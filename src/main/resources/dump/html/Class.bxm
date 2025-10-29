@@ -102,12 +102,18 @@
 												<td>
 													<!--- check if this is static or we have an instance --->
 													<bx:if Modifier.isStatic(variables.field.getModifiers() ) or !isNull( instance ) >
-														<bx:if isNull( instance )> 
-															<!--- Static field, so we can get the value without an instance --->
-															<bx:set value = variables.field.get(null)>
-														<bx:else>
-															<bx:set value = variables.field.get( instance )>
-														</bx:if>
+														<!--- Can throw java.lang.IllegalAccessException --->
+														<bx:try>
+															<bx:if isNull( instance )> 
+																<!--- Static field, so we can get the value without an instance --->
+																<bx:set value = variables.field.get(null)>
+															<bx:else>
+																<bx:set value = variables.field.get( instance )>
+															</bx:if>
+															<bx:catch type="any">
+																<bx:set value = "[Error retrieving value: " & bxcatch.message & "]">
+															</bx:catch>
+														</bx:try>
 														<bx:if isNull( value ) >
 															[Null]
 														<bx:else>
