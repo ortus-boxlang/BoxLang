@@ -271,7 +271,8 @@ public class RunnableLoader {
 		}
 
 		// This extension check is duplicated in the BaseBoxContext.includeTemplate() right now since some code paths hit the runnableLoader directly
-		if ( ext.equals( "*" ) || VALID_TEMPLATE_EXTENSIONS.contains( ext ) ) {
+		boolean includeAll = VALID_TEMPLATE_EXTENSIONS.contains( "*" );
+		if ( includeAll || VALID_TEMPLATE_EXTENSIONS.contains( ext ) ) {
 			Class<IBoxRunnable> clazz = getBoxpiler().compileTemplate( resolvedFilePath );
 			return ( BoxTemplate ) DynamicObject.of( clazz ).invokeStatic( context, "getInstance" );
 		} else {

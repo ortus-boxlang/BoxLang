@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.services;
 
 import java.io.File;
 import java.net.URI;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
@@ -201,8 +202,10 @@ public class ApplicationService extends BaseService {
 	@Override
 	public void onStartup() {
 		// Setup the application descriptor extensions from the runtime configuration
-		this.applicationDescriptorClassExtensions	= BoxRuntime.getInstance().getConfiguration().validClassExtensions;
-		this.applicationDescriptorExtensions		= BoxRuntime.getInstance().getConfiguration().getValidTemplateExtensions();
+		this.applicationDescriptorClassExtensions = BoxRuntime.getInstance().getConfiguration().validClassExtensions;
+		// Exclude wildcard "*" from template extensions so we don't try to check for Application.*
+		this.applicationDescriptorExtensions = BoxRuntime.getInstance().getConfiguration().getValidTemplateExtensions().stream()
+		    .filter( ( e ) -> !e.equals( "*" ) ).collect( java.util.stream.Collectors.toSet() );
 	}
 
 	/**
@@ -367,16 +370,26 @@ public class ApplicationService extends BaseService {
 
 		// Look for a class first
 		for ( var extension : applicationDescriptorClassExtensions ) {
-			var descriptorPath = Paths.get( path, "Application." + extension );
-			if ( descriptorPath.toFile().exists() ) {
-				return new ApplicationDescriptorSearch( descriptorPath, ApplicationDescriptorType.CLASS );
+			try {
+				var descriptorPath = Paths.get( path, "Application." + extension );
+				if ( descriptorPath.toFile().exists() ) {
+					return new ApplicationDescriptorSearch( descriptorPath, ApplicationDescriptorType.CLASS );
+				}
+			} catch ( InvalidPathException ipe ) {
+				// Skip invalid paths. This can happen if an extensions gets registered which invalid chars. No need to blow up, just ignore.
+				continue;
 			}
 		}
 		// Then a template
 		for ( var extension : applicationDescriptorExtensions ) {
-			var descriptorPath = Paths.get( path, "Application." + extension );
-			if ( descriptorPath.toFile().exists() ) {
-				return new ApplicationDescriptorSearch( descriptorPath, ApplicationDescriptorType.TEMPLATE );
+			try {
+				var descriptorPath = Paths.get( path, "Application." + extension );
+				if ( descriptorPath.toFile().exists() ) {
+					return new ApplicationDescriptorSearch( descriptorPath, ApplicationDescriptorType.TEMPLATE );
+				}
+			} catch ( InvalidPathException ipe ) {
+				// Skip invalid paths. This can happen if an extensions gets registered which invalid chars. No need to blow up, just ignore.
+				continue;
 			}
 		}
 		// Nothing found in this directory

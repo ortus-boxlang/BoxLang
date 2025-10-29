@@ -718,6 +718,7 @@ public class BaseBoxContext implements IBoxContext {
 	@Override
 	public void includeTemplate( String templatePath, boolean externalOnly ) {
 		Set<String>	VALID_TEMPLATE_EXTENSIONS	= BoxRuntime.getInstance().getConfiguration().getValidTemplateExtensions();
+		boolean		includeAll					= VALID_TEMPLATE_EXTENSIONS.contains( "*" );
 
 		String		ext							= "";
 		// If there is double //, remove the first char
@@ -736,7 +737,7 @@ public class BaseBoxContext implements IBoxContext {
 		}
 
 		// This extension check is duplicated in the runnableLoader right now since some code paths hit the runnableLoader directly
-		if ( ext.equals( "*" ) || VALID_TEMPLATE_EXTENSIONS.contains( ext ) ) {
+		if ( includeAll || VALID_TEMPLATE_EXTENSIONS.contains( ext ) ) {
 			// Load template class, compiling if neccessary
 			BoxTemplate template = RunnableLoader.getInstance().loadTemplateRelative( this, templatePath, externalOnly );
 
