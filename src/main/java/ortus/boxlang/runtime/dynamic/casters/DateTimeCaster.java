@@ -216,9 +216,16 @@ public class DateTimeCaster implements IBoxCaster {
 			return new DateTime( targetLocalDate.atStartOfDay( timezone ) );
 		}
 
-		// This check needs to run BEFORE the next one since a java.sql.Date IS a java.util.Date, but the toInstance() method will throw an unchecked exception
+		// This check needs to run BEFORE the next one since a java.sql.Date IS a java.util.Date, but the toInstant() method will throw an UnsupportedOperationException
+		// https://docs.oracle.com/javase/8/docs/api/java/sql/Date.html#toInstant--
 		if ( object instanceof java.sql.Date sDate ) {
 			return new DateTime( sDate, timezone );
+		}
+
+		// This check needs to run BEFORE the next one since a java.sql.Time IS a java.util.Date, but the toInstant() method will throw an UnsupportedOperationException
+		// https://docs.oracle.com/javase/8/docs/api/java/sql/Time.html#toInstant--
+		if ( object instanceof java.sql.Time sTime ) {
+			return new DateTime( sTime, timezone );
 		}
 
 		// We have a java.util.Date object

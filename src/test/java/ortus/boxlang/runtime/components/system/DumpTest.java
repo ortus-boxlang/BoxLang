@@ -668,4 +668,31 @@ public class DumpTest {
 
 	}
 
+	@DisplayName( "It can dump SQL date and time objects which don't correctly implement the java.util.Date interface" )
+	@Test
+	public void testCanDumpSqlDateAndTimeObjects() {
+		variables.put( "sqlDate", java.sql.Date.valueOf( "2023-01-01" ) );
+		// @formatter:off
+			instance.executeSource(
+				"""
+					dump( var = sqlDate, format = "html" );
+				""",
+				context );
+			// @formatter:on
+		String output = baos.toString();
+		assertThat( output ).contains( "2023-01-01" );
+
+		variables.put( "sqlTime", java.sql.Time.valueOf( "12:34:56" ) );
+		// @formatter:off
+			instance.executeSource(
+				"""
+					dump( var = sqlTime, format = "html" );
+				""",
+				context );
+			// @formatter:on
+		output = baos.toString();
+		assertThat( output ).contains( "12:34:56" );
+
+	}
+
 }
