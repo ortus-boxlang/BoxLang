@@ -772,10 +772,10 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		       	<bx:procresult name="qryReturn">
 		       </bx:storedproc>
 		    <bx:script>
-		    	println( bSqlFlag );
+		    	/* println( bSqlFlag );
 		    	println( iSqlCode );
 		    	println( sSqlMessage );
-		    	println( qryReturn );
+		    	println( qryReturn ); */
 		    </bx:script>
 		               """,
 		    context, BoxSourceType.BOXTEMPLATE );
@@ -799,15 +799,21 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 
 		instance.executeSource(
 		    """
-		       <bx:storedproc procedure="_testTestStoredProcTimestampIn" datasource="MSSQLdatasource" debug=false >
-		       	<bx:procparam sqltype="timestamp" value="#now()#" type="in">
-		       	<bx:procresult name="qryReturn">
-		       </bx:storedproc>
-		    <bx:script>
-		    	println( qryReturn );
-		    </bx:script>
-		               """,
+		    <bx:set theDate = now() />
+		          <bx:storedproc procedure="_testTestStoredProcTimestampIn" datasource="MSSQLdatasource" debug=false >
+		          	<bx:procparam sqltype="timestamp" value="#theDate#" type="in">
+		          	<bx:procresult name="qryReturn">
+		          </bx:storedproc>
+		       <bx:script>
+		    		result = (datetimeformat( theDate, "yyyy-MM-dd HH:mm:ss" ) == datetimeformat( qryReturn.today, "yyyy-MM-dd HH:mm:ss" ));
+		       </bx:script>
+		                  """,
 		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.get( "qryReturn" ) ).isInstanceOf( Query.class );
+		Query rs = variables.getAsQuery( Key.of( "qryReturn" ) );
+		assertThat( rs.size() ).isEqualTo( 1 );
+		assertThat( rs.getRowAsStruct( 0 ).get( Key.of( "today" ) ) ).isNotNull();
+		assertThat( variables.getAsBoolean( Key.of( "result" ) ) ).isTrue();
 	}
 
 }
