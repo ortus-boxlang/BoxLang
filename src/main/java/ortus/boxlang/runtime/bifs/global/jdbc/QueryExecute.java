@@ -96,9 +96,11 @@ public class QueryExecute extends BIF {
 	 * <li><strong>dbtype:string</strong> - The database type to use for the query, this is either for query of queries or HQL. Mutually exclusive with <code>datasource</code></li>
 	 * <li><strong>fetchsize:numeric</strong> - Number of rows to fetch from database at once, defaults to all rows (0)</li>
 	 * <li><strong>maxrows:numeric</strong> - Maximum number of rows to return</li>
+	 * <li><strong>password:string</strong> - Override the datasource password for this query only. NOTE: Not all JDBC drivers support this; will fall back to unpooled connection if unsupported</li>
 	 * <li><strong>result</strong> - The name of the variable to store the results of the query</li>
 	 * <li><strong>returntype</strong> - The return type: "query", "array", "struct"</li>
 	 * <li><strong>timeout</strong> - Query timeout in seconds</li>
+	 * <li><strong>username:string</strong> - Override the datasource username for this query only. NOTE: Not all JDBC drivers support this; will fall back to unpooled connection if unsupported</li>
 	 * </ul>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
