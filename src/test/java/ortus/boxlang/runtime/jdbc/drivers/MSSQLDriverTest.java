@@ -760,14 +760,14 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		    """
 		       <bx:storedproc procedure="_testQtestStoredProcOutParamMixup" datasource="MSSQLdatasource" debug=false >
 		       	<!---pagination/sort params--->
-		       	<bx:procparam cfsqltype="integer" dbVarName="@prm_drug_exclusion_quote_id"        value="123" null="false">,
+		       	<bx:procparam sqltype="integer" dbVarName="@prm_drug_exclusion_quote_id"        value="123" null="false">,
 		       	<!--- audit --->
-		       	<bx:procparam cfsqltype="varchar" dbVarName="@prm_ip_address"            value="127.0.0.1"           maxlength="45" type="in">
-		       	<bx:procparam cfsqltype="varchar" dbVarName="@prm_last_updated_user_id"  value="abcd" maxlength="50" type="in">
+		       	<bx:procparam sqltype="varchar" dbVarName="@prm_ip_address"            value="127.0.0.1"           maxlength="45" type="in">
+		       	<bx:procparam sqltype="varchar" dbVarName="@prm_last_updated_user_id"  value="abcd" maxlength="50" type="in">
 		       	<!--- output --->
-		       	<bx:procparam cfsqltype="bit"    dbVarName="@prm_return_success_flag"    variable="bSqlFlag"     type="out">
-		       	<bx:procparam cfsqltype="integer" dbVarName="@prm_return_status_code"        variable="iSqlCode"     type="out">
-		       	<bx:procparam cfsqltype="varchar" dbVarName="@prm_return_status_message"     variable="sSqlMessage"  type="out">
+		       	<bx:procparam sqltype="bit"    dbVarName="@prm_return_success_flag"    variable="bSqlFlag"     type="out">
+		       	<bx:procparam sqltype="integer" dbVarName="@prm_return_status_code"        variable="iSqlCode"     type="out">
+		       	<bx:procparam sqltype="varchar" dbVarName="@prm_return_status_message"     variable="sSqlMessage"  type="out">
 		       	<!--- output --->
 		       	<bx:procresult name="qryReturn">
 		       </bx:storedproc>
@@ -775,6 +775,35 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		    	println( bSqlFlag );
 		    	println( iSqlCode );
 		    	println( sSqlMessage );
+		    	println( qryReturn );
+		    </bx:script>
+		               """,
+		    context, BoxSourceType.BOXTEMPLATE );
+	}
+
+	@Test
+	public void testStoredProcTimestampIn() {
+		instance.executeSource(
+		    """
+		        <bx:query datasource="MSSQLdatasource">
+		     	create or ALTER PROCEDURE [dbo].[_testTestStoredProcTimestampIn]
+		    (
+		    	@today datetime
+		    ) AS
+		     	begin
+		    		SELECT @today as today;
+		     	end
+		     </bx:query>
+		        """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		instance.executeSource(
+		    """
+		       <bx:storedproc procedure="_testTestStoredProcTimestampIn" datasource="MSSQLdatasource" debug=false >
+		       	<bx:procparam sqltype="timestamp" value="#now()#" type="in">
+		       	<bx:procresult name="qryReturn">
+		       </bx:storedproc>
+		    <bx:script>
 		    	println( qryReturn );
 		    </bx:script>
 		               """,

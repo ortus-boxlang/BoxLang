@@ -123,7 +123,7 @@ public class StoredProc extends Component {
 				paramOffset = 1;
 			}
 
-			registerProcedureParams( procedure, params, paramOffset, debug, procedureName );
+			registerProcedureParams( procedure, params, paramOffset, debug, procedureName, context );
 
 			if ( options.maxRows > 0 ) {
 				procedure.setLargeMaxRows( options.maxRows );
@@ -226,7 +226,7 @@ public class StoredProc extends Component {
 	 * @param debug         Whether to output debug info
 	 * @param procedureName The name of the stored procedure, for debug output
 	 */
-	private void registerProcedureParams( CallableStatement procedure, Array params, int paramOffset, boolean debug, String procedureName )
+	private void registerProcedureParams( CallableStatement procedure, Array params, int paramOffset, boolean debug, String procedureName, IBoxContext context )
 	    throws SQLException {
 		for ( int i = 0; i < params.size(); i++ ) {
 			IStruct	attr	= ( IStruct ) params.get( i );
@@ -234,8 +234,9 @@ public class StoredProc extends Component {
 			if ( attr.containsKey( Key.type ) ) {
 				varType = attr.getAsString( Key.type ).toLowerCase();
 			}
-			int		sqlType	= QueryColumnType.fromString( attr.getAsString( Key.sqltype ) ).sqlType;
-			Object	value	= attr.get( Key.value );
+			QueryColumnType	queryType	= QueryColumnType.fromString( attr.getAsString( Key.sqltype ) );
+			int				sqlType		= queryType.sqlType;
+			Object			value		= attr.get( Key.value );
 			if ( varType.contains( "in" ) ) {
 				if ( debug ) {
 					String paramName = attr.getAsString( Key.DBVarName );
@@ -251,7 +252,7 @@ public class StoredProc extends Component {
 					        " (type: " + typeInfo + ")"
 					);
 				}
-				procedure.setObject( i + 1 + paramOffset, value, sqlType );
+				procedure.setObject( i + 1 + paramOffset, QueryColumnType.toSQLType( queryType, value, context ), sqlType );
 			}
 			if ( varType.contains( "out" ) ) {
 				if ( debug ) {
