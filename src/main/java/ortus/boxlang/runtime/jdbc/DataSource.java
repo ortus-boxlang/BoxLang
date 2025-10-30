@@ -223,16 +223,54 @@ public class DataSource implements Comparable<DataSource> {
 
 	/**
 	 * Get a connection to the configured datasource with the provided username and password.
+	 * <p>
+	 * <strong>Important:</strong> Some JDBC drivers do not support the pooled
+	 * {@code getConnection(username, password)} method and will throw a
+	 * {@link java.sql.SQLFeatureNotSupportedException}. In such cases, this method will
+	 * automatically fall back to using {@link DriverManager} to create a direct connection with the
+	 * provided credentials. This fallback connection will NOT be pooled and may impact performance
+	 * if used frequently.
+	 * <p>
+	 * <strong>Known drivers that do NOT support this feature:</strong>
+	 * <ul>
+	 * <li>Oracle (ojdbc)</li>
+	 * <li>Microsoft SQL Server (mssql-jdbc)</li>
+	 * <li>IBM DB2</li>
+	 * </ul>
+	 * <p>
+	 * <strong>Drivers that support this feature (but bypass pooling):</strong>
+	 * <ul>
+	 * <li>PostgreSQL (pgjdbc)</li>
+	 * <li>MySQL (mysql-connector-j)</li>
+	 * <li>MariaDB (mariadb-java-client)</li>
+	 * <li>H2</li>
+	 * </ul>
+	 * <p>
+	 * <strong>Best Practice:</strong> Define credentials in the datasource configuration rather than
+	 * overriding them per-query to ensure connection pooling is used.
+	 *
+	 * @param username The username to use for authentication
+	 * @param password The password to use for authentication
 	 *
 	 * @return A JDBC connection to the configured datasource.
 	 *
-	 * @throws BoxRuntimeException if connection could not be established.
+	 * @throws DatabaseException if connection could not be established.
 	 */
 	public Connection getConnection( String username, String password ) {
 		try {
 			return this.hikariDataSource.getConnection( username, password );
+		} catch ( java.sql.SQLFeatureNotSupportedException e ) {
+			// Some JDBC drivers (Oracle, MS SQL Server, IBM DB2) don't support getConnection(user, pass) on pooled connections
+			// Fall back to DriverManager for a direct, unpooled connection
+			try {
+				return DriverManager.getConnection( this.hikariDataSource.getJdbcUrl(), username, password );
+			} catch ( SQLException fallbackException ) {
+				throw new DatabaseException(
+				    "Unable to open connection with provided credentials. Driver does not support pooled credential override and direct connection failed:",
+				    fallbackException
+				);
+			}
 		} catch ( SQLException e ) {
-			// @TODO: Recast as BoxSQLException?
 			throw new DatabaseException( "Unable to open connection:", e );
 		}
 	}

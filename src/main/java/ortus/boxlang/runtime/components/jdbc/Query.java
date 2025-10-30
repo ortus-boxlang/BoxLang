@@ -56,6 +56,8 @@ public class Query extends Component {
 		    new Attribute( Key.dbtype, "string", Set.of(
 		        Validator.NON_EMPTY, Validator.valueOneOf( "query", "hql" )
 		    ) ),
+		    new Attribute( Key.username, "string" ),
+		    new Attribute( Key.password, "string" ),
 
 		    // connection options
 		    new Attribute( Key.maxRows, "integer", -1 ),
