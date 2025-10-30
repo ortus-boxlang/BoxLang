@@ -21,6 +21,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
@@ -53,7 +54,8 @@ public class CreateObject extends BIF {
 		    new Argument( false, Argument.STRING, Key.type, CLASS_TYPE ),
 		    new Argument( false, Argument.STRING, Key.className ),
 		    new Argument( false, Argument.ANY, Key.properties ),
-		    new Argument( false, Argument.BOOLEAN, Key.externalOnly )
+		    new Argument( false, Argument.BOOLEAN, Key.externalOnly ),
+		    new Argument( false, Argument.ANY, Key.classLoader )
 		};
 	}
 
@@ -91,17 +93,22 @@ public class CreateObject extends BIF {
 	 *
 	 * @argument.properties Depending on the type, this can be used to pass additional properties to the object creation process
 	 *
+	 * @argument.classLoader The class loader to use when loading Java classes. Only applicable for type="java". Defaults to the request class loader.
+	 *
 	 * @throws BoxRuntimeException If the type is not supported and no interception is available.
 	 *
 	 * @return The created object.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	type			= arguments.getAsString( Key.type );
-		String	className		= arguments.getAsString( Key.className );
-		Object	properties		= arguments.get( Key.properties );
-		Boolean	externalOnly	= arguments.getAsBoolean( Key.externalOnly );
+		String		type			= arguments.getAsString( Key.type );
+		String		className		= arguments.getAsString( Key.className );
+		Object		properties		= arguments.get( Key.properties );
+		Boolean		externalOnly	= arguments.getAsBoolean( Key.externalOnly );
+		ClassLoader	classLoader		= arguments.getAsAttempt( Key.classLoader, ClassLoader.class ).orElse(
+		    context.getParentOfType( RequestBoxContext.class ).getRequestClassLoader()
+		);
 
-		return createObject( context, type, className, properties, arguments, externalOnly );
+		return createObject( context, type, className, properties, arguments, externalOnly, classLoader );
 	}
 
 	/**
@@ -113,11 +120,13 @@ public class CreateObject extends BIF {
 	/**
 	 * Static helper for creation of objects, see docs for {@link #_invoke(IBoxContext, ArgumentsScope)}.
 	 *
-	 * @param context    The context in which the BIF is being invoked.
-	 * @param type       The type of object to create: java, class (component), or any other type
-	 * @param className  A fully qualified class name to create an instance of
-	 * @param properties Depending on the type, this can be used to pass additional properties to the object creation process
-	 * @param arguments  The arguments scope for the BIF.
+	 * @param context      The context in which the BIF is being invoked.
+	 * @param type         The type of object to create: java, class (component), or any other type
+	 * @param className    A fully qualified class name to create an instance of
+	 * @param properties   Depending on the type, this can be used to pass additional properties to the object creation process
+	 * @param arguments    The arguments scope for the BIF.
+	 * @param externalOnly Whether to only load external classes
+	 * @param classLoader  The class loader to use when loading Java classes
 	 *
 	 * @throws BoxRuntimeException If the type is not supported and no interception is available.
 	 *
@@ -129,7 +138,8 @@ public class CreateObject extends BIF {
 	    String className,
 	    Object properties,
 	    ArgumentsScope arguments,
-	    Boolean externalOnly ) {
+	    Boolean externalOnly,
+	    ClassLoader classLoader ) {
 		// If no type is provided, default to class
 		if ( className == null ) {
 			className	= type;
@@ -138,7 +148,7 @@ public class CreateObject extends BIF {
 
 		// Java Classes
 		if ( type.equalsIgnoreCase( ClassLocator.JAVA_PREFIX ) ) {
-			return createJavaClass( context, className, properties );
+			return createJavaClass( context, className, properties, classLoader );
 		}
 
 		// Class and Component left for backward compatibility
@@ -178,11 +188,12 @@ public class CreateObject extends BIF {
 	/**
 	 * Creates a new Java class instance.
 	 *
-	 * @param context    The context in which the BIF is being invoked.
-	 * @param className  The fully qualified class name to create an instance of.
-	 * @param properties The class paths to load the class from.
+	 * @param context     The context in which the BIF is being invoked.
+	 * @param className   The fully qualified class name to create an instance of.
+	 * @param properties  The class paths to load the class from.
+	 * @param classLoader The class loader to use when loading the class.
 	 */
-	private static Object createJavaClass( IBoxContext context, String className, Object properties ) {
+	private static Object createJavaClass( IBoxContext context, String className, Object properties, ClassLoader classLoader ) {
 		// If we have properties, we need to load the class with the properties
 		if ( properties != null ) {
 			Array classPaths;
@@ -202,6 +213,16 @@ public class CreateObject extends BIF {
 			    true,
 			    context.getCurrentImports()
 			);
+		}
+
+		// If a custom classLoader is provided, use it to load the class
+		if ( classLoader != null ) {
+			try {
+				Class<?> loadedClass = classLoader.loadClass( className );
+				return DynamicObject.of( loadedClass, context );
+			} catch ( ClassNotFoundException e ) {
+				throw new BoxRuntimeException( "Class not found using custom class loader: " + className, e );
+			}
 		}
 
 		// Otherwise, traditional class loading
