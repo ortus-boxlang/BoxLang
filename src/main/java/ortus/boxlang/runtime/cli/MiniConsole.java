@@ -627,6 +627,18 @@ public class MiniConsole implements AutoCloseable {
 	 * Windows-specific input handling using PowerShell
 	 */
 	private String readLineWindows() throws IOException {
+		try {
+			return readLineWindowsRaw();
+		} catch ( Exception e ) {
+			System.err.println( "Warning: PowerShell raw terminal mode failed, falling back to line mode. " + e.getMessage() );
+			return readLineWindowsFallback();
+		}
+	}
+
+	/**
+	 * Raw Windows input handling via PowerShell subprocess
+	 */
+	private String readLineWindowsRaw() throws IOException {
 		try ( WinKeys keys = new WinKeys() ) {
 			System.out.print( prompt );
 			System.out.flush();
@@ -981,6 +993,19 @@ public class MiniConsole implements AutoCloseable {
 	 * Fallback to line-buffered input for systems where raw mode fails
 	 */
 	private String readLinePosixFallback() throws IOException {
+		try ( BufferedReader reader = new BufferedReader( new InputStreamReader( System.in ) ) ) {
+			System.out.print( prompt );
+			System.out.flush();
+			String result = reader.readLine();
+			addToHistory( result );
+			return result;
+		}
+	}
+
+	/**
+	 * Fallback to line-buffered input for Windows when PowerShell raw mode fails
+	 */
+	private String readLineWindowsFallback() throws IOException {
 		try ( BufferedReader reader = new BufferedReader( new InputStreamReader( System.in ) ) ) {
 			System.out.print( prompt );
 			System.out.flush();
