@@ -983,10 +983,10 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		componentMap.put( "output", "core" );
 		componentMap.put( "pageencoding", "" );
 		componentMap.put( "param", "core" );
-		componentMap.put( "pdf", "" );
-		componentMap.put( "pdfform", "" );
-		componentMap.put( "pdfformparam", "" );
-		componentMap.put( "pdfparam", "" );
+		componentMap.put( "pdf", "bx-pdf+" );
+		componentMap.put( "pdfform", "bx-pdf+" );
+		componentMap.put( "pdfformparam", "bx-pdf+" );
+		componentMap.put( "pdfparam", "bx-pdf+" );
 		componentMap.put( "pdfsubform", "" );
 		componentMap.put( "pod", "bx-ui-compat" );
 		componentMap.put( "pop", "" );
