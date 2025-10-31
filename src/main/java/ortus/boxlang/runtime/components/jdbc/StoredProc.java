@@ -61,6 +61,8 @@ public class StoredProc extends Component {
 		    new Attribute( Key.debug, "boolean", false ),
 		    new Attribute( Key.returnCode, "boolean", false ),
 		    new Attribute( Key.result, "string", "bxstoredproc" ),
+		    new Attribute( Key.username, "string" ),
+		    new Attribute( Key.password, "string" ),
 		};
 
 	}
@@ -319,12 +321,12 @@ public class StoredProc extends Component {
 	/**
 	 * Validate that all ProcResult components either have a resultSet attribute, or don't. Positional vs indexed.
 	 * Throw an exception if there is a mix of both.
-	 * 
+	 *
 	 * Return a map of resultSet index to ProcResult attribute struct. If they were positional, then assign them indexes starting at 1.
 	 * If they were indexed, then use the provided index. There may be gaps in the indexes. If more than one procresult used the same index, the last one wins (overwrite)
 	 *
 	 * @param procResults The array of proc result definitions
-	 * 
+	 *
 	 * @return Map of resultSet index to ProcResult attribute struct.
 	 */
 	private Map<Integer, IStruct> processProcResults( Array procResults ) {
