@@ -188,8 +188,8 @@ public class CustomInputStreamReader {
 				}
 
 				// Read one byte at a time to minimize read-ahead
-				int off		= bytes.arrayOffset() + bytes.limit();
-				int wasRead	= in.read( bytes.array(), off, 1 );
+				int	off		= bytes.arrayOffset() + bytes.limit();
+				int	wasRead	= in.read( bytes.array(), off, 1 );
 
 				if ( wasRead == -1 ) {
 					endOfInput = true;

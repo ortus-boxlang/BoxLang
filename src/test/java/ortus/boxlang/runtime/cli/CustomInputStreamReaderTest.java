@@ -33,11 +33,11 @@ public class CustomInputStreamReaderTest {
 	@Test
 	@DisplayName( "Test reading single ASCII byte" )
 	public void testReadSingleByte() throws IOException {
-		byte[]						input	= new byte[] { 65 }; // 'A'
-		ByteArrayInputStream		in		= new ByteArrayInputStream( input );
-		CustomInputStreamReader		reader	= new CustomInputStreamReader( in );
+		byte[]					input	= new byte[] { 65 }; // 'A'
+		ByteArrayInputStream	in		= new ByteArrayInputStream( input );
+		CustomInputStreamReader	reader	= new CustomInputStreamReader( in );
 
-		int							b		= reader.readByte();
+		int						b		= reader.readByte();
 		assertThat( b ).isEqualTo( 65 );
 
 		reader.close();
@@ -46,9 +46,9 @@ public class CustomInputStreamReaderTest {
 	@Test
 	@DisplayName( "Test reading multiple ASCII bytes" )
 	public void testReadMultipleBytes() throws IOException {
-		byte[]						input	= "Hello".getBytes( StandardCharsets.UTF_8 );
-		ByteArrayInputStream		in		= new ByteArrayInputStream( input );
-		CustomInputStreamReader		reader	= new CustomInputStreamReader( in );
+		byte[]					input	= "Hello".getBytes( StandardCharsets.UTF_8 );
+		ByteArrayInputStream	in		= new ByteArrayInputStream( input );
+		CustomInputStreamReader	reader	= new CustomInputStreamReader( in );
 
 		assertThat( reader.readByte() ).isEqualTo( 72 );	// 'H'
 		assertThat( reader.readByte() ).isEqualTo( 101 );	// 'e'
@@ -62,9 +62,9 @@ public class CustomInputStreamReaderTest {
 	@Test
 	@DisplayName( "Test reading EOF" )
 	public void testReadEOF() throws IOException {
-		byte[]						input	= new byte[] { 65 }; // 'A'
-		ByteArrayInputStream		in		= new ByteArrayInputStream( input );
-		CustomInputStreamReader		reader	= new CustomInputStreamReader( in );
+		byte[]					input	= new byte[] { 65 }; // 'A'
+		ByteArrayInputStream	in		= new ByteArrayInputStream( input );
+		CustomInputStreamReader	reader	= new CustomInputStreamReader( in );
 
 		assertThat( reader.readByte() ).isEqualTo( 65 );
 		assertThat( reader.readByte() ).isEqualTo( -1 );	// EOF
@@ -76,11 +76,11 @@ public class CustomInputStreamReaderTest {
 	@Test
 	@DisplayName( "Test reading single ASCII character" )
 	public void testReadSingleChar() throws IOException {
-		byte[]						input	= "A".getBytes( StandardCharsets.UTF_8 );
-		ByteArrayInputStream		in		= new ByteArrayInputStream( input );
-		CustomInputStreamReader		reader	= new CustomInputStreamReader( in );
+		byte[]					input	= "A".getBytes( StandardCharsets.UTF_8 );
+		ByteArrayInputStream	in		= new ByteArrayInputStream( input );
+		CustomInputStreamReader	reader	= new CustomInputStreamReader( in );
 
-		int							c		= reader.readChar();
+		int						c		= reader.readChar();
 		assertThat( c ).isEqualTo( 'A' );
 
 		reader.close();
@@ -90,11 +90,11 @@ public class CustomInputStreamReaderTest {
 	@DisplayName( "Test reading UTF-8 multi-byte character" )
 	public void testReadUTF8MultiByteChar() throws IOException {
 		// Test with emoji and special characters
-		byte[]						input	= "😀".getBytes( StandardCharsets.UTF_8 );
-		ByteArrayInputStream		in		= new ByteArrayInputStream( input );
-		CustomInputStreamReader		reader	= new CustomInputStreamReader( in, StandardCharsets.UTF_8 );
+		byte[]					input	= "😀".getBytes( StandardCharsets.UTF_8 );
+		ByteArrayInputStream	in		= new ByteArrayInputStream( input );
+		CustomInputStreamReader	reader	= new CustomInputStreamReader( in, StandardCharsets.UTF_8 );
 
-		int							c		= reader.readChar();
+		int						c		= reader.readChar();
 		assertThat( c ).isEqualTo( 0xD83D );				// High surrogate of emoji
 
 		reader.close();
@@ -103,12 +103,12 @@ public class CustomInputStreamReaderTest {
 	@Test
 	@DisplayName( "Test reading character array" )
 	public void testReadCharArray() throws IOException {
-		byte[]						input	= "Hello World".getBytes( StandardCharsets.UTF_8 );
-		ByteArrayInputStream		in		= new ByteArrayInputStream( input );
-		CustomInputStreamReader		reader	= new CustomInputStreamReader( in );
+		byte[]					input	= "Hello World".getBytes( StandardCharsets.UTF_8 );
+		ByteArrayInputStream	in		= new ByteArrayInputStream( input );
+		CustomInputStreamReader	reader	= new CustomInputStreamReader( in );
 
-		char[]						buffer	= new char[ 5 ];
-		int							read	= reader.read( buffer, 0, 5 );
+		char[]					buffer	= new char[ 5 ];
+		int						read	= reader.read( buffer, 0, 5 );
 
 		assertThat( read ).isEqualTo( 5 );
 		assertThat( new String( buffer ) ).isEqualTo( "Hello" );
@@ -119,12 +119,12 @@ public class CustomInputStreamReaderTest {
 	@Test
 	@DisplayName( "Test reading character array with offset" )
 	public void testReadCharArrayWithOffset() throws IOException {
-		byte[]						input	= "Test".getBytes( StandardCharsets.UTF_8 );
-		ByteArrayInputStream		in		= new ByteArrayInputStream( input );
-		CustomInputStreamReader		reader	= new CustomInputStreamReader( in );
+		byte[]					input	= "Test".getBytes( StandardCharsets.UTF_8 );
+		ByteArrayInputStream	in		= new ByteArrayInputStream( input );
+		CustomInputStreamReader	reader	= new CustomInputStreamReader( in );
 
-		char[]						buffer	= new char[ 10 ];
-		int							read	= reader.read( buffer, 2, 4 );
+		char[]					buffer	= new char[ 10 ];
+		int						read	= reader.read( buffer, 2, 4 );
 
 		assertThat( read ).isEqualTo( 4 );
 		assertThat( buffer[ 2 ] ).isEqualTo( 'T' );
@@ -138,9 +138,9 @@ public class CustomInputStreamReaderTest {
 	@Test
 	@DisplayName( "Test ready() method" )
 	public void testReady() throws IOException {
-		byte[]						input	= "Test".getBytes( StandardCharsets.UTF_8 );
-		ByteArrayInputStream		in		= new ByteArrayInputStream( input );
-		CustomInputStreamReader		reader	= new CustomInputStreamReader( in );
+		byte[]					input	= "Test".getBytes( StandardCharsets.UTF_8 );
+		ByteArrayInputStream	in		= new ByteArrayInputStream( input );
+		CustomInputStreamReader	reader	= new CustomInputStreamReader( in );
 
 		// Should be ready when data is available
 		assertThat( reader.ready() ).isTrue();
@@ -157,8 +157,8 @@ public class CustomInputStreamReaderTest {
 	@Test
 	@DisplayName( "Test getEncoding() method" )
 	public void testGetEncoding() throws IOException {
-		ByteArrayInputStream		in		= new ByteArrayInputStream( new byte[] { 65 } );
-		CustomInputStreamReader		reader	= new CustomInputStreamReader( in, StandardCharsets.UTF_8 );
+		ByteArrayInputStream	in		= new ByteArrayInputStream( new byte[] { 65 } );
+		CustomInputStreamReader	reader	= new CustomInputStreamReader( in, StandardCharsets.UTF_8 );
 
 		assertThat( reader.getEncoding() ).isEqualTo( "UTF-8" );
 
@@ -170,13 +170,13 @@ public class CustomInputStreamReaderTest {
 	@DisplayName( "Test reading with different charsets" )
 	public void testDifferentCharsets() throws IOException {
 		// Test with ISO-8859-1 (Latin-1)
-		String			text		= "Test";
-		byte[]			input		= text.getBytes( StandardCharsets.ISO_8859_1 );
-		ByteArrayInputStream		in		= new ByteArrayInputStream( input );
-		CustomInputStreamReader		reader	= new CustomInputStreamReader( in, StandardCharsets.ISO_8859_1 );
+		String					text	= "Test";
+		byte[]					input	= text.getBytes( StandardCharsets.ISO_8859_1 );
+		ByteArrayInputStream	in		= new ByteArrayInputStream( input );
+		CustomInputStreamReader	reader	= new CustomInputStreamReader( in, StandardCharsets.ISO_8859_1 );
 
-		char[]			buffer		= new char[ 4 ];
-		int				read		= reader.read( buffer, 0, 4 );
+		char[]					buffer	= new char[ 4 ];
+		int						read	= reader.read( buffer, 0, 4 );
 
 		assertThat( read ).isEqualTo( 4 );
 		assertThat( new String( buffer ) ).isEqualTo( "Test" );
@@ -187,11 +187,11 @@ public class CustomInputStreamReaderTest {
 	@Test
 	@DisplayName( "Test reading zero-length array" )
 	public void testReadZeroLength() throws IOException {
-		ByteArrayInputStream		in		= new ByteArrayInputStream( "Test".getBytes( StandardCharsets.UTF_8 ) );
-		CustomInputStreamReader		reader	= new CustomInputStreamReader( in );
+		ByteArrayInputStream	in		= new ByteArrayInputStream( "Test".getBytes( StandardCharsets.UTF_8 ) );
+		CustomInputStreamReader	reader	= new CustomInputStreamReader( in );
 
-		char[]						buffer	= new char[ 5 ];
-		int							read	= reader.read( buffer, 0, 0 );
+		char[]					buffer	= new char[ 5 ];
+		int						read	= reader.read( buffer, 0, 0 );
 
 		assertThat( read ).isEqualTo( 0 );
 
@@ -201,8 +201,8 @@ public class CustomInputStreamReaderTest {
 	@Test
 	@DisplayName( "Test exception on closed reader for readByte" )
 	public void testReadByteAfterClose() throws IOException {
-		ByteArrayInputStream		in		= new ByteArrayInputStream( new byte[] { 65 } );
-		CustomInputStreamReader		reader	= new CustomInputStreamReader( in );
+		ByteArrayInputStream	in		= new ByteArrayInputStream( new byte[] { 65 } );
+		CustomInputStreamReader	reader	= new CustomInputStreamReader( in );
 
 		reader.close();
 
@@ -217,8 +217,8 @@ public class CustomInputStreamReaderTest {
 	@Test
 	@DisplayName( "Test exception on closed reader for readChar" )
 	public void testReadCharAfterClose() throws IOException {
-		ByteArrayInputStream		in		= new ByteArrayInputStream( new byte[] { 65 } );
-		CustomInputStreamReader		reader	= new CustomInputStreamReader( in );
+		ByteArrayInputStream	in		= new ByteArrayInputStream( new byte[] { 65 } );
+		CustomInputStreamReader	reader	= new CustomInputStreamReader( in );
 
 		reader.close();
 
@@ -233,10 +233,10 @@ public class CustomInputStreamReaderTest {
 	@Test
 	@DisplayName( "Test exception on invalid array bounds" )
 	public void testInvalidArrayBounds() throws IOException {
-		ByteArrayInputStream		in		= new ByteArrayInputStream( "Test".getBytes( StandardCharsets.UTF_8 ) );
-		CustomInputStreamReader		reader	= new CustomInputStreamReader( in );
+		ByteArrayInputStream	in		= new ByteArrayInputStream( "Test".getBytes( StandardCharsets.UTF_8 ) );
+		CustomInputStreamReader	reader	= new CustomInputStreamReader( in );
 
-		char[]						buffer	= new char[ 5 ];
+		char[]					buffer	= new char[ 5 ];
 
 		try {
 			reader.read( buffer, -1, 3 );
@@ -259,9 +259,9 @@ public class CustomInputStreamReaderTest {
 	@DisplayName( "Test reading escape sequences (arrow keys)" )
 	public void testReadEscapeSequences() throws IOException {
 		// ESC [ A = Up arrow
-		byte[]						input	= new byte[] { 27, '[', 'A' };
-		ByteArrayInputStream		in		= new ByteArrayInputStream( input );
-		CustomInputStreamReader		reader	= new CustomInputStreamReader( in );
+		byte[]					input	= new byte[] { 27, '[', 'A' };
+		ByteArrayInputStream	in		= new ByteArrayInputStream( input );
+		CustomInputStreamReader	reader	= new CustomInputStreamReader( in );
 
 		assertThat( reader.readByte() ).isEqualTo( 27 );	// ESC
 		assertThat( reader.readByte() ).isEqualTo( '[' );
@@ -274,9 +274,9 @@ public class CustomInputStreamReaderTest {
 	@DisplayName( "Test reading control characters" )
 	public void testReadControlCharacters() throws IOException {
 		// Test Ctrl+C (0x03), Tab (0x09), Enter (0x0D), Backspace (0x7F)
-		byte[]						input	= new byte[] { 3, 9, 13, 127 };
-		ByteArrayInputStream		in		= new ByteArrayInputStream( input );
-		CustomInputStreamReader		reader	= new CustomInputStreamReader( in );
+		byte[]					input	= new byte[] { 3, 9, 13, 127 };
+		ByteArrayInputStream	in		= new ByteArrayInputStream( input );
+		CustomInputStreamReader	reader	= new CustomInputStreamReader( in );
 
 		assertThat( reader.readByte() ).isEqualTo( 3 );	// Ctrl+C
 		assertThat( reader.readByte() ).isEqualTo( 9 );	// Tab
@@ -290,13 +290,13 @@ public class CustomInputStreamReaderTest {
 	@DisplayName( "Test reading mixed ASCII and UTF-8" )
 	public void testReadMixedContent() throws IOException {
 		// Mix of ASCII and UTF-8 characters
-		String						text	= "Hello 世界";
-		byte[]						input	= text.getBytes( StandardCharsets.UTF_8 );
-		ByteArrayInputStream		in		= new ByteArrayInputStream( input );
-		CustomInputStreamReader		reader	= new CustomInputStreamReader( in, StandardCharsets.UTF_8 );
+		String					text	= "Hello 世界";
+		byte[]					input	= text.getBytes( StandardCharsets.UTF_8 );
+		ByteArrayInputStream	in		= new ByteArrayInputStream( input );
+		CustomInputStreamReader	reader	= new CustomInputStreamReader( in, StandardCharsets.UTF_8 );
 
-		char[]						buffer	= new char[ 20 ];
-		int							read	= reader.read( buffer, 0, 20 );
+		char[]					buffer	= new char[ 20 ];
+		int						read	= reader.read( buffer, 0, 20 );
 
 		assertThat( read ).isGreaterThan( 0 );
 		String result = new String( buffer, 0, read );
@@ -308,9 +308,9 @@ public class CustomInputStreamReaderTest {
 	@Test
 	@DisplayName( "Test default charset constructor" )
 	public void testDefaultCharsetConstructor() throws IOException {
-		byte[]						input	= "Test".getBytes( Charset.defaultCharset() );
-		ByteArrayInputStream		in		= new ByteArrayInputStream( input );
-		CustomInputStreamReader		reader	= new CustomInputStreamReader( in );
+		byte[]					input	= "Test".getBytes( Charset.defaultCharset() );
+		ByteArrayInputStream	in		= new ByteArrayInputStream( input );
+		CustomInputStreamReader	reader	= new CustomInputStreamReader( in );
 
 		assertThat( reader.getEncoding() ).isNotNull();
 		assertThat( reader.getEncoding() ).isEqualTo( Charset.defaultCharset().name() );
