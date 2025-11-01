@@ -142,11 +142,11 @@ dependencies {
 	// https://mvnrepository.com/artifact/com.zaxxer/HikariCP
 	implementation 'com.zaxxer:HikariCP:6.3.0'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-tree
-	implementation 'org.ow2.asm:asm-tree:9.8'
+	implementation 'org.ow2.asm:asm-tree:9.9'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-util
-	implementation 'org.ow2.asm:asm-util:9.8'
+	implementation 'org.ow2.asm:asm-util:9.9'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-commons
-	implementation 'org.ow2.asm:asm-commons:9.8'
+	implementation 'org.ow2.asm:asm-commons:9.9'
 	// https://mvnrepository.com/artifact/org.semver4j/semver4j
 	implementation 'org.semver4j:semver4j:6.0.0'
 
