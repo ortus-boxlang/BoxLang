@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.cli;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -207,7 +208,7 @@ public class CustomInputStreamReaderTest {
 
 		try {
 			reader.readByte();
-			assertThat( false ).isTrue(); // Should not reach here
+			fail( "Should have thrown IOException" );
 		} catch ( IOException e ) {
 			assertThat( e.getMessage() ).contains( "closed" );
 		}
@@ -223,7 +224,7 @@ public class CustomInputStreamReaderTest {
 
 		try {
 			reader.readChar();
-			assertThat( false ).isTrue(); // Should not reach here
+			fail( "Should have thrown IOException" );
 		} catch ( IOException e ) {
 			assertThat( e.getMessage() ).contains( "closed" );
 		}
@@ -239,14 +240,14 @@ public class CustomInputStreamReaderTest {
 
 		try {
 			reader.read( buffer, -1, 3 );
-			assertThat( false ).isTrue(); // Should not reach here
+			fail( "Should have thrown IndexOutOfBoundsException" );
 		} catch ( IndexOutOfBoundsException e ) {
 			// Expected
 		}
 
 		try {
 			reader.read( buffer, 0, 10 );
-			assertThat( false ).isTrue(); // Should not reach here
+			fail( "Should have thrown IndexOutOfBoundsException" );
 		} catch ( IndexOutOfBoundsException e ) {
 			// Expected
 		}

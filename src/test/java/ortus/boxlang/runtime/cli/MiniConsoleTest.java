@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.cli;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -194,7 +195,7 @@ public class MiniConsoleTest {
 	public void testCodesEnumInvalidName() {
 		try {
 			MiniConsole.CODES.get( "INVALID_CODE" );
-			assertThat( false ).isTrue(); // Should not reach here
+			fail( "Should have thrown BoxRuntimeException" );
 		} catch ( ortus.boxlang.runtime.types.exceptions.BoxRuntimeException e ) {
 			assertThat( e.getMessage() ).contains( "Invalid ANSI code name" );
 		}
