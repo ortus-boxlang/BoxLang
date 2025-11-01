@@ -78,7 +78,7 @@ jobs:
           ./gradlew test --stacktrace --console=plain
 
       - name: Publish Test Reports
-        uses: mikepenz/action-junit-report@v5.6.2
+        uses: mikepenz/action-junit-report@v6.0.1
         if: always()
         with:
           report_paths: |
