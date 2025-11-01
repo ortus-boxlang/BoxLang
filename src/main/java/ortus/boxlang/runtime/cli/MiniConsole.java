@@ -1397,7 +1397,8 @@ public class MiniConsole implements AutoCloseable {
 	 */
 	private static final class PosixRaw implements AutoCloseable {
 
-		private final String originalSettings;
+		private final String					originalSettings;
+		private final CustomInputStreamReader	reader;
 
 		PosixRaw() {
 			try {
@@ -1409,27 +1410,19 @@ public class MiniConsole implements AutoCloseable {
 				// time 0 = no timeout
 				executeCommand( "stty -icanon -echo -isig min 1 time 0 < /dev/tty" );
 
+				// Create a reader for System.in using the custom InputStreamReader
+				this.reader = new CustomInputStreamReader( System.in );
+
 			} catch ( Exception e ) {
 				throw new RuntimeException( "Failed to enable raw terminal mode. Ensure 'stty' is available.", e );
 			}
 		}
 
 		/**
-		 * Read a single byte from the terminal in raw mode
+		 * Read a single byte from the terminal in raw mode using CustomInputStreamReader
 		 */
 		int readByte() throws IOException {
-			try {
-				Process	p	= new ProcessBuilder( "dd", "if=/dev/tty", "bs=1", "count=1" )
-				    .redirectError( ProcessBuilder.Redirect.DISCARD )
-				    .start();
-
-				int		b	= p.getInputStream().read();
-				p.waitFor();
-				return b;
-			} catch ( InterruptedException e ) {
-				Thread.currentThread().interrupt();
-				throw new IOException( "Interrupted while reading", e );
-			}
+			return reader.readByte();
 		}
 
 		@Override
@@ -1439,6 +1432,11 @@ public class MiniConsole implements AutoCloseable {
 			} catch ( Exception e ) {
 				// Best effort to restore - don't throw in close()
 				System.err.println( "Warning: Failed to restore terminal settings: " + e.getMessage() );
+			}
+			try {
+				reader.close();
+			} catch ( Exception e ) {
+				// Best effort cleanup
 			}
 		}
 
