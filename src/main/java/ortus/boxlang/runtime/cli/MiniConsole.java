@@ -42,7 +42,11 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  * The console automatically detects the operating system and uses the appropriate
  * method for raw input:
  * - Windows: PowerShell-based key reading
- * - POSIX (macOS/Linux): stty + dd for direct /dev/tty access
+ * - POSIX (macOS/Linux): stty + CustomInputStreamReader for efficient byte-level access
+ *
+ * The POSIX implementation uses a custom InputStream reader that reads the minimal number
+ * of bytes needed for character decoding, providing efficient UTF-8 support and eliminating
+ * the need to spawn external processes for each byte read.
  *
  * Example usage:
  *
@@ -69,6 +73,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  * - Backspace/Delete for editing
  * - Automatic history management (no duplicates)
  * - 256-color terminal support for prompts
+ * - UTF-8 and multi-byte character support
  *
  * @author Ortus Solutions, Corp
  *
