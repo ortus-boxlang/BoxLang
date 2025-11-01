@@ -58,10 +58,9 @@ public class BoxReplTest {
 		// Restore System.out
 		System.setOut( originalOut );
 
-		// Shutdown runtime after each test
-		if ( runtime != null ) {
-			runtime.shutdown();
-		}
+		// NOTE: We don't shutdown the runtime here because BoxRuntime is a singleton
+		// and shutting it down in the middle of a test suite will affect other tests.
+		// The runtime will be cleaned up when the JVM exits.
 	}
 
 	@Test
@@ -73,13 +72,11 @@ public class BoxReplTest {
 	@Test
 	@DisplayName( "Test BoxRepl with runtime" )
 	public void testReplWithRuntime() {
-		BoxRuntime	testRuntime	= BoxRuntime.getInstance( true );
-		BoxRepl		testRepl	= new BoxRepl( testRuntime );
+		// BoxRepl uses the runtime passed to constructor
+		BoxRepl testRepl = new BoxRepl( runtime );
 
 		assertThat( testRepl ).isNotNull();
-
-		// Cleanup
-		testRuntime.shutdown();
+		// Note: We don't shutdown the runtime as it's a singleton shared across tests
 	}
 
 	@Test
