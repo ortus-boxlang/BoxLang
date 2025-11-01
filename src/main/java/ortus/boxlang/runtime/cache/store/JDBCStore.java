@@ -308,7 +308,7 @@ public class JDBCStore extends AbstractStore {
 	 * object saving. This method is called when the cache provider is stopped.
 	 */
 	public void shutdown() {
-		// Nothing to do
+		clearAll();
 	}
 
 	/**
