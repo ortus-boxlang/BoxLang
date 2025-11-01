@@ -50,7 +50,7 @@ import java.nio.charset.CodingErrorAction;
  *
  * @since 1.6.0
  */
-public class BoxInputStreamReader {
+public class BoxInputStreamReader implements AutoCloseable {
 
 	/**
 	 * Buffer size for byte reading - kept small to minimize read-ahead
