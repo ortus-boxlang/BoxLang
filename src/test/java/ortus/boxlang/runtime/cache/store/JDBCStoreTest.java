@@ -56,6 +56,13 @@ class JDBCStoreTest extends BaseStoreTest {
 		runtime	= BoxRuntime.getInstance( true );
 		context	= new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
 
+		// Clean up any existing database directory
+		try {
+			ortus.boxlang.runtime.util.FileSystemUtil.deleteDirectory( "src/test/resources/tmp/JDBCStoreTest", true );
+		} catch ( Exception e ) {
+			// Ignore errors
+		}
+
 		// Ensure the test directory exists
 		ortus.boxlang.runtime.util.FileSystemUtil.createDirectory( "src/test/resources/tmp/JDBCStoreTest" );
 

@@ -267,17 +267,17 @@ public class JDBCStore extends AbstractStore {
 			    fullTableName
 			);
 		} else {
-			// Default to Derby/HSQLDB syntax
+			// Default to Derby/HSQLDB syntax - use VARCHAR for cache_value to avoid CLOB issues
 			return String.format(
 			    "CREATE TABLE %s ("
 			        + "cache_key VARCHAR(500) PRIMARY KEY, "
-			        + "cache_value CLOB, "
+			        + "cache_value VARCHAR(32672), "
 			        + "hits BIGINT DEFAULT 0, "
 			        + "created TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
 			        + "last_accessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
 			        + "timeout BIGINT DEFAULT 0, "
 			        + "last_access_timeout BIGINT DEFAULT 0, "
-			        + "metadata CLOB"
+			        + "metadata VARCHAR(1000)"
 			        + ")",
 			    fullTableName
 			);
@@ -635,7 +635,9 @@ public class JDBCStore extends AbstractStore {
 		);
 
 		if ( result instanceof Query query && query.size() > 0 ) {
-			return deserializeEntry( query.getRowAsStruct( 0 ) );
+			// Materialize CLOB data immediately after query returns
+			IStruct row = materializeClobData( query.getRowAsStruct( 0 ) );
+			return deserializeEntry( row );
 		}
 		return null;
 	}
@@ -751,9 +753,46 @@ public class JDBCStore extends AbstractStore {
 		);
 
 		if ( result instanceof Query query ) {
-			return query.stream().map( row -> ( IStruct ) row );
+			// Eagerly collect all rows and materialize CLOB values to avoid lazy evaluation issues
+			java.util.List<IStruct> materializedRows = new java.util.ArrayList<>();
+			for ( Object row : query ) {
+				IStruct rowStruct = ( IStruct ) row;
+				// Materialize CLOB data immediately
+				materializedRows.add( materializeClobData( rowStruct ) );
+			}
+			return materializedRows.stream();
 		}
 		return Stream.empty();
+	}
+
+	/**
+	 * Materialize CLOB data in a struct to avoid lazy evaluation issues
+	 * 
+	 * @param row The row struct that may contain CLOB values
+	 * 
+	 * @return A struct with CLOB values converted to strings
+	 */
+	private IStruct materializeClobData( IStruct row ) {
+		Object cacheValueObj = row.get( Key.of( "cache_value" ) );
+		if ( cacheValueObj instanceof java.sql.Clob clob ) {
+			try {
+				long	length		= clob.length();
+				String	stringValue	= clob.getSubString( 1, ( int ) length );
+				// Create a new struct with the string value
+				IStruct	newRow		= new Struct( IStruct.TYPES.LINKED );
+				row.entrySet().forEach( entry -> {
+					if ( entry.getKey().equals( Key.of( "cache_value" ) ) ) {
+						newRow.put( entry.getKey(), stringValue );
+					} else {
+						newRow.put( entry.getKey(), entry.getValue() );
+					}
+				} );
+				return newRow;
+			} catch ( java.sql.SQLException e ) {
+				throw new BoxRuntimeException( "Failed to read CLOB data", e );
+			}
+		}
+		return row;
 	}
 
 	/**
