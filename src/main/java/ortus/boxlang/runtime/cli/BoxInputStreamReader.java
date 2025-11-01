@@ -50,7 +50,7 @@ import java.nio.charset.CodingErrorAction;
  *
  * @since 1.6.0
  */
-public class CustomInputStreamReader {
+public class BoxInputStreamReader {
 
 	/**
 	 * Buffer size for byte reading - kept small to minimize read-ahead
@@ -78,21 +78,21 @@ public class CustomInputStreamReader {
 	private boolean				endOfInput	= false;
 
 	/**
-	 * Constructs a new CustomInputStreamReader using the default charset.
+	 * Constructs a new BoxInputStreamReader using the default charset.
 	 *
 	 * @param in the input stream from which to read bytes
 	 */
-	public CustomInputStreamReader( InputStream in ) {
+	public BoxInputStreamReader( InputStream in ) {
 		this( in, Charset.defaultCharset() );
 	}
 
 	/**
-	 * Constructs a new CustomInputStreamReader using the specified charset.
+	 * Constructs a new BoxInputStreamReader using the specified charset.
 	 *
 	 * @param in      the input stream from which to read bytes
 	 * @param charset the charset to use for decoding
 	 */
-	public CustomInputStreamReader( InputStream in, Charset charset ) {
+	public BoxInputStreamReader( InputStream in, Charset charset ) {
 		this.in			= in;
 		this.decoder	= charset.newDecoder()
 		    .onMalformedInput( CodingErrorAction.REPLACE )

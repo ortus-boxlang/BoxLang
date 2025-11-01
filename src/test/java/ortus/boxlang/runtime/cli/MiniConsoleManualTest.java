@@ -1,5 +1,5 @@
 /**
- * Manual test script for MiniConsole with CustomInputStreamReader
+ * Manual test script for MiniConsole with BoxInputStreamReader
  * 
  * This is a simple demonstration to verify:
  * - Basic input reading works
@@ -20,7 +20,7 @@ public class MiniConsoleManualTest {
 
 	public static void main( String[] args ) {
 		System.out.println( "==================================================" );
-		System.out.println( "MiniConsole Manual Test with CustomInputStreamReader" );
+		System.out.println( "MiniConsole Manual Test with BoxInputStreamReader" );
 		System.out.println( "==================================================" );
 		System.out.println();
 		System.out.println( "Test the following features:" );

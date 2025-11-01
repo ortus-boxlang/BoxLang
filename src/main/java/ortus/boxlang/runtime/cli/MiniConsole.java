@@ -42,7 +42,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  * The console automatically detects the operating system and uses the appropriate
  * method for raw input:
  * - Windows: PowerShell-based key reading
- * - POSIX (macOS/Linux): stty + CustomInputStreamReader for efficient byte-level access
+ * - POSIX (macOS/Linux): stty + BoxInputStreamReader for efficient byte-level access
  *
  * The POSIX implementation uses a custom InputStream reader that reads the minimal number
  * of bytes needed for character decoding, providing efficient UTF-8 support and eliminating
@@ -1402,8 +1402,8 @@ public class MiniConsole implements AutoCloseable {
 	 */
 	private static final class PosixRaw implements AutoCloseable {
 
-		private final String					originalSettings;
-		private final CustomInputStreamReader	reader;
+		private final String				originalSettings;
+		private final BoxInputStreamReader	reader;
 
 		PosixRaw() {
 			try {
@@ -1416,7 +1416,7 @@ public class MiniConsole implements AutoCloseable {
 				executeCommand( "stty -icanon -echo -isig min 1 time 0 < /dev/tty" );
 
 				// Create a reader for System.in using the custom InputStreamReader
-				this.reader = new CustomInputStreamReader( System.in );
+				this.reader = new BoxInputStreamReader( System.in );
 
 			} catch ( Exception e ) {
 				throw new RuntimeException( "Failed to enable raw terminal mode. Ensure 'stty' is available.", e );
@@ -1424,7 +1424,7 @@ public class MiniConsole implements AutoCloseable {
 		}
 
 		/**
-		 * Read a single byte from the terminal in raw mode using CustomInputStreamReader
+		 * Read a single byte from the terminal in raw mode using BoxInputStreamReader
 		 */
 		int readByte() throws IOException {
 			return reader.readByte();

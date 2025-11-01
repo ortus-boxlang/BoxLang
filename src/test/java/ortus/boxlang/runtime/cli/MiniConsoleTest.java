@@ -24,7 +24,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 /**
- * Integration tests for MiniConsole functionality with CustomInputStreamReader
+ * Integration tests for MiniConsole functionality with BoxInputStreamReader
  */
 public class MiniConsoleTest {
 
