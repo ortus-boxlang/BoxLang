@@ -26,6 +26,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Instant;
 import java.util.AbstractMap;
+import java.util.Base64;
 import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -138,7 +139,7 @@ public class JDBCStore extends AbstractStore {
 		}
 
 		// Get the datasource
-		this.datasource	= BoxRuntime.getInstance().getDataSourceService().get( datasourceKey );
+		this.datasource = BoxRuntime.getInstance().getDataSourceService().get( datasourceKey );
 		if ( this.datasource == null ) {
 			throw new BoxRuntimeException( "Datasource '" + datasourceName + "' could not be retrieved with key: " + datasourceKey.getName() );
 		}
@@ -208,12 +209,12 @@ public class JDBCStore extends AbstractStore {
 	private String getCreateTableSQL( String fullTableName ) {
 		String driverName = getDatabaseDriverName();
 
-		// Build SQL based on database vendor
+		// Build SQL based on database vendor - using TEXT types for Base64 encoded values
 		if ( driverName.contains( "oracle" ) ) {
 			return String.format(
 			    "CREATE TABLE %s ("
 			        + "cache_key VARCHAR2(500) PRIMARY KEY, "
-			        + "cache_value BLOB, "
+			        + "cache_value CLOB, "
 			        + "hits NUMBER DEFAULT 0, "
 			        + "created TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
 			        + "last_accessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
@@ -227,7 +228,7 @@ public class JDBCStore extends AbstractStore {
 			return String.format(
 			    "CREATE TABLE %s ("
 			        + "cache_key VARCHAR(500) PRIMARY KEY, "
-			        + "cache_value LONGBLOB, "
+			        + "cache_value LONGTEXT, "
 			        + "hits BIGINT DEFAULT 0, "
 			        + "created TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
 			        + "last_accessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
@@ -241,7 +242,7 @@ public class JDBCStore extends AbstractStore {
 			return String.format(
 			    "CREATE TABLE %s ("
 			        + "cache_key VARCHAR(500) PRIMARY KEY, "
-			        + "cache_value BYTEA, "
+			        + "cache_value TEXT, "
 			        + "hits BIGINT DEFAULT 0, "
 			        + "created TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
 			        + "last_accessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
@@ -255,7 +256,7 @@ public class JDBCStore extends AbstractStore {
 			return String.format(
 			    "CREATE TABLE %s ("
 			        + "cache_key VARCHAR(500) PRIMARY KEY, "
-			        + "cache_value VARBINARY(MAX), "
+			        + "cache_value VARCHAR(MAX), "
 			        + "hits BIGINT DEFAULT 0, "
 			        + "created DATETIME DEFAULT GETDATE(), "
 			        + "last_accessed DATETIME DEFAULT GETDATE(), "
@@ -270,7 +271,7 @@ public class JDBCStore extends AbstractStore {
 			return String.format(
 			    "CREATE TABLE %s ("
 			        + "cache_key VARCHAR(500) PRIMARY KEY, "
-			        + "cache_value BLOB, "
+			        + "cache_value CLOB, "
 			        + "hits BIGINT DEFAULT 0, "
 			        + "created TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
 			        + "last_accessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
@@ -675,7 +676,7 @@ public class JDBCStore extends AbstractStore {
 	 */
 	public void set( Key key, ICacheEntry entry ) {
 		String	fullTableName	= getFullTableName();
-		byte[]	serializedValue	= serializeValue( entry.rawValue() );
+		String	serializedValue	= serializeValue( entry.rawValue() );
 		String	metadata		= entry.metadata().asString();
 
 		// Check if entry exists
@@ -756,17 +757,17 @@ public class JDBCStore extends AbstractStore {
 	}
 
 	/**
-	 * Serialize a value to a byte array
+	 * Serialize a value to a Base64-encoded string
 	 *
 	 * @param value The value to serialize
 	 *
-	 * @return The serialized byte array
+	 * @return The Base64-encoded serialized string
 	 */
-	private byte[] serializeValue( Object value ) {
+	private String serializeValue( Object value ) {
 		try ( ByteArrayOutputStream baos = new ByteArrayOutputStream() ) {
 			try ( ObjectOutputStream oos = new ObjectOutputStream( baos ) ) {
 				oos.writeObject( value );
-				return baos.toByteArray();
+				return Base64.getEncoder().encodeToString( baos.toByteArray() );
 			}
 		} catch ( IOException e ) {
 			throw new BoxIOException( "Failed to serialize cache value", e );
@@ -782,8 +783,27 @@ public class JDBCStore extends AbstractStore {
 	 */
 	private ICacheEntry deserializeEntry( IStruct row ) {
 		try {
-			byte[]				serializedValue	= ( byte[] ) row.get( Key.of( "cache_value" ) );
-			Object				value			= deserializeValue( serializedValue );
+			// Get the cache value - it might be a CLOB or String depending on the database
+			Object	cacheValueObj	= row.get( Key.of( "cache_value" ) );
+			String	base64Value		= null;
+
+			if ( cacheValueObj instanceof java.sql.Clob clob ) {
+				// Convert CLOB to String - must be done immediately before connection closes
+				try {
+					long length = clob.length();
+					base64Value = clob.getSubString( 1, ( int ) length );
+				} catch ( java.sql.SQLException e ) {
+					throw new BoxRuntimeException( "Failed to read CLOB data", e );
+				}
+			} else if ( cacheValueObj instanceof String str ) {
+				// Already a String
+				base64Value = str;
+			} else {
+				// Try to cast to string
+				base64Value = cacheValueObj.toString();
+			}
+
+			Object	value	= deserializeValue( base64Value );
 
 			// Parse timestamps
 			java.sql.Timestamp	createdTs		= ( java.sql.Timestamp ) row.get( Key.of( "created" ) );
@@ -809,18 +829,21 @@ public class JDBCStore extends AbstractStore {
 	}
 
 	/**
-	 * Deserialize a value from a byte array
+	 * Deserialize a value from a Base64-encoded string
 	 *
-	 * @param data The byte array to deserialize
+	 * @param base64Data The Base64-encoded string to deserialize
 	 *
 	 * @return The deserialized value
 	 */
-	private Object deserializeValue( byte[] data ) {
-		try ( ByteArrayInputStream bais = new ByteArrayInputStream( data ) ) {
-			try ( RuntimeObjectInputStream ois = new RuntimeObjectInputStream( bais ) ) {
-				return ois.readObject();
-			} catch ( ClassNotFoundException e ) {
-				throw new BoxRuntimeException( "Cannot cast the deserialized object to a known class.", e );
+	private Object deserializeValue( String base64Data ) {
+		try {
+			byte[] data = Base64.getDecoder().decode( base64Data );
+			try ( ByteArrayInputStream bais = new ByteArrayInputStream( data ) ) {
+				try ( RuntimeObjectInputStream ois = new RuntimeObjectInputStream( bais ) ) {
+					return ois.readObject();
+				} catch ( ClassNotFoundException e ) {
+					throw new BoxRuntimeException( "Cannot cast the deserialized object to a known class.", e );
+				}
 			}
 		} catch ( IOException e ) {
 			throw new BoxIOException( "Failed to deserialize cache value", e );

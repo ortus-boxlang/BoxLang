@@ -47,11 +47,11 @@ class JDBCStoreTest extends BaseStoreTest {
 
 	@BeforeAll
 	static void setUp() {
-		runtime		= BoxRuntime.getInstance( true );
-		context		= new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
+		runtime			= BoxRuntime.getInstance( true );
+		context			= new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
 
 		// Register the datasource in the runtime and get the instance
-		datasource	= runtime.getDataSourceService().register(
+		datasource		= runtime.getDataSourceService().register(
 		    Key.of( "JDBCStoreTest" ),
 		    Struct.of(
 		        "driver", "derby",
@@ -60,7 +60,7 @@ class JDBCStoreTest extends BaseStoreTest {
 		);
 
 		// Prep the fields to use in the base test
-		mockProvider = getMockProvider( "test" );
+		mockProvider	= getMockProvider( "test" );
 		mockConfig.properties.put( Key.datasource, "JDBCStoreTest" );
 		mockConfig.properties.put( Key.table, "boxlang_cache" );
 		mockConfig.properties.put( Key.of( "autoCreate" ), true );
