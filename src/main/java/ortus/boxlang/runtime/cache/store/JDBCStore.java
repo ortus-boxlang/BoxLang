@@ -803,7 +803,7 @@ public class JDBCStore extends AbstractStore {
 				base64Value = cacheValueObj.toString();
 			}
 
-			Object	value	= deserializeValue( base64Value );
+			Object				value			= deserializeValue( base64Value );
 
 			// Parse timestamps
 			java.sql.Timestamp	createdTs		= ( java.sql.Timestamp ) row.get( Key.of( "created" ) );

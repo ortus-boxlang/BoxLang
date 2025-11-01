@@ -43,19 +43,28 @@ class JDBCStoreTest extends BaseStoreTest {
 				// Ignore errors
 			}
 		}
+		// Clean up the Derby database directory
+		try {
+			ortus.boxlang.runtime.util.FileSystemUtil.deleteDirectory( "src/test/resources/tmp/JDBCStoreTest", true );
+		} catch ( Exception e ) {
+			// Ignore errors
+		}
 	}
 
 	@BeforeAll
 	static void setUp() {
-		runtime			= BoxRuntime.getInstance( true );
-		context			= new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
+		runtime	= BoxRuntime.getInstance( true );
+		context	= new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
 
-		// Register the datasource in the runtime and get the instance
+		// Ensure the test directory exists
+		ortus.boxlang.runtime.util.FileSystemUtil.createDirectory( "src/test/resources/tmp/JDBCStoreTest" );
+
+		// Register the datasource in the runtime and get the instance - using file-based Derby
 		datasource		= runtime.getDataSourceService().register(
 		    Key.of( "JDBCStoreTest" ),
 		    Struct.of(
 		        "driver", "derby",
-		        "connectionString", "jdbc:derby:memory:JDBCStoreTest;create=true"
+		        "connectionString", "jdbc:derby:src/test/resources/tmp/JDBCStoreTest/JDBCStoreTestDB;create=true"
 		    )
 		);
 
