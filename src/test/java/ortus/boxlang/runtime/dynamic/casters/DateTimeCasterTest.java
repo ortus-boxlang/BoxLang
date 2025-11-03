@@ -314,4 +314,14 @@ public class DateTimeCasterTest {
 		assertThat( result ).isNotNull();
 		assertThat( result.setFormat( "yyyy-MM-dd" ).toString() ).isEqualTo( "2018-09-06" );
 	}
+
+	@Test
+	@DisplayName( "Test medium format date and time with tz" )
+	public void testMedFormatTimezone() {
+		// Med string example Aug 26, 2024 22:05:00 UTC
+		String		dateString	= "Nov 22, 2022 11:01:51 CET";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.convertToZone( ZoneId.of( "CET" ) ).format( "EEE MMM dd HH:mm:ss zzz yyyy" ) ).isEqualTo( "Tue Nov 22 11:01:51 CET 2022" );
+	}
 }
