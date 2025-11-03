@@ -71,9 +71,17 @@ public class ConcurrentSoftReferenceStore extends AbstractStore {
 	public IObjectStore init( ICacheProvider provider, IStruct config ) {
 		this.provider	= provider;
 		this.config		= config;
-		int maxObjects = IntegerCaster.cast( config.get( Key.maxObjects ) );
-		this.pool			= new ConcurrentHashMap<>( maxObjects / 4 );
-		this.softRefKeyMap	= new ConcurrentHashMap<>( maxObjects / 4 );
+
+		// Calculate optimal initial capacity to minimize resizing
+		// ConcurrentHashMap default load factor is 0.75, so we set initial capacity
+		// to maxObjects / 0.75 to avoid resizing when the cache fills up
+		int	maxObjects		= IntegerCaster.cast( config.get( Key.maxObjects ) );
+		int	initialCapacity	= ( int ) Math.ceil( maxObjects / 0.75 );
+
+		// ConcurrentHashMap constructor: initialCapacity, loadFactor, concurrencyLevel
+		// Using default load factor (0.75) and calculated initial capacity
+		this.pool			= new ConcurrentHashMap<>( initialCapacity );
+		this.softRefKeyMap	= new ConcurrentHashMap<>( initialCapacity );
 		this.referenceQueue	= new ReferenceQueue<>();
 
 		return this;
