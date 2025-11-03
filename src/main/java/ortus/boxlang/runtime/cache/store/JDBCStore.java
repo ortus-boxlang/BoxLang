@@ -53,6 +53,26 @@ import ortus.boxlang.runtime.util.conversion.ObjectMarshaller;
 public class JDBCStore extends AbstractStore {
 
 	/**
+	 * Database vendor enumeration for SQL dialect differences
+	 */
+	private enum DatabaseVendor {
+		ORACLE,
+		MYSQL,
+		MARIADB,
+		POSTGRESQL,
+		SQLSERVER,
+		DERBY,
+		HSQLDB,
+		SQLITE,
+		UNKNOWN
+	}
+
+	/**
+	 * The detected database vendor for this store
+	 */
+	private DatabaseVendor		vendor;
+
+	/**
 	 * The datasource to use for storage
 	 */
 	private DataSource			datasource;
@@ -140,6 +160,9 @@ public class JDBCStore extends AbstractStore {
 		}
 
 		this.context.getConnectionManager().register( this.datasource );
+
+		// Detect the database vendor once at initialization
+		this.vendor = detectDatabaseVendor();
 
 		// Create the table if needed
 		if ( this.autoCreate ) {
@@ -707,6 +730,36 @@ public class JDBCStore extends AbstractStore {
 	}
 
 	/**
+	 * Detect the database vendor from the JDBC driver name.
+	 * Called once during initialization to avoid repeated string comparisons.
+	 *
+	 * @return The detected DatabaseVendor enum value
+	 */
+	private DatabaseVendor detectDatabaseVendor() {
+		String driverName = getDatabaseDriverName();
+
+		if ( driverName.contains( "oracle" ) ) {
+			return DatabaseVendor.ORACLE;
+		} else if ( driverName.contains( "mariadb" ) ) {
+			return DatabaseVendor.MARIADB;
+		} else if ( driverName.contains( "mysql" ) ) {
+			return DatabaseVendor.MYSQL;
+		} else if ( driverName.contains( "postgres" ) ) {
+			return DatabaseVendor.POSTGRESQL;
+		} else if ( driverName.contains( "microsoft" ) || driverName.contains( "sqlserver" ) ) {
+			return DatabaseVendor.SQLSERVER;
+		} else if ( driverName.contains( "derby" ) ) {
+			return DatabaseVendor.DERBY;
+		} else if ( driverName.contains( "hsql" ) ) {
+			return DatabaseVendor.HSQLDB;
+		} else if ( driverName.contains( "sqlite" ) ) {
+			return DatabaseVendor.SQLITE;
+		} else {
+			return DatabaseVendor.UNKNOWN;
+		}
+	}
+
+	/**
 	 * Create the cache table if it doesn't exist
 	 */
 	private void ensureTable() {
@@ -771,88 +824,87 @@ public class JDBCStore extends AbstractStore {
 	 * @return The CREATE TABLE SQL statement for the current database vendor
 	 */
 	private String getCreateTableSQL( String tableName ) {
-		String driverName = getDatabaseDriverName();
+		switch ( this.vendor ) {
+			case ORACLE :
+				return String.format(
+				    "CREATE TABLE %s ("
+				        + "objectKey VARCHAR2(500) PRIMARY KEY, "
+				        + "objectValue CLOB, "
+				        + "hits NUMBER DEFAULT 0, "
+				        + "created TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+				        + "lastAccessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+				        + "timeout NUMBER DEFAULT 0, "
+				        + "lastAccessTimeout NUMBER DEFAULT 0, "
+				        + "metadata CLOB"
+				        + ")",
+				    tableName
+				);
 
-		// *********** ORACLE ***********/
-		if ( driverName.contains( "oracle" ) ) {
-			return String.format(
-			    "CREATE TABLE %s ("
-			        + "objectKey VARCHAR2(500) PRIMARY KEY, "
-			        + "objectValue CLOB, "
-			        + "hits NUMBER DEFAULT 0, "
-			        + "created TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
-			        + "lastAccessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
-			        + "timeout NUMBER DEFAULT 0, "
-			        + "lastAccessTimeout NUMBER DEFAULT 0, "
-			        + "metadata CLOB"
-			        + ")",
-			    tableName
-			);
-		}
-		// *********** MYSQL ***********/
-		else if ( driverName.contains( "mysql" ) || driverName.contains( "mariadb" ) ) {
-			return String.format(
-			    "CREATE TABLE %s ("
-			        + "objectKey VARCHAR(500) PRIMARY KEY, "
-			        + "objectValue LONGTEXT, "
-			        + "hits BIGINT DEFAULT 0, "
-			        + "created TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
-			        + "lastAccessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
-			        + "timeout BIGINT DEFAULT 0, "
-			        + "lastAccessTimeout BIGINT DEFAULT 0, "
-			        + "metadata LONGTEXT"
-			        + ")",
-			    tableName
-			);
-		}
-		// *********** POSTGRES ***********/
-		else if ( driverName.contains( "postgres" ) ) {
-			return String.format(
-			    "CREATE TABLE %s ("
-			        + "objectKey VARCHAR(500) PRIMARY KEY, "
-			        + "objectValue TEXT, "
-			        + "hits BIGINT DEFAULT 0, "
-			        + "created TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
-			        + "lastAccessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
-			        + "timeout BIGINT DEFAULT 0, "
-			        + "lastAccessTimeout BIGINT DEFAULT 0, "
-			        + "metadata TEXT"
-			        + ")",
-			    tableName
-			);
-		}
-		// *********** MICROSOFT ***********/
-		else if ( driverName.contains( "microsoft" ) || driverName.contains( "sqlserver" ) ) {
-			return String.format(
-			    "CREATE TABLE %s ("
-			        + "objectKey VARCHAR(500) PRIMARY KEY, "
-			        + "objectValue VARCHAR(MAX), "
-			        + "hits BIGINT DEFAULT 0, "
-			        + "created DATETIME DEFAULT GETDATE(), "
-			        + "lastAccessed DATETIME DEFAULT GETDATE(), "
-			        + "timeout BIGINT DEFAULT 0, "
-			        + "lastAccessTimeout BIGINT DEFAULT 0, "
-			        + "metadata VARCHAR(MAX)"
-			        + ")",
-			    tableName
-			);
-		}
-		// *********** SQL COMPLIANT ***********/
-		else {
-			// Default to Derby/HSQLDB syntax - use VARCHAR for objectValue to avoid CLOB issues
-			return String.format(
-			    "CREATE TABLE %s ("
-			        + "objectKey VARCHAR(500) PRIMARY KEY, "
-			        + "objectValue VARCHAR(32672), "
-			        + "hits BIGINT DEFAULT 0, "
-			        + "created TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
-			        + "lastAccessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
-			        + "timeout BIGINT DEFAULT 0, "
-			        + "lastAccessTimeout BIGINT DEFAULT 0, "
-			        + "metadata VARCHAR(1000)"
-			        + ")",
-			    tableName
-			);
+			case MYSQL :
+			case MARIADB :
+				return String.format(
+				    "CREATE TABLE %s ("
+				        + "objectKey VARCHAR(500) PRIMARY KEY, "
+				        + "objectValue LONGTEXT, "
+				        + "hits BIGINT DEFAULT 0, "
+				        + "created TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+				        + "lastAccessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+				        + "timeout BIGINT DEFAULT 0, "
+				        + "lastAccessTimeout BIGINT DEFAULT 0, "
+				        + "metadata LONGTEXT"
+				        + ")",
+				    tableName
+				);
+
+			case POSTGRESQL :
+				return String.format(
+				    "CREATE TABLE %s ("
+				        + "objectKey VARCHAR(500) PRIMARY KEY, "
+				        + "objectValue TEXT, "
+				        + "hits BIGINT DEFAULT 0, "
+				        + "created TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+				        + "lastAccessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+				        + "timeout BIGINT DEFAULT 0, "
+				        + "lastAccessTimeout BIGINT DEFAULT 0, "
+				        + "metadata TEXT"
+				        + ")",
+				    tableName
+				);
+
+			case SQLSERVER :
+				return String.format(
+				    "CREATE TABLE %s ("
+				        + "objectKey VARCHAR(500) PRIMARY KEY, "
+				        + "objectValue VARCHAR(MAX), "
+				        + "hits BIGINT DEFAULT 0, "
+				        + "created DATETIME DEFAULT GETDATE(), "
+				        + "lastAccessed DATETIME DEFAULT GETDATE(), "
+				        + "timeout BIGINT DEFAULT 0, "
+				        + "lastAccessTimeout BIGINT DEFAULT 0, "
+				        + "metadata VARCHAR(MAX)"
+				        + ")",
+				    tableName
+				);
+
+			case DERBY :
+			case HSQLDB :
+			case SQLITE :
+			case UNKNOWN :
+			default :
+				// Default to Derby/HSQLDB syntax - use VARCHAR for objectValue to avoid CLOB issues
+				return String.format(
+				    "CREATE TABLE %s ("
+				        + "objectKey VARCHAR(500) PRIMARY KEY, "
+				        + "objectValue VARCHAR(32672), "
+				        + "hits BIGINT DEFAULT 0, "
+				        + "created TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+				        + "lastAccessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+				        + "timeout BIGINT DEFAULT 0, "
+				        + "lastAccessTimeout BIGINT DEFAULT 0, "
+				        + "metadata VARCHAR(1000)"
+				        + ")",
+				    tableName
+				);
 		}
 	}
 
@@ -863,20 +915,23 @@ public class JDBCStore extends AbstractStore {
 	 * @return The appropriate clear all SQL statement
 	 */
 	private String getClearAllSQL() {
-		String driverName = getDatabaseDriverName().toLowerCase();
-
 		// Most databases support TRUNCATE TABLE for fast clear
-		if ( driverName.contains( "oracle" ) ||
-		    driverName.contains( "mysql" ) ||
-		    driverName.contains( "mariadb" ) ||
-		    driverName.contains( "postgresql" ) ||
-		    driverName.contains( "sqlserver" ) ||
-		    driverName.contains( "microsoft" ) ) {
-			return "TRUNCATE TABLE " + this.tableName;
-		} else {
-			// Derby and some other databases don't support TRUNCATE
-			// Use DELETE FROM instead (slower but universally supported)
-			return "DELETE FROM " + this.tableName;
+		switch ( this.vendor ) {
+			case ORACLE :
+			case MYSQL :
+			case MARIADB :
+			case POSTGRESQL :
+			case SQLSERVER :
+				return "TRUNCATE TABLE " + this.tableName;
+
+			case DERBY :
+			case HSQLDB :
+			case SQLITE :
+			case UNKNOWN :
+			default :
+				// Derby and some other databases don't support TRUNCATE
+				// Use DELETE FROM instead (slower but universally supported)
+				return "DELETE FROM " + this.tableName;
 		}
 	}
 
@@ -893,21 +948,29 @@ public class JDBCStore extends AbstractStore {
 	 * @return The database-specific LIMIT clause
 	 */
 	private String buildLimitClause( int limit ) {
-		String driverName = getDatabaseDriverName().toLowerCase();
+		switch ( this.vendor ) {
+			case ORACLE :
+				// Oracle 12c+ supports FETCH FIRST n ROWS ONLY
+				return " FETCH FIRST " + limit + " ROWS ONLY";
 
-		if ( driverName.contains( "oracle" ) ) {
-			// Oracle 12c+ supports FETCH FIRST n ROWS ONLY
-			return " FETCH FIRST " + limit + " ROWS ONLY";
-		} else if ( driverName.contains( "mysql" ) || driverName.contains( "mariadb" ) || driverName.contains( "postgresql" ) ) {
-			return " LIMIT " + limit;
-		} else if ( driverName.contains( "sqlserver" ) || driverName.contains( "microsoft" ) ) {
-			// SQL Server uses TOP n at the beginning of SELECT
-			// This is handled differently in the calling code if needed
-			// For now, return empty and handle in query builder
-			return "";
-		} else {
-			// Derby, HSQLDB use FETCH FIRST n ROWS ONLY
-			return " FETCH FIRST " + limit + " ROWS ONLY";
+			case MYSQL :
+			case MARIADB :
+			case POSTGRESQL :
+				return " LIMIT " + limit;
+
+			case SQLSERVER :
+				// SQL Server uses TOP n at the beginning of SELECT
+				// This is handled differently in the calling code if needed
+				// For now, return empty and handle in query builder
+				return "";
+
+			case DERBY :
+			case HSQLDB :
+			case SQLITE :
+			case UNKNOWN :
+			default :
+				// Derby, HSQLDB use FETCH FIRST n ROWS ONLY
+				return " FETCH FIRST " + limit + " ROWS ONLY";
 		}
 	}
 }
