@@ -610,6 +610,8 @@ public class MiniConsole implements AutoCloseable {
 						continue;
 					}
 					// Normal ENTER - execute the line
+					// Clear the current line to remove any terminal echo before moving to next line
+					System.out.print( CODES.CLEAR_LINE.code() );
 					System.out.print( "\r\n" );
 					System.out.flush();
 					historyIndex = -1;
