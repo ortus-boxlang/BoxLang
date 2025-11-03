@@ -783,6 +783,8 @@ public class JDBCStore extends AbstractStore {
 
 		try {
 			QueryExecute.execute( this.context, createTableSQL, Array.EMPTY, this.queryOptions );
+			// Create indexes separately (some databases don't support multiple statements)
+			createIndexes();
 		} catch ( DatabaseException e ) {
 			throw new BoxRuntimeException( "Failed to create cache table: " + this.tableName, e );
 		}
@@ -842,6 +844,7 @@ public class JDBCStore extends AbstractStore {
 
 			case MYSQL :
 			case MARIADB :
+				// MySQL/MariaDB can define indexes inline
 				return String.format(
 				    "CREATE TABLE %s ("
 				        + "objectKey VARCHAR(500) PRIMARY KEY, "
@@ -851,7 +854,11 @@ public class JDBCStore extends AbstractStore {
 				        + "lastAccessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
 				        + "timeout BIGINT DEFAULT 0, "
 				        + "lastAccessTimeout BIGINT DEFAULT 0, "
-				        + "metadata LONGTEXT"
+				        + "metadata LONGTEXT, "
+				        + "INDEX idx_lastAccessed (lastAccessed), "
+				        + "INDEX idx_created (created), "
+				        + "INDEX idx_hits (hits), "
+				        + "INDEX idx_timeout (timeout, lastAccessTimeout)"
 				        + ")",
 				    tableName
 				);
@@ -905,6 +912,35 @@ public class JDBCStore extends AbstractStore {
 				        + ")",
 				    tableName
 				);
+		}
+	}
+
+	/**
+	 * Create indexes on the cache table for query optimization.
+	 * Indexes are created separately to support databases that don't allow
+	 * multiple statements in a single execute.
+	 */
+	private void createIndexes() {
+		// MySQL/MariaDB already have indexes defined inline in CREATE TABLE
+		if ( this.vendor == DatabaseVendor.MYSQL || this.vendor == DatabaseVendor.MARIADB ) {
+			return;
+		}
+
+		// Create indexes for all other databases
+		String[]	indexes	= {
+								"CREATE INDEX idx_" + this.tableName + "_lastAccessed ON " + this.tableName + "(lastAccessed)",
+								"CREATE INDEX idx_" + this.tableName + "_created ON " + this.tableName + "(created)",
+								"CREATE INDEX idx_" + this.tableName + "_hits ON " + this.tableName + "(hits)",
+								"CREATE INDEX idx_" + this.tableName + "_timeout ON " + this.tableName + "(timeout, lastAccessTimeout)"
+		};
+
+		for ( String indexSQL : indexes ) {
+			try {
+				QueryExecute.execute( this.context, indexSQL, Array.EMPTY, this.queryOptions );
+			} catch ( DatabaseException e ) {
+				// Log but don't fail - indexes are nice to have but not critical
+				this.logger.warn( "Failed to create index: " + indexSQL + " - " + e.getMessage() );
+			}
 		}
 	}
 
