@@ -66,7 +66,8 @@ public class FileSystemStore extends AbstractStore {
 	 * Constructor
 	 */
 	public FileSystemStore() {
-		// Empty constructor
+		// Mark this as a distributed store (persists to file system)
+		this.distributed = true;
 	}
 
 	/**

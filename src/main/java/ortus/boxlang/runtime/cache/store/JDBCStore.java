@@ -100,7 +100,8 @@ public class JDBCStore extends AbstractStore {
 	 * Constructor
 	 */
 	public JDBCStore() {
-		// Empty constructor
+		// Mark this as a distributed store (persists to database)
+		this.distributed = true;
 	}
 
 	/**
@@ -283,6 +284,12 @@ public class JDBCStore extends AbstractStore {
 	 * @return True if the object was cleared, false otherwise (if the object was not found in the store)
 	 */
 	public boolean clear( Key key ) {
+		// First check if the key exists
+		boolean exists = lookup( key );
+		if ( !exists ) {
+			return false;
+		}
+
 		QueryExecute.execute(
 		    this.context,
 		    this.sqlClearByKey,
@@ -290,7 +297,6 @@ public class JDBCStore extends AbstractStore {
 		    this.queryOptions
 		);
 
-		// DELETE queries don't return meaningful data, so we return true if no exception was thrown
 		return true;
 	}
 
@@ -302,7 +308,7 @@ public class JDBCStore extends AbstractStore {
 	 * @return A struct of keys and their clear status: true if the object was cleared, false otherwise (if the object was not found in the store)
 	 */
 	public IStruct clear( Key... keys ) {
-		IStruct results = new Struct();
+		IStruct results = new Struct( false );
 		for ( Key key : keys ) {
 			results.put( key, clear( key ) );
 		}
@@ -395,7 +401,7 @@ public class JDBCStore extends AbstractStore {
 	 * @return A struct of keys and their lookup status
 	 */
 	public IStruct lookup( Key... keys ) {
-		IStruct results = new Struct();
+		IStruct results = new Struct( false );
 		for ( Key key : keys ) {
 			results.put( key, lookup( key ) );
 		}
@@ -451,7 +457,7 @@ public class JDBCStore extends AbstractStore {
 	 * @return A struct of keys and their cache entries
 	 */
 	public IStruct get( Key... keys ) {
-		IStruct results = new Struct();
+		IStruct results = new Struct( false );
 		for ( Key key : keys ) {
 			results.put( key, get( key ) );
 		}
@@ -466,7 +472,7 @@ public class JDBCStore extends AbstractStore {
 	 * @return A struct of keys and their cache entries
 	 */
 	public IStruct get( ICacheKeyFilter filter ) {
-		IStruct results = new Struct();
+		IStruct results = new Struct( false );
 		getKeysStream( filter ).forEach( key -> results.put( key, get( key ) ) );
 		return results;
 	}
@@ -487,9 +493,7 @@ public class JDBCStore extends AbstractStore {
 		);
 
 		if ( !result.isEmpty() ) {
-			// Materialize CLOB data immediately after query returns
-			IStruct row = materializeClobData( ( IStruct ) result.get( 0 ) );
-			return deserializeEntry( row );
+			return deserializeEntry( ( IStruct ) result.get( 0 ) );
 		}
 		return null;
 	}
@@ -502,7 +506,7 @@ public class JDBCStore extends AbstractStore {
 	 * @return A struct of keys and their cache entries
 	 */
 	public IStruct getQuiet( Key... keys ) {
-		IStruct results = new Struct();
+		IStruct results = new Struct( false );
 		for ( Key key : keys ) {
 			results.put( key, getQuiet( key ) );
 		}
@@ -517,7 +521,7 @@ public class JDBCStore extends AbstractStore {
 	 * @return A struct of keys and their cache entries
 	 */
 	public IStruct getQuiet( ICacheKeyFilter filter ) {
-		IStruct results = new Struct();
+		IStruct results = new Struct( false );
 		getKeysStream( filter ).forEach( key -> results.put( key, getQuiet( key ) ) );
 		return results;
 	}
@@ -529,8 +533,8 @@ public class JDBCStore extends AbstractStore {
 	 * @param entry The cache entry to store
 	 */
 	public void set( Key key, ICacheEntry entry ) {
-		String	serializedValue	= serializeValue( entry.rawValue() );
-		String	metadata		= entry.metadata().asString();
+		// Serialize the entire entry object, just like FileSystemStore does
+		String	serializedEntry	= serializeValue( entry );
 
 		// Check if entry exists
 		boolean	exists			= lookup( key );
@@ -541,13 +545,13 @@ public class JDBCStore extends AbstractStore {
 			    this.context,
 			    this.sqlUpdateEntry,
 			    Array.of(
-			        serializedValue,
+			        serializedEntry,
 			        entry.hits(),
 			        java.sql.Timestamp.from( entry.created() ),
 			        java.sql.Timestamp.from( entry.lastAccessed() ),
 			        entry.timeout(),
 			        entry.lastAccessTimeout(),
-			        metadata,
+			        "",  // metadata - stored in the entry itself
 			        key.getName()
 			    ),
 			    this.queryOptions
@@ -559,13 +563,13 @@ public class JDBCStore extends AbstractStore {
 			    this.sqlInsertEntry,
 			    Array.of(
 			        key.getName(),
-			        serializedValue,
+			        serializedEntry,
 			        entry.hits(),
 			        java.sql.Timestamp.from( entry.created() ),
 			        java.sql.Timestamp.from( entry.lastAccessed() ),
 			        entry.timeout(),
 			        entry.lastAccessTimeout(),
-			        metadata
+			        ""  // metadata - stored in the entry itself
 			    ),
 			    this.queryOptions
 			);
@@ -613,51 +617,14 @@ public class JDBCStore extends AbstractStore {
 	 * @return A stream of all entries
 	 */
 	private Stream<IStruct> getEntryStream() {
-		Array					result				= ( Array ) QueryExecute.execute(
+		Array result = ( Array ) QueryExecute.execute(
 		    this.context,
 		    this.sqlGetAllEntries,
 		    Array.EMPTY,
 		    this.queryOptions
 		);
 
-		// Eagerly collect all rows and materialize CLOB values to avoid lazy evaluation issues
-		java.util.List<IStruct>	materializedRows	= new java.util.ArrayList<>();
-		for ( Object row : result ) {
-			IStruct rowStruct = ( IStruct ) row;
-			// Materialize CLOB data immediately
-			materializedRows.add( materializeClobData( rowStruct ) );
-		}
-		return materializedRows.stream();
-	}
-
-	/**
-	 * Materialize CLOB data in a struct to avoid lazy evaluation issues
-	 *
-	 * @param row The row struct that may contain CLOB values
-	 *
-	 * @return A struct with CLOB values converted to strings
-	 */
-	private IStruct materializeClobData( IStruct row ) {
-		Object cacheValueObj = row.get( Key.objectValue );
-		if ( cacheValueObj instanceof java.sql.Clob clob ) {
-			try {
-				long	length		= clob.length();
-				String	stringValue	= clob.getSubString( 1, ( int ) length );
-				// Create a new struct with the string value
-				IStruct	newRow		= new Struct( IStruct.TYPES.LINKED );
-				row.entrySet().forEach( entry -> {
-					if ( entry.getKey().equals( Key.objectValue ) ) {
-						newRow.put( entry.getKey(), stringValue );
-					} else {
-						newRow.put( entry.getKey(), entry.getValue() );
-					}
-				} );
-				return newRow;
-			} catch ( java.sql.SQLException e ) {
-				throw new BoxRuntimeException( "Failed to read CLOB data", e );
-			}
-		}
-		return row;
+		return result.stream().map( row -> ( IStruct ) row );
 	}
 
 	/**
@@ -707,22 +674,23 @@ public class JDBCStore extends AbstractStore {
 				base64Value = StringCaster.cast( cacheValueObj );
 			}
 
-			Object			value	= deserializeValue( base64Value );
+			// Deserialize the entire entry object, just like FileSystemStore does
+			Object result = deserializeValue( base64Value );
 
-			// Create the cache entry
-			BoxCacheEntry	entry	= new BoxCacheEntry(
-			    this.provider.getName(),
-			    row.getAsLong( Key.timeout ),
-			    row.getAsLong( Key.lastAccessTimeout ),
-			    Key.of( row.getAsString( Key.objectKey ) ),
-			    value,
-			    this.queryOptions
-			);
-
-			// Set the stats
-			entry.setHits( row.getAsLong( Key.hits ) );
-
-			return entry;
+			// If it's already an ICacheEntry, return it as-is (preserves all properties)
+			if ( result instanceof ICacheEntry ) {
+				return ( ICacheEntry ) result;
+			} else {
+				// Otherwise, wrap it in a new entry (backward compatibility)
+				return new BoxCacheEntry(
+				    this.provider.getName(),
+				    row.getAsLong( Key.timeout ),
+				    row.getAsLong( Key.lastAccessTimeout ),
+				    Key.of( row.getAsString( Key.objectKey ) ),
+				    result,
+				    new Struct()
+				);
+			}
 		} catch ( Exception e ) {
 			throw new BoxRuntimeException( "Failed to deserialize cache entry", e );
 		}
@@ -783,7 +751,7 @@ public class JDBCStore extends AbstractStore {
 		this.sqlGetByKey		= "SELECT * FROM " + this.tableName + " WHERE objectKey = ?";
 
 		// Write operations
-		this.sqlClearAll		= "DELETE FROM " + this.tableName;
+		this.sqlClearAll		= "TRUNCATE TABLE " + this.tableName;
 		this.sqlClearByKey		= "DELETE FROM " + this.tableName + " WHERE objectKey = ?";
 
 		// Update operations
