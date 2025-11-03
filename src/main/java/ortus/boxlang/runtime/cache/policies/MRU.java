@@ -33,4 +33,14 @@ public class MRU implements ICachePolicy {
 		return Comparator.comparing( ICacheEntry::lastAccessed ).reversed();
 	}
 
+	/**
+	 * Get the SQL ORDER BY clause for this policy
+	 *
+	 * @return The ORDER BY clause (without "ORDER BY" prefix) for SQL queries
+	 */
+	@Override
+	public String getSQLOrderBy() {
+		return "lastAccessed DESC";
+	}
+
 }

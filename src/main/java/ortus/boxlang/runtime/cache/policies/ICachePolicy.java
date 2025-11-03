@@ -48,4 +48,17 @@ public interface ICachePolicy {
 	 */
 	public Comparator<ICacheEntry> getComparator();
 
+	/**
+	 * Get the SQL ORDER BY clause for this policy.
+	 * This is used for database-backed stores to efficiently evict entries
+	 * using SQL instead of loading all entries into memory.
+	 *
+	 * @return The ORDER BY clause (without "ORDER BY" prefix) for SQL queries
+	 */
+	default String getSQLOrderBy() {
+		// Default implementation based on common policy patterns
+		// Subclasses can override for more specific SQL ordering
+		return "lastAccessed ASC, hits ASC";
+	}
+
 }

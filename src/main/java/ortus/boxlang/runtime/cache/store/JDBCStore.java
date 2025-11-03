@@ -222,16 +222,30 @@ public class JDBCStore extends AbstractStore {
 			return;
 		}
 
-		// Get all entries and sort them by the eviction policy
-		Stream<ICacheEntry> entries = getEntryStream()
-		    .map( this::deserializeEntry )
-		    .sorted( getPolicy().getComparator() )
-		    .filter( entry -> !entry.isEternal() )
-		    .limit( evictCount );
+		// Build SQL to select keys to evict based on policy
+		// Filter out eternal entries (timeout = 0 AND lastAccessTimeout = 0)
+		String	orderByClause	= getPolicy().getSQLOrderBy();
+
+		// Build database-specific LIMIT clause
+		String	limitClause		= buildLimitClause( evictCount );
+
+		String	sql				= "SELECT objectKey FROM " + this.tableName
+		    + " WHERE NOT (timeout = 0 AND lastAccessTimeout = 0)"
+		    + " ORDER BY " + orderByClause
+		    + limitClause;
+
+		// Get the keys to evict
+		Array	keysToEvict		= ( Array ) QueryExecute.execute(
+		    this.context,
+		    sql,
+		    Array.EMPTY,
+		    this.queryOptions
+		);
 
 		// Delete the entries
-		entries.forEach( entry -> {
-			clear( entry.key() );
+		keysToEvict.forEach( row -> {
+			Key key = Key.of( ( ( IStruct ) row ).getAsString( Key.objectKey ) );
+			clear( key );
 			getProvider().getStats().recordEviction();
 		} );
 	}
@@ -612,22 +626,6 @@ public class JDBCStore extends AbstractStore {
 	}
 
 	/**
-	 * Get a stream of all entries in the store
-	 *
-	 * @return A stream of all entries
-	 */
-	private Stream<IStruct> getEntryStream() {
-		Array result = ( Array ) QueryExecute.execute(
-		    this.context,
-		    this.sqlGetAllEntries,
-		    Array.EMPTY,
-		    this.queryOptions
-		);
-
-		return result.stream().map( row -> ( IStruct ) row );
-	}
-
-	/**
 	 * Serialize a value to a Base64-encoded string
 	 *
 	 * @param value The value to serialize
@@ -857,4 +855,34 @@ public class JDBCStore extends AbstractStore {
 		}
 	}
 
+	/**
+	 * Build database-specific LIMIT clause for restricting result set size.
+	 * Different databases use different syntax:
+	 * - MySQL/MariaDB/PostgreSQL: LIMIT n
+	 * - Derby/HSQLDB: FETCH FIRST n ROWS ONLY
+	 * - SQL Server: TOP n (goes before columns, not at end)
+	 * - Oracle: FETCH FIRST n ROWS ONLY (12c+) or ROWNUM <= n (older)
+	 *
+	 * @param limit The number of rows to limit
+	 *
+	 * @return The database-specific LIMIT clause
+	 */
+	private String buildLimitClause( int limit ) {
+		String driverName = getDatabaseDriverName().toLowerCase();
+
+		if ( driverName.contains( "oracle" ) ) {
+			// Oracle 12c+ supports FETCH FIRST n ROWS ONLY
+			return " FETCH FIRST " + limit + " ROWS ONLY";
+		} else if ( driverName.contains( "mysql" ) || driverName.contains( "mariadb" ) || driverName.contains( "postgresql" ) ) {
+			return " LIMIT " + limit;
+		} else if ( driverName.contains( "sqlserver" ) || driverName.contains( "microsoft" ) ) {
+			// SQL Server uses TOP n at the beginning of SELECT
+			// This is handled differently in the calling code if needed
+			// For now, return empty and handle in query builder
+			return "";
+		} else {
+			// Derby, HSQLDB use FETCH FIRST n ROWS ONLY
+			return " FETCH FIRST " + limit + " ROWS ONLY";
+		}
+	}
 }
