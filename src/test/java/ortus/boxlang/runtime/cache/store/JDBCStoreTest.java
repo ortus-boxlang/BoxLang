@@ -70,6 +70,13 @@ class JDBCStoreTest extends BaseStoreTest {
 		    );
 		runtime.getConfiguration().datasources.put( datasourceName, datasource.getConfiguration() );
 
+		// Drop any existing table to ensure clean schema
+		try {
+			datasource.execute( "DROP TABLE cacheStore", context );
+		} catch ( Exception e ) {
+			// Ignore if table doesn't exist
+		}
+
 		// Prep the fields to use in the base test
 		mockProvider = getMockProvider( "jdbcStoreTest" );
 		mockConfig.properties.put( Key.datasource, datasourceName );
