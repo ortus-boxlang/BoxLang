@@ -250,6 +250,11 @@ public class MiniConsole implements AutoCloseable {
 	private String						originalSttySettings	= null;
 
 	/**
+	 * Flag to indicate if we're running on Windows (for emoji fallbacks)
+	 */
+	private static final boolean		isWindows				= System.getProperty( "os.name" ).toLowerCase().contains( "windows" );
+
+	/**
 	 * ----------------------------------------------------------------------------
 	 * Constructors
 	 * ----------------------------------------------------------------------------
@@ -580,7 +585,7 @@ public class MiniConsole implements AutoCloseable {
 	 */
 	@SuppressWarnings( "static-access" )
 	public static void printWarning( String text ) {
-		ColorPrint.yellow().bold().println( "⚠️  " + text );
+		ColorPrint.yellow().bold().println( getSymbol( "⚠️", "WARN:" ) + "  " + text );
 	}
 
 	/**
@@ -590,7 +595,19 @@ public class MiniConsole implements AutoCloseable {
 	 */
 	@SuppressWarnings( "static-access" )
 	public static void printInfo( String text ) {
-		ColorPrint.blue().bold().println( "ℹ️  " + text );
+		ColorPrint.blue().bold().println( getSymbol( "ℹ️", "INFO:" ) + "  " + text );
+	}
+
+	/**
+	 * Get an appropriate symbol for the given emoji, with ASCII fallback for Windows.
+	 *
+	 * @param emoji    The emoji character
+	 * @param fallback The ASCII fallback
+	 *
+	 * @return The emoji or ASCII fallback depending on platform
+	 */
+	private static String getSymbol( String emoji, String fallback ) {
+		return isWindows ? fallback : emoji;
 	}
 
 	/**
