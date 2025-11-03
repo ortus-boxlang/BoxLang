@@ -927,11 +927,11 @@ public class JDBCStore extends AbstractStore {
 		}
 
 		// Create indexes for all other databases
-		String[]	indexes	= {
-								"CREATE INDEX idx_" + this.tableName + "_lastAccessed ON " + this.tableName + "(lastAccessed)",
-								"CREATE INDEX idx_" + this.tableName + "_created ON " + this.tableName + "(created)",
-								"CREATE INDEX idx_" + this.tableName + "_hits ON " + this.tableName + "(hits)",
-								"CREATE INDEX idx_" + this.tableName + "_timeout ON " + this.tableName + "(timeout, lastAccessTimeout)"
+		String[] indexes = {
+		    "CREATE INDEX idx_" + this.tableName + "_lastAccessed ON " + this.tableName + "(lastAccessed)",
+		    "CREATE INDEX idx_" + this.tableName + "_created ON " + this.tableName + "(created)",
+		    "CREATE INDEX idx_" + this.tableName + "_hits ON " + this.tableName + "(hits)",
+		    "CREATE INDEX idx_" + this.tableName + "_timeout ON " + this.tableName + "(timeout, lastAccessTimeout)"
 		};
 
 		for ( String indexSQL : indexes ) {
