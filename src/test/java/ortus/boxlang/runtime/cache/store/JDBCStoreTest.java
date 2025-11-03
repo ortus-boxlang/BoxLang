@@ -29,7 +29,8 @@ import tools.JDBCTestUtils;
 
 class JDBCStoreTest extends BaseStoreTest {
 
-	static String		datasourceName	= "jdbcStoreTest";
+	static String		datasourceName		= "jdbcStoreTest";
+	static Key			keyDatasourceName	= Key.of( datasourceName );
 	static DataSource	datasource;
 	static IBoxContext	context;
 	static BoxRuntime	runtime;
@@ -55,6 +56,7 @@ class JDBCStoreTest extends BaseStoreTest {
 	static void setUp() {
 		// Initialize BoxLang runtime
 		runtime		= BoxRuntime.getInstance( true );
+		context		= new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
 
 		// Build Derby in-memory database datasource using JDBCTestUtils
 		datasource	= JDBCTestUtils.buildDatasource( datasourceName );
@@ -63,18 +65,16 @@ class JDBCStoreTest extends BaseStoreTest {
 		runtime
 		    .getDataSourceService()
 		    .register(
-		        Key.of( datasourceName ),
+		        keyDatasourceName,
 		        datasource
 		    );
-
-		// Create a scripting context for testing
-		context			= new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
+		runtime.getConfiguration().datasources.put( datasourceName, datasource.getConfiguration() );
 
 		// Prep the fields to use in the base test
-		mockProvider	= getMockProvider( "jdbcStoreTest" );
+		mockProvider = getMockProvider( "jdbcStoreTest" );
 		mockConfig.properties.put( Key.datasource, datasourceName );
-		mockConfig.properties.put( Key.of( "tableName" ), "cacheStore" );
-		mockConfig.properties.put( Key.of( "autoCreate" ), true );
+		mockConfig.properties.put( Key.table, "cacheStore" );
+		mockConfig.properties.put( Key.autoCreate, true );
 
 		// Initialize the JDBC store
 		store = new JDBCStore().init( mockProvider, mockConfig.properties );

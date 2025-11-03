@@ -118,28 +118,27 @@ public class JDBCStore extends AbstractStore {
 		this.logger		= BoxRuntime.getInstance().getLoggingService().CACHE_LOGGER;
 
 		// Get configuration with defaults
-		String datasource = config.getAsString( Key.datasource );
-		if ( datasource == null || datasource.isEmpty() ) {
+		String datasourceName = config.getAsString( Key.datasource );
+		if ( datasourceName == null || datasourceName.isEmpty() ) {
 			throw new BoxRuntimeException( "JDBCStore requires a 'datasource' configuration property" );
 		}
 		this.tableName	= StringCaster.cast( config.getOrDefault( Key.table, "boxlang_cache" ) );
 		this.autoCreate	= BooleanCaster.attempt( config.get( Key.autoCreate ) ).orElse( true );
 
 		// Populate the query options with the datasource and always return array of structs
-		this.queryOptions.put( Key.datasource, datasource );
+		this.queryOptions.put( Key.datasource, datasourceName );
 		this.queryOptions.put( Key.returnType, "array" );
 
 		// Create a context for executing queries
 		this.context	= new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() );
 
-		// Get the datasource
-		this.datasource	= BoxRuntime.getInstance().getDataSourceService().get( Key.of( datasource ) );
+		// Get the datasource, because it needs to exist in order for it to work
+		this.datasource	= BoxRuntime.getInstance().getDataSourceService().get( Key.of( datasourceName ) );
 		if ( this.datasource == null ) {
-			throw new BoxRuntimeException( "JDBCStore datasource '" + datasource + "' not found." );
+			throw new BoxRuntimeException( "JDBCStore datasource '" + datasourceName + "' not found." );
 		}
 
-		// Set the default datasource on the context's connection manager for query execution
-		this.context.getConnectionManager().setDefaultDatasource( this.datasource );
+		this.context.getConnectionManager().register( this.datasource );
 
 		// Create the table if needed
 		if ( this.autoCreate ) {
@@ -168,6 +167,15 @@ public class JDBCStore extends AbstractStore {
 	 */
 	public String getTableName() {
 		return this.tableName;
+	}
+
+	/**
+	 * Get the auto create setting
+	 *
+	 * @return True if auto create is enabled, false otherwise
+	 */
+	public boolean isAutoCreate() {
+		return this.autoCreate;
 	}
 
 	/**
