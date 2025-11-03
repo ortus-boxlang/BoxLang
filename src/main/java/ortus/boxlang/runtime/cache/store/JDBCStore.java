@@ -1,0 +1,803 @@
+/**
+ * [BoxLang]
+ *
+ * Copyright [2023] [Ortus Solutions, Corp]
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package ortus.boxlang.runtime.cache.store;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.AbstractMap;
+import java.util.Base64;
+import java.util.stream.Stream;
+
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.bifs.global.jdbc.QueryExecute;
+import ortus.boxlang.runtime.cache.BoxCacheEntry;
+import ortus.boxlang.runtime.cache.ICacheEntry;
+import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
+import ortus.boxlang.runtime.cache.providers.ICacheProvider;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.jdbc.DataSource;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.DatabaseException;
+import ortus.boxlang.runtime.types.util.BLCollector;
+import ortus.boxlang.runtime.util.conversion.ObjectMarshaller;
+
+/**
+ * This object store keeps all objects in a JDBC database table.
+ * Each cache entry is stored as a row with serialized data.
+ */
+public class JDBCStore extends AbstractStore {
+
+	/**
+	 * The datasource to use for storage
+	 */
+	private DataSource		datasource;
+
+	/**
+	 * The table name to use for storage
+	 */
+	private String			tableName;
+
+	/**
+	 * Whether to automatically create the table if it doesn't exist
+	 */
+	private boolean			autoCreate;
+
+	/**
+	 * The context to use for executing queries
+	 */
+	private IBoxContext		context;
+
+	/**
+	 * The query options to use for executing queries
+	 */
+	private IStruct			queryOptions	= new Struct();
+
+	/**
+	 * Cache Logger
+	 */
+	private BoxLangLogger	logger;
+
+	/**
+	 * Constructor
+	 */
+	public JDBCStore() {
+		// Empty constructor
+	}
+
+	/**
+	 * Some storages require a method to initialize the storage or do
+	 * object loading. This method is called when the cache provider is started.
+	 *
+	 * @param provider The cache provider associated with this store
+	 * @param config   The configuration for the store
+	 */
+	@Override
+	public IObjectStore init( ICacheProvider provider, IStruct config ) {
+		// Initialize base store
+		this.provider	= provider;
+		this.config		= config;
+		this.logger		= BoxRuntime.getInstance().getLoggingService().CACHE_LOGGER;
+
+		// Get configuration with defaults
+		String datasource = config.getAsString( Key.datasource );
+		if ( datasource == null || datasource.isEmpty() ) {
+			throw new BoxRuntimeException( "JDBCStore requires a 'datasource' configuration property" );
+		}
+		this.tableName	= StringCaster.cast( config.getOrDefault( Key.table, "boxlang_cache" ) );
+		this.autoCreate	= BooleanCaster.attempt( config.get( Key.autoCreate ) ).orElse( true );
+
+		// Populate the query options with the datasaource and always return array of structs
+		this.queryOptions.put( Key.datasource, datasource );
+		this.queryOptions.put( Key.returnType, "array" );
+
+		// Create a context for executing queries
+		this.context	= BoxRuntime.getInstance().getRuntimeContext();
+
+		// Get the datasource
+		this.datasource	= BoxRuntime.getInstance().getDataSourceService().get( Key.of( datasource ) );
+		if ( this.datasource == null ) {
+			throw new BoxRuntimeException( "JDBCStore datasource '" + datasource + "' not found." );
+		}
+
+		// Create the table if needed
+		if ( this.autoCreate ) {
+			ensureTable();
+		}
+
+		return this;
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Interface Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Some storages require a shutdown method to close the storage or do
+	 * object saving. This method is called when the cache provider is stopped.
+	 */
+	public void shutdown() {
+		// Nothing to do
+	}
+
+	/**
+	 * Flush the store to a permanent storage.
+	 * Only applicable to stores that support it.
+	 *
+	 * @return The number of objects flushed
+	 */
+	public int flush() {
+		return 0;
+	}
+
+	/**
+	 * Runs the eviction algorithm to remove objects from the store based on the eviction policy
+	 * and eviction count.
+	 */
+	public synchronized void evict() {
+		int evictCount = IntegerCaster.cast( this.config.get( Key.evictCount ) );
+		if ( evictCount == 0 ) {
+			return;
+		}
+
+		// Get all entries and sort them by the eviction policy
+		Stream<ICacheEntry> entries = getEntryStream()
+		    .map( this::deserializeEntry )
+		    .sorted( getPolicy().getComparator() )
+		    .filter( entry -> !entry.isEternal() )
+		    .limit( evictCount );
+
+		// Delete the entries
+		entries.forEach( entry -> {
+			clear( entry.key() );
+			getProvider().getStats().recordEviction();
+		} );
+	}
+
+	/**
+	 * Get the size of the store, not the size in bytes but the number of objects in the store
+	 */
+	public int getSize() {
+		Array result = ( Array ) QueryExecute.execute(
+		    this.context,
+		    "SELECT COUNT(*) as itemCount FROM " + this.tableName,
+		    Array.EMPTY,
+		    this.queryOptions
+		);
+
+		if ( !result.isEmpty() ) {
+			return ( ( IStruct ) result.get( 0 ) ).getAsInteger( Key.itemCount );
+		}
+		return 0;
+	}
+
+	/**
+	 * Clear all the elements in the store
+	 */
+	public void clearAll() {
+		QueryExecute.execute(
+		    this.context,
+		    "DELETE FROM " + this.tableName,
+		    Array.EMPTY,
+		    this.queryOptions
+		);
+	}
+
+	/**
+	 * Clear all the elements in the store with a ${@link ICacheKeyFilter}.
+	 * This can be a lambda or method reference since it's a functional interface.
+	 *
+	 * @param filter The filter that determines which keys to clear
+	 */
+	public boolean clearAll( ICacheKeyFilter filter ) {
+		getKeysStream( filter ).forEach( this::clear );
+		return true;
+	}
+
+	/**
+	 * Clears an object from the storage
+	 *
+	 * @param key The object key to clear
+	 *
+	 * @return True if the object was cleared, false otherwise (if the object was not found in the store)
+	 */
+	public boolean clear( Key key ) {
+		QueryExecute.execute(
+		    this.context,
+		    "DELETE FROM " + this.tableName + " WHERE objectKey = ?",
+		    Array.of( key.getName() ),
+		    this.queryOptions
+		);
+
+		// DELETE queries don't return meaningful data, so we return true if no exception was thrown
+		return true;
+	}
+
+	/**
+	 * Clears multiple objects from the storage
+	 *
+	 * @param keys The keys to clear
+	 *
+	 * @return A struct of keys and their clear status: true if the object was cleared, false otherwise (if the object was not found in the store)
+	 */
+	public IStruct clear( Key... keys ) {
+		IStruct results = new Struct();
+		for ( Key key : keys ) {
+			results.put( key, clear( key ) );
+		}
+		return results;
+	}
+
+	/**
+	 * Get all the keys in the store
+	 *
+	 * @return An array of keys in the cache
+	 */
+	public Key[] getKeys() {
+		Array result = ( Array ) QueryExecute.execute(
+		    this.context,
+		    "SELECT objectKey FROM " + this.tableName,
+		    Array.EMPTY,
+		    this.queryOptions
+		);
+
+		return result.stream()
+		    .map( row -> Key.of( ( ( IStruct ) row ).getAsString( Key.objectKey ) ) )
+		    .toArray( Key[]::new );
+	}
+
+	/**
+	 * Get all the keys in the store using a filter
+	 *
+	 * @param filter The filter that determines which keys to return
+	 *
+	 * @return An array of keys in the cache
+	 */
+	public Key[] getKeys( ICacheKeyFilter filter ) {
+		return getKeysStream( filter ).toArray( Key[]::new );
+	}
+
+	/**
+	 * Get all the keys in the store as a stream
+	 *
+	 * @return A stream of keys in the cache
+	 */
+	public Stream<Key> getKeysStream() {
+		Array result = ( Array ) QueryExecute.execute(
+		    this.context,
+		    "SELECT objectKey FROM " + this.tableName,
+		    Array.EMPTY,
+		    this.queryOptions
+		);
+
+		return result.stream()
+		    .map( row -> Key.of( ( ( IStruct ) row ).getAsString( Key.objectKey ) ) );
+	}
+
+	/**
+	 * Get all the keys in the store as a stream
+	 *
+	 * @param filter The filter that determines which keys to return
+	 *
+	 * @return A stream of keys in the cache
+	 */
+	public Stream<Key> getKeysStream( ICacheKeyFilter filter ) {
+		return getKeysStream().filter( filter );
+	}
+
+	/**
+	 * Check if an object is in the store
+	 *
+	 * @param key The key to lookup in the store
+	 *
+	 * @return True if the object is in the store, false otherwise
+	 */
+	public boolean lookup( Key key ) {
+		Array result = ( Array ) QueryExecute.execute(
+		    this.context,
+		    "SELECT COUNT(*) as itemCount FROM " + this.tableName + " WHERE objectKey = ?",
+		    Array.of( key.getName() ),
+		    this.queryOptions
+		);
+
+		if ( !result.isEmpty() ) {
+			return ( ( IStruct ) result.get( 0 ) ).getAsInteger( Key.itemCount ) > 0;
+		}
+		return false;
+	}
+
+	/**
+	 * Check if multiple objects are in the store
+	 *
+	 * @param keys A varargs of keys to lookup in the store
+	 *
+	 * @return A struct of keys and their lookup status
+	 */
+	public IStruct lookup( Key... keys ) {
+		IStruct results = new Struct();
+		for ( Key key : keys ) {
+			results.put( key, lookup( key ) );
+		}
+		return results;
+	}
+
+	/**
+	 * Check if multiple objects are in the store using a filter
+	 *
+	 * @param filter The filter that determines which keys to return
+	 *
+	 * @return A struct of the keys found. True if the object is in the store, false otherwise
+	 */
+	public IStruct lookup( ICacheKeyFilter filter ) {
+		Key[] foundKeys = getKeys( filter );
+
+		return Stream.of( foundKeys )
+		    .map( key -> new AbstractMap.SimpleEntry<Key, Object>( key, lookup( key ) ) )
+		    .collect( BLCollector.toStruct() );
+	}
+
+	/**
+	 * Get an object from the store with metadata tracking: hits, lastAccess, etc
+	 *
+	 * @param key The key to retrieve
+	 *
+	 * @return The cache entry retrieved or null if not found
+	 */
+	public ICacheEntry get( Key key ) {
+		ICacheEntry results = getQuiet( key );
+
+		if ( results != null ) {
+			// Update Stats
+			results.incrementHits().touchLastAccessed();
+
+			// Is resetTimeoutOnAccess enabled? If so, jump up the creation time to increase the timeout
+			if ( BooleanCaster.cast( this.config.get( Key.resetTimeoutOnAccess ) ) ) {
+				results.resetCreated();
+			}
+
+			// Update the database with the new stats
+			updateEntryStats( key, results );
+		}
+
+		return results;
+	}
+
+	/**
+	 * Get multiple objects from the store with metadata tracking
+	 *
+	 * @param keys The keys to retrieve
+	 *
+	 * @return A struct of keys and their cache entries
+	 */
+	public IStruct get( Key... keys ) {
+		IStruct results = new Struct();
+		for ( Key key : keys ) {
+			results.put( key, get( key ) );
+		}
+		return results;
+	}
+
+	/**
+	 * Get multiple objects from the store with metadata tracking using a filter
+	 *
+	 * @param filter The filter that determines which keys to return
+	 *
+	 * @return A struct of keys and their cache entries
+	 */
+	public IStruct get( ICacheKeyFilter filter ) {
+		IStruct results = new Struct();
+		getKeysStream( filter ).forEach( key -> results.put( key, get( key ) ) );
+		return results;
+	}
+
+	/**
+	 * Get an object from cache with no metadata tracking
+	 *
+	 * @param key The key to retrieve
+	 *
+	 * @return The cache entry retrieved or null if not found
+	 */
+	public ICacheEntry getQuiet( Key key ) {
+		Array result = ( Array ) QueryExecute.execute(
+		    this.context,
+		    "SELECT * FROM " + this.tableName + " WHERE objectKey = ?",
+		    Array.of( key.getName() ),
+		    this.queryOptions
+		);
+
+		if ( !result.isEmpty() ) {
+			// Materialize CLOB data immediately after query returns
+			IStruct row = materializeClobData( ( IStruct ) result.get( 0 ) );
+			return deserializeEntry( row );
+		}
+		return null;
+	}
+
+	/**
+	 * Get multiple objects from the store with no metadata tracking
+	 *
+	 * @param keys The keys to retrieve
+	 *
+	 * @return A struct of keys and their cache entries
+	 */
+	public IStruct getQuiet( Key... keys ) {
+		IStruct results = new Struct();
+		for ( Key key : keys ) {
+			results.put( key, getQuiet( key ) );
+		}
+		return results;
+	}
+
+	/**
+	 * Get multiple objects from the store with no metadata tracking using a filter
+	 *
+	 * @param filter The filter that determines which keys to return
+	 *
+	 * @return A struct of keys and their cache entries
+	 */
+	public IStruct getQuiet( ICacheKeyFilter filter ) {
+		IStruct results = new Struct();
+		getKeysStream( filter ).forEach( key -> results.put( key, getQuiet( key ) ) );
+		return results;
+	}
+
+	/**
+	 * Sets an object in the storage
+	 *
+	 * @param key   The key to store the object under
+	 * @param entry The cache entry to store
+	 */
+	public void set( Key key, ICacheEntry entry ) {
+		String	serializedValue	= serializeValue( entry.rawValue() );
+		String	metadata		= entry.metadata().asString();
+
+		// Check if entry exists
+		boolean	exists			= lookup( key );
+
+		if ( exists ) {
+			// Update existing entry
+			QueryExecute.execute(
+			    this.context,
+			    "UPDATE " + this.tableName
+			        + " SET objectValue = ?, hits = ?, created = ?, lastAccessed = ?, timeout = ?, lastAccessTimeout = ?, metadata = ? WHERE objectKey = ?",
+			    Array.of(
+			        serializedValue,
+			        entry.hits(),
+			        java.sql.Timestamp.from( entry.created() ),
+			        java.sql.Timestamp.from( entry.lastAccessed() ),
+			        entry.timeout(),
+			        entry.lastAccessTimeout(),
+			        metadata,
+			        key.getName()
+			    ),
+			    this.queryOptions
+			);
+		} else {
+			// Insert new entry
+			QueryExecute.execute(
+			    this.context,
+			    "INSERT INTO " + this.tableName
+			        + " (objectKey, objectValue, hits, created, lastAccessed, timeout, lastAccessTimeout, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+			    Array.of(
+			        key.getName(),
+			        serializedValue,
+			        entry.hits(),
+			        java.sql.Timestamp.from( entry.created() ),
+			        java.sql.Timestamp.from( entry.lastAccessed() ),
+			        entry.timeout(),
+			        entry.lastAccessTimeout(),
+			        metadata
+			    ),
+			    this.queryOptions
+			);
+		}
+	}
+
+	/**
+	 * Set's multiple objects in the storage
+	 *
+	 * @param entries The keys and cache entries to store
+	 */
+	public void set( IStruct entries ) {
+		entries.forEach( ( key, value ) -> set( key, ( ICacheEntry ) value ) );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Private Helpers
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Update the entry statistics in the database
+	 *
+	 * @param key   The key of the entry
+	 * @param entry The entry with updated stats
+	 */
+	private void updateEntryStats( Key key, ICacheEntry entry ) {
+		QueryExecute.execute(
+		    this.context,
+		    "UPDATE " + this.tableName + " SET hits = ?, lastAccessed = ?, created = ? WHERE objectKey = ?",
+		    Array.of(
+		        entry.hits(),
+		        java.sql.Timestamp.from( entry.lastAccessed() ),
+		        java.sql.Timestamp.from( entry.created() ),
+		        key.getName()
+		    ),
+		    this.queryOptions
+		);
+	}
+
+	/**
+	 * Get a stream of all entries in the store
+	 *
+	 * @return A stream of all entries
+	 */
+	private Stream<IStruct> getEntryStream() {
+		Array					result				= ( Array ) QueryExecute.execute(
+		    this.context,
+		    "SELECT * FROM " + this.tableName,
+		    Array.EMPTY,
+		    this.queryOptions
+		);
+
+		// Eagerly collect all rows and materialize CLOB values to avoid lazy evaluation issues
+		java.util.List<IStruct>	materializedRows	= new java.util.ArrayList<>();
+		for ( Object row : result ) {
+			IStruct rowStruct = ( IStruct ) row;
+			// Materialize CLOB data immediately
+			materializedRows.add( materializeClobData( rowStruct ) );
+		}
+		return materializedRows.stream();
+	}
+
+	/**
+	 * Materialize CLOB data in a struct to avoid lazy evaluation issues
+	 *
+	 * @param row The row struct that may contain CLOB values
+	 *
+	 * @return A struct with CLOB values converted to strings
+	 */
+	private IStruct materializeClobData( IStruct row ) {
+		Object cacheValueObj = row.get( Key.objectValue );
+		if ( cacheValueObj instanceof java.sql.Clob clob ) {
+			try {
+				long	length		= clob.length();
+				String	stringValue	= clob.getSubString( 1, ( int ) length );
+				// Create a new struct with the string value
+				IStruct	newRow		= new Struct( IStruct.TYPES.LINKED );
+				row.entrySet().forEach( entry -> {
+					if ( entry.getKey().equals( Key.objectValue ) ) {
+						newRow.put( entry.getKey(), stringValue );
+					} else {
+						newRow.put( entry.getKey(), entry.getValue() );
+					}
+				} );
+				return newRow;
+			} catch ( java.sql.SQLException e ) {
+				throw new BoxRuntimeException( "Failed to read CLOB data", e );
+			}
+		}
+		return row;
+	}
+
+	/**
+	 * Serialize a value to a Base64-encoded string
+	 *
+	 * @param value The value to serialize
+	 *
+	 * @return The Base64-encoded serialized string
+	 */
+	private String serializeValue( Object value ) {
+		return Base64.getEncoder().encodeToString(
+		    ObjectMarshaller.serialize( this.context, value )
+		);
+	}
+
+	/**
+	 * Deserialize a value from a Base64-encoded string
+	 *
+	 * @param base64Data The Base64-encoded string to deserialize
+	 *
+	 * @return The deserialized value
+	 */
+	private Object deserializeValue( String base64Data ) {
+		return ObjectMarshaller.deserialize(
+		    this.context,
+		    Base64.getDecoder().decode( base64Data )
+		);
+	}
+
+	/**
+	 * Deserialize a cache entry from a database row
+	 *
+	 * @param row The database row
+	 *
+	 * @return The deserialized cache entry
+	 */
+	private ICacheEntry deserializeEntry( IStruct row ) {
+		try {
+			// Get the cache value - it might be a CLOB or String depending on the database
+			Object	cacheValueObj	= row.get( Key.objectValue );
+			String	base64Value		= null;
+
+			// Already a String
+			if ( cacheValueObj instanceof String str ) {
+				base64Value = str;
+			} else {
+				base64Value = StringCaster.cast( cacheValueObj );
+			}
+
+			Object			value	= deserializeValue( base64Value );
+
+			// Create the cache entry
+			BoxCacheEntry	entry	= new BoxCacheEntry(
+			    this.provider.getName(),
+			    row.getAsLong( Key.timeout ),
+			    row.getAsLong( Key.lastAccessTimeout ),
+			    Key.of( row.getAsString( Key.objectKey ) ),
+			    value,
+			    this.queryOptions
+			);
+
+			// Set the stats
+			entry.setHits( row.getAsLong( Key.hits ) );
+
+			return entry;
+		} catch ( Exception e ) {
+			throw new BoxRuntimeException( "Failed to deserialize cache entry", e );
+		}
+	}
+
+	/**
+	 * Get the database driver name for vendor detection
+	 *
+	 * @return The database driver name
+	 */
+	private String getDatabaseDriverName() {
+		try ( Connection conn = this.datasource.getConnection() ) {
+			return conn.getMetaData().getDriverName().toLowerCase();
+		} catch ( SQLException e ) {
+			throw new DatabaseException( "Failed to get database metadata", e );
+		}
+	}
+
+	/**
+	 * Create the cache table if it doesn't exist
+	 */
+	private void ensureTable() {
+		// Verify if we can query the table
+		try {
+			QueryExecute.execute(
+			    this.context,
+			    "SELECT COUNT(*) as itemCount FROM " + this.tableName + " WHERE 1=0",
+			    Array.EMPTY,
+			    this.queryOptions
+			);
+			// Table exists, we're good
+			return;
+		} catch ( DatabaseException e ) {
+			// Table doesn't exist, create it
+			this.logger.info( "Cache table '" + this.tableName + "' does not exist. Creating it now." );
+		}
+
+		// Determine the database vendor
+		String createTableSQL = getCreateTableSQL( this.tableName );
+
+		try {
+			QueryExecute.execute( this.context, createTableSQL, Array.EMPTY, this.queryOptions );
+		} catch ( DatabaseException e ) {
+			throw new BoxRuntimeException( "Failed to create cache table: " + this.tableName, e );
+		}
+	}
+
+	/**
+	 * Get the CREATE TABLE SQL for the current database vendor
+	 *
+	 * @param fullTableName The full table name including schema
+	 *
+	 * @return The CREATE TABLE SQL
+	 */
+	private String getCreateTableSQL( String fullTableName ) {
+		String driverName = getDatabaseDriverName();
+
+		// Build SQL based on database vendor - using TEXT types for Base64 encoded values
+		if ( driverName.contains( "oracle" ) ) {
+			return String.format(
+			    "CREATE TABLE %s ("
+			        + "objectKey VARCHAR2(500) PRIMARY KEY, "
+			        + "objectValue CLOB, "
+			        + "hits NUMBER DEFAULT 0, "
+			        + "created TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+			        + "lastAccessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+			        + "timeout NUMBER DEFAULT 0, "
+			        + "lastAccessTimeout NUMBER DEFAULT 0, "
+			        + "metadata CLOB"
+			        + ")",
+			    fullTableName
+			);
+		} else if ( driverName.contains( "mysql" ) || driverName.contains( "mariadb" ) ) {
+			return String.format(
+			    "CREATE TABLE %s ("
+			        + "objectKey VARCHAR(500) PRIMARY KEY, "
+			        + "objectValue LONGTEXT, "
+			        + "hits BIGINT DEFAULT 0, "
+			        + "created TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+			        + "lastAccessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+			        + "timeout BIGINT DEFAULT 0, "
+			        + "lastAccessTimeout BIGINT DEFAULT 0, "
+			        + "metadata LONGTEXT"
+			        + ")",
+			    fullTableName
+			);
+		} else if ( driverName.contains( "postgres" ) ) {
+			return String.format(
+			    "CREATE TABLE %s ("
+			        + "objectKey VARCHAR(500) PRIMARY KEY, "
+			        + "objectValue TEXT, "
+			        + "hits BIGINT DEFAULT 0, "
+			        + "created TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+			        + "lastAccessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+			        + "timeout BIGINT DEFAULT 0, "
+			        + "lastAccessTimeout BIGINT DEFAULT 0, "
+			        + "metadata TEXT"
+			        + ")",
+			    fullTableName
+			);
+		} else if ( driverName.contains( "microsoft" ) || driverName.contains( "sqlserver" ) ) {
+			return String.format(
+			    "CREATE TABLE %s ("
+			        + "objectKey VARCHAR(500) PRIMARY KEY, "
+			        + "objectValue VARCHAR(MAX), "
+			        + "hits BIGINT DEFAULT 0, "
+			        + "created DATETIME DEFAULT GETDATE(), "
+			        + "lastAccessed DATETIME DEFAULT GETDATE(), "
+			        + "timeout BIGINT DEFAULT 0, "
+			        + "lastAccessTimeout BIGINT DEFAULT 0, "
+			        + "metadata VARCHAR(MAX)"
+			        + ")",
+			    fullTableName
+			);
+		} else {
+			// Default to Derby/HSQLDB syntax - use VARCHAR for objectValue to avoid CLOB issues
+			return String.format(
+			    "CREATE TABLE %s ("
+			        + "objectKey VARCHAR(500) PRIMARY KEY, "
+			        + "objectValue VARCHAR(32672), "
+			        + "hits BIGINT DEFAULT 0, "
+			        + "created TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+			        + "lastAccessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
+			        + "timeout BIGINT DEFAULT 0, "
+			        + "lastAccessTimeout BIGINT DEFAULT 0, "
+			        + "metadata VARCHAR(1000)"
+			        + ")",
+			    fullTableName
+			);
+		}
+	}
+
+}

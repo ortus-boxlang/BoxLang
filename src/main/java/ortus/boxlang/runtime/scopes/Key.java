@@ -124,6 +124,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		auth_type							= Key.of( "auth_type" );
 	public static final Key		auth_user							= Key.of( "auth_user" );
 	public static final Key		author								= Key.of( "author" );
+	public static final Key		autoCreate							= Key.of( "autoCreate" );
 	public static final Key		authType							= Key.of( "authType" );
 	public static final Key		base64_or_object					= Key.of( "base64_or_object " );
 	public static final Key		baseTag								= Key.of( "baseTag" );
@@ -396,6 +397,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		header								= Key.of( "header" );
 	public static final Key		headers								= Key.of( "headers" );
 	public static final Key		hint								= Key.of( "hint" );
+	public static final Key		hits								= Key.of( "hits" );
 	public static final Key		hostname							= Key.of( "hostname" );
 	public static final Key		hour								= Key.of( "hour" );
 	public static final Key		hours								= Key.of( "hours" );
@@ -451,6 +453,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		isShutdown							= Key.of( "isShutdown" );
 	public static final Key		isValid								= Key.of( "isValid" );
 	public static final Key		item								= Key.of( "item" );
+	public static final Key		itemCount							= Key.of( "itemCount" );
 	public static final Key		items								= Key.of( "items" );
 	public static final Key		iterations							= Key.of( "iterations" );
 	public static final Key		IVorSalt							= Key.of( "IVorSalt" );
@@ -472,6 +475,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		lambda								= Key.of( "lambda" );
 	public static final Key		language							= Key.of( "language" );
 	public static final Key		lastVisit							= Key.of( "lastVisit" );
+	public static final Key		lastAccessTimeout					= Key.of( "lastAccessTimeout" );
 	public static final Key		leakDetectionThreshold				= Key.of( "leakDetectionThreshold" );
 	public static final Key		leaveIndex							= Key.of( "leaveIndex" );
 	public static final Key		len									= Key.of( "len" );
@@ -572,6 +576,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		numIterations						= Key.of( "numIterations" );
 	public static final Key		obj									= Key.of( "obj" );
 	public static final Key		object								= Key.of( "object" );
+	public static final Key		objectKey							= Key.of( "objectKey" );
+	public static final Key		objectValue							= Key.of( "objectValue" );
 	public static final Key		objectArgument						= Key.of( "objectArgument" );
 	public static final Key		objectMappings						= Key.of( "objectMappings" );
 	public static final Key		objectStore							= Key.of( "objectStore" );
@@ -703,6 +709,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		samesite							= Key.of( "samesite" );
 	public static final Key		scalar								= Key.of( "scalar" );
 	public static final Key		scale								= Key.of( "scale" );
+	public static final Key		schema								= Key.of( "schema" );
 	public static final Key		scheduler							= Key.of( "scheduler" );
 	public static final Key		schedulers							= Key.of( "schedulers" );
 	public static final Key		schedulerService					= Key.of( "schedulerService" );
