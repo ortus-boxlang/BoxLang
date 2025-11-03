@@ -245,6 +245,11 @@ public class MiniConsole implements AutoCloseable {
 	private int							completionDisplayLines	= 0;
 
 	/**
+	 * Original terminal settings (for restoration on close)
+	 */
+	private String						originalSttySettings	= null;
+
+	/**
 	 * ----------------------------------------------------------------------------
 	 * Constructors
 	 * ----------------------------------------------------------------------------
@@ -255,6 +260,7 @@ public class MiniConsole implements AutoCloseable {
 	 */
 	public MiniConsole() {
 		// Uses default prompt
+		setupTerminal();
 	}
 
 	/**
@@ -264,6 +270,7 @@ public class MiniConsole implements AutoCloseable {
 	 */
 	public MiniConsole( String prompt ) {
 		this.prompt = prompt != null ? prompt : DEFAULT_PROMPT;
+		setupTerminal();
 	}
 
 	/**
@@ -275,6 +282,48 @@ public class MiniConsole implements AutoCloseable {
 	public MiniConsole( String prompt, ISyntaxHighlighter highlighter ) {
 		this( prompt );
 		this.syntaxHighlighter = highlighter;
+	}
+
+	/**
+	 * Setup terminal for raw input mode (disable echo)
+	 */
+	private void setupTerminal() {
+		try {
+			// Save original settings
+			Process	process	= Runtime.getRuntime().exec( new String[] { "sh", "-c", "stty -g < /dev/tty" } );
+			String	result	= new String( process.getInputStream().readAllBytes() ).trim();
+			process.waitFor();
+			originalSttySettings	= result;
+
+			// Disable echo and canonical mode (line buffering) for character-by-character input
+			// -echo: don't echo input characters
+			// -icanon: disable canonical mode (read character-by-character, not line-by-line)
+			// min 1: return after reading at least 1 character
+			// time 0: no timeout (blocking read)
+			process					= Runtime.getRuntime().exec( new String[] { "sh", "-c", "stty -echo -icanon min 1 time 0 < /dev/tty" } );
+			process.waitFor();
+
+			// Register shutdown hook to restore terminal settings
+			Runtime.getRuntime().addShutdownHook( new Thread( this::restoreTerminal ) );
+		} catch ( Exception e ) {
+			// If stty is not available or fails, continue without terminal setup
+			// This allows the console to work on systems without stty
+		}
+	}
+
+	/**
+	 * Restore terminal to original settings
+	 */
+	private void restoreTerminal() {
+		if ( originalSttySettings != null ) {
+			try {
+				Process process = Runtime.getRuntime()
+				    .exec( new String[] { "sh", "-c", "stty " + originalSttySettings + " < /dev/tty" } );
+				process.waitFor();
+			} catch ( Exception e ) {
+				// Ignore errors during restoration
+			}
+		}
 	}
 
 	/**
@@ -610,10 +659,7 @@ public class MiniConsole implements AutoCloseable {
 						continue;
 					}
 					// Normal ENTER - execute the line
-					// Clear the current line to remove any terminal echo before moving to next line
-					System.out.print( "\r" );
-					System.out.print( CODES.CLEAR_LINE.code() );
-					System.out.print( "\r" );
+					System.out.print( "\r\n" );
 					System.out.flush();
 					historyIndex = -1;
 					String result = inputBuffer.toString();
@@ -726,7 +772,8 @@ public class MiniConsole implements AutoCloseable {
 	 */
 	@Override
 	public void close() {
-		// Nothing to clean up at this level - handled by inner classes
+		// Restore terminal settings
+		restoreTerminal();
 	}
 
 	/**
