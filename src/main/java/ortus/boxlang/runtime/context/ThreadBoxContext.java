@@ -77,10 +77,12 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	 * The parallel flag is for convenience since many BIFs allow for parallel execution to be toggled
 	 * on and off, this will make for simpler code paths. When parallel is false, this method
 	 * is basically a no-op.
-	 * 
+	 *
 	 * @param parent   The parent context to use for the ThreadBoxContext
-	 * @param runnable The runnable to execute
 	 * @param parallel If true, run in a new ThreadBoxContext, otherwise run in the current context
+	 * @param runnable The runnable to execute
+	 *
+	 * @return The result of the runnable
 	 */
 	public static Object runInContext( IBoxContext parent, boolean parallel, java.util.function.Function<IBoxContext, Object> runnable ) {
 
@@ -114,7 +116,7 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	/**
 	 * Run a consumer with a given context. We will create a new ThreadBoxContext
 	 * and set it as the current context, cleaning up any JDBC connections when done.
-	 * 
+	 *
 	 * @param parent   The parent context to use for the ThreadBoxContext
 	 * @param runnable The runnable to execute
 	 */
