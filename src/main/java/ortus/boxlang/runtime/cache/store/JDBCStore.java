@@ -30,6 +30,8 @@ import ortus.boxlang.runtime.cache.ICacheEntry;
 import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.IJDBCCapableContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -53,32 +55,46 @@ public class JDBCStore extends AbstractStore {
 	/**
 	 * The datasource to use for storage
 	 */
-	private DataSource		datasource;
+	private DataSource			datasource;
 
 	/**
 	 * The table name to use for storage
 	 */
-	private String			tableName;
+	private String				tableName;
 
 	/**
 	 * Whether to automatically create the table if it doesn't exist
 	 */
-	private boolean			autoCreate;
+	private boolean				autoCreate;
 
 	/**
 	 * The context to use for executing queries
 	 */
-	private IBoxContext		context;
+	private IJDBCCapableContext	context;
 
 	/**
 	 * The query options to use for executing queries
 	 */
-	private IStruct			queryOptions	= new Struct();
+	private IStruct				queryOptions	= new Struct();
 
 	/**
 	 * Cache Logger
 	 */
-	private BoxLangLogger	logger;
+	private BoxLangLogger		logger;
+
+	/**
+	 * Pre-compiled SQL statements for common operations
+	 */
+	private String				sqlGetSize;
+	private String				sqlClearAll;
+	private String				sqlClearByKey;
+	private String				sqlGetKeys;
+	private String				sqlLookupByKey;
+	private String				sqlGetByKey;
+	private String				sqlUpdateEntry;
+	private String				sqlInsertEntry;
+	private String				sqlUpdateStats;
+	private String				sqlGetAllEntries;
 
 	/**
 	 * Constructor
@@ -109,12 +125,12 @@ public class JDBCStore extends AbstractStore {
 		this.tableName	= StringCaster.cast( config.getOrDefault( Key.table, "boxlang_cache" ) );
 		this.autoCreate	= BooleanCaster.attempt( config.get( Key.autoCreate ) ).orElse( true );
 
-		// Populate the query options with the datasaource and always return array of structs
+		// Populate the query options with the datasource and always return array of structs
 		this.queryOptions.put( Key.datasource, datasource );
 		this.queryOptions.put( Key.returnType, "array" );
 
 		// Create a context for executing queries
-		this.context	= BoxRuntime.getInstance().getRuntimeContext();
+		this.context	= new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() );
 
 		// Get the datasource
 		this.datasource	= BoxRuntime.getInstance().getDataSourceService().get( Key.of( datasource ) );
@@ -122,12 +138,45 @@ public class JDBCStore extends AbstractStore {
 			throw new BoxRuntimeException( "JDBCStore datasource '" + datasource + "' not found." );
 		}
 
+		// Set the default datasource on the context's connection manager for query execution
+		this.context.getConnectionManager().setDefaultDatasource( this.datasource );
+
 		// Create the table if needed
 		if ( this.autoCreate ) {
 			ensureTable();
 		}
 
+		// Pre-compile SQL statements for better performance
+		compileSQLStatements();
+
 		return this;
+	}
+
+	/**
+	 * Get the datasource used by this store
+	 *
+	 * @return The datasource
+	 */
+	public DataSource getDatasource() {
+		return this.datasource;
+	}
+
+	/**
+	 * Get the table name used by this store
+	 *
+	 * @return The table name
+	 */
+	public String getTableName() {
+		return this.tableName;
+	}
+
+	/**
+	 * Get the context used for executing queries
+	 *
+	 * @return The box context
+	 */
+	public IBoxContext getContext() {
+		return this.context;
 	}
 
 	/**
@@ -141,7 +190,7 @@ public class JDBCStore extends AbstractStore {
 	 * object saving. This method is called when the cache provider is stopped.
 	 */
 	public void shutdown() {
-		// Nothing to do
+		this.context.shutdownConnections();
 	}
 
 	/**
@@ -184,7 +233,7 @@ public class JDBCStore extends AbstractStore {
 	public int getSize() {
 		Array result = ( Array ) QueryExecute.execute(
 		    this.context,
-		    "SELECT COUNT(*) as itemCount FROM " + this.tableName,
+		    this.sqlGetSize,
 		    Array.EMPTY,
 		    this.queryOptions
 		);
@@ -201,7 +250,7 @@ public class JDBCStore extends AbstractStore {
 	public void clearAll() {
 		QueryExecute.execute(
 		    this.context,
-		    "DELETE FROM " + this.tableName,
+		    this.sqlClearAll,
 		    Array.EMPTY,
 		    this.queryOptions
 		);
@@ -228,7 +277,7 @@ public class JDBCStore extends AbstractStore {
 	public boolean clear( Key key ) {
 		QueryExecute.execute(
 		    this.context,
-		    "DELETE FROM " + this.tableName + " WHERE objectKey = ?",
+		    this.sqlClearByKey,
 		    Array.of( key.getName() ),
 		    this.queryOptions
 		);
@@ -260,7 +309,7 @@ public class JDBCStore extends AbstractStore {
 	public Key[] getKeys() {
 		Array result = ( Array ) QueryExecute.execute(
 		    this.context,
-		    "SELECT objectKey FROM " + this.tableName,
+		    this.sqlGetKeys,
 		    Array.EMPTY,
 		    this.queryOptions
 		);
@@ -289,7 +338,7 @@ public class JDBCStore extends AbstractStore {
 	public Stream<Key> getKeysStream() {
 		Array result = ( Array ) QueryExecute.execute(
 		    this.context,
-		    "SELECT objectKey FROM " + this.tableName,
+		    this.sqlGetKeys,
 		    Array.EMPTY,
 		    this.queryOptions
 		);
@@ -319,7 +368,7 @@ public class JDBCStore extends AbstractStore {
 	public boolean lookup( Key key ) {
 		Array result = ( Array ) QueryExecute.execute(
 		    this.context,
-		    "SELECT COUNT(*) as itemCount FROM " + this.tableName + " WHERE objectKey = ?",
+		    this.sqlLookupByKey,
 		    Array.of( key.getName() ),
 		    this.queryOptions
 		);
@@ -424,7 +473,7 @@ public class JDBCStore extends AbstractStore {
 	public ICacheEntry getQuiet( Key key ) {
 		Array result = ( Array ) QueryExecute.execute(
 		    this.context,
-		    "SELECT * FROM " + this.tableName + " WHERE objectKey = ?",
+		    this.sqlGetByKey,
 		    Array.of( key.getName() ),
 		    this.queryOptions
 		);
@@ -482,8 +531,7 @@ public class JDBCStore extends AbstractStore {
 			// Update existing entry
 			QueryExecute.execute(
 			    this.context,
-			    "UPDATE " + this.tableName
-			        + " SET objectValue = ?, hits = ?, created = ?, lastAccessed = ?, timeout = ?, lastAccessTimeout = ?, metadata = ? WHERE objectKey = ?",
+			    this.sqlUpdateEntry,
 			    Array.of(
 			        serializedValue,
 			        entry.hits(),
@@ -500,8 +548,7 @@ public class JDBCStore extends AbstractStore {
 			// Insert new entry
 			QueryExecute.execute(
 			    this.context,
-			    "INSERT INTO " + this.tableName
-			        + " (objectKey, objectValue, hits, created, lastAccessed, timeout, lastAccessTimeout, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+			    this.sqlInsertEntry,
 			    Array.of(
 			        key.getName(),
 			        serializedValue,
@@ -541,7 +588,7 @@ public class JDBCStore extends AbstractStore {
 	private void updateEntryStats( Key key, ICacheEntry entry ) {
 		QueryExecute.execute(
 		    this.context,
-		    "UPDATE " + this.tableName + " SET hits = ?, lastAccessed = ?, created = ? WHERE objectKey = ?",
+		    this.sqlUpdateStats,
 		    Array.of(
 		        entry.hits(),
 		        java.sql.Timestamp.from( entry.lastAccessed() ),
@@ -560,7 +607,7 @@ public class JDBCStore extends AbstractStore {
 	private Stream<IStruct> getEntryStream() {
 		Array					result				= ( Array ) QueryExecute.execute(
 		    this.context,
-		    "SELECT * FROM " + this.tableName,
+		    this.sqlGetAllEntries,
 		    Array.EMPTY,
 		    this.queryOptions
 		);
@@ -716,16 +763,42 @@ public class JDBCStore extends AbstractStore {
 	}
 
 	/**
+	 * Pre-compile SQL statements for common operations to avoid string concatenation overhead.
+	 * This method is called during initialization after the table is created/verified.
+	 */
+	private void compileSQLStatements() {
+		// Read operations
+		this.sqlGetSize			= "SELECT COUNT(*) as itemCount FROM " + this.tableName;
+		this.sqlGetKeys			= "SELECT objectKey FROM " + this.tableName;
+		this.sqlGetAllEntries	= "SELECT * FROM " + this.tableName;
+		this.sqlLookupByKey		= "SELECT COUNT(*) as itemCount FROM " + this.tableName + " WHERE objectKey = ?";
+		this.sqlGetByKey		= "SELECT * FROM " + this.tableName + " WHERE objectKey = ?";
+
+		// Write operations
+		this.sqlClearAll		= "DELETE FROM " + this.tableName;
+		this.sqlClearByKey		= "DELETE FROM " + this.tableName + " WHERE objectKey = ?";
+
+		// Update operations
+		this.sqlUpdateEntry		= "UPDATE " + this.tableName
+		    + " SET objectValue = ?, hits = ?, created = ?, lastAccessed = ?, timeout = ?, lastAccessTimeout = ?, metadata = ? WHERE objectKey = ?";
+
+		this.sqlInsertEntry		= "INSERT INTO " + this.tableName
+		    + " (objectKey, objectValue, hits, created, lastAccessed, timeout, lastAccessTimeout, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+
+		this.sqlUpdateStats		= "UPDATE " + this.tableName + " SET hits = ?, lastAccessed = ?, created = ? WHERE objectKey = ?";
+	}
+
+	/**
 	 * Get the CREATE TABLE SQL for the current database vendor
 	 *
-	 * @param fullTableName The full table name including schema
+	 * @param tableName The table name to use in the CREATE TABLE statement
 	 *
-	 * @return The CREATE TABLE SQL
+	 * @return The CREATE TABLE SQL statement for the current database vendor
 	 */
-	private String getCreateTableSQL( String fullTableName ) {
+	private String getCreateTableSQL( String tableName ) {
 		String driverName = getDatabaseDriverName();
 
-		// Build SQL based on database vendor - using TEXT types for Base64 encoded values
+		// *********** ORACLE ***********/
 		if ( driverName.contains( "oracle" ) ) {
 			return String.format(
 			    "CREATE TABLE %s ("
@@ -738,9 +811,11 @@ public class JDBCStore extends AbstractStore {
 			        + "lastAccessTimeout NUMBER DEFAULT 0, "
 			        + "metadata CLOB"
 			        + ")",
-			    fullTableName
+			    tableName
 			);
-		} else if ( driverName.contains( "mysql" ) || driverName.contains( "mariadb" ) ) {
+		}
+		// *********** MYSQL ***********/
+		else if ( driverName.contains( "mysql" ) || driverName.contains( "mariadb" ) ) {
 			return String.format(
 			    "CREATE TABLE %s ("
 			        + "objectKey VARCHAR(500) PRIMARY KEY, "
@@ -752,9 +827,11 @@ public class JDBCStore extends AbstractStore {
 			        + "lastAccessTimeout BIGINT DEFAULT 0, "
 			        + "metadata LONGTEXT"
 			        + ")",
-			    fullTableName
+			    tableName
 			);
-		} else if ( driverName.contains( "postgres" ) ) {
+		}
+		// *********** POSTGRES ***********/
+		else if ( driverName.contains( "postgres" ) ) {
 			return String.format(
 			    "CREATE TABLE %s ("
 			        + "objectKey VARCHAR(500) PRIMARY KEY, "
@@ -766,9 +843,11 @@ public class JDBCStore extends AbstractStore {
 			        + "lastAccessTimeout BIGINT DEFAULT 0, "
 			        + "metadata TEXT"
 			        + ")",
-			    fullTableName
+			    tableName
 			);
-		} else if ( driverName.contains( "microsoft" ) || driverName.contains( "sqlserver" ) ) {
+		}
+		// *********** MICROSOFT ***********/
+		else if ( driverName.contains( "microsoft" ) || driverName.contains( "sqlserver" ) ) {
 			return String.format(
 			    "CREATE TABLE %s ("
 			        + "objectKey VARCHAR(500) PRIMARY KEY, "
@@ -780,9 +859,11 @@ public class JDBCStore extends AbstractStore {
 			        + "lastAccessTimeout BIGINT DEFAULT 0, "
 			        + "metadata VARCHAR(MAX)"
 			        + ")",
-			    fullTableName
+			    tableName
 			);
-		} else {
+		}
+		// *********** SQL COMPLIANT ***********/
+		else {
 			// Default to Derby/HSQLDB syntax - use VARCHAR for objectValue to avoid CLOB issues
 			return String.format(
 			    "CREATE TABLE %s ("
@@ -795,7 +876,7 @@ public class JDBCStore extends AbstractStore {
 			        + "lastAccessTimeout BIGINT DEFAULT 0, "
 			        + "metadata VARCHAR(1000)"
 			        + ")",
-			    fullTableName
+			    tableName
 			);
 		}
 	}
