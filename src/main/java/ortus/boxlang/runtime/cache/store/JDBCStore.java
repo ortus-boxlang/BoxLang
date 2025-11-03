@@ -115,6 +115,7 @@ public class JDBCStore extends AbstractStore {
 	private String				sqlUpdateEntry;
 	private String				sqlInsertEntry;
 	private String				sqlUpdateStats;
+	private String				sqlUpdateStatsNoCreated;
 
 	/**
 	 * Constructor
@@ -245,32 +246,25 @@ public class JDBCStore extends AbstractStore {
 			return;
 		}
 
-		// Build SQL to select keys to evict based on policy
+		// Build SQL to delete entries based on policy
 		// Filter out eternal entries (timeout = 0 AND lastAccessTimeout = 0)
 		String	orderByClause	= getPolicy().getSQLOrderBy();
+		String	sql				= buildEvictionSQL( evictCount, orderByClause );
 
-		// Build database-specific LIMIT clause
-		String	limitClause		= buildLimitClause( evictCount );
-
-		String	sql				= "SELECT objectKey FROM " + this.tableName
-		    + " WHERE NOT (timeout = 0 AND lastAccessTimeout = 0)"
-		    + " ORDER BY " + orderByClause
-		    + limitClause;
-
-		// Get the keys to evict
-		Array	keysToEvict		= ( Array ) QueryExecute.execute(
+		// Execute the delete
+		QueryExecute.execute(
 		    this.context,
 		    sql,
 		    Array.EMPTY,
 		    this.queryOptions
 		);
 
-		// Delete the entries
-		keysToEvict.forEach( row -> {
-			Key key = Key.of( ( ( IStruct ) row ).getAsString( Key.objectKey ) );
-			clear( key );
+		// Record evictions in stats
+		// For databases that return affected rows, we could use that count
+		// For now, we'll record up to evictCount evictions
+		for ( int i = 0; i < evictCount; i++ ) {
 			getProvider().getStats().recordEviction();
-		} );
+		}
 	}
 
 	/**
@@ -477,10 +471,11 @@ public class JDBCStore extends AbstractStore {
 			// Is resetTimeoutOnAccess enabled? If so, jump up the creation time to increase the timeout
 			if ( BooleanCaster.cast( this.config.get( Key.resetTimeoutOnAccess ) ) ) {
 				results.resetCreated();
+				updateEntryStats( key, results, true );
+			} else {
+				updateEntryStats( key, results, false );
 			}
 
-			// Update the database with the new stats
-			updateEntryStats( key, results );
 		}
 
 		return results;
@@ -628,21 +623,35 @@ public class JDBCStore extends AbstractStore {
 	/**
 	 * Update the entry statistics in the database
 	 *
-	 * @param key   The key of the entry
-	 * @param entry The entry with updated stats
+	 * @param key          The key of the entry
+	 * @param entry        The entry with updated stats
+	 * @param resetCreated Whether to reset the created timestamp
 	 */
-	private void updateEntryStats( Key key, ICacheEntry entry ) {
-		QueryExecute.execute(
-		    this.context,
-		    this.sqlUpdateStats,
-		    Array.of(
-		        entry.hits(),
-		        java.sql.Timestamp.from( entry.lastAccessed() ),
-		        java.sql.Timestamp.from( entry.created() ),
-		        key.getName()
-		    ),
-		    this.queryOptions
-		);
+	private void updateEntryStats( Key key, ICacheEntry entry, boolean resetCreated ) {
+		if ( resetCreated ) {
+			QueryExecute.execute(
+			    this.context,
+			    this.sqlUpdateStats,
+			    Array.of(
+			        entry.hits(),
+			        java.sql.Timestamp.from( entry.lastAccessed() ),
+			        java.sql.Timestamp.from( entry.created() ),
+			        key.getName()
+			    ),
+			    this.queryOptions
+			);
+		} else {
+			QueryExecute.execute(
+			    this.context,
+			    this.sqlUpdateStatsNoCreated,
+			    Array.of(
+			        entry.hits(),
+			        java.sql.Timestamp.from( entry.lastAccessed() ),
+			        key.getName()
+			    ),
+			    this.queryOptions
+			);
+		}
 	}
 
 	/**
@@ -794,26 +803,27 @@ public class JDBCStore extends AbstractStore {
 	 */
 	private void compileSQLStatements() {
 		// Read operations
-		this.sqlGetSize			= "SELECT COUNT(*) as itemCount FROM " + this.tableName;
-		this.sqlGetKeys			= "SELECT objectKey FROM " + this.tableName;
-		this.sqlGetAllEntries	= "SELECT * FROM " + this.tableName;
-		this.sqlLookupByKey		= "SELECT COUNT(*) as itemCount FROM " + this.tableName + " WHERE objectKey = ?";
-		this.sqlGetByKey		= "SELECT * FROM " + this.tableName + " WHERE objectKey = ?";
+		this.sqlGetSize					= "SELECT COUNT(*) as itemCount FROM " + this.tableName;
+		this.sqlGetKeys					= "SELECT objectKey FROM " + this.tableName;
+		this.sqlGetAllEntries			= "SELECT * FROM " + this.tableName;
+		this.sqlLookupByKey				= "SELECT COUNT(*) as itemCount FROM " + this.tableName + " WHERE objectKey = ?";
+		this.sqlGetByKey				= "SELECT * FROM " + this.tableName + " WHERE objectKey = ?";
 
 		// Write operations
-		this.sqlClearAll		= getClearAllSQL();
-		this.sqlClearByKey		= "DELETE FROM " + this.tableName + " WHERE objectKey = ?";
+		this.sqlClearAll				= getClearAllSQL();
+		this.sqlClearByKey				= "DELETE FROM " + this.tableName + " WHERE objectKey = ?";
 
 		// Update operations
 		// Note: created timestamp is NOT updated on regular updates - only on inserts
 		// The sqlUpdateStats will update created only when resetTimeoutOnAccess=true
-		this.sqlUpdateEntry		= "UPDATE " + this.tableName
+		this.sqlUpdateEntry				= "UPDATE " + this.tableName
 		    + " SET objectValue = ?, hits = ?, lastAccessed = ?, timeout = ?, lastAccessTimeout = ? WHERE objectKey = ?";
 
-		this.sqlInsertEntry		= "INSERT INTO " + this.tableName
+		this.sqlInsertEntry				= "INSERT INTO " + this.tableName
 		    + " (objectKey, objectValue, hits, created, lastAccessed, timeout, lastAccessTimeout) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-		this.sqlUpdateStats		= "UPDATE " + this.tableName + " SET hits = ?, lastAccessed = ?, created = ? WHERE objectKey = ?";
+		this.sqlUpdateStats				= "UPDATE " + this.tableName + " SET hits = ?, lastAccessed = ?, created = ? WHERE objectKey = ?";
+		this.sqlUpdateStatsNoCreated	= "UPDATE " + this.tableName + " SET hits = ?, lastAccessed = ? WHERE objectKey = ?";
 	}
 
 	/**
@@ -965,41 +975,69 @@ public class JDBCStore extends AbstractStore {
 	}
 
 	/**
-	 * Build database-specific LIMIT clause for restricting result set size.
-	 * Different databases use different syntax:
-	 * - MySQL/MariaDB/PostgreSQL: LIMIT n
-	 * - Derby/HSQLDB: FETCH FIRST n ROWS ONLY
-	 * - SQL Server: TOP n (goes before columns, not at end)
-	 * - Oracle: FETCH FIRST n ROWS ONLY (12c+) or ROWNUM <= n (older)
+	 * Build database-specific DELETE SQL for eviction that handles different SQL dialects.
+	 * Different databases have different ways to limit deletions:
+	 * - MySQL/MariaDB/PostgreSQL: DELETE with subquery using LIMIT
+	 * - SQL Server: DELETE TOP (n)
+	 * - Oracle/Derby/HSQLDB: DELETE with subquery using FETCH FIRST n ROWS ONLY
 	 *
-	 * @param limit The number of rows to limit
+	 * @param limit         The number of rows to evict
+	 * @param orderByClause The ORDER BY clause from the eviction policy
 	 *
-	 * @return The database-specific LIMIT clause
+	 * @return The database-specific DELETE SQL statement
 	 */
-	private String buildLimitClause( int limit ) {
+	private String buildEvictionSQL( int limit, String orderByClause ) {
 		switch ( this.vendor ) {
-			case ORACLE :
-				// Oracle 12c+ supports FETCH FIRST n ROWS ONLY
-				return " FETCH FIRST " + limit + " ROWS ONLY";
+			case SQLSERVER :
+				// SQL Server: DELETE TOP (n) FROM table WHERE ... ORDER BY ...
+				return "DELETE TOP (" + limit + ") FROM " + this.tableName
+				    + " WHERE NOT (timeout = 0 AND lastAccessTimeout = 0)"
+				    + " ORDER BY " + orderByClause;
 
 			case MYSQL :
 			case MARIADB :
-			case POSTGRESQL :
-				return " LIMIT " + limit;
+				// MySQL/MariaDB: DELETE FROM table WHERE key IN (SELECT key ... LIMIT n)
+				return "DELETE FROM " + this.tableName
+				    + " WHERE objectKey IN ("
+				    + "SELECT objectKey FROM " + this.tableName
+				    + " WHERE NOT (timeout = 0 AND lastAccessTimeout = 0)"
+				    + " ORDER BY " + orderByClause
+				    + " LIMIT " + limit
+				    + ")";
 
-			case SQLSERVER :
-				// SQL Server uses TOP n at the beginning of SELECT
-				// This is handled differently in the calling code if needed
-				// For now, return empty and handle in query builder
-				return "";
+			case POSTGRESQL :
+				// PostgreSQL: DELETE FROM table WHERE key IN (SELECT key ... LIMIT n)
+				return "DELETE FROM " + this.tableName
+				    + " WHERE objectKey IN ("
+				    + "SELECT objectKey FROM " + this.tableName
+				    + " WHERE NOT (timeout = 0 AND lastAccessTimeout = 0)"
+				    + " ORDER BY " + orderByClause
+				    + " LIMIT " + limit
+				    + ")";
+
+			case ORACLE :
+				// Oracle 12c+: DELETE WHERE key IN (SELECT ... FETCH FIRST n ROWS ONLY)
+				return "DELETE FROM " + this.tableName
+				    + " WHERE objectKey IN ("
+				    + "SELECT objectKey FROM " + this.tableName
+				    + " WHERE NOT (timeout = 0 AND lastAccessTimeout = 0)"
+				    + " ORDER BY " + orderByClause
+				    + " FETCH FIRST " + limit + " ROWS ONLY"
+				    + ")";
 
 			case DERBY :
 			case HSQLDB :
 			case SQLITE :
 			case UNKNOWN :
 			default :
-				// Derby, HSQLDB use FETCH FIRST n ROWS ONLY
-				return " FETCH FIRST " + limit + " ROWS ONLY";
+				// Derby/HSQLDB: DELETE WHERE key IN (SELECT ... FETCH FIRST n ROWS ONLY)
+				return "DELETE FROM " + this.tableName
+				    + " WHERE objectKey IN ("
+				    + "SELECT objectKey FROM " + this.tableName
+				    + " WHERE NOT (timeout = 0 AND lastAccessTimeout = 0)"
+				    + " ORDER BY " + orderByClause
+				    + " FETCH FIRST " + limit + " ROWS ONLY"
+				    + ")";
 		}
 	}
 }
