@@ -202,7 +202,7 @@ public class ConcurrentStore extends AbstractStore {
 	 * @return An array of keys in the cache
 	 */
 	public Key[] getKeys( ICacheKeyFilter filter ) {
-		return getPool().keySet().parallelStream().filter( filter ).toArray( Key[]::new );
+		return getPool().keySet().stream().filter( filter ).toArray( Key[]::new );
 	}
 
 	/**
@@ -262,7 +262,7 @@ public class ConcurrentStore extends AbstractStore {
 		IStruct results = new Struct();
 		getPool()
 		    .keySet()
-		    .parallelStream()
+		    .stream()
 		    .filter( filter )
 		    .forEach( key -> results.put( key, true ) );
 		return results;
@@ -318,7 +318,7 @@ public class ConcurrentStore extends AbstractStore {
 		IStruct results = new Struct();
 		getPool()
 		    .keySet()
-		    .parallelStream()
+		    .stream()
 		    .filter( filter )
 		    .forEach( key -> results.put( key, get( key ) ) );
 		return results;
@@ -361,7 +361,7 @@ public class ConcurrentStore extends AbstractStore {
 		IStruct results = new Struct();
 		getPool()
 		    .keySet()
-		    .parallelStream()
+		    .stream()
 		    .filter( filter )
 		    .forEach( key -> results.put( key, getQuiet( key ) ) );
 		return results;
