@@ -283,6 +283,197 @@ Extensible tab completion via provider pattern:
   3. Pass to `MiniConsole` constructor
   4. Called automatically during input redraw
 
+## Logging in BoxLang
+
+BoxLang uses a centralized logging system built on top of **Logback** (SLF4J implementation). All core runtime logging MUST go through the `LoggingService` and use `BoxLangLogger` instances.
+
+### Core Logging Architecture
+
+- **`LoggingService`** (`ortus.boxlang.runtime.logging.LoggingService`) - Centralized logging service managing all loggers
+  - Singleton service accessible via `LoggingService.getInstance()`
+  - Manages logger creation, configuration, and lifecycle
+  - Provides pre-configured common loggers for runtime components
+  - Supports named loggers, file-based loggers, and custom destinations
+
+- **`BoxLangLogger`** (`ortus.boxlang.runtime.logging.BoxLangLogger`) - Wrapper around SLF4J Logger
+  - Implements SLF4J `LocationAwareLogger` interface
+  - Provides standard logging methods: `trace()`, `debug()`, `info()`, `warn()`, `error()`
+  - Supports parameterized messages for performance
+  - Can be configured with custom appenders and log levels
+
+### Getting a Logger
+
+**CRITICAL:** Never use `System.out.println()` or create SLF4J loggers directly in core runtime code. Always obtain loggers through the `LoggingService`.
+
+#### Pre-configured Common Loggers
+
+The `LoggingService` provides pre-loaded loggers for common runtime components:
+
+```java
+// Access via LoggingService singleton
+LoggingService loggingService = LoggingService.getInstance();
+
+// Common loggers (already initialized and ready to use)
+BoxLangLogger logger = loggingService.APPLICATION_LOGGER;   // Application-level events
+BoxLangLogger logger = loggingService.ASYNC_LOGGER;         // Async operations
+BoxLangLogger logger = loggingService.CACHE_LOGGER;         // Cache operations
+BoxLangLogger logger = loggingService.EXCEPTION_LOGGER;     // Exception tracking
+BoxLangLogger logger = loggingService.DATASOURCE_LOGGER;    // Database operations
+BoxLangLogger logger = loggingService.MODULES_LOGGER;       // Module loading/lifecycle
+BoxLangLogger logger = loggingService.RUNTIME_LOGGER;       // Core runtime events
+BoxLangLogger logger = loggingService.SCHEDULER_LOGGER;     // Scheduled tasks
+```
+
+#### Creating Custom/Named Loggers
+
+For component-specific or feature-specific logging:
+
+```java
+LoggingService loggingService = LoggingService.getInstance();
+
+// Get or create a named logger (logs to logs/myfeature.log)
+BoxLangLogger logger = loggingService.getLogger( "myfeature" );
+
+// Get logger with specific file path (relative to logs directory)
+BoxLangLogger logger = loggingService.getLogger( "subsystem/component.log" );
+
+// Get logger with absolute path
+BoxLangLogger logger = loggingService.getLogger( "/var/log/boxlang/custom.log" );
+```
+
+The `getLogger()` method:
+- Automatically appends `.log` extension if not present
+- Creates the logger if it doesn't exist (lazy initialization)
+- Caches loggers for reuse (case-insensitive)
+- Supports relative paths (relative to configured logs directory) or absolute paths
+
+#### Accessing Logger from Context
+
+Many BoxLang components have direct access to loggers via their context:
+
+```java
+// From any IBoxContext
+BoxLangLogger logger = context.getLogger();
+
+// From BaseInterceptor
+BoxLangLogger logger = this.getLogger();
+
+// From BaseScheduler
+BoxLangLogger logger = this.getLogger();
+
+// From BoxExecutor
+BoxLangLogger logger = this.getLogger();
+```
+
+### Logging Best Practices
+
+1. **Use appropriate log levels:**
+   ```java
+   logger.trace( "Entering method with params: {}", params );      // Very detailed tracing
+   logger.debug( "Processing {} items", items.size() );            // Debug information
+   logger.info( "Server started on port {}", port );               // Important events
+   logger.warn( "Cache size exceeded threshold: {}", size );       // Warning conditions
+   logger.error( "Failed to connect to database: {}", e.getMessage() ); // Errors
+   ```
+
+2. **Use parameterized messages for performance:**
+   ```java
+   // GOOD - message only constructed if logging level is enabled
+   logger.debug( "User {} logged in from {}", username, ipAddress );
+   
+   // BAD - string concatenation happens even if debug is disabled
+   logger.debug( "User " + username + " logged in from " + ipAddress );
+   ```
+
+3. **Include exceptions when logging errors:**
+   ```java
+   try {
+       // ... some operation
+   } catch ( Exception e ) {
+       logger.error( "Failed to process request", e );  // Includes full stack trace
+   }
+   ```
+
+4. **Choose the right logger:**
+   - Use common loggers (`RUNTIME_LOGGER`, `CACHE_LOGGER`, etc.) for standard components
+   - Create named loggers for new features or subsystems
+   - Use component-specific loggers for isolation and easier filtering
+
+5. **Log at appropriate points:**
+   - Service/component initialization and shutdown
+   - Important state changes
+   - Error conditions and exceptions
+   - Performance-critical operations (at debug level)
+   - Configuration changes
+
+### Log Configuration
+
+Logging is configured via `boxlang.json`:
+
+```json
+{
+  "logging": {
+    "logsDirectory": "./logs",
+    "level": "INFO",
+    "loggers": {
+      "scheduler": { "level": "DEBUG", "async": true },
+      "cache": { "level": "WARN", "appenders": ["FILE", "CONSOLE"] }
+    }
+  }
+}
+```
+
+### Common Logging Patterns
+
+**Service initialization:**
+```java
+public class MyService implements IService {
+    private BoxLangLogger logger;
+    
+    @Override
+    public void onStartup( BoxRuntime runtime ) {
+        this.logger = LoggingService.getInstance().getLogger( "myservice" );
+        logger.info( "MyService starting up..." );
+    }
+}
+```
+
+**Component with logging:**
+```java
+@BoxComponent
+public class MyComponent {
+    private static final BoxLangLogger logger = 
+        LoggingService.getInstance().getLogger( "components.mycomponent" );
+    
+    public void execute() {
+        logger.debug( "Executing component logic" );
+        try {
+            // ... component logic
+        } catch ( Exception e ) {
+            logger.error( "Component execution failed", e );
+            throw new BoxRuntimeException( "Execution error", e );
+        }
+    }
+}
+```
+
+**Context-aware logging:**
+```java
+public void processRequest( IBoxContext context ) {
+    BoxLangLogger logger = context.getLogger();
+    logger.info( "Processing request for application: {}", 
+                 context.getApplicationName() );
+}
+```
+
+### Avoid These Common Mistakes
+
+- ❌ Don't use `System.out.println()` or `System.err.println()` in core runtime code
+- ❌ Don't create SLF4J `Logger` instances directly (use `LoggingService`)
+- ❌ Don't concatenate strings in log messages (use parameterized messages)
+- ❌ Don't log sensitive data (passwords, tokens, PII) unless in trace mode
+- ❌ Don't over-log in hot code paths (use appropriate levels)
+
 ## Examples
 
 - To add a new component: create a class in `runtime/components/`, annotate with `@BoxComponent`, and implement logic.
