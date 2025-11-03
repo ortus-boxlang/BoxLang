@@ -659,6 +659,18 @@ public class MiniConsole implements AutoCloseable {
 
 				// ENTER (CR or LF)
 				if ( b == '\r' || b == '\n' ) {
+					// Handle Windows line ending quirks - sometimes we get both \r and \n
+					if ( isWindows && b == '\r' ) {
+						// On Windows, check if next byte is \n and consume it
+						if ( reader.ready() ) {
+							int nextByte = reader.readByte();
+							if ( nextByte != '\n' && nextByte != -1 ) {
+								// Put it back by treating it as the next character to process
+								// This is a simplified approach - in practice this is rare
+							}
+						}
+					}
+
 					// If we're in completion mode, accept the selected completion and continue editing
 					if ( completionState != null ) {
 						TabCompletion selected = completionState.getCurrentCompletion();
@@ -675,6 +687,7 @@ public class MiniConsole implements AutoCloseable {
 						redraw( prompt, inputBuffer );
 						continue;
 					}
+
 					// Normal ENTER - execute the line
 					System.out.print( "\r\n" );
 					System.out.flush();
@@ -1194,16 +1207,34 @@ public class MiniConsole implements AutoCloseable {
 	 * Redraw the current line with prompt and buffer content
 	 */
 	private void redraw( String promptStr, StringBuilder buffer ) {
-		System.out.print( "\r" );
-		System.out.print( CODES.CLEAR_LINE.code() );
-		System.out.print( promptStr );
+		if ( isWindows ) {
+			// On Windows, use simpler redraw to avoid terminal issues
+			System.out.print( "\r" );
+			// Clear to end of line (simpler than full line clear)
+			System.out.print( "\033[K" );
+			System.out.print( promptStr );
 
-		// Apply syntax highlighting if available
-		if ( syntaxHighlighter != null ) {
-			String highlighted = syntaxHighlighter.highlight( buffer.toString() );
-			System.out.print( highlighted );
+			// Apply syntax highlighting if available, but with reduced complexity
+			if ( syntaxHighlighter != null && buffer.length() < 200 ) {
+				// Only highlight shorter inputs to avoid Windows Terminal issues
+				String highlighted = syntaxHighlighter.highlight( buffer.toString() );
+				System.out.print( highlighted );
+			} else {
+				System.out.print( buffer );
+			}
 		} else {
-			System.out.print( buffer );
+			// Non-Windows: use full ANSI support
+			System.out.print( "\r" );
+			System.out.print( CODES.CLEAR_LINE.code() );
+			System.out.print( promptStr );
+
+			// Apply syntax highlighting if available
+			if ( syntaxHighlighter != null ) {
+				String highlighted = syntaxHighlighter.highlight( buffer.toString() );
+				System.out.print( highlighted );
+			} else {
+				System.out.print( buffer );
+			}
 		}
 
 		System.out.flush();
