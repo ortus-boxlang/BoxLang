@@ -587,7 +587,6 @@ public class JDBCStore extends AbstractStore {
 			        java.sql.Timestamp.from( entry.lastAccessed() ),
 			        entry.timeout(),
 			        entry.lastAccessTimeout(),
-			        "",  // metadata - stored in the entry itself
 			        key.getName()
 			    ),
 			    this.queryOptions
@@ -604,8 +603,7 @@ public class JDBCStore extends AbstractStore {
 			        java.sql.Timestamp.from( entry.created() ),
 			        java.sql.Timestamp.from( entry.lastAccessed() ),
 			        entry.timeout(),
-			        entry.lastAccessTimeout(),
-			        ""  // metadata - stored in the entry itself
+			        entry.lastAccessTimeout()
 			    ),
 			    this.queryOptions
 			);
@@ -810,10 +808,10 @@ public class JDBCStore extends AbstractStore {
 		// Note: created timestamp is NOT updated on regular updates - only on inserts
 		// The sqlUpdateStats will update created only when resetTimeoutOnAccess=true
 		this.sqlUpdateEntry		= "UPDATE " + this.tableName
-		    + " SET objectValue = ?, hits = ?, lastAccessed = ?, timeout = ?, lastAccessTimeout = ?, metadata = ? WHERE objectKey = ?";
+		    + " SET objectValue = ?, hits = ?, lastAccessed = ?, timeout = ?, lastAccessTimeout = ? WHERE objectKey = ?";
 
 		this.sqlInsertEntry		= "INSERT INTO " + this.tableName
-		    + " (objectKey, objectValue, hits, created, lastAccessed, timeout, lastAccessTimeout, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+		    + " (objectKey, objectValue, hits, created, lastAccessed, timeout, lastAccessTimeout) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
 		this.sqlUpdateStats		= "UPDATE " + this.tableName + " SET hits = ?, lastAccessed = ?, created = ? WHERE objectKey = ?";
 	}
@@ -836,8 +834,7 @@ public class JDBCStore extends AbstractStore {
 				        + "created TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
 				        + "lastAccessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
 				        + "timeout NUMBER DEFAULT 0, "
-				        + "lastAccessTimeout NUMBER DEFAULT 0, "
-				        + "metadata CLOB"
+				        + "lastAccessTimeout NUMBER DEFAULT 0"
 				        + ")",
 				    tableName
 				);
@@ -854,7 +851,6 @@ public class JDBCStore extends AbstractStore {
 				        + "lastAccessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
 				        + "timeout BIGINT DEFAULT 0, "
 				        + "lastAccessTimeout BIGINT DEFAULT 0, "
-				        + "metadata LONGTEXT, "
 				        + "INDEX idx_lastAccessed (lastAccessed), "
 				        + "INDEX idx_created (created), "
 				        + "INDEX idx_hits (hits), "
@@ -872,8 +868,7 @@ public class JDBCStore extends AbstractStore {
 				        + "created TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
 				        + "lastAccessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
 				        + "timeout BIGINT DEFAULT 0, "
-				        + "lastAccessTimeout BIGINT DEFAULT 0, "
-				        + "metadata TEXT"
+				        + "lastAccessTimeout BIGINT DEFAULT 0"
 				        + ")",
 				    tableName
 				);
@@ -887,8 +882,7 @@ public class JDBCStore extends AbstractStore {
 				        + "created DATETIME DEFAULT GETDATE(), "
 				        + "lastAccessed DATETIME DEFAULT GETDATE(), "
 				        + "timeout BIGINT DEFAULT 0, "
-				        + "lastAccessTimeout BIGINT DEFAULT 0, "
-				        + "metadata VARCHAR(MAX)"
+				        + "lastAccessTimeout BIGINT DEFAULT 0"
 				        + ")",
 				    tableName
 				);
@@ -907,8 +901,7 @@ public class JDBCStore extends AbstractStore {
 				        + "created TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
 				        + "lastAccessed TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
 				        + "timeout BIGINT DEFAULT 0, "
-				        + "lastAccessTimeout BIGINT DEFAULT 0, "
-				        + "metadata VARCHAR(1000)"
+				        + "lastAccessTimeout BIGINT DEFAULT 0"
 				        + ")",
 				    tableName
 				);
