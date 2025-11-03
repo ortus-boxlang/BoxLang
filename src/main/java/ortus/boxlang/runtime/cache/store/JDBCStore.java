@@ -89,12 +89,12 @@ public class JDBCStore extends AbstractStore {
 	private String				sqlClearAll;
 	private String				sqlClearByKey;
 	private String				sqlGetKeys;
+	private String				sqlGetAllEntries;
 	private String				sqlLookupByKey;
 	private String				sqlGetByKey;
 	private String				sqlUpdateEntry;
 	private String				sqlInsertEntry;
 	private String				sqlUpdateStats;
-	private String				sqlGetAllEntries;
 
 	/**
 	 * Constructor
@@ -749,7 +749,7 @@ public class JDBCStore extends AbstractStore {
 		this.sqlGetByKey		= "SELECT * FROM " + this.tableName + " WHERE objectKey = ?";
 
 		// Write operations
-		this.sqlClearAll		= "TRUNCATE TABLE " + this.tableName;
+		this.sqlClearAll		= getClearAllSQL();
 		this.sqlClearByKey		= "DELETE FROM " + this.tableName + " WHERE objectKey = ?";
 
 		// Update operations
@@ -852,6 +852,30 @@ public class JDBCStore extends AbstractStore {
 			        + ")",
 			    tableName
 			);
+		}
+	}
+
+	/**
+	 * Get the CLEAR ALL SQL statement for the current database vendor.
+	 * Some databases don't support TRUNCATE TABLE or have different syntax.
+	 *
+	 * @return The appropriate clear all SQL statement
+	 */
+	private String getClearAllSQL() {
+		String driverName = getDatabaseDriverName().toLowerCase();
+
+		// Most databases support TRUNCATE TABLE for fast clear
+		if ( driverName.contains( "oracle" ) ||
+		    driverName.contains( "mysql" ) ||
+		    driverName.contains( "mariadb" ) ||
+		    driverName.contains( "postgresql" ) ||
+		    driverName.contains( "sqlserver" ) ||
+		    driverName.contains( "microsoft" ) ) {
+			return "TRUNCATE TABLE " + this.tableName;
+		} else {
+			// Derby and some other databases don't support TRUNCATE
+			// Use DELETE FROM instead (slower but universally supported)
+			return "DELETE FROM " + this.tableName;
 		}
 	}
 
