@@ -554,14 +554,13 @@ public class JDBCStore extends AbstractStore {
 		boolean	exists			= lookup( key );
 
 		if ( exists ) {
-			// Update existing entry
+			// Update existing entry - do NOT update created timestamp
 			QueryExecute.execute(
 			    this.context,
 			    this.sqlUpdateEntry,
 			    Array.of(
 			        serializedEntry,
 			        entry.hits(),
-			        java.sql.Timestamp.from( entry.created() ),
 			        java.sql.Timestamp.from( entry.lastAccessed() ),
 			        entry.timeout(),
 			        entry.lastAccessTimeout(),
@@ -753,8 +752,10 @@ public class JDBCStore extends AbstractStore {
 		this.sqlClearByKey		= "DELETE FROM " + this.tableName + " WHERE objectKey = ?";
 
 		// Update operations
+		// Note: created timestamp is NOT updated on regular updates - only on inserts
+		// The sqlUpdateStats will update created only when resetTimeoutOnAccess=true
 		this.sqlUpdateEntry		= "UPDATE " + this.tableName
-		    + " SET objectValue = ?, hits = ?, created = ?, lastAccessed = ?, timeout = ?, lastAccessTimeout = ?, metadata = ? WHERE objectKey = ?";
+		    + " SET objectValue = ?, hits = ?, lastAccessed = ?, timeout = ?, lastAccessTimeout = ?, metadata = ? WHERE objectKey = ?";
 
 		this.sqlInsertEntry		= "INSERT INTO " + this.tableName
 		    + " (objectKey, objectValue, hits, created, lastAccessed, timeout, lastAccessTimeout, metadata) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
