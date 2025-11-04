@@ -105,7 +105,7 @@ public final class LocalizationUtil {
 	    "yyyy/MM/dd", // Common to Africa and Taiwan
 	    "M-d-yy", // Short Form two-digit year
 
-	    // US Localized Date formats - Month First (Phase 2B Consolidation)
+	    // US Localized Date formats - Month First (Phase 2B: Not consolidatable due to DateTimeFormatter limitations)
 	    "MMM dd yyyy",                  // Long Date with space separators (e.g., Apr 02 2024)
 	    "MMM-dd-yyyy",                  // Long Date with dash separators (e.g., Apr-02-2024)
 	    "MMM/dd/yyyy",                  // Long Date with slash separators (e.g., Apr/02/2024)
@@ -118,10 +118,8 @@ public final class LocalizationUtil {
 	    // Localized Date formats
 	    "EEE[E][,] dd MMM yyyy",          // Full Date (e.g., Tue, 02 Apr 2024) - Similar to FULL - optional full day, optional comma
 	    "dd MMM yyyy",                   // Long Date (e.g., 02 Apr 2024) - Similar to LONG
-	    "dd-MMM-yy",                     // Medium Date with a two-digit year (e.g., 02-Apr-24) - Might need adjustment based on locale
-	    "dd-MMM-yyyy",                   // Medium Date (e.g., 02-Apr-2024) - Might need adjustment based on locale
-	    "dd/MMM/yyyy",                   // Medium Date (e.g., 02-Apr-2024) - Might need adjustment based on locale
-	    "dd.MMM.yyyy",                   // Medium Date (e.g., 02.Apr.2024) - Might need adjustment based on locale
+	    "dd-MMM-yy",                     // Medium Date with a two-digit year (e.g., 02-Apr-24) - Keep separate for 2-digit year
+	    "dd[-/.]MMM[-/.]yyyy",           // Phase 3: Medium Date with flexible separators (e.g., 02-Apr-2024, 02/Apr/2024, 02.Apr.2024)
 	    "MMM[,] dd[,] yyyy",                  // Med Date (e.g., Apr 02, 2024) - Might need adjustment based on locale
 	    "MMMM[,] dd[,] yyyy",                 // Long month Date (e.g., April 02, 2024) - Might need adjustment based on locale
 
