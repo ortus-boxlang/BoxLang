@@ -113,7 +113,14 @@ functionParam: REQUIRED? type? identifier (EQUALSIGN expression)? postAnnotation
 
 // @foo
 // @foo( bar, "brad wood" )
-preAnnotation: AT fqn ( LPAREN annotation (COMMA annotation)* RPAREN)? SEMICOLON*
+preAnnotation: AT preAnnotationName ( LPAREN annotation (COMMA annotation)* RPAREN)? SEMICOLON*
+    ;
+
+// foo
+// foo-bar
+// foo.bar
+// foo-bar.baz-bum.qux
+preAnnotationName: identifier ( (MINUS identifier) | (DOT identifier))*
     ;
 
 arrayLiteral: LBRACKET expressionList? RBRACKET

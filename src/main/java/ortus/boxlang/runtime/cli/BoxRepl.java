@@ -79,7 +79,7 @@ import ortus.boxlang.runtime.types.exceptions.AbortException;
  */
 public class BoxRepl {
 
-	private static final String	DEFAULT_PROMPT	= "📦 BoxLang> ";
+	private static final String	DEFAULT_PROMPT	= "BoxLang> ";
 
 	/**
 	 * The BoxLang runtime instance
@@ -105,6 +105,11 @@ public class BoxRepl {
 	 * Our REPL Prompt
 	 */
 	private String				prompt;
+
+	/**
+	 * Flag to indicate if we're running on Windows (for emoji fallbacks)
+	 */
+	private boolean				isWindows		= System.getProperty( "os.name" ).toLowerCase().contains( "windows" );
 
 	/**
 	 * Create a dark color pallete for the REPL: prompt, highlights, etc.
@@ -157,7 +162,7 @@ public class BoxRepl {
 		    .collect( Collectors.toSet() );
 
 		// Create console with custom BoxLang prompt
-		this.prompt		= this.currentPalette.get( "prompt" ) + DEFAULT_PROMPT + MiniConsole.reset();
+		this.prompt		= this.currentPalette.get( "prompt" ) + getSymbol( "📦", ">" ) + " " + DEFAULT_PROMPT + MiniConsole.reset();
 		// Setup the MiniConsole
 		this.console	= new MiniConsole( this.prompt, new BoxLangSyntaxHighlighter() );
 		// Set up tab completion providers
@@ -277,7 +282,7 @@ public class BoxRepl {
 
 				// Handle exit commands (only when not in multi-line mode)
 				if ( braceDepth == 0 && isExitCommand( source ) ) {
-					System.out.println( "👋 Thanks for using BoxLang REPL! Happy coding! 🎉" );
+					System.out.println( getSymbol( "👋", "*" ) + " Thanks for using BoxLang REPL! Happy coding! " + getSymbol( "🎉", "*" ) );
 					break;
 				}
 
@@ -304,7 +309,7 @@ public class BoxRepl {
 					console.setPrompt( continuationPrompt );
 				} else {
 					// Negative brace depth means unmatched closing braces
-					System.out.println( "❌ Error: Unmatched closing brace '}'" );
+					System.out.println( getSymbol( "❌", "ERROR:" ) + " Error: Unmatched closing brace '}'" );
 					braceDepth = 0;
 					multiLineBuffer.setLength( 0 );
 					console.setPrompt( prompt );
@@ -323,6 +328,18 @@ public class BoxRepl {
 	}
 
 	/**
+	 * Get an appropriate symbol for the given emoji, with ASCII fallback for Windows.
+	 *
+	 * @param emoji    The emoji character
+	 * @param fallback The ASCII fallback
+	 *
+	 * @return The emoji or ASCII fallback depending on platform
+	 */
+	private String getSymbol( String emoji, String fallback ) {
+		return isWindows ? fallback : emoji;
+	}
+
+	/**
 	 * Display the BoxLang REPL banner and instructions.
 	 */
 	private void showBanner() {
@@ -332,14 +349,14 @@ public class BoxRepl {
 		System.out.println( "   ██   ██ ██    ██  ██ ██  ██      ██   ██ ██  ██ ██ ██    ██" );
 		System.out.println( "   ██████   ██████  ██   ██ ███████ ██   ██ ██   ████  ██████ " );
 		System.out.println( "" );
-		System.out.println( "✨ Welcome to the BoxLang Interactive REPL!" );
-		System.out.println( "💡 Enter an expression, then hit enter" );
-		System.out.println( "🔧 Use { } for multi-line blocks - prompt changes to '...' until balanced" );
-		System.out.println( "📚 Type ':history' to see command history" );
-		System.out.println( "🌙 Type ':dark' for dark theme, ':light' for light theme" );
-		System.out.println( "🔄 Type '!!' to repeat last command, or '!n' to repeat command n" );
-		System.out.println( "🧹 Press Ctrl+D to clear current line, or on empty line to exit" );
-		System.out.println( "🚪 Type 'exit' or 'quit' to leave, or press Ctrl-C" );
+		System.out.println( getSymbol( "✨", "*" ) + " Welcome to the BoxLang Interactive REPL!" );
+		System.out.println( getSymbol( "💡", ">" ) + " Enter an expression, then hit enter" );
+		System.out.println( getSymbol( "🔧", "*" ) + " Use { } for multi-line blocks - prompt changes to '...' until balanced" );
+		System.out.println( getSymbol( "📚", "*" ) + " Type ':history' to see command history" );
+		System.out.println( getSymbol( "🌙", "*" ) + " Type ':dark' for dark theme, ':light' for light theme" );
+		System.out.println( getSymbol( "🔄", "*" ) + " Type '!!' to repeat last command, or '!n' to repeat command n" );
+		System.out.println( getSymbol( "🧹", "*" ) + " Press Ctrl+D to clear current line, or on empty line to exit" );
+		System.out.println( getSymbol( "🚪", "*" ) + " Type 'exit' or 'quit' to leave, or press Ctrl-C" );
 		System.out.println( "" );
 	}
 
@@ -363,14 +380,14 @@ public class BoxRepl {
 	private void switchToTheme( String theme ) {
 		if ( "light".equals( theme ) ) {
 			currentPalette = lightPalette;
-			System.out.println( "☀️ Switched to light theme" );
+			System.out.println( getSymbol( "☀️", "*" ) + " Switched to light theme" );
 		} else if ( "dark".equals( theme ) ) {
 			currentPalette = darkPalette;
-			System.out.println( "🌙 Switched to dark theme" );
+			System.out.println( getSymbol( "🌙", "*" ) + " Switched to dark theme" );
 		}
 
 		// Update the prompt with the new color palette
-		this.prompt = this.currentPalette.get( "prompt" ) + DEFAULT_PROMPT + MiniConsole.reset();
+		this.prompt = this.currentPalette.get( "prompt" ) + getSymbol( "📦", ">" ) + " " + DEFAULT_PROMPT + MiniConsole.reset();
 		console.setPrompt( this.prompt );
 	}
 
@@ -406,11 +423,11 @@ public class BoxRepl {
 			// Handle abort exceptions (like <cfabort>)
 			scriptingContext.flushBuffer( true );
 			if ( e.getCause() != null ) {
-				System.out.println( "⏹️  Abort: " + e.getCause().getMessage() );
+				System.out.println( getSymbol( "⏹️", "STOP:" ) + "  Abort: " + e.getCause().getMessage() );
 			}
 		} catch ( Exception e ) {
 			// Handle any other exceptions
-			System.out.println( "❌ Error: " + e.getMessage() );
+			System.out.println( getSymbol( "❌", "ERROR:" ) + " Error: " + e.getMessage() );
 			// e.printStackTrace(); // Uncomment for detailed stack traces during development
 		}
 	}

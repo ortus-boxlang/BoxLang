@@ -30,9 +30,4 @@ public interface IProxyRunnable {
 	 */
 	public void setBXProxy( IClassRunnable boxClass );
 
-	/**
-	 * The version of the BoxLang runtime
-	 */
-	public long getBXRunnableCompileVersion();
-
 }

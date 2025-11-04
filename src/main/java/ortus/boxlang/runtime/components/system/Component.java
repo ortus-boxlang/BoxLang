@@ -46,7 +46,8 @@ public class Component extends ortus.boxlang.runtime.components.Component {
 	/**
 	 * List of valid class extensions
 	 */
-	private static final List<String> VALID_EXTENSIONS = BoxRuntime.getInstance().getConfiguration().getValidTemplateExtensionsList();
+	private static final List<String> VALID_EXTENSIONS = BoxRuntime.getInstance().getConfiguration().getValidTemplateExtensionsList().stream()
+	    .filter( ( e ) -> !e.equals( "*" ) ).toList();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -262,14 +263,19 @@ public class Component extends ortus.boxlang.runtime.components.Component {
 			    List<ResolvedFilePath> files = new ArrayList<>();
 			    for ( String extension : VALID_EXTENSIONS ) {
 				    var tagPath = fullName + "." + extension;
-				    files.add(
-				        ResolvedFilePath.of(
-				            entry.mappingName(),
-				            entry.mappingPath(),
-				            tagPath,
-				            new File( entry.absolutePath().toString(), tagPath ).toPath()
-				        )
-				    );
+				    try {
+					    files.add(
+					        ResolvedFilePath.of(
+					            entry.mappingName(),
+					            entry.mappingPath(),
+					            tagPath,
+					            new File( entry.absolutePath().toString(), tagPath ).toPath()
+					        )
+					    );
+				    } catch ( java.nio.file.InvalidPathException ipe ) {
+					    // Skip invalid paths. This can happen if the tag name or extension has invalid chars. No need to blow up, it's simply not found.
+					    continue;
+				    }
 			    }
 			    return files.stream();
 		    } )

@@ -35,22 +35,22 @@ import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF( description = "Output the contents of a variable for debugging" )
 @BoxBIF( alias = "writeDump" )
-@BoxMember( type = BoxLangType.ANY, name = "dump" )
-@BoxMember( type = BoxLangType.ARRAY, name = "dump" )
-@BoxMember( type = BoxLangType.BOOLEAN, name = "dump" )
-@BoxMember( type = BoxLangType.DATE, name = "dump" )
-@BoxMember( type = BoxLangType.DATETIME, name = "dump" )
-@BoxMember( type = BoxLangType.FILE, name = "dump" )
-@BoxMember( type = BoxLangType.LIST, name = "dump" )
-@BoxMember( type = BoxLangType.NUMERIC, name = "dump" )
-@BoxMember( type = BoxLangType.QUERY, name = "dump" )
-@BoxMember( type = BoxLangType.STRUCT, name = "dump" )
-@BoxMember( type = BoxLangType.STRING_STRICT, name = "dump" )
-@BoxMember( type = BoxLangType.UDF, name = "dump" )
-@BoxMember( type = BoxLangType.CLOSURE, name = "dump" )
-@BoxMember( type = BoxLangType.LAMBDA, name = "dump" )
-@BoxMember( type = BoxLangType.XML, name = "dump" )
-@BoxMember( type = BoxLangType.CUSTOM, name = "dump" )
+@BoxMember( type = BoxLangType.ANY, name = "bxDump" )
+@BoxMember( type = BoxLangType.ARRAY, name = "bxDump" )
+@BoxMember( type = BoxLangType.BOOLEAN, name = "bxDump" )
+@BoxMember( type = BoxLangType.DATE, name = "bxDump" )
+@BoxMember( type = BoxLangType.DATETIME, name = "bxDump" )
+@BoxMember( type = BoxLangType.FILE, name = "bxDump" )
+@BoxMember( type = BoxLangType.LIST, name = "bxDump" )
+@BoxMember( type = BoxLangType.NUMERIC, name = "bxDump" )
+@BoxMember( type = BoxLangType.QUERY, name = "bxDump" )
+@BoxMember( type = BoxLangType.STRUCT, name = "bxDump" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "bxDump" )
+@BoxMember( type = BoxLangType.UDF, name = "bxDump" )
+@BoxMember( type = BoxLangType.CLOSURE, name = "bxDump" )
+@BoxMember( type = BoxLangType.LAMBDA, name = "bxDump" )
+@BoxMember( type = BoxLangType.XML, name = "bxDump" )
+@BoxMember( type = BoxLangType.CUSTOM, name = "bxDump" )
 public class Dump extends BIF {
 
 	/**
@@ -80,13 +80,16 @@ public class Dump extends BIF {
 
 	/**
 	 * Outputs the contents of a variable (simple or complex) of any type for debugging purposes to a specific output location.
+	 * 
 	 * <p>
-	 * The available {@code output} locations are:
-	 * - <strong>buffer<strong>: The output is written to the buffer, which is the default location. If running on a web server, the output is written to the browser.
+	 * The available <code>output</code> locations are:
+	 * - <strong>buffer</strong>: The output is written to the buffer, which is the default location. If running on a web server, the output is written to the browser.
 	 * - <strong>console</strong>: The output is printed to the System console.
-	 * - <strong>{absolute_file_path}</strong> The output is written to a file with the specified filename path.
-	 * <p>
-	 * The output {@code format} can be either HTML or plain text.
+	 * - <strong>Absolute File Path</strong> The output is written to a file with the specified absolute file path.
+	 * </p>
+	 * 
+	 * The output `format` can be either HTML or plain text.
+	 * 
 	 * The default format is HTML if the output location is the buffer or a web server or a file, otherwise it is plain text for the console.
 	 *
 	 * @param context   The context in which the BIF is being invoked.

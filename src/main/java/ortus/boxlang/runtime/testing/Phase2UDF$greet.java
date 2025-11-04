@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.testing;
 
 import java.nio.file.Path;
-import java.time.LocalDateTime;
 import java.util.List;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
@@ -177,31 +176,10 @@ public class Phase2UDF$greet extends UDF {
 		    false
 		);
 
-		return context.scopeFindNearby( Key.of( "greeting" ), null, false ).value(); 
+		return context.scopeFindNearby( Key.of( "greeting" ), null, false ).value();
 	}
 
 	// ITemplateRunnable implementation methods
-
-	/**
-	 * The version of the BoxLang runtime
-	 */
-	public long getRunnableCompileVersion() {
-		return Phase2UDF$greet.declaringRunnable.getRunnableCompileVersion();
-	}
-
-	/**
-	 * The date the template was compiled
-	 */
-	public LocalDateTime getRunnableCompiledOn() {
-		return Phase2UDF$greet.declaringRunnable.getRunnableCompiledOn();
-	}
-
-	/**
-	 * The AST (abstract syntax tree) of the runnable
-	 */
-	public Object getRunnableAST() {
-		return Phase2UDF$greet.ast;
-	}
 
 	public ResolvedFilePath getRunnablePath() {
 		return ResolvedFilePath.of( Path.of( "unknown" ) );

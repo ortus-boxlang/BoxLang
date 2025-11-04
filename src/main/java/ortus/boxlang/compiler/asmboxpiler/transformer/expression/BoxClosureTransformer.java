@@ -69,6 +69,9 @@ public class BoxClosureTransformer extends AbstractTransformer {
 		AsmHelper.init( classNode, true, type, Type.getType( Closure.class ), methodVisitor -> {
 		} );
 
+		// Add the @BoxByteCodeVersion annotation to the generated class
+		AsmHelper.addBoxByteCodeVersionAnnotation( classNode );
+
 		// create our constructor
 		MethodVisitor contextConstructorVistior = classNode.visitMethod( Opcodes.ACC_PUBLIC,
 		    "<init>",

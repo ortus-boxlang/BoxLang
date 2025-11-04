@@ -174,4 +174,15 @@ public class DateConvertTest {
 		assertEquals( "1970-01-01T01:00", result.format( "yyyy-MM-dd'T'HH:mm" ) );
 	}
 
+	@Test
+	public void testDateConvertYearMonthDay() {
+		instance.executeSource(
+		    """
+		       result = dateConvert( "utc2local", "1970/01/01" );
+		    println( result)
+		       """,
+		    context );
+
+	}
+
 }

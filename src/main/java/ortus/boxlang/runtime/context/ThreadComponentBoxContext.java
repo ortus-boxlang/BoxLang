@@ -419,6 +419,7 @@ public class ThreadComponentBoxContext extends BaseBoxContext implements IJDBCCa
 
 	@Override
 	public void shutdown() {
+		super.shutdown();
 		shutdownConnections();
 	}
 

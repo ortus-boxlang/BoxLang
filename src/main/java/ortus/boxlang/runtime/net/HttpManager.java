@@ -17,19 +17,27 @@
  */
 package ortus.boxlang.runtime.net;
 
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.net.Authenticator;
-import java.net.InetSocketAddress;
-import java.net.PasswordAuthentication;
-import java.net.ProxySelector;
-import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.InetSocketAddress;
+import java.net.PasswordAuthentication;
+import java.net.ProxySelector;
+import java.net.URI;
+import java.security.cert.X509Certificate;
+import java.security.KeyStore;
+import java.security.SecureRandom;
 import java.time.Duration;
-import java.util.Optional;
+import java.util.Base64;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.Optional;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
 
 import javax.net.ssl.SSLSession;
 
@@ -42,7 +50,9 @@ public class HttpManager {
 	/**
 	 * Singleton instance of the HttpManager.
 	 */
-	private static HttpClient instance;
+	private static HttpClient	instance;
+
+	public static Key			encodedCertKey	= Key.of( "clientCertEncoded" );
 
 	/**
 	 * Private constructor. Use getInstance() instead.
@@ -97,6 +107,38 @@ public class HttpManager {
 		}
 		if ( !attributes.getAsBoolean( Key.redirect ) ) {
 			builder.followRedirects( HttpClient.Redirect.NEVER );
+		}
+		// Configure client certificate if provided
+		if ( attributes.containsKey( Key.clientCert ) ) {
+			String	clientCert			= attributes.getAsString( Key.clientCert );
+			String	clientCertPassword	= attributes.containsKey( Key.clientCertPassword )
+			    ? attributes.getAsString( Key.clientCertPassword )
+			    : null;
+
+			try {
+				// Load the client certificate in to a new keystore
+				KeyStore keyStore = KeyStore.getInstance( "PKCS12" );
+				try ( InputStream certInputStream = new FileInputStream( clientCert ) ) {
+					keyStore.load( certInputStream, clientCertPassword != null ? clientCertPassword.toCharArray() : null );
+				}
+
+				// Debugging option for testability
+				if ( attributes.containsKey( Key.debug ) ) {
+					X509Certificate	storeCertificate	= ( X509Certificate ) keyStore.getCertificate( keyStore.aliases().nextElement() );
+					String			encodedCert			= Base64.getEncoder().encodeToString( storeCertificate.getEncoded() );
+					attributes.put( encodedCertKey, encodedCert );
+				}
+
+				KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance( KeyManagerFactory.getDefaultAlgorithm() );
+				keyManagerFactory.init( keyStore, clientCertPassword != null ? clientCertPassword.toCharArray() : null );
+				SSLContext sslContext = SSLContext.getInstance( "TLS" );
+				sslContext.init( keyManagerFactory.getKeyManagers(), null, new SecureRandom() );
+
+				// Set the SSL context in the builder
+				builder.sslContext( sslContext );
+			} catch ( Exception e ) {
+				throw new BoxRuntimeException( "Failed to configure client certificate", e.getClass().getSimpleName(), e );
+			}
 		}
 		return builder.build();
 	}

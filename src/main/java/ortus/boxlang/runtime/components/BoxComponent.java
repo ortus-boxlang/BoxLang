@@ -44,4 +44,11 @@ public @interface BoxComponent {
 
 	// A short description of the component for documentation purposes
 	String description() default "";
+
+	// Ignores setting enableOutputOnly
+	boolean ignoreEnableOutputOnly() default false;
+
+	// Auto evaluate body expressions
+	boolean autoEvaluateBodyExpressions() default false;
+
 }

@@ -24,20 +24,15 @@ import static com.google.common.truth.Truth.assertThat;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
-import java.time.LocalDateTime;
-import java.util.List;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.events.BoxEvent;
-import ortus.boxlang.runtime.loader.ImportDefinition;
-import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -190,45 +185,14 @@ public class ExpandPathTest {
 	@Test
 	public void testRelative() {
 		String abs = Path.of( "src/test/java/ortus/boxlang/runtime/bifs/global/io/expandPathTest.txt" ).toAbsolutePath().toString();
-		context.pushTemplate( new IBoxRunnable() {
-
-			@Override
-			public List<ImportDefinition> getImports() {
-				return List.of();
-			}
-
-			@Override
-			public long getRunnableCompileVersion() {
-				return 0L;
-			}
-
-			@Override
-			public LocalDateTime getRunnableCompiledOn() {
-				return null;
-			}
-
-			@Override
-			public Object getRunnableAST() {
-				return null;
-			}
-
-			@Override
-			public ResolvedFilePath getRunnablePath() {
-				return ResolvedFilePath.of( Path.of( "src/test/java/ortus/boxlang/runtime/bifs/global/io/ExpandPathTest.java" ).toAbsolutePath() );
-			}
-
-			@Override
-			public BoxSourceType getSourceType() {
-				return BoxSourceType.BOXTEMPLATE;
-			}
-
-		} );
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext(),
+		    Path.of( "src/test/java/ortus/boxlang/runtime/bifs/global/io/ExpandPathTest.java" ).toAbsolutePath().toUri() );
+		variables	= context.getScopeNearby( VariablesScope.name );
 		instance.executeSource(
 		    """
 		    result = ExpandPath( "expandPathTest.txt" );
 		    """,
 		    context );
-		context.popTemplate();
 		assertThat( variables.get( result ) ).isEqualTo( abs );
 	}
 

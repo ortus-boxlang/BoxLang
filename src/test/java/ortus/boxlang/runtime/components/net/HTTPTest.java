@@ -18,18 +18,7 @@
 
 package ortus.boxlang.runtime.components.net;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.aMultipart;
-import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
-import static com.github.tomakehurst.wiremock.client.WireMock.containing;
-import static com.github.tomakehurst.wiremock.client.WireMock.created;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
-import static com.github.tomakehurst.wiremock.client.WireMock.get;
-import static com.github.tomakehurst.wiremock.client.WireMock.havingExactly;
-import static com.github.tomakehurst.wiremock.client.WireMock.ok;
-import static com.github.tomakehurst.wiremock.client.WireMock.notFound;
-import static com.github.tomakehurst.wiremock.client.WireMock.post;
-import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.*;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -45,6 +34,31 @@ import org.junit.jupiter.api.Test;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.math.BigInteger;
+import java.nio.file.Path;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.SecureRandom;
+import java.security.Security;
+import java.util.Calendar;
+import java.util.Date;
+
+import javax.security.auth.x500.X500Principal;
+import org.apache.commons.io.FileUtils;
+
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -52,9 +66,9 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @WireMockTest
@@ -289,6 +303,27 @@ public class HTTPTest {
 		assertThat( res.get( Key.statusCode ) ).isEqualTo( 200 );
 		assertThat( res.get( Key.statusText ) ).isEqualTo( "OK" );
 		Object body = res.get( Key.fileContent );
+		assertThat( body ).isInstanceOf( byte[].class );
+
+		// Now test with getAsBinary set to "no" which should still return binary content
+		// @formatter:off
+		instance.executeSource( String.format(
+			"""
+			bx:http method="GET" getAsBinary="no" url="%s" {
+				bx:httpparam type="header" name="Host" value="boxlang.io";
+			}
+			""",
+			wmRuntimeInfo.getHttpBaseUrl() + "/image" ),
+			context
+		);
+		// @formatter:on
+
+		assertThat( variables.get( bxhttp ) ).isInstanceOf( IStruct.class );
+
+		res = variables.getAsStruct( bxhttp );
+		assertThat( res.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( res.get( Key.statusText ) ).isEqualTo( "OK" );
+		body = res.get( Key.fileContent );
 		assertThat( body ).isInstanceOf( byte[].class );
 	}
 
@@ -863,6 +898,34 @@ public class HTTPTest {
 		assertThat( bxhttp.get( Key.fileContent ) ).isEqualTo( "{\"success\": true }" );
 	}
 
+	@DisplayName( "Will not double encode params when encoded is set to false on a URL param" )
+	@Test
+	public void testDoubleEncoding( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    post( "/test-params?myParam=This%26is%20my%2Fvery%20long%3Fquery%2Bparam" )
+		        .willReturn( ok().withBody( "{\"success\": true }" ) ) );
+
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+		// @formatter:off
+		instance.executeSource( String.format( """
+			bx:http method="POST" url="%s" {
+				bx:httpparam type="url" encoded="false" name="myParam" value="#urlEncodedFormat( "This&is my/very long?query+param" )#";
+			}
+			result = bxhttp;
+		""", baseURL + "/test-params" ), context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+
+		IStruct bxhttp = variables.getAsStruct( result );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.statusCode ) );
+		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 200 );
+
+		Assertions.assertTrue( bxhttp.containsKey( Key.fileContent ) );
+		assertThat( bxhttp.get( Key.fileContent ) ).isEqualTo( "{\"success\": true }" );
+	}
+
 	@DisplayName( "It can process a basic authentication request" )
 	@Test
 	public void testBasicAuth( WireMockRuntimeInfo wmRuntimeInfo ) {
@@ -897,6 +960,95 @@ public class HTTPTest {
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 		IStruct bxhttp = variables.getAsStruct( result );
 		assertThat( bxhttp.getAsString( Key.header ) ).contains( "authorization: Basic " + base64Credentials );
+	}
+
+	@DisplayName( "It can handle client certificates" )
+	@Test
+	public void testClientCert( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor( get( urlEqualTo( "/posts/2" ) )
+		    .withHeader( "X-Client-Cert", matching( ".*" ) ) // The header must be present and contain any value
+		    .willReturn( aResponse()
+		        .withStatus( 200 )
+		        .withBody( "Access granted" ) ) );
+		String	clientCertPath		= "src/test/resources/tmp/http_tests/cert.p12";
+
+		String	clientCertPassword	= "password";
+		try {
+			createClientCertificate( clientCertPath, clientCertPassword );
+		} catch ( Exception e ) {
+			throw new BoxRuntimeException( "An error occurred when attempting to create the test certificate", e );
+		}
+
+		// @formatter:off
+		instance.executeSource( String.format( """
+			bx:http method="GET" url="%s" clientCert="%s" clientCertPassword="%s" debug=true {}
+			result = bxhttp;
+		""", wmRuntimeInfo.getHttpBaseUrl() + "/posts/2", clientCertPath, clientCertPassword ), context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct bxhttp = variables.getAsStruct( result );
+		Assertions.assertTrue( bxhttp.containsKey( Key.statusCode ) );
+		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 200 ); // Assuming successful response
+		Assertions.assertTrue( bxhttp.containsKey( Key.statusText ) );
+		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "OK" ); // Assuming successful response
+	}
+
+	private void createClientCertificate( String certPath, String certPassword ) throws Exception {
+		// Generate a key pair
+		KeyPairGenerator keyGen = KeyPairGenerator.getInstance( "RSA" );
+		keyGen.initialize( 2048, new SecureRandom() );
+		KeyPair			keyPair		= keyGen.generateKeyPair();
+		PrivateKey		privateKey	= keyPair.getPrivate();
+
+		// Create a self-signed certificate
+		X509Certificate	cert		= null;
+		try {
+			cert = generateSelfSignedCertificate( keyPair );
+		} catch ( Exception e ) {
+			throw new BoxRuntimeException( "An error occurred when attempting to create the test certificate", e );
+		}
+
+		// Create a KeyStore and store the certificate and private key
+		KeyStore keyStore = KeyStore.getInstance( "PKCS12" );
+		keyStore.load( null, null );
+		keyStore.setKeyEntry( "client-cert", privateKey, certPassword.toCharArray(), new Certificate[] { cert } );
+
+		// Save the KeyStore to a file
+		certPath = Path.of( certPath ).toAbsolutePath().toString();
+		File certFile = new File( certPath );
+		FileUtils.touch( certFile );
+		try ( FileOutputStream fos = new FileOutputStream( certPath ) ) {
+			keyStore.store( fos, certPassword.toCharArray() );
+		}
+	}
+
+	private X509Certificate generateSelfSignedCertificate( KeyPair keyPair ) throws Exception {
+
+		if ( Security.getProvider( BouncyCastleProvider.PROVIDER_NAME ) == null ) {
+			Security.addProvider( new BouncyCastleProvider() );
+		}
+
+		// Create the certificate
+		X500Principal	subject		= new X500Principal( "CN=Test Certificate" );
+		Calendar		calendar	= Calendar.getInstance();
+		calendar.setTime( new Date() );
+		Date startDate = calendar.getTime();
+		calendar.add( Calendar.YEAR, 1 );
+		Date						endDate		= calendar.getTime();
+
+		// Generate the certificate
+		ContentSigner				signer		= new JcaContentSignerBuilder( "SHA256withRSA" ).build( keyPair.getPrivate() );
+		X509v3CertificateBuilder	certBuilder	= new JcaX509v3CertificateBuilder(
+		    subject,
+		    BigInteger.valueOf( System.currentTimeMillis() ),
+		    startDate,
+		    endDate,
+		    subject,
+		    keyPair.getPublic()
+		);
+
+		return new JcaX509CertificateConverter().setProvider( "BC" ).getCertificate( certBuilder.build( signer ) );
 	}
 
 }

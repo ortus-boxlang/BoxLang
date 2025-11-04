@@ -273,20 +273,24 @@ public class ComponentService extends BaseService {
 		}
 
 		// Component Properties
-		Key				customName				= Key.of( "" );
-		String			alias					= "";
-		boolean			allowsBody				= false;
-		boolean			requiresBody			= false;
-		Key				className				= Key.of( componentClass.getSimpleName() );
+		Key				customName					= Key.of( "" );
+		String			alias						= "";
+		boolean			allowsBody					= false;
+		boolean			requiresBody				= false;
+		boolean			ignoreEnableOutputOnly		= false;
+		boolean			autoEvaluateBodyExpressions	= false;
+		Key				className					= Key.of( componentClass.getSimpleName() );
 
 		// Parse the annotations
-		BoxComponent[]	commponentAnnotations	= componentClass.getAnnotationsByType( BoxComponent.class );
+		BoxComponent[]	commponentAnnotations		= componentClass.getAnnotationsByType( BoxComponent.class );
 
 		for ( BoxComponent annotation : commponentAnnotations ) {
-			customName		= annotation.name().length() > 0 ? Key.of( annotation.name() ) : className;
-			allowsBody		= annotation.allowsBody();
-			requiresBody	= annotation.requiresBody();
-			alias			= annotation.alias();
+			customName					= annotation.name().length() > 0 ? Key.of( annotation.name() ) : className;
+			allowsBody					= annotation.allowsBody();
+			requiresBody				= annotation.requiresBody();
+			alias						= annotation.alias();
+			ignoreEnableOutputOnly		= annotation.ignoreEnableOutputOnly();
+			autoEvaluateBodyExpressions	= annotation.autoEvaluateBodyExpressions();
 
 			ComponentDescriptor descriptor = new ComponentDescriptor(
 			    // Use the annotation name or the class name
@@ -296,7 +300,9 @@ public class ComponentService extends BaseService {
 			    null,
 			    component,
 			    allowsBody,
-			    requiresBody
+			    requiresBody,
+			    ignoreEnableOutputOnly,
+			    autoEvaluateBodyExpressions
 			);
 
 			// Register normal first

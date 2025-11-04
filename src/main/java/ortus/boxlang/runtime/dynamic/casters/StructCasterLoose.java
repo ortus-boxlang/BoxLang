@@ -108,7 +108,11 @@ public class StructCasterLoose implements IBoxCaster {
 			dynObject.getFieldsAsStream()
 			    .filter( field -> Modifier.isPublic( field.getModifiers() ) )
 			    .forEach( field -> {
-				    thisResult.put( field.getName(), dynObject.getField( field.getName() ).orElse( null ) );
+				    try {
+					    thisResult.put( field.getName(), dynObject.getField( field.getName() ).orElse( null ) );
+				    } catch ( Exception e ) {
+					    // We're gonna ignore any invalid fields that error out. Some times public fields cannot be accessed
+				    }
 			    } );
 			// also add fields for all public methods starting with "get" that take no arguments
 

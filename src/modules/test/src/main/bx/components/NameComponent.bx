@@ -8,6 +8,8 @@
  * @BoxComponent [ 'myComponentAlias', 'anotherAlias' ]
  * @AllowsBody [boolean=false]
  * @RequiresBody [boolean=false]
+ * @IgnoreEnableOutputOnly [boolean=false]
+ * @AutoEvaluateBodyExpressions [boolean=false]
  * </pre>
  *
  * The runtime injects the following into the variables	scope:
@@ -26,6 +28,8 @@
 @BoxComponent( 'NombreComponent' )
 @AllowsBody( true )
 @RequiresBody( false )
+@IgnoreEnableOutputOnly( false )
+@AutoEvaluateBodyExpressions( false )
 class{
 
 	/**

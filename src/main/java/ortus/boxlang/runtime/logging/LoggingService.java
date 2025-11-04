@@ -320,6 +320,7 @@ public class LoggingService {
 	 */
 	public LoggingService configureBasic( Boolean debugMode ) {
 		ILoggerFactory loggerFactory = LoggerFactory.getILoggerFactory();
+		// Final defaults haven't been applied, so debugMode may be null still.
 		if ( debugMode == null ) {
 			debugMode = false;
 		}
@@ -367,7 +368,7 @@ public class LoggingService {
 
 		// Configure the Root Logger
 		this.rootLogger = new BoxLangLogger( loggerContext.getLogger( Logger.ROOT_LOGGER_NAME ) );
-		this.rootLogger.setLevel( Boolean.TRUE.equals( debugMode ) ? Level.DEBUG : Level.WARN );
+		this.rootLogger.setLevel( ( debugMode ? Level.DEBUG : Level.WARN ) );
 		this.rootLogger.addAppender( appender );
 
 		return instance;
@@ -380,8 +381,15 @@ public class LoggingService {
 	 * This could change logging levels, add new appenders, etc.
 	 */
 	public LoggingService reconfigure() {
+		// This will be set for sure now
+		Boolean debugMode = this.runtime.inDebugMode();
+
+		if ( debugMode ) {
+			DEFAULT_LOG_LEVEL = LEVEL_DEBUG;
+		}
+
 		// Reconfigure Root Logger from the configuration file
-		Level rootLevel = Level.toLevel( this.runtime.getConfiguration().logging.rootLevel.getName() );
+		Level rootLevel = debugMode ? Level.DEBUG : Level.toLevel( this.runtime.getConfiguration().logging.rootLevel.getName() );
 		this.rootLogger.setLevel( rootLevel );
 
 		// Change encoder or not to JSON, default is text

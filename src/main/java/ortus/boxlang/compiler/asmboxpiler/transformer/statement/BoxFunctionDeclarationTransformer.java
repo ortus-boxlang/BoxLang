@@ -14,7 +14,6 @@
  */
 package ortus.boxlang.compiler.asmboxpiler.transformer.statement;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -91,6 +90,9 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		Type				superClass		= Type.getType( UDF.class );
 		ClassNode			classNode		= AsmHelper.initializeClassDefinition( type, superClass, null );
 
+		// Add the @BoxByteCodeVersion annotation to the generated class
+		AsmHelper.addBoxByteCodeVersionAnnotation( classNode );
+
 		classNode.visitSource( transpiler.getProperty( "filePath" ), null );
 		classNode.visitNestHost( transpiler.getProperty( "enclosingClassInternalName" ) );
 		classNode.visitInnerClass( type.getInternalName(), transpiler.getProperty( "enclosingClassInternalName" ),
@@ -110,25 +112,6 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		    ( mv ) -> {
 		    }
 		);
-
-		AsmHelper.addStaticFieldGetter( classNode,
-		    type,
-		    "compileVersion",
-		    "getRunnableCompileVersion",
-		    Type.LONG_TYPE,
-		    1L );
-		AsmHelper.addStaticFieldGetter( classNode,
-		    type,
-		    "compiledOn",
-		    "getRunnableCompiledOn",
-		    Type.getType( LocalDateTime.class ),
-		    null );
-		AsmHelper.addStaticFieldGetter( classNode,
-		    type,
-		    "ast",
-		    "getRunnableAST",
-		    Type.getType( Object.class ),
-		    null );
 
 		ClassNode owningClass = transpiler.getOwningClass();
 		if ( owningClass != null ) {

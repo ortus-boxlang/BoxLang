@@ -28,7 +28,6 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.StaticClassBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
@@ -272,7 +271,8 @@ public class RunnableLoader {
 		}
 
 		// This extension check is duplicated in the BaseBoxContext.includeTemplate() right now since some code paths hit the runnableLoader directly
-		if ( ext.equals( "*" ) || VALID_TEMPLATE_EXTENSIONS.contains( ext ) ) {
+		boolean includeAll = VALID_TEMPLATE_EXTENSIONS.contains( "*" );
+		if ( includeAll || VALID_TEMPLATE_EXTENSIONS.contains( ext ) ) {
 			Class<IBoxRunnable> clazz = getBoxpiler().compileTemplate( resolvedFilePath );
 			return ( BoxTemplate ) DynamicObject.of( clazz ).invokeStatic( context, "getInstance" );
 		} else {
@@ -347,7 +347,6 @@ public class RunnableLoader {
 	 */
 	public Class<IBoxRunnable> loadClass( String source, IBoxContext context, BoxSourceType type ) {
 		Class<IBoxRunnable> clazz = getBoxpiler().compileClass( source, type );
-		runStaticInitializer( clazz, context );
 		return clazz;
 	}
 
@@ -362,34 +361,7 @@ public class RunnableLoader {
 	 */
 	public Class<IBoxRunnable> loadClass( ResolvedFilePath resolvedFilePath, IBoxContext context ) {
 		Class<IBoxRunnable> clazz = getBoxpiler().compileClass( resolvedFilePath );
-		runStaticInitializer( clazz, context );
 		return clazz;
-	}
-
-	/**
-	 * Run static initializers for a Box class
-	 *
-	 * @param clazz   The class to run the static initializer for
-	 * @param context The context to use
-	 */
-	private void runStaticInitializer( Class<IBoxRunnable> clazz, IBoxContext context ) {
-		// Static initializers for Box Classes. We need to manually fire these so we can control the context
-		if ( !clazz.isInterface() && IClassRunnable.class.isAssignableFrom( clazz ) ) {
-			DynamicObject boxClass = DynamicObject.of( clazz );
-			if ( !( Boolean ) boxClass.getField( "staticInitialized" ).get() ) {
-				synchronized ( clazz ) {
-					if ( !( Boolean ) boxClass.getField( "staticInitialized" ).get() ) {
-						StaticClassBoxContext	staticContext	= new StaticClassBoxContext( context, boxClass,
-						    BoxClassSupport.getStaticScope( context, boxClass ) );
-						ResolvedFilePath		staticPath		= ( ResolvedFilePath ) boxClass.getField( "path" ).get();
-						staticContext.pushTemplate( staticPath );
-						boxClass.invokeStatic( context, "staticInitializer", staticContext );
-						staticContext.popTemplate();
-						boxClass.setField( "staticInitialized", true );
-					}
-				}
-			}
-		}
 	}
 
 }

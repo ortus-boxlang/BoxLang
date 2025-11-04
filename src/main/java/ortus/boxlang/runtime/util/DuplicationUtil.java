@@ -19,9 +19,10 @@ package ortus.boxlang.runtime.util;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.ClassUtils;
@@ -93,6 +94,8 @@ public class DuplicationUtil {
 			return duplicateQuery( arr, deep, context );
 		} else if ( target instanceof DateTime dateTimeInstance ) {
 			return dateTimeInstance.clone();
+		} else if ( target instanceof Optional optionalInstance ) {
+			return duplicate( optionalInstance.orElse( null ), deep, context );
 		} else if ( target instanceof Function ) {
 			// functions should never be duplicated
 			return target;

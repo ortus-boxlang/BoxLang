@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.BiConsumer;
 
 import org.objectweb.asm.ClassWriter;
@@ -19,8 +21,8 @@ import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.visitor.QueryEscapeSingleQuoteVisitor;
 import ortus.boxlang.compiler.parser.ParsingResult;
-import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.AsyncService.ExecutorType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.Timer;
 
@@ -61,9 +63,9 @@ public class ASMBoxpiler extends Boxpiler {
 	}
 
 	@Override
-	public void compileClassInfo( String classPoolName, String FQN ) {
+	public List<byte[]> compileClassInfo( String classPoolName, String FQN ) {
 		Timer timer = null;
-		if ( BoxRuntime.getInstance().inDebugMode() ) {
+		if ( runtime.inDebugMode() ) {
 			timer = new Timer();
 			timer.start( FQN );
 		}
@@ -73,18 +75,18 @@ public class ASMBoxpiler extends Boxpiler {
 			throw new BoxRuntimeException( "ClassInfo not found for " + FQN );
 		}
 
+		List<byte[]> classes;
 		if ( classInfo.resolvedFilePath() != null ) {
 			File sourceFile = classInfo.resolvedFilePath().absolutePath().toFile();
 			// Check if the source file contains Java bytecode by reading the first few bytes
 			if ( diskClassUtil.isJavaBytecode( sourceFile ) ) {
-				classInfo.getClassLoader().defineClasses( FQN, sourceFile, classInfo );
-				return;
+				return classInfo.getClassLoader().defineClasses( FQN, sourceFile, classInfo );
 			}
 			ParsingResult result = parseOrFail( sourceFile );
-			doWriteClassInfo( result.getRoot(), classInfo );
+			classes = doWriteClassInfo( result.getRoot(), classInfo );
 		} else if ( classInfo.source() != null ) {
 			ParsingResult result = parseOrFail( classInfo.source(), classInfo.sourceType(), classInfo.isClass() );
-			doWriteClassInfo( result.getRoot(), classInfo );
+			classes = doWriteClassInfo( result.getRoot(), classInfo );
 		} else if ( classInfo.interfaceProxyDefinition() != null ) {
 			if ( timer != null )
 				timer.stop( FQN );
@@ -98,10 +100,12 @@ public class ASMBoxpiler extends Boxpiler {
 		if ( timer != null ) {
 			logger.trace( "ASM BoxPiler Compiled " + FQN + " in " + timer.stop( FQN ) );
 		}
+		return classes;
 	}
 
-	private void doWriteClassInfo( BoxNode node, ClassInfo classInfo ) {
+	private List<byte[]> doWriteClassInfo( BoxNode node, ClassInfo classInfo ) {
 		node.accept( new QueryEscapeSingleQuoteVisitor() );
+		final List<byte[]> classes = new ArrayList<>();
 		doCompileClassInfo( transpiler( classInfo ), classInfo, node, ( fqn, classNode ) -> {
 			ClassWriter classWriter = new ClassWriter( ClassWriter.COMPUTE_FRAMES );
 			try {
@@ -111,7 +115,16 @@ public class ASMBoxpiler extends Boxpiler {
 					classNode.accept( classWriter );
 				}
 				byte[] bytes = classWriter.toByteArray();
-				diskClassUtil.writeBytes( classInfo.classPoolName(), fqn, "class", bytes, classInfo.lastModified() );
+				classes.addFirst( bytes );
+				classInfo.getClassLoader().defineClass( fqn, bytes );
+
+				// Are we storing class files on disk?
+				if ( runtime.getConfiguration().storeClassFilesOnDisk ) {
+					// Run this async
+					runtime.getAsyncService().newExecutor( "ASM-disk-class-writer", ExecutorType.VIRTUAL, 0 ).submit( () -> {
+						diskClassUtil.writeBytes( classInfo.classPoolName(), fqn, "class", bytes, classInfo.lastModified() );
+					} );
+				}
 			} catch ( Exception e ) {
 				StringWriter out = new StringWriter();
 				classNode.accept( new CheckClassAdapter( new TraceClassVisitor( classWriter, new PrintWriter( out ) ) ) );
@@ -125,6 +138,8 @@ public class ASMBoxpiler extends Boxpiler {
 				throw e;
 			}
 		} );
+		classes.addFirst( classInfo.fqn().toString().getBytes() );
+		return classes;
 	}
 
 	private static Transpiler transpiler( ClassInfo classInfo ) {

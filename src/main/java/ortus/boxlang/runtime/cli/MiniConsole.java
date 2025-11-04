@@ -17,9 +17,7 @@
  */
 package ortus.boxlang.runtime.cli;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -34,15 +32,14 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  * that need features like:
  * - Arrow key navigation through command history
  * - Raw terminal input (character-by-character)
- * - Cross-platform support (Windows via PowerShell, POSIX via stty)
+ * - Cross-platform support (Windows, Linux, macOS)
  * - Configurable prompts with color support
  * - Command history management
  * - Terminal control sequences (Ctrl+C, Ctrl+D, etc.)
  *
- * The console automatically detects the operating system and uses the appropriate
- * method for raw input:
- * - Windows: PowerShell-based key reading
- * - POSIX (macOS/Linux): stty + dd for direct /dev/tty access
+ * The console uses BoxInputStreamReader for all platforms, providing a unified
+ * approach for reading terminal input with proper UTF-8 support and efficient
+ * character decoding.
  *
  * Example usage:
  *
@@ -69,6 +66,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  * - Backspace/Delete for editing
  * - Automatic history management (no duplicates)
  * - 256-color terminal support for prompts
+ * - UTF-8 and multi-byte character support
  *
  * @author Ortus Solutions, Corp
  *
@@ -85,12 +83,7 @@ public class MiniConsole implements AutoCloseable {
 	/**
 	 * Default prompt
 	 */
-	private static final String		DEFAULT_PROMPT	= "> ";
-
-	/**
-	 * Operating system detection
-	 */
-	private static final boolean	WINDOWS			= System.getProperty( "os.name" ).toLowerCase().contains( "win" );
+	private static final String DEFAULT_PROMPT = "> ";
 
 	/**
 	 * Global Ansi Codes
@@ -252,6 +245,16 @@ public class MiniConsole implements AutoCloseable {
 	private int							completionDisplayLines	= 0;
 
 	/**
+	 * Original terminal settings (for restoration on close)
+	 */
+	private String						originalSttySettings	= null;
+
+	/**
+	 * Flag to indicate if we're running on Windows (for emoji fallbacks)
+	 */
+	private static final boolean		isWindows				= System.getProperty( "os.name" ).toLowerCase().contains( "windows" );
+
+	/**
 	 * ----------------------------------------------------------------------------
 	 * Constructors
 	 * ----------------------------------------------------------------------------
@@ -262,6 +265,7 @@ public class MiniConsole implements AutoCloseable {
 	 */
 	public MiniConsole() {
 		// Uses default prompt
+		setupTerminal();
 	}
 
 	/**
@@ -271,6 +275,7 @@ public class MiniConsole implements AutoCloseable {
 	 */
 	public MiniConsole( String prompt ) {
 		this.prompt = prompt != null ? prompt : DEFAULT_PROMPT;
+		setupTerminal();
 	}
 
 	/**
@@ -282,6 +287,48 @@ public class MiniConsole implements AutoCloseable {
 	public MiniConsole( String prompt, ISyntaxHighlighter highlighter ) {
 		this( prompt );
 		this.syntaxHighlighter = highlighter;
+	}
+
+	/**
+	 * Setup terminal for raw input mode (disable echo)
+	 */
+	private void setupTerminal() {
+		try {
+			// Save original settings
+			Process	process	= Runtime.getRuntime().exec( new String[] { "sh", "-c", "stty -g < /dev/tty" } );
+			String	result	= new String( process.getInputStream().readAllBytes() ).trim();
+			process.waitFor();
+			originalSttySettings	= result;
+
+			// Disable echo and canonical mode (line buffering) for character-by-character input
+			// -echo: don't echo input characters
+			// -icanon: disable canonical mode (read character-by-character, not line-by-line)
+			// min 1: return after reading at least 1 character
+			// time 0: no timeout (blocking read)
+			process					= Runtime.getRuntime().exec( new String[] { "sh", "-c", "stty -echo -icanon min 1 time 0 < /dev/tty" } );
+			process.waitFor();
+
+			// Register shutdown hook to restore terminal settings
+			Runtime.getRuntime().addShutdownHook( new Thread( this::restoreTerminal ) );
+		} catch ( Exception e ) {
+			// If stty is not available or fails, continue without terminal setup
+			// This allows the console to work on systems without stty
+		}
+	}
+
+	/**
+	 * Restore terminal to original settings
+	 */
+	private void restoreTerminal() {
+		if ( originalSttySettings != null ) {
+			try {
+				Process process = Runtime.getRuntime()
+				    .exec( new String[] { "sh", "-c", "stty " + originalSttySettings + " < /dev/tty" } );
+				process.waitFor();
+			} catch ( Exception e ) {
+				// Ignore errors during restoration
+			}
+		}
 	}
 
 	/**
@@ -538,7 +585,7 @@ public class MiniConsole implements AutoCloseable {
 	 */
 	@SuppressWarnings( "static-access" )
 	public static void printWarning( String text ) {
-		ColorPrint.yellow().bold().println( "⚠️  " + text );
+		ColorPrint.yellow().bold().println( getSymbol( "⚠️", "WARN:" ) + "  " + text );
 	}
 
 	/**
@@ -548,7 +595,19 @@ public class MiniConsole implements AutoCloseable {
 	 */
 	@SuppressWarnings( "static-access" )
 	public static void printInfo( String text ) {
-		ColorPrint.blue().bold().println( "ℹ️  " + text );
+		ColorPrint.blue().bold().println( getSymbol( "ℹ️", "INFO:" ) + "  " + text );
+	}
+
+	/**
+	 * Get an appropriate symbol for the given emoji, with ASCII fallback for Windows.
+	 *
+	 * @param emoji    The emoji character
+	 * @param fallback The ASCII fallback
+	 *
+	 * @return The emoji or ASCII fallback depending on platform
+	 */
+	private static String getSymbol( String emoji, String fallback ) {
+		return isWindows ? fallback : emoji;
 	}
 
 	/**
@@ -585,10 +644,137 @@ public class MiniConsole implements AutoCloseable {
 	 * @throws IOException If an I/O error occurs
 	 */
 	public String readLine() throws IOException {
-		if ( WINDOWS ) {
-			return readLineWindows();
-		} else {
-			return readLinePosix();
+		try ( BoxInputStreamReader reader = new BoxInputStreamReader( System.in ) ) {
+			System.out.print( prompt );
+			System.out.flush();
+
+			// Reuse buffer for performance
+			inputBuffer.setLength( 0 );
+
+			for ( ;; ) {
+				int b = reader.readByte();
+				if ( b == -1 ) {
+					return null; // EOF
+				}
+
+				// ENTER (CR or LF)
+				if ( b == '\r' || b == '\n' ) {
+					// Handle Windows line ending quirks - sometimes we get both \r and \n
+					if ( isWindows && b == '\r' ) {
+						// On Windows, check if next byte is \n and consume it
+						if ( reader.ready() ) {
+							int nextByte = reader.readByte();
+							if ( nextByte != '\n' && nextByte != -1 ) {
+								// Put it back by treating it as the next character to process
+								// This is a simplified approach - in practice this is rare
+							}
+						}
+					}
+
+					// If we're in completion mode, accept the selected completion and continue editing
+					if ( completionState != null ) {
+						TabCompletion selected = completionState.getCurrentCompletion();
+						if ( selected != null ) {
+							// Restore original input first
+							inputBuffer.setLength( 0 );
+							inputBuffer.append( completionState.getOriginalInput() );
+							// Apply the completion
+							applyCompletion( prompt, inputBuffer, selected );
+						}
+						completionState = null;
+						// Clear completion list and continue editing - don't execute the line
+						clearCompletionDisplay();
+						redraw( prompt, inputBuffer );
+						continue;
+					}
+
+					// Normal ENTER - execute the line
+					System.out.print( "\r\n" );
+					System.out.flush();
+					historyIndex = -1;
+					String result = inputBuffer.toString();
+					addToHistory( result );
+					return result;
+				}
+
+				// Backspace (DEL or BS)
+				if ( b == 127 || b == 8 ) {
+					if ( completionState != null ) {
+						clearCompletionDisplay();
+						completionState			= null; // Clear completion state
+						completionDisplayLines	= 0;
+					}
+					if ( inputBuffer.length() > 0 ) {
+						inputBuffer.deleteCharAt( inputBuffer.length() - 1 );
+						redraw( prompt, inputBuffer );
+					}
+					continue;
+				}
+
+				// Escape sequences (arrows, etc.)
+				if ( b == 27 ) { // ESC
+					int next = reader.readByte();
+
+					if ( next == '[' ) {
+						// CSI sequence: ESC [ ...
+						handleCSISequence( reader, prompt, inputBuffer );
+					} else if ( next == 'O' ) {
+						// SS3 sequence: ESC O ...
+						handleSS3Sequence( reader, prompt, inputBuffer );
+					} else if ( next == -1 ) {
+						// Just ESC by itself
+						continue;
+					} else {
+						// Unknown escape sequence, ignore
+						continue;
+					}
+					continue;
+				}
+
+				// Control+D (EOF on empty line = exit)
+				if ( b == 4 && inputBuffer.length() == 0 ) {
+					return null;
+				}
+
+				// Control+D (clear line if not empty)
+				if ( b == 4 && inputBuffer.length() > 0 ) {
+					inputBuffer.setLength( 0 );
+					redraw( prompt, inputBuffer );
+					continue;
+				}
+
+				// Tab completion
+				if ( b == 9 ) {
+					handleTabCompletion( prompt, inputBuffer );
+					continue;
+				}
+
+				// Control+C
+				if ( b == 3 ) {
+					System.out.print( "^C\r\n" );
+					System.out.flush();
+					historyIndex = -1;
+					return null; // Exit signal
+				}
+
+				// Control + L (clear screen)
+				if ( b == 12 ) {
+					clear();
+					redraw( prompt, inputBuffer );
+					continue;
+				}
+
+				// Regular printable character
+				if ( b >= 32 && b < 127 ) {
+					if ( completionState != null ) {
+						clearCompletionDisplay();
+						completionState			= null; // Clear completion state
+						completionDisplayLines	= 0;
+					}
+					inputBuffer.append( ( char ) b );
+					redraw( prompt, inputBuffer );
+				}
+			}
 		}
 	}
 
@@ -616,285 +802,18 @@ public class MiniConsole implements AutoCloseable {
 	 */
 	@Override
 	public void close() {
-		// Nothing to clean up at this level - handled by inner classes
-	}
-
-	// ================================================================================
-	// PRIVATE IMPLEMENTATION
-	// ================================================================================
-
-	/**
-	 * Windows-specific input handling using PowerShell
-	 */
-	private String readLineWindows() throws IOException {
-		try ( WinKeys keys = new WinKeys() ) {
-			System.out.print( prompt );
-			System.out.flush();
-
-			// Reuse buffer for performance
-			inputBuffer.setLength( 0 );
-
-			for ( ;; ) {
-				String token = keys.nextToken();
-				if ( token == null )
-					return null;
-
-				switch ( token ) {
-					// ENTER
-					case "ENTER" -> {
-						// If we're in completion mode, accept the selected completion and continue editing
-						if ( completionState != null ) {
-							TabCompletion selected = completionState.getCurrentCompletion();
-							if ( selected != null ) {
-								// Restore original input first
-								inputBuffer.setLength( 0 );
-								inputBuffer.append( completionState.getOriginalInput() );
-								// Apply the completion
-								applyCompletion( prompt, inputBuffer, selected );
-							}
-							completionState			= null;
-							completionDisplayLines	= 0;
-							// Clear completion list and continue editing - don't execute the line
-							clearCompletionDisplay();
-							redraw( prompt, inputBuffer );
-							continue;
-						}
-						// Normal ENTER - execute the line
-						System.out.print( "\r\n" );
-						historyIndex = -1;
-						String result = inputBuffer.toString();
-						addToHistory( result );
-						return result;
-					}
-					// Backspace
-					case "BACKSPACE" -> {
-						if ( completionState != null ) {
-							clearCompletionDisplay();
-							completionState			= null; // Clear completion state
-							completionDisplayLines	= 0;
-						}
-						if ( inputBuffer.length() > 0 ) {
-							inputBuffer.deleteCharAt( inputBuffer.length() - 1 );
-							redraw( prompt, inputBuffer );
-						}
-					}
-					// Up arrow = History navigation
-					case "UP" -> {
-						if ( completionState != null ) {
-							clearCompletionDisplay();
-							completionState			= null; // Clear completion state
-							completionDisplayLines	= 0;
-						}
-						String prev = navigateHistoryPrevious();
-						if ( prev != null ) {
-							inputBuffer.setLength( 0 );
-							inputBuffer.append( prev );
-							redraw( prompt, inputBuffer );
-						}
-					}
-					// Down arrow = History navigation
-					case "DOWN" -> {
-						if ( completionState != null ) {
-							clearCompletionDisplay();
-							completionState			= null; // Clear completion state
-							completionDisplayLines	= 0;
-						}
-						String next = navigateHistoryNext();
-						if ( next != null ) {
-							inputBuffer.setLength( 0 );
-							inputBuffer.append( next );
-							redraw( prompt, inputBuffer );
-						}
-					}
-					// Control+C (exit)
-					case "CTRL_C" -> {
-						System.out.println();
-						return null;
-					}
-					// Control+D (EOF on empty line = exit)
-					case "CTRL_D" -> {
-						if ( inputBuffer.length() == 0 ) {
-							System.out.println();
-							return null;
-						}
-						inputBuffer.setLength( 0 );
-						redraw( prompt, inputBuffer );
-					}
-					// Control + L (clear screen)
-					case "CTRL_L" -> {
-						clear();
-						redraw( prompt, inputBuffer );
-					}
-					// Tab completion
-					case "TAB" -> {
-						handleTabCompletion( prompt, inputBuffer );
-					}
-					// Shift+Tab completion (previous)
-					case "SHIFT_TAB" -> {
-						handleShiftTabCompletion( prompt, inputBuffer );
-					}
-					default -> {
-						if ( token.startsWith( "CHAR:" ) ) {
-							int code = Integer.parseInt( token.substring( 5 ) );
-							if ( code >= 32 && code < 127 ) {
-								if ( completionState != null ) {
-									clearCompletionDisplay();
-									completionState			= null; // Clear completion state
-									completionDisplayLines	= 0;
-								}
-								inputBuffer.append( ( char ) code );
-								redraw( prompt, inputBuffer );
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-	/**
-	 * POSIX-specific input handling using stty and dd
-	 */
-	private String readLinePosix() throws IOException {
-		try ( PosixRaw raw = new PosixRaw() ) {
-			return readRawPosix( raw );
-		} catch ( Exception e ) {
-			System.err.println( "Warning: Raw terminal mode failed, falling back to line mode. " + e.getMessage() );
-			return readLinePosixFallback();
-		}
-	}
-
-	/**
-	 * Raw POSIX input processing
-	 */
-	private String readRawPosix( PosixRaw raw ) throws IOException {
-		System.out.print( prompt );
-		System.out.flush();
-
-		// Reuse buffer for performance
-		inputBuffer.setLength( 0 );
-
-		for ( ;; ) {
-			int b = raw.readByte();
-			if ( b == -1 ) {
-				return null; // EOF
-			}
-
-			// ENTER (CR or LF)
-			if ( b == '\r' || b == '\n' ) {
-				// If we're in completion mode, accept the selected completion and continue editing
-				if ( completionState != null ) {
-					TabCompletion selected = completionState.getCurrentCompletion();
-					if ( selected != null ) {
-						// Restore original input first
-						inputBuffer.setLength( 0 );
-						inputBuffer.append( completionState.getOriginalInput() );
-						// Apply the completion
-						applyCompletion( prompt, inputBuffer, selected );
-					}
-					completionState = null;
-					// Clear completion list and continue editing - don't execute the line
-					clearCompletionDisplay();
-					redraw( prompt, inputBuffer );
-					continue;
-				}
-				// Normal ENTER - execute the line
-				System.out.print( "\r\n" );
-				System.out.flush();
-				historyIndex = -1;
-				String result = inputBuffer.toString();
-				addToHistory( result );
-				return result;
-			}
-
-			// Backspace (DEL or BS)
-			if ( b == 127 || b == 8 ) {
-				if ( completionState != null ) {
-					clearCompletionDisplay();
-					completionState			= null; // Clear completion state
-					completionDisplayLines	= 0;
-				}
-				if ( inputBuffer.length() > 0 ) {
-					inputBuffer.deleteCharAt( inputBuffer.length() - 1 );
-					redraw( prompt, inputBuffer );
-				}
-				continue;
-			}
-
-			// Escape sequences (arrows, etc.)
-			if ( b == 27 ) { // ESC
-				int next = raw.readByte();
-
-				if ( next == '[' ) {
-					// CSI sequence: ESC [ ...
-					handleCSISequence( raw, prompt, inputBuffer );
-				} else if ( next == 'O' ) {
-					// SS3 sequence: ESC O ...
-					handleSS3Sequence( raw, prompt, inputBuffer );
-				} else if ( next == -1 ) {
-					// Just ESC by itself
-					continue;
-				} else {
-					// Unknown escape sequence, ignore
-					continue;
-				}
-				continue;
-			}
-
-			// Control+D (EOF on empty line = exit)
-			if ( b == 4 && inputBuffer.length() == 0 ) {
-				return null;
-			}
-
-			// Control+D (clear line if not empty)
-			if ( b == 4 && inputBuffer.length() > 0 ) {
-				inputBuffer.setLength( 0 );
-				redraw( prompt, inputBuffer );
-				continue;
-			}
-
-			// Tab completion
-			if ( b == 9 ) {
-				handleTabCompletion( prompt, inputBuffer );
-				continue;
-			}
-
-			// Control+C
-			if ( b == 3 ) {
-				System.out.print( "^C\r\n" );
-				System.out.flush();
-				historyIndex = -1;
-				return null; // Exit signal
-			}
-
-			// Control + L (clear screen)
-			if ( b == 12 ) {
-				clear();
-				redraw( prompt, inputBuffer );
-				continue;
-			}
-
-			// Regular printable character
-			if ( b >= 32 && b < 127 ) {
-				if ( completionState != null ) {
-					clearCompletionDisplay();
-					completionState			= null; // Clear completion state
-					completionDisplayLines	= 0;
-				}
-				inputBuffer.append( ( char ) b );
-				redraw( prompt, inputBuffer );
-			}
-		}
+		// Restore terminal settings
+		restoreTerminal();
 	}
 
 	/**
 	 * Handle CSI escape sequences (ESC[...)
 	 */
-	private void handleCSISequence( PosixRaw raw, String prompt, StringBuilder buffer ) throws IOException {
+	private void handleCSISequence( BoxInputStreamReader reader, String prompt, StringBuilder buffer ) throws IOException {
 		StringBuilder	sequence	= new StringBuilder();
 		int				c;
 
-		while ( ( c = raw.readByte() ) != -1 ) {
+		while ( ( c = reader.readByte() ) != -1 ) {
 			sequence.append( ( char ) c );
 
 			// Final character of CSI sequence (A-Z, a-z)
@@ -943,8 +862,8 @@ public class MiniConsole implements AutoCloseable {
 	/**
 	 * Handle SS3 escape sequences (ESC O...)
 	 */
-	private void handleSS3Sequence( PosixRaw raw, String prompt, StringBuilder buffer ) throws IOException {
-		int c = raw.readByte();
+	private void handleSS3Sequence( BoxInputStreamReader reader, String prompt, StringBuilder buffer ) throws IOException {
+		int c = reader.readByte();
 
 		switch ( c ) {
 			case 'A' -> { // Up arrow
@@ -974,19 +893,6 @@ public class MiniConsole implements AutoCloseable {
 				}
 			}
 			// Ignore other SS3 sequences (C=right, D=left, etc.)
-		}
-	}
-
-	/**
-	 * Fallback to line-buffered input for systems where raw mode fails
-	 */
-	private String readLinePosixFallback() throws IOException {
-		try ( BufferedReader reader = new BufferedReader( new InputStreamReader( System.in ) ) ) {
-			System.out.print( prompt );
-			System.out.flush();
-			String result = reader.readLine();
-			addToHistory( result );
-			return result;
 		}
 	}
 
@@ -1301,16 +1207,34 @@ public class MiniConsole implements AutoCloseable {
 	 * Redraw the current line with prompt and buffer content
 	 */
 	private void redraw( String promptStr, StringBuilder buffer ) {
-		System.out.print( "\r" );
-		System.out.print( CODES.CLEAR_LINE.code() );
-		System.out.print( promptStr );
+		if ( isWindows ) {
+			// On Windows, use simpler redraw to avoid terminal issues
+			System.out.print( "\r" );
+			// Clear to end of line (simpler than full line clear)
+			System.out.print( "\033[K" );
+			System.out.print( promptStr );
 
-		// Apply syntax highlighting if available
-		if ( syntaxHighlighter != null ) {
-			String highlighted = syntaxHighlighter.highlight( buffer.toString() );
-			System.out.print( highlighted );
+			// Apply syntax highlighting if available, but with reduced complexity
+			if ( syntaxHighlighter != null && buffer.length() < 200 ) {
+				// Only highlight shorter inputs to avoid Windows Terminal issues
+				String highlighted = syntaxHighlighter.highlight( buffer.toString() );
+				System.out.print( highlighted );
+			} else {
+				System.out.print( buffer );
+			}
 		} else {
-			System.out.print( buffer );
+			// Non-Windows: use full ANSI support
+			System.out.print( "\r" );
+			System.out.print( CODES.CLEAR_LINE.code() );
+			System.out.print( promptStr );
+
+			// Apply syntax highlighting if available
+			if ( syntaxHighlighter != null ) {
+				String highlighted = syntaxHighlighter.highlight( buffer.toString() );
+				System.out.print( highlighted );
+			} else {
+				System.out.print( buffer );
+			}
 		}
 
 		System.out.flush();
@@ -1360,128 +1284,6 @@ public class MiniConsole implements AutoCloseable {
 	private void trimHistoryToSize() {
 		while ( history.size() > maxHistorySize ) {
 			history.remove( 0 );
-		}
-	}
-
-	// ================================================================================
-	// PLATFORM-SPECIFIC IMPLEMENTATIONS
-	// ================================================================================
-
-	/**
-	 * POSIX raw terminal mode handler using stty
-	 */
-	private static final class PosixRaw implements AutoCloseable {
-
-		private final String originalSettings;
-
-		PosixRaw() {
-			try {
-				// Save original terminal settings
-				this.originalSettings = executeCommand( "stty -g < /dev/tty" );
-
-				// Enable raw mode: no canonical input, no echo, no signal processing
-				// min 1 = return after reading 1 character
-				// time 0 = no timeout
-				executeCommand( "stty -icanon -echo -isig min 1 time 0 < /dev/tty" );
-
-			} catch ( Exception e ) {
-				throw new RuntimeException( "Failed to enable raw terminal mode. Ensure 'stty' is available.", e );
-			}
-		}
-
-		/**
-		 * Read a single byte from the terminal in raw mode
-		 */
-		int readByte() throws IOException {
-			try {
-				Process	p	= new ProcessBuilder( "dd", "if=/dev/tty", "bs=1", "count=1" )
-				    .redirectError( ProcessBuilder.Redirect.DISCARD )
-				    .start();
-
-				int		b	= p.getInputStream().read();
-				p.waitFor();
-				return b;
-			} catch ( InterruptedException e ) {
-				Thread.currentThread().interrupt();
-				throw new IOException( "Interrupted while reading", e );
-			}
-		}
-
-		@Override
-		public void close() {
-			try {
-				executeCommand( "stty " + originalSettings + " < /dev/tty" );
-			} catch ( Exception e ) {
-				// Best effort to restore - don't throw in close()
-				System.err.println( "Warning: Failed to restore terminal settings: " + e.getMessage() );
-			}
-		}
-
-		private static String executeCommand( String command ) {
-			try {
-				Process	p		= new ProcessBuilder( "sh", "-c", command ).redirectErrorStream( true ).start();
-				byte[]	output	= p.getInputStream().readAllBytes();
-				p.waitFor();
-				return new String( output ).trim();
-			} catch ( Exception e ) {
-				throw new RuntimeException( "Command failed: " + command, e );
-			}
-		}
-	}
-
-	/**
-	 * Windows key input handler using PowerShell
-	 */
-	private static final class WinKeys implements AutoCloseable {
-
-		private final Process			process;
-		private final BufferedReader	output;
-
-		WinKeys() {
-			try {
-				String powerShellScript = String.join( " ",
-				    "-NoProfile", "-Command",
-				    "& {",
-				    "while($true){",
-				    "$k=[Console]::ReadKey($true);",
-				    "if(($k.Modifiers -band [ConsoleModifiers]::Control) -and ($k.Key -eq 'C')){[Console]::Out.WriteLine('CTRL_C');break}",
-				    "if(($k.Modifiers -band [ConsoleModifiers]::Control) -and ([int]$k.KeyChar -eq 4)){[Console]::Out.WriteLine('CTRL_D');continue}",
-				    "switch($k.Key){",
-				    "  'Enter'     { [Console]::Out.WriteLine('ENTER'); continue }",
-				    "  'Backspace' { [Console]::Out.WriteLine('BACKSPACE'); continue }",
-				    "  'UpArrow'   { [Console]::Out.WriteLine('UP'); continue }",
-				    "  'DownArrow' { [Console]::Out.WriteLine('DOWN'); continue }",
-				    "  'Tab'       { ",
-				    "    if($k.Modifiers -band [ConsoleModifiers]::Shift){ [Console]::Out.WriteLine('SHIFT_TAB') }",
-				    "    else{ [Console]::Out.WriteLine('TAB') }",
-				    "    continue",
-				    "  }",
-				    "}",
-				    "if([int]$k.KeyChar -gt 0){ [Console]::Out.WriteLine('CHAR:' + ([int]$k.KeyChar)) }",
-				    "}",
-				    "}"
-				);
-
-				this.process	= new ProcessBuilder( "powershell", powerShellScript )
-				    .redirectErrorStream( true )
-				    .start();
-				this.output		= new BufferedReader( new InputStreamReader( process.getInputStream() ) );
-			} catch ( Exception e ) {
-				throw new RuntimeException( "Failed to start PowerShell key feeder. Ensure PowerShell is available.", e );
-			}
-		}
-
-		String nextToken() throws IOException {
-			return output.readLine();
-		}
-
-		@Override
-		public void close() {
-			try {
-				process.destroyForcibly();
-			} catch ( Exception ignored ) {
-				// Best effort cleanup
-			}
 		}
 	}
 }

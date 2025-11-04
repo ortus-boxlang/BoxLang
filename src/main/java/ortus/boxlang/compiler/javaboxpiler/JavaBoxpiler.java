@@ -161,7 +161,7 @@ public class JavaBoxpiler extends Boxpiler {
 	}
 
 	@Override
-	public void compileClassInfo( String classPoolName, String FQN ) {
+	public List<byte[]> compileClassInfo( String classPoolName, String FQN ) {
 		Timer timer = null;
 		if ( BoxRuntime.getInstance().inDebugMode() ) {
 			timer = new Timer();
@@ -176,8 +176,7 @@ public class JavaBoxpiler extends Boxpiler {
 			File sourceFile = classInfo.resolvedFilePath().absolutePath().toFile();
 			// Check if the source file contains Java bytecode by reading the first few bytes
 			if ( diskClassUtil.isJavaBytecode( sourceFile ) ) {
-				classInfo.getClassLoader().defineClasses( FQN, sourceFile, classInfo );
-				return;
+				return classInfo.getClassLoader().defineClasses( FQN, sourceFile, classInfo );
 			}
 			ParsingResult result = parseOrFail( sourceFile );
 			compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.fqn().toString(), classPoolName, classInfo.lastModified() );
@@ -194,6 +193,7 @@ public class JavaBoxpiler extends Boxpiler {
 		if ( timer != null ) {
 			logger.trace( "Java BoxPiler Compiled " + FQN + " in " + timer.stop( FQN ) );
 		}
+		return diskClassUtil.readClassBytes( classPoolName, FQN );
 	}
 
 	/**

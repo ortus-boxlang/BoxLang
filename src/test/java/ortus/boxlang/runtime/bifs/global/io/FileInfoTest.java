@@ -151,7 +151,7 @@ public class FileInfoTest {
 		assertTrue( result.get( "size" ) instanceof Long );
 		assertTrue( result.containsKey( Key.of( "type" ) ) );
 		assertTrue( result.get( "type" ) instanceof String );
-		assertEquals( ( String ) result.get( "type" ), "dir" );
+		assertEquals( ( String ) result.get( "type" ), "directory" );
 		assertTrue( result.containsKey( Key.of( "write" ) ) );
 		assertTrue( result.get( "write" ) instanceof Boolean );
 	}

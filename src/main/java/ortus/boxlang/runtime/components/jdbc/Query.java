@@ -35,10 +35,9 @@ import ortus.boxlang.runtime.jdbc.qoq.QoQConnection;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent( description = "Execute SQL queries against databases", requiresBody = true )
+@BoxComponent( description = "Execute SQL queries against databases", requiresBody = true, ignoreEnableOutputOnly = true, autoEvaluateBodyExpressions = true )
 public class Query extends Component {
 
 	/**
@@ -57,6 +56,8 @@ public class Query extends Component {
 		    new Attribute( Key.dbtype, "string", Set.of(
 		        Validator.NON_EMPTY, Validator.valueOneOf( "query", "hql" )
 		    ) ),
+		    new Attribute( Key.username, "string" ),
+		    new Attribute( Key.password, "string" ),
 
 		    // connection options
 		    new Attribute( Key.maxRows, "integer", -1 ),
@@ -124,19 +125,10 @@ public class Query extends Component {
 		// Prepare the attributes
 		QueryOptions options = new QueryOptions( attributes );
 		executionState.put( Key.queryParams, new Array() );
-		StringBuffer buffer = new StringBuffer();
+		StringBuffer	buffer		= new StringBuffer();
 
-		// Spoof being in the output component in case the app has enableoutputonly=true
-		context.pushComponent(
-		    Struct.of(
-		        Key._NAME, Key.output,
-		        Key._CLASS, null,
-		        Key.attributes, Struct.EMPTY
-		    )
-		);
 		// Process the body of the query
-		BodyResult bodyResult = processBody( context, body, buffer );
-		context.popComponent();
+		BodyResult		bodyResult	= processBody( context, body, buffer );
 
 		// If there was a return statement inside our body, we early exit now
 		if ( bodyResult.isEarlyExit() ) {

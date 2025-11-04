@@ -66,7 +66,8 @@ public class FileSystemStore extends AbstractStore {
 	 * Constructor
 	 */
 	public FileSystemStore() {
-		// Empty constructor
+		// Mark this as a distributed store (persists to file system)
+		this.distributed = true;
 	}
 
 	/**
@@ -152,7 +153,7 @@ public class FileSystemStore extends AbstractStore {
 	 * Runs the eviction algorithm to remove objects from the store based on the eviction policy
 	 * and eviction count.
 	 */
-	public synchronized void evict() {
+	public void evict() {
 		int evictCount = IntegerCaster.cast( this.config.get( Key.evictCount ) );
 		if ( evictCount == 0 ) {
 			return;

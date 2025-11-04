@@ -27,7 +27,6 @@ import org.slf4j.LoggerFactory;
 import com.zaxxer.hikari.HikariConfig;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -36,6 +35,8 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.StructUtil;
 
 /**
@@ -265,7 +266,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 * @return The driver name or an empty string if not found
 	 */
 	public static String discoverDriverFromJdbcUrl( String jdbcURL ) {
-		logger.debug( "Attempting to determine driver from JDBC URL: {}", jdbcURL );
+		logger.trace( "Attempting to determine driver from JDBC URL: {}", jdbcURL );
 
 		// check that the URL is not empty, that it has at least one : and that it
 		// starts with jdbc:
@@ -275,7 +276,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 
 		// extract the driver name from the URL
 		String parsedDriver = jdbcURL.split( ":" )[ 1 ];
-		logger.debug( "Parsed {} driver from {}", parsedDriver, jdbcURL );
+		logger.trace( "Parsed {} driver from {}", parsedDriver, jdbcURL );
 		return parsedDriver;
 	}
 
@@ -409,11 +410,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 
 		// Process the properties into the state, merge them in one by one
 		properties.entrySet().stream().forEach( entry -> {
-			if ( entry.getValue() instanceof String castedValue ) {
-				this.properties.put( entry.getKey(), PlaceholderHelper.resolve( castedValue ) );
-			} else {
-				this.properties.put( entry.getKey(), entry.getValue() );
-			}
+			this.properties.put( entry.getKey(), entry.getValue() );
 		} );
 
 		// Merge defaults into the properties
@@ -689,24 +686,41 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 * @return The connection string with custom parameters incorporated
 	 */
 	public String addCustomParams( String target, String URIDelimiter, String delimiter ) {
-		String targetCustom = "";
+		String	targetCustom	= "";
+		IStruct	structCustom;
+		String	finalURL		= target;
+
+		// Convert to struct
 		if ( this.properties.get( Key.custom ) instanceof String castedCustom ) {
-			targetCustom = castedCustom;
+			structCustom = StructUtil.fromQueryString( castedCustom, delimiter );
 		} else {
-			targetCustom = StructUtil.toQueryString( ( IStruct ) this.properties.get( Key.custom ), delimiter );
+			structCustom = this.properties.getAsStruct( Key.custom );
 		}
+
+		// filter out any keys alraedy in the target query string
+		structCustom	= structCustom
+		    .entrySet()
+		    .stream()
+		    .filter( e -> !target.contains( e.getKey().getName() + "=" ) )
+		    .collect( BLCollector.toStruct() );
+
+		// Convert back to query string
+		targetCustom	= StructUtil.toQueryString( structCustom, delimiter );
 
 		// Append the custom parameters
 		if ( targetCustom.length() > 0 ) {
-			// Incorporate URI Delimiter if it doesn't exist
-			if ( !target.contains( URIDelimiter ) ) {
-				target += URIDelimiter;
+			// if the URL already has a query string, then just add a delimiter
+			if ( finalURL.contains( URIDelimiter ) ) {
+				finalURL += delimiter;
+			} else {
+				// otherwise use the URI delimiter, meaning the query string is starting
+				finalURL += URIDelimiter;
 			}
 			// Now add the custom parameters
-			target += targetCustom;
+			finalURL += targetCustom;
 		}
 
-		return target;
+		return finalURL;
 	}
 
 	/**
@@ -738,8 +752,10 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	/**
 	 * This method is used to replace placeholders in the connection string with the
 	 * appropriate values.
+	 * 
+	 * These replacements are case sensitive.
 	 * <p>
-	 * The placeholders are:
+	 * The placeholders can be any key in the properties struct, including the following:
 	 * <ul>
 	 * <li><code>{host}</code> - The host name</li>
 	 * <li><code>{port}</code> - The port number</li>
@@ -751,21 +767,41 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 * @return The connection string with placeholders replaced
 	 */
 	private String replaceConnectionPlaceholders( String target ) {
+		int curlyIndex = target.indexOf( "{" );
 		// Short circuit if the target is empty
-		if ( target.isBlank() ) {
+		if ( target.isBlank() || curlyIndex == -1 ) {
 			return target;
 		}
 
-		// Replace placeholders
-		target	= target.replace(
-		    "{host}",
-		    StringCaster.cast( this.properties.getOrDefault( Key.host, "NOT_FOUND" ), true ) );
-		target	= target.replace(
-		    "{port}",
-		    StringCaster.cast( this.properties.getOrDefault( Key.port, 0 ), true ) );
-		target	= target.replace(
-		    "{database}",
-		    StringCaster.cast( this.properties.getOrDefault( Key.database, "NOT_FOUND" ), true ) );
+		// loop over all properties and replace them
+		for ( Key propName : this.properties.keySet() ) {
+			String placeholder = "{" + propName.getName() + "}";
+			// The main purpose of this check is to prevent even trying to replace properties not used as a placeholder
+			// specifically, properties which aren't even a string, such as the custom struct.
+			if ( target.contains( placeholder ) ) {
+				target = target.replace(
+				    placeholder,
+				    StringCaster.cast( this.properties.get( propName ) ) );
+			}
+
+			// Stop if there are no more placeholders
+			curlyIndex = target.indexOf( "{" );
+			if ( curlyIndex == -1 ) {
+				break;
+			}
+		}
+
+		// Error out if the JDBC URL required placeholders which did not get replaced
+		if ( curlyIndex != -1 ) {
+			// Just for sanity, ensure we have a closing curly brace, so {something} exists somewhere in the string
+			int endingCurlyIndex = target.indexOf( "}" );
+			if ( endingCurlyIndex == -1 || endingCurlyIndex < curlyIndex ) {
+				throw new BoxRuntimeException(
+				    "The connection string [" + target + "] for datasource [" + getOriginalName()
+				        + "] contains an opening '{' without a closing '}'. Please check your configuration and ensure those properties are included."
+				);
+			}
+		}
 
 		return target;
 	}

@@ -33,4 +33,14 @@ public class MFU implements ICachePolicy {
 		return Comparator.comparing( ICacheEntry::hits ).reversed();
 	}
 
+	/**
+	 * Get the SQL ORDER BY clause for this policy
+	 *
+	 * @return The ORDER BY clause (without "ORDER BY" prefix) for SQL queries
+	 */
+	@Override
+	public String getSQLOrderBy() {
+		return "hits DESC";
+	}
+
 }

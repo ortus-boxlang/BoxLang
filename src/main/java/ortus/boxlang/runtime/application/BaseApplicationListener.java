@@ -49,6 +49,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.util.EncryptionUtil;
@@ -313,6 +314,9 @@ public abstract class BaseApplicationListener {
 			        Key.listener, this,
 			        Key.context, this.context
 			    ) );
+		} catch ( AbortException e ) {
+			// Ignore aborts
+			throw e;
 		} catch ( Throwable e ) {
 			// Log the error
 			logger.error( "Error defining application [{}] => {}", this.appName, e.getMessage(), e );
@@ -454,6 +458,9 @@ public abstract class BaseApplicationListener {
 			// Only starts the first time
 			try {
 				this.application.start( this.context );
+			} catch ( AbortException e ) {
+				// Ignore aborts
+				throw e;
 			} catch ( Throwable e ) {
 				// Note this will remove the application even if the user has an abort;
 				// which means you basically can't start the app if you are aborting inside of it

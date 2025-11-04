@@ -26,6 +26,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
@@ -136,6 +137,9 @@ public class ConfigLoader {
 		    true
 		);
 
+		// Replace all placeholders in the raw config
+		rawConfig = PlaceholderHelper.resolveAll( rawConfig );
+
 		// Verify it loaded the configuration map
 		if ( rawConfig instanceof Map ) {
 			logger.debug( "Loaded internal BoxLang configuration file [{}]", configFile );
@@ -224,6 +228,9 @@ public class ConfigLoader {
 	public IStruct deserializeConfig( File source ) {
 		// Parse it natively to Java objects
 		Object rawConfig = JSONUtil.fromJSON( source, true );
+
+		// Replace all placeholders in the raw config
+		rawConfig = PlaceholderHelper.resolveAll( rawConfig );
 
 		// Verify it loaded the configuration map
 		if ( rawConfig instanceof Map ) {
@@ -347,6 +354,7 @@ public class ConfigLoader {
 				try {
 					IStruct configValue = StructCaster
 					    .cast( JSONUtil.fromJSON( StringCaster.cast( entry.getValue() ), true ) );
+					// Note, we're not expanding placeholders here since this JSON would have already been in an env var or sys prop.
 					flatConfig.put( entry.getKey(), configValue );
 				} catch ( Exception e ) {
 					logger.error(

@@ -21,7 +21,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.compiler.ClassInfo;
+import ortus.boxlang.compiler.IBoxpiler;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
+import ortus.boxlang.runtime.scopes.Key;
 
 public class ProxyTransformer {
 
@@ -63,6 +66,7 @@ public class ProxyTransformer {
 		import ortus.boxlang.compiler.parser.BoxSourceType;
 		import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 		import ortus.boxlang.runtime.runnables.BoxClassSupport;
+		import ortus.boxlang.compiler.BoxByteCodeVersion;
 
 		// Java Imports
 		import java.nio.file.Path;
@@ -78,9 +82,8 @@ public class ProxyTransformer {
 		import java.util.Map;
 		import java.util.Optional;
 
+		@BoxByteCodeVersion(boxlangVersion="${boxlangVersion}", bytecodeVersion=${bytecodeVersion})
 		public class ${className} implements IProxyRunnable, ${interfaceList} {
-
-			private static final long					compileVersion	= ${compileVersion};
 
 			/**
 			 * The box class being proxied to
@@ -91,13 +94,6 @@ public class ProxyTransformer {
 			}
 
 			// IProxyRunnable implementation methods
-
-			/**
-				* The version of the BoxLang runtime
-			*/
-			public long getBXRunnableCompileVersion() {
-				return ${className}.compileVersion;
-			}
 
 			/**
 			 * Set the proxy object
@@ -122,8 +118,9 @@ public class ProxyTransformer {
 		Map<String, String>	values				= Map.ofEntries(
 		    Map.entry( "packagename", packageName ),
 		    Map.entry( "className", className ),
-		    Map.entry( "compileVersion", "1L" ),
 		    Map.entry( "interfaceList", interfaceList ),
+		    Map.entry( "boxlangVersion", BoxRuntime.getInstance().getVersionInfo().getAsString( Key.version ) ),
+		    Map.entry( "bytecodeVersion", String.valueOf( IBoxpiler.BYTECODE_VERSION ) ),
 		    Map.entry( "interfaceMethods", interfaceMethods )
 		);
 

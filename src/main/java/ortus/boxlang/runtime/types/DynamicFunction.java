@@ -19,8 +19,6 @@ package ortus.boxlang.runtime.types;
 
 import java.nio.file.Path;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.List;
 import java.util.function.BiFunction;
 
@@ -252,30 +250,6 @@ public class DynamicFunction extends UDF {
 	@Override
 	public Access getAccess() {
 		return Access.PUBLIC;
-	}
-
-	/**
-	 * @inheritDoc
-	 */
-	@Override
-	public long getRunnableCompileVersion() {
-		return 0;
-	}
-
-	/**
-	 * @inheritDoc
-	 */
-	@Override
-	public LocalDateTime getRunnableCompiledOn() {
-		return LocalDateTime.ofInstant( this.createdOn, ZoneId.systemDefault() );
-	}
-
-	/**
-	 * @inheritDoc
-	 */
-	@Override
-	public Object getRunnableAST() {
-		return null;
 	}
 
 }

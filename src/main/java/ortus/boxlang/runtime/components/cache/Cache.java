@@ -41,6 +41,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.validation.Validator;
 
@@ -321,6 +322,9 @@ public class Cache extends Component {
 						    timeout,
 						    lastAccessTimeout
 						);
+					} catch ( AbortException e ) {
+						// Ignore aborts
+						throw e;
 					} catch ( Throwable e ) {
 						if ( throwOnError ) {
 							throw new BoxRuntimeException( "An error occurred while attempting to set the cache value", e );
@@ -352,6 +356,9 @@ public class Cache extends Component {
 					} else {
 						try {
 							cacheProvider.clearAll();
+						} catch ( AbortException e ) {
+							// Ignore aborts
+							throw e;
 						} catch ( Throwable e ) {
 							if ( throwOnError ) {
 								throw new BoxRuntimeException( "An error occurred while attempting to flush the cache", e );

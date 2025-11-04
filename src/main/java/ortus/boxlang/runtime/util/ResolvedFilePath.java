@@ -51,6 +51,27 @@ public record ResolvedFilePath( String mappingName, String mappingPath, String r
 	}
 
 	/**
+	 * Factor method to create a new ResolvedFilePath instance out of a real path.
+	 * 
+	 * This version doesn't call toRealPath() on the absolute path, assuming it is already real.
+	 *
+	 * @param mappingName  The mapping name used to resolve the path.
+	 * @param mappingPath  The mapping path used to resolve the path.
+	 * @param relativePath The relative path that was resolved
+	 * @param absolutePath The absolute path real resolved.
+	 *
+	 * @return A new ResolvedFilePath instance.
+	 */
+	public static ResolvedFilePath ofReal( String mappingName, String mappingPath, String relativePath, Path absolutePath ) {
+		return new ResolvedFilePath(
+		    mappingName,
+		    mappingPath,
+		    relativePath,
+		    absolutePath
+		);
+	}
+
+	/**
 	 * Factory method to create a new ResolvedFilePath instance, but using a string for the absolute path.
 	 *
 	 * @param mappingName  The mapping name used to resolve the path.

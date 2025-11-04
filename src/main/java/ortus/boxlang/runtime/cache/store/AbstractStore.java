@@ -46,7 +46,13 @@ public abstract class AbstractStore implements IObjectStore {
 	/**
 	 * The Eviction policy we lazy load in.
 	 */
-	private ICachePolicy		policy;
+	protected ICachePolicy		policy;
+
+	/**
+	 * Whether this store is distributed (persists outside the JVM) or local (in-memory).
+	 * Defaults to false (local store). Subclasses should override this if they are distributed.
+	 */
+	protected boolean			distributed			= false;
 
 	/**
 	 * Get the name of the store
@@ -91,6 +97,17 @@ public abstract class AbstractStore implements IObjectStore {
 		}
 
 		return this.policy;
+	}
+
+	/**
+	 * Indicates whether this store is distributed or local.
+	 * Distributed stores (like JDBC, Redis, etc.) persist data outside the JVM,
+	 * while local stores (like ConcurrentStore) keep data in memory.
+	 *
+	 * @return true if this is a distributed store, false if it's a local store
+	 */
+	public boolean isDistributed() {
+		return this.distributed;
 	}
 
 	/**

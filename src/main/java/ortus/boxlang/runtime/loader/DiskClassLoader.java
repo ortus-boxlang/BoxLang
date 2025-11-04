@@ -22,6 +22,8 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
@@ -29,6 +31,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.commons.ClassRemapper;
 import org.objectweb.asm.commons.Remapper;
 import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnList;
@@ -38,6 +41,10 @@ import org.objectweb.asm.tree.MethodNode;
 
 import ortus.boxlang.compiler.ClassInfo;
 import ortus.boxlang.compiler.IBoxpiler;
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.ObjectRef;
 import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
@@ -189,6 +196,11 @@ public class DiskClassLoader extends URLClassLoader {
 	 */
 	@Override
 	public Class<?> loadClass( String name ) throws ClassNotFoundException {
+		if ( !name.startsWith( "boxgenerated." ) ) {
+			// Delegate to parent for non-BoxLang classes
+			return super.loadClass( name );
+		}
+
 		// check local cache
 		java.lang.ref.WeakReference<Class<?>> ref = loadedClasses.get( name );
 		if ( ref != null ) {
@@ -213,6 +225,21 @@ public class DiskClassLoader extends URLClassLoader {
 			var clazz = super.loadClass( name );
 			loadedClasses.put( name, new java.lang.ref.WeakReference<>( clazz ) );
 			return clazz;
+		}
+	}
+
+	/**
+	 * Side-load in a class which we have compiled
+	 * 
+	 * @param name  The fully qualified name of the class
+	 * @param bytes The bytecode of the class
+	 */
+	public void defineClass( String name, byte[] bytes ) {
+		// Define it
+		Class<?> clazz = defineClass( name, bytes, 0, bytes.length );
+		// Add it to our cache
+		synchronized ( loadedClasses ) {
+			loadedClasses.put( name, new java.lang.ref.WeakReference<>( clazz ) );
 		}
 	}
 
@@ -260,21 +287,24 @@ public class DiskClassLoader extends URLClassLoader {
 	 */
 	@Override
 	protected synchronized Class<?> findClass( String name ) throws ClassNotFoundException {
-		Path		diskPath	= generateDiskPath( name );
+		Path			diskPath		= generateDiskPath( name );
 		// JIT compile
-		String		baseName	= IBoxpiler.getBaseFQN( name );
-		ClassInfo	classInfo	= boxPiler.getClassPool( classPoolName ).get( baseName );
+		String			baseName		= IBoxpiler.getBaseFQN( name );
+		boolean			isBaseClass		= name.equals( baseName );
+		ClassInfo		classInfo		= boxPiler.getClassPool( classPoolName ).get( baseName );
+		ObjectRef<Long>	lastModifiedRef	= ObjectRef.of( 0L );
 		// Do we need to compile the class?
 		// Pre-compiled source files will follow this path, but will be discovered as already compiled when we try to parse them
-		if ( needsCompile( classInfo, diskPath, name, baseName ) ) {
+		if ( needsCompile( classInfo, diskPath, name, baseName, lastModifiedRef ) ) {
 			// After this call, the class files will exist on disk, or will have been side-loaded into this classloader via the
 			// defineClass method (for pre-compiled source files)
 			boxPiler.compileClassInfo( classPoolName, baseName );
+			return loadClass( name );
 		}
 
 		// If there is no class file on disk, then we assume pre-compiled class bytes were already side loaded in, so we just get them
 		// TODO: Change this to use the same flag discussed in the needsCompile method
-		if ( !diskPath.toFile().exists() ) {
+		if ( isBaseClass && lastModifiedRef.get() == 0L ) {
 			return loadClass( name );
 		}
 
@@ -282,10 +312,57 @@ public class DiskClassLoader extends URLClassLoader {
 		byte[] bytes;
 		try {
 			bytes = Files.readAllBytes( diskPath );
+			if ( isBaseClass ) {
+				// Validate bytecode version
+				validateByteCodeVersion( bytes, name, diskPath );
+			}
 		} catch ( IOException e ) {
 			throw new ClassNotFoundException( "Unable to read class file from disk", e );
 		}
 		return defineClass( name, bytes, 0, bytes.length );
+	}
+
+	/**
+	 * Validates that the bytecode version of the class is compatible with the current runtime.
+	 * 
+	 * @param bytes    The bytecode of the class
+	 * @param name     The fully qualified name of the class
+	 * @param diskPath The path to the class file on disk
+	 */
+	private void validateByteCodeVersion( byte[] bytes, String name, Path diskPath ) {
+		ClassReader	classReader	= new ClassReader( bytes );
+		ClassNode	classNode	= new ClassNode();
+		classReader.accept( classNode, 0 );
+		validateByteCodeVersion( classNode, name, diskPath );
+	}
+
+	/**
+	 * Validates that the bytecode version of the class is compatible with the current runtime.
+	 * 
+	 * @param classNode The ClassNode representation of the class
+	 * @param name      The fully qualified name of the class
+	 * @param diskPath  The path to the class file on disk
+	 */
+	private void validateByteCodeVersion( ClassNode classNode, String name, Path diskPath ) {
+		List<AnnotationNode>	invisibleAnnotations	= classNode.invisibleAnnotations;
+		boolean					valid					= false;
+		String					compileVersion			= null;
+		if ( invisibleAnnotations != null ) {
+			for ( AnnotationNode an : invisibleAnnotations ) {
+				if ( an.desc.equals( "Lortus/boxlang/compiler/BoxByteCodeVersion;" ) ) {
+					valid			= ( Integer ) an.values.get( 3 ) == IBoxpiler.BYTECODE_VERSION;
+					compileVersion	= ( String ) an.values.get( 1 );
+					break;
+				}
+			}
+		}
+		if ( !valid ) {
+			throw new BoxRuntimeException(
+			    "The class [" + name + "] at [" + diskPath.toString() + "] "
+			        + ( compileVersion == null ? "" : "was compiled by BoxLang [" + compileVersion + "] and " ) +
+			        "is incompatible with this runtime of version [" + BoxRuntime.getInstance().getVersionInfo().getAsString( Key.version ) +
+			        "].  Clear your classes folder, or recompile the source." );
+		}
 	}
 
 	/**
@@ -349,7 +426,7 @@ public class DiskClassLoader extends URLClassLoader {
 	 *
 	 * @see ClassInfo#lastModified()
 	 */
-	private boolean needsCompile( ClassInfo classInfo, Path diskPath, String name, String baseName ) {
+	private boolean needsCompile( ClassInfo classInfo, Path diskPath, String name, String baseName, ObjectRef<Long> lastModifiedRef ) {
 		// TODO: need to add some Modifiable flags to the classInfo object to track if it has been compiled or not
 		// and in what manner. For example, precompiled sources read directly into the class loader won't
 		// have a class file on disk and we should be able to just skip that check entirely if we know that.
@@ -360,16 +437,20 @@ public class DiskClassLoader extends URLClassLoader {
 		if ( !name.equals( baseName ) ) {
 			return false;
 		}
-		// There is a class file cached on disk
-		if ( hasClass( diskPath ) ) {
-			// If the class file is older than the source file
-			if ( classInfo != null && classInfo.lastModified() > 0 && classInfo.lastModified() != diskPath.toFile().lastModified() ) {
+
+		long diskClassLastModified = diskPath.toFile().lastModified();  // returns 0 if file doesn't exist
+		lastModifiedRef.set( diskClassLastModified );
+
+		// File is on disk
+		if ( diskClassLastModified > 0 ) {
+			// Trusted cache is disabled and the class on disk is old
+			if ( classInfo != null && classInfo.lastModified() > 0 && classInfo.lastModified() != diskClassLastModified ) {
 				return true;
 			}
 			return false;
 		}
 
-		// There is no class file cached on disk
+		// no file on disk
 		return true;
 	}
 
@@ -541,7 +622,9 @@ public class DiskClassLoader extends URLClassLoader {
 	 *
 	 * @see #renameClassAndReferences(byte[], String, String, ClassInfo, boolean)
 	 */
-	public void defineClasses( String fqn, File sourceFile, ClassInfo classInfo ) {
+	public List<byte[]> defineClasses( String fqn, File sourceFile, ClassInfo classInfo ) {
+		List<byte[]> classes = new ArrayList<>();
+		classes.add( fqn.getBytes() );
 		try {
 			byte[]		fileBytes	= Files.readAllBytes( sourceFile.toPath() );
 			ByteBuffer	buffer		= ByteBuffer.wrap( fileBytes );
@@ -566,12 +649,13 @@ public class DiskClassLoader extends URLClassLoader {
 				buffer.get( classBytes );
 
 				// Use ASM to rewrite the class name and references
-				byte[] newClassBytes = renameClassAndReferences( classBytes, oldInternalName, newInternalName, classInfo, first );
-
-				defineClass( null, newClassBytes, 0, newClassBytes.length );
+				ObjectRef<String>	newName			= ObjectRef.of( "" );
+				byte[]				newClassBytes	= renameClassAndReferences( classBytes, oldInternalName, newInternalName, classInfo, first, newName );
+				classes.add( newClassBytes );
+				defineClass( newName.get().replace( '/', '.' ), newClassBytes );
 				first = false;
 			}
-
+			return classes;
 		} catch ( IOException e ) {
 			throw new RuntimeException( "Failed to read file", e );
 		}
@@ -646,7 +730,8 @@ public class DiskClassLoader extends URLClassLoader {
 	 * @see org.objectweb.asm.ClassWriter
 	 * @see org.objectweb.asm.commons.ClassRemapper
 	 */
-	private byte[] renameClassAndReferences( byte[] classBytes, String oldInternalName, String newInternalName, ClassInfo classInfo, boolean outerClass ) {
+	private byte[] renameClassAndReferences( byte[] classBytes, String oldInternalName, String newInternalName, ClassInfo classInfo, boolean outerClass,
+	    ObjectRef<String> newName ) {
 		String		boxFQN			= classInfo.boxFqn().toString();
 		String		mappingName		= classInfo.resolvedFilePath().mappingName();
 		String		mappingPath		= classInfo.resolvedFilePath().mappingPath();
@@ -657,13 +742,19 @@ public class DiskClassLoader extends URLClassLoader {
 		ClassNode	sourceNode		= new ClassNode();
 		cr.accept( sourceNode, 0 );
 
+		if ( outerClass ) {
+			// Validate bytecode version
+			validateByteCodeVersion( sourceNode, sourceNode.name.replace( '/', '.' ), classInfo.resolvedFilePath().absolutePath() );
+		}
+
 		// Remap class names into a new ClassNode
 		ClassNode	remappedNode	= new ClassNode();
-		Remapper	remapper		= new Remapper() {
+		Remapper	remapper		= new Remapper( Opcodes.ASM9 ) {
 
 										@Override
 										public String map( String internalName ) {
-											if ( internalName.equals( oldInternalName ) || internalName.startsWith( oldInternalName + "$" ) ) {
+											if ( internalName.equals( oldInternalName )
+											    || internalName.startsWith( oldInternalName + "$" ) ) {
 												return internalName.replace( oldInternalName, newInternalName );
 											}
 											return internalName;
@@ -734,6 +825,7 @@ public class DiskClassLoader extends URLClassLoader {
 
 		ClassWriter cw = new ClassWriter( 0 );
 		remappedNode.accept( cw );
+		newName.set( remappedNode.name );
 		return cw.toByteArray();
 	}
 
@@ -760,6 +852,15 @@ public class DiskClassLoader extends URLClassLoader {
 		ClassNode	classNode	= new ClassNode();
 		classReader.accept( classNode, 0 );
 		return classNode.name.replace( '/', '.' );
+	}
+
+	/**
+	 * Clears the in-memory cache of loaded classes.
+	 */
+	public void clearClassesCache() {
+		synchronized ( loadedClasses ) {
+			loadedClasses.clear();
+		}
 	}
 
 }

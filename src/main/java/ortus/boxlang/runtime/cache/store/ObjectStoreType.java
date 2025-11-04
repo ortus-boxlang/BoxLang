@@ -88,6 +88,8 @@ public enum ObjectStoreType {
 				return new ConcurrentSoftReferenceStore();
 			case DISK :
 				return new FileSystemStore();
+			case JDBC :
+				return new JDBCStore();
 			default :
 				throw new BoxRuntimeException( "No Object Store " + CoreProviderType.class.getCanonicalName() );
 		}

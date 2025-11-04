@@ -1590,4 +1590,13 @@ public class BoxParser extends AbstractParser {
 		}
 	}
 
+	/**
+	 * Check if we are parsing a class or interface
+	 * 
+	 * @return true if we are parsing a class or interface
+	 */
+	public boolean isClassOrInterface() {
+		return this.classOrInterface;
+	}
+
 }

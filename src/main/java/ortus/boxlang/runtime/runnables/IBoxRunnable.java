@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.runnables;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
@@ -36,21 +35,6 @@ public interface IBoxRunnable {
 	 * The imports for this runnable
 	 */
 	public List<ImportDefinition> getImports();
-
-	/**
-	 * The version of the BoxLang runtime
-	 */
-	public long getRunnableCompileVersion();
-
-	/**
-	 * The date the template was compiled
-	 */
-	public LocalDateTime getRunnableCompiledOn();
-
-	/**
-	 * The AST (abstract syntax tree) of the runnable
-	 */
-	public Object getRunnableAST();
 
 	/**
 	 * The path to the template

@@ -22,17 +22,17 @@ import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.ParsePosition;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.ZoneId;
-import java.time.Instant;
-import java.time.temporal.TemporalAccessor;
-import java.time.ZonedDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.FormatStyle;
+import java.time.temporal.TemporalAccessor;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
@@ -70,28 +70,33 @@ public final class LocalizationUtil {
 	 */
 	public static final String[]					COMMON_DATETIME_PATTERNS	= {
 
+	    // ISO basic formats - these need to come first
+	    "yyyy-MM-dd hh:mm[:ss] a",         // Date-time with 12-hour format and meridian (double digit hour)
+	    "yyyy-MM-dd h:mm[:ss] a",         // Date-time with 12-hour format and meridian (single digit hour)
+	    "yyyy-MM-dd['T'][ ]HH:mm[:ss][.SSSSSS][XXX]",  // Consolidated: ISO with optional T/space, seconds, microseconds, offset
+	    "yyyy-MM-dd['T'][ ]HH:mm[:ss][.SSS][XXX]",     // Consolidated: ISO with optional T/space, seconds, milliseconds, offset
+	    "yyyy-MM-dd['T'][ ]HH:mm[:ss][Z][X]",          // Consolidated: ISO with optional T/space, seconds, basic offset
+
 	    // Localized Date/Time formats - the order in which these are presented is very specific
-	    "EEE[E][,] d MMM yyyy HH:mm:ss zzz", // Full DateTime (e.g., Tue, 02 Apr 2024 21:01:00 CEST) - Similar to FULL_FULL - optional full day, optional comma
+	    "EEEE[,] d MMM yyyy HH:mm:ss[ zzz]", // Full DateTime (e.g., Tue, 02 Apr 2024 21:01:00 CEST) - Similar to FULL_FULL - optional full day, optional comma
+	    "EEE[,] d MMM yyyy HH:mm:ss[ zzz]", // Full DateTime (e.g., Tue, 02 Apr 2024 21:01:00 CEST) - Similar to FULL_FULL - optional full day, optional comma
 	    "dd MMM yyyy HH:mm[:ss]",         // Long DateTime (e.g., 02 Apr 2024 21:01:00) - Similar to LONG_LONG
 	    "dd-MMM-yyyy HH:mm[:ss]",         // Medium DateTime (e.g., 02-Apr-2024 21:01:00) - Might need adjustment based on locale
+	    "MMMM[,] dd[,] yyyy HH:mm:ss[ zzz]", 	  // Med DateTime (e.g., Apr 02, 2024 21:01:00) - Might need adjustment based on locale
+	    "MMMM[,] dd[,] yyyy hh:mm a[ zzz]", 	    // Med DateTime No Seconds and AM/PM (e.g., Apr 02, 2024 10:01 AM) - Might need adjustment based on locale
+	    "MMMM[,] dd[,] yyyy HH:mm[ zzz]", 	     // Med DateTime No Seconds (e.g. Apr 02 2024 21:01) - Might need adjustment based on locale
+	    "MMM[,] dd[,] yyyy HH:mm:ss[ zzz]", 	  // Med DateTime (e.g., Apr 02, 2024 21:01:00) - Might need adjustment based on locale
+	    "MMM[,] dd[,] yyyy hh:mm a[ zzz]", 	    // Med DateTime No Seconds and AM/PM (e.g., Apr 02, 2024 10:01 AM) - Might need adjustment based on locale
+	    "MMM[,] dd[,] yyyy HH:mm[ zzz]", 	     // Med DateTime No Seconds (e.g. Apr 02 2024 21:01) - Might need adjustment based on locale
 	    "MM/dd/yyyy hh:mm[:ss] a",         // Short DateTime (e.g., 02/04/2024 04:01:00 PM) - Might need adjustment based on locale
 	    "MM/dd/yyyy HH:mm[:ss]",         // Short DateTime (e.g., 02/04/2024 21:01:00) - Might need adjustment based on locale
 	    "MM/dd/yyyy hh:mm a",         // Short DateTime (e.g., 02/04/2024 04:01:00 PM) - Might need adjustment based on locale
 	    "dd.MM.yyyy HH:mm[:ss]",         // Short DateTime (e.g., 02.04.2024 21:01:00) - Might need adjustment based on locale
 	    "LLLL dd[,] yyyy HH:mm:ss", 	  // Long month DateTime (e.g., April 02, 2024 21:01:00) - Might need adjustment based on locale
 	    "LLLL dd[,] yyyy hh:mm a", 	  // Long month DateTime with AM/PM (e.g., April 02, 2024 05:01 AM) - Might need adjustment based on locale
-	    "MMM[,] dd[,] yyyy HH:mm:ss", 	  // Med DateTime (e.g., Apr 02, 2024 21:01:00) - Might need adjustment based on locale
-	    "MMM[,] dd[,] yyyy hh:mm a", 	    // Med DateTime No Seconds and AM/PM (e.g., Apr 02, 2024 10:01 AM) - Might need adjustment based on locale
-	    "MMM[,] dd[,] yyyy HH:mm", 	     // Med DateTime No Seconds (e.g. Apr 02 2024 21:01) - Might need adjustment based on locale
 
 	    // java.util.Date toString default format
 	    "EEE[,] MMM[,] dd[,] HH:mm:ss zzz yyyy", // Default DateTime (e.g., Tue Apr 02 21:01:00 CET 2024) - Similar to DEFAULT - optional commas
-
-	    // ISO formats
-	    "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX",  // Date-time with fractional microseconds and offset
-	    "yyyy-MM-dd'T'HH:mm:ss.SSS[XXX]",  // Date-time with milliseconds and offset
-	    "yyyy-MM-dd'T'HH:mm:ss[Z][X]",        // Date-time with offset (Z)
-	    "yyyy-MM-dd'T'HH:mm:ss",         // Date-time
 
 	    // ODBC formats
 	    "yyyyMMddHHmmss",                // ODBCDateTime - Potential ODBC format
@@ -100,17 +105,15 @@ public final class LocalizationUtil {
 	    "yyyy/MM/dd", // Common to Africa and Taiwan
 	    "M-d-yy", // Short Form two-digit year
 
-	    // US Localized Date formats - Month First
-	    "MMM dd yyyy",                   // Long Date (e.g., Apr 02 2024)
-	    "MMM-dd-yyyy",                   // Medium Date (e.g., Apr-02-2024) - Might need adjustment based on locale
-	    "MMM/dd/yyyy",                   // Medium Date (e.g., Apr/02/2024) - Might need adjustment based on locale
-	    "MMM.dd.yyyy",                   // Medium Date (e.g., Apr.02.2024) - Might need adjustment based on locale
-
-	    // US Localized Date formats - Month First (Short)
-	    "MM dd yyyy",                   // Short Date (e.g., 04 02 2024) - Might need adjustment based on locale
-	    "MM-dd-yyyy",                   // Short Date (e.g., 04-02-2024) - Might need adjustment based on locale
-	    "MM/dd/yyyy",                   // Short Date (e.g., 04/02/2024) - Might need adjustment based on locale
-	    "MM.dd.yyyy",                   // Short Date (e.g., 04.02.2024) - Might need adjustment based on locale
+	    // US Localized Date formats - Month First (Phase 2B Consolidation)
+	    "MMM dd yyyy",                  // Long Date with space separators (e.g., Apr 02 2024)
+	    "MMM-dd-yyyy",                  // Long Date with dash separators (e.g., Apr-02-2024)
+	    "MMM/dd/yyyy",                  // Long Date with slash separators (e.g., Apr/02/2024)
+	    "MMM.dd.yyyy",                  // Long Date with dot separators (e.g., Apr.02.2024)
+	    "MM dd yyyy",                   // Short Date with space separators (e.g., 04 02 2024)
+	    "MM-dd-yyyy",                   // Short Date with dash separators (e.g., 04-02-2024)
+	    "MM/dd/yyyy",                   // Short Date with slash separators (e.g., 04/02/2024)
+	    "MM.dd.yyyy",                   // Short Date with dot separators (e.g., 04.02.2024)
 
 	    // Localized Date formats
 	    "EEE[E][,] dd MMM yyyy",          // Full Date (e.g., Tue, 02 Apr 2024) - Similar to FULL - optional full day, optional comma
@@ -122,16 +125,11 @@ public final class LocalizationUtil {
 	    "MMM[,] dd[,] yyyy",                  // Med Date (e.g., Apr 02, 2024) - Might need adjustment based on locale
 	    "MMMM[,] dd[,] yyyy",                 // Long month Date (e.g., April 02, 2024) - Might need adjustment based on locale
 
-	    // European Day-First Formats
-	    "dd MM yyyy",                   // Short Date (e.g., 02.04.2024) - Might need adjustment based on locale
-	    "dd-MM-yyyy",                   // Short Date (e.g., 02-04-2024) - Might need adjustment based on locale
-	    "dd/MM/yyyy",                   // Short Date (e.g., 02/04/2024) - Might need adjustment based on locale
-	    "dd.MM.yyyy",                   // Short Date (e.g., 02.04.2024) - Might need adjustment based on locale
+	    // European Day-First Formats - Consolidated
+	    "dd[ /-.]MM[ /-.]yyyy",         // European day-first with flexible separators (e.g., 02-04-2024, 02/04/2024, 02.04.2024)
 
-	    // ISO format
-	    "yyyy-MM-dd",                   // ISODate (e.g., 2024-04-02)
-	    "yyyy/MM/dd",                   // ISODate (e.g., 2024/04/02)
-	    "yyyy.MM.dd",                   // ISODate (e.g., 2024.04.02)
+	    // ISO format - Consolidated
+	    "yyyy[-/.]MM[-/.]dd",           // ISO date with flexible separators (e.g., 2024-04-02, 2024/04/02, 2024.04.02)
 
 	    // ODBC format
 	    "yyyyMMdd"                     // ODBCDate - Potential ODBC format
@@ -670,26 +668,37 @@ public final class LocalizationUtil {
 	 * {@link LocalTime}, or {@link Instant}. If successful, it wraps the parsed result in a {@link DateTime}.
 	 *
 	 * @param dateTime the date-time string to parse
+	 * @param timezone the timezone to apply to parsed dates without timezone information (optional, ignored if null)
 	 * 
 	 * @return a {@link DateTime} object representing the parsed date-time
 	 * 
 	 * @throws BoxRuntimeException if the input string cannot be parsed into a supported {@link TemporalAccessor}
 	 */
-	public static DateTime parseFromCommonPatterns( String dateTime ) {
+	public static DateTime parseFromCommonPatterns( String dateTime, ZoneId timezone ) {
 		TemporalAccessor date = getCommonPatternDateTimeParsers().parseBest( dateTime, OffsetDateTime::from, ZonedDateTime::from, LocalDateTime::from,
 		    LocalDate::from, LocalTime::from );
+
 		if ( date instanceof ZonedDateTime castZonedDateTime ) {
 			return new DateTime( castZonedDateTime );
-		} else if ( date instanceof LocalDateTime castLocalDateTime ) {
-			return new DateTime( castLocalDateTime );
-		} else if ( date instanceof LocalDate castLocalDate ) {
-			return new DateTime( castLocalDate );
-		} else if ( date instanceof LocalTime castLocalTime ) {
-			return new DateTime( castLocalTime );
-		} else if ( date instanceof Instant castInstant ) {
-			return new DateTime( castInstant );
 		} else if ( date instanceof OffsetDateTime castOffsetDateTime ) {
 			return new DateTime( castOffsetDateTime );
+		} else if ( date instanceof LocalDateTime castLocalDateTime ) {
+			// Apply timezone if provided, otherwise use the existing DateTime constructor behavior
+			return timezone != null
+			    ? new DateTime( castLocalDateTime.atZone( timezone ) )
+			    : new DateTime( castLocalDateTime );
+		} else if ( date instanceof LocalDate castLocalDate ) {
+			// Apply timezone if provided, otherwise use the existing DateTime constructor behavior
+			return timezone != null
+			    ? new DateTime( castLocalDate.atStartOfDay( timezone ) )
+			    : new DateTime( castLocalDate );
+		} else if ( date instanceof LocalTime castLocalTime ) {
+			// Apply timezone if provided, otherwise use the existing DateTime constructor behavior
+			return timezone != null
+			    ? new DateTime( castLocalTime.atDate( LocalDate.now() ).atZone( timezone ) )
+			    : new DateTime( castLocalTime );
+		} else if ( date instanceof Instant castInstant ) {
+			return new DateTime( castInstant );
 		} else {
 			throw new BoxRuntimeException(
 			    String.format(
@@ -698,6 +707,20 @@ public final class LocalizationUtil {
 			    )
 			);
 		}
+	}
+
+	/**
+	 * Parses a date-time string using common patterns and returns a {@link DateTime} object.
+	 * Uses the existing DateTime constructor behavior for dates without timezone information.
+	 *
+	 * @param dateTime the date-time string to parse
+	 * 
+	 * @return a {@link DateTime} object representing the parsed date-time
+	 * 
+	 * @throws BoxRuntimeException if the input string cannot be parsed into a supported {@link TemporalAccessor}
+	 */
+	public static DateTime parseFromCommonPatterns( String dateTime ) {
+		return parseFromCommonPatterns( dateTime, null );
 	}
 
 	/**

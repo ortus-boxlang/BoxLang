@@ -23,7 +23,6 @@ import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -76,32 +75,21 @@ public class IsDate extends BIF {
 		} else if ( dateRef instanceof DateTime ) {
 			return true;
 		}
-		// localized handling
-		if ( localeString != null || timezone != null ) {
-			ZoneId zoneId = null;
-			try {
-				zoneId = timezone != null ? ZoneId.of( timezone ) : LocalizationUtil.parseZoneId( timezone, context );
-			} catch ( ZoneRulesException e ) {
-				throw new BoxRuntimeException(
-				    String.format(
-				        "The value [%s] is not a valid timezone.",
-				        timezone
-				    ),
-				    e
-				);
-			}
-			Locale locale = LocalizationUtil.getParsedLocale( localeString );
-			try {
-				new DateTime( StringCaster.cast( dateRef ), locale, zoneId );
-				return true;
-			} catch ( Exception e ) {
-				return false;
-			}
-			// Caster handling
-		} else {
-			return DateTimeCaster.attempt( dateRef, context ).wasSuccessful();
-		}
 
+		ZoneId zoneId = null;
+		try {
+			zoneId = timezone != null ? ZoneId.of( timezone ) : LocalizationUtil.parseZoneId( timezone, context );
+		} catch ( ZoneRulesException e ) {
+			throw new BoxRuntimeException(
+			    String.format(
+			        "The value [%s] is not a valid timezone.",
+			        timezone
+			    ),
+			    e
+			);
+		}
+		Locale locale = LocalizationUtil.getParsedLocale( localeString );
+		return DateTimeCaster.cast( dateRef, false, zoneId, false, context, locale ) != null;
 	}
 
 }

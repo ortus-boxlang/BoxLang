@@ -25,6 +25,10 @@ import java.util.Map;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
+
 public class PlaceholderHelperTest {
 
 	@DisplayName( "PlaceholderHelper.resolve() should resolve placeholders in the input string with no case sensitivity" )
@@ -106,6 +110,29 @@ public class PlaceholderHelperTest {
 		String				resolved	= PlaceholderHelper.resolve( input, map );
 
 		assertThat( resolved ).isEqualTo( expected );
+	}
+
+	@DisplayName( "Placeholder can recursively replace" )
+	@Test
+	public void testResolveRecursive() {
+		IStruct	input		= Struct.of(
+		    "foo", "${brad}",
+		    "bar", Struct.of( "baz", "${jon}" ),
+		    "bum", Array.of( "${luis}", "${brad}" ),
+		    "nested ${brad}", Struct.of( "${luis}", "Cool" )
+		);
+		IStruct	map			= Struct.of( "brad", "wood", "luis", "majano", "jon", "clausen" );
+
+		IStruct	resolved	= PlaceholderHelper.resolveAll( input, map );
+
+		assertThat( resolved.get( "foo" ) ).isEqualTo( "wood" );
+		assertThat( ( ( IStruct ) resolved.get( "bar" ) ).get( "baz" ) ).isEqualTo( "clausen" );
+		assertThat( resolved.get( "bum" ) ).isInstanceOf( Array.class );
+		Array bumArray = ( Array ) resolved.get( "bum" );
+		assertThat( bumArray.get( 0 ) ).isEqualTo( "majano" );
+		assertThat( bumArray.get( 1 ) ).isEqualTo( "wood" );
+		assertThat( ( ( IStruct ) resolved.get( "nested wood" ) ).get( "majano" ) ).isEqualTo( "Cool" );
+
 	}
 
 }

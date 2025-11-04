@@ -808,9 +808,7 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	/**
 	 * This is an optional method on contexts which require shutdown outside of its constructor
 	 */
-	public default void shutdown() {
-		// Default is nothing
-	}
+	public void shutdown();
 
 	/**
 	 * This is an optional method on contexts which require startup outside of its constructor
@@ -846,4 +844,10 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	 */
 	public boolean isDefined( Object value, boolean forAssign );
 
+	/**
+	 * Register a shutdown listener to be called when the context is shutdown
+	 * 
+	 * @param consumer The consumer to register
+	 */
+	public void registerShutdownListener( java.util.function.Consumer<IBoxContext> consumer );
 }

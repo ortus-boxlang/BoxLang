@@ -25,6 +25,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -146,6 +147,7 @@ public final class FileSystemUtil {
 	public static final ArrayList<String>	TEXT_MIME_PREFIXES		= new ArrayList<String>() {
 		{
 			add( "text" );
+			add( "message" );
 		}
 	};
 	// @formatter:on
@@ -551,8 +553,8 @@ public final class FileSystemUtil {
 
 		String[] mimeParts = mimeType.split( "/" );
 
-		return !TEXT_MIME_PREFIXES.contains( mimeParts[ 0 ] )
-		    && !TEXT_MIME_SUFFIXES.stream().anyMatch( suffix -> mimeParts[ 1 ].startsWith( StringCaster.cast( suffix ).toLowerCase() ) );
+		return !TEXT_MIME_PREFIXES.contains( mimeParts[ 0 ].toLowerCase() )
+		    && !TEXT_MIME_SUFFIXES.stream().anyMatch( suffix -> mimeParts[ 1 ].toLowerCase().startsWith( StringCaster.cast( suffix ).toLowerCase() ) );
 	}
 
 	/**
@@ -565,7 +567,11 @@ public final class FileSystemUtil {
 	public static String getMimeType( String filePath ) {
 		try {
 			if ( filePath.substring( 0, 4 ).equalsIgnoreCase( "http" ) ) {
-				return Files.probeContentType( Paths.get( new URI( filePath ).toURL().getFile() ).getFileName() );
+				String contentType = Files.probeContentType( Paths.get( new URI( filePath ).toURL().getFile() ).getFileName() );
+				if ( contentType == null ) {
+					contentType = getRemoteFileContentType( filePath );
+				}
+				return contentType;
 			} else {
 				return Files.probeContentType( Paths.get( filePath ).getFileName() );
 			}
@@ -573,6 +579,30 @@ public final class FileSystemUtil {
 			throw new BoxIOException( e );
 		} catch ( URISyntaxException e ) {
 			throw new BoxRuntimeException( "The provided URL [" + filePath + "] is not a valid. " + e.getMessage() );
+		}
+	}
+
+	/**
+	 * Retrieves the content type of a remote file
+	 *
+	 * @param src
+	 *
+	 * @return
+	 * 
+	 */
+	public static String getRemoteFileContentType( String src ) {
+		try {
+			URL					url			= new URI( src ).toURL();
+			HttpURLConnection	connection	= ( HttpURLConnection ) url.openConnection();
+			// Use HEAD to avoid downloading the full content
+			connection.setRequestMethod( "HEAD" );
+			connection.connect();
+
+			return connection.getHeaderField( "Content-Type" );
+		} catch ( URISyntaxException e ) {
+			throw new RuntimeException( "Error parsing URI: " + src, e );
+		} catch ( IOException e ) {
+			throw new BoxIOException( "Error fetching content type for URL: " + src, e );
 		}
 	}
 
@@ -613,7 +643,7 @@ public final class FileSystemUtil {
 			infoStruct.put( "name", path.getFileName().toString() );
 			infoStruct.put( "path", path.toAbsolutePath().toString() );
 			infoStruct.put( "size", Files.isDirectory( path ) ? 0l : Files.size( path ) );
-			infoStruct.put( "type", Files.isDirectory( path ) ? "dir" : "file" );
+			infoStruct.put( "type", Files.isDirectory( path ) ? "directory" : "file" );
 			infoStruct.put( "lastModified",
 			    new DateTime( Files.getLastModifiedTime( path ).toInstant() ).setFormat( "MMMM, d, yyyy HH:mm:ss Z" ) );
 			if ( verbose == null || !verbose ) {
@@ -1520,7 +1550,7 @@ public final class FileSystemUtil {
 	 * @return The resolved path or null if not found
 	 */
 	public static Path pathExistsCaseInsensitive( Path path ) {
-		Boolean defaultCheck = Files.exists( path );
+		Boolean defaultCheck = path.toFile().exists();
 		if ( defaultCheck ) {
 			try {
 				return path.toRealPath();

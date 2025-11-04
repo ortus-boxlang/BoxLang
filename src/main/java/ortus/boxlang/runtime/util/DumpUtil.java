@@ -19,7 +19,6 @@ package ortus.boxlang.runtime.util;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -125,22 +124,39 @@ public class DumpUtil {
 				output = "buffer";
 			}
 		} else {
-			output = output.toLowerCase();
 
 			// Backwards compat here, could put this in the transpiler if we want
-			if ( output.equals( "browser" ) ) {
+			if ( output.equalsIgnoreCase( "browser" ) ) {
 				output = "buffer";
 			}
 		}
+		Path dumpFilePath = null;
+		// If the output contains a dot or slash, then take it as a file path
+		if ( output.contains( "." ) || output.contains( "/" ) || output.contains( "\\" ) ) {
+			try {
+				// test if output is an absolute valid path on disk
+				dumpFilePath = Paths.get( output );
+				// If not absolute, make relative to the temp dir. FileSystemUtil.getTempDirectory()
+				if ( !dumpFilePath.isAbsolute() ) {
+					dumpFilePath = Paths.get( FileSystemUtil.getTempDirectory() ).resolve( output ).toAbsolutePath().normalize();
+				}
+				// Set this last so any errors above don't change the output type
+				output = "___file___";
+			} catch ( Exception e ) {
+				// If the path is invalid, simply ignore
+				dumpFilePath = null;
+			}
+		}
 
+		// Don't lowercase this until we've checked if it's a file path
+		output = output.toLowerCase();
 		// Determine the output format if not passed from the output parameter.
 		if ( format == null ) {
 			// If the output is console or the parent context is a scripting context, then use text.
 			if ( output.equals( "console" ) || isScriptContext ) {
 				format = "text";
-			}
-			// Otherwise, use HTML (default for buffer or filename)
-			else {
+			} else {
+				// Otherwise, use HTML (default for buffer or filename)
 				format = "html";
 			}
 		} else {
@@ -148,8 +164,9 @@ public class DumpUtil {
 		}
 
 		// Announce it
-		final var	outputFinal	= output;
-		final var	formatFinal	= format;
+		final var	outputFinal			= output;
+		final var	formatFinal			= format;
+		final var	dumpFilePathFinal	= dumpFilePath;
 		context
 		    .getRuntime()
 		    .announce(
@@ -163,152 +180,145 @@ public class DumpUtil {
 		            Key.abort, abort,
 		            Key.output, outputFinal,
 		            Key.format, formatFinal,
+		            Key.dumpFilePath, dumpFilePathFinal,
 		            Key.showUDFs, showUDFs
 		        ) );
 
-		// Dump the object based on the output location
-		switch ( output ) {
-			// SEND TO CONSOLE
-			case "console" :
-				if ( format.equals( "html" ) ) {
-					dumpHTMLToConsole( context, target, label, top, expand, abort, output, format, showUDFs );
-				} else {
-					dumpTextToConsole( context, target, label );
-				}
-				break;
-
-			// SEND TO BUFFER (HTML or TEXT)
-			case "buffer" :
-				if ( format.equals( "html" ) ) {
-					dumpHTMLToBuffer( context, target, label, top, expand, abort, output, format, showUDFs );
-				} else {
-					dumpTextToBuffer( context, target );
-				}
-				break;
-
-			// SEND TO FILE OR ANNOUCEMENT
-			default :
-				// Validate we have something
-				if ( output.isEmpty() ) {
-					throw new BoxRuntimeException( "The output parameter is required." );
-				}
-
-				// Announce the missing dump output
-				// So anybody listening can handle it.
-				context.getRuntime()
-				    .getInterceptorService()
-				    .announce(
-				        BoxEvent.ON_MISSING_DUMP_OUTPUT,
-				        () -> Struct.ofNonConcurrent(
-				            Key.context, context,
-				            Key.target, target,
-				            Key.label, label,
-				            Key.top, top,
-				            Key.expand, expand,
-				            Key.abort, abort,
-				            Key.output, outputFinal,
-				            Key.format, formatFinal,
-				            Key.showUDFs, showUDFs
-				        )
-				    );
-				break;
+		String dumpOutput;
+		if ( format.equals( "html" ) ) {
+			dumpOutput = generateDumpHTML( context, target, label, top, expand, abort, output, format, showUDFs );
+		} else {
+			dumpOutput = generateDumpText( context, target, label );
 		}
+		if ( dumpOutput != null ) {
+			// Dump the object based on the output location
+			switch ( output ) {
+				// SEND TO CONSOLE
+				case "console" :
+					context.getRequestContext().getOut().println( dumpOutput );
+					break;
 
-		// If we are aborting, then throw an abort exception.
-		if ( abort ) {
-			if ( output.equals( "buffer" ) ) {
-				context.writeToBuffer(
-				    """
-				    	<div style="margin-top: 10px; display: inline-block; padding: 8px 12px; background-color: #ff4d4d; color: white; font-weight: bold; border-radius: 5px;">
-				    		Dump Aborted
-				    	</div>
-				    """,
-				    true );
+				// SEND TO BUFFER (HTML or TEXT)
+				case "buffer" :
+					// force=true ensures it shows up even bx:setting enableOutputOnly is true
+					context.writeToBuffer( dumpOutput, true );
+					context.flushBuffer( false );
+
+					// If we are aborting, then throw an abort exception.
+					if ( abort ) {
+						context.writeToBuffer(
+						    """
+						    	<div style="margin-top: 10px; display: inline-block; padding: 8px 12px; background-color: #ff4d4d; color: white; font-weight: bold; border-radius: 5px;">
+						    		Dump Aborted
+						    	</div>
+						    """,
+						    true );
+						context.flushBuffer( true );
+						throw new AbortException( "request", null );
+					}
+					break;
+
+				// SEND TO FILE
+				case "___file___" :
+					if ( dumpFilePath != null ) {
+						appendDumpToFile( dumpFilePath, dumpOutput );
+						break;
+					}
+
+					// SEND ANNOUCEMENT
+				default :
+					// Validate we have something
+					if ( output.isEmpty() ) {
+						throw new BoxRuntimeException( "The output parameter is required." );
+					}
+
+					// Announce the missing dump output
+					// So anybody listening can handle it.
+					final var dumpOutputFinal = dumpOutput;
+					context.getRuntime()
+					    .getInterceptorService()
+					    .announce(
+					        BoxEvent.ON_MISSING_DUMP_OUTPUT,
+					        () -> Struct.ofNonConcurrent(
+					            Key.context, context,
+					            Key.target, target,
+					            Key.label, label,
+					            Key.top, top,
+					            Key.expand, expand,
+					            Key.abort, abort,
+					            Key.output, outputFinal,
+					            Key.format, formatFinal,
+					            Key.dumpFilePath, dumpFilePathFinal,
+					            Key.dumpOutput, dumpOutputFinal,
+					            Key.showUDFs, showUDFs
+					        )
+					    );
+					break;
 			}
-			context.flushBuffer( true );
-			throw new AbortException( "request", null );
+
 		}
 	}
 
 	/**
-	 * Dump the object to the console.
+	 * Appends the given content to the specified file, creating all parent directories and the file if they do not exist.
 	 *
-	 * @param context The context
-	 * @param target  The target object
-	 * @param label   The label for the object
+	 * @param filePath The path to the file
+	 * @param content  The content to append
+	 * 
+	 * @throws IOException If an I/O error occurs
 	 */
-	public static void dumpHTMLToConsole(
-	    IBoxContext context,
-	    Object target,
-	    String label,
-	    @Nullable Integer top,
-	    Boolean expand,
-	    Boolean abort,
-	    String output,
-	    String format,
-	    Boolean showUDFs ) {
-		// Push a fresh buffer to our context to capture the HTML generated
-		StringBuffer buffer = new StringBuffer();
-		context.pushBuffer( buffer );
+	private static void appendDumpToFile( Path filePath, String content ) {
 		try {
-			// Fire the HTML templates to fill up the buffer
-			dumpHTMLToBuffer( context, target, label, top, expand, abort, output, format, showUDFs );
-			// Dump the buffer to the console
-			context.getRequestContext().getOut().println( buffer.toString() );
-		} finally {
-			// We're done with you.
-			context.popBuffer();
+			// Create parent directories if they do not exist
+			Path parent = filePath.getParent();
+			if ( parent != null && !Files.exists( parent ) ) {
+				Files.createDirectories( parent );
+			}
+			// Create the file if it does not exist
+			if ( !Files.exists( filePath ) ) {
+				Files.createFile( filePath );
+			}
+			// Append content to the file
+			Files.writeString( filePath, content + "\n", java.nio.file.StandardOpenOption.APPEND );
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error appending dump output to file: " + filePath.toString(), e );
 		}
-
 	}
 
 	/**
-	 * Dump the object to the console.
+	 * Return the dump text for the object.
 	 *
 	 * @param context The context
 	 * @param target  The target object
 	 * @param label   The label for the object
 	 */
-	public static void dumpTextToConsole( IBoxContext context, Object target, String label ) {
-		PrintStream out = context.getRequestContext().getOut();
+	private static String generateDumpText( IBoxContext context, Object target, String label ) {
+		StringBuffer buffer = new StringBuffer();
 
 		// Do we have a console label?
 		if ( label != null && !label.isEmpty() ) {
-			out.println( "============================================" );
-			out.println( label );
-			out.println( "============================================" );
+			buffer.append( "============================================\n" );
+			buffer.append( label + "\n" );
+			buffer.append( "============================================\n" );
 		}
 
 		// Dump the object(s) to the console
 		if ( target instanceof IClassRunnable castedTarget ) {
 			try {
-				out.println( "> " + castedTarget.getBoxMeta().getMeta().getAsString( Key._NAME ) );
-				out.println( JSONUtil.getJSONBuilder().asString( castedTarget ) );
+				buffer.append( "> " + castedTarget.getBoxMeta().getMeta().getAsString( Key._NAME ) + "\n" );
+				buffer.append( JSONUtil.getJSONBuilder().asString( castedTarget ) + "\n" );
 			} catch ( IOException e ) {
 				throw new BoxRuntimeException( "Error serializing class to JSON", e );
 			}
 		} else {
-			// out.println( "> " + target.getClass().getName() );
+			// buffer.append( "> " + target.getClass().getName() );
 			if ( target == null ) {
-				out.println( "[null]" );
+				buffer.append( "[null]" );
 			} else {
-				out.println( target.toString() );
+				buffer.append( target.toString() );
 			}
 		}
-	}
-
-	/**
-	 * Dump the object to a buffer.
-	 *
-	 * @param context The context
-	 * @param target  The target object
-	 */
-	public static void dumpTextToBuffer( IBoxContext context, Object target ) {
-		if ( target == null ) {
-			context.writeToBuffer( "[null]\n", true );
-		} else {
-			context.writeToBuffer( target.toString() + "\n", true );
-		}
+		return buffer.toString();
 	}
 
 	/**
@@ -324,7 +334,7 @@ public class DumpUtil {
 	 * @param format   The format for the output
 	 * @param showUDFs Whether to show UDFs
 	 */
-	public static void dumpHTMLToBuffer(
+	private static String generateDumpHTML(
 	    IBoxContext context,
 	    Object target,
 	    String label,
@@ -342,13 +352,13 @@ public class DumpUtil {
 		// The target object has already been dumped in this thread, so return to prevent recursion
 		if ( !dumped.add( thisHashCode ) ) {
 			context.writeToBuffer( "<div><em>Recursive Reference (Skipping dump)</em></div>", true );
-			return;
+			return null;
 		}
 
 		// Reached the top limit, so return to prevent dumping the entire world
 		if ( top != null && top <= 0 ) {
 			context.writeToBuffer( "<div><em>Top Limit reached (Skipping dump)</em></div>", true );
-			return;
+			return null;
 		}
 
 		// Prep variables to use for dumping
@@ -386,7 +396,8 @@ public class DumpUtil {
 			        Key.top, top,
 			        Key.expand, expand,
 			        Key.abort, abort,
-			        Key.showUDFs, showUDFs
+			        Key.showUDFs, showUDFs,
+			        Key.format, format
 			    ) );
 
 			// Execute the dump template
@@ -396,15 +407,20 @@ public class DumpUtil {
 		} finally {
 			// Clean up the dumped objects
 			dumped.remove( thisHashCode );
-			// If this is the outer dump, then write the buffer to the output
 			if ( outerDump ) {
 				dumpedObjects.remove();
 				context.popBuffer();
-				if ( buffer != null ) {
-					context.writeToBuffer( buffer.toString(), true );
-				}
 			}
 		}
+
+		// If this is the outer dump, then return the buffer contents
+		if ( outerDump && buffer != null ) {
+			return buffer.toString();
+		}
+
+		// Otherwise, return empty string
+		return null;
+
 	}
 
 	/**

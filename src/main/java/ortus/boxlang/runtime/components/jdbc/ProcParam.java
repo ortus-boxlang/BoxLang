@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.util.RegexBuilder;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent( description = "Define parameters for stored procedure calls", allowsBody = false )
@@ -44,11 +45,12 @@ public class ProcParam extends Component {
 		        )
 		    ) ),
 		    new Attribute( Key.value, "any" ),
+		    new Attribute( Key.variable, "string" ),
 		    new Attribute( Key.sqltype, "string", "string" ),
 		    new Attribute( Key.maxLength, "integer" ),
 		    new Attribute( Key.scale, "integer" ),
-		    new Attribute( Key.nulls, "boolean" )
-			// new Attribute( Key.dbVarName, "boolean" )
+		    new Attribute( Key.nulls, "boolean" ),
+		    new Attribute( Key.DBVarName, "string" )
 		};
 
 	}
@@ -74,6 +76,11 @@ public class ProcParam extends Component {
 		IStruct parentState = context.findClosestComponent( Key.storedproc );
 		if ( parentState == null ) {
 			throw new RuntimeException( "ProcParam must be nested in the body of a StoredProc component" );
+		}
+		// Clean up sqltype if it has cf_sql_ prefix
+		if ( attributes.containsKey( Key.sqltype ) ) {
+			attributes.put( Key.sqltype,
+			    RegexBuilder.of( attributes.getAsString( Key.sqltype ), RegexBuilder.CF_SQL ).replaceAllAndGet( "" ).toLowerCase().trim() );
 		}
 		// Set our data into the Query component for it to use
 		parentState.getAsArray( Key.queryParams ).add( attributes );

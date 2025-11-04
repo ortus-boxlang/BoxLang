@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.context;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -73,7 +74,7 @@ public class BaseBoxContext implements IBoxContext {
 	/**
 	 * A flag to control whether null is considered undefined or not. Used by the compat module
 	 */
-	public static boolean					nullIsUndefined			= false;
+	public static boolean									nullIsUndefined			= false;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -84,7 +85,7 @@ public class BaseBoxContext implements IBoxContext {
 	/**
 	 * Any context can have a parent it can delegate to
 	 */
-	protected IBoxContext					parent;
+	protected IBoxContext									parent;
 
 	/**
 	 * A way to discover the current executing template. We're storing the path
@@ -93,49 +94,51 @@ public class BaseBoxContext implements IBoxContext {
 	 * memory since all
 	 * we really need is static data from them
 	 */
-	private ArrayDeque<ResolvedFilePath>	templates				= null;
+	private ArrayDeque<ResolvedFilePath>					templates				= null;
 
 	/**
 	 * A way to discover the imports tied to the original source of the current
 	 * template.
 	 * This should always match the top current template stack
 	 */
-	protected List<ImportDefinition>		currentImports			= null;
+	protected List<ImportDefinition>						currentImports			= null;
 
 	/**
 	 * A way to discover the current executing componenet
 	 */
-	private ArrayDeque<IStruct>				components				= null;
+	private ArrayDeque<IStruct>								components				= null;
 
 	/**
 	 * This is a denormalized cache of how many "output" components are on the component stack. We use this information very often when flushing output
 	 */
-	private AtomicInteger					outputComponentCount	= null;
+	private AtomicInteger									outputComponentCount	= null;
 
 	/**
 	 * A way to track query loops
 	 */
-	private LinkedHashMap<Query, Integer>	queryLoops				= null;
+	private LinkedHashMap<Query, Integer>					queryLoops				= null;
 
 	/**
 	 * A buffer to write output to
 	 */
-	private ArrayDeque<StringBuffer>		buffers					= null;
+	private ArrayDeque<StringBuffer>						buffers					= null;
 
 	/**
 	 * The function service we can use to retrieve BIFS and member methods
 	 */
-	private final FunctionService			functionService;
+	private final FunctionService							functionService;
 
 	/**
 	 * The component service
 	 */
-	private final ComponentService			componentService;
+	private final ComponentService							componentService;
 
 	/**
 	 * Attachable delegate
 	 */
-	private IBoxAttachable					attachable				= null;
+	private IBoxAttachable									attachable				= null;
+
+	private Set<java.util.function.Consumer<IBoxContext>>	shutdownListeners		= null;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -715,6 +718,7 @@ public class BaseBoxContext implements IBoxContext {
 	@Override
 	public void includeTemplate( String templatePath, boolean externalOnly ) {
 		Set<String>	VALID_TEMPLATE_EXTENSIONS	= BoxRuntime.getInstance().getConfiguration().getValidTemplateExtensions();
+		boolean		includeAll					= VALID_TEMPLATE_EXTENSIONS.contains( "*" );
 
 		String		ext							= "";
 		// If there is double //, remove the first char
@@ -733,7 +737,7 @@ public class BaseBoxContext implements IBoxContext {
 		}
 
 		// This extension check is duplicated in the runnableLoader right now since some code paths hit the runnableLoader directly
-		if ( ext.equals( "*" ) || VALID_TEMPLATE_EXTENSIONS.contains( ext ) ) {
+		if ( includeAll || VALID_TEMPLATE_EXTENSIONS.contains( ext ) ) {
 			// Load template class, compiling if neccessary
 			BoxTemplate template = RunnableLoader.getInstance().loadTemplateRelative( this, templatePath, externalOnly );
 
@@ -1459,6 +1463,38 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public ApplicationBoxContext getApplicationContext() {
 		return getParentOfType( ApplicationBoxContext.class );
+	}
+
+	/**
+	 * Shutdown this context
+	 */
+	@Override
+	public void shutdown() {
+		// Process any shutdown listeners
+		if ( this.shutdownListeners != null ) {
+			for ( var listener : this.shutdownListeners ) {
+				listener.accept( this );
+			}
+			this.shutdownListeners.clear();
+			this.shutdownListeners = null;
+		}
+	}
+
+	/**
+	 * Register a shutdown listener to be called when the context is shutdown
+	 * 
+	 * @param consumer The consumer to register
+	 */
+	@Override
+	public void registerShutdownListener( java.util.function.Consumer<IBoxContext> consumer ) {
+		if ( this.shutdownListeners == null ) {
+			synchronized ( this ) {
+				if ( this.shutdownListeners == null ) {
+					this.shutdownListeners = new HashSet<>();
+				}
+			}
+		}
+		this.shutdownListeners.add( consumer );
 	}
 
 	/**
