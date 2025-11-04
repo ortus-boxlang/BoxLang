@@ -755,6 +755,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		sortOrder							= Key.of( "sortOrder" );
 	public static final Key		sortType							= Key.of( "sortType" );
 	public static final Key		source								= Key.of( "source" );
+	public static final Key		sourceType							= Key.of( "sourceType" );
 	public static final Key		sql									= Key.of( "sql" );
 	public static final Key		sqlParameters						= Key.of( "sqlParameters" );
 	public static final Key		SQLState							= Key.of( "SQLState" );

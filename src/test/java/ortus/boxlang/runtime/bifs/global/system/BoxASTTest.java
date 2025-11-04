@@ -249,4 +249,179 @@ public class BoxASTTest {
 		assertThat( exception.getMessage() ).contains( "could not be found or does not exist" );
 	}
 
+	@Test
+	@DisplayName( "It can be used as a member function on a string (default struct return)" )
+	void testMemberFunctionReturnStruct() {
+		instance.executeSource(
+		    """
+		    source = "x = 1 + 2";
+		    result = source.toAST();
+		    """,
+		    context );
+
+		Object ast = variables.get( result );
+		assertThat( ast ).isInstanceOf( java.util.Map.class );
+		java.util.Map<?, ?> astMap = ( java.util.Map<?, ?> ) ast;
+		assertThat( astMap ).isNotNull();
+		assertThat( astMap.containsKey( "ASTType" ) ).isTrue();
+	}
+
+	@Test
+	@DisplayName( "It can be used as a member function with JSON return type" )
+	void testMemberFunctionReturnJSON() {
+		instance.executeSource(
+		    """
+		    source = "a = [1, 2, 3]";
+		    result = source.toAST( returnType = "json" );
+		    """,
+		    context );
+
+		assertThat( variables.get( result ) ).isInstanceOf( String.class );
+		String json = ( String ) variables.get( result );
+		assertThat( json ).isNotEmpty();
+		assertThat( json ).contains( "\"ASTType\"" );
+	}
+
+	@Test
+	@DisplayName( "It can be used as a member function with text return type" )
+	void testMemberFunctionReturnText() {
+		instance.executeSource(
+		    """
+		    source = "function add(a, b) { return a + b; }";
+		    result = source.toAST( returnType = "text" );
+		    """,
+		    context );
+
+		assertThat( variables.get( result ) ).isInstanceOf( String.class );
+		String text = ( String ) variables.get( result );
+		assertThat( text ).isNotEmpty();
+	}
+
+	@Test
+	@DisplayName( "Member function works with complex code" )
+	void testMemberFunctionComplexCode() {
+		instance.executeSource(
+		    """
+		    source = '''
+		        class MyClass {
+		            function init() {
+		                variables.name = "BoxLang";
+		            }
+		            function greet() {
+		                return "Hello from " & variables.name;
+		            }
+		        }
+		    ''';
+		    result = source.toAST();
+		    """,
+		    context );
+
+		Object ast = variables.get( result );
+		assertThat( ast ).isInstanceOf( java.util.Map.class );
+		java.util.Map<?, ?> astMap = ( java.util.Map<?, ?> ) ast;
+		assertThat( astMap ).isNotNull();
+		assertThat( astMap.containsKey( "ASTType" ) ).isTrue();
+		// The parser wraps class declarations in a BoxExpressionStatement
+		assertThat( astMap.get( "ASTType" ).toString() ).containsMatch( "(?i)(BoxScript)" );
+	}
+
+	@Test
+	@DisplayName( "Member function handles inline string literals" )
+	void testMemberFunctionInlineString() {
+		instance.executeSource(
+		    """
+		    result = "x = 42".toAST();
+		    """,
+		    context );
+
+		Object ast = variables.get( result );
+		assertThat( ast ).isInstanceOf( java.util.Map.class );
+		java.util.Map<?, ?> astMap = ( java.util.Map<?, ?> ) ast;
+		assertThat( astMap ).isNotNull();
+		assertThat( astMap.containsKey( "ASTType" ) ).isTrue();
+	}
+
+	@Test
+	@DisplayName( "It can parse with default sourceType (script)" )
+	void testSourceTypeDefault() {
+		instance.executeSource(
+		    """
+		    result = boxAST( source = "x = 1 + 2" );
+		    """,
+		    context );
+
+		Object ast = variables.get( result );
+		assertThat( ast ).isInstanceOf( java.util.Map.class );
+	}
+
+	@Test
+	@DisplayName( "It can parse with sourceType = 'script'" )
+	void testSourceTypeScript() {
+		instance.executeSource(
+		    """
+		    result = boxAST( source = "x = 1 + 2", sourceType = "script" );
+		    """,
+		    context );
+
+		Object ast = variables.get( result );
+		assertThat( ast ).isInstanceOf( java.util.Map.class );
+	}
+
+	@Test
+	@DisplayName( "It can parse with sourceType = 'template'" )
+	void testSourceTypeTemplate() {
+		instance.executeSource(
+		    """
+		    result = boxAST( source = "<bx:output>Hello</bx:output>", sourceType = "template" );
+		    """,
+		    context );
+
+		Object ast = variables.get( result );
+		assertThat( ast ).isInstanceOf( java.util.Map.class );
+		java.util.Map<?, ?> astMap = ( java.util.Map<?, ?> ) ast;
+		assertThat( astMap.containsKey( "ASTType" ) ).isTrue();
+	}
+
+	@Test
+	@DisplayName( "It can parse with sourceType = 'cfscript'" )
+	void testSourceTypeCFScript() {
+		instance.executeSource(
+		    """
+		    result = boxAST( source = "cfset x = 1", sourceType = "cfscript" );
+		    """,
+		    context );
+
+		Object ast = variables.get( result );
+		assertThat( ast ).isInstanceOf( java.util.Map.class );
+	}
+
+	@Test
+	@DisplayName( "It can parse with sourceType = 'cftemplate'" )
+	void testSourceTypeCFTemplate() {
+		instance.executeSource(
+		    """
+		    result = boxAST( source = "<cfoutput>#now()#</cfoutput>", sourceType = "cftemplate" );
+		    """,
+		    context );
+
+		Object ast = variables.get( result );
+		assertThat( ast ).isInstanceOf( java.util.Map.class );
+		java.util.Map<?, ?> astMap = ( java.util.Map<?, ?> ) ast;
+		assertThat( astMap.containsKey( "ASTType" ) ).isTrue();
+	}
+
+	@Test
+	@DisplayName( "It throws exception for invalid sourceType" )
+	void testInvalidSourceType() {
+		BoxRuntimeException exception = assertThrows( BoxRuntimeException.class, () -> {
+			instance.executeSource(
+			    """
+			    result = boxAST( source = "x = 1", sourceType = "invalid" );
+			    """,
+			    context );
+		} );
+
+		assertThat( exception.getMessage() ).containsMatch( "(?i)(one of|valueOneOf)" );
+	}
+
 }
