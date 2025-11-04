@@ -20,7 +20,17 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public interface IBoxpiler {
 
-	static final Set<String> RESERVED_WORDS = new HashSet<>(
+	/**
+	 * This is the bytecode version used when compiling classes. We will increment this value any time we make breaking changes to the bytecode format
+	 * or to the portions of the runtime that the bytecode directly interacts with. It will be baked into every class file we generate and allow us to determine
+	 * if a given class file is compatible with the current runtime when loading pre-compiled classes.
+	 */
+	public static final int		BYTECODE_VERSION	= 1;
+
+	/**
+	 * A set of reserved words in BoxLang that cannot be used as identifiers.
+	 */
+	static final Set<String>	RESERVED_WORDS		= new HashSet<>(
 	    Arrays.asList( "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char",
 	        "class", "const", "continue", "default", "do", "double", "else", "enum", "extends", "final", "finally", "float", "for", "goto", "if", "implements",
 	        "import", "instanceof", "int", "interface", "long", "native", "new", "package", "private", "protected", "public", "return", "short", "static",
@@ -101,6 +111,29 @@ public interface IBoxpiler {
 		int lambdaIndex = FQN.indexOf( "$Lambda_" );
 		if ( lambdaIndex != -1 ) {
 			return FQN.substring( 0, lambdaIndex );
+		}
+
+		// $ComponentBodyLambda_
+		int componentBodyLambdaIndex = FQN.indexOf( "$ComponentBodyLambda_" );
+		if ( componentBodyLambdaIndex != -1 ) {
+			return FQN.substring( 0, componentBodyLambdaIndex );
+		}
+
+		// Check for anonymous inner classes (e.g., ClassName$1, ClassName$2, etc.)
+		// Look for dollar sign followed by only digits at the end of the string
+		int lastDollarIndex = FQN.lastIndexOf( '$' );
+		if ( lastDollarIndex != -1 && lastDollarIndex < FQN.length() - 1 ) {
+			// Check if everything after the last $ is digits
+			boolean allDigits = true;
+			for ( int i = lastDollarIndex + 1; i < FQN.length(); i++ ) {
+				if ( !Character.isDigit( FQN.charAt( i ) ) ) {
+					allDigits = false;
+					break;
+				}
+			}
+			if ( allDigits ) {
+				return FQN.substring( 0, lastDollarIndex );
+			}
 		}
 
 		return FQN;

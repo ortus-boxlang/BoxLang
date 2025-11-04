@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.types;
 
 import java.nio.file.Path;
-import java.time.LocalDateTime;
 import java.util.List;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
@@ -61,21 +60,6 @@ public class SampleUDF extends UDF {
 
 	public Access getAccess() {
 		return access;
-	}
-
-	@Override
-	public long getRunnableCompileVersion() {
-		return 0;
-	}
-
-	@Override
-	public LocalDateTime getRunnableCompiledOn() {
-		return null;
-	}
-
-	@Override
-	public Object getRunnableAST() {
-		return null;
 	}
 
 	public List<ImportDefinition> getImports() {

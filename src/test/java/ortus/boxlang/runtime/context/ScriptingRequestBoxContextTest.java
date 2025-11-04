@@ -22,7 +22,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.file.Path;
-import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 
@@ -59,21 +58,6 @@ public class ScriptingRequestBoxContextTest {
 
 			@Override
 			public void _invoke( IBoxContext context ) {
-			}
-
-			@Override
-			public long getRunnableCompileVersion() {
-				return 0;
-			}
-
-			@Override
-			public LocalDateTime getRunnableCompiledOn() {
-				return null;
-			}
-
-			@Override
-			public Object getRunnableAST() {
-				return null;
 			}
 
 			@Override

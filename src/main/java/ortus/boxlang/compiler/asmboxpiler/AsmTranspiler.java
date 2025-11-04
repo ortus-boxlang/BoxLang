@@ -440,6 +440,10 @@ public class AsmTranspiler extends Transpiler {
 		setProperty( "classType", type.getDescriptor() );
 		setProperty( "classTypeInternal", type.getInternalName() );
 		ClassNode classNode = new ClassNode();
+
+		// Add the @BoxByteCodeVersion annotation to the generated class
+		AsmHelper.addBoxByteCodeVersionAnnotation( classNode );
+
 		setOwningClass( classNode );
 		setProperty( "enclosingClassInternalName", type.getInternalName() );
 		String	mappingName		= getProperty( "mappingName" );

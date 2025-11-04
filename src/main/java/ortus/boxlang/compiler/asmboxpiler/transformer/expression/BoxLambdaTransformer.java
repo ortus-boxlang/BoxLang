@@ -62,6 +62,10 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 
 		AsmHelper.init( classNode, true, type, Type.getType( Lambda.class ), methodVisitor -> {
 		} );
+
+		// Add the @BoxByteCodeVersion annotation to the generated class
+		AsmHelper.addBoxByteCodeVersionAnnotation( classNode );
+
 		AsmHelper.addStaticFieldGetter( classNode,
 		    type,
 		    "name",

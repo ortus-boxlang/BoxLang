@@ -21,7 +21,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.file.Path;
-import java.time.LocalDateTime;
 import java.util.List;
 
 import org.junit.jupiter.api.AfterAll;
@@ -594,21 +593,6 @@ public class UDFFunctionTest {
 			@Override
 			public Access getAccess() {
 				return Access.PUBLIC;
-			}
-
-			@Override
-			public long getRunnableCompileVersion() {
-				return 0;
-			}
-
-			@Override
-			public LocalDateTime getRunnableCompiledOn() {
-				return null;
-			}
-
-			@Override
-			public Object getRunnableAST() {
-				return null;
 			}
 
 			public ResolvedFilePath getRunnablePath() {
