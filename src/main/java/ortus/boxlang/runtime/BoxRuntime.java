@@ -19,6 +19,7 @@ package ortus.boxlang.runtime;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -38,6 +39,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 
@@ -372,6 +374,27 @@ public class BoxRuntime implements java.io.Closeable {
 		List<String> directories = Arrays.asList( "classes", "config", "global", "logs", "lib", "modules" );
 		directories.forEach( dir -> FileSystemUtil.createDirectoryIfMissing( this.runtimeHome.resolve( dir ) ) );
 
+		// If we're starting a version of BoxLang with a different bytecode version, we need to clear the classes folder IF it exists.
+		var propertiesPath = this.runtimeHome.resolve( "version.properties" );
+		if ( Files.exists( propertiesPath ) ) {
+			Properties properties = new Properties();
+			try ( InputStream inputStream = new FileInputStream( propertiesPath.toFile() ) ) {
+				properties.load( inputStream );
+				String homeBytecodeVersion = properties.getProperty( "bytecodeVersion" );
+				if ( homeBytecodeVersion == null || Integer.parseInt( homeBytecodeVersion ) != IBoxpiler.BYTECODE_VERSION ) {
+					// Different bytecode version, clear classes folder
+					var classesPath = Paths.get( getConfiguration().classGenerationDirectory ).toFile();
+					if ( classesPath.exists() ) {
+						FileUtils.cleanDirectory( classesPath );
+						this.logger.info( "Cleared BoxLang runtime classes folder due to bytecode version change ({} -> {})", homeBytecodeVersion,
+						    IBoxpiler.BYTECODE_VERSION );
+					}
+				}
+			} catch ( Exception e ) {
+				this.logger.error( "Error checking bytecode version in Boxlang home", e );
+			}
+		}
+
 		// Global Directories to ensure
 		List<String> globalDirectories = Arrays.asList( "classes", "components", "schedulers" );
 		globalDirectories.forEach( dir -> FileSystemUtil.createDirectoryIfMissing( this.runtimeHome.resolve( "global" ).resolve( dir ) ) );
@@ -395,7 +418,7 @@ public class BoxRuntime implements java.io.Closeable {
 		// Always copy version.properties from META-INF
 		FileSystemUtil.copyResourceToPath(
 		    "/META-INF/boxlang/version.properties",
-		    this.runtimeHome.resolve( "version.properties" ),
+		    propertiesPath,
 		    true
 		);
 		// Copy Maven-related files
