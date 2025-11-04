@@ -73,10 +73,9 @@ public final class LocalizationUtil {
 	    // ISO basic formats - these need to come first
 	    "yyyy-MM-dd hh:mm[:ss] a",         // Date-time with 12-hour format and meridian (double digit hour)
 	    "yyyy-MM-dd h:mm[:ss] a",         // Date-time with 12-hour format and meridian (single digit hour)
-	    "yyyy-MM-dd['T'][ ]HH:mm[:ss]",         // Date-time with 24-hour format
-	    "yyyy-MM-dd['T'][ ]HH:mm:ss.SSSSSSXXX",  // Date-time with fractional microseconds and offset
-	    "yyyy-MM-dd[['T'][ ]]HH:mm:ss.SSS[XXX]",  // Date-time with milliseconds and offset
-	    "yyyy-MM-dd[['T'][ ]]HH:mm:ss[Z][X]",        // Date-time with offset (Z)
+	    "yyyy-MM-dd['T'][ ]HH:mm[:ss][.SSSSSS][XXX]",  // Consolidated: ISO with optional T/space, seconds, microseconds, offset
+	    "yyyy-MM-dd['T'][ ]HH:mm[:ss][.SSS][XXX]",     // Consolidated: ISO with optional T/space, seconds, milliseconds, offset
+	    "yyyy-MM-dd['T'][ ]HH:mm[:ss][Z][X]",          // Consolidated: ISO with optional T/space, seconds, basic offset
 
 	    // Localized Date/Time formats - the order in which these are presented is very specific
 	    "EEEE[,] d MMM yyyy HH:mm:ss[ zzz]", // Full DateTime (e.g., Tue, 02 Apr 2024 21:01:00 CEST) - Similar to FULL_FULL - optional full day, optional comma
@@ -106,17 +105,15 @@ public final class LocalizationUtil {
 	    "yyyy/MM/dd", // Common to Africa and Taiwan
 	    "M-d-yy", // Short Form two-digit year
 
-	    // US Localized Date formats - Month First
-	    "MMM dd yyyy",                   // Long Date (e.g., Apr 02 2024)
-	    "MMM-dd-yyyy",                   // Medium Date (e.g., Apr-02-2024) - Might need adjustment based on locale
-	    "MMM/dd/yyyy",                   // Medium Date (e.g., Apr/02/2024) - Might need adjustment based on locale
-	    "MMM.dd.yyyy",                   // Medium Date (e.g., Apr.02.2024) - Might need adjustment based on locale
-
-	    // US Localized Date formats - Month First (Short)
-	    "MM dd yyyy",                   // Short Date (e.g., 04 02 2024) - Might need adjustment based on locale
-	    "MM-dd-yyyy",                   // Short Date (e.g., 04-02-2024) - Might need adjustment based on locale
-	    "MM/dd/yyyy",                   // Short Date (e.g., 04/02/2024) - Might need adjustment based on locale
-	    "MM.dd.yyyy",                   // Short Date (e.g., 04.02.2024) - Might need adjustment based on locale
+	    // US Localized Date formats - Month First (Phase 2B Consolidation)
+	    "MMM dd yyyy",                  // Long Date with space separators (e.g., Apr 02 2024)
+	    "MMM-dd-yyyy",                  // Long Date with dash separators (e.g., Apr-02-2024)
+	    "MMM/dd/yyyy",                  // Long Date with slash separators (e.g., Apr/02/2024)
+	    "MMM.dd.yyyy",                  // Long Date with dot separators (e.g., Apr.02.2024)
+	    "MM dd yyyy",                   // Short Date with space separators (e.g., 04 02 2024)
+	    "MM-dd-yyyy",                   // Short Date with dash separators (e.g., 04-02-2024)
+	    "MM/dd/yyyy",                   // Short Date with slash separators (e.g., 04/02/2024)
+	    "MM.dd.yyyy",                   // Short Date with dot separators (e.g., 04.02.2024)
 
 	    // Localized Date formats
 	    "EEE[E][,] dd MMM yyyy",          // Full Date (e.g., Tue, 02 Apr 2024) - Similar to FULL - optional full day, optional comma
@@ -128,16 +125,11 @@ public final class LocalizationUtil {
 	    "MMM[,] dd[,] yyyy",                  // Med Date (e.g., Apr 02, 2024) - Might need adjustment based on locale
 	    "MMMM[,] dd[,] yyyy",                 // Long month Date (e.g., April 02, 2024) - Might need adjustment based on locale
 
-	    // European Day-First Formats
-	    "dd MM yyyy",                   // Short Date (e.g., 02.04.2024) - Might need adjustment based on locale
-	    "dd-MM-yyyy",                   // Short Date (e.g., 02-04-2024) - Might need adjustment based on locale
-	    "dd/MM/yyyy",                   // Short Date (e.g., 02/04/2024) - Might need adjustment based on locale
-	    "dd.MM.yyyy",                   // Short Date (e.g., 02.04.2024) - Might need adjustment based on locale
+	    // European Day-First Formats - Consolidated
+	    "dd[ /-.]MM[ /-.]yyyy",         // European day-first with flexible separators (e.g., 02-04-2024, 02/04/2024, 02.04.2024)
 
-	    // ISO format
-	    "yyyy-MM-dd",                   // ISODate (e.g., 2024-04-02)
-	    "yyyy/MM/dd",                   // ISODate (e.g., 2024/04/02)
-	    "yyyy.MM.dd",                   // ISODate (e.g., 2024.04.02)
+	    // ISO format - Consolidated
+	    "yyyy[-/.]MM[-/.]dd",           // ISO date with flexible separators (e.g., 2024-04-02, 2024/04/02, 2024.04.02)
 
 	    // ODBC format
 	    "yyyyMMdd"                     // ODBCDate - Potential ODBC format
