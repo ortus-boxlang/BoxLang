@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.types;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -425,21 +424,6 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	public abstract Object _invoke( FunctionBoxContext context );
 
 	// ITemplateRunnable implementation methods
-
-	/**
-	 * Get the version of the BoxLang runtime
-	 */
-	public abstract long getRunnableCompileVersion();
-
-	/**
-	 * Get the date the template was compiled
-	 */
-	public abstract LocalDateTime getRunnableCompiledOn();
-
-	/**
-	 * The AST (abstract syntax tree) of the runnable
-	 */
-	public abstract Object getRunnableAST();
 
 	/**
 	 * --------------------------------------------------------------------------

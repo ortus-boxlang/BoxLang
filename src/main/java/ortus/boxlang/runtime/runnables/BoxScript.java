@@ -17,8 +17,6 @@
  */
 package ortus.boxlang.runtime.runnables;
 
-import java.time.LocalDateTime;
-
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.events.BoxEvent;
@@ -36,22 +34,7 @@ public abstract class BoxScript implements IScriptRunnable {
 	/**
 	 * The source to the script
 	 */
-	protected String		source;
-
-	/**
-	 * The version of the runtime that compiled this class
-	 */
-	protected long			compileVersion;
-
-	/**
-	 * The date the source was compiled
-	 */
-	protected LocalDateTime	compiledOn;
-
-	/**
-	 * The AST of the source
-	 */
-	protected Object		ast;
+	protected String source;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -99,27 +82,6 @@ public abstract class BoxScript implements IScriptRunnable {
 	public abstract Object _invoke( IBoxContext context );
 
 	// ISourceRunnable implementation methods
-
-	/**
-	 * The version of the BoxLang runtime
-	 */
-	public long getRunnableCompileVersion() {
-		return this.compileVersion;
-	}
-
-	/**
-	 * The date the source was compiled
-	 */
-	public LocalDateTime getRunnableCompiledOn() {
-		return this.compiledOn;
-	}
-
-	/**
-	 * The AST (abstract syntax tree) of the runnable
-	 */
-	public Object getRunnableAST() {
-		return this.ast;
-	}
 
 	/**
 	 * The source to the script

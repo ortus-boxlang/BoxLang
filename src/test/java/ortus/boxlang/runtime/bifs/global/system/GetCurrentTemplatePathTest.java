@@ -21,7 +21,6 @@ package ortus.boxlang.runtime.bifs.global.system;
 import static com.google.common.truth.Truth.assertThat;
 
 import java.nio.file.Path;
-import java.time.LocalDateTime;
 import java.util.List;
 
 import org.junit.jupiter.api.AfterAll;
@@ -76,21 +75,6 @@ public class GetCurrentTemplatePathTest {
 
 			@Override
 			public void _invoke( IBoxContext context ) {
-			}
-
-			@Override
-			public long getRunnableCompileVersion() {
-				return 1;
-			}
-
-			@Override
-			public LocalDateTime getRunnableCompiledOn() {
-				return null;
-			}
-
-			@Override
-			public Object getRunnableAST() {
-				return null;
 			}
 
 			@Override

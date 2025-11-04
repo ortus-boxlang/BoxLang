@@ -31,6 +31,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.commons.ClassRemapper;
 import org.objectweb.asm.commons.Remapper;
 import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnList;
@@ -40,6 +41,9 @@ import org.objectweb.asm.tree.MethodNode;
 
 import ortus.boxlang.compiler.ClassInfo;
 import ortus.boxlang.compiler.IBoxpiler;
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.ObjectRef;
 import ortus.boxlang.runtime.util.RegexBuilder;
 
@@ -286,6 +290,7 @@ public class DiskClassLoader extends URLClassLoader {
 		Path			diskPath		= generateDiskPath( name );
 		// JIT compile
 		String			baseName		= IBoxpiler.getBaseFQN( name );
+		boolean			isBaseClass		= name.equals( baseName );
 		ClassInfo		classInfo		= boxPiler.getClassPool( classPoolName ).get( baseName );
 		ObjectRef<Long>	lastModifiedRef	= ObjectRef.of( 0L );
 		// Do we need to compile the class?
@@ -299,7 +304,7 @@ public class DiskClassLoader extends URLClassLoader {
 
 		// If there is no class file on disk, then we assume pre-compiled class bytes were already side loaded in, so we just get them
 		// TODO: Change this to use the same flag discussed in the needsCompile method
-		if ( name.equals( baseName ) && lastModifiedRef.get() == 0L ) {
+		if ( isBaseClass && lastModifiedRef.get() == 0L ) {
 			return loadClass( name );
 		}
 
@@ -307,10 +312,57 @@ public class DiskClassLoader extends URLClassLoader {
 		byte[] bytes;
 		try {
 			bytes = Files.readAllBytes( diskPath );
+			if ( isBaseClass ) {
+				// Validate bytecode version
+				validateByteCodeVersion( bytes, name, diskPath );
+			}
 		} catch ( IOException e ) {
 			throw new ClassNotFoundException( "Unable to read class file from disk", e );
 		}
 		return defineClass( name, bytes, 0, bytes.length );
+	}
+
+	/**
+	 * Validates that the bytecode version of the class is compatible with the current runtime.
+	 * 
+	 * @param bytes    The bytecode of the class
+	 * @param name     The fully qualified name of the class
+	 * @param diskPath The path to the class file on disk
+	 */
+	private void validateByteCodeVersion( byte[] bytes, String name, Path diskPath ) {
+		ClassReader	classReader	= new ClassReader( bytes );
+		ClassNode	classNode	= new ClassNode();
+		classReader.accept( classNode, 0 );
+		validateByteCodeVersion( classNode, name, diskPath );
+	}
+
+	/**
+	 * Validates that the bytecode version of the class is compatible with the current runtime.
+	 * 
+	 * @param classNode The ClassNode representation of the class
+	 * @param name      The fully qualified name of the class
+	 * @param diskPath  The path to the class file on disk
+	 */
+	private void validateByteCodeVersion( ClassNode classNode, String name, Path diskPath ) {
+		List<AnnotationNode>	invisibleAnnotations	= classNode.invisibleAnnotations;
+		boolean					valid					= false;
+		String					compileVersion			= null;
+		if ( invisibleAnnotations != null ) {
+			for ( AnnotationNode an : invisibleAnnotations ) {
+				if ( an.desc.equals( "Lortus/boxlang/compiler/BoxByteCodeVersion;" ) ) {
+					valid			= ( Integer ) an.values.get( 3 ) == IBoxpiler.BYTECODE_VERSION;
+					compileVersion	= ( String ) an.values.get( 1 );
+					break;
+				}
+			}
+		}
+		if ( !valid ) {
+			throw new BoxRuntimeException(
+			    "The class [" + name + "] at [" + diskPath.toString() + "] "
+			        + ( compileVersion == null ? "" : "was compiled by BoxLang [" + compileVersion + "] and " ) +
+			        "is incompatible with this runtime of version [" + BoxRuntime.getInstance().getVersionInfo().getAsString( Key.version ) +
+			        "].  Clear your classes folder, or recompile the source." );
+		}
 	}
 
 	/**
@@ -690,13 +742,19 @@ public class DiskClassLoader extends URLClassLoader {
 		ClassNode	sourceNode		= new ClassNode();
 		cr.accept( sourceNode, 0 );
 
+		if ( outerClass ) {
+			// Validate bytecode version
+			validateByteCodeVersion( sourceNode, sourceNode.name.replace( '/', '.' ), classInfo.resolvedFilePath().absolutePath() );
+		}
+
 		// Remap class names into a new ClassNode
 		ClassNode	remappedNode	= new ClassNode();
-		Remapper	remapper		= new Remapper() {
+		Remapper	remapper		= new Remapper( Opcodes.ASM9 ) {
 
 										@Override
 										public String map( String internalName ) {
-											if ( internalName.equals( oldInternalName ) || internalName.startsWith( oldInternalName + "$" ) ) {
+											if ( internalName.equals( oldInternalName )
+											    || internalName.startsWith( oldInternalName + "$" ) ) {
 												return internalName.replace( oldInternalName, newInternalName );
 											}
 											return internalName;

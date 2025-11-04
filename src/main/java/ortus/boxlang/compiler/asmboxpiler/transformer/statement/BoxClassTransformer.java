@@ -241,6 +241,9 @@ public class BoxClassTransformer {
 		interfaceMethods.forEach( methodNode -> methodNode.accept( classNode ) );
 		extendsMethods.forEach( methodNode -> methodNode.accept( classNode ) );
 
+		// Add the @BoxByteCodeVersion annotation to the generated class
+		AsmHelper.addBoxByteCodeVersionAnnotation( classNode );
+
 		classNode.visitField( Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL | Opcodes.ACC_STATIC, "serialVersionUID", Type.getDescriptor( long.class ), null, 1L )
 		    .visitEnd();
 

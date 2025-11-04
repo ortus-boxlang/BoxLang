@@ -22,7 +22,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -121,21 +120,6 @@ public class BoxResolverTest extends AbstractResolverTest {
 			@Override
 			public List<ImportDefinition> getImports() {
 				return List.of();
-			}
-
-			@Override
-			public long getRunnableCompileVersion() {
-				return 0L;
-			}
-
-			@Override
-			public LocalDateTime getRunnableCompiledOn() {
-				return null;
-			}
-
-			@Override
-			public Object getRunnableAST() {
-				return null;
 			}
 
 			@Override

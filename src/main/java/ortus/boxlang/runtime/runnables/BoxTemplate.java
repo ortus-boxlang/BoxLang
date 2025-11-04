@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.runnables;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -111,21 +110,6 @@ public abstract class BoxTemplate implements ITemplateRunnable {
 	public abstract void _invoke( IBoxContext context );
 
 	// ITemplateRunnable implementation methods
-
-	/**
-	 * The version of the BoxLang runtime
-	 */
-	public abstract long getRunnableCompileVersion();
-
-	/**
-	 * The date the template was compiled
-	 */
-	public abstract LocalDateTime getRunnableCompiledOn();
-
-	/**
-	 * The AST (abstract syntax tree) of the runnable
-	 */
-	public abstract Object getRunnableAST();
 
 	/**
 	 * The path to the template

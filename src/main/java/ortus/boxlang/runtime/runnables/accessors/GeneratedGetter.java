@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.runnables.accessors;
 
 import java.nio.file.Path;
-import java.time.LocalDateTime;
 import java.util.List;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
@@ -124,27 +123,6 @@ public class GeneratedGetter extends UDF {
 	}
 
 	// ITemplateRunnable implementation methods
-
-	/**
-	 * Get the version of the BoxLang runtime
-	 */
-	public long getRunnableCompileVersion() {
-		return 0;
-	}
-
-	/**
-	 * Get the date the template was compiled
-	 */
-	public LocalDateTime getRunnableCompiledOn() {
-		return null;
-	}
-
-	/**
-	 * The AST (abstract syntax tree) of the runnable
-	 */
-	public Object getRunnableAST() {
-		return null;
-	}
 
 	@Override
 	public List<ImportDefinition> getImports() {

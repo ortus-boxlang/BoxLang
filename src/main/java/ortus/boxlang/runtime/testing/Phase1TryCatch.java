@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.testing;
 
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
 import java.util.List;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
@@ -41,13 +40,10 @@ public class Phase1TryCatch extends BoxTemplate {
 
 	private static Phase1TryCatch				instance;
 
-	private final static List<ImportDefinition>	imports			= List.of();
+	private final static List<ImportDefinition>	imports	= List.of();
 
-	private static final ResolvedFilePath		path			= ResolvedFilePath.of( Paths
+	private static final ResolvedFilePath		path	= ResolvedFilePath.of( Paths
 	    .get( "runtime\\src\\main\\java\\ortus\\boxlang\\runtime\\testing\\Phase1TryCatch.java" ) );
-	private static final long					compileVersion	= 1L;
-	private static final LocalDateTime			compiledOn		= LocalDateTime.parse( "2023-09-27T10:15:30" );
-	private static final Object					ast				= null;
 
 	private Phase1TryCatch() {
 	}
@@ -219,27 +215,6 @@ public class Phase1TryCatch extends BoxTemplate {
 	}
 
 	// ITemplateRunnable implementation methods
-
-	/**
-	 * The version of the BoxLang runtime
-	 */
-	public long getRunnableCompileVersion() {
-		return Phase1TryCatch.compileVersion;
-	}
-
-	/**
-	 * The date the template was compiled
-	 */
-	public LocalDateTime getRunnableCompiledOn() {
-		return Phase1TryCatch.compiledOn;
-	}
-
-	/**
-	 * The AST (abstract syntax tree) of the runnable
-	 */
-	public Object getRunnableAST() {
-		return Phase1TryCatch.ast;
-	}
 
 	/**
 	 * The path to the template

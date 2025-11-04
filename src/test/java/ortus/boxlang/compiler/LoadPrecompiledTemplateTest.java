@@ -22,20 +22,15 @@ import java.nio.file.Path;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
-import ortus.boxlang.runtime.interop.DynamicObject;
-import ortus.boxlang.runtime.runnables.IClassRunnable;
-import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class LoadPrecompiledTemplateTest {
 
@@ -139,25 +134,4 @@ public class LoadPrecompiledTemplateTest {
 
 	}
 
-	@Test
-	@DisplayName( "Load a pre-compiled class and execute" )
-	public void testPrecompiledModuleConfig() {
-		Path			target			= Path.of( "src/test/resources/compiledCode/ModuleConfig.bx" );
-
-		// Load the ModuleConfig.bx, Construct it and store it
-		IClassRunnable	moduleConfig	= ( IClassRunnable ) DynamicObject.of(
-		    RunnableLoader.getInstance().loadClass(
-		        ResolvedFilePath.of(
-		            null,
-		            null,
-		            "",
-		            target.toString()
-		        ),
-		        context
-		    )
-		)
-		    .invokeConstructor( context )
-		    .getTargetInstance();
-
-	}
 }
