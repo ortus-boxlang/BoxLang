@@ -684,9 +684,10 @@ public class DumpTest {
 
 		variables.put( "sqlTime", java.sql.Time.valueOf( "12:34:56" ) );
 		// @formatter:off
+		// We need to use text format here as otherwise the colons are HTML encoded
 			instance.executeSource(
 				"""
-					dump( var = sqlTime, format = "html" );
+					dump( var = sqlTime, format = "text" );
 				""",
 				context );
 			// @formatter:on
