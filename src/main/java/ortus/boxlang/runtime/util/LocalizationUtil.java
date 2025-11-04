@@ -70,6 +70,14 @@ public final class LocalizationUtil {
 	 */
 	public static final String[]					COMMON_DATETIME_PATTERNS	= {
 
+	    // ISO basic formats - these need to come first
+	    "yyyy-MM-dd hh:mm[:ss] a",         // Date-time with 12-hour format and meridian (double digit hour)
+	    "yyyy-MM-dd h:mm[:ss] a",         // Date-time with 12-hour format and meridian (single digit hour)
+	    "yyyy-MM-dd['T'][ ]HH:mm[:ss]",         // Date-time with 24-hour format
+	    "yyyy-MM-dd['T'][ ]HH:mm:ss.SSSSSSXXX",  // Date-time with fractional microseconds and offset
+	    "yyyy-MM-dd[['T'][ ]]HH:mm:ss.SSS[XXX]",  // Date-time with milliseconds and offset
+	    "yyyy-MM-dd[['T'][ ]]HH:mm:ss[Z][X]",        // Date-time with offset (Z)
+
 	    // Localized Date/Time formats - the order in which these are presented is very specific
 	    "EEEE[,] d MMM yyyy HH:mm:ss[ zzz]", // Full DateTime (e.g., Tue, 02 Apr 2024 21:01:00 CEST) - Similar to FULL_FULL - optional full day, optional comma
 	    "EEE[,] d MMM yyyy HH:mm:ss[ zzz]", // Full DateTime (e.g., Tue, 02 Apr 2024 21:01:00 CEST) - Similar to FULL_FULL - optional full day, optional comma
@@ -90,12 +98,6 @@ public final class LocalizationUtil {
 
 	    // java.util.Date toString default format
 	    "EEE[,] MMM[,] dd[,] HH:mm:ss zzz yyyy", // Default DateTime (e.g., Tue Apr 02 21:01:00 CET 2024) - Similar to DEFAULT - optional commas
-
-	    // ISO formats
-	    "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX",  // Date-time with fractional microseconds and offset
-	    "yyyy-MM-dd'T'HH:mm:ss.SSS[XXX]",  // Date-time with milliseconds and offset
-	    "yyyy-MM-dd'T'HH:mm:ss[Z][X]",        // Date-time with offset (Z)
-	    "yyyy-MM-dd'T'HH:mm:ss",         // Date-time
 
 	    // ODBC formats
 	    "yyyyMMddHHmmss",                // ODBCDateTime - Potential ODBC format
