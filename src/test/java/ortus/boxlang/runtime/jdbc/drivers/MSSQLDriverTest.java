@@ -816,4 +816,47 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		assertThat( variables.getAsBoolean( Key.of( "result" ) ) ).isTrue();
 	}
 
+	@DisplayName( "It ignores non-integer values when null=true and passes NULL to stored proc" )
+	@Test
+	public void testStoredProcNullTrueIgnoresInvalidValue() {
+		// Create a stored procedure that expects an integer parameter
+		instance.executeSource(
+		    """
+		        <bx:query datasource="MSSQLdatasource">
+		     	CREATE OR ALTER PROCEDURE [dbo].[_testNullTrueParam]
+		    (
+		    	@intParam INT = NULL
+		    ) AS
+		     	BEGIN
+		    		SELECT @intParam as receivedValue,
+		    		       CASE WHEN @intParam IS NULL THEN 1 ELSE 0 END as isNull;
+		     	END
+		     </bx:query>
+		        """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		// Call the stored procedure with null=true and pass a non-integer value
+		// The value should be ignored and NULL should be passed to the stored procedure
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="_testNullTrueParam" datasource="MSSQLdatasource" debug=false >
+		    	<bx:procparam sqltype="integer" value="not_an_integer" type="in" null="true">
+		    	<bx:procresult name="qryReturn">
+		    </bx:storedproc>
+		            """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		assertThat( variables.get( "qryReturn" ) ).isInstanceOf( Query.class );
+		Query rs = variables.getAsQuery( Key.of( "qryReturn" ) );
+		assertThat( rs.size() ).isEqualTo( 1 );
+
+		IStruct row = rs.getRowAsStruct( 0 );
+
+		// Verify that the received value is NULL (not the invalid string we passed)
+		assertThat( row.get( Key.of( "receivedValue" ) ) ).isNull();
+
+		// Verify that the isNull flag is 1 (true)
+		assertThat( row.getAsInteger( Key.of( "isNull" ) ) ).isEqualTo( 1 );
+	}
+
 }

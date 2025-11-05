@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.jdbc.QueryOptions;
@@ -254,7 +255,12 @@ public class StoredProc extends Component {
 					        " (type: " + typeInfo + ")"
 					);
 				}
-				procedure.setObject( i + 1 + paramOffset, QueryColumnType.toSQLType( queryType, value, context ), sqlType );
+				if ( BooleanCaster.cast( attr.getOrDefault( Key.nulls, false ) ) ) {
+					value = null;
+				} else {
+					value = QueryColumnType.toSQLType( queryType, value, context );
+				}
+				procedure.setObject( i + 1 + paramOffset, value, sqlType );
 			}
 			if ( varType.contains( "out" ) ) {
 				if ( debug ) {
