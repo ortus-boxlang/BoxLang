@@ -130,7 +130,7 @@ public class BoxRuntime implements java.io.Closeable {
 	/**
 	 * The timestamp when the runtime was started
 	 */
-	private Instant								startTime;
+	private Instant								startTime				= null;
 
 	/**
 	 * Debug mode; defaults to false
@@ -250,6 +250,12 @@ public class BoxRuntime implements java.io.Closeable {
 	private LoggingService						loggingService;
 
 	/**
+	 * Startup Exception. Used to track a startup failure so this instance knows it failed to start.
+	 * This will prevent threads who are waiting for the instance to finish starting to not wait forever.
+	 */
+	Throwable									startupException		= null;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Public Fields
 	 * --------------------------------------------------------------------------
@@ -306,10 +312,7 @@ public class BoxRuntime implements java.io.Closeable {
 		}
 
 		// Seed the override config path, it can be null
-		this.configPath	= configPath;
-
-		// Seed startup properties
-		this.startTime	= Instant.now();
+		this.configPath = configPath;
 	}
 
 	/**
@@ -542,6 +545,9 @@ public class BoxRuntime implements java.io.Closeable {
 		// Announce it baby! Runtime is up
 		this.interceptorService.announce(
 		    BoxEvent.ON_RUNTIME_START );
+
+		// Setting this to a non-null value is the flag that lets everyone know the instance is fully started
+		this.startTime = Instant.now();
 	}
 
 	/**
@@ -645,15 +651,29 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @return A BoxRuntime instance
 	 */
 	public static BoxRuntime getInstance( Boolean debugMode, String configPath, String runtimeHome, CLIOptions options ) {
+		boolean startupNeeded = false;
+
 		if ( instance == null ) {
 			synchronized ( BoxRuntime.class ) {
 				if ( instance == null ) {
-					instance = new BoxRuntime( debugMode, configPath, runtimeHome, options );
+					instance		= new BoxRuntime( debugMode, configPath, runtimeHome, options );
+					startupNeeded	= true;
 				}
 			}
-			// We split in order to avoid circular dependencies on the runtime
-			instance.startup();
+			// We split in order to avoid circular dependencies on the runtime. When we loaded parts of the runtime asynchronously,
+			// those threads would get blocked by this main thread, so the startup was moved outside of the synchronized block.
+			// Only let the thread who actually created the runtime start it up
+			if ( startupNeeded ) {
+				try {
+					instance.startup();
+				} catch ( Throwable t ) {
+					// Capture the startup exception for any other threads waiting for the instance to be available
+					instance.startupException = t;
+					throw t;
+				}
+			}
 		}
+
 		return instance;
 	}
 
@@ -826,7 +846,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @return {@link Configuration} or null if the runtime has not started
 	 */
 	public Configuration getConfiguration() {
-		return instance.configuration;
+		return configuration;
 	}
 
 	/**
@@ -835,7 +855,33 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @return the runtime start time, or null if not started
 	 */
 	public Instant getStartTime() {
-		return instance.startTime;
+		return startTime;
+	}
+
+	/**
+	 * Check if this instance is started. After obtaining a runtime instance, call this method if there
+	 * are other competing threads which are also attemtping to get the instance. The instance you have may
+	 * not be fully started yet as another thread may still be starting it. This method will wait until the
+	 * instance starts, or throw a propagated exception if the startup failed.
+	 *
+	 * @return The started BoxRuntime instance
+	 */
+	public BoxRuntime waitForStart() {
+		// We need to loop until starttime is not-null or we have a startup exception
+		while ( startTime == null ) {
+			// Check if we had a startup exception
+			if ( startupException != null ) {
+				ExceptionUtil.throwException( startupException );
+			}
+			// Sleep a bit
+			try {
+				Thread.sleep( 10 );
+			} catch ( InterruptedException ie ) {
+				Thread.currentThread().interrupt();
+				throw new BoxRuntimeException( "Thread was interrupted while waiting for BoxLang Runtime to start", ie );
+			}
+		}
+		return this;
 	}
 
 	/**
