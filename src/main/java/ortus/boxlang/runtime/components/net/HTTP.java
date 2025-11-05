@@ -501,8 +501,9 @@ public class HTTP extends Component {
 
 			// Process body if not null
 			if ( responseBytes != null ) {
-				String	contentType		= headers.getAsString( Key.of( "content-type" ) );
-				String	contentEncoding	= headers.getAsString( Key.of( "content-encoding" ) );
+
+				String	contentType		= extractFirstHeaderByName( headers, Key.of( "content-type" ) );
+				String	contentEncoding	= extractFirstHeaderByName( headers, Key.of( "content-encoding" ) );
 
 				if ( contentEncoding != null ) {
 					// Split the Content-Encoding header into individual encodings
@@ -574,7 +575,7 @@ public class HTTP extends Component {
 				if ( outputDirectory != null ) {
 					String fileName = attributes.getAsString( Key.file );
 					if ( fileName == null || fileName.trim().isEmpty() ) {
-						String dispositionHeader = headers.getAsString( Key.of( "content-disposition" ) );
+						String dispositionHeader = extractFirstHeaderByName( headers, Key.of( "content-disposition" ) );
 						if ( dispositionHeader != null ) {
 							Pattern	pattern	= Pattern.compile( "filename=\"?([^\";]+)\"?" );
 							Matcher	matcher	= pattern.matcher( dispositionHeader );
@@ -649,6 +650,28 @@ public class HTTP extends Component {
 	 * Private Methods
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Extract the first header value by name from the headers Struct
+	 * 
+	 * @param headers
+	 * @param headerName
+	 * 
+	 * @return
+	 */
+	private String extractFirstHeaderByName( IStruct headers, Key headerName ) {
+		Object				headerValue		= headers.get( headerName );
+		CastAttempt<Array>	isValuesArray	= ArrayCaster.attempt( headerValue );
+		if ( isValuesArray.wasSuccessful() ) {
+			Array values = isValuesArray.getOrFail();
+			if ( values.size() > 0 ) {
+				return StringCaster.cast( values.get( 0 ) );
+			}
+		} else if ( headerValue != null ) {
+			return StringCaster.cast( headerValue );
+		}
+		return null;
+	}
 
 	/**
 	 * Generate a Query of cookies from the headers
