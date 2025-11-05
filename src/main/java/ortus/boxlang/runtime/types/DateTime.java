@@ -755,6 +755,10 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 * @return the DateTime instance
 	 */
 	public DateTime modify( String unit, Long quantity ) {
+		// No modifications are being requested so we can skip out of processing
+		if ( quantity == 0 ) {
+			return this;
+		}
 		switch ( unit ) {
 			case "d" :
 			case "y" :
