@@ -85,9 +85,11 @@ public final class LocalizationUtil {
 	    "MMMM[,] dd[,] yyyy HH:mm:ss[ zzz]", 	  // Med DateTime (e.g., Apr 02, 2024 21:01:00) - Might need adjustment based on locale
 	    "MMMM[,] dd[,] yyyy hh:mm a[ zzz]", 	    // Med DateTime No Seconds and AM/PM (e.g., Apr 02, 2024 10:01 AM) - Might need adjustment based on locale
 	    "MMMM[,] dd[,] yyyy HH:mm[ zzz]", 	     // Med DateTime No Seconds (e.g. Apr 02 2024 21:01) - Might need adjustment based on locale
-	    "MMM[,] dd[,] yyyy HH:mm:ss[ zzz]", 	  // Med DateTime (e.g., Apr 02, 2024 21:01:00) - Might need adjustment based on locale
-	    "MMM[,] dd[,] yyyy hh:mm a[ zzz]", 	    // Med DateTime No Seconds and AM/PM (e.g., Apr 02, 2024 10:01 AM) - Might need adjustment based on locale
-	    "MMM[,] dd[,] yyyy HH:mm[ zzz]", 	     // Med DateTime No Seconds (e.g. Apr 02 2024 21:01) - Might need adjustment based on locale
+	    "MMM[,][- ]dd[,][- ]yyyy HH:mm:ss[ zzz]", 	  // Med DateTime (e.g., Apr 02, 2024 21:01:00) - Might need adjustment based on locale
+	    "MMM[,][- ]dd[,][- ]yyyy hh:mm[ ]a[ zzz]", 	    // Med DateTime No Seconds and AM/PM (e.g., Apr 02, 2024 10:01 AM or 10:01AM) - Might need adjustment based on locale
+	    "MMM[,][- ]dd[,][- ]yyyy h:mm[ ]a[ zzz]", 	    // Med DateTime No Seconds and AM/PM with single digit hour (e.g., Nov-05-2025 8:43 am or 8:43am) - Might need adjustment based on locale
+	    "MMM-dd-yyyy h:mma", 	                      // Med DateTime specific format with single digit hour, no space (e.g., Nov-05-2025 8:43am)
+	    "MMM[,][- ]dd[,][- ]yyyy HH:mm[ zzz]", 	     // Med DateTime No Seconds (e.g. Apr 02 2024 21:01) - Might need adjustment based on locale
 	    "MM/dd/yyyy hh:mm[:ss] a",         // Short DateTime (e.g., 02/04/2024 04:01:00 PM) - Might need adjustment based on locale
 	    "MM/dd/yyyy HH:mm[:ss]",         // Short DateTime (e.g., 02/04/2024 21:01:00) - Might need adjustment based on locale
 	    "MM/dd/yyyy hh:mm a",         // Short DateTime (e.g., 02/04/2024 04:01:00 PM) - Might need adjustment based on locale
@@ -853,7 +855,8 @@ public final class LocalizationUtil {
 	 * @return a DateTimeFormatter configured with common date-time patterns
 	 */
 	public static DateTimeFormatter getCommonPatternDateTimeParsers() {
-		DateTimeFormatterBuilder builder = newLenientDateTimeFormatterBuilder();
+		DateTimeFormatterBuilder builder = newLenientDateTimeFormatterBuilder()
+		    .parseCaseInsensitive(); // Enable case insensitive parsing for meridian indicators
 		Stream.of( COMMON_DATETIME_PATTERNS )
 		    .forEach( pattern -> {
 			    builder.appendOptional(

@@ -386,6 +386,26 @@ public class ParseDateTimeTest {
 
 	}
 
+	@DisplayName( "It tests the BIF ParseDateTime allowing more folks to use lower-case am/pm format" )
+	@Test
+	public void testParseYetAnotherLowerCaseMeridian() {
+		instance.executeSource(
+		    """
+		    result = ParseDateTime( "Nov-05-2025 8:43am" );
+		    """,
+		    context );
+		DateTime result = ( DateTime ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( DateTime.class );
+		assertThat( result.toString() ).isInstanceOf( String.class );
+		assertThat( IntegerCaster.cast( result.format( "yyyy" ) ) ).isEqualTo( 2025 );
+		assertThat( IntegerCaster.cast( result.format( "M" ) ) ).isEqualTo( 11 );
+		assertThat( IntegerCaster.cast( result.format( "d" ) ) ).isEqualTo( 5 );
+		assertThat( IntegerCaster.cast( result.format( "H" ) ) ).isEqualTo( 8 );
+		assertThat( IntegerCaster.cast( result.format( "m" ) ) ).isEqualTo( 43 );
+		assertThat( IntegerCaster.cast( result.format( "s" ) ) ).isEqualTo( 0 );
+
+	}
+
 	@DisplayName( "It tests the BIF ParseDateTime with a common epoch pattern" )
 	@Test
 	public void testParseLongAndShortDateTime() {
