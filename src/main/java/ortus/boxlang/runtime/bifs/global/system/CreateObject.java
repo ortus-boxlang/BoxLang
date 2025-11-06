@@ -130,7 +130,7 @@ public class CreateObject extends BIF {
 	 * @param className    A fully qualified class name to create an instance of
 	 * @param properties   Depending on the type, this can be used to pass additional properties to the object creation process
 	 * @param arguments    The arguments scope for the BIF.
-	 * @param externalOnly Whether to only load external classes
+	 * @param externalOnly Whether to only load classes from external mappings
 	 * @param classLoader  The class loader to use when loading Java classes, it can also be null.
 	 *
 	 * @throws BoxRuntimeException If the type is not supported and no interception is available.
@@ -243,8 +243,9 @@ public class CreateObject extends BIF {
 	/**
 	 * Creates a new BoxLang class or component instance.
 	 *
-	 * @param context   The context in which the BIF is being invoked.
-	 * @param className The fully qualified class name to create an instance of.
+	 * @param context      The context in which the BIF is being invoked.
+	 * @param className    The fully qualified class name to create an instance of.
+	 * @param externalOnly Whether to only load classes from external mappings
 	 *
 	 * @return The created object.
 	 */

@@ -176,7 +176,8 @@ public class FeatureAudit {
 				    .collect( Collectors.toSet() );
 				if ( rcommendedModulesWeCareAbout.size() > 0 ) {
 					System.out.println( "Recommended Modules to install:" );
-					System.out.println( "box install " + rcommendedModulesWeCareAbout.stream().sorted().collect( Collectors.joining( "," ) ) );
+					System.out.println( "box install "
+					    + rcommendedModulesWeCareAbout.stream().sorted().map( name -> name.replace( "+", "" ) ).collect( Collectors.joining( "," ) ) );
 					System.out.println();
 					if ( recommendedModules.contains( "boxlang-web-support" ) ) {
 						System.out.println(
