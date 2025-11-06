@@ -20,7 +20,7 @@
 					<bx:if !expandRoot>class="d-none"</bx:if>
 				>
 					<tr>
-						<bx:loop array="#var.columnList.listToArray()#" item="column">
+						<bx:loop array="#var.getColumns().keyArray()#" item="column">
 							<th>#encodeForHTML( column )#</th>
 						</bx:loop>
 					</tr>
