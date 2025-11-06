@@ -65,6 +65,15 @@ public class BoxIOException extends BoxRuntimeException {
 	}
 
 	/**
+	 * Constructor
+	 *
+	 * @param message The message
+	 */
+	public BoxIOException( String message ) {
+		super( message );
+	}
+
+	/**
 	 * Parses the exception message
 	 *
 	 * @param exception The exception
