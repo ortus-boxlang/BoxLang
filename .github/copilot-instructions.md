@@ -93,6 +93,13 @@
   - Constants: UPPER_SNAKE_CASE
   - Packages: lowercase dot-separated
 
+- **Instance Field Access:** ALWAYS use the `this` prefix when accessing instance fields/properties
+  - Use `this.fieldName` instead of just `fieldName`
+  - This clearly distinguishes instance fields from local variables and parameters
+  - Example: `this.runtime = runtime;` not `runtime = runtime;`
+  - Example: `this.config.get(key)` not `config.get(key)`
+  - Makes code more readable and prevents ambiguity
+
 ## Key Developer Workflows
 
 - **Development:** Use IntelliJ IDEA or VSCode with the BoxLang extension for code editing and navigation.
@@ -380,7 +387,7 @@ BoxLangLogger logger = this.getLogger();
    ```java
    // GOOD - message only constructed if logging level is enabled
    logger.debug( "User {} logged in from {}", username, ipAddress );
-   
+
    // BAD - string concatenation happens even if debug is disabled
    logger.debug( "User " + username + " logged in from " + ipAddress );
    ```
@@ -429,7 +436,7 @@ Logging is configured via `boxlang.json`:
 ```java
 public class MyService implements IService {
     private BoxLangLogger logger;
-    
+
     @Override
     public void onStartup( BoxRuntime runtime ) {
         this.logger = LoggingService.getInstance().getLogger( "myservice" );
@@ -442,9 +449,9 @@ public class MyService implements IService {
 ```java
 @BoxComponent
 public class MyComponent {
-    private static final BoxLangLogger logger = 
+    private static final BoxLangLogger logger =
         LoggingService.getInstance().getLogger( "components.mycomponent" );
-    
+
     public void execute() {
         logger.debug( "Executing component logic" );
         try {
@@ -461,7 +468,7 @@ public class MyComponent {
 ```java
 public void processRequest( IBoxContext context ) {
     BoxLangLogger logger = context.getLogger();
-    logger.info( "Processing request for application: {}", 
+    logger.info( "Processing request for application: {}",
                  context.getApplicationName() );
 }
 ```
