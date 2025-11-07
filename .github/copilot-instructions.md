@@ -100,6 +100,42 @@
   - Example: `this.config.get(key)` not `config.get(key)`
   - Makes code more readable and prevents ambiguity
 
+## BoxLang Language Features
+
+### Closures vs Lambdas
+
+BoxLang supports two types of anonymous functions with different scoping rules:
+
+- **Closures (`=>`)**: Full closures with access to outer scope
+  - Syntax: `(args) => { body }`
+  - Has access to caller scope, variables scope, and parent scopes
+  - Can access variables defined in the outer function/context
+  - Use for callbacks that need to interact with surrounding code
+  - Example: `onMessage = (data, event, consumer) => { messages.append(data); }`
+
+- **Lambdas (`->`)**: Lightweight lambdas with restricted scope
+  - Syntax: `(args) -> { body }`
+  - Only has access to arguments and local scope
+  - Cannot access variables from outer scope
+  - More performant but limited scope access
+  - Use for pure functions that don't need outer context
+  - Example: `array.map((item) -> item * 2)`
+
+**CRITICAL for Testing**: When writing tests that use BoxLang callbacks accessing Java objects or test variables, ALWAYS use closures (`=>`) not lambdas (`->`). Lambdas cannot access the variables scope where Java objects are stored.
+
+**Examples:**
+```java
+// WRONG - Lambda cannot access 'messages' from variables scope
+onMessage = (data, event, consumer) -> {
+    messages.append(data);  // ERROR: messages not accessible
+}
+
+// CORRECT - Closure can access 'messages' from variables scope
+onMessage = (data, event, consumer) => {
+    messages.append(data);  // OK: messages accessible from outer scope
+}
+```
+
 ## Key Developer Workflows
 
 - **Development:** Use IntelliJ IDEA or VSCode with the BoxLang extension for code editing and navigation.
