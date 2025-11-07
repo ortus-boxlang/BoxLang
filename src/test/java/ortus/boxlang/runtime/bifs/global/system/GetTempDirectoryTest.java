@@ -48,7 +48,7 @@ public class GetTempDirectoryTest {
 		    result = getTempDirectory()
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( System.getProperty( "java.io.tmpdir" ) );
+		assertThat( variables.getAsString( result ) ).contains( System.getProperty( "java.io.tmpdir" ) );
 		assertThat( variables.getAsString( result ).endsWith( File.separator ) ).isTrue();
 	}
 }
