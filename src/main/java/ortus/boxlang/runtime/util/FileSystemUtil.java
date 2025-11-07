@@ -1008,12 +1008,16 @@ public final class FileSystemUtil {
 	}
 
 	/**
-	 * Get the system temp directory
+	 * Get the system temp directory. Always ends wtih a file separator.
 	 *
 	 * @return The system temp directory
 	 */
 	public static String getTempDirectory() {
-		return System.getProperty( "java.io.tmpdir" );
+		String tempDir = System.getProperty( "java.io.tmpdir" );
+		if ( !tempDir.endsWith( "/" ) && !tempDir.endsWith( "\\" ) ) {
+			tempDir += File.separator;
+		}
+		return tempDir;
 	}
 
 	/**
