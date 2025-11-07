@@ -90,6 +90,13 @@ public class SSEConsumer {
 	private static final BoxLangLogger	logger					= BoxRuntime.getInstance().getLoggingService().RUNTIME_LOGGER;
 
 	/**
+	 * Sentinel value used to indicate no data was available during an idle polling cycle.
+	 * Using a distinct non-empty string ensures that legitimate blank lines (""), which are
+	 * SSE event delimiters, flow through to the parser and trigger event dispatch.
+	 */
+	private static final String			NO_DATA_SENTINEL		= "\u0000";
+
+	/**
 	 * Virtual Executor
 	 */
 	private final BoxExecutor			boxExecutor				= BoxRuntime.getInstance().getAsyncService().getExecutor( "io-tasks" );
@@ -357,7 +364,7 @@ public class SSEConsumer {
 		// Add HTTP Basic Authentication if username/password are provided
 		if ( this.username != null && this.password != null ) {
 			String	credentials			= this.username + ":" + this.password;
-			String	encodedCredentials	= java.util.Base64.getEncoder().encodeToString( credentials.getBytes() );
+			String	encodedCredentials	= java.util.Base64.getEncoder().encodeToString( credentials.getBytes( StandardCharsets.UTF_8 ) );
 			requestBuilder.header( "Authorization", "Basic " + encodedCredentials );
 		}
 
@@ -397,14 +404,15 @@ public class SSEConsumer {
 			String	line;
 
 			while ( !this.closed.get() && ( line = readLineWithTimeout( reader, lastActivityTime ) ) != null ) {
-				lastActivityTime = System.currentTimeMillis();
-
-				// Skip empty lines returned by timeout polling
-				if ( line.isEmpty() ) {
+				// If this is the idle polling sentinel, skip without updating activity time
+				if ( line == NO_DATA_SENTINEL ) {
 					continue;
 				}
 
-				// Parse the line
+				// Update last activity ONLY when real data (including blank delimiter lines) arrives
+				lastActivityTime = System.currentTimeMillis();
+
+				// Forward all lines (including blank lines) to parser so event delimiters are processed
 				Attempt<SSEParserResult> parseResult = parser.parseLine( line );
 				if ( parseResult.wasSuccessful() ) {
 					SSEParserResult result = parseResult.get();
@@ -481,7 +489,7 @@ public class SSEConsumer {
 
 		// Configure proxy if host is provided
 		if ( this.proxyServer != null && !this.proxyServer.trim().isEmpty() ) {
-			int				port			= this.proxyPort > 0 ? this.proxyPort : 8080; // Default proxy port
+			int				port			= this.proxyPort > 0 ? this.proxyPort : DEFAULT_PROXY_PORT; // Default proxy port
 
 			ProxySelector	proxySelector	= ProxySelector.of( new InetSocketAddress( this.proxyServer, port ) );
 			clientBuilder.proxy( proxySelector );
@@ -703,35 +711,35 @@ public class SSEConsumer {
 	 * @throws IOException if an I/O error occurs
 	 */
 	private String readLineWithTimeout( BufferedReader reader, long lastActivityTime ) throws IOException {
-		// If no idle timeout is configured, use normal readLine
+		// If no idle timeout is configured, block normally for the next line
 		if ( this.idleTimeoutSeconds <= 0 ) {
 			return reader.readLine();
 		}
 
-		// Check if we've exceeded the idle timeout
 		long	currentTime		= System.currentTimeMillis();
 		long	idleTime		= currentTime - lastActivityTime;
 		long	idleTimeoutMs	= this.idleTimeoutSeconds * 1000L;
 
+		// Enforce idle timeout
 		if ( idleTime >= idleTimeoutMs ) {
 			throw new SocketTimeoutException( "Idle timeout exceeded: " + this.idleTimeoutSeconds + " seconds" );
 		}
 
-		// Use ready() to check if data is available without blocking
+		// Non-blocking check for available data
 		if ( reader.ready() ) {
 			return reader.readLine();
 		}
 
-		// Sleep briefly to avoid busy waiting
+		// Brief sleep to avoid busy spin when no data
 		try {
 			Thread.sleep( 100 );
 		} catch ( InterruptedException e ) {
 			Thread.currentThread().interrupt();
-			return null;
+			return null; // Propagate termination
 		}
 
-		// Return empty string to continue the loop and check timeout again
-		return "";
+		// Indicate no data this cycle; caller will skip without updating activity
+		return NO_DATA_SENTINEL;
 	}
 
 	/**
