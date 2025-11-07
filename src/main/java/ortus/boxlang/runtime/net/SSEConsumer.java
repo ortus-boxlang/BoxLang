@@ -34,6 +34,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.BoxExecutor;
@@ -57,49 +58,49 @@ public class SSEConsumer {
 	/**
 	 * Default connection timeout in seconds
 	 */
-	public static final int				DEFAULT_TIMEOUT			= 30;
+	public static final int					DEFAULT_TIMEOUT			= 30;
 
 	/**
 	 * Default idle timeout in seconds (0 = no timeout)
 	 */
-	public static final int				DEFAULT_IDLE_TIMEOUT	= 0;
+	public static final int					DEFAULT_IDLE_TIMEOUT	= 0;
 
 	/**
 	 * Default maximum reconnection attempts
 	 */
-	public static final int				DEFAULT_MAX_RECONNECTS	= 5;
+	public static final int					DEFAULT_MAX_RECONNECTS	= 5;
 
 	/**
 	 * Default initial reconnection delay in milliseconds
 	 */
-	public static final long			DEFAULT_RECONNECT_DELAY	= 1000;
+	public static final long				DEFAULT_RECONNECT_DELAY	= 1000;
 
 	/**
 	 * Default Proxy Port
 	 */
-	public static final int				DEFAULT_PROXY_PORT		= 8080;
+	public static final int					DEFAULT_PROXY_PORT		= 8080;
 
 	/**
 	 * Default User-Agent header value
 	 */
-	public static final String			DEFAULT_USER_AGENT		= "BoxLang/" + BoxRuntime.getInstance().getVersionInfo().getAsString( Key.version );
+	public static final String				DEFAULT_USER_AGENT		= "BoxLang/" + BoxRuntime.getInstance().getVersionInfo().getAsString( Key.version );
 
 	/**
 	 * Logger instance for SSEConsumer
 	 */
-	private static final BoxLangLogger	logger					= BoxRuntime.getInstance().getLoggingService().RUNTIME_LOGGER;
+	private static final BoxLangLogger		logger					= BoxRuntime.getInstance().getLoggingService().RUNTIME_LOGGER;
 
 	/**
 	 * Sentinel value used to indicate no data was available during an idle polling cycle.
 	 * Using a distinct non-empty string ensures that legitimate blank lines (""), which are
 	 * SSE event delimiters, flow through to the parser and trigger event dispatch.
 	 */
-	private static final String			NO_DATA_SENTINEL		= "\u0000";
+	private static final String				NO_DATA_SENTINEL		= "\u0000";
 
 	/**
 	 * Virtual Executor
 	 */
-	private final BoxExecutor			boxExecutor				= BoxRuntime.getInstance().getAsyncService().getExecutor( "io-tasks" );
+	private final BoxExecutor				boxExecutor				= BoxRuntime.getInstance().getAsyncService().getExecutor( "io-tasks" );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -110,122 +111,123 @@ public class SSEConsumer {
 	/**
 	 * The URL of the SSE endpoint.
 	 */
-	private final String				url;
+	private final String					url;
 
 	/**
 	 * The bound context for function invocation.
 	 */
-	private final IBoxContext			context;
+	private final IBoxContext				context;
 
 	/**
 	 * Custom headers to include in the HTTP request.
 	 */
-	private final IStruct				headers;
+	private final IStruct					headers;
 
 	/**
 	 * Custom User-Agent header value.
 	 */
-	private final String				userAgent;
+	private final String					userAgent;
 
 	/**
 	 * Username for HTTP basic authentication.
 	 */
-	private final String				username;
+	private final String					username;
 
 	/**
 	 * Password for HTTP basic authentication.
 	 */
-	private final String				password;
+	private final String					password;
 
 	/**
 	 * Proxy server host for HTTP requests.
 	 */
-	private final String				proxyServer;
+	private final String					proxyServer;
 
 	/**
 	 * Proxy server port for HTTP requests.
 	 */
-	private final int					proxyPort;
+	private final int						proxyPort;
 
 	/**
 	 * Username for proxy authentication.
 	 */
-	private final String				proxyUser;
+	private final String					proxyUser;
 
 	/**
 	 * Password for proxy authentication.
 	 */
-	private final String				proxyPassword;
+	private final String					proxyPassword;
 
 	/**
 	 * Connection timeout in seconds.
 	 */
-	private final int					timeoutSeconds;
+	private final int						timeoutSeconds;
 
 	/**
 	 * Idle timeout in seconds (0 = no timeout, listen forever).
 	 */
-	private final int					idleTimeoutSeconds;
+	private final int						idleTimeoutSeconds;
 
 	/**
 	 * Maximum number of reconnection attempts.
 	 */
-	private final int					maxReconnects;
+	private final int						maxReconnects;
 
 	/**
 	 * Initial reconnection delay in milliseconds.
 	 */
-	private final long					initialReconnectDelay;
+	private final long						initialReconnectDelay;
 
 	/**
 	 * Callback function invoked when a message is received.
 	 */
-	private final Function				onMessage;
+	private final Function					onMessage;
 
 	/**
 	 * Callback function invoked when the SSE connection is opened.
 	 */
-	private final Function				onOpen;
+	private final Function					onOpen;
 
 	/**
 	 * Callback function invoked when the SSE connection is closed.
 	 */
-	private final Function				onClose;
+	private final Function					onClose;
 
 	/**
 	 * Callback function invoked when an error occurs.
 	 */
-	private final Function				onError;
+	private final Function					onError;
 
 	/**
 	 * Callback function invoked when a named event is received.
 	 */
-	private final Function				onEvent;
+	private final Function					onEvent;
 
 	/**
 	 * True if the connection is closed.
 	 */
-	private final AtomicBoolean			closed					= new AtomicBoolean( false );
+	private final AtomicBoolean				closed					= new AtomicBoolean( false );
 
 	/**
 	 * Current number of reconnection attempts.
 	 */
-	private final AtomicInteger			reconnectAttempts		= new AtomicInteger( 0 );
+	private final AtomicInteger				reconnectAttempts		= new AtomicInteger( 0 );
 
 	/**
-	 * Last received event ID for reconnection.
+	 * Last received event ID for reconnection. Stored as a String for full SSE spec compliance.
+	 * Null indicates no ID has been received yet. Numeric convenience parsing offered via getLastEventId().
 	 */
-	private final AtomicLong			lastEventId				= new AtomicLong( -1 );
+	private final AtomicReference<String>	lastEventId				= new AtomicReference<>( null );
 
 	/**
 	 * Current reconnect delay in milliseconds (can be updated by retry directives).
 	 */
-	private final AtomicLong			currentReconnectDelay;
+	private final AtomicLong				currentReconnectDelay;
 
 	/**
 	 * Future representing the current connection task.
 	 */
-	private volatile Future<?>			connectionFuture;
+	private volatile Future<?>				connectionFuture;
 
 	/**
 	 * Private constructor - use Builder to create instances.
@@ -369,9 +371,9 @@ public class SSEConsumer {
 		}
 
 		// Add Last-Event-ID if we have one
-		long lastId = this.lastEventId.get();
-		if ( lastId >= 0 ) {
-			requestBuilder.header( "Last-Event-ID", String.valueOf( lastId ) );
+		String lastId = this.lastEventId.get();
+		if ( lastId != null && !lastId.isEmpty() ) {
+			requestBuilder.header( "Last-Event-ID", lastId );
 		}
 
 		// Build and send the request
@@ -422,10 +424,9 @@ public class SSEConsumer {
 						case SSEEvent event -> {
 							// Update last event ID if present
 							if ( event.id() != null ) {
-								try {
-									this.lastEventId.set( Long.parseLong( event.id() ) );
-								} catch ( NumberFormatException e ) {
-									logger.debug( "Non-numeric event ID received: {}", event.id() );
+								this.lastEventId.set( event.id() );
+								if ( logger.isDebugEnabled() ) {
+									logger.debug( "Event ID received: {}", event.id() );
 								}
 							}
 
@@ -566,11 +567,29 @@ public class SSEConsumer {
 	}
 
 	/**
-	 * Returns the last received event ID.
+	 * Returns the last received event ID as a long if it is numeric.
+	 * Non-numeric or absent IDs return -1. Use getLastEventIdString() for raw value.
 	 *
-	 * @return last event ID, or -1 if none received
+	 * @return numeric event ID or -1
 	 */
 	public long getLastEventId() {
+		String id = this.lastEventId.get();
+		if ( id == null ) {
+			return -1;
+		}
+		try {
+			return Long.parseLong( id );
+		} catch ( NumberFormatException e ) {
+			return -1;
+		}
+	}
+
+	/**
+	 * Returns the raw last event ID string (may be non-numeric or null if not yet received).
+	 *
+	 * @return last event ID string or null
+	 */
+	public String getLastEventIdString() {
 		return this.lastEventId.get();
 	}
 
