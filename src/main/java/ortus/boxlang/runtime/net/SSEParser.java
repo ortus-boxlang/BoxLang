@@ -17,7 +17,20 @@
  */
 package ortus.boxlang.runtime.net;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.dynamic.Attempt;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
+
+/**
+ * Base interface for SSE parser results.
+ *
+ * This sealed interface allows the parser to return either complete events
+ * or server directives (like retry instructions) from the SSE stream.
+ *
+ * This allows us to use jdk21 pattern matching to handle different result types.
+ */
+sealed interface SSEParserResult permits SSEEvent, SSERetryDirective {
+}
 
 /**
  * A stateful parser for Server-Sent Events (SSE) streams.
@@ -81,12 +94,17 @@ import ortus.boxlang.runtime.dynamic.Attempt;
 public class SSEParser {
 
 	/**
+	 * Logger instance for the SSE parser
+	 */
+	private static final BoxLangLogger	logger			= BoxRuntime.getInstance().getLoggingService().RUNTIME_LOGGER;
+
+	/**
 	 * Current event data being parsed.
 	 *
 	 * Data fields can span multiple lines and are accumulated in this StringBuilder.
 	 * Multiple data lines are joined with newline characters (\n) as per SSE specification.
 	 */
-	private StringBuilder	currentData		= new StringBuilder();
+	private StringBuilder				currentData		= new StringBuilder();
 
 	/**
 	 * Current event type being parsed.
@@ -94,7 +112,7 @@ public class SSEParser {
 	 * Corresponds to the "event:" field in SSE streams. Used to identify
 	 * the type of event being sent. Remains null if no event type is specified.
 	 */
-	private String			currentEvent	= null;
+	private String						currentEvent	= null;
 
 	/**
 	 * Current event ID being parsed.
@@ -102,7 +120,7 @@ public class SSEParser {
 	 * Corresponds to the "id:" field in SSE streams. Used to track the
 	 * last received event ID for reconnection purposes. Remains null if no ID is specified.
 	 */
-	private String			currentId		= null;
+	private String						currentId		= null;
 
 	/**
 	 * Parses a single line of an SSE stream.
@@ -130,14 +148,16 @@ public class SSEParser {
 	 *
 	 * @param line The line to parse from the SSE stream. Must not be null.
 	 *
-	 * @return An Attempt containing an SSEEvent if the event is complete (empty line encountered),
-	 *         or an empty Attempt if more lines are needed or the line should be ignored.
+	 * @return An Attempt containing an SSEParserResult. This can be either an SSEEvent if the event
+	 *         is complete (empty line encountered), an SSERetryDirective if a retry instruction was
+	 *         parsed, or an empty Attempt if more lines are needed or the line should be ignored.
 	 *
 	 * @throws NullPointerException if line is null
 	 *
 	 * @see SSEEvent
+	 * @see SSERetryDirective
 	 */
-	public Attempt<SSEEvent> parseLine( String line ) {
+	public Attempt<SSEParserResult> parseLine( String line ) {
 		// End of event - dispatch the event regardless of whether there's data
 		// An SSE event can have just an ID, event type, or be completely empty
 		if ( line.isEmpty() ) {
@@ -179,7 +199,14 @@ public class SSEParser {
 				this.currentId = value;
 				break;
 			case "retry" :
-				// Handle reconnection time if needed
+				// Handle reconnection time directive
+				try {
+					long retryMs = Long.parseLong( value );
+					// Immediately return the retry directive
+					return Attempt.of( new SSERetryDirective( retryMs ) );
+				} catch ( NumberFormatException e ) {
+					logger.debug( "Invalid retry value: {}", value );
+				}
 				break;
 		}
 
@@ -249,5 +276,24 @@ public class SSEParser {
  *
  * @since 1.0.0
  */
-record SSEEvent( String data, String event, String id ) {
+record SSEEvent( String data, String event, String id ) implements SSEParserResult {
+}
+
+/**
+ * Represents an SSE retry directive that instructs the client how long to wait before reconnecting.
+ *
+ * This record encapsulates a retry directive as parsed from an SSE stream's "retry:" field.
+ * According to the SSE specification, the retry field specifies the reconnection time in milliseconds
+ * that the client should use for subsequent reconnection attempts.
+ *
+ * <p>
+ * The retry directive affects future reconnection behavior and should be used to update
+ * the client's reconnection delay setting.
+ * </p>
+ *
+ * @param retryDelayMs The reconnection delay in milliseconds
+ *
+ * @since 1.8.0
+ */
+record SSERetryDirective( long retryDelayMs ) implements SSEParserResult {
 }
