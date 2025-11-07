@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.bifs.global.async;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.net.SSEConsumer;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -147,7 +148,7 @@ public class ServerSideEventConsumer extends BIF {
 		    .timeout( arguments.getAsInteger( Key.timeout ) )
 		    .idleTimeout( arguments.getAsInteger( Key.idleTimeout ) )
 		    .maxReconnects( arguments.getAsInteger( Key.maxReconnects ) )
-		    .reconnectDelay( arguments.getAsLong( Key.reconnectDelay ) )
+		    .reconnectDelay( LongCaster.cast( arguments.get( Key.reconnectDelay ) ) )
 		    .headers( arguments.getAsStruct( Key.headers ) )
 		    .userAgent( arguments.getAsString( Key.userAgent ) )
 		    .proxy( arguments.getAsString( Key.proxyServer ), arguments.getAsInteger( Key.proxyPort ) )
