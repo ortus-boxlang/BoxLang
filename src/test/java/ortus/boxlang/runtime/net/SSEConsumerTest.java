@@ -415,4 +415,96 @@ public class SSEConsumerTest {
 		assertThat( consumer.hasProxy() ).isTrue();
 		assertThat( consumer.hasProxyAuth() ).isTrue();
 	}
+
+	@Test
+	void testIdleTimeoutBuilderMethod() {
+		SSEConsumer consumer = new SSEConsumer.Builder()
+		    .url( "https://example.com/events" )
+		    .context( context )
+		    .idleTimeout( 30 )
+		    .build();
+
+		assertThat( consumer.getIdleTimeoutSeconds() ).isEqualTo( 30 );
+	}
+
+	@Test
+	void testIdleTimeoutDefaultValue() {
+		SSEConsumer consumer = new SSEConsumer.Builder()
+		    .url( "https://example.com/events" )
+		    .context( context )
+		    .build();
+
+		assertThat( consumer.getIdleTimeoutSeconds() ).isEqualTo( 0 );
+	}
+
+	@Test
+	void testIdleTimeoutZeroMeansNoTimeout() {
+		SSEConsumer consumer = new SSEConsumer.Builder()
+		    .url( "https://example.com/events" )
+		    .context( context )
+		    .idleTimeout( 0 )
+		    .build();
+
+		assertThat( consumer.getIdleTimeoutSeconds() ).isEqualTo( 0 );
+	}
+
+	@Test
+	void testIdleTimeoutNegativeBecomesZero() {
+		SSEConsumer consumer = new SSEConsumer.Builder()
+		    .url( "https://example.com/events" )
+		    .context( context )
+		    .idleTimeout( -5 )
+		    .build();
+
+		assertThat( consumer.getIdleTimeoutSeconds() ).isEqualTo( 0 );
+	}
+
+	@Test
+	void testDefaultUserAgent() {
+		SSEConsumer consumer = new SSEConsumer.Builder()
+		    .url( "https://example.com/events" )
+		    .context( context )
+		    .build();
+
+		assertThat( consumer.getUserAgent() ).isEqualTo( SSEConsumer.DEFAULT_USER_AGENT );
+		assertThat( consumer.getUserAgent() ).startsWith( "BoxLang/" );
+	}
+
+	@Test
+	void testCustomUserAgent() {
+		String		customUserAgent	= "MyApp/1.0 (CustomAgent)";
+
+		SSEConsumer	consumer		= new SSEConsumer.Builder()
+		    .url( "https://example.com/events" )
+		    .context( context )
+		    .userAgent( customUserAgent )
+		    .build();
+
+		assertThat( consumer.getUserAgent() ).isEqualTo( customUserAgent );
+	}
+
+	@Test
+	void testUserAgentBuilderChaining() {
+		SSEConsumer consumer = new SSEConsumer.Builder()
+		    .url( "https://example.com/events" )
+		    .context( context )
+		    .userAgent( "TestAgent/1.0" )
+		    .timeout( 60 )
+		    .build();
+
+		assertThat( consumer.getUserAgent() ).isEqualTo( "TestAgent/1.0" );
+		assertThat( consumer.getTimeoutSeconds() ).isEqualTo( 60 );
+	}
+
+	@Test
+	void testInitialReconnectDelayMatchesCurrentDelay() {
+		SSEConsumer consumer = new SSEConsumer.Builder()
+		    .url( "https://example.com/events" )
+		    .context( context )
+		    .reconnectDelay( 2000 )
+		    .build();
+
+		assertThat( consumer.getInitialReconnectDelay() ).isEqualTo( 2000 );
+		assertThat( consumer.getCurrentReconnectDelay() ).isEqualTo( 2000 );
+	}
 }

@@ -17,24 +17,29 @@
  */
 package ortus.boxlang.runtime.net;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.Attempt;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Function;
@@ -63,6 +68,11 @@ public class SSEConsumer {
 	 * Default initial reconnection delay in milliseconds
 	 */
 	public static final long			DEFAULT_RECONNECT_DELAY	= 1000;
+
+	/**
+	 * Default User-Agent header value
+	 */
+	public static final String			DEFAULT_USER_AGENT		= "BoxLang/" + BoxRuntime.getInstance().getVersionInfo().getAsString( Key.version );
 
 	/**
 	 * Logger instance for SSEConsumer
@@ -94,6 +104,11 @@ public class SSEConsumer {
 	 * Custom headers to include in the HTTP request.
 	 */
 	private final IStruct				headers;
+
+	/**
+	 * Custom User-Agent header value.
+	 */
+	private final String				userAgent;
 
 	/**
 	 * Username for HTTP basic authentication.
@@ -129,6 +144,11 @@ public class SSEConsumer {
 	 * Connection timeout in seconds.
 	 */
 	private final int					timeoutSeconds;
+
+	/**
+	 * Idle timeout in seconds (0 = no timeout, listen forever).
+	 */
+	private final int					idleTimeoutSeconds;
 
 	/**
 	 * Maximum number of reconnection attempts.
@@ -181,6 +201,11 @@ public class SSEConsumer {
 	private final AtomicLong			lastEventId				= new AtomicLong( -1 );
 
 	/**
+	 * Current reconnect delay in milliseconds (can be updated by retry directives).
+	 */
+	private final AtomicLong			currentReconnectDelay;
+
+	/**
 	 * Future representing the current connection task.
 	 */
 	private volatile Future<?>			connectionFuture;
@@ -195,6 +220,7 @@ public class SSEConsumer {
 		this.context				= builder.context;
 		this.url					= builder.url;
 		this.headers				= builder.headers;
+		this.userAgent				= builder.userAgent;
 		this.username				= builder.username;
 		this.password				= builder.password;
 		this.proxyHost				= builder.proxyHost;
@@ -202,8 +228,12 @@ public class SSEConsumer {
 		this.proxyUsername			= builder.proxyUsername;
 		this.proxyPassword			= builder.proxyPassword;
 		this.timeoutSeconds			= builder.timeoutSeconds;
+		this.idleTimeoutSeconds		= builder.idleTimeoutSeconds;
 		this.maxReconnects			= builder.maxReconnects;
 		this.initialReconnectDelay	= builder.initialReconnectDelay;
+
+		// Initialize current reconnect delay with initial value
+		this.currentReconnectDelay	= new AtomicLong( builder.initialReconnectDelay );
 
 		// Callbacks
 		this.onMessage				= builder.onMessage;
@@ -265,8 +295,15 @@ public class SSEConsumer {
 
 				// Handle reconnection with exponential backoff
 				if ( !this.closed.get() && this.reconnectAttempts.incrementAndGet() <= this.maxReconnects ) {
-					long delay = this.initialReconnectDelay * ( 1L << Math.min( this.reconnectAttempts.get() - 1, 10 ) );
-					logger.info( "Reconnecting in {} ms (attempt {} of {})", delay, this.reconnectAttempts.get(), this.maxReconnects );
+					long	baseDelay	= this.currentReconnectDelay.get();
+					long	delay		= baseDelay * ( 1L << Math.min( this.reconnectAttempts.get() - 1, 10 ) );
+					logger.info(
+					    "Reconnecting in {} ms (attempt {} of {}, base delay {} ms)",
+					    delay,
+					    this.reconnectAttempts.get(),
+					    this.maxReconnects,
+					    baseDelay
+					);
 
 					try {
 						Thread.sleep( delay );
@@ -296,7 +333,7 @@ public class SSEConsumer {
 		    .uri( URI.create( this.url ) )
 		    .header( "Accept", "text/event-stream" )
 		    .header( "Cache-Control", "no-cache" )
-		    .header( "User-Agent", "BoxLang/" + BoxRuntime.getInstance().getVersionInfo().getAsString( Key.version ) )
+		    .header( "User-Agent", this.userAgent )
 		    .timeout( Duration.ofSeconds( this.timeoutSeconds ) )
 		    .GET();
 
@@ -304,7 +341,7 @@ public class SSEConsumer {
 		this.headers.entrySet().forEach( entry -> {
 			Key		headerName	= entry.getKey();
 			Object	headerValue	= entry.getValue();
-			requestBuilder.header( headerName.getName(), headerValue.toString() );
+			requestBuilder.header( headerName.getName(), StringCaster.cast( headerValue ) );
 		} );
 
 		// Add HTTP Basic Authentication if username/password are provided
@@ -321,10 +358,10 @@ public class SSEConsumer {
 		}
 
 		// Build and send the request
-		HttpRequest						request		= requestBuilder.build();
-		HttpResponse<Stream<String>>	response	= client.send(
+		HttpRequest					request		= requestBuilder.build();
+		HttpResponse<InputStream>	response	= client.send(
 		    request,
-		    HttpResponse.BodyHandlers.ofLines()
+		    HttpResponse.BodyHandlers.ofInputStream()
 		);
 
 		// Check response status
@@ -345,59 +382,82 @@ public class SSEConsumer {
 		SSEParser parser = new SSEParser();
 
 		// Use try-with-resources to ensure the stream is properly closed
-		try ( Stream<String> lines = response.body() ) {
-			lines.forEach( line -> {
-				// If closed, stop processing
-				if ( this.closed.get() ) {
-					return;
+		try ( BufferedReader reader = new BufferedReader( new InputStreamReader( response.body(), StandardCharsets.UTF_8 ) ) ) {
+			long	lastActivityTime	= System.currentTimeMillis();
+			String	line;
+
+			while ( !this.closed.get() && ( line = readLineWithTimeout( reader, lastActivityTime ) ) != null ) {
+				lastActivityTime = System.currentTimeMillis();
+
+				// Skip empty lines returned by timeout polling
+				if ( line.isEmpty() ) {
+					continue;
 				}
 
 				// Parse the line
-				Attempt<SSEEvent> eventAttempt = parser.parseLine( line );
-				if ( eventAttempt.wasSuccessful() ) {
-					SSEEvent event = eventAttempt.get();
+				Attempt<SSEParserResult> parseResult = parser.parseLine( line );
+				if ( parseResult.wasSuccessful() ) {
+					SSEParserResult result = parseResult.get();
 
-					// Update last event ID if present
-					if ( event.id() != null ) {
-						try {
-							this.lastEventId.set( Long.parseLong( event.id() ) );
-						} catch ( NumberFormatException e ) {
-							logger.debug( "Non-numeric event ID received: {}", event.id() );
-						}
-					}
-
-					// Dispatch event to appropriate callback
-					try {
-						// If event type is known, use onEvent callback
-						if ( event.event() != null && this.onEvent != null ) {
-							this.context.invokeFunction( this.onEvent, new Object[] {
-							    event.event(),
-							    event.data(),
-							    event.id(),
-							    this
-							} );
-						}
-						// Otherwise, use onMessage callback
-						else if ( this.onMessage != null ) {
-							this.context.invokeFunction( this.onMessage, new Object[] {
-							    event.data(),
-							    event.id(),
-							    this
-							} );
-						}
-					} catch ( Exception e ) {
-						logger.error( "Error in event callback", e );
-						// Invoke onError callback
-						if ( this.onError != null ) {
-							try {
-								this.context.invokeFunction( this.onError, new Object[] { e, this } );
-							} catch ( Exception callbackError ) {
-								logger.error( "Error in onError callback", callbackError );
+					// Handle different types of parser results
+					switch ( result ) {
+						case SSEEvent event -> {
+							// Update last event ID if present
+							if ( event.id() != null ) {
+								try {
+									this.lastEventId.set( Long.parseLong( event.id() ) );
+								} catch ( NumberFormatException e ) {
+									logger.debug( "Non-numeric event ID received: {}", event.id() );
+								}
 							}
+
+							// Dispatch event to appropriate callback
+							try {
+								// If event type is known, use onEvent callback
+								if ( event.event() != null && this.onEvent != null ) {
+									this.context.invokeFunction( this.onEvent, new Object[] {
+									    event.event(),
+									    event.data(),
+									    event.id(),
+									    this
+									} );
+								}
+								// Otherwise, use onMessage callback
+								else if ( this.onMessage != null ) {
+									this.context.invokeFunction( this.onMessage, new Object[] {
+									    event.data(),
+									    event.id(),
+									    this
+									} );
+								}
+							} catch ( Exception e ) {
+								logger.error( "Error in event callback", e );
+								// Invoke onError callback
+								if ( this.onError != null ) {
+									try {
+										this.context.invokeFunction( this.onError, new Object[] { e, this } );
+									} catch ( Exception callbackError ) {
+										logger.error( "Error in onError callback", callbackError );
+									}
+								}
+							}
+						}
+						case SSERetryDirective retryDirective -> {
+							// Update the reconnect delay based on server directive
+							long newDelay = retryDirective.retryDelayMs();
+							this.currentReconnectDelay.set( newDelay );
+							logger.debug( "Server requested retry delay update to {} ms", newDelay );
 						}
 					}
 				}
-			} );
+			}
+		} catch ( SocketTimeoutException e ) {
+			if ( this.idleTimeoutSeconds > 0 ) {
+				logger.info( "SSE connection idle timeout after {} seconds", this.idleTimeoutSeconds );
+				close();
+				return;
+			}
+			throw e;
 		}
 	}
 
@@ -506,12 +566,30 @@ public class SSEConsumer {
 	}
 
 	/**
+	 * Returns the User-Agent header value.
+	 *
+	 * @return User-Agent string
+	 */
+	public String getUserAgent() {
+		return this.userAgent;
+	}
+
+	/**
 	 * Returns the connection timeout in seconds.
 	 *
 	 * @return timeout in seconds
 	 */
 	public int getTimeoutSeconds() {
 		return this.timeoutSeconds;
+	}
+
+	/**
+	 * Returns the idle timeout in seconds.
+	 *
+	 * @return idle timeout in seconds (0 = no timeout)
+	 */
+	public int getIdleTimeoutSeconds() {
+		return this.idleTimeoutSeconds;
 	}
 
 	/**
@@ -530,6 +608,15 @@ public class SSEConsumer {
 	 */
 	public long getInitialReconnectDelay() {
 		return this.initialReconnectDelay;
+	}
+
+	/**
+	 * Returns the current reconnection delay in milliseconds (may have been updated by retry directives).
+	 *
+	 * @return current reconnection delay in milliseconds
+	 */
+	public long getCurrentReconnectDelay() {
+		return this.currentReconnectDelay.get();
 	}
 
 	/**
@@ -596,10 +683,61 @@ public class SSEConsumer {
 	}
 
 	/**
+	 * Reads a line from the BufferedReader with idle timeout support.
+	 *
+	 * @param reader           The BufferedReader to read from
+	 * @param lastActivityTime The timestamp of the last activity
+	 *
+	 * @return The line read, or null if end of stream or timeout
+	 *
+	 * @throws IOException if an I/O error occurs
+	 */
+	private String readLineWithTimeout( BufferedReader reader, long lastActivityTime ) throws IOException {
+		// If no idle timeout is configured, use normal readLine
+		if ( this.idleTimeoutSeconds <= 0 ) {
+			return reader.readLine();
+		}
+
+		// Check if we've exceeded the idle timeout
+		long	currentTime		= System.currentTimeMillis();
+		long	idleTime		= currentTime - lastActivityTime;
+		long	idleTimeoutMs	= this.idleTimeoutSeconds * 1000L;
+
+		if ( idleTime >= idleTimeoutMs ) {
+			throw new SocketTimeoutException( "Idle timeout exceeded: " + this.idleTimeoutSeconds + " seconds" );
+		}
+
+		// Use ready() to check if data is available without blocking
+		if ( reader.ready() ) {
+			return reader.readLine();
+		}
+
+		// Sleep briefly to avoid busy waiting
+		try {
+			Thread.sleep( 100 );
+		} catch ( InterruptedException e ) {
+			Thread.currentThread().interrupt();
+			return null;
+		}
+
+		// Return empty string to continue the loop and check timeout again
+		return "";
+	}
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Builder
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Creates a new Builder instance for SSEConsumer.
+	 *
+	 * @return Builder instance
+	 */
+	public static Builder builder() {
+		return new Builder();
+	}
 
 	/**
 	 * Builder class for creating SSEConsumer instances with fluent API.
@@ -609,6 +747,7 @@ public class SSEConsumer {
 		private String		url;
 		private IBoxContext	context;
 		private IStruct		headers					= Struct.ofNonConcurrent();
+		private String		userAgent				= DEFAULT_USER_AGENT;
 		private String		username;
 		private String		password;
 		private String		proxyHost;
@@ -616,6 +755,7 @@ public class SSEConsumer {
 		private String		proxyUsername;
 		private String		proxyPassword;
 		private int			timeoutSeconds			= DEFAULT_TIMEOUT;
+		private int			idleTimeoutSeconds		= 0;
 		private int			maxReconnects			= DEFAULT_MAX_RECONNECTS;
 		private long		initialReconnectDelay	= DEFAULT_RECONNECT_DELAY;
 		private Function	onMessage;
@@ -671,6 +811,18 @@ public class SSEConsumer {
 		public Builder headers( IStruct headers ) {
 			headers.entrySet()
 			    .forEach( entry -> this.headers.put( entry.getKey(), entry.getValue() ) );
+			return this;
+		}
+
+		/**
+		 * Sets a custom User-Agent header value. If not set, defaults to BoxLang version.
+		 *
+		 * @param userAgent The custom User-Agent string
+		 *
+		 * @return this builder
+		 */
+		public Builder userAgent( String userAgent ) {
+			this.userAgent = userAgent;
 			return this;
 		}
 
@@ -819,6 +971,19 @@ public class SSEConsumer {
 		}
 
 		/**
+		 * Sets the idle timeout in seconds. If no data is received within this time,
+		 * the connection will be closed. A value of 0 means no timeout (listen forever).
+		 *
+		 * @param idleTimeoutSeconds Idle timeout in seconds (0 = no timeout)
+		 *
+		 * @return this builder
+		 */
+		public Builder idleTimeout( int idleTimeoutSeconds ) {
+			this.idleTimeoutSeconds = Math.max( 0, idleTimeoutSeconds );
+			return this;
+		}
+
+		/**
 		 * Sets the maximum number of reconnection attempts.
 		 *
 		 * @param maxReconnects Maximum reconnect attempts
@@ -915,10 +1080,6 @@ public class SSEConsumer {
 			}
 			if ( this.context == null ) {
 				throw new IllegalArgumentException( "Context is required" );
-			}
-			// onMessage or onEvent must be provided
-			if ( this.onMessage == null && this.onEvent == null ) {
-				throw new IllegalArgumentException( "At least one of onMessage or onEvent callback is required" );
 			}
 
 			return new SSEConsumer( this );
