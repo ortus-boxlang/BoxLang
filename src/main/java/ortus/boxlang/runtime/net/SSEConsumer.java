@@ -60,6 +60,11 @@ public class SSEConsumer {
 	public static final int				DEFAULT_TIMEOUT			= 30;
 
 	/**
+	 * Default idle timeout in seconds (0 = no timeout)
+	 */
+	public static final int				DEFAULT_IDLE_TIMEOUT	= 0;
+
+	/**
 	 * Default maximum reconnection attempts
 	 */
 	public static final int				DEFAULT_MAX_RECONNECTS	= 5;
@@ -68,6 +73,11 @@ public class SSEConsumer {
 	 * Default initial reconnection delay in milliseconds
 	 */
 	public static final long			DEFAULT_RECONNECT_DELAY	= 1000;
+
+	/**
+	 * Default Proxy Port
+	 */
+	public static final int				DEFAULT_PROXY_PORT		= 8080;
 
 	/**
 	 * Default User-Agent header value
@@ -123,7 +133,7 @@ public class SSEConsumer {
 	/**
 	 * Proxy server host for HTTP requests.
 	 */
-	private final String				proxyHost;
+	private final String				proxyServer;
 
 	/**
 	 * Proxy server port for HTTP requests.
@@ -133,7 +143,7 @@ public class SSEConsumer {
 	/**
 	 * Username for proxy authentication.
 	 */
-	private final String				proxyUsername;
+	private final String				proxyUser;
 
 	/**
 	 * Password for proxy authentication.
@@ -223,9 +233,9 @@ public class SSEConsumer {
 		this.userAgent				= builder.userAgent;
 		this.username				= builder.username;
 		this.password				= builder.password;
-		this.proxyHost				= builder.proxyHost;
+		this.proxyServer			= builder.proxyServer;
 		this.proxyPort				= builder.proxyPort;
-		this.proxyUsername			= builder.proxyUsername;
+		this.proxyUser				= builder.proxyUser;
 		this.proxyPassword			= builder.proxyPassword;
 		this.timeoutSeconds			= builder.timeoutSeconds;
 		this.idleTimeoutSeconds		= builder.idleTimeoutSeconds;
@@ -470,21 +480,21 @@ public class SSEConsumer {
 		HttpClient.Builder clientBuilder = HttpClient.newBuilder();
 
 		// Configure proxy if host is provided
-		if ( this.proxyHost != null && !this.proxyHost.trim().isEmpty() ) {
+		if ( this.proxyServer != null && !this.proxyServer.trim().isEmpty() ) {
 			int				port			= this.proxyPort > 0 ? this.proxyPort : 8080; // Default proxy port
 
-			ProxySelector	proxySelector	= ProxySelector.of( new InetSocketAddress( this.proxyHost, port ) );
+			ProxySelector	proxySelector	= ProxySelector.of( new InetSocketAddress( this.proxyServer, port ) );
 			clientBuilder.proxy( proxySelector );
 
 			// Add proxy authentication if provided
-			if ( this.proxyUsername != null && this.proxyPassword != null ) {
+			if ( this.proxyUser != null && this.proxyPassword != null ) {
 				java.net.Authenticator authenticator = new java.net.Authenticator() {
 
 					@Override
 					protected java.net.PasswordAuthentication getPasswordAuthentication() {
 						if ( getRequestorType() == RequestorType.PROXY ) {
 							return new java.net.PasswordAuthentication(
-							    SSEConsumer.this.proxyUsername,
+							    SSEConsumer.this.proxyUser,
 							    SSEConsumer.this.proxyPassword.toCharArray()
 							);
 						}
@@ -642,8 +652,8 @@ public class SSEConsumer {
 	 *
 	 * @return proxy host, or null if not set
 	 */
-	public String getProxyHost() {
-		return this.proxyHost;
+	public String getProxyServer() {
+		return this.proxyServer;
 	}
 
 	/**
@@ -660,8 +670,8 @@ public class SSEConsumer {
 	 *
 	 * @return proxy username, or null if not set
 	 */
-	public String getProxyUsername() {
-		return this.proxyUsername;
+	public String getProxyUser() {
+		return this.proxyUser;
 	}
 
 	/**
@@ -670,7 +680,7 @@ public class SSEConsumer {
 	 * @return true if proxy host is set
 	 */
 	public boolean hasProxy() {
-		return this.proxyHost != null && !this.proxyHost.trim().isEmpty();
+		return this.proxyServer != null && !this.proxyServer.trim().isEmpty();
 	}
 
 	/**
@@ -679,7 +689,7 @@ public class SSEConsumer {
 	 * @return true if both proxy username and password are set
 	 */
 	public boolean hasProxyAuth() {
-		return this.proxyUsername != null && this.proxyPassword != null;
+		return this.proxyUser != null && this.proxyPassword != null;
 	}
 
 	/**
@@ -750,9 +760,9 @@ public class SSEConsumer {
 		private String		userAgent				= DEFAULT_USER_AGENT;
 		private String		username;
 		private String		password;
-		private String		proxyHost;
+		private String		proxyServer;
 		private int			proxyPort				= -1;
-		private String		proxyUsername;
+		private String		proxyUser;
 		private String		proxyPassword;
 		private int			timeoutSeconds			= DEFAULT_TIMEOUT;
 		private int			idleTimeoutSeconds		= 0;
@@ -867,12 +877,12 @@ public class SSEConsumer {
 		/**
 		 * Sets the proxy server host.
 		 *
-		 * @param proxyHost The proxy server hostname or IP address
+		 * @param proxyServer The proxy server hostname or IP address
 		 *
 		 * @return this builder
 		 */
-		public Builder proxyHost( String proxyHost ) {
-			this.proxyHost = proxyHost;
+		public Builder proxyServer( String proxyServer ) {
+			this.proxyServer = proxyServer;
 			return this;
 		}
 
@@ -891,26 +901,26 @@ public class SSEConsumer {
 		/**
 		 * Sets the proxy server host and port.
 		 *
-		 * @param proxyHost The proxy server hostname or IP address
-		 * @param proxyPort The proxy server port number
+		 * @param proxyServer The proxy server hostname or IP address
+		 * @param proxyPort   The proxy server port number
 		 *
 		 * @return this builder
 		 */
-		public Builder proxy( String proxyHost, int proxyPort ) {
-			this.proxyHost	= proxyHost;
-			this.proxyPort	= proxyPort;
+		public Builder proxy( String proxyServer, int proxyPort ) {
+			this.proxyServer	= proxyServer;
+			this.proxyPort		= proxyPort;
 			return this;
 		}
 
 		/**
 		 * Sets the username for proxy authentication.
 		 *
-		 * @param proxyUsername The username for proxy authentication
+		 * @param proxyUser The username for proxy authentication
 		 *
 		 * @return this builder
 		 */
-		public Builder proxyUsername( String proxyUsername ) {
-			this.proxyUsername = proxyUsername;
+		public Builder proxyUser( String proxyUser ) {
+			this.proxyUser = proxyUser;
 			return this;
 		}
 
@@ -929,13 +939,13 @@ public class SSEConsumer {
 		/**
 		 * Sets proxy authentication credentials.
 		 *
-		 * @param proxyUsername The username for proxy authentication
+		 * @param proxyUser     The username for proxy authentication
 		 * @param proxyPassword The password for proxy authentication
 		 *
 		 * @return this builder
 		 */
-		public Builder proxyAuth( String proxyUsername, String proxyPassword ) {
-			this.proxyUsername	= proxyUsername;
+		public Builder proxyAuth( String proxyUser, String proxyPassword ) {
+			this.proxyUser		= proxyUser;
 			this.proxyPassword	= proxyPassword;
 			return this;
 		}
@@ -943,17 +953,17 @@ public class SSEConsumer {
 		/**
 		 * Sets complete proxy configuration.
 		 *
-		 * @param proxyHost     The proxy server hostname or IP address
+		 * @param proxyServer   The proxy server hostname or IP address
 		 * @param proxyPort     The proxy server port number
-		 * @param proxyUsername The username for proxy authentication (optional)
+		 * @param proxyUser     The username for proxy authentication (optional)
 		 * @param proxyPassword The password for proxy authentication (optional)
 		 *
 		 * @return this builder
 		 */
-		public Builder proxy( String proxyHost, int proxyPort, String proxyUsername, String proxyPassword ) {
-			this.proxyHost		= proxyHost;
+		public Builder proxy( String proxyServer, int proxyPort, String proxyUser, String proxyPassword ) {
+			this.proxyServer	= proxyServer;
 			this.proxyPort		= proxyPort;
-			this.proxyUsername	= proxyUsername;
+			this.proxyUser		= proxyUser;
 			this.proxyPassword	= proxyPassword;
 			return this;
 		}

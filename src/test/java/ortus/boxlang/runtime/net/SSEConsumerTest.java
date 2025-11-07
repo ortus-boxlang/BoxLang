@@ -348,7 +348,7 @@ public class SSEConsumerTest {
 
 		// Assert
 		assertThat( consumer ).isNotNull();
-		assertThat( consumer.getProxyHost() ).isEqualTo( "proxy.example.com" );
+		assertThat( consumer.getProxyServer() ).isEqualTo( "proxy.example.com" );
 		assertThat( consumer.getProxyPort() ).isEqualTo( 8080 );
 		assertThat( consumer.hasProxy() ).isTrue();
 		assertThat( consumer.hasProxyAuth() ).isFalse();
@@ -366,9 +366,9 @@ public class SSEConsumerTest {
 
 		// Assert
 		assertThat( consumer ).isNotNull();
-		assertThat( consumer.getProxyHost() ).isEqualTo( "proxy.example.com" );
+		assertThat( consumer.getProxyServer() ).isEqualTo( "proxy.example.com" );
 		assertThat( consumer.getProxyPort() ).isEqualTo( 3128 );
-		assertThat( consumer.getProxyUsername() ).isEqualTo( "proxyuser" );
+		assertThat( consumer.getProxyUser() ).isEqualTo( "proxyuser" );
 		assertThat( consumer.hasProxy() ).isTrue();
 		assertThat( consumer.hasProxyAuth() ).isTrue();
 	}
@@ -380,17 +380,17 @@ public class SSEConsumerTest {
 		SSEConsumer consumer = new SSEConsumer.Builder()
 		    .url( "https://example.com/events" )
 		    .context( context )
-		    .proxyHost( "corporate-proxy.com" )
+		    .proxyServer( "corporate-proxy.com" )
 		    .proxyPort( 8080 )
-		    .proxyUsername( "employee" )
+		    .proxyUser( "employee" )
 		    .proxyPassword( "secret" )
 		    .build();
 
 		// Assert
 		assertThat( consumer ).isNotNull();
-		assertThat( consumer.getProxyHost() ).isEqualTo( "corporate-proxy.com" );
+		assertThat( consumer.getProxyServer() ).isEqualTo( "corporate-proxy.com" );
 		assertThat( consumer.getProxyPort() ).isEqualTo( 8080 );
-		assertThat( consumer.getProxyUsername() ).isEqualTo( "employee" );
+		assertThat( consumer.getProxyUser() ).isEqualTo( "employee" );
 		assertThat( consumer.hasProxy() ).isTrue();
 		assertThat( consumer.hasProxyAuth() ).isTrue();
 	}
@@ -402,16 +402,16 @@ public class SSEConsumerTest {
 		SSEConsumer consumer = new SSEConsumer.Builder()
 		    .url( "https://example.com/events" )
 		    .context( context )
-		    .proxyHost( "proxy.local" )
+		    .proxyServer( "proxy.local" )
 		    .proxyPort( 8080 )
 		    .proxyAuth( "admin", "password123" )
 		    .build();
 
 		// Assert
 		assertThat( consumer ).isNotNull();
-		assertThat( consumer.getProxyHost() ).isEqualTo( "proxy.local" );
+		assertThat( consumer.getProxyServer() ).isEqualTo( "proxy.local" );
 		assertThat( consumer.getProxyPort() ).isEqualTo( 8080 );
-		assertThat( consumer.getProxyUsername() ).isEqualTo( "admin" );
+		assertThat( consumer.getProxyUser() ).isEqualTo( "admin" );
 		assertThat( consumer.hasProxy() ).isTrue();
 		assertThat( consumer.hasProxyAuth() ).isTrue();
 	}

@@ -117,6 +117,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		assignableArray						= Key.of( "assignableArray" );
 	public static final Key		assocAttribs						= Key.of( "assocAttribs" );
 	public static final Key		asyncService						= Key.of( "asyncService" );
+	public static final Key		async								= Key.of( "async" );
 	public static final Key		attribute							= Key.of( "attribute" );
 	public static final Key		attributeCollection					= Key.of( "attributeCollection" );
 	public static final Key		attributes							= Key.of( "attributes" );
@@ -519,6 +520,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		maxLogDays							= Key.of( "maxLogDays" );
 	public static final Key		maxObjects							= Key.of( "maxObjects" );
 	public static final Key		maxRows								= Key.of( "maxRows" );
+	public static final Key		maxReconnects						= Key.of( "maxReconnects" );
 	public static final Key		maxThreads							= Key.of( "maxThreads" );
 	public static final Key		maxTrackedCompletedThreads			= Key.of( "maxTrackedCompletedThreads" );
 	public static final Key		merge								= Key.of( "merge" );
@@ -591,6 +593,10 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		onApplicationStart					= Key.of( "onApplicationStart" );
 	public static final Key		onClassRequest						= Key.of( "onClassRequest" );
 	public static final Key		onError								= Key.of( "onError" );
+	public static final Key		onMessage							= Key.of( "onMessage" );
+	public static final Key		onEvent								= Key.of( "onEvent" );
+	public static final Key		onOpen								= Key.of( "onOpen" );
+	public static final Key		onClose								= Key.of( "onClose" );
 	public static final Key		onLoad								= Key.of( "onLoad" );
 	public static final Key		onMissingMethod						= Key.of( "onMissingMethod" );
 	public static final Key		onMissingTemplate					= Key.of( "onMissingTemplate" );
@@ -664,6 +670,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		readBinary							= Key.of( "readBinary" );
 	public static final Key		reapFrequency						= Key.of( "reapFrequency" );
 	public static final Key		recordCount							= Key.of( "recordCount" );
+	public static final Key		reconnectDelay						= Key.of( "reconnectDelay" );
 	public static final Key		recurse								= Key.of( "recurse" );
 	public static final Key		recursive							= Key.of( "recursive" );
 	public static final Key		redirect							= Key.of( "redirect" );
