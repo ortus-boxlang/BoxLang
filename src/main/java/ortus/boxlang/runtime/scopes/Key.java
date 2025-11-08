@@ -213,6 +213,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		configuration						= Key.of( "configuration" );
 	public static final Key		connectionLimit						= Key.of( "connectionLimit" );
 	public static final Key		content								= Key.of( "content" );
+	public static final Key		contentEncoding						= Key.of( "content-encoding" );
+	public static final Key		contentType							= Key.of( "content-type" );
 	public static final Key		content_length						= Key.of( "content_length" );
 	public static final Key		content_type						= Key.of( "content_type" );
 	public static final Key		context								= Key.of( "context" );

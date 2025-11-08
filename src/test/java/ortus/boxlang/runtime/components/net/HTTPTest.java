@@ -1140,14 +1140,10 @@ public class HTTPTest {
 		Array chunksArray = ( Array ) variables.get( Key.of( "chunks" ) );
 		assertThat( chunksArray.size() ).isGreaterThan( 0 );
 
-		// Verify first chunk has headers
-		IStruct firstChunk = ( IStruct ) chunksArray.get( 0 );
-		assertThat( firstChunk.getAsBoolean( Key.of( "hasHeaders" ) ) ).isTrue();
-
-		// Verify subsequent chunks don't have headers (unless it's a single chunk)
-		if ( chunksArray.size() > 1 ) {
-			IStruct secondChunk = ( IStruct ) chunksArray.get( 1 );
-			assertThat( secondChunk.getAsBoolean( Key.of( "hasHeaders" ) ) ).isFalse();
+		// Verify all chunks have headers
+		for ( Object chunkObj : chunksArray ) {
+			IStruct chunk = ( IStruct ) chunkObj;
+			assertThat( chunk.getAsBoolean( Key.of( "hasHeaders" ) ) ).isTrue();
 		}
 
 		// Verify chunk numbers are sequential

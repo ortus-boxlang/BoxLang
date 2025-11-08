@@ -94,6 +94,7 @@ public class HTTP extends Component {
 	private final static String		BASIC_AUTH_DELIMITER	= ":";
 	private static final String		AUTHMODE_BASIC			= "BASIC";
 	private static final String		AUTHMODE_NTLM			= "NTLM";
+	private static final Pattern	CHARSET_PATTERN			= Pattern.compile( "charset=([a-zA-Z0-9-]+)" );
 
 	protected static ArrayList<Key>	BINARY_REQUEST_VALUES	= new ArrayList<Key>() {
 
@@ -494,9 +495,9 @@ public class HTTP extends Component {
 			    ) );
 
 			// Check if streaming/chunk support is requested
-			Function	onChunkCallback		= attributes.get( Key.onChunk ) != null ? ( Function ) attributes.get( Key.onChunk ) : null;
-			Function	onErrorCallback		= attributes.get( Key.onError ) != null ? ( Function ) attributes.get( Key.onError ) : null;
-			Function	onCompleteCallback	= attributes.get( Key.onComplete ) != null ? ( Function ) attributes.get( Key.onComplete ) : null;
+			Function	onChunkCallback		= attributes.getAsFunction( Key.onChunk );
+			Function	onErrorCallback		= attributes.getAsFunction( Key.onError );
+			Function	onCompleteCallback	= attributes.getAsFunction( Key.onComplete );
 
 			// TODO : should we move the catch block below and add an `exceptionally` handler for the future?
 			if ( onChunkCallback != null ) {
@@ -680,7 +681,7 @@ public class HTTP extends Component {
 	 * 
 	 * @return
 	 */
-	private String extractFirstHeaderByName( IStruct headers, Key headerName ) {
+	private static String extractFirstHeaderByName( IStruct headers, Key headerName ) {
 		Object				headerValue		= headers.get( headerName );
 		CastAttempt<Array>	isValuesArray	= ArrayCaster.attempt( headerValue );
 		if ( isValuesArray.wasSuccessful() ) {
@@ -701,7 +702,7 @@ public class HTTP extends Component {
 	 *
 	 * @return A Query of cookies
 	 */
-	private Query generateCookiesQuery( IStruct headers ) {
+	private static Query generateCookiesQuery( IStruct headers ) {
 		Query cookies = new Query();
 		cookies.addColumn( Key._NAME, QueryColumnType.VARCHAR );
 		cookies.addColumn( Key.value, QueryColumnType.VARCHAR );
@@ -732,7 +733,7 @@ public class HTTP extends Component {
 	 * @param cookieString The cookie string to parse
 	 * @param cookies      The Query to add the cookies to
 	 */
-	private void parseCookieStringIntoQuery( String cookieString, Query cookies ) {
+	private static void parseCookieStringIntoQuery( String cookieString, Query cookies ) {
 		IStruct		cookieStruct;
 		String[]	parts	= cookieString.split( ";" );
 		if ( parts.length == 0 ) {
@@ -782,7 +783,7 @@ public class HTTP extends Component {
 	 *
 	 * @return The generated status line
 	 */
-	private String generateStatusLine( String httpVersionString, String statusCodeString, String statusText ) {
+	private static String generateStatusLine( String httpVersionString, String statusCodeString, String statusText ) {
 		return httpVersionString + " " + statusCodeString + " " + statusText;
 	}
 
@@ -794,7 +795,7 @@ public class HTTP extends Component {
 	 *
 	 * @return The generated header string
 	 */
-	private String generateHeaderString( String statusLine, IStruct headers ) {
+	private static String generateHeaderString( String statusLine, IStruct headers ) {
 		return statusLine + " " + headers.entrySet()
 		    .stream()
 		    .sorted( Map.Entry.comparingByKey() )
@@ -823,8 +824,8 @@ public class HTTP extends Component {
 	 *
 	 * @return The transformed response header struct
 	 */
-	private IStruct transformToResponseHeaderStruct( Map<String, List<String>> headersMap ) {
-		IStruct responseHeaders = new Struct();
+	private static IStruct transformToResponseHeaderStruct( Map<String, List<String>> headersMap ) {
+		IStruct responseHeaders = new Struct( false );
 
 		if ( headersMap == null ) {
 			return responseHeaders;
@@ -866,8 +867,7 @@ public class HTTP extends Component {
 			return null;
 		}
 
-		Pattern	pattern	= Pattern.compile( "charset=([a-zA-Z0-9-]+)" );
-		Matcher	matcher	= pattern.matcher( contentType );
+		Matcher matcher = CHARSET_PATTERN.matcher( contentType );
 
 		if ( matcher.find() ) {
 			return matcher.group( 1 );
@@ -904,8 +904,8 @@ public class HTTP extends Component {
 		IStruct		headers				= transformToResponseHeaderStruct( httpHeaders.map() );
 
 		// Extract content type and encoding
-		String		contentType			= extractFirstHeaderByName( headers, Key.of( "content-type" ) );
-		String		contentEncoding		= extractFirstHeaderByName( headers, Key.of( "content-encoding" ) );
+		String		contentType			= extractFirstHeaderByName( headers, Key.contentType );
+		String		contentEncoding		= extractFirstHeaderByName( headers, Key.contentEncoding );
 
 		// Determine charset
 		String		charset				= contentType != null && contentType.contains( "charset=" )
@@ -992,11 +992,7 @@ public class HTTP extends Component {
 				callbackArgs.put( Key.chunkNumber, chunkNumber );
 				callbackArgs.put( Key.totalReceived, totalReceived );
 				callbackArgs.put( Key.result, HTTPResult );
-
-				// Include headers on first chunk
-				if ( chunkNumber == 1 ) {
-					callbackArgs.put( Key.headers, headers );
-				}
+				callbackArgs.put( Key.headers, headers );
 
 				// Invoke the callback
 				context.invokeFunction( onChunkCallback, new Object[] { callbackArgs } );
@@ -1046,8 +1042,8 @@ public class HTTP extends Component {
 		// Process body if not null
 		if ( responseBytes != null ) {
 
-			String	contentType		= extractFirstHeaderByName( headers, Key.of( "content-type" ) );
-			String	contentEncoding	= extractFirstHeaderByName( headers, Key.of( "content-encoding" ) );
+			String	contentType		= extractFirstHeaderByName( headers, Key.contentType );
+			String	contentEncoding	= extractFirstHeaderByName( headers, Key.contentEncoding );
 
 			if ( contentEncoding != null ) {
 				// Split the Content-Encoding header into individual encodings
