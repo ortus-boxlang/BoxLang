@@ -1089,6 +1089,7 @@ public class HTTPTest {
 					chunks = []
 					chunkCount = 0
 					totalBytes = 0
+					hasResultInCallback = false
 					
 					function myCallback(data) {
 						chunkCount++
@@ -1098,6 +1099,10 @@ public class HTTPTest {
 							size: len(data.chunk),
 							hasHeaders: structKeyExists(data, 'headers')
 						})
+						// Verify result is available in callback
+						if (structKeyExists(data, 'result')) {
+							hasResultInCallback = true
+						}
 					}
 					
 					bx:http url="%s" onChunk=myCallback {
@@ -1114,6 +1119,11 @@ public class HTTPTest {
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 		IStruct bxhttp = variables.getAsStruct( result );
 		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 200 );
+
+		// Verify HTTPResult has same keys as non-streaming responses
+		assertThat( bxhttp.containsKey( Key.responseHeader ) ).isTrue();
+		assertThat( bxhttp.containsKey( Key.errorDetail ) ).isTrue();
+		assertThat( bxhttp.containsKey( Key.executionTime ) ).isTrue();
 
 		// Verify chunks were processed
 		assertThat( variables.get( Key.of( "chunkCount" ) ) ).isInstanceOf( Integer.class );
@@ -1145,6 +1155,10 @@ public class HTTPTest {
 			IStruct chunk = ( IStruct ) chunksArray.get( i );
 			assertThat( chunk.getAsInteger( Key.of( "number" ) ) ).isEqualTo( i + 1 );
 		}
+
+		// Verify result struct is available in callback
+		assertThat( variables.get( Key.of( "hasResultInCallback" ) ) ).isInstanceOf( Boolean.class );
+		assertThat( ( Boolean ) variables.get( Key.of( "hasResultInCallback" ) ) ).isTrue();
 	}
 
 	@DisplayName( "It can handle binary chunked responses with onChunk callback" )

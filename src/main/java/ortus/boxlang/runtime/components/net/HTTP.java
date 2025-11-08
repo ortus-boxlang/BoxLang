@@ -506,7 +506,7 @@ public class HTTP extends Component {
 				) );
 
 				// Process streaming response
-				processStreamingResponse( context, streamResponse, onChunkCallback, HTTPResult, attributes, isBinaryRequested, isBinaryNever );
+				processStreamingResponse( context, streamResponse, onChunkCallback, HTTPResult, attributes, isBinaryRequested, isBinaryNever, startTime );
 
 				// Set the result back into the caller using the variable name
 				ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
@@ -530,75 +530,9 @@ public class HTTP extends Component {
 				    Key.attributes, attributes
 				) );
 
-				// Start Processing Results
-				HttpHeaders	httpHeaders		= Optional.ofNullable( response.headers() )
-				    .orElse( HttpHeaders.of( Map.of(), ( a, b ) -> true ) );
-				IStruct		headers			= transformToResponseHeaderStruct( httpHeaders.map() );
-				byte[]		responseBytes	= response.body();
-				Object		responseBody	= null;
-
-			// Process body if not null
-			if ( responseBytes != null ) {
-
-				String	contentType		= extractFirstHeaderByName( headers, Key.of( "content-type" ) );
-				String	contentEncoding	= extractFirstHeaderByName( headers, Key.of( "content-encoding" ) );
-
-				if ( contentEncoding != null ) {
-					// Split the Content-Encoding header into individual encodings
-					String[] encodings = contentEncoding.split( "," );
-					for ( String encoding : encodings ) {
-						encoding = encoding.trim().toLowerCase();
-						if ( encoding.equals( "gzip" ) ) {
-							responseBytes = ZipUtil.extractGZipContent( responseBytes );
-						} else if ( encoding.equals( "deflate" ) ) {
-							responseBytes = ZipUtil.inflateDeflatedContent( responseBytes );
-						}
-					}
-				}
-
-				Boolean	isBinaryContentType	= FileSystemUtil.isBinaryMimeType( contentType );
-				String	charset				= null;
-				if ( ( isBinaryRequested || isBinaryContentType ) && !isBinaryNever ) {
-					responseBody = responseBytes;
-				} else if ( isBinaryNever && isBinaryContentType ) {
-					throw new BoxRuntimeException( "The response is a binary type, but the getAsBinary attribute was set to 'never'" );
-				} else {
-					charset			= contentType != null && contentType.contains( "charset=" )
-					    ? extractCharset( contentType )
-					    : "UTF-8";
-					responseBody	= new String( responseBytes, Charset.forName( charset ) );
-				}
-
-				// Prepare all the result variables now that we have the response
-				String	httpVersionString	= response.version() == HttpClient.Version.HTTP_1_1 ? "HTTP/1.1" : "HTTP/2";
-				String	statusCodeString	= String.valueOf( response.statusCode() );
-				String	statusText			= HTTPStatusReasons.getReasonForStatus( response.statusCode() );
-
-				headers.put( Key.HTTP_Version, httpVersionString );
-				headers.put( Key.status_code, statusCodeString );
-				headers.put( Key.explanation, statusText );
-
-				HTTPResult.put( Key.responseHeader, headers );
-				HTTPResult.put( Key.header, generateHeaderString( generateStatusLine( httpVersionString, statusCodeString, statusText ), headers ) );
-				HTTPResult.put( Key.HTTP_Version, httpVersionString );
-				HTTPResult.put( Key.statusCode, response.statusCode() );
-				HTTPResult.put( Key.status_code, response.statusCode() );
-				HTTPResult.put( Key.statusText, statusText );
-				HTTPResult.put( Key.status_text, statusText );
-				HTTPResult.put( Key.fileContent, response.statusCode() == 408 ? "Request Timeout" : responseBody );
-				HTTPResult.put( Key.errorDetail, response.statusCode() == 408 ? response.body() : "" );
-				Optional<String> contentTypeHeader = httpHeaders.firstValue( "Content-Type" );
-				contentTypeHeader.ifPresent( ( headerContentType ) -> {
-					String[] contentTypeParts = headerContentType.split( ";\s*" );
-					if ( contentTypeParts.length > 0 ) {
-						HTTPResult.put( Key.mimetype, contentTypeParts[ 0 ] );
-					}
-					if ( contentTypeParts.length > 1 ) {
-						HTTPResult.put( Key.charset, extractCharset( headerContentType ) );
-					}
-				} );
-				HTTPResult.put( Key.cookies, generateCookiesQuery( headers ) );
-				HTTPResult.put( Key.executionTime, Duration.between( startTime, Instant.now() ).toMillis() );
+				// Process buffered response
+				processBufferedResponse( context, response, HTTPResult, attributes, isBinaryRequested, isBinaryNever, startTime, outputDirectory,
+				    targetURI );
 
 				// Set the result back into the caller using the variable name
 				ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
@@ -610,36 +544,7 @@ public class HTTP extends Component {
 				    Key.result, HTTPResult
 				) );
 
-				if ( outputDirectory != null ) {
-					String fileName = attributes.getAsString( Key.file );
-					if ( fileName == null || fileName.trim().isEmpty() ) {
-						String dispositionHeader = extractFirstHeaderByName( headers, Key.of( "content-disposition" ) );
-						if ( dispositionHeader != null ) {
-							Pattern	pattern	= Pattern.compile( "filename=\"?([^\";]+)\"?" );
-							Matcher	matcher	= pattern.matcher( dispositionHeader );
-							if ( matcher.find() ) {
-								fileName = matcher.group( 1 );
-							}
-						} else {
-							fileName = Path.of( targetURI.getPath() ).getFileName().toString();
-						}
-
-						if ( fileName == null || fileName.trim().isEmpty() ) {
-							throw new BoxRuntimeException( "Unable to determine filename from response" );
-						}
-					}
-
-					String destinationPath = Path.of( outputDirectory, fileName ).toAbsolutePath().toString();
-
-					if ( responseBody instanceof String responseString ) {
-						FileSystemUtil.write( destinationPath, responseString, charset, true );
-					} else if ( responseBody instanceof byte[] bodyBytes ) {
-						FileSystemUtil.write( destinationPath, bodyBytes, true );
-					}
-				}
-			}
-
-			return DEFAULT_RETURN;
+				return DEFAULT_RETURN;
 			} // end else block for non-streaming response
 		} catch ( ExecutionException e ) {
 			Throwable innerException = e.getCause();
@@ -903,6 +808,7 @@ public class HTTP extends Component {
 	 * @param attributes        The component attributes
 	 * @param isBinaryRequested Whether binary output was requested
 	 * @param isBinaryNever     Whether binary output is never allowed
+	 * @param startTime         The request start time for calculating execution time
 	 *
 	 * @throws IOException If an I/O error occurs while reading the stream
 	 */
@@ -913,7 +819,8 @@ public class HTTP extends Component {
 	    Struct HTTPResult,
 	    IStruct attributes,
 	    Boolean isBinaryRequested,
-	    Boolean isBinaryNever ) throws IOException {
+	    Boolean isBinaryNever,
+	    Instant startTime ) throws IOException {
 
 		HttpHeaders	httpHeaders	= Optional.ofNullable( response.headers() )
 		    .orElse( HttpHeaders.of( Map.of(), ( a, b ) -> true ) );
@@ -993,17 +900,21 @@ public class HTTP extends Component {
 				chunkNumber++;
 				totalReceived += bytesRead;
 
-				// Create a copy of the chunk data
-				byte[] chunkData = Arrays.copyOf( buffer, bytesRead );
-
-				// Convert to appropriate type
-				Object chunkValue = processingAsBinary ? chunkData : new String( chunkData, Charset.forName( charset ) );
+				// Convert to appropriate type - need to copy buffer data since it's reused in the loop
+				// For binary, create array copy. For text, String constructor already copies the bytes
+				Object chunkValue;
+				if ( processingAsBinary ) {
+					chunkValue = Arrays.copyOf( buffer, bytesRead );
+				} else {
+					chunkValue = new String( buffer, 0, bytesRead, Charset.forName( charset ) );
+				}
 
 				// Build callback arguments
 				IStruct callbackArgs = new Struct();
 				callbackArgs.put( Key.chunk, chunkValue );
 				callbackArgs.put( Key.chunkNumber, chunkNumber );
 				callbackArgs.put( Key.totalReceived, totalReceived );
+				callbackArgs.put( Key.result, HTTPResult );
 
 				// Include headers on first chunk
 				if ( chunkNumber == 1 ) {
@@ -1014,9 +925,139 @@ public class HTTP extends Component {
 				context.invokeFunction( onChunkCallback, new Object[] { callbackArgs } );
 			}
 
-			// Set fileContent to indicate streaming mode
+			// Set fileContent to indicate streaming mode and add execution time
 			HTTPResult.put( Key.fileContent, "Streaming mode - data processed via onChunk callback" );
 			HTTPResult.put( Key.errorDetail, "" );
+			HTTPResult.put( Key.executionTime, Duration.between( startTime, Instant.now() ).toMillis() );
 		}
+	}
+
+	/**
+	 * Process a buffered HTTP response (non-streaming)
+	 *
+	 * @param context           The BoxLang context
+	 * @param response          The HTTP response with byte[] body
+	 * @param HTTPResult        The result struct to populate
+	 * @param attributes        The component attributes
+	 * @param isBinaryRequested Whether binary output was requested
+	 * @param isBinaryNever     Whether binary output is never allowed
+	 * @param startTime         The request start time for calculating execution time
+	 * @param outputDirectory   The output directory for file writing, if any
+	 * @param targetURI         The target URI for the request
+	 *
+	 * @return The processed response body
+	 *
+	 * @throws IOException If an I/O error occurs
+	 */
+	private Object processBufferedResponse(
+	    IBoxContext context,
+	    HttpResponse<byte[]> response,
+	    Struct HTTPResult,
+	    IStruct attributes,
+	    Boolean isBinaryRequested,
+	    Boolean isBinaryNever,
+	    Instant startTime,
+	    String outputDirectory,
+	    URI targetURI ) throws IOException {
+
+		HttpHeaders	httpHeaders		= Optional.ofNullable( response.headers() )
+		    .orElse( HttpHeaders.of( Map.of(), ( a, b ) -> true ) );
+		IStruct		headers			= transformToResponseHeaderStruct( httpHeaders.map() );
+		byte[]		responseBytes	= response.body();
+		Object		responseBody	= null;
+
+		// Process body if not null
+		if ( responseBytes != null ) {
+
+			String	contentType		= extractFirstHeaderByName( headers, Key.of( "content-type" ) );
+			String	contentEncoding	= extractFirstHeaderByName( headers, Key.of( "content-encoding" ) );
+
+			if ( contentEncoding != null ) {
+				// Split the Content-Encoding header into individual encodings
+				String[] encodings = contentEncoding.split( "," );
+				for ( String encoding : encodings ) {
+					encoding = encoding.trim().toLowerCase();
+					if ( encoding.equals( "gzip" ) ) {
+						responseBytes = ZipUtil.extractGZipContent( responseBytes );
+					} else if ( encoding.equals( "deflate" ) ) {
+						responseBytes = ZipUtil.inflateDeflatedContent( responseBytes );
+					}
+				}
+			}
+
+			Boolean	isBinaryContentType	= FileSystemUtil.isBinaryMimeType( contentType );
+			String	charset				= null;
+			if ( ( isBinaryRequested || isBinaryContentType ) && !isBinaryNever ) {
+				responseBody = responseBytes;
+			} else if ( isBinaryNever && isBinaryContentType ) {
+				throw new BoxRuntimeException( "The response is a binary type, but the getAsBinary attribute was set to 'never'" );
+			} else {
+				charset			= contentType != null && contentType.contains( "charset=" )
+				    ? extractCharset( contentType )
+				    : "UTF-8";
+				responseBody	= new String( responseBytes, Charset.forName( charset ) );
+			}
+
+			// Prepare all the result variables now that we have the response
+			String	httpVersionString	= response.version() == HttpClient.Version.HTTP_1_1 ? "HTTP/1.1" : "HTTP/2";
+			String	statusCodeString	= String.valueOf( response.statusCode() );
+			String	statusText			= HTTPStatusReasons.getReasonForStatus( response.statusCode() );
+
+			headers.put( Key.HTTP_Version, httpVersionString );
+			headers.put( Key.status_code, statusCodeString );
+			headers.put( Key.explanation, statusText );
+
+			HTTPResult.put( Key.responseHeader, headers );
+			HTTPResult.put( Key.header, generateHeaderString( generateStatusLine( httpVersionString, statusCodeString, statusText ), headers ) );
+			HTTPResult.put( Key.HTTP_Version, httpVersionString );
+			HTTPResult.put( Key.statusCode, response.statusCode() );
+			HTTPResult.put( Key.status_code, response.statusCode() );
+			HTTPResult.put( Key.statusText, statusText );
+			HTTPResult.put( Key.status_text, statusText );
+			HTTPResult.put( Key.fileContent, response.statusCode() == 408 ? "Request Timeout" : responseBody );
+			HTTPResult.put( Key.errorDetail, response.statusCode() == 408 ? response.body() : "" );
+			Optional<String> contentTypeHeader = httpHeaders.firstValue( "Content-Type" );
+			contentTypeHeader.ifPresent( ( headerContentType ) -> {
+				String[] contentTypeParts = headerContentType.split( ";\s*" );
+				if ( contentTypeParts.length > 0 ) {
+					HTTPResult.put( Key.mimetype, contentTypeParts[ 0 ] );
+				}
+				if ( contentTypeParts.length > 1 ) {
+					HTTPResult.put( Key.charset, extractCharset( headerContentType ) );
+				}
+			} );
+			HTTPResult.put( Key.cookies, generateCookiesQuery( headers ) );
+			HTTPResult.put( Key.executionTime, Duration.between( startTime, Instant.now() ).toMillis() );
+
+			if ( outputDirectory != null ) {
+				String fileName = attributes.getAsString( Key.file );
+				if ( fileName == null || fileName.trim().isEmpty() ) {
+					String dispositionHeader = extractFirstHeaderByName( headers, Key.of( "content-disposition" ) );
+					if ( dispositionHeader != null ) {
+						Pattern	pattern	= Pattern.compile( "filename=\"?([^\";]+)\"?" );
+						Matcher	matcher	= pattern.matcher( dispositionHeader );
+						if ( matcher.find() ) {
+							fileName = matcher.group( 1 );
+						}
+					} else {
+						fileName = Path.of( targetURI.getPath() ).getFileName().toString();
+					}
+
+					if ( fileName == null || fileName.trim().isEmpty() ) {
+						throw new BoxRuntimeException( "Unable to determine filename from response" );
+					}
+				}
+
+				String destinationPath = Path.of( outputDirectory, fileName ).toAbsolutePath().toString();
+
+				if ( responseBody instanceof String responseString ) {
+					FileSystemUtil.write( destinationPath, responseString, charset, true );
+				} else if ( responseBody instanceof byte[] bodyBytes ) {
+					FileSystemUtil.write( destinationPath, bodyBytes, true );
+				}
+			}
+		}
+
+		return responseBody;
 	}
 }
