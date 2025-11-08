@@ -33,8 +33,9 @@ public class BaseJDBCTest {
 	public static void setUp() {
 		instance = BoxRuntime.getInstance( true );
 		IBoxContext setUpContext = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-
 		datasourceService = instance.getDataSourceService();
+
+		// This is a derby-specific test datasource; only set it up if derby is available
 		if ( JDBCTestUtils.hasDerbyModule() ) {
 			String uniqueName = UUID.randomUUID().toString();
 			datasource = JDBCTestUtils.constructTestDataSource( uniqueName, setUpContext );
@@ -50,6 +51,7 @@ public class BaseJDBCTest {
 	@AfterAll
 	public static void teardown() throws SQLException {
 		IBoxContext tearDownContext = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+
 		if ( datasource != null ) {
 			JDBCTestUtils.dropTestTable( datasource, tearDownContext, "developers", true );
 			datasource.shutdown();
@@ -58,12 +60,15 @@ public class BaseJDBCTest {
 
 	@BeforeEach
 	public void setupEach() {
-		context = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		context.getConnectionManager().setDefaultDatasource( datasource );
-		variables = context.getScopeNearby( VariablesScope.name );
-		assertDoesNotThrow( () -> JDBCTestUtils.resetDevelopersTable( datasource, context ) );
-		// Clear the caches
-		instance.getCacheService().getDefaultCache().clearAll();
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
+
+		if ( datasource != null ) {
+			context.getConnectionManager().setDefaultDatasource( datasource );
+			assertDoesNotThrow( () -> JDBCTestUtils.resetDevelopersTable( datasource, context ) );
+			// Clear the caches
+			instance.getCacheService().getDefaultCache().clearAll();
+		}
 	}
 
 	public static BoxRuntime getInstance() {
