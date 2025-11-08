@@ -154,6 +154,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		callback							= Key.of( "callback" );
 	public static final Key		caller								= Key.of( "caller" );
 	public static final Key		canonicalize						= Key.of( "canonicalize" );
+	public static final Key		chunk								= Key.of( "chunk" );
+	public static final Key		chunkNumber							= Key.of( "chunkNumber" );
 	public static final Key		caseSensitive						= Key.of( "caseSensitive" );
 	public static final Key		cast								= Key.of( "cast" );
 	public static final Key		category							= Key.of( "category" );
@@ -589,6 +591,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		onApplicationEnd					= Key.of( "onApplicationEnd" );
 	public static final Key		onApplicationRestart				= Key.of( "onApplicationRestart" );
 	public static final Key		onApplicationStart					= Key.of( "onApplicationStart" );
+	public static final Key		onChunk								= Key.of( "onChunk" );
 	public static final Key		onClassRequest						= Key.of( "onClassRequest" );
 	public static final Key		onError								= Key.of( "onError" );
 	public static final Key		onLoad								= Key.of( "onLoad" );
@@ -839,6 +842,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		top									= Key.of( "top" );
 	public static final Key		toString							= Key.of( "toString" );
 	public static final Key		totalCapSize						= Key.of( "totalCapSize" );
+	public static final Key		totalReceived						= Key.of( "totalReceived" );
 	public static final Key		trace								= Key.of( "trace" );
 	public static final Key		trim								= Key.of( "trim" );
 	public static final Key		trustedCache						= Key.of( "trustedCache" );

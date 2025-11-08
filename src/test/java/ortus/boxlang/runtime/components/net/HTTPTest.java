@@ -77,6 +77,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -1061,6 +1062,150 @@ public class HTTPTest {
 		);
 
 		return new JcaX509CertificateConverter().setProvider( "BC" ).getCertificate( certBuilder.build( signer ) );
+	}
+
+	@DisplayName( "It can handle chunked/streaming responses with onChunk callback" )
+	@Test
+	public void testCanHandleChunkedResponseWithCallback( WireMockRuntimeInfo wmRuntimeInfo ) {
+		// Create a large response to ensure multiple chunks
+		StringBuilder largeBody = new StringBuilder();
+		for ( int i = 0; i < 1000; i++ ) {
+			largeBody.append( "Line " ).append( i ).append( " - This is some test data for chunk processing.\n" );
+		}
+
+		stubFor( get( "/chunked-data" )
+		    .willReturn(
+		        aResponse()
+		            .withBody( largeBody.toString() )
+		            .withStatus( 200 )
+		            .withHeader( "Content-Type", "text/plain" ) )
+		);
+
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+
+		// @formatter:off
+		instance.executeSource(
+		    String.format( """
+					chunks = []
+					chunkCount = 0
+					totalBytes = 0
+					
+					function myCallback(data) {
+						chunkCount++
+						totalBytes = data.totalReceived
+						chunks.append({
+							number: data.chunkNumber,
+							size: len(data.chunk),
+							hasHeaders: structKeyExists(data, 'headers')
+						})
+					}
+					
+					bx:http url="%s" onChunk=myCallback {
+					}
+					
+					result = bxhttp
+				""",
+		        baseURL + "/chunked-data"
+		    ),
+		    context
+		);
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct bxhttp = variables.getAsStruct( result );
+		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 200 );
+
+		// Verify chunks were processed
+		assertThat( variables.get( Key.of( "chunkCount" ) ) ).isInstanceOf( Integer.class );
+		Integer chunkCountValue = ( Integer ) variables.get( Key.of( "chunkCount" ) );
+		assertThat( chunkCountValue ).isGreaterThan( 0 );
+
+		// Verify total bytes
+		assertThat( variables.get( Key.of( "totalBytes" ) ) ).isInstanceOf( Long.class );
+		Long totalBytesValue = ( Long ) variables.get( Key.of( "totalBytes" ) );
+		assertThat( totalBytesValue ).isGreaterThan( 0L );
+
+		// Verify chunks array
+		assertThat( variables.get( Key.of( "chunks" ) ) ).isInstanceOf( Array.class );
+		Array chunksArray = ( Array ) variables.get( Key.of( "chunks" ) );
+		assertThat( chunksArray.size() ).isGreaterThan( 0 );
+
+		// Verify first chunk has headers
+		IStruct firstChunk = ( IStruct ) chunksArray.get( 0 );
+		assertThat( firstChunk.getAsBoolean( Key.of( "hasHeaders" ) ) ).isTrue();
+
+		// Verify subsequent chunks don't have headers (unless it's a single chunk)
+		if ( chunksArray.size() > 1 ) {
+			IStruct secondChunk = ( IStruct ) chunksArray.get( 1 );
+			assertThat( secondChunk.getAsBoolean( Key.of( "hasHeaders" ) ) ).isFalse();
+		}
+
+		// Verify chunk numbers are sequential
+		for ( int i = 0; i < chunksArray.size(); i++ ) {
+			IStruct chunk = ( IStruct ) chunksArray.get( i );
+			assertThat( chunk.getAsInteger( Key.of( "number" ) ) ).isEqualTo( i + 1 );
+		}
+	}
+
+	@DisplayName( "It can handle binary chunked responses with onChunk callback" )
+	@Test
+	public void testCanHandleBinaryChunkedResponse( WireMockRuntimeInfo wmRuntimeInfo ) {
+		byte[] binaryData = new byte[ 10000 ];
+		for ( int i = 0; i < binaryData.length; i++ ) {
+			binaryData[ i ] = ( byte ) ( i % 256 );
+		}
+
+		stubFor( get( "/binary-chunked" )
+		    .willReturn(
+		        aResponse()
+		            .withBody( binaryData )
+		            .withStatus( 200 )
+		            .withHeader( "Content-Type", "application/octet-stream" ) )
+		);
+
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+
+		// @formatter:off
+		instance.executeSource(
+		    String.format( """
+					chunks = []
+					totalSize = 0
+					
+					function binaryCallback(data) {
+						chunks.append({
+							number: data.chunkNumber,
+							isBinary: isBinary(data.chunk)
+						})
+						totalSize += arrayLen(data.chunk)
+					}
+					
+					bx:http url="%s" getAsBinary="true" onChunk=binaryCallback {
+					}
+					
+					result = bxhttp
+				""",
+		        baseURL + "/binary-chunked"
+		    ),
+		    context
+		);
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct bxhttp = variables.getAsStruct( result );
+		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 200 );
+
+		// Verify chunks were binary
+		Array chunksArray = ( Array ) variables.get( Key.of( "chunks" ) );
+		assertThat( chunksArray.size() ).isGreaterThan( 0 );
+
+		for ( Object chunkObj : chunksArray ) {
+			IStruct chunk = ( IStruct ) chunkObj;
+			assertThat( chunk.getAsBoolean( Key.of( "isBinary" ) ) ).isTrue();
+		}
+
+		// Verify total size matches
+		Integer totalSize = ( Integer ) variables.get( Key.of( "totalSize" ) );
+		assertThat( totalSize ).isEqualTo( binaryData.length );
 	}
 
 }

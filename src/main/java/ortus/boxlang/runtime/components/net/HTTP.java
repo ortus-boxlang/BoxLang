@@ -19,6 +19,9 @@ package ortus.boxlang.runtime.components.net;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.InflaterInputStream;
 import java.net.ConnectException;
 import java.net.SocketException;
 import java.net.URI;
@@ -64,8 +67,10 @@ import ortus.boxlang.runtime.net.HTTPStatusReasons;
 import ortus.boxlang.runtime.net.HttpManager;
 import ortus.boxlang.runtime.net.HttpRequestMultipartBody;
 import ortus.boxlang.runtime.net.URIBuilder;
+import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumnType;
@@ -156,6 +161,8 @@ public class HTTP extends Component {
 		        Set.of( Validator.REQUIRED, Validator.NON_EMPTY, Validator.valueOneOf( AUTHMODE_BASIC, AUTHMODE_NTLM ) ) ),
 		    new Attribute( Key.cachedWithin, "string" ),
 		    new Attribute( Key.encodeUrl, "boolean", true, Set.of( Validator.TYPE ) ),
+		    // Streaming/chunk support
+		    new Attribute( Key.onChunk, "function" ),
 		    // Proxy server
 		    new Attribute( Key.proxyServer, "string", Set.of( Validator.requires( Key.proxyPort ) ) ),
 		    new Attribute( Key.proxyPort, "integer", Set.of( Validator.requires( Key.proxyServer ) ) ),
@@ -230,6 +237,9 @@ public class HTTP extends Component {
 	 * @attribute.cachedWithin If set, and a cached response is available within the specified duration (e.g. 10m for 10 minutes, 1h for 1 hour), the cached response will be returned instead of making a new request.
 	 * 
 	 * @attribute.encodeUrl Whether to encode the URL. Default is true.
+	 * 
+	 * @attribute.onChunk A callback function to process response data in chunks/streaming mode. When provided, the response will be processed incrementally. The callback receives a struct with: chunk (string or binary data), chunkNumber (integer,
+	 *                    1-based), totalReceived (total bytes received), and headers (on first chunk only). If not provided, the response is buffered and returned in the result variable as normal.
 	 * 
 	 * @attribute.proxyServer The proxy server to use, if any.
 	 * 
@@ -475,29 +485,57 @@ public class HTTP extends Component {
 			        Key.headers, Struct.fromMap( targetHTTPRequest.headers().map() )
 			    ) );
 
+			// Check if streaming/chunk support is requested
+			Function onChunkCallback = attributes.get( Key.onChunk ) != null ? ( Function ) attributes.get( Key.onChunk ) : null;
+
 			// TODO : should we move the catch block below and add an `exceptionally` handler for the future?
-			CompletableFuture<HttpResponse<byte[]>>	future		= client.sendAsync( targetHTTPRequest, HttpResponse.BodyHandlers.ofByteArray() );
+			if ( onChunkCallback != null ) {
+				// Use streaming response handler
+				CompletableFuture<HttpResponse<InputStream>>	streamFuture	= client.sendAsync( targetHTTPRequest,
+				    HttpResponse.BodyHandlers.ofInputStream() );
+				HttpResponse<InputStream>						streamResponse	= streamFuture.get();
 
-			// Announce the HTTP request
-			HttpResponse<byte[]>					response	= future.get(); // block and wait for the response
+				// Announce the HTTP RAW response
+				interceptorService.announce( BoxEvent.ON_HTTP_RAW_RESPONSE, () -> Struct.ofNonConcurrent(
+				    Key.requestID, requestID,
+				    Key.response, streamResponse,
+				    Key.httpClient, client,
+				    Key.httpRequest, targetHTTPRequest,
+				    Key.targetURI, finalTargetURI,
+				    Key.attributes, attributes
+				) );
 
-			// Announce the HTTP RAW response
-			// Useful for debugging and pre-processing and timing, since the other events are after the response is processed
-			interceptorService.announce( BoxEvent.ON_HTTP_RAW_RESPONSE, () -> Struct.ofNonConcurrent(
-			    Key.requestID, requestID,
-			    Key.response, response,
-			    Key.httpClient, client,
-			    Key.httpRequest, targetHTTPRequest,
-			    Key.targetURI, finalTargetURI,
-			    Key.attributes, attributes
-			) );
+				// Process streaming response
+				processStreamingResponse( context, streamResponse, onChunkCallback, HTTPResult, attributes, isBinaryRequested, isBinaryNever );
 
-			// Start Processing Results
-			HttpHeaders	httpHeaders		= Optional.ofNullable( response.headers() )
-			    .orElse( HttpHeaders.of( Map.of(), ( a, b ) -> true ) );
-			IStruct		headers			= transformToResponseHeaderStruct( httpHeaders.map() );
-			byte[]		responseBytes	= response.body();
-			Object		responseBody	= null;
+				// Set the result back into the caller using the variable name
+				ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
+
+				return DEFAULT_RETURN;
+			} else {
+				// Use buffered response handler (original behavior)
+				CompletableFuture<HttpResponse<byte[]>>	future		= client.sendAsync( targetHTTPRequest, HttpResponse.BodyHandlers.ofByteArray() );
+
+				// Announce the HTTP request
+				HttpResponse<byte[]>					response	= future.get(); // block and wait for the response
+
+				// Announce the HTTP RAW response
+				// Useful for debugging and pre-processing and timing, since the other events are after the response is processed
+				interceptorService.announce( BoxEvent.ON_HTTP_RAW_RESPONSE, () -> Struct.ofNonConcurrent(
+				    Key.requestID, requestID,
+				    Key.response, response,
+				    Key.httpClient, client,
+				    Key.httpRequest, targetHTTPRequest,
+				    Key.targetURI, finalTargetURI,
+				    Key.attributes, attributes
+				) );
+
+				// Start Processing Results
+				HttpHeaders	httpHeaders		= Optional.ofNullable( response.headers() )
+				    .orElse( HttpHeaders.of( Map.of(), ( a, b ) -> true ) );
+				IStruct		headers			= transformToResponseHeaderStruct( httpHeaders.map() );
+				byte[]		responseBytes	= response.body();
+				Object		responseBody	= null;
 
 			// Process body if not null
 			if ( responseBytes != null ) {
@@ -602,6 +640,7 @@ public class HTTP extends Component {
 			}
 
 			return DEFAULT_RETURN;
+			} // end else block for non-streaming response
 		} catch ( ExecutionException e ) {
 			Throwable innerException = e.getCause();
 			if ( innerException instanceof SocketException ) {
@@ -852,5 +891,132 @@ public class HTTP extends Component {
 			return matcher.group( 1 );
 		}
 		return null;
+	}
+
+	/**
+	 * Process a streaming HTTP response with chunk callback
+	 *
+	 * @param context           The BoxLang context
+	 * @param response          The HTTP response with InputStream body
+	 * @param onChunkCallback   The callback function to invoke for each chunk
+	 * @param HTTPResult        The result struct to populate
+	 * @param attributes        The component attributes
+	 * @param isBinaryRequested Whether binary output was requested
+	 * @param isBinaryNever     Whether binary output is never allowed
+	 *
+	 * @throws IOException If an I/O error occurs while reading the stream
+	 */
+	private void processStreamingResponse(
+	    IBoxContext context,
+	    HttpResponse<InputStream> response,
+	    Function onChunkCallback,
+	    Struct HTTPResult,
+	    IStruct attributes,
+	    Boolean isBinaryRequested,
+	    Boolean isBinaryNever ) throws IOException {
+
+		HttpHeaders	httpHeaders	= Optional.ofNullable( response.headers() )
+		    .orElse( HttpHeaders.of( Map.of(), ( a, b ) -> true ) );
+		IStruct		headers		= transformToResponseHeaderStruct( httpHeaders.map() );
+
+		// Extract content type and encoding
+		String	contentType		= extractFirstHeaderByName( headers, Key.of( "content-type" ) );
+		String	contentEncoding	= extractFirstHeaderByName( headers, Key.of( "content-encoding" ) );
+
+		// Determine charset
+		String charset = contentType != null && contentType.contains( "charset=" )
+		    ? extractCharset( contentType )
+		    : "UTF-8";
+
+		// Determine if we should process as binary
+		Boolean	isBinaryContentType	= FileSystemUtil.isBinaryMimeType( contentType );
+		boolean	processingAsBinary	= ( isBinaryRequested || isBinaryContentType ) && !isBinaryNever;
+
+		if ( isBinaryNever && isBinaryContentType ) {
+			throw new BoxRuntimeException( "The response is a binary type, but the getAsBinary attribute was set to 'never'" );
+		}
+
+		// Build basic HTTPResult metadata
+		String	httpVersionString	= response.version() == HttpClient.Version.HTTP_1_1 ? "HTTP/1.1" : "HTTP/2";
+		String	statusCodeString	= String.valueOf( response.statusCode() );
+		String	statusText			= HTTPStatusReasons.getReasonForStatus( response.statusCode() );
+
+		headers.put( Key.HTTP_Version, httpVersionString );
+		headers.put( Key.status_code, statusCodeString );
+		headers.put( Key.explanation, statusText );
+
+		HTTPResult.put( Key.responseHeader, headers );
+		HTTPResult.put( Key.header, generateHeaderString( generateStatusLine( httpVersionString, statusCodeString, statusText ), headers ) );
+		HTTPResult.put( Key.HTTP_Version, httpVersionString );
+		HTTPResult.put( Key.statusCode, response.statusCode() );
+		HTTPResult.put( Key.status_code, response.statusCode() );
+		HTTPResult.put( Key.statusText, statusText );
+		HTTPResult.put( Key.status_text, statusText );
+
+		Optional<String> contentTypeHeader = httpHeaders.firstValue( "Content-Type" );
+		contentTypeHeader.ifPresent( ( headerContentType ) -> {
+			String[] contentTypeParts = headerContentType.split( ";\s*" );
+			if ( contentTypeParts.length > 0 ) {
+				HTTPResult.put( Key.mimetype, contentTypeParts[ 0 ] );
+			}
+			if ( contentTypeParts.length > 1 ) {
+				HTTPResult.put( Key.charset, extractCharset( headerContentType ) );
+			}
+		} );
+		HTTPResult.put( Key.cookies, generateCookiesQuery( headers ) );
+
+		// Stream processing - wrap the input stream with decompression if needed
+		InputStream	rawInputStream		= response.body();
+		InputStream	processedStream		= rawInputStream;
+
+		// Apply decompression wrappers if content-encoding is present
+		if ( contentEncoding != null ) {
+			String[] encodings = contentEncoding.split( "," );
+			// Apply encodings in reverse order (last applied first)
+			for ( int i = encodings.length - 1; i >= 0; i-- ) {
+				String encoding = encodings[ i ].trim().toLowerCase();
+				if ( encoding.equals( "gzip" ) ) {
+					processedStream = new java.util.zip.GZIPInputStream( processedStream );
+				} else if ( encoding.equals( "deflate" ) ) {
+					processedStream = new java.util.zip.InflaterInputStream( processedStream );
+				}
+			}
+		}
+
+		try ( InputStream inputStream = processedStream ) {
+			byte[]	buffer			= new byte[ 8192 ];	// 8KB buffer
+			int		bytesRead;
+			int		chunkNumber		= 0;
+			long	totalReceived	= 0;
+
+			while ( ( bytesRead = inputStream.read( buffer ) ) != -1 ) {
+				chunkNumber++;
+				totalReceived += bytesRead;
+
+				// Create a copy of the chunk data
+				byte[] chunkData = Arrays.copyOf( buffer, bytesRead );
+
+				// Convert to appropriate type
+				Object chunkValue = processingAsBinary ? chunkData : new String( chunkData, Charset.forName( charset ) );
+
+				// Build callback arguments
+				IStruct callbackArgs = new Struct();
+				callbackArgs.put( Key.chunk, chunkValue );
+				callbackArgs.put( Key.chunkNumber, chunkNumber );
+				callbackArgs.put( Key.totalReceived, totalReceived );
+
+				// Include headers on first chunk
+				if ( chunkNumber == 1 ) {
+					callbackArgs.put( Key.headers, headers );
+				}
+
+				// Invoke the callback
+				context.invokeFunction( onChunkCallback, new Object[] { callbackArgs } );
+			}
+
+			// Set fileContent to indicate streaming mode
+			HTTPResult.put( Key.fileContent, "Streaming mode - data processed via onChunk callback" );
+			HTTPResult.put( Key.errorDetail, "" );
+		}
 	}
 }
