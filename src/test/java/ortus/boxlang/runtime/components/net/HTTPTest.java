@@ -1222,4 +1222,132 @@ public class HTTPTest {
 		assertThat( totalSize ).isEqualTo( binaryData.length );
 	}
 
+	@DisplayName( "It can handle onComplete callback" )
+	@Test
+	public void testCanHandleOnCompleteCallback( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor( get( "/complete-test" )
+		    .willReturn(
+		        aResponse()
+		            .withBody( "Success!" )
+		            .withStatus( 200 ) )
+		);
+
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+
+		// @formatter:off
+		instance.executeSource(
+		    String.format( """
+					completeCalled = false
+					completeStatus = 0
+					
+					function onCompleteHandler(data) {
+						completeCalled = true
+						completeStatus = data.statusCode
+					}
+					
+					bx:http url="%s" onComplete=onCompleteHandler {
+					}
+					
+					result = bxhttp
+				""",
+		        baseURL + "/complete-test"
+		    ),
+		    context
+		);
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct bxhttp = variables.getAsStruct( result );
+		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 200 );
+
+		// Verify onComplete was called
+		assertThat( variables.get( Key.of( "completeCalled" ) ) ).isInstanceOf( Boolean.class );
+		assertThat( ( Boolean ) variables.get( Key.of( "completeCalled" ) ) ).isTrue();
+
+		// Verify status code was passed
+		assertThat( variables.get( Key.of( "completeStatus" ) ) ).isInstanceOf( Integer.class );
+		assertThat( ( Integer ) variables.get( Key.of( "completeStatus" ) ) ).isEqualTo( 200 );
+	}
+
+	@DisplayName( "It can handle onError callback for connection failures" )
+	@Test
+	public void testCanHandleOnErrorCallback( WireMockRuntimeInfo wmRuntimeInfo ) {
+		// Use an invalid host to trigger connection error
+		// @formatter:off
+		instance.executeSource(
+		    """
+				errorCalled = false
+				errorMessage = ""
+				
+				function onErrorHandler(data) {
+					errorCalled = true
+					errorMessage = data.message
+				}
+				
+				bx:http url="http://invalid-host-that-does-not-exist.local" onError=onErrorHandler throwOnError=false {
+				}
+				
+				result = bxhttp
+			""",
+		    context
+		);
+		// @formatter:on
+
+		// Verify onError was called
+		assertThat( variables.get( Key.of( "errorCalled" ) ) ).isInstanceOf( Boolean.class );
+		assertThat( ( Boolean ) variables.get( Key.of( "errorCalled" ) ) ).isTrue();
+
+		// Verify error message was passed
+		assertThat( variables.get( Key.of( "errorMessage" ) ) ).isInstanceOf( String.class );
+		String errorMsg = ( String ) variables.get( Key.of( "errorMessage" ) );
+		assertThat( errorMsg ).isNotEmpty();
+		assertThat( errorMsg ).contains( "Unknown host" );
+	}
+
+	@DisplayName( "It can handle onComplete with onChunk in streaming mode" )
+	@Test
+	public void testCanHandleOnCompleteWithOnChunk( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor( get( "/streaming-complete" )
+		    .willReturn(
+		        aResponse()
+		            .withBody( "Streaming data test" )
+		            .withStatus( 200 ) )
+		);
+
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+
+		// @formatter:off
+		instance.executeSource(
+		    String.format( """
+					chunkCount = 0
+					completeCalled = false
+					
+					function chunkHandler(data) {
+						chunkCount++
+					}
+					
+					function completeHandler(data) {
+						completeCalled = true
+					}
+					
+					bx:http url="%s" onChunk=chunkHandler onComplete=completeHandler {
+					}
+					
+					result = bxhttp
+				""",
+		        baseURL + "/streaming-complete"
+		    ),
+		    context
+		);
+		// @formatter:on
+
+		// Verify chunks were processed
+		assertThat( variables.get( Key.of( "chunkCount" ) ) ).isInstanceOf( Integer.class );
+		assertThat( ( Integer ) variables.get( Key.of( "chunkCount" ) ) ).isGreaterThan( 0 );
+
+		// Verify onComplete was called after streaming
+		assertThat( variables.get( Key.of( "completeCalled" ) ) ).isInstanceOf( Boolean.class );
+		assertThat( ( Boolean ) variables.get( Key.of( "completeCalled" ) ) ).isTrue();
+	}
+
 }

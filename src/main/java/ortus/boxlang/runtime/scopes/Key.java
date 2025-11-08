@@ -593,6 +593,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		onApplicationStart					= Key.of( "onApplicationStart" );
 	public static final Key		onChunk								= Key.of( "onChunk" );
 	public static final Key		onClassRequest						= Key.of( "onClassRequest" );
+	public static final Key		onComplete							= Key.of( "onComplete" );
 	public static final Key		onError								= Key.of( "onError" );
 	public static final Key		onLoad								= Key.of( "onLoad" );
 	public static final Key		onMissingMethod						= Key.of( "onMissingMethod" );
@@ -798,6 +799,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		substring1							= Key.of( "substring1" );
 	public static final Key		substringMatch						= Key.of( "substringMatch" );
 	public static final Key		suffix								= Key.of( "suffix" );
+	public static final Key		success								= Key.of( "success" );
 	public static final Key		suppressed							= Key.of( "suppressed" );
 	public static final Key		suppressWhiteSpace					= Key.of( "suppressWhiteSpace" );
 	public static final Key		system								= Key.of( "system" );

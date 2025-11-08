@@ -163,6 +163,8 @@ public class HTTP extends Component {
 		    new Attribute( Key.encodeUrl, "boolean", true, Set.of( Validator.TYPE ) ),
 		    // Streaming/chunk support
 		    new Attribute( Key.onChunk, "function" ),
+		    new Attribute( Key.onError, "function" ),
+		    new Attribute( Key.onComplete, "function" ),
 		    // Proxy server
 		    new Attribute( Key.proxyServer, "string", Set.of( Validator.requires( Key.proxyPort ) ) ),
 		    new Attribute( Key.proxyPort, "integer", Set.of( Validator.requires( Key.proxyServer ) ) ),
@@ -239,7 +241,13 @@ public class HTTP extends Component {
 	 * @attribute.encodeUrl Whether to encode the URL. Default is true.
 	 * 
 	 * @attribute.onChunk A callback function to process response data in chunks/streaming mode. When provided, the response will be processed incrementally. The callback receives a struct with: chunk (string or binary data), chunkNumber (integer,
-	 *                    1-based), totalReceived (total bytes received), and headers (on first chunk only). If not provided, the response is buffered and returned in the result variable as normal.
+	 *                    1-based), totalReceived (total bytes received), headers (on first chunk only), and result (HTTPResult struct). If not provided, the response is buffered and returned in the result variable as normal.
+	 * 
+	 * @attribute.onError A callback function to handle errors during the HTTP request. The callback receives a struct with: error (exception object), message (error message), and result (HTTPResult struct with partial data if available). Called for both
+	 *                    streaming and non-streaming requests.
+	 * 
+	 * @attribute.onComplete A callback function called when the HTTP request completes successfully. The callback receives a struct with: result (HTTPResult struct), statusCode, and success (boolean). Called after all chunks are processed in streaming
+	 *                       mode or after the full response is received in non-streaming mode.
 	 * 
 	 * @attribute.proxyServer The proxy server to use, if any.
 	 * 
@@ -486,7 +494,9 @@ public class HTTP extends Component {
 			    ) );
 
 			// Check if streaming/chunk support is requested
-			Function onChunkCallback = attributes.get( Key.onChunk ) != null ? ( Function ) attributes.get( Key.onChunk ) : null;
+			Function	onChunkCallback		= attributes.get( Key.onChunk ) != null ? ( Function ) attributes.get( Key.onChunk ) : null;
+			Function	onErrorCallback		= attributes.get( Key.onError ) != null ? ( Function ) attributes.get( Key.onError ) : null;
+			Function	onCompleteCallback	= attributes.get( Key.onComplete ) != null ? ( Function ) attributes.get( Key.onComplete ) : null;
 
 			// TODO : should we move the catch block below and add an `exceptionally` handler for the future?
 			if ( onChunkCallback != null ) {
@@ -510,6 +520,15 @@ public class HTTP extends Component {
 
 				// Set the result back into the caller using the variable name
 				ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
+
+				// Call onComplete callback if provided
+				if ( onCompleteCallback != null ) {
+					IStruct completeArgs = new Struct();
+					completeArgs.put( Key.result, HTTPResult );
+					completeArgs.put( Key.statusCode, HTTPResult.get( Key.statusCode ) );
+					completeArgs.put( Key.success, true );
+					context.invokeFunction( onCompleteCallback, new Object[] { completeArgs } );
+				}
 
 				return DEFAULT_RETURN;
 			} else {
@@ -544,10 +563,21 @@ public class HTTP extends Component {
 				    Key.result, HTTPResult
 				) );
 
+				// Call onComplete callback if provided
+				if ( onCompleteCallback != null ) {
+					IStruct completeArgs = new Struct();
+					completeArgs.put( Key.result, HTTPResult );
+					completeArgs.put( Key.statusCode, HTTPResult.get( Key.statusCode ) );
+					completeArgs.put( Key.success, true );
+					context.invokeFunction( onCompleteCallback, new Object[] { completeArgs } );
+				}
+
 				return DEFAULT_RETURN;
 			} // end else block for non-streaming response
 		} catch ( ExecutionException e ) {
-			Throwable innerException = e.getCause();
+			Throwable	innerException	= e.getCause();
+			Function	onErrorCallback	= attributes.get( Key.onError ) != null ? ( Function ) attributes.get( Key.onError ) : null;
+
 			if ( innerException instanceof SocketException ) {
 				HTTPResult.put( Key.responseHeader, new Struct() );
 				HTTPResult.put( Key.header, "" );
@@ -566,6 +596,15 @@ public class HTTP extends Component {
 					HTTPResult.put( Key.errorDetail, "Connection Failure: " + innerException.getMessage() );
 				}
 				ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
+
+				// Call onError callback if provided
+				if ( onErrorCallback != null ) {
+					IStruct errorArgs = new Struct();
+					errorArgs.put( Key.error, innerException );
+					errorArgs.put( Key.message, HTTPResult.getAsString( Key.errorDetail ) );
+					errorArgs.put( Key.result, HTTPResult );
+					context.invokeFunction( onErrorCallback, new Object[] { errorArgs } );
+				}
 			} else if ( innerException instanceof HttpTimeoutException ) {
 				HTTPResult.put( Key.responseHeader, new Struct() );
 				HTTPResult.put( Key.header, "" );
@@ -576,15 +615,53 @@ public class HTTP extends Component {
 				HTTPResult.put( Key.fileContent, "Request Timeout" );
 				HTTPResult.put( Key.errorDetail, "The request timed out after " + attributes.getAsInteger( Key.timeout ) + " second(s)" );
 				ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
+
+				// Call onError callback if provided
+				if ( onErrorCallback != null ) {
+					IStruct errorArgs = new Struct();
+					errorArgs.put( Key.error, innerException );
+					errorArgs.put( Key.message, HTTPResult.getAsString( Key.errorDetail ) );
+					errorArgs.put( Key.result, HTTPResult );
+					context.invokeFunction( onErrorCallback, new Object[] { errorArgs } );
+				}
 			} else {
-				// retrhow any unknown exception types
+				// Call onError callback if provided before re-throwing
+				if ( onErrorCallback != null ) {
+					IStruct errorArgs = new Struct();
+					errorArgs.put( Key.error, innerException );
+					errorArgs.put( Key.message, "An error occurred while processing the HTTP request: " + innerException.getMessage() );
+					errorArgs.put( Key.result, HTTPResult );
+					context.invokeFunction( onErrorCallback, new Object[] { errorArgs } );
+				}
+				// rethrow any unknown exception types
 				throw new BoxRuntimeException( "An error occurred while processing the HTTP request", "ExecutionException", innerException );
 			}
 			return DEFAULT_RETURN;
 		} catch ( InterruptedException e ) {
 			Thread.currentThread().interrupt();
+
+			// Call onError callback if provided
+			Function onErrorCallback = attributes.get( Key.onError ) != null ? ( Function ) attributes.get( Key.onError ) : null;
+			if ( onErrorCallback != null ) {
+				IStruct errorArgs = new Struct();
+				errorArgs.put( Key.error, e );
+				errorArgs.put( Key.message, "The request was interrupted" );
+				errorArgs.put( Key.result, HTTPResult );
+				context.invokeFunction( onErrorCallback, new Object[] { errorArgs } );
+			}
+
 			throw new BoxRuntimeException( "The request was interrupted", "InterruptedException", e );
 		} catch ( URISyntaxException | IOException e ) {
+			// Call onError callback if provided
+			Function onErrorCallback = attributes.get( Key.onError ) != null ? ( Function ) attributes.get( Key.onError ) : null;
+			if ( onErrorCallback != null ) {
+				IStruct errorArgs = new Struct();
+				errorArgs.put( Key.error, e );
+				errorArgs.put( Key.message, e.getMessage() );
+				errorArgs.put( Key.result, HTTPResult );
+				context.invokeFunction( onErrorCallback, new Object[] { errorArgs } );
+			}
+
 			throw new BoxRuntimeException( e.getMessage(), e );
 		}
 	}
@@ -822,22 +899,22 @@ public class HTTP extends Component {
 	    Boolean isBinaryNever,
 	    Instant startTime ) throws IOException {
 
-		HttpHeaders	httpHeaders	= Optional.ofNullable( response.headers() )
+		HttpHeaders	httpHeaders			= Optional.ofNullable( response.headers() )
 		    .orElse( HttpHeaders.of( Map.of(), ( a, b ) -> true ) );
-		IStruct		headers		= transformToResponseHeaderStruct( httpHeaders.map() );
+		IStruct		headers				= transformToResponseHeaderStruct( httpHeaders.map() );
 
 		// Extract content type and encoding
-		String	contentType		= extractFirstHeaderByName( headers, Key.of( "content-type" ) );
-		String	contentEncoding	= extractFirstHeaderByName( headers, Key.of( "content-encoding" ) );
+		String		contentType			= extractFirstHeaderByName( headers, Key.of( "content-type" ) );
+		String		contentEncoding		= extractFirstHeaderByName( headers, Key.of( "content-encoding" ) );
 
 		// Determine charset
-		String charset = contentType != null && contentType.contains( "charset=" )
+		String		charset				= contentType != null && contentType.contains( "charset=" )
 		    ? extractCharset( contentType )
 		    : "UTF-8";
 
 		// Determine if we should process as binary
-		Boolean	isBinaryContentType	= FileSystemUtil.isBinaryMimeType( contentType );
-		boolean	processingAsBinary	= ( isBinaryRequested || isBinaryContentType ) && !isBinaryNever;
+		Boolean		isBinaryContentType	= FileSystemUtil.isBinaryMimeType( contentType );
+		boolean		processingAsBinary	= ( isBinaryRequested || isBinaryContentType ) && !isBinaryNever;
 
 		if ( isBinaryNever && isBinaryContentType ) {
 			throw new BoxRuntimeException( "The response is a binary type, but the getAsBinary attribute was set to 'never'" );
@@ -873,8 +950,8 @@ public class HTTP extends Component {
 		HTTPResult.put( Key.cookies, generateCookiesQuery( headers ) );
 
 		// Stream processing - wrap the input stream with decompression if needed
-		InputStream	rawInputStream		= response.body();
-		InputStream	processedStream		= rawInputStream;
+		InputStream	rawInputStream	= response.body();
+		InputStream	processedStream	= rawInputStream;
 
 		// Apply decompression wrappers if content-encoding is present
 		if ( contentEncoding != null ) {
