@@ -35,21 +35,25 @@ public class BaseJDBCTest {
 		IBoxContext setUpContext = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 
 		datasourceService = instance.getDataSourceService();
-		String uniqueName = UUID.randomUUID().toString();
-		datasource = JDBCTestUtils.constructTestDataSource( uniqueName, setUpContext );
-		Key datasourceKey = Key.of( uniqueName );
-		datasourceService.register( datasourceKey, datasource );
-		instance.getConfiguration().datasources.put(
-		    datasourceKey,
-		    datasource.getConfiguration()
-		);
+		if ( JDBCTestUtils.hasDerbyModule() ) {
+			String uniqueName = UUID.randomUUID().toString();
+			datasource = JDBCTestUtils.constructTestDataSource( uniqueName, setUpContext );
+			Key datasourceKey = Key.of( uniqueName );
+			datasourceService.register( datasourceKey, datasource );
+			instance.getConfiguration().datasources.put(
+			    datasourceKey,
+			    datasource.getConfiguration()
+			);
+		}
 	}
 
 	@AfterAll
 	public static void teardown() throws SQLException {
 		IBoxContext tearDownContext = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		JDBCTestUtils.dropTestTable( datasource, tearDownContext, "developers", true );
-		datasource.shutdown();
+		if ( datasource != null ) {
+			JDBCTestUtils.dropTestTable( datasource, tearDownContext, "developers", true );
+			datasource.shutdown();
+		}
 	}
 
 	@BeforeEach
