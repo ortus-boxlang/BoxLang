@@ -18,12 +18,14 @@
 package ortus.boxlang.runtime.net;
 
 import java.net.http.HttpClient;
+import java.time.Instant;
 
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.services.HttpService;
 
 /**
  * This class represents an HTTP client for making network requests.
+ * It encapsulates the implementation library we use for HTTP operations.
  * It encapsulates configuration and functionality for sending HTTP requests
  * and handling responses.
  */
@@ -35,8 +37,13 @@ public class BoxHttpClient {
 	 * ------------------------------------------------------------------------------
 	 */
 
-	public static final String	HTTP_1	= "HTTP/1.1";
-	public static final String	HTTP_2	= "HTTP/2";
+	public static final String	HTTP_1					= "HTTP/1.1";
+	public static final String	HTTP_2					= "HTTP/2";
+
+	/**
+	 * Connection Timeout in seconds
+	 */
+	public static final int		CONNECT_TIMEOUT_SECONDS	= 15;
 
 	/**
 	 * ------------------------------------------------------------------------------
@@ -60,6 +67,12 @@ public class BoxHttpClient {
 	private final BoxLangLogger	logger;
 
 	/**
+	 * Tracks the last date + time the client was used.
+	 * Multiple threads may access this, so it should be handled carefully.
+	 */
+	private volatile Instant	lastUsedTimestamp;
+
+	/**
 	 * ------------------------------------------------------------------------------
 	 * Constructor
 	 * ------------------------------------------------------------------------------
@@ -79,13 +92,7 @@ public class BoxHttpClient {
 
 	/**
 	 * ------------------------------------------------------------------------------
-	 * Invokers
-	 * ------------------------------------------------------------------------------
-	 */
-
-	/**
-	 * ------------------------------------------------------------------------------
-	 * Private Helpers
+	 * Fluent Request Builder
 	 * ------------------------------------------------------------------------------
 	 */
 
