@@ -113,6 +113,11 @@ public class HttpService extends BaseService {
 
 	@Override
 	public void onStartup() {
+		// Allow for restricted headers to be set so we can send the Host header and Content-Length
+		// Java’s HttpClient (introduced in Java 11) blocks setting certain sensitive headers for security reasons
+		if ( System.getProperty( "jdk.httpclient.allowRestrictedHeaders" ) == null ) {
+			System.setProperty( "jdk.httpclient.allowRestrictedHeaders", "host,content-length" );
+		}
 		this.logger.info( "+ Http Service started" );
 	}
 
