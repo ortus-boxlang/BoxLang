@@ -337,14 +337,14 @@ public class HttpServiceTest {
 		    false
 		);
 
-		Key clientKey = Key.of( "httpclient:v=HTTP/2;redir=true;timeout=30;debug=false;" );
+		Key clientKey = service.buildClientKey( "HTTP/2", true, 30, null, null, null, null, null, null, false );
 		assertThat( service.hasClient( clientKey ) ).isTrue();
 	}
 
 	@DisplayName( "Test hasClient returns false for non-existing client" )
 	@Test
 	void testHasClientReturnsFalse() {
-		Key clientKey = Key.of( "httpclient:v=HTTP/1.1;redir=false;timeout=60;debug=false;" );
+		Key clientKey = service.buildClientKey( "HTTP/1.1", false, 60, null, null, null, null, null, null, false );
 		assertThat( service.hasClient( clientKey ) ).isFalse();
 	}
 
@@ -373,7 +373,7 @@ public class HttpServiceTest {
 
 		assertThat( service.getClientCount() ).isEqualTo( 1 );
 
-		Key clientKey = Key.of( "httpclient:v=HTTP/2;redir=true;timeout=30;debug=false;" );
+		Key clientKey = service.buildClientKey( "HTTP/2", true, 30, null, null, null, null, null, null, false );
 		service.removeClient( clientKey );
 
 		assertThat( service.getClientCount() ).isEqualTo( 0 );
@@ -396,7 +396,7 @@ public class HttpServiceTest {
 		    false
 		);
 
-		Key			clientKey		= Key.of( "httpclient:v=HTTP/2;redir=true;timeout=30;debug=false;" );
+		Key			clientKey		= service.buildClientKey( "HTTP/2", true, 30, null, null, null, null, null, null, false );
 		HttpService	returnedService	= service.removeClient( clientKey );
 
 		assertThat( returnedService ).isSameInstanceAs( service );

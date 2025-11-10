@@ -39,6 +39,7 @@ import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.net.BoxHttpClient;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -191,6 +192,21 @@ public class HttpService extends BaseService {
 	public HttpService removeClient( Key key ) {
 		this.clients.remove( key );
 		return this;
+	}
+
+	/**
+	 * Get all cached client keys
+	 * <p>
+	 * This method returns an array of all keys for the cached HTTP clients.
+	 *
+	 * @return An Array of Keys representing all cached clients
+	 */
+	public Array getAllClientKeys() {
+		Array keys = new Array();
+		for ( Key key : this.clients.keySet() ) {
+			keys.add( key.getName() );
+		}
+		return keys;
 	}
 
 	/**
@@ -350,7 +366,7 @@ public class HttpService extends BaseService {
 	 *
 	 * @return A unique Key identifying this client configuration
 	 */
-	private Key buildClientKey(
+	public Key buildClientKey(
 	    String httpVersion,
 	    boolean followRedirects,
 	    Integer connectTimeout,
@@ -361,10 +377,10 @@ public class HttpService extends BaseService {
 	    String clientCertPath,
 	    String clientCertPass,
 	    boolean debug ) {
-		// Build a composite key from all configuration parameters
-		StringBuilder keyBuilder = new StringBuilder( "httpclient:" );
+		// Build a composite string from all configuration parameters
+		StringBuilder keyBuilder = new StringBuilder();
 
-		keyBuilder.append( "v=" ).append( httpVersion != null ? httpVersion : BoxHttpClient.HTTP_2 ).append( ";" );
+		keyBuilder.append( "v=" ).append( httpVersion ).append( ";" );
 		keyBuilder.append( "redir=" ).append( followRedirects ).append( ";" );
 		keyBuilder.append( "timeout=" ).append( connectTimeout != null ? connectTimeout : "none" ).append( ";" );
 		keyBuilder.append( "debug=" ).append( debug ).append( ";" );
@@ -385,7 +401,11 @@ public class HttpService extends BaseService {
 			keyBuilder.append( "certPass=" ).append( clientCertPass != null ? "yes" : "no" ).append( ";" );
 		}
 
-		return Key.of( keyBuilder.toString() );
+		// Generate SHA-256 hash of the configuration string using EncryptionUtil
+		String hash = ortus.boxlang.runtime.util.EncryptionUtil.hash( keyBuilder.toString(), "SHA-256" );
+
+		// Build the key
+		return Key.of( "bx-http-" + hash );
 	}
 
 }
