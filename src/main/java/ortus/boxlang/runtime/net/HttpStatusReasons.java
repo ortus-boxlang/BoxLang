@@ -24,7 +24,7 @@ import java.util.Map;
 /**
  * Utility class for mapping HTTP status codes to their standard reason phrases.
  */
-public class HttpStatusReasons2 {
+public class HttpStatusReasons {
 
 	private static final String					UNKNOWN_STATUS	= "Unknown Status";
 
@@ -109,7 +109,7 @@ public class HttpStatusReasons2 {
 	 *
 	 * @return The reason for the status code.
 	 */
-	public static String getReasonForStatus( int status ) {
+	public static String getReason( int status ) {
 		return REASONS.getOrDefault( status, UNKNOWN_STATUS );
 	}
 }

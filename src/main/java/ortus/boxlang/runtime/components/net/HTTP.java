@@ -63,7 +63,7 @@ import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.net.HttpManager;
 import ortus.boxlang.runtime.net.HttpRequestMultipartBody;
-import ortus.boxlang.runtime.net.HttpStatusReasons2;
+import ortus.boxlang.runtime.net.HttpStatusReasons;
 import ortus.boxlang.runtime.net.URIBuilder;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -915,7 +915,7 @@ public class HTTP extends Component {
 		// Build basic HTTPResult metadata
 		String	httpVersionString	= response.version() == HttpClient.Version.HTTP_1_1 ? "HTTP/1.1" : "HTTP/2";
 		String	statusCodeString	= String.valueOf( response.statusCode() );
-		String	statusText			= HttpStatusReasons2.getReasonForStatus( response.statusCode() );
+		String	statusText			= HttpStatusReasons.getReason( response.statusCode() );
 
 		headers.put( Key.HTTP_Version, httpVersionString );
 		headers.put( Key.status_code, statusCodeString );
@@ -1066,7 +1066,7 @@ public class HTTP extends Component {
 			// Prepare all the result variables now that we have the response
 			String	httpVersionString	= response.version() == HttpClient.Version.HTTP_1_1 ? "HTTP/1.1" : "HTTP/2";
 			String	statusCodeString	= String.valueOf( response.statusCode() );
-			String	statusText			= HttpStatusReasons2.getReasonForStatus( response.statusCode() );
+			String	statusText			= HttpStatusReasons.getReason( response.statusCode() );
 
 			headers.put( Key.HTTP_Version, httpVersionString );
 			headers.put( Key.status_code, statusCodeString );
