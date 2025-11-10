@@ -70,6 +70,13 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	public static final String		ON_THE_FLY_PREFIX				= "onthefly_";
 
 	/**
+	 * The unique name of the datasource
+	 * 
+	 * Following the pattern: <code>bx_{name}_{properties_hash}</code>
+	 */
+	public final Key				uniqueName;
+
+	/**
 	 * The name of the datasource
 	 */
 	public Key						name;
@@ -203,7 +210,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 */
 	public DatasourceConfig() {
 		// Default all things
-		this.properties.putIfAbsent( Key.custom, new Struct() );
+		this( new Struct() );
 	}
 
 	/**
@@ -226,10 +233,12 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		this.name = name;
 		this.properties.putIfAbsent( Key.custom, new Struct() );
 		processProperties( properties );
+		// Note we generate the unique name AFTER processing properties
+		this.uniqueName = buildUniqueName();
 	}
 
 	/**
-	 * Constructor an unnamed datasource with properties.
+	 * Construct an unnamed datasource with properties.
 	 * This usually happens when you are creating a datasource on the fly.
 	 * The pre-generated name of the form: <code>unnamed_{randomUUID}</code>
 	 *
@@ -245,8 +254,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 * @param name The key name of the datasource
 	 */
 	public DatasourceConfig( Key name ) {
-		this.name = name;
-		this.properties.putIfAbsent( Key.custom, new Struct() );
+		this( name, new Struct() );
 	}
 
 	/**
@@ -255,7 +263,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 * @param name The string name of the datasource
 	 */
 	public DatasourceConfig( String name ) {
-		this( Key.of( name ) );
+		this( Key.of( name ), new Struct() );
 	}
 
 	/**
@@ -312,31 +320,12 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	}
 
 	/**
-	 * Get a unique datasource name which includes a hash of the properties
+	 * Get the generated unique datasource name.
+	 * 
 	 * Following the pattern: <code>bx_{name}_{properties_hash}</code>
 	 */
 	public Key getUniqueName() {
-		StringBuilder uniqueName = new StringBuilder( DATASOURCE_PREFIX );
-
-		// If we have an app name use it
-		if ( !applicationName.isEmpty() ) {
-			uniqueName.append( applicationName.toString() );
-			uniqueName.append( "_" );
-		}
-
-		// If this is an on the fly datasource
-		if ( onTheFly ) {
-			uniqueName.append( ON_THE_FLY_PREFIX );
-		}
-
-		// Datasource name
-		uniqueName.append( this.name.toString() );
-		uniqueName.append( "_" );
-
-		// Hash the properties
-		uniqueName.append( Math.abs( properties.hashCode() ) );
-
-		return Key.of( uniqueName.toString() );
+		return this.uniqueName;
 	}
 
 	/**
@@ -818,6 +807,34 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		    .findFirst()
 		    .map( key -> this.properties.getAsString( key ) )
 		    .orElse( "" );
+	}
+
+	/**
+	 * Generate the unique name used for datasource identification. Includes a hash of the properties, as well as the datasource key name and the application name if known.
+	 * Following the pattern: <code>bx_{name}_{properties_hash}</code>
+	 */
+	private Key buildUniqueName() {
+		StringBuilder uniqueName = new StringBuilder( DATASOURCE_PREFIX );
+
+		// If we have an app name use it
+		if ( !applicationName.isEmpty() ) {
+			uniqueName.append( applicationName.toString() );
+			uniqueName.append( "_" );
+		}
+
+		// If this is an on the fly datasource
+		if ( onTheFly ) {
+			uniqueName.append( ON_THE_FLY_PREFIX );
+		}
+
+		// Datasource name
+		uniqueName.append( this.name.toString() );
+		uniqueName.append( "_" );
+
+		// Hash the properties
+		uniqueName.append( Math.abs( properties.hashCode() ) );
+
+		return Key.of( uniqueName.toString() );
 	}
 
 }
