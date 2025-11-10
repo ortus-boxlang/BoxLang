@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
@@ -31,6 +32,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.components.ComponentDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.services.FunctionService;
@@ -1101,6 +1103,40 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 			} else {
 				aggregateFeaturesUsed.put( aggregateKey,
 				    new AggregateFeatureUsed( name, FeatureType.COMPONENT, module, missing, 1 ) );
+			}
+		}
+		super.visit( node );
+	}
+
+	/**
+	 * Detect REST classes with the rest=true annotation
+	 */
+	public void visit( BoxClass node ) {
+		var annotations = node.getAnnotations();
+		for ( var anno : annotations ) {
+			// Has rest=true
+			boolean	hasRest		= anno.getKey().getValue().equalsIgnoreCase( "rest" )
+			    && anno.getValue().isLiteral()
+			    && BooleanCaster.attempt( anno.getValue().getAsLiteralValue() ).orElse( false );
+
+			// has restPath=anything
+			boolean	hasRestPath	= anno.getKey().getValue().equalsIgnoreCase( "restpath" );
+
+			if ( hasRest || hasRestPath ) {
+				String	name	= "REST Class";
+				String	module	= "";
+				boolean	missing	= true;
+				featuresUsed.add(
+				    new FeatureUsed( name, FeatureType.COMPONENT, module, missing, node.getPosition() ) );
+				String aggregateKey = name + FeatureType.COMPONENT;
+				if ( aggregateFeaturesUsed.containsKey( aggregateKey ) ) {
+					aggregateFeaturesUsed.put( aggregateKey,
+					    aggregateFeaturesUsed.get( aggregateKey ).increment() );
+				} else {
+					aggregateFeaturesUsed.put( aggregateKey,
+					    new AggregateFeatureUsed( name, FeatureType.COMPONENT, module, missing, 1 ) );
+				}
+				break;
 			}
 		}
 		super.visit( node );
