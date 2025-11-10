@@ -20,8 +20,6 @@ package ortus.boxlang.runtime.components.net;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.InflaterInputStream;
 import java.net.ConnectException;
 import java.net.SocketException;
 import java.net.URI;
@@ -63,11 +61,10 @@ import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
-import ortus.boxlang.runtime.net.HTTPStatusReasons;
 import ortus.boxlang.runtime.net.HttpManager;
 import ortus.boxlang.runtime.net.HttpRequestMultipartBody;
+import ortus.boxlang.runtime.net.HttpStatusReasons2;
 import ortus.boxlang.runtime.net.URIBuilder;
-import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
@@ -118,6 +115,7 @@ public class HTTP extends Component {
 	public HTTP() {
 		super();
 		declaredAttributes = new Attribute[] {
+		    // Connection settings
 		    new Attribute( Key.URL, "string", Set.of(
 		        Validator.REQUIRED,
 		        Validator.NON_EMPTY,
@@ -128,61 +126,55 @@ public class HTTP extends Component {
 		        }
 		    ) ),
 		    new Attribute( Key.port, "numeric" ),
+		    new Attribute( Key.httpVersion, "string", "HTTP/2", Set.of( Validator.valueOneOf( "HTTP/1.1", "HTTP/2" ) ) ),
+		    new Attribute( Key.timeout, "numeric", Set.of( Validator.min( 1 ) ) ),
+		    new Attribute( Key.redirect, "boolean", true ),
+		    new Attribute( Key.resolveUrl, "boolean", false ),
+		    new Attribute( Key.encodeUrl, "boolean", true, Set.of( Validator.TYPE ) ),
+		    // Request settings
 		    new Attribute( Key.method, "string", "GET", Set.of(
 		        Validator.REQUIRED,
 		        Validator.NON_EMPTY,
 		        Validator.valueOneOf( "GET", "POST", "PUT", "DELETE", "HEAD", "TRACE", "OPTIONS", "PATCH" )
 		    ) ),
-		    new Attribute( Key.username, "string" ),
-		    new Attribute( Key.password, "string" ),
 		    new Attribute( Key.userAgent, "string", "BoxLang" ),
 		    new Attribute( Key.charset, "string", "UTF-8" ),
-		    new Attribute( Key.resolveUrl, "boolean", false ),
-		    new Attribute( Key.throwOnError, "boolean", true ),
-		    new Attribute( Key.redirect, "boolean", true ),
-		    new Attribute( Key.timeout, "numeric", Set.of( Validator.min( 1 ) ) ),
+		    new Attribute( Key.compression, "string" ),
+		    new Attribute( Key.multipart, "boolean", false, Set.of( Validator.TYPE ) ),
+		    new Attribute( Key.multipartType, "string", "form-data",
+		        Set.of( Validator.REQUIRED, Validator.NON_EMPTY, Validator.valueOneOf( "form-data", "related" ) ) ),
+		    // Response handling
+		    new Attribute( Key.result, "string", "bxhttp", Set.of(
+		        Validator.REQUIRED,
+		        Validator.NON_EMPTY
+		    ) ),
 		    new Attribute( Key.getAsBinary, "string", "auto", Set.of(
 		        Validator.REQUIRED,
 		        Validator.NON_EMPTY,
 		        Validator.valueOneOf( "true", "false", "auto", "no", "yes", "never" )
 		    ) ),
-		    new Attribute( Key.result, "string", "bxhttp", Set.of(
-		        Validator.REQUIRED,
-		        Validator.NON_EMPTY
-		    ) ),
+		    new Attribute( Key.throwOnError, "boolean", true ),
 		    new Attribute( Key.file, "string" ),
-		    new Attribute( Key.multipart, "boolean", false, Set.of( Validator.TYPE ) ),
-		    new Attribute( Key.multipartType, "string", "form-data",
-		        Set.of( Validator.REQUIRED, Validator.NON_EMPTY, Validator.valueOneOf( "form-data", "related" ) ) ),
-		    new Attribute( Key.clientCertPassword, "string" ),
 		    new Attribute( Key.path, "string" ),
-		    new Attribute( Key.clientCert, "string" ),
-		    new Attribute( Key.compression, "string" ),
+		    // Caching
+		    new Attribute( Key.cachedWithin, "string" ),
+		    // Authentication
+		    new Attribute( Key.username, "string" ),
+		    new Attribute( Key.password, "string" ),
 		    new Attribute( Key.authType, "string", AUTHMODE_BASIC,
 		        Set.of( Validator.REQUIRED, Validator.NON_EMPTY, Validator.valueOneOf( AUTHMODE_BASIC, AUTHMODE_NTLM ) ) ),
-		    new Attribute( Key.cachedWithin, "string" ),
-		    new Attribute( Key.encodeUrl, "boolean", true, Set.of( Validator.TYPE ) ),
-		    // Streaming/chunk support
+		    // Client certificates
+		    new Attribute( Key.clientCert, "string" ),
+		    new Attribute( Key.clientCertPassword, "string" ),
+		    // Streaming/callbacks
 		    new Attribute( Key.onChunk, "function" ),
 		    new Attribute( Key.onError, "function" ),
 		    new Attribute( Key.onComplete, "function" ),
-		    // Proxy server
+		    // Proxy configuration
 		    new Attribute( Key.proxyServer, "string", Set.of( Validator.requires( Key.proxyPort ) ) ),
 		    new Attribute( Key.proxyPort, "integer", Set.of( Validator.requires( Key.proxyServer ) ) ),
 		    new Attribute( Key.proxyUser, "string", Set.of( Validator.requires( Key.proxyPassword ) ) ),
-		    new Attribute( Key.proxyPassword, "string", Set.of( Validator.requires( Key.proxyUser ) ) ),
-		    // Currently unimplemented attributes
-		    // Alt name for result
-		    new Attribute( Key._NAME, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
-		    // CSV parsing
-		    new Attribute( Key.delimiter, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
-		    new Attribute( Key.columns, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
-		    new Attribute( Key.firstRowAsHeaders, "boolean", Set.of( Validator.NOT_IMPLEMENTED ) ),
-		    new Attribute( Key.textQualifier, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
-		    // NTLM
-		    new Attribute( Key.domain, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
-		    new Attribute( Key.workstation, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
-		    new Attribute( Key.httpVersion, "string", "HTTP/2", Set.of( Validator.valueOneOf( "HTTP/1.1", "HTTP/2" ) ) )
+		    new Attribute( Key.proxyPassword, "string", Set.of( Validator.requires( Key.proxyUser ) ) )
 		};
 	}
 
@@ -193,69 +185,69 @@ public class HTTP extends Component {
 	 * @param attributes     The attributes to the Component
 	 * @param body           The body of the Component
 	 * @param executionState The execution state of the Component
-	 * 
+	 *
 	 * @attribute.URL The URL to which to make the HTTP request. Must start with http:// or https://
-	 * 
+	 *
 	 * @attribute.port The port to which to make the HTTP request. Defaults to the standard port for the protocol (80 for http, 443 for https)
-	 * 
+	 *
 	 * @attribute.method The HTTP method to use. One of GET, POST, PUT, DELETE, HEAD, TRACE, OPTIONS, PATCH. Default is GET.
-	 * 
+	 *
 	 * @attribute.username The username to use for authentication, if any.
-	 * 
+	 *
 	 * @attribute.password The password to use for authentication, if any.
-	 * 
+	 *
 	 * @attribute.userAgent The User-Agent string to send with the request. Default is "BoxLang".
-	 * 
+	 *
 	 * @attribute.charset The character set to use for the request. Default is UTF-8.
-	 * 
+	 *
 	 * @attribute.resolveUrl Whether to resolve the URL before making the request. Default is false.
-	 * 
+	 *
 	 * @attribute.throwOnError Whether to throw an error if the HTTP response status code is 400 or greater. Default is true.
-	 * 
+	 *
 	 * @attribute.redirect Whether to follow redirects. Default is true.
-	 * 
+	 *
 	 * @attribute.timeout The timeout for the request, in seconds. Default is no timeout.
-	 * 
+	 *
 	 * @attribute.getAsBinary Whether to return the response body as binary. One of true, false, auto, yes, no, never. Default is auto.
-	 * 
+	 *
 	 * @attribute.result The name of the variable in which to store the result Struct. Default is "bxhttp".
-	 * 
+	 *
 	 * @attribute.file The name of the file in which to store the response body. If not set, the response body is stored in the result Struct. If not provided with a `path`, the file attribute can be a full path to the file to write.
-	 * 
+	 *
 	 * @attribute.multipart Whether the request is a multipart request. Default is false.
-	 * 
+	 *
 	 * @attribute.multipartType The type of multipart request. One of form-data, related. Default is form-data.
-	 * 
+	 *
 	 * @attribute.clientCertPassword The password for the client certificate, if any.
-	 * 
+	 *
 	 * @attribute.path The directory in which to store the response file, if any. If a file attribute is not provided, the file name will be extracted from the Content-Disposition header if present. If no disposition header is present with the file name,
 	 *                 an error will be thrown
-	 * 
+	 *
 	 * @attribute.clientCert The path to the client certificate, if any.
-	 * 
+	 *
 	 * @attribute.compression The compression type to use for the request, if any.
-	 * 
+	 *
 	 * @attribute.authType The authentication type to use. One of BASIC, NTLM. Default is BASIC.
-	 * 
+	 *
 	 * @attribute.cachedWithin If set, and a cached response is available within the specified duration (e.g. 10m for 10 minutes, 1h for 1 hour), the cached response will be returned instead of making a new request.
-	 * 
+	 *
 	 * @attribute.encodeUrl Whether to encode the URL. Default is true.
-	 * 
+	 *
 	 * @attribute.onChunk A callback function to process response data in chunks/streaming mode. When provided, the response will be processed incrementally. The callback receives a struct with: chunk (string or binary data), chunkNumber (integer,
 	 *                    1-based), totalReceived (total bytes received), headers (on first chunk only), and result (HTTPResult struct). If not provided, the response is buffered and returned in the result variable as normal.
-	 * 
+	 *
 	 * @attribute.onError A callback function to handle errors during the HTTP request. The callback receives a struct with: error (exception object), message (error message), and result (HTTPResult struct with partial data if available). Called for both
 	 *                    streaming and non-streaming requests.
-	 * 
+	 *
 	 * @attribute.onComplete A callback function called when the HTTP request completes successfully. The callback receives a struct with: result (HTTPResult struct), statusCode, and success (boolean). Called after all chunks are processed in streaming
 	 *                       mode or after the full response is received in non-streaming mode.
-	 * 
+	 *
 	 * @attribute.proxyServer The proxy server to use, if any.
-	 * 
+	 *
 	 * @attribute.proxyPort The proxy server port to use, if any.
-	 * 
+	 *
 	 * @attribute.proxyUser The proxy server username to use, if any.
-	 * 
+	 *
 	 * @attribute.proxyPassword The proxy server password to use, if any.
 	 *
 	 */
@@ -675,10 +667,10 @@ public class HTTP extends Component {
 
 	/**
 	 * Extract the first header value by name from the headers Struct
-	 * 
+	 *
 	 * @param headers
 	 * @param headerName
-	 * 
+	 *
 	 * @return
 	 */
 	private static String extractFirstHeaderByName( IStruct headers, Key headerName ) {
@@ -923,7 +915,7 @@ public class HTTP extends Component {
 		// Build basic HTTPResult metadata
 		String	httpVersionString	= response.version() == HttpClient.Version.HTTP_1_1 ? "HTTP/1.1" : "HTTP/2";
 		String	statusCodeString	= String.valueOf( response.statusCode() );
-		String	statusText			= HTTPStatusReasons.getReasonForStatus( response.statusCode() );
+		String	statusText			= HttpStatusReasons2.getReasonForStatus( response.statusCode() );
 
 		headers.put( Key.HTTP_Version, httpVersionString );
 		headers.put( Key.status_code, statusCodeString );
@@ -1074,7 +1066,7 @@ public class HTTP extends Component {
 			// Prepare all the result variables now that we have the response
 			String	httpVersionString	= response.version() == HttpClient.Version.HTTP_1_1 ? "HTTP/1.1" : "HTTP/2";
 			String	statusCodeString	= String.valueOf( response.statusCode() );
-			String	statusText			= HTTPStatusReasons.getReasonForStatus( response.statusCode() );
+			String	statusText			= HttpStatusReasons2.getReasonForStatus( response.statusCode() );
 
 			headers.put( Key.HTTP_Version, httpVersionString );
 			headers.put( Key.status_code, statusCodeString );
