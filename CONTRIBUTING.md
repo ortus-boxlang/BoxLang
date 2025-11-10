@@ -72,7 +72,7 @@ To run JDBC tests against real databases, you'll need to set up the dockerized d
 1. Set up the database secrets - `cp .env.example .env`
 2. Start your database of choice - `docker compose up -d mssql mysql`
 3. Install the boxlang JDBC driver for testing:
-   1. `box install id=bx-derby,bx-mssql,bx-mysql directory=~/.boxlang/modules`
+   1. `box install id=bx-derby,bx-mssql,bx-mysql directory=~/.boxlang/modules --nosave`
 
 ## Language Compatibility
 
