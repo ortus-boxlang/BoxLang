@@ -27,6 +27,7 @@ import org.checkerframework.checker.nullness.qual.NonNull;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.NameValuePair;
 
 public class URIBuilder {
 

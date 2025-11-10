@@ -20,26 +20,18 @@ package ortus.boxlang.runtime.net;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.net.Authenticator;
-import java.net.http.HttpClient;
-import java.net.http.HttpHeaders;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
 import java.net.ProxySelector;
-import java.net.URI;
-import java.security.cert.X509Certificate;
+import java.net.http.HttpClient;
 import java.security.KeyStore;
 import java.security.SecureRandom;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.Base64;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-import java.util.Optional;
+
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-
-import javax.net.ssl.SSLSession;
 
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -80,9 +72,9 @@ public class HttpManager {
 
 	/**
 	 * Get a new HttpClient instance custom attributes including proxy client connection and redirect enforcement.
-	 * 
+	 *
 	 * @param attributes
-	 * 
+	 *
 	 * @return
 	 */
 	public static HttpClient getCustomClient( IStruct attributes ) {
@@ -141,62 +133,6 @@ public class HttpManager {
 			}
 		}
 		return builder.build();
-	}
-
-	public static CompletableFuture<HttpResponse<String>> getTimeoutRequestAsync( int timeout ) {
-		return CompletableFuture.supplyAsync( () -> getTimeoutRequest( timeout ) );
-	}
-
-	public static HttpResponse<String> getTimeoutRequest( int timeout ) {
-		try {
-			TimeUnit.SECONDS.sleep( timeout );
-			return new HttpResponse<String>() {
-
-				@Override
-				public int statusCode() {
-					return 408;
-				}
-
-				@Override
-				public HttpRequest request() {
-					return null;
-				}
-
-				@Override
-				public Optional<HttpResponse<String>> previousResponse() {
-					return Optional
-					    .empty();
-				}
-
-				@Override
-				public HttpHeaders headers() {
-					return null;
-				}
-
-				@Override
-				public String body() {
-					return "Request timed out after " + timeout + ( timeout == 1 ? " second." : " seconds." );
-				}
-
-				@Override
-				public Optional<SSLSession> sslSession() {
-					return Optional
-					    .empty();
-				}
-
-				@Override
-				public URI uri() {
-					return null;
-				}
-
-				@Override
-				public HttpClient.Version version() {
-					return null;
-				}
-			};
-		} catch ( InterruptedException e ) {
-			throw new BoxRuntimeException( "The request was interrupted", "InterruptedException", e );
-		}
 	}
 
 }
