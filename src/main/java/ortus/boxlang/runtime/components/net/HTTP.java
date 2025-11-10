@@ -54,23 +54,19 @@ import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
-import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
-import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.net.HttpManager;
 import ortus.boxlang.runtime.net.HttpRequestMultipartBody;
+import ortus.boxlang.runtime.net.HttpResponseHelper;
 import ortus.boxlang.runtime.net.HttpStatusReasons;
 import ortus.boxlang.runtime.net.URIBuilder;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.Query;
-import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
@@ -91,7 +87,6 @@ public class HTTP extends Component {
 	private final static String		BASIC_AUTH_DELIMITER	= ":";
 	private static final String		AUTHMODE_BASIC			= "BASIC";
 	private static final String		AUTHMODE_NTLM			= "NTLM";
-	private static final Pattern	CHARSET_PATTERN			= Pattern.compile( "charset=([a-zA-Z0-9-]+)" );
 
 	protected static ArrayList<Key>	BINARY_REQUEST_VALUES	= new ArrayList<Key>() {
 
@@ -666,208 +661,6 @@ public class HTTP extends Component {
 	 */
 
 	/**
-	 * Extract the first header value by name from the headers Struct
-	 *
-	 * @param headers
-	 * @param headerName
-	 *
-	 * @return
-	 */
-	private static String extractFirstHeaderByName( IStruct headers, Key headerName ) {
-		Object				headerValue		= headers.get( headerName );
-		CastAttempt<Array>	isValuesArray	= ArrayCaster.attempt( headerValue );
-		if ( isValuesArray.wasSuccessful() ) {
-			Array values = isValuesArray.getOrFail();
-			if ( values.size() > 0 ) {
-				return StringCaster.cast( values.get( 0 ) );
-			}
-		} else if ( headerValue != null ) {
-			return StringCaster.cast( headerValue );
-		}
-		return null;
-	}
-
-	/**
-	 * Generate a Query of cookies from the headers
-	 *
-	 * @param headers The headers to parse
-	 *
-	 * @return A Query of cookies
-	 */
-	private static Query generateCookiesQuery( IStruct headers ) {
-		Query cookies = new Query();
-		cookies.addColumn( Key._NAME, QueryColumnType.VARCHAR );
-		cookies.addColumn( Key.value, QueryColumnType.VARCHAR );
-		cookies.addColumn( Key.path, QueryColumnType.VARCHAR );
-		cookies.addColumn( Key.domain, QueryColumnType.VARCHAR );
-		cookies.addColumn( Key.expires, QueryColumnType.VARCHAR );
-		cookies.addColumn( Key.secure, QueryColumnType.VARCHAR );
-		cookies.addColumn( Key.httpOnly, QueryColumnType.VARCHAR );
-		cookies.addColumn( Key.samesite, QueryColumnType.VARCHAR );
-
-		Object				cookieValue		= headers.getOrDefault( Key.of( "Set-Cookie" ), new Array() );
-		CastAttempt<Array>	isValuesArray	= ArrayCaster.attempt( cookieValue );
-		if ( isValuesArray.wasSuccessful() ) {
-			Array values = isValuesArray.getOrFail();
-			for ( Object value : values ) {
-				parseCookieStringIntoQuery( StringCaster.cast( value ), cookies );
-			}
-		} else {
-			parseCookieStringIntoQuery( StringCaster.cast( cookieValue ), cookies );
-		}
-
-		return cookies;
-	}
-
-	/**
-	 * Parse a cookie string into a Query
-	 *
-	 * @param cookieString The cookie string to parse
-	 * @param cookies      The Query to add the cookies to
-	 */
-	private static void parseCookieStringIntoQuery( String cookieString, Query cookies ) {
-		IStruct		cookieStruct;
-		String[]	parts	= cookieString.split( ";" );
-		if ( parts.length == 0 ) {
-			return;
-		}
-
-		String[] nameAndValue = parts[ 0 ].split( "=" );
-		if ( nameAndValue.length != 2 ) {
-			return;
-		}
-
-		cookieStruct = new Struct();
-		cookieStruct.put( Key._NAME, nameAndValue[ 0 ] );
-		cookieStruct.put( Key.value, nameAndValue[ 1 ] );
-
-		if ( parts.length > 1 ) {
-			Arrays.stream( parts, 1, parts.length )
-			    .forEach( metadata -> {
-				    String[] metadataParts = metadata.split( "=" );
-				    if ( metadataParts.length == 0 ) {
-					    return;
-				    }
-				    Key	metadataType	= Key.of( metadataParts[ 0 ] );
-				    Object metadataValue = true;
-				    if ( metadataParts.length == 2 ) {
-					    metadataValue = metadataParts[ 1 ];
-				    }
-
-				    if ( metadataType.equals( Key.of( "max-age" ) ) ) {
-					    metadataType = Key.expires;
-					    metadataValue = StringCaster.cast( DoubleCaster.cast( metadataValue ) / 60 / 60 / 24 );
-				    }
-
-				    cookieStruct.put( metadataType, metadataValue );
-			    } );
-		}
-
-		cookies.add( cookieStruct );
-	}
-
-	/**
-	 * Generate a status line from the HTTP version, status code, and status text
-	 *
-	 * @param httpVersionString The HTTP version string
-	 * @param statusCodeString  The status code string
-	 * @param statusText        The status text
-	 *
-	 * @return The generated status line
-	 */
-	private static String generateStatusLine( String httpVersionString, String statusCodeString, String statusText ) {
-		return httpVersionString + " " + statusCodeString + " " + statusText;
-	}
-
-	/**
-	 * Generate a header string from the status line and headers
-	 *
-	 * @param statusLine The status line
-	 * @param headers    The headers to include in the string
-	 *
-	 * @return The generated header string
-	 */
-	private static String generateHeaderString( String statusLine, IStruct headers ) {
-		return statusLine + " " + headers.entrySet()
-		    .stream()
-		    .sorted( Map.Entry.comparingByKey() )
-		    .map( entry -> {
-			    StringBuilder	sb				= new StringBuilder();
-			    Object			headerValues	= entry.getValue();
-			    CastAttempt<Array> isValuesArray = ArrayCaster.attempt( headerValues );
-			    if ( isValuesArray.wasSuccessful() ) {
-				    Array values = isValuesArray.getOrFail();
-				    for ( Object value : values ) {
-					    String headerValue = StringCaster.cast( value );
-					    sb.append( entry.getKey().getName() + ": " + headerValue + " " );
-				    }
-			    } else {
-				    String headerValue = StringCaster.cast( headerValues );
-				    sb.append( entry.getKey().getName() + ": " + headerValue + " " );
-			    }
-			    return sb.toString().trim();
-		    } ).collect( Collectors.joining( " " ) );
-	}
-
-	/**
-	 * Transform the headers map into a response header struct
-	 *
-	 * @param headersMap The headers map to transform
-	 *
-	 * @return The transformed response header struct
-	 */
-	private static IStruct transformToResponseHeaderStruct( Map<String, List<String>> headersMap ) {
-		IStruct responseHeaders = new Struct( false );
-
-		if ( headersMap == null ) {
-			return responseHeaders;
-		}
-
-		// Add all the headers to our struct
-		for ( String headerName : headersMap.keySet() ) {
-			if ( ":status".equals( headerName ) ) {
-				continue;
-			}
-			Key		headerNameKey	= Key.of( headerName );
-			Array	values			= ( Array ) responseHeaders.getOrDefault( headerNameKey, new Array() );
-			values.addAll( headersMap.get( headerName ) );
-			responseHeaders.put( headerNameKey, values );
-		}
-
-		for ( Key structHeaderKey : responseHeaders.keySet() ) {
-			CastAttempt<Array> isValuesArray = ArrayCaster.attempt( responseHeaders.get( structHeaderKey ) );
-			if ( isValuesArray.wasSuccessful() ) {
-				Array values = isValuesArray.getOrFail();
-				if ( values.size() == 1 ) {
-					responseHeaders.put( structHeaderKey, values.get( 0 ) );
-				}
-			}
-		}
-
-		return responseHeaders;
-	}
-
-	/**
-	 * Extract the charset from the content type string
-	 *
-	 * @param contentType The content type string to extract the charset from
-	 *
-	 * @return The extracted charset, or null if not found
-	 */
-	private static String extractCharset( String contentType ) {
-		if ( contentType == null || contentType.isEmpty() ) {
-			return null;
-		}
-
-		Matcher matcher = CHARSET_PATTERN.matcher( contentType );
-
-		if ( matcher.find() ) {
-			return matcher.group( 1 );
-		}
-		return null;
-	}
-
-	/**
 	 * Process a streaming HTTP response with chunk callback
 	 *
 	 * @param context           The BoxLang context
@@ -893,15 +686,15 @@ public class HTTP extends Component {
 
 		HttpHeaders	httpHeaders			= Optional.ofNullable( response.headers() )
 		    .orElse( HttpHeaders.of( Map.of(), ( a, b ) -> true ) );
-		IStruct		headers				= transformToResponseHeaderStruct( httpHeaders.map() );
+		IStruct		headers				= HttpResponseHelper.transformToResponseHeaderStruct( httpHeaders.map() );
 
 		// Extract content type and encoding
-		String		contentType			= extractFirstHeaderByName( headers, Key.contentType );
-		String		contentEncoding		= extractFirstHeaderByName( headers, Key.contentEncoding );
+		String		contentType			= HttpResponseHelper.extractFirstHeaderByName( headers, Key.contentType );
+		String		contentEncoding		= HttpResponseHelper.extractFirstHeaderByName( headers, Key.contentEncoding );
 
 		// Determine charset
 		String		charset				= contentType != null && contentType.contains( "charset=" )
-		    ? extractCharset( contentType )
+		    ? HttpResponseHelper.extractCharset( contentType )
 		    : "UTF-8";
 
 		// Determine if we should process as binary
@@ -922,7 +715,8 @@ public class HTTP extends Component {
 		headers.put( Key.explanation, statusText );
 
 		HTTPResult.put( Key.responseHeader, headers );
-		HTTPResult.put( Key.header, generateHeaderString( generateStatusLine( httpVersionString, statusCodeString, statusText ), headers ) );
+		HTTPResult.put( Key.header,
+		    HttpResponseHelper.generateHeaderString( HttpResponseHelper.generateStatusLine( httpVersionString, statusCodeString, statusText ), headers ) );
 		HTTPResult.put( Key.HTTP_Version, httpVersionString );
 		HTTPResult.put( Key.statusCode, response.statusCode() );
 		HTTPResult.put( Key.status_code, response.statusCode() );
@@ -936,10 +730,10 @@ public class HTTP extends Component {
 				HTTPResult.put( Key.mimetype, contentTypeParts[ 0 ] );
 			}
 			if ( contentTypeParts.length > 1 ) {
-				HTTPResult.put( Key.charset, extractCharset( headerContentType ) );
+				HTTPResult.put( Key.charset, HttpResponseHelper.extractCharset( headerContentType ) );
 			}
 		} );
-		HTTPResult.put( Key.cookies, generateCookiesQuery( headers ) );
+		HTTPResult.put( Key.cookies, HttpResponseHelper.generateCookiesQuery( headers ) );
 
 		// Stream processing - wrap the input stream with decompression if needed
 		InputStream	rawInputStream	= response.body();
@@ -1027,15 +821,15 @@ public class HTTP extends Component {
 
 		HttpHeaders	httpHeaders		= Optional.ofNullable( response.headers() )
 		    .orElse( HttpHeaders.of( Map.of(), ( a, b ) -> true ) );
-		IStruct		headers			= transformToResponseHeaderStruct( httpHeaders.map() );
+		IStruct		headers			= HttpResponseHelper.transformToResponseHeaderStruct( httpHeaders.map() );
 		byte[]		responseBytes	= response.body();
 		Object		responseBody	= null;
 
 		// Process body if not null
 		if ( responseBytes != null ) {
 
-			String	contentType		= extractFirstHeaderByName( headers, Key.contentType );
-			String	contentEncoding	= extractFirstHeaderByName( headers, Key.contentEncoding );
+			String	contentType		= HttpResponseHelper.extractFirstHeaderByName( headers, Key.contentType );
+			String	contentEncoding	= HttpResponseHelper.extractFirstHeaderByName( headers, Key.contentEncoding );
 
 			if ( contentEncoding != null ) {
 				// Split the Content-Encoding header into individual encodings
@@ -1058,7 +852,7 @@ public class HTTP extends Component {
 				throw new BoxRuntimeException( "The response is a binary type, but the getAsBinary attribute was set to 'never'" );
 			} else {
 				charset			= contentType != null && contentType.contains( "charset=" )
-				    ? extractCharset( contentType )
+				    ? HttpResponseHelper.extractCharset( contentType )
 				    : "UTF-8";
 				responseBody	= new String( responseBytes, Charset.forName( charset ) );
 			}
@@ -1073,7 +867,8 @@ public class HTTP extends Component {
 			headers.put( Key.explanation, statusText );
 
 			HTTPResult.put( Key.responseHeader, headers );
-			HTTPResult.put( Key.header, generateHeaderString( generateStatusLine( httpVersionString, statusCodeString, statusText ), headers ) );
+			HTTPResult.put( Key.header,
+			    HttpResponseHelper.generateHeaderString( HttpResponseHelper.generateStatusLine( httpVersionString, statusCodeString, statusText ), headers ) );
 			HTTPResult.put( Key.HTTP_Version, httpVersionString );
 			HTTPResult.put( Key.statusCode, response.statusCode() );
 			HTTPResult.put( Key.status_code, response.statusCode() );
@@ -1088,16 +883,16 @@ public class HTTP extends Component {
 					HTTPResult.put( Key.mimetype, contentTypeParts[ 0 ] );
 				}
 				if ( contentTypeParts.length > 1 ) {
-					HTTPResult.put( Key.charset, extractCharset( headerContentType ) );
+					HTTPResult.put( Key.charset, HttpResponseHelper.extractCharset( headerContentType ) );
 				}
 			} );
-			HTTPResult.put( Key.cookies, generateCookiesQuery( headers ) );
+			HTTPResult.put( Key.cookies, HttpResponseHelper.generateCookiesQuery( headers ) );
 			HTTPResult.put( Key.executionTime, Duration.between( startTime, Instant.now() ).toMillis() );
 
 			if ( outputDirectory != null ) {
 				String fileName = attributes.getAsString( Key.file );
 				if ( fileName == null || fileName.trim().isEmpty() ) {
-					String dispositionHeader = extractFirstHeaderByName( headers, Key.of( "content-disposition" ) );
+					String dispositionHeader = HttpResponseHelper.extractFirstHeaderByName( headers, Key.of( "content-disposition" ) );
 					if ( dispositionHeader != null ) {
 						Pattern	pattern	= Pattern.compile( "filename=\"?([^\";]+)\"?" );
 						Matcher	matcher	= pattern.matcher( dispositionHeader );
