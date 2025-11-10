@@ -17,18 +17,34 @@
  */
 package ortus.boxlang.runtime.services;
 
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.net.Authenticator;
+import java.net.InetSocketAddress;
+import java.net.PasswordAuthentication;
+import java.net.ProxySelector;
+import java.net.http.HttpClient;
+import java.security.KeyStore;
+import java.security.SecureRandom;
+import java.time.Duration;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.net.BoxHttpClient;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
- * This service manages all HTTP clients in BoxLang
+ * This service manages all HTTP clients in BoxLang.
+ * It is responsible for creating, caching, and reusing HTTP clients based on their configuration.
+ * It also handles the lifecycle events of the HTTP service within the BoxLang runtime.
  */
 public class HttpService extends BaseService {
 
@@ -163,7 +179,8 @@ public class HttpService extends BaseService {
 	 * @param client The HttpClient instance
 	 */
 	public BoxHttpClient putClient( Key key, BoxHttpClient client ) {
-		return this.clients.put( key, client );
+		this.clients.put( key, client );
+		return client;
 	}
 
 	/**
@@ -174,6 +191,201 @@ public class HttpService extends BaseService {
 	public HttpService removeClient( Key key ) {
 		this.clients.remove( key );
 		return this;
+	}
+
+	/**
+	 * Clear all cached HTTP clients
+	 * <p>
+	 * This method removes all cached clients from the service.
+	 * Useful for testing or when you need to force recreation of all clients.
+	 *
+	 * @return This HttpService instance for method chaining
+	 */
+	public HttpService clearAllClients() {
+		this.clients.clear();
+		return this;
+	}
+
+	/**
+	 * Get or Build the HTTP client associated with the incoming connection details.
+	 * <p>
+	 * This method will either return an existing cached client or build a new one
+	 * based on the provided connection parameters. Clients are cached based on their
+	 * configuration to enable connection pooling and reuse.
+	 *
+	 * @param httpVersion     The HTTP version to use ("HTTP/1.1" or "HTTP/2")
+	 * @param followRedirects Whether to follow redirects automatically
+	 * @param connectTimeout  The connection timeout in seconds (null for no timeout)
+	 * @param proxyServer     The proxy server address (null if no proxy)
+	 * @param proxyPort       The proxy server port (null if no proxy)
+	 * @param proxyUser       The proxy authentication username (null if no auth)
+	 * @param proxyPassword   The proxy authentication password (null if no auth)
+	 * @param clientCertPath  The path to the client certificate (null if none)
+	 * @param clientCertPass  The client certificate password (null if none)
+	 * @param debug           Whether debug mode is enabled
+	 *
+	 * @return The BoxHttpClient instance (cached or newly created)
+	 */
+	public BoxHttpClient getOrBuildClient(
+	    String httpVersion,
+	    boolean followRedirects,
+	    Integer connectTimeout,
+	    String proxyServer,
+	    Integer proxyPort,
+	    String proxyUser,
+	    String proxyPassword,
+	    String clientCertPath,
+	    String clientCertPass,
+	    boolean debug ) {
+
+		// Default httpVersion if null
+		if ( httpVersion == null ) {
+			httpVersion = BoxHttpClient.HTTP_2;
+		}
+
+		// Build a unique key for this client configuration
+		Key clientKey = buildClientKey(
+		    httpVersion,
+		    followRedirects,
+		    connectTimeout,
+		    proxyServer,
+		    proxyPort,
+		    proxyUser,
+		    proxyPassword,
+		    clientCertPath,
+		    clientCertPass,
+		    debug
+		);
+
+		// Return cached client if it exists
+		if ( hasClient( clientKey ) ) {
+			this.logger.debug( "Reusing cached HTTP client with key: {}", clientKey );
+			return getClient( clientKey );
+		}
+
+		// Build a new HttpClient with the specified configuration
+		this.logger.debug( "Building new HTTP client with key: {}", clientKey );
+
+		// Create HttpClient builder
+		HttpClient.Builder builder = HttpClient.newBuilder()
+		    // Configure Executor
+		    .executor( this.httpExecutor.executor() )
+		    // Configure redirect policy
+		    .followRedirects( followRedirects ? HttpClient.Redirect.NORMAL : HttpClient.Redirect.NEVER )
+		    // Configure HTTP version
+		    .version( httpVersion.equalsIgnoreCase( BoxHttpClient.HTTP_1 )
+		        ? HttpClient.Version.HTTP_1_1
+		        : HttpClient.Version.HTTP_2
+		    );
+
+		// Configure connect timeout
+		if ( connectTimeout != null ) {
+			builder.connectTimeout( Duration.ofSeconds( connectTimeout ) );
+		}
+
+		// Configure proxy
+		if ( proxyServer != null && proxyPort != null ) {
+			builder.proxy( ProxySelector.of( new InetSocketAddress( proxyServer, proxyPort ) ) );
+
+			// Configure proxy authentication if credentials provided
+			if ( proxyUser != null && proxyPassword != null ) {
+				builder.authenticator( new Authenticator() {
+
+					@Override
+					protected PasswordAuthentication getPasswordAuthentication() {
+						return new PasswordAuthentication( proxyUser, proxyPassword.toCharArray() );
+					}
+				} );
+			}
+		}
+
+		// Configure client certificate (SSL/TLS)
+		if ( clientCertPath != null ) {
+			try {
+				// Load the client certificate into a new keystore
+				KeyStore keyStore = KeyStore.getInstance( "PKCS12" );
+				try ( InputStream certInputStream = new FileInputStream( clientCertPath ) ) {
+					keyStore.load( certInputStream, clientCertPass != null ? clientCertPass.toCharArray() : null );
+				}
+
+				KeyManagerFactory keyManagerFactory = KeyManagerFactory
+				    .getInstance( KeyManagerFactory.getDefaultAlgorithm() );
+				keyManagerFactory.init( keyStore, clientCertPass != null ? clientCertPass.toCharArray() : null );
+
+				SSLContext sslContext = SSLContext.getInstance( "TLS" );
+				sslContext.init( keyManagerFactory.getKeyManagers(), null, new SecureRandom() );
+
+				builder.sslContext( sslContext );
+			} catch ( Exception e ) {
+				this.logger.error( "Failed to configure client certificate: {}", clientCertPath, e );
+				throw new BoxRuntimeException(
+				    "Failed to configure client certificate: " + clientCertPath,
+				    e
+				);
+			}
+		}
+
+		// Create our BoxHttpClient wrapper
+		this.logger.debug( "HTTP client created and cached with key: {}", clientKey );
+		return putClient( clientKey, new BoxHttpClient( builder.build(), this ) );
+	}
+
+	/**
+	 * Builds a unique cache key for an HTTP client based on its configuration.
+	 * <p>
+	 * The key is constructed from all configuration parameters that affect the
+	 * underlying HttpClient behavior, ensuring that clients with identical
+	 * configurations can be reused.
+	 *
+	 * @param httpVersion     The HTTP version to use
+	 * @param followRedirects Whether to follow redirects
+	 * @param connectTimeout  The connection timeout in seconds
+	 * @param proxyServer     The proxy server address
+	 * @param proxyPort       The proxy server port
+	 * @param proxyUser       The proxy authentication username
+	 * @param proxyPassword   The proxy authentication password
+	 * @param clientCertPath  The path to the client certificate
+	 * @param clientCertPass  The client certificate password
+	 * @param debug           Whether debug mode is enabled
+	 *
+	 * @return A unique Key identifying this client configuration
+	 */
+	private Key buildClientKey(
+	    String httpVersion,
+	    boolean followRedirects,
+	    Integer connectTimeout,
+	    String proxyServer,
+	    Integer proxyPort,
+	    String proxyUser,
+	    String proxyPassword,
+	    String clientCertPath,
+	    String clientCertPass,
+	    boolean debug ) {
+		// Build a composite key from all configuration parameters
+		StringBuilder keyBuilder = new StringBuilder( "httpclient:" );
+
+		keyBuilder.append( "v=" ).append( httpVersion != null ? httpVersion : BoxHttpClient.HTTP_2 ).append( ";" );
+		keyBuilder.append( "redir=" ).append( followRedirects ).append( ";" );
+		keyBuilder.append( "timeout=" ).append( connectTimeout != null ? connectTimeout : "none" ).append( ";" );
+		keyBuilder.append( "debug=" ).append( debug ).append( ";" );
+
+		// Proxy configuration
+		if ( proxyServer != null && proxyPort != null ) {
+			keyBuilder.append( "proxy=" ).append( proxyServer ).append( ":" ).append( proxyPort ).append( ";" );
+			if ( proxyUser != null ) {
+				keyBuilder.append( "proxyAuth=" ).append( proxyUser ).append( ";" );
+				// Note: We don't include password in the key for security, but we include a flag
+				keyBuilder.append( "proxyPass=" ).append( proxyPassword != null ? "yes" : "no" ).append( ";" );
+			}
+		}
+
+		// Client certificate configuration
+		if ( clientCertPath != null ) {
+			keyBuilder.append( "cert=" ).append( clientCertPath ).append( ";" );
+			keyBuilder.append( "certPass=" ).append( clientCertPass != null ? "yes" : "no" ).append( ";" );
+		}
+
+		return Key.of( keyBuilder.toString() );
 	}
 
 }
