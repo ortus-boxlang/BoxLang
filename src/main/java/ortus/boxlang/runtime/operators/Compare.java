@@ -239,4 +239,22 @@ public class Compare implements IOperator {
 		return null;
 	}
 
+	/**
+	 * Converts a compare result to an integer. This allows sort callbacks to return any numeric value.
+	 * 
+	 * @param result The compare result
+	 * 
+	 * @return The integer comparison value
+	 */
+	public static Integer convertCompareResultToInteger( Object result ) {
+		Double numResult = NumberCaster.cast( result ).doubleValue();
+		if ( numResult == 0 ) {
+			return 0;
+		} else if ( numResult > 0 ) {
+			return 1;
+		} else {
+			return -1;
+		}
+	}
+
 }

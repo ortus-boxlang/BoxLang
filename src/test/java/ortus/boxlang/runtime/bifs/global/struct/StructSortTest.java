@@ -352,4 +352,27 @@ public class StructSortTest {
 		assertEquals( variables.getAsArray( result ).get( 2 ), "zena" );
 	}
 
+	@DisplayName( "It allows decimals in callbacks" )
+	@Test
+	public void testCallbackDecimals() {
+
+		instance.executeSource(
+		    """
+		      	myStruct = {
+		    	cow: {
+		    		total: 3.4
+		    	},
+		    	pig: {
+		    		total: 2.8
+		    	},
+		    	cat: {
+		    		total: 1.3
+		    	}
+		    };
+
+		      	result = structSort( myStruct, ( a , b ) => myStruct[ b ].total - myStruct[ a ].total )
+
+		      """,
+		    context );
+	}
 }
