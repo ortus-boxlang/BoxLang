@@ -113,6 +113,13 @@
   - Max line length: 150 characters
   - Non-negotiable for all contributions and changes
 
+- **Performance Patterns:**
+  - **Pre-compute hashCode for immutable objects:** If a class is immutable (all fields are final and never change), pre-compute the hashCode in the constructor and store it in a `final int hashCode` field. This avoids repeated computation when the object is used in hash-based collections (HashMap, HashSet, etc.). The `hashCode()` method should simply return this cached field.
+    - When: All immutable value objects (classes with only final fields)
+    - How: Add `private final int hashCode;` field, create `computeHashCode()` private method using standard pattern (`31 * result + field.hashCode()`), call in constructor
+    - Example: See `ortus.boxlang.runtime.types.NameValuePair` for reference implementation
+    - Performance rationale: Avoids O(n) hashCode computation on every HashMap/HashSet operation, especially beneficial for objects frequently used as keys
+
 - **Services:** Implement `IService` and register in `BoxRuntime` for global services.
 - **Components:** Annotate with `@BoxComponent` and place in `runtime/components/` for auto-discovery.
 - **Functions (BIFs):** Register via `FunctionService` and use `BIFDescriptor`/`BoxBIF` patterns.
