@@ -195,12 +195,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	public Query( Map<Key, QueryColumn> columns ) {
 		this();
-		this.columns = Collections.synchronizedMap( new LinkedHashMap<>( columns ) );
-		// Re-index the columns
-		int index = 0;
-		for ( QueryColumn column : columns.values() ) {
-			column.setIndex( index++ );
-		}
+		columns.forEach( ( k, v ) -> {
+			addColumn( k, v.getType() );
+		} );
 	}
 
 	/**
