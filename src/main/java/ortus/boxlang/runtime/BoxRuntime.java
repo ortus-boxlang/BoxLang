@@ -76,6 +76,7 @@ import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.services.FunctionService;
+import ortus.boxlang.runtime.services.HttpService;
 import ortus.boxlang.runtime.services.IService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.services.ModuleService;
@@ -248,6 +249,11 @@ public class BoxRuntime implements java.io.Closeable {
 	 * Please note that it does not adhere to the IService to avoid chicken-and-egg issues
 	 */
 	private LoggingService						loggingService;
+
+	/**
+	 * The HTTP Service that manages all HTTP clients and operations
+	 */
+	private HttpService							httpService;
 
 	/**
 	 * Startup Exception. Used to track a startup failure so this instance knows it failed to start.
@@ -469,6 +475,7 @@ public class BoxRuntime implements java.io.Closeable {
 		this.moduleService		= new ModuleService( this );
 		this.schedulerService	= new SchedulerService( this );
 		this.dataSourceService	= new DatasourceService( this );
+		this.httpService		= new HttpService( this );
 
 		// Initiate the Class Locator Service in charge of doing all the class
 		// resolutions
@@ -501,6 +508,7 @@ public class BoxRuntime implements java.io.Closeable {
 		this.moduleService.onConfigurationLoad();
 		this.schedulerService.onConfigurationLoad();
 		this.dataSourceService.onConfigurationLoad();
+		this.httpService.onConfigurationLoad();
 
 		// Seed Mathematical Precision for the runtime
 		MathUtil.setHighPrecisionMath( getConfiguration().useHighPrecisionMath );
@@ -526,6 +534,9 @@ public class BoxRuntime implements java.io.Closeable {
 		// Now the datasource manager can be started, this allows for modules to
 		// register datasources
 		this.dataSourceService.onStartup();
+		// Now the HTTP service can be started, this allows for modules to register
+		// HTTP clients or settings
+		this.httpService.onStartup();
 
 		// Global Services are now available, start them up
 		this.globalServices.values()
@@ -795,6 +806,15 @@ public class BoxRuntime implements java.io.Closeable {
 	 */
 	public LoggingService getLoggingService() {
 		return loggingService;
+	}
+
+	/**
+	 * Get the HTTP service
+	 *
+	 * @return {@link HttpService} or null if the runtime has not started
+	 */
+	public HttpService getHttpService() {
+		return httpService;
 	}
 
 	/**

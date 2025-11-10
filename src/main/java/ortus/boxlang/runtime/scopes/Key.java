@@ -406,6 +406,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		hour								= Key.of( "hour" );
 	public static final Key		hours								= Key.of( "hours" );
 	public static final Key		HTTP								= Key.of( "http" );
+	public static final Key		httpService							= Key.of( "httpService" );
 	public static final Key		http_accept							= Key.of( "http_accept" );
 	public static final Key		http_accept_encoding				= Key.of( "http_accept_encoding" );
 	public static final Key		http_accept_language				= Key.of( "http_accept_language" );
@@ -517,6 +518,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		mask								= Key.of( "mask" );
 	public static final Key		match								= Key.of( "match" );
 	public static final Key		max									= Key.of( "max" );
+	public static final Key		maxAge								= Key.of( "max-age" );
 	public static final Key		maxFileSize							= Key.of( "maxFileSize" );
 	public static final Key		maxFrames							= Key.of( "maxFrames" );
 	public static final Key		maxLength							= Key.of( "maxLength" );
@@ -748,6 +750,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		sessionStorage						= Key.of( "sessionStorage" );
 	public static final Key		sessionTimeout						= Key.of( "sessionTimeout" );
 	public static final Key		set									= Key.of( "set" );
+	public static final Key		setCookie							= Key.of( "Set-Cookie" );
 	public static final Key		setClientCookies					= Key.of( "setClientCookies" );
 	public static final Key		setDomainCookies					= Key.of( "setDomainCookies" );
 	public static final Key		settings							= Key.of( "settings" );
