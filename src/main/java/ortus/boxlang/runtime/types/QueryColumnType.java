@@ -118,6 +118,7 @@ public enum QueryColumnType {
 			case "nvarchar" :
 			case "longvarchar" :
 			case "longnvarchar" :
+			case "text" :
 				return VARCHAR;
 			case "object" :
 				return OBJECT;
