@@ -107,6 +107,7 @@ public class HttpService extends BaseService {
 			this.logger.info( "+ Http Service graceful shutdown initiated" );
 			this.httpExecutor.shutdownAndAwaitTermination( SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS );
 		}
+		this.clients.clear();
 		this.logger.info( "+ Http Service shutdown complete" );
 	}
 
@@ -276,8 +277,12 @@ public class HttpService extends BaseService {
 
 		// Return cached client if it exists
 		if ( hasClient( clientKey ) ) {
-			this.logger.debug( "Reusing cached HTTP client with key: {}", clientKey );
-			return getClient( clientKey );
+			synchronized ( this.clients ) {
+				if ( hasClient( clientKey ) ) {
+					this.logger.debug( "Reusing cached HTTP client with key: {}", clientKey );
+					return getClient( clientKey );
+				}
+			}
 		}
 
 		// Build a new HttpClient with the specified configuration

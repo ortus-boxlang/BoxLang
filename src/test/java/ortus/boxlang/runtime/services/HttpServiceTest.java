@@ -75,8 +75,7 @@ public class HttpServiceTest {
 		    null,
 		    null,
 		    null,
-		    null,
-		    false
+		    null
 		);
 
 		assertThat( client ).isNotNull();
@@ -95,8 +94,7 @@ public class HttpServiceTest {
 		    null,
 		    null,
 		    null,
-		    null,
-		    false
+		    null
 		);
 
 		BoxHttpClient	client2	= service.getOrBuildClient(
@@ -108,8 +106,7 @@ public class HttpServiceTest {
 		    null,
 		    null,
 		    null,
-		    null,
-		    false
+		    null
 		);
 
 		assertThat( client1 ).isSameInstanceAs( client2 );
@@ -128,8 +125,7 @@ public class HttpServiceTest {
 		    null,
 		    null,
 		    null,
-		    null,
-		    false
+		    null
 		);
 
 		BoxHttpClient	client2	= service.getOrBuildClient(
@@ -141,8 +137,7 @@ public class HttpServiceTest {
 		    null,
 		    null,
 		    null,
-		    null,
-		    false
+		    null
 		);
 
 		assertThat( client1 ).isNotSameInstanceAs( client2 );
@@ -161,8 +156,7 @@ public class HttpServiceTest {
 		    null,
 		    null,
 		    null,
-		    null,
-		    false
+		    null
 		);
 
 		BoxHttpClient	client2	= service.getOrBuildClient(
@@ -174,8 +168,7 @@ public class HttpServiceTest {
 		    null,
 		    null,
 		    null,
-		    null,
-		    false
+		    null
 		);
 
 		assertThat( client1 ).isNotSameInstanceAs( client2 );
@@ -194,8 +187,7 @@ public class HttpServiceTest {
 		    null,
 		    null,
 		    null,
-		    null,
-		    false
+		    null
 		);
 
 		BoxHttpClient	client2	= service.getOrBuildClient(
@@ -207,41 +199,7 @@ public class HttpServiceTest {
 		    null,
 		    null,
 		    null,
-		    null,
-		    false
-		);
-
-		assertThat( client1 ).isNotSameInstanceAs( client2 );
-		assertThat( service.getClientCount() ).isEqualTo( 2 );
-	}
-
-	@DisplayName( "Test getOrBuildClient creates different clients for different debug settings" )
-	@Test
-	void testDifferentDebugSettingsCreateDifferentClients() {
-		BoxHttpClient	client1	= service.getOrBuildClient(
-		    "HTTP/2",
-		    true,
-		    30,
-		    null,
-		    null,
-		    null,
-		    null,
-		    null,
-		    null,
-		    false
-		);
-
-		BoxHttpClient	client2	= service.getOrBuildClient(
-		    "HTTP/2",
-		    true,
-		    30,
-		    null,
-		    null,
-		    null,
-		    null,
-		    null,
-		    null,
-		    true
+		    null
 		);
 
 		assertThat( client1 ).isNotSameInstanceAs( client2 );
@@ -260,8 +218,7 @@ public class HttpServiceTest {
 		    null,
 		    null,
 		    null,
-		    null,
-		    false
+		    null
 		);
 
 		assertThat( client ).isNotNull();
@@ -280,8 +237,7 @@ public class HttpServiceTest {
 		    "proxyuser",
 		    "proxypass",
 		    null,
-		    null,
-		    false
+		    null
 		);
 
 		assertThat( client ).isNotNull();
@@ -300,8 +256,7 @@ public class HttpServiceTest {
 		    null,
 		    null,
 		    null,
-		    null,
-		    false
+		    null
 		);
 
 		BoxHttpClient	client2	= service.getOrBuildClient(
@@ -313,8 +268,7 @@ public class HttpServiceTest {
 		    null,
 		    null,
 		    null,
-		    null,
-		    false
+		    null
 		);
 
 		assertThat( client1 ).isNotSameInstanceAs( client2 );
@@ -333,18 +287,17 @@ public class HttpServiceTest {
 		    null,
 		    null,
 		    null,
-		    null,
-		    false
+		    null
 		);
 
-		Key clientKey = service.buildClientKey( "HTTP/2", true, 30, null, null, null, null, null, null, false );
+		Key clientKey = service.buildClientKey( "HTTP/2", true, 30, null, null, null, null, null, null );
 		assertThat( service.hasClient( clientKey ) ).isTrue();
 	}
 
 	@DisplayName( "Test hasClient returns false for non-existing client" )
 	@Test
 	void testHasClientReturnsFalse() {
-		Key clientKey = service.buildClientKey( "HTTP/1.1", false, 60, null, null, null, null, null, null, false );
+		Key clientKey = service.buildClientKey( "HTTP/1.1", false, 60, null, null, null, null, null, null );
 		assertThat( service.hasClient( clientKey ) ).isFalse();
 	}
 
@@ -367,13 +320,12 @@ public class HttpServiceTest {
 		    null,
 		    null,
 		    null,
-		    null,
-		    false
+		    null
 		);
 
 		assertThat( service.getClientCount() ).isEqualTo( 1 );
 
-		Key clientKey = service.buildClientKey( "HTTP/2", true, 30, null, null, null, null, null, null, false );
+		Key clientKey = service.buildClientKey( "HTTP/2", true, 30, null, null, null, null, null, null );
 		service.removeClient( clientKey );
 
 		assertThat( service.getClientCount() ).isEqualTo( 0 );
@@ -392,11 +344,10 @@ public class HttpServiceTest {
 		    null,
 		    null,
 		    null,
-		    null,
-		    false
+		    null
 		);
 
-		Key			clientKey		= service.buildClientKey( "HTTP/2", true, 30, null, null, null, null, null, null, false );
+		Key			clientKey		= service.buildClientKey( "HTTP/2", true, 30, null, null, null, null, null, null );
 		HttpService	returnedService	= service.removeClient( clientKey );
 
 		assertThat( returnedService ).isSameInstanceAs( service );
@@ -415,8 +366,7 @@ public class HttpServiceTest {
 			    null,
 			    null,
 			    "/path/to/nonexistent/cert.p12",
-			    "password",
-			    false
+			    "password"
 			);
 		} );
 	}
@@ -433,8 +383,7 @@ public class HttpServiceTest {
 		    null,
 		    null,
 		    null,
-		    null,
-		    false
+		    null
 		);
 
 		assertThat( client ).isNotNull();
@@ -454,8 +403,7 @@ public class HttpServiceTest {
 		    null,
 		    null,
 		    null,
-		    null,
-		    false
+		    null
 		);
 
 		assertThat( client ).isNotNull();
@@ -465,10 +413,10 @@ public class HttpServiceTest {
 	@DisplayName( "Test multiple clients can coexist" )
 	@Test
 	void testMultipleClientsCanCoexist() {
-		BoxHttpClient	client1	= service.getOrBuildClient( "HTTP/1.1", true, 30, null, null, null, null, null, null, false );
-		BoxHttpClient	client2	= service.getOrBuildClient( "HTTP/2", true, 30, null, null, null, null, null, null, false );
-		BoxHttpClient	client3	= service.getOrBuildClient( "HTTP/2", false, 30, null, null, null, null, null, null, false );
-		BoxHttpClient	client4	= service.getOrBuildClient( "HTTP/2", true, 60, null, null, null, null, null, null, false );
+		BoxHttpClient	client1	= service.getOrBuildClient( "HTTP/1.1", true, 30, null, null, null, null, null, null );
+		BoxHttpClient	client2	= service.getOrBuildClient( "HTTP/2", true, 30, null, null, null, null, null, null );
+		BoxHttpClient	client3	= service.getOrBuildClient( "HTTP/2", false, 30, null, null, null, null, null, null );
+		BoxHttpClient	client4	= service.getOrBuildClient( "HTTP/2", true, 60, null, null, null, null, null, null );
 
 		assertThat( service.getClientCount() ).isEqualTo( 4 );
 		assertThat( client1 ).isNotSameInstanceAs( client2 );
