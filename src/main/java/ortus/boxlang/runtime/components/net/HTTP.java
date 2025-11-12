@@ -36,7 +36,6 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.HttpService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
@@ -233,7 +232,6 @@ public class HTTP extends Component {
 		boolean	isBinaryRequested	= BINARY_REQUEST_VALUES
 		    .stream()
 		    .anyMatch( value -> value.equals( binaryOperator ) );
-		Struct	HTTPResult			= new Struct();
 
 		// Expand client certificate path if provided
 		if ( attributes.containsKey( Key.clientCert ) ) {
