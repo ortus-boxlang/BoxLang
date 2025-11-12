@@ -1176,8 +1176,29 @@ public class BoxHttpClient {
 				this.requestException	= e;
 				this.errorMessage		= e.getMessage();
 
+				logger.error( "ExecutionException during HTTP request", e );
+
+				// Handle timeout exceptions FIRST (most specific)
+				if ( innerException instanceof HttpTimeoutException ) {
+					logger.debug( "HttpTimeoutException detected - request timed out after {} seconds", this.timeout );
+					this.httpResult.put( Key.responseHeader, new Struct( false ) );
+					this.httpResult.put( Key.header, "" );
+					this.httpResult.put( Key.statusCode, 408 );
+					this.httpResult.put( Key.status_code, 408 );
+					this.httpResult.put( Key.statusText, "Request Timeout" );
+					this.httpResult.put( Key.status_text, "Request Timeout" );
+					this.httpResult.put( Key.fileContent, "Request Timeout" );
+					this.httpResult.put( Key.errorDetail, "The request timed out after " + this.timeout + " second(s)" );
+					this.httpResult.put( Key.charset, this.charset );
+					this.httpResult.put( Key.executionTime, Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
+					// Call onError callback if provided
+					if ( onErrorCallback != null ) {
+						context.invokeFunction( onErrorCallback, new Object[] { innerException, this.httpResult } );
+					}
+				}
 				// Handle connection exceptions
-				if ( innerException instanceof SocketException ) {
+				else if ( innerException instanceof SocketException ) {
+					logger.debug( "SocketException detected: {}", innerException.getMessage() );
 					this.httpResult.put( Key.responseHeader, new Struct( false ) );
 					this.httpResult.put( Key.header, "" );
 					this.httpResult.put( Key.statusCode, 502 );
@@ -1185,6 +1206,8 @@ public class BoxHttpClient {
 					this.httpResult.put( Key.statusText, "Bad Gateway" );
 					this.httpResult.put( Key.status_text, "Bad Gateway" );
 					this.httpResult.put( Key.fileContent, "Connection Failure" );
+					this.httpResult.put( Key.charset, this.charset );
+					this.httpResult.put( Key.executionTime, Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
 					if ( innerException instanceof ConnectException ) {
 						if ( this.targetHttpRequest.uri() != null ) {
 							this.httpResult.put( Key.errorDetail,
@@ -1196,40 +1219,46 @@ public class BoxHttpClient {
 					} else {
 						this.httpResult.put( Key.errorDetail, "Connection Failure: " + innerException.getMessage() );
 					}
-					// Call onError callback if provided before re-throwing
+					// Call onError callback if provided
 					if ( onErrorCallback != null ) {
 						context.invokeFunction( onErrorCallback, new Object[] { innerException, this.httpResult } );
 					}
 				}
-				// Handle timeout exceptions
-				else if ( innerException instanceof HttpTimeoutException ) {
+				// Handle any other ExecutionException
+				else {
+					logger.error( "Unhandled ExecutionException with inner exception: {}",
+					    innerException != null ? innerException.getClass().getName() : "null", e );
 					this.httpResult.put( Key.responseHeader, new Struct() );
 					this.httpResult.put( Key.header, "" );
-					this.httpResult.put( Key.statusCode, 408 );
-					this.httpResult.put( Key.status_code, 408 );
-					this.httpResult.put( Key.statusText, "Request Timeout" );
-					this.httpResult.put( Key.status_text, "Request Timeout" );
-					this.httpResult.put( Key.fileContent, "Request Timeout" );
-					this.httpResult.put( Key.errorDetail, "The request timed out after " + this.timeout + " second(s)" );
-					// Call onError callback if provided before re-throwing
+					this.httpResult.put( Key.statusCode, 500 );
+					this.httpResult.put( Key.status_code, 500 );
+					this.httpResult.put( Key.statusText, "Internal Server Error" );
+					this.httpResult.put( Key.status_text, "Internal Server Error" );
+					this.httpResult.put( Key.fileContent, "" );
+					this.httpResult.put( Key.charset, this.charset );
+					this.httpResult.put( Key.executionTime, Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
+					this.httpResult.put( Key.errorDetail,
+					    innerException != null
+					        ? innerException.getClass().getName() + ": " + innerException.getMessage()
+					        : e.getMessage()
+					);
+					// Call onError callback if provided
 					if ( onErrorCallback != null ) {
-						context.invokeFunction( onErrorCallback, new Object[] { innerException, this.httpResult } );
-					}
-				} else {
-					// Call onError callback if provided before re-throwing
-					if ( onErrorCallback != null ) {
-						context.invokeFunction( onErrorCallback, new Object[] { e, this.httpResult } );
+						context.invokeFunction( onErrorCallback, new Object[] { innerException != null ? innerException : e, this.httpResult } );
 					}
 				}
 			} catch ( InterruptedException e ) {
 				// interrupt the thread
 				Thread.currentThread().interrupt();
+				logger.warn( "Thread interrupted during HTTP request", e );
 				this.error				= true;
 				this.errorMessage		= e.getMessage();
 				this.requestException	= e;
+				this.httpResult.put( Key.errorDetail, "Thread interrupted: " + e.getMessage() );
 			}
-			// Rarely occurs since we handle most IOExceptions in the ExecutionException block
-			catch ( URISyntaxException | IOException e ) {
+			// Catch-all for any other unexpected exceptions
+			catch ( Exception e ) {
+				logger.error( "Unexpected exception during HTTP request", e );
 				if ( this.onErrorCallback != null ) {
 					context.invokeFunction(
 					    this.onErrorCallback,
@@ -1239,6 +1268,13 @@ public class BoxHttpClient {
 				this.error				= true;
 				this.errorMessage		= e.getMessage();
 				this.requestException	= e;
+				this.httpResult.put( Key.statusCode, 500 );
+				this.httpResult.put( Key.status_code, 500 );
+				this.httpResult.put( Key.statusText, "Internal Server Error" );
+				this.httpResult.put( Key.status_text, "Internal Server Error" );
+				this.httpResult.put( Key.errorDetail, e.getClass().getName() + ": " + e.getMessage() );
+				this.httpResult.put( Key.charset, this.charset );
+				this.httpResult.put( Key.executionTime, Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
 			}
 
 			return this;

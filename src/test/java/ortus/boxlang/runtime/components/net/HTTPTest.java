@@ -801,15 +801,19 @@ public class HTTPTest {
 	@DisplayName( "It can handle timeouts" )
 	@Test
 	public void testTimeout( WireMockRuntimeInfo wmRuntimeInfo ) {
-		stubFor( get( "/timeout" ).willReturn( aResponse().withStatus( 200 ).withFixedDelay( 5000 ) ) );
+		stubFor( get( "/timeout" )
+		    .willReturn(
+		        aResponse()
+		            .withStatus( 200 )
+		            .withFixedDelay( 5000 ) )
+		);
 
 		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
 		// @formatter:off
 		instance.executeSource( String.format( """
-			bx:http timeout="1" method="GET" url="%s" {
-				bx:httpparam type="header" name="User-Agent" value="HyperCFML/7.5.2";
-			}
+			bx:http timeout="1" method="GET" url="%s";
 			result = bxhttp;
+			println( result )
 		""", baseURL + "/timeout" ), context );
 		// @formatter:on
 
