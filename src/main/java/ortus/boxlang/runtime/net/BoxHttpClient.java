@@ -86,6 +86,11 @@ public class BoxHttpClient {
 	public static final int					DEFAULT_REQUEST_TIMEOUT		= 0;
 	public static final boolean				DEFAULT_THROW_ON_ERROR		= true;
 
+	// HTTP Status Codes
+	public static final int					STATUS_REQUEST_TIMEOUT		= 408;
+	public static final int					STATUS_INTERNAL_ERROR		= 500;
+	public static final int					STATUS_BAD_GATEWAY			= 502;
+
 	/**
 	 * ------------------------------------------------------------------------------
 	 * Static Services
@@ -532,8 +537,18 @@ public class BoxHttpClient {
 		 * @param charset The charset to use
 		 *
 		 * @return This builder for chaining
+		 *
+		 * @throws BoxRuntimeException if the charset is not supported
 		 */
 		public BoxHttpRequest charset( String charset ) {
+			// Validate charset is supported
+			if ( charset != null && !charset.isEmpty() ) {
+				try {
+					Charset.forName( charset );
+				} catch ( Exception e ) {
+					throw new BoxRuntimeException( "Invalid or unsupported charset: " + charset, e );
+				}
+			}
 			this.charset = charset;
 			return this;
 		}
@@ -680,7 +695,7 @@ public class BoxHttpClient {
 		public BoxHttpRequest file( String name, String filePath ) {
 			ortus.boxlang.runtime.types.IStruct param = new ortus.boxlang.runtime.types.Struct();
 			param.put( ortus.boxlang.runtime.scopes.Key.type, "file" );
-			param.put( ortus.boxlang.runtime.scopes.Key._name, name );
+			param.put( ortus.boxlang.runtime.scopes.Key._NAME, name );
 			param.put( ortus.boxlang.runtime.scopes.Key.file, filePath );
 			this.params.add( param );
 			return this;
@@ -698,7 +713,7 @@ public class BoxHttpClient {
 		public BoxHttpRequest file( String name, String filePath, String mimeType ) {
 			ortus.boxlang.runtime.types.IStruct param = new ortus.boxlang.runtime.types.Struct();
 			param.put( ortus.boxlang.runtime.scopes.Key.type, "file" );
-			param.put( ortus.boxlang.runtime.scopes.Key._name, name );
+			param.put( ortus.boxlang.runtime.scopes.Key._NAME, name );
 			param.put( ortus.boxlang.runtime.scopes.Key.file, filePath );
 			param.put( ortus.boxlang.runtime.scopes.Key.mimetype, mimeType );
 			this.params.add( param );
@@ -972,7 +987,7 @@ public class BoxHttpClient {
 						bodyPublisher = HttpRequest.BodyPublishers.ofString( StringCaster.cast( param.get( Key.value ) ) );
 					}
 
-					// @TODO move URLEncoder.encode usage a non-deprecated method
+					// CGI parameter - uses URL encoding
 					case "cgi" -> requestBuilder.header( StringCaster.cast( param.get( Key._NAME ) ),
 					    BooleanCaster.cast( param.getOrDefault( Key.encoded, false ) )
 					        ? EncryptionUtil.urlEncode( StringCaster.cast( param.get( Key.value ) ) )
@@ -1016,6 +1031,26 @@ public class BoxHttpClient {
 			String	auth		= ( this.username != null ? this.username : "" ) + ":" + ( this.password != null ? this.password : "" );
 			String	encodedAuth	= Base64.getEncoder().encodeToString( auth.getBytes() );
 			requestBuilder.header( "Authorization", "Basic " + encodedAuth );
+		}
+
+		/**
+		 * Helper method to extract charset from Content-Type header
+		 *
+		 * @param contentType The Content-Type header value
+		 *
+		 * @return The charset name, or null if not found
+		 */
+		private String extractCharsetFromContentType( String contentType ) {
+			if ( contentType == null || contentType.isEmpty() ) {
+				return null;
+			}
+			String[] parts = contentType.split( ";\s*" );
+			for ( String part : parts ) {
+				if ( part.trim().toLowerCase().startsWith( "charset=" ) ) {
+					return part.substring( part.indexOf( '=' ) + 1 ).trim();
+				}
+			}
+			return null;
 		}
 
 		/**
@@ -1183,8 +1218,8 @@ public class BoxHttpClient {
 					logger.debug( "HttpTimeoutException detected - request timed out after {} seconds", this.timeout );
 					this.httpResult.put( Key.responseHeader, new Struct( false ) );
 					this.httpResult.put( Key.header, "" );
-					this.httpResult.put( Key.statusCode, 408 );
-					this.httpResult.put( Key.status_code, 408 );
+					this.httpResult.put( Key.statusCode, STATUS_REQUEST_TIMEOUT );
+					this.httpResult.put( Key.status_code, STATUS_REQUEST_TIMEOUT );
 					this.httpResult.put( Key.statusText, "Request Timeout" );
 					this.httpResult.put( Key.status_text, "Request Timeout" );
 					this.httpResult.put( Key.fileContent, "Request Timeout" );
@@ -1201,8 +1236,8 @@ public class BoxHttpClient {
 					logger.debug( "SocketException detected: {}", innerException.getMessage() );
 					this.httpResult.put( Key.responseHeader, new Struct( false ) );
 					this.httpResult.put( Key.header, "" );
-					this.httpResult.put( Key.statusCode, 502 );
-					this.httpResult.put( Key.status_code, 502 );
+					this.httpResult.put( Key.statusCode, STATUS_BAD_GATEWAY );
+					this.httpResult.put( Key.status_code, STATUS_BAD_GATEWAY );
 					this.httpResult.put( Key.statusText, "Bad Gateway" );
 					this.httpResult.put( Key.status_text, "Bad Gateway" );
 					this.httpResult.put( Key.fileContent, "Connection Failure" );
@@ -1232,8 +1267,8 @@ public class BoxHttpClient {
 					);
 					this.httpResult.put( Key.responseHeader, new Struct() );
 					this.httpResult.put( Key.header, "" );
-					this.httpResult.put( Key.statusCode, 500 );
-					this.httpResult.put( Key.status_code, 500 );
+					this.httpResult.put( Key.statusCode, STATUS_INTERNAL_ERROR );
+					this.httpResult.put( Key.status_code, STATUS_INTERNAL_ERROR );
 					this.httpResult.put( Key.statusText, "Internal Server Error" );
 					this.httpResult.put( Key.status_text, "Internal Server Error" );
 					this.httpResult.put( Key.fileContent, "" );
@@ -1275,8 +1310,8 @@ public class BoxHttpClient {
 				this.error				= true;
 				this.errorMessage		= e.getMessage();
 				this.requestException	= e;
-				this.httpResult.put( Key.statusCode, 500 );
-				this.httpResult.put( Key.status_code, 500 );
+				this.httpResult.put( Key.statusCode, STATUS_INTERNAL_ERROR );
+				this.httpResult.put( Key.status_code, STATUS_INTERNAL_ERROR );
 				this.httpResult.put( Key.statusText, "Internal Server Error" );
 				this.httpResult.put( Key.status_text, "Internal Server Error" );
 				this.httpResult.put( Key.errorDetail, e.getClass().getName() + ": " + e.getMessage() );
@@ -1368,19 +1403,38 @@ public class BoxHttpClient {
 		 */
 		private Object processBufferedResponse( HttpResponse<byte[]> response ) throws IOException {
 			// Get the response Headers and convert them to a struct
-			HttpHeaders	httpHeaders		= Optional.ofNullable( response.headers() )
+			HttpHeaders	httpHeaders			= Optional.ofNullable( response.headers() )
 			    .orElse( HttpHeaders.of( Map.of(), ( a, b ) -> true ) );
-			IStruct		headers			= HttpResponseHelper.transformToResponseHeaderStruct( httpHeaders.map() );
+			IStruct		headers				= HttpResponseHelper.transformToResponseHeaderStruct( httpHeaders.map() );
+
+			// Prepare HTTP response metadata (always available even if body is null)
+			String		httpVersionString	= response.version() == HttpClient.Version.HTTP_1_1 ? BoxHttpClient.HTTP_1 : BoxHttpClient.HTTP_2;
+			String		statusCodeString	= String.valueOf( response.statusCode() );
+			String		statusText			= HttpStatusReasons.getReason( response.statusCode() );
+
+			// Process The response headers with HTTP status line
+			headers.put( Key.HTTP_Version, httpVersionString );
+			headers.put( Key.status_code, statusCodeString );
+			headers.put( Key.explanation, statusText );
+			this.httpResult.put( Key.responseHeader, headers );
+			this.httpResult.put(
+			    Key.header,
+			    HttpResponseHelper.generateHeaderString(
+			        HttpResponseHelper.generateStatusLine( httpVersionString, statusCodeString, statusText ),
+			        headers
+			    )
+			);
 
 			// Determine binary response handling
-			byte[]		responseBytes	= response.body();
-			Object		responseBody	= null;
+			byte[]	responseBytes	= response.body();
+			Object	responseBody	= null;
 
 			// Process body if not null
-			if ( responseBytes != null ) {
+			if ( responseBytes != null && responseBytes.length > 0 ) {
 				String	contentType		= HttpResponseHelper.extractFirstHeaderByName( headers, Key.contentType );
 				String	contentEncoding	= HttpResponseHelper.extractFirstHeaderByName( headers, Key.contentEncoding );
 
+				// Decode content encoding if present (gzip, deflate)
 				if ( contentEncoding != null ) {
 					// Split the Content-Encoding header into individual encodings
 					String[] encodings = contentEncoding.split( "," );
@@ -1394,102 +1448,106 @@ public class BoxHttpClient {
 					}
 				}
 
+				// Determine if response should be treated as binary
 				Boolean	isBinaryContentType	= FileSystemUtil.isBinaryMimeType( contentType );
 				String	charset				= null;
+
 				if ( ( this.isBinaryRequest || isBinaryContentType ) && !this.isBinaryNever ) {
 					responseBody = responseBytes;
 				} else if ( this.isBinaryNever && isBinaryContentType ) {
 					throw new BoxRuntimeException( "The response is a binary type, but the getAsBinary attribute was set to 'never'" );
 				} else {
-					charset			= contentType != null && contentType.contains( "charset=" )
-					    ? HttpResponseHelper.extractCharset( contentType )
-					    : this.charset;
-					responseBody	= new String( responseBytes, Charset.forName( charset ) );
-				}
-
-				// Prepare all the result variables now that we have the response
-				String	httpVersionString	= response.version() == HttpClient.Version.HTTP_1_1 ? BoxHttpClient.HTTP_1 : BoxHttpClient.HTTP_2;
-				String	statusCodeString	= String.valueOf( response.statusCode() );
-				String	statusText			= HttpStatusReasons.getReason( response.statusCode() );
-
-				// Process The response headers
-				headers.put( Key.HTTP_Version, httpVersionString );
-				headers.put( Key.status_code, statusCodeString );
-				headers.put( Key.explanation, statusText );
-				this.httpResult.put( Key.responseHeader, headers );
-				this.httpResult.put( Key.header,
-				    HttpResponseHelper.generateHeaderString( HttpResponseHelper.generateStatusLine( httpVersionString, statusCodeString, statusText ),
-				        headers ) );
-
-				// Fill out the rest of the httpResult struct
-				this.httpResult.put( Key.HTTP_Version, httpVersionString );
-				this.httpResult.put( Key.statusCode, response.statusCode() );
-				this.httpResult.put( Key.status_code, response.statusCode() );
-				this.httpResult.put( Key.statusText, statusText );
-				this.httpResult.put( Key.status_text, statusText );
-				this.httpResult.put( Key.fileContent, response.statusCode() == 408 ? "Request Timeout" : responseBody );
-				this.httpResult.put( Key.errorDetail, response.statusCode() == 408 ? response.body() : "" );
-				this.httpResult.put( Key.cookies, HttpResponseHelper.generateCookiesQuery( headers ) );
-				this.httpResult.put( Key.executionTime, Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
-				this.httpResult.put( Key.mimetype, "" );
-
-				// Determine Content-Type and Charset
-				Optional<String> contentTypeHeader = httpHeaders.firstValue( "Content-Type" );
-				contentTypeHeader.ifPresent( ( headerContentType ) -> {
-					String[] contentTypeParts = headerContentType.split( ";\s*" );
-					if ( contentTypeParts.length > 0 ) {
-						this.httpResult.put( Key.mimetype, contentTypeParts[ 0 ] );
+					// Extract charset from Content-Type or use default
+					charset = extractCharsetFromContentType( contentType );
+					if ( charset == null ) {
+						charset = this.charset;
 					}
-					if ( contentTypeParts.length > 1 ) {
-						this.httpResult.put( Key.charset, HttpResponseHelper.extractCharset( headerContentType ) );
-					}
-				} );
-
-				// Determine if the response is text based on Content-Type
-				boolean isText = false;
-				if ( contentType == null || contentType.isEmpty() ) {
-					// No content type specified = text
-					isText = true;
-				} else {
-					String lowerContentType = contentType.toLowerCase();
-					isText = lowerContentType.startsWith( "text" )
-					    || lowerContentType.startsWith( "message" )
-					    || lowerContentType.equals( "application/octet-stream" );
-				}
-				this.httpResult.put( Key.text, isText );
-
-				// Handle output file saving if specified
-				if ( this.outputDirectory != null ) {
-					if ( this.outputFile == null || this.outputFile.trim().isEmpty() ) {
-						// If we do not have a filename, try to extract it from the Content-Disposition header
-						String dispositionHeader = HttpResponseHelper.extractFirstHeaderByName( headers, Key.of( "content-disposition" ) );
-						if ( dispositionHeader != null ) {
-							Pattern	pattern	= Pattern.compile( "filename=\"?([^\";]+)\"?" );
-							Matcher	matcher	= pattern.matcher( dispositionHeader );
-							if ( matcher.find() ) {
-								this.outputFile = matcher.group( 1 );
-							}
-						}
-						// Fallback to extracting from the URL path
-						else {
-							this.outputFile = Path.of( this.targetHttpRequest.uri().getPath() ).getFileName().toString();
-						}
-
-						// Final Check
-						if ( this.outputFile == null || this.outputFile.trim().isEmpty() ) {
-							throw new BoxRuntimeException( "Unable to determine filename from response" );
-						}
-					}
-
-					String destinationPath = Path.of( this.outputDirectory, this.outputFile ).toAbsolutePath().toString();
-
-					if ( responseBody instanceof String responseString ) {
-						FileSystemUtil.write( destinationPath, responseString, charset, true );
-					} else if ( responseBody instanceof byte[] bodyBytes ) {
-						FileSystemUtil.write( destinationPath, bodyBytes, true );
+					// Validate charset before using
+					try {
+						responseBody = new String( responseBytes, Charset.forName( charset ) );
+					} catch ( Exception e ) {
+						logger.warn( "Invalid charset '{}', falling back to default: {}", charset, DEFAULT_CHARSET );
+						responseBody	= new String( responseBytes, Charset.forName( DEFAULT_CHARSET ) );
+						charset			= DEFAULT_CHARSET;
 					}
 				}
 			}
+
+			// Handle output file saving if specified (always execute, even if body is null/empty)
+			if ( this.outputDirectory != null ) {
+				if ( this.outputFile == null || this.outputFile.trim().isEmpty() ) {
+					// If we do not have a filename, try to extract it from the Content-Disposition header
+					String dispositionHeader = HttpResponseHelper.extractFirstHeaderByName( headers, Key.of( "content-disposition" ) );
+					if ( dispositionHeader != null ) {
+						Pattern	pattern	= Pattern.compile( "filename=\"?([^\";]+)\"?" );
+						Matcher	matcher	= pattern.matcher( dispositionHeader );
+						if ( matcher.find() ) {
+							this.outputFile = matcher.group( 1 );
+						}
+					}
+					// Fallback to extracting from the URL path
+					if ( this.outputFile == null || this.outputFile.trim().isEmpty() ) {
+						this.outputFile = Path.of( this.targetHttpRequest.uri().getPath() ).getFileName().toString();
+					}
+
+					// Final Check
+					if ( this.outputFile == null || this.outputFile.trim().isEmpty() ) {
+						throw new BoxRuntimeException( "Unable to determine filename from response" );
+					}
+				}
+
+				String destinationPath = Path.of( this.outputDirectory, this.outputFile ).toAbsolutePath().toString();
+
+				// Write the file based on response body type (or empty file if no body)
+				if ( responseBody instanceof String responseString ) {
+					FileSystemUtil.write( destinationPath, responseString, this.charset, true );
+				} else if ( responseBody instanceof byte[] bodyBytes ) {
+					FileSystemUtil.write( destinationPath, bodyBytes, true );
+				} else {
+					// No body or null body - create empty file
+					FileSystemUtil.write( destinationPath, "", this.charset, true );
+				}
+			}
+
+			// Fill out the httpResult struct (always populated regardless of body presence)
+			this.httpResult.put( Key.HTTP_Version, httpVersionString );
+			this.httpResult.put( Key.statusCode, response.statusCode() );
+			this.httpResult.put( Key.status_code, response.statusCode() );
+			this.httpResult.put( Key.statusText, statusText );
+			this.httpResult.put( Key.status_text, statusText );
+			this.httpResult.put( Key.fileContent,
+			    response.statusCode() == STATUS_REQUEST_TIMEOUT ? "Request Timeout" : ( responseBody != null ? responseBody : "" ) );
+			this.httpResult.put( Key.errorDetail, response.statusCode() == STATUS_REQUEST_TIMEOUT ? "" : "" );
+			this.httpResult.put( Key.cookies, HttpResponseHelper.generateCookiesQuery( headers ) );
+			this.httpResult.put( Key.executionTime, Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
+			this.httpResult.put( Key.mimetype, "" );
+
+			// Determine Content-Type and Charset from headers
+			Optional<String> contentTypeHeader = httpHeaders.firstValue( "Content-Type" );
+			contentTypeHeader.ifPresent( ( headerContentType ) -> {
+				String[] contentTypeParts = headerContentType.split( ";\s*" );
+				if ( contentTypeParts.length > 0 ) {
+					this.httpResult.put( Key.mimetype, contentTypeParts[ 0 ] );
+				}
+				String extractedCharset = extractCharsetFromContentType( headerContentType );
+				if ( extractedCharset != null ) {
+					this.httpResult.put( Key.charset, extractedCharset );
+				}
+			} );
+
+			// Determine if the response is text based on Content-Type
+			String	contentType	= HttpResponseHelper.extractFirstHeaderByName( headers, Key.contentType );
+			boolean	isText		= false;
+			if ( contentType == null || contentType.isEmpty() ) {
+				// No content type specified = text
+				isText = true;
+			} else {
+				String lowerContentType = contentType.toLowerCase();
+				isText = lowerContentType.startsWith( "text" )
+				    || lowerContentType.startsWith( "message" )
+				    || lowerContentType.equals( "application/octet-stream" );
+			}
+			this.httpResult.put( Key.text, isText );
 
 			return responseBody;
 		}
