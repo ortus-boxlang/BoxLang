@@ -226,16 +226,28 @@ public class HTTP extends Component {
 		}
 
 		// Prep all attributes
-		Key		binaryOperator		= Key.of( attributes.getAsString( Key.getAsBinary ) );
-		boolean	debug				= BooleanCaster.cast( attributes.getOrDefault( Key.debug, false ) );
-		String	encodedCertKey		= attributes.getAsString( Key.clientCertEncoded );
-		boolean	isBinaryRequested	= BINARY_REQUEST_VALUES
+		Key				binaryOperator		= Key.of( attributes.getAsString( Key.getAsBinary ) );
+		boolean			debug				= BooleanCaster.cast( attributes.getOrDefault( Key.debug, false ) );
+		final String	encodedCertKey;
+		boolean			isBinaryRequested	= BINARY_REQUEST_VALUES
 		    .stream()
 		    .anyMatch( value -> value.equals( binaryOperator ) );
 
 		// Expand client certificate path if provided
 		if ( attributes.containsKey( Key.clientCert ) ) {
 			attributes.put( Key.clientCert, FileSystemUtil.expandPath( context, attributes.getAsString( Key.clientCert ) ).absolutePath().toString() );
+
+			// In debug mode, extract certificate info for X-Client-Cert header
+			if ( debug ) {
+				encodedCertKey = extractClientCertInfo(
+				    attributes.getAsString( Key.clientCert ),
+				    attributes.getAsString( Key.clientCertPassword )
+				);
+			} else {
+				encodedCertKey = null;
+			}
+		} else {
+			encodedCertKey = null;
 		}
 
 		// We allow the `file` attribute to become the full file path if the `path` attribute is empty
@@ -332,5 +344,44 @@ public class HTTP extends Component {
 		);
 
 		return bodyResult;
+	}
+
+	/**
+	 * Extract client certificate information for debugging purposes.
+	 * Reads the certificate file and returns the subject DN (Distinguished Name).
+	 *
+	 * @param certPath     The path to the PKCS12 certificate file
+	 * @param certPassword The password for the certificate
+	 *
+	 * @return The certificate subject DN, or null if extraction fails
+	 */
+	private String extractClientCertInfo( String certPath, String certPassword ) {
+		if ( certPath == null ) {
+			return null;
+		}
+
+		try {
+			// Load the certificate from the PKCS12 file
+			java.security.KeyStore keyStore = java.security.KeyStore.getInstance( "PKCS12" );
+			try ( java.io.FileInputStream fis = new java.io.FileInputStream( certPath ) ) {
+				keyStore.load( fis, certPassword != null ? certPassword.toCharArray() : null );
+			}
+
+			// Get the first certificate alias
+			String alias = keyStore.aliases().nextElement();
+			if ( alias != null ) {
+				java.security.cert.Certificate cert = keyStore.getCertificate( alias );
+				if ( cert instanceof java.security.cert.X509Certificate ) {
+					java.security.cert.X509Certificate x509 = ( java.security.cert.X509Certificate ) cert;
+					// Return the subject DN for the X-Client-Cert header
+					return x509.getSubjectX500Principal().getName();
+				}
+			}
+		} catch ( Exception e ) {
+			// Log but don't fail - this is just for debugging
+			httpService.getLogger().warn( "Failed to extract client certificate info for debug header: {}", e.getMessage() );
+		}
+
+		return null;
 	}
 }
