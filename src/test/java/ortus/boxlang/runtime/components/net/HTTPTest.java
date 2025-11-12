@@ -77,7 +77,6 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -120,8 +119,7 @@ public class HTTPTest {
 		    .willReturn(
 		        aResponse()
 		            .withBody( "Done" )
-		            .withStatus( 200 ) )
-		);
+		            .withStatus( 200 ) ) );
 
 		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
 
@@ -132,7 +130,6 @@ public class HTTPTest {
 						bx:httpparam type="header" name="User-Agent" value="Mozilla";
 					}
 					result = bxhttp
-					println( result )
 				""",
 		        baseURL + "/posts/1"
 		    ),
@@ -140,7 +137,6 @@ public class HTTPTest {
 		);
 		// @formatter:on
 
-		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 		IStruct bxhttp = variables.getAsStruct( result );
 		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 200 );
 		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "OK" );
@@ -151,19 +147,24 @@ public class HTTPTest {
 	@Test
 	public void testCanMakeHTTPRequestPort( WireMockRuntimeInfo wmRuntimeInfo ) {
 		// this is the good request - it would return a 200
-		stubFor( get( "/posts/1" ).willReturn( aResponse().withBody( "Done" ).withStatus( 200 ) ) );
-
+		stubFor( get( "/posts/1" )
+		    .willReturn(
+		        aResponse()
+		            .withBody( "Done" )
+		            .withStatus( 200 ) )
+		);
 		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
 
+		// @formatter:off
 		instance.executeSource( String.format( """
-		                                        bx:http url="%s" port="12345" {
-		                                            bx:httpparam type="header" name="User-Agent" value="Mozilla";
-		                                       }
-		                                       result = bxhttp;
-		                                        """, baseURL + "/posts/1" ),
+			bx:http url="%s" port="12345" {
+				bx:httpparam type="header" name="User-Agent" value="Mozilla";
+			}
+			result = bxhttp;
+			""", baseURL + "/posts/1" ),
 		    context );
+		// @formatter:on
 
-		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 		// Our port change should produce a bad gateway error
 		IStruct bxhttp = variables.getAsStruct( result );
 		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 502 );
@@ -174,17 +175,18 @@ public class HTTPTest {
 	@DisplayName( "It parses returned cookies into a Cookies query object" )
 	@Test
 	public void testCookiesInQuery( WireMockRuntimeInfo wmRuntimeInfo ) {
-		stubFor( get( "/cookies" ).willReturn( ok().withHeader( "Set-Cookie", "foo=bar;path=/;secure;samesite=none;httponly" ) ) );
+		stubFor( get( "/cookies" )
+		    .willReturn( ok().withHeader( "Set-Cookie", "foo=bar;path=/;secure;samesite=none;httponly" ) ) );
 
-		instance.executeSource( String.format( "bx:http url=\"%s\" {}", wmRuntimeInfo.getHttpBaseUrl() + "/cookies" ),
-		    context );
+		instance.executeSource(
+		    String.format( "bx:http url=\"%s\" {}", wmRuntimeInfo.getHttpBaseUrl() + "/cookies" ),
+		    context
+		);
 
-		assertThat( variables.get( bxhttp ) ).isInstanceOf( IStruct.class );
-
-		IStruct res = variables.getAsStruct( bxhttp );
-		assertThat( res.get( Key.statusCode ) ).isEqualTo( 200 );
-		assertThat( res.get( Key.statusText ) ).isEqualTo( "OK" );
-		Query cookies = res.getAsQuery( Key.cookies );
+		IStruct httpResult = variables.getAsStruct( bxhttp );
+		assertThat( httpResult.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( httpResult.get( Key.statusText ) ).isEqualTo( "OK" );
+		Query cookies = httpResult.getAsQuery( Key.cookies );
 		Assertions.assertEquals( 1, cookies.size() );
 		Object[] row = cookies.getRow( 0 );
 		assertThat( row ).isEqualTo( new Object[] { "foo", "bar", "/", "", "", true, true, "none" } );
@@ -196,21 +198,21 @@ public class HTTPTest {
 		stubFor( get( "/cookies" ).willReturn( ok()
 		    .withHeader( "Set-Cookie", "foo=bar;path=/;secure;samesite=none;httponly" )
 		    .withHeader( "Set-Cookie", "baz=qux;path=/;expires=Mon, 31 Dec 2038 23:59:59 GMT" )
-		    .withHeader( "Set-Cookie", "one=two;max-age=2592000;domain=example.com" )
-		) );
+		    .withHeader( "Set-Cookie", "one=two;max-age=2592000;domain=example.com" ) ) );
 
-		instance.executeSource( String.format( "bx:http url=\"%s\" {}", wmRuntimeInfo.getHttpBaseUrl() + "/cookies" ),
-		    context );
+		instance.executeSource(
+		    String.format( "bx:http url=\"%s\" {}", wmRuntimeInfo.getHttpBaseUrl() + "/cookies" ),
+		    context
+		);
 
-		assertThat( variables.get( bxhttp ) ).isInstanceOf( IStruct.class );
-
-		IStruct res = variables.getAsStruct( bxhttp );
-		assertThat( res.get( Key.statusCode ) ).isEqualTo( 200 );
-		assertThat( res.get( Key.statusText ) ).isEqualTo( "OK" );
-		Query cookies = res.getAsQuery( Key.cookies );
+		IStruct httpResult = variables.getAsStruct( bxhttp );
+		assertThat( httpResult.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( httpResult.get( Key.statusText ) ).isEqualTo( "OK" );
+		Query cookies = httpResult.getAsQuery( Key.cookies );
 		Assertions.assertEquals( 3, cookies.size() );
 		assertThat( cookies.getRow( 0 ) ).isEqualTo( new Object[] { "foo", "bar", "/", "", "", true, true, "none" } );
-		assertThat( cookies.getRow( 1 ) ).isEqualTo( new Object[] { "baz", "qux", "/", "", "Mon, 31 Dec 2038 23:59:59 GMT", "", "", "" } );
+		assertThat( cookies.getRow( 1 ) )
+		    .isEqualTo( new Object[] { "baz", "qux", "/", "", "Mon, 31 Dec 2038 23:59:59 GMT", "", "", "" } );
 		assertThat( cookies.getRow( 2 ) ).isEqualTo( new Object[] { "one", "two", "", "example.com", "30", "", "", "" } );
 	}
 
@@ -221,21 +223,27 @@ public class HTTPTest {
 		    post( "/posts" )
 		        .withFormParam( "name", equalTo( "foobar" ) )
 		        .withFormParam( "body", equalTo( "lorem ipsum dolor" ) )
-		        .willReturn( created().withBody( "{\"id\": 1, \"name\": \"foobar\", \"body\": \"lorem ipsum dolor\"}" ) ) );
+		        .willReturn(
+		            created()
+		                .withBody( "{\"id\": 1, \"name\": \"foobar\", \"body\": \"lorem ipsum dolor\"}" )
+		        )
+		);
 
+		// @formatter:off
 		instance.executeSource( String.format( """
-		                                       bx:http method="POST" url="%s" {
-		                                       	bx:httpparam type="formfield" name="name" value="foobar";
-		                                       	bx:httpparam type="formfield" name="body" value="lorem ipsum dolor";
-		                                       }
-		                                       """, wmRuntimeInfo.getHttpBaseUrl() + "/posts" ), context );
+			bx:http method="POST" url="%s" {
+				bx:httpparam type="formfield" name="name" value="foobar";
+				bx:httpparam type="formfield" name="body" value="lorem ipsum dolor";
+			}
+			result = bxhttp;
+			println( result )
+		""", wmRuntimeInfo.getHttpBaseUrl() + "/posts" ), context );
+		// @formatter:on
 
-		assertThat( variables.get( bxhttp ) ).isInstanceOf( IStruct.class );
-
-		IStruct res = variables.getAsStruct( bxhttp );
-		assertThat( res.get( Key.statusCode ) ).isEqualTo( 201 );
-		assertThat( res.get( Key.statusText ) ).isEqualTo( "Created" );
-		String body = res.getAsString( Key.fileContent );
+		IStruct httpResult = variables.getAsStruct( bxhttp );
+		assertThat( httpResult.get( Key.statusCode ) ).isEqualTo( 201 );
+		assertThat( httpResult.get( Key.statusText ) ).isEqualTo( "Created" );
+		String body = httpResult.getAsString( Key.fileContent );
 		assertThat( body ).isEqualTo( "{\"id\": 1, \"name\": \"foobar\", \"body\": \"lorem ipsum dolor\"}" );
 	}
 
@@ -271,13 +279,16 @@ public class HTTPTest {
 		stubFor(
 		    post( "/posts" )
 		        .withRequestBody( equalToJson( "{\"name\": \"foobar\", \"body\": \"lorem ipsum dolor\"}" ) )
-		        .willReturn( created().withBody( "{\"id\": 1, \"name\": \"foobar\", \"body\": \"lorem ipsum dolor\"}" ) ) );
+		        .willReturn( created()
+		            .withBody( "{\"id\": 1, \"name\": \"foobar\", \"body\": \"lorem ipsum dolor\"}" ) ) );
 
-		instance.executeSource( String.format( """
-		                                       bx:http method="POST" url="%s" {
-		                                       	bx:httpparam type="body" value="#JSONSerialize( { 'name': 'foobar', 'body': 'lorem ipsum dolor' } )#";
-		                                       }
-		                                       """, wmRuntimeInfo.getHttpBaseUrl() + "/posts" ), context );
+		instance.executeSource( String.format(
+		    """
+		    bx:http method="POST" url="%s" {
+		    	bx:httpparam type="body" value="#JSONSerialize( { 'name': 'foobar', 'body': 'lorem ipsum dolor' } )#";
+		    }
+		    """,
+		    wmRuntimeInfo.getHttpBaseUrl() + "/posts" ), context );
 
 		assertThat( variables.get( bxhttp ) ).isInstanceOf( IStruct.class );
 
@@ -296,7 +307,8 @@ public class HTTPTest {
 		        .willReturn(
 		            // simulate duplicate headers
 		            ok().withHeader( "Content-Type", "image/jpeg; charset=utf-8" )
-		                .withBody( ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
+		                .withBody(
+		                    ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
 
 		// @formatter:off
 		instance.executeSource( String.format(
@@ -318,7 +330,8 @@ public class HTTPTest {
 		Object body = res.get( Key.fileContent );
 		assertThat( body ).isInstanceOf( byte[].class );
 
-		// Now test with getAsBinary set to "no" which should still return binary content
+		// Now test with getAsBinary set to "no" which should still return binary
+		// content
 		// @formatter:off
 		instance.executeSource( String.format(
 			"""
@@ -376,8 +389,10 @@ public class HTTPTest {
 		    get( "/image" )
 		        .willReturn(
 		            ok().withHeader( "Content-Type", "image/jpeg; charset=utf-8" )
-		                .withHeader( "Content-Disposition", "attachment; filename=\"chuck_norris_dl.jpg\"" )
-		                .withBody( ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
+		                .withHeader( "Content-Disposition",
+		                    "attachment; filename=\"chuck_norris_dl.jpg\"" )
+		                .withBody(
+		                    ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
 
 		// @formatter:off
 		instance.executeSource( String.format(
@@ -396,8 +411,7 @@ public class HTTPTest {
 	public void testResultWithPath( WireMockRuntimeInfo wmRuntimeInfo ) {
 		stubFor(
 		    get( "/bad-image.jpg" )
-		        .willReturn( notFound() )
-		);
+		        .willReturn( notFound() ) );
 
 		// @formatter:off
 		instance.executeSource( String.format(
@@ -421,8 +435,10 @@ public class HTTPTest {
 		    get( "/image" )
 		        .willReturn(
 		            ok().withHeader( "Content-Type", "image/jpeg; charset=utf-8" )
-		                .withHeader( "Content-Disposition", "attachment; filename=\"chuck_norris_dl.jpg\"" )
-		                .withBody( ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
+		                .withHeader( "Content-Disposition",
+		                    "attachment; filename=\"chuck_norris_dl.jpg\"" )
+		                .withBody(
+		                    ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
 
 		// @formatter:off
 		instance.executeSource( String.format(
@@ -443,8 +459,10 @@ public class HTTPTest {
 		    get( "/image" )
 		        .willReturn(
 		            ok().withHeader( "Content-Type", "image/jpeg; charset=utf-8" )
-		                .withHeader( "Content-Disposition", "attachment; filename=\"chuck_norris_dl.jpg\"" )
-		                .withBody( ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
+		                .withHeader( "Content-Disposition",
+		                    "attachment; filename=\"chuck_norris_dl.jpg\"" )
+		                .withBody(
+		                    ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
 
 		// @formatter:off
 		instance.executeSource( String.format(
@@ -464,9 +482,7 @@ public class HTTPTest {
 		stubFor(
 		    post( "/image" )
 		        .willReturn(
-		            ok()
-		        )
-		);
+		            ok() ) );
 
 		// @formatter:off
 		variables.put(  Key.of( "fileContent" ), FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) );
@@ -495,7 +511,8 @@ public class HTTPTest {
 		    get( "/image" )
 		        .willReturn(
 		            ok().withHeader( "Content-Type", "image/jpeg; charset=utf-8" )
-		                .withBody( ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
+		                .withBody(
+		                    ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
 
 		// @formatter:off
 		assertThrows( BoxRuntimeException.class, () -> instance.executeSource( String.format(
@@ -523,7 +540,10 @@ public class HTTPTest {
 		            }
 		            """ ) ) );
 
-		instance.executeSource( String.format( "cfhttp( url=\"%s\", result=\"result\" ) {}", wmRuntimeInfo.getHttpBaseUrl() + "/posts/1" ), context,
+		instance.executeSource(
+		    String.format( "cfhttp( url=\"%s\", result=\"result\" ) {}",
+		        wmRuntimeInfo.getHttpBaseUrl() + "/posts/1" ),
+		    context,
 		    BoxSourceType.CFSCRIPT );
 
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
@@ -539,8 +559,9 @@ public class HTTPTest {
 		      "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
 		      "body": "quia et suscipit\\nsuscipit recusandae consequuntur expedita et cum\\nreprehenderit molestiae ut ut quas totam\\nnostrum rerum est autem sunt rem eveniet architecto"
 		    }
-		    """.replaceAll(
-		        "\\s+", "" ) );
+		    """
+		        .replaceAll(
+		            "\\s+", "" ) );
 	}
 
 	@DisplayName( "It can make a default GET request" )
@@ -577,8 +598,9 @@ public class HTTPTest {
 		      "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
 		      "body": "quia et suscipit\\nsuscipit recusandae consequuntur expedita et cum\\nreprehenderit molestiae ut ut quas totam\\nnostrum rerum est autem sunt rem eveniet architecto"
 		    }
-		    """.replaceAll(
-		        "\\s+", "" ) );
+		    """
+		        .replaceAll(
+		            "\\s+", "" ) );
 	}
 
 	@DisplayName( "It can make a default GET request in BL Tags" )
@@ -615,8 +637,9 @@ public class HTTPTest {
 		      "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
 		      "body": "quia et suscipit\\nsuscipit recusandae consequuntur expedita et cum\\nreprehenderit molestiae ut ut quas totam\\nnostrum rerum est autem sunt rem eveniet architecto"
 		    }
-		    """.replaceAll(
-		        "\\s+", "" ) );
+		    """
+		        .replaceAll(
+		            "\\s+", "" ) );
 	}
 
 	@DisplayName( "It can make HTTP call tag attributeCollection" )
@@ -658,8 +681,9 @@ public class HTTPTest {
 		      "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
 		      "body": "quia et suscipit\\nsuscipit recusandae consequuntur expedita et cum\\nreprehenderit molestiae ut ut quas totam\\nnostrum rerum est autem sunt rem eveniet architecto"
 		    }
-		    """.replaceAll(
-		        "\\s+", "" ) );
+		    """
+		        .replaceAll(
+		            "\\s+", "" ) );
 
 	}
 
@@ -702,8 +726,9 @@ public class HTTPTest {
 		      "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
 		      "body": "quia et suscipit\\nsuscipit recusandae consequuntur expedita et cum\\nreprehenderit molestiae ut ut quas totam\\nnostrum rerum est autem sunt rem eveniet architecto"
 		    }
-		    """.replaceAll(
-		        "\\s+", "" ) );
+		    """
+		        .replaceAll(
+		            "\\s+", "" ) );
 
 	}
 
@@ -711,9 +736,10 @@ public class HTTPTest {
 	@Test
 	public void testGetWithParams( WireMockRuntimeInfo wmRuntimeInfo ) {
 		stubFor(
-		    get( "/posts?userId=1" ).willReturn( ok().withHeader( "Content-Type", "application/json; charset=utf-8" ).withBody(
-		        """
-		        [{"userId":1,"id":1,"title":"suntautfacererepellatprovidentoccaecatiexcepturioptioreprehenderit","body":"quiaetsuscipit\\nsuscipitrecusandaeconsequunturexpeditaetcum\\nreprehenderitmolestiaeututquastotam\\nnostrumrerumestautemsuntremevenietarchitecto"},{"userId":1,"id":2,"title":"quiestesse","body":"estrerumtemporevitae\\nsequisintnihilreprehenderitdolorbeataeeadoloresneque\\nfugiatblanditiisvoluptateporrovelnihilmolestiaeutreiciendis\\nquiaperiamnondebitispossimusquinequenisinulla"},{"userId":1,"id":3,"title":"eamolestiasquasiexercitationemrepellatquiipsasitaut","body":"etiustosedquoiure\\nvoluptatemoccaecatiomniseligendiautad\\nvoluptatemdoloribusvelaccusantiumquispariatur\\nmolestiaeporroeiusodioetlaboreetvelitaut"},{"userId":1,"id":4,"title":"eumetestoccaecati","body":"ullametsaepereiciendisvoluptatemadipisci\\nsitametautemassumendaprovidentrerumculpa\\nquishiccommodinesciuntremteneturdoloremqueipsamiure\\nquissuntvoluptatemrerumillovelit"},{"userId":1,"id":5,"title":"nesciuntquasodio","body":"repudiandaeveniamquaeratsuntsed\\naliasautfugiatsitautemsedest\\nvoluptatemomnispossimusessevoluptatibusquis\\nestautteneturdolorneque"},{"userId":1,"id":6,"title":"doloremeummagnieosaperiamquia","body":"utaspernaturcorporisharumnihilquisprovidentsequi\\nmollitianobisaliquidmolestiae\\nperspiciatiseteanemoabreprehenderitaccusantiumquas\\nvoluptatedoloresvelitetdoloremquemolestiae"},{"userId":1,"id":7,"title":"magnamfacilisautem","body":"doloreplaceatquibusdameaquovitae\\nmagniquisenimquiquisquonemoautsaepe\\nquidemrepellatexcepturiutquia\\nsuntutsequieoseasedquas"},{"userId":1,"id":8,"title":"doloremdoloreestipsam","body":"dignissimosaperiamdoloremquieum\\nfacilisquibusdamanimisintsuscipitquisintpossimuscum\\nquaeratmagnimaioresexcepturi\\nipsamutcommodidolorvoluptatummodiautvitae"},{"userId":1,"id":9,"title":"nesciuntiureomnisdoloremtemporaetaccusantium","body":"consecteturaniminesciuntiuredolore\\nenimquiaad\\nveniamautemutquamautnobis\\netestautquodautprovidentvoluptasautemvoluptas"},{"userId":1,"id":10,"title":"optiomolestiasidquiaeum","body":"quoetexpeditamodicumofficiavelmagni\\ndoloribusquirepudiandae\\nveronisisit\\nquosveniamquodsedaccusamusveritatiserror"}]""" ) ) );
+		    get( "/posts?userId=1" )
+		        .willReturn( ok().withHeader( "Content-Type", "application/json; charset=utf-8" ).withBody(
+		            """
+		            [{"userId":1,"id":1,"title":"suntautfacererepellatprovidentoccaecatiexcepturioptioreprehenderit","body":"quiaetsuscipit\\nsuscipitrecusandaeconsequunturexpeditaetcum\\nreprehenderitmolestiaeututquastotam\\nnostrumrerumestautemsuntremevenietarchitecto"},{"userId":1,"id":2,"title":"quiestesse","body":"estrerumtemporevitae\\nsequisintnihilreprehenderitdolorbeataeeadoloresneque\\nfugiatblanditiisvoluptateporrovelnihilmolestiaeutreiciendis\\nquiaperiamnondebitispossimusquinequenisinulla"},{"userId":1,"id":3,"title":"eamolestiasquasiexercitationemrepellatquiipsasitaut","body":"etiustosedquoiure\\nvoluptatemoccaecatiomniseligendiautad\\nvoluptatemdoloribusvelaccusantiumquispariatur\\nmolestiaeporroeiusodioetlaboreetvelitaut"},{"userId":1,"id":4,"title":"eumetestoccaecati","body":"ullametsaepereiciendisvoluptatemadipisci\\nsitametautemassumendaprovidentrerumculpa\\nquishiccommodinesciuntremteneturdoloremqueipsamiure\\nquissuntvoluptatemrerumillovelit"},{"userId":1,"id":5,"title":"nesciuntquasodio","body":"repudiandaeveniamquaeratsuntsed\\naliasautfugiatsitautemsedest\\nvoluptatemomnispossimusessevoluptatibusquis\\nestautteneturdolorneque"},{"userId":1,"id":6,"title":"doloremeummagnieosaperiamquia","body":"utaspernaturcorporisharumnihilquisprovidentsequi\\nmollitianobisaliquidmolestiae\\nperspiciatiseteanemoabreprehenderitaccusantiumquas\\nvoluptatedoloresvelitetdoloremquemolestiae"},{"userId":1,"id":7,"title":"magnamfacilisautem","body":"doloreplaceatquibusdameaquovitae\\nmagniquisenimquiquisquonemoautsaepe\\nquidemrepellatexcepturiutquia\\nsuntutsequieoseasedquas"},{"userId":1,"id":8,"title":"doloremdoloreestipsam","body":"dignissimosaperiamdoloremquieum\\nfacilisquibusdamanimisintsuscipitquisintpossimuscum\\nquaeratmagnimaioresexcepturi\\nipsamutcommodidolorvoluptatummodiautvitae"},{"userId":1,"id":9,"title":"nesciuntiureomnisdoloremtemporaetaccusantium","body":"consecteturaniminesciuntiuredolore\\nenimquiaad\\nveniamautemutquamautnobis\\netestautquodautprovidentvoluptasautemvoluptas"},{"userId":1,"id":10,"title":"optiomolestiasidquiaeum","body":"quoetexpeditamodicumofficiavelmagni\\ndoloribusquirepudiandae\\nveronisisit\\nquosveniamquodsedaccusamusveritatiserror"}]""" ) ) );
 
 		instance.executeSource(
 		    String.format( """
@@ -760,8 +786,9 @@ public class HTTPTest {
 		assertThat( bxhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
 		    """
 		    	[{"userId":1,"id":1,"title":"suntautfacererepellatprovidentoccaecatiexcepturioptioreprehenderit","body":"quiaetsuscipit\\nsuscipitrecusandaeconsequunturexpeditaetcum\\nreprehenderitmolestiaeututquastotam\\nnostrumrerumestautemsuntremevenietarchitecto"},{"userId":1,"id":2,"title":"quiestesse","body":"estrerumtemporevitae\\nsequisintnihilreprehenderitdolorbeataeeadoloresneque\\nfugiatblanditiisvoluptateporrovelnihilmolestiaeutreiciendis\\nquiaperiamnondebitispossimusquinequenisinulla"},{"userId":1,"id":3,"title":"eamolestiasquasiexercitationemrepellatquiipsasitaut","body":"etiustosedquoiure\\nvoluptatemoccaecatiomniseligendiautad\\nvoluptatemdoloribusvelaccusantiumquispariatur\\nmolestiaeporroeiusodioetlaboreetvelitaut"},{"userId":1,"id":4,"title":"eumetestoccaecati","body":"ullametsaepereiciendisvoluptatemadipisci\\nsitametautemassumendaprovidentrerumculpa\\nquishiccommodinesciuntremteneturdoloremqueipsamiure\\nquissuntvoluptatemrerumillovelit"},{"userId":1,"id":5,"title":"nesciuntquasodio","body":"repudiandaeveniamquaeratsuntsed\\naliasautfugiatsitautemsedest\\nvoluptatemomnispossimusessevoluptatibusquis\\nestautteneturdolorneque"},{"userId":1,"id":6,"title":"doloremeummagnieosaperiamquia","body":"utaspernaturcorporisharumnihilquisprovidentsequi\\nmollitianobisaliquidmolestiae\\nperspiciatiseteanemoabreprehenderitaccusantiumquas\\nvoluptatedoloresvelitetdoloremquemolestiae"},{"userId":1,"id":7,"title":"magnamfacilisautem","body":"doloreplaceatquibusdameaquovitae\\nmagniquisenimquiquisquonemoautsaepe\\nquidemrepellatexcepturiutquia\\nsuntutsequieoseasedquas"},{"userId":1,"id":8,"title":"doloremdoloreestipsam","body":"dignissimosaperiamdoloremquieum\\nfacilisquibusdamanimisintsuscipitquisintpossimuscum\\nquaeratmagnimaioresexcepturi\\nipsamutcommodidolorvoluptatummodiautvitae"},{"userId":1,"id":9,"title":"nesciuntiureomnisdoloremtemporaetaccusantium","body":"consecteturaniminesciuntiuredolore\\nenimquiaad\\nveniamautemutquamautnobis\\netestautquodautprovidentvoluptasautemvoluptas"},{"userId":1,"id":10,"title":"optiomolestiasidquiaeum","body":"quoetexpeditamodicumofficiavelmagni\\ndoloribusquirepudiandae\\nveronisisit\\nquosveniamquodsedaccusamusveritatiserror"}]
-		    """.replaceAll(
-		        "\\s+", "" ) );
+		    """
+		        .replaceAll(
+		            "\\s+", "" ) );
 	}
 
 	@DisplayName( "It can handle bad gateways" )
@@ -794,7 +821,8 @@ public class HTTPTest {
 		assertThat( bxhttp.get( Key.fileContent ) ).isEqualTo( "Connection Failure" );
 
 		Assertions.assertTrue( bxhttp.containsKey( Key.errorDetail ) );
-		assertThat( bxhttp.get( Key.errorDetail ) ).isEqualTo( "Unknown host: does-not-exist.also-does-not-exist: Name or service not known." );
+		assertThat( bxhttp.get( Key.errorDetail ) )
+		    .isEqualTo( "Unknown host: does-not-exist.also-does-not-exist: Name or service not known." );
 	}
 
 	@DisplayName( "It can handle timeouts" )
@@ -878,8 +906,7 @@ public class HTTPTest {
 		            aMultipart()
 		                .withName( "photo" )
 		                .withName( "joke" )
-		                .withBody( containing( "Chuck Norris can divide by zero." ) )
-		        )
+		                .withBody( containing( "Chuck Norris can divide by zero." ) ) )
 		        .willReturn( created().withBody( "{\"success\": true }" ) ) );
 
 		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
@@ -966,8 +993,7 @@ public class HTTPTest {
 		                   """,
 		        wmRuntimeInfo.getHttpBaseUrl() + "/posts/1",
 		        username,
-		        password
-		    ),
+		        password ),
 		    context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
@@ -1058,292 +1084,9 @@ public class HTTPTest {
 		    startDate,
 		    endDate,
 		    subject,
-		    keyPair.getPublic()
-		);
+		    keyPair.getPublic() );
 
 		return new JcaX509CertificateConverter().setProvider( "BC" ).getCertificate( certBuilder.build( signer ) );
-	}
-
-	@DisplayName( "It can handle chunked/streaming responses with onChunk callback" )
-	@Test
-	public void testCanHandleChunkedResponseWithCallback( WireMockRuntimeInfo wmRuntimeInfo ) {
-		// Create a large response to ensure multiple chunks
-		StringBuilder largeBody = new StringBuilder();
-		for ( int i = 0; i < 1000; i++ ) {
-			largeBody.append( "Line " ).append( i ).append( " - This is some test data for chunk processing.\n" );
-		}
-
-		stubFor( get( "/chunked-data" )
-		    .willReturn(
-		        aResponse()
-		            .withBody( largeBody.toString() )
-		            .withStatus( 200 )
-		            .withHeader( "Content-Type", "text/plain" ) )
-		);
-
-		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
-
-		// @formatter:off
-		instance.executeSource(
-		    String.format( """
-					chunks = []
-					chunkCount = 0
-					totalBytes = 0
-					hasResultInCallback = false
-					
-					function myCallback(data) {
-						chunkCount++
-						totalBytes = data.totalReceived
-						chunks.append({
-							number: data.chunkNumber,
-							size: len(data.chunk),
-							hasHeaders: structKeyExists(data, 'headers')
-						})
-						// Verify result is available in callback
-						if (structKeyExists(data, 'result')) {
-							hasResultInCallback = true
-						}
-					}
-					
-					bx:http url="%s" onChunk=myCallback {
-					}
-					
-					result = bxhttp
-				""",
-		        baseURL + "/chunked-data"
-		    ),
-		    context
-		);
-		// @formatter:on
-
-		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
-		IStruct bxhttp = variables.getAsStruct( result );
-		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 200 );
-
-		// Verify HTTPResult has same keys as non-streaming responses
-		assertThat( bxhttp.containsKey( Key.responseHeader ) ).isTrue();
-		assertThat( bxhttp.containsKey( Key.errorDetail ) ).isTrue();
-		assertThat( bxhttp.containsKey( Key.executionTime ) ).isTrue();
-
-		// Verify chunks were processed
-		assertThat( variables.get( Key.of( "chunkCount" ) ) ).isInstanceOf( Integer.class );
-		Integer chunkCountValue = ( Integer ) variables.get( Key.of( "chunkCount" ) );
-		assertThat( chunkCountValue ).isGreaterThan( 0 );
-
-		// Verify total bytes
-		assertThat( variables.get( Key.of( "totalBytes" ) ) ).isInstanceOf( Long.class );
-		Long totalBytesValue = ( Long ) variables.get( Key.of( "totalBytes" ) );
-		assertThat( totalBytesValue ).isGreaterThan( 0L );
-
-		// Verify chunks array
-		assertThat( variables.get( Key.of( "chunks" ) ) ).isInstanceOf( Array.class );
-		Array chunksArray = ( Array ) variables.get( Key.of( "chunks" ) );
-		assertThat( chunksArray.size() ).isGreaterThan( 0 );
-
-		// Verify all chunks have headers
-		for ( Object chunkObj : chunksArray ) {
-			IStruct chunk = ( IStruct ) chunkObj;
-			assertThat( chunk.getAsBoolean( Key.of( "hasHeaders" ) ) ).isTrue();
-		}
-
-		// Verify chunk numbers are sequential
-		for ( int i = 0; i < chunksArray.size(); i++ ) {
-			IStruct chunk = ( IStruct ) chunksArray.get( i );
-			assertThat( chunk.getAsInteger( Key.of( "number" ) ) ).isEqualTo( i + 1 );
-		}
-
-		// Verify result struct is available in callback
-		assertThat( variables.get( Key.of( "hasResultInCallback" ) ) ).isInstanceOf( Boolean.class );
-		assertThat( ( Boolean ) variables.get( Key.of( "hasResultInCallback" ) ) ).isTrue();
-	}
-
-	@DisplayName( "It can handle binary chunked responses with onChunk callback" )
-	@Test
-	public void testCanHandleBinaryChunkedResponse( WireMockRuntimeInfo wmRuntimeInfo ) {
-		byte[] binaryData = new byte[ 10000 ];
-		for ( int i = 0; i < binaryData.length; i++ ) {
-			binaryData[ i ] = ( byte ) ( i % 256 );
-		}
-
-		stubFor( get( "/binary-chunked" )
-		    .willReturn(
-		        aResponse()
-		            .withBody( binaryData )
-		            .withStatus( 200 )
-		            .withHeader( "Content-Type", "application/octet-stream" ) )
-		);
-
-		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
-
-		// @formatter:off
-		instance.executeSource(
-		    String.format( """
-					chunks = []
-					totalSize = 0
-					
-					function binaryCallback(data) {
-						chunks.append({
-							number: data.chunkNumber,
-							isBinary: isBinary(data.chunk)
-						})
-						totalSize += arrayLen(data.chunk)
-					}
-					
-					bx:http url="%s" getAsBinary="true" onChunk=binaryCallback {
-					}
-					
-					result = bxhttp
-				""",
-		        baseURL + "/binary-chunked"
-		    ),
-		    context
-		);
-		// @formatter:on
-
-		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
-		IStruct bxhttp = variables.getAsStruct( result );
-		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 200 );
-
-		// Verify chunks were binary
-		Array chunksArray = ( Array ) variables.get( Key.of( "chunks" ) );
-		assertThat( chunksArray.size() ).isGreaterThan( 0 );
-
-		for ( Object chunkObj : chunksArray ) {
-			IStruct chunk = ( IStruct ) chunkObj;
-			assertThat( chunk.getAsBoolean( Key.of( "isBinary" ) ) ).isTrue();
-		}
-
-		// Verify total size matches
-		Integer totalSize = ( Integer ) variables.get( Key.of( "totalSize" ) );
-		assertThat( totalSize ).isEqualTo( binaryData.length );
-	}
-
-	@DisplayName( "It can handle onComplete callback" )
-	@Test
-	public void testCanHandleOnCompleteCallback( WireMockRuntimeInfo wmRuntimeInfo ) {
-		stubFor( get( "/complete-test" )
-		    .willReturn(
-		        aResponse()
-		            .withBody( "Success!" )
-		            .withStatus( 200 ) )
-		);
-
-		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
-
-		// @formatter:off
-		instance.executeSource(
-		    String.format( """
-					completeCalled = false
-					completeStatus = 0
-					
-					function onCompleteHandler(data) {
-						completeCalled = true
-						completeStatus = data.statusCode
-					}
-					
-					bx:http url="%s" onComplete=onCompleteHandler {
-					}
-					
-					result = bxhttp
-				""",
-		        baseURL + "/complete-test"
-		    ),
-		    context
-		);
-		// @formatter:on
-
-		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
-		IStruct bxhttp = variables.getAsStruct( result );
-		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 200 );
-
-		// Verify onComplete was called
-		assertThat( variables.get( Key.of( "completeCalled" ) ) ).isInstanceOf( Boolean.class );
-		assertThat( ( Boolean ) variables.get( Key.of( "completeCalled" ) ) ).isTrue();
-
-		// Verify status code was passed
-		assertThat( variables.get( Key.of( "completeStatus" ) ) ).isInstanceOf( Integer.class );
-		assertThat( ( Integer ) variables.get( Key.of( "completeStatus" ) ) ).isEqualTo( 200 );
-	}
-
-	@DisplayName( "It can handle onError callback for connection failures" )
-	@Test
-	public void testCanHandleOnErrorCallback( WireMockRuntimeInfo wmRuntimeInfo ) {
-		// Use an invalid host to trigger connection error
-		// @formatter:off
-		instance.executeSource(
-		    """
-				errorCalled = false
-				errorMessage = ""
-				
-				function onErrorHandler(data) {
-					errorCalled = true
-					errorMessage = data.message
-				}
-				
-				bx:http url="http://invalid-host-that-does-not-exist.local" onError=onErrorHandler throwOnError=false {
-				}
-				
-				result = bxhttp
-			""",
-		    context
-		);
-		// @formatter:on
-
-		// Verify onError was called
-		assertThat( variables.get( Key.of( "errorCalled" ) ) ).isInstanceOf( Boolean.class );
-		assertThat( ( Boolean ) variables.get( Key.of( "errorCalled" ) ) ).isTrue();
-
-		// Verify error message was passed
-		assertThat( variables.get( Key.of( "errorMessage" ) ) ).isInstanceOf( String.class );
-		String errorMsg = ( String ) variables.get( Key.of( "errorMessage" ) );
-		assertThat( errorMsg ).isNotEmpty();
-		assertThat( errorMsg ).contains( "Unknown host" );
-	}
-
-	@DisplayName( "It can handle onComplete with onChunk in streaming mode" )
-	@Test
-	public void testCanHandleOnCompleteWithOnChunk( WireMockRuntimeInfo wmRuntimeInfo ) {
-		stubFor( get( "/streaming-complete" )
-		    .willReturn(
-		        aResponse()
-		            .withBody( "Streaming data test" )
-		            .withStatus( 200 ) )
-		);
-
-		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
-
-		// @formatter:off
-		instance.executeSource(
-		    String.format( """
-					chunkCount = 0
-					completeCalled = false
-					
-					function chunkHandler(data) {
-						chunkCount++
-					}
-					
-					function completeHandler(data) {
-						completeCalled = true
-					}
-					
-					bx:http url="%s" onChunk=chunkHandler onComplete=completeHandler {
-					}
-					
-					result = bxhttp
-				""",
-		        baseURL + "/streaming-complete"
-		    ),
-		    context
-		);
-		// @formatter:on
-
-		// Verify chunks were processed
-		assertThat( variables.get( Key.of( "chunkCount" ) ) ).isInstanceOf( Integer.class );
-		assertThat( ( Integer ) variables.get( Key.of( "chunkCount" ) ) ).isGreaterThan( 0 );
-
-		// Verify onComplete was called after streaming
-		assertThat( variables.get( Key.of( "completeCalled" ) ) ).isInstanceOf( Boolean.class );
-		assertThat( ( Boolean ) variables.get( Key.of( "completeCalled" ) ) ).isTrue();
 	}
 
 }

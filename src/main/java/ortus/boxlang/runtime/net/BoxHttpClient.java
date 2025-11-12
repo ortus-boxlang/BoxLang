@@ -838,9 +838,11 @@ public class BoxHttpClient {
 		 * @param bodyPublisher  The body publisher (if any)
 		 * @param formFields     The list of form fields
 		 *
+		 * @return The body publisher with form data
+		 *
 		 * @throws BoxRuntimeException if an error occurs during processing
 		 */
-		private void processFormFields(
+		private HttpRequest.BodyPublisher processFormFields(
 		    HttpRequest.Builder requestBuilder,
 		    HttpRequest.BodyPublisher bodyPublisher,
 		    List<IStruct> formFields ) {
@@ -862,6 +864,7 @@ public class BoxHttpClient {
 			);
 
 			requestBuilder.header( "Content-Type", "application/x-www-form-urlencoded" );
+			return bodyPublisher;
 		}
 
 		/**
@@ -872,11 +875,13 @@ public class BoxHttpClient {
 		 * @param formFields     The list of form fields
 		 * @param files          The list of files
 		 *
+		 * @return The body publisher with multipart data
+		 *
 		 * @throws IOException
 		 *
 		 * @throws BoxRuntimeException if an error occurs during processing
 		 */
-		private void processFiles(
+		private HttpRequest.BodyPublisher processFiles(
 		    HttpRequest.Builder requestBuilder,
 		    HttpRequest.BodyPublisher bodyPublisher,
 		    List<IStruct> formFields,
@@ -903,6 +908,7 @@ public class BoxHttpClient {
 			HttpRequestMultipartBody multipartBody = multipartBodyBuilder.build();
 			requestBuilder.header( "Content-Type", multipartBody.getContentType() );
 			bodyPublisher = HttpRequest.BodyPublishers.ofByteArray( multipartBody.getBody() );
+			return bodyPublisher;
 		}
 
 		/**
@@ -914,9 +920,11 @@ public class BoxHttpClient {
 		 * @param files          The list of files
 		 * @param bodyPublisher  The body publisher (if any)
 		 *
+		 * @return The body publisher (possibly modified)
+		 *
 		 * @throws BoxRuntimeException if an error occurs during processing
 		 */
-		private void processParams(
+		private HttpRequest.BodyPublisher processParams(
 		    URIBuilder uriBuilder,
 		    HttpRequest.Builder requestBuilder,
 		    List<IStruct> formFields,
@@ -996,6 +1004,7 @@ public class BoxHttpClient {
 					default -> throw new BoxRuntimeException( "Unhandled HTTPParam type: " + type );
 				}
 			}
+			return bodyPublisher;
 		}
 
 		/**
@@ -1043,15 +1052,15 @@ public class BoxHttpClient {
 				setupBasicAuth( requestBuilder );
 			}
 
-			// Proceess HTTP Params
-			processParams( uriBuilder, requestBuilder, formFields, files, bodyPublisher );
+			// Process HTTP Params - returns the bodyPublisher if any body-type params were found
+			bodyPublisher = processParams( uriBuilder, requestBuilder, formFields, files, bodyPublisher );
 
 			// Process Files
 			if ( !files.isEmpty() ) {
-				processFiles( requestBuilder, bodyPublisher, formFields, files );
+				bodyPublisher = processFiles( requestBuilder, bodyPublisher, formFields, files );
 			} else if ( !formFields.isEmpty() ) {
 				// Process Form Fields
-				processFormFields( requestBuilder, bodyPublisher, formFields );
+				bodyPublisher = processFormFields( requestBuilder, bodyPublisher, formFields );
 			}
 
 			// Set body publisher to noBody if still null
@@ -1103,11 +1112,13 @@ public class BoxHttpClient {
 				this.httpResult.put(
 				    Key.request,
 				    Struct.ofNonConcurrent(
-				        Key.URL, this.targetHttpRequest.uri().toString(),
+				        Key.charset, this.charset,
+				        Key.headers, Struct.fromMap( this.targetHttpRequest.headers().map() ),
+				        Key.httpVersion, this.httpVersion,
 				        Key.method, method,
-				        Key.timeout, this.timeout,
 				        Key.multipart, this.multipart,
-				        Key.headers, Struct.fromMap( this.targetHttpRequest.headers().map() )
+				        Key.timeout, this.timeout,
+				        Key.URL, this.targetHttpRequest.uri().toString()
 				    ) );
 
 				// Announce we are ready to process

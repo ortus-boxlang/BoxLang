@@ -92,6 +92,7 @@ public class HTTP extends Component {
 		    new Attribute( Key.port, "numeric" ),
 		    new Attribute( Key.httpVersion, "string", "HTTP/2", Set.of( Validator.valueOneOf( "HTTP/1.1", "HTTP/2" ) ) ),
 		    new Attribute( Key.timeout, "numeric", BoxHttpClient.DEFAULT_REQUEST_TIMEOUT ),
+		    new Attribute( Key.connectionTimeout, "numeric", BoxHttpClient.DEFAULT_CONNECTION_TIMEOUT ),
 		    new Attribute( Key.redirect, "boolean", true ),
 		    new Attribute( Key.resolveUrl, "boolean", false ),
 		    new Attribute( Key.encodeUrl, "boolean", true, Set.of( Validator.TYPE ) ),
@@ -117,7 +118,7 @@ public class HTTP extends Component {
 		        Validator.NON_EMPTY,
 		        Validator.valueOneOf( "true", "false", "auto", "no", "yes", "never" )
 		    ) ),
-		    new Attribute( Key.throwOnError, "boolean", true ),
+		    new Attribute( Key.throwOnError, "boolean", false ),
 		    new Attribute( Key.file, "string" ),
 		    new Attribute( Key.path, "string" ),
 		    // Caching
@@ -259,7 +260,7 @@ public class HTTP extends Component {
 		BoxHttpClient	boxHttpClient	= httpService.getOrBuildClient(
 		    attributes.getAsString( Key.httpVersion ),
 		    attributes.getAsBoolean( Key.redirect ),
-		    BoxHttpClient.DEFAULT_CONNECTION_TIMEOUT,
+		    attributes.getAsInteger( Key.connectionTimeout ),
 		    attributes.getAsString( Key.proxyServer ),
 		    attributes.getAsInteger( Key.proxyPort ),
 		    attributes.getAsString( Key.proxyUser ),
