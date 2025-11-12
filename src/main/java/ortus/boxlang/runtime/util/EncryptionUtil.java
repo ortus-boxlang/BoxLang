@@ -55,8 +55,8 @@ import javax.crypto.spec.PBEParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.commons.lang3.SerializationUtils;
-import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
@@ -966,6 +966,68 @@ public final class EncryptionUtil {
 			_byteTable[ i ] = h;
 		}
 		return _byteTable;
+	}
+
+	/**
+	 * Extract client certificate information from a PKCS12 certificate file.
+	 * Reads the certificate and returns the subject DN (Distinguished Name).
+	 * This is commonly used for debugging or logging purposes.
+	 *
+	 * @param certPath     The path to the PKCS12 certificate file
+	 * @param certPassword The password for the certificate (can be null if no password)
+	 *
+	 * @return The certificate subject DN (e.g., "CN=Test Certificate"), or null if extraction fails
+	 */
+	public static String extractCertificateSubject( String certPath, String certPassword ) {
+		// Load the keystore using the shared utility method
+		java.security.KeyStore keyStore = loadPKCS12KeyStore( certPath, certPassword );
+		if ( keyStore == null ) {
+			return null;
+		}
+
+		try {
+			// Get the first certificate alias
+			String alias = keyStore.aliases().nextElement();
+			if ( alias != null ) {
+				java.security.cert.Certificate cert = keyStore.getCertificate( alias );
+				if ( cert instanceof java.security.cert.X509Certificate ) {
+					java.security.cert.X509Certificate x509 = ( java.security.cert.X509Certificate ) cert;
+					// Return the subject DN for the certificate
+					return x509.getSubjectX500Principal().getName();
+				}
+			}
+		} catch ( Exception e ) {
+			// Return null on error - caller can decide how to handle
+			return null;
+		}
+
+		return null;
+	}
+
+	/**
+	 * Load a PKCS12 keystore from a file.
+	 * This is a convenience method for loading certificate keystores commonly used in SSL/TLS.
+	 *
+	 * @param certPath     The path to the PKCS12 certificate file
+	 * @param certPassword The password for the certificate (can be null if no password)
+	 *
+	 * @return The loaded KeyStore, or null if loading fails
+	 */
+	public static java.security.KeyStore loadPKCS12KeyStore( String certPath, String certPassword ) {
+		if ( certPath == null ) {
+			return null;
+		}
+
+		try {
+			java.security.KeyStore keyStore = java.security.KeyStore.getInstance( "PKCS12" );
+			try ( java.io.FileInputStream fis = new java.io.FileInputStream( certPath ) ) {
+				keyStore.load( fis, certPassword != null ? certPassword.toCharArray() : null );
+			}
+			return keyStore;
+		} catch ( Exception e ) {
+			// Return null on error - caller can decide how to handle
+			return null;
+		}
 	}
 
 }

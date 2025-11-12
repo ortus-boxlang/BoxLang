@@ -17,8 +17,6 @@
  */
 package ortus.boxlang.runtime.services;
 
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.net.Authenticator;
 import java.net.InetSocketAddress;
 import java.net.PasswordAuthentication;
@@ -41,6 +39,7 @@ import ortus.boxlang.runtime.net.BoxHttpClient;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.EncryptionUtil;
 
 /**
  * This service manages all HTTP clients in BoxLang.
@@ -243,7 +242,6 @@ public class HttpService extends BaseService {
 	 * @param proxyPassword   The proxy authentication password (null if no auth)
 	 * @param clientCertPath  The path to the client certificate (null if none)
 	 * @param clientCertPass  The client certificate password (null if none)
-	 * @param debug           Whether debug mode is enabled
 	 *
 	 * @return The BoxHttpClient instance (cached or newly created)
 	 */
@@ -256,8 +254,7 @@ public class HttpService extends BaseService {
 	    String proxyUser,
 	    String proxyPassword,
 	    String clientCertPath,
-	    String clientCertPass,
-	    boolean debug ) {
+	    String clientCertPass ) {
 
 		// Default httpVersion if null
 		if ( httpVersion == null ) {
@@ -274,8 +271,7 @@ public class HttpService extends BaseService {
 		    proxyUser,
 		    proxyPassword,
 		    clientCertPath,
-		    clientCertPass,
-		    debug
+		    clientCertPass
 		);
 
 		// Return cached client if it exists
@@ -323,20 +319,34 @@ public class HttpService extends BaseService {
 		// Configure client certificate (SSL/TLS)
 		if ( clientCertPath != null ) {
 			try {
-				// Load the client certificate into a new keystore
-				KeyStore keyStore = KeyStore.getInstance( "PKCS12" );
-				try ( InputStream certInputStream = new FileInputStream( clientCertPath ) ) {
-					keyStore.load( certInputStream, clientCertPass != null ? clientCertPass.toCharArray() : null );
+				// Verify the certificate file exists before attempting to load
+				java.io.File certFile = new java.io.File( clientCertPath );
+				if ( !certFile.exists() ) {
+					throw new BoxRuntimeException( "Client certificate file not found: " + clientCertPath );
+				}
+				if ( !certFile.canRead() ) {
+					throw new BoxRuntimeException( "Client certificate file is not readable: " + clientCertPath );
 				}
 
-				KeyManagerFactory keyManagerFactory = KeyManagerFactory
-				    .getInstance( KeyManagerFactory.getDefaultAlgorithm() );
+				// Load the client certificate keystore using EncryptionUtil
+				KeyStore keyStore = EncryptionUtil.loadPKCS12KeyStore( clientCertPath, clientCertPass );
+				if ( keyStore == null ) {
+					throw new BoxRuntimeException(
+					    "Failed to load client certificate keystore (check password or file format): " + clientCertPath
+					);
+				}
+
+				KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance( KeyManagerFactory.getDefaultAlgorithm() );
 				keyManagerFactory.init( keyStore, clientCertPass != null ? clientCertPass.toCharArray() : null );
 
 				SSLContext sslContext = SSLContext.getInstance( "TLS" );
 				sslContext.init( keyManagerFactory.getKeyManagers(), null, new SecureRandom() );
 
 				builder.sslContext( sslContext );
+			} catch ( BoxRuntimeException e ) {
+				// Re-throw BoxRuntimeException as-is (these are our validation errors)
+				this.logger.error( "Client certificate configuration error: {}", e.getMessage() );
+				throw e;
 			} catch ( Exception e ) {
 				this.logger.error( "Failed to configure client certificate: {}", clientCertPath, e );
 				throw new BoxRuntimeException(
@@ -367,7 +377,6 @@ public class HttpService extends BaseService {
 	 * @param proxyPassword   The proxy authentication password
 	 * @param clientCertPath  The path to the client certificate
 	 * @param clientCertPass  The client certificate password
-	 * @param debug           Whether debug mode is enabled
 	 *
 	 * @return A unique Key identifying this client configuration
 	 */
@@ -380,15 +389,14 @@ public class HttpService extends BaseService {
 	    String proxyUser,
 	    String proxyPassword,
 	    String clientCertPath,
-	    String clientCertPass,
-	    boolean debug ) {
+	    String clientCertPass ) {
 		// Build a composite string from all configuration parameters
 		StringBuilder keyBuilder = new StringBuilder();
 
 		keyBuilder.append( "v=" ).append( httpVersion ).append( ";" );
 		keyBuilder.append( "redir=" ).append( followRedirects ).append( ";" );
 		keyBuilder.append( "timeout=" ).append( connectTimeout != null ? connectTimeout : "none" ).append( ";" );
-		keyBuilder.append( "debug=" ).append( debug ).append( ";" );
+		// Note: debug flag intentionally excluded - it doesn't affect HttpClient configuration
 
 		// Proxy configuration
 		if ( proxyServer != null && proxyPort != null ) {
@@ -403,11 +411,12 @@ public class HttpService extends BaseService {
 		// Client certificate configuration
 		if ( clientCertPath != null ) {
 			keyBuilder.append( "cert=" ).append( clientCertPath ).append( ";" );
+			// Note: We don't include password in the key for security, but we include a flag
 			keyBuilder.append( "certPass=" ).append( clientCertPass != null ? "yes" : "no" ).append( ";" );
 		}
 
 		// Generate SHA-256 hash of the configuration string using EncryptionUtil
-		String hash = ortus.boxlang.runtime.util.EncryptionUtil.hash( keyBuilder.toString(), "SHA-256" );
+		String hash = EncryptionUtil.hash( keyBuilder.toString(), "SHA-256" );
 
 		// Build the key
 		return Key.of( "bx-http-" + hash );

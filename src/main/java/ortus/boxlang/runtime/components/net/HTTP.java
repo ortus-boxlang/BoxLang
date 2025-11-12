@@ -38,6 +38,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
+import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 import ortus.boxlang.runtime.validation.Validator;
@@ -239,7 +240,7 @@ public class HTTP extends Component {
 
 			// In debug mode, extract certificate info for X-Client-Cert header
 			if ( debug ) {
-				encodedCertKey = extractClientCertInfo(
+				encodedCertKey = EncryptionUtil.extractCertificateSubject(
 				    attributes.getAsString( Key.clientCert ),
 				    attributes.getAsString( Key.clientCertPassword )
 				);
@@ -276,8 +277,7 @@ public class HTTP extends Component {
 		    attributes.getAsString( Key.proxyUser ),
 		    attributes.getAsString( Key.proxyPassword ),
 		    attributes.getAsString( Key.clientCert ),
-		    attributes.getAsString( Key.clientCertPassword ),
-		    BooleanCaster.cast( attributes.getOrDefault( Key.debug, false ) )
+		    attributes.getAsString( Key.clientCertPassword )
 		);
 
 		// Make the HTTP request
@@ -344,44 +344,5 @@ public class HTTP extends Component {
 		);
 
 		return bodyResult;
-	}
-
-	/**
-	 * Extract client certificate information for debugging purposes.
-	 * Reads the certificate file and returns the subject DN (Distinguished Name).
-	 *
-	 * @param certPath     The path to the PKCS12 certificate file
-	 * @param certPassword The password for the certificate
-	 *
-	 * @return The certificate subject DN, or null if extraction fails
-	 */
-	private String extractClientCertInfo( String certPath, String certPassword ) {
-		if ( certPath == null ) {
-			return null;
-		}
-
-		try {
-			// Load the certificate from the PKCS12 file
-			java.security.KeyStore keyStore = java.security.KeyStore.getInstance( "PKCS12" );
-			try ( java.io.FileInputStream fis = new java.io.FileInputStream( certPath ) ) {
-				keyStore.load( fis, certPassword != null ? certPassword.toCharArray() : null );
-			}
-
-			// Get the first certificate alias
-			String alias = keyStore.aliases().nextElement();
-			if ( alias != null ) {
-				java.security.cert.Certificate cert = keyStore.getCertificate( alias );
-				if ( cert instanceof java.security.cert.X509Certificate ) {
-					java.security.cert.X509Certificate x509 = ( java.security.cert.X509Certificate ) cert;
-					// Return the subject DN for the X-Client-Cert header
-					return x509.getSubjectX500Principal().getName();
-				}
-			}
-		} catch ( Exception e ) {
-			// Log but don't fail - this is just for debugging
-			httpService.getLogger().warn( "Failed to extract client certificate info for debug header: {}", e.getMessage() );
-		}
-
-		return null;
 	}
 }
