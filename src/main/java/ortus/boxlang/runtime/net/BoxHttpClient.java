@@ -497,7 +497,7 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest timeout( int timeout ) {
+		public BoxHttpRequest timeout( Integer timeout ) {
 			this.timeout = timeout;
 			return this;
 		}
@@ -509,7 +509,7 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest port( int port ) {
+		public BoxHttpRequest port( Integer port ) {
 			this.port = port;
 			return this;
 		}
@@ -1156,7 +1156,7 @@ public class BoxHttpClient {
 				if ( this.onCompleteCallback != null ) {
 					context.invokeFunction(
 					    onCompleteCallback,
-					    new Object[] { response, this.httpResult, this.httpResult.get( Key.statusCode ) }
+					    new Object[] { this.httpResult, response }
 					);
 				}
 			} catch ( ExecutionException e ) {
@@ -1384,7 +1384,7 @@ public class BoxHttpClient {
 					}
 				} );
 				this.httpResult.put( Key.cookies, HttpResponseHelper.generateCookiesQuery( headers ) );
-				this.httpResult.put( Key.executionTime, Duration.between( this.startTime, Instant.now() ).toMillis() );
+				this.httpResult.put( Key.executionTime, Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
 
 				// Handle output file saving if specified
 				if ( this.outputDirectory != null ) {
