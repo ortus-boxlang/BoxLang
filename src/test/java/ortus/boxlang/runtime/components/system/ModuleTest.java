@@ -310,6 +310,21 @@ public class ModuleTest {
 	}
 
 	@Test
+	public void testCanRunCustomTagInsideCatchBlock() {
+		instance.executeSource(
+		    """
+		       <cftry>
+		    	<cfset 1/0>
+		    	<cfcatch type="any">
+		    		<cfmodule name="brad" foo="bar">
+		    	</cfcatch>
+		    </cftry>
+		                 """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( buffer.toString().trim() ).isEqualTo( "This is the Brad tag bar" );
+	}
+
+	@Test
 	public void testCanRunCustomTagNameBL() {
 		instance.executeSource(
 		    """

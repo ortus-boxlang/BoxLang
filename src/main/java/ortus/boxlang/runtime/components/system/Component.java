@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.context.CustomTagBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
+import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
@@ -106,9 +107,9 @@ public class Component extends ortus.boxlang.runtime.components.Component {
 		executionState.put( Key.customTagPath, bTemplate.getRunnablePath().absolutePath().toString() );
 
 		// Prepare the variables
-		VariablesScope		caller		= ( VariablesScope ) context.getScopeNearby( VariablesScope.name );
+		IScope				caller		= context.getScopeNearby( VariablesScope.name );
 		CustomTagBoxContext	ctContext	= new CustomTagBoxContext( context, tagName );
-		VariablesScope		variables	= ( VariablesScope ) ctContext.getScopeNearby( VariablesScope.name );
+		IScope				variables	= ctContext.getScopeNearby( VariablesScope.name );
 
 		variables.put( Key.attributes, actualAttributes );
 		variables.put( Key.caller, caller );
