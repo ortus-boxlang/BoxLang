@@ -1369,14 +1369,16 @@ public class BoxHttpClient {
 				String	statusCodeString	= String.valueOf( response.statusCode() );
 				String	statusText			= HttpStatusReasons.getReason( response.statusCode() );
 
+				// Process The response headers
 				headers.put( Key.HTTP_Version, httpVersionString );
 				headers.put( Key.status_code, statusCodeString );
 				headers.put( Key.explanation, statusText );
-
 				this.httpResult.put( Key.responseHeader, headers );
 				this.httpResult.put( Key.header,
 				    HttpResponseHelper.generateHeaderString( HttpResponseHelper.generateStatusLine( httpVersionString, statusCodeString, statusText ),
 				        headers ) );
+
+				// Fill out the rest of the httpResult struct
 				this.httpResult.put( Key.HTTP_Version, httpVersionString );
 				this.httpResult.put( Key.statusCode, response.statusCode() );
 				this.httpResult.put( Key.status_code, response.statusCode() );
@@ -1384,6 +1386,11 @@ public class BoxHttpClient {
 				this.httpResult.put( Key.status_text, statusText );
 				this.httpResult.put( Key.fileContent, response.statusCode() == 408 ? "Request Timeout" : responseBody );
 				this.httpResult.put( Key.errorDetail, response.statusCode() == 408 ? response.body() : "" );
+				this.httpResult.put( Key.cookies, HttpResponseHelper.generateCookiesQuery( headers ) );
+				this.httpResult.put( Key.executionTime, Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
+				this.httpResult.put( Key.mimetype, "" );
+
+				// Determine Content-Type and Charset
 				Optional<String> contentTypeHeader = httpHeaders.firstValue( "Content-Type" );
 				contentTypeHeader.ifPresent( ( headerContentType ) -> {
 					String[] contentTypeParts = headerContentType.split( ";\s*" );
@@ -1394,8 +1401,19 @@ public class BoxHttpClient {
 						this.httpResult.put( Key.charset, HttpResponseHelper.extractCharset( headerContentType ) );
 					}
 				} );
-				this.httpResult.put( Key.cookies, HttpResponseHelper.generateCookiesQuery( headers ) );
-				this.httpResult.put( Key.executionTime, Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
+
+				// Determine if the response is text based on Content-Type
+				boolean isText = false;
+				if ( contentType == null || contentType.isEmpty() ) {
+					// No content type specified = text
+					isText = true;
+				} else {
+					String lowerContentType = contentType.toLowerCase();
+					isText = lowerContentType.startsWith( "text" )
+					    || lowerContentType.startsWith( "message" )
+					    || lowerContentType.equals( "application/octet-stream" );
+				}
+				this.httpResult.put( Key.text, isText );
 
 				// Handle output file saving if specified
 				if ( this.outputDirectory != null ) {
