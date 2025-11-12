@@ -278,6 +278,8 @@ public class HTTP extends Component {
 		    .method( attributes.getAsString( Key.method ) )
 		    // Special URL Port if any
 		    .port( attributes.getAsInteger( Key.port ) )
+		    // Timeout in seconds
+		    .timeout( attributes.getAsInteger( Key.timeout ) )
 		    // Charset for the request
 		    .charset( attributes.getAsString( Key.charset ) )
 		    // Whether to throw an error if the HTTP response status code is 400 or greater. Default is true.
