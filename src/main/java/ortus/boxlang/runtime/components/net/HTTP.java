@@ -319,11 +319,6 @@ public class HTTP extends Component {
 				        exception
 				    );
 			    }
-			    ExpressionInterpreter.setVariable(
-			        context,
-			        attributes.getAsString( Key.result ),
-			        result
-			    );
 		    } );
 
 		// Set the result variable before returning
