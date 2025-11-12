@@ -132,6 +132,7 @@ public class HTTP extends Component {
 		    new Attribute( Key.clientCert, "string" ),
 		    new Attribute( Key.clientCertPassword, "string" ),
 		    // Streaming/callbacks
+		    new Attribute( Key.onRequestStart, "function" ),
 		    new Attribute( Key.onChunk, "function" ),
 		    new Attribute( Key.onError, "function" ),
 		    new Attribute( Key.onComplete, "function" ),
@@ -151,7 +152,7 @@ public class HTTP extends Component {
 	 * and file download/upload operations. It wraps Java's HttpClient with a BoxLang-friendly interface.
 	 * <p>
 	 * <b>Basic Usage:</b>
-	 * 
+	 *
 	 * <pre>
 	 * // Simple GET request
 	 * bx:http url="https://api.example.com/users" {}
@@ -161,7 +162,7 @@ public class HTTP extends Component {
 	 * </pre>
 	 * <p>
 	 * <b>POST with JSON:</b>
-	 * 
+	 *
 	 * <pre>
 	 * bx:http method="POST" url="https://api.example.com/users" result="response" {
 	 *     bx:httpparam type="header" name="Content-Type" value="application/json";
@@ -171,7 +172,7 @@ public class HTTP extends Component {
 	 * </pre>
 	 * <p>
 	 * <b>File Upload (Multipart):</b>
-	 * 
+	 *
 	 * <pre>
 	 * bx:http method="POST" url="https://api.example.com/upload" multipart=true {
 	 *     bx:httpparam type="file" name="document" file="/path/to/document.pdf";
@@ -180,7 +181,7 @@ public class HTTP extends Component {
 	 * </pre>
 	 * <p>
 	 * <b>Download File:</b>
-	 * 
+	 *
 	 * <pre>
 	 * bx:http url="https://example.com/file.pdf"
 	 *         path="/downloads"
@@ -190,7 +191,7 @@ public class HTTP extends Component {
 	 * </pre>
 	 * <p>
 	 * <b>Authentication:</b>
-	 * 
+	 *
 	 * <pre>
 	 * // Basic Authentication
 	 * bx:http url="https://api.example.com/protected"
@@ -205,7 +206,7 @@ public class HTTP extends Component {
 	 * </pre>
 	 * <p>
 	 * <b>Streaming/Chunked Responses:</b>
-	 * 
+	 *
 	 * <pre>
 	 * bx:http url="https://api.example.com/stream" onChunk=function(chunk) {
 	 *     println( "Received chunk ##chunk.chunkNumber: ##chunk.totalReceived bytes" );
@@ -214,7 +215,7 @@ public class HTTP extends Component {
 	 * </pre>
 	 * <p>
 	 * <b>Proxy Configuration:</b>
-	 * 
+	 *
 	 * <pre>
 	 * bx:http url="https://api.example.com/data"
 	 *         proxyServer="proxy.company.com"
@@ -224,7 +225,7 @@ public class HTTP extends Component {
 	 * </pre>
 	 * <p>
 	 * <b>Error Handling:</b>
-	 * 
+	 *
 	 * <pre>
 	 * bx:http url="https://api.example.com/data"
 	 *         throwOnError=true
@@ -303,6 +304,9 @@ public class HTTP extends Component {
 	 * @attribute.clientCert The file path to the PKCS12 (.p12/.pfx) client certificate for SSL/TLS mutual authentication. Optional.
 	 *
 	 * @attribute.clientCertPassword The password for the client certificate keystore. Optional.
+	 *
+	 * @attribute.onRequestStart A callback function called before the HTTP request is sent. Receives a struct with: request (HTTPRequest builder object), url (target URL), method (HTTP method), headers (struct of headers). Useful for logging, modifying
+	 *                           request, or performing pre-flight checks. Optional.
 	 *
 	 * @attribute.onChunk A callback function for streaming/chunked response processing. Receives a struct with: chunk (data), chunkNumber (1-based), totalReceived (bytes), headers (first chunk only), result (HTTPResult struct). Optional.
 	 *
@@ -424,6 +428,7 @@ public class HTTP extends Component {
 			    request.asBinaryNever();
 		    } )
 		    // CallBacks
+		    .onRequestStart( attributes.getAsFunction( Key.onRequestStart ) )
 		    .onChunk( attributes.getAsFunction( Key.onChunk ) )
 		    .onError( attributes.getAsFunction( Key.onError ) )
 		    .onComplete( attributes.getAsFunction( Key.onComplete ) )

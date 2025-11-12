@@ -277,6 +277,7 @@ public class BoxHttpClient {
 		private String										authType			= "BASIC";
 
 		// Callbacks
+		private ortus.boxlang.runtime.types.Function		onRequestStartCallback;
 		private ortus.boxlang.runtime.types.Function		onChunkCallback;
 		private ortus.boxlang.runtime.types.Function		onErrorCallback;
 		private ortus.boxlang.runtime.types.Function		onCompleteCallback;
@@ -748,6 +749,18 @@ public class BoxHttpClient {
 		}
 
 		/**
+		 * Set the callback function for request start (called before request is sent)
+		 *
+		 * @param callback The request start callback function
+		 *
+		 * @return This builder for chaining
+		 */
+		public BoxHttpRequest onRequestStart( ortus.boxlang.runtime.types.Function callback ) {
+			this.onRequestStartCallback = callback;
+			return this;
+		}
+
+		/**
 		 * Set the callback function for streaming chunk processing
 		 *
 		 * @param callback The chunk callback function
@@ -1168,6 +1181,22 @@ public class BoxHttpClient {
 				    )
 				);
 
+				// Call onRequestStart callback if provided (before sending the request)
+				if ( this.onRequestStartCallback != null ) {
+					context.invokeFunction(
+					    this.onRequestStartCallback,
+					    new Object[] {
+					        Struct.ofNonConcurrent(
+					            Key.request, this.targetHttpRequest,
+					            Key.URL, this.targetHttpRequest.uri().toString(),
+					            Key.method, this.method,
+					            Key.headers, Struct.fromMap( this.targetHttpRequest.headers().map() ),
+					            Key.httpResult, this.httpResult
+					        )
+					    }
+					);
+				}
+
 				// Send the HTTP Request asynchronously
 				HttpResponse<byte[]> response = httpClient
 				    .sendAsync( this.targetHttpRequest, HttpResponse.BodyHandlers.ofByteArray() )
@@ -1317,6 +1346,11 @@ public class BoxHttpClient {
 				this.httpResult.put( Key.errorDetail, e.getClass().getName() + ": " + e.getMessage() );
 				this.httpResult.put( Key.charset, this.charset );
 				this.httpResult.put( Key.executionTime, Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
+			} finally {
+				// Always calculate execution time if not already set (success path)
+				if ( this.startTime != null && !this.httpResult.containsKey( Key.executionTime ) ) {
+					this.httpResult.put( Key.executionTime, Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
+				}
 			}
 
 			return this;
