@@ -274,6 +274,8 @@ public class HTTP extends Component {
 		BoxHttpRequest	httpRequest		= boxHttpClient
 		    // Target URL and invocation context
 		    .newRequest( attributes.getAsString( Key.URL ), context )
+		    // HTTP Method (GET, POST, PUT, DELETE, etc.)
+		    .method( attributes.getAsString( Key.method ) )
 		    // Special URL Port if any
 		    .port( attributes.getAsInteger( Key.port ) )
 		    // Charset for the request
@@ -308,7 +310,7 @@ public class HTTP extends Component {
 		    .onChunk( attributes.getAsFunction( Key.onChunk ) )
 		    .onError( attributes.getAsFunction( Key.onError ) )
 		    .onComplete( attributes.getAsFunction( Key.onComplete ) )
-		    // Finally, invoke the request
+		    // Invoke the request
 		    .invoke()
 		    // Handle failures
 		    .ifFailed( ( exception, result ) -> {
