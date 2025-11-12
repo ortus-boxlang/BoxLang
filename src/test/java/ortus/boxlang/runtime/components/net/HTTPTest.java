@@ -264,12 +264,10 @@ public class HTTPTest {
 		""", wmRuntimeInfo.getHttpBaseUrl() + "/posts" ), context );
 		// @formatter:on
 
-		assertThat( variables.get( bxhttp ) ).isInstanceOf( IStruct.class );
-
-		IStruct res = variables.getAsStruct( bxhttp );
-		assertThat( res.get( Key.statusCode ) ).isEqualTo( 201 );
-		assertThat( res.get( Key.statusText ) ).isEqualTo( "Created" );
-		String body = res.getAsString( Key.fileContent );
+		IStruct httpResult = variables.getAsStruct( bxhttp );
+		assertThat( httpResult.get( Key.statusCode ) ).isEqualTo( 201 );
+		assertThat( httpResult.get( Key.statusText ) ).isEqualTo( "Created" );
+		String body = httpResult.getAsString( Key.fileContent );
 		assertThat( body ).isEqualTo( "{\"id\": 1, \"tags\": [ \"tag-a\", \"tag-b\" ] }" );
 	}
 
@@ -290,12 +288,10 @@ public class HTTPTest {
 		    """,
 		    wmRuntimeInfo.getHttpBaseUrl() + "/posts" ), context );
 
-		assertThat( variables.get( bxhttp ) ).isInstanceOf( IStruct.class );
-
-		IStruct res = variables.getAsStruct( bxhttp );
-		assertThat( res.get( Key.statusCode ) ).isEqualTo( 201 );
-		assertThat( res.get( Key.statusText ) ).isEqualTo( "Created" );
-		String body = res.getAsString( Key.fileContent );
+		IStruct httpResult = variables.getAsStruct( bxhttp );
+		assertThat( httpResult.get( Key.statusCode ) ).isEqualTo( 201 );
+		assertThat( httpResult.get( Key.statusText ) ).isEqualTo( "Created" );
+		String body = httpResult.getAsString( Key.fileContent );
 		assertThat( body ).isEqualTo( "{\"id\": 1, \"name\": \"foobar\", \"body\": \"lorem ipsum dolor\"}" );
 	}
 
@@ -322,12 +318,10 @@ public class HTTPTest {
 		);
 		// @formatter:on
 
-		assertThat( variables.get( bxhttp ) ).isInstanceOf( IStruct.class );
-
-		IStruct res = variables.getAsStruct( bxhttp );
-		assertThat( res.get( Key.statusCode ) ).isEqualTo( 200 );
-		assertThat( res.get( Key.statusText ) ).isEqualTo( "OK" );
-		Object body = res.get( Key.fileContent );
+		IStruct httpResult = variables.getAsStruct( bxhttp );
+		assertThat( httpResult.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( httpResult.get( Key.statusText ) ).isEqualTo( "OK" );
+		Object body = httpResult.get( Key.fileContent );
 		assertThat( body ).isInstanceOf( byte[].class );
 
 		// Now test with getAsBinary set to "no" which should still return binary
@@ -344,12 +338,10 @@ public class HTTPTest {
 		);
 		// @formatter:on
 
-		assertThat( variables.get( bxhttp ) ).isInstanceOf( IStruct.class );
-
-		res = variables.getAsStruct( bxhttp );
-		assertThat( res.get( Key.statusCode ) ).isEqualTo( 200 );
-		assertThat( res.get( Key.statusText ) ).isEqualTo( "OK" );
-		body = res.get( Key.fileContent );
+		httpResult = variables.getAsStruct( bxhttp );
+		assertThat( httpResult.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( httpResult.get( Key.statusText ) ).isEqualTo( "OK" );
+		body = httpResult.get( Key.fileContent );
 		assertThat( body ).isInstanceOf( byte[].class );
 	}
 
@@ -372,12 +364,10 @@ public class HTTPTest {
 		);
 		// @formatter:on
 
-		assertThat( variables.get( bxhttp ) ).isInstanceOf( IStruct.class );
-
-		IStruct res = variables.getAsStruct( bxhttp );
-		assertThat( res.get( Key.statusCode ) ).isEqualTo( 200 );
-		assertThat( res.get( Key.statusText ) ).isEqualTo( "OK" );
-		Object body = res.get( Key.fileContent );
+		IStruct httpResult = variables.getAsStruct( bxhttp );
+		assertThat( httpResult.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( httpResult.get( Key.statusText ) ).isEqualTo( "OK" );
+		Object body = httpResult.get( Key.fileContent );
 		assertThat( body ).isInstanceOf( String.class );
 		assertThat( ( String ) body ).isEqualTo( "Hello world!" );
 	}
@@ -422,9 +412,8 @@ public class HTTPTest {
 			context
 		);
 		// @formatter:on
-		assertThat( variables.get( Key.of( "httpResult" ) ) ).isInstanceOf( IStruct.class );
-		IStruct res = variables.getAsStruct( Key.of( "httpResult" ) );
-		assertThat( res.get( Key.statusCode ) ).isEqualTo( 404 );
+		IStruct httpResult = variables.getAsStruct( Key.of( "httpResult" ) );
+		assertThat( httpResult.get( Key.statusCode ) ).isEqualTo( 404 );
 		assertThat( FileSystemUtil.exists( "src/test/resources/tmp/http_tests/bad-image.jpg" ) ).isTrue();
 	}
 
@@ -497,11 +486,9 @@ public class HTTPTest {
 		);
 		// @formatter:on
 
-		assertThat( variables.get( bxhttp ) ).isInstanceOf( IStruct.class );
-
-		IStruct res = variables.getAsStruct( bxhttp );
-		assertThat( res.get( Key.statusCode ) ).isEqualTo( 200 );
-		assertThat( res.get( Key.statusText ) ).isEqualTo( "OK" );
+		IStruct httpResult = variables.getAsStruct( bxhttp );
+		assertThat( httpResult.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( httpResult.get( Key.statusText ) ).isEqualTo( "OK" );
 	}
 
 	@DisplayName( "Will throw an error if binary is returned and getAsBinary is never" )
@@ -546,12 +533,10 @@ public class HTTPTest {
 		    context,
 		    BoxSourceType.CFSCRIPT );
 
-		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
-
-		IStruct bxhttp = variables.getAsStruct( result );
-		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 200 );
-		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "OK" );
-		assertThat( bxhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
+		IStruct httpResult = variables.getAsStruct( result );
+		assertThat( httpResult.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( httpResult.get( Key.statusText ) ).isEqualTo( "OK" );
+		assertThat( httpResult.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
 		    """
 		    {
 		      "userId": 1,
@@ -585,12 +570,10 @@ public class HTTPTest {
 		                   """, wmRuntimeInfo.getHttpBaseUrl() + "/posts/1" ),
 		    context, BoxSourceType.CFTEMPLATE );
 
-		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
-
-		IStruct bxhttp = variables.getAsStruct( result );
-		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 200 );
-		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "OK" );
-		assertThat( bxhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
+		IStruct httpResult = variables.getAsStruct( result );
+		assertThat( httpResult.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( httpResult.get( Key.statusText ) ).isEqualTo( "OK" );
+		assertThat( httpResult.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
 		    """
 		    {
 		      "userId": 1,
@@ -624,12 +607,10 @@ public class HTTPTest {
 		                   """, wmRuntimeInfo.getHttpBaseUrl() + "/posts/1" ),
 		    context, BoxSourceType.BOXTEMPLATE );
 
-		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
-
-		IStruct bxhttp = variables.getAsStruct( result );
-		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 200 );
-		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "OK" );
-		assertThat( bxhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
+		IStruct httpResult = variables.getAsStruct( result );
+		assertThat( httpResult.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( httpResult.get( Key.statusText ) ).isEqualTo( "OK" );
+		assertThat( httpResult.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
 		    """
 		    {
 		      "userId": 1,
@@ -668,12 +649,10 @@ public class HTTPTest {
 		                        """, wmRuntimeInfo.getHttpBaseUrl() + "/posts/1" ),
 		    context, BoxSourceType.CFTEMPLATE );
 
-		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
-
-		IStruct bxhttp = variables.getAsStruct( result );
-		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 200 );
-		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "OK" );
-		assertThat( bxhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
+		IStruct httpResult = variables.getAsStruct( result );
+		assertThat( httpResult.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( httpResult.get( Key.statusText ) ).isEqualTo( "OK" );
+		assertThat( httpResult.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
 		    """
 		    {
 		      "userId": 1,
@@ -713,12 +692,10 @@ public class HTTPTest {
 		                                     """, wmRuntimeInfo.getHttpBaseUrl() + "/posts/3" ),
 		    context, BoxSourceType.CFTEMPLATE );
 
-		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
-
-		IStruct bxhttp = variables.getAsStruct( result );
-		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 200 );
-		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "OK" );
-		assertThat( bxhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
+		IStruct httpResult = variables.getAsStruct( result );
+		assertThat( httpResult.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( httpResult.get( Key.statusText ) ).isEqualTo( "OK" );
+		assertThat( httpResult.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
 		    """
 		    {
 		      "userId": 3,
@@ -750,40 +727,38 @@ public class HTTPTest {
 		                    """, wmRuntimeInfo.getHttpBaseUrl() + "/posts" ),
 		    context );
 
-		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct httpResult = variables.getAsStruct( result );
 
-		IStruct bxhttp = variables.getAsStruct( result );
+		Assertions.assertTrue( httpResult.containsKey( Key.statusCode ) );
+		assertThat( httpResult.get( Key.statusCode ) ).isEqualTo( 200 );
+		Assertions.assertTrue( httpResult.containsKey( Key.status_code ) );
+		assertThat( httpResult.get( Key.status_code ) ).isEqualTo( 200 );
 
-		Assertions.assertTrue( bxhttp.containsKey( Key.statusCode ) );
-		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 200 );
-		Assertions.assertTrue( bxhttp.containsKey( Key.status_code ) );
-		assertThat( bxhttp.get( Key.status_code ) ).isEqualTo( 200 );
+		Assertions.assertTrue( httpResult.containsKey( Key.statusText ) );
+		assertThat( httpResult.get( Key.statusText ) ).isEqualTo( "OK" );
+		Assertions.assertTrue( httpResult.containsKey( Key.status_text ) );
+		assertThat( httpResult.get( Key.status_text ) ).isEqualTo( "OK" );
 
-		Assertions.assertTrue( bxhttp.containsKey( Key.statusText ) );
-		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "OK" );
-		Assertions.assertTrue( bxhttp.containsKey( Key.status_text ) );
-		assertThat( bxhttp.get( Key.status_text ) ).isEqualTo( "OK" );
+		Assertions.assertTrue( httpResult.containsKey( Key.HTTP_Version ) );
+		assertThat( httpResult.getAsString( Key.HTTP_Version ) ).isEqualTo( "HTTP/2" );
 
-		Assertions.assertTrue( bxhttp.containsKey( Key.HTTP_Version ) );
-		assertThat( bxhttp.getAsString( Key.HTTP_Version ) ).isEqualTo( "HTTP/2" );
+		Assertions.assertTrue( httpResult.containsKey( Key.errorDetail ) );
+		assertThat( httpResult.getAsString( Key.errorDetail ) ).isEqualTo( "" );
 
-		Assertions.assertTrue( bxhttp.containsKey( Key.errorDetail ) );
-		assertThat( bxhttp.getAsString( Key.errorDetail ) ).isEqualTo( "" );
+		Assertions.assertTrue( httpResult.containsKey( Key.mimetype ) );
+		assertThat( httpResult.getAsString( Key.mimetype ) ).isEqualTo( "application/json" );
 
-		Assertions.assertTrue( bxhttp.containsKey( Key.mimetype ) );
-		assertThat( bxhttp.getAsString( Key.mimetype ) ).isEqualTo( "application/json" );
+		Assertions.assertTrue( httpResult.containsKey( Key.charset ) );
+		assertThat( httpResult.getAsString( Key.charset ) ).isEqualTo( "utf-8" );
 
-		Assertions.assertTrue( bxhttp.containsKey( Key.charset ) );
-		assertThat( bxhttp.getAsString( Key.charset ) ).isEqualTo( "utf-8" );
-
-		Assertions.assertTrue( bxhttp.containsKey( Key.cookies ) );
-		Query cookies = bxhttp.getAsQuery( Key.cookies );
+		Assertions.assertTrue( httpResult.containsKey( Key.cookies ) );
+		Query cookies = httpResult.getAsQuery( Key.cookies );
 		Assertions.assertNotNull( cookies );
 		assertThat( cookies ).isInstanceOf( Query.class );
 		Assertions.assertEquals( 0, cookies.size() );
 
-		Assertions.assertTrue( bxhttp.containsKey( Key.fileContent ) );
-		assertThat( bxhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
+		Assertions.assertTrue( httpResult.containsKey( Key.fileContent ) );
+		assertThat( httpResult.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo(
 		    """
 		    	[{"userId":1,"id":1,"title":"suntautfacererepellatprovidentoccaecatiexcepturioptioreprehenderit","body":"quiaetsuscipit\\nsuscipitrecusandaeconsequunturexpeditaetcum\\nreprehenderitmolestiaeututquastotam\\nnostrumrerumestautemsuntremevenietarchitecto"},{"userId":1,"id":2,"title":"quiestesse","body":"estrerumtemporevitae\\nsequisintnihilreprehenderitdolorbeataeeadoloresneque\\nfugiatblanditiisvoluptateporrovelnihilmolestiaeutreiciendis\\nquiaperiamnondebitispossimusquinequenisinulla"},{"userId":1,"id":3,"title":"eamolestiasquasiexercitationemrepellatquiipsasitaut","body":"etiustosedquoiure\\nvoluptatemoccaecatiomniseligendiautad\\nvoluptatemdoloribusvelaccusantiumquispariatur\\nmolestiaeporroeiusodioetlaboreetvelitaut"},{"userId":1,"id":4,"title":"eumetestoccaecati","body":"ullametsaepereiciendisvoluptatemadipisci\\nsitametautemassumendaprovidentrerumculpa\\nquishiccommodinesciuntremteneturdoloremqueipsamiure\\nquissuntvoluptatemrerumillovelit"},{"userId":1,"id":5,"title":"nesciuntquasodio","body":"repudiandaeveniamquaeratsuntsed\\naliasautfugiatsitautemsedest\\nvoluptatemomnispossimusessevoluptatibusquis\\nestautteneturdolorneque"},{"userId":1,"id":6,"title":"doloremeummagnieosaperiamquia","body":"utaspernaturcorporisharumnihilquisprovidentsequi\\nmollitianobisaliquidmolestiae\\nperspiciatiseteanemoabreprehenderitaccusantiumquas\\nvoluptatedoloresvelitetdoloremquemolestiae"},{"userId":1,"id":7,"title":"magnamfacilisautem","body":"doloreplaceatquibusdameaquovitae\\nmagniquisenimquiquisquonemoautsaepe\\nquidemrepellatexcepturiutquia\\nsuntutsequieoseasedquas"},{"userId":1,"id":8,"title":"doloremdoloreestipsam","body":"dignissimosaperiamdoloremquieum\\nfacilisquibusdamanimisintsuscipitquisintpossimuscum\\nquaeratmagnimaioresexcepturi\\nipsamutcommodidolorvoluptatummodiautvitae"},{"userId":1,"id":9,"title":"nesciuntiureomnisdoloremtemporaetaccusantium","body":"consecteturaniminesciuntiuredolore\\nenimquiaad\\nveniamautemutquamautnobis\\netestautquodautprovidentvoluptasautemvoluptas"},{"userId":1,"id":10,"title":"optiomolestiasidquiaeum","body":"quoetexpeditamodicumofficiavelmagni\\ndoloribusquirepudiandae\\nveronisisit\\nquosveniamquodsedaccusamusveritatiserror"}]
 		    """
@@ -803,25 +778,23 @@ public class HTTPTest {
 		""", context );
 		// @formatter:on
 
-		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct httpResult = variables.getAsStruct( result );
 
-		IStruct bxhttp = variables.getAsStruct( result );
+		Assertions.assertTrue( httpResult.containsKey( Key.statusCode ) );
+		assertThat( httpResult.get( Key.statusCode ) ).isEqualTo( 502 );
+		Assertions.assertTrue( httpResult.containsKey( Key.status_code ) );
+		assertThat( httpResult.get( Key.status_code ) ).isEqualTo( 502 );
 
-		Assertions.assertTrue( bxhttp.containsKey( Key.statusCode ) );
-		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 502 );
-		Assertions.assertTrue( bxhttp.containsKey( Key.status_code ) );
-		assertThat( bxhttp.get( Key.status_code ) ).isEqualTo( 502 );
+		Assertions.assertTrue( httpResult.containsKey( Key.statusText ) );
+		assertThat( httpResult.get( Key.statusText ) ).isEqualTo( "Bad Gateway" );
+		Assertions.assertTrue( httpResult.containsKey( Key.status_text ) );
+		assertThat( httpResult.get( Key.status_text ) ).isEqualTo( "Bad Gateway" );
 
-		Assertions.assertTrue( bxhttp.containsKey( Key.statusText ) );
-		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "Bad Gateway" );
-		Assertions.assertTrue( bxhttp.containsKey( Key.status_text ) );
-		assertThat( bxhttp.get( Key.status_text ) ).isEqualTo( "Bad Gateway" );
+		Assertions.assertTrue( httpResult.containsKey( Key.fileContent ) );
+		assertThat( httpResult.get( Key.fileContent ) ).isEqualTo( "Connection Failure" );
 
-		Assertions.assertTrue( bxhttp.containsKey( Key.fileContent ) );
-		assertThat( bxhttp.get( Key.fileContent ) ).isEqualTo( "Connection Failure" );
-
-		Assertions.assertTrue( bxhttp.containsKey( Key.errorDetail ) );
-		assertThat( bxhttp.get( Key.errorDetail ) )
+		Assertions.assertTrue( httpResult.containsKey( Key.errorDetail ) );
+		assertThat( httpResult.get( Key.errorDetail ) )
 		    .isEqualTo( "Unknown host: does-not-exist.also-does-not-exist: Name or service not known." );
 	}
 
@@ -840,25 +813,23 @@ public class HTTPTest {
 		""", baseURL + "/timeout" ), context );
 		// @formatter:on
 
-		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct httpResult = variables.getAsStruct( result );
 
-		IStruct bxhttp = variables.getAsStruct( result );
+		Assertions.assertTrue( httpResult.containsKey( Key.statusCode ) );
+		assertThat( httpResult.get( Key.statusCode ) ).isEqualTo( 408 );
+		Assertions.assertTrue( httpResult.containsKey( Key.status_code ) );
+		assertThat( httpResult.get( Key.status_code ) ).isEqualTo( 408 );
 
-		Assertions.assertTrue( bxhttp.containsKey( Key.statusCode ) );
-		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 408 );
-		Assertions.assertTrue( bxhttp.containsKey( Key.status_code ) );
-		assertThat( bxhttp.get( Key.status_code ) ).isEqualTo( 408 );
+		Assertions.assertTrue( httpResult.containsKey( Key.statusText ) );
+		assertThat( httpResult.get( Key.statusText ) ).isEqualTo( "Request Timeout" );
+		Assertions.assertTrue( httpResult.containsKey( Key.status_text ) );
+		assertThat( httpResult.get( Key.status_text ) ).isEqualTo( "Request Timeout" );
 
-		Assertions.assertTrue( bxhttp.containsKey( Key.statusText ) );
-		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "Request Timeout" );
-		Assertions.assertTrue( bxhttp.containsKey( Key.status_text ) );
-		assertThat( bxhttp.get( Key.status_text ) ).isEqualTo( "Request Timeout" );
+		Assertions.assertTrue( httpResult.containsKey( Key.fileContent ) );
+		assertThat( httpResult.get( Key.fileContent ) ).isEqualTo( "Request Timeout" );
 
-		Assertions.assertTrue( bxhttp.containsKey( Key.fileContent ) );
-		assertThat( bxhttp.get( Key.fileContent ) ).isEqualTo( "Request Timeout" );
-
-		Assertions.assertTrue( bxhttp.containsKey( Key.errorDetail ) );
-		assertThat( bxhttp.get( Key.errorDetail ) ).isEqualTo( "The request timed out after 1 second(s)" );
+		Assertions.assertTrue( httpResult.containsKey( Key.errorDetail ) );
+		assertThat( httpResult.get( Key.errorDetail ) ).isEqualTo( "The request timed out after 1 second(s)" );
 	}
 
 	@DisplayName( "It can handle files" )
@@ -879,22 +850,20 @@ public class HTTPTest {
 		""", baseURL + "/files" ), context );
 		// @formatter:on
 
-		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct httpResult = variables.getAsStruct( result );
 
-		IStruct bxhttp = variables.getAsStruct( result );
+		Assertions.assertTrue( httpResult.containsKey( Key.statusCode ) );
+		assertThat( httpResult.get( Key.statusCode ) ).isEqualTo( 201 );
+		Assertions.assertTrue( httpResult.containsKey( Key.status_code ) );
+		assertThat( httpResult.get( Key.status_code ) ).isEqualTo( 201 );
 
-		Assertions.assertTrue( bxhttp.containsKey( Key.statusCode ) );
-		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 201 );
-		Assertions.assertTrue( bxhttp.containsKey( Key.status_code ) );
-		assertThat( bxhttp.get( Key.status_code ) ).isEqualTo( 201 );
+		Assertions.assertTrue( httpResult.containsKey( Key.statusText ) );
+		assertThat( httpResult.get( Key.statusText ) ).isEqualTo( "Created" );
+		Assertions.assertTrue( httpResult.containsKey( Key.status_text ) );
+		assertThat( httpResult.get( Key.status_text ) ).isEqualTo( "Created" );
 
-		Assertions.assertTrue( bxhttp.containsKey( Key.statusText ) );
-		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "Created" );
-		Assertions.assertTrue( bxhttp.containsKey( Key.status_text ) );
-		assertThat( bxhttp.get( Key.status_text ) ).isEqualTo( "Created" );
-
-		Assertions.assertTrue( bxhttp.containsKey( Key.fileContent ) );
-		assertThat( bxhttp.get( Key.fileContent ) ).isEqualTo( "{\"success\": true }" );
+		Assertions.assertTrue( httpResult.containsKey( Key.fileContent ) );
+		assertThat( httpResult.get( Key.fileContent ) ).isEqualTo( "{\"success\": true }" );
 	}
 
 	@DisplayName( "It can handle multipart uploads" )
@@ -920,22 +889,20 @@ public class HTTPTest {
 		""", baseURL + "/multipart" ), context );
 		// @formatter:on
 
-		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct httpResult = variables.getAsStruct( result );
 
-		IStruct bxhttp = variables.getAsStruct( result );
+		Assertions.assertTrue( httpResult.containsKey( Key.statusCode ) );
+		assertThat( httpResult.get( Key.statusCode ) ).isEqualTo( 201 );
+		Assertions.assertTrue( httpResult.containsKey( Key.status_code ) );
+		assertThat( httpResult.get( Key.status_code ) ).isEqualTo( 201 );
 
-		Assertions.assertTrue( bxhttp.containsKey( Key.statusCode ) );
-		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 201 );
-		Assertions.assertTrue( bxhttp.containsKey( Key.status_code ) );
-		assertThat( bxhttp.get( Key.status_code ) ).isEqualTo( 201 );
+		Assertions.assertTrue( httpResult.containsKey( Key.statusText ) );
+		assertThat( httpResult.get( Key.statusText ) ).isEqualTo( "Created" );
+		Assertions.assertTrue( httpResult.containsKey( Key.status_text ) );
+		assertThat( httpResult.get( Key.status_text ) ).isEqualTo( "Created" );
 
-		Assertions.assertTrue( bxhttp.containsKey( Key.statusText ) );
-		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "Created" );
-		Assertions.assertTrue( bxhttp.containsKey( Key.status_text ) );
-		assertThat( bxhttp.get( Key.status_text ) ).isEqualTo( "Created" );
-
-		Assertions.assertTrue( bxhttp.containsKey( Key.fileContent ) );
-		assertThat( bxhttp.get( Key.fileContent ) ).isEqualTo( "{\"success\": true }" );
+		Assertions.assertTrue( httpResult.containsKey( Key.fileContent ) );
+		assertThat( httpResult.get( Key.fileContent ) ).isEqualTo( "{\"success\": true }" );
 	}
 
 	@DisplayName( "Will not double encode params when encoded is set to false on a URL param" )
@@ -955,15 +922,13 @@ public class HTTPTest {
 		""", baseURL + "/test-params" ), context );
 		// @formatter:on
 
-		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct httpResult = variables.getAsStruct( result );
 
-		IStruct bxhttp = variables.getAsStruct( result );
+		Assertions.assertTrue( httpResult.containsKey( Key.statusCode ) );
+		assertThat( httpResult.get( Key.statusCode ) ).isEqualTo( 200 );
 
-		Assertions.assertTrue( bxhttp.containsKey( Key.statusCode ) );
-		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 200 );
-
-		Assertions.assertTrue( bxhttp.containsKey( Key.fileContent ) );
-		assertThat( bxhttp.get( Key.fileContent ) ).isEqualTo( "{\"success\": true }" );
+		Assertions.assertTrue( httpResult.containsKey( Key.fileContent ) );
+		assertThat( httpResult.get( Key.fileContent ) ).isEqualTo( "{\"success\": true }" );
 	}
 
 	@DisplayName( "It can process a basic authentication request" )
@@ -996,9 +961,8 @@ public class HTTPTest {
 		        password ),
 		    context, BoxSourceType.CFTEMPLATE );
 
-		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
-		IStruct bxhttp = variables.getAsStruct( result );
-		assertThat( bxhttp.getAsString( Key.header ) ).contains( "authorization: Basic " + base64Credentials );
+		IStruct httpResult = variables.getAsStruct( result );
+		assertThat( httpResult.getAsString( Key.header ) ).contains( "authorization: Basic " + base64Credentials );
 	}
 
 	@DisplayName( "It can handle client certificates" )
@@ -1025,12 +989,11 @@ public class HTTPTest {
 		""", wmRuntimeInfo.getHttpBaseUrl() + "/posts/2", clientCertPath, clientCertPassword ), context );
 		// @formatter:on
 
-		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
-		IStruct bxhttp = variables.getAsStruct( result );
-		Assertions.assertTrue( bxhttp.containsKey( Key.statusCode ) );
-		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 200 ); // Assuming successful response
-		Assertions.assertTrue( bxhttp.containsKey( Key.statusText ) );
-		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "OK" ); // Assuming successful response
+		IStruct httpResult = variables.getAsStruct( result );
+		Assertions.assertTrue( httpResult.containsKey( Key.statusCode ) );
+		assertThat( httpResult.get( Key.statusCode ) ).isEqualTo( 200 ); // Assuming successful response
+		Assertions.assertTrue( httpResult.containsKey( Key.statusText ) );
+		assertThat( httpResult.get( Key.statusText ) ).isEqualTo( "OK" ); // Assuming successful response
 	}
 
 	private void createClientCertificate( String certPath, String certPassword ) throws Exception {
