@@ -702,6 +702,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		row_number							= Key.of( "row_number" );
 	public static final Key		rowData								= Key.of( "rowData" );
 	public static final Key		rowNumber							= Key.of( "rowNumber" );
+	public static final Key		rowID								= Key.of( "rowID" );
+	public static final Key		rowIDs								= Key.of( "rowIDs" );
 	public static final Key		run									= Key.of( "run" );
 	public static final Key		runnable							= Key.of( "runnable" );
 	public static final Key		runtime								= Key.of( "runtime" );
