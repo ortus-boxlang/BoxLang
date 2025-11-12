@@ -186,6 +186,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		cli									= Key.of( "cli" );
 	public static final Key		clientCert							= Key.of( "clientCert" );
 	public static final Key		clientCertPassword					= Key.of( "clientCertPassword" );
+	public static final Key		clientCertEncoded					= Key.of( "clientCertEncoded" );
 	public static final Key		closure								= Key.of( "closure" );
 	public static final Key		codePrintHTML						= Key.of( "codePrintHTML" );
 	public static final Key		codePrintPlain						= Key.of( "codePrintPlain" );
@@ -406,6 +407,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		hour								= Key.of( "hour" );
 	public static final Key		hours								= Key.of( "hours" );
 	public static final Key		HTTP								= Key.of( "http" );
+	public static final Key		httpResult							= Key.of( "httpResult" );
 	public static final Key		httpService							= Key.of( "httpService" );
 	public static final Key		http_accept							= Key.of( "http_accept" );
 	public static final Key		http_accept_encoding				= Key.of( "http_accept_encoding" );

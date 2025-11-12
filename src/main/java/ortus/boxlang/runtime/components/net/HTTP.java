@@ -17,63 +17,30 @@
  */
 package ortus.boxlang.runtime.components.net;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.ConnectException;
-import java.net.SocketException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLConnection;
-import java.net.http.HttpClient;
-import java.net.http.HttpHeaders;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.net.http.HttpTimeoutException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
-import ortus.boxlang.runtime.dynamic.casters.StructCaster;
-import ortus.boxlang.runtime.events.BoxEvent;
-import ortus.boxlang.runtime.net.HttpManager;
-import ortus.boxlang.runtime.net.HttpRequestMultipartBody;
-import ortus.boxlang.runtime.net.HttpResponseHelper;
-import ortus.boxlang.runtime.net.HttpStatusReasons;
-import ortus.boxlang.runtime.net.URIBuilder;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.net.BoxHttpClient;
+import ortus.boxlang.runtime.net.BoxHttpClient.BoxHttpRequest;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.HttpService;
 import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
-import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
-import ortus.boxlang.runtime.util.ZipUtil;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent( description = "Make HTTP requests and handle responses", allowsBody = true )
@@ -84,19 +51,21 @@ public class HTTP extends Component {
 	 * Constants
 	 * --------------------------------------------------------------------------
 	 */
-	private final static String		BASIC_AUTH_DELIMITER	= ":";
-	private static final String		AUTHMODE_BASIC			= "BASIC";
-	private static final String		AUTHMODE_NTLM			= "NTLM";
+	private static final String			AUTHMODE_BASIC			= "BASIC";
+	private static final String			AUTHMODE_NTLM			= "NTLM";
+	private static final HttpService	httpService				= BoxRuntime.getInstance().getHttpService();
 
-	protected static ArrayList<Key>	BINARY_REQUEST_VALUES	= new ArrayList<Key>() {
+	/**
+	 * Binary request values
+	 */
+	private static ArrayList<Key>		BINARY_REQUEST_VALUES	= new ArrayList<Key>() {
 
-																{
-																	add( Key.of( "true" ) );
-																	add( Key.of( "yes" ) );
-																}
-															};
-
-	protected static Key			BINARY_NEVER			= Key.of( "never" );
+																	{
+																		add( Key.of( "true" ) );
+																		add( Key.of( "yes" ) );
+																	}
+																};
+	private static Key					BINARY_NEVER			= Key.of( "never" );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -122,7 +91,7 @@ public class HTTP extends Component {
 		    ) ),
 		    new Attribute( Key.port, "numeric" ),
 		    new Attribute( Key.httpVersion, "string", "HTTP/2", Set.of( Validator.valueOneOf( "HTTP/1.1", "HTTP/2" ) ) ),
-		    new Attribute( Key.timeout, "numeric", Set.of( Validator.min( 1 ) ) ),
+		    new Attribute( Key.timeout, "numeric", BoxHttpClient.DEFAULT_REQUEST_TIMEOUT ),
 		    new Attribute( Key.redirect, "boolean", true ),
 		    new Attribute( Key.resolveUrl, "boolean", false ),
 		    new Attribute( Key.encodeUrl, "boolean", true, Set.of( Validator.TYPE ) ),
@@ -132,8 +101,8 @@ public class HTTP extends Component {
 		        Validator.NON_EMPTY,
 		        Validator.valueOneOf( "GET", "POST", "PUT", "DELETE", "HEAD", "TRACE", "OPTIONS", "PATCH" )
 		    ) ),
-		    new Attribute( Key.userAgent, "string", "BoxLang" ),
-		    new Attribute( Key.charset, "string", "UTF-8" ),
+		    new Attribute( Key.userAgent, "string", BoxHttpClient.DEFAULT_USER_AGENT ),
+		    new Attribute( Key.charset, "string", StandardCharsets.UTF_8.name() ),
 		    new Attribute( Key.compression, "string" ),
 		    new Attribute( Key.multipart, "boolean", false, Set.of( Validator.TYPE ) ),
 		    new Attribute( Key.multipartType, "string", "form-data",
@@ -247,44 +216,31 @@ public class HTTP extends Component {
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		// Allow for restricted headers to be set so we can send the Host header and Content-Length
-		// Java’s HttpClient (introduced in Java 11) blocks setting certain sensitive headers for security reasons
-		if ( System.getProperty( "jdk.httpclient.allowRestrictedHeaders" ) == null ) {
-			System.setProperty( "jdk.httpclient.allowRestrictedHeaders", "host,content-length" );
-		}
-
-		// Keeps track of the HTTPParams
+		// Create HTTPParams array in execution state
 		executionState.put( Key.HTTPParams, new Array() );
-
 		// Process the component for HTTPParams
 		BodyResult bodyResult = processBody( context, body );
-
 		// IF there was a return statement inside our body, we early exit now
 		if ( bodyResult.isEarlyExit() ) {
 			return bodyResult;
 		}
 
-		// Prepare invocation of the HTTP request
+		// Prep all attributes
 		Key		binaryOperator		= Key.of( attributes.getAsString( Key.getAsBinary ) );
-		Boolean	isBinaryRequested	= BINARY_REQUEST_VALUES
+		boolean	debug				= BooleanCaster.cast( attributes.getOrDefault( Key.debug, false ) );
+		String	encodedCertKey		= attributes.getAsString( Key.clientCertEncoded );
+		boolean	isBinaryRequested	= BINARY_REQUEST_VALUES
 		    .stream()
 		    .anyMatch( value -> value.equals( binaryOperator ) );
-		Boolean	isBinaryNever		= binaryOperator.equals( BINARY_NEVER );
-		String	variableName		= attributes.getAsString( Key.result );
-		String	theURL				= attributes.getAsString( Key.URL );
-		String	method				= attributes.getAsString( Key.method ).toUpperCase();
-		Array	params				= executionState.getAsArray( Key.HTTPParams );
 		Struct	HTTPResult			= new Struct();
-		URI		targetURI			= null;
-		String	authMode			= attributes.getAsString( Key.authType ).toUpperCase();
-		String	outputDirectory		= attributes.getAsString( Key.path );
-		String	requestID			= UUID.randomUUID().toString();
-		Instant	startTime			= Instant.now();
+
+		// Expand client certificate path if provided
 		if ( attributes.containsKey( Key.clientCert ) ) {
 			attributes.put( Key.clientCert, FileSystemUtil.expandPath( context, attributes.getAsString( Key.clientCert ) ).absolutePath().toString() );
 		}
 
 		// We allow the `file` attribute to become the full file path if the `path` attribute is empty
+		String outputDirectory = attributes.getAsString( Key.path );
 		if ( outputDirectory == null && attributes.getAsString( Key.file ) != null ) {
 			Path filePath = FileSystemUtil.expandPath( context, attributes.getAsString( Key.file ) ).absolutePath();
 			outputDirectory = filePath.getParent().toString();
@@ -299,625 +255,84 @@ public class HTTP extends Component {
 			}
 		}
 
-		HttpClient.Version httpVersion = attributes.getAsString( Key.httpVersion ).equalsIgnoreCase( "HTTP/1.1" )
-		    ? HttpClient.Version.HTTP_1_1
-		    : HttpClient.Version.HTTP_2;
-
-		try {
-			HttpRequest.Builder	builder		= HttpRequest.newBuilder();
-			URIBuilder			uriBuilder	= new URIBuilder( theURL );
-			if ( attributes.get( Key.port ) != null ) {
-				uriBuilder.setPort( attributes.getAsInteger( Key.port ) );
-			}
-			HttpRequest.BodyPublisher	bodyPublisher	= null;
-			List<IStruct>				formFields		= new ArrayList<>();
-			List<IStruct>				files			= new ArrayList<>();
-
-			// Basic metadata for the request and results
-			builder
-			    .version( httpVersion )
-			    .header( "User-Agent", attributes.getAsString( Key.userAgent ) )
-			    .header( "Accept", "*/*" )
-			    .header( "Accept-Encoding", "gzip, deflate" )
-			    .header( "x-request-id", requestID );
-
-			// Set the values into the HTTPResult Struct
-			HTTPResult.put( Key.requestID, requestID );
-			HTTPResult.put( Key.userAgent, attributes.getAsString( Key.userAgent ) );
-
-			// Set username/password if they are set
-			if ( attributes.get( Key.username ) != null && attributes.get( Key.password ) != null ) {
-				if ( authMode.equals( AUTHMODE_BASIC ) ) {
-					String	auth		= ( attributes.get( Key.username ) != null ? StringCaster.cast( attributes.get( Key.username ) ) : null )
-					    + BASIC_AUTH_DELIMITER
-					    + StringCaster.cast( attributes.getOrDefault( Key.password, "" ) );
-					String	encodedAuth	= Base64.getEncoder().encodeToString( auth.getBytes() );
-					builder.header( "Authorization", "Basic " + encodedAuth );
-				} else if ( authMode.equals( AUTHMODE_NTLM ) ) {
-					// TODO: This will need to be implemented as separate type of smb request
-					throw new BoxRuntimeException( "NTLM authentication is not currently supported." );
-				}
-			}
-
-			// Process the HTTPParams
-			for ( Object p : params ) {
-				IStruct	param	= StructCaster.cast( p );
-				String	type	= StringCaster.cast( param.get( Key.type ) );
-				switch ( type.toLowerCase() ) {
-					// We need to use `setHeader` to overwrite any previously set headers
-					case "header" -> {
-						String headerName = StringCaster.cast( param.get( Key._NAME ) );
-						// We need to downgrade our HTTP version if a TE header is present and is not `trailers`
-						// because HTTP/2 does not support the TE header with any other values
-						if ( headerName.equalsIgnoreCase( "TE" ) && !StringCaster.cast( param.get( Key.value ) ).equalsIgnoreCase( "trailers" ) ) {
-							httpVersion = HttpClient.Version.HTTP_1_1;
-							builder.version( httpVersion );
-						}
-						builder.setHeader( headerName, StringCaster.cast( param.get( Key.value ) ) );
-					}
-					case "body" -> {
-						if ( bodyPublisher != null ) {
-							throw new BoxRuntimeException( "Cannot use a body httpparam with an existing http body: " + bodyPublisher.toString() );
-						}
-						if ( param.get( Key.value ) instanceof byte[] bodyBytes ) {
-							bodyPublisher = HttpRequest.BodyPublishers.ofByteArray( bodyBytes );
-						} else if ( StringCaster.attempt( param.get( Key.value ) ).wasSuccessful() ) {
-							bodyPublisher = HttpRequest.BodyPublishers.ofString( StringCaster.cast( param.get( Key.value ) ) );
-						} else {
-							throw new BoxRuntimeException( "The body attribute provided is not a valid string nor a binary object." );
-						}
-					}
-					case "xml" -> {
-						if ( bodyPublisher != null ) {
-							throw new BoxRuntimeException( "Cannot use a xml httpparam with an existing http body: " + bodyPublisher.toString() );
-						}
-						builder.header( "Content-Type", "text/xml" );
-						bodyPublisher = HttpRequest.BodyPublishers.ofString( StringCaster.cast( param.get( Key.value ) ) );
-					}
-					// @TODO move URLEncoder.encode usage a non-deprecated method
-					case "cgi" -> builder.header( StringCaster.cast( param.get( Key._NAME ) ),
-					    BooleanCaster.cast( param.getOrDefault( Key.encoded, false ) )
-					        ? EncryptionUtil.urlEncode( StringCaster.cast( param.get( Key.value ) ) )
-					        : StringCaster.cast( param.get( Key.value ) )
-					);
-					case "file" -> files.add( param );
-					case "url" -> uriBuilder.addParameter(
-					    StringCaster.cast( param.get( Key._NAME ) ),
-					    BooleanCaster.cast( param.getOrDefault( Key.encoded, true ) )
-					        ? EncryptionUtil.urlEncode( StringCaster.cast( param.get( Key.value ) ), StandardCharsets.UTF_8 )
-					        : StringCaster.cast( param.get( Key.value ) )
-					);
-					case "formfield" -> formFields.add( param );
-					case "cookie" -> builder.header( "Cookie",
-					    StringCaster.cast( param.get( Key._NAME ) ) + "="
-					        + EncryptionUtil.urlEncode( StringCaster.cast( param.get( Key.value ) ), StandardCharsets.UTF_8 ) );
-					default -> throw new BoxRuntimeException( "Unhandled HTTPParam type: " + type );
-				}
-			}
-
-			// Process Files
-			if ( !files.isEmpty() ) {
-				if ( bodyPublisher != null ) {
-					throw new BoxRuntimeException( "Cannot use a multipart body with an existing http body: " + bodyPublisher.toString() );
-				}
-				HttpRequestMultipartBody.Builder multipartBodyBuilder = new HttpRequestMultipartBody.Builder();
-				for ( IStruct param : files ) {
-					ResolvedFilePath	path		= FileSystemUtil.expandPath( context, StringCaster.cast( param.get( Key.file ) ) );
-					File				file		= path.absolutePath().toFile();
-					String				mimeType	= Optional.ofNullable( param.getAsString( Key.mimetype ) )
-					    .orElseGet( () -> URLConnection.getFileNameMap().getContentTypeFor( file.getName() ) );
-					multipartBodyBuilder.addPart( StringCaster.cast( param.get( Key._name ) ), file, mimeType, file.getName() );
-				}
-
-				for ( IStruct formField : formFields ) {
-					multipartBodyBuilder.addPart( StringCaster.cast( formField.get( Key._name ) ), StringCaster.cast( formField.get( Key.value ) ) );
-				}
-				HttpRequestMultipartBody multipartBody = multipartBodyBuilder.build();
-				builder.header( "Content-Type", multipartBody.getContentType() );
-				bodyPublisher = HttpRequest.BodyPublishers.ofByteArray( multipartBody.getBody() );
-			}
-			// Process Form Fields
-			else if ( !formFields.isEmpty() ) {
-				if ( bodyPublisher != null ) {
-					throw new BoxRuntimeException( "Cannot use a formfield httpparam with an existing http body: " + bodyPublisher.toString() );
-				}
-				bodyPublisher = HttpRequest.BodyPublishers.ofString(
-				    formFields.stream()
-				        .map( formField -> {
-					        String value = StringCaster.cast( formField.get( Key.value ) );
-					        if ( BooleanCaster.cast( formField.getOrDefault( Key.encoded, false ) ) ) {
-						        value = EncryptionUtil.urlEncode( value, StandardCharsets.UTF_8 );
-					        }
-					        return StringCaster.cast( formField.get( Key._name ) ) + "=" + value;
-				        } )
-				        .collect( Collectors.joining( "&" ) )
-				);
-				builder.header( "Content-Type", "application/x-www-form-urlencoded" );
-			}
-
-			if ( bodyPublisher == null ) {
-				bodyPublisher = HttpRequest.BodyPublishers.noBody();
-			}
-
-			builder.method( method, bodyPublisher );
-			targetURI = uriBuilder.build();
-			builder.uri( targetURI );
-
-			if ( attributes.containsKey( Key.timeout ) ) {
-				builder.timeout( Duration.ofSeconds( attributes.getAsInteger( Key.timeout ) ) );
-			}
-
-			// Create a default HTTP Client or a Proxy based Client
-			HttpClient client = attributes.containsKey( Key.clientCert ) || attributes.containsKey( Key.proxyServer )
-			    || !attributes.getAsBoolean( Key.redirect )
-			        ? HttpManager.getCustomClient( attributes )
-			        : HttpManager.getClient();
-
-			// Append our debug cert header if in debug mode and the cert has been assigned
-			if ( BooleanCaster.cast( attributes.getOrDefault( Key.debug, false ) ) && attributes.containsKey( HttpManager.encodedCertKey ) ) {
-				builder.header( "X-Client-Cert", attributes.getAsString( HttpManager.encodedCertKey ) );
-			}
-
-			HttpRequest	targetHTTPRequest	= builder.build();
-
-			// Announce the HTTP request
-			final var	finalTargetURI		= targetURI;
-			interceptorService.announce( BoxEvent.ON_HTTP_REQUEST, () -> Struct.ofNonConcurrent(
-			    Key.requestID, requestID,
-			    Key.httpClient, client,
-			    Key.httpRequest, targetHTTPRequest,
-			    Key.targetURI, finalTargetURI,
-			    Key.attributes, attributes
-			) );
-
-			// Adding the request
-			HTTPResult.put(
-			    Key.request,
-			    Struct.of(
-			        Key.URL, targetURI,
-			        Key.method, method,
-			        Key.timeout, targetHTTPRequest.timeout().orElse( null ),
-			        Key.multipart, attributes.getAsBoolean( Key.multipart ),
-			        Key.headers, Struct.fromMap( targetHTTPRequest.headers().map() )
-			    ) );
-
-			// Check if streaming/chunk support is requested
-			Function	onChunkCallback		= attributes.getAsFunction( Key.onChunk );
-			Function	onErrorCallback		= attributes.getAsFunction( Key.onError );
-			Function	onCompleteCallback	= attributes.getAsFunction( Key.onComplete );
-
-			// TODO : should we move the catch block below and add an `exceptionally` handler for the future?
-			if ( onChunkCallback != null ) {
-				// Use streaming response handler
-				CompletableFuture<HttpResponse<InputStream>>	streamFuture	= client.sendAsync( targetHTTPRequest,
-				    HttpResponse.BodyHandlers.ofInputStream() );
-				HttpResponse<InputStream>						streamResponse	= streamFuture.get();
-
-				// Announce the HTTP RAW response
-				interceptorService.announce( BoxEvent.ON_HTTP_RAW_RESPONSE, () -> Struct.ofNonConcurrent(
-				    Key.requestID, requestID,
-				    Key.response, streamResponse,
-				    Key.httpClient, client,
-				    Key.httpRequest, targetHTTPRequest,
-				    Key.targetURI, finalTargetURI,
-				    Key.attributes, attributes
-				) );
-
-				// Process streaming response
-				processStreamingResponse( context, streamResponse, onChunkCallback, HTTPResult, attributes, isBinaryRequested, isBinaryNever, startTime );
-
-				// Set the result back into the caller using the variable name
-				ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
-
-				// Call onComplete callback if provided
-				if ( onCompleteCallback != null ) {
-					IStruct completeArgs = new Struct();
-					completeArgs.put( Key.result, HTTPResult );
-					completeArgs.put( Key.statusCode, HTTPResult.get( Key.statusCode ) );
-					completeArgs.put( Key.success, true );
-					context.invokeFunction( onCompleteCallback, new Object[] { completeArgs } );
-				}
-
-				return DEFAULT_RETURN;
-			} else {
-				// Use buffered response handler (original behavior)
-				CompletableFuture<HttpResponse<byte[]>>	future		= client.sendAsync( targetHTTPRequest, HttpResponse.BodyHandlers.ofByteArray() );
-
-				// Announce the HTTP request
-				HttpResponse<byte[]>					response	= future.get(); // block and wait for the response
-
-				// Announce the HTTP RAW response
-				// Useful for debugging and pre-processing and timing, since the other events are after the response is processed
-				interceptorService.announce( BoxEvent.ON_HTTP_RAW_RESPONSE, () -> Struct.ofNonConcurrent(
-				    Key.requestID, requestID,
-				    Key.response, response,
-				    Key.httpClient, client,
-				    Key.httpRequest, targetHTTPRequest,
-				    Key.targetURI, finalTargetURI,
-				    Key.attributes, attributes
-				) );
-
-				// Process buffered response
-				processBufferedResponse( context, response, HTTPResult, attributes, isBinaryRequested, isBinaryNever, startTime, outputDirectory,
-				    targetURI );
-
-				// Set the result back into the caller using the variable name
-				ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
-
-				// Announce the HTTP response
-				interceptorService.announce( BoxEvent.ON_HTTP_RESPONSE, () -> Struct.ofNonConcurrent(
-				    Key.requestID, requestID,
-				    Key.response, response,
-				    Key.result, HTTPResult
-				) );
-
-				// Call onComplete callback if provided
-				if ( onCompleteCallback != null ) {
-					IStruct completeArgs = new Struct();
-					completeArgs.put( Key.result, HTTPResult );
-					completeArgs.put( Key.statusCode, HTTPResult.get( Key.statusCode ) );
-					completeArgs.put( Key.success, true );
-					context.invokeFunction( onCompleteCallback, new Object[] { completeArgs } );
-				}
-
-				return DEFAULT_RETURN;
-			} // end else block for non-streaming response
-		} catch ( ExecutionException e ) {
-			Throwable	innerException	= e.getCause();
-			Function	onErrorCallback	= attributes.get( Key.onError ) != null ? ( Function ) attributes.get( Key.onError ) : null;
-
-			if ( innerException instanceof SocketException ) {
-				HTTPResult.put( Key.responseHeader, new Struct() );
-				HTTPResult.put( Key.header, "" );
-				HTTPResult.put( Key.statusCode, 502 );
-				HTTPResult.put( Key.status_code, 502 );
-				HTTPResult.put( Key.statusText, "Bad Gateway" );
-				HTTPResult.put( Key.status_text, "Bad Gateway" );
-				HTTPResult.put( Key.fileContent, "Connection Failure" );
-				if ( innerException instanceof ConnectException ) {
-					if ( targetURI != null ) {
-						HTTPResult.put( Key.errorDetail, String.format( "Unknown host: %s: Name or service not known.", targetURI.getHost() ) );
-					} else {
-						HTTPResult.put( Key.errorDetail, String.format( "Unknown host: %s: Name or service not known.", theURL ) );
-					}
-				} else {
-					HTTPResult.put( Key.errorDetail, "Connection Failure: " + innerException.getMessage() );
-				}
-				ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
-
-				// Call onError callback if provided
-				if ( onErrorCallback != null ) {
-					IStruct errorArgs = new Struct();
-					errorArgs.put( Key.error, innerException );
-					errorArgs.put( Key.message, HTTPResult.getAsString( Key.errorDetail ) );
-					errorArgs.put( Key.result, HTTPResult );
-					context.invokeFunction( onErrorCallback, new Object[] { errorArgs } );
-				}
-			} else if ( innerException instanceof HttpTimeoutException ) {
-				HTTPResult.put( Key.responseHeader, new Struct() );
-				HTTPResult.put( Key.header, "" );
-				HTTPResult.put( Key.statusCode, 408 );
-				HTTPResult.put( Key.status_code, 408 );
-				HTTPResult.put( Key.statusText, "Request Timeout" );
-				HTTPResult.put( Key.status_text, "Request Timeout" );
-				HTTPResult.put( Key.fileContent, "Request Timeout" );
-				HTTPResult.put( Key.errorDetail, "The request timed out after " + attributes.getAsInteger( Key.timeout ) + " second(s)" );
-				ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
-
-				// Call onError callback if provided
-				if ( onErrorCallback != null ) {
-					IStruct errorArgs = new Struct();
-					errorArgs.put( Key.error, innerException );
-					errorArgs.put( Key.message, HTTPResult.getAsString( Key.errorDetail ) );
-					errorArgs.put( Key.result, HTTPResult );
-					context.invokeFunction( onErrorCallback, new Object[] { errorArgs } );
-				}
-			} else {
-				// Call onError callback if provided before re-throwing
-				if ( onErrorCallback != null ) {
-					IStruct errorArgs = new Struct();
-					errorArgs.put( Key.error, innerException );
-					errorArgs.put( Key.message, "An error occurred while processing the HTTP request: " + innerException.getMessage() );
-					errorArgs.put( Key.result, HTTPResult );
-					context.invokeFunction( onErrorCallback, new Object[] { errorArgs } );
-				}
-				// rethrow any unknown exception types
-				throw new BoxRuntimeException( "An error occurred while processing the HTTP request", "ExecutionException", innerException );
-			}
-			return DEFAULT_RETURN;
-		} catch ( InterruptedException e ) {
-			Thread.currentThread().interrupt();
-
-			// Call onError callback if provided
-			Function onErrorCallback = attributes.get( Key.onError ) != null ? ( Function ) attributes.get( Key.onError ) : null;
-			if ( onErrorCallback != null ) {
-				IStruct errorArgs = new Struct();
-				errorArgs.put( Key.error, e );
-				errorArgs.put( Key.message, "The request was interrupted" );
-				errorArgs.put( Key.result, HTTPResult );
-				context.invokeFunction( onErrorCallback, new Object[] { errorArgs } );
-			}
-
-			throw new BoxRuntimeException( "The request was interrupted", "InterruptedException", e );
-		} catch ( URISyntaxException | IOException e ) {
-			// Call onError callback if provided
-			Function onErrorCallback = attributes.get( Key.onError ) != null ? ( Function ) attributes.get( Key.onError ) : null;
-			if ( onErrorCallback != null ) {
-				IStruct errorArgs = new Struct();
-				errorArgs.put( Key.error, e );
-				errorArgs.put( Key.message, e.getMessage() );
-				errorArgs.put( Key.result, HTTPResult );
-				context.invokeFunction( onErrorCallback, new Object[] { errorArgs } );
-			}
-
-			throw new BoxRuntimeException( e.getMessage(), e );
-		}
-	}
-
-	/**
-	 * --------------------------------------------------------------------------
-	 * Private Methods
-	 * --------------------------------------------------------------------------
-	 */
-
-	/**
-	 * Process a streaming HTTP response with chunk callback
-	 *
-	 * @param context           The BoxLang context
-	 * @param response          The HTTP response with InputStream body
-	 * @param onChunkCallback   The callback function to invoke for each chunk
-	 * @param HTTPResult        The result struct to populate
-	 * @param attributes        The component attributes
-	 * @param isBinaryRequested Whether binary output was requested
-	 * @param isBinaryNever     Whether binary output is never allowed
-	 * @param startTime         The request start time for calculating execution time
-	 *
-	 * @throws IOException If an I/O error occurs while reading the stream
-	 */
-	private void processStreamingResponse(
-	    IBoxContext context,
-	    HttpResponse<InputStream> response,
-	    Function onChunkCallback,
-	    Struct HTTPResult,
-	    IStruct attributes,
-	    Boolean isBinaryRequested,
-	    Boolean isBinaryNever,
-	    Instant startTime ) throws IOException {
-
-		HttpHeaders	httpHeaders			= Optional.ofNullable( response.headers() )
-		    .orElse( HttpHeaders.of( Map.of(), ( a, b ) -> true ) );
-		IStruct		headers				= HttpResponseHelper.transformToResponseHeaderStruct( httpHeaders.map() );
-
-		// Extract content type and encoding
-		String		contentType			= HttpResponseHelper.extractFirstHeaderByName( headers, Key.contentType );
-		String		contentEncoding		= HttpResponseHelper.extractFirstHeaderByName( headers, Key.contentEncoding );
-
-		// Determine charset
-		String		charset				= contentType != null && contentType.contains( "charset=" )
-		    ? HttpResponseHelper.extractCharset( contentType )
-		    : "UTF-8";
-
-		// Determine if we should process as binary
-		Boolean		isBinaryContentType	= FileSystemUtil.isBinaryMimeType( contentType );
-		boolean		processingAsBinary	= ( isBinaryRequested || isBinaryContentType ) && !isBinaryNever;
-
-		if ( isBinaryNever && isBinaryContentType ) {
-			throw new BoxRuntimeException( "The response is a binary type, but the getAsBinary attribute was set to 'never'" );
-		}
-
-		// Build basic HTTPResult metadata
-		String	httpVersionString	= response.version() == HttpClient.Version.HTTP_1_1 ? "HTTP/1.1" : "HTTP/2";
-		String	statusCodeString	= String.valueOf( response.statusCode() );
-		String	statusText			= HttpStatusReasons.getReason( response.statusCode() );
-
-		headers.put( Key.HTTP_Version, httpVersionString );
-		headers.put( Key.status_code, statusCodeString );
-		headers.put( Key.explanation, statusText );
-
-		HTTPResult.put( Key.responseHeader, headers );
-		HTTPResult.put( Key.header,
-		    HttpResponseHelper.generateHeaderString( HttpResponseHelper.generateStatusLine( httpVersionString, statusCodeString, statusText ), headers ) );
-		HTTPResult.put( Key.HTTP_Version, httpVersionString );
-		HTTPResult.put( Key.statusCode, response.statusCode() );
-		HTTPResult.put( Key.status_code, response.statusCode() );
-		HTTPResult.put( Key.statusText, statusText );
-		HTTPResult.put( Key.status_text, statusText );
-
-		Optional<String> contentTypeHeader = httpHeaders.firstValue( "Content-Type" );
-		contentTypeHeader.ifPresent( ( headerContentType ) -> {
-			String[] contentTypeParts = headerContentType.split( ";\s*" );
-			if ( contentTypeParts.length > 0 ) {
-				HTTPResult.put( Key.mimetype, contentTypeParts[ 0 ] );
-			}
-			if ( contentTypeParts.length > 1 ) {
-				HTTPResult.put( Key.charset, HttpResponseHelper.extractCharset( headerContentType ) );
-			}
-		} );
-		HTTPResult.put( Key.cookies, HttpResponseHelper.generateCookiesQuery( headers ) );
-
-		// Stream processing - wrap the input stream with decompression if needed
-		InputStream	rawInputStream	= response.body();
-		InputStream	processedStream	= rawInputStream;
-
-		// Apply decompression wrappers if content-encoding is present
-		if ( contentEncoding != null ) {
-			String[] encodings = contentEncoding.split( "," );
-			// Apply encodings in reverse order (last applied first)
-			for ( int i = encodings.length - 1; i >= 0; i-- ) {
-				String encoding = encodings[ i ].trim().toLowerCase();
-				if ( encoding.equals( "gzip" ) ) {
-					processedStream = new java.util.zip.GZIPInputStream( processedStream );
-				} else if ( encoding.equals( "deflate" ) ) {
-					processedStream = new java.util.zip.InflaterInputStream( processedStream );
-				}
-			}
-		}
-
-		try ( InputStream inputStream = processedStream ) {
-			byte[]	buffer			= new byte[ 8192 ];	// 8KB buffer
-			int		bytesRead;
-			int		chunkNumber		= 0;
-			long	totalReceived	= 0;
-
-			while ( ( bytesRead = inputStream.read( buffer ) ) != -1 ) {
-				chunkNumber++;
-				totalReceived += bytesRead;
-
-				// Convert to appropriate type - need to copy buffer data since it's reused in the loop
-				// For binary, create array copy. For text, String constructor already copies the bytes
-				Object chunkValue;
-				if ( processingAsBinary ) {
-					chunkValue = Arrays.copyOf( buffer, bytesRead );
-				} else {
-					chunkValue = new String( buffer, 0, bytesRead, Charset.forName( charset ) );
-				}
-
-				// Build callback arguments
-				IStruct callbackArgs = new Struct();
-				callbackArgs.put( Key.chunk, chunkValue );
-				callbackArgs.put( Key.chunkNumber, chunkNumber );
-				callbackArgs.put( Key.totalReceived, totalReceived );
-				callbackArgs.put( Key.result, HTTPResult );
-				callbackArgs.put( Key.headers, headers );
-
-				// Invoke the callback
-				context.invokeFunction( onChunkCallback, new Object[] { callbackArgs } );
-			}
-
-			// Set fileContent to indicate streaming mode and add execution time
-			HTTPResult.put( Key.fileContent, "Streaming mode - data processed via onChunk callback" );
-			HTTPResult.put( Key.errorDetail, "" );
-			HTTPResult.put( Key.executionTime, Duration.between( startTime, Instant.now() ).toMillis() );
-		}
-	}
-
-	/**
-	 * Process a buffered HTTP response (non-streaming)
-	 *
-	 * @param context           The BoxLang context
-	 * @param response          The HTTP response with byte[] body
-	 * @param HTTPResult        The result struct to populate
-	 * @param attributes        The component attributes
-	 * @param isBinaryRequested Whether binary output was requested
-	 * @param isBinaryNever     Whether binary output is never allowed
-	 * @param startTime         The request start time for calculating execution time
-	 * @param outputDirectory   The output directory for file writing, if any
-	 * @param targetURI         The target URI for the request
-	 *
-	 * @return The processed response body
-	 *
-	 * @throws IOException If an I/O error occurs
-	 */
-	private Object processBufferedResponse(
-	    IBoxContext context,
-	    HttpResponse<byte[]> response,
-	    Struct HTTPResult,
-	    IStruct attributes,
-	    Boolean isBinaryRequested,
-	    Boolean isBinaryNever,
-	    Instant startTime,
-	    String outputDirectory,
-	    URI targetURI ) throws IOException {
-
-		HttpHeaders	httpHeaders		= Optional.ofNullable( response.headers() )
-		    .orElse( HttpHeaders.of( Map.of(), ( a, b ) -> true ) );
-		IStruct		headers			= HttpResponseHelper.transformToResponseHeaderStruct( httpHeaders.map() );
-		byte[]		responseBytes	= response.body();
-		Object		responseBody	= null;
-
-		// Process body if not null
-		if ( responseBytes != null ) {
-
-			String	contentType		= HttpResponseHelper.extractFirstHeaderByName( headers, Key.contentType );
-			String	contentEncoding	= HttpResponseHelper.extractFirstHeaderByName( headers, Key.contentEncoding );
-
-			if ( contentEncoding != null ) {
-				// Split the Content-Encoding header into individual encodings
-				String[] encodings = contentEncoding.split( "," );
-				for ( String encoding : encodings ) {
-					encoding = encoding.trim().toLowerCase();
-					if ( encoding.equals( "gzip" ) ) {
-						responseBytes = ZipUtil.extractGZipContent( responseBytes );
-					} else if ( encoding.equals( "deflate" ) ) {
-						responseBytes = ZipUtil.inflateDeflatedContent( responseBytes );
-					}
-				}
-			}
-
-			Boolean	isBinaryContentType	= FileSystemUtil.isBinaryMimeType( contentType );
-			String	charset				= null;
-			if ( ( isBinaryRequested || isBinaryContentType ) && !isBinaryNever ) {
-				responseBody = responseBytes;
-			} else if ( isBinaryNever && isBinaryContentType ) {
-				throw new BoxRuntimeException( "The response is a binary type, but the getAsBinary attribute was set to 'never'" );
-			} else {
-				charset			= contentType != null && contentType.contains( "charset=" )
-				    ? HttpResponseHelper.extractCharset( contentType )
-				    : "UTF-8";
-				responseBody	= new String( responseBytes, Charset.forName( charset ) );
-			}
-
-			// Prepare all the result variables now that we have the response
-			String	httpVersionString	= response.version() == HttpClient.Version.HTTP_1_1 ? "HTTP/1.1" : "HTTP/2";
-			String	statusCodeString	= String.valueOf( response.statusCode() );
-			String	statusText			= HttpStatusReasons.getReason( response.statusCode() );
-
-			headers.put( Key.HTTP_Version, httpVersionString );
-			headers.put( Key.status_code, statusCodeString );
-			headers.put( Key.explanation, statusText );
-
-			HTTPResult.put( Key.responseHeader, headers );
-			HTTPResult.put( Key.header,
-			    HttpResponseHelper.generateHeaderString( HttpResponseHelper.generateStatusLine( httpVersionString, statusCodeString, statusText ), headers ) );
-			HTTPResult.put( Key.HTTP_Version, httpVersionString );
-			HTTPResult.put( Key.statusCode, response.statusCode() );
-			HTTPResult.put( Key.status_code, response.statusCode() );
-			HTTPResult.put( Key.statusText, statusText );
-			HTTPResult.put( Key.status_text, statusText );
-			HTTPResult.put( Key.fileContent, response.statusCode() == 408 ? "Request Timeout" : responseBody );
-			HTTPResult.put( Key.errorDetail, response.statusCode() == 408 ? response.body() : "" );
-			Optional<String> contentTypeHeader = httpHeaders.firstValue( "Content-Type" );
-			contentTypeHeader.ifPresent( ( headerContentType ) -> {
-				String[] contentTypeParts = headerContentType.split( ";\s*" );
-				if ( contentTypeParts.length > 0 ) {
-					HTTPResult.put( Key.mimetype, contentTypeParts[ 0 ] );
-				}
-				if ( contentTypeParts.length > 1 ) {
-					HTTPResult.put( Key.charset, HttpResponseHelper.extractCharset( headerContentType ) );
-				}
-			} );
-			HTTPResult.put( Key.cookies, HttpResponseHelper.generateCookiesQuery( headers ) );
-			HTTPResult.put( Key.executionTime, Duration.between( startTime, Instant.now() ).toMillis() );
-
-			if ( outputDirectory != null ) {
-				String fileName = attributes.getAsString( Key.file );
-				if ( fileName == null || fileName.trim().isEmpty() ) {
-					String dispositionHeader = HttpResponseHelper.extractFirstHeaderByName( headers, Key.of( "content-disposition" ) );
-					if ( dispositionHeader != null ) {
-						Pattern	pattern	= Pattern.compile( "filename=\"?([^\";]+)\"?" );
-						Matcher	matcher	= pattern.matcher( dispositionHeader );
-						if ( matcher.find() ) {
-							fileName = matcher.group( 1 );
-						}
-					} else {
-						fileName = Path.of( targetURI.getPath() ).getFileName().toString();
-					}
-
-					if ( fileName == null || fileName.trim().isEmpty() ) {
-						throw new BoxRuntimeException( "Unable to determine filename from response" );
-					}
-				}
-
-				String destinationPath = Path.of( outputDirectory, fileName ).toAbsolutePath().toString();
-
-				if ( responseBody instanceof String responseString ) {
-					FileSystemUtil.write( destinationPath, responseString, charset, true );
-				} else if ( responseBody instanceof byte[] bodyBytes ) {
-					FileSystemUtil.write( destinationPath, bodyBytes, true );
-				}
-			}
-		}
-
-		return responseBody;
+		// Get a new or existing BoxHttpClient
+		BoxHttpClient	boxHttpClient	= httpService.getOrBuildClient(
+		    attributes.getAsString( Key.httpVersion ),
+		    attributes.getAsBoolean( Key.redirect ),
+		    BoxHttpClient.DEFAULT_CONNECTION_TIMEOUT,
+		    attributes.getAsString( Key.proxyServer ),
+		    attributes.getAsInteger( Key.proxyPort ),
+		    attributes.getAsString( Key.proxyUser ),
+		    attributes.getAsString( Key.proxyPassword ),
+		    attributes.getAsString( Key.clientCert ),
+		    attributes.getAsString( Key.clientCertPassword ),
+		    BooleanCaster.cast( attributes.getOrDefault( Key.debug, false ) )
+		);
+
+		// Make the HTTP request
+		BoxHttpRequest	httpRequest		= boxHttpClient
+		    // Target URL and invocation context
+		    .newRequest( attributes.getAsString( Key.URL ), context )
+		    // Special URL Port if any
+		    .port( attributes.getAsInteger( Key.port ) )
+		    // Charset for the request
+		    .charset( attributes.getAsString( Key.charset ) )
+		    // Whether to throw an error if the HTTP response status code is 400 or greater. Default is true.
+		    .throwOnError( attributes.getAsBoolean( Key.throwOnError ) )
+		    // Debug Mode
+		    .debug( BooleanCaster.cast( attributes.getOrDefault( Key.debug, false ) ) )
+		    // HTTP Version
+		    .httpVersion( attributes.getAsString( Key.httpVersion ) )
+		    // User Agent
+		    .userAgent( attributes.getAsString( Key.userAgent ) )
+		    // Are we multipart?
+		    .multipart( attributes.getAsBoolean( Key.multipart ) )
+		    // HTTP Params
+		    .params( executionState.getAsArray( Key.HTTPParams ) )
+		    // Outputs if any
+		    .outputDirectory( outputDirectory )
+		    .outputFile( attributes.getAsString( Key.file ) )
+		    // Encoded Client Certificate Header for Debugging
+		    .when( debug && encodedCertKey != null, ( request ) -> {
+			    request.header( "X-Client-Cert", encodedCertKey );
+		    } )
+		    // Binary Response Handling
+		    .when( isBinaryRequested, ( request ) -> {
+			    request.asBinary();
+		    } )
+		    .when( binaryOperator.equals( BINARY_NEVER ), ( request ) -> {
+			    request.asBinaryNever();
+		    } )
+		    // CallBacks
+		    .onChunk( attributes.getAsFunction( Key.onChunk ) )
+		    .onError( attributes.getAsFunction( Key.onError ) )
+		    .onComplete( attributes.getAsFunction( Key.onComplete ) )
+		    // Finally, invoke the request
+		    .invoke()
+		    // Handle failures
+		    .ifFailed( ( exception, result ) -> {
+			    // Check the status code, if it's >= 400 and throwOnError is true, rethrow
+			    int statusCode = IntegerCaster.cast( result.get( Key.statusCode ) );
+			    if ( attributes.getAsBoolean( Key.throwOnError ) && statusCode >= 400 ) {
+				    throw new BoxRuntimeException(
+				        "HTTP request failed with status code " + statusCode,
+				        exception
+				    );
+			    }
+			    ExpressionInterpreter.setVariable(
+			        context,
+			        attributes.getAsString( Key.result ),
+			        result
+			    );
+		    } );
+
+		// Set the result variable before returning
+		ExpressionInterpreter.setVariable(
+		    context,
+		    attributes.getAsString( Key.result ),
+		    httpRequest.getHttpResult()
+		);
+
+		return bodyResult;
 	}
 }
