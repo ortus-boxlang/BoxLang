@@ -1005,6 +1005,240 @@ public class HTTPTest {
 		assertThat( httpResult.get( Key.statusText ) ).isEqualTo( "OK" ); // Assuming successful response
 	}
 
+	@DisplayName( "It can use onRequestStart callback" )
+	@Test
+	public void testOnRequestStartCallback( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor( get( "/test-callback" )
+		    .willReturn(
+		        aResponse()
+		            .withBody( "Success" )
+		            .withStatus( 200 ) ) );
+
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+
+		// @formatter:off
+		instance.executeSource(
+		    String.format( """
+				callbackData = {};
+				onRequestStartFn = (data) => {
+					callbackData.called = true;
+					callbackData.url = data.url;
+					callbackData.method = data.method;
+					callbackData.hasHeaders = structKeyExists(data, 'headers');
+					callbackData.hasHttpResult = structKeyExists(data, 'httpResult');
+				};
+				bx:http url="%s" onRequestStart=onRequestStartFn;
+				result = bxhttp;
+			""",
+		        baseURL + "/test-callback"
+		    ),
+		    context
+		);
+		// @formatter:on
+
+		IStruct callbackData = variables.getAsStruct( Key.of( "callbackData" ) );
+		assertThat( callbackData.getAsBoolean( Key.of( "called" ) ) ).isTrue();
+		assertThat( callbackData.getAsString( Key.of( "url" ) ) ).contains( "/test-callback" );
+		assertThat( callbackData.getAsString( Key.of( "method" ) ) ).isEqualTo( "GET" );
+		assertThat( callbackData.getAsBoolean( Key.of( "hasHeaders" ) ) ).isTrue();
+		assertThat( callbackData.getAsBoolean( Key.of( "hasHttpResult" ) ) ).isTrue();
+
+		IStruct httpResult = variables.getAsStruct( result );
+		assertThat( httpResult.get( Key.statusCode ) ).isEqualTo( 200 );
+	}
+
+	@DisplayName( "It can use onComplete callback" )
+	@Test
+	public void testOnCompleteCallback( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor( get( "/test-complete" )
+		    .willReturn(
+		        aResponse()
+		            .withBody( "Completed" )
+		            .withStatus( 200 ) ) );
+
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+
+		// @formatter:off
+		instance.executeSource(
+		    String.format( """
+				completeData = {};
+				onCompleteFn = (httpResult, response) => {
+					completeData.called = true;
+					completeData.statusCode = httpResult.statusCode;
+					completeData.fileContent = httpResult.fileContent;
+					completeData.hasResponse = !isNull(response);
+				};
+				bx:http url="%s" onComplete=onCompleteFn;
+				result = bxhttp;
+			""",
+		        baseURL + "/test-complete"
+		    ),
+		    context
+		);
+		// @formatter:on
+
+		IStruct completeData = variables.getAsStruct( Key.of( "completeData" ) );
+		assertThat( completeData.getAsBoolean( Key.of( "called" ) ) ).isTrue();
+		assertThat( completeData.getAsInteger( Key.of( "statusCode" ) ) ).isEqualTo( 200 );
+		assertThat( completeData.getAsString( Key.of( "fileContent" ) ) ).isEqualTo( "Completed" );
+		assertThat( completeData.getAsBoolean( Key.of( "hasResponse" ) ) ).isTrue();
+
+		IStruct httpResult = variables.getAsStruct( result );
+		assertThat( httpResult.get( Key.statusCode ) ).isEqualTo( 200 );
+	}
+
+	@DisplayName( "It can use onError callback" )
+	@Test
+	public void testOnErrorCallback( WireMockRuntimeInfo wmRuntimeInfo ) {
+		// Don't stub anything - this will cause a connection error
+		String baseURL = "http://localhost:99999"; // Invalid port to force error
+
+		// @formatter:off
+		instance.executeSource(
+		    String.format( """
+				errorData = {};
+				onErrorFn = (exception, httpResult) => {
+					errorData.called = true;
+					errorData.hasException = !isNull(exception);
+					errorData.hasHttpResult = !isNull(httpResult);
+					errorData.statusCode = httpResult.statusCode ?: 0;
+				};
+				bx:http url="%s" timeout="1" onError=onErrorFn;
+				result = bxhttp;
+			""",
+		        baseURL + "/test-error"
+		    ),
+		    context
+		);
+		// @formatter:on
+
+		IStruct errorData = variables.getAsStruct( Key.of( "errorData" ) );
+		assertThat( errorData.getAsBoolean( Key.of( "called" ) ) ).isTrue();
+		assertThat( errorData.getAsBoolean( Key.of( "hasException" ) ) ).isTrue();
+		assertThat( errorData.getAsBoolean( Key.of( "hasHttpResult" ) ) ).isTrue();
+
+		IStruct httpResult = variables.getAsStruct( result );
+		// Should have an error status code (5xx for connection/server errors)
+		assertThat( httpResult.getAsInteger( Key.statusCode ) ).isGreaterThan( 499 );
+	}
+
+	@DisplayName( "It can use multiple callbacks together" )
+	@Test
+	public void testMultipleCallbacks( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor( get( "/test-multi" )
+		    .willReturn(
+		        aResponse()
+		            .withBody( "Multi-callback test" )
+		            .withStatus( 200 ) ) );
+
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+
+		// @formatter:off
+		instance.executeSource(
+		    String.format( """
+				callbacks = {
+					onRequestStart: false,
+					onComplete: false
+				};
+				
+				onRequestStartFn = (data) => { callbacks.onRequestStart = true; };
+				onCompleteFn = (httpResult, response) => { callbacks.onComplete = true; };
+				
+				bx:http url="%s" 
+					onRequestStart=onRequestStartFn
+					onComplete=onCompleteFn;
+				
+				result = bxhttp;
+			""",
+		        baseURL + "/test-multi"
+		    ),
+		    context
+		);
+		// @formatter:on
+
+		IStruct callbacks = variables.getAsStruct( Key.of( "callbacks" ) );
+		assertThat( callbacks.getAsBoolean( Key.of( "onRequestStart" ) ) ).isTrue();
+		assertThat( callbacks.getAsBoolean( Key.of( "onComplete" ) ) ).isTrue();
+
+		IStruct httpResult = variables.getAsStruct( result );
+		assertThat( httpResult.get( Key.statusCode ) ).isEqualTo( 200 );
+	}
+
+	@DisplayName( "It can modify request in onRequestStart callback" )
+	@Test
+	public void testOnRequestStartModification( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor( get( "/test-modification" )
+		    .willReturn(
+		        aResponse()
+		            .withBody( "Modified" )
+		            .withStatus( 200 ) ) );
+
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+
+		// @formatter:off
+		instance.executeSource(
+		    String.format( """
+				requestInfo = {};
+				onRequestStartFn = (data) => {
+					// Capture request details
+					requestInfo.url = data.url;
+					requestInfo.method = data.method;
+					requestInfo.headerCount = structCount(data.headers);
+					requestInfo.executionTime = data.httpResult.executionTime ?: 0;
+				};
+				bx:http url="%s" onRequestStart=onRequestStartFn;
+				result = bxhttp;
+			""",
+		        baseURL + "/test-modification"
+		    ),
+		    context
+		);
+		// @formatter:on
+
+		IStruct requestInfo = variables.getAsStruct( Key.of( "requestInfo" ) );
+		assertThat( requestInfo.getAsString( Key.of( "url" ) ) ).contains( "/test-modification" );
+		assertThat( requestInfo.getAsString( Key.of( "method" ) ) ).isEqualTo( "GET" );
+		assertThat( requestInfo.getAsInteger( Key.of( "headerCount" ) ) ).isGreaterThan( 0 );
+	}
+
+	@DisplayName( "It can access execution time in onComplete callback" )
+	@Test
+	public void testExecutionTimeInCallback( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor( get( "/test-timing" )
+		    .willReturn(
+		        aResponse()
+		            .withBody( "Timing test" )
+		            .withStatus( 200 ) ) );
+
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+
+		// @formatter:off
+		instance.executeSource(
+		    String.format( """
+				timingData = {};
+				onCompleteFn = (httpResult, response) => {
+					timingData.hasExecutionTime = structKeyExists(httpResult, 'executionTime');
+					timingData.executionTime = httpResult.executionTime ?: -1;
+					timingData.isNumeric = isNumeric(httpResult.executionTime);
+				};
+				bx:http url="%s" onComplete=onCompleteFn;
+				result = bxhttp;
+			""",
+		        baseURL + "/test-timing"
+		    ),
+		    context
+		);
+		// @formatter:on
+
+		IStruct timingData = variables.getAsStruct( Key.of( "timingData" ) );
+		assertThat( timingData.getAsBoolean( Key.of( "hasExecutionTime" ) ) ).isTrue();
+		assertThat( timingData.getAsBoolean( Key.of( "isNumeric" ) ) ).isTrue();
+		assertThat( timingData.getAsLong( Key.of( "executionTime" ) ) ).isGreaterThan( -1L );
+
+		IStruct httpResult = variables.getAsStruct( result );
+		assertThat( httpResult.containsKey( Key.executionTime ) ).isTrue();
+	}
+
 	private void createClientCertificate( String certPath, String certPassword ) throws Exception {
 		// Generate a key pair
 		KeyPairGenerator keyGen = KeyPairGenerator.getInstance( "RSA" );
