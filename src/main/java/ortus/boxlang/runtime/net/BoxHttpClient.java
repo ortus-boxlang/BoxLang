@@ -1226,8 +1226,10 @@ public class BoxHttpClient {
 				}
 				// Handle any other ExecutionException
 				else {
-					logger.error( "Unhandled ExecutionException with inner exception: {}",
-					    innerException != null ? innerException.getClass().getName() : "null", e );
+					logger.error(
+					    "Unhandled ExecutionException with inner exception: {}",
+					    innerException != null ? innerException.getClass().getName() : "null", e
+					);
 					this.httpResult.put( Key.responseHeader, new Struct() );
 					this.httpResult.put( Key.header, "" );
 					this.httpResult.put( Key.statusCode, 500 );
@@ -1255,6 +1257,11 @@ public class BoxHttpClient {
 				this.errorMessage		= e.getMessage();
 				this.requestException	= e;
 				this.httpResult.put( Key.errorDetail, "Thread interrupted: " + e.getMessage() );
+			}
+			// BoxRuntimeException should always be re-thrown (e.g., binary validation errors, hard-stop errors, etc.)
+			catch ( BoxRuntimeException e ) {
+				logger.debug( "BoxRuntimeException during HTTP request - re-throwing", e );
+				throw e;
 			}
 			// Catch-all for any other unexpected exceptions
 			catch ( Exception e ) {

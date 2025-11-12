@@ -497,9 +497,13 @@ public class HTTPTest {
 		stubFor(
 		    get( "/image" )
 		        .willReturn(
-		            ok().withHeader( "Content-Type", "image/jpeg; charset=utf-8" )
+		            ok()
+		                .withHeader( "Content-Type", "image/jpeg; charset=utf-8" )
 		                .withBody(
-		                    ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
+		                    ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" )
+		                )
+		        )
+		);
 
 		// @formatter:off
 		assertThrows( BoxRuntimeException.class, () -> instance.executeSource( String.format(
@@ -989,7 +993,8 @@ public class HTTPTest {
 		// @formatter:off
 		instance.executeSource( String.format( """
 			bx:http method="GET" url="%s" clientCert="%s" clientCertPassword="%s" debug=true {}
-			result = bxhttp;
+			result = bxhttp
+			println( result )
 		""", wmRuntimeInfo.getHttpBaseUrl() + "/posts/2", clientCertPath, clientCertPassword ), context );
 		// @formatter:on
 
