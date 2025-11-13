@@ -58,7 +58,8 @@ public class ExceptionUtil {
 	private static BoxRuntime runtime = BoxRuntime.getInstance();
 
 	/**
-	 * Checks if an exception is of a given type
+	 * Checks if an exception is of a given type using loose rules based on the type as a string.
+	 * This takes into account the "type" string of BoxLang exceptions as well as the class name of native exceptions.
 	 *
 	 * @param context The context
 	 * @param e       The exception
@@ -81,6 +82,23 @@ public class ExceptionUtil {
 
 			// Native exceptions just check the class hierarchy
 			if ( InstanceOf.invoke( context, e, type ) ) {
+				return true;
+			}
+			e = e.getCause();
+		}
+		return false;
+	}
+
+	/**
+	 * Check if an exception, or its cause is an InterruptedException.
+	 * This is a pure Java check and does not take BoxLang runtime exception types into
+	 * 
+	 * @param exception The exception
+	 */
+	public static boolean isInterruptedException( Throwable exception ) {
+		Throwable e = exception;
+		while ( e != null ) {
+			if ( e instanceof InterruptedException ) {
 				return true;
 			}
 			e = e.getCause();
