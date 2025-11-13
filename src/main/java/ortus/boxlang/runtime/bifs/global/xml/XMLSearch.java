@@ -135,6 +135,14 @@ public class XMLSearch extends BIF {
 		}
 	}
 
+	/**
+	 * Determines the appropriate NamespaceContext for the given XML node.
+	 * Checks if the node or its document element has a namespace prefix.
+	 *
+	 * @param xml The XML node to check for namespace context
+	 *
+	 * @return The XMLNamespaceResolver if namespaces are present, null otherwise
+	 */
 	private NamespaceContext getNamespaceContext( XML xml ) {
 
 		if ( xml.getNode() instanceof Document doc ) {
