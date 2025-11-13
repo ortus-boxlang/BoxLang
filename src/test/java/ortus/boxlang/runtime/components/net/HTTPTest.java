@@ -77,6 +77,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -1140,14 +1141,14 @@ public class HTTPTest {
 					onRequestStart: false,
 					onComplete: false
 				};
-				
+
 				onRequestStartFn = (data) => { callbacks.onRequestStart = true; };
 				onCompleteFn = (httpResult, response) => { callbacks.onComplete = true; };
-				
-				bx:http url="%s" 
+
+				bx:http url="%s"
 					onRequestStart=onRequestStartFn
 					onComplete=onCompleteFn;
-				
+
 				result = bxhttp;
 			""",
 		        baseURL + "/test-multi"
@@ -1237,6 +1238,261 @@ public class HTTPTest {
 
 		IStruct httpResult = variables.getAsStruct( result );
 		assertThat( httpResult.containsKey( Key.executionTime ) ).isTrue();
+	}
+
+	@DisplayName( "It can stream response with onChunk callback" )
+	@Test
+	public void testOnChunkCallbackStreaming( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor( get( "/test-streaming" )
+		    .willReturn(
+		        aResponse()
+		            .withBody( "Line 1\nLine 2\nLine 3\nLine 4\nLine 5" )
+		            .withStatus( 200 )
+		    ) );
+
+		String baseURL = "http://localhost:" + wmRuntimeInfo.getHttpPort();
+
+		instance.executeSource(
+		    """
+		       chunkData = {
+		           chunks: [],
+		           chunkCount: 0,
+		           totalContent: ""
+		       };
+		    """,
+		    context
+		);
+
+		// @formatter:off
+		instance.executeSource(
+		    String.format(
+		        """
+					onChunkFn = (data) => {
+						chunkData.chunkCount++;
+						arrayAppend(chunkData.chunks, {
+							chunkNumber: data.chunkNumber,
+							content: data.content,
+							totalBytes: data.totalBytes
+						});
+						chunkData.totalContent &= data.content;
+					};
+					bx:http url="%s" onChunk=onChunkFn;
+					result = bxhttp;
+				""",
+			        baseURL + "/test-streaming"
+			    ),
+			    context
+			);
+		// @formatter:on
+
+		IStruct chunkData = variables.getAsStruct( Key.of( "chunkData" ) );
+		assertThat( chunkData.getAsInteger( Key.of( "chunkCount" ) ) ).isGreaterThan( 0 );
+		assertThat( chunkData.get( Key.of( "chunks" ) ) ).isInstanceOf( Array.class );
+
+		Array chunks = ( Array ) chunkData.get( Key.of( "chunks" ) );
+		assertThat( chunks.size() ).isGreaterThan( 0 );
+
+		// Verify first chunk has expected structure
+		IStruct firstChunk = ( IStruct ) chunks.get( 0 );
+		assertThat( firstChunk.containsKey( Key.of( "chunkNumber" ) ) ).isTrue();
+		assertThat( firstChunk.containsKey( Key.of( "content" ) ) ).isTrue();
+		assertThat( firstChunk.containsKey( Key.of( "totalBytes" ) ) ).isTrue();
+
+		// Verify httpResult indicates streaming mode
+		IStruct httpResult = variables.getAsStruct( result );
+		assertThat( httpResult.getAsBoolean( Key.of( "stream" ) ) ).isTrue();
+		assertThat( httpResult.getAsInteger( Key.statusCode ) ).isEqualTo( 200 );
+	}
+
+	@DisplayName( "It accumulates streamed content in fileContent" )
+	@Test
+	public void testStreamingAccumulatesContent( WireMockRuntimeInfo wmRuntimeInfo ) {
+		String testContent = "First line\nSecond line\nThird line";
+		stubFor( get( "/test-accumulation" )
+		    .willReturn(
+		        aResponse()
+		            .withBody( testContent )
+		            .withStatus( 200 )
+		    ) );
+
+		String baseURL = "http://localhost:" + wmRuntimeInfo.getHttpPort();
+
+		// @formatter:off
+		instance.executeSource(
+		    String.format(
+		        """
+					chunkTracker = { count: 0 };
+					onChunkFn = (data) => {
+						chunkTracker.count++;
+					};
+					bx:http url="%s" onChunk=onChunkFn;
+					result = bxhttp;
+				""",
+			        baseURL + "/test-accumulation"
+			    ),
+			    context
+			);
+		// @formatter:on
+
+		IStruct	httpResult	= variables.getAsStruct( result );
+		String	fileContent	= httpResult.getAsString( Key.fileContent );
+
+		// Verify accumulated content contains all lines
+		assertThat( fileContent ).contains( "First line" );
+		assertThat( fileContent ).contains( "Second line" );
+		assertThat( fileContent ).contains( "Third line" );
+
+		// Verify chunks were processed
+		IStruct chunkTracker = variables.getAsStruct( Key.of( "chunkTracker" ) );
+		assertThat( chunkTracker.getAsInteger( Key.of( "count" ) ) ).isGreaterThan( 0 );
+	}
+
+	@DisplayName( "It handles streaming with onComplete callback" )
+	@Test
+	public void testStreamingWithOnComplete( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor( get( "/test-streaming-complete" )
+		    .willReturn(
+		        aResponse()
+		            .withBody( "Stream line 1\nStream line 2" )
+		            .withStatus( 200 )
+		    ) );
+
+		String baseURL = "http://localhost:" + wmRuntimeInfo.getHttpPort();
+
+		instance.executeSource(
+		    """
+		       streamData = {
+		           chunksCalled: false,
+		           completeCalled: false,
+		           finalContent: ""
+		       };
+		    """,
+		    context
+		);
+
+		// @formatter:off
+		instance.executeSource(
+		    String.format(
+		        """
+					onChunkFn = (data) => {
+						streamData.chunksCalled = true;
+					};
+					onCompleteFn = (httpResult, response) => {
+						streamData.completeCalled = true;
+						streamData.finalContent = httpResult.fileContent;
+					};
+					bx:http url="%s" onChunk=onChunkFn onComplete=onCompleteFn;
+					result = bxhttp;
+				""",
+			        baseURL + "/test-streaming-complete"
+			    ),
+			    context
+			);
+		// @formatter:on
+
+		IStruct streamData = variables.getAsStruct( Key.of( "streamData" ) );
+		assertThat( streamData.getAsBoolean( Key.of( "chunksCalled" ) ) ).isTrue();
+		assertThat( streamData.getAsBoolean( Key.of( "completeCalled" ) ) ).isTrue();
+		assertThat( streamData.getAsString( Key.of( "finalContent" ) ) ).isNotEmpty();
+	}
+
+	@DisplayName( "It provides chunk metadata in streaming mode" )
+	@Test
+	public void testChunkMetadata( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor( get( "/test-chunk-metadata" )
+		    .willReturn(
+		        aResponse()
+		            .withBody( "Metadata test\nLine 2\nLine 3" )
+		            .withHeader( "Content-Type", "text/plain" )
+		            .withStatus( 200 )
+		    ) );
+
+		String baseURL = "http://localhost:" + wmRuntimeInfo.getHttpPort();
+
+		instance.executeSource(
+		    """
+		       metadataTracker = {
+		           hasStatusCode: false,
+		           hasHeaders: false,
+		           hasHttpResult: false,
+		           statusCode: 0
+		       };
+		    """,
+		    context
+		);
+
+		// @formatter:off
+		instance.executeSource(
+		    String.format(
+		        """
+					onChunkFn = (data) => {
+						metadataTracker.hasStatusCode = structKeyExists(data, 'statusCode');
+						metadataTracker.hasHeaders = structKeyExists(data, 'headers');
+						metadataTracker.hasHttpResult = structKeyExists(data, 'httpResult');
+						metadataTracker.statusCode = data.statusCode ?: 0;
+					};
+					bx:http url="%s" onChunk=onChunkFn;
+					result = bxhttp;
+				""",
+			        baseURL + "/test-chunk-metadata"
+			    ),
+			    context
+			);
+		// @formatter:on
+
+		IStruct metadataTracker = variables.getAsStruct( Key.of( "metadataTracker" ) );
+		assertThat( metadataTracker.getAsBoolean( Key.of( "hasStatusCode" ) ) ).isTrue();
+		assertThat( metadataTracker.getAsBoolean( Key.of( "hasHeaders" ) ) ).isTrue();
+		assertThat( metadataTracker.getAsBoolean( Key.of( "hasHttpResult" ) ) ).isTrue();
+		assertThat( metadataTracker.getAsInteger( Key.of( "statusCode" ) ) ).isEqualTo( 200 );
+	}
+
+	@DisplayName( "It handles streaming errors gracefully" )
+	@Test
+	public void testStreamingErrorHandling( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor( get( "/test-streaming-error" )
+		    .willReturn(
+		        aResponse()
+		            .withBody( "Error content" )
+		            .withStatus( 500 )
+		    ) );
+
+		String baseURL = "http://localhost:" + wmRuntimeInfo.getHttpPort();
+
+		instance.executeSource(
+		    """
+		       errorTracker = {
+		           chunksCalled: false,
+		           statusCode: 0
+		       };
+		    """,
+		    context
+		);
+
+		// @formatter:off
+		instance.executeSource(
+		    String.format(
+		        """
+					onChunkFn = (data) => {
+						errorTracker.chunksCalled = true;
+						errorTracker.statusCode = data.statusCode;
+					};
+					bx:http url="%s" onChunk=onChunkFn throwOnError=false;
+					result = bxhttp;
+				""",
+			        baseURL + "/test-streaming-error"
+			    ),
+			    context
+			);
+		// @formatter:on
+
+		// Verify chunks were processed even with error status
+		IStruct errorTracker = variables.getAsStruct( Key.of( "errorTracker" ) );
+		assertThat( errorTracker.getAsBoolean( Key.of( "chunksCalled" ) ) ).isTrue();
+		assertThat( errorTracker.getAsInteger( Key.of( "statusCode" ) ) ).isEqualTo( 500 );
+
+		IStruct httpResult = variables.getAsStruct( result );
+		assertThat( httpResult.getAsInteger( Key.statusCode ) ).isEqualTo( 500 );
 	}
 
 	private void createClientCertificate( String certPath, String certPassword ) throws Exception {

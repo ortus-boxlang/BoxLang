@@ -854,6 +854,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		toString							= Key.of( "toString" );
 	public static final Key		totalCapSize						= Key.of( "totalCapSize" );
 	public static final Key		totalReceived						= Key.of( "totalReceived" );
+	public static final Key		totalBytes							= Key.of( "totalBytes" );
 	public static final Key		trace								= Key.of( "trace" );
 	public static final Key		trim								= Key.of( "trim" );
 	public static final Key		trustedCache						= Key.of( "trustedCache" );
