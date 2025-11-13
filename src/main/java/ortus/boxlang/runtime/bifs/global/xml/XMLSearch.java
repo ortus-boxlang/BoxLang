@@ -24,6 +24,7 @@ import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPathVariableResolver;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import ortus.boxlang.runtime.bifs.BIF;
@@ -146,8 +147,9 @@ public class XMLSearch extends BIF {
 	private NamespaceContext getNamespaceContext( XML xml ) {
 
 		if ( xml.getNode() instanceof Document doc ) {
-			if ( doc.getDocumentElement().getPrefix() != null ) {
-				return new XMLNamespaceResolver( doc.getDocumentElement().getOwnerDocument() );
+			Element docElement = doc.getDocumentElement();
+			if ( docElement != null && docElement.getPrefix() != null ) {
+				return new XMLNamespaceResolver( doc );
 			}
 		}
 
