@@ -100,6 +100,11 @@ public class DatasourceService extends BaseService {
 		// Register the default JDBC Driver
 		registerDriver( new ortus.boxlang.runtime.jdbc.drivers.GenericJDBCDriver() );
 
+		// Register all datasources from the configuration
+		runtime.getConfiguration().datasources.values().forEach( config -> {
+			register( ( DatasourceConfig ) config );
+		} );
+
 		// Announce it
 		announce(
 		    BoxEvent.ON_DATASOURCE_SERVICE_STARTUP,
