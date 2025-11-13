@@ -122,7 +122,7 @@ public final class ExecutedQuery implements Serializable {
 	 * "normal" result set as the generated keys after an update. (Looking at you MSSQL :/ )
 	 *
 	 * @param rs The ResultSet to check.
-	 * 
+	 *
 	 * @return True if the ResultSet is for generated keys, false otherwise.
 	 */
 	private static boolean isResultSetGeneratedKeys( ResultSet rs ) {
@@ -146,7 +146,11 @@ public final class ExecutedQuery implements Serializable {
 		}
 	}
 
-	public static ExecutedQuery fromPendingQuery( @NonNull PendingQuery pendingQuery, @NonNull Statement statement, long executionTime, boolean hasResults,
+	public static ExecutedQuery fromPendingQuery(
+	    @NonNull PendingQuery pendingQuery,
+	    @NonNull Statement statement,
+	    long executionTime,
+	    boolean hasResults,
 	    SQLException initialSqlException ) {
 		boolean				generatedKeysComeAsResultSet	= false;
 		Object				generatedKey					= null;
@@ -195,6 +199,7 @@ public final class ExecutedQuery implements Serializable {
 				} else {
 
 					// Capture generated keys, if any.
+					// Skip this if we already have an error from the initial execution
 					try {
 						affectedCount = statement.getUpdateCount();
 						if ( debug )
@@ -203,23 +208,36 @@ public final class ExecutedQuery implements Serializable {
 							updateCounts.add( affectedCount );
 							totalUpdateCount += affectedCount;
 
-							if ( !generatedKeysComeAsResultSet ) {
+							// Only try to get generated keys if there was no error from the initial execution
+							// This prevents NullPointerException in SQLite when the statement failed
+							if ( !generatedKeysComeAsResultSet && raisedError == null ) {
 								ResultSet keys = statement.getGeneratedKeys();
 								if ( debug )
 									System.out.println( "retrieving generated keys" );
 								if ( keys != null ) {
 									generatedKey = processGeneratedKeys( keys, allGeneratedKeys, generatedKey, affectedCount, generatedKeyIsActuallyRowID );
-									keys.close();
+									try {
+										keys.close();
+									} catch ( SQLException | NullPointerException e ) {
+										// Some JDBC drivers have issues closing the ResultSet after an error
+										logger.error( "Error closing generated keys ResultSet", e );
+									}
 								}
 							}
 						}
 					} catch ( SQLException | NullPointerException t ) {
-						// throw new DatabaseException( "Error getting update count", t );
+						// For SQLite and other databases, a NullPointerException can occur when trying to get generated keys
+						// after an error. We should preserve the original error if it exists, otherwise capture this one.
 						if ( debug )
 							t.printStackTrace();
 						if ( debug )
 							System.out.println( "Error getting generatedKeys: " + t.getMessage() );
 						logger.error( "Error getting update count", t );
+
+						// Preserve the error to be thrown later
+						if ( raisedError == null ) {
+							raisedError = t;
+						}
 					}
 				}
 				// If we have no results and no affected count, we're done.
@@ -340,9 +358,9 @@ public final class ExecutedQuery implements Serializable {
 	 * @param allGeneratedKeys An array to store all generated keys.
 	 * @param generatedKey     The generated key for the current insert/update operation.
 	 * @param affectedCount    The number of rows affected by the operation.
-	 * 
+	 *
 	 * @return The processed generated key.
-	 * 
+	 *
 	 * @throws SQLException If an SQL error occurs.
 	 */
 	private static Object processGeneratedKeys( ResultSet rs, Array allGeneratedKeys, Object generatedKey, int affectedCount,
@@ -351,18 +369,33 @@ public final class ExecutedQuery implements Serializable {
 			// dumpResultSet( rs );
 		}
 
+		if ( rs == null ) {
+			return generatedKey;
+		}
+
 		Array theseKeys = new Array();
 		// MariaDB returns ALL the generated keys at once for the current statement and future statements, so we should never take more keys than the updated count showed.
-		while ( rs.next() && ( affectedCount == -1 || affectedCount > theseKeys.size() ) ) {
-			boolean first = true;
-			if ( debug )
-				System.out.println( "acquired generated key: " + rs.getObject( 1 ) );
-			// Check if column name is ROWID
-			if ( first ) {
-				generatedKeyIsActuallyRowID.set( rs.getMetaData().getColumnLabel( 1 ).equalsIgnoreCase( "ROWID" ) );
-				first = false;
+		try {
+			while ( rs.next() && ( affectedCount == -1 || affectedCount > theseKeys.size() ) ) {
+				boolean first = true;
+				if ( debug ) {
+					System.out.println( "acquired generated key: " + rs.getObject( 1 ) );
+				}
+				// Check if column name is ROWID
+				if ( first ) {
+					generatedKeyIsActuallyRowID.set( rs.getMetaData().getColumnLabel( 1 ).equalsIgnoreCase( "ROWID" ) );
+					first = false;
+				}
+				theseKeys.add( rs.getObject( 1 ) );
 			}
-			theseKeys.add( rs.getObject( 1 ) );
+		} catch ( NullPointerException e ) {
+			// Some JDBC drivers (Derby, SQLite) can return a ResultSet with null internal state
+			// when the statement execution failed. We just return the current generatedKey.
+			if ( debug ) {
+				System.out.println( "NullPointerException while processing generated keys: " + e.getMessage() );
+			}
+			logger.error( "NullPointerException while processing generated keys", e );
+			return generatedKey;
 		}
 		allGeneratedKeys.add( theseKeys );
 		if ( generatedKey == null && !theseKeys.isEmpty() ) {
