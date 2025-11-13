@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.runtime.bifs.global.xml;
 
+import javax.xml.namespace.NamespaceContext;
 import javax.xml.namespace.QName;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
@@ -22,6 +23,7 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPathVariableResolver;
 
+import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 
 import ortus.boxlang.runtime.bifs.BIF;
@@ -71,18 +73,19 @@ public class XMLSearch extends BIF {
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		XML				xml				= arguments.getAsXML( Key.XMLNode );
-		String			xpathString		= arguments.getAsString( Key.xpath );
-		final IStruct	params			= arguments.getAsStruct( Key.params );
+		XML					xml				= arguments.getAsXML( Key.XMLNode );
+		String				xpathString		= arguments.getAsString( Key.xpath );
+		final IStruct		params			= arguments.getAsStruct( Key.params );
 
 		// Create an XPathFactory
-		XPathFactory	xPathFactory	= XPathFactory.newInstance();
+		XPathFactory		xPathFactory	= XPathFactory.newInstance();
 
 		// Create an XPath object
-		XPath			xpath			= xPathFactory.newXPath();
+		XPath				xpath			= xPathFactory.newXPath();
+		NamespaceContext	nsContext		= getNamespaceContext( xml );
 
-		if ( xml.getNode().getPrefix() != null ) {
-			xpath.setNamespaceContext( new XMLNamespaceResolver( xml.getNode().getOwnerDocument() ) );
+		if ( nsContext != null ) {
+			xpath.setNamespaceContext( nsContext );
 		}
 
 		xpath.setXPathVariableResolver( new XPathVariableResolver() {
@@ -130,6 +133,21 @@ public class XMLSearch extends BIF {
 				throw new BoxRuntimeException( "Error evaluating XPath: " + xpathString, e1 );
 			}
 		}
+	}
+
+	private NamespaceContext getNamespaceContext( XML xml ) {
+
+		if ( xml.getNode() instanceof Document doc ) {
+			if ( doc.getDocumentElement().getPrefix() != null ) {
+				return new XMLNamespaceResolver( doc.getDocumentElement().getOwnerDocument() );
+			}
+		}
+
+		if ( xml.getNode().getPrefix() != null ) {
+			return new XMLNamespaceResolver( xml.getNode().getOwnerDocument() );
+		}
+
+		return null;
 	}
 
 }
