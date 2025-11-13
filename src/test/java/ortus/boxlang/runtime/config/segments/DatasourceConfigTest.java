@@ -108,6 +108,34 @@ class DatasourceConfigTest {
 		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:mysql://localhost:3306/foo?totalRandomValue=12345&useSSL=false" );
 	}
 
+	@DisplayName( "It performs case-insensitive placeholder replacements" )
+	@Test
+	void testItPerformsCaseInsensitivePlaceholderReplacements() {
+		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
+		    "dsn", "jdbc:mysql://{host}:{PORT}/{database}?totalRandomValue={TOTALRandomValue}",
+		    "HoSt", "localhost",
+		    "pOrT", 3306,
+		    "DATAbase", "foo",
+		    "tOtAlRaNdOmVaLuE", 12345,
+		    "custom", Struct.of( "useSSL", false )
+		) );
+		HikariConfig		hikariConfig	= datasource.toHikariConfig();
+		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:mysql://localhost:3306/foo?totalRandomValue=12345&useSSL=false" );
+	}
+
+	@DisplayName( "It can replace the same placeholder more than once" )
+	@Test
+	void testItCanReplaceSamePlaceholderMoreThanOnce() {
+		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
+		    "dsn", "jdbc:mysql://{host}:{port}/{database}?someThing={host}&andAnotherThing={PORT}",
+		    "host", "localhost",
+		    "port", 3306,
+		    "database", "foo"
+		) );
+		HikariConfig		hikariConfig	= datasource.toHikariConfig();
+		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:mysql://localhost:3306/foo?someThing=localhost&andAnotherThing=3306" );
+	}
+
 	@DisplayName( "It can load config" )
 	@Test
 	void testItCanConstructMinimalConnectionString() {
