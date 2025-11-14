@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.net;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -258,4 +259,38 @@ public class HttpResponseHelper {
 		}
 		return null;
 	}
+
+	/**
+	 * Decodes an InputStream based on the Content-Encoding header.
+	 * Handles gzip and deflate compression transparently for streaming responses.
+	 *
+	 * @param inputStream     The raw input stream from the HTTP response
+	 * @param contentEncoding The Content-Encoding header value (can be null or comma-separated)
+	 *
+	 * @return A decoded InputStream, or the original stream if no encoding is specified
+	 *
+	 * @throws IOException If decompression fails
+	 */
+	public static java.io.InputStream decodeInputStream( java.io.InputStream inputStream, String contentEncoding ) throws IOException {
+		if ( contentEncoding == null || contentEncoding.isEmpty() ) {
+			return inputStream;
+		}
+
+		// Process encodings in reverse order (they are applied in order, we need to decode in reverse)
+		String[]			encodings		= contentEncoding.split( "," );
+		java.io.InputStream	decodedStream	= inputStream;
+
+		for ( int i = encodings.length - 1; i >= 0; i-- ) {
+			String encoding = encodings[ i ].trim().toLowerCase();
+			if ( encoding.equals( "gzip" ) ) {
+				decodedStream = new java.util.zip.GZIPInputStream( decodedStream );
+			} else if ( encoding.equals( "deflate" ) ) {
+				decodedStream = new java.util.zip.InflaterInputStream( decodedStream );
+			}
+			// Ignore unknown encodings
+		}
+
+		return decodedStream;
+	}
+
 }

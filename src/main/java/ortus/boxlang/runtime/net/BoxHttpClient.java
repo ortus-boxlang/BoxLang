@@ -1678,13 +1678,18 @@ public class BoxHttpClient {
 			} );
 
 			// Process the stream with chunk callbacks
-			BoxLangLogger streamLogger = BoxRuntime.getInstance().getLoggingService().getLogger( "http.streaming" );
-			streamLogger.debug( "Starting streaming response processing. onChunkCallback present: {}, charset: {}", ( onChunkCallback != null ), charset );
+			BoxLangLogger streamLogger = getLogger();
+			streamLogger.debug( "Starting streaming response processing. Charset: {}", charset );
+
+			// Extract Content-Encoding header to handle compression
+			String contentEncoding = HttpResponseHelper.extractFirstHeaderByName( headers, Key.contentEncoding );
+			streamLogger.debug( "Content-Encoding header: {}", contentEncoding );
 
 			// Read the response body line by line with proper charset
 			try (
-			    java.io.InputStream inputStream = response.body();
-			    java.io.InputStreamReader reader = new java.io.InputStreamReader( inputStream, Charset.forName( charset ) );
+			    java.io.InputStream rawInputStream = response.body();
+			    java.io.InputStream decodedInputStream = HttpResponseHelper.decodeInputStream( rawInputStream, contentEncoding );
+			    java.io.InputStreamReader reader = new java.io.InputStreamReader( decodedInputStream, Charset.forName( charset ) );
 			    java.io.BufferedReader bufferedReader = new java.io.BufferedReader( reader ) ) {
 				String line;
 				while ( ( line = bufferedReader.readLine() ) != null ) {
