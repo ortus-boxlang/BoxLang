@@ -38,6 +38,7 @@ import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.net.BoxHttpClient;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 
@@ -212,6 +213,32 @@ public class HttpService extends BaseService {
 			keys.add( key.getName() );
 		}
 		return keys;
+	}
+
+	/**
+	 * Get Client Stats
+	 *
+	 * @return A struct of client statistics
+	 */
+	public IStruct getClientStats( Key key ) {
+		BoxHttpClient client = getClient( key );
+		if ( client == null ) {
+			throw new BoxRuntimeException( "No HTTP client found for key: " + key.getName() );
+		}
+		return client.getStatistics();
+	}
+
+	/**
+	 * Get all the client stats as a struct of structs
+	 *
+	 * @return A struct containing stats for all clients
+	 */
+	public IStruct getAllClientStats() {
+		IStruct allStats = new Struct( false );
+		for ( Key key : this.clients.keySet() ) {
+			allStats.setValue( key.getName(), getClientStats( key ) );
+		}
+		return allStats;
 	}
 
 	/**

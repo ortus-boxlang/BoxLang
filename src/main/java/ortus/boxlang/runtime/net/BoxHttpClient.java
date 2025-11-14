@@ -77,19 +77,19 @@ public class BoxHttpClient {
 	 * ------------------------------------------------------------------------------
 	 */
 
-	public static final String				HTTP_1						= "HTTP/1.1";
-	public static final String				HTTP_2						= "HTTP/2";
-	public static final String				DEFAULT_USER_AGENT			= "BoxLang-HttpClient/1.0";
-	public static final String				DEFAULT_CHARSET				= StandardCharsets.UTF_8.name();
-	public static final String				DEFAULT_METHOD				= "GET";
-	public static final int					DEFAULT_CONNECTION_TIMEOUT	= 15;
-	public static final int					DEFAULT_REQUEST_TIMEOUT		= 0;
-	public static final boolean				DEFAULT_THROW_ON_ERROR		= true;
+	public static final String											HTTP_1						= "HTTP/1.1";
+	public static final String											HTTP_2						= "HTTP/2";
+	public static final String											DEFAULT_USER_AGENT			= "BoxLang-HttpClient/1.0";
+	public static final String											DEFAULT_CHARSET				= StandardCharsets.UTF_8.name();
+	public static final String											DEFAULT_METHOD				= "GET";
+	public static final int												DEFAULT_CONNECTION_TIMEOUT	= 15;
+	public static final int												DEFAULT_REQUEST_TIMEOUT		= 0;
+	public static final boolean											DEFAULT_THROW_ON_ERROR		= true;
 
 	// HTTP Status Codes
-	public static final int					STATUS_REQUEST_TIMEOUT		= 408;
-	public static final int					STATUS_INTERNAL_ERROR		= 500;
-	public static final int					STATUS_BAD_GATEWAY			= 502;
+	public static final int												STATUS_REQUEST_TIMEOUT		= 408;
+	public static final int												STATUS_INTERNAL_ERROR		= 500;
+	public static final int												STATUS_BAD_GATEWAY			= 502;
 
 	/**
 	 * ------------------------------------------------------------------------------
@@ -97,8 +97,8 @@ public class BoxHttpClient {
 	 * ------------------------------------------------------------------------------
 	 */
 
-	private static final BoxRuntime			runtime						= BoxRuntime.getInstance();
-	private static final InterceptorService	interceptorService			= runtime.getInterceptorService();
+	private static final BoxRuntime										runtime						= BoxRuntime.getInstance();
+	private static final InterceptorService								interceptorService			= runtime.getInterceptorService();
 
 	/**
 	 * ------------------------------------------------------------------------------
@@ -109,41 +109,42 @@ public class BoxHttpClient {
 	/**
 	 * The underlying HttpClient used for making HTTP requests.
 	 */
-	private final HttpClient				httpClient;
+	private final HttpClient											httpClient;
 
 	/**
 	 * The HttpService that manages this client.
 	 */
-	private final HttpService				httpService;
+	private final HttpService											httpService;
 
 	/**
 	 * The Logger used for logging HTTP operations.
 	 */
-	private final BoxLangLogger				logger;
+	private final BoxLangLogger											logger;
 
 	/**
 	 * Tracks the last date + time the client was used.
 	 * Uses AtomicReference for thread-safe updates without synchronization.
 	 */
-	private final java.util.concurrent.atomic.AtomicReference<Instant>	lastUsedTimestamp	= new java.util.concurrent.atomic.AtomicReference<>( null );
+	private final java.util.concurrent.atomic.AtomicReference<Instant>	lastUsedTimestamp			= new java.util.concurrent.atomic.AtomicReference<>( null );
 
 	/**
 	 * Statistics tracking for this client.
 	 * Uses AtomicLong for thread-safe updates without synchronization.
 	 */
-	private final java.util.concurrent.atomic.AtomicLong	totalRequests			= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong	successfulRequests		= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong	failedRequests			= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong	timeoutFailures			= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong	connectionFailures		= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong	tlsFailures				= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong	httpProtocolFailures	= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong	bytesReceived			= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong	bytesSent				= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong	totalExecutionTimeMs	= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong	minExecutionTimeMs		= new java.util.concurrent.atomic.AtomicLong( Long.MAX_VALUE );
-	private final java.util.concurrent.atomic.AtomicLong	maxExecutionTimeMs		= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final Instant										createdAt				= Instant.now();
+	private final java.util.concurrent.atomic.AtomicLong				totalRequests				= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong				successfulRequests			= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong				failedRequests				= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong				timeoutFailures				= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong				connectionFailures			= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong				tlsFailures					= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong				httpProtocolFailures		= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong				bytesReceived				= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong				bytesSent					= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong				totalExecutionTimeMs		= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong				minExecutionTimeMs			= new java.util.concurrent.atomic.AtomicLong(
+	    Long.MAX_VALUE );
+	private final java.util.concurrent.atomic.AtomicLong				maxExecutionTimeMs			= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final Instant												createdAt					= Instant.now();
 
 	/**
 	 * ------------------------------------------------------------------------------
@@ -1457,8 +1458,8 @@ public class BoxHttpClient {
 				else if ( innerException instanceof SocketException ) {
 					logger.debug( "SocketException detected: {}", innerException.getMessage() );
 					// Check if it's a TLS/SSL failure
-					if ( innerException instanceof javax.net.ssl.SSLException || 
-					     ( innerException.getCause() instanceof javax.net.ssl.SSLException ) ) {
+					if ( innerException instanceof javax.net.ssl.SSLException ||
+					    ( innerException.getCause() instanceof javax.net.ssl.SSLException ) ) {
 						BoxHttpClient.this.tlsFailures.incrementAndGet();
 					} else {
 						BoxHttpClient.this.connectionFailures.incrementAndGet();
@@ -1494,9 +1495,9 @@ public class BoxHttpClient {
 					    innerException != null ? innerException.getClass().getName() : "null", e
 					);
 					// Track as HTTP protocol failure if it's an HTTP-related exception
-					if ( innerException != null && 
-					     ( innerException.getClass().getName().contains( "Http" ) || 
-					       innerException.getClass().getName().contains( "Protocol" ) ) ) {
+					if ( innerException != null &&
+					    ( innerException.getClass().getName().contains( "Http" ) ||
+					        innerException.getClass().getName().contains( "Protocol" ) ) ) {
 						BoxHttpClient.this.httpProtocolFailures.incrementAndGet();
 					}
 					String errorDetail = innerException != null
@@ -1566,19 +1567,21 @@ public class BoxHttpClient {
 				if ( this.httpResult.containsKey( Key.executionTime ) ) {
 					long executionTime = ( ( Number ) this.httpResult.get( Key.executionTime ) ).longValue();
 					BoxHttpClient.this.totalExecutionTimeMs.addAndGet( executionTime );
-					
+
 					// Update min execution time
 					long currentMin;
 					do {
 						currentMin = BoxHttpClient.this.minExecutionTimeMs.get();
-						if ( executionTime >= currentMin ) break;
+						if ( executionTime >= currentMin )
+							break;
 					} while ( !BoxHttpClient.this.minExecutionTimeMs.compareAndSet( currentMin, executionTime ) );
-					
+
 					// Update max execution time
 					long currentMax;
 					do {
 						currentMax = BoxHttpClient.this.maxExecutionTimeMs.get();
-						if ( executionTime <= currentMax ) break;
+						if ( executionTime <= currentMax )
+							break;
 					} while ( !BoxHttpClient.this.maxExecutionTimeMs.compareAndSet( currentMax, executionTime ) );
 				}
 
