@@ -58,14 +58,15 @@ public class HTTP extends Component {
 	/**
 	 * Binary request values
 	 */
+	// @formatter:off
 	private static ArrayList<Key>		BINARY_REQUEST_VALUES	= new ArrayList<Key>() {
-
-																	{
-																		add( Key.of( "true" ) );
-																		add( Key.of( "yes" ) );
-																	}
-																};
+		{
+			add( Key.of( "true" ) );
+			add( Key.of( "yes" ) );
+		}
+	};
 	private static Key					BINARY_NEVER			= Key.of( "never" );
+	// @formatter:on
 
 	/**
 	 * --------------------------------------------------------------------------

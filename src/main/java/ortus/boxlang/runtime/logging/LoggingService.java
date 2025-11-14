@@ -775,7 +775,7 @@ public class LoggingService {
 		// Check if we have the logger configuration or else build a vanilla one
 		LoggerConfig	loggerConfig	= ( LoggerConfig ) this.runtime
 		    .getConfiguration().logging.loggers
-		        .computeIfAbsent( loggerKey, key -> new LoggerConfig( key.getName().toUpperCase(), this.runtime.getConfiguration().logging ) );
+		    .computeIfAbsent( loggerKey, key -> new LoggerConfig( key.getName().toUpperCase(), this.runtime.getConfiguration().logging ) );
 		Level			configLevel		= Level.toLevel( LogLevel.valueOf( loggerConfig.level.getName(), false ).getName() );
 
 		// Seed the properties
