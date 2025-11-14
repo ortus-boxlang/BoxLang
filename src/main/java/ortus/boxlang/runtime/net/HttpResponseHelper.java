@@ -293,4 +293,90 @@ public class HttpResponseHelper {
 		return decodedStream;
 	}
 
+	/**
+	 * Populate httpResult with standard response metadata including headers, status, and cookies.
+	 * This method sets the common metadata fields that are shared between buffered and streaming responses.
+	 *
+	 * @param httpResult        The httpResult struct to populate
+	 * @param headers           The parsed response headers struct
+	 * @param httpVersionString The HTTP version string (e.g., "HTTP/1.1" or "HTTP/2")
+	 * @param statusCode        The HTTP status code
+	 * @param statusText        The HTTP status text/reason phrase
+	 */
+	public static void populateResponseMetadata(
+	    IStruct httpResult,
+	    IStruct headers,
+	    String httpVersionString,
+	    int statusCode ) {
+		String	statusCodeString	= String.valueOf( statusCode );
+		String	statusText			= HttpStatusReasons.getReason( statusCode );
+
+		// Add metadata to headers
+		headers.put( Key.HTTP_Version, httpVersionString );
+		headers.put( Key.status_code, statusCodeString );
+		headers.put( Key.explanation, statusText );
+
+		// Populate httpResult with response metadata
+		httpResult.put( Key.responseHeader, headers );
+		httpResult.put(
+		    Key.header,
+		    generateHeaderString(
+		        generateStatusLine( httpVersionString, statusCodeString, statusText ),
+		        headers
+		    )
+		);
+		httpResult.put( Key.HTTP_Version, httpVersionString );
+		httpResult.put( Key.statusCode, statusCode );
+		httpResult.put( Key.status_code, statusCode );
+		httpResult.put( Key.statusText, statusText );
+		httpResult.put( Key.status_text, statusText );
+		httpResult.put( Key.cookies, generateCookiesQuery( headers ) );
+		httpResult.put( Key.mimetype, "" );
+	}
+
+	/**
+	 * Process Content-Type header and populate httpResult with mimetype, charset, and text determination.
+	 * Extracts the mimetype and charset from the Content-Type header and determines if the response
+	 * should be treated as text based on the MIME type.
+	 *
+	 * @param httpResult     The httpResult struct to populate
+	 * @param headers        The parsed response headers struct
+	 * @param contentType    The Content-Type header value
+	 * @param defaultCharset The default charset to use if none is specified
+	 *
+	 * @return The extracted or default charset
+	 */
+	public static String processContentType( IStruct httpResult, IStruct headers, String contentType, String defaultCharset ) {
+		String charset = defaultCharset;
+
+		// Extract and set mimetype and charset from Content-Type header
+		if ( contentType != null && !contentType.isEmpty() ) {
+			String[] contentTypeParts = contentType.split( ";\s*" );
+			if ( contentTypeParts.length > 0 ) {
+				httpResult.put( Key.mimetype, contentTypeParts[ 0 ] );
+			}
+
+			String extractedCharset = extractCharset( contentType );
+			if ( extractedCharset != null ) {
+				charset = extractedCharset;
+			}
+		}
+
+		httpResult.put( Key.charset, charset );
+
+		// Determine if response is text based on Content-Type
+		boolean isText = false;
+		if ( contentType == null || contentType.isEmpty() ) {
+			isText = true;
+		} else {
+			String lowerContentType = contentType.toLowerCase();
+			isText = lowerContentType.startsWith( "text" )
+			    || lowerContentType.startsWith( "message" )
+			    || lowerContentType.equals( "application/octet-stream" );
+		}
+		httpResult.put( Key.text, isText );
+
+		return charset;
+	}
+
 }
