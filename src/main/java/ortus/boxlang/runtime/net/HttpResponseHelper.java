@@ -46,7 +46,8 @@ import ortus.boxlang.runtime.types.Struct;
  */
 public class HttpResponseHelper {
 
-	private static final Pattern CHARSET_PATTERN = Pattern.compile( "charset=([a-zA-Z0-9-]+)" );
+	private static final Pattern	CHARSET_PATTERN		= Pattern.compile( "charset=([a-zA-Z0-9-]+)" );
+	private static final Pattern	FILENAME_PATTERN	= Pattern.compile( "filename=\"?([^\";]+)\"?" );
 
 	/**
 	 * Extract the first header value by name from the headers Struct.
@@ -394,12 +395,12 @@ public class HttpResponseHelper {
 	 * Populate httpResult with error response metadata.
 	 * Used for timeout, connection failure, and other error scenarios.
 	 *
-	 * @param httpResult   The httpResult struct to populate
-	 * @param statusCode   The HTTP status code to set
-	 * @param statusText   The status text/reason phrase
-	 * @param fileContent  The content to set for fileContent field
-	 * @param errorDetail  The error detail message
-	 * @param charset      The charset to use
+	 * @param httpResult    The httpResult struct to populate
+	 * @param statusCode    The HTTP status code to set
+	 * @param statusText    The status text/reason phrase
+	 * @param fileContent   The content to set for fileContent field
+	 * @param errorDetail   The error detail message
+	 * @param charset       The charset to use
 	 * @param executionTime The execution time in milliseconds
 	 */
 	public static void populateErrorResponse(
@@ -426,9 +427,9 @@ public class HttpResponseHelper {
 	 * Resolve output filename from Content-Disposition header or URL path.
 	 * Tries Content-Disposition header first, then falls back to URL path.
 	 *
-	 * @param headers      The response headers
-	 * @param outputFile   The explicitly specified output file (takes precedence)
-	 * @param requestUri   The request URI to extract filename from if needed
+	 * @param headers    The response headers
+	 * @param outputFile The explicitly specified output file (takes precedence)
+	 * @param requestUri The request URI to extract filename from if needed
 	 *
 	 * @return The resolved filename
 	 *
@@ -440,13 +441,12 @@ public class HttpResponseHelper {
 			return outputFile;
 		}
 
-		String filename = null;
+		String	filename			= null;
 
 		// Try to extract from Content-Disposition header
-		String dispositionHeader = extractFirstHeaderByName( headers, Key.contentDisposition );
+		String	dispositionHeader	= extractFirstHeaderByName( headers, Key.contentDisposition );
 		if ( dispositionHeader != null ) {
-			Pattern	pattern	= Pattern.compile( "filename=\"?([^\";]+)\"?" );
-			Matcher	matcher	= pattern.matcher( dispositionHeader );
+			Matcher matcher = FILENAME_PATTERN.matcher( dispositionHeader );
 			if ( matcher.find() ) {
 				filename = matcher.group( 1 );
 			}
