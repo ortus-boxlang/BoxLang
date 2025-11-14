@@ -75,7 +75,7 @@ To run JDBC tests against real databases, you'll need to set up the dockerized d
    2. MySQL: `docker compose up -d mysql`
    3. Oracle: `docker compose up -d oracle`
 3. Install the boxlang JDBC driver:
-   1. MSSQL: `box install id=bx-mssql,bx-mysql,bx-oracle directory=~/.boxlang/modules`
+   1. MSSQL: `box install id=bx-mssql directory=~/.boxlang/modules`
    2. MySQL: `box install id=bx-mysql directory=~/.boxlang/modules`
    3. Oracle: `box install id=bx-oracle directory=~/.boxlang/modules`
 
