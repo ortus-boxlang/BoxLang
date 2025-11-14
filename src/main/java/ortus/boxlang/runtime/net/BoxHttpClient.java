@@ -1397,8 +1397,7 @@ public class BoxHttpClient {
 					        Key.result, this.httpResult,
 					        Key.response, response,
 					        Key.httpClient, BoxHttpClient.this,
-					        Key.httpRequest, this.targetHttpRequest,
-					        Key.stream, false
+					        Key.httpRequest, this.targetHttpRequest
 					    ) );
 
 					// Process buffered response
@@ -1411,7 +1410,6 @@ public class BoxHttpClient {
 					        Key.result, this.httpResult,
 					        Key.response, response,
 					        Key.httpClient, BoxHttpClient.this,
-					        Key.stream, false,
 					        Key.chunkCount, 0
 					    ) );
 
@@ -1798,8 +1796,7 @@ public class BoxHttpClient {
 			        Key.result, this.httpResult,
 			        Key.response, response,
 			        Key.httpClient, BoxHttpClient.this,
-			        Key.httpRequest, this.targetHttpRequest,
-			        Key.stream, true
+			        Key.httpRequest, this.targetHttpRequest
 			    ) );
 
 			// Process response headers and metadata
@@ -1898,7 +1895,6 @@ public class BoxHttpClient {
 			        Key.result, this.httpResult,
 			        Key.response, response,
 			        Key.httpClient, BoxHttpClient.this,
-			        Key.stream, true,
 			        Key.chunkCount, chunkCount.get()
 			    ) );
 
@@ -1906,7 +1902,12 @@ public class BoxHttpClient {
 			if ( !streamingError.get() && this.onCompleteCallback != null ) {
 				context.invokeFunction(
 				    onCompleteCallback,
-				    new Object[] { this.httpResult, response, BoxHttpClient.this }
+				    new Object[] {
+				        chunkCount.get(), // total chunks
+				        this.httpResult, // result
+				        response, // final response
+				        BoxHttpClient.this  // httpClient
+				    }
 				);
 			}
 		}
