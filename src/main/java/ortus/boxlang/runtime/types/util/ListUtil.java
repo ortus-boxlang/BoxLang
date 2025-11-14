@@ -35,7 +35,6 @@ import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.operators.CollatorStringCompare;
 import ortus.boxlang.runtime.operators.Compare;
@@ -1033,7 +1032,7 @@ public class ListUtil {
 	    IBoxContext callbackContext ) {
 
 		array.sort(
-		    ( a, b ) -> IntegerCaster.cast( callbackContext.invokeFunction( callback, new Object[] { a, b } ) ) );
+		    ( a, b ) -> Compare.convertCompareResultToInteger( callbackContext.invokeFunction( callback, new Object[] { a, b } ) ) );
 		return array;
 	}
 

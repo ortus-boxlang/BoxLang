@@ -525,15 +525,15 @@ public class BoxRuntime implements java.io.Closeable {
 		this.runtimeContext = new RuntimeBoxContext();
 		// Now startup the modules so we can have a runtime context available to them
 		this.moduleService.onStartup();
+		// Now the datasource manager can be started, this allows for modules to
+		// register datasources
+		this.dataSourceService.onStartup();
 		// Now the cache service can be started, this allows for modules to register
 		// caches
 		this.cacheService.onStartup();
 		// Now all schedulers can be started, this allows for modules to register
 		// schedulers
 		this.schedulerService.onStartup();
-		// Now the datasource manager can be started, this allows for modules to
-		// register datasources
-		this.dataSourceService.onStartup();
 		// Now the HTTP service can be started, this allows for modules to register
 		// HTTP clients or settings
 		this.httpService.onStartup();
