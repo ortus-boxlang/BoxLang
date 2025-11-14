@@ -830,6 +830,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		target								= Key.of( "target" );
 	public static final Key		targetThread						= Key.of( "targetThread" );
 	public static final Key		targetURI							= Key.of( "targetURI" );
+	public static final Key		targetURL							= Key.of( "targetURL" );
 	public static final Key		task								= Key.of( "task" );
 	public static final Key		tasks								= Key.of( "tasks" );
 	public static final Key		template							= Key.of( "template" );

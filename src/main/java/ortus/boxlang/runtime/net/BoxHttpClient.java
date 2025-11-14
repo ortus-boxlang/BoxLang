@@ -1359,11 +1359,9 @@ public class BoxHttpClient {
 				interceptorService.announce(
 				    BoxEvent.ON_HTTP_REQUEST,
 				    ( java.util.function.Supplier<IStruct> ) () -> Struct.ofNonConcurrent(
-				        Key.requestID, this.requestID,
+				        Key.result, this.httpResult,
 				        Key.httpClient, BoxHttpClient.this,
-				        Key.httpRequest, this.targetHttpRequest,
-				        Key.targetURI, this.targetHttpRequest.uri(),
-				        Key.httpResult, this.httpResult
+				        Key.httpRequest, this.targetHttpRequest
 				    )
 				);
 
@@ -1373,11 +1371,9 @@ public class BoxHttpClient {
 					    this.onRequestStartCallback,
 					    new Object[] {
 					        Struct.ofNonConcurrent(
-					            Key.request, this.targetHttpRequest,
-					            Key.URL, this.targetHttpRequest.uri().toString(),
-					            Key.method, this.method,
-					            Key.headers, Struct.fromMap( this.targetHttpRequest.headers().map() ),
-					            Key.httpResult, this.httpResult
+					            Key.httpResult, this.httpResult,
+					            Key.httpClient, BoxHttpClient.this,
+					            Key.httpRequest, this.targetHttpRequest
 					        )
 					    }
 					);
@@ -1398,12 +1394,10 @@ public class BoxHttpClient {
 					interceptorService.announce(
 					    BoxEvent.ON_HTTP_RAW_RESPONSE,
 					    ( java.util.function.Supplier<IStruct> ) () -> Struct.ofNonConcurrent(
-					        Key.requestID, this.requestID,
+					        Key.result, this.httpResult,
 					        Key.response, response,
 					        Key.httpClient, BoxHttpClient.this,
 					        Key.httpRequest, this.targetHttpRequest,
-					        Key.targetURI, this.targetHttpRequest.uri(),
-					        Key.httpResult, this.httpResult,
 					        Key.stream, false
 					    ) );
 
@@ -1414,9 +1408,9 @@ public class BoxHttpClient {
 					interceptorService.announce(
 					    BoxEvent.ON_HTTP_RESPONSE,
 					    ( java.util.function.Supplier<IStruct> ) () -> Struct.ofNonConcurrent(
-					        Key.requestID, this.requestID,
-					        Key.response, response,
 					        Key.result, this.httpResult,
+					        Key.response, response,
+					        Key.httpClient, BoxHttpClient.this,
 					        Key.stream, false,
 					        Key.chunkCount, 0
 					    ) );
@@ -1801,12 +1795,10 @@ public class BoxHttpClient {
 			interceptorService.announce(
 			    BoxEvent.ON_HTTP_RAW_RESPONSE,
 			    ( java.util.function.Supplier<IStruct> ) () -> Struct.ofNonConcurrent(
-			        Key.requestID, this.requestID,
+			        Key.result, this.httpResult,
 			        Key.response, response,
 			        Key.httpClient, BoxHttpClient.this,
 			        Key.httpRequest, this.targetHttpRequest,
-			        Key.targetURI, this.targetHttpRequest.uri(),
-			        Key.httpResult, this.httpResult,
 			        Key.stream, true
 			    ) );
 
@@ -1906,9 +1898,9 @@ public class BoxHttpClient {
 			interceptorService.announce(
 			    BoxEvent.ON_HTTP_RESPONSE,
 			    ( java.util.function.Supplier<IStruct> ) () -> Struct.ofNonConcurrent(
-			        Key.requestID, this.requestID,
-			        Key.response, response,
 			        Key.result, this.httpResult,
+			        Key.response, response,
+			        Key.httpClient, BoxHttpClient.this,
 			        Key.stream, true,
 			        Key.chunkCount, chunkCount.get()
 			    ) );
