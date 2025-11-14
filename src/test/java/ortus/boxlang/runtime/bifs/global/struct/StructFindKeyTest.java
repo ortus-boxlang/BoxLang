@@ -36,8 +36,8 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 
 public class StructFindKeyTest {
 
@@ -260,8 +260,15 @@ public class StructFindKeyTest {
 		assertEquals( Array.class, variables.get( Key.of( "resultNested" ) ).getClass() );
 		assertEquals( 3, variables.getAsArray( Key.of( "resultNested" ) ).size() );
 		assertEquals( Struct.class, variables.get( Key.of( "nestedOwner" ) ).getClass() );
-		assertTrue( StructCaster.cast( variables.get( Key.of( "nestedOwner" ) ) ).containsKey( Key.of( "size" ) ) );
-		assertTrue( StructCaster.cast( variables.get( Key.of( "nestedOwner" ) ) ).containsKey( Key.of( "total" ) ) );
+		// With the correct owner behavior, nestedOwner should be the immediate parent struct containing "size"
+		// For the "size" key, the owner should be the species struct (parrot, finch, duck), not the root
+		IStruct nestedOwnerStruct = StructCaster.cast( variables.get( Key.of( "nestedOwner" ) ) );
+		// The owner should contain "size" and "total" keys (for parrot, finch, or duck struct)
+		assertTrue( nestedOwnerStruct.containsKey( Key.of( "size" ) ) );
+		assertTrue( nestedOwnerStruct.containsKey( Key.of( "total" ) ) );
+		// The owner should NOT be the root struct (should not contain top-level keys like "bird", "cow")
+		assertTrue( !nestedOwnerStruct.containsKey( Key.of( "bird" ) ) );
+		assertTrue( !nestedOwnerStruct.containsKey( Key.of( "cow" ) ) );
 		assertEquals( Array.class, variables.get( Key.of( "resultParrotNames" ) ).getClass() );
 		assertEquals( 1, variables.getAsArray( Key.of( "resultParrotNames" ) ).size() );
 		assertEquals( Array.class, variables.getAsStruct( Key.of( "parrotResult" ) ).get( Key.value ).getClass() );
@@ -300,6 +307,49 @@ public class StructFindKeyTest {
 		assertTrue( variables.get( result ) instanceof Array );
 		assertEquals( 1, variables.getAsArray( result ).size() );
 
+	}
+
+	@DisplayName( "It tests that owner modifications are reflected in the original struct" )
+	@Test
+	public void testOwnerModification() {
+		//@formatter:off
+		instance.executeSource(
+		    """
+		    myStruct = {
+		    	level1: {
+		    		level2: {
+		    			targetKey: "originalValue",
+		    			otherKey: "unchanged"
+		    		}
+		    	}
+		    };
+		    
+		    // Find the nested key
+		    result = StructFindKey( myStruct, "targetKey" );
+		    firstResult = result[1];
+		    
+		    // Modify the owner struct by adding a new key - owner should be level2
+		    firstResult.owner.newKey = "addedValue";
+		    
+		    // Modify an existing value through the owner - owner should be level2  
+		    firstResult.owner.targetKey = "modifiedValue";
+		    """,
+		    context );
+		//@formatter:on
+
+		// Verify that the modifications are reflected in the original myStruct
+		IStruct	myStruct	= variables.getAsStruct( Key.of( "myStruct" ) );
+		IStruct	level2		= myStruct.getAsStruct( Key.of( "level1" ) ).getAsStruct( Key.of( "level2" ) );
+
+		// Check that the new key was added to level2 through the owner reference
+		assertTrue( level2.containsKey( Key.of( "newKey" ) ) );
+		assertEquals( "addedValue", level2.get( Key.of( "newKey" ) ) );
+
+		// Check that the existing value was modified in level2 through the owner reference
+		assertEquals( "modifiedValue", level2.get( Key.of( "targetKey" ) ) );
+
+		// Check that other values remain unchanged
+		assertEquals( "unchanged", level2.get( Key.of( "otherKey" ) ) );
 	}
 
 }

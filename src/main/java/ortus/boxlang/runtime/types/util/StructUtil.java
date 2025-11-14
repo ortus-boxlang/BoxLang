@@ -771,28 +771,20 @@ public class StructUtil {
 		        .map( entry -> {
 			        Struct returnStruct	= new Struct( Struct.TYPES.LINKED );
 			        String keyName		= entry.getKey().getName();
-			        String[] entryKeyParts = entry.getKey().getName().split( "\\." );
-			        String flatMapParent = keyName.lastIndexOf( "." ) > -1 ? keyName.substring( 0, keyName.lastIndexOf( "." ) ) : "";
+			        String[] pathParts	= keyName.split( "\\." );
+
+			        // Find the immediate parent struct that contains the target key
+			        IStruct ownerStruct	= struct;
+			        if ( pathParts.length > 1 ) {
+				        // Navigate to the parent struct
+				        for ( int i = 0; i < pathParts.length - 1; i++ ) {
+					        ownerStruct = ownerStruct.getAsStruct( Key.of( pathParts[ i ] ) );
+				        }
+			        }
+
 			        returnStruct.put(
 			            Key.owner,
-			            entryKeyParts.length > 1
-			                ? unFlattenKeys(
-			                    flatMap.entrySet().stream()
-			                        .filter( mapEntry -> mapEntry.getKey().getName().length() >= flatMapParent.length()
-			                            && mapEntry.getKey().getName().substring( 0, flatMapParent.length() ).equals( flatMapParent ) )
-			                        .map( mapEntry -> {
-				                        String keyname = mapEntry.getKey().getName();
-				                        String resultKeyName = keyname.substring( flatMapParent.length() + 1 );
-				                        return new AbstractMap.SimpleEntry<Key, Object>(
-				                            Key.of( resultKeyName ), mapEntry.getValue()
-				                        );
-			                        }
-			                        )
-			                        .collect( BLCollector.toStruct() ),
-			                    true,
-			                    false
-			                )
-			                : struct
+			            ownerStruct
 			        );
 			        returnStruct.put(
 			            Key.path,
