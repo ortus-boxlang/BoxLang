@@ -1495,6 +1495,289 @@ public class HTTPTest {
 		assertThat( httpResult.getAsInteger( Key.statusCode ) ).isEqualTo( 500 );
 	}
 
+	@DisplayName( "Can track basic HTTP client statistics" )
+	@Test
+	public void testHttpClientStatistics( WireMockRuntimeInfo wmRuntimeInfo ) {
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+
+		// Setup mock endpoint
+		stubFor( get( urlEqualTo( "/stats-test" ) )
+		    .willReturn( ok( "Test response for statistics" )
+		        .withHeader( "Content-Type", "text/plain" ) ) );
+
+		// @formatter:off
+		instance.executeSource(
+		    String.format(
+		        """
+					// Get client from HttpService
+					client = getBoxRuntime().getHttpService().getOrBuildClient(
+						"HTTP/2",
+						false,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null
+					);
+
+					// Record creation time
+					createdAt = client.getCreatedAt();
+
+					// Verify initial statistics
+					initialStats = client.getStatistics();
+
+					// Make a successful request
+					client.newRequest( "%s", getBoxContext() ).invoke();
+
+					// Get updated statistics
+					stats = client.getStatistics();
+				""",
+		        baseURL + "/stats-test"
+		    ),
+		    context
+		);
+		// @formatter:on
+
+		// Verify initial statistics
+		IStruct initialStats = variables.getAsStruct( Key.of( "initialStats" ) );
+		assertThat( initialStats.getAsLong( Key.of( "totalRequests" ) ) ).isEqualTo( 0L );
+		assertThat( initialStats.getAsLong( Key.of( "successfulRequests" ) ) ).isEqualTo( 0L );
+		assertThat( initialStats.getAsLong( Key.of( "failedRequests" ) ) ).isEqualTo( 0L );
+		assertThat( initialStats.getAsLong( Key.of( "bytesReceived" ) ) ).isEqualTo( 0L );
+		assertThat( initialStats.getAsLong( Key.of( "bytesSent" ) ) ).isEqualTo( 0L );
+
+		// Verify updated statistics after request
+		IStruct stats = variables.getAsStruct( Key.of( "stats" ) );
+		assertThat( stats.getAsLong( Key.of( "totalRequests" ) ) ).isEqualTo( 1L );
+		assertThat( stats.getAsLong( Key.of( "successfulRequests" ) ) ).isEqualTo( 1L );
+		assertThat( stats.getAsLong( Key.of( "failedRequests" ) ) ).isEqualTo( 0L );
+		assertThat( stats.getAsLong( Key.of( "bytesReceived" ) ) ).isGreaterThan( 0L );
+		assertThat( stats.getAsLong( Key.of( "totalExecutionTimeMs" ) ) ).isGreaterThan( 0L );
+		assertThat( stats.getAsLong( Key.of( "minExecutionTimeMs" ) ) ).isGreaterThan( 0L );
+		assertThat( stats.getAsLong( Key.of( "maxExecutionTimeMs" ) ) ).isGreaterThan( 0L );
+		assertThat( stats.get( Key.of( "lastUsedTimestamp" ) ) ).isNotNull();
+		assertThat( stats.get( Key.of( "createdAt" ) ) ).isNotNull();
+	}
+
+	@DisplayName( "Can track HTTP client failure statistics" )
+	@Test
+	public void testHttpClientFailureStatistics( WireMockRuntimeInfo wmRuntimeInfo ) {
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+
+		// Setup mock endpoints for different failure types
+		stubFor( get( urlEqualTo( "/timeout-test" ) )
+		    .willReturn( ok()
+		        .withFixedDelay( 5000 ) ) ); // Delay longer than timeout
+
+		stubFor( get( urlEqualTo( "/error-test" ) )
+		    .willReturn( aResponse()
+		        .withStatus( 500 )
+		        .withBody( "Server error" ) ) );
+
+		// @formatter:off
+		instance.executeSource(
+		    String.format(
+		        """
+					// Get client from HttpService
+					client = getBoxRuntime().getHttpService().getOrBuildClient(
+						"HTTP/2",
+						false,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null
+					);
+
+					// Test timeout failure
+					client.newRequest( "%s", getBoxContext() )
+						.timeout( 1 )
+						.throwOnError( false )
+						.invoke();
+
+					// Test HTTP error (should be successful request but error status)
+					client.newRequest( "%s", getBoxContext() )
+						.throwOnError( false )
+						.invoke();
+
+					// Test connection failure (invalid host)
+					client.newRequest( "http://invalid-host-that-does-not-exist-12345.com", getBoxContext() )
+						.timeout( 1 )
+						.throwOnError( false )
+						.invoke();
+
+					// Get statistics
+					stats = client.getStatistics();
+				""",
+		        baseURL + "/timeout-test",
+		        baseURL + "/error-test"
+		    ),
+		    context
+		);
+		// @formatter:on
+
+		IStruct stats = variables.getAsStruct( Key.of( "stats" ) );
+
+		// Verify total requests (3 attempts)
+		assertThat( stats.getAsLong( Key.of( "totalRequests" ) ) ).isEqualTo( 3L );
+
+		// Verify timeout failure was tracked
+		assertThat( stats.getAsLong( Key.of( "timeoutFailures" ) ) ).isGreaterThan( 0L );
+
+		// Verify connection failure was tracked
+		assertThat( stats.getAsLong( Key.of( "connectionFailures" ) ) ).isGreaterThan( 0L );
+
+		// HTTP error (500) is a successful request, just error status
+		assertThat( stats.getAsLong( Key.of( "successfulRequests" ) ) ).isGreaterThan( 0L );
+	}
+
+	@DisplayName( "Can track min and max execution times across multiple requests" )
+	@Test
+	public void testHttpClientExecutionTimeTracking( WireMockRuntimeInfo wmRuntimeInfo ) {
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+
+		// Setup mock endpoints with different delays
+		stubFor( get( urlEqualTo( "/fast" ) )
+		    .willReturn( ok( "Fast response" ) ) );
+
+		stubFor( get( urlEqualTo( "/slow" ) )
+		    .willReturn( ok( "Slow response" )
+		        .withFixedDelay( 100 ) ) );
+
+		stubFor( get( urlEqualTo( "/medium" ) )
+		    .willReturn( ok( "Medium response" )
+		        .withFixedDelay( 50 ) ) );
+
+		// @formatter:off
+		instance.executeSource(
+		    String.format(
+		        """
+					// Get client from HttpService
+					client = getBoxRuntime().getHttpService().getOrBuildClient(
+						"HTTP/2",
+						false,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null
+					);
+
+					// Make requests with different response times
+					client.newRequest( "%s", getBoxContext() ).invoke();
+					client.newRequest( "%s", getBoxContext() ).invoke();
+					client.newRequest( "%s", getBoxContext() ).invoke();
+
+					// Get statistics
+					stats = client.getStatistics();
+				""",
+		        baseURL + "/fast",
+		        baseURL + "/slow",
+		        baseURL + "/medium"
+		    ),
+		    context
+		);
+		// @formatter:on
+
+		IStruct	stats		= variables.getAsStruct( Key.of( "stats" ) );
+
+		Long	minTime		= stats.getAsLong( Key.of( "minExecutionTimeMs" ) );
+		Long	maxTime		= stats.getAsLong( Key.of( "maxExecutionTimeMs" ) );
+		Long	totalTime	= stats.getAsLong( Key.of( "totalExecutionTimeMs" ) );
+		Long	avgTime		= stats.getAsLong( Key.of( "averageExecutionTimeMs" ) );
+
+		// Verify min is less than max
+		assertThat( minTime ).isLessThan( maxTime );
+
+		// Verify total is sum of all executions
+		assertThat( totalTime ).isGreaterThan( minTime );
+		assertThat( totalTime ).isGreaterThan( maxTime );
+
+		// Verify average makes sense
+		assertThat( avgTime ).isGreaterThan( 0L );
+		assertThat( avgTime ).isAtLeast( minTime );
+		assertThat( avgTime ).isAtMost( maxTime );
+	}
+
+	@DisplayName( "Can reset HTTP client statistics" )
+	@Test
+	public void testHttpClientStatisticsReset( WireMockRuntimeInfo wmRuntimeInfo ) {
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+
+		stubFor( get( urlEqualTo( "/reset-test" ) )
+		    .willReturn( ok( "Test response" ) ) );
+
+		// @formatter:off
+		instance.executeSource(
+		    String.format(
+		        """
+					// Get client from HttpService
+					client = getBoxRuntime().getHttpService().getOrBuildClient(
+						"HTTP/2",
+						false,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null,
+						null
+					);
+
+					// Reset statistics first (client may be cached and have stats from previous tests)
+					client.resetStatistics();
+					createdAt = client.getCreatedAt();
+
+					// Make some requests
+					client.newRequest( "%s", getBoxContext() ).invoke();
+					client.newRequest( "%s", getBoxContext() ).invoke();
+
+					// Get statistics before reset
+					beforeReset = client.getStatistics();
+
+					// Reset statistics
+					client.resetStatistics();
+
+					// Get statistics after reset
+					afterReset = client.getStatistics();
+					afterCreatedAt = client.getCreatedAt();
+				""",
+		        baseURL + "/reset-test",
+		        baseURL + "/reset-test"
+		    ),
+		    context
+		);
+		// @formatter:on
+
+		IStruct	beforeReset	= variables.getAsStruct( Key.of( "beforeReset" ) );
+		IStruct	afterReset	= variables.getAsStruct( Key.of( "afterReset" ) );
+
+		// Verify statistics were non-zero before reset
+		assertThat( beforeReset.getAsLong( Key.of( "totalRequests" ) ) ).isEqualTo( 2L );
+		assertThat( beforeReset.getAsLong( Key.of( "successfulRequests" ) ) ).isEqualTo( 2L );
+
+		// Verify statistics were reset to zero
+		assertThat( afterReset.getAsLong( Key.of( "totalRequests" ) ) ).isEqualTo( 0L );
+		assertThat( afterReset.getAsLong( Key.of( "successfulRequests" ) ) ).isEqualTo( 0L );
+		assertThat( afterReset.getAsLong( Key.of( "failedRequests" ) ) ).isEqualTo( 0L );
+		assertThat( afterReset.getAsLong( Key.of( "bytesReceived" ) ) ).isEqualTo( 0L );
+		assertThat( afterReset.getAsLong( Key.of( "bytesSent" ) ) ).isEqualTo( 0L );
+		assertThat( afterReset.getAsLong( Key.of( "totalExecutionTimeMs" ) ) ).isEqualTo( 0L );
+
+		// Verify minExecutionTimeMs was reset to 0 (sentinel value handled)
+		assertThat( afterReset.getAsLong( Key.of( "minExecutionTimeMs" ) ) ).isEqualTo( 0L );
+		assertThat( afterReset.getAsLong( Key.of( "maxExecutionTimeMs" ) ) ).isEqualTo( 0L );
+
+		// Verify createdAt timestamp was NOT reset (immutable)
+		assertThat( afterReset.get( Key.of( "createdAt" ) ) ).isEqualTo( beforeReset.get( Key.of( "createdAt" ) ) );
+	}
+
 	private void createClientCertificate( String certPath, String certPassword ) throws Exception {
 		// Generate a key pair
 		KeyPairGenerator keyGen = KeyPairGenerator.getInstance( "RSA" );

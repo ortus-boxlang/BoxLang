@@ -123,9 +123,27 @@ public class BoxHttpClient {
 
 	/**
 	 * Tracks the last date + time the client was used.
-	 * Multiple threads may access this, so it should be handled carefully.
+	 * Uses AtomicReference for thread-safe updates without synchronization.
 	 */
-	private volatile Instant				lastUsedTimestamp;
+	private final java.util.concurrent.atomic.AtomicReference<Instant>	lastUsedTimestamp	= new java.util.concurrent.atomic.AtomicReference<>( null );
+
+	/**
+	 * Statistics tracking for this client.
+	 * Uses AtomicLong for thread-safe updates without synchronization.
+	 */
+	private final java.util.concurrent.atomic.AtomicLong	totalRequests			= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong	successfulRequests		= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong	failedRequests			= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong	timeoutFailures			= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong	connectionFailures		= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong	tlsFailures				= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong	httpProtocolFailures	= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong	bytesReceived			= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong	bytesSent				= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong	totalExecutionTimeMs	= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong	minExecutionTimeMs		= new java.util.concurrent.atomic.AtomicLong( Long.MAX_VALUE );
+	private final java.util.concurrent.atomic.AtomicLong	maxExecutionTimeMs		= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final Instant										createdAt				= Instant.now();
 
 	/**
 	 * ------------------------------------------------------------------------------
@@ -212,17 +230,192 @@ public class BoxHttpClient {
 	/**
 	 * Get the last used timestamp.
 	 *
-	 * @return The Instant when this client was last used
+	 * @return The Instant when this client was last used, or null if never used
 	 */
 	public Instant getLastUsedTimestamp() {
-		return this.lastUsedTimestamp;
+		return this.lastUsedTimestamp.get();
 	}
 
 	/**
 	 * Update the last used timestamp to now.
 	 */
 	public void updateLastUsedTimestamp() {
-		this.lastUsedTimestamp = Instant.now();
+		this.lastUsedTimestamp.set( Instant.now() );
+	}
+
+	/**
+	 * Get statistics for this HTTP client.
+	 *
+	 * @return A Struct containing usage statistics
+	 */
+	public IStruct getStatistics() {
+		long minTime = this.minExecutionTimeMs.get();
+		return Struct.ofNonConcurrent(
+		    Key.of( "totalRequests" ), this.totalRequests.get(),
+		    Key.of( "successfulRequests" ), this.successfulRequests.get(),
+		    Key.of( "failedRequests" ), this.failedRequests.get(),
+		    Key.of( "timeoutFailures" ), this.timeoutFailures.get(),
+		    Key.of( "connectionFailures" ), this.connectionFailures.get(),
+		    Key.of( "tlsFailures" ), this.tlsFailures.get(),
+		    Key.of( "httpProtocolFailures" ), this.httpProtocolFailures.get(),
+		    Key.of( "bytesReceived" ), this.bytesReceived.get(),
+		    Key.of( "bytesSent" ), this.bytesSent.get(),
+		    Key.of( "totalExecutionTimeMs" ), this.totalExecutionTimeMs.get(),
+		    Key.of( "minExecutionTimeMs" ), minTime == Long.MAX_VALUE ? 0 : minTime,
+		    Key.of( "maxExecutionTimeMs" ), this.maxExecutionTimeMs.get(),
+		    Key.of( "averageExecutionTimeMs" ),
+		    this.totalRequests.get() > 0 ? this.totalExecutionTimeMs.get() / this.totalRequests.get() : 0,
+		    Key.of( "createdAt" ), this.createdAt,
+		    Key.of( "lastUsedTimestamp" ), this.lastUsedTimestamp.get()
+		);
+	}
+
+	/**
+	 * Get the total number of requests made by this client.
+	 *
+	 * @return The total request count
+	 */
+	public long getTotalRequests() {
+		return this.totalRequests.get();
+	}
+
+	/**
+	 * Get the number of successful requests.
+	 *
+	 * @return The successful request count
+	 */
+	public long getSuccessfulRequests() {
+		return this.successfulRequests.get();
+	}
+
+	/**
+	 * Get the number of failed requests.
+	 *
+	 * @return The failed request count
+	 */
+	public long getFailedRequests() {
+		return this.failedRequests.get();
+	}
+
+	/**
+	 * Get the number of timeout failures.
+	 *
+	 * @return The timeout failure count
+	 */
+	public long getTimeoutFailures() {
+		return this.timeoutFailures.get();
+	}
+
+	/**
+	 * Get the number of connection failures.
+	 *
+	 * @return The connection failure count
+	 */
+	public long getConnectionFailures() {
+		return this.connectionFailures.get();
+	}
+
+	/**
+	 * Get the number of TLS/SSL failures.
+	 *
+	 * @return The TLS failure count
+	 */
+	public long getTlsFailures() {
+		return this.tlsFailures.get();
+	}
+
+	/**
+	 * Get the number of HTTP protocol failures.
+	 *
+	 * @return The HTTP protocol failure count
+	 */
+	public long getHttpProtocolFailures() {
+		return this.httpProtocolFailures.get();
+	}
+
+	/**
+	 * Get the total bytes received by this client.
+	 *
+	 * @return The total bytes received
+	 */
+	public long getBytesReceived() {
+		return this.bytesReceived.get();
+	}
+
+	/**
+	 * Get the total bytes sent by this client.
+	 *
+	 * @return The total bytes sent
+	 */
+	public long getBytesSent() {
+		return this.bytesSent.get();
+	}
+
+	/**
+	 * Get the total execution time for all requests.
+	 *
+	 * @return The total execution time in milliseconds
+	 */
+	public long getTotalExecutionTimeMs() {
+		return this.totalExecutionTimeMs.get();
+	}
+
+	/**
+	 * Get the average execution time per request.
+	 *
+	 * @return The average execution time in milliseconds, or 0 if no requests have been made
+	 */
+	public long getAverageExecutionTimeMs() {
+		long total = this.totalRequests.get();
+		return total > 0 ? this.totalExecutionTimeMs.get() / total : 0;
+	}
+
+	/**
+	 * Get the minimum execution time for a single request.
+	 *
+	 * @return The minimum execution time in milliseconds, or 0 if no requests have been made
+	 */
+	public long getMinExecutionTimeMs() {
+		long min = this.minExecutionTimeMs.get();
+		return min == Long.MAX_VALUE ? 0 : min;
+	}
+
+	/**
+	 * Get the maximum execution time for a single request.
+	 *
+	 * @return The maximum execution time in milliseconds
+	 */
+	public long getMaxExecutionTimeMs() {
+		return this.maxExecutionTimeMs.get();
+	}
+
+	/**
+	 * Get the timestamp when this HTTP client was created.
+	 *
+	 * @return The creation timestamp
+	 */
+	public Instant getCreatedAt() {
+		return this.createdAt;
+	}
+
+	/**
+	 * Reset all statistics for this client.
+	 * Useful for testing or periodic resets.
+	 * Note: createdAt timestamp is NOT reset.
+	 */
+	public void resetStatistics() {
+		this.totalRequests.set( 0 );
+		this.successfulRequests.set( 0 );
+		this.failedRequests.set( 0 );
+		this.timeoutFailures.set( 0 );
+		this.connectionFailures.set( 0 );
+		this.tlsFailures.set( 0 );
+		this.httpProtocolFailures.set( 0 );
+		this.bytesReceived.set( 0 );
+		this.bytesSent.set( 0 );
+		this.totalExecutionTimeMs.set( 0 );
+		this.minExecutionTimeMs.set( Long.MAX_VALUE );
+		this.maxExecutionTimeMs.set( 0 );
 	}
 
 	/**
@@ -1126,11 +1319,24 @@ public class BoxHttpClient {
 		 */
 		public BoxHttpRequest invoke() {
 			try {
+				// Update client usage tracking
+				BoxHttpClient.this.updateLastUsedTimestamp();
+				BoxHttpClient.this.totalRequests.incrementAndGet();
+
 				// Mark the start time of the request
 				this.startTime = new DateTime();
 				// This prepares the request, forms, files, etc.
 				// The request builder is available as this.targetHttpRequest
 				prepareRequest();
+
+				// Track bytes sent (estimate from body publisher if available)
+				this.targetHttpRequest.bodyPublisher().ifPresent( publisher -> {
+					publisher.contentLength();
+					long contentLength = publisher.contentLength();
+					if ( contentLength > 0 ) {
+						BoxHttpClient.this.bytesSent.addAndGet( contentLength );
+					}
+				} );
 
 				// Prepare the Http Reesults with the request info so we can start
 				this.httpResult.put( Key.requestID, this.requestID );
@@ -1232,6 +1438,7 @@ public class BoxHttpClient {
 				// Handle timeout exceptions FIRST (most specific)
 				if ( innerException instanceof HttpTimeoutException ) {
 					logger.debug( "HttpTimeoutException detected - request timed out after {} seconds", this.timeout );
+					BoxHttpClient.this.timeoutFailures.incrementAndGet();
 					HttpResponseHelper.populateErrorResponse(
 					    this.httpResult,
 					    STATUS_REQUEST_TIMEOUT,
@@ -1249,6 +1456,13 @@ public class BoxHttpClient {
 				// Handle connection exceptions
 				else if ( innerException instanceof SocketException ) {
 					logger.debug( "SocketException detected: {}", innerException.getMessage() );
+					// Check if it's a TLS/SSL failure
+					if ( innerException instanceof javax.net.ssl.SSLException || 
+					     ( innerException.getCause() instanceof javax.net.ssl.SSLException ) ) {
+						BoxHttpClient.this.tlsFailures.incrementAndGet();
+					} else {
+						BoxHttpClient.this.connectionFailures.incrementAndGet();
+					}
 					String errorDetail;
 					if ( innerException instanceof ConnectException ) {
 						if ( this.targetHttpRequest.uri() != null ) {
@@ -1279,6 +1493,12 @@ public class BoxHttpClient {
 					    "Unhandled ExecutionException with inner exception: {}",
 					    innerException != null ? innerException.getClass().getName() : "null", e
 					);
+					// Track as HTTP protocol failure if it's an HTTP-related exception
+					if ( innerException != null && 
+					     ( innerException.getClass().getName().contains( "Http" ) || 
+					       innerException.getClass().getName().contains( "Protocol" ) ) ) {
+						BoxHttpClient.this.httpProtocolFailures.incrementAndGet();
+					}
 					String errorDetail = innerException != null
 					    ? innerException.getClass().getName() + ": " + innerException.getMessage()
 					    : e.getMessage();
@@ -1333,6 +1553,43 @@ public class BoxHttpClient {
 				// Always calculate execution time if not already set (success path)
 				if ( this.startTime != null && !this.httpResult.containsKey( Key.executionTime ) ) {
 					this.httpResult.put( Key.executionTime, Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
+				}
+
+				// Update statistics based on request outcome
+				if ( this.error ) {
+					BoxHttpClient.this.failedRequests.incrementAndGet();
+				} else {
+					BoxHttpClient.this.successfulRequests.incrementAndGet();
+				}
+
+				// Track execution time
+				if ( this.httpResult.containsKey( Key.executionTime ) ) {
+					long executionTime = ( ( Number ) this.httpResult.get( Key.executionTime ) ).longValue();
+					BoxHttpClient.this.totalExecutionTimeMs.addAndGet( executionTime );
+					
+					// Update min execution time
+					long currentMin;
+					do {
+						currentMin = BoxHttpClient.this.minExecutionTimeMs.get();
+						if ( executionTime >= currentMin ) break;
+					} while ( !BoxHttpClient.this.minExecutionTimeMs.compareAndSet( currentMin, executionTime ) );
+					
+					// Update max execution time
+					long currentMax;
+					do {
+						currentMax = BoxHttpClient.this.maxExecutionTimeMs.get();
+						if ( executionTime <= currentMax ) break;
+					} while ( !BoxHttpClient.this.maxExecutionTimeMs.compareAndSet( currentMax, executionTime ) );
+				}
+
+				// Track bytes received (from fileContent if available)
+				if ( this.httpResult.containsKey( Key.fileContent ) ) {
+					Object fileContent = this.httpResult.get( Key.fileContent );
+					if ( fileContent instanceof String ) {
+						BoxHttpClient.this.bytesReceived.addAndGet( ( ( String ) fileContent ).getBytes().length );
+					} else if ( fileContent instanceof byte[] ) {
+						BoxHttpClient.this.bytesReceived.addAndGet( ( ( byte[] ) fileContent ).length );
+					}
 				}
 			}
 
