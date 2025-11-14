@@ -52,7 +52,7 @@ jobs:
 
       - name: Install JDBC modules
         if: ${{ matrix.os != 'windows-latest' }}
-        run: box install id=bx-mssql,bx-mysql directory=~/.boxlang/modules --verbose --nosave
+        run: box install id=bx-mssql,bx-mysql,bx-oracle directory=~/.boxlang/modules --verbose --nosave
 
       - name: Setup MySQL Service
         if: ${{ matrix.os != 'windows-latest' }}
