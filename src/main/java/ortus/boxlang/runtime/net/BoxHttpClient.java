@@ -252,22 +252,21 @@ public class BoxHttpClient {
 	public IStruct getStatistics() {
 		long minTime = this.minExecutionTimeMs.get();
 		return Struct.ofNonConcurrent(
-		    Key.of( "totalRequests" ), this.totalRequests.get(),
-		    Key.of( "successfulRequests" ), this.successfulRequests.get(),
-		    Key.of( "failedRequests" ), this.failedRequests.get(),
-		    Key.of( "timeoutFailures" ), this.timeoutFailures.get(),
-		    Key.of( "connectionFailures" ), this.connectionFailures.get(),
-		    Key.of( "tlsFailures" ), this.tlsFailures.get(),
-		    Key.of( "httpProtocolFailures" ), this.httpProtocolFailures.get(),
-		    Key.of( "bytesReceived" ), this.bytesReceived.get(),
-		    Key.of( "bytesSent" ), this.bytesSent.get(),
-		    Key.of( "totalExecutionTimeMs" ), this.totalExecutionTimeMs.get(),
-		    Key.of( "minExecutionTimeMs" ), minTime == Long.MAX_VALUE ? 0 : minTime,
-		    Key.of( "maxExecutionTimeMs" ), this.maxExecutionTimeMs.get(),
-		    Key.of( "averageExecutionTimeMs" ),
-		    this.totalRequests.get() > 0 ? this.totalExecutionTimeMs.get() / this.totalRequests.get() : 0,
-		    Key.of( "createdAt" ), this.createdAt,
-		    Key.of( "lastUsedTimestamp" ), this.lastUsedTimestamp.get()
+		    Key.averageExecutionTimeMs, this.getAverageExecutionTimeMs(),
+		    Key.bytesReceived, this.bytesReceived.get(),
+		    Key.bytesSent, this.bytesSent.get(),
+		    Key.connectionFailures, this.connectionFailures.get(),
+		    Key.createdAt, new DateTime( this.createdAt ),
+		    Key.failedRequests, this.failedRequests.get(),
+		    Key.httpProtocolFailures, this.httpProtocolFailures.get(),
+		    Key.lastUsedTimestamp, this.lastUsedTimestamp.get(),
+		    Key.maxExecutionTimeMs, this.maxExecutionTimeMs.get(),
+		    Key.minExecutionTimeMs, minTime == Long.MAX_VALUE ? 0 : minTime,
+		    Key.successfulRequests, this.successfulRequests.get(),
+		    Key.timeoutFailures, this.timeoutFailures.get(),
+		    Key.tlsFailures, this.tlsFailures.get(),
+		    Key.totalExecutionTimeMs, this.totalExecutionTimeMs.get(),
+		    Key.totalRequests, this.totalRequests.get()
 		);
 	}
 
@@ -1417,7 +1416,9 @@ public class BoxHttpClient {
 					    ( java.util.function.Supplier<IStruct> ) () -> Struct.ofNonConcurrent(
 					        Key.requestID, this.requestID,
 					        Key.response, response,
-					        Key.result, this.httpResult
+					        Key.result, this.httpResult,
+					        Key.stream, false,
+					        Key.chunkCount, 0
 					    ) );
 
 					// Call onComplete callback if provided
@@ -1851,9 +1852,9 @@ public class BoxHttpClient {
 
 						// Invoke onChunk callback with chunk data
 						IStruct chunkData = Struct.ofNonConcurrent(
-						    Key.of( "chunkNumber" ), currentChunk,
-						    Key.of( "content" ), line,
-						    Key.of( "totalBytes" ), accumulatedContent.length(),
+						    Key.chunkNumber, currentChunk,
+						    Key.content, line,
+						    Key.totalBytes, accumulatedContent.length(),
 						    Key.statusCode, response.statusCode(),
 						    Key.headers, headers,
 						    Key.httpResult, this.httpResult
@@ -1908,8 +1909,8 @@ public class BoxHttpClient {
 			        Key.requestID, this.requestID,
 			        Key.response, response,
 			        Key.result, this.httpResult,
-			        Key.of( "streaming" ), true,
-			        Key.of( "chunkCount" ), chunkCount.get()
+			        Key.stream, true,
+			        Key.chunkCount, chunkCount.get()
 			    ) );
 
 			// Call onComplete callback if provided and no errors occurred
