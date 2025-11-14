@@ -1438,7 +1438,7 @@ public class BoxHttpClient {
 
 				// Handle timeout exceptions FIRST (most specific)
 				if ( innerException instanceof HttpTimeoutException ) {
-					logger.debug( "HttpTimeoutException detected - request timed out after {} seconds", this.timeout );
+					logger.trace( "HttpTimeoutException detected - request timed out after {} seconds", this.timeout );
 					BoxHttpClient.this.timeoutFailures.incrementAndGet();
 					HttpResponseHelper.populateErrorResponse(
 					    this.httpResult,
@@ -1456,7 +1456,7 @@ public class BoxHttpClient {
 				}
 				// Handle connection exceptions
 				else if ( innerException instanceof SocketException ) {
-					logger.debug( "SocketException detected: {}", innerException.getMessage() );
+					logger.trace( "SocketException detected: {}", innerException.getMessage() );
 					// Check if it's a TLS/SSL failure
 					if ( innerException instanceof javax.net.ssl.SSLException ||
 					    ( innerException.getCause() instanceof javax.net.ssl.SSLException ) ) {
@@ -1528,7 +1528,7 @@ public class BoxHttpClient {
 			}
 			// BoxRuntimeException should always be re-thrown (e.g., binary validation errors, hard-stop errors, etc.)
 			catch ( BoxRuntimeException e ) {
-				logger.debug( "BoxRuntimeException during HTTP request - re-throwing", e );
+				logger.error( "BoxRuntimeException during HTTP request - re-throwing", e );
 				throw e;
 			}
 			// Catch-all for any other unexpected exceptions
@@ -1826,7 +1826,7 @@ public class BoxHttpClient {
 
 			// Process the stream with chunk callbacks
 			BoxLangLogger	streamLogger	= getLogger();
-			streamLogger.debug( "Starting streaming response processing. Charset: {}, Content-Encoding: {}", charset, contentEncoding );
+			streamLogger.trace( "Starting streaming response processing. Charset: {}, Content-Encoding: {}", charset, contentEncoding );
 
 			// Read the response body line by line with proper charset
 			try (
@@ -1844,7 +1844,7 @@ public class BoxHttpClient {
 
 					try {
 						long currentChunk = chunkCount.incrementAndGet();
-						streamLogger.debug( "Processing chunk #{}: {}", currentChunk, line.substring( 0, Math.min( 50, line.length() ) ) );
+						streamLogger.trace( "Processing chunk #{}: {}", currentChunk, line.substring( 0, Math.min( 50, line.length() ) ) );
 
 						// Accumulate content for final result
 						accumulatedContent.append( line ).append( System.lineSeparator() );
@@ -1859,7 +1859,7 @@ public class BoxHttpClient {
 						    Key.httpResult, this.httpResult
 						);
 
-						streamLogger.debug( "Invoking onChunk callback for chunk #{}", currentChunk );
+						streamLogger.trace( "Invoking onChunk callback for chunk #{}", currentChunk );
 						context.invokeFunction(
 						    onChunkCallback,
 						    new Object[] { chunkData }
