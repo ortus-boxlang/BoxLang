@@ -20,6 +20,9 @@ package ortus.boxlang.runtime.net;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 
 /**
  * Base interface for SSE parser results.
@@ -277,6 +280,14 @@ public class SSEParser {
  * @since 1.0.0
  */
 record SSEEvent( String data, String event, String id ) implements SSEParserResult {
+
+	public IStruct toStruct() {
+		return Struct.ofNonConcurrent(
+		    Key.data, data,
+		    Key.event, event,
+		    Key.id, id
+		);
+	}
 }
 
 /**
