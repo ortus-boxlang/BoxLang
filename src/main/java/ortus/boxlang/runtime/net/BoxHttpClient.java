@@ -43,8 +43,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -1049,46 +1047,6 @@ public class BoxHttpClient {
 		}
 
 		/**
-		 * Resolve the output filename from Content-Disposition header or URL path.
-		 * Tries to extract filename from Content-Disposition header first, then falls back to URL path.
-		 *
-		 * @param headers The response headers
-		 *
-		 * @return The resolved filename
-		 *
-		 * @throws BoxRuntimeException If unable to determine filename
-		 */
-		private String resolveOutputFilename( IStruct headers ) {
-			if ( this.outputFile != null && !this.outputFile.trim().isEmpty() ) {
-				return this.outputFile;
-			}
-
-			String	filename			= null;
-
-			// Try to extract from Content-Disposition header
-			String	dispositionHeader	= HttpResponseHelper.extractFirstHeaderByName( headers, Key.contentDisposition );
-			if ( dispositionHeader != null ) {
-				Pattern	pattern	= Pattern.compile( "filename=\"?([^\";]+)\"?" );
-				Matcher	matcher	= pattern.matcher( dispositionHeader );
-				if ( matcher.find() ) {
-					filename = matcher.group( 1 );
-				}
-			}
-
-			// Fallback to URL path
-			if ( filename == null || filename.trim().isEmpty() ) {
-				filename = Path.of( this.targetHttpRequest.uri().getPath() ).getFileName().toString();
-			}
-
-			// Final validation
-			if ( filename == null || filename.trim().isEmpty() ) {
-				throw new BoxRuntimeException( "Unable to determine filename from response" );
-			}
-
-			return filename;
-		}
-
-		/**
 		 * --------------------------------------------------------------------------
 		 * Process the request (Preparation)
 		 * --------------------------------------------------------------------------
@@ -1274,16 +1232,15 @@ public class BoxHttpClient {
 				// Handle timeout exceptions FIRST (most specific)
 				if ( innerException instanceof HttpTimeoutException ) {
 					logger.debug( "HttpTimeoutException detected - request timed out after {} seconds", this.timeout );
-					this.httpResult.put( Key.responseHeader, new Struct( false ) );
-					this.httpResult.put( Key.header, "" );
-					this.httpResult.put( Key.statusCode, STATUS_REQUEST_TIMEOUT );
-					this.httpResult.put( Key.status_code, STATUS_REQUEST_TIMEOUT );
-					this.httpResult.put( Key.statusText, "Request Timeout" );
-					this.httpResult.put( Key.status_text, "Request Timeout" );
-					this.httpResult.put( Key.fileContent, "Request Timeout" );
-					this.httpResult.put( Key.errorDetail, "The request timed out after " + this.timeout + " second(s)" );
-					this.httpResult.put( Key.charset, this.charset );
-					this.httpResult.put( Key.executionTime, Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
+					HttpResponseHelper.populateErrorResponse(
+					    this.httpResult,
+					    STATUS_REQUEST_TIMEOUT,
+					    "Request Timeout",
+					    "Request Timeout",
+					    "The request timed out after " + this.timeout + " second(s)",
+					    this.charset,
+					    Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis()
+					);
 					// Call onError callback if provided
 					if ( onErrorCallback != null ) {
 						context.invokeFunction( onErrorCallback, new Object[] { innerException, this.httpResult } );
@@ -1292,26 +1249,25 @@ public class BoxHttpClient {
 				// Handle connection exceptions
 				else if ( innerException instanceof SocketException ) {
 					logger.debug( "SocketException detected: {}", innerException.getMessage() );
-					this.httpResult.put( Key.responseHeader, new Struct( false ) );
-					this.httpResult.put( Key.header, "" );
-					this.httpResult.put( Key.statusCode, STATUS_BAD_GATEWAY );
-					this.httpResult.put( Key.status_code, STATUS_BAD_GATEWAY );
-					this.httpResult.put( Key.statusText, "Bad Gateway" );
-					this.httpResult.put( Key.status_text, "Bad Gateway" );
-					this.httpResult.put( Key.fileContent, "Connection Failure" );
-					this.httpResult.put( Key.charset, this.charset );
-					this.httpResult.put( Key.executionTime, Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
+					String errorDetail;
 					if ( innerException instanceof ConnectException ) {
 						if ( this.targetHttpRequest.uri() != null ) {
-							this.httpResult.put( Key.errorDetail,
-							    String.format( "Unknown host: %s: Name or service not known.", this.targetHttpRequest.uri().getHost() ) );
+							errorDetail = String.format( "Unknown host: %s: Name or service not known.", this.targetHttpRequest.uri().getHost() );
 						} else {
-							this.httpResult.put( Key.errorDetail,
-							    String.format( "Unknown host: %s: Name or service not known.", this.targetHttpRequest.uri().toString() ) );
+							errorDetail = String.format( "Unknown host: %s: Name or service not known.", this.targetHttpRequest.uri().toString() );
 						}
 					} else {
-						this.httpResult.put( Key.errorDetail, "Connection Failure: " + innerException.getMessage() );
+						errorDetail = "Connection Failure: " + innerException.getMessage();
 					}
+					HttpResponseHelper.populateErrorResponse(
+					    this.httpResult,
+					    STATUS_BAD_GATEWAY,
+					    "Bad Gateway",
+					    "Connection Failure",
+					    errorDetail,
+					    this.charset,
+					    Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis()
+					);
 					// Call onError callback if provided
 					if ( onErrorCallback != null ) {
 						context.invokeFunction( onErrorCallback, new Object[] { innerException, this.httpResult } );
@@ -1323,19 +1279,17 @@ public class BoxHttpClient {
 					    "Unhandled ExecutionException with inner exception: {}",
 					    innerException != null ? innerException.getClass().getName() : "null", e
 					);
-					this.httpResult.put( Key.responseHeader, new Struct() );
-					this.httpResult.put( Key.header, "" );
-					this.httpResult.put( Key.statusCode, STATUS_INTERNAL_ERROR );
-					this.httpResult.put( Key.status_code, STATUS_INTERNAL_ERROR );
-					this.httpResult.put( Key.statusText, "Internal Server Error" );
-					this.httpResult.put( Key.status_text, "Internal Server Error" );
-					this.httpResult.put( Key.fileContent, "" );
-					this.httpResult.put( Key.charset, this.charset );
-					this.httpResult.put( Key.executionTime, Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
-					this.httpResult.put( Key.errorDetail,
-					    innerException != null
-					        ? innerException.getClass().getName() + ": " + innerException.getMessage()
-					        : e.getMessage()
+					String errorDetail = innerException != null
+					    ? innerException.getClass().getName() + ": " + innerException.getMessage()
+					    : e.getMessage();
+					HttpResponseHelper.populateErrorResponse(
+					    this.httpResult,
+					    STATUS_INTERNAL_ERROR,
+					    "Internal Server Error",
+					    "",
+					    errorDetail,
+					    this.charset,
+					    Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis()
 					);
 					// Call onError callback if provided
 					if ( onErrorCallback != null ) {
@@ -1472,7 +1426,7 @@ public class BoxHttpClient {
 			IStruct		headers				= HttpResponseHelper.transformToResponseHeaderStruct( httpHeaders.map() );
 
 			// Prepare HTTP response metadata as a string
-			String		httpVersionString	= response.version() == HttpClient.Version.HTTP_1_1 ? BoxHttpClient.HTTP_1 : BoxHttpClient.HTTP_2;
+			String		httpVersionString	= HttpResponseHelper.getHttpVersionString( response.version() );
 
 			// Populate standard response metadata
 			HttpResponseHelper.populateResponseMetadata( this.httpResult, headers, httpVersionString, response.statusCode() );
@@ -1527,7 +1481,7 @@ public class BoxHttpClient {
 
 			// Handle output file saving if specified (always execute, even if body is null/empty)
 			if ( this.outputDirectory != null ) {
-				String	filename		= resolveOutputFilename( headers );
+				String	filename		= HttpResponseHelper.resolveOutputFilename( headers, this.outputFile, this.targetHttpRequest.uri() );
 				String	destinationPath	= Path.of( this.outputDirectory, filename ).toAbsolutePath().toString();
 
 				// Write the file based on response body type (or empty file if no body)
@@ -1600,7 +1554,7 @@ public class BoxHttpClient {
 			IStruct		headers				= HttpResponseHelper.transformToResponseHeaderStruct( httpHeaders.map() );
 
 			// Prepare HTTP response metadata
-			String		httpVersionString	= response.version() == HttpClient.Version.HTTP_1_1 ? BoxHttpClient.HTTP_1 : BoxHttpClient.HTTP_2;
+			String		httpVersionString	= HttpResponseHelper.getHttpVersionString( response.version() );
 
 			// Populate standard response metadata
 			HttpResponseHelper.populateResponseMetadata( this.httpResult, headers, httpVersionString, response.statusCode() );
@@ -1682,7 +1636,7 @@ public class BoxHttpClient {
 
 			// Handle output file saving if specified (streaming variant)
 			if ( this.outputDirectory != null ) {
-				String	filename		= resolveOutputFilename( headers );
+				String	filename		= HttpResponseHelper.resolveOutputFilename( headers, this.outputFile, this.targetHttpRequest.uri() );
 				String	destinationPath	= Path.of( this.outputDirectory, filename ).toAbsolutePath().toString();
 				FileSystemUtil.write( destinationPath, finalContent, charset, true );
 			}

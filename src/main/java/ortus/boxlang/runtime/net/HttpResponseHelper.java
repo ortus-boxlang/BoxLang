@@ -379,4 +379,90 @@ public class HttpResponseHelper {
 		return charset;
 	}
 
+	/**
+	 * Convert HttpClient.Version enum to HTTP version string.
+	 *
+	 * @param version The HttpClient.Version enum value
+	 *
+	 * @return "HTTP/1.1" for HTTP_1_1, "HTTP/2" for HTTP_2
+	 */
+	public static String getHttpVersionString( java.net.http.HttpClient.Version version ) {
+		return version == java.net.http.HttpClient.Version.HTTP_1_1 ? "HTTP/1.1" : "HTTP/2";
+	}
+
+	/**
+	 * Populate httpResult with error response metadata.
+	 * Used for timeout, connection failure, and other error scenarios.
+	 *
+	 * @param httpResult   The httpResult struct to populate
+	 * @param statusCode   The HTTP status code to set
+	 * @param statusText   The status text/reason phrase
+	 * @param fileContent  The content to set for fileContent field
+	 * @param errorDetail  The error detail message
+	 * @param charset      The charset to use
+	 * @param executionTime The execution time in milliseconds
+	 */
+	public static void populateErrorResponse(
+	    IStruct httpResult,
+	    int statusCode,
+	    String statusText,
+	    String fileContent,
+	    String errorDetail,
+	    String charset,
+	    long executionTime ) {
+		httpResult.put( Key.responseHeader, new Struct( false ) );
+		httpResult.put( Key.header, "" );
+		httpResult.put( Key.statusCode, statusCode );
+		httpResult.put( Key.status_code, statusCode );
+		httpResult.put( Key.statusText, statusText );
+		httpResult.put( Key.status_text, statusText );
+		httpResult.put( Key.fileContent, fileContent );
+		httpResult.put( Key.errorDetail, errorDetail );
+		httpResult.put( Key.charset, charset );
+		httpResult.put( Key.executionTime, executionTime );
+	}
+
+	/**
+	 * Resolve output filename from Content-Disposition header or URL path.
+	 * Tries Content-Disposition header first, then falls back to URL path.
+	 *
+	 * @param headers      The response headers
+	 * @param outputFile   The explicitly specified output file (takes precedence)
+	 * @param requestUri   The request URI to extract filename from if needed
+	 *
+	 * @return The resolved filename
+	 *
+	 * @throws RuntimeException If unable to determine filename
+	 */
+	public static String resolveOutputFilename( IStruct headers, String outputFile, java.net.URI requestUri ) {
+		// Use explicit outputFile if provided
+		if ( outputFile != null && !outputFile.trim().isEmpty() ) {
+			return outputFile;
+		}
+
+		String filename = null;
+
+		// Try to extract from Content-Disposition header
+		String dispositionHeader = extractFirstHeaderByName( headers, Key.contentDisposition );
+		if ( dispositionHeader != null ) {
+			Pattern	pattern	= Pattern.compile( "filename=\"?([^\";]+)\"?" );
+			Matcher	matcher	= pattern.matcher( dispositionHeader );
+			if ( matcher.find() ) {
+				filename = matcher.group( 1 );
+			}
+		}
+
+		// Fallback to URL path
+		if ( filename == null || filename.trim().isEmpty() ) {
+			filename = java.nio.file.Path.of( requestUri.getPath() ).getFileName().toString();
+		}
+
+		// Final validation
+		if ( filename == null || filename.trim().isEmpty() ) {
+			throw new RuntimeException( "Unable to determine filename from response" );
+		}
+
+		return filename;
+	}
+
 }
