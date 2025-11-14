@@ -70,6 +70,14 @@ jobs:
           sa-password: "123456Password"
           version: 2022
 
+      - name: Setup Oracle
+        if: ${{ matrix.os != 'windows-latest' }}
+        uses: gvenzl/setup-oracle-free@v1
+        with:
+          app-user: boxlang
+          app-user-password: "123456Password"
+          oracle-password: "123456Password"
+
       - name: Test BoxLang
         env:
           BOXLANG_EXPERIMENTAL_COMPILER: ${{ matrix.compiler }}
