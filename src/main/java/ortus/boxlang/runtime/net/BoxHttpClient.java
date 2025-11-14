@@ -1841,21 +1841,18 @@ public class BoxHttpClient {
 
 						// Accumulate content for final result
 						accumulatedContent.append( line ).append( System.lineSeparator() );
-
-						// Invoke onChunk callback with chunk data
-						IStruct chunkData = Struct.ofNonConcurrent(
-						    Key.chunkNumber, currentChunk,
-						    Key.content, line,
-						    Key.totalBytes, accumulatedContent.length(),
-						    Key.statusCode, response.statusCode(),
-						    Key.headers, headers,
-						    Key.httpResult, this.httpResult
-						);
-
 						streamLogger.trace( "Invoking onChunk callback for chunk #{}", currentChunk );
+
 						context.invokeFunction(
 						    onChunkCallback,
-						    new Object[] { chunkData }
+						    new Object[] {
+						        currentChunk, // chunkNumber
+						        line, // content
+						        accumulatedContent.length(), // totalBytes
+						        this.httpResult, // httpResult
+						        BoxHttpClient.this, // httpClient
+						        response // raw response
+						    }
 						);
 
 					} catch ( Exception e ) {
@@ -1909,7 +1906,7 @@ public class BoxHttpClient {
 			if ( !streamingError.get() && this.onCompleteCallback != null ) {
 				context.invokeFunction(
 				    onCompleteCallback,
-				    new Object[] { this.httpResult, response }
+				    new Object[] { this.httpResult, response, BoxHttpClient.this }
 				);
 			}
 		}
