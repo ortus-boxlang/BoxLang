@@ -77,6 +77,7 @@ jobs:
           app-user: boxlang
           app-user-password: "123456Password"
           oracle-password: "123456Password"
+          oracle-database: "XEPDB1"
 
       - name: Test BoxLang
         env:
