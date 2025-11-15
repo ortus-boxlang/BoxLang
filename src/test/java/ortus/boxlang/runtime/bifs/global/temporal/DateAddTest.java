@@ -184,4 +184,46 @@ public class DateAddTest {
 		assertThat( result ).isEqualTo( "2025-01-01T00:00:00.000Z" );
 	}
 
+	@DisplayName( "It tests the BIF DateAdd various weekend overlaps" )
+	@Test
+	public void testBIFWithPositiveNegativeWeekOverlaps() {
+		//@formatter:off
+		instance.executeSource(
+		    """
+		    d = createDate( 2024, 1, 8 ); // Monday, January 8, 2024
+			baseDate = dateFormat(d, "full");
+
+			// 'w' weekday tests
+			addZero = dateFormat( dateAdd( "w", 0, d ), "full");
+			addOne = dateFormat( dateAdd( "w", 1, d ), "full");
+			addTwo = dateFormat( dateAdd( "w", 2, d ), "full");
+
+			subFive = dateFormat( dateAdd( "w", -5, d ), "full");
+			addFive = dateFormat( dateAdd( "w", 5, d ), "full");
+			addTen = dateFormat( dateAdd( "w", 10, d ), "full");
+
+			// 'ww' week tests
+			addZeroWW = dateFormat( dateAdd( "ww", 0, d ), "full");
+			subFiveWW = dateFormat( dateAdd( "ww", -5, d ), "full");
+			addFiveWW = dateFormat( dateAdd( "ww", 5, d ), "full");
+			addTenWW = dateFormat( dateAdd( "ww", 10, d ), "full");
+
+		    """,
+		    context );
+		//@formatter:on
+		assertThat( variables.getAsString( Key.of( "baseDate" ) ) ).isEqualTo( "Monday, January 8, 2024" );
+		assertThat( variables.getAsString( Key.of( "addZero" ) ) ).isEqualTo( "Monday, January 8, 2024" );
+		assertThat( variables.getAsString( Key.of( "addOne" ) ) ).isEqualTo( "Tuesday, January 9, 2024" );
+		assertThat( variables.getAsString( Key.of( "addTwo" ) ) ).isEqualTo( "Wednesday, January 10, 2024" );
+
+		assertThat( variables.getAsString( Key.of( "subFive" ) ) ).isEqualTo( "Monday, January 1, 2024" );
+		assertThat( variables.getAsString( Key.of( "addFive" ) ) ).isEqualTo( "Monday, January 15, 2024" );
+		assertThat( variables.getAsString( Key.of( "addTen" ) ) ).isEqualTo( "Monday, January 22, 2024" );
+
+		assertThat( variables.getAsString( Key.of( "addZeroWW" ) ) ).isEqualTo( "Monday, January 8, 2024" );
+		assertThat( variables.getAsString( Key.of( "subFiveWW" ) ) ).isEqualTo( "Monday, December 4, 2023" );
+		assertThat( variables.getAsString( Key.of( "addFiveWW" ) ) ).isEqualTo( "Monday, February 12, 2024" );
+		assertThat( variables.getAsString( Key.of( "addTenWW" ) ) ).isEqualTo( "Monday, March 18, 2024" );
+	}
+
 }
