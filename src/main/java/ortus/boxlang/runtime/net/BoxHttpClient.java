@@ -46,6 +46,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
@@ -55,6 +56,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.HttpService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -474,6 +476,10 @@ public class BoxHttpClient {
 		private ortus.boxlang.runtime.types.Function		onChunkCallback;
 		private ortus.boxlang.runtime.types.Function		onErrorCallback;
 		private ortus.boxlang.runtime.types.Function		onCompleteCallback;
+
+		// SSE (Server-Sent Events) handling
+		private boolean										forceSSE			= false;
+		private String										lastEventId			= null;
 
 		// File handling
 		private String										outputDirectory;
@@ -1047,6 +1053,18 @@ public class BoxHttpClient {
 		}
 
 		/**
+		 * Enable or force SSE (Server-Sent Events) mode
+		 *
+		 * @param sse Whether to force SSE mode
+		 *
+		 * @return This builder for chaining
+		 */
+		public BoxHttpRequest sse( boolean sse ) {
+			this.forceSSE = sse;
+			return this;
+		}
+
+		/**
 		 * ------------------------------------------------------------------------------
 		 * Processors
 		 * ------------------------------------------------------------------------------
@@ -1240,9 +1258,7 @@ public class BoxHttpClient {
 		}
 
 		/**
-		 * --------------------------------------------------------------------------
-		 * Process the request (Preparation)
-		 * --------------------------------------------------------------------------
+		 * Prepare the HttpRequest based on the configured parameters.
 		 *
 		 * @throws URISyntaxException
 		 * @throws IOException
@@ -1264,9 +1280,24 @@ public class BoxHttpClient {
 			requestBuilder
 			    .version( this.httpVersion.equalsIgnoreCase( HTTP_1 ) ? HttpClient.Version.HTTP_1_1 : HttpClient.Version.HTTP_2 )
 			    .header( "User-Agent", this.userAgent )
-			    .header( "Accept", "*/*" )
 			    .header( "Accept-Encoding", "gzip, deflate" )
 			    .header( "x-request-id", this.requestID );
+
+			// Set a request Timeout if specified
+			if ( this.timeout > 0 ) {
+				requestBuilder.timeout( java.time.Duration.ofSeconds( this.timeout ) );
+			}
+
+			// Setup Accept and Cache-Control headers based on SSE mode
+			if ( this.forceSSE ) {
+				requestBuilder
+				    .header( "Accept", "text/event-stream" )
+				    .header( "Cache-Control", "no-cache" );
+			} else {
+				requestBuilder
+				    .header( "Accept", "*/*" )
+				    .header( "Cache-Control", "no-cache" );
+			}
 
 			// Setup Basic Auth if provided
 			if ( this.username != null && this.password != null ) {
@@ -1294,11 +1325,6 @@ public class BoxHttpClient {
 			    .method( this.method, bodyPublisher )
 			    .uri( uriBuilder.build() );
 
-			// Set a request Timeout if specified
-			if ( this.timeout > 0 ) {
-				requestBuilder.timeout( java.time.Duration.ofSeconds( this.timeout ) );
-			}
-
 			// Build the final HttpRequest
 			this.targetHttpRequest = requestBuilder.build();
 
@@ -1312,24 +1338,110 @@ public class BoxHttpClient {
 		 */
 
 		/**
-		 * Execute the HTTP request and return the buffered response.
-		 * This is a terminal operation.
+		 * Execute the HTTP request and process the response.
+		 * <p>
+		 * This is the main terminal operation that executes the HTTP request based on the configured
+		 * parameters. The method handles both streaming and buffered response modes, manages callbacks,
+		 * tracks statistics, and provides comprehensive error handling.
+		 * <p>
+		 * <strong>Execution Flow:</strong>
+		 * <ol>
+		 * <li>Request Preparation: Builds the HttpRequest with all configured parameters (URL, method, headers, body, auth, etc.)</li>
+		 * <li>Pre-Request Setup: Initializes timing, updates client statistics, populates result metadata</li>
+		 * <li>Request Start Event: Fires ON_HTTP_REQUEST interceptor event and onRequestStart callback</li>
+		 * <li>Request Execution:
+		 * <ul>
+		 * <li>Streaming Mode: If onChunk callback is provided, processes response in chunks with SSE detection</li>
+		 * <li>Buffered Mode: Receives entire response then processes (default)</li>
+		 * </ul>
+		 * </li>
+		 * <li>Response Processing: Decodes, transforms, and populates httpResult struct</li>
+		 * <li>Post-Response Events: Fires ON_HTTP_RESPONSE interceptor and onComplete callback</li>
+		 * <li>Finalization: Calculates execution time and updates client statistics</li>
+		 * </ol>
+		 * <p>
+		 * <strong>Error Handling:</strong>
+		 * <p>
+		 * The method catches and handles multiple exception types gracefully:
+		 * <ul>
+		 * <li><strong>HttpTimeoutException:</strong> Request timeout - sets 408 status, calls onError callback</li>
+		 * <li><strong>SocketException/ConnectException:</strong> Connection failures (DNS, SSL/TLS, network) - sets 502 status</li>
+		 * <li><strong>BoxRuntimeException:</strong> Re-thrown immediately (validation errors, hard-stop errors)</li>
+		 * <li><strong>InterruptedException:</strong> Thread interrupted - sets error state and re-interrupts thread</li>
+		 * <li><strong>ExecutionException:</strong> Wraps various HTTP execution failures - unwraps and handles inner exception</li>
+		 * <li><strong>Other Exceptions:</strong> Catch-all for unexpected errors - sets 500 status</li>
+		 * </ul>
+		 * <p>
+		 * <strong>Statistics Tracking:</strong>
+		 * <p>
+		 * Updates various client-level metrics:
+		 * <ul>
+		 * <li>Total/successful/failed request counts</li>
+		 * <li>Execution time (min/max/total)</li>
+		 * <li>Bytes sent/received</li>
+		 * <li>Failure type counters (timeout, connection, TLS, protocol)</li>
+		 * </ul>
+		 * <p>
+		 * <strong>Usage Example:</strong>
 		 *
-		 * @return The HTTPResult struct with the response data
+		 * <pre>
+		 *
+		 * BoxHttpRequest request = httpClient.newRequest( "https://api.example.com/data" )
+		 *     .method( "POST" )
+		 *     .header( "Content-Type", "application/json" )
+		 *     .onComplete( result -> {
+		 * 							} )
+		 *     .invoke();
+		 *
+		 * IStruct result = request.getHttpResult();
+		 * </pre>
+		 *
+		 * @return This BoxHttpRequest instance with populated httpResult struct containing:
+		 *         <ul>
+		 *         <li>statusCode - HTTP status code (e.g., 200, 404, 500)</li>
+		 *         <li>statusText - HTTP status text (e.g., "OK", "Not Found")</li>
+		 *         <li>fileContent - Response body (String or byte[])</li>
+		 *         <li>headers - Response headers as IStruct</li>
+		 *         <li>charset - Response charset</li>
+		 *         <li>executionTime - Request duration in milliseconds</li>
+		 *         <li>request - Original request metadata</li>
+		 *         <li>errorDetail - Error message if request failed</li>
+		 *         <li>stream - Boolean indicating if streaming mode was used</li>
+		 *         <li>sse - Boolean indicating if SSE mode was detected/forced</li>
+		 *         </ul>
+		 *
+		 * @see #invokeOrThrow() For throwing exceptions instead of catching them
+		 * @see #ifSuccessful(Consumer) For conditional success handling
+		 * @see #ifFailed(BiConsumer) For conditional failure handling
+		 * @see #onRequestStart(Function) For pre-request callbacks
+		 * @see #onChunk(Function) For streaming mode
+		 * @see #onComplete(Function) For post-request callbacks
+		 * @see #onError(Function) For error callbacks
 		 */
 		public BoxHttpRequest invoke() {
 			try {
+				// Mark the start time of the request
+				this.startTime = new DateTime();
+
 				// Update client usage tracking
 				BoxHttpClient.this.updateLastUsedTimestamp();
 				BoxHttpClient.this.totalRequests.incrementAndGet();
 
-				// Mark the start time of the request
-				this.startTime = new DateTime();
-				// This prepares the request, forms, files, etc.
-				// The request builder is available as this.targetHttpRequest
+				/**
+				 * ------------------------------------------------------------------------------
+				 * PREPARE THE REQUEST
+				 * ------------------------------------------------------------------------------
+				 * This builds the HttpRequest object based on the provided configuration
+				 * It setups the this.targetHttpRequest object for execution
+				 * This is used by streaming and buffered modes
+				 */
 				prepareRequest();
 
-				// Track bytes sent (estimate from body publisher if available)
+				/**
+				 * ------------------------------------------------------------------------------
+				 * BYTES SENT TRACKING
+				 * ------------------------------------------------------------------------------
+				 */
 				this.targetHttpRequest.bodyPublisher().ifPresent( publisher -> {
 					publisher.contentLength();
 					long contentLength = publisher.contentLength();
@@ -1338,10 +1450,19 @@ public class BoxHttpClient {
 					}
 				} );
 
+				/**
+				 * ------------------------------------------------------------------------------
+				 * PRE-REQUEST RESULT SETUP
+				 * ------------------------------------------------------------------------------
+				 */
+
 				// Prepare the Http Reesults with the request info so we can start
 				this.httpResult.put( Key.requestID, this.requestID );
 				this.httpResult.put( Key.userAgent, this.userAgent );
 				this.httpResult.put( Key.stream, this.onChunkCallback != null ? true : false );
+				// Note, if sse was not set explicitly, this will be false
+				// Content type detection for SSE is done after receiving the response headers
+				this.httpResult.put( Key.sse, this.forceSSE );
 				this.httpResult.put( Key.startTime, this.startTime );
 				this.httpResult.put(
 				    Key.request,
@@ -1355,7 +1476,11 @@ public class BoxHttpClient {
 				        Key.URL, this.targetHttpRequest.uri().toString()
 				    ) );
 
-				// Announce we are ready to process
+				/**
+				 * ------------------------------------------------------------------------------
+				 * ON HTTP REQUEST EVENT
+				 * ------------------------------------------------------------------------------
+				 */
 				interceptorService.announce(
 				    BoxEvent.ON_HTTP_REQUEST,
 				    ( java.util.function.Supplier<IStruct> ) () -> Struct.ofNonConcurrent(
@@ -1365,61 +1490,20 @@ public class BoxHttpClient {
 				    )
 				);
 
-				// Call onRequestStart callback if provided (before sending the request)
-				if ( this.onRequestStartCallback != null ) {
-					context.invokeFunction(
-					    this.onRequestStartCallback,
-					    new Object[] {
-					        Struct.ofNonConcurrent(
-					            Key.httpResult, this.httpResult,
-					            Key.httpClient, BoxHttpClient.this,
-					            Key.httpRequest, this.targetHttpRequest
-					        )
-					    }
-					);
-				}
+				/**
+				 * ------------------------------------------------------------------------------
+				 * EXECUTE THE REQUEST
+				 * ------------------------------------------------------------------------------
+				 * - Streaming mode if onChunkCallback is provided
+				 * - Buffered mode otherwise
+				 */
 
-				// Choose between streaming and buffered response based on onChunk callback
 				if ( this.onChunkCallback != null ) {
 					// Streaming mode: process response in chunks
-					processStreamingResponse();
+					invokeStreaming();
 				} else {
-					// Buffered mode: receive entire response then process
-					HttpResponse<byte[]> response = httpClient
-					    .sendAsync( this.targetHttpRequest, HttpResponse.BodyHandlers.ofByteArray() )
-					    .get();
-
-					// Announce the HTTP RAW response
-					// Useful for debugging and pre-processing and timing, since the other events are after the response is processed
-					interceptorService.announce(
-					    BoxEvent.ON_HTTP_RAW_RESPONSE,
-					    ( java.util.function.Supplier<IStruct> ) () -> Struct.ofNonConcurrent(
-					        Key.result, this.httpResult,
-					        Key.response, response,
-					        Key.httpClient, BoxHttpClient.this,
-					        Key.httpRequest, this.targetHttpRequest
-					    ) );
-
-					// Process buffered response
-					processBufferedResponse( response );
-
-					// Announce the HTTP response now that it's processed
-					interceptorService.announce(
-					    BoxEvent.ON_HTTP_RESPONSE,
-					    ( java.util.function.Supplier<IStruct> ) () -> Struct.ofNonConcurrent(
-					        Key.result, this.httpResult,
-					        Key.response, response,
-					        Key.httpClient, BoxHttpClient.this,
-					        Key.chunkCount, 0
-					    ) );
-
-					// Call onComplete callback if provided
-					if ( this.onCompleteCallback != null ) {
-						context.invokeFunction(
-						    onCompleteCallback,
-						    new Object[] { this.httpResult, response }
-						);
-					}
+					// Buffered mode: get the full response at once
+					invokeBuffered();
 				}
 			} catch ( ExecutionException e ) {
 				Throwable innerException = e.getCause();
@@ -1661,6 +1745,104 @@ public class BoxHttpClient {
 		}
 
 		/**
+		 * --------------------------------------------------------------------------
+		 * Internal Invokers and Processors
+		 * --------------------------------------------------------------------------
+		 */
+
+		/**
+		 * Execute a buffered HTTP request and process the response.
+		 * This is called from the main invoke() method which takes care of error handling.
+		 *
+		 * @throws IOException          If an I/O error occurs
+		 * @throws ExecutionException   If the HTTP request fails
+		 * @throws InterruptedException If the request is interrupted
+		 * @throws BoxRuntimeException  If response handling fails
+		 */
+		private void invokeBuffered() throws IOException, ExecutionException, InterruptedException {
+			/**
+			 * ------------------------------------------------------------------------------
+			 * ON REQUEST START EVENT
+			 * ------------------------------------------------------------------------------
+			 */
+			if ( this.onRequestStartCallback != null ) {
+				context.invokeFunction(
+				    this.onRequestStartCallback,
+				    Struct.ofNonConcurrent(
+				        Key.result, this.httpResult,
+				        Key.httpClient, BoxHttpClient.this,
+				        Key.httpRequest, this.targetHttpRequest
+				    )
+				);
+			}
+
+			/**
+			 * ------------------------------------------------------------------------------
+			 * Make the HTTP Request (Buffered)
+			 * ------------------------------------------------------------------------------
+			 */
+
+			// Buffered mode: receive entire response then process
+			HttpResponse<byte[]> response = httpClient
+			    .sendAsync( this.targetHttpRequest, HttpResponse.BodyHandlers.ofByteArray() )
+			    .get();
+
+			/**
+			 * ------------------------------------------------------------------------------
+			 * ON HTTP RAW RESPONSE EVENT
+			 * ------------------------------------------------------------------------------
+			 */
+			// Useful for debugging and pre-processing and timing, since the other events are after the response is processed
+			interceptorService.announce(
+			    BoxEvent.ON_HTTP_RAW_RESPONSE,
+			    ( java.util.function.Supplier<IStruct> ) () -> Struct.ofNonConcurrent(
+			        Key.result, this.httpResult,
+			        Key.response, response,
+			        Key.httpClient, BoxHttpClient.this,
+			        Key.httpRequest, this.targetHttpRequest
+			    ) );
+
+			/**
+			 * ------------------------------------------------------------------------------
+			 * PROCESS BUFFERED RESPONSE
+			 * ------------------------------------------------------------------------------
+			 * This makes sure the response is processed for BoxLang consumption
+			 */
+			processBufferedResponse( response );
+
+			/**
+			 * ------------------------------------------------------------------------------
+			 * ON HTTP RESPONSE EVENT
+			 * ------------------------------------------------------------------------------
+			 */
+			interceptorService.announce(
+			    BoxEvent.ON_HTTP_RESPONSE,
+			    ( java.util.function.Supplier<IStruct> ) () -> Struct.ofNonConcurrent(
+			        Key.result, this.httpResult,
+			        Key.response, response,
+			        Key.httpClient, BoxHttpClient.this,
+			        Key.chunkCount, 0
+			    ) );
+
+			/**
+			 * ------------------------------------------------------------------------------
+			 * ON COMPLETE CALLBACK
+			 * ------------------------------------------------------------------------------
+			 */
+			if ( this.onCompleteCallback != null ) {
+				context.invokeFunction(
+				    onCompleteCallback,
+				    new Object[] {
+				        this.httpResult, // result
+				        response, // response
+				        BoxHttpClient.this, // httpClient
+				        0 // chunkCount is 0 for buffered responses
+				    }
+				);
+			}
+		}
+
+		/**
 		 * Process a buffered HTTP response (non-streaming).
 		 * This method handles decoding, charset conversion, binary validation,
 		 * and output file saving.
@@ -1675,7 +1857,9 @@ public class BoxHttpClient {
 		 */
 		private Object processBufferedResponse( HttpResponse<byte[]> response ) throws IOException {
 			// Get the response Headers and convert them to a native BoxLang struct
-			HttpHeaders	httpHeaders			= Optional.ofNullable( response.headers() ).orElse( HttpHeaders.of( Map.of(), ( a, b ) -> true ) );
+			HttpHeaders	httpHeaders			= Optional
+			    .ofNullable( response.headers() )
+			    .orElse( HttpHeaders.of( Map.of(), ( a, b ) -> true ) );
 			IStruct		headers				= HttpResponseHelper.transformToResponseHeaderStruct( httpHeaders.map() );
 
 			// Prepare HTTP response metadata as a string
@@ -1710,7 +1894,6 @@ public class BoxHttpClient {
 				// Determine if response should be treated as binary
 				Boolean	isBinaryContentType	= FileSystemUtil.isBinaryMimeType( contentType );
 				String	charset				= null;
-
 				if ( ( this.isBinaryRequest || isBinaryContentType ) && !this.isBinaryNever ) {
 					responseBody = responseBytes;
 				} else if ( this.isBinaryNever && isBinaryContentType ) {
@@ -1764,7 +1947,8 @@ public class BoxHttpClient {
 		}
 
 		/**
-		 * Process a streaming HTTP response with chunked callbacks
+		 * Process a streaming HTTP response with chunked callbacks.
+		 * Detects SSE mode and delegates to appropriate handler.
 		 * <p>
 		 * This method handles the response in a streaming fashion, invoking the onChunk callback
 		 * for each chunk of data as it arrives. It reuses the same header processing and response
@@ -1775,13 +1959,31 @@ public class BoxHttpClient {
 		 * @throws InterruptedException If the request is interrupted
 		 * @throws BoxRuntimeException  If response handling fails
 		 */
-		private void processStreamingResponse() throws IOException, ExecutionException, InterruptedException {
-			// Prep for streaming
-			StringBuilder						accumulatedContent	= new StringBuilder();
-			AtomicLong							chunkCount			= new AtomicLong( 0 );
-			AtomicBoolean						streamingError		= new AtomicBoolean( false );
+		private void invokeStreaming() throws IOException, ExecutionException, InterruptedException {
 
-			// Send request with streaming body handler (using InputStream for better control)
+			/**
+			 * ------------------------------------------------------------------------------
+			 * ON REQUEST START EVENT
+			 * ------------------------------------------------------------------------------
+			 */
+			if ( this.onRequestStartCallback != null ) {
+				context.invokeFunction(
+				    this.onRequestStartCallback,
+				    Struct.ofNonConcurrent(
+				        Key.result, this.httpResult,
+				        Key.httpClient, BoxHttpClient.this,
+				        Key.httpRequest, this.targetHttpRequest
+				    )
+				);
+			}
+
+			/**
+			 * ------------------------------------------------------------------------------
+			 * Make the HTTP Request (Streaming)
+			 * ------------------------------------------------------------------------------
+			 * Send request with streaming body handler (using InputStream for better control)
+			 * Because it could be SSE or regular streaming, we need to handle both cases
+			 */
 			HttpResponse<java.io.InputStream>	response			= httpClient
 			    .sendAsync(
 			        this.targetHttpRequest,
@@ -1789,7 +1991,41 @@ public class BoxHttpClient {
 			    )
 			    .get();
 
-			// Announce the HTTP RAW response (streaming variant)
+			/**
+			 * ------------------------------------------------------------------------------
+			 * PROCESS RESPONSE HEADERS AND METADATA
+			 * ------------------------------------------------------------------------------
+			 */
+
+			// Process response headers and metadata
+			HttpHeaders							httpHeaders			= Optional
+			    .ofNullable( response.headers() )
+			    .orElse( HttpHeaders.of( Map.of(), ( a, b ) -> true ) );
+			IStruct								headers				= HttpResponseHelper.transformToResponseHeaderStruct( httpHeaders.map() );
+
+			// Prepare HTTP response metadata
+			String								httpVersionString	= HttpResponseHelper.getHttpVersionString( response.version() );
+
+			// Populate standard response metadata
+			HttpResponseHelper.populateResponseMetadata( this.httpResult, headers, httpVersionString, response.statusCode() );
+
+			// Process Content-Type header and extract charset for streaming
+			String	contentType		= HttpResponseHelper.extractFirstHeaderByName( headers, Key.contentType );
+			String	charset			= HttpResponseHelper.processContentType( this.httpResult, headers, contentType, this.charset );
+			String	contentEncoding	= HttpResponseHelper.extractFirstHeaderByName( headers, Key.contentEncoding );
+
+			// Determine if SSE mode (auto-detect or forced)
+			boolean	isSSE			= this.forceSSE || ( contentType != null && contentType.contains( "text/event-stream" ) );
+
+			// Execution Markers
+			this.httpResult.put( Key.stream, true );
+			this.httpResult.put( Key.sse, isSSE );
+
+			/**
+			 * ------------------------------------------------------------------------------
+			 * ON HTTP RAW RESPONSE EVENT
+			 * ------------------------------------------------------------------------------
+			 */
 			interceptorService.announce(
 			    BoxEvent.ON_HTTP_RAW_RESPONSE,
 			    ( java.util.function.Supplier<IStruct> ) () -> Struct.ofNonConcurrent(
@@ -1799,56 +2035,224 @@ public class BoxHttpClient {
 			        Key.httpRequest, this.targetHttpRequest
 			    ) );
 
-			// Process response headers and metadata
-			HttpHeaders	httpHeaders			= Optional.ofNullable( response.headers() ).orElse( HttpHeaders.of( Map.of(), ( a, b ) -> true ) );
-			IStruct		headers				= HttpResponseHelper.transformToResponseHeaderStruct( httpHeaders.map() );
+			/**
+			 * ------------------------------------------------------------------------------
+			 * PROCESS STREAMING RESPONSE BY MODE
+			 * ------------------------------------------------------------------------------
+			 */
+			if ( isSSE ) {
+				processSSEStream( response, headers, charset, contentEncoding );
+			} else {
+				processRegularStream( response, headers, charset, contentEncoding );
+			}
+		}
 
-			// Prepare HTTP response metadata
-			String		httpVersionString	= HttpResponseHelper.getHttpVersionString( response.version() );
+		/**
+		 * Process an SSE (Server-Sent Events) stream
+		 *
+		 * @param response        The HTTP response with InputStream body
+		 * @param headers         The response headers struct
+		 * @param charset         The charset to use for reading
+		 * @param contentEncoding The content encoding (ignored for SSE, always text)
+		 *
+		 * @throws IOException If an I/O error occurs
+		 */
+		private void processSSEStream(
+		    HttpResponse<java.io.InputStream> response,
+		    IStruct headers,
+		    String charset,
+		    String contentEncoding ) throws IOException {
 
-			// Populate standard response metadata
-			HttpResponseHelper.populateResponseMetadata( this.httpResult, headers, httpVersionString, response.statusCode() );
+			// Logging essential for SSE processing
+			BoxLangLogger streamLogger = getLogger();
+			streamLogger.trace( "Starting SSE stream processing. Charset: {}", charset );
 
-			// Process Content-Type header and extract charset for streaming
-			String			contentType		= HttpResponseHelper.extractFirstHeaderByName( headers, Key.contentType );
-			String			charset			= HttpResponseHelper.processContentType( this.httpResult, headers, contentType, this.charset );
-			String			contentEncoding	= HttpResponseHelper.extractFirstHeaderByName( headers, Key.contentEncoding );
+			// Prepare for SSE processing
+			SSEParser		parser			= new SSEParser();
+			StringBuilder	accumulatedData	= new StringBuilder();
+			AtomicLong		eventCount		= new AtomicLong( 0 );
+			AtomicBoolean	streamingError	= new AtomicBoolean( false );
 
-			// Process the stream with chunk callbacks
-			BoxLangLogger	streamLogger	= getLogger();
-			streamLogger.trace( "Starting streaming response processing. Charset: {}, Content-Encoding: {}", charset, contentEncoding );
+			// Read SSE stream (always UTF-8 text, no decoding)
+			// Try with Resources to ensure streams are closed properly
+			try (
+			    java.io.InputStream rawInputStream = response.body();
+			    java.io.InputStreamReader reader = new java.io.InputStreamReader( rawInputStream, Charset.forName( charset ) );
+			    java.io.BufferedReader bufferedReader = new java.io.BufferedReader( reader ) ) {
 
-			// Read the response body line by line with proper charset
+				String line;
+
+				while ( ( line = bufferedReader.readLine() ) != null ) {
+
+					// Check for streaming error to stop processing
+					if ( streamingError.get() ) {
+						break;
+					}
+
+					try {
+						Attempt<SSEParserResult> result = parser.parseLine( line );
+						if ( result.wasSuccessful() ) {
+							SSEParserResult parserResult = result.get();
+
+							// Handle SSE Event
+							if ( parserResult instanceof SSEEvent sseEvent ) {
+								// Update lastEventId if present
+								eventCount.incrementAndGet();
+								if ( sseEvent.id() != null && !sseEvent.id().isEmpty() ) {
+									this.lastEventId = sseEvent.id();
+								}
+
+								// Accumulate data for final result
+								accumulatedData.append( sseEvent.data() ).append( System.lineSeparator() );
+
+								// Log the SSE event details
+								streamLogger.trace( "SSE Event #{}: type={}, id={}",
+								    eventCount.get(),
+								    sseEvent.event() != null ? sseEvent.event() : "message",
+								    sseEvent.id() != null ? sseEvent.id() : "none"
+								);
+
+								// Invoke onChunk callback with SSE event
+								context.invokeFunction(
+								    onChunkCallback,
+								    new Object[] {
+								        sseEvent.toStruct(),		// event struct
+								        this.lastEventId,			// lastEventId
+								        this.httpResult,			// httpResult
+								        BoxHttpClient.this,			// httpClient
+								        response					// rawResponse
+								    }
+								);
+							}
+							// Handle SSE Retry Directive
+							else if ( parserResult instanceof SSERetryDirective retryDirective ) {
+								streamLogger.debug( "SSE retry directive: {}ms", retryDirective.retryDelayMs() );
+								// TODO: Handle retry logic if needed
+							}
+						}
+
+					} catch ( Exception e ) {
+						streamingError.set( true );
+						streamLogger.error( "Error processing SSE event", e );
+
+						this.error				= true;
+						this.requestException	= e;
+						this.errorMessage		= e.getMessage();
+						this.httpResult.put( Key.errorDetail, "SSE parsing error: " + e.getMessage() );
+
+						// Call onError callback
+						if ( onErrorCallback != null ) {
+							try {
+								context.invokeFunction( onErrorCallback, new Object[] { e, this.httpResult } );
+							} catch ( Exception callbackError ) {
+								streamLogger.error( "Error in onError callback during SSE", callbackError );
+							}
+						}
+						break;
+					}
+				}
+			}
+
+			// Finalize httpResult
+			String finalContent = accumulatedData.toString();
+			this.httpResult.put( Key.fileContent, finalContent );
+			this.httpResult.put( Key.errorDetail, "" );
+			this.httpResult.put( Key.executionTime, Duration.between( startTime.toInstant(), Instant.now() ).toMillis() );
+			this.httpResult.put( Key.totalEvents, eventCount.get() );
+
+			/**
+			 * ------------------------------------------------------------------------------
+			 * ON HTTP RESPONSE EVENT
+			 * ------------------------------------------------------------------------------
+			 */
+			interceptorService.announce(
+			    BoxEvent.ON_HTTP_RESPONSE,
+			    ( java.util.function.Supplier<IStruct> ) () -> Struct.ofNonConcurrent(
+			        Key.requestID, requestID,
+			        Key.response, response,
+			        Key.result, httpResult,
+			        Key.stream, true,
+			        Key.sse, true,
+			        Key.eventCount, eventCount
+			    )
+			);
+
+			/**
+			 * ------------------------------------------------------------------------------
+			 * ON COMPLETE CALLBACK
+			 * ------------------------------------------------------------------------------
+			 */
+			if ( onCompleteCallback != null ) {
+				context.invokeFunction(
+				    onCompleteCallback,
+				    new Object[] {
+				        this.httpResult, // result
+				        response, // response
+				        BoxHttpClient.this, // httpClient
+				        eventCount.get() // eventCount for SSE
+				    }
+				);
+			}
+		}
+
+		/**
+		 * Process a regular (non-SSE) streaming response
+		 *
+		 * @param response        The HTTP response with InputStream body
+		 * @param headers         The response headers struct
+		 * @param charset         The charset to use for reading
+		 * @param contentEncoding The content encoding (gzip, deflate, etc.)
+		 *
+		 * @throws IOException If an I/O error occurs
+		 */
+		private void processRegularStream(
+		    HttpResponse<java.io.InputStream> response,
+		    IStruct headers,
+		    String charset,
+		    String contentEncoding ) throws IOException {
+
+			// This logging tracers are useful for debugging streaming issues
+			BoxLangLogger streamLogger = getLogger();
+			streamLogger.trace( "Starting regular stream processing. Charset: {}, Content-Encoding: {}", charset, contentEncoding );
+			// Prepare for streaming processing
+			StringBuilder	accumulatedContent	= new StringBuilder();
+			AtomicLong		chunkCount			= new AtomicLong( 0 );
+			AtomicBoolean	streamingError		= new AtomicBoolean( false );
+
+			// Read the response body line by line with proper charset and decoding
+			// Try with Resources to ensure streams are closed properly
 			try (
 			    java.io.InputStream rawInputStream = response.body();
 			    java.io.InputStream decodedInputStream = HttpResponseHelper.decodeInputStream( rawInputStream, contentEncoding );
 			    java.io.InputStreamReader reader = new java.io.InputStreamReader( decodedInputStream, Charset.forName( charset ) );
 			    java.io.BufferedReader bufferedReader = new java.io.BufferedReader( reader ) ) {
+
 				String line;
 
-				// Read each line (chunk) from the stream
 				while ( ( line = bufferedReader.readLine() ) != null ) {
+
+					// Check for streaming error to stop processing
 					if ( streamingError.get() ) {
-						break; // Stop processing if error occurred
+						break;
 					}
 
 					try {
 						long currentChunk = chunkCount.incrementAndGet();
-						streamLogger.trace( "Processing chunk #{}: {}", currentChunk, line.substring( 0, Math.min( 50, line.length() ) ) );
+						streamLogger.trace( "Processing chunk #{}", currentChunk );
 
 						// Accumulate content for final result
 						accumulatedContent.append( line ).append( System.lineSeparator() );
-						streamLogger.trace( "Invoking onChunk callback for chunk #{}", currentChunk );
 
+						// Invoke onChunk callback with regular chunk data
 						context.invokeFunction(
 						    onChunkCallback,
 						    new Object[] {
-						        currentChunk, // chunkNumber
-						        line, // content
-						        accumulatedContent.length(), // totalBytes
-						        this.httpResult, // httpResult
-						        BoxHttpClient.this, // httpClient
-						        response // raw response
+						        currentChunk,					// chunkNumber
+						        line,							// content
+						        accumulatedContent.length(),	// totalBytes
+						        this.httpResult,				// httpResult
+						        BoxHttpClient.this,				// httpClient
+						        response						// rawResponse
 						    }
 						);
 
@@ -1856,61 +2260,66 @@ public class BoxHttpClient {
 						streamingError.set( true );
 						streamLogger.error( "Error in onChunk callback", e );
 
-						// Store error in httpResult
 						this.error				= true;
 						this.requestException	= e;
 						this.errorMessage		= e.getMessage();
 						this.httpResult.put( Key.errorDetail, "Streaming callback error: " + e.getMessage() );
 
-						// Call onError callback if provided
 						if ( onErrorCallback != null ) {
 							try {
 								context.invokeFunction( onErrorCallback, new Object[] { e, this.httpResult } );
 							} catch ( Exception callbackError ) {
-								streamLogger.error( "Error in onError callback during streaming", callbackError );
+								streamLogger.error( "Error in onError callback", callbackError );
 							}
 						}
-						break; // Stop processing on error
+						break;
 					}
 				}
 			}
 
-			// Finalize httpResult after streaming completes
 			String finalContent = accumulatedContent.toString();
 			this.httpResult.put( Key.fileContent, finalContent );
 			this.httpResult.put( Key.errorDetail, "" );
-			this.httpResult.put( Key.executionTime, Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
+			this.httpResult.put( Key.executionTime, Duration.between( startTime.toInstant(), Instant.now() ).toMillis() );
 
-			// Handle output file saving if specified (streaming variant)
+			// Handle output file saving
 			if ( this.outputDirectory != null ) {
 				String	filename		= HttpResponseHelper.resolveOutputFilename( headers, this.outputFile, this.targetHttpRequest.uri() );
 				String	destinationPath	= Path.of( this.outputDirectory, filename ).toAbsolutePath().toString();
 				FileSystemUtil.write( destinationPath, finalContent, charset, true );
 			}
 
-			// Announce the HTTP response now that streaming is complete
+			/**
+			 * ------------------------------------------------------------------------------
+			 * ON HTTP RESPONSE EVENT
+			 * ------------------------------------------------------------------------------
+			 */
 			interceptorService.announce(
 			    BoxEvent.ON_HTTP_RESPONSE,
 			    ( java.util.function.Supplier<IStruct> ) () -> Struct.ofNonConcurrent(
-			        Key.result, this.httpResult,
+			        Key.result, httpResult,
 			        Key.response, response,
 			        Key.httpClient, BoxHttpClient.this,
 			        Key.chunkCount, chunkCount.get()
-			    ) );
+			    )
+			);
 
-			// Call onComplete callback if provided and no errors occurred
-			if ( !streamingError.get() && this.onCompleteCallback != null ) {
+			/**
+			 * ------------------------------------------------------------------------------
+			 * ON COMPLETE CALLBACK
+			 * ------------------------------------------------------------------------------
+			 */
+			if ( onCompleteCallback != null ) {
 				context.invokeFunction(
 				    onCompleteCallback,
 				    new Object[] {
-				        chunkCount.get(), // total chunks
 				        this.httpResult, // result
-				        response, // final response
-				        BoxHttpClient.this  // httpClient
+				        response, // response
+				        BoxHttpClient.this, // httpClient
+				        chunkCount.get()
 				    }
 				);
 			}
 		}
-
-	}
+	} // End of BoxHttpRequest class
 }

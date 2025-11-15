@@ -341,6 +341,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		errorHandler						= Key.of( "errorHandler" );
 	public static final Key		errors								= Key.of( "errors" );
 	public static final Key		event								= Key.of( "event" );
+	public static final Key		eventCount							= Key.of( "eventCount" );
 	public static final Key		escapeChars							= Key.of( "escapeChars" );
 	public static final Key		evictCount							= Key.of( "evictCount" );
 	public static final Key		evictionPolicy						= Key.of( "evictionPolicy" );
@@ -614,6 +615,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		onComplete							= Key.of( "onComplete" );
 	public static final Key		onError								= Key.of( "onError" );
 	public static final Key		onLoad								= Key.of( "onLoad" );
+	public static final Key		onMessage							= Key.of( "onMessage" );
 	public static final Key		onMissingMethod						= Key.of( "onMissingMethod" );
 	public static final Key		onMissingTemplate					= Key.of( "onMissingTemplate" );
 	public static final Key		onParse								= Key.of( "onParse" );
@@ -802,6 +804,9 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		storedproc							= Key.of( "storedproc" );
 	public static final Key		storeClassFilesOnDisk				= Key.of( "storeClassFilesOnDisk" );
 	public static final Key		stream								= Key.of( "stream" );
+	public static final Key		sse									= Key.of( "sse" );
+	public static final Key		lastEventId							= Key.of( "lastEventId" );
+	public static final Key		eventType							= Key.of( "eventType" );
 	public static final Key		strict								= Key.of( "strict" );
 	public static final Key		strictMapping						= Key.of( "strictMapping" );
 	public static final Key		string								= Key.of( "string" );
@@ -870,6 +875,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		top									= Key.of( "top" );
 	public static final Key		toString							= Key.of( "toString" );
 	public static final Key		totalCapSize						= Key.of( "totalCapSize" );
+	public static final Key		totalEvents							= Key.of( "totalEvents" );
 	public static final Key		totalReceived						= Key.of( "totalReceived" );
 	public static final Key		totalBytes							= Key.of( "totalBytes" );
 	public static final Key		totalRequests						= Key.of( "totalRequests" );

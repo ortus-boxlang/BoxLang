@@ -133,8 +133,10 @@ public class HTTP extends Component {
 		    new Attribute( Key.clientCert, "string" ),
 		    new Attribute( Key.clientCertPassword, "string" ),
 		    // Streaming/callbacks
+		    new Attribute( Key.sse, "boolean", false ),
 		    new Attribute( Key.onRequestStart, "function" ),
 		    new Attribute( Key.onChunk, "function" ),
+		    new Attribute( Key.onMessage, "function" ),
 		    new Attribute( Key.onError, "function" ),
 		    new Attribute( Key.onComplete, "function" ),
 		    // Proxy configuration
@@ -344,6 +346,12 @@ public class HTTP extends Component {
 		    .stream()
 		    .anyMatch( value -> value.equals( binaryOperator ) );
 
+		// onMessage is sugar for onChunk + sse=true
+		if ( attributes.containsKey( Key.onMessage ) && attributes.get( Key.onMessage ) != null ) {
+			attributes.put( Key.onChunk, attributes.get( Key.onMessage ) );
+			attributes.put( Key.sse, true );
+		}
+
 		// Expand client certificate path if provided
 		if ( attributes.containsKey( Key.clientCert ) ) {
 			attributes.put( Key.clientCert, FileSystemUtil.expandPath( context, attributes.getAsString( Key.clientCert ) ).absolutePath().toString() );
@@ -433,6 +441,8 @@ public class HTTP extends Component {
 		    .onChunk( attributes.getAsFunction( Key.onChunk ) )
 		    .onError( attributes.getAsFunction( Key.onError ) )
 		    .onComplete( attributes.getAsFunction( Key.onComplete ) )
+		    // SSE Mode
+		    .sse( attributes.getAsBoolean( Key.sse ) )
 		    // Invoke the request
 		    .invoke()
 		    // Handle failures
