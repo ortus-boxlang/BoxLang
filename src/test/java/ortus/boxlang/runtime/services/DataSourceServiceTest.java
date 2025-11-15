@@ -21,7 +21,6 @@ package ortus.boxlang.runtime.services;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -30,6 +29,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.jdbc.BoxConnection;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -120,7 +120,7 @@ public class DataSourceServiceTest {
 		    )
 		);
 
-		try ( Connection conn = dsn.getConnection() ) {
+		try ( BoxConnection conn = dsn.getBoxConnection() ) {
 			assertThat( service.remove( dsn.getUniqueName() ) ).isTrue();
 			assertThat( conn.isValid( 1 ) ).isFalse();
 		}
@@ -139,8 +139,8 @@ public class DataSourceServiceTest {
 		);
 
 		assertThat( service.has( dsn.getUniqueName() ) ).isTrue();
-		try ( Connection connection = dsn.getConnection() ) {
-			assertThat( connection ).isInstanceOf( Connection.class );
+		try ( BoxConnection connection = dsn.getBoxConnection() ) {
+			assertThat( connection ).isInstanceOf( BoxConnection.class );
 
 			service.clear();
 			assertThat( service.has( dsn.getUniqueName() ) ).isFalse();

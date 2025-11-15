@@ -21,6 +21,8 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.QueryColumn;
+import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
@@ -119,11 +121,15 @@ public class OracleDriverTest extends AbstractDriverTest {
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 		IStruct meta = variables.getAsStruct( result );
 
+		// RowID is returned as String
+		assertThat( meta.get( Key.rowID ) ).isInstanceOf( String.class );
 		assertThat( meta.get( Key.rowID ).toString().length() ).isGreaterThan( 0 );
 
 		Array generatedKeys = meta.getAsArray( Key.rowIDs );
 
 		assertThat( generatedKeys ).hasSize( 1 );
+		// Each key is a String
+		assertThat( ( ( Array ) generatedKeys.get( 0 ) ).get( 0 ) ).isInstanceOf( String.class );
 		// Single INSERT statement with 1 row generates 1 key
 		String[] allKeys = ( ( Array ) generatedKeys.get( 0 ) ).stream().map( String::valueOf ).toArray( String[]::new );
 		assertThat( allKeys[ 0 ].length() ).isGreaterThan( 0 );
@@ -131,6 +137,29 @@ public class OracleDriverTest extends AbstractDriverTest {
 		assertThat( meta.get( "updateCount" ) ).isEqualTo( 1 );
 		Array updateCounts = meta.getAsArray( Key.of( "updateCounts" ) );
 		assertThat( updateCounts.toArray() ).isEqualTo( new Integer[] { 1 } );
+	}
+
+	@DisplayName( "It selects a rowID and uses as String" )
+	@Test
+	public void testGeneratedKeyAsString() {
+		instance.executeStatement(
+		    String.format(
+		        """
+		        result = queryExecute( "SELECT ROWID FROM developers",
+		        {},
+		        { "datasource" : "%s" }
+		        );
+
+		        value = "rowID: " & result.rowID;
+		                                                   """,
+		        getDatasourceName() ),
+		    context );
+		assertThat( variables.getAsQuery( result ).getColumns().values().toArray( new QueryColumn[ 0 ] )[ 0 ].getType() ).isEqualTo( QueryColumnType.VARCHAR );
+
+		assertThat( variables.get( "value" ) ).isInstanceOf( String.class );
+		String rowIDString = variables.getAsString( Key.of( "value" ) );
+		assertThat( rowIDString ).startsWith( "rowID: " );
+
 	}
 
 	@DisplayName( "It can call stored proc" )

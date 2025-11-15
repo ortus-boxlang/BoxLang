@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.components.jdbc;
 
 import java.sql.CallableStatement;
-import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -35,6 +34,8 @@ import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.jdbc.BoxCallableStatement;
+import ortus.boxlang.runtime.jdbc.BoxConnection;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.jdbc.QueryOptions;
 import ortus.boxlang.runtime.scopes.Key;
@@ -116,8 +117,8 @@ public class StoredProc extends Component {
 
 		String callString = buildCallString( procedureName, params, hasReturnCode, debug );
 		try (
-		    Connection conn = connectionManager.getConnection( options );
-		    CallableStatement procedure = conn.prepareCall( callString ); ) {
+		    BoxConnection conn = connectionManager.getBoxConnection( options );
+		    BoxCallableStatement procedure = conn.prepareCall( callString ); ) {
 
 			// Register return code parameter if needed
 			int paramOffset = 0;
@@ -286,7 +287,7 @@ public class StoredProc extends Component {
 	 * @param procedure   The callable statement.
 	 * @param procResults The stored procedure results - It's an array because there can be multiple ResultSets.
 	 */
-	private void putResultSetsInContext( IBoxContext context, CallableStatement procedure, Array procResults, boolean hasResult ) throws SQLException {
+	private void putResultSetsInContext( IBoxContext context, BoxCallableStatement procedure, Array procResults, boolean hasResult ) throws SQLException {
 		var	indexedProcResults	= processProcResults( procResults );
 
 		int	resultSetIndex		= 1;
@@ -302,7 +303,8 @@ public class StoredProc extends Component {
 					String		resultSetAttr	= matchingProcResult.getAsString( Key._NAME );
 
 					ResultSet	res				= procedure.getResultSet();
-					ExpressionInterpreter.setVariable( context, resultSetAttr, Query.fromResultSet( res, matchingProcResult.getAsInteger( Key.maxRows ) ) );
+					ExpressionInterpreter.setVariable( context, resultSetAttr,
+					    Query.fromResultSet( procedure, res, matchingProcResult.getAsInteger( Key.maxRows ) ) );
 					res.close();
 				}
 				resultSetIndex++;

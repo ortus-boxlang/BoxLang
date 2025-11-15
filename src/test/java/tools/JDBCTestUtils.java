@@ -252,7 +252,7 @@ public class JDBCTestUtils {
 	 */
 	public static void ensureTestTableExists( DataSource datasource, IBoxContext context ) {
 		try {
-			if ( datasource.getConnection().getMetaData().getDriverName().toLowerCase().contains( "microsoft" ) ) {
+			if ( datasource.getBoxConnection().getMetaData().getDriverName().toLowerCase().contains( "microsoft" ) ) {
 				datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155), createdAt DATETIME )", context );
 			} else {
 				datasource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155), createdAt TIMESTAMP )", context );
@@ -280,7 +280,7 @@ public class JDBCTestUtils {
 	private static String getCurrentDate( DataSource datasource ) {
 		String driverName;
 		try {
-			driverName = datasource.getConnection().getMetaData().getDriverName().toLowerCase();
+			driverName = datasource.getBoxConnection().getMetaData().getDriverName().toLowerCase();
 		} catch ( SQLException e ) {
 			throw new DatabaseException( "Failed to get current date", e );
 		}

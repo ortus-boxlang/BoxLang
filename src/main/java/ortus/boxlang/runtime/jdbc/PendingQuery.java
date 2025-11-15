@@ -142,6 +142,11 @@ public class PendingQuery {
 	private IBoxContext							context;
 
 	/**
+	 * Datasource used to execute this query. This will be null until the execute() method is called
+	 */
+	private DataSource							datasource;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructor(s)
 	 * --------------------------------------------------------------------------
@@ -231,6 +236,15 @@ public class PendingQuery {
 	 * Methods
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Get the datasource used to execute this query.
+	 * 
+	 * @return The datasource used to execute this query.
+	 */
+	public DataSource getDataSource() {
+		return this.datasource;
+	}
 
 	/**
 	 * Returns the cache key for this query.
@@ -579,7 +593,8 @@ public class PendingQuery {
 			}
 		}
 
-		Connection connection = connectionManager.getConnection( this.queryOptions );
+		BoxConnection connection = connectionManager.getBoxConnection( this.queryOptions );
+		datasource = connection.getDataSource();
 		try {
 			return execute( connection, context );
 		} finally {
@@ -603,7 +618,8 @@ public class PendingQuery {
 	 *
 	 * @see ExecutedQuery
 	 */
-	public @NonNull ExecutedQuery execute( Connection connection, IBoxContext context ) {
+	public @NonNull ExecutedQuery execute( BoxConnection connection, IBoxContext context ) {
+		this.datasource = connection.getDataSource();
 		if ( isCacheable() ) {
 			// we use separate get() and set() calls over a .getOrSet() so we can run
 			// `.setIsCached()` on discovered/cached results.
@@ -621,6 +637,29 @@ public class PendingQuery {
 	}
 
 	/**
+	 * Executes the PendingQuery on a given {@link Connection} and returns the
+	 * results in an {@link ExecutedQuery} instance.
+	 * 
+	 * @deprecated Use {@link #execute(BoxConnection,IBoxContext)} instead.
+	 *
+	 * @param connection The Connection instance to use for executing the query. It
+	 *                   is the responsibility of the caller to close the connection
+	 *                   after this method returns.
+	 *
+	 * @throws DatabaseException If a {@link SQLException} occurs, wraps it in a
+	 *                           DatabaseException and throws.
+	 *
+	 * @return An ExecutedQuery instance with the results of this JDBC execution, as
+	 *         well as a link to this PendingQuery instance.
+	 *
+	 * @see ExecutedQuery
+	 */
+	@Deprecated
+	public @NonNull ExecutedQuery execute( Connection connection, IBoxContext context ) {
+		return execute( BoxConnection.of( connection, null ), context );
+	}
+
+	/**
 	 * Generate and execute a JDBC statement using the provided connection.
 	 * <p>
 	 * If query parameters are present, a {@link PreparedStatement} will be
@@ -635,11 +674,11 @@ public class PendingQuery {
 	 * @return An ExecutedQuery instance with the results of this JDBC execution, as
 	 *         well as a link to this PendingQuery instance.
 	 */
-	private ExecutedQuery executeStatement( Connection connection, IBoxContext context ) {
+	private ExecutedQuery executeStatement( BoxConnection connection, IBoxContext context ) {
 		try {
 			// Determine if we can return generated keys
 			int GENERATED_KEYS_SETTING = Statement.RETURN_GENERATED_KEYS;
-			if ( ! ( connection instanceof QoQConnection ) ) {
+			if ( ! ( connection.getConnection() instanceof QoQConnection ) ) {
 				DatabaseMetaData metaData = connection.getMetaData();
 				if ( !metaData.supportsGetGeneratedKeys() ) {
 					GENERATED_KEYS_SETTING = Statement.NO_GENERATED_KEYS;
@@ -649,7 +688,7 @@ public class PendingQuery {
 			String sqlStatement = this.sql;
 			try (
 			    // If we have no parameters, we can use a Statement, otherwise we use a PreparedStatement
-			    Statement statement = this.parameters.isEmpty()
+			    BoxStatement statement = this.parameters.isEmpty()
 			        ? connection.createStatement()
 			        : connection.prepareStatement( sqlStatement, GENERATED_KEYS_SETTING ); ) {
 
@@ -725,7 +764,7 @@ public class PendingQuery {
 		Struct	queryMeta	= new Struct( cachedQuery.getQueryMeta() );
 		queryMeta.addAll( cacheMeta );
 		results.setMetadata( queryMeta );
-		return new ExecutedQuery( results, cachedQuery.getGeneratedKey() );
+		return new ExecutedQuery( results, cachedQuery.getGeneratedKey(), null );
 	}
 
 	/**

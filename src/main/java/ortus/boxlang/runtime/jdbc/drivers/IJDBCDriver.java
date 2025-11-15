@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.jdbc.drivers;
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.QueryColumnType;
 
 /**
  * This interface is used to define the methods that a JDBC driver must implement
@@ -83,4 +84,25 @@ public interface IJDBCDriver {
 	 * @return The custom parameters as a query string
 	 */
 	public String customParamsToQueryString( DatasourceConfig config );
+
+	/**
+	 * Map a SQL type to a QueryColumnType. The default implementation will use the mappings in the QueryColumnType enum.
+	 * Override this method if the driver has specific mappings. Example, mapping RowId in Oracle to a String type.
+	 * 
+	 * @param sqlType The SQL type to map, from java.sql.Types
+	 * 
+	 * @return The QueryColumnType
+	 */
+	public QueryColumnType mapSQLTypeToQueryColumnType( int sqlType );
+
+	/**
+	 * Transform a value according to the driver's specific needs. This allows drivers to map custom Java classes to native BL types.
+	 * The default implementation will return the value as-is.
+	 * 
+	 * @param sqlType The SQL type of the value, from java.sql.Types
+	 * @param value   The value to transform
+	 * 
+	 * @return The transformed value
+	 */
+	public Object transformValue( int sqlType, Object value );
 }

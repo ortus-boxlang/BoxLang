@@ -205,20 +205,53 @@ public class DataSource implements Comparable<DataSource> {
 	 *
 	 * @throws BoxRuntimeException if connection could not be established.
 	 */
-	public Connection getConnection() {
+	public BoxConnection getBoxConnection() {
 		try {
-			return this.hikariDataSource.getConnection();
+			return BoxConnection.of( this.hikariDataSource.getConnection(), this );
 		} catch ( SQLException e ) {
 			throw new DatabaseException( "Unable to open connection:", e );
 		}
 	}
 
-	protected Connection getUnpooledConnection() {
+	/**
+	 * Get a connection to the configured datasource.
+	 * 
+	 * This method is deprecated. Use {@link #getBoxConnection()} instead.
+	 *
+	 * @return A JDBC connection to the configured datasource.
+	 *
+	 * @throws BoxRuntimeException if connection could not be established.
+	 */
+	@Deprecated
+	public Connection getConnection() {
+		return getBoxConnection();
+	}
+
+	/**
+	 * Get an unpooled BoxConnection to the configured datasource.
+	 *
+	 * @return A JDBC connection to the configured datasource.
+	 */
+	protected BoxConnection getUnpooledBoxConnection() {
 		try {
-			return DriverManager.getConnection( this.hikariDataSource.getJdbcUrl(), this.hikariDataSource.getUsername(), this.hikariDataSource.getPassword() );
+			return BoxConnection.of(
+			    DriverManager.getConnection( this.hikariDataSource.getJdbcUrl(), this.hikariDataSource.getUsername(), this.hikariDataSource.getPassword() ),
+			    this );
 		} catch ( SQLException e ) {
 			throw new DatabaseException( "Unable to open connection:", e );
 		}
+	}
+
+	/**
+	 * Get an unpooled connection to the configured datasource.
+	 * 
+	 * This method is deprecated. Use {@link #getUnpooledBoxConnection()} instead.
+	 * 
+	 * @return A JDBC connection to the configured datasource.
+	 */
+	@Deprecated
+	protected Connection getUnpooledConnection() {
+		return getUnpooledBoxConnection();
 	}
 
 	/**
@@ -256,14 +289,14 @@ public class DataSource implements Comparable<DataSource> {
 	 *
 	 * @throws DatabaseException if connection could not be established.
 	 */
-	public Connection getConnection( String username, String password ) {
+	public BoxConnection getBoxConnection( String username, String password ) {
 		try {
-			return this.hikariDataSource.getConnection( username, password );
+			return BoxConnection.of( this.hikariDataSource.getConnection( username, password ), this );
 		} catch ( java.sql.SQLFeatureNotSupportedException e ) {
 			// Some JDBC drivers (Oracle, MS SQL Server, IBM DB2) don't support getConnection(user, pass) on pooled connections
 			// Fall back to DriverManager for a direct, unpooled connection
 			try {
-				return DriverManager.getConnection( this.hikariDataSource.getJdbcUrl(), username, password );
+				return BoxConnection.of( DriverManager.getConnection( this.hikariDataSource.getJdbcUrl(), username, password ), this );
 			} catch ( SQLException fallbackException ) {
 				throw new DatabaseException(
 				    "Unable to open connection with provided credentials. Driver does not support pooled credential override and direct connection failed:",
@@ -273,6 +306,49 @@ public class DataSource implements Comparable<DataSource> {
 		} catch ( SQLException e ) {
 			throw new DatabaseException( "Unable to open connection:", e );
 		}
+	}
+
+	/**
+	 * Get a connection to the configured datasource with the provided username and password.
+	 * 
+	 * This method is deprecated. Use {@link #getBoxConnection(String, String)} instead.
+	 * 
+	 * <p>
+	 * <strong>Important:</strong> Some JDBC drivers do not support the pooled
+	 * {@code getConnection(username, password)} method and will throw a
+	 * {@link java.sql.SQLFeatureNotSupportedException}. In such cases, this method will
+	 * automatically fall back to using {@link DriverManager} to create a direct connection with the
+	 * provided credentials. This fallback connection will NOT be pooled and may impact performance
+	 * if used frequently.
+	 * <p>
+	 * <strong>Known drivers that do NOT support this feature:</strong>
+	 * <ul>
+	 * <li>Oracle (ojdbc)</li>
+	 * <li>Microsoft SQL Server (mssql-jdbc)</li>
+	 * <li>IBM DB2</li>
+	 * </ul>
+	 * <p>
+	 * <strong>Drivers that support this feature (but bypass pooling):</strong>
+	 * <ul>
+	 * <li>PostgreSQL (pgjdbc)</li>
+	 * <li>MySQL (mysql-connector-j)</li>
+	 * <li>MariaDB (mariadb-java-client)</li>
+	 * <li>H2</li>
+	 * </ul>
+	 * <p>
+	 * <strong>Best Practice:</strong> Define credentials in the datasource configuration rather than
+	 * overriding them per-query to ensure connection pooling is used.
+	 *
+	 * @param username The username to use for authentication
+	 * @param password The password to use for authentication
+	 *
+	 * @return A JDBC connection to the configured datasource.
+	 *
+	 * @throws DatabaseException if connection could not be established.
+	 */
+	@Deprecated
+	public Connection getConnection( String username, String password ) {
+		return getBoxConnection( username, password );
 	}
 
 	/**
@@ -300,7 +376,7 @@ public class DataSource implements Comparable<DataSource> {
 	 *         array is returned.
 	 */
 	public ExecutedQuery execute( String query ) {
-		try ( Connection conn = getConnection() ) {
+		try ( BoxConnection conn = getBoxConnection() ) {
 			return execute( query, conn, null );
 		} catch ( SQLException e ) {
 			throw new DatabaseException( e );
@@ -314,7 +390,7 @@ public class DataSource implements Comparable<DataSource> {
 	 * @param context The boxlang context for localization. Useful for localization; i.e., queries with date or time values.
 	 */
 	public ExecutedQuery execute( String query, IBoxContext context ) {
-		try ( Connection conn = getConnection() ) {
+		try ( BoxConnection conn = getBoxConnection() ) {
 			return execute( query, conn, context );
 		} catch ( SQLException e ) {
 			throw new DatabaseException( e );
@@ -334,24 +410,54 @@ public class DataSource implements Comparable<DataSource> {
 	 * @return An array of Structs, each representing a row of the result set (if any). If there are no results (say, for an UPDATE statement), an empty
 	 *         array is returned.
 	 */
-	public ExecutedQuery execute( String query, Connection conn, IBoxContext context ) {
+	public ExecutedQuery execute( String query, BoxConnection conn, IBoxContext context ) {
 		PendingQuery pendingQuery = new PendingQuery( context, query, new ArrayList<>() );
 		return pendingQuery.execute( conn, context );
 	}
 
 	/**
+	 * Execute a query on the connection, using the provided connection.
+	 * 
+	 * @deprecated Use {@link #execute(String, BoxConnection, IBoxContext)} instead.
+	 *             <p>
+	 *             Note the connection passed in is NOT closed automatically. It is up to the caller to close the connection when they are done with it. If you want
+	 *             an automanaged, i.e. autoclosed connection, use the <code>execute(String)</code> method.
+	 *
+	 * @param query The SQL query to execute.
+	 * @param conn  The connection to execute the query on. A connection is required - use <code>execute(String)</code> if you don't wish to
+	 *              provide one.
+	 *
+	 * @return An array of Structs, each representing a row of the result set (if any). If there are no results (say, for an UPDATE statement), an empty
+	 *         array is returned.
+	 */
+	@Deprecated
+	public ExecutedQuery execute( String query, Connection conn, IBoxContext context ) {
+		return execute( query, BoxConnection.of( conn, this ), context );
+	}
+
+	/**
 	 * Execute a query with a List of parameters on a given connection.
 	 */
-	public ExecutedQuery execute( String query, List<QueryParameter> parameters, Connection conn, IBoxContext context ) {
+	public ExecutedQuery execute( String query, List<QueryParameter> parameters, BoxConnection conn, IBoxContext context ) {
 		PendingQuery pendingQuery = new PendingQuery( context, query, parameters );
 		return pendingQuery.execute( conn, context );
+	}
+
+	/**
+	 * Execute a query with a List of parameters on a given connection.
+	 * 
+	 * @deprecated Use {@link #execute(String, List, BoxConnection, IBoxContext)} instead.
+	 */
+	@Deprecated
+	public ExecutedQuery execute( String query, List<QueryParameter> parameters, Connection conn, IBoxContext context ) {
+		return execute( query, parameters, BoxConnection.of( conn, this ), context );
 	}
 
 	/**
 	 * Execute a query with a List of parameters on the default connection.
 	 */
 	public ExecutedQuery execute( String query, List<QueryParameter> parameters, IBoxContext context ) {
-		try ( Connection conn = getConnection() ) {
+		try ( BoxConnection conn = getBoxConnection() ) {
 			return execute( query, parameters, conn, context );
 		} catch ( SQLException e ) {
 			throw new DatabaseException( e );
@@ -361,16 +467,26 @@ public class DataSource implements Comparable<DataSource> {
 	/**
 	 * Execute a query with an array of parameters on a given connection.
 	 */
-	public ExecutedQuery execute( String query, Array parameters, Connection conn, IBoxContext context ) {
+	public ExecutedQuery execute( String query, Array parameters, BoxConnection conn, IBoxContext context ) {
 		PendingQuery pendingQuery = new PendingQuery( context, query, parameters, new QueryOptions( new Struct() ) );
 		return pendingQuery.execute( conn, context );
+	}
+
+	/**
+	 * Execute a query with an array of parameters on a given connection.
+	 * 
+	 * @deprecated Use {@link #execute(String, Array, BoxConnection, IBoxContext)} instead.
+	 */
+	@Deprecated
+	public ExecutedQuery execute( String query, Array parameters, Connection conn, IBoxContext context ) {
+		return execute( query, parameters, BoxConnection.of( conn, this ), context );
 	}
 
 	/**
 	 * Execute a query with an array of parameters on the default connection.
 	 */
 	public ExecutedQuery execute( String query, Array parameters, IBoxContext context ) {
-		try ( Connection conn = getConnection() ) {
+		try ( BoxConnection conn = getBoxConnection() ) {
 			return execute( query, parameters, conn, context );
 		} catch ( SQLException e ) {
 			throw new DatabaseException( e );
@@ -380,16 +496,26 @@ public class DataSource implements Comparable<DataSource> {
 	/**
 	 * Execute a query with a struct of parameters on a given connection.
 	 */
-	public ExecutedQuery execute( String query, IStruct parameters, Connection conn, IBoxContext context ) {
+	public ExecutedQuery execute( String query, IStruct parameters, BoxConnection conn, IBoxContext context ) {
 		PendingQuery pendingQuery = new PendingQuery( context, query, parameters, new QueryOptions( new Struct() ) );
 		return pendingQuery.execute( conn, context );
+	}
+
+	/**
+	 * Execute a query with a struct of parameters on a given connection.
+	 * 
+	 * @deprecated Use {@link #execute(String, IStruct, BoxConnection, IBoxContext)} instead.
+	 */
+	@Deprecated
+	public ExecutedQuery execute( String query, IStruct parameters, Connection conn, IBoxContext context ) {
+		return execute( query, parameters, BoxConnection.of( conn, this ), context );
 	}
 
 	/**
 	 * Execute a query with a struct of parameters on the default connection.
 	 */
 	public ExecutedQuery execute( String query, IStruct parameters, IBoxContext context ) {
-		try ( Connection conn = getConnection() ) {
+		try ( BoxConnection conn = getBoxConnection() ) {
 			return execute( query, parameters, conn, context );
 		} catch ( SQLException e ) {
 			throw new DatabaseException( e );
