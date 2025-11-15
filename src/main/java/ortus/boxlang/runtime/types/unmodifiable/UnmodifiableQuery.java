@@ -310,6 +310,8 @@ public class UnmodifiableQuery extends Query implements IUnmodifiable {
 	/**
 	 * Duplicate the current query.
 	 *
+	 * @deprecated Use {@link #duplicate(IBoxContext)} instead.
+	 *
 	 * @return A copy of the current query.
 	 */
 	@Override

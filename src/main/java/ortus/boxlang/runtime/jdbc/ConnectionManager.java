@@ -306,6 +306,8 @@ public class ConnectionManager {
 	 * @param username   The username to use for authentication - will not check authentication if null.
 	 * @param password   The password to use for authentication - will not check authentication if null.
 	 *
+	 * @deprecated Use {@link #getBoxConnection(DataSource, String, String)} instead.
+	 *
 	 * @return A JDBC Connection object, possibly from a transactional context.
 	 */
 	@Deprecated
@@ -341,7 +343,7 @@ public class ConnectionManager {
 	/**
 	 * Release a JDBC Connection back to the pool. Will not release transactional connections.
 	 * 
-	 * This method is deprecated. Use releaseConnection(BoxConnection) instead.
+	 * This method is deprecated. Use {@link #releaseConnection(BoxConnection)} instead.
 	 *
 	 * @param connection The JDBC connection to release, acquired from ${@link #getConnection(DataSource)}. Can be null or already closed, in which case this method will do nothing.
 	 *
@@ -411,6 +413,8 @@ public class ConnectionManager {
 	 *
 	 * @param datasource The datasource to get a connection for.
 	 *
+	 * @deprecated Use {@link #getBoxConnection(DataSource)} instead.
+	 *
 	 * @return A JDBC Connection object, possibly from a transactional context.
 	 */
 	@Deprecated
@@ -434,7 +438,7 @@ public class ConnectionManager {
 	/**
 	 * Get a connection for the provided QueryOptions.
 	 * 
-	 * This method is deprecated. Use getBoxConnection(options) instead.
+	 * This method is deprecated. Use {@link #getBoxConnection(QueryOptions)} instead.
 	 *
 	 * @return A connection to the configured datasource.
 	 */
