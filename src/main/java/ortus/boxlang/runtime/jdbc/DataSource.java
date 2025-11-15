@@ -216,7 +216,7 @@ public class DataSource implements Comparable<DataSource> {
 	/**
 	 * Get a connection to the configured datasource.
 	 * 
-	 * This method is deprecated. Use getBoxConnection() instead.
+	 * This method is deprecated. Use {@link #getBoxConnection()} instead.
 	 *
 	 * @return A JDBC connection to the configured datasource.
 	 *
@@ -245,7 +245,7 @@ public class DataSource implements Comparable<DataSource> {
 	/**
 	 * Get an unpooled connection to the configured datasource.
 	 * 
-	 * This method is deprecated. Use getUnpooledBoxConnection() instead.
+	 * This method is deprecated. Use {@link #getUnpooledBoxConnection()} instead.
 	 * 
 	 * @return A JDBC connection to the configured datasource.
 	 */
@@ -311,7 +311,7 @@ public class DataSource implements Comparable<DataSource> {
 	/**
 	 * Get a connection to the configured datasource with the provided username and password.
 	 * 
-	 * This method is deprecated. Use getBoxConnection(username, password) instead.
+	 * This method is deprecated. Use {@link #getBoxConnection(String, String)} instead.
 	 * 
 	 * <p>
 	 * <strong>Important:</strong> Some JDBC drivers do not support the pooled
@@ -418,7 +418,7 @@ public class DataSource implements Comparable<DataSource> {
 	/**
 	 * Execute a query on the connection, using the provided connection.
 	 * 
-	 * @deprecated Use the version that accepts a BoxConnection instead.
+	 * @deprecated Use {@link #execute(String, BoxConnection, IBoxContext)} instead.
 	 *             <p>
 	 *             Note the connection passed in is NOT closed automatically. It is up to the caller to close the connection when they are done with it. If you want
 	 *             an automanaged, i.e. autoclosed connection, use the <code>execute(String)</code> method.
@@ -446,7 +446,7 @@ public class DataSource implements Comparable<DataSource> {
 	/**
 	 * Execute a query with a List of parameters on a given connection.
 	 * 
-	 * @deprecated Use the version that accepts a BoxConnection instead.
+	 * @deprecated Use {@link #execute(String, List, BoxConnection, IBoxContext)} instead.
 	 */
 	@Deprecated
 	public ExecutedQuery execute( String query, List<QueryParameter> parameters, Connection conn, IBoxContext context ) {
@@ -475,7 +475,7 @@ public class DataSource implements Comparable<DataSource> {
 	/**
 	 * Execute a query with an array of parameters on a given connection.
 	 * 
-	 * @deprecated Use the version that accepts a BoxConnection instead.
+	 * @deprecated Use {@link #execute(String, Array, BoxConnection, IBoxContext)} instead.
 	 */
 	@Deprecated
 	public ExecutedQuery execute( String query, Array parameters, Connection conn, IBoxContext context ) {
@@ -504,7 +504,7 @@ public class DataSource implements Comparable<DataSource> {
 	/**
 	 * Execute a query with a struct of parameters on a given connection.
 	 * 
-	 * @deprecated Use the version that accepts a BoxConnection instead.
+	 * @deprecated Use {@link #execute(String, IStruct, BoxConnection, IBoxContext)} instead.
 	 */
 	@Deprecated
 	public ExecutedQuery execute( String query, IStruct parameters, Connection conn, IBoxContext context ) {
