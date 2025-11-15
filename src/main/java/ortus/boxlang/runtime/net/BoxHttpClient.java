@@ -46,6 +46,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.async.BoxFuture;
 import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -60,6 +61,7 @@ import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.JSONUtil;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
@@ -692,6 +694,96 @@ public class BoxHttpClient {
 		 */
 		public BoxHttpRequest method( String method ) {
 			this.method = method.toUpperCase();
+			return this;
+		}
+
+		/**
+		 * Set the HTTP method to GET
+		 *
+		 * @return This builder for chaining
+		 */
+		public BoxHttpRequest get() {
+			this.method = "GET";
+			return this;
+		}
+
+		/**
+		 * Set the HTTP method to POST
+		 *
+		 * @return This builder for chaining
+		 */
+		public BoxHttpRequest post() {
+			this.method = "POST";
+			return this;
+		}
+
+		/**
+		 * Set the HTTP method to PUT
+		 *
+		 * @return This builder for chaining
+		 */
+		public BoxHttpRequest put() {
+			this.method = "PUT";
+			return this;
+		}
+
+		/**
+		 * Set the HTTP method to DELETE
+		 *
+		 * @return This builder for chaining
+		 */
+		public BoxHttpRequest delete() {
+			this.method = "DELETE";
+			return this;
+		}
+
+		/**
+		 * Set the HTTP method to PATCH
+		 *
+		 * @return This builder for chaining
+		 */
+		public BoxHttpRequest patch() {
+			this.method = "PATCH";
+			return this;
+		}
+
+		/**
+		 * Set the HTTP method to HEAD
+		 *
+		 * @return This builder for chaining
+		 */
+		public BoxHttpRequest head() {
+			this.method = "HEAD";
+			return this;
+		}
+
+		/**
+		 * Set the HTTP method to OPTIONS
+		 *
+		 * @return This builder for chaining
+		 */
+		public BoxHttpRequest options() {
+			this.method = "OPTIONS";
+			return this;
+		}
+
+		/**
+		 * Set the HTTP method to TRACE
+		 *
+		 * @return This builder for chaining
+		 */
+		public BoxHttpRequest trace() {
+			this.method = "TRACE";
+			return this;
+		}
+
+		/**
+		 * Alias for get() - familiar fetch API naming
+		 *
+		 * @return This builder for chaining
+		 */
+		public BoxHttpRequest fetch() {
+			this.method = "GET";
 			return this;
 		}
 
@@ -1390,7 +1482,7 @@ public class BoxHttpClient {
 		 *     .method( "POST" )
 		 *     .header( "Content-Type", "application/json" )
 		 *     .onComplete( result -> {
-		 * 	} )
+		 * 							} )
 		 *     .invoke();
 		 *
 		 * IStruct result = request.getHttpResult();
@@ -1674,6 +1766,50 @@ public class BoxHttpClient {
 			}
 
 			return this;
+		}
+
+		/**
+		 * Invoke the request asynchronously.
+		 * It will internally call invokeAndGet() when you invoke the future.
+		 *
+		 * @return A BoxFuture representing the asynchronous operation
+		 */
+		public BoxFuture<IStruct> invokeAsync() {
+			return BoxFuture.run(
+			    () -> invokeAndGet(),
+			    getHttpService().getHttpExecutor().executor()
+			);
+		}
+
+		/**
+		 * Invoke and get the result, throwing any exceptions encountered.
+		 *
+		 * @return The result struct
+		 */
+		public IStruct invokeAndGet() {
+			// Invoke the request
+			invoke();
+
+			// If there was an exception during the request, throw it now
+			if ( this.requestException != null ) {
+				throw new BoxRuntimeException( "Exception during HTTP request: " + this.requestException.getMessage(), this.requestException );
+			}
+
+			// Return the result struct
+			return this.httpResult;
+		}
+
+		/**
+		 * Invoke and get the result, parsing the fileContent as JSON.
+		 * Throws an exception if we cannot parse the JSON.
+		 *
+		 * @return The parsed JSON object
+		 */
+		public Object invokeAndGetAsJson() {
+			IStruct	result			= invokeAndGet();
+			// Convert the filecontent from JSON to BoxLang native
+			Object	inflatedJSON	= JSONUtil.fromJSON( result.get( Key.fileContent ) );
+			return JSONUtil.mapToBLTypes( inflatedJSON, true );
 		}
 
 		/**
