@@ -17,21 +17,21 @@
  */
 package ortus.boxlang.runtime.services;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.TimeUnit;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.async.executors.BoxScheduledExecutor;
 import ortus.boxlang.runtime.async.executors.BoxExecutor;
+import ortus.boxlang.runtime.async.executors.BoxScheduledExecutor;
 import ortus.boxlang.runtime.config.segments.ExecutorConfig;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -516,7 +516,9 @@ public class AsyncService extends BaseService {
 				}
 				break;
 			case VIRTUAL :
-				executor = Executors.newVirtualThreadPerTaskExecutor();
+				executor = Executors.newThreadPerTaskExecutor(
+				    Thread.ofVirtual().name( name + "-vt-", 0 ).factory()
+				);
 				break;
 			default :
 				executor = null;

@@ -37,7 +37,19 @@ public class SystemCacheClear extends BIF {
 	 * Valid caches
 	 */
 	private static final String[]	VALID_CACHES	= new String[] {
-	    "all", "template", "page", "component", "cfc", "class", "customtag", "ct", "query", "object", "tag", "function"
+	    "all",
+	    "cfc",
+	    "class",
+	    "component",
+	    "ct",
+	    "customtag",
+	    "function",
+	    "http",
+	    "object",
+	    "page",
+	    "query",
+	    "tag",
+	    "template"
 	};
 
 	private static final String		DEFAULT_CACHE	= "all";
@@ -82,6 +94,11 @@ public class SystemCacheClear extends BIF {
 		// Class resolvers: component, cfc, left for compat
 		if ( clearAll || cacheName.equals( "component" ) || cacheName.equals( "cfc" ) || cacheName.equals( "class" ) ) {
 			runtime.getClassLocator().clear();
+		}
+
+		// HTTP Clients
+		if ( clearAll || cacheName.equals( "http" ) ) {
+			runtime.getHttpService().clearAllClients();
 		}
 
 		// Query Caching
