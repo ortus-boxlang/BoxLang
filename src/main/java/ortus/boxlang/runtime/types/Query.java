@@ -47,6 +47,8 @@ import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
+import ortus.boxlang.runtime.jdbc.BoxStatement;
+import ortus.boxlang.runtime.jdbc.drivers.IJDBCDriver;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.InterceptorService;
@@ -203,18 +205,21 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	/**
 	 * Create a new query and populate it from the given JDBC ResultSet.
 	 *
+	 * @param statement BoxStatement instance.
 	 * @param resultSet JDBC result set.
 	 */
-	public static Query fromResultSet( ResultSet resultSet ) {
-		return fromResultSet( resultSet, -1 );
+	public static Query fromResultSet( BoxStatement statement, ResultSet resultSet ) {
+		return fromResultSet( statement, resultSet, -1 );
 	}
 
 	/**
 	 * Create a new query and populate it from the given JDBC ResultSet.
 	 *
+	 * @param statement BoxStatement instance.
 	 * @param resultSet JDBC result set.
+	 * @param maxRows   Maximum number of rows to fetch, -1 for all rows.
 	 */
-	public static Query fromResultSet( ResultSet resultSet, int maxRows ) {
+	public static Query fromResultSet( BoxStatement statement, ResultSet resultSet, int maxRows ) {
 		Query query = new Query();
 
 		if ( resultSet == null ) {
@@ -222,10 +227,15 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		}
 
 		try {
+			IJDBCDriver			driver				= statement.getBoxConnection().getDataSource()
+			    .getConfiguration()
+			    .getDriver();
 			ResultSetMetaData	resultSetMetaData	= resultSet.getMetaData();
 			int					columnCount			= resultSetMetaData.getColumnCount();
 			// This will map which column in the JDBC result corresponds with the ordinal position of each query column
 			List<Integer>		columnMapList		= new ArrayList<>();
+			// This will store the SQL types for each column in the order they are added to the query
+			int[]				columnSQLTypes		= new int[ columnCount ];
 
 			int					emptyCounter		= 0;
 			// The column count starts from 1
@@ -240,9 +250,11 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 					// Add it
 					query.addColumn(
 					    colName,
-					    QueryColumnType.fromSQLType( resultSetMetaData.getColumnType( i ) ) );
+					    driver.mapSQLTypeToQueryColumnType( resultSetMetaData.getColumnType( i ) ) );
 					// And remember this col possition as where the data will come from
 					columnMapList.add( i );
+					// Store the SQL type for this column (columnMapList.size() - 1 is the current column index)
+					columnSQLTypes[ i - 1 ] = resultSetMetaData.getColumnType( i );
 				}
 			}
 
@@ -255,8 +267,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 				rowCount++;
 				Object[] row = new Object[ columnCount ];
 				for ( int i = 0; i < columnCount; i++ ) {
-					// Get the data in the JDBC column based on our column map
-					row[ i ] = resultSet.getObject( columnMap[ i ] );
+					// Get the data in the JDBC column based on our column map and use the corresponding SQL type
+					row[ i ] = driver.transformValue( columnSQLTypes[ i ], resultSet.getObject( columnMap[ i ] ) );
 				}
 				query.addRow( row );
 			}

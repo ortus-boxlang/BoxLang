@@ -24,6 +24,7 @@ import java.util.Map;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.jdbc.BoxStatement;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -87,12 +88,13 @@ public class UnmodifiableQuery extends Query implements IUnmodifiable {
 	/**
 	 * Create a new query and populate it from the given JDBC ResultSet.
 	 *
+	 * @param statement BoxStatement instance.
 	 * @param resultSet JDBC result set.
 	 *
 	 * @return Query object
 	 */
-	public static UnmodifiableQuery fromResultSet( ResultSet resultSet ) {
-		return Query.fromResultSet( resultSet ).toUnmodifiable();
+	public static UnmodifiableQuery fromResultSet( BoxStatement statement, ResultSet resultSet ) {
+		return Query.fromResultSet( statement, resultSet ).toUnmodifiable();
 	}
 
 	/**

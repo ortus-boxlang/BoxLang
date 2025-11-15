@@ -49,7 +49,7 @@ public class Transaction implements ITransaction {
 	/**
 	 * The underlying JDBC connection.
 	 */
-	private Connection					connection;
+	private BoxConnection				connection;
 
 	/**
 	 * The datasource associated with this transaction.
@@ -119,12 +119,12 @@ public class Transaction implements ITransaction {
 	 * This method should be called by queries executed inside a transaction body to ensure they run on the correct (transactional) connection.
 	 * Upon first execution, this method will acquire a connection from the datasource and store it for further use within the transaction.
 	 */
-	public Connection getConnection() {
+	public BoxConnection getBoxConnection() {
 		if ( this.connection == null ) {
 			if ( this.datasource == null ) {
 				throw new BoxRuntimeException( "Transaction does not have a set datasource; cannot acquire connection." );
 			}
-			this.connection = this.datasource.getConnection();
+			this.connection = this.datasource.getBoxConnection();
 			if ( this.connection == null ) {
 				throw new BoxRuntimeException( "Failed to acquire connection from datasource" );
 			}
@@ -152,6 +152,20 @@ public class Transaction implements ITransaction {
 			}
 		}
 		return this.connection;
+	}
+
+	/**
+	 * Get (creating if none found) the connection associated with this transaction.
+	 * 
+	 * This method is deprecated. Use getBoxConnection() instead.
+	 * 
+	 * <p>
+	 * This method should be called by queries executed inside a transaction body to ensure they run on the correct (transactional) connection.
+	 * Upon first execution, this method will acquire a connection from the datasource and store it for further use within the transaction.
+	 */
+	@Deprecated
+	public Connection getConnection() {
+		return getBoxConnection();
 	}
 
 	/**

@@ -253,7 +253,7 @@ public class ConnectionManager {
 	 *
 	 * @return A JDBC Connection object, possibly from a transactional context.
 	 */
-	public Connection getConnection( DataSource datasource, String username, String password ) {
+	public BoxConnection getBoxConnection( DataSource datasource, String username, String password ) {
 		if ( isInTransaction() ) {
 			logger.debug(
 			    "Am inside transaction context; will check datasource and authentication to determine if we should return the transactional connection" );
@@ -263,23 +263,54 @@ public class ConnectionManager {
 				logger.debug( "Transaction datasource is null; setting it to the provided datasource" );
 				return getTransaction()
 				    .setDataSource( datasource )
-				    .getConnection();
+				    .getBoxConnection();
 			}
 			boolean isSameDatasource = transactionalDatasource.equals( datasource );
 			if ( isSameDatasource
 			    && ( username == null || transactionalDatasource.isAuthenticationMatch( username, password ) ) ) {
 				logger.debug(
 				    "Both the query datasource argument and authentication matches; proceeding with established transactional connection" );
-				return getTransaction().getConnection();
+				return getTransaction().getBoxConnection();
 			} else {
 				// A different datasource was specified OR the authentication check failed; thus this is NOT a transactional query and we should use a new
 				// connection.
 				logger.debug( "Datasource OR authentication does not match transaction; Will ignore transaction context and return a new JDBC connection" );
-				return datasource.getConnection( username, password );
+				return datasource.getBoxConnection( username, password );
 			}
 		}
 		logger.debug( "Not within transaction; obtaining new connection from pool" );
-		return datasource.getConnection( username, password );
+		return datasource.getBoxConnection( username, password );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Connection Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Get a JDBC Connection to the specified datasource.
+	 * 
+	 * This is deprecated. Use getBoxConnection() instead. It contains the JDBC Connection as well as the BoxLang DataSource.
+	 * <p>
+	 * This method uses the following logic to pull the correct connection for the given query/context:
+	 * <ol>
+	 * <li>check for a transactional context.</li>
+	 * <li>If an active transaction is found, this method compares the provided datasource against the transaction's datasource.</li>
+	 * <li>If the datasources match, this method then checks the username/password authentication (if not null)</li>
+	 * <li>if all those checks succeed, the transactional connection is returned.
+	 * <li>if any of those checks fail, a new connection is returned from the provided datasource.</li>
+	 * </ol>
+	 *
+	 * @param datasource The datasource to get a connection for.
+	 * @param username   The username to use for authentication - will not check authentication if null.
+	 * @param password   The password to use for authentication - will not check authentication if null.
+	 *
+	 * @return A JDBC Connection object, possibly from a transactional context.
+	 */
+	@Deprecated
+	public Connection getConnection( DataSource datasource, String username, String password ) {
+		return getBoxConnection( datasource, username, password );
 	}
 
 	/**
@@ -289,7 +320,7 @@ public class ConnectionManager {
 	 *
 	 * @return True if the connection was successfully released, otherwise false.
 	 */
-	public boolean releaseConnection( Connection connection ) {
+	public boolean releaseConnection( BoxConnection connection ) {
 		if ( isInTransaction() ) {
 			logger.debug( "Am inside transaction context; skipping connection release." );
 			return false;
@@ -308,6 +339,20 @@ public class ConnectionManager {
 	}
 
 	/**
+	 * Release a JDBC Connection back to the pool. Will not release transactional connections.
+	 * 
+	 * This method is deprecated. Use releaseConnection(BoxConnection) instead.
+	 *
+	 * @param connection The JDBC connection to release, acquired from ${@link #getConnection(DataSource)}. Can be null or already closed, in which case this method will do nothing.
+	 *
+	 * @return True if the connection was successfully released, otherwise false.
+	 */
+	@Deprecated
+	public boolean releaseConnection( Connection connection ) {
+		return releaseConnection( BoxConnection.of( connection, null ) );
+	}
+
+	/**
 	 * Get a JDBC Connection to a specified datasource.
 	 * <p>
 	 * This method uses the following logic to pull the correct connection for the given query/context:
@@ -322,7 +367,7 @@ public class ConnectionManager {
 	 *
 	 * @return A JDBC Connection object, possibly from a transactional context.
 	 */
-	public Connection getConnection( DataSource datasource ) {
+	public BoxConnection getBoxConnection( DataSource datasource ) {
 		if ( isInTransaction() ) {
 			logger.debug( "Am inside transaction context; will check datasource to determine if we should return the transactional connection" );
 
@@ -331,23 +376,46 @@ public class ConnectionManager {
 				logger.debug( "Transaction datasource is null; setting it to the provided datasource" );
 				return getTransaction()
 				    .setDataSource( datasource )
-				    .getConnection();
+				    .getBoxConnection();
 			}
 			boolean isSameDatasource = transactionalDatasource.equals( datasource );
 			if ( isSameDatasource ) {
 				logger.debug(
 				    "The query datasource matches the transaction datasource; proceeding with established transactional connection" );
-				return getTransaction().getConnection();
+				return getTransaction().getBoxConnection();
 			} else {
 				// A different datasource was specified OR the authentication check failed; thus this is NOT a transactional query and we should use a new
 				// connection.
 				logger.debug( "Datasource does not match transaction; Will ignore transaction context and return a new JDBC connection" );
-				return datasource.getConnection();
+				return datasource.getBoxConnection();
 			}
 		}
 
 		logger.debug( "Not within transaction; obtaining new connection from the datasource object" );
-		return datasource.getConnection();
+		return datasource.getBoxConnection();
+	}
+
+	/**
+	 * Get a JDBC Connection to a specified datasource.
+	 * 
+	 * This method is deprecated. Use getBoxConnection() instead.
+	 * 
+	 * <p>
+	 * This method uses the following logic to pull the correct connection for the given query/context:
+	 * <ol>
+	 * <li>check for a transactional context.</li>
+	 * <li>If an active transaction is found, this method compares the provided datasource against the transaction's datasource.</li>
+	 * <li>If the datasources match, the transactional connection is returned.
+	 * <li>if not, a new connection is returned from the provided datasource.</li>
+	 * </ol>
+	 *
+	 * @param datasource The datasource to get a connection for.
+	 *
+	 * @return A JDBC Connection object, possibly from a transactional context.
+	 */
+	@Deprecated
+	public Connection getConnection( DataSource datasource ) {
+		return getBoxConnection( datasource );
 	}
 
 	/**
@@ -355,12 +423,24 @@ public class ConnectionManager {
 	 *
 	 * @return A connection to the configured datasource.
 	 */
-	public Connection getConnection( QueryOptions options ) {
+	public BoxConnection getBoxConnection( QueryOptions options ) {
 		if ( options.wantsUsernameAndPassword() ) {
-			return getConnection( getDataSource( options ), options.username, options.password );
+			return getBoxConnection( getDataSource( options ), options.username, options.password );
 		} else {
-			return getConnection( getDataSource( options ) );
+			return getBoxConnection( getDataSource( options ) );
 		}
+	}
+
+	/**
+	 * Get a connection for the provided QueryOptions.
+	 * 
+	 * This method is deprecated. Use getBoxConnection(options) instead.
+	 *
+	 * @return A connection to the configured datasource.
+	 */
+	@Deprecated
+	public Connection getConnection( QueryOptions options ) {
+		return getBoxConnection( options );
 	}
 
 	/**

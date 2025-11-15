@@ -4,7 +4,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 
 import org.junit.jupiter.api.AfterAll;
@@ -19,6 +18,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.jdbc.BoxConnection;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -152,8 +152,8 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		        "username", "sa",
 		        "password", "123456Password"
 		    ) );
-		try ( Connection conn = myDataSource.getConnection() ) {
-			assertThat( conn ).isInstanceOf( Connection.class );
+		try ( BoxConnection conn = myDataSource.getBoxConnection() ) {
+			assertThat( conn ).isInstanceOf( BoxConnection.class );
 		}
 		myDataSource.shutdown();
 	}

@@ -23,6 +23,7 @@ import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
+import ortus.boxlang.runtime.jdbc.BoxConnection;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.jdbc.ExecutedQuery;
 import ortus.boxlang.runtime.jdbc.PendingQuery;
@@ -141,7 +142,7 @@ public class QueryExecute extends BIF {
 		// QoQ uses a special QoQ connection
 		if ( options.isQoQ() ) {
 			Connection connection = new QoQConnection( context );
-			executedQuery = pendingQuery.execute( connection, context );
+			executedQuery = pendingQuery.execute( BoxConnection.of( connection, null ), context );
 		} else {
 			// whereas normal queries use the JDBC connection manager
 			IJDBCCapableContext	jdbcContext			= context.getParentOfType( IJDBCCapableContext.class );
