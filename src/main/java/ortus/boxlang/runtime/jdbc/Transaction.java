@@ -157,7 +157,7 @@ public class Transaction implements ITransaction {
 	/**
 	 * Get (creating if none found) the connection associated with this transaction.
 	 * 
-	 * This method is deprecated. Use getBoxConnection() instead.
+	 * This method is deprecated. Use {@link #getBoxConnection()} instead.
 	 * 
 	 * <p>
 	 * This method should be called by queries executed inside a transaction body to ensure they run on the correct (transactional) connection.

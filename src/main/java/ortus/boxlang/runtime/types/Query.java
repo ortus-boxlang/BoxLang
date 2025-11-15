@@ -1318,6 +1318,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	/**
 	 * Duplicate the current query.
 	 *
+	 * @deprecated Use {@link #duplicate(IBoxContext)} instead.
+	 *
 	 * @return A copy of the current query.
 	 */
 	@Deprecated
@@ -1338,6 +1340,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	/**
 	 * Duplicate the current query.
+	 *
+	 * @deprecated Use {@link #duplicate(boolean, IBoxContext)} instead.
 	 *
 	 * @param deep If true, nested objects will be duplicated as well.
 	 *
