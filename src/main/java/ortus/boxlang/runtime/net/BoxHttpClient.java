@@ -1390,7 +1390,7 @@ public class BoxHttpClient {
 		 *     .method( "POST" )
 		 *     .header( "Content-Type", "application/json" )
 		 *     .onComplete( result -> {
-		 * 							} )
+		 * 	} )
 		 *     .invoke();
 		 *
 		 * IStruct result = request.getHttpResult();
