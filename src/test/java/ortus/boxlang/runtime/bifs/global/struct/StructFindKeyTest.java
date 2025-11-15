@@ -190,12 +190,17 @@ public class StructFindKeyTest {
 		    	}
 		    };
 		       result = myStruct.findKey( "pig.total" );
+		    result[ 1 ].owner.MY_NEW_KEY = "do-something";
 		       """,
 		    context );
 
 		assertTrue( variables.get( result ) instanceof Array );
 		assertEquals( variables.getAsArray( result ).size(), 1 );
 		assertEquals( StructCaster.cast( variables.getAsArray( result ).get( 0 ) ).get( Key.value ), 5 );
+
+		IStruct pigStruct = variables.getAsStruct( Key.of( "myStruct" ) ).getAsStruct( Key.of( "pig" ) );
+		assertTrue( pigStruct.containsKey( Key.of( "MY_NEW_KEY" ) ) );
+		assertEquals( pigStruct.getAsString( Key.of( "MY_NEW_KEY" ) ), "do-something" );
 	}
 
 	@DisplayName( "It tests the owner values" )
@@ -315,41 +320,69 @@ public class StructFindKeyTest {
 		//@formatter:off
 		instance.executeSource(
 		    """
-		    myStruct = {
-		    	level1: {
-		    		level2: {
-		    			targetKey: "originalValue",
-		    			otherKey: "unchanged"
-		    		}
-		    	}
-		    };
-		    
-		    // Find the nested key
-		    result = StructFindKey( myStruct, "targetKey" );
-		    firstResult = result[1];
-		    
-		    // Modify the owner struct by adding a new key - owner should be level2
-		    firstResult.owner.newKey = "addedValue";
-		    
-		    // Modify an existing value through the owner - owner should be level2  
-		    firstResult.owner.targetKey = "modifiedValue";
+		    void function appendMyNewKey(required struct results) {
+				var matches = StructFindKey(arguments.results, "needle", "all");
+				for (var match in matches) {
+					match.owner["MY_NEW_KEY"] = "do-something-with:#match.value.id#";
+				}
+			}
+
+			result = mockResponse();
+			appendMyNewKey( result );
+
+			struct function mockResponse() {
+				return {
+					"alpha" : {
+						"charlie" : {
+							"needle" : {
+								"id" : "acn"
+							},
+							"delta" : {
+								"hotel" : {
+									"needle" : {
+										"id" : "acd"
+									}
+								}
+							}
+						}
+					},
+					"bravo" : {
+						"echo" : {
+							"foxtrot"     : {
+								"golf" : {
+									"needle" : {
+										"id" : "befg"
+									}
+									
+								}
+							}
+						}
+					}
+				};
+			}
 		    """,
 		    context );
 		//@formatter:on
 
 		// Verify that the modifications are reflected in the original myStruct
-		IStruct	myStruct	= variables.getAsStruct( Key.of( "myStruct" ) );
-		IStruct	level2		= myStruct.getAsStruct( Key.of( "level1" ) ).getAsStruct( Key.of( "level2" ) );
+		IStruct	myStruct	= variables.getAsStruct( result );
+		IStruct	level2		= myStruct.getAsStruct( Key.of( "alpha" ) ).getAsStruct( Key.of( "charlie" ) );
+		IStruct	level3		= level2.getAsStruct( Key.of( "delta" ) ).getAsStruct( Key.of( "hotel" ) );
 
 		// Check that the new key was added to level2 through the owner reference
-		assertTrue( level2.containsKey( Key.of( "newKey" ) ) );
-		assertEquals( "addedValue", level2.get( Key.of( "newKey" ) ) );
+		assertTrue( level2.containsKey( Key.of( "MY_NEW_KEY" ) ) );
+		assertTrue( level2.getAsString( Key.of( "MY_NEW_KEY" ) ).contains( "do-something" ) );
 
-		// Check that the existing value was modified in level2 through the owner reference
-		assertEquals( "modifiedValue", level2.get( Key.of( "targetKey" ) ) );
+		assertTrue( level3.containsKey( Key.of( "MY_NEW_KEY" ) ) );
+		assertTrue( level3.getAsString( Key.of( "MY_NEW_KEY" ) ).contains( "do-something" ) );
 
-		// Check that other values remain unchanged
-		assertEquals( "unchanged", level2.get( Key.of( "otherKey" ) ) );
+		IStruct levelBravo = myStruct.getAsStruct( Key.of( "bravo" ) ).getAsStruct( Key.of( "echo" ) )
+		    .getAsStruct( Key.of( "foxtrot" ) ).getAsStruct( Key.of( "golf" ) );
+
+		// Check that the new key was added to levelBravo through the owner reference
+		assertTrue( levelBravo.containsKey( Key.of( "MY_NEW_KEY" ) ) );
+		assertTrue( levelBravo.getAsString( Key.of( "MY_NEW_KEY" ) ).contains( "do-something" ) );
+
 	}
 
 }

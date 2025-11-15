@@ -728,78 +728,87 @@ public class StructUtil {
 	 * @return a stream of structs containing the owner, path, and value of the found key
 	 */
 	public static Stream<IStruct> findKey( IStruct struct, String key ) {
-		String[]			keyParts	= key.toLowerCase().split( "\\." );
-		IStruct				flatMap		= toFlatMap( struct );
+		String				searchKey	= key.toLowerCase();
 		ArrayList<IStruct>	results		= new ArrayList<IStruct>();
 
-		// If we have a single key and find it in the root add that result first
-		if ( keyParts.length == 1 && struct.containsKey( Key.of( key ) ) ) {
-			results.add(
-			    Struct.of(
-			        Key.owner, struct,
-			        Key.path, "." + key.toLowerCase(),
-			        Key.value, struct.get( Key.of( key ) )
-			    )
+		// Check if the key contains dots - indicating a path search
+		if ( searchKey.contains( "." ) ) {
+			// Use the toFlatMap approach for dot notation searches
+			IStruct flatMap = toFlatMap( struct );
+			results.addAll(
+			    flatMap.entrySet()
+			        .stream()
+			        .filter( entry -> entry.getKey().getName().toLowerCase().equals( searchKey ) )
+			        .map( entry -> {
+				        Struct returnStruct	= new Struct( Struct.TYPES.LINKED );
+				        String keyName		= entry.getKey().getName();
+				        String[] pathParts	= keyName.split( "\\." );
+
+				        // Find the immediate parent struct that contains the target key
+				        IStruct ownerStruct	= struct;
+				        if ( pathParts.length > 1 ) {
+					        // Navigate to the parent struct
+					        for ( int i = 0; i < pathParts.length - 1; i++ ) {
+						        ownerStruct = ownerStruct.getAsStruct( Key.of( pathParts[ i ] ) );
+					        }
+				        }
+
+				        returnStruct.put(
+				            Key.owner,
+				            ownerStruct
+				        );
+				        returnStruct.put(
+				            Key.path,
+				            "." + keyName
+				        );
+				        returnStruct.put(
+				            Key.value,
+				            entry.getValue()
+				        );
+				        return returnStruct;
+			        } )
+			        .collect( Collectors.toList() )
 			);
+		} else {
+			// Use recursive search for simple key searches (supports intermediate structs)
+			findKeyRecursive( struct, struct, searchKey, "", results );
 		}
 
-		// Now add any results that are nested
-		results.addAll(
-		    flatMap.entrySet()
-		        .stream()
-		        .filter( entry -> {
-			        String[] splitParts = entry.getKey().getName().toLowerCase().split( "\\." );
-			        String stringKey = entry.getKey().getName().toLowerCase();
-			        return splitParts.length > 1
-			            ? splitParts[ splitParts.length - 1 ].equals( key.toLowerCase() ) || stringKey.equals( key.toLowerCase() )
-			            // For single keys make sure we check that it wasn't added above
-			            : results.stream()
-			                .filter(
-			                    result -> {
-				                    Object resultObj = result.get( Key.value );
-				                    Object entryObj = entry.getValue();
-				                    if ( resultObj == null ) {
-					                    return entry.getValue() == null;
-				                    } else {
-					                    return entryObj != null ? resultObj.equals( entryObj ) : false;
-				                    }
-			                    }
-			                )
-			                .count() == 0
-			                && stringKey.equals( key.toLowerCase() );
-		        } )
-		        .map( entry -> {
-			        Struct returnStruct	= new Struct( Struct.TYPES.LINKED );
-			        String keyName		= entry.getKey().getName();
-			        String[] pathParts	= keyName.split( "\\." );
-
-			        // Find the immediate parent struct that contains the target key
-			        IStruct ownerStruct	= struct;
-			        if ( pathParts.length > 1 ) {
-				        // Navigate to the parent struct
-				        for ( int i = 0; i < pathParts.length - 1; i++ ) {
-					        ownerStruct = ownerStruct.getAsStruct( Key.of( pathParts[ i ] ) );
-				        }
-			        }
-
-			        returnStruct.put(
-			            Key.owner,
-			            ownerStruct
-			        );
-			        returnStruct.put(
-			            Key.path,
-			            "." + keyName
-			        );
-			        returnStruct.put(
-			            Key.value,
-			            entry.getValue()
-			        );
-			        return returnStruct;
-		        } ).collect( Collectors.toList() )
-		);
-
 		return results.stream();
+	}
 
+	/**
+	 * Helper method to recursively find keys in nested structures
+	 *
+	 * @param rootStruct    the original root struct for reference
+	 * @param currentStruct the current struct being searched
+	 * @param searchKey     the key to search for (lowercase)
+	 * @param currentPath   the current path from root (for building result paths)
+	 * @param results       the list to collect matching results
+	 */
+	private static void findKeyRecursive( IStruct rootStruct, IStruct currentStruct, String searchKey, String currentPath, ArrayList<IStruct> results ) {
+		for ( Map.Entry<Key, Object> entry : currentStruct.entrySet() ) {
+			String	keyName		= entry.getKey().getName();
+			String	fullPath	= currentPath.isEmpty() ? keyName : currentPath + "." + keyName;
+			Object	value		= entry.getValue();
+
+			// Check if this key matches what we're looking for
+			if ( keyName.toLowerCase().equals( searchKey ) ) {
+				// Find the immediate parent struct that contains this key
+				IStruct ownerStruct = currentStruct;
+
+				results.add( Struct.of(
+				    Key.owner, ownerStruct,
+				    Key.path, "." + fullPath.toLowerCase(),
+				    Key.value, value
+				) );
+			}
+
+			// If the value is a struct, recursively search it
+			if ( value instanceof IStruct ) {
+				findKeyRecursive( rootStruct, ( IStruct ) value, searchKey, fullPath, results );
+			}
+		}
 	}
 
 	/**
