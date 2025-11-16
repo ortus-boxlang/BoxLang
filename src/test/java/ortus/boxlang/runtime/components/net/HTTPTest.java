@@ -1021,12 +1021,11 @@ public class HTTPTest {
 		instance.executeSource(
 		    String.format( """
 				callbackData = {};
-				onRequestStartFn = (data) => {
+				onRequestStartFn = ( result ) => {
 					callbackData.called = true;
-					callbackData.url = data.url;
-					callbackData.method = data.method;
-					callbackData.hasHeaders = structKeyExists(data, 'headers');
-					callbackData.hasHttpResult = structKeyExists(data, 'httpResult');
+					callbackData.url = result.request.url;
+					callbackData.method = result.request.method;
+					callbackData.hasHeaders = structKeyExists( result.request, 'headers');
 				};
 				bx:http url="%s" onRequestStart=onRequestStartFn;
 				result = bxhttp;
@@ -1042,7 +1041,6 @@ public class HTTPTest {
 		assertThat( callbackData.getAsString( Key.of( "url" ) ) ).contains( "/test-callback" );
 		assertThat( callbackData.getAsString( Key.of( "method" ) ) ).isEqualTo( "GET" );
 		assertThat( callbackData.getAsBoolean( Key.of( "hasHeaders" ) ) ).isTrue();
-		assertThat( callbackData.getAsBoolean( Key.of( "hasHttpResult" ) ) ).isTrue();
 
 		IStruct httpResult = variables.getAsStruct( result );
 		assertThat( httpResult.get( Key.statusCode ) ).isEqualTo( 200 );
@@ -1180,12 +1178,12 @@ public class HTTPTest {
 		instance.executeSource(
 		    String.format( """
 				requestInfo = {};
-				onRequestStartFn = (data) => {
+				onRequestStartFn = ( result ) => {
 					// Capture request details
-					requestInfo.url = data.url;
-					requestInfo.method = data.method;
-					requestInfo.headerCount = structCount(data.headers);
-					requestInfo.executionTime = data.httpResult.executionTime ?: 0;
+					requestInfo.url = result.request.url;
+					requestInfo.method = result.request.method;
+					requestInfo.headerCount = structCount(result.request.headers);
+					requestInfo.executionTime = result.executionTime ?: 0;
 				};
 				bx:http url="%s" onRequestStart=onRequestStartFn;
 				result = bxhttp;
@@ -1267,14 +1265,14 @@ public class HTTPTest {
 		instance.executeSource(
 		    String.format(
 		        """
-					onChunkFn = (data) => {
+					onChunkFn = ( chunkNumber, content, totalBytes , result, httpClient, response ) => {
 						chunkData.chunkCount++;
 						arrayAppend(chunkData.chunks, {
-							chunkNumber: data.chunkNumber,
-							content: data.content,
-							totalBytes: data.totalBytes
+							chunkNumber: chunkNumber,
+							content: content,
+							totalBytes: totalBytes
 						});
-						chunkData.totalContent &= data.content;
+						chunkData.totalContent &= content;
 					};
 					bx:http url="%s" onChunk=onChunkFn;
 					result = bxhttp;
@@ -1425,11 +1423,10 @@ public class HTTPTest {
 		instance.executeSource(
 		    String.format(
 		        """
-					onChunkFn = (data) => {
-						metadataTracker.hasStatusCode = structKeyExists(data, 'statusCode');
-						metadataTracker.hasHeaders = structKeyExists(data, 'headers');
-						metadataTracker.hasHttpResult = structKeyExists(data, 'httpResult');
-						metadataTracker.statusCode = data.statusCode ?: 0;
+					onChunkFn = (currentChunk, line, totalBytes, result, httpClient, response ) => {
+						metadataTracker.hasStatusCode = structKeyExists(result, 'statusCode');
+						metadataTracker.hasHeaders = structKeyExists(result, 'responseHeader');
+						metadataTracker.statusCode = result.statusCode ?: 0;
 					};
 					bx:http url="%s" onChunk=onChunkFn;
 					result = bxhttp;
@@ -1443,7 +1440,6 @@ public class HTTPTest {
 		IStruct metadataTracker = variables.getAsStruct( Key.of( "metadataTracker" ) );
 		assertThat( metadataTracker.getAsBoolean( Key.of( "hasStatusCode" ) ) ).isTrue();
 		assertThat( metadataTracker.getAsBoolean( Key.of( "hasHeaders" ) ) ).isTrue();
-		assertThat( metadataTracker.getAsBoolean( Key.of( "hasHttpResult" ) ) ).isTrue();
 		assertThat( metadataTracker.getAsInteger( Key.of( "statusCode" ) ) ).isEqualTo( 200 );
 	}
 
@@ -1473,9 +1469,9 @@ public class HTTPTest {
 		instance.executeSource(
 		    String.format(
 		        """
-					onChunkFn = (data) => {
+					onChunkFn = (chunkNumber, content, totalBytes, result, httpClient, response) => {
 						errorTracker.chunksCalled = true;
-						errorTracker.statusCode = data.statusCode;
+						errorTracker.statusCode = result.statusCode;
 					};
 					bx:http url="%s" onChunk=onChunkFn throwOnError=false;
 					result = bxhttp;
@@ -1805,6 +1801,238 @@ public class HTTPTest {
 		try ( FileOutputStream fos = new FileOutputStream( certPath ) ) {
 			keyStore.store( fos, certPassword.toCharArray() );
 		}
+	}
+
+	@DisplayName( "Test asJSON transformer" )
+	@Test
+	public void testAsJSONTransformer( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    get( urlEqualTo( "/json-data" ) )
+		        .willReturn(
+		            aResponse()
+		                .withStatus( 200 )
+		                .withHeader( "Content-Type", "application/json" )
+		                .withBody( "{\"name\":\"John\",\"age\":30,\"active\":true}" )
+		        )
+		);
+
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+		// @formatter:off
+		instance.executeSource(
+		    String.format( """
+		                   result = http( "%s/json-data" )
+		                       .get()
+		                       .asJSON()
+		                       .send();
+		                   """, baseURL ),
+		    context, BoxSourceType.BOXSCRIPT
+		);
+		// @formatter:on
+
+		Object jsonResult = variables.get( result );
+		assertThat( jsonResult ).isInstanceOf( IStruct.class );
+		IStruct data = ( IStruct ) jsonResult;
+		assertThat( data.getAsString( Key.of( "name" ) ) ).isEqualTo( "John" );
+		assertThat( data.getAsInteger( Key.of( "age" ) ) ).isEqualTo( 30 );
+		assertThat( data.getAsBoolean( Key.of( "active" ) ) ).isTrue();
+	}
+
+	@DisplayName( "Test asJSON transformer with array response" )
+	@Test
+	public void testAsJSONTransformerArray( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    get( urlEqualTo( "/json-array" ) )
+		        .willReturn(
+		            aResponse()
+		                .withStatus( 200 )
+		                .withHeader( "Content-Type", "application/json" )
+		                .withBody( "[\"apple\",\"banana\",\"orange\"]" )
+		        )
+		);
+
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+		// @formatter:off
+		instance.executeSource(
+		    String.format( """
+		                   result = http( "%s/json-array" )
+		                       .get()
+		                       .asJSON()
+		                       .send();
+		                   """, baseURL ),
+		    context, BoxSourceType.BOXSCRIPT
+		);
+		// @formatter:on
+
+		Object jsonResult = variables.get( result );
+		assertThat( jsonResult ).isInstanceOf( Array.class );
+		Array data = ( Array ) jsonResult;
+		assertThat( data.size() ).isEqualTo( 3 );
+		assertThat( data.get( 0 ) ).isEqualTo( "apple" );
+		assertThat( data.get( 1 ) ).isEqualTo( "banana" );
+		assertThat( data.get( 2 ) ).isEqualTo( "orange" );
+	}
+
+	@DisplayName( "Test asText transformer" )
+	@Test
+	public void testAsTextTransformer( WireMockRuntimeInfo wmRuntimeInfo ) {
+		String testContent = "This is plain text content from the server.";
+		stubFor(
+		    get( urlEqualTo( "/text-data" ) )
+		        .willReturn(
+		            aResponse()
+		                .withStatus( 200 )
+		                .withHeader( "Content-Type", "text/plain" )
+		                .withBody( testContent )
+		        )
+		);
+
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+		// @formatter:off
+		instance.executeSource(
+		    String.format( """
+		                   result = http( "%s/text-data" )
+		                       .get()
+		                       .asText()
+		                       .send();
+		                   """, baseURL ),
+		    context, BoxSourceType.BOXSCRIPT
+		);
+		// @formatter:on
+
+		Object textResult = variables.get( result );
+		assertThat( textResult ).isInstanceOf( String.class );
+		assertThat( textResult ).isEqualTo( testContent );
+	}
+
+	@DisplayName( "Test asXML transformer" )
+	@Test
+	public void testAsXMLTransformer( WireMockRuntimeInfo wmRuntimeInfo ) {
+		String xmlContent = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><root><item>Test</item><value>123</value></root>";
+		stubFor(
+		    get( urlEqualTo( "/xml-data" ) )
+		        .willReturn(
+		            aResponse()
+		                .withStatus( 200 )
+		                .withHeader( "Content-Type", "application/xml" )
+		                .withBody( xmlContent )
+		        )
+		);
+
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+		// @formatter:off
+		instance.executeSource(
+		    String.format( """
+		                   result = http( "%s/xml-data" )
+		                       .get()
+		                       .asXML()
+		                       .send();
+		                   """, baseURL ),
+		    context, BoxSourceType.BOXSCRIPT
+		);
+		// @formatter:on
+
+		Object xmlResult = variables.get( result );
+		assertThat( xmlResult ).isInstanceOf( ortus.boxlang.runtime.types.XML.class );
+		// Verify it's a valid XML object by accessing it
+		ortus.boxlang.runtime.types.XML xmlDoc = ( ortus.boxlang.runtime.types.XML ) xmlResult;
+		assertThat( xmlDoc ).isNotNull();
+	}
+
+	@DisplayName( "Test custom transformer with BoxLang function" )
+	@Test
+	public void testCustomTransformer( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    get( urlEqualTo( "/custom-data" ) )
+		        .willReturn(
+		            aResponse()
+		                .withStatus( 200 )
+		                .withBody( "UPPERCASE TEXT" )
+		        )
+		);
+
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+		// @formatter:off
+		instance.executeSource(
+		    String.format( """
+		                   result = http( "%s/custom-data" )
+		                       .get()
+		                       .transform( (httpResult) => {
+		                           return lCase( httpResult.fileContent );
+		                       } )
+		                       .send();
+		                   """, baseURL ),
+		    context, BoxSourceType.BOXSCRIPT
+		);
+		// @formatter:on
+
+		Object transformedResult = variables.get( result );
+		assertThat( transformedResult ).isInstanceOf( String.class );
+		assertThat( transformedResult ).isEqualTo( "uppercase text" );
+	}
+
+	@DisplayName( "Test transformer with async request" )
+	@Test
+	public void testTransformerWithAsync( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    get( urlEqualTo( "/async-json" ) )
+		        .willReturn(
+		            aResponse()
+		                .withStatus( 200 )
+		                .withHeader( "Content-Type", "application/json" )
+		                .withBody( "{\"status\":\"success\"}" )
+		        )
+		);
+
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+		// @formatter:off
+		instance.executeSource(
+		    String.format( """
+		                   future = http( "%s/async-json" )
+		                       .get()
+		                       .asJSON()
+		                       .sendAsync();
+		                   result = future.get();
+		                   """, baseURL ),
+		    context, BoxSourceType.BOXSCRIPT
+		);
+		// @formatter:on
+
+		Object jsonResult = variables.get( result );
+		assertThat( jsonResult ).isInstanceOf( IStruct.class );
+		IStruct data = ( IStruct ) jsonResult;
+		assertThat( data.getAsString( Key.of( "status" ) ) ).isEqualTo( "success" );
+	}
+
+	@DisplayName( "Test no transformer returns httpResult struct" )
+	@Test
+	public void testNoTransformer( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor(
+		    get( urlEqualTo( "/no-transform" ) )
+		        .willReturn(
+		            aResponse()
+		                .withStatus( 200 )
+		                .withBody( "test content" )
+		        )
+		);
+
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+		// @formatter:off
+		instance.executeSource(
+		    String.format( """
+		                   result = http( "%s/no-transform" )
+		                       .get()
+		                       .send();
+		                   """, baseURL ),
+		    context, BoxSourceType.BOXSCRIPT
+		);
+		// @formatter:on
+
+		Object httpResult = variables.get( result );
+		assertThat( httpResult ).isInstanceOf( IStruct.class );
+		IStruct resultStruct = ( IStruct ) httpResult;
+		assertThat( resultStruct.containsKey( Key.statusCode ) ).isTrue();
+		assertThat( resultStruct.containsKey( Key.fileContent ) ).isTrue();
+		assertThat( resultStruct.getAsInteger( Key.statusCode ) ).isEqualTo( 200 );
 	}
 
 	private X509Certificate generateSelfSignedCertificate( KeyPair keyPair ) throws Exception {

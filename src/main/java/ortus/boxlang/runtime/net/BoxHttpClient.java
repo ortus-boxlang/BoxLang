@@ -435,66 +435,69 @@ public class BoxHttpClient {
 	public class BoxHttpRequest {
 
 		// The target URL
-		private String										url;
+		private String											url;
 		// The port number (if specified)
-		private Integer										port;
+		private Integer											port;
 		// The BoxLang context
-		private ortus.boxlang.runtime.context.IBoxContext	context;
+		private ortus.boxlang.runtime.context.IBoxContext		context;
 		// Unique request ID
-		private final String								requestID			= java.util.UUID.randomUUID().toString();
+		private final String									requestID			= java.util.UUID.randomUUID().toString();
 		// Request start time, set by the invokers
-		private DateTime									startTime;
+		private DateTime										startTime;
 
 		// If debug mode is enabled: not used right now, maybe later we do something with it.
-		private boolean										debug				= false;
+		private boolean											debug				= false;
 		// Http version
-		private String										httpVersion			= HTTP_2;
+		private String											httpVersion			= HTTP_2;
 		// The HTTP method
-		private String										method				= DEFAULT_METHOD;
+		private String											method				= DEFAULT_METHOD;
 		// Request timeout in seconds
-		private Integer										timeout				= DEFAULT_REQUEST_TIMEOUT;
+		private Integer											timeout				= DEFAULT_REQUEST_TIMEOUT;
 		// The User-Agent header
-		private String										userAgent			= DEFAULT_USER_AGENT;
+		private String											userAgent			= DEFAULT_USER_AGENT;
 		// The Charset to use
-		private String										charset				= DEFAULT_CHARSET;
+		private String											charset				= DEFAULT_CHARSET;
 		// Whether to throw on error status codes
-		private boolean										throwOnError		= DEFAULT_THROW_ON_ERROR;
+		private boolean											throwOnError		= DEFAULT_THROW_ON_ERROR;
 		// Binary Markers
-		private boolean										isBinaryRequest		= false;
-		private boolean										isBinaryNever		= false;
+		private boolean											isBinaryRequest		= false;
+		private boolean											isBinaryNever		= false;
 		// Parameters and body
-		private ortus.boxlang.runtime.types.Array			params				= new ortus.boxlang.runtime.types.Array();
+		private ortus.boxlang.runtime.types.Array				params				= new ortus.boxlang.runtime.types.Array();
 		// Multi part mode
-		private boolean										multipart			= false;
+		private boolean											multipart			= false;
 
 		// Basic Authentication
-		private String										username;
-		private String										password;
+		private String											username;
+		private String											password;
 		// Only basic for now, maybe in the future NTLM, but that's legacy, kept here just in case, but never used
-		private String										authType			= "BASIC";
+		private String											authType			= "BASIC";
 
 		// Callbacks
-		private ortus.boxlang.runtime.types.Function		onRequestStartCallback;
-		private ortus.boxlang.runtime.types.Function		onChunkCallback;
-		private ortus.boxlang.runtime.types.Function		onErrorCallback;
-		private ortus.boxlang.runtime.types.Function		onCompleteCallback;
+		private ortus.boxlang.runtime.types.Function			onRequestStartCallback;
+		private ortus.boxlang.runtime.types.Function			onChunkCallback;
+		private ortus.boxlang.runtime.types.Function			onErrorCallback;
+		private ortus.boxlang.runtime.types.Function			onCompleteCallback;
+
+		// Response transformer (takes httpResult, returns transformed value)
+		private java.util.function.Function<IStruct, Object>	transformer;
 
 		// SSE (Server-Sent Events) handling
-		private boolean										forceSSE			= false;
-		private String										lastEventId			= null;
+		private boolean											forceSSE			= false;
+		private String											lastEventId			= null;
 
 		// File handling
-		private String										outputDirectory;
-		private String										outputFile;
+		private String											outputDirectory;
+		private String											outputFile;
 
 		// Results
-		private IStruct										httpResult			= new Struct( false );
+		private IStruct											httpResult			= new Struct( false );
 		// Internal HttpRequest being built
-		private HttpRequest									targetHttpRequest;
+		private HttpRequest										targetHttpRequest;
 		// Error Marker
-		private boolean										error				= false;
-		private String										errorMessage		= null;
-		private Throwable									requestException	= null;
+		private boolean											error				= false;
+		private String											errorMessage		= null;
+		private Throwable										requestException	= null;
 
 		/**
 		 * ------------------------------------------------------------------------------
@@ -1084,6 +1087,70 @@ public class BoxHttpClient {
 		 */
 		public BoxHttpRequest onComplete( ortus.boxlang.runtime.types.Function callback ) {
 			this.onCompleteCallback = callback;
+			return this;
+		}
+
+		/**
+		 * Set a custom transformer function to process the HTTP result.
+		 * The transformer receives the httpResult struct and returns the transformed value.
+		 *
+		 * @param transformer The transformer function (Java Function or BoxLang Function)
+		 *
+		 * @return This builder for chaining
+		 */
+		@SuppressWarnings( "unchecked" )
+		public BoxHttpRequest transform( Object transformer ) {
+			if ( transformer instanceof java.util.function.Function ) {
+				this.transformer = ( java.util.function.Function<IStruct, Object> ) transformer;
+			} else if ( transformer instanceof ortus.boxlang.runtime.types.Function ) {
+				// Wrap BoxLang Function in a Java Function
+				ortus.boxlang.runtime.types.Function blFunction = ( ortus.boxlang.runtime.types.Function ) transformer;
+				this.transformer = ( result ) -> this.context.invokeFunction( blFunction, new Object[] { result } );
+			} else {
+				throw new BoxRuntimeException( "Transformer must be a Function" );
+			}
+			return this;
+		}
+
+		/**
+		 * Transform the response by parsing the fileContent as JSON.
+		 * This is a pre-built transformer that automatically converts JSON responses to BoxLang types.
+		 *
+		 * @return This builder for chaining
+		 */
+		public BoxHttpRequest asJSON() {
+			this.transformer = ( result ) -> {
+				Object	fileContent		= result.get( Key.fileContent );
+				// Convert the filecontent from JSON to BoxLang native
+				Object	inflatedJSON	= JSONUtil.fromJSON( fileContent );
+				return JSONUtil.mapToBLTypes( inflatedJSON, true );
+			};
+			return this;
+		}
+
+		/**
+		 * Transform the response by returning the fileContent as-is (text).
+		 * This is a pre-built transformer that extracts the response body as a string.
+		 *
+		 * @return This builder for chaining
+		 */
+		public BoxHttpRequest asText() {
+			this.transformer = ( result ) -> result.get( Key.fileContent );
+			return this;
+		}
+
+		/**
+		 * Transform the response by parsing the fileContent as XML.
+		 * This is a pre-built transformer that converts XML responses to BoxLang XML objects.
+		 *
+		 * @return This builder for chaining
+		 */
+		public BoxHttpRequest asXML() {
+			this.transformer = ( result ) -> {
+				Object	fileContent	= result.get( Key.fileContent );
+				String	xmlString	= fileContent instanceof String ? ( String ) fileContent : fileContent.toString();
+				return new ortus.boxlang.runtime.types.XML( xmlString );
+			};
 			return this;
 		}
 
@@ -1769,24 +1836,24 @@ public class BoxHttpClient {
 		}
 
 		/**
-		 * Invoke the request asynchronously.
-		 * It will internally call invokeAndGet() when you invoke the future.
+		 * Send the request asynchronously.
 		 *
 		 * @return A BoxFuture representing the asynchronous operation
 		 */
-		public BoxFuture<IStruct> invokeAsync() {
+		public BoxFuture<Object> sendAsync() {
 			return BoxFuture.run(
-			    () -> invokeAndGet(),
+			    () -> send(),
 			    getHttpService().getHttpExecutor().executor()
 			);
 		}
 
 		/**
-		 * Invoke and get the result, throwing any exceptions encountered.
+		 * Send the request and get the result, throwing any exceptions encountered.
+		 * If a transformer is set, it will be applied to the result.
 		 *
-		 * @return The result struct
+		 * @return The result struct or a transformed result (if transformer is set)
 		 */
-		public IStruct invokeAndGet() {
+		public Object send() {
 			// Invoke the request
 			invoke();
 
@@ -1795,21 +1862,13 @@ public class BoxHttpClient {
 				throw new BoxRuntimeException( "Exception during HTTP request: " + this.requestException.getMessage(), this.requestException );
 			}
 
+			// Apply transformer if set
+			if ( this.transformer != null ) {
+				return this.transformer.apply( this.httpResult );
+			}
+
 			// Return the result struct
 			return this.httpResult;
-		}
-
-		/**
-		 * Invoke and get the result, parsing the fileContent as JSON.
-		 * Throws an exception if we cannot parse the JSON.
-		 *
-		 * @return The parsed JSON object
-		 */
-		public Object invokeAndGetAsJson() {
-			IStruct	result			= invokeAndGet();
-			// Convert the filecontent from JSON to BoxLang native
-			Object	inflatedJSON	= JSONUtil.fromJSON( result.get( Key.fileContent ) );
-			return JSONUtil.mapToBLTypes( inflatedJSON, true );
 		}
 
 		/**
