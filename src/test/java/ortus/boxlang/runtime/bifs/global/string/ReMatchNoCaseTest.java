@@ -106,4 +106,17 @@ public class ReMatchNoCaseTest {
 
 	}
 
+	@Test
+	public void testResultSize() {
+		instance.executeSource(
+		    """
+		    result = "registry_ID,keyname,keyvalue".reMatchNoCase("\\+?[0-9a-zA-Z_,. ]*" );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Array.class );
+		Array arr = variables.getAsArray( result );
+		assertThat( arr.size() ).isEqualTo( 1 );
+
+	}
+
 }
