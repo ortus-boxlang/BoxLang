@@ -33,6 +33,13 @@ public class VariableNameCasterTest {
 		assertThat( VariableNameCaster.cast( "7test", false ) ).isNull();
 		assertThat( VariableNameCaster.cast( "brad wood", false ) ).isNull();
 		assertThat( VariableNameCaster.cast( "foo!@#$%^&*()_bar", false ) ).isNull();
+		assertThat( VariableNameCaster.cast( "foo..bar", false ) ).isNull();
+		assertThat( VariableNameCaster.cast( ".foobar", false ) ).isNull();
+		assertThat( VariableNameCaster.cast( "foobar.", false ) ).isNull();
+		assertThat( VariableNameCaster.cast( "", false ) ).isNull();
+		assertThat( VariableNameCaster.cast( null, false ) ).isNull();
+		assertThat( VariableNameCaster.cast( "foo.bar.baz", true ) ).isEqualTo( "foo.bar.baz" );
+
 	}
 
 }
