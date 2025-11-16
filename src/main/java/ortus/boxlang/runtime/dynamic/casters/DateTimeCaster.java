@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
@@ -241,6 +243,14 @@ public class DateTimeCaster implements IBoxCaster {
 		// We have a java.time.LocalTime; object
 		if ( object instanceof LocalTime targetTimestamp ) {
 			return new DateTime( targetTimestamp );
+		}
+
+		// Test if it is a numeric and is zero - which is the epoch
+		if ( NumberCaster.attempt( object ).wasSuccessful() ) {
+			BigDecimal numericValue = BigDecimalCaster.cast( object );
+			if ( numericValue.compareTo( BigDecimal.ZERO ) == 0 ) {
+				return new DateTime( Instant.EPOCH.atZone( ZoneId.of( "UTC" ) ) );
+			}
 		}
 
 		// Try to cast it to a String and see if we can parse it
