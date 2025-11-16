@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -824,7 +825,8 @@ public class StructUtil {
 		IStruct flatMap = toFlatMap( struct );
 		return flatMap.entrySet()
 		    .stream()
-		    .filter( entry -> Compare.invoke( value, entry.getValue() ) == 0 )
+		    // Filter out entries where the value is a list/array as we can't recurse any deeper in to those
+		    .filter( entry -> ! ( entry.getValue() instanceof List ) && Compare.invoke( value, entry.getValue() ) == 0 )
 		    .map( entry -> {
 			    Struct	returnStruct	= new Struct( Struct.TYPES.LINKED );
 			    String	keyName			= entry.getKey().getName();
