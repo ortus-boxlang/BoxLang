@@ -108,7 +108,8 @@ public class HTTP extends Component {
 		    new Attribute( Key.compression, "string" ),
 		    new Attribute( Key.multipart, "boolean", false, Set.of( Validator.TYPE ) ),
 		    new Attribute( Key.multipartType, "string", "form-data",
-		        Set.of( Validator.REQUIRED, Validator.NON_EMPTY, Validator.valueOneOf( "form-data", "related" ) ) ),
+		        Set.of( Validator.REQUIRED, Validator.NON_EMPTY, Validator.valueOneOf( "form-data", "related" ) )
+		    ),
 		    // Response handling
 		    new Attribute( Key.result, "string", "bxhttp", Set.of(
 		        Validator.REQUIRED,
@@ -127,8 +128,6 @@ public class HTTP extends Component {
 		    // Authentication
 		    new Attribute( Key.username, "string" ),
 		    new Attribute( Key.password, "string" ),
-		    new Attribute( Key.authType, "string", AUTHMODE_BASIC,
-		        Set.of( Validator.REQUIRED, Validator.NON_EMPTY, Validator.valueOneOf( AUTHMODE_BASIC, AUTHMODE_NTLM ) ) ),
 		    // Client certificates
 		    new Attribute( Key.clientCert, "string" ),
 		    new Attribute( Key.clientCertPassword, "string" ),
@@ -143,7 +142,23 @@ public class HTTP extends Component {
 		    new Attribute( Key.proxyServer, "string", Set.of( Validator.requires( Key.proxyPort ) ) ),
 		    new Attribute( Key.proxyPort, "integer", Set.of( Validator.requires( Key.proxyServer ) ) ),
 		    new Attribute( Key.proxyUser, "string", Set.of( Validator.requires( Key.proxyPassword ) ) ),
-		    new Attribute( Key.proxyPassword, "string", Set.of( Validator.requires( Key.proxyUser ) ) )
+		    new Attribute( Key.proxyPassword, "string", Set.of( Validator.requires( Key.proxyUser ) ) ),
+		    // ----------------------------------------------------------------------------
+		    // NON IMPLEMENTED ATTRIBUTES BELOW
+		    // Left here so we can track them for future implementation if needed
+		    // ----------------------------------------------------------------------------
+		    new Attribute( Key._NAME, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    // CSV parsing
+		    new Attribute( Key.delimiter, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key.columns, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key.firstRowAsHeaders, "boolean", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key.textQualifier, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    // NTLM
+		    new Attribute( Key.authType, "string", AUTHMODE_BASIC,
+		        Set.of( Validator.REQUIRED, Validator.NON_EMPTY, Validator.valueOneOf( AUTHMODE_BASIC, AUTHMODE_NTLM ) )
+		    ),
+		    new Attribute( Key.domain, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key.workstation, "string", Set.of( Validator.NOT_IMPLEMENTED ) )
 		};
 	}
 
