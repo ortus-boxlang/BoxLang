@@ -48,7 +48,7 @@ public class DataSource implements Comparable<DataSource> {
 	/**
 	 * Underlying HikariDataSource object, used in connection pooling.
 	 */
-	private final HikariDataSource	hikariDataSource;
+	private HikariDataSource		hikariDataSource;
 
 	/**
 	 * The configuration object for this datasource.
@@ -56,18 +56,38 @@ public class DataSource implements Comparable<DataSource> {
 	private final DatasourceConfig	configuration;
 
 	/**
+	 * The Hikari configuration object for this datasource.
+	 */
+	private final HikariConfig		hikariConfig;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructor(s)
 	 * --------------------------------------------------------------------------
 	 */
-
 	/**
-	 * Configure and initialize a new DataSourceRecord object from a struct of properties.
+	 * Configure and initialize a new DataSource given a configuration struct.
+	 * 
+	 * Immediately begins connection pooling.
 	 *
 	 * @param config A struct of properties to configure the datasource. Hikari itself will require either `dataSourceClassName` or `jdbcUrl` to be
 	 *               defined, and potentially `username` and `password` as well.
 	 */
 	public DataSource( DatasourceConfig config ) {
+		this( config, true );
+	}
+
+	/**
+	 * Configure and initialize a new DataSource given a configuration struct.
+	 * 
+	 * Optionally specify beginPooling=false to delay connection pooling until calling {@link #beginPooling()} manually when desired.
+	 *
+	 * @param config       A struct of properties to configure the datasource. Hikari itself will require either `dataSourceClassName` or `jdbcUrl` to be
+	 *                     defined, and potentially `username` and `password` as well.
+	 * 
+	 * @param beginPooling Whether to begin connection pooling immediately.
+	 */
+	public DataSource( DatasourceConfig config, boolean beginPooling ) {
 		IStruct eventParams = Struct.ofNonConcurrent(
 		    Key._NAME, config.getUniqueName(),
 		    Key.properties, config.properties,
@@ -83,16 +103,39 @@ public class DataSource implements Comparable<DataSource> {
 		// Warn if driver is not found in the datasource service
 		this.configuration.validateDriver();
 
-		HikariConfig hikariConfig = null;
+		this.hikariConfig = this.configuration.toHikariConfig();
+		if ( beginPooling ) {
+			beginPooling();
+		}
+	}
+
+	/**
+	 * Begin connection pooling for this datasource.
+	 * 
+	 * No-op if pooling is already started.
+	 *
+	 * @return This DataSource object, now with an active connection pool.
+	 *
+	 * @throws BoxRuntimeException if the connection pool could not be established.
+	 */
+	public DataSource beginPooling() {
+		if ( isPoolingStarted() ) {
+			return this;
+		}
 		try {
-			hikariConfig			= this.configuration.toHikariConfig();
-			this.hikariDataSource	= new HikariDataSource( hikariConfig );
+			this.hikariDataSource = new HikariDataSource( hikariConfig );
 		} catch ( RuntimeException e ) {
-			String message = hikariConfig != null
-			    ? "Unable to create datasource connection to URL [" + hikariConfig.getJdbcUrl() + "] : "
-			    : "Unable to create datasource connection: ";
+			String message = String.format( "Unable to create datasource connection to URL [%s] : ", hikariConfig.getJdbcUrl() );
 			throw new BoxRuntimeException( message + e.getMessage(), e );
 		}
+		return this;
+	}
+
+	/**
+	 * Is connection pooling started for this datasource?
+	 */
+	public boolean isPoolingStarted() {
+		return this.hikariDataSource != null && !this.hikariDataSource.isClosed();
 	}
 
 	/**
@@ -109,6 +152,8 @@ public class DataSource implements Comparable<DataSource> {
 
 	/**
 	 * Helper builder to build out a new DataSource object from a struct of properties and a name.
+	 * 
+	 * Will begin connection pooling automatically, unlike the default constructor.
 	 *
 	 * @param name       The name of the datasource.
 	 * @param properties A struct of properties to configure the datasource. Will likely be defined via <code>Application.bx</code> or a web admin.
@@ -116,7 +161,7 @@ public class DataSource implements Comparable<DataSource> {
 	 * @return a DataSource object configured from the provided struct.
 	 */
 	public static DataSource fromStruct( Key name, IStruct properties ) {
-		return new DataSource( new DatasourceConfig( name, properties ) );
+		return new DataSource( new DatasourceConfig( name, properties ) ).beginPooling();
 	}
 
 	/**

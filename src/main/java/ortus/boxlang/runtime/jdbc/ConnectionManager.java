@@ -508,7 +508,7 @@ public class ConnectionManager {
 		DatasourceConfig	dsn				= new DatasourceConfig( defaultDSNKey )
 		    .process( targetConfig )
 		    .withAppName( getApplicationName() );
-		this.defaultDatasource = this.datasourceService.register( dsn );
+		this.defaultDatasource = this.datasourceService.register( dsn ).beginPooling();
 
 		return this.defaultDatasource;
 	}
@@ -564,7 +564,7 @@ public class ConnectionManager {
 			DatasourceConfig dsnConfig = new DatasourceConfig( uniqueName )
 			    .process( configDatasources.getAsStruct( uniqueName ) )
 			    .withAppName( getApplicationName() );
-			return this.datasourceService.register( dsnConfig );
+			return this.datasourceService.register( dsnConfig ).beginPooling();
 		} );
 	}
 
@@ -589,7 +589,7 @@ public class ConnectionManager {
 	 * @return The datasource object
 	 */
 	public DataSource register( Key datasourceName, IStruct properties ) {
-		DataSource target = this.datasourceService.register( new DatasourceConfig( datasourceName, properties ) );
+		DataSource target = this.datasourceService.register( new DatasourceConfig( datasourceName, properties ) ).beginPooling();
 		this.datasources.put( datasourceName, target );
 		return target;
 	}
@@ -634,7 +634,7 @@ public class ConnectionManager {
 			    .setOnTheFly();
 
 			// Register it
-			return this.datasourceService.register( config );
+			return this.datasourceService.register( config ).beginPooling();
 		} );
 	}
 
