@@ -1761,6 +1761,8 @@ public class BoxHttpClient {
 				this.errorMessage		= e.getMessage();
 				this.requestException	= e;
 				this.httpResult.put( Key.errorDetail, "Thread interrupted: " + e.getMessage() );
+				// Throwing InterruptedException to respect thread interruption
+				throw new BoxRuntimeException( "Thread interrupted during HTTP request", e );
 			}
 			// BoxRuntimeException should always be re-thrown (e.g., binary validation errors, hard-stop errors, etc.)
 			catch ( BoxRuntimeException e ) {
@@ -1856,14 +1858,6 @@ public class BoxHttpClient {
 		public Object send() {
 			// Invoke the request
 			invoke();
-
-			// If there was an exception during the request, throw it now
-			if ( this.requestException != null ) {
-				throw new BoxRuntimeException(
-				    "Exception during HTTP request: " + this.requestException.getMessage(),
-				    this.requestException
-				);
-			}
 
 			// IF THROW ON ERROR IS ENABLED, THROW FOR HTTP ERRORS
 			// Check the status code, if it's >= 400 and throwOnError is true, rethrow
