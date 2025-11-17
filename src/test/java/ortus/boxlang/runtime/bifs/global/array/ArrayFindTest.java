@@ -209,4 +209,16 @@ public class ArrayFindTest {
 		assertThat( variables.get( result ) ).isEqualTo( 0 );
 	}
 
+	@Test
+	public void testWillNotFindBooleanEval() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        result = arrayFind( ["YES","NO","Y","N" ], "99" );
+		    """,
+		    context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( 0 );
+	}
+
 }
