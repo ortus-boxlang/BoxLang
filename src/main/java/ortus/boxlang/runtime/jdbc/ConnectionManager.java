@@ -498,10 +498,7 @@ public class ConnectionManager {
 		Key		defaultDSNKey		= Key.of( defaultDSN );
 		IStruct	configDatasources	= ( IStruct ) this.context.getConfigItems( Key.datasources );
 		if ( !configDatasources.containsKey( defaultDSNKey ) ) {
-			throw new DatabaseException(
-			    String.format( "Default datasource [%s] not found in the application or globally. Registered datasources are: %s", defaultDSNKey.getName(),
-			        Arrays.toString( getAppDatasourceNames() ) )
-			);
+			throwNoDefaultDatasourceDefined( defaultDSNKey.getName() );
 		}
 
 		// Get the datasource config and incorporate the application name
@@ -524,12 +521,25 @@ public class ConnectionManager {
 	public DataSource getDefaultDatasourceOrThrow() {
 		DataSource datasource = getDefaultDatasource();
 		if ( datasource == null ) {
-			throw new DatabaseException(
-			    String.format( "No default datasource defined in the application or globally or in the query options. Registered datasources are: %s",
-			        Arrays.toString( getAppDatasourceNames() ) )
-			);
+			throwNoDefaultDatasourceDefined( null );
 		}
 		return datasource;
+	}
+
+	/**
+	 * Helper method for throwing a DatabaseException when no default datasource is defined.
+	 * 
+	 * @param defaultName The name of the default datasource, if any
+	 */
+	public void throwNoDefaultDatasourceDefined( String defaultName ) {
+		String message = String.format( "No default datasource defined in the application or globally or in the query options. Registered datasources are: %s",
+		    Arrays.toString( getAppDatasourceNames() ) );
+		if ( defaultName != null && !defaultName.isEmpty() ) {
+			message = String.format( "Default datasource [%s] not found in the application or globally. Registered datasources are: %s",
+			    defaultName,
+			    Arrays.toString( getAppDatasourceNames() ) );
+		}
+		throw new DatabaseException( message );
 	}
 
 	/**
