@@ -443,7 +443,7 @@ public class BoxHttpClient {
 		private ortus.boxlang.runtime.context.IBoxContext		context;
 		// Unique request ID
 		private final String									requestID			= java.util.UUID.randomUUID().toString();
-		// Request start time, set by the invokers
+		// Request start time, set during execution
 		private DateTime										startTime;
 
 		// If debug mode is enabled: not used right now, maybe later we do something with it.
@@ -1551,7 +1551,7 @@ public class BoxHttpClient {
 		 *     .header( "Content-Type", "application/json" )
 		 *     .onComplete( result -> {
 		 * 							} )
-		 *     .invoke();
+		 *     .send();
 		 *
 		 * IStruct result = request.getHttpResult();
 		 * </pre>
@@ -1570,7 +1570,6 @@ public class BoxHttpClient {
 		 *         <li>sse - Boolean indicating if SSE mode was detected/forced</li>
 		 *         </ul>
 		 *
-		 * @see #invokeOrThrow() For throwing exceptions instead of catching them
 		 * @see #ifSuccessful(Consumer) For conditional success handling
 		 * @see #ifFailed(BiConsumer) For conditional failure handling
 		 * @see #onRequestStart(Function) For pre-request callbacks
@@ -1938,7 +1937,7 @@ public class BoxHttpClient {
 
 		/**
 		 * --------------------------------------------------------------------------
-		 * Internal Invokers and Processors
+		 * Internal Executors and Processors
 		 * --------------------------------------------------------------------------
 		 */
 
