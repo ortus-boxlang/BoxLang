@@ -101,8 +101,18 @@ public class DatasourceService extends BaseService {
 		registerDriver( new ortus.boxlang.runtime.jdbc.drivers.GenericJDBCDriver() );
 
 		// Register all datasources from the configuration
+		// If the registration fails, we log a warning and skip it, leaving it to lazy loading
 		runtime.getConfiguration().datasources.values().forEach( config -> {
-			register( ( DatasourceConfig ) config );
+			var targetConfig = ( DatasourceConfig ) config;
+			try {
+				register( targetConfig );
+			} catch ( Exception e ) {
+				logger.warn( "Error registering datasource on startup, skipping and leaving to lazy loading [{}]: {}",
+				    targetConfig.name.getName(),
+				    e.getMessage(),
+				    e
+				);
+			}
 		} );
 
 		// Announce it
