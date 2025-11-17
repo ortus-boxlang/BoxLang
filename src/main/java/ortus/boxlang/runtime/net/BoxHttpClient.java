@@ -49,6 +49,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.BoxFuture;
 import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
@@ -1549,7 +1550,7 @@ public class BoxHttpClient {
 		 *     .method( "POST" )
 		 *     .header( "Content-Type", "application/json" )
 		 *     .onComplete( result -> {
-		 * 	} )
+		 * 							} )
 		 *     .invoke();
 		 *
 		 * IStruct result = request.getHttpResult();
@@ -1577,7 +1578,7 @@ public class BoxHttpClient {
 		 * @see #onComplete(Function) For post-request callbacks
 		 * @see #onError(Function) For error callbacks
 		 */
-		public BoxHttpRequest invoke() {
+		private BoxHttpRequest invoke() {
 			try {
 				// Mark the start time of the request
 				this.startTime = new DateTime();
@@ -1859,7 +1860,22 @@ public class BoxHttpClient {
 
 			// If there was an exception during the request, throw it now
 			if ( this.requestException != null ) {
-				throw new BoxRuntimeException( "Exception during HTTP request: " + this.requestException.getMessage(), this.requestException );
+				throw new BoxRuntimeException(
+				    "Exception during HTTP request: " + this.requestException.getMessage(),
+				    this.requestException
+				);
+			}
+
+			// IF THROW ON ERROR IS ENABLED, THROW FOR HTTP ERRORS
+			// Check the status code, if it's >= 400 and throwOnError is true, rethrow
+			int statusCode = IntegerCaster.cast( this.httpResult.get( Key.statusCode ) );
+			if ( this.throwOnError && statusCode >= 400 ) {
+				throw new BoxRuntimeException(
+				    "HTTP request failed with status code [" + statusCode + "]",
+				    this.httpResult.getAsString( Key.fileContent ),
+				    this.httpResult.getAsStruct( Key.request ),
+				    this.requestException
+				);
 			}
 
 			// Apply transformer if set
@@ -1869,25 +1885,6 @@ public class BoxHttpClient {
 
 			// Return the result struct
 			return this.httpResult;
-		}
-
-		/**
-		 * Invoke and if there is an exception, then throw it
-		 *
-		 * @throws Throwable
-		 */
-		public void invokeOrThrow() throws Throwable {
-			try {
-				invoke();
-			} catch ( Throwable t ) {
-				// Just in case
-				throw t;
-			}
-
-			// If there was an exception during the request, throw it now
-			if ( this.requestException != null ) {
-				throw ( this.requestException );
-			}
 		}
 
 		/**

@@ -29,14 +29,11 @@ import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.net.BoxHttpClient;
-import ortus.boxlang.runtime.net.BoxHttpClient.BoxHttpRequest;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.HttpService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
@@ -414,7 +411,7 @@ public class HTTP extends Component {
 		);
 
 		// Make the HTTP request
-		BoxHttpRequest	httpRequest		= boxHttpClient
+		IStruct			result			= ( IStruct ) boxHttpClient
 		    // Target URL and invocation context
 		    .newRequest( attributes.getAsString( Key.URL ), context )
 		    // HTTP Method (GET, POST, PUT, DELETE, etc.)
@@ -459,24 +456,13 @@ public class HTTP extends Component {
 		    // SSE Mode
 		    .sse( attributes.getAsBoolean( Key.sse ) )
 		    // Invoke the request
-		    .invoke()
-		    // Handle failures
-		    .ifFailed( ( exception, result ) -> {
-			    // Check the status code, if it's >= 400 and throwOnError is true, rethrow
-			    int statusCode = IntegerCaster.cast( result.get( Key.statusCode ) );
-			    if ( attributes.getAsBoolean( Key.throwOnError ) && statusCode >= 400 ) {
-				    throw new BoxRuntimeException(
-				        "HTTP request failed with status code " + statusCode,
-				        exception
-				    );
-			    }
-		    } );
+		    .send();
 
 		// Set the result variable before returning
 		ExpressionInterpreter.setVariable(
 		    context,
 		    attributes.getAsString( Key.result ),
-		    httpRequest.getHttpResult()
+		    result
 		);
 
 		return bodyResult;
