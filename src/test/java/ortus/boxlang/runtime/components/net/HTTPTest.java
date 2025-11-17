@@ -1525,7 +1525,7 @@ public class HTTPTest {
 					initialStats = client.getStatistics();
 
 					// Make a successful request
-					client.newRequest( "%s", getBoxContext() ).invoke();
+					client.newRequest( "%s", getBoxContext() ).send();
 
 					// Get updated statistics
 					stats = client.getStatistics();
@@ -1593,18 +1593,18 @@ public class HTTPTest {
 					client.newRequest( "%s", getBoxContext() )
 						.timeout( 1 )
 						.throwOnError( false )
-						.invoke();
+						.send();
 
 					// Test HTTP error (should be successful request but error status)
 					client.newRequest( "%s", getBoxContext() )
 						.throwOnError( false )
-						.invoke();
+						.send();
 
 					// Test connection failure (invalid host)
 					client.newRequest( "http://invalid-host-that-does-not-exist-12345.com", getBoxContext() )
 						.timeout( 1 )
 						.throwOnError( false )
-						.invoke();
+						.send();
 
 					// Get statistics
 					stats = client.getStatistics();
@@ -1666,9 +1666,9 @@ public class HTTPTest {
 					);
 
 					// Make requests with different response times
-					client.newRequest( "%s", getBoxContext() ).invoke();
-					client.newRequest( "%s", getBoxContext() ).invoke();
-					client.newRequest( "%s", getBoxContext() ).invoke();
+					client.newRequest( "%s", getBoxContext() ).send();
+					client.newRequest( "%s", getBoxContext() ).send();
+					client.newRequest( "%s", getBoxContext() ).send();
 
 					// Get statistics
 					stats = client.getStatistics();
@@ -1731,8 +1731,8 @@ public class HTTPTest {
 					createdAt = client.getCreatedAt();
 
 					// Make some requests
-					client.newRequest( "%s", getBoxContext() ).invoke();
-					client.newRequest( "%s", getBoxContext() ).invoke();
+					client.newRequest( "%s", getBoxContext() ).send();
+					client.newRequest( "%s", getBoxContext() ).send();
 
 					// Get statistics before reset
 					beforeReset = client.getStatistics();
