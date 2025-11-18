@@ -258,4 +258,26 @@ public class IsDateTest {
 		);
 	}
 
+	@DisplayName( "It tests zero is not a date" )
+	@Test
+	@Disabled( "BL-1939" )
+	public void testIsDateZero() {
+		instance.executeSource(
+		    """
+		    result = IsDate( -1 );
+		    result2 = IsDate( 0 );
+		    result3 = IsDate( 1 );
+		    result4 = IsDate( 2 );
+		    result5 = IsDate( 3 );
+		    result6 = IsDate( 4 );
+		    """,
+		    context );
+		assertFalse( variables.getAsBoolean( result ) );
+		assertFalse( variables.getAsBoolean( Key.of( "result2" ) ) );
+		assertFalse( variables.getAsBoolean( Key.of( "result3" ) ) );
+		assertFalse( variables.getAsBoolean( Key.of( "result4" ) ) );
+		assertFalse( variables.getAsBoolean( Key.of( "result5" ) ) );
+		assertFalse( variables.getAsBoolean( Key.of( "result6" ) ) );
+	}
+
 }
