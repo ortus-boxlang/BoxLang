@@ -21,6 +21,7 @@ import java.sql.Types;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BigIntegerCaster;
+import ortus.boxlang.runtime.dynamic.casters.BinaryCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
@@ -301,14 +302,7 @@ public enum QueryColumnType {
 			case QueryColumnType.DECIMAL -> DoubleCaster.cast( value );
 			case QueryColumnType.CHAR, VARCHAR -> StringCaster.cast( value );
 			case QueryColumnType.BINARY -> value; // @TODO: Will this work?
-			case QueryColumnType.BLOB -> {
-				// Convert value to byte array for BLOB storage
-				if ( value instanceof byte[] ) {
-					yield value;
-				}
-				// Convert string to UTF-8 bytes
-				yield StringCaster.cast( value ).getBytes( java.nio.charset.StandardCharsets.UTF_8 );
-			}
+			case QueryColumnType.BLOB -> BinaryCaster.cast( value );
 			case QueryColumnType.CLOB -> StringCaster.cast( value );
 			case QueryColumnType.BIT -> BooleanCaster.cast( value );
 			case QueryColumnType.BOOLEAN -> BooleanCaster.cast( value );
