@@ -66,13 +66,15 @@ public class IsValidTest {
 		    aDate     = isValid( 'Any', now() );
 		    anInt     = isValid( 'Any', 12345 );
 		    namedArgs = isValid( type = 'Any', value = 12345 );
+		    nullValue = isValid( 'Any', null );
 		    """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "aStruct" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "aBool" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "aDate" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "anInt" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "namedArgs" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "aStruct" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "aBool" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "aDate" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "anInt" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "namedArgs" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "nullValue" ) ) ).isTrue();
 	}
 
 	@DisplayName( "It works on Arrays" )
@@ -80,6 +82,7 @@ public class IsValidTest {
 	public void testArray() {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Array', [] )" ) ).isTrue();
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Array', {} )" ) ).isFalse();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Array', null )" ) ).isFalse();
 	}
 
 	@DisplayName( "It works on booleans" )
@@ -87,18 +90,20 @@ public class IsValidTest {
 	public void testBoolean() {
 		instance.executeSource(
 		    """
-		       aTrue = isValid( 'boolean', true );
-		       aYes = isValid( 'boolean', "yes" );
-		       aStringFalse = isValid( 'boolean', "false" );
-		    anArray = isValid( 'boolean', {} );
-		    aStruct = isValid( 'boolean', [] );
-		       """,
+		    aTrue = isValid( 'boolean', true );
+		    aYes = isValid( 'boolean', "yes" );
+		    aStringFalse = isValid( 'boolean', "false" );
+		    anArray = isValid( 'boolean', [] );
+		    aStruct = isValid( 'boolean', {} );
+		    nullValue = isValid( 'boolean', null );
+		          """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "aTrue" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "aYes" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "aStringFalse" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "anArray" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "aStruct" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "aTrue" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "aYes" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "aStringFalse" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "anArray" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "aStruct" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "nullValue" ) ) ).isFalse();
 	}
 
 	@DisplayName( "It works on creditcards" )
@@ -123,19 +128,19 @@ public class IsValidTest {
 		    invalid4             = IsValid( "creditcard","4000000000007" );
 		       """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "stripeTestCard" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "valid1" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "valid2" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "valid3" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "valid4" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "valid5" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "valid6" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "valid7" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "stripeTestCard" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "valid1" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "valid2" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "valid3" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "valid4" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "valid5" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "valid6" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "valid7" ) ) ).isTrue();
 
-		assertThat( ( Boolean ) variables.get( Key.of( "stripeTestWithExtra4" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "alphachars" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "invalid3" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "invalid4" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "stripeTestWithExtra4" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "alphachars" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "invalid3" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "invalid4" ) ) ).isFalse();
 	}
 
 	@DisplayName( "It works on components" )
@@ -143,6 +148,7 @@ public class IsValidTest {
 	public void testComponent() {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'component', new src.test.java.TestCases.phase3.MyClass() )" ) ).isTrue();
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'component', {} )" ) ).isFalse();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'component', null )" ) ).isFalse();
 	}
 
 	@DisplayName( "It works on dates" )
@@ -154,6 +160,7 @@ public class IsValidTest {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'date', 'Mar 22 2025 05:21 PM' )" ) ).isTrue();
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'date', 'March 22 2025 5:21 PM' )" ) ).isTrue();
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'date', 'March 22, 2025 05:21 PM' )" ) ).isTrue();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'date', null )" ) ).isFalse();
 	}
 
 	@DisplayName( "It works on times" )
@@ -162,6 +169,7 @@ public class IsValidTest {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'time', '10:45' )" ) ).isTrue();
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'time', '' )" ) ).isFalse();
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'time', timeFormat( now() ) )" ) ).isTrue();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'time', null )" ) ).isFalse();
 	}
 
 	@DisplayName( "It works on guids" )
@@ -170,6 +178,7 @@ public class IsValidTest {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'guid', createGUID() )" ) ).isTrue();
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'guid', '00000000-0000-0000-0000-000000000000' )" ) ).isTrue();
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'guid', createUUID() )" ) ).isFalse();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'guid', null )" ) ).isFalse();
 	}
 
 	@DisplayName( "It works on integers" )
@@ -189,14 +198,14 @@ public class IsValidTest {
 		    stringWithDec = isValid( 'integer', '3.5' );
 		            """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "int" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "intWithDec" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "stringInt" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "stringIntWithDec" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "bool" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "float" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "stringval" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "stringWithDec" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "int" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "intWithDec" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "stringInt" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "stringIntWithDec" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "bool" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "float" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "stringval" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "stringWithDec" ) ) ).isFalse();
 	}
 
 	@DisplayName( "It works on Numerics" )
@@ -215,12 +224,12 @@ public class IsValidTest {
 		    stringval = isValid( 'numeric', '3x' );
 		    """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "int" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "float" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "stringInt" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "stringFloat" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "bool" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "stringval" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "int" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "float" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "stringInt" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "stringFloat" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "bool" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "stringval" ) ) ).isFalse();
 	}
 
 	@DisplayName( "It works on Numbers" )
@@ -239,12 +248,12 @@ public class IsValidTest {
 		    stringval = isValid( 'number', '3x' );
 		    """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "int" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "float" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "stringInt" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "stringFloat" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "bool" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "stringval" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "int" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "float" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "stringInt" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "stringFloat" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "bool" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "stringval" ) ) ).isFalse();
 	}
 
 	@DisplayName( "It works on ssns" )
@@ -263,13 +272,13 @@ public class IsValidTest {
 		    ssaDisallowed = isValid( 'ssn', '219-09-9999' );
 		       """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "validwithdashes" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "validnodashes" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "validwithdashes" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "validnodashes" ) ) ).isTrue();
 
-		assertThat( ( Boolean ) variables.get( Key.of( "toomanychars" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "zeros" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "woolworth" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "ssaDisallowed" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "toomanychars" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "zeros" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "woolworth" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "ssaDisallowed" ) ) ).isFalse();
 	}
 
 	@DisplayName( "It works on social_security_numbers" )
@@ -288,13 +297,13 @@ public class IsValidTest {
 		    ssaDisallowed = isValid( 'ssn', '219-09-9999' );
 		       """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "validwithdashes" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "validnodashes" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "validwithdashes" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "validnodashes" ) ) ).isTrue();
 
-		assertThat( ( Boolean ) variables.get( Key.of( "toomanychars" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "zeros" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "woolworth" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "ssaDisallowed" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "toomanychars" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "zeros" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "woolworth" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "ssaDisallowed" ) ) ).isFalse();
 	}
 
 	@DisplayName( "It works on Strings" )
@@ -302,6 +311,7 @@ public class IsValidTest {
 	public void testString() {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'String', 'aString' )" ) ).isTrue();
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'String', {} )" ) ).isFalse();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'String', null )" ) ).isFalse();
 	}
 
 	@DisplayName( "It works on Structs" )
@@ -309,6 +319,7 @@ public class IsValidTest {
 	public void testStruct() {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Struct', {} )" ) ).isTrue();
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Struct', [] )" ) ).isFalse();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Struct', null )" ) ).isFalse();
 	}
 
 	@DisplayName( "It works on telephones" )
@@ -327,13 +338,13 @@ public class IsValidTest {
 		    missingCountryCode = isValid( 'telephone', '+ 1234-456-7890' );
 		       """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "dotdelimited" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "pluscountry" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "noPunctuation" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "dotdelimited" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "pluscountry" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "noPunctuation" ) ) ).isTrue();
 
-		assertThat( ( Boolean ) variables.get( Key.of( "tooshort" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "toolong" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "missingCountryCode" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "tooshort" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "toolong" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "missingCountryCode" ) ) ).isFalse();
 	}
 
 	@DisplayName( "It works on URLs" )
@@ -357,18 +368,18 @@ public class IsValidTest {
 		    filepath = isValid( 'url', '../www/var/html' );
 		       """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "httpScheme" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "httpsScheme" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "ftpScheme" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "fileScheme" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "httpScheme" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "httpsScheme" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "ftpScheme" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "fileScheme" ) ) ).isTrue();
 
-		assertThat( ( Boolean ) variables.get( Key.of( "doubleslash" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "filename" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "querystring" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "querystringfunky" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "doubleslash" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "filename" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "querystring" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "querystringfunky" ) ) ).isTrue();
 
-		assertThat( ( Boolean ) variables.get( Key.of( "noscheme" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "filepath" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "noscheme" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "filepath" ) ) ).isFalse();
 	}
 
 	@DisplayName( "It works on UUIDs" )
@@ -386,11 +397,11 @@ public class IsValidTest {
 		    toomanychars = isValid( 'uuid', '8BC22B08-53A4-4876-A4E08CD9690DBF2C111' );
 		    """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "createuuid" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "result" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "createuuid" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "result" ) ) ).isTrue();
 
-		// assertThat( ( Boolean ) variables.get( Key.of( "guid" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "toomanychars" ) ) ).isFalse();
+		// assertThat( variables.getAsBoolean( Key.of( "guid" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "toomanychars" ) ) ).isFalse();
 	}
 
 	@DisplayName( "It works on usdates" )
@@ -416,12 +427,12 @@ public class IsValidTest {
 		    eightwithdash = IsValid( "zipcode", '1234-12345' );
 		    """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "fivedigit" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "ninewithdash" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "ninewithspace" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "fivedigit" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "ninewithdash" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "ninewithspace" ) ) ).isTrue();
 
-		assertThat( ( Boolean ) variables.get( Key.of( "fourdigit" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "eightwithdash" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "fourdigit" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "eightwithdash" ) ) ).isFalse();
 	}
 
 	@Disabled( "toBinary is not implemented" )
@@ -449,14 +460,14 @@ public class IsValidTest {
 		    userstartwithdot = isValid( 'email', '.foo@ortussolutions.xom' );
 		       """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "singlechar" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "specialchars" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "singlechar" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "specialchars" ) ) ).isTrue();
 
-		assertThat( ( Boolean ) variables.get( Key.of( "doubleat" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "nouser" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "domainendwithdot" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "userendwithdot" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "userstartwithdot" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "doubleat" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "nouser" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "domainendwithdot" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "userendwithdot" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "userstartwithdot" ) ) ).isFalse();
 
 	}
 
@@ -477,11 +488,11 @@ public class IsValidTest {
 		    stringval = isValid( 'float', '3x' );
 		    """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "float" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "stringFloat" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "int" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "bool" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "stringval" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "float" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "stringFloat" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "int" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "bool" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "stringval" ) ) ).isFalse();
 	}
 
 	@DisplayName( "It works on Querys" )
@@ -489,6 +500,7 @@ public class IsValidTest {
 	public void testQuery() {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Query', queryNew( 'id,name', 'varchar,varchar' ) )" ) ).isTrue();
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Query', {} )" ) ).isFalse();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'Query', null )" ) ).isFalse();
 	}
 
 	@DisplayName( "It works on ranges" )
@@ -508,14 +520,14 @@ public class IsValidTest {
 		    isXin1through5  = IsValid( "range", 'x',1,5);
 		    """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "is3in1through5" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "is1in1through5" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "is5in1through5" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "is3in1through5" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "is1in1through5" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "is5in1through5" ) ) ).isTrue();
 
-		assertThat( ( Boolean ) variables.get( Key.of( "is6in1through5" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "is0in1through5" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "is10in1through5" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "isXin1through5" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "is6in1through5" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "is0in1through5" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "is10in1through5" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "isXin1through5" ) ) ).isFalse();
 	}
 
 	@DisplayName( "It works on Regexs" )
@@ -533,12 +545,12 @@ public class IsValidTest {
 		    mismatch = IsValid( "regex", '(abc', '[abc]{3}' );
 		    """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "singlechar" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "plusquantifier" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "curlyquantifier" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "singlechar" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "plusquantifier" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "curlyquantifier" ) ) ).isTrue();
 
-		assertThat( ( Boolean ) variables.get( Key.of( "wrongCasing" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "mismatch" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "wrongCasing" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "mismatch" ) ) ).isFalse();
 	}
 
 	@DisplayName( "It works on regular_expressions" )
@@ -556,12 +568,12 @@ public class IsValidTest {
 		    mismatch = IsValid( "regular_expression", '(abc', '[abc]{3}' );
 		    """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "singlechar" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "plusquantifier" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "curlyquantifier" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "singlechar" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "plusquantifier" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "curlyquantifier" ) ) ).isTrue();
 
-		assertThat( ( Boolean ) variables.get( Key.of( "wrongCasing" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "mismatch" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "wrongCasing" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "mismatch" ) ) ).isFalse();
 	}
 
 	@DisplayName( "It works on variablenames" )
@@ -569,6 +581,7 @@ public class IsValidTest {
 	public void testVariablename() {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'variablename','foo' )" ) ).isTrue();
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'variablename','123' )" ) ).isFalse();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'variablename', null )" ) ).isFalse();
 	}
 
 	@DisplayName( "It works on xmls" )
@@ -584,11 +597,11 @@ public class IsValidTest {
 		    emptybrackets    = isValid( 'xml', '<>' );
 		    """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "xmlNew" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "emptyXMLNode" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "xmlNew" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "emptyXMLNode" ) ) ).isTrue();
 
-		assertThat( ( Boolean ) variables.get( Key.of( "invalidchildnode" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "emptybrackets" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "invalidchildnode" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "emptybrackets" ) ) ).isFalse();
 	}
 
 	@DisplayName( "It works on lambdas" )
@@ -599,7 +612,7 @@ public class IsValidTest {
 		    aLambdaIsLambda  = IsValid( "lambda", () -> {} );
 		    """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "aLambdaIsLambda" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "aLambdaIsLambda" ) ) ).isTrue();
 	}
 
 	@DisplayName( "It works on closures" )
@@ -607,6 +620,7 @@ public class IsValidTest {
 	public void testClosure() {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'closure', function() {} )" ) ).isTrue();
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'closure', () => {} )" ) ).isTrue();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'closure', null )" ) ).isFalse();
 	}
 
 	@DisplayName( "It works on custom functions" )
@@ -626,12 +640,12 @@ public class IsValidTest {
 		    """,
 		    context );
 		// @formatter:on
-		assertThat( ( Boolean ) variables.get( Key.of( "aUDF" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "aClosure" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "aLambda" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "aUDF" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "aClosure" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "aLambda" ) ) ).isTrue();
 
-		assertThat( ( Boolean ) variables.get( Key.of( "fClosure" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "fLambda" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "fClosure" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "fLambda" ) ) ).isFalse();
 	}
 
 	@DisplayName( "It can validate hex strings" )
@@ -653,16 +667,16 @@ public class IsValidTest {
 		    hex9 = isValid( 'hex', '' );
 		    """,
 		    context );
-		assertThat( ( Boolean ) variables.get( Key.of( "hex1" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "hex2" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "hex3" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "hex4" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "hex5" ) ) ).isTrue();
-		assertThat( ( Boolean ) variables.get( Key.of( "hex6" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "hex1" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "hex2" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "hex3" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "hex4" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "hex5" ) ) ).isTrue();
+		assertThat( variables.getAsBoolean( Key.of( "hex6" ) ) ).isTrue();
 
-		assertThat( ( Boolean ) variables.get( Key.of( "hex7" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "hex8" ) ) ).isFalse();
-		assertThat( ( Boolean ) variables.get( Key.of( "hex9" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "hex7" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "hex8" ) ) ).isFalse();
+		assertThat( variables.getAsBoolean( Key.of( "hex9" ) ) ).isFalse();
 	}
 
 }
