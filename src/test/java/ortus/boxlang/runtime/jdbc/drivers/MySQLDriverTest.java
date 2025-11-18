@@ -305,4 +305,32 @@ public class MySQLDriverTest extends AbstractDriverTest {
 		assertThat( getVariables().get( Key.of( "names_desc" ) ) ).isInstanceOf( Query.class );
 	}
 
+	@DisplayName( "It can select from char 15 field" )
+	@Test
+	public void testSelectFromCharFields() {
+		instance.executeStatement(
+		    """
+		    queryExecute( "
+		    	CREATE TABLE IF NOT EXISTS char15Test ( char15field CHAR(15) )
+		    ",{},{ "datasource" : "MySQLdatasource" }
+		    );
+
+		    queryExecute( "TRUNCATE TABLE char15Test",{},{ "datasource" : "MySQLdatasource" } );
+		    queryExecute( "INSERT INTO char15Test ( char15field ) VALUES ( 'value' )",{},{ "datasource" : "MySQLdatasource" } );
+
+		    result = queryExecute( "
+		    	SELECT * FROM char15Test where char15field = ?
+		    	",[ {
+		    		sqltype : "varchar",
+		    		value: "value"
+		    	}],{ "datasource" : "MySQLdatasource" }
+		    );
+		    """,
+		    context );
+
+		// Verify that the query found the row without needing RTRIM
+		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 1 );
+
+	}
+
 }

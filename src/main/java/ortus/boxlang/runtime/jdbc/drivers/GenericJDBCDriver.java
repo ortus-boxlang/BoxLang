@@ -291,4 +291,18 @@ public class GenericJDBCDriver implements IJDBCDriver {
 		return StructUtil.toQueryString( params, getDefaultDelimiter() );
 	}
 
+	/**
+	 * Map param type to SQL type. For the most part, these mappings are defined by the QueryColumnType enum,
+	 * but some drivers may have specific needs. Oracle, or example, uses CHAR even when you ask for VARCHAR which allows
+	 * char columns to match without trailing space.
+	 * 
+	 * @param type  The QueryColumnType of the parameter
+	 * @param value The value of the parameter (in case the mapping needs to consider the value)
+	 * 
+	 * @return The SQL type as defined in java.sql.Types
+	 */
+	public int mapParamTypeToSQLType( QueryColumnType type, Object value ) {
+		return type.sqlType;
+	}
+
 }

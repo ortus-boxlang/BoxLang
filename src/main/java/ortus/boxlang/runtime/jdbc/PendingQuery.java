@@ -38,6 +38,7 @@ import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.jdbc.drivers.IJDBCDriver;
 import ortus.boxlang.runtime.jdbc.qoq.QoQConnection;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
@@ -777,12 +778,13 @@ public class PendingQuery {
 	 *
 	 * @throws SQLException
 	 */
-	private void applyParameters( Statement statement, IBoxContext context ) throws SQLException {
+	private void applyParameters( BoxStatement statement, IBoxContext context ) throws SQLException {
 		if ( this.parameters.isEmpty() ) {
 			return;
 		}
 
 		if ( statement instanceof PreparedStatement preparedStatement ) {
+			IJDBCDriver		driver				= statement.getConnection().getDataSource().getConfiguration().getDriver();
 			StringBuilder	SQLWithParamValues	= new StringBuilder();
 			// The param index starts from 1
 			int				parameterIndex		= 1;
@@ -800,9 +802,9 @@ public class PendingQuery {
 							SQLWithParamValues.append( ", " );
 						}
 						if ( scaleOrLength == null ) {
-							preparedStatement.setObject( parameterIndex, casted, param.getSqlTypeAsInt() );
+							preparedStatement.setObject( parameterIndex, casted, driver.mapParamTypeToSQLType( param.getType(), casted ) );
 						} else {
-							preparedStatement.setObject( parameterIndex, casted, param.getSqlTypeAsInt(),
+							preparedStatement.setObject( parameterIndex, casted, driver.mapParamTypeToSQLType( param.getType(), casted ),
 							    scaleOrLength );
 						}
 						parameterIndex++;
@@ -812,9 +814,9 @@ public class PendingQuery {
 					Object value = param.toSQLType( context );
 					emitValueToSQL( SQLWithParamValues, value, param.getType() );
 					if ( scaleOrLength == null ) {
-						preparedStatement.setObject( parameterIndex, value, param.getSqlTypeAsInt() );
+						preparedStatement.setObject( parameterIndex, value, driver.mapParamTypeToSQLType( param.getType(), value ) );
 					} else {
-						preparedStatement.setObject( parameterIndex, value, param.getSqlTypeAsInt(),
+						preparedStatement.setObject( parameterIndex, value, driver.mapParamTypeToSQLType( param.getType(), value ),
 						    scaleOrLength );
 					}
 					parameterIndex++;

@@ -816,6 +816,35 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		assertThat( variables.getAsBoolean( Key.of( "result" ) ) ).isTrue();
 	}
 
+	@DisplayName( "It can select from char 15 field" )
+	@Test
+	public void testSelectFromCharFields() {
+		instance.executeStatement(
+		    """
+		    queryExecute( "
+		    	IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='char15Test' AND xtype='U')
+		    		CREATE TABLE char15Test ( char15field CHAR(15) )
+		    ",{},{ "datasource" : "MSSQLdatasource" }
+		    );
+
+		    queryExecute( "TRUNCATE TABLE char15Test",{},{ "datasource" : "MSSQLdatasource" } );
+		    queryExecute( "INSERT INTO char15Test ( char15field ) VALUES ( 'value' )",{},{ "datasource" : "MSSQLdatasource" } );
+
+		    result = queryExecute( "
+		    	SELECT * FROM char15Test where char15field = ?
+		    	",[ {
+		    		sqltype : "varchar",
+		    		value: "value"
+		    	}],{ "datasource" : "MSSQLdatasource" }
+		    );
+		    """,
+		    context );
+
+		// Verify that the query found the row without needing RTRIM
+		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 1 );
+
+	}
+
 	@DisplayName( "It ignores non-integer values when null=true and passes NULL to stored proc" )
 	@Test
 	public void testStoredProcNullTrueIgnoresInvalidValue() {
