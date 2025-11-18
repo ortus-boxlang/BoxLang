@@ -37,6 +37,7 @@ import java.util.stream.Stream;
 import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
@@ -824,48 +825,107 @@ public class StructUtil {
 	 * @return a stream of structs containing the owner, path, and key of the found value
 	 */
 	public static Stream<IStruct> findValue( IStruct struct, Object value ) {
-		IStruct flatMap = toFlatMap( struct );
+		IStruct			flatMap			= toFlatMap( struct );
+
+		// First get regular struct matches (non-List values)
+		Stream<IStruct>	regularMatches	= flatMap.entrySet()
+		    .stream()
+		    .filter( entry -> ! ( entry.getValue() instanceof List ) && Compare.invoke( value, entry.getValue() ) == 0 )
+		    .map( entry -> extractValueResult( entry, flatMap, struct ) );
+
+		// Then get matches from within arrays/lists
+		Stream<IStruct>	arrayMatches	= extractValuesFromArrays( flatMap, struct, value );
+
+		// Combine both streams
+		return Stream.concat( regularMatches, arrayMatches );
+	}
+
+	/**
+	 * Helper method to find values within arrays/lists in a flattened struct
+	 *
+	 * @param flatMap        the flattened map to search within
+	 * @param originalStruct the original struct for context
+	 * @param value          the value to search for
+	 *
+	 * @return a stream of structs containing matches found within arrays
+	 */
+	private static Stream<IStruct> extractValuesFromArrays( IStruct flatMap, IStruct originalStruct, Object value ) {
 		return flatMap.entrySet()
 		    .stream()
-		    // Filter out entries where the value is a list/array as we can't recurse any deeper in to those
-		    .filter( entry -> ! ( entry.getValue() instanceof List ) && Compare.invoke( value, entry.getValue() ) == 0 )
-		    .map( entry -> {
-			    Struct	returnStruct	= new Struct( Struct.TYPES.LINKED );
-			    String	keyName			= entry.getKey().getName();
-			    String[] keyParts		= entry.getKey().getName().split( "\\." );
-			    String	parentName		= keyName;
-			    if ( keyParts.length > 1 ) {
-				    parentName = keyName.substring( 0, keyName.lastIndexOf( "." ) );
-			    }
-			    final String finalParent = parentName;
-			    returnStruct.put(
-			        Key.owner,
-			        keyParts.length > 1
-			            ? unFlattenKeys(
-			                flatMap.entrySet().stream()
-			                    .filter( mapEntry -> mapEntry.getKey().getName().contains( finalParent )
-			                    ).map(
-			                        mapEntry -> new AbstractMap.SimpleEntry<Key, Object>(
-			                            Key.of( mapEntry.getKey().getName().replace( finalParent + ".", "" ) ), mapEntry.getValue() )
-			                    )
-			                    .collect( BLCollector.toStruct() ),
-			                true,
-			                false
-			            )
-			            : struct
-			    );
-			    // TODO: This dot prefix is silly given the context this function operates in. Deprecate the dot prefix in a future release.
-			    returnStruct.put(
-			        Key.path,
-			        "." + keyName
-			    );
-			    returnStruct.put(
-			        Key.key,
-			        keyParts[ keyParts.length - 1 ]
-			    );
-			    return returnStruct;
-		    } );
+		    .filter( entry -> entry.getValue() instanceof List )
+		    .flatMap( entry -> {
+			    List<?> list	= ( List<?> ) entry.getValue();
+			    Array array		= ArrayCaster.cast( list );
+			    String basePath	= entry.getKey().getName();
 
+			    return array.stream()
+			        .filter( item -> item instanceof Map )
+			        .map( item -> StructCaster.cast( item ) )
+			        .flatMap( structItem -> {
+				        // Find values recursively in this struct
+				        return findValue( structItem, value )
+				            .map( result -> {
+					            // Modify the path to include array index
+					            String originalPath = result.getAsString( Key.path );
+					            int arrayIndex = array.indexOf( structItem ) + 1; // 1-based index
+					            String newPath = "." + basePath + "[" + arrayIndex + "]" + originalPath;
+
+					            // Create new result with corrected path
+					            Struct newResult = new Struct( Struct.TYPES.LINKED );
+					            newResult.put( Key.owner, result.get( Key.owner ) );
+					            newResult.put( Key.path, newPath );
+					            newResult.put( Key.key, result.get( Key.key ) );
+
+					            return newResult;
+				            } );
+			        } );
+		    } );
+	}
+
+	/**
+	 * Helper method to create a findValue result struct from a map entry
+	 *
+	 * @param entry          the map entry containing the found value
+	 * @param flatMap        the complete flattened map for context
+	 * @param originalStruct the original struct
+	 *
+	 * @return a struct containing owner, path, and key information
+	 */
+	private static IStruct extractValueResult( Map.Entry<Key, Object> entry, IStruct flatMap, IStruct originalStruct ) {
+		Struct		returnStruct	= new Struct( Struct.TYPES.LINKED );
+		String		keyName			= entry.getKey().getName();
+		String[]	keyParts		= entry.getKey().getName().split( "\\." );
+		String		parentName		= keyName;
+		if ( keyParts.length > 1 ) {
+			parentName = keyName.substring( 0, keyName.lastIndexOf( "." ) );
+		}
+		final String finalParent = parentName;
+		returnStruct.put(
+		    Key.owner,
+		    keyParts.length > 1
+		        ? unFlattenKeys(
+		            flatMap.entrySet().stream()
+		                .filter( mapEntry -> mapEntry.getKey().getName().contains( finalParent )
+		                ).map(
+		                    mapEntry -> new AbstractMap.SimpleEntry<Key, Object>(
+		                        Key.of( mapEntry.getKey().getName().replace( finalParent + ".", "" ) ), mapEntry.getValue() )
+		                )
+		                .collect( BLCollector.toStruct() ),
+		            true,
+		            false
+		        )
+		        : originalStruct
+		);
+		// TODO: This dot prefix is silly given the context this function operates in. Deprecate the dot prefix in a future release.
+		returnStruct.put(
+		    Key.path,
+		    "." + keyName
+		);
+		returnStruct.put(
+		    Key.key,
+		    keyParts[ keyParts.length - 1 ]
+		);
+		return returnStruct;
 	}
 
 	/**
