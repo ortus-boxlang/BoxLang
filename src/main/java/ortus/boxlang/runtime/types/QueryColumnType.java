@@ -21,6 +21,7 @@ import java.sql.Types;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BigIntegerCaster;
+import ortus.boxlang.runtime.dynamic.casters.BinaryCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
@@ -34,9 +35,11 @@ public enum QueryColumnType {
 
 	BIGINT( Types.BIGINT ),
 	BINARY( Types.BINARY ),
+	BLOB( Types.BLOB ),
 	BOOLEAN( Types.BOOLEAN ),
 	BIT( Types.BIT ),
 	CHAR( Types.CHAR ),
+	CLOB( Types.CLOB ),
 	DATE( Types.DATE ),
     // DATETIME maps to Types.TIMESTAMP because SQL DATETIME is typically treated as a timestamp with both date and time components.
 	DATETIME( Types.TIMESTAMP ),
@@ -83,9 +86,10 @@ public enum QueryColumnType {
 			case "longvarbinary" :
 				return BINARY;
 			case "blob" :
+				return BLOB;
 			case "clob" :
 			case "nclob" :
-				return OBJECT;
+				return CLOB;
 			case "bit" :
 				return BIT;
 			case "boolean" :
@@ -158,6 +162,10 @@ public enum QueryColumnType {
 				return "string";
 			case BINARY :
 				return "binary";
+			case BLOB :
+				return "blob";
+			case CLOB :
+				return "clob";
 			case BIT :
 				return "bit";
 			case TIME :
@@ -199,13 +207,13 @@ public enum QueryColumnType {
 			case Types.BIT :
 				return BIT;
 			case Types.BLOB :
-				return OBJECT;
+				return BLOB;
 			case Types.BOOLEAN :
 				return BOOLEAN;
 			case Types.CHAR :
 				return VARCHAR;
 			case Types.CLOB :
-				return OBJECT;
+				return CLOB;
 			case Types.DATALINK :
 				return OTHER;
 			case Types.DATE :
@@ -231,7 +239,7 @@ public enum QueryColumnType {
 			case Types.NCHAR :
 				return VARCHAR;
 			case Types.NCLOB :
-				return OBJECT;
+				return CLOB;
 			case Types.NULL :
 				return NULL;
 			case Types.NUMERIC :
@@ -294,6 +302,8 @@ public enum QueryColumnType {
 			case QueryColumnType.DECIMAL -> DoubleCaster.cast( value );
 			case QueryColumnType.CHAR, VARCHAR -> StringCaster.cast( value );
 			case QueryColumnType.BINARY -> value; // @TODO: Will this work?
+			case QueryColumnType.BLOB -> BinaryCaster.cast( value );
+			case QueryColumnType.CLOB -> StringCaster.cast( value );
 			case QueryColumnType.BIT -> BooleanCaster.cast( value );
 			case QueryColumnType.BOOLEAN -> BooleanCaster.cast( value );
 			case QueryColumnType.TIME -> DateTimeCaster.cast( value, context ).toDate();
