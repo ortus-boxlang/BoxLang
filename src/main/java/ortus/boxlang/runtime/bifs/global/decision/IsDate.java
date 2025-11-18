@@ -23,6 +23,7 @@ import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -87,6 +88,11 @@ public class IsDate extends BIF {
 			    ),
 			    e
 			);
+		}
+
+		// Exclude numbers here - even though the DateTimeCaster would parse them, we don't want to treat them as dates in the decision context
+		if ( NumberCaster.attempt( dateRef, false ).wasSuccessful() ) {
+			return false;
 		}
 		Locale locale = LocalizationUtil.getParsedLocale( localeString );
 		return DateTimeCaster.cast( dateRef, false, zoneId, false, context, locale ) != null;

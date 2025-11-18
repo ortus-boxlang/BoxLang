@@ -260,7 +260,6 @@ public class IsDateTest {
 
 	@DisplayName( "It tests zero is not a date" )
 	@Test
-	@Disabled( "BL-1939" )
 	public void testIsDateZero() {
 		instance.executeSource(
 		    """
