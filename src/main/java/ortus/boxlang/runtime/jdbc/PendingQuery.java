@@ -794,7 +794,7 @@ public class PendingQuery {
 					var		i		= 1;
 					Array	list	= ( Array ) param.getValue();
 					for ( Object value : list ) {
-						Object casted = QueryColumnType.toSQLType( param.getType(), value, context );
+						Object casted = transformValueForSQL( param.getType(), value, context, statement.getConnection() );
 						emitValueToSQL( SQLWithParamValues, casted, param.getType() );
 						if ( i < list.size() ) {
 							SQLWithParamValues.append( ", " );
@@ -809,8 +809,9 @@ public class PendingQuery {
 						i++;
 					}
 				} else {
-					Object value = param.toSQLType( context );
+					Object value = transformValueForSQL( param.getType(), param.getValue(), context, statement.getConnection() );
 					emitValueToSQL( SQLWithParamValues, value, param.getType() );
+
 					if ( scaleOrLength == null ) {
 						preparedStatement.setObject( parameterIndex, value, mapParamTypeToSQLType( param.getType(), value ) );
 					} else {
@@ -841,6 +842,24 @@ public class PendingQuery {
 			return type.sqlType;
 		}
 		return this.datasource.getConfiguration().getDriver().mapParamTypeToSQLType( type, value );
+	}
+
+	/**
+	 * Transform a value to be suitable for SQL insertion based on its QueryColumnType.
+	 * 
+	 * @param type       The QueryColumnType of the value.
+	 * @param value      The value to transform.
+	 * @param context    The context for type casting.
+	 * @param connection The BoxConnection for driver-specific transformations.
+	 * 
+	 * @return The transformed value.
+	 */
+	private Object transformValueForSQL( QueryColumnType type, Object value, IBoxContext context, BoxConnection connection ) {
+		// QoQ has no datasource
+		if ( this.datasource == null ) {
+			return QueryColumnType.toSQLType( type, value, context, connection );
+		}
+		return this.datasource.getConfiguration().getDriver().transformParamValue( type, value, context, connection );
 	}
 
 	/**

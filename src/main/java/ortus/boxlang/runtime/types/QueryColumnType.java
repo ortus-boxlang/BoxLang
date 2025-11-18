@@ -27,6 +27,7 @@ import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.jdbc.BoxConnection;
 
 /**
  * Represents a column type in a Query object.
@@ -287,33 +288,71 @@ public enum QueryColumnType {
 	 *
 	 * @TODO: This may better belong in a Caster class.
 	 *
+	 * @param type       The query column type to convert to.
+	 * @param value      The value to convert.
+	 * @param context    The context in which the conversion is taking place. Useful for localization.
+	 * @param connection The BoxConnection instance
+	 */
+	public static Object toSQLType( QueryColumnType type, Object value, IBoxContext context, BoxConnection connection ) {
+		if ( value == null ) {
+			return null;
+		}
+		try {
+			return switch ( type ) {
+				case QueryColumnType.INTEGER -> IntegerCaster.cast( value );
+				case QueryColumnType.BIGINT -> BigIntegerCaster.cast( value );
+				case QueryColumnType.DOUBLE -> DoubleCaster.cast( value );
+				case QueryColumnType.DECIMAL -> DoubleCaster.cast( value );
+				case QueryColumnType.CHAR, VARCHAR -> StringCaster.cast( value );
+				case QueryColumnType.BINARY -> value; // @TODO: Will this work?
+				case QueryColumnType.BLOB -> {
+					if ( connection != null ) {
+						var blob = connection.createBlob();
+						blob.setBytes( 1, BinaryCaster.cast( value ) );
+						yield blob;
+					} else {
+						yield new javax.sql.rowset.serial.SerialBlob( BinaryCaster.cast( value ) );
+					}
+				}
+				case QueryColumnType.CLOB -> {
+					if ( connection != null ) {
+						var clob = connection.createClob();
+						clob.setString( 1, StringCaster.cast( value ) );
+						yield clob;
+					} else {
+						yield new javax.sql.rowset.serial.SerialClob( StringCaster.cast( value ).toCharArray() );
+					}
+				}
+				case QueryColumnType.BIT -> BooleanCaster.cast( value );
+				case QueryColumnType.BOOLEAN -> BooleanCaster.cast( value );
+				case QueryColumnType.TIME -> DateTimeCaster.cast( value, context ).toDate();
+				case QueryColumnType.DATE -> DateTimeCaster.cast( value, context ).toDate();
+				case QueryColumnType.TIMESTAMP -> new java.sql.Timestamp( DateTimeCaster.cast( value, context ).toEpochMillis() );
+				case QueryColumnType.DATETIME -> new java.sql.Timestamp( DateTimeCaster.cast( value, context ).toEpochMillis() );
+				case QueryColumnType.OBJECT -> value;
+				case QueryColumnType.OTHER -> value;
+				case QueryColumnType.NULL -> null;
+			};
+		} catch ( Exception e ) {
+			throw new IllegalArgumentException( "Cannot convert value to SQL type " + type + ": " + e.getMessage(), e );
+		}
+	}
+
+	/**
+	 * Convert a value to the appropriate SQL type.
+	 * 
+	 * Deprecated: Use the overload that includes BoxConnection.
+	 * <p>
+	 *
+	 * @TODO: This may better belong in a Caster class.
+	 *
 	 * @param type    The query column type to convert to.
 	 * @param value   The value to convert.
 	 * @param context The context in which the conversion is taking place. Useful for localization.
 	 */
+	@Deprecated
 	public static Object toSQLType( QueryColumnType type, Object value, IBoxContext context ) {
-		if ( value == null ) {
-			return null;
-		}
-		return switch ( type ) {
-			case QueryColumnType.INTEGER -> IntegerCaster.cast( value );
-			case QueryColumnType.BIGINT -> BigIntegerCaster.cast( value );
-			case QueryColumnType.DOUBLE -> DoubleCaster.cast( value );
-			case QueryColumnType.DECIMAL -> DoubleCaster.cast( value );
-			case QueryColumnType.CHAR, VARCHAR -> StringCaster.cast( value );
-			case QueryColumnType.BINARY -> value; // @TODO: Will this work?
-			case QueryColumnType.BLOB -> BinaryCaster.cast( value );
-			case QueryColumnType.CLOB -> StringCaster.cast( value );
-			case QueryColumnType.BIT -> BooleanCaster.cast( value );
-			case QueryColumnType.BOOLEAN -> BooleanCaster.cast( value );
-			case QueryColumnType.TIME -> DateTimeCaster.cast( value, context ).toDate();
-			case QueryColumnType.DATE -> DateTimeCaster.cast( value, context ).toDate();
-			case QueryColumnType.TIMESTAMP -> new java.sql.Timestamp( DateTimeCaster.cast( value, context ).toEpochMillis() );
-			case QueryColumnType.DATETIME -> new java.sql.Timestamp( DateTimeCaster.cast( value, context ).toEpochMillis() );
-			case QueryColumnType.OBJECT -> value;
-			case QueryColumnType.OTHER -> value;
-			case QueryColumnType.NULL -> null;
-		};
+		return toSQLType( type, value, context, null );
 	}
 
 	/**

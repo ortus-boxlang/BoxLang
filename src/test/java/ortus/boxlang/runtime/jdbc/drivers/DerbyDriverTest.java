@@ -75,49 +75,72 @@ public class DerbyDriverTest extends AbstractDriverTest {
 		}
 	}
 
-	@DisplayName( "It can handle large blob columns" )
+	@DisplayName( "It can handle large blob and clob columns" )
 	@Test
-	public void testLargeBlobColumns() {
+	public void testLargeBlobAndClobColumns() {
 		instance.executeStatement(
 		    """
-		        result = queryExecute( "CREATE TABLE large_blob ( id INTEGER PRIMARY KEY, data BLOB )" );
-		    """, context );
+		    queryExecute( "
+		    	CREATE TABLE large_lob (
+		    		id INT PRIMARY KEY,
+		    		blob_data BLOB,
+		    		clob_data CLOB
+		    	)
+		    ",{}
+		    );
 
-		// Build a large string (~300KB)
+		    queryExecute( "DELETE FROM large_lob", {} );
+		    """, context );
+		// @formatter:off
 		instance.executeStatement(
-		    """
-		    	newBlob = "";
-		    	// ~300 chars
-		    	quote = "
+			"""
+				newLobData = "";
+				// ~300 chars
+				quote = "
 		               	Farewell, Aragorn! Go to Minas Tirith and save my people! I
 		               	have failed.
 		               	No! said Aragorn, taking his hand and kissing his brow. You
 		               	have conquered. Few have gained such a victory. Be at peace! Minas
 		               	Tirith shall not fall!
 		        ";
-		    	// times 1000 = ~300,000 chars
-		    	for( i=1; i <= 1000; i = i + 1 ) {
-		    		newBlob = newBlob & quote;
-		    	}
-		        insert = queryExecute( "INSERT INTO large_blob ( id, data ) VALUES ( 1, :newBlob )", { newBlob: { value: newBlob, sqltype: "blob" } } );
-		    """, context );
-
+				// times 1000 = ~300,000 chars
+				for( i=1; i <= 1000; i = i + 1 ) {
+					newLobData = newLobData & quote;
+				}
+				
+				insert = queryExecute( "INSERT INTO large_lob ( id, blob_data, clob_data ) VALUES ( 1, ?, ? )", [ 
+					{ value: newLobData, sqltype: "blob" },
+					{ value: newLobData, sqltype: "clob" }
+				] );
+			""", context );
 		instance.executeStatement(
-		    """
-		        result = queryExecute( "SELECT * FROM large_blob WHERE id = 1" );
-		    """, context );
-
+			"""
+				result = queryExecute( "SELECT * FROM large_lob WHERE id = 1" );
+			""", context );
+		// @formatter:on
 		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
 		Query query = variables.getAsQuery( result );
 		assertEquals( 1, query.size() );
 		IStruct	firstRow	= query.getRowAsStruct( 0 );
-		Object	data		= firstRow.get( Key.of( "data" ) );
-		assertNotNull( data );
-		if ( data instanceof byte[] ) {
-			byte[]	bytes		= ( byte[] ) data;
-			String	retrieved	= new String( bytes, java.nio.charset.StandardCharsets.UTF_8 );
-			assertThat( retrieved.length() ).isGreaterThan( 300000 );
+
+		// Test BLOB data
+		Object	blobData	= firstRow.get( Key.of( "BLOB_DATA" ) );
+		assertThat( blobData ).isNotNull();
+		// BLOB data may be returned as byte[] or other types depending on driver
+		if ( blobData instanceof byte[] ) {
+			String retrieved = new String( ( byte[] ) blobData, java.nio.charset.StandardCharsets.UTF_8 );
+			assertThat( retrieved.length() ).isAtLeast( 300000 );
 		}
+
+		// Test CLOB data
+		Object clobData = firstRow.get( Key.of( "CLOB_DATA" ) );
+		assertThat( clobData ).isNotNull();
+		assertThat( clobData ).isInstanceOf( String.class );
+		String clobString = ( String ) clobData;
+		assertThat( clobString.length() ).isAtLeast( 300000 );
+		// Use containsMatch to handle whitespace variations
+		assertThat( clobString ).containsMatch( "Farewell,\\s+Aragorn!" );
+		assertThat( clobString ).containsMatch( "Minas\\s+Tirith\\s+shall\\s+not\\s+fall!" );
 	}
 
 	@DisplayName( "It can insert null BLOB values" )

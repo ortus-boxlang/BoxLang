@@ -18,6 +18,8 @@
 package ortus.boxlang.runtime.jdbc.drivers;
 
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.jdbc.BoxConnection;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.QueryColumnType;
@@ -96,7 +98,7 @@ public interface IJDBCDriver {
 	public QueryColumnType mapSQLTypeToQueryColumnType( int sqlType );
 
 	/**
-	 * Transform a value according to the driver's specific needs. This allows drivers to map custom Java classes to native BL types.
+	 * Transform a value coming OUT of the DB according to the driver's specific needs. This allows drivers to map custom Java classes to native BL types.
 	 * The default implementation will return the value as-is.
 	 * 
 	 * @param sqlType The SQL type of the value, from java.sql.Types
@@ -105,6 +107,19 @@ public interface IJDBCDriver {
 	 * @return The transformed value
 	 */
 	public Object transformValue( int sqlType, Object value );
+
+	/**
+	 * Transform a value going IN to the DB according to the driver's specific needs. This allows drivers to map custom native BL types to custom driver Java types.
+	 * Ex: Oracle's custom BLOB and CLOB classes.
+	 * 
+	 * @param type       The SQL type of the value, from QueryColumnType
+	 * @param value      The value to transform
+	 * @param context    The context for type casting
+	 * @param connection The BoxConnection instance
+	 * 
+	 * @return The transformed value
+	 */
+	public Object transformParamValue( QueryColumnType type, Object value, IBoxContext context, BoxConnection connection );
 
 	/**
 	 * Map param type to SQL type. For the most part, these mappings are defined by the QueryColumnType enum,

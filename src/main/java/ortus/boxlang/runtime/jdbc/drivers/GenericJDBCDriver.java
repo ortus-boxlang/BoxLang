@@ -18,7 +18,9 @@
 package ortus.boxlang.runtime.jdbc.drivers;
 
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.jdbc.BoxConnection;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.QueryColumnType;
@@ -215,7 +217,73 @@ public class GenericJDBCDriver implements IJDBCDriver {
 	 */
 	@Override
 	public Object transformValue( int sqlType, Object value ) {
+		// Handle common JDBC LOB and complex types
+		if ( value instanceof java.sql.Blob blob ) {
+			try {
+				return blob.getBytes( 1, ( int ) blob.length() );
+			} catch ( Exception e ) {
+				throw new RuntimeException( "Error reading Blob data", e );
+			}
+		} else if ( value instanceof java.sql.Clob clob ) {
+			try {
+				return clob.getSubString( 1, ( int ) clob.length() );
+			} catch ( Exception e ) {
+				throw new RuntimeException( "Error reading Clob data", e );
+			}
+		} else if ( value instanceof java.sql.NClob nclob ) {
+			try {
+				return nclob.getSubString( 1, ( int ) nclob.length() );
+			} catch ( Exception e ) {
+				throw new RuntimeException( "Error reading NClob data", e );
+			}
+		} else if ( value instanceof java.sql.SQLXML sqlxml ) {
+			try {
+				return sqlxml.getString();
+			} catch ( Exception e ) {
+				throw new RuntimeException( "Error reading SQLXML data", e );
+			}
+		} else if ( value instanceof java.sql.Array array ) {
+			try {
+				// Convert SQL Array to Java Object array
+				return array.getArray();
+			} catch ( Exception e ) {
+				throw new RuntimeException( "Error reading Array data", e );
+			}
+		} else if ( value instanceof java.sql.Struct struct ) {
+			try {
+				// Convert SQL Struct to Object array of attributes
+				return struct.getAttributes();
+			} catch ( Exception e ) {
+				throw new RuntimeException( "Error reading Struct data", e );
+			}
+		} else if ( value instanceof java.sql.Ref ref ) {
+			try {
+				// Convert SQL Ref to its base type name
+				return ref.getBaseTypeName();
+			} catch ( Exception e ) {
+				throw new RuntimeException( "Error reading Ref data", e );
+			}
+		} else if ( value instanceof java.sql.RowId rowId ) {
+			// Convert RowId to byte array
+			return rowId.getBytes();
+		}
 		return value;
+	}
+
+	/**
+	 * Transform a value going IN to the DB according to the driver's specific needs. This allows drivers to map custom native BL types to custom driver Java types.
+	 * Ex: Oracle's custom BLOB and CLOB classes.
+	 * 
+	 * @param type       The SQL type of the value, from QueryColumnType
+	 * @param value      The value to transform
+	 * @param context    The context for type casting
+	 * @param connection The BoxConnection instance
+	 * 
+	 * 
+	 * @return The transformed value
+	 */
+	public Object transformParamValue( QueryColumnType type, Object value, IBoxContext context, BoxConnection connection ) {
+		return QueryColumnType.toSQLType( type, value, context, connection );
 	}
 
 	/**

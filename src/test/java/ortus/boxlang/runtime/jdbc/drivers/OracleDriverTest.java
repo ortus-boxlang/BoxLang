@@ -242,17 +242,29 @@ public class OracleDriverTest extends AbstractDriverTest {
 		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
 	}
 
-	@DisplayName( "It can handle large blob columns" )
+	@DisplayName( "It can handle large blob and clob columns" )
 	@Test
-	public void testLargeBlobColumns() {
+	public void testLargeBlobAndClobColumns() {
 		instance.executeStatement(
 		    """
-		        result = queryExecute( "CREATE TABLE large_blob ( id INTEGER PRIMARY KEY, data BLOB )" );
+		    queryExecute( "
+		    	BEGIN
+		    		EXECUTE IMMEDIATE 'CREATE TABLE large_lob ( id INTEGER PRIMARY KEY, blob_data BLOB, clob_data CLOB )';
+		    	EXCEPTION
+		    		WHEN OTHERS THEN
+		    			IF SQLCODE != -955 THEN
+		    				RAISE;
+		    			END IF;
+		    	END;
+		    ",{},{ "datasource" : "OracleDatasource" }
+		    );
+
+		    queryExecute( "TRUNCATE TABLE large_lob", {}, { "datasource" : "OracleDatasource" } );
 		    """, context );
 		// @formatter:off
 		instance.executeStatement(
 		    """
-				newBlob = "";
+				newLobData = "";
 				// ~300 chars
 				quote = "
 		               	Farewell, Aragorn! Go to Minas Tirith and save my people! I
@@ -263,25 +275,75 @@ public class OracleDriverTest extends AbstractDriverTest {
 		        ";
 				// times 1000 = ~300,000 chars
 				for( i=1; i <= 1000; i = i + 1 ) {
-					newBlob = newBlob & quote;
+					newLobData = newLobData & quote;
 				}
-		        insert = queryExecute( "INSERT INTO large_blob ( id, data ) VALUES ( 1, :newBlob )", { newBlob: { value: newBlob, sqltype: "blob" } } );
+		        insert = queryExecute( "INSERT INTO large_lob ( id, blob_data, clob_data ) VALUES ( 1, :blobData, :clobData )", { 
+		        	blobData: { value: newLobData, sqltype: "blob" },
+		        	clobData: { value: newLobData, sqltype: "clob" }
+		        }, { "datasource" : "OracleDatasource" } );
 		    """, context );
 		instance.executeStatement(
 		    """
-		        result = queryExecute( "SELECT * FROM large_blob WHERE id = 1" );
+		        result = queryExecute( "SELECT * FROM large_lob WHERE id = 1", {}, { "datasource" : "OracleDatasource" } );
 		    """, context );
-// @formatter:on
+		// @formatter:on
 		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
 		Query query = variables.getAsQuery( result );
 		assertEquals( 1, query.size() );
 		IStruct	firstRow	= query.getRowAsStruct( 0 );
-		Object	data		= firstRow.get( Key.data );
-		assertThat( data ).isNotNull();
+
+		// Test BLOB data
+		Object	blobData	= firstRow.get( Key.of( "BLOB_DATA" ) );
+		assertThat( blobData ).isNotNull();
 		// BLOB data may be returned as byte[] or other types depending on driver
-		if ( data instanceof byte[] ) {
-			String retrieved = new String( ( byte[] ) data, java.nio.charset.StandardCharsets.UTF_8 );
-			assertThat( retrieved.length() ).isGreaterThan( 300000 );
+		if ( blobData instanceof byte[] ) {
+			String retrieved = new String( ( byte[] ) blobData, java.nio.charset.StandardCharsets.UTF_8 );
+			assertThat( retrieved.length() ).isAtLeast( 300000 );
 		}
+
+		// Test CLOB data
+		Object clobData = firstRow.get( Key.of( "CLOB_DATA" ) );
+		assertThat( clobData ).isNotNull();
+		assertThat( clobData ).isInstanceOf( String.class );
+		String clobString = ( String ) clobData;
+		assertThat( clobString.length() ).isAtLeast( 300000 );
+		// Use containsMatch to handle whitespace variations
+		assertThat( clobString ).containsMatch( "Farewell,\\s+Aragorn!" );
+		assertThat( clobString ).containsMatch( "Minas\\s+Tirith\\s+shall\\s+not\\s+fall!" );
+	}
+
+	@DisplayName( "proc out vars transform custom JDBC driver types" )
+	@Test
+	public void testProcOutVarTransformCustomJDBCDriverTypes() {
+		// Create the stored procedure
+		instance.executeStatement(
+		    """
+		    queryExecute( "
+		    	CREATE OR REPLACE PROCEDURE getRowIdProc (
+		    		outRowId OUT ROWID
+		    	)
+		    	IS
+		    	BEGIN
+		    		SELECT ROWID INTO outRowId FROM dual;
+		    	END getRowIdProc;
+		    ",{},{ "datasource" : "OracleDatasource" }
+		    );
+		    """, context );
+
+		ExecutedQuery.debug = true;
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="getRowIdProc" datasource="OracleDatasource" result="variables.result" debug=true>
+		        <bx:procparam name="outRowId" type="out" sqltype="string" variable="returnedRowId" />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		ExecutedQuery.debug = false;
+
+		// Verify that we got a ROWID back
+		assertThat( variables.get( "returnedRowId" ) ).isNotNull();
+		assertThat( variables.get( "returnedRowId" ) ).isInstanceOf( String.class );
+		String rowIdString = variables.getAsString( Key.of( "returnedRowId" ) );
+		assertThat( rowIdString.length() ).isGreaterThan( 0 );
 	}
 }

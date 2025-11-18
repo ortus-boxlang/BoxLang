@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.components.jdbc;
 
-import java.sql.CallableStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -230,7 +229,8 @@ public class StoredProc extends Component {
 	 * @param debug         Whether to output debug info
 	 * @param procedureName The name of the stored procedure, for debug output
 	 */
-	private void registerProcedureParams( CallableStatement procedure, Array params, int paramOffset, boolean debug, String procedureName, IBoxContext context )
+	private void registerProcedureParams( BoxCallableStatement procedure, Array params, int paramOffset, boolean debug, String procedureName,
+	    IBoxContext context )
 	    throws SQLException {
 		for ( int i = 0; i < params.size(); i++ ) {
 			IStruct	attr	= ( IStruct ) params.get( i );
@@ -259,7 +259,7 @@ public class StoredProc extends Component {
 				if ( BooleanCaster.cast( attr.getOrDefault( Key.nulls, false ) ) ) {
 					value = null;
 				} else {
-					value = QueryColumnType.toSQLType( queryType, value, context );
+					value = QueryColumnType.toSQLType( queryType, value, context, procedure.getConnection() );
 				}
 				procedure.setObject( i + 1 + paramOffset, value, sqlType );
 			}
@@ -369,7 +369,7 @@ public class StoredProc extends Component {
 	 * @param params      The stored procedure parameters.
 	 * @param paramOffset Offset for parameter positions (1 if return code is present, 0 otherwise)
 	 */
-	private void putOutVariablesInContext( IBoxContext context, CallableStatement procedure, Array params, int paramOffset ) throws SQLException {
+	private void putOutVariablesInContext( IBoxContext context, BoxCallableStatement procedure, Array params, int paramOffset ) throws SQLException {
 		for ( int i = 0; i < params.size(); i++ ) {
 			IStruct attr = ( IStruct ) params.get( i );
 			if ( attr.containsKey( Key.type )
@@ -377,8 +377,16 @@ public class StoredProc extends Component {
 			    && attr.containsKey( Key.variable )
 			    && !Strings.isNullOrEmpty( attr.getAsString( Key.variable ) ) ) {
 
-				Object value = procedure.getObject( i + 1 + paramOffset );
+				// Get the out sql type, default to OBJECT if not specified
+				QueryColumnType BLType = QueryColumnType.fromString( ( String ) attr.getOrDefault( Key.sqltype, "OBJECT" ) );
 
+				// Get the value from the procedure, transform it if needed
+				Object value = procedure.getConnection().getDataSource().getConfiguration().getDriver().transformValue(
+				    BLType.sqlType,
+				    procedure.getObject( i + 1 + paramOffset )
+				);
+
+				// Set the variable in the context
 				ExpressionInterpreter.setVariable( context, attr.getAsString( Key.variable ), value );
 			}
 		}
