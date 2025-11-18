@@ -877,11 +877,11 @@ public final class LocalizationUtil {
 			        new DateTimeFormatterBuilder()
 			            .parseCaseInsensitive()
 			            .appendPattern( pattern )
-			            .toFormatter()
+			            .toFormatter( Locale.US )
 			    );
 		    } );
 
-		return builder.toFormatter();
+		return builder.toFormatter( Locale.US );
 
 	}
 

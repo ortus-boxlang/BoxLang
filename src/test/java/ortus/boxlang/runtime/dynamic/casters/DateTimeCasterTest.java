@@ -26,6 +26,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -336,12 +337,48 @@ public class DateTimeCasterTest {
 	}
 
 	@Test
-	@DisplayName( "Test medium format with seconds and meridian" )
+	@DisplayName( "Test Med with meridian and seconds" )
 	public void testMedWithMeridianSeconds() {
 		// Med string example Aug 26, 2024 22:05:00 UTC
 		String		dateString	= "Jul 17, 2017 9:29:40 PM";
 		DateTime	result		= DateTimeCaster.cast( dateString );
 		assertThat( result ).isNotNull();
 		assertThat( result.format( "yyyy-MM-dd hh:mm a" ) ).isEqualTo( "2017-07-17 09:29 PM" );
+	}
+
+	@Test
+	@DisplayName( "Test date parsing with German (de_DE) JVM locale to replicate locale-specific parsing issues" )
+	public void testDateParsingWithGermanLocale() {
+		// Store the original default locale to restore later
+		Locale originalLocale = Locale.getDefault();
+
+		try {
+			// Set JVM locale to German (Germany) which can cause date parsing issues
+			Locale.setDefault( Locale.GERMANY ); // This is de_DE
+
+			// Test various date formats that should still parse correctly with the fix
+			// These formats rely on the common pattern parsers being forced to use Locale.US
+
+			// Test medium format with meridian and seconds that was failing
+			String		dateString1	= "Jul 17, 2017 9:29:40 PM";
+			DateTime	result1		= DateTimeCaster.cast( dateString1 );
+			assertThat( result1 ).isNotNull();
+			assertThat( result1.format( "yyyy-MM-dd hh:mm a" ) ).isEqualTo( "2017-07-17 09:29 PM" );
+
+			// Test additional common English date formats
+			String		dateString2	= "Apr 02, 2024 12:00:00 AM";
+			DateTime	result2		= DateTimeCaster.cast( dateString2 );
+			assertThat( result2 ).isNotNull();
+
+			// Test another format that could be affected by locale
+			String		dateString3	= "Dec 25, 2023 11:59:59 PM";
+			DateTime	result3		= DateTimeCaster.cast( dateString3 );
+			assertThat( result3 ).isNotNull();
+			assertThat( result3.format( "yyyy-MM-dd" ) ).isEqualTo( "2023-12-25" );
+
+		} finally {
+			// Always restore the original locale
+			Locale.setDefault( originalLocale );
+		}
 	}
 }
