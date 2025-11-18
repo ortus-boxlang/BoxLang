@@ -38,7 +38,6 @@ import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
-import ortus.boxlang.runtime.jdbc.drivers.IJDBCDriver;
 import ortus.boxlang.runtime.jdbc.qoq.QoQConnection;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
@@ -784,7 +783,6 @@ public class PendingQuery {
 		}
 
 		if ( statement instanceof PreparedStatement preparedStatement ) {
-			IJDBCDriver		driver				= statement.getConnection().getDataSource().getConfiguration().getDriver();
 			StringBuilder	SQLWithParamValues	= new StringBuilder();
 			// The param index starts from 1
 			int				parameterIndex		= 1;
@@ -802,9 +800,9 @@ public class PendingQuery {
 							SQLWithParamValues.append( ", " );
 						}
 						if ( scaleOrLength == null ) {
-							preparedStatement.setObject( parameterIndex, casted, driver.mapParamTypeToSQLType( param.getType(), casted ) );
+							preparedStatement.setObject( parameterIndex, casted, mapParamTypeToSQLType( param.getType(), casted ) );
 						} else {
-							preparedStatement.setObject( parameterIndex, casted, driver.mapParamTypeToSQLType( param.getType(), casted ),
+							preparedStatement.setObject( parameterIndex, casted, mapParamTypeToSQLType( param.getType(), casted ),
 							    scaleOrLength );
 						}
 						parameterIndex++;
@@ -814,9 +812,9 @@ public class PendingQuery {
 					Object value = param.toSQLType( context );
 					emitValueToSQL( SQLWithParamValues, value, param.getType() );
 					if ( scaleOrLength == null ) {
-						preparedStatement.setObject( parameterIndex, value, driver.mapParamTypeToSQLType( param.getType(), value ) );
+						preparedStatement.setObject( parameterIndex, value, mapParamTypeToSQLType( param.getType(), value ) );
 					} else {
-						preparedStatement.setObject( parameterIndex, value, driver.mapParamTypeToSQLType( param.getType(), value ),
+						preparedStatement.setObject( parameterIndex, value, mapParamTypeToSQLType( param.getType(), value ),
 						    scaleOrLength );
 					}
 					parameterIndex++;
@@ -827,6 +825,22 @@ public class PendingQuery {
 			this.SQLWithParamValues = SQLWithParamValues.toString();
 			SQLWithParamTokens.clear();
 		}
+	}
+
+	/**
+	 * Map the BoxLang QueryColumnType to a SQL type integer for PreparedStatement
+	 * 
+	 * @param type  The QueryColumnType to map.
+	 * @param value The value associated with the type.
+	 * 
+	 * @return The corresponding SQL type integer.
+	 */
+	private int mapParamTypeToSQLType( QueryColumnType type, Object value ) {
+		// QoQ has no datasource
+		if ( this.datasource == null ) {
+			return type.sqlType;
+		}
+		return this.datasource.getConfiguration().getDriver().mapParamTypeToSQLType( type, value );
 	}
 
 	/**

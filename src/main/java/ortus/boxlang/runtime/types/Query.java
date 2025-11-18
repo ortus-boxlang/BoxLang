@@ -1427,7 +1427,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		Query q = new Query();
 
 		this.getColumns().entrySet().stream().forEach( entry -> {
-			q.addColumn( entry.getKey(), entry.getValue().getType() );
+			q.addColumn( entry.getKey(), entry.getValue().getType(), null, entry.getValue().getSQLType() );
 		} );
 
 		if ( deep ) {
