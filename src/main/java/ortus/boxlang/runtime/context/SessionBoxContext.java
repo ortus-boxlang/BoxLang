@@ -202,7 +202,7 @@ public class SessionBoxContext extends BaseBoxContext {
 
 		Application	application		= requestContext.getApplicationListener().getApplication();
 		Object		sessionTimeout	= requestContext.getConfigItems( Key.applicationSettings, Key.sessionTimeout );
-		String		cacheKey		= Session.buildCacheKey( this.session.getID(), application.getName() );
+		String		cacheKey		= this.session.getCacheKey();
 		Duration	timeoutDuration;
 
 		// Duration is the default, but if not, we will use the number as fractional days
