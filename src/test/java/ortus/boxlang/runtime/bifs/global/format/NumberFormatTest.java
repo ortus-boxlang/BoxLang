@@ -28,6 +28,7 @@ import java.util.Locale;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -283,6 +284,29 @@ public class NumberFormatTest {
 		    """,
 		    context );
 		assertEquals( "1", variables.getAsString( result ) );
+	}
+
+	@DisplayName( "It treats empty strings as zero" )
+	@Test
+	public void testEmptyStringAsZero() {
+		instance.executeSource(
+		    """
+		    result = numberFormat( "" );
+		    """,
+		    context );
+		assertEquals( "0", variables.getAsString( result ) );
+	}
+
+	@DisplayName( "It includes leading zero before decimal" )
+	@Test
+	@Disabled( "BL-1938" )
+	public void testEmptyStringAsZerod() {
+		instance.executeSource(
+		    """
+		    result = numberFormat( 0, "_.00" );
+		    """,
+		    context );
+		assertEquals( "0.00", variables.getAsString( result ) );
 	}
 
 }
