@@ -1,6 +1,7 @@
 package ortus.boxlang.runtime.jdbc.drivers;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.sql.SQLException;
 import java.sql.Types;
@@ -237,5 +238,44 @@ public class OracleDriverTest extends AbstractDriverTest {
 		IStruct resultStruct = variables.getAsStruct( result );
 
 		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
+	}
+
+	@Disabled( "To fix." )
+	@DisplayName( "It can handle large blob columns" )
+	@Test
+	public void testLargeBlobColumns() {
+		instance.executeStatement(
+		    """
+		        result = queryExecute( "CREATE TABLE large_blob ( id INTEGER PRIMARY KEY, data BLOB )" );
+		    """, context );
+		// @formatter:off
+		instance.executeStatement(
+		    """
+				newBlob = "";
+				// ~300 chars
+				quote = "
+		               	Farewell, Aragorn! Go to Minas Tirith and save my people! I
+		               	have failed.
+		               	No! said Aragorn, taking his hand and kissing his brow. You
+		               	have conquered. Few have gained such a victory. Be at peace! Minas
+		               	Tirith shall not fall!
+		        ";
+				// times 1000 = ~300,000 chars
+				for( i=1; i LTE 1000; i = i + 1 ) {
+					newBlob = newBlob & quote;
+				}
+		        insert = queryExecute( "INSERT INTO large_blob ( id, data ) VALUES ( 1, :newBlob )", { newBlob: { value: newBlob, sqltype: "blob" } } );
+		    """, context );
+		instance.executeStatement(
+		    """
+		        result = queryExecute( "SELECT * FROM large_blob WHERE id = 1", { newBlob: newBlob} );
+		    """, context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 1, query.size() );
+		IStruct firstRow = query.getRowAsStruct( 0 );
+		assertThat( firstRow.getAsString( Key.data ) ).isNotEmpty();
+		assertThat( firstRow.getAsString( Key.data ).length() ).isGreaterThan( 300000 );
 	}
 }
