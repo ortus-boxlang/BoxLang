@@ -35,6 +35,7 @@ import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.context.SessionBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
@@ -539,7 +540,16 @@ public class Application {
 			this.sessionsCache.set( cacheKey, targetSession, timeoutDuration, timeoutDuration );
 		}
 
+		context.getParentOfType( RequestBoxContext.class ).registerShutdownListener( ( ctx ) -> {
+			// Persist the session at the end of the request
+			SessionBoxContext sessionContext = ctx.getParentOfType( SessionBoxContext.class );
+			if ( sessionContext != null ) {
+				sessionContext.persistSession( ( RequestBoxContext ) ctx );
+			}
+		} );
+
 		return targetSession;
+
 	}
 
 	/**

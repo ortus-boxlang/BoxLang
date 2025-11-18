@@ -17,7 +17,14 @@
  */
 package ortus.boxlang.runtime.context;
 
+import java.math.BigDecimal;
+import java.time.Duration;
+
+import ortus.boxlang.runtime.application.Application;
 import ortus.boxlang.runtime.application.Session;
+import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
+import ortus.boxlang.runtime.dynamic.casters.LongCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.SessionScope;
@@ -183,6 +190,43 @@ public class SessionBoxContext extends BaseBoxContext {
 
 		// The RuntimeBoxContext has no "nearby" scopes
 		return getScope( name );
+	}
+
+	/**
+	 * Persist the current session state to the sessions cache
+	 * 
+	 * @param requestContext The request context to use for persisting the session.
+	 *                       We must pass this in manually, as the SessionContext is the parent of the Request context and Application context and thus `getRequestContext()` will not work
+	 */
+	public void persistSession( RequestBoxContext requestContext ) {
+
+		Application	application		= requestContext.getApplicationListener().getApplication();
+		Object		sessionTimeout	= requestContext.getConfigItems( Key.applicationSettings, Key.sessionTimeout );
+		String		cacheKey		= Session.buildCacheKey( this.session.getID(), application.getName() );
+		Duration	timeoutDuration;
+
+		// Duration is the default, but if not, we will use the number as fractional days
+		// Which is what the cache providers expect
+		if ( sessionTimeout instanceof Duration castedTimeout ) {
+			timeoutDuration = castedTimeout;
+		} else {
+			if ( sessionTimeout instanceof BigDecimal castDecimal ) {
+				BigDecimal timeoutMinutes = castDecimal.multiply( BigDecimalCaster.cast( 1440 ) );
+				timeoutDuration = Duration.ofMinutes( timeoutMinutes.longValue() );
+			} else if ( sessionTimeout instanceof String && StringCaster.cast( sessionTimeout ).contains( "." ) ) {
+				BigDecimal	castDecimal		= BigDecimalCaster.cast( sessionTimeout );
+				BigDecimal	timeoutMinutes	= castDecimal.multiply( BigDecimalCaster.cast( 1440 ) );
+				timeoutDuration = Duration.ofMinutes( timeoutMinutes.longValue() );
+			} else {
+				timeoutDuration = Duration.ofDays( LongCaster.cast( sessionTimeout ) );
+			}
+		}
+		requestContext.getApplicationListener().getApplication().getSessionsCache().set(
+		    cacheKey,
+		    this.session,
+		    timeoutDuration,
+		    timeoutDuration
+		);
 	}
 
 }
