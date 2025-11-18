@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.types.meta;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 
 /**
@@ -31,6 +32,10 @@ public class QueryMeta extends BoxMeta<Query> {
 	private Query	target;
 	public Class<?>	$class;
 	public IStruct	meta;
+	// Accessing a query column directly is pretty much impossible since we eagerly unwrap them.
+	// This gives us the information as a Array we can get our hands on.
+	// This is also why we're not storing this meta in the individual QueryColumn objects, because there is no way to actually dereference them directly.
+	public IStruct	columnsMeta;
 
 	/**
 	 * Constructor
@@ -46,6 +51,27 @@ public class QueryMeta extends BoxMeta<Query> {
 		IStruct metadata = target.getMetaData();
 		metadata.put( Key.type, "Query" );
 		this.meta = new UnmodifiableStruct( metadata );
+
+		buildColumnsMeta();
+	}
+
+	/**
+	 * Build the columns metadata
+	 */
+	public QueryMeta buildColumnsMeta() {
+		var colMeta = new Struct( IStruct.TYPES.LINKED );
+		for ( var col : target.getColumns().entrySet() ) {
+			colMeta.put(
+			    col.getKey(),
+			    UnmodifiableStruct.of(
+			        Key._NAME, col.getKey().toString(),
+			        Key.type, col.getValue().getType().toString(),
+			        Key.sqltype, col.getValue().getSQLType(),
+			        Key.index, col.getValue().getIndex()
+			    ) );
+		}
+		this.columnsMeta = colMeta.toUnmodifiable();
+		return this;
 	}
 
 	/**
@@ -60,6 +86,13 @@ public class QueryMeta extends BoxMeta<Query> {
 	 */
 	public IStruct getMeta() {
 		return this.meta;
+	}
+
+	/**
+	 * Get the columns metadata
+	 */
+	public IStruct getColumnsMeta() {
+		return this.columnsMeta;
 	}
 
 }

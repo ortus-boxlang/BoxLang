@@ -325,4 +325,42 @@ public class QueryTest {
 		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 1 );
 	}
 
+	@Test
+	public void testGetColumnMeta() {
+
+		instance.executeSource(
+		    """
+		    myQry = queryNew( "col,col2", "numeric,varchar" );
+		    result = myQry.$bx.columnsMeta
+		    result2 = myQry.getColumnMeta();
+		    resultCol = myQry.getColumnMeta( "col" );
+		    resultCol2 = myQry.getColumnMeta( "col2" );
+
+		                      """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct colMeta = variables.getAsStruct( result );
+		assertThat( colMeta.getAsStruct( Key.of( "col" ) ).getAsString( Key._NAME ) ).isEqualTo( "col" );
+		assertThat( colMeta.getAsStruct( Key.of( "col" ) ).getAsString( Key.type ) ).isEqualTo( "numeric" );
+		assertThat( colMeta.getAsStruct( Key.of( "col2" ) ).getAsString( Key._NAME ) ).isEqualTo( "col2" );
+		assertThat( colMeta.getAsStruct( Key.of( "col2" ) ).getAsString( Key.type ) ).isEqualTo( "string" );
+
+		assertThat( variables.get( Key.of( "result2" ) ) ).isInstanceOf( IStruct.class );
+		colMeta = variables.getAsStruct( Key.of( "result2" ) );
+		assertThat( colMeta.getAsStruct( Key.of( "col" ) ).getAsString( Key._NAME ) ).isEqualTo( "col" );
+		assertThat( colMeta.getAsStruct( Key.of( "col" ) ).getAsString( Key.type ) ).isEqualTo( "numeric" );
+		assertThat( colMeta.getAsStruct( Key.of( "col2" ) ).getAsString( Key._NAME ) ).isEqualTo( "col2" );
+		assertThat( colMeta.getAsStruct( Key.of( "col2" ) ).getAsString( Key.type ) ).isEqualTo( "string" );
+
+		assertThat( variables.get( Key.of( "resultCol" ) ) ).isInstanceOf( IStruct.class );
+		IStruct singleColMeta = variables.getAsStruct( Key.of( "resultCol" ) );
+		assertThat( singleColMeta.getAsString( Key._NAME ) ).isEqualTo( "col" );
+		assertThat( singleColMeta.getAsString( Key.type ) ).isEqualTo( "numeric" );
+
+		assertThat( variables.get( Key.of( "resultCol2" ) ) ).isInstanceOf( IStruct.class );
+		singleColMeta = variables.getAsStruct( Key.of( "resultCol2" ) );
+		assertThat( singleColMeta.getAsString( Key._NAME ) ).isEqualTo( "col2" );
+		assertThat( singleColMeta.getAsString( Key.type ) ).isEqualTo( "string" );
+	}
+
 }

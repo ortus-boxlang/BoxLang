@@ -3,6 +3,7 @@ package ortus.boxlang.runtime.jdbc.drivers;
 import static com.google.common.truth.Truth.assertThat;
 
 import java.sql.SQLException;
+import java.sql.Types;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -145,13 +146,14 @@ public class OracleDriverTest extends AbstractDriverTest {
 		instance.executeStatement(
 		    String.format(
 		        """
-		        result = queryExecute( "SELECT ROWID FROM developers",
-		        {},
-		        { "datasource" : "%s" }
-		        );
+		              result = queryExecute( "SELECT ROWID FROM developers",
+		              {},
+		              { "datasource" : "%s" }
+		              );
 
-		        value = "rowID: " & result.rowID;
-		                                                   """,
+		              value = "rowID: " & result.rowID;
+		        colMeta = result.$bx.getColumnsMeta()
+		                                                         """,
 		        getDatasourceName() ),
 		    context );
 		assertThat( variables.getAsQuery( result ).getColumns().values().toArray( new QueryColumn[ 0 ] )[ 0 ].getType() ).isEqualTo( QueryColumnType.VARCHAR );
@@ -159,6 +161,43 @@ public class OracleDriverTest extends AbstractDriverTest {
 		assertThat( variables.get( "value" ) ).isInstanceOf( String.class );
 		String rowIDString = variables.getAsString( Key.of( "value" ) );
 		assertThat( rowIDString ).startsWith( "rowID: " );
+
+		IStruct rowIDMeta = variables.getAsStruct( Key.of( "colMeta" ) ).getAsStruct( Key.of( "ROWID" ) );
+		assertThat( rowIDMeta.getAsInteger( Key.sqltype ) ).isEqualTo( Types.ROWID );
+		assertThat( rowIDMeta.get( Key.type ) ).isEqualTo( QueryColumnType.VARCHAR.toString() );
+
+	}
+
+	@DisplayName( "It can select from char 15 field" )
+	@Test
+	public void testSelectFromCharFields() {
+		instance.executeStatement(
+		    """
+		    queryExecute( "
+		    	BEGIN
+		    		EXECUTE IMMEDIATE 'CREATE TABLE char15Test ( char15field CHAR(15) )';
+		    	EXCEPTION
+		    		WHEN OTHERS THEN
+		    			IF SQLCODE != -955 THEN
+		    				RAISE;
+		    			END IF;
+		    	END;
+		    ",{},{ "datasource" : "OracleDatasource" }
+		    );
+
+		    queryExecute( "TRUNCATE TABLE char15Test",{},{ "datasource" : "OracleDatasource" } );
+		    queryExecute( "INSERT INTO char15Test ( char15field ) VALUES ( 'value' )",{},{ "datasource" : "OracleDatasource" } );
+
+		    result = queryExecute( "
+		    	SELECT * FROM char15Test where char15field = ?
+		    	",[ {
+		    		sqltype : "varchar",
+		    		value: "value"
+		    	}],{ "datasource" : "OracleDatasource" }
+		    );
+		    println( result )
+		    """,
+		    context );
 
 	}
 

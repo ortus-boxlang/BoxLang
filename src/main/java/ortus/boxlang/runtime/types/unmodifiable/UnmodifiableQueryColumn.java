@@ -43,6 +43,19 @@ public class UnmodifiableQueryColumn extends QueryColumn {
 		super( name, type, query, index );
 	}
 
+	/**
+	 * Add new column to query
+	 *
+	 * @param name    column name
+	 * @param type    column type
+	 * @param query   query
+	 * @param index   column index (0-based)
+	 * @param SQLType original SQL type of the column
+	 */
+	public UnmodifiableQueryColumn( Key name, QueryColumnType type, Query query, int index, Integer SQLType ) {
+		super( name, type, query, index, SQLType );
+	}
+
 	// Convenience methods
 
 	/**
@@ -64,6 +77,21 @@ public class UnmodifiableQueryColumn extends QueryColumn {
 	@Override
 	public Object assign( IBoxContext context, Key name, Object value ) {
 		throw new UnmodifiableException( "Cannot assign to Unmodifiable Query column" );
+	}
+
+	/**
+	 * Clone this QueryColumn, overriding the query reference, index
+	 * Passing null for either parameter will keep the existing value
+	 */
+	@Override
+	public UnmodifiableQueryColumn clone( Query query, Integer index ) {
+		return new UnmodifiableQueryColumn(
+		    getName(),
+		    getType(),
+		    query == null ? getQuery() : query,
+		    index == null ? getIndex() : index,
+		    getSQLType()
+		);
 	}
 
 }

@@ -71,7 +71,7 @@ public class UnmodifiableQuery extends Query implements IUnmodifiable {
 		this();
 		// add columns
 		for ( Map.Entry<Key, QueryColumn> columnInfo : query.getColumns().entrySet() ) {
-			super.addColumn( columnInfo.getValue().getName(), columnInfo.getValue().getType(), null );
+			super.addColumn( columnInfo.getValue().getName(), columnInfo.getValue().getType(), null, columnInfo.getValue().getSQLType() );
 		}
 		// then copy data
 		int i = 1;
@@ -110,6 +110,17 @@ public class UnmodifiableQuery extends Query implements IUnmodifiable {
 		return Query.fromArray( columnNames, columnTypes, rowData ).toUnmodifiable();
 	}
 
+	@Override
+	public Query addColumn( Key name, QueryColumnType type ) {
+		throw new UnmodifiableException( "Cannot add columns to an UnmodifiableQuery" );
+
+	}
+
+	@Override
+	public Query addColumn( Key name, QueryColumnType type, Object[] columnData, Integer SQLType ) {
+		throw new UnmodifiableException( "Cannot add columns to an UnmodifiableQuery" );
+	}
+
 	/**
 	 * Add a column to the query, populated with provided data. If the data array is
 	 * shorter than the current number of rows, the remaining rows will be
@@ -125,6 +136,11 @@ public class UnmodifiableQuery extends Query implements IUnmodifiable {
 		throw new UnmodifiableException( "Cannot add columns to an UnmodifiableQuery" );
 	}
 
+	@Override
+	public Query addColumn( Key name, QueryColumnType type, Integer SQLType ) {
+		throw new UnmodifiableException( "Cannot add columns to an UnmodifiableQuery" );
+	}
+
 	/**
 	 * Abstraction for creating a new column so we can re-use logic easier between normal and Unmodifiable queries
 	 *
@@ -137,6 +153,21 @@ public class UnmodifiableQuery extends Query implements IUnmodifiable {
 	@Override
 	protected QueryColumn createQueryColumn( Key name, QueryColumnType type, int index ) {
 		return new UnmodifiableQueryColumn( name, type, this, index );
+	}
+
+	/**
+	 * Abstraction for creating a new column so we can re-use logic easier between normal and Unmodifiable queries
+	 *
+	 * @param name    column name
+	 * @param type    column type
+	 * @param index   column index
+	 * @param SQLType original SQL type
+	 *
+	 * @return QueryColumn object
+	 */
+	@Override
+	protected QueryColumn createQueryColumn( Key name, QueryColumnType type, int index, Integer SQLType ) {
+		return new UnmodifiableQueryColumn( name, type, this, index, SQLType );
 	}
 
 	/**
@@ -346,7 +377,7 @@ public class UnmodifiableQuery extends Query implements IUnmodifiable {
 		var q = new Query();
 		// add columns
 		for ( Map.Entry<Key, QueryColumn> columnInfo : getColumns().entrySet() ) {
-			q.addColumn( columnInfo.getValue().getName(), columnInfo.getValue().getType(), null );
+			q.addColumn( columnInfo.getValue().getName(), columnInfo.getValue().getType(), null, columnInfo.getValue().getSQLType() );
 		}
 		// then copy data
 		int i = 1;

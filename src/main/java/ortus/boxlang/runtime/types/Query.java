@@ -129,7 +129,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	/**
 	 * Metadata object
 	 */
-	public transient BoxMeta<Query>			$bx;
+	public transient QueryMeta				$bx;
 
 	/**
 	 * Metadata for the query, used to populate QueryMeta
@@ -197,9 +197,10 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	public Query( Map<Key, QueryColumn> columns ) {
 		this();
-		columns.forEach( ( k, v ) -> {
-			addColumn( k, v.getType() );
-		} );
+		int index = 0;
+		for ( Map.Entry<Key, QueryColumn> entry : columns.entrySet() ) {
+			this.columns.put( entry.getKey(), entry.getValue().clone( this, index++ ) );
+		}
 	}
 
 	/**
@@ -250,7 +251,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 					// Add it
 					query.addColumn(
 					    colName,
-					    driver.mapSQLTypeToQueryColumnType( resultSetMetaData.getColumnType( i ) ) );
+					    driver.mapSQLTypeToQueryColumnType( resultSetMetaData.getColumnType( i ) ),
+					    resultSetMetaData.getColumnType( i ) );
 					// And remember this col possition as where the data will come from
 					columnMapList.add( i );
 					// Store the SQL type for this column (columnMapList.size() - 1 is the current column index)
@@ -313,19 +315,18 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	/**
 	 * Clone the columns of this query and return a new QueryColumn map.
+	 * Note, the columns will STILL point to the original query object and will have the original indexes.
 	 */
 	public Map<Key, QueryColumn> cloneColumns() {
-		var	newColumns	= Collections.synchronizedMap( new LinkedHashMap<>( this.columns ) );
-		// Re-index the columns
-		int	index		= 0;
-		for ( QueryColumn column : newColumns.values() ) {
-			column.setIndex( index++ );
+		var newColumns = Collections.synchronizedMap( new LinkedHashMap<Key, QueryColumn>() );
+		for ( Map.Entry<Key, QueryColumn> entry : this.columns.entrySet() ) {
+			newColumns.put( entry.getKey(), entry.getValue().clone() );
 		}
 		return newColumns;
 	}
 
 	/**
-	 * Set the columns for this query
+	 * Set the columns for this query. This will overwrite any existing index and query target.
 	 */
 	public Query setColumns( Map<Key, QueryColumn> columns ) {
 		this.columns = columns;
@@ -333,6 +334,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		int index = 0;
 		for ( QueryColumn column : columns.values() ) {
 			column.setIndex( index++ );
+			column.setQuery( this );
 		}
 		return this;
 	}
@@ -387,7 +389,19 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @return this query
 	 */
 	public Query addColumn( Key name, QueryColumnType type ) {
-		return addColumn( name, type, null );
+		return addColumn( name, type, null, null );
+	}
+
+	/**
+	 * Add a column to the query, populated with nulls
+	 *
+	 * @param name column name
+	 * @param type column type
+	 *
+	 * @return this query
+	 */
+	public Query addColumn( Key name, QueryColumnType type, Integer SQLType ) {
+		return addColumn( name, type, null, SQLType );
 	}
 
 	/**
@@ -401,7 +415,23 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @return this query
 	 */
-	public synchronized Query addColumn( Key name, QueryColumnType type, Object[] columnData ) {
+	public Query addColumn( Key name, QueryColumnType type, Object[] columnData ) {
+		return addColumn( name, type, columnData, null );
+	}
+
+	/**
+	 * Add a column to the query, populated with provided data. If the data array is
+	 * shorter than the current number of rows, the remaining rows will be
+	 * populated with nulls.
+	 *
+	 * @param name       column name
+	 * @param type       column type
+	 * @param columnData array of data to populate the column with, can be null
+	 * @param SQLType    original SQL type of the column, can be null
+	 *
+	 * @return this query
+	 */
+	public synchronized Query addColumn( Key name, QueryColumnType type, Object[] columnData, Integer SQLType ) {
 		// check if column name already exists
 		int	index		= -1;
 		int	newColIndex	= getColumns().size();
@@ -413,7 +443,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 				break;
 			}
 		}
-		columns.put( name, createQueryColumn( name, type, newColIndex ) );
+		columns.put( name, createQueryColumn( name, type, newColIndex, SQLType ) );
 		if ( size.get() > 0 ) {
 			// loop over data and replace each array with a new array having an additional
 			// null at the end
@@ -437,6 +467,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		}
 		columnNameList	= null;
 		columnNameArray	= null;
+		if ( this.$bx != null ) {
+			this.$bx.buildColumnsMeta();
+		}
 		return this;
 	}
 
@@ -451,6 +484,20 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	protected QueryColumn createQueryColumn( Key name, QueryColumnType type, int index ) {
 		return new QueryColumn( name, type, this, index );
+	}
+
+	/**
+	 * Abstraction for creating a new column so we can re-use logic easier between normal and Unmodifiable queries
+	 *
+	 * @param name    column name
+	 * @param type    column type
+	 * @param index   column index
+	 * @param SQLType original SQL type
+	 *
+	 * @return QueryColumn object
+	 */
+	protected QueryColumn createQueryColumn( Key name, QueryColumnType type, int index, Integer SQLType ) {
+		return new QueryColumn( name, type, this, index, SQLType );
 	}
 
 	/**
@@ -521,18 +568,31 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
-	 * Get the QueryColumn meta object
+	 * Get the QueryColumn meta object for a column
+	 * 
+	 * Same as getBoxMeta().getColumnsMeta().get( name )
 	 *
 	 * @param name column name
 	 *
 	 * @return QueryColumn meta object
 	 */
-	public BoxMeta<?> getColumnMeta( Key name ) {
-		QueryColumn column = columns.get( name );
-		if ( column == null ) {
+	public IStruct getColumnMeta( Key name ) {
+		IStruct columnMeta = ( IStruct ) getBoxMeta().getColumnsMeta().get( name );
+		if ( columnMeta == null ) {
 			throw new BoxRuntimeException( "Column '" + name + "' does not exist in query" );
 		}
-		return column.getBoxMeta();
+		return columnMeta;
+	}
+
+	/**
+	 * Get the meta for all columns
+	 * 
+	 * Same as getBoxMeta().getColumnsMeta()
+	 *
+	 * @return Struct of column meta
+	 */
+	public IStruct getColumnMeta() {
+		return getBoxMeta().getColumnsMeta();
 	}
 
 	/**
@@ -755,6 +815,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		}
 		columnNameList	= null;
 		columnNameArray	= null;
+		if ( this.$bx != null ) {
+			this.$bx.buildColumnsMeta();
+		}
 	}
 
 	/**
@@ -1263,7 +1326,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	@Override
-	public BoxMeta<Query> getBoxMeta() {
+	public QueryMeta getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new QueryMeta( this );
 		}
