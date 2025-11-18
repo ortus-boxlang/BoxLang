@@ -153,7 +153,7 @@ public class DataSource implements Comparable<DataSource> {
 	/**
 	 * Helper builder to build out a new DataSource object from a struct of properties and a name.
 	 * 
-	 * Will begin connection pooling automatically, unlike the default constructor.
+	 * Will begin connection pooling automatically.
 	 *
 	 * @param name       The name of the datasource.
 	 * @param properties A struct of properties to configure the datasource. Will likely be defined via <code>Application.bx</code> or a web admin.
@@ -161,7 +161,7 @@ public class DataSource implements Comparable<DataSource> {
 	 * @return a DataSource object configured from the provided struct.
 	 */
 	public static DataSource fromStruct( Key name, IStruct properties ) {
-		return new DataSource( new DatasourceConfig( name, properties ) ).beginPooling();
+		return new DataSource( new DatasourceConfig( name, properties ), true );
 	}
 
 	/**
