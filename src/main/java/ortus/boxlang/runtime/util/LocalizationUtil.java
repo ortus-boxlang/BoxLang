@@ -77,19 +77,33 @@ public final class LocalizationUtil {
 	    "yyyy-MM-dd['T'][ ]HH:mm[:ss][.SSS][XXX]",     // Consolidated: ISO with optional T/space, seconds, milliseconds, offset
 	    "yyyy-MM-dd['T'][ ]HH:mm[:ss][Z][X]",          // Consolidated: ISO with optional T/space, seconds, basic offset
 
-	    // Localized Date/Time formats - the order in which these are presented is very specific
+	    // Specific edge case patterns that don't fit the consolidated pattern structure
+	    "MMM d, yyyy h:mm:ss a", // Specific format for Jul 17, 2017 9:29:40 PM - single digit day and hour with seconds
+	    "MMM-dd-yyyy h:mm[ ]a", // Med DateTime specific format with double digit day, single digit hour (e.g., Nov-05-2025 8:43am)
+
+	    // Localized Date/Time formats - single-digit patterns come first for proper precedence
 	    "EEEE[,] d MMM yyyy HH:mm:ss[ zzz]", // Full DateTime (e.g., Tue, 02 Apr 2024 21:01:00 CEST) - Similar to FULL_FULL - optional full day, optional comma
 	    "EEE[,] d MMM yyyy HH:mm:ss[ zzz]", // Full DateTime (e.g., Tue, 02 Apr 2024 21:01:00 CEST) - Similar to FULL_FULL - optional full day, optional comma
-	    "dd MMM yyyy HH:mm[:ss]",         // Long DateTime (e.g., 02 Apr 2024 21:01:00) - Similar to LONG_LONG
-	    "dd-MMM-yyyy HH:mm[:ss]",         // Medium DateTime (e.g., 02-Apr-2024 21:01:00) - Might need adjustment based on locale
-	    "MMMM[,] dd[,] yyyy HH:mm:ss[ zzz]", 	  // Med DateTime (e.g., Apr 02, 2024 21:01:00) - Might need adjustment based on locale
-	    "MMMM[,] dd[,] yyyy hh:mm a[ zzz]", 	    // Med DateTime No Seconds and AM/PM (e.g., Apr 02, 2024 10:01 AM) - Might need adjustment based on locale
-	    "MMMM[,] dd[,] yyyy HH:mm[ zzz]", 	     // Med DateTime No Seconds (e.g. Apr 02 2024 21:01) - Might need adjustment based on locale
-	    "MMM[,][- ]dd[,][- ]yyyy HH:mm:ss[ zzz]", 	  // Med DateTime (e.g., Apr 02, 2024 21:01:00) - Might need adjustment based on locale
-	    "MMM[,][- ]dd[,][- ]yyyy hh:mm[ ]a[ zzz]", 	    // Med DateTime No Seconds and AM/PM (e.g., Apr 02, 2024 10:01 AM or 10:01AM) - Might need adjustment based on locale
-	    "MMM[,][- ]dd[,][- ]yyyy h:mm[ ]a[ zzz]", 	    // Med DateTime No Seconds and AM/PM with single digit hour (e.g., Nov-05-2025 8:43 am or 8:43am) - Might need adjustment based on locale
-	    "MMM-dd-yyyy h:mma", 	                      // Med DateTime specific format with single digit hour, no space (e.g., Nov-05-2025 8:43am)
-	    "MMM[,][- ]dd[,][- ]yyyy HH:mm[ zzz]", 	     // Med DateTime No Seconds (e.g. Apr 02 2024 21:01) - Might need adjustment based on locale
+	    "d MMM yyyy HH:mm[:ss]",         // Long DateTime with single digit day (e.g., 2 Apr 2024 21:01:00)
+	    "dd MMM yyyy HH:mm[:ss]",        // Long DateTime with double digit day (e.g., 02 Apr 2024 21:01:00) - Similar to LONG_LONG
+	    "d-MMM-yyyy HH:mm[:ss]",         // Medium DateTime with single digit day (e.g., 2-Apr-2024 21:01:00)
+	    "dd-MMM-yyyy HH:mm[:ss]",        // Medium DateTime with double digit day (e.g., 02-Apr-2024 21:01:00) - Might need adjustment based on locale
+	    "MMMM[,] d[,] yyyy HH:mm:ss[ zzz]", 	  // Med DateTime with single digit day (e.g., Apr 2, 2024 21:01:00) - Might need adjustment based on locale
+	    "MMMM[,] dd[,] yyyy HH:mm:ss[ zzz]", 	  // Med DateTime with double digit day (e.g., Apr 02, 2024 21:01:00) - Might need adjustment based on locale
+	    "MMMM[,] d[,] yyyy h:mm a[ zzz]", 	    // Med DateTime No Seconds and AM/PM with single digit day/hour (e.g., Apr 2, 2024 9:01 AM) - Might need adjustment based on locale
+	    "MMMM[,] dd[,] yyyy hh:mm a[ zzz]", 	    // Med DateTime No Seconds and AM/PM with double digit day/hour (e.g., Apr 02, 2024 10:01 AM) - Might need adjustment based on locale
+	    "MMMM[,] d[,] yyyy HH:mm[ zzz]", 	     // Med DateTime No Seconds with single digit day (e.g. Apr 2 2024 21:01) - Might need adjustment based on locale
+	    "MMMM[,] dd[,] yyyy HH:mm[ zzz]", 	     // Med DateTime No Seconds with double digit day (e.g. Apr 02 2024 21:01) - Might need adjustment based on locale
+	    // Consolidated patterns
+	    "MMM[,][- ]d[,][- ]yyyy h:mm[ ]a[ zzz]", 	    // Med DateTime No Seconds and AM/PM with single digit day/hour (e.g., Apr 2, 2024 9:01 AM, Jul 17, 2017 9:29 PM) - Might need adjustment based on locale
+	    "MMM[,][- ]dd[,][- ]yyyy hh:mm[ ]a[ zzz]", 	    // Med DateTime No Seconds and AM/PM with double digit day/hour (e.g., Apr 02, 2024 10:01 AM or 10:01AM) - Might need adjustment based on locale
+	    "MMM[,][- ]d[,][- ]yyyy h:mm:ss[ ]a[ zzz]", 	    // Med DateTime with Seconds and AM/PM with single digit day/hour (e.g., Jul 17, 2017 9:29:40 PM) - Might need adjustment based on locale
+	    "MMM[,][- ]dd[,][- ]yyyy h:mm:ss[ ]a[ zzz]", 	    // Med DateTime with Seconds and AM/PM with single/double digit day/hour (e.g., Apr 02, 2024 10:01:00 AM) - Might need adjustment based on locale
+
+	    "MMM[,][- ]d[,][- ]yyyy HH:mm:ss[ zzz]", 	  // Med DateTime with single digit day (e.g., Apr 2, 2024 21:01:00) - Might need adjustment based on locale
+	    "MMM[,][- ]dd[,][- ]yyyy HH:mm:ss[ zzz]", 	  // Med DateTime with double digit day (e.g., Apr 02, 2024 21:01:00) - Might need adjustment based on locale
+	    "MMM[,][- ]d[,][- ]yyyy HH:mm[ zzz]", 	     // Med DateTime No Seconds with single digit day (e.g. Apr 2 2024 21:01) - Might need adjustment based on locale
+	    "MMM[,][- ]dd[,][- ]yyyy HH:mm[ zzz]", 	     // Med DateTime No Seconds with double digit day (e.g. Apr 02 2024 21:01) - Might need adjustment based on locale
 	    "MM/dd/yyyy hh:mm[:ss] a",         // Short DateTime (e.g., 02/04/2024 04:01:00 PM) - Might need adjustment based on locale
 	    "MM/dd/yyyy HH:mm[:ss]",         // Short DateTime (e.g., 02/04/2024 21:01:00) - Might need adjustment based on locale
 	    "MM/dd/yyyy hh:mm a",         // Short DateTime (e.g., 02/04/2024 04:01:00 PM) - Might need adjustment based on locale
@@ -1020,7 +1034,6 @@ public final class LocalizationUtil {
 	 */
 
 	public static DateTimeFormatter getLocaleTimeParsers( Locale locale ) {
-		DateTimeFormatterBuilder formatBuilder = new DateTimeFormatterBuilder();
 		return appendLocaleTimeParsers( newLenientDateTimeFormatterBuilder(), locale ).toFormatter( locale );
 	}
 

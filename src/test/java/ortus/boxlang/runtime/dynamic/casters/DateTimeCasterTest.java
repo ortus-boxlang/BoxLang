@@ -334,4 +334,14 @@ public class DateTimeCasterTest {
 		assertThat( result ).isNotNull();
 		assertThat( result.format( "yyyy-MM-dd hh:mm a" ) ).isEqualTo( "1899-12-31 06:10 PM" );
 	}
+
+	@Test
+	@DisplayName( "Test medium format with seconds and meridian" )
+	public void testMedWithMeridianSeconds() {
+		// Med string example Aug 26, 2024 22:05:00 UTC
+		String		dateString	= "Jul 17, 2017 9:29:40 PM";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd hh:mm a" ) ).isEqualTo( "2017-07-17 09:29 PM" );
+	}
 }
