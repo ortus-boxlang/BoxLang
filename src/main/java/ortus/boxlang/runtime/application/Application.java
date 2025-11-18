@@ -695,7 +695,6 @@ public class Application {
 
 		// Clear out the data
 		this.started = false;
-		this.sessionsCache.clearAll( sessionCacheFilter );
 		this.classLoaders.clear();
 		this.applicationScope	= null;
 		this.startTime			= null;
