@@ -402,7 +402,9 @@ public class DataSource implements Comparable<DataSource> {
 	 * @return This DataSource object, which is now shut down and useless for any further operations.
 	 */
 	public DataSource shutdown() {
-		this.hikariDataSource.close();
+		if ( isPoolingStarted() ) {
+			this.hikariDataSource.close();
+		}
 		return this;
 	}
 

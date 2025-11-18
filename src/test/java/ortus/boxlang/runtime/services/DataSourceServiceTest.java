@@ -62,7 +62,7 @@ public class DataSourceServiceTest {
 		    "driver", "other",
 		    "connectionString", "jdbc:foobar:myDB"
 		);
-		assertThrows( BoxRuntimeException.class, () -> service.register( Key.of( "testIt" ), properties ) );
+		assertThrows( BoxRuntimeException.class, () -> service.register( Key.of( "testIt" ), properties ).beginPooling() );
 	}
 
 	@DisplayName( "It throws on invalid datasource when no driver is passed" )
@@ -71,7 +71,7 @@ public class DataSourceServiceTest {
 		IStruct properties = Struct.of(
 		    "connectionString", "jdbc:foobar:myDB"
 		);
-		assertThrows( BoxRuntimeException.class, () -> service.register( Key.of( "Invalid" ), properties ) );
+		assertThrows( BoxRuntimeException.class, () -> service.register( Key.of( "Invalid" ), properties ).beginPooling() );
 	}
 
 	@DisplayName( "It can set and get datasources with normal configurations" )
@@ -83,7 +83,7 @@ public class DataSourceServiceTest {
 		        "driver", "derby",
 		        "connectionString", "jdbc:derby:memory:DataSourceServiceTest;create=true"
 		    )
-		);
+		).beginPooling();
 
 		assertThat( service.get( dsn.getUniqueName() ) ).isInstanceOf( DataSource.class );
 		assertThat( dsn.equals( dsn ) ).isTrue();
@@ -98,7 +98,7 @@ public class DataSourceServiceTest {
 		        "driver", "derby",
 		        "connectionString", "jdbc:derby:memory:DataSourceServiceTest;create=true"
 		    )
-		);
+		).beginPooling();
 
 		assertThat( service.getNames() ).asList().containsExactly( dsn.getUniqueName().getName() );
 	}
@@ -118,7 +118,7 @@ public class DataSourceServiceTest {
 		        "driver", "derby",
 		        "connectionString", "jdbc:derby:memory:DataSourceServiceTest;create=true"
 		    )
-		);
+		).beginPooling();
 
 		try ( BoxConnection conn = dsn.getBoxConnection() ) {
 			assertThat( service.remove( dsn.getUniqueName() ) ).isTrue();
@@ -136,7 +136,7 @@ public class DataSourceServiceTest {
 		        "driver", "derby",
 		        "connectionString", "jdbc:derby:memory:DataSourceServiceTest;create=true"
 		    )
-		);
+		).beginPooling();
 
 		assertThat( service.has( dsn.getUniqueName() ) ).isTrue();
 		try ( BoxConnection connection = dsn.getBoxConnection() ) {
