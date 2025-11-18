@@ -28,7 +28,6 @@ import java.util.Locale;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -299,7 +298,6 @@ public class NumberFormatTest {
 
 	@DisplayName( "It includes leading zero before decimal" )
 	@Test
-	@Disabled( "BL-1938" )
 	public void testEmptyStringAsZerod() {
 		instance.executeSource(
 		    """

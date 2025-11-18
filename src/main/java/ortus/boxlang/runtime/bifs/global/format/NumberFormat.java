@@ -85,6 +85,9 @@ public class NumberFormat extends BIF {
 
 																	{
 																		put( "9", "0" );
+																		// This is a special case to ensure preceeding zeroes before the decimal. Using `#` will leave those blank
+																		put( "_.", "0." );
+																		// Standard replacement
 																		put( "_", "#" );
 																		put( "#,.", "#,##0." );
 																		put( "#$,0", "$#,##0" );
