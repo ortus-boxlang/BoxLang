@@ -21,11 +21,13 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -963,23 +965,89 @@ public class StructUtil {
 	 * @return a flattened map of the struct
 	 */
 	public static IStruct unFlattenKeys( IStruct struct, boolean deep, boolean retainKeys ) {
-		String	key;
-		Object	value;
-		int		index;
-		for ( Key k : struct.getKeys() ) {
+		String		key;
+		Object		value;
+		int			index;
+
+		// Pass 1: Determine which keys should be unflattened
+		Set<String>	keysToUnflatten	= determineKeysToUnflatten( struct );
+
+		// Pass 2: Create a copy of keys to iterate over since we'll be modifying the struct
+		Key[]		keys			= struct.getKeys().toArray( new Key[ 0 ] );
+		for ( Key k : keys ) {
 			key		= k.getName();
 			value	= struct.get( k );
 			if ( deep && value instanceof IStruct )
 				unFlattenKeys( StructCaster.cast( value ), deep, retainKeys );
+
 			if ( ( index = key.indexOf( '.' ) ) != -1 ) {
-				unFlattenKey( index, k, key, struct, retainKeys );
+				// Only unflatten if this key was marked for unflattening
+				if ( keysToUnflatten.contains( key ) ) {
+					unFlattenKey( index, k, key, struct, retainKeys );
+				}
 			}
 		}
 
 		return struct;
-
 	}
 
+	/**
+	 * Analyzes all keys in the struct to determine which dotted keys should be unflattened.
+	 * Uses heuristics to distinguish between original dotted keys and flattened keys.
+	 * 
+	 * @param struct the struct to analyze
+	 * 
+	 * @return a set of key names that should be unflattened
+	 */
+	private static Set<String> determineKeysToUnflatten( IStruct struct ) {
+		Set<String>					result		= new HashSet<>();
+		Map<String, List<String>>	keysByRoot	= new HashMap<>();
+
+		// Group all dotted keys by their root (first part before first dot)
+		for ( Key k : struct.getKeys() ) {
+			String	keyName		= k.getName();
+			int		dotIndex	= keyName.indexOf( '.' );
+			if ( dotIndex != -1 ) {
+				String root = keyName.substring( 0, dotIndex );
+				keysByRoot.computeIfAbsent( root, unused -> new ArrayList<>() ).add( keyName );
+			}
+		}
+
+		// For each root, decide if its keys should be unflattened
+		for ( Map.Entry<String, List<String>> entry : keysByRoot.entrySet() ) {
+			String			root	= entry.getKey();
+			List<String>	keys	= entry.getValue();
+
+			// If there are multiple keys with the same root, they likely represent
+			// a flattened object structure
+			if ( keys.size() > 1 ) {
+				result.addAll( keys );
+			}
+			// Single key with simple structure might be flattened from single-property object
+			// vs multi-dot keys are likely original configuration keys
+			else if ( keys.size() == 1 ) {
+				String	singleKey	= keys.get( 0 );
+				String	remainder	= singleKey.substring( root.length() + 1 );
+				// Simple keys like "nested.subkey" are likely flattened
+				// Complex keys like "oracle.net.disableOob" are likely original
+				if ( !remainder.contains( "." ) ) {
+					result.add( singleKey );
+				}
+			}
+		}
+
+		return result;
+	}
+
+	/**
+	 * Determines if a dotted key should be unflattened based on evidence that it represents
+	 * a flattened nested structure rather than an original dotted key name.
+	 *
+	 * @param keyName the dotted key to evaluate
+	 * @param struct  the struct containing all keys
+	 * 
+	 * @return true if the key should be unflattened, false if it should be preserved as-is
+	 */
 	/**
 	 * Method to recursively un-flatten a struct with keys in dot-notation
 	 *
