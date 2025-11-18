@@ -17,14 +17,9 @@
  */
 package ortus.boxlang.runtime.context;
 
-import java.math.BigDecimal;
 import java.time.Duration;
 
-import ortus.boxlang.runtime.application.Application;
 import ortus.boxlang.runtime.application.Session;
-import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
-import ortus.boxlang.runtime.dynamic.casters.LongCaster;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.SessionScope;
@@ -200,27 +195,10 @@ public class SessionBoxContext extends BaseBoxContext {
 	 */
 	public void persistSession( RequestBoxContext requestContext ) {
 
-		Application	application		= requestContext.getApplicationListener().getApplication();
 		Object		sessionTimeout	= requestContext.getConfigItems( Key.applicationSettings, Key.sessionTimeout );
 		String		cacheKey		= this.session.getCacheKey();
-		Duration	timeoutDuration;
+		Duration	timeoutDuration	= Session.convertTimeoutToDuration( sessionTimeout );
 
-		// Duration is the default, but if not, we will use the number as fractional days
-		// Which is what the cache providers expect
-		if ( sessionTimeout instanceof Duration castedTimeout ) {
-			timeoutDuration = castedTimeout;
-		} else {
-			if ( sessionTimeout instanceof BigDecimal castDecimal ) {
-				BigDecimal timeoutMinutes = castDecimal.multiply( BigDecimalCaster.cast( 1440 ) );
-				timeoutDuration = Duration.ofMinutes( timeoutMinutes.longValue() );
-			} else if ( sessionTimeout instanceof String && StringCaster.cast( sessionTimeout ).contains( "." ) ) {
-				BigDecimal	castDecimal		= BigDecimalCaster.cast( sessionTimeout );
-				BigDecimal	timeoutMinutes	= castDecimal.multiply( BigDecimalCaster.cast( 1440 ) );
-				timeoutDuration = Duration.ofMinutes( timeoutMinutes.longValue() );
-			} else {
-				timeoutDuration = Duration.ofDays( LongCaster.cast( sessionTimeout ) );
-			}
-		}
 		requestContext.getApplicationListener().getApplication().getSessionsCache().set(
 		    cacheKey,
 		    this.session,
