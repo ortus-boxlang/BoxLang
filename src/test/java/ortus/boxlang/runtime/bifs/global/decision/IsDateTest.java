@@ -263,13 +263,14 @@ public class IsDateTest {
 	public void testIsDateZero() {
 		instance.executeSource(
 		    """
-		    result = IsDate( -1 );
-		    result2 = IsDate( 0 );
-		    result3 = IsDate( 1 );
-		    result4 = IsDate( 2 );
-		    result5 = IsDate( 3 );
-		    result6 = IsDate( 4 );
-		    """,
+		       result = IsDate( -1 );
+		       result2 = IsDate( 0 );
+		       result3 = IsDate( 1 );
+		       result4 = IsDate( 2 );
+		       result5 = IsDate( 3 );
+		       result6 = IsDate( 4 );
+		    result7 = IsDate( "000009" );
+		       """,
 		    context );
 		assertFalse( variables.getAsBoolean( result ) );
 		assertFalse( variables.getAsBoolean( Key.of( "result2" ) ) );
@@ -277,6 +278,7 @@ public class IsDateTest {
 		assertFalse( variables.getAsBoolean( Key.of( "result4" ) ) );
 		assertFalse( variables.getAsBoolean( Key.of( "result5" ) ) );
 		assertFalse( variables.getAsBoolean( Key.of( "result6" ) ) );
+		assertFalse( variables.getAsBoolean( Key.of( "result7" ) ) );
 	}
 
 }
