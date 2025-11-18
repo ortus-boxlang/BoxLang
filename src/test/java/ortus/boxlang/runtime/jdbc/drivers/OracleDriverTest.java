@@ -199,6 +199,8 @@ public class OracleDriverTest extends AbstractDriverTest {
 		    println( result )
 		    """,
 		    context );
+		// Verify that the query found the row without needing RTRIM
+		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 1 );
 
 	}
 
