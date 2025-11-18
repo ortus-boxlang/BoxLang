@@ -813,32 +813,10 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertEquals( "Luis Majano", theResult.getRowAsStruct( 0 ).get( Key._NAME ) );
 	}
 
-	/**
-	 * This feature is not supported in Hikari https://github.com/brettwooldridge/HikariCP/issues/231
-	 */
-	@DisplayName( "It can execute a query with a custom username and password" )
-	@Test
-	@Disabled( "Lacking support in HikariCP" )
-	public void testCustomUsernameAndPassword() {
-		// DataSource alternateDataSource = DataSource.fromStruct( Struct.of(
-		// "connectionString", "jdbc:derby:memory:testQueryExecuteAlternateUserDB;user=foo;password=bar;create=true"
-		// ) );
-		// alternateDataSource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
-		// datasourceService.register( Key.of( "alternate" ), alternateDataSource );
-		instance.executeSource(
-		    """
-		    result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "username": "foo", "password": "bar", "datasource": "alternate" } );
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
-		Query query = variables.getAsQuery( result );
-		assertEquals( 0, query.size() );
-	}
-
 	@DisplayName( "ExecutedQuery instances are serializable" )
 	@Test
 	public void testObjectMarshallingOfExecutedQuery() {
-		ExecutedQuery executedQuery = new ExecutedQuery( new Query(), null );
+		ExecutedQuery executedQuery = new ExecutedQuery( new Query(), null, null );
 		ObjectMarshaller.serialize( context, executedQuery );
 	}
 }

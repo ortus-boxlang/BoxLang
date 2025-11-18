@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -775,15 +776,23 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 				wrapped = Long.signum( quantity ) == 1 ? wrapped.plusMonths( quantity ) : wrapped.minusMonths( Math.abs( quantity ) );
 				break;
 			case "w" :
-				Integer dayOfWeek = wrapped.getDayOfWeek().getValue();
-				switch ( dayOfWeek ) {
-					case 5 :
-						quantity = quantity + 2l;
-						break;
-					case 6 :
-						quantity = quantity + 1l;
+				// Weekday calculation - skip weekends based on locale
+				if ( quantity > 0 ) {
+					// Adding weekdays
+					for ( long i = 0; i < quantity; i++ ) {
+						do {
+							wrapped = wrapped.plusDays( 1 );
+						} while ( isWeekend( wrapped.getDayOfWeek() ) );
+					}
+				} else if ( quantity < 0 ) {
+					// Subtracting weekdays
+					for ( long i = 0; i < Math.abs( quantity ); i++ ) {
+						do {
+							wrapped = wrapped.minusDays( 1 );
+						} while ( isWeekend( wrapped.getDayOfWeek() ) );
+					}
 				}
-				wrapped = Long.signum( quantity ) == 1 ? wrapped.plusDays( quantity ) : wrapped.minusDays( Math.abs( quantity ) );
+				// quantity == 0 is handled by the early return at the top
 				break;
 			case "ww" :
 				wrapped = Long.signum( quantity ) == 1 ? wrapped.plusWeeks( quantity ) : wrapped.minusWeeks( Math.abs( quantity ) );
@@ -1183,6 +1192,25 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	@Override
 	public ZoneId getZone() {
 		return this.wrapped.getZone();
+	}
+
+	/**
+	 * Determines if a given day of the week is a weekend day based on the system locale.
+	 * This handles different locale-specific definitions of weekend days.
+	 * For most Western locales, weekends are Saturday and Sunday.
+	 * For some Middle Eastern locales, weekends might be Friday and Saturday.
+	 *
+	 * @param dayOfWeek The day of the week to check
+	 * 
+	 * @return true if the day is a weekend day, false if it's a weekday
+	 */
+	private boolean isWeekend( DayOfWeek dayOfWeek ) {
+		// For most practical purposes and to maintain backward compatibility,
+		// we'll treat Saturday and Sunday as weekend days regardless of locale.
+		// This matches the behavior expected by most DateAdd implementations.
+		// If locale-specific weekend handling is needed in the future,
+		// this could be enhanced to check specific locale weekend patterns.
+		return dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY;
 	}
 
 	/**

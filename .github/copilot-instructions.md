@@ -93,6 +93,13 @@
   - Constants: UPPER_SNAKE_CASE
   - Packages: lowercase dot-separated
 
+- **Instance Field Access:** ALWAYS use the `this` prefix when accessing instance fields/properties
+  - Use `this.fieldName` instead of just `fieldName`
+  - This clearly distinguishes instance fields from local variables and parameters
+  - Example: `this.runtime = runtime;` not `runtime = runtime;`
+  - Example: `this.config.get(key)` not `config.get(key)`
+  - Makes code more readable and prevents ambiguity
+
 ## Key Developer Workflows
 
 - **Development:** Use IntelliJ IDEA or VSCode with the BoxLang extension for code editing and navigation.

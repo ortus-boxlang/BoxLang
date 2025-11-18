@@ -41,11 +41,23 @@ public interface ITransaction {
 
 	/**
 	 * Get (creating if none found) the connection associated with this transaction.
+	 * 
+	 * This method is deprecated. Use getBoxConnection() instead.
+	 * 
 	 * <p>
 	 * This method should be called by queries executed inside a transaction body to ensure they run on the correct (transactional) connection.
 	 * Upon first execution, this method will acquire a connection from the datasource and store it for further use within the transaction.
 	 */
+	@Deprecated
 	public Connection getConnection();
+
+	/**
+	 * Get (creating if none found) the connection associated with this transaction.
+	 * <p>
+	 * This method should be called by queries executed inside a transaction body to ensure they run on the correct (transactional) connection.
+	 * Upon first execution, this method will acquire a connection from the datasource and store it for further use within the transaction.
+	 */
+	public BoxConnection getBoxConnection();
 
 	/**
 	 * Set the datasource associated with this transaction.

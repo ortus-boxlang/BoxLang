@@ -1,8 +1,10 @@
 package ortus.boxlang.runtime.jdbc.drivers;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.sql.SQLException;
+import java.sql.Types;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -21,6 +23,8 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.QueryColumn;
+import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
@@ -119,11 +123,15 @@ public class OracleDriverTest extends AbstractDriverTest {
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 		IStruct meta = variables.getAsStruct( result );
 
+		// RowID is returned as String
+		assertThat( meta.get( Key.rowID ) ).isInstanceOf( String.class );
 		assertThat( meta.get( Key.rowID ).toString().length() ).isGreaterThan( 0 );
 
 		Array generatedKeys = meta.getAsArray( Key.rowIDs );
 
 		assertThat( generatedKeys ).hasSize( 1 );
+		// Each key is a String
+		assertThat( ( ( Array ) generatedKeys.get( 0 ) ).get( 0 ) ).isInstanceOf( String.class );
 		// Single INSERT statement with 1 row generates 1 key
 		String[] allKeys = ( ( Array ) generatedKeys.get( 0 ) ).stream().map( String::valueOf ).toArray( String[]::new );
 		assertThat( allKeys[ 0 ].length() ).isGreaterThan( 0 );
@@ -131,6 +139,67 @@ public class OracleDriverTest extends AbstractDriverTest {
 		assertThat( meta.get( "updateCount" ) ).isEqualTo( 1 );
 		Array updateCounts = meta.getAsArray( Key.of( "updateCounts" ) );
 		assertThat( updateCounts.toArray() ).isEqualTo( new Integer[] { 1 } );
+	}
+
+	@DisplayName( "It selects a rowID and uses as String" )
+	@Test
+	public void testGeneratedKeyAsString() {
+		instance.executeStatement(
+		    String.format(
+		        """
+		              result = queryExecute( "SELECT ROWID FROM developers",
+		              {},
+		              { "datasource" : "%s" }
+		              );
+
+		              value = "rowID: " & result.rowID;
+		        colMeta = result.$bx.getColumnsMeta()
+		                                                         """,
+		        getDatasourceName() ),
+		    context );
+		assertThat( variables.getAsQuery( result ).getColumns().values().toArray( new QueryColumn[ 0 ] )[ 0 ].getType() ).isEqualTo( QueryColumnType.VARCHAR );
+
+		assertThat( variables.get( "value" ) ).isInstanceOf( String.class );
+		String rowIDString = variables.getAsString( Key.of( "value" ) );
+		assertThat( rowIDString ).startsWith( "rowID: " );
+
+		IStruct rowIDMeta = variables.getAsStruct( Key.of( "colMeta" ) ).getAsStruct( Key.of( "ROWID" ) );
+		assertThat( rowIDMeta.getAsInteger( Key.sqltype ) ).isEqualTo( Types.ROWID );
+		assertThat( rowIDMeta.get( Key.type ) ).isEqualTo( QueryColumnType.VARCHAR.toString() );
+
+	}
+
+	@DisplayName( "It can select from char 15 field" )
+	@Test
+	public void testSelectFromCharFields() {
+		instance.executeStatement(
+		    """
+		    queryExecute( "
+		    	BEGIN
+		    		EXECUTE IMMEDIATE 'CREATE TABLE char15Test ( char15field CHAR(15) )';
+		    	EXCEPTION
+		    		WHEN OTHERS THEN
+		    			IF SQLCODE != -955 THEN
+		    				RAISE;
+		    			END IF;
+		    	END;
+		    ",{},{ "datasource" : "OracleDatasource" }
+		    );
+
+		    queryExecute( "TRUNCATE TABLE char15Test",{},{ "datasource" : "OracleDatasource" } );
+		    queryExecute( "INSERT INTO char15Test ( char15field ) VALUES ( 'value' )",{},{ "datasource" : "OracleDatasource" } );
+
+		    result = queryExecute( "
+		    	SELECT * FROM char15Test where char15field = ?
+		    	",[ {
+		    		sqltype : "varchar",
+		    		value: "value"
+		    	}],{ "datasource" : "OracleDatasource" }
+		    );
+		    println( result )
+		    """,
+		    context );
+
 	}
 
 	@DisplayName( "It can call stored proc" )
@@ -169,5 +238,44 @@ public class OracleDriverTest extends AbstractDriverTest {
 		IStruct resultStruct = variables.getAsStruct( result );
 
 		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
+	}
+
+	@Disabled( "To fix." )
+	@DisplayName( "It can handle large blob columns" )
+	@Test
+	public void testLargeBlobColumns() {
+		instance.executeStatement(
+		    """
+		        result = queryExecute( "CREATE TABLE large_blob ( id INTEGER PRIMARY KEY, data BLOB )" );
+		    """, context );
+		// @formatter:off
+		instance.executeStatement(
+		    """
+				newBlob = "";
+				// ~300 chars
+				quote = "
+		               	Farewell, Aragorn! Go to Minas Tirith and save my people! I
+		               	have failed.
+		               	No! said Aragorn, taking his hand and kissing his brow. You
+		               	have conquered. Few have gained such a victory. Be at peace! Minas
+		               	Tirith shall not fall!
+		        ";
+				// times 1000 = ~300,000 chars
+				for( i=1; i LTE 1000; i = i + 1 ) {
+					newBlob = newBlob & quote;
+				}
+		        insert = queryExecute( "INSERT INTO large_blob ( id, data ) VALUES ( 1, :newBlob )", { newBlob: { value: newBlob, sqltype: "blob" } } );
+		    """, context );
+		instance.executeStatement(
+		    """
+		        result = queryExecute( "SELECT * FROM large_blob WHERE id = 1", { newBlob: newBlob} );
+		    """, context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 1, query.size() );
+		IStruct firstRow = query.getRowAsStruct( 0 );
+		assertThat( firstRow.getAsString( Key.data ) ).isNotEmpty();
+		assertThat( firstRow.getAsString( Key.data ).length() ).isGreaterThan( 300000 );
 	}
 }

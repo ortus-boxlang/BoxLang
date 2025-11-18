@@ -21,10 +21,13 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -728,78 +731,87 @@ public class StructUtil {
 	 * @return a stream of structs containing the owner, path, and value of the found key
 	 */
 	public static Stream<IStruct> findKey( IStruct struct, String key ) {
-		String[]			keyParts	= key.toLowerCase().split( "\\." );
-		IStruct				flatMap		= toFlatMap( struct );
+		String				searchKey	= key.toLowerCase();
 		ArrayList<IStruct>	results		= new ArrayList<IStruct>();
 
-		// If we have a single key and find it in the root add that result first
-		if ( keyParts.length == 1 && struct.containsKey( Key.of( key ) ) ) {
-			results.add(
-			    Struct.of(
-			        Key.owner, struct,
-			        Key.path, "." + key.toLowerCase(),
-			        Key.value, struct.get( Key.of( key ) )
-			    )
+		// Check if the key contains dots - indicating a path search
+		if ( searchKey.contains( "." ) ) {
+			// Use the toFlatMap approach for dot notation searches
+			IStruct flatMap = toFlatMap( struct );
+			results.addAll(
+			    flatMap.entrySet()
+			        .stream()
+			        .filter( entry -> entry.getKey().getName().toLowerCase().equals( searchKey ) )
+			        .map( entry -> {
+				        Struct returnStruct	= new Struct( Struct.TYPES.LINKED );
+				        String keyName		= entry.getKey().getName();
+				        String[] pathParts	= keyName.split( "\\." );
+
+				        // Find the immediate parent struct that contains the target key
+				        IStruct ownerStruct	= struct;
+				        if ( pathParts.length > 1 ) {
+					        // Navigate to the parent struct
+					        for ( int i = 0; i < pathParts.length - 1; i++ ) {
+						        ownerStruct = ownerStruct.getAsStruct( Key.of( pathParts[ i ] ) );
+					        }
+				        }
+
+				        returnStruct.put(
+				            Key.owner,
+				            ownerStruct
+				        );
+				        returnStruct.put(
+				            Key.path,
+				            "." + keyName
+				        );
+				        returnStruct.put(
+				            Key.value,
+				            entry.getValue()
+				        );
+				        return returnStruct;
+			        } )
+			        .collect( Collectors.toList() )
 			);
+		} else {
+			// Use recursive search for simple key searches (supports intermediate structs)
+			findKeyRecursive( struct, struct, searchKey, "", results );
 		}
 
-		// Now add any results that are nested
-		results.addAll(
-		    flatMap.entrySet()
-		        .stream()
-		        .filter( entry -> {
-			        String[] splitParts = entry.getKey().getName().toLowerCase().split( "\\." );
-			        String stringKey = entry.getKey().getName().toLowerCase();
-			        return splitParts.length > 1
-			            ? splitParts[ splitParts.length - 1 ].equals( key.toLowerCase() ) || stringKey.equals( key.toLowerCase() )
-			            // For single keys make sure we check that it wasn't added above
-			            : results.stream()
-			                .filter(
-			                    result -> {
-				                    Object resultObj = result.get( Key.value );
-				                    Object entryObj = entry.getValue();
-				                    if ( resultObj == null ) {
-					                    return entry.getValue() == null;
-				                    } else {
-					                    return entryObj != null ? resultObj.equals( entryObj ) : false;
-				                    }
-			                    }
-			                )
-			                .count() == 0
-			                && stringKey.equals( key.toLowerCase() );
-		        } )
-		        .map( entry -> {
-			        Struct returnStruct	= new Struct( Struct.TYPES.LINKED );
-			        String keyName		= entry.getKey().getName();
-			        String[] pathParts	= keyName.split( "\\." );
-
-			        // Find the immediate parent struct that contains the target key
-			        IStruct ownerStruct	= struct;
-			        if ( pathParts.length > 1 ) {
-				        // Navigate to the parent struct
-				        for ( int i = 0; i < pathParts.length - 1; i++ ) {
-					        ownerStruct = ownerStruct.getAsStruct( Key.of( pathParts[ i ] ) );
-				        }
-			        }
-
-			        returnStruct.put(
-			            Key.owner,
-			            ownerStruct
-			        );
-			        returnStruct.put(
-			            Key.path,
-			            "." + keyName
-			        );
-			        returnStruct.put(
-			            Key.value,
-			            entry.getValue()
-			        );
-			        return returnStruct;
-		        } ).collect( Collectors.toList() )
-		);
-
 		return results.stream();
+	}
 
+	/**
+	 * Helper method to recursively find keys in nested structures
+	 *
+	 * @param rootStruct    the original root struct for reference
+	 * @param currentStruct the current struct being searched
+	 * @param searchKey     the key to search for (lowercase)
+	 * @param currentPath   the current path from root (for building result paths)
+	 * @param results       the list to collect matching results
+	 */
+	private static void findKeyRecursive( IStruct rootStruct, IStruct currentStruct, String searchKey, String currentPath, ArrayList<IStruct> results ) {
+		for ( Map.Entry<Key, Object> entry : currentStruct.entrySet() ) {
+			String	keyName		= entry.getKey().getName();
+			String	fullPath	= currentPath.isEmpty() ? keyName : currentPath + "." + keyName;
+			Object	value		= entry.getValue();
+
+			// Check if this key matches what we're looking for
+			if ( keyName.toLowerCase().equals( searchKey ) ) {
+				// Find the immediate parent struct that contains this key
+				IStruct ownerStruct = currentStruct;
+
+				results.add( Struct.of(
+				    Key.owner, ownerStruct,
+				    Key.path, "." + fullPath.toLowerCase(),
+				    Key.value, value
+				) );
+			}
+
+			// If the value is a struct, recursively search it
+			if ( value instanceof IStruct ) {
+				findKeyRecursive( rootStruct, ( IStruct ) value, searchKey, fullPath, results );
+			}
+		}
 	}
 
 	/**
@@ -815,7 +827,8 @@ public class StructUtil {
 		IStruct flatMap = toFlatMap( struct );
 		return flatMap.entrySet()
 		    .stream()
-		    .filter( entry -> Compare.invoke( value, entry.getValue() ) == 0 )
+		    // Filter out entries where the value is a list/array as we can't recurse any deeper in to those
+		    .filter( entry -> ! ( entry.getValue() instanceof List ) && Compare.invoke( value, entry.getValue() ) == 0 )
 		    .map( entry -> {
 			    Struct	returnStruct	= new Struct( Struct.TYPES.LINKED );
 			    String	keyName			= entry.getKey().getName();
@@ -952,23 +965,89 @@ public class StructUtil {
 	 * @return a flattened map of the struct
 	 */
 	public static IStruct unFlattenKeys( IStruct struct, boolean deep, boolean retainKeys ) {
-		String	key;
-		Object	value;
-		int		index;
-		for ( Key k : struct.getKeys() ) {
+		String		key;
+		Object		value;
+		int			index;
+
+		// Pass 1: Determine which keys should be unflattened
+		Set<String>	keysToUnflatten	= determineKeysToUnflatten( struct );
+
+		// Pass 2: Create a copy of keys to iterate over since we'll be modifying the struct
+		Key[]		keys			= struct.getKeys().toArray( new Key[ 0 ] );
+		for ( Key k : keys ) {
 			key		= k.getName();
 			value	= struct.get( k );
 			if ( deep && value instanceof IStruct )
 				unFlattenKeys( StructCaster.cast( value ), deep, retainKeys );
+
 			if ( ( index = key.indexOf( '.' ) ) != -1 ) {
-				unFlattenKey( index, k, key, struct, retainKeys );
+				// Only unflatten if this key was marked for unflattening
+				if ( keysToUnflatten.contains( key ) ) {
+					unFlattenKey( index, k, key, struct, retainKeys );
+				}
 			}
 		}
 
 		return struct;
-
 	}
 
+	/**
+	 * Analyzes all keys in the struct to determine which dotted keys should be unflattened.
+	 * Uses heuristics to distinguish between original dotted keys and flattened keys.
+	 * 
+	 * @param struct the struct to analyze
+	 * 
+	 * @return a set of key names that should be unflattened
+	 */
+	private static Set<String> determineKeysToUnflatten( IStruct struct ) {
+		Set<String>					result		= new HashSet<>();
+		Map<String, List<String>>	keysByRoot	= new HashMap<>();
+
+		// Group all dotted keys by their root (first part before first dot)
+		for ( Key k : struct.getKeys() ) {
+			String	keyName		= k.getName();
+			int		dotIndex	= keyName.indexOf( '.' );
+			if ( dotIndex != -1 ) {
+				String root = keyName.substring( 0, dotIndex );
+				keysByRoot.computeIfAbsent( root, unused -> new ArrayList<>() ).add( keyName );
+			}
+		}
+
+		// For each root, decide if its keys should be unflattened
+		for ( Map.Entry<String, List<String>> entry : keysByRoot.entrySet() ) {
+			String			root	= entry.getKey();
+			List<String>	keys	= entry.getValue();
+
+			// If there are multiple keys with the same root, they likely represent
+			// a flattened object structure
+			if ( keys.size() > 1 ) {
+				result.addAll( keys );
+			}
+			// Single key with simple structure might be flattened from single-property object
+			// vs multi-dot keys are likely original configuration keys
+			else if ( keys.size() == 1 ) {
+				String	singleKey	= keys.get( 0 );
+				String	remainder	= singleKey.substring( root.length() + 1 );
+				// Simple keys like "nested.subkey" are likely flattened
+				// Complex keys like "oracle.net.disableOob" are likely original
+				if ( !remainder.contains( "." ) ) {
+					result.add( singleKey );
+				}
+			}
+		}
+
+		return result;
+	}
+
+	/**
+	 * Determines if a dotted key should be unflattened based on evidence that it represents
+	 * a flattened nested structure rather than an original dotted key name.
+	 *
+	 * @param keyName the dotted key to evaluate
+	 * @param struct  the struct containing all keys
+	 * 
+	 * @return true if the key should be unflattened, false if it should be preserved as-is
+	 */
 	/**
 	 * Method to recursively un-flatten a struct with keys in dot-notation
 	 *

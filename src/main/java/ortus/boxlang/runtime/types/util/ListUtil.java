@@ -619,10 +619,11 @@ public class ListUtil {
 	 * @param ordered         Boolean as to whether to maintain order in parallel
 	 *                        execution
 	 *
-	 * @Deprecated Since 1.5.0 Use
+	 * @deprecated Since 1.5.0 Use
 	 *             {@link #each(Array, Function, IBoxContext, Boolean, Integer, Boolean)}
 	 *             instead.
 	 */
+	@Deprecated
 	public static void each(
 	    Array array,
 	    Function callback,
@@ -736,10 +737,11 @@ public class ListUtil {
 	 *
 	 * @return The boolean value as to whether the test is met
 	 *
-	 * @Deprecated Since 1.5.0 Use
+	 * @deprecated Since 1.5.0 Use
 	 *             {@link #some(Array, Function, IBoxContext, Boolean, Integer, Boolean)}
 	 *             instead.
 	 */
+	@Deprecated
 	public static boolean some(
 	    Array array,
 	    Function callback,
@@ -923,10 +925,11 @@ public class ListUtil {
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
 	 *
-	 * @Deprecated Since 1.5.0 Use {@link #filter(Array, Function, IBoxContext, Boolean, Integer, Boolean)} instead.
+	 * @deprecated Since 1.5.0 Use {@link #filter(Array, Function, IBoxContext, Boolean, Integer, Boolean)} instead.
 	 *
 	 * @return A filtered array
 	 */
+	@Deprecated
 	public static Array filter(
 	    Array array,
 	    Function callback,
@@ -1099,10 +1102,11 @@ public class ListUtil {
 	 *
 	 * @return The boolean value as to whether the test is met
 	 *
-	 * @Deprecated Since 1.5.0 Use
+	 * @deprecated Since 1.5.0 Use
 	 *             {@link #map(Array, Function, IBoxContext, Boolean, Integer, Boolean)}
 	 *             instead.
 	 */
+	@Deprecated
 	public static Array map(
 	    Array array,
 	    Function callback,

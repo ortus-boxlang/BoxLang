@@ -5776,4 +5776,21 @@ public class CoreLangTest {
 
 	}
 
+	@Test
+	public void testAssignmentParsing() {
+
+		instance.executeSource(
+		    """
+		    function asdf() {
+		    	var foo = () => {};
+		    	(() => {})();
+		    	writedump(foo);
+		    }
+
+		             """
+		);
+		// Just needs to parse without error
+
+	}
+
 }

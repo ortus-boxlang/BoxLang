@@ -83,8 +83,40 @@ public class VariableNameCaster implements IBoxCaster {
 			}
 		}
 
+		// Check for empty string
+		if ( sObject.isEmpty() ) {
+			if ( fail ) {
+				throw new BoxCastException( "Can't cast empty string to a VariableName." );
+			} else {
+				return null;
+			}
+		}
+
+		// Cannot start with period
+		if ( sObject.charAt( 0 ) == '.' ) {
+			if ( fail ) {
+				throw new BoxCastException(
+				    "Can't cast " + TypeUtil.getObjectName( object ) + " to a VariableName. Variable name cannot start with a period." );
+			} else {
+				return null;
+			}
+		}
+
+		boolean lastCharWasPeriod = false;
+
 		for ( int i = 0; i < sObject.length(); i++ ) {
 			char nextChar = sObject.charAt( i );
+
+			// Check for consecutive periods
+			if ( nextChar == '.' && lastCharWasPeriod ) {
+				if ( fail ) {
+					throw new BoxCastException(
+					    "Can't cast " + TypeUtil.getObjectName( object ) + " to a VariableName. Variable name cannot contain consecutive periods." );
+				} else {
+					return null;
+				}
+			}
+
 			if ( i == 0 ) {
 				if ( ! ( Character.isAlphabetic( nextChar ) || nextChar == '_' || nextChar == '$' ) ) {
 					if ( fail ) {
@@ -95,7 +127,8 @@ public class VariableNameCaster implements IBoxCaster {
 					}
 				}
 			} else {
-				if ( ! ( Character.isAlphabetic( nextChar ) || Character.isDigit( nextChar ) || nextChar == '_' || nextChar == '$' ) ) {
+				if ( ! ( ( lastCharWasPeriod = nextChar == '.' ) || Character.isAlphabetic( nextChar ) || Character.isDigit( nextChar ) || nextChar == '_'
+				    || nextChar == '$' ) ) {
 					if ( fail ) {
 						throw new BoxCastException(
 						    "Can't cast " + TypeUtil.getObjectName( object ) + " to a VariableName.  Invalid character in VariableName: " + nextChar );
@@ -103,6 +136,15 @@ public class VariableNameCaster implements IBoxCaster {
 						return null;
 					}
 				}
+			}
+		}
+
+		// Cannot end with period (lastCharWasPeriod will be true if last character was a period)
+		if ( lastCharWasPeriod ) {
+			if ( fail ) {
+				throw new BoxCastException( "Can't cast " + TypeUtil.getObjectName( object ) + " to a VariableName. Variable name cannot end with a period." );
+			} else {
+				return null;
 			}
 		}
 

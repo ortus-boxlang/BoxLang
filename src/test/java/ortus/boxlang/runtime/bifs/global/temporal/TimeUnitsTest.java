@@ -843,4 +843,17 @@ public class TimeUnitsTest {
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( 7, result );
 	}
+
+	@DisplayName( "It tests the BIF year on a zero" )
+	@Test
+	public void testBifYearWithZero() {
+		instance.executeSource(
+		    """
+		    setLocale( "en_US" );
+		       result = year( 0 );
+		       """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( 1970, result );
+	}
 }

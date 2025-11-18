@@ -78,7 +78,10 @@ public class ReMatch extends BIF {
 		Array	result	= new Array();
 
 		while ( matcher.find() ) {
-			result.add( matcher.group() );
+			String match = matcher.group();
+			if ( !match.trim().isEmpty() ) {
+				result.add( match );
+			}
 		}
 
 		return result;

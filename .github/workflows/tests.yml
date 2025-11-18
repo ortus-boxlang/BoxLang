@@ -52,7 +52,7 @@ jobs:
 
       - name: Install JDBC modules
         if: ${{ matrix.os != 'windows-latest' }}
-        run: box install id=bx-mssql,bx-mysql directory=~/.boxlang/modules --verbose --nosave
+        run: box install id=bx-mssql,bx-mysql,bx-oracle@be directory=~/.boxlang/modules --verbose --nosave
 
       - name: Setup MySQL Service
         if: ${{ matrix.os != 'windows-latest' }}
@@ -69,6 +69,15 @@ jobs:
           components: sqlengine
           sa-password: "123456Password"
           version: 2022
+
+      - name: Setup Oracle
+        if: ${{ matrix.os != 'windows-latest' }}
+        uses: gvenzl/setup-oracle-free@v1
+        with:
+          app-user: boxlang
+          app-user-password: "123456Password"
+          oracle-password: "123456Password"
+          oracle-database: "XEPDB1"
 
       - name: Test BoxLang
         env:

@@ -9,6 +9,8 @@ parser grammar CFGrammar;
 options {
     tokenVocab = CFLexer;
     superClass = CFParserControl;
+    // Uncomment if using ANTLR GUI debugger
+    // contextSuperClass = org .antlr .v4 .runtime .RuleContextWithAltNum;
 }
 
 @header {
@@ -170,11 +172,11 @@ anonymousFunction
     ;
 
 // { statement; statement; }
-statementBlock: LBRACE statement+ RBRACE SEMICOLON*
+statementBlock: LBRACE statement+ RBRACE
     ;
 
 // { statement; statement; }
-emptyStatementBlock: LBRACE RBRACE SEMICOLON*
+emptyStatementBlock: LBRACE RBRACE
     ;
 
 normalStatementBlock: LBRACE statement* RBRACE

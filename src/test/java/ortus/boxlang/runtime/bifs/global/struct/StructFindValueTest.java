@@ -118,6 +118,31 @@ public class StructFindValueTest {
 
 	}
 
+	@DisplayName( "It tests a comparison of value when arrays are within the struct" )
+	@Test
+	public void testBifWithArrays() {
+		instance.executeSource(
+		    """
+		      myStruct = {
+		      	cow: "farm",
+		      	pig: "farm",
+		      	cat: [
+		    	"house",
+		    	"barn"
+		    ]
+		      };
+		         result = StructFindValue( myStruct, "farm", "all" );
+		         """,
+		    context );
+
+		assertTrue( variables.get( result ) instanceof Array );
+		assertEquals( variables.getAsArray( result ).size(), 2 );
+		IStruct firstItem = StructCaster.cast( variables.getAsArray( result ).get( 0 ) );
+		assertTrue( firstItem.containsKey( Key.owner ) );
+		assertTrue( firstItem.containsKey( Key.key ) );
+		assertTrue( firstItem.containsKey( Key.path ) );
+	}
+
 	@DisplayName( "It tests the member function for StructFindValue" )
 	@Test
 	public void testMemberFunction() {

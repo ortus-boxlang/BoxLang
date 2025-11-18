@@ -746,7 +746,21 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	public int findIndex( Object value, Boolean caseSensitive ) {
 		return intStream()
 		    .filter(
-		        i -> EqualsEquals.invoke( get( i ), value, caseSensitive ) || get( i ).equals( value )
+		        i -> {
+			        Object item = get( i );
+			        if ( item == null && value == null ) {
+				        return true;
+			        } else if ( NumberCaster.attempt( value ).wasSuccessful() ) {
+				        // Make sure boolean evaluation is not interfering with number comparisons
+				        if ( NumberCaster.attempt( item ).wasSuccessful() ) {
+					        return Compare.invoke( NumberCaster.cast( item ), NumberCaster.cast( value ) ) == 0;
+				        } else {
+					        return item.equals( value );
+				        }
+			        } else {
+				        return item.equals( value ) || EqualsEquals.invoke( item, value, caseSensitive );
+			        }
+		        }
 		    )
 		    .findFirst()
 		    .orElse( -1 ) + 1;
