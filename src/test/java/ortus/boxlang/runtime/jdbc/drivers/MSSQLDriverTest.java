@@ -888,4 +888,69 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		assertThat( row.getAsInteger( Key.of( "isNull" ) ) ).isEqualTo( 1 );
 	}
 
+	@DisplayName( "It can handle large blob and clob columns" )
+	@Test
+	public void testLargeBlobAndClobColumns() {
+		instance.executeStatement(
+		    """
+		    queryExecute( "
+		    	IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'large_lob') AND type in (N'U'))
+		    	CREATE TABLE large_lob ( id INT PRIMARY KEY, blob_data VARBINARY(MAX), clob_data NVARCHAR(MAX) )
+		    ",{},{ "datasource" : "MSSQLdatasource" }
+		    );
+
+		    queryExecute( "TRUNCATE TABLE large_lob", {}, { "datasource" : "MSSQLdatasource" } );
+		    """, context );
+		// @formatter:off
+		instance.executeStatement(
+		    """
+				newLobData = "";
+				// ~300 chars
+				quote = "
+		               	Farewell, Aragorn! Go to Minas Tirith and save my people! I
+		               	have failed.
+		               	No! said Aragorn, taking his hand and kissing his brow. You
+		               	have conquered. Few have gained such a victory. Be at peace! Minas
+		               	Tirith shall not fall!
+		        ";
+				// times 1000 = ~300,000 chars
+				for( i=1; i <= 1000; i = i + 1 ) {
+					newLobData = newLobData & quote;
+				}
+				
+		        insert = queryExecute( "INSERT INTO large_lob ( id, blob_data, clob_data ) VALUES ( 1, :blobData, :clobData )", { 
+		        	blobData: { value: newLobData, sqltype: "blob" },
+		        	clobData: { value: newLobData, sqltype: "clob" }
+		        }, { "datasource" : "MSSQLdatasource" } );
+		    """, context );
+		instance.executeStatement(
+		    """
+		        result = queryExecute( "SELECT * FROM large_lob WHERE id = 1", {}, { "datasource" : "MSSQLdatasource" } );
+		    """, context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 1, query.size() );
+		IStruct	firstRow	= query.getRowAsStruct( 0 );
+
+		// Test BLOB data (VARBINARY(MAX) in SQL Server)
+		Object	blobData	= firstRow.get( Key.of( "BLOB_DATA" ) );
+		assertThat( blobData ).isNotNull();
+		// BLOB data may be returned as byte[] or other types depending on driver
+		if ( blobData instanceof byte[] ) {
+			String retrieved = new String( ( byte[] ) blobData, java.nio.charset.StandardCharsets.UTF_8 );
+			assertThat( retrieved.length() ).isAtLeast( 300000 );
+		}
+
+		// Test CLOB data (NVARCHAR(MAX) in SQL Server)
+		Object clobData = firstRow.get( Key.of( "CLOB_DATA" ) );
+		assertThat( clobData ).isNotNull();
+		assertThat( clobData ).isInstanceOf( String.class );
+		String clobString = ( String ) clobData;
+		assertThat( clobString.length() ).isAtLeast( 300000 );
+		// Use containsMatch to handle whitespace variations
+		assertThat( clobString ).containsMatch( "Farewell,\\s+Aragorn!" );
+		assertThat( clobString ).containsMatch( "Minas\\s+Tirith\\s+shall\\s+not\\s+fall!" );
+	}
+
 }

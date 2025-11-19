@@ -170,13 +170,16 @@ public class QueryParameter {
 	}
 
 	/**
-	 * Retrieve the value casted to the declared SQL type of the parameter..
+	 * Retrieve the value casted to the declared SQL type of the parameter.
+	 * 
+	 * Deprecated: Use {@link QueryColumnType#toSQLType(QueryColumnType, Object, IBoxContext, BoxConnection)} instead.
 	 */
+	@Deprecated
 	public Object toSQLType( IBoxContext context ) {
 		if ( this.value == null ) {
 			return null;
 		}
-		return QueryColumnType.toSQLType( this.type, this.value, context );
+		return QueryColumnType.toSQLType( this.type, this.value, context, null );
 	}
 
 	/**

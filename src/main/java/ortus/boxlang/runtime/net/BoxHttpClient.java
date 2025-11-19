@@ -1440,8 +1440,7 @@ public class BoxHttpClient {
 			requestBuilder
 			    .version( this.httpVersion.equalsIgnoreCase( HTTP_1 ) ? HttpClient.Version.HTTP_1_1 : HttpClient.Version.HTTP_2 )
 			    .header( "User-Agent", this.userAgent )
-			    .header( "Accept-Encoding", "gzip, deflate" )
-			    .header( "x-request-id", this.requestID );
+			    .header( "Accept-Encoding", "gzip, deflate" );
 
 			// Set a request Timeout if specified
 			if ( this.timeout > 0 ) {

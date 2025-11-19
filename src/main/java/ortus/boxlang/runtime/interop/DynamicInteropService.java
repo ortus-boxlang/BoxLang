@@ -790,7 +790,15 @@ public class DynamicInteropService {
 			    && targetInstance instanceof IClassRunnable boxClass ) {
 				fieldHandle = boxClass.lookupPrivateField( field );
 			} else {
-				fieldHandle = METHOD_LOOKUP.unreflectGetter( field );
+				// If the field's declaring class is not public (package-private, protected, or private abstract parent),
+				// but the target class is public, we need to use a lookup from the target class to access the field
+				if ( !Modifier.isPublic( field.getDeclaringClass().getModifiers() ) && Modifier.isPublic( targetClass.getModifiers() ) ) {
+					// Use MethodHandles.privateLookupIn to get access through the public subclass
+					MethodHandles.Lookup privateLookup = MethodHandles.privateLookupIn( targetClass, METHOD_LOOKUP );
+					fieldHandle = privateLookup.unreflectGetter( field );
+				} else {
+					fieldHandle = METHOD_LOOKUP.unreflectGetter( field );
+				}
 			}
 		} catch ( IllegalAccessException e ) {
 			throw new BoxRuntimeException( "Error getting field " + fieldName + " for class " + targetClass.getName(), e );

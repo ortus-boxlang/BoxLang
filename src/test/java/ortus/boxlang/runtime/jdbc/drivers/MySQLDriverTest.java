@@ -333,4 +333,72 @@ public class MySQLDriverTest extends AbstractDriverTest {
 
 	}
 
+	@DisplayName( "It can handle large blob and clob columns" )
+	@Test
+	public void testLargeBlobAndClobColumns() {
+		instance.executeStatement(
+		    """
+		    queryExecute( "
+		    	CREATE TABLE IF NOT EXISTS large_lob (
+		    		id INT PRIMARY KEY,
+		    		blob_data LONGBLOB,
+		    		clob_data LONGTEXT
+		    	)
+		    ",{},{ "datasource" : "MySQLdatasource" }
+		    );
+
+		    queryExecute( "TRUNCATE TABLE large_lob", {}, { "datasource" : "MySQLdatasource" } );
+		    """, context );
+		// @formatter:off
+		instance.executeStatement(
+			"""
+				newLobData = "";
+				// ~300 chars
+				quote = "
+		               	Farewell, Aragorn! Go to Minas Tirith and save my people! I
+		               	have failed.
+		               	No! said Aragorn, taking his hand and kissing his brow. You
+		               	have conquered. Few have gained such a victory. Be at peace! Minas
+		               	Tirith shall not fall!
+		        ";
+				// times 1000 = ~300,000 chars
+				for( i=1; i <= 1000; i = i + 1 ) {
+					newLobData = newLobData & quote;
+				}
+				
+				insert = queryExecute( "INSERT INTO large_lob ( id, blob_data, clob_data ) VALUES ( 1, ?, ? )", [ 
+					{ value: newLobData, sqltype: "blob" },
+					{ value: newLobData, sqltype: "clob" }
+				], { "datasource" : "MySQLdatasource" } );
+			""", context );
+		instance.executeStatement(
+			"""
+				result = queryExecute( "SELECT * FROM large_lob WHERE id = 1", {}, { "datasource" : "MySQLdatasource" } );
+			""", context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 1, query.size() );
+		IStruct	firstRow	= query.getRowAsStruct( 0 );
+
+		// Test BLOB data (LONGBLOB in MySQL)
+		Object	blobData	= firstRow.get( Key.of( "blob_data" ) );
+		assertThat( blobData ).isNotNull();
+		// BLOB data may be returned as byte[] or other types depending on driver
+		if ( blobData instanceof byte[] ) {
+			String retrieved = new String( ( byte[] ) blobData, java.nio.charset.StandardCharsets.UTF_8 );
+			assertThat( retrieved.length() ).isAtLeast( 300000 );
+		}
+
+		// Test CLOB data (LONGTEXT in MySQL)
+		Object clobData = firstRow.get( Key.of( "clob_data" ) );
+		assertThat( clobData ).isNotNull();
+		assertThat( clobData ).isInstanceOf( String.class );
+		String clobString = ( String ) clobData;
+		assertThat( clobString.length() ).isAtLeast( 300000 );
+		// Use containsMatch to handle whitespace variations
+		assertThat( clobString ).containsMatch( "Farewell,\\s+Aragorn!" );
+		assertThat( clobString ).containsMatch( "Minas\\s+Tirith\\s+shall\\s+not\\s+fall!" );
+	}
+
 }
