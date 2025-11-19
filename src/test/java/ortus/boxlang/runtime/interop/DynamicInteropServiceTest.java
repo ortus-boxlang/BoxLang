@@ -272,7 +272,7 @@ public class DynamicInteropServiceTest {
 		instance.executeSource(
 		    """
 		        import TestCases.interop.PublicConcreteChild;
-		        
+
 		        result1 = PublicConcreteChild.PARENT_CONSTANT_STRING;
 		        result2 = PublicConcreteChild.PARENT_CONSTANT_INT;
 		        result3 = PublicConcreteChild.PARENT_CONSTANT_BOOLEAN;
