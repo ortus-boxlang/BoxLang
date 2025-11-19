@@ -407,7 +407,7 @@ public class DataSource implements Comparable<DataSource> {
 	 */
 	public DataSource shutdown() {
 		if ( isPoolingStarted() ) {
-			synchronized ( this.hikariDataSource.getClass() ) {
+			synchronized ( HikariDataSource.class ) {
 				if ( isPoolingStarted() ) {
 					this.hikariDataSource.close();
 				}
