@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.types.util;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.time.DateTimeException;
 import java.time.DayOfWeek;
 import java.time.Duration;
@@ -31,16 +32,16 @@ import java.time.temporal.TemporalAdjusters;
 import java.time.zone.ZoneRulesException;
 import java.util.concurrent.TimeUnit;
 
-import java.math.MathContext;
-
 import javax.management.InvalidAttributeValueException;
 
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
-import ortus.boxlang.runtime.util.RegexBuilder;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.types.DateTime;
-import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
  * We represent a static date/time helper class that assists with time units on date/time conversions
@@ -441,6 +442,34 @@ public class DateTimeHelper {
 		}
 
 		return time;
+	}
+
+	/**
+	 * This method will convert an incoming timeout object to a Java Duration object.
+	 * 
+	 * @param timeout
+	 * 
+	 * @return
+	 */
+	public static Duration convertTimeoutToDuration( Object timeout ) {
+		Duration timeoutDuration;
+		// Duration is the default, but if not, we will use the number as fractional days
+		// Which is what the cache providers expect
+		if ( timeout instanceof Duration castedTimeout ) {
+			timeoutDuration = castedTimeout;
+		} else {
+			if ( timeout instanceof BigDecimal castDecimal ) {
+				BigDecimal timeoutMinutes = castDecimal.multiply( BigDecimalCaster.cast( 1440 ) );
+				timeoutDuration = Duration.ofMinutes( timeoutMinutes.longValue() );
+			} else if ( timeout instanceof String && StringCaster.cast( timeout ).contains( "." ) ) {
+				BigDecimal	castDecimal		= BigDecimalCaster.cast( timeout );
+				BigDecimal	timeoutMinutes	= castDecimal.multiply( BigDecimalCaster.cast( 1440 ) );
+				timeoutDuration = Duration.ofMinutes( timeoutMinutes.longValue() );
+			} else {
+				timeoutDuration = Duration.ofDays( NumberCaster.cast( timeout ).longValue() );
+			}
+		}
+		return timeoutDuration;
 	}
 
 	/**

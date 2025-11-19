@@ -51,6 +51,7 @@ import ortus.boxlang.runtime.services.SchedulerService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.DateTimeHelper;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 
 /**
@@ -492,40 +493,21 @@ public class Application {
 	 * @return The session object
 	 */
 	public Session getOrCreateSession( Key ID, RequestBoxContext context ) {
-		Duration	timeoutDuration	= null;
-		Object		sessionTimeout	= context.getConfigItems( Key.applicationSettings, Key.sessionTimeout );
-		String		cacheKey		= Session.buildCacheKey( ID, this.name );
-
-		// Duration is the default, but if not, we will use the number as fractional days
-		// Which is what the cache providers expect
-		if ( sessionTimeout instanceof Duration castedTimeout ) {
-			timeoutDuration = castedTimeout;
-		} else {
-			if ( sessionTimeout instanceof BigDecimal castDecimal ) {
-				BigDecimal timeoutMinutes = castDecimal.multiply( BigDecimalCaster.cast( 1440 ) );
-				timeoutDuration = Duration.ofMinutes( timeoutMinutes.longValue() );
-			} else if ( sessionTimeout instanceof String && StringCaster.cast( sessionTimeout ).contains( "." ) ) {
-				BigDecimal	castDecimal		= BigDecimalCaster.cast( sessionTimeout );
-				BigDecimal	timeoutMinutes	= castDecimal.multiply( BigDecimalCaster.cast( 1440 ) );
-				timeoutDuration = Duration.ofMinutes( timeoutMinutes.longValue() );
-			} else {
-				timeoutDuration = Duration.ofDays( LongCaster.cast( sessionTimeout ) );
-			}
-		}
-		// Dumb Java! It needs a final variable to use in the lambda
-		final Duration finalTimeoutDuration = timeoutDuration;
+		Object			sessionTimeout	= context.getConfigItems( Key.applicationSettings, Key.sessionTimeout );
+		final Duration	timeoutDuration	= DateTimeHelper.convertTimeoutToDuration( sessionTimeout );
+		String			cacheKey		= Session.buildCacheKey( ID, this.name );
 		// Make sure our created duration is represented in the application metadata
 		context.getParentOfType( RequestBoxContext.class )
 		    .getApplicationListener()
 		    .getSettings()
-		    .put( Key.sessionTimeout, finalTimeoutDuration );
+		    .put( Key.sessionTimeout, timeoutDuration );
 
 		// logger.debug( "**** getOrCreateSession {} Timeout {} ", ID, timeoutDuration );
 
 		// Get or create the session
 		Session targetSession = ( Session ) this.sessionsCache.getOrSet(
 		    cacheKey,
-		    () -> new Session( ID, this, finalTimeoutDuration ),
+		    () -> new Session( ID, this, timeoutDuration ),
 		    timeoutDuration,
 		    timeoutDuration
 		);
@@ -535,11 +517,12 @@ public class Application {
 			// If not, remove it
 			this.sessionsCache.clear( cacheKey );
 			// And create a new one
-			targetSession = new Session( ID, this, finalTimeoutDuration );
+			targetSession = new Session( ID, this, timeoutDuration );
 			this.sessionsCache.set( cacheKey, targetSession, timeoutDuration, timeoutDuration );
 		}
 
 		return targetSession;
+
 	}
 
 	/**
@@ -713,7 +696,6 @@ public class Application {
 
 		// Clear out the data
 		this.started = false;
-		this.sessionsCache.clearAll( sessionCacheFilter );
 		this.classLoaders.clear();
 		this.applicationScope	= null;
 		this.startTime			= null;

@@ -17,12 +17,15 @@
  */
 package ortus.boxlang.runtime.context;
 
+import java.time.Duration;
+
 import ortus.boxlang.runtime.application.Session;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.SessionScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
+import ortus.boxlang.runtime.types.util.DateTimeHelper;
 
 /**
  * This class represents the context of a session in the BoxLang runtime
@@ -183,6 +186,26 @@ public class SessionBoxContext extends BaseBoxContext {
 
 		// The RuntimeBoxContext has no "nearby" scopes
 		return getScope( name );
+	}
+
+	/**
+	 * Persist the current session state to the sessions cache
+	 * 
+	 * @param requestContext The request context to use for persisting the session.
+	 *                       We must pass this in manually, as the SessionContext is the parent of the Request context and Application context and thus `getRequestContext()` will not work
+	 */
+	public void persistSession( RequestBoxContext requestContext ) {
+
+		Object		sessionTimeout	= requestContext.getConfigItems( Key.applicationSettings, Key.sessionTimeout );
+		String		cacheKey		= this.session.getCacheKey();
+		Duration	timeoutDuration	= DateTimeHelper.convertTimeoutToDuration( sessionTimeout );
+
+		requestContext.getApplicationListener().getApplication().getSessionsCache().set(
+		    cacheKey,
+		    this.session,
+		    timeoutDuration,
+		    timeoutDuration
+		);
 	}
 
 }
