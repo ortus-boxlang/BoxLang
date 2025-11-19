@@ -89,4 +89,12 @@ public class IsCurrencyTest {
 		assertTrue( ( Boolean ) instance.executeStatement( "IsCurrency( lsCurrencyFormat(3.21, 'international', 'en_US') )" ) );
 	}
 
+	@DisplayName( "It tests the BIF IsCurrency with a raw number" )
+	@Test
+	@Disabled( "Until @jclausen fixes it :)" )
+	public void testCanParseNumber() {
+		assertTrue( ( Boolean ) instance.executeStatement( "IsCurrency( 5 )" ) );
+
+	}
+
 }
