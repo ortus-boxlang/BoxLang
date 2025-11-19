@@ -18,16 +18,12 @@
 package ortus.boxlang.runtime.application;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.time.Duration;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.SessionBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
-import ortus.boxlang.runtime.dynamic.casters.LongCaster;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -344,27 +340,6 @@ public class Session implements Serializable {
 		// Example: 10:00 + 1 hour = 11:00, now is 11:01, so it's expired : true
 		// Example: 10:00 + 1 hour = 11:00, now is 10:59, so it's not expired : false
 		return lastVisit.plus( this.timeout ).isBefore( new DateTime() );
-	}
-
-	public static Duration convertTimeoutToDuration( Object timeout ) {
-		Duration timeoutDuration;
-		// Duration is the default, but if not, we will use the number as fractional days
-		// Which is what the cache providers expect
-		if ( timeout instanceof Duration castedTimeout ) {
-			timeoutDuration = castedTimeout;
-		} else {
-			if ( timeout instanceof BigDecimal castDecimal ) {
-				BigDecimal timeoutMinutes = castDecimal.multiply( BigDecimalCaster.cast( 1440 ) );
-				timeoutDuration = Duration.ofMinutes( timeoutMinutes.longValue() );
-			} else if ( timeout instanceof String && StringCaster.cast( timeout ).contains( "." ) ) {
-				BigDecimal	castDecimal		= BigDecimalCaster.cast( timeout );
-				BigDecimal	timeoutMinutes	= castDecimal.multiply( BigDecimalCaster.cast( 1440 ) );
-				timeoutDuration = Duration.ofMinutes( timeoutMinutes.longValue() );
-			} else {
-				timeoutDuration = Duration.ofDays( LongCaster.cast( timeout ) );
-			}
-		}
-		return timeoutDuration;
 	}
 
 }

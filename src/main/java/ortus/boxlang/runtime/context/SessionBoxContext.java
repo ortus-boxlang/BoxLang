@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.SessionScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
+import ortus.boxlang.runtime.types.util.DateTimeHelper;
 
 /**
  * This class represents the context of a session in the BoxLang runtime
@@ -197,7 +198,7 @@ public class SessionBoxContext extends BaseBoxContext {
 
 		Object		sessionTimeout	= requestContext.getConfigItems( Key.applicationSettings, Key.sessionTimeout );
 		String		cacheKey		= this.session.getCacheKey();
-		Duration	timeoutDuration	= Session.convertTimeoutToDuration( sessionTimeout );
+		Duration	timeoutDuration	= DateTimeHelper.convertTimeoutToDuration( sessionTimeout );
 
 		requestContext.getApplicationListener().getApplication().getSessionsCache().set(
 		    cacheKey,

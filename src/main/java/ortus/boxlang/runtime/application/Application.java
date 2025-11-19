@@ -51,6 +51,7 @@ import ortus.boxlang.runtime.services.SchedulerService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.DateTimeHelper;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 
 /**
@@ -493,7 +494,7 @@ public class Application {
 	 */
 	public Session getOrCreateSession( Key ID, RequestBoxContext context ) {
 		Object			sessionTimeout	= context.getConfigItems( Key.applicationSettings, Key.sessionTimeout );
-		final Duration	timeoutDuration	= Session.convertTimeoutToDuration( sessionTimeout );
+		final Duration	timeoutDuration	= DateTimeHelper.convertTimeoutToDuration( sessionTimeout );
 		String			cacheKey		= Session.buildCacheKey( ID, this.name );
 		// Make sure our created duration is represented in the application metadata
 		context.getParentOfType( RequestBoxContext.class )
