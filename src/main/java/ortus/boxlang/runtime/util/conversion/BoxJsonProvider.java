@@ -32,6 +32,7 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.util.conversion.deserializers.ArrayDeserializer;
 import ortus.boxlang.runtime.util.conversion.deserializers.DateTimeDeserializer;
 import ortus.boxlang.runtime.util.conversion.deserializers.LocalDateDeserializer;
@@ -40,6 +41,7 @@ import ortus.boxlang.runtime.util.conversion.deserializers.StructDeserializer;
 import ortus.boxlang.runtime.util.conversion.serializers.BoxArraySerializer;
 import ortus.boxlang.runtime.util.conversion.serializers.BoxClassSerializer;
 import ortus.boxlang.runtime.util.conversion.serializers.BoxFunctionSerializer;
+import ortus.boxlang.runtime.util.conversion.serializers.BoxQuerySerializer;
 import ortus.boxlang.runtime.util.conversion.serializers.BoxStructSerializer;
 import ortus.boxlang.runtime.util.conversion.serializers.DynamicObjectSerializer;
 import ortus.boxlang.runtime.util.conversion.serializers.ExceptionSerializer;
@@ -62,6 +64,10 @@ public class BoxJsonProvider extends ReaderWriterProvider {
 
 		if ( IClassRunnable.class.isAssignableFrom( type ) ) {
 			return new BoxClassSerializer();
+		}
+
+		if ( Query.class.isAssignableFrom( type ) ) {
+			return new BoxQuerySerializer();
 		}
 
 		if ( List.class.isAssignableFrom( type ) ) {
