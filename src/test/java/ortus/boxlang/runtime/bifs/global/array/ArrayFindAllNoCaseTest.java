@@ -151,12 +151,11 @@ public class ArrayFindAllNoCaseTest {
 		    """,
 		    context );
 		Array found = ( Array ) variables.get( result );
-		assertThat( found.size() ).isEqualTo( 5 );
+		assertThat( found.size() ).isEqualTo( 4 );
 		assertThat( found.get( 0 ) ).isEqualTo( 1 );
-		assertThat( found.get( 1 ) ).isEqualTo( 3 );
-		assertThat( found.get( 2 ) ).isEqualTo( 5 );
-		assertThat( found.get( 3 ) ).isEqualTo( 6 );
-		assertThat( found.get( 4 ) ).isEqualTo( 8 );
+		assertThat( found.get( 1 ) ).isEqualTo( 5 );
+		assertThat( found.get( 2 ) ).isEqualTo( 6 );
+		assertThat( found.get( 3 ) ).isEqualTo( 8 );
 	}
 
 	@DisplayName( "It should match every number variation when compared with an int" )
@@ -169,7 +168,7 @@ public class ArrayFindAllNoCaseTest {
 		    """,
 		    context );
 		Array found = ( Array ) variables.get( result );
-		assertThat( found.size() ).isEqualTo( 7 );
+		assertThat( found.size() ).isEqualTo( 4 );
 	}
 
 	@DisplayName( "It should match every number variation when compared with a string int" )
@@ -182,7 +181,7 @@ public class ArrayFindAllNoCaseTest {
 		    """,
 		    context );
 		Array found = ( Array ) variables.get( result );
-		assertThat( found.size() ).isEqualTo( 7 );
+		assertThat( found.size() ).isEqualTo( 4 );
 	}
 
 	@DisplayName( "It should match every number variation when compared with a double" )
@@ -195,7 +194,7 @@ public class ArrayFindAllNoCaseTest {
 		    """,
 		    context );
 		Array found = ( Array ) variables.get( result );
-		assertThat( found.size() ).isEqualTo( 7 );
+		assertThat( found.size() ).isEqualTo( 4 );
 	}
 
 	@DisplayName( "It should match every number variation when compared with a string double" )
@@ -208,7 +207,7 @@ public class ArrayFindAllNoCaseTest {
 		    """,
 		    context );
 		Array found = ( Array ) variables.get( result );
-		assertThat( found.size() ).isEqualTo( 7 );
+		assertThat( found.size() ).isEqualTo( 4 );
 	}
 
 	@DisplayName( "It should match every number variation when compared with a boolean" )
@@ -221,7 +220,7 @@ public class ArrayFindAllNoCaseTest {
 		    """,
 		    context );
 		Array found = ( Array ) variables.get( result );
-		assertThat( found.size() ).isEqualTo( 7 );
+		assertThat( found.size() ).isEqualTo( 3 );
 	}
 
 	@DisplayName( "It should match every number variation when compared with a string boolean" )
@@ -234,7 +233,7 @@ public class ArrayFindAllNoCaseTest {
 		    """,
 		    context );
 		Array found = ( Array ) variables.get( result );
-		assertThat( found.size() ).isEqualTo( 7 );
+		assertThat( found.size() ).isEqualTo( 3 );
 	}
 
 	@DisplayName( "It should match every number variation when compared with yes" )
@@ -247,7 +246,7 @@ public class ArrayFindAllNoCaseTest {
 		    """,
 		    context );
 		Array found = ( Array ) variables.get( result );
-		assertThat( found.size() ).isEqualTo( 7 );
+		assertThat( found.size() ).isEqualTo( 3 );
 	}
 
 	@DisplayName( "It should match using a provided UDF" )

@@ -128,4 +128,12 @@ public class CompareTest {
 		}
 	}
 
+	@DisplayName( "It will not compare positive numbers and booleans as Equal" )
+	@Test
+	void testItWillNotComparePositiveNumbersAndBooleansAsEqual() {
+		// Does not error, but is not equal
+		assertThat( Compare.invoke( true, 99 ) ).isGreaterThan( 0 );
+		assertThat( Compare.invoke( true, 1 ) ).isGreaterThan( 0 );
+	}
+
 }

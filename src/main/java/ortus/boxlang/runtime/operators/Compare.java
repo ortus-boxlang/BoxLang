@@ -196,9 +196,9 @@ public class Compare implements IOperator {
 		}
 
 		// Check boolean
-		CastAttempt<Boolean> leftBooleanAttempt = BooleanCaster.attempt( left, false );
+		CastAttempt<Boolean> leftBooleanAttempt = BooleanCaster.attempt( left, false, false );
 		if ( leftBooleanAttempt.wasSuccessful() ) {
-			CastAttempt<Boolean> rightBooleanAttempt = BooleanCaster.attempt( right, false );
+			CastAttempt<Boolean> rightBooleanAttempt = BooleanCaster.attempt( right, false, false );
 
 			if ( rightBooleanAttempt.wasSuccessful() ) {
 				return Boolean.compare( leftBooleanAttempt.get(), rightBooleanAttempt.get() );
@@ -208,8 +208,9 @@ public class Compare implements IOperator {
 		// String comparison
 		// This only works if at least one operand is already a java.lang.String
 		// What if both are a Character or CharSequence?
-		// TODO: we may want to try the string casters every time regardless of the type
+		boolean triedStringCompare = false;
 		if ( left instanceof String || right instanceof String ) {
+			triedStringCompare = true;
 			CastAttempt<String>	leftStringAttempt	= StringCaster.attempt( left );
 			CastAttempt<String>	rightStringAttempt	= StringCaster.attempt( right );
 
@@ -228,6 +229,17 @@ public class Compare implements IOperator {
 			    && right instanceof Key keyRight
 			        ? keyLeft.compareToWithCase( keyRight )
 			        : ( ( Comparable<Object> ) left ).compareTo( ( Comparable<Object> ) right );
+		}
+
+		if ( !triedStringCompare ) {
+			// Last ditch effort, try string comparison
+			// Do this last if everything else failed for performance reasons
+			CastAttempt<String>	leftStringAttempt	= StringCaster.attempt( left );
+			CastAttempt<String>	rightStringAttempt	= StringCaster.attempt( right );
+
+			if ( leftStringAttempt.wasSuccessful() && rightStringAttempt.wasSuccessful() ) {
+				return StringCompare.invoke( leftStringAttempt.get(), rightStringAttempt.get(), caseSensitive );
+			}
 		}
 
 		if ( fail ) {

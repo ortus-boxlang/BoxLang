@@ -67,11 +67,27 @@ public class BooleanCaster implements IBoxCaster {
 	 * or can be interrogated to proceed otherwise.
 	 *
 	 * @param object The value to cast to a boolean
+	 * @param loose  True to allow for truthy and falsey values when casting
 	 *
 	 * @return The boolean value
 	 */
 	public static CastAttempt<Boolean> attempt( Object object, Boolean loose ) {
-		return CastAttempt.ofNullable( cast( object, false, loose ) );
+		return CastAttempt.ofNullable( cast( object, false, loose, true ) );
+	}
+
+	/**
+	 * Tests to see if the value can be cast to a boolean.
+	 * Returns a {@code CastAttempt<T>} which will contain the result if casting was successful,
+	 * or can be interrogated to proceed otherwise.
+	 *
+	 * @param object             The value to cast to a boolean
+	 * @param loose              True to allow for truthy and falsey values when casting
+	 * @param numbersAreBooleans True to treat numbers as booleans (non-zero is true, zero is false)
+	 *
+	 * @return The boolean value
+	 */
+	public static CastAttempt<Boolean> attempt( Object object, Boolean loose, boolean numbersAreBooleans ) {
+		return CastAttempt.ofNullable( cast( object, false, loose, numbersAreBooleans ) );
 	}
 
 	/**
@@ -107,6 +123,20 @@ public class BooleanCaster implements IBoxCaster {
 	 * @return The boolean value, or null when cannot be cast
 	 */
 	public static Boolean cast( Object object, Boolean fail, Boolean loose ) {
+		return cast( object, fail, loose, true );
+	}
+
+	/**
+	 * Used to cast anything to a boolean
+	 *
+	 * @param object             The value to cast to a boolean
+	 * @param fail               True to throw exception when failing.
+	 * @param loose              True to allow for truthy and falsey values when casting
+	 * @param numbersAreBooleans True to treat numbers as booleans (non-zero is true, zero is false)
+	 *
+	 * @return The boolean value, or null when cannot be cast
+	 */
+	public static Boolean cast( Object object, Boolean fail, Boolean loose, boolean numbersAreBooleans ) {
 		if ( object == null ) {
 			return false;
 		}
@@ -118,7 +148,7 @@ public class BooleanCaster implements IBoxCaster {
 		}
 
 		// Quick number check first
-		if ( object instanceof Number num ) {
+		if ( numbersAreBooleans && object instanceof Number num ) {
 			// Positive and negative numbers are true, zero is false
 			return num.doubleValue() != 0;
 		}
@@ -148,11 +178,13 @@ public class BooleanCaster implements IBoxCaster {
 			if ( wkt.containsKey( aliasKey ) ) {
 				return wkt.getAsBoolean( aliasKey );
 			}
-			// Is string a number
-			CastAttempt<Number> numberAttempt = NumberCaster.attempt( str );
-			if ( numberAttempt.wasSuccessful() ) {
-				// Positive and negative numbers are true, zero is false
-				return GreaterThan.invoke( numberAttempt.get(), 0 ) || LessThan.invoke( numberAttempt.get(), 0 );
+			if ( numbersAreBooleans ) {
+				// Is string a number
+				CastAttempt<Number> numberAttempt = NumberCaster.attempt( str );
+				if ( numberAttempt.wasSuccessful() ) {
+					// Positive and negative numbers are true, zero is false
+					return GreaterThan.invoke( numberAttempt.get(), 0 ) || LessThan.invoke( numberAttempt.get(), 0 );
+				}
 			}
 			if ( fail ) {
 				throw new BoxCastException(
