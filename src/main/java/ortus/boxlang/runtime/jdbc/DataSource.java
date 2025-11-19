@@ -48,17 +48,17 @@ public class DataSource implements Comparable<DataSource> {
 	/**
 	 * Underlying HikariDataSource object, used in connection pooling.
 	 */
-	private HikariDataSource		hikariDataSource;
+	private volatile HikariDataSource	hikariDataSource;
 
 	/**
 	 * The configuration object for this datasource.
 	 */
-	private final DatasourceConfig	configuration;
+	private final DatasourceConfig		configuration;
 
 	/**
 	 * The Hikari configuration object for this datasource.
 	 */
-	private final HikariConfig		hikariConfig;
+	private final HikariConfig			hikariConfig;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -119,15 +119,19 @@ public class DataSource implements Comparable<DataSource> {
 	 * @throws BoxRuntimeException if the connection pool could not be established.
 	 */
 	public DataSource beginPooling() {
-		if ( isPoolingStarted() ) {
-			return this;
+		if ( !isPoolingStarted() ) {
+			synchronized ( HikariDataSource.class ) {
+				if ( !isPoolingStarted() ) {
+					try {
+						this.hikariDataSource = new HikariDataSource( hikariConfig );
+					} catch ( RuntimeException e ) {
+						String message = String.format( "Unable to create datasource connection to URL [%s] : ", hikariConfig.getJdbcUrl() );
+						throw new BoxRuntimeException( message + e.getMessage(), e );
+					}
+				}
+			}
 		}
-		try {
-			this.hikariDataSource = new HikariDataSource( hikariConfig );
-		} catch ( RuntimeException e ) {
-			String message = String.format( "Unable to create datasource connection to URL [%s] : ", hikariConfig.getJdbcUrl() );
-			throw new BoxRuntimeException( message + e.getMessage(), e );
-		}
+
 		return this;
 	}
 
@@ -403,7 +407,11 @@ public class DataSource implements Comparable<DataSource> {
 	 */
 	public DataSource shutdown() {
 		if ( isPoolingStarted() ) {
-			this.hikariDataSource.close();
+			synchronized ( this.hikariDataSource.getClass() ) {
+				if ( isPoolingStarted() ) {
+					this.hikariDataSource.close();
+				}
+			}
 		}
 		return this;
 	}
