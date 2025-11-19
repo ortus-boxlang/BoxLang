@@ -243,6 +243,49 @@ public class DynamicInteropServiceTest {
 
 	}
 
+	@DisplayName( "It can get public static fields from package-private parent class" )
+	@Test
+	void testItCanGetStaticFieldsFromPackagePrivateParent() {
+		// Test accessing inherited public static fields from package-private parent
+		assertThat(
+		    DynamicInteropService.getField( TestCases.interop.PublicConcreteChild.class, "PARENT_CONSTANT_STRING" ).get()
+		).isEqualTo( "ParentValue" );
+
+		assertThat(
+		    DynamicInteropService.getField( TestCases.interop.PublicConcreteChild.class, "PARENT_CONSTANT_INT" ).get()
+		).isEqualTo( 42 );
+
+		assertThat(
+		    DynamicInteropService.getField( TestCases.interop.PublicConcreteChild.class, "PARENT_CONSTANT_BOOLEAN" ).get()
+		).isEqualTo( true );
+
+		// Also test accessing the child's own static field
+		assertThat(
+		    DynamicInteropService.getField( TestCases.interop.PublicConcreteChild.class, "CHILD_CONSTANT" ).get()
+		).isEqualTo( "ChildValue" );
+	}
+
+	@DisplayName( "It can get public static fields from package-private parent via BoxLang" )
+	@Test
+	void testItCanGetStaticFieldsFromPackagePrivateParentViaBoxLang() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        import TestCases.interop.PublicConcreteChild;
+		        
+		        result1 = PublicConcreteChild.PARENT_CONSTANT_STRING;
+		        result2 = PublicConcreteChild.PARENT_CONSTANT_INT;
+		        result3 = PublicConcreteChild.PARENT_CONSTANT_BOOLEAN;
+		        result4 = PublicConcreteChild.CHILD_CONSTANT;
+		    """, context );
+		// @formatter:on
+
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "ParentValue" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( 42 );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "ChildValue" );
+	}
+
 	@DisplayName( "It can get all the callable method names of a class" )
 	@Test
 	void testItCanGetAllMethodNames() {
