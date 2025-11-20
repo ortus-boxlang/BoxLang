@@ -5793,4 +5793,45 @@ public class CoreLangTest {
 
 	}
 
+	@Test
+	public void testContinueInASwitchInAForLoop() {
+
+		instance.executeSource(
+		    """
+		    for (v in [1,2]) {
+		    	switch ( v ) {
+		    		case 1:
+		    			// The requested key [continue] was not located
+		    			// in any scope or it's undefined
+		    			continue;
+		    		case 2:
+		    			writedump("ok")
+		    	}
+		    }
+		            """
+		);
+		// Just needs to parse without error
+	}
+
+	@Test
+	public void testContinueInASwitchInAForLoopCF() {
+
+		instance.executeSource(
+		    """
+		    for (v in [1,2]) {
+		    	switch ( v ) {
+		    		case 1:
+		    			// The requested key [continue] was not located
+		    			// in any scope or it's undefined
+		    			continue;
+		    		case 2:
+		    			writedump("ok")
+		    	}
+		    }
+		            """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+		// Just needs to parse without error
+	}
+
 }
