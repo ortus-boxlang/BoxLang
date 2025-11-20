@@ -2159,4 +2159,13 @@ public class ClassTest {
 		assertThat( variables.get( "result" ) ).isEqualTo( 42 );
 	}
 
+	@Test
+	public void testTagComponentParse() {
+		instance.executeSource(
+		    """
+		    result = new src.test.java.TestCases.phase3.TagComponentParse();
+		       """,
+		    context );
+	}
+
 }

@@ -273,6 +273,16 @@ public class Parser {
 
 	}
 
+	/**
+	 * Guess the class type by reading the file contents
+	 * 
+	 * @param file    File to read
+	 * @param charset Charset to use when reading the file
+	 * 
+	 * @return Detected BoxSourceType
+	 * 
+	 * @throws IOException If an I/O error occurs reading the file
+	 */
 	private static BoxSourceType guessClassType( File file, Charset charset ) throws IOException {
 
 		// This will only read the lines up until it finds a match to avoid loading the entire file
@@ -296,6 +306,14 @@ public class Parser {
 				}
 				if ( line.contains( "--->" ) || line.contains( "*/" ) ) {
 					inComment = false;
+					// If the line ends the comment, remove the part of the string starting at the end of where that text was found so the line variable contains the rest of the line after the comment
+					int	htmlCommentEnd	= line.indexOf( "--->" );
+					int	blockCommentEnd	= line.indexOf( "*/" );
+					if ( htmlCommentEnd != -1 && ( blockCommentEnd == -1 || htmlCommentEnd < blockCommentEnd ) ) {
+						line = line.substring( htmlCommentEnd + 4 ).trim();
+					} else if ( blockCommentEnd != -1 ) {
+						line = line.substring( blockCommentEnd + 2 ).trim();
+					}
 				}
 				if ( inComment ) {
 					continue;
