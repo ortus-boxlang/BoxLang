@@ -2149,4 +2149,14 @@ public class ClassTest {
 		    context );
 	}
 
+	@Test
+	public void testWeirdParse() {
+		instance.executeSource(
+		    """
+		    result = new src.test.java.TestCases.phase3.WeirdParse().foo();
+		       """,
+		    context );
+		assertThat( variables.get( "result" ) ).isEqualTo( 42 );
+	}
+
 }
