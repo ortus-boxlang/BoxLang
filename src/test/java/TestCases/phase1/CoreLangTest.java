@@ -5834,4 +5834,32 @@ public class CoreLangTest {
 		// Just needs to parse without error
 	}
 
+	@Test
+	public void testFunkyTernary() {
+
+		instance.executeSource(
+		    """
+		    true ? foo = true : bar = false;
+		    result = true ? 'a' : 'b';
+		                 """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+		assertThat( variables.get( Key.of( "foo" ) ) ).isEqualTo( true );
+		assertThat( variables.get( result ) ).isEqualTo( "a" );
+	}
+
+	@Test
+	public void testFunkyTernaryCF() {
+
+		instance.executeSource(
+		    """
+		    true ? foo = true : bar = false;
+		    result = true ? 'a' : 'b';
+		                 """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+		assertThat( variables.get( Key.of( "foo" ) ) ).isEqualTo( true );
+		assertThat( variables.get( result ) ).isEqualTo( "a" );
+	}
+
 }

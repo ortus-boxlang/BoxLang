@@ -466,15 +466,6 @@ el2
     | el2 (AND | AMPAMP) el2                                                # exprAnd               // foo AND bar
     | el2 (OR | PIPEPIPE) el2                                               # exprOr                // foo OR bar
 
-    // Ternary operations are right associative, which means that if they are nested,
-    // the rightmost operation is evaluated first.
-    | <assoc = right> el2 QM el2 COLON el2 # exprTernary // foo ? bar : baz
-    | atoms                                # exprAtoms   // foo, 42, true, false, null, [1,2,3], {foo:bar}
-
-    // el2 elements that have no operators so will be selected in order other than LL(*) solving
-    | ICHAR el2 ICHAR # exprOutString    // #el2# not within a string literal
-    | literals        # exprLiterals     // "bar", [1,2,3], {foo:bar}
-    | arrayLiteral    # exprArrayLiteral // [1,2,3]
     // Evaluate assign here so that we can assign the result of an el2 to a variable
     | el2 op = (
         EQUALSIGN
@@ -484,9 +475,19 @@ el2
         | SLASHEQUAL
         | MODEQUAL
         | CONCATEQUAL
-    ) expression                                                       # exprAssign     // foo = bar
-    | { isAssignmentModifier(_input) }? assignmentModifier+ expression # exprVarDecl    // var foo = bar or final foo = bar
-    | identifier                                                       # exprIdentifier // foo
+    ) expression # exprAssign // foo = bar
+
+    // Ternary operations are right associative, which means that if they are nested,
+    // the rightmost operation is evaluated first.
+    | <assoc = right> el2 QM el2 COLON el2 # exprTernary // foo ? bar : baz
+    | atoms                                # exprAtoms   // foo, 42, true, false, null, [1,2,3], {foo:bar}
+
+    // el2 elements that have no operators so will be selected in order other than LL(*) solving
+    | ICHAR el2 ICHAR                                                  # exprOutString    // #el2# not within a string literal
+    | literals                                                         # exprLiterals     // "bar", [1,2,3], {foo:bar}
+    | arrayLiteral                                                     # exprArrayLiteral // [1,2,3]
+    | { isAssignmentModifier(_input) }? assignmentModifier+ expression # exprVarDecl      // var foo = bar or final foo = bar
+    | identifier                                                       # exprIdentifier   // foo
     ;
 
 // Use this instead of redoing it as arrayValues, arguments etc.
