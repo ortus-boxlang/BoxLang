@@ -711,4 +711,25 @@ public class ClosureFunctionTest {
 
 	}
 
+	@DisplayName( "More lexical in catch block" )
+	@Test
+	public void testMoreLexicalInCatchBlock() {
+
+		instance.executeSource(
+		    """
+		    		function foo() {
+		    			var localVar = "brad";
+		    			try {
+		    				throw "oops"
+		    			} catch (any e) {
+		    				(()=>localVar.len())()
+		    			}
+		    		}
+
+		    		foo();
+		    """,
+		    context );
+
+	}
+
 }
