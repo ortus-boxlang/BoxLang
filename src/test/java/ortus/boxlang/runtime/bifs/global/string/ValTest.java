@@ -110,7 +110,17 @@ public class ValTest {
 		assertThat( variables.get( Key.of( "result9" ) ) ).isEqualTo( 0 );
 		assertThat( variables.get( Key.of( "result10" ) ) ).isEqualTo( -50 );
 		assertThat( variables.get( Key.of( "result11" ) ) ).isEqualTo( -45 );
+	}
 
+	@DisplayName( "It avoids sci notation" )
+	@Test
+	public void testItAvoidsSciNotation() {
+		instance.executeSource(
+		    """
+		    result = val(15852073);
+		           """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 15852073 );
 	}
 
 }
