@@ -60,6 +60,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 import ortus.boxlang.runtime.types.exceptions.NoMethodException;
 import ortus.boxlang.runtime.types.util.BooleanRef;
@@ -1238,7 +1239,40 @@ public class DynamicInteropServiceTest {
 			IntStream.range( 1, 3 ).forEach( ::len )
 			""", context);
 		// @formatter:on
+	}
 
+	@Test
+	void testCastWhenSettingField() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			import java:ortus.boxlang.runtime.context.BaseBoxContext;
+
+			BaseBoxContext.nullIsUndefined = "false";
+			""", context);
+		// @formatter:on
+
+		// @formatter:off
+		Throwable t = assertThrows( BoxRuntimeException.class, ()->instance.executeSource(
+			"""
+			import java:ortus.boxlang.runtime.context.BaseBoxContext;
+
+			BaseBoxContext.nullIsUndefined = {};
+			""", context));
+		// @formatter:on
+		assertThat( t.getMessage() ).contains( "Struct" );
+		assertThat( t.getMessage() ).contains( "boolean" );
+
+		// @formatter:off
+		t = assertThrows( BoxRuntimeException.class, ()->instance.executeSource(
+			"""
+			import java:ortus.boxlang.runtime.context.BaseBoxContext;
+
+			BaseBoxContext.nullIsUndefined = null;
+			""", context));
+		// @formatter:on
+		assertThat( t.getMessage() ).contains( "primitive" );
+		assertThat( t.getMessage() ).contains( "boolean" );
 	}
 
 }
