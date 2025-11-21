@@ -71,9 +71,14 @@ public class Application {
 	private Key								name;
 
 	/**
-	 * The timestamp when the runtime was started
+	 * The timestamp when the application was started
 	 */
 	private Instant							startTime;
+
+	/**
+	 * The timestamp when the application was last accessed
+	 */
+	private Instant							lastAccessTime;
 
 	/**
 	 * Bit that determines if the application is running or not. Accesible by multiple threads
@@ -315,8 +320,9 @@ public class Application {
 			startupAppSchedulers( context.getRequestContext() );
 
 			// Record startup
-			this.startTime	= Instant.now();
-			this.started	= true;
+			this.startTime		= Instant.now();
+			this.lastAccessTime	= this.startTime;
+			this.started		= true;
 		}
 
 		logger.debug( "Application.start() - {}", this.name );
@@ -569,8 +575,26 @@ public class Application {
 	}
 
 	/**
+	 * Get the last access time of the application.
+	 *
+	 * @return the application last access time
+	 */
+	public Instant getLastAccessTime() {
+		return this.lastAccessTime;
+	}
+
+	/**
+	 * Update the last access time of the application to the current time.
+	 */
+	public Application updateLastAccessTime() {
+		this.lastAccessTime = Instant.now();
+		return this;
+	}
+
+	/**
 	 * Has this application expired.
-	 * We look at the application start time and the application timeout to determine if it has expired
+	 * We look at the application last access time and the application timeout to determine if it has expired
+	 * Application last access time is updated every time this application is used on a new request.
 	 *
 	 * @return True if the application has expired, false otherwise
 	 */
@@ -600,14 +624,14 @@ public class Application {
 		}
 
 		// App is still starting up
-		if ( this.startTime == null ) {
+		if ( this.lastAccessTime == null ) {
 			return false;
 		}
 
 		// If the start time + the duration is before now, then it's expired
 		// Example: 10:00 + 1 hour = 11:00, now is 11:01, so it's expired : true
 		// Example: 10:00 + 1 hour = 11:00, now is 10:59, so it's not expired : false
-		return this.startTime.plus( appDuration ).isBefore( Instant.now() );
+		return this.lastAccessTime.plus( appDuration ).isBefore( Instant.now() );
 	}
 
 	/**
@@ -644,7 +668,7 @@ public class Application {
 	 * @param force If true, forces the shutdown of the scheduler
 	 */
 	public synchronized void shutdown( boolean force ) {
-		// If the app has already been shutdown, don't do it again4
+		// If the app has already been shutdown, don't do it again
 		if ( !hasStarted() ) {
 			logger.debug( "Can't shutdown application [{}] as it's already shutdown", this.name );
 			return;

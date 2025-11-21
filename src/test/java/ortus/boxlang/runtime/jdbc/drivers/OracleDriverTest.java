@@ -346,4 +346,40 @@ public class OracleDriverTest extends AbstractDriverTest {
 		String rowIdString = variables.getAsString( Key.of( "returnedRowId" ) );
 		assertThat( rowIdString.length() ).isGreaterThan( 0 );
 	}
+
+	@DisplayName( "proc out vars transform custom JDBC driver types named" )
+	@Test
+	@Disabled( "Named parameters not yet supported for Oracle stored procs" )
+	public void testProcOutVarTransformCustomJDBCDriverTypesNamed() {
+		// Create the stored procedure
+		instance.executeStatement(
+		    """
+		    queryExecute( "
+		    	CREATE OR REPLACE PROCEDURE getRowIdProc (
+		    		outRowId OUT ROWID
+		    	)
+		    	IS
+		    	BEGIN
+		    		SELECT ROWID INTO outRowId FROM dual;
+		    	END getRowIdProc;
+		    ",{},{ "datasource" : "OracleDatasource" }
+		    );
+		    """, context );
+
+		ExecutedQuery.debug = true;
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="getRowIdProc" datasource="OracleDatasource" result="variables.result" debug=true>
+		        <bx:procparam name="outRowId" dbvarname=":outRowId" type="out" sqltype="string" variable="returnedRowId" />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		ExecutedQuery.debug = false;
+
+		// Verify that we got a ROWID back
+		assertThat( variables.get( "returnedRowId" ) ).isNotNull();
+		assertThat( variables.get( "returnedRowId" ) ).isInstanceOf( String.class );
+		String rowIdString = variables.getAsString( Key.of( "returnedRowId" ) );
+		assertThat( rowIdString.length() ).isGreaterThan( 0 );
+	}
 }
