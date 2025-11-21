@@ -69,16 +69,16 @@ public class ValTest {
 		    result10 = val(null);
 		         """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 0 );
-		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( 0 );
-		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( 0 );
-		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( 123 );
-		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( 123 );
-		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( .123 );
-		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( 123.456 );
-		assertThat( variables.get( Key.of( "result8" ) ) ).isEqualTo( 0 );
-		assertThat( variables.get( Key.of( "result9" ) ) ).isEqualTo( 0 );
-		assertThat( variables.get( Key.of( "result10" ) ) ).isEqualTo( 0 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 0 );
+		assertThat( variables.getAsNumber( Key.of( "result2" ) ).doubleValue() ).isEqualTo( 0 );
+		assertThat( variables.getAsNumber( Key.of( "result3" ) ).doubleValue() ).isEqualTo( 0 );
+		assertThat( variables.getAsNumber( Key.of( "result4" ) ).doubleValue() ).isEqualTo( 123 );
+		assertThat( variables.getAsNumber( Key.of( "result5" ) ).doubleValue() ).isEqualTo( 123 );
+		assertThat( variables.getAsNumber( Key.of( "result6" ) ).doubleValue() ).isEqualTo( .123 );
+		assertThat( variables.getAsNumber( Key.of( "result7" ) ).doubleValue() ).isEqualTo( 123.456 );
+		assertThat( variables.getAsNumber( Key.of( "result8" ) ).doubleValue() ).isEqualTo( 0 );
+		assertThat( variables.getAsNumber( Key.of( "result9" ) ).doubleValue() ).isEqualTo( 0 );
+		assertThat( variables.getAsNumber( Key.of( "result10" ) ).doubleValue() ).isEqualTo( 0 );
 	}
 
 	@DisplayName( "It extracts number from string Member" )
@@ -99,17 +99,17 @@ public class ValTest {
 		    result11 = "-45-60".val();
 		         """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 0 );
-		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( 0 );
-		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( 0 );
-		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( 123 );
-		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( 123 );
-		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( .123 );
-		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( 123.456 );
-		assertThat( variables.get( Key.of( "result8" ) ) ).isEqualTo( 0 );
-		assertThat( variables.get( Key.of( "result9" ) ) ).isEqualTo( 0 );
-		assertThat( variables.get( Key.of( "result10" ) ) ).isEqualTo( -50 );
-		assertThat( variables.get( Key.of( "result11" ) ) ).isEqualTo( -45 );
+		assertThat( variables.getAsNumber( result ).doubleValue() ).isEqualTo( 0 );
+		assertThat( variables.getAsNumber( Key.of( "result2" ) ).doubleValue() ).isEqualTo( 0 );
+		assertThat( variables.getAsNumber( Key.of( "result3" ) ).doubleValue() ).isEqualTo( 0 );
+		assertThat( variables.getAsNumber( Key.of( "result4" ) ).doubleValue() ).isEqualTo( 123 );
+		assertThat( variables.getAsNumber( Key.of( "result5" ) ).doubleValue() ).isEqualTo( 123 );
+		assertThat( variables.getAsNumber( Key.of( "result6" ) ).doubleValue() ).isEqualTo( .123 );
+		assertThat( variables.getAsNumber( Key.of( "result7" ) ).doubleValue() ).isEqualTo( 123.456 );
+		assertThat( variables.getAsNumber( Key.of( "result8" ) ).doubleValue() ).isEqualTo( 0 );
+		assertThat( variables.getAsNumber( Key.of( "result9" ) ).doubleValue() ).isEqualTo( 0 );
+		assertThat( variables.getAsNumber( Key.of( "result10" ) ).doubleValue() ).isEqualTo( -50 );
+		assertThat( variables.getAsNumber( Key.of( "result11" ) ).doubleValue() ).isEqualTo( -45 );
 	}
 
 	@DisplayName( "It avoids sci notation" )
