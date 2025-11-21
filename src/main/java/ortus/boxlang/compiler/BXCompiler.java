@@ -24,13 +24,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.types.exceptions.ParseException;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
@@ -49,6 +50,16 @@ public class BXCompiler {
 	 * @param includeStatic Whether to include static files in compilation
 	 */
 	public record CompilerOptions( String source, String target, Boolean stopOnError, Boolean includeStatic ) {
+	}
+
+	/**
+	 * Record to hold compilation statistics.
+	 *
+	 * @param successCount Number of files successfully compiled
+	 * @param failureCount Number of files that failed to compile
+	 * @param errors       List of error messages for failed files
+	 */
+	public record CompilationStats( int successCount, int failureCount, java.util.List<String> errors ) {
 	}
 
 	/**
@@ -71,6 +82,12 @@ public class BXCompiler {
 			final Boolean	finalIncludeStatic	= options.includeStatic();
 			Path			sourcePath			= Paths.get( options.source() ).normalize();
 
+			// Track compilation statistics
+			AtomicInteger	successCount		= new AtomicInteger( 0 );
+			AtomicInteger	failureCount		= new AtomicInteger( 0 );
+			List<String>	errors				= new ArrayList<>();
+			long			startTime			= System.currentTimeMillis();
+
 			// Resolve relative paths against current working directory
 			if ( !sourcePath.isAbsolute() ) {
 				sourcePath = Paths.get( "" ).resolve( sourcePath ).normalize().toAbsolutePath().normalize();
@@ -90,7 +107,20 @@ public class BXCompiler {
 
 			// Compile source
 			if ( sourcePath.toFile().isDirectory() ) {
-				System.out.println( "Compiling all source files in " + sourcePath.toString() + " to " + targetPath.toString() );
+				// Print compilation header
+				System.out.println( "═══════════════════════════════════════════════════════════════" );
+				System.out.println( "🥊 BOXLANG COMPILER" );
+				System.out.println( "═══════════════════════════════════════════════════════════════" );
+				System.out.println();
+				System.out.println( "📂 Source: " + sourcePath.toString() );
+				System.out.println( "🎯 Target: " + targetPath.toString() );
+				System.out.println( "🔍 Include Static: " + finalIncludeStatic );
+				System.out.println( "🛑 Stop On Error: " + options.stopOnError() );
+				System.out.println();
+				System.out.println( "───────────────────────────────────────────────────────────────" );
+				System.out.println( "⚡ Starting compilation..." );
+				System.out.println();
+
 				// compile all .cfm, .cfs, and .cfc files in sourcePath to targetPath
 				final Path finalTargetPath = targetPath;
 				try {
@@ -105,7 +135,12 @@ public class BXCompiler {
 						    Path resolvedTargetPath	= finalTargetPath.resolve( finalSourcePath.relativize( path ).toString() );
 
 						    if ( SUPPORTED_EXTENSIONS.contains( sourceExtension ) ) {
-							    compileFile( path, resolvedTargetPath, finalStopOnError, runtime );
+							    boolean success = compileFile( path, resolvedTargetPath, finalStopOnError, runtime, errors );
+							    if ( success ) {
+								    successCount.incrementAndGet();
+							    } else {
+								    failureCount.incrementAndGet();
+							    }
 						    } else if ( finalIncludeStatic && !Files.exists( resolvedTargetPath ) ) {
 							    // If the file is not a supported source file, but we are including static files,
 							    // we will copy it to the target directory
@@ -137,10 +172,22 @@ public class BXCompiler {
 					// if target is a directory, use the source file name as the target file name
 					targetPath = targetPath.resolve( sourceFileName );
 				}
-				compileFile( sourcePath, targetPath, options.stopOnError(), runtime );
+				boolean success = compileFile( sourcePath, targetPath, options.stopOnError(), runtime, errors );
+				if ( success ) {
+					successCount.incrementAndGet();
+				} else {
+					failureCount.incrementAndGet();
+				}
 			}
 
-			System.exit( 0 );
+			// Calculate elapsed time
+			long	elapsedTime	= System.currentTimeMillis() - startTime;
+			double	seconds		= elapsedTime / 1000.0;
+
+			// Print compilation summary
+			printCompilationSummary( successCount.get(), failureCount.get(), errors, seconds );
+
+			System.exit( failureCount.get() > 0 ? 1 : 0 );
 		} finally {
 			runtime.shutdown();
 		}
@@ -153,23 +200,46 @@ public class BXCompiler {
 	 * @param targetPath  The path where the compiled file should be written.
 	 * @param stopOnError If true, throws an exception on compilation errors; otherwise logs the error and continues.
 	 * @param runtime     The BoxRuntime instance used for compilation.
+	 *
+	 * @return true if compilation was successful, false otherwise
 	 */
-	public static void compileFile( Path sourcePath, Path targetPath, Boolean stopOnError, BoxRuntime runtime ) {
+	public static boolean compileFile( Path sourcePath, Path targetPath, Boolean stopOnError, BoxRuntime runtime ) {
+		return compileFile( sourcePath, targetPath, stopOnError, runtime, new ArrayList<>() );
+	}
+
+	/**
+	 * Compiles a single file to the target path.
+	 *
+	 * @param sourcePath  The path to the source file to compile.
+	 * @param targetPath  The path where the compiled file should be written.
+	 * @param stopOnError If true, throws an exception on compilation errors; otherwise logs the error and continues.
+	 * @param runtime     The BoxRuntime instance used for compilation.
+	 * @param errors      List to collect file paths for failed compilations.
+	 *
+	 * @return true if compilation was successful, false otherwise
+	 */
+	public static boolean compileFile( Path sourcePath, Path targetPath, Boolean stopOnError, BoxRuntime runtime, List<String> errors ) {
 		ensureParentDirectoriesExist( targetPath );
-		System.out.println( "Writing " + targetPath.toString() );
+		System.out.println( "⚡ Writing -> " + targetPath.toString() );
 		List<byte[]> bytesList = null;
 		try {
-			bytesList = RunnableLoader.getInstance().getBoxpiler()
+			bytesList = RunnableLoader.getInstance()
+			    .getBoxpiler()
 			    .compileTemplateBytes( ResolvedFilePath.of( "", "", sourcePath.toString(), sourcePath ) );
-		} catch ( ParseException e ) {
+		} catch ( Exception e ) {
+			synchronized ( errors ) {
+				errors.add( sourcePath.toString() );
+			}
 			if ( stopOnError ) {
 				throw e;
 			} else {
-				System.out.println( "Error compiling " + sourcePath.toString() + ": " + e.getMessage() );
-				return;
+				String errorMsg = sourcePath.toString() + ": " + e.getMessage();
+				System.out.println( "═══════════════════════════════════════════════════════════════" );
+				System.out.println( "❌ Error compiling " + errorMsg );
+				System.out.println( "═══════════════════════════════════════════════════════════════" );
+				return false;
 			}
-		}
-		// Concatenate the byte arrays with a delimiter of four null bytes
+		}		// Concatenate the byte arrays with a delimiter of four null bytes
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
 		try {
@@ -183,8 +253,17 @@ public class BXCompiler {
 
 			// Write the concatenated byte array to the target file
 			Files.write( targetPath, baos.toByteArray() );
+			return true;
 		} catch ( IOException e ) {
-			throw new RuntimeException( "Unable to write to target file", e );
+			String errorMsg = targetPath.toString() + ": Unable to write to target file - " + e.getMessage();
+			synchronized ( errors ) {
+				errors.add( errorMsg );
+			}
+			System.out.println( "❌ Error: " + errorMsg );
+			if ( stopOnError ) {
+				throw new RuntimeException( "Unable to write to target file", e );
+			}
+			return false;
 		}
 	}
 
@@ -249,6 +328,46 @@ public class BXCompiler {
 		}
 
 		return new CompilerOptions( source, target, stopOnError, includeStatic );
+	}
+
+	/**
+	 * Prints a compilation summary with statistics and failed file paths.
+	 *
+	 * @param successCount Number of files successfully compiled
+	 * @param failureCount Number of files that failed to compile
+	 * @param errors       List of file paths that failed to compile
+	 * @param seconds      Total compilation time in seconds
+	 */
+	private static void printCompilationSummary( int successCount, int failureCount, List<String> errors, double seconds ) {
+		int totalFiles = successCount + failureCount;
+
+		System.out.println();
+		System.out.println( "═══════════════════════════════════════════════════════════════" );
+		System.out.println( "📊 COMPILATION SUMMARY" );
+		System.out.println( "═══════════════════════════════════════════════════════════════" );
+		System.out.println();
+		System.out.printf( "⏱️  Time Elapsed: %.2f seconds%n", seconds );
+		System.out.printf( "📁 Total Files:   %d%n", totalFiles );
+		System.out.printf( "✅ Successful:    %d%n", successCount );
+		System.out.printf( "❌ Failed:        %d%n", failureCount );
+		System.out.println();
+
+		if ( failureCount > 0 ) {
+			System.out.println( "═══════════════════════════════════════════════════════════════" );
+			System.out.println( "❌ FAILED FILES" );
+			System.out.println( "═══════════════════════════════════════════════════════════════" );
+			System.out.println();
+
+			int errorNumber = 1;
+			for ( String filePath : errors ) {
+				System.out.printf( "%d. %s%n", errorNumber++, filePath );
+			}
+			System.out.println();
+			System.out.println( "═══════════════════════════════════════════════════════════════" );
+		} else {
+			System.out.println( "🎉 All files compiled successfully!" );
+			System.out.println( "═══════════════════════════════════════════════════════════════" );
+		}
 	}
 
 	/**
