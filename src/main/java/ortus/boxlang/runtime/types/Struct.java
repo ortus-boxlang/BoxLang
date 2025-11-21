@@ -687,9 +687,7 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 	 */
 	@Override
 	public void putAll( Map<? extends Key, ? extends Object> map ) {
-		for ( Key key : map.keySet() ) {
-			putInternal( key, map.get( key ) );
-		}
+		addAll( map );
 	}
 
 	/**

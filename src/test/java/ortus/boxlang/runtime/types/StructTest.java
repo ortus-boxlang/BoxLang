@@ -314,4 +314,24 @@ class StructTest {
 		assertThat( variables.getAsStruct( Key.of( "myStr" ) ).get( Key.of( "softRef" ) ) ).isInstanceOf( SoftReference.class );
 	}
 
+	@DisplayName( "Can call putAll() with a map not using Key keys" )
+	@Test
+	void testCanCallPutAllWithMapNotUsingKeyKeys() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			x = createObject("java", "java.util.HashMap")
+			x.put("foo", 42)
+
+			v = {}
+
+			v.putAll(x)
+			""",
+			context );
+		// @formatter:on
+		IStruct v = variables.getAsStruct( Key.of( "v" ) );
+		assertThat( v.get( Key.of( "foo" ) ) ).isEqualTo( 42 );
+
+	}
+
 }
