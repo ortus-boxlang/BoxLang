@@ -41,58 +41,21 @@ public class BXCompiler {
 	private static final Set<String> SUPPORTED_EXTENSIONS = Set.of( "cfm", "cfc", "cfs", "bx", "bxs", "bxm" );
 
 	/**
-	 * Prints the help message for the BXCompiler tool.
+	 * Record to hold the parsed command-line options.
+	 *
+	 * @param source        Path to source directory or file to compile
+	 * @param target        Path to target directory or file
+	 * @param stopOnError   Whether to stop processing on first error
+	 * @param includeStatic Whether to include static files in compilation
 	 */
-	private static void printHelp() {
-		System.out.println( "⚡ BoxLang Compiler - A CLI tool for pre-compiling BoxLang code to class files" );
-		System.out.println();
-		System.out.println( "📋 USAGE:" );
-		System.out.println( "  boxlang compile [OPTIONS]  # 🔧 Using OS binary" );
-		System.out.println( "  java -jar boxlang.jar ortus.boxlang.compiler.BXCompiler [OPTIONS] # 🐍 Using Java JAR" );
-		System.out.println();
-		System.out.println( "⚙️  OPTIONS:" );
-		System.out.println( "  -h, --help                  ❓ Show this help message and exit" );
-		System.out.println( "      --source <PATH>         📂 Path to source directory or file to compile (default: current directory)" );
-		System.out.println( "      --target <PATH>         🎯 Path to target directory or file (required)" );
-		System.out.println( "      --includeStatic         🔍 Include static files in compilation (default: false)" );
-		System.out.println( "      --stopOnError [BOOL]    🛑 Stop processing on first error (default: false)" );
-		System.out.println();
-		System.out.println( "📦 COMPILATION PROCESS:" );
-		System.out.println( "  • Compiles BoxLang/ColdFusion source files to Java bytecode class files" );
-		System.out.println( "  • Creates pre-compiled templates for faster runtime execution" );
-		System.out.println( "  • Preserves directory structure in target location" );
-		System.out.println();
-		System.out.println( "🔧 SUPPORTED SOURCE FILES:" );
-		System.out.println( "  .cfm  - ColdFusion markup pages" );
-		System.out.println( "  .cfc  - ColdFusion components" );
-		System.out.println( "  .cfs  - ColdFusion script files" );
-		System.out.println( "  .bx   - BoxLang class files" );
-		System.out.println( "  .bxs  - BoxLang script files" );
-		System.out.println( "  .bxm  - BoxLang module files" );
-		System.out.println();
-		System.out.println( "💡 EXAMPLES:" );
-		System.out.println( "  # ⚡ Compile current directory to target" );
-		System.out.println( "  boxlang compile --target ./compiled" );
-		System.out.println();
-		System.out.println( "  # 🛑 Stop on first compilation error" );
-		System.out.println( "  boxlang compile --source ./src --target ./build --stopOnError" );
-		System.out.println();
-		System.out.println( "📂 PATH REQUIREMENTS:" );
-		System.out.println( "  • Target directories are created automatically if they don't exist" );
-		System.out.println( "  • Relative paths are resolved against the current working directory" );
-		System.out.println();
-		System.out.println( "🔄 OUTPUT FORMAT:" );
-		System.out.println( "  • Compiled files maintain original directory structure" );
-		System.out.println( "  • Binary format with CAFEBABE header for BoxLang runtime" );
-		System.out.println( "  • Multiple class files concatenated with length prefixes" );
-		System.out.println();
-		System.out.println( "📖 More Information:" );
-		System.out.println( "  📖 Documentation: https://boxlang.ortusbooks.com/" );
-		System.out.println( "  💬 Community: https://community.ortussolutions.com/c/boxlang/42" );
-		System.out.println( "  💾 GitHub: https://github.com/ortus-boxlang" );
-		System.out.println();
+	public record CompilerOptions( String source, String target, Boolean stopOnError, Boolean includeStatic ) {
 	}
 
+	/**
+	 * Main entry point for the BXCompiler CLI tool.
+	 *
+	 * @param args Command-line arguments
+	 */
 	public static void main( String[] args ) {
 		// Check for help first before initializing BoxRuntime
 		for ( int i = 0; i < args.length; i++ ) {
@@ -104,61 +67,35 @@ public class BXCompiler {
 
 		BoxRuntime runtime = BoxRuntime.getInstance();
 		try {
-			String	source			= ".";
-			String	target			= null;
-			Boolean	stopOnError		= false;
-			Boolean	includeStatic	= false;
-			for ( int i = 0; i < args.length; i++ ) {
-				if ( args[ i ].equalsIgnoreCase( "--includeStatic" ) ) {
-					includeStatic = true;
-				}
-				if ( args[ i ].equalsIgnoreCase( "--source" ) ) {
-					if ( i + 1 >= args.length ) {
-						throw new BoxRuntimeException( "--source requires a path" );
-					}
-					source = args[ i + 1 ];
-				}
-				if ( args[ i ].equalsIgnoreCase( "--target" ) ) {
-					if ( i + 1 >= args.length ) {
-						throw new BoxRuntimeException( "--target requires a path" );
-					}
-					target = args[ i + 1 ];
-				}
-				if ( args[ i ].equalsIgnoreCase( "--stopOnError" ) ) {
-					if ( i + 1 >= args.length || args[ i + 1 ].startsWith( "--" ) ) {
-						stopOnError = true;
-					} else {
-						stopOnError = Boolean.parseBoolean( args[ i + 1 ] );
-					}
+			CompilerOptions	options				= parseArguments( args );
+			final Boolean	finalIncludeStatic	= options.includeStatic();
+			Path			sourcePath			= Paths.get( options.source() ).normalize();
 
-				}
-			}
-			final Boolean	finalIncludeStatic	= includeStatic;
-			Path			sourcePath			= Paths.get( source ).normalize();
+			// Resolve relative paths against current working directory
 			if ( !sourcePath.isAbsolute() ) {
 				sourcePath = Paths.get( "" ).resolve( sourcePath ).normalize().toAbsolutePath().normalize();
 			}
 
+			// Verify source path exists
 			if ( !sourcePath.toFile().exists() ) {
 				System.out.println( "Source Path does not exist: " + sourcePath.toString() );
 				System.exit( 1 );
 			}
 
-			if ( target == null ) {
-				throw new BoxRuntimeException( "--target is required " );
-			}
-			Path targetPath = Paths.get( target ).normalize();
+			// Verify target path exists
+			Path targetPath = Paths.get( options.target() ).normalize();
 			if ( !targetPath.isAbsolute() ) {
 				targetPath = Paths.get( "" ).resolve( targetPath ).normalize().toAbsolutePath().normalize();
 			}
 
+			// Compile source
 			if ( sourcePath.toFile().isDirectory() ) {
 				System.out.println( "Compiling all source files in " + sourcePath.toString() + " to " + targetPath.toString() );
 				// compile all .cfm, .cfs, and .cfc files in sourcePath to targetPath
 				final Path finalTargetPath = targetPath;
 				try {
 					final Path		finalSourcePath		= sourcePath;
-					final boolean	finalStopOnError	= stopOnError;
+					final boolean	finalStopOnError	= options.stopOnError();
 					Files.walk( finalSourcePath )
 					    .parallel()
 					    .filter( Files::isRegularFile )
@@ -188,7 +125,9 @@ public class BXCompiler {
 				} catch ( IOException e ) {
 					throw new BoxRuntimeException( "Error walking source path", e );
 				}
-			} else {
+			}
+			// Compile a FILE source
+			else {
 				String sourceFileName = sourcePath.getFileName().toString();
 				if ( !SUPPORTED_EXTENSIONS.contains( sourceFileName.substring( sourceFileName.lastIndexOf( "." ) + 1 ).toLowerCase() ) ) {
 					System.out.println( "Unsupported source file extension: " + sourcePath.getFileName().toString() );
@@ -198,7 +137,7 @@ public class BXCompiler {
 					// if target is a directory, use the source file name as the target file name
 					targetPath = targetPath.resolve( sourceFileName );
 				}
-				compileFile( sourcePath, targetPath, stopOnError, runtime );
+				compileFile( sourcePath, targetPath, options.stopOnError(), runtime );
 			}
 
 			System.exit( 0 );
@@ -263,6 +202,106 @@ public class BXCompiler {
 		} catch ( IOException e ) {
 			// folder already exists
 		}
+	}
+
+	/**
+	 * Parses command-line arguments and returns a CompilerOptions record.
+	 *
+	 * @param args The command-line arguments to parse
+	 *
+	 * @return A CompilerOptions record containing the parsed options
+	 *
+	 * @throws BoxRuntimeException if required arguments are missing or invalid
+	 */
+	private static CompilerOptions parseArguments( String[] args ) {
+		String	source			= ".";
+		String	target			= null;
+		Boolean	stopOnError		= false;
+		Boolean	includeStatic	= false;
+
+		for ( int i = 0; i < args.length; i++ ) {
+			if ( args[ i ].equalsIgnoreCase( "--includeStatic" ) ) {
+				includeStatic = true;
+			}
+			if ( args[ i ].equalsIgnoreCase( "--source" ) ) {
+				if ( i + 1 >= args.length ) {
+					throw new BoxRuntimeException( "--source requires a path" );
+				}
+				source = args[ i + 1 ];
+			}
+			if ( args[ i ].equalsIgnoreCase( "--target" ) ) {
+				if ( i + 1 >= args.length ) {
+					throw new BoxRuntimeException( "--target requires a path" );
+				}
+				target = args[ i + 1 ];
+			}
+			if ( args[ i ].equalsIgnoreCase( "--stopOnError" ) ) {
+				if ( i + 1 >= args.length || args[ i + 1 ].startsWith( "--" ) ) {
+					stopOnError = true;
+				} else {
+					stopOnError = Boolean.parseBoolean( args[ i + 1 ] );
+				}
+			}
+		}
+
+		if ( target == null ) {
+			throw new BoxRuntimeException( "--target is required" );
+		}
+
+		return new CompilerOptions( source, target, stopOnError, includeStatic );
+	}
+
+	/**
+	 * Prints the help message for the BXCompiler tool.
+	 */
+	private static void printHelp() {
+		System.out.println( "⚡ BoxLang Compiler - A CLI tool for pre-compiling BoxLang code to class files" );
+		System.out.println();
+		System.out.println( "📋 USAGE:" );
+		System.out.println( "  boxlang compile [OPTIONS]  # 🔧 Using OS binary" );
+		System.out.println( "  java -jar boxlang.jar ortus.boxlang.compiler.BXCompiler [OPTIONS] # 🐍 Using Java JAR" );
+		System.out.println();
+		System.out.println( "⚙️  OPTIONS:" );
+		System.out.println( "  -h, --help                  ❓ Show this help message and exit" );
+		System.out.println( "      --source <PATH>         📂 Path to source directory or file to compile (default: current directory)" );
+		System.out.println( "      --target <PATH>         🎯 Path to target directory or file (required)" );
+		System.out.println( "      --includeStatic         🔍 Include static files in compilation (default: false)" );
+		System.out.println( "      --stopOnError [BOOL]    🛑 Stop processing on first error (default: false)" );
+		System.out.println();
+		System.out.println( "📦 COMPILATION PROCESS:" );
+		System.out.println( "  • Compiles BoxLang/ColdFusion source files to Java bytecode class files" );
+		System.out.println( "  • Creates pre-compiled templates for faster runtime execution" );
+		System.out.println( "  • Preserves directory structure in target location" );
+		System.out.println();
+		System.out.println( "🔧 SUPPORTED SOURCE FILES:" );
+		System.out.println( "  .cfm  - ColdFusion markup pages" );
+		System.out.println( "  .cfc  - ColdFusion components" );
+		System.out.println( "  .cfs  - ColdFusion script files" );
+		System.out.println( "  .bx   - BoxLang class files" );
+		System.out.println( "  .bxs  - BoxLang script files" );
+		System.out.println( "  .bxm  - BoxLang module files" );
+		System.out.println();
+		System.out.println( "💡 EXAMPLES:" );
+		System.out.println( "  # ⚡ Compile current directory to target" );
+		System.out.println( "  boxlang compile --target ./compiled" );
+		System.out.println();
+		System.out.println( "  # 🛑 Stop on first compilation error" );
+		System.out.println( "  boxlang compile --source ./src --target ./build --stopOnError" );
+		System.out.println();
+		System.out.println( "📂 PATH REQUIREMENTS:" );
+		System.out.println( "  • Target directories are created automatically if they don't exist" );
+		System.out.println( "  • Relative paths are resolved against the current working directory" );
+		System.out.println();
+		System.out.println( "🔄 OUTPUT FORMAT:" );
+		System.out.println( "  • Compiled files maintain original directory structure" );
+		System.out.println( "  • Binary format with CAFEBABE header for BoxLang runtime" );
+		System.out.println( "  • Multiple class files concatenated with length prefixes" );
+		System.out.println();
+		System.out.println( "📖 More Information:" );
+		System.out.println( "  📖 Documentation: https://boxlang.ortusbooks.com/" );
+		System.out.println( "  💬 Community: https://community.ortussolutions.com/c/boxlang/42" );
+		System.out.println( "  💾 GitHub: https://github.com/ortus-boxlang" );
+		System.out.println();
 	}
 
 }
