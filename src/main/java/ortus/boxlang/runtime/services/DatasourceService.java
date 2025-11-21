@@ -253,7 +253,7 @@ public class DatasourceService extends BaseService {
 	 * @return A new or already registered datasource
 	 */
 	public DataSource register( DatasourceConfig config ) {
-		return this.datasources.computeIfAbsent( config.getUniqueName(), key -> new DataSource( config ) );
+		return this.datasources.computeIfAbsent( config.getUniqueName(), key -> new DataSource( config, false ) );
 	}
 
 	/**
