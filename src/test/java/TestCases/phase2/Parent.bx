@@ -1,0 +1,7 @@
+class {
+	property name="data" type="string" default="";
+
+	function add( String newData ) {
+		data &= newData;
+	}
+}

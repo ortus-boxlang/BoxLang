@@ -732,4 +732,17 @@ public class ClosureFunctionTest {
 
 	}
 
+	@DisplayName( "test closure can access super scope" )
+	@Test
+	public void testClosureCanAccessSuperScope() {
+
+		instance.executeSource(
+		    """
+		    result = new src.test.java.TestCases.phase2.Child().addMessages( ["one", "two"] )
+		      """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "onetwo" );
+
+	}
+
 }

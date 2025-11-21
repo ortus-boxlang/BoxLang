@@ -1,0 +1,10 @@
+class extends="Parent" {
+
+	function addMessages( Array messages ) {
+		messages.each( function( msg ) {
+			super.add( msg );
+		} );
+		return data;
+	}
+
+}
