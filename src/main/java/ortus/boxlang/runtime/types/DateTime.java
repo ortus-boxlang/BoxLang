@@ -492,19 +492,20 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 */
 
 	/**
-	 * Returns a DateTime formatter from a pattern passed in
+	 * Returns a cached DateTime formatter from a pattern passed in.
+	 * Uses LocalizationUtil for memory-sensitive caching with SoftReference.
 	 *
 	 * @param pattern the pattern to use
 	 *
-	 * @return the DateTimeFormatter object with the pattern
+	 * @return the cached or newly created DateTimeFormatter object with the pattern
 	 */
 	private static DateTimeFormatter getFormatter( String pattern ) {
-		return DateTimeFormatter.ofPattern( pattern );
+		return LocalizationUtil.getPatternFormatter( pattern );
 	}
 
 	/**
 	 * Convenience method to get a common date time formatter if it exists in the {@link DateTime#COMMON_FORMATTERS} map
-	 * else it will return a new DateTimeFormatter instance according to the passed mask.
+	 * else it will return a cached DateTimeFormatter instance according to the passed mask.
 	 *
 	 * @param mask The mask to use with a postfix of {@code DateTime} or a common formatter key:
 	 *             fullDateTime, longDateTime, mediumDateTime, shortDateTime,
@@ -515,7 +516,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	public static DateTimeFormatter getDateTimeFormatter( String mask ) {
 		return ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.getOrDefault(
 		    Key.of( mask + MODE_DATETIME ),
-		    DateTimeFormatter.ofPattern( mask )
+		    LocalizationUtil.getPatternFormatter( mask )
 		);
 	}
 
@@ -528,7 +529,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 */
 	public DateTime setFormat( String mask ) {
 		this.appliedFormatMask	= mask;
-		this.formatter			= DateTimeFormatter.ofPattern( mask );
+		this.formatter			= LocalizationUtil.getPatternFormatter( mask );
 		return this;
 	}
 
@@ -1253,7 +1254,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 			this.formatter = defaultFormatter;
 		} else {
 			this.appliedFormatMask	= pattern;
-			this.formatter			= DateTimeFormatter.ofPattern( this.appliedFormatMask );
+			this.formatter			= LocalizationUtil.getPatternFormatter( this.appliedFormatMask );
 		}
 		// Reconstruct the formatter
 	}
