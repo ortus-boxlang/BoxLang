@@ -35,6 +35,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.IStruct;
 
 public class ParseDateTimeTest {
 
@@ -464,6 +465,45 @@ public class ParseDateTimeTest {
 		    parseDateTime( 'Tuesday 02 Apr 2024 21:01:00 CEST' );
 		          """,
 		    context );
+	}
+
+	@DisplayName( "It tests the speed of both masked and non-masked parsing" )
+	@Test
+	public void testSpeed() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    function parseIt( string dateString, string mask ){
+			var iterations = 10000;
+			var start = getTickCount();
+			for( var i = 1; i <= iterations; i++ ){
+				var result = !isNull( mask ) ? parseDateTime( dateString, mask ) : parseDateTime( dateString )
+			}
+			var totalTime = ( getTickCount() - start );
+			return totalTime;
+			}
+
+			result = [
+				"isoTimestamp" : parseIt( "2024-04-02T21:01:00Z" ),
+				"isoTimestampWMask" : parseIt( "2024-04-02T21:01:00Z", "yyyy-MM-dd'T'HH:mm:ssXXX" ),
+				"mediumFormatZoned" : parseIt( "Nov 22, 2022 11:01:51 CET" ),
+				"mediumFormatZonedWithMask" : parseIt( "Nov 22, 2022 11:01:51 CET", "MMM dd, yyyy HH:mm:ss zz" )
+			];
+			println( result );
+		       """,
+		    context );
+			// @formatter:on
+
+		IStruct	result			= variables.getAsStruct( Key.of( "result" ) );
+		long	isoTimestamp	= IntegerCaster.cast( result.get( Key.of( "isoTimestamp" ) ) );
+		assertThat( isoTimestamp ).isLessThan( 500 ); // less than 2 seconds for 10k parses
+		long isoTimestampWMask = IntegerCaster.cast( result.get( Key.of( "isoTimestampWMask" ) ) );
+		assertThat( isoTimestampWMask ).isLessThan( 100 ); // less than 5 seconds for 10k parses
+		long mediumFormatZoned = IntegerCaster.cast( result.get( Key.of( "mediumFormatZoned" ) ) );
+		assertThat( mediumFormatZoned ).isLessThan( 500 ); // less than 2 seconds for 10k parses
+		long mediumFormatZonedWithMask = IntegerCaster.cast( result.get( Key.of( "mediumFormatZonedWithMask" ) ) );
+		assertThat( mediumFormatZonedWithMask ).isLessThan( 100 ); // less than 5 seconds for 10k
+
 	}
 
 }
