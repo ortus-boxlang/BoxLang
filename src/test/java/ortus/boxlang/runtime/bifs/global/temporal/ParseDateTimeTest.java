@@ -502,7 +502,7 @@ public class ParseDateTimeTest {
 		long mediumFormatZoned = IntegerCaster.cast( result.get( Key.of( "mediumFormatZoned" ) ) );
 		assertThat( mediumFormatZoned ).isLessThan( 500 ); // less than 2 seconds for 10k parses
 		long mediumFormatZonedWithMask = IntegerCaster.cast( result.get( Key.of( "mediumFormatZonedWithMask" ) ) );
-		assertThat( mediumFormatZonedWithMask ).isLessThan( 100 ); // less than 5 seconds for 10k
+		assertThat( mediumFormatZonedWithMask ).isLessThan( 100 ); // less than 100ms for 10k parses
 
 	}
 
