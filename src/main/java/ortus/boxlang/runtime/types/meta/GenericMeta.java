@@ -46,7 +46,7 @@ public class GenericMeta extends BoxMeta<Object> {
 		} else {
 			this.$class = target.getClass();
 		}
-		
+
 		// Populate the metadata struct with at least the class information
 		Struct metaStruct = new Struct();
 		metaStruct.put( Key._CLASS, this.$class );

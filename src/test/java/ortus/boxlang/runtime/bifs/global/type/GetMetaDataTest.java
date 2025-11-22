@@ -69,14 +69,14 @@ public class GetMetaDataTest {
 		    context );
 		Object meta = variables.get( result );
 		assertThat( meta ).isNotNull();
-		
+
 		// It should be a struct
 		assertThat( meta ).isInstanceOf( IStruct.class );
-		
+
 		IStruct metaStruct = ( IStruct ) meta;
 		// It should have at least a 'class' key
 		assertThat( metaStruct.containsKey( Key.of( "class" ) ) ).isTrue();
-		
+
 		// The class should be DateTime
 		assertThat( metaStruct.get( Key.of( "class" ) ).toString() ).contains( "DateTime" );
 	}
@@ -92,7 +92,7 @@ public class GetMetaDataTest {
 		    context );
 		Object meta = variables.get( result );
 		assertThat( meta ).isNotNull();
-		
+
 		// For non-IType objects, it should return the class
 		assertThat( meta ).isInstanceOf( Class.class );
 		assertThat( ( ( Class<?> ) meta ).getName() ).isEqualTo( "java.lang.String" );
@@ -109,10 +109,10 @@ public class GetMetaDataTest {
 		    context );
 		Object meta = variables.get( result );
 		assertThat( meta ).isNotNull();
-		
+
 		// Arrays return structured metadata
 		assertThat( meta ).isInstanceOf( IStruct.class );
-		
+
 		IStruct metaStruct = ( IStruct ) meta;
 		// Generic metadata should have at least a 'class' key
 		assertThat( metaStruct.containsKey( Key.of( "class" ) ) ).isTrue();
