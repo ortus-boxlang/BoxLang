@@ -263,6 +263,9 @@ public class DateTimeCaster implements IBoxCaster {
 			return null;
 		}
 
+		// replace not standard spaces (like nbsp and nnsb) with standard spaces to ensure consistency for our masks
+		targetString = DateTime.sanitizeStringSpaces( targetString );
+
 		try {
 			// Timestamp string "^\{ts ([^\}])*\}" - {ts 2023-01-01 12:00:00}
 			if ( RegexBuilder.of( targetString, RegexBuilder.TIMESTAMP ).matches() ) {

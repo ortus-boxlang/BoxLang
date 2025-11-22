@@ -327,6 +327,16 @@ public class DateTimeCasterTest {
 	}
 
 	@Test
+	@DisplayName( "Test medium format datetime with no comma separator between year and time and narrow no-break space unicode char" )
+	public void testMedFormatWithMeridianAndNoSeparator() {
+		// Do not change the no-break space character here; it's intentional
+		String		dateString	= "Nov 20, 2025 10:40:09 AM";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd HH:mm:ss" ) ).isEqualTo( "2025-11-20 10:40:09" );
+	}
+
+	@Test
 	@DisplayName( "Test weird medium formats that no one should be using" )
 	public void testWeirdMediumFormats() {
 		// Weird string example

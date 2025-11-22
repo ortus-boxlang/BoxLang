@@ -677,7 +677,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 */
 	@Override
 	public String format( DateTimeFormatter formatter ) {
-		return this.wrapped.format( formatter );
+		return sanitizeStringSpaces( this.wrapped.format( formatter ) );
 	}
 
 	/**
@@ -690,9 +690,10 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 */
 	public String format( Locale locale, String mask ) {
 		if ( mask == null ) {
-			return this.wrapped.format( DateTimeFormatter.ofLocalizedDateTime( FormatStyle.LONG, FormatStyle.LONG ).withLocale( locale ) );
+			return sanitizeStringSpaces(
+			    this.wrapped.format( DateTimeFormatter.ofLocalizedDateTime( FormatStyle.LONG, FormatStyle.LONG ).withLocale( locale ) ) );
 		} else {
-			return this.format( getDateTimeFormatter( mask ).withLocale( locale ) );
+			return sanitizeStringSpaces( this.format( getDateTimeFormatter( mask ).withLocale( locale ) ) );
 		}
 	}
 
@@ -705,7 +706,18 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 * @return the date time representation as a string in the specified format mask
 	 */
 	public String format( Locale locale, DateTimeFormatter formatter ) {
-		return this.wrapped.format( formatter.withLocale( locale ) );
+		return sanitizeStringSpaces( this.wrapped.format( formatter.withLocale( locale ) ) );
+	}
+
+	/**
+	 * Sanitizes a string by replacing non-breaking spaces with regular spaces. Newer JVMs will use these as padding between meridians and time values.
+	 *
+	 * @param input The input string to sanitize
+	 *
+	 * @return The sanitized string
+	 */
+	public static String sanitizeStringSpaces( String input ) {
+		return input.replace( '\u00A0', ' ' ).replace( '\u202F', ' ' );
 	}
 
 	/**
