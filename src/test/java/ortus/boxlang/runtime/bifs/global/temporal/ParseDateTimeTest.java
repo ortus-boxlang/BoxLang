@@ -496,7 +496,7 @@ public class ParseDateTimeTest {
 
 		IStruct	result			= variables.getAsStruct( Key.of( "result" ) );
 		long	isoTimestamp	= IntegerCaster.cast( result.get( Key.of( "isoTimestamp" ) ) );
-		assertThat( isoTimestamp ).isLessThan( 500 ); // less than 2 seconds for 10k parses
+		assertThat( isoTimestamp ).isLessThan( 500 ); // less than 500ms for 10k parses
 		long isoTimestampWMask = IntegerCaster.cast( result.get( Key.of( "isoTimestampWMask" ) ) );
 		assertThat( isoTimestampWMask ).isLessThan( 100 ); // less than 5 seconds for 10k parses
 		long mediumFormatZoned = IntegerCaster.cast( result.get( Key.of( "mediumFormatZoned" ) ) );
