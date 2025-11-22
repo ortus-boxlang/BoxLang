@@ -327,6 +327,21 @@ public class DateTimeCasterTest {
 	}
 
 	@Test
+	@DisplayName( "Test weird medium formats that no one should be using" )
+	public void testWeirdMediumFormats() {
+		// Weird string example
+		String		dateString	= "Nov/21/2025 00:01:00";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd HH:mm:ss" ) ).isEqualTo( "2025-11-21 00:01:00" );
+
+		dateString	= "Jun-30-2010 04:33";
+		result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd HH:mm" ) ).isEqualTo( "2010-06-30 04:33" );
+	}
+
+	@Test
 	@DisplayName( "Test ms format with meridian" )
 	public void testMSEpochWithMeridian() {
 		// Med string example Aug 26, 2024 22:05:00 UTC

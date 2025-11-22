@@ -80,6 +80,7 @@ public final class LocalizationUtil {
 	    // Specific edge case patterns that don't fit the consolidated pattern structure
 	    "MMM d, yyyy h:mm:ss a", // Specific format for Jul 17, 2017 9:29:40 PM - single digit day and hour with seconds
 	    "MMM-dd-yyyy h:mm[ ]a", // Med DateTime specific format with double digit day, single digit hour (e.g., Nov-05-2025 8:43am)
+	    "MMM-dd-yyyy HH:mm[:ss]", // Med DateTime specific format with double digit day, and 24 hour time with optional seconds
 
 	    // Localized Date/Time formats - single-digit patterns come first for proper precedence
 	    "EEEE[,] d MMM yyyy HH:mm:ss[ zzz]", // Full DateTime (e.g., Tue, 02 Apr 2024 21:01:00 CEST) - Similar to FULL_FULL - optional full day, optional comma
@@ -107,6 +108,7 @@ public final class LocalizationUtil {
 	    "MM/dd/yyyy hh:mm[:ss] a",         // Short DateTime (e.g., 02/04/2024 04:01:00 PM) - Might need adjustment based on locale
 	    "MM/dd/yyyy HH:mm[:ss]",         // Short DateTime (e.g., 02/04/2024 21:01:00) - Might need adjustment based on locale
 	    "MM/dd/yyyy hh:mm a",         // Short DateTime (e.g., 02/04/2024 04:01:00 PM) - Might need adjustment based on locale
+	    "MMM/dd/yyyy HH:mm:ss", // Short DateTime with medium month and 24 hour time (e.g., Feb/04/2024 22:01:00) - Might need adjustment based on locale
 	    "dd.MM.yyyy HH:mm[:ss]",         // Short DateTime (e.g., 02.04.2024 21:01:00) - Might need adjustment based on locale
 	    "LLLL dd[,] yyyy HH:mm:ss", 	  // Long month DateTime (e.g., April 02, 2024 21:01:00) - Might need adjustment based on locale
 	    "LLLL dd[,] yyyy hh:mm a", 	  // Long month DateTime with AM/PM (e.g., April 02, 2024 05:01 AM) - Might need adjustment based on locale
