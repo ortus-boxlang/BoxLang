@@ -470,7 +470,7 @@ public class ParseDateTimeTest {
 
 	@DisplayName( "It tests the speed of both masked and non-masked parsing" )
 	@Test
-	@Disabled( "Disabled due to wimpy CI speeds" )
+	@Disabled( "Disabled for CI performance.  Comment to test locally" )
 	public void testSpeed() {
 		// @formatter:off
 		instance.executeSource(
