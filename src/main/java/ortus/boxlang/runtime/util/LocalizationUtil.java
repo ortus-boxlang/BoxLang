@@ -907,9 +907,16 @@ public final class LocalizationUtil {
 		DateTimeFormatter					formatter	= ref != null ? ref.get() : null;
 
 		if ( formatter == null ) {
-			// Create the formatter and cache it
-			formatter = supplier.get();
-			formatterCache.put( cacheKey, new SoftReference<>( formatter ) );
+			// Use compute to avoid race condition
+			formatterCache.compute( cacheKey, ( key, existingRef ) -> {
+				DateTimeFormatter existing = existingRef != null ? existingRef.get() : null;
+				if ( existing == null ) {
+					return new SoftReference<>( supplier.get() );
+				}
+				return existingRef;
+			} );
+			ref			= formatterCache.get( cacheKey );
+			formatter	= ref.get();
 		}
 
 		return formatter;
