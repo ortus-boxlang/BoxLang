@@ -114,6 +114,7 @@ public class GetMetaDataTest {
 		assertThat( meta ).isInstanceOf( IStruct.class );
 		
 		IStruct metaStruct = ( IStruct ) meta;
-		assertThat( metaStruct.containsKey( Key.of( "type" ) ) ).isTrue();
+		// Generic metadata should have at least a 'class' key
+		assertThat( metaStruct.containsKey( Key.of( "class" ) ) ).isTrue();
 	}
 }

@@ -19,7 +19,9 @@ package ortus.boxlang.runtime.types.meta;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 
 /**
@@ -44,7 +46,11 @@ public class GenericMeta extends BoxMeta<Object> {
 		} else {
 			this.$class = target.getClass();
 		}
-		this.meta = UnmodifiableStruct.EMPTY;
+		
+		// Populate the metadata struct with at least the class information
+		Struct metaStruct = new Struct();
+		metaStruct.put( Key._CLASS, this.$class );
+		this.meta = metaStruct;
 
 	}
 
