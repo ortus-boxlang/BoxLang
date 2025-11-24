@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.util;
 
+import java.lang.ref.SoftReference;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
@@ -36,6 +37,7 @@ import java.time.temporal.TemporalAccessor;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -63,12 +65,31 @@ public final class LocalizationUtil {
 	/**
 	 * The runtime logger
 	 */
-	private static final BoxLangLogger				logger						= BoxRuntime.getInstance().getLoggingService().getRuntimeLogger();
+	private static final BoxLangLogger													logger								= BoxRuntime.getInstance()
+	    .getLoggingService().getRuntimeLogger();
+
+	/**
+	 * Cache for DateTimeFormatter instances keyed by cache key string.
+	 * Uses SoftReference to allow garbage collection under memory pressure.
+	 */
+	private static final ConcurrentHashMap<String, SoftReference<DateTimeFormatter>>	formatterCache						= new ConcurrentHashMap<>();
+
+	/**
+	 * Cache keys for different formatter types
+	 */
+	private static final String															COMMON_PATTERNS_CACHE_KEY			= "common_patterns";
+	private static final String															LOCALE_ZONED_DATETIME_PREFIX		= "locale_zoned_datetime_";
+	private static final String															ALT_LOCALE_ZONED_DATETIME_PREFIX	= "alt_locale_zoned_datetime_";
+	private static final String															LOCALE_DATETIME_PREFIX				= "locale_datetime_";
+	private static final String															LOCALE_DATE_PREFIX					= "locale_date_";
+	private static final String															LOCALE_TIME_PREFIX					= "locale_time_";
+	private static final String															PATTERN_FORMATTER_PREFIX			= "pattern_formatter_";
+	private static final String															LOCALE_PATTERN_FORMATTER_PREFIX		= "locale_pattern_formatter_";
 
 	/**
 	 * A primitive array of common US-prioritized DateTime format patterns, which is used for fast casting by commons lang DateUtils
 	 */
-	public static final String[]					COMMON_DATETIME_PATTERNS	= {
+	public static final String[]														COMMON_DATETIME_PATTERNS			= {
 
 	    // ISO basic formats - these need to come first
 	    "yyyy-MM-dd hh:mm[:ss] a",         // Date-time with 12-hour format and meridian (double digit hour)
@@ -154,7 +175,7 @@ public final class LocalizationUtil {
 	/**
 	 * A struct of common locale constants
 	 */
-	public static final LinkedHashMap<Key, Locale>	COMMON_LOCALES				= new LinkedHashMap<Key, Locale>();
+	public static final LinkedHashMap<Key, Locale>										COMMON_LOCALES						= new LinkedHashMap<Key, Locale>();
 	static {
 		COMMON_LOCALES.put( Key.of( "Canada" ), Locale.CANADA );
 		COMMON_LOCALES.put( Key.of( "Canadian" ), Locale.CANADA );
@@ -862,6 +883,58 @@ public final class LocalizationUtil {
 	}
 
 	/**
+	 * Gets a formatter from cache or creates and caches it if not present.
+	 * Uses SoftReference for memory-sensitive caching.
+	 * 
+	 * <p>
+	 * DateTimeFormatter creation is resource-intensive because it involves:
+	 * - Building complex DateTimeFormatterBuilder instances
+	 * - Parsing multiple pattern strings
+	 * - Configuring locale-specific formatting rules
+	 * - Creating optional parsing chains for multiple formats
+	 * 
+	 * Caching provides significant performance improvements for date parsing operations
+	 * while SoftReference ensures cache entries can be garbage collected under memory pressure.
+	 * </p>
+	 *
+	 * @param cacheKey the cache key for the formatter
+	 * @param supplier the function that creates the formatter if not cached
+	 * 
+	 * @return the cached or newly created DateTimeFormatter
+	 */
+	private static DateTimeFormatter getOrCreateFormatter( String cacheKey, java.util.function.Supplier<DateTimeFormatter> supplier ) {
+		SoftReference<DateTimeFormatter>	ref			= formatterCache.get( cacheKey );
+		DateTimeFormatter					formatter	= ref != null ? ref.get() : null;
+
+		if ( formatter == null ) {
+			// Use compute to avoid race condition
+			formatterCache.compute( cacheKey, ( key, existingRef ) -> {
+				DateTimeFormatter existing = existingRef != null ? existingRef.get() : null;
+				if ( existing == null ) {
+					return new SoftReference<>( supplier.get() );
+				}
+				return existingRef;
+			} );
+			ref			= formatterCache.get( cacheKey );
+			formatter	= ref.get();
+		}
+
+		return formatter;
+	}
+
+	/**
+	 * Creates a cache key for locale-specific formatters
+	 *
+	 * @param prefix the cache key prefix
+	 * @param locale the locale to include in the key
+	 * 
+	 * @return the cache key string
+	 */
+	private static String createLocaleCacheKey( String prefix, Locale locale ) {
+		return prefix + locale.toString();
+	}
+
+	/**
 	 * Returns a DateTimeFormatter that can parse common date-time patterns.
 	 * <p>
 	 * This method constructs a lenient DateTimeFormatter that supports a predefined
@@ -871,20 +944,21 @@ public final class LocalizationUtil {
 	 * @return a DateTimeFormatter configured with common date-time patterns
 	 */
 	public static DateTimeFormatter getCommonPatternDateTimeParsers() {
-		DateTimeFormatterBuilder builder = newLenientDateTimeFormatterBuilder()
-		    .parseCaseInsensitive(); // Enable case insensitive parsing for meridian indicators
-		Stream.of( COMMON_DATETIME_PATTERNS )
-		    .forEach( pattern -> {
-			    builder.appendOptional(
-			        new DateTimeFormatterBuilder()
-			            .parseCaseInsensitive()
-			            .appendPattern( pattern )
-			            .toFormatter( Locale.US )
-			    );
-		    } );
+		return getOrCreateFormatter( COMMON_PATTERNS_CACHE_KEY, () -> {
+			DateTimeFormatterBuilder builder = newLenientDateTimeFormatterBuilder()
+			    .parseCaseInsensitive(); // Enable case insensitive parsing for meridian indicators
 
-		return builder.toFormatter( Locale.US );
+			for ( String pattern : COMMON_DATETIME_PATTERNS ) {
+				builder.appendOptional(
+				    new DateTimeFormatterBuilder()
+				        .parseCaseInsensitive()
+				        .appendPattern( pattern )
+				        .toFormatter( Locale.US )
+				);
+			}
 
+			return builder.toFormatter( Locale.US );
+		} );
 	}
 
 	/**
@@ -895,7 +969,9 @@ public final class LocalizationUtil {
 	 * @return the localized DateTimeFormatter object
 	 */
 	public static DateTimeFormatter getLocaleZonedDateTimeParsers( Locale locale ) {
-		return appendLocaleZonedDateTimeParsers( newLenientDateTimeFormatterBuilder(), locale ).toFormatter( locale );
+		String cacheKey = createLocaleCacheKey( LOCALE_ZONED_DATETIME_PREFIX, locale );
+		return getOrCreateFormatter( cacheKey, () -> appendLocaleZonedDateTimeParsers( newLenientDateTimeFormatterBuilder(), locale ).toFormatter( locale )
+		);
 	}
 
 	/**
@@ -907,7 +983,9 @@ public final class LocalizationUtil {
 	 * @return the localized DateTimeFormatter object
 	 */
 	public static DateTimeFormatter getAltLocaleZonedDateTimeParsers( Locale locale ) {
-		return appendAltLocaleZonedDateTimeParsers( newLenientDateTimeFormatterBuilder(), locale ).toFormatter( locale );
+		String cacheKey = createLocaleCacheKey( ALT_LOCALE_ZONED_DATETIME_PREFIX, locale );
+		return getOrCreateFormatter( cacheKey, () -> appendAltLocaleZonedDateTimeParsers( newLenientDateTimeFormatterBuilder(), locale ).toFormatter( locale )
+		);
 	}
 
 	/**
@@ -946,7 +1024,9 @@ public final class LocalizationUtil {
 	 * @return the localized DateTimeFormatter object
 	 */
 	public static DateTimeFormatter getLocaleDateTimeParsers( Locale locale ) {
-		return appendLocaleDateTimeParsers( newLenientDateTimeFormatterBuilder(), locale ).toFormatter( locale );
+		String cacheKey = createLocaleCacheKey( LOCALE_DATETIME_PREFIX, locale );
+		return getOrCreateFormatter( cacheKey, () -> appendLocaleDateTimeParsers( newLenientDateTimeFormatterBuilder(), locale ).toFormatter( locale )
+		);
 	}
 
 	/**
@@ -1001,7 +1081,9 @@ public final class LocalizationUtil {
 	 */
 
 	public static DateTimeFormatter getLocaleDateParsers( Locale locale ) {
-		return appendLocaleDateParsers( newLenientDateTimeFormatterBuilder(), locale ).toFormatter( locale );
+		String cacheKey = createLocaleCacheKey( LOCALE_DATE_PREFIX, locale );
+		return getOrCreateFormatter( cacheKey, () -> appendLocaleDateParsers( newLenientDateTimeFormatterBuilder(), locale ).toFormatter( locale )
+		);
 	}
 
 	/**
@@ -1036,7 +1118,9 @@ public final class LocalizationUtil {
 	 */
 
 	public static DateTimeFormatter getLocaleTimeParsers( Locale locale ) {
-		return appendLocaleTimeParsers( newLenientDateTimeFormatterBuilder(), locale ).toFormatter( locale );
+		String cacheKey = createLocaleCacheKey( LOCALE_TIME_PREFIX, locale );
+		return getOrCreateFormatter( cacheKey, () -> appendLocaleTimeParsers( newLenientDateTimeFormatterBuilder(), locale ).toFormatter( locale )
+		);
 	}
 
 	/**
@@ -1054,6 +1138,42 @@ public final class LocalizationUtil {
 		    .appendOptional( DateTimeFormatter.ofLocalizedTime( FormatStyle.FULL ).withLocale( locale ) )
 		    .appendOptional( DateTime.DEFAULT_TIME_FORMATTER )
 		    .appendOptional( DateTimeFormatter.ISO_TIME );
+	}
+
+	/**
+	 * Gets a cached DateTimeFormatter for the specified pattern using the default locale.
+	 * Uses memory-sensitive caching with SoftReference to allow garbage collection under memory pressure.
+	 *
+	 * @param pattern the date/time pattern string
+	 * 
+	 * @return the cached or newly created DateTimeFormatter
+	 */
+	public static DateTimeFormatter getPatternFormatter( String pattern ) {
+		String cacheKey = PATTERN_FORMATTER_PREFIX + pattern;
+		return getOrCreateFormatter( cacheKey, () -> DateTimeFormatter.ofPattern( pattern )
+		);
+	}
+
+	/**
+	 * Gets a cached DateTimeFormatter for the specified pattern and locale.
+	 * Uses memory-sensitive caching with SoftReference to allow garbage collection under memory pressure.
+	 *
+	 * @param pattern the date/time pattern string
+	 * @param locale  the locale to use for the formatter
+	 * 
+	 * @return the cached or newly created DateTimeFormatter
+	 */
+	public static DateTimeFormatter getPatternFormatter( String pattern, Locale locale ) {
+		String cacheKey = LOCALE_PATTERN_FORMATTER_PREFIX + pattern + "_" + locale.toString();
+		return getOrCreateFormatter( cacheKey, () -> DateTimeFormatter.ofPattern( pattern, locale )
+		);
+	}
+
+	/**
+	 * Clears all cached formatters
+	 */
+	public static void clearAllFormatterCaches() {
+		formatterCache.clear();
 	}
 
 	/**
