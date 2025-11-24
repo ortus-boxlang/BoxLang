@@ -120,7 +120,7 @@ public class DataSource implements Comparable<DataSource> {
 	 */
 	public DataSource beginPooling() {
 		if ( !isPoolingStarted() ) {
-			synchronized ( HikariDataSource.class ) {
+			synchronized ( this ) {
 				if ( !isPoolingStarted() ) {
 					try {
 						this.hikariDataSource = new HikariDataSource( hikariConfig );
@@ -407,7 +407,7 @@ public class DataSource implements Comparable<DataSource> {
 	 */
 	public DataSource shutdown() {
 		if ( isPoolingStarted() ) {
-			synchronized ( HikariDataSource.class ) {
+			synchronized ( this ) {
 				if ( isPoolingStarted() ) {
 					this.hikariDataSource.close();
 				}
