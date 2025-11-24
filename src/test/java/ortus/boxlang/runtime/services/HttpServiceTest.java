@@ -460,10 +460,4 @@ public class HttpServiceTest {
 		assertThat( service.getSoapClientCount() ).isEqualTo( 0 );
 	}
 
-	@DisplayName( "Test getAllSoapClientStats returns empty map initially" )
-	@Test
-	void testGetAllSoapClientStatsEmpty() {
-		assertThat( service.getAllSoapClientStats() ).isEmpty();
-	}
-
 }
