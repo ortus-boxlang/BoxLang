@@ -25,6 +25,7 @@ import java.net.http.HttpClient;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.time.Duration;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -36,6 +37,8 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.net.BoxHttpClient;
+import ortus.boxlang.runtime.net.soap.BoxSoapClient;
+import ortus.boxlang.runtime.net.soap.WsdlDefinition;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -53,22 +56,32 @@ public class HttpService extends BaseService {
 	/**
 	 * Concurrent map that stores all HTTP reusable clients
 	 */
-	private final ConcurrentMap<Key, BoxHttpClient>	clients						= new ConcurrentHashMap<>();
+	private final ConcurrentMap<Key, BoxHttpClient>										clients						= new ConcurrentHashMap<>();
+
+	/**
+	 * Concurrent map that stores all SOAP/WSDL clients
+	 */
+	private final ConcurrentMap<String, ortus.boxlang.runtime.net.soap.BoxSoapClient>	soapClients					= new ConcurrentHashMap<>();
+
+	/**
+	 * Concurrent map that stores parsed WSDL definitions
+	 */
+	private final ConcurrentMap<String, ortus.boxlang.runtime.net.soap.WsdlDefinition>	wsdlDefinitions				= new ConcurrentHashMap<>();
 
 	/**
 	 * Shutdown timeout in seconds
 	 */
-	private static final Long						SHUTDOWN_TIMEOUT_SECONDS	= 10L;
+	private static final Long															SHUTDOWN_TIMEOUT_SECONDS	= 10L;
 
 	/**
 	 * The main HTTP logger
 	 */
-	private BoxLangLogger							logger;
+	private BoxLangLogger																logger;
 
 	/**
 	 * The HTTP Executor used by all clients
 	 */
-	private BoxExecutor								httpExecutor;
+	private BoxExecutor																	httpExecutor;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -110,6 +123,8 @@ public class HttpService extends BaseService {
 			this.httpExecutor.shutdownAndAwaitTermination( SHUTDOWN_TIMEOUT_SECONDS, TimeUnit.SECONDS );
 		}
 		this.clients.clear();
+		this.soapClients.clear();
+		this.wsdlDefinitions.clear();
 		this.logger.info( "+ Http Service shutdown complete" );
 	}
 
@@ -453,6 +468,199 @@ public class HttpService extends BaseService {
 
 		// Build the key
 		return Key.of( "bx-http-" + hash );
+	}
+
+	/**
+	 * ------------------------------------------------------------------------------
+	 * SOAP/WSDL Client Management Methods
+	 * ------------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Get or create a SOAP client from a WSDL URL.
+	 * This method caches both the parsed WSDL definition and the SoapClient instance
+	 * for efficient reuse across multiple requests.
+	 *
+	 * @param wsdlUrl The WSDL URL to parse and create a client for
+	 *
+	 * @return A configured SoapClient instance
+	 *
+	 * @throws ortus.boxlang.runtime.types.exceptions.BoxRuntimeException If WSDL parsing or client creation fails
+	 */
+	public BoxSoapClient getOrCreateSoapClient( String wsdlUrl ) {
+		// Check if we already have a cached client for this WSDL
+		BoxSoapClient cachedClient = this.soapClients.get( wsdlUrl );
+		if ( cachedClient != null ) {
+			this.logger.debug( "Reusing cached SOAP client for WSDL: {}", wsdlUrl );
+			return cachedClient;
+		}
+
+		// Double-checked locking for thread safety
+		synchronized ( this.soapClients ) {
+			cachedClient = this.soapClients.get( wsdlUrl );
+			if ( cachedClient != null ) {
+				return cachedClient;
+			}
+
+			this.logger.debug( "Creating new SOAP client for WSDL: {}", wsdlUrl );
+
+			// Check if we have a cached WSDL definition
+			ortus.boxlang.runtime.net.soap.WsdlDefinition definition = this.wsdlDefinitions.get( wsdlUrl );
+			if ( definition != null ) {
+				this.logger.debug( "Reusing cached WSDL definition for: {}", wsdlUrl );
+			} else {
+				// Parse the WSDL and cache the definition
+				this.logger.debug( "Parsing WSDL from URL: {}", wsdlUrl );
+				definition = ortus.boxlang.runtime.net.soap.WsdlParser.parse( wsdlUrl );
+				this.wsdlDefinitions.put( wsdlUrl, definition );
+			}
+
+			// Create the SOAP client from the definition
+			ortus.boxlang.runtime.net.soap.BoxSoapClient newClient = ortus.boxlang.runtime.net.soap.BoxSoapClient.fromDefinition( definition, this,
+			    this.logger );
+
+			// Cache and return
+			this.soapClients.put( wsdlUrl, newClient );
+			this.logger.info( "Created and cached SOAP client for WSDL: {}", wsdlUrl );
+
+			return newClient;
+		}
+	}
+
+	/**
+	 * Get a cached SOAP client
+	 *
+	 * @param wsdlUrl The WSDL URL
+	 *
+	 * @return The SoapClient instance, or null if not cached
+	 */
+	public BoxSoapClient getSoapClient( String wsdlUrl ) {
+		return this.soapClients.get( wsdlUrl );
+	}
+
+	/**
+	 * Check if a SOAP client is cached
+	 *
+	 * @param wsdlUrl The WSDL URL
+	 *
+	 * @return True if a client is cached for this WSDL
+	 */
+	public boolean hasSoapClient( String wsdlUrl ) {
+		return this.soapClients.containsKey( wsdlUrl );
+	}
+
+	/**
+	 * Get a cached WSDL definition
+	 *
+	 * @param wsdlUrl The WSDL URL
+	 *
+	 * @return The WsdlDefinition instance, or null if not cached
+	 */
+	public WsdlDefinition getWsdlDefinition( String wsdlUrl ) {
+		return this.wsdlDefinitions.get( wsdlUrl );
+	}
+
+	/**
+	 * Check if a WSDL definition is cached
+	 *
+	 * @param wsdlUrl The WSDL URL
+	 *
+	 * @return True if a definition is cached for this WSDL
+	 */
+	public boolean hasWsdlDefinition( String wsdlUrl ) {
+		return this.wsdlDefinitions.containsKey( wsdlUrl );
+	}
+
+	/**
+	 * Remove a SOAP client from the cache
+	 *
+	 * @param wsdlUrl The WSDL URL
+	 *
+	 * @return This HttpService instance for method chaining
+	 */
+	public HttpService removeSoapClient( String wsdlUrl ) {
+		this.soapClients.remove( wsdlUrl );
+		return this;
+	}
+
+	/**
+	 * Remove a WSDL definition from the cache
+	 *
+	 * @param wsdlUrl The WSDL URL
+	 *
+	 * @return This HttpService instance for method chaining
+	 */
+	public HttpService removeWsdlDefinition( String wsdlUrl ) {
+		this.wsdlDefinitions.remove( wsdlUrl );
+		return this;
+	}
+
+	/**
+	 * Clear all cached SOAP clients
+	 *
+	 * @return This HttpService instance for method chaining
+	 */
+	public HttpService clearAllSoapClients() {
+		this.soapClients.clear();
+		return this;
+	}
+
+	/**
+	 * Clear all cached WSDL definitions
+	 *
+	 * @return This HttpService instance for method chaining
+	 */
+	public HttpService clearAllWsdlDefinitions() {
+		this.wsdlDefinitions.clear();
+		return this;
+	}
+
+	/**
+	 * Get the count of cached SOAP clients
+	 *
+	 * @return The number of cached SOAP clients
+	 */
+	public int getSoapClientCount() {
+		return this.soapClients.size();
+	}
+
+	/**
+	 * Get the count of cached WSDL definitions
+	 *
+	 * @return The number of cached WSDL definitions
+	 */
+	public int getWsdlDefinitionCount() {
+		return this.wsdlDefinitions.size();
+	}
+
+	/**
+	 * Get statistics for a SOAP client
+	 *
+	 * @param wsdlUrl The WSDL URL
+	 *
+	 * @return A struct containing client statistics
+	 *
+	 * @throws ortus.boxlang.runtime.types.exceptions.BoxRuntimeException If no client is cached for this WSDL
+	 */
+	public IStruct getSoapClientStats( String wsdlUrl ) {
+		BoxSoapClient client = this.soapClients.get( wsdlUrl );
+		if ( client == null ) {
+			throw new ortus.boxlang.runtime.types.exceptions.BoxRuntimeException( "No SOAP client found for WSDL: " + wsdlUrl );
+		}
+		return client.getStatistics();
+	}
+
+	/**
+	 * Get statistics for all SOAP clients
+	 *
+	 * @return A struct containing statistics for all clients
+	 */
+	public IStruct getAllSoapClientStats() {
+		IStruct allStats = new Struct( false );
+		for ( Map.Entry<String, ortus.boxlang.runtime.net.soap.BoxSoapClient> entry : this.soapClients.entrySet() ) {
+			allStats.put( entry.getKey(), entry.getValue().getStatistics() );
+		}
+		return allStats;
 	}
 
 }

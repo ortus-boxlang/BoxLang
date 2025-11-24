@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.components.system;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -406,6 +407,72 @@ public class InvokeTest {
 		assertThat( variables.getAsStruct( Key.of( "attrs" ) ).get( Key.of( "method" ) ) ).isEqualTo( "runOnRequest" );
 		assertThat( variables.getAsStruct( Key.of( "attrs" ) ).get( Key.of( "COMPONENT" ) ).toString() )
 		    .isEqualTo( "src.test.java.ortus.boxlang.runtime.components.system.EventMethods" );
+	}
+
+	@DisplayName( "Test invoke BIF with webservice object" )
+	@Test
+	public void testInvokeWebserviceBIF() {
+		// Using local WSDL file
+		String wsdlPath = Paths.get( "src/test/resources/wsdl/calculator.wsdl" ).toAbsolutePath().toUri().toString();
+
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    ws = createObject( "webservice", "%s" )
+		    result = isNull( ws )
+		    """.formatted( wsdlPath ),
+		    context );
+		// @formatter:on
+
+		// Verify the SOAP client was created
+		Object ws = variables.get( Key.of( "ws" ) );
+		assertThat( ws ).isNotNull();
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "Test invoke with webservice created from live WSDL" )
+	@Test
+	public void testInvokeWithLiveWebservice() {
+		// Using Beeceptor's free SOAP mock service
+		try {
+			// @formatter:off
+			instance.executeSource(
+			    """
+			    ws = createObject(
+			        "webservice",
+			        "https://soap-test-server.mock.beeceptor.com/CountryInfoService?WSDL"
+			    )
+			    clientCreated = !isNull( ws )
+			    """,
+			    context );
+			// @formatter:on
+
+			assertThat( variables.get( Key.of( "clientCreated" ) ) ).isEqualTo( true );
+			assertThat( variables.get( Key.of( "ws" ) ) ).isNotNull();
+		} catch ( Exception e ) {
+			// Skip test if network is unavailable
+			org.junit.jupiter.api.Assumptions.assumeTrue( false, "Network unavailable: " + e.getMessage() );
+		}
+	}
+
+	@DisplayName( "Test webservice client structure and properties" )
+	@Test
+	public void testWebserviceClientStructure() {
+		String wsdlPath = Paths.get( "src/test/resources/wsdl/calculator.wsdl" ).toAbsolutePath().toUri().toString();
+
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    ws = createObject( "webservice", "%s" )
+		    hasToString = structKeyExists( ws, "toString" )
+		    """.formatted( wsdlPath ),
+		    context );
+		// @formatter:on
+
+		Object ws = variables.get( Key.of( "ws" ) );
+		assertThat( ws ).isNotNull();
+		// Verify it's a valid BoxSoapClient instance
+		assertThat( ws.getClass().getName() ).contains( "BoxSoapClient" );
 	}
 
 }

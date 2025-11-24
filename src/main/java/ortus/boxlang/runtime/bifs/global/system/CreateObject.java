@@ -27,6 +27,7 @@ import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.HttpService;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -43,6 +44,7 @@ public class CreateObject extends BIF {
 	private static final ClassLocator	CLASS_LOCATOR	= BoxRuntime.getInstance().getClassLocator();
 	private static final String			CLASS_TYPE		= "class";
 	private static final String			COMPONENT_TYPE	= "component";
+	private static final String			WEBSERVICE_TYPE	= "webservice";
 
 	/**
 	 * Constructor
@@ -65,6 +67,7 @@ public class CreateObject extends BIF {
 	 * <ul>
 	 * <li><strong>class/component</strong> - Creates a new instance of a BoxLang class (Default if not used)</li>
 	 * <li><strong>java</strong> - Creates a new instance of a Java class</li>
+	 * <li><strong>webservice</strong> - Creates a SOAP web service client from a WSDL URL</li>
 	 * <li><strong>{anything}</strong> - Passes the request to the {@code BoxEvent.ON_CREATEOBJECT_REQUEST} event for further processing</li>
 	 * </ul>
 	 * <p>
@@ -78,17 +81,19 @@ public class CreateObject extends BIF {
 	 * <ul>
 	 * <li><strong>class/component</strong> - The properties are not used</li>
 	 * <li><strong>java</strong> - The properties can be a single or an array of absolute path(s) to a directory containing Jars/Classes, or absolute path(s) to specific Jars/Classes to classload</li>
+	 * <li><strong>webservice</strong> - The properties are not used</li>
 	 * <li><strong>{anything}</strong> - The properties can be any object that the listener can use to create the object</li>
 	 * </ul>
 	 * <p>
-	 * <strong>IMPORTANT:</strong> This does NOT create an instance of the class, for that you will need to call the {@code init()} method on the returned object.
+	 * <strong>IMPORTANT:</strong> For class/component types, this does NOT create an instance of the class. For that you will need to call the {@code init()} method on the returned object.
+	 * For webservice type, a fully configured SoapClient is returned ready for method invocation.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.type The type of object to create: java, class (component), or any other type
+	 * @argument.type The type of object to create: java, class (component), webservice, or any other type
 	 *
-	 * @argument.className A fully qualified class name to create an instance of
+	 * @argument.className For java/class types: a fully qualified class name. For webservice type: the WSDL URL.
 	 *
 	 * @argument.properties Depending on the type, this can be used to pass additional properties to the object creation process
 	 *
@@ -154,6 +159,11 @@ public class CreateObject extends BIF {
 		// Java Classes
 		if ( type.equalsIgnoreCase( ClassLocator.JAVA_PREFIX ) ) {
 			return createJavaClass( context, className, properties, classLoader );
+		}
+
+		// Web Services (SOAP/WSDL)
+		if ( type.equalsIgnoreCase( WEBSERVICE_TYPE ) ) {
+			return createWebService( context, className );
 		}
 
 		// Class and Component left for backward compatibility
@@ -271,5 +281,21 @@ public class CreateObject extends BIF {
 			// Otherwise, an interface-- just return it. These are singletons
 			return result.unWrapBoxLangClass();
 		}
+	}
+
+	/**
+	 * Creates a new SOAP web service client from a WSDL URL.
+	 * The client is cached by the HttpService for reuse across requests.
+	 *
+	 * @param context The context in which the BIF is being invoked.
+	 * @param wsdlUrl The WSDL URL to parse and create a client for.
+	 *
+	 * @return A configured SoapClient instance.
+	 *
+	 * @throws BoxRuntimeException If WSDL parsing or client creation fails.
+	 */
+	private static Object createWebService( IBoxContext context, String wsdlUrl ) {
+		HttpService httpService = BoxRuntime.getInstance().getHttpService();
+		return httpService.getOrCreateSoapClient( wsdlUrl );
 	}
 }
