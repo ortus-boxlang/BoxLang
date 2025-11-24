@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.util;
 
+import java.lang.ref.SoftReference;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
@@ -29,7 +30,6 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.lang.ref.SoftReference;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.FormatStyle;
@@ -947,15 +947,15 @@ public final class LocalizationUtil {
 		return getOrCreateFormatter( COMMON_PATTERNS_CACHE_KEY, () -> {
 			DateTimeFormatterBuilder builder = newLenientDateTimeFormatterBuilder()
 			    .parseCaseInsensitive(); // Enable case insensitive parsing for meridian indicators
-			Stream.of( COMMON_DATETIME_PATTERNS )
-			    .forEach( pattern -> {
-				    builder.appendOptional(
-				        new DateTimeFormatterBuilder()
-				            .parseCaseInsensitive()
-				            .appendPattern( pattern )
-				            .toFormatter( Locale.US )
-				    );
-			    } );
+
+			for ( String pattern : COMMON_DATETIME_PATTERNS ) {
+				builder.appendOptional(
+				    new DateTimeFormatterBuilder()
+				        .parseCaseInsensitive()
+				        .appendPattern( pattern )
+				        .toFormatter( Locale.US )
+				);
+			}
 
 			return builder.toFormatter( Locale.US );
 		} );
@@ -1167,6 +1167,13 @@ public final class LocalizationUtil {
 		String cacheKey = LOCALE_PATTERN_FORMATTER_PREFIX + pattern + "_" + locale.toString();
 		return getOrCreateFormatter( cacheKey, () -> DateTimeFormatter.ofPattern( pattern, locale )
 		);
+	}
+
+	/**
+	 * Clears all cached formatters
+	 */
+	public static void clearAllFormatterCaches() {
+		formatterCache.clear();
 	}
 
 	/**
