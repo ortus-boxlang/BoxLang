@@ -21,6 +21,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.net.soap.BoxSoapClient;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -30,7 +31,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 
-@BoxBIF( description = "Dynamically invoke a method on an object" )
+@BoxBIF( description = "Dynamically invoke a method on an object or a webservice" )
 public class Invoke extends BIF {
 
 	ClassLocator classLocator = BoxRuntime.getInstance().getClassLocator();
@@ -69,6 +70,11 @@ public class Invoke extends BIF {
 		// If args were passed, they must be a struct or an array. Pass them as an argument collection which will handle all the possible cases
 		if ( args != null ) {
 			argCollection.put( Key.argumentCollection, args );
+		}
+
+		// Special handling for BoxSoapClient webservice objects
+		if ( instance instanceof BoxSoapClient soapClient ) {
+			return soapClient.invoke( context, method.getName(), args );
 		}
 
 		// If we had a non-empty string, create the Box Class instance
