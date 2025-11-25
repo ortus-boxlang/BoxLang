@@ -953,4 +953,49 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		assertThat( clobString ).containsMatch( "Minas\\s+Tirith\\s+shall\\s+not\\s+fall!" );
 	}
 
+	@DisplayName( "It can override username and password" )
+	@Test
+	public void testOverrideUsernameAndPassword() {
+		// @formatter:off
+		instance.executeStatement("""
+				result = queryExecute(
+					"select * from developers",
+					{},
+					{
+						"datasource" : "MSSQLdatasource",
+						"username" : "sa",
+						"password" : "123456Password"
+					}
+				);
+			""",
+		    context );
+		// @formatter:on
+	}
+
+	@DisplayName( "It can override username and password on struct datasource definition" )
+	@Test
+	public void testOverrideUsernameAndPasswordOnStructDatasource() {
+		// @formatter:off
+		instance.executeStatement("""
+				result = queryExecute(
+					"select * from developers",
+					{},
+					{
+						"datasource" : {
+							"username" : "",
+							"password" : "",
+							"host" : "localhost",
+							"port" : "1433",
+							"driver" : "mssql",
+							"database" : "master"
+						},
+						"username" : "sa",
+						"password" : "123456Password"
+					}
+				);
+			""",
+		    context );
+		// @formatter:on
+	}
+
 }
