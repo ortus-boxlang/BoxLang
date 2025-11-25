@@ -18,13 +18,14 @@
 package ortus.boxlang.runtime.net.soap;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.util.BLCollector;
 
 /**
  * Represents a parsed WSDL definition containing service endpoints, operations, and metadata.
@@ -276,11 +277,11 @@ public class WsdlDefinition {
 	 *
 	 * @return List of operation names
 	 */
-	public List<String> getOperationNames() {
+	public Array getOperationNames() {
 		return this.operations.keySet().stream()
 		    .map( Key::getName )
 		    .sorted()
-		    .toList();
+		    .collect( BLCollector.toArray() );
 	}
 
 	/**
@@ -334,7 +335,7 @@ public class WsdlDefinition {
 	 * @return A struct representation
 	 */
 	public IStruct toStruct() {
-		IStruct result = Struct.of(
+		IStruct result = Struct.ofNonConcurrent(
 		    "wsdlUrl", this.wsdlUrl,
 		    "targetNamespace", this.targetNamespace,
 		    "serviceName", this.serviceName,

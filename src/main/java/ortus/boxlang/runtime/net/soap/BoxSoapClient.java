@@ -77,10 +77,10 @@ public class BoxSoapClient implements IReferenceable {
 	 * ------------------------------------------------------------------------------
 	 */
 
-	private static final String			SOAP_11_ENVELOPE_NS		= "http://schemas.xmlsoap.org/soap/envelope/";
-	private static final String			SOAP_12_ENVELOPE_NS		= "http://www.w3.org/2003/05/soap-envelope";
-	private static final String			XSI_NS					= "http://www.w3.org/2001/XMLSchema-instance";
-	private static final String			XSD_NS					= "http://www.w3.org/2001/XMLSchema";
+	private static final String		SOAP_11_ENVELOPE_NS		= "http://schemas.xmlsoap.org/soap/envelope/";
+	private static final String		SOAP_12_ENVELOPE_NS		= "http://www.w3.org/2003/05/soap-envelope";
+	private static final String		XSI_NS					= "http://www.w3.org/2001/XMLSchema-instance";
+	private static final String		XSD_NS					= "http://www.w3.org/2001/XMLSchema";
 
 	/**
 	 * ------------------------------------------------------------------------------
@@ -91,54 +91,59 @@ public class BoxSoapClient implements IReferenceable {
 	/**
 	 * The WSDL definition for this client
 	 */
-	private final WsdlDefinition		wsdlDefinition;
+	private final WsdlDefinition	wsdlDefinition;
 
 	/**
 	 * The HTTP service for making requests
 	 */
-	private final HttpService			httpService;
+	private final HttpService		httpService;
 
 	/**
 	 * The logger
 	 */
-	private final BoxLangLogger			logger;
+	private final BoxLangLogger		logger;
 
 	/**
 	 * Request timeout in seconds (0 = no timeout)
 	 */
-	private int							timeout					= 30;
+	private int						timeout					= 30;
 
 	/**
 	 * Username for HTTP basic authentication
 	 */
-	private String						username;
+	private String					username;
 
 	/**
 	 * Password for HTTP basic authentication
 	 */
-	private String						password;
+	private String					password;
 
 	/**
 	 * Custom HTTP headers
 	 */
-	private final Map<String, String>	customHeaders			= new HashMap<>();
+	private Map<String, String>		customHeaders			= new HashMap<>();
 
 	/**
 	 * SOAP version (1.1 or 1.2)
 	 */
-	private String						soapVersion				= "1.1";
+	private String					soapVersion				= "1.1";
 
 	/**
 	 * The creation timestamp
 	 */
-	private final Instant				createdAt;
+	private final Instant			createdAt				= Instant.now();
+
+	/**
+	 * The execution context
+	 */
+	private IBoxContext				executionContext;
 
 	/**
 	 * Statistics tracking
 	 */
-	private long						totalInvocations		= 0;
-	private long						successfulInvocations	= 0;
-	private long						failedInvocations		= 0;
+	private long					totalInvocations		= 0;
+	private long					successfulInvocations	= 0;
+	private long					failedInvocations		= 0;
 
 	/**
 	 * ------------------------------------------------------------------------------
@@ -151,15 +156,15 @@ public class BoxSoapClient implements IReferenceable {
 	 *
 	 * @param wsdlDefinition The WSDL definition
 	 * @param httpService    The HTTP service
-	 * @param logger         The logger
+	 * @param context        The BoxLang execution context
 	 */
-	private BoxSoapClient( WsdlDefinition wsdlDefinition, HttpService httpService, BoxLangLogger logger ) {
-		this.wsdlDefinition	= wsdlDefinition;
-		this.httpService	= httpService;
-		this.logger			= logger;
-		this.createdAt		= Instant.now();
+	private BoxSoapClient( WsdlDefinition wsdlDefinition, HttpService httpService, IBoxContext context ) {
+		this.wsdlDefinition		= wsdlDefinition;
+		this.httpService		= httpService;
+		this.logger				= this.httpService.getLogger();
 		// Initialize SOAP version from WSDL definition (can be overridden later)
-		this.soapVersion	= wsdlDefinition.getSoapVersion();
+		this.soapVersion		= wsdlDefinition.getSoapVersion();
+		this.executionContext	= context;
 	}
 
 	/**
@@ -173,28 +178,15 @@ public class BoxSoapClient implements IReferenceable {
 	 *
 	 * @param wsdlUrl     The WSDL URL to parse
 	 * @param httpService The HTTP service to use
-	 * @param logger      The logger to use
+	 * @param context     The BoxLang execution context
 	 *
 	 * @return A new SOAP client instance
 	 *
 	 * @throws BoxRuntimeException If WSDL parsing fails
 	 */
-	public static BoxSoapClient fromWsdl( String wsdlUrl, HttpService httpService, BoxLangLogger logger ) {
+	public static BoxSoapClient fromWsdl( String wsdlUrl, HttpService httpService, IBoxContext context ) {
 		WsdlDefinition definition = WsdlParser.parse( wsdlUrl );
-		return new BoxSoapClient( definition, httpService, logger );
-	}
-
-	/**
-	 * Create a new SOAP client from a cached WSDL definition
-	 *
-	 * @param wsdlDefinition The cached WSDL definition
-	 * @param httpService    The HTTP service to use
-	 * @param logger         The logger to use
-	 *
-	 * @return A new SOAP client instance
-	 */
-	public static BoxSoapClient fromDefinition( WsdlDefinition wsdlDefinition, HttpService httpService, BoxLangLogger logger ) {
-		return new BoxSoapClient( wsdlDefinition, httpService, logger );
+		return new BoxSoapClient( definition, httpService, context );
 	}
 
 	/**
@@ -210,7 +202,7 @@ public class BoxSoapClient implements IReferenceable {
 	 *
 	 * @return This instance for chaining
 	 */
-	public BoxSoapClient setTimeout( int timeout ) {
+	public BoxSoapClient timeout( int timeout ) {
 		this.timeout = timeout;
 		return this;
 	}
@@ -223,7 +215,7 @@ public class BoxSoapClient implements IReferenceable {
 	 *
 	 * @return This instance for chaining
 	 */
-	public BoxSoapClient setAuthentication( String username, String password ) {
+	public BoxSoapClient withBasicAuth( String username, String password ) {
 		this.username	= username;
 		this.password	= password;
 		return this;
@@ -237,7 +229,7 @@ public class BoxSoapClient implements IReferenceable {
 	 *
 	 * @return This instance for chaining
 	 */
-	public BoxSoapClient addHeader( String name, String value ) {
+	public BoxSoapClient header( String name, String value ) {
 		this.customHeaders.put( name, value );
 		return this;
 	}
@@ -251,11 +243,23 @@ public class BoxSoapClient implements IReferenceable {
 	 *
 	 * @return This instance for chaining
 	 */
-	public BoxSoapClient setSoapVersion( String version ) {
+	public BoxSoapClient soapVersion( String version ) {
 		if ( !"1.1".equals( version ) && !"1.2".equals( version ) ) {
 			throw new BoxRuntimeException( "Invalid SOAP version: " + version + ". Must be '1.1' or '1.2'" );
 		}
 		this.soapVersion = version;
+		return this;
+	}
+
+	/**
+	 * Seed a new execution context for this client.
+	 *
+	 * @param context The BoxLang execution context
+	 *
+	 * @return This instance for chaining
+	 */
+	public BoxSoapClient withContext( IBoxContext context ) {
+		this.executionContext = context;
 		return this;
 	}
 
@@ -306,7 +310,7 @@ public class BoxSoapClient implements IReferenceable {
 	 *
 	 * @return List of operation names
 	 */
-	public List<String> getOperationNames() {
+	public Array getOperationNames() {
 		return this.wsdlDefinition.getOperationNames();
 	}
 
@@ -339,7 +343,7 @@ public class BoxSoapClient implements IReferenceable {
 	 * @return A struct containing statistics
 	 */
 	public IStruct getStatistics() {
-		return Struct.of(
+		return Struct.ofNonConcurrent(
 		    "totalInvocations", this.totalInvocations,
 		    "successfulInvocations", this.successfulInvocations,
 		    "failedInvocations", this.failedInvocations,
@@ -356,7 +360,7 @@ public class BoxSoapClient implements IReferenceable {
 	 * @return A struct with client information
 	 */
 	public IStruct toStruct() {
-		return Struct.of(
+		return Struct.ofNonConcurrent(
 		    "wsdlUrl", this.wsdlDefinition.getWsdlUrl(),
 		    "serviceEndpoint", this.wsdlDefinition.getServiceEndpoint(),
 		    "serviceName", this.wsdlDefinition.getServiceName(),
@@ -378,7 +382,6 @@ public class BoxSoapClient implements IReferenceable {
 	/**
 	 * Invoke a SOAP operation with positional arguments
 	 *
-	 * @param context       The BoxLang context
 	 * @param operationName The operation to invoke
 	 * @param arguments     The arguments (array or struct)
 	 *
@@ -386,7 +389,7 @@ public class BoxSoapClient implements IReferenceable {
 	 *
 	 * @throws BoxRuntimeException If the operation fails
 	 */
-	public Object invoke( IBoxContext context, String operationName, Object arguments ) {
+	public Object invoke( String operationName, Object arguments ) {
 		this.totalInvocations++;
 
 		try {
@@ -394,8 +397,10 @@ public class BoxSoapClient implements IReferenceable {
 			WsdlOperation operation = this.wsdlDefinition.getOperation( Key.of( operationName ) );
 			if ( operation == null ) {
 				throw new BoxRuntimeException(
-				    "Operation '" + operationName + "' not found in WSDL. Available operations: " +
-				        String.join( ", ", this.getOperationNames() )
+				    "SOAP operation [" + operationName + "] not found in WSDL: "
+				        + this.getWsdlUrl()
+				        + ". Available operations: "
+				        + this.wsdlDefinition.getOperationNames().toString()
 				);
 			}
 
@@ -404,20 +409,20 @@ public class BoxSoapClient implements IReferenceable {
 
 			// Log the request if debug enabled
 			if ( this.logger.isDebugEnabled() ) {
-				this.logger.debug( "SOAP Request to {}: {}", this.getServiceEndpoint(), soapRequest );
+				this.logger.trace( "SOAP Request to {}: {}", this.getServiceEndpoint(), soapRequest );
 			}
 
 			// Execute the HTTP request using a default HTTP client
 			BoxHttpClient					httpClient	= this.httpService.getOrBuildClient(
 			    "HTTP/2", // HTTP version
-			    false, // follow redirects
-			    30, // connect timeout
+			    true, // follow redirects
+			    BoxHttpClient.DEFAULT_CONNECTION_TIMEOUT, // connect timeout
 			    null, null, null, null, // no proxy
 			    null, null // no client cert
 			);
 
 			// Build the request
-			BoxHttpClient.BoxHttpRequest	request		= httpClient.newRequest( this.getServiceEndpoint(), context )
+			BoxHttpClient.BoxHttpRequest	request		= httpClient.newRequest( this.getServiceEndpoint(), this.executionContext )
 			    .post()
 			    .timeout( this.timeout )
 			    .header(
@@ -524,7 +529,7 @@ public class BoxSoapClient implements IReferenceable {
 
 		// Check if this is a SOAP operation
 		if ( this.hasOperation( methodName ) ) {
-			return this.invoke( context, methodName, arguments );
+			return this.invoke( methodName, arguments );
 		}
 
 		// Handle built-in methods
@@ -532,7 +537,7 @@ public class BoxSoapClient implements IReferenceable {
 			case "invoke" :
 				String operationName = ( String ) arguments.get( Key.method );
 				Object argCollection = arguments.get( Key.argumentCollection );
-				return this.invoke( context, operationName, argCollection );
+				return this.invoke( operationName, argCollection );
 
 			case "getoperationinfo" :
 				String opName = ( String ) arguments.get( Key.of( "operation" ) );
@@ -573,7 +578,7 @@ public class BoxSoapClient implements IReferenceable {
 
 		// Check if this is a SOAP operation - pass first argument as params
 		if ( this.hasOperation( methodName ) ) {
-			return this.invoke( context, methodName, arguments.length > 0 ? arguments[ 0 ] : Struct.EMPTY );
+			return this.invoke( methodName, arguments.length > 0 ? arguments[ 0 ] : Struct.EMPTY );
 		}
 
 		// Handle built-in methods (most don't take args with positional style)
@@ -748,8 +753,8 @@ public class BoxSoapClient implements IReferenceable {
 			}
 
 			// Log the response if debug enabled
-			if ( this.logger.isDebugEnabled() ) {
-				this.logger.debug( "SOAP Response: {}", responseBody );
+			if ( this.logger.isTraceEnabled() ) {
+				this.logger.trace( "SOAP Response: {}", responseBody );
 			}
 
 			// Parse the XML response

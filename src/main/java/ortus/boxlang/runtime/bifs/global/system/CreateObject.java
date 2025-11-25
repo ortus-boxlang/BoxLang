@@ -296,6 +296,6 @@ public class CreateObject extends BIF {
 	 */
 	private static Object createWebService( IBoxContext context, String wsdlUrl ) {
 		HttpService httpService = BoxRuntime.getInstance().getHttpService();
-		return httpService.getOrCreateSoapClient( wsdlUrl );
+		return httpService.getOrCreateSoapClient( wsdlUrl, context );
 	}
 }

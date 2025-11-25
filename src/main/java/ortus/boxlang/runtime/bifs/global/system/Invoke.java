@@ -74,7 +74,7 @@ public class Invoke extends BIF {
 
 		// Special handling for BoxSoapClient webservice objects
 		if ( instance instanceof BoxSoapClient soapClient ) {
-			return soapClient.invoke( context, method.getName(), args );
+			return soapClient.invoke( method.getName(), args );
 		}
 
 		// If we had a non-empty string, create the Box Class instance
