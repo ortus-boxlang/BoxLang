@@ -421,8 +421,6 @@ public class InvokeTest {
 					webservice="%s"
 					method="ListOfContinentsByName"
 					returnVariable="results";
-
-				println( results )
 		    """.formatted( testWSDL ),
 		    context );
 		// @formatter:on
@@ -441,8 +439,6 @@ public class InvokeTest {
 					method="CountryCurrency"
 					argumentCollection={ sCountryISOCode : "US" }
 					returnVariable="results";
-
-				println( results )
 		    """.formatted( testWSDL ),
 		    context );
 		// @formatter:on

@@ -427,18 +427,16 @@ public class BoxSoapClient implements IReferenceable {
 			    .header( "SOAPAction", operation.getSoapAction() != null ? operation.getSoapAction() : "" )
 			    .body( soapRequest );
 
-
-
 			// Add authentication if provided
 			if ( this.username != null && this.password != null ) {
 				request.withBasicAuth( this.username, this.password );
 			}
 
 			// Execute the request
-			IStruct httpResult = ( IStruct ) request.send();
+			IStruct	httpResult	= ( IStruct ) request.send();
 
 			// Parse the SOAP response
-			Object result = parseSoapResponse( httpResult, operation );
+			Object	result		= parseSoapResponse( httpResult, operation );
 
 			this.successfulInvocations++;
 			return result;
