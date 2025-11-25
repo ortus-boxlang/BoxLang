@@ -128,18 +128,11 @@ public class ApplicationService extends BaseService {
 			synchronized ( name.getName().toLowerCase().intern() ) {
 				thisApplication = this.applications.get( name );
 				if ( thisApplication == null || thisApplication.isExpired() ) {
-					Application oldApplication = thisApplication;
 					logger.trace( "ApplicationService.getApplication() - {} creating new because {}", name,
 					    thisApplication == null ? "didnt' exist" : "was expired" );
 					// Create a new one
 					thisApplication = new Application( name );
 					this.applications.put( name, thisApplication );
-					// If we had an old one, make sure it's shutdown
-					if ( oldApplication != null ) {
-						// TODO: this will affect any current requests using this application. Enhance this to wait for current requests to finish before shutting down
-						// which will require tracking active requests per application so we know when the last one is done.
-						oldApplication.shutdown( true );
-					}
 				}
 			}
 		}
@@ -172,7 +165,7 @@ public class ApplicationService extends BaseService {
 			// remove it first so no one else can access it while it's shutting down
 			this.applications.remove( name );
 			// nuke it
-			thisApp.shutdown( false );
+			thisApp.shutdown( true );
 		}
 
 		logger.trace( "ApplicationService.shutdownApplication() - {}", name );
