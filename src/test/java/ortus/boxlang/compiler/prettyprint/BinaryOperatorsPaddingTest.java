@@ -37,7 +37,7 @@ public class BinaryOperatorsPaddingTest extends PrettyPrintTest {
 
 	@Test
 	public void test() throws IOException {
-		singlePrintTest( "struct_emptypadding/input.bx", "struct_emptypadding/output_true.bx", new Config() );
+		singlePrintTest( "binary_operators/input.bxs", "binary_operators/output_true.bxs", new Config() );
 	}
 
 	static Stream<Arguments> binaryOperatorsPaddingConfigs() {
