@@ -35,6 +35,7 @@ import javax.net.ssl.SSLContext;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.BoxExecutor;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.net.BoxHttpClient;
 import ortus.boxlang.runtime.net.soap.BoxSoapClient;
@@ -474,12 +475,13 @@ public class HttpService extends BaseService {
 	 * This method caches the SoapClient instance for efficient reuse across multiple requests.
 	 *
 	 * @param wsdlUrl The WSDL URL to parse and create a client for
+	 * @param context The BoxLang execution context
 	 *
 	 * @return A configured SoapClient instance
 	 *
 	 * @throws ortus.boxlang.runtime.types.exceptions.BoxRuntimeException If WSDL parsing or client creation fails
 	 */
-	public BoxSoapClient getOrCreateSoapClient( String wsdlUrl ) {
+	public BoxSoapClient getOrCreateSoapClient( String wsdlUrl, IBoxContext context ) {
 		// Check if we already have a cached client for this WSDL
 		BoxSoapClient cachedClient = this.soapClients.get( wsdlUrl );
 		if ( cachedClient != null ) {
@@ -497,7 +499,7 @@ public class HttpService extends BaseService {
 			this.logger.trace( "Creating new SOAP client for WSDL: {}", wsdlUrl );
 
 			// Parse the WSDL and create the client
-			BoxSoapClient newClient = BoxSoapClient.fromWsdl( wsdlUrl, this, this.logger );
+			BoxSoapClient newClient = BoxSoapClient.fromWsdl( wsdlUrl, this, context );
 
 			// Cache and return
 			this.soapClients.put( wsdlUrl, newClient );
