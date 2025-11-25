@@ -41,6 +41,7 @@ import org.xml.sax.InputSource;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.net.BoxHttpClient;
 import ortus.boxlang.runtime.scopes.Key;
@@ -860,9 +861,107 @@ public class BoxSoapClient implements IReferenceable {
 
 			return result;
 		} else {
-			// Leaf element - return text content
-			return element.getTextContent();
+			// Leaf element - get text content and attempt type casting
+			String	textContent	= element.getTextContent();
+
+			// Check for xsi:type attribute for explicit type information
+			String	xsiType		= element.getAttributeNS( XSI_NS, "type" );
+			if ( xsiType != null && !xsiType.isEmpty() ) {
+				return castByXsiType( textContent, xsiType );
+			}
+
+			// Attempt intelligent type casting based on content
+			return castStringValue( textContent );
 		}
+	}
+
+	/**
+	 * Cast a string value to an appropriate BoxLang type using xsi:type information
+	 *
+	 * @param value   The string value to cast
+	 * @param xsiType The xsi:type attribute value (e.g., "xsd:int", "xsd:boolean")
+	 *
+	 * @return The cast value
+	 */
+	private Object castByXsiType( Object value, String xsiType ) {
+		if ( value == null ) {
+			return value;
+		}
+
+		// Remove namespace prefix if present
+		String type = xsiType.contains( ":" ) ? xsiType.substring( xsiType.indexOf( ':' ) + 1 ) : xsiType;
+		type = type.toLowerCase();
+
+		try {
+			switch ( type ) {
+				case "boolean" :
+					return ortus.boxlang.runtime.dynamic.casters.BooleanCaster.cast( value, false );
+				case "int" :
+				case "integer" :
+					return ortus.boxlang.runtime.dynamic.casters.IntegerCaster.cast( value, false );
+				case "short" :
+					return ortus.boxlang.runtime.dynamic.casters.ShortCaster.cast( value, false );
+				case "byte" :
+					return ortus.boxlang.runtime.dynamic.casters.ByteCaster.cast( value, false );
+				case "long" :
+					return ortus.boxlang.runtime.dynamic.casters.LongCaster.cast( value, false );
+				case "float" :
+				case "double" :
+				case "decimal" :
+					return ortus.boxlang.runtime.dynamic.casters.DoubleCaster.cast( value, false );
+				case "datetime" :
+				case "date" :
+				case "time" :
+					return ortus.boxlang.runtime.dynamic.casters.DateTimeCaster.cast( value );
+				default :
+					// Unknown type, return as string
+					return StringCaster.cast( value );
+			}
+		} catch ( Exception e ) {
+			// If casting fails, return as string
+			this.logger.trace( "Failed to cast value '{}' using xsi-type '{}': {}", value, xsiType, e.getMessage() );
+			return value;
+		}
+	}
+
+	/**
+	 * Attempt to intelligently cast a string value to an appropriate BoxLang type
+	 *
+	 * @param value The string value to cast
+	 *
+	 * @return The cast value, or original string if no casting applies
+	 */
+	private Object castStringValue( String value ) {
+		if ( value == null || value.isEmpty() ) {
+			return value;
+		}
+
+		// Try boolean first (most specific patterns)
+		var boolAttempt = ortus.boxlang.runtime.dynamic.casters.BooleanCaster.attempt( value, false );
+		if ( boolAttempt.wasSuccessful() ) {
+			return boolAttempt.get();
+		}
+
+		// Try integer (before double to avoid losing precision)
+		var intAttempt = ortus.boxlang.runtime.dynamic.casters.IntegerCaster.attempt( value );
+		if ( intAttempt.wasSuccessful() ) {
+			return intAttempt.get();
+		}
+
+		// Try double/float
+		var doubleAttempt = ortus.boxlang.runtime.dynamic.casters.DoubleCaster.attempt( value );
+		if ( doubleAttempt.wasSuccessful() ) {
+			return doubleAttempt.get();
+		}
+
+		// Try datetime (ISO formats and common date patterns)
+		var dateAttempt = ortus.boxlang.runtime.dynamic.casters.DateTimeCaster.attempt( value );
+		if ( dateAttempt.wasSuccessful() ) {
+			return dateAttempt.get();
+		}
+
+		// Return as string if no casting worked
+		return value;
 	}
 
 	/**
