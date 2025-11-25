@@ -114,9 +114,9 @@ dependencies {
 
 	// Antlr
 	antlr "org.antlr:antlr4:$antlrVersion"
-	
+
     // Uncomment if using ANTLR GUI debugger
-    //implementation "org.antlr:antlr4-runtime:$antlrVersion" 
+    //implementation "org.antlr:antlr4-runtime:$antlrVersion"
 
 	// Implementation Dependencies
 	// https://mvnrepository.com/artifact/commons-io/commons-io
@@ -216,15 +216,15 @@ application {
 
 processResources {
 	dependsOn compileJava
-	
+
 	// Always run this task
 	outputs.upToDateWhen { false }
-			
+
 	// Replace @build.date@ with the current date in META-INF/version.properties file
 	filter( ReplaceTokens, tokens: [ 'build.date': new SimpleDateFormat( "yyyy-MM-dd HH:mm:ss" ).format( new Date() ) ] )
 	// Replace @build.version@ with the current version in META-INF/version.properties file
 	filter( ReplaceTokens, tokens: [ 'build.version': version + "+" + buildID ] )
-	
+
 	doLast {
 		// Replace @build.bytecode.version@ after resources are copied
 		def versionFile = file("$buildDir/resources/main/META-INF/boxlang/version.properties")
@@ -232,7 +232,7 @@ processResources {
 			def loader = new URLClassLoader([file("$buildDir/classes/java/main").toURI().toURL()] as URL[])
 			def iBoxpilerClass = loader.loadClass('ortus.boxlang.compiler.IBoxpiler')
 			def bytecodeVersion = iBoxpilerClass.BYTECODE_VERSION.toString()
-			
+
 			def content = versionFile.text
 			content = content.replace('@build.bytecode.version@', bytecodeVersion)
 			versionFile.text = content
@@ -722,9 +722,13 @@ test {
 
 	// Detailed  logging
 	testLogging {
+
 		showStandardStreams = true
-		events "PASSED", "FAILED", "SKIPPED", "STANDARD_ERROR"
         displayGranularity = 1
+		events "PASSED", "FAILED", "SKIPPED", "STANDARD_ERROR"
+        exceptionFormat "full"
+        showExceptions true
+        showCauses true
 	}
 
 	// Set system properties for consistent behavior across OS

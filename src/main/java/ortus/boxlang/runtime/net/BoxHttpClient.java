@@ -874,6 +874,47 @@ public class BoxHttpClient {
 		}
 
 		/**
+		 * Set the request body directly (simpler alternative to using params)
+		 *
+		 * @param body The body content (String or byte[])
+		 *
+		 * @return This builder for chaining
+		 */
+		public BoxHttpRequest body( Object body ) {
+			ortus.boxlang.runtime.types.IStruct param = new ortus.boxlang.runtime.types.Struct();
+			param.put( ortus.boxlang.runtime.scopes.Key.type, "body" );
+			param.put( ortus.boxlang.runtime.scopes.Key.value, body );
+			this.params.add( param );
+			return this;
+		}
+
+		/**
+		 * Set the request body as XML with appropriate Content-Type header
+		 *
+		 * @param xmlContent The XML content as a string
+		 *
+		 * @return This builder for chaining
+		 */
+		public BoxHttpRequest xmlBody( String xmlContent ) {
+			this.header( "Content-Type", "application/xml; charset=" + this.charset );
+			return this.body( xmlContent );
+		}
+
+		/**
+		 * Set the request body as JSON with appropriate Content-Type header
+		 *
+		 * @param jsonContent The JSON content as a string
+		 *
+		 * @return This builder for chaining
+		 */
+		public BoxHttpRequest jsonBody( String jsonContent ) {
+			// Add Content-Type header for JSON
+			this.header( "Content-Type", "application/json; charset=utf-8" );
+			// Add body
+			return this.body( jsonContent );
+		}
+
+		/**
 		 * Add a header to the request
 		 *
 		 * @param name  The header name
@@ -1225,6 +1266,37 @@ public class BoxHttpClient {
 		}
 
 		/**
+		 * This method returns a struct of what the request would look like when sending.
+		 * It is used for debugging to know the state of the Request before sending.
+		 *
+		 * @return A Struct representing the request state
+		 */
+		public IStruct inspect() {
+			IStruct requestStruct = new Struct( false );
+			requestStruct.put( Key.authType, this.authType );
+			requestStruct.put( Key.charset, this.charset );
+			requestStruct.put( Key.error, this.error );
+			requestStruct.put( Key.errorMessage, this.errorMessage );
+			requestStruct.put( Key.httpVersion, this.httpVersion );
+			requestStruct.put( Key.isBinaryNever, this.isBinaryNever );
+			requestStruct.put( Key.isBinaryRequest, this.isBinaryRequest );
+			requestStruct.put( Key.method, this.method );
+			requestStruct.put( Key.multipart, this.multipart );
+			requestStruct.put( Key.outputDirectory, this.outputDirectory );
+			requestStruct.put( Key.outputFile, this.outputFile );
+			requestStruct.put( Key.params, this.params );
+			requestStruct.put( Key.port, this.port );
+			requestStruct.put( Key.requestID, this.requestID );
+			requestStruct.put( Key.sse, this.forceSSE );
+			requestStruct.put( Key.throwOnError, this.throwOnError );
+			requestStruct.put( Key.timeout, this.timeout );
+			requestStruct.put( Key.URL, this.url );
+			requestStruct.put( Key.userAgent, this.userAgent );
+			requestStruct.put( Key.username, this.username != null ? "****" : null );
+			return requestStruct;
+		}
+
+		/**
 		 * ------------------------------------------------------------------------------
 		 * Processors
 		 * ------------------------------------------------------------------------------
@@ -1549,7 +1621,7 @@ public class BoxHttpClient {
 		 *     .method( "POST" )
 		 *     .header( "Content-Type", "application/json" )
 		 *     .onComplete( result -> {
-		 * 	} )
+		 * 							} )
 		 *     .send();
 		 *
 		 * IStruct result = request.getHttpResult();

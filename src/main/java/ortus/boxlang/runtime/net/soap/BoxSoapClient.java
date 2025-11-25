@@ -55,15 +55,15 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  * Provides human-friendly methods for invoking SOAP operations discovered from WSDL documents.
  *
  * Usage:
- * 
+ *
  * <pre>
- * 
+ *
  * SoapClient client = SoapClient.fromWsdl( "http://example.com/service.wsdl" );
  * Object result = client.invoke( "methodName", args );
  * </pre>
  *
  * Or using createObject:
- * 
+ *
  * <pre>
  * ws = createObject( "webservice", "http://example.com/service.wsdl" );
  * result = ws.methodName( arg1, arg2 );
@@ -403,21 +403,21 @@ public class BoxSoapClient implements IReferenceable {
 			    null, null // no client cert
 			);
 
-			// Build params array with body
-			Array							params		= Array.of(
-			    Struct.of(
-			        Key.type, "body",
-			        Key.value, soapRequest
-			    )
-			);
-
 			// Build the request
 			BoxHttpClient.BoxHttpRequest	request		= httpClient.newRequest( this.getServiceEndpoint(), context )
 			    .post()
 			    .timeout( this.timeout )
-			    .header( "Content-Type",
-			        "1.1".equals( this.soapVersion ) ? "text/xml; charset=utf-8" : "application/soap+xml; charset=utf-8" )
-			    .header( "SOAPAction", operation.getSoapAction() != null ? operation.getSoapAction() : "" );
+			    .header(
+			        "Content-Type",
+			        "1.1".equals( this.soapVersion ) ? "text/xml; charset=utf-8" : "application/soap+xml; charset=utf-8"
+			    )
+			    .header( "SOAPAction", operation.getSoapAction() != null ? operation.getSoapAction() : "" )
+			    .body( soapRequest );
+
+			// Debugging
+			System.out.println( "SOAP Request to " + this.getServiceEndpoint() + ":\n" + soapRequest );
+			System.out.println( "SOAPAction: " + ( operation.getSoapAction() != null ? operation.getSoapAction() : "" ) );
+			System.out.println( "HTTP Request " + request.inspect().toString() );
 
 			// Add authentication if provided
 			if ( this.username != null && this.password != null ) {
@@ -425,10 +425,12 @@ public class BoxSoapClient implements IReferenceable {
 			}
 
 			// Execute the request
-			IStruct	httpResult	= ( IStruct ) request.params( params ).send();
+			IStruct httpResult = ( IStruct ) request.send();
+
+			System.out.println( "SOAP Response from " + this.getServiceEndpoint() + ":\n" + httpResult.toString() );
 
 			// Parse the SOAP response
-			Object	result		= parseSoapResponse( httpResult, operation );
+			Object result = parseSoapResponse( httpResult, operation );
 
 			this.successfulInvocations++;
 			return result;
@@ -763,7 +765,9 @@ public class BoxSoapClient implements IReferenceable {
 				// The first child of Body should be the response element
 				Element	response	= getFirstChildElement( body );
 				if ( response != null ) {
-					return xmlElementToBoxLang( response );
+					Object result = xmlElementToBoxLang( response );
+					// Unwrap single-property structs (common SOAP pattern)
+					return unwrapResponse( result );
 				}
 			}
 
@@ -848,6 +852,34 @@ public class BoxSoapClient implements IReferenceable {
 			// Leaf element - return text content
 			return element.getTextContent();
 		}
+	}
+
+	/**
+	 * Unwrap single-property structs from SOAP responses.
+	 * Many SOAP services wrap the actual result in a container element.
+	 * For example:
+	 * { ListOfContinentsByNameResult: { tContinent: [...] } }
+	 * becomes:
+	 * { tContinent: [...] }
+	 *
+	 * This only unwraps if the struct has exactly ONE property, preserving
+	 * multi-property responses unchanged.
+	 *
+	 * @param value The value to potentially unwrap
+	 *
+	 * @return The unwrapped value or the original value if not a single-property struct
+	 */
+	private Object unwrapResponse( Object value ) {
+		if ( value instanceof IStruct struct ) {
+			// Only unwrap if there's exactly one property
+			if ( struct.size() == 1 ) {
+				// Get the single value
+				Object unwrapped = struct.values().iterator().next();
+				// Recursively unwrap in case of nested single-property structs
+				return unwrapResponse( unwrapped );
+			}
+		}
+		return value;
 	}
 
 	/**

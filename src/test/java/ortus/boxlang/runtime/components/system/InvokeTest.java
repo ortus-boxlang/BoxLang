@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.components.system;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import java.nio.file.Paths;
 import java.util.LinkedHashMap;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -36,13 +35,16 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
 
 public class InvokeTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
 	IScope				variables;
-	static Key			result	= new Key( "result" );
+	static Key			result		= new Key( "result" );
+	static String		testWSDL	= "http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso?WSDL";
 
 	@BeforeAll
 	public static void setUp() {
@@ -409,70 +411,43 @@ public class InvokeTest {
 		    .isEqualTo( "src.test.java.ortus.boxlang.runtime.components.system.EventMethods" );
 	}
 
-	@DisplayName( "Test invoke BIF with webservice object" )
+	@DisplayName( "Test invoke with webservice object" )
 	@Test
-	public void testInvokeWebserviceBIF() {
-		// Using local WSDL file
-		String wsdlPath = Paths.get( "src/test/resources/wsdl/calculator.wsdl" ).toAbsolutePath().toUri().toString();
-
+	public void testInvokeWebServiceWithWrapper() {
 		// @formatter:off
 		instance.executeSource(
 		    """
-		    ws = createObject( "webservice", "%s" )
-		    result = isNull( ws )
-		    """.formatted( wsdlPath ),
+				bx:invoke
+					webservice="%s"
+					method="ListOfContinentsByName"
+					returnVariable="results";
+
+				println( results )
+		    """.formatted( testWSDL ),
 		    context );
 		// @formatter:on
-
-		// Verify the SOAP client was created
-		Object ws = variables.get( Key.of( "ws" ) );
-		assertThat( ws ).isNotNull();
-		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( false );
+		Array results = variables.getAsArray( Key.of( "results" ) );
+		assertThat( results.size() ).isGreaterThan( 0 );
 	}
 
-	@DisplayName( "Test invoke with webservice created from live WSDL" )
+	@DisplayName( "Test web service with arguments" )
 	@Test
-	public void testInvokeWithLiveWebservice() {
-		// Using Beeceptor's free SOAP mock service
-		try {
-			// @formatter:off
-			instance.executeSource(
-			    """
-			    ws = createObject(
-			        "webservice",
-			        "https://soap-test-server.mock.beeceptor.com/CountryInfoService?WSDL"
-			    )
-			    clientCreated = !isNull( ws )
-			    """,
-			    context );
-			// @formatter:on
-
-			assertThat( variables.get( Key.of( "clientCreated" ) ) ).isEqualTo( true );
-			assertThat( variables.get( Key.of( "ws" ) ) ).isNotNull();
-		} catch ( Exception e ) {
-			// Skip test if network is unavailable
-			org.junit.jupiter.api.Assumptions.assumeTrue( false, "Network unavailable: " + e.getMessage() );
-		}
-	}
-
-	@DisplayName( "Test webservice client structure and properties" )
-	@Test
-	public void testWebserviceClientStructure() {
-		String wsdlPath = Paths.get( "src/test/resources/wsdl/calculator.wsdl" ).toAbsolutePath().toUri().toString();
-
+	public void testInvokeWebServiceWithArguments() {
 		// @formatter:off
 		instance.executeSource(
 		    """
-		    ws = createObject( "webservice", "%s" )
-		    hasToString = structKeyExists( ws, "toString" )
-		    """.formatted( wsdlPath ),
+				bx:invoke
+					webservice="%s"
+					method="CountryCurrency"
+					argumentCollection="#{ sCountryISOCode : "US" }#"
+					returnVariable="results";
+
+				println( results )
+		    """.formatted( testWSDL ),
 		    context );
 		// @formatter:on
-
-		Object ws = variables.get( Key.of( "ws" ) );
-		assertThat( ws ).isNotNull();
-		// Verify it's a valid BoxSoapClient instance
-		assertThat( ws.getClass().getName() ).contains( "BoxSoapClient" );
+		IStruct results = variables.getAsStruct( Key.of( "results" ) );
+		assertThat( results.get( Key.of( "sName" ) ).toString().toLowerCase() ).isEqualTo( "united states dollar" );
 	}
 
 }

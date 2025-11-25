@@ -40,9 +40,15 @@ import ortus.boxlang.runtime.validation.Validator;
 @BoxComponent( description = "Invoke methods on objects dynamically", allowsBody = true )
 public class Invoke extends Component {
 
-	ClassLocator			classLocator			= BoxRuntime.getInstance().getClassLocator();
-	static final Key		webserviceKey			= Key.of( "webservice" );
-	static final Set<Key>	reservedAttributeNames	= Set.of( Key._CLASS, Key.method, Key.returnVariable, Key.argumentCollection, webserviceKey );
+	/**
+	 * This class responsible for locating classes
+	 */
+	private static final ClassLocator	classLocator			= BoxRuntime.getInstance().getClassLocator();
+
+	/**
+	 * The webservice attribute key
+	 */
+	private static final Set<Key>		reservedAttributeNames	= Set.of( Key._CLASS, Key.method, Key.returnVariable, Key.argumentCollection, Key.webservice );
 
 	/**
 	 * Constructor
@@ -51,7 +57,7 @@ public class Invoke extends Component {
 		super();
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key._CLASS, "any", "" ),
-		    new Attribute( webserviceKey, "string", "" ),
+		    new Attribute( Key.webservice, "string", "" ),
 		    new Attribute( Key.method, "string", Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) ),
 		    new Attribute( Key.returnVariable, "string", Set.of( Validator.NON_EMPTY ) ),
 		    new Attribute( Key.argumentCollection, "any" )
@@ -59,7 +65,7 @@ public class Invoke extends Component {
 	}
 
 	/**
-	 * Invokes a method from within a template or class.
+	 * Invokes a method from within a template or class or a web service dynamically.
 	 *
 	 * @param context        The context in which the Component is being invoked
 	 * @param attributes     The attributes to the Component
@@ -70,18 +76,18 @@ public class Invoke extends Component {
 	 *
 	 * @attribute.webservice The WSDL URL of a web service to invoke. Mutually exclusive with class attribute.
 	 *
-	 * @attribute.method The name of the method to invoke.
+	 * @attribute.method The name of the method to invoke on the class or web service.
 	 *
 	 * @attribute.returnVariable The variable to store the result of the method invocation.
 	 *
-	 * @attribute.argumentCollection An array or struct of arguments to pass to the method.
+	 * @attribute.argumentCollection An array or struct of arguments to pass to the method being invoked.
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		String	returnVariable	= attributes.getAsString( Key.returnVariable );
 		Key		methodname		= Key.of( attributes.getAsString( Key.method ) );
 		Object	instance		= attributes.get( Key._CLASS );
-		String	webserviceUrl	= attributes.getAsString( webserviceKey );
+		String	webserviceUrl	= attributes.getAsString( Key.webservice );
 		Object	args			= attributes.get( Key.argumentCollection );
 		IStruct	argCollection	= Struct.of();
 		Object	result			= null;
