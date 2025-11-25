@@ -17,14 +17,13 @@
  */
 package ortus.boxlang.runtime.runnables;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
@@ -51,16 +50,18 @@ public abstract class BoxTemplate implements ITemplateRunnable {
 		context.pushTemplate( this );
 		try {
 			// Announcements
-			IStruct data = Struct.of(
-			    "context", context,
-			    "template", this,
-			    "templatePath", this.getRunnablePath()
+
+			runtime.announce(
+			    BoxEvent.PRE_TEMPLATE_INVOKE,
+			    () -> Struct.ofNonConcurrent(
+			        Key.context, context,
+			        Key.template, this,
+			        Key.templatePath, this.getRunnablePath()
+			    )
 			);
-			runtime.announce( "preTemplateInvoke", data );
+
 			_invoke( context );
 
-			// Announce
-			runtime.announce( "postTemplateInvoke", data );
 		} catch ( AbortException e ) {
 			// Module components have their own checks
 			if ( isInModule && ( e.isTemplate() || e.isLoop() || e.isTag() ) ) {
@@ -79,6 +80,17 @@ public abstract class BoxTemplate implements ITemplateRunnable {
 			context.flushBuffer( false );
 			throw e;
 		} finally {
+
+			// Announce
+			runtime.announce(
+			    BoxEvent.POST_TEMPLATE_INVOKE,
+			    () -> Struct.ofNonConcurrent(
+			        Key.context, context,
+			        Key.template, this,
+			        Key.templatePath, this.getRunnablePath()
+			    )
+			);
+
 			context.popTemplate();
 		}
 
@@ -98,21 +110,6 @@ public abstract class BoxTemplate implements ITemplateRunnable {
 	public abstract void _invoke( IBoxContext context );
 
 	// ITemplateRunnable implementation methods
-
-	/**
-	 * The version of the BoxLang runtime
-	 */
-	public abstract long getRunnableCompileVersion();
-
-	/**
-	 * The date the template was compiled
-	 */
-	public abstract LocalDateTime getRunnableCompiledOn();
-
-	/**
-	 * The AST (abstract syntax tree) of the runnable
-	 */
-	public abstract Object getRunnableAST();
 
 	/**
 	 * The path to the template

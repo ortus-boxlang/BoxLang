@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-@BoxBIF
+@BoxBIF( description = "Create a dynamic proxy for a Java interface" )
 public class CreateDynamicProxy extends BIF {
 
 	ClassLocator classLocator = BoxRuntime.getInstance().getClassLocator();
@@ -43,7 +43,8 @@ public class CreateDynamicProxy extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key._CLASS ),
-		    new Argument( true, "any", Key.interfaces )
+		    new Argument( true, "any", Key.interfaces ),
+		    new Argument( false, "any", Key.classLoader ),
 		};
 	}
 
@@ -60,13 +61,18 @@ public class CreateDynamicProxy extends BIF {
 	 *
 	 * @argument.class The Box Class to create a dynamic proxy of.
 	 *
-	 * @argument.interfaces The interfaces that the dynamic proxy should implement.
+	 * @argument.interfaces The interfaces that the dynamic proxy should implement. Can be a single class, a single string fqn, or an array of class/string fqns
+	 * 
+	 * @argument.classLoader The class loader to use when loading the interface classes and creating the proxy. Defaults to the request class loader.
 	 *
 	 * @return A dynamic proxy of the Box Class.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object			oClass		= arguments.get( Key._CLASS );
 		Object			oInterfaces	= arguments.get( Key.interfaces );
+		ClassLoader		cl			= arguments.getAsAttempt( Key.classLoader, ClassLoader.class ).orElse(
+		    context.getParentOfType( RequestBoxContext.class ).getRequestClassLoader()
+		);
 		IClassRunnable	classToProxy;
 		Array			interfacesToImplement;
 
@@ -86,7 +92,11 @@ public class CreateDynamicProxy extends BIF {
 		if ( arrayAttemp.wasSuccessful() ) {
 			interfacesToImplement = arrayAttemp.get();
 		} else {
-			interfacesToImplement = Array.of( StringCaster.cast( oInterfaces ) );
+			// If not an array, treat as single interface name or instance
+			if ( ! ( oInterfaces instanceof Class ) ) {
+				oInterfaces = StringCaster.cast( oInterfaces );
+			}
+			interfacesToImplement = Array.of( oInterfaces );
 		}
 
 		// assert, we now have a Box Class instance to proxy and an array of interface names to implement
@@ -103,7 +113,7 @@ public class CreateDynamicProxy extends BIF {
 		    classToProxy,
 		    null,
 		    interfacesToImplement,
-		    context.getParentOfType( RequestBoxContext.class ).getRequestClassLoader()
+		    cl
 		);
 	}
 }

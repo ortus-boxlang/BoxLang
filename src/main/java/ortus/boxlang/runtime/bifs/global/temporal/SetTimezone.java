@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
-@BoxBIF
+@BoxBIF( description = "Set the timezone for a datetime value" )
 
 public class SetTimezone extends BIF {
 

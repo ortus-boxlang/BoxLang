@@ -30,8 +30,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
-@BoxBIF
-
+@BoxBIF( description = "Copy a file to a new location" )
 public class FileCopy extends BIF {
 
 	/**
@@ -62,9 +61,9 @@ public class FileCopy extends BIF {
 	 * @argument.createPath [ true ] whether to create any nested paths required to the new file
 	 *
 	 * @argument.overwrite Whether to overwrite the destination file if it exists. Defaults to true.
-	 * 
+	 *
 	 * @argument.accept A comma separated list of file extensions to accept - which will override runtime security settings
-	 * 
+	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Set and expand
@@ -94,6 +93,7 @@ public class FileCopy extends BIF {
 			}
 		}
 
+		// If the destination file exists and overwrite is false, throw an error
 		if ( Files.exists( destinationPath ) && !arguments.getAsBoolean( Key.overwrite ) ) {
 			throw new BoxRuntimeException(
 			    "The target path of [" + destinationPath.toString() + "] already exists and the overwrite argument is set to false" );
@@ -105,7 +105,7 @@ public class FileCopy extends BIF {
 		}
 
 		try {
-			Files.copy( sourcePath, destinationPath );
+			Files.copy( sourcePath, destinationPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING );
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
 		}

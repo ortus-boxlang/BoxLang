@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Reduce string characters to a single value using a callback function starting from the right" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "StringReduceRight" )
 
 public class StringReduceRight extends ListReduceRight {

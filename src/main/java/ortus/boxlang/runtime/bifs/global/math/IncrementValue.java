@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Increment a numeric value by 1" )
 @BoxMember( type = BoxLangType.NUMERIC, name = "incrementValue" )
 public class IncrementValue extends BIF {
 

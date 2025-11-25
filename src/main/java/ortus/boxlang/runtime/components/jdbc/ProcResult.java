@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent( allowsBody = false )
+@BoxComponent( description = "Capture result sets from stored procedures", allowsBody = false )
 public class ProcResult extends Component {
 
 	/**

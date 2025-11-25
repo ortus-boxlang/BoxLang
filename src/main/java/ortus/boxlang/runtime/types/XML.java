@@ -40,8 +40,8 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.w3c.dom.Document;
 import org.w3c.dom.DocumentType;
 import org.w3c.dom.Element;
@@ -58,6 +58,7 @@ import org.xml.sax.SAXException;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BoxMemberExpose;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
+import ortus.boxlang.runtime.bifs.global.string.UCFirst;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
@@ -129,21 +130,8 @@ public class XML implements Serializable, IStruct {
 	public XML( String xmlData ) {
 
 		this.type = TYPES.DEFAULT;
-
-		DocumentBuilderFactory	factory	= DocumentBuilderFactory.newNSInstance();
-
-		DocumentBuilder			builder;
-		try {
-			// Disable DTD validation
-			factory.setFeature( "http://apache.org/xml/features/nonvalidating/load-external-dtd", false );
-			factory.setFeature( "http://xml.org/sax/features/validation", false );
-			factory.setFeature( "http://apache.org/xml/features/disallow-doctype-decl", false );
-
-			builder = factory.newDocumentBuilder();
-		} catch ( ParserConfigurationException e ) {
-			throw new BoxRuntimeException( "Error creating XML document builder", e );
-		}
-		InputSource inputSource = new InputSource( new StringReader( xmlData ) );
+		DocumentBuilder	builder		= newDocumentBuilder();
+		InputSource		inputSource	= new InputSource( new StringReader( xmlData ) );
 		try {
 			node = builder.parse( inputSource );
 		} catch ( SAXException e ) {
@@ -166,6 +154,26 @@ public class XML implements Serializable, IStruct {
 	 */
 	public XML( Boolean caseSenstive ) {
 		this.type = caseSenstive ? TYPES.CASE_SENSITIVE : TYPES.DEFAULT;
+	}
+
+	/**
+	 * Creates a new document builder for either parsing or document creation
+	 */
+	private static DocumentBuilder newDocumentBuilder() {
+		DocumentBuilderFactory	factory	= DocumentBuilderFactory.newNSInstance();
+
+		DocumentBuilder			builder;
+		try {
+			// Disable DTD validation
+			factory.setFeature( "http://apache.org/xml/features/nonvalidating/load-external-dtd", false );
+			factory.setFeature( "http://xml.org/sax/features/validation", false );
+			factory.setFeature( "http://apache.org/xml/features/disallow-doctype-decl", false );
+
+			builder = factory.newDocumentBuilder();
+		} catch ( ParserConfigurationException e ) {
+			throw new BoxRuntimeException( "Error creating XML document builder", e );
+		}
+		return builder;
 	}
 
 	/**
@@ -461,11 +469,30 @@ public class XML implements Serializable, IStruct {
 			return getXMLValue();
 		}
 
+		// If we were initialized with an empty XML object and an attempt is made to access a property, then we need to create the document now.
+		if ( node == null ) {
+			node = newDocumentBuilder().newDocument();
+			if ( name.equals( Key.XMLRoot ) ) {
+				return this;
+			} else if ( name.equals( Key.XMLAttributes ) ) {
+				return getXMLAttributes();
+			} else if ( name.equals( Key.XMLComment ) ) {
+				return getNodeComments();
+			} else if ( name.equals( Key.XMLDocType ) ) {
+				return new XML( ( ( Document ) node ).getDoctype() );
+			} else if ( name.equals( Key.XMLChildren ) ) {
+				return getXMLChildren();
+			} else if ( name.equals( Key.XMLNodes ) ) {
+				return getXMLNodes();
+			}
+		}
+
 		// Document nodes support the following:
-		if ( node.getNodeType() == Node.DOCUMENT_NODE ) {
-			Document document = ( Document ) node;
+		if ( node instanceof Document document ) {
 			if ( name.equals( Key.XMLRoot ) ) {
 				return new XML( document.getDocumentElement() );
+			} else if ( name.equals( Key.XMLAttributes ) ) {
+				return new XML( document.getDocumentElement() ).getXMLAttributes();
 			} else if ( name.equals( Key.XMLComment ) ) {
 				return getNodeComments();
 			} else if ( name.equals( Key.XMLDocType ) ) {
@@ -680,6 +707,16 @@ public class XML implements Serializable, IStruct {
 		    "method", "xml",
 		    "indent", "yes"
 		) );
+	}
+
+	/**
+	 * Get the BoxLang type name for this type
+	 * 
+	 * @return The BoxLang type name
+	 */
+	@Override
+	public String getBoxTypeName() {
+		return "XML<" + UCFirst.ucFirst( getXMLType(), false, true ) + ">";
 	}
 
 	@Override

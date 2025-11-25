@@ -19,9 +19,11 @@ package ortus.boxlang.runtime.services;
 
 import java.io.File;
 import java.net.URI;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -58,17 +60,23 @@ public class ApplicationService extends BaseService {
 	/**
 	 * The applications for this runtime
 	 */
-	private Map<Key, Application>	applications	= new ConcurrentHashMap<>();
+	private Map<Key, Application>												applications				= new ConcurrentHashMap<>();
 
 	/**
 	 * Extensions to search for application descriptor classes: Application.bx, Application.cfc, etc
 	 */
-	private Set<String>				applicationDescriptorClassExtensions;
+	private Set<String>															applicationDescriptorClassExtensions;
 
 	/**
 	 * Extensions to search for application descriptor templates: Application.bxm, Application.bxml, etc
 	 */
-	private Set<String>				applicationDescriptorExtensions;
+	private Set<String>															applicationDescriptorExtensions;
+
+	/**
+	 * Cache Application.bx/bxm lookups per directory if trusted cache is enabled.
+	 * This cache is server-wide and based purely on the file system absolute path being looked in.
+	 */
+	private final java.util.Map<String, Optional<ApplicationDescriptorSearch>>	applicationDescriptorCache	= new java.util.HashMap<>();
 
 	/**
 	 * The types of application listeners we support: Application classes and
@@ -113,8 +121,21 @@ public class ApplicationService extends BaseService {
 	 * @return The application
 	 */
 	public Application getApplication( Key name ) {
-		Application thisApplication = this.applications.computeIfAbsent( name, k -> new Application( name ) );
-
+		Application thisApplication = this.applications.get( name );
+		if ( thisApplication == null || thisApplication.isExpired() ) {
+			// Server-wide lock on this application name. We want to block other threads from creating THIS SPECIFIC application,
+			// but we don't want to block other unrelated application creations while we do this.
+			synchronized ( name.getName().toLowerCase().intern() ) {
+				thisApplication = this.applications.get( name );
+				if ( thisApplication == null || thisApplication.isExpired() ) {
+					logger.trace( "ApplicationService.getApplication() - {} creating new because {}", name,
+					    thisApplication == null ? "didnt' exist" : "was expired" );
+					// Create a new one
+					thisApplication = new Application( name );
+					this.applications.put( name, thisApplication );
+				}
+			}
+		}
 		logger.trace( "ApplicationService.getApplication() - {}", name );
 
 		return thisApplication;
@@ -144,7 +165,7 @@ public class ApplicationService extends BaseService {
 			// remove it first so no one else can access it while it's shutting down
 			this.applications.remove( name );
 			// nuke it
-			thisApp.shutdown( false );
+			thisApp.shutdown( true );
 		}
 
 		logger.trace( "ApplicationService.shutdownApplication() - {}", name );
@@ -194,8 +215,10 @@ public class ApplicationService extends BaseService {
 	@Override
 	public void onStartup() {
 		// Setup the application descriptor extensions from the runtime configuration
-		this.applicationDescriptorClassExtensions	= BoxRuntime.getInstance().getConfiguration().validClassExtensions;
-		this.applicationDescriptorExtensions		= BoxRuntime.getInstance().getConfiguration().getValidTemplateExtensions();
+		this.applicationDescriptorClassExtensions = BoxRuntime.getInstance().getConfiguration().validClassExtensions;
+		// Exclude wildcard "*" from template extensions so we don't try to check for Application.*
+		this.applicationDescriptorExtensions = BoxRuntime.getInstance().getConfiguration().getValidTemplateExtensions().stream()
+		    .filter( ( e ) -> !e.equals( "*" ) ).collect( java.util.stream.Collectors.toSet() );
 	}
 
 	/**
@@ -235,6 +258,8 @@ public class ApplicationService extends BaseService {
 				// resolved via a mapping declared in the Application class, which we haven't yet created
 
 				templatePath = FileSystemUtil.expandPath( context, template.getPath() );
+				// templatePath = FileSystemUtil.expandPath( runtime.getConfiguration().mappings, template.getPath(), null, false );
+
 				Path	rootPath			= Paths.get( templatePath.mappingPath() );
 				Path	currentDirectory	= templatePath.absolutePath().getParent();
 				while ( currentDirectory != null && ( currentDirectory.startsWith( rootPath ) || currentDirectory.equals( rootPath ) ) ) {
@@ -299,22 +324,23 @@ public class ApplicationService extends BaseService {
 		announce(
 		    BoxEvent.BEFORE_APPLICATION_LISTENER_LOAD,
 		    Struct.of(
-		        "listener", listener,
-		        "context", context,
-		        "template", template
+		        Key.listener, listener,
+		        Key.context, context,
+		        Key.template, template
 		    )
 		);
 
 		// Now that the settings are in place, actually define the app (and possibly
 		// session) in this request
+		context.setTimezone( null ); // reset any inherited timezone before defining the application
 		listener.defineApplication();
 
 		announce(
 		    BoxEvent.AFTER_APPLICATION_LISTENER_LOAD,
 		    Struct.of(
-		        "listener", listener,
-		        "context", context,
-		        "template", template
+		        Key.listener, listener,
+		        Key.context, context,
+		        Key.template, template
 		    )
 		);
 
@@ -323,21 +349,60 @@ public class ApplicationService extends BaseService {
 
 	/**
 	 * Search a directory for all known file extensions.
-	 * TODO: Cache this lookup when in a production mode
 	 */
 	private ApplicationDescriptorSearch fileLookup( String path ) {
+		// If not caching, simply get and return
+		if ( !runtime.getConfiguration().trustedCache ) {
+			return _fileLookup( path );
+		}
+
+		var cachedOptional = applicationDescriptorCache.get( path );
+		if ( cachedOptional != null ) {
+			// Once the cache is warm, we'll always exit here.
+			return cachedOptional.orElse( null );
+		}
+
+		// Only need to do this once
+		synchronized ( applicationDescriptorCache ) {
+			// Double check in case another thread already did the work while we were waiting
+			cachedOptional = applicationDescriptorCache.get( path );
+			if ( cachedOptional != null ) {
+				return cachedOptional.orElse( null );
+			}
+			var result = _fileLookup( path );
+			applicationDescriptorCache.put( path, Optional.ofNullable( result ) );
+			return result;
+		}
+
+	}
+
+	/**
+	 * Search a directory for all known file extensions.
+	 */
+	private ApplicationDescriptorSearch _fileLookup( String path ) {
+
 		// Look for a class first
 		for ( var extension : applicationDescriptorClassExtensions ) {
-			var descriptorPath = Paths.get( path, "Application." + extension );
-			if ( descriptorPath.toFile().exists() ) {
-				return new ApplicationDescriptorSearch( descriptorPath, ApplicationDescriptorType.CLASS );
+			try {
+				var descriptorPath = Paths.get( path, "Application." + extension );
+				if ( descriptorPath.toFile().exists() ) {
+					return new ApplicationDescriptorSearch( descriptorPath, ApplicationDescriptorType.CLASS );
+				}
+			} catch ( InvalidPathException ipe ) {
+				// Skip invalid paths. This can happen if an extensions gets registered which invalid chars. No need to blow up, just ignore.
+				continue;
 			}
 		}
 		// Then a template
 		for ( var extension : applicationDescriptorExtensions ) {
-			var descriptorPath = Paths.get( path, "Application." + extension );
-			if ( descriptorPath.toFile().exists() ) {
-				return new ApplicationDescriptorSearch( descriptorPath, ApplicationDescriptorType.TEMPLATE );
+			try {
+				var descriptorPath = Paths.get( path, "Application." + extension );
+				if ( descriptorPath.toFile().exists() ) {
+					return new ApplicationDescriptorSearch( descriptorPath, ApplicationDescriptorType.TEMPLATE );
+				}
+			} catch ( InvalidPathException ipe ) {
+				// Skip invalid paths. This can happen if an extensions gets registered which invalid chars. No need to blow up, just ignore.
+				continue;
 			}
 		}
 		// Nothing found in this directory

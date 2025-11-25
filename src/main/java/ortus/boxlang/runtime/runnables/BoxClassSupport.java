@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -27,6 +28,7 @@ import ortus.boxlang.runtime.context.BaseBoxContext;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.context.StaticClassBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
@@ -50,8 +52,10 @@ import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.ClassMeta;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 import ortus.boxlang.runtime.util.ArgumentUtil;
 import ortus.boxlang.runtime.util.BoxFQN;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * The methods in this class are an extension of IClassRunnable. They are here for better readability
@@ -399,7 +403,7 @@ public class BoxClassSupport {
 		// Not a function, throw an exception
 		if ( value != null ) {
 			throw new BoxRuntimeException(
-			    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
+			    "key '" + name.getName() + "' of type  '" + TypeUtil.getObjectName( value ) + "'  is not a function " );
 		}
 
 		// Do we have a member function for classes?
@@ -486,7 +490,7 @@ public class BoxClassSupport {
 		// Not a function, throw an exception
 		if ( value != null ) {
 			throw new BoxRuntimeException(
-			    "key '" + name.getName() + "' of type  '" + value.getClass().getName() + "'  is not a function " );
+			    "key '" + name.getName() + "' of type  '" + TypeUtil.getObjectName( value ) + "'  is not a function " );
 		}
 
 		// Do we have a member function for classes?
@@ -817,7 +821,7 @@ public class BoxClassSupport {
 			return BoxRuntime.getInstance().getClassLocator().load( context, str, imports );
 		}
 		throw new BoxRuntimeException( "Cannot load class for static access.  Did you try to statically dereference an instance on accident?  Type provided: "
-		    + obj.getClass().getName() );
+		    + TypeUtil.getObjectName( obj ) );
 
 	}
 
@@ -898,6 +902,28 @@ public class BoxClassSupport {
 		}
 		// If the original class and no supers were the enclosing class, then this is prolly a mixin. Just return the original value.
 		return highestClassWithUDFInstance != null ? highestClassWithUDFInstance : thisClass;
+	}
+
+	/**
+	 * Run a static initializer in a static class context. This is to be called from the actual java static initializer block.
+	 * 
+	 * Even though the static scope and path are already in the class, we're passing them explicitly to avoid reflection to get them.
+	 * 
+	 * @param consumer    The actual BL static initializer code to run
+	 * @param clazz       The class being initialized
+	 * @param staticScope The static scope of the class
+	 * @param path        The path of the class file
+	 */
+	public static void runStaticInitializer( Consumer<IBoxContext> consumer, Class<?> clazz, StaticScope staticScope, ResolvedFilePath path ) {
+		IBoxContext context = RequestBoxContext.getCurrent();
+		if ( context == null ) {
+			context = BoxRuntime.getInstance().getRuntimeContext();
+		}
+		DynamicObject			boxClass		= DynamicObject.of( clazz );
+		StaticClassBoxContext	staticContext	= new StaticClassBoxContext( context, boxClass, staticScope );
+		staticContext.pushTemplate( path );
+		consumer.accept( staticContext );
+		staticContext.popTemplate();
 	}
 
 }

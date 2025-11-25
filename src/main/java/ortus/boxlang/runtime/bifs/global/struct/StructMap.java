@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.StructUtil;
 
-@BoxBIF
+@BoxBIF( description = "Transform struct values using a callback function" )
 @BoxMember( type = BoxLangType.STRUCT )
 
 public class StructMap extends BIF {

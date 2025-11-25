@@ -310,6 +310,14 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 
 	@Override
 	public BoxNode visitStatement( StatementContext ctx ) {
+
+		if ( tools.isClassOrInterface() && ctx.importStatement() != null ) {
+			var pos = tools.getPosition( ctx );
+			// import statements are not allowed here
+			tools.reportError( "Import statements are not allowed here.  They must be at the top of the class.", pos );
+			new BoxStatementError( pos, tools.getSourceText( ctx ) );
+		}
+
 		List<Function<BoxGrammar.StatementContext, ParserRuleContext>> functions = Arrays.asList( StatementContext::importStatement,
 		    BoxGrammar.StatementContext::do_, StatementContext::for_, StatementContext::if_, BoxGrammar.StatementContext::switch_,
 		    StatementContext::try_, StatementContext::while_, BoxGrammar.StatementContext::expressionStatement, StatementContext::include,
@@ -866,7 +874,10 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		var				pos		= tools.getPosition( ctx );
 		var				src		= tools.getSourceText( ctx );
 
-		BoxExpression	aName	= ctx.fqn().accept( expressionVisitor );
+		// TODO: annotation names can actually have - chars which makes then not a valid FQN. Consider refactoring a dedicated BoxAnnotationName
+		// node class since they don't fit as an identifier either, but I don't want them to just be a string literal either.
+		BoxFQN			aName	= new BoxFQN( ctx.preAnnotationName().getText(), tools.getPosition( ctx.preAnnotationName() ),
+		    tools.getSourceText( ctx.preAnnotationName() ) );
 
 		BoxExpression	aValue	= null;
 		if ( ctx.annotation() != null ) {
@@ -879,7 +890,7 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 			}
 		}
 
-		return new BoxAnnotation( ( BoxFQN ) aName, aValue, pos, src );
+		return new BoxAnnotation( aName, aValue, pos, src );
 	}
 
 	public BoxNode visitFunction( FunctionContext ctx ) {

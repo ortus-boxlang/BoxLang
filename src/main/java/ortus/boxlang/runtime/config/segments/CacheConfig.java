@@ -22,7 +22,6 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
@@ -204,8 +203,7 @@ public class CacheConfig {
 			Key		key					= entry.getKey();
 			Object	incomingValue		= entry.getValue();
 
-			// Resolve placeholders for the incoming value.
-			String	resolvedStringValue	= PlaceholderHelper.resolve( incomingValue.toString() );
+			String	resolvedStringValue	= incomingValue.toString();
 
 			// Get the default value for this key to determine the expected type
 			Object	defaultValue		= DEFAULTS.get( key );
@@ -251,10 +249,10 @@ public class CacheConfig {
 	 * Remember that this is what the context's use to build runtime/request configs, so don't use any references
 	 */
 	public IStruct toStruct() {
-		return Struct.of(
-		    "name", this.name.getName(),
-		    "provider", this.provider.getName(),
-		    "properties", new Struct( this.properties )
+		return Struct.ofNonConcurrent(
+		    Key._NAME, this.name.getName(),
+		    Key.provider, this.provider.getName(),
+		    Key.properties, new Struct( IStruct.TYPES.DEFAULT, this.properties, false )
 		);
 	}
 

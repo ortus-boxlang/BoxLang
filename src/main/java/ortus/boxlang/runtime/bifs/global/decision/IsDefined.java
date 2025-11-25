@@ -22,7 +22,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
-@BoxBIF
+@BoxBIF( description = "Check if variable is defined" )
 public class IsDefined extends BIF {
 
 	/**

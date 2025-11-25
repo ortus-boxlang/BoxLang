@@ -35,4 +35,20 @@ public class Random implements ICachePolicy {
 		return ( entry1, entry2 ) -> randomGenerator.nextInt( 3 ) - 1;
 	}
 
+	/**
+	 * Get the SQL ORDER BY clause for this policy.
+	 * Note: Different databases use different functions for random ordering.
+	 * This returns a database-agnostic RANDOM() function that should work with most databases.
+	 *
+	 * @return The ORDER BY clause (without "ORDER BY" prefix) for SQL queries
+	 */
+	@Override
+	public String getSQLOrderBy() {
+		// Use RANDOM() which works in Derby, PostgreSQL, HSQLDB
+		// For MySQL/MariaDB: RAND()
+		// For SQL Server: NEWID()
+		// For Oracle: DBMS_RANDOM.VALUE
+		return "RANDOM()";
+	}
+
 }

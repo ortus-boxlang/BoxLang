@@ -45,7 +45,7 @@
 								</th>
 								<td>
 									<div class="bx-onoff">
-										<bx:set dump( var : value, top : isNull( top ) ? null : top - 1, expand : expand ?: null )>
+										<bx:set dump( var : value, top : isNull( top ) ? null : top - 1, expand : expand ?: null, output : "buffer", format : format )>
 									</div>
 								</td>
 							</tr>

@@ -166,6 +166,11 @@ public class CFLexerCustom extends CFLexer {
 	    AND, EQ, EQUAL, EQV, GE, GREATER, GT, GTE, IMP, IS, LE, LESS, LT, LTE, MOD, NEQ, NOT, OR, THAN, XOR );
 
 	/**
+	 * Keywords that represent a value
+	 */
+	private static final Set<Integer>	keywordsThatAreValues			= Set.of( NULL, TRUE, FALSE );
+
+	/**
 	 * Keywords that legtimatley have trailing (
 	 */
 	private static final Set<Integer>	keywordsThatComeBeforeLParen	= Set.of( CATCH, FOR, FUNCTION, IF, WHILE, SWITCH, NOT, AND, EQ, EQUAL, EQV, GE, GT,
@@ -364,7 +369,7 @@ public class CFLexerCustom extends CFLexer {
 					} else if ( ( nextTokenType == BREAK || nextTokenType == CASE ) && inSwitchBody ) {
 						// switch( foo ) { case 1: break; }
 						isIdentifier = false;
-					} else if ( nextTokenType == RETURN && !lastTokenWas( DOT ) &&
+					} else if ( nextTokenType == RETURN && !lastTokenWas( DOT ) && !wrappedInPounds( nextToken ) &&
 					    ( nextNonWhiteSpaceCharIsOneOf( new int[] { '(', '{', '[', ';', '}', '\'', '"', '-', '_', '$' } ) || nextNonWhiteSpaceIsAnyChar()
 					        || nextNonWhiteSpaceIsAnyDigit() ) ) {
 						// return foo;
@@ -376,6 +381,8 @@ public class CFLexerCustom extends CFLexer {
 						// return _foo;
 						// return $foo;
 						// { return }
+						// ignore foo.return
+						// ignore #return#
 						isIdentifier = false;
 					} else if ( nextTokenType == PARAM && ( ( lastTokenWas( DOT ) || lastTokenWas( LPAREN ) || nextNonWhiteSpaceCharIs( ')' ) )
 					    || ! ( nextNonWhiteSpaceCharIsOneOf( new int[] { '\'', '"' } ) || nextNonWhiteSpaceIsAnyChar() ) ) ) {
@@ -399,9 +406,13 @@ public class CFLexerCustom extends CFLexer {
 						// var foo = "bar"
 						isIdentifier = false;
 					} else if ( nextTokenType == NEW && !lastTokenWas( DOT )
-					    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '\'' ) || nextNonWhiteSpaceCharIs( '"' ) )
+					    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '\'' ) || nextNonWhiteSpaceCharIs( '"' )
+					        || nextNonWhiteSpaceCharIs( '_' ) )
 					    && !nextNonWhiteSpaceCharsAre( operatorStartingChars ) ) {
 						// foo = new Bar() is fine
+						// new "Bar"() is fine
+						// new 'Bar'() is fine
+						// new _Bar() is fine
 						// but ignore "new is 1" because there is an operator after new
 						isIdentifier = false;
 					} else if ( nextTokenType == FUNCTION && !isFunctionDeclaration( nextToken ) ) {
@@ -409,9 +420,10 @@ public class CFLexerCustom extends CFLexer {
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because it is not a function declaration" );
 						isIdentifier = true;
-					} else if ( nextNonWhiteSpaceCharIs( ':' ) && ! ( nextTokenType == DEFAULT && inSwitchBody ) ) {
+					} else if ( nextNonWhiteSpaceCharIs( ':' ) && ! ( nextTokenType == DEFAULT && inSwitchBody ) && ! ( lastTokenWas( EQUALSIGN ) ) ) {
 						// left side of a : which is usually { foo : bar }
 						// however, ignore default: in a switch body.
+						// also ignore condition ? foo = true : bar = false
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because next char is a colon" );
 						isIdentifier = true;
@@ -421,11 +433,13 @@ public class CFLexerCustom extends CFLexer {
 					    && ! ( nextTokenType == TO && lastTokenWas( EQUAL ) )
 					    && ! ( nextTokenType == OR && lastTokenWas( THAN ) )
 					    && ! ( nextTokenType == EQUAL && lastTokenWas( OR ) )
-					    && nextTokenType != NOT ) {
+					    && nextTokenType != NOT
+					    && !keywordsThatAreValues.contains( nextTokenType ) ) {
 						// right side of an operator token like foo == switch
 						// but NOT CONTAINS and EQUAL TO are fine
 						// also leave 5 AND NOT false alone
 						// also leave greater than or equal to alone
+						// Ignore foo = true
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because last token was the end of an operator" );
 
@@ -458,7 +472,8 @@ public class CFLexerCustom extends CFLexer {
 					    && ! ( inSwitchBody
 					        && ( ( ( nextTokenType == IF || nextTokenType == PREFIXEDIDENTIFIER || nextTokenType == SWITCH ) && nextNonWhiteSpaceCharIs( '(' ) )
 					            || ( nextTokenType == TRY && nextNonWhiteSpaceCharIs( '{' ) )
-					            || ( nextTokenType == INCLUDE || nextTokenType == THROW || nextTokenType == VAR || nextTokenType == DEFAULT ) ) ) ) {
+					            || ( nextTokenType == INCLUDE || nextTokenType == THROW || nextTokenType == VAR || nextTokenType == DEFAULT
+					                || nextTokenType == CONTINUE ) ) ) ) {
 						// preceeded by a :
 						// but myLabel : for() is fine
 						// and myLabel : while()
@@ -466,6 +481,7 @@ public class CFLexerCustom extends CFLexer {
 						// and not case: if()
 						// but not case: try {} catch(){}
 						// and not case: include "foo"
+						// and not case: continue
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because last token was a colon" );
 						isIdentifier = true;
@@ -510,7 +526,7 @@ public class CFLexerCustom extends CFLexer {
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because next chars are the start of an operator" );
 						isIdentifier = true;
-					} else if ( lastTokenWas( ICHAR ) && nextNonWhiteSpaceCharIs( '#' ) && hasMode( hashMode ) ) {
+					} else if ( lastTokenWas( ICHAR ) && nextNonWhiteSpaceCharIs( '#' ) && ( hasMode( hashMode ) || lastModeWas( DEFAULT_SCRIPT_MODE ) ) ) {
 						// The token is encased in #hash# signs
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because it is encased in #hash# signs" );
@@ -543,7 +559,7 @@ public class CFLexerCustom extends CFLexer {
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because it is not a CF component call" );
 						isIdentifier = true;
-					} else if ( nextTokenType == ABSTRACT ) {
+					} else if ( nextTokenType == ABSTRACT || nextTokenType == COMPONENT || nextTokenType == INTERFACE ) {
 						if ( !classIsExpected ) {
 							if ( debug )
 								System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because the file is not a class" );
@@ -893,6 +909,21 @@ public class CFLexerCustom extends CFLexer {
 	public CFLexerCustom setClassIsExpected( boolean classIsExpected ) {
 		this.classIsExpected = classIsExpected;
 		return this;
+	}
+
+	/**
+	 * Decide if a token is wrapped in #pound# signs.
+	 * 
+	 * @param token the token to check
+	 * 
+	 * @return true if the token is wrapped in #pound# signs
+	 */
+	private boolean wrappedInPounds( Token token ) {
+		int length = token.getText().length();
+		if ( getInputStream().LA( -length - 1 ) == '#' && getInputStream().LA( 1 ) == '#' ) {
+			return true;
+		}
+		return false;
 	}
 
 }

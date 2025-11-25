@@ -24,6 +24,7 @@ import java.util.Map;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.jdbc.BoxStatement;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -70,7 +71,7 @@ public class UnmodifiableQuery extends Query implements IUnmodifiable {
 		this();
 		// add columns
 		for ( Map.Entry<Key, QueryColumn> columnInfo : query.getColumns().entrySet() ) {
-			super.addColumn( columnInfo.getValue().getName(), columnInfo.getValue().getType(), null );
+			super.addColumn( columnInfo.getValue().getName(), columnInfo.getValue().getType(), null, columnInfo.getValue().getSQLType() );
 		}
 		// then copy data
 		int i = 1;
@@ -87,12 +88,13 @@ public class UnmodifiableQuery extends Query implements IUnmodifiable {
 	/**
 	 * Create a new query and populate it from the given JDBC ResultSet.
 	 *
+	 * @param statement BoxStatement instance.
 	 * @param resultSet JDBC result set.
 	 *
 	 * @return Query object
 	 */
-	public static UnmodifiableQuery fromResultSet( ResultSet resultSet ) {
-		return Query.fromResultSet( resultSet ).toUnmodifiable();
+	public static UnmodifiableQuery fromResultSet( BoxStatement statement, ResultSet resultSet ) {
+		return Query.fromResultSet( statement, resultSet ).toUnmodifiable();
 	}
 
 	/**
@@ -106,6 +108,17 @@ public class UnmodifiableQuery extends Query implements IUnmodifiable {
 	 */
 	public static UnmodifiableQuery fromArray( Array columnNames, Array columnTypes, Object rowData ) {
 		return Query.fromArray( columnNames, columnTypes, rowData ).toUnmodifiable();
+	}
+
+	@Override
+	public Query addColumn( Key name, QueryColumnType type ) {
+		throw new UnmodifiableException( "Cannot add columns to an UnmodifiableQuery" );
+
+	}
+
+	@Override
+	public Query addColumn( Key name, QueryColumnType type, Object[] columnData, Integer SQLType ) {
+		throw new UnmodifiableException( "Cannot add columns to an UnmodifiableQuery" );
 	}
 
 	/**
@@ -123,6 +136,11 @@ public class UnmodifiableQuery extends Query implements IUnmodifiable {
 		throw new UnmodifiableException( "Cannot add columns to an UnmodifiableQuery" );
 	}
 
+	@Override
+	public Query addColumn( Key name, QueryColumnType type, Integer SQLType ) {
+		throw new UnmodifiableException( "Cannot add columns to an UnmodifiableQuery" );
+	}
+
 	/**
 	 * Abstraction for creating a new column so we can re-use logic easier between normal and Unmodifiable queries
 	 *
@@ -135,6 +153,21 @@ public class UnmodifiableQuery extends Query implements IUnmodifiable {
 	@Override
 	protected QueryColumn createQueryColumn( Key name, QueryColumnType type, int index ) {
 		return new UnmodifiableQueryColumn( name, type, this, index );
+	}
+
+	/**
+	 * Abstraction for creating a new column so we can re-use logic easier between normal and Unmodifiable queries
+	 *
+	 * @param name    column name
+	 * @param type    column type
+	 * @param index   column index
+	 * @param SQLType original SQL type
+	 *
+	 * @return QueryColumn object
+	 */
+	@Override
+	protected QueryColumn createQueryColumn( Key name, QueryColumnType type, int index, Integer SQLType ) {
+		return new UnmodifiableQueryColumn( name, type, this, index, SQLType );
 	}
 
 	/**
@@ -308,6 +341,8 @@ public class UnmodifiableQuery extends Query implements IUnmodifiable {
 	/**
 	 * Duplicate the current query.
 	 *
+	 * @deprecated Use {@link #duplicate(IBoxContext)} instead.
+	 *
 	 * @return A copy of the current query.
 	 */
 	@Override
@@ -342,7 +377,7 @@ public class UnmodifiableQuery extends Query implements IUnmodifiable {
 		var q = new Query();
 		// add columns
 		for ( Map.Entry<Key, QueryColumn> columnInfo : getColumns().entrySet() ) {
-			q.addColumn( columnInfo.getValue().getName(), columnInfo.getValue().getType(), null );
+			q.addColumn( columnInfo.getValue().getName(), columnInfo.getValue().getType(), null, columnInfo.getValue().getSQLType() );
 		}
 		// then copy data
 		int i = 1;

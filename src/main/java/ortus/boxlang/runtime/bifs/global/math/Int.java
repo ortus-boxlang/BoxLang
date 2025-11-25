@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Return the integer portion of a number" )
 @BoxMember( type = BoxLangType.NUMERIC )
 public class Int extends BIF {
 

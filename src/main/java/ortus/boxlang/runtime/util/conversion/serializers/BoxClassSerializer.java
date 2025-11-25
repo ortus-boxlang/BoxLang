@@ -19,9 +19,8 @@ package ortus.boxlang.runtime.util.conversion.serializers;
 
 import java.io.IOException;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Map;
-import java.util.Set;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.jr.ob.api.ValueWriter;
@@ -46,7 +45,7 @@ import ortus.boxlang.runtime.types.util.BLCollector;
 public class BoxClassSerializer implements ValueWriter {
 
 	// ThreadLocal to keep track of seen structs in the current thread
-	private static final ThreadLocal<Set<IClassRunnable>> visitedClasses = ThreadLocal.withInitial( HashSet::new );
+	private static final ThreadLocal<IdentityHashMap<IClassRunnable, Boolean>> visitedClasses = ThreadLocal.withInitial( IdentityHashMap::new );
 
 	/**
 	 * Inflate an annotation value into an Array
@@ -72,16 +71,16 @@ public class BoxClassSerializer implements ValueWriter {
 	 */
 	@Override
 	public void writeValue( JSONWriter context, JsonGenerator g, Object value ) throws IOException {
-		IClassRunnable		bxClass				= ( IClassRunnable ) value;
-		Map<Key, Property>	properties			= bxClass.getProperties();
-		IStruct				classAnnotations	= bxClass.getAnnotations();
-		VariablesScope		variablesScope		= bxClass.getVariablesScope();
-		IBoxContext			boxContext			= BoxRuntime.getInstance().getRuntimeContext();
+		IClassRunnable								bxClass				= ( IClassRunnable ) value;
+		Map<Key, Property>							properties			= bxClass.getProperties();
+		IStruct										classAnnotations	= bxClass.getAnnotations();
+		VariablesScope								variablesScope		= bxClass.getVariablesScope();
+		IBoxContext									boxContext			= BoxRuntime.getInstance().getRuntimeContext();
 
 		// Get the current thread's set of visted classes
-		Set<IClassRunnable>	visited				= visitedClasses.get();
+		IdentityHashMap<IClassRunnable, Boolean>	visited				= visitedClasses.get();
 
-		if ( visited.contains( bxClass ) ) {
+		if ( visited.containsKey( bxClass ) ) {
 			g.writeString( "recursive-class-skipping" );
 			return;
 		}
@@ -95,12 +94,16 @@ public class BoxClassSerializer implements ValueWriter {
 		// Seed the class annotations needed
 		Array classJsonExcludes = inflateArray( classAnnotations.getOrDefault( Key.jsonExclude, "" ) );
 
+		// Add the class to the set of seen classes
+		visited.put( bxClass, Boolean.TRUE );
+
 		// If there is a "toJson" method in the class, then call it
 		// The user wants control over the serialization
 		if ( variablesScope.containsKey( Key.toJSON ) ) {
 			context.writeValue(
 			    variablesScope.dereferenceAndInvoke( boxContext, Key.toJSON, new Object[] { context, g, value }, false )
 			);
+			visited.remove( bxClass );
 			return;
 		}
 

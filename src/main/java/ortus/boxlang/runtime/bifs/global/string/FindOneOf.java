@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Find the first occurrence of any character from a set" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "FindOneOf", objectArgument = "string" )
 
 public class FindOneOf extends BIF {

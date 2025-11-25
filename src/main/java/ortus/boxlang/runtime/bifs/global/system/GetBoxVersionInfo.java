@@ -22,7 +22,7 @@ import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 
-@BoxBIF
+@BoxBIF( description = "Get BoxLang version information" )
 public class GetBoxVersionInfo extends BIF {
 
 	/**

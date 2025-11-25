@@ -14,7 +14,6 @@
  */
 package ortus.boxlang.compiler.javaboxpiler.transformer.statement;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,6 +30,7 @@ import com.github.javaparser.ast.stmt.EmptyStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
 
+import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
@@ -46,6 +46,7 @@ import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -60,6 +61,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 	private String classTemplate = """
 		package ${packageName};
 
+		@BoxByteCodeVersion(boxlangVersion="${boxlangVersion}", bytecodeVersion=${bytecodeVersion})
 		public class ${classname} extends UDF {
 			private static ${classname}				instance;
 			private final static Key				name		= ${functionName};
@@ -70,10 +72,6 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 
 			private final static IStruct	annotations;
 			private final static IStruct	documentation;
-
-			private static final long					compileVersion	= ${compileVersion};
-			private static final LocalDateTime			compiledOn		= ${compiledOnTimestamp};
-			private static final Object					ast				= null;
 
 			public Key getName() {
 				return name;
@@ -93,27 +91,18 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			public List<BoxMethodDeclarationModifier> getModifiers() {
 				return modifiers;		
 			}
-		
-
-			public  long getRunnableCompileVersion() {
-				return ${className}.compileVersion;
-			}
-
-			public LocalDateTime getRunnableCompiledOn() {
-				return ${className}.compiledOn;
-			}
-
-			public Object getRunnableAST() {
-				return ${className}.ast;
-			}
 
 			private ${classname}() {
 				super(${defaultOutput});
 			}
 
-			public static synchronized ${classname} getInstance() {
+			public static ${classname} getInstance() {
 				if ( instance == null ) {
-					instance = new ${classname}();
+					synchronized ( ${classname}.class ) {
+						if ( instance == null ) {
+							instance = new ${classname}();
+						}
+					}
 				}
 				return instance;
 			}
@@ -188,8 +177,8 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		    Map.entry( "functionName", createKey( function.getName() ).toString() ),
 		    Map.entry( "returnType", returnType.equals( BoxType.Fqn ) ? fqn : returnType.name() ),
 		    Map.entry( "enclosingClassName", enclosingClassName ),
-		    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
-		    Map.entry( "compileVersion", "1L" ),
+		    Map.entry( "boxlangVersion", BoxRuntime.getInstance().getVersionInfo().getAsString( Key.version ) ),
+		    Map.entry( "bytecodeVersion", String.valueOf( IBoxpiler.BYTECODE_VERSION ) ),
 		    Map.entry( "defaultOutput", String.valueOf( defaultOutput ) )
 		);
 		transpiler.pushContextName( "context" );

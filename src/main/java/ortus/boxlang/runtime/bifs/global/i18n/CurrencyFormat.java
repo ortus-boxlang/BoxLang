@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Format a number as currency" )
 @BoxBIF( alias = "LSCurrencyFormat" )
 @BoxMember( type = BoxLangType.NUMERIC )
 

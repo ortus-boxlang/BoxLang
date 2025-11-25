@@ -781,6 +781,12 @@ public class OperatorsTest {
 		result = instance.executeStatement( "'brad'==5", context );
 		assertThat( result ).isEqualTo( false );
 
+		result = instance.executeStatement( "true==99", context );
+		assertThat( result ).isEqualTo( false );
+
+		result = instance.executeStatement( "true==1", context );
+		assertThat( result ).isEqualTo( false );
+
 	}
 
 	@DisplayName( "comparison inequality" )

@@ -17,11 +17,10 @@
  */
 package ortus.boxlang.runtime.runnables;
 
-import java.time.LocalDateTime;
-
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Struct;
 
 public abstract class BoxScript implements IScriptRunnable {
@@ -35,22 +34,7 @@ public abstract class BoxScript implements IScriptRunnable {
 	/**
 	 * The source to the script
 	 */
-	protected String		source;
-
-	/**
-	 * The version of the runtime that compiled this class
-	 */
-	protected long			compileVersion;
-
-	/**
-	 * The date the source was compiled
-	 */
-	protected LocalDateTime	compiledOn;
-
-	/**
-	 * The AST of the source
-	 */
-	protected Object		ast;
+	protected String source;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -65,18 +49,26 @@ public abstract class BoxScript implements IScriptRunnable {
 	 *
 	 */
 	public Object invoke( IBoxContext context ) {
-		BoxRuntime	runtime	= BoxRuntime.getInstance();
+		BoxRuntime runtime = BoxRuntime.getInstance();
 
 		// Announcements
-		IStruct		data	= Struct.of(
-		    "context", context,
-		    "source", this
+		runtime.announce(
+		    BoxEvent.ON_PRE_SOURCE_INVOKE,
+		    () -> Struct.ofNonConcurrent(
+		        Key.context, context,
+		        Key.source, this
+		    )
 		);
-		runtime.announce( "preSourceInvoke", data );
 		try {
 			return _invoke( context );
 		} finally {
-			runtime.announce( "postSourceInvoke", data );
+			runtime.announce(
+			    BoxEvent.ON_POST_SOURCE_INVOKE,
+			    () -> Struct.ofNonConcurrent(
+			        Key.context, context,
+			        Key.source, this
+			    )
+			);
 		}
 
 	}
@@ -90,27 +82,6 @@ public abstract class BoxScript implements IScriptRunnable {
 	public abstract Object _invoke( IBoxContext context );
 
 	// ISourceRunnable implementation methods
-
-	/**
-	 * The version of the BoxLang runtime
-	 */
-	public long getRunnableCompileVersion() {
-		return this.compileVersion;
-	}
-
-	/**
-	 * The date the source was compiled
-	 */
-	public LocalDateTime getRunnableCompiledOn() {
-		return this.compiledOn;
-	}
-
-	/**
-	 * The AST (abstract syntax tree) of the runnable
-	 */
-	public Object getRunnableAST() {
-		return this.ast;
-	}
 
 	/**
 	 * The source to the script

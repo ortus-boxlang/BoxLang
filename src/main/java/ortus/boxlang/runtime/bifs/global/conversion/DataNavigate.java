@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.util.DataNavigator;
 import ortus.boxlang.runtime.util.DataNavigator.Navigator;
 
-@BoxBIF
+@BoxBIF( description = "Navigate through complex data structures" )
 public class DataNavigate extends BIF {
 
 	/**

@@ -22,12 +22,16 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
+import tools.JDBCTestUtils;
 
 public abstract class AbstractDriverTest extends BaseJDBCTest {
 
@@ -37,6 +41,39 @@ public abstract class AbstractDriverTest extends BaseJDBCTest {
 	 * Subclasses must implement to provide driver-specific datasource name
 	 */
 	abstract String getDatasourceName();
+
+	/**
+	 * Sets up a specific driver type datasource for testing purposes.
+	 * 
+	 * @param instance         Boxlang runtime
+	 * @param setUpContext     The context to use for setup
+	 * @param datasourceName   The name of the datasource to register
+	 * @param datasourceConfig The configuration struct for the datasource
+	 */
+	public static DataSource setupTestDatasource( BoxRuntime instance, IBoxContext setUpContext, Key datasourceName, IStruct datasourceConfig ) {
+		DataSource theDatasource = DataSource.fromStruct( datasourceName, datasourceConfig );
+		instance.getConfiguration().datasources.put(
+		    datasourceName,
+		    theDatasource.getConfiguration()
+		);
+		datasourceService.register( datasourceName, theDatasource );
+		JDBCTestUtils.ensureTestTableExists( theDatasource, setUpContext );
+		JDBCTestUtils.resetDevelopersTable( theDatasource, setUpContext );
+		JDBCTestUtils.dropTestTable( theDatasource, setUpContext, "generatedKeyTest", true );
+		return theDatasource;
+	}
+
+	/**
+	 * Tears down a specific driver type datasource after testing is complete.
+	 * 
+	 * @param tearDownContext The context to use for teardown
+	 * @param theDatasource   The datasource to teardown
+	 */
+	public static void teardownTestDatasource( IBoxContext tearDownContext, DataSource theDatasource ) {
+		JDBCTestUtils.dropTestTable( theDatasource, tearDownContext, "developers", true );
+		JDBCTestUtils.dropTestTable( theDatasource, tearDownContext, "generatedKeyTest", true );
+		theDatasource.shutdown();
+	}
 
 	@DisplayName( "It sets generatedKey in query meta" )
 	@Test

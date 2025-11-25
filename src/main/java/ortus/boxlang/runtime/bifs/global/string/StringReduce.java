@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 
-@BoxBIF
+@BoxBIF( description = "Reduce string characters to a single value using a callback function" )
 
 public class StringReduce extends ListReduce {
 

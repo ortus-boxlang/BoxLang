@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
-@BoxBIF
+@BoxBIF( description = "Get a list of available functions" )
 public class GetFunctionList extends BIF {
 
 	/**

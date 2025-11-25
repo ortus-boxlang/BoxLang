@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import javax.management.InvalidAttributeValueException;
 
@@ -46,6 +47,7 @@ import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.net.NetworkUtil;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Function;
@@ -53,7 +55,6 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.util.DateTimeHelper;
 import ortus.boxlang.runtime.types.util.StringUtil;
-import ortus.boxlang.runtime.util.NetworkUtil;
 import ortus.boxlang.runtime.util.Timer;
 
 /**
@@ -316,7 +317,7 @@ public class ScheduledTask implements Runnable {
 		}
 
 		// Init the stats
-		this.stats = Struct.of(
+		this.stats = Struct.ofNonConcurrent(
 		    // Save name just in case
 		    "name", name,
 		    // Save group just in case
@@ -345,7 +346,7 @@ public class ScheduledTask implements Runnable {
 		    "localIp", NetworkUtil.getLocalIPAddress()
 		);
 
-		debugLog( "constructor", Struct.of( "name", name, "group", group ) );
+		debugLog( "constructor", () -> Struct.ofNonConcurrent( "name", name, "group", group ) );
 	}
 
 	/**
@@ -456,7 +457,8 @@ public class ScheduledTask implements Runnable {
 			// Before Interceptors : From global to local
 			this.interceptorService.announce(
 			    BoxEvent.SCHEDULER_BEFORE_ANY_TASK,
-			    Struct.of( "task", this ) );
+			    () -> Struct.ofNonConcurrent( Key.task, this )
+			);
 			if ( hasScheduler() ) {
 				getScheduler().beforeAnyTask( this );
 			}
@@ -507,7 +509,8 @@ public class ScheduledTask implements Runnable {
 			}
 			this.interceptorService.announce(
 			    BoxEvent.SCHEDULER_AFTER_ANY_TASK,
-			    Struct.of( "task", this, "result", result ) );
+			    () -> Struct.ofNonConcurrent( Key.task, this, Key.result, result )
+			);
 
 			// Store successes and call success interceptor : From global to local
 			( ( AtomicInteger ) this.stats.get( "totalSuccess" ) ).incrementAndGet();
@@ -519,7 +522,8 @@ public class ScheduledTask implements Runnable {
 			}
 			this.interceptorService.announce(
 			    BoxEvent.SCHEDULER_ON_ANY_TASK_SUCCESS,
-			    Struct.of( "task", this, "result", result ) );
+			    () -> Struct.ofNonConcurrent( Key.task, this, Key.result, result )
+			);
 
 		} catch ( Exception e ) {
 			// store failures
@@ -539,7 +543,7 @@ public class ScheduledTask implements Runnable {
 				}
 				this.interceptorService.announce(
 				    BoxEvent.SCHEDULER_ON_ANY_TASK_ERROR,
-				    Struct.of( "task", this, "exception", e ) );
+				    () -> Struct.ofNonConcurrent( Key.task, this, Key.exception, e ) );
 
 				// After Tasks Interceptor with the exception as the last result : From global
 				// to local
@@ -551,7 +555,8 @@ public class ScheduledTask implements Runnable {
 				}
 				this.interceptorService.announce(
 				    BoxEvent.SCHEDULER_AFTER_ANY_TASK,
-				    Struct.of( "task", this, "result", Optional.of( e ) ) );
+				    () -> Struct.ofNonConcurrent( Key.task, this, Key.result, Optional.of( e ) )
+				);
 			} catch ( Exception afterException ) {
 				// Log it, so it doesn't go to ether and executor doesn't die.
 				logger.error(
@@ -626,7 +631,7 @@ public class ScheduledTask implements Runnable {
 		// Log it
 		debugLog(
 		    "start",
-		    Struct.of(
+		    () -> Struct.ofNonConcurrent(
 		        "initialDelay", this.initialDelay,
 		        "delayTimeUnit", this.initialDelayTimeUnit,
 		        "period", this.period,
@@ -945,7 +950,7 @@ public class ScheduledTask implements Runnable {
 	 *             00:00
 	 */
 	public ScheduledTask startOn( String date, String time ) {
-		debugLog( "startOn", Struct.of( "date", date, "time", time ) );
+		debugLog( "startOn", () -> Struct.ofNonConcurrent( "date", date, "time", time ) );
 
 		this.startOnDateTime = DateTimeHelper.parse( date + "T" + time );
 
@@ -986,7 +991,7 @@ public class ScheduledTask implements Runnable {
 	 *             00:00
 	 */
 	public ScheduledTask endOn( String date, String time ) {
-		debugLog( "endOn", Struct.of( "date", date, "time", time ) );
+		debugLog( "endOn", () -> Struct.ofNonConcurrent( "date", date, "time", time ) );
 
 		this.endOnDateTime = DateTimeHelper.parse( date + "T" + time );
 
@@ -1059,7 +1064,7 @@ public class ScheduledTask implements Runnable {
 
 		debugLog(
 		    "delay",
-		    Struct.of(
+		    () -> Struct.ofNonConcurrent(
 		        "delay", delay,
 		        "timeUnit", timeUnit,
 		        "overwrites", overwrites ) );
@@ -1116,7 +1121,7 @@ public class ScheduledTask implements Runnable {
 	public ScheduledTask spacedDelay( long spacedDelay, TimeUnit timeUnit ) {
 		debugLog(
 		    "spacedDelay",
-		    Struct.of( "spacedDelay", spacedDelay, "timeUnit", timeUnit ) );
+		    () -> Struct.ofNonConcurrent( "spacedDelay", spacedDelay, "timeUnit", timeUnit ) );
 		this.spacedDelay	= spacedDelay;
 		this.timeUnit		= timeUnit;
 		return this;
@@ -1163,7 +1168,7 @@ public class ScheduledTask implements Runnable {
 	 *                 is milliseconds
 	 */
 	public ScheduledTask every( long period, TimeUnit timeUnit ) {
-		debugLog( "every", Struct.of( "period", period, "timeUnit", timeUnit ) );
+		debugLog( "every", () -> Struct.ofNonConcurrent( "period", period, "timeUnit", timeUnit ) );
 
 		this.period		= period;
 		this.timeUnit	= timeUnit;
@@ -1213,7 +1218,7 @@ public class ScheduledTask implements Runnable {
 	 * @param minutes The minutes past the hour mark
 	 */
 	public ScheduledTask everyHourAt( int minutes ) {
-		debugLog( "everyHourAt", Struct.of( "minutes", minutes ) );
+		debugLog( "everyHourAt", () -> Struct.ofNonConcurrent( "minutes", minutes ) );
 
 		// Get times
 		var	now		= getNow();
@@ -1251,16 +1256,16 @@ public class ScheduledTask implements Runnable {
 	 * @throws InvalidAttributeValueException When the time format is invalid
 	 */
 	public ScheduledTask everyDayAt( String time ) throws InvalidAttributeValueException {
-		debugLog( "everyDayAt", Struct.of( "time", time ) );
+		debugLog( "everyDayAt", () -> Struct.ofNonConcurrent( "time", time ) );
 
 		// Validate time format
-		time = DateTimeHelper.validateTime( time );
+		String	validatedTime	= DateTimeHelper.validateTime( time );
 
 		// Get times
-		var	now		= getNow();
-		var	nextRun	= now
-		    .withHour( Integer.parseInt( time.split( ":" )[ 0 ] ) )
-		    .withMinute( Integer.parseInt( time.split( ":" )[ 1 ] ) )
+		var		now				= getNow();
+		var		nextRun			= now
+		    .withHour( Integer.parseInt( validatedTime.split( ":" )[ 0 ] ) )
+		    .withMinute( Integer.parseInt( validatedTime.split( ":" )[ 1 ] ) )
 		    .withSecond( 0 );
 
 		// If we passed it, then move to the next day
@@ -1310,19 +1315,19 @@ public class ScheduledTask implements Runnable {
 	 * @return The ScheduledTask instance
 	 */
 	public ScheduledTask everyWeekOn( int dayOfWeek, String time ) throws InvalidAttributeValueException {
-		debugLog( "everyWeekOn", Struct.of( "dayOfWeek", dayOfWeek, "time", time ) );
+		debugLog( "everyWeekOn", () -> Struct.ofNonConcurrent( "dayOfWeek", dayOfWeek, "time", time ) );
 
 		// Validate time format
-		time = DateTimeHelper.validateTime( time );
+		String	validatedTime	= DateTimeHelper.validateTime( time );
 
 		// Get times
-		var	now		= getNow();
-		var	nextRun	= now
+		var		now				= getNow();
+		var		nextRun			= now
 		    // Given day
 		    .with( ChronoField.DAY_OF_WEEK, dayOfWeek )
 		    // Given time
-		    .withHour( Integer.parseInt( time.split( ":" )[ 0 ] ) )
-		    .withMinute( Integer.parseInt( time.split( ":" )[ 1 ] ) )
+		    .withHour( Integer.parseInt( validatedTime.split( ":" )[ 0 ] ) )
+		    .withMinute( Integer.parseInt( validatedTime.split( ":" )[ 1 ] ) )
 		    .withSecond( 0 );
 
 		// If we passed it, then move to the next week
@@ -1376,19 +1381,19 @@ public class ScheduledTask implements Runnable {
 	 * @return The ScheduledTask instance
 	 */
 	public ScheduledTask everyMonthOn( int day, String time ) throws InvalidAttributeValueException {
-		debugLog( "everyMonthOn", Struct.of( "day", day, "time", time ) );
+		debugLog( "everyMonthOn", () -> Struct.ofNonConcurrent( "day", day, "time", time ) );
 
 		// Validate time format
-		time = DateTimeHelper.validateTime( time );
+		String	validatedTime	= DateTimeHelper.validateTime( time );
 
 		// Get times
-		var	now		= getNow();
-		var	nextRun	= now
+		var		now				= getNow();
+		var		nextRun			= now
 		    // First day of the month
 		    .with( ChronoField.DAY_OF_MONTH, day )
 		    // Specific Time
-		    .withHour( Integer.parseInt( time.split( ":" )[ 0 ] ) )
-		    .withMinute( Integer.parseInt( time.split( ":" )[ 1 ] ) )
+		    .withHour( Integer.parseInt( validatedTime.split( ":" )[ 0 ] ) )
+		    .withMinute( Integer.parseInt( validatedTime.split( ":" )[ 1 ] ) )
 		    .withSecond( 0 );
 
 		// If we passed it, then move to the next month
@@ -1423,18 +1428,18 @@ public class ScheduledTask implements Runnable {
 	 * @throws InvalidAttributeValueException When the time format is invalid
 	 */
 	public ScheduledTask onFirstBusinessDayOfTheMonth( String time ) throws InvalidAttributeValueException {
-		debugLog( "onFirstBusinessDayOfTheMonth", Struct.of( "time", time ) );
+		debugLog( "onFirstBusinessDayOfTheMonth", () -> Struct.ofNonConcurrent( "time", time ) );
 
 		// Validate time format
-		time = DateTimeHelper.validateTime( time );
+		String	validatedTime	= DateTimeHelper.validateTime( time );
 
 		// Get times
-		var	now		= getNow();
-		var	nextRun	= DateTimeHelper.getFirstBusinessDayOfTheMonth( time, false, getTimezone() );
+		var		now				= getNow();
+		var		nextRun			= DateTimeHelper.getFirstBusinessDayOfTheMonth( validatedTime, false, getTimezone() );
 
 		// If we passed it, then move to the first business day of next month
 		if ( now.compareTo( nextRun ) > 0 ) {
-			nextRun = DateTimeHelper.getFirstBusinessDayOfTheMonth( time, true, getTimezone() );
+			nextRun = DateTimeHelper.getFirstBusinessDayOfTheMonth( validatedTime, true, getTimezone() );
 		}
 
 		// Set the initial delay, period, and time unit
@@ -1442,7 +1447,7 @@ public class ScheduledTask implements Runnable {
 
 		// Set constraints
 		this.firstBusinessDay	= true;
-		this.taskTime			= time;
+		this.taskTime			= validatedTime;
 
 		return this;
 	}
@@ -1465,18 +1470,18 @@ public class ScheduledTask implements Runnable {
 	 * @throws InvalidAttributeValueException When the time format is invalid
 	 */
 	public ScheduledTask onLastBusinessDayOfTheMonth( String time ) throws InvalidAttributeValueException {
-		debugLog( "onLastBusinessDayOfTheMonth", Struct.of( "time", time ) );
+		debugLog( "onLastBusinessDayOfTheMonth", () -> Struct.ofNonConcurrent( "time", time ) );
 
 		// Validate time format
-		time = DateTimeHelper.validateTime( time );
+		String	validatedTime	= DateTimeHelper.validateTime( time );
 
 		// Get times
-		var	now		= getNow();
-		var	nextRun	= DateTimeHelper.getLastBusinessDayOfTheMonth( time, false, getTimezone() );
+		var		now				= getNow();
+		var		nextRun			= DateTimeHelper.getLastBusinessDayOfTheMonth( validatedTime, false, getTimezone() );
 
 		// If we passed it, then move to the last business day of next month
 		if ( now.compareTo( nextRun ) > 0 ) {
-			nextRun = DateTimeHelper.getLastBusinessDayOfTheMonth( time, true, getTimezone() );
+			nextRun = DateTimeHelper.getLastBusinessDayOfTheMonth( validatedTime, true, getTimezone() );
 		}
 
 		// Set the initial delay, period, and time unit
@@ -1484,7 +1489,7 @@ public class ScheduledTask implements Runnable {
 
 		// Set constraints
 		this.lastBusinessDay	= true;
-		this.taskTime			= time;
+		this.taskTime			= validatedTime;
 
 		return this;
 	}
@@ -1522,21 +1527,21 @@ public class ScheduledTask implements Runnable {
 	 * @throws InvalidAttributeValueException When the time format is invalid
 	 */
 	public ScheduledTask everyYearOn( int month, int day, String time ) throws InvalidAttributeValueException {
-		debugLog( "everyYearOn", Struct.of( "month", month, "day", day, "time", time ) );
+		debugLog( "everyYearOn", () -> Struct.ofNonConcurrent( "month", month, "day", day, "time", time ) );
 
 		// Validate time format
-		time = DateTimeHelper.validateTime( time );
+		String	validatedTime	= DateTimeHelper.validateTime( time );
 
 		// Get times
-		var	now		= getNow();
-		var	nextRun	= now
+		var		now				= getNow();
+		var		nextRun			= now
 		    // Specific month
 		    .with( ChronoField.MONTH_OF_YEAR, month )
 		    // Specific day of the month
 		    .with( ChronoField.DAY_OF_MONTH, day )
 		    // Midnight
-		    .withHour( Integer.parseInt( time.split( ":" )[ 0 ] ) )
-		    .withMinute( Integer.parseInt( time.split( ":" )[ 1 ] ) )
+		    .withHour( Integer.parseInt( validatedTime.split( ":" )[ 0 ] ) )
+		    .withMinute( Integer.parseInt( validatedTime.split( ":" )[ 1 ] ) )
 		    .withSecond( 0 );
 
 		// If we passed it, then move to the next year
@@ -1570,16 +1575,16 @@ public class ScheduledTask implements Runnable {
 	 * @throws InvalidAttributeValueException When the time format is invalid
 	 */
 	public ScheduledTask onWeekends( String time ) throws InvalidAttributeValueException {
-		debugLog( "onWeekends", Struct.of( "time", time ) );
+		debugLog( "onWeekends", () -> Struct.ofNonConcurrent( "time", time ) );
 
 		// Validate time format
-		time = DateTimeHelper.validateTime( time );
+		String	validatedTime	= DateTimeHelper.validateTime( time );
 
 		// Get times
-		var	now		= getNow();
-		var	nextRun	= now
-		    .withHour( Integer.parseInt( time.split( ":" )[ 0 ] ) )
-		    .withMinute( Integer.parseInt( time.split( ":" )[ 1 ] ) )
+		var		now				= getNow();
+		var		nextRun			= now
+		    .withHour( Integer.parseInt( validatedTime.split( ":" )[ 0 ] ) )
+		    .withMinute( Integer.parseInt( validatedTime.split( ":" )[ 1 ] ) )
 		    .withSecond( 0 );
 
 		// If we passed it, then move to the next day
@@ -1615,16 +1620,16 @@ public class ScheduledTask implements Runnable {
 	 * @throws InvalidAttributeValueException When the time format is invalid
 	 */
 	public ScheduledTask onWeekdays( String time ) throws InvalidAttributeValueException {
-		debugLog( "onWeekdays", Struct.of( "time", time ) );
+		debugLog( "onWeekdays", () -> Struct.ofNonConcurrent( "time", time ) );
 
 		// Validate time format
-		time = DateTimeHelper.validateTime( time );
+		String	validatedTime	= DateTimeHelper.validateTime( time );
 
 		// Get times
-		var	now		= getNow();
-		var	nextRun	= now
-		    .withHour( Integer.parseInt( time.split( ":" )[ 0 ] ) )
-		    .withMinute( Integer.parseInt( time.split( ":" )[ 1 ] ) )
+		var		now				= getNow();
+		var		nextRun			= now
+		    .withHour( Integer.parseInt( validatedTime.split( ":" )[ 0 ] ) )
+		    .withMinute( Integer.parseInt( validatedTime.split( ":" )[ 1 ] ) )
 		    .withSecond( 0 );
 
 		// If we passed it, then move to the next day
@@ -1660,7 +1665,7 @@ public class ScheduledTask implements Runnable {
 	 *             00:00
 	 */
 	public ScheduledTask onMondays( String time ) throws InvalidAttributeValueException {
-		debugLog( "onMondays", Struct.of( "time", time ) );
+		debugLog( "onMondays", () -> Struct.ofNonConcurrent( "time", time ) );
 		return everyWeekOn( 1, time );
 	}
 
@@ -1680,7 +1685,7 @@ public class ScheduledTask implements Runnable {
 	 *             00:00
 	 */
 	public ScheduledTask onTuesdays( String time ) throws InvalidAttributeValueException {
-		debugLog( "onTuesdays", Struct.of( "time", time ) );
+		debugLog( "onTuesdays", () -> Struct.ofNonConcurrent( "time", time ) );
 		return everyWeekOn( 2, time );
 	}
 
@@ -1702,7 +1707,7 @@ public class ScheduledTask implements Runnable {
 	 *             00:00
 	 */
 	public ScheduledTask onWednesdays( String time ) throws InvalidAttributeValueException {
-		debugLog( "onWednesdays", Struct.of( "time", time ) );
+		debugLog( "onWednesdays", () -> Struct.ofNonConcurrent( "time", time ) );
 		return everyWeekOn( 3, time );
 	}
 
@@ -1724,7 +1729,7 @@ public class ScheduledTask implements Runnable {
 	 *             00:00
 	 */
 	public ScheduledTask onThursdays( String time ) throws InvalidAttributeValueException {
-		debugLog( "onThursdays", Struct.of( "time", time ) );
+		debugLog( "onThursdays", () -> Struct.ofNonConcurrent( "time", time ) );
 		return everyWeekOn( 4, time );
 	}
 
@@ -1746,7 +1751,7 @@ public class ScheduledTask implements Runnable {
 	 *             00:00
 	 */
 	public ScheduledTask onFridays( String time ) throws InvalidAttributeValueException {
-		debugLog( "onFridays", Struct.of( "time", time ) );
+		debugLog( "onFridays", () -> Struct.ofNonConcurrent( "time", time ) );
 		return everyWeekOn( 5, time );
 	}
 
@@ -1768,7 +1773,7 @@ public class ScheduledTask implements Runnable {
 	 *             00:00
 	 */
 	public ScheduledTask onSaturdays( String time ) throws InvalidAttributeValueException {
-		debugLog( "onSaturdays", Struct.of( "time", time ) );
+		debugLog( "onSaturdays", () -> Struct.ofNonConcurrent( "time", time ) );
 		return everyWeekOn( 6, time );
 	}
 
@@ -1790,7 +1795,7 @@ public class ScheduledTask implements Runnable {
 	 *             00:00
 	 */
 	public ScheduledTask onSundays( String time ) throws InvalidAttributeValueException {
-		debugLog( "onSundays", Struct.of( "time", time ) );
+		debugLog( "onSundays", () -> Struct.ofNonConcurrent( "time", time ) );
 		return everyWeekOn( 7, time );
 	}
 
@@ -1932,10 +1937,13 @@ public class ScheduledTask implements Runnable {
 			initialNextRun = castedNextRun;
 		}
 
+		// Capture values for debug logging
+		final LocalDateTime finalInitialNextRun = initialNextRun;
+
 		// Debug
 		debugLog(
 		    "setNextRunTime-start",
-		    Struct.of(
+		    () -> Struct.ofNonConcurrent(
 		        "delay", this.initialDelay,
 		        "delayTimeUnit", this.initialDelayTimeUnit,
 		        "period", this.period,
@@ -1946,7 +1954,7 @@ public class ScheduledTask implements Runnable {
 		        "firstBusinessDay", this.firstBusinessDay,
 		        "lastBusinessDay", this.lastBusinessDay,
 		        "taskTime", this.taskTime,
-		        "initialNextRun", initialNextRun == null ? "null" : initialNextRun.toString() ) );
+		        "initialNextRun", finalInitialNextRun == null ? "null" : finalInitialNextRun.toString() ) );
 
 		// First and Last business days are special cases
 		// It overrides the incoming next run date time to be the first or last business
@@ -1980,8 +1988,11 @@ public class ScheduledTask implements Runnable {
 			nextRun = DateTimeHelper.dateTimeAdd( nextRun, amount, this.timeUnit );
 		}
 
+		// Capture final value for debug logging
+		final LocalDateTime finalNextRun = nextRun;
+
 		// Store it
-		debugLog( "setNextRunTime-end", Struct.of( "nextRun", nextRun ) );
+		debugLog( "setNextRunTime-end", () -> Struct.ofNonConcurrent( "nextRun", finalNextRun ) );
 		this.stats.put( "nextRun", nextRun );
 	}
 
@@ -2006,7 +2017,7 @@ public class ScheduledTask implements Runnable {
 	    int periodMultiplier ) {
 		debugLog(
 		    "setInitialDelayPeriodAndTimeUnit",
-		    Struct.of(
+		    () -> Struct.ofNonConcurrent(
 		        "now", now,
 		        "nextRun", nextRun,
 		        "periodValue", periodValue,
@@ -2061,12 +2072,13 @@ public class ScheduledTask implements Runnable {
 	/**
 	 * Debug output to the console, this is only used for hard-core debugging
 	 *
-	 * @param caller The name of the method calling this
-	 * @param args   The arguments to output
+	 * @param caller       The name of the method calling this
+	 * @param argsSupplier The lambda that produces the arguments struct
 	 */
-	private void debugLog( String caller, IStruct args ) {
+	private void debugLog( String caller, Supplier<IStruct> argsSupplier ) {
 		if ( logger.isTraceEnabled() ) {
-			List<String> message = List.of(
+			IStruct			args	= argsSupplier != null ? argsSupplier.get() : null;
+			List<String>	message	= List.of(
 			    "+ ScheduledTask",
 			    "group: ", getGroup(),
 			    "name: ", getName(),

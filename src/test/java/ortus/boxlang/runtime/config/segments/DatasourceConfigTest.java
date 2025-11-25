@@ -26,14 +26,17 @@ import org.junit.jupiter.api.Test;
 import com.zaxxer.hikari.HikariConfig;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.config.Configuration;
+import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 class DatasourceConfigTest {
 
 	@BeforeAll
 	public static void setUp() {
-		BoxRuntime instance = BoxRuntime.getInstance( true );
+		BoxRuntime.getInstance( true );
 	}
 
 	@DisplayName( "It can generate hikari config" )
@@ -88,6 +91,49 @@ class DatasourceConfigTest {
 		) );
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
 		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:mysql://localhost:3306/foo?useSSL=false" );
+	}
+
+	@DisplayName( "It can load a config with nonstandard placeholders on a dsn key" )
+	@Test
+	void testItCanConstructConnectionStringWithNonstandardPlaceholdersOnDSN() {
+		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
+		    "dsn", "jdbc:mysql://{host}:{port}/{database}?totalRandomValue={totalRandomValue}",
+		    "host", "localhost",
+		    "port", 3306,
+		    "database", "foo",
+		    "totalRandomValue", 12345,
+		    "custom", Struct.of( "useSSL", false )
+		) );
+		HikariConfig		hikariConfig	= datasource.toHikariConfig();
+		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:mysql://localhost:3306/foo?totalRandomValue=12345&useSSL=false" );
+	}
+
+	@DisplayName( "It performs case-insensitive placeholder replacements" )
+	@Test
+	void testItPerformsCaseInsensitivePlaceholderReplacements() {
+		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
+		    "dsn", "jdbc:mysql://{host}:{PORT}/{database}?totalRandomValue={TOTALRandomValue}",
+		    "HoSt", "localhost",
+		    "pOrT", 3306,
+		    "DATAbase", "foo",
+		    "tOtAlRaNdOmVaLuE", 12345,
+		    "custom", Struct.of( "useSSL", false )
+		) );
+		HikariConfig		hikariConfig	= datasource.toHikariConfig();
+		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:mysql://localhost:3306/foo?totalRandomValue=12345&useSSL=false" );
+	}
+
+	@DisplayName( "It can replace the same placeholder more than once" )
+	@Test
+	void testItCanReplaceSamePlaceholderMoreThanOnce() {
+		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
+		    "dsn", "jdbc:mysql://{host}:{port}/{database}?someThing={host}&andAnotherThing={PORT}",
+		    "host", "localhost",
+		    "port", 3306,
+		    "database", "foo"
+		) );
+		HikariConfig		hikariConfig	= datasource.toHikariConfig();
+		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:mysql://localhost:3306/foo?someThing=localhost&andAnotherThing=3306" );
 	}
 
 	@DisplayName( "It can load config" )
@@ -313,6 +359,33 @@ class DatasourceConfigTest {
 		    "jdbcURL", "jdbc:postgresql://127.0.0.1:5432/foo?"
 		) );
 		assertThat( datasource4.toHikariConfig().getJdbcUrl() ).isEqualTo( "jdbc:postgresql://127.0.0.1:5432/foo?" );
+	}
+
+	@DisplayName( "It resolves placeholders in datasource names when loading configuration" )
+	@Test
+	void testItResolvesDatasourceNamePlaceholders() {
+		// Build a config where the datasource key is a placeholder with a default value
+		IStruct datasources = Struct.ofNonConcurrent(
+		    Key.datasources,
+		    Struct.ofNonConcurrent(
+		        Key.of( "${env.MY_DS:MyDSDefault}" ),
+		        Struct.ofNonConcurrent(
+		            "driver", "postgresql",
+		            "host", "127.0.0.1",
+		            "port", 5432,
+		            "database", "foo"
+		        )
+		    ) );
+		datasources = PlaceholderHelper.resolveAll( datasources );
+
+		Configuration	cfg		= new Configuration().process( datasources );
+
+		// The placeholder should resolve to the default "MyDSDefault"
+		boolean			found	= cfg.datasources.keySet()
+		    .stream()
+		    .anyMatch( k -> k.getName().equals( "MyDSDefault" ) );
+
+		assertThat( found ).isTrue();
 	}
 
 }

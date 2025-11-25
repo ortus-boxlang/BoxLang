@@ -104,6 +104,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		applicationSettings					= Key.of( "applicationSettings" );
 	public static final Key		applicationTimeout					= Key.of( "applicationTimeout" );
 	public static final Key		appListener							= Key.of( "appListener" );
+	public static final Key		args								= Key.of( "args" );
 	public static final Key		argumentCollection					= Key.of( "argumentCollection" );
 	public static final Key		arguments							= Key.of( "arguments" );
 	public static final Key		array								= Key.of( "array" );
@@ -123,6 +124,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		auth_type							= Key.of( "auth_type" );
 	public static final Key		auth_user							= Key.of( "auth_user" );
 	public static final Key		author								= Key.of( "author" );
+	public static final Key		autoCreate							= Key.of( "autoCreate" );
 	public static final Key		authType							= Key.of( "authType" );
 	public static final Key		base64_or_object					= Key.of( "base64_or_object " );
 	public static final Key		baseTag								= Key.of( "baseTag" );
@@ -144,6 +146,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		bxRegex								= Key.of( "bxRegex" );
 	public static final Key		bxSessions							= Key.of( "bxSessions" );
 	public static final Key		bxTracers							= Key.of( "bxTracers" );
+	public static final Key		bytesReceived						= Key.of( "bytesReceived" );
+	public static final Key		bytesSent							= Key.of( "bytesSent" );
 	public static final Key		cached								= Key.of( "cached" );
 	public static final Key		cachedwithin						= Key.of( "cachedwithin" );
 	public static final Key		cacheName							= Key.of( "cacheName" );
@@ -152,6 +156,9 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		callback							= Key.of( "callback" );
 	public static final Key		caller								= Key.of( "caller" );
 	public static final Key		canonicalize						= Key.of( "canonicalize" );
+	public static final Key		chunk								= Key.of( "chunk" );
+	public static final Key		chunkNumber							= Key.of( "chunkNumber" );
+	public static final Key		chunkCount							= Key.of( "chunkCount" );
 	public static final Key		caseSensitive						= Key.of( "caseSensitive" );
 	public static final Key		cast								= Key.of( "cast" );
 	public static final Key		category							= Key.of( "category" );
@@ -176,11 +183,13 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		className							= Key.of( "className" );
 	public static final Key		classPaths							= Key.of( "classPaths" );
 	public static final Key		classResolverCache					= Key.of( "classResolverCache" );
+	public static final Key		classLoader							= Key.of( "classloader" );
 	public static final Key		clazz								= Key.of( "clazz" );
 	public static final Key		clearClassFilesOnStartup			= Key.of( "clearClassFilesOnStartup" );
 	public static final Key		cli									= Key.of( "cli" );
 	public static final Key		clientCert							= Key.of( "clientCert" );
 	public static final Key		clientCertPassword					= Key.of( "clientCertPassword" );
+	public static final Key		clientCertEncoded					= Key.of( "clientCertEncoded" );
 	public static final Key		closure								= Key.of( "closure" );
 	public static final Key		codePrintHTML						= Key.of( "codePrintHTML" );
 	public static final Key		codePrintPlain						= Key.of( "codePrintPlain" );
@@ -203,9 +212,15 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		compression							= Key.of( "compression" );
 	public static final Key		compressionLevel					= Key.of( "compressionLevel" );
 	public static final Key		condition							= Key.of( "condition" );
+	public static final Key		config								= Key.of( "config" );
 	public static final Key		configure							= Key.of( "configure" );
+	public static final Key		configuration						= Key.of( "configuration" );
 	public static final Key		connectionLimit						= Key.of( "connectionLimit" );
+	public static final Key		connectionFailures					= Key.of( "connectionFailures" );
 	public static final Key		content								= Key.of( "content" );
+	public static final Key		contentEncoding						= Key.of( "content-encoding" );
+	public static final Key		contentDisposition					= Key.of( "content-disposition" );
+	public static final Key		contentType							= Key.of( "content-type" );
 	public static final Key		content_length						= Key.of( "content_length" );
 	public static final Key		content_type						= Key.of( "content_type" );
 	public static final Key		context								= Key.of( "context" );
@@ -218,6 +233,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		count								= Key.of( "count" );
 	public static final Key		country								= Key.of( "country" );
 	public static final Key		create								= Key.of( "create" );
+	public static final Key		createdAt							= Key.of( "createdAt" );
 	public static final Key		createObject						= Key.of( "createObject" );
 	public static final Key		createPath							= Key.of( "createPath" );
 	public static final Key		currentRow							= Key.of( "currentRow" );
@@ -290,6 +306,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		dspLocale							= Key.of( "dspLocale" );
 	public static final Key		dump								= Key.of( "dump" );
 	public static final Key		dumpLevel							= Key.of( "dumpLevel" );
+	public static final Key		dumpFilePath						= Key.of( "dumpFilePath" );
+	public static final Key		dumpOutput							= Key.of( "dumpOutput" );
 	public static final Key		duration							= Key.of( "duration" );
 	public static final Key		elapsedTime							= Key.of( "elapsedTime" );
 	public static final Key		elem								= Key.of( "elem" );
@@ -322,6 +340,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		errorDetail							= Key.of( "errorDetail" );
 	public static final Key		errorHandler						= Key.of( "errorHandler" );
 	public static final Key		errors								= Key.of( "errors" );
+	public static final Key		event								= Key.of( "event" );
+	public static final Key		eventCount							= Key.of( "eventCount" );
 	public static final Key		escapeChars							= Key.of( "escapeChars" );
 	public static final Key		evictCount							= Key.of( "evictCount" );
 	public static final Key		evictionPolicy						= Key.of( "evictionPolicy" );
@@ -348,6 +368,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		externalOnly						= Key.of( "externalOnly" );
 	public static final Key		extrainfo							= Key.of( "extrainfo" );
 	public static final Key		fatalErrors							= Key.of( "fatalErrors" );
+	public static final Key		failedRequests						= Key.of( "failedRequests" );
 	public static final Key		file								= Key.of( "file" );
 	public static final Key		fileContent							= Key.of( "fileContent" );
 	public static final Key		filefield							= Key.of( "filefield" );
@@ -390,10 +411,14 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		header								= Key.of( "header" );
 	public static final Key		headers								= Key.of( "headers" );
 	public static final Key		hint								= Key.of( "hint" );
+	public static final Key		hits								= Key.of( "hits" );
 	public static final Key		hostname							= Key.of( "hostname" );
 	public static final Key		hour								= Key.of( "hour" );
 	public static final Key		hours								= Key.of( "hours" );
 	public static final Key		HTTP								= Key.of( "http" );
+	public static final Key		httpProtocolFailures				= Key.of( "httpProtocolFailures" );
+	public static final Key		httpResult							= Key.of( "httpResult" );
+	public static final Key		httpService							= Key.of( "httpService" );
 	public static final Key		http_accept							= Key.of( "http_accept" );
 	public static final Key		http_accept_encoding				= Key.of( "http_accept_encoding" );
 	public static final Key		http_accept_language				= Key.of( "http_accept_language" );
@@ -403,8 +428,10 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		http_referer						= Key.of( "http_referer" );
 	public static final Key		http_user_agent						= Key.of( "http_user_agent" );
 	public static final Key		HTTP_Version						= Key.of( "http_version" );
+	public static final Key		httpClient							= Key.of( "httpClient" );
 	public static final Key		httpOnly							= Key.of( "httpOnly" );
 	public static final Key		HTTPParams							= Key.of( "httpParams" );
+	public static final Key		httpRequest							= Key.of( "httpRequest" );
 	public static final Key		https								= Key.of( "https" );
 	public static final Key		https_keysize						= Key.of( "https_keysize" );
 	public static final Key		https_secretkeysize					= Key.of( "https_secretkeysize" );
@@ -443,6 +470,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		isShutdown							= Key.of( "isShutdown" );
 	public static final Key		isValid								= Key.of( "isValid" );
 	public static final Key		item								= Key.of( "item" );
+	public static final Key		itemCount							= Key.of( "itemCount" );
 	public static final Key		items								= Key.of( "items" );
 	public static final Key		iterations							= Key.of( "iterations" );
 	public static final Key		IVorSalt							= Key.of( "IVorSalt" );
@@ -464,6 +492,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		lambda								= Key.of( "lambda" );
 	public static final Key		language							= Key.of( "language" );
 	public static final Key		lastVisit							= Key.of( "lastVisit" );
+	public static final Key		lastUsedTimestamp					= Key.of( "lastUsedTimestamp" );
+	public static final Key		lastAccessTimeout					= Key.of( "lastAccessTimeout" );
 	public static final Key		leakDetectionThreshold				= Key.of( "leakDetectionThreshold" );
 	public static final Key		leaveIndex							= Key.of( "leaveIndex" );
 	public static final Key		len									= Key.of( "len" );
@@ -501,6 +531,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		mask								= Key.of( "mask" );
 	public static final Key		match								= Key.of( "match" );
 	public static final Key		max									= Key.of( "max" );
+	public static final Key		maxAge								= Key.of( "max-age" );
 	public static final Key		maxFileSize							= Key.of( "maxFileSize" );
 	public static final Key		maxFrames							= Key.of( "maxFrames" );
 	public static final Key		maxLength							= Key.of( "maxLength" );
@@ -508,6 +539,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		maxObjects							= Key.of( "maxObjects" );
 	public static final Key		maxRows								= Key.of( "maxRows" );
 	public static final Key		maxThreads							= Key.of( "maxThreads" );
+	public static final Key		maxExecutionTimeMs					= Key.of( "maxExecutionTimeMs" );
+	public static final Key		minExecutionTimeMs					= Key.of( "minExecutionTimeMs" );
 	public static final Key		maxTrackedCompletedThreads			= Key.of( "maxTrackedCompletedThreads" );
 	public static final Key		merge								= Key.of( "merge" );
 	public static final Key		message								= Key.of( "message" );
@@ -564,6 +597,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		numIterations						= Key.of( "numIterations" );
 	public static final Key		obj									= Key.of( "obj" );
 	public static final Key		object								= Key.of( "object" );
+	public static final Key		objectKey							= Key.of( "objectKey" );
+	public static final Key		objectValue							= Key.of( "objectValue" );
 	public static final Key		objectArgument						= Key.of( "objectArgument" );
 	public static final Key		objectMappings						= Key.of( "objectMappings" );
 	public static final Key		objectStore							= Key.of( "objectStore" );
@@ -575,9 +610,12 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		onApplicationEnd					= Key.of( "onApplicationEnd" );
 	public static final Key		onApplicationRestart				= Key.of( "onApplicationRestart" );
 	public static final Key		onApplicationStart					= Key.of( "onApplicationStart" );
+	public static final Key		onChunk								= Key.of( "onChunk" );
 	public static final Key		onClassRequest						= Key.of( "onClassRequest" );
+	public static final Key		onComplete							= Key.of( "onComplete" );
 	public static final Key		onError								= Key.of( "onError" );
 	public static final Key		onLoad								= Key.of( "onLoad" );
+	public static final Key		onMessage							= Key.of( "onMessage" );
 	public static final Key		onMissingMethod						= Key.of( "onMissingMethod" );
 	public static final Key		onMissingTemplate					= Key.of( "onMissingTemplate" );
 	public static final Key		onParse								= Key.of( "onParse" );
@@ -633,6 +671,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		proxyPort							= Key.of( "proxyPort" );
 	public static final Key		proxyServer							= Key.of( "proxyServer" );
 	public static final Key		proxyUser							= Key.of( "proxyUser" );
+	public static final Key		publicMapping						= Key.of( "publicMapping" );
 	public static final Key		qualifier							= Key.of( "qualifier" );
 	public static final Key		quarter								= Key.of( "quarter" );
 	public static final Key		query								= Key.of( "query" );
@@ -687,6 +726,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		row_number							= Key.of( "row_number" );
 	public static final Key		rowData								= Key.of( "rowData" );
 	public static final Key		rowNumber							= Key.of( "rowNumber" );
+	public static final Key		rowID								= Key.of( "rowID" );
+	public static final Key		rowIDs								= Key.of( "rowIDs" );
 	public static final Key		run									= Key.of( "run" );
 	public static final Key		runnable							= Key.of( "runnable" );
 	public static final Key		runtime								= Key.of( "runtime" );
@@ -694,6 +735,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		samesite							= Key.of( "samesite" );
 	public static final Key		scalar								= Key.of( "scalar" );
 	public static final Key		scale								= Key.of( "scale" );
+	public static final Key		schema								= Key.of( "schema" );
 	public static final Key		scheduler							= Key.of( "scheduler" );
 	public static final Key		schedulers							= Key.of( "schedulers" );
 	public static final Key		schedulerService					= Key.of( "schedulerService" );
@@ -715,6 +757,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		server_port_secure					= Key.of( "server_port_secure" );
 	public static final Key		server_protocol						= Key.of( "server_protocol" );
 	public static final Key		server_software						= Key.of( "server_software" );
+	public static final Key		serverScope							= Key.of( "serverScope" );
 	public static final Key		servlet								= Key.of( "servlet" );
 	public static final Key		session								= Key.of( "session" );
 	public static final Key		sessionCluster						= Key.of( "sessionCluster" );
@@ -725,6 +768,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		sessionStorage						= Key.of( "sessionStorage" );
 	public static final Key		sessionTimeout						= Key.of( "sessionTimeout" );
 	public static final Key		set									= Key.of( "set" );
+	public static final Key		setCookie							= Key.of( "Set-Cookie" );
 	public static final Key		setClientCookies					= Key.of( "setClientCookies" );
 	public static final Key		setDomainCookies					= Key.of( "setDomainCookies" );
 	public static final Key		settings							= Key.of( "settings" );
@@ -738,6 +782,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		sortOrder							= Key.of( "sortOrder" );
 	public static final Key		sortType							= Key.of( "sortType" );
 	public static final Key		source								= Key.of( "source" );
+	public static final Key		sourceType							= Key.of( "sourceType" );
 	public static final Key		sql									= Key.of( "sql" );
 	public static final Key		sqlParameters						= Key.of( "sqlParameters" );
 	public static final Key		SQLState							= Key.of( "SQLState" );
@@ -757,7 +802,11 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		statusText							= Key.of( "statusText" );
 	public static final Key		step								= Key.of( "step" );
 	public static final Key		storedproc							= Key.of( "storedproc" );
+	public static final Key		storeClassFilesOnDisk				= Key.of( "storeClassFilesOnDisk" );
 	public static final Key		stream								= Key.of( "stream" );
+	public static final Key		sse									= Key.of( "sse" );
+	public static final Key		lastEventId							= Key.of( "lastEventId" );
+	public static final Key		eventType							= Key.of( "eventType" );
 	public static final Key		strict								= Key.of( "strict" );
 	public static final Key		strictMapping						= Key.of( "strictMapping" );
 	public static final Key		string								= Key.of( "string" );
@@ -776,6 +825,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		substring1							= Key.of( "substring1" );
 	public static final Key		substringMatch						= Key.of( "substringMatch" );
 	public static final Key		suffix								= Key.of( "suffix" );
+	public static final Key		success								= Key.of( "success" );
+	public static final Key		successfulRequests					= Key.of( "successfulRequests" );
 	public static final Key		suppressed							= Key.of( "suppressed" );
 	public static final Key		suppressWhiteSpace					= Key.of( "suppressWhiteSpace" );
 	public static final Key		system								= Key.of( "system" );
@@ -784,9 +835,12 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		tagName								= Key.of( "tagName" );
 	public static final Key		target								= Key.of( "target" );
 	public static final Key		targetThread						= Key.of( "targetThread" );
+	public static final Key		targetURI							= Key.of( "targetURI" );
+	public static final Key		targetURL							= Key.of( "targetURL" );
 	public static final Key		task								= Key.of( "task" );
 	public static final Key		tasks								= Key.of( "tasks" );
 	public static final Key		template							= Key.of( "template" );
+	public static final Key		templatePath						= Key.of( "templatePath" );
 	public static final Key		terminate							= Key.of( "terminate" );
 	public static final Key		terminated							= Key.of( "terminated" );
 	public static final Key		terminateOnTimeout					= Key.of( "terminateOnTimeout" );
@@ -807,6 +861,9 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		timeCreated							= Key.of( "timeCreated" );
 	public static final Key		timeFormat							= Key.of( "timeFormat" );
 	public static final Key		timeout								= Key.of( "timeout" );
+	public static final Key		timeoutFailures						= Key.of( "timeoutFailures" );
+	public static final Key		tlsFailures							= Key.of( "tlsFailures" );
+	public static final Key		totalExecutionTimeMs				= Key.of( "totalExecutionTimeMs" );
 	public static final Key		times								= Key.of( "times" );
 	public static final Key		timespan							= Key.of( "timespan" );
 	public static final Key		timeUnit							= Key.of( "timeUnit" );
@@ -818,6 +875,10 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		top									= Key.of( "top" );
 	public static final Key		toString							= Key.of( "toString" );
 	public static final Key		totalCapSize						= Key.of( "totalCapSize" );
+	public static final Key		totalEvents							= Key.of( "totalEvents" );
+	public static final Key		totalReceived						= Key.of( "totalReceived" );
+	public static final Key		totalBytes							= Key.of( "totalBytes" );
+	public static final Key		totalRequests						= Key.of( "totalRequests" );
 	public static final Key		trace								= Key.of( "trace" );
 	public static final Key		trim								= Key.of( "trim" );
 	public static final Key		trustedCache						= Key.of( "trustedCache" );
@@ -838,6 +899,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		useLastAccessTimeouts				= Key.of( "useLastAccessTimeouts" );
 	public static final Key		useQueryString						= Key.of( "useQueryString" );
 	public static final Key		userAgent							= Key.of( "userAgent" );
+	public static final Key		usePrefix							= Key.of( "usePrefix" );
 	public static final Key		useRegex							= Key.of( "useRegex" );
 	public static final Key		useSecureJSONPrefix					= Key.of( "useSecureJSONPrefix" );
 	public static final Key		validator							= Key.of( "validator" );
@@ -892,6 +954,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		cacheProvider						= Key.of( "cacheProvider" );
 	public static final Key		cacheTimeout						= Key.of( "cacheTimeout" );
 	public static final Key		dbname								= Key.of( "dbname" );
+	public static final Key		DBVarName							= Key.of( "DBVarName" );
 	public static final Key		driver								= Key.of( "driver" );
 	public static final Key		dbdriver							= Key.of( "dbdriver" );
 	public static final Key		host								= Key.of( "host" );
@@ -909,6 +972,9 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		savepoint							= Key.of( "savepoint" );
 	public static final Key		table								= Key.of( "table" );
 	public static final Key		username							= Key.of( "username" );
+	public static final Key		loadSystemClassPath					= Key.of( "loadSystemClassPath" );
+	public static final Key		secureJson							= Key.of( "secureJson" );
+	public static final Key		secureJsonPrefix					= Key.of( "secureJsonPrefix" );
 
 	// Datasource configuration keys
 	public static final Key		blockfactor							= Key.of( "blockfactor" );
@@ -940,6 +1006,7 @@ public class Key implements Comparable<Key>, Serializable {
 	// HikariCP configuration Key names. Includes all "Essential" and "Frquently Used" configuration keys, but no "Infrequently used" keys (for now.)
 	// https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby
 	public static final Key		autoCommit							= Key.of( "autoCommit" );
+	public static final Key		averageExecutionTimeMs				= Key.of( "averageExecutionTimeMs" );
 	public static final Key		connectionTestQuery					= Key.of( "connectionTestQuery" );
 	public static final Key		connectionTimeout					= Key.of( "connectionTimeout" );
 	public static final Key		healthCheckRegistry					= Key.of( "healthCheckRegistry" );

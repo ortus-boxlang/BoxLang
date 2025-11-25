@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Check if a struct is case-sensitive" )
 @BoxMember( type = BoxLangType.STRUCT )
 
 public class StructIsCaseSensitive extends BIF {

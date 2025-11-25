@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Test whether no items in struct match the callback function" )
 @BoxMember( type = BoxLangType.STRUCT )
 
 public class StructNone extends StructSome {

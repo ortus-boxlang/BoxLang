@@ -17,68 +17,30 @@
  */
 package ortus.boxlang.runtime.components.net;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.ConnectException;
-import java.net.SocketException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLConnection;
-import java.net.http.HttpClient;
-import java.net.http.HttpHeaders;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.net.http.HttpTimeoutException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
-import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
-import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
-import ortus.boxlang.runtime.dynamic.casters.StructCaster;
-import ortus.boxlang.runtime.events.BoxEvent;
-import ortus.boxlang.runtime.net.HTTPStatusReasons;
-import ortus.boxlang.runtime.net.HttpManager;
-import ortus.boxlang.runtime.net.HttpRequestMultipartBody;
-import ortus.boxlang.runtime.net.URIBuilder;
+import ortus.boxlang.runtime.net.BoxHttpClient;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.HttpService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.Query;
-import ortus.boxlang.runtime.types.QueryColumnType;
-import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
-import ortus.boxlang.runtime.util.ZipUtil;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent( allowsBody = true )
+@BoxComponent( description = "Make HTTP requests and handle responses", allowsBody = true )
 public class HTTP extends Component {
 
 	/**
@@ -86,19 +48,22 @@ public class HTTP extends Component {
 	 * Constants
 	 * --------------------------------------------------------------------------
 	 */
-	private final static String		BASIC_AUTH_DELIMITER	= ":";
-	private static final String		AUTHMODE_BASIC			= "BASIC";
-	private static final String		AUTHMODE_NTLM			= "NTLM";
+	private static final String			AUTHMODE_BASIC			= "BASIC";
+	private static final String			AUTHMODE_NTLM			= "NTLM";
+	private static final HttpService	httpService				= BoxRuntime.getInstance().getHttpService();
 
-	protected static ArrayList<Key>	BINARY_REQUEST_VALUES	= new ArrayList<Key>() {
-
-																{
-																	add( Key.of( "true" ) );
-																	add( Key.of( "yes" ) );
-																}
-															};
-
-	protected static Key			BINARY_NEVER			= Key.of( "never" );
+	/**
+	 * Binary request values
+	 */
+	// @formatter:off
+	private static ArrayList<Key>		BINARY_REQUEST_VALUES	= new ArrayList<Key>() {
+		{
+			add( Key.of( "true" ) );
+			add( Key.of( "yes" ) );
+		}
+	};
+	private static Key					BINARY_NEVER			= Key.of( "never" );
+	// @formatter:on
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -112,6 +77,7 @@ public class HTTP extends Component {
 	public HTTP() {
 		super();
 		declaredAttributes = new Attribute[] {
+		    // Connection settings
 		    new Attribute( Key.URL, "string", Set.of(
 		        Validator.REQUIRED,
 		        Validator.NON_EMPTY,
@@ -122,47 +88,62 @@ public class HTTP extends Component {
 		        }
 		    ) ),
 		    new Attribute( Key.port, "numeric" ),
+		    new Attribute( Key.httpVersion, "string", "HTTP/2", Set.of( Validator.valueOneOf( "HTTP/1.1", "HTTP/2" ) ) ),
+		    new Attribute( Key.timeout, "numeric", BoxHttpClient.DEFAULT_REQUEST_TIMEOUT ),
+		    new Attribute( Key.connectionTimeout, "numeric", BoxHttpClient.DEFAULT_CONNECTION_TIMEOUT ),
+		    new Attribute( Key.redirect, "boolean", true ),
+		    new Attribute( Key.resolveUrl, "boolean", false ),
+		    new Attribute( Key.encodeUrl, "boolean", true, Set.of( Validator.TYPE ) ),
+		    // Request settings
 		    new Attribute( Key.method, "string", "GET", Set.of(
 		        Validator.REQUIRED,
 		        Validator.NON_EMPTY,
 		        Validator.valueOneOf( "GET", "POST", "PUT", "DELETE", "HEAD", "TRACE", "OPTIONS", "PATCH" )
 		    ) ),
-		    new Attribute( Key.username, "string" ),
-		    new Attribute( Key.password, "string" ),
-		    new Attribute( Key.userAgent, "string", "BoxLang" ),
-		    new Attribute( Key.charset, "string", "UTF-8" ),
-		    new Attribute( Key.resolveUrl, "boolean", false ),
-		    new Attribute( Key.throwOnError, "boolean", true ),
-		    new Attribute( Key.redirect, "boolean", true ),
-		    new Attribute( Key.timeout, "numeric", Set.of( Validator.min( 1 ) ) ),
+		    new Attribute( Key.userAgent, "string", BoxHttpClient.DEFAULT_USER_AGENT ),
+		    new Attribute( Key.charset, "string", StandardCharsets.UTF_8.name() ),
+		    new Attribute( Key.compression, "string" ),
+		    new Attribute( Key.multipart, "boolean", false, Set.of( Validator.TYPE ) ),
+		    new Attribute( Key.multipartType, "string", "form-data",
+		        Set.of( Validator.REQUIRED, Validator.NON_EMPTY, Validator.valueOneOf( "form-data", "related" ) )
+		    ),
+		    // Response handling
+		    new Attribute( Key.result, "string", "bxhttp", Set.of(
+		        Validator.REQUIRED,
+		        Validator.NON_EMPTY
+		    ) ),
 		    new Attribute( Key.getAsBinary, "string", "auto", Set.of(
 		        Validator.REQUIRED,
 		        Validator.NON_EMPTY,
 		        Validator.valueOneOf( "true", "false", "auto", "no", "yes", "never" )
 		    ) ),
-		    new Attribute( Key.result, "string", "bxhttp", Set.of(
-		        Validator.REQUIRED,
-		        Validator.NON_EMPTY
-		    ) ),
+		    new Attribute( Key.throwOnError, "boolean", false ),
 		    new Attribute( Key.file, "string" ),
-		    new Attribute( Key.multipart, "boolean", false, Set.of( Validator.TYPE ) ),
-		    new Attribute( Key.multipartType, "string", "form-data",
-		        Set.of( Validator.REQUIRED, Validator.NON_EMPTY, Validator.valueOneOf( "form-data", "related" ) ) ),
-		    new Attribute( Key.clientCertPassword, "string" ),
 		    new Attribute( Key.path, "string" ),
-		    new Attribute( Key.clientCert, "string" ),
-		    new Attribute( Key.compression, "string" ),
-		    new Attribute( Key.authType, "string", AUTHMODE_BASIC,
-		        Set.of( Validator.REQUIRED, Validator.NON_EMPTY, Validator.valueOneOf( AUTHMODE_BASIC, AUTHMODE_NTLM ) ) ),
+		    // Caching
 		    new Attribute( Key.cachedWithin, "string" ),
-		    new Attribute( Key.encodeUrl, "boolean", true, Set.of( Validator.TYPE ) ),
-		    // Proxy server
+		    // Authentication
+		    new Attribute( Key.username, "string" ),
+		    new Attribute( Key.password, "string" ),
+		    // Client certificates
+		    new Attribute( Key.clientCert, "string" ),
+		    new Attribute( Key.clientCertPassword, "string" ),
+		    // Streaming/callbacks
+		    new Attribute( Key.sse, "boolean", false ),
+		    new Attribute( Key.onRequestStart, "function" ),
+		    new Attribute( Key.onChunk, "function" ),
+		    new Attribute( Key.onMessage, "function" ),
+		    new Attribute( Key.onError, "function" ),
+		    new Attribute( Key.onComplete, "function" ),
+		    // Proxy configuration
 		    new Attribute( Key.proxyServer, "string", Set.of( Validator.requires( Key.proxyPort ) ) ),
 		    new Attribute( Key.proxyPort, "integer", Set.of( Validator.requires( Key.proxyServer ) ) ),
 		    new Attribute( Key.proxyUser, "string", Set.of( Validator.requires( Key.proxyPassword ) ) ),
 		    new Attribute( Key.proxyPassword, "string", Set.of( Validator.requires( Key.proxyUser ) ) ),
-		    // Currently unimplemented attributes
-		    // Alt name for result
+		    // ----------------------------------------------------------------------------
+		    // NON IMPLEMENTED ATTRIBUTES BELOW
+		    // Left here so we can track them for future implementation if needed
+		    // ----------------------------------------------------------------------------
 		    new Attribute( Key._NAME, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    // CSV parsing
 		    new Attribute( Key.delimiter, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
@@ -170,112 +151,238 @@ public class HTTP extends Component {
 		    new Attribute( Key.firstRowAsHeaders, "boolean", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    new Attribute( Key.textQualifier, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    // NTLM
+		    new Attribute( Key.authType, "string", AUTHMODE_BASIC,
+		        Set.of( Validator.REQUIRED, Validator.NON_EMPTY, Validator.valueOneOf( AUTHMODE_BASIC, AUTHMODE_NTLM ) )
+		    ),
 		    new Attribute( Key.domain, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
-		    new Attribute( Key.workstation, "string", Set.of( Validator.NOT_IMPLEMENTED ) ),
-		    new Attribute( Key.httpVersion, "string", "HTTP/2", Set.of( Validator.valueOneOf( "HTTP/1.1", "HTTP/2" ) ) )
+		    new Attribute( Key.workstation, "string", Set.of( Validator.NOT_IMPLEMENTED ) )
 		};
 	}
 
 	/**
-	 * I make an HTTP call using tons of attributes to control the request.
+	 * Makes an HTTP request with comprehensive control over request configuration and response handling.
+	 * <p>
+	 * This component provides a complete HTTP client implementation supporting various HTTP methods,
+	 * authentication mechanisms, SSL/TLS client certificates, proxy configuration, streaming responses,
+	 * and file download/upload operations. It wraps Java's HttpClient with a BoxLang-friendly interface.
+	 * <p>
+	 * <b>Basic Usage:</b>
+	 *
+	 * <pre>
+	 * // Simple GET request
+	 * bx:http url="https://api.example.com/users" {}
+	 * // Result is stored in 'bxhttp' variable by default
+	 * println( bxhttp.statusCode ); // 200
+	 * println( bxhttp.fileContent ); // Response body
+	 * </pre>
+	 * <p>
+	 * <b>POST with JSON:</b>
+	 *
+	 * <pre>
+	 * bx:http method="POST" url="https://api.example.com/users" result="response" {
+	 *     bx:httpparam type="header" name="Content-Type" value="application/json";
+	 *     bx:httpparam type="body" value='{"name":"John","email":"john@example.com"}';
+	 * }
+	 * println( response.statusCode );
+	 * </pre>
+	 * <p>
+	 * <b>File Upload (Multipart):</b>
+	 *
+	 * <pre>
+	 * bx:http method="POST" url="https://api.example.com/upload" multipart=true {
+	 *     bx:httpparam type="file" name="document" file="/path/to/document.pdf";
+	 *     bx:httpparam type="formfield" name="description" value="Important document";
+	 * }
+	 * </pre>
+	 * <p>
+	 * <b>Download File:</b>
+	 *
+	 * <pre>
+	 * bx:http url="https://example.com/file.pdf"
+	 *         path="/downloads"
+	 *         file="document.pdf"
+	 *         getAsBinary="yes" {}
+	 * // File saved to /downloads/document.pdf
+	 * </pre>
+	 * <p>
+	 * <b>Authentication:</b>
+	 *
+	 * <pre>
+	 * // Basic Authentication
+	 * bx:http url="https://api.example.com/protected"
+	 *         username="user"
+	 *         password="pass"
+	 *         authType="BASIC" {}
+	 *
+	 * // Client Certificate (Mutual TLS)
+	 * bx:http url="https://api.example.com/secure"
+	 *         clientCert="/path/to/cert.p12"
+	 *         clientCertPassword="certpass" {}
+	 * </pre>
+	 * <p>
+	 * <b>Streaming/Chunked Responses:</b>
+	 *
+	 * <pre>
+	 * bx:http url="https://api.example.com/stream" onChunk=function(chunk) {
+	 *     println( "Received chunk ##chunk.chunkNumber: ##chunk.totalReceived bytes" );
+	 *     println( chunk.chunk ); // The actual data
+	 * } {}
+	 * </pre>
+	 * <p>
+	 * <b>Proxy Configuration:</b>
+	 *
+	 * <pre>
+	 * bx:http url="https://api.example.com/data"
+	 *         proxyServer="proxy.company.com"
+	 *         proxyPort=8080
+	 *         proxyUser="proxyuser"
+	 *         proxyPassword="proxypass" {}
+	 * </pre>
+	 * <p>
+	 * <b>Error Handling:</b>
+	 *
+	 * <pre>
+	 * bx:http url="https://api.example.com/data"
+	 *         throwOnError=true
+	 *         onError=function(error) {
+	 *     println( "Request failed: ##error.message" );
+	 * } {}
+	 * </pre>
+	 * <p>
+	 * <b>Response Structure (bxhttp variable):</b>
+	 * <ul>
+	 * <li><code>statusCode</code> - HTTP status code (e.g., 200, 404, 500)</li>
+	 * <li><code>statusText</code> - HTTP status text (e.g., "OK", "Not Found")</li>
+	 * <li><code>fileContent</code> - Response body as string or binary</li>
+	 * <li><code>header</code> - All response headers as a single string</li>
+	 * <li><code>responseHeader</code> - Struct containing individual headers</li>
+	 * <li><code>charset</code> - Character encoding of the response</li>
+	 * <li><code>errorDetail</code> - Error details if request failed</li>
+	 * <li><code>mimeType</code> - Content-Type of the response</li>
+	 * <li><code>text</code> - Boolean indicating if response is text</li>
+	 * <li><code>cookies</code> - Array of cookies from Set-Cookie headers</li>
+	 * <li><code>executionTime</code> - Request duration in milliseconds</li>
+	 * <li><code>request</code> - Struct containing request details (URL, method, headers, etc.)</li>
+	 * </ul>
 	 *
 	 * @param context        The context in which the Component is being invoked
 	 * @param attributes     The attributes to the Component
-	 * @param body           The body of the Component
+	 * @param body           The body of the Component (can contain bx:httpparam tags)
 	 * @param executionState The execution state of the Component
-	 * 
-	 * @attribute.URL The URL to which to make the HTTP request. Must start with http:// or https://
-	 * 
-	 * @attribute.port The port to which to make the HTTP request. Defaults to the standard port for the protocol (80 for http, 443 for https)
-	 * 
-	 * @attribute.method The HTTP method to use. One of GET, POST, PUT, DELETE, HEAD, TRACE, OPTIONS, PATCH. Default is GET.
-	 * 
-	 * @attribute.username The username to use for authentication, if any.
-	 * 
-	 * @attribute.password The password to use for authentication, if any.
-	 * 
-	 * @attribute.userAgent The User-Agent string to send with the request. Default is "BoxLang".
-	 * 
-	 * @attribute.charset The character set to use for the request. Default is UTF-8.
-	 * 
-	 * @attribute.resolveUrl Whether to resolve the URL before making the request. Default is false.
-	 * 
-	 * @attribute.throwOnError Whether to throw an error if the HTTP response status code is 400 or greater. Default is true.
-	 * 
-	 * @attribute.redirect Whether to follow redirects. Default is true.
-	 * 
-	 * @attribute.timeout The timeout for the request, in seconds. Default is no timeout.
-	 * 
-	 * @attribute.getAsBinary Whether to return the response body as binary. One of true, false, auto, yes, no, never. Default is auto.
-	 * 
-	 * @attribute.result The name of the variable in which to store the result Struct. Default is "bxhttp".
-	 * 
-	 * @attribute.file The name of the file in which to store the response body. If not set, the response body is stored in the result Struct. If not provided with a `path`, the file attribute can be a full path to the file to write.
-	 * 
-	 * @attribute.multipart Whether the request is a multipart request. Default is false.
-	 * 
-	 * @attribute.multipartType The type of multipart request. One of form-data, related. Default is form-data.
-	 * 
-	 * @attribute.clientCertPassword The password for the client certificate, if any.
-	 * 
-	 * @attribute.path The directory in which to store the response file, if any. If a file attribute is not provided, the file name will be extracted from the Content-Disposition header if present. If no disposition header is present with the file name,
-	 *                 an error will be thrown
-	 * 
-	 * @attribute.clientCert The path to the client certificate, if any.
-	 * 
-	 * @attribute.compression The compression type to use for the request, if any.
-	 * 
-	 * @attribute.authType The authentication type to use. One of BASIC, NTLM. Default is BASIC.
-	 * 
-	 * @attribute.cachedWithin If set, and a cached response is available within the specified duration (e.g. 10m for 10 minutes, 1h for 1 hour), the cached response will be returned instead of making a new request.
-	 * 
-	 * @attribute.encodeUrl Whether to encode the URL. Default is true.
-	 * 
-	 * @attribute.proxyServer The proxy server to use, if any.
-	 * 
-	 * @attribute.proxyPort The proxy server port to use, if any.
-	 * 
-	 * @attribute.proxyUser The proxy server username to use, if any.
-	 * 
-	 * @attribute.proxyPassword The proxy server password to use, if any.
 	 *
+	 * @attribute.URL The URL to which to make the HTTP request. Must start with http:// or https://. Required.
+	 *
+	 * @attribute.port The port number to use for the connection. If not specified, uses the standard port for the protocol (80 for HTTP, 443 for HTTPS).
+	 *
+	 * @attribute.httpVersion The HTTP protocol version to use. One of "HTTP/1.1" or "HTTP/2". Default is "HTTP/2".
+	 *
+	 * @attribute.timeout The request timeout in seconds. How long to wait for the server to respond. Default is 60 seconds.
+	 *
+	 * @attribute.connectionTimeout The connection timeout in seconds. How long to wait when establishing the connection. Default is 30 seconds.
+	 *
+	 * @attribute.redirect Whether to automatically follow HTTP redirects (3xx status codes). Default is true.
+	 *
+	 * @attribute.resolveUrl Whether to resolve relative URLs before making the request. Default is false.
+	 *
+	 * @attribute.encodeUrl Whether to URL-encode the query string parameters. Default is true.
+	 *
+	 * @attribute.method The HTTP method to use. One of GET, POST, PUT, DELETE, HEAD, TRACE, OPTIONS, PATCH. Default is GET. Required.
+	 *
+	 * @attribute.userAgent The User-Agent header value to send with the request. Default is "BoxLang-HttpClient/1.0".
+	 *
+	 * @attribute.charset The character encoding to use for the request and response. Default is "UTF-8".
+	 *
+	 * @attribute.compression The compression type to accept for the response (e.g., "gzip", "deflate"). Optional.
+	 *
+	 * @attribute.multipart Whether the request should be sent as multipart/form-data. Used for file uploads. Default is false.
+	 *
+	 * @attribute.multipartType The type of multipart request. One of "form-data" or "related". Default is "form-data". Required when multipart is true.
+	 *
+	 * @attribute.result The name of the variable in which to store the HTTP response struct. Default is "bxhttp". Required.
+	 *
+	 * @attribute.getAsBinary Controls how binary responses are handled. One of "true", "false", "auto", "yes", "no", or "never". Default is "auto". "auto" detects based on content-type, "never" throws an error if binary is received. Required.
+	 *
+	 * @attribute.throwOnError Whether to throw an exception if the HTTP response status code is 400 or greater. Default is false.
+	 *
+	 * @attribute.file The filename to use when saving the response to disk. Can be a full path if path attribute is not provided. Optional.
+	 *
+	 * @attribute.path The directory path where the response file should be saved. If file attribute is not provided, attempts to extract filename from Content-Disposition header. Optional.
+	 *
+	 * @attribute.cachedWithin If set, uses cached response if available within the specified duration (e.g., "10m" for 10 minutes, "1h" for 1 hour). Optional. (Note: Caching not yet implemented)
+	 *
+	 * @attribute.username The username for HTTP Basic or NTLM authentication. Optional.
+	 *
+	 * @attribute.password The password for HTTP Basic or NTLM authentication. Optional.
+	 *
+	 * @attribute.authType The authentication type to use. One of "BASIC" or "NTLM". Default is "BASIC". Required when username/password provided.
+	 *
+	 * @attribute.clientCert The file path to the PKCS12 (.p12/.pfx) client certificate for SSL/TLS mutual authentication. Optional.
+	 *
+	 * @attribute.clientCertPassword The password for the client certificate keystore. Optional.
+	 *
+	 * @attribute.onRequestStart A callback function called before the HTTP request is sent. Receives a struct with: request (HTTPRequest builder object), url (target URL), method (HTTP method), headers (struct of headers). Useful for logging, modifying
+	 *                           request, or performing pre-flight checks. Optional.
+	 *
+	 * @attribute.onChunk A callback function for streaming/chunked response processing. Receives a struct with: chunk (data), chunkNumber (1-based), totalReceived (bytes), headers (first chunk only), result (HTTPResult struct). Optional.
+	 *
+	 * @attribute.onError A callback function to handle errors during the HTTP request. Receives a struct with: error (exception), message (error message), result (HTTPResult struct with partial data). Called for both streaming and non-streaming
+	 *                    requests. Optional.
+	 *
+	 * @attribute.onComplete A callback function called when the HTTP request completes successfully. Receives a struct with: result (HTTPResult struct), statusCode, success (boolean). Called after all chunks in streaming mode. Optional.
+	 *
+	 * @attribute.proxyServer The hostname or IP address of the proxy server. Required if using a proxy.
+	 *
+	 * @attribute.proxyPort The port number of the proxy server. Required if using a proxy.
+	 *
+	 * @attribute.proxyUser The username for proxy authentication. Required if proxyPassword is provided.
+	 *
+	 * @attribute.proxyPassword The password for proxy authentication. Required if proxyUser is provided.
+	 *
+	 * @return BodyResult containing the execution result
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		// Allow for restricted headers to be set so we can send the Host header and Content-Length
-		// Java’s HttpClient (introduced in Java 11) blocks setting certain sensitive headers for security reasons
-		if ( System.getProperty( "jdk.httpclient.allowRestrictedHeaders" ) == null ) {
-			System.setProperty( "jdk.httpclient.allowRestrictedHeaders", "host,content-length" );
-		}
-
-		// Keeps track of the HTTPParams
+		// Create HTTPParams array in execution state
 		executionState.put( Key.HTTPParams, new Array() );
-
 		// Process the component for HTTPParams
 		BodyResult bodyResult = processBody( context, body );
-
 		// IF there was a return statement inside our body, we early exit now
 		if ( bodyResult.isEarlyExit() ) {
 			return bodyResult;
 		}
 
-		// Prepare invocation of the HTTP request
-		Key		binaryOperator		= Key.of( attributes.getAsString( Key.getAsBinary ) );
-		Boolean	isBinaryRequested	= BINARY_REQUEST_VALUES
+		// Prep all attributes
+		Key				binaryOperator		= Key.of( attributes.getAsString( Key.getAsBinary ) );
+		boolean			debug				= BooleanCaster.cast( attributes.getOrDefault( Key.debug, false ) );
+		final String	encodedCertKey;
+		boolean			isBinaryRequested	= BINARY_REQUEST_VALUES
 		    .stream()
 		    .anyMatch( value -> value.equals( binaryOperator ) );
-		Boolean	isBinaryNever		= binaryOperator.equals( BINARY_NEVER );
-		String	variableName		= attributes.getAsString( Key.result );
-		String	theURL				= attributes.getAsString( Key.URL );
-		String	method				= attributes.getAsString( Key.method ).toUpperCase();
-		Array	params				= executionState.getAsArray( Key.HTTPParams );
-		Struct	HTTPResult			= new Struct();
-		URI		targetURI			= null;
-		String	authMode			= attributes.getAsString( Key.authType ).toUpperCase();
-		String	outputDirectory		= attributes.getAsString( Key.path );
-		String	requestID			= UUID.randomUUID().toString();
-		Instant	startTime			= Instant.now();
+
+		// onMessage is sugar for onChunk + sse=true
+		if ( attributes.containsKey( Key.onMessage ) && attributes.get( Key.onMessage ) != null ) {
+			attributes.put( Key.onChunk, attributes.get( Key.onMessage ) );
+			attributes.put( Key.sse, true );
+		}
+
+		// Expand client certificate path if provided
+		if ( attributes.containsKey( Key.clientCert ) ) {
+			attributes.put( Key.clientCert, FileSystemUtil.expandPath( context, attributes.getAsString( Key.clientCert ) ).absolutePath().toString() );
+
+			// In debug mode, extract certificate info for X-Client-Cert header
+			if ( debug ) {
+				encodedCertKey = EncryptionUtil.extractCertificateSubject(
+				    attributes.getAsString( Key.clientCert ),
+				    attributes.getAsString( Key.clientCertPassword )
+				);
+			} else {
+				encodedCertKey = null;
+			}
+		} else {
+			encodedCertKey = null;
+		}
 
 		// We allow the `file` attribute to become the full file path if the `path` attribute is empty
+		String outputDirectory = attributes.getAsString( Key.path );
 		if ( outputDirectory == null && attributes.getAsString( Key.file ) != null ) {
 			Path filePath = FileSystemUtil.expandPath( context, attributes.getAsString( Key.file ) ).absolutePath();
 			outputDirectory = filePath.getParent().toString();
@@ -290,531 +397,74 @@ public class HTTP extends Component {
 			}
 		}
 
-		HttpClient.Version httpVersion = attributes.getAsString( Key.httpVersion ).equalsIgnoreCase( "HTTP/1.1" )
-		    ? HttpClient.Version.HTTP_1_1
-		    : HttpClient.Version.HTTP_2;
+		// Get a new or existing BoxHttpClient
+		BoxHttpClient	boxHttpClient	= httpService.getOrBuildClient(
+		    attributes.getAsString( Key.httpVersion ),
+		    attributes.getAsBoolean( Key.redirect ),
+		    attributes.getAsInteger( Key.connectionTimeout ),
+		    attributes.getAsString( Key.proxyServer ),
+		    attributes.getAsInteger( Key.proxyPort ),
+		    attributes.getAsString( Key.proxyUser ),
+		    attributes.getAsString( Key.proxyPassword ),
+		    attributes.getAsString( Key.clientCert ),
+		    attributes.getAsString( Key.clientCertPassword )
+		);
 
-		try {
-			HttpRequest.Builder	builder		= HttpRequest.newBuilder();
-			URIBuilder			uriBuilder	= new URIBuilder( theURL );
-			if ( attributes.get( Key.port ) != null ) {
-				uriBuilder.setPort( attributes.getAsInteger( Key.port ) );
-			}
-			HttpRequest.BodyPublisher	bodyPublisher	= null;
-			List<IStruct>				formFields		= new ArrayList<>();
-			List<IStruct>				files			= new ArrayList<>();
+		// Make the HTTP request
+		IStruct			result			= ( IStruct ) boxHttpClient
+		    // Target URL and invocation context
+		    .newRequest( attributes.getAsString( Key.URL ), context )
+		    // HTTP Method (GET, POST, PUT, DELETE, etc.)
+		    .method( attributes.getAsString( Key.method ) )
+		    // Special URL Port if any
+		    .port( attributes.getAsInteger( Key.port ) )
+		    // Timeout in seconds
+		    .timeout( attributes.getAsInteger( Key.timeout ) )
+		    // Charset for the request
+		    .charset( attributes.getAsString( Key.charset ) )
+		    // Whether to throw an error if the HTTP response status code is 400 or greater. Default is true.
+		    .throwOnError( attributes.getAsBoolean( Key.throwOnError ) )
+		    // Debug Mode
+		    .debug( BooleanCaster.cast( attributes.getOrDefault( Key.debug, false ) ) )
+		    // HTTP Version
+		    .httpVersion( attributes.getAsString( Key.httpVersion ) )
+		    // User Agent
+		    .userAgent( attributes.getAsString( Key.userAgent ) )
+		    // Are we multipart?
+		    .multipart( attributes.getAsBoolean( Key.multipart ) )
+		    // HTTP Params
+		    .params( executionState.getAsArray( Key.HTTPParams ) )
+		    // Outputs if any
+		    .outputDirectory( outputDirectory )
+		    .outputFile( attributes.getAsString( Key.file ) )
+		    // Encoded Client Certificate Header for Debugging
+		    .when( debug && encodedCertKey != null, ( request ) -> {
+			    request.header( "X-Client-Cert", encodedCertKey );
+		    } )
+		    // Binary Response Handling
+		    .when( isBinaryRequested, ( request ) -> {
+			    request.asBinary();
+		    } )
+		    .when( binaryOperator.equals( BINARY_NEVER ), ( request ) -> {
+			    request.asBinaryNever();
+		    } )
+		    // CallBacks
+		    .onRequestStart( attributes.getAsFunction( Key.onRequestStart ) )
+		    .onChunk( attributes.getAsFunction( Key.onChunk ) )
+		    .onError( attributes.getAsFunction( Key.onError ) )
+		    .onComplete( attributes.getAsFunction( Key.onComplete ) )
+		    // SSE Mode
+		    .sse( attributes.getAsBoolean( Key.sse ) )
+		    // Invoke the request
+		    .send();
 
-			// Basic metadata for the request and results
-			builder
-			    .version( httpVersion )
-			    .header( "User-Agent", attributes.getAsString( Key.userAgent ) )
-			    .header( "Accept", "*/*" )
-			    .header( "Accept-Encoding", "gzip, deflate" )
-			    .header( "x-request-id", requestID );
+		// Set the result variable before returning
+		ExpressionInterpreter.setVariable(
+		    context,
+		    attributes.getAsString( Key.result ),
+		    result
+		);
 
-			// Set the values into the HTTPResult Struct
-			HTTPResult.put( Key.requestID, requestID );
-			HTTPResult.put( Key.userAgent, attributes.getAsString( Key.userAgent ) );
-
-			// Set username/password if they are set
-			if ( attributes.get( Key.username ) != null && attributes.get( Key.password ) != null ) {
-				if ( authMode.equals( AUTHMODE_BASIC ) ) {
-					String	auth		= ( attributes.get( Key.username ) != null ? StringCaster.cast( attributes.get( Key.username ) ) : null )
-					    + BASIC_AUTH_DELIMITER
-					    + StringCaster.cast( attributes.getOrDefault( Key.password, "" ) );
-					String	encodedAuth	= Base64.getEncoder().encodeToString( auth.getBytes() );
-					builder.header( "Authorization", "Basic " + encodedAuth );
-				} else if ( authMode.equals( AUTHMODE_NTLM ) ) {
-					// TODO: This will need to be implemented as separate type of smb request
-					throw new BoxRuntimeException( "NTLM authentication is not currently supported." );
-				}
-			}
-
-			// Process the HTTPParams
-			for ( Object p : params ) {
-				IStruct	param	= StructCaster.cast( p );
-				String	type	= StringCaster.cast( param.get( Key.type ) );
-				switch ( type.toLowerCase() ) {
-					// We need to use `setHeader` to overwrite any previously set headers
-					case "header" -> {
-						String headerName = StringCaster.cast( param.get( Key._NAME ) );
-						// We need to downgrade our HTTP version if a TE header is present and is not `trailers`
-						// because HTTP/2 does not support the TE header with any other values
-						if ( headerName.equalsIgnoreCase( "TE" ) && !StringCaster.cast( param.get( Key.value ) ).equalsIgnoreCase( "trailers" ) ) {
-							httpVersion = HttpClient.Version.HTTP_1_1;
-							builder.version( httpVersion );
-						}
-						builder.setHeader( headerName, StringCaster.cast( param.get( Key.value ) ) );
-					}
-					case "body" -> {
-						if ( bodyPublisher != null ) {
-							throw new BoxRuntimeException( "Cannot use a body httpparam with an existing http body: " + bodyPublisher.toString() );
-						}
-						if ( param.get( Key.value ) instanceof byte[] bodyBytes ) {
-							bodyPublisher = HttpRequest.BodyPublishers.ofByteArray( bodyBytes );
-						} else if ( StringCaster.attempt( param.get( Key.value ) ).wasSuccessful() ) {
-							bodyPublisher = HttpRequest.BodyPublishers.ofString( StringCaster.cast( param.get( Key.value ) ) );
-						} else {
-							throw new BoxRuntimeException( "The body attribute provided is not a valid string nor a binary object." );
-						}
-					}
-					case "xml" -> {
-						if ( bodyPublisher != null ) {
-							throw new BoxRuntimeException( "Cannot use a xml httpparam with an existing http body: " + bodyPublisher.toString() );
-						}
-						builder.header( "Content-Type", "text/xml" );
-						bodyPublisher = HttpRequest.BodyPublishers.ofString( StringCaster.cast( param.get( Key.value ) ) );
-					}
-					// @TODO move URLEncoder.encode usage a non-deprecated method
-					case "cgi" -> builder.header( StringCaster.cast( param.get( Key._NAME ) ),
-					    BooleanCaster.cast( param.getOrDefault( Key.encoded, false ) )
-					        ? EncryptionUtil.urlEncode( StringCaster.cast( param.get( Key.value ) ) )
-					        : StringCaster.cast( param.get( Key.value ) )
-					);
-					case "file" -> files.add( param );
-					case "url" -> uriBuilder.addParameter(
-					    StringCaster.cast( param.get( Key._NAME ) ),
-					    EncryptionUtil.urlEncode( StringCaster.cast( param.get( Key.value ) ), StandardCharsets.UTF_8 )
-					);
-					case "formfield" -> formFields.add( param );
-					case "cookie" -> builder.header( "Cookie",
-					    StringCaster.cast( param.get( Key._NAME ) ) + "="
-					        + EncryptionUtil.urlEncode( StringCaster.cast( param.get( Key.value ) ), StandardCharsets.UTF_8 ) );
-					default -> throw new BoxRuntimeException( "Unhandled HTTPParam type: " + type );
-				}
-			}
-
-			// Process Files
-			if ( !files.isEmpty() ) {
-				if ( bodyPublisher != null ) {
-					throw new BoxRuntimeException( "Cannot use a multipart body with an existing http body: " + bodyPublisher.toString() );
-				}
-				HttpRequestMultipartBody.Builder multipartBodyBuilder = new HttpRequestMultipartBody.Builder();
-				for ( IStruct param : files ) {
-					ResolvedFilePath	path		= FileSystemUtil.expandPath( context, StringCaster.cast( param.get( Key.file ) ) );
-					File				file		= path.absolutePath().toFile();
-					String				mimeType	= Optional.ofNullable( param.getAsString( Key.mimetype ) )
-					    .orElseGet( () -> URLConnection.getFileNameMap().getContentTypeFor( file.getName() ) );
-					multipartBodyBuilder.addPart( StringCaster.cast( param.get( Key._name ) ), file, mimeType, file.getName() );
-				}
-
-				for ( IStruct formField : formFields ) {
-					multipartBodyBuilder.addPart( StringCaster.cast( formField.get( Key._name ) ), StringCaster.cast( formField.get( Key.value ) ) );
-				}
-				HttpRequestMultipartBody multipartBody = multipartBodyBuilder.build();
-				builder.header( "Content-Type", multipartBody.getContentType() );
-				bodyPublisher = HttpRequest.BodyPublishers.ofByteArray( multipartBody.getBody() );
-			}
-			// Process Form Fields
-			else if ( !formFields.isEmpty() ) {
-				if ( bodyPublisher != null ) {
-					throw new BoxRuntimeException( "Cannot use a formfield httpparam with an existing http body: " + bodyPublisher.toString() );
-				}
-				bodyPublisher = HttpRequest.BodyPublishers.ofString(
-				    formFields.stream()
-				        .map( formField -> {
-					        String value = StringCaster.cast( formField.get( Key.value ) );
-					        if ( BooleanCaster.cast( formField.getOrDefault( Key.encoded, false ) ) ) {
-						        value = EncryptionUtil.urlEncode( value, StandardCharsets.UTF_8 );
-					        }
-					        return StringCaster.cast( formField.get( Key._name ) ) + "=" + value;
-				        } )
-				        .collect( Collectors.joining( "&" ) )
-				);
-				builder.header( "Content-Type", "application/x-www-form-urlencoded" );
-			}
-
-			if ( bodyPublisher == null ) {
-				bodyPublisher = HttpRequest.BodyPublishers.noBody();
-			}
-
-			builder.method( method, bodyPublisher );
-			targetURI = uriBuilder.build();
-			builder.uri( targetURI );
-
-			if ( attributes.containsKey( Key.timeout ) ) {
-				builder.timeout( Duration.ofSeconds( attributes.getAsInteger( Key.timeout ) ) );
-			}
-
-			HttpRequest	targetHTTPRequest	= builder.build();
-			// Create a default HTTP Client or a Proxy based Client
-			HttpClient	client				= attributes.containsKey( Key.proxyServer ) || !attributes.getAsBoolean( Key.redirect )
-			    ? HttpManager.getCustomClient( attributes )
-			    : HttpManager.getClient();
-
-			// Announce the HTTP request
-			interceptorService.announce( BoxEvent.ON_HTTP_REQUEST, Struct.of(
-			    "requestID", requestID,
-			    "httpClient", client,
-			    "httpRequest", targetHTTPRequest,
-			    "targetURI", targetURI,
-			    "attributes", attributes
-			) );
-
-			// Adding the request
-			HTTPResult.put(
-			    Key.request,
-			    Struct.of(
-			        "url", targetURI,
-			        "method", method,
-			        "timeout", targetHTTPRequest.timeout(),
-			        "multipart", attributes.getAsBoolean( Key.multipart ),
-			        "headers", Struct.fromMap( targetHTTPRequest.headers().map() )
-			    ) );
-
-			// TODO : should we move the catch block below and add an `exceptionally` handler for the future?
-			CompletableFuture<HttpResponse<byte[]>>	future		= client.sendAsync( targetHTTPRequest, HttpResponse.BodyHandlers.ofByteArray() );
-
-			// Announce the HTTP request
-			HttpResponse<byte[]>					response	= future.get(); // block and wait for the response
-
-			// Announce the HTTP RAW response
-			// Useful for debugging and pre-processing and timing, since the other events are after the response is processed
-			interceptorService.announce( BoxEvent.ON_HTTP_RAW_RESPONSE, Struct.of(
-			    "requestID", requestID,
-			    "response", response,
-			    "httpClient", client,
-			    "httpRequest", targetHTTPRequest,
-			    "targetURI", targetURI,
-			    "attributes", attributes
-			) );
-
-			// Start Processing Results
-			HttpHeaders	httpHeaders		= Optional.ofNullable( response.headers() )
-			    .orElse( HttpHeaders.of( Map.of(), ( a, b ) -> true ) );
-			IStruct		headers			= transformToResponseHeaderStruct( httpHeaders.map() );
-			byte[]		responseBytes	= response.body();
-			Object		responseBody	= null;
-
-			// Process body if not null
-			if ( responseBytes != null ) {
-				String	contentType		= headers.getAsString( Key.of( "content-type" ) );
-				String	contentEncoding	= headers.getAsString( Key.of( "content-encoding" ) );
-
-				if ( contentEncoding != null ) {
-					// Split the Content-Encoding header into individual encodings
-					String[] encodings = contentEncoding.split( "," );
-					for ( String encoding : encodings ) {
-						encoding = encoding.trim().toLowerCase();
-						if ( encoding.equals( "gzip" ) ) {
-							responseBytes = ZipUtil.extractGZipContent( responseBytes );
-						} else if ( encoding.equals( "deflate" ) ) {
-							responseBytes = ZipUtil.inflateDeflatedContent( responseBytes );
-						}
-					}
-				}
-
-				Boolean	isBinaryContentType	= FileSystemUtil.isBinaryMimeType( contentType );
-				String	charset				= null;
-				if ( ( isBinaryRequested || isBinaryContentType ) && !isBinaryNever ) {
-					responseBody = responseBytes;
-				} else if ( isBinaryNever && isBinaryContentType ) {
-					throw new BoxRuntimeException( "The response is a binary type, but the getAsBinary attribute was set to 'never'" );
-				} else {
-					charset			= contentType != null && contentType.contains( "charset=" )
-					    ? extractCharset( contentType )
-					    : "UTF-8";
-					responseBody	= new String( responseBytes, Charset.forName( charset ) );
-				}
-
-				// Prepare all the result variables now that we have the response
-				String	httpVersionString	= response.version() == HttpClient.Version.HTTP_1_1 ? "HTTP/1.1" : "HTTP/2";
-				String	statusCodeString	= String.valueOf( response.statusCode() );
-				String	statusText			= HTTPStatusReasons.getReasonForStatus( response.statusCode() );
-
-				headers.put( Key.HTTP_Version, httpVersionString );
-				headers.put( Key.status_code, statusCodeString );
-				headers.put( Key.explanation, statusText );
-
-				HTTPResult.put( Key.responseHeader, headers );
-				HTTPResult.put( Key.header, generateHeaderString( generateStatusLine( httpVersionString, statusCodeString, statusText ), headers ) );
-				HTTPResult.put( Key.HTTP_Version, httpVersionString );
-				HTTPResult.put( Key.statusCode, response.statusCode() );
-				HTTPResult.put( Key.status_code, response.statusCode() );
-				HTTPResult.put( Key.statusText, statusText );
-				HTTPResult.put( Key.status_text, statusText );
-				HTTPResult.put( Key.fileContent, response.statusCode() == 408 ? "Request Timeout" : responseBody );
-				HTTPResult.put( Key.errorDetail, response.statusCode() == 408 ? response.body() : "" );
-				Optional<String> contentTypeHeader = httpHeaders.firstValue( "Content-Type" );
-				contentTypeHeader.ifPresent( ( headerContentType ) -> {
-					String[] contentTypeParts = headerContentType.split( ";\s*" );
-					if ( contentTypeParts.length > 0 ) {
-						HTTPResult.put( Key.mimetype, contentTypeParts[ 0 ] );
-					}
-					if ( contentTypeParts.length > 1 ) {
-						HTTPResult.put( Key.charset, extractCharset( headerContentType ) );
-					}
-				} );
-				HTTPResult.put( Key.cookies, generateCookiesQuery( headers ) );
-				HTTPResult.put( Key.executionTime, Duration.between( startTime, Instant.now() ).toMillis() );
-
-				// Set the result back into the caller using the variable name
-				ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
-
-				// Announce the HTTP response
-				interceptorService.announce( BoxEvent.ON_HTTP_RESPONSE, Struct.of(
-				    "requestID", requestID,
-				    "response", response,
-				    "result", HTTPResult
-				) );
-
-				if ( outputDirectory != null ) {
-					String fileName = attributes.getAsString( Key.file );
-					if ( fileName == null || fileName.trim().isEmpty() ) {
-						String dispositionHeader = headers.getAsString( Key.of( "content-disposition" ) );
-						if ( dispositionHeader != null ) {
-							Pattern	pattern	= Pattern.compile( "filename=\"?([^\";]+)\"?" );
-							Matcher	matcher	= pattern.matcher( dispositionHeader );
-							if ( matcher.find() ) {
-								fileName = matcher.group( 1 );
-							}
-						} else {
-							fileName = Path.of( targetURI.getPath() ).getFileName().toString();
-						}
-
-						if ( fileName == null || fileName.trim().isEmpty() ) {
-							throw new BoxRuntimeException( "Unable to determine filename from response" );
-						}
-					}
-
-					String destinationPath = Path.of( outputDirectory, fileName ).toAbsolutePath().toString();
-
-					if ( responseBody instanceof String responseString ) {
-						FileSystemUtil.write( destinationPath, responseString, charset, true );
-					} else if ( responseBody instanceof byte[] bodyBytes ) {
-						FileSystemUtil.write( destinationPath, bodyBytes, true );
-					}
-				}
-			}
-
-			return DEFAULT_RETURN;
-		} catch ( ExecutionException e ) {
-			Throwable innerException = e.getCause();
-			if ( innerException instanceof SocketException ) {
-				HTTPResult.put( Key.responseHeader, Struct.EMPTY );
-				HTTPResult.put( Key.header, "" );
-				HTTPResult.put( Key.statusCode, 502 );
-				HTTPResult.put( Key.status_code, 502 );
-				HTTPResult.put( Key.statusText, "Bad Gateway" );
-				HTTPResult.put( Key.status_text, "Bad Gateway" );
-				HTTPResult.put( Key.fileContent, "Connection Failure" );
-				if ( innerException instanceof ConnectException ) {
-					if ( targetURI != null ) {
-						HTTPResult.put( Key.errorDetail, String.format( "Unknown host: %s: Name or service not known.", targetURI.getHost() ) );
-					} else {
-						HTTPResult.put( Key.errorDetail, String.format( "Unknown host: %s: Name or service not known.", theURL ) );
-					}
-				} else {
-					HTTPResult.put( Key.errorDetail, "Connection Failure: " + innerException.getMessage() );
-				}
-				ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
-			} else if ( innerException instanceof HttpTimeoutException ) {
-				HTTPResult.put( Key.responseHeader, Struct.EMPTY );
-				HTTPResult.put( Key.header, "" );
-				HTTPResult.put( Key.statusCode, 408 );
-				HTTPResult.put( Key.status_code, 408 );
-				HTTPResult.put( Key.statusText, "Request Timeout" );
-				HTTPResult.put( Key.status_text, "Request Timeout" );
-				HTTPResult.put( Key.fileContent, "Request Timeout" );
-				HTTPResult.put( Key.errorDetail, "The request timed out after " + attributes.getAsInteger( Key.timeout ) + " second(s)" );
-				ExpressionInterpreter.setVariable( context, variableName, HTTPResult );
-			} else {
-				// retrhow any unknown exception types
-				throw new BoxRuntimeException( "An error occurred while processing the HTTP request", "ExecutionException", innerException );
-			}
-			return DEFAULT_RETURN;
-		} catch ( InterruptedException e ) {
-			Thread.currentThread().interrupt();
-			throw new BoxRuntimeException( "The request was interrupted", "InterruptedException", e );
-		} catch ( URISyntaxException | IOException e ) {
-			throw new BoxRuntimeException( e.getMessage(), e );
-		}
-	}
-
-	/**
-	 * --------------------------------------------------------------------------
-	 * Private Methods
-	 * --------------------------------------------------------------------------
-	 */
-
-	/**
-	 * Generate a Query of cookies from the headers
-	 *
-	 * @param headers The headers to parse
-	 *
-	 * @return A Query of cookies
-	 */
-	private Query generateCookiesQuery( IStruct headers ) {
-		Query cookies = new Query();
-		cookies.addColumn( Key._NAME, QueryColumnType.VARCHAR );
-		cookies.addColumn( Key.value, QueryColumnType.VARCHAR );
-		cookies.addColumn( Key.path, QueryColumnType.VARCHAR );
-		cookies.addColumn( Key.domain, QueryColumnType.VARCHAR );
-		cookies.addColumn( Key.expires, QueryColumnType.VARCHAR );
-		cookies.addColumn( Key.secure, QueryColumnType.VARCHAR );
-		cookies.addColumn( Key.httpOnly, QueryColumnType.VARCHAR );
-		cookies.addColumn( Key.samesite, QueryColumnType.VARCHAR );
-
-		Object				cookieValue		= headers.getOrDefault( Key.of( "Set-Cookie" ), new Array() );
-		CastAttempt<Array>	isValuesArray	= ArrayCaster.attempt( cookieValue );
-		if ( isValuesArray.wasSuccessful() ) {
-			Array values = isValuesArray.getOrFail();
-			for ( Object value : values ) {
-				parseCookieStringIntoQuery( StringCaster.cast( value ), cookies );
-			}
-		} else {
-			parseCookieStringIntoQuery( StringCaster.cast( cookieValue ), cookies );
-		}
-
-		return cookies;
-	}
-
-	/**
-	 * Parse a cookie string into a Query
-	 *
-	 * @param cookieString The cookie string to parse
-	 * @param cookies      The Query to add the cookies to
-	 */
-	private void parseCookieStringIntoQuery( String cookieString, Query cookies ) {
-		IStruct		cookieStruct;
-		String[]	parts	= cookieString.split( ";" );
-		if ( parts.length == 0 ) {
-			return;
-		}
-
-		String[] nameAndValue = parts[ 0 ].split( "=" );
-		if ( nameAndValue.length != 2 ) {
-			return;
-		}
-
-		cookieStruct = new Struct();
-		cookieStruct.put( Key._NAME, nameAndValue[ 0 ] );
-		cookieStruct.put( Key.value, nameAndValue[ 1 ] );
-
-		if ( parts.length > 1 ) {
-			Arrays.stream( parts, 1, parts.length )
-			    .forEach( metadata -> {
-				    String[] metadataParts = metadata.split( "=" );
-				    if ( metadataParts.length == 0 ) {
-					    return;
-				    }
-				    Key	metadataType	= Key.of( metadataParts[ 0 ] );
-				    Object metadataValue = true;
-				    if ( metadataParts.length == 2 ) {
-					    metadataValue = metadataParts[ 1 ];
-				    }
-
-				    if ( metadataType.equals( Key.of( "max-age" ) ) ) {
-					    metadataType = Key.expires;
-					    metadataValue = StringCaster.cast( DoubleCaster.cast( metadataValue ) / 60 / 60 / 24 );
-				    }
-
-				    cookieStruct.put( metadataType, metadataValue );
-			    } );
-		}
-
-		cookies.add( cookieStruct );
-	}
-
-	/**
-	 * Generate a status line from the HTTP version, status code, and status text
-	 *
-	 * @param httpVersionString The HTTP version string
-	 * @param statusCodeString  The status code string
-	 * @param statusText        The status text
-	 *
-	 * @return The generated status line
-	 */
-	private String generateStatusLine( String httpVersionString, String statusCodeString, String statusText ) {
-		return httpVersionString + " " + statusCodeString + " " + statusText;
-	}
-
-	/**
-	 * Generate a header string from the status line and headers
-	 *
-	 * @param statusLine The status line
-	 * @param headers    The headers to include in the string
-	 *
-	 * @return The generated header string
-	 */
-	private String generateHeaderString( String statusLine, IStruct headers ) {
-		return statusLine + " " + headers.entrySet()
-		    .stream()
-		    .sorted( Map.Entry.comparingByKey() )
-		    .map( entry -> {
-			    StringBuilder	sb				= new StringBuilder();
-			    Object			headerValues	= entry.getValue();
-			    CastAttempt<Array> isValuesArray = ArrayCaster.attempt( headerValues );
-			    if ( isValuesArray.wasSuccessful() ) {
-				    Array values = isValuesArray.getOrFail();
-				    for ( Object value : values ) {
-					    String headerValue = StringCaster.cast( value );
-					    sb.append( entry.getKey().getName() + ": " + headerValue + " " );
-				    }
-			    } else {
-				    String headerValue = StringCaster.cast( headerValues );
-				    sb.append( entry.getKey().getName() + ": " + headerValue + " " );
-			    }
-			    return sb.toString().trim();
-		    } ).collect( Collectors.joining( " " ) );
-	}
-
-	/**
-	 * Transform the headers map into a response header struct
-	 *
-	 * @param headersMap The headers map to transform
-	 *
-	 * @return The transformed response header struct
-	 */
-	private IStruct transformToResponseHeaderStruct( Map<String, List<String>> headersMap ) {
-		IStruct responseHeaders = new Struct();
-
-		if ( headersMap == null ) {
-			return responseHeaders;
-		}
-
-		// Add all the headers to our struct
-		for ( String headerName : headersMap.keySet() ) {
-			if ( ":status".equals( headerName ) ) {
-				continue;
-			}
-			Key		headerNameKey	= Key.of( headerName );
-			Array	values			= ( Array ) responseHeaders.getOrDefault( headerNameKey, new Array() );
-			values.addAll( headersMap.get( headerName ) );
-			responseHeaders.put( headerNameKey, values );
-		}
-
-		for ( Key structHeaderKey : responseHeaders.keySet() ) {
-			CastAttempt<Array> isValuesArray = ArrayCaster.attempt( responseHeaders.get( structHeaderKey ) );
-			if ( isValuesArray.wasSuccessful() ) {
-				Array values = isValuesArray.getOrFail();
-				if ( values.size() == 1 ) {
-					responseHeaders.put( structHeaderKey, values.get( 0 ) );
-				}
-			}
-		}
-
-		return responseHeaders;
-	}
-
-	/**
-	 * Extract the charset from the content type string
-	 *
-	 * @param contentType The content type string to extract the charset from
-	 *
-	 * @return The extracted charset, or null if not found
-	 */
-	private static String extractCharset( String contentType ) {
-		if ( contentType == null || contentType.isEmpty() ) {
-			return null;
-		}
-
-		Pattern	pattern	= Pattern.compile( "charset=([a-zA-Z0-9-]+)" );
-		Matcher	matcher	= pattern.matcher( contentType );
-
-		if ( matcher.find() ) {
-			return matcher.group( 1 );
-		}
-		return null;
+		return bodyResult;
 	}
 }

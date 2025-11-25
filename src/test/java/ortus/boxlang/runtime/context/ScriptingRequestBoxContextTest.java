@@ -22,7 +22,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.file.Path;
-import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 
 import org.junit.jupiter.api.DisplayName;
@@ -58,21 +58,6 @@ public class ScriptingRequestBoxContextTest {
 
 			@Override
 			public void _invoke( IBoxContext context ) {
-			}
-
-			@Override
-			public long getRunnableCompileVersion() {
-				return 0;
-			}
-
-			@Override
-			public LocalDateTime getRunnableCompiledOn() {
-				return null;
-			}
-
-			@Override
-			public Object getRunnableAST() {
-				return null;
 			}
 
 			@Override
@@ -181,5 +166,25 @@ public class ScriptingRequestBoxContextTest {
 		// also this must exist in the Key.runtime, Key.datasources
 		var datasources = ( IStruct ) context.getConfigItems( Key.datasources );
 		assertThat( datasources.containsKey( Key.bxDefaultDatasource ) ).isTrue();
+	}
+
+	@Test
+	@DisplayName( "Test context shutdown listener" )
+	void testContextShutdownListener() {
+		ScriptingRequestBoxContext	context		= new ScriptingRequestBoxContext();
+		final var					reference	= new HashMap<String, String>();
+		context.registerShutdownListener( ( ctx ) -> {
+			reference.put( "shutdownCalled", "true" );
+		} );
+		context.registerShutdownListener( ( ctx ) -> {
+			reference.put( "shutdownCalled2", "true" );
+		} );
+		context.shutdown();
+
+		assertThat( reference.containsKey( "shutdownCalled" ) ).isTrue();
+		assertThat( reference.get( "shutdownCalled" ) ).isEqualTo( "true" );
+
+		assertThat( reference.containsKey( "shutdownCalled2" ) ).isTrue();
+		assertThat( reference.get( "shutdownCalled2" ) ).isEqualTo( "true" );
 	}
 }

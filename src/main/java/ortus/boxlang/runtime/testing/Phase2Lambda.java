@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.testing;
 
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -41,13 +40,10 @@ public class Phase2Lambda extends BoxTemplate {
 
     private static Phase2Lambda                 instance;
 
-    private final static List<ImportDefinition> imports        = List.of();
+    private final static List<ImportDefinition> imports = List.of();
 
-    private static final ResolvedFilePath       path           = ResolvedFilePath
+    private static final ResolvedFilePath       path    = ResolvedFilePath
         .of( Paths.get( "runtime\\src\\main\\java\\ortus\\boxlang\\runtime\\testing\\Phase2Lambda.java" ) );
-    private static final long                   compileVersion = 1L;
-    private static final LocalDateTime          compiledOn     = LocalDateTime.parse( "2023-09-27T10:15:30" );
-    private static final Object                 ast            = null;
 
     private Phase2Lambda() {
     }
@@ -131,28 +127,6 @@ public class Phase2Lambda extends BoxTemplate {
     }
 
     // ITemplateRunnable implementation methods
-
-    /**
-     * The version of the BoxLang runtime
-     */
-    public long getRunnableCompileVersion() {
-        return Phase2Lambda.compileVersion;
-    }
-
-    /**
-     * The date the template was compiled
-     */
-    public LocalDateTime getRunnableCompiledOn() {
-        return Phase2Lambda.compiledOn;
-    }
-
-    /**
-     * The AST (abstract syntax tree) of the runnable
-     */
-    public Object getRunnableAST() {
-        return Phase2Lambda.ast;
-    }
-
     /**
      * The path to the template
      */

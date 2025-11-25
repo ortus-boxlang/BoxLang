@@ -433,7 +433,8 @@ public class DelimitedArray extends Array {
 		String[]	result	= new String[ wrapped.size() + delimiters.size() ];
 		int			i		= 0;
 		for ( int j = 0; j < wrapped.size(); j++ ) {
-			result[ i++ ] = wrapped.get( j ).toString();
+			Object value = wrapped.get( j );
+			result[ i++ ] = value == null ? "" : value.toString();
 			if ( j < delimiters.size() ) {
 				result[ i++ ] = delimiters.get( j );
 			}
@@ -479,9 +480,9 @@ public class DelimitedArray extends Array {
 	 */
 
 	/**
-	 * Returns a new array removing all of the duplicates - either caseSenstively or not
+	 * Returns a new array removing all of the duplicates - either caseSensitively or not
 	 *
-	 * @param caseSensitive whether to perform the deduplication caseSenstively
+	 * @param caseSensitive whether to perform the deduplication caseSensitively
 	 *
 	 * @return The new array
 	 */

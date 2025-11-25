@@ -1,6 +1,5 @@
 package ortus.boxlang.compiler.asmboxpiler;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,6 +28,8 @@ import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
+import ortus.boxlang.compiler.BoxByteCodeVersion;
+import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxClass;
@@ -724,24 +725,6 @@ public class AsmHelper {
 		}
 		addConstructor( classVisitor, !singleton, superClass, onConstruction );
 
-		addStaticFieldGetter( classVisitor,
-		    type,
-		    "compileVersion",
-		    "getRunnableCompileVersion",
-		    Type.LONG_TYPE,
-		    1L );
-		addStaticFieldGetter( classVisitor,
-		    type,
-		    "compiledOn",
-		    "getRunnableCompiledOn",
-		    Type.getType( LocalDateTime.class ),
-		    null );
-		addStaticFieldGetter( classVisitor,
-		    type,
-		    "ast",
-		    "getRunnableAST",
-		    Type.getType( Object.class ),
-		    null );
 	}
 
 	public static void addConstructor(
@@ -794,18 +777,36 @@ public class AsmHelper {
 		    null );
 		fieldVisitor.visitEnd();
 		MethodVisitor methodVisitor = classVisitor.visitMethod(
-		    Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNCHRONIZED | Opcodes.ACC_STATIC,
+		    Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
 		    "getInstance",
 		    Type.getMethodDescriptor( type ),
 		    null,
 		    null );
 		methodVisitor.visitCode();
-		Label after = new Label();
+
+		// First null check (outside synchronized block)
+		Label endOfMethod = new Label();
 		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
 		    type.getInternalName(),
 		    "instance",
 		    type.getDescriptor() );
-		methodVisitor.visitJumpInsn( Opcodes.IFNONNULL, after );
+		methodVisitor.visitJumpInsn( Opcodes.IFNONNULL, endOfMethod );
+
+		// Synchronized block on class
+		methodVisitor.visitLdcInsn( type );
+		methodVisitor.visitInsn( Opcodes.MONITORENTER );
+
+		// Second null check (inside synchronized block)
+		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
+		    type.getInternalName(),
+		    "instance",
+		    type.getDescriptor() );
+		Label start = new Label(), end = new Label(), handler = new Label();
+		methodVisitor.visitTryCatchBlock( start, end, handler, null );
+		methodVisitor.visitLabel( start );
+		methodVisitor.visitJumpInsn( Opcodes.IFNONNULL, end );
+
+		// Create new instance
 		methodVisitor.visitTypeInsn( Opcodes.NEW, type.getInternalName() );
 		methodVisitor.visitInsn( Opcodes.DUP );
 		methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL,
@@ -817,12 +818,26 @@ public class AsmHelper {
 		    type.getInternalName(),
 		    "instance",
 		    type.getDescriptor() );
-		methodVisitor.visitLabel( after );
+
+		// Exit synchronized block normally
+		methodVisitor.visitLabel( end );
+		methodVisitor.visitLdcInsn( type );
+		methodVisitor.visitInsn( Opcodes.MONITOREXIT );
+
+		// Return instance
+		methodVisitor.visitLabel( endOfMethod );
 		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
 		    type.getInternalName(),
 		    "instance",
 		    type.getDescriptor() );
 		methodVisitor.visitInsn( Opcodes.ARETURN );
+
+		// Exception handler for synchronized block
+		methodVisitor.visitLabel( handler );
+		methodVisitor.visitLdcInsn( type );
+		methodVisitor.visitInsn( Opcodes.MONITOREXIT );
+		methodVisitor.visitInsn( Opcodes.ATHROW );
+
 		methodVisitor.visitMaxs( 0, 0 );
 		methodVisitor.visitEnd();
 	}
@@ -1021,29 +1036,6 @@ public class AsmHelper {
 		    null,
 		    null );
 		methodVisitor.visitCode();
-
-		methodVisitor.visitLdcInsn( 1L );
-		methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-		    type.getInternalName(),
-		    "compileVersion",
-		    Type.LONG_TYPE.getDescriptor() );
-
-		methodVisitor.visitLdcInsn( LocalDateTime.now().toString() );
-		methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
-		    Type.getInternalName( LocalDateTime.class ),
-		    "parse",
-		    Type.getMethodDescriptor( Type.getType( LocalDateTime.class ), Type.getType( CharSequence.class ) ),
-		    false );
-		methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-		    type.getInternalName(),
-		    "compiledOn",
-		    Type.getDescriptor( LocalDateTime.class ) );
-
-		methodVisitor.visitInsn( Opcodes.ACONST_NULL );
-		methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-		    type.getInternalName(),
-		    "ast",
-		    Type.getDescriptor( Object.class ) );
 
 		onCinit.accept( methodVisitor );
 
@@ -1613,5 +1605,20 @@ public class AsmHelper {
 		}
 
 		return subNodes;
+	}
+
+	/**
+	 * Adds the @BoxByteCodeVersion annotation to a generated class.
+	 * This annotation contains the BoxLang version and bytecode version for compatibility validation.
+	 *
+	 * @param classNode The ClassNode to add the annotation to
+	 */
+	public static void addBoxByteCodeVersionAnnotation( ClassNode classNode ) {
+		String	boxlangVersion		= BoxRuntime.getInstance().getVersionInfo().getAsString( Key.of( "version" ) );
+		int		bytecodeVersion		= IBoxpiler.BYTECODE_VERSION;
+		var		annotationVisitor	= classNode.visitAnnotation( Type.getDescriptor( BoxByteCodeVersion.class ), false );
+		annotationVisitor.visit( "boxlangVersion", boxlangVersion );
+		annotationVisitor.visit( "bytecodeVersion", bytecodeVersion );
+		annotationVisitor.visitEnd();
 	}
 }

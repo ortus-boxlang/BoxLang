@@ -212,6 +212,17 @@ public class IsDateTest {
 		assertTrue( variables.getAsBoolean( result ) );
 	}
 
+	@DisplayName( "It tests year/month/day with local and zone" )
+	@Test
+	public void testIsDateYMD() {
+		instance.executeSource(
+		    """
+		    result = isDate( "1970/01/01", "en-US", "UTC" )
+		       """,
+		    context );
+		assertTrue( variables.getAsBoolean( result ) );
+	}
+
 	@DisplayName( "It tests the BIF IsDate returns false with an invalid date" )
 	@Test
 	public void testIsDateFalseChinese() {
@@ -245,6 +256,29 @@ public class IsDateTest {
 		        """,
 		        context )
 		);
+	}
+
+	@DisplayName( "It tests zero is not a date" )
+	@Test
+	public void testIsDateZero() {
+		instance.executeSource(
+		    """
+		       result = IsDate( -1 );
+		       result2 = IsDate( 0 );
+		       result3 = IsDate( 1 );
+		       result4 = IsDate( 2 );
+		       result5 = IsDate( 3 );
+		       result6 = IsDate( 4 );
+		    result7 = IsDate( "000009" );
+		       """,
+		    context );
+		assertFalse( variables.getAsBoolean( result ) );
+		assertFalse( variables.getAsBoolean( Key.of( "result2" ) ) );
+		assertFalse( variables.getAsBoolean( Key.of( "result3" ) ) );
+		assertFalse( variables.getAsBoolean( Key.of( "result4" ) ) );
+		assertFalse( variables.getAsBoolean( Key.of( "result5" ) ) );
+		assertFalse( variables.getAsBoolean( Key.of( "result6" ) ) );
+		assertFalse( variables.getAsBoolean( Key.of( "result7" ) ) );
 	}
 
 }

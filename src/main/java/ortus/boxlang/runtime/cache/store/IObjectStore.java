@@ -254,4 +254,13 @@ public interface IObjectStore {
 	 */
 	public void set( IStruct entries );
 
+	/**
+	 * Indicates whether this store is distributed or local.
+	 * Distributed stores (like JDBC, Redis, etc.) persist data outside the JVM,
+	 * while local stores (like ConcurrentStore) keep data in memory.
+	 *
+	 * @return true if this is a distributed store, false if it's a local store
+	 */
+	public boolean isDistributed();
+
 }

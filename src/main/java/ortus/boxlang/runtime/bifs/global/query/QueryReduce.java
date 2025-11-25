@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF
+@BoxBIF( description = "Reduce query data to a single value using a callback function" )
 @BoxMember( type = BoxLangType.QUERY )
 public class QueryReduce extends BIF {
 

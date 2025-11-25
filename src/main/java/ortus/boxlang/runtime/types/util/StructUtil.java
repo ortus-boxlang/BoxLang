@@ -21,10 +21,13 @@ import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -34,9 +37,9 @@ import java.util.stream.Stream;
 import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
@@ -45,10 +48,10 @@ import ortus.boxlang.runtime.operators.StringCompare;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
@@ -112,8 +115,8 @@ public class StructUtil {
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
 	 * @param ordered         Boolean as to whether to maintain order in parallel execution
-	 * 
-	 * @deprecated since 1.5.0, use {@link #each(IStruct, Function, IBoxContext, Boolean, Integer, Boolean, Boolean)} instead
+	 *
+	 * @Deprecated since 1.5.0, use {@link #each(IStruct, Function, IBoxContext, Boolean, Integer, Boolean, Boolean)} instead
 	 */
 	public static void each(
 	    IStruct struct,
@@ -213,8 +216,8 @@ public class StructUtil {
 	 * @param callbackContext The context in which to execute the callback
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
-	 * 
-	 * @deprecated since 1.5.0, use {@link #some(IStruct, Function, IBoxContext, Boolean, Integer, Boolean)} instead
+	 *
+	 * @Deprecated since 1.5.0, use {@link #some(IStruct, Function, IBoxContext, Boolean, Integer, Boolean)} instead
 	 *
 	 * @return The boolean value as to whether the test is met
 	 */
@@ -301,8 +304,8 @@ public class StructUtil {
 	 * @param callbackContext The context in which to execute the callback
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
-	 * 
-	 * @deprecated since 1.5.0, use {@link #every(IStruct, Function, IBoxContext, Boolean, Integer, Boolean)} instead
+	 *
+	 * @Deprecated since 1.5.0, use {@link #every(IStruct, Function, IBoxContext, Boolean, Integer, Boolean)} instead
 	 *
 	 * @return The boolean value as to whether the test is met
 	 */
@@ -386,8 +389,8 @@ public class StructUtil {
 	 * @param callbackContext The context in which to execute the callback
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
-	 * 
-	 * @deprecated since 1.5.0, use {@link #filter(IStruct, Function, IBoxContext, Boolean, Integer, Boolean)} instead
+	 *
+	 * @Deprecated since 1.5.0, use {@link #filter(IStruct, Function, IBoxContext, Boolean, Integer, Boolean)} instead
 	 *
 	 * @return A filtered array
 	 */
@@ -476,8 +479,8 @@ public class StructUtil {
 	 * @param callbackContext The context in which to execute the callback
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
-	 * 
-	 * @deprecated since 1.5.0, use {@link #map(IStruct, Function, IBoxContext, Boolean, Integer, Boolean)} instead
+	 *
+	 * @Deprecated since 1.5.0, use {@link #map(IStruct, Function, IBoxContext, Boolean, Integer, Boolean)} instead
 	 *
 	 * @return A filtered array
 	 */
@@ -684,7 +687,7 @@ public class StructUtil {
 		        .stream()
 		        .map( k -> k.getName() )
 		        .sorted(
-		            ( a, b ) -> IntegerCaster.cast( callbackContext.invokeFunction(
+		            ( a, b ) -> Compare.convertCompareResultToInteger( callbackContext.invokeFunction(
 		                callback,
 		                new Object[] { a, b }
 		            ) )
@@ -729,86 +732,87 @@ public class StructUtil {
 	 * @return a stream of structs containing the owner, path, and value of the found key
 	 */
 	public static Stream<IStruct> findKey( IStruct struct, String key ) {
-		String[]			keyParts	= key.toLowerCase().split( "\\." );
-		IStruct				flatMap		= toFlatMap( struct );
+		String				searchKey	= key.toLowerCase();
 		ArrayList<IStruct>	results		= new ArrayList<IStruct>();
 
-		// If we have a single key and find it in the root add that result first
-		if ( keyParts.length == 1 && struct.containsKey( Key.of( key ) ) ) {
-			results.add(
-			    Struct.of(
-			        Key.owner, struct,
-			        Key.path, "." + key.toLowerCase(),
-			        Key.value, struct.get( Key.of( key ) )
-			    )
+		// Check if the key contains dots - indicating a path search
+		if ( searchKey.contains( "." ) ) {
+			// Use the toFlatMap approach for dot notation searches
+			IStruct flatMap = toFlatMap( struct );
+			results.addAll(
+			    flatMap.entrySet()
+			        .stream()
+			        .filter( entry -> entry.getKey().getName().toLowerCase().equals( searchKey ) )
+			        .map( entry -> {
+				        Struct returnStruct	= new Struct( Struct.TYPES.LINKED );
+				        String keyName		= entry.getKey().getName();
+				        String[] pathParts	= keyName.split( "\\." );
+
+				        // Find the immediate parent struct that contains the target key
+				        IStruct ownerStruct	= struct;
+				        if ( pathParts.length > 1 ) {
+					        // Navigate to the parent struct
+					        for ( int i = 0; i < pathParts.length - 1; i++ ) {
+						        ownerStruct = ownerStruct.getAsStruct( Key.of( pathParts[ i ] ) );
+					        }
+				        }
+
+				        returnStruct.put(
+				            Key.owner,
+				            ownerStruct
+				        );
+				        returnStruct.put(
+				            Key.path,
+				            "." + keyName
+				        );
+				        returnStruct.put(
+				            Key.value,
+				            entry.getValue()
+				        );
+				        return returnStruct;
+			        } )
+			        .collect( Collectors.toList() )
 			);
+		} else {
+			// Use recursive search for simple key searches (supports intermediate structs)
+			findKeyRecursive( struct, struct, searchKey, "", results );
 		}
 
-		// Now add any results that are nested
-		results.addAll(
-		    flatMap.entrySet()
-		        .stream()
-		        .filter( entry -> {
-			        String[] splitParts = entry.getKey().getName().toLowerCase().split( "\\." );
-			        String stringKey = entry.getKey().getName().toLowerCase();
-			        return splitParts.length > 1
-			            ? splitParts[ splitParts.length - 1 ].equals( key.toLowerCase() ) || stringKey.equals( key.toLowerCase() )
-			            // For single keys make sure we check that it wasn't added above
-			            : results.stream()
-			                .filter(
-			                    result -> {
-				                    Object resultObj = result.get( Key.value );
-				                    Object entryObj = entry.getValue();
-				                    if ( resultObj == null ) {
-					                    return entry.getValue() == null;
-				                    } else {
-					                    return entryObj != null ? resultObj.equals( entryObj ) : false;
-				                    }
-			                    }
-			                )
-			                .count() == 0
-			                && stringKey.equals( key.toLowerCase() );
-		        } )
-		        .map( entry -> {
-			        Struct returnStruct	= new Struct( Struct.TYPES.LINKED );
-			        String keyName		= entry.getKey().getName();
-			        String[] entryKeyParts = entry.getKey().getName().split( "\\." );
-			        String flatMapParent = keyName.lastIndexOf( "." ) > -1 ? keyName.substring( 0, keyName.lastIndexOf( "." ) ) : "";
-			        returnStruct.put(
-			            Key.owner,
-			            entryKeyParts.length > 1
-			                ? unFlattenKeys(
-			                    flatMap.entrySet().stream()
-			                        .filter( mapEntry -> mapEntry.getKey().getName().length() >= flatMapParent.length()
-			                            && mapEntry.getKey().getName().substring( 0, flatMapParent.length() ).equals( flatMapParent ) )
-			                        .map( mapEntry -> {
-				                        String keyname = mapEntry.getKey().getName();
-				                        String resultKeyName = keyname.substring( flatMapParent.length() + 1 );
-				                        return new AbstractMap.SimpleEntry<Key, Object>(
-				                            Key.of( resultKeyName ), mapEntry.getValue()
-				                        );
-			                        }
-			                        )
-			                        .collect( BLCollector.toStruct() ),
-			                    true,
-			                    false
-			                )
-			                : struct
-			        );
-			        returnStruct.put(
-			            Key.path,
-			            "." + keyName
-			        );
-			        returnStruct.put(
-			            Key.value,
-			            entry.getValue()
-			        );
-			        return returnStruct;
-		        } ).collect( Collectors.toList() )
-		);
-
 		return results.stream();
+	}
 
+	/**
+	 * Helper method to recursively find keys in nested structures
+	 *
+	 * @param rootStruct    the original root struct for reference
+	 * @param currentStruct the current struct being searched
+	 * @param searchKey     the key to search for (lowercase)
+	 * @param currentPath   the current path from root (for building result paths)
+	 * @param results       the list to collect matching results
+	 */
+	private static void findKeyRecursive( IStruct rootStruct, IStruct currentStruct, String searchKey, String currentPath, ArrayList<IStruct> results ) {
+		for ( Map.Entry<Key, Object> entry : currentStruct.entrySet() ) {
+			String	keyName		= entry.getKey().getName();
+			String	fullPath	= currentPath.isEmpty() ? keyName : currentPath + "." + keyName;
+			Object	value		= entry.getValue();
+
+			// Check if this key matches what we're looking for
+			if ( keyName.toLowerCase().equals( searchKey ) ) {
+				// Find the immediate parent struct that contains this key
+				IStruct ownerStruct = currentStruct;
+
+				results.add( Struct.of(
+				    Key.owner, ownerStruct,
+				    Key.path, "." + fullPath.toLowerCase(),
+				    Key.value, value
+				) );
+			}
+
+			// If the value is a struct, recursively search it
+			if ( value instanceof IStruct ) {
+				findKeyRecursive( rootStruct, ( IStruct ) value, searchKey, fullPath, results );
+			}
+		}
 	}
 
 	/**
@@ -821,47 +825,107 @@ public class StructUtil {
 	 * @return a stream of structs containing the owner, path, and key of the found value
 	 */
 	public static Stream<IStruct> findValue( IStruct struct, Object value ) {
-		IStruct flatMap = toFlatMap( struct );
+		IStruct			flatMap			= toFlatMap( struct );
+
+		// First get regular struct matches (non-List values)
+		Stream<IStruct>	regularMatches	= flatMap.entrySet()
+		    .stream()
+		    .filter( entry -> ! ( entry.getValue() instanceof List ) && Compare.invoke( value, entry.getValue() ) == 0 )
+		    .map( entry -> extractValueResult( entry, flatMap, struct ) );
+
+		// Then get matches from within arrays/lists
+		Stream<IStruct>	arrayMatches	= extractValuesFromArrays( flatMap, struct, value );
+
+		// Combine both streams
+		return Stream.concat( regularMatches, arrayMatches );
+	}
+
+	/**
+	 * Helper method to find values within arrays/lists in a flattened struct
+	 *
+	 * @param flatMap        the flattened map to search within
+	 * @param originalStruct the original struct for context
+	 * @param value          the value to search for
+	 *
+	 * @return a stream of structs containing matches found within arrays
+	 */
+	private static Stream<IStruct> extractValuesFromArrays( IStruct flatMap, IStruct originalStruct, Object value ) {
 		return flatMap.entrySet()
 		    .stream()
-		    .filter( entry -> Compare.invoke( value, entry.getValue() ) == 0 )
-		    .map( entry -> {
-			    Struct	returnStruct	= new Struct( Struct.TYPES.LINKED );
-			    String	keyName			= entry.getKey().getName();
-			    String[] keyParts		= entry.getKey().getName().split( "\\." );
-			    String	parentName		= keyName;
-			    if ( keyParts.length > 1 ) {
-				    parentName = keyName.substring( 0, keyName.lastIndexOf( "." ) );
-			    }
-			    final String finalParent = parentName;
-			    returnStruct.put(
-			        Key.owner,
-			        keyParts.length > 1
-			            ? unFlattenKeys(
-			                flatMap.entrySet().stream()
-			                    .filter( mapEntry -> mapEntry.getKey().getName().contains( finalParent )
-			                    ).map(
-			                        mapEntry -> new AbstractMap.SimpleEntry<Key, Object>(
-			                            Key.of( mapEntry.getKey().getName().replace( finalParent + ".", "" ) ), mapEntry.getValue() )
-			                    )
-			                    .collect( BLCollector.toStruct() ),
-			                true,
-			                false
-			            )
-			            : struct
-			    );
-			    // TODO: This dot prefix is silly given the context this function operates in. Deprecate the dot prefix in a future release.
-			    returnStruct.put(
-			        Key.path,
-			        "." + keyName
-			    );
-			    returnStruct.put(
-			        Key.key,
-			        keyParts[ keyParts.length - 1 ]
-			    );
-			    return returnStruct;
-		    } );
+		    .filter( entry -> entry.getValue() instanceof List )
+		    .flatMap( entry -> {
+			    List<?> list	= ( List<?> ) entry.getValue();
+			    Array array		= ArrayCaster.cast( list );
+			    String basePath	= entry.getKey().getName();
 
+			    return array.stream()
+			        .filter( item -> item instanceof Map )
+			        .map( item -> StructCaster.cast( item ) )
+			        .flatMap( structItem -> {
+				        // Find values recursively in this struct
+				        return findValue( structItem, value )
+				            .map( result -> {
+					            // Modify the path to include array index
+					            String originalPath = result.getAsString( Key.path );
+					            int arrayIndex = array.indexOf( structItem ) + 1; // 1-based index
+					            String newPath = "." + basePath + "[" + arrayIndex + "]" + originalPath;
+
+					            // Create new result with corrected path
+					            Struct newResult = new Struct( Struct.TYPES.LINKED );
+					            newResult.put( Key.owner, result.get( Key.owner ) );
+					            newResult.put( Key.path, newPath );
+					            newResult.put( Key.key, result.get( Key.key ) );
+
+					            return newResult;
+				            } );
+			        } );
+		    } );
+	}
+
+	/**
+	 * Helper method to create a findValue result struct from a map entry
+	 *
+	 * @param entry          the map entry containing the found value
+	 * @param flatMap        the complete flattened map for context
+	 * @param originalStruct the original struct
+	 *
+	 * @return a struct containing owner, path, and key information
+	 */
+	private static IStruct extractValueResult( Map.Entry<Key, Object> entry, IStruct flatMap, IStruct originalStruct ) {
+		Struct		returnStruct	= new Struct( Struct.TYPES.LINKED );
+		String		keyName			= entry.getKey().getName();
+		String[]	keyParts		= entry.getKey().getName().split( "\\." );
+		String		parentName		= keyName;
+		if ( keyParts.length > 1 ) {
+			parentName = keyName.substring( 0, keyName.lastIndexOf( "." ) );
+		}
+		final String finalParent = parentName;
+		returnStruct.put(
+		    Key.owner,
+		    keyParts.length > 1
+		        ? unFlattenKeys(
+		            flatMap.entrySet().stream()
+		                .filter( mapEntry -> mapEntry.getKey().getName().contains( finalParent )
+		                ).map(
+		                    mapEntry -> new AbstractMap.SimpleEntry<Key, Object>(
+		                        Key.of( mapEntry.getKey().getName().replace( finalParent + ".", "" ) ), mapEntry.getValue() )
+		                )
+		                .collect( BLCollector.toStruct() ),
+		            true,
+		            false
+		        )
+		        : originalStruct
+		);
+		// TODO: This dot prefix is silly given the context this function operates in. Deprecate the dot prefix in a future release.
+		returnStruct.put(
+		    Key.path,
+		    "." + keyName
+		);
+		returnStruct.put(
+		    Key.key,
+		    keyParts[ keyParts.length - 1 ]
+		);
+		return returnStruct;
 	}
 
 	/**
@@ -961,23 +1025,89 @@ public class StructUtil {
 	 * @return a flattened map of the struct
 	 */
 	public static IStruct unFlattenKeys( IStruct struct, boolean deep, boolean retainKeys ) {
-		String	key;
-		Object	value;
-		int		index;
-		for ( Key k : struct.getKeys() ) {
+		String		key;
+		Object		value;
+		int			index;
+
+		// Pass 1: Determine which keys should be unflattened
+		Set<String>	keysToUnflatten	= determineKeysToUnflatten( struct );
+
+		// Pass 2: Create a copy of keys to iterate over since we'll be modifying the struct
+		Key[]		keys			= struct.getKeys().toArray( new Key[ 0 ] );
+		for ( Key k : keys ) {
 			key		= k.getName();
 			value	= struct.get( k );
 			if ( deep && value instanceof IStruct )
 				unFlattenKeys( StructCaster.cast( value ), deep, retainKeys );
+
 			if ( ( index = key.indexOf( '.' ) ) != -1 ) {
-				unFlattenKey( index, k, key, struct, retainKeys );
+				// Only unflatten if this key was marked for unflattening
+				if ( keysToUnflatten.contains( key ) ) {
+					unFlattenKey( index, k, key, struct, retainKeys );
+				}
 			}
 		}
 
 		return struct;
-
 	}
 
+	/**
+	 * Analyzes all keys in the struct to determine which dotted keys should be unflattened.
+	 * Uses heuristics to distinguish between original dotted keys and flattened keys.
+	 * 
+	 * @param struct the struct to analyze
+	 * 
+	 * @return a set of key names that should be unflattened
+	 */
+	private static Set<String> determineKeysToUnflatten( IStruct struct ) {
+		Set<String>					result		= new HashSet<>();
+		Map<String, List<String>>	keysByRoot	= new HashMap<>();
+
+		// Group all dotted keys by their root (first part before first dot)
+		for ( Key k : struct.getKeys() ) {
+			String	keyName		= k.getName();
+			int		dotIndex	= keyName.indexOf( '.' );
+			if ( dotIndex != -1 ) {
+				String root = keyName.substring( 0, dotIndex );
+				keysByRoot.computeIfAbsent( root, unused -> new ArrayList<>() ).add( keyName );
+			}
+		}
+
+		// For each root, decide if its keys should be unflattened
+		for ( Map.Entry<String, List<String>> entry : keysByRoot.entrySet() ) {
+			String			root	= entry.getKey();
+			List<String>	keys	= entry.getValue();
+
+			// If there are multiple keys with the same root, they likely represent
+			// a flattened object structure
+			if ( keys.size() > 1 ) {
+				result.addAll( keys );
+			}
+			// Single key with simple structure might be flattened from single-property object
+			// vs multi-dot keys are likely original configuration keys
+			else if ( keys.size() == 1 ) {
+				String	singleKey	= keys.get( 0 );
+				String	remainder	= singleKey.substring( root.length() + 1 );
+				// Simple keys like "nested.subkey" are likely flattened
+				// Complex keys like "oracle.net.disableOob" are likely original
+				if ( !remainder.contains( "." ) ) {
+					result.add( singleKey );
+				}
+			}
+		}
+
+		return result;
+	}
+
+	/**
+	 * Determines if a dotted key should be unflattened based on evidence that it represents
+	 * a flattened nested structure rather than an original dotted key name.
+	 *
+	 * @param keyName the dotted key to evaluate
+	 * @param struct  the struct containing all keys
+	 * 
+	 * @return true if the key should be unflattened, false if it should be preserved as-is
+	 */
 	/**
 	 * Method to recursively un-flatten a struct with keys in dot-notation
 	 *

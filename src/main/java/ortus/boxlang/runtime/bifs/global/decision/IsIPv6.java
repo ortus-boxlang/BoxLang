@@ -22,12 +22,12 @@ import java.util.Arrays;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.net.NetworkUtil;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.util.NetworkUtil;
 
-@BoxBIF
+@BoxBIF( description = "Check if string is a valid IPv6 address" )
 public class IsIPv6 extends BIF {
 
 	/**

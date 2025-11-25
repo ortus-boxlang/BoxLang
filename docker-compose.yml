@@ -35,3 +35,15 @@ services:
       MSSQL_PID: "Developer"
     ports:
       - "${MSSQL_PORT}:1433"
+
+  oracle:
+    image: gvenzl/oracle-xe:21-slim
+    platform: linux/amd64
+    restart: always
+    ports:
+      - "${ORACLE_PORT}:1521" # Oracle Listener
+      - "5500:5500" # Enterprise Manager Express
+    environment:
+      ORACLE_PASSWORD: ${ORACLE_PASSWORD}
+      ORACLE_CHARACTERSET: "AL32UTF8"
+    shm_size: "1g"

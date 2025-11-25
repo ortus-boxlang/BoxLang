@@ -175,7 +175,7 @@ public class ConnectionManagerTest {
 			    "host", "127.0.0.1"
 			) );
 		} catch ( Exception e ) {
-			assertThat( e ).isInstanceOf( BoxRuntimeException.class );
+			assertThat( e ).isInstanceOf( IllegalArgumentException.class );
 			assertThat( e.getMessage() )
 			    .contains( "Datasource configuration must contain a 'driver'" );
 		}

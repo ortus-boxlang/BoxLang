@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
-@BoxBIF
+@BoxBIF( description = "Parse a numeric string into a number" )
 @BoxBIF( alias = "LSParseNumber" )
 public class ParseNumber extends BIF {
 

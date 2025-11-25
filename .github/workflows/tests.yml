@@ -52,7 +52,7 @@ jobs:
 
       - name: Install JDBC modules
         if: ${{ matrix.os != 'windows-latest' }}
-        run: box install id=bx-mssql,bx-mysql directory=~/.boxlang/modules --verbose --nosave
+        run: box install id=bx-mssql,bx-mysql,bx-oracle@be directory=~/.boxlang/modules --verbose --nosave
 
       - name: Setup MySQL Service
         if: ${{ matrix.os != 'windows-latest' }}
@@ -64,11 +64,20 @@ jobs:
 
       - name: Setup MSSQL
         if: ${{ matrix.os != 'windows-latest' }}
-        uses: rails-sqlserver/setup-mssql@v1
+        uses: rails-sqlserver/setup-mssql@v2
         with:
           components: sqlengine
           sa-password: "123456Password"
           version: 2022
+
+      - name: Setup Oracle
+        if: ${{ matrix.os != 'windows-latest' }}
+        uses: gvenzl/setup-oracle-free@v1
+        with:
+          app-user: boxlang
+          app-user-password: "123456Password"
+          oracle-password: "123456Password"
+          oracle-database: "XEPDB1"
 
       - name: Test BoxLang
         env:
@@ -78,7 +87,7 @@ jobs:
           ./gradlew test --stacktrace --console=plain
 
       - name: Publish Test Reports
-        uses: mikepenz/action-junit-report@v5.6.2
+        uses: mikepenz/action-junit-report@v6.0.1
         if: always()
         with:
           report_paths: |
@@ -93,7 +102,7 @@ jobs:
 
       - name: Upload Test Results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: tests-${{ matrix.os }}-${{ matrix.jdkProvider }}-${{ matrix.jdkVersion }}-${{ matrix.compiler }}
           path: |

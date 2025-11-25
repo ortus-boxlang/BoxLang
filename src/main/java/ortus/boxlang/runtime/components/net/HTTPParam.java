@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent
+@BoxComponent( description = "Define parameters for HTTP requests" )
 public class HTTPParam extends Component {
 
 	/**
@@ -72,7 +72,7 @@ public class HTTPParam extends Component {
 			        }
 		        }
 		    ) ),
-		    new Attribute( Key.encoded, "boolean", false ),
+		    new Attribute( Key.encoded, "boolean" ),
 		    new Attribute( Key.mimetype, "string", Set.of(
 		        ( cxt, comp, attr, attrs ) -> {
 			        String type = attrs.getAsString( Key.type ).toLowerCase();
@@ -100,7 +100,7 @@ public class HTTPParam extends Component {
 	 * 
 	 * @attribute.file The path to the file (required for file type)
 	 * 
-	 * @attribute.encoded Whether the value is URL encoded (default: false)
+	 * @attribute.encoded Whether the value is URL encoded. Applies to CGI Params and Form Fields (default: false). If passed as false to a URL param, it will bypass the default encoding that occurs.
 	 * 
 	 * @attribute.mimetype The MIME type of the file (only used for file type, default: application/octet-stream)
 	 */

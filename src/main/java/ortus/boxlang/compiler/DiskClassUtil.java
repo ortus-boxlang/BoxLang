@@ -183,13 +183,28 @@ public class DiskClassUtil {
 	}
 
 	/**
-	 * Checkf if the file is a Java bytecode file or source file
+	 * Check if the file is a Java bytecode file or source file
+	 * 
+	 * Deprecated
+	 * Use the static method isJavaByteCode(File) instead
 	 *
 	 * @param sourceFile The file to check
 	 *
 	 * @return true if the file is a Java bytecode file
 	 */
+	@Deprecated
 	public boolean isJavaBytecode( File sourceFile ) {
+		return isJavaByteCode( sourceFile );
+	}
+
+	/**
+	 * Check if the file is a Java bytecode file or source file
+	 *
+	 * @param sourceFile The file to check
+	 *
+	 * @return true if the file is a Java bytecode file
+	 */
+	public static boolean isJavaByteCode( File sourceFile ) {
 		try ( FileInputStream fis = new FileInputStream( sourceFile );
 		    DataInputStream dis = new DataInputStream( fis ) ) {
 			// File may be empty! At least 4 bytes are needed to read an int

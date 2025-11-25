@@ -306,6 +306,42 @@ public class DynamicClassLoader extends URLClassLoader {
 	}
 
 	/**
+	 * Add a single path to the class loader by converting it to URLs
+	 * and adding them to the class loader. This method internally calls
+	 * getJarURLs() to discover all JAR files and classes in the path.
+	 *
+	 * @param path The file system path to add (can be a directory or single file)
+	 *
+	 * @throws BoxIOException If the path is invalid or cannot be processed
+	 */
+	public void addPaths( String path ) {
+		try {
+			URL[] urls = getJarURLs( path );
+			addURLs( urls );
+		} catch ( IOException e ) {
+			throw new BoxIOException( "Failed to add path [" + path + "] to class loader [" + this.nameAsKey.getName() + "]", e );
+		} catch ( UncheckedIOException e ) {
+			// Convert UncheckedIOException to IOException for BoxIOException constructor
+			IOException cause = e.getCause();
+			throw new BoxIOException( "Failed to add path [" + path + "] to class loader [" + this.nameAsKey.getName() + "]", cause );
+		}
+	}
+
+	/**
+	 * Add multiple paths to the class loader by converting them to URLs
+	 * and adding them to the class loader. This method internally calls
+	 * getJarURLs() for each path and then addURLs() to add them.
+	 *
+	 * @param paths Array of file system paths to add (can be directories or single files)
+	 *
+	 * @throws BoxIOException If any path is invalid or cannot be processed
+	 */
+	public void addPaths( Array paths ) {
+		URL[] urls = inflateClassPaths( paths );
+		addURLs( urls );
+	}
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Class Cache Methods
 	 * --------------------------------------------------------------------------

@@ -56,6 +56,7 @@ import ortus.boxlang.runtime.types.meta.GenericMeta;
 import ortus.boxlang.runtime.types.meta.IChangeListener;
 import ortus.boxlang.runtime.types.meta.IListenable;
 import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableArray;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
@@ -184,6 +185,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	/**
 	 * Create an Array from a Java array of boxed objects
 	 * This will wrap the original array and not copy it.
+	 * The resulting array will be unmodifiable!
 	 *
 	 * @param arr The array to create the Array from
 	 */
@@ -234,7 +236,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 			return new Array( new ArrayList<>( collection ) );
 		}
 		throw new BoxRuntimeException(
-		    "Cannot create Array from type: " + arr.getClass().getName() + ". Supported types: List, Array, Collection, or native arrays." );
+		    "Cannot create Array from type: " + TypeUtil.getObjectName( arr ) + ". Supported types: List, Array, Collection, or native arrays." );
 	}
 
 	public Object toVarArgsArray( Class<?> varArgType ) {
@@ -606,10 +608,21 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	}
 
 	/**
+	 * Get the BoxLang type name for this type
+	 * 
+	 * @return The BoxLang type name
+	 */
+	@Override
+	public String getBoxTypeName() {
+		return "Array";
+	}
+
+	/**
 	 * Get the metadata object for this array
 	 *
 	 * @return The metadata object for the array
 	 */
+	@Override
 	public BoxMeta<?> getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new GenericMeta( this );
@@ -773,7 +786,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	}
 
 	/**
-	 * Returns a new array removing all of the duplicates caseSenstively
+	 * Returns a new array removing all of the duplicates caseSensitively
 	 *
 	 * @return The new array
 	 */
@@ -782,9 +795,9 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	}
 
 	/**
-	 * Returns a new array removing all of the duplicates - either caseSenstively or not
+	 * Returns a new array removing all of the duplicates - either caseSensitively or not
 	 *
-	 * @param caseSensitive whether to perform the deduplication caseSenstively
+	 * @param caseSensitive whether to perform the deduplication caseSensitively
 	 *
 	 * @return The new array
 	 */

@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF
+@BoxBIF( description = "Append a value to the end of a list" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "listAppend" )
 
 public class ListAppend extends BIF {

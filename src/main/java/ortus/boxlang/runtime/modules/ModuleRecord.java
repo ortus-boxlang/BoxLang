@@ -79,6 +79,7 @@ import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.types.util.StructUtil;
 import ortus.boxlang.runtime.util.DataNavigator;
 import ortus.boxlang.runtime.util.EncryptionUtil;
+import ortus.boxlang.runtime.util.Mapping;
 import ortus.boxlang.runtime.util.RegexBuilder;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
@@ -123,7 +124,12 @@ public class ModuleRecord {
 	 * {@link ModuleService#MODULE_MAPPING_INVOCATION_PREFIX}
 	 *
 	 */
-	public String					mapping;
+	public Mapping					mapping						= null;
+
+	/**
+	 * A public conventioin mapping for a /public folder inside the module
+	 */
+	public Mapping					publicMapping				= null;
 
 	/**
 	 * If the module is enabled for activation, defaults to false
@@ -139,16 +145,6 @@ public class ModuleRecord {
 	 * The settings of the module
 	 */
 	public Struct					settings					= new Struct();
-
-	/**
-	 * The object mappings of the module
-	 */
-	public Struct					objectMappings				= new Struct();
-
-	/**
-	 * The datasources to register by the module
-	 */
-	public Struct					datasources					= new Struct( Struct.TYPES.LINKED );
 
 	/**
 	 * Any module activation dependencies
@@ -296,11 +292,26 @@ public class ModuleRecord {
 		if ( this.name == null ) {
 			this.name = Key.of( directoryPath.getFileName().toString() );
 		}
+
 		// Path to the module in string and Path formats
 		this.path			= physicalPath;
 		this.physicalPath	= Paths.get( physicalPath );
+
 		// Register the automatic mapping by convention: /bxModules/{name}
-		this.mapping		= ModuleService.MODULE_MAPPING_PREFIX + name.getName();
+		// Not visible externally
+		this.mapping		= Mapping.of(
+		    ModuleService.MODULE_MAPPING_PREFIX + name.getName(),
+		    this.path,
+		    false
+		);
+
+		// Register the public mapping by convention /bxModules/{name}/public
+		this.publicMapping	= Mapping.of(
+		    ModuleService.MODULE_MAPPING_PREFIX + name.getName() + "/" + ModuleService.MODULE_PUBLIC_FOLDER,
+		    this.physicalPath.resolve( "public" ).toString(),
+		    true
+		);
+
 		// Register the invocation path by convention: bxModules.{name}
 		this.invocationPath	= ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + name.getName();
 	}
@@ -313,6 +324,7 @@ public class ModuleRecord {
 
 	/**
 	 * Load the ModuleConfig.bx from disk, construct it and store it
+	 * This happens before module registration.
 	 * Then populate the module record with the information from the descriptor
 	 *
 	 * @param context The current context of execution
@@ -321,10 +333,11 @@ public class ModuleRecord {
 	 */
 	public ModuleRecord loadDescriptor( IBoxContext context ) {
 		Path	descriptorPath	= physicalPath.resolve( ModuleService.MODULE_DESCRIPTOR );
-		String	packageName		= MODULE_PACKAGE_NAME + this.name.getNameNoCase()
+		String	packageName		= MODULE_PACKAGE_NAME
+		    + this.name.getNameNoCase()
 		    + EncryptionUtil.hash( physicalPath.toString() );
 
-		// Load the Class, Construct it and store it
+		// Load the ModuleConfig.bx, Construct it and store it
 		this.moduleConfig = ( IClassRunnable ) DynamicObject.of(
 		    RunnableLoader.getInstance().loadClass(
 		        ResolvedFilePath.of(
@@ -356,18 +369,17 @@ public class ModuleRecord {
 		}
 
 		// Do we have a custom mapping to override?
-		// If so, recalculate it
-		if ( thisScope.containsKey( Key.mapping ) &&
-		    thisScope.get( Key.mapping ) instanceof String castedMapping &&
-		    !castedMapping.isBlank() ) {
-			this.mapping		= ModuleService.MODULE_MAPPING_PREFIX + castedMapping;
-			this.invocationPath	= ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + castedMapping;
+		if ( thisScope.containsKey( Key.mapping ) ) {
+			this.mapping = resolveMapping( thisScope.get( Key.mapping ) );
+		}
+
+		// Do we have a public mapping to override?
+		if ( thisScope.containsKey( Key.publicMapping ) ) {
+			this.publicMapping = resolvePublicMapping( thisScope.get( Key.publicMapping ) );
 		}
 
 		// Verify the internal config structures exist, else default them
 		variablesScope.computeIfAbsent( Key.settings, k -> new Struct() );
-		variablesScope.computeIfAbsent( Key.objectMappings, k -> new Struct() );
-		variablesScope.computeIfAbsent( Key.datasources, k -> new Struct( Struct.TYPES.LINKED ) );
 		variablesScope.computeIfAbsent( Key.interceptors, k -> Array.of() );
 		variablesScope.computeIfAbsent( Key.customInterceptionPoints, k -> Array.of() );
 
@@ -409,7 +421,8 @@ public class ModuleRecord {
 
 		// Register the module mapping in the this.runtime
 		// Called first in case this is used in the `configure` method
-		this.runtime.getConfiguration().registerMapping( this.mapping, this.path, false );
+		this.runtime.getConfiguration().registerMapping( this.mapping );
+		this.runtime.getConfiguration().registerMapping( this.publicMapping );
 
 		// Create the module class loader and seed it with the physical path to the
 		// module
@@ -460,10 +473,9 @@ public class ModuleRecord {
 			StructUtil.deepMerge( this.settings, config.settings, true );
 		}
 
+		// Get the interceptors and custom interception points
 		this.interceptors				= variablesScope.getAsArray( Key.interceptors );
 		this.customInterceptionPoints	= variablesScope.getAsArray( Key.customInterceptionPoints );
-		this.objectMappings				= ( Struct ) variablesScope.getAsStruct( Key.objectMappings );
-		this.datasources				= ( Struct ) variablesScope.getAsStruct( Key.datasources );
 
 		// Register Interception points with the InterceptorService
 		if ( !this.customInterceptionPoints.isEmpty() ) {
@@ -601,9 +613,9 @@ public class ModuleRecord {
 	 * and other resources associated with this module.
 	 *
 	 * @param context The current context of execution
-	 * 
+	 *
 	 * @return The ModuleRecord instance
-	 * 
+	 *
 	 * @throws ortus.boxlang.runtime.types.exceptions.DatabaseException if a SQL error occurs while deregistering JDBC drivers
 	 */
 	public ModuleRecord unregister( IBoxContext context ) {
@@ -665,6 +677,7 @@ public class ModuleRecord {
 
 		// unregister the module mapping from the runtime
 		this.runtime.getConfiguration().unregisterMapping( this.mapping );
+		this.runtime.getConfiguration().unregisterMapping( this.publicMapping );
 
 		// Unregister all interceptors from all states
 		if ( !this.interceptors.isEmpty() ) {
@@ -861,24 +874,31 @@ public class ModuleRecord {
 	 */
 	public IStruct asStruct() {
 		return Struct.of(
-		    "activatedOn", activatedOn,
-		    "activationTime", activationTime,
-		    "activated", activated,
-		    "author", author,
-		    "customInterceptionPoints", Array.copyOf( customInterceptionPoints ),
-		    "description", description,
-		    "enabled", enabled,
-		    "Id", id,
-		    "interceptors", Array.copyOf( interceptors ),
-		    "invocationPath", invocationPath,
-		    "mapping", mapping,
-		    "name", name,
-		    "physicalPath", physicalPath.toString(),
-		    "registeredOn", registeredOn,
-		    "registrationTime", registrationTime,
-		    "settings", settings,
-		    "version", version,
-		    "webURL", webURL );
+		    "activatedOn", this.activatedOn,
+		    "activationTime", this.activationTime,
+		    "activated", this.activated,
+		    "author", this.author,
+		    "bifs", Array.copyOf( this.bifs ),
+		    "classLoader", this.classLoader,
+		    "components", Array.copyOf( this.components ),
+		    "customInterceptionPoints", Array.copyOf( this.customInterceptionPoints ),
+		    "description", this.description,
+		    "dependencies", Array.copyOf( this.dependencies ),
+		    "enabled", this.enabled,
+		    "Id", this.id,
+		    "interceptors", Array.copyOf( this.interceptors ),
+		    "invocationPath", this.invocationPath,
+		    "jdbcDrivers", Array.of( this.jdbcDrivers.keySet().stream().map( Key::getName ).toArray() ),
+		    "mapping", this.mapping.toStruct(),
+		    "memberMethods", Array.copyOf( this.memberMethods ),
+		    "name", this.name,
+		    "physicalPath", this.physicalPath.toString(),
+		    "publicMapping", this.publicMapping.toStruct(),
+		    "registeredOn", this.registeredOn,
+		    "registrationTime", this.registrationTime,
+		    "settings", this.settings,
+		    "version", this.version,
+		    "webURL", this.webURL );
 	}
 
 	/**
@@ -959,7 +979,9 @@ public class ModuleRecord {
 		    null,
 		    oComponentProxy,
 		    BooleanCaster.cast( annotations.getOrDefault( "AllowsBody", false ) ),
-		    BooleanCaster.cast( annotations.getOrDefault( "RequiresBody", false ) ) );
+		    BooleanCaster.cast( annotations.getOrDefault( "RequiresBody", false ) ),
+		    BooleanCaster.cast( annotations.getOrDefault( "ignoreEnableOutputOnly", false ) ),
+		    BooleanCaster.cast( annotations.getOrDefault( "autoEvaluateBodyExpressions", false ) ) );
 		Key[]				componentAliases	= buildAnnotationAliases( oComponent, className, Key.boxComponent );
 
 		// Register all components with their aliases
@@ -1248,6 +1270,108 @@ public class ModuleRecord {
 		oTargetObject.getVariablesScope().put( Key.log, this.logger );
 
 		return oTargetObject;
+	}
+
+	/**
+	 * Resolve the mapping for the module based on the targetMapping object
+	 * which can be either a string or a struct.
+	 *
+	 * @param targetMapping The target mapping to resolve
+	 *
+	 * @return The resolved Mapping object
+	 */
+	private Mapping resolveMapping( Object targetMapping ) {
+		Mapping result = null;
+
+		// If it's a string, then we assume it's the name and not visibly externally
+		if ( targetMapping instanceof String castedMapping && !castedMapping.isBlank() ) {
+			result				= Mapping.of(
+			    ModuleService.MODULE_MAPPING_PREFIX + castedMapping,
+			    // Always points to the module path
+			    this.path,
+			    false
+			);
+			this.invocationPath	= ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + castedMapping;
+		}
+		// If it's a struct, then we assume it's a full mapping definition
+		// It must have a `name` key and optionally:
+		// - usePrefix (boolean, default true)
+		// - external (boolean, default false)
+		// - path (string, relative from the module path, default is the module path)
+		else if ( targetMapping instanceof IStruct structMapping ) {
+			result				= mappingFromStruct( structMapping, false );
+			this.invocationPath	= ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + structMapping.getAsString( Key._name );
+		}
+
+		return result;
+	}
+
+	/**
+	 * Create a Mapping from a struct definition
+	 *
+	 * @param definition        The struct definition
+	 * @param isExternalDefault The default value for the external key if not
+	 *
+	 * @return The Mapping object
+	 */
+	private Mapping mappingFromStruct( IStruct definition, boolean isExternalDefault ) {
+		// Default usePrefix to true
+		boolean usePrefix = BooleanCaster.cast( definition.getOrDefault( Key.usePrefix, true ) );
+		// If the definition doesn't have a name, use the module name
+		if ( !definition.containsKey( Key._name ) || definition.getAsString( Key._name ).isBlank() ) {
+			definition.put( Key._name, this.name.getName() );
+		}
+
+		// Compose the mapping name
+		String mappingName = usePrefix
+		    ? ModuleService.MODULE_MAPPING_PREFIX + definition.getAsString( Key._name )
+		    : definition.getAsString( Key._name );
+
+		// Compose the mapping path
+		String mappingPath = this.path;
+		// The path is relative to the module path, so compose it.
+		if ( definition.containsKey( Key.path ) && !definition.getAsString( Key.path ).isBlank() ) {
+			mappingPath = this.physicalPath.resolve( definition.getAsString( Key.path ) ).toString();
+		}
+
+		// Now create the mapping
+		return Mapping.fromData(
+		    mappingName,
+		    mappingPath,
+		    BooleanCaster.cast( definition.getOrDefault( Key.external, isExternalDefault ) )
+		);
+	}
+
+	/**
+	 * Resolve the public mapping for the module based on the targetMapping object
+	 * which can be either a string or a struct.
+	 *
+	 * @param targetMapping The target mapping to resolve
+	 *
+	 * @return The resolved Mapping object
+	 */
+	private Mapping resolvePublicMapping( Object targetMapping ) {
+		// If it's a string, then basically the value is the relative folder or 'path'
+		// this.publicMapping = "public" -> /bxModules/{this.name}/public
+		// this.publicMapping = "www" -> /bxModules/{this.name}/www
+		if ( targetMapping instanceof String castedMapping && !castedMapping.isBlank() ) {
+			return Mapping.of(
+			    this.mapping.name() + castedMapping,
+			    this.physicalPath.resolve( castedMapping ).toString(),
+			    true
+			);
+		}
+
+		// If it's a struct then
+		// - name (optional) defaults to the module mapping
+		// - usePrefix (optional, default true)
+		// - path (relative from the module path)
+		if ( targetMapping instanceof IStruct structMapping ) {
+			return mappingFromStruct( structMapping, true );
+		}
+
+		// Return original mapping if we can't resolve it
+		return this.publicMapping;
 	}
 
 }

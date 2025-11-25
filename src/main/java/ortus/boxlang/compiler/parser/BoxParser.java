@@ -373,6 +373,9 @@ public class BoxParser extends AbstractParser {
 			return null;
 		}
 
+		// Uncomment to use ANTLR GUI tree viewer for debugging
+		// org.antlr.v4.gui.Trees.inspect( parseTree, parser );
+
 		// This must run FIRST before resetting the lexer
 		validateParse( lexer );
 
@@ -1588,6 +1591,15 @@ public class BoxParser extends AbstractParser {
 		for ( int d = 0; d < cache.length; d++ ) {
 			cache[ d ] = new DFA( _ATN.getDecisionState( d ), d );
 		}
+	}
+
+	/**
+	 * Check if we are parsing a class or interface
+	 * 
+	 * @return true if we are parsing a class or interface
+	 */
+	public boolean isClassOrInterface() {
+		return this.classOrInterface;
 	}
 
 }

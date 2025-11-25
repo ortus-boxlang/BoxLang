@@ -100,4 +100,18 @@ public class SettingTest {
 
 	}
 
+	@Test
+	public void testQueryIgnoresMe() {
+
+		instance.executeSource(
+		    """
+		    	<bx:set qry = queryNew( "col", "string", [["brad"],["jon"]]) />
+		    	<bx:setting enableoutputonly="true">
+		    	<bx:query name="result" dbtype="query">
+		    		select * from qry
+		    	</bx:query>
+		    """, context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsQuery( result ) ).hasSize( 2 );
+	}
+
 }

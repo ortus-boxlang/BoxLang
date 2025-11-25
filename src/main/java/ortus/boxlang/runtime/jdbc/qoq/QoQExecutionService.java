@@ -44,7 +44,6 @@ import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
@@ -83,11 +82,13 @@ public class QoQExecutionService {
 		if ( !result.isCorrect() ) {
 			throw new ParseException( result.getIssues(), sql );
 		}
-		IStruct data = Struct.of(
-		    "file", null,
-		    "result", result
-		);
-		BoxRuntime.getInstance().announce( "onParse", data );
+
+		BoxRuntime.getInstance().announce(
+		    Key.onParse,
+		    () -> Struct.ofNonConcurrent(
+		        Key.file, null,
+		        Key.result, result
+		    ) );
 
 		return ( SQLNode ) result.getRoot();
 	}

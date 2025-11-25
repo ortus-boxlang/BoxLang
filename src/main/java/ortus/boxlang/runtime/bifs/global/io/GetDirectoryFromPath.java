@@ -21,7 +21,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
-@BoxBIF
+@BoxBIF( description = "Extract directory path from a file path" )
 public class GetDirectoryFromPath extends BIF {
 
 	/**

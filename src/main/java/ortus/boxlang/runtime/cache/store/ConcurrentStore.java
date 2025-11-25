@@ -60,8 +60,16 @@ public class ConcurrentStore extends AbstractStore {
 	public IObjectStore init( ICacheProvider provider, IStruct config ) {
 		this.provider	= provider;
 		this.config		= config;
-		int maxObject = IntegerCaster.cast( config.get( Key.maxObjects ) );
-		this.pool = new ConcurrentHashMap<>( maxObject / 4 );
+
+		// Calculate optimal initial capacity to minimize resizing
+		// ConcurrentHashMap default load factor is 0.75, so we set initial capacity
+		// to maxObjects / 0.75 to avoid resizing when the cache fills up
+		int	maxObjects		= IntegerCaster.cast( config.get( Key.maxObjects ) );
+		int	initialCapacity	= ( int ) Math.ceil( maxObjects / 0.75 );
+
+		// ConcurrentHashMap constructor: initialCapacity, loadFactor, concurrencyLevel
+		// Using default load factor (0.75) and calculated initial capacity
+		this.pool = new ConcurrentHashMap<>( initialCapacity );
 
 		return this;
 	}
@@ -106,7 +114,7 @@ public class ConcurrentStore extends AbstractStore {
 	 * Runs the eviction algorithm to remove objects from the store based on the eviction policy
 	 * and eviction count.
 	 */
-	public synchronized void evict() {
+	public void evict() {
 		int evictCount = IntegerCaster.cast( this.config.get( Key.evictCount ) );
 		if ( evictCount == 0 ) {
 			return;
@@ -194,7 +202,7 @@ public class ConcurrentStore extends AbstractStore {
 	 * @return An array of keys in the cache
 	 */
 	public Key[] getKeys( ICacheKeyFilter filter ) {
-		return getPool().keySet().parallelStream().filter( filter ).toArray( Key[]::new );
+		return getPool().keySet().stream().filter( filter ).toArray( Key[]::new );
 	}
 
 	/**
@@ -254,7 +262,7 @@ public class ConcurrentStore extends AbstractStore {
 		IStruct results = new Struct();
 		getPool()
 		    .keySet()
-		    .parallelStream()
+		    .stream()
 		    .filter( filter )
 		    .forEach( key -> results.put( key, true ) );
 		return results;
@@ -310,7 +318,7 @@ public class ConcurrentStore extends AbstractStore {
 		IStruct results = new Struct();
 		getPool()
 		    .keySet()
-		    .parallelStream()
+		    .stream()
 		    .filter( filter )
 		    .forEach( key -> results.put( key, get( key ) ) );
 		return results;
@@ -353,7 +361,7 @@ public class ConcurrentStore extends AbstractStore {
 		IStruct results = new Struct();
 		getPool()
 		    .keySet()
-		    .parallelStream()
+		    .stream()
 		    .filter( filter )
 		    .forEach( key -> results.put( key, getQuiet( key ) ) );
 		return results;

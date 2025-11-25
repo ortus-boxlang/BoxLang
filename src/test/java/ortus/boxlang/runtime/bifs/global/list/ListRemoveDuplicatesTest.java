@@ -105,7 +105,7 @@ public class ListRemoveDuplicatesTest {
 
 	@DisplayName( "Can deduplicate case sensitively" )
 	@Test
-	public void testCaseSenstive() {
+	public void testCaseSensitive() {
 		instance.executeSource(
 		    """
 		        nums = "Brad,BRAD,Luis,Luis,LUIS";

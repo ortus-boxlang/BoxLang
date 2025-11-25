@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
-@BoxBIF
+@BoxBIF( description = "Get the display name for a locale" )
 
 public class GetLocaleDisplayName extends GetLocaleInfo {
 

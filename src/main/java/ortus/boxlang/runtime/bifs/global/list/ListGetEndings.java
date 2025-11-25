@@ -28,6 +28,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
+@BoxBIF( description = "Get the first or last item from a list" )
 @BoxBIF( alias = "ListFirst" )
 @BoxBIF( alias = "ListLast" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "listFirst" )

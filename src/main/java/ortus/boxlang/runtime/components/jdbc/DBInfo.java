@@ -35,6 +35,7 @@ import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
+import ortus.boxlang.runtime.jdbc.BoxConnection;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
@@ -47,7 +48,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent( allowsBody = false )
+@BoxComponent( description = "Retrieve database metadata and connection information", allowsBody = false )
 public class DBInfo extends Component {
 
 	/**
@@ -155,7 +156,7 @@ public class DBInfo extends Component {
 		}
 
 		// Now that we have the datasource, we can get the connection and metadata by type
-		try ( Connection conn = datasource.getConnection(); ) {
+		try ( BoxConnection conn = datasource.getBoxConnection(); ) {
 			DatabaseMetaData databaseMetadata = conn.getMetaData();
 			tableNameLookup = normalizeTableNameCasing( databaseMetadata, tableNameLookup );
 			String databaseName = attributes.getAsString( Key.dbname );

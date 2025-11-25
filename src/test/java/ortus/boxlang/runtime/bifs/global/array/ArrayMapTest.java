@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableArray;
 
 public class ArrayMapTest {
 
@@ -228,6 +229,27 @@ public class ArrayMapTest {
 		assertThat( res.get( 2 ) ).isEqualTo( 3 );
 		assertThat( res.get( 3 ) ).isEqualTo( 4 );
 		assertThat( res.get( 4 ) ).isEqualTo( 5 );
+	}
+
+	@DisplayName( "It should map an unmodifiable array to a modifiable array" )
+	@Test
+	public void testUnmodifiableArrayMapping() {
+		instance.executeSource(
+		    """
+		              nums = [ "red", "blue", "green" ].toUnmodifiable();
+
+		              result = ArrayMap( nums, function( item, i ){
+		                return i;
+		              });
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Array.class );
+		assertThat( variables.get( result ) ).isNotInstanceOf( UnmodifiableArray.class );
+		Array res = ( Array ) variables.get( result );
+		assertThat( res.size() ).isEqualTo( 3 );
+		assertThat( res.get( 0 ) ).isEqualTo( 1 );
+		assertThat( res.get( 1 ) ).isEqualTo( 2 );
+		assertThat( res.get( 2 ) ).isEqualTo( 3 );
 	}
 
 }

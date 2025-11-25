@@ -19,7 +19,6 @@ package ortus.boxlang.runtime.interop.proxies;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
@@ -27,7 +26,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
-import ortus.boxlang.runtime.types.util.BooleanRef;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * A generic proxy allows you to wrap any object and call any method on it from Java/BoxLang
@@ -95,25 +94,13 @@ public class GenericProxy extends BaseProxy implements InvocationHandler {
 			return returnValue;
 		}
 
-		// Delegate the coercion to the DynamicInteropService to cast the return value to what the proxy expects.
-		// This is required when we pass things like UDFs into a Java methods expecting a functional interface.
-		// We need to ensure whatever we return adheres to the type expected.
-		Object[]	args	= new Object[] { returnValue };
-		boolean		success	= DynamicInteropService.coerceArguments(
-		    context,
-		    DynamicInteropService.unBoxTypes( new Class<?>[] { returnType } ),
-		    DynamicInteropService.unBoxTypes( new Class<?>[] { returnValue.getClass() } ),
-		    args,
-		    args,
-		    false,
-		    BooleanRef.of( true ),
-		    new AtomicInteger( 0 )
-		);
-		if ( !success ) {
-			throw new BoxRuntimeException( "Proxied method [ " + methodName + "() ] returned a value of type [ " + returnValue.getClass().getName()
-			    + " ] which could not be coerced to [ " + returnType.getName() + " ] in order to match the interface method signature." );
+		try {
+			return DynamicInteropService.coerceValue( context, returnValue, returnType );
+		} catch ( BoxCastException bce ) {
+			// Throw an error message that's as useful as possible
+			throw new BoxRuntimeException( "Proxied method [ " + methodName + "() ] returned a value of type [ " + TypeUtil.getObjectName( returnValue )
+			    + " ] which could not be coerced to [ " + returnType.getName() + " ] in order to match the interface method signature.", bce );
 		}
-		return args[ 0 ];
 	}
 
 }

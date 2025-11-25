@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.util.RegexBuilder;
 
-@BoxBIF
+@BoxBIF( description = "Wrap text to specified line length" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "Wrap" )
 public class Wrap extends BIF {
 

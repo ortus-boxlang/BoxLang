@@ -74,12 +74,16 @@ public class DateConvertTest {
 		variables.put( Key.of( "date" ), dateRef );
 		instance.executeSource(
 		    """
-		    result = dateConvert( "local2Utc", date );
-		    """,
+		       result = dateConvert( "local2Utc", date );
+		    setTimezone( "America/Chicago" );
+		    formatResult = dateTimeFormat( result, "yyyy-MM-dd'T'HH:mm:ssXXX" );
+		       """,
 		    context );
 		DateTime result = DateTimeCaster.cast( variables.get( Key.of( "result" ) ) );
 		assertNotEquals( result.getWrapped().getZone(), localZone );
 		assertTrue( result.getWrapped().equals( conversionRef.getWrapped() ) );
+		// tests that we no longer allow the result of the date to mutate timezones
+		assertEquals( result.format( "yyyy-MM-dd'T'HH:mm:ssXXX" ), variables.getAsString( Key.of( "formatResult" ) ) );
 	}
 
 	@DisplayName( "It tests the BIF DateConvert with utc2Local" )
@@ -91,17 +95,21 @@ public class DateConvertTest {
 
 		assertEquals( dateRef.getWrapped().getZone(), utcZone );
 
-		var conversionRef = dateRef.convertToZone( localZone );
+		var conversionRef = dateRef.convertToZone( localZone, true );
 		variables.put( Key.of( "date" ), dateRef );
 		instance.executeSource(
 		    """
-		    result = dateConvert( "utc2local", date );
-		    """,
+		       result = dateConvert( "utc2local", date );
+		    setTimezone( "America/Chicago" );
+		    formatResult = dateTimeFormat( result, "yyyy-MM-dd'T'HH:mm:ssXXX" );
+		       """,
 		    context );
 
 		DateTime result = DateTimeCaster.cast( variables.get( Key.of( "result" ) ) );
 		assertNotEquals( result.getWrapped().getZone(), utcZone );
 		assertTrue( result.getWrapped().equals( conversionRef.getWrapped() ) );
+		// tests that we no longer allow the result of the date to mutate timezones
+		assertEquals( result.format( "yyyy-MM-dd'T'HH:mm:ssXXX" ), variables.getAsString( Key.of( "formatResult" ) ) );
 	}
 
 	@DisplayName( "It tests the BIF DateConvert with utc2Local on epoch date" )
@@ -164,6 +172,17 @@ public class DateConvertTest {
 		assertNotEquals( result.getWrapped().getZone(), utcZone );
 		// Zurich is 1 hour ahead of UTC
 		assertEquals( "1970-01-01T01:00", result.format( "yyyy-MM-dd'T'HH:mm" ) );
+	}
+
+	@Test
+	public void testDateConvertYearMonthDay() {
+		instance.executeSource(
+		    """
+		       result = dateConvert( "utc2local", "1970/01/01" );
+		    println( result)
+		       """,
+		    context );
+
 	}
 
 }

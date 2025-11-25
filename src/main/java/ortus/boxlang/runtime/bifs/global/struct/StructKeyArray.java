@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
 
-@BoxBIF
+@BoxBIF( description = "Return an array of struct keys" )
 @BoxMember( type = BoxLangType.STRUCT, name = "keyArray" )
 public class StructKeyArray extends BIF {
 
@@ -49,6 +49,6 @@ public class StructKeyArray extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct struct = arguments.getAsStruct( Key.structure );
-		return Array.fromArray( struct.getKeysAsStrings().toArray() );
+		return Array.of( struct.getKeysAsStrings().toArray() );
 	}
 }

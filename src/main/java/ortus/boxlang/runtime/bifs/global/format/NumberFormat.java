@@ -17,21 +17,22 @@
  */
 package ortus.boxlang.runtime.bifs.global.format;
 
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.LinkedHashMap;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
-@BoxBIF
+@BoxBIF( description = "Format a number using a specified mask" )
 @BoxMember( type = BoxLangType.NUMERIC )
 @BoxBIF( alias = "LSNumberFormat" )
 
@@ -43,7 +44,7 @@ public class NumberFormat extends BIF {
 	public NumberFormat() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "number", Key.number ),
+		    new Argument( true, "any", Key.number ),
 		    new Argument( false, "string", Key.mask ),
 		    new Argument( false, "string", Key.locale )
 		};
@@ -55,7 +56,7 @@ public class NumberFormat extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.number The number to be formatted
+	 * @argument.number The number to be formatted, or an empty string which will be treated as 0.
 	 *
 	 * @argument.mask The formatting mask to apply using the {@link java.text.DecimalFormat} patterns.
 	 *
@@ -64,7 +65,16 @@ public class NumberFormat extends BIF {
 	 * @function.currencyFormat Formats a number as a currency value
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Number								value				= arguments.getAsNumber( Key.number );
+		Object oValue = arguments.get( Key.number );
+		if ( oValue == null ) {
+			oValue = 0;
+		}
+		// Turn "" into 0
+		if ( oValue instanceof String sValue && sValue.isEmpty() ) {
+			oValue = 0;
+		}
+		// "" is the only valid string valie. Any other non-numbers will error out here
+		Number								value				= NumberCaster.cast( oValue );
 		String								format				= arguments.getAsString( Key.mask );
 		Locale								locale				= LocalizationUtil.parseLocaleFromContext( context, arguments );
 		java.text.NumberFormat				formatter			= LocalizationUtil.localizedDecimalFormatter(
@@ -75,6 +85,9 @@ public class NumberFormat extends BIF {
 
 																	{
 																		put( "9", "0" );
+																		// This is a special case to ensure preceeding zeroes before the decimal. Using `#` will leave those blank
+																		put( "_.", "0." );
+																		// Standard replacement
 																		put( "_", "#" );
 																		put( "#,.", "#,##0." );
 																		put( "#$,0", "$#,##0" );

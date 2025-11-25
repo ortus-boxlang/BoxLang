@@ -62,7 +62,7 @@ public class CreateODBCDateTimeTest {
 	@Test
 	public void testCreateODBCDateTime() {
 		DateTime	dateRef				= new DateTime( "2024-01-14T00:00:01.0001Z" );
-		String		refFormattedDate	= dateRef.format( DateTime.ODBC_DATE_TIME_FORMAT_MASK );
+		String		refFormattedDate	= dateRef.format( DateTime.ODBC_DATE_TIME_FORMATTER );
 		variables.put( Key.of( "date" ), dateRef );
 		instance.executeSource(
 		    """
@@ -77,7 +77,7 @@ public class CreateODBCDateTimeTest {
 	@Test
 	public void testMemberToODBCDateTime() {
 		DateTime	dateRef				= new DateTime( "2024-01-14T00:00:01.0001Z" );
-		String		refFormattedDate	= dateRef.format( DateTime.ODBC_DATE_TIME_FORMAT_MASK );
+		String		refFormattedDate	= dateRef.format( DateTime.ODBC_DATE_TIME_FORMATTER );
 		variables.put( Key.of( "date" ), dateRef );
 		instance.executeSource(
 		    """
@@ -92,7 +92,7 @@ public class CreateODBCDateTimeTest {
 	@Test
 	public void testCreateODBCDate() {
 		DateTime	dateRef				= new DateTime( "2024-01-14" );
-		String		refFormattedDate	= dateRef.format( DateTime.ODBC_DATE_FORMAT_MASK );
+		String		refFormattedDate	= dateRef.format( DateTime.ODBC_DATE_FORMATTER );
 		variables.put( Key.of( "date" ), dateRef );
 		instance.executeSource(
 		    """
@@ -107,7 +107,7 @@ public class CreateODBCDateTimeTest {
 	@Test
 	public void testMemberToODBCDate() {
 		DateTime	dateRef				= new DateTime( "2024-01-14" );
-		String		refFormattedDate	= dateRef.format( DateTime.ODBC_DATE_FORMAT_MASK );
+		String		refFormattedDate	= dateRef.format( DateTime.ODBC_DATE_FORMATTER );
 		variables.put( Key.of( "date" ), dateRef );
 		instance.executeSource(
 		    """
@@ -122,7 +122,7 @@ public class CreateODBCDateTimeTest {
 	@Test
 	public void testCreateODBCTime() {
 		DateTime	dateRef				= new DateTime( "23:59:59" );
-		String		refFormattedDate	= dateRef.format( DateTime.ODBC_TIME_FORMAT_MASK );
+		String		refFormattedDate	= dateRef.format( DateTime.ODBC_TIME_FORMATTER );
 		variables.put( Key.of( "date" ), dateRef );
 		instance.executeSource(
 		    """
@@ -137,7 +137,7 @@ public class CreateODBCDateTimeTest {
 	@Test
 	public void testMemberToODBCTime() {
 		DateTime	dateRef				= new DateTime( "23:59:59" );
-		String		refFormattedDate	= dateRef.format( DateTime.ODBC_TIME_FORMAT_MASK );
+		String		refFormattedDate	= dateRef.format( DateTime.ODBC_TIME_FORMATTER );
 		variables.put( Key.of( "date" ), dateRef );
 		instance.executeSource(
 		    """

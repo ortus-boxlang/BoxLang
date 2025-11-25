@@ -14,7 +14,6 @@
  */
 package ortus.boxlang.compiler.javaboxpiler.transformer.expression;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 
 import com.github.javaparser.ParseResult;
@@ -29,13 +28,16 @@ import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
 
+import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxClosure;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class BoxClosureTransformer extends AbstractTransformer {
@@ -59,6 +61,7 @@ public class BoxClosureTransformer extends AbstractTransformer {
 		import ortus.boxlang.compiler.parser.BoxSourceType;
 		import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 		import ortus.boxlang.runtime.runnables.BoxClassSupport;
+		import ortus.boxlang.compiler.BoxByteCodeVersion;
 
 		// Classes Auto-Imported on all Templates and Classes by BoxLang
 		import java.time.LocalDateTime;
@@ -75,6 +78,7 @@ public class BoxClosureTransformer extends AbstractTransformer {
 		import java.util.LinkedHashMap;
 		import java.nio.file.*;
 
+		@BoxByteCodeVersion(boxlangVersion="${boxlangVersion}", bytecodeVersion=${bytecodeVersion})
   		public class ${classname} extends Closure {
 			private final static Key				name		= Closure.defaultName;
 			private final static Argument[]			arguments	= new Argument[] {};
@@ -83,11 +87,6 @@ public class BoxClosureTransformer extends AbstractTransformer {
 		    private final static IStruct			annotations			= Struct.EMPTY;
 			private final static IStruct			documentation		= Struct.EMPTY;
 			
-			private static final long					compileVersion	= ${compileVersion};
-			private static final LocalDateTime			compiledOn		= ${compiledOnTimestamp};
-			private static final Object					ast				= null;
-
-
 			public Key getName() {
 				return name;
 			}
@@ -101,18 +100,6 @@ public class BoxClosureTransformer extends AbstractTransformer {
 			public Access getAccess() {
    				return Access.PUBLIC;
    			}
-
-			public  long getRunnableCompileVersion() {
-				return ${className}.compileVersion;
-			}
-
-			public LocalDateTime getRunnableCompiledOn() {
-				return ${className}.compiledOn;
-			}
-
-			public Object getRunnableAST() {
-				return ${className}.ast;
-			}
 
 			public ${classname}( IBoxContext declaringContext  ) {
 				super( declaringContext );
@@ -179,9 +166,9 @@ public class BoxClosureTransformer extends AbstractTransformer {
 		    Map.entry( "className", className ),
 		    Map.entry( "closureName", closureName ),
 		    Map.entry( "enclosingClassName", enclosingClassName ),
-		    Map.entry( "contextName", transpiler.peekContextName() ),
-		    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
-		    Map.entry( "compileVersion", "1L" )
+		    Map.entry( "boxlangVersion", BoxRuntime.getInstance().getVersionInfo().getAsString( Key.version ) ),
+		    Map.entry( "bytecodeVersion", String.valueOf( IBoxpiler.BYTECODE_VERSION ) ),
+		    Map.entry( "contextName", transpiler.peekContextName() )
 		);
 		transpiler.pushContextName( "context" );
 		String							code	= PlaceholderHelper.resolve( template, values );

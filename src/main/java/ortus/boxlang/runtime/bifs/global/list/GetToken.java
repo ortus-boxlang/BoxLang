@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF
+@BoxBIF( description = "Extract a token from a delimited string" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "GetToken" )
 
 public class GetToken extends BIF {

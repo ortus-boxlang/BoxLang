@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.types.util.RegexUtil;
 import ortus.boxlang.runtime.util.RegexBuilder;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxBIF
+@BoxBIF( description = "Replace matches of a regular expression in a string" )
 @BoxBIF( alias = "reReplaceNoCase" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "ReReplace" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "ReReplaceNoCase" )

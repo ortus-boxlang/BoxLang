@@ -121,7 +121,9 @@ public abstract class BaseStoreTest {
 	public void testShutdown() {
 		store.set( Key.of( "test" ), newTestEntry( "test" ) );
 		store.shutdown();
-		if ( ! ( store instanceof FileSystemStore ) ) {
+		// Distributed stores (JDBC, FileSystem, etc.) persist data outside the JVM,
+		// so shutdown doesn't clear the data. Only local stores clear on shutdown.
+		if ( !store.isDistributed() ) {
 			assertThat( store.getSize() ).isEqualTo( 0 );
 		}
 	}

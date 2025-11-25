@@ -21,7 +21,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
-@BoxBIF
+@BoxBIF( description = "Execute code and catch exceptions" )
 public class Attempt extends BIF {
 
 	/**

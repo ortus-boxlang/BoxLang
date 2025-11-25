@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Calculate the sum of all numeric values in an array" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArraySum extends BIF {
 

@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Swap elements at two positions in an array" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArraySwap extends BIF {
 
@@ -42,12 +42,12 @@ public class ArraySwap extends BIF {
 
 	/**
 	 * Swaps array values of an array at specified positions. This function is more efficient than multiple assignment statements
-	 * 
+	 *
 	 * @param context
 	 * @param arguments Argument scope defining the array.
-	 * 
+	 *
 	 * @arguments.position1 The first position to swap
-	 * 
+	 *
 	 * @arguments.position2 The second position to swap
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

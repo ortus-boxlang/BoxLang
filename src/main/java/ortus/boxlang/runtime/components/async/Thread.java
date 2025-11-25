@@ -22,6 +22,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.async.RequestThreadManager;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
@@ -34,12 +35,12 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.ListUtil;
-import ortus.boxlang.runtime.util.RequestThreadManager;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent( allowsBody = true )
+@BoxComponent( description = "Enables multithreaded programming for asynchronous execution", allowsBody = true )
 public class Thread extends Component {
 
 	/**
@@ -167,7 +168,8 @@ public class Thread extends Component {
 				        nameKey,
 				        buffer.toString(),
 				        exception,
-				        java.lang.Thread.interrupted()
+				        // Will check the top exception and its causes
+				        ExceptionUtil.isInterruptedException( exception )
 				    );
 				    tContext.shutdown();
 				    RequestBoxContext.removeCurrent();

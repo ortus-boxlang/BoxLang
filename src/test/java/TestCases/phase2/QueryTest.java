@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -286,6 +287,80 @@ public class QueryTest {
 		assertThat( variables.getAsArray( Key.of( "valList" ) ).size() ).isEqualTo( 2 );
 		assertThat( variables.getAsArray( Key.of( "valList" ) ).get( 0 ) ).isEqualTo( "brad" );
 		assertThat( variables.getAsArray( Key.of( "valList" ) ).get( 1 ) ).isEqualTo( "luis" );
+	}
+
+	@Test
+	public void testEvalExpressionsWithoutOutputCF() {
+
+		instance.executeSource(
+		    """
+		    <cfset myQry = queryNew( "col,col2", "numeric,varchar", [ [ 1, "brad,luis" ], [ 2, "" ], [ 3, "" ] ] )>
+		    <cfset id = "1">
+		    <cfsetting enableoutputonly="true" />
+		    <cfquery name="result"  dbtype="query">
+		    	select *
+		    	from myQry
+		    	where col = #id#
+		    </cfquery>
+		           """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 1 );
+	}
+
+	@Test
+	public void testEvalExpressionsWithoutOutput() {
+
+		instance.executeSource(
+		    """
+		    <bx:set myQry = queryNew( "col,col2", "numeric,varchar", [ [ 1, "brad,luis" ], [ 2, "" ], [ 3, "" ] ] )>
+		    <bx:set id = "1">
+		    <bx:setting enableoutputonly="true" />
+		    <bx:query name="result"  dbtype="query">
+		    	select *
+		    	from myQry
+		    	where col = #id#
+		    </bx:query>
+		           """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 1 );
+	}
+
+	@Test
+	public void testGetColumnMeta() {
+
+		instance.executeSource(
+		    """
+		    myQry = queryNew( "col,col2", "numeric,varchar" );
+		    result = myQry.$bx.columnsMeta
+		    result2 = myQry.getColumnMeta();
+		    resultCol = myQry.getColumnMeta( "col" );
+		    resultCol2 = myQry.getColumnMeta( "col2" );
+
+		                      """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct colMeta = variables.getAsStruct( result );
+		assertThat( colMeta.getAsStruct( Key.of( "col" ) ).getAsString( Key._NAME ) ).isEqualTo( "col" );
+		assertThat( colMeta.getAsStruct( Key.of( "col" ) ).getAsString( Key.type ) ).isEqualTo( "numeric" );
+		assertThat( colMeta.getAsStruct( Key.of( "col2" ) ).getAsString( Key._NAME ) ).isEqualTo( "col2" );
+		assertThat( colMeta.getAsStruct( Key.of( "col2" ) ).getAsString( Key.type ) ).isEqualTo( "string" );
+
+		assertThat( variables.get( Key.of( "result2" ) ) ).isInstanceOf( IStruct.class );
+		colMeta = variables.getAsStruct( Key.of( "result2" ) );
+		assertThat( colMeta.getAsStruct( Key.of( "col" ) ).getAsString( Key._NAME ) ).isEqualTo( "col" );
+		assertThat( colMeta.getAsStruct( Key.of( "col" ) ).getAsString( Key.type ) ).isEqualTo( "numeric" );
+		assertThat( colMeta.getAsStruct( Key.of( "col2" ) ).getAsString( Key._NAME ) ).isEqualTo( "col2" );
+		assertThat( colMeta.getAsStruct( Key.of( "col2" ) ).getAsString( Key.type ) ).isEqualTo( "string" );
+
+		assertThat( variables.get( Key.of( "resultCol" ) ) ).isInstanceOf( IStruct.class );
+		IStruct singleColMeta = variables.getAsStruct( Key.of( "resultCol" ) );
+		assertThat( singleColMeta.getAsString( Key._NAME ) ).isEqualTo( "col" );
+		assertThat( singleColMeta.getAsString( Key.type ) ).isEqualTo( "numeric" );
+
+		assertThat( variables.get( Key.of( "resultCol2" ) ) ).isInstanceOf( IStruct.class );
+		singleColMeta = variables.getAsStruct( Key.of( "resultCol2" ) );
+		assertThat( singleColMeta.getAsString( Key._NAME ) ).isEqualTo( "col2" );
+		assertThat( singleColMeta.getAsString( Key.type ) ).isEqualTo( "string" );
 	}
 
 }

@@ -21,7 +21,8 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.types.exceptions.BoxIOException;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 
 /**
  * I represent the a file path that has been resolved to an absolute path.
@@ -46,6 +47,27 @@ public record ResolvedFilePath( String mappingName, String mappingPath, String r
 		    mappingPath,
 		    relativePath,
 		    absolutePath != null ? makeReal( absolutePath.normalize() ) : null
+		);
+	}
+
+	/**
+	 * Factor method to create a new ResolvedFilePath instance out of a real path.
+	 * 
+	 * This version doesn't call toRealPath() on the absolute path, assuming it is already real.
+	 *
+	 * @param mappingName  The mapping name used to resolve the path.
+	 * @param mappingPath  The mapping path used to resolve the path.
+	 * @param relativePath The relative path that was resolved
+	 * @param absolutePath The absolute path real resolved.
+	 *
+	 * @return A new ResolvedFilePath instance.
+	 */
+	public static ResolvedFilePath ofReal( String mappingName, String mappingPath, String relativePath, Path absolutePath ) {
+		return new ResolvedFilePath(
+		    mappingName,
+		    mappingPath,
+		    relativePath,
+		    absolutePath
 		);
 	}
 
@@ -147,28 +169,43 @@ public record ResolvedFilePath( String mappingName, String mappingPath, String r
 	/**
 	 * Create a new ResolvedFilePath instance from a path relative to the current path.
 	 *
+	 * @param context      The box context to use for resolving the new path.
 	 * @param relativePath The relative path to create a new ResolvedFilePath instance from.
 	 *
 	 * @return A new ResolvedFilePath instance.
 	 */
 	public ResolvedFilePath newFromRelative( IBoxContext context, String relativePath ) {
+		IStruct mappings = context.getConfig().getAsStruct( Key.mappings );
+		return newFromRelative( mappings, relativePath );
+	}
+
+	/**
+	 * Create a new ResolvedFilePath instance from a path relative to the current path.
+	 *
+	 * @param mappings     The mappings to use for resolving the new path.
+	 * @param relativePath The relative path to create a new ResolvedFilePath instance from.
+	 *
+	 * @return A new ResolvedFilePath instance.
+	 */
+	public ResolvedFilePath newFromRelative( IStruct mappings, String relativePath ) {
 		Path	absoluteParent	= absolutePath().getParent();
 		// This is our new absolute path, relative to the first
 		Path	newAbsolutePath	= absoluteParent.resolve( relativePath ).toAbsolutePath().normalize();
 
 		// Use contract path to find the mapping, which we'll try to default to the mapping we started with, but
 		// if the new path had ../ in it, we may need another mapping, or it may not match any mappings at all.
-		return FileSystemUtil.contractPath( context, newAbsolutePath.toString(), this.mappingName );
+		return FileSystemUtil.contractPath( mappings, newAbsolutePath.toString(), this.mappingName );
 
 	}
 
 	private static Path makeReal( Path path ) {
 		// if exists, make it real
-		if ( path != null && path.toFile().exists() ) {
+		if ( path != null ) {
 			try {
 				return path.toRealPath();
 			} catch ( IOException e ) {
-				throw new BoxIOException( e );
+				// Doesn't exist. Trying to avoid the IO overhead of running the exists() check first!
+				return path;
 			}
 		}
 		return path;

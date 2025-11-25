@@ -1,0 +1,42 @@
+{
+	"name": "BoxLang OS Runtime",
+	"version": "@build.version@+@build.number@",
+	"location": "https://downloads.ortussolutions.com/ortussolutions/boxlang/@build.version@/boxlang-@build.version@.zip",
+	"author": "Ortus Solutions <info@ortussolutions.com>",
+	"slug": "boxlang-runtime",
+	"type": "projects",
+	"keywords": "language,jvm,scripting,boxlang",
+	"homepage": "https://www.boxlang.io",
+	"documentation": "https://boxlang.ortusbooks.com/",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/ortus-boxlang/boxlang"
+	},
+	"bugs": "https://ortussolutions.atlassian.net/browse/BOXLANG",
+	"shortDescription": "The BoxLang operating system runtime.",
+	"license": [
+		{
+			"type": "Apache2",
+			"url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+		}
+	],
+	"contributors": [
+		"Luis Majano <luis@ortussolutions.com>",
+		"Brad Wood <brad@ortussolutions.com>",
+		"Jon Clausen <jclausen@ortussolutions.com>",
+		"Esme Acevedo <esme@ortussolutions.com>",
+		"Grant Copley <gcopley@ortussolutions.com>",
+		"Eric Peterson <eric@ortussolutions.com>",
+		"Jacob Beers <jbeers@ortussolutions.com>",
+		"Daniel Garcia <dgarcia@ortussolutions.com>",
+		"Alan Quinlan <aquinlan@ortussolutions.com>",
+		"Javier Quintero <jquintero@ortussolutions.com>",
+		"Jaime Ramirez <jramirez@ortussolutions.com>",
+		"Michael Born <mborn@ortussolutions.com>",
+		"Oscar Tisnado <otisnado@ortussolutions.com>",
+		"Jorge Reyes <jreyes@ortussolutions.com>",
+		"Bill Reese <breese@ortussolutions.com>",
+		"Davis Vega <dvega@ortussolutions.com>"
+	],
+	"createPackageDirectory": true
+}

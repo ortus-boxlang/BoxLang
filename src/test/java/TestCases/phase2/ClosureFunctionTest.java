@@ -711,4 +711,38 @@ public class ClosureFunctionTest {
 
 	}
 
+	@DisplayName( "More lexical in catch block" )
+	@Test
+	public void testMoreLexicalInCatchBlock() {
+
+		instance.executeSource(
+		    """
+		    		function foo() {
+		    			var localVar = "brad";
+		    			try {
+		    				throw "oops"
+		    			} catch (any e) {
+		    				(()=>localVar.len())()
+		    			}
+		    		}
+
+		    		foo();
+		    """,
+		    context );
+
+	}
+
+	@DisplayName( "test closure can access super scope" )
+	@Test
+	public void testClosureCanAccessSuperScope() {
+
+		instance.executeSource(
+		    """
+		    result = new src.test.java.TestCases.phase2.Child().addMessages( ["one", "two"] )
+		      """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "onetwo" );
+
+	}
+
 }

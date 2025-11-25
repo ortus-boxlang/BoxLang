@@ -37,7 +37,7 @@ import ortus.boxlang.runtime.types.util.JSONUtil;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.conversion.ObjectMarshaller;
 
-@BoxBIF
+@BoxBIF( description = "Generate a hash value for a string" )
 @BoxBIF( alias = "Hash40" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "hash" )
 @BoxMember( type = BoxLangType.STRUCT, name = "hash" )

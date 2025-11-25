@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.config.segments;
 
-import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.config.util.PropertyHelper;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
@@ -73,10 +72,6 @@ public class ModuleConfig implements IConfigSegment {
 	public ModuleConfig process( IStruct config ) {
 		this.enabled	= BooleanCaster.cast( PropertyHelper.processString( config, Key.enabled, "true" ) );
 		this.settings	= StructCaster.cast( config.getOrDefault( Key.settings, new Struct() ) );
-		// Process placeholders
-		this.settings.forEach( ( key, value ) -> {
-			this.settings.put( key, PlaceholderHelper.resolveAll( value ) );
-		} );
 
 		return this;
 	}
@@ -87,7 +82,7 @@ public class ModuleConfig implements IConfigSegment {
 	 * @return A struct representation of the configuration segment
 	 */
 	public IStruct asStruct() {
-		return Struct.of(
+		return Struct.ofNonConcurrent(
 		    Key._NAME, this.name,
 		    Key.enabled, this.enabled,
 		    Key.settings, new Struct( this.settings )

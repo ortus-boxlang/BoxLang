@@ -34,7 +34,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.util.StructUtil;
 
-@BoxBIF
+@BoxBIF( description = "Find keys in a struct that match a value" )
 @BoxMember( type = BoxLangType.STRUCT )
 
 public class StructFindKey extends BIF {

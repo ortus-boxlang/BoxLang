@@ -24,12 +24,13 @@ import org.apache.commons.lang3.math.NumberUtils;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
-@BoxBIF
+@BoxBIF( description = "Check if a string represents a valid currency value" )
 @BoxBIF( alias = "LSIsCurrency" )
 
 public class IsCurrency extends BIF {
@@ -56,7 +57,7 @@ public class IsCurrency extends BIF {
 	 * @argument.locale The locale to apply to parsing - uses the context config value if not specified
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	value	= arguments.getAsString( Key.number );
+		String	value	= StringCaster.cast( arguments.get( Key.number ) );
 
 		Locale	locale	= LocalizationUtil.parseLocaleFromContext( context, arguments );
 

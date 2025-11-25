@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.types.Argument;
 
-@BoxBIF
+@BoxBIF( description = "Create a new executor service" )
 public class ExecutorNew extends BIF {
 
 	/**

@@ -17,25 +17,27 @@
  */
 package ortus.boxlang.runtime.util;
 
+import java.lang.ref.SoftReference;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.text.ParsePosition;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.ZoneId;
-import java.time.Instant;
-import java.time.temporal.TemporalAccessor;
-import java.time.ZonedDateTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.FormatStyle;
+import java.time.temporal.TemporalAccessor;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -63,71 +65,108 @@ public final class LocalizationUtil {
 	/**
 	 * The runtime logger
 	 */
-	private static final BoxLangLogger				logger						= BoxRuntime.getInstance().getLoggingService().getRuntimeLogger();
+	private static final BoxLangLogger													logger								= BoxRuntime.getInstance()
+	    .getLoggingService().getRuntimeLogger();
+
+	/**
+	 * Cache for DateTimeFormatter instances keyed by cache key string.
+	 * Uses SoftReference to allow garbage collection under memory pressure.
+	 */
+	private static final ConcurrentHashMap<String, SoftReference<DateTimeFormatter>>	formatterCache						= new ConcurrentHashMap<>();
+
+	/**
+	 * Cache keys for different formatter types
+	 */
+	private static final String															COMMON_PATTERNS_CACHE_KEY			= "common_patterns";
+	private static final String															LOCALE_ZONED_DATETIME_PREFIX		= "locale_zoned_datetime_";
+	private static final String															ALT_LOCALE_ZONED_DATETIME_PREFIX	= "alt_locale_zoned_datetime_";
+	private static final String															LOCALE_DATETIME_PREFIX				= "locale_datetime_";
+	private static final String															LOCALE_DATE_PREFIX					= "locale_date_";
+	private static final String															LOCALE_TIME_PREFIX					= "locale_time_";
+	private static final String															PATTERN_FORMATTER_PREFIX			= "pattern_formatter_";
+	private static final String															LOCALE_PATTERN_FORMATTER_PREFIX		= "locale_pattern_formatter_";
 
 	/**
 	 * A primitive array of common US-prioritized DateTime format patterns, which is used for fast casting by commons lang DateUtils
 	 */
-	public static final String[]					COMMON_DATETIME_PATTERNS	= {
+	public static final String[]														COMMON_DATETIME_PATTERNS			= {
 
-	    // Localized Date/Time formats - the order in which these are presented is very specific
-	    "EEE[E][,] d MMM yyyy HH:mm:ss zzz", // Full DateTime (e.g., Tue, 02 Apr 2024 21:01:00 CEST) - Similar to FULL_FULL - optional full day, optional comma
-	    "dd MMM yyyy HH:mm[:ss]",         // Long DateTime (e.g., 02 Apr 2024 21:01:00) - Similar to LONG_LONG
-	    "dd-MMM-yyyy HH:mm[:ss]",         // Medium DateTime (e.g., 02-Apr-2024 21:01:00) - Might need adjustment based on locale
+	    // ISO basic formats - these need to come first
+	    "yyyy-MM-dd hh:mm[:ss] a",         // Date-time with 12-hour format and meridian (double digit hour)
+	    "yyyy-MM-dd h:mm[:ss] a",         // Date-time with 12-hour format and meridian (single digit hour)
+	    "yyyy-MM-dd['T'][ ]HH:mm[:ss][.SSSSSS][XXX]",  // Consolidated: ISO with optional T/space, seconds, microseconds, offset
+	    "yyyy-MM-dd['T'][ ]HH:mm[:ss][.SSS][XXX]",     // Consolidated: ISO with optional T/space, seconds, milliseconds, offset
+	    "yyyy-MM-dd['T'][ ]HH:mm[:ss][Z][X]",          // Consolidated: ISO with optional T/space, seconds, basic offset
+
+	    // Specific edge case patterns that don't fit the consolidated pattern structure
+	    "MMM d, yyyy h:mm:ss a", // Specific format for Jul 17, 2017 9:29:40 PM - single digit day and hour with seconds
+	    "MMM-dd-yyyy h:mm[ ]a", // Med DateTime specific format with double digit day, single digit hour (e.g., Nov-05-2025 8:43am)
+	    "MMM-dd-yyyy HH:mm[:ss]", // Med DateTime specific format with double digit day, and 24 hour time with optional seconds
+
+	    // Localized Date/Time formats - single-digit patterns come first for proper precedence
+	    "EEEE[,] d MMM yyyy HH:mm:ss[ zzz]", // Full DateTime (e.g., Tue, 02 Apr 2024 21:01:00 CEST) - Similar to FULL_FULL - optional full day, optional comma
+	    "EEE[,] d MMM yyyy HH:mm:ss[ zzz]", // Full DateTime (e.g., Tue, 02 Apr 2024 21:01:00 CEST) - Similar to FULL_FULL - optional full day, optional comma
+	    "d MMM yyyy HH:mm[:ss]",         // Long DateTime with single digit day (e.g., 2 Apr 2024 21:01:00)
+	    "dd MMM yyyy HH:mm[:ss]",        // Long DateTime with double digit day (e.g., 02 Apr 2024 21:01:00) - Similar to LONG_LONG
+	    "d-MMM-yyyy HH:mm[:ss]",         // Medium DateTime with single digit day (e.g., 2-Apr-2024 21:01:00)
+	    "dd-MMM-yyyy HH:mm[:ss]",        // Medium DateTime with double digit day (e.g., 02-Apr-2024 21:01:00) - Might need adjustment based on locale
+	    "MMMM[,] d[,] yyyy HH:mm:ss[ zzz]", 	  // Med DateTime with single digit day (e.g., Apr 2, 2024 21:01:00) - Might need adjustment based on locale
+	    "MMMM[,] dd[,] yyyy HH:mm:ss[ zzz]", 	  // Med DateTime with double digit day (e.g., Apr 02, 2024 21:01:00) - Might need adjustment based on locale
+	    "MMMM[,] d[,] yyyy h:mm a[ zzz]", 	    // Med DateTime No Seconds and AM/PM with single digit day/hour (e.g., Apr 2, 2024 9:01 AM) - Might need adjustment based on locale
+	    "MMMM[,] dd[,] yyyy hh:mm a[ zzz]", 	    // Med DateTime No Seconds and AM/PM with double digit day/hour (e.g., Apr 02, 2024 10:01 AM) - Might need adjustment based on locale
+	    "MMMM[,] d[,] yyyy HH:mm[ zzz]", 	     // Med DateTime No Seconds with single digit day (e.g. Apr 2 2024 21:01) - Might need adjustment based on locale
+	    "MMMM[,] dd[,] yyyy HH:mm[ zzz]", 	     // Med DateTime No Seconds with double digit day (e.g. Apr 02 2024 21:01) - Might need adjustment based on locale
+	    // Consolidated patterns
+	    "MMM[,][- ]d[,][- ]yyyy h:mm[ ]a[ zzz]", 	    // Med DateTime No Seconds and AM/PM with single digit day/hour (e.g., Apr 2, 2024 9:01 AM, Jul 17, 2017 9:29 PM) - Might need adjustment based on locale
+	    "MMM[,][- ]dd[,][- ]yyyy hh:mm[ ]a[ zzz]", 	    // Med DateTime No Seconds and AM/PM with double digit day/hour (e.g., Apr 02, 2024 10:01 AM or 10:01AM) - Might need adjustment based on locale
+	    "MMM[,][- ]d[,][- ]yyyy h:mm:ss[ ]a[ zzz]", 	    // Med DateTime with Seconds and AM/PM with single digit day/hour (e.g., Jul 17, 2017 9:29:40 PM) - Might need adjustment based on locale
+	    "MMM[,][- ]dd[,][- ]yyyy h:mm:ss[ ]a[ zzz]", 	    // Med DateTime with Seconds and AM/PM with single/double digit day/hour (e.g., Apr 02, 2024 10:01:00 AM) - Might need adjustment based on locale
+
+	    "MMM[,][- ]d[,][- ]yyyy HH:mm:ss[ zzz]", 	  // Med DateTime with single digit day (e.g., Apr 2, 2024 21:01:00) - Might need adjustment based on locale
+	    "MMM[,][- ]dd[,][- ]yyyy HH:mm:ss[ zzz]", 	  // Med DateTime with double digit day (e.g., Apr 02, 2024 21:01:00) - Might need adjustment based on locale
+	    "MMM[,][- ]d[,][- ]yyyy HH:mm[ zzz]", 	     // Med DateTime No Seconds with single digit day (e.g. Apr 2 2024 21:01) - Might need adjustment based on locale
+	    "MMM[,][- ]dd[,][- ]yyyy HH:mm[ zzz]", 	     // Med DateTime No Seconds with double digit day (e.g. Apr 02 2024 21:01) - Might need adjustment based on locale
 	    "MM/dd/yyyy hh:mm[:ss] a",         // Short DateTime (e.g., 02/04/2024 04:01:00 PM) - Might need adjustment based on locale
 	    "MM/dd/yyyy HH:mm[:ss]",         // Short DateTime (e.g., 02/04/2024 21:01:00) - Might need adjustment based on locale
 	    "MM/dd/yyyy hh:mm a",         // Short DateTime (e.g., 02/04/2024 04:01:00 PM) - Might need adjustment based on locale
+	    "MMM/dd/yyyy HH:mm:ss", // Short DateTime with medium month and 24 hour time (e.g., Feb/04/2024 22:01:00) - Might need adjustment based on locale
 	    "dd.MM.yyyy HH:mm[:ss]",         // Short DateTime (e.g., 02.04.2024 21:01:00) - Might need adjustment based on locale
 	    "LLLL dd[,] yyyy HH:mm:ss", 	  // Long month DateTime (e.g., April 02, 2024 21:01:00) - Might need adjustment based on locale
 	    "LLLL dd[,] yyyy hh:mm a", 	  // Long month DateTime with AM/PM (e.g., April 02, 2024 05:01 AM) - Might need adjustment based on locale
-	    "MMM[,] dd[,] yyyy HH:mm:ss", 	  // Med DateTime (e.g., Apr 02, 2024 21:01:00) - Might need adjustment based on locale
-	    "MMM[,] dd[,] yyyy hh:mm a", 	    // Med DateTime No Seconds and AM/PM (e.g., Apr 02, 2024 10:01 AM) - Might need adjustment based on locale
-	    "MMM[,] dd[,] yyyy HH:mm", 	     // Med DateTime No Seconds (e.g. Apr 02 2024 21:01) - Might need adjustment based on locale
 
 	    // java.util.Date toString default format
 	    "EEE[,] MMM[,] dd[,] HH:mm:ss zzz yyyy", // Default DateTime (e.g., Tue Apr 02 21:01:00 CET 2024) - Similar to DEFAULT - optional commas
 
-	    // ISO formats
-	    "yyyy-MM-dd'T'HH:mm:ss.SSSSSSXXX",  // Date-time with fractional microseconds and offset
-	    "yyyy-MM-dd'T'HH:mm:ss.SSS[XXX]",  // Date-time with milliseconds and offset
-	    "yyyy-MM-dd'T'HH:mm:ss[Z][X]",        // Date-time with offset (Z)
-	    "yyyy-MM-dd'T'HH:mm:ss",         // Date-time
-
 	    // ODBC formats
 	    "yyyyMMddHHmmss",                // ODBCDateTime - Potential ODBC format
 
-	    // US Localized Date formats - Month First
-	    "MMM dd yyyy",                   // Long Date (e.g., Apr 02 2024)
-	    "MMM-dd-yyyy",                   // Medium Date (e.g., Apr-02-2024) - Might need adjustment based on locale
-	    "MMM/dd/yyyy",                   // Medium Date (e.g., Apr/02/2024) - Might need adjustment based on locale
-	    "MMM.dd.yyyy",                   // Medium Date (e.g., Apr.02.2024) - Might need adjustment based on locale
+	    // Alt patterns encountered with dates from other countries - anything out of English locale norms needs to come first
+	    "yyyy/MM/dd", // Common to Africa and Taiwan
+	    "M-d-yy", // Short Form two-digit year
 
-	    // US Localized Date formats - Month First (Short)
-	    "MM dd yyyy",                   // Short Date (e.g., 04 02 2024) - Might need adjustment based on locale
-	    "MM-dd-yyyy",                   // Short Date (e.g., 04-02-2024) - Might need adjustment based on locale
-	    "MM/dd/yyyy",                   // Short Date (e.g., 04/02/2024) - Might need adjustment based on locale
-	    "MM.dd.yyyy",                   // Short Date (e.g., 04.02.2024) - Might need adjustment based on locale
+	    // US Localized Date formats - Month First (Phase 2B: Not consolidatable due to DateTimeFormatter limitations)
+	    "MMM dd yyyy",                  // Long Date with space separators (e.g., Apr 02 2024)
+	    "MMM-dd-yyyy",                  // Long Date with dash separators (e.g., Apr-02-2024)
+	    "MMM/dd/yyyy",                  // Long Date with slash separators (e.g., Apr/02/2024)
+	    "MMM.dd.yyyy",                  // Long Date with dot separators (e.g., Apr.02.2024)
+	    "MM dd yyyy",                   // Short Date with space separators (e.g., 04 02 2024)
+	    "MM-dd-yyyy",                   // Short Date with dash separators (e.g., 04-02-2024)
+	    "MM/dd/yyyy",                   // Short Date with slash separators (e.g., 04/02/2024)
+	    "MM.dd.yyyy",                   // Short Date with dot separators (e.g., 04.02.2024)
 
 	    // Localized Date formats
 	    "EEE[E][,] dd MMM yyyy",          // Full Date (e.g., Tue, 02 Apr 2024) - Similar to FULL - optional full day, optional comma
 	    "dd MMM yyyy",                   // Long Date (e.g., 02 Apr 2024) - Similar to LONG
-	    "dd-MMM-yy",                     // Medium Date with a two-digit year (e.g., 02-Apr-24) - Might need adjustment based on locale
-	    "dd-MMM-yyyy",                   // Medium Date (e.g., 02-Apr-2024) - Might need adjustment based on locale
-	    "dd/MMM/yyyy",                   // Medium Date (e.g., 02-Apr-2024) - Might need adjustment based on locale
-	    "dd.MMM.yyyy",                   // Medium Date (e.g., 02.Apr.2024) - Might need adjustment based on locale
+	    "dd-MMM-yy",                     // Medium Date with a two-digit year (e.g., 02-Apr-24) - Keep separate for 2-digit year
+	    "dd[-/.]MMM[-/.]yyyy",           // Phase 3: Medium Date with flexible separators (e.g., 02-Apr-2024, 02/Apr/2024, 02.Apr.2024)
 	    "MMM[,] dd[,] yyyy",                  // Med Date (e.g., Apr 02, 2024) - Might need adjustment based on locale
 	    "MMMM[,] dd[,] yyyy",                 // Long month Date (e.g., April 02, 2024) - Might need adjustment based on locale
 
-	    // European Day-First Formats
-	    "dd MM yyyy",                   // Short Date (e.g., 02.04.2024) - Might need adjustment based on locale
-	    "dd-MM-yyyy",                   // Short Date (e.g., 02-04-2024) - Might need adjustment based on locale
-	    "dd/MM/yyyy",                   // Short Date (e.g., 02/04/2024) - Might need adjustment based on locale
-	    "dd.MM.yyyy",                   // Short Date (e.g., 02.04.2024) - Might need adjustment based on locale
+	    // European Day-First Formats - Consolidated
+	    "dd[ /-.]MM[ /-.]yyyy",         // European day-first with flexible separators (e.g., 02-04-2024, 02/04/2024, 02.04.2024)
 
-	    // ISO format
-	    "yyyy-MM-dd",                   // ISODate (e.g., 2024-04-02)
-	    "yyyy/MM/dd",                   // ISODate (e.g., 2024/04/02)
-	    "yyyy.MM.dd",                   // ISODate (e.g., 2024.04.02)
+	    // ISO format - Consolidated
+	    "yyyy[-/.]MM[-/.]dd",           // ISO date with flexible separators (e.g., 2024-04-02, 2024/04/02, 2024.04.02)
 
 	    // ODBC format
 	    "yyyyMMdd"                     // ODBCDate - Potential ODBC format
@@ -136,7 +175,7 @@ public final class LocalizationUtil {
 	/**
 	 * A struct of common locale constants
 	 */
-	public static final LinkedHashMap<Key, Locale>	COMMON_LOCALES				= new LinkedHashMap<Key, Locale>();
+	public static final LinkedHashMap<Key, Locale>										COMMON_LOCALES						= new LinkedHashMap<Key, Locale>();
 	static {
 		COMMON_LOCALES.put( Key.of( "Canada" ), Locale.CANADA );
 		COMMON_LOCALES.put( Key.of( "Canadian" ), Locale.CANADA );
@@ -666,26 +705,37 @@ public final class LocalizationUtil {
 	 * {@link LocalTime}, or {@link Instant}. If successful, it wraps the parsed result in a {@link DateTime}.
 	 *
 	 * @param dateTime the date-time string to parse
+	 * @param timezone the timezone to apply to parsed dates without timezone information (optional, ignored if null)
 	 * 
 	 * @return a {@link DateTime} object representing the parsed date-time
 	 * 
 	 * @throws BoxRuntimeException if the input string cannot be parsed into a supported {@link TemporalAccessor}
 	 */
-	public static DateTime parseFromCommonPatterns( String dateTime ) {
+	public static DateTime parseFromCommonPatterns( String dateTime, ZoneId timezone ) {
 		TemporalAccessor date = getCommonPatternDateTimeParsers().parseBest( dateTime, OffsetDateTime::from, ZonedDateTime::from, LocalDateTime::from,
 		    LocalDate::from, LocalTime::from );
+
 		if ( date instanceof ZonedDateTime castZonedDateTime ) {
 			return new DateTime( castZonedDateTime );
-		} else if ( date instanceof LocalDateTime castLocalDateTime ) {
-			return new DateTime( castLocalDateTime );
-		} else if ( date instanceof LocalDate castLocalDate ) {
-			return new DateTime( castLocalDate );
-		} else if ( date instanceof LocalTime castLocalTime ) {
-			return new DateTime( castLocalTime );
-		} else if ( date instanceof Instant castInstant ) {
-			return new DateTime( castInstant );
 		} else if ( date instanceof OffsetDateTime castOffsetDateTime ) {
 			return new DateTime( castOffsetDateTime );
+		} else if ( date instanceof LocalDateTime castLocalDateTime ) {
+			// Apply timezone if provided, otherwise use the existing DateTime constructor behavior
+			return timezone != null
+			    ? new DateTime( castLocalDateTime.atZone( timezone ) )
+			    : new DateTime( castLocalDateTime );
+		} else if ( date instanceof LocalDate castLocalDate ) {
+			// Apply timezone if provided, otherwise use the existing DateTime constructor behavior
+			return timezone != null
+			    ? new DateTime( castLocalDate.atStartOfDay( timezone ) )
+			    : new DateTime( castLocalDate );
+		} else if ( date instanceof LocalTime castLocalTime ) {
+			// Apply timezone if provided, otherwise use the existing DateTime constructor behavior
+			return timezone != null
+			    ? new DateTime( castLocalTime.atDate( LocalDate.now() ).atZone( timezone ) )
+			    : new DateTime( castLocalTime );
+		} else if ( date instanceof Instant castInstant ) {
+			return new DateTime( castInstant );
 		} else {
 			throw new BoxRuntimeException(
 			    String.format(
@@ -694,6 +744,20 @@ public final class LocalizationUtil {
 			    )
 			);
 		}
+	}
+
+	/**
+	 * Parses a date-time string using common patterns and returns a {@link DateTime} object.
+	 * Uses the existing DateTime constructor behavior for dates without timezone information.
+	 *
+	 * @param dateTime the date-time string to parse
+	 * 
+	 * @return a {@link DateTime} object representing the parsed date-time
+	 * 
+	 * @throws BoxRuntimeException if the input string cannot be parsed into a supported {@link TemporalAccessor}
+	 */
+	public static DateTime parseFromCommonPatterns( String dateTime ) {
+		return parseFromCommonPatterns( dateTime, null );
 	}
 
 	/**
@@ -737,7 +801,7 @@ public final class LocalizationUtil {
 					} catch ( java.time.format.DateTimeParseException x ) {
 						throw new BoxRuntimeException(
 						    String.format(
-						        "The date time value of [%s] could not be parsed as a valid date or datetime locale of [%s]",
+						        "The date time value of [%s] could not be parsed as a valid date or datetime using the locale of [%s]",
 						        dateTime,
 						        locale.getDisplayName()
 						    ), x );
@@ -745,7 +809,7 @@ public final class LocalizationUtil {
 				}
 				throw new BoxRuntimeException(
 				    String.format(
-				        "The date time value of [%s] could not be parsed as a valid date or datetime locale of [%s]",
+				        "The date time value of [%s] could not be parsed as a valid date or datetime using the locale of [%s]",
 				        dateTime,
 				        locale.getDisplayName()
 				    ), e );
@@ -792,7 +856,7 @@ public final class LocalizationUtil {
 			} catch ( Exception x ) {
 				throw new BoxRuntimeException(
 				    String.format(
-				        "The date time value of [%s] could not be parsed as a valid date or datetime locale of [%s]",
+				        "The date time value of [%s] could not be parsed as a valid date or datetime using the locale of [%s]",
 				        dateTime,
 				        locale.getDisplayName()
 				    ), x );
@@ -819,6 +883,58 @@ public final class LocalizationUtil {
 	}
 
 	/**
+	 * Gets a formatter from cache or creates and caches it if not present.
+	 * Uses SoftReference for memory-sensitive caching.
+	 * 
+	 * <p>
+	 * DateTimeFormatter creation is resource-intensive because it involves:
+	 * - Building complex DateTimeFormatterBuilder instances
+	 * - Parsing multiple pattern strings
+	 * - Configuring locale-specific formatting rules
+	 * - Creating optional parsing chains for multiple formats
+	 * 
+	 * Caching provides significant performance improvements for date parsing operations
+	 * while SoftReference ensures cache entries can be garbage collected under memory pressure.
+	 * </p>
+	 *
+	 * @param cacheKey the cache key for the formatter
+	 * @param supplier the function that creates the formatter if not cached
+	 * 
+	 * @return the cached or newly created DateTimeFormatter
+	 */
+	private static DateTimeFormatter getOrCreateFormatter( String cacheKey, java.util.function.Supplier<DateTimeFormatter> supplier ) {
+		SoftReference<DateTimeFormatter>	ref			= formatterCache.get( cacheKey );
+		DateTimeFormatter					formatter	= ref != null ? ref.get() : null;
+
+		if ( formatter == null ) {
+			// Use compute to avoid race condition
+			formatterCache.compute( cacheKey, ( key, existingRef ) -> {
+				DateTimeFormatter existing = existingRef != null ? existingRef.get() : null;
+				if ( existing == null ) {
+					return new SoftReference<>( supplier.get() );
+				}
+				return existingRef;
+			} );
+			ref			= formatterCache.get( cacheKey );
+			formatter	= ref.get();
+		}
+
+		return formatter;
+	}
+
+	/**
+	 * Creates a cache key for locale-specific formatters
+	 *
+	 * @param prefix the cache key prefix
+	 * @param locale the locale to include in the key
+	 * 
+	 * @return the cache key string
+	 */
+	private static String createLocaleCacheKey( String prefix, Locale locale ) {
+		return prefix + locale.toString();
+	}
+
+	/**
 	 * Returns a DateTimeFormatter that can parse common date-time patterns.
 	 * <p>
 	 * This method constructs a lenient DateTimeFormatter that supports a predefined
@@ -828,19 +944,21 @@ public final class LocalizationUtil {
 	 * @return a DateTimeFormatter configured with common date-time patterns
 	 */
 	public static DateTimeFormatter getCommonPatternDateTimeParsers() {
-		DateTimeFormatterBuilder builder = newLenientDateTimeFormatterBuilder();
-		Stream.of( COMMON_DATETIME_PATTERNS )
-		    .forEach( pattern -> {
-			    builder.appendOptional(
-			        new DateTimeFormatterBuilder()
-			            .parseCaseInsensitive()
-			            .appendPattern( pattern )
-			            .toFormatter()
-			    );
-		    } );
+		return getOrCreateFormatter( COMMON_PATTERNS_CACHE_KEY, () -> {
+			DateTimeFormatterBuilder builder = newLenientDateTimeFormatterBuilder()
+			    .parseCaseInsensitive(); // Enable case insensitive parsing for meridian indicators
 
-		return builder.toFormatter();
+			for ( String pattern : COMMON_DATETIME_PATTERNS ) {
+				builder.appendOptional(
+				    new DateTimeFormatterBuilder()
+				        .parseCaseInsensitive()
+				        .appendPattern( pattern )
+				        .toFormatter( Locale.US )
+				);
+			}
 
+			return builder.toFormatter( Locale.US );
+		} );
 	}
 
 	/**
@@ -851,7 +969,9 @@ public final class LocalizationUtil {
 	 * @return the localized DateTimeFormatter object
 	 */
 	public static DateTimeFormatter getLocaleZonedDateTimeParsers( Locale locale ) {
-		return appendLocaleZonedDateTimeParsers( newLenientDateTimeFormatterBuilder(), locale ).toFormatter( locale );
+		String cacheKey = createLocaleCacheKey( LOCALE_ZONED_DATETIME_PREFIX, locale );
+		return getOrCreateFormatter( cacheKey, () -> appendLocaleZonedDateTimeParsers( newLenientDateTimeFormatterBuilder(), locale ).toFormatter( locale )
+		);
 	}
 
 	/**
@@ -863,7 +983,9 @@ public final class LocalizationUtil {
 	 * @return the localized DateTimeFormatter object
 	 */
 	public static DateTimeFormatter getAltLocaleZonedDateTimeParsers( Locale locale ) {
-		return appendAltLocaleZonedDateTimeParsers( newLenientDateTimeFormatterBuilder(), locale ).toFormatter( locale );
+		String cacheKey = createLocaleCacheKey( ALT_LOCALE_ZONED_DATETIME_PREFIX, locale );
+		return getOrCreateFormatter( cacheKey, () -> appendAltLocaleZonedDateTimeParsers( newLenientDateTimeFormatterBuilder(), locale ).toFormatter( locale )
+		);
 	}
 
 	/**
@@ -902,7 +1024,9 @@ public final class LocalizationUtil {
 	 * @return the localized DateTimeFormatter object
 	 */
 	public static DateTimeFormatter getLocaleDateTimeParsers( Locale locale ) {
-		return appendLocaleDateTimeParsers( newLenientDateTimeFormatterBuilder(), locale ).toFormatter( locale );
+		String cacheKey = createLocaleCacheKey( LOCALE_DATETIME_PREFIX, locale );
+		return getOrCreateFormatter( cacheKey, () -> appendLocaleDateTimeParsers( newLenientDateTimeFormatterBuilder(), locale ).toFormatter( locale )
+		);
 	}
 
 	/**
@@ -935,14 +1059,14 @@ public final class LocalizationUtil {
 		    .appendOptional(
 		        DateTimeFormatter.ofPattern( "MMMM d yyyy HH:mm" )
 		    )
-		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.ISO_DATE_TIME_MILIS_FORMAT_MASK ) )
-		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.ISO_DATE_TIME_MILIS_NO_T_FORMAT_MASK ) )
-		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.ISO_DATE_TIME_VARIATION_FORMAT_MASK ) )
-		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.DEFAULT_DATETIME_FORMAT_MASK ) )
-		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.TS_FORMAT_MASK ) )
-		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.JS_COMMON_TO_STRING_MASK ) )
-		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.JS_COMMON_ALT_STRING_MASK ) )
-		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.ZONED_DATE_TIME_TO_STRING_MASK ) )
+		    .appendOptional( DateTime.ISO_DATE_TIME_MILIS_FORMATTER )
+		    .appendOptional( DateTime.ISO_DATE_TIME_MILIS_NO_T_FORMATTER )
+		    .appendOptional( DateTime.ISO_DATE_TIME_VARIATION_FORMATTER )
+		    .appendOptional( DateTime.DEFAULT_DATETIME_FORMATTER )
+		    .appendOptional( DateTime.TS_FORMATTER )
+		    .appendOptional( DateTime.JS_COMMON_TO_STRING_FORMATTER )
+		    .appendOptional( DateTime.JS_COMMON_ALT_STRING_FORMATTER )
+		    .appendOptional( DateTime.ZONED_DATE_TIME_TO_STRING_FORMATTER )
 		    .appendOptional( DateTimeFormatter.ISO_INSTANT )
 		    .appendOptional( DateTimeFormatter.ISO_DATE_TIME )
 		    .appendOptional( DateTimeFormatter.ISO_LOCAL_DATE_TIME );
@@ -957,7 +1081,9 @@ public final class LocalizationUtil {
 	 */
 
 	public static DateTimeFormatter getLocaleDateParsers( Locale locale ) {
-		return appendLocaleDateParsers( newLenientDateTimeFormatterBuilder(), locale ).toFormatter( locale );
+		String cacheKey = createLocaleCacheKey( LOCALE_DATE_PREFIX, locale );
+		return getOrCreateFormatter( cacheKey, () -> appendLocaleDateParsers( newLenientDateTimeFormatterBuilder(), locale ).toFormatter( locale )
+		);
 	}
 
 	/**
@@ -977,7 +1103,7 @@ public final class LocalizationUtil {
 		    .appendOptional( DateTimeFormatter.ofPattern( "yyyy-MM-dd" ) )
 		    .appendOptional( DateTimeFormatter.ofPattern( "yyyy.MM.dd" ) )
 		    .appendOptional( DateTimeFormatter.ofPattern( "MM/dd/yyyy" ) )
-		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.DEFAULT_DATE_FORMAT_MASK ) )
+		    .appendOptional( DateTime.DEFAULT_DATE_FORMATTER )
 		    .appendOptional( DateTimeFormatter.ISO_DATE )
 		    .appendOptional( DateTimeFormatter.ISO_LOCAL_DATE )
 		    .appendOptional( DateTimeFormatter.BASIC_ISO_DATE );
@@ -992,8 +1118,9 @@ public final class LocalizationUtil {
 	 */
 
 	public static DateTimeFormatter getLocaleTimeParsers( Locale locale ) {
-		DateTimeFormatterBuilder formatBuilder = new DateTimeFormatterBuilder();
-		return appendLocaleTimeParsers( newLenientDateTimeFormatterBuilder(), locale ).toFormatter( locale );
+		String cacheKey = createLocaleCacheKey( LOCALE_TIME_PREFIX, locale );
+		return getOrCreateFormatter( cacheKey, () -> appendLocaleTimeParsers( newLenientDateTimeFormatterBuilder(), locale ).toFormatter( locale )
+		);
 	}
 
 	/**
@@ -1009,8 +1136,44 @@ public final class LocalizationUtil {
 		    .appendOptional( DateTimeFormatter.ofLocalizedTime( FormatStyle.MEDIUM ).withLocale( locale ) )
 		    .appendOptional( DateTimeFormatter.ofLocalizedTime( FormatStyle.LONG ).withLocale( locale ) )
 		    .appendOptional( DateTimeFormatter.ofLocalizedTime( FormatStyle.FULL ).withLocale( locale ) )
-		    .appendOptional( DateTimeFormatter.ofPattern( DateTime.DEFAULT_TIME_FORMAT_MASK ) )
+		    .appendOptional( DateTime.DEFAULT_TIME_FORMATTER )
 		    .appendOptional( DateTimeFormatter.ISO_TIME );
+	}
+
+	/**
+	 * Gets a cached DateTimeFormatter for the specified pattern using the default locale.
+	 * Uses memory-sensitive caching with SoftReference to allow garbage collection under memory pressure.
+	 *
+	 * @param pattern the date/time pattern string
+	 * 
+	 * @return the cached or newly created DateTimeFormatter
+	 */
+	public static DateTimeFormatter getPatternFormatter( String pattern ) {
+		String cacheKey = PATTERN_FORMATTER_PREFIX + pattern;
+		return getOrCreateFormatter( cacheKey, () -> DateTimeFormatter.ofPattern( pattern )
+		);
+	}
+
+	/**
+	 * Gets a cached DateTimeFormatter for the specified pattern and locale.
+	 * Uses memory-sensitive caching with SoftReference to allow garbage collection under memory pressure.
+	 *
+	 * @param pattern the date/time pattern string
+	 * @param locale  the locale to use for the formatter
+	 * 
+	 * @return the cached or newly created DateTimeFormatter
+	 */
+	public static DateTimeFormatter getPatternFormatter( String pattern, Locale locale ) {
+		String cacheKey = LOCALE_PATTERN_FORMATTER_PREFIX + pattern + "_" + locale.toString();
+		return getOrCreateFormatter( cacheKey, () -> DateTimeFormatter.ofPattern( pattern, locale )
+		);
+	}
+
+	/**
+	 * Clears all cached formatters
+	 */
+	public static void clearAllFormatterCaches() {
+		formatterCache.clear();
 	}
 
 	/**

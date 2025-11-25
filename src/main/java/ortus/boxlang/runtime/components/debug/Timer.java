@@ -33,8 +33,8 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent( name = "Timer", allowsBody = true, requiresBody = true )
-@BoxComponent( name = "Stopwatch", allowsBody = true, requiresBody = true )
+@BoxComponent( description = "Measure execution time of code blocks", name = "Timer", allowsBody = true, requiresBody = true )
+@BoxComponent( description = "Measure execution time of code blocks", name = "Stopwatch", allowsBody = true, requiresBody = true )
 public class Timer extends Component {
 
 	private static ortus.boxlang.runtime.util.Timer	bxTimer		= new ortus.boxlang.runtime.util.Timer();

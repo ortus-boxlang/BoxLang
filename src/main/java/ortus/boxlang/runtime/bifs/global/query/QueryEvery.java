@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.QueryUtil;
 
-@BoxBIF
+@BoxBIF( description = "Test whether every item in query matches the callback function" )
 @BoxMember( type = BoxLangType.QUERY )
 public class QueryEvery extends BIF {
 

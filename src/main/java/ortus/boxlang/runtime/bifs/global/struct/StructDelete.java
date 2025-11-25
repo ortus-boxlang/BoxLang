@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
 
-@BoxBIF
+@BoxBIF( description = "Delete a key from a struct" )
 @BoxMember( type = BoxLangType.STRUCT )
 
 public class StructDelete extends BIF {

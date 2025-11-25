@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.MathUtil;
 
-@BoxBIF
+@BoxBIF( description = "Calculate the sine of an angle" )
 @BoxMember( type = BoxLangType.NUMERIC, name = "Sin" )
 public class Sin extends BIF {
 

@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 
-@BoxBIF
+@BoxBIF( description = "Generate a PBKDF2 (Password-Based Key Derivation Function) key" )
 public class GeneratePBKDFKey extends BIF {
 
 	/**

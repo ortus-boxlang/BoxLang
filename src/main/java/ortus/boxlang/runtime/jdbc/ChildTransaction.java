@@ -38,7 +38,7 @@ public class ChildTransaction implements ITransaction {
 	/**
 	 * The underlying JDBC connection.
 	 */
-	private Connection					connection;
+	private BoxConnection				connection;
 
 	/**
 	 * The prefix for savepoints created in this transaction.
@@ -110,15 +110,25 @@ public class ChildTransaction implements ITransaction {
 	/**
 	 * Get (creating if none found) the connection associated with the parent transaction.
 	 */
-	public Connection getConnection() {
+	public BoxConnection getBoxConnection() {
 		if ( this.connection == null ) {
-			this.connection = this.parent.getConnection();
+			this.connection = this.parent.getBoxConnection();
 			// now that we've obtained a connection, we can "begin" the child transaction.
 			if ( !this.savepoints.containsKey( generateSavepointKey( ChildTransaction.BEGIN ) ) ) {
 				begin();
 			}
 		}
 		return this.connection;
+	}
+
+	/**
+	 * Get (creating if none found) the connection associated with the parent transaction.
+	 * 
+	 * This method is deprecated. Use getBoxConnection() instead.
+	 */
+	@Deprecated
+	public Connection getConnection() {
+		return getBoxConnection();
 	}
 
 	/**

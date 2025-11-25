@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Function;
 
-@BoxBIF
+@BoxBIF( description = "Find all indices where a value exists in an array" )
 @BoxBIF( alias = "ArrayFindAllNoCase" )
 @BoxMember( type = BoxLangType.ARRAY )
 @BoxMember( type = BoxLangType.ARRAY, name = "findAllNoCase" )

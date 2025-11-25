@@ -14,7 +14,6 @@
  */
 package ortus.boxlang.compiler.javaboxpiler.transformer;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -41,6 +40,7 @@ import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
 import com.github.javaparser.ast.type.UnknownType;
 
+import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -65,6 +65,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyService;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
@@ -107,6 +108,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.types.util.*;
 		import ortus.boxlang.runtime.util.*;
 		import ortus.boxlang.runtime.util.conversion.ObjectMarshaller;
+		import ortus.boxlang.compiler.BoxByteCodeVersion;
 
 		// Java Imports
 		import java.io.*;
@@ -129,20 +131,18 @@ public class BoxClassTransformer extends AbstractTransformer {
 		import java.util.Set;
 		import java.util.Optional;
 
-
+		@BoxByteCodeVersion(boxlangVersion="${boxlangVersion}", bytecodeVersion=${bytecodeVersion})
 		public class ${className} ${extendsTemplate} implements ${interfaceList} {
 
 			// Public static fields
 			public static final Key[] keys = new Key[] {};
 
 			// Private Static fields
-			private static final long serialVersionUID = ${compileVersion};
+			private static final long serialVersionUID = ${bytecodeVersion};
 			private static final List<ImportDefinition>	imports	= List.of();
 			// public so the static initializer can access it
 			public static final ResolvedFilePath path = ${resolvedFilePath};
 			private static final BoxSourceType sourceType = BoxSourceType.${sourceType};
-			private static final long compileVersion = ${compileVersion};
-			private static final LocalDateTime compiledOn = ${compiledOnTimestamp};
 			private static final Object	ast	= null;
 			private static final IStruct annotations;
 			private static final IStruct documentation;
@@ -156,6 +156,10 @@ public class BoxClassTransformer extends AbstractTransformer {
 			// This is public so the ClassLocator can check it easily
 			public static boolean staticInitialized = false;
 			public static final Key name = ${boxFQN};
+
+			static {
+				BoxClassSupport.runStaticInitializer( ${className}::staticInitializer, ${className}.class, ${className}.staticScope, ${className}.path );
+			}
 
 			// Private instance fields
 			private VariablesScope variablesScope = new ClassVariablesScope(this);
@@ -218,18 +222,6 @@ public class BoxClassTransformer extends AbstractTransformer {
 			}
 
 			// ITemplateRunnable implementation methods
-
-			public long getRunnableCompileVersion() {
-				return ${className}.compileVersion;
-			}
-
-			public LocalDateTime getRunnableCompiledOn() {
-				return ${className}.compiledOn;
-			}
-
-			public Object getRunnableAST() {
-				return ${className}.ast;
-			}
 
 			public ResolvedFilePath getRunnablePath() {
 				return ${className}.path;
@@ -535,10 +527,11 @@ public class BoxClassTransformer extends AbstractTransformer {
 		    Map.entry( "isJavaExtends", isJavaExtends ),
 		    Map.entry( "sourceType", sourceType ),
 		    Map.entry( "resolvedFilePath", transpiler.getResolvedFilePath( mappingName, mappingPath, relativePath, filePath ) ),
-		    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
-		    Map.entry( "compileVersion", "1L" ),
+		    Map.entry( "boxlangVersion", BoxRuntime.getInstance().getVersionInfo().getAsString( Key.version ) ),
+		    Map.entry( "bytecodeVersion", String.valueOf( IBoxpiler.BYTECODE_VERSION ) ),
 		    // Don't use the transpiler helper method for this so it's always a Key.of() call. When re-defining a class, we want this to be a Key.of() call.
-		    Map.entry( "boxFQN", "Key.of( \"" + boxFQN + "\" )" ),
+		    // Casting input to Object to match the same bytecode the ASM boxpiler uses, which the DiskClassLoader ASM vistor looks for.
+		    Map.entry( "boxFQN", "Key.of( (Object)\"" + boxFQN + "\" )" ),
 		    Map.entry( "compileTimeMethodNames", generateCompileTimeMethodNames( boxClass ) )
 		);
 		String							code		= PlaceholderHelper.resolve( CLASS_TEMPLATE, values );

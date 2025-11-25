@@ -274,7 +274,7 @@ public class Parser {
 				if ( fast ) {
 					return null;
 				}
-				if ( new DiskClassUtil( null ).isJavaBytecode( file ) ) {
+				if ( DiskClassUtil.isJavaByteCode( file ) ) {
 					return BoxSourceType.CFSCRIPT;
 				}
 				try {
@@ -307,6 +307,16 @@ public class Parser {
 
 	}
 
+	/**
+	 * Guess the class type by reading the file contents
+	 * 
+	 * @param file    File to read
+	 * @param charset Charset to use when reading the file
+	 * 
+	 * @return Detected BoxSourceType
+	 * 
+	 * @throws IOException If an I/O error occurs reading the file
+	 */
 	private static BoxSourceType guessClassType( File file, Charset charset ) throws IOException {
 
 		// This will only read the lines up until it finds a match to avoid loading the entire file
@@ -314,9 +324,13 @@ public class Parser {
 		try ( BufferedReader reader = Files.newBufferedReader( file.toPath(), charset ) ) {
 			String line;
 			while ( ( line = reader.readLine() ) != null ) {
-				// Remove any BOMs from the start of the file
-				line = line.replaceFirst( "^\uFEFF", "" ).replaceFirst( "^\uFFFE", "" ).replaceFirst( "^\u0000FEFF", "" )
-				    .replaceFirst( "^\uFFFE0000", "" ).toLowerCase().trim();
+				// Remove any BOMs from the start of the file (There can be more than one BOM in some cases)
+				line = line.replaceAll( "^\u0000\uFEFF+", "" )     // UTF-32 BE BOM (longest first)
+				    .replaceAll( "^\uFFFE\u0000+", "" )      // UTF-32 LE BOM (longest first)
+				    .replaceAll( "^\uFEFF+", "" )            // UTF-8 BOM (handle multiple)
+				    .replaceFirst( "^\uFFFE", "" )           // UTF-16 LE BOM (after UTF-32 LE)
+				    .toLowerCase().trim();
+
 				// Rudimentary attempt to skip comments
 				if ( line.startsWith( "//" ) ) {
 					continue;
@@ -326,6 +340,14 @@ public class Parser {
 				}
 				if ( line.contains( "--->" ) || line.contains( "*/" ) ) {
 					inComment = false;
+					// If the line ends the comment, remove the part of the string starting at the end of where that text was found so the line variable contains the rest of the line after the comment
+					int	htmlCommentEnd	= line.indexOf( "--->" );
+					int	blockCommentEnd	= line.indexOf( "*/" );
+					if ( htmlCommentEnd != -1 && ( blockCommentEnd == -1 || htmlCommentEnd < blockCommentEnd ) ) {
+						line = line.substring( htmlCommentEnd + 4 ).trim();
+					} else if ( blockCommentEnd != -1 ) {
+						line = line.substring( blockCommentEnd + 2 ).trim();
+					}
 				}
 				if ( inComment ) {
 					continue;

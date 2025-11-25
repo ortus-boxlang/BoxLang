@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent( allowsBody = true )
+@BoxComponent( description = "Define arguments for method invocation", allowsBody = true )
 public class InvokeArgument extends Component {
 
 	/**

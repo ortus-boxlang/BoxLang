@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Capitalize the first letter of a string" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "UCFirst" )
 public class UCFirst extends BIF {
 
@@ -52,10 +52,23 @@ public class UCFirst extends BIF {
 	 * @argument.doLowerIfAllUppercase Boolean flag indicating whether to lowercase uppercase characters.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	input					= arguments.getAsString( Key.string );
-		boolean	doAll					= arguments.getAsBoolean( Key.doAll );
-		boolean	doLowerIfAllUppercase	= arguments.getAsBoolean( Key.doLowerIfAllUppercase );
+		return ucFirst(
+		    arguments.getAsString( Key.string ),
+		    arguments.getAsBoolean( Key.doAll ),
+		    arguments.getAsBoolean( Key.doLowerIfAllUppercase )
+		);
+	}
 
+	/**
+	 * Transform the first letter of a string to uppercase or the first letter of each word, and optionally lowercase uppercase characters.
+	 *
+	 * @param input                 The string to transform
+	 * @param doAll                 Boolean flag indicating whether to transform the first letter of each word
+	 * @param doLowerIfAllUppercase Boolean flag indicating whether to lowercase uppercase characters
+	 * 
+	 * @return The transformed string
+	 */
+	public static String ucFirst( String input, boolean doAll, boolean doLowerIfAllUppercase ) {
 		if ( input.isEmpty() ) {
 			return "";
 		}

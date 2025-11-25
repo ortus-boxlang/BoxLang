@@ -20,7 +20,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.types.Array;
 
-@BoxBIF
+@BoxBIF( description = "Create a new array" )
 public class ArrayNew extends BIF {
 
 	/**
@@ -32,10 +32,10 @@ public class ArrayNew extends BIF {
 
 	/**
 	 * Return new array
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// TODO: accept dimension and isSynchronized params - need to update ArrayGetMetaData

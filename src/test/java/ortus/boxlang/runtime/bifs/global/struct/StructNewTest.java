@@ -194,7 +194,7 @@ public class StructNewTest {
 
 	@DisplayName( "case sensitive access" )
 	@Test
-	public void testCaseSenstiveAccess() {
+	public void testCaseSensitiveAccess() {
 		variables.put( Key.of( "struct" ), new Struct( Struct.TYPES.CASE_SENSITIVE ) );
 		instance.executeSource(
 		    """

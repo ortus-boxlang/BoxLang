@@ -17,12 +17,15 @@
  */
 package ortus.boxlang.runtime.operators;
 
-import java.time.Duration;
-
 import static com.google.common.truth.Truth.assertThat;
+
+import java.sql.Timestamp;
+import java.time.Duration;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import ortus.boxlang.runtime.types.DateTime;
 
 public class EqualsEqualsTest {
 
@@ -60,6 +63,14 @@ public class EqualsEqualsTest {
 	@Test
 	void testItCanCompareTimespans() {
 		assertThat( EqualsEquals.invoke( Duration.ofDays( 1 ), 1 ) ).isTrue();
+	}
+
+	@DisplayName( "It can compare date and SQL timestamp" )
+	@Test
+	void testItCanCompareSQLTime() {
+		Timestamp	sqlTimestamp	= Timestamp.valueOf( "2024-06-15 12:34:56.789" );
+		DateTime	boxDateTime		= new DateTime( "2024-06-15 12:34:56.789" );
+		assertThat( EqualsEquals.invoke( boxDateTime, sqlTimestamp ) ).isTrue();
 	}
 
 }

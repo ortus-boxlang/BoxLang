@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-@BoxBIF
+@BoxBIF( description = "Clear the CLI console screen" )
 public class CLIClear extends BIF {
 
 	/**

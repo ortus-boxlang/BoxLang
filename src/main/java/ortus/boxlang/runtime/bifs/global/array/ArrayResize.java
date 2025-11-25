@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Resize an array to a specified size" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayResize extends BIF {
 
@@ -50,7 +50,7 @@ public class ArrayResize extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.array The array to resize
-	 * 
+	 *
 	 * @argument.size The new minimum size of the array
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

@@ -22,7 +22,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.File;
 
-@BoxBIF
+@BoxBIF( description = "Check if value is a file object" )
 public class IsFileObject extends BIF {
 
 	/**

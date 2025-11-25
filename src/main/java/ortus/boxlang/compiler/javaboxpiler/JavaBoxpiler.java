@@ -161,7 +161,7 @@ public class JavaBoxpiler extends Boxpiler {
 	}
 
 	@Override
-	public void compileClassInfo( String classPoolName, String FQN ) {
+	public List<byte[]> compileClassInfo( String classPoolName, String FQN ) {
 		Timer timer = null;
 		if ( BoxRuntime.getInstance().inDebugMode() ) {
 			timer = new Timer();
@@ -176,8 +176,7 @@ public class JavaBoxpiler extends Boxpiler {
 			File sourceFile = classInfo.resolvedFilePath().absolutePath().toFile();
 			// Check if the source file contains Java bytecode by reading the first few bytes
 			if ( diskClassUtil.isJavaBytecode( sourceFile ) ) {
-				classInfo.getClassLoader().defineClasses( FQN, sourceFile, classInfo );
-				return;
+				return classInfo.getClassLoader().defineClasses( FQN, sourceFile, classInfo );
 			}
 			ParsingResult result = parseOrFail( sourceFile );
 			compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.fqn().toString(), classPoolName, classInfo.lastModified() );
@@ -194,6 +193,7 @@ public class JavaBoxpiler extends Boxpiler {
 		if ( timer != null ) {
 			logger.trace( "Java BoxPiler Compiled " + FQN + " in " + timer.stop( FQN ) );
 		}
+		return diskClassUtil.readClassBytes( classPoolName, FQN );
 	}
 
 	/**
@@ -218,43 +218,46 @@ public class JavaBoxpiler extends Boxpiler {
 			String								classPoolDiskPrefix	= RegexBuilder.of( classPoolName, RegexBuilder.NON_ALPHANUMERIC ).replaceAllAndGet( "_" );
 
 			standardFileManager.setLocation( StandardLocation.CLASS_OUTPUT, Arrays.asList( classGenerationDirectory.resolve( classPoolDiskPrefix ).toFile() ) );
-			JavaFileManager					fileManager		= new ForwardingJavaFileManager<StandardJavaFileManager>( standardFileManager ) {
+			JavaFileManager	fileManager		= new ForwardingJavaFileManager<StandardJavaFileManager>( standardFileManager ) {
 
-																@Override
-																public JavaFileObject getJavaFileForOutput( Location location, String className,
-																    JavaFileObject.Kind kind, FileObject sibling ) throws IOException {
-																	SimpleJavaFileObject	d;
-																	JavaFileObject			f	= this.fileManager.getJavaFileForOutput( location, className,
-																	    kind, sibling );
-																	return new SimpleJavaFileObject( f.toUri(), kind ) {
+												@Override
+												public JavaFileObject getJavaFileForOutput( Location location, String className,
+												    JavaFileObject.Kind kind, FileObject sibling ) throws IOException {
+													SimpleJavaFileObject	d;
+													JavaFileObject			f	= this.fileManager.getJavaFileForOutput( location, className,
+													    kind, sibling );
+													return new SimpleJavaFileObject( f.toUri(), kind ) {
 
-																														@Override
-																														public OutputStream openOutputStream()
-																														    throws IOException {
-																															return new FileOutputStream(
-																															    f.toUri().getPath() ) {
+																						@Override
+																						public OutputStream openOutputStream()
+																						    throws IOException {
+																							return new FileOutputStream(
+																							    f.toUri().getPath() ) {
 
-																																												@Override
-																																												public void close()
-																																												    throws IOException {
-																																													super.close();
-																																													if ( lastModifiedDate > 0 ) {
-																																														Paths
-																																														    .get(
-																																														        f.toUri() )
-																																														    .toFile()
-																																														    .setLastModified(
-																																														        lastModifiedDate );
-																																													}
-																																												}
-																																											};
-																														}
-																													};
-																}
-															};
+																																@Override
+																																public void close()
+																																    throws IOException {
+																																	super.close();
+																																	if ( lastModifiedDate > 0 ) {
+																																		Paths
+																																		    .get(
+																																		        f.toUri() )
+																																		    .toFile()
+																																		    .setLastModified(
+																																		        lastModifiedDate );
+																																	}
+																																}
+																															};
+																						}
+																					};
+												}
+											};
 
-			String							javaCP			= System.getProperty( "java.class.path" );
-
+			String			javaCP			= System.getProperty( "java.class.path" );
+			String			currentJarPath	= getCurrentJarPath();
+			if ( currentJarPath != null && !javaCP.contains( currentJarPath ) ) {
+				javaCP = javaCP + File.pathSeparator + currentJarPath;
+			}
 			List<JavaFileObject>			sourceFiles		= Collections.singletonList( new JavaSourceString( fqn, javaSource ) );
 			List<String>					options			= List.of( "-g", "-cp", javaCP, "-source", "21", "-target", "21" );
 			JavaCompiler.CompilationTask	task			= compiler.getTask( null, fileManager, diagnostics, options, null, sourceFiles );
@@ -272,6 +275,29 @@ public class JavaBoxpiler extends Boxpiler {
 			frTransService.endTransaction( trans );
 		}
 
+	}
+
+	/**
+	 * Get the path to the current JAR file containing this class
+	 *
+	 * @return The path to the current JAR, or null if not running from a JAR
+	 */
+	private String getCurrentJarPath() {
+		try {
+			String classPath = JavaBoxpiler.class.getProtectionDomain()
+			    .getCodeSource()
+			    .getLocation()
+			    .toURI()
+			    .getPath();
+
+			// Only add if it's actually a JAR file
+			if ( classPath.endsWith( ".jar" ) ) {
+				return classPath;
+			}
+			return null;
+		} catch ( Exception e ) {
+			return null;
+		}
 	}
 
 	/**

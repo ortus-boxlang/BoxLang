@@ -23,6 +23,7 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -35,6 +36,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.IStruct;
 
 public class ParseDateTimeTest {
 
@@ -386,6 +388,26 @@ public class ParseDateTimeTest {
 
 	}
 
+	@DisplayName( "It tests the BIF ParseDateTime allowing more folks to use lower-case am/pm format" )
+	@Test
+	public void testParseYetAnotherLowerCaseMeridian() {
+		instance.executeSource(
+		    """
+		    result = ParseDateTime( "Nov-05-2025 8:43am" );
+		    """,
+		    context );
+		DateTime result = ( DateTime ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( DateTime.class );
+		assertThat( result.toString() ).isInstanceOf( String.class );
+		assertThat( IntegerCaster.cast( result.format( "yyyy" ) ) ).isEqualTo( 2025 );
+		assertThat( IntegerCaster.cast( result.format( "M" ) ) ).isEqualTo( 11 );
+		assertThat( IntegerCaster.cast( result.format( "d" ) ) ).isEqualTo( 5 );
+		assertThat( IntegerCaster.cast( result.format( "H" ) ) ).isEqualTo( 8 );
+		assertThat( IntegerCaster.cast( result.format( "m" ) ) ).isEqualTo( 43 );
+		assertThat( IntegerCaster.cast( result.format( "s" ) ) ).isEqualTo( 0 );
+
+	}
+
 	@DisplayName( "It tests the BIF ParseDateTime with a common epoch pattern" )
 	@Test
 	public void testParseLongAndShortDateTime() {
@@ -444,6 +466,46 @@ public class ParseDateTimeTest {
 		    parseDateTime( 'Tuesday 02 Apr 2024 21:01:00 CEST' );
 		          """,
 		    context );
+	}
+
+	@DisplayName( "It tests the speed of both masked and non-masked parsing" )
+	@Test
+	@Disabled( "Disabled for CI performance. Comment to test locally" )
+	public void testSpeed() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    function parseIt( string dateString, string mask ){
+			var iterations = 10000;
+			var start = getTickCount();
+			for( var i = 1; i <= iterations; i++ ){
+				var result = !isNull( mask ) ? parseDateTime( dateString, mask ) : parseDateTime( dateString )
+			}
+			var totalTime = ( getTickCount() - start );
+			return totalTime;
+			}
+
+			result = [
+				"isoTimestamp" : parseIt( "2024-04-02T21:01:00Z" ),
+				"isoTimestampWMask" : parseIt( "2024-04-02T21:01:00Z", "yyyy-MM-dd'T'HH:mm:ssXXX" ),
+				"mediumFormatZoned" : parseIt( "Nov 22, 2022 11:01:51 CET" ),
+				"mediumFormatZonedWithMask" : parseIt( "Nov 22, 2022 11:01:51 CET", "MMM dd, yyyy HH:mm:ss zz" )
+			];
+			println( result );
+		       """,
+		    context );
+			// @formatter:on
+
+		IStruct	result			= variables.getAsStruct( Key.of( "result" ) );
+		long	isoTimestamp	= IntegerCaster.cast( result.get( Key.of( "isoTimestamp" ) ) );
+		assertThat( isoTimestamp ).isLessThan( 500 ); // less than 500ms for 10k parses
+		long isoTimestampWMask = IntegerCaster.cast( result.get( Key.of( "isoTimestampWMask" ) ) );
+		assertThat( isoTimestampWMask ).isLessThan( 100 ); // less than 5 seconds for 10k parses
+		long mediumFormatZoned = IntegerCaster.cast( result.get( Key.of( "mediumFormatZoned" ) ) );
+		assertThat( mediumFormatZoned ).isLessThan( 500 ); // less than 500ms for 10k parses
+		long mediumFormatZonedWithMask = IntegerCaster.cast( result.get( Key.of( "mediumFormatZonedWithMask" ) ) );
+		assertThat( mediumFormatZonedWithMask ).isLessThan( 100 ); // less than 100ms for 10k parses
+
 	}
 
 }

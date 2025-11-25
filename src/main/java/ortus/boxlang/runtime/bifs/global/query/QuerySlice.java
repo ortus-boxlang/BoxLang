@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-@BoxBIF
+@BoxBIF( description = "Extract a portion of query rows" )
 @BoxMember( type = BoxLangType.QUERY )
 public class QuerySlice extends BIF {
 
@@ -68,7 +68,7 @@ public class QuerySlice extends BIF {
 		}
 
 		// Ensure the offset is within the valid range
-		if ( offset >= query.size() - 1 ) {
+		if ( offset > query.size() - 1 ) {
 			throw new BoxRuntimeException( "Offset is outside the query row range." );
 		}
 

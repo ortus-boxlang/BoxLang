@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.XML;
 
-@BoxBIF
+@BoxBIF( description = "Check if value is XML" )
 public class IsXML extends BIF {
 
 	/**

@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.context.CustomTagBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
+import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
@@ -40,13 +41,14 @@ import ortus.boxlang.runtime.types.exceptions.CustomException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
-@BoxComponent( allowsBody = true )
+@BoxComponent( description = "Define component properties and functionality", allowsBody = true )
 public class Component extends ortus.boxlang.runtime.components.Component {
 
 	/**
 	 * List of valid class extensions
 	 */
-	private static final List<String> VALID_EXTENSIONS = BoxRuntime.getInstance().getConfiguration().getValidTemplateExtensionsList();
+	private static final List<String> VALID_EXTENSIONS = BoxRuntime.getInstance().getConfiguration().getValidTemplateExtensionsList().stream()
+	    .filter( ( e ) -> !e.equals( "*" ) ).toList();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -105,9 +107,9 @@ public class Component extends ortus.boxlang.runtime.components.Component {
 		executionState.put( Key.customTagPath, bTemplate.getRunnablePath().absolutePath().toString() );
 
 		// Prepare the variables
-		VariablesScope		caller		= ( VariablesScope ) context.getScopeNearby( VariablesScope.name );
+		IScope				caller		= context.getScopeNearby( VariablesScope.name );
 		CustomTagBoxContext	ctContext	= new CustomTagBoxContext( context, tagName );
-		VariablesScope		variables	= ( VariablesScope ) ctContext.getScopeNearby( VariablesScope.name );
+		IScope				variables	= ctContext.getScopeNearby( VariablesScope.name );
 
 		variables.put( Key.attributes, actualAttributes );
 		variables.put( Key.caller, caller );
@@ -262,14 +264,19 @@ public class Component extends ortus.boxlang.runtime.components.Component {
 			    List<ResolvedFilePath> files = new ArrayList<>();
 			    for ( String extension : VALID_EXTENSIONS ) {
 				    var tagPath = fullName + "." + extension;
-				    files.add(
-				        ResolvedFilePath.of(
-				            entry.mappingName(),
-				            entry.mappingPath(),
-				            tagPath,
-				            new File( entry.absolutePath().toString(), tagPath ).toPath()
-				        )
-				    );
+				    try {
+					    files.add(
+					        ResolvedFilePath.of(
+					            entry.mappingName(),
+					            entry.mappingPath(),
+					            tagPath,
+					            new File( entry.absolutePath().toString(), tagPath ).toPath()
+					        )
+					    );
+				    } catch ( java.nio.file.InvalidPathException ipe ) {
+					    // Skip invalid paths. This can happen if the tag name or extension has invalid chars. No need to blow up, it's simply not found.
+					    continue;
+				    }
 			    }
 			    return files.stream();
 		    } )

@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Query;
 
-@BoxBIF
+@BoxBIF( description = "Clear all data from a query" )
 @BoxMember( type = BoxLangType.QUERY )
 public class QueryClear extends BIF {
 

@@ -22,7 +22,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
-@BoxBIF
+@BoxBIF( description = "Check if an executor service exists" )
 public class ExecutorHas extends BIF {
 
 	/**

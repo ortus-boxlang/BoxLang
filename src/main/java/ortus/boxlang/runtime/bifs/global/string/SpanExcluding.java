@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxBIF
+@BoxBIF( description = "Return characters from start of string until any excluded character is found" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "SpanExcluding" )
 public class SpanExcluding extends BIF {
 

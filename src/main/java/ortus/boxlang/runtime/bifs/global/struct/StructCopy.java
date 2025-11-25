@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.util.DuplicationUtil;
 
-@BoxBIF
+@BoxBIF( description = "Create a copy of a struct" )
 @BoxMember( type = BoxLangType.STRUCT )
 public class StructCopy extends BIF {
 

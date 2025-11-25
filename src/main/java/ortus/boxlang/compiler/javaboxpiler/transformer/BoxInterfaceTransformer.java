@@ -14,7 +14,6 @@
  */
 package ortus.boxlang.compiler.javaboxpiler.transformer;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 
 import com.github.javaparser.ParseResult;
@@ -28,6 +27,7 @@ import com.github.javaparser.ast.expr.IntegerLiteralExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 
+import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -41,7 +41,9 @@ import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxStringLiteralTransformer;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
@@ -84,6 +86,7 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 		import ortus.boxlang.compiler.parser.BoxSourceType;
 		import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 		import ortus.boxlang.runtime.runnables.BoxClassSupport;
+		import ortus.boxlang.compiler.BoxByteCodeVersion;
 
 		// Java Imports
 		import java.nio.file.Path;
@@ -98,15 +101,13 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 		import java.util.Map;
 		import java.util.Optional;
 
+		@BoxByteCodeVersion(boxlangVersion="${boxlangVersion}", bytecodeVersion=${bytecodeVersion})
 		public class ${classname} extends BoxInterface {
 			
 			private static final List<ImportDefinition>	imports			= List.of();
 			// public so the static initializer can access it
 			public static final ResolvedFilePath					path			= ${resolvedFilePath};
 			private static final BoxSourceType			sourceType		= BoxSourceType.${sourceType};
-			private static final long					compileVersion	= ${compileVersion};
-			private static final LocalDateTime			compiledOn		= ${compiledOnTimestamp};
-			private static final Object					ast				= null;
 			public static final Key[]					keys			= new Key[] {};
 
 
@@ -167,27 +168,6 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 			}
 
 			// ITemplateRunnable implementation methods
-
-			/**
-				* The version of the BoxLang runtime
-			*/
-			public long getRunnableCompileVersion() {
-				return ${classname}.compileVersion;
-			}
-
-			/**
-				* The date the template was compiled
-			*/
-			public LocalDateTime getRunnableCompiledOn() {
-				return ${classname}.compiledOn;
-			}
-
-			/**
-				* The AST (abstract syntax tree) of the runnable
-			*/
-			public Object getRunnableAST() {
-				return ${classname}.ast;
-			}
 
 			/**
 				* The path to the template
@@ -278,9 +258,11 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 		    Map.entry( "fileName", fileName ),
 		    Map.entry( "resolvedFilePath", transpiler.getResolvedFilePath( mappingName, mappingPath, relativePath, filePath ) ),
 		    Map.entry( "sourceType", sourceType ),
-		    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
-		    Map.entry( "compileVersion", "1L" ),
-		    Map.entry( "boxFQN", createKey( boxFQN ).toString() )
+		    Map.entry( "boxlangVersion", BoxRuntime.getInstance().getVersionInfo().getAsString( Key.version ) ),
+		    Map.entry( "bytecodeVersion", String.valueOf( IBoxpiler.BYTECODE_VERSION ) ),
+		    // Don't use the transpiler helper method for this so it's always a Key.of() call. When re-defining a class, we want this to be a Key.of() call.
+		    // Casting input to Object to match the same bytecode the ASM boxpiler uses, which the DiskClassLoader ASM vistor looks for.
+		    Map.entry( "boxFQN", "Key.of( (Object)\"" + boxFQN + "\" )" )
 		);
 		String							code			= PlaceholderHelper.resolve( template, values );
 		ParseResult<CompilationUnit>	result;

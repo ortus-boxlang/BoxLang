@@ -38,6 +38,8 @@ public enum BoxEvent {
 	ON_CONFIGURATION_OVERRIDE_LOAD( "onConfigurationOverrideLoad" ),
 	ON_PARSE( "onParse" ),
 	ON_MISSING_MAPPING( "onMissingMapping" ),
+	ON_PRE_SOURCE_INVOKE( "onPreSourceInvoke" ),
+	ON_POST_SOURCE_INVOKE( "onPostSourceInvoke" ),
 
 	/**
 	 * Lifecycle Methods for Components and BIFS
@@ -47,6 +49,7 @@ public enum BoxEvent {
 	POST_BIF_INVOCATION( "postBIFInvocation" ),
 	ON_COMPONENT_INSTANCE( "onComponentInstance" ),
 	ON_COMPONENT_INVOCATION( "onComponentInvocation" ),
+	ON_CACHE_COMPONENT_ACTION( "onCacheComponentAction" ),
 	ON_FILECOMPONENT_ACTION( "onFileComponentAction" ),
 	ON_CREATEOBJECT_REQUEST( "onCreateObjectRequest" ),
 
@@ -180,6 +183,7 @@ public enum BoxEvent {
 	AFTER_OBJECT_MARSHALL_SERIALIZE( "afterObjectMarshallSerialize" ),
 	BEFORE_OBJECT_MARSHALL_DESERIALIZE( "beforeObjectMarshallDeserialize" ),
 	AFTER_OBJECT_MARSHALL_DESERIALIZE( "afterObjectMarshallDeserialize" ),
+	ON_JSON_QUERY_SERIALIZE( "onJSONQuerySerialize" ),
 
 	/**
 	 * Dump Events

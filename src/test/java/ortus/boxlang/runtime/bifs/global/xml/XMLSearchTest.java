@@ -57,6 +57,97 @@ public class XMLSearchTest {
 	public void setupEach() {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
+
+		variables.put(
+		    Key.of( "bigxmlString" ),
+		    """
+		    		    <samlp:Response ID="_74634feb-b473-4679-9aba-c3778ef35bfa" Version="2.0"
+		        IssueInstant="2025-11-12T21:54:21.468Z" Destination="http://localhost:9181/cbsso/auth/entra"
+		        InResponseTo="idACB318BD-F2B7-49E0-8340B56C81928DA0"
+		        xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol">
+		        <Issuer xmlns="urn:oasis:names:tc:SAML:2.0:assertion">
+		            https://sts.windows.net/d8f22d4c-22ab-4713-90d8-652b57f7d30f/</Issuer>
+		        <samlp:Status>
+		            <samlp:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Success" />
+		        </samlp:Status>
+		        <Assertion ID="_28fd0c70-8240-43a8-b5d7-5a77386b3c00" IssueInstant="2025-11-12T21:54:21.465Z"
+		            Version="2.0" xmlns="urn:oasis:names:tc:SAML:2.0:assertion">
+		            <Issuer>https://sts.windows.net/d8f22d4c-22ab-4713-90d8-652b57f7d30f/</Issuer>
+		            <Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
+		                <SignedInfo>
+		                    <CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" />
+		                    <SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256" />
+		                    <Reference URI="#_28fd0c70-8240-43a8-b5d7-5a77386b3c00">
+		                        <Transforms>
+		                            <Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" />
+		                            <Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#" />
+		                        </Transforms>
+		                        <DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256" />
+		                        <DigestValue>g+8/KlVZ5JXko4kGfayO1JGscvpsb1Mp1rXZsWLE+SU=</DigestValue>
+		                    </Reference>
+		                </SignedInfo>
+		                <SignatureValue>
+		                    o2aU1QdJGqi6NZoK2cURVMpq6nj3zG4lWAcTpJ7UagEsqi3IRh/kPELk/F8iMkFQ1zcn/AQSLKlM2U5+UFarg7IVwurdU2NnYyynPfVsck/OrRIbIgE7D+qMayImm7kR09PCi9rxcdmx0lyBQauA3QE150z3Iy2UNgmlFRrcC/+bkK+BQoSS/NrIDPOC0GSwOFRtYDYy45HEmaxaiOKr82cT7xqeVBFOsOT1bglzSd/OUGsoBaOnXIcDuk5vkDLHe0VpeuVzBXLGiYmfYXl6cwwP606ytEr9EsBAPoyhVf/RvWxw/ym01TfgARmmBvQMsXd8fbO6Nk4MgR/f0OYX0w==</SignatureValue>
+		                <KeyInfo>
+		                    <X509Data>
+		                        <X509Certificate>
+		                            MIIC/jCCAeagAwIBAgIJAPJGEpowIhBNMA0GCSqGSIb3DQEBCwUAMC0xKzApBgNVBAMTImFjY291bnRzLmFjY2Vzc2NvbnRyb2wud2luZG93cy5uZXQwHhcNMjUxMDI2MTk0NjQ1WhcNMzAxMDI2MTk0NjQ1WjAtMSswKQYDVQQDEyJhY2NvdW50cy5hY2Nlc3Njb250cm9sLndpbmRvd3MubmV0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsE+vzm1BhzJJ5KKgJKPGX4M3GbeM0c25HOVQL1aLbOEHm92HBFk1djM9a8WLDfg/d8SLh3Ehta0i0ctATwU0CSeeodvsqL4mKEOXYEqIi1f8ixCX0c7vJ0ESNcyWeAm18F9WNtFKKDOM7gzCn0zuuAZR3m/rBaPDOkoX1AULrkMZjnantrw4z8hL344dLAneta5JiulJor2NiJGNU5EHcVjw7eMDunPTpC/IAxDKF5/hTQ0Hj4+R2AzuSBO0DZ3T2G7/6lmIguOIanfGoYGKev4JvumXahkVGf/tgZ3WuoUqB8KEIM8VGjS0MjBFgCtxX6GmvRD+H3F58x4bsBAZxwIDAQABoyEwHzAdBgNVHQ4EFgQU+A6C3/xdVe7vu2wezFXPLQE0nyMwDQYJKoZIhvcNAQELBQADggEBADAAoTCjqbO+Ku6E1nbOUkq513ETV+7iL6g7FnxY4ysl2qPAsgPcLOO/HoWGLNfu4fbqyBqtSpoHYQUEe2e4FNF9T0EB5B5NShFiSlLVcQyp23PcrcInQRnb7x9iX/ztxm1bpNnLXrQrh/RTsdev6LqiIfhC2XH70Avb6LTYcBMkUuo9Y2kxT3WtyklSl0Ogr3td/lPZne1vcPP4h64uzE9+GKcm+2iZRyWGMjtG6DnC1whmoetqDDmQ9pmHi2xlxSjcTS8oq/FwEA20sjNO4DdBN9tS2VMwVZldZ/Z594sRKOPo3kPVdKhJZud5Yt2nt+xiHcjKY48HmOXRnF8AOto=</X509Certificate>
+		                    </X509Data>
+		                </KeyInfo>
+		            </Signature>
+		            <Subject>
+		                <NameID Format="urn:oasis:names:tc:SAML:2.0:nameid-format:transient">
+		                    mMceg+Qeu9APYxQDW9LuA4GaTXm8u1BOinCPhAKrNrw=</NameID>
+		                <SubjectConfirmation Method="urn:oasis:names:tc:SAML:2.0:cm:bearer">
+		                    <SubjectConfirmationData InResponseTo="idACB318BD-F2B7-49E0-8340B56C81928DA0"
+		                        NotOnOrAfter="2025-11-12T22:54:21.305Z"
+		                        Recipient="http://localhost:9181/cbsso/auth/entra" />
+		                </SubjectConfirmation>
+		            </Subject>
+		            <Conditions NotBefore="2025-11-12T21:49:21.305Z" NotOnOrAfter="2025-11-12T22:54:21.305Z">
+		                <AudienceRestriction>
+		                    <Audience>spn:caaa139f-4810-4355-a5b5-d8417b406909</Audience>
+		                </AudienceRestriction>
+		            </Conditions>
+		            <AttributeStatement>
+		                <Attribute Name="http://schemas.microsoft.com/identity/claims/tenantid">
+		                    <AttributeValue>d8f22d4c-22ab-4713-90d8-652b57f7d30f</AttributeValue>
+		                </Attribute>
+		                <Attribute Name="http://schemas.microsoft.com/identity/claims/objectidentifier">
+		                    <AttributeValue>ab143efb-18d5-4888-8005-97ae69a9f6f5</AttributeValue>
+		                </Attribute>
+		                <Attribute Name="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname">
+		                    <AttributeValue>Beers</AttributeValue>
+		                </Attribute>
+		                <Attribute Name="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname">
+		                    <AttributeValue>Jacob</AttributeValue>
+		                </Attribute>
+		                <Attribute Name="http://schemas.microsoft.com/identity/claims/displayname">
+		                    <AttributeValue>Jacob Beers</AttributeValue>
+		                </Attribute>
+		                <Attribute Name="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress">
+		                    <AttributeValue>jbeers@ortussolutions.com</AttributeValue>
+		                </Attribute>
+		                <Attribute Name="http://schemas.microsoft.com/identity/claims/identityprovider">
+		                    <AttributeValue>live.com</AttributeValue>
+		                </Attribute>
+		                <Attribute Name="http://schemas.microsoft.com/claims/authnmethodsreferences">
+		                    <AttributeValue>
+		                        http://schemas.microsoft.com/ws/2008/06/identity/authenticationmethod/password</AttributeValue>
+		                    <AttributeValue>http://schemas.microsoft.com/claims/multipleauthn</AttributeValue>
+		                    <AttributeValue>
+		                        http://schemas.microsoft.com/ws/2008/06/identity/authenticationmethod/unspecified</AttributeValue>
+		                </Attribute>
+		            </AttributeStatement>
+		            <AuthnStatement AuthnInstant="2025-11-12T20:40:34.778Z"
+		                SessionIndex="_28fd0c70-8240-43a8-b5d7-5a77386b3c00">
+		                <AuthnContext>
+		                    <AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:Password</AuthnContextClassRef>
+		                </AuthnContext>
+		            </AuthnStatement>
+		        </Assertion>
+		    </samlp:Response>
+		    		    """ );
 	}
 
 	@DisplayName( "It can search" )
@@ -180,6 +271,19 @@ public class XMLSearchTest {
 
 		assertThat( variables.get( result ) ).isInstanceOf( Array.class );
 		assertThat( variables.getAsArray( result ).size() ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "It works attribute Node" )
+	@Test
+	public void testSearchComplexXML() {
+		instance.executeSource(
+		    """
+		     xml = XMLParse( bigxmlString.trim() );
+		     search = xmlSearch( xml, "samlp:Response//samlp:StatusCode[@Value='urn:oasis:names:tc:SAML:2.0:status:Success']" )
+		    result = search.len();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
 	}
 
 }

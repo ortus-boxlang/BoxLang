@@ -56,6 +56,9 @@ public class ValidationUtil {
 	 * @return Boolean indicating whether the given string is a valid credit card number.
 	 */
 	public static boolean isValidCreditCard( String cardNumber ) {
+		if ( cardNumber == null ) {
+			return false;
+		}
 		int	shortestValidCardLength	= 12;
 		int	longestValidCardLength	= 19;
 		if ( cardNumber == null || !RegexBuilder.of( cardNumber, RegexBuilder.CREDIT_CARD_NUMBERS ).matches() ) {
@@ -119,6 +122,9 @@ public class ValidationUtil {
 	 * @return Boolean indicating whether the given string is a valid compatible UUID.
 	 */
 	public static boolean isValidGUID( String uuid ) {
+		if ( uuid == null ) {
+			return false;
+		}
 		return RegexBuilder.of( uuid, RegexBuilder.UUID_V4 ).matches();
 	}
 
@@ -132,6 +138,9 @@ public class ValidationUtil {
 	 * @return Boolean indicating whether the given string is a valid compatible UUID.
 	 */
 	public static boolean isValidUUID( String uuid ) {
+		if ( uuid == null ) {
+			return false;
+		}
 		return RegexBuilder.of( uuid, RegexBuilder.UUID_PATTERN ).matches();
 	}
 
@@ -145,6 +154,9 @@ public class ValidationUtil {
 	 * @return Boolean indicating whether the given string is a valid hexadecimal string.
 	 */
 	public static boolean isValidHexString( String hex ) {
+		if ( hex == null ) {
+			return false;
+		}
 		// Remove any leading "0x" or "#" if present (common in hex notation)
 		hex = hex.replaceFirst( "^(0x|#)", "" );
 		return RegexBuilder.of( hex, RegexBuilder.HEX_STRING ).matches();
@@ -161,6 +173,9 @@ public class ValidationUtil {
 	 * @return Boolean indicating whether the given string is a valid SSN.
 	 */
 	public static boolean isValidSSN( String ssn ) {
+		if ( ssn == null ) {
+			return false;
+		}
 		return RegexBuilder.of( ssn.replace( "-", "" ).replace( " ", "" ), RegexBuilder.SSN ).matches();
 	}
 
@@ -172,6 +187,9 @@ public class ValidationUtil {
 	 * @return Boolean indicating whether the given string is a valid US or North American telephone number.
 	 */
 	public static boolean isValidTelephone( String phone ) {
+		if ( phone == null ) {
+			return false;
+		}
 		return RegexBuilder.of( phone, RegexBuilder.TELEPHONE ).matches();
 	}
 
@@ -183,6 +201,9 @@ public class ValidationUtil {
 	 * @return Boolean indicating whether the given string is a valid URL.
 	 */
 	public static boolean isValidURL( String url ) {
+		if ( url == null ) {
+			return false;
+		}
 		return RegexBuilder.of( url, RegexBuilder.URL ).matches();
 	}
 
@@ -199,6 +220,9 @@ public class ValidationUtil {
 	 * @return Boolean indicating whether the given string is a valid zip code.
 	 */
 	public static boolean isValidZipCode( String zipCode ) {
+		if ( zipCode == null ) {
+			return false;
+		}
 		return RegexBuilder.of( zipCode, RegexBuilder.ZIPCODE ).matches();
 	}
 
@@ -212,6 +236,9 @@ public class ValidationUtil {
 	 * @return Boolean indicating whether the given string is a valid variable name.
 	 */
 	public static boolean isValidVariableName( String variableName ) {
+		if ( variableName == null ) {
+			return false;
+		}
 		return RegexBuilder.of( variableName, RegexBuilder.VALID_VARIABLENAME ).matches();
 	}
 
@@ -325,6 +352,9 @@ public class ValidationUtil {
 	 * @return Boolean indicating if the value matches the regex
 	 */
 	public static boolean isValidMatch( String value, String regex ) {
+		if ( value == null ) {
+			return false;
+		}
 		return RegexBuilder.of( value, regex ).matches();
 	}
 
@@ -347,6 +377,9 @@ public class ValidationUtil {
 	 * @param email The email address to validate
 	 */
 	public static boolean isValidEmail( String email ) {
+		if ( email == null ) {
+			return false;
+		}
 		return RegexBuilder.of( email, RegexBuilder.EMAIL ).matches();
 	}
 
@@ -358,6 +391,9 @@ public class ValidationUtil {
 	 * @param pattern The regex pattern to match
 	 */
 	public static boolean isValidPattern( String value, String pattern ) {
+		if ( value == null ) {
+			return false;
+		}
 		return RegexBuilder.of( value, pattern ).matches();
 	}
 

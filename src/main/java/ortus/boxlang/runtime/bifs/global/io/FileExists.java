@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
-@BoxBIF
+@BoxBIF( description = "Check if a file exists" )
 
 public class FileExists extends BIF {
 

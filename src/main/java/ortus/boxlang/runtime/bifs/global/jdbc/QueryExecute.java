@@ -23,6 +23,7 @@ import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.IJDBCCapableContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
+import ortus.boxlang.runtime.jdbc.BoxConnection;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.jdbc.ExecutedQuery;
 import ortus.boxlang.runtime.jdbc.PendingQuery;
@@ -32,10 +33,11 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxBIF
+@BoxBIF( description = "Execute a SQL query" )
 public class QueryExecute extends BIF {
 
 	/**
@@ -85,7 +87,7 @@ public class QueryExecute extends BIF {
 	 * <h2>Options</h2>
 	 * The available options for this BIF are:
 	 * <ul>
-	 * <><strong>cache:boolean</strong> - Whether to cache the query results, defaults to false</li>
+	 * <li><strong>cache:boolean</strong> - Whether to cache the query results, defaults to false</li>
 	 * <li><strong>cacheKey:string</strong> - Your own cache key, if not specified, the SQL will be used as the cache key</li>
 	 * <li><strong>cacheTimeout:timespan|seconds</strong> - The timeout for the cache, defaults to 0 (no timeout)</li>
 	 * <li><strong>cacheLastAccessTimeout:timespan|seconds</strong> - The timeout for the last access to the cache, defaults to 0 (no timeout)</li>
@@ -95,9 +97,11 @@ public class QueryExecute extends BIF {
 	 * <li><strong>dbtype:string</strong> - The database type to use for the query, this is either for query of queries or HQL. Mutually exclusive with <code>datasource</code></li>
 	 * <li><strong>fetchsize:numeric</strong> - Number of rows to fetch from database at once, defaults to all rows (0)</li>
 	 * <li><strong>maxrows:numeric</strong> - Maximum number of rows to return</li>
+	 * <li><strong>password:string</strong> - Override the datasource password for this query only. NOTE: Not all JDBC drivers support this; will fall back to unpooled connection if unsupported</li>
 	 * <li><strong>result</strong> - The name of the variable to store the results of the query</li>
 	 * <li><strong>returntype</strong> - The return type: "query", "array", "struct"</li>
 	 * <li><strong>timeout</strong> - Query timeout in seconds</li>
+	 * <li><strong>username:string</strong> - Override the datasource username for this query only. NOTE: Not all JDBC drivers support this; will fall back to unpooled connection if unsupported</li>
 	 * </ul>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
@@ -108,18 +112,37 @@ public class QueryExecute extends BIF {
 	 * @argument.params An array of binding parameters or a struct of named binding parameters
 	 *
 	 * @argument.options A struct of query options
+	 *
+	 * @return The executed query results, based on the return type specified in the options
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String			sql				= arguments.getAsString( Key.sql );
-		Object			bindings		= arguments.get( Key.params );
-		QueryOptions	options			= new QueryOptions( arguments.getAsStruct( Key.options ) );
+		return execute(
+		    context,
+		    arguments.getAsString( Key.sql ),
+		    arguments.get( Key.params ),
+		    arguments.getAsStruct( Key.options )
+		);
+	}
+
+	/**
+	 * Static helper to execute a query outside of the BIF context
+	 *
+	 * @param context       The context in which the BIF is being invoked.
+	 * @param sql           The SQL to execute
+	 * @param bindings      An array of binding parameters or a struct of named binding parameters
+	 * @param optionsStruct A struct of query options
+	 *
+	 * @return The executed query results, based on the return type specified in the options
+	 */
+	public static Object execute( IBoxContext context, String sql, Object bindings, IStruct optionsStruct ) {
+		QueryOptions	options			= new QueryOptions( optionsStruct != null ? optionsStruct : new Struct() );
 		PendingQuery	pendingQuery	= new PendingQuery( context, sql, bindings, options );
 		ExecutedQuery	executedQuery;
 
 		// QoQ uses a special QoQ connection
 		if ( options.isQoQ() ) {
 			Connection connection = new QoQConnection( context );
-			executedQuery = pendingQuery.execute( connection, context );
+			executedQuery = pendingQuery.execute( BoxConnection.of( connection, null ), context );
 		} else {
 			// whereas normal queries use the JDBC connection manager
 			IJDBCCapableContext	jdbcContext			= context.getParentOfType( IJDBCCapableContext.class );
@@ -136,5 +159,4 @@ public class QueryExecute extends BIF {
 		// Encapsulate this into the executed query
 		return options.castAsReturnType( executedQuery );
 	}
-
 }

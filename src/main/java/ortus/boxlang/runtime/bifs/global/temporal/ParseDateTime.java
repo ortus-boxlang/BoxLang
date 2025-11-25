@@ -19,7 +19,6 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
-import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -33,7 +32,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 
-@BoxBIF
+@BoxBIF( description = "Parse a date/time string into a datetime object" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "parseDateTime" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "toDateTime" )
 public class ParseDateTime extends BIF {
@@ -80,17 +79,10 @@ public class ParseDateTime extends BIF {
 			return dateObj;
 		}
 		if ( format != null ) {
+			// Should this use Locale?
 			return new DateTime( StringCaster.cast( dateRef ), format, timezone );
-		} else if ( locale != null ) {
-			return new DateTime( StringCaster.cast( dateRef ), locale, timezone );
 		} else {
-			CastAttempt<DateTime> attempt = DateTimeCaster.attempt( StringCaster.cast( dateRef ), context );
-			if ( attempt.wasSuccessful() ) {
-				// If the dateRef can be cast to a DateTime, we can return it directly
-				return attempt.get();
-			} else {
-				return new DateTime( StringCaster.cast( dateRef ), timezone );
-			}
+			return DateTimeCaster.cast( StringCaster.cast( dateRef ), true, timezone, false, context, locale );
 		}
 	}
 

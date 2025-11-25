@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.config.segments;
 
-import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
@@ -92,19 +91,19 @@ public class ExecutorConfig {
 	 */
 	public ExecutorConfig process( IStruct config ) {
 		if ( config.containsKey( "name" ) ) {
-			this.name = PlaceholderHelper.resolve( config.get( "name" ) );
+			this.name = config.getAsString( Key._NAME );
 		}
 
 		if ( config.containsKey( "type" ) ) {
-			this.type = PlaceholderHelper.resolve( config.get( "type" ) ).toUpperCase();
+			this.type = config.getAsString( Key.type ).toUpperCase();
 		}
 
 		if ( config.containsKey( "maxThreads" ) ) {
-			this.maxThreads = IntegerCaster.cast( PlaceholderHelper.resolve( config.get( "maxThreads" ) ) );
+			this.maxThreads = IntegerCaster.cast( config.get( Key.maxThreads ) );
 		}
 
 		if ( config.containsKey( "description" ) ) {
-			this.description = PlaceholderHelper.resolve( config.get( "description" ) );
+			this.description = config.getAsString( Key.description );
 		}
 
 		return this;
@@ -115,10 +114,10 @@ public class ExecutorConfig {
 	 * Remember that this is what the context's use to build runtime/request configs, so don't use any references
 	 */
 	public IStruct toStruct() {
-		return Struct.of(
-		    "name", this.name,
-		    "type", this.type,
-		    "maxThreads", this.maxThreads
+		return Struct.ofNonConcurrent(
+		    Key._NAME, this.name,
+		    Key.type, this.type,
+		    Key.maxThreads, this.maxThreads
 		);
 	}
 

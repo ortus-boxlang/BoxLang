@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxBIF
+@BoxBIF( description = "Terminate a running thread" )
 public class ThreadTerminate extends BIF {
 
 	/**

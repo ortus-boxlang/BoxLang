@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.testing;
 
 import java.nio.file.Path;
-import java.time.LocalDateTime;
 import java.util.List;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
@@ -119,27 +118,6 @@ public class Phase2Closure$closure1 extends Closure {
 	}
 
 	// ITemplateRunnable implementation methods
-
-	/**
-	 * The version of the BoxLang runtime
-	 */
-	public long getRunnableCompileVersion() {
-		return Phase2Closure$closure1.declaringRunnable.getRunnableCompileVersion();
-	}
-
-	/**
-	 * The date the template was compiled
-	 */
-	public LocalDateTime getRunnableCompiledOn() {
-		return Phase2Closure$closure1.declaringRunnable.getRunnableCompiledOn();
-	}
-
-	/**
-	 * The AST (abstract syntax tree) of the runnable
-	 */
-	public Object getRunnableAST() {
-		return Phase2Closure$closure1.ast;
-	}
 
 	/**
 	 * The imports for this runnable

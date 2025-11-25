@@ -20,7 +20,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 
-@BoxBIF
+@BoxBIF( description = "Get information about all scheduled tasks" )
 public class SchedulerGetAll extends BIF {
 
 	/**

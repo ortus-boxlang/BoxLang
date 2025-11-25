@@ -19,9 +19,12 @@
 package ortus.boxlang.runtime.components.system;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -35,6 +38,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class DumpTest {
 
@@ -264,12 +268,14 @@ public class DumpTest {
 		// @formatter:off
 		instance.executeSource(
 		    """
-				val = {"a":1, "b":2, "c":3, "d":4, "e":5};
+				val = {"a":1, "b":2, "c":3, "d":4, "brad":"wood"};
 				dump( var = val, format = "html" );
 		    """,
 		    context );
 			System.out.println( baos.toString() );
- 		assertThat( baos.toString().replaceAll( "[ \\t\\r\\n]", "" ) ).contains( "12345" );
+			String results = baos.toString().replaceAll( "[ \\t\\r\\n]", "" );
+ 		assertThat( results ).contains( "brad" );
+ 		assertThat( results ).contains( "wood" );
 		// @formatter:on
 	}
 
@@ -545,6 +551,149 @@ public class DumpTest {
 				context );
 			// @formatter:on
 		assertThat( baos.toString() ).contains( "Numeric to string" );
+	}
+
+	@DisplayName( "It can dump text to a file" )
+	@Test
+	public void testCanDumpTextToFile() {
+		// @formatter:off
+			instance.executeSource(
+				"""
+					val = "Hello, BoxLang";
+					filePath = expandPath( "/src/test/resources/tmp/dump_test.txt" );
+					if( fileExists( filePath ) ) fileDelete( filePath );
+					dump( var = val, format = "text", output = filePath );
+				""",
+				context );
+			// @formatter:on
+
+		Path filePath = Paths.get( variables.getAsString( Key.of( "filePath" ) ) );
+		assertWithMessage( "File [" + filePath + "] should exist" ).that( filePath.toFile().exists() ).isTrue();
+		String fileContents = ( String ) FileSystemUtil.read( filePath.toString(), FileSystemUtil.DEFAULT_CHARSET.name(), null, true );
+		assertThat( fileContents ).contains( "Hello, BoxLang" );
+		// Cleanup
+		filePath.toFile().delete();
+	}
+
+	@DisplayName( "It can dump HTML to a file" )
+	@Test
+	public void testCanDumpHTMLToFile() {
+		// @formatter:off
+			instance.executeSource(
+				"""
+					val = "Hello, BoxLang";
+					filePath = expandPath( "/src/test/resources/tmp/dump_test.html" );
+					if( fileExists( filePath ) ) fileDelete( filePath );
+					dump( var = val, format = "html", output = filePath );
+				""",
+				context );
+			// @formatter:on
+
+		Path filePath = Paths.get( variables.getAsString( Key.of( "filePath" ) ) );
+		assertWithMessage( "File [" + filePath + "] should exist" ).that( filePath.toFile().exists() ).isTrue();
+		String fileContents = ( String ) FileSystemUtil.read( filePath.toString(), FileSystemUtil.DEFAULT_CHARSET.name(), null, true );
+		assertThat( fileContents ).contains( "Hello, BoxLang" );
+		assertThat( fileContents ).contains( "<style>" );
+		// Cleanup
+		filePath.toFile().delete();
+	}
+
+	@DisplayName( "It can dump to a file in temp dir" )
+	@Test
+	public void testCanDumpToFileInTempDir() {
+		// @formatter:off
+			instance.executeSource(
+				"""
+					val = "Hello, BoxLang";
+					fileName = "dump_test.txt";
+					filePath = getTempDirectory() & "/" & fileName;
+					if( fileExists( filePath ) ) fileDelete( filePath );
+					dump( var = val, format = "text", output = fileName );
+				""",
+				context );
+			// @formatter:on
+
+		Path filePath = Paths.get( variables.getAsString( Key.of( "filePath" ) ) );
+		assertWithMessage( "File [" + filePath + "] should exist" ).that( filePath.toFile().exists() ).isTrue();
+		String fileContents = ( String ) FileSystemUtil.read( filePath.toString(), FileSystemUtil.DEFAULT_CHARSET.name(), null, true );
+		assertThat( fileContents ).contains( "Hello, BoxLang" );
+		// Cleanup
+		filePath.toFile().delete();
+	}
+
+	@DisplayName( "It can append text to a file" )
+	@Test
+	public void testCanAppendTextToFile() {
+		// @formatter:off
+			instance.executeSource(
+				"""
+					filePath = expandPath( "/src/test/resources/tmp/extra/deep/dump_test.txt" );
+					parent = expandPath( "/src/test/resources/tmp/extra" );
+					if( directoryExists( parent ) ) directoryDelete( parent, true );
+					dump( var = "dump one", format = "text", output = filePath );
+					dump( var = "dump two", format = "text", output = filePath );
+					dump( var = "dump three", format = "text", output = filePath );
+				""",
+				context );
+			// @formatter:on
+
+		Path filePath = Paths.get( variables.getAsString( Key.of( "filePath" ) ) );
+		assertWithMessage( "File [" + filePath + "] should exist" ).that( filePath.toFile().exists() ).isTrue();
+		String fileContents = ( String ) FileSystemUtil.read( filePath.toString(), FileSystemUtil.DEFAULT_CHARSET.name(), null, true );
+		assertThat( fileContents ).contains( "dump one" );
+		assertThat( fileContents ).contains( "dump two" );
+		assertThat( fileContents ).contains( "dump three" );
+		// Cleanup
+		filePath.toFile().delete();
+		filePath.getParent().toFile().delete();
+		filePath.getParent().getParent().toFile().delete();
+	}
+
+	@DisplayName( "It shows properties from super class" )
+	@Test
+	public void testShowsPropertiesFromSuperClass() {
+		// @formatter:off
+			instance.executeSource(
+				"""
+					dump( var = new src.test.java.ortus.boxlang.runtime.components.system.DumpChild(), format = "html" );
+				""",
+				context );
+			// @formatter:on
+		String output = baos.toString();
+		assertThat( output ).contains( "childProperty" );
+		assertThat( output ).contains( "I am a child property" );
+
+		assertThat( output ).contains( "parentProperty" );
+		assertThat( output ).contains( "I am a parent property" );
+
+	}
+
+	@DisplayName( "It can dump SQL date and time objects which don't correctly implement the java.util.Date interface" )
+	@Test
+	public void testCanDumpSqlDateAndTimeObjects() {
+		variables.put( "sqlDate", java.sql.Date.valueOf( "2023-01-01" ) );
+		// @formatter:off
+			instance.executeSource(
+				"""
+					dump( var = sqlDate, format = "html" );
+				""",
+				context );
+			// @formatter:on
+		String output = baos.toString();
+		assertThat( output ).contains( "2023-01-01" );
+
+		variables.put( "sqlTime", java.sql.Time.valueOf( "12:34:56" ) );
+		// @formatter:off
+		// We need to use text format here as otherwise the colons are HTML encoded
+			instance.executeSource(
+				"""
+					dump( var = sqlTime, format = "text" );
+				""",
+				context );
+			// @formatter:on
+		output = baos.toString();
+		assertThat( output ).contains( "12:34:56" );
+
 	}
 
 }

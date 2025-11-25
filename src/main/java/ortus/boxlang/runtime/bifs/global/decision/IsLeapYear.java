@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
-@BoxBIF
+@BoxBIF( description = "Check if a year is a leap year" )
 public class IsLeapYear extends BIF {
 
 	/**

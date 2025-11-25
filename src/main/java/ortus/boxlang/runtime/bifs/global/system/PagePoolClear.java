@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 
-@BoxBIF
+@BoxBIF( description = "Clear the page pool cache" )
 public class PagePoolClear extends BIF {
 
 	/**

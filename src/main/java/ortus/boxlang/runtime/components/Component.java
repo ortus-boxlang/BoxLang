@@ -66,32 +66,37 @@ public abstract class Component {
 	/**
 	 * Component Attributes
 	 */
-	protected Attribute[]			declaredAttributes	= new Attribute[] {};
+	protected Attribute[]			declaredAttributes		= new Attribute[] {};
 
 	/**
 	 * The runtime instance
 	 */
-	protected BoxRuntime			runtime				= BoxRuntime.getInstance();
+	protected BoxRuntime			runtime					= BoxRuntime.getInstance();
 
 	/**
 	 * The component service helper
 	 */
-	protected ComponentService		componentService	= BoxRuntime.getInstance().getComponentService();
+	protected ComponentService		componentService		= BoxRuntime.getInstance().getComponentService();
 
 	/**
 	 * The function service helper
 	 */
-	protected FunctionService		functionService		= BoxRuntime.getInstance().getFunctionService();
+	protected FunctionService		functionService			= BoxRuntime.getInstance().getFunctionService();
 
 	/**
 	 * The interceptor service helper
 	 */
-	protected InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
+	protected InterceptorService	interceptorService		= BoxRuntime.getInstance().getInterceptorService();
 
 	/**
 	 * Runtime Logger
 	 */
-	protected BoxLangLogger			logger				= BoxRuntime.getInstance().getLoggingService().getRuntimeLogger();
+	protected BoxLangLogger			logger					= BoxRuntime.getInstance().getLoggingService().getRuntimeLogger();
+
+	/**
+	 * Ignores setting enableOutputOnly
+	 */
+	protected boolean				ignoreEnableOutputOnly	= false;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -125,6 +130,27 @@ public abstract class Component {
 	}
 
 	/**
+	 * Get whether to ignore enableOutputOnly
+	 *
+	 * @return true if enableOutputOnly should be ignored, false otherwise
+	 */
+	public boolean isIgnoreEnableOutputOnly() {
+		return ignoreEnableOutputOnly;
+	}
+
+	/**
+	 * Set whether to ignore enableOutputOnly
+	 *
+	 * @param ignoreEnableOutputOnly true to ignore, false otherwise
+	 * 
+	 * @return this
+	 */
+	public Component setIgnoreEnableOutputOnly( boolean ignoreEnableOutputOnly ) {
+		this.ignoreEnableOutputOnly = ignoreEnableOutputOnly;
+		return this;
+	}
+
+	/**
 	 * Invoke the Component with the given arguments. This is a wrapper method that sets up the execution.
 	 *
 	 * @param context    The context in which the Component is being invoked
@@ -141,10 +167,25 @@ public abstract class Component {
 		executionState.put( Key.attributes, attributes );
 		executionState.put( Key.dataCollection, Struct.of() );
 		context.pushComponent( executionState );
+
+		if ( ignoreEnableOutputOnly ) {
+			// Spoof being in the output component in case the app has enableoutputonly=true
+			context.pushComponent(
+			    Struct.of(
+			        Key._NAME, Key.output,
+			        Key._CLASS, null,
+			        Key.attributes, Struct.EMPTY
+			    )
+			);
+		}
+
 		try {
 			return _invoke( context, attributes, body, executionState );
 		} finally {
 			context.popComponent();
+			if ( ignoreEnableOutputOnly ) {
+				context.popComponent();
+			}
 		}
 
 	}

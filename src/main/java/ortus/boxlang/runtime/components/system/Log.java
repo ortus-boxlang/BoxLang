@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.logging.LoggingService;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
-@BoxComponent
+@BoxComponent( description = "Write messages to log files" )
 public class Log extends Component {
 
 	/**

@@ -32,7 +32,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF
+@BoxBIF( description = "Format text into paragraphs" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "ParagraphFormat" )
 
 public class ParagraphFormat extends BIF {

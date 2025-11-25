@@ -17,7 +17,10 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
+import java.nio.charset.StandardCharsets;
+
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * I handle casting anything to a Binary
@@ -69,9 +72,14 @@ public class BinaryCaster implements IBoxCaster {
 			return bo;
 		}
 
+		// Convert string to byte array using UTF-8 encoding
+		if ( object instanceof String || object instanceof CharSequence ) {
+			return StringCaster.cast( object ).getBytes( java.nio.charset.StandardCharsets.UTF_8 );
+		}
+
 		// Do we throw?
 		if ( fail ) {
-			throw new BoxCastException( "Can't cast " + object.getClass().getName() + " to a Binary." );
+			throw new BoxCastException( "Can't cast " + TypeUtil.getObjectName( object ) + " to a Binary." );
 		}
 
 		return null;

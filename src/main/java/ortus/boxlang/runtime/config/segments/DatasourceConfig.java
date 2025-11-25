@@ -27,7 +27,6 @@ import org.slf4j.LoggerFactory;
 import com.zaxxer.hikari.HikariConfig;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -36,6 +35,8 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.StructUtil;
 
 /**
@@ -87,6 +88,11 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 * The properties for the datasource
 	 */
 	public IStruct					properties						= new Struct( DEFAULTS );
+
+	/**
+	 * The BoxLang JDBC driver to use for this query. Used to help control driver-specific behaviors
+	 */
+	private IJDBCDriver				driver;
 
 	/**
 	 * PRIVATE PROPERTIES
@@ -159,7 +165,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	    // additional monitoring information
 	    "registerMbeans", true,
 	    // Leak detection threshold in seconds
-	    "leakDetectionThreshold", 30 );
+	    "leakDetectionThreshold", 0 );
 
 	// List of keys to NOT set dynamically. All keys not in this list will use
 	// `addDataSourceProperty` to set the property and pass it to the JDBC driver.
@@ -265,7 +271,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 * @return The driver name or an empty string if not found
 	 */
 	public static String discoverDriverFromJdbcUrl( String jdbcURL ) {
-		logger.debug( "Attempting to determine driver from JDBC URL: {}", jdbcURL );
+		logger.trace( "Attempting to determine driver from JDBC URL: {}", jdbcURL );
 
 		// check that the URL is not empty, that it has at least one : and that it
 		// starts with jdbc:
@@ -275,7 +281,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 
 		// extract the driver name from the URL
 		String parsedDriver = jdbcURL.split( ":" )[ 1 ];
-		logger.debug( "Parsed {} driver from {}", parsedDriver, jdbcURL );
+		logger.trace( "Parsed {} driver from {}", parsedDriver, jdbcURL );
 		return parsedDriver;
 	}
 
@@ -409,11 +415,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 
 		// Process the properties into the state, merge them in one by one
 		properties.entrySet().stream().forEach( entry -> {
-			if ( entry.getValue() instanceof String castedValue ) {
-				this.properties.put( entry.getKey(), PlaceholderHelper.resolve( castedValue ) );
-			} else {
-				this.properties.put( entry.getKey(), entry.getValue() );
-			}
+			this.properties.put( entry.getKey(), entry.getValue() );
 		} );
 
 		// Merge defaults into the properties
@@ -454,7 +456,20 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 *
 	 * @return The driver name or an empty string if not found
 	 */
-	public Key getDriver() {
+	public IJDBCDriver getDriver() {
+		if ( this.driver == null ) {
+			DatasourceService datasourceService = BoxRuntime.getInstance().getDataSourceService();
+			this.driver = datasourceService.getDriverOrGeneric( getDriverName() );
+		}
+		return this.driver;
+	}
+
+	/**
+	 * Helper method, tries to get the driver from the properties
+	 *
+	 * @return The driver name or an empty string if not found
+	 */
+	public Key getDriverName() {
 		return Key.of( this.properties.getOrDefault( Key.driver, "" ).toString() );
 	}
 
@@ -545,15 +560,12 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 			    "Datasource configuration must contain a 'driver', or a valid JDBC connection string in 'url'." );
 		}
 
-		DatasourceService	datasourceService	= BoxRuntime.getInstance().getDataSourceService();
-		HikariConfig		result				= new HikariConfig();
+		HikariConfig	result		= new HikariConfig();
 		// If we can't find the driver, we default to the generic driver
-		IJDBCDriver			driverOrDefault		= datasourceService.hasDriver( getDriver() )
-		    ? datasourceService.getDriver( getDriver() )
-		    : datasourceService.getGenericDriver();
+		IJDBCDriver		JDBCdriver	= getDriver();
 
 		// Incorporate the driver's default properties
-		driverOrDefault.getDefaultProperties().entrySet().stream()
+		JDBCdriver.getDefaultProperties().entrySet().stream()
 		    .forEach( entry -> this.properties.putIfAbsent( entry.getKey(), entry.getValue() ) );
 
 		// Make sure the `custom` property is a struct: Normalize it
@@ -562,12 +574,12 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		}
 		// Incorporate the driver's default 'custom' properties
 		IStruct customParams = this.properties.getAsStruct( Key.custom );
-		driverOrDefault.getDefaultCustomParams().entrySet().stream()
+		JDBCdriver.getDefaultCustomParams().entrySet().stream()
 		    .forEach( entry -> customParams.putIfAbsent( entry.getKey(), entry.getValue() ) );
 		this.properties.put( Key.custom, customParams );
 
 		// Build out the JDBC URL according to the driver chosen or url chosen
-		result.setJdbcUrl( getOrBuildConnectionString( driverOrDefault ) );
+		result.setJdbcUrl( getOrBuildConnectionString( JDBCdriver ) );
 
 		// Standard Boxlang configuration properties into hikari equivalents
 		if ( properties.containsKey( Key.username ) ) {
@@ -689,24 +701,41 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 * @return The connection string with custom parameters incorporated
 	 */
 	public String addCustomParams( String target, String URIDelimiter, String delimiter ) {
-		String targetCustom = "";
+		String	targetCustom	= "";
+		IStruct	structCustom;
+		String	finalURL		= target;
+
+		// Convert to struct
 		if ( this.properties.get( Key.custom ) instanceof String castedCustom ) {
-			targetCustom = castedCustom;
+			structCustom = StructUtil.fromQueryString( castedCustom, delimiter );
 		} else {
-			targetCustom = StructUtil.toQueryString( ( IStruct ) this.properties.get( Key.custom ), delimiter );
+			structCustom = this.properties.getAsStruct( Key.custom );
 		}
+
+		// filter out any keys alraedy in the target query string
+		structCustom	= structCustom
+		    .entrySet()
+		    .stream()
+		    .filter( e -> !target.contains( e.getKey().getName() + "=" ) )
+		    .collect( BLCollector.toStruct() );
+
+		// Convert back to query string
+		targetCustom	= StructUtil.toQueryString( structCustom, delimiter );
 
 		// Append the custom parameters
 		if ( targetCustom.length() > 0 ) {
-			// Incorporate URI Delimiter if it doesn't exist
-			if ( !target.contains( URIDelimiter ) ) {
-				target += URIDelimiter;
+			// if the URL already has a query string, then just add a delimiter
+			if ( finalURL.contains( URIDelimiter ) ) {
+				finalURL += delimiter;
+			} else {
+				// otherwise use the URI delimiter, meaning the query string is starting
+				finalURL += URIDelimiter;
 			}
 			// Now add the custom parameters
-			target += targetCustom;
+			finalURL += targetCustom;
 		}
 
-		return target;
+		return finalURL;
 	}
 
 	/**
@@ -728,18 +757,20 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 * We purposely avoid throwing an exception here, as the generic driver may be sufficient.
 	 */
 	public void validateDriver() {
-		if ( !BoxRuntime.getInstance().getDataSourceService().hasDriver( getDriver() ) ) {
+		if ( !BoxRuntime.getInstance().getDataSourceService().hasDriver( getDriverName() ) ) {
 			logger.warn( "The datasource [{}] has a driver [{}] that is not registered with the datasource service. Do you need to install a driver module?",
 			    getOriginalName(),
-			    getDriver() );
+			    getDriverName() );
 		}
 	}
 
 	/**
 	 * This method is used to replace placeholders in the connection string with the
 	 * appropriate values.
+	 * 
+	 * These replacements are case sensitive.
 	 * <p>
-	 * The placeholders are:
+	 * The placeholders can be any key in the properties struct, including the following:
 	 * <ul>
 	 * <li><code>{host}</code> - The host name</li>
 	 * <li><code>{port}</code> - The port number</li>
@@ -751,21 +782,52 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 * @return The connection string with placeholders replaced
 	 */
 	private String replaceConnectionPlaceholders( String target ) {
+		int curlyIndex = target.indexOf( "{" );
 		// Short circuit if the target is empty
-		if ( target.isBlank() ) {
+		if ( target.isBlank() || curlyIndex == -1 ) {
 			return target;
 		}
 
-		// Replace placeholders
-		target	= target.replace(
-		    "{host}",
-		    StringCaster.cast( this.properties.getOrDefault( Key.host, "NOT_FOUND" ), true ) );
-		target	= target.replace(
-		    "{port}",
-		    StringCaster.cast( this.properties.getOrDefault( Key.port, 0 ), true ) );
-		target	= target.replace(
-		    "{database}",
-		    StringCaster.cast( this.properties.getOrDefault( Key.database, "NOT_FOUND" ), true ) );
+		// Convert target to lowercase once for case-insensitive comparison
+		String targetLower = target.toLowerCase();
+
+		// loop over all properties and replace them
+		for ( Key propName : this.properties.keySet() ) {
+			String	placeholder			= "{" + propName.getName() + "}";
+			String	placeholderLower	= placeholder.toLowerCase();
+			// The main purpose of this check is to prevent even trying to replace properties not used as a placeholder
+			// specifically, properties which aren't even a string, such as the custom struct.
+			int		startIndex			= targetLower.indexOf( placeholderLower );
+			if ( startIndex != -1 ) {
+				String replacement = StringCaster.cast( this.properties.get( propName ) );
+				while ( startIndex != -1 ) {
+					target		= target.substring( 0, startIndex ) +
+					    replacement +
+					    target.substring( startIndex + placeholder.length() );
+					// Update the lowercase version for next search
+					targetLower	= target.toLowerCase();
+					startIndex	= targetLower.indexOf( placeholderLower, startIndex + replacement.length() );
+				}
+			}
+
+			// Stop if there are no more placeholders
+			curlyIndex = targetLower.indexOf( "{" );
+			if ( curlyIndex == -1 ) {
+				break;
+			}
+		}
+
+		// Error out if the JDBC URL required placeholders which did not get replaced
+		if ( curlyIndex != -1 ) {
+			// Just for sanity, ensure we have a closing curly brace, so {something} exists somewhere in the string
+			int endingCurlyIndex = target.indexOf( "}" );
+			if ( endingCurlyIndex == -1 || endingCurlyIndex < curlyIndex ) {
+				throw new BoxRuntimeException(
+				    "The connection string [" + target + "] for datasource [" + getOriginalName()
+				        + "] contains an opening '{' without a closing '}'. Please check your configuration and ensure those properties are included."
+				);
+			}
+		}
 
 		return target;
 	}

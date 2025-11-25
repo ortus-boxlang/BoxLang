@@ -18,12 +18,13 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Extract numeric value from the beginning of a string" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "Val" )
 public class Val extends BIF {
 
@@ -90,7 +91,7 @@ public class Val extends BIF {
 		if ( result.toString().equals( "." ) ) {
 			return 0;
 		}
-		// Return the result as a double
-		return Double.parseDouble( result.toString() );
+		// Return the result as a number
+		return NumberCaster.cast( result.toString() );
 	}
 }

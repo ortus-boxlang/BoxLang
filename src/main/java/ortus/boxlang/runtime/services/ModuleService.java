@@ -64,6 +64,7 @@ public class ModuleService extends BaseService {
 	public static final String		MODULE_COMPONENTS					= "components";
 	public static final String		MODULE_LIBS							= "libs";
 	public static final String		MODULE_PACKAGE_PREFIX				= "modules";
+	public static final String		MODULE_PUBLIC_FOLDER				= "public";
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -167,8 +168,9 @@ public class ModuleService extends BaseService {
 			        "description", entrySet.getValue().description,
 			        "enabled", entrySet.getValue().isEnabled(),
 			        "invocationPath", entrySet.getValue().invocationPath,
-			        "mapping", entrySet.getValue().mapping,
+			        "mapping", entrySet.getValue().mapping.toStruct(),
 			        "physicalPath", entrySet.getValue().physicalPath.toString(),
+			        "publicMapping", entrySet.getValue().publicMapping.toStruct(),
 			        "registeredOn", entrySet.getValue().registeredOn,
 			        "registrationTime", entrySet.getValue().registrationTime,
 			        "version", entrySet.getValue().version

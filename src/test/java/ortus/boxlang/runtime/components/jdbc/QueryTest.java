@@ -34,7 +34,6 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
-import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -44,8 +43,7 @@ import tools.JDBCTestUtils;
 
 public class QueryTest extends BaseJDBCTest {
 
-	static Key			result	= new Key( "result" );
-	static DataSource	MySQLDataSource;
+	static Key result = new Key( "result" );
 
 	@DisplayName( "It can execute a query with no bindings on the default datasource" )
 	@Test

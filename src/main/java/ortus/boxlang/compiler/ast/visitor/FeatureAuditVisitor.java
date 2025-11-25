@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
@@ -31,6 +32,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.components.ComponentDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.services.FunctionService;
@@ -259,7 +261,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "entitytoquery", "bx-orm" );
 		BIFMap.put( "esapidecode", "bx-esapi" );
 		BIFMap.put( "esapiencode", "bx-esapi" );
-		BIFMap.put( "evaluate", "bx-unsafe-evaulate" );
+		BIFMap.put( "evaluate", "bx-unsafe-evaluate" );
 		BIFMap.put( "exp", "core" );
 		BIFMap.put( "expandpath", "core" );
 		BIFMap.put( "extensionexists", "" );
@@ -283,8 +285,8 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "filesetattribute", "core" );
 		BIFMap.put( "filesetlastmodified", "core" );
 		BIFMap.put( "fileskipbytes", "core" );
-		BIFMap.put( "fileupload", "" );
-		BIFMap.put( "fileuploadall", "" );
+		BIFMap.put( "fileupload", "boxlang-web-support" );
+		BIFMap.put( "fileuploadall", "boxlang-web-support" );
 		BIFMap.put( "filewrite", "core" );
 		BIFMap.put( "filewriteline", "core" );
 		BIFMap.put( "find", "core" );
@@ -325,7 +327,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "getfunctionkeywords", "" );
 		BIFMap.put( "getfunctionlist", "core" );
 		BIFMap.put( "getgatewayhelper", "" );
-		BIFMap.put( "gethttprequestdata", "" );
+		BIFMap.put( "gethttprequestdata", "boxlang-web-support" );
 		BIFMap.put( "gethttptimestring", "" );
 		BIFMap.put( "getk2serverdoccount", "" );
 		BIFMap.put( "getk2serverdoccountlimit", "" );
@@ -340,7 +342,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "getmetadata", "core" );
 		BIFMap.put( "getmetricdata", "" );
 		BIFMap.put( "getnumericdate", "core" );
-		BIFMap.put( "getpagecontext", "" );
+		BIFMap.put( "getpagecontext", "boxlang-web-support" );
 		BIFMap.put( "getprinterinfo", "" );
 		BIFMap.put( "getprinterlist", "" );
 		BIFMap.put( "getprofilesections", "" );
@@ -373,7 +375,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "hour", "core" );
 		BIFMap.put( "htmlcodeformat", "" );
 		BIFMap.put( "htmleditformat", "bx-compat-cfml" );
-		BIFMap.put( "htmlparse", "" );
+		BIFMap.put( "htmlparse", "bx-jsoup" );
 		BIFMap.put( "iif", "core" );
 		BIFMap.put( "imageaddborder", "" );
 		BIFMap.put( "imageblur", "" );
@@ -480,8 +482,8 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "issafehtml", "bx-esapi" );
 		BIFMap.put( "issimplevalue", "core" );
 		BIFMap.put( "issoaprequest", "" );
-		BIFMap.put( "isspreadsheetfile", "" );
-		BIFMap.put( "isspreadsheetobject", "" );
+		BIFMap.put( "isspreadsheetfile", "bx-spreadsheet+" );
+		BIFMap.put( "isspreadsheetobject", "bx-spreadsheet+" );
 		BIFMap.put( "isstruct", "core" );
 		BIFMap.put( "isuserinanyrole", "" );
 		BIFMap.put( "isuserinrole", "" );
@@ -537,7 +539,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "listvaluecount", "core" );
 		BIFMap.put( "listvaluecountnocase", "core" );
 		BIFMap.put( "ljustify", "core" );
-		BIFMap.put( "location", "" );
+		BIFMap.put( "location", "boxlang-web-support" );
 		BIFMap.put( "log", "core" );
 		BIFMap.put( "log10", "core" );
 		BIFMap.put( "lscurrencyformat", "core" );
@@ -686,48 +688,89 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "soundex", "" );
 		BIFMap.put( "spanexcluding", "core" );
 		BIFMap.put( "spanincluding", "core" );
-		BIFMap.put( "spreadsheetaddautofilter", "" );
-		BIFMap.put( "spreadsheetaddcolumn", "" );
-		BIFMap.put( "spreadsheetaddfreezepane", "" );
-		BIFMap.put( "spreadsheetaddimage", "" );
-		BIFMap.put( "spreadsheetaddinfo", "" );
-		BIFMap.put( "spreadsheetaddpagebreaks", "" );
-		BIFMap.put( "spreadsheetaddrow", "" );
-		BIFMap.put( "spreadsheetaddrows", "" );
-		BIFMap.put( "spreadsheetaddsplitpane", "" );
-		BIFMap.put( "spreadsheetcreatesheet", "" );
-		BIFMap.put( "spreadsheetdeletecolumn", "" );
-		BIFMap.put( "spreadsheetdeletecolumns", "" );
-		BIFMap.put( "spreadsheetdeleterow", "" );
-		BIFMap.put( "spreadsheetdeleterows", "" );
-		BIFMap.put( "spreadsheetformatcell", "" );
-		BIFMap.put( "spreadsheetformatcellrange", "" );
-		BIFMap.put( "spreadsheetformatcolumn", "" );
-		BIFMap.put( "spreadsheetformatcolumns", "" );
-		BIFMap.put( "spreadsheetformatrow", "" );
-		BIFMap.put( "spreadsheetformatrows", "" );
-		BIFMap.put( "spreadsheetgetcellcomment", "" );
-		BIFMap.put( "spreadsheetgetcellformula", "" );
-		BIFMap.put( "spreadsheetgetcellvalue", "" );
-		BIFMap.put( "spreadsheetgetcolumncount", "" );
-		BIFMap.put( "spreadsheetinfo", "" );
-		BIFMap.put( "spreadsheetmergecells", "" );
-		BIFMap.put( "spreadsheetnew", "" );
-		BIFMap.put( "spreadsheetread", "" );
-		BIFMap.put( "spreadsheetreadbinary", "" );
-		BIFMap.put( "spreadsheetremovesheet", "" );
-		BIFMap.put( "spreadsheetsetactivesheet", "" );
-		BIFMap.put( "spreadsheetsetactivesheetnumber", "" );
-		BIFMap.put( "spreadsheetsetcellcomment", "" );
-		BIFMap.put( "spreadsheetsetcellformula", "" );
-		BIFMap.put( "spreadsheetsetcellvalue", "" );
-		BIFMap.put( "spreadsheetsetcolumnwidth", "" );
-		BIFMap.put( "spreadsheetsetfooter", "" );
-		BIFMap.put( "spreadsheetsetheader", "" );
-		BIFMap.put( "spreadsheetsetrowheight", "" );
-		BIFMap.put( "spreadsheetshiftcolumns", "" );
-		BIFMap.put( "spreadsheetshiftrows", "" );
-		BIFMap.put( "spreadsheetwrite", "" );
+		BIFMap.put( "spreadsheet", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetaddautofilter", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetaddcolumn", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetaddfreezepane", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetaddimage", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetaddinfo", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetaddpagebreaks", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetaddprintgridlines", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetaddrow", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetaddrows", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetaddsplitpane", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetclearcell", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetclearcellrange", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetcreatesheet", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetdeletecolumn", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetdeletecolumns", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetdeleterow", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetdeleterows", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetformatcell", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetformatcellrange", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetformatcolumn", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetformatcolumns", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetformatrow", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetformatrows", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetgetactivecell", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetgetautocalculate", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetgetcellcomment", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetgetcellformat", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetgetcellformula", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetgetcellhyperlink", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetgetcelltype", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetgetcellvalue", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetgetcolumncount", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetgetcolumnwidth", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetgetforceformularecalculation", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetgetlastrownumber", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetgetprintorientation", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetgroupcolumns", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetgrouprows", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetinfo", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetisbinaryformat", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetiscolumnhidden", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetisrowhidden", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetisxmlformat", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetmergecells", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetnew", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetread", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetreadbinary", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetremovecolumnbreak", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetremoveprintgridlines", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetremoverowbreak", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetremovesheet", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetremovesheetnumber", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetrenamesheet", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetsetactivecell", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetsetactivesheet", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetsetactivesheetnumber", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetsetautocalculate", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetsetcellcomment", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetsetcellformula", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetsetcellhyperlink", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetsetcellrangevalue", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetsetcellvalue", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetsetcolumnbreak", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetsetcolumnhidden", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetsetcolumnwidth", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetsetfittopage", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetsetfooter", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetsetfooterimage", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetsetforceformularecalculation", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetsetheader", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetsetheaderimage", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetsetprintorientation", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetsetrepeatingcolumns", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetsetrepeatingrows", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetsetrowbreak", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetsetrowheight", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetsetrowhidden", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetshiftcolumns", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetshiftrows", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetungroupcolumns", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetungrouprows", "bx-spreadsheet+" );
+		BIFMap.put( "spreadsheetwrite", "bx-spreadsheet+" );
 		BIFMap.put( "sqr", "core" );
 		BIFMap.put( "sslcertificateinstall", "" );
 		BIFMap.put( "sslcertificatelist", "" );
@@ -840,8 +883,8 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		componentMap.put( "_socialplugin", "" );
 		componentMap.put( "abort", "core" );
 		componentMap.put( "admin", "" );
-		componentMap.put( "ajaximport", "" );
-		componentMap.put( "ajaxproxy", "" );
+		componentMap.put( "ajaximport", "bx-ui-compat" );
+		componentMap.put( "ajaxproxy", "bx-ui-compat" );
 		componentMap.put( "applet", "" );
 		componentMap.put( "application", "core" );
 		componentMap.put( "argument", "core" );
@@ -851,9 +894,9 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		componentMap.put( "calendar", "" );
 		// componentMap.put( "case", "core" );
 		// componentMap.put( "catch", "core" );
-		componentMap.put( "chart", "" );
-		componentMap.put( "chartdata", "" );
-		componentMap.put( "chartseries", "" );
+		componentMap.put( "chart", "bx-charts" );
+		componentMap.put( "chartdata", "bx-charts" );
+		componentMap.put( "chartseries", "bx-charts" );
 		componentMap.put( "client", "" );
 		componentMap.put( "clientsettings", "" );
 		componentMap.put( "col", "" );
@@ -865,7 +908,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		componentMap.put( "dbinfo", "core" );
 		// componentMap.put( "defaultcase", "core" );
 		componentMap.put( "directory", "core" );
-		componentMap.put( "div", "" );
+		componentMap.put( "div", "bx-ui-compat" );
 		componentMap.put( "document", "bx-pdf" );
 		componentMap.put( "documentitem", "bx-pdf" );
 		componentMap.put( "documentsection", "bx-pdf" );
@@ -883,19 +926,19 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		componentMap.put( "exit", "core" );
 		componentMap.put( "feed", "" );
 		componentMap.put( "file", "core" );
-		componentMap.put( "fileupload", "" );
+		componentMap.put( "fileupload", "boxlang-web-support" );
 		// componentMap.put( "finally", "core" );
 		componentMap.put( "flush", "core" );
-		componentMap.put( "form", "" );
+		componentMap.put( "form", "bx-ui-forms" );
 		componentMap.put( "formgroup", "" );
 		componentMap.put( "formitem", "" );
 		componentMap.put( "forward", "" );
-		componentMap.put( "ftp", "" );
+		componentMap.put( "ftp", "bx-ftp" );
 		componentMap.put( "function", "core" );
-		componentMap.put( "grid", "" );
-		componentMap.put( "gridcolumn", "" );
-		componentMap.put( "gridrow", "" );
-		componentMap.put( "gridupdate", "" );
+		componentMap.put( "grid", "bx-ui-compat" );
+		componentMap.put( "gridcolumn", "bx-ui-compat" );
+		componentMap.put( "gridrow", "bx-ui-compat" );
+		componentMap.put( "gridupdate", "bx-ui-compat" );
 		componentMap.put( "header", "boxlang-web-support" );
 		componentMap.put( "htmlbody", "" );
 		componentMap.put( "htmlhead", "boxlang-web-support" );
@@ -910,14 +953,14 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		// componentMap.put( "import", "core" );
 		componentMap.put( "include", "core" );
 		componentMap.put( "index", "" );
-		componentMap.put( "input", "" );
+		componentMap.put( "input", "bx-ui-forms" );
 		componentMap.put( "insert", "core" );
 		// componentMap.put( "interface", "core" );
 		componentMap.put( "invoke", "core" );
 		componentMap.put( "invokeargument", "core" );
-		componentMap.put( "layout", "" );
-		componentMap.put( "layoutarea", "" );
-		componentMap.put( "ldap", "" );
+		componentMap.put( "layout", "bx-ui-compat" );
+		componentMap.put( "layoutarea", "bx-ui-compat" );
+		componentMap.put( "ldap", "bx-ldap+" );
 		componentMap.put( "location", "boxlang-web-support" );
 		componentMap.put( "lock", "core" );
 		componentMap.put( "log", "core" );
@@ -942,12 +985,12 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		componentMap.put( "output", "core" );
 		componentMap.put( "pageencoding", "" );
 		componentMap.put( "param", "core" );
-		componentMap.put( "pdf", "" );
-		componentMap.put( "pdfform", "" );
-		componentMap.put( "pdfformparam", "" );
-		componentMap.put( "pdfparam", "" );
+		componentMap.put( "pdf", "bx-pdf+" );
+		componentMap.put( "pdfform", "bx-pdf+" );
+		componentMap.put( "pdfformparam", "bx-pdf+" );
+		componentMap.put( "pdfparam", "bx-pdf+" );
 		componentMap.put( "pdfsubform", "" );
-		componentMap.put( "pod", "" );
+		componentMap.put( "pod", "bx-ui-compat" );
 		componentMap.put( "pop", "" );
 		componentMap.put( "presentation", "" );
 		componentMap.put( "presentationslide", "" );
@@ -970,7 +1013,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		componentMap.put( "schedule", "" );
 		componentMap.put( "script", "core" );
 		componentMap.put( "search", "" );
-		componentMap.put( "select", "" );
+		componentMap.put( "select", "bx-ui-forms" );
 		componentMap.put( "servlet", "" );
 		componentMap.put( "servletparam", "" );
 		componentMap.put( "set", "core" );
@@ -978,19 +1021,19 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		componentMap.put( "sharepoint", "" );
 		componentMap.put( "silent", "core" );
 		componentMap.put( "sleep", "core" );
-		componentMap.put( "slider", "" );
-		componentMap.put( "spreadsheet", "" );
+		componentMap.put( "slider", "bx-ui-forms" );
+		componentMap.put( "spreadsheet", "bx-spreadsheet+" );
 		componentMap.put( "sprydataset", "" );
 		componentMap.put( "stopwatch", "bx-compat-cfml" );
 		componentMap.put( "storedproc", "core" );
 		// componentMap.put( "switch", "core" );
 		componentMap.put( "table", "" );
-		componentMap.put( "textarea", "" );
+		componentMap.put( "textarea", "bx-ui-forms" );
 		componentMap.put( "textinput", "" );
 		componentMap.put( "thread", "core" );
 		// componentMap.put( "throw", "core" );
 		componentMap.put( "timer", "core" );
-		componentMap.put( "tooltip", "" );
+		componentMap.put( "tooltip", "bx-ui-compat" );
 		componentMap.put( "trace", "core" );
 		componentMap.put( "transaction", "core" );
 		componentMap.put( "tree", "" );
@@ -1003,7 +1046,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		componentMap.put( "window", "" );
 		componentMap.put( "xml", "core" );
 		componentMap.put( "zip", "core" );
-		componentMap.put( "zipparam", "" );
+		componentMap.put( "zipparam", "core" );
 	}
 
 	public FeatureAuditVisitor() {
@@ -1060,6 +1103,40 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 			} else {
 				aggregateFeaturesUsed.put( aggregateKey,
 				    new AggregateFeatureUsed( name, FeatureType.COMPONENT, module, missing, 1 ) );
+			}
+		}
+		super.visit( node );
+	}
+
+	/**
+	 * Detect REST classes with the rest=true annotation
+	 */
+	public void visit( BoxClass node ) {
+		var annotations = node.getAnnotations();
+		for ( var anno : annotations ) {
+			// Has rest=true
+			boolean	hasRest		= anno.getKey().getValue().equalsIgnoreCase( "rest" )
+			    && anno.getValue().isLiteral()
+			    && BooleanCaster.attempt( anno.getValue().getAsLiteralValue() ).orElse( false );
+
+			// has restPath=anything
+			boolean	hasRestPath	= anno.getKey().getValue().equalsIgnoreCase( "restpath" );
+
+			if ( hasRest || hasRestPath ) {
+				String	name	= "REST Class";
+				String	module	= "";
+				boolean	missing	= true;
+				featuresUsed.add(
+				    new FeatureUsed( name, FeatureType.COMPONENT, module, missing, node.getPosition() ) );
+				String aggregateKey = name + FeatureType.COMPONENT;
+				if ( aggregateFeaturesUsed.containsKey( aggregateKey ) ) {
+					aggregateFeaturesUsed.put( aggregateKey,
+					    aggregateFeaturesUsed.get( aggregateKey ).increment() );
+				} else {
+					aggregateFeaturesUsed.put( aggregateKey,
+					    new AggregateFeatureUsed( name, FeatureType.COMPONENT, module, missing, 1 ) );
+				}
+				break;
 			}
 		}
 		super.visit( node );
@@ -1154,6 +1231,8 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 				        "",
 				        null,
 				        true,
+				        false,
+				        false,
 				        false ),
 				    nameKey,
 				    true );

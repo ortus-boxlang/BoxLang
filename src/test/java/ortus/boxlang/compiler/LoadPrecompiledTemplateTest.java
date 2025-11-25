@@ -105,13 +105,33 @@ public class LoadPrecompiledTemplateTest {
 		    true,
 		    instance
 		);
+
+		// Create some alternative ways to create the same physical class on disk. These should have different names in their
+		// bytecode which represents how they were referenced when they were created.
+		instance.getConfiguration().registerMapping( "/precompiled/path/to/", source.getParent().toString() );
+		instance.getConfiguration().registerMapping( "/another/precompiled/path/whee/", source.getParent().toString() );
+
 		instance.executeSource(
 		    """
-		       foo = new src.test.java.ortus.boxlang.compiler.Precompiled();
-		    result = foo.bar()
-		          """,
+		      	foo = new src.test.java.ortus.boxlang.compiler.Precompiled();
+		      	result = foo.bar()
+		    resultName = foo.$bx.meta.name;
+		      	foo2 = new precompiled.path.to.Precompiled();
+		      	result2 = foo2.bar()
+		    resultName2 = foo2.$bx.meta.name;
+		      	foo3 = new another.precompiled.path.whee.Precompiled();
+		      	result3 = foo3.bar()
+		    resultName3 = foo3.$bx.meta.name;
+		      """,
 		    context, BoxSourceType.BOXSCRIPT );
+
 		assertThat( variables.get( result ) ).isEqualTo( "brad" );
+		assertThat( variables.get( new Key( "resultName" ) ) ).isEqualTo( "src.test.java.ortus.boxlang.compiler.Precompiled" );
+		assertThat( variables.get( new Key( "result2" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( new Key( "resultName2" ) ) ).isEqualTo( "precompiled.path.to.Precompiled" );
+		assertThat( variables.get( new Key( "result3" ) ) ).isEqualTo( "brad" );
+		assertThat( variables.get( new Key( "resultName3" ) ) ).isEqualTo( "another.precompiled.path.whee.Precompiled" );
 
 	}
+
 }

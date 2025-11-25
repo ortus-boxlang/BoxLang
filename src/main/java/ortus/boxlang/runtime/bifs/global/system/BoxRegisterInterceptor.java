@@ -29,8 +29,9 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
-@BoxBIF
+@BoxBIF( description = "Register an application-level interceptor" )
 public class BoxRegisterInterceptor extends BIF {
 
 	protected InterceptorPool interceptorTarget;
@@ -93,7 +94,7 @@ public class BoxRegisterInterceptor extends BIF {
 			default -> {
 				throw new BoxRuntimeException(
 				    "Invalid interceptor type. Expected a class, dynamic object, or closure/lambda, but got: "
-				        + interceptor.getClass().getName()
+				        + TypeUtil.getObjectName( interceptor )
 				);
 			}
 		}

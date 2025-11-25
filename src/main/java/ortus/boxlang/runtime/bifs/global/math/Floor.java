@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Round a number down to the nearest integer" )
 @BoxMember( type = BoxLangType.NUMERIC, name = "Floor" )
 public class Floor extends BIF {
 

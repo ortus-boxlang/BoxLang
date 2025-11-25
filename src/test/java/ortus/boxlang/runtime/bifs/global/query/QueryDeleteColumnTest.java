@@ -67,22 +67,22 @@ public class QueryDeleteColumnTest {
 	public void testDeleteColumnMemberFunction() {
 		instance.executeSource(
 		    """
-		    query = QueryNew("name,age", "varchar,integer");
-		    query.addRow({name: "John", age: 30});
-		    query.addRow({name: "Jane", age: 25});
+		        query = QueryNew("name,age", "varchar,integer");
+		        query.addRow({name: "John", age: 30});
+		        query.addRow({name: "Jane", age: 25});
 
-		    ageInitialIndex = query.getColumnMeta( "age" ).invokeTargetMethod( getBoxContext(), "getIndex", [] );
+		        ageInitialIndex = query.getColumnMeta( "age" ).index;
 
-		    query.deleteColumn("name");
-		    columnList = query.columnList;
-		    age1 = query.age[1];
-		    age2 = query.age[2];
+		        query.deleteColumn("name");
+		        columnList = query.columnList;
+		        age1 = query.age[1];
+		        age2 = query.age[2];
 
-		    row1DataLength = query.getData()[1].len();
-		    row2DataLength = query.getData()[2].len();
-
-		    ageIndex = query.getColumnMeta( "age" ).invokeTargetMethod( getBoxContext(), "getIndex", [] );
-		         """,
+		        row1DataLength = query.getData()[1].len();
+		        row2DataLength = query.getData()[2].len();
+		    println( query.getColumnMeta( ) )
+		        ageIndex = query.getColumnMeta( "age" ).index;
+		             """,
 		    context
 		);
 

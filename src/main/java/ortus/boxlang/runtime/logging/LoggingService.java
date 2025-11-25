@@ -103,6 +103,7 @@ public class LoggingService {
 	public BoxLangLogger							CACHE_LOGGER		= null;
 	public BoxLangLogger							EXCEPTION_LOGGER	= null;
 	public BoxLangLogger							DATASOURCE_LOGGER	= null;
+	public BoxLangLogger							HTTP_LOGGER			= null;
 	public BoxLangLogger							MODULES_LOGGER		= null;
 	public BoxLangLogger							RUNTIME_LOGGER		= null;
 	public BoxLangLogger							SCHEDULER_LOGGER	= null;
@@ -320,6 +321,7 @@ public class LoggingService {
 	 */
 	public LoggingService configureBasic( Boolean debugMode ) {
 		ILoggerFactory loggerFactory = LoggerFactory.getILoggerFactory();
+		// Final defaults haven't been applied, so debugMode may be null still.
 		if ( debugMode == null ) {
 			debugMode = false;
 		}
@@ -367,7 +369,7 @@ public class LoggingService {
 
 		// Configure the Root Logger
 		this.rootLogger = new BoxLangLogger( loggerContext.getLogger( Logger.ROOT_LOGGER_NAME ) );
-		this.rootLogger.setLevel( Boolean.TRUE.equals( debugMode ) ? Level.DEBUG : Level.WARN );
+		this.rootLogger.setLevel( ( debugMode ? Level.DEBUG : Level.WARN ) );
 		this.rootLogger.addAppender( appender );
 
 		return instance;
@@ -380,8 +382,15 @@ public class LoggingService {
 	 * This could change logging levels, add new appenders, etc.
 	 */
 	public LoggingService reconfigure() {
+		// This will be set for sure now
+		Boolean debugMode = this.runtime.inDebugMode();
+
+		if ( debugMode ) {
+			DEFAULT_LOG_LEVEL = LEVEL_DEBUG;
+		}
+
 		// Reconfigure Root Logger from the configuration file
-		Level rootLevel = Level.toLevel( this.runtime.getConfiguration().logging.rootLevel.getName() );
+		Level rootLevel = debugMode ? Level.DEBUG : Level.toLevel( this.runtime.getConfiguration().logging.rootLevel.getName() );
 		this.rootLogger.setLevel( rootLevel );
 
 		// Change encoder or not to JSON, default is text
@@ -403,6 +412,7 @@ public class LoggingService {
 		this.MODULES_LOGGER		= getLogger( "modules" );
 		this.RUNTIME_LOGGER		= getLogger( "runtime" );
 		this.SCHEDULER_LOGGER	= getLogger( "scheduler" );
+		this.HTTP_LOGGER		= getLogger( "http" );
 
 		return instance;
 	}

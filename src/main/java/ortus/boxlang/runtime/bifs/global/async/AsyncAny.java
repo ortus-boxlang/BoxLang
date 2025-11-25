@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
-@BoxBIF
+@BoxBIF( description = "Wait for any of the async operations to complete" )
 public class AsyncAny extends BIF {
 
 	/**

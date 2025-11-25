@@ -81,6 +81,9 @@ public class BoxInterfaceTransformer {
 		AsmHelper.init( classNode, false, type, Type.getType( ortus.boxlang.runtime.runnables.BoxInterface.class ), methodVisitor -> {
 		} );
 
+		// Add the @BoxByteCodeVersion annotation to the generated class
+		AsmHelper.addBoxByteCodeVersionAnnotation( classNode );
+
 		AsmHelper.addLazySingleton( classNode, type, methodVisitor -> {
 			methodVisitor.visitTypeInsn( Opcodes.NEW, type.getInternalName() );
 			methodVisitor.visitInsn( Opcodes.DUP );

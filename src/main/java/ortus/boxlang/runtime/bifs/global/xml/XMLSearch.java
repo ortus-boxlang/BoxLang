@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.runtime.bifs.global.xml;
 
+import javax.xml.namespace.NamespaceContext;
 import javax.xml.namespace.QName;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
@@ -22,6 +23,8 @@ import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPathVariableResolver;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 import ortus.boxlang.runtime.bifs.BIF;
@@ -41,7 +44,7 @@ import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.XMLNamespaceResolver;
 
-@BoxBIF
+@BoxBIF( description = "Search XML using XPath expressions" )
 @BoxMember( type = BoxLangType.XML )
 public class XMLSearch extends BIF {
 
@@ -71,18 +74,19 @@ public class XMLSearch extends BIF {
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		XML				xml				= arguments.getAsXML( Key.XMLNode );
-		String			xpathString		= arguments.getAsString( Key.xpath );
-		final IStruct	params			= arguments.getAsStruct( Key.params );
+		XML					xml				= arguments.getAsXML( Key.XMLNode );
+		String				xpathString		= arguments.getAsString( Key.xpath );
+		final IStruct		params			= arguments.getAsStruct( Key.params );
 
 		// Create an XPathFactory
-		XPathFactory	xPathFactory	= XPathFactory.newInstance();
+		XPathFactory		xPathFactory	= XPathFactory.newInstance();
 
 		// Create an XPath object
-		XPath			xpath			= xPathFactory.newXPath();
+		XPath				xpath			= xPathFactory.newXPath();
+		NamespaceContext	nsContext		= getNamespaceContext( xml );
 
-		if ( xml.getNode().getPrefix() != null ) {
-			xpath.setNamespaceContext( new XMLNamespaceResolver( xml.getNode().getOwnerDocument() ) );
+		if ( nsContext != null ) {
+			xpath.setNamespaceContext( nsContext );
 		}
 
 		xpath.setXPathVariableResolver( new XPathVariableResolver() {
@@ -130,6 +134,30 @@ public class XMLSearch extends BIF {
 				throw new BoxRuntimeException( "Error evaluating XPath: " + xpathString, e1 );
 			}
 		}
+	}
+
+	/**
+	 * Determines the appropriate NamespaceContext for the given XML node.
+	 * Checks if the node or its document element has a namespace prefix.
+	 *
+	 * @param xml The XML node to check for namespace context
+	 *
+	 * @return The XMLNamespaceResolver if namespaces are present, null otherwise
+	 */
+	private NamespaceContext getNamespaceContext( XML xml ) {
+
+		if ( xml.getNode() instanceof Document doc ) {
+			Element docElement = doc.getDocumentElement();
+			if ( docElement != null && docElement.getPrefix() != null ) {
+				return new XMLNamespaceResolver( doc );
+			}
+		}
+
+		if ( xml.getNode().getPrefix() != null ) {
+			return new XMLNamespaceResolver( xml.getNode().getOwnerDocument() );
+		}
+
+		return null;
 	}
 
 }

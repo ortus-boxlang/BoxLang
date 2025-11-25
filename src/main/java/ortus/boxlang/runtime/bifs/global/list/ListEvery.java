@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF
+@BoxBIF( description = "Test whether every item in list matches the callback function" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "listEvery" )
 public class ListEvery extends ArrayEvery {
 

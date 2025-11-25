@@ -32,46 +32,57 @@ public class TaskRecord {
 	 * Task name
 	 */
 	public String				name;
+
 	/**
 	 * Task group
 	 */
 	public String				group;
+
 	/**
 	 * The task object
 	 */
 	public ScheduledTask		task;
+
 	/**
 	 * The future object for the task
 	 */
 	public ScheduledFuture<?>	future;
+
 	/**
 	 * The scheduled date for the task
 	 */
 	public LocalDateTime		scheduledAt;
+
 	/**
 	 * The registered date for the task
 	 */
 	public LocalDateTime		registeredAt;
+
 	/**
 	 * If the task is disabled
 	 */
 	public Boolean				disabled		= false;
+
 	/**
 	 * If the task errored out when scheduling
 	 */
 	public Boolean				error			= false;
+
 	/**
 	 * The error message if any
 	 */
 	public String				errorMessage	= "";
+
 	/**
 	 * The stacktrace if any
 	 */
 	public String				stacktrace		= "";
+
 	/**
 	 * The inet host
 	 */
 	public String				inetHost		= "";
+
 	/**
 	 * The inet address
 	 */
@@ -95,7 +106,7 @@ public class TaskRecord {
 	 * Return the record as a struct
 	 */
 	public IStruct asStruct() {
-		return Struct.of(
+		return Struct.ofNonConcurrent(
 		    "name", name,
 		    "group", group,
 		    "task", task,

@@ -23,6 +23,7 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * I handle casting anything to XML
@@ -99,7 +100,7 @@ public class XMLCaster implements IBoxCaster {
 		}
 
 		if ( fail ) {
-			throw new BoxCastException( "Can't cast " + object.getClass().getName() + " to XML." );
+			throw new BoxCastException( "Can't cast " + TypeUtil.getObjectName( object ) + " to XML." );
 		} else {
 			return null;
 		}

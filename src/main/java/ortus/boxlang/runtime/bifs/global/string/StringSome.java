@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Test whether at least one character in string matches the callback function" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "StringSome" )
 
 public class StringSome extends ListSome {

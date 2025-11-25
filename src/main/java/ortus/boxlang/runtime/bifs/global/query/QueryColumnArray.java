@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Return query column data as an array" )
 @BoxMember( type = BoxLangType.QUERY )
 public class QueryColumnArray extends BIF {
 

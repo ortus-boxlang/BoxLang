@@ -30,7 +30,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.validation.Validator;
 
 // I don't think this should allow a body, but Lucee supports this.
-@BoxComponent( allowsBody = true )
+@BoxComponent( description = "Execute external programs and capture their output", allowsBody = true )
 public class Execute extends Component {
 
 	private final Key	outputFileKey		= Key.of( "outputFile" );

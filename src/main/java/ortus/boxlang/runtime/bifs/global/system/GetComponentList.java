@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
-@BoxBIF
+@BoxBIF( description = "Get a list of available components" )
 public class GetComponentList extends BIF {
 
 	/**
@@ -58,6 +58,8 @@ public class GetComponentList extends BIF {
 			            "className", descriptor.componentClass.getCanonicalName(),
 			            "allowsBody", descriptor.allowsBody(),
 			            "requiresBody", descriptor.requiresBody(),
+			            "ignoreEnableOutputOnly", descriptor.ignoreEnableOutputOnly(),
+			            "autoEvaluateBodyExpressions", descriptor.autoEvaluateBodyExpressions(),
 			            "attributes", descriptor.getAttributes()
 			        )
 			    );

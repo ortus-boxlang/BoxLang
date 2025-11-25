@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-@BoxBIF
+@BoxBIF( description = "Remove and return the first element from an array" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayShift extends BIF {
 

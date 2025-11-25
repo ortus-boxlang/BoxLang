@@ -40,12 +40,19 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
+import ortus.boxlang.runtime.types.util.BLCollector;
+import ortus.boxlang.runtime.types.util.ObjectRef;
 
 /**
- * This class represents a query that has been executed and contains the results of executing that query.
- * It contains a reference to the {@link PendingQuery} that was executed to create this.
+ * This class represents a query that has been executed and contains the results
+ * of executing that query.
+ * It contains a reference to the {@link PendingQuery} that was executed to
+ * create this.
  */
 public final class ExecutedQuery implements Serializable {
+
+	// Flag for debugging since we can't always log stuff easily here
+	public static boolean					debug				= false;
 
 	private static final InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
 	private static final BoxLangLogger		logger				= BoxRuntime.getInstance().getLoggingService().DATASOURCE_LOGGER;
@@ -64,9 +71,16 @@ public final class ExecutedQuery implements Serializable {
 	private @Nullable Object				generatedKey;
 
 	/**
-	 * Struct of query metadata, such as original SQL, parameters, size, and cache info.
+	 * Struct of query metadata, such as original SQL, parameters, size, and cache
+	 * info.
 	 */
 	private IStruct							queryMeta;
+
+	/**
+	 * Datasource used to execute this query. This will be null if the query was
+	 * loaded from cache.
+	 */
+	private DataSource						datasource;
 
 	/**
 	 * Constructor
@@ -74,23 +88,35 @@ public final class ExecutedQuery implements Serializable {
 	 * @param results      The results of the query, i.e. the actual Query object.
 	 * @param generatedKey The generated key of the query, if any.
 	 */
-	public ExecutedQuery( @NonNull Query results, @Nullable Object generatedKey ) {
+	public ExecutedQuery( @NonNull Query results, @Nullable Object generatedKey, DataSource datasource ) {
 		this.results		= results;
 		this.generatedKey	= generatedKey;
 		this.queryMeta		= results.getMetaData();
+		this.datasource		= datasource;
 	}
 
 	/**
-	 * Creates an ExecutedQuery instance from a PendingQuery instance and a JDBC Statement.
+	 * Get the datasource used to execute this query.
+	 * 
+	 * @return The datasource used to execute this query.
+	 */
+	public DataSource getDataSource() {
+		return this.datasource;
+	}
+
+	/**
+	 * Creates an ExecutedQuery instance from a PendingQuery instance and a JDBC
+	 * Statement.
 	 *
 	 * @param pendingQuery  The {@link PendingQuery} executed.
 	 * @param statement     The {@link Statement} instance executed.
 	 * @param executionTime The execution time the query took.
-	 * @param hasResults    Boolean flag from {@link PreparedStatement#execute()} designating if the execution returned any results.
+	 * @param hasResults    Boolean flag from {@link PreparedStatement#execute()}
+	 *                      designating if the execution returned any results.
 	 */
 	public static void dumpResultSet( ResultSet rs ) throws SQLException {
 		if ( rs == null ) {
-			System.out.println( "ResultSet is null." );
+			System.out.println( "ResultSet is null when dumping." );
 			return;
 		}
 
@@ -108,17 +134,19 @@ public final class ExecutedQuery implements Serializable {
 				System.out.println();
 			}
 		} catch ( NullPointerException e ) {
-			System.out.println( "ResultSet is null 2." );
+			System.out.println( "NullPointerException when dumping ResultSet." );
 			return;
 		}
 	}
 
 	/**
-	 * Detect if a result set is generated keys. This is needed because some JDBC drivers will INCORRECTLY return a
-	 * "normal" result set as the generated keys after an update. (Looking at you MSSQL :/ )
+	 * Detect if a result set is generated keys. This is needed because some JDBC
+	 * drivers will INCORRECTLY return a
+	 * "normal" result set as the generated keys after an update. (Looking at you
+	 * MSSQL :/ )
 	 *
 	 * @param rs The ResultSet to check.
-	 * 
+	 *
 	 * @return True if the ResultSet is for generated keys, false otherwise.
 	 */
 	private static boolean isResultSetGeneratedKeys( ResultSet rs ) {
@@ -133,7 +161,8 @@ public final class ExecutedQuery implements Serializable {
 			}
 			// This can be tricked, but it's the best we can do
 			String columnName = meta.getColumnLabel( 1 );
-			// System.out.println( "Checking if result set is generated keys: " + columnName );
+			if ( debug )
+				System.out.println( "Checking if result set is generated keys: " + columnName );
 			// Possible others, not sure. IDENTITYCOL, GENERATEDKEYS
 			return columnName.equalsIgnoreCase( "GENERATED_KEYS" ) || columnName.equalsIgnoreCase( "GENERATED_KEY" );
 		} catch ( SQLException | NullPointerException e ) {
@@ -141,25 +170,32 @@ public final class ExecutedQuery implements Serializable {
 		}
 	}
 
-	public static ExecutedQuery fromPendingQuery( @NonNull PendingQuery pendingQuery, @NonNull Statement statement, long executionTime, boolean hasResults,
+	public static ExecutedQuery fromPendingQuery(
+	    @NonNull PendingQuery pendingQuery,
+	    @NonNull BoxStatement statement,
+	    long executionTime,
+	    boolean hasResults,
 	    SQLException initialSqlException ) {
-		boolean		generatedKeysComeAsResultSet	= false;
-		Object		generatedKey					= null;
-		Throwable	raisedError						= initialSqlException;
-		Query		results							= null;
-		int			recordCount						= 0;
-		int			totalUpdateCount				= 0;
-		Array		updateCounts					= new Array();
-		int			affectedCount					= -1;
-		Array		allGeneratedKeys				= new Array();
-		// System.out.println( "****************************** process query result. hasResults: " + hasResults );
+		boolean				generatedKeysComeAsResultSet	= false;
+		Object				generatedKey					= null;
+		Throwable			raisedError						= initialSqlException;
+		Query				results							= null;
+		int					recordCount						= 0;
+		int					totalUpdateCount				= 0;
+		Array				updateCounts					= new Array();
+		int					affectedCount					= -1;
+		Array				allGeneratedKeys				= new Array();
+		ObjectRef<Boolean>	generatedKeyIsActuallyRowID		= new ObjectRef<>( false );
+		if ( debug )
+			System.out.println( "****************************** process query result. hasResults: " + hasResults );
 
-		if ( statement instanceof QoQStatement qs ) {
+		if ( statement.getDelegate() instanceof QoQStatement qs ) {
 			results = qs.getQueryResult();
 		} else {
 			try {
 				// TODO: Move this into a generic flag that we set on the MSSQL driver.
-				generatedKeysComeAsResultSet = statement.getConnection().getMetaData().getDriverName().toLowerCase().contains( "microsoft" );
+				generatedKeysComeAsResultSet = statement.getConnection().getMetaData().getDriverName().toLowerCase()
+				    .contains( "microsoft" );
 			} catch ( SQLException e ) {
 				logger.error( "Error getting JDBC driver name", e );
 			}
@@ -168,60 +204,91 @@ public final class ExecutedQuery implements Serializable {
 			while ( true ) {
 				if ( hasResults ) {
 					try ( ResultSet rs = statement.getResultSet() ) {
-						// Surprise, MSSQL sometimes returns generated keys as a result set. Because it hates us.
+						// Surprise, MSSQL sometimes returns generated keys as a result set. Because it
+						// hates us.
 						if ( generatedKeysComeAsResultSet && isResultSetGeneratedKeys( rs ) ) {
-							generatedKey = processGeneratedKeys( rs, allGeneratedKeys, generatedKey );
+							generatedKey = processGeneratedKeys( rs, allGeneratedKeys, generatedKey, -1,
+							    generatedKeyIsActuallyRowID );
 						} else {
-							// Only take first result set. We don't break here though because we need to keep looping in case a later result raised an exception
+							// Only take first result set. We don't break here though because we need to
+							// keep looping in case a later result raised an exception
 							if ( results == null ) {
-								results		= Query.fromResultSet( rs );
+								results		= Query.fromResultSet( statement, rs );
 								recordCount	= results.size();
-								// System.out.println( "acquired query result. recordCount: " + recordCount );
+								if ( debug )
+									System.out.println( "acquired query result. recordCount: " + recordCount );
 							}
 						}
 					} catch ( SQLException e ) {
-						// e.printStackTrace();
+						if ( debug )
+							e.printStackTrace();
 						throw new DatabaseException( e );
 					}
 				} else {
 
 					// Capture generated keys, if any.
+					// Skip this if we already have an error from the initial execution
 					try {
 						affectedCount = statement.getUpdateCount();
-						// System.out.println( "affectedCount: " + affectedCount );
+						if ( debug )
+							System.out.println( "affectedCount: " + affectedCount );
 						if ( affectedCount > -1 ) {
 							updateCounts.add( affectedCount );
 							totalUpdateCount += affectedCount;
 
-							if ( !generatedKeysComeAsResultSet ) {
+							// Only try to get generated keys if there was no error from the initial
+							// execution
+							// This prevents NullPointerException in SQLite when the statement failed
+							if ( !generatedKeysComeAsResultSet && raisedError == null ) {
 								ResultSet keys = statement.getGeneratedKeys();
-								// System.out.println( "retrieving generated keys" );
+								if ( debug )
+									System.out.println( "retrieving generated keys" );
 								if ( keys != null ) {
-									generatedKey = processGeneratedKeys( keys, allGeneratedKeys, generatedKey );
+									generatedKey = processGeneratedKeys( keys, allGeneratedKeys, generatedKey,
+									    affectedCount, generatedKeyIsActuallyRowID );
+									try {
+										keys.close();
+									} catch ( SQLException | NullPointerException e ) {
+										// Some JDBC drivers have issues closing the ResultSet after an error
+										logger.error( "Error closing generated keys ResultSet", e );
+									}
 								}
-								keys.close();
 							}
 						}
 					} catch ( SQLException | NullPointerException t ) {
-						// throw new DatabaseException( "Error getting update count", t );
-						// t.printStackTrace();
-						// System.out.println( "Error getting generatedKeys: " + t.getMessage() );
+						// For SQLite and other databases, a NullPointerException can occur when trying
+						// to get generated keys
+						// after an error. We should preserve the original error if it exists, otherwise
+						// capture this one.
+						if ( debug )
+							t.printStackTrace();
+						if ( debug )
+							System.out.println( "Error getting generatedKeys: " + t.getMessage() );
 						logger.error( "Error getting update count", t );
+
+						// Preserve the error to be thrown later
+						if ( raisedError == null ) {
+							raisedError = t;
+						}
 					}
 				}
 				// If we have no results and no affected count, we're done.
 				if ( !hasResults && affectedCount == -1 ) {
-					// System.out.println( "no results or affected count, breaking" );
+					if ( debug )
+						System.out.println( "no results or affected count, breaking" );
 					break;
 				}
 
 				// Otherwise, look for another result set or update count.
 				try {
-					// System.out.println( "checking for more results" );
+					if ( debug )
+						System.out.println( "checking for more results" );
 					hasResults = statement.getMoreResults();
-					// System.out.println( "hasResults: " + hasResults );
+					if ( debug )
+						System.out.println( "hasResults: " + hasResults );
 				} catch ( SQLException e ) {
-					// e.printStackTrace();
+					if ( debug )
+						e.printStackTrace();
 					// Keep nesting our raised errors. We'll throw them all at the end.
 					if ( raisedError == null || !raisedError.equals( e ) ) {
 						if ( raisedError == null || e.getCause() != null ) {
@@ -233,7 +300,8 @@ public final class ExecutedQuery implements Serializable {
 					try {
 						// It's possible that the SQLException was that the statement was closed
 						// If so, break to avoid endless looping.
-						// Otherwise, we want to continue as MSSQL can thrown many exceptions and we gotta' catch them all!
+						// Otherwise, we want to continue as MSSQL can thrown many exceptions and we
+						// gotta' catch them all!
 						if ( statement.isClosed() ) {
 							break;
 						}
@@ -241,6 +309,11 @@ public final class ExecutedQuery implements Serializable {
 						// stupid isCClosed() can throw SQLException
 						break;
 					}
+				} catch ( NullPointerException e1 ) {
+					// Maria DB will throw Cannot invoke "java.util.List.size()" because
+					// "this.results" is null
+					// here if there is no result (like an update)
+					hasResults = false;
 				}
 
 			} // /while
@@ -252,7 +325,8 @@ public final class ExecutedQuery implements Serializable {
 
 		}
 
-		// I'm not sure what the precedent is here, but if there were multiple updates or inserts and no selects,
+		// I'm not sure what the precedent is here, but if there were multiple updates
+		// or inserts and no selects,
 		// then make our record count the total number of updated rows.
 		if ( results == null ) {
 			recordCount = totalUpdateCount;
@@ -264,10 +338,21 @@ public final class ExecutedQuery implements Serializable {
 		    Key.sql, pendingQuery.getSQLWithParamValues(),
 		    Key.sqlParameters, Array.fromList( pendingQuery.getParameterValues() ),
 		    Key.executionTime, executionTime,
-		    Key.recordCount, recordCount
-		);
+		    Key.recordCount, recordCount );
 
 		if ( generatedKey != null ) {
+			// Oracle, for example, sends back a ROWID instead of a generated key
+			if ( generatedKeyIsActuallyRowID.get() ) {
+				queryMeta.put( Key.rowID, generatedKey.toString() );
+				// I'm not actually sure if it's possible to insert more than one row and get
+				// multiple ROWIDs back, but just in case...
+				queryMeta.put( Key.rowIDs,
+				    allGeneratedKeys.stream()
+				        .map( arr -> ( ( Array ) arr ).stream().map( Object::toString ).collect( BLCollector.toArray() ) )
+				        .collect( BLCollector.toArray() ) );
+			}
+			// We still always set GENERATEDKEY even if it's a ROWID
+
 			// The first/last generated key (depends on driver)
 			queryMeta.put( Key.generatedKey, generatedKey );
 			// array of arrays of generated keys (depends on driver)
@@ -286,9 +371,10 @@ public final class ExecutedQuery implements Serializable {
 			results = new Query();
 		}
 
-		// important that we set the metadata on the Query object for later getBoxMeta(), i.e. $bx.meta calls.
+		// important that we set the metadata on the Query object for later
+		// getBoxMeta(), i.e. $bx.meta calls.
 		results.setMetadata( queryMeta );
-		ExecutedQuery executedQuery = new ExecutedQuery( results, generatedKey );
+		ExecutedQuery executedQuery = new ExecutedQuery( results, generatedKey, pendingQuery.getDataSource() );
 
 		interceptorService.announce( BoxEvent.POST_QUERY_EXECUTE,
 		    Struct.of(
@@ -298,9 +384,7 @@ public final class ExecutedQuery implements Serializable {
 		        Key.data, results,
 		        Key.result, queryMeta,
 		        Key.pendingQuery, pendingQuery,
-		        Key.executedQuery, executedQuery
-		    )
-		);
+		        Key.executedQuery, executedQuery ) );
 		return executedQuery;
 	}
 
@@ -309,22 +393,55 @@ public final class ExecutedQuery implements Serializable {
 	 *
 	 * @param rs               The result set containing the generated keys.
 	 * @param allGeneratedKeys An array to store all generated keys.
-	 * @param generatedKey     The generated key for the current insert/update operation.
-	 * 
+	 * @param generatedKey     The generated key for the current insert/update
+	 *                         operation.
+	 * @param affectedCount    The number of rows affected by the operation.
+	 *
 	 * @return The processed generated key.
-	 * 
+	 *
 	 * @throws SQLException If an SQL error occurs.
 	 */
-	private static Object processGeneratedKeys( ResultSet rs, Array allGeneratedKeys, Object generatedKey ) throws SQLException {
-		// System.out.println( "retrieving generated keys posing as a result set" );
+	private static Object processGeneratedKeys( ResultSet rs, Array allGeneratedKeys, Object generatedKey,
+	    int affectedCount,
+	    ObjectRef<Boolean> generatedKeyIsActuallyRowID ) throws SQLException {
+		if ( debug ) {
+			// dumpResultSet( rs );
+		}
+
+		if ( rs == null ) {
+			return generatedKey;
+		}
+
 		Array theseKeys = new Array();
-		while ( rs.next() ) {
-			theseKeys.add( rs.getObject( 1 ) );
+		// MariaDB returns ALL the generated keys at once for the current statement and
+		// future statements, so we should never take more keys than the updated count
+		// showed.
+		try {
+			while ( rs.next() && ( affectedCount == -1 || affectedCount > theseKeys.size() ) ) {
+				boolean first = true;
+				if ( debug ) {
+					System.out.println( "acquired generated key: " + rs.getObject( 1 ) );
+				}
+				// Check if column name is ROWID
+				if ( first ) {
+					generatedKeyIsActuallyRowID.set( rs.getMetaData().getColumnLabel( 1 ).equalsIgnoreCase( "ROWID" ) );
+					first = false;
+				}
+				theseKeys.add( rs.getObject( 1 ) );
+			}
+		} catch ( NullPointerException e ) {
+			// Some JDBC drivers (Derby, SQLite) can return a ResultSet with null internal
+			// state
+			// when the statement execution failed. We just return the current generatedKey.
+			if ( debug ) {
+				System.out.println( "NullPointerException while processing generated keys: " + e.getMessage() );
+			}
+			logger.error( "NullPointerException while processing generated keys", e );
+			return generatedKey;
 		}
 		allGeneratedKeys.add( theseKeys );
 		if ( generatedKey == null && !theseKeys.isEmpty() ) {
 			generatedKey = theseKeys.get( 0 );
-			// System.out.println( "acquired generated key: " + generatedKey );
 		}
 		return generatedKey;
 	}
@@ -339,7 +456,8 @@ public final class ExecutedQuery implements Serializable {
 	}
 
 	/**
-	 * Returns an {@link Array} of {@link Struct} instances representing the {@link Query} results.
+	 * Returns an {@link Array} of {@link Struct} instances representing the
+	 * {@link Query} results.
 	 *
 	 * @return An Array of Structs representing the Query
 	 */
@@ -352,16 +470,17 @@ public final class ExecutedQuery implements Serializable {
 	 *
 	 * @param key The column to group the results by.
 	 *
-	 * @return A struct of String to Struct instances representing the Query results.
+	 * @return A struct of String to Struct instances representing the Query
+	 *         results.
 	 */
 	public @NonNull IStruct getResultsAsStruct( @NonNull String key ) {
 		// @TODO get brad to make this better
 		Map<Object, List<IStruct>>	groupedResults	= this.results.stream().collect( groupingBy( r -> r.get( key ) ) );
-		Map<Object, Object>			groupedArray	= groupedResults.entrySet().stream().collect( toMap( Map.Entry::getKey, e -> new Array( e.getValue() ) ) );
+		Map<Object, Object>			groupedArray	= groupedResults.entrySet().stream()
+		    .collect( toMap( Map.Entry::getKey, e -> new Array( e.getValue() ) ) );
 		return Struct.fromMap(
 		    IStruct.TYPES.LINKED,
-		    groupedArray
-		);
+		    groupedArray );
 	}
 
 	/**
@@ -382,15 +501,19 @@ public final class ExecutedQuery implements Serializable {
 	 * <li>SQL: The SQL statement that was executed. (string)
 	 * <li>SqlParameters: An ordered Array of queryparam values. (array)
 	 * <li>ExecutionTime: Execution time for the SQL request. (numeric)
-	 * <li>GENERATEDKEY: If the query was an INSERT with an identity or auto-increment value the value of that ID is placed in this variable.
+	 * <li>GENERATEDKEY: If the query was an INSERT with an identity or
+	 * auto-increment value the value of that ID is placed in this variable.
 	 * <li>Cached: If the query was cached. (boolean)
 	 * <li>CacheProvider: The cache provider used to cache the query. (string)
 	 * <li>CacheKey: The cache key used to store the query in the cache. (string)
 	 * <li>CacheTimeout: The max time the query will be cached for. (timespan)
-	 * <li>CacheLastAccessTimeout: Max time to wait for a cache to be accessed before it is considered stale and automatically removed from the BoxLang cache. (timespan)
+	 * <li>CacheLastAccessTimeout: Max time to wait for a cache to be accessed
+	 * before it is considered stale and automatically removed from the BoxLang
+	 * cache. (timespan)
 	 * </ul>
 	 *
-	 * @return A struct of query metadata, like original SQL, parameters, size, and cache info.
+	 * @return A struct of query metadata, like original SQL, parameters, size, and
+	 *         cache info.
 	 */
 	public @NonNull IStruct getQueryMeta() {
 		return this.queryMeta;

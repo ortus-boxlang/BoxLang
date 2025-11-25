@@ -83,6 +83,29 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 				);
 			}
 		}
+
+		public String getHumanReadableName() {
+			// return the opposite of the case statement above
+			switch ( this ) {
+				case CASE_SENSITIVE :
+					return "Case Sensitive";
+				case DEFAULT :
+					return "Default";
+				case LINKED_CASE_SENSITIVE :
+					return "Ordered Case Sensitive";
+				case LINKED :
+					return "Ordered";
+				case SOFT :
+					return "Soft";
+				case SORTED :
+					return "Sorted";
+				case WEAK :
+					return "Weak";
+				default :
+					return this.name();
+			}
+		}
+
 	}
 
 	/**
@@ -287,6 +310,14 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	}
 
 	/**
+	 * Convenience method for getting cast as Char
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	default Character getAsChar( Key key ) {
+		return ( Character ) DynamicObject.unWrap( get( key ) );
+	}
+
+	/**
 	 * Convenience method for getting cast as Double
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
 	 */
@@ -371,6 +402,24 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 			return ar;
 		}
 		return Attempt.of( result );
+	}
+
+	/**
+	 * Convenience method for getting cast as BoxLang Attempt with a specific type.
+	 * If the value is not already an Attempt, it will be wrapped in an Attempt.
+	 *
+	 * @param <T>   The type parameter for the Attempt
+	 * @param key   The key to get
+	 * @param clazz The class to cast the Attempt value to
+	 * 
+	 * @return The Attempt containing the value cast to the specified type
+	 */
+	default <T> Attempt<T> getAsAttempt( Key key, Class<T> clazz ) {
+		Object result = DynamicObject.unWrap( get( key ) );
+		if ( result instanceof Attempt<?> ar ) {
+			return ( Attempt<T> ) ar.map( clazz::cast );
+		}
+		return Attempt.of( clazz.cast( result ) );
 	}
 
 	/**

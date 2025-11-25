@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
-@BoxBIF
+@BoxBIF( description = "Execute code asynchronously" )
 @BoxBIF( alias = "RunAsync" )
 public class AsyncRun extends BIF {
 

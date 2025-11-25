@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF
+@BoxBIF( description = "Add one or more elements to the beginning of an array" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayUnshift extends BIF {
 
@@ -47,7 +47,7 @@ public class ArrayUnshift extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.array The array to add an item to
-	 * 
+	 *
 	 * @argument.object The value to add
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

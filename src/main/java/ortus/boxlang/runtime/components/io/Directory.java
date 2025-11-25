@@ -33,7 +33,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent
+@BoxComponent( description = "Perform directory operations and file listing" )
 public class Directory extends Component {
 
 	/**

@@ -32,9 +32,7 @@ import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableArray;
  */
 public class FunctionMeta extends BoxMeta<Function> {
 
-	@SuppressWarnings( "unused" )
 	private Function	target;
-	public Object		AST;
 	public Class<?>		$class;
 	public IStruct		meta;
 
@@ -45,7 +43,6 @@ public class FunctionMeta extends BoxMeta<Function> {
 		super();
 		this.target	= target;
 		this.$class	= target.getClass();
-		this.AST	= target.getRunnableAST();
 
 		// prepare args first
 		Object[]	params	= new Object[ target.getArguments().length ];

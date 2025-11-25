@@ -41,10 +41,11 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent( allowsBody = true )
+@BoxComponent( description = "Manage cached data with get, put, and delete operations", allowsBody = true )
 public class Cache extends Component {
 
 	/**
@@ -250,7 +251,7 @@ public class Cache extends Component {
 
 		// Evalutions on cache directive
 		if ( !namedCacheOps.contains( cacheAction ) ) {
-			IStruct interceptorArgs = Struct.of(
+			IStruct interceptorArgs = Struct.ofNonConcurrent(
 			    Key.component, this,
 			    Key.context, context,
 			    Key.attributes, attributes,
@@ -258,7 +259,7 @@ public class Cache extends Component {
 			    Key.executionState, executionState,
 			    Key.result, null
 			);
-			interceptorService.announce( BoxEvent.ON_CREATEOBJECT_REQUEST, interceptorArgs );
+			interceptorService.announce( BoxEvent.ON_CACHE_COMPONENT_ACTION, interceptorArgs );
 			if ( interceptorArgs.get( Key.result ) == null ) {
 				throw new BoxRuntimeException(
 				    String.format( "The specified cache action [%s] is is not valid in the current runtime", cacheAction.toString().toLowerCase() )
@@ -321,6 +322,9 @@ public class Cache extends Component {
 						    timeout,
 						    lastAccessTimeout
 						);
+					} catch ( AbortException e ) {
+						// Ignore aborts
+						throw e;
 					} catch ( Throwable e ) {
 						if ( throwOnError ) {
 							throw new BoxRuntimeException( "An error occurred while attempting to set the cache value", e );
@@ -352,6 +356,9 @@ public class Cache extends Component {
 					} else {
 						try {
 							cacheProvider.clearAll();
+						} catch ( AbortException e ) {
+							// Ignore aborts
+							throw e;
 						} catch ( Throwable e ) {
 							if ( throwOnError ) {
 								throw new BoxRuntimeException( "An error occurred while attempting to flush the cache", e );

@@ -145,21 +145,23 @@ public class DateTimeFormatTest {
 	@DisplayName( "It tests the output of the format will change with a timezone change" )
 	@Test
 	public void testDateTimeFormatTZChange() {
+		// @formatter:off
 		instance.executeSource(
 		    """
-		       setTimezone( "America/New_York" );
-		       ref = now();
-		             result1 = dateTimeFormat( ref, "v" );
-		    	  result1Hours = dateTimeFormat( ref, "HH" );
-		    setTimezone( "America/Los_Angeles" );
+		    	setTimezone( "America/New_York" );
+		    	ref = now();
+		        result1 = dateTimeFormat( ref, "v" );
+		    	result1Hours = dateTimeFormat( ref, "HH" );
 
-		             result2 = dateTimeFormat( ref, "v" );
-		             result2Hours = dateTimeFormat( ref, "HH" );
-		             """,
-		    context );
-		DateTime	dateRef	= variables.getAsDateTime( Key.of( "ref" ) );
-		String		result1	= variables.getAsString( Key.of( "result1" ) );
-		String		result2	= variables.getAsString( Key.of( "result2" ) );
+				setTimezone( "America/Los_Angeles" );
+				result2 = dateTimeFormat( ref, "v" );
+		        result2Hours = dateTimeFormat( ref, "HH" );
+		    """,
+		    context
+		);
+		// @formatter:on
+		String	result1	= variables.getAsString( Key.of( "result1" ) );
+		String	result2	= variables.getAsString( Key.of( "result2" ) );
 		assertNotEquals( result1, result2 );
 		assertNotEquals( variables.getAsString( Key.of( "result2Hours" ) ), variables.getAsString( Key.of( "result1Hours" ) ) );
 	}
@@ -430,7 +432,7 @@ public class DateTimeFormatTest {
 		    	 """,
 		    context );
 		result = ( String ) variables.get( Key.of( "result" ) );
-		assertThat( result ).isEqualTo( "12/31/23, 12:30\u202FPM" );
+		assertThat( result ).isEqualTo( "12/31/23, 12:30 PM" );
 
 	}
 

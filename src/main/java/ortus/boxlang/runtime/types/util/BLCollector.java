@@ -26,6 +26,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableArray;
 
 public class BLCollector {
 
@@ -48,11 +49,22 @@ public class BLCollector {
 	 * @return the populated array
 	 */
 	public static Collector<Object, ?, Array> toArray( Class<? extends Array> type ) {
+		Class<? extends Array>	typeToUse;
+		boolean					makeUnmodifiable;
+		// Pursuant to other dynamic languages, when collecting into an array (such as arrayMap()), always return a modifiable array
+		if ( type.equals( UnmodifiableArray.class ) ) {
+			typeToUse			= Array.class;
+			makeUnmodifiable	= true;
+		} else {
+			typeToUse			= type;
+			makeUnmodifiable	= false;
+		}
+
 		return Collector.of(
 		    () -> {
 			    try {
 				    // This should never error, but we are forced to catch a host of checked exceptions here
-				    return type.getDeclaredConstructor().newInstance();
+				    return typeToUse.getDeclaredConstructor().newInstance();
 			    } catch ( Exception e ) {
 				    throw new BoxRuntimeException( "Unable to instantiate Array of type: " + type.getName(), e );
 			    }
@@ -62,8 +74,8 @@ public class BLCollector {
 			    left.addAll( right );
 			    return left;
 		    }, // combiner
-		    Collector.Characteristics.IDENTITY_FINISH,
-		    Collector.Characteristics.CONCURRENT
+		    arr -> makeUnmodifiable ? arr.toUnmodifiable() : arr, // finisher
+		    Collector.Characteristics.CONCURRENT // characteristics
 		);
 	}
 

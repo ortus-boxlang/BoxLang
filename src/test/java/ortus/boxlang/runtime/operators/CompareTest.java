@@ -19,9 +19,11 @@ package ortus.boxlang.runtime.operators;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.time.Duration;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import java.time.Duration;
+
 import ortus.boxlang.runtime.types.DateTime;
 
 public class CompareTest {
@@ -110,6 +112,28 @@ public class CompareTest {
 	@Test
 	void testItCanCompareDurations() {
 		assertThat( Compare.invoke( Duration.ofDays( 1 ), 1 ) ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "It can compare null to empty string" )
+	@Test
+	void testItCanCompareNullToEmptyString() {
+		Compare.nullEqualsEmptyString = true;
+		try {
+			assertThat( Compare.invoke( null, "" ) ).isEqualTo( 0 );
+			assertThat( Compare.invoke( "", null ) ).isEqualTo( 0 );
+			assertThat( Compare.invoke( null, "test" ) ).isEqualTo( -1 );
+			assertThat( Compare.invoke( "test", null ) ).isEqualTo( 1 );
+		} finally {
+			Compare.nullEqualsEmptyString = false;
+		}
+	}
+
+	@DisplayName( "It will not compare positive numbers and booleans as Equal" )
+	@Test
+	void testItWillNotComparePositiveNumbersAndBooleansAsEqual() {
+		// Does not error, but is not equal
+		assertThat( Compare.invoke( true, 99 ) ).isGreaterThan( 0 );
+		assertThat( Compare.invoke( true, 1 ) ).isGreaterThan( 0 );
 	}
 
 }

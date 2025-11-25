@@ -14,7 +14,6 @@
  */
 package ortus.boxlang.compiler.javaboxpiler.transformer.statement;
 
-import java.time.LocalDateTime;
 import java.util.Map;
 
 import com.github.javaparser.ParseResult;
@@ -33,6 +32,7 @@ import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
 
+import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
@@ -46,7 +46,9 @@ import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxStringLiteralTransformer;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
@@ -82,6 +84,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		import ortus.boxlang.compiler.parser.BoxSourceType;
 		import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 		import ortus.boxlang.runtime.runnables.BoxClassSupport;
+		import ortus.boxlang.compiler.BoxByteCodeVersion;
 
 		// Java Imports
 		import java.nio.file.Path;
@@ -94,6 +97,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		import java.util.Map;
 		import java.util.Optional;
 
+		@BoxByteCodeVersion(boxlangVersion="${boxlangVersion}", bytecodeVersion=${bytecodeVersion})
 		public class ${className} extends ${baseclass} {
 
 			private static ${className} instance;
@@ -101,17 +105,18 @@ public class BoxScriptTransformer extends AbstractTransformer {
 			private static final List<ImportDefinition>	imports			= List.of();
 			private static final ResolvedFilePath					path			= ${resolvedFilePath};
 			private static final BoxSourceType			sourceType		= BoxSourceType.${sourceType};
-			private static final long					compileVersion	= ${compileVersion};
-			private static final LocalDateTime			compiledOn		= ${compiledOnTimestamp};
-			private static final Object					ast				= null;
 			public static final Key[]					keys			= new Key[] {};
 
 			public ${className}() {
 			}
 
-			public static synchronized ${className} getInstance() {
+			public static ${className} getInstance() {
 				if ( instance == null ) {
-					instance = new ${className}();
+					synchronized ( ${className}.class ) {
+						if ( instance == null ) {
+							instance = new ${className}();
+						}
+					}
 				}
 				return instance;
 			}
@@ -125,27 +130,6 @@ public class BoxScriptTransformer extends AbstractTransformer {
 			}
 
 			// ITemplateRunnable implementation methods
-
-			/**
-				* The version of the BoxLang runtime
-			*/
-			public long getRunnableCompileVersion() {
-				return ${className}.compileVersion;
-			}
-
-			/**
-				* The date the template was compiled
-			*/
-			public LocalDateTime getRunnableCompiledOn() {
-				return ${className}.compiledOn;
-			}
-
-			/**
-				* The AST (abstract syntax tree) of the runnable
-			*/
-			public Object getRunnableAST() {
-				return ${className}.ast;
-			}
 
 			/**
 				* The path to the template
@@ -211,9 +195,9 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		    Map.entry( "resolvedFilePath", transpiler.getResolvedFilePath( mappingName, mappingPath, relativePath, filePath ) ),
 		    Map.entry( "returnType", returnType ),
 		    Map.entry( "sourceType", sourceType ),
-		    Map.entry( "fileExtension", fileExt ),
-		    Map.entry( "compiledOnTimestamp", transpiler.getDateTime( LocalDateTime.now() ) ),
-		    Map.entry( "compileVersion", "1L" )
+		    Map.entry( "boxlangVersion", BoxRuntime.getInstance().getVersionInfo().getAsString( Key.version ) ),
+		    Map.entry( "bytecodeVersion", String.valueOf( IBoxpiler.BYTECODE_VERSION ) ),
+		    Map.entry( "fileExtension", fileExt )
 		);
 		String							code		= PlaceholderHelper.resolve( template, values );
 		ParseResult<CompilationUnit>	result;

@@ -133,12 +133,9 @@ public class CatchBoxContext extends ParentPassthroughBoxContext {
 			}
 		}
 
-		if ( shallow ) {
-			return null;
-		}
-
+		// Don't exit if shallow, we need to delegate to parent context first.
 		if ( parent != null ) {
-			return parent.scopeFindNearby( key, defaultScope, forAssign );
+			return parent.scopeFindNearby( key, defaultScope, shallow, forAssign );
 		}
 
 		return scopeFind( key, defaultScope, forAssign );

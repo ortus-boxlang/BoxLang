@@ -17,15 +17,14 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-
-import org.apache.commons.lang3.time.DateUtils;
+import java.util.Locale;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -38,6 +37,8 @@ import ortus.boxlang.runtime.util.RegexBuilder;
  * I cast to DateTime objects
  */
 public class DateTimeCaster implements IBoxCaster {
+
+	public static boolean convertParsedDatesToLocalZone = false;
 
 	/**
 	 * Tests to see if the value can be cast.
@@ -57,12 +58,28 @@ public class DateTimeCaster implements IBoxCaster {
 	 * Returns a {@code CastAttempt<T>} which will contain the result if casting was
 	 * was successfull, or can be interogated to proceed otherwise.
 	 *
-	 * @param object The value to cast
+	 * @param object  The value to cast
+	 * @param context The context in which the casting is being performed.
 	 *
 	 * @return The value
 	 */
 	public static CastAttempt<DateTime> attempt( Object object, IBoxContext context ) {
 		return CastAttempt.ofNullable( cast( object, false, context ) );
+	}
+
+	/**
+	 * Tests to see if the value can be cast.
+	 * Returns a {@code CastAttempt<T>} which will contain the result if casting was
+	 * was successfull, or can be interogated to proceed otherwise.
+	 *
+	 * @param object   The value to cast
+	 * @param context  The context in which the casting is being performed.
+	 * @param timezone The ZoneId to ensure a timezone is applied
+	 *
+	 * @return The value
+	 */
+	public static CastAttempt<DateTime> attempt( Object object, IBoxContext context, ZoneId timezone, Locale locale ) {
+		return CastAttempt.ofNullable( cast( object, false, timezone, false, context, locale ) );
 	}
 
 	/**
@@ -130,10 +147,29 @@ public class DateTimeCaster implements IBoxCaster {
 	 * @param fail     True to throw exception when failing.
 	 * @param timezone The ZoneId to ensure a timezone is applied
 	 * @param clone    If true, will return a clone of the object if it was originally a DateTime.
+	 * @param context  The context in which the casting is being performed.
 	 *
 	 * @return The value, or null when cannot be cast
 	 */
 	public static DateTime cast( Object object, Boolean fail, ZoneId timezone, Boolean clone, IBoxContext context ) {
+		return cast( object, fail, timezone, clone, context, null );
+	}
+
+	/**
+	 * Used to cast anything to a DateTime object. We start off by testing the object
+	 * against commonly known Java date objects, and then try to parse the object as a
+	 * string. If we fail, we return null.
+	 *
+	 * @param object   The value to cast
+	 * @param fail     True to throw exception when failing.
+	 * @param timezone The ZoneId to ensure a timezone is applied
+	 * @param clone    If true, will return a clone of the object if it was originally a DateTime.
+	 * @param context  The context in which the casting is being performed.
+	 * @param locale   The locale to use when parsing date strings.
+	 *
+	 * @return The value, or null when cannot be cast
+	 */
+	public static DateTime cast( Object object, Boolean fail, ZoneId timezone, Boolean clone, IBoxContext context, Locale locale ) {
 		if ( timezone == null ) {
 			if ( context == null ) {
 				context = RequestBoxContext.getCurrent();
@@ -181,9 +217,16 @@ public class DateTimeCaster implements IBoxCaster {
 			return new DateTime( targetLocalDate.atStartOfDay( timezone ) );
 		}
 
-		// This check needs to run BEFORE the next one since a java.sql.Date IS a java.util.Date, but the toInstance() method will throw an unchecked exception
+		// This check needs to run BEFORE the next one since a java.sql.Date IS a java.util.Date, but the toInstant() method will throw an UnsupportedOperationException
+		// https://docs.oracle.com/javase/8/docs/api/java/sql/Date.html#toInstant--
 		if ( object instanceof java.sql.Date sDate ) {
 			return new DateTime( sDate, timezone );
+		}
+
+		// This check needs to run BEFORE the next one since a java.sql.Time IS a java.util.Date, but the toInstant() method will throw an UnsupportedOperationException
+		// https://docs.oracle.com/javase/8/docs/api/java/sql/Time.html#toInstant--
+		if ( object instanceof java.sql.Time sTime ) {
+			return new DateTime( sTime, timezone );
 		}
 
 		// We have a java.util.Date object
@@ -201,6 +244,14 @@ public class DateTimeCaster implements IBoxCaster {
 			return new DateTime( targetTimestamp );
 		}
 
+		// Test if it is a numeric and is zero - which is the epoch
+		var numberAttempt = NumberCaster.attempt( object );
+		if ( numberAttempt.wasSuccessful() ) {
+			if ( numberAttempt.get().intValue() == 0 ) {
+				return new DateTime( Instant.EPOCH.atZone( ZoneId.of( "UTC" ) ) );
+			}
+		}
+
 		// Try to cast it to a String and see if we can parse it
 		var targetString = StringCaster.attempt( object ).getOrDefault( null );
 
@@ -211,6 +262,9 @@ public class DateTimeCaster implements IBoxCaster {
 			}
 			return null;
 		}
+
+		// replace not standard spaces (like nbsp and nnsb) with standard spaces to ensure consistency for our masks
+		targetString = DateTime.sanitizeStringSpaces( targetString );
 
 		try {
 			// Timestamp string "^\{ts ([^\}])*\}" - {ts 2023-01-01 12:00:00}
@@ -231,10 +285,14 @@ public class DateTimeCaster implements IBoxCaster {
 
 		// Now let's go to Apache commons lang for its date parsing
 		try {
-			return LocalizationUtil.parseFromCommonPatterns( targetString );
+			return LocalizationUtil.parseFromCommonPatterns( targetString, timezone );
 		} catch ( java.time.format.DateTimeParseException e ) {
 			try {
-				return new DateTime( targetString, timezone );
+				if ( locale != null ) {
+					return new DateTime( targetString, locale, timezone );
+				} else {
+					return new DateTime( targetString, timezone );
+				}
 			} catch ( Throwable e2 ) {
 				if ( fail ) {
 					throw new BoxCastException( "Can't cast [" + targetString + "] to a DateTime." );

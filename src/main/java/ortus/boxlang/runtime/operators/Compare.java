@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * Performs EQ, GT, and LT comparisons
@@ -46,6 +47,11 @@ public class Compare implements IOperator {
 	 * Flag to allow compat to set the comparison mode for dates to loose
 	 */
 	public static boolean		lenientDateComparison	= false;
+
+	/**
+	 * null is equal to empty string
+	 */
+	public static boolean		nullEqualsEmptyString	= false;
 
 	/**
 	 * Invokes the comparison
@@ -117,6 +123,17 @@ public class Compare implements IOperator {
 		if ( left == null && right == null ) {
 			return 0;
 		}
+
+		// This is here for CF compat, off unless toggled by compat module
+		if ( nullEqualsEmptyString ) {
+			if ( left == null && "".equals( right ) ) {
+				return 0;
+			}
+			if ( right == null && "".equals( left ) ) {
+				return 0;
+			}
+		}
+
 		// null is less than than non null
 		if ( left == null && right != null ) {
 			return -1;
@@ -179,9 +196,9 @@ public class Compare implements IOperator {
 		}
 
 		// Check boolean
-		CastAttempt<Boolean> leftBooleanAttempt = BooleanCaster.attempt( left, false );
+		CastAttempt<Boolean> leftBooleanAttempt = BooleanCaster.attempt( left, false, false );
 		if ( leftBooleanAttempt.wasSuccessful() ) {
-			CastAttempt<Boolean> rightBooleanAttempt = BooleanCaster.attempt( right, false );
+			CastAttempt<Boolean> rightBooleanAttempt = BooleanCaster.attempt( right, false, false );
 
 			if ( rightBooleanAttempt.wasSuccessful() ) {
 				return Boolean.compare( leftBooleanAttempt.get(), rightBooleanAttempt.get() );
@@ -191,8 +208,9 @@ public class Compare implements IOperator {
 		// String comparison
 		// This only works if at least one operand is already a java.lang.String
 		// What if both are a Character or CharSequence?
-		// TODO: we may want to try the string casters every time regardless of the type
+		boolean triedStringCompare = false;
 		if ( left instanceof String || right instanceof String ) {
+			triedStringCompare = true;
 			CastAttempt<String>	leftStringAttempt	= StringCaster.attempt( left );
 			CastAttempt<String>	rightStringAttempt	= StringCaster.attempt( right );
 
@@ -213,13 +231,42 @@ public class Compare implements IOperator {
 			        : ( ( Comparable<Object> ) left ).compareTo( ( Comparable<Object> ) right );
 		}
 
+		if ( !triedStringCompare ) {
+			// Last ditch effort, try string comparison
+			// Do this last if everything else failed for performance reasons
+			CastAttempt<String>	leftStringAttempt	= StringCaster.attempt( left );
+			CastAttempt<String>	rightStringAttempt	= StringCaster.attempt( right );
+
+			if ( leftStringAttempt.wasSuccessful() && rightStringAttempt.wasSuccessful() ) {
+				return StringCompare.invoke( leftStringAttempt.get(), rightStringAttempt.get(), caseSensitive );
+			}
+		}
+
 		if ( fail ) {
 			throw new BoxRuntimeException(
-			    String.format( "Can't compare [%s] against [%s]", left.getClass().getName(), right.getClass().getName() )
+			    String.format( "Can't compare [%s] against [%s]", TypeUtil.getObjectName( left ), TypeUtil.getObjectName( right ) )
 			);
 		}
 
 		return null;
+	}
+
+	/**
+	 * Converts a compare result to an integer. This allows sort callbacks to return any numeric value.
+	 * 
+	 * @param result The compare result
+	 * 
+	 * @return The integer comparison value
+	 */
+	public static Integer convertCompareResultToInteger( Object result ) {
+		Double numResult = NumberCaster.cast( result ).doubleValue();
+		if ( numResult == 0 ) {
+			return 0;
+		} else if ( numResult > 0 ) {
+			return 1;
+		} else {
+			return -1;
+		}
 	}
 
 }

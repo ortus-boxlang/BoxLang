@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * I handle casting anything to a Struct, except I'll also cast any Java classes which are not a built in datatype into a struct, using the public
@@ -107,7 +108,11 @@ public class StructCasterLoose implements IBoxCaster {
 			dynObject.getFieldsAsStream()
 			    .filter( field -> Modifier.isPublic( field.getModifiers() ) )
 			    .forEach( field -> {
-				    thisResult.put( field.getName(), dynObject.getField( field.getName() ).orElse( null ) );
+				    try {
+					    thisResult.put( field.getName(), dynObject.getField( field.getName() ).orElse( null ) );
+				    } catch ( Exception e ) {
+					    // We're gonna ignore any invalid fields that error out. Some times public fields cannot be accessed
+				    }
 			    } );
 			// also add fields for all public methods starting with "get" that take no arguments
 
@@ -155,7 +160,7 @@ public class StructCasterLoose implements IBoxCaster {
 
 		if ( fail ) {
 			throw new BoxCastException(
-			    String.format( "Can't cast [%s] to a Struct.", object.getClass().getName() )
+			    String.format( "Can't cast [%s] to a Struct.", TypeUtil.getObjectName( object ) )
 			);
 		} else {
 			return null;

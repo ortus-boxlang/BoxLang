@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
-@BoxBIF
+@BoxBIF( description = "Copy a directory and its contents" )
 
 public class DirectoryCopy extends BIF {
 

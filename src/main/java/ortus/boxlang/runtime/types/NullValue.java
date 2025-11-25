@@ -50,8 +50,19 @@ public class NullValue implements IType, IUnmodifiable, Serializable {
 	 *
 	 * @return The string representation
 	 */
+	@Override
 	public String asString() {
 		return "[null]";
+	}
+
+	/**
+	 * Get the BoxLang type name for this type
+	 * 
+	 * @return The BoxLang type name
+	 */
+	@Override
+	public String getBoxTypeName() {
+		return "Null";
 	}
 
 	/**
@@ -59,6 +70,7 @@ public class NullValue implements IType, IUnmodifiable, Serializable {
 	 *
 	 * @return The metadata object
 	 */
+	@Override
 	public BoxMeta<?> getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new GenericMeta( this );

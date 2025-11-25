@@ -28,7 +28,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent( requiresBody = true )
+@BoxComponent( description = "Parse, transform, and manipulate XML documents", requiresBody = true )
 public class XML extends Component {
 
 	/**

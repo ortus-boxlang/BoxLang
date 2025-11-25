@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.util.DuplicationUtil;
 
-@BoxBIF
+@BoxBIF( description = "Create a deep copy of a variable" )
 @BoxMember( type = BoxLangType.ARRAY )
 @BoxMember( type = BoxLangType.STRUCT )
 @BoxMember( type = BoxLangType.DATETIME )

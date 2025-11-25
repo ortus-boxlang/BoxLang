@@ -26,6 +26,7 @@ import java.util.Locale;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.application.ApplicationDefaultListener;
 import ortus.boxlang.runtime.application.BaseApplicationListener;
+import ortus.boxlang.runtime.async.RequestThreadManager;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
@@ -43,7 +44,6 @@ import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.util.LocalizationUtil;
 import ortus.boxlang.runtime.util.Mapping;
-import ortus.boxlang.runtime.util.RequestThreadManager;
 
 /**
  * A request-type context. I track additional things related to a request.
@@ -485,9 +485,9 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		    .getInterceptorService()
 		    .announce(
 		        BoxEvent.ON_REQUEST_CONTEXT_CONFIG,
-		        Struct.of(
-		            "context", this,
-		            "config", config
+		        () -> Struct.ofNonConcurrent(
+		            Key.context, this,
+		            Key.config, config
 		        )
 		    );
 
@@ -601,6 +601,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 
 	@Override
 	public void shutdown() {
+		super.shutdown();
 		shutdownConnections();
 	}
 
@@ -674,10 +675,10 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	/**
 	 * Run a consumer with the thread's current context. If there is no current thread context, then
 	 * we'll create one and manage its lifecycle.
-	 * 
+	 *
 	 * @param parent   Optional parent context to use if creating one
 	 * @param runnable The runnable to execute in the context
-	 * 
+	 *
 	 * @return The result of the runnable
 	 */
 	public static Object runInContext( IBoxContext parent, java.util.function.Function<IBoxContext, Object> runnable ) {
@@ -727,9 +728,9 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	/**
 	 * Run a consumer with the thread's current context. If there is no current thread context, then
 	 * we'll create one and manage its lifecycle.
-	 * 
+	 *
 	 * @param runnable The runnable to execute in the context
-	 * 
+	 *
 	 * @return The result of the runnable
 	 */
 	public static Object runInContext( java.util.function.Function<IBoxContext, Object> runnable ) {

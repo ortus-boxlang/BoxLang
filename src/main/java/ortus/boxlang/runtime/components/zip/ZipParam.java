@@ -29,7 +29,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxComponent( allowsBody = false )
+@BoxComponent( description = "Define entries for ZIP file operations", allowsBody = false )
 public class ZipParam extends Component {
 
 	/**

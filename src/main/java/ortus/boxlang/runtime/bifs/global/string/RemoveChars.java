@@ -33,7 +33,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF
+@BoxBIF( description = "Remove characters from a string" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "RemoveChars" )
 
 public class RemoveChars extends BIF {

@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-@BoxBIF
+@BoxBIF( description = "Insert a substring into a string at a specific position" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "Insert", objectArgument = "string" )
 public class Insert extends BIF {
 

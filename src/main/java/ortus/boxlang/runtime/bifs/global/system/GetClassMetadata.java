@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
-@BoxBIF
+@BoxBIF( description = "Get metadata about a Java class" )
 public class GetClassMetadata extends BIF {
 
 	private static final ClassLocator CLASS_LOCATOR = BoxRuntime.getInstance().getClassLocator();

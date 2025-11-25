@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-@BoxBIF
+@BoxBIF( description = "Add a new column to a query" )
 @BoxMember( type = BoxLangType.QUERY )
 public class QueryAddColumn extends BIF {
 

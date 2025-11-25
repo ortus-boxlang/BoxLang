@@ -20,7 +20,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 
-@BoxBIF
+@BoxBIF( description = "Check if code is executing within a thread" )
 public class IsInThread extends BIF {
 
 	/**

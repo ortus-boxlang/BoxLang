@@ -5757,4 +5757,109 @@ public class CoreLangTest {
 		assertThat( t.getMessage() ).contains( "Unclosed bracket" );
 	}
 
+	@Test
+	public void testContextShutdownListener() {
+
+		// Not passing the context from the request so the runtime will create its own and automatically shut it down
+		instance.executeSource(
+		    """
+		    server[ "myRequest" ] = "running";
+		       	getBoxContext().getRequestContext().registerShutdownListener( (ctx) => {
+		       		server[ "myRequest" ] = "done";
+		       	} );
+
+		       """
+		);
+
+		String result = ( String ) instance.executeStatement( "server[ 'myRequest' ]", context );
+		assertThat( result ).isEqualTo( "done" );
+
+	}
+
+	@Test
+	public void testAssignmentParsing() {
+
+		instance.executeSource(
+		    """
+		    function asdf() {
+		    	var foo = () => {};
+		    	(() => {})();
+		    	writedump(foo);
+		    }
+
+		             """
+		);
+		// Just needs to parse without error
+
+	}
+
+	@Test
+	public void testContinueInASwitchInAForLoop() {
+
+		instance.executeSource(
+		    """
+		    for (v in [1,2]) {
+		    	switch ( v ) {
+		    		case 1:
+		    			// The requested key [continue] was not located
+		    			// in any scope or it's undefined
+		    			continue;
+		    		case 2:
+		    			writedump("ok")
+		    	}
+		    }
+		            """
+		);
+		// Just needs to parse without error
+	}
+
+	@Test
+	public void testContinueInASwitchInAForLoopCF() {
+
+		instance.executeSource(
+		    """
+		    for (v in [1,2]) {
+		    	switch ( v ) {
+		    		case 1:
+		    			// The requested key [continue] was not located
+		    			// in any scope or it's undefined
+		    			continue;
+		    		case 2:
+		    			writedump("ok")
+		    	}
+		    }
+		            """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+		// Just needs to parse without error
+	}
+
+	@Test
+	public void testFunkyTernary() {
+
+		instance.executeSource(
+		    """
+		    true ? foo = true : bar = false;
+		    result = true ? 'a' : 'b';
+		                 """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+		assertThat( variables.get( Key.of( "foo" ) ) ).isEqualTo( true );
+		assertThat( variables.get( result ) ).isEqualTo( "a" );
+	}
+
+	@Test
+	public void testFunkyTernaryCF() {
+
+		instance.executeSource(
+		    """
+		    true ? foo = true : bar = false;
+		    result = true ? 'a' : 'b';
+		                 """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+		assertThat( variables.get( Key.of( "foo" ) ) ).isEqualTo( true );
+		assertThat( variables.get( result ) ).isEqualTo( "a" );
+	}
+
 }

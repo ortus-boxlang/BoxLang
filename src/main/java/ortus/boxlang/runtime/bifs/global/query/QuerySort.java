@@ -19,7 +19,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.Query;
 
-@BoxBIF
+@BoxBIF( description = "Sort query rows by one or more columns" )
 @BoxMember( type = BoxLangType.QUERY )
 public class QuerySort extends BIF {
 
@@ -56,7 +56,7 @@ public class QuerySort extends BIF {
 		Query		query		= arguments.getAsQuery( Key.query );
 		Function	sortFunc	= arguments.getAsFunction( Key.sortFunc );
 
-		query.sort( ( a, b ) -> IntegerCaster.cast( context.invokeFunction( sortFunc, new Object[] { a, b } ) ) );
+		query.sort( ( a, b ) -> Compare.convertCompareResultToInteger( context.invokeFunction( sortFunc, new Object[] { a, b } ) ) );
 
 		return query;
 	}

@@ -13,7 +13,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-@BoxBIF
+@BoxBIF( description = "Convert a decimal number to specified base" )
 @BoxMember( type = BoxLangType.NUMERIC )
 public class FormatBaseN extends BIF {
 

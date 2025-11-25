@@ -17,8 +17,6 @@
  */
 package ortus.boxlang.runtime.bifs.global.conversion;
 
-import java.io.IOException;
-import java.util.Map;
 import java.util.Set;
 
 import ortus.boxlang.runtime.bifs.BIF;
@@ -30,16 +28,13 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.Query;
-import ortus.boxlang.runtime.types.QueryColumn;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.JSONUtil;
 import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.util.conversion.serializers.BoxQuerySerializer;
 import ortus.boxlang.runtime.validation.Validator;
 
-@BoxBIF
+@BoxBIF( description = "Convert BoxLang data to JSON string" )
 @BoxMember( type = BoxLangType.CUSTOM, customType = java.lang.Boolean.class, name = "toJSON" )
 @BoxMember( type = BoxLangType.CUSTOM2, customType = java.lang.Number.class, name = "toJSON" )
 @BoxMember( type = BoxLangType.ARRAY, name = "toJSON" )
@@ -123,35 +118,6 @@ public class JSONSerialize extends BIF {
 			queryFormat = "false";
 		}
 
-		// Query serialization is manual, due to the different formats in the arguments
-		if ( obj instanceof Query qry ) {
-			// "row" is the same as "false". Top level struct with columns (array of strings), data (array of arrays)
-			if ( queryFormat.equals( "row" ) || queryFormat.equals( "false" ) ) {
-				obj = Struct.linkedOf(
-				    "columns", qry.getColumns().keySet().stream().map( c -> c.getName() ).toArray( String[]::new ),
-				    "data", qry.getData()
-				);
-				// "column" is the same as "true". Top level struct with rowcount, columns (array of strings), data (struct with column name as key and array of
-				// values as value)
-			} else if ( queryFormat.equals( "column" ) || queryFormat.equals( "true" ) ) {
-				var						data	= new Struct( IStruct.TYPES.LINKED );
-				Map<Key, QueryColumn>	cols	= qry.getColumns();
-				for ( var col : cols.keySet() ) {
-					data.put( col, cols.get( col ).getColumnData() );
-				}
-				obj = Struct.linkedOf(
-				    "rowCount", qry.size(),
-				    "columns", qry.getColumns().keySet().stream().map( c -> c.getName() ).toArray( String[]::new ),
-				    "data", data
-				);
-				// "struct" is what we get by default (array of structs)
-			} else if ( queryFormat.equals( "struct" ) ) {
-				obj = qry;
-			} else {
-				throw new BoxRuntimeException( "Invalid queryFormat: " + queryFormat );
-			}
-		}
-
 		// If we called "foo,bar".listToJSON(), then we need to convert the string to a list
 		if ( arguments.get( BIF.__functionName ).equals( Key.listToJSON ) ) {
 			obj = ListUtil.asList( StringCaster.cast( arguments.get( Key.data ) ), "," );
@@ -159,9 +125,14 @@ public class JSONSerialize extends BIF {
 
 		// Serialize the object to JSON
 		try {
+			// Jackson Jr doesn't have any sort of extendable feature or context I can use, so I have to use thread local to
+			// inform the query serializer what format to use if it encounters a query.
+			BoxQuerySerializer.currentQueryFormat.set( queryFormat );
 			return JSONUtil.getJSONBuilder( arguments.getAsBoolean( Key.pretty ) ).asString( obj );
-		} catch ( IOException e ) {
+		} catch ( Exception e ) {
 			throw new BoxRuntimeException( "Error serializing to JSON", e );
+		} finally {
+			BoxQuerySerializer.currentQueryFormat.remove();
 		}
 	}
 }

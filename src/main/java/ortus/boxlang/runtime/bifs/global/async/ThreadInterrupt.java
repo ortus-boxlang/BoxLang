@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.runtime.bifs.global.async;
 
+import ortus.boxlang.runtime.async.RequestThreadManager;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -22,9 +23,8 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.util.RequestThreadManager;
 
-@BoxBIF
+@BoxBIF( description = "Interrupt a running thread" )
 public class ThreadInterrupt extends BIF {
 
 	/**

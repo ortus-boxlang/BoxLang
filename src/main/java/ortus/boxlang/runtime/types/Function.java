@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.types;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -47,6 +46,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.FunctionMeta;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 import ortus.boxlang.runtime.util.ArgumentUtil;
 
 /**
@@ -191,8 +191,19 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	/**
 	 * Return a string representation of the function
 	 */
+	@Override
 	public String asString() {
 		return toString();
+	}
+
+	/**
+	 * Get the BoxLang type name for this type
+	 * 
+	 * @return The BoxLang type name
+	 */
+	@Override
+	public String getBoxTypeName() {
+		return "Function";
 	}
 
 	/**
@@ -200,6 +211,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 *
 	 * @return The source type of the function
 	 */
+	@Override
 	public BoxMeta<Function> getBoxMeta() {
 		if ( this.$bx == null ) {
 			this.$bx = new FunctionMeta( this );
@@ -261,7 +273,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 		// Announcements
 		IStruct	data		= null;
 		if ( doEvents ) {
-			data = Struct.of(
+			data = Struct.ofNonConcurrent(
 			    Key.context, context,
 			    Key.arguments, context.getArgumentsScope(),
 			    Key.function, this,
@@ -344,7 +356,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 		if ( !typeCheck.wasSuccessful() ) {
 			throw new BoxRuntimeException(
 			    String.format( "The return value of the function [%s] is of type [%s] does not match the declared type of [%s]",
-			        getName().getName(), value.getClass().getName(), getReturnType() )
+			        getName().getName(), TypeUtil.getObjectName( value ), getReturnType() )
 			);
 		}
 		if ( typeCheck.get() instanceof NullValue ) {
@@ -412,21 +424,6 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	public abstract Object _invoke( FunctionBoxContext context );
 
 	// ITemplateRunnable implementation methods
-
-	/**
-	 * Get the version of the BoxLang runtime
-	 */
-	public abstract long getRunnableCompileVersion();
-
-	/**
-	 * Get the date the template was compiled
-	 */
-	public abstract LocalDateTime getRunnableCompiledOn();
-
-	/**
-	 * The AST (abstract syntax tree) of the runnable
-	 */
-	public abstract Object getRunnableAST();
 
 	/**
 	 * --------------------------------------------------------------------------

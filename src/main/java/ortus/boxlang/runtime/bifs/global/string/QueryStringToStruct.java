@@ -22,7 +22,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.util.StructUtil;
 
-@BoxBIF
+@BoxBIF( description = "Convert a query string to a struct" )
 public class QueryStringToStruct extends BIF {
 
 	/**

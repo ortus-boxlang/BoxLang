@@ -236,7 +236,7 @@ public class QueryOptions {
 	 * @return True if the query should use a username and password to connect to the datasource, false otherwise.
 	 */
 	public boolean wantsUsernameAndPassword() {
-		return this.username != null;
+		return this.username != null && !this.username.isEmpty();
 	}
 
 	public boolean isQoQ() {

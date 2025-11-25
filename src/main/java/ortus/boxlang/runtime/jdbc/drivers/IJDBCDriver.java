@@ -18,8 +18,11 @@
 package ortus.boxlang.runtime.jdbc.drivers;
 
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.jdbc.BoxConnection;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.QueryColumnType;
 
 /**
  * This interface is used to define the methods that a JDBC driver must implement
@@ -83,4 +86,50 @@ public interface IJDBCDriver {
 	 * @return The custom parameters as a query string
 	 */
 	public String customParamsToQueryString( DatasourceConfig config );
+
+	/**
+	 * Map a SQL type to a QueryColumnType. The default implementation will use the mappings in the QueryColumnType enum.
+	 * Override this method if the driver has specific mappings. Example, mapping RowId in Oracle to a String type.
+	 * 
+	 * @param sqlType The SQL type to map, from java.sql.Types
+	 * 
+	 * @return The QueryColumnType
+	 */
+	public QueryColumnType mapSQLTypeToQueryColumnType( int sqlType );
+
+	/**
+	 * Transform a value coming OUT of the DB according to the driver's specific needs. This allows drivers to map custom Java classes to native BL types.
+	 * The default implementation will return the value as-is.
+	 * 
+	 * @param sqlType The SQL type of the value, from java.sql.Types
+	 * @param value   The value to transform
+	 * 
+	 * @return The transformed value
+	 */
+	public Object transformValue( int sqlType, Object value );
+
+	/**
+	 * Transform a value going IN to the DB according to the driver's specific needs. This allows drivers to map custom native BL types to custom driver Java types.
+	 * Ex: Oracle's custom BLOB and CLOB classes.
+	 * 
+	 * @param type       The SQL type of the value, from QueryColumnType
+	 * @param value      The value to transform
+	 * @param context    The context for type casting
+	 * @param connection The BoxConnection instance
+	 * 
+	 * @return The transformed value
+	 */
+	public Object transformParamValue( QueryColumnType type, Object value, IBoxContext context, BoxConnection connection );
+
+	/**
+	 * Map param type to SQL type. For the most part, these mappings are defined by the QueryColumnType enum,
+	 * but some drivers may have specific needs. Oracle, or example, uses CHAR even when you ask for VARCHAR which allows
+	 * char columns to match without trailing space.
+	 * 
+	 * @param type  The QueryColumnType of the parameter
+	 * @param value The value of the parameter (in case the mapping needs to consider the value)
+	 * 
+	 * @return The SQL type as defined in java.sql.Types
+	 */
+	public int mapParamTypeToSQLType( QueryColumnType type, Object value );
 }

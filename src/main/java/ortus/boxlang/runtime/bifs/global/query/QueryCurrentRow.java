@@ -24,7 +24,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Query;
 
-@BoxBIF
+@BoxBIF( description = "Get the current row number in a query" )
 @BoxMember( type = BoxLangType.QUERY )
 public class QueryCurrentRow extends BIF {
 

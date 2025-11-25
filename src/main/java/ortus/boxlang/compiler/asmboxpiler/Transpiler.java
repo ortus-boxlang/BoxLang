@@ -317,7 +317,7 @@ public abstract class Transpiler implements ITranspiler {
 			nodes.addAll( AsmHelper.array( Type.getType( Object.class ), members ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( Struct.class ),
-			    "linkedOf",
+			    "linkedOfNonConcurrent",
 			    Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),
 			    false ) );
 			return nodes;
@@ -372,7 +372,7 @@ public abstract class Transpiler implements ITranspiler {
 			nodes.addAll( AsmHelper.array( Type.getType( Object.class ), members ) );
 			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( Struct.class ),
-			    "linkedOf",
+			    "linkedOfNonConcurrent",
 			    Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),
 			    false ) );
 			return nodes;

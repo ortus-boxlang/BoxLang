@@ -19,6 +19,7 @@
 package ortus.boxlang.runtime.bifs.global.jdbc;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -31,6 +32,7 @@ import java.util.List;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.jdbc.ExecutedQuery;
@@ -350,7 +352,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 
 	// See: https://github.com/brettwooldridge/HikariCP/issues/1197
 	// See: https://ortussolutions.atlassian.net/browse/BL-1376
-	@Disabled( "Not currently supported, leaving test for further development." )
+	@EnabledIf( "tools.JDBCTestUtils#hasMySQLModule" )
 	@DisplayName( "It can provide username/password at query time" )
 	@Test
 	public void testDatasourceUsernamePasswordAtQueryTime() {
@@ -365,9 +367,36 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		        "initializationFailTimeout": 0,
 		        "minimumIdle" : 0
 		    };
-		    queryExecute( "SELECT 1", [], { "datasource": ds, "username": "root", "password": "123456Password", } );
+		    result = queryExecute( "SELECT 1", [], { "datasource": ds, "username": "root", "password": "123456Password" } );
 		    """,
 		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 1, query.size() );
+	}
+
+	@EnabledIf( "tools.JDBCTestUtils#hasMySQLModule" )
+	@DisplayName( "It ignores empty username/password" )
+	@Test
+	public void testDatasourceUsernamePasswordEmptyIgnored() {
+		assertDoesNotThrow( () -> {
+		instance.executeSource(
+		    """
+		    ds = {
+		        "host":"127.0.0.1",
+		        "port":"3309",
+		        "driver":"mysql",
+		        "database":"myDB",
+		        "custom":"allowMultiQueries=true",
+		        "initializationFailTimeout": 0,
+		        "minimumIdle" : 0,
+				"username": "root",
+				"password": "123456Password"
+		    };
+		    result = queryExecute( "SELECT 1", [], { "datasource": ds, "username": "", "password": "" } );
+		    """,
+		    context );
+		} );
 		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
 		Query query = variables.getAsQuery( result );
 		assertEquals( 1, query.size() );
@@ -784,32 +813,10 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertEquals( "Luis Majano", theResult.getRowAsStruct( 0 ).get( Key._NAME ) );
 	}
 
-	/**
-	 * This feature is not supported in Hikari https://github.com/brettwooldridge/HikariCP/issues/231
-	 */
-	@DisplayName( "It can execute a query with a custom username and password" )
-	@Test
-	@Disabled( "Lacking support in HikariCP" )
-	public void testCustomUsernameAndPassword() {
-		// DataSource alternateDataSource = DataSource.fromStruct( Struct.of(
-		// "connectionString", "jdbc:derby:memory:testQueryExecuteAlternateUserDB;user=foo;password=bar;create=true"
-		// ) );
-		// alternateDataSource.execute( "CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )" );
-		// datasourceService.register( Key.of( "alternate" ), alternateDataSource );
-		instance.executeSource(
-		    """
-		    result = queryExecute( "SELECT * FROM developers ORDER BY id", [], { "username": "foo", "password": "bar", "datasource": "alternate" } );
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
-		Query query = variables.getAsQuery( result );
-		assertEquals( 0, query.size() );
-	}
-
 	@DisplayName( "ExecutedQuery instances are serializable" )
 	@Test
 	public void testObjectMarshallingOfExecutedQuery() {
-		ExecutedQuery executedQuery = new ExecutedQuery( new Query(), null );
+		ExecutedQuery executedQuery = new ExecutedQuery( new Query(), null, null );
 		ObjectMarshaller.serialize( context, executedQuery );
 	}
 }

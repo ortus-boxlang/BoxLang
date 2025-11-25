@@ -25,7 +25,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
-@BoxBIF
+@BoxBIF( description = "Convert a relative path to an absolute path" )
 public class ExpandPath extends BIF {
 
 	/**
@@ -53,7 +53,13 @@ public class ExpandPath extends BIF {
 		// base path is base template, or the original template that started the request, NOT the currently-executing template
 
 		try {
-			String pathStr = FileSystemUtil.expandPath( context, path, context.findBaseTemplate() ).absolutePath().toString();
+			String pathStr = FileSystemUtil.expandPath(
+			    context,
+			    path,
+			    context.getRequestContext().getApplicationListener().getBaseTemplatePath()
+			)
+			    .absolutePath().toString();
+
 			if ( hasTrailingSlash ) {
 				if ( !pathStr.endsWith( "/" ) || !pathStr.endsWith( "\\" ) ) {
 					pathStr += File.separator;

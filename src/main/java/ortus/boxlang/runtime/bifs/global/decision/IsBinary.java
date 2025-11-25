@@ -22,7 +22,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.util.ValidationUtil;
 
-@BoxBIF
+@BoxBIF( description = "Check if value is binary data" )
 public class IsBinary extends BIF {
 
 	/**

@@ -50,6 +50,7 @@ import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * This class represents a query and any parameters/bindings before being
@@ -141,6 +142,11 @@ public class PendingQuery {
 	private IBoxContext							context;
 
 	/**
+	 * Datasource used to execute this query. This will be null until the execute() method is called
+	 */
+	private DataSource							datasource;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructor(s)
 	 * --------------------------------------------------------------------------
@@ -174,11 +180,11 @@ public class PendingQuery {
 		 * - options : The QueryOptions class populated with query options from
 		 * `queryExecute()` or `<bx:query>`
 		 */
-		IStruct eventArgs = Struct.of(
-		    "sql", sql.trim(),
-		    "bindings", bindings,
-		    "pendingQuery", this,
-		    "options", queryOptions
+		IStruct eventArgs = Struct.ofNonConcurrent(
+		    Key.sql, sql.trim(),
+		    Key.bindings, bindings,
+		    Key.pendingQuery, this,
+		    Key.options, queryOptions
 		);
 
 		interceptorService.announce( BoxEvent.ON_QUERY_BUILD, eventArgs );
@@ -230,6 +236,15 @@ public class PendingQuery {
 	 * Methods
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Get the datasource used to execute this query.
+	 * 
+	 * @return The datasource used to execute this query.
+	 */
+	public DataSource getDataSource() {
+		return this.datasource;
+	}
 
 	/**
 	 * Returns the cache key for this query.
@@ -320,8 +335,7 @@ public class PendingQuery {
 		}
 
 		// We always have bindings, since we exit early if there are none
-		String className = bindings.getClass().getName();
-		throw new DatabaseException( "Invalid type for query params. Expected array or struct. Received: " + className );
+		throw new DatabaseException( "Invalid type for query params. Expected array or struct. Received: " + TypeUtil.getObjectName( bindings ) );
 	}
 
 	/**
@@ -579,7 +593,8 @@ public class PendingQuery {
 			}
 		}
 
-		Connection connection = connectionManager.getConnection( this.queryOptions );
+		BoxConnection connection = connectionManager.getBoxConnection( this.queryOptions );
+		datasource = connection.getDataSource();
 		try {
 			return execute( connection, context );
 		} finally {
@@ -603,7 +618,8 @@ public class PendingQuery {
 	 *
 	 * @see ExecutedQuery
 	 */
-	public @NonNull ExecutedQuery execute( Connection connection, IBoxContext context ) {
+	public @NonNull ExecutedQuery execute( BoxConnection connection, IBoxContext context ) {
+		this.datasource = connection.getDataSource();
 		if ( isCacheable() ) {
 			// we use separate get() and set() calls over a .getOrSet() so we can run
 			// `.setIsCached()` on discovered/cached results.
@@ -621,6 +637,29 @@ public class PendingQuery {
 	}
 
 	/**
+	 * Executes the PendingQuery on a given {@link Connection} and returns the
+	 * results in an {@link ExecutedQuery} instance.
+	 * 
+	 * @deprecated Use {@link #execute(BoxConnection,IBoxContext)} instead.
+	 *
+	 * @param connection The Connection instance to use for executing the query. It
+	 *                   is the responsibility of the caller to close the connection
+	 *                   after this method returns.
+	 *
+	 * @throws DatabaseException If a {@link SQLException} occurs, wraps it in a
+	 *                           DatabaseException and throws.
+	 *
+	 * @return An ExecutedQuery instance with the results of this JDBC execution, as
+	 *         well as a link to this PendingQuery instance.
+	 *
+	 * @see ExecutedQuery
+	 */
+	@Deprecated
+	public @NonNull ExecutedQuery execute( Connection connection, IBoxContext context ) {
+		return execute( BoxConnection.of( connection, null ), context );
+	}
+
+	/**
 	 * Generate and execute a JDBC statement using the provided connection.
 	 * <p>
 	 * If query parameters are present, a {@link PreparedStatement} will be
@@ -635,11 +674,11 @@ public class PendingQuery {
 	 * @return An ExecutedQuery instance with the results of this JDBC execution, as
 	 *         well as a link to this PendingQuery instance.
 	 */
-	private ExecutedQuery executeStatement( Connection connection, IBoxContext context ) {
+	private ExecutedQuery executeStatement( BoxConnection connection, IBoxContext context ) {
 		try {
 			// Determine if we can return generated keys
 			int GENERATED_KEYS_SETTING = Statement.RETURN_GENERATED_KEYS;
-			if ( ! ( connection instanceof QoQConnection ) ) {
+			if ( ! ( connection.getConnection() instanceof QoQConnection ) ) {
 				DatabaseMetaData metaData = connection.getMetaData();
 				if ( !metaData.supportsGetGeneratedKeys() ) {
 					GENERATED_KEYS_SETTING = Statement.NO_GENERATED_KEYS;
@@ -649,7 +688,7 @@ public class PendingQuery {
 			String sqlStatement = this.sql;
 			try (
 			    // If we have no parameters, we can use a Statement, otherwise we use a PreparedStatement
-			    Statement statement = this.parameters.isEmpty()
+			    BoxStatement statement = this.parameters.isEmpty()
 			        ? connection.createStatement()
 			        : connection.prepareStatement( sqlStatement, GENERATED_KEYS_SETTING ); ) {
 
@@ -658,10 +697,10 @@ public class PendingQuery {
 
 				interceptorService.announce(
 				    BoxEvent.PRE_QUERY_EXECUTE,
-				    Struct.of(
-				        "sql", sqlStatement,
-				        "bindings", getParameterValues(),
-				        "pendingQuery", this
+				    () -> Struct.ofNonConcurrent(
+				        Key.sql, sqlStatement,
+				        Key.bindings, getParameterValues(),
+				        Key.pendingQuery, this
 				    )
 				);
 
@@ -725,7 +764,7 @@ public class PendingQuery {
 		Struct	queryMeta	= new Struct( cachedQuery.getQueryMeta() );
 		queryMeta.addAll( cacheMeta );
 		results.setMetadata( queryMeta );
-		return new ExecutedQuery( results, cachedQuery.getGeneratedKey() );
+		return new ExecutedQuery( results, cachedQuery.getGeneratedKey(), null );
 	}
 
 	/**
@@ -738,7 +777,7 @@ public class PendingQuery {
 	 *
 	 * @throws SQLException
 	 */
-	private void applyParameters( Statement statement, IBoxContext context ) throws SQLException {
+	private void applyParameters( BoxStatement statement, IBoxContext context ) throws SQLException {
 		if ( this.parameters.isEmpty() ) {
 			return;
 		}
@@ -755,27 +794,28 @@ public class PendingQuery {
 					var		i		= 1;
 					Array	list	= ( Array ) param.getValue();
 					for ( Object value : list ) {
-						Object casted = QueryColumnType.toSQLType( param.getType(), value, context );
+						Object casted = transformValueForSQL( param.getType(), value, context, statement.getConnection() );
 						emitValueToSQL( SQLWithParamValues, casted, param.getType() );
 						if ( i < list.size() ) {
 							SQLWithParamValues.append( ", " );
 						}
 						if ( scaleOrLength == null ) {
-							preparedStatement.setObject( parameterIndex, casted, param.getSqlTypeAsInt() );
+							preparedStatement.setObject( parameterIndex, casted, mapParamTypeToSQLType( param.getType(), casted ) );
 						} else {
-							preparedStatement.setObject( parameterIndex, casted, param.getSqlTypeAsInt(),
+							preparedStatement.setObject( parameterIndex, casted, mapParamTypeToSQLType( param.getType(), casted ),
 							    scaleOrLength );
 						}
 						parameterIndex++;
 						i++;
 					}
 				} else {
-					Object value = param.toSQLType( context );
+					Object value = transformValueForSQL( param.getType(), param.getValue(), context, statement.getConnection() );
 					emitValueToSQL( SQLWithParamValues, value, param.getType() );
+
 					if ( scaleOrLength == null ) {
-						preparedStatement.setObject( parameterIndex, value, param.getSqlTypeAsInt() );
+						preparedStatement.setObject( parameterIndex, value, mapParamTypeToSQLType( param.getType(), value ) );
 					} else {
-						preparedStatement.setObject( parameterIndex, value, param.getSqlTypeAsInt(),
+						preparedStatement.setObject( parameterIndex, value, mapParamTypeToSQLType( param.getType(), value ),
 						    scaleOrLength );
 					}
 					parameterIndex++;
@@ -786,6 +826,40 @@ public class PendingQuery {
 			this.SQLWithParamValues = SQLWithParamValues.toString();
 			SQLWithParamTokens.clear();
 		}
+	}
+
+	/**
+	 * Map the BoxLang QueryColumnType to a SQL type integer for PreparedStatement
+	 * 
+	 * @param type  The QueryColumnType to map.
+	 * @param value The value associated with the type.
+	 * 
+	 * @return The corresponding SQL type integer.
+	 */
+	private int mapParamTypeToSQLType( QueryColumnType type, Object value ) {
+		// QoQ has no datasource
+		if ( this.datasource == null ) {
+			return type.sqlType;
+		}
+		return this.datasource.getConfiguration().getDriver().mapParamTypeToSQLType( type, value );
+	}
+
+	/**
+	 * Transform a value to be suitable for SQL insertion based on its QueryColumnType.
+	 * 
+	 * @param type       The QueryColumnType of the value.
+	 * @param value      The value to transform.
+	 * @param context    The context for type casting.
+	 * @param connection The BoxConnection for driver-specific transformations.
+	 * 
+	 * @return The transformed value.
+	 */
+	private Object transformValueForSQL( QueryColumnType type, Object value, IBoxContext context, BoxConnection connection ) {
+		// QoQ has no datasource
+		if ( this.datasource == null ) {
+			return QueryColumnType.toSQLType( type, value, context, connection );
+		}
+		return this.datasource.getConfiguration().getDriver().transformParamValue( type, value, context, connection );
 	}
 
 	/**
