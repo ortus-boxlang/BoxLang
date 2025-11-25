@@ -41,7 +41,7 @@ import ortus.boxlang.runtime.validation.Validator;
 public class Invoke extends Component {
 
 	/**
-	 * This class responsible for locating classes
+	 * This class is responsible for locating classes
 	 */
 	private static final ClassLocator	classLocator			= BoxRuntime.getInstance().getClassLocator();
 
