@@ -439,7 +439,7 @@ public class InvokeTest {
 				bx:invoke
 					webservice="%s"
 					method="CountryCurrency"
-					argumentCollection="#{ sCountryISOCode : "US" }#"
+					argumentCollection={ sCountryISOCode : "US" }
 					returnVariable="results";
 
 				println( results )
@@ -447,7 +447,8 @@ public class InvokeTest {
 		    context );
 		// @formatter:on
 		IStruct results = variables.getAsStruct( Key.of( "results" ) );
-		assertThat( results.get( Key.of( "sName" ) ).toString().toLowerCase() ).isEqualTo( "united states dollar" );
+		assertThat( results.get( Key.of( "sISOCode" ) ).toString() ).isEqualTo( "USD" );
+		assertThat( results.get( Key.of( "sName" ) ).toString() ).isEqualTo( "Dollars" );
 	}
 
 }

@@ -116,10 +116,14 @@ public class Invoke extends Component {
 
 		// Handle webservice invocations
 		if ( webserviceUrl != null && !webserviceUrl.isEmpty() ) {
-			BoxSoapClient soapClient = BoxRuntime.getInstance().getHttpService().getOrCreateSoapClient( webserviceUrl );
+			BoxSoapClient	soapClient	= BoxRuntime.getInstance().getHttpService().getOrCreateSoapClient( webserviceUrl );
+
+			// Extract the actual arguments to pass to SOAP
+			// We used the pre-existing argCollection to hold all args
+			Object			soapArgs	= argCollection.get( Key.argumentCollection );
 
 			// Invoke the SOAP operation
-			result = soapClient.invoke( context, methodname.getName(), argCollection );
+			result = soapClient.invoke( context, methodname.getName(), soapArgs );
 
 			if ( returnVariable != null ) {
 				ExpressionInterpreter.setVariable( context, returnVariable, result );

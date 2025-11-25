@@ -427,9 +427,7 @@ public class BoxSoapClient implements IReferenceable {
 			    .header( "SOAPAction", operation.getSoapAction() != null ? operation.getSoapAction() : "" )
 			    .body( soapRequest );
 
-			// Debugging
-			System.out.println( "SOAP Request: " + ":\n" + soapRequest );
-			System.out.println( "HTTP Request: " + request.inspect().toString() );
+
 
 			// Add authentication if provided
 			if ( this.username != null && this.password != null ) {
@@ -438,8 +436,6 @@ public class BoxSoapClient implements IReferenceable {
 
 			// Execute the request
 			IStruct httpResult = ( IStruct ) request.send();
-
-			System.out.println( "SOAP Response: " + httpResult.toString() );
 
 			// Parse the SOAP response
 			Object result = parseSoapResponse( httpResult, operation );

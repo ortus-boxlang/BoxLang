@@ -319,26 +319,107 @@ public class WsdlParser {
 		NodeList parts = messageElement.getElementsByTagNameNS( WSDL_NS, "part" );
 
 		for ( int i = 0; i < parts.getLength(); i++ ) {
-			Element			partElement	= ( Element ) parts.item( i );
-			String			partName	= partElement.getAttribute( "name" );
-			String			type		= partElement.getAttribute( "type" );
-			String			element		= partElement.getAttribute( "element" );
+			Element	partElement	= ( Element ) parts.item( i );
+			String	partName	= partElement.getAttribute( "name" );
+			String	type		= partElement.getAttribute( "type" );
+			String	element		= partElement.getAttribute( "element" );
 
-			WsdlParameter	parameter	= new WsdlParameter( partName );
+			// For document/literal wrapped style, we need to resolve the element reference
+			// and extract the actual parameters from the schema
+			if ( element != null && !element.isEmpty() ) {
+				// Extract the local name from the element reference (e.g., "tns:CountryCurrency" -> "CountryCurrency")
+				String elementName = getLocalName( element );
 
-			// Type could be specified as type or element attribute
-			if ( type != null && !type.isEmpty() ) {
+				// Try to find the element definition in the schema
+				if ( !extractParametersFromSchemaElement( root, elementName, operation, isInput ) ) {
+					// Fallback: if we can't find schema elements, use the part name
+					WsdlParameter parameter = new WsdlParameter( partName );
+					parameter.setType( elementName );
+					if ( isInput ) {
+						operation.addInputParameter( parameter );
+					} else {
+						operation.addOutputParameter( parameter );
+					}
+				}
+			} else if ( type != null && !type.isEmpty() ) {
+				// RPC style - use the part name directly
+				WsdlParameter parameter = new WsdlParameter( partName );
 				parameter.setType( getLocalName( type ) );
-			} else if ( element != null && !element.isEmpty() ) {
-				parameter.setType( getLocalName( element ) );
-			}
-
-			if ( isInput ) {
-				operation.addInputParameter( parameter );
-			} else {
-				operation.addOutputParameter( parameter );
+				if ( isInput ) {
+					operation.addInputParameter( parameter );
+				} else {
+					operation.addOutputParameter( parameter );
+				}
 			}
 		}
+	}
+
+	/**
+	 * Extract parameters from a schema element definition
+	 *
+	 * @param root        The root WSDL element
+	 * @param elementName The element name to find
+	 * @param operation   The operation to add parameters to
+	 * @param isInput     True if this is an input message
+	 *
+	 * @return True if parameters were found and extracted
+	 */
+	private static boolean extractParametersFromSchemaElement( Element root, String elementName, WsdlOperation operation, boolean isInput ) {
+		// Find the types section
+		NodeList types = root.getElementsByTagNameNS( WSDL_NS, "types" );
+		if ( types.getLength() == 0 ) {
+			return false;
+		}
+
+		Element		typesElement	= ( Element ) types.item( 0 );
+
+		// Find schema elements
+		NodeList	schemas			= typesElement.getElementsByTagNameNS( "http://www.w3.org/2001/XMLSchema", "schema" );
+		for ( int i = 0; i < schemas.getLength(); i++ ) {
+			Element		schema		= ( Element ) schemas.item( i );
+
+			// Find the element definition with matching name
+			NodeList	elements	= schema.getElementsByTagNameNS( "http://www.w3.org/2001/XMLSchema", "element" );
+			for ( int j = 0; j < elements.getLength(); j++ ) {
+				Element	element	= ( Element ) elements.item( j );
+				String	name	= element.getAttribute( "name" );
+
+				if ( elementName.equals( name ) ) {
+					// Found the element - now extract its children (the actual parameters)
+					// Look for complexType/sequence/element children
+					NodeList complexTypes = element.getElementsByTagNameNS( "http://www.w3.org/2001/XMLSchema", "complexType" );
+					if ( complexTypes.getLength() > 0 ) {
+						Element		complexType	= ( Element ) complexTypes.item( 0 );
+						NodeList	sequences	= complexType.getElementsByTagNameNS( "http://www.w3.org/2001/XMLSchema", "sequence" );
+						if ( sequences.getLength() > 0 ) {
+							Element		sequence		= ( Element ) sequences.item( 0 );
+							NodeList	paramElements	= sequence.getElementsByTagNameNS( "http://www.w3.org/2001/XMLSchema", "element" );
+
+							for ( int k = 0; k < paramElements.getLength(); k++ ) {
+								Element			paramElement	= ( Element ) paramElements.item( k );
+								String			paramName		= paramElement.getAttribute( "name" );
+								String			paramType		= paramElement.getAttribute( "type" );
+
+								WsdlParameter	parameter		= new WsdlParameter( paramName );
+								if ( paramType != null && !paramType.isEmpty() ) {
+									parameter.setType( getLocalName( paramType ) );
+								}
+
+								if ( isInput ) {
+									operation.addInputParameter( parameter );
+								} else {
+									operation.addOutputParameter( parameter );
+								}
+							}
+
+							return paramElements.getLength() > 0;
+						}
+					}
+				}
+			}
+		}
+
+		return false;
 	}
 
 	/**
