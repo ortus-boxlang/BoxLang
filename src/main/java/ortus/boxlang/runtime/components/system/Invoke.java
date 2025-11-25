@@ -46,7 +46,7 @@ public class Invoke extends Component {
 	private static final ClassLocator	classLocator			= BoxRuntime.getInstance().getClassLocator();
 
 	/**
-	 * The webservice attribute key
+	 * Reserved attribute names including class, method, returnVariable, argumentCollection, and webservice
 	 */
 	private static final Set<Key>		reservedAttributeNames	= Set.of( Key._CLASS, Key.method, Key.returnVariable, Key.argumentCollection, Key.webservice );
 
