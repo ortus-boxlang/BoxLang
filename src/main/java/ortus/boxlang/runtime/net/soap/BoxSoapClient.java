@@ -158,6 +158,8 @@ public class BoxSoapClient implements IReferenceable {
 		this.httpService	= httpService;
 		this.logger			= logger;
 		this.createdAt		= Instant.now();
+		// Initialize SOAP version from WSDL definition (can be overridden later)
+		this.soapVersion	= wsdlDefinition.getSoapVersion();
 	}
 
 	/**
@@ -241,7 +243,9 @@ public class BoxSoapClient implements IReferenceable {
 	}
 
 	/**
-	 * Set the SOAP version
+	 * Set the SOAP version to use (1.1 or 1.2).
+	 * By default, the SOAP version is automatically detected from the WSDL binding.
+	 * Use this method to override the detected version if needed.
 	 *
 	 * @param version The SOAP version ("1.1" or "1.2")
 	 *
@@ -260,6 +264,15 @@ public class BoxSoapClient implements IReferenceable {
 	 * Information Methods
 	 * ------------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Get the SOAP version being used
+	 *
+	 * @return The SOAP version ("1.1" or "1.2")
+	 */
+	public String getSoapVersion() {
+		return this.soapVersion;
+	}
 
 	/**
 	 * Get the WSDL definition
@@ -415,9 +428,8 @@ public class BoxSoapClient implements IReferenceable {
 			    .body( soapRequest );
 
 			// Debugging
-			System.out.println( "SOAP Request to " + this.getServiceEndpoint() + ":\n" + soapRequest );
-			System.out.println( "SOAPAction: " + ( operation.getSoapAction() != null ? operation.getSoapAction() : "" ) );
-			System.out.println( "HTTP Request " + request.inspect().toString() );
+			System.out.println( "SOAP Request: " + ":\n" + soapRequest );
+			System.out.println( "HTTP Request: " + request.inspect().toString() );
 
 			// Add authentication if provided
 			if ( this.username != null && this.password != null ) {
@@ -427,7 +439,7 @@ public class BoxSoapClient implements IReferenceable {
 			// Execute the request
 			IStruct httpResult = ( IStruct ) request.send();
 
-			System.out.println( "SOAP Response from " + this.getServiceEndpoint() + ":\n" + httpResult.toString() );
+			System.out.println( "SOAP Response: " + httpResult.toString() );
 
 			// Parse the SOAP response
 			Object result = parseSoapResponse( httpResult, operation );

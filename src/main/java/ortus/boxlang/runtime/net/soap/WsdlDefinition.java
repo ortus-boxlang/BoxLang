@@ -68,6 +68,11 @@ public class WsdlDefinition {
 	private String							bindingStyle;
 
 	/**
+	 * SOAP version (1.1 or 1.2) detected from WSDL
+	 */
+	private String							soapVersion	= "1.1";
+
+	/**
 	 * Timestamp when this definition was created
 	 */
 	private final java.time.Instant			createdAt;
@@ -184,6 +189,27 @@ public class WsdlDefinition {
 	 */
 	public WsdlDefinition setBindingStyle( String bindingStyle ) {
 		this.bindingStyle = bindingStyle;
+		return this;
+	}
+
+	/**
+	 * Get the SOAP version
+	 *
+	 * @return The SOAP version (1.1 or 1.2)
+	 */
+	public String getSoapVersion() {
+		return this.soapVersion;
+	}
+
+	/**
+	 * Set the SOAP version
+	 *
+	 * @param soapVersion The SOAP version (1.1 or 1.2)
+	 *
+	 * @return This instance for chaining
+	 */
+	public WsdlDefinition setSoapVersion( String soapVersion ) {
+		this.soapVersion = soapVersion;
 		return this;
 	}
 

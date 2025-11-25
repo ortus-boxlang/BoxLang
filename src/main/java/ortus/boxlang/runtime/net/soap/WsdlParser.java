@@ -197,14 +197,18 @@ public class WsdlParser {
 
 			// Get SOAP binding (try both SOAP 1.1 and 1.2)
 			NodeList	soapBindings	= binding.getElementsByTagNameNS( SOAP_NS, "binding" );
+			boolean		isSoap12		= false;
 			if ( soapBindings.getLength() == 0 ) {
-				soapBindings = binding.getElementsByTagNameNS( SOAP12_NS, "binding" );
+				soapBindings	= binding.getElementsByTagNameNS( SOAP12_NS, "binding" );
+				isSoap12		= soapBindings.getLength() > 0;
 			}
 
 			if ( soapBindings.getLength() > 0 ) {
 				Element	soapBinding	= ( Element ) soapBindings.item( 0 );
 				String	style		= soapBinding.getAttribute( "style" );
 				definition.setBindingStyle( style != null && !style.isEmpty() ? style : "document" );
+				// Set SOAP version based on detected namespace
+				definition.setSoapVersion( isSoap12 ? "1.2" : "1.1" );
 			}
 		}
 	}
