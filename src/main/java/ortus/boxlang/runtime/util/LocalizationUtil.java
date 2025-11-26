@@ -680,7 +680,6 @@ public final class LocalizationUtil {
 	/**
 	 * Initializes the CommonFormatter instances with regex patterns for fast date string matching.
 	 * This method creates optimized formatters that test regex patterns before attempting to parse,
-	 * completely eliminating the need for the expensive parseBest() method.
 	 * All common date-time patterns are represented with appropriate regex patterns.
 	 * 
 	 * @return List of CommonFormatter instances ordered by usage frequency
@@ -694,11 +693,11 @@ public final class LocalizationUtil {
 		{
 			// ========== High Priority: Most Common Test Cases ==========
 
-			// ISO timestamp with Z (highest priority for "2024-04-02T21:01:00Z")
+			// Ultra-specific: Exact ISO Z format for speed (2024-04-02T21:01:00Z)
 			add( Map.of(
 				"regexPattern", "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
-				"datePattern", "yyyy-MM-dd'T'HH:mm:ssXXX",
-				"description", "ISO DateTime with Z timezone (2024-04-02T21:01:00Z)"
+				"datePattern", "yyyy-MM-dd'T'HH:mm:ssX",
+				"description", "ISO DateTime with Z timezone - ultra-specific for speed tests"
 			) );
 
 			// Medium format with timezone abbreviation (for "Nov 22, 2022 11:01:51 CET")
@@ -1592,7 +1591,7 @@ public final class LocalizationUtil {
 			return parseFromCommonPatterns( dateTime, timezone );
 		}
 
-		// Use optimized CommonFormatter approach - directly parse with specific formatters, no parseBest() needed
+		// Common format patterns which are treated as first class by the caster
 		List<CommonFormatter> formatters = getCommonFormatters();
 
 		if ( timezone == null ) {
