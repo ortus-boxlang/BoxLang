@@ -283,17 +283,26 @@ public class DateTimeCaster implements IBoxCaster {
 			return null;
 		}
 
-		// Now let's go to Apache commons lang for its date parsing
-		try {
-			return LocalizationUtil.parseFromCommonPatterns( targetString, timezone );
-		} catch ( java.time.format.DateTimeParseException e ) {
+		// Now let's check common patterns and then fall back to the full localization parsing
+		DateTime parsed;
+		if ( locale != null ) {
+			// Use locale-aware common patterns to ensure proper locale validation
+			parsed = LocalizationUtil.parseFromCommonPatterns( targetString, timezone, locale );
+		} else {
+			// Use all common patterns when no specific locale is required
+			parsed = LocalizationUtil.parseFromCommonPatterns( targetString, timezone );
+		}
+
+		if ( parsed != null ) {
+			return parsed;
+		} else {
 			try {
 				if ( locale != null ) {
 					return new DateTime( targetString, locale, timezone );
 				} else {
 					return new DateTime( targetString, timezone );
 				}
-			} catch ( Throwable e2 ) {
+			} catch ( Throwable e ) {
 				if ( fail ) {
 					throw new BoxCastException( "Can't cast [" + targetString + "] to a DateTime." );
 				}
