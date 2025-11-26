@@ -339,6 +339,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		errorcode							= Key.of( "errorcode" );
 	public static final Key		errorDetail							= Key.of( "errorDetail" );
 	public static final Key		errorHandler						= Key.of( "errorHandler" );
+	public static final Key		errorMessage						= Key.of( "errorMessage" );
 	public static final Key		errors								= Key.of( "errors" );
 	public static final Key		event								= Key.of( "event" );
 	public static final Key		eventCount							= Key.of( "eventCount" );
@@ -465,6 +466,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		invokeImplicitAccessor				= Key.of( "invokeImplicitAccessor" );
 	public static final Key		ip									= Key.of( "ip" );
 	public static final Key		isGlobal							= Key.of( "isGlobal" );
+	public static final Key		isBinaryRequest						= Key.of( "isBinaryRequest" );
+	public static final Key		isBinaryNever						= Key.of( "isBinaryNever" );
 	public static final Key		isNew								= Key.of( "isNew" );
 	public static final Key		iso									= Key.of( "iso" );
 	public static final Key		isShutdown							= Key.of( "isShutdown" );
@@ -633,6 +636,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		originalLine						= Key.of( "originalLine" );
 	public static final Key		os									= Key.of( "os" );
 	public static final Key		output								= Key.of( "output" );
+	public static final Key		outputFile							= Key.of( "outputFile" );
+	public static final Key		outputDirectory						= Key.of( "outputDirectory" );
 	public static final Key		overwrite							= Key.of( "overwrite" );
 	public static final Key		owner								= Key.of( "owner" );
 	public static final Key		pageEncoding						= Key.of( "pageEncoding" );
@@ -919,6 +924,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		wddx								= Key.of( "wddx" );
 	public static final Key		web_server_api						= Key.of( "web_server_api" );
 	public static final Key		webURL								= Key.of( "webURL" );
+	public static final Key		webservice							= Key.of( "webservice" );
 	public static final Key		where								= Key.of( "where" );
 	public static final Key		whitespaceCompressionEnabled		= Key.of( "whitespaceCompressionEnabled" );
 	public static final Key		workstation							= Key.of( "workstation" );
