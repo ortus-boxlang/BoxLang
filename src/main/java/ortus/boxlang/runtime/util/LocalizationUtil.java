@@ -98,12 +98,14 @@ public final class LocalizationUtil {
 		private final DateTimeFormatter	formatter;
 		private final String			description;
 		private final String			regexPattern;
+		private final Boolean			isPureLatinPattern;
 
 		public CommonFormatter( String regexPattern, String datePattern, String description ) {
-			this.regexPattern	= regexPattern;
-			this.pattern		= Pattern.compile( regexPattern );
-			this.formatter		= LocalizationUtil.getPatternFormatter( datePattern, Locale.US );
-			this.description	= description;
+			this.regexPattern		= regexPattern;
+			this.pattern			= Pattern.compile( regexPattern );
+			this.formatter			= LocalizationUtil.getPatternFormatter( datePattern, Locale.US );
+			this.description		= description;
+			this.isPureLatinPattern	= calculateIsPureLatinPattern( regexPattern );
 		}
 
 		public boolean matches( String input ) {
@@ -121,6 +123,36 @@ public final class LocalizationUtil {
 		public String getRegexPattern() {
 			return this.regexPattern;
 		}
+
+		public Boolean isPureLatinPattern() {
+			return this.isPureLatinPattern;
+		}
+
+		/**
+		 * Pre-calculates whether a regex pattern contains only Latin/ASCII characters.
+		 * This optimization allows us to skip locale validation for pure Latin patterns.
+		 */
+		private Boolean calculateIsPureLatinPattern( String regexPattern ) {
+			for ( char c : regexPattern.toCharArray() ) {
+				Character.UnicodeBlock block = Character.UnicodeBlock.of( c );
+
+				// Skip ASCII, punctuation, digits, and regex metacharacters - these are universally valid
+				if ( block == Character.UnicodeBlock.BASIC_LATIN ||
+				    block == Character.UnicodeBlock.LATIN_1_SUPPLEMENT ||
+				    Character.isDigit( c ) ||
+				    "\\[]{}()*+?^$.|".indexOf( c ) >= 0 ) {
+					continue;
+				}
+
+				// If we find any non-Latin Unicode characters, this is not a pure Latin pattern
+				if ( block != null ) {
+					return false;
+				}
+			}
+
+			// Pattern contains only Latin/ASCII characters
+			return true;
+		}
 	}
 
 	/**
@@ -131,12 +163,18 @@ public final class LocalizationUtil {
 	/**
 	 * Cache for CommonFormatter instances that use regex for fast pattern matching
 	 */
-	private static volatile List<CommonFormatter>	commonFormatters	= getCommonFormatters();
+	private static volatile List<CommonFormatter>			commonFormatters		= getCommonFormatters();
+
+	/**
+	 * Cache for locale validation results to avoid repeated Unicode block analysis
+	 * Key format: "formatterDescription|localeLanguage"
+	 */
+	private static final ConcurrentHashMap<String, Boolean>	localeValidationCache	= new ConcurrentHashMap<>();
 
 	/**
 	 * A struct of common locale constants
 	 */
-	public static final LinkedHashMap<Key, Locale>	COMMON_LOCALES		= new LinkedHashMap<Key, Locale>();
+	public static final LinkedHashMap<Key, Locale>			COMMON_LOCALES			= new LinkedHashMap<Key, Locale>();
 	static {
 		COMMON_LOCALES.put( Key.of( "Canada" ), Locale.CANADA );
 		COMMON_LOCALES.put( Key.of( "Canadian" ), Locale.CANADA );
@@ -1549,6 +1587,11 @@ public final class LocalizationUtil {
 	 */
 	public static DateTime parseFromCommonPatterns( String dateTime, ZoneId timezone, Locale locale ) {
 
+		// Performance fast-path: if locale is null, delegate to the original optimized method
+		if ( locale == null ) {
+			return parseFromCommonPatterns( dateTime, timezone );
+		}
+
 		// Use optimized CommonFormatter approach - directly parse with specific formatters, no parseBest() needed
 		List<CommonFormatter> formatters = getCommonFormatters();
 
@@ -1557,53 +1600,70 @@ public final class LocalizationUtil {
 		}
 
 		for ( CommonFormatter formatter : formatters ) {
-			// Only use patterns that are valid for the specified locale
-			if ( formatter.matches( dateTime ) && isPatternValidForLocale( formatter, locale ) ) {
-				try {
-					TemporalAccessor date = formatter.getFormatter().parseBest(
-					    dateTime,
-					    ZonedDateTime::from,
-					    OffsetDateTime::from,
-					    LocalDateTime::from,
-					    LocalDate::from,
-					    LocalTime::from,
-					    Instant::from
-					);
+			// Only check patterns that match the input first (performance optimization)
+			if ( !formatter.matches( dateTime ) ) {
+				continue;
+			}
 
-					if ( date instanceof ZonedDateTime castZonedDateTime ) {
-						return new DateTime( castZonedDateTime );
-					} else if ( date instanceof OffsetDateTime castOffsetDateTime ) {
-						return new DateTime( castOffsetDateTime );
-					} else if ( date instanceof LocalDateTime castLocalDateTime ) {
-						// Apply timezone if provided, otherwise use the existing DateTime constructor behavior
-						return timezone != null
-						    ? new DateTime( castLocalDateTime.atZone( timezone ) )
-						    : new DateTime( castLocalDateTime );
-					} else if ( date instanceof LocalDate castLocalDate ) {
-						// Apply timezone if provided, otherwise use the existing DateTime constructor behavior
-						return timezone != null
-						    ? new DateTime( castLocalDate.atStartOfDay( timezone ) )
-						    : new DateTime( castLocalDate );
-					} else if ( date instanceof LocalTime castLocalTime ) {
-						// Apply timezone if provided, otherwise use the existing DateTime constructor behavior
-						return timezone != null
-						    ? new DateTime( castLocalTime.atDate( LocalDate.now() ).atZone( timezone ) )
-						    : new DateTime( castLocalTime );
-					} else if ( date instanceof Instant castInstant ) {
-						return new DateTime( castInstant );
-					} else {
-						throw new BoxRuntimeException(
-						    String.format(
-						        "The TemporalAccessor instanceof [%s] does not have a valid DateTime constructor",
-						        date.getClass().getName()
-						    )
-						);
-					}
-				} catch ( Exception e ) {
-					logger.trace(
-					    "Error parsing date time with common formatter.  The pattern [" + formatter.getDescription() + "] failed with error: "
-					        + e.getMessage() );
+			// Performance optimization: skip locale validation for pure Latin patterns
+			if ( !formatter.isPureLatinPattern() ) {
+				// Use cached validation result when possible
+				String	cacheKey	= formatter.getDescription() + "|" + locale.getLanguage();
+				Boolean	isValid		= localeValidationCache.get( cacheKey );
+				if ( isValid == null ) {
+					isValid = isPatternValidForLocale( formatter, locale );
+					localeValidationCache.put( cacheKey, isValid );
 				}
+				if ( !isValid ) {
+					continue;
+				}
+			}
+
+			// Pattern matches and is valid for locale - attempt parsing
+			try {
+				TemporalAccessor date = formatter.getFormatter().parseBest(
+				    dateTime,
+				    ZonedDateTime::from,
+				    OffsetDateTime::from,
+				    LocalDateTime::from,
+				    LocalDate::from,
+				    LocalTime::from,
+				    Instant::from
+				);
+
+				if ( date instanceof ZonedDateTime castZonedDateTime ) {
+					return new DateTime( castZonedDateTime );
+				} else if ( date instanceof OffsetDateTime castOffsetDateTime ) {
+					return new DateTime( castOffsetDateTime );
+				} else if ( date instanceof LocalDateTime castLocalDateTime ) {
+					// Apply timezone if provided, otherwise use the existing DateTime constructor behavior
+					return timezone != null
+					    ? new DateTime( castLocalDateTime.atZone( timezone ) )
+					    : new DateTime( castLocalDateTime );
+				} else if ( date instanceof LocalDate castLocalDate ) {
+					// Apply timezone if provided, otherwise use the existing DateTime constructor behavior
+					return timezone != null
+					    ? new DateTime( castLocalDate.atStartOfDay( timezone ) )
+					    : new DateTime( castLocalDate );
+				} else if ( date instanceof LocalTime castLocalTime ) {
+					// Apply timezone if provided, otherwise use the existing DateTime constructor behavior
+					return timezone != null
+					    ? new DateTime( castLocalTime.atDate( LocalDate.now() ).atZone( timezone ) )
+					    : new DateTime( castLocalTime );
+				} else if ( date instanceof Instant castInstant ) {
+					return new DateTime( castInstant );
+				} else {
+					throw new BoxRuntimeException(
+					    String.format(
+					        "The TemporalAccessor instanceof [%s] does not have a valid DateTime constructor",
+					        date.getClass().getName()
+					    )
+					);
+				}
+			} catch ( Exception e ) {
+				logger.trace(
+				    "Error parsing date time with common formatter.  The pattern [" + formatter.getDescription() + "] failed with error: "
+				        + e.getMessage() );
 			}
 		}
 
@@ -1797,6 +1857,11 @@ public final class LocalizationUtil {
 	private static boolean isPatternValidForLocale( CommonFormatter formatter, Locale locale ) {
 		if ( locale == null ) {
 			return true; // No locale restriction
+		}
+
+		// Performance optimization: if this is a pure Latin pattern, always allow it
+		if ( formatter.isPureLatinPattern() ) {
+			return true;
 		}
 
 		String pattern = formatter.getRegexPattern();
