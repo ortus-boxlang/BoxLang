@@ -433,6 +433,11 @@ public class BoxSoapClient implements IReferenceable {
 			    .header( "SOAPAction", operation.getSoapAction() != null ? operation.getSoapAction() : "" )
 			    .body( soapRequest );
 
+			// Do we have any custom headers to add?
+			for ( Map.Entry<String, String> header : this.customHeaders.entrySet() ) {
+				request.header( header.getKey(), header.getValue() );
+			}
+
 			// Add authentication if provided
 			if ( this.username != null && this.password != null ) {
 				request.withBasicAuth( this.username, this.password );
