@@ -231,4 +231,19 @@ public class AsyncRunTest {
 		assertThat( future.isCompletedExceptionally() ).isFalse();
 	}
 
+	@DisplayName( "asyncRun with custom BoxExecutor" )
+	@Test
+	public void testAsyncRunWithCustomExecutor() throws InterruptedException, ExecutionException {
+		// @formatter:off
+		instance.executeSource("""
+			result = runAsync( () -> {
+				return 42;
+			}, executorGet() ).get()
+		""", context);
+		// @formatter:on
+
+		// Check the result
+		assertThat( variables.get( result ) ).isEqualTo( 42 );
+	}
+
 }
