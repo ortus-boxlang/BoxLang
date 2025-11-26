@@ -19,6 +19,8 @@ package ortus.boxlang.runtime.types.meta;
 
 import java.io.Serializable;
 
+import org.checkerframework.checker.nullness.qual.NonNull;
+
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -30,7 +32,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 public abstract class BoxMeta<T> implements Serializable {
 
 	/**
-	 * The key used for BoxLang meta data
+	 * The key used for BoxLang meta data when dereferencing
 	 */
 	public static final Key key = Key.$bx;
 
@@ -38,6 +40,7 @@ public abstract class BoxMeta<T> implements Serializable {
 	 * Get target object this metadata is for.
 	 * Implementations should return the target object.
 	 */
+	@NonNull
 	public abstract T getTarget();
 
 	/**
@@ -91,7 +94,7 @@ public abstract class BoxMeta<T> implements Serializable {
 	 *
 	 * @throws BoxRuntimeException If the target is not listenable
 	 */
-	@SuppressWarnings( "unchecked" )
+	@SuppressWarnings( { "unchecked", "null" } )
 	private IListenable<T> ensureTargetListenable() {
 		if ( getTarget() instanceof IListenable listenable ) {
 			return listenable;

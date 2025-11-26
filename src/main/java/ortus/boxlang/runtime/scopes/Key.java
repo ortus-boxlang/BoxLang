@@ -781,6 +781,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		showerror							= Key.of( "showerror" );
 	public static final Key		showUDFs							= Key.of( "showUDFs" );
 	public static final Key		size								= Key.of( "size" );
+	public static final Key		simpleName							= Key.of( "simpleName" );
 	public static final Key		sleep								= Key.of( "sleep" );
 	public static final Key		sort								= Key.of( "sort" );
 	public static final Key		sortFunc							= Key.of( "sortFunc" );
