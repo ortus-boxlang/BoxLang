@@ -941,12 +941,6 @@ public class BoxSoapClient implements IReferenceable {
 			return value;
 		}
 
-		// Try boolean first (most specific patterns)
-		var boolAttempt = ortus.boxlang.runtime.dynamic.casters.BooleanCaster.attempt( value, false );
-		if ( boolAttempt.wasSuccessful() ) {
-			return boolAttempt.get();
-		}
-
 		// Try integer (before double to avoid losing precision)
 		var intAttempt = ortus.boxlang.runtime.dynamic.casters.IntegerCaster.attempt( value );
 		if ( intAttempt.wasSuccessful() ) {

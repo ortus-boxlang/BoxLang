@@ -204,8 +204,7 @@ public class CreateObjectWebServiceTest {
 		    """.formatted( tempConvertWSDL ),
 		    context );
 		// @formatter:on
-		String result = variables.getAsString( Key.of( "result" ) );
-		assertThat( result ).isEqualTo( "32" );
+		assertThat( variables.get( Key.of( "result" ) ).toString() ).isEqualTo( "32" );
 	}
 
 	@DisplayName( "Temp Convert: Fahrenheit to Celsius" )
@@ -219,8 +218,7 @@ public class CreateObjectWebServiceTest {
 		    """.formatted( tempConvertWSDL ),
 		    context );
 		// @formatter:on
-		String result = variables.getAsString( Key.of( "result" ) );
-		assertThat( result ).isEqualTo( "100" );
+		assertThat( variables.get( Key.of( "result" ) ).toString() ).isEqualTo( "100" );
 	}
 
 	// ========================================
