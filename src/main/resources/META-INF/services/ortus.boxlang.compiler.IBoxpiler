@@ -1,3 +1,2 @@
-ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler
 ortus.boxlang.compiler.asmboxpiler.ASMBoxpiler
 ortus.boxlang.compiler.NoOpBoxpiler
