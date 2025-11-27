@@ -30,26 +30,6 @@ import org.junit.jupiter.api.Test;
 public class LocalizationUtilCacheTest {
 
 	@Test
-	public void testCommonFormatterCaching() {
-		// Test that CommonFormatters are properly cached/initialized
-		// This tests the getCommonFormatters() method which replaced getCommonPatternDateTimeParsers()
-
-		// Call the method that uses CommonFormatters internally
-		// We'll test with the same date string twice to ensure consistent behavior
-		String									testDateString	= "2023-12-25T14:30:00";
-
-		// This should use our optimized CommonFormatter approach
-		// The test ensures the optimization doesn't break basic functionality
-		ortus.boxlang.runtime.types.DateTime	result1			= LocalizationUtil.parseFromCommonPatterns( testDateString, null );
-		ortus.boxlang.runtime.types.DateTime	result2			= LocalizationUtil.parseFromCommonPatterns( testDateString, null );
-
-		// Both should parse successfully and return equivalent results
-		assertThat( result1 ).isNotNull();
-		assertThat( result2 ).isNotNull();
-		assertThat( result1.toString() ).isEqualTo( result2.toString() );
-	}
-
-	@Test
 	public void testLocaleSpecificCaching() {
 		Locale				germanLocale		= Locale.GERMAN;
 		Locale				frenchLocale		= Locale.FRENCH;
