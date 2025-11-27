@@ -131,18 +131,12 @@ public final class LocalizationUtil {
 	/**
 	 * Cache for CommonFormatter instances that use regex for fast pattern matching
 	 */
-	private static final List<CommonFormatter>				commonFormatters		= getCommonFormatters();
-
-	/**
-	 * Cache for locale validation results to avoid repeated Unicode block analysis
-	 * Key format: "formatterDescription|localeLanguage"
-	 */
-	private static final ConcurrentHashMap<String, Boolean>	localeValidationCache	= new ConcurrentHashMap<>();
+	private static final List<CommonFormatter>		commonFormatters	= getCommonFormatters();
 
 	/**
 	 * A struct of common locale constants
 	 */
-	public static final LinkedHashMap<Key, Locale>			COMMON_LOCALES			= new LinkedHashMap<Key, Locale>();
+	public static final LinkedHashMap<Key, Locale>	COMMON_LOCALES		= new LinkedHashMap<Key, Locale>();
 	static {
 		COMMON_LOCALES.put( Key.of( "Canada" ), Locale.CANADA );
 		COMMON_LOCALES.put( Key.of( "Canadian" ), Locale.CANADA );
@@ -662,13 +656,13 @@ public final class LocalizationUtil {
 
 		// @formatter:off
 		{
-			// ========== High Priority: Most Common Test Cases ==========
+			// ========== Highest Priority Patterns Come First ==========
 
 			// Ultra-specific: Exact ISO Z format for speed (2024-04-02T21:01:00Z)
 			add( Map.of(
 				"regexPattern", "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
 				"datePattern", "yyyy-MM-dd'T'HH:mm:ssX",
-				"description", "ISO DateTime with Z timezone - ultra-specific for speed tests"
+				"description", "ISO DateTime with Z timezone - ultra-specific"
 			) );
 
 			// Medium format with timezone abbreviation (for "Nov 22, 2022 11:01:51 CET")
