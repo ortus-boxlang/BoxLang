@@ -163,7 +163,7 @@ public final class LocalizationUtil {
 	/**
 	 * Cache for CommonFormatter instances that use regex for fast pattern matching
 	 */
-	private static volatile List<CommonFormatter>			commonFormatters		= getCommonFormatters();
+	private static final List<CommonFormatter>				commonFormatters		= getCommonFormatters();
 
 	/**
 	 * Cache for locale validation results to avoid repeated Unicode block analysis
@@ -498,13 +498,16 @@ public final class LocalizationUtil {
 				    ? parsed
 				    : ( ZoneId ) context.getConfig().get( Key.timezone );
 			}
-		} else {
+		} else if ( context != null ) {
 			RequestBoxContext requestContext = context.getParentOfType( RequestBoxContext.class );
 			if ( requestContext != null && requestContext.getTimezone() != null ) {
 				return requestContext.getTimezone();
 			} else {
 				return ( ZoneId ) context.getConfig().get( Key.timezone );
 			}
+		} else {
+			IBoxContext runtimeContext = BoxRuntime.getInstance().getRuntimeContext();
+			return ( ZoneId ) runtimeContext.getConfig().get( Key.timezone );
 		}
 	}
 
@@ -1581,8 +1584,6 @@ public final class LocalizationUtil {
 	 * @param locale   the locale to filter patterns by
 	 * 
 	 * @return a {@link DateTime} object representing the parsed date-time
-	 * 
-	 * @throws BoxRuntimeException if the input string cannot be parsed into a supported {@link TemporalAccessor}
 	 */
 	public static DateTime parseFromCommonPatterns( String dateTime, ZoneId timezone, Locale locale ) {
 
@@ -1591,14 +1592,11 @@ public final class LocalizationUtil {
 			return parseFromCommonPatterns( dateTime, timezone );
 		}
 
-		// Common format patterns which are treated as first class by the caster
-		List<CommonFormatter> formatters = getCommonFormatters();
-
 		if ( timezone == null ) {
 			timezone = parseZoneId( null, RequestBoxContext.getCurrent() );
 		}
 
-		for ( CommonFormatter formatter : formatters ) {
+		for ( CommonFormatter formatter : commonFormatters ) {
 			// Only check patterns that match the input first (performance optimization)
 			if ( !formatter.matches( dateTime ) ) {
 				continue;
@@ -1863,20 +1861,9 @@ public final class LocalizationUtil {
 			return true;
 		}
 
-		String pattern = formatter.getRegexPattern();
-
 		// Check if pattern contains locale-specific Unicode characters
-		for ( char c : pattern.toCharArray() ) {
+		for ( char c : formatter.getRegexPattern().toCharArray() ) {
 			Character.UnicodeBlock block = Character.UnicodeBlock.of( c );
-
-			// Skip ASCII, punctuation, and regex metacharacters - these are universally valid
-			if ( block == Character.UnicodeBlock.BASIC_LATIN ||
-			    block == Character.UnicodeBlock.LATIN_1_SUPPLEMENT ||
-			    Character.isDigit( c ) ||
-			    "\\[]{}()*+?^$.|".indexOf( c ) >= 0 ) {
-				continue;
-			}
-
 			// If we find non-Latin Unicode characters, validate locale compatibility
 			if ( block != null && !isUnicodeBlockCompatibleWithLocale( block, locale ) ) {
 				return false;

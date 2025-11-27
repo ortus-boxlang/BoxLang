@@ -36,12 +36,12 @@ public class LocalizationUtilCacheTest {
 
 		// Call the method that uses CommonFormatters internally
 		// We'll test with the same date string twice to ensure consistent behavior
-		String testDateString = "2023-12-25T14:30:00";
+		String									testDateString	= "2023-12-25T14:30:00";
 
 		// This should use our optimized CommonFormatter approach
 		// The test ensures the optimization doesn't break basic functionality
-		ortus.boxlang.runtime.types.DateTime	result1	= LocalizationUtil.parseFromCommonPatterns( testDateString, null );
-		ortus.boxlang.runtime.types.DateTime	result2	= LocalizationUtil.parseFromCommonPatterns( testDateString, null );
+		ortus.boxlang.runtime.types.DateTime	result1			= LocalizationUtil.parseFromCommonPatterns( testDateString, null );
+		ortus.boxlang.runtime.types.DateTime	result2			= LocalizationUtil.parseFromCommonPatterns( testDateString, null );
 
 		// Both should parse successfully and return equivalent results
 		assertThat( result1 ).isNotNull();
