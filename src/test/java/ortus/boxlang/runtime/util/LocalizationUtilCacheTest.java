@@ -40,19 +40,13 @@ public class LocalizationUtilCacheTest {
 
 		// This should use our optimized CommonFormatter approach
 		// The test ensures the optimization doesn't break basic functionality
-		try {
-			ortus.boxlang.runtime.types.DateTime	result1	= LocalizationUtil.parseFromCommonPatterns( testDateString, null );
-			ortus.boxlang.runtime.types.DateTime	result2	= LocalizationUtil.parseFromCommonPatterns( testDateString, null );
+		ortus.boxlang.runtime.types.DateTime	result1	= LocalizationUtil.parseFromCommonPatterns( testDateString, null );
+		ortus.boxlang.runtime.types.DateTime	result2	= LocalizationUtil.parseFromCommonPatterns( testDateString, null );
 
-			// Both should parse successfully and return equivalent results
-			assertThat( result1 ).isNotNull();
-			assertThat( result2 ).isNotNull();
-			assertThat( result1.toString() ).isEqualTo( result2.toString() );
-		} catch ( Exception e ) {
-			// This is expected for some test strings that don't match our patterns
-			// The important thing is that the method doesn't crash
-			assertThat( e ).isNotNull();
-		}
+		// Both should parse successfully and return equivalent results
+		assertThat( result1 ).isNotNull();
+		assertThat( result2 ).isNotNull();
+		assertThat( result1.toString() ).isEqualTo( result2.toString() );
 	}
 
 	@Test
