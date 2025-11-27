@@ -82,19 +82,19 @@ public class BoxHttpClient {
 	 * ------------------------------------------------------------------------------
 	 */
 
-	public static final String											HTTP_1						= "HTTP/1.1";
-	public static final String											HTTP_2						= "HTTP/2";
-	public static final String											DEFAULT_USER_AGENT			= "BoxLang-HttpClient/1.0";
-	public static final String											DEFAULT_CHARSET				= StandardCharsets.UTF_8.name();
-	public static final String											DEFAULT_METHOD				= "GET";
-	public static final int												DEFAULT_CONNECTION_TIMEOUT	= 15;
-	public static final int												DEFAULT_REQUEST_TIMEOUT		= 0;
-	public static final boolean											DEFAULT_THROW_ON_ERROR		= true;
+	public static final String HTTP_1 = "HTTP/1.1";
+	public static final String HTTP_2 = "HTTP/2";
+	public static final String DEFAULT_USER_AGENT = "BoxLang-HttpClient/1.0";
+	public static final String DEFAULT_CHARSET = StandardCharsets.UTF_8.name();
+	public static final String DEFAULT_METHOD = "GET";
+	public static final int DEFAULT_CONNECTION_TIMEOUT = 15;
+	public static final int DEFAULT_REQUEST_TIMEOUT = 0;
+	public static final boolean DEFAULT_THROW_ON_ERROR = false;
 
 	// HTTP Status Codes
-	public static final int												STATUS_REQUEST_TIMEOUT		= 408;
-	public static final int												STATUS_INTERNAL_ERROR		= 500;
-	public static final int												STATUS_BAD_GATEWAY			= 502;
+	public static final int STATUS_REQUEST_TIMEOUT = 408;
+	public static final int STATUS_INTERNAL_ERROR = 500;
+	public static final int STATUS_BAD_GATEWAY = 502;
 
 	/**
 	 * ------------------------------------------------------------------------------
@@ -102,8 +102,8 @@ public class BoxHttpClient {
 	 * ------------------------------------------------------------------------------
 	 */
 
-	private static final BoxRuntime										runtime						= BoxRuntime.getInstance();
-	private static final InterceptorService								interceptorService			= runtime.getInterceptorService();
+	private static final BoxRuntime runtime = BoxRuntime.getInstance();
+	private static final InterceptorService interceptorService = runtime.getInterceptorService();
 
 	/**
 	 * ------------------------------------------------------------------------------
@@ -114,42 +114,49 @@ public class BoxHttpClient {
 	/**
 	 * The underlying HttpClient used for making HTTP requests.
 	 */
-	private final HttpClient											httpClient;
+	private final HttpClient httpClient;
 
 	/**
 	 * The HttpService that manages this client.
 	 */
-	private final HttpService											httpService;
+	private final HttpService httpService;
 
 	/**
 	 * The Logger used for logging HTTP operations.
 	 */
-	private final BoxLangLogger											logger;
+	private final BoxLangLogger logger;
 
 	/**
 	 * Tracks the last date + time the client was used.
 	 * Uses AtomicReference for thread-safe updates without synchronization.
 	 */
-	private final java.util.concurrent.atomic.AtomicReference<Instant>	lastUsedTimestamp			= new java.util.concurrent.atomic.AtomicReference<>( null );
+	private final java.util.concurrent.atomic.AtomicReference<Instant> lastUsedTimestamp = new java.util.concurrent.atomic.AtomicReference<>(
+			null);
 
 	/**
 	 * Statistics tracking for this client.
 	 * Uses AtomicLong for thread-safe updates without synchronization.
 	 */
-	private final java.util.concurrent.atomic.AtomicLong				totalRequests				= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong				successfulRequests			= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong				failedRequests				= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong				timeoutFailures				= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong				connectionFailures			= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong				tlsFailures					= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong				httpProtocolFailures		= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong				bytesReceived				= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong				bytesSent					= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong				totalExecutionTimeMs		= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong				minExecutionTimeMs			= new java.util.concurrent.atomic.AtomicLong(
-	    Long.MAX_VALUE );
-	private final java.util.concurrent.atomic.AtomicLong				maxExecutionTimeMs			= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final Instant												createdAt					= Instant.now();
+	private final java.util.concurrent.atomic.AtomicLong totalRequests = new java.util.concurrent.atomic.AtomicLong(0);
+	private final java.util.concurrent.atomic.AtomicLong successfulRequests = new java.util.concurrent.atomic.AtomicLong(
+			0);
+	private final java.util.concurrent.atomic.AtomicLong failedRequests = new java.util.concurrent.atomic.AtomicLong(0);
+	private final java.util.concurrent.atomic.AtomicLong timeoutFailures = new java.util.concurrent.atomic.AtomicLong(
+			0);
+	private final java.util.concurrent.atomic.AtomicLong connectionFailures = new java.util.concurrent.atomic.AtomicLong(
+			0);
+	private final java.util.concurrent.atomic.AtomicLong tlsFailures = new java.util.concurrent.atomic.AtomicLong(0);
+	private final java.util.concurrent.atomic.AtomicLong httpProtocolFailures = new java.util.concurrent.atomic.AtomicLong(
+			0);
+	private final java.util.concurrent.atomic.AtomicLong bytesReceived = new java.util.concurrent.atomic.AtomicLong(0);
+	private final java.util.concurrent.atomic.AtomicLong bytesSent = new java.util.concurrent.atomic.AtomicLong(0);
+	private final java.util.concurrent.atomic.AtomicLong totalExecutionTimeMs = new java.util.concurrent.atomic.AtomicLong(
+			0);
+	private final java.util.concurrent.atomic.AtomicLong minExecutionTimeMs = new java.util.concurrent.atomic.AtomicLong(
+			Long.MAX_VALUE);
+	private final java.util.concurrent.atomic.AtomicLong maxExecutionTimeMs = new java.util.concurrent.atomic.AtomicLong(
+			0);
+	private final Instant createdAt = Instant.now();
 
 	/**
 	 * ------------------------------------------------------------------------------
@@ -163,10 +170,10 @@ public class BoxHttpClient {
 	 * @param httpClient  The underlying HttpClient to be used for HTTP operations.
 	 * @param httpService The HttpService managing this client.
 	 */
-	public BoxHttpClient( HttpClient httpClient, HttpService httpService ) {
-		this.httpClient		= httpClient;
-		this.httpService	= httpService;
-		this.logger			= this.httpService.getLogger();
+	public BoxHttpClient(HttpClient httpClient, HttpService httpService) {
+		this.httpClient = httpClient;
+		this.httpService = httpService;
+		this.logger = this.httpService.getLogger();
 	}
 
 	/**
@@ -184,8 +191,8 @@ public class BoxHttpClient {
 	 *
 	 * @return A new HttpRequestBuilder instance
 	 */
-	public BoxHttpRequest newRequest( String url, ortus.boxlang.runtime.context.IBoxContext context, boolean debug ) {
-		return new BoxHttpRequest( url, context, debug );
+	public BoxHttpRequest newRequest(String url, ortus.boxlang.runtime.context.IBoxContext context, boolean debug) {
+		return new BoxHttpRequest(url, context, debug);
 	}
 
 	/**
@@ -196,8 +203,8 @@ public class BoxHttpClient {
 	 *
 	 * @return A new HttpRequestBuilder instance
 	 */
-	public BoxHttpRequest newRequest( String url, ortus.boxlang.runtime.context.IBoxContext context ) {
-		return new BoxHttpRequest( url, context, false );
+	public BoxHttpRequest newRequest(String url, ortus.boxlang.runtime.context.IBoxContext context) {
+		return new BoxHttpRequest(url, context, false);
 	}
 
 	/**
@@ -246,7 +253,7 @@ public class BoxHttpClient {
 	 * Update the last used timestamp to now.
 	 */
 	public void updateLastUsedTimestamp() {
-		this.lastUsedTimestamp.set( Instant.now() );
+		this.lastUsedTimestamp.set(Instant.now());
 	}
 
 	/**
@@ -257,22 +264,21 @@ public class BoxHttpClient {
 	public IStruct getStatistics() {
 		long minTime = this.minExecutionTimeMs.get();
 		return Struct.ofNonConcurrent(
-		    Key.averageExecutionTimeMs, this.getAverageExecutionTimeMs(),
-		    Key.bytesReceived, this.bytesReceived.get(),
-		    Key.bytesSent, this.bytesSent.get(),
-		    Key.connectionFailures, this.connectionFailures.get(),
-		    Key.createdAt, new DateTime( this.createdAt ),
-		    Key.failedRequests, this.failedRequests.get(),
-		    Key.httpProtocolFailures, this.httpProtocolFailures.get(),
-		    Key.lastUsedTimestamp, this.lastUsedTimestamp.get(),
-		    Key.maxExecutionTimeMs, this.maxExecutionTimeMs.get(),
-		    Key.minExecutionTimeMs, minTime == Long.MAX_VALUE ? 0 : minTime,
-		    Key.successfulRequests, this.successfulRequests.get(),
-		    Key.timeoutFailures, this.timeoutFailures.get(),
-		    Key.tlsFailures, this.tlsFailures.get(),
-		    Key.totalExecutionTimeMs, this.totalExecutionTimeMs.get(),
-		    Key.totalRequests, this.totalRequests.get()
-		);
+				Key.averageExecutionTimeMs, this.getAverageExecutionTimeMs(),
+				Key.bytesReceived, this.bytesReceived.get(),
+				Key.bytesSent, this.bytesSent.get(),
+				Key.connectionFailures, this.connectionFailures.get(),
+				Key.createdAt, new DateTime(this.createdAt),
+				Key.failedRequests, this.failedRequests.get(),
+				Key.httpProtocolFailures, this.httpProtocolFailures.get(),
+				Key.lastUsedTimestamp, this.lastUsedTimestamp.get(),
+				Key.maxExecutionTimeMs, this.maxExecutionTimeMs.get(),
+				Key.minExecutionTimeMs, minTime == Long.MAX_VALUE ? 0 : minTime,
+				Key.successfulRequests, this.successfulRequests.get(),
+				Key.timeoutFailures, this.timeoutFailures.get(),
+				Key.tlsFailures, this.tlsFailures.get(),
+				Key.totalExecutionTimeMs, this.totalExecutionTimeMs.get(),
+				Key.totalRequests, this.totalRequests.get());
 	}
 
 	/**
@@ -368,7 +374,8 @@ public class BoxHttpClient {
 	/**
 	 * Get the average execution time per request.
 	 *
-	 * @return The average execution time in milliseconds, or 0 if no requests have been made
+	 * @return The average execution time in milliseconds, or 0 if no requests have
+	 *         been made
 	 */
 	public long getAverageExecutionTimeMs() {
 		long total = this.totalRequests.get();
@@ -378,7 +385,8 @@ public class BoxHttpClient {
 	/**
 	 * Get the minimum execution time for a single request.
 	 *
-	 * @return The minimum execution time in milliseconds, or 0 if no requests have been made
+	 * @return The minimum execution time in milliseconds, or 0 if no requests have
+	 *         been made
 	 */
 	public long getMinExecutionTimeMs() {
 		long min = this.minExecutionTimeMs.get();
@@ -409,18 +417,18 @@ public class BoxHttpClient {
 	 * Note: createdAt timestamp is NOT reset.
 	 */
 	public void resetStatistics() {
-		this.totalRequests.set( 0 );
-		this.successfulRequests.set( 0 );
-		this.failedRequests.set( 0 );
-		this.timeoutFailures.set( 0 );
-		this.connectionFailures.set( 0 );
-		this.tlsFailures.set( 0 );
-		this.httpProtocolFailures.set( 0 );
-		this.bytesReceived.set( 0 );
-		this.bytesSent.set( 0 );
-		this.totalExecutionTimeMs.set( 0 );
-		this.minExecutionTimeMs.set( Long.MAX_VALUE );
-		this.maxExecutionTimeMs.set( 0 );
+		this.totalRequests.set(0);
+		this.successfulRequests.set(0);
+		this.failedRequests.set(0);
+		this.timeoutFailures.set(0);
+		this.connectionFailures.set(0);
+		this.tlsFailures.set(0);
+		this.httpProtocolFailures.set(0);
+		this.bytesReceived.set(0);
+		this.bytesSent.set(0);
+		this.totalExecutionTimeMs.set(0);
+		this.minExecutionTimeMs.set(Long.MAX_VALUE);
+		this.maxExecutionTimeMs.set(0);
 	}
 
 	/**
@@ -436,69 +444,71 @@ public class BoxHttpClient {
 	public class BoxHttpRequest {
 
 		// The target URL
-		private String											url;
+		private String url;
 		// The port number (if specified)
-		private Integer											port;
+		private Integer port;
 		// The BoxLang context
-		private ortus.boxlang.runtime.context.IBoxContext		context;
+		private ortus.boxlang.runtime.context.IBoxContext context;
 		// Unique request ID
-		private final String									requestID			= java.util.UUID.randomUUID().toString();
+		private final String requestID = java.util.UUID.randomUUID().toString();
 		// Request start time, set during execution
-		private DateTime										startTime;
+		private DateTime startTime;
 
-		// If debug mode is enabled: not used right now, maybe later we do something with it.
-		private boolean											debug				= false;
+		// If debug mode is enabled: not used right now, maybe later we do something
+		// with it.
+		private boolean debug = false;
 		// Http version
-		private String											httpVersion			= HTTP_2;
+		private String httpVersion = HTTP_2;
 		// The HTTP method
-		private String											method				= DEFAULT_METHOD;
+		private String method = DEFAULT_METHOD;
 		// Request timeout in seconds
-		private Integer											timeout				= DEFAULT_REQUEST_TIMEOUT;
+		private Integer timeout = DEFAULT_REQUEST_TIMEOUT;
 		// The User-Agent header
-		private String											userAgent			= DEFAULT_USER_AGENT;
+		private String userAgent = DEFAULT_USER_AGENT;
 		// The Charset to use
-		private String											charset				= DEFAULT_CHARSET;
+		private String charset = DEFAULT_CHARSET;
 		// Whether to throw on error status codes
-		private boolean											throwOnError		= DEFAULT_THROW_ON_ERROR;
+		private boolean throwOnError = DEFAULT_THROW_ON_ERROR;
 		// Binary Markers
-		private boolean											isBinaryRequest		= false;
-		private boolean											isBinaryNever		= false;
+		private boolean isBinaryRequest = false;
+		private boolean isBinaryNever = false;
 		// Parameters and body
-		private ortus.boxlang.runtime.types.Array				params				= new ortus.boxlang.runtime.types.Array();
+		private ortus.boxlang.runtime.types.Array params = new ortus.boxlang.runtime.types.Array();
 		// Multi part mode
-		private boolean											multipart			= false;
+		private boolean multipart = false;
 
 		// Basic Authentication
-		private String											username;
-		private String											password;
-		// Only basic for now, maybe in the future NTLM, but that's legacy, kept here just in case, but never used
-		private String											authType			= "BASIC";
+		private String username;
+		private String password;
+		// Only basic for now, maybe in the future NTLM, but that's legacy, kept here
+		// just in case, but never used
+		private String authType = "BASIC";
 
 		// Callbacks
-		private ortus.boxlang.runtime.types.Function			onRequestStartCallback;
-		private ortus.boxlang.runtime.types.Function			onChunkCallback;
-		private ortus.boxlang.runtime.types.Function			onErrorCallback;
-		private ortus.boxlang.runtime.types.Function			onCompleteCallback;
+		private ortus.boxlang.runtime.types.Function onRequestStartCallback;
+		private ortus.boxlang.runtime.types.Function onChunkCallback;
+		private ortus.boxlang.runtime.types.Function onErrorCallback;
+		private ortus.boxlang.runtime.types.Function onCompleteCallback;
 
 		// Response transformer (takes httpResult, returns transformed value)
-		private java.util.function.Function<IStruct, Object>	transformer;
+		private java.util.function.Function<IStruct, Object> transformer;
 
 		// SSE (Server-Sent Events) handling
-		private boolean											forceSSE			= false;
-		private String											lastEventId			= null;
+		private boolean forceSSE = false;
+		private String lastEventId = null;
 
 		// File handling
-		private String											outputDirectory;
-		private String											outputFile;
+		private String outputDirectory;
+		private String outputFile;
 
 		// Results
-		private IStruct											httpResult			= new Struct( false );
+		private IStruct httpResult = new Struct(false);
 		// Internal HttpRequest being built
-		private HttpRequest										targetHttpRequest;
+		private HttpRequest targetHttpRequest;
 		// Error Marker
-		private boolean											error				= false;
-		private String											errorMessage		= null;
-		private Throwable										requestException	= null;
+		private boolean error = false;
+		private String errorMessage = null;
+		private Throwable requestException = null;
 
 		/**
 		 * ------------------------------------------------------------------------------
@@ -514,8 +524,8 @@ public class BoxHttpClient {
 		 * @param debug   Whether debug mode is enabled
 		 */
 		public BoxHttpRequest(
-		    String url, ortus.boxlang.runtime.context.IBoxContext context ) {
-			this( url, context, false );
+				String url, ortus.boxlang.runtime.context.IBoxContext context) {
+			this(url, context, false);
 		}
 
 		/**
@@ -525,10 +535,10 @@ public class BoxHttpClient {
 		 * @param context The BoxLang context
 		 * @param debug   Whether debug mode is enabled
 		 */
-		public BoxHttpRequest( String url, ortus.boxlang.runtime.context.IBoxContext context, boolean debug ) {
-			this.url		= url;
-			this.context	= context;
-			this.debug		= debug;
+		public BoxHttpRequest(String url, ortus.boxlang.runtime.context.IBoxContext context, boolean debug) {
+			this.url = url;
+			this.context = context;
+			this.debug = debug;
 		}
 
 		/**
@@ -589,7 +599,7 @@ public class BoxHttpClient {
 		 *
 		 * @param url The URL to send the request to
 		 */
-		public BoxHttpRequest url( String url ) {
+		public BoxHttpRequest url(String url) {
 			this.url = url;
 			return this;
 		}
@@ -599,7 +609,7 @@ public class BoxHttpClient {
 		 *
 		 * @param context The BoxLang context
 		 */
-		public BoxHttpRequest context( ortus.boxlang.runtime.context.IBoxContext context ) {
+		public BoxHttpRequest context(ortus.boxlang.runtime.context.IBoxContext context) {
 			this.context = context;
 			return this;
 		}
@@ -609,7 +619,7 @@ public class BoxHttpClient {
 		 *
 		 * @param outputDirectory The output directory path
 		 */
-		public BoxHttpRequest outputDirectory( String outputDirectory ) {
+		public BoxHttpRequest outputDirectory(String outputDirectory) {
 			this.outputDirectory = outputDirectory;
 			return this;
 		}
@@ -621,7 +631,7 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest debug( boolean debug ) {
+		public BoxHttpRequest debug(boolean debug) {
 			this.debug = debug;
 			return this;
 		}
@@ -669,8 +679,8 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest httpVersion( String version ) {
-			if ( version == null ) {
+		public BoxHttpRequest httpVersion(String version) {
+			if (version == null) {
 				version = HTTP_2;
 			}
 			this.httpVersion = version;
@@ -684,7 +694,7 @@ public class BoxHttpClient {
 		 *
 		 * @return
 		 */
-		public BoxHttpRequest multipart( boolean multipart ) {
+		public BoxHttpRequest multipart(boolean multipart) {
 			this.multipart = multipart;
 			return this;
 		}
@@ -696,7 +706,7 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest method( String method ) {
+		public BoxHttpRequest method(String method) {
 			this.method = method.toUpperCase();
 			return this;
 		}
@@ -798,7 +808,7 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest timeout( Integer timeout ) {
+		public BoxHttpRequest timeout(Integer timeout) {
 			this.timeout = timeout;
 			return this;
 		}
@@ -810,7 +820,7 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest port( Integer port ) {
+		public BoxHttpRequest port(Integer port) {
 			this.port = port;
 			return this;
 		}
@@ -822,7 +832,7 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest userAgent( String userAgent ) {
+		public BoxHttpRequest userAgent(String userAgent) {
 			this.userAgent = userAgent;
 			return this;
 		}
@@ -836,13 +846,13 @@ public class BoxHttpClient {
 		 *
 		 * @throws BoxRuntimeException if the charset is not supported
 		 */
-		public BoxHttpRequest charset( String charset ) {
+		public BoxHttpRequest charset(String charset) {
 			// Validate charset is supported
-			if ( charset != null && !charset.isEmpty() ) {
+			if (charset != null && !charset.isEmpty()) {
 				try {
-					Charset.forName( charset );
-				} catch ( Exception e ) {
-					throw new BoxRuntimeException( "Invalid or unsupported charset: " + charset, e );
+					Charset.forName(charset);
+				} catch (Exception e) {
+					throw new BoxRuntimeException("Invalid or unsupported charset: " + charset, e);
 				}
 			}
 			this.charset = charset;
@@ -856,7 +866,7 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest throwOnError( boolean throwOnError ) {
+		public BoxHttpRequest throwOnError(boolean throwOnError) {
 			this.throwOnError = throwOnError;
 			return this;
 		}
@@ -868,7 +878,7 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest params( ortus.boxlang.runtime.types.Array params ) {
+		public BoxHttpRequest params(ortus.boxlang.runtime.types.Array params) {
 			this.params = params;
 			return this;
 		}
@@ -880,11 +890,11 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest body( Object body ) {
+		public BoxHttpRequest body(Object body) {
 			ortus.boxlang.runtime.types.IStruct param = new ortus.boxlang.runtime.types.Struct();
-			param.put( ortus.boxlang.runtime.scopes.Key.type, "body" );
-			param.put( ortus.boxlang.runtime.scopes.Key.value, body );
-			this.params.add( param );
+			param.put(ortus.boxlang.runtime.scopes.Key.type, "body");
+			param.put(ortus.boxlang.runtime.scopes.Key.value, body);
+			this.params.add(param);
 			return this;
 		}
 
@@ -895,9 +905,9 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest xmlBody( String xmlContent ) {
-			this.header( "Content-Type", "application/xml; charset=" + this.charset );
-			return this.body( xmlContent );
+		public BoxHttpRequest xmlBody(String xmlContent) {
+			this.header("Content-Type", "application/xml; charset=" + this.charset);
+			return this.body(xmlContent);
 		}
 
 		/**
@@ -907,11 +917,11 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest jsonBody( String jsonContent ) {
+		public BoxHttpRequest jsonBody(String jsonContent) {
 			// Add Content-Type header for JSON
-			this.header( "Content-Type", "application/json; charset=utf-8" );
+			this.header("Content-Type", "application/json; charset=utf-8");
 			// Add body
-			return this.body( jsonContent );
+			return this.body(jsonContent);
 		}
 
 		/**
@@ -922,12 +932,12 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest header( String name, String value ) {
+		public BoxHttpRequest header(String name, String value) {
 			ortus.boxlang.runtime.types.IStruct param = new ortus.boxlang.runtime.types.Struct();
-			param.put( ortus.boxlang.runtime.scopes.Key.type, "header" );
-			param.put( ortus.boxlang.runtime.scopes.Key._NAME, name );
-			param.put( ortus.boxlang.runtime.scopes.Key.value, value );
-			this.params.add( param );
+			param.put(ortus.boxlang.runtime.scopes.Key.type, "header");
+			param.put(ortus.boxlang.runtime.scopes.Key._NAME, name);
+			param.put(ortus.boxlang.runtime.scopes.Key.value, value);
+			this.params.add(param);
 			return this;
 		}
 
@@ -939,13 +949,13 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest urlParam( String name, String value ) {
+		public BoxHttpRequest urlParam(String name, String value) {
 			ortus.boxlang.runtime.types.IStruct param = new ortus.boxlang.runtime.types.Struct();
-			param.put( ortus.boxlang.runtime.scopes.Key.type, "url" );
-			param.put( ortus.boxlang.runtime.scopes.Key._NAME, name );
-			param.put( ortus.boxlang.runtime.scopes.Key.value, value );
-			param.put( ortus.boxlang.runtime.scopes.Key.encoded, true );
-			this.params.add( param );
+			param.put(ortus.boxlang.runtime.scopes.Key.type, "url");
+			param.put(ortus.boxlang.runtime.scopes.Key._NAME, name);
+			param.put(ortus.boxlang.runtime.scopes.Key.value, value);
+			param.put(ortus.boxlang.runtime.scopes.Key.encoded, true);
+			this.params.add(param);
 			return this;
 		}
 
@@ -958,13 +968,13 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest urlParam( String name, String value, boolean encoded ) {
+		public BoxHttpRequest urlParam(String name, String value, boolean encoded) {
 			ortus.boxlang.runtime.types.IStruct param = new ortus.boxlang.runtime.types.Struct();
-			param.put( ortus.boxlang.runtime.scopes.Key.type, "url" );
-			param.put( ortus.boxlang.runtime.scopes.Key._NAME, name );
-			param.put( ortus.boxlang.runtime.scopes.Key.value, value );
-			param.put( ortus.boxlang.runtime.scopes.Key.encoded, encoded );
-			this.params.add( param );
+			param.put(ortus.boxlang.runtime.scopes.Key.type, "url");
+			param.put(ortus.boxlang.runtime.scopes.Key._NAME, name);
+			param.put(ortus.boxlang.runtime.scopes.Key.value, value);
+			param.put(ortus.boxlang.runtime.scopes.Key.encoded, encoded);
+			this.params.add(param);
 			return this;
 		}
 
@@ -976,12 +986,12 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest formField( String name, String value ) {
+		public BoxHttpRequest formField(String name, String value) {
 			ortus.boxlang.runtime.types.IStruct param = new ortus.boxlang.runtime.types.Struct();
-			param.put( ortus.boxlang.runtime.scopes.Key.type, "formfield" );
-			param.put( ortus.boxlang.runtime.scopes.Key._NAME, name );
-			param.put( ortus.boxlang.runtime.scopes.Key.value, value );
-			this.params.add( param );
+			param.put(ortus.boxlang.runtime.scopes.Key.type, "formfield");
+			param.put(ortus.boxlang.runtime.scopes.Key._NAME, name);
+			param.put(ortus.boxlang.runtime.scopes.Key.value, value);
+			this.params.add(param);
 			return this;
 		}
 
@@ -994,13 +1004,13 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest formField( String name, String value, boolean encoded ) {
+		public BoxHttpRequest formField(String name, String value, boolean encoded) {
 			ortus.boxlang.runtime.types.IStruct param = new ortus.boxlang.runtime.types.Struct();
-			param.put( ortus.boxlang.runtime.scopes.Key.type, "formfield" );
-			param.put( ortus.boxlang.runtime.scopes.Key._NAME, name );
-			param.put( ortus.boxlang.runtime.scopes.Key.value, value );
-			param.put( ortus.boxlang.runtime.scopes.Key.encoded, encoded );
-			this.params.add( param );
+			param.put(ortus.boxlang.runtime.scopes.Key.type, "formfield");
+			param.put(ortus.boxlang.runtime.scopes.Key._NAME, name);
+			param.put(ortus.boxlang.runtime.scopes.Key.value, value);
+			param.put(ortus.boxlang.runtime.scopes.Key.encoded, encoded);
+			this.params.add(param);
 			return this;
 		}
 
@@ -1012,12 +1022,12 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest cookie( String name, String value ) {
+		public BoxHttpRequest cookie(String name, String value) {
 			ortus.boxlang.runtime.types.IStruct param = new ortus.boxlang.runtime.types.Struct();
-			param.put( ortus.boxlang.runtime.scopes.Key.type, "cookie" );
-			param.put( ortus.boxlang.runtime.scopes.Key._NAME, name );
-			param.put( ortus.boxlang.runtime.scopes.Key.value, value );
-			this.params.add( param );
+			param.put(ortus.boxlang.runtime.scopes.Key.type, "cookie");
+			param.put(ortus.boxlang.runtime.scopes.Key._NAME, name);
+			param.put(ortus.boxlang.runtime.scopes.Key.value, value);
+			this.params.add(param);
 			return this;
 		}
 
@@ -1029,12 +1039,12 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest file( String name, String filePath ) {
+		public BoxHttpRequest file(String name, String filePath) {
 			ortus.boxlang.runtime.types.IStruct param = new ortus.boxlang.runtime.types.Struct();
-			param.put( ortus.boxlang.runtime.scopes.Key.type, "file" );
-			param.put( ortus.boxlang.runtime.scopes.Key._NAME, name );
-			param.put( ortus.boxlang.runtime.scopes.Key.file, filePath );
-			this.params.add( param );
+			param.put(ortus.boxlang.runtime.scopes.Key.type, "file");
+			param.put(ortus.boxlang.runtime.scopes.Key._NAME, name);
+			param.put(ortus.boxlang.runtime.scopes.Key.file, filePath);
+			this.params.add(param);
 			return this;
 		}
 
@@ -1047,13 +1057,13 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest file( String name, String filePath, String mimeType ) {
+		public BoxHttpRequest file(String name, String filePath, String mimeType) {
 			ortus.boxlang.runtime.types.IStruct param = new ortus.boxlang.runtime.types.Struct();
-			param.put( ortus.boxlang.runtime.scopes.Key.type, "file" );
-			param.put( ortus.boxlang.runtime.scopes.Key._NAME, name );
-			param.put( ortus.boxlang.runtime.scopes.Key.file, filePath );
-			param.put( ortus.boxlang.runtime.scopes.Key.mimetype, mimeType );
-			this.params.add( param );
+			param.put(ortus.boxlang.runtime.scopes.Key.type, "file");
+			param.put(ortus.boxlang.runtime.scopes.Key._NAME, name);
+			param.put(ortus.boxlang.runtime.scopes.Key.file, filePath);
+			param.put(ortus.boxlang.runtime.scopes.Key.mimetype, mimeType);
+			this.params.add(param);
 			return this;
 		}
 
@@ -1065,10 +1075,10 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest withBasicAuth( String username, String password ) {
-			this.username	= username;
-			this.password	= password;
-			this.authType	= "BASIC";
+		public BoxHttpRequest withBasicAuth(String username, String password) {
+			this.username = username;
+			this.password = password;
+			this.authType = "BASIC";
 			return this;
 		}
 
@@ -1079,7 +1089,7 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest authType( String authType ) {
+		public BoxHttpRequest authType(String authType) {
 			this.authType = authType.toUpperCase();
 			return this;
 		}
@@ -1091,7 +1101,7 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest onRequestStart( ortus.boxlang.runtime.types.Function callback ) {
+		public BoxHttpRequest onRequestStart(ortus.boxlang.runtime.types.Function callback) {
 			this.onRequestStartCallback = callback;
 			return this;
 		}
@@ -1103,7 +1113,7 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest onChunk( ortus.boxlang.runtime.types.Function callback ) {
+		public BoxHttpRequest onChunk(ortus.boxlang.runtime.types.Function callback) {
 			this.onChunkCallback = callback;
 			return this;
 		}
@@ -1115,7 +1125,7 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest onError( ortus.boxlang.runtime.types.Function callback ) {
+		public BoxHttpRequest onError(ortus.boxlang.runtime.types.Function callback) {
 			this.onErrorCallback = callback;
 			return this;
 		}
@@ -1127,45 +1137,48 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest onComplete( ortus.boxlang.runtime.types.Function callback ) {
+		public BoxHttpRequest onComplete(ortus.boxlang.runtime.types.Function callback) {
 			this.onCompleteCallback = callback;
 			return this;
 		}
 
 		/**
 		 * Set a custom transformer function to process the HTTP result.
-		 * The transformer receives the httpResult struct and returns the transformed value.
+		 * The transformer receives the httpResult struct and returns the transformed
+		 * value.
 		 *
-		 * @param transformer The transformer function (Java Function or BoxLang Function)
+		 * @param transformer The transformer function (Java Function or BoxLang
+		 *                    Function)
 		 *
 		 * @return This builder for chaining
 		 */
-		@SuppressWarnings( "unchecked" )
-		public BoxHttpRequest transform( Object transformer ) {
-			if ( transformer instanceof java.util.function.Function ) {
-				this.transformer = ( java.util.function.Function<IStruct, Object> ) transformer;
-			} else if ( transformer instanceof ortus.boxlang.runtime.types.Function ) {
+		@SuppressWarnings("unchecked")
+		public BoxHttpRequest transform(Object transformer) {
+			if (transformer instanceof java.util.function.Function) {
+				this.transformer = (java.util.function.Function<IStruct, Object>) transformer;
+			} else if (transformer instanceof ortus.boxlang.runtime.types.Function) {
 				// Wrap BoxLang Function in a Java Function
-				ortus.boxlang.runtime.types.Function blFunction = ( ortus.boxlang.runtime.types.Function ) transformer;
-				this.transformer = ( result ) -> this.context.invokeFunction( blFunction, new Object[] { result } );
+				ortus.boxlang.runtime.types.Function blFunction = (ortus.boxlang.runtime.types.Function) transformer;
+				this.transformer = (result) -> this.context.invokeFunction(blFunction, new Object[] { result });
 			} else {
-				throw new BoxRuntimeException( "Transformer must be a Function" );
+				throw new BoxRuntimeException("Transformer must be a Function");
 			}
 			return this;
 		}
 
 		/**
 		 * Transform the response by parsing the fileContent as JSON.
-		 * This is a pre-built transformer that automatically converts JSON responses to BoxLang types.
+		 * This is a pre-built transformer that automatically converts JSON responses to
+		 * BoxLang types.
 		 *
 		 * @return This builder for chaining
 		 */
 		public BoxHttpRequest asJSON() {
-			this.transformer = ( result ) -> {
-				Object	fileContent		= result.get( Key.fileContent );
+			this.transformer = (result) -> {
+				Object fileContent = result.get(Key.fileContent);
 				// Convert the filecontent from JSON to BoxLang native
-				Object	inflatedJSON	= JSONUtil.fromJSON( fileContent );
-				return JSONUtil.mapToBLTypes( inflatedJSON, true );
+				Object inflatedJSON = JSONUtil.fromJSON(fileContent);
+				return JSONUtil.mapToBLTypes(inflatedJSON, true);
 			};
 			return this;
 		}
@@ -1177,21 +1190,22 @@ public class BoxHttpClient {
 		 * @return This builder for chaining
 		 */
 		public BoxHttpRequest asText() {
-			this.transformer = ( result ) -> result.get( Key.fileContent );
+			this.transformer = (result) -> result.get(Key.fileContent);
 			return this;
 		}
 
 		/**
 		 * Transform the response by parsing the fileContent as XML.
-		 * This is a pre-built transformer that converts XML responses to BoxLang XML objects.
+		 * This is a pre-built transformer that converts XML responses to BoxLang XML
+		 * objects.
 		 *
 		 * @return This builder for chaining
 		 */
 		public BoxHttpRequest asXML() {
-			this.transformer = ( result ) -> {
-				Object	fileContent	= result.get( Key.fileContent );
-				String	xmlString	= fileContent instanceof String ? ( String ) fileContent : fileContent.toString();
-				return new ortus.boxlang.runtime.types.XML( xmlString );
+			this.transformer = (result) -> {
+				Object fileContent = result.get(Key.fileContent);
+				String xmlString = fileContent instanceof String ? (String) fileContent : fileContent.toString();
+				return new ortus.boxlang.runtime.types.XML(xmlString);
 			};
 			return this;
 		}
@@ -1203,7 +1217,7 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest outputFile( String file ) {
+		public BoxHttpRequest outputFile(String file) {
 			this.outputFile = file;
 			return this;
 		}
@@ -1216,9 +1230,9 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest when( boolean condition, java.util.function.Consumer<BoxHttpRequest> action ) {
-			if ( condition ) {
-				action.accept( this );
+		public BoxHttpRequest when(boolean condition, java.util.function.Consumer<BoxHttpRequest> action) {
+			if (condition) {
+				action.accept(this);
 			}
 			return this;
 		}
@@ -1231,9 +1245,9 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest ifNull( Object value, java.util.function.Consumer<BoxHttpRequest> action ) {
-			if ( value == null ) {
-				action.accept( this );
+		public BoxHttpRequest ifNull(Object value, java.util.function.Consumer<BoxHttpRequest> action) {
+			if (value == null) {
+				action.accept(this);
 			}
 			return this;
 		}
@@ -1246,9 +1260,9 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest ifNotNull( Object value, java.util.function.Consumer<BoxHttpRequest> action ) {
-			if ( value != null ) {
-				action.accept( this );
+		public BoxHttpRequest ifNotNull(Object value, java.util.function.Consumer<BoxHttpRequest> action) {
+			if (value != null) {
+				action.accept(this);
 			}
 			return this;
 		}
@@ -1260,39 +1274,40 @@ public class BoxHttpClient {
 		 *
 		 * @return This builder for chaining
 		 */
-		public BoxHttpRequest sse( boolean sse ) {
+		public BoxHttpRequest sse(boolean sse) {
 			this.forceSSE = sse;
 			return this;
 		}
 
 		/**
-		 * This method returns a struct of what the request would look like when sending.
+		 * This method returns a struct of what the request would look like when
+		 * sending.
 		 * It is used for debugging to know the state of the Request before sending.
 		 *
 		 * @return A Struct representing the request state
 		 */
 		public IStruct inspect() {
-			IStruct requestStruct = new Struct( false );
-			requestStruct.put( Key.authType, this.authType );
-			requestStruct.put( Key.charset, this.charset );
-			requestStruct.put( Key.error, this.error );
-			requestStruct.put( Key.errorMessage, this.errorMessage );
-			requestStruct.put( Key.httpVersion, this.httpVersion );
-			requestStruct.put( Key.isBinaryNever, this.isBinaryNever );
-			requestStruct.put( Key.isBinaryRequest, this.isBinaryRequest );
-			requestStruct.put( Key.method, this.method );
-			requestStruct.put( Key.multipart, this.multipart );
-			requestStruct.put( Key.outputDirectory, this.outputDirectory );
-			requestStruct.put( Key.outputFile, this.outputFile );
-			requestStruct.put( Key.params, this.params );
-			requestStruct.put( Key.port, this.port );
-			requestStruct.put( Key.requestID, this.requestID );
-			requestStruct.put( Key.sse, this.forceSSE );
-			requestStruct.put( Key.throwOnError, this.throwOnError );
-			requestStruct.put( Key.timeout, this.timeout );
-			requestStruct.put( Key.URL, this.url );
-			requestStruct.put( Key.userAgent, this.userAgent );
-			requestStruct.put( Key.username, this.username != null ? "****" : null );
+			IStruct requestStruct = new Struct(false);
+			requestStruct.put(Key.authType, this.authType);
+			requestStruct.put(Key.charset, this.charset);
+			requestStruct.put(Key.error, this.error);
+			requestStruct.put(Key.errorMessage, this.errorMessage);
+			requestStruct.put(Key.httpVersion, this.httpVersion);
+			requestStruct.put(Key.isBinaryNever, this.isBinaryNever);
+			requestStruct.put(Key.isBinaryRequest, this.isBinaryRequest);
+			requestStruct.put(Key.method, this.method);
+			requestStruct.put(Key.multipart, this.multipart);
+			requestStruct.put(Key.outputDirectory, this.outputDirectory);
+			requestStruct.put(Key.outputFile, this.outputFile);
+			requestStruct.put(Key.params, this.params);
+			requestStruct.put(Key.port, this.port);
+			requestStruct.put(Key.requestID, this.requestID);
+			requestStruct.put(Key.sse, this.forceSSE);
+			requestStruct.put(Key.throwOnError, this.throwOnError);
+			requestStruct.put(Key.timeout, this.timeout);
+			requestStruct.put(Key.URL, this.url);
+			requestStruct.put(Key.userAgent, this.userAgent);
+			requestStruct.put(Key.username, this.username != null ? "****" : null);
 			return requestStruct;
 		}
 
@@ -1314,27 +1329,27 @@ public class BoxHttpClient {
 		 * @throws BoxRuntimeException if an error occurs during processing
 		 */
 		private HttpRequest.BodyPublisher processFormFields(
-		    HttpRequest.Builder requestBuilder,
-		    HttpRequest.BodyPublisher bodyPublisher,
-		    List<IStruct> formFields ) {
+				HttpRequest.Builder requestBuilder,
+				HttpRequest.BodyPublisher bodyPublisher,
+				List<IStruct> formFields) {
 			// Cannot have an existing body when using form fields
-			if ( bodyPublisher != null ) {
-				throw new BoxRuntimeException( "Cannot use a formfield httpparam with an existing http body: " + bodyPublisher.toString() );
+			if (bodyPublisher != null) {
+				throw new BoxRuntimeException(
+						"Cannot use a formfield httpparam with an existing http body: " + bodyPublisher.toString());
 			}
 
 			bodyPublisher = HttpRequest.BodyPublishers.ofString(
-			    formFields.stream()
-			        .map( formField -> {
-				        String value = StringCaster.cast( formField.get( Key.value ) );
-				        if ( BooleanCaster.cast( formField.getOrDefault( Key.encoded, false ) ) ) {
-					        value = EncryptionUtil.urlEncode( value, StandardCharsets.UTF_8 );
-				        }
-				        return StringCaster.cast( formField.get( Key._name ) ) + "=" + value;
-			        } )
-			        .collect( Collectors.joining( "&" ) )
-			);
+					formFields.stream()
+							.map(formField -> {
+								String value = StringCaster.cast(formField.get(Key.value));
+								if (BooleanCaster.cast(formField.getOrDefault(Key.encoded, false))) {
+									value = EncryptionUtil.urlEncode(value, StandardCharsets.UTF_8);
+								}
+								return StringCaster.cast(formField.get(Key._name)) + "=" + value;
+							})
+							.collect(Collectors.joining("&")));
 
-			requestBuilder.header( "Content-Type", "application/x-www-form-urlencoded" );
+			requestBuilder.header("Content-Type", "application/x-www-form-urlencoded");
 			return bodyPublisher;
 		}
 
@@ -1353,32 +1368,34 @@ public class BoxHttpClient {
 		 * @throws BoxRuntimeException if an error occurs during processing
 		 */
 		private HttpRequest.BodyPublisher processFiles(
-		    HttpRequest.Builder requestBuilder,
-		    HttpRequest.BodyPublisher bodyPublisher,
-		    List<IStruct> formFields,
-		    List<IStruct> files ) throws IOException {
+				HttpRequest.Builder requestBuilder,
+				HttpRequest.BodyPublisher bodyPublisher,
+				List<IStruct> formFields,
+				List<IStruct> files) throws IOException {
 			// Cannot have an existing body when using multipart
-			if ( bodyPublisher != null ) {
-				throw new BoxRuntimeException( "Cannot use a multipart body with an existing http body: " + bodyPublisher.toString() );
+			if (bodyPublisher != null) {
+				throw new BoxRuntimeException(
+						"Cannot use a multipart body with an existing http body: " + bodyPublisher.toString());
 			}
 
 			HttpRequestMultipartBody.Builder multipartBodyBuilder = new HttpRequestMultipartBody.Builder();
-			for ( IStruct param : files ) {
-				ResolvedFilePath	path		= FileSystemUtil.expandPath( context, StringCaster.cast( param.get( Key.file ) ) );
-				File				file		= path.absolutePath().toFile();
-				String				mimeType	= Optional
-				    .ofNullable( param.getAsString( Key.mimetype ) )
-				    .orElseGet( () -> URLConnection.getFileNameMap().getContentTypeFor( file.getName() ) );
-				multipartBodyBuilder.addPart( StringCaster.cast( param.get( Key._name ) ), file, mimeType, file.getName() );
+			for (IStruct param : files) {
+				ResolvedFilePath path = FileSystemUtil.expandPath(context, StringCaster.cast(param.get(Key.file)));
+				File file = path.absolutePath().toFile();
+				String mimeType = Optional
+						.ofNullable(param.getAsString(Key.mimetype))
+						.orElseGet(() -> URLConnection.getFileNameMap().getContentTypeFor(file.getName()));
+				multipartBodyBuilder.addPart(StringCaster.cast(param.get(Key._name)), file, mimeType, file.getName());
 			}
 
-			for ( IStruct formField : formFields ) {
-				multipartBodyBuilder.addPart( StringCaster.cast( formField.get( Key._name ) ), StringCaster.cast( formField.get( Key.value ) ) );
+			for (IStruct formField : formFields) {
+				multipartBodyBuilder.addPart(StringCaster.cast(formField.get(Key._name)),
+						StringCaster.cast(formField.get(Key.value)));
 			}
 
 			HttpRequestMultipartBody multipartBody = multipartBodyBuilder.build();
-			requestBuilder.header( "Content-Type", multipartBody.getContentType() );
-			bodyPublisher = HttpRequest.BodyPublishers.ofByteArray( multipartBody.getBody() );
+			requestBuilder.header("Content-Type", multipartBody.getContentType());
+			bodyPublisher = HttpRequest.BodyPublishers.ofByteArray(multipartBody.getBody());
 			return bodyPublisher;
 		}
 
@@ -1396,83 +1413,88 @@ public class BoxHttpClient {
 		 * @throws BoxRuntimeException if an error occurs during processing
 		 */
 		private HttpRequest.BodyPublisher processParams(
-		    URIBuilder uriBuilder,
-		    HttpRequest.Builder requestBuilder,
-		    List<IStruct> formFields,
-		    List<IStruct> files,
-		    HttpRequest.BodyPublisher bodyPublisher ) {
+				URIBuilder uriBuilder,
+				HttpRequest.Builder requestBuilder,
+				List<IStruct> formFields,
+				List<IStruct> files,
+				HttpRequest.BodyPublisher bodyPublisher) {
 
 			// Iterate over each param and process based on type
-			for ( Object p : this.params ) {
-				IStruct	param	= StructCaster.cast( p );
-				String	type	= StringCaster.cast( param.get( Key.type ) );
+			for (Object p : this.params) {
+				IStruct param = StructCaster.cast(p);
+				String type = StringCaster.cast(param.get(Key.type));
 
 				// Process based on type
-				switch ( type.toLowerCase() ) {
+				switch (type.toLowerCase()) {
 					// We need to use `setHeader` to overwrite any previously set headers
 					case "header" -> {
-						String headerName = StringCaster.cast( param.get( Key._NAME ) );
-						// We need to downgrade our HTTP version if a TE header is present and is not `trailers`
+						String headerName = StringCaster.cast(param.get(Key._NAME));
+						// We need to downgrade our HTTP version if a TE header is present and is not
+						// `trailers`
 						// because HTTP/2 does not support the TE header with any other values
-						if ( headerName.equalsIgnoreCase( "TE" ) && !StringCaster.cast( param.get( Key.value ) ).equalsIgnoreCase( "trailers" ) ) {
-							requestBuilder.version( HttpClient.Version.HTTP_1_1 );
+						if (headerName.equalsIgnoreCase("TE")
+								&& !StringCaster.cast(param.get(Key.value)).equalsIgnoreCase("trailers")) {
+							requestBuilder.version(HttpClient.Version.HTTP_1_1);
 						}
-						requestBuilder.setHeader( headerName, StringCaster.cast( param.get( Key.value ) ) );
+						requestBuilder.setHeader(headerName, StringCaster.cast(param.get(Key.value)));
 					}
 
 					// Set body content
 					case "body" -> {
-						if ( bodyPublisher != null ) {
-							throw new BoxRuntimeException( "Cannot use a body httpparam with an existing http body: " + bodyPublisher.toString() );
+						if (bodyPublisher != null) {
+							throw new BoxRuntimeException("Cannot use a body httpparam with an existing http body: "
+									+ bodyPublisher.toString());
 						}
-						if ( param.get( Key.value ) instanceof byte[] bodyBytes ) {
-							bodyPublisher = HttpRequest.BodyPublishers.ofByteArray( bodyBytes );
-						} else if ( StringCaster.attempt( param.get( Key.value ) ).wasSuccessful() ) {
-							bodyPublisher = HttpRequest.BodyPublishers.ofString( StringCaster.cast( param.get( Key.value ) ) );
+						if (param.get(Key.value) instanceof byte[] bodyBytes) {
+							bodyPublisher = HttpRequest.BodyPublishers.ofByteArray(bodyBytes);
+						} else if (StringCaster.attempt(param.get(Key.value)).wasSuccessful()) {
+							bodyPublisher = HttpRequest.BodyPublishers
+									.ofString(StringCaster.cast(param.get(Key.value)));
 						} else {
-							throw new BoxRuntimeException( "The body attribute provided is not a valid string nor a binary object." );
+							throw new BoxRuntimeException(
+									"The body attribute provided is not a valid string nor a binary object.");
 						}
 					}
 
 					// XML body
 					case "xml" -> {
-						if ( bodyPublisher != null ) {
-							throw new BoxRuntimeException( "Cannot use a xml httpparam with an existing http body: " + bodyPublisher.toString() );
+						if (bodyPublisher != null) {
+							throw new BoxRuntimeException("Cannot use a xml httpparam with an existing http body: "
+									+ bodyPublisher.toString());
 						}
-						requestBuilder.header( "Content-Type", "text/xml" );
-						bodyPublisher = HttpRequest.BodyPublishers.ofString( StringCaster.cast( param.get( Key.value ) ) );
+						requestBuilder.header("Content-Type", "text/xml");
+						bodyPublisher = HttpRequest.BodyPublishers.ofString(StringCaster.cast(param.get(Key.value)));
 					}
 
 					// CGI parameter - uses URL encoding
-					case "cgi" -> requestBuilder.header( StringCaster.cast( param.get( Key._NAME ) ),
-					    BooleanCaster.cast( param.getOrDefault( Key.encoded, false ) )
-					        ? EncryptionUtil.urlEncode( StringCaster.cast( param.get( Key.value ) ) )
-					        : StringCaster.cast( param.get( Key.value ) )
-					);
+					case "cgi" -> requestBuilder.header(StringCaster.cast(param.get(Key._NAME)),
+							BooleanCaster.cast(param.getOrDefault(Key.encoded, false))
+									? EncryptionUtil.urlEncode(StringCaster.cast(param.get(Key.value)))
+									: StringCaster.cast(param.get(Key.value)));
 
 					// File to upload
-					case "file" -> files.add( param );
+					case "file" -> files.add(param);
 
 					// URL parameter
 					case "url" -> uriBuilder.addParameter(
-					    StringCaster.cast( param.get( Key._NAME ) ),
-					    BooleanCaster.cast( param.getOrDefault( Key.encoded, true ) )
-					        ? EncryptionUtil.urlEncode( StringCaster.cast( param.get( Key.value ) ), StandardCharsets.UTF_8 )
-					        : StringCaster.cast( param.get( Key.value ) )
-					);
+							StringCaster.cast(param.get(Key._NAME)),
+							BooleanCaster.cast(param.getOrDefault(Key.encoded, true))
+									? EncryptionUtil.urlEncode(StringCaster.cast(param.get(Key.value)),
+											StandardCharsets.UTF_8)
+									: StringCaster.cast(param.get(Key.value)));
 
 					// Form field
-					case "formfield" -> formFields.add( param );
+					case "formfield" -> formFields.add(param);
 
 					// Cookie
-					case "cookie" -> requestBuilder.header( "Cookie",
-					    StringCaster.cast( param.get( Key._NAME ) )
-					        + "="
-					        + EncryptionUtil.urlEncode( StringCaster.cast( param.get( Key.value ) ), StandardCharsets.UTF_8 )
-					);
+					case "cookie" -> requestBuilder.header("Cookie",
+							StringCaster.cast(param.get(Key._NAME))
+									+ "="
+									+ EncryptionUtil.urlEncode(StringCaster.cast(param.get(Key.value)),
+											StandardCharsets.UTF_8));
 
 					// Unhandled type
-					default -> throw new BoxRuntimeException( "Unhandled HTTPParam type: " + type );
+					default -> throw new BoxRuntimeException("Unhandled HTTPParam type: " + type);
 				}
 			}
 			return bodyPublisher;
@@ -1483,10 +1505,11 @@ public class BoxHttpClient {
 		 *
 		 * @param requestBuilder The HttpRequest.Builder to add the header to
 		 */
-		private void setupBasicAuth( HttpRequest.Builder requestBuilder ) {
-			String	auth		= ( this.username != null ? this.username : "" ) + ":" + ( this.password != null ? this.password : "" );
-			String	encodedAuth	= Base64.getEncoder().encodeToString( auth.getBytes() );
-			requestBuilder.header( "Authorization", "Basic " + encodedAuth );
+		private void setupBasicAuth(HttpRequest.Builder requestBuilder) {
+			String auth = (this.username != null ? this.username : "") + ":"
+					+ (this.password != null ? this.password : "");
+			String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes());
+			requestBuilder.header("Authorization", "Basic " + encodedAuth);
 		}
 
 		/**
@@ -1497,64 +1520,66 @@ public class BoxHttpClient {
 		 */
 		private BoxHttpRequest prepareRequest() throws URISyntaxException, IOException {
 			// Setup Request Builders
-			HttpRequest.Builder			requestBuilder	= HttpRequest.newBuilder();
-			URIBuilder					uriBuilder		= new URIBuilder( this.url );
-			HttpRequest.BodyPublisher	bodyPublisher	= null;
-			List<IStruct>				formFields		= new ArrayList<>();
-			List<IStruct>				files			= new ArrayList<>();
+			HttpRequest.Builder requestBuilder = HttpRequest.newBuilder();
+			URIBuilder uriBuilder = new URIBuilder(this.url);
+			HttpRequest.BodyPublisher bodyPublisher = null;
+			List<IStruct> formFields = new ArrayList<>();
+			List<IStruct> files = new ArrayList<>();
 
 			// Process Port if provided
-			if ( this.port != null ) {
-				uriBuilder.setPort( this.port );
+			if (this.port != null) {
+				uriBuilder.setPort(this.port);
 			}
 
 			// Basic metadata for the request and results
 			requestBuilder
-			    .version( this.httpVersion.equalsIgnoreCase( HTTP_1 ) ? HttpClient.Version.HTTP_1_1 : HttpClient.Version.HTTP_2 )
-			    .header( "User-Agent", this.userAgent )
-			    .header( "Accept-Encoding", "gzip, deflate" );
+					.version(this.httpVersion.equalsIgnoreCase(HTTP_1) ? HttpClient.Version.HTTP_1_1
+							: HttpClient.Version.HTTP_2)
+					.header("User-Agent", this.userAgent)
+					.header("Accept-Encoding", "gzip, deflate");
 
 			// Set a request Timeout if specified
-			if ( this.timeout > 0 ) {
-				requestBuilder.timeout( java.time.Duration.ofSeconds( this.timeout ) );
+			if (this.timeout > 0) {
+				requestBuilder.timeout(java.time.Duration.ofSeconds(this.timeout));
 			}
 
 			// Setup Accept and Cache-Control headers based on SSE mode
-			if ( this.forceSSE ) {
+			if (this.forceSSE) {
 				requestBuilder
-				    .header( "Accept", "text/event-stream" )
-				    .header( "Cache-Control", "no-cache" );
+						.header("Accept", "text/event-stream")
+						.header("Cache-Control", "no-cache");
 			} else {
 				requestBuilder
-				    .header( "Accept", "*/*" )
-				    .header( "Cache-Control", "no-cache" );
+						.header("Accept", "*/*")
+						.header("Cache-Control", "no-cache");
 			}
 
 			// Setup Basic Auth if provided
-			if ( this.username != null && this.password != null ) {
-				setupBasicAuth( requestBuilder );
+			if (this.username != null && this.password != null) {
+				setupBasicAuth(requestBuilder);
 			}
 
-			// Process HTTP Params - returns the bodyPublisher if any body-type params were found
-			bodyPublisher = processParams( uriBuilder, requestBuilder, formFields, files, bodyPublisher );
+			// Process HTTP Params - returns the bodyPublisher if any body-type params were
+			// found
+			bodyPublisher = processParams(uriBuilder, requestBuilder, formFields, files, bodyPublisher);
 
 			// Process Files
-			if ( !files.isEmpty() ) {
-				bodyPublisher = processFiles( requestBuilder, bodyPublisher, formFields, files );
-			} else if ( !formFields.isEmpty() ) {
+			if (!files.isEmpty()) {
+				bodyPublisher = processFiles(requestBuilder, bodyPublisher, formFields, files);
+			} else if (!formFields.isEmpty()) {
 				// Process Form Fields
-				bodyPublisher = processFormFields( requestBuilder, bodyPublisher, formFields );
+				bodyPublisher = processFormFields(requestBuilder, bodyPublisher, formFields);
 			}
 
 			// Set body publisher to noBody if still null
-			if ( bodyPublisher == null ) {
+			if (bodyPublisher == null) {
 				bodyPublisher = HttpRequest.BodyPublishers.noBody();
 			}
 
 			// Finalize Request Building with different settings
 			requestBuilder
-			    .method( this.method, bodyPublisher )
-			    .uri( uriBuilder.build() );
+					.method(this.method, bodyPublisher)
+					.uri(uriBuilder.build());
 
 			// Build the final HttpRequest
 			this.targetHttpRequest = requestBuilder.build();
@@ -1571,36 +1596,51 @@ public class BoxHttpClient {
 		/**
 		 * Execute the HTTP request and process the response.
 		 * <p>
-		 * This is the main terminal operation that executes the HTTP request based on the configured
-		 * parameters. The method handles both streaming and buffered response modes, manages callbacks,
+		 * This is the main terminal operation that executes the HTTP request based on
+		 * the configured
+		 * parameters. The method handles both streaming and buffered response modes,
+		 * manages callbacks,
 		 * tracks statistics, and provides comprehensive error handling.
 		 * <p>
 		 * <strong>Execution Flow:</strong>
 		 * <ol>
-		 * <li>Request Preparation: Builds the HttpRequest with all configured parameters (URL, method, headers, body, auth, etc.)</li>
-		 * <li>Pre-Request Setup: Initializes timing, updates client statistics, populates result metadata</li>
-		 * <li>Request Start Event: Fires ON_HTTP_REQUEST interceptor event and onRequestStart callback</li>
+		 * <li>Request Preparation: Builds the HttpRequest with all configured
+		 * parameters (URL, method, headers, body, auth, etc.)</li>
+		 * <li>Pre-Request Setup: Initializes timing, updates client statistics,
+		 * populates result metadata</li>
+		 * <li>Request Start Event: Fires ON_HTTP_REQUEST interceptor event and
+		 * onRequestStart callback</li>
 		 * <li>Request Execution:
 		 * <ul>
-		 * <li>Streaming Mode: If onChunk callback is provided, processes response in chunks with SSE detection</li>
+		 * <li>Streaming Mode: If onChunk callback is provided, processes response in
+		 * chunks with SSE detection</li>
 		 * <li>Buffered Mode: Receives entire response then processes (default)</li>
 		 * </ul>
 		 * </li>
-		 * <li>Response Processing: Decodes, transforms, and populates httpResult struct</li>
-		 * <li>Post-Response Events: Fires ON_HTTP_RESPONSE interceptor and onComplete callback</li>
-		 * <li>Finalization: Calculates execution time and updates client statistics</li>
+		 * <li>Response Processing: Decodes, transforms, and populates httpResult
+		 * struct</li>
+		 * <li>Post-Response Events: Fires ON_HTTP_RESPONSE interceptor and onComplete
+		 * callback</li>
+		 * <li>Finalization: Calculates execution time and updates client
+		 * statistics</li>
 		 * </ol>
 		 * <p>
 		 * <strong>Error Handling:</strong>
 		 * <p>
 		 * The method catches and handles multiple exception types gracefully:
 		 * <ul>
-		 * <li><strong>HttpTimeoutException:</strong> Request timeout - sets 408 status, calls onError callback</li>
-		 * <li><strong>SocketException/ConnectException:</strong> Connection failures (DNS, SSL/TLS, network) - sets 502 status</li>
-		 * <li><strong>BoxRuntimeException:</strong> Re-thrown immediately (validation errors, hard-stop errors)</li>
-		 * <li><strong>InterruptedException:</strong> Thread interrupted - sets error state and re-interrupts thread</li>
-		 * <li><strong>ExecutionException:</strong> Wraps various HTTP execution failures - unwraps and handles inner exception</li>
-		 * <li><strong>Other Exceptions:</strong> Catch-all for unexpected errors - sets 500 status</li>
+		 * <li><strong>HttpTimeoutException:</strong> Request timeout - sets 408 status,
+		 * calls onError callback</li>
+		 * <li><strong>SocketException/ConnectException:</strong> Connection failures
+		 * (DNS, SSL/TLS, network) - sets 502 status</li>
+		 * <li><strong>BoxRuntimeException:</strong> Re-thrown immediately (validation
+		 * errors, hard-stop errors)</li>
+		 * <li><strong>InterruptedException:</strong> Thread interrupted - sets error
+		 * state and re-interrupts thread</li>
+		 * <li><strong>ExecutionException:</strong> Wraps various HTTP execution
+		 * failures - unwraps and handles inner exception</li>
+		 * <li><strong>Other Exceptions:</strong> Catch-all for unexpected errors - sets
+		 * 500 status</li>
 		 * </ul>
 		 * <p>
 		 * <strong>Statistics Tracking:</strong>
@@ -1617,17 +1657,18 @@ public class BoxHttpClient {
 		 *
 		 * <pre>
 		 *
-		 * BoxHttpRequest request = httpClient.newRequest( "https://api.example.com/data" )
-		 *     .method( "POST" )
-		 *     .header( "Content-Type", "application/json" )
-		 *     .onComplete( result -> {
-		 * 	} )
-		 *     .send();
+		 * BoxHttpRequest request = httpClient.newRequest("https://api.example.com/data")
+		 * 		.method("POST")
+		 * 		.header("Content-Type", "application/json")
+		 * 		.onComplete(result -> {
+		 * 		})
+		 * 		.send();
 		 *
 		 * IStruct result = request.getHttpResult();
 		 * </pre>
 		 *
-		 * @return This BoxHttpRequest instance with populated httpResult struct containing:
+		 * @return This BoxHttpRequest instance with populated httpResult struct
+		 *         containing:
 		 *         <ul>
 		 *         <li>statusCode - HTTP status code (e.g., 200, 404, 500)</li>
 		 *         <li>statusText - HTTP status text (e.g., "OK", "Not Found")</li>
@@ -1672,13 +1713,13 @@ public class BoxHttpClient {
 				 * BYTES SENT TRACKING
 				 * ------------------------------------------------------------------------------
 				 */
-				this.targetHttpRequest.bodyPublisher().ifPresent( publisher -> {
+				this.targetHttpRequest.bodyPublisher().ifPresent(publisher -> {
 					publisher.contentLength();
 					long contentLength = publisher.contentLength();
-					if ( contentLength > 0 ) {
-						BoxHttpClient.this.bytesSent.addAndGet( contentLength );
+					if (contentLength > 0) {
+						BoxHttpClient.this.bytesSent.addAndGet(contentLength);
 					}
-				} );
+				});
 
 				/**
 				 * ------------------------------------------------------------------------------
@@ -1687,24 +1728,23 @@ public class BoxHttpClient {
 				 */
 
 				// Prepare the Http Reesults with the request info so we can start
-				this.httpResult.put( Key.requestID, this.requestID );
-				this.httpResult.put( Key.userAgent, this.userAgent );
-				this.httpResult.put( Key.stream, this.onChunkCallback != null ? true : false );
+				this.httpResult.put(Key.requestID, this.requestID);
+				this.httpResult.put(Key.userAgent, this.userAgent);
+				this.httpResult.put(Key.stream, this.onChunkCallback != null ? true : false);
 				// Note, if sse was not set explicitly, this will be false
 				// Content type detection for SSE is done after receiving the response headers
-				this.httpResult.put( Key.sse, this.forceSSE );
-				this.httpResult.put( Key.startTime, this.startTime );
+				this.httpResult.put(Key.sse, this.forceSSE);
+				this.httpResult.put(Key.startTime, this.startTime);
 				this.httpResult.put(
-				    Key.request,
-				    Struct.ofNonConcurrent(
-				        Key.charset, this.charset,
-				        Key.headers, Struct.fromMap( this.targetHttpRequest.headers().map() ),
-				        Key.httpVersion, this.httpVersion,
-				        Key.method, method,
-				        Key.multipart, this.multipart,
-				        Key.timeout, this.timeout,
-				        Key.URL, this.targetHttpRequest.uri().toString()
-				    ) );
+						Key.request,
+						Struct.ofNonConcurrent(
+								Key.charset, this.charset,
+								Key.headers, Struct.fromMap(this.targetHttpRequest.headers().map()),
+								Key.httpVersion, this.httpVersion,
+								Key.method, method,
+								Key.multipart, this.multipart,
+								Key.timeout, this.timeout,
+								Key.URL, this.targetHttpRequest.uri().toString()));
 
 				/**
 				 * ------------------------------------------------------------------------------
@@ -1712,13 +1752,11 @@ public class BoxHttpClient {
 				 * ------------------------------------------------------------------------------
 				 */
 				interceptorService.announce(
-				    BoxEvent.ON_HTTP_REQUEST,
-				    ( java.util.function.Supplier<IStruct> ) () -> Struct.ofNonConcurrent(
-				        Key.result, this.httpResult,
-				        Key.httpClient, BoxHttpClient.this,
-				        Key.httpRequest, this.targetHttpRequest
-				    )
-				);
+						BoxEvent.ON_HTTP_REQUEST,
+						(java.util.function.Supplier<IStruct>) () -> Struct.ofNonConcurrent(
+								Key.result, this.httpResult,
+								Key.httpClient, BoxHttpClient.this,
+								Key.httpRequest, this.targetHttpRequest));
 
 				/**
 				 * ------------------------------------------------------------------------------
@@ -1728,179 +1766,180 @@ public class BoxHttpClient {
 				 * - Buffered mode otherwise
 				 */
 
-				if ( this.onChunkCallback != null ) {
+				if (this.onChunkCallback != null) {
 					// Streaming mode: process response in chunks
 					invokeStreaming();
 				} else {
 					// Buffered mode: get the full response at once
 					invokeBuffered();
 				}
-			} catch ( ExecutionException e ) {
+			} catch (ExecutionException e) {
 				Throwable innerException = e.getCause();
-				this.error				= true;
-				this.requestException	= e;
-				this.errorMessage		= e.getMessage();
+				this.error = true;
+				this.requestException = e;
+				this.errorMessage = e.getMessage();
 
-				logger.error( "ExecutionException during HTTP request", e );
+				logger.error("ExecutionException during HTTP request", e);
 
 				// Handle timeout exceptions FIRST (most specific)
-				if ( innerException instanceof HttpTimeoutException ) {
-					logger.trace( "HttpTimeoutException detected - request timed out after {} seconds", this.timeout );
+				if (innerException instanceof HttpTimeoutException) {
+					logger.trace("HttpTimeoutException detected - request timed out after {} seconds", this.timeout);
 					BoxHttpClient.this.timeoutFailures.incrementAndGet();
 					HttpResponseHelper.populateErrorResponse(
-					    this.httpResult,
-					    STATUS_REQUEST_TIMEOUT,
-					    "Request Timeout",
-					    "Request Timeout",
-					    "The request timed out after " + this.timeout + " second(s)",
-					    this.charset,
-					    Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis()
-					);
+							this.httpResult,
+							STATUS_REQUEST_TIMEOUT,
+							"Request Timeout",
+							"Request Timeout",
+							"The request timed out after " + this.timeout + " second(s)",
+							this.charset,
+							Duration.between(this.startTime.toInstant(), Instant.now()).toMillis());
 					// Call onError callback if provided
-					if ( onErrorCallback != null ) {
-						context.invokeFunction( onErrorCallback, new Object[] { innerException, this.httpResult } );
+					if (onErrorCallback != null) {
+						context.invokeFunction(onErrorCallback, new Object[] { innerException, this.httpResult });
 					}
 				}
 				// Handle connection exceptions
-				else if ( innerException instanceof SocketException ) {
-					logger.trace( "SocketException detected: {}", innerException.getMessage() );
+				else if (innerException instanceof SocketException) {
+					logger.trace("SocketException detected: {}", innerException.getMessage());
 					// Check if it's a TLS/SSL failure
-					if ( innerException instanceof javax.net.ssl.SSLException ||
-					    ( innerException.getCause() instanceof javax.net.ssl.SSLException ) ) {
+					if (innerException instanceof javax.net.ssl.SSLException ||
+							(innerException.getCause() instanceof javax.net.ssl.SSLException)) {
 						BoxHttpClient.this.tlsFailures.incrementAndGet();
 					} else {
 						BoxHttpClient.this.connectionFailures.incrementAndGet();
 					}
 					String errorDetail;
-					if ( innerException instanceof ConnectException ) {
-						if ( this.targetHttpRequest.uri() != null ) {
-							errorDetail = String.format( "Unknown host: %s: Name or service not known.", this.targetHttpRequest.uri().getHost() );
+					if (innerException instanceof ConnectException) {
+						if (this.targetHttpRequest.uri() != null) {
+							errorDetail = String.format("Unknown host: %s: Name or service not known.",
+									this.targetHttpRequest.uri().getHost());
 						} else {
-							errorDetail = String.format( "Unknown host: %s: Name or service not known.", this.targetHttpRequest.uri().toString() );
+							errorDetail = String.format("Unknown host: %s: Name or service not known.",
+									this.targetHttpRequest.uri().toString());
 						}
 					} else {
 						errorDetail = "Connection Failure: " + innerException.getMessage();
 					}
 					HttpResponseHelper.populateErrorResponse(
-					    this.httpResult,
-					    STATUS_BAD_GATEWAY,
-					    "Bad Gateway",
-					    "Connection Failure",
-					    errorDetail,
-					    this.charset,
-					    Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis()
-					);
+							this.httpResult,
+							STATUS_BAD_GATEWAY,
+							"Bad Gateway",
+							"Connection Failure",
+							errorDetail,
+							this.charset,
+							Duration.between(this.startTime.toInstant(), Instant.now()).toMillis());
 					// Call onError callback if provided
-					if ( onErrorCallback != null ) {
-						context.invokeFunction( onErrorCallback, new Object[] { innerException, this.httpResult } );
+					if (onErrorCallback != null) {
+						context.invokeFunction(onErrorCallback, new Object[] { innerException, this.httpResult });
 					}
 				}
 				// Handle any other ExecutionException
 				else {
 					logger.error(
-					    "Unhandled ExecutionException with inner exception: {}",
-					    innerException != null ? innerException.getClass().getName() : "null", e
-					);
+							"Unhandled ExecutionException with inner exception: {}",
+							innerException != null ? innerException.getClass().getName() : "null", e);
 					// Track as HTTP protocol failure if it's an HTTP-related exception
-					if ( innerException != null &&
-					    ( innerException.getClass().getName().contains( "Http" ) ||
-					        innerException.getClass().getName().contains( "Protocol" ) ) ) {
+					if (innerException != null &&
+							(innerException.getClass().getName().contains("Http") ||
+									innerException.getClass().getName().contains("Protocol"))) {
 						BoxHttpClient.this.httpProtocolFailures.incrementAndGet();
 					}
 					String errorDetail = innerException != null
-					    ? innerException.getClass().getName() + ": " + innerException.getMessage()
-					    : e.getMessage();
+							? innerException.getClass().getName() + ": " + innerException.getMessage()
+							: e.getMessage();
 					HttpResponseHelper.populateErrorResponse(
-					    this.httpResult,
-					    STATUS_INTERNAL_ERROR,
-					    "Internal Server Error",
-					    "",
-					    errorDetail,
-					    this.charset,
-					    Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis()
-					);
+							this.httpResult,
+							STATUS_INTERNAL_ERROR,
+							"Internal Server Error",
+							"",
+							errorDetail,
+							this.charset,
+							Duration.between(this.startTime.toInstant(), Instant.now()).toMillis());
 					// Call onError callback if provided
-					if ( onErrorCallback != null ) {
-						context.invokeFunction( onErrorCallback, new Object[] { innerException != null ? innerException : e, this.httpResult } );
+					if (onErrorCallback != null) {
+						context.invokeFunction(onErrorCallback,
+								new Object[] { innerException != null ? innerException : e, this.httpResult });
 					}
 				}
-			} catch ( InterruptedException e ) {
+			} catch (InterruptedException e) {
 				// interrupt the thread
 				Thread.currentThread().interrupt();
-				logger.warn( "Thread interrupted during HTTP request", e );
-				this.error				= true;
-				this.errorMessage		= e.getMessage();
-				this.requestException	= e;
-				this.httpResult.put( Key.errorDetail, "Thread interrupted: " + e.getMessage() );
+				logger.warn("Thread interrupted during HTTP request", e);
+				this.error = true;
+				this.errorMessage = e.getMessage();
+				this.requestException = e;
+				this.httpResult.put(Key.errorDetail, "Thread interrupted: " + e.getMessage());
 				// Throwing InterruptedException to respect thread interruption
-				throw new BoxRuntimeException( "Thread interrupted during HTTP request", e );
+				throw new BoxRuntimeException("Thread interrupted during HTTP request", e);
 			}
-			// BoxRuntimeException should always be re-thrown (e.g., binary validation errors, hard-stop errors, etc.)
-			catch ( BoxRuntimeException e ) {
-				logger.error( "BoxRuntimeException during HTTP request - re-throwing", e );
+			// BoxRuntimeException should always be re-thrown (e.g., binary validation
+			// errors, hard-stop errors, etc.)
+			catch (BoxRuntimeException e) {
+				logger.error("BoxRuntimeException during HTTP request - re-throwing", e);
 				throw e;
 			}
 			// Catch-all for any other unexpected exceptions
-			catch ( Exception e ) {
-				logger.error( "Unexpected exception during HTTP request", e );
-				if ( this.onErrorCallback != null ) {
+			catch (Exception e) {
+				logger.error("Unexpected exception during HTTP request", e);
+				if (this.onErrorCallback != null) {
 					context.invokeFunction(
-					    this.onErrorCallback,
-					    new Object[] { e, this.httpResult }
-					);
+							this.onErrorCallback,
+							new Object[] { e, this.httpResult });
 				}
-				this.error				= true;
-				this.errorMessage		= e.getMessage();
-				this.requestException	= e;
-				this.httpResult.put( Key.statusCode, STATUS_INTERNAL_ERROR );
-				this.httpResult.put( Key.status_code, STATUS_INTERNAL_ERROR );
-				this.httpResult.put( Key.statusText, "Internal Server Error" );
-				this.httpResult.put( Key.status_text, "Internal Server Error" );
-				this.httpResult.put( Key.errorDetail, e.getClass().getName() + ": " + e.getMessage() );
-				this.httpResult.put( Key.charset, this.charset );
-				this.httpResult.put( Key.executionTime, Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
+				this.error = true;
+				this.errorMessage = e.getMessage();
+				this.requestException = e;
+				this.httpResult.put(Key.statusCode, STATUS_INTERNAL_ERROR);
+				this.httpResult.put(Key.status_code, STATUS_INTERNAL_ERROR);
+				this.httpResult.put(Key.statusText, "Internal Server Error");
+				this.httpResult.put(Key.status_text, "Internal Server Error");
+				this.httpResult.put(Key.errorDetail, e.getClass().getName() + ": " + e.getMessage());
+				this.httpResult.put(Key.charset, this.charset);
+				this.httpResult.put(Key.executionTime,
+						Duration.between(this.startTime.toInstant(), Instant.now()).toMillis());
 			} finally {
 				// Always calculate execution time if not already set (success path)
-				if ( this.startTime != null && !this.httpResult.containsKey( Key.executionTime ) ) {
-					this.httpResult.put( Key.executionTime, Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
+				if (this.startTime != null && !this.httpResult.containsKey(Key.executionTime)) {
+					this.httpResult.put(Key.executionTime,
+							Duration.between(this.startTime.toInstant(), Instant.now()).toMillis());
 				}
 
 				// Update statistics based on request outcome
-				if ( this.error ) {
+				if (this.error) {
 					BoxHttpClient.this.failedRequests.incrementAndGet();
 				} else {
 					BoxHttpClient.this.successfulRequests.incrementAndGet();
 				}
 
 				// Track execution time
-				if ( this.httpResult.containsKey( Key.executionTime ) ) {
-					long executionTime = ( ( Number ) this.httpResult.get( Key.executionTime ) ).longValue();
-					BoxHttpClient.this.totalExecutionTimeMs.addAndGet( executionTime );
+				if (this.httpResult.containsKey(Key.executionTime)) {
+					long executionTime = ((Number) this.httpResult.get(Key.executionTime)).longValue();
+					BoxHttpClient.this.totalExecutionTimeMs.addAndGet(executionTime);
 
 					// Update min execution time
 					long currentMin;
 					do {
 						currentMin = BoxHttpClient.this.minExecutionTimeMs.get();
-						if ( executionTime >= currentMin )
+						if (executionTime >= currentMin)
 							break;
-					} while ( !BoxHttpClient.this.minExecutionTimeMs.compareAndSet( currentMin, executionTime ) );
+					} while (!BoxHttpClient.this.minExecutionTimeMs.compareAndSet(currentMin, executionTime));
 
 					// Update max execution time
 					long currentMax;
 					do {
 						currentMax = BoxHttpClient.this.maxExecutionTimeMs.get();
-						if ( executionTime <= currentMax )
+						if (executionTime <= currentMax)
 							break;
-					} while ( !BoxHttpClient.this.maxExecutionTimeMs.compareAndSet( currentMax, executionTime ) );
+					} while (!BoxHttpClient.this.maxExecutionTimeMs.compareAndSet(currentMax, executionTime));
 				}
 
 				// Track bytes received (from fileContent if available)
-				if ( this.httpResult.containsKey( Key.fileContent ) ) {
-					Object fileContent = this.httpResult.get( Key.fileContent );
-					if ( fileContent instanceof String ) {
-						BoxHttpClient.this.bytesReceived.addAndGet( ( ( String ) fileContent ).getBytes().length );
-					} else if ( fileContent instanceof byte[] ) {
-						BoxHttpClient.this.bytesReceived.addAndGet( ( ( byte[] ) fileContent ).length );
+				if (this.httpResult.containsKey(Key.fileContent)) {
+					Object fileContent = this.httpResult.get(Key.fileContent);
+					if (fileContent instanceof String) {
+						BoxHttpClient.this.bytesReceived.addAndGet(((String) fileContent).getBytes().length);
+					} else if (fileContent instanceof byte[]) {
+						BoxHttpClient.this.bytesReceived.addAndGet(((byte[]) fileContent).length);
 					}
 				}
 			}
@@ -1915,9 +1954,8 @@ public class BoxHttpClient {
 		 */
 		public BoxFuture<Object> sendAsync() {
 			return BoxFuture.run(
-			    () -> send(),
-			    getHttpService().getHttpExecutor().executor()
-			);
+					() -> send(),
+					getHttpService().getHttpExecutor().executor());
 		}
 
 		/**
@@ -1932,19 +1970,18 @@ public class BoxHttpClient {
 
 			// IF THROW ON ERROR IS ENABLED, THROW FOR HTTP ERRORS
 			// Check the status code, if it's >= 400 and throwOnError is true, rethrow
-			int statusCode = IntegerCaster.cast( this.httpResult.get( Key.statusCode ) );
-			if ( this.throwOnError && statusCode >= 400 ) {
+			int statusCode = IntegerCaster.cast(this.httpResult.get(Key.statusCode));
+			if (this.throwOnError && statusCode >= 400) {
 				throw new BoxRuntimeException(
-				    "HTTP request failed with status code [" + statusCode + "]",
-				    this.httpResult.getAsString( Key.fileContent ),
-				    this.httpResult.getAsStruct( Key.request ),
-				    this.requestException
-				);
+						"HTTP request failed with status code [" + statusCode + "]",
+						this.httpResult.getAsString(Key.fileContent),
+						this.httpResult.getAsStruct(Key.request),
+						this.requestException);
 			}
 
 			// Apply transformer if set
-			if ( this.transformer != null ) {
-				return this.transformer.apply( this.httpResult );
+			if (this.transformer != null) {
+				return this.transformer.apply(this.httpResult);
 			}
 
 			// Return the result struct
@@ -1960,18 +1997,18 @@ public class BoxHttpClient {
 		 *
 		 * <pre>
 		 * httpRequestBuilder
-		 *     .ifFailed( ( exception, httpResult ) -> {
-		 * 		// Handle failure
-		 * 	} );
+		 * 		.ifFailed((exception, httpResult) -> {
+		 * 			// Handle failure
+		 * 		});
 		 * </pre>
 		 *
 		 * @param callback The function to call on failure
 		 *
 		 * @return The HttpRequestBuilder for chaining
 		 */
-		public BoxHttpRequest ifFailed( BiConsumer<Throwable, IStruct> callback ) {
-			if ( this.error ) {
-				callback.accept( this.requestException, this.httpResult );
+		public BoxHttpRequest ifFailed(BiConsumer<Throwable, IStruct> callback) {
+			if (this.error) {
+				callback.accept(this.requestException, this.httpResult);
 			}
 			return this;
 		}
@@ -1984,18 +2021,18 @@ public class BoxHttpClient {
 		 *
 		 * <pre>
 		 * httpRequestBuilder
-		 *     .ifSuccessful( ( httpResult ) -> {
-		 * 		// Handle success
-		 * 	} );
+		 * 		.ifSuccessful((httpResult) -> {
+		 * 			// Handle success
+		 * 		});
 		 * </pre>
 		 *
 		 * @param callback The function to call on success
 		 *
 		 * @return The HttpRequestBuilder for chaining
 		 */
-		public BoxHttpRequest ifSuccessful( Consumer<IStruct> callback ) {
-			if ( !this.error ) {
-				callback.accept( this.httpResult );
+		public BoxHttpRequest ifSuccessful(Consumer<IStruct> callback) {
+			if (!this.error) {
+				callback.accept(this.httpResult);
 			}
 			return this;
 		}
@@ -2008,7 +2045,8 @@ public class BoxHttpClient {
 
 		/**
 		 * Execute a buffered HTTP request and process the response.
-		 * This is called from the main invoke() method which takes care of error handling.
+		 * This is called from the main invoke() method which takes care of error
+		 * handling.
 		 *
 		 * @throws IOException          If an I/O error occurs
 		 * @throws ExecutionException   If the HTTP request fails
@@ -2021,15 +2059,13 @@ public class BoxHttpClient {
 			 * ON REQUEST START EVENT
 			 * ------------------------------------------------------------------------------
 			 */
-			if ( this.onRequestStartCallback != null ) {
+			if (this.onRequestStartCallback != null) {
 				context.invokeFunction(
-				    this.onRequestStartCallback,
-				    Struct.ofNonConcurrent(
-				        Key.result, this.httpResult,
-				        Key.httpClient, BoxHttpClient.this,
-				        Key.httpRequest, this.targetHttpRequest
-				    )
-				);
+						this.onRequestStartCallback,
+						Struct.ofNonConcurrent(
+								Key.result, this.httpResult,
+								Key.httpClient, BoxHttpClient.this,
+								Key.httpRequest, this.targetHttpRequest));
 			}
 
 			/**
@@ -2040,23 +2076,23 @@ public class BoxHttpClient {
 
 			// Buffered mode: receive entire response then process
 			HttpResponse<byte[]> response = httpClient
-			    .sendAsync( this.targetHttpRequest, HttpResponse.BodyHandlers.ofByteArray() )
-			    .get();
+					.sendAsync(this.targetHttpRequest, HttpResponse.BodyHandlers.ofByteArray())
+					.get();
 
 			/**
 			 * ------------------------------------------------------------------------------
 			 * ON HTTP RAW RESPONSE EVENT
 			 * ------------------------------------------------------------------------------
 			 */
-			// Useful for debugging and pre-processing and timing, since the other events are after the response is processed
+			// Useful for debugging and pre-processing and timing, since the other events
+			// are after the response is processed
 			interceptorService.announce(
-			    BoxEvent.ON_HTTP_RAW_RESPONSE,
-			    ( java.util.function.Supplier<IStruct> ) () -> Struct.ofNonConcurrent(
-			        Key.result, this.httpResult,
-			        Key.response, response,
-			        Key.httpClient, BoxHttpClient.this,
-			        Key.httpRequest, this.targetHttpRequest
-			    ) );
+					BoxEvent.ON_HTTP_RAW_RESPONSE,
+					(java.util.function.Supplier<IStruct>) () -> Struct.ofNonConcurrent(
+							Key.result, this.httpResult,
+							Key.response, response,
+							Key.httpClient, BoxHttpClient.this,
+							Key.httpRequest, this.targetHttpRequest));
 
 			/**
 			 * ------------------------------------------------------------------------------
@@ -2064,7 +2100,7 @@ public class BoxHttpClient {
 			 * ------------------------------------------------------------------------------
 			 * This makes sure the response is processed for BoxLang consumption
 			 */
-			processBufferedResponse( response );
+			processBufferedResponse(response);
 
 			/**
 			 * ------------------------------------------------------------------------------
@@ -2072,29 +2108,27 @@ public class BoxHttpClient {
 			 * ------------------------------------------------------------------------------
 			 */
 			interceptorService.announce(
-			    BoxEvent.ON_HTTP_RESPONSE,
-			    ( java.util.function.Supplier<IStruct> ) () -> Struct.ofNonConcurrent(
-			        Key.result, this.httpResult,
-			        Key.response, response,
-			        Key.httpClient, BoxHttpClient.this,
-			        Key.chunkCount, 0
-			    ) );
+					BoxEvent.ON_HTTP_RESPONSE,
+					(java.util.function.Supplier<IStruct>) () -> Struct.ofNonConcurrent(
+							Key.result, this.httpResult,
+							Key.response, response,
+							Key.httpClient, BoxHttpClient.this,
+							Key.chunkCount, 0));
 
 			/**
 			 * ------------------------------------------------------------------------------
 			 * ON COMPLETE CALLBACK
 			 * ------------------------------------------------------------------------------
 			 */
-			if ( this.onCompleteCallback != null ) {
+			if (this.onCompleteCallback != null) {
 				context.invokeFunction(
-				    onCompleteCallback,
-				    new Object[] {
-				        this.httpResult, // result
-				        response, // response
-				        BoxHttpClient.this, // httpClient
-				        0 // chunkCount is 0 for buffered responses
-				    }
-				);
+						onCompleteCallback,
+						new Object[] {
+								this.httpResult, // result
+								response, // response
+								BoxHttpClient.this, // httpClient
+								0 // chunkCount is 0 for buffered responses
+						});
 			}
 		}
 
@@ -2108,96 +2142,103 @@ public class BoxHttpClient {
 		 * @return The processed response body
 		 *
 		 * @throws IOException         If an I/O error occurs
-		 * @throws BoxRuntimeException If the response is binary but getAsBinary is set to 'never'.
-		 *                             Unable to determine filename from response for output.
+		 * @throws BoxRuntimeException If the response is binary but getAsBinary is set
+		 *                             to 'never'.
+		 *                             Unable to determine filename from response for
+		 *                             output.
 		 */
-		private Object processBufferedResponse( HttpResponse<byte[]> response ) throws IOException {
+		private Object processBufferedResponse(HttpResponse<byte[]> response) throws IOException {
 			// Get the response Headers and convert them to a native BoxLang struct
-			HttpHeaders	httpHeaders			= Optional
-			    .ofNullable( response.headers() )
-			    .orElse( HttpHeaders.of( Map.of(), ( a, b ) -> true ) );
-			IStruct		headers				= HttpResponseHelper.transformToResponseHeaderStruct( httpHeaders.map() );
+			HttpHeaders httpHeaders = Optional
+					.ofNullable(response.headers())
+					.orElse(HttpHeaders.of(Map.of(), (a, b) -> true));
+			IStruct headers = HttpResponseHelper.transformToResponseHeaderStruct(httpHeaders.map());
 
 			// Prepare HTTP response metadata as a string
-			String		httpVersionString	= HttpResponseHelper.getHttpVersionString( response.version() );
+			String httpVersionString = HttpResponseHelper.getHttpVersionString(response.version());
 
 			// Populate standard response metadata
-			HttpResponseHelper.populateResponseMetadata( this.httpResult, headers, httpVersionString, response.statusCode() );
+			HttpResponseHelper.populateResponseMetadata(this.httpResult, headers, httpVersionString,
+					response.statusCode());
 
 			// Determine binary response handling
-			byte[]	responseBytes	= response.body();
-			Object	responseBody	= null;
+			byte[] responseBytes = response.body();
+			Object responseBody = null;
 
 			// Process body if not null
-			if ( responseBytes != null && responseBytes.length > 0 ) {
-				String	contentType		= HttpResponseHelper.extractFirstHeaderByName( headers, Key.contentType );
-				String	contentEncoding	= HttpResponseHelper.extractFirstHeaderByName( headers, Key.contentEncoding );
+			if (responseBytes != null && responseBytes.length > 0) {
+				String contentType = HttpResponseHelper.extractFirstHeaderByName(headers, Key.contentType);
+				String contentEncoding = HttpResponseHelper.extractFirstHeaderByName(headers, Key.contentEncoding);
 
 				// Decode content encoding if present (gzip, deflate)
-				if ( contentEncoding != null ) {
+				if (contentEncoding != null) {
 					// Split the Content-Encoding header into individual encodings
-					String[] encodings = contentEncoding.split( "," );
-					for ( String encoding : encodings ) {
+					String[] encodings = contentEncoding.split(",");
+					for (String encoding : encodings) {
 						encoding = encoding.trim().toLowerCase();
-						if ( encoding.equals( "gzip" ) ) {
-							responseBytes = ZipUtil.extractGZipContent( responseBytes );
-						} else if ( encoding.equals( "deflate" ) ) {
-							responseBytes = ZipUtil.inflateDeflatedContent( responseBytes );
+						if (encoding.equals("gzip")) {
+							responseBytes = ZipUtil.extractGZipContent(responseBytes);
+						} else if (encoding.equals("deflate")) {
+							responseBytes = ZipUtil.inflateDeflatedContent(responseBytes);
 						}
 					}
 				}
 
 				// Determine if response should be treated as binary
-				Boolean	isBinaryContentType	= FileSystemUtil.isBinaryMimeType( contentType );
-				String	charset				= null;
-				if ( ( this.isBinaryRequest || isBinaryContentType ) && !this.isBinaryNever ) {
+				Boolean isBinaryContentType = FileSystemUtil.isBinaryMimeType(contentType);
+				String charset = null;
+				if ((this.isBinaryRequest || isBinaryContentType) && !this.isBinaryNever) {
 					responseBody = responseBytes;
-				} else if ( this.isBinaryNever && isBinaryContentType ) {
-					throw new BoxRuntimeException( "The response is a binary type, but the getAsBinary attribute was set to 'never'" );
+				} else if (this.isBinaryNever && isBinaryContentType) {
+					throw new BoxRuntimeException(
+							"The response is a binary type, but the getAsBinary attribute was set to 'never'");
 				} else {
 					// Extract charset from Content-Type or use default
-					charset = HttpResponseHelper.extractCharset( contentType );
-					if ( charset == null ) {
+					charset = HttpResponseHelper.extractCharset(contentType);
+					if (charset == null) {
 						charset = this.charset;
 					}
 					// Validate charset before using
 					try {
-						responseBody = new String( responseBytes, Charset.forName( charset ) );
-					} catch ( Exception e ) {
-						logger.warn( "Invalid charset '{}', falling back to default: {}", charset, DEFAULT_CHARSET );
-						responseBody	= new String( responseBytes, Charset.forName( DEFAULT_CHARSET ) );
-						charset			= DEFAULT_CHARSET;
+						responseBody = new String(responseBytes, Charset.forName(charset));
+					} catch (Exception e) {
+						logger.warn("Invalid charset '{}', falling back to default: {}", charset, DEFAULT_CHARSET);
+						responseBody = new String(responseBytes, Charset.forName(DEFAULT_CHARSET));
+						charset = DEFAULT_CHARSET;
 					}
 				}
 			}
 
-			// Handle output file saving if specified (always execute, even if body is null/empty)
-			if ( this.outputDirectory != null ) {
-				String	filename		= HttpResponseHelper.resolveOutputFilename( headers, this.outputFile, this.targetHttpRequest.uri() );
-				String	destinationPath	= Path.of( this.outputDirectory, filename ).toAbsolutePath().toString();
+			// Handle output file saving if specified (always execute, even if body is
+			// null/empty)
+			if (this.outputDirectory != null) {
+				String filename = HttpResponseHelper.resolveOutputFilename(headers, this.outputFile,
+						this.targetHttpRequest.uri());
+				String destinationPath = Path.of(this.outputDirectory, filename).toAbsolutePath().toString();
 
 				// Write the file based on response body type (or empty file if no body)
-				if ( responseBody instanceof String responseString ) {
-					FileSystemUtil.write( destinationPath, responseString, this.charset, true );
-				} else if ( responseBody instanceof byte[] bodyBytes ) {
-					FileSystemUtil.write( destinationPath, bodyBytes, true );
+				if (responseBody instanceof String responseString) {
+					FileSystemUtil.write(destinationPath, responseString, this.charset, true);
+				} else if (responseBody instanceof byte[] bodyBytes) {
+					FileSystemUtil.write(destinationPath, bodyBytes, true);
 				} else {
 					// No body or null body - create empty file
-					FileSystemUtil.write( destinationPath, "", this.charset, true );
+					FileSystemUtil.write(destinationPath, "", this.charset, true);
 				}
 			}
 
 			// Fill out the httpResult struct (always populated regardless of body presence)
 			this.httpResult.put(
-			    Key.fileContent,
-			    response.statusCode() == STATUS_REQUEST_TIMEOUT ? "Request Timeout" : ( responseBody != null ? responseBody : "" )
-			);
-			this.httpResult.put( Key.errorDetail, response.statusCode() == STATUS_REQUEST_TIMEOUT ? "" : "" );
-			this.httpResult.put( Key.executionTime, Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
+					Key.fileContent,
+					response.statusCode() == STATUS_REQUEST_TIMEOUT ? "Request Timeout"
+							: (responseBody != null ? responseBody : ""));
+			this.httpResult.put(Key.errorDetail, response.statusCode() == STATUS_REQUEST_TIMEOUT ? "" : "");
+			this.httpResult.put(Key.executionTime,
+					Duration.between(this.startTime.toInstant(), Instant.now()).toMillis());
 
 			// Process Content-Type header (mimetype, charset, text determination)
-			String contentType = HttpResponseHelper.extractFirstHeaderByName( headers, Key.contentType );
-			HttpResponseHelper.processContentType( this.httpResult, headers, contentType, this.charset );
+			String contentType = HttpResponseHelper.extractFirstHeaderByName(headers, Key.contentType);
+			HttpResponseHelper.processContentType(this.httpResult, headers, contentType, this.charset);
 
 			return responseBody;
 		}
@@ -2206,8 +2247,10 @@ public class BoxHttpClient {
 		 * Process a streaming HTTP response with chunked callbacks.
 		 * Detects SSE mode and delegates to appropriate handler.
 		 * <p>
-		 * This method handles the response in a streaming fashion, invoking the onChunk callback
-		 * for each chunk of data as it arrives. It reuses the same header processing and response
+		 * This method handles the response in a streaming fashion, invoking the onChunk
+		 * callback
+		 * for each chunk of data as it arrives. It reuses the same header processing
+		 * and response
 		 * metadata logic as the buffered response handler.
 		 *
 		 * @throws IOException          If an I/O error occurs
@@ -2222,30 +2265,28 @@ public class BoxHttpClient {
 			 * ON REQUEST START EVENT
 			 * ------------------------------------------------------------------------------
 			 */
-			if ( this.onRequestStartCallback != null ) {
+			if (this.onRequestStartCallback != null) {
 				context.invokeFunction(
-				    this.onRequestStartCallback,
-				    Struct.ofNonConcurrent(
-				        Key.result, this.httpResult,
-				        Key.httpClient, BoxHttpClient.this,
-				        Key.httpRequest, this.targetHttpRequest
-				    )
-				);
+						this.onRequestStartCallback,
+						Struct.ofNonConcurrent(
+								Key.result, this.httpResult,
+								Key.httpClient, BoxHttpClient.this,
+								Key.httpRequest, this.targetHttpRequest));
 			}
 
 			/**
 			 * ------------------------------------------------------------------------------
 			 * Make the HTTP Request (Streaming)
 			 * ------------------------------------------------------------------------------
-			 * Send request with streaming body handler (using InputStream for better control)
+			 * Send request with streaming body handler (using InputStream for better
+			 * control)
 			 * Because it could be SSE or regular streaming, we need to handle both cases
 			 */
-			HttpResponse<java.io.InputStream>	response			= httpClient
-			    .sendAsync(
-			        this.targetHttpRequest,
-			        HttpResponse.BodyHandlers.ofInputStream()
-			    )
-			    .get();
+			HttpResponse<java.io.InputStream> response = httpClient
+					.sendAsync(
+							this.targetHttpRequest,
+							HttpResponse.BodyHandlers.ofInputStream())
+					.get();
 
 			/**
 			 * ------------------------------------------------------------------------------
@@ -2254,28 +2295,29 @@ public class BoxHttpClient {
 			 */
 
 			// Process response headers and metadata
-			HttpHeaders							httpHeaders			= Optional
-			    .ofNullable( response.headers() )
-			    .orElse( HttpHeaders.of( Map.of(), ( a, b ) -> true ) );
-			IStruct								headers				= HttpResponseHelper.transformToResponseHeaderStruct( httpHeaders.map() );
+			HttpHeaders httpHeaders = Optional
+					.ofNullable(response.headers())
+					.orElse(HttpHeaders.of(Map.of(), (a, b) -> true));
+			IStruct headers = HttpResponseHelper.transformToResponseHeaderStruct(httpHeaders.map());
 
 			// Prepare HTTP response metadata
-			String								httpVersionString	= HttpResponseHelper.getHttpVersionString( response.version() );
+			String httpVersionString = HttpResponseHelper.getHttpVersionString(response.version());
 
 			// Populate standard response metadata
-			HttpResponseHelper.populateResponseMetadata( this.httpResult, headers, httpVersionString, response.statusCode() );
+			HttpResponseHelper.populateResponseMetadata(this.httpResult, headers, httpVersionString,
+					response.statusCode());
 
 			// Process Content-Type header and extract charset for streaming
-			String	contentType		= HttpResponseHelper.extractFirstHeaderByName( headers, Key.contentType );
-			String	charset			= HttpResponseHelper.processContentType( this.httpResult, headers, contentType, this.charset );
-			String	contentEncoding	= HttpResponseHelper.extractFirstHeaderByName( headers, Key.contentEncoding );
+			String contentType = HttpResponseHelper.extractFirstHeaderByName(headers, Key.contentType);
+			String charset = HttpResponseHelper.processContentType(this.httpResult, headers, contentType, this.charset);
+			String contentEncoding = HttpResponseHelper.extractFirstHeaderByName(headers, Key.contentEncoding);
 
 			// Determine if SSE mode (auto-detect or forced)
-			boolean	isSSE			= this.forceSSE || ( contentType != null && contentType.contains( "text/event-stream" ) );
+			boolean isSSE = this.forceSSE || (contentType != null && contentType.contains("text/event-stream"));
 
 			// Execution Markers
-			this.httpResult.put( Key.stream, true );
-			this.httpResult.put( Key.sse, isSSE );
+			this.httpResult.put(Key.stream, true);
+			this.httpResult.put(Key.sse, isSSE);
 
 			/**
 			 * ------------------------------------------------------------------------------
@@ -2283,23 +2325,22 @@ public class BoxHttpClient {
 			 * ------------------------------------------------------------------------------
 			 */
 			interceptorService.announce(
-			    BoxEvent.ON_HTTP_RAW_RESPONSE,
-			    ( java.util.function.Supplier<IStruct> ) () -> Struct.ofNonConcurrent(
-			        Key.result, this.httpResult,
-			        Key.response, response,
-			        Key.httpClient, BoxHttpClient.this,
-			        Key.httpRequest, this.targetHttpRequest
-			    ) );
+					BoxEvent.ON_HTTP_RAW_RESPONSE,
+					(java.util.function.Supplier<IStruct>) () -> Struct.ofNonConcurrent(
+							Key.result, this.httpResult,
+							Key.response, response,
+							Key.httpClient, BoxHttpClient.this,
+							Key.httpRequest, this.targetHttpRequest));
 
 			/**
 			 * ------------------------------------------------------------------------------
 			 * PROCESS STREAMING RESPONSE BY MODE
 			 * ------------------------------------------------------------------------------
 			 */
-			if ( isSSE ) {
-				processSSEStream( response, headers, charset, contentEncoding );
+			if (isSSE) {
+				processSSEStream(response, headers, charset, contentEncoding);
 			} else {
-				processRegularStream( response, headers, charset, contentEncoding );
+				processRegularStream(response, headers, charset, contentEncoding);
 			}
 		}
 
@@ -2314,94 +2355,93 @@ public class BoxHttpClient {
 		 * @throws IOException If an I/O error occurs
 		 */
 		private void processSSEStream(
-		    HttpResponse<java.io.InputStream> response,
-		    IStruct headers,
-		    String charset,
-		    String contentEncoding ) throws IOException {
+				HttpResponse<java.io.InputStream> response,
+				IStruct headers,
+				String charset,
+				String contentEncoding) throws IOException {
 
 			// Logging essential for SSE processing
 			BoxLangLogger streamLogger = getLogger();
-			streamLogger.trace( "Starting SSE stream processing. Charset: {}", charset );
+			streamLogger.trace("Starting SSE stream processing. Charset: {}", charset);
 
 			// Prepare for SSE processing
-			SSEParser		parser			= new SSEParser();
-			StringBuilder	accumulatedData	= new StringBuilder();
-			AtomicLong		eventCount		= new AtomicLong( 0 );
-			AtomicBoolean	streamingError	= new AtomicBoolean( false );
+			SSEParser parser = new SSEParser();
+			StringBuilder accumulatedData = new StringBuilder();
+			AtomicLong eventCount = new AtomicLong(0);
+			AtomicBoolean streamingError = new AtomicBoolean(false);
 
 			// Read SSE stream (always UTF-8 text, no decoding)
 			// Try with Resources to ensure streams are closed properly
 			try (
-			    java.io.InputStream rawInputStream = response.body();
-			    java.io.InputStreamReader reader = new java.io.InputStreamReader( rawInputStream, Charset.forName( charset ) );
-			    java.io.BufferedReader bufferedReader = new java.io.BufferedReader( reader ) ) {
+					java.io.InputStream rawInputStream = response.body();
+					java.io.InputStreamReader reader = new java.io.InputStreamReader(rawInputStream,
+							Charset.forName(charset));
+					java.io.BufferedReader bufferedReader = new java.io.BufferedReader(reader)) {
 
 				String line;
 
-				while ( ( line = bufferedReader.readLine() ) != null ) {
+				while ((line = bufferedReader.readLine()) != null) {
 
 					// Check for streaming error to stop processing
-					if ( streamingError.get() ) {
+					if (streamingError.get()) {
 						break;
 					}
 
 					try {
-						Attempt<SSEParserResult> result = parser.parseLine( line );
-						if ( result.wasSuccessful() ) {
+						Attempt<SSEParserResult> result = parser.parseLine(line);
+						if (result.wasSuccessful()) {
 							SSEParserResult parserResult = result.get();
 
 							// Handle SSE Event
-							if ( parserResult instanceof SSEEvent sseEvent ) {
+							if (parserResult instanceof SSEEvent sseEvent) {
 								// Update lastEventId if present
 								eventCount.incrementAndGet();
-								if ( sseEvent.id() != null && !sseEvent.id().isEmpty() ) {
+								if (sseEvent.id() != null && !sseEvent.id().isEmpty()) {
 									this.lastEventId = sseEvent.id();
 								}
 
 								// Accumulate data for final result
-								accumulatedData.append( sseEvent.data() ).append( System.lineSeparator() );
+								accumulatedData.append(sseEvent.data()).append(System.lineSeparator());
 
 								// Log the SSE event details
-								streamLogger.trace( "SSE Event #{}: type={}, id={}",
-								    eventCount.get(),
-								    sseEvent.event() != null ? sseEvent.event() : "message",
-								    sseEvent.id() != null ? sseEvent.id() : "none"
-								);
+								streamLogger.trace("SSE Event #{}: type={}, id={}",
+										eventCount.get(),
+										sseEvent.event() != null ? sseEvent.event() : "message",
+										sseEvent.id() != null ? sseEvent.id() : "none");
 
 								// Invoke onChunk callback with SSE event
 								context.invokeFunction(
-								    onChunkCallback,
-								    new Object[] {
-								        sseEvent.toStruct(),		// event struct
-								        this.lastEventId,			// lastEventId
-								        this.httpResult,			// httpResult
-								        BoxHttpClient.this,			// httpClient
-								        response					// rawResponse
-								    }
-								);
+										onChunkCallback,
+										new Object[] {
+												sseEvent.toStruct(), // event struct
+												this.lastEventId, // lastEventId
+												this.httpResult, // httpResult
+												BoxHttpClient.this, // httpClient
+												response // rawResponse
+										});
 							}
 							// Handle SSE Retry Directive
-							else if ( parserResult instanceof SSERetryDirective retryDirective ) {
-								streamLogger.debug( "SSE retry directive: {}ms", retryDirective.retryDelayMs() );
+							else if (parserResult instanceof SSERetryDirective retryDirective) {
+								streamLogger.debug("SSE retry directive: {}ms", retryDirective.retryDelayMs());
 								// TODO: Handle retry logic if needed
 							}
 						}
 
-					} catch ( Exception e ) {
-						streamingError.set( true );
-						streamLogger.error( "Error processing SSE event", e );
+					} catch (Exception e) {
+						streamingError.set(true);
+						streamLogger.error("Error processing SSE event", e);
 
-						this.error				= true;
-						this.requestException	= e;
-						this.errorMessage		= e.getMessage();
-						this.httpResult.put( Key.errorDetail, "SSE parsing error: " + e.getMessage() );
+						this.error = true;
+						this.requestException = e;
+						this.errorMessage = e.getMessage();
+						this.httpResult.put(Key.errorDetail, "SSE parsing error: " + e.getMessage());
 
 						// Call onError callback
-						if ( onErrorCallback != null ) {
+						if (onErrorCallback != null) {
 							try {
-								context.invokeFunction( onErrorCallback, new Object[] { e, this.httpResult } );
-							} catch ( Exception callbackError ) {
-								streamLogger.error( "Error in onError callback during SSE", callbackError );
+								context.invokeFunction(onErrorCallback, new Object[] { e, this.httpResult });
+							} catch (Exception callbackError) {
+								streamLogger.error("Error in onError callback during SSE", callbackError);
 							}
 						}
 						break;
@@ -2411,10 +2451,10 @@ public class BoxHttpClient {
 
 			// Finalize httpResult
 			String finalContent = accumulatedData.toString();
-			this.httpResult.put( Key.fileContent, finalContent );
-			this.httpResult.put( Key.errorDetail, "" );
-			this.httpResult.put( Key.executionTime, Duration.between( startTime.toInstant(), Instant.now() ).toMillis() );
-			this.httpResult.put( Key.totalEvents, eventCount.get() );
+			this.httpResult.put(Key.fileContent, finalContent);
+			this.httpResult.put(Key.errorDetail, "");
+			this.httpResult.put(Key.executionTime, Duration.between(startTime.toInstant(), Instant.now()).toMillis());
+			this.httpResult.put(Key.totalEvents, eventCount.get());
 
 			/**
 			 * ------------------------------------------------------------------------------
@@ -2422,32 +2462,29 @@ public class BoxHttpClient {
 			 * ------------------------------------------------------------------------------
 			 */
 			interceptorService.announce(
-			    BoxEvent.ON_HTTP_RESPONSE,
-			    ( java.util.function.Supplier<IStruct> ) () -> Struct.ofNonConcurrent(
-			        Key.requestID, requestID,
-			        Key.response, response,
-			        Key.result, httpResult,
-			        Key.stream, true,
-			        Key.sse, true,
-			        Key.eventCount, eventCount
-			    )
-			);
+					BoxEvent.ON_HTTP_RESPONSE,
+					(java.util.function.Supplier<IStruct>) () -> Struct.ofNonConcurrent(
+							Key.requestID, requestID,
+							Key.response, response,
+							Key.result, httpResult,
+							Key.stream, true,
+							Key.sse, true,
+							Key.eventCount, eventCount));
 
 			/**
 			 * ------------------------------------------------------------------------------
 			 * ON COMPLETE CALLBACK
 			 * ------------------------------------------------------------------------------
 			 */
-			if ( onCompleteCallback != null ) {
+			if (onCompleteCallback != null) {
 				context.invokeFunction(
-				    onCompleteCallback,
-				    new Object[] {
-				        this.httpResult, // result
-				        response, // response
-				        BoxHttpClient.this, // httpClient
-				        eventCount.get() // eventCount for SSE
-				    }
-				);
+						onCompleteCallback,
+						new Object[] {
+								this.httpResult, // result
+								response, // response
+								BoxHttpClient.this, // httpClient
+								eventCount.get() // eventCount for SSE
+						});
 			}
 		}
 
@@ -2462,70 +2499,72 @@ public class BoxHttpClient {
 		 * @throws IOException If an I/O error occurs
 		 */
 		private void processRegularStream(
-		    HttpResponse<java.io.InputStream> response,
-		    IStruct headers,
-		    String charset,
-		    String contentEncoding ) throws IOException {
+				HttpResponse<java.io.InputStream> response,
+				IStruct headers,
+				String charset,
+				String contentEncoding) throws IOException {
 
 			// This logging tracers are useful for debugging streaming issues
 			BoxLangLogger streamLogger = getLogger();
-			streamLogger.trace( "Starting regular stream processing. Charset: {}, Content-Encoding: {}", charset, contentEncoding );
+			streamLogger.trace("Starting regular stream processing. Charset: {}, Content-Encoding: {}", charset,
+					contentEncoding);
 			// Prepare for streaming processing
-			StringBuilder	accumulatedContent	= new StringBuilder();
-			AtomicLong		chunkCount			= new AtomicLong( 0 );
-			AtomicBoolean	streamingError		= new AtomicBoolean( false );
+			StringBuilder accumulatedContent = new StringBuilder();
+			AtomicLong chunkCount = new AtomicLong(0);
+			AtomicBoolean streamingError = new AtomicBoolean(false);
 
 			// Read the response body line by line with proper charset and decoding
 			// Try with Resources to ensure streams are closed properly
 			try (
-			    java.io.InputStream rawInputStream = response.body();
-			    java.io.InputStream decodedInputStream = HttpResponseHelper.decodeInputStream( rawInputStream, contentEncoding );
-			    java.io.InputStreamReader reader = new java.io.InputStreamReader( decodedInputStream, Charset.forName( charset ) );
-			    java.io.BufferedReader bufferedReader = new java.io.BufferedReader( reader ) ) {
+					java.io.InputStream rawInputStream = response.body();
+					java.io.InputStream decodedInputStream = HttpResponseHelper.decodeInputStream(rawInputStream,
+							contentEncoding);
+					java.io.InputStreamReader reader = new java.io.InputStreamReader(decodedInputStream,
+							Charset.forName(charset));
+					java.io.BufferedReader bufferedReader = new java.io.BufferedReader(reader)) {
 
 				String line;
 
-				while ( ( line = bufferedReader.readLine() ) != null ) {
+				while ((line = bufferedReader.readLine()) != null) {
 
 					// Check for streaming error to stop processing
-					if ( streamingError.get() ) {
+					if (streamingError.get()) {
 						break;
 					}
 
 					try {
 						long currentChunk = chunkCount.incrementAndGet();
-						streamLogger.trace( "Processing chunk #{}", currentChunk );
+						streamLogger.trace("Processing chunk #{}", currentChunk);
 
 						// Accumulate content for final result
-						accumulatedContent.append( line ).append( System.lineSeparator() );
+						accumulatedContent.append(line).append(System.lineSeparator());
 
 						// Invoke onChunk callback with regular chunk data
 						context.invokeFunction(
-						    onChunkCallback,
-						    new Object[] {
-						        currentChunk,					// chunkNumber
-						        line,							// content
-						        accumulatedContent.length(),	// totalBytes
-						        this.httpResult,				// httpResult
-						        BoxHttpClient.this,				// httpClient
-						        response						// rawResponse
-						    }
-						);
+								onChunkCallback,
+								new Object[] {
+										currentChunk, // chunkNumber
+										line, // content
+										accumulatedContent.length(), // totalBytes
+										this.httpResult, // httpResult
+										BoxHttpClient.this, // httpClient
+										response // rawResponse
+								});
 
-					} catch ( Exception e ) {
-						streamingError.set( true );
-						streamLogger.error( "Error in onChunk callback", e );
+					} catch (Exception e) {
+						streamingError.set(true);
+						streamLogger.error("Error in onChunk callback", e);
 
-						this.error				= true;
-						this.requestException	= e;
-						this.errorMessage		= e.getMessage();
-						this.httpResult.put( Key.errorDetail, "Streaming callback error: " + e.getMessage() );
+						this.error = true;
+						this.requestException = e;
+						this.errorMessage = e.getMessage();
+						this.httpResult.put(Key.errorDetail, "Streaming callback error: " + e.getMessage());
 
-						if ( onErrorCallback != null ) {
+						if (onErrorCallback != null) {
 							try {
-								context.invokeFunction( onErrorCallback, new Object[] { e, this.httpResult } );
-							} catch ( Exception callbackError ) {
-								streamLogger.error( "Error in onError callback", callbackError );
+								context.invokeFunction(onErrorCallback, new Object[] { e, this.httpResult });
+							} catch (Exception callbackError) {
+								streamLogger.error("Error in onError callback", callbackError);
 							}
 						}
 						break;
@@ -2534,15 +2573,16 @@ public class BoxHttpClient {
 			}
 
 			String finalContent = accumulatedContent.toString();
-			this.httpResult.put( Key.fileContent, finalContent );
-			this.httpResult.put( Key.errorDetail, "" );
-			this.httpResult.put( Key.executionTime, Duration.between( startTime.toInstant(), Instant.now() ).toMillis() );
+			this.httpResult.put(Key.fileContent, finalContent);
+			this.httpResult.put(Key.errorDetail, "");
+			this.httpResult.put(Key.executionTime, Duration.between(startTime.toInstant(), Instant.now()).toMillis());
 
 			// Handle output file saving
-			if ( this.outputDirectory != null ) {
-				String	filename		= HttpResponseHelper.resolveOutputFilename( headers, this.outputFile, this.targetHttpRequest.uri() );
-				String	destinationPath	= Path.of( this.outputDirectory, filename ).toAbsolutePath().toString();
-				FileSystemUtil.write( destinationPath, finalContent, charset, true );
+			if (this.outputDirectory != null) {
+				String filename = HttpResponseHelper.resolveOutputFilename(headers, this.outputFile,
+						this.targetHttpRequest.uri());
+				String destinationPath = Path.of(this.outputDirectory, filename).toAbsolutePath().toString();
+				FileSystemUtil.write(destinationPath, finalContent, charset, true);
 			}
 
 			/**
@@ -2551,30 +2591,27 @@ public class BoxHttpClient {
 			 * ------------------------------------------------------------------------------
 			 */
 			interceptorService.announce(
-			    BoxEvent.ON_HTTP_RESPONSE,
-			    ( java.util.function.Supplier<IStruct> ) () -> Struct.ofNonConcurrent(
-			        Key.result, httpResult,
-			        Key.response, response,
-			        Key.httpClient, BoxHttpClient.this,
-			        Key.chunkCount, chunkCount.get()
-			    )
-			);
+					BoxEvent.ON_HTTP_RESPONSE,
+					(java.util.function.Supplier<IStruct>) () -> Struct.ofNonConcurrent(
+							Key.result, httpResult,
+							Key.response, response,
+							Key.httpClient, BoxHttpClient.this,
+							Key.chunkCount, chunkCount.get()));
 
 			/**
 			 * ------------------------------------------------------------------------------
 			 * ON COMPLETE CALLBACK
 			 * ------------------------------------------------------------------------------
 			 */
-			if ( onCompleteCallback != null ) {
+			if (onCompleteCallback != null) {
 				context.invokeFunction(
-				    onCompleteCallback,
-				    new Object[] {
-				        this.httpResult, // result
-				        response, // response
-				        BoxHttpClient.this, // httpClient
-				        chunkCount.get()
-				    }
-				);
+						onCompleteCallback,
+						new Object[] {
+								this.httpResult, // result
+								response, // response
+								BoxHttpClient.this, // httpClient
+								chunkCount.get()
+						});
 			}
 		}
 	} // End of BoxHttpRequest class
