@@ -666,7 +666,7 @@ public final class LocalizationUtil {
 
 			// Ultra-specific: Exact ISO Z format for speed (2024-04-02T21:01:00Z)
 			add( Map.of(
-				"regexPattern", "\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
+				"regexPattern", "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$",
 				"datePattern", "yyyy-MM-dd'T'HH:mm:ssX",
 				"description", "ISO DateTime with Z timezone - ultra-specific for speed tests"
 			) );
@@ -674,7 +674,7 @@ public final class LocalizationUtil {
 			// Medium format with timezone abbreviation (for "Nov 22, 2022 11:01:51 CET")
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{3}\\s+\\d{1,2},\\s+\\d{4}\\s+\\d{1,2}:\\d{2}:\\d{2}\\s+[A-Z]{3,4}$",
+				"^[A-Za-z]{3}\\s+\\d{1,2},\\s+\\d{4}\\s+\\d{1,2}:\\d{2}:\\d{2}\\s+[A-Z]{3,4}$",
 				"datePattern", "MMM dd, yyyy HH:mm:ss zzz",
 				"description",
 				"Medium format with timezone (Nov 22, 2022 11:01:51 CET)"
@@ -685,7 +685,7 @@ public final class LocalizationUtil {
 			// Date-time with 12-hour format and meridian (double digit hour)
 			add( Map.of(
 				"regexPattern",
-				"\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}(?::\\d{2})?\\s+[APap][Mm]$",
+				"^\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}(?::\\d{2})?\\s+[APap][Mm]$",
 				"datePattern", "yyyy-MM-dd hh:mm[:ss] a",
 				"description",
 				"ISO date with 12-hour time and AM/PM (double digit hour)"
@@ -694,7 +694,7 @@ public final class LocalizationUtil {
 			// Date-time with 12-hour format and meridian (single digit hour)
 			add( Map.of(
 				"regexPattern",
-				"\\d{4}-\\d{2}-\\d{2}\\s+\\d{1}:\\d{2}(?::\\d{2})?\\s+[APap][Mm]$",
+				"^\\d{4}-\\d{2}-\\d{2}\\s+\\d{1}:\\d{2}(?::\\d{2})?\\s+[APap][Mm]$",
 				"datePattern", "yyyy-MM-dd h:mm[:ss] a",
 				"description",
 				"ISO date with 12-hour time and AM/PM (single digit hour)"
@@ -703,7 +703,7 @@ public final class LocalizationUtil {
 			// Consolidated: ISO with optional T/space, seconds, microseconds, offset
 			add( Map.of(
 				"regexPattern",
-				"\\d{4}-\\d{2}-\\d{2}[T\\s]\\d{2}:\\d{2}(?:\\:\\d{2})?(?:\\.\\d{1,6})?(?:[+-]\\d{2}:?\\d{2}|Z)?$",
+				"^\\d{4}-\\d{2}-\\d{2}[T\\s]\\d{2}:\\d{2}(?:\\:\\d{2})?(?:\\.\\d{1,6})?(?:[+-]\\d{2}:?\\d{2}|Z)?$",
 				"datePattern", "yyyy-MM-dd['T'][ ]HH:mm[:ss][.SSSSSS][XXX]",
 				"description",
 				"ISO with optional T/space, seconds, microseconds, offset"
@@ -712,7 +712,7 @@ public final class LocalizationUtil {
 			// Consolidated: ISO with optional T/space, seconds, milliseconds, offset
 			add( Map.of(
 				"regexPattern",
-				"\\d{4}-\\d{2}-\\d{2}[T\\s]\\d{2}:\\d{2}(?:\\:\\d{2})?(?:\\.\\d{1,3})?(?:[+-]\\d{2}:?\\d{2}|Z)?$",
+				"^\\d{4}-\\d{2}-\\d{2}[T\\s]\\d{2}:\\d{2}(?:\\:\\d{2})?(?:\\.\\d{1,3})?(?:[+-]\\d{2}:?\\d{2}|Z)?$",
 				"datePattern", "yyyy-MM-dd['T'][ ]HH:mm[:ss][.SSS][XXX]",
 				"description",
 				"ISO with optional T/space, seconds, milliseconds, offset"
@@ -721,7 +721,7 @@ public final class LocalizationUtil {
 			// Consolidated: ISO with optional T/space, seconds, basic offset
 			add( Map.of(
 				"regexPattern",
-				"\\d{4}-\\d{2}-\\d{2}[T\\s]\\d{2}:\\d{2}(?:\\:\\d{2})?(?:Z|[+-]\\d{2})?$",
+				"^\\d{4}-\\d{2}-\\d{2}[T\\s]\\d{2}:\\d{2}(?:\\:\\d{2})?(?:Z|[+-]\\d{2})?$",
 				"datePattern", "yyyy-MM-dd['T'][ ]HH:mm[:ss][Z][X]",
 				"description", "ISO with optional T/space, seconds, basic offset"
 			) );
@@ -731,7 +731,7 @@ public final class LocalizationUtil {
 			// Specific format for Jul 17, 2017 9:29:40 PM - single digit day and hour with seconds
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{3}\\s+\\d{1},\\s+\\d{4}\\s+\\d{1}:\\d{2}:\\d{2}\\s+[APap][Mm]$",
+				"^[A-Za-z]{3}\\s+\\d{1},\\s+\\d{4}\\s+\\d{1}:\\d{2}:\\d{2}\\s+[APap][Mm]$",
 				"datePattern", "MMM d, yyyy h:mm:ss a",
 				"description", "Month single-digit-day, year hour:min:sec AM/PM"
 			) );
@@ -739,7 +739,7 @@ public final class LocalizationUtil {
 			// Med DateTime specific format with double digit day, single digit hour (e.g., Nov-05-2025 8:43am)
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{3}-\\d{2}-\\d{4}\\s+\\d{1}:\\d{2}\\s*[APap][Mm]$",
+				"^[A-Za-z]{3}-\\d{2}-\\d{4}\\s+\\d{1}:\\d{2}\\s*[APap][Mm]$",
 				"datePattern", "MMM-dd-yyyy h:mm[ ]a",
 				"description", "Month-DD-YYYY H:MM AM/PM format"
 			) );
@@ -747,7 +747,7 @@ public final class LocalizationUtil {
 			// Med DateTime specific format with double digit day, and 24 hour time with optional seconds
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{3}-\\d{2}-\\d{4}\\s+\\d{2}:\\d{2}(?::\\d{2})?$",
+				"^[A-Za-z]{3}-\\d{2}-\\d{4}\\s+\\d{2}:\\d{2}(?::\\d{2})?$",
 				"datePattern", "MMM-dd-yyyy HH:mm[:ss]",
 				"description", "Month-DD-YYYY HH:MM[:SS] format"
 			) );
@@ -757,7 +757,7 @@ public final class LocalizationUtil {
 			// Full DateTime with full day name (e.g., Tuesday, 02 Apr 2024 21:01:00 CEST)
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{4,},?\\s+\\d{1,2}\\s+[A-Za-z]{3}\\s+\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}(?:\\s+[A-Z]{3,4})?$",
+				"^[A-Za-z]{4,},?\\s+\\d{1,2}\\s+[A-Za-z]{3}\\s+\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}(?:\\s+[A-Z]{3,4})?$",
 				"datePattern", "EEEE[,] d MMM yyyy HH:mm:ss[ zzz]",
 				"description",
 				"Full day name, day month year time with optional timezone"
@@ -766,7 +766,7 @@ public final class LocalizationUtil {
 			// Full DateTime with abbreviated day name (e.g., Tue, 02 Apr 2024 21:01:00 CEST)
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{3},?\\s+\\d{1,2}\\s+[A-Za-z]{3}\\s+\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}(?:\\s+[A-Z]{3,4})?$",
+				"^[A-Za-z]{3},?\\s+\\d{1,2}\\s+[A-Za-z]{3}\\s+\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}(?:\\s+[A-Z]{3,4})?$",
 				"datePattern", "EEE[,] d MMM yyyy HH:mm:ss[ zzz]",
 				"description",
 				"Abbreviated day name, day month year time with optional timezone"
@@ -775,7 +775,7 @@ public final class LocalizationUtil {
 			// Long DateTime with single digit day (e.g., 2 Apr 2024 21:01:00)
 			add( Map.of(
 				"regexPattern",
-				"\\d{1}\\s+[A-Za-z]{3}\\s+\\d{4}\\s+\\d{2}:\\d{2}(?::\\d{2})?$",
+				"^\\d{1}\\s+[A-Za-z]{3}\\s+\\d{4}\\s+\\d{2}:\\d{2}(?::\\d{2})?$",
 				"datePattern", "d MMM yyyy HH:mm[:ss]",
 				"description", "Single digit day month year time"
 			) );
@@ -783,7 +783,7 @@ public final class LocalizationUtil {
 			// Long DateTime with double digit day (e.g., 02 Apr 2024 21:01:00)
 			add( Map.of(
 				"regexPattern",
-				"\\d{2}\\s+[A-Za-z]{3}\\s+\\d{4}\\s+\\d{2}:\\d{2}(?::\\d{2})?$",
+				"^\\d{2}\\s+[A-Za-z]{3}\\s+\\d{4}\\s+\\d{2}:\\d{2}(?::\\d{2})?$",
 				"datePattern", "dd MMM yyyy HH:mm[:ss]",
 				"description", "Double digit day month year time"
 			) );
@@ -791,7 +791,7 @@ public final class LocalizationUtil {
 			// Medium DateTime with single digit day (e.g., 2-Apr-2024 21:01:00)
 			add( Map.of(
 				"regexPattern",
-				"\\d{1}-[A-Za-z]{3}-\\d{4}\\s+\\d{2}:\\d{2}(?::\\d{2})?$",
+				"^\\d{1}-[A-Za-z]{3}-\\d{4}\\s+\\d{2}:\\d{2}(?::\\d{2})?$",
 				"datePattern", "d-MMM-yyyy HH:mm[:ss]",
 				"description", "Single digit day-month-year time"
 			) );
@@ -799,7 +799,7 @@ public final class LocalizationUtil {
 			// Medium DateTime with double digit day (e.g., 02-Apr-2024 21:01:00)
 			add( Map.of(
 				"regexPattern",
-				"\\d{2}-[A-Za-z]{3}-\\d{4}\\s+\\d{2}:\\d{2}(?::\\d{2})?$",
+				"^\\d{2}-[A-Za-z]{3}-\\d{4}\\s+\\d{2}:\\d{2}(?::\\d{2})?$",
 				"datePattern", "dd-MMM-yyyy HH:mm[:ss]",
 				"description", "Double digit day-month-year time"
 			) );
@@ -807,7 +807,7 @@ public final class LocalizationUtil {
 			// Full month name with single digit day (e.g., April 2, 2024 21:01:00)
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{4,},?\\s+\\d{1},?\\s+\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}(?:\\s+[A-Z]{3,4})?$",
+				"^[A-Za-z]{4,},?\\s+\\d{1},?\\s+\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}(?:\\s+[A-Z]{3,4})?$",
 				"datePattern", "MMMM[,] d[,] yyyy HH:mm:ss[ zzz]",
 				"description",
 				"Full month single digit day year time with optional timezone"
@@ -816,7 +816,7 @@ public final class LocalizationUtil {
 			// Full month name with double digit day (e.g., April 02, 2024 21:01:00)
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{4,},?\\s+\\d{2},?\\s+\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}(?:\\s+[A-Z]{3,4})?$",
+				"^[A-Za-z]{4,},?\\s+\\d{2},?\\s+\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}(?:\\s+[A-Z]{3,4})?$",
 				"datePattern", "MMMM[,] dd[,] yyyy HH:mm:ss[ zzz]",
 				"description",
 				"Full month double digit day year time with optional timezone"
@@ -825,7 +825,7 @@ public final class LocalizationUtil {
 			// Full month name with single digit day and AM/PM (e.g., April 2, 2024 9:01 AM)
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{4,},?\\s+\\d{1},?\\s+\\d{4}\\s+\\d{1}:\\d{2}\\s+[APap][Mm](?:\\s+[A-Z]{3,4})?$",
+				"^[A-Za-z]{4,},?\\s+\\d{1},?\\s+\\d{4}\\s+\\d{1}:\\d{2}\\s+[APap][Mm](?:\\s+[A-Z]{3,4})?$",
 				"datePattern", "MMMM[,] d[,] yyyy h:mm a[ zzz]",
 				"description",
 				"Full month single digit day year time AM/PM with optional timezone"
@@ -834,7 +834,7 @@ public final class LocalizationUtil {
 			// Full month name with double digit day and AM/PM (e.g., April 02, 2024 10:01 AM)
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{4,},?\\s+\\d{2},?\\s+\\d{4}\\s+\\d{2}:\\d{2}\\s+[APap][Mm](?:\\s+[A-Z]{3,4})?$",
+				"^[A-Za-z]{4,},?\\s+\\d{2},?\\s+\\d{4}\\s+\\d{2}:\\d{2}\\s+[APap][Mm](?:\\s+[A-Z]{3,4})?$",
 				"datePattern", "MMMM[,] dd[,] yyyy hh:mm a[ zzz]",
 				"description",
 				"Full month double digit day year time AM/PM with optional timezone"
@@ -843,7 +843,7 @@ public final class LocalizationUtil {
 			// Full month name with single digit day no seconds (e.g. April 2 2024 21:01)
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{4,},?\\s+\\d{1},?\\s+\\d{4}\\s+\\d{2}:\\d{2}(?:\\s+[A-Z]{3,4})?$",
+				"^[A-Za-z]{4,},?\\s+\\d{1},?\\s+\\d{4}\\s+\\d{2}:\\d{2}(?:\\s+[A-Z]{3,4})?$",
 				"datePattern", "MMMM[,] d[,] yyyy HH:mm[ zzz]",
 				"description",
 				"Full month single digit day year time no seconds with optional timezone"
@@ -852,7 +852,7 @@ public final class LocalizationUtil {
 			// Full month name with double digit day no seconds (e.g. April 02 2024 21:01)
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{4,},?\\s+\\d{2},?\\s+\\d{4}\\s+\\d{2}:\\d{2}(?:\\s+[A-Z]{3,4})?$",
+				"^[A-Za-z]{4,},?\\s+\\d{2},?\\s+\\d{4}\\s+\\d{2}:\\d{2}(?:\\s+[A-Z]{3,4})?$",
 				"datePattern", "MMMM[,] dd[,] yyyy HH:mm[ zzz]",
 				"description",
 				"Full month double digit day year time no seconds with optional timezone"
@@ -863,7 +863,7 @@ public final class LocalizationUtil {
 			// Medium DateTime No Seconds and AM/PM with single digit day/hour
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{3}[,\\-\\s]+\\d{1}[,\\-\\s]+\\d{4}\\s+\\d{1}:\\d{2}\\s*[APap][Mm](?:\\s+[A-Z]{3,4})?$",
+				"^[A-Za-z]{3}[,\\-\\s]+\\d{1}[,\\-\\s]+\\d{4}\\s+\\d{1}:\\d{2}\\s*[APap][Mm](?:\\s+[A-Z]{3,4})?$",
 				"datePattern", "MMM[,][- ]d[,][- ]yyyy h:mm[ ]a[ zzz]",
 				"description",
 				"Month single day year single hour:min AM/PM with optional timezone"
@@ -872,7 +872,7 @@ public final class LocalizationUtil {
 			// Medium DateTime No Seconds and AM/PM with double digit day/hour
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{3}[,\\-\\s]+\\d{2}[,\\-\\s]+\\d{4}\\s+\\d{2}:\\d{2}\\s*[APap][Mm](?:\\s+[A-Z]{3,4})?$",
+				"^[A-Za-z]{3}[,\\-\\s]+\\d{2}[,\\-\\s]+\\d{4}\\s+\\d{2}:\\d{2}\\s*[APap][Mm](?:\\s+[A-Z]{3,4})?$",
 				"datePattern", "MMM[,][- ]dd[,][- ]yyyy hh:mm[ ]a[ zzz]",
 				"description",
 				"Month double day year double hour:min AM/PM with optional timezone"
@@ -881,7 +881,7 @@ public final class LocalizationUtil {
 			// Medium DateTime with Seconds and AM/PM with single digit day/hour
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{3}[,\\-\\s]+\\d{1}[,\\-\\s]+\\d{4}\\s+\\d{1}:\\d{2}:\\d{2}\\s*[APap][Mm](?:\\s+[A-Z]{3,4})?$",
+				"^[A-Za-z]{3}[,\\-\\s]+\\d{1}[,\\-\\s]+\\d{4}\\s+\\d{1}:\\d{2}:\\d{2}\\s*[APap][Mm](?:\\s+[A-Z]{3,4})?$",
 				"datePattern", "MMM[,][- ]d[,][- ]yyyy h:mm:ss[ ]a[ zzz]",
 				"description",
 				"Month single day year single hour:min:sec AM/PM with optional timezone"
@@ -890,7 +890,7 @@ public final class LocalizationUtil {
 			// Medium DateTime with Seconds and AM/PM with double digit day/hour
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{3}[,\\-\\s]+\\d{2}[,\\-\\s]+\\d{4}\\s+\\d{1,2}:\\d{2}:\\d{2}\\s*[APap][Mm](?:\\s+[A-Z]{3,4})?$",
+				"^[A-Za-z]{3}[,\\-\\s]+\\d{2}[,\\-\\s]+\\d{4}\\s+\\d{1,2}:\\d{2}:\\d{2}\\s*[APap][Mm](?:\\s+[A-Z]{3,4})?$",
 				"datePattern", "MMM[,][- ]dd[,][- ]yyyy h:mm:ss[ ]a[ zzz]",
 				"description",
 				"Month double day year hour:min:sec AM/PM with optional timezone"
@@ -899,7 +899,7 @@ public final class LocalizationUtil {
 			// Medium DateTime with single digit day (e.g., Apr 2, 2024 21:01:00)
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{3}[,\\-\\s]+\\d{1}[,\\-\\s]+\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}(?:\\s+[A-Z]{3,4})?$",
+				"^[A-Za-z]{3}[,\\-\\s]+\\d{1}[,\\-\\s]+\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}(?:\\s+[A-Z]{3,4})?$",
 				"datePattern", "MMM[,][- ]d[,][- ]yyyy HH:mm:ss[ zzz]",
 				"description",
 				"Month single day year time:sec with optional timezone"
@@ -908,7 +908,7 @@ public final class LocalizationUtil {
 			// Medium DateTime with double digit day (e.g., Apr 02, 2024 21:01:00)
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{3}[,\\-\\s]+\\d{2}[,\\-\\s]+\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}(?:\\s+[A-Z]{3,4})?$",
+				"^[A-Za-z]{3}[,\\-\\s]+\\d{2}[,\\-\\s]+\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}(?:\\s+[A-Z]{3,4})?$",
 				"datePattern", "MMM[,][- ]dd[,][- ]yyyy HH:mm:ss[ zzz]",
 				"description",
 				"Month double day year time:sec with optional timezone"
@@ -917,7 +917,7 @@ public final class LocalizationUtil {
 			// Medium DateTime No Seconds with single digit day
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{3}[,\\-\\s]+\\d{1}[,\\-\\s]+\\d{4}\\s+\\d{2}:\\d{2}(?:\\s+[A-Z]{3,4})?$",
+				"^[A-Za-z]{3}[,\\-\\s]+\\d{1}[,\\-\\s]+\\d{4}\\s+\\d{2}:\\d{2}(?:\\s+[A-Z]{3,4})?$",
 				"datePattern", "MMM[,][- ]d[,][- ]yyyy HH:mm[ zzz]",
 				"description",
 				"Month single day year time no seconds with optional timezone"
@@ -926,7 +926,7 @@ public final class LocalizationUtil {
 			// Medium DateTime No Seconds with double digit day
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{3}[,\\-\\s]+\\d{2}[,\\-\\s]+\\d{4}\\s+\\d{2}:\\d{2}(?:\\s+[A-Z]{3,4})?$",
+				"^[A-Za-z]{3}[,\\-\\s]+\\d{2}[,\\-\\s]+\\d{4}\\s+\\d{2}:\\d{2}(?:\\s+[A-Z]{3,4})?$",
 				"datePattern", "MMM[,][- ]dd[,][- ]yyyy HH:mm[ zzz]",
 				"description",
 				"Month double day year time no seconds with optional timezone"
@@ -937,7 +937,7 @@ public final class LocalizationUtil {
 			// US Short DateTime with AM/PM and seconds (e.g., 02/04/2024 04:01:00 PM)
 			add( Map.of(
 				"regexPattern",
-				"\\d{2}/\\d{2}/\\d{4}\\s+\\d{2}:\\d{2}(?::\\d{2})?\\s+[APap][Mm]$",
+				"^\\d{2}/\\d{2}/\\d{4}\\s+\\d{2}:\\d{2}(?::\\d{2})?\\s+[APap][Mm]$",
 				"datePattern", "MM/dd/yyyy hh:mm[:ss] a",
 				"description", "US date MM/dd/yyyy with time and AM/PM"
 			) );
@@ -945,7 +945,7 @@ public final class LocalizationUtil {
 			// US Short DateTime 24-hour with optional seconds (e.g., 02/04/2024 21:01:00)
 			add( Map.of(
 				"regexPattern",
-				"\\d{2}/\\d{2}/\\d{4}\\s+\\d{2}:\\d{2}(?::\\d{2})?$",
+				"^\\d{2}/\\d{2}/\\d{4}\\s+\\d{2}:\\d{2}(?::\\d{2})?$",
 				"datePattern", "MM/dd/yyyy HH:mm[:ss]",
 				"description", "US date MM/dd/yyyy with 24-hour time"
 			) );
@@ -953,7 +953,7 @@ public final class LocalizationUtil {
 			// US Short DateTime with AM/PM no seconds (e.g., 02/04/2024 04:01 PM)
 			add( Map.of(
 				"regexPattern",
-				"\\d{2}/\\d{2}/\\d{4}\\s+\\d{2}:\\d{2}\\s+[APap][Mm]$",
+				"^\\d{2}/\\d{2}/\\d{4}\\s+\\d{2}:\\d{2}\\s+[APap][Mm]$",
 				"datePattern", "MM/dd/yyyy hh:mm a",
 				"description", "US date MM/dd/yyyy with time AM/PM no seconds"
 			) );
@@ -961,7 +961,7 @@ public final class LocalizationUtil {
 			// Short DateTime with medium month and 24 hour time (e.g., Feb/04/2024 22:01:00)
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{3}/\\d{2}/\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}$",
+				"^[A-Za-z]{3}/\\d{2}/\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}$",
 				"datePattern", "MMM/dd/yyyy HH:mm:ss",
 				"description", "Month/DD/YYYY with 24-hour time"
 			) );
@@ -969,7 +969,7 @@ public final class LocalizationUtil {
 			// European dot format datetime (e.g., 02.04.2024 21:01:00)
 			add( Map.of(
 				"regexPattern",
-				"\\d{2}\\.\\d{2}\\.\\d{4}\\s+\\d{2}:\\d{2}(?::\\d{2})?$",
+				"^\\d{2}\\.\\d{2}\\.\\d{4}\\s+\\d{2}:\\d{2}(?::\\d{2})?$",
 				"datePattern", "dd.MM.yyyy HH:mm[:ss]",
 				"description", "European DD.MM.YYYY with time"
 			) );
@@ -977,7 +977,7 @@ public final class LocalizationUtil {
 			// Long month DateTime (e.g., April 02, 2024 21:01:00)
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{4,}\\s+\\d{2},?\\s+\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}$",
+				"^[A-Za-z]{4,}\\s+\\d{2},?\\s+\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}$",
 				"datePattern", "LLLL dd[,] yyyy HH:mm:ss",
 				"description", "Full month name DD, YYYY with time"
 			) );
@@ -985,7 +985,7 @@ public final class LocalizationUtil {
 			// Long month DateTime with AM/PM (e.g., April 02, 2024 05:01 AM)
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{4,}\\s+\\d{2},?\\s+\\d{4}\\s+\\d{2}:\\d{2}\\s+[APap][Mm]$",
+				"^[A-Za-z]{4,}\\s+\\d{2},?\\s+\\d{4}\\s+\\d{2}:\\d{2}\\s+[APap][Mm]$",
 				"datePattern", "LLLL dd[,] yyyy hh:mm a",
 				"description", "Full month name DD, YYYY with time AM/PM"
 			) );
@@ -995,7 +995,7 @@ public final class LocalizationUtil {
 			// Default DateTime (e.g., Tue Apr 02 21:01:00 CET 2024)
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{3},?\\s+[A-Za-z]{3},?\\s+\\d{2},?\\s+\\d{2}:\\d{2}:\\d{2}\\s+[A-Z]{3,4}\\s+\\d{4}$",
+				"^[A-Za-z]{3},?\\s+[A-Za-z]{3},?\\s+\\d{2},?\\s+\\d{2}:\\d{2}:\\d{2}\\s+[A-Z]{3,4}\\s+\\d{4}$",
 				"datePattern", "EEE[,] MMM[,] dd[,] HH:mm:ss zzz yyyy",
 				"description", "Java Date toString format"
 			) );
@@ -1004,14 +1004,14 @@ public final class LocalizationUtil {
 
 			// ODBC DateTime compact format (yyyyMMddHHmmss)
 			add( Map.of(
-				"regexPattern", "\\d{14}$",
+				"regexPattern", "^\\d{14}$",
 				"datePattern", "yyyyMMddHHmmss",
 				"description", "ODBC DateTime compact format"
 			) );
 
 			// ODBC Date compact format (yyyyMMdd)
 			add( Map.of(
-				"regexPattern", "\\d{8}$",
+				"regexPattern", "^\\d{8}$",
 				"datePattern", "yyyyMMdd",
 				"description", "ODBC Date compact format"
 			) );
@@ -1020,14 +1020,14 @@ public final class LocalizationUtil {
 
 			// Alternative international format (yyyy/MM/dd)
 			add( Map.of(
-				"regexPattern", "\\d{4}/\\d{2}/\\d{2}$",
+				"regexPattern", "^\\d{4}/\\d{2}/\\d{2}$",
 				"datePattern", "yyyy/MM/dd",
 				"description", "International year/month/day format"
 			) );
 
 			// Short form two-digit year (M-d-yy)
 			add( Map.of(
-				"regexPattern", "\\d{1,2}-\\d{1,2}-\\d{2}$",
+				"regexPattern", "^\\d{1,2}-\\d{1,2}-\\d{2}$",
 				"datePattern", "M-d-yy",
 				"description", "Short month-day-year format"
 			) );
@@ -1036,56 +1036,56 @@ public final class LocalizationUtil {
 
 			// Long Date with space separators (e.g., Apr 02 2024)
 			add( Map.of(
-				"regexPattern", "[A-Za-z]{3}\\s+\\d{2}\\s+\\d{4}$",
+				"regexPattern", "^[A-Za-z]{3}\\s+\\d{2}\\s+\\d{4}$",
 				"datePattern", "MMM dd yyyy",
 				"description", "Month day year with spaces"
 			) );
 
 			// Long Date with dash separators (e.g., Apr-02-2024)
 			add( Map.of(
-				"regexPattern", "[A-Za-z]{3}-\\d{2}-\\d{4}$",
+				"regexPattern", "^[A-Za-z]{3}-\\d{2}-\\d{4}$",
 				"datePattern", "MMM-dd-yyyy",
 				"description", "Month-day-year with dashes"
 			) );
 
 			// Long Date with slash separators (e.g., Apr/02/2024)
 			add( Map.of(
-				"regexPattern", "[A-Za-z]{3}/\\d{2}/\\d{4}$",
+				"regexPattern", "^[A-Za-z]{3}/\\d{2}/\\d{4}$",
 				"datePattern", "MMM/dd/yyyy",
 				"description", "Month/day/year with slashes"
 			) );
 
 			// Long Date with dot separators (e.g., Apr.02.2024)
 			add( Map.of(
-				"regexPattern", "[A-Za-z]{3}\\.\\d{2}\\.\\d{4}$",
+				"regexPattern", "^[A-Za-z]{3}\\.\\d{2}\\.\\d{4}$",
 				"datePattern", "MMM.dd.yyyy",
 				"description", "Month.day.year with dots"
 			) );
 
 			// Short Date with space separators (e.g., 04 02 2024)
 			add( Map.of(
-				"regexPattern", "\\d{2}\\s\\d{2}\\s\\d{4}$",
+				"regexPattern", "^\\d{2}\\s\\d{2}\\s\\d{4}$",
 				"datePattern", "MM dd yyyy",
 				"description", "MM dd yyyy with spaces"
 			) );
 
 			// Short Date with dash separators (e.g., 04-02-2024)
 			add( Map.of(
-				"regexPattern", "\\d{2}-\\d{2}-\\d{4}$",
+				"regexPattern", "^\\d{2}-\\d{2}-\\d{4}$",
 				"datePattern", "MM-dd-yyyy",
 				"description", "MM-dd-yyyy with dashes"
 			) );
 
 			// Short Date with slash separators (e.g., 04/02/2024)
 			add( Map.of(
-				"regexPattern", "\\d{2}/\\d{2}/\\d{4}$",
+				"regexPattern", "^\\d{2}/\\d{2}/\\d{4}$",
 				"datePattern", "MM/dd/yyyy",
 				"description", "MM/dd/yyyy with slashes"
 			) );
 
 			// Short Date with dot separators (e.g., 04.02.2024)
 			add( Map.of(
-				"regexPattern", "\\d{2}\\.\\d{2}\\.\\d{4}$",
+				"regexPattern", "^\\d{2}\\.\\d{2}\\.\\d{4}$",
 				"datePattern", "MM.dd.yyyy",
 				"description", "MM.dd.yyyy with dots"
 			) );
@@ -1095,63 +1095,63 @@ public final class LocalizationUtil {
 			// Full Date with optional full day name and comma (e.g., Tuesday, 02 Apr 2024)
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{3,},?\\s+\\d{2}\\s+[A-Za-z]{3}\\s+\\d{4}$",
+				"^[A-Za-z]{3,},?\\s+\\d{2}\\s+[A-Za-z]{3}\\s+\\d{4}$",
 				"datePattern", "EEE[E][,] dd MMM yyyy",
 				"description", "Day name, day month year"
 			) );
 
 			// Long Date (e.g., 02 Apr 2024)
 			add( Map.of(
-				"regexPattern", "\\d{2}\\s+[A-Za-z]{3}\\s+\\d{4}$",
+				"regexPattern", "^\\d{2}\\s+[A-Za-z]{3}\\s+\\d{4}$",
 				"datePattern", "dd MMM yyyy",
 				"description", "Day month year"
 			) );
 
 			// Medium Date with a two-digit year (e.g., 02-Apr-24)
 			add( Map.of(
-				"regexPattern", "\\d{2}-[A-Za-z]{3}-\\d{2}$",
+				"regexPattern", "^\\d{2}-[A-Za-z]{3}-\\d{2}$",
 				"datePattern", "dd-MMM-yy",
 				"description", "Day-month-year with two-digit year"
 			) );
 
 			// Medium Date with flexible separators (e.g., 02-Apr-2024, 02/Apr/2024, 02.Apr.2024)
 			add( Map.of(
-				"regexPattern", "\\d{2}[./-][A-Za-z]{3}[./-]\\d{4}$",
+				"regexPattern", "^\\d{2}[./-][A-Za-z]{3}[./-]\\d{4}$",
 				"datePattern", "dd[-/.]MMM[-/.]yyyy",
 				"description", "Day-month-year with flexible separators"
 			) );
 
 			// Med Date (e.g., Apr 02, 2024)
 			add( Map.of(
-				"regexPattern", "[A-Za-z]{3},?\\s+\\d{2},?\\s+\\d{4}$",
+				"regexPattern", "^[A-Za-z]{3},?\\s+\\d{2},?\\s+\\d{4}$",
 				"datePattern", "MMM[,] dd[,] yyyy",
 				"description", "Month day, year with optional commas"
 			) );
 
 			// Long month Date (e.g., April 02, 2024)
 			add( Map.of(
-				"regexPattern", "[A-Za-z]{4,},?\\s+\\d{2},?\\s+\\d{4}$",
+				"regexPattern", "^[A-Za-z]{4,},?\\s+\\d{2},?\\s+\\d{4}$",
 				"datePattern", "MMMM[,] dd[,] yyyy",
 				"description", "Full month day, year with optional commas"
 			) );
 
 			// European day-first with flexible separators (e.g., 02-04-2024, 02/04/2024, 02.04.2024)
 			add( Map.of(
-				"regexPattern", "\\d{2}[ ./-]\\d{2}[ ./-]\\d{4}$",
+				"regexPattern", "^\\d{2}[ ./-]\\d{2}[ ./-]\\d{4}$",
 				"datePattern", "dd[ /-.]MM[ /-.]yyyy",
 				"description", "European day-first with flexible separators"
 			) );
 
 			// ISO date with flexible separators (e.g., 2024-04-02, 2024/04/02, 2024.04.02)
 			add( Map.of(
-				"regexPattern", "\\d{4}[./-]\\d{2}[./-]\\d{2}$",
+				"regexPattern", "^\\d{4}[./-]\\d{2}[./-]\\d{2}$",
 				"datePattern", "yyyy[-/.]MM[-/.]dd",
 				"description", "ISO year-month-day with flexible separators"
 			) );
 
 			// Basic ISO date (handles 2024-04-02)
 			add( Map.of(
-				"regexPattern", "\\d{4}-\\d{2}-\\d{2}$",
+				"regexPattern", "^\\d{4}-\\d{2}-\\d{2}$",
 				"datePattern", "yyyy-MM-dd",
 				"description", "ISO Date format"
 			) );
@@ -1170,7 +1170,7 @@ public final class LocalizationUtil {
 			// Pattern for "Jan 20, 2024 00:00:00" - medium format with seconds
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{3}\\s+\\d{1,2},\\s+\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}$",
+				"^[A-Za-z]{3}\\s+\\d{1,2},\\s+\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}$",
 				"datePattern", "MMM dd, yyyy HH:mm:ss",
 				"description",
 				"Medium format without timezone (Jan 20, 2024 00:00:00)"
@@ -1178,14 +1178,14 @@ public final class LocalizationUtil {
 
 			// Pattern for "2024.01.01" - ISO date with dots
 			add( Map.of(
-				"regexPattern", "\\d{4}\\.\\d{2}\\.\\d{2}$",
+				"regexPattern", "^\\d{4}\\.\\d{2}\\.\\d{2}$",
 				"datePattern", "yyyy.MM.dd",
 				"description", "ISO date with dots (2024.01.01)"
 			) );
 
 			// Pattern for "14.01.2024" - European date with dots
 			add( Map.of(
-				"regexPattern", "\\d{2}\\.\\d{2}\\.\\d{4}$",
+				"regexPattern", "^\\d{2}\\.\\d{2}\\.\\d{4}$",
 				"datePattern", "dd.MM.yyyy",
 				"description", "European date with dots (14.01.2024)"
 			) );
@@ -1193,7 +1193,7 @@ public final class LocalizationUtil {
 			// Pattern for "Nov-05-2025 8:43am" - medium format with lowercase am/pm
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{3}-\\d{2}-\\d{4}\\s+\\d{1,2}:\\d{2}\\s*[APap][Mm]$",
+				"^[A-Za-z]{3}-\\d{2}-\\d{4}\\s+\\d{1,2}:\\d{2}\\s*[APap][Mm]$",
 				"datePattern", "MMM-dd-yyyy h:mm a",
 				"description",
 				"Medium format with lowercase am/pm (Nov-05-2025 8:43am)"
@@ -1202,7 +1202,7 @@ public final class LocalizationUtil {
 			// Pattern for "Jul 17, 2017 9:29:40 PM" - single digit day with seconds and meridian
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{3}\\s+\\d{1,2},\\s+\\d{4}\\s+\\d{1,2}:\\d{2}:\\d{2}\\s+[APap][Mm]$",
+				"^[A-Za-z]{3}\\s+\\d{1,2},\\s+\\d{4}\\s+\\d{1,2}:\\d{2}:\\d{2}\\s+[APap][Mm]$",
 				"datePattern", "MMM dd, yyyy h:mm:ss a",
 				"description",
 				"Medium format single digit day/hour with seconds and AM/PM"
@@ -1211,7 +1211,7 @@ public final class LocalizationUtil {
 			// Pattern for "Mar 22, 2025 05:21 PM" - medium format without seconds and AM/PM
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{3}\\s+\\d{1,2},\\s+\\d{4}\\s+\\d{1,2}:\\d{2}\\s+[APap][Mm]$",
+				"^[A-Za-z]{3}\\s+\\d{1,2},\\s+\\d{4}\\s+\\d{1,2}:\\d{2}\\s+[APap][Mm]$",
 				"datePattern", "MMM dd, yyyy h:mm a",
 				"description",
 				"Medium format single digit day/hour no seconds with AM/PM"
@@ -1220,7 +1220,7 @@ public final class LocalizationUtil {
 			// Pattern for "Mar 22 2025 05:21 PM" - medium format without comma and seconds
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{3}\\s+\\d{1,2}\\s+\\d{4}\\s+\\d{1,2}:\\d{2}\\s+[APap][Mm]$",
+				"^[A-Za-z]{3}\\s+\\d{1,2}\\s+\\d{4}\\s+\\d{1,2}:\\d{2}\\s+[APap][Mm]$",
 				"datePattern", "MMM dd yyyy h:mm a",
 				"description",
 				"Medium format without comma no seconds with AM/PM"
@@ -1229,7 +1229,7 @@ public final class LocalizationUtil {
 			// Pattern for "March 22 2025 5:21 PM" - full month name without comma
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{4,}\\s+\\d{1,2}\\s+\\d{4}\\s+\\d{1,2}:\\d{2}\\s+[APap][Mm]$",
+				"^[A-Za-z]{4,}\\s+\\d{1,2}\\s+\\d{4}\\s+\\d{1,2}:\\d{2}\\s+[APap][Mm]$",
 				"datePattern", "MMMM dd yyyy h:mm a",
 				"description",
 				"Full month name without comma no seconds with AM/PM"
@@ -1237,14 +1237,14 @@ public final class LocalizationUtil {
 
 			// Pattern for single digit month/day formats like "1/1/2024"
 			add( Map.of(
-				"regexPattern", "\\d{1,2}/\\d{1,2}/\\d{4}$",
+				"regexPattern", "^\\d{1,2}/\\d{1,2}/\\d{4}$",
 				"datePattern", "M/d/yyyy",
 				"description", "US date with single digit month/day (1/1/2024)"
 			) );
 
 			// Pattern for single digit year/month/day like "2018/9/6"
 			add( Map.of(
-				"regexPattern", "\\d{4}/\\d{1,2}/\\d{1,2}$",
+				"regexPattern", "^\\d{4}/\\d{1,2}/\\d{1,2}$",
 				"datePattern", "yyyy/M/d",
 				"description",
 				"International date with single digit month/day (2018/9/6)"
@@ -1252,7 +1252,7 @@ public final class LocalizationUtil {
 
 			// Pattern for "02-Apr-2024" - European format with dashes
 			add( Map.of(
-				"regexPattern", "\\d{2}-[A-Za-z]{3}-\\d{4}$",
+				"regexPattern", "^\\d{2}-[A-Za-z]{3}-\\d{4}$",
 				"datePattern", "dd-MMM-yyyy",
 				"description", "European date-month-year (02-Apr-2024)"
 			) );
@@ -1260,7 +1260,7 @@ public final class LocalizationUtil {
 			// Pattern for medium format with narrow no-break space "Nov 20, 2025 10:40:09 AM"
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{3}\\s+\\d{1,2},\\s+\\d{4}[\\s\\u00A0\\u202F]+\\d{1,2}:\\d{2}:\\d{2}\\s+[APap][Mm]$",
+				"^[A-Za-z]{3}\\s+\\d{1,2},\\s+\\d{4}[\\s\\u00A0\\u202F]+\\d{1,2}:\\d{2}:\\d{2}\\s+[APap][Mm]$",
 				"datePattern", "MMM dd, yyyy h:mm:ss a",
 				"description", "Medium format with various spaces and AM/PM"
 			) );
@@ -1270,7 +1270,7 @@ public final class LocalizationUtil {
 			// Pattern for "03/28/2025 04:32 PM" - US slash format with time and AM/PM (single digit hour)
 			add( Map.of(
 				"regexPattern",
-				"\\d{2}/\\d{2}/\\d{4}\\s+\\d{1,2}:\\d{2}\\s+[APap][Mm]$",
+				"^\\d{2}/\\d{2}/\\d{4}\\s+\\d{1,2}:\\d{2}\\s+[APap][Mm]$",
 				"datePattern", "MM/dd/yyyy h:mm a",
 				"description", "US date with time and AM/PM (single digit hour)"
 			) );
@@ -1278,7 +1278,7 @@ public final class LocalizationUtil {
 			// Pattern for "Tue, 02 Apr 2024" - day name prefix with comma
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{3},\\s+\\d{2}\\s+[A-Za-z]{3}\\s+\\d{4}$",
+				"^[A-Za-z]{3},\\s+\\d{2}\\s+[A-Za-z]{3}\\s+\\d{4}$",
 				"datePattern", "EEE, dd MMM yyyy",
 				"description", "Day name, day month year"
 			) );
@@ -1286,7 +1286,7 @@ public final class LocalizationUtil {
 			// Pattern for "02 Apr 2024 21:01:00" - space format with time
 			add( Map.of(
 				"regexPattern",
-				"\\d{2}\\s+[A-Za-z]{3}\\s+\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}$",
+				"^\\d{2}\\s+[A-Za-z]{3}\\s+\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}$",
 				"datePattern", "dd MMM yyyy HH:mm:ss",
 				"description", "Day month year with time"
 			) );
@@ -1294,7 +1294,7 @@ public final class LocalizationUtil {
 			// Pattern for "Nov/21/2025 00:01:00" - month name slash format with time
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{3}/\\d{2}/\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}$",
+				"^[A-Za-z]{3}/\\d{2}/\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}$",
 				"datePattern", "MMM/dd/yyyy HH:mm:ss",
 				"description", "Month/day/year with time"
 			) );
@@ -1302,14 +1302,14 @@ public final class LocalizationUtil {
 			// Pattern for "Tue, 02 Apr 2024 21:01:00 CEST" - full day name with timezone
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{3},\\s+\\d{2}\\s+[A-Za-z]{3}\\s+\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}\\s+[A-Z]{3,4}$",
+				"^[A-Za-z]{3},\\s+\\d{2}\\s+[A-Za-z]{3}\\s+\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}\\s+[A-Z]{3,4}$",
 				"datePattern", "EEE, dd MMM yyyy HH:mm:ss zzz",
 				"description", "Day name, day month year with time and timezone"
 			) );
 
 			// Pattern for "02 Apr 2024" - day first with spaces
 			add( Map.of(
-				"regexPattern", "\\d{2}\\s+[A-Za-z]{3}\\s+\\d{4}$",
+				"regexPattern", "^\\d{2}\\s+[A-Za-z]{3}\\s+\\d{4}$",
 				"datePattern", "dd MMM yyyy",
 				"description", "Day month year with spaces"
 			) );
@@ -1317,7 +1317,7 @@ public final class LocalizationUtil {
 			// Pattern for "1899-12-31 06:10 PM" - ISO date with AM/PM time (single digit hour)
 			add( Map.of(
 				"regexPattern",
-				"\\d{4}-\\d{2}-\\d{2}\\s+\\d{1,2}:\\d{2}\\s+[APap][Mm]$",
+				"^\\d{4}-\\d{2}-\\d{2}\\s+\\d{1,2}:\\d{2}\\s+[APap][Mm]$",
 				"datePattern", "yyyy-MM-dd h:mm a",
 				"description", "ISO date with AM/PM time (single digit hour)"
 			) );
@@ -1325,7 +1325,7 @@ public final class LocalizationUtil {
 			// Pattern for "Tue Nov 22 11:01:51 CET 2022" - java.util.Date toString format
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{3}\\s+[A-Za-z]{3}\\s+\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}\\s+[A-Z]{3,4}\\s+\\d{4}$",
+				"^[A-Za-z]{3}\\s+[A-Za-z]{3}\\s+\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}\\s+[A-Z]{3,4}\\s+\\d{4}$",
 				"datePattern", "EEE MMM dd HH:mm:ss zzz yyyy",
 				"description", "Java Date toString format without commas"
 			) );
@@ -1345,7 +1345,7 @@ public final class LocalizationUtil {
 			// Pattern for "Jul 17, 2017 9:29:40 PM" - single digit hour/day with AM/PM
 			add( Map.of(
 				"regexPattern",
-				"[A-Za-z]{3}\\s+\\d{1,2},\\s+\\d{4}\\s+\\d{1,2}:\\d{2}:\\d{2}\\s+[APap][Mm]$",
+				"^[A-Za-z]{3}\\s+\\d{1,2},\\s+\\d{4}\\s+\\d{1,2}:\\d{2}:\\d{2}\\s+[APap][Mm]$",
 				"datePattern", "MMM d, yyyy h:mm:ss a",
 				"description",
 				"Medium format with single digit day/hour AM/PM seconds"
@@ -1354,7 +1354,7 @@ public final class LocalizationUtil {
 			// Pattern for lowercase am/pm "2021-01-01 12:00:00 pm"
 			add( Map.of(
 				"regexPattern",
-				"\\d{4}-\\d{2}-\\d{2}\\s+\\d{1,2}:\\d{2}:\\d{2}\\s+[APap][Mm]$",
+				"^\\d{4}-\\d{2}-\\d{2}\\s+\\d{1,2}:\\d{2}:\\d{2}\\s+[APap][Mm]$",
 				"datePattern", "yyyy-MM-dd h:mm:ss a",
 				"description", "ISO format with lowercase am/pm"
 			) );
@@ -1362,7 +1362,7 @@ public final class LocalizationUtil {
 			// Pattern for slash date with lowercase pm "7/20/2025 1:00 pm"
 			add( Map.of(
 				"regexPattern",
-				"\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{2}\\s+[APap][Mm]$",
+				"^\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{2}\\s+[APap][Mm]$",
 				"datePattern", "M/d/yyyy h:mm a",
 				"description", "US date format with lowercase am/pm"
 			) );
@@ -1370,7 +1370,7 @@ public final class LocalizationUtil {
 			// Pattern for microsecond precision "2024-01-14T00:00:01.0001Z"
 			add( Map.of(
 				"regexPattern",
-				"\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{4}Z$",
+				"^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{4}Z$",
 				"datePattern", "yyyy-MM-dd'T'HH:mm:ss.SSSSXXX",
 				"description", "ISO with microsecond precision"
 			) );
@@ -1378,7 +1378,7 @@ public final class LocalizationUtil {
 			// Pattern for microsecond without Z "2024-01-14T00:00:01.0001"
 			add( Map.of(
 				"regexPattern",
-				"\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{4}$",
+				"^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{4}$",
 				"datePattern", "yyyy-MM-dd'T'HH:mm:ss.SSSS",
 				"description", "ISO with microsecond precision no timezone"
 			) );
@@ -1386,7 +1386,7 @@ public final class LocalizationUtil {
 			// Pattern for space separated with single decimal "2024-01-14 00:00:01.1"
 			add( Map.of(
 				"regexPattern",
-				"\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}\\.\\d{1}$",
+				"^\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}\\.\\d{1}$",
 				"datePattern", "yyyy-MM-dd HH:mm:ss.S",
 				"description", "ISO space format with single decimal"
 			) );
