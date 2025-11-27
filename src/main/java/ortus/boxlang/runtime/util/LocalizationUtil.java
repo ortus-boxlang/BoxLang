@@ -34,6 +34,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.FormatStyle;
 import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalQuery;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -94,16 +95,20 @@ public final class LocalizationUtil {
 	 */
 	public static class CommonFormatter {
 
-		private final Pattern			pattern;
-		private final DateTimeFormatter	formatter;
-		private final String			description;
-		private final String			regexPattern;
+		private final Pattern				pattern;
+		private final DateTimeFormatter		formatter;
+		private final String				description;
+		private final String				regexPattern;
+		private final String				datePattern;
+		private final TemporalQuery<?>[]	optimizedQueries;
 
 		public CommonFormatter( String regexPattern, String datePattern, String description ) {
-			this.regexPattern	= regexPattern;
-			this.pattern		= Pattern.compile( regexPattern );
-			this.formatter		= LocalizationUtil.getPatternFormatter( datePattern, Locale.US );
-			this.description	= description;
+			this.regexPattern		= regexPattern;
+			this.datePattern		= datePattern;
+			this.pattern			= Pattern.compile( regexPattern );
+			this.formatter			= LocalizationUtil.getPatternFormatter( datePattern, Locale.US );
+			this.description		= description;
+			this.optimizedQueries	= determineOptimalTemporalQueries( datePattern );
 		}
 
 		public boolean matches( String input ) {
@@ -120,6 +125,83 @@ public final class LocalizationUtil {
 
 		public String getRegexPattern() {
 			return this.regexPattern;
+		}
+
+		public String getDatePattern() {
+			return this.datePattern;
+		}
+
+		public TemporalQuery<?>[] getOptimizedQueries() {
+			return this.optimizedQueries;
+		}
+
+		/**
+		 * Analyzes a DateTimeFormatter pattern to determine which TemporalQuery functions
+		 * should be used with parseBest() based on the temporal components present in the pattern.
+		 * This optimization reduces unnecessary parsing attempts and improves performance.
+		 * 
+		 * @param pattern The DateTimeFormatter pattern string to analyze
+		 * 
+		 * @return Array of TemporalQuery functions in optimal order for parseBest()
+		 */
+		private static TemporalQuery<?>[] determineOptimalTemporalQueries( String pattern ) {
+			List<TemporalQuery<?>>	queries		= new ArrayList<>();
+
+			// Pattern analysis flags - more comprehensive pattern detection
+			boolean					hasDate		= pattern.matches( ".*[yMLdDjgEFwWu].*" ); // year, month, day, week patterns
+			boolean					hasTime		= pattern.matches( ".*[HhKkmsSnA].*" ); // hour, minute, second, am/pm patterns
+			boolean					hasTimezone	= pattern.matches( ".*[zZVvXxOo].*" ); // timezone patterns
+			boolean					hasOffset	= pattern.matches( ".*[XxZO].*" ); // offset patterns (subset of timezone)
+
+			// Conservative approach: always include the most likely types first, but include all for safety
+			// This still provides optimization by ordering, while ensuring compatibility
+
+			if ( hasDate && hasTime && ( hasTimezone || hasOffset ) ) {
+				// Full date-time with timezone - prioritize timezone-aware types
+				if ( hasOffset ) {
+					queries.add( OffsetDateTime::from ); // ISO offsets like +01:00, Z
+				}
+				queries.add( ZonedDateTime::from ); // Named timezones
+				queries.add( LocalDateTime::from ); // Fallback for when timezone parsing fails
+				queries.add( Instant::from ); // Alternative for timestamp patterns
+				queries.add( LocalDate::from ); // Safety fallback
+				queries.add( LocalTime::from ); // Safety fallback
+			} else if ( hasDate && hasTime ) {
+				// Date and time without explicit timezone - most common case
+				queries.add( LocalDateTime::from ); // Primary target
+				queries.add( LocalDate::from ); // In case time parsing fails
+				queries.add( LocalTime::from ); // In case date parsing fails
+				// Add timezone types as fallback in case pattern analysis missed timezone info
+				queries.add( ZonedDateTime::from );
+				queries.add( OffsetDateTime::from );
+				queries.add( Instant::from );
+			} else if ( hasDate ) {
+				// Date only patterns
+				queries.add( LocalDate::from );
+				queries.add( LocalDateTime::from ); // Safety fallback
+				queries.add( ZonedDateTime::from );
+				queries.add( OffsetDateTime::from );
+				queries.add( LocalTime::from );
+				queries.add( Instant::from );
+			} else if ( hasTime ) {
+				// Time only patterns
+				queries.add( LocalTime::from );
+				queries.add( LocalDateTime::from ); // Safety fallback
+				queries.add( LocalDate::from );
+				queries.add( ZonedDateTime::from );
+				queries.add( OffsetDateTime::from );
+				queries.add( Instant::from );
+			} else {
+				// Fallback for patterns we couldn't categorize - use all types starting with the most verbose
+				queries.add( ZonedDateTime::from );
+				queries.add( OffsetDateTime::from );
+				queries.add( LocalDateTime::from );
+				queries.add( LocalDate::from );
+				queries.add( LocalTime::from );
+				queries.add( Instant::from );
+			}
+
+			return queries.toArray( new TemporalQuery<?>[ 0 ] );
 		}
 	}
 
@@ -1455,16 +1537,11 @@ public final class LocalizationUtil {
 		for ( CommonFormatter formatter : commonFormatters ) {
 			if ( formatter.matches( dateTime ) ) {
 				try {
-					// The order of the TemporalQuery functions here affects parsing speed.
-					// parseBest seems to use an internal try/catch approach, so the most likely types should be first.
+					// Use pattern-optimized TemporalQuery functions to prioritize parsing into the most specific type
+					// The queries are pre-computed based on the pattern's temporal components
 					TemporalAccessor date = formatter.getFormatter().parseBest(
 					    dateTime,
-					    ZonedDateTime::from,
-					    OffsetDateTime::from,
-					    LocalDateTime::from,
-					    LocalDate::from,
-					    LocalTime::from,
-					    Instant::from
+					    formatter.getOptimizedQueries()
 					);
 
 					// Parse timezone if not provided and date does not already contain timezone info
