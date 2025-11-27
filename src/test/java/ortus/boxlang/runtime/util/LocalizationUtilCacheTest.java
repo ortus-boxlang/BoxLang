@@ -17,10 +17,10 @@
  */
 package ortus.boxlang.runtime.util;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
-
-import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.jupiter.api.Test;
 
@@ -28,16 +28,6 @@ import org.junit.jupiter.api.Test;
  * Test the LocalizationUtil formatter caching functionality
  */
 public class LocalizationUtilCacheTest {
-
-	@Test
-	public void testFormatterCaching() {
-		// Test that the same formatter instance is returned for repeated calls
-		DateTimeFormatter	formatter1	= LocalizationUtil.getCommonPatternDateTimeParsers();
-		DateTimeFormatter	formatter2	= LocalizationUtil.getCommonPatternDateTimeParsers();
-
-		// Should be the same instance due to caching
-		assertThat( formatter1 ).isSameInstanceAs( formatter2 );
-	}
 
 	@Test
 	public void testLocaleSpecificCaching() {

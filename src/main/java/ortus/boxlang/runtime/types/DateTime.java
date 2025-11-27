@@ -718,7 +718,11 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 * @return The sanitized string
 	 */
 	public static String sanitizeStringSpaces( String input ) {
-		return input.replace( '\u00A0', ' ' ).replace( '\u202F', ' ' );
+		return input
+		    .trim()
+		    .replaceAll( "\u00A0", " " )
+		    .replaceAll( "\u202F", " " )
+		    .replaceAll( " +", " " );
 	}
 
 	/**
