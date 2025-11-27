@@ -98,14 +98,12 @@ public final class LocalizationUtil {
 		private final DateTimeFormatter	formatter;
 		private final String			description;
 		private final String			regexPattern;
-		private final boolean			isPureLatinPattern;
 
 		public CommonFormatter( String regexPattern, String datePattern, String description ) {
-			this.regexPattern		= regexPattern;
-			this.pattern			= Pattern.compile( regexPattern );
-			this.formatter			= LocalizationUtil.getPatternFormatter( datePattern, Locale.US );
-			this.description		= description;
-			this.isPureLatinPattern	= calculateIsPureLatinPattern( regexPattern );
+			this.regexPattern	= regexPattern;
+			this.pattern		= Pattern.compile( regexPattern );
+			this.formatter		= LocalizationUtil.getPatternFormatter( datePattern, Locale.US );
+			this.description	= description;
 		}
 
 		public boolean matches( String input ) {
@@ -122,36 +120,6 @@ public final class LocalizationUtil {
 
 		public String getRegexPattern() {
 			return this.regexPattern;
-		}
-
-		public boolean isPureLatinPattern() {
-			return this.isPureLatinPattern;
-		}
-
-		/**
-		 * Pre-calculates whether a regex pattern contains only Latin/ASCII characters.
-		 * This optimization allows us to skip locale validation for pure Latin patterns.
-		 */
-		private boolean calculateIsPureLatinPattern( String regexPattern ) {
-			for ( char c : regexPattern.toCharArray() ) {
-				Character.UnicodeBlock block = Character.UnicodeBlock.of( c );
-
-				// Skip ASCII, punctuation, digits, and regex metacharacters - these are universally valid
-				if ( block == Character.UnicodeBlock.BASIC_LATIN ||
-				    block == Character.UnicodeBlock.LATIN_1_SUPPLEMENT ||
-				    Character.isDigit( c ) ||
-				    "\\[]{}()*+?^$.|".indexOf( c ) >= 0 ) {
-					continue;
-				}
-
-				// If we find any non-Latin Unicode characters, this is not a pure Latin pattern
-				if ( block != null ) {
-					return false;
-				}
-			}
-
-			// Pattern contains only Latin/ASCII characters
-			return true;
 		}
 	}
 
@@ -1101,13 +1069,6 @@ public final class LocalizationUtil {
 				"description", "MM dd yyyy with spaces"
 			) );
 
-			// Short Date with multiple spaces (e.g., 04 02 2024)
-			add( Map.of(
-				"regexPattern", "\\d{2}\\s{2,}\\d{2}\\s{2,}\\d{4}$",
-				"datePattern", "MM  dd  yyyy",
-				"description", "MM dd yyyy with multiple spaces"
-			) );
-
 			// Short Date with dash separators (e.g., 04-02-2024)
 			add( Map.of(
 				"regexPattern", "\\d{2}-\\d{2}-\\d{4}$",
@@ -1430,13 +1391,6 @@ public final class LocalizationUtil {
 				"description", "ISO space format with single decimal"
 			) );
 
-			// Chinese date formats
-			add( Map.of(
-				"regexPattern", "^\\d{4}年\\d{1,2}月\\d{1,2}日$",
-				"datePattern", "yyyy年M月d日",
-				"description", "Chinese date format"
-			) );
-
 			// Spanish date formats
 			add( Map.of(
 				"regexPattern", "^\\d{1,2}\\s+de\\s+\\w+\\s+de\\s+\\d{4}$",
@@ -1503,6 +1457,9 @@ public final class LocalizationUtil {
 	 * @throws BoxRuntimeException if the input string cannot be parsed into a supported {@link TemporalAccessor}
 	 */
 	public static DateTime parseFromCommonPatterns( String dateTime, ZoneId timezone ) {
+
+		// Sanitize input by trimming and normalizing spaces
+		dateTime = dateTime.trim().replaceAll( " +", " " );
 
 		if ( timezone == null ) {
 			timezone = parseZoneId( null, RequestBoxContext.getCurrent() );
@@ -1602,20 +1559,6 @@ public final class LocalizationUtil {
 				continue;
 			}
 
-			// Performance optimization: skip locale validation for pure Latin patterns
-			if ( !formatter.isPureLatinPattern() ) {
-				// Use cached validation result when possible
-				String	cacheKey	= formatter.getDescription() + "|" + locale.getLanguage();
-				Boolean	isValid		= localeValidationCache.get( cacheKey );
-				if ( isValid == null ) {
-					isValid = isPatternValidForLocale( formatter, locale );
-					localeValidationCache.put( cacheKey, isValid );
-				}
-				if ( !isValid ) {
-					continue;
-				}
-			}
-
 			// Pattern matches and is valid for locale - attempt parsing
 			try {
 				TemporalAccessor date = formatter.getFormatter().parseBest(
@@ -1677,6 +1620,9 @@ public final class LocalizationUtil {
 	 * @return
 	 */
 	public static ZonedDateTime parseFromString( String dateTime, Locale locale, ZoneId timezone ) {
+
+		// sanitize input by trimming and normalizing spaces
+		dateTime = dateTime.trim().replaceAll( " +", " " );
 
 		Boolean	likelyHasDate			= dateTime.contains( "/" ) || dateTime.contains( "-" );
 		Boolean	likelyIsLongFormDate	= !likelyHasDate && REGEX_LONGFORM_PATTERN.matcher( dateTime ).find();
@@ -1839,106 +1785,6 @@ public final class LocalizationUtil {
 	 */
 	private static String createLocaleCacheKey( String prefix, Locale locale ) {
 		return prefix + locale.toString();
-	}
-
-	/**
-	 * Determines if a common formatter pattern is appropriate for the specified locale.
-	 * Patterns containing locale-specific Unicode characters should only be used
-	 * with locales that support those character sets to prevent incorrect date validation.
-	 *
-	 * @param formatter the CommonFormatter to check
-	 * @param locale    the locale to validate against
-	 * 
-	 * @return true if the pattern is valid for the locale, false otherwise
-	 */
-	private static boolean isPatternValidForLocale( CommonFormatter formatter, Locale locale ) {
-		if ( locale == null ) {
-			return true; // No locale restriction
-		}
-
-		// Performance optimization: if this is a pure Latin pattern, always allow it
-		if ( formatter.isPureLatinPattern() ) {
-			return true;
-		}
-
-		// Check if pattern contains locale-specific Unicode characters
-		for ( char c : formatter.getRegexPattern().toCharArray() ) {
-			Character.UnicodeBlock block = Character.UnicodeBlock.of( c );
-			// If we find non-Latin Unicode characters, validate locale compatibility
-			if ( block != null && !isUnicodeBlockCompatibleWithLocale( block, locale ) ) {
-				return false;
-			}
-		}
-
-		// All characters in pattern are compatible with the locale
-		return true;
-	}
-
-	/**
-	 * Determines if a Unicode block is compatible with the given locale.
-	 * 
-	 * @param block  the Unicode block to check
-	 * @param locale the locale to validate against
-	 * 
-	 * @return true if the Unicode block is appropriate for the locale
-	 */
-	private static boolean isUnicodeBlockCompatibleWithLocale( Character.UnicodeBlock block, Locale locale ) {
-		String language = locale.getLanguage();
-
-		// Chinese Unicode blocks
-		if ( block == Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS ||
-		    block == Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A ||
-		    block == Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_B ||
-		    block == Character.UnicodeBlock.CJK_COMPATIBILITY_IDEOGRAPHS ) {
-			return "zh".equals( language ) || "ja".equals( language );
-		}
-
-		// Japanese-specific blocks
-		if ( block == Character.UnicodeBlock.HIRAGANA ||
-		    block == Character.UnicodeBlock.KATAKANA ) {
-			return "ja".equals( language );
-		}
-
-		// Korean blocks
-		if ( block == Character.UnicodeBlock.HANGUL_JAMO ||
-		    block == Character.UnicodeBlock.HANGUL_SYLLABLES ||
-		    block == Character.UnicodeBlock.HANGUL_COMPATIBILITY_JAMO ) {
-			return "ko".equals( language );
-		}
-
-		// Arabic blocks
-		if ( block == Character.UnicodeBlock.ARABIC ) {
-			return "ar".equals( language );
-		}
-
-		// Cyrillic blocks (Russian, Bulgarian, Serbian, etc.)
-		if ( block == Character.UnicodeBlock.CYRILLIC ) {
-			return "ru".equals( language ) || "bg".equals( language ) ||
-			    "sr".equals( language ) || "mk".equals( language ) ||
-			    "uk".equals( language ) || "be".equals( language );
-		}
-
-		// Greek blocks
-		if ( block == Character.UnicodeBlock.GREEK ||
-		    block == Character.UnicodeBlock.GREEK_EXTENDED ) {
-			return "el".equals( language );
-		}
-
-		// Hebrew blocks
-		if ( block == Character.UnicodeBlock.HEBREW ) {
-			return "he".equals( language ) || "iw".equals( language ); // iw is legacy code for Hebrew
-		}
-
-		// Thai blocks
-		if ( block == Character.UnicodeBlock.THAI ) {
-			return "th".equals( language );
-		}
-
-		// Add more Unicode block mappings as needed for other locales
-
-		// If we don't recognize the Unicode block, assume it's not compatible
-		// This is a conservative approach that prevents false positives
-		return false;
 	}
 
 	/**
