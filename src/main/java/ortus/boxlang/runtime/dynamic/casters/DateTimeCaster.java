@@ -284,14 +284,7 @@ public class DateTimeCaster implements IBoxCaster {
 		}
 
 		// Now let's check common patterns and then fall back to the full localization parsing
-		DateTime parsed;
-		if ( locale != null ) {
-			// Use locale-aware common patterns to ensure proper locale validation
-			parsed = LocalizationUtil.parseFromCommonPatterns( targetString, timezone, locale );
-		} else {
-			// Use all common patterns when no specific locale is required
-			parsed = LocalizationUtil.parseFromCommonPatterns( targetString, timezone );
-		}
+		DateTime parsed = LocalizationUtil.parseFromCommonPatterns( targetString, timezone );
 
 		if ( parsed != null ) {
 			return parsed;
