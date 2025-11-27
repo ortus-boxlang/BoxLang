@@ -21,11 +21,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ "ubuntu-latest", "windows-latest" ]
-        jdkProvider: [ "temurin" ]
-        jdkVersion: [ "21" ]
-        experimental: [ false ]
-        compiler: [ "java", "asm" ]
+        os: ["ubuntu-latest", "windows-latest"]
+        jdkProvider: ["temurin"]
+        jdkVersion: ["21"]
+        experimental: [false]
+        compiler: ["java", "asm"]
         exclude:
           - os: windows-latest
             compiler: java
@@ -81,7 +81,7 @@ jobs:
 
       - name: Test BoxLang
         env:
-          BOXLANG_EXPERIMENTAL_COMPILER: ${{ matrix.compiler }}
+          BOXLANG_COMPILER: ${{ matrix.compiler }}
         run: |
           ./gradlew :src:modules:test:build --stacktrace --console=plain
           ./gradlew test --stacktrace --console=plain

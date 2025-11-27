@@ -73,7 +73,7 @@ public class RunnableLoader {
 	private static final Set<String>	VALID_TEMPLATE_EXTENSIONS	= BoxRuntime.getInstance().getConfiguration().getValidTemplateExtensions();
 
 	/**
-	 * The registry of Boxpilers
+	 * The registry of Boxpilers we know about
 	 */
 	private Map<Key, IBoxpiler>			boxpilers					= new ConcurrentHashMap<Key, IBoxpiler>();
 
@@ -111,10 +111,11 @@ public class RunnableLoader {
 	 * Public Methods
 	 * --------------------------------------------------------------------------
 	 */
+
 	/**
 	 * Registers the Boxpilers in a specified class loader.
-	 * 
-	 * @param cl
+	 *
+	 * @param cl The class loader to use for loading Boxpiler implementations
 	 */
 	public void registerBoxpilers( ClassLoader cl ) {
 		// use service loader to find instance of myself
@@ -191,7 +192,7 @@ public class RunnableLoader {
 		}
 
 		BoxRuntime	runtime		= BoxRuntime.getInstance();
-		String		nameToUse	= StringCaster.cast( runtime.getConfiguration().experimental.get( "compiler" ) );
+		String		nameToUse	= StringCaster.cast( runtime.getConfiguration().compiler );
 		Key			keyToUse	= null;
 		// if there is no config
 		if ( nameToUse == null ) {

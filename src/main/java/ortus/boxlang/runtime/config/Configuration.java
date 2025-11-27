@@ -81,17 +81,18 @@ public class Configuration implements IConfigSegment {
 	 * Change listener for mappings, etc. That will force a trailing slash on the key
 	 * when the key is added to the struct.
 	 */
+	// @formatter:off
 	public static final IChangeListener<IStruct>	forceMappingTrailingSlash		= ( key, newValue, oldValue, object ) -> {
-																						// Only fire for new values not ending with /
-																						if ( newValue != null && !key.getName().endsWith( "/" ) ) {
-																							object.remove( key );
-																							object.put( Key.of( key.getName() + "/" ), newValue );
-																							// don't insert original key
-																							return null;
-																						}
-																						return newValue;
-																					};
-
+		// Only fire for new values not ending with /
+		if ( newValue != null && !key.getName().endsWith( "/" ) ) {
+			object.remove( key );
+			object.put( Key.of( key.getName() + "/" ), newValue );
+			// don't insert original key
+			return null;
+		}
+		return newValue;
+	};
+	// @formatter:on
 	/**
 	 * --------------------------------------------------------------------------
 	 * Configuration Keys
@@ -115,6 +116,13 @@ public class Configuration implements IConfigSegment {
 	 * {@code false} by default
 	 */
 	public Boolean									clearClassFilesOnStartup		= false;
+
+	/**
+	 * The compiler class or short name to use for compiling Box classes and templates
+	 * ASMCompiler is the default {@see ASMBoxpiler} using the ASM library
+	 * Available options: asm, java, noop
+	 */
+	public String									compiler						= "asm";
 
 	/**
 	 * The debug mode flag which turns on all kinds of debugging information
@@ -391,9 +399,14 @@ public class Configuration implements IConfigSegment {
 			this.storeClassFilesOnDisk = BooleanCaster.cast( config.get( Key.storeClassFilesOnDisk ) );
 		}
 
-		// Compiler
+		// Class Generation Directory
 		if ( config.containsKey( Key.classGenerationDirectory ) ) {
 			this.classGenerationDirectory = config.getAsString( Key.classGenerationDirectory );
+		}
+
+		// Compiler
+		if ( config.containsKey( Key.compiler ) ) {
+			this.compiler = config.getAsString( Key.compiler );
 		}
 
 		// Version
