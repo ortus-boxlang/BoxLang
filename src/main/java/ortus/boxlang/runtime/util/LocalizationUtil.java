@@ -98,7 +98,7 @@ public final class LocalizationUtil {
 		private final DateTimeFormatter	formatter;
 		private final String			description;
 		private final String			regexPattern;
-		private final Boolean			isPureLatinPattern;
+		private final boolean			isPureLatinPattern;
 
 		public CommonFormatter( String regexPattern, String datePattern, String description ) {
 			this.regexPattern		= regexPattern;
@@ -124,7 +124,7 @@ public final class LocalizationUtil {
 			return this.regexPattern;
 		}
 
-		public Boolean isPureLatinPattern() {
+		public boolean isPureLatinPattern() {
 			return this.isPureLatinPattern;
 		}
 
@@ -132,7 +132,7 @@ public final class LocalizationUtil {
 		 * Pre-calculates whether a regex pattern contains only Latin/ASCII characters.
 		 * This optimization allows us to skip locale validation for pure Latin patterns.
 		 */
-		private Boolean calculateIsPureLatinPattern( String regexPattern ) {
+		private boolean calculateIsPureLatinPattern( String regexPattern ) {
 			for ( char c : regexPattern.toCharArray() ) {
 				Character.UnicodeBlock block = Character.UnicodeBlock.of( c );
 
