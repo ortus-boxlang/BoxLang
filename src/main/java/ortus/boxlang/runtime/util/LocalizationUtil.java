@@ -1452,16 +1452,11 @@ public final class LocalizationUtil {
 	 */
 	public static DateTime parseFromCommonPatterns( String dateTime, ZoneId timezone ) {
 
-		// Sanitize input by trimming and normalizing spaces
-		dateTime = dateTime.trim().replaceAll( " +", " " );
-
-		if ( timezone == null ) {
-			timezone = parseZoneId( null, RequestBoxContext.getCurrent() );
-		}
-
 		for ( CommonFormatter formatter : commonFormatters ) {
 			if ( formatter.matches( dateTime ) ) {
 				try {
+					// The order of the TemporalQuery functions here affects parsing speed.
+					// parseBest seems to use an internal try/catch approach, so the most likely types should be first.
 					TemporalAccessor date = formatter.getFormatter().parseBest(
 					    dateTime,
 					    ZonedDateTime::from,
@@ -1471,6 +1466,11 @@ public final class LocalizationUtil {
 					    LocalTime::from,
 					    Instant::from
 					);
+
+					// Parse timezone if not provided and date does not already contain timezone info
+					if ( timezone == null && ( ! ( date instanceof ZonedDateTime ) && ! ( date instanceof OffsetDateTime ) ) ) {
+						timezone = parseZoneId( null, RequestBoxContext.getCurrent() );
+					}
 
 					if ( date instanceof ZonedDateTime castZonedDateTime ) {
 						return new DateTime( castZonedDateTime );
@@ -1536,9 +1536,6 @@ public final class LocalizationUtil {
 	 * @return
 	 */
 	public static ZonedDateTime parseFromString( String dateTime, Locale locale, ZoneId timezone ) {
-
-		// sanitize input by trimming and normalizing spaces
-		dateTime = dateTime.trim().replaceAll( " +", " " );
 
 		Boolean	likelyHasDate			= dateTime.contains( "/" ) || dateTime.contains( "-" );
 		Boolean	likelyIsLongFormDate	= !likelyHasDate && REGEX_LONGFORM_PATTERN.matcher( dateTime ).find();
