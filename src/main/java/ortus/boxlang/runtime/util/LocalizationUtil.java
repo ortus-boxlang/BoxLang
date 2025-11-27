@@ -679,10 +679,10 @@ public final class LocalizationUtil {
 
 	/**
 	 * Initializes the CommonFormatter instances with regex patterns for fast date string matching.
-	 * This method creates optimized formatters that test regex patterns before attempting to parse,
-	 * All common date-time patterns are represented with appropriate regex patterns.
+	 * This method creates optimized formatters that test regex patterns before attempting to parse.
+	 * All common date-time patterns are represented with appropriate regex patterns for efficient matching.
 	 * 
-	 * @return List of CommonFormatter instances ordered by usage frequency
+	 * @return List of CommonFormatter instances, ordered so that the most frequently used date-time patterns appear first to optimize matching performance.
 	 */
 	private static List<CommonFormatter> getCommonFormatters() {
 
