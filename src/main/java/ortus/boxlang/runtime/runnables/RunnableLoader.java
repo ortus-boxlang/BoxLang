@@ -55,13 +55,28 @@ public class RunnableLoader {
 	private static RunnableLoader		instance;
 
 	/**
-	 * The BoxPiler implementation the runtime will use. At this time we offer two
-	 * choices:
-	 * 1. JavaBoxpiler - Generates Java source code and compiles it via the JDK
-	 * 2. ASMBoxpiler - Generates bytecode directly via ASM
-	 * However, developers can create their own Boxpiler implementations and
-	 * register them with the runtime
-	 * via configuration.
+	 * The BoxPiler implementation the runtime will use. BoxLang provides three core implementations:
+	 *
+	 * <ol>
+	 * <li><b>ASMBoxpiler</b> - Generates bytecode directly via ASM (default when available, high performance)</li>
+	 * <li><b>JavaBoxpiler</b> - Generates Java source code and compiles it via the JDK (useful for debugging)</li>
+	 * <li><b>NoOpBoxpiler</b> - Loads pre-compiled classes only, does not compile (for fully pre-compiled deployments)</li>
+	 * </ol>
+	 *
+	 * <p>
+	 * Developers can create their own Boxpiler implementations and register them with the runtime
+	 * via the ServiceLoader mechanism and configuration.
+	 * </p>
+	 *
+	 * <p>
+	 * <b>Selection Priority:</b>
+	 * </p>
+	 * <ol>
+	 * <li>Use the compiler specified in configuration (if set)</li>
+	 * <li>Prefer ASMBoxpiler if available</li>
+	 * <li>Fall back to any other registered Boxpiler</li>
+	 * <li>Use NoOpBoxpiler as last resort (requires pre-compiled classes)</li>
+	 * </ol>
 	 */
 	private IBoxpiler					boxpiler;
 
@@ -113,16 +128,49 @@ public class RunnableLoader {
 	 */
 
 	/**
-	 * Registers the Boxpilers in a specified class loader.
+	 * Registers the Boxpilers in a specified class loader using Java's ServiceLoader mechanism.
+	 *
+	 * <p>
+	 * This method gracefully handles cases where a Boxpiler class is listed in the service file
+	 * but is not available on the classpath. This allows for modular JAR distributions where
+	 * different Boxpiler implementations can be included or excluded.
+	 * </p>
+	 *
+	 * <p>
+	 * If no Boxpilers are successfully registered, the runtime will attempt to use NoOpBoxpiler
+	 * as a fallback during the selection process.
+	 * </p>
 	 *
 	 * @param cl The class loader to use for loading Boxpiler implementations
 	 */
+	@SuppressWarnings( "null" )
 	public void registerBoxpilers( ClassLoader cl ) {
-		// use service loader to find instance of myself
-		ServiceLoader<IBoxpiler> loader = ServiceLoader.load( IBoxpiler.class, cl );
+		BoxRuntime					runtime	= BoxRuntime.getInstance();
+		// Use service loader to find Boxpiler implementations
+		ServiceLoader<IBoxpiler>	loader	= ServiceLoader.load( IBoxpiler.class, cl );
+
+		// Iterate through available Boxpilers, handling missing classes gracefully
+		// The try-catch MUST be inside the loop so that one failure doesn't stop the entire iteration
 		for ( IBoxpiler boxpiler : loader ) {
-			boxpilers.put( boxpiler.getName(), boxpiler );
+			try {
+				this.boxpilers.put( boxpiler.getName(), boxpiler );
+				runtime.getLoggingService().RUNTIME_LOGGER.trace(
+				    "+ Registered Boxpiler: {} ({})",
+				    boxpiler.getName(),
+				    boxpiler.getClass().getName()
+				);
+			} catch ( Throwable e ) {
+				// ServiceConfigurationError, ClassNotFoundException, NoClassDefFoundError, etc.
+				// This can happen when a Boxpiler is listed in the service file but the class
+				// or its dependencies are not on the classpath
+				runtime.getLoggingService().RUNTIME_LOGGER.debug(
+				    "- Failed to register Boxpiler (class may not be on classpath): {}",
+				    e.getMessage()
+				);
+			}
 		}
+
+		// Choose which Boxpiler to use
 		chooseBoxpiler();
 	}
 
@@ -137,7 +185,7 @@ public class RunnableLoader {
 	 * Get all boxpilers registered, initting in double check lock if null
 	 */
 	public Map<Key, IBoxpiler> getBoxpilers() {
-		return boxpilers;
+		return this.boxpilers;
 	}
 
 	/**
@@ -148,11 +196,11 @@ public class RunnableLoader {
 	 * @return the Boxpiler instance
 	 */
 	public IBoxpiler getBoxpiler( Key name ) {
-		IBoxpiler boxpiler = boxpilers.get( name );
+		IBoxpiler boxpiler = this.boxpilers.get( name );
 		if ( boxpiler == null ) {
 			String detail = "There are no registered Boxpilers. Please ensure you have a Boxpiler implementation on the classpath.";
-			if ( !boxpilers.isEmpty() ) {
-				detail = "Available Boxpilers are: [" + boxpilers.keySet() + "]";
+			if ( !this.boxpilers.isEmpty() ) {
+				detail = "Available Boxpilers are: [" + this.boxpilers.keySet() + "]";
 			}
 			throw new BoxRuntimeException( "No Boxpiler registered for name: " + name + ". " + detail );
 		}
@@ -179,41 +227,74 @@ public class RunnableLoader {
 	}
 
 	/**
-	 * Choose the Boxpiler implementation to use according to the configuration
-	 * We only support two direct implementations, Java and ASM
-	 * Later on we need to inspect the class path for specific files if we want this configurable.
+	 * Choose the Boxpiler implementation to use according to the following priority:
 	 *
-	 * @return The Boxpiler implementation to use
+	 * <ol>
+	 * <li>Use the compiler explicitly specified in configuration (if set)</li>
+	 * <li>Prefer ASMBoxpiler if it's registered (high performance, default)</li>
+	 * <li>Use any other registered Boxpiler (e.g., JavaBoxpiler)</li>
+	 * <li>Fall back to NoOpBoxpiler (for pre-compiled deployments only)</li>
+	 * </ol>
+	 *
+	 * <p>
+	 * <b>Note:</b> NoOpBoxpiler can only load pre-compiled classes and will throw an exception
+	 * if asked to compile source code. It's intended for fully pre-compiled application deployments.
+	 * </p>
+	 *
+	 * @throws BoxRuntimeException if the configured Boxpiler is not found or no Boxpilers are available
 	 */
 	private void chooseBoxpiler() {
-		if ( boxpiler != null ) {
-			// If we already have a boxpiler, do not change it
+		// If we already have a boxpiler, do not change it
+		if ( this.boxpiler != null ) {
 			return;
 		}
-
+		// Determine which Boxpiler to use
 		BoxRuntime	runtime		= BoxRuntime.getInstance();
 		String		nameToUse	= StringCaster.cast( runtime.getConfiguration().compiler );
 		Key			keyToUse	= null;
-		// if there is no config
+
 		if ( nameToUse == null ) {
-			// prefer the ASM Boxpiler if it's registered
-			if ( boxpilers.containsKey( Key.asm ) ) {
+			// No explicit configuration, use default selection logic
+			if ( this.boxpilers.containsKey( Key.asm ) ) {
+				// Prefer ASM Boxpiler (high performance default)
 				keyToUse = Key.asm;
-			} else if ( !boxpilers.isEmpty() ) {
-				// if there is no ASM, juse the first we find
-				keyToUse = boxpilers.keySet().iterator().next();
+			} else if ( !this.boxpilers.isEmpty() ) {
+				// Use the first registered Boxpiler (e.g., JavaBoxpiler)
+				keyToUse = this.boxpilers.keySet().iterator().next();
 			} else {
-				// If there are no boxpilers registered, use the no-op
-				// it will still load classes, but not compile them
+				// No Boxpilers registered at all, fall back to NoOp
+				// This will work only for pre-compiled classes
 				keyToUse = Key.noOp;
 			}
-
 		} else {
+			// Use explicitly configured Boxpiler
 			keyToUse = Key.of( nameToUse );
 		}
 
-		selectBoxPiler( keyToUse );
-		runtime.getLoggingService().RUNTIME_LOGGER.info( "+ Choosing " + getBoxpiler().getClass().getSimpleName() + " as the Boxpiler implementation" );
+		// Attempt to select the chosen Boxpiler
+		try {
+			selectBoxPiler( keyToUse );
+			runtime.getLoggingService().RUNTIME_LOGGER.debug(
+			    "+ Activated Boxpiler: {} ({})",
+			    keyToUse,
+			    getBoxpiler().getClass().getSimpleName()
+			);
+		} catch ( BoxRuntimeException e ) {
+			// The requested Boxpiler is not available
+			if ( nameToUse != null ) {
+				// User explicitly requested a Boxpiler that isn't available
+				throw new BoxRuntimeException(
+				    "Configured Boxpiler '" + nameToUse + "' is not available. " + e.getMessage(),
+				    e
+				);
+			} else {
+				// Should not happen, but handle gracefully
+				throw new BoxRuntimeException(
+				    "Failed to activate any Boxpiler. Please ensure at least one Boxpiler implementation is on the classpath. " + e.getMessage(),
+				    e
+				);
+			}
+		}
 	}
 
 	/**

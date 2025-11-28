@@ -214,6 +214,9 @@ application {
     mainClass = "ortus.boxlang.runtime.BoxRunner"
 }
 
+/**
+ * This task processes resources to inject build metadata into version.properties
+ */
 processResources {
 	dependsOn compileJava
 
@@ -241,8 +244,35 @@ processResources {
 }
 
 /**
- * Jar and Shadow Jar config
+ * ================================================================================
+ * JAR Build Configuration
+ * ================================================================================
+ *
+ * BoxLang produces 4 different JAR artifacts:
+ *
+ * 1. boxlang-{version}.jar (shadowJar)
+ *    - Main distribution with Runtime + ASMBoxpiler + NoOpBoxpiler
+ *    - Excludes: JavaBoxpiler and JavaParser dependencies
+ *    - Service file: Lists ASMBoxpiler and NoOpBoxpiler
+ *
+ * 2. boxlang-noop-{version}.jar (shadowJarNoop)
+ *    - Minimal runtime with NoOpBoxpiler ONLY
+ *    - Excludes: Both ASMBoxpiler and JavaBoxpiler
+ *    - Purpose: Pre-compiled deployments or custom classpath scenarios
+ *    - Service file: Lists NoOpBoxpiler only
+ *
+ * 3. boxlang-compiler-java-{version}.jar (jarJavaCompiler)
+ *    - JavaBoxpiler + JavaParser dependencies ONLY
+ *    - Add-on JAR to combine with boxlang.jar or boxlang-noop.jar
+ *    - Service file: Lists JavaBoxpiler only
+ *
+ * 4. boxlang-compiler-asm-{version}.jar (jarAsmCompiler)
+ *    - ASMBoxpiler ONLY (ASM library remains in core runtime)
+ *    - Add-on JAR to combine with boxlang-noop.jar if needed
+ *    - Service file: Lists ASMBoxpiler only
+ *
  * https://imperceptiblethoughts.com/shadow/configuration/
+ * ================================================================================
  */
 jar {
     archiveBaseName = 'boxlang'
@@ -268,27 +298,179 @@ tasks.named( "startScripts" ) {
 tasks.named( "startShadowScripts" ) {
     dependsOn tasks.named( "jar" )
 }
+/**
+ * Main BoxLang Distribution JAR
+ * Includes: Runtime + ASMBoxpiler + NoOpBoxpiler
+ * Excludes: JavaBoxpiler and JavaParser dependencies
+ */
 shadowJar {
 	archiveBaseName = "boxlang"
 	archiveClassifier = ""
     mergeServiceFiles()
 
-	// Antlr unecessary files
+	// Antlr unnecessary files
 	exclude "com/ibm/icu/**"
 	exclude 'ortus/boxlang/tools/**'
 	exclude 'ortus/boxlang/runtime/testing/**'
-	// Java Parser: Remove when we are reading to remove it.
-	// exclude 'ortus/boxlang/compiler/javaboxpiler/**'
-	// exclude 'com/github/javaparser/**'
-	// exclude 'org/javassist/**'
-	// exclude 'com/google/**'
-	// exclude 'org/checkerframework/**'
+
+	// Exclude JavaBoxpiler and its dependencies
+	exclude 'ortus/boxlang/compiler/javaboxpiler/**'
+	exclude 'com/github/javaparser/**'
+	exclude 'org/javassist/**'
+	exclude 'com/google/**'
+	exclude 'org/checkerframework/**'
 
 	minimize{
 		exclude( dependency( "org.slf4j:.*:.*" ) )
 		exclude( dependency( "ch.qos.logback:.*:.*" ) )
 		exclude( dependency( "com.zaxxer:.*:.*" ) )
 		exclude( dependency( "com.fasterxml.jackson.jr:.*:.*" ) )
+	}
+}
+
+/**
+ * NoOp-Only BoxLang JAR
+ * Includes: Runtime + NoOpBoxpiler ONLY
+ * Excludes: ASMBoxpiler, JavaBoxpiler, ASM library (except what runtime needs), JavaParser
+ * Purpose: Minimal runtime for pre-compiled deployments
+ */
+task shadowJarNoop( type: com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar ) {
+	dependsOn classes
+	archiveBaseName = "boxlang-noop"
+	archiveClassifier = ""
+	archiveVersion = "${version}"
+
+	from sourceSets.main.output
+	configurations = [project.configurations.runtimeClasspath]
+
+	// Don't use mergeServiceFiles() - we'll provide a custom one
+	exclude 'META-INF/services/ortus.boxlang.compiler.IBoxpiler'
+
+	// Exclude unnecessary files
+	exclude "com/ibm/icu/**"
+	exclude 'ortus/boxlang/tools/**'
+	exclude 'ortus/boxlang/runtime/testing/**'
+
+	// Exclude both compiler implementations
+	exclude 'ortus/boxlang/compiler/asmboxpiler/**'
+	exclude 'ortus/boxlang/compiler/javaboxpiler/**'
+
+	// Exclude compiler dependencies
+	exclude 'com/github/javaparser/**'
+	exclude 'org/javassist/**'
+	exclude 'com/google/**'
+	exclude 'org/checkerframework/**'
+	// Note: We keep ASM in runtime as it's used for bytecode manipulation beyond compilation
+
+	manifest {
+		attributes 'Main-Class': 'ortus.boxlang.runtime.BoxRunner'
+		attributes 'Description': 'BoxLang NoOp Runtime (Pre-compiled Classes Only)'
+		attributes 'Implementation-Version': "${version}+${buildID}"
+		attributes 'Created-On': new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())
+		attributes 'Created-By': "Ortus Solutions, Corp"
+	}
+
+	minimize{
+		exclude( dependency( "org.slf4j:.*:.*" ) )
+		exclude( dependency( "ch.qos.logback:.*:.*" ) )
+		exclude( dependency( "com.zaxxer:.*:.*" ) )
+		exclude( dependency( "com.fasterxml.jackson.jr:.*:.*" ) )
+	}
+
+	// Add custom service file with only NoOpBoxpiler
+	from(file("$buildDir/tmp/shadowJarNoop-services")) {
+		into('META-INF')
+	}
+
+	doFirst {
+		// Create custom service file before JAR is built
+		def servicesDir = file("$buildDir/tmp/shadowJarNoop-services/services")
+		servicesDir.mkdirs()
+		def serviceFile = file("$buildDir/tmp/shadowJarNoop-services/services/ortus.boxlang.compiler.IBoxpiler")
+		serviceFile.text = 'ortus.boxlang.compiler.NoOpBoxpiler\n'
+	}
+}
+
+/**
+ * Java Compiler Add-on JAR
+ * Includes: JavaBoxpiler + JavaParser dependencies ONLY
+ * Excludes: Runtime, ASMBoxpiler, NoOpBoxpiler
+ * Purpose: Add-on to combine with boxlang.jar or boxlang-noop.jar
+ */
+task jarJavaCompiler(type: Jar) {
+	dependsOn classes
+	archiveBaseName = "boxlang-compiler-java"
+	archiveClassifier = ""
+	archiveVersion = "${version}"
+
+	from(sourceSets.main.output) {
+		include 'ortus/boxlang/compiler/javaboxpiler/**'
+	}
+
+	// Include JavaParser dependencies
+	from {
+		configurations.runtimeClasspath.findAll {
+			it.name.contains('javaparser') ||
+			it.name.contains('javassist') ||
+			it.name.contains('checker-qual')
+		}.collect { it.isDirectory() ? it : zipTree(it) }
+	}
+
+	manifest {
+		attributes 'Description': 'BoxLang Java Compiler Add-on'
+		attributes 'Implementation-Version': "${version}+${buildID}"
+		attributes 'Created-On': new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())
+		attributes 'Created-By': "Ortus Solutions, Corp"
+	}
+
+	doLast {
+		// Create service file for Java compiler
+		def servicesDir = file("$buildDir/tmp/jarJavaCompiler/META-INF/services")
+		servicesDir.mkdirs()
+		def serviceFile = file("$buildDir/tmp/jarJavaCompiler/META-INF/services/ortus.boxlang.compiler.IBoxpiler")
+		serviceFile.text = 'ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler\n'
+
+		// Add service file to the JAR
+		ant.jar(update: true, destfile: archiveFile.get().asFile.absolutePath) {
+			zipfileset(dir: "$buildDir/tmp/jarJavaCompiler/META-INF", prefix: "META-INF")
+		}
+	}
+}
+
+/**
+ * ASM Compiler Add-on JAR
+ * Includes: ASMBoxpiler ONLY
+ * Excludes: Runtime, JavaBoxpiler, NoOpBoxpiler, ASM library (it's in core)
+ * Purpose: Add-on to combine with boxlang-noop.jar
+ */
+task jarAsmCompiler(type: Jar) {
+	dependsOn classes
+	archiveBaseName = "boxlang-compiler-asm"
+	archiveClassifier = ""
+	archiveVersion = "${version}"
+
+	from(sourceSets.main.output) {
+		include 'ortus/boxlang/compiler/asmboxpiler/**'
+	}
+
+	manifest {
+		attributes 'Description': 'BoxLang ASM Compiler Add-on'
+		attributes 'Implementation-Version': "${version}+${buildID}"
+		attributes 'Created-On': new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())
+		attributes 'Created-By': "Ortus Solutions, Corp"
+	}
+
+	doLast {
+		// Create service file for ASM compiler
+		def servicesDir = file("$buildDir/tmp/jarAsmCompiler/META-INF/services")
+		servicesDir.mkdirs()
+		def serviceFile = file("$buildDir/tmp/jarAsmCompiler/META-INF/services/ortus.boxlang.compiler.IBoxpiler")
+		serviceFile.text = 'ortus.boxlang.compiler.asmboxpiler.ASMBoxpiler\n'
+
+		// Add service file to the JAR
+		ant.jar(update: true, destfile: archiveFile.get().asFile.absolutePath) {
+			zipfileset(dir: "$buildDir/tmp/jarAsmCompiler/META-INF", prefix: "META-INF")
+		}
 	}
 }
 
@@ -323,14 +505,17 @@ task createDistributionFile( type: Zip ){
 }
 /**
  * Task moves the contents of the `libs` folder to the `distributions` folder
- and must run after build
+ * Includes all BoxLang JAR variants: main, noop, java-compiler, and asm-compiler
  */
 task libsToDistro( type: Copy ) {
-	dependsOn build, createDistributionFile
+	dependsOn build, createDistributionFile, shadowJarNoop, jarJavaCompiler, jarAsmCompiler
 
 	from( 'build/libs' ) {
 		include 'boxlang-' + version + '.jar'
 		include 'boxlang-' + version + '-javadoc.jar'
+		include 'boxlang-noop-' + version + '.jar'
+		include 'boxlang-compiler-java-' + version + '.jar'
+		include 'boxlang-compiler-asm-' + version + '.jar'
 	}
 
 	from( 'build/resources/main/META-INF/boxlang/version.properties' ){
@@ -487,6 +672,264 @@ publishing {
 				}
 			}
         }
+
+		noop( MavenPublication ) { publication ->
+
+			artifact shadowJarNoop
+
+			groupId = 'io.boxlang'
+			artifactId = 'boxlang-noop'
+			pom {
+				name = "BoxLang NoOp Runtime"
+				description = "BoxLang minimal runtime with NoOpBoxpiler only. For pre-compiled deployments or custom classpath scenarios where you provide your own compiler implementation."
+				url = "https://boxlang.io"
+				issueManagement {
+					system = "Jira"
+					url = "https://ortussolutions.atlassian.net/jira/software/c/projects/BL/issues"
+				}
+				mailingLists {
+					mailingList {
+						name = "BoxLang Community"
+						subscribe = "https://community.ortussolutions.com/c/boxlang/42"
+						unsubscribe = "https://community.ortussolutions.com/c/boxlang/42"
+					}
+				}
+				licenses {
+					license {
+						name = 'The Apache License, Version 2.0'
+						url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+					}
+				}
+				scm {
+					connection = 'scm:git:https://github.com/ortus-boxlang/boxlang.git'
+					developerConnection = 'scm:git:ssh://github.com/ortus-boxlang/boxlang.git'
+					url = 'https://github.com/ortus-boxlang/boxlang'
+				}
+				developers{
+					developer {
+						id  = "lmajano"
+						name = "Luis Majano"
+						email = "lmajano@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "bdw429s"
+						name = "Brad Wood"
+						email = "brad@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "jclausen"
+						name = "Jon Clausen"
+						email = "jclausen@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "michaelborn"
+						name = "Michael Born"
+						email = "michael@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "garciadev"
+						name = "Daniel Garcia"
+						email = "dgarcia@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "jbeers"
+						name = "Jacob Beers"
+						email = "jbeers@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "ericpeterson"
+						name = "Eric Peterson"
+						email = "eric@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+				}
+			}
+		}
+
+		compilerJava( MavenPublication ) { publication ->
+
+			artifact jarJavaCompiler
+
+			groupId = 'io.boxlang'
+			artifactId = 'boxlang-compiler-java'
+			pom {
+				name = "BoxLang Java Compiler"
+				description = "JavaBoxpiler compiler add-on for BoxLang. Add this JAR to your classpath alongside boxlang.jar or boxlang-noop.jar to enable Java source code generation and JDK compilation."
+				url = "https://boxlang.io"
+				issueManagement {
+					system = "Jira"
+					url = "https://ortussolutions.atlassian.net/jira/software/c/projects/BL/issues"
+				}
+				mailingLists {
+					mailingList {
+						name = "BoxLang Community"
+						subscribe = "https://community.ortussolutions.com/c/boxlang/42"
+						unsubscribe = "https://community.ortussolutions.com/c/boxlang/42"
+					}
+				}
+				licenses {
+					license {
+						name = 'The Apache License, Version 2.0'
+						url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+					}
+				}
+				scm {
+					connection = 'scm:git:https://github.com/ortus-boxlang/boxlang.git'
+					developerConnection = 'scm:git:ssh://github.com/ortus-boxlang/boxlang.git'
+					url = 'https://github.com/ortus-boxlang/boxlang'
+				}
+				developers{
+					developer {
+						id  = "lmajano"
+						name = "Luis Majano"
+						email = "lmajano@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "bdw429s"
+						name = "Brad Wood"
+						email = "brad@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "jclausen"
+						name = "Jon Clausen"
+						email = "jclausen@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "michaelborn"
+						name = "Michael Born"
+						email = "michael@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "garciadev"
+						name = "Daniel Garcia"
+						email = "dgarcia@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "jbeers"
+						name = "Jacob Beers"
+						email = "jbeers@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "ericpeterson"
+						name = "Eric Peterson"
+						email = "eric@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+				}
+			}
+		}
+
+		compilerAsm( MavenPublication ) { publication ->
+
+			artifact jarAsmCompiler
+
+			groupId = 'io.boxlang'
+			artifactId = 'boxlang-compiler-asm'
+			pom {
+				name = "BoxLang ASM Compiler"
+				description = "ASMBoxpiler compiler add-on for BoxLang. Add this JAR to your classpath alongside boxlang-noop.jar to enable direct bytecode compilation via ASM."
+				url = "https://boxlang.io"
+				issueManagement {
+					system = "Jira"
+					url = "https://ortussolutions.atlassian.net/jira/software/c/projects/BL/issues"
+				}
+				mailingLists {
+					mailingList {
+						name = "BoxLang Community"
+						subscribe = "https://community.ortussolutions.com/c/boxlang/42"
+						unsubscribe = "https://community.ortussolutions.com/c/boxlang/42"
+					}
+				}
+				licenses {
+					license {
+						name = 'The Apache License, Version 2.0'
+						url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+					}
+				}
+				scm {
+					connection = 'scm:git:https://github.com/ortus-boxlang/boxlang.git'
+					developerConnection = 'scm:git:ssh://github.com/ortus-boxlang/boxlang.git'
+					url = 'https://github.com/ortus-boxlang/boxlang'
+				}
+				developers{
+					developer {
+						id  = "lmajano"
+						name = "Luis Majano"
+						email = "lmajano@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "bdw429s"
+						name = "Brad Wood"
+						email = "brad@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "jclausen"
+						name = "Jon Clausen"
+						email = "jclausen@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "michaelborn"
+						name = "Michael Born"
+						email = "michael@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "garciadev"
+						name = "Daniel Garcia"
+						email = "dgarcia@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "jbeers"
+						name = "Jacob Beers"
+						email = "jbeers@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "ericpeterson"
+						name = "Eric Peterson"
+						email = "eric@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+				}
+			}
+		}
     }
 
     repositories {
@@ -534,10 +977,14 @@ signing {
 	if ( gpgKey && gpgPassword ) {
 		// Use in-memory PGP keys for CI/CD
 		useInMemoryPgpKeys( gpgKey, gpgPassword )
+
+		// Only sign if GPG credentials are available
+		sign publishing.publications.shadow
+		sign publishing.publications.noop
+		sign publishing.publications.compilerJava
+		sign publishing.publications.compilerAsm
 	}
 	// Otherwise use traditional gradle.properties approach for local development
-
-    sign publishing.publications.shadow
 }
 
 /**
@@ -735,6 +1182,12 @@ test {
 	systemProperty 'junit.jupiter.testclass.order.default', 'org.junit.jupiter.api.ClassOrderer$ClassName'
     systemProperty 'file.encoding', 'UTF-8'
     systemProperty 'user.timezone', 'UTC'
+
+	// Add Java Compiler JAR to classpath if specified (for CI testing with java compiler)
+	if ( project.hasProperty( 'addJavaCompiler' ) && project.property( 'addJavaCompiler' ) == 'true' ) {
+		dependsOn jarJavaCompiler
+		classpath += files("$buildDir/libs/boxlang-compiler-java-${version}.jar")
+	}
 
 	// Dependencies
 	dependsOn compileJava, compileTestJava
