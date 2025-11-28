@@ -1183,6 +1183,12 @@ test {
     systemProperty 'file.encoding', 'UTF-8'
     systemProperty 'user.timezone', 'UTC'
 
+	// Add Java Compiler JAR to classpath if specified (for CI testing with java compiler)
+	if ( project.hasProperty( 'addJavaCompiler' ) && project.property( 'addJavaCompiler' ) == 'true' ) {
+		dependsOn jarJavaCompiler
+		classpath += files("$buildDir/libs/boxlang-compiler-java-${version}.jar")
+	}
+
 	// Dependencies
 	dependsOn compileJava, compileTestJava
 	//exclude '**/resources/**'

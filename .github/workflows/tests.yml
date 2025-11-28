@@ -79,12 +79,25 @@ jobs:
           oracle-password: "123456Password"
           oracle-database: "XEPDB1"
 
-      - name: Test BoxLang
+      - name: Build Java Compiler JAR
+        if: ${{ matrix.compiler == 'java' }}
+        run: ./gradlew jarJavaCompiler --stacktrace --console=plain
+
+      - name: Test BoxLang (ASM)
+        if: ${{ matrix.compiler == 'asm' }}
         env:
           BOXLANG_COMPILER: ${{ matrix.compiler }}
         run: |
           ./gradlew :src:modules:test:build --stacktrace --console=plain
           ./gradlew test --stacktrace --console=plain
+
+      - name: Test BoxLang (Java)
+        if: ${{ matrix.compiler == 'java' }}
+        env:
+          BOXLANG_COMPILER: ${{ matrix.compiler }}
+        run: |
+          ./gradlew :src:modules:test:build --stacktrace --console=plain
+          ./gradlew test --stacktrace --console=plain -PaddJavaCompiler=true
 
       - name: Publish Test Reports
         uses: mikepenz/action-junit-report@v6.0.1
