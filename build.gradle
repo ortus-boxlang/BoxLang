@@ -977,7 +977,7 @@ signing {
 	if ( gpgKey && gpgPassword ) {
 		// Use in-memory PGP keys for CI/CD
 		useInMemoryPgpKeys( gpgKey, gpgPassword )
-		
+
 		// Only sign if GPG credentials are available
 		sign publishing.publications.shadow
 		sign publishing.publications.noop
