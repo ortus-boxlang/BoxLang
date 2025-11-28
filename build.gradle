@@ -672,6 +672,266 @@ publishing {
 				}
 			}
         }
+
+		noop( MavenPublication ) { publication ->
+
+			artifact shadowJarNoop
+			artifact javadocJar
+			artifact sourcesJar
+
+			groupId = 'io.boxlang'
+			artifactId = 'boxlang-noop'
+			pom {
+				name = "BoxLang NoOp Runtime"
+				description = "BoxLang minimal runtime with NoOpBoxpiler only. For pre-compiled deployments or custom classpath scenarios where you provide your own compiler implementation."
+				url = "https://boxlang.io"
+				issueManagement {
+					system = "Jira"
+					url = "https://ortussolutions.atlassian.net/jira/software/c/projects/BL/issues"
+				}
+				mailingLists {
+					mailingList {
+						name = "BoxLang Community"
+						subscribe = "https://community.ortussolutions.com/c/boxlang/42"
+						unsubscribe = "https://community.ortussolutions.com/c/boxlang/42"
+					}
+				}
+				licenses {
+					license {
+						name = 'The Apache License, Version 2.0'
+						url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+					}
+				}
+				scm {
+					connection = 'scm:git:https://github.com/ortus-boxlang/boxlang.git'
+					developerConnection = 'scm:git:ssh://github.com/ortus-boxlang/boxlang.git'
+					url = 'https://github.com/ortus-boxlang/boxlang'
+				}
+				developers{
+					developer {
+						id  = "lmajano"
+						name = "Luis Majano"
+						email = "lmajano@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "bdw429s"
+						name = "Brad Wood"
+						email = "brad@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "jclausen"
+						name = "Jon Clausen"
+						email = "jclausen@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "michaelborn"
+						name = "Michael Born"
+						email = "michael@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "garciadev"
+						name = "Daniel Garcia"
+						email = "dgarcia@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "jbeers"
+						name = "Jacob Beers"
+						email = "jbeers@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "ericpeterson"
+						name = "Eric Peterson"
+						email = "eric@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+				}
+			}
+		}
+
+		compilerJava( MavenPublication ) { publication ->
+
+			artifact jarJavaCompiler
+
+			groupId = 'io.boxlang'
+			artifactId = 'boxlang-compiler-java'
+			pom {
+				name = "BoxLang Java Compiler"
+				description = "JavaBoxpiler compiler add-on for BoxLang. Add this JAR to your classpath alongside boxlang.jar or boxlang-noop.jar to enable Java source code generation and JDK compilation."
+				url = "https://boxlang.io"
+				issueManagement {
+					system = "Jira"
+					url = "https://ortussolutions.atlassian.net/jira/software/c/projects/BL/issues"
+				}
+				mailingLists {
+					mailingList {
+						name = "BoxLang Community"
+						subscribe = "https://community.ortussolutions.com/c/boxlang/42"
+						unsubscribe = "https://community.ortussolutions.com/c/boxlang/42"
+					}
+				}
+				licenses {
+					license {
+						name = 'The Apache License, Version 2.0'
+						url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+					}
+				}
+				scm {
+					connection = 'scm:git:https://github.com/ortus-boxlang/boxlang.git'
+					developerConnection = 'scm:git:ssh://github.com/ortus-boxlang/boxlang.git'
+					url = 'https://github.com/ortus-boxlang/boxlang'
+				}
+				developers{
+					developer {
+						id  = "lmajano"
+						name = "Luis Majano"
+						email = "lmajano@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "bdw429s"
+						name = "Brad Wood"
+						email = "brad@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "jclausen"
+						name = "Jon Clausen"
+						email = "jclausen@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "michaelborn"
+						name = "Michael Born"
+						email = "michael@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "garciadev"
+						name = "Daniel Garcia"
+						email = "dgarcia@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "jbeers"
+						name = "Jacob Beers"
+						email = "jbeers@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "ericpeterson"
+						name = "Eric Peterson"
+						email = "eric@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+				}
+			}
+		}
+
+		compilerAsm( MavenPublication ) { publication ->
+
+			artifact jarAsmCompiler
+
+			groupId = 'io.boxlang'
+			artifactId = 'boxlang-compiler-asm'
+			pom {
+				name = "BoxLang ASM Compiler"
+				description = "ASMBoxpiler compiler add-on for BoxLang. Add this JAR to your classpath alongside boxlang-noop.jar to enable direct bytecode compilation via ASM."
+				url = "https://boxlang.io"
+				issueManagement {
+					system = "Jira"
+					url = "https://ortussolutions.atlassian.net/jira/software/c/projects/BL/issues"
+				}
+				mailingLists {
+					mailingList {
+						name = "BoxLang Community"
+						subscribe = "https://community.ortussolutions.com/c/boxlang/42"
+						unsubscribe = "https://community.ortussolutions.com/c/boxlang/42"
+					}
+				}
+				licenses {
+					license {
+						name = 'The Apache License, Version 2.0'
+						url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+					}
+				}
+				scm {
+					connection = 'scm:git:https://github.com/ortus-boxlang/boxlang.git'
+					developerConnection = 'scm:git:ssh://github.com/ortus-boxlang/boxlang.git'
+					url = 'https://github.com/ortus-boxlang/boxlang'
+				}
+				developers{
+					developer {
+						id  = "lmajano"
+						name = "Luis Majano"
+						email = "lmajano@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "bdw429s"
+						name = "Brad Wood"
+						email = "brad@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "jclausen"
+						name = "Jon Clausen"
+						email = "jclausen@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "michaelborn"
+						name = "Michael Born"
+						email = "michael@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "garciadev"
+						name = "Daniel Garcia"
+						email = "dgarcia@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "jbeers"
+						name = "Jacob Beers"
+						email = "jbeers@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+					developer {
+						id = "ericpeterson"
+						name = "Eric Peterson"
+						email = "eric@ortussolutions.com"
+						organization = "Ortus Solutions, Corp"
+						organizationUrl = "https://www.ortussolutions.com"
+					}
+				}
+			}
+		}
     }
 
     repositories {
@@ -723,6 +983,9 @@ signing {
 	// Otherwise use traditional gradle.properties approach for local development
 
     sign publishing.publications.shadow
+	sign publishing.publications.noop
+	sign publishing.publications.compilerJava
+	sign publishing.publications.compilerAsm
 }
 
 /**
