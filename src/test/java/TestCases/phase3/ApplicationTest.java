@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.time.ZoneId;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -63,6 +64,13 @@ public class ApplicationTest {
 	public void setupEach() {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
+	}
+
+	@AfterEach
+	public void teardownEach() {
+		if ( context != null ) {
+			context.shutdown();
+		}
 	}
 
 	@DisplayName( "application basics" )

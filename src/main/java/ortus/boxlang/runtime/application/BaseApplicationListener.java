@@ -505,6 +505,8 @@ public abstract class BaseApplicationListener {
 			SessionScope newScope = sessionContext.getSession().getSessionScope();
 			// Transfer existing keys which were added to the scope
 			existingScope.entrySet().stream().forEach( entry -> newScope.putIfAbsent( entry.getKey(), entry.getValue() ) );
+
+			sessionContext.persistSession( context.getRequestContext() );
 		}
 	}
 
@@ -537,6 +539,9 @@ public abstract class BaseApplicationListener {
 		this.context.removeParentContext( SessionBoxContext.class );
 		this.context.injectTopParentContext( new SessionBoxContext( targetSession ) );
 		targetSession.start( this.context );
+
+		this.context.registerShutdownListener( SessionBoxContext.persistSessionListener );
+
 	}
 
 	/**

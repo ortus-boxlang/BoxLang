@@ -23,6 +23,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.context.SessionBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 
 @BoxBIF( description = "Invalidate the current session" )
@@ -43,7 +44,12 @@ public class SessionInvalidate extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		context.getParentOfType( RequestBoxContext.class ).resetSession();
+		RequestBoxContext requestContext = context.getParentOfType( RequestBoxContext.class );
+		requestContext.resetSession();
+		SessionBoxContext sessionContext = requestContext.getParentOfType( SessionBoxContext.class );
+		if ( sessionContext != null ) {
+			sessionContext.persistSession( requestContext );
+		}
 		return null;
 	}
 
