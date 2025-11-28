@@ -57,6 +57,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.RuntimeBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.context.SessionBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
@@ -1396,6 +1397,7 @@ public class BoxRuntime implements java.io.Closeable {
 					}
 				}
 				scriptingContext.flushBuffer( false );
+				persistSession();
 				RequestBoxContext.removeCurrent();
 				Thread.currentThread().setContextClassLoader( oldClassLoader );
 			}
@@ -1505,6 +1507,7 @@ public class BoxRuntime implements java.io.Closeable {
 				}
 			}
 			scriptingContext.flushBuffer( false );
+			persistSession();
 			RequestBoxContext.removeCurrent();
 			Thread.currentThread().setContextClassLoader( oldClassLoader );
 			if ( shutdownContext ) {
@@ -1578,6 +1581,7 @@ public class BoxRuntime implements java.io.Closeable {
 			return null;
 		} finally {
 			scriptingContext.flushBuffer( false );
+			persistSession();
 			RequestBoxContext.removeCurrent();
 			Thread.currentThread().setContextClassLoader( oldClassLoader );
 			if ( shutdownContext ) {
@@ -1651,6 +1655,7 @@ public class BoxRuntime implements java.io.Closeable {
 			}
 		} finally {
 			scriptingContext.flushBuffer( false );
+			persistSession();
 			RequestBoxContext.removeCurrent();
 			Thread.currentThread().setContextClassLoader( oldClassLoader );
 			if ( shutdownContext ) {
@@ -1716,11 +1721,23 @@ public class BoxRuntime implements java.io.Closeable {
 		} catch ( IOException e ) {
 			throw new BoxRuntimeException( "Error reading source stream", e );
 		} finally {
+			persistSession();
 			RequestBoxContext.removeCurrent();
 			Thread.currentThread().setContextClassLoader( oldClassLoader );
 		}
 
 		return null;
+	}
+
+	public void persistSession() {
+		// Persist the session if we have one
+		IBoxContext currentContext = RequestBoxContext.getCurrent();
+		if ( currentContext != null ) {
+			SessionBoxContext sessionContext = currentContext.getParentOfType( SessionBoxContext.class );
+			if ( sessionContext != null ) {
+				sessionContext.persistSession( ( RequestBoxContext ) currentContext );
+			}
+		}
 	}
 
 	/**

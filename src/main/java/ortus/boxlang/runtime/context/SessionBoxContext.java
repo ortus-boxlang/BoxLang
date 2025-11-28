@@ -19,7 +19,12 @@ package ortus.boxlang.runtime.context;
 
 import java.time.Duration;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.application.Session;
+import ortus.boxlang.runtime.cache.providers.ICacheProvider;
+import ortus.boxlang.runtime.cache.store.ConcurrentStore;
+import ortus.boxlang.runtime.cache.store.IObjectStore;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.SessionScope;
@@ -40,15 +45,17 @@ public class SessionBoxContext extends BaseBoxContext {
 	 * --------------------------------------------------------------------------
 	 */
 
+	private BoxLangLogger	logger;
+
 	/**
 	 * The variables scope
 	 */
-	protected Session	session;
+	protected Session		session;
 
 	/**
 	 * The session scope for this application
 	 */
-	protected IScope	sessionScope;
+	protected IScope		sessionScope;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -65,6 +72,7 @@ public class SessionBoxContext extends BaseBoxContext {
 		super( null );
 		this.session		= session;
 		this.sessionScope	= session.getSessionScope();
+		this.logger			= BoxRuntime.getInstance().getLoggingService().APPLICATION_LOGGER;
 	}
 
 	/**
@@ -196,11 +204,21 @@ public class SessionBoxContext extends BaseBoxContext {
 	 */
 	public void persistSession( RequestBoxContext requestContext ) {
 
-		Object		sessionTimeout	= requestContext.getConfigItems( Key.applicationSettings, Key.sessionTimeout );
-		String		cacheKey		= this.session.getCacheKey();
-		Duration	timeoutDuration	= DateTimeHelper.convertTimeoutToDuration( sessionTimeout );
+		Object			sessionTimeout	= requestContext.getConfigItems( Key.applicationSettings, Key.sessionTimeout );
+		String			cacheKey		= this.session.getCacheKey();
+		Duration		timeoutDuration	= DateTimeHelper.convertTimeoutToDuration( sessionTimeout );
 
-		requestContext.getApplicationListener().getApplication().getSessionsCache().set(
+		ICacheProvider	cacheProvider	= requestContext.getApplicationListener().getApplication().getSessionsCache();
+		IObjectStore	providerStore	= cacheProvider.getObjectStore();
+
+		// NoOp if we are using a concurrent store as it is already modified by reference
+		if ( providerStore != null && ( providerStore instanceof ConcurrentStore ) ) {
+			return;
+		}
+
+		logger.trace( "Persisting session data to cache with key '{}' and values: '{}'", cacheKey, this.session.getSessionScope().asString() );
+
+		cacheProvider.set(
 		    cacheKey,
 		    this.session,
 		    timeoutDuration,

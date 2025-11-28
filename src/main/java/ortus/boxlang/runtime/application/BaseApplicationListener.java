@@ -505,6 +505,7 @@ public abstract class BaseApplicationListener {
 			SessionScope newScope = sessionContext.getSession().getSessionScope();
 			// Transfer existing keys which were added to the scope
 			existingScope.entrySet().stream().forEach( entry -> newScope.putIfAbsent( entry.getKey(), entry.getValue() ) );
+			sessionContext.persistSession( context );
 		}
 	}
 
