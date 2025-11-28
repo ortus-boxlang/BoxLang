@@ -676,8 +676,6 @@ publishing {
 		noop( MavenPublication ) { publication ->
 
 			artifact shadowJarNoop
-			artifact javadocJar
-			artifact sourcesJar
 
 			groupId = 'io.boxlang'
 			artifactId = 'boxlang-noop'
@@ -979,13 +977,14 @@ signing {
 	if ( gpgKey && gpgPassword ) {
 		// Use in-memory PGP keys for CI/CD
 		useInMemoryPgpKeys( gpgKey, gpgPassword )
+		
+		// Only sign if GPG credentials are available
+		sign publishing.publications.shadow
+		sign publishing.publications.noop
+		sign publishing.publications.compilerJava
+		sign publishing.publications.compilerAsm
 	}
 	// Otherwise use traditional gradle.properties approach for local development
-
-    sign publishing.publications.shadow
-	sign publishing.publications.noop
-	sign publishing.publications.compilerJava
-	sign publishing.publications.compilerAsm
 }
 
 /**
