@@ -199,7 +199,7 @@ public class RunnableLoader {
 		IBoxpiler boxpiler = this.boxpilers.get( name );
 		if ( boxpiler == null ) {
 			String detail = "There are no registered Boxpilers. Please ensure you have a Boxpiler implementation on the classpath.";
-			if ( !boxpilers.isEmpty() ) {
+			if ( !this.boxpilers.isEmpty() ) {
 				detail = "Available Boxpilers are: [" + this.boxpilers.keySet() + "]";
 			}
 			throw new BoxRuntimeException( "No Boxpiler registered for name: " + name + ". " + detail );
@@ -255,12 +255,12 @@ public class RunnableLoader {
 
 		if ( nameToUse == null ) {
 			// No explicit configuration, use default selection logic
-			if ( boxpilers.containsKey( Key.asm ) ) {
+			if ( this.boxpilers.containsKey( Key.asm ) ) {
 				// Prefer ASM Boxpiler (high performance default)
 				keyToUse = Key.asm;
-			} else if ( !boxpilers.isEmpty() ) {
+			} else if ( !this.boxpilers.isEmpty() ) {
 				// Use the first registered Boxpiler (e.g., JavaBoxpiler)
-				keyToUse = boxpilers.keySet().iterator().next();
+				keyToUse = this.boxpilers.keySet().iterator().next();
 			} else {
 				// No Boxpilers registered at all, fall back to NoOp
 				// This will work only for pre-compiled classes
