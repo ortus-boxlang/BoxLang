@@ -1487,6 +1487,7 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	@Override
 	public void registerShutdownListener( java.util.function.Consumer<IBoxContext> consumer ) {
+
 		if ( this.shutdownListeners == null ) {
 			synchronized ( this ) {
 				if ( this.shutdownListeners == null ) {
@@ -1494,7 +1495,11 @@ public class BaseBoxContext implements IBoxContext {
 				}
 			}
 		}
-		this.shutdownListeners.add( consumer );
+
+		// Prevent addition of duplicate listeners
+		if ( !this.shutdownListeners.contains( consumer ) ) {
+			this.shutdownListeners.add( consumer );
+		}
 	}
 
 	/**

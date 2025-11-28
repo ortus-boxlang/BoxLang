@@ -18,7 +18,9 @@
 package ortus.boxlang.runtime.context;
 
 import java.time.Duration;
+import java.util.function.Consumer;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.application.Session;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -43,12 +45,26 @@ public class SessionBoxContext extends BaseBoxContext {
 	/**
 	 * The variables scope
 	 */
-	protected Session	session;
+	protected Session							session;
 
 	/**
 	 * The session scope for this application
 	 */
-	protected IScope	sessionScope;
+	protected IScope							sessionScope;
+
+	public static final Consumer<IBoxContext>	persistSessionListener	= ( context ) -> {
+																			if ( context instanceof RequestBoxContext requestContext ) {
+																				// Persist the session at the end of the request
+																				SessionBoxContext sessionContext = requestContext
+																				    .getParentOfType( SessionBoxContext.class );
+																				if ( sessionContext != null ) {
+																					BoxRuntime.getInstance().getLoggingService().APPLICATION_LOGGER
+																					    .trace( "Persisting session at request end for identifier: ["
+																					        + sessionContext.getSession().getID().getName() + "]" );
+																					sessionContext.persistSession( requestContext );
+																				}
+																			}
+																		};
 
 	/**
 	 * --------------------------------------------------------------------------
