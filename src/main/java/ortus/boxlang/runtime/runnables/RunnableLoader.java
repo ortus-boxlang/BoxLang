@@ -253,7 +253,6 @@ public class RunnableLoader {
 		String		nameToUse	= StringCaster.cast( runtime.getConfiguration().compiler );
 		Key			keyToUse	= null;
 
-		// Determine which Boxpiler to use
 		if ( nameToUse == null ) {
 			// No explicit configuration, use default selection logic
 			if ( boxpilers.containsKey( Key.asm ) ) {
