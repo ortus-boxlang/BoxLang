@@ -20,11 +20,11 @@ package ortus.boxlang.runtime.context;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
@@ -1491,7 +1491,7 @@ public class BaseBoxContext implements IBoxContext {
 		if ( this.shutdownListeners == null ) {
 			synchronized ( this ) {
 				if ( this.shutdownListeners == null ) {
-					this.shutdownListeners = new HashSet<>();
+					this.shutdownListeners = ConcurrentHashMap.newKeySet();
 				}
 			}
 		}

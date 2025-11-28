@@ -52,6 +52,11 @@ public class SessionBoxContext extends BaseBoxContext {
 	 */
 	protected IScope							sessionScope;
 
+	/**
+	 * Shutdown listener that persists session state at the end of each request.
+	 * Registered during session initialization to ensure session data is saved to the cache
+	 * before the request context is destroyed.
+	 */
 	public static final Consumer<IBoxContext>	persistSessionListener	= ( context ) -> {
 																			if ( context instanceof RequestBoxContext requestContext ) {
 																				// Persist the session at the end of the request
