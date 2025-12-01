@@ -812,10 +812,10 @@ public final class LocalizationUtil {
 				"description", "Month single-digit-day, year hour:min:sec AM/PM"
 			) );
 
-			// Med DateTime specific format with double digit day, single digit hour (e.g., Nov-05-2025 8:43am)
+			// Med DateTime specific format with single-or-double digit day, single digit hour (e.g., Nov-05-2025 8:43am)
 			add( Map.of(
 				"regexPattern",
-				"^[A-Za-z]{3}-\\d{2}-\\d{4}\\s+\\d{1}:\\d{2}\\s*[APap][Mm]$",
+				"^[A-Za-z]{3}-\\d{1,2}-\\d{4}\\s+\\d{1}:\\d{2}\\s*[APap][Mm]$",
 				"datePattern", "MMM-dd-yyyy h:mm[ ]a",
 				"description", "Month-DD-YYYY H:MM AM/PM format"
 			) );

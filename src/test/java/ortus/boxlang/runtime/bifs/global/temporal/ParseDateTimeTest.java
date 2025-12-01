@@ -408,6 +408,26 @@ public class ParseDateTimeTest {
 
 	}
 
+	@DisplayName( "parseDateTime - Nov-5-2025 8:43am" )
+	@Test
+	public void testParseYetAnotherLowerCaseMeridian2() {
+		instance.executeSource(
+		    """
+		    result = ParseDateTime( "Nov-5-2025 8:43am" );
+		    """,
+		    context );
+		DateTime result = ( DateTime ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( DateTime.class );
+		assertThat( result.toString() ).isInstanceOf( String.class );
+		assertThat( IntegerCaster.cast( result.format( "yyyy" ) ) ).isEqualTo( 2025 );
+		assertThat( IntegerCaster.cast( result.format( "M" ) ) ).isEqualTo( 11 );
+		assertThat( IntegerCaster.cast( result.format( "d" ) ) ).isEqualTo( 5 );
+		assertThat( IntegerCaster.cast( result.format( "H" ) ) ).isEqualTo( 8 );
+		assertThat( IntegerCaster.cast( result.format( "m" ) ) ).isEqualTo( 43 );
+		assertThat( IntegerCaster.cast( result.format( "s" ) ) ).isEqualTo( 0 );
+
+	}
+
 	@DisplayName( "It tests the BIF ParseDateTime with a common epoch pattern" )
 	@Test
 	public void testParseLongAndShortDateTime() {
