@@ -36,7 +36,6 @@ import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.SourceMap;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.SourceFile;
-import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StructCasterLoose;
@@ -223,7 +222,7 @@ public class ExceptionUtil {
 					IBoxpiler	boxpiler	= RunnableLoader.getInstance().getBoxpiler();
 					SourceMap	sourceMap	= null;
 
-					if ( boxpiler instanceof JavaBoxpiler ) {
+					if ( boxpiler.getName().equals( Key.java ) ) {
 						sourceMap = boxpiler.getSourceMapFromFQN( IBoxpiler.getBaseFQN( element.getClassName() ) );
 					}
 
