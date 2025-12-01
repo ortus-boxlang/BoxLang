@@ -983,13 +983,15 @@ public final class LocalizationUtil {
 				"description", "US date MM/dd/yyyy with 24-hour time"
 			) );
 
+
 			// US Short DateTime with AM/PM no seconds (e.g., 02/04/2024 04:01 PM)
 			add( Map.of(
 				"regexPattern",
-				"^\\d{2}/\\d{1,2}/\\d{4}\\s+\\d{2}:\\d{2}\\s+[APap][Mm]$",
-				"datePattern", "MM/d/yyyy hh:mm a",
+				"^\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{2}\\s+[APap][Mm]$",
+				"datePattern", "M/d/yyyy h:mm a",
 				"description", "US date MM/dd/yyyy with time AM/PM no seconds"
 			) );
+
 
 			// Short DateTime with medium month and 24 hour time (e.g., Feb/04/2024 22:01:00)
 			add( Map.of(
@@ -997,6 +999,14 @@ public final class LocalizationUtil {
 				"^[A-Za-z]{3}/\\d{1,2}/\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}$",
 				"datePattern", "MMM/d/yyyy HH:mm:ss",
 				"description", "Month/DD/YYYY with 24-hour time"
+			) );
+
+			// US Short DateTime with no seconds and no meridian (e.g., 11/21/2025 1:05)
+			add( Map.of(
+				"regexPattern",
+				"^\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{2}$",
+				"datePattern", "M/d/yyyy H:mm",
+				"description", "US date MM/dd/yyyy with time no seconds"
 			) );
 
 			// European dot format datetime (e.g., 02.04.2024 21:01:00)
@@ -1018,8 +1028,8 @@ public final class LocalizationUtil {
 			// Long month DateTime with AM/PM (e.g., April 02, 2024 05:01 AM)
 			add( Map.of(
 				"regexPattern",
-				"^[A-Za-z]{4,}\\s+\\d{1,2},?\\s+\\d{4}\\s+\\d{2}:\\d{2}\\s+[APap][Mm]$",
-				"datePattern", "LLLL d[,] yyyy hh:mm a",
+				"^[A-Za-z]{4,}\\s+\\d{1,2},?\\s+\\d{4}\\s+\\d{1,2}:\\d{2}\\s+[APap][Mm]$",
+				"datePattern", "LLLL d[,] yyyy h:mm a",
 				"description", "Full month name DD, YYYY with time AM/PM"
 			) );
 

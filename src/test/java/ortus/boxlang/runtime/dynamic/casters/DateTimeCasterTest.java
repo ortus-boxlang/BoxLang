@@ -261,6 +261,11 @@ public class DateTimeCasterTest {
 		result		= DateTimeCaster.cast( dateString );
 		assertThat( result ).isNotNull();
 		assertThat( result.format( "MM/dd/yyyy hh:mm:ss a" ) ).isEqualTo( "03/28/2025 04:32:26 PM" );
+
+		dateString	= "11/21/2025 1:05";
+		result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "MM/dd/yyyy hh:mm:ss a" ) ).isEqualTo( "11/21/2025 01:05:00 AM" );
 	}
 
 	@Test
