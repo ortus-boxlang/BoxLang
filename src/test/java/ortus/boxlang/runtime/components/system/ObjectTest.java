@@ -19,13 +19,15 @@
 
 package ortus.boxlang.runtime.components.system;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.nio.file.Paths;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -34,9 +36,11 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Struct;
 
 public class ObjectTest {
 
@@ -73,7 +77,7 @@ public class ObjectTest {
 		assertEquals( ( ( DynamicObject ) variables.get( result ) ).getTargetClass(), String.class );
 	}
 
-	@Disabled( "It tests the BIF Object with BoxLang parsing" )
+	@DisplayName( "It tests the BIF Object with BoxLang parsing" )
 	@Test
 	public void testComponentBX() {
 		instance.executeSource(
@@ -86,17 +90,40 @@ public class ObjectTest {
 		assertEquals( ( ( DynamicObject ) variables.get( result ) ).getTargetClass(), String.class );
 	}
 
-	@Disabled( "It tests the BIF Object with BoxLang parsing" )
+	@DisplayName( "It tests the BIF Object with BoxLang parsing" )
 	@Test
 	public void testComponentScript() {
 		instance.executeSource(
 		    """
-		    object name="result" type="java" className="java.lang.String";
+		    bx:object name="result" type="java" className="java.lang.String";
 		    """,
 		    context, BoxSourceType.BOXSCRIPT );
 
 		assertTrue( variables.get( result ) instanceof DynamicObject );
 		assertEquals( ( ( DynamicObject ) variables.get( result ) ).getTargetClass(), String.class );
+	}
+
+	@DisplayName( "Tests that default type is class" )
+	@Test
+	void testDefaultTypeIsClass() {
+
+		String mappingPath = Paths.get( "src/test/java/TestCases/" ).toAbsolutePath().toString();
+		instance.getConfiguration().registerMapping( "/bxexternalTest", Struct.of(
+		    Key.path, mappingPath,
+		    Key.external, true
+		) );
+		instance.getConfiguration().registerMapping( "/bxinternalTest", Struct.of(
+		    Key.path, mappingPath,
+		    Key.external, false
+		) );
+
+		instance.executeSource(
+		    """
+		    bx:object name="result" className="bxexternalTest.phase3.MyClass";
+		    """,
+		    context, BoxSourceType.BOXSCRIPT );
+
+		assertThat( variables.get( result ) ).isInstanceOf( IClassRunnable.class );
 	}
 
 }

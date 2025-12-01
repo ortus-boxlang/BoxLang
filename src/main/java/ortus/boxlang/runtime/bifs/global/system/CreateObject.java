@@ -42,7 +42,7 @@ public class CreateObject extends BIF {
 	 * How we find classes
 	 */
 	private static final ClassLocator	CLASS_LOCATOR	= BoxRuntime.getInstance().getClassLocator();
-	private static final String			CLASS_TYPE		= "class";
+	public static final String			CLASS_TYPE		= "class";
 	private static final String			COMPONENT_TYPE	= "component";
 	private static final String			WEBSERVICE_TYPE	= "webservice";
 
