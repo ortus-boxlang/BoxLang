@@ -349,6 +349,16 @@ public class DateTimeCasterTest {
 		result		= DateTimeCaster.cast( dateString );
 		assertThat( result ).isNotNull();
 		assertThat( result.format( "yyyy-MM-dd HH:mm" ) ).isEqualTo( "2010-06-30 04:33" );
+
+		dateString	= "Jun-3-2010 04:33";
+		result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd HH:mm" ) ).isEqualTo( "2010-06-03 04:33" );
+
+		dateString	= "Jun-03-2010 04:33";
+		result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd HH:mm" ) ).isEqualTo( "2010-06-03 04:33" );
 	}
 
 	@Test
