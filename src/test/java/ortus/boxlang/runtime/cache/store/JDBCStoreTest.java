@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.cache.store;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -27,6 +28,7 @@ import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.Key;
 import tools.JDBCTestUtils;
 
+@EnabledIf( "tools.JDBCTestUtils#hasDerbyModule" )
 class JDBCStoreTest extends BaseStoreTest {
 
 	static String		datasourceName		= "jdbcStoreTest";
@@ -66,8 +68,7 @@ class JDBCStoreTest extends BaseStoreTest {
 		    .getDataSourceService()
 		    .register(
 		        keyDatasourceName,
-		        datasource
-		    );
+		        datasource );
 		runtime.getConfiguration().datasources.put( datasourceName, datasource.getConfiguration() );
 
 		// Drop any existing table to ensure clean schema

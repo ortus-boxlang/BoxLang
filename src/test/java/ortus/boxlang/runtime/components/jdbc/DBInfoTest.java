@@ -31,6 +31,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -45,6 +46,7 @@ import ortus.boxlang.runtime.types.QueryColumn;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
+@EnabledIf( "tools.JDBCTestUtils#hasDerbyModule" )
 public class DBInfoTest extends BaseJDBCTest {
 
 	static Key			result	= new Key( "result" );

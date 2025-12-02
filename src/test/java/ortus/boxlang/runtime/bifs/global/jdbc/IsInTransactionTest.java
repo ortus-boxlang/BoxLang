@@ -5,9 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.runtime.scopes.Key;
 
+@EnabledIf( "tools.JDBCTestUtils#hasDerbyModule" )
 public class IsInTransactionTest extends BaseJDBCTest {
 
 	static Key result = new Key( "result" );
