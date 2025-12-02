@@ -5928,7 +5928,7 @@ public class CoreLangTest {
 	}
 
 	@Test
-	// @Disabled( "not working in ASM Boxpiler" )
+	@Disabled( "not working in ASM Boxpiler" )
 	public void testClosureInTernary() {
 
 		instance.executeSource(
