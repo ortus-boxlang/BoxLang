@@ -55,7 +55,7 @@ public class QueryColumnTypeTest {
 		assertEquals( QueryColumnType.VARCHAR, QueryColumnType.fromString( "NVARCHAR" ) );
 		assertEquals( QueryColumnType.OTHER, QueryColumnType.fromString( "OTHER" ) );
 		assertEquals( QueryColumnType.DOUBLE, QueryColumnType.fromString( "REAL" ) );
-		assertEquals( QueryColumnType.REFCURSOR, QueryColumnType.fromString( "REFCURSOR" ) );
+		assertEquals( QueryColumnType.OTHER, QueryColumnType.fromString( "REFCURSOR" ) );
 		assertEquals( QueryColumnType.INTEGER, QueryColumnType.fromString( "SMALLINT" ) );
 		assertEquals( QueryColumnType.OTHER, QueryColumnType.fromString( "STRUCT" ) );
 		assertEquals( QueryColumnType.OTHER, QueryColumnType.fromString( "SQLXML" ) );
