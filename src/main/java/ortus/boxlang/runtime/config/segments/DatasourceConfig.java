@@ -74,7 +74,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 * 
 	 * Following the pattern: <code>bx_{name}_{properties_hash}</code>
 	 */
-	public final Key				uniqueName;
+	public Key						uniqueName;
 
 	/**
 	 * The name of the datasource
@@ -308,7 +308,9 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 * @return the datasource configuration
 	 */
 	public DatasourceConfig setOnTheFly() {
-		this.onTheFly = true;
+		this.onTheFly	= true;
+		// Regenerate the unique name.
+		this.uniqueName	= buildUniqueName();
 		return this;
 	}
 
@@ -320,7 +322,9 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 * @return the datasource configuration
 	 */
 	public DatasourceConfig withAppName( Key appName ) {
-		this.applicationName = appName;
+		this.applicationName	= appName;
+		// Regenerate the unique name.
+		this.uniqueName			= buildUniqueName();
 		return this;
 	}
 
