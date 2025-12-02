@@ -340,7 +340,7 @@ public class CFParser extends AbstractParser {
 		this.classOrInterface = classOrInterface;
 		CFLexerCustom	lexer	= new CFLexerCustom( CharStreams.fromStream( stream, StandardCharsets.UTF_8 ),
 		    isScript ? CFLexerCustom.DEFAULT_SCRIPT_MODE : CFLexerCustom.DEFAULT_TEMPLATE_MODE, errorListener, this )
-		    .setClassIsExpected( classOrInterface );
+		        .setClassIsExpected( classOrInterface );
 		CFGrammar		parser	= new CFGrammar( new CommonTokenStream( lexer ) );
 
 		// DEBUG: Will print a trace of all parser rules visited:
@@ -389,9 +389,10 @@ public class CFParser extends AbstractParser {
 
 		// Uncomment to use ANTLR GUI tree viewer for debugging
 		// org.antlr.v4.gui.Trees.inspect( parseTree, parser );
+
 		/*
 		 * try {
-		 * Thread.sleep( 100000 );
+		 * Thread.sleep( 1000000 );
 		 * } catch ( InterruptedException e ) {
 		 * // TODO Auto-generated catch block
 		 * e.printStackTrace();
