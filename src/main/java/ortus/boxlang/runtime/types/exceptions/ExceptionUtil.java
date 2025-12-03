@@ -192,11 +192,11 @@ public class ExceptionUtil {
 				}
 
 				String fileName = element.toString();
-				if ( ( fileName.contains( "$cf" ) || fileName.contains( "$bx" ) )
+				if ( isCompiledSource( fileName )
 				    // _pseudoConstructor means we're in a class pseudoconstructor, ._invoke means we're executing the template or function. lambda$_invoke$ means we're in a lambda inside of that same template for
 				    // function. argumentDefaultValue is true when this is next stack AFTER a call to Argument.getDefaultValue()
 				    && ( fileName.contains( "._pseudoConstructor(" ) || fileName.contains( "._invoke(" )
-				        || ( isInComponent = fileName.contains( ".lambda$_invoke$" ) ) || argumentDefaultValue ) ) {
+				        || ( isInComponent = isComponentBody( fileName ) ) || argumentDefaultValue ) ) {
 
 					// If we're just inside the nested lambda for a component, skip subssequent lines of the stack trace
 					if ( !skipNext.isEmpty() ) {
@@ -209,7 +209,7 @@ public class ExceptionUtil {
 					// If this stack trace line was inside of a lambda, skip the next line(s) starting with this
 					if ( isInComponent ) {
 						// take entire string up until ".lambda$_invoke$"
-						skipNext = fileName.substring( 0, fileName.indexOf( ".lambda$_invoke$" ) );
+						skipNext = fileName.substring( 0, Math.max( fileName.indexOf( ".lambda$_invoke$" ), fileName.indexOf( "$ComponentBodyLambda_" ) ) );
 					}
 
 					int		lineNo		= element.getLineNumber();
@@ -290,13 +290,36 @@ public class ExceptionUtil {
 				    Key.line, position.getStart().getLine(),
 				    Key.lineNumber, position.getStart().getLine(),
 				    Key.Raw_Trace, "",
-				    Key.template, fileName,
+				    Key.template, fileName == null ? "" : fileName,
 				    Key.type, "BL"
 				) );
 			}
 			tagContext.addAll( thisTagContext );
 		}
 		return tagContext;
+	}
+
+	/**
+	 * Check if the given file name is a compiled source
+	 * 
+	 * @param fileName The file name
+	 * 
+	 * @return True if the file name indicates a compiled source file, false otherwise
+	 */
+	private static boolean isCompiledSource( String fileName ) {
+		return fileName.contains( "$cf" ) || fileName.contains( "$bx" ) || fileName.startsWith( "boxgenerated.scripts.Script__" )
+		    || fileName.startsWith( "boxgenerated.scripts.Script.Statement__" );
+	}
+
+	/**
+	 * Check if the given file name is a component body invocation. This differs between the Java and ASM boxpilers
+	 * 
+	 * @param fileName The file name
+	 * 
+	 * @return True if the file name indicates a component body invocation, false otherwise
+	 */
+	private static boolean isComponentBody( String fileName ) {
+		return fileName.contains( ".lambda$_invoke$" ) || ( fileName.contains( "$ComponentBodyLambda_" ) && fileName.contains( ".process(" ) );
 	}
 
 	/**
@@ -311,6 +334,10 @@ public class ExceptionUtil {
 	private static String getSurroudingLinesOfCode( String fileName, int lineNo, boolean html ) {
 		// Only return source lines when in debug mode
 		if ( !runtime.inDebugMode() ) {
+			return "";
+		}
+
+		if ( fileName == null || fileName.isEmpty() ) {
 			return "";
 		}
 
