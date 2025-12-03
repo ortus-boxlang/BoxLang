@@ -28,6 +28,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 @EnabledIf( "tools.JDBCTestUtils#hasOracleModule" )
+@Disabled( "need drivers to build" )
 public class OracleDriverTest extends AbstractDriverTest {
 
 	public static DataSource	oracleDatasource;
@@ -205,7 +206,6 @@ public class OracleDriverTest extends AbstractDriverTest {
 
 	@DisplayName( "It can call stored proc" )
 	@Test
-	@Disabled( "waiting for bx-oracle to build" )
 	public void testCallStoredProc() {
 		instance.executeSource(
 		    """
