@@ -69,7 +69,7 @@ public class ObjectTest {
 	public void testComponentCF() {
 		instance.executeSource(
 		    """
-		    <cfobject name="result" type="java" className="java.lang.String" />
+		    <cfobject name="result" type="java" component="java.lang.String" />
 		    """,
 		    context, BoxSourceType.CFTEMPLATE );
 
