@@ -18,7 +18,6 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.jdbc.DataSource;
-import ortus.boxlang.runtime.jdbc.ExecutedQuery;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -206,9 +205,8 @@ public class OracleDriverTest extends AbstractDriverTest {
 
 	@DisplayName( "It can call stored proc" )
 	@Test
-	@Disabled( "Lacking stored procedure implementation" )
+	@Disabled( "waiting for bx-oracle to build" )
 	public void testCallStoredProc() {
-		ExecutedQuery.debug = true;
 		instance.executeSource(
 		    """
 		    <bx:storedproc procedure="testProcedure" datasource="OracleDatasource" result="variables.result" debug=true>
@@ -221,7 +219,6 @@ public class OracleDriverTest extends AbstractDriverTest {
 		    </bx:storedproc>
 		    """,
 		    context, BoxSourceType.BOXTEMPLATE );
-		ExecutedQuery.debug = false;
 		assertThat( variables.get( "inout1" ) ).isEqualTo( 223 );
 		assertThat( variables.get( "out1" ) ).isEqualTo( "foo-123-hello" );
 
@@ -330,7 +327,6 @@ public class OracleDriverTest extends AbstractDriverTest {
 		    );
 		    """, context );
 
-		ExecutedQuery.debug = true;
 		instance.executeSource(
 		    """
 		    <bx:storedproc procedure="getRowIdProc" datasource="OracleDatasource" result="variables.result" debug=true>
@@ -338,7 +334,6 @@ public class OracleDriverTest extends AbstractDriverTest {
 		    </bx:storedproc>
 		    """,
 		    context, BoxSourceType.BOXTEMPLATE );
-		ExecutedQuery.debug = false;
 
 		// Verify that we got a ROWID back
 		assertThat( variables.get( "returnedRowId" ) ).isNotNull();
@@ -349,7 +344,6 @@ public class OracleDriverTest extends AbstractDriverTest {
 
 	@DisplayName( "proc out vars transform custom JDBC driver types named" )
 	@Test
-	@Disabled( "Named parameters not yet supported for Oracle stored procs" )
 	public void testProcOutVarTransformCustomJDBCDriverTypesNamed() {
 		// Create the stored procedure
 		instance.executeStatement(
@@ -366,7 +360,6 @@ public class OracleDriverTest extends AbstractDriverTest {
 		    );
 		    """, context );
 
-		ExecutedQuery.debug = true;
 		instance.executeSource(
 		    """
 		    <bx:storedproc procedure="getRowIdProc" datasource="OracleDatasource" result="variables.result" debug=true>
@@ -374,7 +367,6 @@ public class OracleDriverTest extends AbstractDriverTest {
 		    </bx:storedproc>
 		    """,
 		    context, BoxSourceType.BOXTEMPLATE );
-		ExecutedQuery.debug = false;
 
 		// Verify that we got a ROWID back
 		assertThat( variables.get( "returnedRowId" ) ).isNotNull();

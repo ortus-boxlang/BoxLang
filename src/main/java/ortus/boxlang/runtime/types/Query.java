@@ -270,7 +270,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 				Object[] row = new Object[ columnCount ];
 				for ( int i = 0; i < columnCount; i++ ) {
 					// Get the data in the JDBC column based on our column map and use the corresponding SQL type
-					row[ i ] = driver.transformValue( columnSQLTypes[ i ], resultSet.getObject( columnMap[ i ] ) );
+					row[ i ] = driver.transformValue( columnSQLTypes[ i ], resultSet.getObject( columnMap[ i ] ), statement );
 				}
 				query.addRow( row );
 			}
