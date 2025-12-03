@@ -8,7 +8,6 @@ import java.sql.SQLException;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
@@ -30,7 +29,6 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 @EnabledIf( "tools.JDBCTestUtils#hasMSSQLModule" )
-@Disabled( "need drivers to build" )
 public class MSSQLDriverTest extends AbstractDriverTest {
 
 	public static DataSource	mssqlDatasource;

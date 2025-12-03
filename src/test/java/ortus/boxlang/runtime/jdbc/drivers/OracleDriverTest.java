@@ -8,7 +8,6 @@ import java.sql.Types;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
@@ -28,7 +27,6 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 @EnabledIf( "tools.JDBCTestUtils#hasOracleModule" )
-@Disabled( "need drivers to build" )
 public class OracleDriverTest extends AbstractDriverTest {
 
 	public static DataSource	oracleDatasource;
