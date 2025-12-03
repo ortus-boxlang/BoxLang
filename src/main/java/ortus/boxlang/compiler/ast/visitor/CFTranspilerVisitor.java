@@ -295,6 +295,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		componentAttrMap.put( "invoke", Map.of( "component", "class" ) );
 		componentAttrMap.put( "procparam", Map.of( "cfsqltype", "sqltype" ) );
 		componentAttrMap.put( "queryparam", Map.of( "cfsqltype", "sqltype" ) );
+		componentAttrMap.put( "object", Map.of( "component", "className" ) );
 
 		/*
 		 * These are BIFs that return something useless like true, but would be much more useful to return the actual data structure.

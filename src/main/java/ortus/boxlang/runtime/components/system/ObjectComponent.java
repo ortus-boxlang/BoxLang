@@ -29,7 +29,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.validation.Validator;
 
 // Weirdly named so it doesn't conflict with `java.lang.Object`
@@ -47,8 +46,7 @@ public class ObjectComponent extends Component {
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.of( "name" ), "string", Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) ),
 		    new Attribute( Key.type, "string", CreateObject.CLASS_TYPE, Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) ),
-		    new Attribute( Key.className, "string" ),
-		    new Attribute( Key.component, "string" )
+		    new Attribute( Key.className, "string", Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) )
 		};
 	}
 
@@ -65,16 +63,6 @@ public class ObjectComponent extends Component {
 	 * @argument.className A classname for a component/class request or the java class to create
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		String componentAttribute = attributes.getAsString( Key.component );
-		if ( componentAttribute != null && !componentAttribute.isEmpty() ) {
-			attributes.put( Key.className, componentAttribute );
-			attributes.remove( Key.component );
-		}
-
-		String className = attributes.getAsString( Key.className );
-		if ( className == null || className.isEmpty() ) {
-			throw new BoxValidationException( "The 'className' attribute for component " + attributes.getAsString( Key.of( "name" ) ) + " is required." );
-		}
 
 		ExpressionInterpreter.setVariable(
 		    context,
