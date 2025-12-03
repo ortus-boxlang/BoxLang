@@ -23,8 +23,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import com.google.common.base.Strings;
-
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
@@ -215,7 +213,7 @@ public class StoredProc extends Component {
 			}
 			IStruct	attr	= ( IStruct ) params.get( i );
 			String	varName	= null;
-			if ( attr.containsKey( Key.DBVarName ) && !Strings.isNullOrEmpty( attr.getAsString( Key.DBVarName ) ) ) {
+			if ( attr.containsKey( Key.DBVarName ) && attr.getAsString( Key.DBVarName ) != null && !attr.getAsString( Key.DBVarName ).isEmpty() ) {
 				varName = attr.getAsString( Key.DBVarName );
 				if ( hasPositional ) {
 					throw new BoxRuntimeException(
@@ -406,7 +404,7 @@ public class StoredProc extends Component {
 			if ( attr.containsKey( Key.type )
 			    && attr.getAsString( Key.type ).toLowerCase().contains( "out" )
 			    && attr.containsKey( Key.variable )
-			    && !Strings.isNullOrEmpty( attr.getAsString( Key.variable ) ) ) {
+			    && attr.getAsString( Key.variable ) != null && !attr.getAsString( Key.variable ).isEmpty() ) {
 
 				// Get the out sql type, default to OBJECT if not specified
 				QueryColumnType BLType = QueryColumnType.fromString( ( String ) attr.getOrDefault( Key.sqltype, "OBJECT" ) );
