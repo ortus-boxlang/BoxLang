@@ -90,7 +90,7 @@ public class ExceptionUtil {
 
 	/**
 	 * Check if an exception, or its cause is an InterruptedException.
-	 * This is a pure Java check and does not take BoxLang runtime exception types into
+	 * This is a pure Java check and does not take BoxLang runtime exception types into account; it only checks for Java's InterruptedException.
 	 * 
 	 * @param exception The exception
 	 */
