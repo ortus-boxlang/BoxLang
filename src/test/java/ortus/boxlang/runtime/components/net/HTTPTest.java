@@ -964,7 +964,7 @@ public class HTTPTest {
 
 		instance.executeSource(
 		    String.format( """
-		                     <cfhttp result="result" url="%s" username="%s" password="%s" throwonerror="true"></bxhttp>
+		                     <cfhttp result="result" url="%s" username="%s" password="%s" throwonerror="true"></cfhttp>
 		                   """,
 		        wmRuntimeInfo.getHttpBaseUrl() + "/posts/1",
 		        username,
