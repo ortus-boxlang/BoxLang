@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.cache.store;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.AbstractMap;
 import java.util.Base64;
@@ -35,6 +34,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.jdbc.BoxConnection;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
@@ -729,7 +729,7 @@ public class JDBCStore extends AbstractStore {
 	 * @return The database driver name
 	 */
 	private String getDatabaseDriverName() {
-		try ( Connection conn = this.datasource.getConnection() ) {
+		try ( BoxConnection conn = this.datasource.getBoxConnection() ) {
 			return conn.getMetaData().getDriverName().toLowerCase();
 		} catch ( SQLException e ) {
 			throw new DatabaseException( "Failed to get database metadata", e );

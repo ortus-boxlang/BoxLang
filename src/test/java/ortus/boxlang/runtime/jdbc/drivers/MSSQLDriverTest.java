@@ -4,7 +4,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 
 import org.junit.jupiter.api.AfterAll;
@@ -19,6 +18,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.jdbc.BoxConnection;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -152,8 +152,8 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		        "username", "sa",
 		        "password", "123456Password"
 		    ) );
-		try ( Connection conn = myDataSource.getConnection() ) {
-			assertThat( conn ).isInstanceOf( Connection.class );
+		try ( BoxConnection conn = myDataSource.getBoxConnection() ) {
+			assertThat( conn ).isInstanceOf( BoxConnection.class );
 		}
 		myDataSource.shutdown();
 	}
@@ -814,6 +814,188 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		assertThat( rs.size() ).isEqualTo( 1 );
 		assertThat( rs.getRowAsStruct( 0 ).get( Key.of( "today" ) ) ).isNotNull();
 		assertThat( variables.getAsBoolean( Key.of( "result" ) ) ).isTrue();
+	}
+
+	@DisplayName( "It can select from char 15 field" )
+	@Test
+	public void testSelectFromCharFields() {
+		instance.executeStatement(
+		    """
+		    queryExecute( "
+		    	IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='char15Test' AND xtype='U')
+		    		CREATE TABLE char15Test ( char15field CHAR(15) )
+		    ",{},{ "datasource" : "MSSQLdatasource" }
+		    );
+
+		    queryExecute( "TRUNCATE TABLE char15Test",{},{ "datasource" : "MSSQLdatasource" } );
+		    queryExecute( "INSERT INTO char15Test ( char15field ) VALUES ( 'value' )",{},{ "datasource" : "MSSQLdatasource" } );
+
+		    result = queryExecute( "
+		    	SELECT * FROM char15Test where char15field = ?
+		    	",[ {
+		    		sqltype : "varchar",
+		    		value: "value"
+		    	}],{ "datasource" : "MSSQLdatasource" }
+		    );
+		    """,
+		    context );
+
+		// Verify that the query found the row without needing RTRIM
+		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 1 );
+
+	}
+
+	@DisplayName( "It ignores non-integer values when null=true and passes NULL to stored proc" )
+	@Test
+	public void testStoredProcNullTrueIgnoresInvalidValue() {
+		// Create a stored procedure that expects an integer parameter
+		instance.executeSource(
+		    """
+		        <bx:query datasource="MSSQLdatasource">
+		     	CREATE OR ALTER PROCEDURE [dbo].[_testNullTrueParam]
+		    (
+		    	@intParam INT = NULL
+		    ) AS
+		     	BEGIN
+		    		SELECT @intParam as receivedValue,
+		    		       CASE WHEN @intParam IS NULL THEN 1 ELSE 0 END as isNull;
+		     	END
+		     </bx:query>
+		        """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		// Call the stored procedure with null=true and pass a non-integer value
+		// The value should be ignored and NULL should be passed to the stored procedure
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="_testNullTrueParam" datasource="MSSQLdatasource" debug=false >
+		    	<bx:procparam sqltype="integer" value="not_an_integer" type="in" null="true">
+		    	<bx:procresult name="qryReturn">
+		    </bx:storedproc>
+		            """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		assertThat( variables.get( "qryReturn" ) ).isInstanceOf( Query.class );
+		Query rs = variables.getAsQuery( Key.of( "qryReturn" ) );
+		assertThat( rs.size() ).isEqualTo( 1 );
+
+		IStruct row = rs.getRowAsStruct( 0 );
+
+		// Verify that the received value is NULL (not the invalid string we passed)
+		assertThat( row.get( Key.of( "receivedValue" ) ) ).isNull();
+
+		// Verify that the isNull flag is 1 (true)
+		assertThat( row.getAsInteger( Key.of( "isNull" ) ) ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "It can handle large blob and clob columns" )
+	@Test
+	public void testLargeBlobAndClobColumns() {
+		instance.executeStatement(
+		    """
+		    queryExecute( "
+		    	IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'large_lob') AND type in (N'U'))
+		    	CREATE TABLE large_lob ( id INT PRIMARY KEY, blob_data VARBINARY(MAX), clob_data NVARCHAR(MAX) )
+		    ",{},{ "datasource" : "MSSQLdatasource" }
+		    );
+
+		    queryExecute( "TRUNCATE TABLE large_lob", {}, { "datasource" : "MSSQLdatasource" } );
+		    """, context );
+		// @formatter:off
+		instance.executeStatement(
+		    """
+				newLobData = "";
+				// ~300 chars
+				quote = "
+		               	Farewell, Aragorn! Go to Minas Tirith and save my people! I
+		               	have failed.
+		               	No! said Aragorn, taking his hand and kissing his brow. You
+		               	have conquered. Few have gained such a victory. Be at peace! Minas
+		               	Tirith shall not fall!
+		        ";
+				// times 1000 = ~300,000 chars
+				for( i=1; i <= 1000; i = i + 1 ) {
+					newLobData = newLobData & quote;
+				}
+				
+		        insert = queryExecute( "INSERT INTO large_lob ( id, blob_data, clob_data ) VALUES ( 1, :blobData, :clobData )", { 
+		        	blobData: { value: newLobData, sqltype: "blob" },
+		        	clobData: { value: newLobData, sqltype: "clob" }
+		        }, { "datasource" : "MSSQLdatasource" } );
+		    """, context );
+		instance.executeStatement(
+		    """
+		        result = queryExecute( "SELECT * FROM large_lob WHERE id = 1", {}, { "datasource" : "MSSQLdatasource" } );
+		    """, context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 1, query.size() );
+		IStruct	firstRow	= query.getRowAsStruct( 0 );
+
+		// Test BLOB data (VARBINARY(MAX) in SQL Server)
+		Object	blobData	= firstRow.get( Key.of( "BLOB_DATA" ) );
+		assertThat( blobData ).isNotNull();
+		// BLOB data may be returned as byte[] or other types depending on driver
+		if ( blobData instanceof byte[] ) {
+			String retrieved = new String( ( byte[] ) blobData, java.nio.charset.StandardCharsets.UTF_8 );
+			assertThat( retrieved.length() ).isAtLeast( 300000 );
+		}
+
+		// Test CLOB data (NVARCHAR(MAX) in SQL Server)
+		Object clobData = firstRow.get( Key.of( "CLOB_DATA" ) );
+		assertThat( clobData ).isNotNull();
+		assertThat( clobData ).isInstanceOf( String.class );
+		String clobString = ( String ) clobData;
+		assertThat( clobString.length() ).isAtLeast( 300000 );
+		// Use containsMatch to handle whitespace variations
+		assertThat( clobString ).containsMatch( "Farewell,\\s+Aragorn!" );
+		assertThat( clobString ).containsMatch( "Minas\\s+Tirith\\s+shall\\s+not\\s+fall!" );
+	}
+
+	@DisplayName( "It can override username and password" )
+	@Test
+	public void testOverrideUsernameAndPassword() {
+		// @formatter:off
+	 	instance.executeStatement("""
+				result = queryExecute(
+					"select * from developers",
+					{},
+					{
+						"datasource" : "MSSQLdatasource",
+						"username" : "sa",
+						"password" : "123456Password"
+					}
+				);
+			""",
+		    context );
+		// @formatter:on
+	}
+
+	@DisplayName( "It can override username and password on struct datasource definition" )
+	@Test
+	public void testOverrideUsernameAndPasswordOnStructDatasource() {
+		// @formatter:off
+		instance.executeStatement("""
+				result = queryExecute(
+					"select * from developers",
+					{},
+					{
+						"datasource" : {
+							"username" : "",
+							"password" : "",
+							"host" : "localhost",
+							"port" : "1433",
+							"driver" : "mssql",
+							"database" : "master"
+						},
+						"username" : "sa",
+						"password" : "123456Password"
+					}
+				);
+			""",
+		    context );
+		// @formatter:on
 	}
 
 }

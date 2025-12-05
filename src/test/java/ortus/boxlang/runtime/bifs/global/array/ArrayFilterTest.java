@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableArray;
 
 public class ArrayFilterTest {
 
@@ -285,5 +286,23 @@ public class ArrayFilterTest {
 		assertThat( indexes.get( 2 ) ).isEqualTo( 3 );
 		assertThat( indexes.get( 3 ) ).isEqualTo( 4 );
 		assertThat( indexes.get( 4 ) ).isEqualTo( 5 );
+	}
+
+	@DisplayName( "It should filter an unmodifiable array to a modifiable array" )
+	@Test
+	public void testUnmodifiableArrayFiltering() {
+		instance.executeSource(
+		    """
+		              nums = [ "red", "blue", "green" ].toUnmodifiable();
+
+		              result = nums.filter( (i)->i != 'red' );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Array.class );
+		assertThat( variables.get( result ) ).isNotInstanceOf( UnmodifiableArray.class );
+		Array res = ( Array ) variables.get( result );
+		assertThat( res.size() ).isEqualTo( 2 );
+		assertThat( res.get( 0 ) ).isEqualTo( "blue" );
+		assertThat( res.get( 1 ) ).isEqualTo( "green" );
 	}
 }

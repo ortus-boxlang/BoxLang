@@ -2,6 +2,8 @@ package ortus.boxlang.runtime.bifs.global.system;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.io.File;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,6 +48,7 @@ public class GetTempDirectoryTest {
 		    result = getTempDirectory()
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( System.getProperty( "java.io.tmpdir" ) );
+		assertThat( variables.getAsString( result ) ).contains( System.getProperty( "java.io.tmpdir" ) );
+		assertThat( variables.getAsString( result ).endsWith( File.separator ) ).isTrue();
 	}
 }

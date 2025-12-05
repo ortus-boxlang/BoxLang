@@ -445,11 +445,9 @@ public abstract class BaseApplicationListener {
 	private void createOrUpdateApplication() {
 		ApplicationBoxContext appContext = this.context.getParentOfType( ApplicationBoxContext.class );
 
-		// If it exists, make sure it has not expired, else restart it
-		if ( appContext != null && appContext.getApplication().isExpired() ) {
-			this.context.getRuntime().getApplicationService().shutdownApplication( this.appName );
-			appContext = null;
-		}
+		// Don't check the application exiry here. If there is already an application context, then that means we're simply updating an
+		// existing application mid-request and no good will become of nuking it mid-request. We'll enforce timeoutes only when first getting the application
+		// for the frist time
 
 		// If there's none, then this creates a new application
 		if ( appContext == null ) {
@@ -479,6 +477,10 @@ public abstract class BaseApplicationListener {
 		else {
 			this.application = appContext.getApplication();
 		}
+
+		// Update the last access time. We don't do this inside the ApplicationService.getApplication() method
+		// because we want other gets that happen around the runtime to be "quiet".
+		this.application.updateLastAccessTime();
 	}
 
 	/**
@@ -503,6 +505,8 @@ public abstract class BaseApplicationListener {
 			SessionScope newScope = sessionContext.getSession().getSessionScope();
 			// Transfer existing keys which were added to the scope
 			existingScope.entrySet().stream().forEach( entry -> newScope.putIfAbsent( entry.getKey(), entry.getValue() ) );
+
+			sessionContext.persistSession( context.getRequestContext() );
 		}
 	}
 
@@ -535,6 +539,9 @@ public abstract class BaseApplicationListener {
 		this.context.removeParentContext( SessionBoxContext.class );
 		this.context.injectTopParentContext( new SessionBoxContext( targetSession ) );
 		targetSession.start( this.context );
+
+		this.context.registerShutdownListener( SessionBoxContext.persistSessionListener );
+
 	}
 
 	/**

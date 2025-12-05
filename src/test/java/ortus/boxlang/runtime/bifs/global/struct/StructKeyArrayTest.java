@@ -113,4 +113,21 @@ public class StructKeyArrayTest {
 		    context );
 		assertThat( variables.getAsArray( result ).get( 0 ) ).isEqualTo( "boxlang" );
 	}
+
+	@DisplayName( "It should be a mutable array" )
+	@Test
+	public void testItShouldBeAMutableArray() {
+		instance.executeSource(
+		    """
+		    myStruct = [ "brad" : "wood" ];
+		       result = myStruct.keyArray();
+		    result.append("newKey");
+		       """,
+		    context );
+
+		assertThat( variables.getAsArray( result ).size() ).isEqualTo( 2 );
+		assertThat( variables.getAsArray( result ).get( 0 ) ).isEqualTo( "brad" );
+		assertThat( variables.getAsArray( result ).get( 1 ) ).isEqualTo( "newKey" );
+
+	}
 }

@@ -373,6 +373,9 @@ public class BoxParser extends AbstractParser {
 			return null;
 		}
 
+		// Uncomment to use ANTLR GUI tree viewer for debugging
+		// org.antlr.v4.gui.Trees.inspect( parseTree, parser );
+
 		// This must run FIRST before resetting the lexer
 		validateParse( lexer );
 

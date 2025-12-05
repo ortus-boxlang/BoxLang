@@ -353,7 +353,18 @@ public class ReReplaceTest {
 		         """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "abcdefghijklmnopqrstuvwxyz" );
+	}
 
+	@DisplayName( "ignore invalid backreference groups" )
+	@Test
+	public void testIgnoreInvalidBackreferenceGroups() {
+		instance.executeSource(
+		    """
+		    str = "abc";
+		    result = reReplaceNoCase( str, "abc", "xyz\\1\\2\\3", "all" )
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "xyz" );
 	}
 
 }

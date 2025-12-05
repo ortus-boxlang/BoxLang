@@ -35,7 +35,6 @@ import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.operators.CollatorStringCompare;
 import ortus.boxlang.runtime.operators.Compare;
@@ -47,6 +46,7 @@ import ortus.boxlang.runtime.types.DelimitedArray;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableArray;
 
 /**
  * Utility class providing comprehensive list manipulation operations for
@@ -620,10 +620,11 @@ public class ListUtil {
 	 * @param ordered         Boolean as to whether to maintain order in parallel
 	 *                        execution
 	 *
-	 * @Deprecated Since 1.5.0 Use
+	 * @deprecated Since 1.5.0 Use
 	 *             {@link #each(Array, Function, IBoxContext, Boolean, Integer, Boolean)}
 	 *             instead.
 	 */
+	@Deprecated
 	public static void each(
 	    Array array,
 	    Function callback,
@@ -737,10 +738,11 @@ public class ListUtil {
 	 *
 	 * @return The boolean value as to whether the test is met
 	 *
-	 * @Deprecated Since 1.5.0 Use
+	 * @deprecated Since 1.5.0 Use
 	 *             {@link #some(Array, Function, IBoxContext, Boolean, Integer, Boolean)}
 	 *             instead.
 	 */
+	@Deprecated
 	public static boolean some(
 	    Array array,
 	    Function callback,
@@ -924,10 +926,11 @@ public class ListUtil {
 	 * @param parallel        Whether to process the filter in parallel
 	 * @param maxThreads      Optional max threads for parallel execution
 	 *
-	 * @Deprecated Since 1.5.0 Use {@link #filter(Array, Function, IBoxContext, Boolean, Integer, Boolean)} instead.
+	 * @deprecated Since 1.5.0 Use {@link #filter(Array, Function, IBoxContext, Boolean, Integer, Boolean)} instead.
 	 *
 	 * @return A filtered array
 	 */
+	@Deprecated
 	public static Array filter(
 	    Array array,
 	    Function callback,
@@ -999,7 +1002,7 @@ public class ListUtil {
 			if ( !virtual && maxThreads <= 0 ) {
 				return arrayStream
 				    .parallel()
-				    .collect( BLCollector.toArray( array.getClass() ) );
+				    .collect( BLCollector.toArray( getReturnArrayClass( array.getClass() ) ) );
 			}
 
 			BoxExecutor executor = AsyncService.chooseParallelExecutor( "ArrayFilter_", maxThreads, virtual );
@@ -1007,12 +1010,12 @@ public class ListUtil {
 			return ( Array ) executor.submitAndGet( () -> {
 				return arrayStream
 				    .parallel()
-				    .collect( BLCollector.toArray( array.getClass() ) );
+				    .collect( BLCollector.toArray( getReturnArrayClass( array.getClass() ) ) );
 			} );
 		}
 
 		// Non-parallel execution
-		return arrayStream.collect( BLCollector.toArray( array.getClass() ) );
+		return arrayStream.collect( BLCollector.toArray( getReturnArrayClass( array.getClass() ) ) );
 	}
 
 	/**
@@ -1033,7 +1036,7 @@ public class ListUtil {
 	    IBoxContext callbackContext ) {
 
 		array.sort(
-		    ( a, b ) -> IntegerCaster.cast( callbackContext.invokeFunction( callback, new Object[] { a, b } ) ) );
+		    ( a, b ) -> Compare.convertCompareResultToInteger( callbackContext.invokeFunction( callback, new Object[] { a, b } ) ) );
 		return array;
 	}
 
@@ -1100,10 +1103,11 @@ public class ListUtil {
 	 *
 	 * @return The boolean value as to whether the test is met
 	 *
-	 * @Deprecated Since 1.5.0 Use
+	 * @deprecated Since 1.5.0 Use
 	 *             {@link #map(Array, Function, IBoxContext, Boolean, Integer, Boolean)}
 	 *             instead.
 	 */
+	@Deprecated
 	public static Array map(
 	    Array array,
 	    Function callback,
@@ -1167,7 +1171,7 @@ public class ListUtil {
 			if ( !virtual && maxThreads <= 0 ) {
 				return arrayStream
 				    .parallel()
-				    .collect( BLCollector.toArray( array.getClass() ) );
+				    .collect( BLCollector.toArray( getReturnArrayClass( array.getClass() ) ) );
 			}
 
 			BoxExecutor executor = AsyncService.chooseParallelExecutor( "ArrayMap_", maxThreads, virtual );
@@ -1175,12 +1179,29 @@ public class ListUtil {
 			return ( Array ) executor.submitAndGet( () -> {
 				return arrayStream
 				    .parallel()
-				    .collect( BLCollector.toArray( array.getClass() ) );
+				    .collect( BLCollector.toArray( getReturnArrayClass( array.getClass() ) ) );
 			} );
 		}
 
 		// Non-parallel execution
-		return arrayStream.collect( BLCollector.toArray( array.getClass() ) );
+		return arrayStream.collect( BLCollector.toArray( getReturnArrayClass( array.getClass() ) ) );
+	}
+
+	/**
+	 * For higher order functions which return a new datastructure, this decides which type to return.
+	 * Map() and filter() for example, when called on an UnmodifiableArray should return a regular Array.
+	 * 
+	 * This is to match other dynamic languages such as Python, JavaScript, or Ruby.
+	 * 
+	 * @param type The original array type
+	 * 
+	 * @return The return array type
+	 */
+	private static Class<? extends Array> getReturnArrayClass( Class<? extends Array> type ) {
+		if ( type.equals( UnmodifiableArray.class ) ) {
+			return Array.class;
+		}
+		return type;
 	}
 
 	/**

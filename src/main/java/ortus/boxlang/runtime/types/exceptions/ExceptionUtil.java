@@ -36,7 +36,6 @@ import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.SourceMap;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.SourceFile;
-import ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StructCasterLoose;
@@ -58,7 +57,8 @@ public class ExceptionUtil {
 	private static BoxRuntime runtime = BoxRuntime.getInstance();
 
 	/**
-	 * Checks if an exception is of a given type
+	 * Checks if an exception is of a given type using loose rules based on the type as a string.
+	 * This takes into account the "type" string of BoxLang exceptions as well as the class name of native exceptions.
 	 *
 	 * @param context The context
 	 * @param e       The exception
@@ -81,6 +81,23 @@ public class ExceptionUtil {
 
 			// Native exceptions just check the class hierarchy
 			if ( InstanceOf.invoke( context, e, type ) ) {
+				return true;
+			}
+			e = e.getCause();
+		}
+		return false;
+	}
+
+	/**
+	 * Check if an exception, or its cause is an InterruptedException.
+	 * This is a pure Java check and does not take BoxLang runtime exception types into account; it only checks for Java's InterruptedException.
+	 * 
+	 * @param exception The exception
+	 */
+	public static boolean isInterruptedException( Throwable exception ) {
+		Throwable e = exception;
+		while ( e != null ) {
+			if ( e instanceof InterruptedException ) {
 				return true;
 			}
 			e = e.getCause();
@@ -175,11 +192,11 @@ public class ExceptionUtil {
 				}
 
 				String fileName = element.toString();
-				if ( ( fileName.contains( "$cf" ) || fileName.contains( "$bx" ) )
+				if ( isCompiledSource( fileName )
 				    // _pseudoConstructor means we're in a class pseudoconstructor, ._invoke means we're executing the template or function. lambda$_invoke$ means we're in a lambda inside of that same template for
 				    // function. argumentDefaultValue is true when this is next stack AFTER a call to Argument.getDefaultValue()
 				    && ( fileName.contains( "._pseudoConstructor(" ) || fileName.contains( "._invoke(" )
-				        || ( isInComponent = fileName.contains( ".lambda$_invoke$" ) ) || argumentDefaultValue ) ) {
+				        || ( isInComponent = isComponentBody( fileName ) ) || argumentDefaultValue ) ) {
 
 					// If we're just inside the nested lambda for a component, skip subssequent lines of the stack trace
 					if ( !skipNext.isEmpty() ) {
@@ -192,7 +209,7 @@ public class ExceptionUtil {
 					// If this stack trace line was inside of a lambda, skip the next line(s) starting with this
 					if ( isInComponent ) {
 						// take entire string up until ".lambda$_invoke$"
-						skipNext = fileName.substring( 0, fileName.indexOf( ".lambda$_invoke$" ) );
+						skipNext = fileName.substring( 0, Math.max( fileName.indexOf( ".lambda$_invoke$" ), fileName.indexOf( "$ComponentBodyLambda_" ) ) );
 					}
 
 					int		lineNo		= element.getLineNumber();
@@ -205,7 +222,7 @@ public class ExceptionUtil {
 					IBoxpiler	boxpiler	= RunnableLoader.getInstance().getBoxpiler();
 					SourceMap	sourceMap	= null;
 
-					if ( boxpiler instanceof JavaBoxpiler ) {
+					if ( boxpiler.getName().equals( Key.java ) ) {
 						sourceMap = boxpiler.getSourceMapFromFQN( IBoxpiler.getBaseFQN( element.getClassName() ) );
 					}
 
@@ -273,13 +290,36 @@ public class ExceptionUtil {
 				    Key.line, position.getStart().getLine(),
 				    Key.lineNumber, position.getStart().getLine(),
 				    Key.Raw_Trace, "",
-				    Key.template, fileName,
+				    Key.template, fileName == null ? "" : fileName,
 				    Key.type, "BL"
 				) );
 			}
 			tagContext.addAll( thisTagContext );
 		}
 		return tagContext;
+	}
+
+	/**
+	 * Check if the given file name is a compiled source
+	 * 
+	 * @param fileName The file name
+	 * 
+	 * @return True if the file name indicates a compiled source file, false otherwise
+	 */
+	private static boolean isCompiledSource( String fileName ) {
+		return fileName.contains( "$cf" ) || fileName.contains( "$bx" ) || fileName.startsWith( "boxgenerated.scripts.Script__" )
+		    || fileName.startsWith( "boxgenerated.scripts.Script.Statement__" );
+	}
+
+	/**
+	 * Check if the given file name is a component body invocation. This differs between the Java and ASM boxpilers
+	 * 
+	 * @param fileName The file name
+	 * 
+	 * @return True if the file name indicates a component body invocation, false otherwise
+	 */
+	private static boolean isComponentBody( String fileName ) {
+		return fileName.contains( ".lambda$_invoke$" ) || ( fileName.contains( "$ComponentBodyLambda_" ) && fileName.contains( ".process(" ) );
 	}
 
 	/**
@@ -294,6 +334,10 @@ public class ExceptionUtil {
 	private static String getSurroudingLinesOfCode( String fileName, int lineNo, boolean html ) {
 		// Only return source lines when in debug mode
 		if ( !runtime.inDebugMode() ) {
+			return "";
+		}
+
+		if ( fileName == null || fileName.isEmpty() ) {
 			return "";
 		}
 

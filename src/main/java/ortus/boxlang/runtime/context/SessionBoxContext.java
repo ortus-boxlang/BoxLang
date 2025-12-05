@@ -17,12 +17,17 @@
  */
 package ortus.boxlang.runtime.context;
 
+import java.time.Duration;
+import java.util.function.Consumer;
+
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.application.Session;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.SessionScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
+import ortus.boxlang.runtime.types.util.DateTimeHelper;
 
 /**
  * This class represents the context of a session in the BoxLang runtime
@@ -40,12 +45,31 @@ public class SessionBoxContext extends BaseBoxContext {
 	/**
 	 * The variables scope
 	 */
-	protected Session	session;
+	protected Session							session;
 
 	/**
 	 * The session scope for this application
 	 */
-	protected IScope	sessionScope;
+	protected IScope							sessionScope;
+
+	/**
+	 * Shutdown listener that persists session state at the end of each request.
+	 * Registered during session initialization to ensure session data is saved to the cache
+	 * before the request context is destroyed.
+	 */
+	public static final Consumer<IBoxContext>	persistSessionListener	= ( context ) -> {
+																			if ( context instanceof RequestBoxContext requestContext ) {
+																				// Persist the session at the end of the request
+																				SessionBoxContext sessionContext = requestContext
+																				    .getParentOfType( SessionBoxContext.class );
+																				if ( sessionContext != null ) {
+																					BoxRuntime.getInstance().getLoggingService().APPLICATION_LOGGER
+																					    .trace( "Persisting session at request end for identifier: ["
+																					        + sessionContext.getSession().getID().getName() + "]" );
+																					sessionContext.persistSession( requestContext );
+																				}
+																			}
+																		};
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -183,6 +207,26 @@ public class SessionBoxContext extends BaseBoxContext {
 
 		// The RuntimeBoxContext has no "nearby" scopes
 		return getScope( name );
+	}
+
+	/**
+	 * Persist the current session state to the sessions cache
+	 * 
+	 * @param requestContext The request context to use for persisting the session.
+	 *                       We must pass this in manually, as the SessionContext is the parent of the Request context and Application context and thus `getRequestContext()` will not work
+	 */
+	public void persistSession( RequestBoxContext requestContext ) {
+
+		Object		sessionTimeout	= requestContext.getConfigItems( Key.applicationSettings, Key.sessionTimeout );
+		String		cacheKey		= this.session.getCacheKey();
+		Duration	timeoutDuration	= DateTimeHelper.convertTimeoutToDuration( sessionTimeout );
+
+		requestContext.getApplicationListener().getApplication().getSessionsCache().set(
+		    cacheKey,
+		    this.session,
+		    timeoutDuration,
+		    timeoutDuration
+		);
 	}
 
 }

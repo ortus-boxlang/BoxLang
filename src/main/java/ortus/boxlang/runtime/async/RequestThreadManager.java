@@ -557,14 +557,19 @@ public class RequestThreadManager {
 	 */
 	public void joinThread( Key name, Integer timeout ) {
 		Objects.requireNonNull( name, "Thread name is required for join" );
+		IStruct threadData = getThreadData( name );
+		if ( threadData == null ) {
+			return;
+		}
+		Thread thread = ( ( ThreadComponentBoxContext ) threadData.get( Key.context ) )
+		    .getThread();
+
+		// Skip if already terminated
+		if ( thread.getState() == Thread.State.TERMINATED ) {
+			return;
+		}
 		try {
-			IStruct threadData = getThreadData( name );
-			if ( threadData == null ) {
-				return;
-			}
-			( ( ThreadComponentBoxContext ) threadData.get( Key.context ) )
-			    .getThread()
-			    .join( timeout );
+			thread.join( timeout );
 		} catch ( InterruptedException e ) {
 			throw new BoxRuntimeException( "Thread join interrupted", e );
 		}

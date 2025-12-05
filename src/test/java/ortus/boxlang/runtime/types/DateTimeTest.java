@@ -175,7 +175,8 @@ public class DateTimeTest {
 		Long initialWeekDay = LongCaster.cast( initialDateTime.format( "e" ) );
 		assertThat( LongCaster.cast( initialDateTime.modify( "w", 1l ).format( "e" ) ) ).isEqualTo( 2l );
 		assertThat( Long.signum( -1l ) ).isEqualTo( -1 );
-		initialDateTime.modify( "w", -1l );
+		// Our initial day was a sunday so we have to revert it back one actual day
+		initialDateTime.modify( "d", -1l );
 		assertThat( initialWeekDay ).isEqualTo( LongCaster.cast( initialDateTime.format( "e" ) ) );
 		// Quarter
 		Long initialQuarter = LongCaster.cast( initialDateTime.format( "Q" ) );

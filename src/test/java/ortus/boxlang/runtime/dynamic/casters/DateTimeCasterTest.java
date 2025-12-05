@@ -26,6 +26,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -260,6 +261,11 @@ public class DateTimeCasterTest {
 		result		= DateTimeCaster.cast( dateString );
 		assertThat( result ).isNotNull();
 		assertThat( result.format( "MM/dd/yyyy hh:mm:ss a" ) ).isEqualTo( "03/28/2025 04:32:26 PM" );
+
+		dateString	= "11/21/2025 1:05";
+		result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "MM/dd/yyyy hh:mm:ss a" ) ).isEqualTo( "11/21/2025 01:05:00 AM" );
 	}
 
 	@Test
@@ -326,6 +332,41 @@ public class DateTimeCasterTest {
 	}
 
 	@Test
+	@DisplayName( "Test medium format datetime with no comma separator between year and time and narrow no-break space unicode char" )
+	public void testMedFormatWithMeridianAndNoSeparator() {
+		// Do not change the no-break space character here; it's intentional
+		String		dateString	= "Nov 20, 2025 10:40:09 AM";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd HH:mm:ss" ) ).isEqualTo( "2025-11-20 10:40:09" );
+	}
+
+	@Test
+	@DisplayName( "Test weird medium formats that no one should be using" )
+	public void testWeirdMediumFormats() {
+		// Weird string example
+		String		dateString	= "Nov/21/2025 00:01:00";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd HH:mm:ss" ) ).isEqualTo( "2025-11-21 00:01:00" );
+
+		dateString	= "Jun-30-2010 04:33";
+		result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd HH:mm" ) ).isEqualTo( "2010-06-30 04:33" );
+
+		dateString	= "Jun-3-2010 04:33";
+		result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd HH:mm" ) ).isEqualTo( "2010-06-03 04:33" );
+
+		dateString	= "Jun-03-2010 04:33";
+		result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd HH:mm" ) ).isEqualTo( "2010-06-03 04:33" );
+	}
+
+	@Test
 	@DisplayName( "Test ms format with meridian" )
 	public void testMSEpochWithMeridian() {
 		// Med string example Aug 26, 2024 22:05:00 UTC
@@ -333,5 +374,51 @@ public class DateTimeCasterTest {
 		DateTime	result		= DateTimeCaster.cast( dateString );
 		assertThat( result ).isNotNull();
 		assertThat( result.format( "yyyy-MM-dd hh:mm a" ) ).isEqualTo( "1899-12-31 06:10 PM" );
+	}
+
+	@Test
+	@DisplayName( "Test Med with meridian and seconds" )
+	public void testMedWithMeridianSeconds() {
+		// Med string example Aug 26, 2024 22:05:00 UTC
+		String		dateString	= "Jul 17, 2017 9:29:40 PM";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd hh:mm a" ) ).isEqualTo( "2017-07-17 09:29 PM" );
+	}
+
+	@Test
+	@DisplayName( "Test date parsing with German (de_DE) JVM locale to replicate locale-specific parsing issues" )
+	public void testDateParsingWithGermanLocale() {
+		// Store the original default locale to restore later
+		Locale originalLocale = Locale.getDefault();
+
+		try {
+			// Set JVM locale to German (Germany) which can cause date parsing issues
+			Locale.setDefault( Locale.GERMANY ); // This is de_DE
+
+			// Test various date formats that should still parse correctly with the fix
+			// These formats rely on the common pattern parsers being forced to use Locale.US
+
+			// Test medium format with meridian and seconds that was failing
+			String		dateString1	= "Jul 17, 2017 9:29:40 PM";
+			DateTime	result1		= DateTimeCaster.cast( dateString1 );
+			assertThat( result1 ).isNotNull();
+			assertThat( result1.format( "yyyy-MM-dd hh:mm a" ) ).isEqualTo( "2017-07-17 09:29 PM" );
+
+			// Test additional common English date formats
+			String		dateString2	= "Apr 02, 2024 12:00:00 AM";
+			DateTime	result2		= DateTimeCaster.cast( dateString2 );
+			assertThat( result2 ).isNotNull();
+
+			// Test another format that could be affected by locale
+			String		dateString3	= "Dec 25, 2023 11:59:59 PM";
+			DateTime	result3		= DateTimeCaster.cast( dateString3 );
+			assertThat( result3 ).isNotNull();
+			assertThat( result3.format( "yyyy-MM-dd" ) ).isEqualTo( "2023-12-25" );
+
+		} finally {
+			// Always restore the original locale
+			Locale.setDefault( originalLocale );
+		}
 	}
 }

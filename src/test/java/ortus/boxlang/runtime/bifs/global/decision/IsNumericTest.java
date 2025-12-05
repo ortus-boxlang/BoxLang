@@ -146,16 +146,20 @@ public class IsNumericTest {
 	public void testBooleanFalse() {
 		instance.executeSource(
 		    """
-		    	result = isNumeric( true )
-		    """,
+		    result = isNumeric( true )
+		    result2 = isNumeric( false )
+		    result3 = isNumeric( "true" )
+		    result4 = isNumeric( "false" )
+		    result5 = isNumeric( "yes" )
+		    result6 = isNumeric( "no" )
+		        """,
 		    context );
 		assertFalse( variables.getAsBoolean( Key.of( "result" ) ) );
-		instance.executeSource(
-		    """
-		    	result = isNumeric( false )
-		    """,
-		    context );
-		assertFalse( variables.getAsBoolean( Key.of( "result" ) ) );
+		assertFalse( variables.getAsBoolean( Key.of( "result2" ) ) );
+		assertFalse( variables.getAsBoolean( Key.of( "result3" ) ) );
+		assertFalse( variables.getAsBoolean( Key.of( "result4" ) ) );
+		assertFalse( variables.getAsBoolean( Key.of( "result5" ) ) );
+		assertFalse( variables.getAsBoolean( Key.of( "result6" ) ) );
 	}
 
 }

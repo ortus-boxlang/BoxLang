@@ -237,6 +237,9 @@ public class ConnectionManager {
 
 	/**
 	 * Get a JDBC Connection to the specified datasource.
+	 * 
+	 * This is deprecated For username/password overrides, use {@link #getBoxConnection(QueryOptions)} instead.
+	 * 
 	 * <p>
 	 * This method uses the following logic to pull the correct connection for the given query/context:
 	 * <ol>
@@ -253,7 +256,8 @@ public class ConnectionManager {
 	 *
 	 * @return A JDBC Connection object, possibly from a transactional context.
 	 */
-	public Connection getConnection( DataSource datasource, String username, String password ) {
+	@Deprecated
+	public BoxConnection getBoxConnection( DataSource datasource, String username, String password ) {
 		if ( isInTransaction() ) {
 			logger.debug(
 			    "Am inside transaction context; will check datasource and authentication to determine if we should return the transactional connection" );
@@ -263,23 +267,57 @@ public class ConnectionManager {
 				logger.debug( "Transaction datasource is null; setting it to the provided datasource" );
 				return getTransaction()
 				    .setDataSource( datasource )
-				    .getConnection();
+				    .getBoxConnection();
 			}
 			boolean isSameDatasource = transactionalDatasource.equals( datasource );
 			if ( isSameDatasource
 			    && ( username == null || transactionalDatasource.isAuthenticationMatch( username, password ) ) ) {
 				logger.debug(
 				    "Both the query datasource argument and authentication matches; proceeding with established transactional connection" );
-				return getTransaction().getConnection();
+				return getTransaction().getBoxConnection();
 			} else {
 				// A different datasource was specified OR the authentication check failed; thus this is NOT a transactional query and we should use a new
 				// connection.
 				logger.debug( "Datasource OR authentication does not match transaction; Will ignore transaction context and return a new JDBC connection" );
-				return datasource.getConnection( username, password );
+				return datasource.getBoxConnection( username, password );
 			}
 		}
 		logger.debug( "Not within transaction; obtaining new connection from pool" );
-		return datasource.getConnection( username, password );
+		return datasource.getBoxConnection( username, password );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Connection Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Get a JDBC Connection to the specified datasource.
+	 * 
+	 * This is deprecated For username/password overrides, use {@link #getBoxConnection(QueryOptions)} instead.
+	 * 
+	 * <p>
+	 * This method uses the following logic to pull the correct connection for the given query/context:
+	 * <ol>
+	 * <li>check for a transactional context.</li>
+	 * <li>If an active transaction is found, this method compares the provided datasource against the transaction's datasource.</li>
+	 * <li>If the datasources match, this method then checks the username/password authentication (if not null)</li>
+	 * <li>if all those checks succeed, the transactional connection is returned.
+	 * <li>if any of those checks fail, a new connection is returned from the provided datasource.</li>
+	 * </ol>
+	 *
+	 * @param datasource The datasource to get a connection for.
+	 * @param username   The username to use for authentication - will not check authentication if null.
+	 * @param password   The password to use for authentication - will not check authentication if null.
+	 *
+	 * @deprecated Use {@link #getBoxConnection(DataSource, String, String)} instead.
+	 *
+	 * @return A JDBC Connection object, possibly from a transactional context.
+	 */
+	@Deprecated
+	public Connection getConnection( DataSource datasource, String username, String password ) {
+		return getBoxConnection( datasource, username, password );
 	}
 
 	/**
@@ -289,7 +327,7 @@ public class ConnectionManager {
 	 *
 	 * @return True if the connection was successfully released, otherwise false.
 	 */
-	public boolean releaseConnection( Connection connection ) {
+	public boolean releaseConnection( BoxConnection connection ) {
 		if ( isInTransaction() ) {
 			logger.debug( "Am inside transaction context; skipping connection release." );
 			return false;
@@ -308,6 +346,20 @@ public class ConnectionManager {
 	}
 
 	/**
+	 * Release a JDBC Connection back to the pool. Will not release transactional connections.
+	 * 
+	 * This method is deprecated. Use {@link #releaseConnection(BoxConnection)} instead.
+	 *
+	 * @param connection The JDBC connection to release, acquired from ${@link #getConnection(DataSource)}. Can be null or already closed, in which case this method will do nothing.
+	 *
+	 * @return True if the connection was successfully released, otherwise false.
+	 */
+	@Deprecated
+	public boolean releaseConnection( Connection connection ) {
+		return releaseConnection( BoxConnection.of( connection, null ) );
+	}
+
+	/**
 	 * Get a JDBC Connection to a specified datasource.
 	 * <p>
 	 * This method uses the following logic to pull the correct connection for the given query/context:
@@ -322,7 +374,7 @@ public class ConnectionManager {
 	 *
 	 * @return A JDBC Connection object, possibly from a transactional context.
 	 */
-	public Connection getConnection( DataSource datasource ) {
+	public BoxConnection getBoxConnection( DataSource datasource ) {
 		if ( isInTransaction() ) {
 			logger.debug( "Am inside transaction context; will check datasource to determine if we should return the transactional connection" );
 
@@ -331,23 +383,48 @@ public class ConnectionManager {
 				logger.debug( "Transaction datasource is null; setting it to the provided datasource" );
 				return getTransaction()
 				    .setDataSource( datasource )
-				    .getConnection();
+				    .getBoxConnection();
 			}
 			boolean isSameDatasource = transactionalDatasource.equals( datasource );
 			if ( isSameDatasource ) {
 				logger.debug(
 				    "The query datasource matches the transaction datasource; proceeding with established transactional connection" );
-				return getTransaction().getConnection();
+				return getTransaction().getBoxConnection();
 			} else {
 				// A different datasource was specified OR the authentication check failed; thus this is NOT a transactional query and we should use a new
 				// connection.
 				logger.debug( "Datasource does not match transaction; Will ignore transaction context and return a new JDBC connection" );
-				return datasource.getConnection();
+				return datasource.getBoxConnection();
 			}
 		}
 
 		logger.debug( "Not within transaction; obtaining new connection from the datasource object" );
-		return datasource.getConnection();
+		return datasource.getBoxConnection();
+	}
+
+	/**
+	 * Get a JDBC Connection to a specified datasource.
+	 * 
+	 * This method is deprecated. Use getBoxConnection() instead.
+	 * 
+	 * <p>
+	 * This method uses the following logic to pull the correct connection for the given query/context:
+	 * <ol>
+	 * <li>check for a transactional context.</li>
+	 * <li>If an active transaction is found, this method compares the provided datasource against the transaction's datasource.</li>
+	 * <li>If the datasources match, the transactional connection is returned.
+	 * <li>if not, a new connection is returned from the provided datasource.</li>
+	 * </ol>
+	 *
+	 * @param datasource The datasource to get a connection for.
+	 *
+	 * @deprecated Use {@link #getBoxConnection(DataSource)} instead.
+	 *
+	 * @return A JDBC Connection object, possibly from a transactional context.
+	 */
+	@Deprecated
+	public Connection getConnection( DataSource datasource ) {
+		return getBoxConnection( datasource );
 	}
 
 	/**
@@ -355,12 +432,20 @@ public class ConnectionManager {
 	 *
 	 * @return A connection to the configured datasource.
 	 */
+	public BoxConnection getBoxConnection( QueryOptions options ) {
+		return getBoxConnection( getDataSource( options ) );
+	}
+
+	/**
+	 * Get a connection for the provided QueryOptions.
+	 * 
+	 * This method is deprecated. Use {@link #getBoxConnection(QueryOptions)} instead.
+	 *
+	 * @return A connection to the configured datasource.
+	 */
+	@Deprecated
 	public Connection getConnection( QueryOptions options ) {
-		if ( options.wantsUsernameAndPassword() ) {
-			return getConnection( getDataSource( options ), options.username, options.password );
-		} else {
-			return getConnection( getDataSource( options ) );
-		}
+		return getBoxConnection( options );
 	}
 
 	/**
@@ -377,6 +462,18 @@ public class ConnectionManager {
 			}
 			// NAMED DATASOURCE
 			else if ( datasourceObject instanceof String datasourceName ) {
+
+				// If there is a username/password specified alongside a datasource name,
+				// we treat this as an ad-hoc datasource with overrides
+				if ( options.wantsUsernameAndPassword() ) {
+					IStruct adHocUserPassOptions = getDatasourceOrThrow( Key.of( datasourceName ) )
+					    .getConfiguration()
+					    .toConfigStruct();
+					adHocUserPassOptions.put( Key.username, options.username );
+					adHocUserPassOptions.put( Key.password, options.password );
+					return getOnTheFlyDataSource( adHocUserPassOptions );
+				}
+
 				return getDatasourceOrThrow( Key.of( datasourceName ) );
 			}
 			// INVALID DATASOURCE
@@ -414,10 +511,7 @@ public class ConnectionManager {
 		Key		defaultDSNKey		= Key.of( defaultDSN );
 		IStruct	configDatasources	= ( IStruct ) this.context.getConfigItems( Key.datasources );
 		if ( !configDatasources.containsKey( defaultDSNKey ) ) {
-			throw new DatabaseException(
-			    String.format( "Default datasource [%s] not found in the application or globally. Registered datasources are: %s", defaultDSNKey.getName(),
-			        Arrays.toString( getAppDatasourceNames() ) )
-			);
+			throwNoDefaultDatasourceDefined( defaultDSNKey.getName() );
 		}
 
 		// Get the datasource config and incorporate the application name
@@ -427,7 +521,7 @@ public class ConnectionManager {
 		DatasourceConfig	dsn				= new DatasourceConfig( defaultDSNKey )
 		    .process( targetConfig )
 		    .withAppName( getApplicationName() );
-		this.defaultDatasource = this.datasourceService.register( dsn );
+		this.defaultDatasource = this.datasourceService.register( dsn ).beginPooling();
 
 		return this.defaultDatasource;
 	}
@@ -440,12 +534,25 @@ public class ConnectionManager {
 	public DataSource getDefaultDatasourceOrThrow() {
 		DataSource datasource = getDefaultDatasource();
 		if ( datasource == null ) {
-			throw new DatabaseException(
-			    String.format( "No default datasource defined in the application or globally or in the query options. Registered datasources are: %s",
-			        Arrays.toString( getAppDatasourceNames() ) )
-			);
+			throwNoDefaultDatasourceDefined( null );
 		}
 		return datasource;
+	}
+
+	/**
+	 * Helper method for throwing a DatabaseException when no default datasource is defined.
+	 * 
+	 * @param defaultName The name of the default datasource, if any
+	 */
+	public void throwNoDefaultDatasourceDefined( String defaultName ) {
+		String message = String.format( "No default datasource defined in the application or globally or in the query options. Registered datasources are: %s",
+		    Arrays.toString( getAppDatasourceNames() ) );
+		if ( defaultName != null && !defaultName.isEmpty() ) {
+			message = String.format( "Default datasource [%s] not found in the application or globally. Registered datasources are: %s",
+			    defaultName,
+			    Arrays.toString( getAppDatasourceNames() ) );
+		}
+		throw new DatabaseException( message );
 	}
 
 	/**
@@ -470,7 +577,7 @@ public class ConnectionManager {
 			DatasourceConfig dsnConfig = new DatasourceConfig( uniqueName )
 			    .process( configDatasources.getAsStruct( uniqueName ) )
 			    .withAppName( getApplicationName() );
-			return this.datasourceService.register( dsnConfig );
+			return this.datasourceService.register( dsnConfig ).beginPooling();
 		} );
 	}
 
@@ -495,7 +602,7 @@ public class ConnectionManager {
 	 * @return The datasource object
 	 */
 	public DataSource register( Key datasourceName, IStruct properties ) {
-		DataSource target = this.datasourceService.register( new DatasourceConfig( datasourceName, properties ) );
+		DataSource target = this.datasourceService.register( new DatasourceConfig( datasourceName, properties ) ).beginPooling();
 		this.datasources.put( datasourceName, target );
 		return target;
 	}
@@ -540,7 +647,7 @@ public class ConnectionManager {
 			    .setOnTheFly();
 
 			// Register it
-			return this.datasourceService.register( config );
+			return this.datasourceService.register( config ).beginPooling();
 		} );
 	}
 

@@ -54,6 +54,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.ClassBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
@@ -82,6 +83,7 @@ import ortus.boxlang.runtime.types.JavaMethod;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.StructMapWrapper;
 import ortus.boxlang.runtime.types.exceptions.AbstractClassException;
+import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.CustomException;
@@ -95,6 +97,7 @@ import ortus.boxlang.runtime.types.meta.GenericMeta;
 import ortus.boxlang.runtime.types.util.BooleanRef;
 import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.types.util.ObjectRef;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * This class is used to provide a way to dynamically and efficiently interact with the java layer from the within a BoxLang environment.
@@ -790,7 +793,15 @@ public class DynamicInteropService {
 			    && targetInstance instanceof IClassRunnable boxClass ) {
 				fieldHandle = boxClass.lookupPrivateField( field );
 			} else {
-				fieldHandle = METHOD_LOOKUP.unreflectGetter( field );
+				// If the field's declaring class is not public (package-private, protected, or private abstract parent),
+				// but the target class is public, we need to use a lookup from the target class to access the field
+				if ( !Modifier.isPublic( field.getDeclaringClass().getModifiers() ) && Modifier.isPublic( targetClass.getModifiers() ) ) {
+					// Use MethodHandles.privateLookupIn to get access through the public subclass
+					MethodHandles.Lookup privateLookup = MethodHandles.privateLookupIn( targetClass, METHOD_LOOKUP );
+					fieldHandle = privateLookup.unreflectGetter( field );
+				} else {
+					fieldHandle = METHOD_LOOKUP.unreflectGetter( field );
+				}
 			}
 		} catch ( IllegalAccessException e ) {
 			throw new BoxRuntimeException( "Error getting field " + fieldName + " for class " + targetClass.getName(), e );
@@ -919,21 +930,29 @@ public class DynamicInteropService {
 			);
 		}
 
-		try {
-			if ( isStatic ) {
-				fieldHandle.invokeWithArguments( value );
-			} else {
-				fieldHandle.bindTo( targetInstance ).invokeWithArguments( value );
+		Class<?> fieldType = field.getType();
+		// TODO: Add context parameter to this method so we can avoid RequestBoxContext.runInContext()
+		RequestBoxContext.runInContext( ( ctx ) -> {
+			try {
+				Object coercedValue = DynamicInteropService.coerceValue( ctx, value, fieldType );
+
+				if ( isStatic ) {
+					fieldHandle.invokeWithArguments( coercedValue );
+				} else {
+					fieldHandle.bindTo( targetInstance ).invokeWithArguments( coercedValue );
+				}
+				return null;
+			} catch ( RuntimeException e ) {
+				throw e;
+			} catch ( Throwable e ) {
+				throw new BoxRuntimeException(
+				    "Error setting field " + fieldName + " for class " + targetClass.getName(),
+				    e.getClass().getName(),
+				    e
+				);
 			}
-		} catch ( RuntimeException e ) {
-			throw e;
-		} catch ( Throwable e ) {
-			throw new BoxRuntimeException(
-			    "Error setting field " + fieldName + " for class " + targetClass.getName(),
-			    e.getClass().getName(),
-			    e
-			);
-		}
+		} );
+
 	}
 
 	/**
@@ -2996,6 +3015,50 @@ public class DynamicInteropService {
 
 		// We have a fully initialized class, so we can return it
 		return ( T ) boxClass;
+	}
+
+	/**
+	 * Coerce a single value to the expected type
+	 * Unlike our BL Casters, this is directly tied to Java types for our Java interop. It uses
+	 * the same logic used for method argument coercion, but just on a single value.
+	 * 
+	 * Throws a BoxCastException if the value cannot be coerced to the expected type.
+	 * 
+	 * @param context The context to use for the method invocation
+	 * @param value   The value to coerce
+	 * @param type    The expected type
+	 * 
+	 * @return The coerced value
+	 */
+	public static Object coerceValue(
+	    IBoxContext context,
+	    Object value,
+	    Class<?> type ) {
+
+		// Check for nulls
+		if ( value == null ) {
+			if ( type.isPrimitive() ) {
+				throw new BoxRuntimeException( "Cannot coerce null to primitive type [ " + type.getName() + " ]." );
+			}
+			return null;
+		}
+
+		Object[]	args	= new Object[] { value };
+		boolean		success	= coerceArguments(
+		    context,
+		    unBoxTypes( new Class<?>[] { type } ),
+		    unBoxTypes( new Class<?>[] { value.getClass() } ),
+		    args,
+		    args,
+		    false,
+		    BooleanRef.of( true ),
+		    new AtomicInteger( 0 )
+		);
+		if ( !success ) {
+			throw new BoxCastException( "Value of type [ " + TypeUtil.getObjectName( value )
+			    + " ] which could not be coerced to [ " + type.getName() + " ]." );
+		}
+		return args[ 0 ];
 	}
 
 	private record CoerceAttempt( Executable executable, AtomicInteger matchScore, Object[] castedArgumentValues ) {

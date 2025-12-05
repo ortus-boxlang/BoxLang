@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.nio.charset.StandardCharsets;
 
-import ortus.boxlang.compiler.javaboxpiler.transformer.BoxClassTransformer;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.loader.ClassLocator;
@@ -147,7 +146,7 @@ public class ObjectMarshaller {
 
 	/**
 	 * Serialize a BoxLang class into a binary format. This is used to serialize the state of
-	 * a BoxLang class so it can be reconstructed later. The {@link BoxClassTransformer}
+	 * a BoxLang class so it can be reconstructed later. The BoxClassTransformer
 	 * uses it to do custom serialization of classes.
 	 *
 	 * @param target The class to serialize

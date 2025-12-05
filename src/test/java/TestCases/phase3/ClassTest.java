@@ -1622,7 +1622,7 @@ public class ClassTest {
 			System.out.println( tagContext );
 		}
 		assertThat( tagContext ).isNotNull();
-		assertThat( tagContext.size() ).isEqualTo( 1 );
+		assertThat( tagContext.size() ).isEqualTo( 2 );
 		assertThat( ( ( IStruct ) tagContext.get( 0 ) ).getAsString( Key.template ) ).contains( "PseudoConstructorError.bx" );
 	}
 
@@ -2145,6 +2145,25 @@ public class ClassTest {
 		instance.executeSource(
 		    """
 		    result = new src.test.java.TestCases.phase3.ImportKeyClass().main();
+		       """,
+		    context );
+	}
+
+	@Test
+	public void testWeirdParse() {
+		instance.executeSource(
+		    """
+		    result = new src.test.java.TestCases.phase3.WeirdParse().foo();
+		       """,
+		    context );
+		assertThat( variables.get( "result" ) ).isEqualTo( 42 );
+	}
+
+	@Test
+	public void testTagComponentParse() {
+		instance.executeSource(
+		    """
+		    result = new src.test.java.TestCases.phase3.TagComponentParse();
 		       """,
 		    context );
 	}

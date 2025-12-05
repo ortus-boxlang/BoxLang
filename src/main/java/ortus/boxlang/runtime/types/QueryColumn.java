@@ -30,8 +30,6 @@ import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.types.meta.BoxMeta;
-import ortus.boxlang.runtime.types.meta.GenericMeta;
 
 /**
  * Represents a column within a BoxLang Query object.
@@ -97,6 +95,12 @@ public class QueryColumn implements IReferenceable, Serializable {
 	private QueryColumnType		type;
 
 	/**
+	 * The original SQL type of the column (as reported by JDBC)
+	 * Will be null if not applicable
+	 */
+	private Integer				SQLType;
+
+	/**
 	 * The query this column is a part of
 	 */
 	private Query				query;
@@ -108,14 +112,26 @@ public class QueryColumn implements IReferenceable, Serializable {
 	private int					index;
 
 	/**
-	 * Metadata object
-	 */
-	public transient BoxMeta<?>	$bx;
-
-	/**
 	 * Serial version UID
 	 */
 	private static final long	serialVersionUID	= 1L;
+
+	/**
+	 * Add new column to query
+	 *
+	 * @param name    column name
+	 * @param type    column type
+	 * @param query   query
+	 * @param index   column index (0-based)
+	 * @param SQLType original SQL type of the column
+	 */
+	public QueryColumn( Key name, QueryColumnType type, Query query, int index, Integer SQLType ) {
+		this.name		= name;
+		this.type		= type;
+		this.query		= query;
+		this.index		= index;
+		this.SQLType	= SQLType;
+	}
 
 	/**
 	 * Add new column to query
@@ -126,29 +142,7 @@ public class QueryColumn implements IReferenceable, Serializable {
 	 * @param index column index (0-based)
 	 */
 	public QueryColumn( Key name, QueryColumnType type, Query query, int index ) {
-		this.name	= name;
-		this.type	= type;
-		this.query	= query;
-		this.index	= index;
-	}
-
-	/**
-	 * Get the metadata object for this column
-	 *
-	 * @return metadata object
-	 */
-	public BoxMeta<?> getBoxMeta() {
-		if ( this.$bx == null ) {
-			// TODO: create query column meta object.
-			// getMetaData() in CF returns struct of
-			/*
-			 * IsCaseSensitive NO
-			 * Name colName
-			 * TypeName OBJECT
-			 */
-			this.$bx = new GenericMeta( this );
-		}
-		return this.$bx;
+		this( name, type, query, index, null );
 	}
 
 	/**
@@ -167,6 +161,15 @@ public class QueryColumn implements IReferenceable, Serializable {
 	 */
 	public QueryColumnType getType() {
 		return type;
+	}
+
+	/**
+	 * Get the original SQL type of this column
+	 *
+	 * @return The original SQL type of the column, or null if not applicable
+	 */
+	public Integer getSQLType() {
+		return SQLType;
 	}
 
 	/**
@@ -197,6 +200,15 @@ public class QueryColumn implements IReferenceable, Serializable {
 			throw new BoxRuntimeException( "Query column index cannot be negative" );
 		}
 		this.index = index;
+	}
+
+	/**
+	 * Set the target query of this column
+	 *
+	 * @param query The new target query
+	 */
+	public void setQuery( Query query ) {
+		this.query = query;
 	}
 
 	/**
@@ -310,13 +322,6 @@ public class QueryColumn implements IReferenceable, Serializable {
 	@Override
 	public Object dereference( IBoxContext context, Key name, Boolean safe ) {
 
-		// Special check for $bx
-		/*
-		 * if ( name.equals( BoxMeta.key ) ) {
-		 * return getBoxMeta();
-		 * }
-		 */
-
 		// Check if the key is numeric
 		int index = getIntFromKey( name, true );
 		// If dereferencing a query column with a number like qry.col[1], then we ALWAYS get the value from that row
@@ -378,6 +383,34 @@ public class QueryColumn implements IReferenceable, Serializable {
 		// then we get the value at the "current" row and assign it (perhaps it's struct etc)
 		Referencer.set( context, getCell( query.getRowFromContext( context ) ), name, value );
 		return value;
+	}
+
+	/**
+	 * Clone this QueryColumn
+	 */
+	public QueryColumn clone() {
+		return clone( null, null );
+	}
+
+	/**
+	 * Clone this QueryColumn, overriding the query reference
+	 */
+	public QueryColumn clone( Query query ) {
+		return clone( query, null );
+	}
+
+	/**
+	 * Clone this QueryColumn, overriding the query reference, index
+	 * Passing null for either parameter will keep the existing value
+	 */
+	public QueryColumn clone( Query query, Integer index ) {
+		return new QueryColumn(
+		    this.name,
+		    this.type,
+		    query == null ? this.query : query,
+		    index == null ? this.index : index,
+		    this.SQLType
+		);
 	}
 
 }

@@ -31,6 +31,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Query;
 
 public class QueryFilterTest {
@@ -232,6 +233,38 @@ public class QueryFilterTest {
 
 		Query qry = variables.getAsQuery( result );
 		assertThat( qry.size() ).isEqualTo( 3 );
+	}
+
+	@Test
+	public void testCollectionQueryClonesColumns() {
+		instance.executeSource(
+		    """
+		             data = [
+		          	{id: 1,name:'Alpha',responses: 40 },
+		          	{id:2,name:'Bravo',responses: 30 },
+		          	{id:3,name:'Charlie',responses: 20 },
+		          	{id:4,name:'Delta',responses: 10 }
+		          ];
+		          meh = QueryNew( data );
+		          filtered = meh.filter((d) => true);
+		          //writeDump( var=filtered, format="html" );
+		    result = []
+		       ```
+		       		<bx:loop query="#filtered#" item="row" index="index">
+		       			<bx:set result.append( filtered[ "name" ] ) />
+		       		</bx:loop>
+		       ```
+
+		             	   """,
+		    context );
+
+		Array nameValues = variables.getAsArray( result );
+		assertThat( nameValues.size() ).isEqualTo( 4 );
+		assertThat( nameValues.get( 0 ) ).isEqualTo( "Alpha" );
+		assertThat( nameValues.get( 1 ) ).isEqualTo( "Bravo" );
+		assertThat( nameValues.get( 2 ) ).isEqualTo( "Charlie" );
+		assertThat( nameValues.get( 3 ) ).isEqualTo( "Delta" );
+
 	}
 
 }

@@ -18,12 +18,14 @@
 package ortus.boxlang.runtime.loader;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -33,8 +35,17 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.modules.ModuleRecord;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ModuleService;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 
 public class DynamicClassLoaderTest {
+
+	static BoxRuntime runtime;
+
+	@BeforeAll
+	public static void setUp() {
+		runtime = BoxRuntime.getInstance( true );
+	}
 
 	@Test
 	@DisplayName( "Load Class Successfully" )
@@ -46,28 +57,32 @@ public class DynamicClassLoaderTest {
 		ClassLoader			parentClassLoader	= getClass().getClassLoader();
 		DynamicClassLoader	dynamicClassLoader	= new DynamicClassLoader( Key.of( "TestClassLoader" ), urls, parentClassLoader, false );
 
-		assertThat( dynamicClassLoader.getURLs() ).hasLength( 3 );
-		assertThat( dynamicClassLoader.getResource( "config.properties" ) ).isNotNull();
+		try {
+			assertThat( dynamicClassLoader.getURLs() ).hasLength( 3 );
+			assertThat( dynamicClassLoader.getResource( "config.properties" ) ).isNotNull();
 
-		// String targetClass = "com.github.benmanes.caffeine.cache.Caffeine";
-		String		targetClass	= "HelloWorld";
-		Class<?>	loadedClass	= dynamicClassLoader.loadClass(
-		    targetClass
-		); // Replace with an actual test class name
+			// String targetClass = "com.github.benmanes.caffeine.cache.Caffeine";
+			String		targetClass	= "HelloWorld";
+			Class<?>	loadedClass	= dynamicClassLoader.loadClass(
+			    targetClass
+			); // Replace with an actual test class name
 
-		// Then
-		assertThat( loadedClass ).isNotNull();
-		assertThat( loadedClass.getName() ).isEqualTo( targetClass );
-		assertThat( loadedClass.getClassLoader() ).isEqualTo( dynamicClassLoader );
-		// Check cache
-		assertThat( dynamicClassLoader.isCacheEmpty() ).isFalse();
-		assertThat( dynamicClassLoader.getCacheSize() ).isEqualTo( 1 );
-		assertThat( dynamicClassLoader.getCacheKeys() ).contains( targetClass );
+			// Then
+			assertThat( loadedClass ).isNotNull();
+			assertThat( loadedClass.getName() ).isEqualTo( targetClass );
+			assertThat( loadedClass.getClassLoader() ).isEqualTo( dynamicClassLoader );
+			// Check cache
+			assertThat( dynamicClassLoader.isCacheEmpty() ).isFalse();
+			assertThat( dynamicClassLoader.getCacheSize() ).isEqualTo( 1 );
+			assertThat( dynamicClassLoader.getCacheKeys() ).contains( targetClass );
+		} finally {
+			dynamicClassLoader.close();
+		}
 	}
 
 	@Test
 	@DisplayName( "Class Not Found" )
-	void testClassNotFound() {
+	void testClassNotFound() throws Exception {
 		// Given
 		URL[]				urls				= new URL[] { /* Add your test URLs here */ };
 		ClassLoader			parentClassLoader	= getClass().getClassLoader();
@@ -80,6 +95,8 @@ public class DynamicClassLoaderTest {
 			// Then
 			assertThat( e ).isNotNull();
 			assertThat( e.getMessage() ).contains( "NonExistentClass" );
+		} finally {
+			dynamicClassLoader.close();
 		}
 	}
 
@@ -129,4 +146,107 @@ public class DynamicClassLoaderTest {
 		assertThat( loadedClass.getName() ).isEqualTo( targetClass );
 
 	}
+
+	@Test
+	@DisplayName( "Add Paths - Single String Path" )
+	void testAddPathsSingleString() throws Exception {
+		// Given
+		Path				libPath				= Paths.get( "src/test/resources/libs/" ).toAbsolutePath().normalize();
+		ClassLoader			parentClassLoader	= getClass().getClassLoader();
+		DynamicClassLoader	dynamicClassLoader	= new DynamicClassLoader( Key.of( "TestAddPathsClassLoader" ), new URL[] {}, parentClassLoader, false );
+
+		// Get initial URL count
+		int					initialUrlCount		= dynamicClassLoader.getURLs().length;
+
+		// When
+		dynamicClassLoader.addPaths( libPath.toString() );
+
+		// Then
+		assertThat( dynamicClassLoader.getURLs().length ).isGreaterThan( initialUrlCount );
+
+		// Should be able to load class from added path
+		try {
+			String		targetClass	= "HelloWorld";
+			Class<?>	loadedClass	= dynamicClassLoader.loadClass( targetClass );
+			assertThat( loadedClass ).isNotNull();
+			assertThat( loadedClass.getName() ).isEqualTo( targetClass );
+		} finally {
+			dynamicClassLoader.close();
+		}
+	}
+
+	@Test
+	@DisplayName( "Add Paths - Array of Paths" )
+	void testAddPathsArray() throws Exception {
+		// Given
+		Path				libPath				= Paths.get( "src/test/resources/libs/" ).toAbsolutePath().normalize();
+		ClassLoader			parentClassLoader	= getClass().getClassLoader();
+		DynamicClassLoader	dynamicClassLoader	= new DynamicClassLoader( Key.of( "TestAddPathsArrayClassLoader" ), new URL[] {}, parentClassLoader, false );
+
+		// Create Array with multiple paths
+		Array				paths				= new Array();
+		paths.add( libPath.toString() );
+
+		// Get initial URL count
+		int initialUrlCount = dynamicClassLoader.getURLs().length;
+
+		// When
+		dynamicClassLoader.addPaths( paths );
+
+		// Then
+		assertThat( dynamicClassLoader.getURLs().length ).isGreaterThan( initialUrlCount );
+
+		// Should be able to load class from added path
+		try {
+			String		targetClass	= "HelloWorld";
+			Class<?>	loadedClass	= dynamicClassLoader.loadClass( targetClass );
+			assertThat( loadedClass ).isNotNull();
+			assertThat( loadedClass.getName() ).isEqualTo( targetClass );
+		} finally {
+			dynamicClassLoader.close();
+		}
+	}
+
+	@Test
+	@DisplayName( "Add Paths - Invalid Path Throws Exception" )
+	void testAddPathsInvalidPath() throws Exception {
+		// Given
+		ClassLoader			parentClassLoader	= getClass().getClassLoader();
+		DynamicClassLoader	dynamicClassLoader	= new DynamicClassLoader( Key.of( "TestInvalidPathClassLoader" ), new URL[] {}, parentClassLoader, false );
+
+		try {
+			// When/Then
+			BoxIOException exception = assertThrows( BoxIOException.class, () -> {
+				dynamicClassLoader.addPaths( "/non/existent/path/that/should/not/exist" );
+			} );
+
+			assertThat( exception.getMessage() ).contains( "Failed to add path" );
+			assertThat( exception.getMessage() ).contains( "non/existent/path" );
+		} finally {
+			dynamicClassLoader.close();
+		}
+	}
+
+	@Test
+	@DisplayName( "Add Paths - Empty Array" )
+	void testAddPathsEmptyArray() throws Exception {
+		// Given
+		ClassLoader			parentClassLoader	= getClass().getClassLoader();
+		DynamicClassLoader	dynamicClassLoader	= new DynamicClassLoader( Key.of( "TestEmptyArrayClassLoader" ), new URL[] {}, parentClassLoader, false );
+
+		// Create empty Array
+		Array				emptyPaths			= new Array();
+
+		// Get initial URL count
+		int					initialUrlCount		= dynamicClassLoader.getURLs().length;
+
+		// When
+		dynamicClassLoader.addPaths( emptyPaths );
+
+		// Then
+		assertThat( dynamicClassLoader.getURLs().length ).isEqualTo( initialUrlCount );
+
+		dynamicClassLoader.close();
+	}
+
 }

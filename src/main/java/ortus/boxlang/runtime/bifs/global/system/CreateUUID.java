@@ -32,7 +32,9 @@ public class CreateUUID extends BIF {
 	}
 
 	/**
-	 * Create a Universally Unique Identifier (UUID).
+	 * Create a Universally Unique Identifier (UUID) in the standard format.
+	 * 
+	 * Generates UUIDs in this format: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx. Each 'x' is a hexadecimal digit (0-9, a-f).
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -40,7 +42,6 @@ public class CreateUUID extends BIF {
 	 * @return A UUID as a string.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String uuid = UUID.randomUUID().toString().toUpperCase();
-		return new StringBuilder( uuid.substring( 0, 23 ) ).append( uuid.substring( 24 ) ).toString();
+		return UUID.randomUUID().toString();
 	}
 }

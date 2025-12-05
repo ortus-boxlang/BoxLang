@@ -632,4 +632,22 @@ public class JSONSerializeTest {
 		assertThat( json ).isNotEmpty();
 	}
 
+	@DisplayName( "It can serialize queries nested inside" )
+	@Test
+	public void testCanSerializeQueriesNestedInside() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				myQry = queryNew( "col", "varchar", [["brad"]] )
+				result = jsonSerialize( [ myQry ] );
+			""",
+		    context );
+		// @formatter:on
+
+		var json = variables.getAsString( result );
+		assertThat( json ).isNotEmpty();
+		assertThat( json ).isEqualTo( "[{\"columns\":[\"col\"],\"data\":[[\"brad\"]]}]" );
+
+	}
+
 }

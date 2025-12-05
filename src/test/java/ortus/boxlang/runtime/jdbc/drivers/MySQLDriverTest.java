@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 
 import org.junit.jupiter.api.AfterAll;
@@ -20,6 +19,7 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.jdbc.BoxConnection;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -142,8 +142,8 @@ public class MySQLDriverTest extends AbstractDriverTest {
 		        "password", "123456Password",
 		        "connectionString", "jdbc:mysql://localhost:3309"
 		    ) );
-		try ( Connection conn = myDataSource.getConnection() ) {
-			assertThat( conn ).isInstanceOf( Connection.class );
+		try ( BoxConnection conn = myDataSource.getBoxConnection() ) {
+			assertThat( conn ).isInstanceOf( BoxConnection.class );
 		}
 		myDataSource.shutdown();
 	}
@@ -303,6 +303,102 @@ public class MySQLDriverTest extends AbstractDriverTest {
 		    getContext(), BoxSourceType.BOXTEMPLATE );
 		assertThat( getVariables().get( Key.of( "names_asc" ) ) ).isInstanceOf( Query.class );
 		assertThat( getVariables().get( Key.of( "names_desc" ) ) ).isInstanceOf( Query.class );
+	}
+
+	@DisplayName( "It can select from char 15 field" )
+	@Test
+	public void testSelectFromCharFields() {
+		instance.executeStatement(
+		    """
+		    queryExecute( "
+		    	CREATE TABLE IF NOT EXISTS char15Test ( char15field CHAR(15) )
+		    ",{},{ "datasource" : "MySQLdatasource" }
+		    );
+
+		    queryExecute( "TRUNCATE TABLE char15Test",{},{ "datasource" : "MySQLdatasource" } );
+		    queryExecute( "INSERT INTO char15Test ( char15field ) VALUES ( 'value' )",{},{ "datasource" : "MySQLdatasource" } );
+
+		    result = queryExecute( "
+		    	SELECT * FROM char15Test where char15field = ?
+		    	",[ {
+		    		sqltype : "varchar",
+		    		value: "value"
+		    	}],{ "datasource" : "MySQLdatasource" }
+		    );
+		    """,
+		    context );
+
+		// Verify that the query found the row without needing RTRIM
+		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 1 );
+
+	}
+
+	@DisplayName( "It can handle large blob and clob columns" )
+	@Test
+	public void testLargeBlobAndClobColumns() {
+		instance.executeStatement(
+		    """
+		    queryExecute( "
+		    	CREATE TABLE IF NOT EXISTS large_lob (
+		    		id INT PRIMARY KEY,
+		    		blob_data LONGBLOB,
+		    		clob_data LONGTEXT
+		    	)
+		    ",{},{ "datasource" : "MySQLdatasource" }
+		    );
+
+		    queryExecute( "TRUNCATE TABLE large_lob", {}, { "datasource" : "MySQLdatasource" } );
+		    """, context );
+		// @formatter:off
+		instance.executeStatement(
+			"""
+				newLobData = "";
+				// ~300 chars
+				quote = "
+		               	Farewell, Aragorn! Go to Minas Tirith and save my people! I
+		               	have failed.
+		               	No! said Aragorn, taking his hand and kissing his brow. You
+		               	have conquered. Few have gained such a victory. Be at peace! Minas
+		               	Tirith shall not fall!
+		        ";
+				// times 1000 = ~300,000 chars
+				for( i=1; i <= 1000; i = i + 1 ) {
+					newLobData = newLobData & quote;
+				}
+				
+				insert = queryExecute( "INSERT INTO large_lob ( id, blob_data, clob_data ) VALUES ( 1, ?, ? )", [ 
+					{ value: newLobData, sqltype: "blob" },
+					{ value: newLobData, sqltype: "clob" }
+				], { "datasource" : "MySQLdatasource" } );
+			""", context );
+		instance.executeStatement(
+			"""
+				result = queryExecute( "SELECT * FROM large_lob WHERE id = 1", {}, { "datasource" : "MySQLdatasource" } );
+			""", context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertEquals( 1, query.size() );
+		IStruct	firstRow	= query.getRowAsStruct( 0 );
+
+		// Test BLOB data (LONGBLOB in MySQL)
+		Object	blobData	= firstRow.get( Key.of( "blob_data" ) );
+		assertThat( blobData ).isNotNull();
+		// BLOB data may be returned as byte[] or other types depending on driver
+		if ( blobData instanceof byte[] ) {
+			String retrieved = new String( ( byte[] ) blobData, java.nio.charset.StandardCharsets.UTF_8 );
+			assertThat( retrieved.length() ).isAtLeast( 300000 );
+		}
+
+		// Test CLOB data (LONGTEXT in MySQL)
+		Object clobData = firstRow.get( Key.of( "clob_data" ) );
+		assertThat( clobData ).isNotNull();
+		assertThat( clobData ).isInstanceOf( String.class );
+		String clobString = ( String ) clobData;
+		assertThat( clobString.length() ).isAtLeast( 300000 );
+		// Use containsMatch to handle whitespace variations
+		assertThat( clobString ).containsMatch( "Farewell,\\s+Aragorn!" );
+		assertThat( clobString ).containsMatch( "Minas\\s+Tirith\\s+shall\\s+not\\s+fall!" );
 	}
 
 }

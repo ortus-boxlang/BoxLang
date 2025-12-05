@@ -128,53 +128,55 @@ public class IsValid extends BIF {
 			}
 		}
 
+		Object value = arguments.get( Key.value );
 		return switch ( type ) {
 			/**
 			 * Implemented in GenericCaster, mostly non-string types.
 			 */
-			case ANY -> GenericCaster.attempt( context, arguments.get( Key.value ), "any" ).wasSuccessful();
-			case ARRAY -> GenericCaster.attempt( context, arguments.get( Key.value ), "array" ).wasSuccessful();
-			case BOOLEAN -> BooleanCaster.attempt( arguments.get( Key.value ), false ).wasSuccessful();
-			case DATE -> GenericCaster.attempt( context, arguments.get( Key.value ), "datetime" ).wasSuccessful();
-			case FLOAT -> ValidationUtil.isFloat( arguments.get( Key.value ) );
-			case QUERY -> GenericCaster.attempt( context, arguments.get( Key.value ), "query" ).wasSuccessful();
-			case STRING -> GenericCaster.attempt( context, arguments.get( Key.value ), "string" ).wasSuccessful();
-			case STRUCT -> GenericCaster.attempt( context, arguments.get( Key.value ), "struct" ).wasSuccessful();
-			case TIME -> GenericCaster.attempt( context, arguments.get( Key.value ), "time" ).wasSuccessful();
-			case XML -> GenericCaster.attempt( context, arguments.get( Key.value ), "xml" ).wasSuccessful();
+			case ANY -> true;
+			case ARRAY -> GenericCaster.cast( context, value, "array", false ) != null;
+			// BooleanCaster will cast null to false, but we don't want null to be considered valid for the sake of this BIF.
+			case BOOLEAN -> value != null && BooleanCaster.cast( value, false, false ) != null;
+			case DATE -> GenericCaster.cast( context, value, "datetime", false ) != null;
+			case FLOAT -> ValidationUtil.isFloat( value );
+			case QUERY -> GenericCaster.cast( context, value, "query", false ) != null;
+			case STRING -> GenericCaster.cast( context, value, "string", false ) != null;
+			case STRUCT -> GenericCaster.cast( context, value, "struct", false ) != null;
+			case TIME -> GenericCaster.cast( context, value, "time", false ) != null;
+			case XML -> GenericCaster.cast( context, value, "xml", false ) != null;
 
 			/**
 			 * Implemented in ValidationUtil
 			 */
-			case BINARY -> ValidationUtil.isBinary( arguments.get( Key.value ) );
-			case CREDITCARD -> ValidationUtil.isValidCreditCard( castAsStringOrNull( arguments.get( Key.value ) ) );
-			case CLOSURE -> ValidationUtil.isClosure( arguments.get( Key.value ) );
-			case COMPONENT, CLASS -> ValidationUtil.isBoxClass( arguments.get( Key.value ) );
-			case GUID -> ValidationUtil.isValidGUID( castAsStringOrNull( arguments.get( Key.value ) ) );
-			case EMAIL -> ValidationUtil.isValidEmail( castAsStringOrNull( arguments.get( Key.value ) ) );
-			case FUNCTION -> ValidationUtil.isFunction( arguments.get( Key.value ) );
-			case HEX -> ValidationUtil.isValidHexString( castAsStringOrNull( arguments.get( Key.value ) ) );
-			case INTEGER -> ValidationUtil.isValidInteger( arguments.get( Key.value ) );
-			case LAMBDA -> ValidationUtil.isLambda( arguments.get( Key.value ) );
-			case NUMERIC -> ValidationUtil.isValidNumeric( arguments.get( Key.value ) );
-			case NUMBER -> ValidationUtil.isValidNumeric( arguments.get( Key.value ) );
+			case BINARY -> ValidationUtil.isBinary( value );
+			case CREDITCARD -> ValidationUtil.isValidCreditCard( castAsStringOrNull( value ) );
+			case CLOSURE -> ValidationUtil.isClosure( value );
+			case COMPONENT, CLASS -> ValidationUtil.isBoxClass( value );
+			case GUID -> ValidationUtil.isValidGUID( castAsStringOrNull( value ) );
+			case EMAIL -> ValidationUtil.isValidEmail( castAsStringOrNull( value ) );
+			case FUNCTION -> ValidationUtil.isFunction( value );
+			case HEX -> ValidationUtil.isValidHexString( castAsStringOrNull( value ) );
+			case INTEGER -> ValidationUtil.isValidInteger( value );
+			case LAMBDA -> ValidationUtil.isLambda( value );
+			case NUMERIC -> ValidationUtil.isValidNumeric( value );
+			case NUMBER -> ValidationUtil.isValidNumeric( value );
 			case RANGE -> ValidationUtil.isValidRange(
-			    arguments.get( Key.value ),
+			    value,
 			    NumberCaster.cast( arguments.get( Key.min ) ),
 			    NumberCaster.cast( arguments.get( Key.max ) ) );
 			case REGEX, REGULAR_EXPRESSION -> ValidationUtil.isValidPattern(
-			    castAsStringOrNull( arguments.get( Key.value ) ),
+			    castAsStringOrNull( value ),
 			    pattern );
-			case SSN, SOCIAL_SECURITY_NUMBER -> ValidationUtil.isValidSSN( castAsStringOrNull( arguments.get( Key.value ) ) );
-			case TELEPHONE -> ValidationUtil.isValidTelephone( castAsStringOrNull( arguments.get( Key.value ) ) );
-			case URL -> ValidationUtil.isValidURL( castAsStringOrNull( arguments.get( Key.value ) ) );
-			case UDF -> ValidationUtil.isUDF( arguments.get( Key.value ) );
-			case UUID -> ValidationUtil.isValidUUID( castAsStringOrNull( arguments.get( Key.value ) ) )
-			    || ValidationUtil.isValidGUID( castAsStringOrNull( arguments.get( Key.value ) ) );
-			case VARIABLENAME -> ValidationUtil.isValidVariableName( castAsStringOrNull( arguments.get( Key.value ) ) );
+			case SSN, SOCIAL_SECURITY_NUMBER -> ValidationUtil.isValidSSN( castAsStringOrNull( value ) );
+			case TELEPHONE -> ValidationUtil.isValidTelephone( castAsStringOrNull( value ) );
+			case URL -> ValidationUtil.isValidURL( castAsStringOrNull( value ) );
+			case UDF -> ValidationUtil.isUDF( value );
+			case UUID -> ValidationUtil.isValidUUID( castAsStringOrNull( value ) )
+			    || ValidationUtil.isValidGUID( castAsStringOrNull( value ) );
+			case VARIABLENAME -> ValidationUtil.isValidVariableName( castAsStringOrNull( value ) );
 			case USDATE -> context.invokeFunction( Key.of( "IsDate" ),
-			    java.util.Map.of( Key.date, arguments.get( Key.value ), Key.locale, "en_US" ) );
-			case ZIPCODE -> ValidationUtil.isValidZipCode( castAsStringOrNull( arguments.get( Key.value ) ) );
+			    java.util.Map.of( Key.date, value, Key.locale, "en_US" ) );
+			case ZIPCODE -> ValidationUtil.isValidZipCode( castAsStringOrNull( value ) );
 
 			default -> throw new IllegalArgumentException(
 			    "Invalid type: " + type + ". Valid types are: " + Arrays.toString( IsValidType.toArray() ) );

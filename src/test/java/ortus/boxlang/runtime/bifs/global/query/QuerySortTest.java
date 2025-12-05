@@ -83,4 +83,23 @@ public class QuerySortTest {
 		assertThat( qry.getRowAsStruct( 0 ).getAsInteger( Key.of( "col1" ) ) ).isEqualTo( 100 );
 		assertThat( qry.getRowAsStruct( 1 ).getAsInteger( Key.of( "col1" ) ) ).isEqualTo( 200 );
 	}
+
+	@DisplayName( "It should allow decimals from callback" )
+	@Test
+	public void testSortWithDecimals() {
+		instance.executeSource(
+		    """
+		      	result = queryNew("col1","integer");
+		          queryAddRow(result, [ 1.5 ]);
+		    queryAddRow( result, [ 2 ]);
+		    querySort( result, ( a, b ) => a.col1 - b.col1 );
+
+		         """,
+		    context );
+
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.size() ).isEqualTo( 2 );
+		assertThat( qry.getRowAsStruct( 0 ).getAsNumber( Key.of( "col1" ) ).doubleValue() ).isEqualTo( 1.5 );
+		assertThat( qry.getRowAsStruct( 1 ).getAsInteger( Key.of( "col1" ) ) ).isEqualTo( 2 );
+	}
 }

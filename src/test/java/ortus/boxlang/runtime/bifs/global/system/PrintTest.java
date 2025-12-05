@@ -104,4 +104,15 @@ public class PrintTest {
 		assertThat( expected.replaceAll( "[ \\t\\r\\n]", "" ) ).contains( actual.replaceAll( "[ \\t\\r\\n]", "" ) );
 	}
 
+	@DisplayName( "It can print Java native array to the console" )
+	@Test
+	public void testPrintJavaArray() {
+		instance.executeSource(
+		    """
+		    print( "abc".getBytes() )
+		    """,
+		    context );
+		assertThat( new String( outContent.toByteArray() ).replaceAll( "[ \\t]", "" ) ).contains( "[97,98,99]" );
+	}
+
 }

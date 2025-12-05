@@ -56,6 +56,8 @@ public class DuplicationUtil {
 	 * @param target The object to duplicate
 	 * @param deep   Flag to do a deep copy on all nested objects, if true
 	 *
+	 * @deprecated Use {@link #duplicate(Object, Boolean, IBoxContext)} instead.
+	 *
 	 * @return A new object copy
 	 */
 	@Deprecated
@@ -162,6 +164,8 @@ public class DuplicationUtil {
 	 * @param target The Struct object to duplicate
 	 * @param deep   Flag to do a deep copy on all nested objects, if true
 	 *
+	 * @deprecated Use {@link #duplicateStruct(IStruct, Boolean, IBoxContext)} instead.
+	 *
 	 * @return A new Struct copy
 	 */
 	@Deprecated
@@ -253,6 +257,8 @@ public class DuplicationUtil {
 	 *
 	 * @param target The Array object to duplicate
 	 * @param deep   Flag to do a deep copy on all nested objects, if true
+	 *
+	 * @deprecated Use {@link #duplicateArray(Array, Boolean, IBoxContext)} instead.
 	 *
 	 * @return A new Array copy
 	 */

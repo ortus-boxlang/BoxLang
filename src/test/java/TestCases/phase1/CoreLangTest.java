@@ -5776,4 +5776,170 @@ public class CoreLangTest {
 
 	}
 
+	@Test
+	public void testAssignmentParsing() {
+
+		instance.executeSource(
+		    """
+		    function asdf() {
+		    	var foo = () => {};
+		    	(() => {})();
+		    	writedump(foo);
+		    }
+
+		             """
+		);
+		// Just needs to parse without error
+
+	}
+
+	@Test
+	public void testContinueInASwitchInAForLoop() {
+
+		instance.executeSource(
+		    """
+		    for (v in [1,2]) {
+		    	switch ( v ) {
+		    		case 1:
+		    			// The requested key [continue] was not located
+		    			// in any scope or it's undefined
+		    			continue;
+		    		case 2:
+		    			writedump("ok")
+		    	}
+		    }
+		            """
+		);
+		// Just needs to parse without error
+	}
+
+	@Test
+	public void testContinueInASwitchInAForLoopCF() {
+
+		instance.executeSource(
+		    """
+		    for (v in [1,2]) {
+		    	switch ( v ) {
+		    		case 1:
+		    			// The requested key [continue] was not located
+		    			// in any scope or it's undefined
+		    			continue;
+		    		case 2:
+		    			writedump("ok")
+		    	}
+		    }
+		            """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+		// Just needs to parse without error
+	}
+
+	@Test
+	public void testFunkyTernary() {
+
+		instance.executeSource(
+		    """
+		    true ? foo = true : bar = false;
+		    result = true ? 'a' : 'b';
+		                 """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+		assertThat( variables.get( Key.of( "foo" ) ) ).isEqualTo( true );
+		assertThat( variables.get( result ) ).isEqualTo( "a" );
+	}
+
+	@Test
+	public void testFunkyTernaryCF() {
+
+		instance.executeSource(
+		    """
+		    true ? foo = true : bar = false;
+		    result = true ? 'a' : 'b';
+		                 """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+		assertThat( variables.get( Key.of( "foo" ) ) ).isEqualTo( true );
+		assertThat( variables.get( result ) ).isEqualTo( "a" );
+	}
+
+	@Test
+	public void testSemicolonEndingExpressionWithStatement() {
+
+		instance.executeSource(
+		    """
+		       zzz = () => { return; };
+		    (() => {})();
+		         """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+	}
+
+	@Test
+	public void testSemicolonEndingClosureStatement() {
+
+		instance.executeSource(
+		    """
+		    arr = [1,2,3,4,5];
+		    arr.forEach( (v) => println( v ); );
+		         """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+
+		instance.executeSource(
+		    """
+		       obj = {
+		    method : ()=>writedump(arguments)
+		    }
+
+		    obj.method( ()=>return;, "anotherParam" )
+		            """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+
+		instance.executeSource(
+		    """
+		    arr = [ 1, "two", ()=>return; ]
+		          """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+
+		instance.executeSource(
+		    """
+		    str = { "key" : ()=>return; }
+		          """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+
+	}
+
+	@Test
+	@Disabled( "not working in ASM Boxpiler" )
+	public void testClosureInTernaryCF() {
+
+		instance.executeSource(
+		    """
+		    result = true ? ()=>"foo"; : ()=>"bar";
+		    result2 = result();
+		          """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "foo" );
+
+	}
+
+	@Test
+	@Disabled( "not working in ASM Boxpiler" )
+	public void testClosureInTernary() {
+
+		instance.executeSource(
+		    """
+		    result = true ? ()=>"foo" : ()=>"bar"
+		    result2 = result();
+		               """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "foo" );
+
+	}
+
 }

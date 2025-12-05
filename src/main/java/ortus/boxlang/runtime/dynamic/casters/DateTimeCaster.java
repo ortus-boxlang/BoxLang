@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
@@ -243,6 +244,14 @@ public class DateTimeCaster implements IBoxCaster {
 			return new DateTime( targetTimestamp );
 		}
 
+		// Test if it is a numeric and is zero - which is the epoch
+		var numberAttempt = NumberCaster.attempt( object );
+		if ( numberAttempt.wasSuccessful() ) {
+			if ( numberAttempt.get().intValue() == 0 ) {
+				return new DateTime( Instant.EPOCH.atZone( ZoneId.of( "UTC" ) ) );
+			}
+		}
+
 		// Try to cast it to a String and see if we can parse it
 		var targetString = StringCaster.attempt( object ).getOrDefault( null );
 
@@ -253,6 +262,9 @@ public class DateTimeCaster implements IBoxCaster {
 			}
 			return null;
 		}
+
+		// replace not standard spaces (like nbsp and nnsb) with standard spaces to ensure consistency for our masks
+		targetString = DateTime.sanitizeStringSpaces( targetString );
 
 		try {
 			// Timestamp string "^\{ts ([^\}])*\}" - {ts 2023-01-01 12:00:00}
@@ -271,17 +283,19 @@ public class DateTimeCaster implements IBoxCaster {
 			return null;
 		}
 
-		// Now let's go to Apache commons lang for its date parsing
-		try {
-			return LocalizationUtil.parseFromCommonPatterns( targetString, timezone );
-		} catch ( java.time.format.DateTimeParseException e ) {
+		// Now let's check common patterns and then fall back to the full localization parsing
+		DateTime parsed = LocalizationUtil.parseFromCommonPatterns( targetString, timezone );
+
+		if ( parsed != null ) {
+			return parsed;
+		} else {
 			try {
 				if ( locale != null ) {
 					return new DateTime( targetString, locale, timezone );
 				} else {
 					return new DateTime( targetString, timezone );
 				}
-			} catch ( Throwable e2 ) {
+			} catch ( Throwable e ) {
 				if ( fail ) {
 					throw new BoxCastException( "Can't cast [" + targetString + "] to a DateTime." );
 				}

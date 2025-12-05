@@ -121,8 +121,21 @@ public class ApplicationService extends BaseService {
 	 * @return The application
 	 */
 	public Application getApplication( Key name ) {
-		Application thisApplication = this.applications.computeIfAbsent( name, k -> new Application( name ) );
-
+		Application thisApplication = this.applications.get( name );
+		if ( thisApplication == null || thisApplication.isExpired() ) {
+			// Server-wide lock on this application name. We want to block other threads from creating THIS SPECIFIC application,
+			// but we don't want to block other unrelated application creations while we do this.
+			synchronized ( name.getName().toLowerCase().intern() ) {
+				thisApplication = this.applications.get( name );
+				if ( thisApplication == null || thisApplication.isExpired() ) {
+					logger.trace( "ApplicationService.getApplication() - {} creating new because {}", name,
+					    thisApplication == null ? "didn't exist" : "was expired" );
+					// Create a new one
+					thisApplication = new Application( name );
+					this.applications.put( name, thisApplication );
+				}
+			}
+		}
 		logger.trace( "ApplicationService.getApplication() - {}", name );
 
 		return thisApplication;
@@ -152,7 +165,7 @@ public class ApplicationService extends BaseService {
 			// remove it first so no one else can access it while it's shutting down
 			this.applications.remove( name );
 			// nuke it
-			thisApp.shutdown( false );
+			thisApp.shutdown( true );
 		}
 
 		logger.trace( "ApplicationService.shutdownApplication() - {}", name );

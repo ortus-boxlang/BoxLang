@@ -21,6 +21,7 @@ package ortus.boxlang.runtime.components.system;
 
 import java.util.Set;
 
+import ortus.boxlang.runtime.bifs.global.system.CreateObject;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
@@ -44,7 +45,7 @@ public class ObjectComponent extends Component {
 		// Uncomment and define declare argument to this Component
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.of( "name" ), "string", Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) ),
-		    new Attribute( Key.type, "string", Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) ),
+		    new Attribute( Key.type, "string", CreateObject.CLASS_TYPE, Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) ),
 		    new Attribute( Key.className, "string", Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) )
 		};
 	}

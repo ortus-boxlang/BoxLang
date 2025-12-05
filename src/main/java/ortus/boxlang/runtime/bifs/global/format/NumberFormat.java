@@ -17,9 +17,9 @@
  */
 package ortus.boxlang.runtime.bifs.global.format;
 
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.LinkedHashMap;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -44,7 +44,7 @@ public class NumberFormat extends BIF {
 	public NumberFormat() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "number", Key.number ),
+		    new Argument( true, "any", Key.number ),
 		    new Argument( false, "string", Key.mask ),
 		    new Argument( false, "string", Key.locale )
 		};
@@ -56,7 +56,7 @@ public class NumberFormat extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.number The number to be formatted
+	 * @argument.number The number to be formatted, or an empty string which will be treated as 0.
 	 *
 	 * @argument.mask The formatting mask to apply using the {@link java.text.DecimalFormat} patterns.
 	 *
@@ -65,7 +65,16 @@ public class NumberFormat extends BIF {
 	 * @function.currencyFormat Formats a number as a currency value
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Number								value				= NumberCaster.cast( arguments.get( Key.number ) );
+		Object oValue = arguments.get( Key.number );
+		if ( oValue == null ) {
+			oValue = 0;
+		}
+		// Turn "" into 0
+		if ( oValue instanceof String sValue && sValue.isEmpty() ) {
+			oValue = 0;
+		}
+		// "" is the only valid string valie. Any other non-numbers will error out here
+		Number								value				= NumberCaster.cast( oValue );
 		String								format				= arguments.getAsString( Key.mask );
 		Locale								locale				= LocalizationUtil.parseLocaleFromContext( context, arguments );
 		java.text.NumberFormat				formatter			= LocalizationUtil.localizedDecimalFormatter(
@@ -76,6 +85,9 @@ public class NumberFormat extends BIF {
 
 																	{
 																		put( "9", "0" );
+																		// This is a special case to ensure preceeding zeroes before the decimal. Using `#` will leave those blank
+																		put( "_.", "0." );
+																		// Standard replacement
 																		put( "_", "#" );
 																		put( "#,.", "#,##0." );
 																		put( "#$,0", "$#,##0" );

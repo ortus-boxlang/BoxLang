@@ -387,6 +387,18 @@ public class CFParser extends AbstractParser {
 		// uncomment this to see all the profiling information
 		// profileParser( parser );
 
+		// Uncomment to use ANTLR GUI tree viewer for debugging
+		// org.antlr.v4.gui.Trees.inspect( parseTree, parser );
+
+		/*
+		 * try {
+		 * Thread.sleep( 1000000 );
+		 * } catch ( InterruptedException e ) {
+		 * // TODO Auto-generated catch block
+		 * e.printStackTrace();
+		 * }
+		 */
+
 		// This must run FIRST before resetting the lexer
 		validateParse( lexer );
 

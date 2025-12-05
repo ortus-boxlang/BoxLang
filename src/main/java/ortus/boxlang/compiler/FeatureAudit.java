@@ -35,6 +35,7 @@ import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 
 /**
  * I am a CLI tool for auditing code to determine BIFs and tags in use
@@ -176,7 +177,8 @@ public class FeatureAudit {
 				    .collect( Collectors.toSet() );
 				if ( rcommendedModulesWeCareAbout.size() > 0 ) {
 					System.out.println( "Recommended Modules to install:" );
-					System.out.println( "box install " + rcommendedModulesWeCareAbout.stream().sorted().collect( Collectors.joining( "," ) ) );
+					System.out.println( "box install "
+					    + rcommendedModulesWeCareAbout.stream().sorted().map( name -> name.replace( "+", "" ) ).collect( Collectors.joining( "," ) ) );
 					System.out.println();
 					if ( recommendedModules.contains( "boxlang-web-support" ) ) {
 						System.out.println(
@@ -260,16 +262,26 @@ public class FeatureAudit {
 	    StringBuffer reportText,
 	    boolean quiet,
 	    Set<String> recommendedModules ) {
-		if ( !quiet ) {
-			System.out.println( "Processing: " + sourcePath.toString() );
-		}
-		ParsingResult result;
+		final boolean	finalQuiet	= quiet;
+		ParsingResult	result;
+		String			logMessage	= "Processing: " + sourcePath.toString();
 		try {
+			if ( DiskClassUtil.isJavaByteCode( sourcePath.toFile() ) ) {
+				logMessage	+= "  <<< Skipping precompiled bytecode >>>  ";
+				quiet		= false;
+				return;
+			}
 			result = new Parser().parse( sourcePath.toFile() );
 		} catch ( Throwable e ) {
-			System.out.println( "Parsing failed: " + e.getMessage() );
-			e.printStackTrace();
+			logMessage	+= "\n" + "Parsing failed: " + e.getMessage()
+			    + "\n" + ExceptionUtil.getStackTraceAsString( e );
+			quiet		= false;
 			return;
+		} finally {
+			// Logging everything in the finally block in a SINGLE log call. Otherwise, all the output gets intermixed due to threading.
+			if ( !quiet ) {
+				System.out.println( logMessage );
+			}
 		}
 		if ( result.isCorrect() ) {
 			FeatureAuditVisitor visitor = new FeatureAuditVisitor();
@@ -286,7 +298,7 @@ public class FeatureAudit {
 			if ( aggregate ) {
 				if ( aggregateResults.get( sourcePath.toString() ).size() > 0 ) {
 					aggregateResults.get( sourcePath.toString() ).forEach( data -> {
-						if ( !quiet )
+						if ( !finalQuiet )
 							System.out.println( data );
 						if ( doReport )
 							reportText.append( sourcePath.toString() ).append( "," ).append( data.toCSV() ).append( "\n" );
@@ -295,7 +307,7 @@ public class FeatureAudit {
 			} else {
 				if ( results.get( sourcePath.toString() ).size() > 0 ) {
 					results.get( sourcePath.toString() ).forEach( data -> {
-						if ( !quiet )
+						if ( !finalQuiet )
 							System.out.println( data );
 						if ( doReport )
 							reportText.append( sourcePath.toString() ).append( "," ).append( data.toCSV() ).append( "\n" );
@@ -303,8 +315,12 @@ public class FeatureAudit {
 				}
 			}
 		} else {
-			System.out.println( "Parsing failed for " + sourcePath.toString() );
-			result.getIssues().forEach( System.out::println );
+			// Build the string and then output all at once so we're threadsafe.
+			String errorMessage = "Parsing failed for " + sourcePath.toString() + "\n" +
+			    result.getIssues().stream()
+			        .map( Object::toString )
+			        .collect( Collectors.joining( "\n" ) );
+			System.out.println( errorMessage );
 		}
 	}
 

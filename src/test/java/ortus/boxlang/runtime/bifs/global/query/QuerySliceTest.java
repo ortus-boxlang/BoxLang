@@ -154,4 +154,26 @@ public class QuerySliceTest {
 		        context )
 		);
 	}
+
+	@DisplayName( "Validation error sclicing single row query" )
+	@Test
+	public void testSliceSingleRowQuery() {
+		instance.executeSource(
+		    """
+		    	data = [
+		    	{id: 1,name:'Alpha',responses: 40 }
+		    ];
+		    meh = QueryNew( data );
+		    result = querySlice( meh, 1, 1 );
+		          """,
+		    context );
+		assertInstanceOf( Query.class, variables.get( result ) );
+		Query query = ( Query ) variables.get( result );
+		assertThat( query.size() ).isEqualTo( 1 );
+		assertThat( query.getCell( Key.of( "name" ), 0 ) ).isEqualTo( "Alpha" );
+		assertThat( query.getCell( Key.of( "responses" ), 0 ) ).isEqualTo( 40 );
+		assertThat( query.getCell( Key.of( "id" ), 0 ) ).isEqualTo( 1 );
+
+	}
+
 }

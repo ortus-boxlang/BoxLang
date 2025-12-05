@@ -60,6 +60,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.NoFieldException;
 import ortus.boxlang.runtime.types.exceptions.NoMethodException;
 import ortus.boxlang.runtime.types.util.BooleanRef;
@@ -241,6 +242,49 @@ public class DynamicInteropServiceTest {
 		    DynamicInteropService.hasField( InvokeDynamicFields.class, "bogus" )
 		).isFalse();
 
+	}
+
+	@DisplayName( "It can get public static fields from package-private parent class" )
+	@Test
+	void testItCanGetStaticFieldsFromPackagePrivateParent() {
+		// Test accessing inherited public static fields from package-private parent
+		assertThat(
+		    DynamicInteropService.getField( TestCases.interop.PublicConcreteChild.class, "PARENT_CONSTANT_STRING" ).get()
+		).isEqualTo( "ParentValue" );
+
+		assertThat(
+		    DynamicInteropService.getField( TestCases.interop.PublicConcreteChild.class, "PARENT_CONSTANT_INT" ).get()
+		).isEqualTo( 42 );
+
+		assertThat(
+		    DynamicInteropService.getField( TestCases.interop.PublicConcreteChild.class, "PARENT_CONSTANT_BOOLEAN" ).get()
+		).isEqualTo( true );
+
+		// Also test accessing the child's own static field
+		assertThat(
+		    DynamicInteropService.getField( TestCases.interop.PublicConcreteChild.class, "CHILD_CONSTANT" ).get()
+		).isEqualTo( "ChildValue" );
+	}
+
+	@DisplayName( "It can get public static fields from package-private parent via BoxLang" )
+	@Test
+	void testItCanGetStaticFieldsFromPackagePrivateParentViaBoxLang() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        import TestCases.interop.PublicConcreteChild;
+
+		        result1 = PublicConcreteChild.PARENT_CONSTANT_STRING;
+		        result2 = PublicConcreteChild.PARENT_CONSTANT_INT;
+		        result3 = PublicConcreteChild.PARENT_CONSTANT_BOOLEAN;
+		        result4 = PublicConcreteChild.CHILD_CONSTANT;
+		    """, context );
+		// @formatter:on
+
+		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "ParentValue" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( 42 );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "ChildValue" );
 	}
 
 	@DisplayName( "It can get all the callable method names of a class" )
@@ -813,7 +857,7 @@ public class DynamicInteropServiceTest {
 					cache.set( "bx-4", "Hello World" );
 
 					cache.clearAll(
-						( key ) -> key.getName().startsWith( "bl" );
+						( key ) -> key.getName().startsWith( "bl" )
 					);
 
 					println( cache.getKeys() );
@@ -1195,7 +1239,40 @@ public class DynamicInteropServiceTest {
 			IntStream.range( 1, 3 ).forEach( ::len )
 			""", context);
 		// @formatter:on
+	}
 
+	@Test
+	void testCastWhenSettingField() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			import java:ortus.boxlang.runtime.context.BaseBoxContext;
+
+			BaseBoxContext.nullIsUndefined = "false";
+			""", context);
+		// @formatter:on
+
+		// @formatter:off
+		Throwable t = assertThrows( BoxRuntimeException.class, ()->instance.executeSource(
+			"""
+			import java:ortus.boxlang.runtime.context.BaseBoxContext;
+
+			BaseBoxContext.nullIsUndefined = {};
+			""", context));
+		// @formatter:on
+		assertThat( t.getMessage() ).contains( "Struct" );
+		assertThat( t.getMessage() ).contains( "boolean" );
+
+		// @formatter:off
+		t = assertThrows( BoxRuntimeException.class, ()->instance.executeSource(
+			"""
+			import java:ortus.boxlang.runtime.context.BaseBoxContext;
+
+			BaseBoxContext.nullIsUndefined = null;
+			""", context));
+		// @formatter:on
+		assertThat( t.getMessage() ).contains( "primitive" );
+		assertThat( t.getMessage() ).contains( "boolean" );
 	}
 
 }

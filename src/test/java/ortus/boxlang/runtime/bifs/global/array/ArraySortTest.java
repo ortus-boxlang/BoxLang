@@ -303,6 +303,23 @@ public class ArraySortTest {
 		assertThat( ( ( Number ) res.get( 3 ) ).doubleValue() ).isEqualTo( 4.3 );
 	}
 
+	@DisplayName( "It should allow decimal returns from sort callback" )
+	@Test
+	public void testCallbackDecimals() {
+		instance.executeSource(
+		    """
+		      result = [1, 21.5835807146]
+
+		      result.sort( (a,b)=>b - a );
+		    """,
+		    context );
+
+		Array res = variables.getAsArray( result );
+		assertThat( ( ( Number ) res.get( 0 ) ).doubleValue() ).isEqualTo( 21.5835807146 );
+		assertThat( res.get( 1 ) ).isEqualTo( 1 );
+
+	}
+
 	@DisplayName( "It should work on native arrays" )
 	@Test
 	public void testNativeArray() {

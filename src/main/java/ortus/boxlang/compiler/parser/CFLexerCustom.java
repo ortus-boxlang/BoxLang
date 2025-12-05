@@ -166,6 +166,11 @@ public class CFLexerCustom extends CFLexer {
 	    AND, EQ, EQUAL, EQV, GE, GREATER, GT, GTE, IMP, IS, LE, LESS, LT, LTE, MOD, NEQ, NOT, OR, THAN, XOR );
 
 	/**
+	 * Keywords that represent a value
+	 */
+	private static final Set<Integer>	keywordsThatAreValues			= Set.of( NULL, TRUE, FALSE );
+
+	/**
 	 * Keywords that legtimatley have trailing (
 	 */
 	private static final Set<Integer>	keywordsThatComeBeforeLParen	= Set.of( CATCH, FOR, FUNCTION, IF, WHILE, SWITCH, NOT, AND, EQ, EQUAL, EQV, GE, GT,
@@ -415,9 +420,10 @@ public class CFLexerCustom extends CFLexer {
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because it is not a function declaration" );
 						isIdentifier = true;
-					} else if ( nextNonWhiteSpaceCharIs( ':' ) && ! ( nextTokenType == DEFAULT && inSwitchBody ) ) {
+					} else if ( nextNonWhiteSpaceCharIs( ':' ) && ! ( nextTokenType == DEFAULT && inSwitchBody ) && ! ( lastTokenWas( EQUALSIGN ) ) ) {
 						// left side of a : which is usually { foo : bar }
 						// however, ignore default: in a switch body.
+						// also ignore condition ? foo = true : bar = false
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because next char is a colon" );
 						isIdentifier = true;
@@ -427,11 +433,13 @@ public class CFLexerCustom extends CFLexer {
 					    && ! ( nextTokenType == TO && lastTokenWas( EQUAL ) )
 					    && ! ( nextTokenType == OR && lastTokenWas( THAN ) )
 					    && ! ( nextTokenType == EQUAL && lastTokenWas( OR ) )
-					    && nextTokenType != NOT ) {
+					    && nextTokenType != NOT
+					    && !keywordsThatAreValues.contains( nextTokenType ) ) {
 						// right side of an operator token like foo == switch
 						// but NOT CONTAINS and EQUAL TO are fine
 						// also leave 5 AND NOT false alone
 						// also leave greater than or equal to alone
+						// Ignore foo = true
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because last token was the end of an operator" );
 
@@ -464,7 +472,8 @@ public class CFLexerCustom extends CFLexer {
 					    && ! ( inSwitchBody
 					        && ( ( ( nextTokenType == IF || nextTokenType == PREFIXEDIDENTIFIER || nextTokenType == SWITCH ) && nextNonWhiteSpaceCharIs( '(' ) )
 					            || ( nextTokenType == TRY && nextNonWhiteSpaceCharIs( '{' ) )
-					            || ( nextTokenType == INCLUDE || nextTokenType == THROW || nextTokenType == VAR || nextTokenType == DEFAULT ) ) ) ) {
+					            || ( nextTokenType == INCLUDE || nextTokenType == THROW || nextTokenType == VAR || nextTokenType == DEFAULT
+					                || nextTokenType == CONTINUE ) ) ) ) {
 						// preceeded by a :
 						// but myLabel : for() is fine
 						// and myLabel : while()
@@ -472,6 +481,7 @@ public class CFLexerCustom extends CFLexer {
 						// and not case: if()
 						// but not case: try {} catch(){}
 						// and not case: include "foo"
+						// and not case: continue
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because last token was a colon" );
 						isIdentifier = true;

@@ -185,6 +185,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	/**
 	 * Create an Array from a Java array of boxed objects
 	 * This will wrap the original array and not copy it.
+	 * The resulting array will be unmodifiable!
 	 *
 	 * @param arr The array to create the Array from
 	 */

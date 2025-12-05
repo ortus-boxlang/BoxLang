@@ -87,8 +87,8 @@ public class DataSourceTest {
 	void testDerbyConnection() throws SQLException {
 		DataSource derbyDB = JDBCTestUtils.buildDatasource( "funkyDB", new Struct() );
 
-		try ( Connection conn = derbyDB.getConnection() ) {
-			assertThat( conn ).isInstanceOf( Connection.class );
+		try ( BoxConnection conn = derbyDB.getBoxConnection() ) {
+			assertThat( conn ).isInstanceOf( BoxConnection.class );
 		}
 		derbyDB.shutdown();
 	}
@@ -102,7 +102,7 @@ public class DataSourceTest {
 		        "driver", "derby",
 		        "connectionString", "jdbc:derby:src/test/resources/tmp/DataSourceTests/DataSourceTest;create=true"
 		    ) );
-		try ( Connection conn = myDataSource.getConnection() ) {
+		try ( BoxConnection conn = myDataSource.getBoxConnection() ) {
 			assertThat( conn ).isInstanceOf( Connection.class );
 		}
 		myDataSource.shutdown();
@@ -112,7 +112,7 @@ public class DataSourceTest {
 	@Test
 	void testDataSourceClose() throws SQLException {
 
-		DataSource	myDataSource	= DataSource.fromStruct(
+		DataSource		myDataSource	= DataSource.fromStruct(
 		    Key.of( "funkyDB" ),
 		    Struct.of(
 		        "driver", "derby",
@@ -120,8 +120,8 @@ public class DataSourceTest {
 		        "password", "password",
 		        "connectionString", "jdbc:derby:src/test/resources/tmp/DataSourceTests/DataSourceTest;create=true"
 		    ) );
-		Connection	conn			= myDataSource.getConnection();
-		assertThat( conn ).isInstanceOf( Connection.class );
+		BoxConnection	conn			= myDataSource.getBoxConnection();
+		assertThat( conn ).isInstanceOf( BoxConnection.class );
 
 		myDataSource.shutdown();
 		assertThat( conn.isValid( 5 ) ).isFalse();
@@ -130,7 +130,7 @@ public class DataSourceTest {
 	@DisplayName( "It can execute simple queries without providing a connection" )
 	@Test
 	void testDataSourceExecute() {
-		try ( Connection conn = datasource.getConnection() ) {
+		try ( BoxConnection conn = datasource.getBoxConnection() ) {
 			assertDoesNotThrow( () -> {
 				ExecutedQuery executedQuery = datasource.execute( "SELECT * FROM developers", conn, context );
 				assertEquals( 4, executedQuery.getRecordCount() );
@@ -143,7 +143,7 @@ public class DataSourceTest {
 	@DisplayName( "It can execute queries with parameters without providing a connection" )
 	@Test
 	void testDataSourceWithParamsExecute() {
-		try ( Connection conn = datasource.getConnection() ) {
+		try ( BoxConnection conn = datasource.getBoxConnection() ) {
 			assertDoesNotThrow( () -> {
 				ExecutedQuery executedQuery = datasource.execute(
 				    "SELECT * FROM developers WHERE name = ?",
@@ -166,7 +166,7 @@ public class DataSourceTest {
 	@DisplayName( "It can execute queries with parameters without providing a connection" )
 	@Test
 	void testDataSourceWithNamedParamsExecute() {
-		try ( Connection conn = datasource.getConnection() ) {
+		try ( BoxConnection conn = datasource.getBoxConnection() ) {
 			assertDoesNotThrow( () -> {
 				ExecutedQuery executedQuery = datasource.execute(
 				    "SELECT * FROM developers WHERE name = :name",
@@ -189,7 +189,7 @@ public class DataSourceTest {
 	@DisplayName( "It throws an exception if a named param is missing" )
 	@Test
 	void testDatasourceWithMissingNamedParams() {
-		try ( Connection conn = datasource.getConnection() ) {
+		try ( BoxConnection conn = datasource.getBoxConnection() ) {
 			DatabaseException exception = assertThrows( DatabaseException.class, () -> {
 				datasource.execute(
 				    "SELECT * FROM developers WHERE name = :name",

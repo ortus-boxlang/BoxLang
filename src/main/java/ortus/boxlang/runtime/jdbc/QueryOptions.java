@@ -62,7 +62,7 @@ public class QueryOptions {
 	/**
 	 * The datasource setting - purposely left as an Object to allow to support both datasource string names and on-the-fly datasource struct configurations.
 	 */
-	public final Object				datasource;
+	public Object					datasource;
 
 	/**
 	 * The result variable name
@@ -190,6 +190,13 @@ public class QueryOptions {
 		this.dbtype		= options.getAsString( Key.dbtype );
 
 		determineReturnType();
+
+		// If there is a username/password override along side a struct defintion, override those values in the struct
+		if ( wantsUsernameAndPassword() && this.datasource instanceof IStruct dStruct ) {
+			dStruct.put( Key.username, this.username );
+			dStruct.put( Key.password, this.password );
+		}
+
 	}
 
 	/**
@@ -236,7 +243,7 @@ public class QueryOptions {
 	 * @return True if the query should use a username and password to connect to the datasource, false otherwise.
 	 */
 	public boolean wantsUsernameAndPassword() {
-		return this.username != null;
+		return this.username != null && !this.username.isEmpty();
 	}
 
 	public boolean isQoQ() {

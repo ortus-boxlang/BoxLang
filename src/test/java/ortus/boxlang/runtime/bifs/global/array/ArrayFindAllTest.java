@@ -175,17 +175,17 @@ public class ArrayFindAllTest {
 	public void testMatchAll() {
 		instance.executeSource(
 		    """
-		        nums = [ 1, [3], true, { test: true }, "1", 1.0, 4, "1.0" ];
-		        result = nums.findAll( 1 );
-		    """,
+		    // Note, in compat mode booleans will cast to numbers
+		           nums = [ 1, [3], true, { test: true }, "1", 1.0, 4, "1.0" ];
+		           result = nums.findAll( 1 );
+		       """,
 		    context );
 		Array found = ( Array ) variables.get( result );
-		assertThat( found.size() ).isEqualTo( 5 );
+		assertThat( found.size() ).isEqualTo( 4 );
 		assertThat( found.get( 0 ) ).isEqualTo( 1 );
-		assertThat( found.get( 1 ) ).isEqualTo( 3 );
-		assertThat( found.get( 2 ) ).isEqualTo( 5 );
-		assertThat( found.get( 3 ) ).isEqualTo( 6 );
-		assertThat( found.get( 4 ) ).isEqualTo( 8 );
+		assertThat( found.get( 1 ) ).isEqualTo( 5 );
+		assertThat( found.get( 2 ) ).isEqualTo( 6 );
+		assertThat( found.get( 3 ) ).isEqualTo( 8 );
 	}
 
 	@DisplayName( "It should match every number variation when compared with an int" )
@@ -193,12 +193,13 @@ public class ArrayFindAllTest {
 	public void testMatchNumberVariationsInt() {
 		instance.executeSource(
 		    """
-		        nums = [ 1, "1", 1.0, "1.0", true, "true", "yes" ];
-		        result = nums.findAll( 1 );
-		    """,
+		    // Note, in compat mode booleans will cast to numbers
+		           nums = [ 1, "1", 1.0, "1.0", true, "true", "yes" ];
+		           result = nums.findAll( 1 );
+		       """,
 		    context );
 		Array found = ( Array ) variables.get( result );
-		assertThat( found.size() ).isEqualTo( 7 );
+		assertThat( found.size() ).isEqualTo( 4 );
 	}
 
 	@DisplayName( "It should match every number variation when compared with a string int" )
@@ -206,12 +207,13 @@ public class ArrayFindAllTest {
 	public void testMatchNumberVariationsStringInt() {
 		instance.executeSource(
 		    """
+		    // Note, in compat mode booleans will cast to numbers
 		        nums = [ 1, "1", 1.0, "1.0", true, "true", "yes" ];
 		        result = nums.findAll( "1" );
 		    """,
 		    context );
 		Array found = ( Array ) variables.get( result );
-		assertThat( found.size() ).isEqualTo( 7 );
+		assertThat( found.size() ).isEqualTo( 4 );
 	}
 
 	@DisplayName( "It should match every number variation when compared with a double" )
@@ -219,12 +221,13 @@ public class ArrayFindAllTest {
 	public void testMatchNumberVariationsDouble() {
 		instance.executeSource(
 		    """
-		        nums = [ 1, "1", 1.0, "1.0", true, "true", "yes" ];
-		        result = nums.findAll( 1.0 );
-		    """,
+		    // Note, in compat mode booleans will cast to numbers
+		           nums = [ 1, "1", 1.0, "1.0", true, "true", "yes" ];
+		           result = nums.findAll( 1.0 );
+		       """,
 		    context );
 		Array found = ( Array ) variables.get( result );
-		assertThat( found.size() ).isEqualTo( 7 );
+		assertThat( found.size() ).isEqualTo( 4 );
 	}
 
 	@DisplayName( "It should match every number variation when compared with a string double" )
@@ -237,7 +240,7 @@ public class ArrayFindAllTest {
 		    """,
 		    context );
 		Array found = ( Array ) variables.get( result );
-		assertThat( found.size() ).isEqualTo( 7 );
+		assertThat( found.size() ).isEqualTo( 4 );
 	}
 
 	@DisplayName( "It should match every number variation when compared with a boolean" )
@@ -245,12 +248,25 @@ public class ArrayFindAllTest {
 	public void testMatchNumberVariationsBoolean() {
 		instance.executeSource(
 		    """
-		        nums = [ 1, "1", 1.0, "1.0", true, "true", "yes" ];
-		        result = nums.findAll( true );
-		    """,
+		    // Note, in compat mode booleans will cast to numbers
+		             nums = [ 1, "1", 1.0, "1.0", true, "true", "yes" ];
+		             result = nums.findAll( true );
+		       println( result );
+		         """,
 		    context );
 		Array found = ( Array ) variables.get( result );
-		assertThat( found.size() ).isEqualTo( 7 );
+		assertThat( found.size() ).isEqualTo( 3 );
+	}
+
+	@DisplayName( "It should match every number variation when compared with a boolean" )
+	@Test
+	public void testMatchNumsdberVariationsBoolean() {
+		instance.executeSource(
+		    """
+		    println( 1 == true );
+		    println( "1" == true );
+		      """,
+		    context );
 	}
 
 	@DisplayName( "It should match every number variation when compared with a string boolean" )
@@ -258,12 +274,13 @@ public class ArrayFindAllTest {
 	public void testMatchNumberVariationsStringBoolean() {
 		instance.executeSource(
 		    """
-		        nums = [ 1, "1", 1.0, "1.0", true, "true", "yes" ];
-		        result = nums.findAll( "true" );
-		    """,
+		    // Note, in compat mode booleans will cast to numbers
+		           nums = [ 1, "1", 1.0, "1.0", true, "true", "yes" ];
+		           result = nums.findAll( "true" );
+		       """,
 		    context );
 		Array found = ( Array ) variables.get( result );
-		assertThat( found.size() ).isEqualTo( 7 );
+		assertThat( found.size() ).isEqualTo( 3 );
 	}
 
 	@DisplayName( "It should match every number variation when compared with yes" )
@@ -271,12 +288,13 @@ public class ArrayFindAllTest {
 	public void testMatchNumberVariationsYes() {
 		instance.executeSource(
 		    """
-		        nums = [ 1, "1", 1.0, "1.0", true, "true", "yes" ];
-		        result = nums.findAll( "yes" );
-		    """,
+		    // Note, in compat mode booleans will cast to numbers
+		           nums = [ 1, "1", 1.0, "1.0", true, "true", "yes" ];
+		           result = nums.findAll( "yes" );
+		       """,
 		    context );
 		Array found = ( Array ) variables.get( result );
-		assertThat( found.size() ).isEqualTo( 7 );
+		assertThat( found.size() ).isEqualTo( 3 );
 	}
 
 	@DisplayName( "It should match using a provided UDF" )

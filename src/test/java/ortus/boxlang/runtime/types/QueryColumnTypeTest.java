@@ -33,9 +33,9 @@ public class QueryColumnTypeTest {
 		assertEquals( QueryColumnType.BIGINT, QueryColumnType.fromString( "BIGINT" ) );
 		assertEquals( QueryColumnType.BINARY, QueryColumnType.fromString( "BINARY" ) );
 		assertEquals( QueryColumnType.BIT, QueryColumnType.fromString( "BIT" ) );
-		assertEquals( QueryColumnType.OBJECT, QueryColumnType.fromString( "BLOB" ) );
+		assertEquals( QueryColumnType.BLOB, QueryColumnType.fromString( "BLOB" ) );
 		assertEquals( QueryColumnType.CHAR, QueryColumnType.fromString( "CHAR" ) );
-		assertEquals( QueryColumnType.OBJECT, QueryColumnType.fromString( "CLOB" ) );
+		assertEquals( QueryColumnType.CLOB, QueryColumnType.fromString( "CLOB" ) );
 		assertEquals( QueryColumnType.DATE, QueryColumnType.fromString( "DATE" ) );
 		assertEquals( QueryColumnType.DECIMAL, QueryColumnType.fromString( "DECIMAL" ) );
 		assertEquals( QueryColumnType.OTHER, QueryColumnType.fromString( "DISTINCT" ) );
@@ -49,13 +49,13 @@ public class QueryColumnTypeTest {
 		assertEquals( QueryColumnType.DOUBLE, QueryColumnType.fromString( "MONEY" ) );
 		assertEquals( QueryColumnType.DOUBLE, QueryColumnType.fromString( "MONEY4" ) );
 		assertEquals( QueryColumnType.CHAR, QueryColumnType.fromString( "NCHAR" ) );
-		assertEquals( QueryColumnType.OBJECT, QueryColumnType.fromString( "NCLOB" ) );
+		assertEquals( QueryColumnType.CLOB, QueryColumnType.fromString( "NCLOB" ) );
 		assertEquals( QueryColumnType.NULL, QueryColumnType.fromString( "NULL" ) );
 		assertEquals( QueryColumnType.DOUBLE, QueryColumnType.fromString( "NUMERIC" ) );
 		assertEquals( QueryColumnType.VARCHAR, QueryColumnType.fromString( "NVARCHAR" ) );
 		assertEquals( QueryColumnType.OTHER, QueryColumnType.fromString( "OTHER" ) );
 		assertEquals( QueryColumnType.DOUBLE, QueryColumnType.fromString( "REAL" ) );
-		assertEquals( QueryColumnType.OTHER, QueryColumnType.fromString( "REFCURSOR" ) );
+		assertEquals( QueryColumnType.REFCURSOR, QueryColumnType.fromString( "REFCURSOR" ) );
 		assertEquals( QueryColumnType.INTEGER, QueryColumnType.fromString( "SMALLINT" ) );
 		assertEquals( QueryColumnType.OTHER, QueryColumnType.fromString( "STRUCT" ) );
 		assertEquals( QueryColumnType.OTHER, QueryColumnType.fromString( "SQLXML" ) );

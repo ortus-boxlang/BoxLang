@@ -131,6 +131,7 @@ import ortus.boxlang.parser.antlr.CFGrammar.SimpleStatementContext;
 import ortus.boxlang.parser.antlr.CFGrammar.StatementBlockContext;
 import ortus.boxlang.parser.antlr.CFGrammar.StatementContext;
 import ortus.boxlang.parser.antlr.CFGrammar.StatementOrBlockContext;
+import ortus.boxlang.parser.antlr.CFGrammar.StatementOrBlockExpressionContext;
 import ortus.boxlang.parser.antlr.CFGrammar.StaticInitializerContext;
 import ortus.boxlang.parser.antlr.CFGrammar.StructExpressionContext;
 import ortus.boxlang.parser.antlr.CFGrammar.SwitchContext;
@@ -491,6 +492,14 @@ public class CFVisitor extends CFGrammarBaseVisitor<BoxNode> {
 		BoxExpression	value	= Optional.ofNullable( ctx.expression() ).map( expression -> expression.accept( expressionVisitor ) ).orElse( null );
 
 		return new BoxAnnotation( name, value, pos, src );
+	}
+
+	@Override
+	public BoxNode visitStatementOrBlockExpression( StatementOrBlockExpressionContext ctx ) {
+		if ( ctx.emptyStatementBlock() != null ) {
+			return ctx.emptyStatementBlock().accept( this );
+		}
+		return ctx.statement().accept( this );
 	}
 
 	@Override

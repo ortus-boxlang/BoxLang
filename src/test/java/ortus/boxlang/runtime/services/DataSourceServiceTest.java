@@ -21,7 +21,6 @@ package ortus.boxlang.runtime.services;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -30,6 +29,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.jdbc.BoxConnection;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -62,7 +62,7 @@ public class DataSourceServiceTest {
 		    "driver", "other",
 		    "connectionString", "jdbc:foobar:myDB"
 		);
-		assertThrows( BoxRuntimeException.class, () -> service.register( Key.of( "testIt" ), properties ) );
+		assertThrows( BoxRuntimeException.class, () -> service.register( Key.of( "testIt" ), properties ).beginPooling() );
 	}
 
 	@DisplayName( "It throws on invalid datasource when no driver is passed" )
@@ -71,7 +71,7 @@ public class DataSourceServiceTest {
 		IStruct properties = Struct.of(
 		    "connectionString", "jdbc:foobar:myDB"
 		);
-		assertThrows( BoxRuntimeException.class, () -> service.register( Key.of( "Invalid" ), properties ) );
+		assertThrows( BoxRuntimeException.class, () -> service.register( Key.of( "Invalid" ), properties ).beginPooling() );
 	}
 
 	@DisplayName( "It can set and get datasources with normal configurations" )
@@ -83,7 +83,7 @@ public class DataSourceServiceTest {
 		        "driver", "derby",
 		        "connectionString", "jdbc:derby:memory:DataSourceServiceTest;create=true"
 		    )
-		);
+		).beginPooling();
 
 		assertThat( service.get( dsn.getUniqueName() ) ).isInstanceOf( DataSource.class );
 		assertThat( dsn.equals( dsn ) ).isTrue();
@@ -98,7 +98,7 @@ public class DataSourceServiceTest {
 		        "driver", "derby",
 		        "connectionString", "jdbc:derby:memory:DataSourceServiceTest;create=true"
 		    )
-		);
+		).beginPooling();
 
 		assertThat( service.getNames() ).asList().containsExactly( dsn.getUniqueName().getName() );
 	}
@@ -118,9 +118,9 @@ public class DataSourceServiceTest {
 		        "driver", "derby",
 		        "connectionString", "jdbc:derby:memory:DataSourceServiceTest;create=true"
 		    )
-		);
+		).beginPooling();
 
-		try ( Connection conn = dsn.getConnection() ) {
+		try ( BoxConnection conn = dsn.getBoxConnection() ) {
 			assertThat( service.remove( dsn.getUniqueName() ) ).isTrue();
 			assertThat( conn.isValid( 1 ) ).isFalse();
 		}
@@ -136,11 +136,11 @@ public class DataSourceServiceTest {
 		        "driver", "derby",
 		        "connectionString", "jdbc:derby:memory:DataSourceServiceTest;create=true"
 		    )
-		);
+		).beginPooling();
 
 		assertThat( service.has( dsn.getUniqueName() ) ).isTrue();
-		try ( Connection connection = dsn.getConnection() ) {
-			assertThat( connection ).isInstanceOf( Connection.class );
+		try ( BoxConnection connection = dsn.getBoxConnection() ) {
+			assertThat( connection ).isInstanceOf( BoxConnection.class );
 
 			service.clear();
 			assertThat( service.has( dsn.getUniqueName() ) ).isFalse();

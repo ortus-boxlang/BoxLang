@@ -27,6 +27,7 @@
   - `ast/` - Abstract Syntax Tree node definitions
   - `asmboxpiler/` - ASM-based bytecode compilation
   - `javaboxpiler/` - Java source code generation
+  - `noopboxpiler/` - No-op compiler for interpretation mode
 
 - **`java/ortus/boxlang/runtime/`** - Core runtime implementation:
   - `BoxRuntime.java` / `BoxRunner.java` - Runtime initialization and CLI entry point
@@ -93,6 +94,13 @@
   - Constants: UPPER_SNAKE_CASE
   - Packages: lowercase dot-separated
 
+- **Instance Field Access:** ALWAYS use the `this` prefix when accessing instance fields/properties
+  - Use `this.fieldName` instead of just `fieldName`
+  - This clearly distinguishes instance fields from local variables and parameters
+  - Example: `this.runtime = runtime;` not `runtime = runtime;`
+  - Example: `this.config.get(key)` not `config.get(key)`
+  - Makes code more readable and prevents ambiguity
+
 ## Key Developer Workflows
 
 - **Development:** Use IntelliJ IDEA or VSCode with the BoxLang extension for code editing and navigation.
@@ -112,6 +120,13 @@
   - Use tabs (not spaces) for indentation
   - Max line length: 150 characters
   - Non-negotiable for all contributions and changes
+
+- **Performance Patterns:**
+  - **Pre-compute hashCode for immutable objects:** If a class is immutable (all fields are final and never change), pre-compute the hashCode in the constructor and store it in a `final int hashCode` field. This avoids repeated computation when the object is used in hash-based collections (HashMap, HashSet, etc.). The `hashCode()` method should simply return this cached field.
+    - When: All immutable value objects (classes with only final fields)
+    - How: Add `private final int hashCode;` field, create `computeHashCode()` private method using standard pattern (`31 * result + field.hashCode()`), call in constructor
+    - Example: See `ortus.boxlang.runtime.types.NameValuePair` for reference implementation
+    - Performance rationale: Avoids O(n) hashCode computation on every HashMap/HashSet operation, especially beneficial for objects frequently used as keys
 
 - **Services:** Implement `IService` and register in `BoxRuntime` for global services.
 - **Components:** Annotate with `@BoxComponent` and place in `runtime/components/` for auto-discovery.
@@ -380,7 +395,7 @@ BoxLangLogger logger = this.getLogger();
    ```java
    // GOOD - message only constructed if logging level is enabled
    logger.debug( "User {} logged in from {}", username, ipAddress );
-   
+
    // BAD - string concatenation happens even if debug is disabled
    logger.debug( "User " + username + " logged in from " + ipAddress );
    ```
@@ -429,7 +444,7 @@ Logging is configured via `boxlang.json`:
 ```java
 public class MyService implements IService {
     private BoxLangLogger logger;
-    
+
     @Override
     public void onStartup( BoxRuntime runtime ) {
         this.logger = LoggingService.getInstance().getLogger( "myservice" );
@@ -442,9 +457,9 @@ public class MyService implements IService {
 ```java
 @BoxComponent
 public class MyComponent {
-    private static final BoxLangLogger logger = 
+    private static final BoxLangLogger logger =
         LoggingService.getInstance().getLogger( "components.mycomponent" );
-    
+
     public void execute() {
         logger.debug( "Executing component logic" );
         try {
@@ -461,7 +476,7 @@ public class MyComponent {
 ```java
 public void processRequest( IBoxContext context ) {
     BoxLangLogger logger = context.getLogger();
-    logger.info( "Processing request for application: {}", 
+    logger.info( "Processing request for application: {}",
                  context.getApplicationName() );
 }
 ```

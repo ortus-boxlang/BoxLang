@@ -100,6 +100,21 @@ public class DatasourceService extends BaseService {
 		// Register the default JDBC Driver
 		registerDriver( new ortus.boxlang.runtime.jdbc.drivers.GenericJDBCDriver() );
 
+		// Register all datasources from the configuration
+		// If the registration fails, we log a warning and skip it, leaving it to lazy loading
+		runtime.getConfiguration().datasources.values().forEach( config -> {
+			var targetConfig = ( DatasourceConfig ) config;
+			try {
+				register( targetConfig );
+			} catch ( Exception e ) {
+				logger.warn( "Error registering datasource on startup, skipping and leaving to lazy loading [{}]: {}",
+				    targetConfig.name.getName(),
+				    e.getMessage(),
+				    e
+				);
+			}
+		} );
+
 		// Announce it
 		announce(
 		    BoxEvent.ON_DATASOURCE_SERVICE_STARTUP,
@@ -169,6 +184,15 @@ public class DatasourceService extends BaseService {
 	}
 
 	/**
+	 * Get the JDBC driver, returning the generic driver if not found
+	 *
+	 * @return The JDBC driver
+	 */
+	public IJDBCDriver getDriverOrGeneric( Key name ) {
+		return this.jdbcDrivers.getOrDefault( name, this.jdbcDrivers.get( Key.generic ) );
+	}
+
+	/**
 	 * Has a driver been registered?
 	 *
 	 * @param name The name of the driver
@@ -229,7 +253,7 @@ public class DatasourceService extends BaseService {
 	 * @return A new or already registered datasource
 	 */
 	public DataSource register( DatasourceConfig config ) {
-		return this.datasources.computeIfAbsent( config.getUniqueName(), key -> new DataSource( config ) );
+		return this.datasources.computeIfAbsent( config.getUniqueName(), key -> new DataSource( config, false ) );
 	}
 
 	/**

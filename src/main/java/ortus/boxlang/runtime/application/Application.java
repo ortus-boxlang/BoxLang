@@ -22,10 +22,13 @@ import java.math.BigDecimal;
 import java.net.URL;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Future;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.global.scheduler.SchedulerStart;
@@ -46,11 +49,15 @@ import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.ApplicationService;
+import ortus.boxlang.runtime.services.AsyncService;
+import ortus.boxlang.runtime.services.AsyncService.ExecutorType;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.services.SchedulerService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.DateTimeHelper;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 
 /**
@@ -70,9 +77,19 @@ public class Application {
 	private Key								name;
 
 	/**
-	 * The timestamp when the runtime was started
+	 * The timestamp when the application was started
 	 */
 	private Instant							startTime;
+
+	/**
+	 * The duration of the application before it times out
+	 */
+	Duration								appDuration						= Duration.ZERO;
+
+	/**
+	 * The timestamp when the application was last accessed
+	 */
+	private Instant							lastAccessTime;
 
 	/**
 	 * Bit that determines if the application is running or not. Accesible by multiple threads
@@ -88,6 +105,21 @@ public class Application {
 	 * The cache service helper
 	 */
 	protected CacheService					cacheService					= BoxRuntime.getInstance().getCacheService();
+
+	/**
+	 * The async service
+	 */
+	protected AsyncService					asyncService					= BoxRuntime.getInstance().getAsyncService();
+
+	/**
+	 * The Application service
+	 */
+	protected ApplicationService			applicationService				= BoxRuntime.getInstance().getApplicationService();
+
+	/**
+	 * Scheduler Service
+	 */
+	protected SchedulerService				schedulerService				= BoxRuntime.getInstance().getSchedulerService();
 
 	/**
 	 * The sessions for this application
@@ -113,6 +145,16 @@ public class Application {
 	 * Static strings for comparison
 	 */
 	private static final String				SESSION_STORAGE_MEMORY			= "memory";
+
+	/**
+	 * The task which checks for application timeout. We keep a reference here so we can cancel on forced shutdown.
+	 */
+	private Future<?>						expiringFuture;
+
+	/**
+	 * Started schedulers
+	 */
+	private List<Key>						startedSchedulers				= new ArrayList<>();
 
 	/**
 	 * Default session cache properties
@@ -313,13 +355,78 @@ public class Application {
 			// Startup the schedulers so the application can use them
 			startupAppSchedulers( context.getRequestContext() );
 
+			calculateAppDuration();
+
+			// Start up expiry task
+			startupExpiryTask();
+
 			// Record startup
-			this.startTime	= Instant.now();
-			this.started	= true;
+			this.startTime		= Instant.now();
+			this.lastAccessTime	= this.startTime;
+			this.started		= true;
 		}
 
 		logger.debug( "Application.start() - {}", this.name );
 		return this;
+	}
+
+	/**
+	 * Startup the application expiry task. If there is already an expiry task running, it will not start another.
+	 */
+	private void startupExpiryTask() {
+		// App never expires, don't bother
+		if ( appDuration.isZero() ) {
+			return;
+		}
+
+		// Already running. Prevent doubling up threads.
+		if ( this.expiringFuture != null && !this.expiringFuture.isDone() ) {
+			return;
+		}
+
+		// wait for timeout minus last access instant
+		Long secondsBeforeTimeout;
+		// If app has not been accessed (still starting up), then use full duration
+		if ( lastAccessTime == null ) {
+			secondsBeforeTimeout = appDuration.toSeconds();
+		} else {
+			// Otherwise, only sleep the remaining time
+			Duration timeSinceLastAccess = Duration.between( lastAccessTime, Instant.now() );
+			secondsBeforeTimeout = appDuration.toSeconds() - timeSinceLastAccess.toSeconds();
+		}
+
+		// Use a virtual thread pool, so no platform threads will be harmed while our task is sleeping
+		this.expiringFuture = asyncService.newExecutor( "application-timeouts", ExecutorType.VIRTUAL )
+		    .submit( () -> {
+			    try {
+				    // At the exact moment of expiry...
+				    Thread.sleep( secondsBeforeTimeout * 1000 );
+				    // ... wake up and check if we have actually expired
+				    checkExpiry();
+			    } catch ( InterruptedException e ) {
+				    // Task was cancelled
+			    } finally {
+				    // When the task is done for any reason, we clear it
+				    this.expiringFuture = null;
+			    }
+		    } );
+	}
+
+	/**
+	 * Check if the application has expired, and if so, shutdown.
+	 * If not (because the last access time was updated), restart the expiry task to check again later.
+	 */
+	private void checkExpiry() {
+		if ( isExpired() ) {
+			logger.info( "Application [{}] has expired after [{}]. Shutting down.", getName(), appDuration );
+			// Remove it, will be recreated on next access
+			applicationService.removeApplication( getName() );
+			// Shut it down. force=false means it won't try to cancel the expiry thread (which we're currenty running inside of!)
+			shutdown( false );
+		} else {
+			// Restart the expiry task
+			startupExpiryTask();
+		}
 	}
 
 	/**
@@ -376,8 +483,6 @@ public class Application {
 	 * @param requestContext The request context
 	 */
 	public void startupAppSchedulers( RequestBoxContext requestContext ) {
-		SchedulerService schedulerService = BoxRuntime.getInstance().getSchedulerService();
-
 		// Get the schedulers from the application settings
 		ArrayCaster
 		    .attempt( requestContext.getConfigItems( Key.applicationSettings, Key.schedulers ) )
@@ -390,6 +495,7 @@ public class Application {
 				    // If we don't have it registered by name, then register it
 				    if ( !schedulerService.hasScheduler( schedulerNameKey ) ) {
 					    SchedulerStart.startScheduler( requestContext, schedulerPath, schedulerName, false );
+					    startedSchedulers.add( schedulerNameKey );
 				    }
 			    }
 		    } );
@@ -492,40 +598,21 @@ public class Application {
 	 * @return The session object
 	 */
 	public Session getOrCreateSession( Key ID, RequestBoxContext context ) {
-		Duration	timeoutDuration	= null;
-		Object		sessionTimeout	= context.getConfigItems( Key.applicationSettings, Key.sessionTimeout );
-		String		cacheKey		= Session.buildCacheKey( ID, this.name );
-
-		// Duration is the default, but if not, we will use the number as fractional days
-		// Which is what the cache providers expect
-		if ( sessionTimeout instanceof Duration castedTimeout ) {
-			timeoutDuration = castedTimeout;
-		} else {
-			if ( sessionTimeout instanceof BigDecimal castDecimal ) {
-				BigDecimal timeoutMinutes = castDecimal.multiply( BigDecimalCaster.cast( 1440 ) );
-				timeoutDuration = Duration.ofMinutes( timeoutMinutes.longValue() );
-			} else if ( sessionTimeout instanceof String && StringCaster.cast( sessionTimeout ).contains( "." ) ) {
-				BigDecimal	castDecimal		= BigDecimalCaster.cast( sessionTimeout );
-				BigDecimal	timeoutMinutes	= castDecimal.multiply( BigDecimalCaster.cast( 1440 ) );
-				timeoutDuration = Duration.ofMinutes( timeoutMinutes.longValue() );
-			} else {
-				timeoutDuration = Duration.ofDays( LongCaster.cast( sessionTimeout ) );
-			}
-		}
-		// Dumb Java! It needs a final variable to use in the lambda
-		final Duration finalTimeoutDuration = timeoutDuration;
+		Object			sessionTimeout	= context.getConfigItems( Key.applicationSettings, Key.sessionTimeout );
+		final Duration	timeoutDuration	= DateTimeHelper.convertTimeoutToDuration( sessionTimeout );
+		String			cacheKey		= Session.buildCacheKey( ID, this.name );
 		// Make sure our created duration is represented in the application metadata
 		context.getParentOfType( RequestBoxContext.class )
 		    .getApplicationListener()
 		    .getSettings()
-		    .put( Key.sessionTimeout, finalTimeoutDuration );
+		    .put( Key.sessionTimeout, timeoutDuration );
 
 		// logger.debug( "**** getOrCreateSession {} Timeout {} ", ID, timeoutDuration );
 
 		// Get or create the session
 		Session targetSession = ( Session ) this.sessionsCache.getOrSet(
 		    cacheKey,
-		    () -> new Session( ID, this, finalTimeoutDuration ),
+		    () -> new Session( ID, this, timeoutDuration ),
 		    timeoutDuration,
 		    timeoutDuration
 		);
@@ -535,11 +622,12 @@ public class Application {
 			// If not, remove it
 			this.sessionsCache.clear( cacheKey );
 			// And create a new one
-			targetSession = new Session( ID, this, finalTimeoutDuration );
+			targetSession = new Session( ID, this, timeoutDuration );
 			this.sessionsCache.set( cacheKey, targetSession, timeoutDuration, timeoutDuration );
 		}
 
 		return targetSession;
+
 	}
 
 	/**
@@ -586,45 +674,67 @@ public class Application {
 	}
 
 	/**
+	 * Get the last access time of the application.
+	 *
+	 * @return the application last access time
+	 */
+	public Instant getLastAccessTime() {
+		return this.lastAccessTime;
+	}
+
+	/**
+	 * Update the last access time of the application to the current time.
+	 */
+	public Application updateLastAccessTime() {
+		this.lastAccessTime = Instant.now();
+		return this;
+	}
+
+	/**
+	 * Calculate the application duration from the application timeout setting
+	 */
+	private void calculateAppDuration() {
+		Object appTimeout = this.startingListener.getSettings().get( Key.applicationTimeout );
+		// Duration is the default, but if not, we will use the number as minutes
+		// Which is what the cache providers expect
+		if ( appTimeout instanceof Duration castedTimeout ) {
+			this.appDuration = castedTimeout;
+		} else {
+			if ( appTimeout instanceof BigDecimal castDecimal ) {
+				BigDecimal timeoutSeconds = castDecimal.multiply( BigDecimalCaster.cast( 60 ) );
+				this.appDuration = Duration.ofSeconds( timeoutSeconds.longValue() );
+			} else if ( appTimeout instanceof String && StringCaster.cast( appTimeout ).contains( "." ) ) {
+				BigDecimal	castDecimal		= BigDecimalCaster.cast( appTimeout );
+				BigDecimal	timeoutSeconds	= castDecimal.multiply( BigDecimalCaster.cast( 60 ) );
+				this.appDuration = Duration.ofSeconds( timeoutSeconds.longValue() );
+			} else {
+				this.appDuration = Duration.ofMinutes( LongCaster.cast( appTimeout ) );
+			}
+		}
+	}
+
+	/**
 	 * Has this application expired.
-	 * We look at the application start time and the application timeout to determine if it has expired
+	 * We look at the application last access time and the application timeout to determine if it has expired
+	 * Application last access time is updated every time this application is used on a new request.
 	 *
 	 * @return True if the application has expired, false otherwise
 	 */
 	public boolean isExpired() {
-		Object		appTimeout	= this.startingListener.getSettings().get( Key.applicationTimeout );
-		Duration	appDuration	= null;
-		// Duration is the default, but if not, we will use the number as minutes
-		// Which is what the cache providers expect
-		if ( appTimeout instanceof Duration castedTimeout ) {
-			appDuration = castedTimeout;
-		} else {
-			if ( appTimeout instanceof BigDecimal castDecimal ) {
-				BigDecimal timeoutSeconds = castDecimal.multiply( BigDecimalCaster.cast( 60 ) );
-				appDuration = Duration.ofSeconds( timeoutSeconds.longValue() );
-			} else if ( appTimeout instanceof String && StringCaster.cast( appTimeout ).contains( "." ) ) {
-				BigDecimal	castDecimal		= BigDecimalCaster.cast( appTimeout );
-				BigDecimal	timeoutSeconds	= castDecimal.multiply( BigDecimalCaster.cast( 60 ) );
-				appDuration = Duration.ofSeconds( timeoutSeconds.longValue() );
-			} else {
-				appDuration = Duration.ofMinutes( LongCaster.cast( appTimeout ) );
-			}
-		}
-
 		// If the duration is zero, then it never expires
-		if ( appDuration.isZero() ) {
+		if ( this.appDuration.isZero() ) {
 			return false;
 		}
 
 		// App is still starting up
-		if ( this.startTime == null ) {
+		if ( this.lastAccessTime == null ) {
 			return false;
 		}
 
 		// If the start time + the duration is before now, then it's expired
 		// Example: 10:00 + 1 hour = 11:00, now is 11:01, so it's expired : true
 		// Example: 10:00 + 1 hour = 11:00, now is 10:59, so it's not expired : false
-		return this.startTime.plus( appDuration ).isBefore( Instant.now() );
+		return this.lastAccessTime.plus( this.appDuration ).isBefore( Instant.now() );
 	}
 
 	/**
@@ -661,10 +771,23 @@ public class Application {
 	 * @param force If true, forces the shutdown of the scheduler
 	 */
 	public synchronized void shutdown( boolean force ) {
-		// If the app has already been shutdown, don't do it again4
+		// If the app has already been shutdown, don't do it again
 		if ( !hasStarted() ) {
 			logger.debug( "Can't shutdown application [{}] as it's already shutdown", this.name );
 			return;
+		}
+
+		// Cancel the expiry task if forced
+		if ( force ) {
+			if ( this.expiringFuture != null ) {
+				this.expiringFuture.cancel( true );
+			}
+
+			// Shutdown all started schedulers
+			startedSchedulers.forEach( schedulerName -> {
+				// TODO: Allow the user to configure a timeout for graceful shutdown
+				schedulerService.removeScheduler( schedulerName );
+			} );
 		}
 
 		// Announce it globally
@@ -713,7 +836,6 @@ public class Application {
 
 		// Clear out the data
 		this.started = false;
-		this.sessionsCache.clearAll( sessionCacheFilter );
 		this.classLoaders.clear();
 		this.applicationScope	= null;
 		this.startTime			= null;

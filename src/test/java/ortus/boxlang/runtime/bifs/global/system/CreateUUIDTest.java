@@ -52,16 +52,48 @@ public class CreateUUIDTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName( "It creates a UUID" )
+	@DisplayName( "It creates a standard/valid UUID" )
 	@Test
-	public void testCreatesUUID() {
+	public void isStandardUUIDFormat() {
+		instance.executeSource(
+		    """
+		    result = createUUID();
+		    """,
+		    context );
+		String uuid = variables.getAsString( result );
+		assertThat( uuid.length() ).isEqualTo( 36 );
+		String[] splitUUID = uuid.split( "-" );
+		assertThat( splitUUID.length ).isEqualTo( 5 );
+		assertThat( splitUUID[ 0 ].length() ).isEqualTo( 8 );
+		assertThat( splitUUID[ 1 ].length() ).isEqualTo( 4 );
+		assertThat( splitUUID[ 2 ].length() ).isEqualTo( 4 );
+		assertThat( splitUUID[ 3 ].length() ).isEqualTo( 4 );
+		assertThat( splitUUID[ 4 ].length() ).isEqualTo( 12 );
+	}
+
+	@DisplayName( "It uses the hexadecimal character set" )
+	@Test
+	public void testIsHexadecimal() {
 		instance.executeSource(
 		    """
 		    result = createUUID();
 		    """,
 		    context );
 
-		String uuid = ( String ) variables.get( result );
-		assertThat( uuid.matches( "[A-F0-9]{8}-[A-F0-9]{4}-[A-F0-9]{4}-[A-F0-9]{16}" ) ).isEqualTo( true );
+		String uuid = variables.getAsString( result );
+		assertThat( uuid.matches( "[A-Fa-f0-9]{8}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{4}-[A-Fa-f0-9]{12}" ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "It does not SHOUT" )
+	@Test
+	public void testIsNotForcedUppercase() {
+		instance.executeSource(
+		    """
+		    result = createUUID();
+		    """,
+		    context );
+
+		String uuid = variables.getAsString( result );
+		assertThat( uuid.matches( ".*[a-f].*" ) ).isEqualTo( true );
 	}
 }

@@ -21,6 +21,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -54,6 +55,10 @@ public class Println extends BIF {
 		// If it's a BoxLang type, let's use the string representation
 		if ( obj instanceof IType t ) {
 			obj = t.asString();
+		}
+		// For native arrays use the Arrays.toString for better formatting
+		else if ( obj != null && obj.getClass().isArray() ) {
+			obj = java.util.Arrays.toString( ArrayCaster.cast( obj ).toArray() );
 		}
 
 		// If we have a request context, let's use that context's out

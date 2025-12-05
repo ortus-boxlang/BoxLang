@@ -1682,4 +1682,14 @@ public class CFTemplateTest {
 		assertThat( variables.get( result ) ).isEqualTo( "brad" );
 	}
 
+	@Test
+	public void testParseGenericSelfCloseComponentWhitespace() throws IOException {
+		var result = new Parser().parse(
+		    """
+		    <cfexecute attribute="value" / >
+		    """,
+		    BoxSourceType.CFTEMPLATE );
+		assertThat( result.isCorrect() ).isTrue();
+	}
+
 }

@@ -102,7 +102,7 @@ public class TestClosure extends TestBase {
 	@Test
 	public void testClosureReturn() throws IOException {
 		String			code	= """
-		                          	() => "my func";
+		                          	() => "my func"
 		                          """;
 		CFParser		parser	= new CFParser();
 		ParsingResult	result	= parser.parse( code );
