@@ -594,7 +594,7 @@ task createDistributionFile( type: Zip ){
  * Includes all BoxLang JAR variants: main, noop, java-compiler, and asm-compiler
  */
 task libsToDistro( type: Copy ) {
-	dependsOn build, createDistributionFile, shadowJarNoop, jarJavaCompiler, jarAsmCompiler, 
+	dependsOn build, createDistributionFile, shadowJarNoop, jarJavaCompiler, jarAsmCompiler,
 		javadocJarJavaCompiler, sourcesJarJavaCompiler,
 		javadocJarAsmCompiler, sourcesJarAsmCompiler,
 		javadocJarNoop, sourcesJarNoop
