@@ -75,7 +75,17 @@ public class BigDecimalCaster implements IBoxCaster {
 			return new BigDecimal( bi.toString() );
 		}
 
-		// Any existing known number class like int, long, or double
+		// Requires tostring, so do it separately
+		if ( object instanceof Float fnum ) {
+			return new BigDecimal( fnum.toString(), MathUtil.getMathContext() );
+		}
+
+		// Requires tostring, so do it separately
+		if ( object instanceof Double dnum ) {
+			return new BigDecimal( dnum.toString(), MathUtil.getMathContext() );
+		}
+
+		// Any remaining numbers can be converted faster with the direct double value AND without any loss of precision
 		if ( object instanceof Number num ) {
 			return new BigDecimal( num.doubleValue(), MathUtil.getMathContext() );
 		}

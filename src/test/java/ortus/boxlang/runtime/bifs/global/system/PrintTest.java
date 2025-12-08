@@ -115,4 +115,17 @@ public class PrintTest {
 		assertThat( new String( outContent.toByteArray() ).replaceAll( "[ \\t]", "" ) ).contains( "[97,98,99]" );
 	}
 
+	@DisplayName( "It can print Java double without scientific notation" )
+	@Test
+	public void testPrintJavaDouble() {
+		instance.executeSource(
+		    """
+		       import java.lang.Double;
+		       myDoubleInstance = Double.valueOf( 15852073 );
+		    print( myDoubleInstance );
+		    """,
+		    context );
+		assertThat( new String( outContent.toByteArray() ) ).contains( "15852073" );
+	}
+
 }

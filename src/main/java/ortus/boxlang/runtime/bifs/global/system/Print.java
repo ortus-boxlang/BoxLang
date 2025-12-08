@@ -21,12 +21,10 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.IType;
 
 @BoxBIF( description = "Print output to the console or response" )
 public class Print extends BIF {
@@ -52,14 +50,8 @@ public class Print extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object obj = DynamicObject.unWrap( arguments.get( Key.message ) );
 
-		// If it's a BoxLang type, let's use the string representation
-		if ( obj instanceof IType t ) {
-			obj = t.asString();
-		}
-		// For native arrays use the Arrays.toString for better formatting
-		else if ( obj != null && obj.getClass().isArray() ) {
-			obj = java.util.Arrays.toString( ArrayCaster.cast( obj ).toArray() );
-		}
+		// Force to string representation
+		obj = Println.forceToString( obj );
 
 		// If we have a request context, let's use that context's out
 		RequestBoxContext rCon = context.getParentOfType( RequestBoxContext.class );

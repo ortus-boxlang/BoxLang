@@ -5913,6 +5913,37 @@ public class CoreLangTest {
 	}
 
 	@Test
+	public void testExpressionInterpreterSetInFunctionLocal() {
+
+		instance.executeSource(
+		    """
+		    	import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
+		    	function foo() {
+		    		ExpressionInterpreter.setVariable( getBoxContext(), "local.bar", "baz" );
+		    		return local.bar;
+		    	}
+		    	result = foo();
+		    """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( "baz" );
+	}
+
+	@Test
+	public void testDoubleToString() {
+
+		instance.executeSource(
+		    """
+		    import java.lang.Double;
+		    myDoubleInstance = Double.valueOf( 15852073 );
+		    result = "" & myDoubleInstance;
+		      """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( "15852073" );
+	}
+
+	@Test
 	@Disabled( "not working in ASM Boxpiler" )
 	public void testClosureInTernaryCF() {
 
