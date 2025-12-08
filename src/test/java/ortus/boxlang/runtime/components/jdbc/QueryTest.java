@@ -457,22 +457,36 @@ public class QueryTest extends BaseJDBCTest {
 	@DisplayName( "It can return cached query results within the cache timeout" )
 	@Test
 	public void testQueryCaching() {
+		// @formatter:off
 		getInstance().executeSource(
 		    """
-		       <bx:query name="result" cache="true" cacheTimeout="#createTimespan( 0, 0, 0, 2 )#" result="queryMeta" returnType="array">
-		    SELECT id,name,role FROM developers WHERE role = <bx:queryparam value="Developer" />
-		    </bx:query>
-		       <bx:query name="result2" cache="true" cacheTimeout="#createTimespan( 0, 0, 0, 2 )#" result="queryMeta2" returnType="array">
-		    SELECT id,name,role FROM developers WHERE role = <bx:queryparam value="Developer" />
-		    </bx:query>
-		       <bx:query name="result3" cache="true" cacheTimeout="#createTimespan( 0, 0, 0, 2 )#" result="queryMeta3" returnType="array">
-		    SELECT id,name,role FROM developers WHERE role = <bx:queryparam value="Admin" />
-		    </bx:query>, [ 'Admin
-		       <bx:query name="result4" cache="false" cacheTimeout="#createTimespan( 0, 0, 0, 2 )#" result="queryMeta4" returnType="array">
-		    SELECT id,name,role FROM developers WHERE role = <bx:queryparam value="Developer" />
-		    </bx:query>
-		       """,
+				<bx:query name="result" cache="true" cacheTimeout="#createTimespan( 0, 0, 0, 2 )#" result="queryMeta" returnType="array">
+				SELECT id,name,role FROM developers WHERE role = <bx:queryparam value="Developer" />
+				</bx:query>
+
+				<bx:script>
+				assert queryMeta.cached == false
+				</bx:script>
+
+				<bx:query name="result2" cache="true" cacheTimeout="#createTimespan( 0, 0, 0, 2 )#" result="queryMeta2" returnType="array">
+				SELECT id,name,role FROM developers WHERE role = <bx:queryparam value="Developer" />
+				</bx:query>
+
+				<bx:query name="result3" cache="true" cacheTimeout="#createTimespan( 0, 0, 0, 2 )#" result="queryMeta3" returnType="array">
+				SELECT id,name,role FROM developers WHERE role = <bx:queryparam value="Admin" />
+				</bx:query>
+
+				<bx:script>
+				assert queryMeta3.cached == false
+				</bx:script>
+
+				<bx:query name="result4" cache="false" cacheTimeout="#createTimespan( 0, 0, 0, 2 )#" result="queryMeta4" returnType="array">
+				SELECT id,name,role FROM developers WHERE role = <bx:queryparam value="Developer" />
+				</bx:query>
+		          """,
 		    getContext(), BoxSourceType.BOXTEMPLATE );
+		// @formatter:on
+
 		Array	query1	= getVariables().getAsArray( result );
 		Array	query2	= getVariables().getAsArray( Key.of( "result2" ) );
 		Array	query3	= getVariables().getAsArray( Key.of( "result3" ) );
@@ -483,10 +497,6 @@ public class QueryTest extends BaseJDBCTest {
 		assertEquals( query2, query4 );
 		// query 3 should be a different, uncached result
 		assertNotEquals( query1, query3 );
-
-		// Query 1 should NOT be cached
-		IStruct queryMeta = StructCaster.cast( getVariables().getAsStruct( Key.of( "queryMeta" ) ) );
-		assertThat( queryMeta.getAsBoolean( Key.cached ) ).isEqualTo( false );
 
 		// query 2 SHOULD be cached
 		IStruct queryMeta2 = StructCaster.cast( getVariables().getAsStruct( Key.of( "queryMeta2" ) ) );
