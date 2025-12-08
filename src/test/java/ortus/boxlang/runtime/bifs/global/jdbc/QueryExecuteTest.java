@@ -759,6 +759,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertThat( firstRow.get( Key.of( "role" ) ) ).isEqualTo( "CEO" );
 	}
 
+	@Disabled( "Hangs on linux due to apparent Derby locking issues" )
 	@DisplayName( "It uses a different connection manager for each thread" )
 	@Test
 	public void testDifferentConnectionManagerPerThread() {
