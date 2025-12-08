@@ -186,6 +186,24 @@ public class FileTest {
 	}
 
 	@Test
+	public void testResultVariableAlias() throws IOException {
+		assertFalse( FileSystemUtil.exists( testBinaryFile ) );
+
+		BufferedInputStream urlStream = new BufferedInputStream( URI.create( testURLImage ).toURL().openStream() );
+		FileSystemUtil.write( testBinaryFile, urlStream.readAllBytes(), true );
+
+		variables.put( Key.of( "testFile" ), Path.of( testBinaryFile ).toAbsolutePath().toString() );
+		instance.executeSource(
+		    """
+		    bx:file action="readBinary" file="#testFile#" result="readVariable";
+		    """,
+		    context, BoxSourceType.BOXSCRIPT );
+
+		Object result = variables.get( Key.of( "readVariable" ) );
+		assertTrue( result instanceof byte[] );
+	}
+
+	@Test
 	public void testFileDelete() throws IOException {
 		assertFalse( FileSystemUtil.exists( testTextFile ) );
 		FileSystemUtil.write( testTextFile, "file read test!".getBytes( "UTF-8" ), true );

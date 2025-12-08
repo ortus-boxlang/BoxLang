@@ -143,6 +143,7 @@ public class File extends Component {
 
 		if ( variable == null && attributes.containsKey( Key.result ) ) {
 			variable = attributes.getAsString( Key.result );
+			attributes.put( Key.variable, variable );
 		}
 
 		if ( action.equals( Key.write ) ) {
