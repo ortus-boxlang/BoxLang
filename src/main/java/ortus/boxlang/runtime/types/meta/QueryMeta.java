@@ -54,15 +54,15 @@ public class QueryMeta extends BoxMeta<Query> {
 
 		// Build out the query metadata
 		metadata.put( Key.type, "Query" );
-		metadata.putIfAbsent( Key.executionTime, 0 );
-		metadata.putIfAbsent( Key.cached, false );
-		metadata.putIfAbsent( Key.cacheKey, null );
-		metadata.putIfAbsent( Key.cacheProvider, null );
-		metadata.putIfAbsent( Key.cacheTimeout, Duration.ZERO );
-		metadata.putIfAbsent( Key.cacheLastAccessTimeout, Duration.ZERO );
-		metadata.putIfAbsent( Key.recordCount, target.size() );
-		metadata.putIfAbsent( Key.columnList, target.getColumnList() );
-		metadata.putIfAbsent( Key._HASHCODE, target.hashCode() );
+		metadata.put( Key.executionTime, 0 );
+		metadata.put( Key.cached, false );
+		metadata.put( Key.cacheKey, null );
+		metadata.put( Key.cacheProvider, null );
+		metadata.put( Key.cacheTimeout, Duration.ZERO );
+		metadata.put( Key.cacheLastAccessTimeout, Duration.ZERO );
+		metadata.put( Key.recordCount, target.size() );
+		metadata.put( Key.columnList, target.getColumnList() );
+		metadata.put( Key._HASHCODE, target.hashCode() );
 		// Build columns metadata
 		buildColumnsMeta();
 		metadata.put( Key.columnMetadata, this.columnsMeta );
@@ -121,13 +121,18 @@ public class QueryMeta extends BoxMeta<Query> {
 	 * @return The merged metadata struct
 	 */
 	public IStruct mergeMeta( IStruct source ) {
+		Struct modifiableMeta = ( Struct ) this.meta;
+
 		if ( this.meta instanceof UnmodifiableStruct targetMeta ) {
-			Struct modifiableMeta = targetMeta.toModifiable();
-			for ( var entry : source.entrySet() ) {
-				modifiableMeta.put( entry.getKey(), entry.getValue() );
-			}
-			this.meta = modifiableMeta.toUnmodifiable();
+			modifiableMeta = targetMeta.toModifiable();
 		}
+
+		for ( var entry : source.entrySet() ) {
+			modifiableMeta.put( entry.getKey(), entry.getValue() );
+		}
+
+		// Lock it again
+		this.meta = modifiableMeta.toUnmodifiable();
 		return this.meta;
 	}
 

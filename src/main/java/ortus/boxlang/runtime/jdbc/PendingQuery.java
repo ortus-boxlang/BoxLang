@@ -239,7 +239,7 @@ public class PendingQuery {
 
 	/**
 	 * Get the datasource used to execute this query.
-	 * 
+	 *
 	 * @return The datasource used to execute this query.
 	 */
 	public DataSource getDataSource() {
@@ -594,7 +594,7 @@ public class PendingQuery {
 		}
 
 		BoxConnection connection = connectionManager.getBoxConnection( this.queryOptions );
-		datasource = connection.getDataSource();
+		this.datasource = connection.getDataSource();
 		try {
 			return execute( connection, context );
 		} finally {
@@ -629,17 +629,25 @@ public class PendingQuery {
 			}
 
 			ExecutedQuery executedQuery = executeStatement( connection, context );
-			this.cacheProvider.set( this.cacheKey, executedQuery, this.queryOptions.cacheTimeout,
-			    this.queryOptions.cacheLastAccessTimeout );
+
+			// Now cache the results
+			this.cacheProvider.set(
+			    this.cacheKey,
+			    executedQuery,
+			    this.queryOptions.cacheTimeout,
+			    this.queryOptions.cacheLastAccessTimeout
+			);
 			return executedQuery;
 		}
+
+		// Not cacheable, just execute
 		return executeStatement( connection, context );
 	}
 
 	/**
 	 * Executes the PendingQuery on a given {@link Connection} and returns the
 	 * results in an {@link ExecutedQuery} instance.
-	 * 
+	 *
 	 * @deprecated Use {@link #execute(BoxConnection,IBoxContext)} instead.
 	 *
 	 * @param connection The Connection instance to use for executing the query. It
@@ -753,17 +761,23 @@ public class PendingQuery {
 	 * cacheKey, cacheProvider, etc.
 	 */
 	private ExecutedQuery respondWithCachedQuery( ExecutedQuery cachedQuery ) {
+
 		logger.debug( "Query is present, returning cached result: {}", this.cacheKey );
-		IStruct	cacheMeta	= Struct.of(
-		    "cached", true,
-		    "cacheKey", this.cacheKey,
-		    "cacheProvider", this.cacheProvider.getName().toString(),
-		    "cacheTimeout", this.queryOptions.cacheTimeout,
-		    "cacheLastAccessTimeout", this.queryOptions.cacheLastAccessTimeout );
-		Query	results		= cachedQuery.getResults();
-		Struct	queryMeta	= new Struct( cachedQuery.getQueryMeta() );
-		queryMeta.addAll( cacheMeta );
-		results.setMetadata( queryMeta );
+
+		IStruct	cacheMeta	= Struct.ofNonConcurrent(
+		    Key.cached, true,
+		    Key.cacheKey, this.cacheKey,
+		    Key.cacheProvider, this.cacheProvider.getName().toString(),
+		    Key.cacheTimeout, this.queryOptions.cacheTimeout,
+		    Key.cacheLastAccessTimeout, this.queryOptions.cacheLastAccessTimeout
+		);
+
+		// We set the metadata on the results to indicate this was a cached query
+		Query	results		= cachedQuery
+		    .getResults()
+		    .setMetadata( cacheMeta );
+
+		// Return a new ExecutedQuery instance with the cached results and generated key
 		return new ExecutedQuery( results, cachedQuery.getGeneratedKey(), null );
 	}
 
@@ -830,10 +844,10 @@ public class PendingQuery {
 
 	/**
 	 * Map the BoxLang QueryColumnType to a SQL type integer for PreparedStatement
-	 * 
+	 *
 	 * @param type  The QueryColumnType to map.
 	 * @param value The value associated with the type.
-	 * 
+	 *
 	 * @return The corresponding SQL type integer.
 	 */
 	private int mapParamTypeToSQLType( QueryColumnType type, Object value ) {
@@ -846,12 +860,12 @@ public class PendingQuery {
 
 	/**
 	 * Transform a value to be suitable for SQL insertion based on its QueryColumnType.
-	 * 
+	 *
 	 * @param type       The QueryColumnType of the value.
 	 * @param value      The value to transform.
 	 * @param context    The context for type casting.
 	 * @param connection The BoxConnection for driver-specific transformations.
-	 * 
+	 *
 	 * @return The transformed value.
 	 */
 	private Object transformValueForSQL( QueryColumnType type, Object value, IBoxContext context, BoxConnection connection ) {
