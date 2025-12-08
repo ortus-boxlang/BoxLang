@@ -31,6 +31,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.jdbc.drivers.JDBCDriverFeature;
 import ortus.boxlang.runtime.jdbc.qoq.QoQStatement;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
@@ -193,11 +194,18 @@ public final class ExecutedQuery implements Serializable {
 			results = qs.getQueryResult();
 		} else {
 			try {
-				// TODO: Move this into a generic flag that we set on the MSSQL driver.
-				generatedKeysComeAsResultSet = statement.getConnection().getMetaData().getDriverName().toLowerCase()
-				    .contains( "microsoft" );
+				generatedKeysComeAsResultSet = statement.getBoxConnection().getDataSource().getConfiguration().getDriver()
+				    .hasFeature( JDBCDriverFeature.GENERATED_KEYS_COME_AS_RESULT_SET );
+
+				// TODO: Remove this backwards compat check after the next bx-mssql release
+				// This is so people updating to the 1.8.0-snapshot won't have MSSQL generated keys break if they aren't also on the bx-mssql snapshot
+				if ( !generatedKeysComeAsResultSet ) {
+					generatedKeysComeAsResultSet = statement.getConnection().getMetaData().getDriverName().toLowerCase()
+					    .contains( "microsoft" );
+				}
+				// TODO: Remove this backwards compat check after the next bx-mssql release
 			} catch ( SQLException e ) {
-				logger.error( "Error getting JDBC driver name", e );
+				logger.error( "Error getting JDBC driver features", e );
 			}
 
 			// Loop over results until we find a result set, or run out of results

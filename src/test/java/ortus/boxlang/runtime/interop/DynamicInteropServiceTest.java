@@ -857,7 +857,7 @@ public class DynamicInteropServiceTest {
 					cache.set( "bx-4", "Hello World" );
 
 					cache.clearAll(
-						( key ) -> key.getName().startsWith( "bl" );
+						( key ) -> key.getName().startsWith( "bl" )
 					);
 
 					println( cache.getKeys() );

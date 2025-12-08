@@ -66,12 +66,25 @@ public class ObjectTest {
 
 	@DisplayName( "It tests the BIF Object a java object" )
 	@Test
-	public void testComponentCF() {
+	public void testComponentCFTemplate() {
 		instance.executeSource(
 		    """
-		    <cfobject name="result" type="java" className="java.lang.String" />
+		    <cfobject name="result" type="java" component="java.lang.String" />
 		    """,
 		    context, BoxSourceType.CFTEMPLATE );
+
+		assertTrue( variables.get( result ) instanceof DynamicObject );
+		assertEquals( ( ( DynamicObject ) variables.get( result ) ).getTargetClass(), String.class );
+	}
+
+	@DisplayName( "It tests the BIF Object a java object" )
+	@Test
+	public void testComponentCFScript() {
+		instance.executeSource(
+		    """
+		    object name="result" type="java" component="java.lang.String";
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
 
 		assertTrue( variables.get( result ) instanceof DynamicObject );
 		assertEquals( ( ( DynamicObject ) variables.get( result ) ).getTargetClass(), String.class );

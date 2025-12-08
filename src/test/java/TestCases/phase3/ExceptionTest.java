@@ -18,18 +18,21 @@
 package TestCases.phase3;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class ExceptionTest {
@@ -109,6 +112,23 @@ public class ExceptionTest {
 		BoxRuntimeException t = ( BoxRuntimeException ) variables.get( result );
 		assertThat( t.getDetail() ).isEqualTo( "" );
 		assertThat( t.getExtendedInfo() ).isEqualTo( "" );
+
+	}
+
+	@Test
+	public void testCorrectLineNumberInComponent() {
+
+		// @formatter:off
+		BoxRuntimeException t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		"""
+			<cfoutput>
+				<cfobject>
+			</cfoutput>
+		""", context, BoxSourceType.CFTEMPLATE ) );
+		// @formatter:on
+
+		assertThat( t.getTagContext().size() ).isGreaterThan( 0 );
+		assertThat( ( ( IStruct ) t.getTagContext().get( 0 ) ).getAsInteger( Key.line ) ).isEqualTo( 2 );
 
 	}
 

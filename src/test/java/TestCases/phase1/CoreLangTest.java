@@ -5862,4 +5862,84 @@ public class CoreLangTest {
 		assertThat( variables.get( result ) ).isEqualTo( "a" );
 	}
 
+	@Test
+	public void testSemicolonEndingExpressionWithStatement() {
+
+		instance.executeSource(
+		    """
+		       zzz = () => { return; };
+		    (() => {})();
+		         """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+	}
+
+	@Test
+	public void testSemicolonEndingClosureStatement() {
+
+		instance.executeSource(
+		    """
+		    arr = [1,2,3,4,5];
+		    arr.forEach( (v) => println( v ); );
+		         """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+
+		instance.executeSource(
+		    """
+		       obj = {
+		    method : ()=>writedump(arguments)
+		    }
+
+		    obj.method( ()=>return;, "anotherParam" )
+		            """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+
+		instance.executeSource(
+		    """
+		    arr = [ 1, "two", ()=>return; ]
+		          """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+
+		instance.executeSource(
+		    """
+		    str = { "key" : ()=>return; }
+		          """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+
+	}
+
+	@Test
+	@Disabled( "not working in ASM Boxpiler" )
+	public void testClosureInTernaryCF() {
+
+		instance.executeSource(
+		    """
+		    result = true ? ()=>"foo"; : ()=>"bar";
+		    result2 = result();
+		          """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "foo" );
+
+	}
+
+	@Test
+	@Disabled( "not working in ASM Boxpiler" )
+	public void testClosureInTernary() {
+
+		instance.executeSource(
+		    """
+		    result = true ? ()=>"foo" : ()=>"bar"
+		    result2 = result();
+		               """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "foo" );
+
+	}
+
 }

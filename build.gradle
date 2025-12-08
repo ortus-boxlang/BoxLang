@@ -127,9 +127,9 @@ dependencies {
 	implementation 'org.apache.commons:commons-lang3:3.20.0'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-text
 	// Many of these classes ( e.g. StringEscapeUtils ) are currently deprecated in commons-lang and others will be moved in the future
-	implementation 'org.apache.commons:commons-text:1.14.0'
+	implementation 'org.apache.commons:commons-text:1.15.0'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-cli
-	implementation "commons-cli:commons-cli:1.10.0"
+	implementation "commons-cli:commons-cli:1.11.0"
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-objects
 	implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.20.1'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-extension-javatime
@@ -141,7 +141,7 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-api
 	implementation 'org.slf4j:slf4j-api:2.0.17'
 	// https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
-	implementation 'ch.qos.logback:logback-classic:1.5.20'
+	implementation 'ch.qos.logback:logback-classic:1.5.21'
 	// https://mvnrepository.com/artifact/com.zaxxer/HikariCP
 	implementation 'com.zaxxer:HikariCP:6.3.0'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-tree
@@ -475,6 +475,92 @@ task jarAsmCompiler(type: Jar) {
 }
 
 /**
+ * ================================================================================
+ * Javadoc and Sources JARs for Compiler Artifacts
+ * These are required for Maven Central publication
+ * ================================================================================
+ */
+
+/**
+ * Javadoc JAR for Java Compiler
+ */
+task javadocJarJavaCompiler(type: Jar) {
+	dependsOn javadoc
+	archiveBaseName = "boxlang-compiler-java"
+	archiveClassifier = "javadoc"
+	archiveVersion = "${version}"
+	from javadoc.destinationDir
+}
+
+/**
+ * Sources JAR for Java Compiler
+ */
+task sourcesJarJavaCompiler(type: Jar) {
+	dependsOn generateGrammarSource, generateTestGrammarSource
+	archiveBaseName = "boxlang-compiler-java"
+	archiveClassifier = "sources"
+	archiveVersion = "${version}"
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+	from(sourceSets.main.allSource) {
+		include 'ortus/boxlang/compiler/javaboxpiler/**'
+	}
+}
+
+/**
+ * Javadoc JAR for ASM Compiler
+ */
+task javadocJarAsmCompiler(type: Jar) {
+	dependsOn javadoc
+	archiveBaseName = "boxlang-compiler-asm"
+	archiveClassifier = "javadoc"
+	archiveVersion = "${version}"
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+	from javadoc.destinationDir
+}
+
+/**
+ * Sources JAR for ASM Compiler
+ */
+task sourcesJarAsmCompiler(type: Jar) {
+	dependsOn generateGrammarSource, generateTestGrammarSource
+	archiveBaseName = "boxlang-compiler-asm"
+	archiveClassifier = "sources"
+	archiveVersion = "${version}"
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+	from(sourceSets.main.allSource) {
+		include 'ortus/boxlang/compiler/asmboxpiler/**'
+	}
+}
+
+/**
+ * Javadoc JAR for NoOp Runtime
+ */
+task javadocJarNoop(type: Jar) {
+	dependsOn javadoc
+	archiveBaseName = "boxlang-noop"
+	archiveClassifier = "javadoc"
+	archiveVersion = "${version}"
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+	from javadoc.destinationDir
+}
+
+/**
+ * Sources JAR for NoOp Runtime
+ */
+task sourcesJarNoop(type: Jar) {
+	dependsOn generateGrammarSource, generateTestGrammarSource
+	archiveBaseName = "boxlang-noop"
+	archiveClassifier = "sources"
+	archiveVersion = "${version}"
+	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+	from(sourceSets.main.allSource) {
+		// Include all sources except compiler-specific packages
+		exclude 'ortus/boxlang/compiler/javaboxpiler/**'
+		exclude 'ortus/boxlang/compiler/asmboxpiler/**'
+	}
+}
+
+/**
  * Cleanup final artifacts, we only want the shadow artifacts
  */
 tasks.distZip.setEnabled( false )
@@ -508,14 +594,24 @@ task createDistributionFile( type: Zip ){
  * Includes all BoxLang JAR variants: main, noop, java-compiler, and asm-compiler
  */
 task libsToDistro( type: Copy ) {
-	dependsOn build, createDistributionFile, shadowJarNoop, jarJavaCompiler, jarAsmCompiler
+	dependsOn build, createDistributionFile, shadowJarNoop, jarJavaCompiler, jarAsmCompiler,
+		javadocJarJavaCompiler, sourcesJarJavaCompiler,
+		javadocJarAsmCompiler, sourcesJarAsmCompiler,
+		javadocJarNoop, sourcesJarNoop
 
 	from( 'build/libs' ) {
 		include 'boxlang-' + version + '.jar'
 		include 'boxlang-' + version + '-javadoc.jar'
+		include 'boxlang-' + version + '-sources.jar'
 		include 'boxlang-noop-' + version + '.jar'
+		include 'boxlang-noop-' + version + '-javadoc.jar'
+		include 'boxlang-noop-' + version + '-sources.jar'
 		include 'boxlang-compiler-java-' + version + '.jar'
+		include 'boxlang-compiler-java-' + version + '-javadoc.jar'
+		include 'boxlang-compiler-java-' + version + '-sources.jar'
 		include 'boxlang-compiler-asm-' + version + '.jar'
+		include 'boxlang-compiler-asm-' + version + '-javadoc.jar'
+		include 'boxlang-compiler-asm-' + version + '-sources.jar'
 	}
 
 	from( 'build/resources/main/META-INF/boxlang/version.properties' ){
@@ -676,6 +772,8 @@ publishing {
 		noop( MavenPublication ) { publication ->
 
 			artifact shadowJarNoop
+			artifact javadocJarNoop
+			artifact sourcesJarNoop
 
 			groupId = 'io.boxlang'
 			artifactId = 'boxlang-noop'
@@ -762,6 +860,8 @@ publishing {
 		compilerJava( MavenPublication ) { publication ->
 
 			artifact jarJavaCompiler
+			artifact javadocJarJavaCompiler
+			artifact sourcesJarJavaCompiler
 
 			groupId = 'io.boxlang'
 			artifactId = 'boxlang-compiler-java'
@@ -848,6 +948,8 @@ publishing {
 		compilerAsm( MavenPublication ) { publication ->
 
 			artifact jarAsmCompiler
+			artifact javadocJarAsmCompiler
+			artifact sourcesJarAsmCompiler
 
 			groupId = 'io.boxlang'
 			artifactId = 'boxlang-compiler-asm'

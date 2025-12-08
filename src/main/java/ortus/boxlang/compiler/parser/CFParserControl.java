@@ -7,6 +7,8 @@ import static ortus.boxlang.parser.antlr.CFGrammar.BREAK;
 import static ortus.boxlang.parser.antlr.CFGrammar.CASE;
 import static ortus.boxlang.parser.antlr.CFGrammar.CASTAS;
 import static ortus.boxlang.parser.antlr.CFGrammar.CATCH;
+import static ortus.boxlang.parser.antlr.CFGrammar.COLON;
+import static ortus.boxlang.parser.antlr.CFGrammar.COMMA;
 import static ortus.boxlang.parser.antlr.CFGrammar.COMPONENT;
 import static ortus.boxlang.parser.antlr.CFGrammar.CONTAIN;
 import static ortus.boxlang.parser.antlr.CFGrammar.CONTAINS;
@@ -58,10 +60,14 @@ import static ortus.boxlang.parser.antlr.CFGrammar.PREFIXEDIDENTIFIER;
 import static ortus.boxlang.parser.antlr.CFGrammar.PRIVATE;
 import static ortus.boxlang.parser.antlr.CFGrammar.PROPERTY;
 import static ortus.boxlang.parser.antlr.CFGrammar.PUBLIC;
+import static ortus.boxlang.parser.antlr.CFGrammar.RBRACE;
+import static ortus.boxlang.parser.antlr.CFGrammar.RBRACKET;
 import static ortus.boxlang.parser.antlr.CFGrammar.REMOTE;
 import static ortus.boxlang.parser.antlr.CFGrammar.REQUIRED;
 import static ortus.boxlang.parser.antlr.CFGrammar.RETHROW;
 import static ortus.boxlang.parser.antlr.CFGrammar.RETURN;
+import static ortus.boxlang.parser.antlr.CFGrammar.RPAREN;
+import static ortus.boxlang.parser.antlr.CFGrammar.SEMICOLON;
 import static ortus.boxlang.parser.antlr.CFGrammar.STATIC;
 import static ortus.boxlang.parser.antlr.CFGrammar.THAN;
 import static ortus.boxlang.parser.antlr.CFGrammar.THROW;
@@ -201,6 +207,24 @@ public abstract class CFParserControl extends Parser {
 		int	thisType	= input.LT( 1 ).getType();
 		int	nextType	= input.LT( 2 ).getType();
 		return thisType == THROW && nextType != LPAREN;
+	}
+
+	/**
+	 * Return true if the next token is ) ] } : or , indicating that the expression continues
+	 * 
+	 * @param input
+	 * 
+	 * @return
+	 */
+	protected boolean isNextTokenExprContinuation( TokenStream input ) {
+		int nextType = input.LT( 1 ).getType();
+		// This predicate runs before the rule. If the next token isn't a semicolon, just stop now
+		if ( nextType != SEMICOLON ) {
+			return false;
+		}
+		// If it is a semicolon, check what comes after it
+		nextType = input.LT( 2 ).getType();
+		return nextType == RPAREN || nextType == COMMA || nextType == RBRACKET || nextType == RBRACE || nextType == COLON;
 	}
 
 }

@@ -139,6 +139,7 @@ import ortus.boxlang.parser.antlr.BoxGrammar.SimpleStatementContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.StatementBlockContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.StatementContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.StatementOrBlockContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.StatementOrBlockExpressionContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.StaticInitializerContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.StructExpressionContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.SwitchContext;
@@ -511,6 +512,14 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 
 	@Override
 	public BoxNode visitStatementOrBlock( StatementOrBlockContext ctx ) {
+		if ( ctx.emptyStatementBlock() != null ) {
+			return ctx.emptyStatementBlock().accept( this );
+		}
+		return ctx.statement().accept( this );
+	}
+
+	@Override
+	public BoxNode visitStatementOrBlockExpression( StatementOrBlockExpressionContext ctx ) {
 		if ( ctx.emptyStatementBlock() != null ) {
 			return ctx.emptyStatementBlock().accept( this );
 		}
