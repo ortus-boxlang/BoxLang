@@ -32,7 +32,9 @@ import java.util.List;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.EnabledIf;
+import org.junit.jupiter.api.condition.OS;
 
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.jdbc.ExecutedQuery;
@@ -759,7 +761,8 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertThat( firstRow.get( Key.of( "role" ) ) ).isEqualTo( "CEO" );
 	}
 
-	@Disabled( "Hangs on linux due to apparent Derby locking issues" )
+	// Hangs on linux due to apparent Derby locking issues.
+	@DisabledOnOs( OS.LINUX )
 	@DisplayName( "It uses a different connection manager for each thread" )
 	@Test
 	public void testDifferentConnectionManagerPerThread() {
