@@ -174,8 +174,10 @@ public class StoredProc extends Component {
 			    context,
 			    resultVarName,
 			    Struct.of(
-			        "returnCode", returnCode,
-			        "ExecutionTime", executionTimeMS
+			        // TODO: remove returnCode in 2.x
+			        Key.returnCode, returnCode,
+			        Key.statusCode, returnCode,
+			        Key.executionTime, executionTimeMS
 			    )
 			);
 			procedure.close();
