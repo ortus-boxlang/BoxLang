@@ -386,20 +386,31 @@ public class PendingQuery {
 		Predicate<Character>	isValidIdentiferStartChar	= c -> Character.isLetter( c ) || c == '_';
 		// Pop this into a lambda so we can re-use it for the last named parameter
 		Runnable				processNamed				= () -> {
-																SQLWithParamTokens.add( SQLWithParamToken.toString() );
-																SQLWithParamToken.setLength( 0 );
 																Key finalParamName = Key.of( paramName.toString() );
 																if ( namedParameters.containsKey( finalParamName ) ) {
 																	QueryParameter newParam = QueryParameter
 																	    .fromAny( namedParameters.get( finalParamName ) );
 																	foundNamedParams.add( finalParamName );
-																	params.add( newParam );
 																	// List params add ?, ?, ? etc. to the SQL string
 																	if ( newParam.isListParam() ) {
 																		List<Object> values = ( List<Object> ) newParam.getValue();
+																		if ( values.isEmpty() ) {
+																			// Empty list - add single ? placeholder, will bind NULL in applyParameters
+																			SQLWithParamTokens.add( SQLWithParamToken.toString() );
+																			SQLWithParamToken.setLength( 0 );
+																			params.add( newParam );
+																			newSQL.append( "?" );
+																			return;
+																		}
+																		SQLWithParamTokens.add( SQLWithParamToken.toString() );
+																		SQLWithParamToken.setLength( 0 );
+																		params.add( newParam );
 																		newSQL.append(
 																		    values.stream().map( v -> "?" ).collect( Collectors.joining( ", " ) ) );
 																	} else {
+																		SQLWithParamTokens.add( SQLWithParamToken.toString() );
+																		SQLWithParamToken.setLength( 0 );
+																		params.add( newParam );
 																		newSQL.append( "?" );
 																	}
 																} else {
@@ -431,14 +442,25 @@ public class PendingQuery {
 							    + "] provided for query having at least [" + paramsEncountered + "] '?' char(s)." );
 						}
 
-						SQLWithParamTokens.add( SQLWithParamToken.toString() );
-						SQLWithParamToken.setLength( 0 );
 						var				newParam	= QueryParameter.fromAny( positionalParameters.get( paramsEncountered - 1 ) );
 						List<Object>	values;
 						// List params add ?, ?, ? etc. to the SQL string
-						if ( newParam.isListParam() && ( values = ( List<Object> ) newParam.getValue() ).size() > 1 ) {
-							newSQL.append( "?, ".repeat( values.size() - 1 ) );
+						if ( newParam.isListParam() ) {
+							values = ( List<Object> ) newParam.getValue();
+							if ( values.isEmpty() ) {
+								// Empty list - add single ? placeholder, will bind NULL in applyParameters
+								SQLWithParamTokens.add( SQLWithParamToken.toString() );
+								SQLWithParamToken.setLength( 0 );
+								params.add( newParam );
+								newSQL.append( "?" );
+								break;
+							}
+							if ( values.size() > 1 ) {
+								newSQL.append( "?, ".repeat( values.size() - 1 ) );
+							}
 						}
+						SQLWithParamTokens.add( SQLWithParamToken.toString() );
+						SQLWithParamToken.setLength( 0 );
 						params.add( newParam );
 						// append here and break so the ? doesn't go into the SQLWithParamToken
 						newSQL.append( c );
@@ -805,22 +827,29 @@ public class PendingQuery {
 				SQLWithParamValues.append( SQLWithParamTokens.get( SQLParamIndex ) );
 				Integer scaleOrLength = param.getScaleOrLength();
 				if ( param.isListParam() ) {
-					var		i		= 1;
-					Array	list	= ( Array ) param.getValue();
-					for ( Object value : list ) {
-						Object casted = transformValueForSQL( param.getType(), value, context, statement.getConnection() );
-						emitValueToSQL( SQLWithParamValues, casted, param.getType() );
-						if ( i < list.size() ) {
-							SQLWithParamValues.append( ", " );
-						}
-						if ( scaleOrLength == null ) {
-							preparedStatement.setObject( parameterIndex, casted, mapParamTypeToSQLType( param.getType(), casted ) );
-						} else {
-							preparedStatement.setObject( parameterIndex, casted, mapParamTypeToSQLType( param.getType(), casted ),
-							    scaleOrLength );
-						}
+					Array list = ( Array ) param.getValue();
+					// Empty list - bind NULL to match CFML behavior (matches no rows in IN clause)
+					if ( list.isEmpty() ) {
+						SQLWithParamValues.append( "NULL" );
+						preparedStatement.setNull( parameterIndex, mapParamTypeToSQLType( param.getType(), null ) );
 						parameterIndex++;
-						i++;
+					} else {
+						var i = 1;
+						for ( Object value : list ) {
+							Object casted = transformValueForSQL( param.getType(), value, context, statement.getConnection() );
+							emitValueToSQL( SQLWithParamValues, casted, param.getType() );
+							if ( i < list.size() ) {
+								SQLWithParamValues.append( ", " );
+							}
+							if ( scaleOrLength == null ) {
+								preparedStatement.setObject( parameterIndex, casted, mapParamTypeToSQLType( param.getType(), casted ) );
+							} else {
+								preparedStatement.setObject( parameterIndex, casted, mapParamTypeToSQLType( param.getType(), casted ),
+								    scaleOrLength );
+							}
+							parameterIndex++;
+							i++;
+						}
 					}
 				} else {
 					Object value = transformValueForSQL( param.getType(), param.getValue(), context, statement.getConnection() );

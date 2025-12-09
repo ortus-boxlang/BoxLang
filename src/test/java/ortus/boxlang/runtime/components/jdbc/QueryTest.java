@@ -172,7 +172,7 @@ public class QueryTest extends BaseJDBCTest {
 		assertEquals( 3, query.size() );
 	}
 
-	@DisplayName( "It can execute a query a list param with a single numeric value" )
+	@DisplayName( "It can execute a query a list param with numeric values" )
 	@Test
 	public void testListInteger() {
 		getInstance().executeSource(
@@ -200,6 +200,123 @@ public class QueryTest extends BaseJDBCTest {
 		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
 		query = getVariables().getAsQuery( result );
 		assertEquals( 2, query.size() );
+
+		getInstance().executeSource(
+		    """
+		        <cfset ids = "" />
+		        <cfquery name="result">
+		        SELECT * FROM developers WHERE id IN (<cfqueryparam cf_sql_type="cf_sql_integer" value="#ids#" list="true">)
+		        </cfquery>
+		    """,
+		    context,
+		    BoxSourceType.CFTEMPLATE );
+		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		query = getVariables().getAsQuery( result );
+		assertEquals( 0, query.size() );
+	}
+
+	@DisplayName( "It can queryExecute() with positional list param" )
+	@Test
+	public void testListIntegerPositional() {
+		getInstance().executeSource(
+		    """
+		           ids = 42
+		           result = queryExecute( "SELECT * FROM developers WHERE id IN (?)",
+		    [ {
+		    	type: "integer",
+		    	value: ids,
+		    	list: true
+		    } ] );
+		       """,
+		    context,
+		    BoxSourceType.CFSCRIPT );
+		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		ortus.boxlang.runtime.types.Query query = getVariables().getAsQuery( result );
+		assertEquals( 1, query.size() );
+
+		getInstance().executeSource(
+		    """
+		           ids = "42,77"
+		           result = queryExecute( "SELECT * FROM developers WHERE id IN (?)",
+		    [ {
+		    	type: "integer",
+		    	value: ids,
+		    	list: true
+		    } ] );
+		       """,
+		    context,
+		    BoxSourceType.CFSCRIPT );
+		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		query = getVariables().getAsQuery( result );
+		assertEquals( 2, query.size() );
+
+		getInstance().executeSource(
+		    """
+		           ids = ""
+		           result = queryExecute( "SELECT * FROM developers WHERE id IN (?)",
+		    [ {
+		    	type: "integer",
+		    	value: ids,
+		    	list: true
+		             } ] );
+		       """,
+		    context,
+		    BoxSourceType.CFSCRIPT );
+		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		query = getVariables().getAsQuery( result );
+		assertEquals( 0, query.size() );
+	}
+
+	@DisplayName( "It can queryExecute() with named list param" )
+	@Test
+	public void testListIntegerNamed() {
+		getInstance().executeSource(
+		    """
+		              ids = 42
+		              result = queryExecute( "SELECT * FROM developers WHERE id IN (:ids)",
+		       { ids :  {
+		       	type: "integer",
+		       	value: ids,
+		       	list: true
+		    } } );
+		          """,
+		    context,
+		    BoxSourceType.CFSCRIPT );
+		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		ortus.boxlang.runtime.types.Query query = getVariables().getAsQuery( result );
+		assertEquals( 1, query.size() );
+
+		getInstance().executeSource(
+		    """
+		           ids = "42,77"
+		           result = queryExecute( "SELECT * FROM developers WHERE id IN (:ids)",
+		    { ids :  {
+		    	type: "integer",
+		    	value: ids,
+		    	list: true
+		    } } );
+		       """,
+		    context,
+		    BoxSourceType.CFSCRIPT );
+		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		query = getVariables().getAsQuery( result );
+		assertEquals( 2, query.size() );
+
+		getInstance().executeSource(
+		    """
+		           ids = ""
+		           result = queryExecute( "SELECT * FROM developers WHERE id IN (:ids)",
+		    { ids :  {
+		    	type: "integer",
+		    	value: ids,
+		    	list: true
+		             } } );
+		       """,
+		    context,
+		    BoxSourceType.CFSCRIPT );
+		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		query = getVariables().getAsQuery( result );
+		assertEquals( 0, query.size() );
 	}
 
 	@DisplayName( "It can execute a query with a list queryparam" )
