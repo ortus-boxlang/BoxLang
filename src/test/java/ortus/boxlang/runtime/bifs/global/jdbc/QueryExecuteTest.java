@@ -762,14 +762,10 @@ public class QueryExecuteTest extends BaseJDBCTest {
 	@DisplayName( "It uses a different connection manager for each thread" )
 	@Test
 	public void testDifferentConnectionManagerPerThread() {
+
+		// @formatter:off
 		instance.executeStatement(
 		    """
-		       import java.lang.ProcessHandle;
-		       pid = ProcessHandle.current().pid();
-		    println("Current Process ID: " & pid);
-
-		    import java.lang.ProcessHandle;
-
 		          bx:application
 		          	name="mysleeptest"
 		          	datasources={
@@ -787,6 +783,8 @@ public class QueryExecuteTest extends BaseJDBCTest {
 
 		          }, true );
 		          """, context );
+				  
+		// @formatter:on
 	}
 
 	@Disabled( "Not implemented" )
