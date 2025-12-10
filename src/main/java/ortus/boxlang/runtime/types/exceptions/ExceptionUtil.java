@@ -75,7 +75,7 @@ public class ExceptionUtil {
 			// BoxLangExceptions check the type
 			if ( e instanceof BoxLangException ble ) {
 				// Either direct match to type, or "foo.bar" matches "foo.bar.baz
-				if ( ble.type.equalsIgnoreCase( type ) || ble.type.toLowerCase().startsWith( type + "." ) )
+				if ( ble.type.equalsIgnoreCase( type ) || ble.type.toLowerCase().startsWith( type.toLowerCase() + "." ) )
 					return true;
 			}
 

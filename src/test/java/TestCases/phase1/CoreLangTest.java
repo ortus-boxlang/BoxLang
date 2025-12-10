@@ -5944,6 +5944,35 @@ public class CoreLangTest {
 	}
 
 	@Test
+	public void testCustomCatchTypes() {
+
+		instance.executeSource(
+		    """
+		    function boom() {
+		    	throw(
+		    		type="MyCustom.Exception",
+		    		message="thrown in boom"
+		    	);
+		    }
+		    function foo() {
+		    	try {
+		    		boom();
+		    	} catch ( MyCustom e ) {
+		    		return "custom";
+		    	} catch ( any e ) {
+		    		return "generic";
+		    	}
+		    	return "done";
+		    }
+		    result = foo();
+		            """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( "custom" );
+
+	}
+
+	@Test
 	@Disabled( "not working in ASM Boxpiler" )
 	public void testClosureInTernaryCF() {
 
