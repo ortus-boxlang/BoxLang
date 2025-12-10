@@ -188,8 +188,8 @@ emptyStatementBlock: LBRACE RBRACE
 normalStatementBlock: LBRACE (statement | SEMICOLON)* RBRACE
     ;
 
-// This is used only for top level statements, where we're ok consuming an extra semicolon at the end (see below)
-statementOrBlock: emptyStatementBlock | statement SEMICOLON*
+// This is used only for top level statements, where we're ok consuming an extra semicolon at the end (see below).  We also allow an "empty statement" here (just a semicolon).
+statementOrBlock: emptyStatementBlock | statement SEMICOLON* | SEMICOLON
     ;
 
 // This exists basically for anonymous functions who end with a statement or block, but CANNOT consume any trailing seimicolons
@@ -198,6 +198,7 @@ statementOrBlockExpression: emptyStatementBlock | statement
     ;
 
 // Any top-level statement that can be in a block.
+// Don't ever match semi-colons directly here as it will mess up expressions which includes statements-- namely anonymous functions.
 statement
     : importStatement
     | function

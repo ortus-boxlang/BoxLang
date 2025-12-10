@@ -6002,4 +6002,128 @@ public class CoreLangTest {
 
 	}
 
+	@Test
+	public void testEmptyStatementWhileCF() {
+
+		instance.executeSource(
+		    """
+		    while(false);
+		                  """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+	}
+
+	@Test
+	public void testEmptyStatementForCF() {
+
+		instance.executeSource(
+		    """
+		    for(i=0; i<10; i++);
+		                  """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+	}
+
+	@Test
+	public void testEmptyStatementDoWhileCF() {
+
+		instance.executeSource(
+		    """
+		    do; while(false);
+		                  """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+	}
+
+	@Test
+	public void testEmptyStatementIfElseCF() {
+
+		instance.executeSource(
+		    """
+		    if(false);
+		    else;
+		                  """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+	}
+
+	@Test
+	public void testEmptyStatementSwitchCaseCF() {
+
+		instance.executeSource(
+		    """
+		    switch(42) {
+		    	case 42:
+		    		;
+		    		break;
+		    	default:
+		    		;
+		    }
+		                             """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+	}
+
+	@Test
+	public void testEmptyStatementWhile() {
+
+		instance.executeSource(
+		    """
+		    while(false);
+		                  """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+	}
+
+	@Test
+	public void testEmptyStatementFor() {
+
+		instance.executeSource(
+		    """
+		    for(i=0; i<10; i++);
+		                  """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+	}
+
+	@Test
+	public void testEmptyStatementDoWhile() {
+
+		instance.executeSource(
+		    """
+		    do; while(false);
+		                  """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+	}
+
+	@Test
+	public void testEmptyStatementIfElse() {
+
+		instance.executeSource(
+		    """
+		    if(false);
+		    else;
+		                  """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+	}
+
+	@Test
+	public void testEmptyStatementSwitchCase() {
+
+		instance.executeSource(
+		    """
+		    switch(42) {
+		    	case 42:
+		    		;
+		    		break;
+		    	default:
+		    		;
+		    }
+		                             """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+	}
+
 }
