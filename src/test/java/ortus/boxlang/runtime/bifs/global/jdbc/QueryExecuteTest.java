@@ -32,9 +32,7 @@ import java.util.List;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.condition.DisabledOnOs;
 import org.junit.jupiter.api.condition.EnabledIf;
-import org.junit.jupiter.api.condition.OS;
 
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.jdbc.ExecutedQuery;
@@ -761,43 +759,34 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertThat( firstRow.get( Key.of( "role" ) ) ).isEqualTo( "CEO" );
 	}
 
-	// Hangs on linux due to apparent Derby locking issues.
-	@DisabledOnOs( OS.LINUX )
 	@DisplayName( "It uses a different connection manager for each thread" )
 	@Test
 	public void testDifferentConnectionManagerPerThread() {
 		instance.executeStatement(
 		    """
-		    bx:application
-		    	name="mysleeptest"
-		    	datasources={
-		    		"derby": {
-		    			"connectionString": "jdbc:derby:memory:testQueryExecuteAlternateUserDB;user=foo;password=bar;create=true"
-		    		}
-		    	}
-		    	datasource : "derby";
+		       import java.lang.ProcessHandle;
+		       pid = ProcessHandle.current().pid();
+		    println("Current Process ID: " & pid);
 
-		    [1,2,3,4,5].each( ()=> {
-		    	try {
-		    		queryExecute( "
-		    			CREATE FUNCTION SLEEP(MILLISECONDS INT)
-		    			RETURNS INT
-		    			PARAMETER STYLE JAVA
-		    			LANGUAGE JAVA
-		    			EXTERNAL NAME 'ortus.boxlang.runtime.bifs.global.jdbc.DerbySleep.sleep'
-		    		" );
+		    import java.lang.ProcessHandle;
 
-		    		transaction {
-		    			queryExecute( "VALUES SLEEP(5000)" )
-		    		}
+		          bx:application
+		          	name="mysleeptest"
+		          	datasources={
+		          		"derby": {
+		          			"connectionString": "jdbc:derby:memory:testQueryExecuteAlternateUserDB;user=foo;password=bar;create=true"
+		          		}
+		          	}
+		          	datasource : "derby";
 
-		    	} catch( e ) {
-		    		if( !(e.message contains 'already exists') ) {
-		    			rethrow;
-		    		}
-		    	}
-		    }, true );
-		    """, context );
+		          [1,2,3,4,5].each( ()=> {
+
+		          		transaction {
+		          			queryExecute( "SELECT COUNT(*) FROM SYS.SYSCOLUMNS A, SYS.SYSCOLUMNS B" )
+		          		}
+
+		          }, true );
+		          """, context );
 	}
 
 	@Disabled( "Not implemented" )
