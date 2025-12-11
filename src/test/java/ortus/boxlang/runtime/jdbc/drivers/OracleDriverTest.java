@@ -99,6 +99,59 @@ public class OracleDriverTest extends AbstractDriverTest {
 		    """,
 		    context
 		);
+
+		// Stored procedure with ONLY a ref cursor (no other params)
+		dataSource.execute(
+		    """
+		    CREATE OR REPLACE PROCEDURE testProcedureCursorOnly (
+		    	cursor1 OUT SYS_REFCURSOR
+		    )
+		    IS
+		    BEGIN
+		    	OPEN cursor1 FOR SELECT 'cursorOnly' as col FROM dual;
+		    END testProcedureCursorOnly;
+		    """,
+		    context
+		);
+
+		// Stored procedure with ref cursor FIRST, then in/out params AFTER it
+		dataSource.execute(
+		    """
+		    CREATE OR REPLACE PROCEDURE testProcedureCursorWithInAfter (
+		    	cursor1 OUT SYS_REFCURSOR,
+		    	in1 IN NUMBER,
+		    	inout1 IN OUT NUMBER,
+		    	out1 OUT NVARCHAR2
+		    )
+		    IS
+		    BEGIN
+		    	inout1 := in1 + inout1;
+		    	out1 := 'out-' || TO_CHAR(in1);
+		    	OPEN cursor1 FOR SELECT in1 as numVal, inout1 as sumVal FROM dual;
+		    END testProcedureCursorWithInAfter;
+		    """,
+		    context
+		);
+
+		// Stored procedure with cursor in the MIDDLE of in/out params
+		dataSource.execute(
+		    """
+		    CREATE OR REPLACE PROCEDURE testProcedureCursorInMiddle (
+		    	in1 IN NUMBER,
+		    	inout1 IN OUT NUMBER,
+		    	cursor1 OUT SYS_REFCURSOR,
+		    	in2 IN NVARCHAR2,
+		    	out1 OUT NVARCHAR2
+		    )
+		    IS
+		    BEGIN
+		    	inout1 := in1 + inout1;
+		    	out1 := 'result-' || in2;
+		    	OPEN cursor1 FOR SELECT in1 as numVal, in2 as strVal, inout1 as sumVal FROM dual;
+		    END testProcedureCursorInMiddle;
+		    """,
+		    context
+		);
 	}
 
 	@DisplayName( "It sets generatedKey in query meta" )
@@ -208,14 +261,14 @@ public class OracleDriverTest extends AbstractDriverTest {
 		instance.executeSource(
 		    """
 		    <bx:storedproc procedure="testProcedure" datasource="OracleDatasource" result="variables.result" debug=true>
-		        <bx:procparam name="in1" value="123" type="in" sqltype="integer" />
-		        <bx:procparam name="in2" value="hello" type="in" sqltype="nvarchar" />
-		        <bx:procparam name="inout1" value="10" type="inout" sqltype="integer" variable="inout1" />
-		        <bx:procparam name="out1" type="out" sqltype="nvarchar" variable="out1" />
-		        <bx:procresult name="resultSet1" resultSet=1 />
-		        <bx:procresult name="resultSet2" resultSet=2 />
-		    </bx:storedproc>
-		    """,
+		        <bx:procparam dbvarname="in1" value="123" type="in" sqltype="integer" />
+		        <bx:procparam dbvarname="in2" value="hello" type="in" sqltype="nvarchar" />
+		        <bx:procparam dbvarname="inout1" value="10" type="inout" sqltype="integer" variable="inout1" />
+		        <bx:procparam dbvarname="out1" type="out" sqltype="nvarchar" variable="out1" />
+		          <bx:procresult name="resultSet1" resultSet=1 />
+		          <bx:procresult name="resultSet2" resultSet=2 />
+		      </bx:storedproc>
+		      """,
 		    context, BoxSourceType.BOXTEMPLATE );
 		assertThat( variables.get( "inout1" ) ).isEqualTo( 223 );
 		assertThat( variables.get( "out1" ) ).isEqualTo( "foo-123-hello" );
@@ -328,9 +381,9 @@ public class OracleDriverTest extends AbstractDriverTest {
 		instance.executeSource(
 		    """
 		    <bx:storedproc procedure="getRowIdProc" datasource="OracleDatasource" result="variables.result" debug=true>
-		        <bx:procparam name="outRowId" type="out" sqltype="string" variable="returnedRowId" />
+		        <bx:procparam dbvarname="outRowId" type="out" sqltype="string" variable="returnedRowId" />
 		    </bx:storedproc>
-		    """,
+		      """,
 		    context, BoxSourceType.BOXTEMPLATE );
 
 		// Verify that we got a ROWID back
@@ -361,7 +414,7 @@ public class OracleDriverTest extends AbstractDriverTest {
 		instance.executeSource(
 		    """
 		    <bx:storedproc procedure="getRowIdProc" datasource="OracleDatasource" result="variables.result" debug=true>
-		        <bx:procparam name="outRowId" dbvarname=":outRowId" type="out" sqltype="string" variable="returnedRowId" />
+		        <bx:procparam dbvarname="outRowId" type="out" sqltype="string" variable="returnedRowId" />
 		    </bx:storedproc>
 		    """,
 		    context, BoxSourceType.BOXTEMPLATE );
@@ -371,5 +424,141 @@ public class OracleDriverTest extends AbstractDriverTest {
 		assertThat( variables.get( "returnedRowId" ) ).isInstanceOf( String.class );
 		String rowIdString = variables.getAsString( Key.of( "returnedRowId" ) );
 		assertThat( rowIdString.length() ).isGreaterThan( 0 );
+	}
+
+	@DisplayName( "It can call stored proc with ref cursor only (named)" )
+	@Test
+	public void testCallStoredProcCursorOnlyNamed() {
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedureCursorOnly" datasource="OracleDatasource" result="variables.result" debug=true>
+		        <bx:procresult name="resultSet1" resultSet=1 />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		assertThat( variables.get( "resultSet1" ) ).isInstanceOf( Query.class );
+		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
+		assertThat( rs1.size() ).isEqualTo( 1 );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "cursorOnly" );
+	}
+
+	@DisplayName( "It can call stored proc with in/out params after OUT cursor (named)" )
+	@Test
+	public void testCallStoredProcCursorWithInAfterNamed() {
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedureCursorWithInAfter" datasource="OracleDatasource" result="variables.result" debug=true>
+		      <bx:procparam dbvarname="out1" type="out" sqltype="nvarchar" variable="out1" />
+		      <bx:procparam dbvarname="in1" value="42" type="in" sqltype="integer" />
+		      <bx:procresult name="resultSet1" resultSet=1 />
+		      <bx:procparam dbvarname="inout1" value="8" type="inout" sqltype="integer" variable="inout1" />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		assertThat( variables.get( "inout1" ) ).isEqualTo( 50 );
+		assertThat( variables.get( "out1" ) ).isEqualTo( "out-42" );
+
+		assertThat( variables.get( "resultSet1" ) ).isInstanceOf( Query.class );
+		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
+		assertThat( rs1.size() ).isEqualTo( 1 );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsNumber( Key.of( "numVal" ) ).doubleValue() ).isEqualTo( 42D );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsNumber( Key.of( "sumVal" ) ).doubleValue() ).isEqualTo( 50D );
+	}
+
+	@DisplayName( "It can call stored proc with cursor in middle of in/out params (named)" )
+	@Test
+	public void testCallStoredProcCursorInMiddleNamed() {
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedureCursorInMiddle" datasource="OracleDatasource" result="variables.result" debug=true>
+		      <bx:procparam dbvarname="in2" value="world" type="in" sqltype="nvarchar" />
+		      <bx:procparam dbvarname="out1" type="out" sqltype="nvarchar" variable="out1" />
+		      <bx:procparam dbvarname="in1" value="10" type="in" sqltype="integer" />
+		      <bx:procparam dbvarname="inout1" value="5" type="inout" sqltype="integer" variable="inout1" />
+		      <bx:procresult name="resultSet1" resultSet=1 />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		assertThat( variables.get( "inout1" ) ).isEqualTo( 15 );
+		assertThat( variables.get( "out1" ) ).isEqualTo( "result-world" );
+
+		assertThat( variables.get( "resultSet1" ) ).isInstanceOf( Query.class );
+		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
+		assertThat( rs1.size() ).isEqualTo( 1 );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsNumber( Key.of( "numVal" ) ).doubleValue() ).isEqualTo( 10D );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsString( Key.of( "strVal" ) ) ).isEqualTo( "world" );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsNumber( Key.of( "sumVal" ) ).doubleValue() ).isEqualTo( 15D );
+	}
+
+	@DisplayName( "It can call stored proc with ref cursor only (positional)" )
+	@Test
+	public void testCallStoredProcCursorOnlyPositional() {
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedureCursorOnly" datasource="OracleDatasource" result="variables.result" debug=true>
+		        <bx:procresult name="resultSet1" resultSet=1 />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		assertThat( variables.get( "resultSet1" ) ).isInstanceOf( Query.class );
+		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
+		assertThat( rs1.size() ).isEqualTo( 1 );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "cursorOnly" );
+	}
+
+	@DisplayName( "It can call stored proc with in/out params after OUT cursor (positional)" )
+	@Test
+	public void testCallStoredProcCursorWithInAfterPositional() {
+		// Proc signature: cursor1 OUT, in1 IN, inout1 INOUT, out1 OUT
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedureCursorWithInAfter" datasource="OracleDatasource" result="variables.result" debug=true>
+		        <bx:procresult name="resultSet1" resultSet=1 />
+		        <bx:procparam value="42" type="in" sqltype="integer" />
+		        <bx:procparam value="8" type="inout" sqltype="integer" variable="inout1" />
+		        <bx:procparam type="out" sqltype="nvarchar" variable="out1" />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		assertThat( variables.get( "inout1" ) ).isEqualTo( 50 );
+		assertThat( variables.get( "out1" ) ).isEqualTo( "out-42" );
+
+		assertThat( variables.get( "resultSet1" ) ).isInstanceOf( Query.class );
+		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
+		assertThat( rs1.size() ).isEqualTo( 1 );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsNumber( Key.of( "numVal" ) ).doubleValue() ).isEqualTo( 42D );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsNumber( Key.of( "sumVal" ) ).doubleValue() ).isEqualTo( 50D );
+	}
+
+	@DisplayName( "It can call stored proc with cursor in middle of in/out params (positional)" )
+	@Test
+	public void testCallStoredProcCursorInMiddlePositional() {
+		// Proc signature: in1 IN, inout1 INOUT, cursor1 OUT, in2 IN, out1 OUT
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedureCursorInMiddle" datasource="OracleDatasource" result="variables.result" debug=true>
+		        <bx:procparam value="10" type="in" sqltype="integer" />
+		        <bx:procparam value="5" type="inout" sqltype="integer" variable="inout1" />
+		        <bx:procresult name="resultSet1" resultSet=1 />
+		        <bx:procparam value="world" type="in" sqltype="nvarchar" />
+		        <bx:procparam type="out" sqltype="nvarchar" variable="out1" />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		assertThat( variables.get( "inout1" ) ).isEqualTo( 15 );
+		assertThat( variables.get( "out1" ) ).isEqualTo( "result-world" );
+
+		assertThat( variables.get( "resultSet1" ) ).isInstanceOf( Query.class );
+		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
+		assertThat( rs1.size() ).isEqualTo( 1 );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsNumber( Key.of( "numVal" ) ).doubleValue() ).isEqualTo( 10D );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsString( Key.of( "strVal" ) ) ).isEqualTo( "world" );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsNumber( Key.of( "sumVal" ) ).doubleValue() ).isEqualTo( 15D );
 	}
 }
