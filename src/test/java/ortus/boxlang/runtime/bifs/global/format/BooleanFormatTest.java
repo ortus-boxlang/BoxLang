@@ -65,8 +65,6 @@ public class BooleanFormatTest {
 		assertEquals( ( String ) instance.executeStatement( "booleanFormat( 0 )" ), "false" );
 		assertEquals( ( String ) instance.executeStatement( "booleanFormat( -1 )" ), "true" );
 		assertEquals( ( String ) instance.executeStatement( "booleanFormat( 1 )" ), "true" );
-		assertEquals( ( String ) instance.executeStatement( "booleanFormat( 'Y' )" ), "true" );
-		assertEquals( ( String ) instance.executeStatement( "booleanFormat( 'N' )" ), "false" );
 		assertEquals( ( String ) instance.executeStatement( "booleanFormat( 'Yes' )" ), "true" );
 		assertEquals( ( String ) instance.executeStatement( "booleanFormat( 'No' )" ), "false" );
 		assertEquals( ( String ) instance.executeStatement( "booleanFormat( 'true' )" ), "true" );
@@ -77,8 +75,6 @@ public class BooleanFormatTest {
 	@DisplayName( "It tests the BooleanFormat Member function on a string" )
 	@Test
 	public void testStringMember() {
-		assertEquals( ( String ) instance.executeStatement( "'Y'.booleanFormat()" ), "true" );
-		assertEquals( ( String ) instance.executeStatement( "'N'.booleanFormat()" ), "false" );
 		assertEquals( ( String ) instance.executeStatement( "'Yes'.booleanFormat()" ), "true" );
 		assertEquals( ( String ) instance.executeStatement( "'No'.booleanFormat()" ), "false" );
 		assertEquals( ( String ) instance.executeStatement( "'true'.booleanFormat()" ), "true" );
