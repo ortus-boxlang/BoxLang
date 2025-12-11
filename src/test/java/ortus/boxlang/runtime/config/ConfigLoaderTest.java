@@ -52,8 +52,8 @@ class ConfigLoaderTest {
 		if ( System.getProperty( "BOXLANG_SECURITY_ALLOWEDFILEOPERATIONEXTENSIONS" ) != null ) {
 			System.clearProperty( "BOXLANG_SECURITY_ALLOWEDFILEOPERATIONEXTENSIONS" );
 		}
-		if ( System.getProperty( "boxlang.experimental.compiler" ) != null ) {
-			System.clearProperty( "boxlang.experimental.compiler" );
+		if ( System.getProperty( "boxlang.compiler" ) != null ) {
+			System.clearProperty( "boxlang.compiler" );
 		}
 	}
 
@@ -212,7 +212,7 @@ class ConfigLoaderTest {
 	@Disabled( "This test passes, but is not thread safe to run in CI in parallel with other tests" )
 	void testItCanMergeEnvironmentalProperties() {
 		System.setProperty( "BOXLANG_SECURITY_ALLOWEDFILEOPERATIONEXTENSIONS", ".exe" );
-		System.setProperty( "boxlang.experimental.compiler", "asm" );
+		System.setProperty( "boxlang.compiler", "asm" );
 		Configuration config = ConfigLoader.getInstance().loadCore();
 		// Core config checks
 		// Compiler Checks
@@ -256,7 +256,7 @@ class ConfigLoaderTest {
 		assertThat( config.security.allowedFileOperationExtensions ).isInstanceOf( List.class );
 		assertThat( config.security.allowedFileOperationExtensions ).contains( ".exe" );
 		assertThat( config.experimental ).isInstanceOf( IStruct.class );
-		assertThat( config.experimental.getAsString( Key.of( "compiler" ) ) ).isEqualTo( "asm" );
+		assertThat( config.compiler ).isEqualTo( "asm" );
 	}
 
 }

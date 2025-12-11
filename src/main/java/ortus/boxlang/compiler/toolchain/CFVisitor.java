@@ -37,6 +37,7 @@ import ortus.boxlang.compiler.ast.statement.BoxBreak;
 import ortus.boxlang.compiler.ast.statement.BoxContinue;
 import ortus.boxlang.compiler.ast.statement.BoxDo;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
+import ortus.boxlang.compiler.ast.statement.BoxEmptyStatement;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.statement.BoxForIn;
 import ortus.boxlang.compiler.ast.statement.BoxForIndex;
@@ -132,6 +133,7 @@ import ortus.boxlang.parser.antlr.CFGrammar.SimpleStatementContext;
 import ortus.boxlang.parser.antlr.CFGrammar.StatementBlockContext;
 import ortus.boxlang.parser.antlr.CFGrammar.StatementContext;
 import ortus.boxlang.parser.antlr.CFGrammar.StatementOrBlockContext;
+import ortus.boxlang.parser.antlr.CFGrammar.StatementOrBlockExpressionContext;
 import ortus.boxlang.parser.antlr.CFGrammar.StaticInitializerContext;
 import ortus.boxlang.parser.antlr.CFGrammar.StructExpressionContext;
 import ortus.boxlang.parser.antlr.CFGrammar.SwitchContext;
@@ -496,11 +498,24 @@ public class CFVisitor extends CFGrammarBaseVisitor<BoxNode> {
 	}
 
 	@Override
-	public BoxNode visitStatementOrBlock( StatementOrBlockContext ctx ) {
+	public BoxNode visitStatementOrBlockExpression( StatementOrBlockExpressionContext ctx ) {
 		if ( ctx.emptyStatementBlock() != null ) {
 			return ctx.emptyStatementBlock().accept( this );
 		}
 		return ctx.statement().accept( this );
+	}
+
+	@Override
+	public BoxNode visitStatementOrBlock( StatementOrBlockContext ctx ) {
+		if ( ctx.emptyStatementBlock() != null ) {
+			return ctx.emptyStatementBlock().accept( this );
+		}
+		if ( ctx.statement() != null ) {
+			return ctx.statement().accept( this );
+		}
+		// SEMICOLON case
+		// If we get here, there will only be one semicolon, even thoguh the previous alternative may have matched 1 or more.
+		return new BoxEmptyStatement( tools.getPosition( ctx.SEMICOLON( 0 ) ), ctx.SEMICOLON( 0 ).getText() );
 	}
 
 	@Override

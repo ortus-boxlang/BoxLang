@@ -1191,7 +1191,7 @@ public class ListUtil {
 	 * For higher order functions which return a new datastructure, this decides which type to return.
 	 * Map() and filter() for example, when called on an UnmodifiableArray should return a regular Array.
 	 * 
-	 * This is to match other dynamnic languages such as Python, JavaScript, or Ruby.
+	 * This is to match other dynamic languages such as Python, JavaScript, or Ruby.
 	 * 
 	 * @param type The original array type
 	 * 

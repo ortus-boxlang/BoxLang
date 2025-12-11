@@ -22,8 +22,6 @@ import java.time.Duration;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.RequestBoxContext;
-import ortus.boxlang.runtime.context.SessionBoxContext;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -118,14 +116,6 @@ public class Session implements Serializable {
 		            Key.application, application
 		        )
 		    );
-
-		application.getStartingListener().getRequestContext().registerShutdownListener( ( ctx ) -> {
-			// Persist the session at the end of the request
-			SessionBoxContext sessionContext = ctx.getParentOfType( SessionBoxContext.class );
-			if ( sessionContext != null ) {
-				sessionContext.persistSession( ( RequestBoxContext ) ctx );
-			}
-		} );
 	}
 
 	/**

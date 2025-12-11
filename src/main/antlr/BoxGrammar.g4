@@ -45,7 +45,7 @@ classOrInterface: SEMICOLON* (boxClass | interface)
     ;
 
 // This is the top level rule for a script of statements.
-script: SEMICOLON* functionOrStatement*
+script: ( SEMICOLON | functionOrStatement)*
     ;
 
 // Used for tests, to force the parser to look at all tokens and not just stop at the first expression
@@ -68,13 +68,13 @@ boxClass
     : importStatement* preAnnotation* ABSTRACT? FINAL? CLASS postAnnotation* LBRACE property* classBody RBRACE
     ;
 
-classBody: classBodyStatement*
+classBody: (classBodyStatement | SEMICOLON)*
     ;
 
 classBodyStatement: staticInitializer | functionOrStatement
     ;
 
-staticInitializer: SEMICOLON* STATIC normalStatementBlock SEMICOLON*
+staticInitializer: STATIC normalStatementBlock
     ;
 
 // interface {}
@@ -82,11 +82,12 @@ interface
     : importStatement* (preAnnotation)* INTERFACE postAnnotation* LBRACE (
         function
         | staticInitializer
+        | SEMICOLON
     )* RBRACE
     ;
 
 // UDF or abstractFunction
-function: functionSignature postAnnotation* ( ( normalStatementBlock? SEMICOLON*) | SEMICOLON)
+function: functionSignature postAnnotation* normalStatementBlock?
     ;
 
 // public String myFunction( String foo, String bar )
@@ -168,52 +169,57 @@ anonymousFunction
     // function( param, param ) {}
     FUNCTION LPAREN functionParamList? RPAREN (postAnnotation)* normalStatementBlock # closureFunc
     // ( param, param ) => {}, param => {} (param, param) -> {}, param -> {}
-    | (LPAREN functionParamList? RPAREN | identifier) (postAnnotation)* op = (ARROW | ARROW_RIGHT) statementOrBlock # lambdaFunc
+    | (LPAREN functionParamList? RPAREN | identifier) (postAnnotation)* op = (ARROW | ARROW_RIGHT) statementOrBlockExpression # lambdaFunc
     ;
 
 // { statement; statement; }
-statementBlock: LBRACE statement+ RBRACE
+statementBlock: LBRACE SEMICOLON* (statement SEMICOLON*)+ RBRACE
     ;
 
 // { statement; statement; }
 emptyStatementBlock: LBRACE RBRACE
     ;
 
-normalStatementBlock: LBRACE statement* RBRACE
+normalStatementBlock: LBRACE (statement | SEMICOLON)* RBRACE
     ;
 
-statementOrBlock: emptyStatementBlock | statement
+// This is used only for top level statements, where we're ok consuming an extra semicolon at the end (see below).  We also allow an "empty statement" here (just a semicolon).
+statementOrBlock: emptyStatementBlock | statement SEMICOLON* | SEMICOLON
+    ;
+
+// This exists basically for anonymous functions who end with a statement or block, but CANNOT consume any trailing seimicolons
+// or it will fail to end the outermost statement, causing the next expression to possibly be unexpectdly merged with it.
+statementOrBlockExpression: emptyStatementBlock | statement
     ;
 
 // Any top-level statement that can be in a block.
+// Don't ever match semi-colons directly here as it will mess up expressions which includes statements-- namely anonymous functions
 statement
-    : SEMICOLON* (
-        importStatement
-        | function
-        | if
-        | switch
-        | try
-        | while
-        | for
-        | do
-        // throw would parser as a component or a simple statement, but the `throw new
-        // java:com.foo.Bar();` case needs checked PRIOR to the component case, which needs checked
-        // prior to simple statements due to its ambiguity
-        | throw
-        // include is really a component or a simple statement, but the `include expression;` case
-        // needs checked PRIOR to the compnent case, which needs checked prior to expression
-        | include
-        // Introducing headless .express means we have to use tricks to distinguids between an empty staetment block
-        // and something like {}.func() as statementBlocks can be empty so the parse will see an emply staeement block
-        // and a standlaong headless access. So statementBlock now MUST conmtain a stament, and we have a separate
-        // empty statement block rule that follows after expression.
-        | statementBlock
-        | component
-        | simpleStatement
-        | expressionStatement // Allows for statements like complicated.thing.foo.bar--
-        | emptyStatementBlock
-        | componentIsland
-    ) SEMICOLON*
+    : importStatement
+    | function
+    | if
+    | switch
+    | try
+    | while
+    | for
+    | do
+    // throw would parser as a component or a simple statement, but the `throw new
+    // java:com.foo.Bar();` case needs checked PRIOR to the component case, which needs checked
+    // prior to simple statements due to its ambiguity
+    | throw
+    // include is really a component or a simple statement, but the `include expression;` case
+    // needs checked PRIOR to the compnent case, which needs checked prior to expression
+    | include
+    // Introducing headless .express means we have to use tricks to distinguids between an empty staetment block
+    // and something like {}.func() as statementBlocks can be empty so the parse will see an emply staeement block
+    // and a standlaong headless access. So statementBlock now MUST conmtain a stament, and we have a separate
+    // empty statement block rule that follows after expression.
+    | statementBlock
+    | component
+    | simpleStatement
+    | expressionStatement // Allows for statements like complicated.thing.foo.bar--
+    | emptyStatementBlock
+    | componentIsland
     ;
 
 // op=(VAR | FINAL) etc
@@ -507,7 +513,7 @@ el2
 
     // Ternary operations are right associative, which means that if they are nested,
     // the rightmost operation is evaluated first.
-    | <assoc = right> el2 QM el2 COLON el2                             # exprTernary    // foo ? bar : baz
+    | <assoc = right> el2 QM expression COLON expression               # exprTernary    // foo ? bar : baz
     | atoms                                                            # exprAtoms      // foo, 42, true, false, null, [1,2,3], {foo:bar}
     | { isAssignmentModifier(_input) }? assignmentModifier+ expression # exprVarDecl    // var foo = bar or final foo = bar
     | identifier                                                       # exprIdentifier // foo

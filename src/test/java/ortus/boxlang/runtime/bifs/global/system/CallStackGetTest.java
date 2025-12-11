@@ -45,7 +45,7 @@ public class CallStackGetTest {
 		    """,
 		context );
 		Array stack = variables.getAsArray( result );
-		assertThat( stack.size() ).isEqualTo( 2 );
+		assertThat( stack.size() ).isEqualTo( 3);
 		IStruct frame = (IStruct) stack.get(0);
 		assertThat( frame.containsKey( "Function" ) ).isEqualTo( true );
 		assertThat( frame.get( "Function" ) ).isEqualTo( "nested" );

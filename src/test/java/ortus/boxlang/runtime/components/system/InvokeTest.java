@@ -35,13 +35,16 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
 
 public class InvokeTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
 	IScope				variables;
-	static Key			result	= new Key( "result" );
+	static Key			result		= new Key( "result" );
+	static String		testWSDL	= "http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso?WSDL";
 
 	@BeforeAll
 	public static void setUp() {
@@ -406,6 +409,138 @@ public class InvokeTest {
 		assertThat( variables.getAsStruct( Key.of( "attrs" ) ).get( Key.of( "method" ) ) ).isEqualTo( "runOnRequest" );
 		assertThat( variables.getAsStruct( Key.of( "attrs" ) ).get( Key.of( "COMPONENT" ) ).toString() )
 		    .isEqualTo( "src.test.java.ortus.boxlang.runtime.components.system.EventMethods" );
+	}
+
+	@DisplayName( "Test invoke with webservice object" )
+	@Test
+	public void testInvokeWebServiceWithWrapper() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				bx:invoke
+					webservice="%s"
+					method="ListOfContinentsByName"
+					returnVariable="results";
+		    """.formatted( testWSDL ),
+		    context );
+		// @formatter:on
+		Array results = variables.getAsArray( Key.of( "results" ) );
+		assertThat( results.size() ).isGreaterThan( 0 );
+	}
+
+	@DisplayName( "Test web service with arguments" )
+	@Test
+	public void testInvokeWebServiceWithArguments() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				bx:invoke
+					webservice="%s"
+					method="CountryCurrency"
+					argumentCollection={ sCountryISOCode : "US" }
+					returnVariable="results";
+		    """.formatted( testWSDL ),
+		    context );
+		// @formatter:on
+		IStruct results = variables.getAsStruct( Key.of( "results" ) );
+		assertThat( results.get( Key.of( "sISOCode" ) ).toString() ).isEqualTo( "USD" );
+		assertThat( results.get( Key.of( "sName" ) ).toString() ).isEqualTo( "Dollars" );
+	}
+
+	@DisplayName( "Test web service with language lookup" )
+	@Test
+	public void testInvokeWebServiceLanguageName() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				bx:invoke
+					webservice="%s"
+					method="LanguageName"
+					argumentCollection={ sISOCode : "eng" }
+					returnVariable="results";
+
+				println( results )
+		    """.formatted( testWSDL ),
+		    context );
+		// @formatter:on
+		String results = variables.getAsString( Key.of( "results" ) );
+		assertThat( results.toLowerCase() ).isEqualTo( "english" );
+	}
+
+	@DisplayName( "Test web service returning complex nested structure" )
+	@Test
+	public void testInvokeWebServiceFullCountryInfo() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				bx:invoke
+					webservice="%s"
+					method="FullCountryInfo"
+					argumentCollection={ sCountryISOCode : "US" }
+					returnVariable="results";
+
+				println( results )
+		    """.formatted( testWSDL ),
+		    context );
+		// @formatter:on
+		IStruct results = variables.getAsStruct( Key.of( "results" ) );
+
+		// Verify country code
+		assertThat( results.get( Key.of( "sISOCode" ) ).toString() ).isEqualTo( "US" );
+
+		// Verify country name
+		assertThat( results.get( Key.of( "sName" ) ).toString() ).isEqualTo( "United States" );
+
+		// Verify capital city
+		assertThat( results.get( Key.of( "sCapitalCity" ) ).toString() ).isEqualTo( "Washington" );
+
+		// Verify currency is present and has expected structure
+		Object currency = results.get( Key.of( "sCurrencyISOCode" ) );
+		assertThat( currency ).isNotNull();
+		assertThat( currency.toString() ).isEqualTo( "USD" );
+	}
+
+	@DisplayName( "Test web service returning array of countries" )
+	@Test
+	public void testInvokeWebServiceCountriesUsingCurrency() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				bx:invoke
+					webservice="%s"
+					method="CountriesUsingCurrency"
+					argumentCollection={ sISOCurrencyCode : "EUR" }
+					returnVariable="results";
+
+				println( results )
+		    """.formatted( testWSDL ),
+		    context );
+		// @formatter:on
+		Array results = variables.getAsArray( Key.of( "results" ) );
+
+		// EUR is used by multiple European countries
+		assertThat( results.size() ).isGreaterThan( 10 );
+
+		// Each item should be a struct with country information
+		IStruct firstCountry = ( IStruct ) results.get( 0 );
+		assertThat( firstCountry.get( Key.of( "sISOCode" ) ) ).isNotNull();
+		assertThat( firstCountry.get( Key.of( "sName" ) ) ).isNotNull();
+
+		// Verify at least some expected countries are in the list
+		boolean	foundGermany	= false;
+		boolean	foundFrance		= false;
+		for ( Object country : results ) {
+			IStruct	countryStruct	= ( IStruct ) country;
+			String	isoCode			= countryStruct.get( Key.of( "sISOCode" ) ).toString();
+			if ( "DE".equals( isoCode ) ) {
+				foundGermany = true;
+			}
+			if ( "FR".equals( isoCode ) ) {
+				foundFrance = true;
+			}
+		}
+		assertThat( foundGermany ).isTrue();
+		assertThat( foundFrance ).isTrue();
 	}
 
 }

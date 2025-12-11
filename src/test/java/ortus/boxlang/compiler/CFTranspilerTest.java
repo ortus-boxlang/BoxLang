@@ -450,4 +450,46 @@ public class CFTranspilerTest {
 		assertThat( trasnpiledSource ).doesNotContain( "cf_sql_" );
 	}
 
+	@Test
+	public void testIsDefinedRewrite() {
+		instance.executeSource(
+		    """
+		       thisTag = { foo : "bar" }
+		    xthisTagx = { foo : "bar" }
+
+		    result = isDefined( "thisTag" );
+		    result2 = isDefined( "thisTag.foo" );
+		    result3 = isDefined( "variables.thisTag" );
+		    result4 = isDefined( "variables[ 'ThisTag' ]" );
+		    result5 = isDefined( "thisTag['foo']" );
+		    result6 = isDefined( 'thisTag["foo"]' );
+		    result7 = isDefined( "thisTag[ 'foo' ]" );
+
+		    // All the same as above, but avoid false hits
+		    result8 = isDefined( "xthisTagx" );
+		    result9 = isDefined( "xthisTagx.foo" );
+		    result10 = isDefined( "variables.xthisTagx" );
+		    result11 = isDefined( "variables[ 'XthisTagx' ]" );
+		    result12 = isDefined( "xthisTagx['foo']" );
+		    result13 = isDefined( 'xthisTagx["foo"]' );
+		    result14 = isDefined( "xthisTagx[ 'foo' ]" );
+		         	""",
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result7" ) ) ).isEqualTo( true );
+
+		assertThat( variables.get( Key.of( "result8" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result9" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result10" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result11" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result12" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result13" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result14" ) ) ).isEqualTo( true );
+	}
+
 }

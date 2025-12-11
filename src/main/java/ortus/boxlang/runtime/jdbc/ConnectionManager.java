@@ -237,6 +237,9 @@ public class ConnectionManager {
 
 	/**
 	 * Get a JDBC Connection to the specified datasource.
+	 * 
+	 * This is deprecated For username/password overrides, use {@link #getBoxConnection(QueryOptions)} instead.
+	 * 
 	 * <p>
 	 * This method uses the following logic to pull the correct connection for the given query/context:
 	 * <ol>
@@ -253,6 +256,7 @@ public class ConnectionManager {
 	 *
 	 * @return A JDBC Connection object, possibly from a transactional context.
 	 */
+	@Deprecated
 	public BoxConnection getBoxConnection( DataSource datasource, String username, String password ) {
 		if ( isInTransaction() ) {
 			logger.debug(
@@ -291,7 +295,8 @@ public class ConnectionManager {
 	/**
 	 * Get a JDBC Connection to the specified datasource.
 	 * 
-	 * This is deprecated. Use getBoxConnection() instead. It contains the JDBC Connection as well as the BoxLang DataSource.
+	 * This is deprecated For username/password overrides, use {@link #getBoxConnection(QueryOptions)} instead.
+	 * 
 	 * <p>
 	 * This method uses the following logic to pull the correct connection for the given query/context:
 	 * <ol>
@@ -428,11 +433,7 @@ public class ConnectionManager {
 	 * @return A connection to the configured datasource.
 	 */
 	public BoxConnection getBoxConnection( QueryOptions options ) {
-		if ( options.wantsUsernameAndPassword() ) {
-			return getBoxConnection( getDataSource( options ), options.username, options.password );
-		} else {
-			return getBoxConnection( getDataSource( options ) );
-		}
+		return getBoxConnection( getDataSource( options ) );
 	}
 
 	/**
@@ -461,6 +462,18 @@ public class ConnectionManager {
 			}
 			// NAMED DATASOURCE
 			else if ( datasourceObject instanceof String datasourceName ) {
+
+				// If there is a username/password specified alongside a datasource name,
+				// we treat this as an ad-hoc datasource with overrides
+				if ( options.wantsUsernameAndPassword() ) {
+					IStruct adHocUserPassOptions = getDatasourceOrThrow( Key.of( datasourceName ) )
+					    .getConfiguration()
+					    .toConfigStruct();
+					adHocUserPassOptions.put( Key.username, options.username );
+					adHocUserPassOptions.put( Key.password, options.password );
+					return getOnTheFlyDataSource( adHocUserPassOptions );
+				}
+
 				return getDatasourceOrThrow( Key.of( datasourceName ) );
 			}
 			// INVALID DATASOURCE

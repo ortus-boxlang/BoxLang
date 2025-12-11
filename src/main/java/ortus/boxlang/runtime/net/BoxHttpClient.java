@@ -89,7 +89,7 @@ public class BoxHttpClient {
 	public static final String											DEFAULT_METHOD				= "GET";
 	public static final int												DEFAULT_CONNECTION_TIMEOUT	= 15;
 	public static final int												DEFAULT_REQUEST_TIMEOUT		= 0;
-	public static final boolean											DEFAULT_THROW_ON_ERROR		= true;
+	public static final boolean											DEFAULT_THROW_ON_ERROR		= false;
 
 	// HTTP Status Codes
 	public static final int												STATUS_REQUEST_TIMEOUT		= 408;
@@ -130,25 +130,32 @@ public class BoxHttpClient {
 	 * Tracks the last date + time the client was used.
 	 * Uses AtomicReference for thread-safe updates without synchronization.
 	 */
-	private final java.util.concurrent.atomic.AtomicReference<Instant>	lastUsedTimestamp			= new java.util.concurrent.atomic.AtomicReference<>( null );
+	private final java.util.concurrent.atomic.AtomicReference<Instant>	lastUsedTimestamp			= new java.util.concurrent.atomic.AtomicReference<>(
+	    null );
 
 	/**
 	 * Statistics tracking for this client.
 	 * Uses AtomicLong for thread-safe updates without synchronization.
 	 */
 	private final java.util.concurrent.atomic.AtomicLong				totalRequests				= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong				successfulRequests			= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong				successfulRequests			= new java.util.concurrent.atomic.AtomicLong(
+	    0 );
 	private final java.util.concurrent.atomic.AtomicLong				failedRequests				= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong				timeoutFailures				= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong				connectionFailures			= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong				timeoutFailures				= new java.util.concurrent.atomic.AtomicLong(
+	    0 );
+	private final java.util.concurrent.atomic.AtomicLong				connectionFailures			= new java.util.concurrent.atomic.AtomicLong(
+	    0 );
 	private final java.util.concurrent.atomic.AtomicLong				tlsFailures					= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong				httpProtocolFailures		= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong				httpProtocolFailures		= new java.util.concurrent.atomic.AtomicLong(
+	    0 );
 	private final java.util.concurrent.atomic.AtomicLong				bytesReceived				= new java.util.concurrent.atomic.AtomicLong( 0 );
 	private final java.util.concurrent.atomic.AtomicLong				bytesSent					= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong				totalExecutionTimeMs		= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong				totalExecutionTimeMs		= new java.util.concurrent.atomic.AtomicLong(
+	    0 );
 	private final java.util.concurrent.atomic.AtomicLong				minExecutionTimeMs			= new java.util.concurrent.atomic.AtomicLong(
 	    Long.MAX_VALUE );
-	private final java.util.concurrent.atomic.AtomicLong				maxExecutionTimeMs			= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong				maxExecutionTimeMs			= new java.util.concurrent.atomic.AtomicLong(
+	    0 );
 	private final Instant												createdAt					= Instant.now();
 
 	/**
@@ -271,8 +278,7 @@ public class BoxHttpClient {
 		    Key.timeoutFailures, this.timeoutFailures.get(),
 		    Key.tlsFailures, this.tlsFailures.get(),
 		    Key.totalExecutionTimeMs, this.totalExecutionTimeMs.get(),
-		    Key.totalRequests, this.totalRequests.get()
-		);
+		    Key.totalRequests, this.totalRequests.get() );
 	}
 
 	/**
@@ -368,7 +374,8 @@ public class BoxHttpClient {
 	/**
 	 * Get the average execution time per request.
 	 *
-	 * @return The average execution time in milliseconds, or 0 if no requests have been made
+	 * @return The average execution time in milliseconds, or 0 if no requests have
+	 *         been made
 	 */
 	public long getAverageExecutionTimeMs() {
 		long total = this.totalRequests.get();
@@ -378,7 +385,8 @@ public class BoxHttpClient {
 	/**
 	 * Get the minimum execution time for a single request.
 	 *
-	 * @return The minimum execution time in milliseconds, or 0 if no requests have been made
+	 * @return The minimum execution time in milliseconds, or 0 if no requests have
+	 *         been made
 	 */
 	public long getMinExecutionTimeMs() {
 		long min = this.minExecutionTimeMs.get();
@@ -446,7 +454,8 @@ public class BoxHttpClient {
 		// Request start time, set during execution
 		private DateTime										startTime;
 
-		// If debug mode is enabled: not used right now, maybe later we do something with it.
+		// If debug mode is enabled: not used right now, maybe later we do something
+		// with it.
 		private boolean											debug				= false;
 		// Http version
 		private String											httpVersion			= HTTP_2;
@@ -471,7 +480,8 @@ public class BoxHttpClient {
 		// Basic Authentication
 		private String											username;
 		private String											password;
-		// Only basic for now, maybe in the future NTLM, but that's legacy, kept here just in case, but never used
+		// Only basic for now, maybe in the future NTLM, but that's legacy, kept here
+		// just in case, but never used
 		private String											authType			= "BASIC";
 
 		// Callbacks
@@ -874,6 +884,47 @@ public class BoxHttpClient {
 		}
 
 		/**
+		 * Set the request body directly (simpler alternative to using params)
+		 *
+		 * @param body The body content (String or byte[])
+		 *
+		 * @return This builder for chaining
+		 */
+		public BoxHttpRequest body( Object body ) {
+			ortus.boxlang.runtime.types.IStruct param = new ortus.boxlang.runtime.types.Struct();
+			param.put( ortus.boxlang.runtime.scopes.Key.type, "body" );
+			param.put( ortus.boxlang.runtime.scopes.Key.value, body );
+			this.params.add( param );
+			return this;
+		}
+
+		/**
+		 * Set the request body as XML with appropriate Content-Type header
+		 *
+		 * @param xmlContent The XML content as a string
+		 *
+		 * @return This builder for chaining
+		 */
+		public BoxHttpRequest xmlBody( String xmlContent ) {
+			this.header( "Content-Type", "application/xml; charset=" + this.charset );
+			return this.body( xmlContent );
+		}
+
+		/**
+		 * Set the request body as JSON with appropriate Content-Type header
+		 *
+		 * @param jsonContent The JSON content as a string
+		 *
+		 * @return This builder for chaining
+		 */
+		public BoxHttpRequest jsonBody( String jsonContent ) {
+			// Add Content-Type header for JSON
+			this.header( "Content-Type", "application/json; charset=utf-8" );
+			// Add body
+			return this.body( jsonContent );
+		}
+
+		/**
 		 * Add a header to the request
 		 *
 		 * @param name  The header name
@@ -1093,9 +1144,11 @@ public class BoxHttpClient {
 
 		/**
 		 * Set a custom transformer function to process the HTTP result.
-		 * The transformer receives the httpResult struct and returns the transformed value.
+		 * The transformer receives the httpResult struct and returns the transformed
+		 * value.
 		 *
-		 * @param transformer The transformer function (Java Function or BoxLang Function)
+		 * @param transformer The transformer function (Java Function or BoxLang
+		 *                    Function)
 		 *
 		 * @return This builder for chaining
 		 */
@@ -1115,7 +1168,8 @@ public class BoxHttpClient {
 
 		/**
 		 * Transform the response by parsing the fileContent as JSON.
-		 * This is a pre-built transformer that automatically converts JSON responses to BoxLang types.
+		 * This is a pre-built transformer that automatically converts JSON responses to
+		 * BoxLang types.
 		 *
 		 * @return This builder for chaining
 		 */
@@ -1142,7 +1196,8 @@ public class BoxHttpClient {
 
 		/**
 		 * Transform the response by parsing the fileContent as XML.
-		 * This is a pre-built transformer that converts XML responses to BoxLang XML objects.
+		 * This is a pre-built transformer that converts XML responses to BoxLang XML
+		 * objects.
 		 *
 		 * @return This builder for chaining
 		 */
@@ -1225,6 +1280,38 @@ public class BoxHttpClient {
 		}
 
 		/**
+		 * This method returns a struct of what the request would look like when
+		 * sending.
+		 * It is used for debugging to know the state of the Request before sending.
+		 *
+		 * @return A Struct representing the request state
+		 */
+		public IStruct inspect() {
+			IStruct requestStruct = new Struct( false );
+			requestStruct.put( Key.authType, this.authType );
+			requestStruct.put( Key.charset, this.charset );
+			requestStruct.put( Key.error, this.error );
+			requestStruct.put( Key.errorMessage, this.errorMessage );
+			requestStruct.put( Key.httpVersion, this.httpVersion );
+			requestStruct.put( Key.isBinaryNever, this.isBinaryNever );
+			requestStruct.put( Key.isBinaryRequest, this.isBinaryRequest );
+			requestStruct.put( Key.method, this.method );
+			requestStruct.put( Key.multipart, this.multipart );
+			requestStruct.put( Key.outputDirectory, this.outputDirectory );
+			requestStruct.put( Key.outputFile, this.outputFile );
+			requestStruct.put( Key.params, this.params );
+			requestStruct.put( Key.port, this.port );
+			requestStruct.put( Key.requestID, this.requestID );
+			requestStruct.put( Key.sse, this.forceSSE );
+			requestStruct.put( Key.throwOnError, this.throwOnError );
+			requestStruct.put( Key.timeout, this.timeout );
+			requestStruct.put( Key.URL, this.url );
+			requestStruct.put( Key.userAgent, this.userAgent );
+			requestStruct.put( Key.username, this.username != null ? "****" : null );
+			return requestStruct;
+		}
+
+		/**
 		 * ------------------------------------------------------------------------------
 		 * Processors
 		 * ------------------------------------------------------------------------------
@@ -1247,7 +1334,8 @@ public class BoxHttpClient {
 		    List<IStruct> formFields ) {
 			// Cannot have an existing body when using form fields
 			if ( bodyPublisher != null ) {
-				throw new BoxRuntimeException( "Cannot use a formfield httpparam with an existing http body: " + bodyPublisher.toString() );
+				throw new BoxRuntimeException(
+				    "Cannot use a formfield httpparam with an existing http body: " + bodyPublisher.toString() );
 			}
 
 			bodyPublisher = HttpRequest.BodyPublishers.ofString(
@@ -1259,8 +1347,7 @@ public class BoxHttpClient {
 				        }
 				        return StringCaster.cast( formField.get( Key._name ) ) + "=" + value;
 			        } )
-			        .collect( Collectors.joining( "&" ) )
-			);
+			        .collect( Collectors.joining( "&" ) ) );
 
 			requestBuilder.header( "Content-Type", "application/x-www-form-urlencoded" );
 			return bodyPublisher;
@@ -1287,7 +1374,8 @@ public class BoxHttpClient {
 		    List<IStruct> files ) throws IOException {
 			// Cannot have an existing body when using multipart
 			if ( bodyPublisher != null ) {
-				throw new BoxRuntimeException( "Cannot use a multipart body with an existing http body: " + bodyPublisher.toString() );
+				throw new BoxRuntimeException(
+				    "Cannot use a multipart body with an existing http body: " + bodyPublisher.toString() );
 			}
 
 			HttpRequestMultipartBody.Builder multipartBodyBuilder = new HttpRequestMultipartBody.Builder();
@@ -1301,7 +1389,8 @@ public class BoxHttpClient {
 			}
 
 			for ( IStruct formField : formFields ) {
-				multipartBodyBuilder.addPart( StringCaster.cast( formField.get( Key._name ) ), StringCaster.cast( formField.get( Key.value ) ) );
+				multipartBodyBuilder.addPart( StringCaster.cast( formField.get( Key._name ) ),
+				    StringCaster.cast( formField.get( Key.value ) ) );
 			}
 
 			HttpRequestMultipartBody multipartBody = multipartBodyBuilder.build();
@@ -1340,9 +1429,11 @@ public class BoxHttpClient {
 					// We need to use `setHeader` to overwrite any previously set headers
 					case "header" -> {
 						String headerName = StringCaster.cast( param.get( Key._NAME ) );
-						// We need to downgrade our HTTP version if a TE header is present and is not `trailers`
+						// We need to downgrade our HTTP version if a TE header is present and is not
+						// `trailers`
 						// because HTTP/2 does not support the TE header with any other values
-						if ( headerName.equalsIgnoreCase( "TE" ) && !StringCaster.cast( param.get( Key.value ) ).equalsIgnoreCase( "trailers" ) ) {
+						if ( headerName.equalsIgnoreCase( "TE" )
+						    && !StringCaster.cast( param.get( Key.value ) ).equalsIgnoreCase( "trailers" ) ) {
 							requestBuilder.version( HttpClient.Version.HTTP_1_1 );
 						}
 						requestBuilder.setHeader( headerName, StringCaster.cast( param.get( Key.value ) ) );
@@ -1351,21 +1442,25 @@ public class BoxHttpClient {
 					// Set body content
 					case "body" -> {
 						if ( bodyPublisher != null ) {
-							throw new BoxRuntimeException( "Cannot use a body httpparam with an existing http body: " + bodyPublisher.toString() );
+							throw new BoxRuntimeException( "Cannot use a body httpparam with an existing http body: "
+							    + bodyPublisher.toString() );
 						}
 						if ( param.get( Key.value ) instanceof byte[] bodyBytes ) {
 							bodyPublisher = HttpRequest.BodyPublishers.ofByteArray( bodyBytes );
 						} else if ( StringCaster.attempt( param.get( Key.value ) ).wasSuccessful() ) {
-							bodyPublisher = HttpRequest.BodyPublishers.ofString( StringCaster.cast( param.get( Key.value ) ) );
+							bodyPublisher = HttpRequest.BodyPublishers
+							    .ofString( StringCaster.cast( param.get( Key.value ) ) );
 						} else {
-							throw new BoxRuntimeException( "The body attribute provided is not a valid string nor a binary object." );
+							throw new BoxRuntimeException(
+							    "The body attribute provided is not a valid string nor a binary object." );
 						}
 					}
 
 					// XML body
 					case "xml" -> {
 						if ( bodyPublisher != null ) {
-							throw new BoxRuntimeException( "Cannot use a xml httpparam with an existing http body: " + bodyPublisher.toString() );
+							throw new BoxRuntimeException( "Cannot use a xml httpparam with an existing http body: "
+							    + bodyPublisher.toString() );
 						}
 						requestBuilder.header( "Content-Type", "text/xml" );
 						bodyPublisher = HttpRequest.BodyPublishers.ofString( StringCaster.cast( param.get( Key.value ) ) );
@@ -1375,8 +1470,7 @@ public class BoxHttpClient {
 					case "cgi" -> requestBuilder.header( StringCaster.cast( param.get( Key._NAME ) ),
 					    BooleanCaster.cast( param.getOrDefault( Key.encoded, false ) )
 					        ? EncryptionUtil.urlEncode( StringCaster.cast( param.get( Key.value ) ) )
-					        : StringCaster.cast( param.get( Key.value ) )
-					);
+					        : StringCaster.cast( param.get( Key.value ) ) );
 
 					// File to upload
 					case "file" -> files.add( param );
@@ -1385,9 +1479,9 @@ public class BoxHttpClient {
 					case "url" -> uriBuilder.addParameter(
 					    StringCaster.cast( param.get( Key._NAME ) ),
 					    BooleanCaster.cast( param.getOrDefault( Key.encoded, true ) )
-					        ? EncryptionUtil.urlEncode( StringCaster.cast( param.get( Key.value ) ), StandardCharsets.UTF_8 )
-					        : StringCaster.cast( param.get( Key.value ) )
-					);
+					        ? EncryptionUtil.urlEncode( StringCaster.cast( param.get( Key.value ) ),
+					            StandardCharsets.UTF_8 )
+					        : StringCaster.cast( param.get( Key.value ) ) );
 
 					// Form field
 					case "formfield" -> formFields.add( param );
@@ -1396,8 +1490,8 @@ public class BoxHttpClient {
 					case "cookie" -> requestBuilder.header( "Cookie",
 					    StringCaster.cast( param.get( Key._NAME ) )
 					        + "="
-					        + EncryptionUtil.urlEncode( StringCaster.cast( param.get( Key.value ) ), StandardCharsets.UTF_8 )
-					);
+					        + EncryptionUtil.urlEncode( StringCaster.cast( param.get( Key.value ) ),
+					            StandardCharsets.UTF_8 ) );
 
 					// Unhandled type
 					default -> throw new BoxRuntimeException( "Unhandled HTTPParam type: " + type );
@@ -1412,7 +1506,8 @@ public class BoxHttpClient {
 		 * @param requestBuilder The HttpRequest.Builder to add the header to
 		 */
 		private void setupBasicAuth( HttpRequest.Builder requestBuilder ) {
-			String	auth		= ( this.username != null ? this.username : "" ) + ":" + ( this.password != null ? this.password : "" );
+			String	auth		= ( this.username != null ? this.username : "" ) + ":"
+			    + ( this.password != null ? this.password : "" );
 			String	encodedAuth	= Base64.getEncoder().encodeToString( auth.getBytes() );
 			requestBuilder.header( "Authorization", "Basic " + encodedAuth );
 		}
@@ -1438,7 +1533,8 @@ public class BoxHttpClient {
 
 			// Basic metadata for the request and results
 			requestBuilder
-			    .version( this.httpVersion.equalsIgnoreCase( HTTP_1 ) ? HttpClient.Version.HTTP_1_1 : HttpClient.Version.HTTP_2 )
+			    .version( this.httpVersion.equalsIgnoreCase( HTTP_1 ) ? HttpClient.Version.HTTP_1_1
+			        : HttpClient.Version.HTTP_2 )
 			    .header( "User-Agent", this.userAgent )
 			    .header( "Accept-Encoding", "gzip, deflate" );
 
@@ -1463,7 +1559,8 @@ public class BoxHttpClient {
 				setupBasicAuth( requestBuilder );
 			}
 
-			// Process HTTP Params - returns the bodyPublisher if any body-type params were found
+			// Process HTTP Params - returns the bodyPublisher if any body-type params were
+			// found
 			bodyPublisher = processParams( uriBuilder, requestBuilder, formFields, files, bodyPublisher );
 
 			// Process Files
@@ -1499,36 +1596,51 @@ public class BoxHttpClient {
 		/**
 		 * Execute the HTTP request and process the response.
 		 * <p>
-		 * This is the main terminal operation that executes the HTTP request based on the configured
-		 * parameters. The method handles both streaming and buffered response modes, manages callbacks,
+		 * This is the main terminal operation that executes the HTTP request based on
+		 * the configured
+		 * parameters. The method handles both streaming and buffered response modes,
+		 * manages callbacks,
 		 * tracks statistics, and provides comprehensive error handling.
 		 * <p>
 		 * <strong>Execution Flow:</strong>
 		 * <ol>
-		 * <li>Request Preparation: Builds the HttpRequest with all configured parameters (URL, method, headers, body, auth, etc.)</li>
-		 * <li>Pre-Request Setup: Initializes timing, updates client statistics, populates result metadata</li>
-		 * <li>Request Start Event: Fires ON_HTTP_REQUEST interceptor event and onRequestStart callback</li>
+		 * <li>Request Preparation: Builds the HttpRequest with all configured
+		 * parameters (URL, method, headers, body, auth, etc.)</li>
+		 * <li>Pre-Request Setup: Initializes timing, updates client statistics,
+		 * populates result metadata</li>
+		 * <li>Request Start Event: Fires ON_HTTP_REQUEST interceptor event and
+		 * onRequestStart callback</li>
 		 * <li>Request Execution:
 		 * <ul>
-		 * <li>Streaming Mode: If onChunk callback is provided, processes response in chunks with SSE detection</li>
+		 * <li>Streaming Mode: If onChunk callback is provided, processes response in
+		 * chunks with SSE detection</li>
 		 * <li>Buffered Mode: Receives entire response then processes (default)</li>
 		 * </ul>
 		 * </li>
-		 * <li>Response Processing: Decodes, transforms, and populates httpResult struct</li>
-		 * <li>Post-Response Events: Fires ON_HTTP_RESPONSE interceptor and onComplete callback</li>
-		 * <li>Finalization: Calculates execution time and updates client statistics</li>
+		 * <li>Response Processing: Decodes, transforms, and populates httpResult
+		 * struct</li>
+		 * <li>Post-Response Events: Fires ON_HTTP_RESPONSE interceptor and onComplete
+		 * callback</li>
+		 * <li>Finalization: Calculates execution time and updates client
+		 * statistics</li>
 		 * </ol>
 		 * <p>
 		 * <strong>Error Handling:</strong>
 		 * <p>
 		 * The method catches and handles multiple exception types gracefully:
 		 * <ul>
-		 * <li><strong>HttpTimeoutException:</strong> Request timeout - sets 408 status, calls onError callback</li>
-		 * <li><strong>SocketException/ConnectException:</strong> Connection failures (DNS, SSL/TLS, network) - sets 502 status</li>
-		 * <li><strong>BoxRuntimeException:</strong> Re-thrown immediately (validation errors, hard-stop errors)</li>
-		 * <li><strong>InterruptedException:</strong> Thread interrupted - sets error state and re-interrupts thread</li>
-		 * <li><strong>ExecutionException:</strong> Wraps various HTTP execution failures - unwraps and handles inner exception</li>
-		 * <li><strong>Other Exceptions:</strong> Catch-all for unexpected errors - sets 500 status</li>
+		 * <li><strong>HttpTimeoutException:</strong> Request timeout - sets 408 status,
+		 * calls onError callback</li>
+		 * <li><strong>SocketException/ConnectException:</strong> Connection failures
+		 * (DNS, SSL/TLS, network) - sets 502 status</li>
+		 * <li><strong>BoxRuntimeException:</strong> Re-thrown immediately (validation
+		 * errors, hard-stop errors)</li>
+		 * <li><strong>InterruptedException:</strong> Thread interrupted - sets error
+		 * state and re-interrupts thread</li>
+		 * <li><strong>ExecutionException:</strong> Wraps various HTTP execution
+		 * failures - unwraps and handles inner exception</li>
+		 * <li><strong>Other Exceptions:</strong> Catch-all for unexpected errors - sets
+		 * 500 status</li>
 		 * </ul>
 		 * <p>
 		 * <strong>Statistics Tracking:</strong>
@@ -1555,7 +1667,8 @@ public class BoxHttpClient {
 		 * IStruct result = request.getHttpResult();
 		 * </pre>
 		 *
-		 * @return This BoxHttpRequest instance with populated httpResult struct containing:
+		 * @return This BoxHttpRequest instance with populated httpResult struct
+		 *         containing:
 		 *         <ul>
 		 *         <li>statusCode - HTTP status code (e.g., 200, 404, 500)</li>
 		 *         <li>statusText - HTTP status text (e.g., "OK", "Not Found")</li>
@@ -1631,8 +1744,7 @@ public class BoxHttpClient {
 				        Key.method, method,
 				        Key.multipart, this.multipart,
 				        Key.timeout, this.timeout,
-				        Key.URL, this.targetHttpRequest.uri().toString()
-				    ) );
+				        Key.URL, this.targetHttpRequest.uri().toString() ) );
 
 				/**
 				 * ------------------------------------------------------------------------------
@@ -1644,9 +1756,7 @@ public class BoxHttpClient {
 				    ( java.util.function.Supplier<IStruct> ) () -> Struct.ofNonConcurrent(
 				        Key.result, this.httpResult,
 				        Key.httpClient, BoxHttpClient.this,
-				        Key.httpRequest, this.targetHttpRequest
-				    )
-				);
+				        Key.httpRequest, this.targetHttpRequest ) );
 
 				/**
 				 * ------------------------------------------------------------------------------
@@ -1682,8 +1792,7 @@ public class BoxHttpClient {
 					    "Request Timeout",
 					    "The request timed out after " + this.timeout + " second(s)",
 					    this.charset,
-					    Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis()
-					);
+					    Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
 					// Call onError callback if provided
 					if ( onErrorCallback != null ) {
 						context.invokeFunction( onErrorCallback, new Object[] { innerException, this.httpResult } );
@@ -1702,9 +1811,11 @@ public class BoxHttpClient {
 					String errorDetail;
 					if ( innerException instanceof ConnectException ) {
 						if ( this.targetHttpRequest.uri() != null ) {
-							errorDetail = String.format( "Unknown host: %s: Name or service not known.", this.targetHttpRequest.uri().getHost() );
+							errorDetail = String.format( "Unknown host: %s: Name or service not known.",
+							    this.targetHttpRequest.uri().getHost() );
 						} else {
-							errorDetail = String.format( "Unknown host: %s: Name or service not known.", this.targetHttpRequest.uri().toString() );
+							errorDetail = String.format( "Unknown host: %s: Name or service not known.",
+							    this.targetHttpRequest.uri().toString() );
 						}
 					} else {
 						errorDetail = "Connection Failure: " + innerException.getMessage();
@@ -1716,8 +1827,7 @@ public class BoxHttpClient {
 					    "Connection Failure",
 					    errorDetail,
 					    this.charset,
-					    Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis()
-					);
+					    Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
 					// Call onError callback if provided
 					if ( onErrorCallback != null ) {
 						context.invokeFunction( onErrorCallback, new Object[] { innerException, this.httpResult } );
@@ -1727,8 +1837,7 @@ public class BoxHttpClient {
 				else {
 					logger.error(
 					    "Unhandled ExecutionException with inner exception: {}",
-					    innerException != null ? innerException.getClass().getName() : "null", e
-					);
+					    innerException != null ? innerException.getClass().getName() : "null", e );
 					// Track as HTTP protocol failure if it's an HTTP-related exception
 					if ( innerException != null &&
 					    ( innerException.getClass().getName().contains( "Http" ) ||
@@ -1745,11 +1854,11 @@ public class BoxHttpClient {
 					    "",
 					    errorDetail,
 					    this.charset,
-					    Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis()
-					);
+					    Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
 					// Call onError callback if provided
 					if ( onErrorCallback != null ) {
-						context.invokeFunction( onErrorCallback, new Object[] { innerException != null ? innerException : e, this.httpResult } );
+						context.invokeFunction( onErrorCallback,
+						    new Object[] { innerException != null ? innerException : e, this.httpResult } );
 					}
 				}
 			} catch ( InterruptedException e ) {
@@ -1763,7 +1872,8 @@ public class BoxHttpClient {
 				// Throwing InterruptedException to respect thread interruption
 				throw new BoxRuntimeException( "Thread interrupted during HTTP request", e );
 			}
-			// BoxRuntimeException should always be re-thrown (e.g., binary validation errors, hard-stop errors, etc.)
+			// BoxRuntimeException should always be re-thrown (e.g., binary validation
+			// errors, hard-stop errors, etc.)
 			catch ( BoxRuntimeException e ) {
 				logger.error( "BoxRuntimeException during HTTP request - re-throwing", e );
 				throw e;
@@ -1774,8 +1884,7 @@ public class BoxHttpClient {
 				if ( this.onErrorCallback != null ) {
 					context.invokeFunction(
 					    this.onErrorCallback,
-					    new Object[] { e, this.httpResult }
-					);
+					    new Object[] { e, this.httpResult } );
 				}
 				this.error				= true;
 				this.errorMessage		= e.getMessage();
@@ -1786,11 +1895,13 @@ public class BoxHttpClient {
 				this.httpResult.put( Key.status_text, "Internal Server Error" );
 				this.httpResult.put( Key.errorDetail, e.getClass().getName() + ": " + e.getMessage() );
 				this.httpResult.put( Key.charset, this.charset );
-				this.httpResult.put( Key.executionTime, Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
+				this.httpResult.put( Key.executionTime,
+				    Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
 			} finally {
 				// Always calculate execution time if not already set (success path)
 				if ( this.startTime != null && !this.httpResult.containsKey( Key.executionTime ) ) {
-					this.httpResult.put( Key.executionTime, Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
+					this.httpResult.put( Key.executionTime,
+					    Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
 				}
 
 				// Update statistics based on request outcome
@@ -1844,8 +1955,7 @@ public class BoxHttpClient {
 		public BoxFuture<Object> sendAsync() {
 			return BoxFuture.run(
 			    () -> send(),
-			    getHttpService().getHttpExecutor().executor()
-			);
+			    getHttpService().getHttpExecutor().executor() );
 		}
 
 		/**
@@ -1866,8 +1976,7 @@ public class BoxHttpClient {
 				    "HTTP request failed with status code [" + statusCode + "]",
 				    this.httpResult.getAsString( Key.fileContent ),
 				    this.httpResult.getAsStruct( Key.request ),
-				    this.requestException
-				);
+				    this.requestException );
 			}
 
 			// Apply transformer if set
@@ -1936,7 +2045,8 @@ public class BoxHttpClient {
 
 		/**
 		 * Execute a buffered HTTP request and process the response.
-		 * This is called from the main invoke() method which takes care of error handling.
+		 * This is called from the main invoke() method which takes care of error
+		 * handling.
 		 *
 		 * @throws IOException          If an I/O error occurs
 		 * @throws ExecutionException   If the HTTP request fails
@@ -1955,9 +2065,7 @@ public class BoxHttpClient {
 				    Struct.ofNonConcurrent(
 				        Key.result, this.httpResult,
 				        Key.httpClient, BoxHttpClient.this,
-				        Key.httpRequest, this.targetHttpRequest
-				    )
-				);
+				        Key.httpRequest, this.targetHttpRequest ) );
 			}
 
 			/**
@@ -1976,15 +2084,15 @@ public class BoxHttpClient {
 			 * ON HTTP RAW RESPONSE EVENT
 			 * ------------------------------------------------------------------------------
 			 */
-			// Useful for debugging and pre-processing and timing, since the other events are after the response is processed
+			// Useful for debugging and pre-processing and timing, since the other events
+			// are after the response is processed
 			interceptorService.announce(
 			    BoxEvent.ON_HTTP_RAW_RESPONSE,
 			    ( java.util.function.Supplier<IStruct> ) () -> Struct.ofNonConcurrent(
 			        Key.result, this.httpResult,
 			        Key.response, response,
 			        Key.httpClient, BoxHttpClient.this,
-			        Key.httpRequest, this.targetHttpRequest
-			    ) );
+			        Key.httpRequest, this.targetHttpRequest ) );
 
 			/**
 			 * ------------------------------------------------------------------------------
@@ -2005,8 +2113,7 @@ public class BoxHttpClient {
 			        Key.result, this.httpResult,
 			        Key.response, response,
 			        Key.httpClient, BoxHttpClient.this,
-			        Key.chunkCount, 0
-			    ) );
+			        Key.chunkCount, 0 ) );
 
 			/**
 			 * ------------------------------------------------------------------------------
@@ -2021,8 +2128,7 @@ public class BoxHttpClient {
 				        response, // response
 				        BoxHttpClient.this, // httpClient
 				        0 // chunkCount is 0 for buffered responses
-				    }
-				);
+				    } );
 			}
 		}
 
@@ -2036,8 +2142,10 @@ public class BoxHttpClient {
 		 * @return The processed response body
 		 *
 		 * @throws IOException         If an I/O error occurs
-		 * @throws BoxRuntimeException If the response is binary but getAsBinary is set to 'never'.
-		 *                             Unable to determine filename from response for output.
+		 * @throws BoxRuntimeException If the response is binary but getAsBinary is set
+		 *                             to 'never'.
+		 *                             Unable to determine filename from response for
+		 *                             output.
 		 */
 		private Object processBufferedResponse( HttpResponse<byte[]> response ) throws IOException {
 			// Get the response Headers and convert them to a native BoxLang struct
@@ -2050,7 +2158,8 @@ public class BoxHttpClient {
 			String		httpVersionString	= HttpResponseHelper.getHttpVersionString( response.version() );
 
 			// Populate standard response metadata
-			HttpResponseHelper.populateResponseMetadata( this.httpResult, headers, httpVersionString, response.statusCode() );
+			HttpResponseHelper.populateResponseMetadata( this.httpResult, headers, httpVersionString,
+			    response.statusCode() );
 
 			// Determine binary response handling
 			byte[]	responseBytes	= response.body();
@@ -2081,7 +2190,8 @@ public class BoxHttpClient {
 				if ( ( this.isBinaryRequest || isBinaryContentType ) && !this.isBinaryNever ) {
 					responseBody = responseBytes;
 				} else if ( this.isBinaryNever && isBinaryContentType ) {
-					throw new BoxRuntimeException( "The response is a binary type, but the getAsBinary attribute was set to 'never'" );
+					throw new BoxRuntimeException(
+					    "The response is a binary type, but the getAsBinary attribute was set to 'never'" );
 				} else {
 					// Extract charset from Content-Type or use default
 					charset = HttpResponseHelper.extractCharset( contentType );
@@ -2099,9 +2209,11 @@ public class BoxHttpClient {
 				}
 			}
 
-			// Handle output file saving if specified (always execute, even if body is null/empty)
+			// Handle output file saving if specified (always execute, even if body is
+			// null/empty)
 			if ( this.outputDirectory != null ) {
-				String	filename		= HttpResponseHelper.resolveOutputFilename( headers, this.outputFile, this.targetHttpRequest.uri() );
+				String	filename		= HttpResponseHelper.resolveOutputFilename( headers, this.outputFile,
+				    this.targetHttpRequest.uri() );
 				String	destinationPath	= Path.of( this.outputDirectory, filename ).toAbsolutePath().toString();
 
 				// Write the file based on response body type (or empty file if no body)
@@ -2118,10 +2230,11 @@ public class BoxHttpClient {
 			// Fill out the httpResult struct (always populated regardless of body presence)
 			this.httpResult.put(
 			    Key.fileContent,
-			    response.statusCode() == STATUS_REQUEST_TIMEOUT ? "Request Timeout" : ( responseBody != null ? responseBody : "" )
-			);
+			    response.statusCode() == STATUS_REQUEST_TIMEOUT ? "Request Timeout"
+			        : ( responseBody != null ? responseBody : "" ) );
 			this.httpResult.put( Key.errorDetail, response.statusCode() == STATUS_REQUEST_TIMEOUT ? "" : "" );
-			this.httpResult.put( Key.executionTime, Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
+			this.httpResult.put( Key.executionTime,
+			    Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
 
 			// Process Content-Type header (mimetype, charset, text determination)
 			String contentType = HttpResponseHelper.extractFirstHeaderByName( headers, Key.contentType );
@@ -2134,8 +2247,10 @@ public class BoxHttpClient {
 		 * Process a streaming HTTP response with chunked callbacks.
 		 * Detects SSE mode and delegates to appropriate handler.
 		 * <p>
-		 * This method handles the response in a streaming fashion, invoking the onChunk callback
-		 * for each chunk of data as it arrives. It reuses the same header processing and response
+		 * This method handles the response in a streaming fashion, invoking the onChunk
+		 * callback
+		 * for each chunk of data as it arrives. It reuses the same header processing
+		 * and response
 		 * metadata logic as the buffered response handler.
 		 *
 		 * @throws IOException          If an I/O error occurs
@@ -2156,23 +2271,21 @@ public class BoxHttpClient {
 				    Struct.ofNonConcurrent(
 				        Key.result, this.httpResult,
 				        Key.httpClient, BoxHttpClient.this,
-				        Key.httpRequest, this.targetHttpRequest
-				    )
-				);
+				        Key.httpRequest, this.targetHttpRequest ) );
 			}
 
 			/**
 			 * ------------------------------------------------------------------------------
 			 * Make the HTTP Request (Streaming)
 			 * ------------------------------------------------------------------------------
-			 * Send request with streaming body handler (using InputStream for better control)
+			 * Send request with streaming body handler (using InputStream for better
+			 * control)
 			 * Because it could be SSE or regular streaming, we need to handle both cases
 			 */
 			HttpResponse<java.io.InputStream>	response			= httpClient
 			    .sendAsync(
 			        this.targetHttpRequest,
-			        HttpResponse.BodyHandlers.ofInputStream()
-			    )
+			        HttpResponse.BodyHandlers.ofInputStream() )
 			    .get();
 
 			/**
@@ -2191,7 +2304,8 @@ public class BoxHttpClient {
 			String								httpVersionString	= HttpResponseHelper.getHttpVersionString( response.version() );
 
 			// Populate standard response metadata
-			HttpResponseHelper.populateResponseMetadata( this.httpResult, headers, httpVersionString, response.statusCode() );
+			HttpResponseHelper.populateResponseMetadata( this.httpResult, headers, httpVersionString,
+			    response.statusCode() );
 
 			// Process Content-Type header and extract charset for streaming
 			String	contentType		= HttpResponseHelper.extractFirstHeaderByName( headers, Key.contentType );
@@ -2216,8 +2330,7 @@ public class BoxHttpClient {
 			        Key.result, this.httpResult,
 			        Key.response, response,
 			        Key.httpClient, BoxHttpClient.this,
-			        Key.httpRequest, this.targetHttpRequest
-			    ) );
+			        Key.httpRequest, this.targetHttpRequest ) );
 
 			/**
 			 * ------------------------------------------------------------------------------
@@ -2261,7 +2374,8 @@ public class BoxHttpClient {
 			// Try with Resources to ensure streams are closed properly
 			try (
 			    java.io.InputStream rawInputStream = response.body();
-			    java.io.InputStreamReader reader = new java.io.InputStreamReader( rawInputStream, Charset.forName( charset ) );
+			    java.io.InputStreamReader reader = new java.io.InputStreamReader( rawInputStream,
+			        Charset.forName( charset ) );
 			    java.io.BufferedReader bufferedReader = new java.io.BufferedReader( reader ) ) {
 
 				String line;
@@ -2293,20 +2407,18 @@ public class BoxHttpClient {
 								streamLogger.trace( "SSE Event #{}: type={}, id={}",
 								    eventCount.get(),
 								    sseEvent.event() != null ? sseEvent.event() : "message",
-								    sseEvent.id() != null ? sseEvent.id() : "none"
-								);
+								    sseEvent.id() != null ? sseEvent.id() : "none" );
 
 								// Invoke onChunk callback with SSE event
 								context.invokeFunction(
 								    onChunkCallback,
 								    new Object[] {
-								        sseEvent.toStruct(),		// event struct
-								        this.lastEventId,			// lastEventId
-								        this.httpResult,			// httpResult
-								        BoxHttpClient.this,			// httpClient
-								        response					// rawResponse
-								    }
-								);
+								        sseEvent.toStruct(), // event struct
+								        this.lastEventId, // lastEventId
+								        this.httpResult, // httpResult
+								        BoxHttpClient.this, // httpClient
+								        response // rawResponse
+								    } );
 							}
 							// Handle SSE Retry Directive
 							else if ( parserResult instanceof SSERetryDirective retryDirective ) {
@@ -2357,9 +2469,7 @@ public class BoxHttpClient {
 			        Key.result, httpResult,
 			        Key.stream, true,
 			        Key.sse, true,
-			        Key.eventCount, eventCount
-			    )
-			);
+			        Key.eventCount, eventCount ) );
 
 			/**
 			 * ------------------------------------------------------------------------------
@@ -2374,8 +2484,7 @@ public class BoxHttpClient {
 				        response, // response
 				        BoxHttpClient.this, // httpClient
 				        eventCount.get() // eventCount for SSE
-				    }
-				);
+				    } );
 			}
 		}
 
@@ -2397,7 +2506,8 @@ public class BoxHttpClient {
 
 			// This logging tracers are useful for debugging streaming issues
 			BoxLangLogger streamLogger = getLogger();
-			streamLogger.trace( "Starting regular stream processing. Charset: {}, Content-Encoding: {}", charset, contentEncoding );
+			streamLogger.trace( "Starting regular stream processing. Charset: {}, Content-Encoding: {}", charset,
+			    contentEncoding );
 			// Prepare for streaming processing
 			StringBuilder	accumulatedContent	= new StringBuilder();
 			AtomicLong		chunkCount			= new AtomicLong( 0 );
@@ -2407,8 +2517,10 @@ public class BoxHttpClient {
 			// Try with Resources to ensure streams are closed properly
 			try (
 			    java.io.InputStream rawInputStream = response.body();
-			    java.io.InputStream decodedInputStream = HttpResponseHelper.decodeInputStream( rawInputStream, contentEncoding );
-			    java.io.InputStreamReader reader = new java.io.InputStreamReader( decodedInputStream, Charset.forName( charset ) );
+			    java.io.InputStream decodedInputStream = HttpResponseHelper.decodeInputStream( rawInputStream,
+			        contentEncoding );
+			    java.io.InputStreamReader reader = new java.io.InputStreamReader( decodedInputStream,
+			        Charset.forName( charset ) );
 			    java.io.BufferedReader bufferedReader = new java.io.BufferedReader( reader ) ) {
 
 				String line;
@@ -2431,14 +2543,13 @@ public class BoxHttpClient {
 						context.invokeFunction(
 						    onChunkCallback,
 						    new Object[] {
-						        currentChunk,					// chunkNumber
-						        line,							// content
-						        accumulatedContent.length(),	// totalBytes
-						        this.httpResult,				// httpResult
-						        BoxHttpClient.this,				// httpClient
-						        response						// rawResponse
-						    }
-						);
+						        currentChunk, // chunkNumber
+						        line, // content
+						        accumulatedContent.length(), // totalBytes
+						        this.httpResult, // httpResult
+						        BoxHttpClient.this, // httpClient
+						        response // rawResponse
+						    } );
 
 					} catch ( Exception e ) {
 						streamingError.set( true );
@@ -2468,7 +2579,8 @@ public class BoxHttpClient {
 
 			// Handle output file saving
 			if ( this.outputDirectory != null ) {
-				String	filename		= HttpResponseHelper.resolveOutputFilename( headers, this.outputFile, this.targetHttpRequest.uri() );
+				String	filename		= HttpResponseHelper.resolveOutputFilename( headers, this.outputFile,
+				    this.targetHttpRequest.uri() );
 				String	destinationPath	= Path.of( this.outputDirectory, filename ).toAbsolutePath().toString();
 				FileSystemUtil.write( destinationPath, finalContent, charset, true );
 			}
@@ -2484,9 +2596,7 @@ public class BoxHttpClient {
 			        Key.result, httpResult,
 			        Key.response, response,
 			        Key.httpClient, BoxHttpClient.this,
-			        Key.chunkCount, chunkCount.get()
-			    )
-			);
+			        Key.chunkCount, chunkCount.get() ) );
 
 			/**
 			 * ------------------------------------------------------------------------------
@@ -2501,8 +2611,7 @@ public class BoxHttpClient {
 				        response, // response
 				        BoxHttpClient.this, // httpClient
 				        chunkCount.get()
-				    }
-				);
+				    } );
 			}
 		}
 	} // End of BoxHttpRequest class

@@ -31,6 +31,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.jdbc.drivers.JDBCDriverFeature;
 import ortus.boxlang.runtime.jdbc.qoq.QoQStatement;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
@@ -97,7 +98,7 @@ public final class ExecutedQuery implements Serializable {
 
 	/**
 	 * Get the datasource used to execute this query.
-	 * 
+	 *
 	 * @return The datasource used to execute this query.
 	 */
 	public DataSource getDataSource() {
@@ -170,6 +171,23 @@ public final class ExecutedQuery implements Serializable {
 		}
 	}
 
+	/**
+	 * Creates an ExecutedQuery instance from a PendingQuery instance and a JDBC
+	 * Statement.
+	 *
+	 * @param pendingQuery        The {@link PendingQuery} executed.
+	 * @param statement           The {@link Statement} instance executed.
+	 * @param executionTime       The execution time the query took.
+	 * @param hasResults          Boolean flag from
+	 *                            {@link PreparedStatement#execute()} designating
+	 *                            if the execution returned any results.
+	 * @param initialSqlException An initial SQLException raised during execution,
+	 *                            if any.
+	 *
+	 * @return An ExecutedQuery instance representing the results of the query.
+	 *
+	 * @throws DatabaseException If an error occurs during processing the results.
+	 */
 	public static ExecutedQuery fromPendingQuery(
 	    @NonNull PendingQuery pendingQuery,
 	    @NonNull BoxStatement statement,
@@ -193,11 +211,18 @@ public final class ExecutedQuery implements Serializable {
 			results = qs.getQueryResult();
 		} else {
 			try {
-				// TODO: Move this into a generic flag that we set on the MSSQL driver.
-				generatedKeysComeAsResultSet = statement.getConnection().getMetaData().getDriverName().toLowerCase()
-				    .contains( "microsoft" );
+				generatedKeysComeAsResultSet = statement.getBoxConnection().getDataSource().getConfiguration().getDriver()
+				    .hasFeature( JDBCDriverFeature.GENERATED_KEYS_COME_AS_RESULT_SET );
+
+				// TODO: Remove this backwards compat check after the next bx-mssql release
+				// This is so people updating to the 1.8.0-snapshot won't have MSSQL generated keys break if they aren't also on the bx-mssql snapshot
+				if ( !generatedKeysComeAsResultSet ) {
+					generatedKeysComeAsResultSet = statement.getConnection().getMetaData().getDriverName().toLowerCase()
+					    .contains( "microsoft" );
+				}
+				// TODO: Remove this backwards compat check after the next bx-mssql release
 			} catch ( SQLException e ) {
-				logger.error( "Error getting JDBC driver name", e );
+				logger.error( "Error getting JDBC driver features", e );
 			}
 
 			// Loop over results until we find a result set, or run out of results
@@ -332,13 +357,14 @@ public final class ExecutedQuery implements Serializable {
 			recordCount = totalUpdateCount;
 		}
 
-		IStruct queryMeta = Struct.of(
+		IStruct queryMeta = Struct.ofNonConcurrent(
 		    Key.cached, false,
 		    Key.cacheKey, pendingQuery.getCacheKey(),
 		    Key.sql, pendingQuery.getSQLWithParamValues(),
 		    Key.sqlParameters, Array.fromList( pendingQuery.getParameterValues() ),
 		    Key.executionTime, executionTime,
-		    Key.recordCount, recordCount );
+		    Key.recordCount, recordCount
+		);
 
 		if ( generatedKey != null ) {
 			// Oracle, for example, sends back a ROWID instead of a generated key
@@ -374,17 +400,23 @@ public final class ExecutedQuery implements Serializable {
 		// important that we set the metadata on the Query object for later
 		// getBoxMeta(), i.e. $bx.meta calls.
 		results.setMetadata( queryMeta );
-		ExecutedQuery executedQuery = new ExecutedQuery( results, generatedKey, pendingQuery.getDataSource() );
+		ExecutedQuery	executedQuery	= new ExecutedQuery( results, generatedKey, pendingQuery.getDataSource() );
 
-		interceptorService.announce( BoxEvent.POST_QUERY_EXECUTE,
-		    Struct.of(
+		// Announce post query execute event
+		final Query		iResults		= results;
+		interceptorService.announce(
+		    BoxEvent.POST_QUERY_EXECUTE,
+		    () -> Struct.ofNonConcurrent(
 		        Key.sql, queryMeta.getAsString( Key.sql ),
 		        Key.bindings, pendingQuery.getParameterValues(),
 		        Key.executionTime, executionTime,
-		        Key.data, results,
+		        Key.data, iResults,
 		        Key.result, queryMeta,
 		        Key.pendingQuery, pendingQuery,
-		        Key.executedQuery, executedQuery ) );
+		        Key.executedQuery, executedQuery
+		    )
+		);
+
 		return executedQuery;
 	}
 

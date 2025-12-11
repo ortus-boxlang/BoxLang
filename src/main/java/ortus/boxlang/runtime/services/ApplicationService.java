@@ -129,7 +129,7 @@ public class ApplicationService extends BaseService {
 				thisApplication = this.applications.get( name );
 				if ( thisApplication == null || thisApplication.isExpired() ) {
 					logger.trace( "ApplicationService.getApplication() - {} creating new because {}", name,
-					    thisApplication == null ? "didnt' exist" : "was expired" );
+					    thisApplication == null ? "didn't exist" : "was expired" );
 					// Create a new one
 					thisApplication = new Application( name );
 					this.applications.put( name, thisApplication );

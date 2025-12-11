@@ -17,6 +17,7 @@ package ortus.boxlang.runtime.bifs.global.async;
 import java.util.concurrent.Executor;
 
 import ortus.boxlang.runtime.async.BoxFuture;
+import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -84,6 +85,11 @@ public class AsyncRun extends BIF {
 		// Check if the executor is an instance of an Executor class
 		if ( executor instanceof Executor castedExecutor ) {
 			return BoxFuture.ofFunction( context, callback, castedExecutor );
+		}
+
+		// Check if this is a BoxExecutor
+		if ( executor instanceof BoxExecutor boxExecutor ) {
+			return BoxFuture.ofFunction( context, callback, boxExecutor.executor() );
 		}
 
 		throw new BoxRuntimeException( "Invalid executor type " + executor.getClass().getName() );

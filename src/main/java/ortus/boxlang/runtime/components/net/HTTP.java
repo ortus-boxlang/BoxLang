@@ -124,7 +124,7 @@ public class HTTP extends Component {
 		    new Attribute( Key.cachedWithin, "string" ),
 		    // Authentication
 		    new Attribute( Key.username, "string" ),
-		    new Attribute( Key.password, "string" ),
+		    new Attribute( Key.password, "string", Set.of( Validator.requires( Key.username ) ) ),
 		    // Client certificates
 		    new Attribute( Key.clientCert, "string" ),
 		    new Attribute( Key.clientCertPassword, "string" ),
@@ -437,6 +437,12 @@ public class HTTP extends Component {
 		    // Outputs if any
 		    .outputDirectory( outputDirectory )
 		    .outputFile( attributes.getAsString( Key.file ) )
+		    .when( attributes.get( Key.username ) != null && attributes.get( Key.password ) != null, ( request ) -> {
+			    request.withBasicAuth(
+			        attributes.getAsString( Key.username ),
+			        attributes.getAsString( Key.password )
+			    );
+		    } )
 		    // Encoded Client Certificate Header for Debugging
 		    .when( debug && encodedCertKey != null, ( request ) -> {
 			    request.header( "X-Client-Cert", encodedCertKey );

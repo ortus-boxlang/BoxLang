@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.types.meta;
 
 import java.util.ArrayList;
+import java.util.Set;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -34,10 +35,25 @@ import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableArray;
  */
 public class ClassMeta extends BoxMeta<IClassRunnable> {
 
-	@SuppressWarnings( "unused" )
-	private IClassRunnable	target;
-	public Class<?>			$class;
-	public IStruct			meta;
+	/**
+	 * The target object this metadata is for
+	 */
+	private IClassRunnable		target;
+
+	/**
+	 * The Java class of the target
+	 */
+	public Class<?>				$class;
+
+	/**
+	 * The assembled metadata
+	 */
+	public IStruct				meta;
+
+	/**
+	 * Constants
+	 */
+	private static final String	CLASS_TYPE	= "Class";
 
 	/**
 	 * Constructor
@@ -48,40 +64,60 @@ public class ClassMeta extends BoxMeta<IClassRunnable> {
 		super();
 		this.target	= target;
 		this.$class	= target.getClass();
+
 		// Assemble the metadata
-		var	functions				= new ArrayList<Object>();
+		var			mdFunctions				= new ArrayList<Object>();
+		var			variablesScope			= target.getVariablesScope();
 
 		// Functions are done depending on the size of the scope
-		var	variablesScope			= target.getVariablesScope();
-		var	compileTimeMethodNames	= target.getCompileTimeMethodNames();
-		compileTimeMethodNames
-		    .stream()
-		    .map( variablesScope::get )
-		    .filter( Function.class::isInstance )
-		    .forEach( entry -> functions.add( ( ( FunctionMeta ) ( ( Function ) entry ).getBoxMeta() ).meta ) );
+		Set<Key>	compileTimeMethodNames	= target.getCompileTimeMethodNames();
 
-		this.meta = Struct.of(
-		    Key._NAME, target.bxGetName().getName(),
-		    Key.nameAsKey, target.bxGetName(),
+		// Micro-optimize list allocation
+		mdFunctions.ensureCapacity( compileTimeMethodNames.size() );
+		// Iterate and add
+		for ( Key key : compileTimeMethodNames ) {
+			Object entry = variablesScope.get( key );
+			if ( entry instanceof Function castedFunction ) {
+				mdFunctions.add( ( ( FunctionMeta ) castedFunction.getBoxMeta() ).meta );
+			}
+		}
+
+		// Process Properties
+		var	mdProperties		= new ArrayList<Object>();
+		var	targetProperties	= target.getProperties();
+
+		// Micro-optimize list allocation
+		mdProperties.ensureCapacity( targetProperties.size() );
+		// Iterate and add
+		for ( var entry : targetProperties.entrySet() ) {
+			if ( entry.getValue().declaringClass() == target.getClass() ) {
+				mdProperties.add( Struct.ofNonConcurrent(
+				    Key._NAME, entry.getKey().getName(),
+				    Key.nameAsKey, entry.getKey(),
+				    Key.type, entry.getValue().type(),
+				    Key.defaultValue, entry.getValue().getDefaultValueForMeta(),
+				    Key.annotations, new Struct( entry.getValue().annotations() ),
+				    Key.documentation, new Struct( entry.getValue().documentation() )
+				) );
+			}
+		}
+
+		// Build the meta struct
+		var	keyName		= target.bxGetName();
+		var	fullName	= keyName.getName();
+		this.meta = Struct.ofNonConcurrent(
+		    Key._NAME, fullName,
+		    Key.nameAsKey, keyName,
+		    Key.simpleName, fullName.substring( fullName.lastIndexOf( '.' ) + 1 ),
 		    Key.output, target.canOutput(),
 		    Key.documentation, new Struct( target.getDocumentation() ),
 		    Key.annotations, new Struct( target.getAnnotations() ),
 		    Key._EXTENDS, target.getSuper() != null ? target.getSuper().getBoxMeta().getMeta() : Struct.EMPTY,
 		    Key._IMPLEMENTS, UnmodifiableArray.fromList( target.getInterfaces().stream().map( iface -> iface.getBoxMeta().getMeta() ).toList() ),
-		    Key.functions, UnmodifiableArray.fromList( functions ),
+		    Key.functions, UnmodifiableArray.fromList( mdFunctions ),
 		    Key._HASHCODE, target.hashCode(),
-		    Key.properties,
-		    // Only include properties that are declared in the class
-		    UnmodifiableArray.of( target.getProperties().entrySet().stream().filter( p -> p.getValue().declaringClass() == target.getClass() )
-		        .map( entry -> Struct.of(
-		            Key._NAME, entry.getKey().getName(),
-		            Key.nameAsKey, entry.getKey(),
-		            Key.type, entry.getValue().type(),
-		            Key.defaultValue, entry.getValue().getDefaultValueForMeta(),
-		            Key.annotations, new Struct( entry.getValue().annotations() ),
-		            Key.documentation, new Struct( entry.getValue().documentation() )
-		        ) ).toArray() ),
-		    Key.type, "Class",
+		    Key.properties, UnmodifiableArray.fromList( mdProperties ),
+		    Key.type, CLASS_TYPE,
 		    Key.fullname, target.bxGetName().getName(),
 		    Key.path, target.getRunnablePath().absolutePath().toString()
 		);

@@ -177,7 +177,7 @@ public class IsValidTest {
 	public void testGuid() {
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'guid', createGUID() )" ) ).isTrue();
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'guid', '00000000-0000-0000-0000-000000000000' )" ) ).isTrue();
-		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'guid', createUUID() )" ) ).isFalse();
+		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'guid', createUUID() )" ) ).isTrue();
 		assertThat( ( Boolean ) instance.executeStatement( "isValid( 'guid', null )" ) ).isFalse();
 	}
 

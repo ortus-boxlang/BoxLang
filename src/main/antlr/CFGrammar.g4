@@ -54,7 +54,7 @@ classOrInterface: SEMICOLON* (boxClass | interface)
     ;
 
 // This is the top level rule for a script of statements.
-script: SEMICOLON* functionOrStatement*
+script: ( SEMICOLON | functionOrStatement)*
     ;
 
 // Used for tests, to force the parser to look at all tokens and not just stop at the first expression
@@ -76,21 +76,21 @@ include: INCLUDE expression
 boxClass: importStatement* ABSTRACT? FINAL? COMPONENT postAnnotation* LBRACE classBody RBRACE
     ;
 
-classBody: classBodyStatement*
+classBody: (classBodyStatement | SEMICOLON)*
     ;
 
 classBodyStatement: property | staticInitializer | functionOrStatement
     ;
 
-staticInitializer: SEMICOLON* STATIC normalStatementBlock SEMICOLON*
+staticInitializer: STATIC normalStatementBlock
     ;
 
 // interface {}
-interface: importStatement* INTERFACE postAnnotation* LBRACE ( function)* RBRACE
+interface: importStatement* INTERFACE postAnnotation* LBRACE ( function | SEMICOLON)* RBRACE
     ;
 
 // UDF or abstractFunction
-function: functionSignature postAnnotation* normalStatementBlock? SEMICOLON*
+function: functionSignature postAnnotation* normalStatementBlock?
     ;
 
 // public String myFunction( String foo, String bar )
@@ -168,48 +168,59 @@ anonymousFunction
     // function( param, param ) {}
     FUNCTION LPAREN functionParamList? RPAREN (postAnnotation)* normalStatementBlock # closureFunc
     // ( param, param ) => {}, param => {} (param, param) -> {}, param -> {}
-    | (LPAREN functionParamList? RPAREN | identifier) (postAnnotation)* op = (ARROW | ARROW_RIGHT) statementOrBlock # lambdaFunc
+    | (LPAREN functionParamList? RPAREN | identifier) (postAnnotation)* op = (ARROW | ARROW_RIGHT) statementOrBlockExpression semicolonUnfinishedExpr? 
+        # lambdaFunc
+    ;
+
+// This allows foo.method( ()=>return; ) or foo.method( ()=>return;, "anotherArg" ) or [ ()=>return; ]
+// We'll allow a semicolon after a single statement ONLY if the next token is ) , ] } or :
+semicolonUnfinishedExpr: { isNextTokenExprContinuation(_input) }? SEMICOLON
     ;
 
 // { statement; statement; }
-statementBlock: LBRACE statement+ RBRACE
+statementBlock: LBRACE SEMICOLON* (statement SEMICOLON*)+ RBRACE
     ;
 
 // { statement; statement; }
 emptyStatementBlock: LBRACE RBRACE
     ;
 
-normalStatementBlock: LBRACE statement* RBRACE
+normalStatementBlock: LBRACE (statement | SEMICOLON)* RBRACE
     ;
 
-statementOrBlock: emptyStatementBlock | statement
+// This is used only for top level statements, where we're ok consuming an extra semicolon at the end (see below).  We also allow an "empty statement" here (just a semicolon).
+statementOrBlock: emptyStatementBlock | statement SEMICOLON* | SEMICOLON
+    ;
+
+// This exists basically for anonymous functions who end with a statement or block, but CANNOT consume any trailing seimicolons
+// or it will fail to end the outermost statement, causing the next expression to possibly be unexpectdly merged with it.
+statementOrBlockExpression: emptyStatementBlock | statement
     ;
 
 // Any top-level statement that can be in a block.
+// Don't ever match semi-colons directly here as it will mess up expressions which includes statements-- namely anonymous functions.
 statement
-    : SEMICOLON* (
-        importStatement
-        | function
-        | if
-        | switch
-        | try
-        | while
-        | for
-        | do
-        // throw would parser as a component or a simple statement, but the `throw new
-        // java:com.foo.Bar();` case needs checked PRIOR to the component case, which needs checked
-        // prior to simple statements due to its ambiguity
-        | throw
-        // include is really a component or a simple statement, but the `include expression;` case
-        // needs checked PRIOR to the compnent case, which needs checked prior to expression
-        | include
-        | statementBlock
-        | component
-        | simpleStatement
-        | expressionStatement // Allows for statements like complicated.thing.foo.bar--
-        | emptyStatementBlock
-        | componentIsland
-    ) SEMICOLON*
+    : importStatement
+    | function
+    | if
+    | switch
+    | try
+    | while
+    | for
+    | do
+    // throw would parser as a component or a simple statement, but the `throw new
+    // java:com.foo.Bar();` case needs checked PRIOR to the component case, which needs checked
+    // prior to simple statements due to its ambiguity
+    | throw
+    // include is really a component or a simple statement, but the `include expression;` case
+    // needs checked PRIOR to the compnent case, which needs checked prior to expression
+    | include
+    | statementBlock
+    | component
+    | simpleStatement
+    | expressionStatement // Allows for statements like complicated.thing.foo.bar--
+    | emptyStatementBlock
+    | componentIsland
     ;
 
 // op=(VAR | FINAL) etc
@@ -479,8 +490,8 @@ el2
 
     // Ternary operations are right associative, which means that if they are nested,
     // the rightmost operation is evaluated first.
-    | <assoc = right> el2 QM el2 COLON el2 # exprTernary // foo ? bar : baz
-    | atoms                                # exprAtoms   // foo, 42, true, false, null, [1,2,3], {foo:bar}
+    | <assoc = right> el2 QM expression COLON expression # exprTernary // foo ? bar : baz
+    | atoms                                              # exprAtoms   // foo, 42, true, false, null, [1,2,3], {foo:bar}
 
     // el2 elements that have no operators so will be selected in order other than LL(*) solving
     | ICHAR el2 ICHAR                                                  # exprOutString    // #el2# not within a string literal

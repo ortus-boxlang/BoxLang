@@ -731,9 +731,9 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 	public BoxExpression visitExprTernary( ExprTernaryContext ctx ) {
 		var	pos			= tools.getPosition( ctx );
 		var	src			= tools.getSourceText( ctx );
-		var	condition	= ctx.el2( 0 ).accept( this );
-		var	trueExpr	= ctx.el2( 1 ).accept( this );
-		var	falseExpr	= ctx.el2( 2 ).accept( this );
+		var	condition	= ctx.el2().accept( this );
+		var	trueExpr	= ctx.expression( 0 ).accept( this );
+		var	falseExpr	= ctx.expression( 1 ).accept( this );
 		return new BoxTernaryOperation( condition, trueExpr, falseExpr, pos, src );
 	}
 
@@ -881,7 +881,7 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 
 		BoxStatement					body;
 
-		body = ( BoxStatement ) ctx.statementOrBlock().accept( statementVisitor );
+		body = ( BoxStatement ) ctx.statementOrBlockExpression().accept( statementVisitor );
 
 		List<BoxAnnotation> postAnnotations = Optional
 		    .ofNullable( ctx.postAnnotation() ).map( postAnnotationList -> postAnnotationList.stream()

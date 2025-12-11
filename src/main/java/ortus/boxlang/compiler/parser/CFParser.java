@@ -395,9 +395,10 @@ public class CFParser extends AbstractParser {
 
 		// Uncomment to use ANTLR GUI tree viewer for debugging
 		// org.antlr.v4.gui.Trees.inspect( parseTree, parser );
+
 		/*
 		 * try {
-		 * Thread.sleep( 100000 );
+		 * Thread.sleep( 1000000 );
 		 * } catch ( InterruptedException e ) {
 		 * // TODO Auto-generated catch block
 		 * e.printStackTrace();

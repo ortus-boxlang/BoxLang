@@ -483,7 +483,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	}
 
 	/**
-	 * Returns the configuration as a struct
+	 * Returns this entire object as a struct
 	 *
 	 * @return A struct representation of the configuration segment
 	 */
@@ -494,6 +494,16 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		    "onTheFly", this.onTheFly,
 		    "uniqueName", this.getUniqueName().getName(),
 		    "properties", new Struct( this.properties ) );
+	}
+
+	/**
+	 * Returns just the connection config as a struct, matching what you'd use for an on-the-fly datasource defintion
+	 * The returned struct is a top level copy of the properties
+	 *
+	 * @return A struct representation of the configuration segment
+	 */
+	public IStruct toConfigStruct() {
+		return new Struct( this.properties );
 	}
 
 	/**

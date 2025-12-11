@@ -226,4 +226,13 @@ public class BooleanCaster implements IBoxCaster {
 		}
 	}
 
+	/**
+	 * Get the well-known-text boolean strings
+	 * 
+	 * @return The well-known-text boolean strings
+	 */
+	public static IStruct getBooleanStrings() {
+		return wkt;
+	}
+
 }

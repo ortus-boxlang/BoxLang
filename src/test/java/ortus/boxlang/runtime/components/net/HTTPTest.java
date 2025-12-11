@@ -948,9 +948,10 @@ public class HTTPTest {
 		String	base64Credentials	= Base64.getEncoder().encodeToString( ( username + ":" + password ).getBytes() );
 		stubFor(
 		    get( "/posts/1" )
+		        .withHeader( "Authorization", equalTo( "Basic " + base64Credentials ) )
 		        .willReturn( ok()
-		            .withHeader( "Authorization", "Basic " + base64Credentials )
 		            .withHeader( "Content-Type", "application/json; charset=utf-8" )
+		            .withHeader( "Authorization", "Basic " + base64Credentials )
 		            .withBody(
 		                """
 		                {
@@ -963,7 +964,7 @@ public class HTTPTest {
 
 		instance.executeSource(
 		    String.format( """
-		                     <cfhttp result="result" url="%s" username="%s" password="%s"></bxhttp>
+		                     <cfhttp result="result" url="%s" username="%s" password="%s" throwonerror="true"></cfhttp>
 		                   """,
 		        wmRuntimeInfo.getHttpBaseUrl() + "/posts/1",
 		        username,

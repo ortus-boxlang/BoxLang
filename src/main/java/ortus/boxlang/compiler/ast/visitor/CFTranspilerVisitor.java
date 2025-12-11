@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -86,6 +87,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
  * CF Transpiler Visitor for BoxLang AST Transformation
@@ -293,6 +295,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		componentAttrMap.put( "invoke", Map.of( "component", "class" ) );
 		componentAttrMap.put( "procparam", Map.of( "cfsqltype", "sqltype" ) );
 		componentAttrMap.put( "queryparam", Map.of( "cfsqltype", "sqltype" ) );
+		componentAttrMap.put( "object", Map.of( "component", "className" ) );
 
 		/*
 		 * These are BIFs that return something useless like true, but would be much more useful to return the actual data structure.
@@ -640,18 +643,50 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		 */
 
 		// Look for valueList( myQry.columnName ) or valueList( myQry[ "columnName" ] )
-		if ( name.equalsIgnoreCase( "valueList" ) && node.getArguments().size() > 0 && node.getArguments().get( 0 ).getValue() instanceof BoxAccess ) {
+		if ( name.equals( "valuelist" ) && node.getArguments().size() > 0 && node.getArguments().get( 0 ).getValue() instanceof BoxAccess ) {
 			return transpileValueList( node );
 		}
 		// Look for quotedValueList( myQry.columnName ) or valueList( myQry[ "columnName" ] )
-		if ( name.equalsIgnoreCase( "quotedValueList" ) && node.getArguments().size() > 0 && node.getArguments().get( 0 ).getValue() instanceof BoxAccess ) {
+		if ( name.equals( "quotedvaluelist" ) && node.getArguments().size() > 0 && node.getArguments().get( 0 ).getValue() instanceof BoxAccess ) {
 			return transpileQuotedValueList( node );
 		}
 		// look for BIFs whose return type has changed
 		if ( BIFReturnTypeFixSet.contains( name ) && returnValueIsUsed( node ) ) {
 			return transpileBIFReturnType( node, name );
 		}
+		// look for rewritten variable names passed to insDefined()
+		if ( name.equals( "isdefined" ) && node.getArguments().size() > 0 && node.getArguments().get( 0 ).getValue() instanceof BoxStringLiteral bsl ) {
+			identifierMap.entrySet().stream().forEach( e -> {
+				bsl.setValue( replaceIdentifiersInString( bsl.getValue(), e.getKey(), e.getValue() ) );
+			} );
+		}
+
 		return super.visit( node );
+	}
+
+	/**
+	 * Replaces occurrences of oldValue with newValue in the input string,
+	 * matching whole words only, case-insensitively.
+	 * This is designed for variable names as it will only match
+	 * whole words to avoid partial replacements. non-alphanumeric characters are considered word boundaries.
+	 * 
+	 * @param input    The input string
+	 * @param oldValue The value to be replaced
+	 * @param newValue The replacement value
+	 * 
+	 * @return The modified string with replacements made
+	 */
+	private String replaceIdentifiersInString( String input, String oldValue, String newValue ) {
+		// Quick smoke test to avoid regex
+		if ( !input.toLowerCase().contains( oldValue.toLowerCase() ) ) {
+			return input;
+		}
+		String pattern = "(?i)\\b" + Pattern.quote( oldValue ) + "\\b";
+		return RegexBuilder.of(
+		    input,
+		    pattern,
+		    true
+		).replaceAllAndGet( newValue );
 	}
 
 	/**
@@ -1142,9 +1177,8 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 			// Look for a "result" attribute, and if it's a string literal, replace any identifers inside with the new name
 			node.getAttributes().stream().filter( a -> a.getKey().getValue().equalsIgnoreCase( "result" ) && a.getValue() instanceof BoxStringLiteral )
 			    .forEach( a -> {
-				    BoxStringLiteral str		= ( BoxStringLiteral ) a.getValue();
-				    String			newValue	= str.getValue().replace( strToReplace, identifierMap.get( strToReplace ) );
-				    str.setValue( newValue );
+				    BoxStringLiteral str = ( BoxStringLiteral ) a.getValue();
+				    str.setValue( replaceIdentifiersInString( str.getValue(), strToReplace, identifierMap.get( strToReplace ) ) );
 			    } );
 
 		}

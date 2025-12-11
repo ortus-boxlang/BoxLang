@@ -599,6 +599,18 @@ public class BoxClassSupport {
 		if ( thisClass.getSuper() != null ) {
 			meta.put( Key._EXTENDS, thisClass.getSuper().getMetaData() );
 		}
+
+		if ( thisClass.getInterfaces().size() > 0 ) {
+			meta.put(
+			    Key._IMPLEMENTS,
+			    thisClass.getInterfaces().stream()
+			        .collect(
+			            Struct::new,
+			            ( struct, iface ) -> struct.put( iface.getName(), iface.getMetaData() ),
+			            Struct::putAll
+			        )
+			);
+		}
 		return meta;
 	}
 

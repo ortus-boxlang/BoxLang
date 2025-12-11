@@ -1622,7 +1622,7 @@ public class ClassTest {
 			System.out.println( tagContext );
 		}
 		assertThat( tagContext ).isNotNull();
-		assertThat( tagContext.size() ).isEqualTo( 1 );
+		assertThat( tagContext.size() ).isEqualTo( 2 );
 		assertThat( ( ( IStruct ) tagContext.get( 0 ) ).getAsString( Key.template ) ).contains( "PseudoConstructorError.bx" );
 	}
 

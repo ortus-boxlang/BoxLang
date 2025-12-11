@@ -424,4 +424,40 @@ public class HttpServiceTest {
 		assertThat( client3 ).isNotSameInstanceAs( client4 );
 	}
 
+	/**
+	 * SOAP Client Cache Tests
+	 */
+
+	@DisplayName( "Test SOAP client count starts at zero" )
+	@Test
+	void testSoapClientCountStartsAtZero() {
+		assertThat( service.getSoapClientCount() ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "Test hasSoapClient returns false for non-existent client" )
+	@Test
+	void testHasSoapClientReturnsFalse() {
+		assertThat( service.hasSoapClient( "http://example.com/service.wsdl" ) ).isFalse();
+	}
+
+	@DisplayName( "Test getSoapClient returns null for non-existent client" )
+	@Test
+	void testGetSoapClientReturnsNull() {
+		assertThat( service.getSoapClient( "http://example.com/service.wsdl" ) ).isNull();
+	}
+
+	@DisplayName( "Test removeSoapClient returns service for method chaining" )
+	@Test
+	void testRemoveSoapClientReturnsService() {
+		HttpService returnedService = service.removeSoapClient( "http://example.com/service.wsdl" );
+		assertThat( returnedService ).isSameInstanceAs( service );
+	}
+
+	@DisplayName( "Test clearAllSoapClients empties cache" )
+	@Test
+	void testClearAllSoapClients() {
+		service.clearAllSoapClients();
+		assertThat( service.getSoapClientCount() ).isEqualTo( 0 );
+	}
+
 }

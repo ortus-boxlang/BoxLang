@@ -84,6 +84,7 @@ import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.statement.BoxContinue;
 import ortus.boxlang.compiler.ast.statement.BoxDo;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
+import ortus.boxlang.compiler.ast.statement.BoxEmptyStatement;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.statement.BoxForIn;
 import ortus.boxlang.compiler.ast.statement.BoxForIndex;
@@ -128,6 +129,10 @@ public abstract class VoidBoxVisitor {
 	}
 
 	public void visit( BoxStatementBlock node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxEmptyStatement node ) {
 		visitChildren( node );
 	}
 

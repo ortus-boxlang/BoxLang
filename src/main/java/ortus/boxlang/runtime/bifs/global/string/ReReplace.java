@@ -148,7 +148,8 @@ public class ReReplace extends BIF {
 					} else if ( Character.isDigit( replacement.charAt( i + 1 ) ) ) {
 						int		groupIndexLength	= findGroupIndexLength( replacement, i + 1 );
 						int		groupIndex			= Integer.parseInt( replacement.substring( i + 1, i + groupIndexLength ) );
-						String	group				= matcher.group( groupIndex );
+						// Ignore invalid group indexes - use empty string if out of range
+						String	group				= groupIndex > matcher.groupCount() ? "" : matcher.group( groupIndex );
 
 						if ( group != null ) {
 							if ( upperCase ) {

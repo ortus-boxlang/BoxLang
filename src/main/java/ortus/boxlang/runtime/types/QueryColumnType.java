@@ -52,7 +52,8 @@ public enum QueryColumnType {
 	OTHER( Types.OTHER ),
 	TIME( Types.TIME ),
 	TIMESTAMP( Types.TIMESTAMP ),
-	VARCHAR( Types.VARCHAR );
+	VARCHAR( Types.VARCHAR ),
+	REFCURSOR( Types.REF_CURSOR );
 
 	/**
 	 * The SQL type associated with this QueryColumnType.
@@ -76,7 +77,6 @@ public enum QueryColumnType {
 
 		switch ( type ) {
 			case "array" :
-			case "refcursor" :
 			case "struct" :
 			case "sqlxml" :
 				return OTHER;
@@ -139,6 +139,8 @@ public enum QueryColumnType {
 				return VARCHAR;
 			case "null" :
 				return NULL;
+			case "refcursor" :
+				return REFCURSOR;
 			default :
 				throw new IllegalArgumentException( "Unknown QueryColumnType: " + type );
 		}
@@ -185,6 +187,8 @@ public enum QueryColumnType {
 				return "null";
 			case BOOLEAN :
 				return "boolean";
+			case REFCURSOR :
+				return "refcursor";
 			default :
 				throw new IllegalArgumentException( "Unknown QueryColumnType: " + this );
 		}
@@ -254,7 +258,7 @@ public enum QueryColumnType {
 			case Types.REF :
 				return OTHER;
 			case Types.REF_CURSOR :
-				return OTHER;
+				return REFCURSOR;
 			case Types.ROWID :
 				return OTHER;
 			case Types.SMALLINT :
@@ -332,6 +336,7 @@ public enum QueryColumnType {
 				case QueryColumnType.OBJECT -> value;
 				case QueryColumnType.OTHER -> value;
 				case QueryColumnType.NULL -> null;
+				case QueryColumnType.REFCURSOR -> value;
 			};
 		} catch ( Exception e ) {
 			throw new IllegalArgumentException( "Cannot convert value to SQL type " + type + ": " + e.getMessage(), e );

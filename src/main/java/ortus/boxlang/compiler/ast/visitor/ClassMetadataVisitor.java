@@ -38,7 +38,6 @@ import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxType;
-import ortus.boxlang.compiler.javaboxpiler.transformer.BoxClassTransformer;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -166,7 +165,7 @@ public class ClassMetadataVisitor extends VoidBoxVisitor {
 	 */
 	@Override
 	public void visit( BoxProperty prop ) {
-		List<BoxAnnotation>	finalAnnotations	= BoxClassTransformer.normlizePropertyAnnotations( prop );
+		List<BoxAnnotation>	finalAnnotations	= BoxClass.normlizePropertyAnnotations( prop );
 		BoxAnnotation		nameAnnotation		= finalAnnotations.stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "name" ) ).findFirst()
 		    .orElseThrow( () -> new ExpressionException( "Property [" + prop.getSourceText() + "] missing name annotation", prop ) );
 		BoxAnnotation		typeAnnotation		= finalAnnotations.stream().filter( it -> it.getKey().getValue().equalsIgnoreCase( "type" ) ).findFirst()

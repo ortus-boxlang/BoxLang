@@ -27,6 +27,7 @@
   - `ast/` - Abstract Syntax Tree node definitions
   - `asmboxpiler/` - ASM-based bytecode compilation
   - `javaboxpiler/` - Java source code generation
+  - `noopboxpiler/` - No-op compiler for interpretation mode
 
 - **`java/ortus/boxlang/runtime/`** - Core runtime implementation:
   - `BoxRuntime.java` / `BoxRunner.java` - Runtime initialization and CLI entry point

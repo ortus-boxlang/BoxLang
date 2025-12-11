@@ -58,8 +58,6 @@ public class File extends Component {
 		actionsMap.put( Key.move, BoxRuntime.getInstance().getFunctionService().getGlobalFunction( fileMoveKey ) );
 		actionsMap.put( Key.read, BoxRuntime.getInstance().getFunctionService().getGlobalFunction( fileReadKey ) );
 		actionsMap.put( Key.readBinary, BoxRuntime.getInstance().getFunctionService().getGlobalFunction( fileReadBinaryKey ) );
-		actionsMap.put( Key.upload, BoxRuntime.getInstance().getFunctionService().getGlobalFunction( fileUploadKey ) );
-		actionsMap.put( Key.uploadAll, BoxRuntime.getInstance().getFunctionService().getGlobalFunction( fileUploadAllKey ) );
 		actionsMap.put( Key.write, BoxRuntime.getInstance().getFunctionService().getGlobalFunction( fileWriteKey ) );
 	}
 
@@ -145,6 +143,7 @@ public class File extends Component {
 
 		if ( variable == null && attributes.containsKey( Key.result ) ) {
 			variable = attributes.getAsString( Key.result );
+			attributes.put( Key.variable, variable );
 		}
 
 		if ( action.equals( Key.write ) ) {

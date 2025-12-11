@@ -239,7 +239,7 @@ public class PendingQuery {
 
 	/**
 	 * Get the datasource used to execute this query.
-	 * 
+	 *
 	 * @return The datasource used to execute this query.
 	 */
 	public DataSource getDataSource() {
@@ -386,20 +386,31 @@ public class PendingQuery {
 		Predicate<Character>	isValidIdentiferStartChar	= c -> Character.isLetter( c ) || c == '_';
 		// Pop this into a lambda so we can re-use it for the last named parameter
 		Runnable				processNamed				= () -> {
-																SQLWithParamTokens.add( SQLWithParamToken.toString() );
-																SQLWithParamToken.setLength( 0 );
 																Key finalParamName = Key.of( paramName.toString() );
 																if ( namedParameters.containsKey( finalParamName ) ) {
 																	QueryParameter newParam = QueryParameter
 																	    .fromAny( namedParameters.get( finalParamName ) );
 																	foundNamedParams.add( finalParamName );
-																	params.add( newParam );
 																	// List params add ?, ?, ? etc. to the SQL string
 																	if ( newParam.isListParam() ) {
 																		List<Object> values = ( List<Object> ) newParam.getValue();
+																		if ( values.isEmpty() ) {
+																			// Empty list - add single ? placeholder, will bind NULL in applyParameters
+																			SQLWithParamTokens.add( SQLWithParamToken.toString() );
+																			SQLWithParamToken.setLength( 0 );
+																			params.add( newParam );
+																			newSQL.append( "?" );
+																			return;
+																		}
+																		SQLWithParamTokens.add( SQLWithParamToken.toString() );
+																		SQLWithParamToken.setLength( 0 );
+																		params.add( newParam );
 																		newSQL.append(
 																		    values.stream().map( v -> "?" ).collect( Collectors.joining( ", " ) ) );
 																	} else {
+																		SQLWithParamTokens.add( SQLWithParamToken.toString() );
+																		SQLWithParamToken.setLength( 0 );
+																		params.add( newParam );
 																		newSQL.append( "?" );
 																	}
 																} else {
@@ -431,14 +442,25 @@ public class PendingQuery {
 							    + "] provided for query having at least [" + paramsEncountered + "] '?' char(s)." );
 						}
 
-						SQLWithParamTokens.add( SQLWithParamToken.toString() );
-						SQLWithParamToken.setLength( 0 );
 						var				newParam	= QueryParameter.fromAny( positionalParameters.get( paramsEncountered - 1 ) );
 						List<Object>	values;
 						// List params add ?, ?, ? etc. to the SQL string
-						if ( newParam.isListParam() && ( values = ( List<Object> ) newParam.getValue() ).size() > 1 ) {
-							newSQL.append( "?, ".repeat( values.size() - 1 ) );
+						if ( newParam.isListParam() ) {
+							values = ( List<Object> ) newParam.getValue();
+							if ( values.isEmpty() ) {
+								// Empty list - add single ? placeholder, will bind NULL in applyParameters
+								SQLWithParamTokens.add( SQLWithParamToken.toString() );
+								SQLWithParamToken.setLength( 0 );
+								params.add( newParam );
+								newSQL.append( "?" );
+								break;
+							}
+							if ( values.size() > 1 ) {
+								newSQL.append( "?, ".repeat( values.size() - 1 ) );
+							}
 						}
+						SQLWithParamTokens.add( SQLWithParamToken.toString() );
+						SQLWithParamToken.setLength( 0 );
 						params.add( newParam );
 						// append here and break so the ? doesn't go into the SQLWithParamToken
 						newSQL.append( c );
@@ -594,7 +616,7 @@ public class PendingQuery {
 		}
 
 		BoxConnection connection = connectionManager.getBoxConnection( this.queryOptions );
-		datasource = connection.getDataSource();
+		this.datasource = connection.getDataSource();
 		try {
 			return execute( connection, context );
 		} finally {
@@ -629,17 +651,25 @@ public class PendingQuery {
 			}
 
 			ExecutedQuery executedQuery = executeStatement( connection, context );
-			this.cacheProvider.set( this.cacheKey, executedQuery, this.queryOptions.cacheTimeout,
-			    this.queryOptions.cacheLastAccessTimeout );
+
+			// Now cache the results
+			this.cacheProvider.set(
+			    this.cacheKey,
+			    executedQuery,
+			    this.queryOptions.cacheTimeout,
+			    this.queryOptions.cacheLastAccessTimeout
+			);
 			return executedQuery;
 		}
+
+		// Not cacheable, just execute
 		return executeStatement( connection, context );
 	}
 
 	/**
 	 * Executes the PendingQuery on a given {@link Connection} and returns the
 	 * results in an {@link ExecutedQuery} instance.
-	 * 
+	 *
 	 * @deprecated Use {@link #execute(BoxConnection,IBoxContext)} instead.
 	 *
 	 * @param connection The Connection instance to use for executing the query. It
@@ -753,17 +783,23 @@ public class PendingQuery {
 	 * cacheKey, cacheProvider, etc.
 	 */
 	private ExecutedQuery respondWithCachedQuery( ExecutedQuery cachedQuery ) {
+
 		logger.debug( "Query is present, returning cached result: {}", this.cacheKey );
-		IStruct	cacheMeta	= Struct.of(
-		    "cached", true,
-		    "cacheKey", this.cacheKey,
-		    "cacheProvider", this.cacheProvider.getName().toString(),
-		    "cacheTimeout", this.queryOptions.cacheTimeout,
-		    "cacheLastAccessTimeout", this.queryOptions.cacheLastAccessTimeout );
-		Query	results		= cachedQuery.getResults();
-		Struct	queryMeta	= new Struct( cachedQuery.getQueryMeta() );
-		queryMeta.addAll( cacheMeta );
-		results.setMetadata( queryMeta );
+
+		IStruct	cacheMeta	= Struct.ofNonConcurrent(
+		    Key.cached, true,
+		    Key.cacheKey, this.cacheKey,
+		    Key.cacheProvider, this.cacheProvider.getName().toString(),
+		    Key.cacheTimeout, this.queryOptions.cacheTimeout,
+		    Key.cacheLastAccessTimeout, this.queryOptions.cacheLastAccessTimeout
+		);
+
+		// We set the metadata on the results to indicate this was a cached query
+		Query	results		= cachedQuery
+		    .getResults()
+		    .setMetadata( cacheMeta );
+
+		// Return a new ExecutedQuery instance with the cached results and generated key
 		return new ExecutedQuery( results, cachedQuery.getGeneratedKey(), null );
 	}
 
@@ -791,22 +827,29 @@ public class PendingQuery {
 				SQLWithParamValues.append( SQLWithParamTokens.get( SQLParamIndex ) );
 				Integer scaleOrLength = param.getScaleOrLength();
 				if ( param.isListParam() ) {
-					var		i		= 1;
-					Array	list	= ( Array ) param.getValue();
-					for ( Object value : list ) {
-						Object casted = transformValueForSQL( param.getType(), value, context, statement.getConnection() );
-						emitValueToSQL( SQLWithParamValues, casted, param.getType() );
-						if ( i < list.size() ) {
-							SQLWithParamValues.append( ", " );
-						}
-						if ( scaleOrLength == null ) {
-							preparedStatement.setObject( parameterIndex, casted, mapParamTypeToSQLType( param.getType(), casted ) );
-						} else {
-							preparedStatement.setObject( parameterIndex, casted, mapParamTypeToSQLType( param.getType(), casted ),
-							    scaleOrLength );
-						}
+					Array list = ( Array ) param.getValue();
+					// Empty list - bind NULL to match CFML behavior (matches no rows in IN clause)
+					if ( list.isEmpty() ) {
+						SQLWithParamValues.append( "NULL" );
+						preparedStatement.setNull( parameterIndex, mapParamTypeToSQLType( param.getType(), null ) );
 						parameterIndex++;
-						i++;
+					} else {
+						var i = 1;
+						for ( Object value : list ) {
+							Object casted = transformValueForSQL( param.getType(), value, context, statement.getConnection() );
+							emitValueToSQL( SQLWithParamValues, casted, param.getType() );
+							if ( i < list.size() ) {
+								SQLWithParamValues.append( ", " );
+							}
+							if ( scaleOrLength == null ) {
+								preparedStatement.setObject( parameterIndex, casted, mapParamTypeToSQLType( param.getType(), casted ) );
+							} else {
+								preparedStatement.setObject( parameterIndex, casted, mapParamTypeToSQLType( param.getType(), casted ),
+								    scaleOrLength );
+							}
+							parameterIndex++;
+							i++;
+						}
 					}
 				} else {
 					Object value = transformValueForSQL( param.getType(), param.getValue(), context, statement.getConnection() );
@@ -830,10 +873,10 @@ public class PendingQuery {
 
 	/**
 	 * Map the BoxLang QueryColumnType to a SQL type integer for PreparedStatement
-	 * 
+	 *
 	 * @param type  The QueryColumnType to map.
 	 * @param value The value associated with the type.
-	 * 
+	 *
 	 * @return The corresponding SQL type integer.
 	 */
 	private int mapParamTypeToSQLType( QueryColumnType type, Object value ) {
@@ -846,12 +889,12 @@ public class PendingQuery {
 
 	/**
 	 * Transform a value to be suitable for SQL insertion based on its QueryColumnType.
-	 * 
+	 *
 	 * @param type       The QueryColumnType of the value.
 	 * @param value      The value to transform.
 	 * @param context    The context for type casting.
 	 * @param connection The BoxConnection for driver-specific transformations.
-	 * 
+	 *
 	 * @return The transformed value.
 	 */
 	private Object transformValueForSQL( QueryColumnType type, Object value, IBoxContext context, BoxConnection connection ) {

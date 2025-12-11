@@ -28,6 +28,7 @@ import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.net.soap.BoxSoapClient;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -39,8 +40,15 @@ import ortus.boxlang.runtime.validation.Validator;
 @BoxComponent( description = "Invoke methods on objects dynamically", allowsBody = true )
 public class Invoke extends Component {
 
-	ClassLocator			classLocator			= BoxRuntime.getInstance().getClassLocator();
-	static final Set<Key>	reservedAttributeNames	= Set.of( Key._CLASS, Key.method, Key.returnVariable, Key.argumentCollection );
+	/**
+	 * This class is responsible for locating classes
+	 */
+	private static final ClassLocator	classLocator			= BoxRuntime.getInstance().getClassLocator();
+
+	/**
+	 * Reserved attribute names including class, method, returnVariable, argumentCollection, and webservice
+	 */
+	private static final Set<Key>		reservedAttributeNames	= Set.of( Key._CLASS, Key.method, Key.returnVariable, Key.argumentCollection, Key.webservice );
 
 	/**
 	 * Constructor
@@ -49,6 +57,7 @@ public class Invoke extends Component {
 		super();
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key._CLASS, "any", "" ),
+		    new Attribute( Key.webservice, "string", "" ),
 		    new Attribute( Key.method, "string", Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) ),
 		    new Attribute( Key.returnVariable, "string", Set.of( Validator.NON_EMPTY ) ),
 		    new Attribute( Key.argumentCollection, "any" )
@@ -56,7 +65,7 @@ public class Invoke extends Component {
 	}
 
 	/**
-	 * Invokes a method from within a template or class.
+	 * Invokes a method from within a template or class or a web service dynamically.
 	 *
 	 * @param context        The context in which the Component is being invoked
 	 * @param attributes     The attributes to the Component
@@ -65,17 +74,20 @@ public class Invoke extends Component {
 	 *
 	 * @attribute.class The Box Class instance or the name of the Box Class to instantiate.
 	 *
-	 * @attribute.method The name of the method to invoke.
+	 * @attribute.webservice The WSDL URL of a web service to invoke. Mutually exclusive with class attribute.
+	 *
+	 * @attribute.method The name of the method to invoke on the class or web service.
 	 *
 	 * @attribute.returnVariable The variable to store the result of the method invocation.
 	 *
-	 * @attribute.argumentCollection An array or struct of arguments to pass to the method.
+	 * @attribute.argumentCollection An array or struct of arguments to pass to the method being invoked.
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		String	returnVariable	= attributes.getAsString( Key.returnVariable );
 		Key		methodname		= Key.of( attributes.getAsString( Key.method ) );
 		Object	instance		= attributes.get( Key._CLASS );
+		String	webserviceUrl	= attributes.getAsString( Key.webservice );
 		Object	args			= attributes.get( Key.argumentCollection );
 		IStruct	argCollection	= Struct.of();
 		Object	result			= null;
@@ -100,6 +112,24 @@ public class Invoke extends Component {
 		// IF there was a return statement inside our body, we early exit now
 		if ( bodyResult.isEarlyExit() ) {
 			return bodyResult;
+		}
+
+		// Handle webservice invocations
+		if ( webserviceUrl != null && !webserviceUrl.isEmpty() ) {
+			BoxSoapClient	soapClient	= BoxRuntime.getInstance().getHttpService().getOrCreateSoapClient( webserviceUrl, context );
+
+			// Extract the actual arguments to pass to SOAP
+			// We used the pre-existing argCollection to hold all args
+			Object			soapArgs	= argCollection.get( Key.argumentCollection );
+
+			// Invoke the SOAP operation
+			result = soapClient.invoke( methodname.getName(), soapArgs );
+
+			if ( returnVariable != null ) {
+				ExpressionInterpreter.setVariable( context, returnVariable, result );
+			}
+
+			return DEFAULT_RETURN;
 		}
 
 		IReferenceable actualInstance;

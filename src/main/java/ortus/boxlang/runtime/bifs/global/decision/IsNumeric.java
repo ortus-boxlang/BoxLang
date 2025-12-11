@@ -19,6 +19,7 @@ import java.util.Locale;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -59,6 +60,10 @@ public class IsNumeric extends BIF {
 		}
 		// We can't use the number caster on booleans when the booleansAreNumbers setting is set to true
 		if ( value instanceof Boolean ) {
+			return false;
+		}
+		// If we have a string which can be cast to boolean strings, it's not numeric
+		if ( value instanceof String str && BooleanCaster.getBooleanStrings().keySet().contains( Key.of( str ) ) ) {
 			return false;
 		}
 		if ( GenericCaster.attempt( context, value, "numeric" ).wasSuccessful() ) {

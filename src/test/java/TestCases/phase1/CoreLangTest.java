@@ -5862,4 +5862,268 @@ public class CoreLangTest {
 		assertThat( variables.get( result ) ).isEqualTo( "a" );
 	}
 
+	@Test
+	public void testSemicolonEndingExpressionWithStatement() {
+
+		instance.executeSource(
+		    """
+		       zzz = () => { return; };
+		    (() => {})();
+		         """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+	}
+
+	@Test
+	public void testSemicolonEndingClosureStatement() {
+
+		instance.executeSource(
+		    """
+		    arr = [1,2,3,4,5];
+		    arr.forEach( (v) => println( v ); );
+		         """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+
+		instance.executeSource(
+		    """
+		       obj = {
+		    method : ()=>writedump(arguments)
+		    }
+
+		    obj.method( ()=>return;, "anotherParam" )
+		            """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+
+		instance.executeSource(
+		    """
+		    arr = [ 1, "two", ()=>return; ]
+		          """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+
+		instance.executeSource(
+		    """
+		    str = { "key" : ()=>return; }
+		          """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+
+	}
+
+	@Test
+	public void testExpressionInterpreterSetInFunctionLocal() {
+
+		instance.executeSource(
+		    """
+		    	import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
+		    	function foo() {
+		    		ExpressionInterpreter.setVariable( getBoxContext(), "local.bar", "baz" );
+		    		return local.bar;
+		    	}
+		    	result = foo();
+		    """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( "baz" );
+	}
+
+	@Test
+	public void testDoubleToString() {
+
+		instance.executeSource(
+		    """
+		    import java.lang.Double;
+		    myDoubleInstance = Double.valueOf( 15852073 );
+		    result = "" & myDoubleInstance;
+		      """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( "15852073" );
+	}
+
+	@Test
+	public void testCustomCatchTypes() {
+
+		instance.executeSource(
+		    """
+		    function boom() {
+		    	throw(
+		    		type="MyCustom.Exception",
+		    		message="thrown in boom"
+		    	);
+		    }
+		    function foo() {
+		    	try {
+		    		boom();
+		    	} catch ( MyCustom e ) {
+		    		return "custom";
+		    	} catch ( any e ) {
+		    		return "generic";
+		    	}
+		    	return "done";
+		    }
+		    result = foo();
+		            """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( "custom" );
+
+	}
+
+	@Test
+	@Disabled( "not working in ASM Boxpiler" )
+	public void testClosureInTernaryCF() {
+
+		instance.executeSource(
+		    """
+		    result = true ? ()=>"foo"; : ()=>"bar";
+		    result2 = result();
+		          """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "foo" );
+
+	}
+
+	@Test
+	@Disabled( "not working in ASM Boxpiler" )
+	public void testClosureInTernary() {
+
+		instance.executeSource(
+		    """
+		    result = true ? ()=>"foo" : ()=>"bar"
+		    result2 = result();
+		               """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "foo" );
+
+	}
+
+	@Test
+	public void testEmptyStatementWhileCF() {
+
+		instance.executeSource(
+		    """
+		    while(false);
+		                  """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+	}
+
+	@Test
+	public void testEmptyStatementForCF() {
+
+		instance.executeSource(
+		    """
+		    for(i=0; i<10; i++);
+		                  """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+	}
+
+	@Test
+	public void testEmptyStatementDoWhileCF() {
+
+		instance.executeSource(
+		    """
+		    do; while(false);
+		                  """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+	}
+
+	@Test
+	public void testEmptyStatementIfElseCF() {
+
+		instance.executeSource(
+		    """
+		    if(false);
+		    else;
+		                  """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+	}
+
+	@Test
+	public void testEmptyStatementSwitchCaseCF() {
+
+		instance.executeSource(
+		    """
+		    switch(42) {
+		    	case 42:
+		    		;
+		    		break;
+		    	default:
+		    		;
+		    }
+		                             """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+	}
+
+	@Test
+	public void testEmptyStatementWhile() {
+
+		instance.executeSource(
+		    """
+		    while(false);
+		                  """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+	}
+
+	@Test
+	public void testEmptyStatementFor() {
+
+		instance.executeSource(
+		    """
+		    for(i=0; i<10; i++);
+		                  """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+	}
+
+	@Test
+	public void testEmptyStatementDoWhile() {
+
+		instance.executeSource(
+		    """
+		    do; while(false);
+		                  """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+	}
+
+	@Test
+	public void testEmptyStatementIfElse() {
+
+		instance.executeSource(
+		    """
+		    if(false);
+		    else;
+		                  """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+	}
+
+	@Test
+	public void testEmptyStatementSwitchCase() {
+
+		instance.executeSource(
+		    """
+		    switch(42) {
+		    	case 42:
+		    		;
+		    		break;
+		    	default:
+		    		;
+		    }
+		                             """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+	}
+
 }

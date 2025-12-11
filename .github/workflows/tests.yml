@@ -21,17 +21,17 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ "ubuntu-latest", "windows-latest" ]
-        jdkProvider: [ "temurin" ]
-        jdkVersion: [ "21" ]
-        experimental: [ false ]
-        compiler: [ "java", "asm" ]
+        os: ["ubuntu-latest", "windows-latest"]
+        jdkProvider: ["temurin"]
+        jdkVersion: ["21"]
+        experimental: [false]
+        compiler: ["java", "asm"]
         exclude:
           - os: windows-latest
             compiler: java
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup Java
         uses: actions/setup-java@v5
@@ -52,7 +52,7 @@ jobs:
 
       - name: Install JDBC modules
         if: ${{ matrix.os != 'windows-latest' }}
-        run: box install id=bx-mssql,bx-mysql,bx-oracle@be directory=~/.boxlang/modules --verbose --nosave
+        run: box install id=bx-mssql@be,bx-mysql,bx-oracle@be directory=~/.boxlang/modules --verbose --nosave
 
       - name: Setup MySQL Service
         if: ${{ matrix.os != 'windows-latest' }}
@@ -79,12 +79,25 @@ jobs:
           oracle-password: "123456Password"
           oracle-database: "XEPDB1"
 
-      - name: Test BoxLang
+      - name: Build Java Compiler JAR
+        if: ${{ matrix.compiler == 'java' }}
+        run: ./gradlew jarJavaCompiler --stacktrace --console=plain
+
+      - name: Test BoxLang (ASM)
+        if: ${{ matrix.compiler == 'asm' }}
         env:
-          BOXLANG_EXPERIMENTAL_COMPILER: ${{ matrix.compiler }}
+          BOXLANG_COMPILER: ${{ matrix.compiler }}
         run: |
           ./gradlew :src:modules:test:build --stacktrace --console=plain
           ./gradlew test --stacktrace --console=plain
+
+      - name: Test BoxLang (Java)
+        if: ${{ matrix.compiler == 'java' }}
+        env:
+          BOXLANG_COMPILER: ${{ matrix.compiler }}
+        run: |
+          ./gradlew :src:modules:test:build --stacktrace --console=plain
+          ./gradlew test --stacktrace --console=plain -PaddJavaCompiler=true
 
       - name: Publish Test Reports
         uses: mikepenz/action-junit-report@v6.0.1

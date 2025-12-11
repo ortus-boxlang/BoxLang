@@ -261,6 +261,11 @@ public class DateTimeCasterTest {
 		result		= DateTimeCaster.cast( dateString );
 		assertThat( result ).isNotNull();
 		assertThat( result.format( "MM/dd/yyyy hh:mm:ss a" ) ).isEqualTo( "03/28/2025 04:32:26 PM" );
+
+		dateString	= "11/21/2025 1:05";
+		result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "MM/dd/yyyy hh:mm:ss a" ) ).isEqualTo( "11/21/2025 01:05:00 AM" );
 	}
 
 	@Test
@@ -349,6 +354,16 @@ public class DateTimeCasterTest {
 		result		= DateTimeCaster.cast( dateString );
 		assertThat( result ).isNotNull();
 		assertThat( result.format( "yyyy-MM-dd HH:mm" ) ).isEqualTo( "2010-06-30 04:33" );
+
+		dateString	= "Jun-3-2010 04:33";
+		result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd HH:mm" ) ).isEqualTo( "2010-06-03 04:33" );
+
+		dateString	= "Jun-03-2010 04:33";
+		result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd HH:mm" ) ).isEqualTo( "2010-06-03 04:33" );
 	}
 
 	@Test
