@@ -68,9 +68,6 @@ public class Transaction extends Component {
 		        )
 		    ) ),
 		    new Attribute( Key.savepoint, "string" ),
-		    new Attribute( Key.nested, "boolean", false, Set.of(
-		        Validator.TYPE
-		    ) ),
 		    new Attribute( Key.datasource, "string" )
 		};
 	}
@@ -88,8 +85,6 @@ public class Transaction extends Component {
 	 * @attribute.isolation The isolation level to use for the transaction. Can only be set upon transaction begin. One of: `read_uncommitted`, `read_committed`, `repeatable_read`, or `serializable`.
 	 *
 	 * @attribute.savepoint The name of the savepoint to set or rollback to. Used with `savepoint` or `rollback` actions.
-	 *
-	 * @attribute.nested Whether or not this transaction is nested within another transaction. Default is `false`.
 	 *
 	 * @attribute.datasource The name of the datasource to use for the transaction. If not provided, the first query execution inside the transaction will set the datasource.
 	 */
