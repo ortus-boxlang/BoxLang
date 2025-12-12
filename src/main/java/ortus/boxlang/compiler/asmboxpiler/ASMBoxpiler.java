@@ -207,8 +207,9 @@ public class ASMBoxpiler extends Boxpiler {
 																return class1.getName().replace( '.', '/' );
 															} catch ( ClassNotFoundException e ) {
 																// Fall back to the default implementation if classes can't be loaded
-																logger.warn( "ClassNotFoundException in getCommonSuperClass for " + type1 + " and " + type2 + ": "
-																    + e.getMessage() );
+																logger
+																    .warn( "ClassNotFoundException in getCommonSuperClass for " + type1 + " and " + type2 + ": "
+																        + e.getMessage() );
 																return "java/lang/Object";
 															}
 														} else {
