@@ -725,4 +725,23 @@ public class QoQParseTest {
 		assertEquals( 3, query.size() );
 	}
 
+	@Test
+	public void testNullLike() {
+		instance.executeSource(
+		    """
+		       q = queryNew( "col","string",[[null]] )
+		    result = queryExecute("
+		    select 'cool'
+		    from q
+		    where col like '%'
+		    ", [], { dbtype="query" } )
+		              """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		ortus.boxlang.runtime.types.Query query = variables.getAsQuery( result );
+		// TODO: THis matches Lucee but isn't actually correct. Any comparison operatino including null should evaluate false
+		// but we need some refactoring to allow that as my internal methods aren't using boxed booleans so I can't return nulls right now
+		assertEquals( 1, query.size() );
+	}
+
 }
