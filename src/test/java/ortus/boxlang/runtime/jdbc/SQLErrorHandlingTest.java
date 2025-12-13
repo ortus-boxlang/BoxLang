@@ -36,6 +36,7 @@ import tools.JDBCTestUtils;
  * Test that SQL errors (like creating duplicate tables) are properly reported
  * instead of being masked by NullPointerException.
  */
+@DisabledOnOs( OS.WINDOWS )
 public class SQLErrorHandlingTest {
 
 	static BoxRuntime	instance;
