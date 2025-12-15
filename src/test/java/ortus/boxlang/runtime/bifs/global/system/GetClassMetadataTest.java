@@ -87,5 +87,14 @@ public class GetClassMetadataTest {
 
 		assertThat( metadata.containsKey( "type" ) ).isTrue();
 		assertThat( metadata.getAsString( Key.type ) ).isEqualTo( "Interface" );
+
+		assertThat( metadata.containsKey( "annotations" ) ).isTrue();
+		var annotations = metadata.getAsStruct( Key.annotations );
+		assertThat( annotations.containsKey( "Anno" ) ).isTrue();
+		assertThat( annotations.getAsString( Key.of( "Anno" ) ) ).isEqualTo( "value" );
+
+		assertThat( metadata.containsKey( "documentation" ) ).isTrue();
+		var documentation = metadata.getAsStruct( Key.documentation );
+		assertThat( documentation.getAsString( Key.of( "foo" ) ) ).isEqualTo( "bar" );
 	}
 }
