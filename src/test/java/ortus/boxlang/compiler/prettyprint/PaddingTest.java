@@ -6,6 +6,7 @@ package ortus.boxlang.compiler.prettyprint;
 import java.io.IOException;
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -14,6 +15,7 @@ import ortus.boxlang.compiler.prettyprint.config.Config;
 
 public class PaddingTest extends PrettyPrintTest {
 
+	@Disabled( "Disabled as this has been moved to more specific configuration under struct and array configuration" )
 	@ParameterizedTest( name = "Bracket Padding: {0}" )
 	@MethodSource( "bracketPaddingConfigs" )
 	public void testBracketPadding( String testName, Config config, String expectedSuffix ) throws IOException {
