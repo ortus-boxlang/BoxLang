@@ -131,13 +131,23 @@ public class ClassMeta extends BoxMeta<IClassRunnable> {
 		    Key.documentation, new Struct( target.getDocumentation() ),
 		    Key.annotations, new Struct( target.getAnnotations() ),
 		    Key._EXTENDS, target.getSuper() != null ? target.getSuper().getBoxMeta().getMeta() : Struct.EMPTY,
-		    Key._IMPLEMENTS, UnmodifiableArray.fromList( target.getInterfaces().stream().map( iface -> iface.getBoxMeta().getMeta() ).toList() ),
 		    Key.functions, UnmodifiableArray.fromList( mdFunctions ),
 		    Key._HASHCODE, target.hashCode(),
 		    Key.properties, UnmodifiableArray.fromList( mdProperties ),
 		    Key.type, CLASS_TYPE,
 		    Key.fullname, target.bxGetName().getName(),
 		    Key.path, target.getRunnablePath().absolutePath().toString()
+		);
+
+		// Add interfaces if any
+		meta.put(
+		    Key._IMPLEMENTS,
+		    target.getInterfaces().stream()
+		        .collect(
+		            Struct::new,
+		            ( struct, iface ) -> struct.put( iface.getName(), iface.getMetaData() ),
+		            Struct::putAll
+		        )
 		);
 
 	}
