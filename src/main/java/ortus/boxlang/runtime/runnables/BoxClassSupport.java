@@ -570,7 +570,9 @@ public class BoxClassSupport {
 		var	fullName	= keyName.getName();
 		meta.put( Key.type, CLASS_TYPE );
 		meta.put( Key._NAME, fullName );
+		meta.put( Key.fullname, fullName );
 		meta.put( Key.simpleName, fullName.substring( fullName.lastIndexOf( '.' ) + 1 ) );
+
 		meta.put( Key.accessors, hasAccessors( thisClass ) );
 		meta.put( Key.path, thisClass.getRunnablePath().absolutePath().toString() );
 		meta.put( Key.persisent, false );
