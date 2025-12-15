@@ -34,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -225,6 +226,21 @@ public class DatePartTest {
 		    context );
 		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
 		assertEquals( result, refMillisecond );
+
+	}
+
+	@DisplayName( "Tests that incorrect casing will be translated correctly" )
+	@Test
+	public void testIncorrectCasing() {
+		DateTime ref = DateTimeCaster.cast( "2000-01-01" );
+		variables.put( Key.of( "date" ), ref );
+		instance.executeSource(
+		    """
+		    result = datePart( "YYYY", date );
+		    """,
+		    context );
+		Integer result = ( Integer ) variables.get( Key.of( "result" ) );
+		assertEquals( result, 2000 );
 
 	}
 
