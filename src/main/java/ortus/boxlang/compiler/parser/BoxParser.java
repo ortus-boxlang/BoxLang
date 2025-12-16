@@ -332,7 +332,7 @@ public class BoxParser extends AbstractParser {
 		this.classOrInterface = classOrInterface;
 		BoxLexerCustom	lexer	= new BoxLexerCustom( CharStreams.fromStream( stream, StandardCharsets.UTF_8 ),
 		    isScript ? BoxLexerCustom.DEFAULT_SCRIPT_MODE : BoxLexerCustom.DEFAULT_TEMPLATE_MODE, errorListener, this )
-		    .setClassIsExpected( classOrInterface );
+		        .setClassIsExpected( classOrInterface );
 		BoxGrammar		parser	= new BoxGrammar( new CommonTokenStream( lexer ) );
 
 		// DEBUG: Will print a trace of all parser rules visited:
@@ -375,6 +375,14 @@ public class BoxParser extends AbstractParser {
 
 		// Uncomment to use ANTLR GUI tree viewer for debugging
 		// org.antlr.v4.gui.Trees.inspect( parseTree, parser );
+
+		/*
+		 * try {
+		 * Thread.sleep( 1000000 );
+		 * } catch ( InterruptedException e ) {
+		 * // Ignore
+		 * }
+		 */
 
 		// This must run FIRST before resetting the lexer
 		validateParse( lexer );
@@ -707,8 +715,8 @@ public class BoxParser extends AbstractParser {
 						statements.add(
 						    new BoxScriptIsland(
 						        scriptNode.getStatements(),
-						        getPosition( script.script() ),
-						        getSourceText( script.script() )
+						        getPosition( script ),
+						        getSourceText( script )
 						    )
 						);
 					}

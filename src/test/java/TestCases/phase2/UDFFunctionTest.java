@@ -1048,6 +1048,37 @@ public class UDFFunctionTest {
 		assertThat( paramMeta.getAsStruct( Key.of( "annotations" ) ).get( Key.of( "luis" ) ).toString() ).isEqualTo( "majano" );
 	}
 
+	@Test
+	public void testFunctionMetadataInScriptComponent() {
+		instance.executeSource(
+		    """
+		    <bx:script>
+		      	/**
+		      	 * @event.brad wood
+		      	 * @eventgavin pickin
+		      	 */
+		      	@event.luis( majano )
+		      	@eventjon( "clausen" )
+		      	void function preEvent( event ) eventesme="acevado" {}
+
+		      	result = getMetadata( preEvent );
+		    </bx:script>
+		      """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		IStruct meta = variables.getAsStruct( result );
+		assertThat( meta ).containsKey( Key.of( "documentation" ) );
+		assertThat( meta ).containsKey( Key.of( "annotations" ) );
+		assertThat( meta ).containsKey( Key.of( "parameters" ) );
+		assertThat( meta.getAsStruct( Key.of( "documentation" ) ).get( Key.of( "eventgavin" ) ).toString() ).isEqualTo( "pickin" );
+		assertThat( meta.getAsStruct( Key.of( "annotations" ) ).get( Key.of( "eventjon" ) ).toString() ).isEqualTo( "clausen" );
+		assertThat( meta.getAsStruct( Key.of( "annotations" ) ).get( Key.of( "eventesme" ) ).toString() ).isEqualTo( "acevado" );
+		assertThat( meta.getAsArray( Key.of( "parameters" ) ).size() ).isEqualTo( 1 );
+		IStruct paramMeta = ( Struct ) meta.getAsArray( Key.of( "parameters" ) ).get( 0 );
+		assertThat( paramMeta.getAsStruct( Key.of( "documentation" ) ).get( Key.of( "brad" ) ).toString() ).isEqualTo( "wood" );
+		assertThat( paramMeta.getAsStruct( Key.of( "annotations" ) ).get( Key.of( "luis" ) ).toString() ).isEqualTo( "majano" );
+	}
+
 	@DisplayName( "UDF metadata annotations" )
 	@Test
 	public void testUDFMetadataHyphenAnnotations() {
