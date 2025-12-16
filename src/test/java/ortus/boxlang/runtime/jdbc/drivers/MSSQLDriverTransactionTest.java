@@ -231,7 +231,7 @@ public class MSSQLDriverTransactionTest extends AbstractDriverTest {
 		    	// do nothing and see if the transaction is still committed.
 		    	}
 		    }
-		    variables.result = queryExecute( "SELECT * FROM developers", {} );
+		    variables.result = queryExecute( "SELECT * FROM developers", {}, { datasource="MSSQLdatasource" } );
 		    """,
 		    getContext() );
 		assertNotNull(
@@ -317,7 +317,7 @@ public class MSSQLDriverTransactionTest extends AbstractDriverTest {
 		getInstance().executeSource(
 		    """
 		    transaction{
-		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 22, 'Brad Wood', 'Developer' )", 	{ datasource="MSSQLdatasource" } );
+		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 22, 'Brad Wood', 'Developer' )", {}, 	{ datasource="MSSQLdatasource" } );
 		        transactionCommit();
 		        queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {}, { datasource="MSSQLdatasource" } );
 		        transactionRollback();
@@ -354,7 +354,7 @@ public class MSSQLDriverTransactionTest extends AbstractDriverTest {
 		    transaction{
 		     queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {}, { datasource="MSSQLdatasource" } );
 		     transactionSetSavepoint( "savepoint1" );
-		     queryExecute( "UPDATE developers SET name='Maxwell Smart' WHERE id=33" );
+		     queryExecute( "UPDATE developers SET name='Maxwell Smart' WHERE id=33", {}, { datasource="MSSQLdatasource" } );
 		     transactionRollback( "savepoint1" );
 		    }
 		    variables.result = queryExecute( "SELECT * FROM developers", {}, { datasource="MSSQLdatasource" } );

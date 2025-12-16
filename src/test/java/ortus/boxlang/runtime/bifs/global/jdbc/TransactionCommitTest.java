@@ -5,10 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
+@EnabledIf( "tools.JDBCTestUtils#hasDerbyModule" )
 public class TransactionCommitTest extends BaseJDBCTest {
 
 	static Key result = new Key( "result" );

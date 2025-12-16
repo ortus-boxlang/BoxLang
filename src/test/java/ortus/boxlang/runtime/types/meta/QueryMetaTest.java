@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.runtime.bifs.global.jdbc.BaseJDBCTest;
 import ortus.boxlang.runtime.dynamic.Referencer;
@@ -45,6 +46,7 @@ public class QueryMetaTest extends BaseJDBCTest {
 
 	}
 
+	@EnabledIf( "tools.JDBCTestUtils#hasDerbyModule" )
 	@DisplayName( "Test JDBC query meta" )
 	@Test
 	void testJDBCQueryMeta() {

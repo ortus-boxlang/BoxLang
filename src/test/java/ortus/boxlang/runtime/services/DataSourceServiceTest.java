@@ -27,6 +27,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.jdbc.BoxConnection;
@@ -36,6 +37,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
+@EnabledIf( "tools.JDBCTestUtils#hasDerbyModule" )
 public class DataSourceServiceTest {
 
 	static BoxRuntime			runtime;

@@ -45,6 +45,7 @@ import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.util.conversion.ObjectMarshaller;
 import tools.JDBCTestUtils;
 
+@EnabledIf( "tools.JDBCTestUtils#hasDerbyModule" )
 public class QueryExecuteTest extends BaseJDBCTest {
 
 	static Key result = new Key( "result" );
@@ -762,38 +763,29 @@ public class QueryExecuteTest extends BaseJDBCTest {
 	@DisplayName( "It uses a different connection manager for each thread" )
 	@Test
 	public void testDifferentConnectionManagerPerThread() {
+
+		// @formatter:off
 		instance.executeStatement(
 		    """
-		    bx:application
-		    	name="mysleeptest"
-		    	datasources={
-		    		"derby": {
-		    			"connectionString": "jdbc:derby:memory:testQueryExecuteAlternateUserDB;user=foo;password=bar;create=true"
-		    		}
-		    	}
-		    	datasource : "derby";
+		          bx:application
+		          	name="mysleeptest"
+		          	datasources={
+		          		"derby": {
+		          			"connectionString": "jdbc:derby:memory:testQueryExecuteAlternateUserDB;user=foo;password=bar;create=true"
+		          		}
+		          	}
+		          	datasource : "derby";
 
-		    [1,2,3,4,5].each( ()=> {
-		    	try {
-		    		queryExecute( "
-		    			CREATE FUNCTION SLEEP(MILLISECONDS INT)
-		    			RETURNS INT
-		    			PARAMETER STYLE JAVA
-		    			LANGUAGE JAVA
-		    			EXTERNAL NAME 'ortus.boxlang.runtime.bifs.global.jdbc.DerbySleep.sleep'
-		    		" );
+		          [1,2,3,4,5].each( ()=> {
 
-		    		transaction {
-		    			queryExecute( "VALUES SLEEP(5000)" )
-		    		}
+		          		transaction {
+		          			queryExecute( "SELECT COUNT(*) FROM SYS.SYSCOLUMNS A, SYS.SYSCOLUMNS B" )
+		          		}
 
-		    	} catch( e ) {
-		    		if( !(e.message contains 'already exists') ) {
-		    			rethrow;
-		    		}
-		    	}
-		    }, true );
-		    """, context );
+		          }, true );
+		          """, context );
+				  
+		// @formatter:on
 	}
 
 	@Disabled( "Not implemented" )
