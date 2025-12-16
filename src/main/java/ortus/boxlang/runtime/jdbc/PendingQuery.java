@@ -800,7 +800,7 @@ public class PendingQuery {
 		    .setMetadata( cacheMeta );
 
 		// Return a new ExecutedQuery instance with the cached results and generated key
-		return new ExecutedQuery( results, cachedQuery.getGeneratedKey(), null );
+		return new ExecutedQuery( results, cachedQuery.getGeneratedKey() );
 	}
 
 	/**

@@ -817,7 +817,7 @@ public class QueryExecuteTest extends BaseJDBCTest {
 	@DisplayName( "ExecutedQuery instances are serializable" )
 	@Test
 	public void testObjectMarshallingOfExecutedQuery() {
-		ExecutedQuery executedQuery = new ExecutedQuery( new Query(), null, null );
+		ExecutedQuery executedQuery = new ExecutedQuery( new Query(), null );
 		ObjectMarshaller.serialize( context, executedQuery );
 	}
 }
