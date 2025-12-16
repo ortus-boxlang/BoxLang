@@ -106,13 +106,13 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	/**
 	 * The JDBC connection manager, which tracks transaction state/context and allows a thread or request to retrieve connections.
 	 */
-	private ConnectionManager									connectionManager;
+	private ConnectionManager									connectionManager		= null;
 
 	/**
 	 * Application.bx listener for this request
 	 * null if there is none
 	 */
-	private BaseApplicationListener								applicationListener;
+	private BaseApplicationListener								applicationListener		= null;
 
 	/**
 	 * The application service
@@ -143,7 +143,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 */
 	protected RequestBoxContext( IBoxContext parent ) {
 		super( parent );
-		this.connectionManager = new ConnectionManager( this );
+		registerShutdownListener( ( context ) -> this.doShutdown() );
 	}
 
 	/**
@@ -587,8 +587,18 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 
 	/**
 	 * Get the ConnectionManager, which is the central point for managing database connections and transactions.
+	 * Create as needed
 	 */
 	public ConnectionManager getConnectionManager() {
+		if ( this.connectionManager != null ) {
+			return this.connectionManager;
+		}
+		synchronized ( this ) {
+			if ( this.connectionManager != null ) {
+				return this.connectionManager;
+			}
+			this.connectionManager = new ConnectionManager( this );
+		}
 		return this.connectionManager;
 	}
 
@@ -596,13 +606,24 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 * Shutdown the ConnectionManager and release any resources.
 	 */
 	public void shutdownConnections() {
-		this.connectionManager.shutdown();
+		if ( this.connectionManager != null ) {
+			this.connectionManager.shutdown();
+			this.connectionManager = null;
+		}
 	}
 
-	@Override
-	public void shutdown() {
-		super.shutdown();
+	/**
+	 * Internal method to do the actual shutdown
+	 */
+	private void doShutdown() {
 		shutdownConnections();
+
+		// Wipe out this stuff to help GC
+		this.threadManager			= null;
+		this.requestClassLoader		= null;
+		this.applicationListener	= null;
+		this.configCache			= null;
+
 	}
 
 	/**

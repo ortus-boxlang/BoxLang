@@ -20,6 +20,8 @@ package ortus.boxlang.runtime.components.async;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.util.List;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -257,7 +259,7 @@ public class ThreadTest {
 			thread name="myThread" {
 				local.foo = "bar";
 				variables.result = local.foo;
-				variables.threadContext = getBoxContext();
+				variables.localScope = getBoxContext().getScopeNearby( "local" );
 			}
 			thread name="myThread" action="join";
 
@@ -267,7 +269,7 @@ public class ThreadTest {
 		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( "bar" );
 		// ensure variables scope doesn't have local key
 		assertThat( variables ).doesNotContainKey( Key.of( "local" ) );
-		assertThat( ( ( IBoxContext ) variables.get( Key.of( "threadContext" ) ) ).getScopeNearby( Key.of( "local" ) ) ).doesNotContainKey( Key.of( "local" ) );
+		assertThat( variables.getAsStruct( Key.of( "localScope" ) ) ).doesNotContainKey( Key.of( "local" ) );
 	}
 
 	@DisplayName( "It can join thread zero timeout" )
@@ -449,6 +451,34 @@ public class ThreadTest {
 			context, BoxSourceType.BOXSCRIPT );
 		// @formatter:on
 		assert ( variables.get( result ).equals( true ) );
+	}
+
+	@DisplayName( "The request context stays alive until the thread is done" )
+	@Test
+	public void testRequestContextStaysAliveUntilThreadDone() throws InterruptedException {
+		List<String> log = new java.util.ArrayList<>();
+		context.registerShutdownListener( context -> log.add( "custom shutdown listener ran" ) );
+
+		// @formatter:off
+		instance.executeSource(
+		    """
+		       thread name="myThread" {
+		    	   sleep( 2000 )
+		       }
+		    		""",
+		    context, BoxSourceType.CFSCRIPT );
+		// @formatter:on
+
+		// This should defer and not ACTUALLY shutdown the request context yet since the thread is still running
+		context.shutdown();
+		log.add( "Main context shutdown called" );
+
+		// The actual shutdown should happen after the thread is done while this sleep is going on
+		java.lang.Thread.sleep( 4000 );
+
+		assertThat( log.size() ).isEqualTo( 2 );
+		assertThat( log.get( 0 ) ).isEqualTo( "Main context shutdown called" );
+		assertThat( log.get( 1 ) ).isEqualTo( "custom shutdown listener ran" );
 	}
 
 }

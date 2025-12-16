@@ -97,6 +97,7 @@ public class RunThreadInContext extends BIF {
 		ClassLoader			oldClassLoader	= Thread.currentThread().getContextClassLoader();
 		RequestBoxContext	requestContext	= newContext.getRequestContext();
 		if ( requestContext != null ) {
+			requestContext.registerDependentThread();
 			Thread.currentThread().setContextClassLoader( requestContext.getRequestClassLoader() );
 		} else {
 			Thread.currentThread().setContextClassLoader( BoxRuntime.getInstance().getRuntimeLoader() );
@@ -108,6 +109,9 @@ public class RunThreadInContext extends BIF {
 			RequestBoxContext.removeCurrent();
 			newContext.shutdown();
 			Thread.currentThread().setContextClassLoader( oldClassLoader );
+			if ( requestContext != null ) {
+				requestContext.unregisterDependentThread();
+			}
 		}
 	}
 }

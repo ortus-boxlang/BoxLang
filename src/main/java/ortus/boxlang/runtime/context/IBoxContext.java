@@ -850,4 +850,21 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	 * @param consumer The consumer to register
 	 */
 	public void registerShutdownListener( java.util.function.Consumer<IBoxContext> consumer );
+
+	/**
+	 * Register a dependent thread on this request context
+	 * 
+	 * @return The number of dependent threads after registering this one
+	 */
+	public int registerDependentThread();
+
+	/**
+	 * Unregister a dependent thread on this request context
+	 * If this context has previously been shutdown and the number of dependent threads has reached zero,
+	 * the context will call its shutdown listeners
+	 * 
+	 * @return The number of dependent threads after unregistering this one
+	 */
+	public int unregisterDependentThread();
+
 }

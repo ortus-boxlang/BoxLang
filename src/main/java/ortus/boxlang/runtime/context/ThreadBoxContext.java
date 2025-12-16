@@ -67,7 +67,7 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 	 */
 	public ThreadBoxContext( IBoxContext parent ) {
 		super( parent );
-		// variables scope and connection manager are lazy initialized
+		registerShutdownListener( ( context ) -> this.doShutdown() );
 	}
 
 	/**
@@ -96,6 +96,9 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 
 		if ( parallel ) {
 			ThreadBoxContext context = new ThreadBoxContext( parent );
+			if ( requestContext != null ) {
+				requestContext.registerDependentThread();
+			}
 			try {
 				RequestBoxContext.setCurrent( context );
 				return runnable.apply( context );
@@ -103,6 +106,9 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 				RequestBoxContext.removeCurrent();
 				context.shutdown();
 				Thread.currentThread().setContextClassLoader( oldClassLoader );
+				if ( requestContext != null ) {
+					requestContext.unregisterDependentThread();
+				}
 			}
 		} else {
 			try {
@@ -254,10 +260,15 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 		}
 	}
 
-	@Override
-	public void shutdown() {
-		super.shutdown();
+	/**
+	 * Internal method to do the actual shutdown
+	 */
+	private void doShutdown() {
 		shutdownConnections();
+
+		// Wipe out this stuff to help GC
+		this.variablesScope = null;
+
 	}
 
 }

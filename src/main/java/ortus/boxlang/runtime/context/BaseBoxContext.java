@@ -21,10 +21,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayDeque;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 
@@ -138,7 +138,20 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	private IBoxAttachable									attachable				= null;
 
+	/**
+	 * Listeners to be invoked on shutdown
+	 */
 	private Set<java.util.function.Consumer<IBoxContext>>	shutdownListeners		= null;
+
+	/**
+	 * Track many thread are dependent on this request context
+	 */
+	private AtomicInteger									threadDependents		= null;
+
+	/**
+	 * Flag if this context is pending a shutdown
+	 */
+	private volatile boolean								shutdownRequested		= false;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -1466,13 +1479,26 @@ public class BaseBoxContext implements IBoxContext {
 	}
 
 	/**
-	 * Shutdown this context
+	 * Shutdown this context. If there are 1 or more dependent threads registered,
+	 * the shutdown will be delayed until all dependent threads have unregistered.
+	 * Don't override this method with any logic since this call may be a no-op!
+	 * Instead, if your context has shutdown tasks, register them in the constructor
+	 * as a shutdown listener. That way, they will be called at the proper time.
 	 */
 	@Override
 	public void shutdown() {
+		shutdownRequested = true;
+
+		if ( hasDependentThreads() ) {
+			// There are dependent threads, so we can't shutdown yet
+			return;
+		}
 		// Process any shutdown listeners
 		if ( this.shutdownListeners != null ) {
-			for ( var listener : this.shutdownListeners ) {
+			// Loop backwards, so the first registered listener is the last called
+			var listenerList = new java.util.ArrayList<>( this.shutdownListeners );
+			java.util.Collections.reverse( listenerList );
+			for ( var listener : listenerList ) {
 				listener.accept( this );
 			}
 			this.shutdownListeners.clear();
@@ -1491,7 +1517,7 @@ public class BaseBoxContext implements IBoxContext {
 		if ( this.shutdownListeners == null ) {
 			synchronized ( this ) {
 				if ( this.shutdownListeners == null ) {
-					this.shutdownListeners = ConcurrentHashMap.newKeySet();
+					this.shutdownListeners = new LinkedHashSet<java.util.function.Consumer<IBoxContext>>();
 				}
 			}
 		}
@@ -1550,6 +1576,64 @@ public class BaseBoxContext implements IBoxContext {
 	@Override
 	public <T> T computeAttachmentIfAbsent( Key key, java.util.function.Function<? super Key, ? extends T> mappingFunction ) {
 		return _getAttachable().computeAttachmentIfAbsent( key, mappingFunction );
+	}
+
+	/**
+	 * Get dependent thread count, initializing if needed
+	 */
+	private AtomicInteger getThreadDependents() {
+		if ( this.threadDependents == null ) {
+			synchronized ( this ) {
+				if ( this.threadDependents == null ) {
+					this.threadDependents = new AtomicInteger( 0 );
+				}
+			}
+		}
+		return this.threadDependents;
+	}
+
+	/**
+	 * Check if there are any dependent threads on this request context
+	 * 
+	 * @return true if there are dependent threads
+	 */
+	protected boolean hasDependentThreads() {
+		return this.threadDependents != null && this.threadDependents.get() > 0;
+	}
+
+	/**
+	 * Register a dependent thread on this request context
+	 * 
+	 * @return The number of dependent threads after registering this one
+	 */
+	@Override
+	public int registerDependentThread() {
+		// Just to be safe
+		if ( shutdownRequested ) {
+			throw new BoxRuntimeException( "Cannot register dependent thread on a context that is shutting down" );
+		}
+		return getThreadDependents().incrementAndGet();
+	}
+
+	/**
+	 * Unregister a dependent thread on this request context
+	 * If this context has previously been shutdown and the number of dependent threads has reached zero,
+	 * the context will call its shutdown listeners
+	 * 
+	 * @return The number of dependent threads after unregistering this one
+	 */
+	@Override
+	public int unregisterDependentThread() {
+		int count = getThreadDependents().decrementAndGet();
+		// This shouldn't happen, but if a cfthread misfires, it may be possible
+		if ( count < 0 ) {
+			getThreadDependents().set( 0 );
+			count = 0;
+		}
+		if ( shutdownRequested && count == 0 ) {
+			shutdown();
+		}
+		return count;
 	}
 
 }
