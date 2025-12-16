@@ -93,8 +93,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		ancestorLevels						= Key.of( "ancestorLevels" );
 	public static final Key		annotations							= Key.of( "annotations" );
 	public static final Key		announce							= Key.of( "announce" );
-	public static final Key		ANONYMOUSCLOSURE					= Key.of( "ANONYMOUSCLOSURE" );
-	public static final Key		ANONYMOUSLAMBDA						= Key.of( "ANONYMOUSLAMBDA" );
+	public static final Key		ANONYMOUSCLOSURE					= Key.of( "anonymousClosure" );
+	public static final Key		ANONYMOUSLAMBDA						= Key.of( "anonymousLambda" );
 	public static final Key		append								= Key.of( "append" );
 	public static final Key		appender							= Key.of( "appender" );
 	public static final Key		appenderArguments					= Key.of( "appenderArguments" );
@@ -795,6 +795,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		SQLState							= Key.of( "SQLState" );
 	public static final Key		sqltype								= Key.of( "sqltype" );
 	public static final Key		stackTrace							= Key.of( "stackTrace" );
+	public static final Key		_STATIC								= Key.of( "static" );
 	public static final Key		start								= Key.of( "start" );
 	public static final Key		startRow							= Key.of( "startRow" );
 	public static final Key		startTicks							= Key.of( "startTicks" );

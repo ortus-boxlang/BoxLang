@@ -35,6 +35,7 @@ import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.BaseScope;
+import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.StaticScope;
 import ortus.boxlang.runtime.scopes.ThisScope;
@@ -52,6 +53,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.ClassMeta;
+import ortus.boxlang.runtime.types.meta.FunctionMeta;
 import ortus.boxlang.runtime.types.util.TypeUtil;
 import ortus.boxlang.runtime.util.ArgumentUtil;
 import ortus.boxlang.runtime.util.BoxFQN;
@@ -84,6 +86,11 @@ public class BoxClassSupport {
 	    Key.type,
 	    Key._DEFAULT
 	);
+
+	/**
+	 * Constants
+	 */
+	private static final String		CLASS_TYPE								= "Component";
 
 	/**
 	 * Call the pseudo constructor
@@ -530,7 +537,7 @@ public class BoxClassSupport {
 		meta.putIfAbsent( "output", thisClass.canOutput() );
 		meta.putIfAbsent( "invokeImplicitAccessor", thisClass.getCanInvokeImplicitAccessor() );
 
-		// Assemble the metadata
+		// Assemble the functions
 		var	functions				= new ArrayList<Object>();
 		var	compileTimeMethodNames	= thisClass.getCompileTimeMethodNames();
 		// loop over target's variables scope and add metadata for each function
@@ -540,8 +547,35 @@ public class BoxClassSupport {
 				functions.add( fun.getMetaData() );
 			}
 		}
-		meta.put( Key._NAME, thisClass.bxGetName().getName() );
+
+		// Add all static methods as well, if any
+		IScope staticScope = thisClass.getStaticScope();
+		if ( staticScope != null ) {
+			// iterate over the entrySet, each value that's a Function and is declared in this class, add it
+			for ( var entry : staticScope.entrySet() ) {
+				if ( entry.getValue() instanceof Function castedFunction ) {
+					functions.add( castedFunction.getMetaData() );
+				}
+			}
+		}
+
+		// Add all abstract methods as well, if any
+		for ( var entry : thisClass.getAbstractMethods().keySet() ) {
+			AbstractFunction value = thisClass.getAbstractMethods().get( entry );
+			functions.add( ( ( FunctionMeta ) value.getBoxMeta() ).meta );
+		}
+
+		// Top Level Class Metadata
+		var	keyName		= thisClass.bxGetName();
+		var	fullName	= keyName.getName();
+		meta.put( Key.type, CLASS_TYPE );
+		meta.put( Key._NAME, fullName );
+		meta.put( Key.fullname, fullName );
+		meta.put( Key.simpleName, fullName.substring( fullName.lastIndexOf( '.' ) + 1 ) );
+
 		meta.put( Key.accessors, hasAccessors( thisClass ) );
+		meta.put( Key.path, thisClass.getRunnablePath().absolutePath().toString() );
+		meta.put( Key.persisent, false );
 		meta.put( Key.functions, Array.fromList( functions ) );
 
 		// meta.put( "hashCode", hashCode() );
@@ -576,12 +610,8 @@ public class BoxClassSupport {
 			properties.add( propertyStruct );
 		}
 		meta.put( Key.properties, properties );
-		meta.put( Key.type, "Component" );
-		meta.put( Key._NAME, thisClass.bxGetName().getName() );
-		meta.put( Key.fullname, thisClass.bxGetName().getName() );
-		meta.put( Key.path, thisClass.getRunnablePath().absolutePath().toString() );
-		meta.put( Key.persisent, false );
 
+		// Add in any ad-hoc documentation or annotations that aren't reserved
 		if ( thisClass.getDocumentation() != null ) {
 			for ( Map.Entry<Key, Object> entry : thisClass.getDocumentation().entrySet() ) {
 				if ( !legacyMetaClassReservedAnnotations.contains( entry.getKey() ) ) {
@@ -589,6 +619,8 @@ public class BoxClassSupport {
 				}
 			}
 		}
+
+		// Add in any ad-hoc annotations that aren't reserved
 		if ( thisClass.getAnnotations() != null ) {
 			for ( Map.Entry<Key, Object> entry : thisClass.getAnnotations().entrySet() ) {
 				if ( !legacyMetaClassReservedAnnotations.contains( entry.getKey() ) ) {
@@ -596,10 +628,13 @@ public class BoxClassSupport {
 				}
 			}
 		}
+
+		// Add extends and implements
 		if ( thisClass.getSuper() != null ) {
 			meta.put( Key._EXTENDS, thisClass.getSuper().getMetaData() );
 		}
 
+		// Interfaces
 		if ( thisClass.getInterfaces().size() > 0 ) {
 			meta.put(
 			    Key._IMPLEMENTS,
@@ -918,9 +953,9 @@ public class BoxClassSupport {
 
 	/**
 	 * Run a static initializer in a static class context. This is to be called from the actual java static initializer block.
-	 * 
+	 *
 	 * Even though the static scope and path are already in the class, we're passing them explicitly to avoid reflection to get them.
-	 * 
+	 *
 	 * @param consumer    The actual BL static initializer code to run
 	 * @param clazz       The class being initialized
 	 * @param staticScope The static scope of the class

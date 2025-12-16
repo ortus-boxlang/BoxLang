@@ -993,11 +993,11 @@ public final class LocalizationUtil {
 			) );
 
 
-			// Short DateTime with medium month and 24 hour time (e.g., Feb/04/2024 22:01:00)
+			// Short DateTime with medium month and 24 hour time (e.g., Feb/04/2024 22:01[:00])
 			add( Map.of(
 				"regexPattern",
-				"^[A-Za-z]{3}/\\d{1,2}/\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}$",
-				"datePattern", "MMM/d/yyyy HH:mm:ss",
+				"^[A-Za-z]{3}/\\d{1,2}/\\d{4}\\s+\\d{2}:\\d{2}(?::\\d{2})?$",
+				"datePattern", "MMM/d/yyyy HH:mm[:ss]",
 				"description", "Month/DD/YYYY with 24-hour time"
 			) );
 

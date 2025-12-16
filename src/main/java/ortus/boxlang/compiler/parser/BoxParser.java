@@ -376,6 +376,14 @@ public class BoxParser extends AbstractParser {
 		// Uncomment to use ANTLR GUI tree viewer for debugging
 		// org.antlr.v4.gui.Trees.inspect( parseTree, parser );
 
+		/*
+		 * try {
+		 * Thread.sleep( 1000000 );
+		 * } catch ( InterruptedException e ) {
+		 * // Ignore
+		 * }
+		 */
+
 		// This must run FIRST before resetting the lexer
 		validateParse( lexer );
 
@@ -707,8 +715,8 @@ public class BoxParser extends AbstractParser {
 						statements.add(
 						    new BoxScriptIsland(
 						        scriptNode.getStatements(),
-						        getPosition( script.script() ),
-						        getSourceText( script.script() )
+						        getPosition( script ),
+						        getSourceText( script )
 						    )
 						);
 					}

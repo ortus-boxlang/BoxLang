@@ -350,6 +350,12 @@ public class DateTimeCasterTest {
 		assertThat( result ).isNotNull();
 		assertThat( result.format( "yyyy-MM-dd HH:mm:ss" ) ).isEqualTo( "2025-11-21 00:01:00" );
 
+		// Weird string example 2
+		dateString	= "Dec/13/2025 08:00";
+		result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd HH:mm:ss" ) ).isEqualTo( "2025-12-13 08:00:00" );
+
 		dateString	= "Jun-30-2010 04:33";
 		result		= DateTimeCaster.cast( dateString );
 		assertThat( result ).isNotNull();

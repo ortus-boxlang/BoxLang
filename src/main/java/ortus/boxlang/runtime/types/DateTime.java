@@ -773,6 +773,8 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 * @return the DateTime instance
 	 */
 	public DateTime modify( String unit, Long quantity ) {
+		// We can safely lowercase the unit for comparison
+		unit = unit.toLowerCase();
 		// No modifications are being requested so we can skip out of processing
 		if ( quantity == 0 ) {
 			return this;
@@ -826,6 +828,8 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 			case "l" :
 				wrapped = Long.signum( quantity ) == 1 ? wrapped.plus( quantity, ChronoUnit.MILLIS ) : wrapped.minus( Math.abs( quantity ), ChronoUnit.MILLIS );
 				break;
+			default :
+				throw new BoxRuntimeException( String.format( "The datepart unit of [%s] is not recognized.", unit ) );
 		}
 		return this;
 	}

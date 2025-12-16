@@ -863,8 +863,8 @@ public class CFParser extends AbstractParser {
 						statements.add(
 						    new BoxScriptIsland(
 						        scriptNode.getStatements(),
-						        getPosition( script.script() ),
-						        getSourceText( script.script() )
+						        getPosition( script ),
+						        getSourceText( script )
 						    )
 						);
 					} else if ( script.classOrInterface() != null ) {

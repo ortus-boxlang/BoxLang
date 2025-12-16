@@ -477,8 +477,8 @@ public class SQLBinaryOperation extends SQLExpression {
 	 * Implement LIKE so we can reuse for NOT LIKE
 	 */
 	private boolean doLike( QoQSelectExecution QoQExec, int[] intersection ) {
-		String	leftValueStr	= StringCaster.cast( left.evaluate( QoQExec, intersection ) );
-		String	rightValueStr	= StringCaster.cast( right.evaluate( QoQExec, intersection ) );
+		String	leftValueStr	= StringCaster.cast( nullToEmptyString( left.evaluate( QoQExec, intersection ) ) );
+		String	rightValueStr	= StringCaster.cast( nullToEmptyString( right.evaluate( QoQExec, intersection ) ) );
 		String	escapeValue		= null;
 		if ( escape != null ) {
 			escapeValue = StringCaster.cast( escape.evaluate( QoQExec, intersection ) );
@@ -490,8 +490,8 @@ public class SQLBinaryOperation extends SQLExpression {
 	 * Implement LIKE so we can reuse for NOT LIKE
 	 */
 	private boolean doLikeAggregate( QoQSelectExecution QoQExec, List<int[]> intersections ) {
-		String	leftValueStr	= StringCaster.cast( left.evaluateAggregate( QoQExec, intersections ) );
-		String	rightValueStr	= StringCaster.cast( right.evaluateAggregate( QoQExec, intersections ) );
+		String	leftValueStr	= StringCaster.cast( nullToEmptyString( left.evaluateAggregate( QoQExec, intersections ) ) );
+		String	rightValueStr	= StringCaster.cast( nullToEmptyString( right.evaluateAggregate( QoQExec, intersections ) ) );
 		String	escapeValue		= null;
 		if ( escape != null ) {
 			escapeValue = StringCaster.cast( escape.evaluateAggregate( QoQExec, intersections ) );
@@ -595,6 +595,16 @@ public class SQLBinaryOperation extends SQLExpression {
 			return null;
 		}
 		return nValue.doubleValue();
+	}
+
+	/**
+	 * Turn null into empty string
+	 */
+	private Object nullToEmptyString( Object obj ) {
+		if ( obj == null ) {
+			return "";
+		}
+		return obj;
 	}
 
 	@Override

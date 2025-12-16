@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.types.meta;
 
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Closure;
@@ -69,7 +70,8 @@ public class FunctionMeta extends BoxMeta<Function> {
 		    Key.parameters, new UnmodifiableArray( params ),
 		    Key.closure, target instanceof Closure,
 		    Key.lambda, target instanceof Lambda,
-		    Key.output, target.canOutput( null )
+		    Key.output, target.canOutput( null ),
+		    Key._STATIC, target.hasModifier( BoxMethodDeclarationModifier.STATIC )
 		);
 	}
 
