@@ -1,9 +1,9 @@
 lexer grammar DocLexer;
 
 NEWLINE:
-	'\n' (SPACE? (STAR {_input.LA(1) != '/'}?)+)?
-	| '\r\n' (SPACE? (STAR {_input.LA(1) != '/'}?)+)?
-	| '\r' (SPACE? (STAR {_input.LA(1) != '/'}?)+)?;
+	'\n' (SPACE? (STAR {_input.LA(1) != '/'}?)+ ' '?)?
+	| '\r\n' (SPACE? (STAR {_input.LA(1) != '/'}?)+ ' '?)?
+	| '\r' (SPACE? (STAR {_input.LA(1) != '/'}?)+ ' '?)?;
 
 SPACE: (' ' | '\t')+;
 

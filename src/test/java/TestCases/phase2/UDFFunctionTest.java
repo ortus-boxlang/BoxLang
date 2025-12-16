@@ -379,7 +379,7 @@ public class UDFFunctionTest {
 
 		FunctionMeta	$bx				= ( ( FunctionMeta ) Referencer.get( context, UDFfoo, BoxMeta.key, false ) );
 		IStruct			documentation	= ( IStruct ) $bx.meta.get( Key.of( "documentation" ) );
-		assertThat( documentation.get( Key.of( "hint" ) ) ).isEqualTo( "my UDF also more hint here" );
+		assertThat( documentation.get( Key.of( "hint" ) ) ).isEqualTo( "my UDF\nalso more hint here" );
 		assertThat( documentation.get( Key.of( "returns" ) ) ).isEqualTo( "Pure Gold" );
 		assertThat( documentation ).containsKey( Key.of( "mxunit:expectedException" ) );
 		assertThat( documentation.getAsString( Key.of( "mxunit:expectedException" ) ).trim() ).isEqualTo( "" );
@@ -391,7 +391,7 @@ public class UDFFunctionTest {
 
 		IStruct param2Documentation = ( IStruct ) Referencer.get( context, params.get( 1 ), Key.of( "documentation" ), false );
 		assertThat( param2Documentation.getAsString( Key.of( "hint" ) ).trim() ).isEqualTo( "param2 hint" );
-		assertThat( param2Documentation.getAsString( Key.of( "luis" ) ).trim() ).isEqualTo( "majano is spread across two lines" );
+		assertThat( param2Documentation.getAsString( Key.of( "luis" ) ).trim() ).isEqualTo( "majano\nis spread across two lines" );
 
 		IStruct annotations = $bx.meta.getAsStruct( Key.of( "annotations" ) );
 		assertThat( annotations.getAsBoolean( Key.of( "output" ) ) ).isEqualTo( true );
