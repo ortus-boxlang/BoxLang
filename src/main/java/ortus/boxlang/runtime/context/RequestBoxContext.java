@@ -617,13 +617,6 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 */
 	private void doShutdown() {
 		shutdownConnections();
-
-		// Wipe out this stuff to help GC
-		this.threadManager			= null;
-		this.requestClassLoader		= null;
-		this.applicationListener	= null;
-		this.configCache			= null;
-
 	}
 
 	/**

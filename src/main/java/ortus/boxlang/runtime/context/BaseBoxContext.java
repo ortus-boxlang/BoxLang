@@ -1489,10 +1489,6 @@ public class BaseBoxContext implements IBoxContext {
 	public void shutdown() {
 		shutdownRequested = true;
 
-		if ( hasDependentThreads() ) {
-			// There are dependent threads, so we can't shutdown yet
-			return;
-		}
 		// Process any shutdown listeners
 		if ( this.shutdownListeners != null ) {
 			// Loop backwards, so the first registered listener is the last called
@@ -1629,9 +1625,6 @@ public class BaseBoxContext implements IBoxContext {
 		if ( count < 0 ) {
 			getThreadDependents().set( 0 );
 			count = 0;
-		}
-		if ( shutdownRequested && count == 0 ) {
-			shutdown();
 		}
 		return count;
 	}
