@@ -85,6 +85,18 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 	}
 
 	/**
+	 * Creates a new execution context with a parent context
+	 *
+	 * @param parent The parent context
+	 */
+	public ScriptingRequestBoxContext( IBoxContext parent, boolean loadAppDescriptor ) {
+		super( parent );
+		if ( loadAppDescriptor ) {
+			loadApplicationDescriptor( null );
+		}
+	}
+
+	/**
 	 * Creates a new execution context with a parent context and a specific application listener.
 	 *
 	 * @param parent   The parent context

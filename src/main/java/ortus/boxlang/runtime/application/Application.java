@@ -328,6 +328,12 @@ public class Application {
 
 			// Get the app listener (Application.bx)
 			this.startingListener = context.getRequestContext().getApplicationListener();
+			// This will mark the context as a dependent thread so web runtimes will detach from the HTTP Exchange, but keep its values around
+			// It's not ideal to store the starting listener and context for a long time, but it's the easiest way to fire onApplicationEnd() and onSessionEnd()
+			// later on and ensure they have access to the same form, url, and CGI scopes that were present when the application was started.
+			// TODO: the context when the application started isn't even nececarily the same as the context whe the session started, so even that isn't quite right.
+			// Both app end and session end generally run outside of an HTTP request, so it's ambiguous what should really be available to them.
+			this.startingListener.getRequestContext().registerDependentThread();
 			// Startup the class loader
 			startupClassLoaderPaths( context.getRequestContext() );
 			// Startup the caches
