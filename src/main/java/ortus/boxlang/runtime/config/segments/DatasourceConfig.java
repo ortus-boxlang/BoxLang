@@ -131,7 +131,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	    "maxConnections", 100,
 	    // Keeps at least 1 idle connection open
 	    // Hikari: minimumIdle
-	    "minConnections", 1,
+	    "minConnections", 10,
 	    // Maximum time to wait for a successful connection, in seconds ( 5 Seconds )
 	    "connectionTimeout", 5,
 	    // The maximum number of idle time in seconds ( 5 Minutes = 300 )
