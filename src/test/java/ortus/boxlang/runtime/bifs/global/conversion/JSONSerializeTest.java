@@ -650,4 +650,23 @@ public class JSONSerializeTest {
 
 	}
 
+	@DisplayName( "It will serialize doubles without using scientific notation" )
+	@Test
+	public void testWillSerializeDoublesWithoutScientificNotation() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				result = JSONserialize( {
+					"q": 0.0000000 + 0
+				} );
+			""",
+		    context );
+		// @formatter:on
+
+		var json = variables.getAsString( result );
+		assertThat( json ).isNotEmpty();
+		assertThat( json ).doesNotContain( "E" );
+		assertThat( json ).isEqualTo( "{\"q\":0.0000000}" );
+	}
+
 }
