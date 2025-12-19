@@ -6126,4 +6126,16 @@ public class CoreLangTest {
 		);
 	}
 
+	@Test
+	public void testEmptyStatementSwitchCasdse() {
+
+		instance.executeSource(
+		    """
+		    	result = 0E-7
+		    """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+		assertThat( variables.getAsNumber( Key.of( "result" ) ).doubleValue() ).isEqualTo( 0 );
+	}
+
 }
