@@ -412,6 +412,8 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		// Register it into the datasources struct as well as the 'bxDefaultDatasource'
 		// this.datasource = { driver: "", url: "", username: "", password: "" }
 		if ( appSettings.get( Key.datasource ) instanceof IStruct castedDSN ) {
+			// The connection manager will use this to know it's an app-specific datasource
+			castedDSN.put( Key.applicationName, getApplicationListener().getAppName().getName() );
 			// Store the datasource in the datasources struct
 			config.getAsStruct( Key.datasources ).put( Key.bxDefaultDatasource, castedDSN );
 			// Store the datasource name in the runtime struct as "defaultDatasource"
@@ -420,7 +422,16 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 
 		// Datasource overrides
 		StructCaster.attempt( appSettings.get( Key.datasources ) )
-		    .ifPresent( datasources -> config.getAsStruct( Key.datasources ).putAll( datasources ) );
+		    .ifPresent( datasources -> {
+			    // Set the application name in each datasource
+			    datasources.values().forEach( ds -> {
+				    if ( ds instanceof IStruct struct ) {
+					    // The connection manager will use this to know it's an app-specific datasource
+					    struct.put( Key.applicationName, getApplicationListener().getAppName().getName() );
+				    }
+			    } );
+			    config.getAsStruct( Key.datasources ).putAll( datasources );
+		    } );
 		// ----------------------------------------------------------------------------------
 
 		// Timezone override

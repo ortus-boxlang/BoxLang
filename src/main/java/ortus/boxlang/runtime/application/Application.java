@@ -53,6 +53,7 @@ import ortus.boxlang.runtime.services.ApplicationService;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.services.AsyncService.ExecutorType;
 import ortus.boxlang.runtime.services.CacheService;
+import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.services.SchedulerService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -818,15 +819,6 @@ public class Application {
 			    .forEach( session -> session.shutdown( this.getStartingListener() ) );
 		}
 
-		// Shutdown all class loaders
-		this.classLoaders.values().forEach( t -> {
-			try {
-				t.close();
-			} catch ( IOException e ) {
-				logger.error( "Error closing class loader", e );
-			}
-		} );
-
 		// Announce it to the listener
 		if ( this.startingListener != null ) {
 			try {
@@ -839,6 +831,37 @@ public class Application {
 				logger.error( "Error calling onApplicationEnd", e );
 			}
 		}
+
+		// Shutdown all class loaders
+		this.classLoaders.values().forEach( t -> {
+			try {
+				t.close();
+			} catch ( IOException e ) {
+				logger.error( "Error closing class loader", e );
+			}
+		} );
+
+		// Shut down any datasources associated with this application
+		DatasourceService dataSourceService = BoxRuntime
+		    .getInstance()
+		    .getDataSourceService();
+
+		// Converting the keyset to an array to avoid any concurrent modification issues
+		for ( Key dsn : dataSourceService
+		    .getByApplicationName( name )
+		    .keySet()
+		    .toArray( new Key[ 0 ] ) ) {
+			dataSourceService.remove( dsn );
+		}
+
+		// Shutdown our application caches
+		StructCaster.attempt( requestContext.getConfigItems( Key.applicationSettings, Key.caches ) )
+		    .ifPresent( appCaches -> {
+			    for ( Entry<Key, Object> entry : appCaches.entrySet() ) {
+				    Key cacheName = buildAppCacheKey( entry.getKey() );
+				    this.cacheService.shutdownCache( cacheName );
+			    }
+		    } );
 
 		// Clear out the data
 		this.started = false;

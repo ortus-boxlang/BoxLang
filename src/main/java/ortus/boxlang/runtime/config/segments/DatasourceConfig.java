@@ -60,14 +60,19 @@ import ortus.boxlang.runtime.types.util.StructUtil;
 public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSegment {
 
 	/**
-	 * The prefix for all datasource names
+	 * The prefix for all server-wide names
 	 */
-	public static final String		DATASOURCE_PREFIX				= "bx_";
+	public static final String		SERVER_PREFIX					= "server_";
 
 	/**
-	 * The prefix for all on the fly datasource names
+	 * The prefix for all on the fly datasource names (these are effectivley server-wide as well)
 	 */
 	public static final String		ON_THE_FLY_PREFIX				= "onthefly_";
+
+	/**
+	 * The prefix for all application-specific datasource names
+	 */
+	public static final String		APPLICATION_PREFIX				= "application_";
 
 	/**
 	 * The name of the datasource
@@ -124,9 +129,9 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	    // The maximum number of connections.
 	    // Hikari: maximumPoolSize
 	    "maxConnections", 100,
-	    // Keeps at least 10 idle connections open
+	    // Keeps at least 1 idle connection open
 	    // Hikari: minimumIdle
-	    "minConnections", 10,
+	    "minConnections", 1,
 	    // Maximum time to wait for a successful connection, in seconds ( 5 Seconds )
 	    "connectionTimeout", 5,
 	    // The maximum number of idle time in seconds ( 5 Minutes = 300 )
@@ -317,28 +322,72 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	}
 
 	/**
+	 * Get application name.
+	 * If there is no application name, and the Key _EMPTY is returned.
+	 * 
+	 * @return The application name
+	 */
+	public Key getApplicationName() {
+		return this.applicationName;
+	}
+
+	/**
+	 * Check if this config is tied to an application
+	 * 
+	 * @return true if it is tied to an application
+	 */
+	public boolean hasApplicationName() {
+		return this.applicationName != null && !this.applicationName.equals( Key._EMPTY );
+	}
+
+	/**
 	 * Get a unique datasource name which includes a hash of the properties
-	 * Following the pattern: <code>bx_{name}_{properties_hash}</code>
+	 * 
+	 * Following one of the patterns:
+	 * - server_{name}_{properties_hash}
+	 * - onthefly_{properties_hash}
+	 * - application_{applicationName}_{name}_{properties_hash}
 	 */
 	public Key getUniqueName() {
-		StringBuilder uniqueName = new StringBuilder( DATASOURCE_PREFIX );
+		return getUniqueName( this.applicationName.getName(), this.onTheFly, this.name.getName(), this.properties );
+	}
 
-		// If we have an app name use it
-		if ( !applicationName.isEmpty() ) {
-			uniqueName.append( applicationName.toString() );
+	/**
+	 * Get a unique datasource name which includes a hash of the properties
+	 * 
+	 * Following one of the patterns:
+	 * - server_{name}_{properties_hash}
+	 * - onthefly_{properties_hash}
+	 * - application_{applicationName}_{name}_{properties_hash}
+	 * 
+	 * This static version of the method is so we can get a unique name without needing to create a DatasourceConfig instance
+	 */
+	public static Key getUniqueName( String applicationName, boolean onTheFly, String name, IStruct properties ) {
+		StringBuilder uniqueName = new StringBuilder();
+
+		// If we have an app name use it and use the app prefix
+		if ( applicationName != null && !applicationName.isEmpty() ) {
+			uniqueName.append( APPLICATION_PREFIX );
+			uniqueName.append( applicationName );
+			uniqueName.append( "_" );
+		} else if ( onTheFly ) {
+			// If this is an on the fly datasource
+			uniqueName.append( ON_THE_FLY_PREFIX );
+		} else {
+			// Server wide
+			uniqueName.append( SERVER_PREFIX );
+		}
+
+		// on the fly datasources don't have anything meaningful in their name that we aren't already adding via the prefix and hash below.
+		if ( !onTheFly ) {
+			// Datasource name
+			uniqueName.append( name );
 			uniqueName.append( "_" );
 		}
 
-		// If this is an on the fly datasource
-		if ( onTheFly ) {
-			uniqueName.append( ON_THE_FLY_PREFIX );
-		}
-
-		// Datasource name
-		uniqueName.append( this.name.toString() );
-		uniqueName.append( "_" );
-
 		// Hash the properties
+		// This is prolly uneccessary for server-level datasources, but having it will protect against someone updating the config
+		// for a server-wide datasource during runtime.
 		uniqueName.append( Math.abs( properties.hashCode() ) );
 
 		return Key.of( uniqueName.toString() );

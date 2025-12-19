@@ -607,6 +607,11 @@ public class DataSource implements Comparable<DataSource> {
 	 * @return A struct containing the current pool statistics, including active connections, idle connections, and total connections.
 	 */
 	public IStruct getPoolStats() {
+		// Prevent NPE if pooling is not started
+		if ( this.hikariDataSource == null ) {
+			return Struct.of();
+		}
+
 		var pool = this.hikariDataSource.getHikariPoolMXBean();
 		return Struct.of(
 		    "pendingThreads", pool.getThreadsAwaitingConnection(),
