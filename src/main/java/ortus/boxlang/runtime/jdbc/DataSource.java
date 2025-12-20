@@ -614,12 +614,12 @@ public class DataSource implements Comparable<DataSource> {
 
 		var pool = this.hikariDataSource.getHikariPoolMXBean();
 		return Struct.of(
-		    "pendingThreads", pool.getThreadsAwaitingConnection(),
-		    "idleConnections", pool.getIdleConnections(),
-		    "totalConnections", pool.getTotalConnections(),
-		    "activeConnections", pool.getActiveConnections(),
-		    "maxConnections", hikariDataSource.getMaximumPoolSize(),
-		    "minConnections", hikariDataSource.getMinimumIdle()
+		    Key.pendingThreads, pool.getThreadsAwaitingConnection(),
+		    Key.idleConnections, pool.getIdleConnections(),
+		    Key.totalConnections, pool.getTotalConnections(),
+		    Key.activeConnections, pool.getActiveConnections(),
+		    Key.maxConnections, hikariDataSource.getMaximumPoolSize(),
+		    Key.minConnections, hikariDataSource.getMinimumIdle()
 		);
 	}
 }
