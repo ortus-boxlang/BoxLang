@@ -124,6 +124,38 @@ public class DateCompareTest {
 		assertThat( comparison ).isEqualTo( -1 );
 	}
 
+	@DisplayName( "It tests the BIF DateCompare with a datepart seconds" )
+	@Test
+	public void testBifWithDatepartSeconds() {
+		var	date1	= new DateTime();
+		var	date2	= new DateTime().modify( "s", 2l );
+		variables.put( Key.of( "date1" ), date1 );
+		variables.put( Key.of( "date2" ), date2 );
+		instance.executeSource(
+		    """
+		    result = dateCompare( date1, date2, "s" );
+		    """,
+		    context );
+		Integer comparison = variables.getAsInteger( Key.of( "result" ) );
+		assertThat( comparison ).isEqualTo( -1 );
+	}
+
+	@DisplayName( "It tests the BIF DateCompare with a datepart minutes" )
+	@Test
+	public void testBifWithDatepartMinutes() {
+		var	date1	= new DateTime();
+		var	date2	= new DateTime().modify( "m", 2l );
+		variables.put( Key.of( "date1" ), date1 );
+		variables.put( Key.of( "date2" ), date2 );
+		instance.executeSource(
+		    """
+		    result = dateCompare( date1, date2, "n" );
+		    """,
+		    context );
+		Integer comparison = variables.getAsInteger( Key.of( "result" ) );
+		assertThat( comparison ).isEqualTo( -1 );
+	}
+
 	@DisplayName( "It tests the BIF DateCompare with a datepart month" )
 	@Test
 	public void testBifWithDatepart() {

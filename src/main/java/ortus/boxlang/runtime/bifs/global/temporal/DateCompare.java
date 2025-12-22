@@ -89,10 +89,16 @@ public class DateCompare extends BIF {
 			if ( !datePartMap.containsKey( partKey ) ) {
 				throw new BoxRuntimeException( "Invalid datepart: " + datePart );
 			}
-			// Between is reversed so it will return negative numbers if date1 is before date2
-			long diff = datePartMap.get( partKey ).between( date2.getWrapped(), date1.getWrapped() );
+			ChronoUnit unit = datePartMap.get( partKey );
+			// if we have a comparator less than or equal to minutes, truncate for accurate comparison
+			if ( unit.compareTo( ChronoUnit.MINUTES ) <= 0 ) {
+				return date1.getWrapped().truncatedTo( unit ).compareTo( date2.getWrapped().truncatedTo( unit ) );
+			} else {
+				// Between is reversed so it will return negative numbers if date1 is before date2
+				long diff = datePartMap.get( partKey ).between( date2.getWrapped(), date1.getWrapped() );
+				return diff == 0 ? 0 : ( diff > 0 ? 1 : -1 );
+			}
 
-			return diff == 0 ? 0 : ( diff > 0 ? 1 : -1 );
 		}
 	}
 
