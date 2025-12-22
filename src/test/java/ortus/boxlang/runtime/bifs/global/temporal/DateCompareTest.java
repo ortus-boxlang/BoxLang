@@ -156,6 +156,22 @@ public class DateCompareTest {
 		assertThat( comparison ).isEqualTo( -1 );
 	}
 
+	@DisplayName( "It tests the BIF DateCompare with a datepart day" )
+	@Test
+	public void testBifWithDatepartDay() {
+		var	date1	= "2024-01-19T10:00:00Z";
+		var	date2	= "2024-01-20T02:00:00Z";
+		variables.put( Key.of( "date1" ), date1 );
+		variables.put( Key.of( "date2" ), date2 );
+		instance.executeSource(
+		    """
+		    result = dateCompare( date1, date2, "d" );
+		    """,
+		    context );
+		Integer comparison = variables.getAsInteger( Key.of( "result" ) );
+		assertThat( comparison ).isEqualTo( -1 );
+	}
+
 	@DisplayName( "It tests the BIF DateCompare with a datepart month" )
 	@Test
 	public void testBifWithDatepart() {

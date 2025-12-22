@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.bifs.global.temporal;
 
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
@@ -90,13 +91,22 @@ public class DateCompare extends BIF {
 				throw new BoxRuntimeException( "Invalid datepart: " + datePart );
 			}
 			ChronoUnit unit = datePartMap.get( partKey );
-			// if we have a comparator less than or equal to minutes, truncate for accurate comparison
-			if ( unit.compareTo( ChronoUnit.MINUTES ) <= 0 ) {
-				return date1.getWrapped().truncatedTo( unit ).compareTo( date2.getWrapped().truncatedTo( unit ) );
-			} else {
-				// Between is reversed so it will return negative numbers if date1 is before date2
-				long diff = datePartMap.get( partKey ).between( date2.getWrapped(), date1.getWrapped() );
-				return diff == 0 ? 0 : ( diff > 0 ? 1 : -1 );
+
+			switch ( unit ) {
+				case NANOS, MICROS, MILLIS, SECONDS, MINUTES, DAYS -> {
+					// For the smaller units, we can directly compare a truncated version
+					return date1.getWrapped().truncatedTo( unit ).compareTo( date2.getWrapped().truncatedTo( unit ) );
+				}
+				case MONTHS, YEARS -> {
+					// For larger units, we need to convert to LocalDate to avoid errors attempting to truncate
+					LocalDate	localDate1	= LocalDate.from( date1.getWrapped() );
+					LocalDate	localDate2	= LocalDate.from( date2.getWrapped() );
+					long		diffBetween	= unit.between( localDate1, localDate2 );
+					return Long.compare( 0, diffBetween );
+				}
+				default -> {
+					throw new BoxRuntimeException( "Unhandled datepart: [" + datePart + "]" );
+				}
 			}
 
 		}
