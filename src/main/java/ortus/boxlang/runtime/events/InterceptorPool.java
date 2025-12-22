@@ -38,7 +38,6 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
@@ -688,15 +687,7 @@ public class InterceptorPool {
 	 */
 	public void announce( Key state, Supplier<IStruct> dataProducer, IBoxContext context ) {
 		if ( hasState( state ) ) {
-			try {
-				getState( state ).announce( dataProducer.get(), context );
-			} catch ( AbortException e ) {
-				throw e;
-			} catch ( Exception e ) {
-				String errorMessage = String.format( "Errors announcing [%s] interception", state.getName() );
-				getLogger().error( errorMessage, e );
-				throw new BoxRuntimeException( errorMessage, e );
-			}
+			getState( state ).announce( dataProducer.get(), context );
 		} else {
 			getLogger().trace( "InterceptorService.announce() - No state found for: {}", state.getName() );
 		}
@@ -777,14 +768,8 @@ public class InterceptorPool {
 	public CompletableFuture<IStruct> announceAsync( Key state, IStruct data, IBoxContext context ) {
 		if ( hasState( state ) ) {
 			return CompletableFuture.supplyAsync( () -> {
-				try {
-					getState( state ).announce( data, context );
-					return data;
-				} catch ( Exception e ) {
-					String errorMessage = String.format( "Errors announcing [%s] interception", state.getName() );
-					getLogger().error( errorMessage, e );
-					throw new BoxRuntimeException( errorMessage, e );
-				}
+				getState( state ).announce( data, context );
+				return data;
 			} );
 		}
 

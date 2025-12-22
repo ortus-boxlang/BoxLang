@@ -157,9 +157,8 @@ public class Compare implements IOperator {
 						int comparison = ref.get().compareTo( target.get() );
 						return comparison == 0 ? 0 : ( comparison < 0 ? -1 : 1 );
 					} else {
-						Key dateCompareKey = Key.of( "DateCompare" );
 						return IntegerCaster.cast(
-						    runtime.getFunctionService().getGlobalFunction( dateCompareKey ).invoke(
+						    runtime.getFunctionService().getGlobalFunction( Key.dateCompare ).invoke(
 						        runtime.getRuntimeContext(),
 						        Struct.of(
 						            Key.date1, ref.get(),
@@ -167,7 +166,7 @@ public class Compare implements IOperator {
 						            Key.datepart, "s"
 						        ),
 						        false,
-						        dateCompareKey
+						        Key.dateCompare
 						    )
 						);
 

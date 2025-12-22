@@ -260,6 +260,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		dateFormat							= Key.of( "dateFormat" );
 	public static final Key		dateLastModified					= Key.of( "dateLastModified" );
 	public static final Key		datepart							= Key.of( "datepart" );
+	public static final Key		dateCompare							= Key.of( "dateCompare" );
 	public static final Key		day									= Key.of( "day" );
 	public static final Key		days								= Key.of( "days" );
 	public static final Key		debuggingEnabled					= Key.of( "debuggingEnabled" );
