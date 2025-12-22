@@ -1606,7 +1606,7 @@ public class BaseBoxContext implements IBoxContext {
 	public int registerDependentThread() {
 		// Just to be safe
 		if ( shutdownRequested ) {
-			throw new BoxRuntimeException( "Cannot register dependent thread on a context that is shutting down" );
+			return 0;
 		}
 		return getThreadDependents().incrementAndGet();
 	}
@@ -1620,6 +1620,10 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	@Override
 	public int unregisterDependentThread() {
+		// Just to be safe
+		if ( shutdownRequested ) {
+			return 0;
+		}
 		int count = getThreadDependents().decrementAndGet();
 		// This shouldn't happen, but if a cfthread misfires, it may be possible
 		if ( count < 0 ) {
