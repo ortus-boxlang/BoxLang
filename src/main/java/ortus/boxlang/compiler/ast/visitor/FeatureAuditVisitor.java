@@ -924,7 +924,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		componentMap.put( "exchangetask", "" );
 		componentMap.put( "execute", "core" );
 		componentMap.put( "exit", "core" );
-		componentMap.put( "feed", "" );
+		componentMap.put( "feed", "bx-rss" );
 		componentMap.put( "file", "core" );
 		componentMap.put( "fileupload", "boxlang-web-support" );
 		// componentMap.put( "finally", "core" );
