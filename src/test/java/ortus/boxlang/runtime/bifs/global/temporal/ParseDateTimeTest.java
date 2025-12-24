@@ -468,6 +468,17 @@ public class ParseDateTimeTest {
 		    context );
 	}
 
+	@DisplayName( "It tests the BIF ParseDateTime with the result format of getHTTPTimeString" )
+	@Test
+	public void testHTTPTimestringFormat() {
+		instance.executeSource(
+		    """
+		    result = ParseDateTime( "Tue, 23 Dec 2025 21:24:20 UTC" );
+		          """,
+		    context );
+		assertThat( variables.get( Key.of( "result" ) ) ).isInstanceOf( DateTime.class );
+	}
+
 	@DisplayName( "It tests the speed of both masked and non-masked parsing" )
 	@Test
 	@Disabled( "Disabled for CI performance. Comment to test locally" )
