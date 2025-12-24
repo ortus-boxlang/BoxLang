@@ -95,7 +95,8 @@ public class DateCompare extends BIF {
 			switch ( unit ) {
 				case NANOS, MICROS, MILLIS, SECONDS, MINUTES, DAYS -> {
 					// For the smaller units, we can directly compare a truncated version
-					return date1.getWrapped().truncatedTo( unit ).compareTo( date2.getWrapped().truncatedTo( unit ) );
+					int comparison = date1.getWrapped().truncatedTo( unit ).compareTo( date2.getWrapped().truncatedTo( unit ) );
+					return comparison == 0 ? 0 : ( comparison < 0 ? -1 : 1 );
 				}
 				case MONTHS, YEARS -> {
 					// For larger units, we need to convert to LocalDate to avoid errors attempting to truncate

@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.operators;
 
 import java.math.BigDecimal;
+import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -25,13 +26,11 @@ import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.DateTime;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.TypeUtil;
 
@@ -152,25 +151,15 @@ public class Compare implements IOperator {
 			if ( ref.wasSuccessful() ) {
 				CastAttempt<DateTime> target = DateTimeCaster.attempt( right );
 				if ( target.wasSuccessful() ) {
+					int comparison = 0;
 					if ( !lenientDateComparison ) {
 						// the chrono date time will return a numeric comparator rather than 0,1,-1
-						int comparison = ref.get().compareTo( target.get() );
-						return comparison == 0 ? 0 : ( comparison < 0 ? -1 : 1 );
+						comparison = ref.get().compareTo( target.get() );
 					} else {
-						return IntegerCaster.cast(
-						    runtime.getFunctionService().getGlobalFunction( Key.dateCompare ).invoke(
-						        runtime.getRuntimeContext(),
-						        Struct.of(
-						            Key.date1, ref.get(),
-						            Key.date2, target.get(),
-						            Key.datepart, "s"
-						        ),
-						        false,
-						        Key.dateCompare
-						    )
-						);
-
+						comparison = ref.get().getWrapped().truncatedTo( ChronoUnit.SECONDS )
+						    .compareTo( target.get().getWrapped().truncatedTo( ChronoUnit.SECONDS ) );
 					}
+					return comparison == 0 ? 0 : ( comparison < 0 ? -1 : 1 );
 				}
 			}
 		}

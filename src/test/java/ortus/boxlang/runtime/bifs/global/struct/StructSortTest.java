@@ -25,12 +25,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -374,5 +376,37 @@ public class StructSortTest {
 
 		      """,
 		    context );
+	}
+
+	@DisplayName( "It can sort by a date values with milliseconds precision" )
+	@Test
+	@Disabled( "Re-enable if testing failed contract resolution with structSort and date values" )
+	public void testDateMillisecondsPrecision() {
+
+		try {
+
+			Compare.lenientDateComparison = true;
+
+			//@formatter:off
+			instance.executeSource("""
+			start = now();
+			bx:loop from=1 to=10000 index="k" {
+				pool = {};
+				number = 32;
+				{
+				for ( i = 1; i <= number; i++ ) {
+					pool[ "cache_key_#i#" ] = {
+						lastAccessed: dateAdd( 'l', randRange( -5, 5 ), start )
+					};
+				}
+			}
+				result = structSort( pool, "numeric", "asc", "lastAccessed" );
+			}
+			""", context ); 
+			//@formatter:on
+
+		} finally {
+			Compare.lenientDateComparison = false;
+		}
 	}
 }
