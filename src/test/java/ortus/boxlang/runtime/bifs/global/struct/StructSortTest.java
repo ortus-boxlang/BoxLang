@@ -389,18 +389,49 @@ public class StructSortTest {
 
 			//@formatter:off
 			instance.executeSource("""
-			start = now();
-			bx:loop from=1 to=10000 index="k" {
-				pool = {};
-				number = 32;
-				{
-				for ( i = 1; i <= number; i++ ) {
-					pool[ "cache_key_#i#" ] = {
-						lastAccessed: dateAdd( 'l', randRange( -5, 5 ), start )
-					};
-				}
+			// Simulate ConcurrentStore pool structure
+			pool = {};
+
+			// Populate with cache entries (mimics CacheBoxProvider.set operations)
+			for ( i = 1; i <= 5000; i++ ) {
+				pool[ "cache_key_#i#" ] = {
+					object: "cached_value_#i#",
+					hits: randRange( 0, 1000 ),
+					timeout: "",  // Empty string like in real cache
+					lastAccessTimeout: "",  // Empty string like in real cache
+					created: dateAdd( "l",randRange( 0, 100 ), now() ),
+					// Uncomment if you want to get funky and mix dates and numbers in the sort
+					// created: now() - randRange( 0, 100 ),
+					// lastAccessed: now() - randRange( 0, 100 ),
+					lastAccessed: dateAdd( "l", -randRange( 0, 100 ), now() ),  // Very close timestamps
+					isExpired: false
+				};
 			}
-				result = structSort( pool, "numeric", "asc", "lastAccessed" );
+
+			// Simulate rapid concurrent access + sort (like LRU policy eviction)
+			for ( attempt = 1; attempt <= 50; attempt++ ) {
+				try {
+					for ( j = 1; j <= 100; j++ ) {
+						randomKey = "cache_key_#randRange( 1, 5000 )#";
+						if ( structKeyExists( pool, randomKey ) ) {
+							pool[ randomKey ].hits++;
+							pool[ randomKey ].lastAccessed = now();
+						}
+					}
+					
+					// This is where the error occurs - sorting during concurrent access
+					sorted = structSort(
+						pool,
+						"numeric",
+						"asc",
+						"lastAccessed"
+					);
+					
+					println( "Attempt #attempt#: OK (#arrayLen( sorted )# keys)<br>" );
+				} catch ( any e ) {
+					println( "<strong>Attempt #attempt#: ERROR</strong><br>" );
+					rethrow;
+				}
 			}
 			""", context ); 
 			//@formatter:on

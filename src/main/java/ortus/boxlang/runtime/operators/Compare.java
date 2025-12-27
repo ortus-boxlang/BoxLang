@@ -32,6 +32,7 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.DateTimeHelper;
 import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
@@ -145,19 +146,52 @@ public class Compare implements IOperator {
 		left	= DynamicObject.unWrap( left );
 		right	= DynamicObject.unWrap( right );
 
-		// Date comparison
+		// Date comparison - when at least one operand is a known date class
 		if ( DateTimeCaster.isKnownDateClass( left ) || DateTimeCaster.isKnownDateClass( right ) ) {
-			CastAttempt<DateTime> ref = DateTimeCaster.attempt( left );
-			if ( ref.wasSuccessful() ) {
-				CastAttempt<DateTime> target = DateTimeCaster.attempt( right );
-				if ( target.wasSuccessful() ) {
-					int comparison = 0;
-					if ( !lenientDateComparison ) {
-						// the chrono date time will return a numeric comparator rather than 0,1,-1
-						comparison = ref.get().compareTo( target.get() );
-					} else {
-						comparison = ref.get().getWrapped().truncatedTo( ChronoUnit.SECONDS )
-						    .compareTo( target.get().getWrapped().truncatedTo( ChronoUnit.SECONDS ) );
+			CastAttempt<DateTime>	ref		= DateTimeCaster.attempt( left );
+			CastAttempt<DateTime>	target	= DateTimeCaster.attempt( right );
+
+			// If both can be cast to DateTime, do a proper date comparison
+			if ( ref.wasSuccessful() && target.wasSuccessful() ) {
+				int comparison;
+				if ( !lenientDateComparison ) {
+					comparison = ref.get().compareTo( target.get() );
+				} else {
+					comparison = ref.get().getWrapped().truncatedTo( ChronoUnit.SECONDS )
+					    .compareTo( target.get().getWrapped().truncatedTo( ChronoUnit.SECONDS ) );
+				}
+				// Normalize to -1, 0, 1 to satisfy comparator contract
+				return comparison == 0 ? 0 : ( comparison < 0 ? -1 : 1 );
+			}
+
+			// If only one is a DateTime and the other is a Number, convert both to epoch millis for consistent comparison
+			// This handles the case where dates are stored as fractional days (numeric representation)
+			if ( ref.wasSuccessful() || target.wasSuccessful() ) {
+				DateTime			dateTimeValue	= ref.wasSuccessful() ? ref.get() : target.get();
+				Object				otherValue		= ref.wasSuccessful() ? right : left;
+
+				CastAttempt<Number>	numericAttempt	= NumberCaster.attempt( otherValue, false );
+				if ( numericAttempt.wasSuccessful() ) {
+					// Convert DateTime to epoch millis for comparison
+					long	dateTimeMillis	= dateTimeValue.toEpochMillis();
+					// Convert fractional days to epoch millis
+					long	numericMillis	= DateTimeHelper.fractionalDaysToEpochMillis(
+					    numericAttempt.get() instanceof BigDecimal bd
+					        ? bd
+					        : BigDecimalCaster.cast( numericAttempt.get() )
+					);
+
+					// For lenient comparison, truncate both values to seconds (remove milliseconds)
+					if ( lenientDateComparison ) {
+						dateTimeMillis	= ( dateTimeMillis / 1000 ) * 1000;
+						numericMillis	= ( numericMillis / 1000 ) * 1000;
+					}
+
+					// Compare and normalize result, accounting for which operand was the DateTime
+					int comparison = Long.compare( dateTimeMillis, numericMillis );
+					// If the DateTime was on the right side, flip the comparison
+					if ( target.wasSuccessful() && !ref.wasSuccessful() ) {
+						comparison = -comparison;
 					}
 					return comparison == 0 ? 0 : ( comparison < 0 ? -1 : 1 );
 				}
