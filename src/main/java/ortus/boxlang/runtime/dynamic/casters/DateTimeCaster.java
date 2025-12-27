@@ -273,7 +273,7 @@ public class DateTimeCaster implements IBoxCaster {
 				    LocalDateTime.parse(
 				        targetString.trim(),
 				        ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "ODBCDateTime" )
-				    )
+				    ), timezone
 				);
 			}
 		} catch ( Throwable e2 ) {

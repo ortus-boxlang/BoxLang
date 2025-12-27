@@ -31,6 +31,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -103,6 +104,37 @@ public class DateCompareTest {
 		    """
 		    result = dateCompare( date2, date1 );
 		    """,
+		    context );
+		Integer comparison = variables.getAsInteger( Key.of( "result" ) );
+		assertThat( comparison ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "It tests the BIF DateCompare will re-compare using the correct timezone" )
+	@Test
+	public void testBIFCorrectZoneInfo() {
+		//@formatter:off
+		instance.executeSource(
+		    """
+			setTimeZone( "America/Los_Angeles" );
+			date1 = now();
+			date2 = trim( date1 );
+			result = dateCompare( date2, date1, "s" );
+			""",
+		    context );
+		//@formatter:on
+		Integer comparison = variables.getAsInteger( Key.of( "result" ) );
+		assertThat( comparison ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "It tests the BIF DateCompare - equal seconds - tests truncation" )
+	@Test
+	public void testBifEqualSeconds() {
+		variables.put( Key.of( "date1" ), DateTimeCaster.cast( "2025-12-25T00:00:00" ) );
+		instance.executeSource(
+		    """
+		    date2 = dateAdd( "l", 999, date1 );
+		       result = dateCompare( date2, date1, "s" );
+		       """,
 		    context );
 		Integer comparison = variables.getAsInteger( Key.of( "result" ) );
 		assertThat( comparison ).isEqualTo( 0 );
