@@ -311,14 +311,15 @@ public class DumpTest {
 	@Test
 	public void testCanDumpBoxClass() {
 		// @formatter:off
-			instance.executeSource(
-				"""
-					cfc = new src.test.java.ortus.boxlang.runtime.components.system.TestDumpClass();
-					dump( var = cfc, format = "html" );
-				""",
-				context );
-			// @formatter:on
-		assertThat( baos.toString() ).contains( "UDF" );
+				instance.executeSource(
+					"""
+						cfc = new src.test.java.ortus.boxlang.runtime.components.system.TestDumpClass();
+						dump( var = cfc, format = "html" );
+					""",
+					context );
+				// @formatter:on
+		assertThat( baos.toString() ).contains( "components.system.TestDumpClass" );
+		assertThat( baos.toString() ).contains( "IDumpClass" );
 	}
 
 	@DisplayName( "It can dump a Class data type" )
