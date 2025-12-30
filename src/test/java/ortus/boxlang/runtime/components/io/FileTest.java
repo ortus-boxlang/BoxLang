@@ -415,7 +415,13 @@ public class FileTest {
 		    """,
 		    context, BoxSourceType.BOXSCRIPT );
 
-		assertThat( FileSystemUtil.read( testTextFile, null, null ) ).isEqualTo( "file read test!" );
+		// We need to append another item so that the first line break is returned
+		instance.executeSource(
+		    """
+		    bx:file action="append" file="#testFile#" output="Success!";
+		    """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( FileSystemUtil.read( testTextFile, null, null, true ) ).isEqualTo( "file read test!" + System.lineSeparator() + "Success!" );
 	}
 
 }
