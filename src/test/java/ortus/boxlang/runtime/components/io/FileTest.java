@@ -421,7 +421,7 @@ public class FileTest {
 		    bx:file action="append" file="#testFile#" output="Success!";
 		    """,
 		    context, BoxSourceType.BOXSCRIPT );
-		assertThat( FileSystemUtil.read( testTextFile, null, null, true ) ).isEqualTo( "file read test!" + System.lineSeparator() + "Success!" );
+		assertThat( FileSystemUtil.read( testTextFile, null, null, true ) ).isEqualTo( "file read test!" + FileSystemUtil.LINE_SEPARATOR + "Success!" );
 	}
 
 }

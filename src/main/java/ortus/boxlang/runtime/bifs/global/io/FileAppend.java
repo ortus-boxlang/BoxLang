@@ -78,7 +78,7 @@ public class FileAppend extends BIF {
 		}
 
 		if ( BooleanCaster.cast( arguments.get( Key.addnewline ) ) ) {
-			content += System.lineSeparator();
+			content += FileSystemUtil.LINE_SEPARATOR;
 		}
 
 		file.append( content );
