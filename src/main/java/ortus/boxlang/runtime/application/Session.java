@@ -30,6 +30,7 @@ import ortus.boxlang.runtime.services.ApplicationService;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.AbortException;
 
 /**
  * I represent a Session. This will be stored in a BoxLang cache
@@ -266,6 +267,12 @@ public class Session implements Serializable {
 			        targetAppScope
 			    }
 			);
+		} catch ( AbortException e ) {
+			BoxRuntime.getInstance().getLoggingService().getLogger( Key.session.getName() )
+			    .warn( "Abort exception called during session end for session ID [" + this.ID + "]. Aborting session end is not allowed." );
+		} catch ( Exception e ) {
+			BoxRuntime.getInstance().getLoggingService().getLogger( Key.session.getName() )
+			    .error( "Error during session end for session ID [" + this.ID + "]: " + e.getMessage(), e );
 		} finally {
 			// Clear the session scope
 			if ( this.sessionScope != null ) {
