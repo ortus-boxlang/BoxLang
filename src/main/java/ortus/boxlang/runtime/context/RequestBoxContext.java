@@ -244,9 +244,10 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 *
 	 * @param template The URI to the Application.bx file
 	 */
-	public void loadApplicationDescriptor( URI template ) {
+	public RequestBoxContext loadApplicationDescriptor( URI template ) {
 		// This will load the Application file and create an ApplicationListener, or an empty listener with default behavior
 		this.applicationListener = this.applicationService.createApplicationListener( this, template );
+		return this;
 	}
 
 	/**

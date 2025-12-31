@@ -185,8 +185,8 @@ public class ExpandPathTest {
 	@Test
 	public void testRelative() {
 		String abs = Path.of( "src/test/java/ortus/boxlang/runtime/bifs/global/io/expandPathTest.txt" ).toAbsolutePath().toString();
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext(),
-		    Path.of( "src/test/java/ortus/boxlang/runtime/bifs/global/io/ExpandPathTest.java" ).toAbsolutePath().toUri() );
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext(), false )
+		    .loadApplicationDescriptor( Path.of( "src/test/java/ortus/boxlang/runtime/bifs/global/io/ExpandPathTest.java" ).toAbsolutePath().toUri() );
 		variables	= context.getScopeNearby( VariablesScope.name );
 		instance.executeSource(
 		    """

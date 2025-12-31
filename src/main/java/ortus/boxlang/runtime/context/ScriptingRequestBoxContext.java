@@ -109,9 +109,15 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 
 	/**
 	 * Creates a new execution context with a parent context, and template
+	 * 
+	 * This constructor is deprecated. If you have a template, first call new ScriptingRequestBoxContext( context, false )
+	 * set the RequestContext.setCurrent() and THEN call context.loadApplicationDescriptor( template )
+	 * This ensure proper startup for ORM-enabled apps. ORM will fail with chicken/egg errors if the app descriptor is loaded
+	 * before the current context is in the thread local.
 	 *
 	 * @param parent The parent context
 	 */
+	@Deprecated
 	public ScriptingRequestBoxContext( IBoxContext parent, URI template ) {
 		super( parent );
 		loadApplicationDescriptor( template );
