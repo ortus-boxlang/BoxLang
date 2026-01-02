@@ -15,6 +15,7 @@ import org.objectweb.asm.util.TraceClassVisitor;
 
 import ortus.boxlang.compiler.Boxpiler;
 import ortus.boxlang.compiler.ClassInfo;
+import ortus.boxlang.compiler.DiskClassUtil;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -79,7 +80,7 @@ public class ASMBoxpiler extends Boxpiler {
 		if ( classInfo.resolvedFilePath() != null ) {
 			File sourceFile = classInfo.resolvedFilePath().absolutePath().toFile();
 			// Check if the source file contains Java bytecode by reading the first few bytes
-			if ( diskClassUtil.isJavaBytecode( sourceFile ) ) {
+			if ( DiskClassUtil.isJavaByteCode( sourceFile ) ) {
 				return classInfo.getClassLoader().defineClasses( FQN, sourceFile, classInfo );
 			}
 			ParsingResult result = parseOrFail( sourceFile );

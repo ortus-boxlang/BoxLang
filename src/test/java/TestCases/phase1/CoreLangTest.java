@@ -6127,7 +6127,7 @@ public class CoreLangTest {
 	}
 
 	@Test
-	public void testEmptyStatementSwitchCasdse() {
+	public void testSciNotationWithLeadingZero() {
 
 		instance.executeSource(
 		    """
@@ -6136,6 +6136,58 @@ public class CoreLangTest {
 		    context, BoxSourceType.CFSCRIPT
 		);
 		assertThat( variables.getAsNumber( Key.of( "result" ) ).doubleValue() ).isEqualTo( 0 );
+	}
+
+	@Test
+	public void testCompileThreadSafety() {
+		// print PID to console
+		System.out.println( "PID: " + ProcessHandle.current().pid() );
+		instance.executeSource(
+		// @formatter:off
+		    """
+				relPath = "src/test/java/TestCases/phase1/includeMe.bxs"
+				function runner() {
+					try {
+						include relPath;
+					} catch ( any e ) {
+						variables.error = e;
+						stop = 0;
+						rethrow;
+					}
+				}
+				// pre-compile
+				runner();
+
+				fullPath = expandPath( relPath );
+				start = getTickCount();
+				stop = start + 2000;
+
+				thread name="updater" {
+					while( getTickCount() < stop ) {
+						// repeatedly touch the file to force recompile
+						fileWrite( fullPath, fileRead( fullPath ) );
+						sleep( 500 );
+					}
+				}
+				thread name="compiler1" {
+					while( getTickCount() < stop ) {
+						runner();
+					}
+				}
+				thread name="compiler2" {
+					while( getTickCount() < stop ) {
+						runner();
+					}
+				}
+
+				thread action="join" name="updater,compiler1,compiler2";
+
+				if( !isNull( variables.error ) ) {
+					throw variables.error;
+				}
+            """,
+			// @formatter:on
+		    context );
 	}
 
 }
