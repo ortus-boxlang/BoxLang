@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -151,8 +152,10 @@ import ortus.boxlang.runtime.util.RegexBuilder;
  */
 public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 
-	private final CFParser	tools;
-	private final CFVisitor	statementVisitor;
+	private final CFParser		tools;
+	private final CFVisitor		statementVisitor;
+	// Remove this once we solve https://ortussolutions.atlassian.net/browse/BL-2010
+	private final AtomicInteger	expressionVistorRecusionDetection	= new AtomicInteger( 0 );
 
 	public CFExpressionVisitor( CFParser tools, CFVisitor statementVisitor ) {
 		this.tools				= tools;
@@ -312,9 +315,23 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		var		pos			= tools.getPosition( ctx.el2( 1 ) );
 		var		start		= pos.getStart();
 		start.setColumn( start.getColumn() - 1 );
-		var	src		= ( isStatic ? "::" : "." ) + tools.getSourceText( ctx.el2( 1 ) );
-		var	left	= ctx.el2( 0 ).accept( this );
-		var	right	= ctx.el2( 1 ).accept( this );
+		var				src		= ( isStatic ? "::" : "." ) + tools.getSourceText( ctx.el2( 1 ) );
+
+		// Remove this once we solve https://ortussolutions.atlassian.net/browse/BL-2010
+		int				count	= expressionVistorRecusionDetection.incrementAndGet();
+		BoxExpression	left;
+		BoxExpression	right;
+		try {
+			if ( count > 50 ) {
+				throw new ExpressionException( "Possible infinite recursion detected in expression visitor for file: " + tools.getFileName(),
+				    tools.getPosition( ctx ), tools.getSourceText( ctx ) );
+			}
+			left	= ctx.el2( 0 ).accept( this );
+			right	= ctx.el2( 1 ).accept( this );
+		} finally {
+			// Remove this once we solve https://ortussolutions.atlassian.net/browse/BL-2010
+			expressionVistorRecusionDetection.decrementAndGet();
+		}
 
 		// foo.bar.baz::property or foo.bar.baz::method() MUST be seen as a class name on the LHS, not dot access
 		if ( isStatic && left instanceof BoxDotAccess ) {
