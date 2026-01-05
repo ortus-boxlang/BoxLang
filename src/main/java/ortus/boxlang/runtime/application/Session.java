@@ -175,11 +175,15 @@ public class Session implements Serializable {
 				// Announce it's start
 				BaseApplicationListener listener = context.getRequestContext().getApplicationListener();
 				listener.onSessionStart( context, new Object[] { this.ID } );
+			} catch ( AbortException ae ) {
+				// Ignore aborts
+				throw ae;
 			} catch ( Exception e ) {
 				// If startup errored, flag the session as not intialized. The next thread can try again.
 				// An error in your onSessionStart() will mean you can never get passed it, but I think that's actually desired as the
 				// app likely relies on a complete and successful session start.
 				isNew = true;
+				throw e;
 			}
 		}
 		return this;

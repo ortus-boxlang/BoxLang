@@ -408,6 +408,11 @@ public abstract class BaseApplicationListener {
 	 * Update or create the session management in an application if enabled.
 	 */
 	private void createOrUpdateSessionManagement() {
+		// Defer this until AFTER any application start methods are done. Otherwise, recursive application updating starts the session too soon.
+		if ( context.getAttachment( Key.onApplicationStart ) != null ) {
+			return;
+		}
+
 		// Check for existing session context
 		SessionBoxContext	existingSessionContext		= this.context.getParentOfType( SessionBoxContext.class );
 		boolean				sessionManagementEnabled	= BooleanCaster.cast( this.settings.get( Key.sessionManagement ) );

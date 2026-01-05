@@ -57,6 +57,7 @@ import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.services.SchedulerService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.DateTimeHelper;
 import ortus.boxlang.runtime.util.EncryptionUtil;
@@ -342,21 +343,28 @@ public class Application {
 			// Startup session storages
 			startupSessionStorage( context.getApplicationContext() );
 
-			// Announce it globally
-			BoxRuntime.getInstance().getInterceptorService().announce(
-			    Key.onApplicationStart,
-			    Struct.of(
-			        Key.application, this,
-			        Key.listener, this.startingListener,
-			        Key.context, context
-			    )
-			);
+			// We need a way to kow if we're inside an application start to prevent starting the session too soon.
+			// This happens if we update the application from inside of the onApplicationStart() method.
+			context.getRequestContext().putAttachment( Key.onApplicationStart, true );
+			try {
+				// Announce it globally
+				BoxRuntime.getInstance().getInterceptorService().announce(
+				    Key.onApplicationStart,
+				    Struct.of(
+				        Key.application, this,
+				        Key.listener, this.startingListener,
+				        Key.context, context
+				    )
+				);
 
-			// Announce it to the listener
-			if ( startingListener != null ) {
-				startingListener.onApplicationStart( context, new Object[] {} );
-			} else {
-				logger.debug( "No listener found for application [{}]", this.name );
+				// Announce it to the listener
+				if ( startingListener != null ) {
+					startingListener.onApplicationStart( context, new Object[] {} );
+				} else {
+					logger.debug( "No listener found for application [{}]", this.name );
+				}
+			} finally {
+				context.getRequestContext().removeAttachment( Key.onApplicationStart );
 			}
 
 			// Startup the schedulers so the application can use them
@@ -806,6 +814,8 @@ public class Application {
 			        Key.application, this,
 			        Key.context, requestContext
 			    ) );
+		} catch ( AbortException ae ) {
+			throw ae;
 		} catch ( Exception e ) {
 			logger.error( "Error announcing onApplicationEnd", e );
 		}
@@ -827,6 +837,8 @@ public class Application {
 				    requestContext,
 				    new Object[] { applicationScope }
 				);
+			} catch ( AbortException ae ) {
+				throw ae;
 			} catch ( Exception e ) {
 				logger.error( "Error calling onApplicationEnd", e );
 			}
