@@ -176,6 +176,7 @@ public abstract class BaseApplicationListener {
 	    Key.sessionManagement, runtime.getConfiguration().sessionManagement,
 	    Key.sessionStorage, runtime.getConfiguration().sessionStorage,
 	    Key.sessionTimeout, runtime.getConfiguration().sessionTimeout,
+	    Key.sessionType, runtime.getConfiguration().sessionType,
 	    // Cookie Management
 	    Key.setClientCookies, runtime.getConfiguration().setClientCookies,
 	    Key.setDomainCookies, runtime.getConfiguration().setDomainCookies,

@@ -774,6 +774,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		sessionScope						= Key.of( "sessionScope" );
 	public static final Key		sessionStorage						= Key.of( "sessionStorage" );
 	public static final Key		sessionTimeout						= Key.of( "sessionTimeout" );
+	public static final Key		sessionType							= Key.of( "sessionType" );
 	public static final Key		set									= Key.of( "set" );
 	public static final Key		setCookie							= Key.of( "Set-Cookie" );
 	public static final Key		setClientCookies					= Key.of( "setClientCookies" );
