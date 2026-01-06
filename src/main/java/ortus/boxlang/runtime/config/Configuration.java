@@ -219,10 +219,8 @@ public class Configuration implements IConfigSegment {
 	public String									sessionStorage					= "memory";
 
 	/**
-	 * The default session storage cache. This has to be the name of a registered
-	 * cache
-	 * or the keyword "memory" which indicates our internal cache.
-	 * {@code memory} is the default
+	 * The session type - By default we use the native session but this hook allows for compatibility with other session mechanisms
+	 * {@code native} by default
 	 */
 	public String									sessionType						= "native";
 
