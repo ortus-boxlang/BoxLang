@@ -23,7 +23,6 @@ import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
@@ -84,7 +83,7 @@ public class Trace extends Component {
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		// Verify if the Tracer exists in the request context, else initialize it
 		context
-		    .getParentOfType( RequestBoxContext.class )
+		    .getRequestContextOrFail()
 		    .computeAttachmentIfAbsent( Key.bxTracers, key -> new Tracer() )
 		    // Add the trace record
 		    .trace(

@@ -1452,7 +1452,7 @@ public class BaseBoxContext implements IBoxContext {
 		if ( hasParent() ) {
 			return getParent().getParentOfType( type );
 		}
-		return null;
+		return ( T ) null;
 	}
 
 	/**
@@ -1465,6 +1465,23 @@ public class BaseBoxContext implements IBoxContext {
 	 */
 	public RequestBoxContext getRequestContext() {
 		return getParentOfType( RequestBoxContext.class );
+	}
+
+	/**
+	 * Serach for an ancestor context of RequestBoxContext
+	 * This is a convenience method for getParentOfType( RequestBoxContext.class )
+	 * since it is so common
+	 * If no parent RequestBoxContext is found, an exception is thrown.
+	 * This method will never return null.
+	 *
+	 * @return The matching parent RequestBoxContext, or an exception if one is not found of this
+	 */
+	public RequestBoxContext getRequestContextOrFail() {
+		RequestBoxContext requestContext = getRequestContext();
+		if ( requestContext == null ) {
+			throw new BoxRuntimeException( "This feature cannot be used outside of a request." );
+		}
+		return requestContext;
 	}
 
 	/**

@@ -220,7 +220,7 @@ public class BoxRepl {
 	public void start( InputStream sourceStream, IBoxContext context ) {
 		// Create a scripting context for REPL execution
 		IBoxContext scriptingContext = new ScriptingRequestBoxContext( context );
-		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
+		RequestBoxContext.setCurrent( scriptingContext.getRequestContext() );
 		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 
 		try {

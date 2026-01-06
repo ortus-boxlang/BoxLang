@@ -493,7 +493,7 @@ public final class LocalizationUtil {
 	 * @return The Locale object found or the default
 	 */
 	public static Locale parseLocaleFromContext( IBoxContext context, ArgumentsScope arguments ) {
-		RequestBoxContext requestContext = context.getParentOfType( RequestBoxContext.class );
+		RequestBoxContext requestContext = context.getRequestContext();
 		return parseLocaleOrDefault(
 		    arguments.getAsString( Key.locale ),
 		    requestContext != null && requestContext.getLocale() != null ? requestContext.getLocale() : ( Locale ) context.getConfig().get( Key.locale )
@@ -543,7 +543,7 @@ public final class LocalizationUtil {
 				    : ( ZoneId ) context.getConfig().get( Key.timezone );
 			}
 		} else if ( context != null ) {
-			RequestBoxContext requestContext = context.getParentOfType( RequestBoxContext.class );
+			RequestBoxContext requestContext = context.getRequestContext();
 			if ( requestContext != null && requestContext.getTimezone() != null ) {
 				return requestContext.getTimezone();
 			} else {

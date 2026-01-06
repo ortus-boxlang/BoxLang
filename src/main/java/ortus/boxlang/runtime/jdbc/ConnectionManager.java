@@ -103,7 +103,7 @@ public class ConnectionManager {
 	public ConnectionManager( IBoxContext context ) {
 		this.context = context;
 
-		RequestBoxContext requestContext = this.context.getParentOfType( RequestBoxContext.class );
+		RequestBoxContext requestContext = this.context.getRequestContext();
 		if ( requestContext != null ) {
 			requestContext.getApplicationListener()
 			    .getInterceptorPool()

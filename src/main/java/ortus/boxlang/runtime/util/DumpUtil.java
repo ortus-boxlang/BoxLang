@@ -43,6 +43,7 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.components.jdbc.Query;
 import ortus.boxlang.runtime.context.ContainerBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
@@ -195,7 +196,13 @@ public class DumpUtil {
 			switch ( output ) {
 				// SEND TO CONSOLE
 				case "console" :
-					context.getRequestContext().getOut().println( dumpOutput );
+					RequestBoxContext requestContext = context.getRequestContext();
+					if ( requestContext != null ) {
+						requestContext.getOut().println( dumpOutput );
+					} else {
+						// Could be in on server start or something
+						System.out.println( dumpOutput );
+					}
 					break;
 
 				// SEND TO BUFFER (HTML or TEXT)

@@ -35,15 +35,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
@@ -149,7 +148,7 @@ public class FileCopyTest {
 	public void testBifSecurity() {
 		variables.put( Key.of( "source" ), Path.of( sourceFile ).toAbsolutePath().toString() );
 
-		context.getParentOfType( RequestBoxContext.class ).getApplicationListener().updateSettings( Struct.of( "disallowedFileOperationExtensions", "exe" ) );
+		context.getRequestContext().getApplicationListener().updateSettings( Struct.of( "disallowedFileOperationExtensions", "exe" ) );
 		try {
 			assertThrows(
 			    BoxRuntimeException.class,
@@ -160,7 +159,7 @@ public class FileCopyTest {
 			        context )
 			);
 		} finally {
-			context.getParentOfType( RequestBoxContext.class ).getApplicationListener()
+			context.getRequestContext().getApplicationListener()
 			    .updateSettings( Struct.of( "disallowedFileOperationExtensions", new Array() ) );
 		}
 	}

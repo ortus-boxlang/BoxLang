@@ -126,7 +126,7 @@ public class Thread extends Component {
 	 * @param body       The body of the Component
 	 */
 	private void run( IBoxContext context, String name, String priority, IStruct attributes, ComponentBody body ) {
-		RequestBoxContext			requestContext	= context.getParentOfType( RequestBoxContext.class );
+		RequestBoxContext			requestContext	= context.getRequestContextOrFail();
 		RequestThreadManager		threadManager	= requestContext.getThreadManager();
 		final Key					nameKey			= RequestThreadManager.ensureThreadName( name );
 		ThreadComponentBoxContext	tContext		= threadManager.createThreadContext( context, nameKey, attributes );
@@ -193,7 +193,7 @@ public class Thread extends Component {
 	 */
 	private void join( IBoxContext context, String name, Integer timeout ) {
 		timeout = timeout == null ? 0 : timeout;
-		RequestThreadManager	threadManager	= context.getParentOfType( RequestBoxContext.class ).getThreadManager();
+		RequestThreadManager	threadManager	= context.getRequestContextOrFail().getThreadManager();
 		Array					aThreadNames	= ListUtil.asList( name, "," )
 		    .stream()
 		    .map( String::valueOf )
@@ -214,7 +214,7 @@ public class Thread extends Component {
 	 * @param name    The name of the thread
 	 */
 	private void terminate( IBoxContext context, String name ) {
-		context.getParentOfType( RequestBoxContext.class )
+		context.getRequestContextOrFail()
 		    .getThreadManager()
 		    .terminateThread( Key.of( name ) );
 	}

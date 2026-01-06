@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.bifs.global.i18n;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 
 @BoxBIF( description = "Clear the current locale setting" )
@@ -41,7 +40,7 @@ public class ClearLocale extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		context.getParentOfType( RequestBoxContext.class ).setLocale( null );
+		context.getRequestContextOrFail().setLocale( null );
 		return null;
 	}
 

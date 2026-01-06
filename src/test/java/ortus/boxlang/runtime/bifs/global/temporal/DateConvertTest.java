@@ -32,7 +32,6 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -61,7 +60,7 @@ public class DateConvertTest {
 	public void setupEach() {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
-		context.getParentOfType( RequestBoxContext.class ).setTimezone( ZoneId.of( "America/Los_Angeles" ) );
+		context.getRequestContext().setTimezone( ZoneId.of( "America/Los_Angeles" ) );
 	}
 
 	@DisplayName( "It tests the BIF DateConvert local2UTC" )

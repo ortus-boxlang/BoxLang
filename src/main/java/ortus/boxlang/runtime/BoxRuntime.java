@@ -1322,7 +1322,7 @@ public class BoxRuntime implements java.io.Closeable {
 	public void executeClass( Class<IBoxRunnable> targetClass, String templatePath, IBoxContext context, String[] args ) {
 		IBoxContext				scriptingContext	= ensureRequestTypeContext( context, Paths.get( templatePath ).toUri() );
 		boolean					shutdownContext		= context != scriptingContext;
-		BaseApplicationListener	listener			= scriptingContext.getParentOfType( RequestBoxContext.class )
+		BaseApplicationListener	listener			= scriptingContext.getRequestContext()
 		    .getApplicationListener();
 		Throwable				errorToHandle		= null;
 		IClassRunnable			target				= ( IClassRunnable ) DynamicObject.of( targetClass )
@@ -1440,7 +1440,7 @@ public class BoxRuntime implements java.io.Closeable {
 		scriptingContext = ensureRequestTypeContext( context, FileSystemUtil.createFileUri( templatePath ) );
 		boolean					shutdownContext	= context != scriptingContext;
 		BaseApplicationListener	listener		= scriptingContext
-		    .getParentOfType( RequestBoxContext.class )
+		    .getRequestContext()
 		    .getApplicationListener();
 		Throwable				errorToHandle	= null;
 		ClassLoader				oldClassLoader	= Thread.currentThread().getContextClassLoader();
@@ -1840,7 +1840,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 */
 	@SuppressWarnings( "unused" )
 	private IBoxContext ensureRequestTypeContext( IBoxContext context, URI template ) {
-		RequestBoxContext currentRequestContext = context.getParentOfType( RequestBoxContext.class );
+		RequestBoxContext currentRequestContext = context.getRequestContext();
 		if ( currentRequestContext != null ) {
 			RequestBoxContext.setCurrent( currentRequestContext );
 			return context;

@@ -617,7 +617,7 @@ public class Application {
 		final Duration	timeoutDuration	= DateTimeHelper.convertTimeoutToDuration( sessionTimeout );
 		String			cacheKey		= Session.buildCacheKey( ID, this.name );
 		// Make sure our created duration is represented in the application metadata
-		context.getParentOfType( RequestBoxContext.class )
+		context.getRequestContext()
 		    .getApplicationListener()
 		    .getSettings()
 		    .put( Key.sessionTimeout, timeoutDuration );
