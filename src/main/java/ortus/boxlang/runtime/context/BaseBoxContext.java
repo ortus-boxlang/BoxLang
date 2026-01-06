@@ -1379,6 +1379,7 @@ public class BaseBoxContext implements IBoxContext {
 				lastResult	= castedConfig.get( key );
 				config		= lastResult;
 			} else {
+				lastResult = null;
 				break;
 			}
 		}
