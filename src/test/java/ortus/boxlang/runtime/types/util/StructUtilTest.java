@@ -197,10 +197,10 @@ public class StructUtilTest {
 		// This test verifies the fix for: "Comparison method violates its general contract!"
 		// when sorting structs with nested paths that may contain null or incomparable values
 
-		Struct struct = new Struct();
-		
+		Struct	struct	= new Struct();
+
 		// Create nested structs with various value types including nulls
-		Struct item1 = new Struct();
+		Struct	item1	= new Struct();
 		item1.put( "timestamp", 100 );
 		struct.put( "key1", item1 );
 
@@ -237,9 +237,9 @@ public class StructUtilTest {
 	@DisplayName( "Can sort struct with nested path in descending order" )
 	@Test
 	void testStructSortWithNestedPathDescending() {
-		Struct struct = new Struct();
+		Struct	struct	= new Struct();
 
-		Struct item1 = new Struct();
+		Struct	item1	= new Struct();
 		item1.put( "value", "apple" );
 		struct.put( "key1", item1 );
 
