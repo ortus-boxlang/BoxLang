@@ -1444,7 +1444,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		if ( isClass ) {
 			BoxExpression expr = node.getExpression();
 			// only contains white space
-			if ( expr instanceof BoxStringLiteral str && str.getValue().trim().isEmpty() ) {
+			if ( expr instanceof BoxStringLiteral str && str.getValue().isBlank() ) {
 				if ( node.getFirstAncestorOfType( BoxTemplateIsland.class ) == null
 				    // This is prolly not comprehensive. Maybe there's a better approach, but let's try to detect if we're in a componenet that's actually outputting something
 				    // The main problem here is that any whitespace COULD POTENTIALLY be significant depending on what the code is doing.

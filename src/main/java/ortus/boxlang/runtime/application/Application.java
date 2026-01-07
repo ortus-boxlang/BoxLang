@@ -544,7 +544,7 @@ public class Application {
 				throw new BoxRuntimeException( "Session storage directive must be a string that matches a registered cache" );
 			} )
 			// If present, make sure it has a value or default it
-			.map( ( String setting ) -> setting.trim().isEmpty() ? SESSION_STORAGE_MEMORY : setting.trim() )
+			.map( ( String setting ) -> setting.isBlank() ? SESSION_STORAGE_MEMORY : setting.trim() )
 			// Return the right value or the default name
 		    .getOrDefault( SESSION_STORAGE_MEMORY );
 		// @formatter:on
