@@ -466,14 +466,6 @@ public abstract class AbstractParser {
 		return comments;
 	}
 
-	// Remove this once we solve https://ortussolutions.atlassian.net/browse/BL-2010
-	public String getFileName() {
-		if ( file != null ) {
-			return file.getAbsolutePath();
-		}
-		return "adhoc source code";
-	}
-
 	public void profileParser( org.antlr.v4.runtime.Parser parser ) {
 		PrintStream out = System.out;
 
