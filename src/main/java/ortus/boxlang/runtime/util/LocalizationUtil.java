@@ -587,8 +587,14 @@ public final class LocalizationUtil {
 		DecimalFormat	parser			= ( DecimalFormat ) DecimalFormat.getCurrencyInstance( locale );
 		String			stringValue		= StringCaster.cast( value );
 		String			currencyCode	= parser.getCurrency().getCurrencyCode();
+
+		// If it's empty just skip out
+		if ( stringValue.trim().isEmpty() ) {
+			return null;
+		}
+
 		// If we have an international format with the currency code we need to replace it with the symbol
-		if ( stringValue.substring( 0, currencyCode.length() ).equals( currencyCode ) ) {
+		if ( stringValue.trim().length() >= currencyCode.length() && stringValue.substring( 0, currencyCode.length() ).equals( currencyCode ) ) {
 			stringValue = stringValue
 			    .replace( currencyCode, parser.getCurrency().getSymbol() )
 			    .replace( parser.getCurrency().getSymbol() + " ", parser.getCurrency().getSymbol() );
