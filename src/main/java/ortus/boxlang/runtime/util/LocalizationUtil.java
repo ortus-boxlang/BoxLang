@@ -589,12 +589,12 @@ public final class LocalizationUtil {
 		String			currencyCode	= parser.getCurrency().getCurrencyCode();
 
 		// If it's empty just skip out
-		if ( stringValue.trim().isEmpty() ) {
+		if ( stringValue.isBlank() ) {
 			return null;
 		}
 
 		// If we have an international format with the currency code we need to replace it with the symbol
-		if ( stringValue.trim().length() >= currencyCode.length() && stringValue.substring( 0, currencyCode.length() ).equals( currencyCode ) ) {
+		if ( stringValue.length() >= currencyCode.length() && stringValue.substring( 0, currencyCode.length() ).equals( currencyCode ) ) {
 			stringValue = stringValue
 			    .replace( currencyCode, parser.getCurrency().getSymbol() )
 			    .replace( parser.getCurrency().getSymbol() + " ", parser.getCurrency().getSymbol() );
