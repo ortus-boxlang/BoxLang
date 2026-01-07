@@ -82,9 +82,7 @@ public class DateCompare extends BIF {
 		DateTime	date2		= DateTimeCaster.cast( arguments.get( Key.date2 ), true, timezone, context );
 
 		if ( datePart == null ) {
-			boolean	dateOneIsBefore	= date1.getWrapped().isBefore( date2.getWrapped() );
-			boolean	datesAreEqual	= date1.getWrapped().isEqual( date2.getWrapped() );
-			return datesAreEqual ? 0 : ( dateOneIsBefore ? -1 : 1 );
+			return date1.compare( date2, true );
 		} else {
 			Key partKey = Key.of( datePart );
 			if ( !datePartMap.containsKey( partKey ) ) {

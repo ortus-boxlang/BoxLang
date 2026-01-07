@@ -153,15 +153,7 @@ public class Compare implements IOperator {
 
 			// If both can be cast to DateTime, do a proper date comparison
 			if ( ref.wasSuccessful() && target.wasSuccessful() ) {
-				int comparison;
-				if ( !lenientDateComparison ) {
-					comparison = ref.get().compareTo( target.get() );
-				} else {
-					comparison = ref.get().getWrapped().truncatedTo( ChronoUnit.SECONDS )
-					    .compareTo( target.get().getWrapped().truncatedTo( ChronoUnit.SECONDS ) );
-				}
-				// Normalize to -1, 0, 1 to satisfy comparator contract
-				return comparison == 0 ? 0 : ( comparison < 0 ? -1 : 1 );
+				return ref.get().compare( target.get(), lenientDateComparison );
 			}
 
 			// If only one is a DateTime and the other is a Number, convert both to epoch millis for consistent comparison

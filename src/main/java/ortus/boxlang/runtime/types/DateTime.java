@@ -64,6 +64,7 @@ import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
+import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -1024,22 +1025,87 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	}
 
 	/**
+	 * Compare method with default leniency
+	 *
+	 * @param other The other DateTime object to compare to
+	 *
+	 * @return A -1, 0, or 1 as this object is less than, equal to, or greater than the specified object.
+	 */
+	public int compare( Object other ) {
+		return compare( other, Compare.lenientDateComparison );
+	}
+
+	/**
+	 * Compare method with leniency option
+	 *
+	 * @param other   The other DateTime object to compare to
+	 * @param lenient Whether to perform a lenient comparison (seconds precision) or strict (nanoseconds precision)
+	 *
+	 * @return A -1, 0, or 1 as this object is less than, equal to, or greater than the specified object.
+	 */
+	public int compare( Object other, boolean lenient ) {
+		int comparison = compareTo( other, lenient );
+		return comparison == 0 ? 0 : ( comparison < 0 ? -1 : 1 );
+	}
+
+	/**
 	 * Comparable interface method
 	 *
 	 * @param other The other DateTime object to compare to
 	 *
-	 * @return The comparison result: -1 if less, 0 if equal, 1 if greater
+	 * @return The comparison result which adheres to the ChronoZonedDateTime compareTo contract
 	 */
 	@Override
 	public int compareTo( ChronoZonedDateTime<?> other ) {
+		boolean isLenientComparison = Compare.lenientDateComparison;
+		return compareTo( other, isLenientComparison );
+	}
+
+	/**
+	 * CompareTo with leniency option
+	 *
+	 * @param other   The other DateTime object to compare to
+	 * @param lenient Whether to perform a lenient comparison (seconds precision) or strict (nanoseconds precision)
+	 *
+	 * @return The comparison result which adheres to the ChronoZonedDateTime compareTo contract
+	 */
+	public int compareTo( Object other, boolean lenient ) {
+		ZonedDateTime localRef = getWrapped();
+		if ( lenient ) {
+			localRef = localRef.truncatedTo( ChronoUnit.SECONDS );
+		}
 		if ( other instanceof DateTime castedDateTime ) {
-			return getWrapped().compareTo( castedDateTime.getWrapped() );
+			ZonedDateTime otherRef = castedDateTime.getWrapped();
+			if ( lenient ) {
+				otherRef = otherRef.truncatedTo( ChronoUnit.SECONDS );
+			}
+			return localRef.compareTo( otherRef );
 		}
 		if ( other instanceof ZonedDateTime castedDateTime ) {
-			return getWrapped().compareTo( castedDateTime );
+			ZonedDateTime otherRef = castedDateTime;
+			if ( lenient ) {
+				otherRef = otherRef.truncatedTo( ChronoUnit.SECONDS );
+			}
+			return localRef.compareTo( otherRef );
 		}
 
-		return getWrapped().compareTo( DateTimeCaster.cast( other, BoxRuntime.getInstance().getRuntimeContext() ).getWrapped() );
+		CastAttempt<DateTime> attempt = DateTimeCaster.attempt( other, BoxRuntime.getInstance().getRuntimeContext() );
+
+		if ( !attempt.wasSuccessful() ) {
+			throw new BoxRuntimeException(
+			    String.format(
+			        "The object of type [%s] could not be cast to a DateTime for comparison.",
+			        other.getClass().getSimpleName()
+			    )
+			);
+		}
+		DateTime		castResult	= attempt.get();
+		ZonedDateTime	otherRef	= castResult.getWrapped();
+		if ( lenient ) {
+			otherRef = castResult.wrapped.truncatedTo( ChronoUnit.SECONDS );
+		}
+
+		return localRef.compareTo( otherRef );
 	}
 
 	/**

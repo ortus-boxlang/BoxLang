@@ -657,15 +657,20 @@ public class StructUtil {
 		} else {
 			Boolean	isDescending	= Key.of( sortOrder ).equals( Key.of( "desc" ) );
 			boolean	caseSensitive	= !sortType.toLowerCase().contains( "nocase" );
-			return new Array( struct.entrySet().stream().sorted(
-			    ( a, b ) -> {
-				    Object leftValue = StructUtil.getAtPath( StructCaster.cast( isDescending ? b.getValue() : a.getValue() ), path );
-				    Object rightValue = StructUtil.getAtPath( StructCaster.cast( isDescending ? a.getValue() : b.getValue() ), path );
-				    Integer result	= Compare.attempt( leftValue, rightValue, caseSensitive );
-				    // If comparison fails (returns null), treat values as equal to maintain comparator contract consistency
-				    return result != null ? result : 0;
-			    }
-			).map( e -> e.getKey().getName() ).toArray()
+			return new Array(
+			    struct.entrySet()
+			        .stream()
+			        // Convert the values now so that we don't have repeated getAtPath calls during sorting
+			        .map( entry -> new AbstractMap.SimpleEntry<>( entry.getKey(), StructUtil.getAtPath( StructCaster.cast( entry.getValue() ), path ) ) )
+			        .sorted(
+			            ( a, b ) -> {
+				            Object leftValue = isDescending ? b.getValue() : a.getValue();
+				            Object rightValue = isDescending ? a.getValue() : b.getValue();
+				            Integer result = Compare.attempt( leftValue, rightValue, caseSensitive );
+				            // If comparison fails (returns null), treat values as equal to maintain comparator contract consistency
+				            return result != null ? result : 0;
+			            }
+			        ).map( e -> e.getKey().getName() ).toArray()
 			);
 		}
 
