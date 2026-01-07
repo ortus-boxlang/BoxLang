@@ -18,7 +18,9 @@
 package ortus.boxlang.runtime.net.soap;
 
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,6 +32,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import ortus.boxlang.runtime.net.BoxHttpClient;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -87,9 +90,17 @@ public class WsdlParser {
 					document = builder.parse( input );
 				}
 			} else {
-				// HTTP/HTTPS URL - use URL.openStream()
-				try ( InputStream input = uri.toURL().openStream() ) {
+				// HTTP/HTTPS URL - use HttpURLConnection with proper User-Agent header
+				URL					url			= uri.toURL();
+				HttpURLConnection	connection	= ( HttpURLConnection ) url.openConnection();
+				connection.setRequestProperty( "User-Agent", BoxHttpClient.DEFAULT_USER_AGENT );
+				connection.setConnectTimeout( BoxHttpClient.DEFAULT_CONNECTION_TIMEOUT );
+				connection.setReadTimeout( BoxHttpClient.DEFAULT_READ_TIMEOUT );
+
+				try ( InputStream input = connection.getInputStream() ) {
 					document = builder.parse( input );
+				} finally {
+					connection.disconnect();
 				}
 			}
 
