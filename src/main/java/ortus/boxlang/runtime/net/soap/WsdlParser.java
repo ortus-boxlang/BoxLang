@@ -94,8 +94,8 @@ public class WsdlParser {
 				URL					url			= uri.toURL();
 				HttpURLConnection	connection	= ( HttpURLConnection ) url.openConnection();
 				connection.setRequestProperty( "User-Agent", BoxHttpClient.DEFAULT_USER_AGENT );
-				connection.setConnectTimeout( BoxHttpClient.DEFAULT_CONNECTION_TIMEOUT );
-				connection.setReadTimeout( BoxHttpClient.DEFAULT_READ_TIMEOUT );
+				connection.setConnectTimeout( BoxHttpClient.DEFAULT_CONNECTION_TIMEOUT * 1000 );
+				connection.setReadTimeout( BoxHttpClient.DEFAULT_READ_TIMEOUT * 1000 );
 
 				try ( InputStream input = connection.getInputStream() ) {
 					document = builder.parse( input );
