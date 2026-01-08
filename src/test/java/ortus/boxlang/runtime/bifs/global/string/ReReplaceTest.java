@@ -367,4 +367,15 @@ public class ReReplaceTest {
 		assertThat( variables.get( result ) ).isEqualTo( "xyz" );
 	}
 
+	@DisplayName( "Out of bounds error" )
+	@Test
+	public void testOutOfBoundsError() {
+		instance.executeSource(
+		    """
+		    result = reReplaceNoCase( "foo", '(^)()', '\\1\\2', 'all' );
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "foo" );
+	}
+
 }
