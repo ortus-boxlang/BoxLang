@@ -245,11 +245,8 @@ public class DateTimeCaster implements IBoxCaster {
 		}
 
 		// Test if it is a numeric and is zero - which is the epoch
-		var numberAttempt = NumberCaster.attempt( object );
-		if ( numberAttempt.wasSuccessful() ) {
-			if ( numberAttempt.get().intValue() == 0 ) {
-				return new DateTime( Instant.EPOCH.atZone( ZoneId.of( "UTC" ) ) );
-			}
+		if ( object instanceof Number nObject && nObject.doubleValue() == 0 ) {
+			return new DateTime( Instant.EPOCH.atZone( ZoneId.of( "UTC" ) ) );
 		}
 
 		// Try to cast it to a String and see if we can parse it
