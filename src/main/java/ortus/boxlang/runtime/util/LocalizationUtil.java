@@ -102,10 +102,10 @@ public final class LocalizationUtil {
 		private final String				datePattern;
 		private final TemporalQuery<?>[]	optimizedQueries;
 
-		private static final Pattern dateMatchPattern = Pattern.compile( ".*[yMLdDjgEFwWu].*" );
-		private static final Pattern timeMatchPattern = Pattern.compile( ".*[HhKkmsSnA].*" );
-		private static final Pattern timezoneMatchPattern = Pattern.compile( ".*[zZVvXxOo].*" );
-		private static final Pattern offsetMatchPattern = Pattern.compile( ".*[XxZO].*" );
+		private static final Pattern		dateMatchPattern		= Pattern.compile( ".*[yMLdDjgEFwWu].*" );
+		private static final Pattern		timeMatchPattern		= Pattern.compile( ".*[HhKkmsSnA].*" );
+		private static final Pattern		timezoneMatchPattern	= Pattern.compile( ".*[zZVvXxOo].*" );
+		private static final Pattern		offsetMatchPattern		= Pattern.compile( ".*[XxZO].*" );
 
 		public CommonFormatter( String regexPattern, String datePattern, String description ) {
 			this.regexPattern		= regexPattern;
@@ -151,12 +151,12 @@ public final class LocalizationUtil {
 		 */
 		public static TemporalQuery<?>[] determineOptimalTemporalQueries( String pattern ) {
 			List<TemporalQuery<?>>	queries		= new ArrayList<>();
-			
+
 			// Pattern analysis flags - more comprehensive pattern detection
-			boolean					hasDate		= dateMatchPattern.matcher(pattern).matches(); // year, month, day, week patterns
-			boolean					hasTime		= timeMatchPattern.matcher(pattern).matches(); // hour, minute, second, am/pm patterns
-			boolean					hasTimezone	= timezoneMatchPattern.matcher(pattern).matches(); // timezone patterns
-			boolean					hasOffset	= offsetMatchPattern.matcher(pattern).matches(); // offset patterns (subset of timezone)
+			boolean					hasDate		= dateMatchPattern.matcher( pattern ).matches(); // year, month, day, week patterns
+			boolean					hasTime		= timeMatchPattern.matcher( pattern ).matches(); // hour, minute, second, am/pm patterns
+			boolean					hasTimezone	= timezoneMatchPattern.matcher( pattern ).matches(); // timezone patterns
+			boolean					hasOffset	= offsetMatchPattern.matcher( pattern ).matches(); // offset patterns (subset of timezone)
 
 			// Conservative approach: always include the most likely types first, but include all for safety
 			// This still provides optimization by ordering, while ensuring compatibility

@@ -347,11 +347,11 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 * @param mask     - a string representing the mask
 	 */
 	public DateTime( String dateTime, String mask, ZoneId timezone ) {
-		ZonedDateTime	parsed = null;
-		try{
+		ZonedDateTime parsed = null;
+		try {
 			TemporalAccessor date = getFormatter( mask ).parseBest(
-				dateTime,
-				LocalizationUtil.CommonFormatter.determineOptimalTemporalQueries( mask )
+			    dateTime,
+			    LocalizationUtil.CommonFormatter.determineOptimalTemporalQueries( mask )
 			);
 
 			if ( date instanceof ZonedDateTime castZonedDateTime ) {
@@ -361,37 +361,37 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 			} else if ( date instanceof LocalDateTime castLocalDateTime ) {
 				// Apply timezone if provided, otherwise use the existing DateTime constructor behavior
 				parsed = timezone != null
-					? ZonedDateTime.of( castLocalDateTime, timezone )
-					: ZonedDateTime.of( castLocalDateTime, ZoneId.systemDefault() );
+				    ? ZonedDateTime.of( castLocalDateTime, timezone )
+				    : ZonedDateTime.of( castLocalDateTime, ZoneId.systemDefault() );
 			} else if ( date instanceof LocalDate castLocalDate ) {
 				// Apply timezone if provided, otherwise use the existing DateTime constructor behavior
 				parsed = timezone != null
-					? ZonedDateTime.of( castLocalDate.atStartOfDay(), timezone )
-					: ZonedDateTime.of( castLocalDate.atStartOfDay(), ZoneId.systemDefault() );
+				    ? ZonedDateTime.of( castLocalDate.atStartOfDay(), timezone )
+				    : ZonedDateTime.of( castLocalDate.atStartOfDay(), ZoneId.systemDefault() );
 			} else if ( date instanceof LocalTime castLocalTime ) {
 				// Apply timezone if provided, otherwise use the existing DateTime constructor behavior
 				parsed = timezone != null
-					? ZonedDateTime.of( castLocalTime.atDate( LocalDate.now() ), timezone )
-					: ZonedDateTime.of( castLocalTime.atDate( LocalDate.now() ), ZoneId.systemDefault() );
+				    ? ZonedDateTime.of( castLocalTime.atDate( LocalDate.now() ), timezone )
+				    : ZonedDateTime.of( castLocalTime.atDate( LocalDate.now() ), ZoneId.systemDefault() );
 			} else if ( date instanceof Instant castInstant ) {
 				parsed = ZonedDateTime.ofInstant( castInstant, timezone );
 			} else {
 				throw new BoxRuntimeException(
-					String.format(
-						"The TemporalAccessor instanceof [%s] does not have a valid DateTime constructor",
-						date.getClass().getName()
-					)
+				    String.format(
+				        "The TemporalAccessor instanceof [%s] does not have a valid DateTime constructor",
+				        date.getClass().getName()
+				    )
 				);
 			}
 
-		} catch( java.time.format.DateTimeParseException e ) {
+		} catch ( java.time.format.DateTimeParseException e ) {
 			throw new BoxRuntimeException(
-				    String.format(
-				        "The date time value of [%s] could not be parsed as a valid date or datetime",
-				        dateTime
-				    ), dateTime );
+			    String.format(
+			        "The date time value of [%s] could not be parsed as a valid date or datetime",
+			        dateTime
+			    ), dateTime );
 		}
-		
+
 		this.wrapped = parsed;
 	}
 
@@ -1191,7 +1191,26 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 
 	@Override
 	public boolean isEqual( ChronoZonedDateTime<?> other ) {
-		return this.wrapped.isEqual( other );
+		boolean isLenientComparison = Compare.lenientDateComparison;
+		return isEqual( other, isLenientComparison );
+	}
+
+	/**
+	 * isEqual with leniency option
+	 *
+	 * @param other   The other DateTime object to compare to
+	 * @param lenient Whether to perform a lenient comparison (seconds precision) or strict (nanoseconds precision)
+	 *
+	 * @return true if the two date times are equal, false otherwise
+	 */
+	public boolean isEqual( ChronoZonedDateTime<?> other, boolean lenient ) {
+		if ( !lenient && other instanceof DateTime castDateTime ) {
+			return this.wrapped.isEqual( castDateTime.getWrapped() );
+		} else if ( !lenient && other instanceof ZonedDateTime castZonedDateTime ) {
+			return this.wrapped.isEqual( castZonedDateTime );
+		} else {
+			return this.compare( other, lenient ) == 0;
+		}
 	}
 
 	@Override
