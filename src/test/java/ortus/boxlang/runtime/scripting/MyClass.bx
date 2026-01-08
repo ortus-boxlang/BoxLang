@@ -1,0 +1,7 @@
+class {
+
+	function myMethod( name = "World" ) {
+		return "Hello, " & name & "!";
+	}
+
+}

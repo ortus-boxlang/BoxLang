@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Optional;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -42,6 +43,7 @@ import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.dynamic.casters.QueryCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -666,8 +668,76 @@ public class DuplicateTest {
 		    result = duplicate( myOptional );
 		          """,
 		    context );
-		assertThat( variables.get( resultKey ) ).isInstanceOf( String.class );
-		assertThat( variables.getAsString( resultKey ) ).isEqualTo( "foo" );
+		assertThat( variables.get( resultKey ) ).isInstanceOf( Optional.class );
+		Optional<?> opt = ( Optional<?> ) variables.get( resultKey );
+		assertThat( opt.isPresent() ).isTrue();
+		assertThat( opt.get() ).isInstanceOf( String.class );
+		assertThat( opt.get() ).isEqualTo( "foo" );
 
 	}
+
+	@Test
+	public void testDuplicateRecursiveStruct() {
+		instance.executeSource(
+		    """
+		    a = {}
+		    b = {ref:a}
+		    a.ref=b
+		    result = duplicate( a );
+		    result2 = result.ref.ref.ref.ref.ref.ref.ref.ref.ref;
+		            """,
+		    context );
+		assertThat( variables.get( resultKey ) ).isInstanceOf( Struct.class );
+		assertThat( variables.getAsStruct( Key.of( "result2" ) ) ).isInstanceOf( Struct.class );
+	}
+
+	@Test
+	public void testDuplicateRecursiveArray() {
+		instance.executeSource(
+		    """
+		    a = []
+		    b = [a]
+		    a[1]=b
+		    result = duplicate( a )
+
+		    result2 = result[1][1][1][1][1][1][1][1][1][1];
+		                  """,
+		    context );
+		assertThat( variables.get( resultKey ) ).isInstanceOf( Array.class );
+		assertThat( variables.getAsArray( Key.of( "result2" ) ) ).isInstanceOf( Array.class );
+	}
+
+	@Test
+	public void testDuplicateRecursiveQuery() {
+		instance.executeSource(
+		    """
+		    a = queryNew( "id", "object", [[""]] )
+		    b = queryNew( "id", "object", [[a]] )
+		    a.id=b
+		    result = duplicate( a )
+
+		    result2 = result.id.id.id.id.id.id.id.id.id.id;
+		                  """,
+		    context );
+		assertThat( variables.get( resultKey ) ).isInstanceOf( Query.class );
+		assertThat( variables.getAsQuery( Key.of( "result2" ) ) ).isInstanceOf( Query.class );
+	}
+
+	@Test
+	public void testDuplicateRecursiveClass() {
+		instance.executeSource(
+		    """
+		       a = new src.test.java.ortus.boxlang.runtime.bifs.global.system.Dupe1();
+		    b = new src.test.java.ortus.boxlang.runtime.bifs.global.system.Dupe2();
+		       a.ref = b;
+		       b.ref = a;
+		       result = duplicate( a )
+
+		       result2 = result.ref.ref.ref.ref.ref.ref.ref.ref.ref.ref;
+		                     """,
+		    context );
+		assertThat( variables.get( resultKey ) ).isInstanceOf( IClassRunnable.class );
+		assertThat( variables.getAsClassRunnable( Key.of( "result2" ) ) ).isInstanceOf( IClassRunnable.class );
+	}
+
 }

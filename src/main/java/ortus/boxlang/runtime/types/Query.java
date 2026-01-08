@@ -1401,24 +1401,37 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	/**
 	 * Duplicate the current query.
 	 *
+	 * @param newQuery The query object to duplicate into
+	 * @param deep     If true, nested objects will be duplicated as well.
+	 * @param context  The context to use for duplication of nested objects
+	 *
+	 * @return A copy of the current query.
+	 */
+	public Query duplicate( Query newQuery, boolean deep, IBoxContext context ) {
+
+		this.getColumns().entrySet().stream().forEach( entry -> {
+			newQuery.addColumn( entry.getKey(), entry.getValue().getType(), null, entry.getValue().getSQLType() );
+		} );
+
+		if ( deep ) {
+			newQuery.addData( DuplicationUtil.duplicate( this.getData(), deep, context ) );
+		} else {
+			newQuery.addData( this.getData() );
+		}
+		return newQuery;
+	}
+
+	/**
+	 * Duplicate the current query.
+	 *
 	 * @param deep    If true, nested objects will be duplicated as well.
 	 * @param context The context to use for duplication of nested objects
 	 *
 	 * @return A copy of the current query.
 	 */
 	public Query duplicate( boolean deep, IBoxContext context ) {
-		Query q = new Query();
-
-		this.getColumns().entrySet().stream().forEach( entry -> {
-			q.addColumn( entry.getKey(), entry.getValue().getType(), null, entry.getValue().getSQLType() );
-		} );
-
-		if ( deep ) {
-			q.addData( DuplicationUtil.duplicate( this.getData(), deep, context ) );
-		} else {
-			q.addData( this.getData() );
-		}
-		return q;
+		Query newQuery = new Query();
+		return duplicate( newQuery, deep, context );
 	}
 
 	@Override
