@@ -38,6 +38,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
+import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
@@ -346,37 +347,51 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 * @param mask     - a string representing the mask
 	 */
 	public DateTime( String dateTime, String mask, ZoneId timezone ) {
-		ZonedDateTime parsed = null;
-		// try parsing if it fails then our time does not contain timezone info so we fall back to a local zoned date
-		try {
-			parsed = ZonedDateTime.parse( dateTime, getFormatter( mask ) );
-		} catch ( java.time.format.DateTimeParseException e ) {
-			// First fallback - it has a time without a zone
-			try {
-				parsed = ZonedDateTime.of( LocalDateTime.parse( dateTime, getFormatter( mask ) ), timezone );
-				// Second fallback - it is only a date and we need to supply a time
-			} catch ( java.time.format.DateTimeParseException x ) {
-				try {
-					parsed = ZonedDateTime.of( LocalDateTime.of( LocalDate.parse( dateTime, getFormatter( mask ) ), LocalTime.MIN ), timezone );
-					// last fallback - this is a time only value
-				} catch ( java.time.format.DateTimeParseException z ) {
-					parsed = ZonedDateTime.of( LocalDate.MIN, LocalTime.parse( dateTime, getFormatter( mask ) ), timezone );
-				}
-			} catch ( Exception x ) {
+		ZonedDateTime	parsed = null;
+		try{
+			TemporalAccessor date = getFormatter( mask ).parseBest(
+				dateTime,
+				LocalizationUtil.CommonFormatter.determineOptimalTemporalQueries( mask )
+			);
+
+			if ( date instanceof ZonedDateTime castZonedDateTime ) {
+				parsed = castZonedDateTime;
+			} else if ( date instanceof OffsetDateTime castOffsetDateTime ) {
+				parsed = castOffsetDateTime.toZonedDateTime();
+			} else if ( date instanceof LocalDateTime castLocalDateTime ) {
+				// Apply timezone if provided, otherwise use the existing DateTime constructor behavior
+				parsed = timezone != null
+					? ZonedDateTime.of( castLocalDateTime, timezone )
+					: ZonedDateTime.of( castLocalDateTime, ZoneId.systemDefault() );
+			} else if ( date instanceof LocalDate castLocalDate ) {
+				// Apply timezone if provided, otherwise use the existing DateTime constructor behavior
+				parsed = timezone != null
+					? ZonedDateTime.of( castLocalDate.atStartOfDay(), timezone )
+					: ZonedDateTime.of( castLocalDate.atStartOfDay(), ZoneId.systemDefault() );
+			} else if ( date instanceof LocalTime castLocalTime ) {
+				// Apply timezone if provided, otherwise use the existing DateTime constructor behavior
+				parsed = timezone != null
+					? ZonedDateTime.of( castLocalTime.atDate( LocalDate.now() ), timezone )
+					: ZonedDateTime.of( castLocalTime.atDate( LocalDate.now() ), ZoneId.systemDefault() );
+			} else if ( date instanceof Instant castInstant ) {
+				parsed = ZonedDateTime.ofInstant( castInstant, timezone );
+			} else {
 				throw new BoxRuntimeException(
+					String.format(
+						"The TemporalAccessor instanceof [%s] does not have a valid DateTime constructor",
+						date.getClass().getName()
+					)
+				);
+			}
+
+		} catch( java.time.format.DateTimeParseException e ) {
+			throw new BoxRuntimeException(
 				    String.format(
 				        "The date time value of [%s] could not be parsed as a valid date or datetime",
 				        dateTime
-				    ), x );
-			}
-		} catch ( Exception e ) {
-			throw new BoxRuntimeException(
-			    String.format(
-			        "The date time value of [%s] could not be parsed using the mask [%s]",
-			        dateTime,
-			        mask
-			    ), e );
+				    ), dateTime );
 		}
+		
 		this.wrapped = parsed;
 	}
 
@@ -502,6 +517,19 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 */
 	private static DateTimeFormatter getFormatter( String pattern ) {
 		return LocalizationUtil.getPatternFormatter( pattern );
+	}
+
+	/**
+	 * Returns a cached DateTime formatter from a pattern passed in.
+	 * Uses LocalizationUtil for memory-sensitive caching with SoftReference.
+	 *
+	 * @param pattern the pattern to use
+	 * @param locale  the locale to use
+	 *
+	 * @return the cached or newly created DateTimeFormatter object with the pattern
+	 */
+	private static DateTimeFormatter getFormatter( String pattern, Locale locale ) {
+		return LocalizationUtil.getPatternFormatter( pattern, locale );
 	}
 
 	/**

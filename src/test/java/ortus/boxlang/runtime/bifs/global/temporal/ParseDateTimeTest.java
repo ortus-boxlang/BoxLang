@@ -497,6 +497,8 @@ public class ParseDateTimeTest {
 			}
 
 			result = [
+				"singleMillisTimestamp" : parseIt( "2025-11-12 00:45:00.0" ),
+				"singleMillisTimestampWithMask" : parseIt( "2025-11-12 00:45:00.0", "yyyy-MM-dd HH:mm:ss.S" ),
 				"isoTimestamp" : parseIt( "2024-04-02T21:01:00Z" ),
 				"isoTimestampWMask" : parseIt( "2024-04-02T21:01:00Z", "yyyy-MM-dd'T'HH:mm:ssXXX" ),
 				"mediumFormatZoned" : parseIt( "Nov 22, 2022 11:01:51 CET" ),

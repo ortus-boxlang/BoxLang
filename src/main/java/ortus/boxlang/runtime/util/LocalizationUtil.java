@@ -102,6 +102,11 @@ public final class LocalizationUtil {
 		private final String				datePattern;
 		private final TemporalQuery<?>[]	optimizedQueries;
 
+		private static final Pattern dateMatchPattern = Pattern.compile( ".*[yMLdDjgEFwWu].*" );
+		private static final Pattern timeMatchPattern = Pattern.compile( ".*[HhKkmsSnA].*" );
+		private static final Pattern timezoneMatchPattern = Pattern.compile( ".*[zZVvXxOo].*" );
+		private static final Pattern offsetMatchPattern = Pattern.compile( ".*[XxZO].*" );
+
 		public CommonFormatter( String regexPattern, String datePattern, String description ) {
 			this.regexPattern		= regexPattern;
 			this.datePattern		= datePattern;
@@ -144,14 +149,14 @@ public final class LocalizationUtil {
 		 * 
 		 * @return Array of TemporalQuery functions in optimal order for parseBest()
 		 */
-		private static TemporalQuery<?>[] determineOptimalTemporalQueries( String pattern ) {
+		public static TemporalQuery<?>[] determineOptimalTemporalQueries( String pattern ) {
 			List<TemporalQuery<?>>	queries		= new ArrayList<>();
-
+			
 			// Pattern analysis flags - more comprehensive pattern detection
-			boolean					hasDate		= pattern.matches( ".*[yMLdDjgEFwWu].*" ); // year, month, day, week patterns
-			boolean					hasTime		= pattern.matches( ".*[HhKkmsSnA].*" ); // hour, minute, second, am/pm patterns
-			boolean					hasTimezone	= pattern.matches( ".*[zZVvXxOo].*" ); // timezone patterns
-			boolean					hasOffset	= pattern.matches( ".*[XxZO].*" ); // offset patterns (subset of timezone)
+			boolean					hasDate		= dateMatchPattern.matcher(pattern).matches(); // year, month, day, week patterns
+			boolean					hasTime		= timeMatchPattern.matcher(pattern).matches(); // hour, minute, second, am/pm patterns
+			boolean					hasTimezone	= timezoneMatchPattern.matcher(pattern).matches(); // timezone patterns
+			boolean					hasOffset	= offsetMatchPattern.matcher(pattern).matches(); // offset patterns (subset of timezone)
 
 			// Conservative approach: always include the most likely types first, but include all for safety
 			// This still provides optimization by ordering, while ensuring compatibility
@@ -751,6 +756,14 @@ public final class LocalizationUtil {
 				"regexPattern", "^\\d{4}-\\d{2}-\\d{1,2}T\\d{2}:\\d{2}:\\d{2}Z$",
 				"datePattern", "yyyy-MM-d'T'HH:mm:ssX",
 				"description", "ISO DateTime with Z timezone - ultra-specific"
+			) );
+
+			// Pattern for space separated with single decimal "2024-01-14 00:00:01.1"
+			add( Map.of(
+				"regexPattern",
+				"^\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}\\.\\d{1}$",
+				"datePattern", "yyyy-MM-dd HH:mm:ss.S",
+				"description", "ISO space format with single decimal"
 			) );
 
 			// Medium format with timezone abbreviation (for "Nov 22, 2022 11:01:51 CET")
@@ -1430,14 +1443,6 @@ public final class LocalizationUtil {
 				"^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{4}$",
 				"datePattern", "yyyy-MM-dd'T'HH:mm:ss.SSSS",
 				"description", "ISO with microsecond precision no timezone"
-			) );
-
-			// Pattern for space separated with single decimal "2024-01-14 00:00:01.1"
-			add( Map.of(
-				"regexPattern",
-				"^\\d{4}-\\d{2}-\\d{2}\\s+\\d{2}:\\d{2}:\\d{2}\\.\\d{1}$",
-				"datePattern", "yyyy-MM-dd HH:mm:ss.S",
-				"description", "ISO space format with single decimal"
 			) );
 
 			// Spanish date formats

@@ -40,7 +40,7 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
 @BoxMember( type = BoxLangType.DATETIME, name = "compareTo" )
 public class DateCompare extends BIF {
 
-	HashMap<Key, ChronoUnit> datePartMap = new HashMap<Key, ChronoUnit>() {
+	private static final HashMap<Key, ChronoUnit> datePartMap = new HashMap<Key, ChronoUnit>() {
 
 		{
 			put( Key.of( "y" ), ChronoUnit.YEARS );
