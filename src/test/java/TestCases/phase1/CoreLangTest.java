@@ -6190,4 +6190,20 @@ public class CoreLangTest {
 		    context );
 	}
 
+	@Test
+	public void testIterateOverPrimitiveArray() {
+
+		instance.executeSource(
+		    """
+		      	string = "hello"
+		    result = ""
+		    for( char in string.toCharArray() ) {
+		    	result &= char;
+		    }
+		      """,
+		    context
+		);
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "hello" );
+	}
+
 }
