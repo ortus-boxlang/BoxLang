@@ -93,8 +93,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		ancestorLevels						= Key.of( "ancestorLevels" );
 	public static final Key		annotations							= Key.of( "annotations" );
 	public static final Key		announce							= Key.of( "announce" );
-	public static final Key		ANONYMOUSCLOSURE					= Key.of( "ANONYMOUSCLOSURE" );
-	public static final Key		ANONYMOUSLAMBDA						= Key.of( "ANONYMOUSLAMBDA" );
+	public static final Key		ANONYMOUSCLOSURE					= Key.of( "anonymousClosure" );
+	public static final Key		ANONYMOUSLAMBDA						= Key.of( "anonymousLambda" );
 	public static final Key		append								= Key.of( "append" );
 	public static final Key		appender							= Key.of( "appender" );
 	public static final Key		appenderArguments					= Key.of( "appenderArguments" );
@@ -200,6 +200,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		columnArray							= Key.of( "columnArray" );
 	public static final Key		columnKey							= Key.of( "columnKey" );
 	public static final Key		columnList							= Key.of( "columnList" );
+	public static final Key		columnMetadata						= Key.of( "columnMetadata" );
 	public static final Key		columnName							= Key.of( "columnName" );
 	public static final Key		columnNames							= Key.of( "columnNames" );
 	public static final Key		columns								= Key.of( "columns" );
@@ -259,6 +260,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		dateFormat							= Key.of( "dateFormat" );
 	public static final Key		dateLastModified					= Key.of( "dateLastModified" );
 	public static final Key		datepart							= Key.of( "datepart" );
+	public static final Key		dateCompare							= Key.of( "dateCompare" );
 	public static final Key		day									= Key.of( "day" );
 	public static final Key		days								= Key.of( "days" );
 	public static final Key		debuggingEnabled					= Key.of( "debuggingEnabled" );
@@ -772,6 +774,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		sessionScope						= Key.of( "sessionScope" );
 	public static final Key		sessionStorage						= Key.of( "sessionStorage" );
 	public static final Key		sessionTimeout						= Key.of( "sessionTimeout" );
+	public static final Key		sessionType							= Key.of( "sessionType" );
 	public static final Key		set									= Key.of( "set" );
 	public static final Key		setCookie							= Key.of( "Set-Cookie" );
 	public static final Key		setClientCookies					= Key.of( "setClientCookies" );
@@ -794,6 +797,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		SQLState							= Key.of( "SQLState" );
 	public static final Key		sqltype								= Key.of( "sqltype" );
 	public static final Key		stackTrace							= Key.of( "stackTrace" );
+	public static final Key		_STATIC								= Key.of( "static" );
 	public static final Key		start								= Key.of( "start" );
 	public static final Key		startRow							= Key.of( "startRow" );
 	public static final Key		startTicks							= Key.of( "startTicks" );
@@ -1004,13 +1008,19 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		ormoptions							= Key.of( "ormoptions" );
 	public static final Key		psq									= Key.of( "psq" );
 
+	// Datasource statistics keys
+	public static final Key		activeConnections					= Key.of( "activeConnections" );
+	public static final Key		idleConnections						= Key.of( "idleConnections" );
+	public static final Key		totalConnections					= Key.of( "totalConnections" );
+	public static final Key		pendingThreads						= Key.of( "pendingThreads" );
+
 	// CFConfig-style datasource config keys
 	public static final Key		custom								= Key.of( "custom" );
 	public static final Key		custom2								= Key.of( "custom2" );
 	public static final Key		custom3								= Key.of( "custom3" );
 	public static final Key		dsn									= Key.of( "dsn" );
 
-	// HikariCP configuration Key names. Includes all "Essential" and "Frquently Used" configuration keys, but no "Infrequently used" keys (for now.)
+	// HikariCP configuration Key names. Includes all "Essential" and "Frequently Used" configuration keys
 	// https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby
 	public static final Key		autoCommit							= Key.of( "autoCommit" );
 	public static final Key		averageExecutionTimeMs				= Key.of( "averageExecutionTimeMs" );

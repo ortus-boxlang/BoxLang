@@ -33,7 +33,6 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -66,7 +65,7 @@ public class ClearTimezoneTest {
 	@Test
 	public void testClearTimezone() {
 		ZoneId	testZone		= ZoneId.of( "America/Los_Angeles" );
-		var		requestContext	= context.getParentOfType( RequestBoxContext.class );
+		var		requestContext	= context.getRequestContext();
 		var		initialTimezone	= requestContext.getTimezone();
 		requestContext.setTimezone( testZone );
 		assertEquals( requestContext.getTimezone(), testZone );
@@ -83,7 +82,7 @@ public class ClearTimezoneTest {
 	@DisplayName( "It tests the ClearTimezone works even if a default is not set" )
 	@Test
 	public void testClearNull() {
-		var requestContext = context.getParentOfType( RequestBoxContext.class );
+		var requestContext = context.getRequestContext();
 		assertNull( requestContext.getTimezone() );
 		assertEquals( requestContext.getConfig().get( Key.timezone ), TimeZone.getDefault().toZoneId() );
 		instance.executeSource(

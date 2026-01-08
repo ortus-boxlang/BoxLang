@@ -21,7 +21,6 @@ import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 
@@ -53,7 +52,7 @@ public class Application extends Component {
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		// This will update the setting overrides for the request, create/update the application and create/update the session
-		context.getParentOfType( RequestBoxContext.class ).getApplicationListener().updateSettings( attributes );
+		context.getRequestContextOrFail().getApplicationListener().updateSettings( attributes );
 		return DEFAULT_RETURN;
 	}
 }

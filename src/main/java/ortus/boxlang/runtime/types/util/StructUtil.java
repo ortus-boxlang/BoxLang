@@ -655,14 +655,22 @@ public class StructUtil {
 			        .toArray()
 			);
 		} else {
-			Boolean isDescending = Key.of( sortOrder ).equals( Key.of( "desc" ) );
-			return new Array( struct.entrySet().stream().sorted(
-			    ( a, b ) -> Compare.invoke(
-			        StructUtil.getAtPath( StructCaster.cast( isDescending ? b.getValue() : a.getValue() ), path ),
-			        StructUtil.getAtPath( StructCaster.cast( isDescending ? a.getValue() : b.getValue() ), path ),
-			        sortType.toLowerCase().contains( "nocase" ) ? false : true
-			    )
-			).map( e -> e.getKey().getName() ).toArray()
+			Boolean	isDescending	= Key.of( sortOrder ).equals( Key.of( "desc" ) );
+			boolean	caseSensitive	= !sortType.toLowerCase().contains( "nocase" );
+			return new Array(
+			    struct.entrySet()
+			        .stream()
+			        // Convert the values now so that we don't have repeated getAtPath calls during sorting
+			        .map( entry -> new AbstractMap.SimpleEntry<>( entry.getKey(), StructUtil.getAtPath( StructCaster.cast( entry.getValue() ), path ) ) )
+			        .sorted(
+			            ( a, b ) -> {
+				            Object leftValue = isDescending ? b.getValue() : a.getValue();
+				            Object rightValue = isDescending ? a.getValue() : b.getValue();
+				            Integer result = Compare.attempt( leftValue, rightValue, caseSensitive );
+				            // If comparison fails (returns null), treat values as equal to maintain comparator contract consistency
+				            return result != null ? result : 0;
+			            }
+			        ).map( e -> e.getKey().getName() ).toArray()
 			);
 		}
 
@@ -1054,9 +1062,9 @@ public class StructUtil {
 	/**
 	 * Analyzes all keys in the struct to determine which dotted keys should be unflattened.
 	 * Uses heuristics to distinguish between original dotted keys and flattened keys.
-	 * 
+	 *
 	 * @param struct the struct to analyze
-	 * 
+	 *
 	 * @return a set of key names that should be unflattened
 	 */
 	private static Set<String> determineKeysToUnflatten( IStruct struct ) {
@@ -1105,7 +1113,7 @@ public class StructUtil {
 	 *
 	 * @param keyName the dotted key to evaluate
 	 * @param struct  the struct containing all keys
-	 * 
+	 *
 	 * @return true if the key should be unflattened, false if it should be preserved as-is
 	 */
 	/**

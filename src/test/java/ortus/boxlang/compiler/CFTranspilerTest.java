@@ -492,4 +492,48 @@ public class CFTranspilerTest {
 		assertThat( variables.get( Key.of( "result14" ) ) ).isEqualTo( true );
 	}
 
+	@DisplayName( "Can append a number in a string list with includeEmptyFields defaulting to true" )
+	@Test
+	public void testAppendNumber() {
+		instance.executeSource(
+		    """
+		        nums = ",1,2,3,4,5";
+		        result = listAppend( nums, 6 );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( result ) ).isEqualTo( ",1,2,3,4,5,6" );
+
+		instance.executeSource(
+		    """
+		        nums = ",1,2,3,4,5";
+		        result = listAppend( nums, 6, "," );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( result ) ).isEqualTo( ",1,2,3,4,5,6" );
+
+		instance.executeSource(
+		    """
+		        nums = ",1,2,3,4,5";
+		        result = listAppend( nums, 6, ",", false );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "1,2,3,4,5,6" );
+
+		instance.executeSource(
+		    """
+		        nums = ",1,2,3,4,5";
+		        result = listAppend( list=nums, value=6 );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( result ) ).isEqualTo( ",1,2,3,4,5,6" );
+
+		instance.executeSource(
+		    """
+		        nums = ",1,2,3,4,5";
+		        result = listAppend( list=nums, value=6, includeEmptyFields=false );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "1,2,3,4,5,6" );
+	}
+
 }

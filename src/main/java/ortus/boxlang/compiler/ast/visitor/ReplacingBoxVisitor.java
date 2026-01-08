@@ -70,6 +70,7 @@ import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.statement.BoxContinue;
 import ortus.boxlang.compiler.ast.statement.BoxDo;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
+import ortus.boxlang.compiler.ast.statement.BoxEmptyStatement;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.statement.BoxForIn;
 import ortus.boxlang.compiler.ast.statement.BoxForIndex;
@@ -110,6 +111,10 @@ public abstract class ReplacingBoxVisitor {
 
 	public BoxNode visit( BoxStatementBlock node ) {
 		handleStatements( node.getBody(), node );
+		return node;
+	}
+
+	public BoxNode visit( BoxEmptyStatement node ) {
 		return node;
 	}
 

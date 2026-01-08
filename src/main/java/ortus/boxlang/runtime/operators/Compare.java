@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.operators;
 
 import java.math.BigDecimal;
+import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -25,14 +26,13 @@ import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.DateTime;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.DateTimeHelper;
 import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
@@ -146,32 +146,46 @@ public class Compare implements IOperator {
 		left	= DynamicObject.unWrap( left );
 		right	= DynamicObject.unWrap( right );
 
-		// Date comparison
+		// Date comparison - when at least one operand is a known date class
 		if ( DateTimeCaster.isKnownDateClass( left ) || DateTimeCaster.isKnownDateClass( right ) ) {
-			CastAttempt<DateTime> ref = DateTimeCaster.attempt( left );
-			if ( ref.wasSuccessful() ) {
-				CastAttempt<DateTime> target = DateTimeCaster.attempt( right );
-				if ( target.wasSuccessful() ) {
-					if ( !lenientDateComparison ) {
-						// the chrono date time will return a numeric comparator rather than 0,1,-1
-						int comparison = ref.get().compareTo( target.get() );
-						return comparison == 0 ? 0 : ( comparison < 0 ? -1 : 1 );
-					} else {
-						Key dateCompareKey = Key.of( "DateCompare" );
-						return IntegerCaster.cast(
-						    runtime.getFunctionService().getGlobalFunction( dateCompareKey ).invoke(
-						        runtime.getRuntimeContext(),
-						        Struct.of(
-						            Key.date1, ref.get(),
-						            Key.date2, target.get(),
-						            Key.datepart, "s"
-						        ),
-						        false,
-						        dateCompareKey
-						    )
-						);
+			CastAttempt<DateTime>	ref		= DateTimeCaster.attempt( left );
+			CastAttempt<DateTime>	target	= DateTimeCaster.attempt( right );
 
+			// If both can be cast to DateTime, do a proper date comparison
+			if ( ref.wasSuccessful() && target.wasSuccessful() ) {
+				return ref.get().compare( target.get(), lenientDateComparison );
+			}
+
+			// If only one is a DateTime and the other is a Number, convert both to epoch millis for consistent comparison
+			// This handles the case where dates are stored as fractional days (numeric representation)
+			if ( ref.wasSuccessful() || target.wasSuccessful() ) {
+				DateTime			dateTimeValue	= ref.wasSuccessful() ? ref.get() : target.get();
+				Object				otherValue		= ref.wasSuccessful() ? right : left;
+
+				CastAttempt<Number>	numericAttempt	= NumberCaster.attempt( otherValue, false );
+				if ( numericAttempt.wasSuccessful() ) {
+					// Convert DateTime to epoch millis for comparison
+					long	dateTimeMillis	= dateTimeValue.toEpochMillis();
+					// Convert fractional days to epoch millis
+					long	numericMillis	= DateTimeHelper.fractionalDaysToEpochMillis(
+					    numericAttempt.get() instanceof BigDecimal bd
+					        ? bd
+					        : BigDecimalCaster.cast( numericAttempt.get() )
+					);
+
+					// For lenient comparison, truncate both values to seconds (remove milliseconds)
+					if ( lenientDateComparison ) {
+						dateTimeMillis	= ( dateTimeMillis / 1000 ) * 1000;
+						numericMillis	= ( numericMillis / 1000 ) * 1000;
 					}
+
+					// Compare and normalize result, accounting for which operand was the DateTime
+					int comparison = Long.compare( dateTimeMillis, numericMillis );
+					// If the DateTime was on the right side, flip the comparison
+					if ( target.wasSuccessful() && !ref.wasSuccessful() ) {
+						comparison = -comparison;
+					}
+					return comparison == 0 ? 0 : ( comparison < 0 ? -1 : 1 );
 				}
 			}
 		}

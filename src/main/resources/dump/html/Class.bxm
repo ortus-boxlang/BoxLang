@@ -121,7 +121,7 @@
 															<bx:if stringCastAttempt.wasSuccessful()>
 																#encodeForHTML( stringCastAttempt.get() )#
 															<bx:else>
-																[#encodeForHTML( value.getClass().getName() )#<bx:if value instanceof 'java.lang.Class'>&lt;#encodeForHTML( value.getName() )#&gt;</bx:if>]
+																[#encodeForHTML( value.$bx.$class.getName() )#<bx:if value instanceof 'java.lang.Class'>&lt;#encodeForHTML( value.getName() )#&gt;</bx:if>]
 															</bx:if>
 														</bx:if>
 													<bx:else>

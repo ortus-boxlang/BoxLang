@@ -36,10 +36,25 @@ import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
  */
 public class InterfaceMeta extends BoxMeta<BoxInterface> {
 
-	@SuppressWarnings( "unused" )
-	private BoxInterface	target;
-	public Class<?>			$class;
-	public IStruct			meta;
+	/**
+	 * The target Interface this metadata is for
+	 */
+	private BoxInterface		target;
+
+	/**
+	 * The Java class of the target
+	 */
+	public Class<?>				$class;
+
+	/**
+	 * The assembled metadata
+	 */
+	public IStruct				meta;
+
+	/**
+	 * Constants
+	 */
+	private static final String	CLASS_TYPE	= "Interface";
 
 	/**
 	 * Constructor
@@ -63,17 +78,20 @@ public class InterfaceMeta extends BoxMeta<BoxInterface> {
 			supersMeta.put( _super.getName().getName(), _super.getBoxMeta().getMeta() );
 		}
 
+		var	keyName		= target.getName();
+		var	fullName	= keyName.getName();
 		this.meta = UnmodifiableStruct.of(
-		    Key._NAME, target.getName().getName(),
-		    Key.nameAsKey, target.getName(),
+		    Key._NAME, fullName,
+		    Key.simpleName, fullName.substring( fullName.lastIndexOf( '.' ) + 1 ),
+		    Key.nameAsKey, keyName,
 		    Key.documentation, UnmodifiableStruct.fromStruct( target.getDocumentation() ),
 		    Key.annotations, UnmodifiableStruct.fromStruct( target.getAnnotations() ),
 		    Key._EXTENDS, supersMeta,
 		    Key.functions, UnmodifiableArray.fromList( functions ),
 		    Key.defaultFunctions, UnmodifiableArray.fromList( defaultFunctions ),
 		    Key._HASHCODE, target.hashCode(),
-		    Key.type, "Interface",
-		    Key.fullname, target.getName().getName(),
+		    Key.type, CLASS_TYPE,
+		    Key.fullname, fullName,
 		    Key.path, target.getRunnablePath().absolutePath().toString()
 		);
 

@@ -48,7 +48,7 @@ public class IsLocalHost extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		try {
 			String ipAddress = arguments.getAsString( Key.ip );
-			return !ipAddress.trim().isEmpty() && InetAddress.getByName( ipAddress ).isLoopbackAddress();
+			return !ipAddress.isBlank() && InetAddress.getByName( ipAddress ).isLoopbackAddress();
 		} catch ( UnknownHostException e ) {
 			return false;
 		}

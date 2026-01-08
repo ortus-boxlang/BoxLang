@@ -309,7 +309,10 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 
 			// For remote methods, save their return format to use later
 			if ( getAccess().equals( Access.REMOTE ) && getAnnotations().containsKey( Key.returnFormat ) ) {
-				context.getParentOfType( RequestBoxContext.class ).putAttachment( Key.returnFormat, getAnnotations().get( Key.returnFormat ).toString() );
+				RequestBoxContext requestContext = context.getRequestContext();
+				if ( requestContext != null ) {
+					context.getRequestContext().putAttachment( Key.returnFormat, getAnnotations().get( Key.returnFormat ).toString() );
+				}
 			}
 		} catch ( AbortException e ) {
 			if ( e.isLoop() ) {

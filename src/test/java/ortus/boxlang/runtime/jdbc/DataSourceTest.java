@@ -305,14 +305,14 @@ public class DataSourceTest {
 		DataSource	derbyDB	= JDBCTestUtils.buildDatasource( "funkyDB", new Struct() );
 		IStruct		stats	= derbyDB.getPoolStats();
 
-		assertThat( stats ).containsKey( Key.of( "pendingThreads" ) );
-		assertThat( stats ).containsKey( Key.of( "totalConnections" ) );
-		assertThat( stats ).containsKey( Key.of( "activeConnections" ) );
-		assertThat( stats ).containsKey( Key.of( "idleConnections" ) );
-		assertThat( stats ).containsKey( Key.of( "maxConnections" ) );
-		assertThat( stats ).containsKey( Key.of( "minConnections" ) );
+		assertThat( stats ).containsKey( Key.pendingThreads );
+		assertThat( stats ).containsKey( Key.totalConnections );
+		assertThat( stats ).containsKey( Key.activeConnections );
+		assertThat( stats ).containsKey( Key.idleConnections );
+		assertThat( stats ).containsKey( Key.maxConnections );
+		assertThat( stats ).containsKey( Key.minConnections );
 
-		assertEquals( 0, stats.getAsInteger( Key.of( "activeConnections" ) ) );
+		assertEquals( 0, stats.getAsInteger( Key.activeConnections ) );
 	}
 
 	@Disabled

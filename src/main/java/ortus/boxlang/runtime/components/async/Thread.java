@@ -21,7 +21,6 @@ import java.util.Set;
 
 import org.slf4j.Logger;
 
-import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.RequestThreadManager;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
@@ -127,57 +126,61 @@ public class Thread extends Component {
 	 * @param body       The body of the Component
 	 */
 	private void run( IBoxContext context, String name, String priority, IStruct attributes, ComponentBody body ) {
-		RequestThreadManager		threadManager	= context.getParentOfType( RequestBoxContext.class ).getThreadManager();
+		RequestBoxContext			requestContext	= context.getRequestContextOrFail();
+		RequestThreadManager		threadManager	= requestContext.getThreadManager();
 		final Key					nameKey			= RequestThreadManager.ensureThreadName( name );
 		ThreadComponentBoxContext	tContext		= threadManager.createThreadContext( context, nameKey, attributes );
 
-		// Startup the thread
-		threadManager.startThread(
-		    // The thread context to run in
-		    tContext,
-		    // The name of the thread as a key
-		    nameKey,
-		    // The thread priority
-		    priority,
-		    // The Runnable Proxy
-		    () -> {
-			    StringBuffer buffer		= new StringBuffer();
-			    Throwable	exception	= null;
-			    Logger		logger		= runtime.getLoggingService().ASYNC_LOGGER;
+		requestContext.registerDependentThread();
+		try {
+			// Startup the thread
+			threadManager.startThread(
+			    // The thread context to run in
+			    tContext,
+			    // The name of the thread as a key
+			    nameKey,
+			    // The thread priority
+			    priority,
+			    // The Runnable Proxy
+			    () -> {
+				    StringBuffer buffer		= new StringBuffer();
+				    Throwable	exception	= null;
+				    Logger		logger		= runtime.getLoggingService().ASYNC_LOGGER;
 
-			    RequestBoxContext.setCurrent( tContext );
-			    ClassLoader		oldClassLoader	= java.lang.Thread.currentThread().getContextClassLoader();
-			    RequestBoxContext requestContext = tContext.getRequestContext();
-			    if ( requestContext != null ) {
+				    RequestBoxContext.setCurrent( tContext );
+				    ClassLoader oldClassLoader = java.lang.Thread.currentThread().getContextClassLoader();
 				    java.lang.Thread.currentThread().setContextClassLoader( requestContext.getRequestClassLoader() );
-			    } else {
-				    java.lang.Thread.currentThread().setContextClassLoader( BoxRuntime.getInstance().getRuntimeLoader() );
-			    }
 
-			    try {
-				    processBody( tContext, body, buffer );
-			    } catch ( AbortException e ) {
-				    // We log it so we can potentially find out why it was aborted
-				    logger.debug( "Thread [{}] aborted at stacktrace: {}", nameKey.getName(), e.getStackTrace() );
-			    } catch ( Throwable e ) {
-				    exception = e;
-				    logger.error( "Thread [{}] terminated with exception: {}", nameKey.getName(), e.getMessage() );
-				    logger.error( "-> Exception", e );
-			    } finally {
-				    threadManager.completeThread(
-				        nameKey,
-				        buffer.toString(),
-				        exception,
-				        // Will check the top exception and its causes
-				        ExceptionUtil.isInterruptedException( exception )
-				    );
-				    tContext.shutdown();
-				    RequestBoxContext.removeCurrent();
-				    java.lang.Thread.currentThread().setContextClassLoader( oldClassLoader );
-			    }
-		    },
-		    BooleanCaster.cast( attributes.get( Key.virtual ) )
-		);
+				    try {
+					    processBody( tContext, body, buffer );
+				    } catch ( AbortException e ) {
+					    // We log it so we can potentially find out why it was aborted
+					    logger.debug( "Thread [{}] aborted at stacktrace: {}", nameKey.getName(), e.getStackTrace() );
+				    } catch ( Throwable e ) {
+					    exception = e;
+					    logger.error( "Thread [{}] terminated with exception: {}", nameKey.getName(), e.getMessage() );
+					    logger.error( "-> Exception", e );
+				    } finally {
+					    threadManager.completeThread(
+					        nameKey,
+					        buffer.toString(),
+					        exception,
+					        // Will check the top exception and its causes
+					        ExceptionUtil.isInterruptedException( exception )
+					    );
+					    tContext.shutdown();
+					    RequestBoxContext.removeCurrent();
+					    java.lang.Thread.currentThread().setContextClassLoader( oldClassLoader );
+					    requestContext.unregisterDependentThread();
+				    }
+			    },
+			    BooleanCaster.cast( attributes.get( Key.virtual ) )
+			);
+		} catch ( Throwable e ) {
+			// If we failed to start the thread, we need to unregister the dependent thread
+			requestContext.unregisterDependentThread();
+			throw e;
+		}
 
 	}
 
@@ -190,7 +193,7 @@ public class Thread extends Component {
 	 */
 	private void join( IBoxContext context, String name, Integer timeout ) {
 		timeout = timeout == null ? 0 : timeout;
-		RequestThreadManager	threadManager	= context.getParentOfType( RequestBoxContext.class ).getThreadManager();
+		RequestThreadManager	threadManager	= context.getRequestContextOrFail().getThreadManager();
 		Array					aThreadNames	= ListUtil.asList( name, "," )
 		    .stream()
 		    .map( String::valueOf )
@@ -211,7 +214,7 @@ public class Thread extends Component {
 	 * @param name    The name of the thread
 	 */
 	private void terminate( IBoxContext context, String name ) {
-		context.getParentOfType( RequestBoxContext.class )
+		context.getRequestContextOrFail()
 		    .getThreadManager()
 		    .terminateThread( Key.of( name ) );
 	}

@@ -702,6 +702,17 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	public RequestBoxContext getRequestContext();
 
 	/**
+	 * Serach for an ancestor context of RequestBoxContext
+	 * This is a convenience method for getParentOfType( RequestBoxContext.class )
+	 * since it is so common
+	 * If no parent RequestBoxContext is found, an exception is thrown.
+	 * This method will never return null.
+	 *
+	 * @return The matching parent RequestBoxContext, or an exception if one is not found of this
+	 */
+	public RequestBoxContext getRequestContextOrFail();
+
+	/**
 	 * Serach for an ancestor context of ApplicationBoxContext
 	 * This is a convenience method for getParentOfType( ApplicationBoxContext.class )
 	 * since it is so common
@@ -850,4 +861,21 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	 * @param consumer The consumer to register
 	 */
 	public void registerShutdownListener( java.util.function.Consumer<IBoxContext> consumer );
+
+	/**
+	 * Register a dependent thread on this request context
+	 * 
+	 * @return The number of dependent threads after registering this one
+	 */
+	public int registerDependentThread();
+
+	/**
+	 * Unregister a dependent thread on this request context
+	 * If this context has previously been shutdown and the number of dependent threads has reached zero,
+	 * the context will call its shutdown listeners
+	 * 
+	 * @return The number of dependent threads after unregistering this one
+	 */
+	public int unregisterDependentThread();
+
 }

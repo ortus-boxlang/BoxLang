@@ -25,7 +25,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -132,22 +131,6 @@ public class ListDeleteAtTest {
 		    context );
 		assertEquals( 3, variables.getAsInteger( Key.position ) );
 		assertEquals( "coldbox.system", variables.getAsString( result ) );
-
-	}
-
-	@DisplayName( "It does not lose preceding slashes when dealing with paths" )
-	@Test
-	@Disabled
-	public void itDoesNotLosePrecedingSlashes() {
-		instance.executeSource(
-		    """
-		       path = "/Users/elpete/Developer/github/coldbox-modules/quick/";
-		       position = listLen( path, "\\/" );
-		    result = listDeleteAt( path, position, "\\/" );
-		       """,
-		    context );
-		assertEquals( 6, variables.getAsInteger( Key.position ) );
-		assertEquals( "/Users/elpete/Developer/github/coldbox-modules", variables.getAsString( result ) );
 
 	}
 }

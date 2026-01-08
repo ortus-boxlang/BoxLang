@@ -292,13 +292,14 @@ public class BoxRunner {
 		}
 
 		// Prep the execution
-		Path					targetSchedulerPath	= Paths.get( schedulerPath ).normalize().toAbsolutePath();
-		IBoxContext				runtimeContext		= runtime.getRuntimeContext();
-		IBoxContext				scriptingContext	= new ScriptingRequestBoxContext( runtimeContext, targetSchedulerPath.toUri() );
-		BaseApplicationListener	listener			= scriptingContext.getRequestContext().getApplicationListener();
-		RequestBoxContext.setCurrent( scriptingContext.getRequestContext() );
-		Throwable			errorToHandle		= null;
-		SchedulerService	schedulerService	= runtime.getSchedulerService();
+		Path				targetSchedulerPath	= Paths.get( schedulerPath ).normalize().toAbsolutePath();
+		IBoxContext			runtimeContext		= runtime.getRuntimeContext();
+		RequestBoxContext	scriptingContext	= new ScriptingRequestBoxContext( runtimeContext, false );
+		RequestBoxContext.setCurrent( scriptingContext );
+		scriptingContext.loadApplicationDescriptor( targetSchedulerPath.toUri() );
+		BaseApplicationListener	listener			= scriptingContext.getApplicationListener();
+		Throwable				errorToHandle		= null;
+		SchedulerService		schedulerService	= runtime.getSchedulerService();
 
 		// FIRE!
 		try {

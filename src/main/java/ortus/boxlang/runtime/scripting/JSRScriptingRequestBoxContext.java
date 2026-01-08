@@ -49,7 +49,8 @@ public class JSRScriptingRequestBoxContext extends ScriptingRequestBoxContext {
 	 * @param parent The parent context
 	 */
 	public JSRScriptingRequestBoxContext( IBoxContext parent, URI template ) {
-		super( parent, template );
+		super( parent, false );
+		loadApplicationDescriptor( template );
 	}
 
 	/**

@@ -150,7 +150,7 @@ public abstract class BoxNode implements BoxVisitable {
 	 * Provided a list of comments, sorted in the order the appeared in the source code,
 	 * associate all comments with their respective node. Comments will be assocaited with the
 	 * node they appear before, unless the comment appears at the end of the same line the
-	 * node appears on, in which case the commend will associate with that node on the same line.
+	 * node appears on, in which case the comment will associate with that node on the same line.
 	 * Any remaining comments left will be associated with the outer-most node.
 	 *
 	 * @param incomingComments the list of comments to associate

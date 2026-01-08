@@ -22,6 +22,8 @@ import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -52,17 +54,11 @@ public class Println extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object obj = DynamicObject.unWrap( arguments.get( Key.message ) );
 
-		// If it's a BoxLang type, let's use the string representation
-		if ( obj instanceof IType t ) {
-			obj = t.asString();
-		}
-		// For native arrays use the Arrays.toString for better formatting
-		else if ( obj != null && obj.getClass().isArray() ) {
-			obj = java.util.Arrays.toString( ArrayCaster.cast( obj ).toArray() );
-		}
+		// Force to string representation
+		obj = Println.forceToString( obj );
 
 		// If we have a request context, let's use that context's out
-		RequestBoxContext rCon = context.getParentOfType( RequestBoxContext.class );
+		RequestBoxContext rCon = context.getRequestContext();
 		if ( rCon != null ) {
 			rCon.getOut().println( obj );
 			return null;
@@ -72,5 +68,26 @@ public class Println extends BIF {
 		System.out.println( obj );
 
 		return null;
+	}
+
+	public static String forceToString( Object obj ) {
+		CastAttempt<String>	strAttempt;
+		String				result;
+
+		// If it's a BoxLang type, let's use the string representation
+		if ( obj instanceof IType t ) {
+			result = t.asString();
+		}
+		// For native arrays use the Arrays.toString for better formatting
+		else if ( obj != null && obj.getClass().isArray() ) {
+			result = java.util.Arrays.toString( ArrayCaster.cast( obj ).toArray() );
+			// Let our StringCaster take a whack at it
+		} else if ( ( strAttempt = StringCaster.attempt( obj ) ).wasSuccessful() ) {
+			result = strAttempt.get();
+		} else {
+			// Fallback to default toString
+			result = String.valueOf( obj );
+		}
+		return result;
 	}
 }

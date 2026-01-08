@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.AbstractFunction;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -82,6 +83,23 @@ public class ClassMeta extends BoxMeta<IClassRunnable> {
 			}
 		}
 
+		// Add all static methods as well, if any
+		IScope staticScope = target.getStaticScope();
+		if ( staticScope != null ) {
+			// iterate over the entrySet, each value that's a Function and is declared in this class, add it
+			for ( var entry : staticScope.entrySet() ) {
+				if ( entry.getValue() instanceof Function castedFunction ) {
+					mdFunctions.add( ( ( FunctionMeta ) castedFunction.getBoxMeta() ).meta );
+				}
+			}
+		}
+
+		// Add all abstract methods as well, if any
+		for ( var entry : target.getAbstractMethods().keySet() ) {
+			AbstractFunction value = target.getAbstractMethods().get( entry );
+			mdFunctions.add( ( ( FunctionMeta ) value.getBoxMeta() ).meta );
+		}
+
 		// Process Properties
 		var	mdProperties		= new ArrayList<Object>();
 		var	targetProperties	= target.getProperties();
@@ -113,13 +131,23 @@ public class ClassMeta extends BoxMeta<IClassRunnable> {
 		    Key.documentation, new Struct( target.getDocumentation() ),
 		    Key.annotations, new Struct( target.getAnnotations() ),
 		    Key._EXTENDS, target.getSuper() != null ? target.getSuper().getBoxMeta().getMeta() : Struct.EMPTY,
-		    Key._IMPLEMENTS, UnmodifiableArray.fromList( target.getInterfaces().stream().map( iface -> iface.getBoxMeta().getMeta() ).toList() ),
 		    Key.functions, UnmodifiableArray.fromList( mdFunctions ),
 		    Key._HASHCODE, target.hashCode(),
 		    Key.properties, UnmodifiableArray.fromList( mdProperties ),
 		    Key.type, CLASS_TYPE,
 		    Key.fullname, target.bxGetName().getName(),
 		    Key.path, target.getRunnablePath().absolutePath().toString()
+		);
+
+		// Add interfaces if any
+		meta.put(
+		    Key._IMPLEMENTS,
+		    target.getInterfaces().stream()
+		        .collect(
+		            Struct::new,
+		            ( struct, iface ) -> struct.put( iface.getName(), iface.getMetaData() ),
+		            Struct::putAll
+		        )
 		);
 
 	}

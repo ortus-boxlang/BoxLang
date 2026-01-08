@@ -219,6 +219,12 @@ public class Configuration implements IConfigSegment {
 	public String									sessionStorage					= "memory";
 
 	/**
+	 * The session type - By default we use the native session but this hook allows for compatibility with other session mechanisms
+	 * {@code native} by default
+	 */
+	public String									sessionType						= "native";
+
+	/**
 	 * This determines whether to send jSessionID cookies to the client browser.
 	 * {@code true} by default
 	 */
@@ -485,6 +491,11 @@ public class Configuration implements IConfigSegment {
 		// Session Storage
 		if ( config.containsKey( Key.sessionStorage ) && StringCaster.cast( config.get( Key.sessionStorage ) ).length() > 0 ) {
 			this.sessionStorage = config.getAsString( Key.sessionStorage );
+		}
+
+		// Session Type - By default we use the native session but this hook allows for compatibility with other session mechanisms
+		if ( config.containsKey( Key.sessionType ) && StringCaster.cast( config.get( Key.sessionType ) ).length() > 0 ) {
+			this.sessionType = config.getAsString( Key.sessionType );
 		}
 
 		// Client Cookies

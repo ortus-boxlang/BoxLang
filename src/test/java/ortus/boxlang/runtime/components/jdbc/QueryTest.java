@@ -172,7 +172,7 @@ public class QueryTest extends BaseJDBCTest {
 		assertEquals( 3, query.size() );
 	}
 
-	@DisplayName( "It can execute a query a list param with a single numeric value" )
+	@DisplayName( "It can execute a query a list param with numeric values" )
 	@Test
 	public void testListInteger() {
 		getInstance().executeSource(
@@ -200,6 +200,123 @@ public class QueryTest extends BaseJDBCTest {
 		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
 		query = getVariables().getAsQuery( result );
 		assertEquals( 2, query.size() );
+
+		getInstance().executeSource(
+		    """
+		        <cfset ids = "" />
+		        <cfquery name="result">
+		        SELECT * FROM developers WHERE id IN (<cfqueryparam cf_sql_type="cf_sql_integer" value="#ids#" list="true">)
+		        </cfquery>
+		    """,
+		    context,
+		    BoxSourceType.CFTEMPLATE );
+		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		query = getVariables().getAsQuery( result );
+		assertEquals( 0, query.size() );
+	}
+
+	@DisplayName( "It can queryExecute() with positional list param" )
+	@Test
+	public void testListIntegerPositional() {
+		getInstance().executeSource(
+		    """
+		           ids = 42
+		           result = queryExecute( "SELECT * FROM developers WHERE id IN (?)",
+		    [ {
+		    	type: "integer",
+		    	value: ids,
+		    	list: true
+		    } ] );
+		       """,
+		    context,
+		    BoxSourceType.CFSCRIPT );
+		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		ortus.boxlang.runtime.types.Query query = getVariables().getAsQuery( result );
+		assertEquals( 1, query.size() );
+
+		getInstance().executeSource(
+		    """
+		           ids = "42,77"
+		           result = queryExecute( "SELECT * FROM developers WHERE id IN (?)",
+		    [ {
+		    	type: "integer",
+		    	value: ids,
+		    	list: true
+		    } ] );
+		       """,
+		    context,
+		    BoxSourceType.CFSCRIPT );
+		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		query = getVariables().getAsQuery( result );
+		assertEquals( 2, query.size() );
+
+		getInstance().executeSource(
+		    """
+		           ids = ""
+		           result = queryExecute( "SELECT * FROM developers WHERE id IN (?)",
+		    [ {
+		    	type: "integer",
+		    	value: ids,
+		    	list: true
+		             } ] );
+		       """,
+		    context,
+		    BoxSourceType.CFSCRIPT );
+		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		query = getVariables().getAsQuery( result );
+		assertEquals( 0, query.size() );
+	}
+
+	@DisplayName( "It can queryExecute() with named list param" )
+	@Test
+	public void testListIntegerNamed() {
+		getInstance().executeSource(
+		    """
+		              ids = 42
+		              result = queryExecute( "SELECT * FROM developers WHERE id IN (:ids)",
+		       { ids :  {
+		       	type: "integer",
+		       	value: ids,
+		       	list: true
+		    } } );
+		          """,
+		    context,
+		    BoxSourceType.CFSCRIPT );
+		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		ortus.boxlang.runtime.types.Query query = getVariables().getAsQuery( result );
+		assertEquals( 1, query.size() );
+
+		getInstance().executeSource(
+		    """
+		           ids = "42,77"
+		           result = queryExecute( "SELECT * FROM developers WHERE id IN (:ids)",
+		    { ids :  {
+		    	type: "integer",
+		    	value: ids,
+		    	list: true
+		    } } );
+		       """,
+		    context,
+		    BoxSourceType.CFSCRIPT );
+		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		query = getVariables().getAsQuery( result );
+		assertEquals( 2, query.size() );
+
+		getInstance().executeSource(
+		    """
+		           ids = ""
+		           result = queryExecute( "SELECT * FROM developers WHERE id IN (:ids)",
+		    { ids :  {
+		    	type: "integer",
+		    	value: ids,
+		    	list: true
+		             } } );
+		       """,
+		    context,
+		    BoxSourceType.CFSCRIPT );
+		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		query = getVariables().getAsQuery( result );
+		assertEquals( 0, query.size() );
 	}
 
 	@DisplayName( "It can execute a query with a list queryparam" )
@@ -457,22 +574,36 @@ public class QueryTest extends BaseJDBCTest {
 	@DisplayName( "It can return cached query results within the cache timeout" )
 	@Test
 	public void testQueryCaching() {
+		// @formatter:off
 		getInstance().executeSource(
 		    """
-		       <bx:query name="result" cache="true" cacheTimeout="#createTimespan( 0, 0, 0, 2 )#" result="queryMeta" returnType="array">
-		    SELECT id,name,role FROM developers WHERE role = <bx:queryparam value="Developer" />
-		    </bx:query>
-		       <bx:query name="result2" cache="true" cacheTimeout="#createTimespan( 0, 0, 0, 2 )#" result="queryMeta2" returnType="array">
-		    SELECT id,name,role FROM developers WHERE role = <bx:queryparam value="Developer" />
-		    </bx:query>
-		       <bx:query name="result3" cache="true" cacheTimeout="#createTimespan( 0, 0, 0, 2 )#" result="queryMeta3" returnType="array">
-		    SELECT id,name,role FROM developers WHERE role = <bx:queryparam value="Admin" />
-		    </bx:query>, [ 'Admin
-		       <bx:query name="result4" cache="false" cacheTimeout="#createTimespan( 0, 0, 0, 2 )#" result="queryMeta4" returnType="array">
-		    SELECT id,name,role FROM developers WHERE role = <bx:queryparam value="Developer" />
-		    </bx:query>
-		       """,
+				<bx:query name="result" cache="true" cacheTimeout="#createTimespan( 0, 0, 0, 2 )#" result="queryMeta" returnType="array">
+				SELECT id,name,role FROM developers WHERE role = <bx:queryparam value="Developer" />
+				</bx:query>
+
+				<bx:script>
+				assert queryMeta.cached == false
+				</bx:script>
+
+				<bx:query name="result2" cache="true" cacheTimeout="#createTimespan( 0, 0, 0, 2 )#" result="queryMeta2" returnType="array">
+				SELECT id,name,role FROM developers WHERE role = <bx:queryparam value="Developer" />
+				</bx:query>
+
+				<bx:query name="result3" cache="true" cacheTimeout="#createTimespan( 0, 0, 0, 2 )#" result="queryMeta3" returnType="array">
+				SELECT id,name,role FROM developers WHERE role = <bx:queryparam value="Admin" />
+				</bx:query>
+
+				<bx:script>
+				assert queryMeta3.cached == false
+				</bx:script>
+
+				<bx:query name="result4" cache="false" cacheTimeout="#createTimespan( 0, 0, 0, 2 )#" result="queryMeta4" returnType="array">
+				SELECT id,name,role FROM developers WHERE role = <bx:queryparam value="Developer" />
+				</bx:query>
+		          """,
 		    getContext(), BoxSourceType.BOXTEMPLATE );
+		// @formatter:on
+
 		Array	query1	= getVariables().getAsArray( result );
 		Array	query2	= getVariables().getAsArray( Key.of( "result2" ) );
 		Array	query3	= getVariables().getAsArray( Key.of( "result3" ) );
@@ -483,10 +614,6 @@ public class QueryTest extends BaseJDBCTest {
 		assertEquals( query2, query4 );
 		// query 3 should be a different, uncached result
 		assertNotEquals( query1, query3 );
-
-		// Query 1 should NOT be cached
-		IStruct queryMeta = StructCaster.cast( getVariables().getAsStruct( Key.of( "queryMeta" ) ) );
-		assertThat( queryMeta.getAsBoolean( Key.cached ) ).isEqualTo( false );
 
 		// query 2 SHOULD be cached
 		IStruct queryMeta2 = StructCaster.cast( getVariables().getAsStruct( Key.of( "queryMeta2" ) ) );

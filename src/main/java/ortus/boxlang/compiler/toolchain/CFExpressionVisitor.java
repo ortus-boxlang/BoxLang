@@ -313,6 +313,7 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		var		start		= pos.getStart();
 		start.setColumn( start.getColumn() - 1 );
 		var	src		= ( isStatic ? "::" : "." ) + tools.getSourceText( ctx.el2( 1 ) );
+
 		var	left	= ctx.el2( 0 ).accept( this );
 		var	right	= ctx.el2( 1 ).accept( this );
 
@@ -808,9 +809,9 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		var	pos		= tools.getPosition( ctx );
 		var	src		= tools.getSourceText( ctx );
 		var	name	= ctx.el2().accept( this );
-		var	args	= Optional.ofNullable( ctx.argumentList() )
+		var	args	= new ArrayList<BoxArgument>( Optional.ofNullable( ctx.argumentList() )
 		    .map( argumentList -> argumentList.argument().stream().map( arg -> ( BoxArgument ) arg.accept( this ) ).toList() )
-		    .orElse( Collections.emptyList() );
+		    .orElse( Collections.emptyList() ) );
 
 		if ( args.size() > 1 ) {
 			checkArgTypes( ctx.argumentList(), args );

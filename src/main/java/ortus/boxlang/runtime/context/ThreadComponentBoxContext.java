@@ -101,6 +101,7 @@ public class ThreadComponentBoxContext extends BaseBoxContext implements IJDBCCa
 		this.attributesScope	= new AttributesScope( attributes );
 
 		this.variablesScope		= parent.getScopeNearby( VariablesScope.name );
+		registerShutdownListener( ( context ) -> this.doShutdown() );
 	}
 
 	/**
@@ -417,10 +418,20 @@ public class ThreadComponentBoxContext extends BaseBoxContext implements IJDBCCa
 		}
 	}
 
-	@Override
-	public void shutdown() {
-		super.shutdown();
+	/**
+	 * Internal method to do the actual shutdown
+	 */
+	private void doShutdown() {
 		shutdownConnections();
+
+		// Wipe out this stuff to help GC
+		this.localScope			= null;
+		this.attributesScope	= null;
+		this.variablesScope		= null;
+		// Seems we have a lot of code which expects this to still exist via the request thread manager
+		// this.thread = null;
+		this.threadManager		= null;
+
 	}
 
 }

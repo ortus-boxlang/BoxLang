@@ -53,9 +53,11 @@ import ortus.boxlang.runtime.services.ApplicationService;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.services.AsyncService.ExecutorType;
 import ortus.boxlang.runtime.services.CacheService;
+import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.services.SchedulerService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.DateTimeHelper;
 import ortus.boxlang.runtime.util.EncryptionUtil;
@@ -328,6 +330,12 @@ public class Application {
 
 			// Get the app listener (Application.bx)
 			this.startingListener = context.getRequestContext().getApplicationListener();
+			// This will mark the context as a dependent thread so web runtimes will detach from the HTTP Exchange, but keep its values around
+			// It's not ideal to store the starting listener and context for a long time, but it's the easiest way to fire onApplicationEnd() and onSessionEnd()
+			// later on and ensure they have access to the same form, url, and CGI scopes that were present when the application was started.
+			// TODO: the context when the application started isn't even nececarily the same as the context whe the session started, so even that isn't quite right.
+			// Both app end and session end generally run outside of an HTTP request, so it's ambiguous what should really be available to them.
+			this.startingListener.getRequestContext().registerDependentThread();
 			// Startup the class loader
 			startupClassLoaderPaths( context.getRequestContext() );
 			// Startup the caches
@@ -335,21 +343,28 @@ public class Application {
 			// Startup session storages
 			startupSessionStorage( context.getApplicationContext() );
 
-			// Announce it globally
-			BoxRuntime.getInstance().getInterceptorService().announce(
-			    Key.onApplicationStart,
-			    Struct.of(
-			        Key.application, this,
-			        Key.listener, this.startingListener,
-			        Key.context, context
-			    )
-			);
+			// We need a way to kow if we're inside an application start to prevent starting the session too soon.
+			// This happens if we update the application from inside of the onApplicationStart() method.
+			context.getRequestContext().putAttachment( Key.onApplicationStart, true );
+			try {
+				// Announce it globally
+				BoxRuntime.getInstance().getInterceptorService().announce(
+				    Key.onApplicationStart,
+				    Struct.of(
+				        Key.application, this,
+				        Key.listener, this.startingListener,
+				        Key.context, context
+				    )
+				);
 
-			// Announce it to the listener
-			if ( startingListener != null ) {
-				startingListener.onApplicationStart( context, new Object[] {} );
-			} else {
-				logger.debug( "No listener found for application [{}]", this.name );
+				// Announce it to the listener
+				if ( startingListener != null ) {
+					startingListener.onApplicationStart( context, new Object[] {} );
+				} else {
+					logger.debug( "No listener found for application [{}]", this.name );
+				}
+			} finally {
+				context.getRequestContext().removeAttachment( Key.onApplicationStart );
 			}
 
 			// Startup the schedulers so the application can use them
@@ -529,7 +544,7 @@ public class Application {
 				throw new BoxRuntimeException( "Session storage directive must be a string that matches a registered cache" );
 			} )
 			// If present, make sure it has a value or default it
-			.map( ( String setting ) -> setting.trim().isEmpty() ? SESSION_STORAGE_MEMORY : setting.trim() )
+			.map( ( String setting ) -> setting.isBlank() ? SESSION_STORAGE_MEMORY : setting.trim() )
 			// Return the right value or the default name
 		    .getOrDefault( SESSION_STORAGE_MEMORY );
 		// @formatter:on
@@ -602,7 +617,7 @@ public class Application {
 		final Duration	timeoutDuration	= DateTimeHelper.convertTimeoutToDuration( sessionTimeout );
 		String			cacheKey		= Session.buildCacheKey( ID, this.name );
 		// Make sure our created duration is represented in the application metadata
-		context.getParentOfType( RequestBoxContext.class )
+		context.getRequestContext()
 		    .getApplicationListener()
 		    .getSettings()
 		    .put( Key.sessionTimeout, timeoutDuration );
@@ -799,6 +814,8 @@ public class Application {
 			        Key.application, this,
 			        Key.context, requestContext
 			    ) );
+		} catch ( AbortException ae ) {
+			throw ae;
 		} catch ( Exception e ) {
 			logger.error( "Error announcing onApplicationEnd", e );
 		}
@@ -812,6 +829,21 @@ public class Application {
 			    .forEach( session -> session.shutdown( this.getStartingListener() ) );
 		}
 
+		// Announce it to the listener
+		if ( this.startingListener != null ) {
+			try {
+				// Any buffer output in this context will be discarded
+				this.startingListener.onApplicationEnd(
+				    requestContext,
+				    new Object[] { applicationScope }
+				);
+			} catch ( AbortException ae ) {
+				throw ae;
+			} catch ( Exception e ) {
+				logger.error( "Error calling onApplicationEnd", e );
+			}
+		}
+
 		// Shutdown all class loaders
 		this.classLoaders.values().forEach( t -> {
 			try {
@@ -821,18 +853,27 @@ public class Application {
 			}
 		} );
 
-		// Announce it to the listener
-		if ( this.startingListener != null ) {
-			try {
-				// Any buffer output in this context will be discarded
-				this.startingListener.onApplicationEnd(
-				    requestContext,
-				    new Object[] { applicationScope }
-				);
-			} catch ( Exception e ) {
-				logger.error( "Error calling onApplicationEnd", e );
-			}
+		// Shut down any datasources associated with this application
+		DatasourceService dataSourceService = BoxRuntime
+		    .getInstance()
+		    .getDataSourceService();
+
+		// Converting the keyset to an array to avoid any concurrent modification issues
+		for ( Key dsn : dataSourceService
+		    .getByApplicationName( name )
+		    .keySet()
+		    .toArray( new Key[ 0 ] ) ) {
+			dataSourceService.remove( dsn );
 		}
+
+		// Shutdown our application caches
+		StructCaster.attempt( requestContext.getConfigItems( Key.applicationSettings, Key.caches ) )
+		    .ifPresent( appCaches -> {
+			    for ( Entry<Key, Object> entry : appCaches.entrySet() ) {
+				    Key cacheName = buildAppCacheKey( entry.getKey() );
+				    this.cacheService.shutdownCache( cacheName );
+			    }
+		    } );
 
 		// Clear out the data
 		this.started = false;

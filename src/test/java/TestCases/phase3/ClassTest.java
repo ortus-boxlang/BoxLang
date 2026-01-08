@@ -461,6 +461,7 @@ public class ClassTest {
 
 		var	cfc		= variables.getAsClassRunnable( Key.of( "cfc" ) );
 		var	meta	= cfc.getMetaData();
+
 		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
 		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
@@ -617,10 +618,20 @@ public class ClassTest {
 
 		assertThat( meta.get( Key.of( "documentation" ) ) instanceof IStruct ).isTrue();
 		var docs = meta.getAsStruct( Key.of( "documentation" ) );
-		assertThat( docs.getAsString( Key.of( "brad" ) ).trim() ).isEqualTo( "wood" );
+		assertThat( docs.getAsString( Key.of( "brad" ) ).trim() ).isEqualTo( "wood\njorge\nluis\n jon\n  gavin\n   grant" );
 		assertThat( docs.get( Key.of( "luis" ) ) ).isEqualTo( "" );
 		assertThat( docs.getAsString( Key.of( "_itwontlikeme~`!@#$%^&*()-=+[]{}\\|'\";:,.<>/?*áéíóúüñ" ) ).trim() ).isEqualTo( "formbuilderV2Form" );
-		assertThat( docs.getAsString( Key.of( "hint" ) ).trim() ).isEqualTo( "This is my class description continued on this line \nand this one as well." );
+		assertThat( docs.getAsString( Key.of( "hint" ) ).trim() ).isEqualTo( "This is my class description\n" +
+		    "continued on this line\n" +
+		    "\n" +
+		    "and this one\n" +
+		    "as well. \n" +
+		    "\n" +
+		    "<pre>\n" +
+		    "  if( true ){\n" +
+		    "    echo( \"hello world\" );\n" +
+		    "  }\n" +
+		    "</pre>" );
 
 		assertThat( meta.get( Key.of( "annotations" ) ) instanceof IStruct ).isTrue();
 		var annos = meta.getAsStruct( Key.of( "annotations" ) );
