@@ -62,6 +62,7 @@ import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 import ortus.boxlang.compiler.parser.BoxParser;
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.parser.antlr.BoxGrammar;
 import ortus.boxlang.parser.antlr.BoxGrammar.AssertContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.AtomsContext;
@@ -198,7 +199,7 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		List<BoxStatement>	statements	= ctx.functionOrStatement().stream()
 		    .map( stmt -> tools.toStatementOrError( () -> ( BoxStatement ) stmt.accept( this ), stmt ) )
 		    .collect( Collectors.toList() );
-		return new BoxScript( statements, pos, src );
+		return new BoxScript( statements, pos, src, BoxSourceType.BOXSCRIPT );
 	}
 
 	@Override
@@ -262,7 +263,7 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 			    tools.getPosition( ctx.FINAL() ), ctx.FINAL().getText() ) );
 		}
 
-		return new BoxClass( imports, body, annotations, documentation, property, pos, src );
+		return new BoxClass( imports, body, annotations, documentation, property, pos, src, BoxSourceType.BOXSCRIPT );
 	}
 
 	@Override
@@ -305,7 +306,8 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		processIfNotNull( ctx.function(), stmt -> body.add( tools.toStatementOrError( () -> ( BoxStatement ) stmt.accept( this ), stmt ) ) );
 		processIfNotNull( ctx.staticInitializer(), stmt -> body.add( tools.toStatementOrError( () -> ( BoxStatement ) stmt.accept( this ), stmt ) ) );
 
-		return new BoxInterface( imports, body, preAnnotations, postAnnotations, documentation, tools.getPosition( ctx ), tools.getSourceText( ctx ) );
+		return new BoxInterface( imports, body, preAnnotations, postAnnotations, documentation, tools.getPosition( ctx ), tools.getSourceText( ctx ),
+		    BoxSourceType.BOXSCRIPT );
 	}
 
 	@Override
