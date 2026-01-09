@@ -5973,7 +5973,6 @@ public class CoreLangTest {
 	}
 
 	@Test
-	@Disabled( "not working in ASM Boxpiler" )
 	public void testClosureInTernaryCF() {
 
 		instance.executeSource(
@@ -5984,11 +5983,9 @@ public class CoreLangTest {
 		    context, BoxSourceType.CFSCRIPT
 		);
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "foo" );
-
 	}
 
 	@Test
-	@Disabled( "not working in ASM Boxpiler" )
 	public void testClosureInTernary() {
 
 		instance.executeSource(
