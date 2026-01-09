@@ -2,6 +2,7 @@ package ortus.boxlang.compiler.asmboxpiler;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -55,6 +56,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.AbstractFunction;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.DefaultExpression;
+import ortus.boxlang.runtime.types.FlowControlResult;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -63,6 +65,10 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class AsmHelper {
 
+	/**
+	 * Legacy instruction count limit (kept for backwards compatibility).
+	 * Prefer using MethodSplitter.BYTECODE_SIZE_LIMIT for byte-accurate estimation.
+	 */
 	private static final int METHOD_SIZE_LIMIT = 25000;
 
 	public record LineNumberIns( List<AbstractInsnNode> start, List<AbstractInsnNode> end ) {
@@ -1099,6 +1105,19 @@ public class AsmHelper {
 		return nodes;
 	}
 
+	/**
+	 * Create a method with context and ClassLocator setup, applying method splitting if needed.
+	 * This overload automatically handles large methods by splitting them into sub-methods.
+	 *
+	 * @param classNode           The class node to add the method to
+	 * @param name                The method name
+	 * @param parameterType       The parameter type (typically IBoxContext)
+	 * @param returnType          The return type
+	 * @param isStatic            Whether the method is static
+	 * @param transpiler          The transpiler instance
+	 * @param implicityReturnNull Whether to implicitly return null if no explicit return
+	 * @param supplier            Supplier for the method body instructions
+	 */
 	public static void methodWithContextAndClassLocator( ClassNode classNode,
 	    String name,
 	    Type parameterType,
@@ -1106,6 +1125,43 @@ public class AsmHelper {
 	    boolean isStatic,
 	    Transpiler transpiler,
 	    boolean implicityReturnNull,
+	    Supplier<List<AbstractInsnNode>> supplier ) {
+		// Call the overload with the main type derived from classNode
+		methodWithContextAndClassLocator(
+		    classNode,
+		    name,
+		    parameterType,
+		    returnType,
+		    isStatic,
+		    transpiler,
+		    implicityReturnNull,
+		    Type.getObjectType( classNode.name ),
+		    supplier
+		);
+	}
+
+	/**
+	 * Create a method with context and ClassLocator setup, applying method splitting if needed.
+	 * This overload allows specifying the main type for method invocations in split methods.
+	 *
+	 * @param classNode           The class node to add the method to
+	 * @param name                The method name
+	 * @param parameterType       The parameter type (typically IBoxContext)
+	 * @param returnType          The return type
+	 * @param isStatic            Whether the method is static
+	 * @param transpiler          The transpiler instance
+	 * @param implicityReturnNull Whether to implicitly return null if no explicit return
+	 * @param mainType            The main type for method invocations in split methods
+	 * @param supplier            Supplier for the method body instructions
+	 */
+	public static void methodWithContextAndClassLocator( ClassNode classNode,
+	    String name,
+	    Type parameterType,
+	    Type returnType,
+	    boolean isStatic,
+	    Transpiler transpiler,
+	    boolean implicityReturnNull,
+	    Type mainType,
 	    Supplier<List<AbstractInsnNode>> supplier ) {
 		MethodContextTracker tracker = new MethodContextTracker( isStatic );
 		transpiler.addMethodContextTracker( tracker );
@@ -1136,12 +1192,32 @@ public class AsmHelper {
 		    false );
 		tracker.storeNewVariable( Opcodes.ASTORE ).nodes().forEach( ( node ) -> node.accept( methodVisitor ) );
 
-		var nodes = supplier.get();
+		var				nodes		= supplier.get();
 
-		nodes.forEach( node -> node.accept( methodVisitor ) );
+		// Collect all labels that are in the original node list
+		Set<LabelNode>	allLabels	= new HashSet<>();
+		for ( AbstractInsnNode node : nodes ) {
+			if ( node instanceof LabelNode labelNode ) {
+				allLabels.add( labelNode );
+			}
+		}
+
+		// Apply method length guard to split large methods if needed
+		// Pass the tracker so we can check for try-catch blocks (which can't be split across methods)
+		var				processedNodes	= methodLengthGuard( mainType, nodes, classNode, name, parameterType, returnType, transpiler, tracker );
+
+		// Collect labels that remain in the processed nodes (after potential splitting)
+		Set<LabelNode>	remainingLabels	= new HashSet<>();
+		for ( AbstractInsnNode node : processedNodes ) {
+			if ( node instanceof LabelNode labelNode ) {
+				remainingLabels.add( labelNode );
+			}
+		}
+
+		processedNodes.forEach( node -> node.accept( methodVisitor ) );
 
 		if ( ( implicityReturnNull && !returnType.equals( Type.VOID_TYPE ) )
-		    || ( nodes.size() == 0 && !returnType.equals( Type.VOID_TYPE ) ) ) {
+		    || ( processedNodes.size() == 0 && !returnType.equals( Type.VOID_TYPE ) ) ) {
 			// push a null onto the stack so that we can return it if there isn't an explicity return
 			methodVisitor.visitInsn( Opcodes.ACONST_NULL );
 		}
@@ -1149,9 +1225,13 @@ public class AsmHelper {
 		methodVisitor.visitInsn( returnType.getOpcode( Opcodes.IRETURN ) );
 		methodVisitor.visitMaxs( 0, 0 );
 
-		// TODO needs to only use try catches that match labels in the above node list
-		// TODO should only clear the used nodes
-		tracker.getTryCatchStack().stream().forEach( ( tryNode ) -> tryNode.accept( methodVisitor ) );
+		// Only write try-catch blocks whose labels are ALL present in the processed nodes
+		// This filters out try-catch blocks that were moved to sub-methods during splitting
+		tracker.getTryCatchStack().stream()
+		    .filter( tryNode -> remainingLabels.contains( tryNode.start )
+		        && remainingLabels.contains( tryNode.end )
+		        && remainingLabels.contains( tryNode.handler ) )
+		    .forEach( tryNode -> tryNode.accept( methodVisitor ) );
 		tracker.clearTryCatchStack();
 		methodVisitor.visitLabel( endContextLabel );
 		methodVisitor.visitEnd();
@@ -1510,6 +1590,12 @@ public class AsmHelper {
 		return nodes;
 	}
 
+	/**
+	 * Guard against methods exceeding JVM's 64KB bytecode limit.
+	 * Overload without tracker parameter - uses null (allows splitting).
+	 *
+	 * @see #methodLengthGuard(Type, List, ClassNode, String, Type, Type, Transpiler, MethodContextTracker)
+	 */
 	public static List<AbstractInsnNode> methodLengthGuard(
 	    Type mainType,
 	    List<AbstractInsnNode> nodes,
@@ -1518,58 +1604,82 @@ public class AsmHelper {
 	    Type parameterType,
 	    Type returnType,
 	    Transpiler transpiler ) {
+		return methodLengthGuard( mainType, nodes, classNode, name, parameterType, returnType, transpiler, null );
+	}
 
-		if ( nodes.size() < METHOD_SIZE_LIMIT ) {
+	/**
+	 * Guard against methods exceeding JVM's 64KB bytecode limit.
+	 * Uses bytecode size estimation and splits methods at DividerNode boundaries.
+	 * Sub-methods return FlowControlResult to propagate return/break/continue.
+	 *
+	 * @param mainType      The main class type for method invocation
+	 * @param nodes         The instruction list to potentially split
+	 * @param classNode     The class node to add sub-methods to
+	 * @param name          The base method name
+	 * @param parameterType The parameter type (typically IBoxContext)
+	 * @param returnType    The expected return type
+	 * @param transpiler    The transpiler instance
+	 * @param tracker       The method context tracker (may contain try-catch blocks)
+	 *
+	 * @return Processed instruction list (may include sub-method calls)
+	 */
+	public static List<AbstractInsnNode> methodLengthGuard(
+	    Type mainType,
+	    List<AbstractInsnNode> nodes,
+	    ClassNode classNode,
+	    String name,
+	    Type parameterType,
+	    Type returnType,
+	    Transpiler transpiler,
+	    MethodContextTracker tracker ) {
+
+		// First check using bytecode size estimation (more accurate)
+		int estimatedSize = MethodSplitter.estimateBytecodeSize( nodes );
+		if ( estimatedSize < MethodSplitter.BYTECODE_SIZE_LIMIT ) {
 			return nodes;
 		}
 
-		List<List<AbstractInsnNode>>	subNodes	= splitifyInstructions( nodes );
+		// Note: Methods with try-catch blocks CAN be split now, because we filter
+		// TryCatchBlockNodes when writing - only those with all labels in the current
+		// method's instruction list will be written. Try-catch blocks that span
+		// split boundaries will be written to the sub-methods that contain them.
 
-		List<AbstractInsnNode>			toReturn	= subNodes.stream().map( nodeList -> {
-														String subName = "_sub_" + name + nodeList.hashCode();
-														methodWithContextAndClassLocator(
-														    classNode,
-														    subName,
-														    parameterType,
-														    returnType,
-														    false,
-														    transpiler,
-														    true,
-														    () -> nodeList
-														);
+		// Use the new MethodSplitter for splitting
+		MethodSplitter			splitter	= new MethodSplitter( transpiler, classNode, mainType );
+		Type					resultType	= Type.getType( FlowControlResult.class );
 
-														List<AbstractInsnNode> subMethodCallNodes = new ArrayList<AbstractInsnNode>();
+		// Split the method - sub-methods return FlowControlResult
+		List<AbstractInsnNode>	splitNodes	= splitter.processMethod( nodes, name, parameterType, resultType );
 
-														subMethodCallNodes.add(
-														    new VarInsnNode( Opcodes.ALOAD, 0 )
-														);
+		// If the return type is Object (typical for BoxLang methods), we need to
+		// unwrap the final FlowControlResult to get the actual value
+		if ( returnType.equals( Type.getType( Object.class ) ) && !splitNodes.isEmpty() ) {
+			// The last instruction sequence should have a FlowControlResult on the stack
+			// We need to call getValue() to unwrap it
+			List<AbstractInsnNode> unwrapNodes = new ArrayList<>( splitNodes );
 
-														subMethodCallNodes.add(
-														    new VarInsnNode( Opcodes.ALOAD, 1 )
-														);
+			// Add getValue() call to unwrap the result
+			unwrapNodes.add( new MethodInsnNode(
+			    Opcodes.INVOKEVIRTUAL,
+			    Type.getInternalName( FlowControlResult.class ),
+			    "getValue",
+			    Type.getMethodDescriptor( Type.getType( Object.class ) ),
+			    false
+			) );
 
-														subMethodCallNodes.add(
-														    new MethodInsnNode(
-														        Opcodes.INVOKEVIRTUAL,
-														        mainType.getInternalName(),
-														        subName,
-														        Type.getMethodDescriptor( returnType, parameterType ),
-														        false
-														    )
-														);
+			return unwrapNodes;
+		}
 
-														subMethodCallNodes.add( new InsnNode( Opcodes.POP ) );
-
-														return subMethodCallNodes;
-													} )
-		    .flatMap( s -> s.stream() )
-		    .collect( Collectors.toList() );
-
-		toReturn.removeLast();
-
-		return toReturn;
+		return splitNodes;
 	}
 
+	/**
+	 * Legacy method for splitting instructions by instruction count.
+	 * Prefer using MethodSplitter for byte-accurate splitting.
+	 *
+	 * @deprecated Use MethodSplitter instead
+	 */
+	@Deprecated
 	private static List<List<AbstractInsnNode>> splitifyInstructions( List<AbstractInsnNode> nodes ) {
 		List<List<AbstractInsnNode>>	subNodes	= new ArrayList<>();
 		int								min			= 0;
