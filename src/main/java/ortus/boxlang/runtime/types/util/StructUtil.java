@@ -1138,7 +1138,15 @@ public class StructUtil {
 			if ( !destination.containsKey( destinationKey ) ) {
 				destination.put( destinationKey, new Struct() );
 			}
-			destination = destination.getAsStruct( destinationKey );
+			Object tmpDestination = destination.get( destinationKey );
+			if ( tmpDestination instanceof IStruct ) {
+				destination = ( IStruct ) tmpDestination;
+			} else {
+				// If we're trying to unflatting a struct, but the key already exists and is not a struct, throw an error. These are basically invalid env vars.
+				throw new BoxRuntimeException(
+				    String.format( "While importing BOXLANG_XXX env vars, error un-flattening key [%s] because [%s] is not a struct, but instead [%s]",
+				        key.getName(), destinationKey.getName(), TypeUtil.getObjectName( tmpDestination ) ) );
+			}
 		} while ( ( index = keyValue.indexOf( '.' ) ) != -1 );
 		// final put of the last key in the delimited string
 		destination.put( Key.of( keyValue ), value );
