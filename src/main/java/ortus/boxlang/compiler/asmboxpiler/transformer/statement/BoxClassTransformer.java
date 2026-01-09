@@ -38,8 +38,13 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldInsnNode;
+import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.InvokeDynamicInsnNode;
+import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.TypeInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
@@ -538,126 +543,126 @@ public class BoxClassTransformer {
 		    }
 		);
 
-		AsmHelper.complete( classNode, type, methodVisitor -> {
-			AsmHelper.resolvedFilePath( methodVisitor, mappingName, mappingPath, relativePath, filePath );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+		AsmHelper.completeWithSplitting( classNode, type, () -> {
+			List<AbstractInsnNode> clinitNodes = new ArrayList<>();
+
+			clinitNodes.addAll( AsmHelper.resolvedFilePathNodes( mappingName, mappingPath, relativePath, filePath ) );
+			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "path",
-			    Type.getDescriptor( ResolvedFilePath.class ) );
+			    Type.getDescriptor( ResolvedFilePath.class ) ) );
 
-			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
+			clinitNodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
 			    Type.getInternalName( BoxSourceType.class ),
 			    sourceType,
-			    Type.getDescriptor( BoxSourceType.class ) );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+			    Type.getDescriptor( BoxSourceType.class ) ) );
+			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "sourceType",
-			    Type.getDescriptor( BoxSourceType.class ) );
+			    Type.getDescriptor( BoxSourceType.class ) ) );
 
-			transpiler.createKeyAdHoc( boxClassName ).forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
-			;
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+			clinitNodes.addAll( transpiler.createKeyAdHoc( boxClassName ) );
+			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "name",
-			    Type.getDescriptor( Key.class ) );
+			    Type.getDescriptor( Key.class ) ) );
 
 			List<AbstractInsnNode>			annotations		= transpiler.transformAnnotations( boxClass.getAnnotations() );
 			List<AbstractInsnNode>			documenation	= transpiler.transformDocumentation( boxClass.getDocumentation() );
 			List<List<AbstractInsnNode>>	properties		= transpiler.transformProperties( type, boxClass.getProperties(), sourceType );
 
-			methodVisitor.visitLdcInsn( transpiler.getKeys().size() );
-			methodVisitor.visitTypeInsn( Opcodes.ANEWARRAY, Type.getInternalName( Key.class ) );
+			clinitNodes.add( new LdcInsnNode( transpiler.getKeys().size() ) );
+			clinitNodes.add( new TypeInsnNode( Opcodes.ANEWARRAY, Type.getInternalName( Key.class ) ) );
 			int index = 0;
 			for ( BoxExpression expression : transpiler.getKeys().values() ) {
-				methodVisitor.visitInsn( Opcodes.DUP );
-				methodVisitor.visitLdcInsn( index++ );
-				transpiler.transform( expression, TransformerContext.NONE, ReturnValueContext.VALUE )
-				    .forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
-				methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
+				clinitNodes.add( new InsnNode( Opcodes.DUP ) );
+				clinitNodes.add( new LdcInsnNode( index++ ) );
+				clinitNodes.addAll( transpiler.transform( expression, TransformerContext.NONE, ReturnValueContext.VALUE ) );
+				clinitNodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 				    Type.getInternalName( Key.class ),
 				    "of",
 				    Type.getMethodDescriptor( Type.getType( Key.class ), Type.getType( Object.class ) ),
-				    false );
-				methodVisitor.visitInsn( Opcodes.AASTORE );
+				    false ) );
+				clinitNodes.add( new InsnNode( Opcodes.AASTORE ) );
 			}
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "keys",
-			    Type.getDescriptor( Key[].class ) );
+			    Type.getDescriptor( Key[].class ) ) );
 
-			methodVisitor.visitLdcInsn( 0 );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+			clinitNodes.add( new LdcInsnNode( 0 ) );
+			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "staticInitialized",
-			    Type.getDescriptor( boolean.class ) );
+			    Type.getDescriptor( boolean.class ) ) );
 
-			methodVisitor.visitTypeInsn( Opcodes.NEW, Type.getInternalName( StaticScope.class ) );
-			methodVisitor.visitInsn( Opcodes.DUP );
-			methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL,
+			clinitNodes.add( new TypeInsnNode( Opcodes.NEW, Type.getInternalName( StaticScope.class ) ) );
+			clinitNodes.add( new InsnNode( Opcodes.DUP ) );
+			clinitNodes.add( new MethodInsnNode( Opcodes.INVOKESPECIAL,
 			    Type.getInternalName( StaticScope.class ),
 			    "<init>",
 			    Type.getMethodDescriptor( Type.VOID_TYPE ),
-			    false );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+			    false ) );
+			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "staticScope",
-			    Type.getDescriptor( StaticScope.class ) );
+			    Type.getDescriptor( StaticScope.class ) ) );
 
-			methodVisitor.visitLdcInsn( isJavaExtends ? 1 : 0 );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "isJavaExtends", Type.getDescriptor( boolean.class ) );
+			clinitNodes.add( new LdcInsnNode( isJavaExtends ? 1 : 0 ) );
+			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "isJavaExtends", Type.getDescriptor( boolean.class ) ) );
 
-			methodVisitor.visitLdcInsn( 1L );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "serialVersionUID", Type.getDescriptor( long.class ) );
+			clinitNodes.add( new LdcInsnNode( 1L ) );
+			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "serialVersionUID", Type.getDescriptor( long.class ) ) );
 
-			importNodes.forEach( node -> node.accept( methodVisitor ) );
-			methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
+			clinitNodes.addAll( importNodes );
+			clinitNodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( List.class ),
 			    "of",
 			    Type.getMethodDescriptor( Type.getType( List.class ), Type.getType( Object[].class ) ),
-			    true );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+			    true ) );
+			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "imports",
-			    Type.getDescriptor( List.class ) );
+			    Type.getDescriptor( List.class ) ) );
 
-			annotations.forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+			clinitNodes.addAll( annotations );
+			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "annotations",
-			    Type.getDescriptor( IStruct.class ) );
+			    Type.getDescriptor( IStruct.class ) ) );
 
-			documenation.forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+			clinitNodes.addAll( documenation );
+			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "documentation",
-			    Type.getDescriptor( IStruct.class ) );
+			    Type.getDescriptor( IStruct.class ) ) );
 
-			properties.get( 0 ).forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+			clinitNodes.addAll( properties.get( 0 ) );
+			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "properties",
-			    Type.getDescriptor( Map.class ) );
+			    Type.getDescriptor( Map.class ) ) );
 
-			properties.get( 1 ).forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+			clinitNodes.addAll( properties.get( 1 ) );
+			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "getterLookup",
-			    Type.getDescriptor( Map.class ) );
+			    Type.getDescriptor( Map.class ) ) );
 
-			properties.get( 2 ).forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
+			clinitNodes.addAll( properties.get( 2 ) );
+			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "setterLookup",
-			    Type.getDescriptor( Map.class ) );
+			    Type.getDescriptor( Map.class ) ) );
 
-			generateSetOfCompileTimeMethodNames( transpiler, boxClass ).forEach( node -> node.accept( methodVisitor ) );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "compileTimeMethodNames", Type.getDescriptor( Set.class ) );
+			clinitNodes.addAll( generateSetOfCompileTimeMethodNames( transpiler, boxClass ) );
+			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "compileTimeMethodNames", Type.getDescriptor( Set.class ) ) );
 
-			AsmHelper.generateMapOfAbstractMethodNames( transpiler, boxClass ).forEach( node -> node.accept( methodVisitor ) );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "abstractMethods", Type.getDescriptor( Map.class ) );
+			clinitNodes.addAll( AsmHelper.generateMapOfAbstractMethodNames( transpiler, boxClass ) );
+			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "abstractMethods", Type.getDescriptor( Map.class ) ) );
 
 			// start invoke static initializer
-			methodVisitor.visitInvokeDynamicInsn(
+			clinitNodes.add( new InvokeDynamicInsnNode(
 			    "accept",
 			    "()Ljava/util/function/Consumer;",
 			    new Handle(
@@ -682,13 +687,13 @@ public class BoxClassTransformer {
 			        false
 			    ),
 			    Type.getMethodType( "(Lortus/boxlang/runtime/context/IBoxContext;)V" )
-			);
+			) );
 
-			methodVisitor.visitLdcInsn( type );
-			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "staticScope", Type.getDescriptor( StaticScope.class ) );
-			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "path", Type.getDescriptor( ResolvedFilePath.class ) );
+			clinitNodes.add( new LdcInsnNode( type ) );
+			clinitNodes.add( new FieldInsnNode( Opcodes.GETSTATIC, type.getInternalName(), "staticScope", Type.getDescriptor( StaticScope.class ) ) );
+			clinitNodes.add( new FieldInsnNode( Opcodes.GETSTATIC, type.getInternalName(), "path", Type.getDescriptor( ResolvedFilePath.class ) ) );
 
-			methodVisitor.visitMethodInsn(
+			clinitNodes.add( new MethodInsnNode(
 			    Opcodes.INVOKESTATIC,
 			    Type.getInternalName( BoxClassSupport.class ),
 			    "runStaticInitializer",
@@ -700,9 +705,10 @@ public class BoxClassTransformer {
 			        Type.getType( ResolvedFilePath.class )
 			    ),
 			    false
-			);
+			) );
 			// end invoke static initializer
 
+			return clinitNodes;
 		} );
 
 		return classNode;
