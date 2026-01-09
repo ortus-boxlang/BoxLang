@@ -68,7 +68,7 @@ public class LargeMethodTest {
 	}
 
 	@Test
-	public void testShouldNotThrowOnLargeMethodx() {
+	public void testShouldNotThrowOnLargeMethod2() {
 		assertDoesNotThrow( () -> {
 			ResolvedFilePath	resolvedPath	= ResolvedFilePath.of( Path.of( "src/test/java/ortus/boxlang/compiler/LargeMethod2.cfc" ) );
 			var					x				= RunnableLoader.getInstance()

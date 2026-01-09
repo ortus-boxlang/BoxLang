@@ -1051,6 +1051,238 @@ public class AsmHelper {
 		methodVisitor.visitEnd();
 	}
 
+	/**
+	 * Complete a class with a static initializer that may be split into sub-methods if too large.
+	 * This is the preferred method for complex classes with many properties or initializers.
+	 *
+	 * @param classNode The class node to add the static initializer to
+	 * @param type      The class type
+	 * @param supplier  Supplier that produces the static initializer instructions
+	 */
+	public static void completeWithSplitting( ClassNode classNode, Type type, Supplier<List<AbstractInsnNode>> supplier ) {
+		List<AbstractInsnNode>	nodes			= supplier.get();
+		int						estimatedSize	= MethodSplitter.estimateBytecodeSize( nodes );
+
+		// If under the limit, use the simple approach
+		if ( estimatedSize < MethodSplitter.BYTECODE_SIZE_LIMIT ) {
+			MethodVisitor methodVisitor = classNode.visitMethod( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+			    "<clinit>",
+			    Type.getMethodDescriptor( Type.VOID_TYPE ),
+			    null,
+			    null );
+			methodVisitor.visitCode();
+
+			nodes.forEach( node -> node.accept( methodVisitor ) );
+
+			methodVisitor.visitInsn( Opcodes.RETURN );
+			methodVisitor.visitMaxs( 0, 0 );
+			methodVisitor.visitEnd();
+			return;
+		}
+
+		// Need to split the static initializer into sub-methods
+		List<List<AbstractInsnNode>>	segments	= splitClinitIntoSegments( nodes );
+		int								subCounter	= 0;
+
+		// Create sub-methods for all but the last segment
+		for ( int i = 0; i < segments.size() - 1; i++ ) {
+			String			subName		= "_clinit_part_" + subCounter++;
+			var				segment		= segments.get( i );
+
+			// Create a static void method for this segment
+			MethodVisitor	subMethod	= classNode.visitMethod(
+			    Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
+			    subName,
+			    Type.getMethodDescriptor( Type.VOID_TYPE ),
+			    null,
+			    null );
+			subMethod.visitCode();
+
+			segment.forEach( node -> node.accept( subMethod ) );
+
+			subMethod.visitInsn( Opcodes.RETURN );
+			subMethod.visitMaxs( 0, 0 );
+			subMethod.visitEnd();
+		}
+
+		// Create the main <clinit> that calls all sub-methods
+		MethodVisitor methodVisitor = classNode.visitMethod( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+		    "<clinit>",
+		    Type.getMethodDescriptor( Type.VOID_TYPE ),
+		    null,
+		    null );
+		methodVisitor.visitCode();
+
+		// Call each sub-method
+		for ( int i = 0; i < segments.size() - 1; i++ ) {
+			String subName = "_clinit_part_" + i;
+			methodVisitor.visitMethodInsn(
+			    Opcodes.INVOKESTATIC,
+			    type.getInternalName(),
+			    subName,
+			    Type.getMethodDescriptor( Type.VOID_TYPE ),
+			    false );
+		}
+
+		// Inline the last segment directly in <clinit>
+		segments.get( segments.size() - 1 ).forEach( node -> node.accept( methodVisitor ) );
+
+		methodVisitor.visitInsn( Opcodes.RETURN );
+		methodVisitor.visitMaxs( 0, 0 );
+		methodVisitor.visitEnd();
+	}
+
+	/**
+	 * Split a list of instructions into segments suitable for separate static methods.
+	 * Ensures that segments don't exceed the bytecode size limit and that related
+	 * operations (like array element stores) aren't split mid-operation.
+	 *
+	 * @param nodes The instruction list to split
+	 *
+	 * @return List of instruction segments
+	 */
+	private static List<List<AbstractInsnNode>> splitClinitIntoSegments( List<AbstractInsnNode> nodes ) {
+		List<List<AbstractInsnNode>>	segments		= new ArrayList<>();
+		List<AbstractInsnNode>			currentSegment	= new ArrayList<>();
+		int								currentSize		= 0;
+		int								targetSize		= MethodSplitter.BYTECODE_SIZE_LIMIT / 2; // Split at ~27KB to be safe
+
+		// Track stack depth to find safe split points (when stack is empty)
+		int								stackDepth		= 0;
+		int								lastSafePoint	= 0;
+		List<AbstractInsnNode>			pendingNodes	= new ArrayList<>();
+
+		for ( int i = 0; i < nodes.size(); i++ ) {
+			AbstractInsnNode	node		= nodes.get( i );
+			int					nodeSize	= MethodSplitter.estimateInstructionSize( node );
+
+			// Track stack depth changes
+			stackDepth += getStackDelta( node );
+
+			currentSegment.add( node );
+			currentSize += nodeSize;
+
+			// When stack is empty, this is a safe place to potentially split
+			if ( stackDepth == 0 ) {
+				lastSafePoint = currentSegment.size();
+			}
+
+			// Check if we should split
+			if ( currentSize >= targetSize && stackDepth == 0 ) {
+				// Split here - stack is empty so it's safe
+				segments.add( new ArrayList<>( currentSegment ) );
+				currentSegment	= new ArrayList<>();
+				currentSize		= 0;
+				lastSafePoint	= 0;
+			} else if ( currentSize >= targetSize * 1.5 && lastSafePoint > 0 ) {
+				// We've exceeded the target by a lot - split at the last safe point
+				List<AbstractInsnNode>	toSplit		= new ArrayList<>( currentSegment.subList( 0, lastSafePoint ) );
+				List<AbstractInsnNode>	remaining	= new ArrayList<>( currentSegment.subList( lastSafePoint, currentSegment.size() ) );
+
+				segments.add( toSplit );
+				currentSegment	= remaining;
+				currentSize		= MethodSplitter.estimateBytecodeSize( currentSegment );
+				stackDepth		= calculateStackDepth( currentSegment );
+				lastSafePoint	= 0;
+			}
+		}
+
+		// Add any remaining instructions
+		if ( !currentSegment.isEmpty() ) {
+			segments.add( currentSegment );
+		}
+
+		return segments;
+	}
+
+	/**
+	 * Calculate the stack delta for an instruction.
+	 * Positive = pushes values, Negative = pops values.
+	 *
+	 * @param node The instruction node
+	 *
+	 * @return Stack depth change
+	 */
+	private static int getStackDelta( AbstractInsnNode node ) {
+		int opcode = node.getOpcode();
+		if ( opcode == -1 ) {
+			return 0; // Label, LineNumber, Frame - no stack effect
+		}
+
+		return switch ( opcode ) {
+			// Push single value onto stack
+			case Opcodes.ACONST_NULL, Opcodes.ICONST_M1, Opcodes.ICONST_0, Opcodes.ICONST_1, Opcodes.ICONST_2, Opcodes.ICONST_3, Opcodes.ICONST_4, Opcodes.ICONST_5, Opcodes.LCONST_0, Opcodes.LCONST_1, Opcodes.FCONST_0, Opcodes.FCONST_1, Opcodes.FCONST_2, Opcodes.DCONST_0, Opcodes.DCONST_1, Opcodes.BIPUSH, Opcodes.SIPUSH, Opcodes.LDC, Opcodes.ILOAD, Opcodes.LLOAD, Opcodes.FLOAD, Opcodes.DLOAD, Opcodes.ALOAD, Opcodes.GETSTATIC, Opcodes.NEW -> 1;
+
+			// Pop single value from stack
+			case Opcodes.ISTORE, Opcodes.LSTORE, Opcodes.FSTORE, Opcodes.DSTORE, Opcodes.ASTORE, Opcodes.POP, Opcodes.IRETURN, Opcodes.LRETURN, Opcodes.FRETURN, Opcodes.DRETURN, Opcodes.ARETURN, Opcodes.ATHROW, Opcodes.MONITORENTER, Opcodes.MONITOREXIT, Opcodes.IFNULL, Opcodes.IFNONNULL, Opcodes.IFEQ, Opcodes.IFNE, Opcodes.IFLT, Opcodes.IFGE, Opcodes.IFGT, Opcodes.IFLE, Opcodes.TABLESWITCH, Opcodes.LOOKUPSWITCH -> -1;
+
+			// Pop 2 values from stack
+			case Opcodes.POP2, Opcodes.IF_ICMPEQ, Opcodes.IF_ICMPNE, Opcodes.IF_ICMPLT, Opcodes.IF_ICMPGE, Opcodes.IF_ICMPGT, Opcodes.IF_ICMPLE, Opcodes.IF_ACMPEQ, Opcodes.IF_ACMPNE, Opcodes.IADD, Opcodes.LADD, Opcodes.FADD, Opcodes.DADD, Opcodes.ISUB, Opcodes.LSUB, Opcodes.FSUB, Opcodes.DSUB, Opcodes.IMUL, Opcodes.LMUL, Opcodes.FMUL, Opcodes.DMUL, Opcodes.IDIV, Opcodes.LDIV, Opcodes.FDIV, Opcodes.DDIV, Opcodes.IREM, Opcodes.LREM, Opcodes.FREM, Opcodes.DREM, Opcodes.ISHL, Opcodes.LSHL, Opcodes.ISHR, Opcodes.LSHR, Opcodes.IUSHR, Opcodes.LUSHR, Opcodes.IAND, Opcodes.LAND, Opcodes.IOR, Opcodes.LOR, Opcodes.IXOR, Opcodes.LXOR, Opcodes.LCMP, Opcodes.FCMPL, Opcodes.FCMPG, Opcodes.DCMPL, Opcodes.DCMPG, Opcodes.PUTFIELD -> -2;
+
+			// Pop 3 values from stack
+			case Opcodes.IASTORE, Opcodes.LASTORE, Opcodes.FASTORE, Opcodes.DASTORE, Opcodes.AASTORE, Opcodes.BASTORE, Opcodes.CASTORE, Opcodes.SASTORE -> -3;
+
+			// DUP operations
+			case Opcodes.DUP -> 1;
+			case Opcodes.DUP_X1 -> 1;
+			case Opcodes.DUP_X2 -> 1;
+			case Opcodes.DUP2 -> 2;
+			case Opcodes.DUP2_X1 -> 2;
+			case Opcodes.DUP2_X2 -> 2;
+			case Opcodes.SWAP -> 0;
+
+			// Array load operations (pop 2, push 1)
+			case Opcodes.IALOAD, Opcodes.LALOAD, Opcodes.FALOAD, Opcodes.DALOAD, Opcodes.AALOAD, Opcodes.BALOAD, Opcodes.CALOAD, Opcodes.SALOAD -> -1;
+
+			// Get field (pop 1, push 1)
+			case Opcodes.GETFIELD -> 0;
+
+			// Put static (pop 1)
+			case Opcodes.PUTSTATIC -> -1;
+
+			// Array length (pop 1, push 1)
+			case Opcodes.ARRAYLENGTH -> 0;
+
+			// No stack change
+			case Opcodes.NOP, Opcodes.RETURN, Opcodes.GOTO, Opcodes.IINC -> 0;
+
+			// Checkcast, instanceof (pop 1, push 1)
+			case Opcodes.CHECKCAST, Opcodes.INSTANCEOF -> 0;
+
+			// Invoke instructions - complex, estimate conservatively
+			default -> {
+				if ( node instanceof MethodInsnNode methodNode ) {
+					Type	methodType	= Type.getMethodType( methodNode.desc );
+					int		delta		= -methodType.getArgumentTypes().length;
+					if ( methodNode.getOpcode() != Opcodes.INVOKESTATIC ) {
+						delta--; // Pop receiver
+					}
+					if ( methodType.getReturnType() != Type.VOID_TYPE ) {
+						delta++; // Push return value
+					}
+					yield delta;
+				}
+				// For other instructions, assume neutral
+				yield 0;
+			}
+		};
+	}
+
+	/**
+	 * Calculate the total stack depth from a list of instructions.
+	 *
+	 * @param nodes The instruction list
+	 *
+	 * @return Current stack depth
+	 */
+	private static int calculateStackDepth( List<AbstractInsnNode> nodes ) {
+		int depth = 0;
+		for ( AbstractInsnNode node : nodes ) {
+			depth += getStackDelta( node );
+		}
+		return depth;
+	}
+
 	public static List<AbstractInsnNode> transformBodyExpressionsFromScript( Transpiler transpiler, List<BoxStatement> statements, TransformerContext context,
 	    ReturnValueContext finalReturnValueContext ) {
 
@@ -1353,6 +1585,33 @@ public class AsmHelper {
 		    Type.getMethodDescriptor( Type.getType( ResolvedFilePath.class ), Type.getType( String.class ), Type.getType( String.class ),
 		        Type.getType( String.class ), Type.getType( String.class ) ),
 		    false );
+	}
+
+	/**
+	 * Create nodes for building a ResolvedFilePath.
+	 * This is the node-based version of resolvedFilePath() for use with splitting.
+	 *
+	 * @param mappingName  The mapping name
+	 * @param mappingPath  The mapping path
+	 * @param relativePath The relative path
+	 * @param filePath     The file path
+	 *
+	 * @return List of instruction nodes
+	 */
+	public static List<AbstractInsnNode> resolvedFilePathNodes( String mappingName, String mappingPath, String relativePath, String filePath ) {
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+		nodes.add( new LdcInsnNode( mappingName == null ? "" : mappingName ) );
+		nodes.add( new LdcInsnNode( mappingPath == null ? "" : mappingPath ) );
+		nodes.add( new LdcInsnNode( relativePath == null ? "" : relativePath ) );
+		nodes.add( new LdcInsnNode( filePath ) );
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( ResolvedFilePath.class ),
+		    "of",
+		    Type.getMethodDescriptor( Type.getType( ResolvedFilePath.class ), Type.getType( String.class ), Type.getType( String.class ),
+		        Type.getType( String.class ), Type.getType( String.class ) ),
+		    false ) );
+		return nodes;
 	}
 
 	public static void boxClassSupport( ClassVisitor classVisitor, String method, Type type, Type... parameters ) {
