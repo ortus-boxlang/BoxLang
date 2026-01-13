@@ -125,6 +125,7 @@ public record Argument(
 		this.validators			= validators;
 	}
 
+	@Override
 	public Object getDefaultValue( IBoxContext context ) {
 		if ( defaultExpression != null ) {
 			return defaultExpression.evaluate( context );
@@ -132,6 +133,7 @@ public record Argument(
 		return DuplicationUtil.duplicate( defaultValue, false, context );
 	}
 
+	@Override
 	public boolean hasDefaultValue() {
 		return defaultValue != null || defaultExpression != null;
 	}

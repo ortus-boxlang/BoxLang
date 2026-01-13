@@ -62,7 +62,7 @@ public class Query extends Component {
 
 		    // connection options
 		    new Attribute( Key.maxRows, "integer", -1 ),
-		    new Attribute( Key.blockfactor, "integer", Set.of( Validator.min( 1 ), Validator.max( 100 ) ), Set.of() ),
+		    new Attribute( Key.blockfactor, "integer", Set.of( Validator.min( 1 ), Validator.max( 100 ) ) ),
 		    new Attribute( Key.fetchSize, "integer", Set.of( Validator.min( 1 ), Validator.max( 100 ) ) ),
 		    new Attribute( Key.timeout, "integer" ),
 
