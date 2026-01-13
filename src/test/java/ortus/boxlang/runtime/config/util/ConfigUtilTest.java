@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DefaultExpression;
@@ -278,36 +279,43 @@ class ConfigUtilTest {
 		String stringResult = ConfigUtil.getAs( String.class, "string", nonExistentKeyKey, config, false, ctx -> "default string",
 		    "config struct", context );
 		assertThat( stringResult ).isEqualTo( "default string" );
+		config.remove( nonExistentKeyKey );
 
 		// Integer default
 		Integer intResult = ConfigUtil.getAs( Integer.class, "integer", nonExistentKeyKey, config, false, ctx -> 999, "config struct", context );
 		assertThat( intResult ).isEqualTo( 999 );
+		config.remove( nonExistentKeyKey );
 
 		// Boolean default
 		Boolean boolResult = ConfigUtil.getAs( Boolean.class, "boolean", nonExistentKeyKey, config, false, ctx -> true, "config struct",
 		    context );
 		assertThat( boolResult ).isTrue();
+		config.remove( nonExistentKeyKey );
 
 		// Double default
 		Double doubleResult = ConfigUtil.getAs( Double.class, "double", nonExistentKeyKey, config, false, ctx -> 3.14, "config struct",
 		    context );
 		assertThat( doubleResult ).isWithin( 0.00001 ).of( 3.14 );
+		config.remove( nonExistentKeyKey );
 
 		// Array default
 		Array arrayResult = ConfigUtil.getAs( Array.class, "array", nonExistentKeyKey, config, false, ctx -> Array.of( "default" ),
 		    "config struct", context );
 		assertThat( arrayResult ).hasSize( 1 );
 		assertThat( arrayResult.get( 0 ) ).isEqualTo( "default" );
+		config.remove( nonExistentKeyKey );
 
 		// Struct default
 		IStruct structResult = ConfigUtil.getAs( IStruct.class, "struct", nonExistentKeyKey, config, false, ctx -> Struct.of( "key", "value" ),
 		    "config struct", context );
 		assertThat( structResult.get( keyKey ) ).isEqualTo( "value" );
+		config.remove( nonExistentKeyKey );
 
 		// Null value with default expression
 		String nullWithDefault = ConfigUtil.getAs( String.class, "string", nullValueKey, config, false, ctx -> "fallback", "config struct",
 		    context );
 		assertThat( nullWithDefault ).isEqualTo( "fallback" );
+		config.remove( nonExistentKeyKey );
 	}
 
 	// ==================== INFERRED CAST TYPE TESTS ====================
@@ -612,37 +620,44 @@ class ConfigUtilTest {
 		String stringResult = ConfigUtil.getAs( String.class,
 		    ConfigItem.of( nonExistentKeyKey, false, "string", ctx -> "default string", "config struct" ), config, context );
 		assertThat( stringResult ).isEqualTo( "default string" );
+		config.remove( nonExistentKeyKey );
 
 		// Integer default - not required
 		Integer intResult = ConfigUtil.getAs( Integer.class, ConfigItem.of( nonExistentKeyKey, false, "integer", ctx -> 999, "config struct" ),
 		    config, context );
 		assertThat( intResult ).isEqualTo( 999 );
+		config.remove( nonExistentKeyKey );
 
 		// Boolean default - not required
 		Boolean boolResult = ConfigUtil.getAs( Boolean.class, ConfigItem.of( nonExistentKeyKey, false, "boolean", ctx -> true, "config struct" ),
 		    config, context );
 		assertThat( boolResult ).isTrue();
+		config.remove( nonExistentKeyKey );
 
 		// Double default - not required
 		Double doubleResult = ConfigUtil.getAs( Double.class, ConfigItem.of( nonExistentKeyKey, false, "double", ctx -> 3.14, "config struct" ),
 		    config, context );
 		assertThat( doubleResult ).isWithin( 0.00001 ).of( 3.14 );
+		config.remove( nonExistentKeyKey );
 
 		// Array default - not required
 		Array arrayResult = ConfigUtil.getAs( Array.class,
 		    ConfigItem.of( nonExistentKeyKey, false, "array", ctx -> Array.of( "default" ), "config struct" ), config, context );
 		assertThat( arrayResult ).hasSize( 1 );
 		assertThat( arrayResult.get( 0 ) ).isEqualTo( "default" );
+		config.remove( nonExistentKeyKey );
 
 		// Struct default - not required
 		IStruct structResult = ConfigUtil.getAs( IStruct.class,
 		    ConfigItem.of( nonExistentKeyKey, false, "struct", ctx -> Struct.of( "key", "value" ), "config struct" ), config, context );
 		assertThat( structResult.get( keyKey ) ).isEqualTo( "value" );
+		config.remove( nonExistentKeyKey );
 
 		// Null value with default expression - not required
 		String nullWithDefault = ConfigUtil.getAs( String.class,
 		    ConfigItem.of( nullValueKey, false, "string", ctx -> "fallback", "config struct" ), config, context );
 		assertThat( nullWithDefault ).isEqualTo( "fallback" );
+		config.remove( nonExistentKeyKey );
 	}
 
 	// ==================== GET CONFIG SET TESTS ====================
@@ -671,18 +686,18 @@ class ConfigUtilTest {
 		    ConfigItem.of( intNegativeKey, true, "integer", "config struct" ),
 
 		    // 7. of(Key name, boolean required, String type, Set<Validator> validators) - with validators (Min, Max)
-		    ConfigItem.of( longValueKey, false, "long", Set.<Validator>of( new Min( 0 ), new Max( 10000000000L ) ) ),
+		    ConfigItem.of( longValueKey, false, "long", Set.<Validator>of( Validator.min( 0 ), Validator.max( 10000000000L ) ) ),
 
 		    // 8. of(Key name, boolean required, String type, Set<Validator> validators, String description) - validators + description (Min)
-		    ConfigItem.of( doubleValueKey, true, "double", Set.<Validator>of( new Min( 0 ) ), "config struct" ),
+		    ConfigItem.of( doubleValueKey, true, "double", Set.<Validator>of( Validator.min( 0 ) ), "config struct" ),
 
 		    // 9. of(Key name, boolean required, String type, DefaultExpression defaultExpression) - with default
 		    ConfigItem.of( arrayValueKey, false, "array", ( DefaultExpression ) null ),
 
 		    // 10. of(Key name, boolean required, String type, DefaultExpression defaultExpression, String description) - default + description
 		    ConfigItem.of( structValueKey, true, "struct", ( DefaultExpression ) null, Set.<Validator>of( Validator.configSet(
-		        ConfigItem.of( nestedKey, false, "string", Set.<Validator>of( new MinLength( 1 ) ), "nested struct in config struct" ),
-		        ConfigItem.of( countKey, false, "integer", Set.<Validator>of( new Min( 0 ) ), "nested struct in config struct"
+		        ConfigItem.of( nestedKey, false, "string", Set.<Validator>of( Validator.minLength( 1 ) ), "nested struct in config struct" ),
+		        ConfigItem.of( countKey, false, "integer", Set.<Validator>of( Validator.min( 0 ) ), "nested struct in config struct"
 		        ) ) ), "config struct" ),
 
 		    // 11. of(Key name, boolean required, String type, DefaultExpression defaultExpression, Set<Validator> validators, String description) - canonical (ValueOneOf)
@@ -724,6 +739,27 @@ class ConfigUtilTest {
 
 		// Assert the result struct has exactly the expected number of keys
 		assertThat( result.size() ).isEqualTo( 22 );
+	}
+
+	@DisplayName( "getConfigSet - default non-existent struct" )
+	@Test
+	void testGetConfigSetDefaultNonExistentStruct() {
+		Set<ConfigItem>	configItems	= Set.of(
+		    ConfigItem.of( Key.properties, true, "struct", ctx -> Struct.of(), Set.<Validator>of( Validator.configSet(
+		        ConfigItem.of( nestedKey, true, "string", ctx -> "brad", Set.<Validator>of( Validator.minLength( 1 ) ), "nested struct in config struct" ),
+		        ConfigItem.of( countKey, false, "integer", ctx -> 42, Set.<Validator>of( Validator.min( 0 ) ), "nested struct in config struct"
+		        ) ) ), "config struct" )
+		);
+
+		IStruct			result		= ConfigUtil.getConfigSet( configItems, Struct.of(), context );
+
+		assertThat( result.containsKey( Key.properties ) ).isTrue();
+		assertThat( result.get( Key.properties ) ).isInstanceOf( IStruct.class );
+		assertThat( ( result.getAsStruct( Key.properties ) ).get( nestedKey ) ).isEqualTo( "brad" );
+		assertThat( ( result.getAsStruct( Key.properties ) ).get( countKey ) ).isEqualTo( 42 );
+
+		// Assert the result struct has exactly the expected number of keys
+		assertThat( result.size() ).isEqualTo( 1 );
 	}
 
 	@DisplayName( "getAs - required null value throws exception" )
@@ -783,6 +819,133 @@ class ConfigUtilTest {
 		// intValue is 42, should pass Min(0) but fail Max(10)
 		ConfigItem ci = ConfigItem.of( intValueKey, false, "integer", Set.<Validator>of( new Min( 0 ), new Max( 10 ) ) );
 		assertThrows( BoxValidationException.class, () -> ConfigUtil.getAs( Integer.class, ci, config, context ) );
+	}
+
+	// ==================== GET AS ATTEMPT TESTS ====================
+
+	@DisplayName( "getAsAttempt canonical - returns value when present" )
+	@Test
+	void testGetAsAttemptCanonicalReturnsValue() {
+		Attempt<String> result = ConfigUtil.getAsAttempt( String.class, "string", stringValueKey, config, false, null, "config struct", context );
+		assertThat( result.isPresent() ).isTrue();
+		assertThat( result.get() ).isEqualTo( "hello world" );
+	}
+
+	@DisplayName( "getAsAttempt canonical - returns empty when null" )
+	@Test
+	void testGetAsAttemptCanonicalReturnsEmpty() {
+		Attempt<String> result = ConfigUtil.getAsAttempt( String.class, "string", nullValueKey, config, false, null, "config struct", context );
+		assertThat( result.isEmpty() ).isTrue();
+	}
+
+	@DisplayName( "getAsAttempt string castType simple - returns value when present" )
+	@Test
+	void testGetAsAttemptStringCastTypeSimpleReturnsValue() {
+		Attempt<Object> result = ConfigUtil.getAsAttempt( "integer", intValueKey, config, context );
+		assertThat( result.isPresent() ).isTrue();
+		assertThat( result.get() ).isEqualTo( 42 );
+	}
+
+	@DisplayName( "getAsAttempt string castType simple - returns empty when null" )
+	@Test
+	void testGetAsAttemptStringCastTypeSimpleReturnsEmpty() {
+		Attempt<Object> result = ConfigUtil.getAsAttempt( "string", nullValueKey, config, context );
+		assertThat( result.isEmpty() ).isTrue();
+	}
+
+	@DisplayName( "getAsAttempt string castType full - returns value when present" )
+	@Test
+	void testGetAsAttemptStringCastTypeFullReturnsValue() {
+		Attempt<Object> result = ConfigUtil.getAsAttempt( "boolean", booleanTrueKey, config, false, null, "config struct", context );
+		assertThat( result.isPresent() ).isTrue();
+		assertThat( result.get() ).isEqualTo( true );
+	}
+
+	@DisplayName( "getAsAttempt string castType full - returns empty when null" )
+	@Test
+	void testGetAsAttemptStringCastTypeFullReturnsEmpty() {
+		Attempt<Object> result = ConfigUtil.getAsAttempt( "boolean", nullValueKey, config, false, null, "config struct", context );
+		assertThat( result.isEmpty() ).isTrue();
+	}
+
+	@DisplayName( "getAsAttempt class simple - returns value when present" )
+	@Test
+	void testGetAsAttemptClassSimpleReturnsValue() {
+		Attempt<Long> result = ConfigUtil.getAsAttempt( Long.class, longValueKey, config, context );
+		assertThat( result.isPresent() ).isTrue();
+		assertThat( result.get() ).isEqualTo( 9999999999L );
+	}
+
+	@DisplayName( "getAsAttempt class simple - returns empty when null" )
+	@Test
+	void testGetAsAttemptClassSimpleReturnsEmpty() {
+		Attempt<Long> result = ConfigUtil.getAsAttempt( Long.class, nullValueKey, config, context );
+		assertThat( result.isEmpty() ).isTrue();
+	}
+
+	@DisplayName( "getAsAttempt class full - returns value when present" )
+	@Test
+	void testGetAsAttemptClassFullReturnsValue() {
+		Attempt<Double> result = ConfigUtil.getAsAttempt( Double.class, doubleValueKey, config, false, null, "config struct", context );
+		assertThat( result.isPresent() ).isTrue();
+		assertThat( result.get() ).isWithin( 0.00001 ).of( 3.14159 );
+	}
+
+	@DisplayName( "getAsAttempt class full - returns empty when null" )
+	@Test
+	void testGetAsAttemptClassFullReturnsEmpty() {
+		Attempt<Double> result = ConfigUtil.getAsAttempt( Double.class, nullValueKey, config, false, null, "config struct", context );
+		assertThat( result.isEmpty() ).isTrue();
+	}
+
+	@DisplayName( "getAsAttempt ConfigItem with class - returns value when present" )
+	@Test
+	void testGetAsAttemptConfigItemClassReturnsValue() {
+		ConfigItem		ci		= ConfigItem.of( arrayValueKey, false, "array", "config struct" );
+		Attempt<Array>	result	= ConfigUtil.getAsAttempt( Array.class, ci, config, context );
+		assertThat( result.isPresent() ).isTrue();
+		assertThat( result.get() ).hasSize( 3 );
+	}
+
+	@DisplayName( "getAsAttempt ConfigItem with class - returns empty when null" )
+	@Test
+	void testGetAsAttemptConfigItemClassReturnsEmpty() {
+		ConfigItem		ci		= ConfigItem.of( nullValueKey, false, "array", "config struct" );
+		Attempt<Array>	result	= ConfigUtil.getAsAttempt( Array.class, ci, config, context );
+		assertThat( result.isEmpty() ).isTrue();
+	}
+
+	@DisplayName( "getAsAttempt ConfigItem only - returns value when present" )
+	@Test
+	void testGetAsAttemptConfigItemOnlyReturnsValue() {
+		ConfigItem		ci		= ConfigItem.of( structValueKey, false, "struct", "config struct" );
+		Attempt<Object>	result	= ConfigUtil.getAsAttempt( ci, config, context );
+		assertThat( result.isPresent() ).isTrue();
+		assertThat( ( ( IStruct ) result.get() ).get( nestedKey ) ).isEqualTo( "value" );
+	}
+
+	@DisplayName( "getAsAttempt ConfigItem only - returns empty when null" )
+	@Test
+	void testGetAsAttemptConfigItemOnlyReturnsEmpty() {
+		ConfigItem		ci		= ConfigItem.of( nullValueKey, false, "struct", "config struct" );
+		Attempt<Object>	result	= ConfigUtil.getAsAttempt( ci, config, context );
+		assertThat( result.isEmpty() ).isTrue();
+	}
+
+	@DisplayName( "getAsAttempt - orElse returns default for empty attempt" )
+	@Test
+	void testGetAsAttemptOrElse() {
+		Attempt<String>	result			= ConfigUtil.getAsAttempt( String.class, nullValueKey, config, context );
+		String			valueOrDefault	= result.orElse( "default value" );
+		assertThat( valueOrDefault ).isEqualTo( "default value" );
+	}
+
+	@DisplayName( "getAsAttempt - orElse returns value for present attempt" )
+	@Test
+	void testGetAsAttemptOrElseWithValue() {
+		Attempt<String>	result			= ConfigUtil.getAsAttempt( String.class, stringValueKey, config, context );
+		String			valueOrDefault	= result.orElse( "default value" );
+		assertThat( valueOrDefault ).isEqualTo( "hello world" );
 	}
 
 }

@@ -20,12 +20,12 @@ package ortus.boxlang.runtime.config.util;
 import java.util.Set;
 
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.DefaultExpression;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.util.TypeUtil;
@@ -55,9 +55,16 @@ public class ConfigUtil {
 	 * @return The configuration value cast to the expected type, or as Object if clazz is null
 	 */
 	@SuppressWarnings( "unchecked" )
-	public static <T> T getAs( Class<T> clazz, String castType, Key key, IStruct config, boolean required, DefaultExpression defaultExpression,
+	public static <T> T getAs(
+	    Class<T> clazz,
+	    String castType,
+	    Key key,
+	    IStruct config,
+	    boolean required,
+	    DefaultExpression defaultExpression,
 	    String description,
 	    IBoxContext context ) {
+
 		Object value = config.get( key );
 
 		// If key doesn't exist, or is null, handle defaulting / required
@@ -69,13 +76,16 @@ public class ConfigUtil {
 			}
 		}
 
-		// Pass through generic caster
-		try {
-			value = GenericCaster.cast( context, value, castType );
-		} catch ( BoxCastException bce ) {
-			// Handle cast failure ourselves so we can control the error message
-			throw new BoxValidationException( String.format( "Could not cast " + buildDescription( key, description ) + " of type [%s] to type [%s]",
-			    TypeUtil.getObjectName( value ), castType ), bce );
+		// Don't try to cast nulls
+		if ( value != null ) {
+			// Pass through generic caster
+			try {
+				value = GenericCaster.cast( context, value, castType );
+			} catch ( BoxCastException bce ) {
+				// Handle cast failure ourselves so we can control the error message
+				throw new BoxValidationException( String.format( "Could not cast " + buildDescription( key, description ) + " of type [%s] to type [%s]",
+				    TypeUtil.getObjectName( value ), castType ), bce );
+			}
 		}
 
 		// Type erasure will make this the same as casting to Object
@@ -85,6 +95,32 @@ public class ConfigUtil {
 
 		// Cast to expected type
 		return clazz.cast( DynamicObject.unWrap( value ) );
+	}
+
+	/**
+	 * Get one-off configuration value from a struct with casting, defaulting, and required validation wrapped in an Attempt
+	 * 
+	 * @param clazz             The expected Java return type
+	 * @param castType          The BoxLang type to cast to
+	 * @param key               The key to get
+	 * @param config            The struct to get the config from
+	 * @param required          Whether this config item is required
+	 * @param defaultExpression The default expression to evaluate if the config item is not present
+	 * @param description       A description of the config item, used in error messages
+	 * @param context           The BoxLang context
+	 * 
+	 * @return The configuration value cast to the expected type, or as Object if clazz is null wrapped in an Attempt
+	 */
+	public static <T> Attempt<T> getAsAttempt(
+	    Class<T> clazz,
+	    String castType,
+	    Key key,
+	    IStruct config,
+	    boolean required,
+	    DefaultExpression defaultExpression,
+	    String description,
+	    IBoxContext context ) {
+		return Attempt.of( getAs( clazz, castType, key, config, required, defaultExpression, description, context ) );
 	}
 
 	/**
@@ -100,6 +136,21 @@ public class ConfigUtil {
 	 */
 	public static Object getAs( String castType, Key key, IStruct config, IBoxContext context ) {
 		return getAs( null, castType, key, config, false, null, null, context );
+	}
+
+	/**
+	 * Get one-off configuration value from a struct with casting wrapped in an Attempt
+	 * A string BL cast type is provided and no specific java return type is expected (Object)
+	 * 
+	 * @param castType The BoxLang type to cast to
+	 * @param key      The key to get
+	 * @param config   The struct to get the config from
+	 * @param context  The BoxLang context
+	 * 
+	 * @return The configuration value wrapped in an Attempt
+	 */
+	public static Attempt<Object> getAsAttempt( String castType, Key key, IStruct config, IBoxContext context ) {
+		return Attempt.of( getAs( castType, key, config, context ) );
 	}
 
 	/**
@@ -121,6 +172,26 @@ public class ConfigUtil {
 		return getAs( null, castType, key, config, required, defaultExpression, description, context );
 	}
 
+	/**
+	 * Get one-off configuration value from a struct with casting, defaulting, and required validation wrapped in an Attempt
+	 * A string BL cast type is provided and no specific java return type is expected (Object)
+	 * 
+	 * @param castType          The BoxLang type to cast to
+	 * @param key               The key to get
+	 * @param config            The struct to get the config from
+	 * @param required          Whether this config item is required
+	 * @param defaultExpression The default expression to evaluate if the config item is not present
+	 * @param description       A description of the config item, used in error messages
+	 * @param context           The BoxLang context
+	 * 
+	 * @return The configuration value wrapped in an Attempt
+	 */
+	public static Attempt<Object> getAsAttempt( String castType, Key key, IStruct config, boolean required, DefaultExpression defaultExpression,
+	    String description,
+	    IBoxContext context ) {
+		return Attempt.of( getAs( castType, key, config, required, defaultExpression, description, context ) );
+	}
+
 	// Ommiting all the other combination of overlaoded methods starting with a string cast type for simplicity and not having 8,000 overloaded methods
 
 	/**
@@ -136,6 +207,21 @@ public class ConfigUtil {
 	 */
 	public static <T> T getAs( Class<T> clazz, Key key, IStruct config, IBoxContext context ) {
 		return getAs( clazz, guessCastType( clazz ), key, config, false, null, null, context );
+	}
+
+	/**
+	 * Get one-off configuration value from a struct with casting wrapped in an Attempt
+	 * A Java return type is provided and the BoxLang cast type is guessed from it
+	 * 
+	 * @param clazz   The expected Java return type
+	 * @param key     The key to get
+	 * @param config  The struct to get the config from
+	 * @param context The BoxLang context
+	 * 
+	 * @return The configuration value wrapped in an Attempt
+	 */
+	public static <T> Attempt<T> getAsAttempt( Class<T> clazz, Key key, IStruct config, IBoxContext context ) {
+		return Attempt.of( getAs( clazz, key, config, context ) );
 	}
 
 	/**
@@ -157,6 +243,26 @@ public class ConfigUtil {
 		return getAs( clazz, guessCastType( clazz ), key, config, required, defaultExpression, description, context );
 	}
 
+	/**
+	 * Get one-off configuration value from a struct with casting, defaulting, and required validation wrapped in an Attempt
+	 * A Java return type is provided and the BoxLang cast type is guessed from it
+	 * 
+	 * @param clazz             The expected Java return type
+	 * @param key               The key to get
+	 * @param config            The struct to get the config from
+	 * @param required          Whether this config item is required
+	 * @param defaultExpression The default expression to evaluate if the config item is not present
+	 * @param description       A description of the config item, used in error messages
+	 * @param context           The BoxLang context
+	 * 
+	 * @return The configuration value wrapped in an Attempt
+	 */
+	public static <T> Attempt<T> getAsAttempt( Class<T> clazz, Key key, IStruct config, boolean required, DefaultExpression defaultExpression,
+	    String description,
+	    IBoxContext context ) {
+		return Attempt.of( getAs( clazz, key, config, required, defaultExpression, description, context ) );
+	}
+
 	// Ommiting all the other combination of overlaoded methods starting with a Java class return type for simplicity and not having 8,000 overloaded methods
 
 	/**
@@ -172,20 +278,21 @@ public class ConfigUtil {
 	@SuppressWarnings( "unchecked" )
 	public static <T> T getAs( Class<T> clazz, ConfigItem configItem, IStruct config, IBoxContext context ) {
 		Object value = config.get( configItem.name() );
-
 		// If key doesn't exist, or is null, handle defaulting / required
 		if ( value == null ) {
 			if ( configItem.hasDefaultValue() ) {
 				value = configItem.getDefaultValue( context );
+				config.put( configItem.name(), value );
 			} else if ( configItem.required() ) {
 				throw new BoxValidationException( configItem.buildDescription() + " is required." );
 			}
 		}
 
 		// Pass through generic caster
-		if ( configItem.type() != null ) {
+		if ( configItem.type() != null && value != null ) {
 			try {
 				value = GenericCaster.cast( context, value, configItem.type() );
+				config.put( configItem.name(), value );
 			} catch ( BoxCastException bce ) {
 				// Handle cast failure ourselves so we can control the error message
 				throw new BoxValidationException( String.format( "Could not cast " + configItem.buildDescription() + " of type [%s] to type [%s]",
@@ -196,6 +303,7 @@ public class ConfigUtil {
 
 		// Apply validators
 		configItem.validate( context, configItem.description() == null ? null : Key.of( configItem.description() ), config );
+		value = config.get( configItem.name() );
 
 		// Type erasure will make this the same as casting to Object
 		if ( clazz == null ) {
@@ -204,6 +312,20 @@ public class ConfigUtil {
 
 		// Cast to expected type
 		return clazz.cast( DynamicObject.unWrap( value ) );
+	}
+
+	/**
+	 * Get one-off configuration value from a struct with casting, defaulting, and required validation wrapped in an Attempt
+	 * 
+	 * @param clazz      The expected Java return type
+	 * @param configItem The config item to get
+	 * @param config     The struct to get the config from
+	 * @param context    The BoxLang context
+	 * 
+	 * @return The configuration value wrapped in an Attempt
+	 */
+	public static <T> Attempt<T> getAsAttempt( Class<T> clazz, ConfigItem configItem, IStruct config, IBoxContext context ) {
+		return Attempt.of( getAs( clazz, configItem, config, context ) );
 	}
 
 	/**
@@ -220,6 +342,19 @@ public class ConfigUtil {
 	}
 
 	/**
+	 * Get one-off configuration value from a struct with casting, defaulting, and required validation wrapped in an Attempt
+	 * 
+	 * @param configItem The config item to get
+	 * @param config     The struct to get the config from
+	 * @param context    The BoxLang context
+	 * 
+	 * @return The configuration value wrapped in an Attempt
+	 */
+	public static Attempt<Object> getAsAttempt( ConfigItem configItem, IStruct config, IBoxContext context ) {
+		return Attempt.of( getAs( configItem, config, context ) );
+	}
+
+	/**
 	 * Get a config set from a struct based on a set of config items
 	 * 
 	 * @param configItems The set of config items to retrieve
@@ -229,13 +364,11 @@ public class ConfigUtil {
 	 * @return A struct containing the retrieved configuration values
 	 */
 	public static IStruct getConfigSet( Set<ConfigItem> configItems, IStruct config, IBoxContext context ) {
-		IStruct result = new Struct( config );
-
 		for ( ConfigItem configItem : configItems ) {
-			result.put( configItem.name(), ConfigUtil.getAs( configItem, config, context ) );
+			config.put( configItem.name(), ConfigUtil.getAs( configItem, config, context ) );
 		}
 
-		return result;
+		return config;
 	}
 
 	/**

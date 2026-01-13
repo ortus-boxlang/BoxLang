@@ -192,6 +192,21 @@ public record ConfigItem(
 	}
 
 	/**
+	 * Factory method with all parameters
+	 *
+	 * @param name              The name of the config item
+	 * @param required          Whether the config item is required
+	 * @param type              The type of the config item
+	 * @param defaultExpression The default expression to evaluate at runtime
+	 * @param validators        Validators for the config item
+	 *
+	 * @return A new ConfigItem instance
+	 */
+	public static ConfigItem of( Key name, boolean required, String type, DefaultExpression defaultExpression, Set<Validator> validators ) {
+		return new ConfigItem( name, required, type, defaultExpression, validators, null );
+	}
+
+	/**
 	 * Factory method with all parameters (canonical)
 	 *
 	 * @param name              The name of the config item
