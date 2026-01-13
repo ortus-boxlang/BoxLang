@@ -479,6 +479,8 @@ public class DumpUtil {
 			return "Number.bxm";
 		} else if ( target instanceof Boolean ) {
 			return "Boolean.bxm";
+		} else if ( target instanceof Byte[] || target instanceof byte[] ) {
+			return "ByteArray.bxm";
 		} else if ( target.getClass().isArray() ) {
 			target = ArrayCaster.cast( target );
 			return "Array.bxm";
