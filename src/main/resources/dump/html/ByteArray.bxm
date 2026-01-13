@@ -6,7 +6,13 @@
 	<div class="bx-dump">
 		<table class="bx-table-secondary" title="#encodeForHTML( posInCode )#">
 			<!--- Binary dumps tend to be long, so left aligning the caption, otherwise you never see it! --->
-			   <caption class="bx-dhAy" style="text-align: left;">
+			<caption
+				role="button"
+				tabindex="0"
+				<bx:if expandRoot>open aria-expanded="true"<bx:else>aria-expanded="false"</bx:if>
+				data-bx-toggle="siblings"
+				style="text-align: left;"
+			>
 				<strong>
 					<bx:if label.len() >#label# - </bx:if>
 					Binary (byte[]): length #numberFormat( byteArrayLen )#
@@ -36,7 +42,7 @@
 								echo( "<br>... truncated" );
 							}
 							echo( "]" );
-						</bx:script>						
+						</bx:script>
 					</td>
 				</tr>
 				<bx:if byteArrayLen LTE 1000 >
