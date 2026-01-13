@@ -22,7 +22,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Set;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -82,11 +81,6 @@ class ConfigUtilTest {
 	@BeforeAll
 	public static void setUp() {
 		runtime = BoxRuntime.getInstance( true );
-	}
-
-	@AfterAll
-	public static void teardown() {
-		runtime.shutdown();
 	}
 
 	@BeforeEach
