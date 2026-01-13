@@ -7,6 +7,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -24,7 +25,7 @@ public class FormatBaseN extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "numeric", Key.number ),
-		    new Argument( true, "integer", Key.radix )
+		    new Argument( true, "integerTruncate", Key.radix )
 		};
 	}
 
@@ -51,6 +52,6 @@ public class FormatBaseN extends BIF {
 			return bigInt.toString( radix );
 		}
 
-		return Long.toString( ( int ) number & 0xffffffffL, radix );
+		return Long.toString( IntegerCaster.cast( number ) & 0xffffffffL, radix );
 	}
 }
