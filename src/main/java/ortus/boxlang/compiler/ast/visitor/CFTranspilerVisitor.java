@@ -659,11 +659,23 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		if ( name.equals( "listappend" ) ) {
 			return transpileListAppend( node );
 		}
-		// look for rewritten variable names passed to insDefined()
+		// look for rewritten variable names passed to isDefined()
 		if ( name.equals( "isdefined" ) && node.getArguments().size() > 0 && node.getArguments().get( 0 ).getValue() instanceof BoxStringLiteral bsl ) {
 			identifierMap.entrySet().stream().forEach( e -> {
 				bsl.setValue( replaceIdentifiersInString( bsl.getValue(), e.getKey(), e.getValue() ) );
 			} );
+		}
+
+		// swap "once" for "one"
+		// Only handling position args for now. We can add named arg support later if needed.
+		if ( ( name.equals( "replacenocase" ) || name.equals( "replace" ) ) && node.getArguments().size() > 3
+		    && node.getArguments().get( 0 ).getName() == null ) {
+			if ( node.getArguments().get( 3 ).getValue() instanceof BoxStringLiteral bsl ) {
+				String val = bsl.getValue().toLowerCase();
+				if ( val.equals( "once" ) ) {
+					bsl.setValue( "one" );
+				}
+			}
 		}
 
 		return super.visit( node );
