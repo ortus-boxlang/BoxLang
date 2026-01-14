@@ -47,7 +47,7 @@ public class Lock extends Component {
 		    new Attribute( Key._NAME, "string", Set.of( Validator.NON_EMPTY ) ),
 		    new Attribute( Key.scope, "string" ),
 		    new Attribute( Key.type, "string", "exclusive", Set.of( Validator.valueOneOf( "readonly", "exclusive" ) ) ),
-		    new Attribute( Key.timeout, "Integer", Set.of( Validator.REQUIRED, Validator.min( 0 ) ) ),
+		    new Attribute( Key.timeout, "Integer", 0, Set.of( Validator.min( 0 ) ) ),
 		    new Attribute( Key.throwOnTimeout, "boolean", true )
 			// Lucee supports a "result" attribute, but it doesn't seem very useful and its docs don't even seem to match its implementation!.
 			// We can add it if it's really needed.
