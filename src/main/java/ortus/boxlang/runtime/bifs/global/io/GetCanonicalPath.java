@@ -15,7 +15,9 @@
 
 package ortus.boxlang.runtime.bifs.global.io;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import ortus.boxlang.runtime.bifs.BIF;
@@ -50,7 +52,13 @@ public class GetCanonicalPath extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String path = arguments.getAsString( Key.path );
 		try {
-			return Path.of( FileSystemUtil.expandPath( context, path ).absolutePath().toString() ).toRealPath().toString();
+			Path	realPath	= Path.of( FileSystemUtil.expandPath( context, path ).absolutePath().toString() ).toRealPath();
+			String	result		= realPath.toString();
+			// Add trailing separator for directories
+			if ( Files.isDirectory( realPath ) ) {
+				result += File.separator;
+			}
+			return result;
 		} catch ( java.nio.file.InvalidPathException e ) {
 			// If the incoming path is totally invalid, just return it as-is
 			return path;
