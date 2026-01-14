@@ -22,6 +22,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -55,6 +56,7 @@ public class LargeMethodTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
 	@Test
 	public void testShouldNotThrowOnLargeMethod() {
 		assertDoesNotThrow( () -> {
@@ -67,6 +69,7 @@ public class LargeMethodTest {
 
 	}
 
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
 	@Test
 	public void testShouldNotThrowOnLargeMethod2() {
 		assertDoesNotThrow( () -> {
@@ -79,6 +82,7 @@ public class LargeMethodTest {
 
 	}
 
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
 	@Test
 	public void testShouldBeAbleToInstantiate() {
 		assertDoesNotThrow( () -> {
@@ -91,6 +95,7 @@ public class LargeMethodTest {
 
 	}
 
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
 	@Test
 	public void testShouldNotThrowOnLargeMethod3() {
 		assertDoesNotThrow( () -> {
