@@ -53,7 +53,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
-import ortus.boxlang.runtime.logging.BoxLangLogger;
+import ortus.boxlang.runtime.logging.LoggingService;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
@@ -69,8 +69,8 @@ public final class LocalizationUtil {
 	/**
 	 * The runtime logger
 	 */
-	private static final BoxLangLogger													logger								= BoxRuntime.getInstance()
-	    .getLoggingService().getRuntimeLogger();
+	private static final LoggingService													loggingService						= BoxRuntime.getInstance()
+	    .getLoggingService();
 
 	/**
 	 * Cache for DateTimeFormatter instances keyed by cache key string.
@@ -608,7 +608,7 @@ public final class LocalizationUtil {
 		try {
 			parsed = parser.parse( stringValue );
 		} catch ( ParseException e ) {
-			logger.debug( "Error parsing currency value: " + stringValue + ". The message received was: " + e.getMessage() );
+			loggingService.getRuntimeLogger().debug( "Error parsing currency value: " + stringValue + ". The message received was: " + e.getMessage() );
 		}
 		return parsed == null ? null : parsed.doubleValue();
 	}
@@ -1557,7 +1557,7 @@ public final class LocalizationUtil {
 						);
 					}
 				} catch ( Exception e ) {
-					logger.trace(
+					loggingService.getRuntimeLogger().trace(
 					    "Error parsing date time with common formatter.  The pattern [" + formatter.getDescription() + "] failed with error: "
 					        + e.getMessage() );
 				}
