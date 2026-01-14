@@ -78,4 +78,17 @@ public class LargeMethodTest {
 		} );
 
 	}
+
+	@Test
+	public void testShouldNotThrowOnLargeMethod3() {
+		assertDoesNotThrow( () -> {
+			instance.executeSource( """
+			                        	x = new src.test.java.ortus.boxlang.compiler.LargeMethod3();
+			                        	x.test( "while2");
+
+			                        """, context );
+
+		} );
+
+	}
 }
