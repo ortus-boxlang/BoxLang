@@ -80,6 +80,18 @@ public class LargeMethodTest {
 	}
 
 	@Test
+	public void testShouldBeAbleToInstantiate() {
+		assertDoesNotThrow( () -> {
+			instance.executeSource( """
+			                        	x = new src.test.java.ortus.boxlang.compiler.LargeMethod2();
+
+			                        """, context );
+
+		} );
+
+	}
+
+	@Test
 	public void testShouldNotThrowOnLargeMethod3() {
 		assertDoesNotThrow( () -> {
 			instance.executeSource( """
