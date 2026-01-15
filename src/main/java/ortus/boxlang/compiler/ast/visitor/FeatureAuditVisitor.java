@@ -960,7 +960,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		componentMap.put( "invokeargument", "core" );
 		componentMap.put( "layout", "bx-ui-compat" );
 		componentMap.put( "layoutarea", "bx-ui-compat" );
-		componentMap.put( "ldap", "" );
+		componentMap.put( "ldap", "bx-ldap+" );
 		componentMap.put( "location", "boxlang-web-support" );
 		componentMap.put( "lock", "core" );
 		componentMap.put( "log", "core" );
