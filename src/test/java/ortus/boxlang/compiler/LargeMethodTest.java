@@ -22,6 +22,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -55,6 +56,7 @@ public class LargeMethodTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
 	@Test
 	public void testShouldNotThrowOnLargeMethod() {
 		assertDoesNotThrow( () -> {
@@ -67,6 +69,7 @@ public class LargeMethodTest {
 
 	}
 
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
 	@Test
 	public void testShouldNotThrowOnLargeMethod2() {
 		assertDoesNotThrow( () -> {
@@ -74,6 +77,33 @@ public class LargeMethodTest {
 			var					x				= RunnableLoader.getInstance()
 			    .getBoxpiler()
 			    .compileClass( resolvedPath );
+
+		} );
+
+	}
+
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
+	@Test
+	public void testShouldBeAbleToInstantiate() {
+		assertDoesNotThrow( () -> {
+			instance.executeSource( """
+			                        	x = new src.test.java.ortus.boxlang.compiler.LargeMethod2();
+
+			                        """, context );
+
+		} );
+
+	}
+
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
+	@Test
+	public void testShouldNotThrowOnLargeMethod3() {
+		assertDoesNotThrow( () -> {
+			instance.executeSource( """
+			                        	x = new src.test.java.ortus.boxlang.compiler.LargeMethod3();
+			                        	x.test( "while2");
+
+			                        """, context );
 
 		} );
 

@@ -468,6 +468,11 @@ public class MethodSplitter {
 			    // Wrap the nodes to return FlowControlResult.NORMAL_RESULT at the end
 			    List<AbstractInsnNode> wrapped = new ArrayList<>( nodes );
 
+			    // Transform any return instructions to wrap in FlowControlResult.ofReturn()
+			    // This is necessary because returns inside loops/conditions would otherwise
+			    // return raw values instead of FlowControlResult expected by the caller
+			    transformReturnInstructions( wrapped );
+
 			    // Remove any trailing POP that would discard our result
 			    while ( !wrapped.isEmpty() && wrapped.get( wrapped.size() - 1 ).getOpcode() == Opcodes.POP ) {
 				    wrapped.remove( wrapped.size() - 1 );
@@ -484,6 +489,110 @@ public class MethodSplitter {
 			    return wrapped;
 		    }
 		);
+	}
+
+	/**
+	 * Transform return instructions in the node list to wrap their values in FlowControlResult.ofReturn().
+	 * This handles all return opcodes (IRETURN, LRETURN, FRETURN, DRETURN, ARETURN, RETURN).
+	 *
+	 * @param nodes The instruction list to transform (modified in place)
+	 */
+	private void transformReturnInstructions( List<AbstractInsnNode> nodes ) {
+		// Find indices of return instructions (iterate backwards to safely modify list)
+		for ( int i = nodes.size() - 1; i >= 0; i-- ) {
+			AbstractInsnNode node = nodes.get( i );
+			if ( ! ( node instanceof InsnNode ) ) {
+				continue;
+			}
+
+			int opcode = node.getOpcode();
+
+			// Check for return opcodes
+			if ( opcode >= Opcodes.IRETURN && opcode <= Opcodes.RETURN ) {
+				// Remove the original return instruction
+				nodes.remove( i );
+
+				// Insert wrapping instructions at the same position
+				List<AbstractInsnNode> wrapInstructions = createReturnWrapInstructions( opcode );
+				nodes.addAll( i, wrapInstructions );
+			}
+		}
+	}
+
+	/**
+	 * Create instructions to wrap a return value in FlowControlResult.ofReturn() and return it.
+	 *
+	 * @param originalOpcode The original return opcode
+	 *
+	 * @return List of instructions to wrap and return the value
+	 */
+	private List<AbstractInsnNode> createReturnWrapInstructions( int originalOpcode ) {
+		List<AbstractInsnNode> instructions = new ArrayList<>();
+
+		// First, box primitives if needed
+		switch ( originalOpcode ) {
+			case Opcodes.IRETURN :
+				// int on stack -> box to Integer
+				instructions.add( new MethodInsnNode(
+				    Opcodes.INVOKESTATIC,
+				    "java/lang/Integer",
+				    "valueOf",
+				    Type.getMethodDescriptor( Type.getType( Integer.class ), Type.INT_TYPE ),
+				    false
+				) );
+				break;
+			case Opcodes.LRETURN :
+				// long on stack -> box to Long
+				instructions.add( new MethodInsnNode(
+				    Opcodes.INVOKESTATIC,
+				    "java/lang/Long",
+				    "valueOf",
+				    Type.getMethodDescriptor( Type.getType( Long.class ), Type.LONG_TYPE ),
+				    false
+				) );
+				break;
+			case Opcodes.FRETURN :
+				// float on stack -> box to Float
+				instructions.add( new MethodInsnNode(
+				    Opcodes.INVOKESTATIC,
+				    "java/lang/Float",
+				    "valueOf",
+				    Type.getMethodDescriptor( Type.getType( Float.class ), Type.FLOAT_TYPE ),
+				    false
+				) );
+				break;
+			case Opcodes.DRETURN :
+				// double on stack -> box to Double
+				instructions.add( new MethodInsnNode(
+				    Opcodes.INVOKESTATIC,
+				    "java/lang/Double",
+				    "valueOf",
+				    Type.getMethodDescriptor( Type.getType( Double.class ), Type.DOUBLE_TYPE ),
+				    false
+				) );
+				break;
+			case Opcodes.RETURN :
+				// void return -> push null
+				instructions.add( new InsnNode( Opcodes.ACONST_NULL ) );
+				break;
+			case Opcodes.ARETURN :
+				// Object already on stack, no boxing needed
+				break;
+		}
+
+		// Call FlowControlResult.ofReturn(Object) - value is now on stack as Object
+		instructions.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( FlowControlResult.class ),
+		    "ofReturn",
+		    Type.getMethodDescriptor( Type.getType( FlowControlResult.class ), Type.getType( Object.class ) ),
+		    false
+		) );
+
+		// Return the FlowControlResult
+		instructions.add( new InsnNode( Opcodes.ARETURN ) );
+
+		return instructions;
 	}
 
 	/**
