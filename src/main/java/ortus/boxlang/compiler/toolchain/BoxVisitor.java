@@ -314,7 +314,7 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		if ( tools.isClassOrInterface() && ctx.importStatement() != null ) {
 			var pos = tools.getPosition( ctx );
 			// import statements are not allowed here
-			tools.reportError( "Import statements are not allowed here.  They must be at the top of the class.", pos );
+			tools.reportError( "Import statements are not allowed here.  They must be above the class definition.", pos );
 			new BoxStatementError( pos, tools.getSourceText( ctx ) );
 		}
 
