@@ -1275,4 +1275,15 @@ public class DynamicInteropServiceTest {
 		assertThat( t.getMessage() ).contains( "boolean" );
 	}
 
+	@Test
+	void testGetterAsField() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			import java.util.UUID;
+				result = UUID.randomUUID().mostSignificantBits;
+			""", context);
+		// @formatter:on
+	}
+
 }
