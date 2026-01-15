@@ -299,7 +299,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "generateargon2hash", "bx-argon" );
 		BIFMap.put( "generatebcrypthash", "bx-bcrypt" );
 		BIFMap.put( "generatepbkdfkey", "core" );
-		BIFMap.put( "generatescrypthash", "bx-scrypt" );
+		BIFMap.put( "generatescrypthash", "" );
 		BIFMap.put( "generatesecretkey", "core" );
 		BIFMap.put( "getapplicationmetadata", "core" );
 		BIFMap.put( "getapplicationsettings", "" );
@@ -960,7 +960,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		componentMap.put( "invokeargument", "core" );
 		componentMap.put( "layout", "bx-ui-compat" );
 		componentMap.put( "layoutarea", "bx-ui-compat" );
-		componentMap.put( "ldap", "bx-ldap+" );
+		componentMap.put( "ldap", "" );
 		componentMap.put( "location", "boxlang-web-support" );
 		componentMap.put( "lock", "core" );
 		componentMap.put( "log", "core" );
