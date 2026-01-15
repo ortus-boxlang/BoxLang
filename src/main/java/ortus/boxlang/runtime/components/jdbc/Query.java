@@ -54,9 +54,7 @@ public class Query extends Component {
 		        Validator.valueOneOf( "query", "array", "struct" )
 		    ) ),
 		    new Attribute( Key.columnKey, "string" ),
-		    new Attribute( Key.dbtype, "string", Set.of(
-		        Validator.NON_EMPTY, Validator.valueOneOf( "query", "hql" )
-		    ) ),
+		    new Attribute( Key.dbtype, "string" ),
 		    new Attribute( Key.username, "string" ),
 		    new Attribute( Key.password, "string" ),
 
