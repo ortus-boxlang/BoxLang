@@ -1309,6 +1309,18 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 				    bsl.setValue( newValue );
 			    } );
 		}
+		// Ignore invalid values for cfquery dbtype. If it's a string literal, and not query or hql, then literally delete the attribute entirely
+		if ( componentName.equals( "query" ) ) {
+			node.getAttributes()
+			    .stream()
+			    .filter( a -> a.getKey().getValue().equalsIgnoreCase( "dbtype" ) && a.getValue() instanceof BoxStringLiteral )
+			    .filter( a -> {
+				    String value = ( ( BoxStringLiteral ) a.getValue() ).getValue();
+				    return !value.equalsIgnoreCase( "query" ) && !value.equalsIgnoreCase( "hql" );
+			    } )
+			    .toList()
+			    .forEach( a -> node.getAttributes().remove( a ) );
+		}
 		return super.visit( node );
 	}
 
