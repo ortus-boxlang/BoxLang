@@ -86,6 +86,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.BoxLicenseException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
 import ortus.boxlang.runtime.types.util.MathUtil;
@@ -678,9 +679,15 @@ public class BoxRuntime implements java.io.Closeable {
 				try {
 					instance.startup();
 				} catch ( Throwable t ) {
-					// Capture the startup exception for any other threads waiting for the instance to be available
-					instance.startupException = t;
-					throw t;
+					// Allow bx-plus commands like activation and info to pass through so that an expired license or trial doesn't block registration or info
+					if ( !ExceptionUtil.isValidLicenseAction( instance, t ) ) {
+						// Capture the startup exception for any other threads waiting for the instance to be available
+						instance.startupException = t;
+						throw t;
+					} else {
+						instance.getLoggingService().getRootLogger()
+						    .warn( "License module action detected during startup failure, allowing it to continue: " + t.getMessage() );
+					}
 				}
 			}
 		}
