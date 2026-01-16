@@ -21,7 +21,7 @@ package ortus.boxlang.runtime.types.exceptions;
  * This exception is thrown when there is a license activation or validation failure
  *
  *
- * */
+ */
 public class BoxLangLicenseException extends BoxRuntimeException {
 
 	/**
