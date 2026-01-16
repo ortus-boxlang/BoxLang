@@ -513,49 +513,67 @@ public class BoxRuntime implements java.io.Closeable {
 		// Seed Mathematical Precision for the runtime
 		MathUtil.setHighPrecisionMath( getConfiguration().useHighPrecisionMath );
 
-		// Announce Startup to Services only
-		this.asyncService.onStartup();
-		this.interceptorService.onStartup();
-		this.functionService.onStartup();
-		this.componentService.onStartup();
-		this.applicationService.onStartup();
+		try {
+			// Announce Startup to Services only
+			this.asyncService.onStartup();
+			this.interceptorService.onStartup();
+			this.functionService.onStartup();
+			this.componentService.onStartup();
+			this.applicationService.onStartup();
 
-		// Create our runtime context that will be the granddaddy of all contexts that
-		// execute inside this runtime
-		this.runtimeContext = new RuntimeBoxContext();
-		// Now startup the modules so we can have a runtime context available to them
-		this.moduleService.onStartup();
-		// Now the datasource manager can be started, this allows for modules to
-		// register datasources
-		this.dataSourceService.onStartup();
-		// Now the cache service can be started, this allows for modules to register
-		// caches
-		this.cacheService.onStartup();
-		// Now all schedulers can be started, this allows for modules to register
-		// schedulers
-		this.schedulerService.onStartup();
-		// Now the HTTP service can be started, this allows for modules to register
-		// HTTP clients or settings
-		this.httpService.onStartup();
+			// Create our runtime context that will be the granddaddy of all contexts that
+			// execute inside this runtime
+			this.runtimeContext = new RuntimeBoxContext();
+			// Now startup the modules so we can have a runtime context available to them
+			this.moduleService.onStartup();
+			// Now the datasource manager can be started, this allows for modules to
+			// register datasources
+			this.dataSourceService.onStartup();
+			// Now the cache service can be started, this allows for modules to register
+			// caches
+			this.cacheService.onStartup();
+			// Now all schedulers can be started, this allows for modules to register
+			// schedulers
+			this.schedulerService.onStartup();
+			// Now the HTTP service can be started, this allows for modules to register
+			// HTTP clients or settings
+			this.httpService.onStartup();
 
-		// Global Services are now available, start them up
-		this.globalServices.values()
-		    .parallelStream()
-		    .forEach( IService::onStartup );
+			// Global Services are now available, start them up
+			this.globalServices.values()
+			    .parallelStream()
+			    .forEach( IService::onStartup );
 
-		// Initialize the Runtime Context for operation.
-		// This is done in order to avoid chicken-and-egg issues with modules
-		this.runtimeContext.startup();
+			// Initialize the Runtime Context for operation.
+			// This is done in order to avoid chicken-and-egg issues with modules
+			this.runtimeContext.startup();
 
-		// Runtime Started log it
-		this.logger.debug(
-		    "+ BoxLang Runtime Started at [{}] in [{}]ms",
-		    Instant.now(),
-		    timerUtil.stopAndGetMillis( "runtime-startup" ) );
+			// Runtime Started log it
+			this.logger.debug(
+			    "+ BoxLang Runtime Started at [{}] in [{}]ms",
+			    Instant.now(),
+			    timerUtil.stopAndGetMillis( "runtime-startup" ) );
 
-		// Announce it baby! Runtime is up
-		this.interceptorService.announce(
-		    BoxEvent.ON_RUNTIME_START );
+			// Announce it baby! Runtime is up
+			this.interceptorService.announce(
+			    BoxEvent.ON_RUNTIME_START );
+		} catch ( BoxRuntimeException e ) {
+			if ( inCLIMode() ) {
+				this.logger.error( "BoxLang runtime failed to start: " + e.getMessage(), e );
+				// Attempt to shutdown any started services gracefully
+				this.globalServices.entrySet().stream()
+				    .forEach( entry -> {
+					    try {
+						    entry.getValue().onShutdown( true );
+					    } catch ( Throwable t ) {
+						    this.logger.error( "Error shutting down global service [{}] during failed runtime startup:", entry.getKey(), t );
+					    }
+				    } );
+				System.exit( 1 );
+			} else {
+				throw e;
+			}
+		}
 
 		// Setting this to a non-null value is the flag that lets everyone know the instance is fully started
 		this.startTime = Instant.now();
