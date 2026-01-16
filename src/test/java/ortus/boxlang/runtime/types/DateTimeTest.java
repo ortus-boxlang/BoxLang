@@ -262,4 +262,20 @@ public class DateTimeTest {
 		// @formatter:on
 	}
 
+	@DisplayName( "Tests DateTime lenient comparisons" )
+	@Test
+	void testLenientComparisons() {
+		// @formatter:off
+		instance.executeSource(
+		"""
+			dateOne = parseDateTime( '2025-02-27T13:00:00-05:00' );
+			dateTwo = parseDateTime( '2025-02-27T10:00:00-08:00' );
+			lenientComparison = dateOne.isEqual( dateTwo, true );
+		""", 
+		context 
+		);
+		assertThat( variables.get( Key.of( "lenientComparison" ) ) ).isEqualTo( true );
+		// @formatter:on
+	}
+
 }
