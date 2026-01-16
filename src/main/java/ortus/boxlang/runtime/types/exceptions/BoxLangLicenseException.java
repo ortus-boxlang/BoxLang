@@ -18,10 +18,10 @@
 package ortus.boxlang.runtime.types.exceptions;
 
 /**
- * This exception is thrown when an attempt to cast a value to a specific Java type fails.
+ * This exception is thrown when there is a license activation or validation failure
  *
- * Most often it is seen when strongly typed arguments or attributes are used in a way that is not compatible with the expected type.
- */
+ *
+ * */
 public class BoxLangLicenseException extends BoxRuntimeException {
 
 	/**
