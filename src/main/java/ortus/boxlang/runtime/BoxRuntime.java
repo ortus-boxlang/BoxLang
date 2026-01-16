@@ -559,7 +559,7 @@ public class BoxRuntime implements java.io.Closeable {
 			    BoxEvent.ON_RUNTIME_START );
 		} catch ( BoxRuntimeException e ) {
 			if ( inCLIMode() ) {
-				this.logger.error( "BoxLang runtime failed to start: " + e.getMessage(), e );
+				this.logger.error( "BoxLang runtime failed to start: {}", e.getMessage(), e );
 				// Attempt to shutdown any started services gracefully
 				this.globalServices.entrySet().stream()
 				    .forEach( entry -> {
