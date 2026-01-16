@@ -55,7 +55,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.SchedulerService;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
-import ortus.boxlang.runtime.types.exceptions.BoxLangLicenseException;
+import ortus.boxlang.runtime.types.exceptions.BoxLicenseException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
@@ -145,7 +145,7 @@ public class BoxRunner {
 		// Get a runtime going using the CLI options
 		try {
 			boxRuntime = BoxRuntime.getInstance( options );
-		} catch ( BoxLangLicenseException le ) {
+		} catch ( BoxLicenseException le ) {
 			System.out.println( String.format( licenseExceptionMessage, le.getMessage() ) );
 			ExceptionUtil.printBoxLangStackTrace( le, System.err );
 			System.exit( 1 );

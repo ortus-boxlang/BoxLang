@@ -567,7 +567,7 @@ public class ExceptionUtil {
 	 * @return True if executing a license action in CLI mode, false otherwise
 	 */
 	public static boolean isValidLicenseAction( BoxRuntime instance, Throwable t ) {
-		return ( t instanceof BoxLangLicenseException
+		return ( t instanceof BoxLicenseException
 		    ||
 		    t.getMessage().contains( ExceptionUtil.LICENSE_MODULE_NAME ) )
 		    && instance.inCLIMode()

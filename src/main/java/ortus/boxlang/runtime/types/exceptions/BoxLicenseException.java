@@ -22,14 +22,14 @@ package ortus.boxlang.runtime.types.exceptions;
  *
  *
  */
-public class BoxLangLicenseException extends BoxRuntimeException {
+public class BoxLicenseException extends BoxRuntimeException {
 
 	/**
 	 * Constructor
 	 *
 	 * @param message The message
 	 */
-	public BoxLangLicenseException( String message ) {
+	public BoxLicenseException( String message ) {
 		this( message, null );
 	}
 
@@ -39,8 +39,8 @@ public class BoxLangLicenseException extends BoxRuntimeException {
 	 * @param message The message
 	 * @param cause   The cause
 	 */
-	public BoxLangLicenseException( String message, Throwable cause ) {
-		super( message, "BoxLangLicenseException", cause );
+	public BoxLicenseException( String message, Throwable cause ) {
+		super( message, "BoxLicenseException", cause );
 	}
 
 }
