@@ -2792,6 +2792,24 @@ public class DynamicInteropService {
 			}
 		}
 
+		// If actual is a Class instance and expected is not, then see if the actual class is assignable to expected, if so we want to attempt to instantiate it using the no-arg constructor
+		if ( value instanceof Class<?> cls && !isInterface( cls ) && expected != Class.class ) {
+			// See if the class is assignable to the expected type
+			if ( expected.isAssignableFrom( cls ) ) {
+				try {
+					// Try to instantiate it using the no-arg constructor
+					Object instance = invokeConstructor( context, cls );
+					// Type casting from Class to instance is a pretty loose match
+					matchScore.addAndGet( 4 );
+					return Optional.of( instance );
+				} catch ( BoxRuntimeException e ) {
+					// Ignore things like NoConstructorException
+					// This is a bit of a wide net, but there are many reasons why instantiation could fail, and in any case, it just means we can't coerce it so we ignore it.
+					// We could do more checks above before attempting to instantiate, but then we'd have to duplicate quite a lot of logic to actually check the constructors available on the class, etc
+				}
+			}
+		}
+
 		// EXPECTED: FunctionInterfaces and/or SAMs
 		Class<?> functionalInterface = InterfaceProxyService.getFunctionalInterface( expected );
 		// If the target is a functional interface and the actual value is a Funcion or Runnable, coerce it
