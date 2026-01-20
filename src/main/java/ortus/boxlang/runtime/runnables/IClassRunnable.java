@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.StaticScope;
 import ortus.boxlang.runtime.scopes.ThisScope;
@@ -37,6 +38,7 @@ import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Property;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 
@@ -93,7 +95,6 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 	/**
 	 * Get the combined metadata for this class and all it's functions
 	 * This follows the format of Lucee and Adobe's "combined" metadata
-	 * TODO: Move this to compat module
 	 *
 	 * @return The metadata as a struct
 	 */
@@ -128,7 +129,12 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 	public void setCanInvokeImplicitAccessor( Boolean canInvokeImplicitAccessor );
 
 	/**
-	 * Get the super class. Null if there is none
+	 * Get the super class definition. Null if there is none
+	 */
+	public DynamicObject getSuperClass();
+
+	/**
+	 * Get the super class instance. Null if there is none
 	 */
 	public IClassRunnable getSuper();
 
@@ -170,6 +176,13 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 	public Map<Key, AbstractFunction> getAbstractMethods();
 
 	public Set<Key> getCompileTimeMethodNames();
+
+	/**
+	 * Get compile time methods
+	 * 
+	 * @return Map of compile time methods
+	 */
+	public Map<Key, Class<? extends UDF>> getCompileTimeMethods();
 
 	public Map<Key, AbstractFunction> getAllAbstractMethods();
 

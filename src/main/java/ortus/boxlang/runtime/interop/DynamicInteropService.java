@@ -95,7 +95,6 @@ import ortus.boxlang.runtime.types.exceptions.NoMethodException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
 import ortus.boxlang.runtime.types.util.BooleanRef;
-import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.types.util.ObjectRef;
 import ortus.boxlang.runtime.types.util.TypeUtil;
 
@@ -2911,49 +2910,27 @@ public class DynamicInteropService {
 		classContext.pushTemplate( boxClass );
 
 		try {
-			// First, we load the super class if it exists
-			Object superClassObject = boxClass.getAnnotations().get( Key._EXTENDS );
-			if ( superClassObject != null ) {
-				String superClassName = StringCaster.cast( superClassObject );
-				if ( superClassName != null && superClassName.length() > 0 && !superClassName.toLowerCase().startsWith( "java:" ) ) {
-					// Recursively load the super class
-					IClassRunnable _super = ( IClassRunnable ) getClassLocator().load( classContext,
-					    superClassName,
-					    classContext.getCurrentImports()
-					)
-					    // Constructor args are NOT passed. Only the outermost class gets to use those
-					    .invokeConstructor( classContext, new Object[] { Key.noInit } )
-					    .unWrapBoxLangClass();
+			if ( boxClass.getSuperClass() != null ) {
+				// Recursively load the super class
+				IClassRunnable _super = ( IClassRunnable ) boxClass.getSuperClass()
+				    // Constructor args are NOT passed. Only the outermost class gets to use those
+				    .invokeConstructor( classContext, new Object[] { Key.noInit } )
+				    .unWrapBoxLangClass();
 
-					// Check for final annotation and throw if we're trying to extend a final class
-					if ( _super.getAnnotations().get( Key._final ) != null ) {
-						throw new BoxRuntimeException( "Cannot extend final class: " + _super.bxGetName() );
-					}
-					// Set in our super class
-					boxClass.setSuper( _super );
+				// Check for final annotation and throw if we're trying to extend a final class
+				if ( _super.getAnnotations().get( Key._final ) != null ) {
+					throw new BoxRuntimeException( "Cannot extend final class: " + _super.bxGetName() );
 				}
+				// Set in our super class
+				boxClass.setSuper( _super );
 			}
 
 			// Run the pseudo constructor
 			boxClass.pseudoConstructor( classContext );
 
 			// Now that UDFs are defined, let's enforce any interfaces
-			Object oInterfaces = boxClass.getAnnotations().get( Key._IMPLEMENTS );
-			if ( oInterfaces != null ) {
-				List<String> interfaceNames = ListUtil.asList( StringCaster.cast( oInterfaces ), "," )
-				    .stream()
-				    .map( String::valueOf )
-				    .map( String::trim )
-				    // ignore anything starting with java: (case insensitive)
-				    .filter( name -> !name.toLowerCase().startsWith( "java:" ) )
-				    .toList();
-
-				for ( String interfaceName : interfaceNames ) {
-					BoxInterface thisInterface = ( BoxInterface ) getClassLocator().load( classContext, interfaceName, classContext.getCurrentImports() )
-					    .unWrapBoxLangClass();
-					boxClass.registerInterface( thisInterface );
-				}
-
+			for ( BoxInterface _interface : boxClass.getInterfaces() ) {
+				boxClass.registerInterface( _interface );
 			}
 
 			if ( !noInit ) {
@@ -3025,7 +3002,9 @@ public class DynamicInteropService {
 					}
 				}
 			}
-		} finally {
+		} finally
+
+		{
 			// This is for any output written in the pseudoconstructor that needs to be flushed
 			classContext.flushBuffer( false );
 			classContext.popTemplate();

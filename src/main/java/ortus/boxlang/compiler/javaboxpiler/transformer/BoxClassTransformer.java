@@ -101,6 +101,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.types.exceptions.*;
 		import ortus.boxlang.runtime.types.meta.BoxMeta;
 		import ortus.boxlang.runtime.types.meta.ClassMeta;
+		import ortus.boxlang.runtime.types.meta.FunctionMeta;
 		import ortus.boxlang.runtime.types.Property;
 		import ortus.boxlang.runtime.types.util.*;
 		import ortus.boxlang.runtime.util.*;
@@ -140,22 +141,27 @@ public class BoxClassTransformer extends AbstractTransformer {
 			// public so the static initializer can access it
 			public static final ResolvedFilePath path = ${resolvedFilePath};
 			private static final BoxSourceType sourceType = BoxSourceType.${sourceType};
-			private static final Object	ast	= null;
+			private static DynamicObject superClass = null;
+			private static List<BoxInterface> interfaces = new ArrayList<>();
 			private static final IStruct annotations;
 			private static final IStruct documentation;
 			private static final Map<Key,Property>	properties;
 			private static final Map<Key,Property>	getterLookup=null;
 			private static final Map<Key,Property>	setterLookup=null;
 			private static Map<Key, AbstractFunction>	abstractMethods	= new LinkedHashMap<>();
-			private static Set<Key> compileTimeMethodNames = ${compileTimeMethodNames};
+			private static Map<Key, Class<? extends UDF>> compileTimeMethods = ${compileTimeMethods};
 			private static final boolean isJavaExtends=${isJavaExtends};
 			private static StaticScope staticScope = new StaticScope();
 			// This is public so the ClassLocator can check it easily
 			public static boolean staticInitialized = false;
 			public static final Key name = ${boxFQN};
+			// Used to cached modern metadata (created on-demand)
+			public static IStruct metadata = null;
+			// Used to cached legacy metadata (created on-demand, never used if compat isn't installed)
+			public static IStruct legacyMetadata = null;
 
 			static {
-				BoxClassSupport.runStaticInitializer( ${className}::staticInitializer, ${className}.class, ${className}.staticScope, ${className}.path );
+				superClass = BoxClassSupport.runStaticInitializer( ${className}::staticInitializer, ${className}.class, ${className}.staticScope, ${className}.path, imports, interfaces, annotations );
 			}
 
 			// Private instance fields
@@ -165,7 +171,6 @@ public class BoxClassTransformer extends AbstractTransformer {
 			private IClassRunnable child = null;
 			private Boolean canOutput = null;
 			private Boolean canInvokeImplicitAccessor = null;
-			private List<BoxInterface> interfaces = new ArrayList<>();
 
 			// Public instance fields
 			public transient BoxMeta		$bx;
@@ -199,7 +204,11 @@ public class BoxClassTransformer extends AbstractTransformer {
 			}
 
 			public Set<Key> getCompileTimeMethodNames() {
-				return compileTimeMethodNames;
+				return ${className}.compileTimeMethods.keySet();
+			}
+
+			public Map<Key, Class<? extends UDF>> getCompileTimeMethods() {
+				return ${className}.compileTimeMethods;
 			}
 
 			public BoxMeta _getbx() {
@@ -302,6 +311,10 @@ public class BoxClassTransformer extends AbstractTransformer {
 				this.canInvokeImplicitAccessor = canInvokeImplicitAccessor;
 			}
 
+			public DynamicObject getSuperClass() {
+				return superClass;
+			}
+
 			public IClassRunnable getSuper() {
 				return this._super;
 			}
@@ -360,8 +373,59 @@ public class BoxClassTransformer extends AbstractTransformer {
 					return BoxClassSupport.dereferenceAndInvoke( this, context, name, namedArguments, safe );
 			}
 
+			@Override
 			public IStruct getMetaData() {
-				return BoxClassSupport.getMetaData( this );
+				return ${className}.getMetaDataStatic();
+			}
+
+			public static IStruct getMetaDataStatic() {
+				if( ${className}.legacyMetadata == null ) {
+					synchronized( ${className}.class ) {
+						if( ${className}.legacyMetadata == null ) {
+							${className}.legacyMetadata =  BoxClassSupport.getMetaData( 
+								${className}.class,
+								${className}.name,
+								${className}.sourceType,
+								${className}.path,
+								${className}.superClass,
+								${className}.interfaces,
+								${className}.abstractMethods,
+								${className}.compileTimeMethods,
+								${className}.annotations,
+								${className}.documentation,
+								${className}.properties,
+								${className}.staticScope				
+							);
+						}
+					}
+				}
+
+				return ${className}.legacyMetadata;
+			}
+
+			public static IStruct getMetaStatic() {
+				if( ${className}.metadata == null ) {
+					synchronized( ${className}.class ) {
+						if( ${className}.metadata == null ) {
+							${className}.metadata =  ClassMeta.generateMeta( 
+								${className}.class,
+								${className}.name,
+								${className}.sourceType,
+								${className}.path,
+								${className}.superClass,
+								${className}.interfaces,
+								${className}.abstractMethods,
+								${className}.compileTimeMethods,
+								${className}.annotations,
+								${className}.documentation,
+								${className}.properties,
+								${className}.staticScope				
+							);
+						}
+					}
+				}
+
+				return ${className}.metadata;
 			}
 
 			public void registerInterface( BoxInterface _interface ) {
@@ -529,7 +593,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 		    // Don't use the transpiler helper method for this so it's always a Key.of() call. When re-defining a class, we want this to be a Key.of() call.
 		    // Casting input to Object to match the same bytecode the ASM boxpiler uses, which the DiskClassLoader ASM vistor looks for.
 		    Map.entry( "boxFQN", "Key.of( (Object)\"" + boxFQN + "\" )" ),
-		    Map.entry( "compileTimeMethodNames", generateCompileTimeMethodNames( boxClass ) )
+		    Map.entry( "compileTimeMethods", generateCompileTimeMethods( boxClass ) )
 		);
 		String							code		= PlaceholderHelper.resolve( CLASS_TEMPLATE, values );
 		ParseResult<CompilationUnit>	result;
@@ -666,14 +730,14 @@ public class BoxClassTransformer extends AbstractTransformer {
 		return entryPoint;
 	}
 
-	private String generateCompileTimeMethodNames( BoxClass boxClass ) {
-		List<String> methodNames = boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
+	private String generateCompileTimeMethods( BoxClass boxClass ) {
+		List<String> entries = boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
 		    .stream()
-		    .map( BoxFunctionDeclaration::getName )
-		    .map( this::createKey )
-		    .map( String::valueOf )
+		    // Filter out abstract methods as they do not have a class
+		    .filter( bfd -> bfd.getBody() != null )
+		    .map( func -> "Map.entry(" + this.createKey( func.getName() ).toString() + ", Func_" + func.getName() + ".class)" )
 		    .collect( java.util.stream.Collectors.toList() );
-		return "Set.of(" + methodNames.stream().collect( java.util.stream.Collectors.joining( ", " ) ) + ")";
+		return "Map.ofEntries(" + entries.stream().collect( java.util.stream.Collectors.joining( ", " ) ) + ")";
 	}
 
 	/**

@@ -74,9 +74,7 @@ public class GetClassMetadata extends BIF {
 		}
 		// Else we have a class
 		else {
-			loadedClass.invokeConstructor( context, Key.noInit );
-			IClassRunnable boxClass = ( IClassRunnable ) loadedClass.unWrapBoxLangClass();
-			return boxClass.getBoxMeta().getMeta();
+			return loadedClass.invokeStatic( context, "getMetaStatic" );
 		}
 
 	}
