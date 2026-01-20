@@ -35,9 +35,11 @@ import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.Function.Access;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Lambda;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.meta.FunctionMeta;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
@@ -102,6 +104,156 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 		    "getAccess",
 		    Type.getType( Function.Access.class ),
 		    null );
+
+		// Add metadata cache fields (private static volatile)
+		AsmHelper.addNullStaticField( classNode, "metadata", Type.getType( IStruct.class ), true );
+		AsmHelper.addNullStaticField( classNode, "legacyMetadata", Type.getType( IStruct.class ), true );
+
+		// Add static boolean fields for isClosure and isLambda
+		AsmHelper.addStaticFieldWithInitialValue( classNode, "isClosure", Type.BOOLEAN_TYPE, false );
+		AsmHelper.addStaticFieldWithInitialValue( classNode, "isLambda", Type.BOOLEAN_TYPE, true );
+
+		// Add defaultOutput as public static field (lambdas can't output by default)
+		AsmHelper.addStaticFieldWithInitialValue( classNode, "defaultOutput", Type.BOOLEAN_TYPE, false );
+
+		// Add getMetaDataStatic() method with double-check locking
+		AsmHelper.addDoubleCheckLockedStaticMethod(
+		    classNode,
+		    type,
+		    "getMetaDataStatic",
+		    "metadata",
+		    Type.getType( IStruct.class ),
+		    methodVisitor -> {
+			    // Call FunctionMeta.generateMeta(name, arguments, returnType, access, documentation, isClosure, isLambda, superClass, interfaces, canOutput,
+			    // declaringClass, annotations)
+
+			    // name (Key)
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "name", Type.getDescriptor( Key.class ) );
+
+			    // arguments (Argument[])
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "arguments", Type.getDescriptor( Argument[].class ) );
+
+			    // returnType (String)
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "returnType", Type.getDescriptor( String.class ) );
+
+			    // access (Access)
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "access", Type.getDescriptor( Access.class ) );
+
+			    // documentation (IStruct)
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "documentation", Type.getDescriptor( IStruct.class ) );
+
+			    // isClosure (boolean) - false for lambda
+			    methodVisitor.visitInsn( Opcodes.ICONST_0 );
+
+			    // isLambda (boolean) - true for lambda
+			    methodVisitor.visitInsn( Opcodes.ICONST_1 );
+
+			    // superClass (String) - null for lambda
+			    methodVisitor.visitInsn( Opcodes.ACONST_NULL );
+
+			    // interfaces (String[]) - empty for lambda
+			    methodVisitor.visitInsn( Opcodes.ICONST_0 );
+			    methodVisitor.visitTypeInsn( Opcodes.ANEWARRAY, "java/lang/String" );
+
+			    // canOutput (boolean) - false for lambda
+			    methodVisitor.visitInsn( Opcodes.ICONST_0 );
+
+			    // declaringClass (Class<?>) - this lambda's class
+			    methodVisitor.visitLdcInsn( type );
+
+			    // annotations (IStruct)
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "annotations", Type.getDescriptor( IStruct.class ) );
+
+			    // Call FunctionMeta.generateMeta(...)
+			    methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
+			        Type.getInternalName( FunctionMeta.class ),
+			        "generateMeta",
+			        Type.getMethodDescriptor(
+			            Type.getType( IStruct.class ),
+			            Type.getType( Key.class ),
+			            Type.getType( Argument[].class ),
+			            Type.getType( String.class ),
+			            Type.getType( Access.class ),
+			            Type.getType( IStruct.class ),
+			            Type.BOOLEAN_TYPE,
+			            Type.BOOLEAN_TYPE,
+			            Type.getType( String.class ),
+			            Type.getType( String[].class ),
+			            Type.BOOLEAN_TYPE,
+			            Type.getType( Class.class ),
+			            Type.getType( IStruct.class ) ),
+			        false );
+		    } );
+
+		// Add getMetaStatic() method with double-check locking (returns same as getMetaDataStatic for lambdas)
+		AsmHelper.addDoubleCheckLockedStaticMethod(
+		    classNode,
+		    type,
+		    "getMetaStatic",
+		    "legacyMetadata",
+		    Type.getType( IStruct.class ),
+		    methodVisitor -> {
+			    // For lambdas, legacy metadata is same as regular metadata
+			    // Call FunctionMeta.generateMeta(name, arguments, returnType, access, documentation, isClosure, isLambda, superClass, interfaces, canOutput,
+			    // declaringClass, annotations)
+
+			    // name (Key)
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "name", Type.getDescriptor( Key.class ) );
+
+			    // arguments (Argument[])
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "arguments", Type.getDescriptor( Argument[].class ) );
+
+			    // returnType (String)
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "returnType", Type.getDescriptor( String.class ) );
+
+			    // access (Access)
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "access", Type.getDescriptor( Access.class ) );
+
+			    // documentation (IStruct)
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "documentation", Type.getDescriptor( IStruct.class ) );
+
+			    // isClosure (boolean) - false for lambda
+			    methodVisitor.visitInsn( Opcodes.ICONST_0 );
+
+			    // isLambda (boolean) - true for lambda
+			    methodVisitor.visitInsn( Opcodes.ICONST_1 );
+
+			    // superClass (String) - null for lambda
+			    methodVisitor.visitInsn( Opcodes.ACONST_NULL );
+
+			    // interfaces (String[]) - empty for lambda
+			    methodVisitor.visitInsn( Opcodes.ICONST_0 );
+			    methodVisitor.visitTypeInsn( Opcodes.ANEWARRAY, "java/lang/String" );
+
+			    // canOutput (boolean) - false for lambda
+			    methodVisitor.visitInsn( Opcodes.ICONST_0 );
+
+			    // declaringClass (Class<?>) - this lambda's class
+			    methodVisitor.visitLdcInsn( type );
+
+			    // annotations (IStruct)
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "annotations", Type.getDescriptor( IStruct.class ) );
+
+			    // Call FunctionMeta.generateMeta(...)
+			    methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
+			        Type.getInternalName( FunctionMeta.class ),
+			        "generateMeta",
+			        Type.getMethodDescriptor(
+			            Type.getType( IStruct.class ),
+			            Type.getType( Key.class ),
+			            Type.getType( Argument[].class ),
+			            Type.getType( String.class ),
+			            Type.getType( Access.class ),
+			            Type.getType( IStruct.class ),
+			            Type.BOOLEAN_TYPE,
+			            Type.BOOLEAN_TYPE,
+			            Type.getType( String.class ),
+			            Type.getType( String[].class ),
+			            Type.BOOLEAN_TYPE,
+			            Type.getType( Class.class ),
+			            Type.getType( IStruct.class ) ),
+			        false );
+		    } );
 
 		Type declaringType = Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
 		    + "/" + transpiler.getProperty( "classname" )

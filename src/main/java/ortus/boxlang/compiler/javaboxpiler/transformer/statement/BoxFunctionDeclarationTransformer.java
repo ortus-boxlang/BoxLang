@@ -67,11 +67,18 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			private final static Key				name		= ${functionName};
 			private final static Argument[]			arguments	= new Argument[] {};
 			private final static String				returnType	= "${returnType}";
-			private              Access		   		access		= Access.${access};
+			private final static Access		   		access		= Access.${access};
 			private final static List<BoxMethodDeclarationModifier>	modifiers = List.of( ${modifiers} );
 
 			private final static IStruct	annotations;
 			private final static IStruct	documentation;
+			// Used to cached modern metadata (created on-demand)
+			private static IStruct metadata = null;
+			// Used to cached legacy metadata (created on-demand, never used if compat isn't installed)
+			private static IStruct legacyMetadata = null;
+			private final static boolean isClosure = ${isClosure};
+			private final static boolean isLambda = ${isLambda};
+			private final static boolean defaultOutput = ${defaultOutput};
 
 			public Key getName() {
 				return name;
@@ -132,6 +139,56 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 				return ${enclosingClassName}.sourceType;
 			}
 
+			public static IStruct getMetaDataStatic() {
+				if( ${className}.legacyMetadata == null ) {
+					synchronized( ${className}.class ) {
+						if( ${className}.legacyMetadata == null ) {
+							${className}.legacyMetadata = Function.getMetaDataStatic(
+								${className}.class,
+								${className}.documentation,
+								${className}.annotations,
+								${className}.name,
+								${className}.returnType,
+								${enclosingClassName}.sourceType,
+								${className}.access,
+								${className}.arguments,
+								${className}.isClosure,
+								${className}.isLambda,
+								${className}.defaultOutput,
+								${className}.modifiers
+							);
+						}
+					}
+				}
+
+				return ${className}.legacyMetadata;
+			}
+
+			public static IStruct getMetaStatic() {
+				if( ${className}.metadata == null ) {
+					synchronized( ${className}.class ) {
+						if( ${className}.metadata == null ) {
+							${className}.metadata =  FunctionMeta.generateMeta( 
+								${className}.class,
+								${className}.documentation,
+								${className}.annotations,
+								${className}.name,
+								${className}.returnType,
+								${enclosingClassName}.sourceType,
+								${className}.access,
+								${className}.arguments,
+								${className}.isClosure,
+								${className}.isLambda,
+								${className}.defaultOutput,
+								${className}.modifiers
+							);
+						}
+					}
+				}
+
+				return ${className}.metadata;
+			}
+
 			@Override
 			public Object _invoke( FunctionBoxContext context ) {
 				ClassLocator classLocator = ClassLocator.getInstance();
@@ -179,7 +236,9 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		    Map.entry( "enclosingClassName", enclosingClassName ),
 		    Map.entry( "boxlangVersion", BoxRuntime.getInstance().getVersionInfo().getAsString( Key.version ) ),
 		    Map.entry( "bytecodeVersion", String.valueOf( IBoxpiler.BYTECODE_VERSION ) ),
-		    Map.entry( "defaultOutput", String.valueOf( defaultOutput ) )
+		    Map.entry( "defaultOutput", String.valueOf( defaultOutput ) ),
+		    Map.entry( "isClosure", "false" ),
+		    Map.entry( "isLambda", "false" )
 		);
 		transpiler.pushContextName( "context" );
 
