@@ -1211,23 +1211,13 @@ public class AsmHelper {
 
 		return switch ( opcode ) {
 			// Push single value onto stack
-			case Opcodes.ACONST_NULL, Opcodes.ICONST_M1, Opcodes.ICONST_0, Opcodes.ICONST_1, Opcodes.ICONST_2, Opcodes.ICONST_3, Opcodes.ICONST_4,
-			    Opcodes.ICONST_5, Opcodes.LCONST_0, Opcodes.LCONST_1, Opcodes.FCONST_0, Opcodes.FCONST_1, Opcodes.FCONST_2, Opcodes.DCONST_0, Opcodes.DCONST_1,
-			    Opcodes.BIPUSH, Opcodes.SIPUSH, Opcodes.LDC, Opcodes.ILOAD, Opcodes.LLOAD, Opcodes.FLOAD, Opcodes.DLOAD, Opcodes.ALOAD, Opcodes.GETSTATIC,
-			    Opcodes.NEW -> 1;
+			case Opcodes.ACONST_NULL, Opcodes.ICONST_M1, Opcodes.ICONST_0, Opcodes.ICONST_1, Opcodes.ICONST_2, Opcodes.ICONST_3, Opcodes.ICONST_4, Opcodes.ICONST_5, Opcodes.LCONST_0, Opcodes.LCONST_1, Opcodes.FCONST_0, Opcodes.FCONST_1, Opcodes.FCONST_2, Opcodes.DCONST_0, Opcodes.DCONST_1, Opcodes.BIPUSH, Opcodes.SIPUSH, Opcodes.LDC, Opcodes.ILOAD, Opcodes.LLOAD, Opcodes.FLOAD, Opcodes.DLOAD, Opcodes.ALOAD, Opcodes.GETSTATIC, Opcodes.NEW -> 1;
 
 			// Pop single value from stack
-			case Opcodes.ISTORE, Opcodes.LSTORE, Opcodes.FSTORE, Opcodes.DSTORE, Opcodes.ASTORE, Opcodes.POP, Opcodes.IRETURN, Opcodes.LRETURN, Opcodes.FRETURN,
-			    Opcodes.DRETURN, Opcodes.ARETURN, Opcodes.ATHROW, Opcodes.MONITORENTER, Opcodes.MONITOREXIT, Opcodes.IFNULL, Opcodes.IFNONNULL, Opcodes.IFEQ,
-			    Opcodes.IFNE, Opcodes.IFLT, Opcodes.IFGE, Opcodes.IFGT, Opcodes.IFLE, Opcodes.TABLESWITCH, Opcodes.LOOKUPSWITCH -> -1;
+			case Opcodes.ISTORE, Opcodes.LSTORE, Opcodes.FSTORE, Opcodes.DSTORE, Opcodes.ASTORE, Opcodes.POP, Opcodes.IRETURN, Opcodes.LRETURN, Opcodes.FRETURN, Opcodes.DRETURN, Opcodes.ARETURN, Opcodes.ATHROW, Opcodes.MONITORENTER, Opcodes.MONITOREXIT, Opcodes.IFNULL, Opcodes.IFNONNULL, Opcodes.IFEQ, Opcodes.IFNE, Opcodes.IFLT, Opcodes.IFGE, Opcodes.IFGT, Opcodes.IFLE, Opcodes.TABLESWITCH, Opcodes.LOOKUPSWITCH -> -1;
 
 			// Pop 2 values from stack
-			case Opcodes.POP2, Opcodes.IF_ICMPEQ, Opcodes.IF_ICMPNE, Opcodes.IF_ICMPLT, Opcodes.IF_ICMPGE, Opcodes.IF_ICMPGT, Opcodes.IF_ICMPLE,
-			    Opcodes.IF_ACMPEQ, Opcodes.IF_ACMPNE, Opcodes.IADD, Opcodes.LADD, Opcodes.FADD, Opcodes.DADD, Opcodes.ISUB, Opcodes.LSUB, Opcodes.FSUB,
-			    Opcodes.DSUB, Opcodes.IMUL, Opcodes.LMUL, Opcodes.FMUL, Opcodes.DMUL, Opcodes.IDIV, Opcodes.LDIV, Opcodes.FDIV, Opcodes.DDIV, Opcodes.IREM,
-			    Opcodes.LREM, Opcodes.FREM, Opcodes.DREM, Opcodes.ISHL, Opcodes.LSHL, Opcodes.ISHR, Opcodes.LSHR, Opcodes.IUSHR, Opcodes.LUSHR, Opcodes.IAND,
-			    Opcodes.LAND, Opcodes.IOR, Opcodes.LOR, Opcodes.IXOR, Opcodes.LXOR, Opcodes.LCMP, Opcodes.FCMPL, Opcodes.FCMPG, Opcodes.DCMPL, Opcodes.DCMPG,
-			    Opcodes.PUTFIELD -> -2;
+			case Opcodes.POP2, Opcodes.IF_ICMPEQ, Opcodes.IF_ICMPNE, Opcodes.IF_ICMPLT, Opcodes.IF_ICMPGE, Opcodes.IF_ICMPGT, Opcodes.IF_ICMPLE, Opcodes.IF_ACMPEQ, Opcodes.IF_ACMPNE, Opcodes.IADD, Opcodes.LADD, Opcodes.FADD, Opcodes.DADD, Opcodes.ISUB, Opcodes.LSUB, Opcodes.FSUB, Opcodes.DSUB, Opcodes.IMUL, Opcodes.LMUL, Opcodes.FMUL, Opcodes.DMUL, Opcodes.IDIV, Opcodes.LDIV, Opcodes.FDIV, Opcodes.DDIV, Opcodes.IREM, Opcodes.LREM, Opcodes.FREM, Opcodes.DREM, Opcodes.ISHL, Opcodes.LSHL, Opcodes.ISHR, Opcodes.LSHR, Opcodes.IUSHR, Opcodes.LUSHR, Opcodes.IAND, Opcodes.LAND, Opcodes.IOR, Opcodes.LOR, Opcodes.IXOR, Opcodes.LXOR, Opcodes.LCMP, Opcodes.FCMPL, Opcodes.FCMPG, Opcodes.DCMPL, Opcodes.DCMPG, Opcodes.PUTFIELD -> -2;
 
 			// Pop 3 values from stack
 			case Opcodes.IASTORE, Opcodes.LASTORE, Opcodes.FASTORE, Opcodes.DASTORE, Opcodes.AASTORE, Opcodes.BASTORE, Opcodes.CASTORE, Opcodes.SASTORE -> -3;
@@ -1999,5 +1989,147 @@ public class AsmHelper {
 		annotationVisitor.visit( "boxlangVersion", boxlangVersion );
 		annotationVisitor.visit( "bytecodeVersion", bytecodeVersion );
 		annotationVisitor.visitEnd();
+	}
+
+	/**
+	 * Adds a static method with double-check locking pattern for lazy initialization.
+	 * This is used for metadata methods like getMetaDataStatic() and getMetaStatic().
+	 *
+	 * @param classVisitor   The class visitor to add the method to
+	 * @param type           The type of the class being modified
+	 * @param methodName     The name of the static method to create
+	 * @param cacheFieldName The name of the static field used to cache the result
+	 * @param generateBody   Consumer that generates the method body to compute the value
+	 */
+	public static void addDoubleCheckLockedStaticMethod(
+	    ClassVisitor classVisitor,
+	    Type type,
+	    String methodName,
+	    String cacheFieldName,
+	    Type returnType,
+	    Consumer<MethodVisitor> generateBody ) {
+
+		MethodVisitor mv = classVisitor.visitMethod(
+		    Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+		    methodName,
+		    Type.getMethodDescriptor( returnType ),
+		    null,
+		    null );
+		mv.visitCode();
+
+		// First null check (outside synchronized block)
+		Label endOfMethod = new Label();
+		mv.visitFieldInsn( Opcodes.GETSTATIC,
+		    type.getInternalName(),
+		    cacheFieldName,
+		    returnType.getDescriptor() );
+		mv.visitJumpInsn( Opcodes.IFNONNULL, endOfMethod );
+
+		// Synchronized block on class
+		mv.visitLdcInsn( type );
+		mv.visitInsn( Opcodes.MONITORENTER );
+
+		// Second null check (inside synchronized block)
+		mv.visitFieldInsn( Opcodes.GETSTATIC,
+		    type.getInternalName(),
+		    cacheFieldName,
+		    returnType.getDescriptor() );
+		Label start = new Label(), end = new Label(), handler = new Label();
+		mv.visitTryCatchBlock( start, end, handler, null );
+		mv.visitLabel( start );
+		mv.visitJumpInsn( Opcodes.IFNONNULL, end );
+
+		// Generate the body that computes and stores the value
+		generateBody.accept( mv );
+		mv.visitFieldInsn( Opcodes.PUTSTATIC,
+		    type.getInternalName(),
+		    cacheFieldName,
+		    returnType.getDescriptor() );
+
+		// Exit synchronized block normally
+		mv.visitLabel( end );
+		mv.visitLdcInsn( type );
+		mv.visitInsn( Opcodes.MONITOREXIT );
+
+		// Return cached value
+		mv.visitLabel( endOfMethod );
+		mv.visitFieldInsn( Opcodes.GETSTATIC,
+		    type.getInternalName(),
+		    cacheFieldName,
+		    returnType.getDescriptor() );
+		mv.visitInsn( Opcodes.ARETURN );
+
+		// Exception handler for synchronized block
+		mv.visitLabel( handler );
+		mv.visitLdcInsn( type );
+		mv.visitInsn( Opcodes.MONITOREXIT );
+		mv.visitInsn( Opcodes.ATHROW );
+
+		mv.visitMaxs( 0, 0 );
+		mv.visitEnd();
+	}
+
+	/**
+	 * Add a static field initialized to null.
+	 *
+	 * @param classVisitor The class visitor
+	 * @param fieldName    The name of the field
+	 * @param fieldType    The type of the field
+	 * @param isVolatile   Whether the field should be volatile
+	 */
+	public static void addNullStaticField( ClassVisitor classVisitor, String fieldName, Type fieldType, boolean isVolatile ) {
+		int access = Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC;
+		if ( isVolatile ) {
+			access |= Opcodes.ACC_VOLATILE;
+		}
+		FieldVisitor fieldVisitor = classVisitor.visitField( access,
+		    fieldName,
+		    fieldType.getDescriptor(),
+		    null,
+		    null );
+		fieldVisitor.visitEnd();
+	}
+
+	/**
+	 * Add a public static field with an initial boolean value.
+	 *
+	 * @param classVisitor The class visitor
+	 * @param fieldName    The name of the field
+	 * @param fieldType    The type of the field (should be Type.BOOLEAN_TYPE)
+	 * @param initialValue The initial boolean value
+	 */
+	public static void addStaticFieldWithInitialValue( ClassVisitor classVisitor, String fieldName, Type fieldType, boolean initialValue ) {
+		FieldVisitor fieldVisitor = classVisitor.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
+		    fieldName,
+		    fieldType.getDescriptor(),
+		    null,
+		    initialValue ? 1 : 0 );
+		fieldVisitor.visitEnd();
+	}
+
+	/**
+	 * Add a static getter method for an existing field (does NOT create the field).
+	 * Use this when the field is already defined elsewhere.
+	 *
+	 * @param classVisitor The class visitor
+	 * @param type         The type of the class
+	 * @param fieldName    The name of the existing field
+	 * @param methodName   The name of the getter method
+	 * @param returnType   The return type of the getter
+	 */
+	public static void addStaticGetterMethodOnly( ClassVisitor classVisitor, Type type, String fieldName, String methodName, Type returnType ) {
+		MethodVisitor methodVisitor = classVisitor.visitMethod( Opcodes.ACC_PUBLIC,
+		    methodName,
+		    Type.getMethodDescriptor( returnType ),
+		    null,
+		    null );
+		methodVisitor.visitCode();
+		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
+		    type.getInternalName(),
+		    fieldName,
+		    returnType.getDescriptor() );
+		methodVisitor.visitInsn( returnType.getOpcode( Opcodes.IRETURN ) );
+		methodVisitor.visitMaxs( 0, 0 );
+		methodVisitor.visitEnd();
 	}
 }
