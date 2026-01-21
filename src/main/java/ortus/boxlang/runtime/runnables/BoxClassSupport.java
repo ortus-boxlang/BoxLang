@@ -730,7 +730,7 @@ public class BoxClassSupport {
 
 		// Add extends and implements
 		if ( superClass != null ) {
-			meta.put( Key._EXTENDS, superClass.invokeStatic( runtime.getRuntimeContext(), "getMetaData" ) );
+			meta.put( Key._EXTENDS, superClass.invokeStatic( runtime.getRuntimeContext(), "getMetaDataStatic" ) );
 		}
 
 		// Interfaces
