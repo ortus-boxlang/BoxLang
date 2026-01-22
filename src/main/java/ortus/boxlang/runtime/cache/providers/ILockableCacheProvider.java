@@ -29,7 +29,7 @@ public interface ILockableCacheProvider {
 	 * @param acquireTimeoutMillis The maximum time to wait to acquire the lock in milliseconds.
 	 * @param expiryTimeMillis     The time after which the lock will expire in milliseconds.
 	 * 
-	 * @return True if the lock was successfully acquired, false otherwise.
+	 * @return An {@link ILock} instance representing the acquired lock.
 	 */
 	ILock acquireLock( String lockKey, int acquireTimeoutMillis,
 	    int expiryTimeMillis );
