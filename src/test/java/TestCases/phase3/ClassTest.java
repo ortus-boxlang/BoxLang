@@ -2214,4 +2214,19 @@ public class ClassTest {
 		    context );
 	}
 
+	@DisplayName( "It should load abstract class with arguments without ArrayIndexOutOfBoundsException" )
+	@Test
+	public void testAbstractMethodWithArguments() {
+		// This test verifies that abstract methods with arguments are correctly handled.
+		// Previously, abstract method argument names were not pre-registered in the keys array,
+		// causing ArrayIndexOutOfBoundsException when the class was loaded.
+		instance.executeSource(
+		    """
+		    result = new src.test.java.TestCases.phase3.ConcreteMethodWithArgs( "test" );
+		    """,
+		    context );
+
+		assertThat( variables.get( Key.result ) ).isNotNull();
+	}
+
 }

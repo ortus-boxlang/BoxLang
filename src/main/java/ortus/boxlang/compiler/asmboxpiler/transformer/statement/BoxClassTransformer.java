@@ -707,12 +707,16 @@ public class BoxClassTransformer {
 			List<List<AbstractInsnNode>>	properties		= transpiler.transformProperties( type, boxClass.getProperties(), sourceType );
 
 			// Pre-register keys for abstract methods (functions with no body) before building the keys array
-			// This includes the function name and all annotation/documentation keys
+			// This includes the function name, argument names, and all annotation/documentation keys
 			boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
 			    .stream()
 			    .filter( func -> func.getBody() == null )
 			    .forEach( func -> {
 				    transpiler.createKey( func.getName() );
+				    // Also pre-register argument name keys
+				    if ( func.getArgs() != null ) {
+					    func.getArgs().forEach( arg -> transpiler.createKey( arg.getName() ) );
+				    }
 				    // Also pre-register annotation keys
 				    if ( func.getAnnotations() != null ) {
 					    func.getAnnotations().forEach( ann -> transpiler.createKey( ann.getKey().getValue() ) );
