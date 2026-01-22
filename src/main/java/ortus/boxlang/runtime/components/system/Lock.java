@@ -25,14 +25,18 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import ortus.boxlang.runtime.cache.providers.ICacheProvider;
+import ortus.boxlang.runtime.cache.providers.ILock;
+import ortus.boxlang.runtime.cache.providers.ILockableCacheProvider;
 import ortus.boxlang.runtime.components.Attribute;
 import ortus.boxlang.runtime.components.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.LockException;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent( description = "Serialize access to sections of code with named locks", requiresBody = true )
@@ -48,7 +52,8 @@ public class Lock extends Component {
 		    new Attribute( Key.scope, "string" ),
 		    new Attribute( Key.type, "string", "exclusive", Set.of( Validator.valueOneOf( "readonly", "exclusive" ) ) ),
 		    new Attribute( Key.timeout, "Integer", 0, Set.of( Validator.min( 0 ) ) ),
-		    new Attribute( Key.throwOnTimeout, "boolean", true )
+		    new Attribute( Key.throwOnTimeout, "boolean", true ),
+		    new Attribute( Key.cache, "string" )
 			// Lucee supports a "result" attribute, but it doesn't seem very useful and its docs don't even seem to match its implementation!.
 			// We can add it if it's really needed.
 		};
@@ -98,66 +103,98 @@ public class Lock extends Component {
 		} else {
 			throw new BoxRuntimeException( "Lock requires either a 'name' or 'scope' attribute to be provided." );
 		}
-		ReentrantReadWriteLock				lock		= getLockByName( lockName );
-		ReentrantReadWriteLock.ReadLock		readLock	= lock.readLock();
-		ReentrantReadWriteLock.WriteLock	writeLock	= lock.writeLock();
 
-		java.util.concurrent.locks.Lock		lockToUse	= null;
-		try {
-			// Will be set to false if we time out
-			boolean acquired;
-			if ( type.equals( "readonly" ) ) {
-				// TODO: Once we implement request timeouts, 0 should be treated as as long as the request timeout
-				if ( timeout == 0 ) {
-					readLock.lock();
-					lockToUse	= readLock;
-					acquired	= true;
+		// Will be set to false if we time out
+		boolean acquired;
+		if ( attributes.get( Key.cache ) == null ) {
+			ReentrantReadWriteLock				lock		= getLockByName( lockName );
+			ReentrantReadWriteLock.ReadLock		readLock	= lock.readLock();
+			ReentrantReadWriteLock.WriteLock	writeLock	= lock.writeLock();
+			java.util.concurrent.locks.Lock		lockToUse	= null;
+			try {
+				if ( type.equals( "readonly" ) ) {
+					// TODO: Once we implement request timeouts, 0 should be treated as as long as the request timeout
+					if ( timeout == 0 ) {
+						readLock.lock();
+						lockToUse	= readLock;
+						acquired	= true;
+					} else {
+						acquired	= readLock.tryLock( timeout, TimeUnit.SECONDS );
+						lockToUse	= readLock;
+					}
+				} else if ( type.equals( "exclusive" ) ) {
+					// TODO: Once we implement request timeouts, 0 should be treated as as long as the request timeout
+					if ( timeout == 0 ) {
+						writeLock.lock();
+						lockToUse	= writeLock;
+						acquired	= true;
+					} else {
+						acquired	= writeLock.tryLock( timeout, TimeUnit.SECONDS );
+						lockToUse	= writeLock;
+					}
 				} else {
-					acquired	= readLock.tryLock( timeout, TimeUnit.SECONDS );
-					lockToUse	= readLock;
+					// This will never happen based on the attribute validation, but the compiler doens't know that so it wants this
+					throw new BoxRuntimeException( "Lock type [" + type + "] is not supported" );
 				}
-			} else if ( type.equals( "exclusive" ) ) {
-				// TODO: Once we implement request timeouts, 0 should be treated as as long as the request timeout
-				if ( timeout == 0 ) {
-					writeLock.lock();
-					lockToUse	= writeLock;
-					acquired	= true;
-				} else {
-					acquired	= writeLock.tryLock( timeout, TimeUnit.SECONDS );
-					lockToUse	= writeLock;
+
+				if ( !acquired ) {
+					if ( throwOnTimeout ) {
+						throw new LockException( "Timeout of [" + timeout + "] seconds reached while waiting to acquire lock [" + lockName + "]", lockName,
+						    "timeout" );
+					} else {
+						// No need to release anything, because we never aquired it!
+						return DEFAULT_RETURN;
+					}
+				}
+
+				try {
+					// process the body
+					BodyResult bodyResult = processBody( context, body );
+					// IF there was a return statement inside our body, we early exit now
+					if ( bodyResult.isEarlyExit() ) {
+						return bodyResult;
+					}
+					return DEFAULT_RETURN;
+				} finally {
+					// unlock the lock
+					lockToUse.unlock();
+				}
+
+			} catch ( InterruptedException e ) {
+				// This doesn't apply to the lock timing out. This just means our current thread was interuppted while waiting for the lock
+				throw new LockException( "Interrupted while waiting for lock", "", lockName, "interrupted", e );
+			}
+		} else {
+			ICacheProvider cacheProvider = context.getApplicationCache( KeyCaster.cast( attributes.get( Key.cache ) ) );
+			if ( cacheProvider instanceof ILockableCacheProvider lockingProvider ) {
+				ILock lock = lockingProvider.acquireLock( lockName, timeout * 1000, ( timeout + 5 ) * 1000 );
+				if ( !lock.isLocked() ) {
+					if ( throwOnTimeout ) {
+						throw new LockException( "Timeout of [" + timeout + "] seconds reached while waiting to acquire lock [" + lockName + "]", lockName,
+						    "timeout" );
+					} else {
+						// No need to release anything, because we never aquired it!
+						return DEFAULT_RETURN;
+					}
+				}
+
+				try {
+					// process the body
+					BodyResult bodyResult = processBody( context, body );
+					// IF there was a return statement inside our body, we early exit now
+					if ( bodyResult.isEarlyExit() ) {
+						return bodyResult;
+					}
+					return DEFAULT_RETURN;
+				} finally {
+					// unlock the lock
+					lockingProvider.releaseLock( lock );
 				}
 			} else {
-				// This will never happen based on the attribute validation, but the compiler doens't know that so it wants this
-				throw new BoxRuntimeException( "Lock type [" + type + "] is not supported" );
+				throw new BoxRuntimeException( "The specified cache provider [" + attributes.getAsString( Key.cache ) + "] does not support locking." );
 			}
-
-			if ( !acquired ) {
-				if ( throwOnTimeout ) {
-					throw new LockException( "Timeout of [" + timeout + "] seconds reached while waiting to acquire lock [" + lockName + "]", lockName,
-					    "timeout" );
-				} else {
-					// No need to release anything, because we never aquired it!
-					return DEFAULT_RETURN;
-				}
-			}
-
-			try {
-				// process the body
-				BodyResult bodyResult = processBody( context, body );
-				// IF there was a return statement inside our body, we early exit now
-				if ( bodyResult.isEarlyExit() ) {
-					return bodyResult;
-				}
-				return DEFAULT_RETURN;
-			} finally {
-				// unlock the lock
-				lockToUse.unlock();
-			}
-
-		} catch ( InterruptedException e ) {
-			// This doesn't apply to the lock timing out. This just means our current thread was interuppted while waiting for the lock
-			throw new LockException( "Interrupted while waiting for lock", "", lockName, "interrupted", e );
 		}
+
 	}
 
 	/**
