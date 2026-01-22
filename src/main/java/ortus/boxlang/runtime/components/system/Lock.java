@@ -165,6 +165,13 @@ public class Lock extends Component {
 				throw new LockException( "Interrupted while waiting for lock", "", lockName, "interrupted", e );
 			}
 		} else {
+			// Distributed locks via cache providers currently only support exclusive locks.
+			// Explicitly reject readonly locks here so callers are not misled into thinking
+			// that distributed read/write semantics are available.
+			if ( "readonly".equals( type ) ) {
+				throw new BoxRuntimeException(
+				    "Distributed locks via cache providers do not support readonly (shared) locks. Use an exclusive lock type or omit cacheName." );
+			}
 			ICacheProvider cacheProvider = context.getApplicationCache( KeyCaster.cast( attributes.get( Key.cacheName ) ) );
 			if ( cacheProvider instanceof ILockableCacheProvider lockingProvider ) {
 				ILock lock = lockingProvider.acquireLock( lockName, timeout * 1000, ( timeout + 5 ) * 1000 );
