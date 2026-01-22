@@ -126,7 +126,7 @@ public class GetMetaDataTest {
 		    result = getMetadata( new src.test.java.ortus.boxlang.runtime.bifs.global.type.AbstractMethod() );
 		             """,
 		    context );
-		// confirm that the meta includes myMethod and it has the foo="bar" annotation
+		// confirm that the meta includes myMethod and it has the foo="bar" annotation.
 		IStruct meta = variables.getAsStruct( result );
 
 		// Top-level class assertions
