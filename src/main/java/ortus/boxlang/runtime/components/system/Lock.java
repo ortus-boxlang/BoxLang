@@ -133,7 +133,7 @@ public class Lock extends Component {
 						lockToUse	= writeLock;
 					}
 				} else {
-					// This will never happen based on the attribute validation, but the compiler doens't know that so it wants this
+					// This will never happen based on the attribute validation, but the compiler doesn't know that so it wants this
 					throw new BoxRuntimeException( "Lock type [" + type + "] is not supported" );
 				}
 
