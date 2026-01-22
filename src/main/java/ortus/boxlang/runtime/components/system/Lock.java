@@ -166,9 +166,7 @@ public class Lock extends Component {
 			}
 		} else {
 			// Distributed locks via cache providers currently only support exclusive locks.
-			// Explicitly reject readonly locks here so callers are not misled into thinking
-			// that distributed read/write semantics are available.
-			if ( "readonly".equals( type ) ) {
+			if ( type.equals( "readonly" ) ) {
 				throw new BoxRuntimeException(
 				    "Distributed locks via cache providers do not support readonly (shared) locks. Use an exclusive lock type or omit cacheName." );
 			}
