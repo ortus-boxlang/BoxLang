@@ -1097,7 +1097,7 @@ public class AsmHelper {
 			subMethod.visitEnd();
 		}
 
-		// Create the main <clinit> that calls all sub-methods
+		// Create the main <clinit> that calls sub-methods and inlines the last segment
 		MethodVisitor methodVisitor = classNode.visitMethod( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
 		    "<clinit>",
 		    Type.getMethodDescriptor( Type.VOID_TYPE ),
@@ -1932,50 +1932,6 @@ public class AsmHelper {
 		}
 
 		return splitNodes;
-	}
-
-	/**
-	 * Legacy method for splitting instructions by instruction count.
-	 * Prefer using MethodSplitter for byte-accurate splitting.
-	 *
-	 * @deprecated Use MethodSplitter instead
-	 */
-	@Deprecated
-	private static List<List<AbstractInsnNode>> splitifyInstructions( List<AbstractInsnNode> nodes ) {
-		List<List<AbstractInsnNode>>	subNodes	= new ArrayList<>();
-		int								min			= 0;
-
-		while ( min < nodes.size() ) {
-
-			for ( var i = min + Math.min( METHOD_SIZE_LIMIT, nodes.size() - min ); i >= min; i-- ) {
-				if ( ! ( nodes.get( i ) instanceof DividerNode ) && i != min ) {
-					continue;
-				}
-
-				if ( min == i ) {
-					i = nodes.size();
-					for ( var j = min + Math.min( METHOD_SIZE_LIMIT, nodes.size() - min ); j < nodes.size(); j++ ) {
-						if ( ! ( nodes.get( j ) instanceof DividerNode ) ) {
-							continue;
-						}
-
-						i = j;
-						break;
-					}
-				}
-
-				subNodes.add( nodes.subList( min, i ) );
-				min = i;
-				break;
-			}
-
-			if ( nodes.size() - min <= METHOD_SIZE_LIMIT ) {
-				subNodes.add( nodes.subList( min, nodes.size() ) );
-				break;
-			}
-		}
-
-		return subNodes;
 	}
 
 	/**

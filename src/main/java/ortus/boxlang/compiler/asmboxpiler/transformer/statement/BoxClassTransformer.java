@@ -249,76 +249,91 @@ public class BoxClassTransformer {
 		classNode.visitField( Opcodes.ACC_PRIVATE | Opcodes.ACC_FINAL | Opcodes.ACC_STATIC, "serialVersionUID", Type.getDescriptor( long.class ), null, 1L )
 		    .visitEnd();
 
+		// Use isFinal=false for static fields to allow <clinit> splitting into sub-methods
+		// (JVM enforces that static final fields can only be written from <clinit> directly)
+		// if we don't do this then we can hit the 64k method size limit for large classes
 		AsmHelper.addStaticFieldGetter( classNode,
 		    type,
 		    "name",
 		    "bxGetName",
 		    Type.getType( Key.class ),
-		    null );
+		    null,
+		    false );
 		AsmHelper.addStaticFieldGetter( classNode,
 		    type,
 		    "imports",
 		    "getImports",
 		    Type.getType( List.class ),
-		    null );
+		    null,
+		    false );
 		AsmHelper.addStaticFieldGetter( classNode,
 		    type,
 		    "path",
 		    "getRunnablePath",
 		    Type.getType( ResolvedFilePath.class ),
-		    null );
+		    null,
+		    false );
 		AsmHelper.addStaticFieldGetter( classNode,
 		    type,
 		    "sourceType",
 		    "getSourceType",
 		    Type.getType( BoxSourceType.class ),
-		    null );
+		    null,
+		    false );
 		AsmHelper.addStaticFieldGetterWithStaticGetter( classNode,
 		    type,
 		    "annotations",
 		    "getAnnotations",
 		    "getAnnotationsStatic",
 		    Type.getType( IStruct.class ),
-		    null );
+		    null,
+		    false );
 		AsmHelper.addStaticFieldGetter( classNode,
 		    type,
 		    "documentation",
 		    "getDocumentation",
 		    Type.getType( IStruct.class ),
-		    null );
+		    null,
+		    false );
 		AsmHelper.addStaticFieldGetter( classNode,
 		    type,
 		    "properties",
 		    "getProperties",
 		    Type.getType( Map.class ),
-		    null );
+		    null,
+		    false );
 		AsmHelper.addStaticFieldGetter( classNode,
 		    type,
 		    "getterLookup",
 		    "getGetterLookup",
 		    Type.getType( Map.class ),
-		    null );
+		    null,
+		    false );
 		AsmHelper.addStaticFieldGetter( classNode,
 		    type,
 		    "setterLookup",
 		    "getSetterLookup",
 		    Type.getType( Map.class ),
-		    null );
+		    null,
+		    false );
 		AsmHelper.addStaticFieldGetter( classNode,
 		    type,
 		    "isJavaExtends",
 		    "isJavaExtends",
 		    Type.BOOLEAN_TYPE,
-		    isJavaExtends ? 1 : 0 );
+		    isJavaExtends ? 1 : 0,
+		    false );
 		AsmHelper.addStaticFieldGetterWithStaticGetter( classNode,
 		    type,
 		    "staticScope",
 		    "getStaticScope",
 		    "getStaticScopeStatic",
 		    Type.getType( StaticScope.class ),
-		    null );
+		    null,
+		    false );
 
-		classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL,
+		// Use non-final for keys to allow <clinit> splitting
+		classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
 		    "keys",
 		    Type.getDescriptor( Key[].class ),
 		    null,
@@ -748,8 +763,8 @@ public class BoxClassTransformer {
 			clinitNodes.add( new LdcInsnNode( isJavaExtends ? 1 : 0 ) );
 			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "isJavaExtends", Type.getDescriptor( boolean.class ) ) );
 
-			clinitNodes.add( new LdcInsnNode( 1L ) );
-			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "serialVersionUID", Type.getDescriptor( long.class ) ) );
+			// Note: serialVersionUID is already initialized in the field declaration with a constant value,
+			// so we don't need to write to it in <clinit>
 
 			clinitNodes.addAll( importNodes );
 			clinitNodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
