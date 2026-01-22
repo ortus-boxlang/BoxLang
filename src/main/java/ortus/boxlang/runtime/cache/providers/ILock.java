@@ -17,6 +17,13 @@
  */
 package ortus.boxlang.runtime.cache.providers;
 
+/**
+ * Interface representing a single distributed lock instance obtained from an {@link ILockableCacheProvider}.
+ * <p>
+ * Implementations encapsulate the lifecycle of a lock, including acquiring, renewing, querying, releasing,
+ * and closing any underlying resources used to coordinate the lock.
+ * </p>
+ */
 public interface ILock {
 
 	/**
