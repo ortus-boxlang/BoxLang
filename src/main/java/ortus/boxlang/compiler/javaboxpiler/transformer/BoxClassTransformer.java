@@ -659,8 +659,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			// Same change applies to interfaces
 			if ( statement instanceof BoxFunctionDeclaration bfd && bfd.getBody() == null ) {
 				// process abstract function (no body)
-				pseudoConstructorBody.addStatement( 0,
-				    ( ( JavaTranspiler ) transpiler ).createAbstractMethod( bfd, this, className, "class" )
+				staticInitializerMethod.getBody().get().addStatement( ( ( JavaTranspiler ) transpiler ).createAbstractMethod( bfd, this, className, "class" )
 				);
 				continue;
 			}

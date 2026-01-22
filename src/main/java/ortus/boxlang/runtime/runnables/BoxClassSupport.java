@@ -54,7 +54,6 @@ import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.ClassMeta;
-import ortus.boxlang.runtime.types.meta.FunctionMeta;
 import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.types.util.TypeUtil;
 import ortus.boxlang.runtime.util.ArgumentUtil;
@@ -662,7 +661,7 @@ public class BoxClassSupport {
 		// Add all abstract methods as well, if any
 		for ( var entry : abstractMethods.keySet() ) {
 			AbstractFunction value = abstractMethods.get( entry );
-			functions.add( ( ( FunctionMeta ) value.getBoxMeta() ).meta );
+			functions.add( value.getMetaData() );
 		}
 
 		// Top Level Class Metadata

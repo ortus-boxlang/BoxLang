@@ -592,6 +592,9 @@ public class BoxClassTransformer {
 			        // skip static methods declarations
 			        .filter( statement -> ! ( statement instanceof BoxFunctionDeclaration func
 			            && func.getModifiers().contains( BoxMethodDeclarationModifier.STATIC ) ) )
+			        // skip abstract methods (no body) - they don't get inner classes or registration
+			        .filter( statement -> ! ( statement instanceof BoxFunctionDeclaration func
+			            && func.getBody() == null ) )
 			        .flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ).stream() )
 			        .collect( Collectors.toList() );
 			    psuedoBody.addAll( transpiler.getUDFRegistrations() );
@@ -687,6 +690,23 @@ public class BoxClassTransformer {
 			List<AbstractInsnNode>			annotations		= transpiler.transformAnnotations( boxClass.getAnnotations() );
 			List<AbstractInsnNode>			documenation	= transpiler.transformDocumentation( boxClass.getDocumentation() );
 			List<List<AbstractInsnNode>>	properties		= transpiler.transformProperties( type, boxClass.getProperties(), sourceType );
+
+			// Pre-register keys for abstract methods (functions with no body) before building the keys array
+			// This includes the function name and all annotation/documentation keys
+			boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
+			    .stream()
+			    .filter( func -> func.getBody() == null )
+			    .forEach( func -> {
+				    transpiler.createKey( func.getName() );
+				    // Also pre-register annotation keys
+				    if ( func.getAnnotations() != null ) {
+					    func.getAnnotations().forEach( ann -> transpiler.createKey( ann.getKey().getValue() ) );
+				    }
+				    // Also pre-register documentation keys
+				    if ( func.getDocumentation() != null ) {
+					    func.getDocumentation().forEach( ann -> transpiler.createKey( ann.getKey().getValue() ) );
+				    }
+			    } );
 
 			clinitNodes.add( new LdcInsnNode( transpiler.getKeys().size() ) );
 			clinitNodes.add( new TypeInsnNode( Opcodes.ANEWARRAY, Type.getInternalName( Key.class ) ) );
