@@ -287,6 +287,17 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 
 		Object result = null;
 		context.pushTemplate( this );
+
+		// If this UDF is in a class, we need to set the template to the class path, but we still need the push above which sets the current imports to the original source file
+		if ( context.isInClass() ) {
+			context.popTemplate();
+			context.pushTemplate( context.getThisClass().getRunnablePath() );
+		} else if ( context.isInStaticClass() ) {
+			// Ignoring this for now. It would only apply to injected/mixed in static methods.
+			// I don't want to add the invokeStatic overhead to every static method execution
+			// context.pushTemplate( context.getThisStaticClass().getField( "path" ) );
+			// extraPop = true;
+		}
 		try {
 			result = ensureReturnType( context, _invoke( context ) );
 
