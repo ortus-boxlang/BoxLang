@@ -25,7 +25,7 @@ public interface ILockableCacheProvider {
 	/**
 	 * Acquire a distributed lock for the given key.
 	 * 
-	 * @param key                  The key to lock.
+	 * @param lockKey              The key to lock.
 	 * @param acquireTimeoutMillis The maximum time to wait to acquire the lock in milliseconds.
 	 * @param expiryTimeMillis     The time after which the lock will expire in milliseconds.
 	 * 
@@ -37,7 +37,7 @@ public interface ILockableCacheProvider {
 	/**
 	 * Renew a distributed lock for the given key.
 	 * 
-	 * @param key              The key to renew the lock for.
+	 * @param lockKey          The key to renew the lock for.
 	 * @param expiryTimeMillis The new expiry time for the lock in milliseconds.
 	 * 
 	 * @return True if the lock was successfully renewed, false otherwise.
