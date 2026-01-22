@@ -977,7 +977,9 @@ public final class FileSystemUtil {
 				throw new BoxRuntimeException( "The filter argument to the method DirectoryCopy filter must either be a string or function/closure" );
 			}
 			directoryListing.forEachOrdered( path -> {
-				Path	targetPath		= Path.of( path.toString().replace( source, destination ) );
+				Path	sourcePath		= Path.of( source );
+				Path	relativePath	= sourcePath.relativize( path );
+				Path	targetPath		= Path.of( destination ).resolve( relativePath );
 				Path	targetParent	= targetPath.getParent();
 				if ( recurse && !Files.exists( targetParent ) ) {
 					try {
