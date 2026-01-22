@@ -668,7 +668,8 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 
 		// swap "once" for "one"
 		// Only handling position args for now. We can add named arg support later if needed.
-		if ( ( name.equals( "replacenocase" ) || name.equals( "replace" ) ) && node.getArguments().size() > 3
+		if ( ( name.equals( "replacenocase" ) || name.equals( "replace" ) || name.equals( "rereplace" ) || name.equals( "rereplacenocase" ) )
+		    && node.getArguments().size() > 3
 		    && node.getArguments().get( 0 ).getName() == null ) {
 			if ( node.getArguments().get( 3 ).getValue() instanceof BoxStringLiteral bsl ) {
 				String val = bsl.getValue().toLowerCase();
