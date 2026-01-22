@@ -42,15 +42,18 @@ import ortus.boxlang.runtime.validation.Validator;
 @BoxComponent( description = "Serialize access to sections of code with named locks", requiresBody = true )
 public class Lock extends Component {
 
-	private ConcurrentHashMap<String, WeakReference<ReentrantReadWriteLock>>	lockMap	= new ConcurrentHashMap<>();
-	private ReferenceQueue<ReentrantReadWriteLock>								queue	= new ReferenceQueue<>();
+	private ConcurrentHashMap<String, WeakReference<ReentrantReadWriteLock>>	lockMap			= new ConcurrentHashMap<>();
+	private ReferenceQueue<ReentrantReadWriteLock>								queue			= new ReferenceQueue<>();
+
+	private static final String													READ_ONLY_TYPE	= "readonly";
+	private static final String													EXCLUSIVE_TYPE	= "exclusive";
 
 	public Lock() {
 		super();
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key._NAME, "string", Set.of( Validator.NON_EMPTY ) ),
 		    new Attribute( Key.scope, "string" ),
-		    new Attribute( Key.type, "string", "exclusive", Set.of( Validator.valueOneOf( "readonly", "exclusive" ) ) ),
+		    new Attribute( Key.type, "string", EXCLUSIVE_TYPE, Set.of( Validator.valueOneOf( READ_ONLY_TYPE, EXCLUSIVE_TYPE ) ) ),
 		    new Attribute( Key.timeout, "Integer", 0, Set.of( Validator.min( 0 ) ) ),
 		    new Attribute( Key.throwOnTimeout, "boolean", true ),
 		    new Attribute( Key.cacheName, "string" )
@@ -112,7 +115,7 @@ public class Lock extends Component {
 			ReentrantReadWriteLock.WriteLock	writeLock	= lock.writeLock();
 			java.util.concurrent.locks.Lock		lockToUse	= null;
 			try {
-				if ( type.equals( "readonly" ) ) {
+				if ( type.equalsIgnoreCase( READ_ONLY_TYPE ) ) {
 					// TODO: Once we implement request timeouts, 0 should be treated as as long as the request timeout
 					if ( timeout == 0 ) {
 						readLock.lock();
@@ -122,7 +125,7 @@ public class Lock extends Component {
 						acquired	= readLock.tryLock( timeout, TimeUnit.SECONDS );
 						lockToUse	= readLock;
 					}
-				} else if ( type.equals( "exclusive" ) ) {
+				} else if ( type.equalsIgnoreCase( EXCLUSIVE_TYPE ) ) {
 					// TODO: Once we implement request timeouts, 0 should be treated as as long as the request timeout
 					if ( timeout == 0 ) {
 						writeLock.lock();
@@ -166,7 +169,7 @@ public class Lock extends Component {
 			}
 		} else {
 			// Distributed locks via cache providers currently only support exclusive locks.
-			if ( type.equals( "readonly" ) ) {
+			if ( type.equalsIgnoreCase( READ_ONLY_TYPE ) ) {
 				throw new BoxRuntimeException(
 				    "Distributed locks via cache providers do not support readonly (shared) locks. Use an exclusive lock type or omit cacheName." );
 			}
