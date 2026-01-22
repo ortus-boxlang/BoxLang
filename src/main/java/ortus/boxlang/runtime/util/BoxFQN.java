@@ -19,12 +19,19 @@ package ortus.boxlang.runtime.util;
 
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.regex.Pattern;
 
 /**
  * This class represents a BoxLang fully qualified name (FQN) for a class or package.
  * It handles all the edge cases of dealing with file paths and package names.
  */
 public class BoxFQN extends FQN {
+
+	/**
+	 * Pre-compiled pattern for splitting FQN strings by dots.
+	 * This is more performant than calling String.split() which compiles the pattern each time.
+	 */
+	private static final Pattern DOT_PATTERN = Pattern.compile( "\\." );
 
 	/**
 	 * Construct an FQN that uses the root path to generate a relative path based on filePath.
@@ -119,8 +126,8 @@ public class BoxFQN extends FQN {
 			return new String[] {};
 		}
 
-		// parse fqn into array of parts
-		return fqn.split( "\\." );
+		// parse fqn into array of parts using pre-compiled pattern
+		return DOT_PATTERN.split( fqn );
 	}
 
 	/**

@@ -54,15 +54,13 @@ public class Query extends Component {
 		        Validator.valueOneOf( "query", "array", "struct" )
 		    ) ),
 		    new Attribute( Key.columnKey, "string" ),
-		    new Attribute( Key.dbtype, "string", Set.of(
-		        Validator.NON_EMPTY, Validator.valueOneOf( "query", "hql" )
-		    ) ),
+		    new Attribute( Key.dbtype, "string" ),
 		    new Attribute( Key.username, "string" ),
 		    new Attribute( Key.password, "string" ),
 
 		    // connection options
 		    new Attribute( Key.maxRows, "integer", -1 ),
-		    new Attribute( Key.blockfactor, "integer", Set.of( Validator.min( 1 ), Validator.max( 100 ) ), Set.of() ),
+		    new Attribute( Key.blockfactor, "integer", Set.of( Validator.min( 1 ), Validator.max( 100 ) ) ),
 		    new Attribute( Key.fetchSize, "integer", Set.of( Validator.min( 1 ), Validator.max( 100 ) ) ),
 		    new Attribute( Key.timeout, "integer" ),
 

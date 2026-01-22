@@ -6206,4 +6206,30 @@ public class CoreLangTest {
 		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "hello" );
 	}
 
+	@Test
+	public void testAllowNumericTruncateTypes() {
+
+		assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		      function foo( required Integer arg ) {
+		    return arg;
+		      }
+		      foo( 1.2 )
+		          """,
+		    context
+		) );
+
+		instance.executeSource(
+		    """
+		      function foo( required IntegerTruncate arg ) {
+		    return arg;
+		      }
+		      result = foo( 1.2 )
+		          """,
+		    context
+		);
+		assertThat( variables.getAsInteger( Key.of( "result" ) ) ).isEqualTo( 1 );
+
+	}
+
 }

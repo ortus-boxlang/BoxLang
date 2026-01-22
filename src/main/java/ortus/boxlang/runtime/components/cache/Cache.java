@@ -281,9 +281,9 @@ public class Cache extends Component {
 					    )
 					);
 				}
-				cacheProvider = cacheService.getCache( directoryCacheKey );
+				cacheProvider = context.getApplicationCache( directoryCacheKey );
 			} else {
-				cacheProvider = cacheService.getDefaultCache();
+				cacheProvider = context.getApplicationCache( Key._DEFAULT );
 			}
 
 			Duration	timeout;

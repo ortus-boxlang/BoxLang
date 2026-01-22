@@ -55,6 +55,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.SchedulerService;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
+import ortus.boxlang.runtime.types.exceptions.BoxLicenseException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
@@ -135,9 +136,31 @@ public class BoxRunner {
 			timer.start( "BoxRunner" );
 		}
 
+		BoxRuntime		boxRuntime				= null;
+
+		final String	licenseExceptionMessage	= "BoxLang License Exception: [{}]%n%n"
+		    + "💡 It looks like you're trying to use BoxLang+ features or modules (https://boxlang.ortusbooks.com/boxlang-framework/boxlang-plus/modules) without a valid license.%n"
+		    + "Please visit https://boxlang.io to learn more about BoxLang+ and how to obtain, activate or renew a license.%n";
+
 		// Get a runtime going using the CLI options
-		BoxRuntime	boxRuntime	= BoxRuntime.getInstance( options );
-		int			exitCode	= 0;
+		try {
+			boxRuntime = BoxRuntime.getInstance( options );
+		} catch ( BoxLicenseException le ) {
+			System.out.println( String.format( licenseExceptionMessage, le.getMessage() ) );
+			ExceptionUtil.printBoxLangStackTrace( le, System.err );
+			System.exit( 1 );
+			return;
+		} catch ( Throwable e ) {
+			String message = "An exception ocurred while initializing the BoxLang runtime: " + e.getMessage();
+			if ( message.contains( ExceptionUtil.LICENSE_MODULE_NAME ) || message.contains( ExceptionUtil.LICENSE_SUBSCRIPTION_NAME ) ) {
+				message = String.format( licenseExceptionMessage, e.getMessage() );
+			}
+			System.out.println( message );
+			ExceptionUtil.printBoxLangStackTrace( e, System.err );
+			System.exit( 1 );
+			return;
+		}
+		int exitCode = 0;
 
 		try {
 			// Show version

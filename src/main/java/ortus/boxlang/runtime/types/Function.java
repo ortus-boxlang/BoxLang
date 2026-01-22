@@ -458,34 +458,81 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	/**
 	 * Get the combined metadata for this function and all it's parameters
 	 * This follows the format of Lucee and Adobe's "combined" metadata
-	 * TODO: Move this to compat module
 	 *
 	 * @return The metadata as a struct
 	 */
 	public IStruct getMetaData() {
+		return getMetaDataStatic(
+		    this.getClass(),
+		    getDocumentation(),
+		    getAnnotations(),
+		    getName(),
+		    getReturnType(),
+		    getSourceType(),
+		    getAccess(),
+		    getArguments(),
+		    this instanceof Closure,
+		    this instanceof Lambda,
+		    canOutput( getAnnotations(), getSourceType(), getDefaultOutput() ),
+		    getModifiers()
+		);
+	}
+
+	/**
+	 * Get the combined metadata for this function and all it's parameters
+	 * This follows the format of Lucee and Adobe's "combined" metadata
+	 * 
+	 * @param functionClass The function class
+	 * @param documentation The documentation struct
+	 * @param annotations   The annotations struct
+	 * @param name          The function name
+	 * @param returnType    The return type
+	 * @param sourceType    The source type
+	 * @param access        The access level
+	 * @param arguments     The function arguments
+	 * @param isClosure     Whether the function is a closure
+	 * @param isLambda      Whether the function is a lambda
+	 * @param defaultOutput The default output value
+	 * @param modifiers     The function modifiers
+	 *
+	 * @return The metadata as a struct
+	 */
+	public static IStruct getMetaDataStatic(
+	    Class<? extends Function> functionClass,
+	    IStruct documentation,
+	    IStruct annotations,
+	    Key name,
+	    String returnType,
+	    BoxSourceType sourceType,
+	    Access access,
+	    Argument[] arguments,
+	    boolean isClosure,
+	    boolean isLambda,
+	    boolean defaultOutput,
+	    List<BoxMethodDeclarationModifier> modifiers ) {
+
 		IStruct meta = new Struct( IStruct.TYPES.LINKED );
-		if ( getDocumentation() != null ) {
-			getDocumentation().forEach( ( k, v ) -> {
+		if ( documentation != null ) {
+			documentation.forEach( ( k, v ) -> {
 				if ( !legacyMetaFunctionReservedAnnotations.contains( k ) ) {
 					meta.put( k, v );
 				}
 			} );
 		}
-		if ( getAnnotations() != null ) {
-			getAnnotations().forEach( ( k, v ) -> {
+		if ( annotations != null ) {
+			annotations.forEach( ( k, v ) -> {
 				if ( !legacyMetaFunctionReservedAnnotations.contains( k ) ) {
 					meta.put( k, v );
 				}
 			} );
 		}
-		meta.put( Key._NAME, getName().getName() );
-		meta.put( Key.returnType, getReturnType() );
+		meta.put( Key._NAME, name.getName() );
+		meta.put( Key.returnType, returnType );
 		meta.putIfAbsent( Key.hint, "" );
-		// Passing null to canOutput will skip the class check
-		meta.putIfAbsent( Key.output, canOutput( null ) );
-		meta.put( Key.access, getAccess().getLowerName() );
+		meta.putIfAbsent( Key.output, canOutput( annotations, sourceType, defaultOutput ) );
+		meta.put( Key.access, access.getLowerName() );
 		Array params = new Array();
-		for ( Argument argument : getArguments() ) {
+		for ( Argument argument : arguments ) {
 			IStruct arg = new Struct( IStruct.TYPES.LINKED );
 			arg.put( Key._NAME, argument.name().getName() );
 			arg.put( Key.required, argument.required() );
@@ -514,14 +561,12 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 		// polymorphism is a pain due to storing the metadata as static values on the class, so we'll just add the closure and lambda checks here
 		// Adobe and Lucee only set the following flags when they are true, but that's inconsistent, so we will always set them.
 
-		boolean isClosure = this instanceof Closure;
 		// Adobe and Lucee have this
 		meta.put( Key.closure, isClosure );
 		// Adobe and Lucee have this
 		meta.put( Key.ANONYMOUSCLOSURE, isClosure );
 
 		// Adobe and Lucee don't have "lambdas" in the same way we have where the actual implementation is a pure function
-		boolean isLambda = this instanceof Lambda;
 		// Neither Adobe nor Lucee have this, but we're setting it for consistency
 		meta.put( Key.lambda, isLambda );
 		// Lucee has this, but it's true for fat arrow functions. We're setting it true only for skinny arrow (true lambda) functions
@@ -578,7 +623,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	public boolean canOutput( FunctionBoxContext context ) {
 		// Check for function annotation
 		if ( this.canOutput == null ) {
-			Object anno = getAnnotations().get( Key.output );
+			Object anno = canOutput( getAnnotations() );
 			if ( anno != null ) {
 				this.canOutput = BooleanCaster.cast( anno );
 			}
@@ -597,10 +642,50 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 
 		// Default based on source type
 		if ( this.canOutput == null ) {
-			this.canOutput = getSourceType().equals( BoxSourceType.CFSCRIPT ) || getSourceType().equals( BoxSourceType.CFTEMPLATE ) ? true : getDefaultOutput();
+			this.canOutput = defaultCanOutput( getSourceType(), getDefaultOutput() );
 		}
 
 		return this.canOutput;
+	}
+
+	/**
+	 * A helper to look at the "output" annotation, null if not set
+	 * 
+	 * @param annotations The annotations struct
+	 * 
+	 * @return Whether the function can output
+	 */
+	public static Object canOutput( IStruct annotations ) {
+		return annotations.get( Key.output );
+	}
+
+	/**
+	 * If there is no explicit output annotation on this function, what should the default be?
+	 * 
+	 * @param sourceType The source type of the function
+	 * 
+	 * @return true if the function should output by default
+	 */
+	public static boolean defaultCanOutput( BoxSourceType sourceType, boolean defaultOutput ) {
+		return sourceType.equals( BoxSourceType.CFSCRIPT ) || sourceType.equals( BoxSourceType.CFTEMPLATE ) ? true : defaultOutput;
+	}
+
+	/**
+	 * A helper to look at the "output" annotation, caching the result. Does not look at
+	 * any enclosing class. Just for metadata.
+	 * 
+	 * @param annotations The annotations struct
+	 * @param sourceType  The source type of the function
+	 * 
+	 * @return Whether the function can output
+	 */
+	public static boolean canOutput( IStruct annotations, BoxSourceType sourceType, boolean defaultOutput ) {
+		Object anno = canOutput( annotations );
+		if ( anno != null ) {
+			return BooleanCaster.cast( anno );
+		} else {
+			return defaultCanOutput( sourceType, defaultOutput );
+		}
 	}
 
 	/**
@@ -666,7 +751,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 *
 	 * @return true if the function should output by default
 	 */
-	protected boolean getDefaultOutput() {
+	public boolean getDefaultOutput() {
 		return defaultOutput;
 	}
 

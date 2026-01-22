@@ -68,6 +68,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyService;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.BoxInterface;
@@ -82,6 +83,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
+import ortus.boxlang.runtime.types.meta.ClassMeta;
 import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
@@ -234,12 +236,7 @@ public class BoxClassTransformer {
 			    false );
 			methodVisitor.visitFieldInsn( Opcodes.PUTFIELD, type.getInternalName(), "thisScope", Type.getDescriptor( ThisScope.class ) );
 
-			methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
-			methodVisitor.visitTypeInsn( Opcodes.NEW, Type.getInternalName( ArrayList.class ) );
-			methodVisitor.visitInsn( Opcodes.DUP );
-			methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL, Type.getInternalName( ArrayList.class ), "<init>", Type.getMethodDescriptor( Type.VOID_TYPE ),
-			    false );
-			methodVisitor.visitFieldInsn( Opcodes.PUTFIELD, type.getInternalName(), "interfaces", Type.getDescriptor( List.class ) );
+			// interfaces field is now static, initialized in <clinit>
 
 		}, interfaces.toArray( Type[]::new ) );
 
@@ -347,12 +344,140 @@ public class BoxClassTransformer {
 		    null,
 		    0 ).visitEnd();
 
-		AsmHelper.addPrviateStaticFieldGetter( classNode,
-		    type,
-		    "compileTimeMethodNames",
+		// classNode.visitField( Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
+		// "compileTimeMethodNames",
+		// Type.getDescriptor( Set.class ),
+		// null,
+		// null ).visitEnd();
+
+		// Add compileTimeMethods field (Map<Key, Class<? extends UDF>>)
+		AsmHelper.addNullStaticField( classNode, "compileTimeMethods", Type.getType( Map.class ), false );
+
+		// Add getCompileTimeMethodNames() that returns compileTimeMethods.keySet()
+		MethodVisitor getCompileTimeMethodNamesVisitor = classNode.visitMethod( Opcodes.ACC_PUBLIC,
 		    "getCompileTimeMethodNames",
-		    Type.getType( Set.class ),
+		    Type.getMethodDescriptor( Type.getType( Set.class ) ),
+		    null,
 		    null );
+		getCompileTimeMethodNamesVisitor.visitCode();
+		getCompileTimeMethodNamesVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "compileTimeMethods", Type.getDescriptor( Map.class ) );
+		getCompileTimeMethodNamesVisitor.visitMethodInsn( Opcodes.INVOKEINTERFACE, Type.getInternalName( Map.class ), "keySet",
+		    Type.getMethodDescriptor( Type.getType( Set.class ) ), true );
+		getCompileTimeMethodNamesVisitor.visitInsn( Opcodes.ARETURN );
+		getCompileTimeMethodNamesVisitor.visitMaxs( 0, 0 );
+		getCompileTimeMethodNamesVisitor.visitEnd();
+
+		// Add getCompileTimeMethods() that returns the Map (only getter, field already defined above)
+		AsmHelper.addStaticGetterMethodOnly( classNode, type, "compileTimeMethods", "getCompileTimeMethods", Type.getType( Map.class ) );
+
+		// Add superClass field and getter
+		AsmHelper.addNullStaticField( classNode, "superClass", Type.getType( DynamicObject.class ), false );
+		AsmHelper.addStaticGetterMethodOnly( classNode, type, "superClass", "getSuperClass", Type.getType( DynamicObject.class ) );
+
+		// Add metadata cache fields
+		AsmHelper.addNullStaticField( classNode, "metadata", Type.getType( IStruct.class ), true );
+		AsmHelper.addNullStaticField( classNode, "legacyMetadata", Type.getType( IStruct.class ), true );
+
+		// Add getMetaDataStatic() with double-check locking - calls BoxClassSupport.getMetaData(...)
+		AsmHelper.addDoubleCheckLockedStaticMethod(
+		    classNode,
+		    type,
+		    "getMetaDataStatic",
+		    "legacyMetadata",
+		    Type.getType( IStruct.class ),
+		    methodVisitor -> {
+			    // Call BoxClassSupport.getMetaData(class, name, sourceType, path, superClass, interfaces, abstractMethods, compileTimeMethods, annotations,
+			    // documentation, properties, staticScope)
+			    methodVisitor.visitLdcInsn( type ); // class
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "name", Type.getDescriptor( Key.class ) ); // name
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "sourceType", Type.getDescriptor( BoxSourceType.class ) ); // sourceType
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "path", Type.getDescriptor( ResolvedFilePath.class ) ); // path
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "superClass", Type.getDescriptor( DynamicObject.class ) ); // superClass
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "interfaces", Type.getDescriptor( List.class ) ); // interfaces
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "abstractMethods", Type.getDescriptor( Map.class ) ); // abstractMethods
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "compileTimeMethods",
+			        Type.getDescriptor( Map.class ) ); // compileTimeMethods
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "annotations", Type.getDescriptor( IStruct.class ) ); // annotations
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "documentation", Type.getDescriptor( IStruct.class ) ); // documentation
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "properties", Type.getDescriptor( Map.class ) ); // properties
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "staticScope", Type.getDescriptor( StaticScope.class ) ); // staticScope
+
+			    methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
+			        Type.getInternalName( BoxClassSupport.class ),
+			        "getMetaData",
+			        Type.getMethodDescriptor(
+			            Type.getType( IStruct.class ),
+			            Type.getType( Class.class ),
+			            Type.getType( Key.class ),
+			            Type.getType( BoxSourceType.class ),
+			            Type.getType( ResolvedFilePath.class ),
+			            Type.getType( DynamicObject.class ),
+			            Type.getType( List.class ),
+			            Type.getType( Map.class ),
+			            Type.getType( Map.class ),
+			            Type.getType( IStruct.class ),
+			            Type.getType( IStruct.class ),
+			            Type.getType( Map.class ),
+			            Type.getType( StaticScope.class ) ),
+			        false );
+		    } );
+
+		// Add getMetaStatic() with double-check locking - calls ClassMeta.generateMeta(...)
+		AsmHelper.addDoubleCheckLockedStaticMethod(
+		    classNode,
+		    type,
+		    "getMetaStatic",
+		    "metadata",
+		    Type.getType( IStruct.class ),
+		    methodVisitor -> {
+			    // Call ClassMeta.generateMeta(class, name, sourceType, path, superClass, interfaces, abstractMethods, compileTimeMethods, annotations,
+			    // documentation, properties, staticScope)
+			    methodVisitor.visitLdcInsn( type ); // class
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "name", Type.getDescriptor( Key.class ) ); // name
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "sourceType", Type.getDescriptor( BoxSourceType.class ) ); // sourceType
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "path", Type.getDescriptor( ResolvedFilePath.class ) ); // path
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "superClass", Type.getDescriptor( DynamicObject.class ) ); // superClass
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "interfaces", Type.getDescriptor( List.class ) ); // interfaces
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "abstractMethods", Type.getDescriptor( Map.class ) ); // abstractMethods
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "compileTimeMethods",
+			        Type.getDescriptor( Map.class ) ); // compileTimeMethods
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "annotations", Type.getDescriptor( IStruct.class ) ); // annotations
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "documentation", Type.getDescriptor( IStruct.class ) ); // documentation
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "properties", Type.getDescriptor( Map.class ) ); // properties
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "staticScope", Type.getDescriptor( StaticScope.class ) ); // staticScope
+
+			    methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
+			        Type.getInternalName( ClassMeta.class ),
+			        "generateMeta",
+			        Type.getMethodDescriptor(
+			            Type.getType( IStruct.class ),
+			            Type.getType( Class.class ),
+			            Type.getType( Key.class ),
+			            Type.getType( BoxSourceType.class ),
+			            Type.getType( ResolvedFilePath.class ),
+			            Type.getType( DynamicObject.class ),
+			            Type.getType( List.class ),
+			            Type.getType( Map.class ),
+			            Type.getType( Map.class ),
+			            Type.getType( IStruct.class ),
+			            Type.getType( IStruct.class ),
+			            Type.getType( Map.class ),
+			            Type.getType( StaticScope.class ) ),
+			        false );
+		    } );
+
+		// Add getMetaData() instance method that calls getMetaDataStatic()
+		MethodVisitor getMetaDataVisitor = classNode.visitMethod( Opcodes.ACC_PUBLIC,
+		    "getMetaData",
+		    Type.getMethodDescriptor( Type.getType( IStruct.class ) ),
+		    null,
+		    null );
+		getMetaDataVisitor.visitCode();
+		getMetaDataVisitor.visitMethodInsn( Opcodes.INVOKESTATIC, type.getInternalName(), "getMetaDataStatic",
+		    Type.getMethodDescriptor( Type.getType( IStruct.class ) ), false );
+		getMetaDataVisitor.visitInsn( Opcodes.ARETURN );
+		getMetaDataVisitor.visitMaxs( 0, 0 );
+		getMetaDataVisitor.visitEnd();
 
 		AsmHelper.addPrviateStaticFieldGetter( classNode,
 		    type,
@@ -410,12 +535,9 @@ public class BoxClassTransformer {
 		    "getThisScope",
 		    Type.getType( ThisScope.class ),
 		    null );
-		AsmHelper.addPrivateFieldGetter( classNode,
-		    type,
-		    "interfaces",
-		    "getInterfaces",
-		    Type.getType( List.class ),
-		    null );
+		// interfaces is now static - add static field and getter
+		AsmHelper.addNullStaticField( classNode, "interfaces", Type.getType( List.class ), false );
+		AsmHelper.addStaticGetterMethodOnly( classNode, type, "interfaces", "getInterfaces", Type.getType( List.class ) );
 		AsmHelper.addPrivateFieldGetterAndSetter( classNode,
 		    type,
 		    "_super",
@@ -455,7 +577,7 @@ public class BoxClassTransformer {
 		AsmHelper.boxClassSupport( classNode, "pseudoConstructor", Type.VOID_TYPE, Type.getType( IBoxContext.class ) );
 		AsmHelper.boxClassSupport( classNode, "canOutput", Type.getType( Boolean.class ) );
 		AsmHelper.boxClassSupport( classNode, "getBoxMeta", Type.getType( BoxMeta.class ) );
-		AsmHelper.boxClassSupport( classNode, "getMetaData", Type.getType( IStruct.class ) );
+		// getMetaData() is now implemented above to call getMetaDataStatic() instead of BoxClassSupport.getMetaData(this)
 		AsmHelper.boxClassSupport( classNode, "asString", Type.getType( String.class ) );
 		AsmHelper.boxClassSupport( classNode, "canInvokeImplicitAccessor", Type.getType( Boolean.class ), Type.getType( IBoxContext.class ) );
 		AsmHelper.boxClassSupport( classNode, "setSuper", Type.VOID_TYPE, Type.getType( IClassRunnable.class ) );
@@ -485,6 +607,9 @@ public class BoxClassTransformer {
 			        // skip static methods declarations
 			        .filter( statement -> ! ( statement instanceof BoxFunctionDeclaration func
 			            && func.getModifiers().contains( BoxMethodDeclarationModifier.STATIC ) ) )
+			        // skip abstract methods (no body) - they don't get inner classes or registration
+			        .filter( statement -> ! ( statement instanceof BoxFunctionDeclaration func
+			            && func.getBody() == null ) )
 			        .flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE, ReturnValueContext.EMPTY ).stream() )
 			        .collect( Collectors.toList() );
 			    psuedoBody.addAll( transpiler.getUDFRegistrations() );
@@ -581,6 +706,23 @@ public class BoxClassTransformer {
 			List<AbstractInsnNode>			documenation	= transpiler.transformDocumentation( boxClass.getDocumentation() );
 			List<List<AbstractInsnNode>>	properties		= transpiler.transformProperties( type, boxClass.getProperties(), sourceType );
 
+			// Pre-register keys for abstract methods (functions with no body) before building the keys array
+			// This includes the function name and all annotation/documentation keys
+			boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
+			    .stream()
+			    .filter( func -> func.getBody() == null )
+			    .forEach( func -> {
+				    transpiler.createKey( func.getName() );
+				    // Also pre-register annotation keys
+				    if ( func.getAnnotations() != null ) {
+					    func.getAnnotations().forEach( ann -> transpiler.createKey( ann.getKey().getValue() ) );
+				    }
+				    // Also pre-register documentation keys
+				    if ( func.getDocumentation() != null ) {
+					    func.getDocumentation().forEach( ann -> transpiler.createKey( ann.getKey().getValue() ) );
+				    }
+			    } );
+
 			clinitNodes.add( new LdcInsnNode( transpiler.getKeys().size() ) );
 			clinitNodes.add( new TypeInsnNode( Opcodes.ANEWARRAY, Type.getInternalName( Key.class ) ) );
 			int index = 0;
@@ -665,11 +807,19 @@ public class BoxClassTransformer {
 			    "setterLookup",
 			    Type.getDescriptor( Map.class ) ) );
 
-			clinitNodes.addAll( generateSetOfCompileTimeMethodNames( transpiler, boxClass ) );
-			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "compileTimeMethodNames", Type.getDescriptor( Set.class ) ) );
+			clinitNodes.addAll( generateMapOfCompileTimeMethods( transpiler, boxClass, type ) );
+			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "compileTimeMethods", Type.getDescriptor( Map.class ) ) );
 
 			clinitNodes.addAll( AsmHelper.generateMapOfAbstractMethodNames( transpiler, boxClass ) );
 			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "abstractMethods", Type.getDescriptor( Map.class ) ) );
+
+			// Initialize the interfaces field with an empty ArrayList
+			clinitNodes.add( new TypeInsnNode( Opcodes.NEW, Type.getInternalName( ArrayList.class ) ) );
+			clinitNodes.add( new InsnNode( Opcodes.DUP ) );
+			clinitNodes
+			    .add( new MethodInsnNode( Opcodes.INVOKESPECIAL, Type.getInternalName( ArrayList.class ), "<init>", Type.getMethodDescriptor( Type.VOID_TYPE ),
+			        false ) );
+			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "interfaces", Type.getDescriptor( List.class ) ) );
 
 			// start invoke static initializer
 			clinitNodes.add( new InvokeDynamicInsnNode(
@@ -702,20 +852,28 @@ public class BoxClassTransformer {
 			clinitNodes.add( new LdcInsnNode( type ) );
 			clinitNodes.add( new FieldInsnNode( Opcodes.GETSTATIC, type.getInternalName(), "staticScope", Type.getDescriptor( StaticScope.class ) ) );
 			clinitNodes.add( new FieldInsnNode( Opcodes.GETSTATIC, type.getInternalName(), "path", Type.getDescriptor( ResolvedFilePath.class ) ) );
+			clinitNodes.add( new FieldInsnNode( Opcodes.GETSTATIC, type.getInternalName(), "imports", Type.getDescriptor( List.class ) ) );
+			clinitNodes.add( new FieldInsnNode( Opcodes.GETSTATIC, type.getInternalName(), "interfaces", Type.getDescriptor( List.class ) ) );
+			clinitNodes.add( new FieldInsnNode( Opcodes.GETSTATIC, type.getInternalName(), "annotations", Type.getDescriptor( IStruct.class ) ) );
 
 			clinitNodes.add( new MethodInsnNode(
 			    Opcodes.INVOKESTATIC,
 			    Type.getInternalName( BoxClassSupport.class ),
 			    "runStaticInitializer",
 			    Type.getMethodDescriptor(
-			        Type.VOID_TYPE,
+			        Type.getType( DynamicObject.class ),
 			        Type.getType( Consumer.class ),
 			        Type.getType( Class.class ),
 			        Type.getType( StaticScope.class ),
-			        Type.getType( ResolvedFilePath.class )
+			        Type.getType( ResolvedFilePath.class ),
+			        Type.getType( List.class ),
+			        Type.getType( List.class ),
+			        Type.getType( IStruct.class )
 			    ),
 			    false
 			) );
+			// Store the returned superClass
+			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "superClass", Type.getDescriptor( DynamicObject.class ) ) );
 			// end invoke static initializer
 
 			return clinitNodes;
@@ -724,28 +882,53 @@ public class BoxClassTransformer {
 		return classNode;
 	}
 
-	private static List<AbstractInsnNode> generateSetOfCompileTimeMethodNames( Transpiler transpiler, BoxClass boxClass ) {
-		List<List<AbstractInsnNode>>	methodKeyLists	= boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
+	private static List<AbstractInsnNode> generateMapOfCompileTimeMethods( Transpiler transpiler, BoxClass boxClass, Type ownerType ) {
+		// Filter out abstract methods (no body) since they don't have a generated class
+		List<BoxFunctionDeclaration>	functions	= boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
 		    .stream()
-		    .map( BoxFunctionDeclaration::getName )
-		    .map( transpiler::createKey )
+		    .filter( func -> func.getBody() != null )
 		    .collect( java.util.stream.Collectors.toList() );
 
-		List<AbstractInsnNode>			nodes			= new ArrayList<AbstractInsnNode>();
+		List<AbstractInsnNode>			nodes		= new ArrayList<AbstractInsnNode>();
 
-		nodes.addAll( AsmHelper.array( Type.getType( Key.class ), methodKeyLists ) );
-		nodes.add(
-		    new MethodInsnNode(
-		        Opcodes.INVOKESTATIC,
-		        Type.getInternalName( Set.class ),
-		        "of",
-		        Type.getMethodDescriptor( Type.getType( Set.class ), Type.getType( Object[].class ) ),
-		        true
-		    )
-		);
+		// Generate Map.ofEntries(Map.entry(key1, class1), Map.entry(key2, class2), ...)
+		for ( BoxFunctionDeclaration func : functions ) {
+			// Push the key
+			nodes.addAll( transpiler.createKey( func.getName() ) );
+			// Push the class literal for Func_<name>
+			Type funcType = Type.getType( "L" + ownerType.getInternalName() + "$Func_" + func.getName() + ";" );
+			nodes.add( new LdcInsnNode( funcType ) );
+			// Call Map.entry(key, class)
+			nodes.add( new MethodInsnNode(
+			    Opcodes.INVOKESTATIC,
+			    Type.getInternalName( Map.class ),
+			    "entry",
+			    Type.getMethodDescriptor( Type.getType( Map.Entry.class ), Type.getType( Object.class ), Type.getType( Object.class ) ),
+			    true ) );
+		}
+
+		// Create array of Map.Entry
+		nodes.add( new LdcInsnNode( functions.size() ) );
+		nodes.add( new TypeInsnNode( Opcodes.ANEWARRAY, Type.getInternalName( Map.Entry.class ) ) );
+
+		// Store each entry in the array (need to work backwards)
+		for ( int i = functions.size() - 1; i >= 0; i-- ) {
+			nodes.add( new InsnNode( Opcodes.DUP_X1 ) );
+			nodes.add( new InsnNode( Opcodes.SWAP ) );
+			nodes.add( new LdcInsnNode( i ) );
+			nodes.add( new InsnNode( Opcodes.SWAP ) );
+			nodes.add( new InsnNode( Opcodes.AASTORE ) );
+		}
+
+		// Call Map.ofEntries(Map.Entry[])
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( Map.class ),
+		    "ofEntries",
+		    Type.getMethodDescriptor( Type.getType( Map.class ), Type.getType( Map.Entry[].class ) ),
+		    true ) );
 
 		return nodes;
-
 	}
 
 	private static void defineLookupPrivateMethod( Transpiler transpiler, ClassNode classNode, Type thisType ) {

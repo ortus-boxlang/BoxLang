@@ -144,6 +144,37 @@ public class HTTPTest {
 		assertThat( bxhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo( "Done" );
 	}
 
+	@DisplayName( "It will ignore empty proxy settings" )
+	@Test
+	public void testWillIgnoreEmptyProxySettings( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor( get( "/posts/1" )
+		    .willReturn(
+		        aResponse()
+		            .withBody( "Done" )
+		            .withStatus( 200 ) ) );
+
+		String baseURL = wmRuntimeInfo.getHttpBaseUrl();
+
+		// @formatter:off
+		instance.executeSource(
+		    String.format( """
+					bx:http url="%s" {
+						bx:httpparam type="header" name="User-Agent" value="Mozilla" proxyServer="" proxyPort="80" proxyUser="" proxyPassword="";
+					}
+					result = bxhttp
+				""",
+		        baseURL + "/posts/1"
+		    ),
+		    context
+		);
+		// @formatter:on
+
+		IStruct bxhttp = variables.getAsStruct( result );
+		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "OK" );
+		assertThat( bxhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo( "Done" );
+	}
+
 	@DisplayName( "It can make HTTP with port attribute" )
 	@Test
 	public void testCanMakeHTTPRequestPort( WireMockRuntimeInfo wmRuntimeInfo ) {

@@ -73,9 +73,9 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	 * This allows us to "reserve" known scope names to ensure arguments.foo
 	 * will always look in the proper arguments scope and never in
 	 * local.arguments.foo for example
-	 * 
+	 *
 	 * @param key The key to check for visibility
-	 * 
+	 *
 	 * @return True if the key is visible in the current context, else false
 	 */
 	public boolean isKeyVisibleScope( Key key );
@@ -85,11 +85,11 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	 * This allows us to "reserve" known scope names to ensure arguments.foo
 	 * will always look in the proper arguments scope and never in
 	 * local.arguments.foo for example
-	 * 
+	 *
 	 * @param key     The key to check for visibility
 	 * @param nearby  true, check only scopes that are nearby to the current execution context
 	 * @param shallow true, do not delegate to parent or default scope if not found
-	 * 
+	 *
 	 * @return True if the key is visible in the current context, else false
 	 */
 	public boolean isKeyVisibleScope( Key key, boolean nearby, boolean shallow );
@@ -418,7 +418,7 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 
 	/**
 	 * Is there at least one output component on the stack
-	 * 
+	 *
 	 * @return True if there is at least one output component, else false
 	 */
 	public boolean isInOutputComponent();
@@ -745,17 +745,31 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	 * @throws BoxRuntimeException If the cache was not found
 	 */
 	public default ICacheProvider getApplicationCache( String cacheName ) {
+		return getApplicationCache( Key.of( cacheName ) );
+	}
+
+	/**
+	 * This is a convenience method to get an application cache using the app name prefix
+	 * or if not found, it tries to find it by the name as a global cache
+	 *
+	 * @param cacheName The name of the cache to retrieve
+	 *
+	 * @return The app or global cache provider
+	 *
+	 * @throws BoxRuntimeException If the cache was not found
+	 */
+	public default ICacheProvider getApplicationCache( Key cacheName ) {
 		ApplicationBoxContext	appContext		= getApplicationContext();
 		CacheService			cacheService	= getRuntime().getCacheService();
 
 		if ( appContext != null ) {
-			Key appCacheName = appContext.getApplication().buildAppCacheKey( Key.of( cacheName ) );
+			Key appCacheName = appContext.getApplication().buildAppCacheKey( cacheName );
 			if ( cacheService.hasCache( appCacheName ) ) {
 				return cacheService.getCache( appCacheName );
 			}
 		}
 
-		return cacheService.getCache( Key.of( cacheName ) );
+		return cacheService.getCache( cacheName );
 	}
 
 	/**
@@ -857,14 +871,14 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 
 	/**
 	 * Register a shutdown listener to be called when the context is shutdown
-	 * 
+	 *
 	 * @param consumer The consumer to register
 	 */
 	public void registerShutdownListener( java.util.function.Consumer<IBoxContext> consumer );
 
 	/**
 	 * Register a dependent thread on this request context
-	 * 
+	 *
 	 * @return The number of dependent threads after registering this one
 	 */
 	public int registerDependentThread();
@@ -873,7 +887,7 @@ public interface IBoxContext extends IBoxAttachable, Serializable {
 	 * Unregister a dependent thread on this request context
 	 * If this context has previously been shutdown and the number of dependent threads has reached zero,
 	 * the context will call its shutdown listeners
-	 * 
+	 *
 	 * @return The number of dependent threads after unregistering this one
 	 */
 	public int unregisterDependentThread();

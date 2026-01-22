@@ -299,7 +299,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "generateargon2hash", "bx-argon" );
 		BIFMap.put( "generatebcrypthash", "bx-bcrypt" );
 		BIFMap.put( "generatepbkdfkey", "core" );
-		BIFMap.put( "generatescrypthash", "bx-scrypt" );
+		BIFMap.put( "generatescrypthash", "" );
 		BIFMap.put( "generatesecretkey", "core" );
 		BIFMap.put( "getapplicationmetadata", "core" );
 		BIFMap.put( "getapplicationsettings", "" );
