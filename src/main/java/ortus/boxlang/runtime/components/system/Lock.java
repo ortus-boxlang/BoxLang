@@ -53,7 +53,7 @@ public class Lock extends Component {
 		    new Attribute( Key.type, "string", "exclusive", Set.of( Validator.valueOneOf( "readonly", "exclusive" ) ) ),
 		    new Attribute( Key.timeout, "Integer", 0, Set.of( Validator.min( 0 ) ) ),
 		    new Attribute( Key.throwOnTimeout, "boolean", true ),
-		    new Attribute( Key.cache, "string" )
+		    new Attribute( Key.cacheName, "string" )
 			// Lucee supports a "result" attribute, but it doesn't seem very useful and its docs don't even seem to match its implementation!.
 			// We can add it if it's really needed.
 		};
@@ -106,7 +106,7 @@ public class Lock extends Component {
 
 		// Will be set to false if we time out
 		boolean acquired;
-		if ( attributes.get( Key.cache ) == null ) {
+		if ( attributes.get( Key.cacheName ) == null ) {
 			ReentrantReadWriteLock				lock		= getLockByName( lockName );
 			ReentrantReadWriteLock.ReadLock		readLock	= lock.readLock();
 			ReentrantReadWriteLock.WriteLock	writeLock	= lock.writeLock();
@@ -165,7 +165,7 @@ public class Lock extends Component {
 				throw new LockException( "Interrupted while waiting for lock", "", lockName, "interrupted", e );
 			}
 		} else {
-			ICacheProvider cacheProvider = context.getApplicationCache( KeyCaster.cast( attributes.get( Key.cache ) ) );
+			ICacheProvider cacheProvider = context.getApplicationCache( KeyCaster.cast( attributes.get( Key.cacheName ) ) );
 			if ( cacheProvider instanceof ILockableCacheProvider lockingProvider ) {
 				ILock lock = lockingProvider.acquireLock( lockName, timeout * 1000, ( timeout + 5 ) * 1000 );
 				if ( !lock.isLocked() ) {
@@ -191,7 +191,7 @@ public class Lock extends Component {
 					lockingProvider.releaseLock( lock );
 				}
 			} else {
-				throw new BoxRuntimeException( "The specified cache provider [" + attributes.getAsString( Key.cache ) + "] does not support locking." );
+				throw new BoxRuntimeException( "The specified cache provider [" + attributes.getAsString( Key.cacheName ) + "] does not support locking." );
 			}
 		}
 
