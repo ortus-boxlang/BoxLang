@@ -26,6 +26,7 @@ import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.LineNumberNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.TryCatchBlockNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
@@ -371,6 +372,7 @@ public class AsmHelper {
 		    )
 		);
 		// IStruct annotations
+
 		nodes.addAll( transpiler.transformAnnotations( func.getAnnotations() ) );
 		// IStruct documentation
 		nodes.addAll( transpiler.transformDocumentation( func.getDocumentation() ) );
@@ -774,70 +776,71 @@ public class AsmHelper {
 		    null,
 		    null );
 		fieldVisitor.visitEnd();
-		MethodVisitor methodVisitor = classVisitor.visitMethod(
+		MethodVisitor mv = classVisitor.visitMethod(
 		    Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
 		    "getInstance",
 		    Type.getMethodDescriptor( type ),
 		    null,
 		    null );
-		methodVisitor.visitCode();
+		mv.visitCode();
+
+		Label	returnInstance	= new Label();
+		Label	tryStart		= new Label();
+		Label	tryEnd			= new Label();
+		Label	handler			= new Label();
+		Label	handlerEnd		= new Label();
 
 		// First null check (outside synchronized block)
-		Label endOfMethod = new Label();
-		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
-		    type.getInternalName(),
-		    "instance",
-		    type.getDescriptor() );
-		methodVisitor.visitJumpInsn( Opcodes.IFNONNULL, endOfMethod );
+		mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "instance", type.getDescriptor() );
+		mv.visitJumpInsn( Opcodes.IFNONNULL, returnInstance );
 
-		// Synchronized block on class
-		methodVisitor.visitLdcInsn( type );
-		methodVisitor.visitInsn( Opcodes.MONITORENTER );
+		// Load class, dup it, store in local var 0 for later monitorexit calls
+		mv.visitLdcInsn( type );
+		mv.visitInsn( Opcodes.DUP );
+		mv.visitVarInsn( Opcodes.ASTORE, 0 );
+		mv.visitInsn( Opcodes.MONITORENTER );
+
+		mv.visitLabel( tryStart );
 
 		// Second null check (inside synchronized block)
-		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
-		    type.getInternalName(),
-		    "instance",
-		    type.getDescriptor() );
-		Label start = new Label(), end = new Label(), handler = new Label();
-		methodVisitor.visitTryCatchBlock( start, end, handler, null );
-		methodVisitor.visitLabel( start );
-		methodVisitor.visitJumpInsn( Opcodes.IFNONNULL, end );
+		mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "instance", type.getDescriptor() );
+		mv.visitJumpInsn( Opcodes.IFNONNULL, tryEnd );
 
 		// Create new instance
-		methodVisitor.visitTypeInsn( Opcodes.NEW, type.getInternalName() );
-		methodVisitor.visitInsn( Opcodes.DUP );
-		methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL,
-		    type.getInternalName(),
-		    "<init>",
-		    Type.getMethodDescriptor( Type.VOID_TYPE ),
-		    false );
-		methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-		    type.getInternalName(),
-		    "instance",
-		    type.getDescriptor() );
+		mv.visitTypeInsn( Opcodes.NEW, type.getInternalName() );
+		mv.visitInsn( Opcodes.DUP );
+		mv.visitMethodInsn( Opcodes.INVOKESPECIAL, type.getInternalName(), "<init>", Type.getMethodDescriptor( Type.VOID_TYPE ), false );
+		mv.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "instance", type.getDescriptor() );
 
-		// Exit synchronized block normally
-		methodVisitor.visitLabel( end );
-		methodVisitor.visitLdcInsn( type );
-		methodVisitor.visitInsn( Opcodes.MONITOREXIT );
+		// Normal exit - the IFNONNULL above jumps here, then we monitorexit
+		mv.visitLabel( tryEnd );
+		mv.visitVarInsn( Opcodes.ALOAD, 0 );
+		mv.visitInsn( Opcodes.MONITOREXIT );
+		// tryEndAfterExit is where exception table entry 1 ends (AFTER monitorexit)
+		Label tryEndAfterExit = new Label();
+		mv.visitLabel( tryEndAfterExit );
+		mv.visitJumpInsn( Opcodes.GOTO, returnInstance );
+
+		// Exception handler - store exception, monitorexit, reload exception, throw
+		mv.visitLabel( handler );
+		mv.visitVarInsn( Opcodes.ASTORE, 1 );
+		mv.visitVarInsn( Opcodes.ALOAD, 0 );
+		mv.visitInsn( Opcodes.MONITOREXIT );
+		mv.visitLabel( handlerEnd );
+		mv.visitVarInsn( Opcodes.ALOAD, 1 );
+		mv.visitInsn( Opcodes.ATHROW );
 
 		// Return instance
-		methodVisitor.visitLabel( endOfMethod );
-		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
-		    type.getInternalName(),
-		    "instance",
-		    type.getDescriptor() );
-		methodVisitor.visitInsn( Opcodes.ARETURN );
+		mv.visitLabel( returnInstance );
+		mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "instance", type.getDescriptor() );
+		mv.visitInsn( Opcodes.ARETURN );
 
-		// Exception handler for synchronized block
-		methodVisitor.visitLabel( handler );
-		methodVisitor.visitLdcInsn( type );
-		methodVisitor.visitInsn( Opcodes.MONITOREXIT );
-		methodVisitor.visitInsn( Opcodes.ATHROW );
+		// Exception table - must match javac: body+monitorexit -> handler, handler's monitorexit -> handler
+		mv.visitTryCatchBlock( tryStart, tryEndAfterExit, handler, null );
+		mv.visitTryCatchBlock( handler, handlerEnd, handler, null );
 
-		methodVisitor.visitMaxs( 0, 0 );
-		methodVisitor.visitEnd();
+		mv.visitMaxs( 0, 0 );
+		mv.visitEnd();
 	}
 
 	public static void addStaticFieldGetterWithStaticGetter( ClassVisitor classVisitor, Type type, String field, String method, String staticMethod,
@@ -1203,23 +1206,13 @@ public class AsmHelper {
 
 		return switch ( opcode ) {
 			// Push single value onto stack
-			case Opcodes.ACONST_NULL, Opcodes.ICONST_M1, Opcodes.ICONST_0, Opcodes.ICONST_1, Opcodes.ICONST_2, Opcodes.ICONST_3, Opcodes.ICONST_4,
-			    Opcodes.ICONST_5, Opcodes.LCONST_0, Opcodes.LCONST_1, Opcodes.FCONST_0, Opcodes.FCONST_1, Opcodes.FCONST_2, Opcodes.DCONST_0, Opcodes.DCONST_1,
-			    Opcodes.BIPUSH, Opcodes.SIPUSH, Opcodes.LDC, Opcodes.ILOAD, Opcodes.LLOAD, Opcodes.FLOAD, Opcodes.DLOAD, Opcodes.ALOAD, Opcodes.GETSTATIC,
-			    Opcodes.NEW -> 1;
+			case Opcodes.ACONST_NULL, Opcodes.ICONST_M1, Opcodes.ICONST_0, Opcodes.ICONST_1, Opcodes.ICONST_2, Opcodes.ICONST_3, Opcodes.ICONST_4, Opcodes.ICONST_5, Opcodes.LCONST_0, Opcodes.LCONST_1, Opcodes.FCONST_0, Opcodes.FCONST_1, Opcodes.FCONST_2, Opcodes.DCONST_0, Opcodes.DCONST_1, Opcodes.BIPUSH, Opcodes.SIPUSH, Opcodes.LDC, Opcodes.ILOAD, Opcodes.LLOAD, Opcodes.FLOAD, Opcodes.DLOAD, Opcodes.ALOAD, Opcodes.GETSTATIC, Opcodes.NEW -> 1;
 
 			// Pop single value from stack
-			case Opcodes.ISTORE, Opcodes.LSTORE, Opcodes.FSTORE, Opcodes.DSTORE, Opcodes.ASTORE, Opcodes.POP, Opcodes.IRETURN, Opcodes.LRETURN, Opcodes.FRETURN,
-			    Opcodes.DRETURN, Opcodes.ARETURN, Opcodes.ATHROW, Opcodes.MONITORENTER, Opcodes.MONITOREXIT, Opcodes.IFNULL, Opcodes.IFNONNULL, Opcodes.IFEQ,
-			    Opcodes.IFNE, Opcodes.IFLT, Opcodes.IFGE, Opcodes.IFGT, Opcodes.IFLE, Opcodes.TABLESWITCH, Opcodes.LOOKUPSWITCH -> -1;
+			case Opcodes.ISTORE, Opcodes.LSTORE, Opcodes.FSTORE, Opcodes.DSTORE, Opcodes.ASTORE, Opcodes.POP, Opcodes.IRETURN, Opcodes.LRETURN, Opcodes.FRETURN, Opcodes.DRETURN, Opcodes.ARETURN, Opcodes.ATHROW, Opcodes.MONITORENTER, Opcodes.MONITOREXIT, Opcodes.IFNULL, Opcodes.IFNONNULL, Opcodes.IFEQ, Opcodes.IFNE, Opcodes.IFLT, Opcodes.IFGE, Opcodes.IFGT, Opcodes.IFLE, Opcodes.TABLESWITCH, Opcodes.LOOKUPSWITCH -> -1;
 
 			// Pop 2 values from stack
-			case Opcodes.POP2, Opcodes.IF_ICMPEQ, Opcodes.IF_ICMPNE, Opcodes.IF_ICMPLT, Opcodes.IF_ICMPGE, Opcodes.IF_ICMPGT, Opcodes.IF_ICMPLE,
-			    Opcodes.IF_ACMPEQ, Opcodes.IF_ACMPNE, Opcodes.IADD, Opcodes.LADD, Opcodes.FADD, Opcodes.DADD, Opcodes.ISUB, Opcodes.LSUB, Opcodes.FSUB,
-			    Opcodes.DSUB, Opcodes.IMUL, Opcodes.LMUL, Opcodes.FMUL, Opcodes.DMUL, Opcodes.IDIV, Opcodes.LDIV, Opcodes.FDIV, Opcodes.DDIV, Opcodes.IREM,
-			    Opcodes.LREM, Opcodes.FREM, Opcodes.DREM, Opcodes.ISHL, Opcodes.LSHL, Opcodes.ISHR, Opcodes.LSHR, Opcodes.IUSHR, Opcodes.LUSHR, Opcodes.IAND,
-			    Opcodes.LAND, Opcodes.IOR, Opcodes.LOR, Opcodes.IXOR, Opcodes.LXOR, Opcodes.LCMP, Opcodes.FCMPL, Opcodes.FCMPG, Opcodes.DCMPL, Opcodes.DCMPG,
-			    Opcodes.PUTFIELD -> -2;
+			case Opcodes.POP2, Opcodes.IF_ICMPEQ, Opcodes.IF_ICMPNE, Opcodes.IF_ICMPLT, Opcodes.IF_ICMPGE, Opcodes.IF_ICMPGT, Opcodes.IF_ICMPLE, Opcodes.IF_ACMPEQ, Opcodes.IF_ACMPNE, Opcodes.IADD, Opcodes.LADD, Opcodes.FADD, Opcodes.DADD, Opcodes.ISUB, Opcodes.LSUB, Opcodes.FSUB, Opcodes.DSUB, Opcodes.IMUL, Opcodes.LMUL, Opcodes.FMUL, Opcodes.DMUL, Opcodes.IDIV, Opcodes.LDIV, Opcodes.FDIV, Opcodes.DDIV, Opcodes.IREM, Opcodes.LREM, Opcodes.FREM, Opcodes.DREM, Opcodes.ISHL, Opcodes.LSHL, Opcodes.ISHR, Opcodes.LSHR, Opcodes.IUSHR, Opcodes.LUSHR, Opcodes.IAND, Opcodes.LAND, Opcodes.IOR, Opcodes.LOR, Opcodes.IXOR, Opcodes.LXOR, Opcodes.LCMP, Opcodes.FCMPL, Opcodes.FCMPG, Opcodes.DCMPL, Opcodes.DCMPG, Opcodes.PUTFIELD -> -2;
 
 			// Pop 3 values from stack
 			case Opcodes.IASTORE, Opcodes.LASTORE, Opcodes.FASTORE, Opcodes.DASTORE, Opcodes.AASTORE, Opcodes.BASTORE, Opcodes.CASTORE, Opcodes.SASTORE -> -3;
@@ -1360,7 +1353,7 @@ public class AsmHelper {
 	    Transpiler transpiler,
 	    boolean implicityReturnNull,
 	    Supplier<List<AbstractInsnNode>> supplier ) {
-		// Call the overload with the main type derived from classNode
+		// Call the overload with the main type derived from classNode and no external try-catch blocks
 		methodWithContextAndClassLocator(
 		    classNode,
 		    name,
@@ -1370,6 +1363,45 @@ public class AsmHelper {
 		    transpiler,
 		    implicityReturnNull,
 		    Type.getObjectType( classNode.name ),
+		    null,
+		    supplier
+		);
+	}
+
+	/**
+	 * Create a method with context and ClassLocator setup, applying method splitting if needed.
+	 * This overload allows specifying external try-catch blocks to be added to the method.
+	 *
+	 * @param classNode              The class node to add the method to
+	 * @param name                   The method name
+	 * @param parameterType          The parameter type (typically IBoxContext)
+	 * @param returnType             The return type
+	 * @param isStatic               Whether the method is static
+	 * @param transpiler             The transpiler instance
+	 * @param implicityReturnNull    Whether to implicitly return null if no explicit return
+	 * @param externalTryCatchBlocks Try-catch blocks from parent method (for method splitting)
+	 * @param supplier               Supplier for the method body instructions
+	 */
+	public static void methodWithContextAndClassLocator( ClassNode classNode,
+	    String name,
+	    Type parameterType,
+	    Type returnType,
+	    boolean isStatic,
+	    Transpiler transpiler,
+	    boolean implicityReturnNull,
+	    List<TryCatchBlockNode> externalTryCatchBlocks,
+	    Supplier<List<AbstractInsnNode>> supplier ) {
+		// Call the full overload with the main type derived from classNode
+		methodWithContextAndClassLocator(
+		    classNode,
+		    name,
+		    parameterType,
+		    returnType,
+		    isStatic,
+		    transpiler,
+		    implicityReturnNull,
+		    Type.getObjectType( classNode.name ),
+		    externalTryCatchBlocks,
 		    supplier
 		);
 	}
@@ -1378,15 +1410,16 @@ public class AsmHelper {
 	 * Create a method with context and ClassLocator setup, applying method splitting if needed.
 	 * This overload allows specifying the main type for method invocations in split methods.
 	 *
-	 * @param classNode           The class node to add the method to
-	 * @param name                The method name
-	 * @param parameterType       The parameter type (typically IBoxContext)
-	 * @param returnType          The return type
-	 * @param isStatic            Whether the method is static
-	 * @param transpiler          The transpiler instance
-	 * @param implicityReturnNull Whether to implicitly return null if no explicit return
-	 * @param mainType            The main type for method invocations in split methods
-	 * @param supplier            Supplier for the method body instructions
+	 * @param classNode              The class node to add the method to
+	 * @param name                   The method name
+	 * @param parameterType          The parameter type (typically IBoxContext)
+	 * @param returnType             The return type
+	 * @param isStatic               Whether the method is static
+	 * @param transpiler             The transpiler instance
+	 * @param implicityReturnNull    Whether to implicitly return null if no explicit return
+	 * @param mainType               The main type for method invocations in split methods
+	 * @param externalTryCatchBlocks External try-catch blocks to add to the method (for split sub-methods)
+	 * @param supplier               Supplier for the method body instructions
 	 */
 	public static void methodWithContextAndClassLocator( ClassNode classNode,
 	    String name,
@@ -1396,9 +1429,17 @@ public class AsmHelper {
 	    Transpiler transpiler,
 	    boolean implicityReturnNull,
 	    Type mainType,
+	    List<TryCatchBlockNode> externalTryCatchBlocks,
 	    Supplier<List<AbstractInsnNode>> supplier ) {
 		MethodContextTracker tracker = new MethodContextTracker( isStatic );
 		transpiler.addMethodContextTracker( tracker );
+
+		// Add external try-catch blocks to the tracker (for split sub-methods that inherit parent's try-catch)
+		if ( externalTryCatchBlocks != null ) {
+			for ( TryCatchBlockNode tryCatchBlock : externalTryCatchBlocks ) {
+				tracker.addTryCatchBlock( tryCatchBlock );
+			}
+		}
 		MethodVisitor methodVisitor = classNode.visitMethod(
 		    Opcodes.ACC_PUBLIC | ( isStatic ? Opcodes.ACC_STATIC : 0 ),
 		    name,
@@ -1778,45 +1819,74 @@ public class AsmHelper {
 		    type.getDescriptor(),
 		    null,
 		    null ).visitEnd();
-		MethodVisitor methodVisitor = classVisitor.visitMethod( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+		MethodVisitor mv = classVisitor.visitMethod( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
 		    "getInstance",
 		    Type.getMethodDescriptor( type, arguments ),
 		    null,
 		    null );
 
-		methodVisitor.visitCode();
-		Label endOfMethod = new Label();
-		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
-		    type.getInternalName(),
-		    "instance",
-		    type.getDescriptor() );
-		methodVisitor.visitJumpInsn( Opcodes.IFNONNULL, endOfMethod );
-		methodVisitor.visitLdcInsn( type );
-		methodVisitor.visitInsn( Opcodes.MONITORENTER );
-		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
-		    type.getInternalName(),
-		    "instance",
-		    type.getDescriptor() );
-		Label start = new Label(), end = new Label(), handler = new Label();
-		methodVisitor.visitTryCatchBlock( start, end, handler, null );
-		methodVisitor.visitLabel( start );
-		methodVisitor.visitJumpInsn( Opcodes.IFNONNULL, end );
-		instantiation.accept( methodVisitor );
-		methodVisitor.visitLabel( end );
-		methodVisitor.visitLdcInsn( type );
-		methodVisitor.visitInsn( Opcodes.MONITOREXIT );
-		methodVisitor.visitLabel( endOfMethod );
-		methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
-		    type.getInternalName(),
-		    "instance",
-		    type.getDescriptor() );
-		methodVisitor.visitInsn( Opcodes.ARETURN );
-		methodVisitor.visitLabel( handler );
-		methodVisitor.visitLdcInsn( type );
-		methodVisitor.visitInsn( Opcodes.MONITOREXIT );
-		methodVisitor.visitInsn( Opcodes.ATHROW );
-		methodVisitor.visitMaxs( 0, 0 );
-		methodVisitor.visitEnd();
+		mv.visitCode();
+
+		// Use high local variable slots to avoid conflicts with the instantiation consumer
+		// which may use slots 0, 1, 2, etc. for arguments and its own locals.
+		// Slot 10 and 11 are safely above any typical consumer usage.
+		int		monitorSlot		= 10;
+		int		exceptionSlot	= 11;
+
+		Label	returnInstance	= new Label();
+		Label	tryStart		= new Label();
+		Label	tryEnd			= new Label();
+		Label	handler			= new Label();
+		Label	handlerEnd		= new Label();
+
+		// First null check (outside synchronized block)
+		mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "instance", type.getDescriptor() );
+		mv.visitJumpInsn( Opcodes.IFNONNULL, returnInstance );
+
+		// Load class, dup it, store in local var for later monitorexit calls
+		mv.visitLdcInsn( type );
+		mv.visitInsn( Opcodes.DUP );
+		mv.visitVarInsn( Opcodes.ASTORE, monitorSlot );
+		mv.visitInsn( Opcodes.MONITORENTER );
+
+		mv.visitLabel( tryStart );
+
+		// Second null check (inside synchronized block)
+		mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "instance", type.getDescriptor() );
+		mv.visitJumpInsn( Opcodes.IFNONNULL, tryEnd );
+
+		// Create new instance via provided instantiation consumer
+		instantiation.accept( mv );
+
+		// Normal exit - the IFNONNULL above jumps here, then we monitorexit
+		mv.visitLabel( tryEnd );
+		mv.visitVarInsn( Opcodes.ALOAD, monitorSlot );
+		mv.visitInsn( Opcodes.MONITOREXIT );
+		// tryEndAfterExit is where exception table entry 1 ends (AFTER monitorexit)
+		Label tryEndAfterExit = new Label();
+		mv.visitLabel( tryEndAfterExit );
+		mv.visitJumpInsn( Opcodes.GOTO, returnInstance );
+
+		// Exception handler - store exception, monitorexit, reload exception, throw
+		mv.visitLabel( handler );
+		mv.visitVarInsn( Opcodes.ASTORE, exceptionSlot );
+		mv.visitVarInsn( Opcodes.ALOAD, monitorSlot );
+		mv.visitInsn( Opcodes.MONITOREXIT );
+		mv.visitLabel( handlerEnd );
+		mv.visitVarInsn( Opcodes.ALOAD, exceptionSlot );
+		mv.visitInsn( Opcodes.ATHROW );
+
+		// Return instance
+		mv.visitLabel( returnInstance );
+		mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "instance", type.getDescriptor() );
+		mv.visitInsn( Opcodes.ARETURN );
+
+		// Exception table - must match javac: body+monitorexit -> handler, handler's monitorexit -> handler
+		mv.visitTryCatchBlock( tryStart, tryEndAfterExit, handler, null );
+		mv.visitTryCatchBlock( handler, handlerEnd, handler, null );
+
+		mv.visitMaxs( 0, 0 );
+		mv.visitEnd();
 	}
 
 	/**
@@ -1905,12 +1975,15 @@ public class AsmHelper {
 		// method's instruction list will be written. Try-catch blocks that span
 		// split boundaries will be written to the sub-methods that contain them.
 
-		// Use the new MethodSplitter for splitting
-		MethodSplitter			splitter	= new MethodSplitter( transpiler, classNode, mainType );
-		Type					resultType	= Type.getType( FlowControlResult.class );
+		// Get try-catch blocks from tracker to pass to sub-methods
+		List<TryCatchBlockNode>	tryCatchBlocks	= tracker != null ? tracker.getTryCatchStack() : null;
+
+		// Use the new MethodSplitter for splitting, passing try-catch blocks for sub-method inheritance
+		MethodSplitter			splitter		= new MethodSplitter( transpiler, classNode, mainType, tryCatchBlocks );
+		Type					resultType		= Type.getType( FlowControlResult.class );
 
 		// Split the method - sub-methods return FlowControlResult
-		List<AbstractInsnNode>	splitNodes	= splitter.processMethod( nodes, name, parameterType, resultType );
+		List<AbstractInsnNode>	splitNodes		= splitter.processMethod( nodes, name, parameterType, resultType );
 
 		// If the return type is Object (typical for BoxLang methods), we need to
 		// unwrap the final FlowControlResult to get the actual value
@@ -1975,53 +2048,58 @@ public class AsmHelper {
 		    null );
 		mv.visitCode();
 
-		// First null check (outside synchronized block)
-		Label endOfMethod = new Label();
-		mv.visitFieldInsn( Opcodes.GETSTATIC,
-		    type.getInternalName(),
-		    cacheFieldName,
-		    returnType.getDescriptor() );
-		mv.visitJumpInsn( Opcodes.IFNONNULL, endOfMethod );
+		Label	returnValue	= new Label();
+		Label	tryStart	= new Label();
+		Label	tryEnd		= new Label();
+		Label	handler		= new Label();
+		Label	handlerEnd	= new Label();
 
-		// Synchronized block on class
+		// First null check (outside synchronized block)
+		mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), cacheFieldName, returnType.getDescriptor() );
+		mv.visitJumpInsn( Opcodes.IFNONNULL, returnValue );
+
+		// Load class, dup it, store in local var 0 for later monitorexit calls
 		mv.visitLdcInsn( type );
+		mv.visitInsn( Opcodes.DUP );
+		mv.visitVarInsn( Opcodes.ASTORE, 0 );
 		mv.visitInsn( Opcodes.MONITORENTER );
 
+		mv.visitLabel( tryStart );
+
 		// Second null check (inside synchronized block)
-		mv.visitFieldInsn( Opcodes.GETSTATIC,
-		    type.getInternalName(),
-		    cacheFieldName,
-		    returnType.getDescriptor() );
-		Label start = new Label(), end = new Label(), handler = new Label();
-		mv.visitTryCatchBlock( start, end, handler, null );
-		mv.visitLabel( start );
-		mv.visitJumpInsn( Opcodes.IFNONNULL, end );
+		mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), cacheFieldName, returnType.getDescriptor() );
+		mv.visitJumpInsn( Opcodes.IFNONNULL, tryEnd );
 
 		// Generate the body that computes and stores the value
 		generateBody.accept( mv );
-		mv.visitFieldInsn( Opcodes.PUTSTATIC,
-		    type.getInternalName(),
-		    cacheFieldName,
-		    returnType.getDescriptor() );
+		mv.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), cacheFieldName, returnType.getDescriptor() );
 
-		// Exit synchronized block normally
-		mv.visitLabel( end );
-		mv.visitLdcInsn( type );
+		// Normal exit - the IFNONNULL above jumps here, then we monitorexit
+		mv.visitLabel( tryEnd );
+		mv.visitVarInsn( Opcodes.ALOAD, 0 );
 		mv.visitInsn( Opcodes.MONITOREXIT );
+		// tryEndAfterExit is where exception table entry 1 ends (AFTER monitorexit)
+		Label tryEndAfterExit = new Label();
+		mv.visitLabel( tryEndAfterExit );
+		mv.visitJumpInsn( Opcodes.GOTO, returnValue );
+
+		// Exception handler - store exception, monitorexit, reload exception, throw
+		mv.visitLabel( handler );
+		mv.visitVarInsn( Opcodes.ASTORE, 1 );
+		mv.visitVarInsn( Opcodes.ALOAD, 0 );
+		mv.visitInsn( Opcodes.MONITOREXIT );
+		mv.visitLabel( handlerEnd );
+		mv.visitVarInsn( Opcodes.ALOAD, 1 );
+		mv.visitInsn( Opcodes.ATHROW );
 
 		// Return cached value
-		mv.visitLabel( endOfMethod );
-		mv.visitFieldInsn( Opcodes.GETSTATIC,
-		    type.getInternalName(),
-		    cacheFieldName,
-		    returnType.getDescriptor() );
+		mv.visitLabel( returnValue );
+		mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), cacheFieldName, returnType.getDescriptor() );
 		mv.visitInsn( Opcodes.ARETURN );
 
-		// Exception handler for synchronized block
-		mv.visitLabel( handler );
-		mv.visitLdcInsn( type );
-		mv.visitInsn( Opcodes.MONITOREXIT );
-		mv.visitInsn( Opcodes.ATHROW );
+		// Exception table - must match javac: body+monitorexit -> handler, handler's monitorexit -> handler
+		mv.visitTryCatchBlock( tryStart, tryEndAfterExit, handler, null );
+		mv.visitTryCatchBlock( handler, handlerEnd, handler, null );
 
 		mv.visitMaxs( 0, 0 );
 		mv.visitEnd();
