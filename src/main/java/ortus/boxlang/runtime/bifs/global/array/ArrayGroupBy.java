@@ -47,10 +47,16 @@ public class ArrayGroupBy extends BIF {
 	/**
 	 * Returns a struct of keys returned from the predicate function and values of arrays of matching rows.
 	 *
+	 * <pre>
+	 * values = [ 1, 2, 3, 4 ];
+	 * values.groupBy( ( value ) => value % 2 ? "odd" : "even" );
+	 * // { odd: [ 1, 3 ], even: [ 2, 4 ] }
+	 * </pre>
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to get the first item from.
+	 * @argument.array The array to group.
 	 * 
 	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the value, the index, the array. You can alternatively pass a Java Predicate which will only receive the 1st arg.
 	 */

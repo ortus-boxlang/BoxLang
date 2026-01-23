@@ -54,11 +54,16 @@ public class ArrayTranspose extends BIF {
 	}
 
 	/**
-	 * Returns a transposed array based on all passed in arrays
+	 * Returns a transposed array based on all passed in arrays.
 	 *
-	 * @param context   The context in which the BIF is being invoked.
-	 * @param arguments Argument scope for the BIF.
-	 *
+	 * <pre>
+	 * arrayTranspose(
+	 *     [ 1, 2, 3 ],
+	 *     [ 4, 5, 6 ],
+	 *     [ 7, 8, 9 ]
+	 * );
+	 * // [ [ 1, 4, 7 ], [ 2, 5, 8 ], [ 3, 6, 9 ] ]
+	 * </pre>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

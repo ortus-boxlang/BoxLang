@@ -51,14 +51,20 @@ public class ArrayChunk extends BIF {
 	}
 
 	/**
-	 * Chunks the array into an array of arrays of the specified size
+	 * Chunks the array into an array of arrays of the specified size.
+	 * The final chunk may be shorter if the array does not divide evenly.
+	 *
+	 * <pre>
+	 * numbers = [ 1, 2, 3, 4, 5 ];
+	 * numbers.chunk( 2 ); // [ [ 1, 2 ], [ 3, 4 ], [ 5 ] ]
+	 * </pre>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
+	 * @argument.array The array to chunk.
 	 *
-	 * @param context   The context in which the BIF is being invoked.
-	 * @param arguments Argument scope for the BIF.
+	 * @argument.length The size of each chunk.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		int		length			= arguments.getAsInteger( Key.length );

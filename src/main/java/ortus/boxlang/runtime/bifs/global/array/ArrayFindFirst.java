@@ -50,6 +50,12 @@ public class ArrayFindFirst extends BIF {
 	/**
 	 * Return first item in array that matches the predicate function.
 	 *
+	 * <pre>
+	 * users = [ { name: "Ada" }, { name: "Grace" } ];
+	 * users.findFirst( ( user ) => user.name == "Grace" ); // { name: "Grace" }
+	 * users.findFirst( ( user ) => user.name == "Linus", "Unknown" ); // "Unknown"
+	 * </pre>
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *

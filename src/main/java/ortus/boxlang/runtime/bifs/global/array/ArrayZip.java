@@ -54,7 +54,15 @@ public class ArrayZip extends BIF {
 	}
 
 	/**
-	 * Returns a zipped array
+	 * Returns a zipped array.
+	 *
+	 * <pre>
+	 * arrayZip( [ 1, 2 ], [ "a", "b" ] );
+	 * // [ [ 1, "a" ], [ 2, "b" ] ]
+	 *
+	 * arrayZip( [ 1, 2 ], [ 10, 20 ], ( a, b ) => a + b );
+	 * // [ 11, 22 ]
+	 * </pre>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -70,9 +78,6 @@ public class ArrayZip extends BIF {
 	 * @argument.maxThreads The maximum number of threads to use when parallel is true. If not provided the common thread pool will be used. If a boolean value is passed, it will be assigned as the virtual argument.
 	 * 
 	 * @argument.virtual If true, the function will be invoked using virtual thread. Defaults to false. Ingored if parallel is false.
-	 *
-	 * @param context   The context in which the BIF is being invoked.
-	 * @param arguments Argument scope for the BIF.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	arr1	= arguments.getAsArray( Key.array1 );

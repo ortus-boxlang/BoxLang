@@ -32,7 +32,7 @@ import ortus.boxlang.runtime.types.util.ListUtil;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 
-@BoxBIF( description = "Removes a new array with duplicate values removed" )
+@BoxBIF( description = "Returns a new array with duplicate values removed" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayUnique extends BIF {
 
@@ -48,6 +48,11 @@ public class ArrayUnique extends BIF {
 
 	/**
 	 * Returns a new array with duplicate items removed.
+	 *
+	 * <pre>
+	 * values = [ 1, 1, 2, 3, 3 ];
+	 * values.unique(); // [ 1, 2, 3 ]
+	 * </pre>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
