@@ -18,28 +18,27 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.bifs.global.array.ArrayParallelUtil.ParallelSettings;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF( description = "Create a new array by transforming each element using a callback function" )
+@BoxBIF( description = "Flattens nested arrays to the specified depth. (Infinite if no depth is specified.)" )
 @BoxMember( type = BoxLangType.ARRAY )
-public class ArrayMap extends BIF {
+public class ArrayFlatten extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public ArrayMap() {
+	public ArrayFlatten() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, Argument.ARRAY, Key.array ),
-		    new Argument( true, "function:Function", Key.callback ),
-		    new Argument( false, Argument.BOOLEAN, Key.parallel, false ),
-		    new Argument( false, Argument.ANY, Key.maxThreads ),
-		    new Argument( false, Argument.BOOLEAN, Key.virtual, false )
+		    new Argument( false, Argument.INTEGER, Key.depth )
 		};
 	}
 
@@ -63,14 +62,9 @@ public class ArrayMap extends BIF {
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		ParallelSettings settings = ArrayParallelUtil.resolveParallelSettings( arguments );
-		return ListUtil.map(
+		return ListUtil.flatten(
 		    arguments.getAsArray( Key.array ),
-		    arguments.getAsFunction( Key.callback ),
-		    context,
-		    arguments.getAsBoolean( Key.parallel ),
-		    settings.maxThreads(),
-		    settings.virtual()
+		    arguments.getAsInteger( Key.depth )
 		);
 	}
 }

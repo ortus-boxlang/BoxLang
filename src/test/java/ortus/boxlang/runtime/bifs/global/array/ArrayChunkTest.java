@@ -18,22 +18,18 @@
 
 package ortus.boxlang.runtime.bifs.global.array;
 
-import static com.google.common.truth.Truth.assertThat;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-
+import org.junit.jupiter.api.*;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
 
-public class ArrayFirstTest {
+import static com.google.common.truth.Truth.assertThat;
+
+public class ArrayChunkTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
@@ -56,60 +52,42 @@ public class ArrayFirstTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName( "It can get first" )
+	@DisplayName( "It chunks an array given a size" )
 	@Test
-	public void testCanSearch() {
-
+	public void testCanChunkAnArray() {
 		instance.executeSource(
 		    """
-		    arr = [ 'a', 'b', 'c' ];
-		    result = arrayFirst(arr);
+		    	data = [ 1, 2, 3, 4, 5, 6, 7, 8, 9 ];
+
+		    	result = arrayChunk( data, 3 );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "a" );
+		assertThat( ( Array ) variables.get( result ) ).isEqualTo(
+		    Array.of(
+		        Array.of( 1, 2, 3 ),
+		        Array.of( 4, 5, 6 ),
+		        Array.of( 7, 8, 9 )
+		    )
+		);
 	}
 
-	@DisplayName( "It can get first member" )
+	@DisplayName( "It adds the remaining values to the last chunk even if it is not the full chunk size" )
 	@Test
-	public void testCanSearchMember() {
-
+	public void testCanChunkAnArrayUnevenNumbers() {
 		instance.executeSource(
 		    """
-		    arr = [ 'a', 'b', 'c' ];
-		    result = arr.First();
+		    	data = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 ];
+
+		    	result = arrayChunk( data, 3 );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "a" );
+		assertThat( ( Array ) variables.get( result ) ).isEqualTo(
+		    Array.of(
+		        Array.of( 1, 2, 3 ),
+		        Array.of( 4, 5, 6 ),
+		        Array.of( 7, 8, 9 ),
+		        Array.of( 10, 11 )
+		    )
+		);
 	}
-
-	@DisplayName( "It can return a default value if no value is found" )
-	@Test
-	public void testDefaultValue() {
-
-		instance.executeSource(
-		    """
-		    arr = [];
-		    result = arr.first( 'default' );
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "default" );
-	}
-
-	@DisplayName( "It returns an exception if the array is empty" )
-	@Test
-	public void testException() {
-		instance.executeSource(
-		    """
-		    arr = [];
-		    try {
-		    	result = arr.first();
-		    } catch ( any e ) {
-		    	result = e.message;
-		    }
-		    """,
-		    context );
-
-		assertThat( variables.get( result ) ).isEqualTo( "Cannot return first element of array; array is empty" );
-	}
-
 }

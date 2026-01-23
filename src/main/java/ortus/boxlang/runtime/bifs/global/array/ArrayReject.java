@@ -18,21 +18,23 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.bifs.global.array.ArrayParallelUtil.ParallelSettings;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 
-@BoxBIF( description = "Test whether every item in an array meets a test condition" )
+@BoxBIF( description = "Filters an array and returns a new array containing only items that do not meet a test condition" )
 @BoxMember( type = BoxLangType.ARRAY )
-public class ArrayEvery extends BIF {
+public class ArrayReject extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public ArrayEvery() {
+	public ArrayReject() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, Argument.ARRAY, Key.array ),
@@ -44,22 +46,24 @@ public class ArrayEvery extends BIF {
 	}
 
 	/**
-	 * Used to iterate over an array and test whether <strong>every</strong> item meets the test callback.
-	 * The function will be passed 3 arguments: the value, the index, and the array.
-	 * You can alternatively pass a Java Predicate which will only receive the 1st arg.
-	 * The function should return true if the item meets the test, and false otherwise.
-	 * <p>
-	 * <strong>Note:</strong> This operation is a short-circuit operation, meaning it will stop iterating as soon as it finds the first item that does not meet the test condition.
-	 * <p>
+	 * Filters an array and returns a new array containing the result
+	 * This BIF will invoke the callback function for each item in the array, passing the item, its index, and the array itself.
+	 * <ul>
+	 * <li>If the callback returns false, the item will be included in the new array.</li>
+	 * <li>If the callback returns true, the item will be excluded from the new array.</li>
+	 * <li>If the callback requires strict arguments, it will only receive the item and its index.</li>
+	 * <li>If the callback does not require strict arguments, it will receive the item, its index, and the array itself.</li>
+	 * </ul>
+	 *
 	 * <h2>Parallel Execution</h2>
 	 * If the <code>parallel</code> argument is set to true, and no <code>max_threads</code> are sent, the filter will be executed in parallel using a ForkJoinPool with parallel streams.
 	 * If <code>max_threads</code> is specified, it will create a new ForkJoinPool with the specified number of threads to run the filter in parallel, and destroy it after the operation is complete.
-	 * This allows for efficient processing of large arrays, especially when the test function is computationally expensive or the array is large.
+	 * Please note that this may not be the most efficient way to filter, as it will create a new ForkJoinPool for each invocation of the BIF. You may want to consider using a shared ForkJoinPool for better performance.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to test against the callback.
+	 * @argument.array The array to filter entries from
 	 *
 	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the value, the index, the array. You can alternatively pass a Java Predicate which will only receive the 1st arg.
 	 *
@@ -67,19 +71,30 @@ public class ArrayEvery extends BIF {
 	 *
 	 * @argument.maxThreads The maximum number of threads to use when running the filter in parallel. If not passed it will use the default number of threads for the ForkJoinPool.
 	 *                      If parallel is false, this argument is ignored. If a boolean is provided it will be assigned to the virtual argument instead.
-	 * 
-	 * @argument.virtual If true, the function will be invoked using virtual threads. Defaults to false. Ignored if parallel is false.
+	 *
+	 * @argument.virtual ( BoxLang only) If true, the function will be invoked using virtual threads. Defaults to false. Ignored if parallel is false.
+	 *
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		ParallelSettings settings = ArrayParallelUtil.resolveParallelSettings( arguments );
-		return ListUtil.every(
+		Object maxThreads = arguments.get( Key.maxThreads );
+		if ( maxThreads instanceof Boolean castBoolean ) {
+			// If maxThreads is a boolean, we assign it to virtual
+			arguments.put( Key.virtual, castBoolean );
+			maxThreads = null;
+		}
+
+		CastAttempt<Integer> maxThreadsAttempt = IntegerCaster.attempt( maxThreads );
+
+		return ListUtil.filter(
 		    arguments.getAsArray( Key.array ),
 		    arguments.getAsFunction( Key.callback ),
 		    context,
 		    arguments.getAsBoolean( Key.parallel ),
-		    settings.maxThreads(),
-		    settings.virtual()
+		    maxThreadsAttempt.getOrDefault( 0 ),
+		    BooleanCaster.cast( arguments.getOrDefault( Key.virtual, false ) ),
+		    false
 		);
-
 	}
 }

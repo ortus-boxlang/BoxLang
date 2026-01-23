@@ -18,22 +18,18 @@
 
 package ortus.boxlang.runtime.bifs.global.array;
 
-import static com.google.common.truth.Truth.assertThat;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-
+import org.junit.jupiter.api.*;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
 
-public class ArrayFirstTest {
+import static com.google.common.truth.Truth.assertThat;
+
+public class ArrayZipTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
@@ -56,60 +52,55 @@ public class ArrayFirstTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName( "It can get first" )
+	@DisplayName( "It can zip two arrays together" )
 	@Test
-	public void testCanSearch() {
-
+	public void testCanZipTwoArrays() {
 		instance.executeSource(
 		    """
-		    arr = [ 'a', 'b', 'c' ];
-		    result = arrayFirst(arr);
+		    	data = [ 1, 2, 3 ];
+		    	zipWith = [ 4, 5, 6 ];
+
+		    	result = arrayZip( data, zipWith );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "a" );
+		assertThat( ( Array ) variables.get( result ) ).isEqualTo(
+		    Array.of(
+		        Array.of( 1, 4 ),
+		        Array.of( 2, 5 ),
+		        Array.of( 3, 6 )
+		    )
+		);
 	}
 
-	@DisplayName( "It can get first member" )
+	@DisplayName( "It can zip two arrays together with a projection function" )
 	@Test
-	public void testCanSearchMember() {
-
+	public void testCanZipWithProjectionFunction() {
 		instance.executeSource(
 		    """
-		    arr = [ 'a', 'b', 'c' ];
-		    result = arr.First();
+		    	data = [ 1, 2, 3 ];
+		    	zipWith = [ 4, 5, 6 ];
+
+		    	result = arrayZip( data, zipWith, ( a, b ) => a + b );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "a" );
+		assertThat( ( Array ) variables.get( result ) ).isEqualTo( Array.of( 5, 7, 9 ) );
 	}
 
-	@DisplayName( "It can return a default value if no value is found" )
+	@DisplayName( "throws an exception if the two arrays are different lengths" )
 	@Test
-	public void testDefaultValue() {
-
+	public void testThrowsIfArraysAreDifferentLengths() {
 		instance.executeSource(
 		    """
-		    arr = [];
-		    result = arr.first( 'default' );
+		    	data = [ 1, 2, 3 ];
+		    	zipWith = [ 4, 5 ];
+
+		    	try {
+		    		result = data.zip( zipWith );
+		    	} catch ( any e ) {
+		    	    result = e.message;
+		    	}
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "default" );
+		assertThat( ( String ) variables.get( result ) ).isEqualTo( "The two arrays do not have the same length.  array1 length: [3]. array2 length: [2]" );
 	}
-
-	@DisplayName( "It returns an exception if the array is empty" )
-	@Test
-	public void testException() {
-		instance.executeSource(
-		    """
-		    arr = [];
-		    try {
-		    	result = arr.first();
-		    } catch ( any e ) {
-		    	result = e.message;
-		    }
-		    """,
-		    context );
-
-		assertThat( variables.get( result ) ).isEqualTo( "Cannot return first element of array; array is empty" );
-	}
-
 }

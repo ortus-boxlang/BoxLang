@@ -18,46 +18,66 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
+import ortus.boxlang.runtime.scopes.IntKey;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-@BoxBIF( description = "Return first item in array" )
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
+@BoxBIF( description = "Chunks the array into an array of arrays of the specified size" )
 @BoxMember( type = BoxLangType.ARRAY )
-public class ArrayFirst extends BIF {
+public class ArrayChunk extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public ArrayFirst() {
+	public ArrayChunk() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "array", Key.array ),
-		    new Argument( false, "any", Key.defaultValue )
+		    new Argument( true, Argument.ARRAY, Key.array ),
+		    new Argument( true, Argument.INTEGER, Key.length )
 		};
 	}
 
 	/**
-	 * Return first item in array
+	 * Chunks the array into an array of arrays of the specified size
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to get the first item from.
+	 *
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array	actualArray		= arguments.getAsArray( Key.array );
-		Object	defaultValue	= arguments.get( Key.defaultValue );
-		if ( actualArray.size() > 0 ) {
-			return actualArray.get( 0 );
-		} else if ( defaultValue != null ) {
-			return defaultValue;
-		} else {
-			throw new BoxRuntimeException( "Cannot return first element of array; array is empty" );
+		int		length			= arguments.getAsInteger( Key.length );
+		Array	a				= arguments.getAsArray( Key.array );
+		int		currentCount	= 1;
+		Array	results			= Array.of();
+		Array	chunked			= Array.of();
+		for ( int i = 0; i < a.size(); i++ ) {
+			if ( currentCount > length ) {
+				results.add( chunked );
+				chunked			= Array.of();
+				currentCount	= 1;
+			}
+			chunked.add( a.get( i ) );
+			currentCount++;
 		}
+		if ( chunked.size() != 0 ) {
+			results.add( chunked );
+		}
+		return results;
 	}
-
 }
