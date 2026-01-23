@@ -38,7 +38,8 @@ public class DirectoryCopy extends BIF {
 		    new Argument( true, "string", Key.destination ),
 		    new Argument( false, "boolean", Key.recurse, false ),
 		    new Argument( false, "any", Key.filter, "*" ),
-		    new Argument( false, "boolean", Key.createPath, true )
+		    new Argument( false, "boolean", Key.createPath, true ),
+		    new Argument( false, "boolean", Key.overwrite, false )
 		};
 	}
 
@@ -52,11 +53,13 @@ public class DirectoryCopy extends BIF {
 	 *
 	 * @argument.destination The destination directory
 	 *
-	 * @argument.recurse [ false ] whether to recurse in to sub-directories and create paths
+	 * @argument.recurse whether to recurse in to sub-directories and create paths
 	 *
-	 * @argument.filter [ "*" ] a file or directory filter to pass
+	 * @argument.filter A file or directory filter to pass
 	 *
-	 * @argument.createPath [ true ] whether to create any nested paths required to the new directory
+	 * @argument.createPath whether to create any nested paths required to the new directory
+	 *
+	 * @argument.overwrite whether to overwrite existing files at the destination
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String	sourcePath		= arguments.getAsString( Key.source );
@@ -77,7 +80,8 @@ public class DirectoryCopy extends BIF {
 		    destinationPath,
 		    arguments.getAsBoolean( Key.recurse ),
 		    arguments.get( Key.filter ),
-		    arguments.getAsBoolean( Key.createPath )
+		    arguments.getAsBoolean( Key.createPath ),
+		    arguments.getAsBoolean( Key.overwrite )
 		);
 
 		return null;
