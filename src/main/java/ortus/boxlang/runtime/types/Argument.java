@@ -149,9 +149,11 @@ public record Argument(
 		if ( !arg.type().equalsIgnoreCase( "any" ) && !arg.type().equalsIgnoreCase( type() ) ) {
 			return false;
 		}
-		if ( arg.defaultValue() != null && !arg.defaultValue().equals( defaultValue() ) ) {
-			return false;
-		}
+		/*
+		 * if ( arg.defaultValue() != null && !arg.defaultValue().equals( defaultValue() ) ) {
+		 * return false;
+		 * }
+		 */
 		return true;
 	}
 
