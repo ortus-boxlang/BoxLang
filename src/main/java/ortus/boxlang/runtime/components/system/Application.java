@@ -37,7 +37,6 @@ public class Application extends Component {
 		super();
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key._NAME, "string" )
-			// TODO: declare all other attributes
 		};
 	}
 
