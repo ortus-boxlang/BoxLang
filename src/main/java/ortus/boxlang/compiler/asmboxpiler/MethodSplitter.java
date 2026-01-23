@@ -34,6 +34,7 @@ import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.LookupSwitchInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.TableSwitchInsnNode;
+import org.objectweb.asm.tree.TryCatchBlockNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.runtime.types.FlowControlResult;
@@ -49,27 +50,32 @@ public class MethodSplitter {
 	 * JVM method bytecode size limit is 64KB (65535 bytes).
 	 * We use a conservative threshold of 55KB to allow for overhead.
 	 */
-	public static final int		BYTECODE_SIZE_LIMIT	= 55000;
+	public static final int					BYTECODE_SIZE_LIMIT	= 55000;
 
 	/**
 	 * Counter for generating unique sub-method names
 	 */
-	private final AtomicInteger	subMethodCounter	= new AtomicInteger( 0 );
+	private final AtomicInteger				subMethodCounter	= new AtomicInteger( 0 );
 
 	/**
 	 * The transpiler instance for creating auxiliary methods
 	 */
-	private final Transpiler	transpiler;
+	private final Transpiler				transpiler;
 
 	/**
 	 * The class node where sub-methods will be added
 	 */
-	private final ClassNode		classNode;
+	private final ClassNode					classNode;
 
 	/**
 	 * The main type for method invocation
 	 */
-	private final Type			mainType;
+	private final Type						mainType;
+
+	/**
+	 * Try-catch blocks from the parent method that may need to be written to sub-methods
+	 */
+	private final List<TryCatchBlockNode>	tryCatchBlocks;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -85,9 +91,22 @@ public class MethodSplitter {
 	 * @param mainType   The type of the main class
 	 */
 	public MethodSplitter( Transpiler transpiler, ClassNode classNode, Type mainType ) {
-		this.transpiler	= transpiler;
-		this.classNode	= classNode;
-		this.mainType	= mainType;
+		this( transpiler, classNode, mainType, null );
+	}
+
+	/**
+	 * Create a new MethodSplitter with try-catch blocks from the parent method
+	 *
+	 * @param transpiler     The transpiler instance
+	 * @param classNode      The class node to add sub-methods to
+	 * @param mainType       The type of the main class
+	 * @param tryCatchBlocks Try-catch blocks from the parent method tracker
+	 */
+	public MethodSplitter( Transpiler transpiler, ClassNode classNode, Type mainType, List<TryCatchBlockNode> tryCatchBlocks ) {
+		this.transpiler		= transpiler;
+		this.classNode		= classNode;
+		this.mainType		= mainType;
+		this.tryCatchBlocks	= tryCatchBlocks != null ? tryCatchBlocks : new ArrayList<>();
 	}
 
 	/**
@@ -456,6 +475,7 @@ public class MethodSplitter {
 		// Sub-methods return FlowControlResult to handle flow control propagation
 		Type returnType = Type.getType( FlowControlResult.class );
 
+		// Use the overload that accepts external try-catch blocks from the parent method
 		AsmHelper.methodWithContextAndClassLocator(
 		    this.classNode,
 		    name,
@@ -464,6 +484,7 @@ public class MethodSplitter {
 		    false,
 		    this.transpiler,
 		    false,
+		    this.tryCatchBlocks,
 		    () -> {
 			    // Wrap the nodes to return FlowControlResult.NORMAL_RESULT at the end
 			    List<AbstractInsnNode> wrapped = new ArrayList<>( nodes );
@@ -642,6 +663,7 @@ public class MethodSplitter {
 
 	/**
 	 * Generate instructions to check FlowControlResult and propagate if needed.
+	 * For return results, we unwrap the value before returning to the caller.
 	 *
 	 * @param isLast Whether this is the last segment
 	 *
@@ -667,7 +689,15 @@ public class MethodSplitter {
 		// If normal (true), jump to continue
 		nodes.add( new JumpInsnNode( Opcodes.IFNE, continueLabel ) );
 
-		// Not normal - return the FlowControlResult to propagate
+		// Not normal - unwrap the value and return it to the caller
+		// FlowControlResult is on the stack, call getValue() to unwrap
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKEVIRTUAL,
+		    Type.getInternalName( FlowControlResult.class ),
+		    "getValue",
+		    Type.getMethodDescriptor( Type.getType( Object.class ) ),
+		    false
+		) );
 		nodes.add( new InsnNode( Opcodes.ARETURN ) );
 
 		// Continue label

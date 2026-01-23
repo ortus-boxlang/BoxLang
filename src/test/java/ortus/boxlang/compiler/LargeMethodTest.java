@@ -98,14 +98,81 @@ public class LargeMethodTest {
 	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
 	@Test
 	public void testShouldNotThrowOnLargeMethod3() {
-		assertDoesNotThrow( () -> {
-			instance.executeSource( """
-			                        	x = new src.test.java.ortus.boxlang.compiler.LargeMethod3();
-			                        	x.test( "while2");
+		// Test return from inside a while loop in a split method
+		instance.executeSource( """
+		                        	x = new src.test.java.ortus.boxlang.compiler.LargeMethod3();
+		                        	result = x.test( "while2" );
+		                        """, context );
 
-			                        """, context );
+		Object resultValue = variables.get( result );
+		assert resultValue.equals( true ) : "Expected true from while2 return, got: " + resultValue;
+	}
 
-		} );
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
+	@Test
+	public void testTryCatchInSplitMethodActuallyCatches() {
+		// This test verifies that try/catch blocks in split methods actually catch exceptions
+		// The "catch" parameter causes a throw inside the try block, which should be caught
+		instance.executeSource( """
+		                        	x = new src.test.java.ortus.boxlang.compiler.LargeMethod3();
+		                        	result = x.test( "catch" );
+		                        """, context );
 
+		// If the catch block works, test() returns false (not a FlowControlResult wrapper)
+		// If the exception is NOT caught, this test would fail with an uncaught exception
+		Object resultValue = variables.get( result );
+		assert resultValue.equals( false ) : "Expected false from catch block, got: " + resultValue;
+	}
+
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
+	@Test
+	public void testReturnFromTryBlockInSplitMethod() {
+		// Test returning from inside a try block (not via catch)
+		instance.executeSource( """
+		                        	x = new src.test.java.ortus.boxlang.compiler.LargeMethod3();
+		                        	result = x.test( "try" );
+		                        """, context );
+
+		Object resultValue = variables.get( result );
+		assert resultValue.equals( true ) : "Expected true from try block return, got: " + resultValue;
+	}
+
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
+	@Test
+	public void testReturnFromMiddleOfSplitMethod() {
+		// Test returning from the middle of the method (mid-if)
+		instance.executeSource( """
+		                        	x = new src.test.java.ortus.boxlang.compiler.LargeMethod3();
+		                        	result = x.test( "mid-if" );
+		                        """, context );
+
+		Object resultValue = variables.get( result );
+		assert resultValue.equals( true ) : "Expected true from mid-if return, got: " + resultValue;
+	}
+
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
+	@Test
+	public void testWhileLoopInSplitMethod() {
+		// Test while loop execution followed by return
+		instance.executeSource( """
+		                        	x = new src.test.java.ortus.boxlang.compiler.LargeMethod3();
+		                        	result = x.test( "while" );
+		                        """, context );
+
+		Object resultValue = variables.get( result );
+		assert resultValue.equals( true ) : "Expected true from while loop return, got: " + resultValue;
+	}
+
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
+	@Test
+	public void testRunToEndOfSplitMethod() {
+		// Test running all the way to the end of the method
+		instance.executeSource( """
+		                        	x = new src.test.java.ortus.boxlang.compiler.LargeMethod3();
+		                        	result = x.test( "end" );
+		                        """, context );
+
+		Object resultValue = variables.get( result );
+		assert resultValue.equals( true ) : "Expected true from end of method, got: " + resultValue;
 	}
 }

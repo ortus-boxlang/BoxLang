@@ -37,7 +37,6 @@ import ortus.boxlang.compiler.SourceMap;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.config.CLIOptions;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StructCasterLoose;
 import ortus.boxlang.runtime.dynamic.casters.ThrowableCaster;
