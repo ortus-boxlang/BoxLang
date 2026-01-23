@@ -53,6 +53,7 @@ public class ArrayReject extends BIF {
 	 * values = [ 1, 2, 3, 4 ];
 	 * values.reject( ( value ) => value % 2 == 0 ); // [ 1, 3 ]
 	 * </pre>
+	 * 
 	 * This BIF will invoke the callback function for each item in the array, passing the item, its index, and the array itself.
 	 * <ul>
 	 * <li>If the callback returns false, the item will be included in the new array.</li>
