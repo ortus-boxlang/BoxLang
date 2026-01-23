@@ -1444,7 +1444,7 @@ public class BaseBoxContext implements IBoxContext {
 	 *         type.
 	 */
 	@Override
-	@SuppressWarnings( "unchecked" )
+	@SuppressWarnings( { "unchecked", "null" } )
 	public <T> T getParentOfType( Class<T> type ) {
 		if ( type.isAssignableFrom( this.getClass() ) ) {
 			return ( T ) this;
@@ -1522,7 +1522,7 @@ public class BaseBoxContext implements IBoxContext {
 
 	/**
 	 * Register a shutdown listener to be called when the context is shutdown
-	 * 
+	 *
 	 * @param consumer The consumer to register
 	 */
 	@Override
@@ -1608,7 +1608,7 @@ public class BaseBoxContext implements IBoxContext {
 
 	/**
 	 * Check if there are any dependent threads on this request context
-	 * 
+	 *
 	 * @return true if there are dependent threads
 	 */
 	protected boolean hasDependentThreads() {
@@ -1617,7 +1617,7 @@ public class BaseBoxContext implements IBoxContext {
 
 	/**
 	 * Register a dependent thread on this request context
-	 * 
+	 *
 	 * @return The number of dependent threads after registering this one
 	 */
 	@Override
@@ -1633,7 +1633,7 @@ public class BaseBoxContext implements IBoxContext {
 	 * Unregister a dependent thread on this request context
 	 * If this context has previously been shutdown and the number of dependent threads has reached zero,
 	 * the context will call its shutdown listeners
-	 * 
+	 *
 	 * @return The number of dependent threads after unregistering this one
 	 */
 	@Override
