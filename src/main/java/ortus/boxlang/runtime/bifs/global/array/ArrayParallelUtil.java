@@ -33,18 +33,19 @@ final class ArrayParallelUtil {
 			maxThreads = null;
 		}
 
-		CastAttempt<Integer> maxThreadsAttempt = IntegerCaster.attempt( maxThreads );
-		boolean virtual = BooleanCaster.cast( arguments.getOrDefault( Key.virtual, false ) );
+		CastAttempt<Integer>	maxThreadsAttempt	= IntegerCaster.attempt( maxThreads );
+		boolean					virtual				= BooleanCaster.cast( arguments.getOrDefault( Key.virtual, false ) );
 		return new ParallelSettings( maxThreadsAttempt.getOrDefault( 0 ), virtual );
 	}
 
 	static final class ParallelSettings {
-		private final int maxThreads;
-		private final boolean virtual;
+
+		private final int		maxThreads;
+		private final boolean	virtual;
 
 		private ParallelSettings( int maxThreads, boolean virtual ) {
-			this.maxThreads = maxThreads;
-			this.virtual = virtual;
+			this.maxThreads	= maxThreads;
+			this.virtual	= virtual;
 		}
 
 		int maxThreads() {

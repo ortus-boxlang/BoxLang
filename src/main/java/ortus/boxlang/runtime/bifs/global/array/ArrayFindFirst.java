@@ -77,8 +77,8 @@ public class ArrayFindFirst extends BIF {
 			}
 		}
 
-		Function callback = arguments.getAsFunction( Key.callback );
-		boolean parallel = arguments.getAsBoolean( Key.parallel );
+		Function	callback	= arguments.getAsFunction( Key.callback );
+		boolean		parallel	= arguments.getAsBoolean( Key.parallel );
 		if ( !parallel ) {
 			int indexFound = actualArray.findIndex( callback, context );
 			if ( indexFound > 0 ) {
@@ -90,8 +90,8 @@ public class ArrayFindFirst extends BIF {
 			throw new BoxRuntimeException( "Could not find any results that matched the predicate function." );
 		}
 
-		ParallelSettings settings = ArrayParallelUtil.resolveParallelSettings( arguments );
-		Array filtered = ListUtil.filter(
+		ParallelSettings	settings	= ArrayParallelUtil.resolveParallelSettings( arguments );
+		Array				filtered	= ListUtil.filter(
 		    actualArray,
 		    callback,
 		    context,
