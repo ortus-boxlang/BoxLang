@@ -18,14 +18,12 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
-import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.bifs.global.array.ArrayParallelUtil.ParallelSettings;
 
 @BoxBIF( description = "Create a new array by transforming each element using a callback function" )
 @BoxMember( type = BoxLangType.ARRAY )
@@ -71,23 +69,15 @@ public class ArrayFlatMap extends BIF {
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object maxThreads = arguments.get( Key.maxThreads );
-		if ( maxThreads instanceof Boolean castBoolean ) {
-			// If maxThreads is a boolean, we assign it to virtual
-			arguments.put( Key.virtual, castBoolean );
-			maxThreads = null;
-		}
-
-		CastAttempt<Integer> maxThreadsAttempt = IntegerCaster.attempt( maxThreads );
-
+		ParallelSettings settings = ArrayParallelUtil.resolveParallelSettings( arguments );
 		return ListUtil.flatten(
 		    ListUtil.map(
 		        arguments.getAsArray( Key.array ),
 		        arguments.getAsFunction( Key.callback ),
 		        context,
 		        arguments.getAsBoolean( Key.parallel ),
-		        maxThreadsAttempt.getOrDefault( 0 ),
-		        BooleanCaster.cast( arguments.getOrDefault( Key.virtual, false ) )
+		        settings.maxThreads(),
+		        settings.virtual()
 		    ),
 		    1
 		);

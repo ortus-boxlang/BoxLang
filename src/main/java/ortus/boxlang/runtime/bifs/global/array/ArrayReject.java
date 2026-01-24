@@ -23,9 +23,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
-import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.bifs.global.array.ArrayParallelUtil.ParallelSettings;
 
 @BoxBIF( description = "Filters an array and returns a new array containing only items that do not meet a test condition" )
 @BoxMember( type = BoxLangType.ARRAY )
@@ -86,22 +84,14 @@ public class ArrayReject extends BIF {
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object maxThreads = arguments.get( Key.maxThreads );
-		if ( maxThreads instanceof Boolean castBoolean ) {
-			// If maxThreads is a boolean, we assign it to virtual
-			arguments.put( Key.virtual, castBoolean );
-			maxThreads = null;
-		}
-
-		CastAttempt<Integer> maxThreadsAttempt = IntegerCaster.attempt( maxThreads );
-
+		ParallelSettings settings = ArrayParallelUtil.resolveParallelSettings( arguments );
 		return ListUtil.filter(
 		    arguments.getAsArray( Key.array ),
 		    arguments.getAsFunction( Key.callback ),
 		    context,
 		    arguments.getAsBoolean( Key.parallel ),
-		    maxThreadsAttempt.getOrDefault( 0 ),
-		    BooleanCaster.cast( arguments.getOrDefault( Key.virtual, false ) ),
+		    settings.maxThreads(),
+		    settings.virtual(),
 		    false
 		);
 	}

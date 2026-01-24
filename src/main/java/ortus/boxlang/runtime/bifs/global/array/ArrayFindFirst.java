@@ -18,7 +18,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.bifs.global.array.ArrayParallelUtil.ParallelSettings;
+import ortus.boxlang.runtime.types.util.ListUtil.ParallelSettings;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -97,7 +97,7 @@ public class ArrayFindFirst extends BIF {
 			throw new BoxRuntimeException( "Could not find any results that matched the predicate function." );
 		}
 
-		ParallelSettings	settings	= ArrayParallelUtil.resolveParallelSettings( arguments );
+		ParallelSettings	settings	= ListUtil.resolveParallelSettings( arguments );
 		Array				filtered	= ListUtil.filter(
 		    actualArray,
 		    callback,
