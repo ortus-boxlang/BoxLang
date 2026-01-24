@@ -554,6 +554,15 @@ public class BoxRuntime implements java.io.Closeable {
 		    Instant.now(),
 		    timerUtil.stopAndGetMillis( "runtime-startup" ) );
 
+		// Trigger DebuggerService class loading for debugger support.
+		// This ensures the class is available when a debugger attaches and
+		// sets up ClassPrepareRequest events.
+		try {
+			Class.forName( "ortus.boxlang.runtime.services.DebuggerService" );
+		} catch ( ClassNotFoundException e ) {
+			// Ignore - debugger support not needed if class not found
+		}
+
 		// Announce it baby! Runtime is up
 		this.interceptorService.announce(
 		    BoxEvent.ON_RUNTIME_START );
