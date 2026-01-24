@@ -84,7 +84,7 @@ public class ArrayReject extends BIF {
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		ParallelSettings settings = ArrayParallelUtil.resolveParallelSettings( arguments );
+		ParallelSettings settings = ListUtil.resolveParallelSettings( arguments );
 		return ListUtil.filter(
 		    arguments.getAsArray( Key.array ),
 		    arguments.getAsFunction( Key.callback ),
