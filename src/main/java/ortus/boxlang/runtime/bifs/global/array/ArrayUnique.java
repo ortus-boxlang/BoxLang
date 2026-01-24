@@ -23,6 +23,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.BLCollector;
+
 @BoxBIF( description = "Returns a new array with duplicate values removed" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayUnique extends BIF {
