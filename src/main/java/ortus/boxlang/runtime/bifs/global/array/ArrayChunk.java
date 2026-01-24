@@ -14,6 +14,8 @@
  */
 package ortus.boxlang.runtime.bifs.global.array;
 
+import java.util.Set;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
@@ -23,6 +25,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.validation.Validator;
 
 @BoxBIF( description = "Chunks the array into an array of arrays of the specified size" )
 @BoxMember( type = BoxLangType.ARRAY )
@@ -35,7 +38,7 @@ public class ArrayChunk extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, Argument.ARRAY, Key.array ),
-		    new Argument( true, Argument.INTEGER, Key.length )
+		    new Argument( true, Argument.INTEGER, Key.length, Set.of( Validator.min( 1 ) ) )
 		};
 	}
 
