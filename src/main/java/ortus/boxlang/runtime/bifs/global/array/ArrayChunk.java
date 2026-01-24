@@ -23,6 +23,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 @BoxBIF( description = "Chunks the array into an array of arrays of the specified size" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayChunk extends BIF {
@@ -57,6 +58,12 @@ public class ArrayChunk extends BIF {
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		int		length			= arguments.getAsInteger( Key.length );
+		
+		// Validate that length is positive
+		if ( length <= 0 ) {
+			throw new BoxRuntimeException( "The length argument must be a positive integer, but received [" + length + "]" );
+		}
+		
 		Array	a				= arguments.getAsArray( Key.array );
 		int		currentCount	= 1;
 		Array	results			= Array.of();
