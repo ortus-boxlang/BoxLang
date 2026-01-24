@@ -69,7 +69,7 @@ public class ArrayFlatMap extends BIF {
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		ParallelSettings settings = ArrayParallelUtil.resolveParallelSettings( arguments );
+		ParallelSettings settings = ListUtil.resolveParallelSettings( arguments );
 		return ListUtil.flatten(
 		    ListUtil.map(
 		        arguments.getAsArray( Key.array ),
