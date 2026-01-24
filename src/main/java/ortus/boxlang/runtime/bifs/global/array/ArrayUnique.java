@@ -18,20 +18,11 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
-import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.BLCollector;
-import ortus.boxlang.runtime.types.util.ListUtil;
-
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-
 @BoxBIF( description = "Returns a new array with duplicate values removed" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayUnique extends BIF {
@@ -62,6 +53,7 @@ public class ArrayUnique extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 */
+	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return arguments.getAsArray( Key.array ).stream().distinct().collect( BLCollector.toArray() );
 	}

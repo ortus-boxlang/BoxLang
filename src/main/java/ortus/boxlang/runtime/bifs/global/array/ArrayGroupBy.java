@@ -18,14 +18,10 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
-import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.*;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.types.util.ListUtil;
 
 import java.util.function.BiFunction;
 
@@ -60,6 +56,7 @@ public class ArrayGroupBy extends BIF {
 	 * 
 	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the value, the index, the array. You can alternatively pass a Java Predicate which will only receive the 1st arg.
 	 */
+	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array								array		= arguments.getAsArray( Key.array );
 		Function							callback	= arguments.getAsFunction( Key.callback );

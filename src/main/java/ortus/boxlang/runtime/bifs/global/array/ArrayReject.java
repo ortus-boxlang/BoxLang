@@ -84,6 +84,7 @@ public class ArrayReject extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 */
+	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object maxThreads = arguments.get( Key.maxThreads );
 		if ( maxThreads instanceof Boolean castBoolean ) {

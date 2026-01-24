@@ -66,9 +66,10 @@ public class ArrayFlatMap extends BIF {
 	 *
 	 * @argument.maxThreads The maximum number of threads to use when parallel is true. If not provided the common thread pool will be used. If a boolean value is passed, it will be assigned as the virtual argument.
 	 *
-	 * @argument.virtual If true, the function will be invoked using virtual thread. Defaults to false. Ingored if parallel is false.
+	 * @argument.virtual If true, the function will be invoked using virtual thread. Defaults to false. Ignored if parallel is false.
 	 *
 	 */
+	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object maxThreads = arguments.get( Key.maxThreads );
 		if ( maxThreads instanceof Boolean castBoolean ) {

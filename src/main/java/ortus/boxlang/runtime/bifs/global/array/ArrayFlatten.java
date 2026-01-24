@@ -59,6 +59,7 @@ public class ArrayFlatten extends BIF {
 	 * @argument.depth The depth to flatten. If omitted, flatten all nested arrays.
 	 *
 	 */
+	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ListUtil.flatten(
 		    arguments.getAsArray( Key.array ),

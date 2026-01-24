@@ -72,6 +72,7 @@ public class ArrayFindFirst extends BIF {
 	 * 
 	 * @argument.virtual (BoxLang only) If true, the function will be invoked using virtual threads. Defaults to false. Ignored if parallel is false.
 	 */
+	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Array	actualArray		= arguments.getAsArray( Key.array );
 		Object	defaultValue	= arguments.get( Key.defaultValue );

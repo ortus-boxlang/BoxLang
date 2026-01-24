@@ -68,6 +68,7 @@ public class ArrayTranspose extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 */
+	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Collection<Object>	args				= arguments.entrySet().stream()
 		    .filter( entry -> entry.getKey() instanceof IntKey )
