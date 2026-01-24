@@ -233,9 +233,11 @@ public class ModuleService extends BaseService {
 		// Register each module now
 		// If we detect more than 10 modules, do it async
 		this.registry
-		    .keySet()
+		    .entrySet()
 		    .stream()
-		    .forEach( this::register );
+		    // Filter out modules which are already registered
+		    .filter( m -> m.getValue().registeredOn == null )
+		    .forEach( entry -> this.register( entry.getKey() ) );
 
 		// Log it
 		this.logger.debug(
@@ -335,9 +337,11 @@ public class ModuleService extends BaseService {
 
 		// If we detect more than 10 modules, do it async
 		this.registry
-		    .keySet()
+		    .entrySet()
 		    .stream()
-		    .forEach( this::activate );
+		    // Filter out modules which are already activated
+		    .filter( m -> m.getValue().activatedOn == null )
+		    .forEach( entry -> this.activate( entry.getKey() ) );
 
 		// Log it
 		this.logger.info(
@@ -709,13 +713,15 @@ public class ModuleService extends BaseService {
 	}
 
 	/**
-	 * This method scans a single module path and builds the module registry
+	 * This method scans a single module path for modules and adds new ones to the module registry
+	 * Call this with a directory of external modules you want to register.
+	 * This method doesn't register or activate the module. It just adds the path to the registry.
 	 *
-	 * @param modulePath The path to scan for modules
+	 * @param modulesDirectory The path to scan for modules
 	 */
-	public void buildRegistryFromPath( Path modulePath ) {
+	public void buildRegistryFromPath( Path modulesDirectory ) {
 		try {
-			Files.walk( modulePath, 1 )
+			Files.walk( modulesDirectory, 1 )
 			    // Exclude the path if it is a root path in the `modulePaths` list
 			    .filter( filePath -> !this.modulePaths.contains( filePath ) )
 			    // Only module folders
@@ -729,9 +735,42 @@ public class ModuleService extends BaseService {
 			    // Collect the stream into the module registry
 			    .forEach( moduleRecord -> this.registry.put( moduleRecord.name, moduleRecord ) );
 		} catch ( IOException e ) {
-			String message = "Error walking and registering module path: " + modulePath.toString();
+			String message = "Error walking and registering module path: " + modulesDirectory.toString();
 			this.logger.error( message, e );
 			throw new BoxRuntimeException( message, e );
 		}
 	}
+
+	/**
+	 * Register and activate a single module. Pass the directory that contains the ModuleConfig.bx. The name of the directory will be the module name.
+	 *
+	 * @param moduleDirectory The path to the module
+	 */
+	public ModuleService loadModule( Path moduleDirectory ) {
+		if ( !Files.isDirectory( moduleDirectory ) ) {
+			throw new BoxRuntimeException( "The provided module path is not a directory: " + moduleDirectory.toString() );
+		}
+		Key moduleName = Key.of( moduleDirectory.getFileName().toString() );
+		// exit if module already registered
+		if ( this.registry.containsKey( moduleName ) ) {
+			return this;
+		}
+		this.registry.put( moduleName, new ModuleRecord( moduleDirectory.toString() ) );
+		register( moduleName );
+		activate( moduleName );
+		return this;
+	}
+
+	/**
+	 * Register and activate all the modules in a directory. Pass the directory that contains nested module directories.
+	 *
+	 * @param moduleDirectory The path to scan for modules
+	 */
+	public ModuleService loadModules( Path modulesDirectory ) {
+		buildRegistryFromPath( modulesDirectory );
+		registerAll();
+		activateAll();
+		return this;
+	}
+
 }

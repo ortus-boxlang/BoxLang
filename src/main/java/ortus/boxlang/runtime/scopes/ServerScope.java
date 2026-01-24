@@ -215,4 +215,12 @@ public class ServerScope extends BaseScope {
 
 	}
 
+	/**
+	 * Unlock the server scope to allow modifications to unmodifiable keys.
+	 * This is primarily used for testing purposes.
+	 */
+	public void unLock() {
+		this.initialized = false;
+	}
+
 }
