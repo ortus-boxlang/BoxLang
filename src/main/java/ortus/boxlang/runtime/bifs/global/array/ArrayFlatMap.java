@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
-import ortus.boxlang.runtime.bifs.global.array.ArrayParallelUtil.ParallelSettings;
+import ortus.boxlang.runtime.types.util.ListUtil.ParallelSettings;
 
 @BoxBIF( description = "Create a new array by transforming each element using a callback function" )
 @BoxMember( type = BoxLangType.ARRAY )

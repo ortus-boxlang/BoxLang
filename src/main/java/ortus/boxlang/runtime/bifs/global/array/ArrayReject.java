@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
-import ortus.boxlang.runtime.bifs.global.array.ArrayParallelUtil.ParallelSettings;
+import ortus.boxlang.runtime.types.util.ListUtil.ParallelSettings;
 
 @BoxBIF( description = "Filters an array and returns a new array containing only items that do not meet a test condition" )
 @BoxMember( type = BoxLangType.ARRAY )
