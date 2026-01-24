@@ -468,6 +468,17 @@ public class ParseDateTimeTest {
 		    context );
 	}
 
+	@DisplayName( "It tests the BIF ParseDateTime with the result format of getHTTPTimeString" )
+	@Test
+	public void testHTTPTimestringFormat() {
+		instance.executeSource(
+		    """
+		    result = ParseDateTime( "Tue, 23 Dec 2025 21:24:20 UTC" );
+		          """,
+		    context );
+		assertThat( variables.get( Key.of( "result" ) ) ).isInstanceOf( DateTime.class );
+	}
+
 	@DisplayName( "It tests the speed of both masked and non-masked parsing" )
 	@Test
 	@Disabled( "Disabled for CI performance. Comment to test locally" )
@@ -486,6 +497,8 @@ public class ParseDateTimeTest {
 			}
 
 			result = [
+				"singleMillisTimestamp" : parseIt( "2025-11-12 00:45:00.0" ),
+				"singleMillisTimestampWithMask" : parseIt( "2025-11-12 00:45:00.0", "yyyy-MM-dd HH:mm:ss.S" ),
 				"isoTimestamp" : parseIt( "2024-04-02T21:01:00Z" ),
 				"isoTimestampWMask" : parseIt( "2024-04-02T21:01:00Z", "yyyy-MM-dd'T'HH:mm:ssXXX" ),
 				"mediumFormatZoned" : parseIt( "Nov 22, 2022 11:01:51 CET" ),

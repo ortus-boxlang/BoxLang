@@ -333,8 +333,9 @@ public class DatasourceService extends BaseService {
 	public Boolean remove( Key name ) {
 		var datasource = this.datasources.get( name );
 		if ( datasource != null ) {
-			datasource.shutdown();
+			// Remove first so no new connections can be made
 			this.datasources.remove( name );
+			datasource.shutdown();
 			return true;
 		}
 		return false;
@@ -377,6 +378,29 @@ public class DatasourceService extends BaseService {
 		    .map( Key::getName )
 		    .sorted()
 		    .toArray( String[]::new );
+	}
+
+	/**
+	 * Get all datasource instances
+	 */
+	public Map<Key, DataSource> getAll() {
+		return datasources;
+	}
+
+	/**
+	 * Get datasources assocated with an application name
+	 * 
+	 * @param applicationName The application name
+	 */
+	public Map<Key, DataSource> getByApplicationName( Key applicationName ) {
+		Map<Key, DataSource> result = new HashMap<>();
+		this.datasources.forEach( ( key, datasource ) -> {
+			Key appName = datasource.getConfiguration().getApplicationName();
+			if ( appName != null && appName.equals( applicationName ) ) {
+				result.put( key, datasource );
+			}
+		} );
+		return result;
 	}
 
 }

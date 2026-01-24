@@ -22,7 +22,6 @@ import java.time.ZoneId;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -62,7 +61,7 @@ public class SetTimezone extends BIF {
 			    )
 			);
 		}
-		context.getParentOfType( RequestBoxContext.class ).setTimezone( assigned );
+		context.getRequestContextOrFail().setTimezone( assigned );
 		return null;
 	}
 

@@ -70,13 +70,11 @@ public class GetClassMetadata extends BIF {
 		// Check if the class is an interface
 		if ( DynamicInteropService.isInterface( loadedClass.getTargetClass() ) ) {
 			BoxInterface boxInterface = ( BoxInterface ) loadedClass.unWrapBoxLangClass();
-			return boxInterface.getMetaData();
+			return boxInterface.getBoxMeta().getMeta();
 		}
 		// Else we have a class
 		else {
-			loadedClass.invokeConstructor( context, Key.noInit );
-			IClassRunnable boxClass = ( IClassRunnable ) loadedClass.unWrapBoxLangClass();
-			return boxClass.getBoxMeta().getMeta();
+			return loadedClass.invokeStatic( context, "getMetaStatic" );
 		}
 
 	}

@@ -86,6 +86,12 @@ public class BoxClosureTransformer extends AbstractTransformer {
 
 		    private final static IStruct			annotations			= Struct.EMPTY;
 			private final static IStruct			documentation		= Struct.EMPTY;
+			// Used to cached modern metadata (created on-demand)
+			private static IStruct metadata = null;
+			// Used to cached legacy metadata (created on-demand, never used if compat isn't installed)
+			private static IStruct legacyMetadata = null;
+			private final static boolean isClosure = ${isClosure};
+			private final static boolean isLambda = ${isLambda};
 			
 			public Key getName() {
 				return name;
@@ -129,6 +135,56 @@ public class BoxClosureTransformer extends AbstractTransformer {
 				return ${enclosingClassName}.path;
 			}
 
+			public static IStruct getMetaDataStatic() {
+				if( ${className}.legacyMetadata == null ) {
+					synchronized( ${className}.class ) {
+						if( ${className}.legacyMetadata == null ) {
+							${className}.legacyMetadata = Function.getMetaDataStatic( 
+								${className}.class,
+								${className}.documentation,
+								${className}.annotations,
+								${className}.name,
+								${className}.returnType,
+								${enclosingClassName}.sourceType,
+								Access.PUBLIC,
+								${className}.arguments,
+								${className}.isClosure,
+								${className}.isLambda,
+								false, // canOutput
+								java.util.Collections.EMPTY_LIST
+							);
+						}
+					}
+				}
+
+				return ${className}.legacyMetadata;
+			}
+
+			public static IStruct getMetaStatic() {
+				if( ${className}.metadata == null ) {
+					synchronized( ${className}.class ) {
+						if( ${className}.metadata == null ) {
+							${className}.metadata =  FunctionMeta.generateMeta( 
+								${className}.class,
+								${className}.documentation,
+								${className}.annotations,
+								${className}.name,
+								${className}.returnType,
+								${enclosingClassName}.sourceType,
+								Access.PUBLIC,
+								${className}.arguments,
+								${className}.isClosure,
+								${className}.isLambda,
+								false, // canOutput
+								java.util.Collections.EMPTY_LIST
+							);
+						}
+					}
+				}
+
+				return ${className}.metadata;
+			}
+
 			/**
 			 * The original source type
 			 */
@@ -168,7 +224,9 @@ public class BoxClosureTransformer extends AbstractTransformer {
 		    Map.entry( "enclosingClassName", enclosingClassName ),
 		    Map.entry( "boxlangVersion", BoxRuntime.getInstance().getVersionInfo().getAsString( Key.version ) ),
 		    Map.entry( "bytecodeVersion", String.valueOf( IBoxpiler.BYTECODE_VERSION ) ),
-		    Map.entry( "contextName", transpiler.peekContextName() )
+		    Map.entry( "contextName", transpiler.peekContextName() ),
+		    Map.entry( "isClosure", "true" ),
+		    Map.entry( "isLambda", "false" )
 		);
 		transpiler.pushContextName( "context" );
 		String							code	= PlaceholderHelper.resolve( template, values );

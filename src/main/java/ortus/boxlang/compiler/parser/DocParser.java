@@ -72,6 +72,7 @@ public class DocParser extends AbstractParser {
 		}
 		InputStream						inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 		DocGrammar.DocumentationContext	parseTree	= ( DocGrammar.DocumentationContext ) parserFirstStage( file, inputStream, false );
+
 		if ( issues.isEmpty() ) {
 			BoxDocComment ast = toAst( file, parseTree );
 			return new ParsingResult( ast, issues, comments );
@@ -96,41 +97,41 @@ public class DocParser extends AbstractParser {
 	}
 
 	private BoxDocumentationAnnotation toAst( File file, DocGrammar.DescriptionContext node ) {
-		BoxFQN			name		= new BoxFQN( "hint", getPosition( node ), getSourceText( node ) );
-		int				numLines	= 0;
-		// use string builder to get text from child nodes that are NOT descriptionNewLIne
-		StringBuilder	valueSB		= new StringBuilder();
+		BoxFQN			name	= new BoxFQN( "hint", getPosition( node ), getSourceText( node ) );
+		// use string builder to get text from child nodes
+		StringBuilder	valueSB	= new StringBuilder();
 		for ( var child : node.children ) {
 			if ( child instanceof DocGrammar.DescriptionNewlineContext ) {
-				numLines++;
-				// only add new line if there are more than one
-				if ( numLines > 1 ) {
-					valueSB.append( "\n" );
-				}
+				valueSB.append( "\n" );
 			} else if ( child instanceof DocGrammar.SpaceContext ) {
-				if ( numLines <= 1 )
-					valueSB.append( child.getText() );
+				valueSB.append( child.getText() );
 			} else {
 				valueSB.append( child.getText() );
-				numLines = 0;
 			}
 		}
-		BoxStringLiteral value = new BoxStringLiteral( valueSB.toString(), getPosition( node ), getSourceText( node ) );
+		BoxStringLiteral value = new BoxStringLiteral( valueSB.toString().trim(), getPosition( node ), getSourceText( node ) );
 		return new BoxDocumentationAnnotation( name, value, getPosition( node ), getSourceText( node ) );
 	}
 
 	private BoxDocumentationAnnotation toAst( File file, DocGrammar.BlockTagContext node ) {
 		BoxFQN			name	= new BoxFQN( node.blockTagName().getText(), getPosition( node.blockTagName() ), getSourceText( node.blockTagName() ) );
-		// use string builder to get text from child nodes that are NOT a new line
+		// use string builder to get text from child nodes
 		StringBuilder	valueSB	= new StringBuilder();
 		node.blockTagContent().forEach( it -> {
 			it.children.forEach( child -> {
-				// Ignore new lines
-				if ( ! ( child instanceof TerminalNode ) ) {
+				// Any direct LEXER matches
+				if ( child instanceof TerminalNode tm ) {
+					// All we are about are line breaks. SPACE are ignored
+					if ( tm.getSymbol().getType() == DocLexer.NEWLINE ) {
+						// Don't use the text as it may contain * chars which were consumed as part of the new line
+						valueSB.append( "\n" );
+					}
+				} else {
 					valueSB.append( child.getText() );
 				}
 			} );
 		} );
+
 		BoxStringLiteral value = new BoxStringLiteral( valueSB.toString().trim(), getPosition( node ), getSourceText( node ) );
 		return new BoxDocumentationAnnotation( name, value, getPosition( node ), getSourceText( node ) );
 	}

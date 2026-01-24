@@ -1,0 +1,263 @@
+// 50 Random User Defined Functions
+
+function addNumbers( required numeric a, required numeric b ) {
+	return a + b;
+}
+
+function subtractNumbers( required numeric a, required numeric b ) {
+	return a - b;
+}
+
+function multiplyNumbers( required numeric a, required numeric b ) {
+	return a * b;
+}
+
+function divideNumbers( required numeric a, required numeric b ) {
+	if ( b == 0 ) {
+		throw( message="Cannot divide by zero" );
+	}
+	return a / b;
+}
+
+function calculatePower( required numeric base, required numeric exponent ) {
+	return base ^ exponent;
+}
+
+function getSquareRoot( required numeric value ) {
+	return sqr( value );
+}
+
+function getAbsoluteValue( required numeric value ) {
+	return abs( value );
+}
+
+function roundNumber( required numeric value, numeric precision = 0 ) {
+	return round( value, precision );
+}
+
+function generateRandomNumber( numeric min = 0, numeric max = 100 ) {
+	return randRange( min, max );
+}
+
+function calculateFactorial( required numeric n ) {
+	if ( n <= 1 ) {
+		return 1;
+	}
+	return n * calculateFactorial( n - 1 );
+}
+
+function isPrime( required numeric n ) {
+	if ( n < 2 ) return false;
+	if ( n == 2 ) return true;
+	if ( n % 2 == 0 ) return false;
+	for ( var i = 3; i <= sqr( n ); i += 2 ) {
+		if ( n % i == 0 ) return false;
+	}
+	return true;
+}
+
+function fibonacci( required numeric n ) {
+	if ( n <= 1 ) return n;
+	return fibonacci( n - 1 ) + fibonacci( n - 2 );
+}
+
+function reverseString( required string text ) {
+	return reverse( text );
+}
+
+function capitalizeWords( required string text ) {
+	return text.listToArray( " " ).map( word => word.left( 1 ).uCase() & word.mid( 2, len( word ) - 1 ).lCase() ).toList( " " );
+}
+
+function countVowels( required string text ) {
+	var vowels = "aeiouAEIOU";
+	var count = 0;
+	for ( var char in text.listToArray( "" ) ) {
+		if ( vowels.find( char ) > 0 ) count++;
+	}
+	return count;
+}
+
+function isPalindrome( required string text ) {
+	var cleaned = text.reReplace( "[^a-zA-Z0-9]", "", "all" ).lCase();
+	return cleaned == reverse( cleaned );
+}
+
+function truncateString( required string text, required numeric maxLength, string suffix = "..." ) {
+	if ( len( text ) <= maxLength ) return text;
+	return left( text, maxLength - len( suffix ) ) & suffix;
+}
+
+function repeatString( required string text, required numeric times ) {
+	return repeatString( text, times );
+}
+
+function padLeft( required string text, required numeric length, string padChar = " " ) {
+	return text.lJustify( length, padChar );
+}
+
+function padRight( required string text, required numeric length, string padChar = " " ) {
+	return text.rJustify( length, padChar );
+}
+
+function removeWhitespace( required string text ) {
+	return text.reReplace( "\s+", "", "all" );
+}
+
+function countWords( required string text ) {
+	return listLen( trim( text ), " " );
+}
+
+function getArraySum( required array arr ) {
+	return arr.reduce( ( acc, val ) => acc + val, 0 );
+}
+
+function getArrayAverage( required array arr ) {
+	if ( arr.isEmpty() ) return 0;
+	return getArraySum( arr ) / arr.len();
+}
+
+function getArrayMax( required array arr ) {
+	return arr.max();
+}
+
+function getArrayMin( required array arr ) {
+	return arr.min();
+}
+
+function shuffleArray( required array arr ) {
+	var result = arr.slice( 1 );
+	for ( var i = result.len(); i > 1; i-- ) {
+		var j = randRange( 1, i );
+		var temp = result[ i ];
+		result[ i ] = result[ j ];
+		result[ j ] = temp;
+	}
+	return result;
+}
+
+function removeDuplicates( required array arr ) {
+	return arr.unique();
+}
+
+function flattenArray( required array arr ) {
+	return arr.flatten();
+}
+
+function chunkArray( required array arr, required numeric size ) {
+	var result = [];
+	for ( var i = 1; i <= arr.len(); i += size ) {
+		result.append( arr.slice( i, min( size, arr.len() - i + 1 ) ) );
+	}
+	return result;
+}
+
+function filterEvenNumbers( required array arr ) {
+	return arr.filter( n => n % 2 == 0 );
+}
+
+function filterOddNumbers( required array arr ) {
+	return arr.filter( n => n % 2 != 0 );
+}
+
+function sortArrayAsc( required array arr ) {
+	return arr.sort( "numeric", "asc" );
+}
+
+function sortArrayDesc( required array arr ) {
+	return arr.sort( "numeric", "desc" );
+}
+
+function getCurrentTimestamp() {
+	return now();
+}
+
+function formatDate( required date dateValue, string format = "yyyy-MM-dd" ) {
+	return dateFormat( dateValue, format );
+}
+
+function formatTime( required date dateValue, string format = "HH:mm:ss" ) {
+	return timeFormat( dateValue, format );
+}
+
+function getDaysBetween( required date startDate, required date endDate ) {
+	return dateDiff( "d", startDate, endDate );
+}
+
+function addDaysToDate( required date dateValue, required numeric days ) {
+	return dateAdd( "d", days, dateValue );
+}
+
+function isWeekend( required date dateValue ) {
+	var dayOfWeek = dayOfWeek( dateValue );
+	return dayOfWeek == 1 || dayOfWeek == 7;
+}
+
+function getStartOfMonth( required date dateValue ) {
+	return createDate( year( dateValue ), month( dateValue ), 1 );
+}
+
+function getEndOfMonth( required date dateValue ) {
+	return dateAdd( "d", -1, dateAdd( "m", 1, getStartOfMonth( dateValue ) ) );
+}
+
+function isValidEmail( required string email ) {
+	return reFind( "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", email ) > 0;
+}
+
+function isValidUrl( required string url ) {
+	return reFind( "^https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", url ) > 0;
+}
+
+function generateUUID() {
+	return createUUID();
+}
+
+function hashString( required string text, string algorithm = "SHA-256" ) {
+	return hash( text, algorithm );
+}
+
+function encodeBase64( required string text ) {
+	return toBase64( text );
+}
+
+function decodeBase64( required string encodedText ) {
+	return toString( toBinary( encodedText ) );
+}
+
+function mergeStructs( required struct struct1, required struct struct2 ) {
+	var result = structCopy( struct1 );
+	result.append( struct2, true );
+	return result;
+}
+
+function getStructKeys( required struct data ) {
+	return structKeyArray( data );
+}
+
+function getStructValues( required struct data ) {
+	return structValueArray( data );
+}
+
+function structToQueryString( required struct data ) {
+	return data.reduce( ( acc, key, value ) => {
+		var separator = acc.len() > 0 ? "&" : "";
+		return acc & separator & encodeForURL( key ) & "=" & encodeForURL( value );
+	}, "" );
+}
+
+function celsiusToFahrenheit( required numeric celsius ) {
+	return ( celsius * 9 / 5 ) + 32;
+}
+
+function fahrenheitToCelsius( required numeric fahrenheit ) {
+	return ( fahrenheit - 32 ) * 5 / 9;
+}
+
+function milesToKilometers( required numeric miles ) {
+	return miles * 1.60934;
+}
+
+function kilometersToMiles( required numeric kilometers ) {
+	return kilometers / 1.60934;
+}

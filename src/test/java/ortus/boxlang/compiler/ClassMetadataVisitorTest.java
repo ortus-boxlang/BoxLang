@@ -62,7 +62,7 @@ public class ClassMetadataVisitorTest {
 		assertThat( docs.getAsString( Key.of( "brad" ) ).trim() ).isEqualTo( "wood" );
 		assertThat( docs.get( Key.of( "luis" ) ) ).isEqualTo( "" );
 		assertThat( docs.getAsString( Key.of( "hint" ) ).trim() )
-		    .isEqualTo( "This is my class description continued on this line \nand this one as well." );
+		    .isEqualTo( "This is my class description\ncontinued on this line\n\nand this one\nas well." );
 
 		assertThat( meta.get( Key.of( "annotations" ) ) instanceof IStruct ).isTrue();
 		var annos = meta.getAsStruct( Key.of( "annotations" ) );

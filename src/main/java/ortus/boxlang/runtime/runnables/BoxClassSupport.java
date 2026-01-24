@@ -32,7 +32,9 @@ import ortus.boxlang.runtime.context.StaticClassBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.BaseScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -52,6 +54,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.ClassMeta;
+import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.types.util.TypeUtil;
 import ortus.boxlang.runtime.util.ArgumentUtil;
 import ortus.boxlang.runtime.util.BoxFQN;
@@ -84,6 +87,16 @@ public class BoxClassSupport {
 	    Key.type,
 	    Key._DEFAULT
 	);
+
+	/**
+	 * This is the class locator
+	 */
+	private static ClassLocator		classLocator							= null;
+
+	/**
+	 * Constants
+	 */
+	private static final String		CLASS_TYPE								= "Component";
 
 	/**
 	 * Call the pseudo constructor
@@ -171,17 +184,25 @@ public class BoxClassSupport {
 	public static Boolean canOutput( IClassRunnable thisClass ) {
 		// Initialize if neccessary
 		if ( thisClass.getCanOutput() == null ) {
-			thisClass.setCanOutput( BooleanCaster.cast(
-			    thisClass.getAnnotations()
-			        .getOrDefault(
-			            Key.output,
-			            // output defaults to true for Application.bx, but false for all others
-			            // Strip just the class name from the FQN foo.com.bar.Application
-			            new BoxFQN( thisClass.bxGetName().getName() ).getClassName().equalsIgnoreCase( "application" )
-			        )
-			) );
+			thisClass.setCanOutput( canOutput( thisClass.getAnnotations(), thisClass.bxGetName().getName() ) );
 		}
 		return thisClass.getCanOutput();
+	}
+
+	/**
+	 * A helper to look at the "output" annotation
+	 *
+	 * @param annotations The annotations to check
+	 *
+	 * @return Whether the function can output
+	 */
+	public static Boolean canOutput( IStruct annotations, String className ) {
+		return BooleanCaster.cast( annotations.getOrDefault(
+		    Key.output,
+		    // output defaults to true for Application.bx, but false for all others
+		    // Strip just the class name from the FQN foo.com.bar.Application
+		    new BoxFQN( className ).getClassName().equalsIgnoreCase( "application" )
+		) );
 	}
 
 	/**
@@ -197,24 +218,63 @@ public class BoxClassSupport {
 		if ( thisClass.getCanInvokeImplicitAccessor() == null ) {
 			synchronized ( thisClass ) {
 				if ( thisClass.getCanInvokeImplicitAccessor() == null ) {
-					Object setting = thisClass.getAnnotations().get( Key.invokeImplicitAccessor );
+					Object setting = canInvokeImplicitAccessor( thisClass.getAnnotations() );
 					if ( setting == null ) {
 						setting = context.getConfigItems( Key.applicationSettings, Key.invokeImplicitAccessor );
 					}
 					if ( setting != null ) {
 						thisClass.setCanInvokeImplicitAccessor( BooleanCaster.cast( setting ) );
 					} else {
-						// Box classes default to true, but CF classes default to false
-						if ( thisClass.getSourceType().equals( BoxSourceType.BOXSCRIPT ) ) {
-							thisClass.setCanInvokeImplicitAccessor( true );
-						} else {
-							thisClass.setCanInvokeImplicitAccessor( false );
-						}
+						thisClass.setCanInvokeImplicitAccessor( defaultInvokeImplicitAccessor( thisClass.getSourceType() ) );
 					}
 				}
 			}
 		}
 		return thisClass.getCanInvokeImplicitAccessor();
+	}
+
+	/**
+	 * A helper to look at the "InvokeImplicitAccessor" annotation and application settings.
+	 * This does not take application settings into account and is only based on class metadata
+	 *
+	 * @param annotations The annotations to check
+	 * @param sourceType  The source type to check
+	 *
+	 * @return Whether the class can invoke implicit accessors
+	 */
+	public static Boolean canInvokeImplicitAccessor( IStruct annotations, BoxSourceType sourceType ) {
+		Object setting = canInvokeImplicitAccessor( annotations );
+		if ( setting != null ) {
+			return BooleanCaster.cast( setting );
+		} else {
+			return defaultInvokeImplicitAccessor( sourceType );
+		}
+	}
+
+	/**
+	 * Check if "InvokeImplicitAccessor" annotation is present. null if not explicitly set.
+	 *
+	 * @param annotations The annotations to check
+	 *
+	 * @return Whether the function can invoke implicit accessors
+	 */
+	public static Object canInvokeImplicitAccessor( IStruct annotations ) {
+		return annotations.get( Key.invokeImplicitAccessor );
+	}
+
+	/**
+	 * Get the default for invokeImplicitAccessor based on source type
+	 *
+	 * @param sourceType The source type to check
+	 *
+	 * @return Whether the function can invoke implicit accessors
+	 */
+	public static boolean defaultInvokeImplicitAccessor( BoxSourceType sourceType ) {
+		if ( sourceType.equals( BoxSourceType.BOXSCRIPT ) ) {
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	/**
@@ -525,32 +585,104 @@ public class BoxClassSupport {
 	 * @return The metadata as a struct
 	 */
 	public static IStruct getMetaData( IClassRunnable thisClass ) {
-		IStruct meta = new Struct( IStruct.TYPES.SORTED );
-		meta.putIfAbsent( "hint", "" );
-		meta.putIfAbsent( "output", thisClass.canOutput() );
-		meta.putIfAbsent( "invokeImplicitAccessor", thisClass.getCanInvokeImplicitAccessor() );
+		return getMetaData(
+		    thisClass.getClass(),
+		    thisClass.bxGetName(),
+		    thisClass.getSourceType(),
+		    thisClass.getRunnablePath(),
+		    thisClass.getSuperClass(),
+		    thisClass.getInterfaces(),
+		    thisClass.getAbstractMethods(),
+		    thisClass.getCompileTimeMethods(),
+		    thisClass.getAnnotations(),
+		    thisClass.getDocumentation(),
+		    thisClass.getProperties(),
+		    thisClass.getStaticScope()
+		);
+	}
 
-		// Assemble the metadata
-		var	functions				= new ArrayList<Object>();
-		var	compileTimeMethodNames	= thisClass.getCompileTimeMethodNames();
-		// loop over target's variables scope and add metadata for each function
-		for ( var entry : compileTimeMethodNames ) {
-			// The only reason it wouldn't be a functon is if someone overwrote/removed it in the variables scope
-			if ( thisClass.getVariablesScope().get( entry ) instanceof Function fun ) {
-				functions.add( fun.getMetaData() );
+	/**
+	 * Get the combined metadata for a class from static context without requiring an instance.
+	 * This follows the format of Lucee and Adobe's "combined" metadata
+	 * This is to keep compatibility for CFML engines
+	 *
+	 * @param targetClass        The class reference (for future use)
+	 * @param name               The class name key
+	 * @param sourceType         The source type of the class
+	 * @param runnablePath       The path to the class file
+	 * @param superClass         The super class, if any
+	 * @param interfaces         The list of interfaces implemented
+	 * @param abstractMethods    The abstract methods defined
+	 * @param compileTimeMethods The methods known at compile time
+	 * @param annotations        The class annotations
+	 * @param documentation      The class documentation
+	 * @param properties         The class properties
+	 * @param staticScope        The static scope
+	 * @param variablesScope     The variables scope (for function lookup)
+	 *
+	 * @return The metadata as a struct
+	 */
+	public static IStruct getMetaData(
+	    Class<? extends IClassRunnable> targetClass,
+	    Key name,
+	    BoxSourceType sourceType,
+	    ResolvedFilePath runnablePath,
+	    DynamicObject superClass,
+	    List<BoxInterface> interfaces,
+	    Map<Key, AbstractFunction> abstractMethods,
+	    Map<Key, Class<? extends UDF>> compileTimeMethods,
+	    IStruct annotations,
+	    IStruct documentation,
+	    Map<Key, ortus.boxlang.runtime.types.Property> properties,
+	    StaticScope staticScope ) {
+
+		BoxRuntime	runtime	= BoxRuntime.getInstance();
+		IStruct		meta	= new Struct( IStruct.TYPES.SORTED );
+		meta.putIfAbsent( "hint", "" );
+		meta.putIfAbsent( "output", canOutput( annotations, name.getName() ) );
+		meta.putIfAbsent( "invokeImplicitAccessor", canInvokeImplicitAccessor( annotations, sourceType ) );
+
+		// Assemble the functions
+		var functions = new ArrayList<Object>();
+		for ( var fun : compileTimeMethods.values() ) {
+			functions.add( DynamicObject.of( fun ).invokeStatic( runtime.getRuntimeContext(), "getMetaDataStatic" ) );
+		}
+
+		// Add all static methods as well, if any
+		if ( staticScope != null ) {
+			// iterate over the entrySet, each value that's a Function and is declared in this class, add it
+			for ( var entry : staticScope.entrySet() ) {
+				if ( entry.getValue() instanceof Function castedFunction ) {
+					functions.add( castedFunction.getMetaData() );
+				}
 			}
 		}
-		meta.put( Key._NAME, thisClass.bxGetName().getName() );
-		meta.put( Key.accessors, hasAccessors( thisClass ) );
+
+		// Add all abstract methods as well, if any
+		for ( var entry : abstractMethods.keySet() ) {
+			AbstractFunction value = abstractMethods.get( entry );
+			functions.add( value.getMetaData() );
+		}
+
+		// Top Level Class Metadata
+		var fullName = name.getName();
+		meta.put( Key.type, CLASS_TYPE );
+		meta.put( Key._NAME, fullName );
+		meta.put( Key.fullname, fullName );
+		meta.put( Key.simpleName, fullName.substring( fullName.lastIndexOf( '.' ) + 1 ) );
+
+		meta.put( Key.accessors, hasAccessors( annotations ) );
+		meta.put( Key.path, runnablePath.absolutePath().toString() );
+		meta.put( Key.persisent, false );
 		meta.put( Key.functions, Array.fromList( functions ) );
 
 		// meta.put( "hashCode", hashCode() );
-		var properties = new Array();
+		var propertiesArray = new Array();
 		// loop over properties list and add struct for each property
-		for ( var entry : thisClass.getProperties().entrySet() ) {
+		for ( var entry : properties.entrySet() ) {
 			var property = entry.getValue();
 			// Only include properties declared here, not in a parent/extends
-			if ( property.declaringClass() != thisClass.getClass() ) {
+			if ( property.declaringClass() != targetClass ) {
 				continue;
 			}
 			var propertyStruct = new Struct( IStruct.TYPES.LINKED );
@@ -573,37 +705,38 @@ public class BoxClassSupport {
 					}
 				}
 			}
-			properties.add( propertyStruct );
+			propertiesArray.add( propertyStruct );
 		}
-		meta.put( Key.properties, properties );
-		meta.put( Key.type, "Component" );
-		meta.put( Key._NAME, thisClass.bxGetName().getName() );
-		meta.put( Key.fullname, thisClass.bxGetName().getName() );
-		meta.put( Key.path, thisClass.getRunnablePath().absolutePath().toString() );
-		meta.put( Key.persisent, false );
+		meta.put( Key.properties, propertiesArray );
 
-		if ( thisClass.getDocumentation() != null ) {
-			for ( Map.Entry<Key, Object> entry : thisClass.getDocumentation().entrySet() ) {
+		// Add in any ad-hoc documentation or annotations that aren't reserved
+		if ( documentation != null ) {
+			for ( Map.Entry<Key, Object> entry : documentation.entrySet() ) {
 				if ( !legacyMetaClassReservedAnnotations.contains( entry.getKey() ) ) {
 					meta.put( entry.getKey(), entry.getValue() );
 				}
 			}
 		}
-		if ( thisClass.getAnnotations() != null ) {
-			for ( Map.Entry<Key, Object> entry : thisClass.getAnnotations().entrySet() ) {
+
+		// Add in any ad-hoc annotations that aren't reserved
+		if ( annotations != null ) {
+			for ( Map.Entry<Key, Object> entry : annotations.entrySet() ) {
 				if ( !legacyMetaClassReservedAnnotations.contains( entry.getKey() ) ) {
 					meta.put( entry.getKey(), entry.getValue() );
 				}
 			}
 		}
-		if ( thisClass.getSuper() != null ) {
-			meta.put( Key._EXTENDS, thisClass.getSuper().getMetaData() );
+
+		// Add extends and implements
+		if ( superClass != null ) {
+			meta.put( Key._EXTENDS, superClass.invokeStatic( runtime.getRuntimeContext(), "getMetaDataStatic" ) );
 		}
 
-		if ( thisClass.getInterfaces().size() > 0 ) {
+		// Interfaces
+		if ( interfaces != null && interfaces.size() > 0 ) {
 			meta.put(
 			    Key._IMPLEMENTS,
-			    thisClass.getInterfaces().stream()
+			    interfaces.stream()
 			        .collect(
 			            Struct::new,
 			            ( struct, iface ) -> struct.put( iface.getName(), iface.getMetaData() ),
@@ -624,7 +757,6 @@ public class BoxClassSupport {
 		_interface.validateClass( thisClass );
 		VariablesScope	variablesScope	= thisClass.getVariablesScope();
 		ThisScope		thisScope		= thisClass.getThisScope();
-		thisClass.getInterfaces().add( _interface );
 		// Add in default methods to the this and variables scopes
 		// The get "ALL" default methods includes super interfaces
 		for ( Map.Entry<Key, Function> entry : _interface.getAllDefaultMethods().entrySet() ) {
@@ -794,13 +926,23 @@ public class BoxClassSupport {
 	 * @return Whether the class has accessors
 	 */
 	public static Boolean hasAccessors( IClassRunnable targetClass ) {
+		return hasAccessors( targetClass.getAnnotations() );
+	}
+
+	/**
+	 * A helper to look at the "accessors" annotation from a static context
+	 * By default in BoxLang this is true
+	 *
+	 * @param annotations The annotations struct
+	 *
+	 * @return Whether the class has accessors
+	 */
+	public static Boolean hasAccessors( IStruct annotations ) {
 		return BooleanCaster.cast(
-		    targetClass
-		        .getAnnotations()
-		        .getOrDefault(
-		            Key.accessors,
-		            true
-		        )
+		    annotations.getOrDefault(
+		        Key.accessors,
+		        true
+		    )
 		);
 	}
 
@@ -830,7 +972,7 @@ public class BoxClassSupport {
 				}
 				// If there is a var, but it's not a static class refernce, then we'll just ignore it now and move on to our class loading attempt
 			}
-			return BoxRuntime.getInstance().getClassLocator().load( context, str, imports );
+			return getClassLocator().load( context, str, imports );
 		}
 		throw new BoxRuntimeException( "Cannot load class for static access.  Did you try to statically dereference an instance on accident?  Type provided: "
 		    + TypeUtil.getObjectName( obj ) );
@@ -918,24 +1060,117 @@ public class BoxClassSupport {
 
 	/**
 	 * Run a static initializer in a static class context. This is to be called from the actual java static initializer block.
-	 * 
+	 *
 	 * Even though the static scope and path are already in the class, we're passing them explicitly to avoid reflection to get them.
-	 * 
+	 *
 	 * @param consumer    The actual BL static initializer code to run
 	 * @param clazz       The class being initialized
 	 * @param staticScope The static scope of the class
 	 * @param path        The path of the class file
 	 */
-	public static void runStaticInitializer( Consumer<IBoxContext> consumer, Class<?> clazz, StaticScope staticScope, ResolvedFilePath path ) {
+	public static DynamicObject runStaticInitializer(
+	    Consumer<IBoxContext> consumer,
+	    Class<?> clazz,
+	    StaticScope staticScope,
+	    ResolvedFilePath path,
+	    List<ImportDefinition> imports,
+	    List<BoxInterface> interfaces,
+	    IStruct annotations ) {
+
 		IBoxContext context = RequestBoxContext.getCurrent();
 		if ( context == null ) {
 			context = BoxRuntime.getInstance().getRuntimeContext();
 		}
 		DynamicObject			boxClass		= DynamicObject.of( clazz );
 		StaticClassBoxContext	staticContext	= new StaticClassBoxContext( context, boxClass, staticScope );
+
 		staticContext.pushTemplate( path );
+		// Run the static initializer code
 		consumer.accept( staticContext );
+
+		// Load super class if any (doesn't instantiate)
+		DynamicObject superClass = loadSuperClass( annotations, imports, staticContext );
+
+		// Load interfaces if any (doesn't validate)
+		loadInterfaces( annotations, imports, staticContext, interfaces );
+
 		staticContext.popTemplate();
+		return superClass;
+	}
+
+	/**
+	 * Load the super class from the annotations if it exists
+	 *
+	 * @param annotations   The annotations to check
+	 * @param imports       The imports to use
+	 * @param staticContext The static context to use
+	 * 
+	 * @return The loaded super class or null if none exists
+	 */
+	public static DynamicObject loadSuperClass( IStruct annotations, List<ImportDefinition> imports, StaticClassBoxContext staticContext ) {
+		// First, we load the super class if it exists
+		Object superClassObject = annotations.get( Key._EXTENDS );
+		if ( superClassObject != null ) {
+			String superClassName = StringCaster.cast( superClassObject );
+			if ( superClassName != null && superClassName.length() > 0 && !superClassName.toLowerCase().startsWith( "java:" ) ) {
+				// Recursively load the super class
+				return getClassLocator().load(
+				    staticContext,
+				    superClassName,
+				    imports
+				);
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Load the interfaces defined
+	 *
+	 * @param annotations   The annotations to check
+	 * @param imports       The imports to use
+	 * @param staticContext The static context to use
+	 * @param interfaces    The list to populate with loaded interfaces
+	 * 
+	 * @return The loaded interfaces
+	 */
+	public static void loadInterfaces(
+	    IStruct annotations,
+	    List<ImportDefinition> imports,
+	    StaticClassBoxContext staticContext,
+	    List<BoxInterface> interfaces ) {
+
+		Object oInterfaces = annotations.get( Key._IMPLEMENTS );
+		if ( oInterfaces != null ) {
+			List<String> interfaceNames = ListUtil.asList( StringCaster.cast( oInterfaces ), "," )
+			    .stream()
+			    .map( String::valueOf )
+			    .map( String::trim )
+			    // ignore anything starting with java: (case insensitive)
+			    .filter( name -> !name.toLowerCase().startsWith( "java:" ) )
+			    .toList();
+
+			for ( String interfaceName : interfaceNames ) {
+				BoxInterface thisInterface = ( BoxInterface ) getClassLocator().load( staticContext, interfaceName, imports )
+				    .unWrapBoxLangClass();
+				interfaces.add( thisInterface );
+			}
+		}
+	}
+
+	/**
+	 * Lazy load ClassLocator as well
+	 * Most of this is done lazy to avoid static init deadlocks
+	 */
+	private static ClassLocator getClassLocator() {
+		if ( classLocator == null ) {
+			synchronized ( BoxClassSupport.class ) {
+				if ( classLocator == null ) {
+					classLocator = BoxRuntime.getInstance().getClassLocator();
+				}
+			}
+		}
+		return classLocator;
 	}
 
 }

@@ -40,7 +40,6 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.net.BoxHttpClient;
@@ -59,18 +58,11 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  *
  * <pre>
  *
- * SoapClient client = SoapClient.fromWsdl( "http://example.com/service.wsdl" );
- * Object result = client.invoke( "methodName", args );
- * </pre>
- *
- * Or using createObject:
- *
- * <pre>
- * ws = createObject( "webservice", "http://example.com/service.wsdl" );
- * result = ws.methodName( arg1, arg2 );
+ * soapClient = SoapClient.fromWsdl( "http://example.com/service.wsdl" );
+ * Object result = soapClient.invoke( "methodName", args );
  * </pre>
  */
-public class BoxSoapClient implements IReferenceable {
+public class BoxSoapClient {
 
 	/**
 	 * ------------------------------------------------------------------------------
@@ -307,11 +299,11 @@ public class BoxSoapClient implements IReferenceable {
 	}
 
 	/**
-	 * Get all available operation names
+	 * Get all available operations on this SOAP service
 	 *
 	 * @return List of operation names
 	 */
-	public Array getOperationNames() {
+	public Array getOperations() {
 		return this.wsdlDefinition.getOperationNames();
 	}
 
@@ -381,6 +373,19 @@ public class BoxSoapClient implements IReferenceable {
 	 */
 
 	/**
+	 * Invoke a SOAP operation without arguments
+	 *
+	 * @param operationName The operation to invoke
+	 *
+	 * @return The operation result
+	 *
+	 * @throws BoxRuntimeException If the operation fails
+	 */
+	public Object invoke( String operationName ) {
+		return invoke( operationName, null );
+	}
+
+	/**
 	 * Invoke a SOAP operation with positional arguments
 	 *
 	 * @param operationName The operation to invoke
@@ -423,7 +428,8 @@ public class BoxSoapClient implements IReferenceable {
 			);
 
 			// Build the request
-			BoxHttpClient.BoxHttpRequest	request		= httpClient.newRequest( this.getServiceEndpoint(), this.executionContext )
+			BoxHttpClient.BoxHttpRequest	request		= httpClient
+			    .newRequest( this.getServiceEndpoint(), this.executionContext )
 			    .post()
 			    .timeout( this.timeout )
 			    .header(
@@ -465,43 +471,6 @@ public class BoxSoapClient implements IReferenceable {
 	 */
 
 	/**
-	 * Dereference a key (used for property access or to check if method exists)
-	 *
-	 * @param context The BoxLang context
-	 * @param name    The name to dereference
-	 * @param safe    Whether to use safe navigation
-	 *
-	 * @return The dereferenced value (for properties) or the name itself (for methods)
-	 */
-	@Override
-	public Object dereference( IBoxContext context, Key name, Boolean safe ) {
-		String methodName = name.getName();
-
-		// Check if this is an operation name or known method
-		if ( this.hasOperation( methodName ) || isKnownMethod( methodName ) ) {
-			// Just return the name - actual invocation happens in dereferenceAndInvoke
-			return methodName;
-		}
-
-		// Check for built-in properties that can be accessed directly
-		switch ( methodName.toLowerCase() ) {
-			case "getoperations" :
-			case "listoperations" :
-				return this.getOperationNames();
-			case "getstatistics" :
-			case "getstats" :
-				return this.getStatistics();
-			case "tostruct" :
-				return this.toStruct();
-			default :
-				if ( safe ) {
-					return null;
-				}
-				throw new BoxRuntimeException( "Unknown method or operation: " + methodName );
-		}
-	}
-
-	/**
 	 * Check if a method name is a known SoapClient method
 	 *
 	 * @param methodName The method name to check
@@ -517,115 +486,6 @@ public class BoxSoapClient implements IReferenceable {
 		    || lower.equals( "getstats" )
 		    || lower.equals( "getoperationinfo" )
 		    || lower.equals( "tostruct" );
-	}
-
-	/**
-	 * Dereference and invoke a method
-	 *
-	 * @param context   The BoxLang context
-	 * @param name      The method name
-	 * @param arguments The arguments
-	 * @param safe      Whether to use safe navigation
-	 *
-	 * @return The invocation result
-	 */
-	@Override
-	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> arguments, Boolean safe ) {
-		String methodName = name.getName();
-
-		// Check if this is a SOAP operation
-		if ( this.hasOperation( methodName ) ) {
-			return this.invoke( methodName, arguments );
-		}
-
-		// Handle built-in methods
-		switch ( methodName.toLowerCase() ) {
-			case "invoke" :
-				String operationName = ( String ) arguments.get( Key.method );
-				Object argCollection = arguments.get( Key.argumentCollection );
-				return this.invoke( operationName, argCollection );
-
-			case "getoperationinfo" :
-				String opName = ( String ) arguments.get( Key.of( "operation" ) );
-				return this.getOperationInfo( opName );
-
-			case "getoperations" :
-			case "listoperations" :
-				return this.getOperationNames();
-
-			case "getstatistics" :
-			case "getstats" :
-				return this.getStatistics();
-
-			case "tostruct" :
-				return this.toStruct();
-
-			default :
-				if ( safe ) {
-					return null;
-				}
-				throw new BoxRuntimeException( "Unknown method or operation: " + methodName );
-		}
-	}
-
-	/**
-	 * Dereference and invoke with array of arguments
-	 *
-	 * @param context   The BoxLang context
-	 * @param name      The method name
-	 * @param arguments The arguments array
-	 * @param safe      Whether to use safe navigation
-	 *
-	 * @return The invocation result
-	 */
-	@Override
-	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] arguments, Boolean safe ) {
-		String methodName = name.getName();
-
-		// Check if this is a SOAP operation - pass first argument as params
-		if ( this.hasOperation( methodName ) ) {
-			return this.invoke( methodName, arguments.length > 0 ? arguments[ 0 ] : Struct.EMPTY );
-		}
-
-		// Handle built-in methods (most don't take args with positional style)
-		switch ( methodName.toLowerCase() ) {
-			case "getoperations" :
-			case "listoperations" :
-				return this.getOperationNames();
-
-			case "getstatistics" :
-			case "getstats" :
-				return this.getStatistics();
-
-			case "tostruct" :
-				return this.toStruct();
-
-			case "getoperationinfo" :
-				if ( arguments.length > 0 ) {
-					return this.getOperationInfo( arguments[ 0 ].toString() );
-				}
-				throw new BoxRuntimeException( "getOperationInfo requires an operation name argument" );
-
-			default :
-				if ( safe ) {
-					return null;
-				}
-				throw new BoxRuntimeException( "Unknown method or operation: " + methodName );
-		}
-	}
-
-	/**
-	 * Assign a value to a key (not supported)
-	 *
-	 * @param context The BoxLang context
-	 * @param name    The name to assign to
-	 * @param value   The value to assign
-	 *
-	 * @return The assigned value
-	 */
-	@Override
-	public Object assign( IBoxContext context, Key name, Object value ) {
-		throw new BoxRuntimeException( "Cannot assign to web service properties" );
 	}
 
 	/**

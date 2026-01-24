@@ -30,6 +30,7 @@ import ortus.boxlang.runtime.services.ApplicationService;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.AbortException;
 
 /**
  * I represent a Session. This will be stored in a BoxLang cache
@@ -174,11 +175,15 @@ public class Session implements Serializable {
 				// Announce it's start
 				BaseApplicationListener listener = context.getRequestContext().getApplicationListener();
 				listener.onSessionStart( context, new Object[] { this.ID } );
+			} catch ( AbortException ae ) {
+				// Ignore aborts
+				throw ae;
 			} catch ( Exception e ) {
 				// If startup errored, flag the session as not intialized. The next thread can try again.
 				// An error in your onSessionStart() will mean you can never get passed it, but I think that's actually desired as the
 				// app likely relies on a complete and successful session start.
 				isNew = true;
+				throw e;
 			}
 		}
 		return this;
@@ -266,6 +271,12 @@ public class Session implements Serializable {
 			        targetAppScope
 			    }
 			);
+		} catch ( AbortException e ) {
+			BoxRuntime.getInstance().getLoggingService().getLogger( Key.session.getName() )
+			    .warn( "Abort exception called during session end for session ID [" + this.ID + "]. Aborting session end is not allowed." );
+		} catch ( Exception e ) {
+			BoxRuntime.getInstance().getLoggingService().getLogger( Key.session.getName() )
+			    .error( "Error during session end for session ID [" + this.ID + "]: " + e.getMessage(), e );
 		} finally {
 			// Clear the session scope
 			if ( this.sessionScope != null ) {

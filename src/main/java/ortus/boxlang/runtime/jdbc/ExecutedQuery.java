@@ -78,31 +78,15 @@ public final class ExecutedQuery implements Serializable {
 	private IStruct							queryMeta;
 
 	/**
-	 * Datasource used to execute this query. This will be null if the query was
-	 * loaded from cache.
-	 */
-	private DataSource						datasource;
-
-	/**
 	 * Constructor
 	 *
 	 * @param results      The results of the query, i.e. the actual Query object.
 	 * @param generatedKey The generated key of the query, if any.
 	 */
-	public ExecutedQuery( @NonNull Query results, @Nullable Object generatedKey, DataSource datasource ) {
+	public ExecutedQuery( @NonNull Query results, @Nullable Object generatedKey ) {
 		this.results		= results;
 		this.generatedKey	= generatedKey;
 		this.queryMeta		= results.getMetaData();
-		this.datasource		= datasource;
-	}
-
-	/**
-	 * Get the datasource used to execute this query.
-	 *
-	 * @return The datasource used to execute this query.
-	 */
-	public DataSource getDataSource() {
-		return this.datasource;
 	}
 
 	/**
@@ -400,7 +384,7 @@ public final class ExecutedQuery implements Serializable {
 		// important that we set the metadata on the Query object for later
 		// getBoxMeta(), i.e. $bx.meta calls.
 		results.setMetadata( queryMeta );
-		ExecutedQuery	executedQuery	= new ExecutedQuery( results, generatedKey, pendingQuery.getDataSource() );
+		ExecutedQuery	executedQuery	= new ExecutedQuery( results, generatedKey );
 
 		// Announce post query execute event
 		final Query		iResults		= results;

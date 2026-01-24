@@ -852,8 +852,8 @@ public class CFParser extends AbstractParser {
 						statements.add(
 						    new BoxScriptIsland(
 						        scriptNode.getStatements(),
-						        getPosition( script.script() ),
-						        getSourceText( script.script() )
+						        getPosition( script ),
+						        getSourceText( script )
 						    )
 						);
 					} else if ( script.classOrInterface() != null ) {
@@ -1408,7 +1408,7 @@ public class CFParser extends AbstractParser {
 			return null;
 		}
 		if ( expr instanceof BoxStringLiteral str ) {
-			if ( !allowEmpty && str.getValue().trim().isEmpty() ) {
+			if ( !allowEmpty && str.getValue().isBlank() ) {
 				issues.add( new Issue( "Attribute [" + name + "] cannot be empty", expr.getPosition() ) );
 			}
 			return str.getValue();

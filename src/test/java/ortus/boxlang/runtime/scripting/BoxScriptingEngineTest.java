@@ -57,7 +57,20 @@ public class BoxScriptingEngineTest {
 	}
 
 	@Test
+	public void testMethodCallOnClass() throws ScriptException, NoSuchMethodException {
+		engine.eval( "myClass = new src.test.java.ortus.boxlang.runtime.scripting.MyClass()" );
+		Invocable	invocable	= ( Invocable ) engine;
+
+		Object		result		= invocable.invokeMethod( engine.get( "myClass" ), "myMethod" );
+		assertThat( result ).isEqualTo( "Hello, World!" );
+
+		result = invocable.invokeMethod( engine.get( "myClass" ), "myMethod", "Dom" );
+		assertThat( result ).isEqualTo( "Hello, Dom!" );
+	}
+
+	@Test
 	public void testMethodCall() throws ScriptException, NoSuchMethodException {
+
 		engine.eval( "myStr = { foo : 'bar' }" );
 		Invocable	invocable	= ( Invocable ) engine;
 		Object		result		= invocable.invokeMethod( engine.get( "myStr" ), "count" );

@@ -44,7 +44,7 @@ public class MiniConsoleManualTest {
 					break;
 				}
 
-				if ( input.trim().isEmpty() ) {
+				if ( input.isBlank() ) {
 					continue;
 				}
 

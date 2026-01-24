@@ -193,6 +193,12 @@ public class GenericCaster implements IBoxCaster {
 			return result;
 		}
 
+		// Allow longTruncate, integerTruncate, shortTruncate, etc to passthru
+		if ( type.endsWith( "truncate" ) ) {
+			allowTruncate	= true;
+			type			= type.substring( 0, type.length() - 8 ).trim();
+		}
+
 		// We will fall back to an instanceof check below as a last resort if we don't recognize the type being validated
 		// but we need a special case here such that if the incoming value is a Box Class instance, we FORCE an instanceof check.
 		// This allows Box Class names who just happen to be the same as one of our pre-defined types like "String" or "Email".
@@ -340,6 +346,18 @@ public class GenericCaster implements IBoxCaster {
 		if ( type.equals( "query" ) ) {
 			// No real "casting" to do, just return it if it is one
 			if ( object instanceof Query ) {
+				return object;
+			}
+			if ( fail ) {
+				throwCastException( type, object );
+			} else {
+				return null;
+			}
+		}
+
+		if ( type.equals( "file" ) ) {
+			// No real "casting" to do, just return it if it is one
+			if ( object instanceof ortus.boxlang.runtime.types.File ) {
 				return object;
 			}
 			if ( fail ) {

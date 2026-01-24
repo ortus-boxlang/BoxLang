@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.Strings;
 
@@ -31,9 +32,15 @@ import org.apache.commons.lang3.Strings;
 public class FQN {
 
 	/**
+	 * Pre-compiled pattern for splitting FQN strings by dots.
+	 * This is more performant than calling String.split() which compiles the pattern each time.
+	 */
+	protected static final Pattern	DOT_PATTERN		= Pattern.compile( "\\." );
+
+	/**
 	 * These words cannot appear in a package name.
 	 */
-	static final Set<String>	RESERVED_WORDS	= new HashSet<>( Arrays.asList( "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char",
+	static final Set<String>		RESERVED_WORDS	= new HashSet<>( Arrays.asList( "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char",
 	    "class", "const", "continue", "default", "do", "double", "else", "enum", "extends", "final", "finally", "float", "for", "goto", "if", "implements",
 	    "import", "instanceof", "int", "interface", "long", "native", "new", "package", "private", "protected", "public", "return", "short", "static",
 	    "strictfp", "super", "switch", "synchronized", "this", "throw", "throws", "transient", "try", "void", "volatile", "while" ) );
@@ -41,7 +48,7 @@ public class FQN {
 	/**
 	 * An array of strings representing all the pieces of the FQN.
 	 */
-	protected String[]			parts;
+	protected String[]				parts;
 
 	/**
 	 * Construct an FQN that uses the root path to generate a relative path based on filePath.
@@ -189,7 +196,7 @@ public class FQN {
 
 		// Remove any non alpha-numeric chars.
 		// Replace any character not a-z, A-Z, 0-9, $, or . with "__"
-		StringBuilder sb = new StringBuilder();
+		StringBuilder sb = new StringBuilder( fqn.length() + 10 );
 		for ( int i = 0; i < fqn.length(); i++ ) {
 			char c = fqn.charAt( i );
 			if ( ( c >= 'a' && c <= 'z' ) ||
@@ -228,7 +235,7 @@ public class FQN {
 		}
 
 		// parse fqn into array, loop over array and clean/normalize parts
-		String[]	splitParts	= fqn.split( "\\." );
+		String[]	splitParts	= DOT_PATTERN.split( fqn );
 		String[]	result		= new String[ splitParts.length ];
 		for ( int i = 0; i < splitParts.length; i++ ) {
 			String s = splitParts[ i ];

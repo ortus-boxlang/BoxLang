@@ -58,7 +58,7 @@ public class Println extends BIF {
 		obj = Println.forceToString( obj );
 
 		// If we have a request context, let's use that context's out
-		RequestBoxContext rCon = context.getParentOfType( RequestBoxContext.class );
+		RequestBoxContext rCon = context.getRequestContext();
 		if ( rCon != null ) {
 			rCon.getOut().println( obj );
 			return null;

@@ -138,6 +138,19 @@ public class LockTest {
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 	}
 
+	@DisplayName( "It can get with no timeout" )
+	@Test
+	public void testLockNoTimeout() {
+		instance.executeSource(
+		    """
+		    lock name="mylock" type="readonly" {
+		    	result = "bar";
+		    }
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+	}
+
 	@DisplayName( "It can get named lock exclusive" )
 	@Test
 	public void testLockNamedExclusive() {
@@ -241,7 +254,6 @@ public class LockTest {
 
 	@DisplayName( "It can exclusive" )
 	@Test
-	@Disabled( "Timing issue Brad to fix" )
 	public void testExclusive() {
 		// @formatter:off
 		instance.executeSource(

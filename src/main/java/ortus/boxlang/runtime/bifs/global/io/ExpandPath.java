@@ -16,6 +16,7 @@
 package ortus.boxlang.runtime.bifs.global.io;
 
 import java.io.File;
+import java.util.Optional;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -56,7 +57,9 @@ public class ExpandPath extends BIF {
 			String pathStr = FileSystemUtil.expandPath(
 			    context,
 			    path,
-			    context.getRequestContext().getApplicationListener().getBaseTemplatePath()
+			    Optional.ofNullable( context.getRequestContext() )
+			        .map( rc -> rc.getApplicationListener().getBaseTemplatePath() )
+			        .orElse( null )
 			)
 			    .absolutePath().toString();
 

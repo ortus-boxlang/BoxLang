@@ -107,6 +107,20 @@ public class DumpTest {
 		assertThat( baos.toString() ).contains( "bar" );
 	}
 
+	@DisplayName( "It can dump byte array" )
+	@Test
+	public void testCanDumpByteArray() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		       	<cfdump var="#'brad'.getBytes()#" format="html">
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+		// @formatter:on
+		assertThat( baos.toString() ).contains( "Raw" );
+		assertThat( baos.toString() ).contains( "98,114,97,100" );
+	}
+
 	@DisplayName( "It can dump tag struct with sorted keys" )
 	@Test
 	public void testCanDumpTagStructSorted() {
@@ -311,14 +325,15 @@ public class DumpTest {
 	@Test
 	public void testCanDumpBoxClass() {
 		// @formatter:off
-			instance.executeSource(
-				"""
-					cfc = new src.test.java.ortus.boxlang.runtime.components.system.TestDumpClass();
-					dump( var = cfc, format = "html" );
-				""",
-				context );
-			// @formatter:on
-		assertThat( baos.toString() ).contains( "UDF" );
+				instance.executeSource(
+					"""
+						cfc = new src.test.java.ortus.boxlang.runtime.components.system.TestDumpClass();
+						dump( var = cfc, format = "html" );
+					""",
+					context );
+				// @formatter:on
+		assertThat( baos.toString() ).contains( "components.system.TestDumpClass" );
+		assertThat( baos.toString() ).contains( "IDumpClass" );
 	}
 
 	@DisplayName( "It can dump a Class data type" )

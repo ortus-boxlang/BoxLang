@@ -17,14 +17,13 @@
  */
 package ortus.boxlang.runtime.bifs.global.temporal;
 
-import java.util.HashMap;
-
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -32,23 +31,18 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class DatePart extends TimeUnits {
 
-	private static final Struct parts = new Struct(
-	    new HashMap<String, Object>() {
-
-		    {
-			    put( "d", BIFMethods.day );
-			    put( "yyyy", Key.of( "Year" ) );
-			    put( "q", BIFMethods.quarter );
-			    put( "m", BIFMethods.month );
-			    put( "y", Key.of( "DayOfYear" ) );
-			    put( "w", BIFMethods.dayOfWeek );
-			    put( "ww", BIFMethods.week );
-			    put( "h", Key.of( "Hour" ) );
-			    put( "n", Key.of( "Minute" ) );
-			    put( "s", Key.of( "Second" ) );
-			    put( "l", BIFMethods.millis );
-		    }
-	    }
+	private static final IStruct parts = Struct.of(
+	    Key.of( "d" ), BIFMethods.day,
+	    Key.of( "yyyy" ), Key.of( "Year" ),
+	    Key.of( "q" ), BIFMethods.quarter,
+	    Key.of( "m" ), BIFMethods.month,
+	    Key.of( "y" ), Key.of( "DayOfYear" ),
+	    Key.of( "w" ), BIFMethods.dayOfWeek,
+	    Key.of( "ww" ), BIFMethods.week,
+	    Key.of( "h" ), Key.of( "Hour" ),
+	    Key.of( "n" ), Key.of( "Minute" ),
+	    Key.of( "s" ), Key.of( "Second" ),
+	    Key.of( "l" ), BIFMethods.millis
 	);
 
 	/**

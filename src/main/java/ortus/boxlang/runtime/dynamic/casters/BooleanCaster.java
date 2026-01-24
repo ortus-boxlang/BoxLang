@@ -40,8 +40,6 @@ public class BooleanCaster implements IBoxCaster {
 	 * Well-Known-Text representations of boolean values
 	 */
 	private static final IStruct wkt = Struct.of(
-	    Key.of( "Y" ), true,
-	    Key.of( "N" ), false,
 	    Key.of( "Yes" ), true,
 	    Key.of( "No" ), false,
 	    Key.of( "true" ), true,
@@ -155,11 +153,11 @@ public class BooleanCaster implements IBoxCaster {
 
 		// Check for char
 		if ( object instanceof Character ch ) {
-			// If y, Y, t, T, 1, are true
-			// If n, N, f, F, 0, are false
+			// If 1, are true
+			// If 0, are false
 			return switch ( ch ) {
-				case 'y', 'Y', 't', 'T', '1' -> true;
-				case 'n', 'N', 'f', 'F', '0' -> false;
+				case '1' -> true;
+				case '0' -> false;
 				default -> {
 					if ( fail ) {
 						throw new BoxCastException(

@@ -142,13 +142,13 @@ public class TimeUnits extends BIF {
 		 * Map of method names to BIF names
 		 */
 		public static final IStruct	MEMBER_METHODS			= Struct.of(
-		    "Year", "getYear",
-		    "Day", "getDayOfMonth",
-		    "DayOfYear", "getDayOfYear",
-		    "Hour", "getHour",
-		    "Minute", "getMinute",
-		    "Second", "getSecond",
-		    "Nanosecond", "getNano"
+		    Key.of( "Year" ), "getYear",
+		    Key.of( "Day" ), "getDayOfMonth",
+		    Key.of( "DayOfYear" ), "getDayOfYear",
+		    Key.of( "Hour" ), "getHour",
+		    Key.of( "Minute" ), "getMinute",
+		    Key.of( "Second" ), "getSecond",
+		    Key.of( "Nanosecond" ), "getNano"
 		);
 
 	}

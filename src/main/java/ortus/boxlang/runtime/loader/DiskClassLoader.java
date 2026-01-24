@@ -234,13 +234,14 @@ public class DiskClassLoader extends URLClassLoader {
 	 * @param name  The fully qualified name of the class
 	 * @param bytes The bytecode of the class
 	 */
-	public void defineClass( String name, byte[] bytes ) {
+	public Class<?> defineClass( String name, byte[] bytes ) {
 		// Define it
 		Class<?> clazz = defineClass( name, bytes, 0, bytes.length );
 		// Add it to our cache
 		synchronized ( loadedClasses ) {
 			loadedClasses.put( name, new java.lang.ref.WeakReference<>( clazz ) );
 		}
+		return clazz;
 	}
 
 	/**
@@ -319,7 +320,7 @@ public class DiskClassLoader extends URLClassLoader {
 		} catch ( IOException e ) {
 			throw new ClassNotFoundException( "Unable to read class file from disk", e );
 		}
-		return defineClass( name, bytes, 0, bytes.length );
+		return defineClass( name, bytes );
 	}
 
 	/**
@@ -447,6 +448,7 @@ public class DiskClassLoader extends URLClassLoader {
 			if ( classInfo != null && classInfo.lastModified() > 0 && classInfo.lastModified() != diskClassLastModified ) {
 				return true;
 			}
+
 			return false;
 		}
 

@@ -444,7 +444,7 @@ public class MiniConsole implements AutoCloseable {
 	 * @param command The command to add (null/empty commands are ignored)
 	 */
 	public void addToHistory( String command ) {
-		if ( command == null || command.trim().isEmpty() ) {
+		if ( command == null || command.isBlank() ) {
 			return;
 		}
 

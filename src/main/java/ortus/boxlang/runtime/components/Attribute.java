@@ -19,7 +19,9 @@ package ortus.boxlang.runtime.components;
 
 import java.util.Set;
 
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.util.DuplicationUtil;
 import ortus.boxlang.runtime.validation.Validatable;
 import ortus.boxlang.runtime.validation.Validator;
 
@@ -73,6 +75,16 @@ public record Attribute( Key name, String type, Object defaultValue, Set<Validat
 	 */
 	public Attribute( Key name, String type, Set<Validator> validators ) {
 		this( name, type, null, validators );
+	}
+
+	@Override
+	public Object getDefaultValue( IBoxContext context ) {
+		return DuplicationUtil.duplicate( defaultValue, false, context );
+	}
+
+	@Override
+	public boolean hasDefaultValue() {
+		return defaultValue != null;
 	}
 
 }

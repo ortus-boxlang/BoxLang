@@ -81,6 +81,7 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 		import ortus.boxlang.runtime.types.meta.BoxMeta;
 		import ortus.boxlang.runtime.types.meta.ClassMeta;
+		import ortus.boxlang.runtime.types.meta.FunctionMeta;
 		import ortus.boxlang.runtime.types.Property;
 		import ortus.boxlang.runtime.util.*;
 		import ortus.boxlang.compiler.parser.BoxSourceType;

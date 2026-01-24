@@ -379,7 +379,7 @@ public class UDFFunctionTest {
 
 		FunctionMeta	$bx				= ( ( FunctionMeta ) Referencer.get( context, UDFfoo, BoxMeta.key, false ) );
 		IStruct			documentation	= ( IStruct ) $bx.meta.get( Key.of( "documentation" ) );
-		assertThat( documentation.get( Key.of( "hint" ) ) ).isEqualTo( "my UDF also more hint here" );
+		assertThat( documentation.get( Key.of( "hint" ) ) ).isEqualTo( "my UDF\nalso more hint here" );
 		assertThat( documentation.get( Key.of( "returns" ) ) ).isEqualTo( "Pure Gold" );
 		assertThat( documentation ).containsKey( Key.of( "mxunit:expectedException" ) );
 		assertThat( documentation.getAsString( Key.of( "mxunit:expectedException" ) ).trim() ).isEqualTo( "" );
@@ -391,7 +391,7 @@ public class UDFFunctionTest {
 
 		IStruct param2Documentation = ( IStruct ) Referencer.get( context, params.get( 1 ), Key.of( "documentation" ), false );
 		assertThat( param2Documentation.getAsString( Key.of( "hint" ) ).trim() ).isEqualTo( "param2 hint" );
-		assertThat( param2Documentation.getAsString( Key.of( "luis" ) ).trim() ).isEqualTo( "majano is spread across two lines" );
+		assertThat( param2Documentation.getAsString( Key.of( "luis" ) ).trim() ).isEqualTo( "majano\nis spread across two lines" );
 
 		IStruct annotations = $bx.meta.getAsStruct( Key.of( "annotations" ) );
 		assertThat( annotations.getAsBoolean( Key.of( "output" ) ) ).isEqualTo( true );
@@ -1034,6 +1034,37 @@ public class UDFFunctionTest {
 		    	result = getMetadata( preEvent );
 		    """,
 		    context );
+
+		IStruct meta = variables.getAsStruct( result );
+		assertThat( meta ).containsKey( Key.of( "documentation" ) );
+		assertThat( meta ).containsKey( Key.of( "annotations" ) );
+		assertThat( meta ).containsKey( Key.of( "parameters" ) );
+		assertThat( meta.getAsStruct( Key.of( "documentation" ) ).get( Key.of( "eventgavin" ) ).toString() ).isEqualTo( "pickin" );
+		assertThat( meta.getAsStruct( Key.of( "annotations" ) ).get( Key.of( "eventjon" ) ).toString() ).isEqualTo( "clausen" );
+		assertThat( meta.getAsStruct( Key.of( "annotations" ) ).get( Key.of( "eventesme" ) ).toString() ).isEqualTo( "acevado" );
+		assertThat( meta.getAsArray( Key.of( "parameters" ) ).size() ).isEqualTo( 1 );
+		IStruct paramMeta = ( Struct ) meta.getAsArray( Key.of( "parameters" ) ).get( 0 );
+		assertThat( paramMeta.getAsStruct( Key.of( "documentation" ) ).get( Key.of( "brad" ) ).toString() ).isEqualTo( "wood" );
+		assertThat( paramMeta.getAsStruct( Key.of( "annotations" ) ).get( Key.of( "luis" ) ).toString() ).isEqualTo( "majano" );
+	}
+
+	@Test
+	public void testFunctionMetadataInScriptComponent() {
+		instance.executeSource(
+		    """
+		    <bx:script>
+		      	/**
+		      	 * @event.brad wood
+		      	 * @eventgavin pickin
+		      	 */
+		      	@event.luis( majano )
+		      	@eventjon( "clausen" )
+		      	void function preEvent( event ) eventesme="acevado" {}
+
+		      	result = getMetadata( preEvent );
+		    </bx:script>
+		      """,
+		    context, BoxSourceType.BOXTEMPLATE );
 
 		IStruct meta = variables.getAsStruct( result );
 		assertThat( meta ).containsKey( Key.of( "documentation" ) );
