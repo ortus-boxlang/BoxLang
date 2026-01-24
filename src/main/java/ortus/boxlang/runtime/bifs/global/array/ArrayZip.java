@@ -96,8 +96,8 @@ public class ArrayZip extends BIF {
 			return results;
 		}
 
-		ParallelSettings	settings	= ArrayParallelUtil.resolveParallelSettings( arguments );
-		Boolean				parallel	= arguments.getAsBoolean( Key.parallel );
+		ParallelSettings						settings	= ArrayParallelUtil.resolveParallelSettings( arguments );
+		Boolean									parallel	= arguments.getAsBoolean( Key.parallel );
 
 		// Build the mapper based on the callback
 		// If the callback requires strict arguments, we only pass the item (Usually

@@ -23,6 +23,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
+
 @BoxBIF( description = "Chunks the array into an array of arrays of the specified size" )
 @BoxMember( type = BoxLangType.ARRAY )
 public class ArrayChunk extends BIF {
