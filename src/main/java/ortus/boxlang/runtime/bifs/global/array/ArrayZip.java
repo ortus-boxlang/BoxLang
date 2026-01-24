@@ -19,9 +19,7 @@ import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
-import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.types.util.ListUtil.ParallelSettings;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -29,10 +27,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.ListUtil;
-
-import java.util.Objects;
 
 @BoxBIF( description = "Merges together two arrays one index at a time" )
 @BoxMember( type = BoxLangType.ARRAY )
@@ -101,15 +96,8 @@ public class ArrayZip extends BIF {
 			return results;
 		}
 
-		Object maxThreads = arguments.get( Key.maxThreads );
-		if ( maxThreads instanceof Boolean castBoolean ) {
-			// If maxThreads is a boolean, we assign it to virtual
-			arguments.put( Key.virtual, castBoolean );
-			maxThreads = null;
-		}
-
-		CastAttempt<Integer>					maxThreadsAttempt	= IntegerCaster.attempt( maxThreads );
-		Boolean									parallel			= arguments.getAsBoolean( Key.parallel );
+		ParallelSettings						settings	= ListUtil.resolveParallelSettings( arguments );
+		Boolean									parallel	= arguments.getAsBoolean( Key.parallel );
 
 		// Build the mapper based on the callback
 		// If the callback requires strict arguments, we only pass the item (Usually
@@ -149,8 +137,8 @@ public class ArrayZip extends BIF {
 		    results,
 		    mapper,
 		    arguments.getAsBoolean( Key.parallel ),
-		    maxThreadsAttempt.getOrDefault( 0 ),
-		    BooleanCaster.cast( arguments.getOrDefault( Key.virtual, false ) )
+		    settings.maxThreads(),
+		    settings.virtual()
 		);
 	}
 }
