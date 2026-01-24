@@ -1386,9 +1386,9 @@ public class ListUtil {
 
 	/**
 	 * Resolves parallel execution settings from arguments.
-	 * 
+	 *
 	 * @param arguments The arguments scope containing maxThreads and virtual settings
-	 * 
+	 *
 	 * @return ParallelSettings object with resolved maxThreads and virtual flags
 	 */
 	public static ParallelSettings resolveParallelSettings( ArgumentsScope arguments ) {
@@ -1417,10 +1417,20 @@ public class ListUtil {
 			this.virtual	= virtual;
 		}
 
+		/**
+		 * Gets the maximum number of threads to use for parallel execution.
+		 *
+		 * @return The maximum number of threads, or 0 for default pool size
+		 */
 		public int maxThreads() {
 			return this.maxThreads;
 		}
 
+		/**
+		 * Checks if virtual threads should be used for parallel execution.
+		 *
+		 * @return true if virtual threads should be used, false otherwise
+		 */
 		public boolean virtual() {
 			return this.virtual;
 		}
