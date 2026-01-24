@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -96,7 +96,7 @@ public class ArrayChunkTest {
 	@DisplayName( "It throws an exception when length is zero" )
 	@Test
 	public void testThrowsExceptionForZeroLength() {
-		assertThrows( BoxRuntimeException.class, () -> {
+		assertThrows( BoxValidationException.class, () -> {
 			instance.executeSource(
 			    """
 			    	data = [ 1, 2, 3 ];
@@ -109,7 +109,7 @@ public class ArrayChunkTest {
 	@DisplayName( "It throws an exception when length is negative" )
 	@Test
 	public void testThrowsExceptionForNegativeLength() {
-		assertThrows( BoxRuntimeException.class, () -> {
+		assertThrows( BoxValidationException.class, () -> {
 			instance.executeSource(
 			    """
 			    	data = [ 1, 2, 3 ];
