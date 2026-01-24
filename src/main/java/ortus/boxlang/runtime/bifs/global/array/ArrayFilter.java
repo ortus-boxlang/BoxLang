@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
-import ortus.boxlang.runtime.bifs.global.array.ArrayParallelUtil.ParallelSettings;
+import ortus.boxlang.runtime.types.util.ListUtil.ParallelSettings;
 
 @BoxBIF( description = "Filters an array and returns a new array containing only items that meet a test condition" )
 @BoxMember( type = BoxLangType.ARRAY )
@@ -76,7 +76,7 @@ public class ArrayFilter extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		ParallelSettings settings = ArrayParallelUtil.resolveParallelSettings( arguments );
+		ParallelSettings settings = ListUtil.resolveParallelSettings( arguments );
 		return ListUtil.filter(
 		    arguments.getAsArray( Key.array ),
 		    arguments.getAsFunction( Key.callback ),
