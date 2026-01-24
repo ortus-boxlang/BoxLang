@@ -36,10 +36,13 @@ import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.operators.CollatorStringCompare;
 import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.operators.StringCompare;
+import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.types.Array;
@@ -1379,5 +1382,47 @@ public class ListUtil {
 			}
 		}
 		return results;
+	}
+
+	/**
+	 * Resolves parallel execution settings from arguments.
+	 * 
+	 * @param arguments The arguments scope containing maxThreads and virtual settings
+	 * 
+	 * @return ParallelSettings object with resolved maxThreads and virtual flags
+	 */
+	public static ParallelSettings resolveParallelSettings( ArgumentsScope arguments ) {
+		Object maxThreads = arguments.get( Key.maxThreads );
+		if ( maxThreads instanceof Boolean castBoolean ) {
+			// If maxThreads is a boolean, we assign it to virtual
+			arguments.put( Key.virtual, castBoolean );
+			maxThreads = null;
+		}
+
+		CastAttempt<Integer>	maxThreadsAttempt	= IntegerCaster.attempt( maxThreads );
+		boolean					virtual				= BooleanCaster.cast( arguments.getOrDefault( Key.virtual, false ) );
+		return new ParallelSettings( maxThreadsAttempt.getOrDefault( 0 ), virtual );
+	}
+
+	/**
+	 * Container class for parallel execution settings.
+	 */
+	public static final class ParallelSettings {
+
+		private final int		maxThreads;
+		private final boolean	virtual;
+
+		private ParallelSettings( int maxThreads, boolean virtual ) {
+			this.maxThreads	= maxThreads;
+			this.virtual	= virtual;
+		}
+
+		public int maxThreads() {
+			return this.maxThreads;
+		}
+
+		public boolean virtual() {
+			return this.virtual;
+		}
 	}
 }

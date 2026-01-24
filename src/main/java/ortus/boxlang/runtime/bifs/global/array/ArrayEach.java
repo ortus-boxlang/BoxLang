@@ -18,7 +18,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.bifs.global.array.ArrayParallelUtil.ParallelSettings;
+import ortus.boxlang.runtime.types.util.ListUtil.ParallelSettings;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -71,7 +71,7 @@ public class ArrayEach extends BIF {
 	 * @argument.virtual ( BoxLang only) If true, the function will be invoked using virtual threads. Defaults to false. Ignored if parallel is false.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		ParallelSettings settings = ArrayParallelUtil.resolveParallelSettings( arguments );
+		ParallelSettings settings = ListUtil.resolveParallelSettings( arguments );
 		ListUtil.each(
 		    arguments.getAsArray( Key.array ),
 		    arguments.getAsFunction( Key.callback ),
