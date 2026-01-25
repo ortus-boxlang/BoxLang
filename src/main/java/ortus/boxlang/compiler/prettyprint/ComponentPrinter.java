@@ -88,7 +88,7 @@ public class ComponentPrinter {
 		if ( hasBody ) {
 			visitor.helperPrinter.printBlock( node, node.getBody() );
 		} else {
-			visitor.print( ";" );
+			visitor.printSemicolon();
 		}
 	}
 }

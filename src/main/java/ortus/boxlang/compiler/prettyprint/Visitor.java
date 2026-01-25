@@ -198,6 +198,16 @@ public class Visitor extends VoidBoxVisitor {
 		getCurrentDoc().append( text );
 	}
 
+	/**
+	 * Print a semicolon if the semicolons config option is enabled.
+	 * Only applies to BoxScript source type (not templates).
+	 */
+	public void printSemicolon() {
+		if ( config.getSemicolons() ) {
+			getCurrentDoc().append( ";" );
+		}
+	}
+
 	boolean printPreComments( BoxNode node ) {
 		return commentsPrinter.printPreComments( node );
 	}
@@ -318,7 +328,7 @@ public class Visitor extends VoidBoxVisitor {
 			print( ">" );
 		} else {
 			node.getExpression().accept( this );
-			print( ";" );
+			printSemicolon();
 		}
 		printPostComments( node );
 	}
@@ -911,7 +921,7 @@ public class Visitor extends VoidBoxVisitor {
 		printPreComments( node );
 		print( "assert " );
 		node.getExpression().accept( this );
-		print( ";" );
+		printSemicolon();
 		printPostComments( node );
 	}
 
@@ -956,7 +966,7 @@ public class Visitor extends VoidBoxVisitor {
 				print( " " );
 				print( node.getLabel() );
 			}
-			print( ";" );
+			printSemicolon();
 		}
 		printPostComments( node );
 	}
@@ -977,7 +987,7 @@ public class Visitor extends VoidBoxVisitor {
 				print( " " );
 				print( node.getLabel() );
 			}
-			print( ";" );
+			printSemicolon();
 		}
 		printPostComments( node );
 	}
@@ -1075,7 +1085,7 @@ public class Visitor extends VoidBoxVisitor {
 				print( " as " );
 				node.getAlias().accept( this );
 			}
-			print( ";" );
+			printSemicolon();
 		}
 		printPostComments( node );
 	}
@@ -1121,7 +1131,7 @@ public class Visitor extends VoidBoxVisitor {
 				print( " = " );
 				node.getDefaultValue().accept( this );
 			}
-			print( ";" );
+			printSemicolon();
 		}
 		printPostComments( node );
 	}
@@ -1172,7 +1182,9 @@ public class Visitor extends VoidBoxVisitor {
 					anno.getValue().accept( this );
 				}
 			}
-			propDoc.append( ";" );
+			if ( config.getSemicolons() ) {
+				propDoc.append( ";" );
+			}
 
 			if ( multiline ) {
 				popDoc();
@@ -1187,7 +1199,8 @@ public class Visitor extends VoidBoxVisitor {
 		if ( isTemplate() ) {
 			print( "<" + componentPrefix + "rethrow>" );
 		} else {
-			print( "rethrow;" );
+			print( "rethrow" );
+			printSemicolon();
 		}
 		printPostComments( node );
 	}
@@ -1207,7 +1220,7 @@ public class Visitor extends VoidBoxVisitor {
 				print( " " );
 				node.getExpression().accept( this );
 			}
-			print( ";" );
+			printSemicolon();
 		}
 		printPostComments( node );
 	}
@@ -1408,7 +1421,7 @@ public class Visitor extends VoidBoxVisitor {
 			print( " " );
 			node.getExpression().accept( this );
 		}
-		print( ";" );
+		printSemicolon();
 		printPostComments( node );
 	}
 
@@ -1520,7 +1533,7 @@ public class Visitor extends VoidBoxVisitor {
 		node.getBody().accept( this );
 		print( " while " );
 		helperPrinter.printParensExpression( node.getCondition() );
-		print( ";" );
+		printSemicolon();
 		printPostComments( node );
 	}
 

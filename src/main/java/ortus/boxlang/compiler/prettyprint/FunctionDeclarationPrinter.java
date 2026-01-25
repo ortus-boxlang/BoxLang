@@ -90,7 +90,7 @@ public class FunctionDeclarationPrinter {
 			currentDoc.append( " " );
 			visitor.helperPrinter.printBlock( node, node.getBody() );
 		} else {
-			currentDoc.append( ";" );
+			visitor.printSemicolon();
 		}
 
 	}
@@ -130,7 +130,7 @@ public class FunctionDeclarationPrinter {
 			currentDoc.append( " " );
 			visitor.helperPrinter.printBlock( node, node.getBody() );
 		} else {
-			currentDoc.append( ";" );
+			visitor.printSemicolon();
 		}
 	}
 
