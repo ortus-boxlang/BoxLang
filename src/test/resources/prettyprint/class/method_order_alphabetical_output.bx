@@ -1,0 +1,14 @@
+class {
+
+	function apple() {
+		return "apple";
+	}
+
+	function mango() {
+		return "mango";
+	}
+
+	function zebra() {
+		return "zebra";
+	}
+}

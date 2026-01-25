@@ -36,6 +36,9 @@ public class ClassConfig {
 	@JsonProperty( "property_order" )
 	private String	propertyOrder	= "preserve";
 
+	@JsonProperty( "method_order" )
+	private String	methodOrder		= "preserve";
+
 	public ClassConfig() {
 	}
 
@@ -66,11 +69,21 @@ public class ClassConfig {
 		return this;
 	}
 
+	public String getMethodOrder() {
+		return methodOrder;
+	}
+
+	public ClassConfig setMethodOrder( String methodOrder ) {
+		this.methodOrder = methodOrder;
+		return this;
+	}
+
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put( "member_order", memberOrder );
 		map.put( "member_spacing", memberSpacing );
 		map.put( "property_order", propertyOrder );
+		map.put( "method_order", methodOrder );
 		return map;
 	}
 }

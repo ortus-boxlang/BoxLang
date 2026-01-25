@@ -72,4 +72,16 @@ public class ClassFormattingTest extends PrettyPrintTest {
 	public void testPropertyOrderAlphabeticalShorthand() throws IOException {
 		printTestWithConfigFile( "class", "property_order_alphabetical_shorthand" );
 	}
+
+	@Test
+	@DisplayName( "Method order preserve (default) - maintains original order" )
+	public void testMethodOrderPreserve() throws IOException {
+		printTestWithConfigFile( "class", "method_order_preserve" );
+	}
+
+	@Test
+	@DisplayName( "Method order alphabetical - sorts methods by name" )
+	public void testMethodOrderAlphabetical() throws IOException {
+		printTestWithConfigFile( "class", "method_order_alphabetical" );
+	}
 }

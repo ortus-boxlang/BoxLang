@@ -24,8 +24,10 @@ import java.util.List;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
+import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
+import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.parser.BoxSourceType;
@@ -59,7 +61,8 @@ public class ClassPrinter {
 	}
 
 	private void printBoxClass( BoxClass classNode ) {
-		var currentDoc = visitor.getCurrentDoc();
+		var	currentDoc		= visitor.getCurrentDoc();
+		var	methodOrder		= visitor.config.getClassConfig().getMethodOrder();
 
 		printImports( classNode.getImports() );
 		visitor.printPreComments( classNode );
@@ -84,7 +87,7 @@ public class ClassPrinter {
 
 		visitor.pushDoc( DocType.INDENT ).append( Line.HARD );
 		printProperties( classNode.getProperties() );
-		visitor.helperPrinter.printStatements( classNode.getBody() );
+		visitor.helperPrinter.printStatements( sortClassBody( classNode.getBody(), methodOrder ) );
 		visitor.printInsideComments( classNode, false );
 
 		currentDoc
@@ -96,7 +99,8 @@ public class ClassPrinter {
 	}
 
 	private void printBoxInterface( BoxInterface interfaceNode ) {
-		var currentDoc = visitor.getCurrentDoc();
+		var	currentDoc	= visitor.getCurrentDoc();
+		var	methodOrder	= visitor.config.getClassConfig().getMethodOrder();
 
 		printImports( interfaceNode.getImports() );
 		visitor.printPreComments( interfaceNode );
@@ -108,7 +112,7 @@ public class ClassPrinter {
 		currentDoc.append( "{" );
 
 		visitor.pushDoc( DocType.INDENT ).append( Line.HARD );
-		visitor.helperPrinter.printStatements( interfaceNode.getBody() );
+		visitor.helperPrinter.printStatements( sortClassBody( interfaceNode.getBody(), methodOrder ) );
 		visitor.printInsideComments( interfaceNode, false );
 
 		currentDoc
@@ -120,7 +124,8 @@ public class ClassPrinter {
 	}
 
 	public void printCFScriptComponent( BoxClass classNode ) {
-		var currentDoc = visitor.getCurrentDoc();
+		var	currentDoc	= visitor.getCurrentDoc();
+		var	methodOrder	= visitor.config.getClassConfig().getMethodOrder();
 
 		printImports( classNode.getImports() );
 		visitor.printPreComments( classNode );
@@ -130,7 +135,7 @@ public class ClassPrinter {
 
 		visitor.pushDoc( DocType.INDENT ).append( Line.HARD );
 		printProperties( classNode.getProperties() );
-		visitor.helperPrinter.printStatements( classNode.getBody() );
+		visitor.helperPrinter.printStatements( sortClassBody( classNode.getBody(), methodOrder ) );
 		visitor.printInsideComments( classNode, false );
 
 		currentDoc
@@ -142,7 +147,8 @@ public class ClassPrinter {
 	}
 
 	public void printCFScriptInterface( BoxInterface interfaceNode ) {
-		var currentDoc = visitor.getCurrentDoc();
+		var	currentDoc	= visitor.getCurrentDoc();
+		var	methodOrder	= visitor.config.getClassConfig().getMethodOrder();
 
 		printImports( interfaceNode.getImports() );
 		visitor.printPreComments( interfaceNode );
@@ -151,7 +157,7 @@ public class ClassPrinter {
 		currentDoc.append( "{" );
 
 		visitor.pushDoc( DocType.INDENT ).append( Line.HARD );
-		visitor.helperPrinter.printStatements( interfaceNode.getBody() );
+		visitor.helperPrinter.printStatements( sortClassBody( interfaceNode.getBody(), methodOrder ) );
 		visitor.printInsideComments( interfaceNode, false );
 
 		currentDoc
@@ -165,6 +171,7 @@ public class ClassPrinter {
 	public void printCFTemplateComponent( BoxClass classNode ) {
 		var	currentDoc		= visitor.getCurrentDoc();
 		var	propertyOrder	= visitor.config.getClassConfig().getPropertyOrder();
+		var	methodOrder		= visitor.config.getClassConfig().getMethodOrder();
 
 		currentDoc.append( "<cfcomponent" );
 		visitor.helperPrinter.printKeyValueAnnotations( classNode.getAnnotations(), false );
@@ -176,7 +183,8 @@ public class ClassPrinter {
 			bodyDoc.append( Line.HARD );
 			property.accept( visitor );
 		}
-		for ( var statement : classNode.getBody() ) {
+		List<BoxStatement>	sortedBody			= sortClassBody( classNode.getBody(), methodOrder );
+		for ( var statement : sortedBody ) {
 			statement.accept( visitor );
 		}
 		visitor.printInsideComments( classNode, false );
@@ -189,14 +197,16 @@ public class ClassPrinter {
 	}
 
 	public void printCFTemplateInterface( BoxInterface interfaceNode ) {
-		var currentDoc = visitor.getCurrentDoc();
+		var	currentDoc	= visitor.getCurrentDoc();
+		var	methodOrder	= visitor.config.getClassConfig().getMethodOrder();
 
 		currentDoc.append( "<cfinterface" );
 		visitor.helperPrinter.printKeyValueAnnotations( interfaceNode.getAnnotations(), false );
 		currentDoc.append( ">" );
 
 		visitor.pushDoc( DocType.INDENT );
-		for ( var statement : interfaceNode.getBody() ) {
+		List<BoxStatement> sortedBody = sortClassBody( interfaceNode.getBody(), methodOrder );
+		for ( var statement : sortedBody ) {
 			statement.accept( visitor );
 		}
 
@@ -369,5 +379,65 @@ public class ClassPrinter {
 		}
 		// Fall back to source text for other expression types
 		return expr.getSourceText() != null ? expr.getSourceText() : "";
+	}
+
+	/**
+	 * Sort class body statements based on method ordering configuration.
+	 * Only BoxFunctionDeclaration nodes are sorted; other statements maintain their relative order.
+	 *
+	 * @param statements  the list of statements in the class body
+	 * @param methodOrder the ordering strategy: "alphabetical" or "preserve"
+	 *
+	 * @return sorted list of statements (original list if "preserve")
+	 */
+	private List<BoxStatement> sortClassBody( List<BoxStatement> statements, String methodOrder ) {
+		if ( statements.isEmpty() || "preserve".equalsIgnoreCase( methodOrder ) ) {
+			return statements;
+		}
+
+		// Extract methods and non-methods
+		List<BoxFunctionDeclaration>	methods		= new ArrayList<>();
+		List<Integer>					methodIndices	= new ArrayList<>();
+
+		for ( int i = 0; i < statements.size(); i++ ) {
+			if ( statements.get( i ) instanceof BoxFunctionDeclaration func ) {
+				methods.add( func );
+				methodIndices.add( i );
+			}
+		}
+
+		// If no methods or only one method, no sorting needed
+		if ( methods.size() <= 1 ) {
+			return statements;
+		}
+
+		// Sort methods based on configuration
+		switch ( methodOrder.toLowerCase() ) {
+			case "alphabetical" -> methods.sort( Comparator.comparing( this::getMethodName, String.CASE_INSENSITIVE_ORDER ) );
+			default -> {
+				// preserve order - return as-is
+				return statements;
+			}
+		}
+
+		// Rebuild the list with sorted methods in their original positions
+		List<BoxStatement>	result		= new ArrayList<>( statements );
+		int					methodIdx	= 0;
+		for ( int originalIndex : methodIndices ) {
+			result.set( originalIndex, methods.get( methodIdx++ ) );
+		}
+
+		return result;
+	}
+
+	/**
+	 * Extract the method name from a BoxFunctionDeclaration node.
+	 *
+	 * @param method the method to get the name from
+	 *
+	 * @return the method name
+	 */
+	private String getMethodName( BoxFunctionDeclaration method ) {
+		return method.getName() != null ? method.getName() : "";
 	}
 }
