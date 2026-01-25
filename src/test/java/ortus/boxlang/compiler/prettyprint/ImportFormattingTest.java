@@ -36,4 +36,16 @@ public class ImportFormattingTest extends PrettyPrintTest {
 	public void testImportSortEnabled() throws IOException {
 		printTestWithConfigFile( "import", "sort_enabled" );
 	}
+
+	@Test
+	@DisplayName( "Import group disabled - no blank lines between package groups" )
+	public void testImportGroupDisabled() throws IOException {
+		printTestWithConfigFile( "import", "group_disabled" );
+	}
+
+	@Test
+	@DisplayName( "Import group enabled - adds blank lines between package groups" )
+	public void testImportGroupEnabled() throws IOException {
+		printTestWithConfigFile( "import", "group_enabled" );
+	}
 }

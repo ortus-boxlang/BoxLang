@@ -232,11 +232,30 @@ public class ClassPrinter {
 		}
 
 		// Sort imports if configured
-		List<BoxImport> sortedImports = sortImports( imports );
+		List<BoxImport>	sortedImports	= sortImports( imports );
+		boolean			groupImports	= visitor.config.getImportConfig().getGroup();
 
-		for ( var importNode : sortedImports ) {
-			importNode.accept( visitor );
-			visitor.newLine();
+		if ( groupImports ) {
+			// Print imports with grouping (blank line between different top-level packages)
+			String lastPrefix = null;
+			for ( var importNode : sortedImports ) {
+				String currentPrefix = getImportPrefix( importNode );
+
+				// Add blank line between groups (different top-level packages)
+				if ( lastPrefix != null && !lastPrefix.equalsIgnoreCase( currentPrefix ) ) {
+					visitor.newLine();
+				}
+
+				importNode.accept( visitor );
+				visitor.newLine();
+				lastPrefix = currentPrefix;
+			}
+		} else {
+			// Print imports without grouping
+			for ( var importNode : sortedImports ) {
+				importNode.accept( visitor );
+				visitor.newLine();
+			}
 		}
 		visitor.newLine();
 	}
@@ -275,6 +294,23 @@ public class ClassPrinter {
 		}
 		// Fall back to source text
 		return expr.getSourceText() != null ? expr.getSourceText() : "";
+	}
+
+	/**
+	 * Extract the top-level package prefix from a BoxImport node for grouping.
+	 * For example, "java.util.Map" returns "java", "ortus.boxlang.runtime.types.Array" returns "ortus".
+	 *
+	 * @param importNode the import to get the prefix from
+	 *
+	 * @return the top-level package prefix
+	 */
+	private String getImportPrefix( BoxImport importNode ) {
+		String path = getImportPath( importNode );
+		if ( path.isEmpty() ) {
+			return "";
+		}
+		int dotIndex = path.indexOf( '.' );
+		return dotIndex > 0 ? path.substring( 0, dotIndex ) : path;
 	}
 
 	private void printBoxAnnotations( List<BoxAnnotation> annotations ) {
