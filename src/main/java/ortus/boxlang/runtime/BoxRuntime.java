@@ -1681,10 +1681,10 @@ public class BoxRuntime implements java.io.Closeable {
 			DebuggerService.signalUserCodeStart( null );
 		}
 
-		BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadSource( scriptingContext, source, type );
-		Object		results				= null;
+		BoxScript	scriptRunnable	= RunnableLoader.getInstance().loadSource( scriptingContext, source, type );
+		Object		results			= null;
 
-		ClassLoader	oldClassLoader		= Thread.currentThread().getContextClassLoader();
+		ClassLoader	oldClassLoader	= Thread.currentThread().getContextClassLoader();
 		try {
 			// Fire!!!
 			results = scriptRunnable.invoke( scriptingContext );
