@@ -73,7 +73,23 @@ public class HelperPrinter {
 				statement.accept( visitor );
 			}
 		} else {
+			// Determine if opening brace should be on a new line based on braces.style config
+			String	braceStyle		= visitor.config.getBraces().getStyle();
+			boolean	braceOnNewLine	= false;
+
+			if ( braceStyle.equals( "new-line" ) ) {
+				braceOnNewLine = true;
+			} else if ( braceStyle.equals( "preserve" ) ) {
+				// Check if the original source had the brace on a new line
+				braceOnNewLine = hasBraceOnNewLine( node );
+			}
+			// "same-line" (default) keeps braceOnNewLine as false
+
+			if ( braceOnNewLine ) {
+				currentDoc.append( Line.HARD );
+			}
 			currentDoc.append( "{" );
+
 			var blockDoc = visitor.pushDoc( DocType.INDENT );
 			blockDoc.append( Line.HARD );
 
@@ -95,6 +111,27 @@ public class HelperPrinter {
 			    .append( Line.HARD )
 			    .append( "}" );
 		}
+	}
+
+	/**
+	 * Check if the original source code had the opening brace on a new line.
+	 * Used for "preserve" brace style mode.
+	 */
+	private boolean hasBraceOnNewLine( BoxNode node ) {
+		String sourceText = node.getSourceText();
+		if ( sourceText == null ) {
+			return false;
+		}
+
+		// Find the opening brace and check if there's a newline before it
+		int braceIndex = sourceText.indexOf( '{' );
+		if ( braceIndex <= 0 ) {
+			return false;
+		}
+
+		// Check if there's a newline between the start and the brace
+		String beforeBrace = sourceText.substring( 0, braceIndex );
+		return beforeBrace.contains( "\n" ) || beforeBrace.contains( "\r" );
 	}
 
 	public void printParensExpression( BoxExpression node ) {
