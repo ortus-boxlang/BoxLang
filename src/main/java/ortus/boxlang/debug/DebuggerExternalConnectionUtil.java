@@ -26,8 +26,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import ortus.boxlang.runtime.logging.LoggingService;
+import ortus.boxlang.runtime.logging.BoxLangLogger;
 
 /**
  * DebuggerExternalConnectionUtil
@@ -58,7 +58,8 @@ public final class DebuggerExternalConnectionUtil {
 	/**
 	 * Logger for timing instrumentation
 	 */
-	private static final Logger												logger				= LoggerFactory.getLogger( DebuggerExternalConnectionUtil.class );
+	private static final BoxLangLogger										logger				= LoggingService.getInstance()
+	    .getLogger( DebuggerExternalConnectionUtil.class );
 
 	/**
 	 * Startup timestamp for timing calculations

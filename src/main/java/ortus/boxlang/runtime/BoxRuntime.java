@@ -1325,6 +1325,14 @@ public class BoxRuntime implements java.io.Closeable {
 		if ( !getModuleService().hasModule( moduleName ) ) {
 			throw new BoxRuntimeException( "Can't execute module [" + module + "] as it does not exist." );
 		}
+
+		// Signal to debugger that user code is about to start (only in debug mode)
+		// This must be called BEFORE loading the class so the debugger can set up
+		// ClassPrepareRequest with SUSPEND_EVENT_THREAD before the class loads
+		if ( instance.inDebugMode() ) {
+			DebuggerExternalConnectionUtil.signalUserCodeStart( null );
+		}
+
 		// Execute it
 		ScriptingRequestBoxContext scriptingContext = new ScriptingRequestBoxContext( getRuntimeContext() );
 		try {
@@ -1347,6 +1355,13 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @param args         The array of arguments to pass to the main method
 	 */
 	public void executeClass( Class<IBoxRunnable> targetClass, String templatePath, IBoxContext context, String[] args ) {
+		// Signal to debugger that user code is about to start (only in debug mode)
+		// This must be called BEFORE loading the class so the debugger can set up
+		// ClassPrepareRequest with SUSPEND_EVENT_THREAD before the class loads
+		if ( instance.inDebugMode() ) {
+			DebuggerExternalConnectionUtil.signalUserCodeStart( templatePath );
+		}
+
 		IBoxContext				scriptingContext	= ensureRequestTypeContext( context, Paths.get( templatePath ).toUri() );
 		boolean					shutdownContext		= context != scriptingContext;
 		BaseApplicationListener	listener			= scriptingContext.getRequestContext()
