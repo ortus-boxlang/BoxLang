@@ -39,6 +39,7 @@ import ortus.boxlang.compiler.BXCompiler;
 import ortus.boxlang.compiler.CFTranspiler;
 import ortus.boxlang.compiler.DiskClassUtil;
 import ortus.boxlang.compiler.FeatureAudit;
+import ortus.boxlang.compiler.prettyprint.PrettyPrint;
 import ortus.boxlang.runtime.application.BaseApplicationListener;
 import ortus.boxlang.runtime.async.tasks.BoxScheduler;
 import ortus.boxlang.runtime.async.tasks.IScheduler;
@@ -104,6 +105,7 @@ public class BoxRunner {
 	    "compile",
 	    "cftranspile",
 	    "featureaudit",
+	    "format",
 	    "schedule" );
 
 	/**
@@ -281,6 +283,9 @@ public class BoxRunner {
 				break;
 			case "featureaudit" :
 				FeatureAudit.main( options.cliArgs().toArray( new String[ 0 ] ) );
+				break;
+			case "format" :
+				PrettyPrint.main( options.cliArgs().toArray( new String[ 0 ] ) );
 				break;
 			case "schedule" :
 				// Check for help first
@@ -786,6 +791,9 @@ public class BoxRunner {
 		System.out.println();
 		System.out.println( "  # 🔍 Audit code features" );
 		System.out.println( "  boxlang featureaudit --source ./myapp --output report.json" );
+		System.out.println();
+		System.out.println( "  # 🔍 Format Code" );
+		System.out.println( "  boxlang format ./" );
 		System.out.println();
 		System.out.println( "  # ⏰ Run a scheduler" );
 		System.out.println( "  boxlang schedule ./schedulers/MyScheduler.bx" );

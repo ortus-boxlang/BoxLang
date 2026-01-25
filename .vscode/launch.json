@@ -175,6 +175,17 @@
             "args": [
                 "module:test"
             ]
+        },
+        {
+            "type": "java",
+            "name": "Run Formatter - initConfig",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRunner",
+            "projectName": "boxlang",
+            "args": [
+                "format",
+                "--initConfig"
+            ]
         }
     ],
     "inputs": [
