@@ -36,4 +36,10 @@ public class FunctionArgumentsTest extends PrettyPrintTest {
 	public void testMultilineCountDefault() throws IOException {
 		printTestWithDefaultConfig( "function_arguments", "multiline_count_default" );
 	}
+
+	@Test
+	@DisplayName( "Arguments go multiline when length >= multiline_length (custom: 30)" )
+	public void testMultilineLength30() throws IOException {
+		printTestWithConfigFile( "function_arguments", "multiline_length_30" );
+	}
 }

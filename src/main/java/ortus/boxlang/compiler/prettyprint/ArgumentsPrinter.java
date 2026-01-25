@@ -31,13 +31,51 @@ public class ArgumentsPrinter {
 		this.visitor = visitor;
 	}
 
+	/**
+	 * Calculate the approximate length of the argument list if printed on a single line.
+	 * Used to determine if the arguments should be printed multiline based on length threshold.
+	 */
+	private int calculateArgumentListLength( List<BoxArgument> arguments ) {
+		int length = 2; // for "(" and ")"
+
+		for ( int i = 0; i < arguments.size(); i++ ) {
+			var arg = arguments.get( i );
+
+			// Named argument: name = value
+			if ( arg.getName() != null ) {
+				if ( arg.getName() instanceof BoxStringLiteral str ) {
+					length += str.getValue().length();
+				} else {
+					String nameSource = arg.getName().getSourceText();
+					if ( nameSource != null ) {
+						length += nameSource.length();
+					}
+				}
+				length += 3; // " = "
+			}
+
+			// Argument value
+			String valueSource = arg.getValue().getSourceText();
+			if ( valueSource != null ) {
+				length += valueSource.length();
+			}
+
+			if ( i < arguments.size() - 1 ) {
+				length += 2; // ", "
+			}
+		}
+
+		return length;
+	}
+
 	public void print( BoxNode parentNode, List<BoxArgument> arguments ) {
 		var	currentDoc			= visitor.getCurrentDoc();
 		var	argumentsDoc		= visitor.pushDoc( DocType.GROUP );
 
 		var	size				= arguments.size();
 		var	assignmentOperator	= " = "; // TODO: use config
-		var	multiline			= size >= visitor.config.getArguments().getMultilineCount();
+		var	multiline			= size >= visitor.config.getArguments().getMultilineCount()
+		    || calculateArgumentListLength( arguments ) >= visitor.config.getArguments().getMultilineLength();
 
 		argumentsDoc.append( "(" );
 
