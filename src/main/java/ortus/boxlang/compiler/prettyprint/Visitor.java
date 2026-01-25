@@ -676,12 +676,101 @@ public class Visitor extends VoidBoxVisitor {
 
 	public void visit( BoxTernaryOperation node ) {
 		printPreComments( node );
+		
+		String ternaryStyle = config.getOperators().getTernary().getStyle();
+		
+		switch ( ternaryStyle ) {
+			case "always-multiline":
+				printTernaryMultiline( node );
+				break;
+			case "preserve":
+				// Check if original source spans multiple lines
+				if ( isMultilineInSource( node ) ) {
+					printTernaryMultiline( node );
+				} else {
+					printTernaryFlat( node );
+				}
+				break;
+			case "flat":
+			default:
+				// Use GROUP to let the printer decide based on line length
+				printTernaryWithGroup( node );
+				break;
+		}
+		
+		printPostComments( node );
+	}
+	
+	/**
+	 * Print ternary on a single line (no line break opportunity)
+	 */
+	private void printTernaryFlat( BoxTernaryOperation node ) {
 		node.getCondition().accept( this );
 		print( " ? " );
 		node.getWhenTrue().accept( this );
 		print( " : " );
 		node.getWhenFalse().accept( this );
-		printPostComments( node );
+	}
+	
+	/**
+	 * Print ternary with GROUP allowing line breaks if needed
+	 */
+	private void printTernaryWithGroup( BoxTernaryOperation node ) {
+		var currentDoc = getCurrentDoc();
+		
+		// Create a GROUP that can break if line is too long
+		var ternaryDoc = pushDoc( DocType.GROUP );
+		var indentDoc = pushDoc( DocType.INDENT );
+		
+		node.getCondition().accept( this );
+		
+		// Use LINE which becomes a space if fits, newline if breaks
+		indentDoc.append( Line.LINE );
+		indentDoc.append( "? " );
+		node.getWhenTrue().accept( this );
+		indentDoc.append( Line.LINE );
+		indentDoc.append( ": " );
+		node.getWhenFalse().accept( this );
+		
+		ternaryDoc.append( popDoc() );
+		currentDoc.append( popDoc() );
+	}
+	
+	/**
+	 * Print ternary always on multiple lines
+	 */
+	private void printTernaryMultiline( BoxTernaryOperation node ) {
+		var currentDoc = getCurrentDoc();
+		
+		// Create a GROUP with BREAK_PARENT to force multiline
+		var ternaryDoc = pushDoc( DocType.GROUP );
+		var indentDoc = pushDoc( DocType.INDENT );
+		
+		node.getCondition().accept( this );
+		
+		// Force line breaks with BREAK_PARENT
+		indentDoc.append( Line.BREAK_PARENT );
+		indentDoc.append( Line.HARD );
+		indentDoc.append( "? " );
+		node.getWhenTrue().accept( this );
+		indentDoc.append( Line.HARD );
+		indentDoc.append( ": " );
+		node.getWhenFalse().accept( this );
+		
+		ternaryDoc.append( popDoc() );
+		currentDoc.append( popDoc() );
+	}
+	
+	/**
+	 * Check if a ternary operation spans multiple lines in source
+	 */
+	private boolean isMultilineInSource( BoxTernaryOperation node ) {
+		if ( node.getPosition() == null ) {
+			return false;
+		}
+		int startLine = node.getPosition().getStart().getLine();
+		int endLine = node.getPosition().getEnd().getLine();
+		return startLine != endLine;
 	}
 
 	public void visit( BoxNew node ) {
