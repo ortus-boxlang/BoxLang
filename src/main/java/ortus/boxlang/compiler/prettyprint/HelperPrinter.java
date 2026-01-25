@@ -26,6 +26,7 @@ import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 
 public class HelperPrinter {
 
@@ -165,5 +166,67 @@ public class HelperPrinter {
 		}
 		attrsDoc.append( padded ? Line.LINE : Line.SOFT );
 		currentDoc.append( visitor.popDoc() );
+	}
+
+	/**
+	 * Print a statement body, optionally wrapping single statements in braces
+	 * based on the braces.require_for_single_statement configuration.
+	 *
+	 * @param node      The parent node (for source info if needed)
+	 * @param statement The statement to print
+	 */
+	public void printStatementBody( BoxNode node, BoxStatement statement ) {
+		if ( visitor.isTemplate() ) {
+			// Template mode doesn't use braces
+			statement.accept( visitor );
+			return;
+		}
+
+		boolean requireBraces = visitor.config.getBraces().getRequireForSingleStatement();
+
+		// Check if the statement is a block statement
+		if ( statement instanceof ortus.boxlang.compiler.ast.statement.BoxStatementBlock ) {
+			// Already a block, just visit it normally
+			statement.accept( visitor );
+		} else if ( requireBraces ) {
+			// Single statement and we need to wrap it in braces
+			var currentDoc = visitor.getCurrentDoc();
+
+			// Determine if opening brace should be on a new line based on braces.style config
+			String	braceStyle		= visitor.config.getBraces().getStyle();
+			boolean	braceOnNewLine	= false;
+
+			if ( braceStyle.equals( "new-line" ) ) {
+				braceOnNewLine = true;
+			} else if ( braceStyle.equals( "preserve" ) ) {
+				// For single statements being wrapped, default to same-line
+				// since there was no original brace to preserve
+				braceOnNewLine = false;
+			}
+
+			if ( braceOnNewLine ) {
+				currentDoc.append( Line.HARD );
+			}
+			currentDoc.append( "{" );
+
+			var blockDoc = visitor.pushDoc( DocType.INDENT );
+			blockDoc.append( Line.HARD );
+
+			statement.accept( visitor );
+
+			currentDoc
+			    .append( visitor.popDoc() )
+			    .append( Line.HARD )
+			    .append( "}" );
+		} else {
+			// Single statement without braces - need to indent it
+			var currentDoc = visitor.getCurrentDoc();
+			var blockDoc = visitor.pushDoc( DocType.INDENT );
+			blockDoc.append( Line.HARD );
+
+			statement.accept( visitor );
+
+			currentDoc.append( visitor.popDoc() );
+		}
 	}
 }

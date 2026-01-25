@@ -780,7 +780,7 @@ public class Visitor extends VoidBoxVisitor {
 		print( " in " );
 		node.getExpression().accept( this );
 		print( ") " );
-		node.getBody().accept( this );
+		helperPrinter.printStatementBody( node, node.getBody() );
 		printPostComments( node );
 	}
 
@@ -813,7 +813,7 @@ public class Visitor extends VoidBoxVisitor {
 			node.getStep().accept( this );
 		}
 		print( ") " );
-		node.getBody().accept( this );
+		helperPrinter.printStatementBody( node, node.getBody() );
 		printPostComments( node );
 	}
 
@@ -1041,10 +1041,41 @@ public class Visitor extends VoidBoxVisitor {
 			print( "if " );
 			helperPrinter.printParensExpression( node.getCondition() );
 			print( " " );
-			node.getThenBody().accept( this );
+			
+			boolean thenBodyIsBlock = node.getThenBody() instanceof BoxStatementBlock;
+			helperPrinter.printStatementBody( node, node.getThenBody() );
+			
 			if ( node.getElseBody() != null ) {
-				print( " else " );
-				node.getElseBody().accept( this );
+				// Check for else-if pattern: else body is a block containing a single if statement
+				boolean isElseIf = false;
+				if ( node.getElseBody() instanceof BoxStatementBlock elseBlock &&
+				    elseBlock.getBody().size() == 1 &&
+				    elseBlock.getBody().get( 0 ) instanceof BoxIfElse ) {
+					isElseIf = true;
+				}
+				
+				// Check if else body is a direct if statement (not in a block)
+				boolean isDirectElseIf = node.getElseBody() instanceof BoxIfElse;
+				
+				// Add newline before else if then body is not a block
+				if ( !thenBodyIsBlock && !config.getBraces().getRequireForSingleStatement() ) {
+					newLine();
+				} else {
+					print( " " );
+				}
+				
+				print( "else " );
+				
+				// For else-if, just visit the if statement directly
+				if ( isElseIf ) {
+					BoxStatementBlock elseBlock = ( BoxStatementBlock ) node.getElseBody();
+					BoxIfElse elseIfNode = ( BoxIfElse ) elseBlock.getBody().get( 0 );
+					doBoxIfElse( elseIfNode, false );
+				} else if ( isDirectElseIf ) {
+					node.getElseBody().accept( this );
+				} else {
+					helperPrinter.printStatementBody( node, node.getElseBody() );
+				}
 			}
 		}
 	}
@@ -1242,7 +1273,7 @@ public class Visitor extends VoidBoxVisitor {
 			print( "while " );
 			helperPrinter.printParensExpression( node.getCondition() );
 			print( " " );
-			node.getBody().accept( this );
+			helperPrinter.printStatementBody( node, node.getBody() );
 		}
 		printPostComments( node );
 	}

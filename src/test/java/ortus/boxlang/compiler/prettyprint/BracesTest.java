@@ -36,4 +36,28 @@ public class BracesTest extends PrettyPrintTest {
 	public void testStyleNewLine() throws IOException {
 		printTestWithConfigFile( "braces", "style_new_line" );
 	}
+
+	@Test
+	@DisplayName( "Require braces for single statement when true" )
+	public void testRequireForSingleStatementTrue() throws IOException {
+		printTestWithConfigFile( "braces", "require_for_single_statement_true" );
+	}
+
+	@Test
+	@DisplayName( "Do not require braces for single statement when false" )
+	public void testRequireForSingleStatementFalse() throws IOException {
+		printTestWithConfigFile( "braces", "require_for_single_statement_false" );
+	}
+
+	@Test
+	@DisplayName( "Require braces for else-if chains" )
+	public void testRequireForElseIfChains() throws IOException {
+		printTestWithConfigFile( "braces", "require_elseif" );
+	}
+
+	@Test
+	@DisplayName( "Require braces with new-line style" )
+	public void testRequireWithNewLineStyle() throws IOException {
+		printTestWithConfigFile( "braces", "require_newline" );
+	}
 }

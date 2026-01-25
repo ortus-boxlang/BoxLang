@@ -1,0 +1,44 @@
+// Single statement if without braces
+if (x > 5) {
+	println("x is greater than 5");
+}
+
+// Single statement if/else without braces
+if (y < 10) {
+	println("y is less than 10");
+} else {
+	println("y is 10 or greater");
+}
+
+// Nested if without braces
+if (a > 0) {
+	if (b > 0) {
+		println("Both positive");
+	}
+}
+
+// For loop without braces
+for (i = 0; i < 10; i++) {
+	println(i);
+}
+
+// For-in loop without braces
+for (item in items) {
+	println(item);
+}
+
+// While loop without braces
+while (count < 100) {
+	count++;
+}
+
+// Already has braces - should remain unchanged
+if (z == 0) {
+	println("z is zero");
+}
+
+// Multiple statements already have braces
+for (j = 0; j < 5; j++) {
+	println(j);
+	sum += j;
+}
