@@ -55,7 +55,15 @@ public class HelperPrinter {
 			// if there is a previous statement, check for empty lines in source
 			// if so, add a hard line break
 			if ( previousStatement != null && statement.hasLinesBetweenWithComments( previousStatement ) ) {
-				visitor.newLine();
+				// Check if we should preserve blank lines before comments
+				boolean	preserveBlankLines	= visitor.config.getComments().getPreserveBlankLines();
+				boolean	hasPreComments		= statement.getComments().stream().anyMatch( c -> c.isBefore( statement ) );
+
+				// If the statement has pre-comments, respect the preserve_blank_lines setting
+				// Otherwise, always preserve blank lines between statements
+				if ( !hasPreComments || preserveBlankLines ) {
+					visitor.newLine();
+				}
 			} else if ( isClassMember ) {
 				// For class members, add configured member_spacing blank lines
 				for ( int i = 0; i < memberSpacing; i++ ) {

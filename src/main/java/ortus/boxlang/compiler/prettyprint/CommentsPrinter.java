@@ -128,7 +128,9 @@ public class CommentsPrinter {
 	 * print comment line spacing
 	 */
 	void printCommentSpacing( BoxNode lastNodeToPrint, BoxNode node ) {
-		var currentDoc = visitor.getCurrentDoc();
+		var		currentDoc			= visitor.getCurrentDoc();
+		boolean	preserveBlankLines	= visitor.config.getComments().getPreserveBlankLines();
+
 		// If we have printed a comment, and this one starts on the same line, we need to append a space
 		if ( node.startsOnEndLineOf( lastNodeToPrint ) ) {
 			currentDoc.append( " " );
@@ -137,7 +139,8 @@ public class CommentsPrinter {
 			currentDoc.append( Line.HARD );
 
 			// check to see if there is a gap of multiple lines in the source
-			if ( node.hasLinesBetween( lastNodeToPrint ) ) {
+			// only preserve blank lines if the config option is enabled
+			if ( preserveBlankLines && node.hasLinesBetween( lastNodeToPrint ) ) {
 				// if so, print an extra new line (eliminating line gaps greater than 1)
 				currentDoc.append( Line.HARD );
 			}
