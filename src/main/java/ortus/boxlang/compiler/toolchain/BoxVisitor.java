@@ -121,7 +121,6 @@ import ortus.boxlang.parser.antlr.BoxGrammar.FunctionOrStatementContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.FunctionParamContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.FunctionParamListContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.FunctionSignatureContext;
-import ortus.boxlang.parser.antlr.BoxGrammar.IdentifierContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.IfContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ImportStatementContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.IncludeContext;

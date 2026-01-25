@@ -456,13 +456,13 @@ public class BoxForInTransformer extends AbstractTransformer {
 
 	/**
 	 * Assigns two variables in a for-in loop (key/value for structs, item/index for arrays/queries)
-	 * 
+	 *
 	 * @param forIn         the BoxForIn AST node
 	 * @param iteratorIndex local variable index of the iterator
 	 * @param isStructIndex local variable index of the isStruct flag
 	 * @param indexIndex    local variable index of the counter (for arrays/queries)
 	 * @param context       transformation context
-	 * 
+	 *
 	 * @return list of ASM instructions for assigning both variables
 	 */
 	private List<AbstractInsnNode> assignTwoVars( BoxForIn forIn, int iteratorIndex, int isStructIndex, int indexIndex,
