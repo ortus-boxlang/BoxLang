@@ -376,6 +376,11 @@ public class DateTimeCasterTest {
 		assertThat( result ).isNotNull();
 		assertThat( result.format( "yyyy-MM-dd HH:mm:ss" ) ).isEqualTo( "2026-01-05 17:39:13" );
 
+		dateString	= "May, 03 2024 00:51:07 -0500";
+		result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd HH:mm:ss" ) ).isEqualTo( "2024-05-03 00:51:07" );
+
 		dateString	= "Dec 26, 2023 7:29:06 PM";
 		result		= DateTimeCaster.cast( dateString );
 		assertThat( result ).isNotNull();

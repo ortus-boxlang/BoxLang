@@ -86,7 +86,6 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.types.exceptions.BoxLicenseException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
 import ortus.boxlang.runtime.types.util.MathUtil;
@@ -381,7 +380,7 @@ public class BoxRuntime implements java.io.Closeable {
 
 		// Add the following directories to the runtime home if they don't exist
 		// Common directories to ensure
-		List<String> directories = Arrays.asList( "classes", "config", "global", "logs", "lib", "modules" );
+		List<String> directories = Arrays.asList( "bin", "classes", "config", "global", "logs", "lib", "modules" );
 		directories.forEach( dir -> FileSystemUtil.createDirectoryIfMissing( this.runtimeHome.resolve( dir ) ) );
 
 		// If we're starting a version of BoxLang with a different bytecode version, we need to clear the classes folder IF it exists.

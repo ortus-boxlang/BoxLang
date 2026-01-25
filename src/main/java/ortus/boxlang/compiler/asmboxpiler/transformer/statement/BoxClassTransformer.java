@@ -888,15 +888,23 @@ public class BoxClassTransformer {
 
 	private static List<AbstractInsnNode> generateMapOfCompileTimeMethods( Transpiler transpiler, BoxClass boxClass, Type ownerType ) {
 		// Filter out abstract methods (no body) since they don't have a generated class
-		List<BoxFunctionDeclaration>	functions	= boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
+		List<BoxFunctionDeclaration>	functions		= boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
 		    .stream()
 		    .filter( func -> func.getBody() != null )
 		    .collect( java.util.stream.Collectors.toList() );
 
-		List<AbstractInsnNode>			nodes		= new ArrayList<AbstractInsnNode>();
-
+		List<AbstractInsnNode>			nodes			= new ArrayList<AbstractInsnNode>();
+		List<String>					takenNames		= new ArrayList<>();
+		int								numFunctions	= 0;
 		// Generate Map.ofEntries(Map.entry(key1, class1), Map.entry(key2, class2), ...)
 		for ( BoxFunctionDeclaration func : functions ) {
+			String thisName = func.getName();
+			if ( takenNames.contains( thisName.toLowerCase() ) ) {
+				continue;
+			}
+			takenNames.add( thisName.toLowerCase() );
+			numFunctions++;
+
 			// Push the key
 			nodes.addAll( transpiler.createKey( func.getName() ) );
 			// Push the class literal for Func_<name>
@@ -912,11 +920,11 @@ public class BoxClassTransformer {
 		}
 
 		// Create array of Map.Entry
-		nodes.add( new LdcInsnNode( functions.size() ) );
+		nodes.add( new LdcInsnNode( numFunctions ) );
 		nodes.add( new TypeInsnNode( Opcodes.ANEWARRAY, Type.getInternalName( Map.Entry.class ) ) );
 
 		// Store each entry in the array (need to work backwards)
-		for ( int i = functions.size() - 1; i >= 0; i-- ) {
+		for ( int i = numFunctions - 1; i >= 0; i-- ) {
 			nodes.add( new InsnNode( Opcodes.DUP_X1 ) );
 			nodes.add( new InsnNode( Opcodes.SWAP ) );
 			nodes.add( new LdcInsnNode( i ) );

@@ -69,7 +69,19 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		TransformerContext		safe		= function.getName().equalsIgnoreCase( "isnull" ) ? TransformerContext.SAFE : context;
 
 		if ( transpiler.hasCompiledFunction( function.getName() ) ) {
-			throw new IllegalStateException( "Cannot define multiple functions with the same name: " + function.getName() );
+			if ( transpiler.getProperty( "sourceType" ).equals( BoxSourceType.BOXSCRIPT.name() )
+			    || transpiler.getProperty( "sourceType" ).equals( BoxSourceType.BOXTEMPLATE.name() ) ) {
+				throw new IllegalStateException( "Cannot define multiple functions with the same name: " + function.getName() );
+			} else {
+				ArrayList<AbstractInsnNode> blankResult = new ArrayList<>();
+
+				if ( returnContext == ReturnValueContext.VALUE || returnContext == ReturnValueContext.VALUE_OR_NULL ) {
+					blankResult.add( new InsnNode( Opcodes.ACONST_NULL ) );
+				}
+
+				return blankResult;
+			}
+
 		}
 
 		Type			type			= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )

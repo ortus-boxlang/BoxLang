@@ -430,7 +430,7 @@ public final class FileSystemUtil {
 
 		} catch ( NoSuchFileException e ) {
 			throw new BoxRuntimeException(
-			    "The file [" + filePath + "] could not be writtent. The directory ["
+			    "The file [" + filePath + "] could not be written. The directory ["
 			        + Path.of( filePath ).getParent().toString() + "] does not exist." );
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );

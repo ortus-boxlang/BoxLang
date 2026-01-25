@@ -885,7 +885,7 @@ public final class LocalizationUtil {
 			// Full month name with double digit day and optional zone offset (e.g., April 2, 2024 21:01:00, January, 05 2026 17:39:13 -0600)
 			add( Map.of(
 				"regexPattern",
-				"^[A-Za-z]{4,},?\\s+\\d{1,2},?\\s+\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}(?:\\s+(?:[A-Z]{3,4}|[+-]\\d{4}))?$",
+				"^[A-Za-z]{3,},?\\s+\\d{1,2},?\\s+\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}(?:\\s+(?:[A-Z]{3,4}|[+-]\\d{4}))?$",
 				"datePattern", "MMMM[,] dd[,] yyyy HH:mm:ss[ x]",
 				"description",
 				"Full month double digit day year time with optional offset"
@@ -894,7 +894,7 @@ public final class LocalizationUtil {
 			// Full month name with double digit day (e.g., April 02, 2024 21:01:00)
 			add( Map.of(
 				"regexPattern",
-				"^[A-Za-z]{4,},?\\s+\\d{1,2},?\\s+\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}(?:\\s+[A-Z]{3,4})?$",
+				"^[A-Za-z]{3,},?\\s+\\d{1,2},?\\s+\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}(?:\\s+[A-Z]{3,4})?$",
 				"datePattern", "MMMM[,] d[,] yyyy HH:mm:ss[ zzz]",
 				"description",
 				"Full month double digit day year time with optional timezone"
@@ -903,7 +903,7 @@ public final class LocalizationUtil {
 			// Full month name with day and AM/PM (e.g., April 2, 2024 9:01 AM)
 			add( Map.of(
 				"regexPattern",
-				"^[A-Za-z]{4,},?\\s+\\d{1,2},?\\s+\\d{4}\\s+\\d{1}:\\d{2}\\s+[APap][Mm](?:\\s+[A-Z]{3,4})?$",
+				"^[A-Za-z]{3,},?\\s+\\d{1,2},?\\s+\\d{4}\\s+\\d{1}:\\d{2}\\s+[APap][Mm](?:\\s+[A-Z]{3,4})?$",
 				"datePattern", "MMMM[,] d[,] yyyy h:mm a[ zzz]",
 				"description",
 				"Full month single digit day year time AM/PM with optional timezone"
@@ -912,7 +912,7 @@ public final class LocalizationUtil {
 			// Full month name with day no seconds (e.g. April 2 2024 21:01)
 			add( Map.of(
 				"regexPattern",
-				"^[A-Za-z]{4,},?\\s+\\d{1,2},?\\s+\\d{4}\\s+\\d{2}:\\d{2}(?:\\s+[A-Z]{3,4})?$",
+				"^[A-Za-z]{3,},?\\s+\\d{1,2},?\\s+\\d{4}\\s+\\d{2}:\\d{2}(?:\\s+[A-Z]{3,4})?$",
 				"datePattern", "MMMM[,] d[,] yyyy HH:mm[ zzz]",
 				"description",
 				"Full month single digit day year time no seconds with optional timezone"
@@ -1192,7 +1192,7 @@ public final class LocalizationUtil {
 
 			// Long month Date (e.g., April 02, 2024)
 			add( Map.of(
-				"regexPattern", "^[A-Za-z]{4,},?\\s+\\d{1,2},?\\s+\\d{4}$",
+				"regexPattern", "^[A-Za-z]{3,},?\\s+\\d{1,2},?\\s+\\d{4}$",
 				"datePattern", "MMMM[,] d[,] yyyy",
 				"description", "Full month day, year with optional commas"
 			) );
@@ -1291,7 +1291,7 @@ public final class LocalizationUtil {
 			// Pattern for "March 22 2025 5:21 PM" - full month name without comma
 			add( Map.of(
 				"regexPattern",
-				"^[A-Za-z]{4,}\\s+\\d{1,2}\\s+\\d{4}\\s+\\d{1,2}:\\d{2}\\s+[APap][Mm]$",
+				"^[A-Za-z]{3,}\\s+\\d{1,2}\\s+\\d{4}\\s+\\d{1,2}:\\d{2}\\s+[APap][Mm]$",
 				"datePattern", "MMMM d yyyy h:mm a",
 				"description",
 				"Full month name without comma no seconds with AM/PM"

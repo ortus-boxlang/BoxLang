@@ -186,4 +186,19 @@ public class LenTest {
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 3 );
 	}
+
+	@DisplayName( "It returns the length of a Set" )
+	@Test
+	public void testItReturnsSetLength() {
+		instance.executeSource(
+		    """
+		    import java.util.HashSet;
+		       mySet = new HashSet();
+		       mySet.add( "one" );
+		    mySet.add( "two" );
+		       result = mySet.len()
+		       """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
+	}
 }
