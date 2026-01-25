@@ -583,7 +583,7 @@ public class ScheduledTask implements Runnable {
 			cleanupTaskRun();
 			// set next run time based on timeUnit and period
 			setNextRunTime();
-
+			// This cleanup is done by the runtime once a thread is done processing a request
 			RequestBoxContext.removeCurrent();
 			Thread.currentThread().setContextClassLoader( oldClassLoader );
 
@@ -1928,7 +1928,7 @@ public class ScheduledTask implements Runnable {
 	 */
 	public void cleanupTaskRun() {
 		debugLog( "cleanupTaskRun" );
-		// no cleanups for now
+		// This cleanup is done by the runtime once a thread is done processing a request
 	}
 
 	/**
