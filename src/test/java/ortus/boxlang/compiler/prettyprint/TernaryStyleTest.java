@@ -48,4 +48,16 @@ public class TernaryStyleTest extends PrettyPrintTest {
 	public void testTernaryStylePreserveMultiline() throws IOException {
 		printTestWithConfigFile( "operators", "ternary_preserve_multi" );
 	}
+
+	@Test
+	@DisplayName( "Ternary question position at start (default)" )
+	public void testTernaryQuestionPositionStart() throws IOException {
+		printTestWithConfigFile( "operators", "ternary_question_start" );
+	}
+
+	@Test
+	@DisplayName( "Ternary question position at end" )
+	public void testTernaryQuestionPositionEnd() throws IOException {
+		printTestWithConfigFile( "operators", "ternary_question_end" );
+	}
 }

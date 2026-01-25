@@ -716,47 +716,71 @@ public class Visitor extends VoidBoxVisitor {
 	 * Print ternary with GROUP allowing line breaks if needed
 	 */
 	private void printTernaryWithGroup( BoxTernaryOperation node ) {
-		var currentDoc = getCurrentDoc();
-		
+		var		currentDoc			= getCurrentDoc();
+		String	questionPosition	= config.getOperators().getTernary().getQuestionPosition();
+
 		// Create a GROUP that can break if line is too long
-		var ternaryDoc = pushDoc( DocType.GROUP );
-		var indentDoc = pushDoc( DocType.INDENT );
-		
+		var ternaryDoc	= pushDoc( DocType.GROUP );
+		var indentDoc	= pushDoc( DocType.INDENT );
+
 		node.getCondition().accept( this );
-		
-		// Use LINE which becomes a space if fits, newline if breaks
-		indentDoc.append( Line.LINE );
-		indentDoc.append( "? " );
-		node.getWhenTrue().accept( this );
-		indentDoc.append( Line.LINE );
-		indentDoc.append( ": " );
-		node.getWhenFalse().accept( this );
-		
+
+		if ( questionPosition.equals( "end" ) ) {
+			// Operators at end of line: condition ? \n valueIfTrue : \n valueIfFalse
+			indentDoc.append( " ?" );
+			indentDoc.append( Line.LINE );
+			node.getWhenTrue().accept( this );
+			indentDoc.append( " :" );
+			indentDoc.append( Line.LINE );
+			node.getWhenFalse().accept( this );
+		} else {
+			// Operators at start of line (default "start"): condition \n ? valueIfTrue \n : valueIfFalse
+			indentDoc.append( Line.LINE );
+			indentDoc.append( "? " );
+			node.getWhenTrue().accept( this );
+			indentDoc.append( Line.LINE );
+			indentDoc.append( ": " );
+			node.getWhenFalse().accept( this );
+		}
+
 		ternaryDoc.append( popDoc() );
 		currentDoc.append( popDoc() );
 	}
-	
+
 	/**
 	 * Print ternary always on multiple lines
 	 */
 	private void printTernaryMultiline( BoxTernaryOperation node ) {
-		var currentDoc = getCurrentDoc();
-		
+		var		currentDoc			= getCurrentDoc();
+		String	questionPosition	= config.getOperators().getTernary().getQuestionPosition();
+
 		// Create a GROUP with BREAK_PARENT to force multiline
-		var ternaryDoc = pushDoc( DocType.GROUP );
-		var indentDoc = pushDoc( DocType.INDENT );
-		
+		var ternaryDoc	= pushDoc( DocType.GROUP );
+		var indentDoc	= pushDoc( DocType.INDENT );
+
 		node.getCondition().accept( this );
-		
+
 		// Force line breaks with BREAK_PARENT
 		indentDoc.append( Line.BREAK_PARENT );
-		indentDoc.append( Line.HARD );
-		indentDoc.append( "? " );
-		node.getWhenTrue().accept( this );
-		indentDoc.append( Line.HARD );
-		indentDoc.append( ": " );
-		node.getWhenFalse().accept( this );
-		
+
+		if ( questionPosition.equals( "end" ) ) {
+			// Operators at end of line: condition ? \n valueIfTrue : \n valueIfFalse
+			indentDoc.append( " ?" );
+			indentDoc.append( Line.HARD );
+			node.getWhenTrue().accept( this );
+			indentDoc.append( " :" );
+			indentDoc.append( Line.HARD );
+			node.getWhenFalse().accept( this );
+		} else {
+			// Operators at start of line (default "start"): condition \n ? valueIfTrue \n : valueIfFalse
+			indentDoc.append( Line.HARD );
+			indentDoc.append( "? " );
+			node.getWhenTrue().accept( this );
+			indentDoc.append( Line.HARD );
+			indentDoc.append( ": " );
+			node.getWhenFalse().accept( this );
+		}
+
 		ternaryDoc.append( popDoc() );
 		currentDoc.append( popDoc() );
 	}

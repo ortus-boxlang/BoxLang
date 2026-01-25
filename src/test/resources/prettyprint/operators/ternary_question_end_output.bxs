@@ -1,0 +1,6 @@
+result = condition ?
+	valueIfTrue :
+	valueIfFalse;
+x = a > b ?
+	a :
+	b;
