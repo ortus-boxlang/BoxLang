@@ -18,22 +18,19 @@
 
 package ortus.boxlang.runtime.bifs.global.array;
 
-import static com.google.common.truth.Truth.assertThat;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-
+import org.junit.jupiter.api.*;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableArray;
 
-public class ArrayFirstTest {
+import static com.google.common.truth.Truth.assertThat;
+
+public class ArrayUniqueTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
@@ -56,60 +53,21 @@ public class ArrayFirstTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName( "It can get first" )
+	@DisplayName( "It can remove duplicate values from an array" )
 	@Test
-	public void testCanSearch() {
-
+	public void testCanRemoveDuplicateValues() {
 		instance.executeSource(
 		    """
-		    arr = [ 'a', 'b', 'c' ];
-		    result = arrayFirst(arr);
+		    	nums = [ 1, 2, 1, 1, 1, 4, 3, 4 ];
+
+		    	result = ArrayUnique( nums );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "a" );
+		Array resultArray = ( Array ) variables.get( result );
+		assertThat( resultArray.size() ).isEqualTo( 4 );
+		assertThat( resultArray.get( 0 ) ).isEqualTo( 1 );
+		assertThat( resultArray.get( 1 ) ).isEqualTo( 2 );
+		assertThat( resultArray.get( 2 ) ).isEqualTo( 4 );
+		assertThat( resultArray.get( 3 ) ).isEqualTo( 3 );
 	}
-
-	@DisplayName( "It can get first member" )
-	@Test
-	public void testCanSearchMember() {
-
-		instance.executeSource(
-		    """
-		    arr = [ 'a', 'b', 'c' ];
-		    result = arr.First();
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "a" );
-	}
-
-	@DisplayName( "It can return a default value if no value is found" )
-	@Test
-	public void testDefaultValue() {
-
-		instance.executeSource(
-		    """
-		    arr = [];
-		    result = arr.first( 'default' );
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "default" );
-	}
-
-	@DisplayName( "It returns an exception if the array is empty" )
-	@Test
-	public void testException() {
-		instance.executeSource(
-		    """
-		    arr = [];
-		    try {
-		    	result = arr.first();
-		    } catch ( any e ) {
-		    	result = e.message;
-		    }
-		    """,
-		    context );
-
-		assertThat( variables.get( result ) ).isEqualTo( "Cannot return first element of array; array is empty" );
-	}
-
 }

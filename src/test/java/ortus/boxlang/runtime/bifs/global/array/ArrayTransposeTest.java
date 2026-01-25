@@ -18,22 +18,18 @@
 
 package ortus.boxlang.runtime.bifs.global.array;
 
-import static com.google.common.truth.Truth.assertThat;
-
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-
+import org.junit.jupiter.api.*;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
 
-public class ArrayFirstTest {
+import static com.google.common.truth.Truth.assertThat;
+
+public class ArrayTransposeTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
@@ -56,60 +52,25 @@ public class ArrayFirstTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName( "It can get first" )
+	@DisplayName( "It can transpose arrays together of the same length" )
 	@Test
-	public void testCanSearch() {
-
+	public void testCanTransposeArraysOfTheSameLength() {
 		instance.executeSource(
 		    """
-		    arr = [ 'a', 'b', 'c' ];
-		    result = arrayFirst(arr);
+		    	names = [ "James T. Kirk", "Spock", "Odo", "Jonathan Archer" ];
+		    	ranks = [ "Captain", "Commander", "Constable", "Captain" ];
+		    	species = [ "Human", "Vulcan", "Changeling", "Human" ];
+
+		    	result = arrayTranspose( names, ranks, species );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "a" );
+		assertThat( ( Array ) variables.get( result ) ).isEqualTo(
+		    Array.of(
+		        Array.of( "James T. Kirk", "Captain", "Human" ),
+		        Array.of( "Spock", "Commander", "Vulcan" ),
+		        Array.of( "Odo", "Constable", "Changeling" ),
+		        Array.of( "Jonathan Archer", "Captain", "Human" )
+		    )
+		);
 	}
-
-	@DisplayName( "It can get first member" )
-	@Test
-	public void testCanSearchMember() {
-
-		instance.executeSource(
-		    """
-		    arr = [ 'a', 'b', 'c' ];
-		    result = arr.First();
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "a" );
-	}
-
-	@DisplayName( "It can return a default value if no value is found" )
-	@Test
-	public void testDefaultValue() {
-
-		instance.executeSource(
-		    """
-		    arr = [];
-		    result = arr.first( 'default' );
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "default" );
-	}
-
-	@DisplayName( "It returns an exception if the array is empty" )
-	@Test
-	public void testException() {
-		instance.executeSource(
-		    """
-		    arr = [];
-		    try {
-		    	result = arr.first();
-		    } catch ( any e ) {
-		    	result = e.message;
-		    }
-		    """,
-		    context );
-
-		assertThat( variables.get( result ) ).isEqualTo( "Cannot return first element of array; array is empty" );
-	}
-
 }

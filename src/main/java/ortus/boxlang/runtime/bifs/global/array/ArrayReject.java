@@ -18,21 +18,21 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.types.util.ListUtil.ParallelSettings;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.util.ListUtil;
-import ortus.boxlang.runtime.types.util.ListUtil.ParallelSettings;
 
-@BoxBIF( description = "Filters an array and returns a new array containing only items that meet a test condition" )
+@BoxBIF( description = "Filters an array and returns a new array containing only items that do not meet a test condition" )
 @BoxMember( type = BoxLangType.ARRAY )
-public class ArrayFilter extends BIF {
+public class ArrayReject extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public ArrayFilter() {
+	public ArrayReject() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, Argument.ARRAY, Key.array ),
@@ -44,11 +44,18 @@ public class ArrayFilter extends BIF {
 	}
 
 	/**
-	 * Filters an array and returns a new array containing the result
+	 * Filters an array and returns a new array containing the result.
+	 * This is the inverse of {@code ArrayFilter}.
+	 *
+	 * <pre>
+	 * values = [ 1, 2, 3, 4 ];
+	 * values.reject( ( value ) => value % 2 == 0 ); // [ 1, 3 ]
+	 * </pre>
+	 * 
 	 * This BIF will invoke the callback function for each item in the array, passing the item, its index, and the array itself.
 	 * <ul>
-	 * <li>If the callback returns true, the item will be included in the new array.</li>
-	 * <li>If the callback returns false, the item will be excluded from the new array.</li>
+	 * <li>If the callback returns false, the item will be included in the new array.</li>
+	 * <li>If the callback returns true, the item will be excluded from the new array.</li>
 	 * <li>If the callback requires strict arguments, it will only receive the item and its index.</li>
 	 * <li>If the callback does not require strict arguments, it will receive the item, its index, and the array itself.</li>
 	 * </ul>
@@ -69,21 +76,24 @@ public class ArrayFilter extends BIF {
 	 *
 	 * @argument.maxThreads The maximum number of threads to use when running the filter in parallel. If not passed it will use the default number of threads for the ForkJoinPool.
 	 *                      If parallel is false, this argument is ignored. If a boolean is provided it will be assigned to the virtual argument instead.
-	 * 
+	 *
 	 * @argument.virtual ( BoxLang only) If true, the function will be invoked using virtual threads. Defaults to false. Ignored if parallel is false.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 */
+	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		ParallelSettings settings = ListUtil.resolveParallelSettings( arguments );
+
 		return ListUtil.filter(
 		    arguments.getAsArray( Key.array ),
 		    arguments.getAsFunction( Key.callback ),
 		    context,
 		    arguments.getAsBoolean( Key.parallel ),
 		    settings.maxThreads(),
-		    settings.virtual()
+		    settings.virtual(),
+		    false
 		);
 	}
 }

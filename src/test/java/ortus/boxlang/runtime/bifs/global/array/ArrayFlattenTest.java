@@ -32,8 +32,9 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
 
-public class ArrayFirstTest {
+public class ArrayFlattenTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
@@ -56,60 +57,36 @@ public class ArrayFirstTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName( "It can get first" )
+	@DisplayName( "It can flatten an array infinitely" )
 	@Test
-	public void testCanSearch() {
-
+	public void testCanFlatten() {
 		instance.executeSource(
 		    """
-		    arr = [ 'a', 'b', 'c' ];
-		    result = arrayFirst(arr);
+		    	 arr = [
+		    		[ 1, 2, 3 ],
+		    		[ 4, [ 5, 6 ] ],
+		    		[ 7 ]
+		    	];
+		    	 result = arr.flatten();
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "a" );
+		assertThat( variables.get( result ) ).isEqualTo( Array.of( 1, 2, 3, 4, 5, 6, 7 ) );
 	}
 
-	@DisplayName( "It can get first member" )
+	@DisplayName( "It can flatten an array to a specific depth" )
 	@Test
-	public void testCanSearchMember() {
-
+	public void testCanSpecifyDepth() {
 		instance.executeSource(
 		    """
-		    arr = [ 'a', 'b', 'c' ];
-		    result = arr.First();
+		    	 arr = [
+		    		[ 1, 2, 3 ],
+		    		[ 4, [ 5, 6 ] ],
+		    		[ 7 ]
+		    	];
+		    	 result = arr.flatten( 1 );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "a" );
-	}
-
-	@DisplayName( "It can return a default value if no value is found" )
-	@Test
-	public void testDefaultValue() {
-
-		instance.executeSource(
-		    """
-		    arr = [];
-		    result = arr.first( 'default' );
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "default" );
-	}
-
-	@DisplayName( "It returns an exception if the array is empty" )
-	@Test
-	public void testException() {
-		instance.executeSource(
-		    """
-		    arr = [];
-		    try {
-		    	result = arr.first();
-		    } catch ( any e ) {
-		    	result = e.message;
-		    }
-		    """,
-		    context );
-
-		assertThat( variables.get( result ) ).isEqualTo( "Cannot return first element of array; array is empty" );
+		assertThat( variables.get( result ) ).isEqualTo( Array.of( 1, 2, 3, 4, Array.of( 5, 6 ), 7 ) );
 	}
 
 }

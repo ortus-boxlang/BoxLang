@@ -18,25 +18,29 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.types.util.ListUtil.ParallelSettings;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.ListUtil;
-import ortus.boxlang.runtime.types.util.ListUtil.ParallelSettings;
 
-@BoxBIF( description = "Filters an array and returns a new array containing only items that meet a test condition" )
+@BoxBIF( description = "Return first item in array that matches the predicate function" )
 @BoxMember( type = BoxLangType.ARRAY )
-public class ArrayFilter extends BIF {
+public class ArrayFindFirst extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public ArrayFilter() {
+	public ArrayFindFirst() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, Argument.ARRAY, Key.array ),
-		    new Argument( true, "function:Predicate", Key.callback ),
+		    new Argument( true, Argument.FUNCTION, Key.callback ),
+		    new Argument( false, Argument.ANY, Key.defaultValue ),
 		    new Argument( false, Argument.BOOLEAN, Key.parallel, false ),
 		    new Argument( false, Argument.ANY, Key.maxThreads ),
 		    new Argument( false, Argument.BOOLEAN, Key.virtual, false )
@@ -44,46 +48,73 @@ public class ArrayFilter extends BIF {
 	}
 
 	/**
-	 * Filters an array and returns a new array containing the result
-	 * This BIF will invoke the callback function for each item in the array, passing the item, its index, and the array itself.
-	 * <ul>
-	 * <li>If the callback returns true, the item will be included in the new array.</li>
-	 * <li>If the callback returns false, the item will be excluded from the new array.</li>
-	 * <li>If the callback requires strict arguments, it will only receive the item and its index.</li>
-	 * <li>If the callback does not require strict arguments, it will receive the item, its index, and the array itself.</li>
-	 * </ul>
+	 * Return first item in array that matches the predicate function.
 	 *
-	 * <h2>Parallel Execution</h2>
-	 * If the <code>parallel</code> argument is set to true, and no <code>max_threads</code> are sent, the filter will be executed in parallel using a ForkJoinPool with parallel streams.
-	 * If <code>max_threads</code> is specified, it will create a new ForkJoinPool with the specified number of threads to run the filter in parallel, and destroy it after the operation is complete.
-	 * Please note that this may not be the most efficient way to filter, as it will create a new ForkJoinPool for each invocation of the BIF. You may want to consider using a shared ForkJoinPool for better performance.
+	 * <pre>
+	 * users = [ { name: "Ada" }, { name: "Grace" } ];
+	 * users.findFirst( ( user ) => user.name == "Grace" ); // { name: "Grace" }
+	 * users.findFirst( ( user ) => user.name == "Linus", "Unknown" ); // "Unknown"
+	 * </pre>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to filter entries from
-	 *
+	 * @argument.array The array to get the first item from.
+	 * 
 	 * @argument.callback The function to invoke for each item. The function will be passed 3 arguments: the value, the index, the array. You can alternatively pass a Java Predicate which will only receive the 1st arg.
-	 *
+	 * 
+	 * @argument.defaultValue The default value to use if the array is empty or no value is returned from the predicate function.
+	 * 
 	 * @argument.parallel Whether to run the filter in parallel. Defaults to false. If true, the filter will be run in parallel using a ForkJoinPool.
-	 *
+	 * 
 	 * @argument.maxThreads The maximum number of threads to use when running the filter in parallel. If not passed it will use the default number of threads for the ForkJoinPool.
 	 *                      If parallel is false, this argument is ignored. If a boolean is provided it will be assigned to the virtual argument instead.
 	 * 
-	 * @argument.virtual ( BoxLang only) If true, the function will be invoked using virtual threads. Defaults to false. Ignored if parallel is false.
-	 *
-	 * @param context   The context in which the BIF is being invoked.
-	 * @param arguments Argument scope for the BIF.
+	 * @argument.virtual (BoxLang only) If true, the function will be invoked using virtual threads. Defaults to false. Ignored if parallel is false.
 	 */
+	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		ParallelSettings settings = ListUtil.resolveParallelSettings( arguments );
-		return ListUtil.filter(
-		    arguments.getAsArray( Key.array ),
-		    arguments.getAsFunction( Key.callback ),
+		Array	actualArray		= arguments.getAsArray( Key.array );
+		Object	defaultValue	= arguments.get( Key.defaultValue );
+		if ( actualArray.size() <= 0 ) {
+			if ( defaultValue != null ) {
+				return defaultValue;
+			} else {
+				throw new BoxRuntimeException( "Cannot retrieve the first record of an empty array." );
+			}
+		}
+
+		Function	callback	= arguments.getAsFunction( Key.callback );
+		boolean		parallel	= arguments.getAsBoolean( Key.parallel );
+		if ( !parallel ) {
+			int indexFound = actualArray.findIndex( callback, context );
+			if ( indexFound > 0 ) {
+				return actualArray.get( indexFound - 1 );
+			}
+			if ( defaultValue != null ) {
+				return defaultValue;
+			}
+			throw new BoxRuntimeException( "Could not find any results that matched the predicate function." );
+		}
+
+		ParallelSettings	settings	= ListUtil.resolveParallelSettings( arguments );
+		Array				filtered	= ListUtil.filter(
+		    actualArray,
+		    callback,
 		    context,
-		    arguments.getAsBoolean( Key.parallel ),
+		    parallel,
 		    settings.maxThreads(),
 		    settings.virtual()
 		);
+
+		if ( filtered.size() > 0 ) {
+			return filtered.get( 0 );
+		}
+		if ( defaultValue != null ) {
+			return defaultValue;
+		}
+		throw new BoxRuntimeException( "Could not find any results that matched the predicate function." );
+
 	}
+
 }

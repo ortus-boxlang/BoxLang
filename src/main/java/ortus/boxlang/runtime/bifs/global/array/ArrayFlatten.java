@@ -21,43 +21,46 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.ListUtil;
 
-@BoxBIF( description = "Return first item in array" )
+@BoxBIF( description = "Flattens nested arrays to the specified depth. (Infinite if no depth is specified.)" )
 @BoxMember( type = BoxLangType.ARRAY )
-public class ArrayFirst extends BIF {
+public class ArrayFlatten extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public ArrayFirst() {
+	public ArrayFlatten() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "array", Key.array ),
-		    new Argument( false, "any", Key.defaultValue )
+		    new Argument( true, Argument.ARRAY, Key.array ),
+		    new Argument( false, Argument.INTEGER, Key.depth )
 		};
 	}
 
 	/**
-	 * Return first item in array
+	 * Flattens nested arrays to the specified depth. When depth is omitted, the array is flattened completely.
+	 *
+	 * <pre>
+	 * nested = [ 1, [ 2, [ 3 ] ] ];
+	 * nested.flatten(); // [ 1, 2, 3 ]
+	 * nested.flatten( 1 ); // [ 1, 2, [ 3 ] ]
+	 * </pre>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to get the first item from.
+	 * @argument.array The array to flatten.
+	 *
+	 * @argument.depth The depth to flatten. If omitted, flatten all nested arrays.
+	 *
 	 */
+	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array	actualArray		= arguments.getAsArray( Key.array );
-		Object	defaultValue	= arguments.get( Key.defaultValue );
-		if ( actualArray.size() > 0 ) {
-			return actualArray.get( 0 );
-		} else if ( defaultValue != null ) {
-			return defaultValue;
-		} else {
-			throw new BoxRuntimeException( "Cannot return first element of array; array is empty" );
-		}
+		return ListUtil.flatten(
+		    arguments.getAsArray( Key.array ),
+		    arguments.getAsInteger( Key.depth )
+		);
 	}
-
 }

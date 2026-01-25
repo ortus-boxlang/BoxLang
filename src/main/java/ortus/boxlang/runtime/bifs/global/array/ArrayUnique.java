@@ -21,43 +21,41 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.BLCollector;
 
-@BoxBIF( description = "Return first item in array" )
+@BoxBIF( description = "Returns a new array with duplicate values removed" )
 @BoxMember( type = BoxLangType.ARRAY )
-public class ArrayFirst extends BIF {
+public class ArrayUnique extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public ArrayFirst() {
+	public ArrayUnique() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "array", Key.array ),
-		    new Argument( false, "any", Key.defaultValue )
+		    new Argument( true, Argument.ARRAY, Key.array )
 		};
 	}
 
 	/**
-	 * Return first item in array
+	 * Returns a new array with duplicate items removed.
+	 *
+	 * <pre>
+	 * values = [ 1, 1, 2, 3, 3 ];
+	 * values.unique(); // [ 1, 2, 3 ]
+	 * </pre>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.array The array to get the first item from.
+	 * @argument.array The array to remove duplicate entries from
+	 *
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
 	 */
+	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array	actualArray		= arguments.getAsArray( Key.array );
-		Object	defaultValue	= arguments.get( Key.defaultValue );
-		if ( actualArray.size() > 0 ) {
-			return actualArray.get( 0 );
-		} else if ( defaultValue != null ) {
-			return defaultValue;
-		} else {
-			throw new BoxRuntimeException( "Cannot return first element of array; array is empty" );
-		}
+		return arguments.getAsArray( Key.array ).stream().distinct().collect( BLCollector.toArray() );
 	}
-
 }
