@@ -1562,7 +1562,7 @@ public class ClassTest {
 		instance.executeSource(
 		    """
 		        include template="src/test/java/TestCases/phase3/scriptIncludeASMIssue.cfm";
-				                                      
+
 		    """, context );
 		// @formatter:on
 	}
@@ -1984,7 +1984,7 @@ public class ClassTest {
 		assertThat( variables.get( "result" ) ).isEqualTo( "brad" );
 		assertThat( variables.get( "result2" ) ).isEqualTo( 21 );
 		assertThat( variables.get( "result2b" ) ).isEqualTo( "noj" );
-		assertThat( variables.get( "result3" ) ).isEqualTo( "siul" );
+		assertThat( variables.get( "result3" ) ).isEqualTo( "luis" );
 	}
 
 	@Test
