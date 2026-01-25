@@ -1562,7 +1562,7 @@ public class ClassTest {
 		instance.executeSource(
 		    """
 		        include template="src/test/java/TestCases/phase3/scriptIncludeASMIssue.cfm";
-				                                      
+
 		    """, context );
 		// @formatter:on
 	}

@@ -29,6 +29,11 @@ docs/
 **/.project
 **/.settings/
 
+# Eclipse files
+.classpath
+.project
+.settings/
+
 # Mac Files
 .DS_Store
 
