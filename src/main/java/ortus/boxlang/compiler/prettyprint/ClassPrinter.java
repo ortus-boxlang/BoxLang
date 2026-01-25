@@ -25,6 +25,7 @@ import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxAccessModifier;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
@@ -226,13 +227,54 @@ public class ClassPrinter {
 	}
 
 	private void printImports( List<BoxImport> imports ) {
-		for ( var importNode : imports ) {
+		if ( imports.isEmpty() ) {
+			return;
+		}
+
+		// Sort imports if configured
+		List<BoxImport> sortedImports = sortImports( imports );
+
+		for ( var importNode : sortedImports ) {
 			importNode.accept( visitor );
 			visitor.newLine();
 		}
-		if ( imports.size() > 0 ) {
-			visitor.newLine();
+		visitor.newLine();
+	}
+
+	/**
+	 * Sort imports alphabetically based on configuration.
+	 *
+	 * @param imports the list of imports to sort
+	 *
+	 * @return sorted list of imports (original list if sorting is disabled)
+	 */
+	private List<BoxImport> sortImports( List<BoxImport> imports ) {
+		if ( imports.isEmpty() || !visitor.config.getImportConfig().getSort() ) {
+			return imports;
 		}
+
+		List<BoxImport> sorted = new ArrayList<>( imports );
+		sorted.sort( Comparator.comparing( this::getImportPath, String.CASE_INSENSITIVE_ORDER ) );
+		return sorted;
+	}
+
+	/**
+	 * Extract the import path from a BoxImport node for sorting.
+	 *
+	 * @param importNode the import to get the path from
+	 *
+	 * @return the import path string
+	 */
+	private String getImportPath( BoxImport importNode ) {
+		BoxExpression expr = importNode.getExpression();
+		if ( expr == null ) {
+			return "";
+		}
+		if ( expr instanceof BoxFQN fqn ) {
+			return fqn.getValue();
+		}
+		// Fall back to source text
+		return expr.getSourceText() != null ? expr.getSourceText() : "";
 	}
 
 	private void printBoxAnnotations( List<BoxAnnotation> annotations ) {
