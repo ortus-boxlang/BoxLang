@@ -482,41 +482,81 @@ public class Visitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxMethodInvocation node ) {
-		var							currentDoc	= getCurrentDoc();
-		List<BoxMethodInvocation>	methodChain	= new ArrayList<>();
-		BoxNode						currentNode	= node;
+		var					currentDoc	= getCurrentDoc();
+		List<ChainElement>	chain		= new ArrayList<>();
+		BoxNode				currentNode	= node;
 
+		// Collect the entire chain (method invocations and dot accesses)
 		while ( currentNode instanceof BoxMethodInvocation methodNode ) {
-			methodChain.add( methodNode );
+			chain.add( new ChainElement( methodNode ) );
 			currentNode = methodNode.getObj();
+			// Also collect any dot accesses in between
+			while ( currentNode instanceof BoxDotAccess dotAccess ) {
+				chain.add( new ChainElement( dotAccess ) );
+				currentNode = dotAccess.getContext();
+			}
 		}
 
-		methodChain.getLast().getObj().accept( this );
+		// Get the root of the chain
+		BoxNode root = currentNode;
+		if ( !chain.isEmpty() && chain.getLast().isMethodInvocation() ) {
+			root = chain.getLast().asMethodInvocation().getObj();
+		} else if ( !chain.isEmpty() && chain.getLast().isDotAccess() ) {
+			root = chain.getLast().asDotAccess().getContext();
+		}
+		root.accept( this );
 
-		var	chainGroup	= pushDoc( DocType.GROUP );
-		var	indentGroup	= pushDoc( DocType.INDENT );
-		for ( int i = methodChain.size() - 1; i >= 0; i-- ) {
-			var chainedNode = methodChain.get( i );
-			indentGroup.append( Line.SOFT );
-			printPreComments( chainedNode );
+		int		chainSize		= chain.size();
+		int		breakCount		= config.getChain().getBreakCount();
+		boolean	shouldBreak		= chainSize >= breakCount;
 
-			if ( chainedNode.getUsedDotAccess() ) {
-				if ( chainedNode.isSafe() ) {
+		var		chainGroup		= pushDoc( DocType.GROUP );
+		var		indentGroup		= pushDoc( DocType.INDENT );
+
+		// Force break if chain is long enough
+		if ( shouldBreak ) {
+			indentGroup.append( Line.BREAK_PARENT );
+		}
+
+		for ( int i = chain.size() - 1; i >= 0; i-- ) {
+			var element = chain.get( i );
+			
+			if ( shouldBreak ) {
+				indentGroup.append( Line.HARD );
+			} else {
+				indentGroup.append( Line.SOFT );
+			}
+
+			if ( element.isMethodInvocation() ) {
+				var methodNode = element.asMethodInvocation();
+				printPreComments( methodNode );
+
+				if ( methodNode.getUsedDotAccess() ) {
+					if ( methodNode.isSafe() ) {
+						print( "?" );
+					}
+					print( "." );
+					methodNode.getName().accept( this );
+				} else {
+					print( "[ " );
+					methodNode.getName().accept( this );
+					print( " ]" );
+				}
+				argumentsPrinter.print( methodNode, methodNode.getArguments() );
+				printPostComments( methodNode );
+			} else if ( element.isDotAccess() ) {
+				var dotAccess = element.asDotAccess();
+				printPreComments( dotAccess );
+				if ( dotAccess.isSafe() ) {
 					print( "?" );
 				}
 				print( "." );
-				chainedNode.getName().accept( this );
-			} else {
-				print( "[ " );
-				chainedNode.getName().accept( this );
-				print( " ]" );
+				dotAccess.getAccess().accept( this );
+				printPostComments( dotAccess );
 			}
-			argumentsPrinter.print( chainedNode, chainedNode.getArguments() );
-			printPostComments( chainedNode );
 		}
 		chainGroup.append( popDoc() );
 		currentDoc.append( popDoc() );
-
 	}
 
 	public void visit( BoxStaticMethodInvocation node ) {
@@ -529,14 +569,66 @@ public class Visitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxDotAccess node ) {
-		printPreComments( node );
-		node.getContext().accept( this );
-		if ( node.isSafe() ) {
-			print( "?" );
+		// Check if this dot access is already being processed as part of a method chain
+		// by checking if its parent is a method invocation
+		if ( node.getParent() instanceof BoxMethodInvocation ) {
+			// This will be handled by the method invocation visitor
+			printPreComments( node );
+			node.getContext().accept( this );
+			if ( node.isSafe() ) {
+				print( "?" );
+			}
+			print( "." );
+			node.getAccess().accept( this );
+			printPostComments( node );
+			return;
 		}
-		print( "." );
-		node.getAccess().accept( this );
-		printPostComments( node );
+
+		var					currentDoc	= getCurrentDoc();
+		List<ChainElement>	chain		= new ArrayList<>();
+		BoxNode				currentNode	= node;
+
+		// Collect the entire dot access chain
+		while ( currentNode instanceof BoxDotAccess dotAccess ) {
+			chain.add( new ChainElement( dotAccess ) );
+			currentNode = dotAccess.getContext();
+		}
+
+		// Get the root of the chain
+		currentNode.accept( this );
+
+		int		chainSize	= chain.size();
+		int		breakCount	= config.getChain().getBreakCount();
+		boolean	shouldBreak	= chainSize >= breakCount;
+
+		var		chainGroup	= pushDoc( DocType.GROUP );
+		var		indentGroup	= pushDoc( DocType.INDENT );
+
+		// Force break if chain is long enough
+		if ( shouldBreak ) {
+			indentGroup.append( Line.BREAK_PARENT );
+		}
+
+		for ( int i = chain.size() - 1; i >= 0; i-- ) {
+			var element = chain.get( i );
+			
+			if ( shouldBreak ) {
+				indentGroup.append( Line.HARD );
+			} else {
+				indentGroup.append( Line.SOFT );
+			}
+
+			var dotAccess = element.asDotAccess();
+			printPreComments( dotAccess );
+			if ( dotAccess.isSafe() ) {
+				print( "?" );
+			}
+			print( "." );
+			dotAccess.getAccess().accept( this );
+			printPostComments( dotAccess );
+		}
+		chainGroup.append( popDoc() );
+		currentDoc.append( popDoc() );
 	}
 
 	public void visit( BoxStaticAccess node ) {
@@ -1635,6 +1727,41 @@ public class Visitor extends VoidBoxVisitor {
 		}
 		print( "*" );
 		printPostComments( node );
+	}
+
+	/**
+	 * Helper class to represent an element in a chain (either method invocation or dot access)
+	 */
+	private static class ChainElement {
+
+		private final BoxMethodInvocation	methodInvocation;
+		private final BoxDotAccess			dotAccess;
+
+		ChainElement( BoxMethodInvocation methodInvocation ) {
+			this.methodInvocation	= methodInvocation;
+			this.dotAccess			= null;
+		}
+
+		ChainElement( BoxDotAccess dotAccess ) {
+			this.methodInvocation	= null;
+			this.dotAccess			= dotAccess;
+		}
+
+		boolean isMethodInvocation() {
+			return methodInvocation != null;
+		}
+
+		boolean isDotAccess() {
+			return dotAccess != null;
+		}
+
+		BoxMethodInvocation asMethodInvocation() {
+			return methodInvocation;
+		}
+
+		BoxDotAccess asDotAccess() {
+			return dotAccess;
+		}
 	}
 
 }
