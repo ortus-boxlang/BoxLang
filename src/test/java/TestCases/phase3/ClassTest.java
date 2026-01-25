@@ -2002,7 +2002,7 @@ public class ClassTest {
 		    context );
 		assertThat( variables.get( "result" ) ).isEqualTo( "brad" );
 		assertThat( variables.get( "result2" ) ).isEqualTo( 21 );
-		// assertThat( variables.get( "result3" ) ).isEqualTo( "luis" );
+		assertThat( variables.get( "result3" ) ).isEqualTo( "siul" );
 	}
 
 	@Test
