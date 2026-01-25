@@ -84,4 +84,22 @@ public class ClassFormattingTest extends PrettyPrintTest {
 	public void testMethodOrderAlphabetical() throws IOException {
 		printTestWithConfigFile( "class", "method_order_alphabetical" );
 	}
+
+	@Test
+	@DisplayName( "Method grouping disabled (default) - maintains original order" )
+	public void testMethodGroupingDisabled() throws IOException {
+		printTestWithConfigFile( "class", "method_grouping_disabled" );
+	}
+
+	@Test
+	@DisplayName( "Method grouping enabled - groups public methods first" )
+	public void testMethodGroupingEnabled() throws IOException {
+		printTestWithConfigFile( "class", "method_grouping_enabled" );
+	}
+
+	@Test
+	@DisplayName( "Method grouping with alphabetical - public first, then alphabetical within groups" )
+	public void testMethodGroupingWithAlphabetical() throws IOException {
+		printTestWithConfigFile( "class", "method_grouping_with_alphabetical" );
+	}
 }

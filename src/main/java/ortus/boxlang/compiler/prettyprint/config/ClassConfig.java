@@ -39,6 +39,9 @@ public class ClassConfig {
 	@JsonProperty( "method_order" )
 	private String	methodOrder		= "preserve";
 
+	@JsonProperty( "method_grouping" )
+	private boolean	methodGrouping	= false;
+
 	public ClassConfig() {
 	}
 
@@ -78,12 +81,22 @@ public class ClassConfig {
 		return this;
 	}
 
+	public boolean getMethodGrouping() {
+		return methodGrouping;
+	}
+
+	public ClassConfig setMethodGrouping( boolean methodGrouping ) {
+		this.methodGrouping = methodGrouping;
+		return this;
+	}
+
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put( "member_order", memberOrder );
 		map.put( "member_spacing", memberSpacing );
 		map.put( "property_order", propertyOrder );
 		map.put( "method_order", methodOrder );
+		map.put( "method_grouping", methodGrouping );
 		return map;
 	}
 }
