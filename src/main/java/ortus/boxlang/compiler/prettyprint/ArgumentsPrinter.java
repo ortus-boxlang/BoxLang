@@ -37,12 +37,13 @@ public class ArgumentsPrinter {
 
 		var	size				= arguments.size();
 		var	assignmentOperator	= " = "; // TODO: use config
+		var	multiline			= size >= visitor.config.getArguments().getMultilineCount();
 
 		argumentsDoc.append( "(" );
 
 		if ( size > 0 ) {
 			var contentsDoc = visitor.pushDoc( DocType.INDENT );
-			contentsDoc.append( visitor.config.getParensPadding() ? Line.LINE : Line.SOFT );
+			contentsDoc.append( multiline || visitor.config.getParensPadding() ? Line.LINE : Line.SOFT );
 
 			// Note: handling BoxArgument here, so that eventually we can
 			// align named arguments if they print on multiple lines.
@@ -68,10 +69,14 @@ public class ArgumentsPrinter {
 				}
 			}
 
+			if ( multiline ) {
+				contentsDoc.append( Line.BREAK_PARENT );
+			}
+
 			visitor.printInsideComments( parentNode, false );
 
 			argumentsDoc.append( visitor.popDoc() );
-			argumentsDoc.append( visitor.config.getParensPadding() ? Line.LINE : Line.SOFT );
+			argumentsDoc.append( multiline || visitor.config.getParensPadding() ? Line.LINE : Line.SOFT );
 		} else {
 			visitor.printInsideComments( parentNode, false );
 			// argumentsDoc.append( Line.SOFT );
