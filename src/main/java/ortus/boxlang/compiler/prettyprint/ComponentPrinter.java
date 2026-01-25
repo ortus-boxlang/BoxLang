@@ -44,7 +44,9 @@ public class ComponentPrinter {
 		    .append( "<" + visitor.componentPrefix )
 		    .append( node.getName() );
 
-		visitor.helperPrinter.printKeyValueAnnotations( node.getAttributes(), false );
+		// Check if single_attribute_per_line is enabled for templates
+		boolean singleAttributePerLine = visitor.config.getTemplate().getSingleAttributePerLine();
+		visitor.helperPrinter.printKeyValueAnnotations( node.getAttributes(), false, singleAttributePerLine );
 
 		if ( node.getBody() != null ) {
 			if ( node.getBody().isEmpty() ) {
@@ -64,8 +66,12 @@ public class ComponentPrinter {
 				currentDoc.append( ">" );
 			}
 		} else {
-			// not existing body gives us <bx:componentName>
-			currentDoc.append( ">" );
+			// not existing body gives us <bx:componentName> or <bx:componentName /> based on config
+			if ( visitor.config.getTemplate().getSelfClosing() ) {
+				currentDoc.append( " />" );
+			} else {
+				currentDoc.append( ">" );
+			}
 		}
 	}
 

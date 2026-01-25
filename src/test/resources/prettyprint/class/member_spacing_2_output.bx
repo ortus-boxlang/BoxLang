@@ -1,0 +1,19 @@
+class {
+	property name="foo";
+	property name="bar";
+
+
+	function init() {
+		return this;
+	}
+
+
+	function doSomething() {
+		return true;
+	}
+
+
+	function doAnotherThing() {
+		return false;
+	}
+}

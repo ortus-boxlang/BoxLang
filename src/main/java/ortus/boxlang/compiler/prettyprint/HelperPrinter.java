@@ -44,16 +44,23 @@ public class HelperPrinter {
 		BoxStatement	lastStatement		= statements.get( statements.size() - 1 );
 		BoxStatement	previousStatement	= null;
 
+		// Get member spacing for class members (default is 1 blank line between functions)
+		int memberSpacing = visitor.config.getClassConfig().getMemberSpacing();
+
 		for ( var statement : statements ) {
+			// Check if this is a class member (function in a class or interface)
+			boolean isClassMember = statement instanceof BoxFunctionDeclaration &&
+			    ( statement.getParent() instanceof BoxClass || statement.getParent() instanceof BoxInterface );
+
 			// if there is a previous statement, check for empty lines in source
 			// if so, add a hard line break
 			if ( previousStatement != null && statement.hasLinesBetweenWithComments( previousStatement ) ) {
 				visitor.newLine();
-			} else if ( statement instanceof BoxFunctionDeclaration &&
-			    ( statement.getParent() instanceof BoxClass || statement.getParent() instanceof BoxInterface ) ) {
-				// if the statement is a function declaration in a class
-				// append an extra hard line break before visiting it
-				visitor.newLine();
+			} else if ( isClassMember ) {
+				// For class members, add configured member_spacing blank lines
+				for ( int i = 0; i < memberSpacing; i++ ) {
+					visitor.newLine();
+				}
 			}
 
 			statement.accept( visitor );
@@ -149,12 +156,17 @@ public class HelperPrinter {
 	}
 
 	public void printKeyValueAnnotations( List<BoxAnnotation> attrs, boolean padded ) {
+		printKeyValueAnnotations( attrs, padded, false );
+	}
+
+	public void printKeyValueAnnotations( List<BoxAnnotation> attrs, boolean padded, boolean forceLineBreaks ) {
 		var	currentDoc	= visitor.getCurrentDoc();
 		var	attrsDoc	= visitor.pushDoc( DocType.GROUP );
 		if ( attrs.size() > 0 ) {
 			var contentsDoc = visitor.pushDoc( DocType.INDENT );
 			for ( var attr : attrs ) {
-				contentsDoc.append( Line.LINE );
+				// Use HARD line breaks when forceLineBreaks is true (single_attribute_per_line)
+				contentsDoc.append( forceLineBreaks ? Line.HARD : Line.LINE );
 				attr.getKey().accept( visitor );
 				if ( attr.getValue() != null ) {
 					contentsDoc.append( "=\"" );
@@ -164,7 +176,10 @@ public class HelperPrinter {
 			}
 			attrsDoc.append( visitor.popDoc() );
 		}
-		attrsDoc.append( padded ? Line.LINE : Line.SOFT );
+		// When forceLineBreaks is true, don't add trailing soft line (it would break unnecessarily)
+		if ( !forceLineBreaks ) {
+			attrsDoc.append( padded ? Line.LINE : Line.SOFT );
+		}
 		currentDoc.append( visitor.popDoc() );
 	}
 

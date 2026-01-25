@@ -231,12 +231,11 @@ public class ClassPrinter {
 
 	private void printProperties( List<BoxProperty> properties ) {
 		var currentDoc = visitor.getCurrentDoc();
-		for ( var property : properties ) {
-			property.accept( visitor );
+
+		for ( int i = 0; i < properties.size(); i++ ) {
+			properties.get( i ).accept( visitor );
 			currentDoc.append( Line.HARD );
 		}
-		if ( properties.size() > 0 ) {
-			currentDoc.append( Line.HARD );
-		}
+		// Note: member_spacing between properties and methods is handled by printStatements
 	}
 }
