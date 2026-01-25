@@ -42,4 +42,22 @@ public class ChainBreakCountTest extends PrettyPrintTest {
 	public void testChainDotAccess() throws IOException {
 		printTestWithConfigFile( "chain", "chain_dot_access" );
 	}
+
+	@Test
+	@DisplayName( "Chain breaks at default break_length (60)" )
+	public void testChainBreakLengthDefault() throws IOException {
+		printTestWithConfigFile( "chain", "chain_break_length_default" );
+	}
+
+	@Test
+	@DisplayName( "Chain breaks at custom break_length (40)" )
+	public void testChainBreakLength40() throws IOException {
+		printTestWithConfigFile( "chain", "chain_break_length_40" );
+	}
+
+	@Test
+	@DisplayName( "Long chain with high break_count but low break_length breaks by length" )
+	public void testChainBreakLengthVsCount() throws IOException {
+		printTestWithConfigFile( "chain", "chain_break_length_vs_count" );
+	}
 }

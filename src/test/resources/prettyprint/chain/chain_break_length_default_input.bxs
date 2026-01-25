@@ -1,0 +1,5 @@
+// Short chain - under 60 chars
+result = obj.foo().bar();
+
+// Long chain - over 60 chars should break
+result = someVeryLongObjectName.methodOne().methodTwo().methodThree();

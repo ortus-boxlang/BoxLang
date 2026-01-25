@@ -508,19 +508,21 @@ public class Visitor extends VoidBoxVisitor {
 
 		int		chainSize		= chain.size();
 		int		breakCount		= config.getChain().getBreakCount();
-		boolean	shouldBreak		= chainSize >= breakCount;
+		int		breakLength		= config.getChain().getBreakLength();
+		int		chainLength		= calculateChainLength( chain, root );
+		boolean	shouldBreak		= chainSize >= breakCount || chainLength >= breakLength;
 
 		var		chainGroup		= pushDoc( DocType.GROUP );
 		var		indentGroup		= pushDoc( DocType.INDENT );
 
-		// Force break if chain is long enough
+		// Force break if chain is long enough (by count or by length)
 		if ( shouldBreak ) {
 			indentGroup.append( Line.BREAK_PARENT );
 		}
 
 		for ( int i = chain.size() - 1; i >= 0; i-- ) {
 			var element = chain.get( i );
-			
+
 			if ( shouldBreak ) {
 				indentGroup.append( Line.HARD );
 			} else {
@@ -599,19 +601,21 @@ public class Visitor extends VoidBoxVisitor {
 
 		int		chainSize	= chain.size();
 		int		breakCount	= config.getChain().getBreakCount();
-		boolean	shouldBreak	= chainSize >= breakCount;
+		int		breakLength	= config.getChain().getBreakLength();
+		int		chainLength	= calculateChainLength( chain, currentNode );
+		boolean	shouldBreak	= chainSize >= breakCount || chainLength >= breakLength;
 
 		var		chainGroup	= pushDoc( DocType.GROUP );
 		var		indentGroup	= pushDoc( DocType.INDENT );
 
-		// Force break if chain is long enough
+		// Force break if chain is long enough (by count or by length)
 		if ( shouldBreak ) {
 			indentGroup.append( Line.BREAK_PARENT );
 		}
 
 		for ( int i = chain.size() - 1; i >= 0; i-- ) {
 			var element = chain.get( i );
-			
+
 			if ( shouldBreak ) {
 				indentGroup.append( Line.HARD );
 			} else {
@@ -1727,6 +1731,37 @@ public class Visitor extends VoidBoxVisitor {
 		}
 		print( "*" );
 		printPostComments( node );
+	}
+
+	/**
+	 * Calculate the total length of a chain based on source text.
+	 * This is used to determine if the chain should be broken based on length.
+	 *
+	 * @param chain The list of chain elements
+	 * @param root  The root node of the chain
+	 *
+	 * @return The total length of the chain
+	 */
+	private int calculateChainLength( List<ChainElement> chain, BoxNode root ) {
+		int length = root.getSourceText() != null ? root.getSourceText().length() : 0;
+		for ( ChainElement element : chain ) {
+			// Each element's source text includes the dot/accessor prefix
+			if ( element.isMethodInvocation() ) {
+				var m = element.asMethodInvocation();
+				// Source text already includes the dot for method invocations built from dot access
+				String sourceText = m.getSourceText();
+				if ( sourceText != null ) {
+					length += sourceText.length();
+				}
+			} else {
+				var d = element.asDotAccess();
+				String sourceText = d.getSourceText();
+				if ( sourceText != null ) {
+					length += sourceText.length();
+				}
+			}
+		}
+		return length;
 	}
 
 	/**

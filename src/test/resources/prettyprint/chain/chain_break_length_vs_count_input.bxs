@@ -1,0 +1,2 @@
+// Chain has only 2 elements (below break_count 100) but over 30 chars (break_length)
+result = objWithLongName.methodOneWithLongName().methodTwoWithLongName();
