@@ -131,7 +131,7 @@ public final class DebuggerExternalConnectionUtil {
 	 * Idempotent startup. Call this once (from the debugger via JDI) to ensure
 	 * the invoker and worker threads exist.
 	 */
-	public static synchronized void start() {
+	public static void start() {
 		synchronized ( startLock ) {
 			if ( started ) {
 				return;
