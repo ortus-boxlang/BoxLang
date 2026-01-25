@@ -438,7 +438,30 @@ public class Visitor extends VoidBoxVisitor {
 
 	public void visit( BoxLambda node ) {
 		printPreComments( node );
-		parametersPrinter.print( node.getArgs() );
+
+		var	args		= node.getArgs();
+		var	arrowParens	= config.getFunction().getArrow().getParens();
+
+		// Check if we can omit parentheses: "avoid" mode, single param, no explicit type, no default, not required, no annotations
+		boolean canOmitParens = false;
+		if ( arrowParens.equals( "avoid" ) && args.size() == 1 ) {
+			var		arg				= args.get( 0 );
+			// Check if type was explicitly specified (not just default "Any")
+			boolean	hasExplicitType	= arg.getType() != null
+			    && ( !arg.getType().equals( "Any" ) || ( arg.getSourceText() != null && arg.getSourceText().contains( "Any " ) ) );
+			boolean	hasDefault		= arg.getValue() != null;
+			boolean	isRequired		= arg.getRequired() != null && arg.getRequired();
+			boolean	hasAnnotations	= arg.getAnnotations() != null && !arg.getAnnotations().isEmpty();
+
+			canOmitParens = !hasExplicitType && !hasDefault && !isRequired && !hasAnnotations;
+		}
+
+		if ( canOmitParens ) {
+			print( args.get( 0 ).getName() );
+		} else {
+			parametersPrinter.print( args );
+		}
+
 		print( " -> " );
 		node.getBody().accept( this );
 		printPostComments( node );
