@@ -154,7 +154,8 @@ public final class DebuggerExternalConnectionUtil {
 						Thread.currentThread().interrupt();
 						break;
 					} catch ( Throwable thr ) {
-						// Protect worker from dying; continue processing tasks
+						// Protect worker from dying; continue processing tasks, but log the failure for diagnostics
+						logger.error( "Unexpected error while processing debugger task in worker thread; continuing to process further tasks.", thr );
 					}
 				}
 			}, "BoxLang-DebuggerWorker" );
