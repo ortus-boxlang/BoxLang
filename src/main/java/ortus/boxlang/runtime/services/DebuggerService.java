@@ -132,8 +132,9 @@ public final class DebuggerService {
 	 */
 	public static synchronized void start() {
 		synchronized ( startLock ) {
-			if ( started )
+			if ( started ) {
 				return;
+			}
 
 			// Record startup time for timing calculations
 			startupTime = System.currentTimeMillis();

@@ -555,15 +555,12 @@ public class BoxRuntime implements java.io.Closeable {
 		    Instant.now(),
 		    timerUtil.stopAndGetMillis( "runtime-startup" ) );
 
-		// Trigger DebuggerService class loading for debugger support.
-		// This ensures the class is available when a debugger attaches and
-		// sets up ClassPrepareRequest events.
-		if ( Boolean.TRUE.equals( instance.debugMode ) ) {
-			try {
-				Class.forName( "ortus.boxlang.runtime.services.DebuggerService" );
-			} catch ( ClassNotFoundException e ) {
-				// Ignore - debugger support not needed if class not found
-			}
+		// Start the DebuggerService when debugMode is enabled.
+		// This starts the invoker and worker threads that the debugger uses
+		// for expression evaluation and method invocations via JDI.
+		if ( Boolean.TRUE.equals( this.debugMode ) ) {
+			DebuggerService.start();
+			this.logger.debug( "+ DebuggerService started for debug mode" );
 		}
 
 		// Announce it baby! Runtime is up
