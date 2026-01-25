@@ -36,4 +36,16 @@ public class FunctionParametersTest extends PrettyPrintTest {
 	public void testMultilineCountDefault() throws IOException {
 		printTestWithDefaultConfig( "function_parameters", "multiline_count_default" );
 	}
+
+	@Test
+	@DisplayName( "Parameters go multiline when length >= multiline_length (custom: 30)" )
+	public void testMultilineLength30() throws IOException {
+		printTestWithConfigFile( "function_parameters", "multiline_length_30" );
+	}
+
+	@Test
+	@DisplayName( "Parameters go multiline when length >= multiline_length (60)" )
+	public void testMultilineLength60() throws IOException {
+		printTestWithConfigFile( "function_parameters", "multiline_length_60" );
+	}
 }

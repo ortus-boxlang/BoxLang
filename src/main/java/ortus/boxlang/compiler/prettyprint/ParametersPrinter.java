@@ -29,6 +29,47 @@ public class ParametersPrinter {
 		this.visitor = visitor;
 	}
 
+	/**
+	 * Calculate the approximate length of the parameter list if printed on a single line.
+	 * Used to determine if the parameters should be printed multiline based on length threshold.
+	 */
+	private int calculateParameterListLength( List<BoxArgumentDeclaration> params ) {
+		int length = 2; // for "(" and ")"
+
+		for ( int i = 0; i < params.size(); i++ ) {
+			var node = params.get( i );
+
+			if ( node.getRequired() != null && node.getRequired() ) {
+				length += 9; // "required "
+			}
+
+			if ( node.getType() != null ) {
+				var	type			= node.getType();
+				var	typeIsPrinted	= type != "Any" || node.getSourceText().contains( "Any " );
+				if ( typeIsPrinted ) {
+					length += type.length() + 1; // type + " "
+				}
+			}
+
+			length += node.getName().length();
+
+			if ( node.getValue() != null ) {
+				length += 3; // " = "
+				// Estimate the default value length from source text
+				String valueSource = node.getValue().getSourceText();
+				if ( valueSource != null ) {
+					length += valueSource.length();
+				}
+			}
+
+			if ( i < params.size() - 1 ) {
+				length += 2; // ", "
+			}
+		}
+
+		return length;
+	}
+
 	public void print( List<BoxArgumentDeclaration> params ) {
 		var	currentDoc	= visitor.getCurrentDoc();
 
@@ -36,7 +77,8 @@ public class ParametersPrinter {
 		paramsDoc.append( "(" );
 
 		var	size		= params.size();
-		var	multiline	= size >= visitor.config.getFunction().getParameters().getMultilineCount();
+		var	multiline	= size >= visitor.config.getFunction().getParameters().getMultilineCount()
+		    || calculateParameterListLength( params ) >= visitor.config.getFunction().getParameters().getMultilineLength();
 
 		if ( size > 0 ) {
 			var contentsDoc = visitor.pushDoc( DocType.INDENT );
