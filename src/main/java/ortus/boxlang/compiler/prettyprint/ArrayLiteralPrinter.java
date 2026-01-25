@@ -64,7 +64,7 @@ public class ArrayLiteralPrinter {
 			visitor.printInsideComments( arrayNode, false );
 		}
 
-		arrayDoc.append( visitor.config.getArray().getEmpty_padding() ? Line.LINE : Line.SOFT );
+		arrayDoc.append( visitor.config.getArray().getEmptyPadding() ? Line.LINE : Line.SOFT );
 
 		arrayDoc.append( "]" );
 		currentDoc.append( visitor.popDoc() );

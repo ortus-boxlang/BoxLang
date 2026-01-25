@@ -203,6 +203,11 @@ public final class Config {
 		map.put( "singleQuote", singleQuote );
 		map.put( "bracketPadding", bracketPadding );
 		map.put( "parensPadding", parensPadding );
+		map.put( "binaryOperatorsPadding", binaryOperatorsPadding );
+		map.put( "struct", struct.toMap() );
+		map.put( "property", property.toMap() );
+		map.put( "array", array.toMap() );
+		map.put( "for_loop_semicolons", forLoopSemicolons.toMap() );
 		return map;
 	}
 
@@ -216,6 +221,7 @@ public final class Config {
 		}
 	}
 
+	@SuppressWarnings( "unchecked" )
 	private void applyMapConfig( Map<String, Object> config ) {
 		if ( config.containsKey( "indentSize" ) && config.get( "indentSize" ) instanceof Number indentSize ) {
 			this.indentSize = indentSize.intValue();
@@ -238,5 +244,93 @@ public final class Config {
 		if ( config.containsKey( "parensPadding" ) && config.get( "parensPadding" ) instanceof Boolean parensPadding ) {
 			this.parensPadding = parensPadding;
 		}
+		if ( config.containsKey( "binaryOperatorsPadding" ) && config.get( "binaryOperatorsPadding" ) instanceof Boolean binaryOperatorsPadding ) {
+			this.binaryOperatorsPadding = binaryOperatorsPadding;
+		}
+		if ( config.containsKey( "struct" ) && config.get( "struct" ) instanceof Map structMap ) {
+			applyStructConfig( ( Map<String, Object> ) structMap );
+		}
+		if ( config.containsKey( "array" ) && config.get( "array" ) instanceof Map arrayMap ) {
+			applyArrayConfig( ( Map<String, Object> ) arrayMap );
+		}
+		if ( config.containsKey( "property" ) && config.get( "property" ) instanceof Map propertyMap ) {
+			applyPropertyConfig( ( Map<String, Object> ) propertyMap );
+		}
+		if ( config.containsKey( "for_loop_semicolons" ) && config.get( "for_loop_semicolons" ) instanceof Map forLoopMap ) {
+			applyForLoopSemicolonsConfig( ( Map<String, Object> ) forLoopMap );
+		}
+	}
+
+	private void applyStructConfig( Map<String, Object> config ) {
+		if ( config.containsKey( "padding" ) && config.get( "padding" ) instanceof Boolean padding ) {
+			this.struct.setPadding( padding );
+		}
+		if ( config.containsKey( "empty_padding" ) && config.get( "empty_padding" ) instanceof Boolean emptyPadding ) {
+			this.struct.setEmptyPadding( emptyPadding );
+		}
+		if ( config.containsKey( "quote_keys" ) && config.get( "quote_keys" ) instanceof Boolean quoteKeys ) {
+			this.struct.setQuoteKeys( quoteKeys );
+		}
+		if ( config.containsKey( "separator" ) && config.get( "separator" ) instanceof String separator ) {
+			this.struct.setSeparator( parseSeparator( separator ) );
+		}
+		if ( config.containsKey( "multiline" ) && config.get( "multiline" ) instanceof Map multilineMap ) {
+			applyMultilineConfig( this.struct.getMultiline(), multilineMap );
+		}
+	}
+
+	private void applyArrayConfig( Map<String, Object> config ) {
+		if ( config.containsKey( "padding" ) && config.get( "padding" ) instanceof Boolean padding ) {
+			this.array.setPadding( padding );
+		}
+		if ( config.containsKey( "empty_padding" ) && config.get( "empty_padding" ) instanceof Boolean emptyPadding ) {
+			this.array.setEmptyPadding( emptyPadding );
+		}
+		if ( config.containsKey( "multiline" ) && config.get( "multiline" ) instanceof Map multilineMap ) {
+			applyMultilineConfig( this.array.getMultiline(), multilineMap );
+		}
+	}
+
+	private void applyPropertyConfig( Map<String, Object> config ) {
+		if ( config.containsKey( "multiline" ) && config.get( "multiline" ) instanceof Map multilineMap ) {
+			applyMultilineConfig( this.property.getMultiline(), multilineMap );
+		}
+		if ( config.containsKey( "key_value" ) && config.get( "key_value" ) instanceof Map keyValueMap ) {
+			if ( keyValueMap.containsKey( "padding" ) && keyValueMap.get( "padding" ) instanceof Boolean padding ) {
+				this.property.getKeyValue().setPadding( padding );
+			}
+		}
+	}
+
+	private void applyForLoopSemicolonsConfig( Map<String, Object> config ) {
+		if ( config.containsKey( "padding" ) && config.get( "padding" ) instanceof Boolean padding ) {
+			this.forLoopSemicolons.setPadding( padding );
+		}
+	}
+
+	@SuppressWarnings( "rawtypes" )
+	private void applyMultilineConfig( MultilineConfig multiline, Map config ) {
+		if ( config.containsKey( "element_count" ) && config.get( "element_count" ) instanceof Number elementCount ) {
+			multiline.setElementCount( elementCount.intValue() );
+		}
+		if ( config.containsKey( "comma_dangle" ) && config.get( "comma_dangle" ) instanceof Boolean commaDangle ) {
+			multiline.setCommaDangle( commaDangle );
+		}
+		if ( config.containsKey( "min_length" ) && config.get( "min_length" ) instanceof Number minLength ) {
+			multiline.setMinLength( minLength.intValue() );
+		}
+		if ( config.containsKey( "leading_comma" ) ) {
+			multiline.setLeadingComma( config.get( "leading_comma" ) );
+		}
+	}
+
+	private Separator parseSeparator( String separator ) {
+		return switch ( separator ) {
+			case ":" -> Separator.COLON;
+			case "=" -> Separator.EQUALS;
+			case ": " -> Separator.COLON_SPACE;
+			case "= " -> Separator.EQUALS_SPACE;
+			default -> Separator.COLON_SPACE;
+		};
 	}
 }

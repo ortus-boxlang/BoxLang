@@ -1,5 +1,6 @@
 package ortus.boxlang.compiler.prettyprint.config;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class LeadingComma {
@@ -41,5 +42,12 @@ public class LeadingComma {
 	public LeadingComma setPadding( boolean padding ) {
 		this.padding = padding;
 		return this;
+	}
+
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = new LinkedHashMap<>();
+		map.put( "enabled", enabled );
+		map.put( "padding", padding );
+		return map;
 	}
 }

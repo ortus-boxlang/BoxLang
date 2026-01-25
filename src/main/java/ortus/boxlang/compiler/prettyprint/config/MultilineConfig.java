@@ -1,5 +1,6 @@
 package ortus.boxlang.compiler.prettyprint.config;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -63,5 +64,14 @@ public class MultilineConfig {
 	public MultilineConfig setElementCount( int elementCount ) {
 		this.elementCount = elementCount;
 		return this;
+	}
+
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = new LinkedHashMap<>();
+		map.put( "element_count", elementCount );
+		map.put( "comma_dangle", commaDangle );
+		map.put( "leading_comma", leadingComma.toMap() );
+		map.put( "min_length", minLength );
+		return map;
 	}
 }

@@ -115,13 +115,8 @@ import ortus.boxlang.compiler.prettyprint.config.Config;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
- * Pretty print BoxLang AST nodes
- * 
- * TODO Items:
- * - Add configuration for indent size
- * - Add any other config settings such as white space inside paren, etc
- * - Modify AST to track pre annotations and inline annotations separately
- * - Test!
+ * Pretty print BoxLang AST nodes.
+ * Traverses the BoxLang AST and builds a Doc tree for formatting.
  */
 public class Visitor extends VoidBoxVisitor {
 

@@ -1,5 +1,8 @@
 package ortus.boxlang.compiler.prettyprint.config;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class PropertyConfig {
@@ -26,6 +29,13 @@ public class PropertyConfig {
 		return this;
 	}
 
+	public Map<String, Object> toMap() {
+		Map<String, Object> map = new LinkedHashMap<>();
+		map.put( "multiline", multiline.toMap() );
+		map.put( "key_value", keyValue.toMap() );
+		return map;
+	}
+
 	public static class KeyValue {
 
 		private boolean padding = false;
@@ -37,6 +47,12 @@ public class PropertyConfig {
 		public KeyValue setPadding( boolean padding ) {
 			this.padding = padding;
 			return this;
+		}
+
+		public Map<String, Object> toMap() {
+			Map<String, Object> map = new LinkedHashMap<>();
+			map.put( "padding", padding );
+			return map;
 		}
 	}
 

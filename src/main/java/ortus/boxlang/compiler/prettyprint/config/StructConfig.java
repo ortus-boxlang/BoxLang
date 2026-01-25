@@ -70,6 +70,9 @@ public class StructConfig {
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put( "padding", padding );
 		map.put( "empty_padding", emptyPadding );
+		map.put( "quote_keys", quoteKeys );
+		map.put( "separator", separator.getSymbol() );
+		map.put( "multiline", multiline.toMap() );
 		return map;
 	}
 
