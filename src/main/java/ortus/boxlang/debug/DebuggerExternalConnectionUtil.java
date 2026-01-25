@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.services;
+package ortus.boxlang.debug;
 
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
@@ -30,7 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * DebuggerService
+ * DebuggerExternalConnectionUtil
  * <p>
  * A utility class that provides debugging support for BoxLang applications.
  * This class exposes a task queue mechanism suitable for being driven via JDI's
@@ -41,7 +41,7 @@ import org.slf4j.LoggerFactory;
  * The heavy reflective invocation runs on a separate worker thread.
  * <p>
  * Usage summary:
- * - Debugger calls DebuggerService.start() once (from a safe suspended event thread)
+ * - Debugger calls DebuggerExternalConnectionUtil.start() once (from a safe suspended event thread)
  * to ensure the invoker and worker threads exist.
  * - Debugger finds the invoker ThreadReference by name and uses it to invoke the
  * static methods (enqueueOnObject / enqueueStatic / pollResult) via JDI.
@@ -53,12 +53,12 @@ import org.slf4j.LoggerFactory;
  * pollResult removes the result and returns it.
  * - The service makes a best-effort to survive any thrown exceptions.
  */
-public final class DebuggerService {
+public final class DebuggerExternalConnectionUtil {
 
 	/**
 	 * Logger for timing instrumentation
 	 */
-	private static final Logger												logger				= LoggerFactory.getLogger( DebuggerService.class );
+	private static final Logger												logger				= LoggerFactory.getLogger( DebuggerExternalConnectionUtil.class );
 
 	/**
 	 * Startup timestamp for timing calculations
@@ -118,7 +118,7 @@ public final class DebuggerService {
 	/**
 	 * Private constructor to prevent instantiation
 	 */
-	private DebuggerService() {
+	private DebuggerExternalConnectionUtil() {
 		// Static-only class
 	}
 
@@ -138,7 +138,7 @@ public final class DebuggerService {
 
 			// Record startup time for timing calculations
 			startupTime = System.currentTimeMillis();
-			logger.debug( "[TIMING] DebuggerService.start() called - recording startup time" );
+			logger.debug( "[TIMING] DebuggerExternalConnectionUtil.start() called - recording startup time" );
 
 			// Start worker thread that processes the task queue
 			workerThread = new Thread( () -> {
@@ -180,7 +180,7 @@ public final class DebuggerService {
 			invokerThread.start();
 
 			started = true;
-			logger.debug( "[TIMING] DebuggerService.start() completed - invoker and worker threads started" );
+			logger.debug( "[TIMING] DebuggerExternalConnectionUtil.start() completed - invoker and worker threads started" );
 		}
 	}
 

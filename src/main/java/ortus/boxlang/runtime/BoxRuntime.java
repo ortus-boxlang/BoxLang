@@ -75,7 +75,7 @@ import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.services.DatasourceService;
-import ortus.boxlang.runtime.services.DebuggerService;
+import ortus.boxlang.debug.DebuggerExternalConnectionUtil;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.HttpService;
 import ortus.boxlang.runtime.services.IService;
@@ -87,7 +87,6 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.types.exceptions.BoxLicenseException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
 import ortus.boxlang.runtime.types.util.MathUtil;
@@ -555,12 +554,12 @@ public class BoxRuntime implements java.io.Closeable {
 		    Instant.now(),
 		    timerUtil.stopAndGetMillis( "runtime-startup" ) );
 
-		// Start the DebuggerService when debugMode is enabled.
+		// Start the DebuggerExternalConnectionUtil when debugMode is enabled.
 		// This starts the invoker and worker threads that the debugger uses
 		// for expression evaluation and method invocations via JDI.
 		if ( Boolean.TRUE.equals( this.debugMode ) ) {
-			DebuggerService.start();
-			this.logger.debug( "+ DebuggerService started for debug mode" );
+			DebuggerExternalConnectionUtil.start();
+			this.logger.debug( "+ DebuggerExternalConnectionUtil started for debug mode" );
 		}
 
 		// Announce it baby! Runtime is up
@@ -1249,7 +1248,7 @@ public class BoxRuntime implements java.io.Closeable {
 		// This must be called BEFORE loading the class so the debugger can set up
 		// ClassPrepareRequest with SUSPEND_EVENT_THREAD before the class loads
 		if ( Boolean.TRUE.equals( instance.debugMode ) ) {
-			DebuggerService.signalUserCodeStart( templatePath );
+			DebuggerExternalConnectionUtil.signalUserCodeStart( templatePath );
 		}
 
 		// If the templatePath is a .cfs, .cfm then use the loadTemplateAbsolute, if
@@ -1678,7 +1677,7 @@ public class BoxRuntime implements java.io.Closeable {
 		// This must be called BEFORE loading the source so the debugger can set up
 		// ClassPrepareRequest with SUSPEND_EVENT_THREAD before the class loads
 		if ( Boolean.TRUE.equals( instance.debugMode ) ) {
-			DebuggerService.signalUserCodeStart( null );
+			DebuggerExternalConnectionUtil.signalUserCodeStart( null );
 		}
 
 		BoxScript	scriptRunnable	= RunnableLoader.getInstance().loadSource( scriptingContext, source, type );
