@@ -357,7 +357,7 @@ public final class DebuggerExternalConnectionUtil {
 	/**
 	 * Shutdown the debugger threads (best-effort). Useful for tests.
 	 */
-	public static synchronized void shutdown() {
+	public static void shutdown() {
 		synchronized ( startLock ) {
 			started = false;
 			Thread	w	= workerThread;
@@ -425,8 +425,9 @@ public final class DebuggerExternalConnectionUtil {
 	}
 
 	private static Object[] safeArgsForInvocation( Class<?>[] paramTypes, Object[] providedArgs ) {
-		if ( ( providedArgs == null || providedArgs.length == 0 ) && ( paramTypes == null || paramTypes.length == 0 ) )
+		if ( ( providedArgs == null || providedArgs.length == 0 ) && ( paramTypes == null || paramTypes.length == 0 ) ) {
 			return new Object[ 0 ];
+		}
 		Object[] out = new Object[ paramTypes.length ];
 		for ( int i = 0; i < paramTypes.length; ++i ) {
 			Object provided = ( providedArgs != null && i < providedArgs.length ) ? providedArgs[ i ] : null;
@@ -436,8 +437,9 @@ public final class DebuggerExternalConnectionUtil {
 	}
 
 	private static Object coerceArgIfNeeded( Class<?> paramType, Object provided ) {
-		if ( provided == null )
+		if ( provided == null ) {
 			return null;
+		}
 		if ( paramType.isPrimitive() ) {
 			if ( paramType == int.class && provided instanceof Number )
 				return ( ( Number ) provided ).intValue();
@@ -499,23 +501,30 @@ public final class DebuggerExternalConnectionUtil {
 			return cls.getDeclaredMethod( methodName, paramTypes );
 		} catch ( NoSuchMethodException ignored ) {
 			// Fallback: try to find a compatible method by name and parameter count/assignability
+			if ( paramTypes == null ) {
+				return null;
+			}
 			for ( Method m : cls.getMethods() ) {
-				if ( !m.getName().equals( methodName ) )
+				if ( !m.getName().equals( methodName ) ) {
 					continue;
+				}
 				Class<?>[] sig = m.getParameterTypes();
-				if ( sig.length != ( paramTypes == null ? 0 : paramTypes.length ) )
+				if ( sig.length != ( paramTypes == null ? 0 : paramTypes.length ) ) {
 					continue;
+				}
 				boolean ok = true;
 				for ( int i = 0; i < sig.length; ++i ) {
-					if ( paramTypes[ i ] == null )
+					if ( paramTypes[ i ] == null ) {
 						continue;
+					}
 					if ( !isAssignable( sig[ i ], paramTypes[ i ] ) ) {
 						ok = false;
 						break;
 					}
 				}
-				if ( ok )
+				if ( ok ) {
 					return m;
+				}
 			}
 			return null;
 		}
