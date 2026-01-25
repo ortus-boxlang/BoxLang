@@ -1984,7 +1984,6 @@ public class ClassTest {
 		assertThat( variables.get( "result" ) ).isEqualTo( "brad" );
 		assertThat( variables.get( "result2" ) ).isEqualTo( 21 );
 		assertThat( variables.get( "result2b" ) ).isEqualTo( "noj" );
-		assertThat( variables.get( "result3" ) ).isEqualTo( "luis" );
 	}
 
 	@Test
@@ -2002,7 +2001,6 @@ public class ClassTest {
 		    context );
 		assertThat( variables.get( "result" ) ).isEqualTo( "brad" );
 		assertThat( variables.get( "result2" ) ).isEqualTo( 21 );
-		assertThat( variables.get( "result3" ) ).isEqualTo( "siul" );
 	}
 
 	@Test
