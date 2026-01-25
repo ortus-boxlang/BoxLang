@@ -42,4 +42,34 @@ public class ClassFormattingTest extends PrettyPrintTest {
 	public void testMemberSpacing2() throws IOException {
 		printTestWithConfigFile( "class", "member_spacing_2" );
 	}
+
+	@Test
+	@DisplayName( "Property order preserve (default) - maintains original order" )
+	public void testPropertyOrderPreserve() throws IOException {
+		printTestWithConfigFile( "class", "property_order_preserve" );
+	}
+
+	@Test
+	@DisplayName( "Property order alphabetical - sorts properties by name" )
+	public void testPropertyOrderAlphabetical() throws IOException {
+		printTestWithConfigFile( "class", "property_order_alphabetical" );
+	}
+
+	@Test
+	@DisplayName( "Property order length - sorts properties by source text length" )
+	public void testPropertyOrderLength() throws IOException {
+		printTestWithConfigFile( "class", "property_order_length" );
+	}
+
+	@Test
+	@DisplayName( "Property order type - sorts properties by type" )
+	public void testPropertyOrderType() throws IOException {
+		printTestWithConfigFile( "class", "property_order_type" );
+	}
+
+	@Test
+	@DisplayName( "Property order alphabetical with shorthand syntax - sorts by name" )
+	public void testPropertyOrderAlphabeticalShorthand() throws IOException {
+		printTestWithConfigFile( "class", "property_order_alphabetical_shorthand" );
+	}
 }

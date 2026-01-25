@@ -18,10 +18,13 @@
 package ortus.boxlang.compiler.prettyprint;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import ortus.boxlang.compiler.ast.BoxClass;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
+import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
@@ -160,14 +163,16 @@ public class ClassPrinter {
 	}
 
 	public void printCFTemplateComponent( BoxClass classNode ) {
-		var currentDoc = visitor.getCurrentDoc();
+		var	currentDoc		= visitor.getCurrentDoc();
+		var	propertyOrder	= visitor.config.getClassConfig().getPropertyOrder();
 
 		currentDoc.append( "<cfcomponent" );
 		visitor.helperPrinter.printKeyValueAnnotations( classNode.getAnnotations(), false );
 		currentDoc.append( ">" );
 
-		var bodyDoc = visitor.pushDoc( DocType.INDENT );
-		for ( var property : classNode.getProperties() ) {
+		var					bodyDoc				= visitor.pushDoc( DocType.INDENT );
+		List<BoxProperty>	sortedProperties	= sortProperties( classNode.getProperties(), propertyOrder );
+		for ( var property : sortedProperties ) {
 			bodyDoc.append( Line.HARD );
 			property.accept( visitor );
 		}
@@ -230,12 +235,139 @@ public class ClassPrinter {
 	}
 
 	private void printProperties( List<BoxProperty> properties ) {
-		var currentDoc = visitor.getCurrentDoc();
+		var	currentDoc		= visitor.getCurrentDoc();
+		var	propertyOrder	= visitor.config.getClassConfig().getPropertyOrder();
 
-		for ( int i = 0; i < properties.size(); i++ ) {
-			properties.get( i ).accept( visitor );
+		// Sort properties based on configuration
+		List<BoxProperty> sortedProperties = sortProperties( properties, propertyOrder );
+
+		for ( int i = 0; i < sortedProperties.size(); i++ ) {
+			sortedProperties.get( i ).accept( visitor );
 			currentDoc.append( Line.HARD );
 		}
 		// Note: member_spacing between properties and methods is handled by printStatements
+	}
+
+	/**
+	 * Sort properties based on the configured order.
+	 *
+	 * @param properties    the list of properties to sort
+	 * @param propertyOrder the ordering strategy: "alphabetical", "length", "type", or "preserve"
+	 *
+	 * @return sorted list of properties (original list if "preserve")
+	 */
+	private List<BoxProperty> sortProperties( List<BoxProperty> properties, String propertyOrder ) {
+		if ( properties.isEmpty() || "preserve".equalsIgnoreCase( propertyOrder ) ) {
+			return properties;
+		}
+
+		List<BoxProperty> sorted = new ArrayList<>( properties );
+
+		switch ( propertyOrder.toLowerCase() ) {
+			case "alphabetical" -> sorted.sort( Comparator.comparing( this::getPropertyName, String.CASE_INSENSITIVE_ORDER ) );
+			case "length" -> sorted.sort( Comparator.comparingInt( p -> {
+				String sourceText = p.getSourceText();
+				return sourceText != null ? sourceText.length() : 0;
+			} ) );
+			case "type" -> sorted.sort( Comparator.comparing( this::getPropertyType, String.CASE_INSENSITIVE_ORDER ) );
+			default -> {
+				// preserve order - return as-is
+			}
+		}
+
+		return sorted;
+	}
+
+	/**
+	 * Extract the property name from a BoxProperty node.
+	 *
+	 * @param property the property to get the name from
+	 *
+	 * @return the property name, or empty string if not found
+	 */
+	private String getPropertyName( BoxProperty property ) {
+		// Get all annotations (post annotations are the inline ones like name="foo")
+		List<BoxAnnotation> allAnnotations = property.getAllAnnotations();
+
+		// First check for an explicit name annotation with a value
+		for ( BoxAnnotation annotation : allAnnotations ) {
+			if ( annotation.getKey().getValue().equalsIgnoreCase( "name" ) && annotation.getValue() != null ) {
+				return extractStringValue( annotation.getValue() );
+			}
+		}
+
+		// If no explicit name, look for non-valued annotations in post annotations
+		// In shorthand syntax like "property String userName;", the name is the last non-valued annotation
+		List<BoxAnnotation>	postAnnotations	= property.getPostAnnotations();
+		List<BoxAnnotation>	nonValuedKeys	= postAnnotations.stream()
+		    .filter( a -> a.getValue() == null )
+		    .toList();
+
+		if ( !nonValuedKeys.isEmpty() ) {
+			// If there are multiple non-valued keys and no explicit type, first is type, second is name
+			// If only one non-valued key, it's the name
+			boolean hasExplicitType = allAnnotations.stream()
+			    .anyMatch( a -> a.getKey().getValue().equalsIgnoreCase( "type" ) && a.getValue() != null );
+
+			if ( nonValuedKeys.size() >= 2 && !hasExplicitType ) {
+				return nonValuedKeys.get( 1 ).getKey().getValue();
+			} else if ( nonValuedKeys.size() >= 1 ) {
+				return nonValuedKeys.get( nonValuedKeys.size() - 1 ).getKey().getValue();
+			}
+		}
+
+		return "";
+	}
+
+	/**
+	 * Extract the property type from a BoxProperty node.
+	 *
+	 * @param property the property to get the type from
+	 *
+	 * @return the property type, or "any" if not found
+	 */
+	private String getPropertyType( BoxProperty property ) {
+		// Get all annotations
+		List<BoxAnnotation> allAnnotations = property.getAllAnnotations();
+
+		// First check for an explicit type annotation with a value
+		for ( BoxAnnotation annotation : allAnnotations ) {
+			if ( annotation.getKey().getValue().equalsIgnoreCase( "type" ) && annotation.getValue() != null ) {
+				return extractStringValue( annotation.getValue() );
+			}
+		}
+
+		// If no explicit type, look for non-valued annotations in post annotations
+		// In shorthand syntax like "property String userName;", type is the first non-valued annotation
+		// when there are 2+ non-valued annotations
+		List<BoxAnnotation>	postAnnotations	= property.getPostAnnotations();
+		List<BoxAnnotation>	nonValuedKeys	= postAnnotations.stream()
+		    .filter( a -> a.getValue() == null )
+		    .toList();
+
+		boolean				hasExplicitName	= allAnnotations.stream()
+		    .anyMatch( a -> a.getKey().getValue().equalsIgnoreCase( "name" ) && a.getValue() != null );
+
+		if ( nonValuedKeys.size() >= 2 && !hasExplicitName ) {
+			// First non-valued key is the type
+			return nonValuedKeys.get( 0 ).getKey().getValue();
+		}
+
+		return "any";
+	}
+
+	/**
+	 * Extract a string value from a BoxExpression.
+	 *
+	 * @param expr the expression to extract the string from
+	 *
+	 * @return the string value, or the source text if not a string literal
+	 */
+	private String extractStringValue( BoxExpression expr ) {
+		if ( expr instanceof BoxStringLiteral stringLiteral ) {
+			return stringLiteral.getValue();
+		}
+		// Fall back to source text for other expression types
+		return expr.getSourceText() != null ? expr.getSourceText() : "";
 	}
 }
