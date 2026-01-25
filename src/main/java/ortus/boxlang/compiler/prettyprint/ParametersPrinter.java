@@ -110,6 +110,9 @@ public class ParametersPrinter {
 
 				if ( i < size - 1 ) {
 					contentsDoc.append( "," ).append( Line.LINE );
+				} else if ( multiline && visitor.config.getFunction().getParameters().getCommaDangle() ) {
+					// Add trailing comma for last parameter when multiline and comma_dangle is enabled
+					contentsDoc.append( "," );
 				}
 			}
 
