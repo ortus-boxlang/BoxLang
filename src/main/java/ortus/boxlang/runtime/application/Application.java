@@ -792,13 +792,14 @@ public class Application {
 			return;
 		}
 
-		// Cancel the expiry task if forced
-		if ( force ) {
-			if ( this.expiringFuture != null ) {
-				this.expiringFuture.cancel( true );
-			}
+		// Always cancel the expiry task on shutdown - it doesn't make sense to keep checking
+		// for timeouts after the application is shutting down, and it prevents clean CLI exits
+		if ( this.expiringFuture != null ) {
+			this.expiringFuture.cancel( true );
+		}
 
-			// Shutdown all started schedulers
+		// Shutdown all started schedulers if forced
+		if ( force ) {
 			startedSchedulers.forEach( schedulerName -> {
 				// TODO: Allow the user to configure a timeout for graceful shutdown
 				schedulerService.removeScheduler( schedulerName );

@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.services;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -267,6 +268,7 @@ public class AsyncService extends BaseService {
 		if ( hasExecutor( name ) ) {
 
 			logger.debug( "+ Shutting down executor ({}), with force ({}) and timeout ({})...", name, force, timeout );
+			System.out.println( "+ Shutting down executor (" + name + "), with force (" + force + ") and timeout (" + timeout + ")..." );
 			getTimerUtil().start( "shutdown-executor-" + name );
 
 			if ( Boolean.TRUE.equals( force ) ) {
@@ -305,14 +307,21 @@ public class AsyncService extends BaseService {
 	    Boolean force,
 	    Long timeout,
 	    TimeUnit unit ) {
-
 		getTimerUtil().start( "shutdownAllExecutors" );
-
 		logger.debug( "+ Starting to shutdown all executors..." );
 
-		this.executors.keySet()
-		    .parallelStream()
-		    .forEach( executorName -> shutdownExecutor( executorName, force, timeout, unit ) );
+		// IMPORTANT: Do NOT use parallelStream() here.
+		// parallelStream() uses ForkJoinPool.commonPool(), and shutdown can block awaiting executor termination.
+		// If shutdown work itself runs on (or depends on) the common pool, this can lead to starvation/hangs.
+		// Also take a snapshot of the keys to avoid concurrent modification concerns.
+		List<String> executorNames = new ArrayList<>( this.executors.keySet() );
+		for ( String executorName : executorNames ) {
+			try {
+				shutdownExecutor( executorName, force, timeout, unit );
+			} catch ( Throwable e ) {
+				logger.warn( "+ Error shutting down executor ({}): {}", executorName, e.getMessage(), e );
+			}
+		}
 
 		logger.debug(
 		    "+ Shutdown all async executor services in [{}]",

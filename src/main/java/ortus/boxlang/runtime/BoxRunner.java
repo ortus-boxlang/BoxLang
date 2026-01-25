@@ -592,6 +592,12 @@ public class BoxRunner {
 			cliArgs.add( currentArgument );
 		}
 
+		// If no file, code, module, or action command was specified, but we have cliArgs,
+		// treat the first arg as a potential module name (shortcut for module:name syntax)
+		if ( file == null && code == null && targetModule == null && actionCommand == null && !cliArgs.isEmpty() ) {
+			targetModule = cliArgs.remove( 0 );
+		}
+
 		return new CLIOptions(
 		    file,
 		    debug,
