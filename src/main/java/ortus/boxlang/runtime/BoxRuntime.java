@@ -75,6 +75,7 @@ import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.services.DatasourceService;
+import ortus.boxlang.runtime.services.DebuggerService;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.HttpService;
 import ortus.boxlang.runtime.services.IService;
@@ -1240,6 +1241,18 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @param args         The arguments to pass to the template
 	 */
 	public void executeTemplate( String templatePath, IBoxContext context, String[] args ) {
+		// Log timing for debugger performance analysis
+		if ( Boolean.TRUE.equals( instance.debugMode ) ) {
+			logger.debug( "[TIMING] executeTemplate() called for: {}", templatePath );
+		}
+
+		// Signal to debugger that user code is about to start (only in debug mode)
+		// This must be called BEFORE loading the class so the debugger can set up
+		// ClassPrepareRequest with SUSPEND_EVENT_THREAD before the class loads
+		if ( Boolean.TRUE.equals( instance.debugMode ) ) {
+			DebuggerService.signalUserCodeStart( templatePath );
+		}
+
 		// If the templatePath is a .cfs, .cfm then use the loadTemplateAbsolute, if
 		// it's a .cfc, .bx then use the loadClass
 		if ( Strings.CI.endsWithAny( templatePath, ".cfc", ".bx" ) ) {
@@ -1352,7 +1365,8 @@ public class BoxRuntime implements java.io.Closeable {
 			try {
 				boolean result = listener.onRequestStart( scriptingContext, new Object[] { templatePath } );
 				if ( result ) {
-					// Not sure onClassRequest() works here since we already have the class loaded
+					// Note: signalUserCodeStart is called in executeTemplate(String, IBoxContext, String[])
+					// before the class is loaded, so we don't need to call it here
 					target.dereferenceAndInvoke( scriptingContext, Key.main, new Object[] { Array.fromArray( args ) },
 					    false );
 				}
@@ -1463,11 +1477,8 @@ public class BoxRuntime implements java.io.Closeable {
 		try {
 			boolean result = listener.onRequestStart( scriptingContext, new Object[] { templatePath } );
 			if ( result ) {
-				// Not sure if this works in this concext, since it's expected to include the
-				// template itself, but in this case our template is a loaded
-				// class, not a path which may or may not be a file and may or may not be inside
-				// of a mapping allowing a relative path to it
-				// listener.onRequest( scriptingContext, new Object[] { templatePath } );
+				// Note: signalUserCodeStart is called in executeTemplate(String, IBoxContext, String[])
+				// before the template is loaded, so we don't need to call it here
 				template.invoke( scriptingContext );
 			}
 		} catch ( AbortException e ) {
@@ -1588,7 +1599,9 @@ public class BoxRuntime implements java.io.Closeable {
 		boolean		shutdownContext		= context != scriptingContext;
 		ClassLoader	oldClassLoader		= Thread.currentThread().getContextClassLoader();
 		try {
-			// Fire!!!
+			// Note: signalUserCodeStart should be called before compiling the script.
+			// Since this method receives an already-compiled BoxScript, the caller
+			// is responsible for signaling if needed.
 			return scriptRunnable.invoke( scriptingContext );
 		} catch ( AbortException e ) {
 			scriptingContext.flushBuffer( true );
@@ -1656,6 +1669,19 @@ public class BoxRuntime implements java.io.Closeable {
 		/* timerUtil.start( "execute-" + source.hashCode() ); */
 		IBoxContext	scriptingContext	= ensureRequestTypeContext( context );
 		boolean		shutdownContext		= context != scriptingContext;
+
+		// Log timing for debugger performance analysis
+		if ( Boolean.TRUE.equals( instance.debugMode ) ) {
+			logger.debug( "[TIMING] executeSource() called for inline source code" );
+		}
+
+		// Signal to debugger that user code is about to start (only in debug mode)
+		// This must be called BEFORE loading the source so the debugger can set up
+		// ClassPrepareRequest with SUSPEND_EVENT_THREAD before the class loads
+		if ( Boolean.TRUE.equals( instance.debugMode ) ) {
+			DebuggerService.signalUserCodeStart( null );
+		}
+
 		BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadSource( scriptingContext, source, type );
 		Object		results				= null;
 

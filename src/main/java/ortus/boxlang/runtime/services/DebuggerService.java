@@ -24,6 +24,10 @@ import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * DebuggerService
@@ -50,6 +54,26 @@ import java.util.concurrent.LinkedBlockingQueue;
  * - The service makes a best-effort to survive any thrown exceptions.
  */
 public final class DebuggerService {
+
+	/**
+	 * Logger for timing instrumentation
+	 */
+	private static final Logger												logger				= LoggerFactory.getLogger( DebuggerService.class );
+
+	/**
+	 * Startup timestamp for timing calculations
+	 */
+	private static volatile long											startupTime			= 0;
+
+	/**
+	 * Counter for debuggerHook calls
+	 */
+	private static final AtomicInteger										debuggerHookCount	= new AtomicInteger( 0 );
+
+	/**
+	 * Counter for signalUserCodeStart calls
+	 */
+	private static final AtomicInteger										signalCount			= new AtomicInteger( 0 );
 
 	/**
 	 * The name of the invoker thread that JDI will use for method invocations
@@ -111,6 +135,10 @@ public final class DebuggerService {
 			if ( started )
 				return;
 
+			// Record startup time for timing calculations
+			startupTime = System.currentTimeMillis();
+			logger.debug( "[TIMING] DebuggerService.start() called - recording startup time" );
+
 			// Start worker thread that processes the task queue
 			workerThread = new Thread( () -> {
 				while ( !Thread.currentThread().isInterrupted() ) {
@@ -151,6 +179,7 @@ public final class DebuggerService {
 			invokerThread.start();
 
 			started = true;
+			logger.debug( "[TIMING] DebuggerService.start() completed - invoker and worker threads started" );
 		}
 	}
 
@@ -168,7 +197,33 @@ public final class DebuggerService {
 	 * or to verify the invoker thread is running.
 	 */
 	public static void debuggerHook() {
-		// Empty method - used by debugger for thread synchronization
+		int count = debuggerHookCount.incrementAndGet();
+		// Only log every 100th call to avoid flooding logs
+		if ( count <= 5 || count % 100 == 0 ) {
+			long elapsed = startupTime > 0 ? System.currentTimeMillis() - startupTime : 0;
+			logger.debug( "[TIMING] debuggerHook() call #{} at T+{}ms", count, elapsed );
+		}
+	}
+
+	/**
+	 * Signal that BoxLang runtime initialization is complete and user code execution
+	 * is about to begin. The debugger can use this as a hook to enable breakpoint
+	 * suspension for user code classes.
+	 * <p>
+	 * This method is called by BoxRuntime just before executing user templates,
+	 * classes, statements, or source code. The debugger should set a MethodEntryRequest
+	 * on this method and use it as the trigger to enable SUSPEND_EVENT_THREAD for
+	 * targeted ClassPrepareRequests.
+	 * <p>
+	 * This is only called when debugMode is enabled in BoxLang configuration.
+	 *
+	 * @param templatePath The path to the template/script about to be executed (may be null for inline code)
+	 */
+	public static void signalUserCodeStart( String templatePath ) {
+		int		count	= signalCount.incrementAndGet();
+		long	elapsed	= startupTime > 0 ? System.currentTimeMillis() - startupTime : 0;
+		logger.debug( "[TIMING] signalUserCodeStart() call #{} at T+{}ms for: {}", count, elapsed, templatePath );
+		logger.debug( "[TIMING] debuggerHook() was called {} times before this signal", debuggerHookCount.get() );
 	}
 
 	// --------------------------------------------------------------------------
