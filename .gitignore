@@ -15,6 +15,11 @@ docs/
 # IDEA files
 .idea
 
+# Eclipse files
+.classpath
+.project
+.settings/
+
 # Mac Files
 .DS_Store
 
