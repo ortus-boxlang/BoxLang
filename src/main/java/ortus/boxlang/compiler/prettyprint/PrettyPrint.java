@@ -23,7 +23,8 @@ public final class PrettyPrint {
 	}
 
 	public static void main( String[] args ) {
-		BoxRuntime instance = BoxRuntime.getInstance();
+		// initialize BoxRuntime if not already done
+		BoxRuntime.getInstance();
 
 		// process cli args
 		// --check (make no changes, just check if the file is already formatted, return an error code if not)
@@ -35,7 +36,6 @@ public final class PrettyPrint {
 			String	configPath	= System.getProperty( "user.dir" ) + "/.bxformat.json";
 			String	inputPath	= System.getProperty( "user.dir" );
 			String	outputPath	= null;
-			boolean	initConfig	= false;
 
 			for ( int i = 0; i < args.length; i++ ) {
 				if ( args[ i ].equalsIgnoreCase( "--help" ) || args[ i ].equalsIgnoreCase( "-h" ) ) {
