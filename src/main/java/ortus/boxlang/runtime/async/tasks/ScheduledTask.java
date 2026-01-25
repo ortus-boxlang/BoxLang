@@ -451,8 +451,14 @@ public class ScheduledTask implements Runnable {
 
 		// Mark the task as it will run now for the first time
 		this.stats.put( "neverRun", false );
+		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 		try {
 			RequestBoxContext.setCurrent( this.taskContext );
+			if ( this.taskContext.getRequestContext() != null ) {
+				Thread.currentThread().setContextClassLoader( this.taskContext.getRequestContext().getRequestClassLoader() );
+			} else {
+				Thread.currentThread().setContextClassLoader( BoxRuntime.getInstance().getRuntimeLoader() );
+			}
 
 			// Before Interceptors : From global to local
 			this.interceptorService.announce(
@@ -579,6 +585,7 @@ public class ScheduledTask implements Runnable {
 			setNextRunTime();
 
 			RequestBoxContext.removeCurrent();
+			Thread.currentThread().setContextClassLoader( oldClassLoader );
 
 			// Clean up an open connections from this run
 			if ( this.taskContext instanceof IJDBCCapableContext jdbcContext ) {
