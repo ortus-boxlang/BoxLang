@@ -48,6 +48,19 @@ public final class Config {
 	private ForLoopSemicolons	forLoopSemicolons		= new ForLoopSemicolons();
 
 	private FunctionConfig		function				= new FunctionConfig();
+	private ArgumentsConfig		arguments				= new ArgumentsConfig();
+	private BracesConfig		braces					= new BracesConfig();
+	private OperatorsConfig		operators				= new OperatorsConfig();
+	private ChainConfig			chain					= new ChainConfig();
+	private TemplateConfig		template				= new TemplateConfig();
+
+	@JsonProperty( "import" )
+	private ImportConfig		importConfig			= new ImportConfig();
+	private CommentsConfig		comments				= new CommentsConfig();
+
+	@JsonProperty( "class" )
+	private ClassConfig			classConfig				= new ClassConfig();
+	private SqlConfig			sql						= new SqlConfig();
 
 	public Config() {
 	}
@@ -178,6 +191,87 @@ public final class Config {
 		return this;
 	}
 
+	public ArgumentsConfig getArguments() {
+		return arguments;
+	}
+
+	public Config setArguments( ArgumentsConfig arguments ) {
+		this.arguments = arguments;
+		return this;
+	}
+
+	public BracesConfig getBraces() {
+		return braces;
+	}
+
+	public Config setBraces( BracesConfig braces ) {
+		this.braces = braces;
+		return this;
+	}
+
+	public OperatorsConfig getOperators() {
+		return operators;
+	}
+
+	public Config setOperators( OperatorsConfig operators ) {
+		this.operators = operators;
+		return this;
+	}
+
+	public ChainConfig getChain() {
+		return chain;
+	}
+
+	public Config setChain( ChainConfig chain ) {
+		this.chain = chain;
+		return this;
+	}
+
+	public TemplateConfig getTemplate() {
+		return template;
+	}
+
+	public Config setTemplate( TemplateConfig template ) {
+		this.template = template;
+		return this;
+	}
+
+	public ImportConfig getImportConfig() {
+		return importConfig;
+	}
+
+	public Config setImportConfig( ImportConfig importConfig ) {
+		this.importConfig = importConfig;
+		return this;
+	}
+
+	public CommentsConfig getComments() {
+		return comments;
+	}
+
+	public Config setComments( CommentsConfig comments ) {
+		this.comments = comments;
+		return this;
+	}
+
+	public ClassConfig getClassConfig() {
+		return classConfig;
+	}
+
+	public Config setClassConfig( ClassConfig classConfig ) {
+		this.classConfig = classConfig;
+		return this;
+	}
+
+	public SqlConfig getSql() {
+		return sql;
+	}
+
+	public Config setSql( SqlConfig sql ) {
+		this.sql = sql;
+		return this;
+	}
+
 	public static Config loadConfig( String filePath ) throws JSONObjectException, IOException {
 		return JSONUtil.getJSONBuilder().beanFrom( Config.class, new File( filePath ) );
 	}
@@ -231,6 +325,15 @@ public final class Config {
 		map.put( "array", array.toMap() );
 		map.put( "for_loop_semicolons", forLoopSemicolons.toMap() );
 		map.put( "function", function.toMap() );
+		map.put( "arguments", arguments.toMap() );
+		map.put( "braces", braces.toMap() );
+		map.put( "operators", operators.toMap() );
+		map.put( "chain", chain.toMap() );
+		map.put( "template", template.toMap() );
+		map.put( "import", importConfig.toMap() );
+		map.put( "comments", comments.toMap() );
+		map.put( "class", classConfig.toMap() );
+		map.put( "sql", sql.toMap() );
 		return map;
 	}
 
@@ -287,6 +390,33 @@ public final class Config {
 		}
 		if ( config.containsKey( "function" ) && config.get( "function" ) instanceof Map functionMap ) {
 			applyFunctionConfig( ( Map<String, Object> ) functionMap );
+		}
+		if ( config.containsKey( "arguments" ) && config.get( "arguments" ) instanceof Map argumentsMap ) {
+			applyArgumentsConfig( ( Map<String, Object> ) argumentsMap );
+		}
+		if ( config.containsKey( "braces" ) && config.get( "braces" ) instanceof Map bracesMap ) {
+			applyBracesConfig( ( Map<String, Object> ) bracesMap );
+		}
+		if ( config.containsKey( "operators" ) && config.get( "operators" ) instanceof Map operatorsMap ) {
+			applyOperatorsConfig( ( Map<String, Object> ) operatorsMap );
+		}
+		if ( config.containsKey( "chain" ) && config.get( "chain" ) instanceof Map chainMap ) {
+			applyChainConfig( ( Map<String, Object> ) chainMap );
+		}
+		if ( config.containsKey( "template" ) && config.get( "template" ) instanceof Map templateMap ) {
+			applyTemplateConfig( ( Map<String, Object> ) templateMap );
+		}
+		if ( config.containsKey( "import" ) && config.get( "import" ) instanceof Map importMap ) {
+			applyImportConfig( ( Map<String, Object> ) importMap );
+		}
+		if ( config.containsKey( "comments" ) && config.get( "comments" ) instanceof Map commentsMap ) {
+			applyCommentsConfig( ( Map<String, Object> ) commentsMap );
+		}
+		if ( config.containsKey( "class" ) && config.get( "class" ) instanceof Map classMap ) {
+			applyClassConfig( ( Map<String, Object> ) classMap );
+		}
+		if ( config.containsKey( "sql" ) && config.get( "sql" ) instanceof Map sqlMap ) {
+			applySqlConfig( ( Map<String, Object> ) sqlMap );
 		}
 	}
 
@@ -381,6 +511,116 @@ public final class Config {
 		}
 		if ( config.containsKey( "leading_comma" ) ) {
 			multiline.setLeadingComma( config.get( "leading_comma" ) );
+		}
+	}
+
+	private void applyArgumentsConfig( Map<String, Object> config ) {
+		if ( config.containsKey( "comma_dangle" ) && config.get( "comma_dangle" ) instanceof Boolean commaDangle ) {
+			this.arguments.setCommaDangle( commaDangle );
+		}
+		if ( config.containsKey( "multiline_count" ) && config.get( "multiline_count" ) instanceof Number multilineCount ) {
+			this.arguments.setMultilineCount( multilineCount.intValue() );
+		}
+		if ( config.containsKey( "multiline_length" ) && config.get( "multiline_length" ) instanceof Number multilineLength ) {
+			this.arguments.setMultilineLength( multilineLength.intValue() );
+		}
+	}
+
+	@SuppressWarnings( "unchecked" )
+	private void applyBracesConfig( Map<String, Object> config ) {
+		if ( config.containsKey( "style" ) && config.get( "style" ) instanceof String style ) {
+			this.braces.setStyle( style );
+		}
+		if ( config.containsKey( "require_for_single_statement" ) && config.get( "require_for_single_statement" ) instanceof Boolean require ) {
+			this.braces.setRequireForSingleStatement( require );
+		}
+		if ( config.containsKey( "else" ) && config.get( "else" ) instanceof Map elseMap ) {
+			applyElseConfig( ( Map<String, Object> ) elseMap );
+		}
+	}
+
+	private void applyElseConfig( Map<String, Object> config ) {
+		if ( config.containsKey( "style" ) && config.get( "style" ) instanceof String style ) {
+			this.braces.getElseConfig().setStyle( style );
+		}
+	}
+
+	@SuppressWarnings( "unchecked" )
+	private void applyOperatorsConfig( Map<String, Object> config ) {
+		if ( config.containsKey( "position" ) && config.get( "position" ) instanceof String position ) {
+			this.operators.setPosition( position );
+		}
+		if ( config.containsKey( "ternary" ) && config.get( "ternary" ) instanceof Map ternaryMap ) {
+			applyTernaryConfig( ( Map<String, Object> ) ternaryMap );
+		}
+	}
+
+	private void applyTernaryConfig( Map<String, Object> config ) {
+		if ( config.containsKey( "style" ) && config.get( "style" ) instanceof String style ) {
+			this.operators.getTernary().setStyle( style );
+		}
+		if ( config.containsKey( "question_position" ) && config.get( "question_position" ) instanceof String questionPosition ) {
+			this.operators.getTernary().setQuestionPosition( questionPosition );
+		}
+	}
+
+	private void applyChainConfig( Map<String, Object> config ) {
+		if ( config.containsKey( "break_count" ) && config.get( "break_count" ) instanceof Number breakCount ) {
+			this.chain.setBreakCount( breakCount.intValue() );
+		}
+		if ( config.containsKey( "break_length" ) && config.get( "break_length" ) instanceof Number breakLength ) {
+			this.chain.setBreakLength( breakLength.intValue() );
+		}
+	}
+
+	private void applyTemplateConfig( Map<String, Object> config ) {
+		if ( config.containsKey( "component_prefix" ) && config.get( "component_prefix" ) instanceof String componentPrefix ) {
+			this.template.setComponentPrefix( componentPrefix );
+		}
+		if ( config.containsKey( "indent_content" ) && config.get( "indent_content" ) instanceof Boolean indentContent ) {
+			this.template.setIndentContent( indentContent );
+		}
+		if ( config.containsKey( "single_attribute_per_line" ) && config.get( "single_attribute_per_line" ) instanceof Boolean singleAttr ) {
+			this.template.setSingleAttributePerLine( singleAttr );
+		}
+		if ( config.containsKey( "self_closing" ) && config.get( "self_closing" ) instanceof Boolean selfClosing ) {
+			this.template.setSelfClosing( selfClosing );
+		}
+	}
+
+	private void applyImportConfig( Map<String, Object> config ) {
+		if ( config.containsKey( "sort" ) && config.get( "sort" ) instanceof Boolean sort ) {
+			this.importConfig.setSort( sort );
+		}
+		if ( config.containsKey( "group" ) && config.get( "group" ) instanceof Boolean group ) {
+			this.importConfig.setGroup( group );
+		}
+	}
+
+	private void applyCommentsConfig( Map<String, Object> config ) {
+		if ( config.containsKey( "preserve_blank_lines" ) && config.get( "preserve_blank_lines" ) instanceof Boolean preserveBlankLines ) {
+			this.comments.setPreserveBlankLines( preserveBlankLines );
+		}
+		if ( config.containsKey( "wrap" ) && config.get( "wrap" ) instanceof Boolean wrap ) {
+			this.comments.setWrap( wrap );
+		}
+	}
+
+	private void applyClassConfig( Map<String, Object> config ) {
+		if ( config.containsKey( "member_order" ) && config.get( "member_order" ) instanceof String memberOrder ) {
+			this.classConfig.setMemberOrder( memberOrder );
+		}
+		if ( config.containsKey( "member_spacing" ) && config.get( "member_spacing" ) instanceof Number memberSpacing ) {
+			this.classConfig.setMemberSpacing( memberSpacing.intValue() );
+		}
+	}
+
+	private void applySqlConfig( Map<String, Object> config ) {
+		if ( config.containsKey( "uppercase_keywords" ) && config.get( "uppercase_keywords" ) instanceof Boolean uppercaseKeywords ) {
+			this.sql.setUppercaseKeywords( uppercaseKeywords );
+		}
+		if ( config.containsKey( "indent_clauses" ) && config.get( "indent_clauses" ) instanceof Boolean indentClauses ) {
+			this.sql.setIndentClauses( indentClauses );
 		}
 	}
 
