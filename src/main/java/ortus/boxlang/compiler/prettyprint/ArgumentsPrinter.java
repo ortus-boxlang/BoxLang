@@ -104,6 +104,9 @@ public class ArgumentsPrinter {
 				if ( i < size - 1 ) {
 					contentsDoc.append( "," );
 					contentsDoc.append( Line.LINE );
+				} else if ( multiline && visitor.config.getArguments().getCommaDangle() ) {
+					// Add trailing comma for last argument when multiline and comma_dangle is enabled
+					contentsDoc.append( "," );
 				}
 			}
 

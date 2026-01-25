@@ -42,4 +42,16 @@ public class FunctionArgumentsTest extends PrettyPrintTest {
 	public void testMultilineLength30() throws IOException {
 		printTestWithConfigFile( "function_arguments", "multiline_length_30" );
 	}
+
+	@Test
+	@DisplayName( "Trailing comma added when comma_dangle is true and multiline" )
+	public void testCommaDangleTrue() throws IOException {
+		printTestWithConfigFile( "function_arguments", "comma_dangle_true" );
+	}
+
+	@Test
+	@DisplayName( "No trailing comma when comma_dangle is false" )
+	public void testCommaDangleFalse() throws IOException {
+		printTestWithConfigFile( "function_arguments", "comma_dangle_false" );
+	}
 }
