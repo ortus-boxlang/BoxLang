@@ -18,7 +18,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -49,6 +51,8 @@ import ortus.boxlang.compiler.ast.statement.BoxForIn;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.CollectionCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 
@@ -85,7 +89,8 @@ public class BoxForInTransformer extends AbstractTransformer {
 			tracker.setStringLabel( forIn.getLabel(), forIn );
 		}
 
-		LineNumberIns expressionPos = AsmHelper.translatePosition( forIn.getExpression() );
+		LineNumberIns	expressionPos	= AsmHelper.translatePosition( forIn.getExpression() );
+		boolean			hasTwoVars		= forIn.hasTwoVariables();
 
 		nodes.addAll( expressionPos.start() );
 
@@ -170,28 +175,93 @@ public class BoxForInTransformer extends AbstractTransformer {
 		nodes.add( endQueryLabel );
 
 		// create iterator
-		nodes.add( new VarInsnNode( Opcodes.ALOAD, collectionVar.index() ) );
-		// CollectionCaster.cast( ${collectionName} ).iterator();
-		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-		    Type.getInternalName( CollectionCaster.class ),
-		    "cast",
-		    Type.getMethodDescriptor(
-		        Type.getType( Collection.class ),
-		        Type.getType( Object.class )
-		    ),
-		    false
-		) );
+		// For two variables with structs: use entrySet().iterator()
+		// For single variable or non-struct: use CollectionCaster.cast(...).iterator()
+		VarStore	iteratorVar	= null;
+		VarStore	indexVar	= null;
 
-		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
-		    Type.getInternalName( Iterable.class ),
-		    "iterator",
-		    Type.getMethodDescriptor(
-		        Type.getType( Iterator.class )
-		    ),
-		    true
-		) );
-		VarStore iteratorVar = tracker.storeNewVariable( Opcodes.ASTORE );
-		nodes.addAll( iteratorVar.nodes() );
+		if ( hasTwoVars ) {
+			// Load isStruct flag
+			nodes.add( new VarInsnNode( Opcodes.ILOAD, isStructVar.index() ) );
+			LabelNode	notStructLabel		= new LabelNode();
+			LabelNode	endIteratorLabel	= new LabelNode();
+
+			// If not a struct, jump to regular iterator
+			nodes.add( new JumpInsnNode( Opcodes.IFEQ, notStructLabel ) );
+
+			// For structs: cast to IStruct and call entrySet().iterator()
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, collectionVar.index() ) );
+			nodes.add( new TypeInsnNode( Opcodes.CHECKCAST, Type.getInternalName( IStruct.class ) ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+			    Type.getInternalName( IStruct.class ),
+			    "entrySet",
+			    Type.getMethodDescriptor(
+			        Type.getType( Set.class )
+			    ),
+			    true
+			) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+			    Type.getInternalName( Set.class ),
+			    "iterator",
+			    Type.getMethodDescriptor(
+			        Type.getType( Iterator.class )
+			    ),
+			    true
+			) );
+			nodes.add( new JumpInsnNode( Opcodes.GOTO, endIteratorLabel ) );
+
+			// For non-structs: use CollectionCaster.cast(...).iterator()
+			nodes.add( notStructLabel );
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, collectionVar.index() ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( CollectionCaster.class ),
+			    "cast",
+			    Type.getMethodDescriptor(
+			        Type.getType( Collection.class ),
+			        Type.getType( Object.class )
+			    ),
+			    false
+			) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+			    Type.getInternalName( Iterable.class ),
+			    "iterator",
+			    Type.getMethodDescriptor(
+			        Type.getType( Iterator.class )
+			    ),
+			    true
+			) );
+
+			nodes.add( endIteratorLabel );
+			iteratorVar = tracker.storeNewVariable( Opcodes.ASTORE );
+			nodes.addAll( iteratorVar.nodes() );
+
+			// Create index variable for arrays/queries (1-based)
+			nodes.add( new LdcInsnNode( 1 ) );
+			indexVar = tracker.storeNewVariable( Opcodes.ISTORE );
+			nodes.addAll( indexVar.nodes() );
+		} else {
+			// Single variable: use regular iterator
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, collectionVar.index() ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( CollectionCaster.class ),
+			    "cast",
+			    Type.getMethodDescriptor(
+			        Type.getType( Collection.class ),
+			        Type.getType( Object.class )
+			    ),
+			    false
+			) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+			    Type.getInternalName( Iterable.class ),
+			    "iterator",
+			    Type.getMethodDescriptor(
+			        Type.getType( Iterator.class )
+			    ),
+			    true
+			) );
+			iteratorVar = tracker.storeNewVariable( Opcodes.ASTORE );
+			nodes.addAll( iteratorVar.nodes() );
+		}
 
 		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 
@@ -212,8 +282,15 @@ public class BoxForInTransformer extends AbstractTransformer {
 		) );
 		nodes.add( new JumpInsnNode( Opcodes.IFEQ, loopEnd ) );
 
-		// assign the variable
-		nodes.addAll( assignVar( forIn, iteratorVar.index(), context ) );
+		// assign the variable(s)
+		if ( hasTwoVars ) {
+			if ( indexVar == null ) {
+				throw new IllegalStateException( "indexVar must be initialized for two-variable loops" );
+			}
+			nodes.addAll( assignTwoVars( forIn, iteratorVar.index(), isStructVar.index(), indexVar.index(), context ) );
+		} else {
+			nodes.addAll( assignVar( forIn, iteratorVar.index(), context ) );
+		}
 		nodes.add( new InsnNode( Opcodes.POP ) );
 
 		nodes.addAll( expressionPos.end() );
@@ -242,6 +319,19 @@ public class BoxForInTransformer extends AbstractTransformer {
 		    true
 		) );
 		nodes.add( endQueryIncrementLabel );
+
+		// For two-variable loops with non-struct collections, increment the index
+		if ( hasTwoVars && indexVar != null ) {
+			// if (!isStruct) { index++; }
+			nodes.add( new VarInsnNode( Opcodes.ILOAD, isStructVar.index() ) );
+			LabelNode skipIndexIncrement = new LabelNode();
+			nodes.add( new JumpInsnNode( Opcodes.IFNE, skipIndexIncrement ) );
+			nodes.add( new VarInsnNode( Opcodes.ILOAD, indexVar.index() ) );
+			nodes.add( new LdcInsnNode( 1 ) );
+			nodes.add( new InsnNode( Opcodes.IADD ) );
+			nodes.add( new VarInsnNode( Opcodes.ISTORE, indexVar.index() ) );
+			nodes.add( skipIndexIncrement );
+		}
 
 		nodes.add( new JumpInsnNode( Opcodes.GOTO, loopStart ) );
 
@@ -362,6 +452,142 @@ public class BoxForInTransformer extends AbstractTransformer {
 		    nodes,
 		    BoxAssignmentOperator.Equal,
 		    modifiers );
+	}
+
+	/**
+	 * Assigns two variables in a for-in loop (key/value for structs, item/index for arrays/queries)
+	 * 
+	 * @param forIn         the BoxForIn AST node
+	 * @param iteratorIndex local variable index of the iterator
+	 * @param isStructIndex local variable index of the isStruct flag
+	 * @param indexIndex    local variable index of the counter (for arrays/queries)
+	 * @param context       transformation context
+	 * 
+	 * @return list of ASM instructions for assigning both variables
+	 */
+	private List<AbstractInsnNode> assignTwoVars( BoxForIn forIn, int iteratorIndex, int isStructIndex, int indexIndex,
+	    TransformerContext context ) {
+		List<AbstractInsnNode>			nodes	= new ArrayList<>();
+		Optional<MethodContextTracker>	tracker	= transpiler.getCurrentMethodContextTracker();
+
+		if ( tracker.isEmpty() ) {
+			throw new IllegalStateException( "No current method context tracker found." );
+		}
+
+		// Get the next element from the iterator
+		nodes.add( new VarInsnNode( Opcodes.ALOAD, iteratorIndex ) );
+		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+		    Type.getInternalName( Iterator.class ),
+		    "next",
+		    Type.getMethodDescriptor(
+		        Type.getType( Object.class )
+		    ),
+		    true
+		) );
+
+		// Store the entry/element
+		VarStore entryVar = tracker.get().storeNewVariable( Opcodes.ASTORE );
+		nodes.addAll( entryVar.nodes() );
+
+		List<BoxAssignmentModifier> modifiers = new ArrayList<BoxAssignmentModifier>();
+		if ( forIn.getHasVar() ) {
+			modifiers.add( BoxAssignmentModifier.VAR );
+		}
+
+		// Assign first variable (key for struct, item for array/query)
+		// For struct: entry.getKey().getName()
+		// For array/query: entry (the element itself)
+		List<AbstractInsnNode> firstVarNodes = new ArrayList<>();
+
+		// Check if it's a struct
+		firstVarNodes.add( new VarInsnNode( Opcodes.ILOAD, isStructIndex ) );
+		LabelNode	notStructLabel1		= new LabelNode();
+		LabelNode	endFirstVarLabel	= new LabelNode();
+
+		firstVarNodes.add( new JumpInsnNode( Opcodes.IFEQ, notStructLabel1 ) );
+
+		// For struct: cast entry to Map.Entry, call getKey() then getName()
+		firstVarNodes.add( new VarInsnNode( Opcodes.ALOAD, entryVar.index() ) );
+		firstVarNodes.add( new TypeInsnNode( Opcodes.CHECKCAST, Type.getInternalName( Map.Entry.class ) ) );
+		firstVarNodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+		    Type.getInternalName( Map.Entry.class ),
+		    "getKey",
+		    Type.getMethodDescriptor(
+		        Type.getType( Object.class )
+		    ),
+		    true
+		) );
+		firstVarNodes.add( new TypeInsnNode( Opcodes.CHECKCAST, Type.getInternalName( Key.class ) ) );
+		firstVarNodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
+		    Type.getInternalName( Key.class ),
+		    "getName",
+		    Type.getMethodDescriptor(
+		        Type.getType( String.class )
+		    ),
+		    false
+		) );
+		firstVarNodes.add( new JumpInsnNode( Opcodes.GOTO, endFirstVarLabel ) );
+
+		// For array/query: just load the entry
+		firstVarNodes.add( notStructLabel1 );
+		firstVarNodes.add( new VarInsnNode( Opcodes.ALOAD, entryVar.index() ) );
+
+		firstVarNodes.add( endFirstVarLabel );
+
+		// Assign to first variable
+		nodes.addAll( new BoxAssignmentTransformer( ( AsmTranspiler ) transpiler ).transformEquals(
+		    forIn.getVariable(),
+		    firstVarNodes,
+		    BoxAssignmentOperator.Equal,
+		    modifiers ) );
+		nodes.add( new InsnNode( Opcodes.POP ) );
+
+		// Assign second variable (value for struct, index for array/query)
+		List<AbstractInsnNode> secondVarNodes = new ArrayList<>();
+
+		// Check if it's a struct
+		secondVarNodes.add( new VarInsnNode( Opcodes.ILOAD, isStructIndex ) );
+		LabelNode	notStructLabel2		= new LabelNode();
+		LabelNode	endSecondVarLabel	= new LabelNode();
+
+		secondVarNodes.add( new JumpInsnNode( Opcodes.IFEQ, notStructLabel2 ) );
+
+		// For struct: cast entry to Map.Entry, call getValue()
+		secondVarNodes.add( new VarInsnNode( Opcodes.ALOAD, entryVar.index() ) );
+		secondVarNodes.add( new TypeInsnNode( Opcodes.CHECKCAST, Type.getInternalName( Map.Entry.class ) ) );
+		secondVarNodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+		    Type.getInternalName( Map.Entry.class ),
+		    "getValue",
+		    Type.getMethodDescriptor(
+		        Type.getType( Object.class )
+		    ),
+		    true
+		) );
+		secondVarNodes.add( new JumpInsnNode( Opcodes.GOTO, endSecondVarLabel ) );
+
+		// For array/query: load the index counter
+		secondVarNodes.add( notStructLabel2 );
+		secondVarNodes.add( new VarInsnNode( Opcodes.ILOAD, indexIndex ) );
+		secondVarNodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+		    Type.getInternalName( Integer.class ),
+		    "valueOf",
+		    Type.getMethodDescriptor(
+		        Type.getType( Integer.class ),
+		        Type.INT_TYPE
+		    ),
+		    false
+		) );
+
+		secondVarNodes.add( endSecondVarLabel );
+
+		// Assign to second variable
+		nodes.addAll( new BoxAssignmentTransformer( ( AsmTranspiler ) transpiler ).transformEquals(
+		    forIn.getSecondVariable(),
+		    secondVarNodes,
+		    BoxAssignmentOperator.Equal,
+		    modifiers ) );
+
+		return nodes;
 	}
 
 }

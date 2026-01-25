@@ -29,6 +29,7 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 public class BoxForIn extends BoxStatement {
 
 	private BoxExpression	variable;
+	private BoxExpression	secondVariable;
 	private BoxExpression	expression;
 	private BoxStatement	body;
 	private Boolean			hasVar;
@@ -37,16 +38,21 @@ public class BoxForIn extends BoxStatement {
 	/**
 	 * Creates the AST node
 	 *
-	 * @param variable   for loop variable
-	 * @param expression for loop collection
-	 * @param body       list of the statement in the body of the loop
-	 * @param position   position of the statement in the source code
-	 * @param sourceText source code that originated the Node
+	 * @param label          optional label for the loop
+	 * @param variable       first loop variable (item/key)
+	 * @param secondVariable optional second variable (index/value), can be null
+	 * @param expression     for loop collection
+	 * @param body           list of the statement in the body of the loop
+	 * @param hasVar         whether var keyword is present
+	 * @param position       position of the statement in the source code
+	 * @param sourceText     source code that originated the Node
 	 */
-	public BoxForIn( String label, BoxExpression variable, BoxExpression expression, BoxStatement body, Boolean hasVar, Position position,
+	public BoxForIn( String label, BoxExpression variable, BoxExpression secondVariable, BoxExpression expression, BoxStatement body, Boolean hasVar,
+	    Position position,
 	    String sourceText ) {
 		super( position, sourceText );
 		setVariable( variable );
+		setSecondVariable( secondVariable );
 		setExpression( expression );
 		setBody( body );
 		setHasVar( hasVar );
@@ -55,6 +61,14 @@ public class BoxForIn extends BoxStatement {
 
 	public BoxExpression getVariable() {
 		return variable;
+	}
+
+	public BoxExpression getSecondVariable() {
+		return secondVariable;
+	}
+
+	public boolean hasTwoVariables() {
+		return secondVariable != null;
 	}
 
 	public BoxExpression getExpression() {
@@ -73,6 +87,14 @@ public class BoxForIn extends BoxStatement {
 		replaceChildren( this.variable, variable );
 		this.variable = variable;
 		this.variable.setParent( this );
+	}
+
+	public void setSecondVariable( BoxExpression secondVariable ) {
+		replaceChildren( this.secondVariable, secondVariable );
+		this.secondVariable = secondVariable;
+		if ( this.secondVariable != null ) {
+			this.secondVariable.setParent( this );
+		}
 	}
 
 	public void setExpression( BoxExpression expression ) {
@@ -115,6 +137,11 @@ public class BoxForIn extends BoxStatement {
 
 		map.put( "hasVar", hasVar );
 		map.put( "variable", variable.toMap() );
+		if ( secondVariable != null ) {
+			map.put( "secondVariable", secondVariable.toMap() );
+		} else {
+			map.put( "secondVariable", null );
+		}
 		map.put( "expression", expression.toMap() );
 		map.put( "body", body.toMap() );
 		if ( label != null ) {
