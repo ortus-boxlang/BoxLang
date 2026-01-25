@@ -39,12 +39,15 @@ public final class Config {
 	private boolean				bracketPadding			= false;
 	private boolean				parensPadding			= false;
 	private boolean				binaryOperatorsPadding	= true;
+	private boolean				semicolons				= true;
 	private StructConfig		struct					= new StructConfig();
 	private PropertyConfig		property				= new PropertyConfig();
 	private ArrayConfig			array					= new ArrayConfig();
 
 	@JsonProperty( "for_loop_semicolons" )
 	private ForLoopSemicolons	forLoopSemicolons		= new ForLoopSemicolons();
+
+	private FunctionConfig		function				= new FunctionConfig();
 
 	public Config() {
 	}
@@ -65,6 +68,15 @@ public final class Config {
 
 	public boolean getBinaryOperatorsPadding() {
 		return this.binaryOperatorsPadding;
+	}
+
+	public boolean getSemicolons() {
+		return semicolons;
+	}
+
+	public Config setSemicolons( boolean semicolons ) {
+		this.semicolons = semicolons;
+		return this;
 	}
 
 	public int getIndentSize() {
@@ -157,6 +169,15 @@ public final class Config {
 		return this;
 	}
 
+	public FunctionConfig getFunction() {
+		return function;
+	}
+
+	public Config setFunction( FunctionConfig function ) {
+		this.function = function;
+		return this;
+	}
+
 	public static Config loadConfig( String filePath ) throws JSONObjectException, IOException {
 		return JSONUtil.getJSONBuilder().beanFrom( Config.class, new File( filePath ) );
 	}
@@ -204,10 +225,12 @@ public final class Config {
 		map.put( "bracketPadding", bracketPadding );
 		map.put( "parensPadding", parensPadding );
 		map.put( "binaryOperatorsPadding", binaryOperatorsPadding );
+		map.put( "semicolons", semicolons );
 		map.put( "struct", struct.toMap() );
 		map.put( "property", property.toMap() );
 		map.put( "array", array.toMap() );
 		map.put( "for_loop_semicolons", forLoopSemicolons.toMap() );
+		map.put( "function", function.toMap() );
 		return map;
 	}
 
@@ -247,6 +270,9 @@ public final class Config {
 		if ( config.containsKey( "binaryOperatorsPadding" ) && config.get( "binaryOperatorsPadding" ) instanceof Boolean binaryOperatorsPadding ) {
 			this.binaryOperatorsPadding = binaryOperatorsPadding;
 		}
+		if ( config.containsKey( "semicolons" ) && config.get( "semicolons" ) instanceof Boolean semicolons ) {
+			this.semicolons = semicolons;
+		}
 		if ( config.containsKey( "struct" ) && config.get( "struct" ) instanceof Map structMap ) {
 			applyStructConfig( ( Map<String, Object> ) structMap );
 		}
@@ -258,6 +284,9 @@ public final class Config {
 		}
 		if ( config.containsKey( "for_loop_semicolons" ) && config.get( "for_loop_semicolons" ) instanceof Map forLoopMap ) {
 			applyForLoopSemicolonsConfig( ( Map<String, Object> ) forLoopMap );
+		}
+		if ( config.containsKey( "function" ) && config.get( "function" ) instanceof Map functionMap ) {
+			applyFunctionConfig( ( Map<String, Object> ) functionMap );
 		}
 	}
 
@@ -305,6 +334,37 @@ public final class Config {
 	private void applyForLoopSemicolonsConfig( Map<String, Object> config ) {
 		if ( config.containsKey( "padding" ) && config.get( "padding" ) instanceof Boolean padding ) {
 			this.forLoopSemicolons.setPadding( padding );
+		}
+	}
+
+	@SuppressWarnings( "unchecked" )
+	private void applyFunctionConfig( Map<String, Object> config ) {
+		if ( config.containsKey( "style" ) && config.get( "style" ) instanceof String style ) {
+			this.function.setStyle( style );
+		}
+		if ( config.containsKey( "parameters" ) && config.get( "parameters" ) instanceof Map parametersMap ) {
+			applyParametersConfig( ( Map<String, Object> ) parametersMap );
+		}
+		if ( config.containsKey( "arrow" ) && config.get( "arrow" ) instanceof Map arrowMap ) {
+			applyArrowConfig( ( Map<String, Object> ) arrowMap );
+		}
+	}
+
+	private void applyParametersConfig( Map<String, Object> config ) {
+		if ( config.containsKey( "comma_dangle" ) && config.get( "comma_dangle" ) instanceof Boolean commaDangle ) {
+			this.function.getParameters().setCommaDangle( commaDangle );
+		}
+		if ( config.containsKey( "multiline_count" ) && config.get( "multiline_count" ) instanceof Number multilineCount ) {
+			this.function.getParameters().setMultilineCount( multilineCount.intValue() );
+		}
+		if ( config.containsKey( "multiline_length" ) && config.get( "multiline_length" ) instanceof Number multilineLength ) {
+			this.function.getParameters().setMultilineLength( multilineLength.intValue() );
+		}
+	}
+
+	private void applyArrowConfig( Map<String, Object> config ) {
+		if ( config.containsKey( "parens" ) && config.get( "parens" ) instanceof String parens ) {
+			this.function.getArrow().setParens( parens );
 		}
 	}
 
