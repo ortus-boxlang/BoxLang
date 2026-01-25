@@ -1,0 +1,11 @@
+// Long binary operation that should wrap
+veryLongVariableName = someVeryLongFunctionName(argument1, argument2, argument3) + anotherLongFunctionCall(arg1, arg2);
+
+// Multiple operations
+result = firstValue + secondValue + thirdValue + fourthValue + fifthValue + sixthValue;
+
+// Nested operations
+total = (valueA + valueB) * (valueC + valueD) + extraValue;
+
+// String concatenation
+message = "This is a very long string that will need to wrap" & " and this is the continuation" & " and more text";

@@ -348,57 +348,64 @@ public class Visitor extends VoidBoxVisitor {
 	public void visit( BoxBinaryOperation node ) {
 		var	currentDoc		= getCurrentDoc();
 
-		var	inGroup			= ( node.getParent() instanceof BoxBinaryOperation ||
-		    node.getParent() instanceof BoxParenthesis || node.getParent() instanceof BoxIfElse );
 		var	needsPadding	= config.getBinaryOperatorsPadding();
+		String operatorPosition = config.getOperators().getPosition();
 
-		if ( !inGroup ) {
-			var	binaryDoc	= pushDoc( DocType.GROUP );
-			var	indentDoc	= pushDoc( DocType.INDENT );
-			node.getLeft().accept( this );
+		// Always create a GROUP for each binary operation
+		// This allows each operation to decide independently whether to break
+		var	binaryDoc	= pushDoc( DocType.GROUP );
+		var	indentDoc	= pushDoc( DocType.INDENT );
+		
+		node.getLeft().accept( this );
+		
+		if ( operatorPosition.equals( "start" ) ) {
+			// Operator at start of next line: left \n op right
 			indentDoc
 			    .append( needsPadding ? Line.LINE : Line.SOFT )
 			    .append( node.getOperator().getSymbol() )
-			    .append( needsPadding ? Line.LINE : Line.SOFT );
-			node.getRight().accept( this );
-			binaryDoc.append( popDoc() );
-
-			currentDoc.append( popDoc() );
+			    .append( needsPadding ? " " : "" );
 		} else {
-			node.getLeft().accept( this );
-			currentDoc
-			    .append( needsPadding ? Line.LINE : Line.SOFT )
+			// Operator at end of line (default "end"): left op \n right
+			indentDoc
+			    .append( needsPadding ? " " : "" )
 			    .append( node.getOperator().getSymbol() )
 			    .append( needsPadding ? Line.LINE : Line.SOFT );
-			node.getRight().accept( this );
 		}
+		
+		node.getRight().accept( this );
+		binaryDoc.append( popDoc() );
+
+		currentDoc.append( popDoc() );
 	}
 
 	public void visit( BoxComparisonOperation node ) {
 		var	currentDoc	= getCurrentDoc();
+		String operatorPosition = config.getOperators().getPosition();
 
-		var	inGroup		= ( node.getParent() instanceof BoxParenthesis );
-
-		if ( !inGroup ) {
-			var	binaryDoc	= pushDoc( DocType.GROUP );
-			var	indentDoc	= pushDoc( DocType.INDENT );
-			node.getLeft().accept( this );
+		// Always create a GROUP for each comparison operation
+		var	binaryDoc	= pushDoc( DocType.GROUP );
+		var	indentDoc	= pushDoc( DocType.INDENT );
+		
+		node.getLeft().accept( this );
+		
+		if ( operatorPosition.equals( "start" ) ) {
+			// Operator at start of next line
+			indentDoc
+			    .append( Line.LINE )
+			    .append( node.getOperator().getSymbol() )
+			    .append( " " );
+		} else {
+			// Operator at end of line (default "end")
 			indentDoc
 			    .append( " " )
 			    .append( node.getOperator().getSymbol() )
 			    .append( Line.LINE );
-			node.getRight().accept( this );
-			binaryDoc.append( popDoc() );
-
-			currentDoc.append( popDoc() );
-		} else {
-			node.getLeft().accept( this );
-			currentDoc
-			    .append( " " )
-			    .append( node.getOperator().getSymbol() )
-			    .append( Line.LINE );
-			node.getRight().accept( this );
 		}
+		
+		node.getRight().accept( this );
+		binaryDoc.append( popDoc() );
+
+		currentDoc.append( popDoc() );
 	}
 
 	public void visit( BoxParenthesis node ) {
