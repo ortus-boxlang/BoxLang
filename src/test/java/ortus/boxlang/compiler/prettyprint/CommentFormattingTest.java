@@ -36,4 +36,16 @@ public class CommentFormattingTest extends PrettyPrintTest {
 	public void testPreserveBlankLinesFalse() throws IOException {
 		printTestWithConfigFile( "comments", "preserve_blank_lines_false" );
 	}
+
+	@Test
+	@DisplayName( "Wrap long single-line comments" )
+	public void testWrapSingleLineComments() throws IOException {
+		printTestWithConfigFile( "comments", "wrap_single_line" );
+	}
+
+	@Test
+	@DisplayName( "Wrap long multi-line comments" )
+	public void testWrapMultiLineComments() throws IOException {
+		printTestWithConfigFile( "comments", "wrap_multi_line" );
+	}
 }

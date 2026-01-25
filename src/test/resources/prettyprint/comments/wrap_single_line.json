@@ -1,0 +1,6 @@
+{
+    "maxLineLength": 60,
+    "comments": {
+        "wrap": true
+    }
+}

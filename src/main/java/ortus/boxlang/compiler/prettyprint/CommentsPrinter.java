@@ -18,6 +18,9 @@
 
 package ortus.boxlang.compiler.prettyprint;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.comment.BoxComment;
 import ortus.boxlang.compiler.ast.comment.BoxDocComment;
@@ -26,7 +29,11 @@ import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
 
 public class CommentsPrinter {
 
-	private Visitor visitor;
+	private static final int	SINGLE_LINE_PREFIX_LENGTH	= 3;	// "// "
+	private static final int	MULTI_LINE_PREFIX_LENGTH	= 4;	// "/* " or " * "
+	private static final int	DEFAULT_INDENT_ESTIMATE		= 8;	// Estimate for typical indentation
+
+	private Visitor				visitor;
 
 	public CommentsPrinter( Visitor visitor ) {
 		this.visitor = visitor;
@@ -175,26 +182,46 @@ public class CommentsPrinter {
 	}
 
 	public void print( BoxSingleLineComment node ) {
-		visitor.getCurrentDoc()
-		    .append( "// " )
-		    .append( node.getCommentText() );
+		var		currentDoc	= visitor.getCurrentDoc();
+		boolean	wrap		= visitor.config.getComments().getWrap();
+		String	text		= node.getCommentText();
 
+		if ( wrap ) {
+			int				maxWidth	= getAvailableWidth( SINGLE_LINE_PREFIX_LENGTH );
+			List<String>	lines		= wrapText( text, maxWidth );
+
+			for ( int i = 0; i < lines.size(); i++ ) {
+				if ( i > 0 ) {
+					currentDoc.append( Line.HARD );
+				}
+				currentDoc.append( "// " ).append( lines.get( i ) );
+			}
+		} else {
+			currentDoc.append( "// " ).append( text );
+		}
 	}
 
 	public void print( BoxMultiLineComment node ) {
-		var currentDoc = visitor.getCurrentDoc();
+		var		currentDoc	= visitor.getCurrentDoc();
+		boolean	wrap		= visitor.config.getComments().getWrap();
+		String	text		= node.getCommentText();
+
 		if ( visitor.isTemplate() ) {
 			currentDoc
 			    .append( "<!--- " )
-			    .append( node.getCommentText() )
+			    .append( text )
 			    .append( " --->" );
 		} else {
 			currentDoc.append( "/*" );
-			if ( !node.getCommentText().startsWith( "*" ) && !node.getCommentText().startsWith( "\n" ) ) {
+			if ( !text.startsWith( "*" ) && !text.startsWith( "\n" ) ) {
 				currentDoc.append( " " );
 			}
-			printMultiLine( node.getCommentText() );
-			if ( !node.getCommentText().endsWith( "*" ) && !node.getCommentText().endsWith( "\n" ) ) {
+			if ( wrap ) {
+				printMultiLineWrapped( text );
+			} else {
+				printMultiLine( text );
+			}
+			if ( !text.endsWith( "*" ) && !text.endsWith( "\n" ) ) {
 				currentDoc.append( " " );
 			}
 			currentDoc.append( "*/" );
@@ -202,22 +229,137 @@ public class CommentsPrinter {
 	}
 
 	public void print( BoxDocComment node ) {
-		var currentDoc = visitor.getCurrentDoc();
+		var		currentDoc	= visitor.getCurrentDoc();
+		boolean	wrap		= visitor.config.getComments().getWrap();
+		String	text		= node.getCommentText();
+
 		if ( visitor.isTemplate() ) {
 			currentDoc
 			    .append( "<!--- " )
-			    .append( node.getCommentText() )
+			    .append( text )
 			    .append( " --->" );
 		} else {
 			currentDoc.append( "/**" );
-			if ( !node.getCommentText().startsWith( "*" ) && !node.getCommentText().startsWith( "\n" ) ) {
+			if ( !text.startsWith( "*" ) && !text.startsWith( "\n" ) ) {
 				currentDoc.append( " " );
 			}
-			printMultiLine( node.getCommentText() );
-			if ( !node.getCommentText().endsWith( "*" ) && !node.getCommentText().endsWith( "\n" ) ) {
+			if ( wrap ) {
+				printMultiLineWrapped( text );
+			} else {
+				printMultiLine( text );
+			}
+			if ( !text.endsWith( "*" ) && !text.endsWith( "\n" ) ) {
 				currentDoc.append( " " );
 			}
 			currentDoc.append( "*/" );
+		}
+	}
+
+	/**
+	 * Calculate the available width for comment text based on maxLineLength,
+	 * accounting for the comment prefix and estimated indentation.
+	 *
+	 * @param prefixLength The length of the comment prefix (e.g., "// " = 3)
+	 *
+	 * @return The available width for comment text
+	 */
+	private int getAvailableWidth( int prefixLength ) {
+		int maxLineLength = visitor.config.getMaxLineLength();
+		// Subtract prefix length and a conservative indentation estimate
+		return Math.max( 20, maxLineLength - prefixLength - DEFAULT_INDENT_ESTIMATE );
+	}
+
+	/**
+	 * Wrap text at word boundaries to fit within the specified width.
+	 *
+	 * @param text     The text to wrap
+	 * @param maxWidth The maximum width for each line
+	 *
+	 * @return A list of wrapped lines
+	 */
+	private List<String> wrapText( String text, int maxWidth ) {
+		List<String> lines = new ArrayList<>();
+		if ( text == null || text.isEmpty() ) {
+			lines.add( "" );
+			return lines;
+		}
+
+		// Split by existing newlines first to preserve intentional line breaks
+		String[] paragraphs = text.split( "\\r?\\n", -1 );
+		for ( String paragraph : paragraphs ) {
+			if ( paragraph.isEmpty() ) {
+				lines.add( "" );
+				continue;
+			}
+
+			// Wrap each paragraph
+			wrapParagraph( paragraph.trim(), maxWidth, lines );
+		}
+
+		return lines;
+	}
+
+	/**
+	 * Wrap a single paragraph (no newlines) at word boundaries.
+	 *
+	 * @param paragraph The paragraph text to wrap
+	 * @param maxWidth  The maximum width for each line
+	 * @param lines     The list to add wrapped lines to
+	 */
+	private void wrapParagraph( String paragraph, int maxWidth, List<String> lines ) {
+		if ( paragraph.length() <= maxWidth ) {
+			lines.add( paragraph );
+			return;
+		}
+
+		String[]		words		= paragraph.split( "\\s+" );
+		StringBuilder	currentLine	= new StringBuilder();
+
+		for ( String word : words ) {
+			if ( currentLine.length() == 0 ) {
+				// First word on the line
+				currentLine.append( word );
+			} else if ( currentLine.length() + 1 + word.length() <= maxWidth ) {
+				// Word fits on current line
+				currentLine.append( " " ).append( word );
+			} else {
+				// Word doesn't fit, start a new line
+				lines.add( currentLine.toString() );
+				currentLine = new StringBuilder( word );
+			}
+		}
+
+		// Add the last line
+		if ( currentLine.length() > 0 ) {
+			lines.add( currentLine.toString() );
+		}
+	}
+
+	/**
+	 * Print multi-line comment text with word wrapping.
+	 *
+	 * @param text The text to print
+	 */
+	private void printMultiLineWrapped( String text ) {
+		var				currentDoc		= visitor.getCurrentDoc();
+		int				maxWidth		= getAvailableWidth( MULTI_LINE_PREFIX_LENGTH );
+		List<String>	wrappedLines	= wrapText( text, maxWidth );
+		int				numLines		= wrappedLines.size();
+
+		for ( int i = 0; i < numLines; i++ ) {
+			boolean	first	= i == 0;
+			boolean	last	= i == numLines - 1;
+
+			// For wrapped comments, all continuation lines get " * " prefix
+			if ( !first ) {
+				currentDoc.append( " * " );
+			}
+
+			if ( last ) {
+				currentDoc.append( wrappedLines.get( i ) );
+			} else {
+				currentDoc.append( wrappedLines.get( i ) ).append( Line.HARD );
+			}
 		}
 	}
 
