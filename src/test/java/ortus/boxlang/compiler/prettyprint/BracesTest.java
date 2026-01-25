@@ -60,4 +60,22 @@ public class BracesTest extends PrettyPrintTest {
 	public void testRequireWithNewLineStyle() throws IOException {
 		printTestWithConfigFile( "braces", "require_newline" );
 	}
+
+	@Test
+	@DisplayName( "Else on same line when style is 'same-line'" )
+	public void testElseStyleSameLine() throws IOException {
+		printTestWithConfigFile( "braces", "else_style_same_line" );
+	}
+
+	@Test
+	@DisplayName( "Else on new line when style is 'new-line'" )
+	public void testElseStyleNewLine() throws IOException {
+		printTestWithConfigFile( "braces", "else_style_new_line" );
+	}
+
+	@Test
+	@DisplayName( "Else style with require_for_single_statement" )
+	public void testElseStyleWithRequire() throws IOException {
+		printTestWithConfigFile( "braces", "else_with_require" );
+	}
 }

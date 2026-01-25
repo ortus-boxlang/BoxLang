@@ -1057,11 +1057,26 @@ public class Visitor extends VoidBoxVisitor {
 				// Check if else body is a direct if statement (not in a block)
 				boolean isDirectElseIf = node.getElseBody() instanceof BoxIfElse;
 				
-				// Add newline before else if then body is not a block
-				if ( !thenBodyIsBlock && !config.getBraces().getRequireForSingleStatement() ) {
+				// Determine spacing before "else" based on configuration
+				String elseStyle = config.getBraces().getElseConfig().getStyle();
+				
+				if ( elseStyle.equals( "new-line" ) ) {
+					// Always put else on a new line
 					newLine();
+				} else if ( elseStyle.equals( "same-line" ) ) {
+					// Put else on same line if then body is a block, otherwise new line
+					if ( thenBodyIsBlock || config.getBraces().getRequireForSingleStatement() ) {
+						print( " " );
+					} else {
+						newLine();
+					}
 				} else {
-					print( " " );
+					// Default to same-line behavior
+					if ( thenBodyIsBlock || config.getBraces().getRequireForSingleStatement() ) {
+						print( " " );
+					} else {
+						newLine();
+					}
 				}
 				
 				print( "else " );
