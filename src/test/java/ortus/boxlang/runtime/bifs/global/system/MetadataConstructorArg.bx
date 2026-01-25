@@ -1,0 +1,7 @@
+class extends="MetadataConstructorArgParent" {
+
+	function init() {
+
+	}
+
+}

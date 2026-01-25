@@ -325,17 +325,36 @@ public abstract class Boxpiler implements IBoxpiler {
 		// This needs to be tested at decision time since the setting may have changed in the runtime since the compiler was created
 		Boolean	trustedCache	= runtime.getConfiguration().trustedCache;
 		if ( ( lastModified > 0 ) && ( lastModified2 > 0 ) && !trustedCache && ( lastModified != lastModified2 ) ) {
-			try {
-				// Don't know if this does anything, but calling it for good measure
-				classPool.get( classInfo.fqn().toString() ).getClassLoader().close();
-			} catch ( IOException e ) {
-				e.printStackTrace();
+			// Double check lock using the class name as the lockn. This ensures only one thread recompiles a class at a time
+			String internedFQN = classInfo.fqn().toString().intern();
+			synchronized ( internedFQN ) {
+
+				lastModified	= classPool.get( classInfo.fqn().toString() ).lastModified();
+				lastModified2	= classInfo.lastModified();
+				if ( ( lastModified > 0 ) && ( lastModified2 > 0 ) && !trustedCache && ( lastModified != lastModified2 ) ) {
+					try {
+						// Don't know if this does anything, but calling it for good measure
+						classPool.get( classInfo.fqn().toString() ).getClassLoader().close();
+					} catch ( IOException e ) {
+						e.printStackTrace();
+					}
+					try {
+						// Mark the class info instance as not ready to use yet
+						classInfo.startCompiling();
+						classPool.put( classInfo.fqn().toString(), classInfo );
+						compileClassInfo( classInfo.classPoolName(), classInfo.fqn().toString() );
+					} finally {
+						// It's ready now
+						classInfo.doneCompiling();
+					}
+				} else {
+					classInfo = classPool.get( classInfo.fqn().toString() );
+				}
 			}
-			classPool.put( classInfo.fqn().toString(), classInfo );
-			compileClassInfo( classInfo.classPoolName(), classInfo.fqn().toString() );
 		} else {
 			classInfo = classPool.get( classInfo.fqn().toString() );
 		}
+		// This will block if the class info is still being compiled
 		return classInfo.getDiskClass();
 	}
 
@@ -374,17 +393,36 @@ public abstract class Boxpiler implements IBoxpiler {
 		// This needs to be tested at decision time since the setting may have changed in the runtime since the compiler was created
 		Boolean	trustedCache	= runtime.getConfiguration().trustedCache;
 		if ( ( lastModified > 0 ) && ( lastModified2 > 0 ) && !trustedCache && ( lastModified != lastModified2 ) ) {
-			try {
-				// Don't know if this does anything, but calling it for good measure
-				classPool.get( classInfo.fqn().toString() ).getClassLoader().close();
-			} catch ( IOException e ) {
-				e.printStackTrace();
+			// Double check lock using the class name as the lock. This ensures only one thread recompiles a class at a time
+			String internedFQN = classInfo.fqn().toString().intern();
+			synchronized ( internedFQN ) {
+
+				lastModified	= classPool.get( classInfo.fqn().toString() ).lastModified();
+				lastModified2	= classInfo.lastModified();
+				if ( ( lastModified > 0 ) && ( lastModified2 > 0 ) && !trustedCache && ( lastModified != lastModified2 ) ) {
+					try {
+						// Don't know if this does anything, but calling it for good measure
+						classPool.get( classInfo.fqn().toString() ).getClassLoader().close();
+					} catch ( IOException e ) {
+						e.printStackTrace();
+					}
+					try {
+						// Mark the class info instance as not ready to use yet
+						classInfo.startCompiling();
+						classPool.put( classInfo.fqn().toString(), classInfo );
+						compileClassInfo( classInfo.classPoolName(), classInfo.fqn().toString() );
+					} finally {
+						// It's ready now
+						classInfo.doneCompiling();
+					}
+				} else {
+					classInfo = classPool.get( classInfo.fqn().toString() );
+				}
 			}
-			classPool.put( classInfo.fqn().toString(), classInfo );
-			compileClassInfo( classInfo.classPoolName(), classInfo.fqn().toString() );
 		} else {
 			classInfo = classPool.get( classInfo.fqn().toString() );
 		}
+		// This will block if the class info is still being compiled
 		return classInfo.getDiskClass();
 	}
 

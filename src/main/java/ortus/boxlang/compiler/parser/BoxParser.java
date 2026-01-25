@@ -1269,7 +1269,7 @@ public class BoxParser extends AbstractParser {
 			return null;
 		}
 		if ( expr instanceof BoxStringLiteral str ) {
-			if ( !allowEmpty && str.getValue().trim().isEmpty() ) {
+			if ( !allowEmpty && str.getValue().isBlank() ) {
 				issues.add( new Issue( "Attribute [" + name + "] cannot be empty", expr.getPosition() ) );
 			}
 			return str.getValue();

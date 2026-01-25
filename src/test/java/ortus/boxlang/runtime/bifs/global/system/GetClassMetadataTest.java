@@ -72,6 +72,20 @@ public class GetClassMetadataTest {
 		assertThat( metadata.getAsString( Key.type ) ).isEqualTo( "Class" );
 	}
 
+	@DisplayName( "It can get the metadata for a class with constructor args" )
+	@Test
+	public void testClassWithConstructorArgs() {
+		runtime.executeSource(
+		    """
+		    result = new src.test.java.ortus.boxlang.runtime.bifs.global.system.MetadataConstructorArg();
+		    """,
+		    context );
+
+		var clazz = variables.getAsClassRunnable( result );
+		// Simulate legacy metadata call that compat invokes
+		clazz.getMetaData();
+	}
+
 	@DisplayName( "It can get the metadata for a bx interface" )
 	@Test
 	public void testInterface() {

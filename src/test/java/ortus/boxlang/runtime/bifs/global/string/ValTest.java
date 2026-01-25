@@ -123,4 +123,15 @@ public class ValTest {
 		assertThat( variables.get( result ) ).isEqualTo( 15852073 );
 	}
 
+	@DisplayName( "It works with trailing hyphen" )
+	@Test
+	public void testItWorksWithTrailingHyphen() {
+		instance.executeSource(
+		    """
+		    result = val("0-");
+		           """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 0 );
+	}
+
 }

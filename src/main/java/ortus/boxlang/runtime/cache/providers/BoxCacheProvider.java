@@ -358,6 +358,8 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 		// Record it
 		getStats().recordReap();
 
+		evictChecks();
+
 		// Log it
 		logger.debug(
 		    "Finished reaping BoxCache [{}] in [{}]ms",
@@ -601,8 +603,7 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 * @return The value retrieved or null
 	 */
 	public Attempt<Object> get( String key ) {
-		// Run eviction checks async using a CompletableFuture
-		getTaskScheduler().submit( this::evictChecks );
+
 		// Get it like a ninja
 		ICacheEntry cacheEntry = getCacheEntry( key );
 
@@ -693,9 +694,6 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 		    value,
 		    metadata
 		);
-
-		// Run eviction checks async using a CompletableFuture
-		getTaskScheduler().submit( this::evictChecks );
 
 		// set the new object
 		setQuiet( boxKey, newEntry );

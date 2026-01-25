@@ -175,14 +175,6 @@
             "args": [
                 "module:test"
             ]
-        },
-        {
-            "type": "java",
-            "name": "PrettyPrinter",
-            "request": "launch",
-            "mainClass": "ortus.boxlang.compiler.PrettyPrinter",
-            "projectName": "BoxLang",
-            "args": "${input:prettyPrintFile}"
         }
     ],
     "inputs": [

@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.bifs.global.temporal;
 
+import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
@@ -39,7 +40,7 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
 @BoxMember( type = BoxLangType.DATETIME, name = "compareTo" )
 public class DateCompare extends BIF {
 
-	HashMap<Key, ChronoUnit> datePartMap = new HashMap<Key, ChronoUnit>() {
+	private static final HashMap<Key, ChronoUnit> datePartMap = new HashMap<Key, ChronoUnit>() {
 
 		{
 			put( Key.of( "y" ), ChronoUnit.YEARS );
@@ -81,18 +82,32 @@ public class DateCompare extends BIF {
 		DateTime	date2		= DateTimeCaster.cast( arguments.get( Key.date2 ), true, timezone, context );
 
 		if ( datePart == null ) {
-			boolean	dateOneIsBefore	= date1.getWrapped().isBefore( date2.getWrapped() );
-			boolean	datesAreEqual	= date1.getWrapped().isEqual( date2.getWrapped() );
-			return datesAreEqual ? 0 : ( dateOneIsBefore ? -1 : 1 );
+			return date1.compare( date2, true );
 		} else {
 			Key partKey = Key.of( datePart );
 			if ( !datePartMap.containsKey( partKey ) ) {
 				throw new BoxRuntimeException( "Invalid datepart: " + datePart );
 			}
-			// Between is reversed so it will return negative numbers if date1 is before date2
-			long diff = datePartMap.get( partKey ).between( date2.getWrapped(), date1.getWrapped() );
+			ChronoUnit unit = datePartMap.get( partKey );
 
-			return diff == 0 ? 0 : ( diff > 0 ? 1 : -1 );
+			switch ( unit ) {
+				case NANOS, MICROS, MILLIS, SECONDS, MINUTES, DAYS -> {
+					// For the smaller units, we can directly compare a truncated version
+					int comparison = date1.getWrapped().truncatedTo( unit ).compareTo( date2.getWrapped().truncatedTo( unit ) );
+					return comparison == 0 ? 0 : ( comparison < 0 ? -1 : 1 );
+				}
+				case MONTHS, YEARS -> {
+					// For larger units, we need to convert to LocalDate to avoid errors attempting to truncate
+					LocalDate	localDate1	= LocalDate.from( date1.getWrapped() );
+					LocalDate	localDate2	= LocalDate.from( date2.getWrapped() );
+					long		diffBetween	= unit.between( localDate1, localDate2 );
+					return Long.compare( 0, diffBetween );
+				}
+				default -> {
+					throw new BoxRuntimeException( "Unhandled datepart: [" + datePart + "]" );
+				}
+			}
+
 		}
 	}
 

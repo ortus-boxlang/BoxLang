@@ -52,15 +52,15 @@ public class SOAP extends BIF {
 	 * // Create a SOAP client from WSDL
 	 * ws = soap( "http://example.com/service.wsdl" )
 	 *
-	 * // Invoke a SOAP operation
-	 * result = ws.methodName( arg1, arg2 )
+	 * // Invoke a SOAP operation: methodName, passing arguments as an array
+	 * result = ws.invoke( "methodName", [ arg1, arg2 ] )
 	 *
 	 * // With authentication and timeout configuration
 	 * ws = soap( "http://example.com/service.wsdl" )
 	 *     .setTimeout( 60 )
 	 *     .setAuthentication( "user", "pass" )
 	 *
-	 * result = ws.methodName( arg1, arg2 )
+	 * result = ws.invoke( "methodName", [ arg1, arg2 ] )
 	 * </pre>
 	 *
 	 * @param context   The BoxLang execution context

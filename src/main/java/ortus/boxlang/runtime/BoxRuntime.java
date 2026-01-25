@@ -678,9 +678,15 @@ public class BoxRuntime implements java.io.Closeable {
 				try {
 					instance.startup();
 				} catch ( Throwable t ) {
-					// Capture the startup exception for any other threads waiting for the instance to be available
-					instance.startupException = t;
-					throw t;
+					// Allow bx-plus commands like activation and info to pass through so that an expired license or trial doesn't block registration or info
+					if ( !ExceptionUtil.isValidLicenseAction( instance, t ) ) {
+						// Capture the startup exception for any other threads waiting for the instance to be available
+						instance.startupException = t;
+						throw t;
+					} else {
+						instance.getLoggingService().getRootLogger()
+						    .warn( "License module action detected during startup failure, allowing it to continue: " + t.getMessage() );
+					}
 				}
 			}
 		}
@@ -1321,7 +1327,8 @@ public class BoxRuntime implements java.io.Closeable {
 	 */
 	public void executeClass( Class<IBoxRunnable> targetClass, String templatePath, IBoxContext context, String[] args ) {
 		IBoxContext				scriptingContext	= ensureRequestTypeContext( context, Paths.get( templatePath ).toUri() );
-		BaseApplicationListener	listener			= scriptingContext.getParentOfType( RequestBoxContext.class )
+		boolean					shutdownContext		= context != scriptingContext;
+		BaseApplicationListener	listener			= scriptingContext.getRequestContext()
 		    .getApplicationListener();
 		Throwable				errorToHandle		= null;
 		IClassRunnable			target				= ( IClassRunnable ) DynamicObject.of( targetClass )
@@ -1330,7 +1337,6 @@ public class BoxRuntime implements java.io.Closeable {
 
 		// Does it have a main method?
 		if ( target.getThisScope().containsKey( Key.main ) ) {
-			RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
 			ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 			// Fire!!!
 			try {
@@ -1398,8 +1404,15 @@ public class BoxRuntime implements java.io.Closeable {
 				scriptingContext.flushBuffer( false );
 				RequestBoxContext.removeCurrent();
 				Thread.currentThread().setContextClassLoader( oldClassLoader );
+				if ( shutdownContext ) {
+					scriptingContext.getRequestContext().shutdown();
+				}
 			}
 		} else {
+			RequestBoxContext.removeCurrent();
+			if ( shutdownContext ) {
+				scriptingContext.getRequestContext().shutdown();
+			}
 			throw new BoxRuntimeException(
 			    "Class [" + targetClass.getName() + "] does not have a main method to execute." );
 		}
@@ -1433,11 +1446,10 @@ public class BoxRuntime implements java.io.Closeable {
 		scriptingContext = ensureRequestTypeContext( context, FileSystemUtil.createFileUri( templatePath ) );
 		boolean					shutdownContext	= context != scriptingContext;
 		BaseApplicationListener	listener		= scriptingContext
-		    .getParentOfType( RequestBoxContext.class )
+		    .getRequestContext()
 		    .getApplicationListener();
 		Throwable				errorToHandle	= null;
-		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
-		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
+		ClassLoader				oldClassLoader	= Thread.currentThread().getContextClassLoader();
 		try {
 			boolean result = listener.onRequestStart( scriptingContext, new Object[] { templatePath } );
 			if ( result ) {
@@ -1564,8 +1576,7 @@ public class BoxRuntime implements java.io.Closeable {
 	public Object executeStatement( BoxScript scriptRunnable, IBoxContext context ) {
 		IBoxContext	scriptingContext	= ensureRequestTypeContext( context );
 		boolean		shutdownContext		= context != scriptingContext;
-		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
-		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
+		ClassLoader	oldClassLoader		= Thread.currentThread().getContextClassLoader();
 		try {
 			// Fire!!!
 			return scriptRunnable.invoke( scriptingContext );
@@ -1638,8 +1649,7 @@ public class BoxRuntime implements java.io.Closeable {
 		BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadSource( scriptingContext, source, type );
 		Object		results				= null;
 
-		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
-		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
+		ClassLoader	oldClassLoader		= Thread.currentThread().getContextClassLoader();
 		try {
 			// Fire!!!
 			results = scriptRunnable.invoke( scriptingContext );
@@ -1672,8 +1682,7 @@ public class BoxRuntime implements java.io.Closeable {
 		IBoxContext		scriptingContext	= ensureRequestTypeContext( context );
 		BufferedReader	reader				= new BufferedReader( new InputStreamReader( sourceStream ) );
 		String			source;
-		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
-		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
+		ClassLoader		oldClassLoader		= Thread.currentThread().getContextClassLoader();
 
 		try {
 			while ( ( source = reader.readLine() ) != null ) {
@@ -1828,19 +1837,28 @@ public class BoxRuntime implements java.io.Closeable {
 	 * new scripting
 	 * context that has a request scope and return that with the original context as
 	 * the parent.
+	 * This will set the request context into the thread local. Be sure to remove it when you are finished!
 	 *
 	 * @param context  The context to check
 	 * @param template The template to use for the context if needed
 	 *
-	 * @return The context with a request scope
+	 * @return The context which is guaranteed to have a request context visible
 	 */
+	@SuppressWarnings( "unused" )
 	private IBoxContext ensureRequestTypeContext( IBoxContext context, URI template ) {
-		if ( context.getParentOfType( RequestBoxContext.class ) != null ) {
+		RequestBoxContext currentRequestContext = context.getRequestContext();
+		if ( currentRequestContext != null ) {
+			RequestBoxContext.setCurrent( currentRequestContext );
 			return context;
 		} else if ( template != null ) {
-			return new ScriptingRequestBoxContext( context, template );
+			currentRequestContext = new ScriptingRequestBoxContext( context, false );
+			RequestBoxContext.setCurrent( currentRequestContext );
+			currentRequestContext.loadApplicationDescriptor( template );
+			return currentRequestContext;
 		} else {
-			return new ScriptingRequestBoxContext( context );
+			currentRequestContext = new ScriptingRequestBoxContext( context );
+			RequestBoxContext.setCurrent( currentRequestContext );
+			return currentRequestContext;
 		}
 	}
 

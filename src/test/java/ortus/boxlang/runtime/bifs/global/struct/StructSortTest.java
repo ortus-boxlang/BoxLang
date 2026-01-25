@@ -25,12 +25,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -374,5 +376,68 @@ public class StructSortTest {
 
 		      """,
 		    context );
+	}
+
+	@DisplayName( "It can sort by a date values with milliseconds precision" )
+	@Test
+	@Disabled( "Re-enable if testing failed contract resolution with structSort and date values" )
+	public void testDateMillisecondsPrecision() {
+
+		try {
+
+			Compare.lenientDateComparison = true;
+
+			//@formatter:off
+			instance.executeSource("""
+			// Simulate ConcurrentStore pool structure
+			pool = {};
+
+			// Populate with cache entries (mimics CacheBoxProvider.set operations)
+			for ( i = 1; i <= 5000; i++ ) {
+				pool[ "cache_key_#i#" ] = {
+					object: "cached_value_#i#",
+					hits: randRange( 0, 1000 ),
+					timeout: "",  // Empty string like in real cache
+					lastAccessTimeout: "",  // Empty string like in real cache
+					created: dateAdd( "l",randRange( 0, 100 ), now() ),
+					// Uncomment if you want to get funky and mix dates and numbers in the sort
+					// created: now() - randRange( 0, 100 ),
+					// lastAccessed: now() - randRange( 0, 100 ),
+					lastAccessed: dateAdd( "l", -randRange( 0, 100 ), now() ),  // Very close timestamps
+					isExpired: false
+				};
+			}
+
+			// Simulate rapid concurrent access + sort (like LRU policy eviction)
+			for ( attempt = 1; attempt <= 50; attempt++ ) {
+				try {
+					for ( j = 1; j <= 100; j++ ) {
+						randomKey = "cache_key_#randRange( 1, 5000 )#";
+						if ( structKeyExists( pool, randomKey ) ) {
+							pool[ randomKey ].hits++;
+							pool[ randomKey ].lastAccessed = now();
+						}
+					}
+					
+					// This is where the error occurs - sorting during concurrent access
+					sorted = structSort(
+						pool,
+						"numeric",
+						"asc",
+						"lastAccessed"
+					);
+					
+					println( "Attempt #attempt#: OK (#arrayLen( sorted )# keys)<br>" );
+				} catch ( any e ) {
+					println( "<strong>Attempt #attempt#: ERROR</strong><br>" );
+					rethrow;
+				}
+			}
+			""", context ); 
+			//@formatter:on
+
+		} finally {
+			Compare.lenientDateComparison = false;
+		}
 	}
 }

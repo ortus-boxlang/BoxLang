@@ -73,8 +73,13 @@ public class MaxTest {
 		}
 
 		@Override
-		public Object defaultValue() {
+		public Object getDefaultValue( IBoxContext context ) {
 			return defaultValue;
+		}
+
+		@Override
+		public boolean hasDefaultValue() {
+			return defaultValue != null;
 		}
 
 		@Override

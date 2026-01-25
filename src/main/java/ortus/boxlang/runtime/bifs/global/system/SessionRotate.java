@@ -22,7 +22,6 @@ package ortus.boxlang.runtime.bifs.global.system;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 
 @BoxBIF( description = "Rotate the current session" )
@@ -43,7 +42,7 @@ public class SessionRotate extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		context.getParentOfType( RequestBoxContext.class ).getApplicationListener().rotateSession();
+		context.getRequestContextOrFail().getApplicationListener().rotateSession();
 		return null;
 	}
 

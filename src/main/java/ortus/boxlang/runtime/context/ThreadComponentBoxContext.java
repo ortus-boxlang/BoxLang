@@ -18,7 +18,9 @@
 package ortus.boxlang.runtime.context;
 
 import ortus.boxlang.runtime.async.RequestThreadManager;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.AttributesScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -101,6 +103,7 @@ public class ThreadComponentBoxContext extends BaseBoxContext implements IJDBCCa
 		this.attributesScope	= new AttributesScope( attributes );
 
 		this.variablesScope		= parent.getScopeNearby( VariablesScope.name );
+		registerShutdownListener( ( context ) -> this.doShutdown() );
 	}
 
 	/**
@@ -417,10 +420,30 @@ public class ThreadComponentBoxContext extends BaseBoxContext implements IJDBCCa
 		}
 	}
 
-	@Override
-	public void shutdown() {
-		super.shutdown();
+	/**
+	 * Internal method to do the actual shutdown
+	 */
+	private void doShutdown() {
 		shutdownConnections();
+
+		// Wipe out this stuff to help GC
+		this.localScope			= null;
+		this.attributesScope	= null;
+		this.variablesScope		= null;
+		// Seems we have a lot of code which expects this to still exist via the request thread manager
+		// this.thread = null;
+		this.threadManager		= null;
+
+	}
+
+	@Override
+	public IClassRunnable getFunctionClass() {
+		return hasParent() ? getParent().getFunctionClass() : null;
+	}
+
+	@Override
+	public DynamicObject getFunctionStaticClass() {
+		return hasParent() ? getParent().getFunctionStaticClass() : null;
 	}
 
 }

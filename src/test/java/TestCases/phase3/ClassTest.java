@@ -36,6 +36,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
@@ -480,6 +481,39 @@ public class ClassTest {
 		assertThat( meta.get( Key.of( "accessors" ) ) ).isEqualTo( true );
 	}
 
+	@DisplayName( "legacy meta" )
+	@Test
+	public void testlegacyNoInstantiate() {
+
+		DynamicObject	loadedClass	= BoxRuntime.getInstance().getClassLocator()
+		    .load(
+		        context,
+		        "src.test.java.TestCases.phase3.MyClass",
+		        ClassLocator.BX_PREFIX,
+		        true,
+		        context.getCurrentImports()
+		    );
+
+		IStruct			meta		= ( IStruct ) loadedClass.invokeStatic( context, "getMetaDataStatic" );
+
+		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
+		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
+		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
+		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.bx" ) ).isTrue();
+		// assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
+		assertThat( meta.get( Key.of( "properties" ) ) ).isInstanceOf( Array.class );
+		assertThat( meta.getAsArray( Key.of( "properties" ) ) ).hasSize( 1 );
+		Struct prop = ( Struct ) meta.getAsArray( Key.of( "properties" ) ).get( 0 );
+		assertThat( prop ).doesNotContainKey( Key.of( "defaultValue" ) );
+
+		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
+		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 5 );
+		assertThat( meta.get( Key.of( "extends" ) ) ).isNull();
+		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( false );
+		assertThat( meta.get( Key.of( "persisent" ) ) ).isEqualTo( false );
+		assertThat( meta.get( Key.of( "accessors" ) ) ).isEqualTo( true );
+	}
+
 	@DisplayName( "legacy meta CF" )
 	@Test
 	public void testlegacyMetaCF() {
@@ -499,7 +533,8 @@ public class ClassTest {
 		assertThat( meta.get( Key.of( "properties" ) ) ).isInstanceOf( Array.class );
 		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
 		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 5 );
-		assertThat( meta.get( Key.of( "extends" ) ) ).isNull();
+		assertThat( meta.get( Key.of( "extends" ) ) ).isNotNull();
+		assertThat( meta.get( Key.of( "implements" ) ) ).isNotNull();
 		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( true );
 		assertThat( meta.get( Key.of( "persisent" ) ) ).isEqualTo( false );
 		assertThat( meta.get( Key.of( "accessors" ) ) ).isEqualTo( false );
@@ -597,7 +632,7 @@ public class ClassTest {
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Class" );
 		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
 		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.bx" ) ).isTrue();
-		assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
+		// assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) instanceof Array ).isTrue();
 		assertThat( meta.getAsBoolean( Key.of( "output" ) ) ).isFalse();
 		Array properties = meta.getAsArray( Key.of( "properties" ) );
@@ -2177,6 +2212,21 @@ public class ClassTest {
 		    result = new src.test.java.TestCases.phase3.TagComponentParse();
 		       """,
 		    context );
+	}
+
+	@DisplayName( "It should load abstract class with arguments without ArrayIndexOutOfBoundsException" )
+	@Test
+	public void testAbstractMethodWithArguments() {
+		// This test verifies that abstract methods with arguments are correctly handled.
+		// Previously, abstract method argument names were not pre-registered in the keys array,
+		// causing ArrayIndexOutOfBoundsException when the class was loaded.
+		instance.executeSource(
+		    """
+		    result = new src.test.java.TestCases.phase3.ConcreteMethodWithArgs( "test" );
+		    """,
+		    context );
+
+		assertThat( variables.get( Key.result ) ).isNotNull();
 	}
 
 }

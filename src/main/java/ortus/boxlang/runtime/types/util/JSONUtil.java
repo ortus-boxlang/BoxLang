@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.StreamWriteConstraints;
 import com.fasterxml.jackson.jr.annotationsupport.JacksonAnnotationExtension;
@@ -324,7 +325,8 @@ public class JSONUtil {
 		    )
 		    .enable( JsonParser.Feature.ALLOW_COMMENTS )
 		    .enable( JsonParser.Feature.ALLOW_YAML_COMMENTS )
-		    .enable( JsonParser.Feature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER );
+		    .enable( JsonParser.Feature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER )
+		    .enable( JsonGenerator.Feature.WRITE_BIGDECIMAL_AS_PLAIN );
 
 		// If lenient parsing is enabled, allow some common non-standard JSON features
 		if ( useLenientParsing ) {

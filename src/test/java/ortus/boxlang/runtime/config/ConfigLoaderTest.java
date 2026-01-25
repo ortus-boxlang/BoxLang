@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.config;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -34,6 +35,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.CacheConfig;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 class ConfigLoaderTest {
 
@@ -257,6 +259,20 @@ class ConfigLoaderTest {
 		assertThat( config.security.allowedFileOperationExtensions ).contains( ".exe" );
 		assertThat( config.experimental ).isInstanceOf( IStruct.class );
 		assertThat( config.compiler ).isEqualTo( "asm" );
+	}
+
+	@DisplayName( "It will reject invalid env vars" )
+	@Test
+	@Disabled( "This test passes, but is not thread safe to run in CI in parallel with other tests" )
+	void testItWillRejectInvalidEnvVars() {
+		System.setProperty( "BOXLANG_FOO", "bar" );
+		System.setProperty( "BOXLANG_FOO_BAR", "baz" );
+		System.setProperty( "BOXLANG_FOO_BAR_BAZ", "bum" );
+		System.setProperty( "BOXLANG_FOO_BAR_BAZ_BUM", "qux" );
+		Throwable t = assertThrows( BoxRuntimeException.class, () -> ConfigLoader.getInstance().loadCore() );
+		// While importing BOXLANG_XXX env vars, error un-flattening key [foo.bar.baz.bum] because [foo] is not a struct, but instead [String]
+		assertThat( t.getMessage() ).contains( "error un-flattening key" );
+
 	}
 
 }

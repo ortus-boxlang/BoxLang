@@ -117,8 +117,10 @@ public class DoubleCaster implements IBoxCaster {
 	 *         null, floats, alpha characters, etc.
 	 */
 	private static Double parseDouble( String value ) {
-		if ( value == null )
+		if ( value == null ) {
 			return null;
+		}
+		value = value.trim();
 		if ( NumberUtils.isCreatable( value ) ) {
 			try {
 				return Double.parseDouble( value );

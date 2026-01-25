@@ -561,4 +561,25 @@ public class OracleDriverTest extends AbstractDriverTest {
 		assertThat( rs1.getRowAsStruct( 0 ).getAsString( Key.of( "strVal" ) ) ).isEqualTo( "world" );
 		assertThat( rs1.getRowAsStruct( 0 ).getAsNumber( Key.of( "sumVal" ) ).doubleValue() ).isEqualTo( 15D );
 	}
+
+	@DisplayName( "It can handle float query param with leading space" )
+	@Test
+	public void testFloatQueryParamWithLeadingSpace() {
+		instance.executeStatement(
+		    """
+		    result = queryExecute(
+		        "SELECT :floatVal as floatValue FROM dual",
+		        {
+		            floatVal: { value: " 0220692.03", sqltype: "float" }
+		        },
+		        { "datasource" : "OracleDatasource" }
+		    );
+		    """,
+		    context );
+
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertThat( query.size() ).isEqualTo( 1 );
+		assertThat( query.getRowAsStruct( 0 ).getAsNumber( Key.of( "floatValue" ) ).doubleValue() ).isEqualTo( 220692.03D );
+	}
 }

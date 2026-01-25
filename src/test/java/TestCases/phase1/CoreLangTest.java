@@ -6126,4 +6126,110 @@ public class CoreLangTest {
 		);
 	}
 
+	@Test
+	public void testSciNotationWithLeadingZero() {
+
+		instance.executeSource(
+		    """
+		    	result = 0E-7
+		    """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+		assertThat( variables.getAsNumber( Key.of( "result" ) ).doubleValue() ).isEqualTo( 0 );
+	}
+
+	@Test
+	public void testCompileThreadSafety() {
+		// print PID to console
+		System.out.println( "PID: " + ProcessHandle.current().pid() );
+		instance.executeSource(
+		// @formatter:off
+		    """
+				relPath = "src/test/java/TestCases/phase1/includeMe.bxs"
+				function runner() {
+					try {
+						include relPath;
+					} catch ( any e ) {
+						variables.error = e;
+						stop = 0;
+						rethrow;
+					}
+				}
+				// pre-compile
+				runner();
+
+				fullPath = expandPath( relPath );
+				start = getTickCount();
+				stop = start + 2000;
+
+				thread name="updater" {
+					while( getTickCount() < stop ) {
+						// repeatedly touch the file to force recompile
+						fileWrite( fullPath, fileRead( fullPath ) );
+						sleep( 500 );
+					}
+				}
+				thread name="compiler1" {
+					while( getTickCount() < stop ) {
+						runner();
+					}
+				}
+				thread name="compiler2" {
+					while( getTickCount() < stop ) {
+						runner();
+					}
+				}
+
+				thread action="join" name="updater,compiler1,compiler2";
+
+				if( !isNull( variables.error ) ) {
+					throw variables.error;
+				}
+            """,
+			// @formatter:on
+		    context );
+	}
+
+	@Test
+	public void testIterateOverPrimitiveArray() {
+
+		instance.executeSource(
+		    """
+		      	string = "hello"
+		    result = ""
+		    for( char in string.toCharArray() ) {
+		    	result &= char;
+		    }
+		      """,
+		    context
+		);
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "hello" );
+	}
+
+	@Test
+	public void testAllowNumericTruncateTypes() {
+
+		assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		      function foo( required Integer arg ) {
+		    return arg;
+		      }
+		      foo( 1.2 )
+		          """,
+		    context
+		) );
+
+		instance.executeSource(
+		    """
+		      function foo( required IntegerTruncate arg ) {
+		    return arg;
+		      }
+		      result = foo( 1.2 )
+		          """,
+		    context
+		);
+		assertThat( variables.getAsInteger( Key.of( "result" ) ) ).isEqualTo( 1 );
+
+	}
+
 }

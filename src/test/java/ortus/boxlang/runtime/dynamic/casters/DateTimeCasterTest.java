@@ -342,8 +342,8 @@ public class DateTimeCasterTest {
 	}
 
 	@Test
-	@DisplayName( "Test weird medium formats that no one should be using" )
-	public void testWeirdMediumFormats() {
+	@DisplayName( "Test medium and long formats" )
+	public void testMediumLongFormats() {
 		// Weird string example
 		String		dateString	= "Nov/21/2025 00:01:00";
 		DateTime	result		= DateTimeCaster.cast( dateString );
@@ -370,6 +370,21 @@ public class DateTimeCasterTest {
 		result		= DateTimeCaster.cast( dateString );
 		assertThat( result ).isNotNull();
 		assertThat( result.format( "yyyy-MM-dd HH:mm" ) ).isEqualTo( "2010-06-03 04:33" );
+
+		dateString	= "January, 05 2026 17:39:13 -0600";
+		result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd HH:mm:ss" ) ).isEqualTo( "2026-01-05 17:39:13" );
+
+		dateString	= "May, 03 2024 00:51:07 -0500";
+		result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd HH:mm:ss" ) ).isEqualTo( "2024-05-03 00:51:07" );
+
+		dateString	= "Dec 26, 2023 7:29:06 PM";
+		result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd hh:mm:ss a" ) ).isEqualTo( "2023-12-26 07:29:06 PM" );
 	}
 
 	@Test

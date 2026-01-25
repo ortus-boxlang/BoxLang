@@ -569,7 +569,7 @@ public class PropertyFile {
 			line.put( Key.value, contents );
 		}
 		// Check for whitespace
-		else if ( contents.trim().isEmpty() ) {
+		else if ( contents.isBlank() ) {
 			line.put( Key.type, "whitespace" );
 			line.put( Key.value, contents );
 		}

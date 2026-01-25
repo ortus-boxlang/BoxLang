@@ -18,18 +18,26 @@
 package ortus.boxlang.runtime.types.meta;
 
 import java.util.ArrayList;
-import java.util.Set;
+import java.util.List;
+import java.util.Map;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.runnables.BoxClassSupport;
+import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.StaticScope;
 import ortus.boxlang.runtime.types.AbstractFunction;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableArray;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
  * This class represents generic BoxLang metadata for a an object which has no object-specifc properties
@@ -66,25 +74,65 @@ public class ClassMeta extends BoxMeta<IClassRunnable> {
 		this.target	= target;
 		this.$class	= target.getClass();
 
-		// Assemble the metadata
-		var			mdFunctions				= new ArrayList<Object>();
-		var			variablesScope			= target.getVariablesScope();
+		this.meta	= generateMeta(
+		    target.getClass(),
+		    target.bxGetName(),
+		    target.getSourceType(),
+		    target.getRunnablePath(),
+		    target.getSuperClass(),
+		    target.getInterfaces(),
+		    target.getAbstractMethods(),
+		    target.getCompileTimeMethods(),
+		    target.getAnnotations(),
+		    target.getDocumentation(),
+		    target.getProperties(),
+		    target.getStaticScope()
+		);
+	}
 
-		// Functions are done depending on the size of the scope
-		Set<Key>	compileTimeMethodNames	= target.getCompileTimeMethodNames();
+	/**
+	 * Generate metadata for a class
+	 *
+	 * @param targetClass        The class reference (for future use)
+	 * @param name               The class name key
+	 * @param sourceType         The source type of the class
+	 * @param runnablePath       The path to the class file
+	 * @param superClass         The super class, if any
+	 * @param interfaces         The list of interfaces implemented
+	 * @param abstractMethods    The abstract methods defined
+	 * @param compileTimeMethods The methods known at compile time
+	 * @param annotations        The class annotations
+	 * @param documentation      The class documentation
+	 * @param properties         The class properties
+	 * @param staticScope        The static scope
+	 *
+	 * @return The metadata as a struct
+	 */
+	public static IStruct generateMeta(
+	    Class<? extends IClassRunnable> targetClass,
+	    Key name,
+	    BoxSourceType sourceType,
+	    ResolvedFilePath runnablePath,
+	    DynamicObject superClass,
+	    List<BoxInterface> interfaces,
+	    Map<Key, AbstractFunction> abstractMethods,
+	    Map<Key, Class<? extends UDF>> compileTimeMethods,
+	    IStruct annotations,
+	    IStruct documentation,
+	    Map<Key, ortus.boxlang.runtime.types.Property> properties,
+	    StaticScope staticScope ) {
+
+		// Assemble the metadata
+		var mdFunctions = new ArrayList<Object>();
 
 		// Micro-optimize list allocation
-		mdFunctions.ensureCapacity( compileTimeMethodNames.size() );
+		mdFunctions.ensureCapacity( compileTimeMethods.size() );
 		// Iterate and add
-		for ( Key key : compileTimeMethodNames ) {
-			Object entry = variablesScope.get( key );
-			if ( entry instanceof Function castedFunction ) {
-				mdFunctions.add( ( ( FunctionMeta ) castedFunction.getBoxMeta() ).meta );
-			}
+		for ( var fun : compileTimeMethods.values() ) {
+			mdFunctions.add( DynamicObject.of( fun ).invokeStatic( BoxRuntime.getInstance().getRuntimeContext(), "getMetaStatic" ) );
 		}
 
 		// Add all static methods as well, if any
-		IScope staticScope = target.getStaticScope();
 		if ( staticScope != null ) {
 			// iterate over the entrySet, each value that's a Function and is declared in this class, add it
 			for ( var entry : staticScope.entrySet() ) {
@@ -95,20 +143,19 @@ public class ClassMeta extends BoxMeta<IClassRunnable> {
 		}
 
 		// Add all abstract methods as well, if any
-		for ( var entry : target.getAbstractMethods().keySet() ) {
-			AbstractFunction value = target.getAbstractMethods().get( entry );
+		for ( var entry : abstractMethods.keySet() ) {
+			AbstractFunction value = abstractMethods.get( entry );
 			mdFunctions.add( ( ( FunctionMeta ) value.getBoxMeta() ).meta );
 		}
 
 		// Process Properties
-		var	mdProperties		= new ArrayList<Object>();
-		var	targetProperties	= target.getProperties();
+		var mdProperties = new ArrayList<Object>();
 
 		// Micro-optimize list allocation
-		mdProperties.ensureCapacity( targetProperties.size() );
+		mdProperties.ensureCapacity( properties.size() );
 		// Iterate and add
-		for ( var entry : targetProperties.entrySet() ) {
-			if ( entry.getValue().declaringClass() == target.getClass() ) {
+		for ( var entry : properties.entrySet() ) {
+			if ( entry.getValue().declaringClass() == targetClass ) {
 				mdProperties.add( Struct.ofNonConcurrent(
 				    Key._NAME, entry.getKey().getName(),
 				    Key.nameAsKey, entry.getKey(),
@@ -121,35 +168,34 @@ public class ClassMeta extends BoxMeta<IClassRunnable> {
 		}
 
 		// Build the meta struct
-		var	keyName		= target.bxGetName();
-		var	fullName	= keyName.getName();
-		this.meta = Struct.ofNonConcurrent(
+		var		fullName	= name.getName();
+		IStruct	meta		= Struct.ofNonConcurrent(
 		    Key._NAME, fullName,
-		    Key.nameAsKey, keyName,
+		    Key.nameAsKey, name,
 		    Key.simpleName, fullName.substring( fullName.lastIndexOf( '.' ) + 1 ),
-		    Key.output, target.canOutput(),
-		    Key.documentation, new Struct( target.getDocumentation() ),
-		    Key.annotations, new Struct( target.getAnnotations() ),
-		    Key._EXTENDS, target.getSuper() != null ? target.getSuper().getBoxMeta().getMeta() : Struct.EMPTY,
+		    Key.output, BoxClassSupport.canOutput( annotations, name.getName() ),
+		    Key.documentation, new Struct( documentation ),
+		    Key.annotations, new Struct( annotations ),
+		    Key._EXTENDS, superClass != null ? superClass.invokeStatic( BoxRuntime.getInstance().getRuntimeContext(), "getMetaStatic" ) : Struct.EMPTY,
 		    Key.functions, UnmodifiableArray.fromList( mdFunctions ),
-		    Key._HASHCODE, target.hashCode(),
+		    // Key._HASHCODE, targetClass.hashCode(),
 		    Key.properties, UnmodifiableArray.fromList( mdProperties ),
 		    Key.type, CLASS_TYPE,
-		    Key.fullname, target.bxGetName().getName(),
-		    Key.path, target.getRunnablePath().absolutePath().toString()
+		    Key.fullname, fullName,
+		    Key.path, runnablePath.absolutePath().toString()
 		);
 
 		// Add interfaces if any
 		meta.put(
 		    Key._IMPLEMENTS,
-		    target.getInterfaces().stream()
+		    interfaces.stream()
 		        .collect(
 		            Struct::new,
-		            ( struct, iface ) -> struct.put( iface.getName(), iface.getMetaData() ),
+		            ( struct, iface ) -> struct.put( iface.getName(), iface.getBoxMeta().getMeta() ),
 		            Struct::putAll
 		        )
 		);
-
+		return meta;
 	}
 
 	/**

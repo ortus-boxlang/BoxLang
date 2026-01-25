@@ -100,7 +100,7 @@ jobs:
           ./gradlew test --stacktrace --console=plain -PaddJavaCompiler=true
 
       - name: Publish Test Reports
-        uses: mikepenz/action-junit-report@v6.0.1
+        uses: mikepenz/action-junit-report@v6.1.0
         if: always()
         with:
           report_paths: |
@@ -115,7 +115,7 @@ jobs:
 
       - name: Upload Test Results
         if: always()
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v6
         with:
           name: tests-${{ matrix.os }}-${{ matrix.jdkProvider }}-${{ matrix.jdkVersion }}-${{ matrix.compiler }}
           path: |

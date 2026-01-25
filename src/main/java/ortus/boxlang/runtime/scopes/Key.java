@@ -134,6 +134,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		bindings							= Key.of( "bindings" );
 	public static final Key		body								= Key.of( "body" );
 	public static final Key		boxBif								= Key.of( "BoxBif" );
+	public static final Key		boxCache							= Key.of( "BoxCache" );
 	public static final Key		boxCacheProvider					= Key.of( "BoxCacheProvider" );
 	public static final Key		boxComponent						= Key.of( "BoxComponent" );
 	public static final Key		boxlang								= Key.of( "boxlang" );
@@ -260,6 +261,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		dateFormat							= Key.of( "dateFormat" );
 	public static final Key		dateLastModified					= Key.of( "dateLastModified" );
 	public static final Key		datepart							= Key.of( "datepart" );
+	public static final Key		dateCompare							= Key.of( "dateCompare" );
 	public static final Key		day									= Key.of( "day" );
 	public static final Key		days								= Key.of( "days" );
 	public static final Key		debuggingEnabled					= Key.of( "debuggingEnabled" );
@@ -773,6 +775,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		sessionScope						= Key.of( "sessionScope" );
 	public static final Key		sessionStorage						= Key.of( "sessionStorage" );
 	public static final Key		sessionTimeout						= Key.of( "sessionTimeout" );
+	public static final Key		sessionType							= Key.of( "sessionType" );
 	public static final Key		set									= Key.of( "set" );
 	public static final Key		setCookie							= Key.of( "Set-Cookie" );
 	public static final Key		setClientCookies					= Key.of( "setClientCookies" );
@@ -1006,13 +1009,19 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		ormoptions							= Key.of( "ormoptions" );
 	public static final Key		psq									= Key.of( "psq" );
 
+	// Datasource statistics keys
+	public static final Key		activeConnections					= Key.of( "activeConnections" );
+	public static final Key		idleConnections						= Key.of( "idleConnections" );
+	public static final Key		totalConnections					= Key.of( "totalConnections" );
+	public static final Key		pendingThreads						= Key.of( "pendingThreads" );
+
 	// CFConfig-style datasource config keys
 	public static final Key		custom								= Key.of( "custom" );
 	public static final Key		custom2								= Key.of( "custom2" );
 	public static final Key		custom3								= Key.of( "custom3" );
 	public static final Key		dsn									= Key.of( "dsn" );
 
-	// HikariCP configuration Key names. Includes all "Essential" and "Frquently Used" configuration keys, but no "Infrequently used" keys (for now.)
+	// HikariCP configuration Key names. Includes all "Essential" and "Frequently Used" configuration keys
 	// https://github.com/brettwooldridge/HikariCP?tab=readme-ov-file#gear-configuration-knobs-baby
 	public static final Key		autoCommit							= Key.of( "autoCommit" );
 	public static final Key		averageExecutionTimeMs				= Key.of( "averageExecutionTimeMs" );

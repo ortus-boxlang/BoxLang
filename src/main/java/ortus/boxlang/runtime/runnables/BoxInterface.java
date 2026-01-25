@@ -49,10 +49,12 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 	 */
 	public transient BoxMeta<?>	$bx;
 
+	private transient IStruct	legacyMetadata	= null;
+
 	/**
 	 * Cached lookup of the output annotation
 	 */
-	private Boolean				canOutput	= null;
+	private Boolean				canOutput		= null;
 
 	protected void resolveSupers( IBoxContext context ) {
 		// First, we load an super interface
@@ -299,43 +301,50 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 	 * @return The metadata as a struct
 	 */
 	public IStruct getMetaData() {
-		IStruct meta = new Struct( IStruct.TYPES.SORTED );
-		meta.putIfAbsent( "hint", "" );
-		meta.putIfAbsent( "output", canOutput() );
+		if ( legacyMetadata == null ) {
+			synchronized ( this.getClass() ) {
+				if ( legacyMetadata == null ) {
+					IStruct meta = new Struct( IStruct.TYPES.SORTED );
+					meta.putIfAbsent( "hint", "" );
+					meta.putIfAbsent( "output", canOutput() );
 
-		// Assemble the metadata
-		var functions = new ArrayList<Object>();
-		for ( var entry : getAbstractMethods().keySet() ) {
-			var value = getAbstractMethods().get( entry );
-			functions.add( value.getMetaData() );
-		}
-		for ( var entry : getDefaultMethods().keySet() ) {
-			var value = getDefaultMethods().get( entry );
-			functions.add( value.getMetaData() );
-		}
-		meta.put( "name", getName().getName() );
-		meta.put( "accessors", false );
-		meta.put( "functions", Array.fromList( functions ) );
-		// meta.put( "hashCode", hashCode() );
-		meta.put( "type", "Interface" );
-		meta.put( "fullname", getName().getName() );
-		meta.put( "path", getRunnablePath().absolutePath().toString() );
+					// Assemble the metadata
+					var functions = new ArrayList<Object>();
+					for ( var entry : getAbstractMethods().keySet() ) {
+						var value = getAbstractMethods().get( entry );
+						functions.add( value.getMetaData() );
+					}
+					for ( var entry : getDefaultMethods().keySet() ) {
+						var value = getDefaultMethods().get( entry );
+						functions.add( value.getMetaData() );
+					}
+					meta.put( "name", getName().getName() );
+					meta.put( "accessors", false );
+					meta.put( "functions", Array.fromList( functions ) );
+					// meta.put( "hashCode", hashCode() );
+					meta.put( "type", "Interface" );
+					meta.put( "fullname", getName().getName() );
+					meta.put( "path", getRunnablePath().absolutePath().toString() );
 
-		if ( getDocumentation() != null ) {
-			meta.putAll( getDocumentation() );
-		}
-		if ( getAnnotations() != null ) {
-			meta.putAll( getAnnotations() );
-		}
-		if ( getSupers().size() > 0 ) {
-			IStruct supersMeta = new Struct( IStruct.TYPES.LINKED );
-			for ( BoxInterface _super : getSupers() ) {
-				supersMeta.put( _super.getName().getName(), _super.getMetaData() );
+					if ( getDocumentation() != null ) {
+						meta.putAll( getDocumentation() );
+					}
+					if ( getAnnotations() != null ) {
+						meta.putAll( getAnnotations() );
+					}
+					if ( getSupers().size() > 0 ) {
+						IStruct supersMeta = new Struct( IStruct.TYPES.LINKED );
+						for ( BoxInterface _super : getSupers() ) {
+							supersMeta.put( _super.getName().getName(), _super.getMetaData() );
+						}
+
+						meta.put( "extends", supersMeta );
+					}
+					legacyMetadata = meta;
+				}
 			}
-
-			meta.put( "extends", supersMeta );
 		}
-		return meta;
+		return legacyMetadata;
 	}
 
 	/**

@@ -88,6 +88,7 @@ public class BoxHttpClient {
 	public static final String											DEFAULT_CHARSET				= StandardCharsets.UTF_8.name();
 	public static final String											DEFAULT_METHOD				= "GET";
 	public static final int												DEFAULT_CONNECTION_TIMEOUT	= 15;
+	public static final int												DEFAULT_READ_TIMEOUT		= 15;
 	public static final int												DEFAULT_REQUEST_TIMEOUT		= 0;
 	public static final boolean											DEFAULT_THROW_ON_ERROR		= false;
 

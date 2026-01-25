@@ -641,7 +641,7 @@ public class ClassLocator extends ClassLoader {
 		URL[]				loadPathsUrls	= DynamicClassLoader.inflateClassPaths(
 		    classPaths
 		        .stream()
-		        .map( item -> FileSystemUtil.expandPath( context.getRequestContext(), ( String ) item ).absolutePath().toString() )
+		        .map( item -> FileSystemUtil.expandPath( context, ( String ) item ).absolutePath().toString() )
 		        .collect( BLCollector.toArray() )
 		);
 		String				loaderCacheKey	= EncryptionUtil.hash( Arrays.toString( loadPathsUrls ) );

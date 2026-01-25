@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.validation;
 
-import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -29,7 +28,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 public class Required implements Validator {
 
 	public void validate( IBoxContext context, Key caller, Validatable record, IStruct records ) {
-		if ( records.getOrDefault( record.name(), record.defaultValue() ) == null ) {
+		if ( records.get( record.name() ) == null && !record.hasDefaultValue() ) {
 			throw new BoxValidationException( caller, record, "is required." );
 		}
 	}

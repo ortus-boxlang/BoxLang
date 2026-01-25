@@ -1,5 +1,5 @@
-class {
+class implements="IDumpClass" {
 	public function init() {
-		return 'UDF Dump Class';
+		return this;
 	}
 }

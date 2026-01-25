@@ -65,10 +65,11 @@ public class ListAppendTest {
 	public void testAppendNumber() {
 		instance.executeSource(
 		    """
-		        nums = "1,2,3,4,5";
+		        nums = ",1,2,3,4,5";
 		        result = listAppend( nums, 6 );
 		    """,
 		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "1,2,3,4,5,6" );
 		Array updated = ListUtil.asList( variables.getAsString( result ), ListUtil.DEFAULT_DELIMITER );
 		assertThat( updated.size() ).isEqualTo( 6 );
 		assertEquals( updated.getAt( 6 ), "6" );

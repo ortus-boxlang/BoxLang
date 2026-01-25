@@ -164,7 +164,7 @@ public class ReReplace extends BIF {
 								lowerCaseOne	= false;
 							}
 							replacement.replace( i, i + groupIndexLength, group );
-							i += group.length() - groupIndexLength;
+							i += group.length() - 1;
 						} else {
 							// Skip replacement if group is null
 							replacement.delete( i, i + 2 );

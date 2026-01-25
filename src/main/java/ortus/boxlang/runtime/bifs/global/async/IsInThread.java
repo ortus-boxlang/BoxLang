@@ -17,7 +17,6 @@ package ortus.boxlang.runtime.bifs.global.async;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 
 @BoxBIF( description = "Check if code is executing within a thread" )
@@ -40,7 +39,7 @@ public class IsInThread extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return context
-		    .getParentOfType( RequestBoxContext.class )
+		    .getRequestContextOrFail()
 		    .getThreadManager()
 		    .isInThread();
 	}

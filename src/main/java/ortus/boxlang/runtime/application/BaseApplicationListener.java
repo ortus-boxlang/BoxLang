@@ -176,6 +176,7 @@ public abstract class BaseApplicationListener {
 	    Key.sessionManagement, runtime.getConfiguration().sessionManagement,
 	    Key.sessionStorage, runtime.getConfiguration().sessionStorage,
 	    Key.sessionTimeout, runtime.getConfiguration().sessionTimeout,
+	    Key.sessionType, runtime.getConfiguration().sessionType,
 	    // Cookie Management
 	    Key.setClientCookies, runtime.getConfiguration().setClientCookies,
 	    Key.setDomainCookies, runtime.getConfiguration().setDomainCookies,
@@ -408,6 +409,11 @@ public abstract class BaseApplicationListener {
 	 * Update or create the session management in an application if enabled.
 	 */
 	private void createOrUpdateSessionManagement() {
+		// Defer this until AFTER any application start methods are done. Otherwise, recursive application updating starts the session too soon.
+		if ( context.getAttachment( Key.onApplicationStart ) != null ) {
+			return;
+		}
+
 		// Check for existing session context
 		SessionBoxContext	existingSessionContext		= this.context.getParentOfType( SessionBoxContext.class );
 		boolean				sessionManagementEnabled	= BooleanCaster.cast( this.settings.get( Key.sessionManagement ) );
