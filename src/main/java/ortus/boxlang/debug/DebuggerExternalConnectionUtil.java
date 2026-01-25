@@ -192,7 +192,9 @@ public final class DebuggerExternalConnectionUtil {
 	 * @return true if the debug threads are running
 	 */
 	public static boolean isStarted() {
-		return started;
+		synchronized ( startLock ) {
+			return started;
+		}
 	}
 
 	/**
