@@ -186,6 +186,43 @@
                 "format",
                 "--initConfig"
             ]
+        },
+        {
+            "type": "java",
+            "name": "Run Formatter - run formatter on directory",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRunner",
+            "projectName": "boxlang",
+            "args": [
+                "format",
+                "--input",
+                "./format-test"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "Run Formatter - run formatter on file",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRunner",
+            "projectName": "boxlang",
+            "args": [
+                "format",
+                "--input",
+                "${file}"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "Run Formatter - run formatter on file",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRunner",
+            "projectName": "boxlang",
+            "args": [
+                "format",
+                "--check",
+                "--input",
+                "${file}"
+            ]
         }
     ],
     "inputs": [

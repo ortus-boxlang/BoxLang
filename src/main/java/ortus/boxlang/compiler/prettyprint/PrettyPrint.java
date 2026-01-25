@@ -1,11 +1,17 @@
 package ortus.boxlang.compiler.prettyprint;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.stream.Stream;
+
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.prettyprint.config.Config;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -38,8 +44,65 @@ public final class PrettyPrint {
 				} else if ( args[ i ].equalsIgnoreCase( "--initConfig" ) ) {
 					initConfig();
 					System.exit( 0 );
+				} else if ( args[ i ].equalsIgnoreCase( "--check" ) ) {
+					checkMode = true;
+				} else if ( ( args[ i ].equalsIgnoreCase( "--config" ) || args[ i ].equalsIgnoreCase( "-c" ) ) && i + 1 < args.length ) {
+					configPath = args[ ++i ];
+				} else if ( ( args[ i ].equalsIgnoreCase( "--input" ) || args[ i ].equalsIgnoreCase( "-i" ) ) && i + 1 < args.length ) {
+					inputPath = args[ ++i ];
+				} else if ( ( args[ i ].equalsIgnoreCase( "--output" ) || args[ i ].equalsIgnoreCase( "-o" ) ) && i + 1 < args.length ) {
+					outputPath = args[ ++i ];
 				}
 			}
+
+			Config			config	= Config.loadConfig( configPath );
+			// get a stream of files to process either from a single file or a directory
+			Stream<Path>	filesToProcess;
+
+			if ( Files.isDirectory( Paths.get( inputPath ) ) ) {
+				filesToProcess = Files.walk( Paths.get( inputPath ) )
+				    .filter( p -> !Files.isDirectory( p ) )
+				    .filter( p -> {
+					    String fileName = p.getFileName().toString().toLowerCase();
+					    return fileName.endsWith( ".bx" ) || fileName.endsWith( ".bxs" ) || fileName.endsWith( ".bxm" )
+					        || fileName.endsWith( ".cfm" ) || fileName.endsWith( ".cfc" ) || fileName.endsWith( ".cfs" );
+				    } );
+			} else {
+				filesToProcess = Stream.of( Paths.get( inputPath ) );
+			}
+
+			final boolean	finalCheckMode	= checkMode;
+			final String	finalOutputPath	= outputPath;
+			filesToProcess.forEach( path -> {
+				try {
+					var		parser			= new Parser();
+					var		parsingResult	= parser.parse( path.toFile(), false );
+					String	formattedCode	= PrettyPrint.prettyPrint( parsingResult.getRoot(), config );
+
+					if ( finalCheckMode ) {
+						String originalCode = Files.readString( path );
+						if ( !originalCode.equals( formattedCode ) ) {
+							System.out.println( "File needs formatting: " + path.toString() );
+							System.exit( 1 );
+						}
+					} else {
+						Path outputFilePath;
+						if ( finalOutputPath != null ) {
+							outputFilePath = Paths.get( finalOutputPath );
+							if ( Files.isDirectory( outputFilePath ) ) {
+								outputFilePath = outputFilePath.resolve( path.getFileName() );
+							}
+						} else {
+							outputFilePath = path;
+						}
+						Files.writeString( outputFilePath, formattedCode );
+						System.out.println( "Formatted file: " + outputFilePath.toString() );
+					}
+				} catch ( Exception e ) {
+					System.err.println( "Error processing file " + path.toString() + ": " + e.getMessage() );
+				}
+			} );
+
 		} catch ( Exception e ) {
 			System.err.println( "Error: " + e.getMessage() );
 			System.exit( 1 );
