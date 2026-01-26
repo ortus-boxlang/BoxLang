@@ -2229,4 +2229,27 @@ public class ClassTest {
 		assertThat( variables.get( Key.result ) ).isNotNull();
 	}
 
+	@Test
+	public void testInitWithArgumentCollection() {
+		instance.executeSource(
+		    """
+		    function foo( param1, param2 ) output=true {
+		    	return arguments;
+		    }
+
+		    args = {}
+		    args["1"] = "arg1";
+		    args["2"] = "arg2";
+
+		    result = foo( argumentCollection = args );
+		           		         """,
+		    context );
+		IStruct resultStruct = variables.getAsStruct( Key.of( "result" ) );
+		assertThat( resultStruct.getAsString( Key.of( "param1" ) ) ).isNotNull();
+		assertThat( resultStruct.getAsString( Key.of( "param2" ) ) ).isNotNull();
+		assertThat( resultStruct.getAsString( Key.of( "param1" ) ) ).isEqualTo( "arg1" );
+		assertThat( resultStruct.getAsString( Key.of( "param2" ) ) ).isEqualTo( "arg2" );
+
+	}
+
 }
