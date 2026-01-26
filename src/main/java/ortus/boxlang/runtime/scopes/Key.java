@@ -1269,6 +1269,9 @@ public class Key implements Comparable<Key>, Serializable {
 		if ( obj instanceof Long l && l >= Integer.MIN_VALUE && l <= Integer.MAX_VALUE ) {
 			return Key.of( l.intValue() );
 		}
+		if ( obj instanceof String str ) {
+			return Key.of( str );
+		}
 		// TODO: also check this higher up so we can tell the user more about what
 		// was null.
 		if ( obj == null ) {

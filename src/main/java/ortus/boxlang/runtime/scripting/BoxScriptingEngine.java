@@ -37,6 +37,7 @@ import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyService;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.debug.DebuggerExternalConnectionUtil;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
 
@@ -82,12 +83,12 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 	/**
 	 * Given the input FOO_BAR will search for an env var of that name, then look for a system property called foo.bar
 	 * Given the input foo.bar will search for a system property of that name, then look for an env var called FOO_BAR
-	 * 
+	 *
 	 * TODO: This logic could be shared in a common utility class and all env vars in BoxLang should prolly follow this format
-	 * 
+	 *
 	 * @param name         The name of the environment variable or system property to look for
 	 * @param defaultValue The default value to return if neither the environment variable nor the system property is found
-	 * 
+	 *
 	 * @return The value of the environment variable or system property, or the default value if neither is found
 	 */
 	private static String getEnvOrProp( String name, String defaultValue ) {
@@ -359,7 +360,15 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 		RequestBoxContext.setCurrent( getBoxContext() );
 		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 		try {
-			// This will handle any sort of referencable object, including member methods on data types
+			// Signal to debugger that user code is about to start (only in debug mode)
+			// This must be called BEFORE loading the class so the debugger can set up
+			// ClassPrepareRequest with SUSPEND_EVENT_THREAD before the class loads
+			if ( this.boxRuntime.inDebugMode() ) {
+				DebuggerExternalConnectionUtil.start();
+				DebuggerExternalConnectionUtil.signalUserCodeStart( null );
+			}
+
+			// This will handle any sort of referenceable object, including member methods on data types
 			return Referencer.getAndInvoke( getBoxContext(), thiz, Key.of( name ), args, false );
 		} finally {
 			RequestBoxContext.removeCurrent();
