@@ -272,8 +272,127 @@ public final class Config {
 		return this;
 	}
 
+	/**
+	 * Load configuration from a specific file path.
+	 *
+	 * @param filePath Path to the configuration file
+	 *
+	 * @return Config object with the loaded settings
+	 *
+	 * @throws JSONObjectException if the JSON is malformed
+	 * @throws IOException         if the file cannot be read
+	 */
 	public static Config loadConfig( String filePath ) throws JSONObjectException, IOException {
 		return JSONUtil.getJSONBuilder().beanFrom( Config.class, new File( filePath ) );
+	}
+
+	/**
+	 * Load configuration with fallback logic.
+	 * First tries .bxformat.json in the specified directory, then falls back to .cfformat.json.
+	 * If neither exists, returns a default Config.
+	 *
+	 * @param directory The directory to search for config files
+	 *
+	 * @return Config object with the loaded settings, or default Config if no file found
+	 */
+	public static Config loadConfigWithFallback( String directory ) {
+		return loadConfigWithFallback( directory, false );
+	}
+
+	/**
+	 * Load configuration with fallback logic.
+	 * First tries .bxformat.json in the specified directory, then falls back to .cfformat.json.
+	 * If neither exists, returns a default Config or throws an exception.
+	 *
+	 * @param directory     The directory to search for config files
+	 * @param requireConfig If true, throws an exception if no config file is found
+	 *
+	 * @return Config object with the loaded settings
+	 *
+	 * @throws RuntimeException if requireConfig is true and no config file is found
+	 */
+	public static Config loadConfigWithFallback( String directory, boolean requireConfig ) {
+		File bxFormatFile = new File( directory, ".bxformat.json" );
+		File cfFormatFile = new File( directory, ".cfformat.json" );
+
+		// First, try .bxformat.json
+		if ( bxFormatFile.exists() ) {
+			try {
+				return loadConfig( bxFormatFile.getAbsolutePath() );
+			} catch ( Exception e ) {
+				System.err.println( "Warning: Failed to load .bxformat.json: " + e.getMessage() );
+			}
+		}
+
+		// Fall back to .cfformat.json
+		if ( cfFormatFile.exists() ) {
+			try {
+				Config config = CFFormatConfigLoader.loadCFFormatConfig( cfFormatFile );
+				System.out.println( "Loaded configuration from .cfformat.json (consider converting to .bxformat.json)" );
+				return config;
+			} catch ( Exception e ) {
+				System.err.println( "Warning: Failed to load .cfformat.json: " + e.getMessage() );
+			}
+		}
+
+		// No config file found
+		if ( requireConfig ) {
+			throw new RuntimeException( "No configuration file found (.bxformat.json or .cfformat.json) in " + directory );
+		}
+
+		return new Config();
+	}
+
+	/**
+	 * Determines which config file path to use, with fallback logic.
+	 * Returns the path to .bxformat.json if it exists, otherwise .cfformat.json if it exists,
+	 * otherwise returns the default .bxformat.json path.
+	 *
+	 * @param directory The directory to search for config files
+	 *
+	 * @return Path to the config file to use
+	 */
+	public static String getConfigFilePath( String directory ) {
+		File bxFormatFile = new File( directory, ".bxformat.json" );
+		if ( bxFormatFile.exists() ) {
+			return bxFormatFile.getAbsolutePath();
+		}
+
+		File cfFormatFile = new File( directory, ".cfformat.json" );
+		if ( cfFormatFile.exists() ) {
+			return cfFormatFile.getAbsolutePath();
+		}
+
+		// Return default path
+		return bxFormatFile.getAbsolutePath();
+	}
+
+	/**
+	 * Check if a config file path is a CFFormat file.
+	 *
+	 * @param filePath The file path to check
+	 *
+	 * @return true if the file is a .cfformat.json file
+	 */
+	public static boolean isCFFormatConfig( String filePath ) {
+		return filePath != null && filePath.toLowerCase().endsWith( ".cfformat.json" );
+	}
+
+	/**
+	 * Load configuration from a file path, automatically detecting the format.
+	 * If the file is a .cfformat.json, it will be converted to Config.
+	 *
+	 * @param filePath Path to the configuration file
+	 *
+	 * @return Config object with the loaded settings
+	 *
+	 * @throws IOException if the file cannot be read
+	 */
+	public static Config loadConfigAutoDetect( String filePath ) throws IOException {
+		if ( isCFFormatConfig( filePath ) ) {
+			return CFFormatConfigLoader.loadCFFormatConfig( filePath );
+		}
+		return loadConfig( filePath );
 	}
 
 	@SuppressWarnings( "unchecked" )
