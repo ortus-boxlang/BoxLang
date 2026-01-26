@@ -223,6 +223,19 @@
                 "--input",
                 "${file}"
             ]
+        },
+        {
+            "type": "java",
+            "name": "Run Formatter - convert cfformat",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRunner",
+            "projectName": "boxlang",
+            "args": [
+                "format",
+                "--convertConfig",
+                "--input",
+                "${file}"
+            ]
         }
     ],
     "inputs": [
