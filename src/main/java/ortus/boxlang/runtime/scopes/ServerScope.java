@@ -130,6 +130,7 @@ public class ServerScope extends BaseScope {
 		        "buildDate", versionInfo.get( "buildDate" ),
 		        "boxlangId", versionInfo.get( "boxlangId" ),
 		        "codename", versionInfo.get( "codename" ),
+		        "compiler", runtime.getConfiguration().compiler,
 		        "cliMode", runtime.inCLIMode(),
 		        "debugMode", runtime.inDebugMode(),
 		        "jarMode", runtime.inJarMode(),
