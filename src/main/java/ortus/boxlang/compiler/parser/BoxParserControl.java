@@ -198,47 +198,4 @@ public abstract class BoxParserControl extends Parser {
 		int	nextType	= input.LT( 2 ).getType();
 		return thisType == THROW && nextType != LPAREN;
 	}
-
-	/**
-	 * Determines if a parenthesized identifier list is followed by the `in` keyword.
-	 * This helps disambiguate between for-loop two-variable syntax `(k, v) in collection`
-	 * and lambda/closure parameter lists `(k, v) => ...` or `(k, v) -> ...`.
-	 *
-	 * The predicate looks ahead past the closing parenthesis to see if `in` follows,
-	 * which indicates this is a for-loop pattern, not a lambda/closure.
-	 *
-	 * @param input the token input stream
-	 *
-	 * @return true if this is NOT followed by `in` (i.e., allow lambda/closure matching)
-	 */
-	protected boolean isFollowedByIn( TokenStream input ) {
-		// Start from current position
-		int	pos		= 1;
-		int	depth	= 0;
-
-		// If we're not starting with LPAREN, bail out (shouldn't happen in our context)
-		if ( input.LT( pos ).getType() != LPAREN ) {
-			return false;
-		}
-
-		// Skip past the opening LPAREN
-		pos++;
-		depth = 1;
-
-		// Find the matching closing RPAREN
-		while ( depth > 0 && input.LT( pos ).getType() != -1 ) {
-			int tokenType = input.LT( pos ).getType();
-			if ( tokenType == LPAREN ) {
-				depth++;
-			} else if ( tokenType == RPAREN ) {
-				depth--;
-			}
-			pos++;
-		}
-
-		// Now check what follows the closing RPAREN
-		// If it's IN, this is a for-loop pattern
-		int nextToken = input.LT( pos ).getType();
-		return nextToken == IN;
-	}
 }
