@@ -240,59 +240,58 @@ public class BoxForInTransformer extends AbstractTransformer {
 		values.put( "firstVarAssignment", firstVarAssignment.toString() );
 		values.put( "secondVarAssignment", secondVarAssignment.toString() );
 
-		String		template1			= """
-		                                  Object ${collectionName} = DynamicObject.unWrap(  );
-		                                  """;
-		String		template1a			= """
-		                                  Boolean ${isQueryName} = ${collectionName} instanceof Query;
-		                                  """;
-		String		template1b			= """
-		                                  Boolean ${isStructName} = ${collectionName} instanceof Struct;
-		                                  """;
-		String		template1bb			= """
-		                                  int ${originalQueryIndexName} = -1;
-		                                  """;
-		String		template1c			= """
-		                                  if( ${isQueryName} ) {
-		                                  	// -1 means the query wasn't originally registered
-		                                  	${originalQueryIndexName} = ${contextName}.getQueryRow( (Query) ${collectionName}, -1 );
-		                                  	${contextName}.registerQueryLoop( (Query) ${collectionName}, 0 );
-		                                  }
-		                                  """;
+		// @formatter:off
+		String template1 = """
+			Object ${collectionName} = DynamicObject.unWrap(  );
+			""";
+		String template1a = """
+			Boolean ${isQueryName} = ${collectionName} instanceof Query;
+			""";
+		String template1b = """
+			Boolean ${isStructName} = ${collectionName} instanceof Struct;
+			""";
+		String template1bb = """
+			int ${originalQueryIndexName} = -1;
+			""";
+		String template1c = """
+			if( ${isQueryName} ) {
+				${originalQueryIndexName} = ${contextName}.getQueryRow( (Query) ${collectionName}, -1 );
+				${contextName}.registerQueryLoop( (Query) ${collectionName}, 0 );
+			}
+			""";
 
 		// For two variables, we need different iterator strategies
 		// For structs: use entrySet().iterator() to get Map.Entry objects
 		// For arrays/queries: use regular iterator but track index separately (1-based)
-		String		template1d			= """
-		                                  Iterator ${iteratorName} = ${isStructName} ? ((IStruct) ${collectionName}).entrySet().iterator() : CollectionCaster.cast( ${collectionName} ).iterator();
-		                                  int ${indexName} = 1;
-		                                  Object ${entryName} = null;
-		                                  """;
+		String template1d = """
+			Iterator ${iteratorName} = ${isStructName} ? ((IStruct) ${collectionName}).entrySet().iterator() : CollectionCaster.cast( ${collectionName} ).iterator();
+			int ${indexName} = 1;
+			Object ${entryName} = null;
+			""";
 
 		// Loop body with both variable assignments
-		String		template2a			= """
-		                                  while( ${iteratorName}.hasNext() ) {
-		                                  	${entryName} = ${iteratorName}.next();
-		                                  	${firstVarAssignment};
-		                                  	${secondVarAssignment};
-		                                  }
-		                                  """;
-		String		template2b			= """
-		                                  if( ${isQueryName} ) {
-		                                  	${contextName}.incrementQueryLoop( (Query) ${collectionName} );
-		                                  }
-		                                  """;
-		String		template3			= """
-		                                  if( ${isQueryName} ) {
-		                                  	if ( ${originalQueryIndexName} > -1 ) {
-		                                  		// If we were originally registered, then unregister us
-		                                  		${contextName}.registerQueryLoop( (Query) ${collectionName}, ${originalQueryIndexName} );
-		                                  	} else {
-		                                  		// Otherwise, we were never registered, so just unregister us
-		                                  		${contextName}.unregisterQueryLoop( (Query) ${collectionName} );
-		                                  	}
-		                                  }
-		                                  """;
+		String template2a = """
+			while( ${iteratorName}.hasNext() ) {
+				${entryName} = ${iteratorName}.next();
+				${firstVarAssignment};
+				${secondVarAssignment};
+			}
+			""";
+		String template2b = """
+			if( ${isQueryName} ) {
+				${contextName}.incrementQueryLoop( (Query) ${collectionName} );
+			}
+			""";
+		String template3 = """
+			if( ${isQueryName} ) {
+				if ( ${originalQueryIndexName} > -1 ) {
+					${contextName}.registerQueryLoop( (Query) ${collectionName}, ${originalQueryIndexName} );
+				} else {
+					${contextName}.unregisterQueryLoop( (Query) ${collectionName} );
+				}
+			}
+			""";
+		// @formatter:on
 
 		WhileStmt	whileStmt			= ( WhileStmt ) parseStatement( template2a, values );
 		IfStmt		incrementQueryStmt	= ( IfStmt ) parseStatement( template2b, values );
