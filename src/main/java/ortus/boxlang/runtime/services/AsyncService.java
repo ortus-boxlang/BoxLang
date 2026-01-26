@@ -268,7 +268,6 @@ public class AsyncService extends BaseService {
 		if ( hasExecutor( name ) ) {
 
 			logger.debug( "+ Shutting down executor ({}), with force ({}) and timeout ({})...", name, force, timeout );
-			System.out.println( "+ Shutting down executor (" + name + "), with force (" + force + ") and timeout (" + timeout + ")..." );
 			getTimerUtil().start( "shutdown-executor-" + name );
 
 			if ( Boolean.TRUE.equals( force ) ) {
