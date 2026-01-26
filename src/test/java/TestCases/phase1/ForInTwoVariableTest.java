@@ -98,9 +98,9 @@ public class ForInTwoVariableTest {
 		    .containsExactly( "a=1", "b=2", "c=3" );
 	}
 
-	@DisplayName( "for-in loop with two variables: struct with value" )
+	@DisplayName( "for-in loop with two variables: struct accessing only value" )
 	@Test
-	public void testForInLoopStructWithValueParens() {
+	public void testForInLoopStructAccessingOnlyValue() {
 		instance.executeSource(
 		    """
 		    myStruct = {x:10, y:20};
