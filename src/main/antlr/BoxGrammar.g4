@@ -291,7 +291,6 @@ if: IF LPAREN expression RPAREN ifStmt = statementOrBlock (ELSE elseStmt = state
  in bar ) {}
  or...
  for( item, index in arr )
- for( (item, index) in arr )
  for( key, value in struct )
  for( var foo in bar ) echo(i)
  */
