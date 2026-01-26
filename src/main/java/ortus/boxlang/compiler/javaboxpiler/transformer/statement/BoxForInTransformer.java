@@ -317,10 +317,8 @@ public class BoxForInTransformer extends AbstractTransformer {
 		loopBody.addStatement( incrementQueryStmt );
 
 		// Increment index for non-struct collections (arrays/queries) - must be after incrementQueryLoop
-		if ( boxFor.hasTwoVariables() ) {
-			Statement incrementIndexStmt = ( Statement ) parseStatement( "if( !${isStructName} ) { ${indexName}++; }", values );
-			loopBody.addStatement( incrementIndexStmt );
-		}
+		Statement incrementIndexStmt = ( Statement ) parseStatement( "if( !${isStructName} ) { ${indexName}++; }", values );
+		loopBody.addStatement( incrementIndexStmt );
 
 		if ( boxFor.getLabel() != null ) {
 			LabeledStmt labeledWhile = new LabeledStmt( boxFor.getLabel().toLowerCase(), whileStmt );
