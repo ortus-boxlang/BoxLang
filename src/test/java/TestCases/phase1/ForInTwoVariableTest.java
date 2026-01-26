@@ -66,9 +66,9 @@ public class ForInTwoVariableTest {
 		    .containsExactly( "a1", "b2", "c3" ).inOrder();
 	}
 
-	@DisplayName( "for-in loop with two variables: array with index" )
+	@DisplayName( "for-in loop with two variables: array with index alternate format" )
 	@Test
-	public void testForInLoopArrayWithIndexParens() {
+	public void testForInLoopArrayWithIndexAlternateFormat() {
 		instance.executeSource(
 		    """
 		    arr = ["x", "y", "z"];
@@ -98,9 +98,9 @@ public class ForInTwoVariableTest {
 		    .containsExactly( "a=1", "b=2", "c=3" );
 	}
 
-	@DisplayName( "for-in loop with two variables: struct accessing only value" )
+	@DisplayName( "for-in loop with two variables: struct with value (alternate)" )
 	@Test
-	public void testForInLoopStructAccessingOnlyValue() {
+	public void testForInLoopStructWithValueAlternate() {
 		instance.executeSource(
 		    """
 		    myStruct = {x:10, y:20};

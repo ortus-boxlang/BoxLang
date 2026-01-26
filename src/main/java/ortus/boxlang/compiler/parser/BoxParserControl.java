@@ -58,7 +58,6 @@ import static ortus.boxlang.parser.antlr.BoxGrammar.REMOTE;
 import static ortus.boxlang.parser.antlr.BoxGrammar.REQUIRED;
 import static ortus.boxlang.parser.antlr.BoxGrammar.RETHROW;
 import static ortus.boxlang.parser.antlr.BoxGrammar.RETURN;
-import static ortus.boxlang.parser.antlr.BoxGrammar.RPAREN;
 import static ortus.boxlang.parser.antlr.BoxGrammar.STATIC;
 import static ortus.boxlang.parser.antlr.BoxGrammar.THAN;
 import static ortus.boxlang.parser.antlr.BoxGrammar.THROW;
