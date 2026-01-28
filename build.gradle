@@ -1292,8 +1292,6 @@ test {
 	if ( project.hasProperty( 'addJavaCompiler' ) && project.property( 'addJavaCompiler' ) == 'true' ) {
 		dependsOn jarJavaCompiler
 		classpath += files("$buildDir/libs/boxlang-compiler-java-${version}.jar")
-		// Tell BoxLang to use the Java compiler
-		systemProperty 'boxlang.compiler', 'java'
 	}
 
 	// Dependencies
