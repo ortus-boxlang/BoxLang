@@ -380,7 +380,7 @@ public class Configuration implements IConfigSegment {
 	public Configuration process( IStruct config ) {
 
 		// Store original config
-		this.originalConfig = config;
+		this.originalConfig.addAll( config.getWrapped() );
 
 		// Debug Mode || Debbuging Enabled (cfconfig)
 		if ( config.containsKey( Key.debugMode ) ) {
