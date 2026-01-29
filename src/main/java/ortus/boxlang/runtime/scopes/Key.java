@@ -1162,9 +1162,9 @@ public class Key implements Comparable<Key>, Serializable {
 
 		if ( obj instanceof Key castedKey ) {
 			// Same key name
-			return hashCode() == castedKey.hashCode();
+			return getNameNoCase().equals( castedKey.getNameNoCase() );
 		}
-
+		// This would only fire if this Key instance is being compared to a non-Key object.
 		return getOriginalValue().equals( obj );
 	}
 
@@ -1185,8 +1185,12 @@ public class Key implements Comparable<Key>, Serializable {
 		if ( obj == null || ! ( obj instanceof Key ) ) {
 			return false;
 		}
-		// Same key name
-		return getName().equals( ( ( Key ) obj ).getName() );
+		if ( obj instanceof Key castedKey ) {
+			// Same key name with case
+			return getName().equals( castedKey.getName() );
+		}
+		// This would only fire if this Key instance is being compared to a non-Key object.
+		return getOriginalValue().equals( obj );
 	}
 
 	/**

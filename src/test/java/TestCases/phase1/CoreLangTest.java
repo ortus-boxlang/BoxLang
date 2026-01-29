@@ -6229,4 +6229,26 @@ public class CoreLangTest {
 
 	}
 
+	@Test
+	public void testAvoidStringHashCollisions() {
+
+		instance.executeSource(
+		    """
+		       key1 = "1ot" castas Key;
+		       key2 = "1q6" castas Key;
+		    equalsResult = key1.equals( key2 );
+		    result = {};
+		    result[ "1ot" ]	= "value1";
+		    result[ "1q6" ]	= "value2";
+		                """,
+		    context
+		);
+		assertThat( variables.getAsBoolean( Key.of( "equalsResult" ) ) ).isFalse();
+		IStruct result = variables.getAsStruct( Key.of( "result" ) );
+		assertThat( result.size() ).isEqualTo( 2 );
+		assertThat( result.get( Key.of( "1ot" ) ) ).isEqualTo( "value1" );
+		assertThat( result.get( Key.of( "1q6" ) ) ).isEqualTo( "value2" );
+
+	}
+
 }
