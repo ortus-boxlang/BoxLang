@@ -138,27 +138,28 @@ public final class DebuggerExternalConnectionUtil {
 			}
 
 			// Record startup time for timing calculations
-			startupTime = System.currentTimeMillis();
-			logger.debug( "[TIMING] DebuggerExternalConnectionUtil.start() called - recording startup time" );
+			startupTime		= System.currentTimeMillis();
 
 			// Start worker thread that processes the task queue
-			workerThread = new Thread( () -> {
-				while ( !Thread.currentThread().isInterrupted() ) {
-					try {
-						Task	t	= QUEUE.take();
-						Result	r	= executeTask( t );
-						if ( r != null ) {
-							RESULTS.put( t.id, r );
-						}
-					} catch ( InterruptedException ie ) {
-						Thread.currentThread().interrupt();
-						break;
-					} catch ( Throwable thr ) {
-						// Protect worker from dying; continue processing tasks, but log the failure for diagnostics
-						logger.error( "Unexpected error while processing debugger task in worker thread; continuing to process further tasks.", thr );
-					}
-				}
-			}, "BoxLang-DebuggerWorker" );
+			workerThread	= new Thread( () -> {
+								while ( !Thread.currentThread().isInterrupted() ) {
+									try {
+										Task	t	= QUEUE.take();
+										Result	r	= executeTask( t );
+										if ( r != null ) {
+											RESULTS.put( t.id, r );
+										}
+									} catch ( InterruptedException ie ) {
+										Thread.currentThread().interrupt();
+										break;
+									} catch ( Throwable thr ) {
+										// Protect worker from dying; continue processing tasks, but log the failure for diagnostics
+										logger.error( "Unexpected error while processing debugger task in worker thread; continuing to process further tasks.",
+										    thr );
+									}
+								}
+							},
+			    "BoxLang-DebuggerWorker" );
 			workerThread.setDaemon( true );
 			workerThread.start();
 
@@ -182,7 +183,6 @@ public final class DebuggerExternalConnectionUtil {
 			invokerThread.start();
 
 			started = true;
-			logger.debug( "[TIMING] DebuggerExternalConnectionUtil.start() completed - invoker and worker threads started" );
 		}
 	}
 
@@ -206,7 +206,6 @@ public final class DebuggerExternalConnectionUtil {
 		// Only log every 100th call to avoid flooding logs
 		if ( count <= 5 || count % 100 == 0 ) {
 			long elapsed = startupTime > 0 ? System.currentTimeMillis() - startupTime : 0;
-			logger.debug( "[TIMING] debuggerHook() call #{} at T+{}ms", count, elapsed );
 		}
 	}
 
@@ -227,8 +226,6 @@ public final class DebuggerExternalConnectionUtil {
 	public static void signalUserCodeStart( String templatePath ) {
 		int		count	= signalCount.incrementAndGet();
 		long	elapsed	= startupTime > 0 ? System.currentTimeMillis() - startupTime : 0;
-		logger.debug( "[TIMING] signalUserCodeStart() call #{} at T+{}ms for: {}", count, elapsed, templatePath );
-		logger.debug( "[TIMING] debuggerHook() was called {} times before this signal", debuggerHookCount.get() );
 	}
 
 	// --------------------------------------------------------------------------

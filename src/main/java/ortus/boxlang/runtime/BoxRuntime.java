@@ -1239,11 +1239,6 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @param args         The arguments to pass to the template
 	 */
 	public void executeTemplate( String templatePath, IBoxContext context, String[] args ) {
-		// Log timing for debugger performance analysis
-		if ( Boolean.TRUE.equals( instance.debugMode ) ) {
-			logger.debug( "[TIMING] executeTemplate() called for: {}", templatePath );
-		}
-
 		// Signal to debugger that user code is about to start (only in debug mode)
 		// This must be called BEFORE loading the class so the debugger can set up
 		// ClassPrepareRequest with SUSPEND_EVENT_THREAD before the class loads
@@ -1682,11 +1677,6 @@ public class BoxRuntime implements java.io.Closeable {
 		/* timerUtil.start( "execute-" + source.hashCode() ); */
 		IBoxContext	scriptingContext	= ensureRequestTypeContext( context );
 		boolean		shutdownContext		= context != scriptingContext;
-
-		// Log timing for debugger performance analysis
-		if ( Boolean.TRUE.equals( instance.debugMode ) ) {
-			logger.debug( "[TIMING] executeSource() called for inline source code" );
-		}
 
 		// Signal to debugger that user code is about to start (only in debug mode)
 		// This must be called BEFORE loading the source so the debugger can set up
