@@ -1692,4 +1692,26 @@ public class CFTemplateTest {
 		assertThat( result.isCorrect() ).isTrue();
 	}
 
+	@Test
+	public void testHashEnclosedVarsInTagIf() {
+		instance.executeSource(
+		    """
+		    <cfoutput>
+		    	<cfset foo = "brad" >
+		    	<cfset bar = "brad" >
+
+		    	<cfif #foo# EQ bar >
+		    		true 1
+		    	</cfif>
+		    	<cfif foo EQ #bar# >
+		    		true 2
+		    	</cfif>
+		    	<cfif #foo# EQ #bar# >
+		    		true 3
+		    	</cfif>
+		    </cfoutput>
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
 }

@@ -1423,4 +1423,26 @@ public class BoxTemplateTest {
 		assertThat( variables.get( result ) ).isEqualTo( "brad" );
 	}
 
+	@Test
+	public void testHashEnclosedVarsInTagsIF() {
+		instance.executeSource(
+		    """
+		    <bx:output>
+		    	<bx:set foo = "brad" >
+		    	<bx:set bar = "brad" >
+
+		    	<bx:if #foo# EQ bar >
+		    		true 1
+		    	</bx:if>
+		    	<bx:if foo EQ  #bar# >
+		    		true 2
+		    	</bx:if>
+		    	<bx:if #foo# EQ #bar# >
+		    		true 3
+		    	</bx:if>
+		    </bx:output>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+	}
+
 }

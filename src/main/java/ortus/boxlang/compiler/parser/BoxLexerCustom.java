@@ -88,6 +88,13 @@ public class BoxLexerCustom extends BoxLexer {
 	boolean										classBodyStarted		= false;
 
 	/**
+	 * Tracks if we just closed a #var# (IDENTIFIER followed by ICHAR).
+	 * This prevents incorrect parsing of expressions like #foo# EQ #bar#
+	 * where EQ appears to be encased in pound signs but is not.
+	 */
+	boolean										justClosedPoundVar		= false;
+
+	/**
 	 * Tokens that end an operator. Instead of having "less than" or "less than or equal to" as a single token sequence,
 	 * we'll just check for the ending token ("than", or "to")
 	 */
@@ -503,8 +510,10 @@ public class BoxLexerCustom extends BoxLexer {
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because next chars are the start of an operator" );
 						isIdentifier = true;
-					} else if ( lastTokenWas( ICHAR ) && nextNonWhiteSpaceCharIs( '#' ) && ( hasMode( hashMode ) || lastModeWas( DEFAULT_SCRIPT_MODE ) ) ) {
+					} else if ( lastTokenWas( ICHAR ) && nextNonWhiteSpaceCharIs( '#' ) && !justClosedPoundVar
+					    && ( hasMode( hashMode ) || lastModeWas( DEFAULT_SCRIPT_MODE ) ) ) {
 						// The token is encased in #hash# signs
+						// Skip this check if we just closed a #var# to handle #foo# EQ #bar# correctly
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because it is encased in #hash# signs" );
 						isIdentifier = true;
@@ -554,7 +563,12 @@ public class BoxLexerCustom extends BoxLexer {
 							System.out.println( "%%%%%%%%%%%% Not switching [" + nextToken.getText() + "] token to identifer" );
 					}
 				}
-
+				// Track if we just closed a #var# (IDENTIFIER followed by ICHAR)
+				if ( nextToken.getType() == ICHAR && lastToken != null && lastToken.getType() == IDENTIFIER ) {
+					justClosedPoundVar = true;
+				} else if ( nextToken.getChannel() != HIDDEN ) {
+					justClosedPoundVar = false;
+				}
 				return setLastToken( nextToken );
 		}
 	}
@@ -626,6 +640,7 @@ public class BoxLexerCustom extends BoxLexer {
 	public void reset() {
 		super.reset();
 		pushMode( defaultMode );
+		justClosedPoundVar = false;
 	}
 
 	/**

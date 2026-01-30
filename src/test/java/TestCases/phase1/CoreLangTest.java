@@ -5973,7 +5973,6 @@ public class CoreLangTest {
 	}
 
 	@Test
-	@Disabled( "not working in ASM Boxpiler" )
 	public void testClosureInTernaryCF() {
 
 		instance.executeSource(
@@ -5984,11 +5983,9 @@ public class CoreLangTest {
 		    context, BoxSourceType.CFSCRIPT
 		);
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "foo" );
-
 	}
 
 	@Test
-	@Disabled( "not working in ASM Boxpiler" )
 	public void testClosureInTernary() {
 
 		instance.executeSource(
@@ -6229,6 +6226,28 @@ public class CoreLangTest {
 		    context
 		);
 		assertThat( variables.getAsInteger( Key.of( "result" ) ) ).isEqualTo( 1 );
+
+	}
+
+	@Test
+	public void testAvoidStringHashCollisions() {
+
+		instance.executeSource(
+		    """
+		       key1 = "1ot" castas Key;
+		       key2 = "1q6" castas Key;
+		    equalsResult = key1.equals( key2 );
+		    result = {};
+		    result[ "1ot" ]	= "value1";
+		    result[ "1q6" ]	= "value2";
+		                """,
+		    context
+		);
+		assertThat( variables.getAsBoolean( Key.of( "equalsResult" ) ) ).isFalse();
+		IStruct result = variables.getAsStruct( Key.of( "result" ) );
+		assertThat( result.size() ).isEqualTo( 2 );
+		assertThat( result.get( Key.of( "1ot" ) ) ).isEqualTo( "value1" );
+		assertThat( result.get( Key.of( "1q6" ) ) ).isEqualTo( "value2" );
 
 	}
 
