@@ -37,6 +37,7 @@ import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.jdbc.drivers.JDBCDriverFeature;
 import ortus.boxlang.runtime.jdbc.qoq.QoQConnection;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
@@ -698,11 +699,19 @@ public class PendingQuery {
 			}
 
 			String sqlStatement = this.sql;
+			if ( connection.getDataSource().getConfiguration().getDriver().hasFeature( JDBCDriverFeature.TRIM_TRAILING_SEMICOLONS ) ) {
+				var trimmed = sqlStatement.trim();
+				// This can be defeated if there is a comment after the semicolon.
+				if ( trimmed.endsWith( ";" ) ) {
+					sqlStatement = trimmed.substring( 0, trimmed.length() - 1 );
+				}
+			}
+			final String finalSQLStatement = sqlStatement;
 			try (
 			    // If we have no parameters, we can use a Statement, otherwise we use a PreparedStatement
 			    BoxStatement statement = this.parameters.isEmpty()
 			        ? connection.createStatement()
-			        : connection.prepareStatement( sqlStatement, GENERATED_KEYS_SETTING ); ) {
+			        : connection.prepareStatement( finalSQLStatement, GENERATED_KEYS_SETTING ); ) {
 
 				applyParameters( statement, context );
 				applyStatementOptions( statement );
@@ -710,7 +719,7 @@ public class PendingQuery {
 				interceptorService.announce(
 				    BoxEvent.PRE_QUERY_EXECUTE,
 				    () -> Struct.ofNonConcurrent(
-				        Key.sql, sqlStatement,
+				        Key.sql, finalSQLStatement,
 				        Key.bindings, getParameterValues(),
 				        Key.pendingQuery, this
 				    )

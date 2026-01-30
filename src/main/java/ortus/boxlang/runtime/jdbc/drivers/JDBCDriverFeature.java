@@ -34,7 +34,14 @@ public enum JDBCDriverFeature {
 	 * When enabled, if the storedproc tag has a returnCode attribute, the SQL generated will include ? = call ... to capture the return code.
 	 * Drivers that support this include: MSSQL
 	 */
-	SUPPORTS_STORED_PROC_RETURN_CODE( 1L << 1 );
+	SUPPORTS_STORED_PROC_RETURN_CODE( 1L << 1 ),
+
+	/**
+	 * Indicates that the driver requires trailing semicolons to be trimmed from SQL statements.
+	 * Some drivers throw errors when SQL statements end with semicolons.
+	 * Drivers that require this include: Oracle
+	 */
+	TRIM_TRAILING_SEMICOLONS( 1L << 2 );
 
 	private final long flag;
 
