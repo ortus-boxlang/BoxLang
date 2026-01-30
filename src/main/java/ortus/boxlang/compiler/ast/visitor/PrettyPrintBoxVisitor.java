@@ -1132,6 +1132,10 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			print( "var " );
 		}
 		node.getVariable().accept( this );
+		if ( node.hasTwoVariables() ) {
+			print( ", " );
+			node.getSecondVariable().accept( this );
+		}
 		print( " in " );
 		node.getExpression().accept( this );
 		print( " ) " );

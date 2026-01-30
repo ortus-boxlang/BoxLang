@@ -704,6 +704,13 @@ public abstract class ReplacingBoxVisitor {
 		if ( newVar != variable ) {
 			node.setVariable( ( BoxExpression ) newVar );
 		}
+		BoxExpression secondVariable = node.getSecondVariable();
+		if ( secondVariable != null ) {
+			BoxNode newSecondVar = secondVariable.accept( this );
+			if ( newSecondVar != secondVariable ) {
+				node.setSecondVariable( ( BoxExpression ) newSecondVar );
+			}
+		}
 		BoxExpression	expression	= node.getExpression();
 		BoxNode			newExpr		= expression.accept( this );
 		if ( newExpr != expression ) {
