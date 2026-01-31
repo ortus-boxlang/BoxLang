@@ -29,6 +29,12 @@ jobs:
         exclude:
           - os: windows-latest
             compiler: java
+        include:
+          - os: ubuntu-latest
+            jdkProvider: temurin
+            jdkVersion: "21"
+            compiler: asm
+            experimental: true
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
@@ -123,7 +129,7 @@ jobs:
             **/build/test-results/**
 
       - name: Inform Slack
-        if: ${{ !matrix.experimental && failure() && github.ref == 'refs/heads/development' }}
+        if: ${{ failure() && github.ref == 'refs/heads/development' }}
         uses: rtCamp/action-slack-notify@v2
         env:
           SLACK_CHANNEL: boxlang
