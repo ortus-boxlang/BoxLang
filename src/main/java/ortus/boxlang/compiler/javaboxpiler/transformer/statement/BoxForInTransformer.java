@@ -221,7 +221,7 @@ public class BoxForInTransformer extends AbstractTransformer {
 		Node	firstVarAssignment	= new BoxAssignmentTransformer( ( JavaTranspiler ) transpiler ).transformEquals(
 		    boxFor.getVariable(),
 		    ( Expression ) parseExpression(
-		        "${isStructName} ? ((Map.Entry) ${entryName}).getKey().getName() : ${entryName}",
+		        "${isStructName} ? ((Key)((Map.Entry) ${entryName}).getKey()).getName() : ${entryName}",
 		        values ),
 		    BoxAssignmentOperator.Equal,
 		    modifiers,
@@ -265,7 +265,13 @@ public class BoxForInTransformer extends AbstractTransformer {
 		// For arrays/queries: use regular iterator but track index separately (1-based)
 		String template1d = """
 			Iterator ${iteratorName} = ${isStructName} ? ((IStruct) ${collectionName}).entrySet().iterator() : CollectionCaster.cast( ${collectionName} ).iterator();
+			""";
+
+		String template1dd = """
 			int ${indexName} = 1;
+			""";
+
+		String template1ddd = """
 			Object ${entryName} = null;
 			""";
 
@@ -306,6 +312,8 @@ public class BoxForInTransformer extends AbstractTransformer {
 
 		TryStmt tryStmt = new TryStmt();
 		tryStmt.getTryBlock().addStatement( ( Statement ) parseStatement( template1d, values ) );
+		tryStmt.getTryBlock().addStatement( ( Statement ) parseStatement( template1dd, values ) );
+		tryStmt.getTryBlock().addStatement( ( Statement ) parseStatement( template1ddd, values ) );
 
 		// May be a single statement or a block statement, which is still a single statement :)
 		BlockStmt loopBody = whileStmt.getBody().asBlockStmt();
