@@ -50,8 +50,10 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.Function.Access;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.UDF;
+import ortus.boxlang.runtime.types.meta.FunctionMeta;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
@@ -67,7 +69,19 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		TransformerContext		safe		= function.getName().equalsIgnoreCase( "isnull" ) ? TransformerContext.SAFE : context;
 
 		if ( transpiler.hasCompiledFunction( function.getName() ) ) {
-			throw new IllegalStateException( "Cannot define multiple functions with the same name: " + function.getName() );
+			if ( transpiler.getProperty( "sourceType" ).equals( BoxSourceType.BOXSCRIPT.name() )
+			    || transpiler.getProperty( "sourceType" ).equals( BoxSourceType.BOXTEMPLATE.name() ) ) {
+				throw new IllegalStateException( "Cannot define multiple functions with the same name: " + function.getName() );
+			} else {
+				ArrayList<AbstractInsnNode> blankResult = new ArrayList<>();
+
+				if ( returnContext == ReturnValueContext.VALUE || returnContext == ReturnValueContext.VALUE_OR_NULL ) {
+					blankResult.add( new InsnNode( Opcodes.ACONST_NULL ) );
+				}
+
+				return blankResult;
+			}
+
 		}
 
 		Type			type			= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
@@ -170,6 +184,125 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		Type declaringType = Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
 		    + "/" + transpiler.getProperty( "classname" )
 		    + ";" );
+
+		// Add metadata cache fields (private static, non-final for lazy init)
+		classNode.visitField( Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
+		    "metadata",
+		    Type.getDescriptor( IStruct.class ),
+		    null,
+		    null ).visitEnd();
+		classNode.visitField( Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
+		    "legacyMetadata",
+		    Type.getDescriptor( IStruct.class ),
+		    null,
+		    null ).visitEnd();
+
+		// Add isClosure, isLambda, defaultOutput static fields
+		AsmHelper.addStaticFieldGetter( classNode,
+		    type,
+		    "isClosure",
+		    "isClosure",
+		    Type.BOOLEAN_TYPE,
+		    false );
+		AsmHelper.addStaticFieldGetter( classNode,
+		    type,
+		    "isLambda",
+		    "isLambda",
+		    Type.BOOLEAN_TYPE,
+		    false );
+		AsmHelper.addStaticFieldGetter( classNode,
+		    type,
+		    "defaultOutput",
+		    "getDefaultOutput",
+		    Type.BOOLEAN_TYPE,
+		    shouldDefaultOutput( function ) );
+
+		// Add getMetaDataStatic() method with double-check locking
+		AsmHelper.addDoubleCheckLockedStaticMethod(
+		    classNode,
+		    type,
+		    "getMetaDataStatic",
+		    "legacyMetadata",
+		    Type.getType( IStruct.class ),
+		    mv -> {
+			    // Function.getMetaDataStatic( class, documentation, annotations, name, returnType, sourceType, access, arguments, isClosure, isLambda, defaultOutput, modifiers )
+			    mv.visitLdcInsn( type );
+			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "documentation", Type.getDescriptor( IStruct.class ) );
+			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "annotations", Type.getDescriptor( IStruct.class ) );
+			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "name", Type.getDescriptor( Key.class ) );
+			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "returnType", Type.getDescriptor( String.class ) );
+			    mv.visitFieldInsn( Opcodes.GETSTATIC, declaringType.getInternalName(), "sourceType", Type.getDescriptor( BoxSourceType.class ) );
+			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "access", Type.getDescriptor( Access.class ) );
+			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "arguments", Type.getDescriptor( Argument[].class ) );
+			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "isClosure", Type.BOOLEAN_TYPE.getDescriptor() );
+			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "isLambda", Type.BOOLEAN_TYPE.getDescriptor() );
+			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "defaultOutput", Type.BOOLEAN_TYPE.getDescriptor() );
+			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "modifiers", Type.getDescriptor( List.class ) );
+			    mv.visitMethodInsn( Opcodes.INVOKESTATIC,
+			        Type.getInternalName( Function.class ),
+			        "getMetaDataStatic",
+			        Type.getMethodDescriptor(
+			            Type.getType( IStruct.class ),
+			            Type.getType( Class.class ),
+			            Type.getType( IStruct.class ),
+			            Type.getType( IStruct.class ),
+			            Type.getType( Key.class ),
+			            Type.getType( String.class ),
+			            Type.getType( BoxSourceType.class ),
+			            Type.getType( Access.class ),
+			            Type.getType( Argument[].class ),
+			            Type.BOOLEAN_TYPE,
+			            Type.BOOLEAN_TYPE,
+			            Type.BOOLEAN_TYPE,
+			            Type.getType( List.class )
+			        ),
+			        false );
+		    }
+		);
+
+		// Add getMetaStatic() method with double-check locking
+		AsmHelper.addDoubleCheckLockedStaticMethod(
+		    classNode,
+		    type,
+		    "getMetaStatic",
+		    "metadata",
+		    Type.getType( IStruct.class ),
+		    mv -> {
+			    // FunctionMeta.generateMeta( class, documentation, annotations, name, returnType, sourceType, access, arguments, isClosure, isLambda, defaultOutput, modifiers )
+			    mv.visitLdcInsn( type );
+			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "documentation", Type.getDescriptor( IStruct.class ) );
+			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "annotations", Type.getDescriptor( IStruct.class ) );
+			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "name", Type.getDescriptor( Key.class ) );
+			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "returnType", Type.getDescriptor( String.class ) );
+			    mv.visitFieldInsn( Opcodes.GETSTATIC, declaringType.getInternalName(), "sourceType", Type.getDescriptor( BoxSourceType.class ) );
+			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "access", Type.getDescriptor( Access.class ) );
+			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "arguments", Type.getDescriptor( Argument[].class ) );
+			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "isClosure", Type.BOOLEAN_TYPE.getDescriptor() );
+			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "isLambda", Type.BOOLEAN_TYPE.getDescriptor() );
+			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "defaultOutput", Type.BOOLEAN_TYPE.getDescriptor() );
+			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "modifiers", Type.getDescriptor( List.class ) );
+			    mv.visitMethodInsn( Opcodes.INVOKESTATIC,
+			        Type.getInternalName( FunctionMeta.class ),
+			        "generateMeta",
+			        Type.getMethodDescriptor(
+			            Type.getType( IStruct.class ),
+			            Type.getType( Class.class ),
+			            Type.getType( IStruct.class ),
+			            Type.getType( IStruct.class ),
+			            Type.getType( Key.class ),
+			            Type.getType( String.class ),
+			            Type.getType( BoxSourceType.class ),
+			            Type.getType( Access.class ),
+			            Type.getType( Argument[].class ),
+			            Type.BOOLEAN_TYPE,
+			            Type.BOOLEAN_TYPE,
+			            Type.BOOLEAN_TYPE,
+			            Type.getType( List.class )
+			        ),
+			        false );
+		    }
+		);
+
 		AsmHelper.addParentGetter( classNode,
 		    declaringType,
 		    "imports",

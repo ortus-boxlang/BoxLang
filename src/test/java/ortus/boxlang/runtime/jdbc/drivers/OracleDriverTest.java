@@ -220,6 +220,23 @@ public class OracleDriverTest extends AbstractDriverTest {
 
 	}
 
+	@DisplayName( "It doesn't error with trailing semicolons" )
+	@Test
+	public void testTrailingSemicolons() {
+		instance.executeStatement(
+		    String.format(
+		        """
+		        result = queryExecute( "SELECT * FROM developers;",
+		        {},
+		        { "datasource" : "%s" }
+		        );
+
+		                                                   """,
+		        getDatasourceName() ),
+		    context );
+
+	}
+
 	@DisplayName( "It can select from char 15 field" )
 	@Test
 	public void testSelectFromCharFields() {

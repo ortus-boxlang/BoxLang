@@ -116,6 +116,25 @@ public class QueryNewTest {
 		assertThat( row.getAsInteger( Key.of( "col2" ) ) ).isEqualTo( 42 );
 	}
 
+	@DisplayName( "It can create new with array of names" )
+	@Test
+	public void testCreateNewWithArrayOfNames() {
+
+		instance.executeSource(
+		    """
+		       result = queryNew(["col1","col2"],"string, integer", [ "foo", 42 ]);
+		    columnList = result.columnList;
+		       """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		assertThat( variables.get( "columnList" ) ).isEqualTo( "col1,col2" );
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.size() ).isEqualTo( 1 );
+		IStruct row = qry.getRowAsStruct( 0 );
+		assertThat( row.getAsString( Key.of( "col1" ) ) ).isEqualTo( "foo" );
+		assertThat( row.getAsInteger( Key.of( "col2" ) ) ).isEqualTo( 42 );
+	}
+
 	@DisplayName( "It can create new with struct data" )
 	@Test
 	public void testCreateNewWithStructData() {
@@ -144,7 +163,7 @@ public class QueryNewTest {
 		         result = queryNew([
 		    	["id": 10, "label": "ten"],
 		    	["id": 20, "label": "twenty"]
-		    ]);;
+		    ]);
 		      columnList = result.columnList;
 		         """,
 		    context );

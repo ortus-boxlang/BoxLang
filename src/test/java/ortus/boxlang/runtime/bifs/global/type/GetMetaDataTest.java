@@ -117,4 +117,83 @@ public class GetMetaDataTest {
 		// Generic metadata should have at least a 'class' key
 		assertThat( metaStruct.containsKey( Key.of( "class" ) ) ).isTrue();
 	}
+
+	@DisplayName( "It should include abstract method in class meta" )
+	@Test
+	public void testAbstractMethodInClassMeta() {
+		instance.executeSource(
+		    """
+		    result = getMetadata( new src.test.java.ortus.boxlang.runtime.bifs.global.type.AbstractMethod() );
+		             """,
+		    context );
+		// confirm that the meta includes myMethod and it has the foo="bar" annotation.
+		IStruct meta = variables.getAsStruct( result );
+
+		// Top-level class assertions
+		assertThat( meta.getAsString( Key.type ) ).isEqualTo( "Class" );
+		assertThat( meta.getAsString( Key.simpleName ) ).isEqualTo( "AbstractMethod" );
+		assertThat( meta.get( Key._NAME ) ).isNotNull();
+		assertThat( meta.get( Key.fullname ) ).isNotNull();
+		assertThat( meta.getAsBoolean( Key.output ) ).isTrue();
+		assertThat( meta.get( Key.path ) ).isNotNull();
+
+		// Annotations
+		IStruct annotations = meta.getAsStruct( Key.annotations );
+		assertThat( annotations ).isNotNull();
+		assertThat( annotations.getAsBoolean( Key.output ) ).isTrue();
+		assertThat( annotations.getAsBoolean( Key.accessors ) ).isFalse();
+
+		// Properties should be empty
+		assertThat( meta.getAsArray( Key.properties ) ).isEmpty();
+
+		// Functions array
+		var functions = meta.getAsArray( Key.functions );
+		assertThat( functions ).isNotNull();
+		assertThat( functions.size() ).isEqualTo( 2 );
+
+		// Find myMethod and myMethod2 in the functions array
+		IStruct	myMethod	= null;
+		IStruct	myMethod2	= null;
+		for ( Object func : functions ) {
+			IStruct	funcStruct	= ( IStruct ) func;
+			String	name		= funcStruct.getAsString( Key._NAME );
+			if ( "myMethod".equals( name ) ) {
+				myMethod = funcStruct;
+			} else if ( "myMethod2".equals( name ) ) {
+				myMethod2 = funcStruct;
+			}
+		}
+
+		// Assert myMethod exists and has correct structure
+		assertThat( myMethod ).isNotNull();
+		assertThat( myMethod.getAsString( Key.access ) ).isEqualTo( "public" );
+		assertThat( myMethod.getAsString( Key.returnType ) ).ignoringCase().isEqualTo( "any" );
+		assertThat( myMethod.getAsBoolean( Key.output ) ).isTrue();
+		assertThat( myMethod.getAsBoolean( Key.of( "lambda" ) ) ).isFalse();
+		assertThat( myMethod.getAsBoolean( Key.of( "closure" ) ) ).isFalse();
+		assertThat( myMethod.getAsBoolean( Key.of( "static" ) ) ).isFalse();
+		assertThat( myMethod.getAsArray( Key.parameters ) ).isEmpty();
+
+		// Check myMethod annotations - should have foo="bar"
+		IStruct myMethodAnnotations = myMethod.getAsStruct( Key.annotations );
+		assertThat( myMethodAnnotations ).isNotNull();
+		assertThat( myMethodAnnotations.getAsString( Key.of( "foo" ) ) ).isEqualTo( "bar" );
+		assertThat( myMethodAnnotations.getAsBoolean( Key.output ) ).isTrue();
+
+		// Assert myMethod2 exists and has correct structure
+		assertThat( myMethod2 ).isNotNull();
+		assertThat( myMethod2.getAsString( Key.access ) ).isEqualTo( "public" );
+		assertThat( myMethod2.getAsString( Key.returnType ) ).isEqualTo( "Any" );
+		assertThat( myMethod2.getAsBoolean( Key.output ) ).isTrue();
+
+		// Check myMethod2 annotations - should have foo="bar"
+		IStruct myMethod2Annotations = myMethod2.getAsStruct( Key.annotations );
+		assertThat( myMethod2Annotations ).isNotNull();
+		assertThat( myMethod2Annotations.getAsString( Key.of( "baz" ) ) ).isEqualTo( "bum" );
+		assertThat( myMethod2Annotations.getAsBoolean( Key.output ) ).isTrue();
+
+		// Implements and extends should be empty structs
+		assertThat( meta.getAsStruct( Key._IMPLEMENTS ) ).isEmpty();
+		assertThat( meta.getAsStruct( Key._EXTENDS ) ).isEmpty();
+	}
 }

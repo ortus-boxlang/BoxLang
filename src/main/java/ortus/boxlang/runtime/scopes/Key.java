@@ -134,6 +134,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		bindings							= Key.of( "bindings" );
 	public static final Key		body								= Key.of( "body" );
 	public static final Key		boxBif								= Key.of( "BoxBif" );
+	public static final Key		boxCache							= Key.of( "BoxCache" );
 	public static final Key		boxCacheProvider					= Key.of( "BoxCacheProvider" );
 	public static final Key		boxComponent						= Key.of( "BoxComponent" );
 	public static final Key		boxlang								= Key.of( "boxlang" );
@@ -1161,9 +1162,9 @@ public class Key implements Comparable<Key>, Serializable {
 
 		if ( obj instanceof Key castedKey ) {
 			// Same key name
-			return hashCode() == castedKey.hashCode();
+			return getNameNoCase().equals( castedKey.getNameNoCase() );
 		}
-
+		// This would only fire if this Key instance is being compared to a non-Key object.
 		return getOriginalValue().equals( obj );
 	}
 
@@ -1184,8 +1185,12 @@ public class Key implements Comparable<Key>, Serializable {
 		if ( obj == null || ! ( obj instanceof Key ) ) {
 			return false;
 		}
-		// Same key name
-		return getName().equals( ( ( Key ) obj ).getName() );
+		if ( obj instanceof Key castedKey ) {
+			// Same key name with case
+			return getName().equals( castedKey.getName() );
+		}
+		// This would only fire if this Key instance is being compared to a non-Key object.
+		return getOriginalValue().equals( obj );
 	}
 
 	/**
@@ -1267,6 +1272,9 @@ public class Key implements Comparable<Key>, Serializable {
 		}
 		if ( obj instanceof Long l && l >= Integer.MIN_VALUE && l <= Integer.MAX_VALUE ) {
 			return Key.of( l.intValue() );
+		}
+		if ( obj instanceof String str ) {
+			return Key.of( str );
 		}
 		// TODO: also check this higher up so we can tell the user more about what
 		// was null.

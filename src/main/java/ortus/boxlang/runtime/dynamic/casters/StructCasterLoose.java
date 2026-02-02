@@ -168,7 +168,7 @@ public class StructCasterLoose implements IBoxCaster {
 	}
 
 	/**
-	 * Support two different levels of loose struct casting. CF will turn literallyk ANYTHING but an array or simple value into a generic struct
+	 * Support two different levels of loose struct casting. CF will turn literally ANYTHING but an array or simple value into a generic struct
 	 * That feels a little too far, so BoxLang's default behavior is to only allow "objects" to be turned into structs, which exempts additional internal types such as UDFs or closures.
 	 * 
 	 * @param object The object to test

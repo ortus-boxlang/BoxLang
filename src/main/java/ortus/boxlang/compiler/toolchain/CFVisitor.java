@@ -350,7 +350,7 @@ public class CFVisitor extends CFGrammarBaseVisitor<BoxNode> {
 
 		// If this is the IN style, then we are guaranteed to have two expressions
 		if ( ctx.IN() != null ) {
-			return new BoxForIn( label, expressions.get( 0 ), expressions.get( 1 ), body, ctx.VAR() != null, pos, src );
+			return new BoxForIn( label, expressions.get( 0 ), null, expressions.get( 1 ), body, ctx.VAR() != null, pos, src );
 		}
 
 		// Otherwise we have an index with 0 <= n <= 3 expressions

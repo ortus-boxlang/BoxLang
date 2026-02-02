@@ -17,11 +17,11 @@ options {
 
 // These facilitate our cache management methods
 @members {
- 
+
  	public static DFA[] getParseCache() {
 		return BoxGrammar._decisionToDFA;
 	}
- 
+
  	public static ATN getStaticATN() {
 		return _ATN;
 	}
@@ -140,7 +140,7 @@ postAnnotation: postAnnotationName ((EQUALSIGN | COLON) attributeSimple)?
 postAnnotationName: identifier ( (MINUS identifier) | (DOT identifier))*
     ;
 
-// This allows [1, 2, 3], "foo", or foo 
+// This allows [1, 2, 3], "foo", or foo
 attributeSimple: annotation | fqn
     ;
 
@@ -290,11 +290,13 @@ if: IF LPAREN expression RPAREN ifStmt = statementOrBlock (ELSE elseStmt = state
  foo
  in bar ) {}
  or...
+ for( item, index in arr )
+ for( key, value in struct )
  for( var foo in bar ) echo(i)
  */
 for
     : preFix? FOR LPAREN (
-        VAR? expression IN expression
+        VAR? expression (COMMA expression)? IN expression
         | intializer = expression? SEMICOLON condition = expression? SEMICOLON increment = expression?
     ) RPAREN statementOrBlock
     ;

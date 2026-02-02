@@ -80,6 +80,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.types.*;
 		import ortus.boxlang.runtime.types.util.*;
 		import ortus.boxlang.runtime.types.exceptions.*;
+		import ortus.boxlang.runtime.types.meta.FunctionMeta;
 		import ortus.boxlang.runtime.util.*;
 		import ortus.boxlang.compiler.parser.BoxSourceType;
 		import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;

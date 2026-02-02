@@ -30,7 +30,6 @@ import org.checkerframework.checker.nullness.qual.NonNull;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
-import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
@@ -38,10 +37,10 @@ import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.jdbc.drivers.JDBCDriverFeature;
 import ortus.boxlang.runtime.jdbc.qoq.QoQConnection;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -199,23 +198,7 @@ public class PendingQuery {
 		// Create a cache key with a default or via the passed options.
 		this.cacheKey			= getOrComputeCacheKey();
 		this.context			= context;
-
-		// Check if we are in an app, to try to see if we will use the app cache or global cache.
-		ApplicationBoxContext	appContext		= context.getApplicationContext();
-		CacheService			cacheService	= BoxRuntime.getInstance().getCacheService();
-
-		// If we are in an app, we will use the app cache if it exists.
-		// Otherwise, we will use the global cache.
-		if ( appContext != null ) {
-			Key appCacheName = appContext.getApplication().buildAppCacheKey( Key.of( this.queryOptions.cacheProvider ) );
-			if ( cacheService.hasCache( appCacheName ) ) {
-				this.cacheProvider = cacheService.getCache( appCacheName );
-			}
-		}
-		// Else we will use the global cache.
-		if ( this.cacheProvider == null ) {
-			this.cacheProvider = cacheService.getCache( this.queryOptions.cacheProvider );
-		}
+		this.cacheProvider		= context.getApplicationCache( Key.of( this.queryOptions.cacheProvider ) );
 	}
 
 	/**
@@ -716,11 +699,26 @@ public class PendingQuery {
 			}
 
 			String sqlStatement = this.sql;
+			// QoQ connections don't have a datasource, so skip this check
+			if ( connection.getDataSource() != null
+			    && connection.getDataSource().getConfiguration().getDriver().hasFeature( JDBCDriverFeature.TRIM_TRAILING_SEMICOLONS ) ) {
+				var trimmed = sqlStatement.trim();
+				// This can be defeated if there is a comment after the semicolon.
+				if ( trimmed.endsWith( ";" ) ) {
+					var lowered = trimmed.toLowerCase();
+					// Exclude if "begin" and "end" appear anywhere in the SQL
+					if ( ! ( lowered.contains( "begin" ) && lowered.contains( "end" ) ) ) {
+						System.out.println( "Trimming trailing semicolon for driver compliance. " + trimmed );
+						sqlStatement = trimmed.substring( 0, trimmed.length() - 1 );
+					}
+				}
+			}
+			final String finalSQLStatement = sqlStatement;
 			try (
 			    // If we have no parameters, we can use a Statement, otherwise we use a PreparedStatement
 			    BoxStatement statement = this.parameters.isEmpty()
 			        ? connection.createStatement()
-			        : connection.prepareStatement( sqlStatement, GENERATED_KEYS_SETTING ); ) {
+			        : connection.prepareStatement( finalSQLStatement, GENERATED_KEYS_SETTING ); ) {
 
 				applyParameters( statement, context );
 				applyStatementOptions( statement );
@@ -728,7 +726,7 @@ public class PendingQuery {
 				interceptorService.announce(
 				    BoxEvent.PRE_QUERY_EXECUTE,
 				    () -> Struct.ofNonConcurrent(
-				        Key.sql, sqlStatement,
+				        Key.sql, finalSQLStatement,
 				        Key.bindings, getParameterValues(),
 				        Key.pendingQuery, this
 				    )

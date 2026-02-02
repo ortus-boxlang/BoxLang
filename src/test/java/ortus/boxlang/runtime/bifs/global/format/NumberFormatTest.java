@@ -108,6 +108,20 @@ public class NumberFormatTest {
 		    """,
 		    context );
 		assertEquals( "$123,456,789.00", variables.getAsString( result ) );
+
+		instance.executeSource(
+		    """
+		    result = numberFormat( 1.2, '9999.0' );
+		    """,
+		    context );
+		assertEquals( "1.2", variables.getAsString( result ) );
+
+		instance.executeSource(
+		    """
+		    result = numberFormat( 0.2, '9999.0' );
+		    """,
+		    context );
+		assertEquals( "0.2", variables.getAsString( result ) );
 	}
 
 	@DisplayName( "It tests the BIF NumberFormat with common format masks" )

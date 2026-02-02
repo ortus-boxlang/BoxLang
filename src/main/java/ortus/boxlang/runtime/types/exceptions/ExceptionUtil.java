@@ -54,7 +54,10 @@ import ortus.boxlang.runtime.util.RegexBuilder;
  */
 public class ExceptionUtil {
 
-	private static BoxRuntime runtime = BoxRuntime.getInstance();
+	private static BoxRuntime	runtime						= BoxRuntime.getInstance();
+
+	public static final String	LICENSE_MODULE_NAME			= "bx-plus";
+	public static final String	LICENSE_SUBSCRIPTION_NAME	= "BoxLang+";
 
 	/**
 	 * Checks if an exception is of a given type using loose rules based on the type as a string.
@@ -552,5 +555,22 @@ public class ExceptionUtil {
 		}
 
 		return result;
+	}
+
+	/**
+	 * Check if the current runtime is executing a license action in CLI mode
+	 * 
+	 * @param instance The BoxRuntime instance
+	 * @param t        The Throwable
+	 * 
+	 * @return True if executing a license action in CLI mode, false otherwise
+	 */
+	public static boolean isValidLicenseAction( BoxRuntime instance, Throwable t ) {
+		return ( t instanceof BoxLicenseException
+		    ||
+		    t.getMessage().contains( ExceptionUtil.LICENSE_MODULE_NAME ) )
+		    && instance.inCLIMode()
+		    && instance.getCliOptions().targetModule() != null
+		    && instance.getCliOptions().targetModule().equalsIgnoreCase( ExceptionUtil.LICENSE_MODULE_NAME );
 	}
 }

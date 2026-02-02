@@ -532,6 +532,19 @@ public class LoggingService {
 	}
 
 	/**
+	 * Get a logger by class.
+	 * If the logger doesn't exist, it will auto-register it and load it
+	 * using the name as the file name in the logs directory.
+	 *
+	 * @param clazz The class of the logger to retrieve.
+	 *
+	 * @return The logger requested
+	 */
+	public BoxLangLogger getLogger( Class clazz ) {
+		return getLogger( clazz.getName() );
+	}
+
+	/**
 	 * Get a logger by registered name.
 	 * If the logger doesn't exist, it will auto-register it and load it
 	 * using the name as the file name in the logs directory.

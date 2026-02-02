@@ -536,4 +536,26 @@ public class CFTranspilerTest {
 		assertThat( variables.getAsString( result ) ).isEqualTo( "1,2,3,4,5,6" );
 	}
 
+	@DisplayName( "Can replace once with one in replaceNoCase" )
+	@Test
+	public void testReplaceNoCaseOnce() {
+		instance.executeSource(
+		    """
+		    result = ReplaceNoCase( "redgreenbluered", "RED", 'brad', "once" );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "bradgreenbluered" );
+	}
+
+	@DisplayName( "Can replace once with one in replace" )
+	@Test
+	public void testReplaceOnce() {
+		instance.executeSource(
+		    """
+		    result = Replace( "redgreenbluered", "red", 'brad', "once" );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "bradgreenbluered" );
+	}
+
 }

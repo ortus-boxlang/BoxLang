@@ -64,34 +64,38 @@ public class CreateTimeSpan extends BIF {
 	 * @argument.milliseconds The number of milliseconds in the timespan
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		// Check to see if any of the inbound arguments are decimals. If so, demote them
+		// Check to see if any of the inbound arguments are decimals. If so, demote them if approppriate
 		// for assignment
-		if ( arguments.get( Key.days ) instanceof BigDecimal castDecimal ) {
+		if ( arguments.get( Key.days ) instanceof BigDecimal castDecimal && isBigDecimalFraction( castDecimal ) ) {
 			BigDecimal timeoutMinutes = castDecimal.multiply( BigDecimalCaster.cast( 1440 ) );
 			arguments.put( Key.days, 0l );
 			arguments.put( Key.minutes, timeoutMinutes.longValue() );
 		}
-		if ( arguments.get( Key.hours ) instanceof BigDecimal castDecimal ) {
+		if ( arguments.get( Key.hours ) instanceof BigDecimal castDecimal && isBigDecimalFraction( castDecimal ) ) {
 			BigDecimal timeoutMinutes = castDecimal.multiply( BigDecimalCaster.cast( 60 ) );
 			arguments.put( Key.hours, 0l );
 			arguments.put( Key.minutes, timeoutMinutes.longValue() );
 		}
-		if ( arguments.get( Key.minutes ) instanceof BigDecimal castDecimal ) {
+		if ( arguments.get( Key.minutes ) instanceof BigDecimal castDecimal && isBigDecimalFraction( castDecimal ) ) {
 			BigDecimal timeoutSeconds = castDecimal.multiply( BigDecimalCaster.cast( 60 ) );
 			arguments.put( Key.minutes, 0l );
 			arguments.put( Key.seconds, timeoutSeconds.longValue() );
 		}
-		if ( arguments.get( Key.seconds ) instanceof BigDecimal castDecimal ) {
+		if ( arguments.get( Key.seconds ) instanceof BigDecimal castDecimal && isBigDecimalFraction( castDecimal ) ) {
 			BigDecimal timeoutMilliseconds = castDecimal.multiply( BigDecimalCaster.cast( 1000 ) );
 			arguments.put( Key.seconds, 0l );
 			arguments.put( Key.milliseconds, timeoutMilliseconds.longValue() );
 		}
 
-		return Duration.ofDays( LongCaster.cast( arguments.get( Key.days ) ) )
-		    .plusHours( LongCaster.cast( arguments.get( Key.hours ) ) )
-		    .plusMinutes( LongCaster.cast( arguments.get( Key.minutes ) ) )
-		    .plusSeconds( LongCaster.cast( arguments.get( Key.seconds ) ) )
-		    .plusMillis( LongCaster.cast( arguments.get( Key.milliseconds ) ) );
+		return Duration.ofDays( LongCaster.cast( arguments.getOrDefault( Key.days, 0l ) ) )
+		    .plusHours( LongCaster.cast( arguments.getOrDefault( Key.hours, 0l ) ) )
+		    .plusMinutes( LongCaster.cast( arguments.getOrDefault( Key.minutes, 0l ) ) )
+		    .plusSeconds( LongCaster.cast( arguments.getOrDefault( Key.seconds, 0l ) ) )
+		    .plusMillis( LongCaster.cast( arguments.getOrDefault( Key.milliseconds, 0l ) ) );
+	}
+
+	private static boolean isBigDecimalFraction( BigDecimal obj ) {
+		return obj.compareTo( BigDecimal.ZERO ) != 0 && obj.abs().compareTo( BigDecimal.ONE ) < 0;
 	}
 
 }

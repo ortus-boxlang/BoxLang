@@ -1105,14 +1105,15 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 		if ( other instanceof DateTime castedDateTime ) {
 			ZonedDateTime otherRef = castedDateTime.getWrapped();
 			if ( lenient ) {
-				otherRef = otherRef.truncatedTo( ChronoUnit.SECONDS );
+				otherRef = otherRef.withZoneSameInstant( localRef.getZone() ).truncatedTo( ChronoUnit.SECONDS );
 			}
+
 			return localRef.compareTo( otherRef );
 		}
 		if ( other instanceof ZonedDateTime castedDateTime ) {
 			ZonedDateTime otherRef = castedDateTime;
 			if ( lenient ) {
-				otherRef = otherRef.truncatedTo( ChronoUnit.SECONDS );
+				otherRef = otherRef.withZoneSameInstant( localRef.getZone() ).truncatedTo( ChronoUnit.SECONDS );
 			}
 			return localRef.compareTo( otherRef );
 		}
@@ -1130,7 +1131,7 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 		DateTime		castResult	= attempt.get();
 		ZonedDateTime	otherRef	= castResult.getWrapped();
 		if ( lenient ) {
-			otherRef = castResult.wrapped.truncatedTo( ChronoUnit.SECONDS );
+			otherRef = otherRef.withZoneSameInstant( localRef.getZone() ).truncatedTo( ChronoUnit.SECONDS );
 		}
 
 		return localRef.compareTo( otherRef );

@@ -1,0 +1,61 @@
+<bx:script>
+	expandRoot = expand ?: true;
+</bx:script>
+<bx:output>
+	<bx:set byteArrayLen = var.len() >
+	<div class="bx-dump">
+		<table class="bx-table-secondary" title="#encodeForHTML( posInCode )#">
+			<!--- Binary dumps tend to be long, so left aligning the caption, otherwise you never see it! --->
+			<caption
+				role="button"
+				tabindex="0"
+				<bx:if expandRoot>open aria-expanded="true"<bx:else>aria-expanded="false"</bx:if>
+				data-bx-toggle="siblings"
+				style="text-align: left;"
+			>
+				<strong>
+					<bx:if label.len() >#label# - </bx:if>
+					Binary (byte[]): length #numberFormat( byteArrayLen )#
+				</strong>
+			</caption>
+			<tbody
+				<bx:if !expandRoot>class="d-none"</bx:if>
+			>
+				<tr>
+					<td>
+						Raw
+					</td>
+					<td>
+						<bx:script>
+							echo( "[" );
+							bx:loop array="#var#" index="i" item="value" {
+								echo( value )
+								if( i < byteArrayLen ){
+									echo( "," )
+								}
+								// Harded coded limit of 1000 bytes
+								if( i > 1000) {
+									break;
+								}
+							}
+							if( i > 1000 ){
+								echo( "<br>... truncated" );
+							}
+							echo( "]" );
+						</bx:script>
+					</td>
+				</tr>
+				<bx:if byteArrayLen LTE 1000 >
+					<tr>
+						<td>
+							Base64 Encoded
+						</td>
+						<td>
+							#toBase64( var )#
+						</td>
+					</tr>
+				</bx:if>
+			</tbody>
+		</table>
+	</div>
+</bx:output>

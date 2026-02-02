@@ -18,9 +18,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
-import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.types.util.ListUtil.ParallelSettings;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -73,23 +71,15 @@ public class ArrayEach extends BIF {
 	 * @argument.virtual ( BoxLang only) If true, the function will be invoked using virtual threads. Defaults to false. Ignored if parallel is false.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object maxThreads = arguments.get( Key.maxThreads );
-		if ( maxThreads instanceof Boolean castBoolean ) {
-			// If maxThreads is a boolean, we assign it to virtual
-			arguments.put( Key.virtual, castBoolean );
-			maxThreads = null;
-		}
-
-		CastAttempt<Integer> maxThreadsAttempt = IntegerCaster.attempt( maxThreads );
-
+		ParallelSettings settings = ListUtil.resolveParallelSettings( arguments );
 		ListUtil.each(
 		    arguments.getAsArray( Key.array ),
 		    arguments.getAsFunction( Key.callback ),
 		    context,
 		    arguments.getAsBoolean( Key.parallel ),
-		    maxThreadsAttempt.getOrDefault( 0 ),
+		    settings.maxThreads(),
 		    arguments.getAsBoolean( Key.ordered ),
-		    BooleanCaster.cast( arguments.getOrDefault( Key.virtual, false ) )
+		    settings.virtual()
 		);
 		return null;
 	}

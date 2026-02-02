@@ -343,11 +343,11 @@ public class HttpService extends BaseService {
 		}
 
 		// Configure proxy
-		if ( proxyServer != null && proxyPort != null ) {
+		if ( proxyServer != null && !proxyServer.isEmpty() && proxyPort != null ) {
 			builder.proxy( ProxySelector.of( new InetSocketAddress( proxyServer, proxyPort ) ) );
 
 			// Configure proxy authentication if credentials provided
-			if ( proxyUser != null && proxyPassword != null ) {
+			if ( proxyUser != null && !proxyUser.isEmpty() && proxyPassword != null && !proxyPassword.isEmpty() ) {
 				builder.authenticator( new Authenticator() {
 
 					@Override

@@ -430,7 +430,7 @@ public final class FileSystemUtil {
 
 		} catch ( NoSuchFileException e ) {
 			throw new BoxRuntimeException(
-			    "The file [" + filePath + "] could not be writtent. The directory ["
+			    "The file [" + filePath + "] could not be written. The directory ["
 			        + Path.of( filePath ).getParent().toString() + "] does not exist." );
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
@@ -943,7 +943,7 @@ public final class FileSystemUtil {
 	}
 
 	/**
-	 * Copies a file or directory from source to destination
+	 * Copies a file or directory from source to destination. overwrite defaults to false
 	 *
 	 * @param source      the source file path
 	 * @param destination the destination file path
@@ -957,8 +957,30 @@ public final class FileSystemUtil {
 	    boolean recurse,
 	    Object filter,
 	    boolean createPaths ) {
-		Path	start	= Path.of( source );
-		Path	end		= Path.of( destination );
+		copyDirectory( source, destination, recurse, filter, createPaths, false );
+	}
+
+	/**
+	 * Copies a file or directory from source to destination
+	 *
+	 * @param source      the source file path
+	 * @param destination the destination file path
+	 * @param recurse     whether to recurse into subdirectories
+	 * @param filter      a glob filter or a closure to filter the results as a Predicate
+	 * @param createPaths whether to create the parent directory if it does not exist
+	 * @param overwrite   whether to overwrite existing files at the destination
+	 */
+	public static void copyDirectory(
+	    String source,
+	    String destination,
+	    boolean recurse,
+	    Object filter,
+	    boolean createPaths,
+	    boolean overwrite ) {
+		Path			start		= Path.of( source );
+		Path			end			= Path.of( destination );
+		CopyOption[]	copyOptions	= overwrite ? new CopyOption[] { StandardCopyOption.REPLACE_EXISTING } : new CopyOption[ 0 ];
+
 		if ( createPaths && !Files.exists( end ) ) {
 			try {
 				Files.createDirectories( end );
@@ -977,7 +999,9 @@ public final class FileSystemUtil {
 				throw new BoxRuntimeException( "The filter argument to the method DirectoryCopy filter must either be a string or function/closure" );
 			}
 			directoryListing.forEachOrdered( path -> {
-				Path	targetPath		= Path.of( path.toString().replace( source, destination ) );
+				Path	sourcePath		= Path.of( source );
+				Path	relativePath	= sourcePath.relativize( path );
+				Path	targetPath		= Path.of( destination ).resolve( relativePath );
 				Path	targetParent	= targetPath.getParent();
 				if ( recurse && !Files.exists( targetParent ) ) {
 					try {
@@ -992,7 +1016,7 @@ public final class FileSystemUtil {
 					// been created
 					if ( !Files.isDirectory( targetPath )
 					    || ( Files.isDirectory( targetPath ) && !Files.exists( targetPath ) ) ) {
-						Files.copy( path, targetPath );
+						Files.copy( path, targetPath, copyOptions );
 					}
 				} catch ( IOException e ) {
 					throw new BoxIOException( e );
@@ -1000,7 +1024,7 @@ public final class FileSystemUtil {
 			} );
 		} else {
 			try {
-				Files.copy( start, end );
+				Files.copy( start, end, copyOptions );
 			} catch ( IOException e ) {
 				throw new BoxIOException( e );
 			}

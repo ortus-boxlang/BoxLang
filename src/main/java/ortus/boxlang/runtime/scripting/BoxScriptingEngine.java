@@ -37,6 +37,7 @@ import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyService;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.debug.DebuggerExternalConnectionUtil;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
 
@@ -55,6 +56,9 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 
 	/**
 	 * Constructor for the BoxScriptingEngine
+	 * The BoxLang home can be overridden via the BOXLANG_HOME env var or boxlang.home system property
+	 * The BoxLang config path can be overridden via the BOXLANG_CONFIG env var or boxlang.config system property
+	 * The root / mapping can be overridden via the BOXLANG_ROOTMAPPING env var or boxlang.rootmapping system property
 	 *
 	 * @param boxScriptingFactory The factory for the BoxScriptingEngine
 	 * @param debug               Whether to run in debug mode, defaults to false
@@ -62,22 +66,56 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 	 * @see BoxScriptingFactory
 	 */
 	public BoxScriptingEngine( BoxScriptingFactory boxScriptingFactory, Boolean debug ) {
-		this.boxScriptingFactory	= boxScriptingFactory;
-		this.boxRuntime				= BoxRuntime.getInstance( debug );
-		this.boxContext				= new JSRScriptingRequestBoxContext( this.boxRuntime.getRuntimeContext() );
-		this.scriptContext			= new BoxScriptingContext( boxContext );
+		this.boxScriptingFactory = boxScriptingFactory;
+		String	configPath	= getEnvOrProp( "BOXLANG_CONFIG", null );
+		String	runtimeHome	= getEnvOrProp( "BOXLANG_HOME", null );
+		String	rootMapping	= getEnvOrProp( "BOXLANG_ROOTMAPPING", null );
+
+		this.boxRuntime = BoxRuntime.getInstance( debug, configPath, runtimeHome );
+		if ( rootMapping != null && !rootMapping.isBlank() ) {
+			this.boxRuntime.getConfiguration().registerMapping( "/", rootMapping );
+		}
+		this.boxContext		= new JSRScriptingRequestBoxContext( this.boxRuntime.getRuntimeContext() );
+		this.scriptContext	= new BoxScriptingContext( boxContext );
 		boxContext.setJSRScriptingContext( this.scriptContext );
 	}
 
 	/**
-	 * Constructor for the BoxScriptingEngine
+	 * Given the input FOO_BAR will search for an env var of that name, then look for a system property called foo.bar
+	 * Given the input foo.bar will search for a system property of that name, then look for an env var called FOO_BAR
+	 *
+	 * TODO: This logic could be shared in a common utility class and all env vars in BoxLang should prolly follow this format
+	 *
+	 * @param name         The name of the environment variable or system property to look for
+	 * @param defaultValue The default value to return if neither the environment variable nor the system property is found
+	 *
+	 * @return The value of the environment variable or system property, or the default value if neither is found
+	 */
+	private static String getEnvOrProp( String name, String defaultValue ) {
+		String value;
+		if ( name.indexOf( "_" ) > -1 ) {
+			value = System.getenv( name );
+			if ( value == null ) {
+				value = System.getProperty( name.toLowerCase().replace( "_", "." ) );
+			}
+		} else {
+			value = System.getProperty( name );
+			if ( value == null ) {
+				value = System.getenv( name.toUpperCase().replace( ".", "_" ) );
+			}
+		}
+		return value != null ? value : defaultValue;
+	}
+
+	/**
+	 * Constructor for the BoxScriptingEngine. Will default debug to the value of the BOXLANG_DEBUG env var or boxlang.debug system property
 	 *
 	 * @param boxScriptingFactory The factory for the BoxScriptingEngine
 	 *
 	 * @see BoxScriptingFactory
 	 */
 	public BoxScriptingEngine( BoxScriptingFactory boxScriptingFactory ) {
-		this( boxScriptingFactory, false );
+		this( boxScriptingFactory, Boolean.parseBoolean( getEnvOrProp( "BOXLANG_DEBUG", "false" ) ) );
 	}
 
 	/**
@@ -322,7 +360,15 @@ public class BoxScriptingEngine implements ScriptEngine, Compilable, Invocable {
 		RequestBoxContext.setCurrent( getBoxContext() );
 		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 		try {
-			// This will handle any sort of referencable object, including member methods on data types
+			// Signal to debugger that user code is about to start (only in debug mode)
+			// This must be called BEFORE loading the class so the debugger can set up
+			// ClassPrepareRequest with SUSPEND_EVENT_THREAD before the class loads
+			if ( this.boxRuntime.inDebugMode() ) {
+				DebuggerExternalConnectionUtil.start();
+				DebuggerExternalConnectionUtil.signalUserCodeStart( null );
+			}
+
+			// This will handle any sort of referenceable object, including member methods on data types
 			return Referencer.getAndInvoke( getBoxContext(), thiz, Key.of( name ), args, false );
 		} finally {
 			RequestBoxContext.removeCurrent();

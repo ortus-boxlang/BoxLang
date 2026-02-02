@@ -998,4 +998,36 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		// @formatter:on
 	}
 
+	@DisplayName( "CF code ignores invalid or empty dbtype attribute" )
+	@Test
+	public void testIgnoreInvalidOrEmptyDbtypeAttribute() {
+		// @formatter:off
+		instance.executeStatement("""
+				<cfquery name="result" datasource="MSSQLdatasource" dbtype="">
+					select * from developers
+				</cfquery>
+				<cfquery name="result" datasource="MSSQLdatasource" dbtype="ODBC">
+					select * from developers
+				</cfquery>
+				<cfquery name="result" datasource="MSSQLdatasource" dbtype="Oracle73">
+					select * from developers
+				</cfquery>
+				<cfquery name="result" datasource="MSSQLdatasource" dbtype="Oracle80">
+					select * from developers
+				</cfquery>
+				<cfquery name="result" datasource="MSSQLdatasource" dbtype="DB2">
+					select * from developers
+				</cfquery>
+				<cfquery name="result" datasource="MSSQLdatasource" dbtype="sdfsdfsdf">
+					select * from developers
+				</cfquery>
+				<cfset dbtype="query">
+				<cfquery name="result" datasource="MSSQLdatasource" dbtype="#dbtype#">
+					select * from result
+				</cfquery>
+			""",
+		    context, BoxSourceType.CFTEMPLATE );
+		// @formatter:on
+	}
+
 }

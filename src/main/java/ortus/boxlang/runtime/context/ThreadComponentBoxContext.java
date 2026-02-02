@@ -18,7 +18,9 @@
 package ortus.boxlang.runtime.context;
 
 import ortus.boxlang.runtime.async.RequestThreadManager;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.AttributesScope;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -432,6 +434,16 @@ public class ThreadComponentBoxContext extends BaseBoxContext implements IJDBCCa
 		// this.thread = null;
 		this.threadManager		= null;
 
+	}
+
+	@Override
+	public IClassRunnable getFunctionClass() {
+		return hasParent() ? getParent().getFunctionClass() : null;
+	}
+
+	@Override
+	public DynamicObject getFunctionStaticClass() {
+		return hasParent() ? getParent().getFunctionStaticClass() : null;
 	}
 
 }

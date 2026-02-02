@@ -40,6 +40,7 @@ import ortus.boxlang.runtime.runnables.BoxScript;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
+import ortus.boxlang.debug.DebuggerExternalConnectionUtil;
 
 /**
  * BoxLang Read-Eval-Print-Loop (REPL) implementation.
@@ -222,6 +223,13 @@ public class BoxRepl {
 		IBoxContext scriptingContext = new ScriptingRequestBoxContext( context );
 		RequestBoxContext.setCurrent( scriptingContext.getRequestContext() );
 		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
+
+		// Signal to debugger that user code is about to start (only in debug mode)
+		// This must be called BEFORE loading the class so the debugger can set up
+		// ClassPrepareRequest with SUSPEND_EVENT_THREAD before the class loads
+		if ( this.runtime.inDebugMode() ) {
+			DebuggerExternalConnectionUtil.signalUserCodeStart( null );
+		}
 
 		try {
 			// Show the interactive banner

@@ -178,6 +178,11 @@ public class FunctionBoxContext extends BaseBoxContext {
 		setThisStaticClass( thisStaticClass );
 		setThisInterface( thisInterface );
 		pushTemplate( function );
+		// If this UDF is in a class, we need to set the template to the class path, but we still need the push above which sets the current imports to the original source file
+		if ( isInClass() ) {
+			popTemplate();
+			pushTemplate( getThisClass().getRunnablePath() );
+		}
 		try {
 			ArgumentUtil.createArgumentsScope( this, positionalArguments, function.getArguments(), this.argumentsScope,
 			    function.getName() );
@@ -212,6 +217,11 @@ public class FunctionBoxContext extends BaseBoxContext {
 		setThisStaticClass( thisStaticClass );
 		setThisInterface( thisInterface );
 		pushTemplate( function );
+		// If this UDF is in a class, we need to set the template to the class path, but we still need the push above which sets the current imports to the original source file
+		if ( isInClass() ) {
+			popTemplate();
+			pushTemplate( getThisClass().getRunnablePath() );
+		}
 		try {
 			ArgumentUtil.createArgumentsScope( this, namedArguments, function.getArguments(), this.argumentsScope,
 			    function.getName() );

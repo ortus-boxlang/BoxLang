@@ -41,6 +41,7 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.xnio.OptionMap;
@@ -1273,6 +1274,59 @@ public class DynamicInteropServiceTest {
 		// @formatter:on
 		assertThat( t.getMessage() ).contains( "primitive" );
 		assertThat( t.getMessage() ).contains( "boolean" );
+	}
+
+	@Test
+	void testGetterAsField() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			import java.util.UUID;
+				result = UUID.randomUUID().mostSignificantBits;
+			""", context);
+		// @formatter:on
+	}
+
+	@DisplayName( "Passing java class to method expecting instance should auto-instantiate via no-arg constructor" )
+	@Test
+	// @Disabled
+	void testPassingJavaClassAutoInstantiatesNoArgConstructor() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+
+			sdf = createObject( "java", "java.text.SimpleDateFormat" ).init();
+
+			// This java method accepts a NumberFormat which perfect for the example since we can't do a direct class name
+			// comparison, but actually have to check assignability
+			sdf.setNumberFormat( createObject( "java", "java.text.DecimalFormat" ) );
+
+			result = sdf.getNumberFormat();
+			""", context);
+		// @formatter:on
+
+		var result = variables.get( Key.result );
+		assertThat( result ).isNotNull();
+		assertThat( DynamicObject.unWrap( result ) ).isInstanceOf( java.text.DecimalFormat.class );
+	}
+
+	@DisplayName( "Passing non-String to method expecting String should auto-call toString()" )
+	@Test
+	@Disabled( "https://ortussolutions.atlassian.net/browse/BL-2092" )
+	void testPassingNonStringAutoCallsToString() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			myCRC = createObject( "java", "java.util.zip.CRC32" ).init();
+			println( myCRC )
+			println( myCRC.toString() )
+			createObject( "java", "java.lang.System" ).setProperty( myCRC, "brad" );
+			result = createObject( "java", "java.lang.System" ).getProperty( myCRC );
+			""", context);
+		// @formatter:on
+
+		var result = variables.get( Key.result );
+		assertThat( result ).isEqualTo( "brad" );
 	}
 
 }
