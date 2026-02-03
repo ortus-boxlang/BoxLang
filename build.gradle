@@ -301,6 +301,160 @@ tasks.named( "startScripts" ) {
 tasks.named( "startShadowScripts" ) {
     dependsOn tasks.named( "jar" )
 }
+
+/**
+ * Customize BoxLang startup scripts to support .env file loading
+ */
+startShadowScripts {
+	doLast {
+		// Customize the Unix script
+		def unixScript = file("${buildDir}/scriptsShadow/boxlang")
+		customizeUnixScript(unixScript)
+
+		// Customize the Windows script
+		def windowsScript = file("${buildDir}/scriptsShadow/boxlang.bat")
+		customizeWindowsScript(windowsScript)
+
+		logger.info("+ BoxLang startup scripts customized with .env support")
+	}
+}
+
+/**
+ * Add .env file loading support to Unix script with --envfile argument support
+ */
+ext.customizeUnixScript = { File scriptFile ->
+	def content = scriptFile.text
+
+	// Insert .env loading logic before "Determine the Java command to use"
+	def envLoadingScript = '''
+######################################
+# Parse --envfile argument and load environment variables
+######################################
+ENV_FILE=".env"
+FILTERED_ARGS=()
+
+# Parse command line arguments and filter out --envfile
+for arg in "$@"; do
+    case $arg in
+        --envfile=*)
+            ENV_FILE="${arg#*=}"
+            ;;
+        *)
+            FILTERED_ARGS+=("$arg")
+            ;;
+    esac
+done
+
+# Replace $@ with filtered arguments
+set -- "${FILTERED_ARGS[@]}"
+
+# Load the environment file if it exists
+if [ -f "$ENV_FILE" ]; then
+    echo "Loading environment variables from $ENV_FILE"
+    while IFS='=' read -r key value || [ -n "$key" ]; do
+        # Skip comments and empty lines
+        if [ -z "$key" ] || [ "${key:0:1}" = "#" ]; then
+            continue
+        fi
+
+        # Remove leading/trailing whitespace from key
+        key=$(echo "$key" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+
+        # Remove leading/trailing whitespace and quotes from value
+        value=$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | sed 's/^"\\(.*\\)"$/\\1/' | sed "s/^'\\(.*\\)'$/\\1/")
+
+        # Export the variable
+        export "$key=$value"
+    done < "$ENV_FILE"
+fi
+######################################
+# End .env loading
+######################################
+
+'''
+
+	content = content.replace(
+		'# Determine the Java command to use to start the JVM.',
+		envLoadingScript + '# Determine the Java command to use to start the JVM.'
+	)
+
+	scriptFile.text = content
+	scriptFile.setExecutable(true, false)
+}
+
+/**
+ * Add .env file loading support to Windows script with --envfile argument support
+ */
+ext.customizeWindowsScript = { File scriptFile ->
+	def content = scriptFile.text
+
+	// Insert .env loading logic before "Setup the command line"
+	def envLoadingScript = '''
+
+@rem ######################################
+@rem Parse --envfile argument and load environment variables
+@rem ######################################
+set "ENV_FILE=.env"
+set "FILTERED_ARGS="
+
+@rem Parse command line arguments and filter out --envfile
+for %%a in (%*) do (
+    set "arg=%%a"
+    if "!arg:~0,10!"=="--envfile=" (
+        set "ENV_FILE=!arg:~10!"
+    ) else (
+        if defined FILTERED_ARGS (
+            set "FILTERED_ARGS=!FILTERED_ARGS! %%a"
+        ) else (
+            set "FILTERED_ARGS=%%a"
+        )
+    )
+)
+
+@rem Load the environment file if it exists
+if exist "!ENV_FILE!" (
+    echo Loading environment variables from !ENV_FILE!
+    for /f "usebackq tokens=1,* delims==" %%a in ("!ENV_FILE!") do (
+        @rem Skip comments and empty lines
+        set "line=%%a"
+        if not "!line:~0,1!"=="#" if not "%%a"=="" (
+            @rem Remove quotes from value if present
+            set "value=%%b"
+            if not "!value!"=="" (
+                set "value=!value:"=!"
+                set "%%a=!value!"
+            )
+        )
+    )
+)
+@rem ######################################
+@rem End .env loading
+@rem ######################################
+
+'''
+
+	// Enable delayed expansion at the beginning of the script (needed for !variable! syntax)
+	if (!content.contains('@setlocal enabledelayedexpansion')) {
+		content = content.replaceFirst(
+			'(@echo off)',
+			'$1\r\n@setlocal enabledelayedexpansion'
+		)
+	}
+
+	// Insert the .env loading code before "Setup the command line"
+	content = content.replace(
+		'@rem Setup the command line',
+		envLoadingScript + '@rem Setup the command line'
+	)
+
+	// Replace CMD_LINE_ARGS with filtered arguments after it's set
+	content = content.replaceFirst(
+		/(set CMD_LINE_ARGS=%\*)/,
+		'$1\r\nset CMD_LINE_ARGS=%FILTERED_ARGS%'
+	)
+
+	scriptFile.text = content
+}
 /**
  * Main BoxLang Distribution JAR
  * Includes: Runtime + ASMBoxpiler + NoOpBoxpiler
