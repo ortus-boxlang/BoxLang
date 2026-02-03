@@ -350,7 +350,7 @@ set -- "${FILTERED_ARGS[@]}"
 
 # Load the environment file if it exists
 if [ -f "$ENV_FILE" ]; then
-    echo "Loading environment variables from $ENV_FILE"
+    # echo "Loading environment variables from $ENV_FILE"
     while IFS='=' read -r key value || [ -n "$key" ]; do
         # Skip comments and empty lines
         if [ -z "$key" ] || [ "${key:0:1}" = "#" ]; then
@@ -413,7 +413,7 @@ for %%a in (%*) do (
 
 @rem Load the environment file if it exists
 if exist "!ENV_FILE!" (
-    echo Loading environment variables from !ENV_FILE!
+    @rem echo Loading environment variables from !ENV_FILE!
     for /f "usebackq tokens=1,* delims==" %%a in ("!ENV_FILE!") do (
         @rem Skip comments and empty lines
         set "line=%%a"
