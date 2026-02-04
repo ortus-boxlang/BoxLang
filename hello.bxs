@@ -1,0 +1,10 @@
+// hello.bxs
+println( "Hello, BoxLang World!" )
+
+// Variables and functions
+name = "Developer"
+function greet( name ) {
+    return "Welcome to BoxLang, " & name & "!"
+}
+
+println( greet( name ) )
