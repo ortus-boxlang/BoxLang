@@ -2912,10 +2912,10 @@ public class DynamicInteropService {
 		try {
 			if ( boxClass.getSuperClass() != null ) {
 				// Recursively load the super class
-				IClassRunnable _super = ( IClassRunnable ) boxClass.getSuperClass()
+				IClassRunnable _super = ( IClassRunnable ) ( DynamicObject.of( boxClass.getSuperClass().getTargetClass() )
 				    // Constructor args are NOT passed. Only the outermost class gets to use those
 				    .invokeConstructor( classContext, new Object[] { Key.noInit } )
-				    .unWrapBoxLangClass();
+				    .unWrapBoxLangClass() );
 
 				// Check for final annotation and throw if we're trying to extend a final class
 				if ( _super.getAnnotations().get( Key._final ) != null ) {
