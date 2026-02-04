@@ -324,57 +324,28 @@ startShadowScripts {
  */
 ext.customizeUnixScript = { File scriptFile ->
 	def content = scriptFile.text
+	def envLoaderScript = file('workbench/scripts/env-loader.sh').text
 
-	// Insert .env loading logic before "Determine the Java command to use"
-	def envLoadingScript = '''
+	// Insert sourcing of env-loader.sh before "Determine the Java command to use"
+	def envLoadingInvocation = """
 ######################################
-# Parse --envfile argument and load environment variables
+# Load environment variables from .env file
 ######################################
-ENV_FILE=".env"
+# Source the env-loader script inline (to preserve environment variables)
+${envLoaderScript}
 
-# Parse command line arguments and filter out --envfile
-# Using POSIX-compliant approach without arrays
-set -- $(
-    for arg in "$@"; do
-        case $arg in
-            --envfile=*)
-                ENV_FILE="${arg#*=}"
-                ;;
-            *)
-                printf '%s\n' "$arg"
-                ;;
-        esac
-    done
-)
+# Update arguments to filtered args (without --envfile)
+set -- \$FILTERED_ARGS
 
-# Load the environment file if it exists
-if [ -f "$ENV_FILE" ]; then
-    # echo "Loading environment variables from $ENV_FILE"
-    while IFS='=' read -r key value || [ -n "$key" ]; do
-        # Skip comments and empty lines
-        if [ -z "$key" ] || [ "${key:0:1}" = "#" ]; then
-            continue
-        fi
-
-        # Remove leading/trailing whitespace from key
-        key=$(echo "$key" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-
-        # Remove leading/trailing whitespace and quotes from value
-        value=$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | sed 's/^"\\(.*\\)"$/\\1/' | sed "s/^'\\(.*\\)'$/\\1/")
-
-        # Export the variable
-        export "$key=$value"
-    done < "$ENV_FILE"
-fi
 ######################################
 # End .env loading
 ######################################
 
-'''
+"""
 
 	content = content.replace(
 		'# Determine the Java command to use to start the JVM.',
-		envLoadingScript + '# Determine the Java command to use to start the JVM.'
+		envLoadingInvocation + '# Determine the Java command to use to start the JVM.'
 	)
 
 	scriptFile.text = content
@@ -386,51 +357,7 @@ fi
  */
 ext.customizeWindowsScript = { File scriptFile ->
 	def content = scriptFile.text
-
-	// Insert .env loading logic before "Setup the command line"
-	def envLoadingScript = '''
-
-@rem ######################################
-@rem Parse --envfile argument and load environment variables
-@rem ######################################
-set "ENV_FILE=.env"
-set "FILTERED_ARGS="
-
-@rem Parse command line arguments and filter out --envfile
-for %%a in (%*) do (
-    set "arg=%%a"
-    if "!arg:~0,10!"=="--envfile=" (
-        set "ENV_FILE=!arg:~10!"
-    ) else (
-        if defined FILTERED_ARGS (
-            set "FILTERED_ARGS=!FILTERED_ARGS! %%a"
-        ) else (
-            set "FILTERED_ARGS=%%a"
-        )
-    )
-)
-
-@rem Load the environment file if it exists
-if exist "!ENV_FILE!" (
-    @rem echo Loading environment variables from !ENV_FILE!
-    for /f "usebackq tokens=1,* delims==" %%a in ("!ENV_FILE!") do (
-        @rem Skip comments and empty lines
-        set "line=%%a"
-        if not "!line:~0,1!"=="#" if not "%%a"=="" (
-            @rem Remove quotes from value if present
-            set "value=%%b"
-            if not "!value!"=="" (
-                set "value=!value:"=!"
-                set "%%a=!value!"
-            )
-        )
-    )
-)
-@rem ######################################
-@rem End .env loading
-@rem ######################################
-
-'''
+	def envLoaderScript = file('workbench/scripts/env-loader.bat').text
 
 	// Enable delayed expansion at the beginning of the script (needed for !variable! syntax)
 	if (!content.contains('@setlocal enabledelayedexpansion')) {
@@ -440,16 +367,32 @@ if exist "!ENV_FILE!" (
 		)
 	}
 
-	// Insert the .env loading code before "Setup the command line"
+	// Insert the env loading code before "Setup the command line"
+	def envLoadingInvocation = """
+
+@rem ######################################
+@rem Load environment variables from .env file
+@rem ######################################
+${envLoaderScript}
+
+@rem Update CMD_LINE_ARGS with filtered arguments
+set "CMD_LINE_ARGS_TEMP=%FILTERED_ARGS%"
+
+@rem ######################################
+@rem End .env loading
+@rem ######################################
+
+"""
+
 	content = content.replace(
 		'@rem Setup the command line',
-		envLoadingScript + '@rem Setup the command line'
+		envLoadingInvocation + '@rem Setup the command line'
 	)
 
 	// Replace CMD_LINE_ARGS with filtered arguments after it's set
 	content = content.replaceFirst(
 		/(set CMD_LINE_ARGS=%\*)/,
-		'$1\r\nset CMD_LINE_ARGS=%FILTERED_ARGS%'
+		'$1\r\nif defined CMD_LINE_ARGS_TEMP set CMD_LINE_ARGS=%CMD_LINE_ARGS_TEMP%'
 	)
 
 	scriptFile.text = content
