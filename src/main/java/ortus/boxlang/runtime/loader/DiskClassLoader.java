@@ -734,11 +734,17 @@ public class DiskClassLoader extends URLClassLoader {
 	 */
 	private byte[] renameClassAndReferences( byte[] classBytes, String oldInternalName, String newInternalName, ClassInfo classInfo, boolean outerClass,
 	    ObjectRef<String> newName ) {
-		String		boxFQN			= classInfo.boxFqn().toString();
-		String		mappingName		= classInfo.resolvedFilePath().mappingName();
-		String		mappingPath		= classInfo.resolvedFilePath().mappingPath();
-		String		relativePath	= classInfo.resolvedFilePath().relativePath();
-		String		absolutePath	= classInfo.resolvedFilePath().absolutePath().toString();
+		String	boxFQN				= classInfo.boxFqn().toString();
+		String	mappingName			= classInfo.resolvedFilePath().mappingName();
+		String	mappingPath			= classInfo.resolvedFilePath().mappingPath();
+		String	relativePath		= classInfo.resolvedFilePath().relativePath();
+		Path	absolutepathPath	= classInfo.resolvedFilePath().absolutePath();
+		try {
+			absolutepathPath = absolutepathPath.toRealPath();
+		} catch ( IOException e ) {
+			// Ignore
+		}
+		String		absolutePath	= absolutepathPath.toString();
 
 		ClassReader	cr				= new ClassReader( classBytes );
 		ClassNode	sourceNode		= new ClassNode();

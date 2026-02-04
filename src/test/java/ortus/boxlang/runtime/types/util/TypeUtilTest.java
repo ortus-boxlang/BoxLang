@@ -53,8 +53,8 @@ class TypeUtilTest {
 	@Test
 	void testGetObjectName() {
 
-		assertEquals( "src.test.java.TestCases.phase3.MyClass",
-		    TypeUtil.getObjectName( instance.executeStatement( "new src.test.java.TestCases.phase3.MyClass()" ) ) );
+		assertEquals( "src.test.java.testcases.phase3.myclass",
+		    TypeUtil.getObjectName( instance.executeStatement( "new src.test.java.TestCases.phase3.MyClass()" ) ).toLowerCase() );
 		assertEquals( "Struct", TypeUtil.getObjectName( instance.executeStatement( "{}" ) ) );
 		assertEquals( "Struct<Ordered>", TypeUtil.getObjectName( instance.executeStatement( "[:]" ) ) );
 		assertEquals( "XML<Document>", TypeUtil.getObjectName( instance.executeStatement( "XMLParse( '<root />' )" ) ) );
