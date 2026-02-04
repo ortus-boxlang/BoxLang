@@ -425,12 +425,14 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		StructCaster.attempt( appSettings.get( Key.datasources ) )
 		    .ifPresent( datasources -> {
 			    // Set the application name in each datasource
-			    datasources.values().forEach( ds -> {
+			    // Copy values to array to avoid ConcurrentModificationException
+			    Object[] values = datasources.values().toArray();
+			    for ( Object ds : values ) {
 				    if ( ds instanceof IStruct struct ) {
 					    // The connection manager will use this to know it's an app-specific datasource
 					    struct.put( Key.applicationName, getApplicationListener().getAppName().getName() );
 				    }
-			    } );
+			    }
 			    config.getAsStruct( Key.datasources ).putAll( datasources );
 		    } );
 		// ----------------------------------------------------------------------------------
@@ -444,12 +446,17 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		// Mapping overrides
 		var configMappings = config.getAsStruct( Key.mappings );
 		StructCaster.attempt( appSettings.get( Key.mappings ) )
-		    .ifPresent( mappings -> mappings.keySet().forEach( mappingKey -> {
-			    // translate from struct/string to mapping instance
-			    // Mappings declared in the Application.bx file default to external
-			    var m = Mapping.fromData( mappingKey.getName(), mappings.get( mappingKey ), true );
-			    configMappings.put( m.name(), m );
-		    } ) );
+		    .ifPresent( mappings -> {
+			    // Copy keys to array to avoid ConcurrentModificationException
+			    Key[] keys = mappings.keySet().toArray( new Key[ 0 ] );
+			    // Avoiding for each here due to concurrent modification as foreach uses the iterator internally
+			    for ( Key mappingKey : keys ) {
+				    // translate from struct/string to mapping instance
+				    // Mappings declared in the Application.bx file default to external
+				    var m = Mapping.fromData( mappingKey.getName(), mappings.get( mappingKey ), true );
+				    configMappings.put( m.name(), m );
+			    }
+		    } );
 
 		// If we have a customTagPaths, then transpile it to customComponentPaths
 		// This is a legacy setting that was used in older versions of BoxLang + CFML
