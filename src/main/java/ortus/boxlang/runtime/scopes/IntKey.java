@@ -80,7 +80,7 @@ public class IntKey extends Key {
 			return getIntValue() == intKey.getIntValue();
 		} else if ( obj instanceof Key key ) {
 			return super.equals( key );
-			// Not sure if there's a use csae for this, but it seems useful perhaps
+			// Not sure if there's a use case for this, but it seems useful perhaps
 		} else if ( obj instanceof Integer ) {
 			return getIntValue() == ( ( Integer ) obj ).intValue();
 		}

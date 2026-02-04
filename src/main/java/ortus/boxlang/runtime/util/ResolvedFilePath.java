@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.util;
 
-import java.io.IOException;
 import java.nio.file.Path;
 
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -46,7 +45,7 @@ public record ResolvedFilePath( String mappingName, String mappingPath, String r
 		    mappingName,
 		    mappingPath,
 		    relativePath,
-		    absolutePath != null ? makeReal( absolutePath.normalize() ) : null
+		    absolutePath != null ? absolutePath.normalize() : null
 		);
 	}
 
@@ -102,7 +101,7 @@ public record ResolvedFilePath( String mappingName, String mappingPath, String r
 		    null,
 		    null,
 		    absolutePath != null ? absolutePath.normalize().toString() : null,
-		    makeReal( absolutePath )
+		    absolutePath
 		);
 	}
 
@@ -196,19 +195,6 @@ public record ResolvedFilePath( String mappingName, String mappingPath, String r
 		// if the new path had ../ in it, we may need another mapping, or it may not match any mappings at all.
 		return FileSystemUtil.contractPath( mappings, newAbsolutePath.toString(), this.mappingName );
 
-	}
-
-	private static Path makeReal( Path path ) {
-		// if exists, make it real
-		if ( path != null ) {
-			try {
-				return path.toRealPath();
-			} catch ( IOException e ) {
-				// Doesn't exist. Trying to avoid the IO overhead of running the exists() check first!
-				return path;
-			}
-		}
-		return path;
 	}
 
 }
