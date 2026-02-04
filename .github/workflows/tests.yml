@@ -2,6 +2,12 @@ name: Test Suites
 
 on:
   workflow_call:
+    inputs:
+      compilers:
+        required: false
+        type: string
+        default: '["java", "asm"]'
+        description: 'JSON list of compilers to run'
     secrets:
       SLACK_WEBHOOK_URL:
         required: false
@@ -25,7 +31,7 @@ jobs:
         jdkProvider: ["temurin"]
         jdkVersion: ["21"]
         experimental: [false]
-        compiler: ["java", "asm"]
+        compiler: ${{ fromJson(inputs.compilers) }}
         exclude:
           - os: windows-latest
             compiler: java
