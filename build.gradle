@@ -331,22 +331,21 @@ ext.customizeUnixScript = { File scriptFile ->
 # Parse --envfile argument and load environment variables
 ######################################
 ENV_FILE=".env"
-FILTERED_ARGS=()
 
 # Parse command line arguments and filter out --envfile
-for arg in "$@"; do
-    case $arg in
-        --envfile=*)
-            ENV_FILE="${arg#*=}"
-            ;;
-        *)
-            FILTERED_ARGS+=("$arg")
-            ;;
-    esac
-done
-
-# Replace $@ with filtered arguments
-set -- "${FILTERED_ARGS[@]}"
+# Using POSIX-compliant approach without arrays
+set -- $(
+    for arg in "$@"; do
+        case $arg in
+            --envfile=*)
+                ENV_FILE="${arg#*=}"
+                ;;
+            *)
+                printf '%s\n' "$arg"
+                ;;
+        esac
+    done
+)
 
 # Load the environment file if it exists
 if [ -f "$ENV_FILE" ]; then
