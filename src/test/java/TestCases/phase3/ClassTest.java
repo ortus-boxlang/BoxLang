@@ -2252,4 +2252,18 @@ public class ClassTest {
 
 	}
 
+	@Test
+	public void testSuperClassInit() {
+		instance.executeSource(
+		    """
+		    arrayRange( "1..1000" ).each( ()-> {
+		    	key = createUUID();
+		    	instance = new src.test.java.TestCases.phase3.SuperClassInit( key ).doChild();
+		    	assert key == instance.key ?: '';
+		    }, true)
+		               """,
+		    context );
+
+	}
+
 }

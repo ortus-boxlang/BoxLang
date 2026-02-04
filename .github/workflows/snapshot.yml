@@ -46,9 +46,23 @@ jobs:
   #############################################
   # Tests First baby! We fail, no build :(
   #############################################
-  tests:
+  tests-asm:
     uses: ./.github/workflows/tests.yml
     needs: format
+    with:
+      compilers: '["asm"]'
+    secrets: inherit
+    permissions:
+      checks: write
+      pull-requests: write
+      contents: read
+      issues: read
+
+  tests-java:
+    uses: ./.github/workflows/tests.yml
+    needs: format
+    with:
+      compilers: '["java"]'
     secrets: inherit
     permissions:
       checks: write
@@ -61,7 +75,7 @@ jobs:
   #############################################
   build:
     uses: ./.github/workflows/release.yml
-    needs: [format, tests]
+    needs: [format, tests-asm]
     secrets: inherit
     permissions:
       checks: write

@@ -301,6 +301,102 @@ tasks.named( "startScripts" ) {
 tasks.named( "startShadowScripts" ) {
     dependsOn tasks.named( "jar" )
 }
+
+/**
+ * Customize BoxLang startup scripts to support .env file loading
+ */
+startShadowScripts {
+	doLast {
+		// Customize the Unix script
+		def unixScript = file("${buildDir}/scriptsShadow/boxlang")
+		customizeUnixScript(unixScript)
+
+		// Customize the Windows script
+		def windowsScript = file("${buildDir}/scriptsShadow/boxlang.bat")
+		customizeWindowsScript(windowsScript)
+
+		logger.info("+ BoxLang startup scripts customized with .env support")
+	}
+}
+
+/**
+ * Add .env file loading support to Unix script with --envfile argument support
+ */
+ext.customizeUnixScript = { File scriptFile ->
+	def content = scriptFile.text
+	def envLoaderScript = file('workbench/scripts/env-loader.sh').text
+
+	// Insert sourcing of env-loader.sh before "Determine the Java command to use"
+	def envLoadingInvocation = """
+######################################
+# Load environment variables from .env file
+######################################
+# Source the env-loader script inline (to preserve environment variables)
+${envLoaderScript}
+
+# Update arguments to filtered args (without --envfile)
+set -- \$FILTERED_ARGS
+
+######################################
+# End .env loading
+######################################
+
+"""
+
+	content = content.replace(
+		'# Determine the Java command to use to start the JVM.',
+		envLoadingInvocation + '# Determine the Java command to use to start the JVM.'
+	)
+
+	scriptFile.text = content
+	scriptFile.setExecutable(true, false)
+}
+
+/**
+ * Add .env file loading support to Windows script with --envfile argument support
+ */
+ext.customizeWindowsScript = { File scriptFile ->
+	def content = scriptFile.text
+	def envLoaderScript = file('workbench/scripts/env-loader.bat').text
+
+	// Enable delayed expansion at the beginning of the script (needed for !variable! syntax)
+	if (!content.contains('@setlocal enabledelayedexpansion')) {
+		content = content.replaceFirst(
+			'(@echo off)',
+			'$1\r\n@setlocal enabledelayedexpansion'
+		)
+	}
+
+	// Insert the env loading code before "Setup the command line"
+	def envLoadingInvocation = """
+
+@rem ######################################
+@rem Load environment variables from .env file
+@rem ######################################
+${envLoaderScript}
+
+@rem Update CMD_LINE_ARGS with filtered arguments
+set "CMD_LINE_ARGS_TEMP=%FILTERED_ARGS%"
+
+@rem ######################################
+@rem End .env loading
+@rem ######################################
+
+"""
+
+	content = content.replace(
+		'@rem Setup the command line',
+		envLoadingInvocation + '@rem Setup the command line'
+	)
+
+	// Replace CMD_LINE_ARGS with filtered arguments after it's set
+	content = content.replaceFirst(
+		/(set CMD_LINE_ARGS=%\*)/,
+		'$1\r\nif defined CMD_LINE_ARGS_TEMP set CMD_LINE_ARGS=%CMD_LINE_ARGS_TEMP%'
+	)
+
+	scriptFile.text = content
+}
 /**
  * Main BoxLang Distribution JAR
  * Includes: Runtime + ASMBoxpiler + NoOpBoxpiler
