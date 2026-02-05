@@ -271,7 +271,7 @@ public class ExpandPathTest {
 	}
 
 	@Test
-	public void testUnixTmp() throws IOException{
+	public void testUnixTmp() throws IOException {
 		if ( FileSystemUtil.IS_WINDOWS ) {
 			return;
 		}
