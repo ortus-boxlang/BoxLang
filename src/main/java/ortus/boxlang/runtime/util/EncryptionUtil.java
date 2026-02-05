@@ -29,11 +29,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
+import java.security.KeyFactory;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.HexFormat;
@@ -641,9 +646,37 @@ public final class EncryptionUtil {
 
 			String					baseAlgorithm	= StringUtils.substringBefore( algorithm, "/" );
 			AlgorithmParameterSpec	params			= null;
-			SecretKey				cipherKey		= null;
+			java.security.Key		cipherKey		= null;
 
-			if ( isPBEAlgorithm( algorithm ) ) {
+			if ( isRSAAlgorithm( algorithm ) ) {
+				// For RSA, parse the key as a private or public key
+				Exception	privateKeyException	= null;
+				Exception	publicKeyException	= null;
+
+				try {
+					// Try to parse as private key first (for encryption with private key or decryption)
+					cipherKey = parseRSAPrivateKey( key );
+				} catch ( Exception e ) {
+					privateKeyException = e;
+				}
+
+				if ( cipherKey == null ) {
+					// If that fails, try to parse as public key (for encryption with public key)
+					try {
+						cipherKey = parseRSAPublicKey( key );
+					} catch ( Exception ex ) {
+						publicKeyException = ex;
+					}
+				}
+
+				if ( cipherKey == null ) {
+					throw new BoxRuntimeException(
+					    "Failed to parse RSA key. Key must be a valid Base64-encoded RSA private key (PKCS8 format) or public key (X509 format). "
+					        + "Private key error: " + ( privateKeyException != null ? privateKeyException.getMessage() : "N/A" )
+					        + ". Public key error: " + ( publicKeyException != null ? publicKeyException.getMessage() : "N/A" ),
+					    publicKeyException != null ? publicKeyException : privateKeyException );
+				}
+			} else if ( isPBEAlgorithm( algorithm ) ) {
 				params		= new PBEParameterSpec( initVectorOrSalt, iterations != null ? iterations : DEFAULT_ENCRYPTION_ITERATIONS );
 				cipherKey	= SecretKeyFactory.getInstance( algorithm ).generateSecret( new PBEKeySpec( key.toCharArray() ) );
 			} else if ( isFBMAlgorithm( algorithm ) ) {
@@ -653,7 +686,6 @@ public final class EncryptionUtil {
 			if ( cipherKey == null ) {
 				cipherKey = new SecretKeySpec( decodeKeyBytes( key ), baseAlgorithm );
 			}
-
 			cipher.init( cipherMode, cipherKey, params );
 
 			if ( cipherMode == Cipher.DECRYPT_MODE ) {
@@ -910,6 +942,68 @@ public final class EncryptionUtil {
 	private static boolean isECBMode( String algorithm ) {
 		String[] algorithmParts = StringUtils.split( algorithm, "/" );
 		return algorithmParts.length > 1 && algorithmParts[ 1 ].equals( "ECB" );
+	}
+
+	/**
+	 * Returns true if the algorithm is an RSA algorithm
+	 *
+	 * @param algorithm The string representation of the algorithm
+	 *
+	 * @return
+	 */
+	public static boolean isRSAAlgorithm( String algorithm ) {
+		String baseAlgorithm = StringUtils.substringBefore( algorithm, "/" );
+		return Strings.CI.equals( baseAlgorithm, "RSA" );
+	}
+
+	/**
+	 * Parses an RSA private key from a Base64-encoded string or PEM format
+	 *
+	 * @param keyString The Base64-encoded key string (may include PEM headers)
+	 *
+	 * @return The parsed PrivateKey
+	 */
+	private static PrivateKey parseRSAPrivateKey( String keyString ) throws NoSuchAlgorithmException, InvalidKeySpecException {
+		// Remove PEM headers/footers and whitespace if present
+		String				cleanKey	= keyString
+		    .replaceAll( "-----BEGIN.*?-----", "" )
+		    .replaceAll( "-----END.*?-----", "" )
+		    .replaceAll( "\\s+", "" );
+
+		// Decode the Base64 key
+		byte[]				keyBytes	= Base64.getDecoder().decode( cleanKey );
+
+		// Create a PKCS8EncodedKeySpec from the decoded bytes
+		PKCS8EncodedKeySpec	keySpec		= new PKCS8EncodedKeySpec( keyBytes );
+
+		// Generate the PrivateKey
+		KeyFactory			keyFactory	= KeyFactory.getInstance( "RSA" );
+		return keyFactory.generatePrivate( keySpec );
+	}
+
+	/**
+	 * Parses an RSA public key from a Base64-encoded string or PEM format
+	 *
+	 * @param keyString The Base64-encoded key string (may include PEM headers)
+	 *
+	 * @return The parsed PublicKey
+	 */
+	private static PublicKey parseRSAPublicKey( String keyString ) throws NoSuchAlgorithmException, InvalidKeySpecException {
+		// Remove PEM headers/footers and whitespace if present
+		String				cleanKey	= keyString
+		    .replaceAll( "-----BEGIN.*?-----", "" )
+		    .replaceAll( "-----END.*?-----", "" )
+		    .replaceAll( "\\s+", "" );
+
+		// Decode the Base64 key
+		byte[]				keyBytes	= Base64.getDecoder().decode( cleanKey );
+
+		// Create an X509EncodedKeySpec from the decoded bytes
+		X509EncodedKeySpec	keySpec		= new X509EncodedKeySpec( keyBytes );
+
+		// Generate the PublicKey
+		KeyFactory			keyFactory	= KeyFactory.getInstance( "RSA" );
+		return keyFactory.generatePublic( keySpec );
 	}
 
 	/**
