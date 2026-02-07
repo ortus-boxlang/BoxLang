@@ -19,18 +19,18 @@ import java.util.Map;
 import java.util.Set;
 
 import com.github.javaparser.ParseResult;
-import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.expr.ArrayCreationExpr;
 import com.github.javaparser.ast.expr.ArrayInitializerExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.NullLiteralExpr;
+import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.EmptyStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
 
-import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
@@ -46,10 +46,10 @@ import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
-import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.Pair;
 
 /**
  * Transform a Function Declaration in the equivalent Java Parser AST nodes
@@ -57,159 +57,45 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 
 	// @formatter:off
-	private String registrationTemplate = "${contextName}.registerUDF( ${enclosingClassName}.${className}.getInstance() );";
-	private String classTemplate = """
-		package ${packageName};
+	private String registrationTemplate = "context.registerUDF( udfs.get( ${functionName} ) );";
 
-		@BoxByteCodeVersion(boxlangVersion="${boxlangVersion}", bytecodeVersion=${bytecodeVersion})
-		public class ${classname} extends UDF {
-			private static ${classname}				instance;
-			private final static Key				name		= ${functionName};
-			private final static Argument[]			arguments	= new Argument[] {};
-			private final static String				returnType	= "${returnType}";
-			private final static Access		   		access		= Access.${access};
-			private final static List<BoxMethodDeclarationModifier>	modifiers = List.of( ${modifiers} );
-
-			private final static IStruct	annotations;
-			private final static IStruct	documentation;
-			// Used to cached modern metadata (created on-demand)
-			private static IStruct metadata = null;
-			// Used to cached legacy metadata (created on-demand, never used if compat isn't installed)
-			private static IStruct legacyMetadata = null;
-			private final static boolean isClosure = ${isClosure};
-			private final static boolean isLambda = ${isLambda};
-			private final static boolean defaultOutput = ${defaultOutput};
-
-			public Key getName() {
-				return name;
-			}
-			public Argument[] getArguments() {
-				return arguments;
-			}
-			public String getReturnType() {
-				return returnType;
-			}
-
-			public Access getAccess() {
-   				return access;
-   			}
+	private String instantiationTemplate = """
+		new UDF(
+			${functionName},
+			null,
+			"${returnType}",
+			Function.Access.${access},
+			null,
+			null,
+			List.of( ${modifiers} ),
+			${defaultOutput},
+			imports,
+			sourceType,
+			path,
+			${className}::${invokerMethodName}
+		)
 			
-			@Override
-			public List<BoxMethodDeclarationModifier> getModifiers() {
-				return modifiers;		
-			}
+ 	""";
 
-			private ${classname}() {
-				super(${defaultOutput});
-			}
+	private String invokerTemplate = """
+		private static Object ${invokerMethodName}( FunctionBoxContext context ) {
+			ClassLocator classLocator = ClassLocator.getInstance();
 
-			public static ${classname} getInstance() {
-				if ( instance == null ) {
-					synchronized ( ${classname}.class ) {
-						if ( instance == null ) {
-							instance = new ${classname}();
-						}
-					}
-				}
-				return instance;
-			}
-
-			@Override
-			public IStruct getAnnotations() {
-				return annotations;
-			}
-
-			@Override
-			public IStruct getDocumentation() {
-				return documentation;
-			}
-
-			public List<ImportDefinition> getImports() {
-				return imports;
-			}
-
-			public ResolvedFilePath getRunnablePath() {
-				return ${enclosingClassName}.path;
-			}
-
-			/**
-			 * The original source type
-			 */
-			public BoxSourceType getSourceType() {
-				return ${enclosingClassName}.sourceType;
-			}
-
-			public static IStruct getMetaDataStatic() {
-				if( ${className}.legacyMetadata == null ) {
-					synchronized( ${className}.class ) {
-						if( ${className}.legacyMetadata == null ) {
-							${className}.legacyMetadata = Function.getMetaDataStatic(
-								${className}.class,
-								${className}.documentation,
-								${className}.annotations,
-								${className}.name,
-								${className}.returnType,
-								${enclosingClassName}.sourceType,
-								${className}.access,
-								${className}.arguments,
-								${className}.isClosure,
-								${className}.isLambda,
-								${className}.defaultOutput,
-								${className}.modifiers
-							);
-						}
-					}
-				}
-
-				return ${className}.legacyMetadata;
-			}
-
-			public static IStruct getMetaStatic() {
-				if( ${className}.metadata == null ) {
-					synchronized( ${className}.class ) {
-						if( ${className}.metadata == null ) {
-							${className}.metadata =  FunctionMeta.generateMeta( 
-								${className}.class,
-								${className}.documentation,
-								${className}.annotations,
-								${className}.name,
-								${className}.returnType,
-								${enclosingClassName}.sourceType,
-								${className}.access,
-								${className}.arguments,
-								${className}.isClosure,
-								${className}.isLambda,
-								${className}.defaultOutput,
-								${className}.modifiers
-							);
-						}
-					}
-				}
-
-				return ${className}.metadata;
-			}
-
-			@Override
-			public Object _invoke( FunctionBoxContext context ) {
-				ClassLocator classLocator = ClassLocator.getInstance();
-
-			}
 		}
  	""";
+
 	public BoxFunctionDeclarationTransformer(JavaTranspiler transpiler) {
     	super(transpiler);
     }
 	// @formatter:on
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxFunctionDeclaration	function			= ( BoxFunctionDeclaration ) node;
-		String					packageName			= transpiler.getProperty( "packageName" );
-		BoxAccessModifier		access				= function.getAccessModifier();
-		String					enclosingClassName	= transpiler.getProperty( "classname" );
-		String					className			= "Func_" + function.getName();
-		BoxReturnType			boxReturnType		= function.getType();
-		BoxType					returnType			= BoxType.Any;
-		String					fqn					= null;
+		BoxFunctionDeclaration	function		= ( BoxFunctionDeclaration ) node;
+		BoxAccessModifier		access			= function.getAccessModifier();
+		String					className		= transpiler.getProperty( "classname" );
+		BoxReturnType			boxReturnType	= function.getType();
+		BoxType					returnType		= BoxType.Any;
+		String					fqn				= null;
 		if ( boxReturnType != null ) {
 			returnType = boxReturnType.getType();
 			if ( returnType.equals( BoxType.Fqn ) ) {
@@ -227,25 +113,22 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		boolean				defaultOutput	= ancestor == null || !Set.of( BoxTemplate.class, BoxTemplateIsland.class ).contains( ancestor.getClass() );
 
 		Map<String, String>	values			= Map.ofEntries(
-		    Map.entry( "packageName", packageName ),
 		    Map.entry( "className", className ),
 		    Map.entry( "access", access.toString().toUpperCase() ),
 		    Map.entry( "modifiers", transformModifiers( function.getModifiers() ) ),
 		    Map.entry( "functionName", createKey( function.getName() ).toString() ),
+		    Map.entry( "invokerMethodName", "invokeFunction" + function.getName() ),
 		    Map.entry( "returnType", returnType.equals( BoxType.Fqn ) ? fqn : returnType.name() ),
-		    Map.entry( "enclosingClassName", enclosingClassName ),
-		    Map.entry( "boxlangVersion", BoxRuntime.getInstance().getVersionInfo().getAsString( Key.version ) ),
-		    Map.entry( "bytecodeVersion", String.valueOf( IBoxpiler.BYTECODE_VERSION ) ),
-		    Map.entry( "defaultOutput", String.valueOf( defaultOutput ) ),
-		    Map.entry( "isClosure", "false" ),
-		    Map.entry( "isLambda", "false" )
+		    Map.entry( "defaultOutput", String.valueOf( defaultOutput ) )
 		);
 		transpiler.pushContextName( "context" );
 
-		String							code	= PlaceholderHelper.resolve( classTemplate, values );
-		ParseResult<CompilationUnit>	result;
+		// ********************** Registration template **********************
+
+		String							code	= PlaceholderHelper.resolve( invokerTemplate, values );
+		ParseResult<MethodDeclaration>	result;
 		try {
-			result = javaParser.parse( code );
+			result = javaParser.parseMethodDeclaration( code );
 		} catch ( Exception e ) {
 			// Temp debugging to see generated Java code
 			throw new BoxRuntimeException( code, e );
@@ -255,27 +138,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 			throw new BoxRuntimeException( result + "\n" + code );
 		}
 
-		/* Transform the arguments creating the initialization values */
-		ArrayInitializerExpr argInitializer = new ArrayInitializerExpr();
-		function.getArgs().forEach( arg -> {
-			Expression argument = ( Expression ) transpiler.transform( arg );
-			argInitializer.getValues().add( argument );
-		} );
-		result.getResult().orElseThrow().getType( 0 ).getFieldByName( "arguments" ).orElseThrow().getVariable( 0 ).setInitializer( argInitializer );
-
-		/* Transform the annotations creating the initialization value */
-		Expression annotationStruct = transformAnnotations( function.getAnnotations() );
-		result.getResult().orElseThrow().getType( 0 ).getFieldByName( "annotations" ).orElseThrow().getVariable( 0 ).setInitializer( annotationStruct );
-
-		/* Transform the documentation creating the initialization value */
-		Expression documentationStruct = transformDocumentation( function.getDocumentation() );
-		result.getResult().orElseThrow().getType( 0 ).getFieldByName( "documentation" ).orElseThrow().getVariable( 0 )
-		    .setInitializer( documentationStruct );
-
-		CompilationUnit		javaClass		= result.getResult().get();
-		MethodDeclaration	invokeMethod	= javaClass.findCompilationUnit().orElseThrow()
-		    .getClassByName( className ).orElseThrow()
-		    .getMethodsByName( "_invoke" ).get( 0 );
+		MethodDeclaration invokeMethod = result.getResult().orElseThrow();
 
 		transpiler.pushfunctionBodyCounter();
 		int componentCounter = transpiler.getComponentCounter();
@@ -294,14 +157,31 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		invokeMethod.getBody().get().addStatement( new ReturnStmt( new NullLiteralExpr() ) );
 		transpiler.popContextName();
 
-		( ( JavaTranspiler ) transpiler ).getUDFcallables().put( Key.of( function.getName() ), javaClass );
+		// ********************** UDF Instantiation template **********************
 
-		// UDF Declaration
-		values = Map.ofEntries(
-		    Map.entry( "className", className ),
-		    Map.entry( "contextName", "context" ),
-		    Map.entry( "enclosingClassName", enclosingClassName )
-		);
+		ObjectCreationExpr		instantiationExpr	= ( ObjectCreationExpr ) parseExpression( instantiationTemplate, values );
+
+		/* Transform the arguments creating the initialization values */
+		ArrayInitializerExpr	argInitializer		= new ArrayInitializerExpr();
+		function.getArgs().forEach( arg -> {
+			Expression argument = ( Expression ) transpiler.transform( arg );
+			argInitializer.getValues().add( argument );
+		} );
+		ArrayCreationExpr argumentsArray = new ArrayCreationExpr()
+		    .setElementType( "Argument" )
+		    .setInitializer( argInitializer );
+		instantiationExpr.setArgument( 1, argumentsArray );
+
+		/* Transform the annotations creating the initialization value */
+		instantiationExpr.setArgument( 4, transformAnnotations( function.getAnnotations() ) );
+
+		/* Transform the documentation creating the initialization value */
+		instantiationExpr.setArgument( 5, transformDocumentation( function.getDocumentation() ) );
+
+		( ( JavaTranspiler ) transpiler ).getUDFInvokers().put( Key.of( function.getName() ), Pair.of( invokeMethod, instantiationExpr ) );
+
+		// ********************** Registration template **********************
+
 		Statement javaStmt = parseStatement( registrationTemplate, values );
 		// logger.trace( node.getSourceText() + " -> " + javaStmt );
 		// commenting this out to prevent BoxFunctionDeclarationTransformer nodes in the SourceMaps

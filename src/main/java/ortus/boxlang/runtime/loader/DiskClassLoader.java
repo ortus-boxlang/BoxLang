@@ -316,6 +316,10 @@ public class DiskClassLoader extends URLClassLoader {
 			if ( isBaseClass ) {
 				// Validate bytecode version
 				validateByteCodeVersion( bytes, name, diskPath );
+				// Patch the ResolvedFilePath if we have classInfo (the path may have changed since compilation)
+				if ( classInfo != null ) {
+					bytes = patchResolvedFilePath( bytes, classInfo );
+				}
 			}
 		} catch ( IOException e ) {
 			throw new ClassNotFoundException( "Unable to read class file from disk", e );
@@ -364,6 +368,83 @@ public class DiskClassLoader extends URLClassLoader {
 			        "is incompatible with this runtime of version [" + BoxRuntime.getInstance().getVersionInfo().getAsString( Key.version ) +
 			        "].  Clear your classes folder, or recompile the source." );
 		}
+	}
+
+	/**
+	 * Patches the ResolvedFilePath in bytecode loaded from disk cache.
+	 *
+	 * <p>
+	 * When loading cached classes from disk, the ResolvedFilePath embedded in the bytecode
+	 * may be stale if the source file location has changed. This method patches the
+	 * static initializer to update the ResolvedFilePath with current values from the ClassInfo.
+	 * </p>
+	 *
+	 * @param classBytes The original bytecode
+	 * @param classInfo  The current ClassInfo with correct path information
+	 * 
+	 * @return The patched bytecode with updated ResolvedFilePath
+	 */
+	private byte[] patchResolvedFilePath( byte[] classBytes, ClassInfo classInfo ) {
+		// If there's no resolvedFilePath, nothing to patch
+		if ( classInfo.resolvedFilePath() == null ) {
+			return classBytes;
+		}
+
+		String	mappingName			= classInfo.resolvedFilePath().mappingName();
+		String	mappingPath			= classInfo.resolvedFilePath().mappingPath();
+		String	relativePath		= classInfo.resolvedFilePath().relativePath();
+		Path	absolutePathPath	= classInfo.resolvedFilePath().absolutePath();
+		try {
+			absolutePathPath = absolutePathPath.toRealPath();
+		} catch ( IOException e ) {
+			// Ignore
+		}
+		String		absolutePath	= absolutePathPath.toString();
+
+		ClassReader	cr				= new ClassReader( classBytes );
+		ClassNode	classNode		= new ClassNode();
+		cr.accept( classNode, 0 );
+
+		for ( MethodNode mn : classNode.methods ) {
+			if ( "<clinit>".equals( mn.name ) ) {
+				InsnList insns = mn.instructions;
+				for ( AbstractInsnNode insn = insns.getFirst(); insn != null; insn = insn.getNext() ) {
+					// Patch ResolvedFilePath path assignment (4 LDC -> INVOKESTATIC -> PUTSTATIC pattern)
+					if ( insn.getOpcode() == Opcodes.LDC
+					    && insn.getNext() != null && insn.getNext().getOpcode() == Opcodes.LDC
+					    && insn.getNext().getNext() != null && insn.getNext().getNext().getOpcode() == Opcodes.LDC
+					    && insn.getNext().getNext().getNext() != null && insn.getNext().getNext().getNext().getOpcode() == Opcodes.LDC
+					    && insn.getNext().getNext().getNext().getNext() != null
+					    && insn.getNext().getNext().getNext().getNext().getOpcode() == Opcodes.INVOKESTATIC
+					    && insn.getNext().getNext().getNext().getNext().getNext() != null
+					    && insn.getNext().getNext().getNext().getNext().getNext().getOpcode() == Opcodes.PUTSTATIC ) {
+
+						LdcInsnNode		ldc1		= ( LdcInsnNode ) insn;
+						LdcInsnNode		ldc2		= ( LdcInsnNode ) insn.getNext();
+						LdcInsnNode		ldc3		= ( LdcInsnNode ) insn.getNext().getNext();
+						LdcInsnNode		ldc4		= ( LdcInsnNode ) insn.getNext().getNext().getNext();
+						MethodInsnNode	ofCall		= ( MethodInsnNode ) insn.getNext().getNext().getNext().getNext();
+						FieldInsnNode	putstatic	= ( FieldInsnNode ) insn.getNext().getNext().getNext().getNext().getNext();
+
+						if ( ofCall.owner.equals( "ortus/boxlang/runtime/util/ResolvedFilePath" )
+						    && ofCall.name.equals( "of" )
+						    && ofCall.desc.equals(
+						        "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Lortus/boxlang/runtime/util/ResolvedFilePath;" )
+						    && putstatic.name.equals( "path" )
+						    && putstatic.desc.equals( "Lortus/boxlang/runtime/util/ResolvedFilePath;" ) ) {
+							ldc1.cst	= mappingName != null ? mappingName : "";
+							ldc2.cst	= mappingPath != null ? mappingPath : "";
+							ldc3.cst	= relativePath != null ? relativePath : "";
+							ldc4.cst	= absolutePath != null ? absolutePath : "";
+						}
+					}
+				}
+			}
+		}
+
+		ClassWriter cw = new ClassWriter( 0 );
+		classNode.accept( cw );
+		return cw.toByteArray();
 	}
 
 	/**

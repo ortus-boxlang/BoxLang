@@ -137,11 +137,6 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	public static final Key				ARGUMENT_COLLECTION	= Key.argumentCollection;
 
 	/**
-	 * The enclosing class of the function, if any
-	 */
-	private Class<?>					enclosingClass		= null;
-
-	/**
 	 * Cached lookup of the output annotation
 	 */
 	private Boolean						canOutput			= null;
@@ -150,6 +145,9 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * Default can output
 	 */
 	private boolean						defaultOutput		= true;
+
+	private IStruct						metadata;
+	private IStruct						legacyMetadata;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -397,7 +395,6 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 *
 	 * @return array of arguments
 	 */
-
 	public abstract Argument[] getArguments();
 
 	/**
@@ -429,6 +426,27 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	public abstract Access getAccess();
 
 	/**
+	 * Get the imports for this function.
+	 *
+	 * @return list of import definitions
+	 */
+	public abstract java.util.List<ortus.boxlang.runtime.loader.ImportDefinition> getImports();
+
+	/**
+	 * Get the source type of the function.
+	 *
+	 * @return the source type
+	 */
+	public abstract BoxSourceType getSourceType();
+
+	/**
+	 * Get the path to the runnable.
+	 *
+	 * @return the resolved file path
+	 */
+	public abstract ortus.boxlang.runtime.util.ResolvedFilePath getRunnablePath();
+
+	/**
 	 * Implement this method to invoke the actual function logic
 	 *
 	 * @param context
@@ -452,7 +470,6 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 */
 	public List<BoxMethodDeclarationModifier> getModifiers() {
 		return List.of();
-
 	}
 
 	/**
@@ -771,14 +788,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * Lazy loads it
 	 */
 	public Class<?> getEnclosingClass() {
-		if ( enclosingClass == null ) {
-			synchronized ( this.getClass() ) {
-				if ( enclosingClass == null ) {
-					enclosingClass = this.getClass().getEnclosingClass();
-				}
-			}
-		}
-		return enclosingClass;
+		return this.getClass();
 	}
 
 }

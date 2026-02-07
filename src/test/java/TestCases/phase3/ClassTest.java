@@ -1758,46 +1758,6 @@ public class ClassTest {
 		    context );
 	}
 
-	@DisplayName( "udf class has enclosing class reference" )
-	@Test
-	public void testUDFClassEnclosingClassReference() {
-
-		instance.executeSource(
-		    """
-		       import bx:src.test.java.TestCases.phase3.PropertyTestCF as brad;
-		       b = new brad()
-		    outerClass = b.$bx.$class;
-		    innerClass = b.init.getClass();
-		    innerClassesOuterClass = b.init.getClass().getEnclosingClass();
-		    println(outerclass)
-		    println(innerClass)
-		         """,
-		    context );
-		assertThat( ( ( Class<?> ) variables.get( "outerClass" ) ).getName() )
-		    .isEqualTo( "boxgenerated.boxclass.src.test.java.testcases.phase3.Propertytestcf$cfc" );
-		assertThat( ( ( Class<?> ) variables.get( "innerClassesOuterClass" ) ).getName() )
-		    .isEqualTo( "boxgenerated.boxclass.src.test.java.testcases.phase3.Propertytestcf$cfc" );
-		assertThat( ( ( Class<?> ) variables.get( "innerClass" ) ).getName() )
-		    .isEqualTo( "boxgenerated.boxclass.src.test.java.testcases.phase3.Propertytestcf$cfc$Func_init" );
-		assertThat( variables.get( "outerClass" ) ).isEqualTo( variables.get( "innerClassesOuterClass" ) );
-	}
-
-	@DisplayName( "udf class has enclosing class reference" )
-	@Test
-	public void testUDFClassEnclosingClassReferenceInTemplate() {
-
-		instance.executeSource(
-		    """
-		    function test(){
-
-		     }
-		         result = test.getClass().getEnclosingClass();
-		                """,
-		    context );
-
-		assertThat( variables.get( result ) ).isNotNull();
-	}
-
 	@DisplayName( "mixins should be public" )
 	@Test
 	public void testMixinsPublic() {

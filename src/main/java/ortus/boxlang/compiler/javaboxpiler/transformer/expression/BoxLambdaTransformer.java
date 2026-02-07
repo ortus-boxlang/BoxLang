@@ -14,283 +14,163 @@
  */
 package ortus.boxlang.compiler.javaboxpiler.transformer.expression;
 
+import java.util.List;
 import java.util.Map;
 
 import com.github.javaparser.ParseResult;
-import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.expr.ArrayCreationExpr;
 import com.github.javaparser.ast.expr.ArrayInitializerExpr;
 import com.github.javaparser.ast.expr.EnclosedExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.NullLiteralExpr;
+import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
 
-import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
-import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
-import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.Pair;
 
 /**
- * Transform a Lambda in the equivalent Java Class
+ * Transform a Lambda expression using inline static method pattern.
+ * Lambdas are stored in a static List and accessed by index.
  */
 public class BoxLambdaTransformer extends AbstractTransformer {
 
 	// @formatter:off
-	private String template = """
-		package ${packageName};
-
-		import ortus.boxlang.runtime.scopes.IScope;
-		import ortus.boxlang.runtime.scopes.Key;
-		import ortus.boxlang.runtime.context.FunctionBoxContext;
-		import ortus.boxlang.runtime.types.exceptions.*;
-		import ortus.boxlang.runtime.context.ClassBoxContext;
-		import ortus.boxlang.runtime.runnables.IBoxRunnable;
-		import ortus.boxlang.runtime.context.IBoxContext;
-		import ortus.boxlang.runtime.loader.ImportDefinition;
-		import ortus.boxlang.runtime.interop.DynamicObject;
-		import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
-		import java.util.Optional;
-		import ortus.boxlang.runtime.components.Component;
-		import ortus.boxlang.compiler.parser.BoxSourceType;
-		import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
-		import ortus.boxlang.runtime.runnables.BoxClassSupport;
-		import ortus.boxlang.compiler.BoxByteCodeVersion;
-
-		// Classes Auto-Imported on all Templates and Classes by BoxLang
-		import java.time.LocalDateTime;
-		import java.time.Instant;
-		import java.lang.System;
-		import java.lang.String;
-		import java.lang.Character;
-		import java.lang.Boolean;
-		import java.lang.Double;
-		import java.lang.Integer;
-		import java.util.*;
-		import ortus.boxlang.runtime.types.*;
-		import ortus.boxlang.runtime.types.util.*;
-		import java.util.LinkedHashMap;
-		import java.nio.file.*;
-
-		@BoxByteCodeVersion(boxlangVersion="${boxlangVersion}", bytecodeVersion=${bytecodeVersion})
-  		public class ${classname} extends Lambda {
-			private static ${classname}				instance;
-			private final static Key				name		= Lambda.defaultName;
-			private final static Argument[]			arguments	= new Argument[] {};
-			private final static String				returnType	= "any";
-
-		    private final static IStruct				annotations			= Struct.EMPTY;
-			private final static IStruct				documentation		= Struct.EMPTY;
-			// Used to cached modern metadata (created on-demand)
-			private static IStruct metadata = null;
-			// Used to cached legacy metadata (created on-demand, never used if compat isn't installed)
-			private static IStruct legacyMetadata = null;
-			private final static boolean isClosure = ${isClosure};
-			private final static boolean isLambda = ${isLambda};
-			
-			public Key getName() {
-				return name;
-			}
-			public Argument[] getArguments() {
-				return arguments;
-			}
-			public String getReturnType() {
-				return returnType;
-			}
-
-			public Access getAccess() {
-   				return Access.PUBLIC;
-   			}
-
-			private ${classname}() {
-				super();
-			}
-
-			public static ${classname} getInstance() {
-				if ( instance == null ) {
-					synchronized ( ${classname}.class ) {
-						if ( instance == null ) {
-							instance = new ${classname}();
-						}
-					}
-				}
-				return instance;
-			}
-
-			@Override
-			public List<ImportDefinition> getImports() {
-				return imports;
-      		}
-
-			@Override
-			public IStruct getAnnotations() {
-				return annotations;
-			}
-
-			@Override
-			public IStruct getDocumentation() {
-				return documentation;
-			}
-			@Override
-			public Object _invoke( FunctionBoxContext context ) {
-				ClassLocator classLocator = ClassLocator.getInstance();
-
-			}
-
-			public ResolvedFilePath getRunnablePath() {
-				return ${enclosingClassName}.path;
-			}
-
-			public static IStruct getMetaDataStatic() {
-				if( ${className}.legacyMetadata == null ) {
-					synchronized( ${className}.class ) {
-						if( ${className}.legacyMetadata == null ) {
-							${className}.legacyMetadata = Function.getMetaDataStatic( 
-								${className}.class,
-								${className}.documentation,
-								${className}.annotations,
-								${className}.name,
-								${className}.returnType,
-								${enclosingClassName}.sourceType,
-								Access.PUBLIC,
-								${className}.arguments,
-								${className}.isClosure,
-								${className}.isLambda,
-								false, // canOutput
-								java.util.Collections.EMPTY_LIST
-							);
-						}
-					}
-				}
-
-				return ${className}.legacyMetadata;
-			}
-
-			public static IStruct getMetaStatic() {
-				if( ${className}.metadata == null ) {
-					synchronized( ${className}.class ) {
-						if( ${className}.metadata == null ) {
-							${className}.metadata =  FunctionMeta.generateMeta( 
-								${className}.class,
-								${className}.documentation,
-								${className}.annotations,
-								${className}.name,
-								${className}.returnType,
-								${enclosingClassName}.sourceType,
-								Access.PUBLIC,
-								${className}.arguments,
-								${className}.isClosure,
-								${className}.isLambda,
-								false, // canOutput
-								java.util.Collections.EMPTY_LIST
-							);
-						}
-					}
-				}
-
-				return ${className}.metadata;
-			}
-
-			/**
-			 * The original source type
-			 */
-			public BoxSourceType getSourceType() {
-				return ${enclosingClassName}.sourceType;
-			}
-
-  		}
- 	""";
+	/**
+	 * Template for instantiating a Lambda with a method reference to the static invoker
+	 */
+	private String instantiationTemplate = """
+		new Lambda(
+			Lambda.defaultName,
+			null,
+			"any",
+			Function.Access.PUBLIC,
+			null,
+			Struct.EMPTY,
+			List.of(),
+			true,
+			imports,
+			sourceType,
+			path,
+			${enclosingClassName}::${invokerMethodName}
+		)
+		""";
+	
+	/**
+	 * Template for the static invoker method that executes the lambda body
+	 */
+	private String invokerTemplate = """
+		private static Object ${invokerMethodName}( FunctionBoxContext context ) {
+			ClassLocator classLocator = ClassLocator.getInstance();
+		}
+		""";
 	// @formatter:on
+
 	public BoxLambdaTransformer( JavaTranspiler transpiler ) {
 		super( transpiler );
 	}
 
 	/**
-	 * Transform a lambda declaration into a Class
+	 * Transform a lambda expression into a reference to a Lambda instance.
+	 * This creates:
+	 * 1. A static invoker method that executes the lambda body
+	 * 2. An instantiation expression that creates the Lambda with a method reference
 	 *
-	 * @param node
-	 * @param context
+	 * @param node    The BoxLambda AST node
+	 * @param context The transformer context
 	 *
-	 * @return
-	 *
-	 * @throws IllegalStateException
+	 * @return An expression that accesses the lambda from the static list (e.g., lambdas.get(0))
 	 */
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxLambda			boxLambda			= ( BoxLambda ) node;
-		String				packageName			= transpiler.getProperty( "packageName" );
-		String				lambdaName			= "Lambda_" + transpiler.incrementAndGetLambdaCounter();
-		String				enclosingClassName	= transpiler.getProperty( "classname" );
-		String				className			= lambdaName;
+		BoxLambda	boxLambda			= ( BoxLambda ) node;
+		String		enclosingClassName	= transpiler.getProperty( "classname" );
+		int			lambdaIndex			= transpiler.incrementAndGetLambdaCounter();
+		String		invokerMethodName	= "invokeLambda_" + lambdaIndex;
 
-		Map<String, String>	values				= Map.ofEntries(
-		    Map.entry( "packageName", packageName ),
-		    Map.entry( "className", className ),
-		    Map.entry( "lambdaName", lambdaName ),
-		    Map.entry( "boxlangVersion", BoxRuntime.getInstance().getVersionInfo().getAsString( Key.version ) ),
-		    Map.entry( "bytecodeVersion", String.valueOf( IBoxpiler.BYTECODE_VERSION ) ),
-		    Map.entry( "enclosingClassName", enclosingClassName ),
-		    Map.entry( "isClosure", "false" ),
-		    Map.entry( "isLambda", "true" )
-		);
-		transpiler.pushContextName( "context" );
-		String							code	= PlaceholderHelper.resolve( template, values );
-		ParseResult<CompilationUnit>	result;
-		try {
-			result = javaParser.parse( code );
-		} catch ( Exception e ) {
-			// Temp debugging to see generated Java code
-			throw new BoxRuntimeException( code, e );
-		}
-		if ( !result.isSuccessful() ) {
-			// Temp debugging to see generated Java code
-			throw new BoxRuntimeException( result + "\n" + code );
-		}
-		CompilationUnit			javaClass		= result.getResult().get();
-		/* Transform the arguments creating the initialization values */
-		ArrayInitializerExpr	argInitializer	= new ArrayInitializerExpr();
+		// Reserve our slot in the lambdaInvokers list BEFORE transforming the body
+		// This ensures nested lambdas get correct indices
+		List<Pair<MethodDeclaration, Expression>> lambdaInvokers = ( ( JavaTranspiler ) transpiler ).getLambdaInvokers();
+		int mySlot = lambdaInvokers.size();
+		lambdaInvokers.add( null ); // Placeholder
+
+		// Transform arguments
+		ArrayInitializerExpr argInitializer = new ArrayInitializerExpr();
 		boxLambda.getArgs().forEach( arg -> {
 			Expression argument = ( Expression ) transpiler.transform( arg );
 			argInitializer.getValues().add( argument );
 		} );
-		javaClass.getType( 0 ).getFieldByName( "arguments" ).orElseThrow().getVariable( 0 ).setInitializer( argInitializer );
 
-		/* Transform the annotations creating the initialization value */
+		// Create the arguments array expression
+		ArrayCreationExpr argumentsArray = new ArrayCreationExpr();
+		argumentsArray.setElementType( "Argument" );
+		argumentsArray.setInitializer( argInitializer );
+
+		// Transform annotations
 		Expression annotationStruct = transformAnnotations( boxLambda.getAnnotations() );
-		result.getResult().orElseThrow().getType( 0 ).getFieldByName( "annotations" ).orElseThrow().getVariable( 0 ).setInitializer( annotationStruct );
 
-		MethodDeclaration	invokeMethod	= javaClass.findCompilationUnit().orElseThrow()
-		    .getClassByName( className ).orElseThrow()
-		    .getMethodsByName( "_invoke" ).get( 0 );
+		Map<String, String> values = Map.ofEntries(
+		    Map.entry( "enclosingClassName", enclosingClassName ),
+		    Map.entry( "invokerMethodName", invokerMethodName ),
+		    Map.entry( "lambdaIndex", String.valueOf( mySlot ) )
+		);
 
-		BlockStmt			body			= invokeMethod.getBody().get();
+		// Create the invoker method using javaParser.parseMethodDeclaration
+		String							invokerCode	= PlaceholderHelper.resolve( invokerTemplate, values );
+		ParseResult<MethodDeclaration>	result;
+		try {
+			result = javaParser.parseMethodDeclaration( invokerCode );
+		} catch ( Exception e ) {
+			throw new BoxRuntimeException( invokerCode, e );
+		}
+		if ( !result.isSuccessful() ) {
+			throw new BoxRuntimeException( result + "\n" + invokerCode );
+		}
+		MethodDeclaration invokeMethod = result.getResult().orElseThrow();
+
+		// Transform the lambda body and add it to the invoker method
+		transpiler.pushContextName( "context" );
+		BlockStmt body = invokeMethod.getBody().get();
 		transpiler.pushfunctionBodyCounter();
 		int componentCounter = transpiler.getComponentCounter();
 		transpiler.setComponentCounter( 0 );
 
-		// If the body statement is an expression, then return it
+		// If the body is a single expression, return it directly
 		if ( boxLambda.getBody() instanceof BoxExpressionStatement boxExpr ) {
 			body.addStatement( new ReturnStmt( new EnclosedExpr( ( Expression ) transpiler.transform( boxExpr.getExpression() ) ) ) );
 		} else {
-			// Otherwise, return null
+			// Otherwise, add the transformed body and return null at the end
 			body.addStatement( ( Statement ) transpiler.transform( boxLambda.getBody() ) );
-			invokeMethod.getBody().get().addStatement( new ReturnStmt( new NullLiteralExpr() ) );
+			body.addStatement( new ReturnStmt( new NullLiteralExpr() ) );
 		}
 
 		transpiler.setComponentCounter( componentCounter );
 		transpiler.popfunctionBodyCounter();
 		transpiler.popContextName();
 
-		( ( JavaTranspiler ) transpiler ).getCallables().add( ( CompilationUnit ) javaClass );
-		return parseExpression( "${enclosingClassName}.${lambdaName}.getInstance()", values );
+		// Create the instantiation expression
+		String					instantiationCode	= PlaceholderHelper.resolve( instantiationTemplate, values );
+		ObjectCreationExpr		instantiationExpr	= ( ObjectCreationExpr ) parseExpression( instantiationCode, values );
+
+		// Replace arguments (position 1) and annotations (position 4) using setArgument
+		instantiationExpr.setArgument( 1, argumentsArray );
+		instantiationExpr.setArgument( 4, annotationStruct );
+
+		// Store the invoker method and instantiation expression
+		lambdaInvokers.set( mySlot, Pair.of( invokeMethod, instantiationExpr ) );
+
+		// Return an expression that accesses this lambda from the list
+		return parseExpression( "lambdas.get(${lambdaIndex})", values );
 	}
 }

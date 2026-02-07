@@ -178,11 +178,22 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 	public Set<Key> getCompileTimeMethodNames();
 
 	/**
-	 * Get compile time methods
-	 * 
-	 * @return Map of compile time methods
+	 * Get compile time methods (legacy - for backwards compatibility)
+	 *
+	 * @return Map of compile time method classes
 	 */
-	public Map<Key, Class<? extends UDF>> getCompileTimeMethods();
+	default Map<Key, Class<? extends UDF>> getCompileTimeMethods() {
+		return Map.of();
+	}
+
+	/**
+	 * Get UDFs defined in this class
+	 *
+	 * @return Map of UDF instances
+	 */
+	default Map<Key, UDF> getUDFs() {
+		return Map.of();
+	}
 
 	public Map<Key, AbstractFunction> getAllAbstractMethods();
 
