@@ -159,9 +159,9 @@ public class BoxClassTransformer extends AbstractTransformer {
 			// This is public so the ClassLocator can check it easily
 			public static boolean staticInitialized = false;
 			public static final Key name = ${boxFQN};
-			private static Map<Key,UDF>					udfs			= StructUtil.<UDF>linkedMapOf();
 			private static List<Lambda>					lambdas			= new ArrayList<>( Arrays.asList( new Lambda[] {} ) );
 			private static List<ClosureDefinition>		closures		= new ArrayList<>( Arrays.asList( new ClosureDefinition[] {} ) );
+			private static Map<Key,UDF>					udfs			= StructUtil.<UDF>linkedMapOf();
 			// Used to cached modern metadata (created on-demand)
 			public static IStruct metadata = null;
 			// Used to cached legacy metadata (created on-demand, never used if compat isn't installed)

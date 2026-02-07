@@ -114,9 +114,9 @@ public class BoxScriptTransformer extends AbstractTransformer {
 			private static final ResolvedFilePath					path			= ${resolvedFilePath};
 			private static final BoxSourceType			sourceType		= BoxSourceType.${sourceType};
 			public static final Key[]					keys			= new Key[] {};
-			private static Map<Key,UDF>					udfs			= StructUtil.<UDF>linkedMapOf();
 			private static List<Lambda>					lambdas			= new ArrayList<>( Arrays.asList( new Lambda[] {} ) );
 			private static List<ClosureDefinition>		closures		= new ArrayList<>( Arrays.asList( new ClosureDefinition[] {} ) );
+			private static Map<Key,UDF>					udfs			= StructUtil.<UDF>linkedMapOf();
 
 			public ${className}() {
 			}

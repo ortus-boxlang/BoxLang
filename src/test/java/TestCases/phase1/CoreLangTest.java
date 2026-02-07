@@ -6270,4 +6270,23 @@ public class CoreLangTest {
 
 	}
 
+	@Test
+	public void testNotAStatement() {
+
+		instance.executeSource(
+		    """
+		    columns = "foo,bar";
+		    columns.listEach( (c) => {
+		    	c = "*";
+		    	listFind( "a",  "a" )
+		    	|| c == "*"
+		    	|| throw( message="boom" );
+		    } );
+
+		                          """,
+		    context
+		);
+
+	}
+
 }
