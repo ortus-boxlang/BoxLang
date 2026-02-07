@@ -568,7 +568,7 @@ public class ExceptionUtil {
 	public static boolean isValidLicenseAction( BoxRuntime instance, Throwable t ) {
 		return ( t instanceof BoxLicenseException
 		    ||
-		    t.getMessage().contains( ExceptionUtil.LICENSE_MODULE_NAME ) )
+		    ( t.getMessage() != null && t.getMessage().contains( ExceptionUtil.LICENSE_MODULE_NAME ) ) )
 		    && instance.inCLIMode()
 		    && instance.getCliOptions().targetModule() != null
 		    && instance.getCliOptions().targetModule().equalsIgnoreCase( ExceptionUtil.LICENSE_MODULE_NAME );
