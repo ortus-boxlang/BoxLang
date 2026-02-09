@@ -111,4 +111,17 @@ public class GetCurrentTemplatePathTest {
 
 	}
 
+	@DisplayName( "It gets current template path in include" )
+	@Test
+	public void testCurrentTemplateCatch() {
+
+		instance.executeSource(
+		    """
+		    include "src/test/java/ortus/boxlang/runtime/bifs/global/system/CurrentTemplateCatch.cfs";
+		     """,
+		    context );
+		assertThat( variables.getAsString( result ) ).contains( "CurrentTemplateCatchInclude.cfs" );
+
+	}
+
 }

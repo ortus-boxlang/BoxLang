@@ -1,0 +1,5 @@
+try {
+	1/0;
+} catch (any e) {
+	include "/src/test/java/ortus/boxlang/runtime/bifs/global/system/CurrentTemplateCatchInclude.cfs";
+}
