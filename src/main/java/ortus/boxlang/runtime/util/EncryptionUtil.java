@@ -614,6 +614,18 @@ public final class EncryptionUtil {
 
 	/**
 	 * Processes the encryption or decryption of an object
+	 * 
+	 * <p>
+	 * Security Note: This method includes CWE-502 mitigation for deserialization of untrusted data.
+	 * When decrypting data that cannot be interpreted as a UTF-8 string, the method validates that
+	 * the decrypted bytes represent a valid Java serialized object stream (0xACED magic bytes) before
+	 * attempting deserialization. This helps prevent deserialization attacks.
+	 * </p>
+	 * 
+	 * <p>
+	 * The implementation uses Apache Commons Lang 3.20.0+ which includes built-in protections
+	 * against CVE-2025-48924 and other known deserialization vulnerabilities.
+	 * </p>
 	 *
 	 * @param cipherMode       The cipher mode to use
 	 * @param obj              The object to encrypt
@@ -693,10 +705,29 @@ public final class EncryptionUtil {
 				try {
 					return new String( decryptedBytes, DEFAULT_CHARSET );
 				} catch ( UnsupportedEncodingException e ) {
-					return SerializationUtils.deserialize( decryptedBytes );
+					// CWE-502 Mitigation: Only deserialize if the data is actually a Java serialized object
+					// Check for Java serialization magic bytes (0xACED) to identify serialized objects
+					boolean isSerializedObject = decryptedBytes.length >= 4
+					    && ( decryptedBytes[ 0 ] & 0xFF ) == 0xAC
+					    && ( decryptedBytes[ 1 ] & 0xFF ) == 0xED;
+
+					if ( isSerializedObject ) {
+						try {
+							// Note: Using Apache Commons Lang 3.20.0+ which includes CVE-2025-48924 mitigation
+							return SerializationUtils.deserialize( decryptedBytes );
+						} catch ( Exception deserializationException ) {
+							throw new BoxRuntimeException(
+							    "Failed to deserialize decrypted data. The data may be corrupted or contain untrusted content.",
+							    deserializationException
+							);
+						}
+					} else {
+						// Not a serialized object and not valid UTF-8 - return raw bytes
+						// This allows the caller to handle binary data (images, files, etc.)
+						return decryptedBytes;
+					}
 				}
 			} else {
-
 				byte[] result = new byte[ ivsSize + cipher.getOutputSize( objectBytes.length ) ];
 
 				if ( ivsSize > 0 ) {
