@@ -35,73 +35,73 @@ import ortus.boxlang.runtime.async.executors.BoxExecutor;
 
 class AsyncServiceTest {
 
-	AsyncService asyncService;
+	AsyncService		asyncService;
 
 	@Spy
 	@InjectMocks
-	private BoxRuntime runtime;
+	private BoxRuntime	runtime;
 
 	@BeforeEach
 	public void setupBeforeEach() {
-		runtime = BoxRuntime.getInstance();
-		asyncService = new AsyncService(runtime);
+		runtime			= BoxRuntime.getInstance();
+		asyncService	= new AsyncService( runtime );
 		asyncService.onConfigurationLoad();
 	}
 
-	@DisplayName("It can create the async service")
+	@DisplayName( "It can create the async service" )
 	@Test
 	void testItCanCreateIt() {
-		assertThat(asyncService).isNotNull();
+		assertThat( asyncService ).isNotNull();
 	}
 
-	@DisplayName("It can startup the async service")
+	@DisplayName( "It can startup the async service" )
 	@Test
 	void testItCanStartup() {
 		asyncService.onStartup();
-		assertThat(asyncService.hasExecutor("io-tasks")).isTrue();
+		assertThat( asyncService.hasExecutor( "io-tasks" ) ).isTrue();
 	}
 
-	@DisplayName("It can get the executors map")
+	@DisplayName( "It can get the executors map" )
 	@Test
 	void testItCanGetTheExecutors() {
 		Map<?, ?> executors = asyncService.getExecutors();
-		assertThat(executors).isEmpty();
+		assertThat( executors ).isEmpty();
 	}
 
 	@ParameterizedTest
-	@EnumSource(AsyncService.ExecutorType.class)
-	@DisplayName("It can register and work with executors")
-	void testItCanRegisterNewExecutors(AsyncService.ExecutorType executorType) {
+	@EnumSource( AsyncService.ExecutorType.class )
+	@DisplayName( "It can register and work with executors" )
+	void testItCanRegisterNewExecutors( AsyncService.ExecutorType executorType ) {
 		String name = "tdd-" + executorType.name().toLowerCase();
-		asyncService.newExecutor(name, executorType);
+		asyncService.newExecutor( name, executorType );
 
 		Map<?, ?> executors = asyncService.getExecutors();
 
-		assertThat(executors).isNotEmpty();
-		assertThat(asyncService.getExecutorNames()).contains(name);
-		assertThat(asyncService.hasExecutor(name)).isTrue();
+		assertThat( executors ).isNotEmpty();
+		assertThat( asyncService.getExecutorNames() ).contains( name );
+		assertThat( asyncService.hasExecutor( name ) ).isTrue();
 
-		BoxExecutor record = asyncService.getExecutor(name);
-		assertThat(record.type()).isEqualTo(executorType);
-		assertThat(record.getStats().toString()).contains("pool");
+		BoxExecutor record = asyncService.getExecutor( name );
+		assertThat( record.type() ).isEqualTo( executorType );
+		assertThat( record.getStats().toString() ).contains( "pool" );
 
-		assertThat(asyncService.getExecutorStatusMap(name)).isNotEmpty();
-		asyncService.deleteExecutor(name);
-		assertThat(asyncService.hasExecutor(name)).isFalse();
+		assertThat( asyncService.getExecutorStatusMap( name ) ).isNotEmpty();
+		asyncService.deleteExecutor( name );
+		assertThat( asyncService.hasExecutor( name ) ).isFalse();
 	}
 
-	@DisplayName("It can shutdown all executors")
+	@DisplayName( "It can shutdown all executors" )
 	@Test
 	void testItCanShutdownAllExecutors() {
-		asyncService.newExecutor("tdd", AsyncService.ExecutorType.FIXED);
-		asyncService.newExecutor("tdd2", AsyncService.ExecutorType.CACHED);
-		asyncService.newExecutor("tdd3", AsyncService.ExecutorType.SINGLE);
+		asyncService.newExecutor( "tdd", AsyncService.ExecutorType.FIXED );
+		asyncService.newExecutor( "tdd2", AsyncService.ExecutorType.CACHED );
+		asyncService.newExecutor( "tdd3", AsyncService.ExecutorType.SINGLE );
 
 		asyncService.shutdownAllExecutors();
 
-		assertThat(asyncService.hasExecutor("tdd")).isFalse();
-		assertThat(asyncService.hasExecutor("tdd2")).isFalse();
-		assertThat(asyncService.hasExecutor("tdd3")).isFalse();
+		assertThat( asyncService.hasExecutor( "tdd" ) ).isFalse();
+		assertThat( asyncService.hasExecutor( "tdd2" ) ).isFalse();
+		assertThat( asyncService.hasExecutor( "tdd3" ) ).isFalse();
 	}
 
 }
