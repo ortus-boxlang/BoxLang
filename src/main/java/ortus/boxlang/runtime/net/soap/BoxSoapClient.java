@@ -518,6 +518,57 @@ public class BoxSoapClient {
 	 */
 
 	/**
+	 * Set SOAP headers to be included in the SOAP envelope.
+	 *
+	 * @param headers A struct of simple key/value pairs
+	 * @return This instance for chaining
+	 */
+	public BoxSoapClient withSoapHeaders( IStruct headers ) {
+		validateSoapHeaders( headers );
+		this.soapHeaders = headers;
+		return this;
+	}
+
+	/**
+	 * Validate SOAP header input.
+	 * Only simple key/value pairs are allowed.
+	 */
+	private void validateSoapHeaders( IStruct headers ) {
+		if ( headers == null ) {
+			throw new BoxRuntimeException( "SOAP headers cannot be null" );
+		}
+
+		for ( Key key : headers.keySet() ) {
+			Object value = headers.get( key );
+
+			// Key must be a string
+			if ( key.getName() == null || key.getName().isEmpty() ) {
+				throw new BoxRuntimeException(
+					"SOAP header keys must be non-empty strings"
+				);
+			}
+
+			// Value must be a simple scalar
+			if ( value == null ) {
+				continue; // allow null → empty element
+			}
+
+			if ( value instanceof String
+				|| value instanceof Number
+				|| value instanceof Boolean
+				|| value instanceof java.time.temporal.Temporal
+			) {
+				continue;
+			}
+
+			throw new BoxRuntimeException(
+				"Invalid SOAP header value for key '" + key.getName() +
+				"'. Only simple scalar values are allowed."
+			);
+		}
+	}
+
+	/**
 	 * Build a SOAP request envelope for an operation
 	 *
 	 * @param operation The operation to invoke
