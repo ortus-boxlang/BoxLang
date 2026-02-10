@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.compiler.javaboxpiler.transformer;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -578,16 +579,20 @@ public class BoxClassTransformer extends AbstractTransformer {
 		 * Prep the class template properties
 		 * --------------------------------------------------------------------------
 		 */
-		String							fileName	= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
-		String							filePath	= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath()
-		    : "unknown";
+		String filePath = "unknown";
+		if ( source instanceof SourceFile file && file.getFile() != null ) {
+			try {
+				filePath = file.getFile().toPath().toRealPath().toString();
+			} catch ( IOException e ) {
+				// If the file no longer exists or can't be accessed, then ignore.
+			}
+		}
 		String							sourceType	= transpiler.getProperty( "sourceType" );
 
 		// This map replaces the string template
 		Map<String, String>				values		= Map.ofEntries(
 		    Map.entry( "packagename", packageName ),
 		    Map.entry( "className", className ),
-		    Map.entry( "fileName", fileName ),
 		    Map.entry( "interfaceMethods", interfaceMethods ),
 		    Map.entry( "interfaceList", interfaces.stream().collect( java.util.stream.Collectors.joining( ", " ) ) ),
 		    Map.entry( "extendsTemplate", extendsTemplate ),

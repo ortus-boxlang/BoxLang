@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.compiler.javaboxpiler.transformer.statement;
 
+import java.io.IOException;
 import java.util.Map;
 
 import com.github.javaparser.ParseResult;
@@ -186,9 +187,14 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		String		mappingName		= transpiler.getProperty( "mappingName" );
 		String		mappingPath		= transpiler.getProperty( "mappingPath" );
 		String		relativePath	= transpiler.getProperty( "relativePath" );
-		String		fileName		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
-		String		fileExt			= fileName.substring( fileName.lastIndexOf( "." ) + 1 );
-		String		filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
+		String		filePath		= "unknown";
+		if ( source instanceof SourceFile file && file.getFile() != null ) {
+			try {
+				filePath = file.getFile().toPath().toRealPath().toString();
+			} catch ( IOException e ) {
+				// If the file no longer exists or can't be accessed, then ignore.
+			}
+		}
 
 		//
 		className	= transpiler.getProperty( "classname" ) != null ? transpiler.getProperty( "classname" ) : className;
@@ -201,14 +207,12 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		Map<String, String>				values		= Map.ofEntries(
 		    Map.entry( "packagename", packageName ),
 		    Map.entry( "className", className ),
-		    Map.entry( "fileName", fileName ),
 		    Map.entry( "baseclass", baseClass ),
 		    Map.entry( "resolvedFilePath", transpiler.getResolvedFilePath( mappingName, mappingPath, relativePath, filePath ) ),
 		    Map.entry( "returnType", returnType ),
 		    Map.entry( "sourceType", sourceType ),
 		    Map.entry( "boxlangVersion", BoxRuntime.getInstance().getVersionInfo().getAsString( Key.version ) ),
-		    Map.entry( "bytecodeVersion", String.valueOf( IBoxpiler.BYTECODE_VERSION ) ),
-		    Map.entry( "fileExtension", fileExt )
+		    Map.entry( "bytecodeVersion", String.valueOf( IBoxpiler.BYTECODE_VERSION ) )
 		);
 		String							code		= PlaceholderHelper.resolve( template, values );
 		ParseResult<CompilationUnit>	result;
