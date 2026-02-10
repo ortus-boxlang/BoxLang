@@ -1114,9 +1114,9 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		                List.of(),
 		                new BoxExpressionStatement(
 		                    new BoxStringConcat( List.of(
-		                        new BoxStringLiteral( "\"", null, null ),
+		                        new BoxStringLiteral( "'", null, null ),
 		                        new BoxIdentifier( "arr", null, null ),
-		                        new BoxStringLiteral( "\"", null, null )
+		                        new BoxStringLiteral( "'", null, null )
 		                    ),
 		                        null,
 		                        null ),

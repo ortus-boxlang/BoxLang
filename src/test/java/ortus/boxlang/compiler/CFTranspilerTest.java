@@ -123,7 +123,7 @@ public class CFTranspilerTest {
 		    result = quotedValueList( qry.id );
 		       """,
 		    context, BoxSourceType.CFSCRIPT );
-		assertThat( variables.get( result ) ).isEqualTo( "\"1\",\"2\",\"3\"" );
+		assertThat( variables.get( result ) ).isEqualTo( "'1','2','3'" );
 	}
 
 	@DisplayName( "Test QuotedvalueList() to queryColumnData().toList( delimiter )" )
@@ -135,7 +135,7 @@ public class CFTranspilerTest {
 		    result = quotedValueList( qry.id, "|" );
 		       """,
 		    context, BoxSourceType.CFSCRIPT );
-		assertThat( variables.get( result ) ).isEqualTo( "\"1\"|\"2\"|\"3\"" );
+		assertThat( variables.get( result ) ).isEqualTo( "'1'|'2'|'3'" );
 	}
 
 	@DisplayName( "Test QuotedvalueList() to queryColumnData().toList( delimiter ) array access" )
@@ -147,7 +147,7 @@ public class CFTranspilerTest {
 		    result = quotedValueList( qry["id"] );
 		       """,
 		    context, BoxSourceType.CFSCRIPT );
-		assertThat( variables.get( result ) ).isEqualTo( "\"1\",\"2\",\"3\"" );
+		assertThat( variables.get( result ) ).isEqualTo( "'1','2','3'" );
 	}
 
 	@DisplayName( "Test new java()" )
