@@ -1079,6 +1079,18 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	/**
 	 * Comparable interface method
 	 *
+	 * @param other The other Object reference to compare to
+	 *
+	 * @return The comparison result which adheres to the ChronoZonedDateTime compareTo contract
+	 */
+	public int compareTo( Comparable<?> other ) {
+		boolean isLenientComparison = Compare.lenientDateComparison;
+		return compareTo( other, isLenientComparison );
+	}
+
+	/**
+	 * Comparable interface method
+	 *
 	 * @param other The other DateTime object to compare to
 	 *
 	 * @return The comparison result which adheres to the ChronoZonedDateTime compareTo contract
