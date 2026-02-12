@@ -708,7 +708,6 @@ public class PendingQuery {
 					var lowered = trimmed.toLowerCase();
 					// Exclude if "begin" and "end" appear anywhere in the SQL
 					if ( ! ( lowered.contains( "begin" ) && lowered.contains( "end" ) ) ) {
-						System.out.println( "Trimming trailing semicolon for driver compliance. " + trimmed );
 						sqlStatement = trimmed.substring( 0, trimmed.length() - 1 );
 					}
 				}

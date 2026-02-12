@@ -1080,13 +1080,44 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 
 	// quotedValueList( delimiter ) -> queryColumnData().map().toList( delimiter )
 	private BoxNode transpileQuotedValueList( BoxFunctionInvocation node ) {
-		BoxAccess			queryCol		= ( BoxAccess ) node.getArguments().get( 0 ).getValue();
-		List<BoxArgument>	toListArguments	= new ArrayList<>();
+		boolean				inQueryComponent	= node.getFirstAncestorOfType( BoxComponent.class, c -> c.getName().equalsIgnoreCase( "query" ) ) != null;
+		BoxAccess			queryCol			= ( BoxAccess ) node.getArguments().get( 0 ).getValue();
+		List<BoxArgument>	toListArguments		= new ArrayList<>();
 		// If there was a delimiter, pass it on to the toList() call
 		if ( node.getArguments().size() > 1 ) {
 			toListArguments.add( node.getArguments().get( 1 ) );
 		}
 
+		BoxExpression itemAccess = new BoxIdentifier( "arr", null, null );
+		if ( inQueryComponent ) {
+			itemAccess = new BoxFunctionInvocation(
+			    "replace",
+			    List.of(
+			        new BoxArgument(
+			            itemAccess,
+			            null,
+			            null
+			        ),
+			        new BoxArgument(
+			            new BoxStringLiteral( "'", null, null ),
+			            null,
+			            null
+			        ),
+			        new BoxArgument(
+			            new BoxStringLiteral( "''", null, null ),
+			            null,
+			            null
+			        ),
+			        new BoxArgument(
+			            new BoxStringLiteral( "all", null, null ),
+			            null,
+			            null
+			        )
+			    ),
+			    null,
+			    null
+			);
+		}
 		// queryColumnData( qry, col ).map()
 		BoxMethodInvocation	mapExpr			= new BoxMethodInvocation(
 		    new BoxIdentifier( "map", null, null ),
@@ -1115,7 +1146,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		                new BoxExpressionStatement(
 		                    new BoxStringConcat( List.of(
 		                        new BoxStringLiteral( "'", null, null ),
-		                        new BoxIdentifier( "arr", null, null ),
+		                        itemAccess,
 		                        new BoxStringLiteral( "'", null, null )
 		                    ),
 		                        null,
@@ -1138,6 +1169,24 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		    null,
 		    null
 		);
+		// wrap in preserveSingleQuotes()
+		if ( inQueryComponent ) {
+			BoxFunctionInvocation preserveSingleQuoteInvocation = new BoxFunctionInvocation(
+			    "preserveSingleQuotes",
+			    List.of(
+			        new BoxArgument(
+			            newInvocation,
+			            null,
+			            null
+			        )
+			    ),
+			    null,
+			    null
+			);
+			// Need a separate visit() call for this path so we call the correct overloaded visit() method
+			return super.visit( preserveSingleQuoteInvocation );
+
+		}
 		return super.visit( newInvocation );
 
 	}

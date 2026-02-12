@@ -57,6 +57,9 @@ public class ListQualify extends BIF {
 
 	/**
 	 * Inserts a string at the beginning and end of list elements.
+	 * 
+	 * If this BIF is being called from inside of a query component,
+	 * and the qualifier is a single quote, any single quotes in the values will be escaped by doubling them up. This projects against SQL Injection attacks.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -72,8 +75,11 @@ public class ListQualify extends BIF {
 	 * @argument.includeEmptyFields If true, empty fields will be qualified.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	elements	= arguments.getAsString( Key.elements );
-		String	qualifier	= arguments.getAsString( Key.qualifier );
+		String	elements			= arguments.getAsString( Key.elements );
+		String	qualifier			= arguments.getAsString( Key.qualifier );
+
+		// If we're being called inside of a query component and the qualifier is a single quote, we need to double up any legit single quotes in the values.
+		boolean	escapeSingleQuotes	= context.findClosestComponent( Key.query ) != null && qualifier.equals( "'" );
 
 		return Arrays.stream( ListUtil.asDelimitedList(
 		    arguments.getAsString( Key.list ),
@@ -82,9 +88,12 @@ public class ListQualify extends BIF {
 		    arguments.getAsBoolean( Key.multiCharacterDelimiter )
 		).toElementDelimiterPairs() )
 		    .map( item -> {
-			    Object oldValue	= item.element();
-			    Object newValue;
-			    if ( elements.equals( ELEMENTS_CHAR ) ? RegexBuilder.of( StringCaster.cast( oldValue ), RegexBuilder.ALPHA ).matches() : true ) {
+			    String oldValue	= StringCaster.cast( item.element() );
+			    String newValue;
+			    if ( elements.equals( ELEMENTS_CHAR ) ? RegexBuilder.of( oldValue, RegexBuilder.ALPHA ).matches() : true ) {
+				    if ( escapeSingleQuotes ) {
+					    oldValue = oldValue.replace( "'", "''" );
+				    }
 				    newValue = new StringBuilder( qualifier ).append( oldValue ).append( qualifier ).toString();
 			    } else {
 				    newValue = oldValue;

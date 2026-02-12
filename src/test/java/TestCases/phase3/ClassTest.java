@@ -466,7 +466,7 @@ public class ClassTest {
 		assertThat( meta.getAsString( Key.of( "name" ) ).toLowerCase() ).isEqualTo( "src.test.java.testcases.phase3.myclass" );
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
 		assertThat( meta.getAsString( Key.of( "fullname" ) ).toLowerCase() ).isEqualTo( "src.test.java.testcases.phase3.myclass" );
-		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.bx" ) ).isTrue();
+		assertThat( meta.getAsString( Key.of( "path" ) ) ).contains( "MyClass.bx" );
 		// assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) ).isInstanceOf( Array.class );
 		assertThat( meta.getAsArray( Key.of( "properties" ) ) ).hasSize( 1 );

@@ -150,6 +150,38 @@ public class CFTranspilerTest {
 		assertThat( variables.get( result ) ).isEqualTo( "'1','2','3'" );
 	}
 
+	@DisplayName( "Test QuotedvalueList() outside query" )
+	@Test
+	public void testQuotedValueListOutsideQuery() {
+		instance.executeSource(
+		    """
+		    qry = queryNew("name", "varchar", [["Brad"],["Luis"],["O'Neil"]]);
+
+		    result = quotedValueList( qry.name );
+		       """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "'Brad','Luis','O'Neil'" );
+	}
+
+	@DisplayName( "Test QuotedvalueList() inside query" )
+	@Test
+	public void testQuotedValueListInsideQuery() {
+		instance.executeSource(
+		    """
+		       <cfset qry = queryNew("name", "varchar", [["Brad"],["Luis"],["O'Neil"]]) >
+		    <cfquery name="result" dbtype="query">
+		    	SELECT *
+		    	FROM qry
+		    	WHERE name IN ( #quotedValueList( qry.name )# )
+		    </cfquery>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 3 );
+		assertThat( variables.getAsQuery( result ).getRowAsStruct( 0 ).get( "name" ) ).isEqualTo( "Brad" );
+		assertThat( variables.getAsQuery( result ).getRowAsStruct( 1 ).get( "name" ) ).isEqualTo( "Luis" );
+		assertThat( variables.getAsQuery( result ).getRowAsStruct( 2 ).get( "name" ) ).isEqualTo( "O'Neil" );
+	}
+
 	@DisplayName( "Test new java()" )
 	@Test
 	public void testNewJava() {

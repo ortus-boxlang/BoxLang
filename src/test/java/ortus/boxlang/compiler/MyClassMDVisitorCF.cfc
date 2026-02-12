@@ -4,7 +4,7 @@
  * @brad wood
  * @luis
  */
-component singleton gavin="pickin" inject foo="bar" extends="MyClassMDVistorCFParent" {
+component singleton gavin="pickin" inject foo="bar" extends="MyClassMDVisitorCFParent" {
 
     variables.setup=true;
     createObject('java','java.lang.System').out.println( "word" );
