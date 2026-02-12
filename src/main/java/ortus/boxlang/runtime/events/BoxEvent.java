@@ -211,6 +211,11 @@ public enum BoxEvent {
 	ON_HTTP_RESPONSE( "onHTTPResponse" ),
 
 	/**
+	 * Custom Event for Route Modification when in a Web Context
+	 */
+	ON_WEB_EXECUTOR_REQUEST( "onWebExecutorRequest" ),
+
+	/**
 	 * Module Service Events
 	 */
 	ON_MODULE_SERVICE_STARTUP( "onModuleServiceStartup" ),
