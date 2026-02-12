@@ -435,6 +435,15 @@ public class DateTimeCasterTest {
 	}
 
 	@Test
+	@DisplayName( "Test casting MM-DD-YYYY HH:mm:ss format to DateTime" )
+	public void testCastMMDDYYYYWithTime() {
+		String		dateString	= "01-31-2026 23:59:59";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "MM-dd-yyyy HH:mm:ss" ) ).isEqualTo( "01-31-2026 23:59:59" );
+	}
+
+	@Test
 	@DisplayName( "Test date parsing with German (de_DE) JVM locale to replicate locale-specific parsing issues" )
 	public void testDateParsingWithGermanLocale() {
 		// Store the original default locale to restore later

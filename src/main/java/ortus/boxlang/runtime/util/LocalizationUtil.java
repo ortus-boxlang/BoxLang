@@ -839,7 +839,6 @@ public final class LocalizationUtil {
 			) );
 
 			// ========== Localized Date/Time Formats ==========
-
 			// Full DateTime with full day name (e.g., Tuesday, 02 Apr 2024 21:01:00 CEST)
 			add( Map.of(
 				"regexPattern",
@@ -982,6 +981,15 @@ public final class LocalizationUtil {
 				"datePattern", "MMM[,][- ]d[,][- ]yyyy HH:mm[ zzz]",
 				"description",
 				"Month double day year time no seconds with optional timezone"
+			) );
+
+			// ========== Weird ISO-ish formats that are still common in the wild ========== //
+			// MM-DD-YYYY HH:mm:ss format (e.g., 01-31-2026 23:59:59)
+			add( Map.of(
+				"regexPattern",
+				"^\\d{2}-\\d{2}-\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}$",
+				"datePattern", "MM-dd-yyyy HH:mm:ss",
+				"description", "MM-DD-YYYY HH:MM:SS format"
 			) );
 
 			// ========== US Format Date/Time ==========
