@@ -65,6 +65,7 @@ jobs:
         uses: samin/mysql-action@v1.3
         with:
           host port: 3309
+          mysql version: '8.0'
           mysql database: "myDB"
           mysql root password: "123456Password"
 
