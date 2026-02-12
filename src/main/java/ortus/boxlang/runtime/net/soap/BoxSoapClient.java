@@ -50,6 +50,8 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 /**
  * A fluent SOAP web service client for BoxLang.
  * Provides human-friendly methods for invoking SOAP operations discovered from WSDL documents.
@@ -117,6 +119,24 @@ public class BoxSoapClient {
 	private Map<String, String>		customHeaders			= new HashMap<>();
 
 	/**
+	 * SOAP headers to include in the SOAP envelope
+	 * 
+	 * SOAP Spec:
+	 * - <soap:Header> is OPTINAL.
+	 * - If present it must be the first child of <soap:Envelope> (before <soap:Body>)
+	 * - There is onlt ONE <soap:Header> section per request
+	 * 
+	 *  Storage approach (STEP 1):
+	 * - We store simple key/value headers using BoxLang Struct (IStruct)
+	 * - Example: {AuthToken" : "abc123", "SessionId" : "session-456"}
+	 * 
+	 * NOTE: Right now this is only storage
+	 * later we will actually inject these into the XML request
+	 */
+
+	private IStruct soapHeaders;
+
+	/**
 	 * SOAP version (1.1 or 1.2)
 	 */
 	private String					soapVersion				= "1.1";
@@ -158,6 +178,9 @@ public class BoxSoapClient {
 		// Initialize SOAP version from WSDL definition (can be overridden later)
 		this.soapVersion		= wsdlDefinition.getSoapVersion();
 		this.executionContext	= context;
+		// Initialize SOAP headers storage as an empty Struct
+		// This avoids NullPointerExceptions later when we add header
+		this.soapHeaders = Struct.of();
 	}
 
 	/**
@@ -493,6 +516,57 @@ public class BoxSoapClient {
 	 * SOAP Message Building and Parsing
 	 * ------------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Set SOAP headers to be included in the SOAP envelope.
+	 *
+	 * @param headers A struct of simple key/value pairs
+	 * @return This instance for chaining
+	 */
+	public BoxSoapClient withSoapHeaders( IStruct headers ) {
+		validateSoapHeaders( headers );
+		this.soapHeaders = headers;
+		return this;
+	}
+
+	/**
+	 * Validate SOAP header input.
+	 * Only simple key/value pairs are allowed.
+	 */
+	private void validateSoapHeaders( IStruct headers ) {
+		if ( headers == null ) {
+			throw new BoxRuntimeException( "SOAP headers cannot be null" );
+		}
+
+		for ( Key key : headers.keySet() ) {
+			Object value = headers.get( key );
+
+			// Key must be a string
+			if ( key.getName() == null || key.getName().isEmpty() ) {
+				throw new BoxRuntimeException(
+					"SOAP header keys must be non-empty strings"
+				);
+			}
+
+			// Value must be a simple scalar
+			if ( value == null ) {
+				continue; // allow null → empty element
+			}
+
+			if ( value instanceof String
+				|| value instanceof Number
+				|| value instanceof Boolean
+				|| value instanceof java.time.temporal.Temporal
+			) {
+				continue;
+			}
+
+			throw new BoxRuntimeException(
+				"Invalid SOAP header value for key '" + key.getName() +
+				"'. Only simple scalar values are allowed."
+			);
+		}
+	}
 
 	/**
 	 * Build a SOAP request envelope for an operation
