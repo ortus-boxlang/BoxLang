@@ -859,21 +859,16 @@ public abstract class BaseApplicationListener {
 				case "wddx" :
 				case "xml" :
 					// first check if we have an xml object or xml string
-					if ( result instanceof XML castXML ) {
-						stringResult = castXML.asString( Struct.of(
+					CastAttempt<XML> xmlAttempt = XMLCaster.attempt( result );
+					if ( xmlAttempt.wasSuccessful() ) {
+						stringResult = xmlAttempt.get().asString( Struct.of(
 						    "omit-xml-declaration", "no",
 						    "method", "xml",
 						    "indent", "no"
 						) );
 						break;
-					} else if ( result instanceof String castString ) {
-						CastAttempt<XML> xmlAttempt = XMLCaster.attempt( castString );
-						if ( xmlAttempt.wasSuccessful() ) {
-							stringResult = castString;
-							break;
-						}
 					}
-					// If it's an XML object or string, we would need to serialize it to WDDX
+					// If it's an not XML object/string, we would need to serialize it to WDDX
 					if ( context.getRuntime().getModuleService().hasModule( Key.wddx ) ) {
 						DynamicObject WDDXUtil = context.getRuntime()
 						    .getClassLocator()
