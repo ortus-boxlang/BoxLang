@@ -55,9 +55,8 @@ public record Property( Key name, String type, Object defaultValue, DefaultExpre
 		    documentation,
 		    Key.of( "get" + name.getName() ),
 		    Key.of( "set" + name.getName() ),
-		    new GeneratedGetter( Key.of( "get" + name.getName() ), name,
-		        sourceType.equals( BoxSourceType.CFSCRIPT ) || sourceType.equals( BoxSourceType.CFSCRIPT ) ? "any" : type ),
-		    new GeneratedSetter( Key.of( "set" + name.getName() ), name, type ),
+		    new GeneratedGetter( Key.of( "get" + name.getName() ), name, type, sourceType ),
+		    new GeneratedSetter( Key.of( "set" + name.getName() ), name, type, sourceType ),
 		    sourceType,
 		    declaringClass
 		);
