@@ -260,14 +260,16 @@ public class BoxSoapClient implements IReferenceable {
 	}
 
 	/**
-	 * Set the timeout for HTTP requests
+	 * Set the timeout for HTTP requests.
+	 * <p>
+	 * The timeout is specified in seconds. If {@code null} is passed, a default of 30 seconds is used.
 	 *
-	 * @param timeout The timeout in milliseconds
+	 * @param timeout The timeout in seconds
 	 *
 	 * @return This instance for chaining
 	 */
 	public BoxSoapClient withTimeout( Integer timeout ) {
-		this.timeout = timeout != null ? timeout : 30000; // Convert to milliseconds and handle null
+		this.timeout = timeout != null ? timeout : 30;
 		return this;
 	}
 
