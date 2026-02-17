@@ -1023,9 +1023,9 @@ public class BoxSoapClient implements IReferenceable {
 
 		} catch ( Exception e ) {
 			String errorMessage = "Failed to parse SOAP response. " + e.getMessage();
-			// if ( logger.isDebugEnabled() ) {
-			errorMessage += " Response body: " + httpResult.get( Key.fileContent );
-			// }
+			if ( logger.isDebugEnabled() ) {
+				errorMessage += " Response body: " + httpResult.get( Key.fileContent );
+			}
 			throw new BoxRuntimeException( errorMessage, e );
 		}
 	}
