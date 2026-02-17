@@ -156,7 +156,8 @@ public class Invoke extends Component {
 				} catch ( BoxCastException e ) {
 					// Ignore invalid timeout values rather than failing
 				}
-			}			// Extract the actual arguments to pass to SOAP
+			}
+			// Extract the actual arguments to pass to SOAP
 			// We used the pre-existing argCollection to hold all args, now including invoke arguments
 			Object soapArgs = argCollection.get( Key.argumentCollection );
 
