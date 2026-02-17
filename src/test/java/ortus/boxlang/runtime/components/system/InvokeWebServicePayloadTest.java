@@ -163,7 +163,7 @@ public class InvokeWebServicePayloadTest {
 
 	@DisplayName( "Test invoke webservice SOAP payload without parameters" )
 	@Test
-	public void testInvokeWebServiceSOAPPayloadNoParameters() {
+	public void testInvokeWebServiceSOAPPayloadParameters() {
 		// Mock the SOAP operation response
 		wireMock.stubFor( post( urlEqualTo( "/calculator" ) )
 		    .willReturn( aResponse()
