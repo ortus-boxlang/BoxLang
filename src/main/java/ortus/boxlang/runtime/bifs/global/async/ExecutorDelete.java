@@ -12,7 +12,7 @@
  * BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language
  * governing permissions and limitations under the License.
  */
-package ortus.boxlang.runtime.bifs.global.jdbc;
+package ortus.boxlang.runtime.bifs.global.async;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -20,37 +20,37 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
-@BoxBIF( description = "Prevent automatic escaping of single quotes" )
-public class PreserveSingleQuotes extends BIF {
+@BoxBIF( description = "Delete an executor service from the registry" )
+public class ExecutorDelete extends BIF {
 
 	/**
 	 * Constructor
 	 */
-	public PreserveSingleQuotes() {
+	public ExecutorDelete() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "String", Key.variable )
+		    new Argument( true, Argument.STRING, Key._NAME )
 		};
 	}
 
 	/**
-	 * Prevents from automatically escaping single quotation mark characters that are contained in a variable.
-	 * 
-	 * It is not neccesary to use this function around listQualify() when the qualifier is a single quote, or around quotedValueList()
-	 * as those automatically preserve and escape single quotes as needed when used inside a query component.
+	 * Deletes an executor from the registry by name. If the executor has not been shutdown,
+	 * it will be forcibly shutdown via shutdownNow() before removal.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.variable The expression that needs to have its single quotes preserved.
+	 * @argument.name The name of the executor to delete
 	 *
+	 * @throws KeyNotFoundException If the executor is not found.
 	 */
-	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		// This BIF itself doesn't do anything. It's largely a placeholder in the AST for the QueryPreserveSingleQuotesVisitor to look for.
-		// The Visitor actually does the work of escaping or preserving single quotes.
-		// System.out.println( "PreserveSingleQuotes._invoke " + arguments.get( Key.variable ) );
-		return arguments.get( Key.variable );
+	@Override
+	public Boolean _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		String name = arguments.getAsString( Key._NAME );
+		asyncService.deleteExecutor( name );
+		return true;
 	}
 
 }

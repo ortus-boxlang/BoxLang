@@ -38,7 +38,7 @@
 									break;
 								}
 							}
-							if( i > 1000 ){
+							if( byteArrayLen > 1000 ){
 								echo( "<br>... truncated" );
 							}
 							echo( "]" );

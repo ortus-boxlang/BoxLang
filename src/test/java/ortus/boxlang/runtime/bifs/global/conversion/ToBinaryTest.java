@@ -88,6 +88,21 @@ public class ToBinaryTest {
 	}
 
 	@Test
+	public void testCanConvertFileObject() {
+		instance.executeSource(
+		    """
+		    tmpFile = getTempDirectory() & "toBinaryFileTest.txt"
+		    fileWrite( tmpFile, "Hello World" )
+		    f = fileOpen( tmpFile, "read" )
+		    result = toBinary( f )
+		    fileClose( f )
+		    fileDelete( tmpFile )
+		    """,
+		    context );
+		assertThat( new String( ( byte[] ) variables.get( result ) ) ).isEqualTo( "Hello World" );
+	}
+
+	@Test
 	public void testTooMuchPadding() {
 		instance.executeSource(
 		    """

@@ -44,15 +44,29 @@ public class GeneratedSetter extends UDF {
 	private final Key						name;
 	private final Argument[]				arguments;
 	private final Key						variable;
+	private final BoxSourceType				sourceType;
 
 	/**
 	 * Constructor
 	 * Create a new abstract function. There is no body to execute, just the metadata
 	 */
+	@Deprecated
 	public GeneratedSetter( Key name, Key variable, String type ) {
 		this.name		= name;
 		this.variable	= variable;
 		this.arguments	= new Argument[] { new Argument( false, type, variable ) };
+		this.sourceType	= BoxSourceType.BOXSCRIPT;
+	}
+
+	/**
+	 * Constructor
+	 * Create a new abstract function. There is no body to execute, just the metadata
+	 */
+	public GeneratedSetter( Key name, Key variable, String type, BoxSourceType sourceType ) {
+		this.name		= name;
+		this.variable	= variable;
+		this.arguments	= new Argument[] { new Argument( false, type, variable ) };
+		this.sourceType	= sourceType;
 	}
 
 	/**
@@ -136,7 +150,7 @@ public class GeneratedSetter extends UDF {
 
 	@Override
 	public BoxSourceType getSourceType() {
-		return BoxSourceType.BOXSCRIPT;
+		return sourceType;
 	}
 
 	@Override

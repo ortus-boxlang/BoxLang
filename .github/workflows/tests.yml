@@ -39,6 +39,9 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v6
 
+      - name: Set Docker API version
+        run: echo "DOCKER_API_VERSION=1.44" >> $GITHUB_ENV
+
       - name: Setup Java
         uses: actions/setup-java@v5
         with:
@@ -65,6 +68,7 @@ jobs:
         uses: samin/mysql-action@v1.3
         with:
           host port: 3309
+          mysql version: '8.0'
           mysql database: "myDB"
           mysql root password: "123456Password"
 

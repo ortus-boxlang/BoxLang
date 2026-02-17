@@ -66,7 +66,8 @@ public class BoxInterfaceTransformer {
 		String	mappingName			= transpiler.getProperty( "mappingName" );
 		String	mappingPath			= transpiler.getProperty( "mappingPath" );
 		String	relativePath		= transpiler.getProperty( "relativePath" );
-		String	filePath			= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
+		String	filePath			= source instanceof SourceFile file && file.getFile() != null ? file.getFileAsRealPath().toString()
+		    : "unknown";
 		// trim leading . if exists
 		String	boxInterfaceName	= transpiler.getProperty( "boxFQN" );
 		String	sourceType			= transpiler.getProperty( "sourceType" );

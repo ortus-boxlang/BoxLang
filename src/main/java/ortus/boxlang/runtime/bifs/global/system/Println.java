@@ -39,7 +39,7 @@ public class Println extends BIF {
 	public Println() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.message )
+		    new Argument( false, "any", Key.message, "" )
 		};
 	}
 

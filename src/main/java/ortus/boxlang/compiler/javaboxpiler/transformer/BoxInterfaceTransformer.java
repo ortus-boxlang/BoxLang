@@ -249,7 +249,7 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 		String							mappingPath		= transpiler.getProperty( "mappingPath" );
 		String							relativePath	= transpiler.getProperty( "relativePath" );
 		String							fileName		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
-		String							filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath()
+		String							filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFileAsRealPath().toString()
 		    : "unknown";
 		String							sourceType		= transpiler.getProperty( "sourceType" );
 

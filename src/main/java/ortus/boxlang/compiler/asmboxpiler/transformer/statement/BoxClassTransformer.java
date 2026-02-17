@@ -100,7 +100,7 @@ public class BoxClassTransformer {
 		Source	source		= boxClass.getPosition().getSource();
 		String	sourceType	= transpiler.getProperty( "sourceType" );
 
-		String	filePath	= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath()
+		String	filePath	= source instanceof SourceFile file && file.getFile() != null ? file.getFileAsRealPath().toString()
 		    : "unknown";
 		transpiler.setProperty( "filePath", filePath );
 		String boxClassName = transpiler.getProperty( "boxFQN" );

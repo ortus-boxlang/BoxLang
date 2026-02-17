@@ -90,6 +90,7 @@ literal_value:
     | NULL_
     | TRUE_
     | FALSE_
+    | ODBCDATETIME_LITERAL
 ;
 
 value_row:

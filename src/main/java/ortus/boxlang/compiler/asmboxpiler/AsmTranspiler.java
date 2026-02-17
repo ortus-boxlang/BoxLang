@@ -453,7 +453,8 @@ public class AsmTranspiler extends Transpiler {
 		String	mappingPath		= getProperty( "mappingPath" );
 		String	relativePath	= getProperty( "relativePath" );
 		Source	source			= boxScript.getPosition().getSource();
-		String	filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
+		String	filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFileAsRealPath().toString()
+		    : "unknown";
 		setProperty( "filePath", filePath );
 		classNode.visitSource( filePath, null );
 

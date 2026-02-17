@@ -20,6 +20,7 @@ package ortus.boxlang.compiler.ast;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.stream.Stream;
 
 /**
@@ -45,6 +46,21 @@ public class SourceFile extends Source {
 	 */
 	public File getFile() {
 		return file;
+	}
+
+	/**
+	 * Returns the File associate to the source as a real path, resolving any symbolic links and relative paths.
+	 *
+	 * @return a Path instance
+	 */
+	public Path getFileAsRealPath() {
+		Path thePath = file.toPath();
+		try {
+			thePath = thePath.toRealPath();
+		} catch ( IOException e ) {
+			// If the file no longer exists or can't be accessed, then ignore.
+		}
+		return thePath;
 	}
 
 	/**

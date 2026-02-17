@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
@@ -41,6 +42,11 @@ import ortus.boxlang.runtime.types.util.TypeUtil;
 public class ArgumentUtil {
 
 	/**
+	 * Runtime instance
+	 */
+	private static BoxRuntime runtime = BoxRuntime.getInstance();
+
+	/**
 	 * Create an arguments scope from the positional arguments
 	 *
 	 * @param context             The context of the execution
@@ -53,6 +59,23 @@ public class ArgumentUtil {
 	 */
 	public static ArgumentsScope createArgumentsScope( IBoxContext context, Object[] positionalArguments, Argument[] arguments, ArgumentsScope scope,
 	    Key functionName ) {
+		return createArgumentsScope( context, positionalArguments, arguments, scope, functionName, runtime.getConfiguration().enforceUDFTypeChecks );
+	}
+
+	/**
+	 * Create an arguments scope from the positional arguments
+	 *
+	 * @param context             The context of the execution
+	 * @param positionalArguments The positional arguments
+	 * @param arguments           The declared arguments
+	 * @param scope               The scope to add the arguments to
+	 * @param functionName        The name of the function
+	 * @param enforceTypes        Whether to enforce argument types
+	 *
+	 * @return The arguments scope
+	 */
+	public static ArgumentsScope createArgumentsScope( IBoxContext context, Object[] positionalArguments, Argument[] arguments, ArgumentsScope scope,
+	    Key functionName, boolean enforceTypes ) {
 		scope.setPositional( true );
 		// Add all incoming args to the scope, using the name if declared, otherwise using the position
 		for ( int i = 0; i < positionalArguments.length; i++ ) {
@@ -60,12 +83,12 @@ public class ArgumentUtil {
 			Object	value	= positionalArguments[ i ];
 			if ( arguments.length - 1 >= i ) {
 				name	= arguments[ i ].name();
-				value	= ensureArgumentType( context, name, value, arguments[ i ].type(), functionName );
+				value	= ensureArgumentType( context, name, value, arguments[ i ].type(), functionName, enforceTypes );
 			} else {
 				name = Key.of( i + 1 );
 			}
 			if ( value == null && arguments.length - 1 >= i && arguments[ i ].hasDefaultValue() ) {
-				value = ensureArgumentType( context, name, arguments[ i ].getDefaultValue( context ), arguments[ i ].type(), functionName );
+				value = ensureArgumentType( context, name, arguments[ i ].getDefaultValue( context ), arguments[ i ].type(), functionName, enforceTypes );
 			}
 			scope.put( name, value );
 		}
@@ -78,7 +101,8 @@ public class ArgumentUtil {
 					    "Required argument [" + arguments[ i ].name().getName() + "] is missing for function [" + functionName.getName() + "]" );
 				}
 				scope.put( arguments[ i ].name(),
-				    ensureArgumentType( context, arguments[ i ].name(), arguments[ i ].getDefaultValue( context ), arguments[ i ].type(), functionName )
+				    ensureArgumentType( context, arguments[ i ].name(), arguments[ i ].getDefaultValue( context ), arguments[ i ].type(), functionName,
+				        enforceTypes )
 				);
 			}
 		}
@@ -96,9 +120,26 @@ public class ArgumentUtil {
 	 *
 	 * @return The arguments scope
 	 */
-	@SuppressWarnings( "unchecked" )
 	public static ArgumentsScope createArgumentsScope( IBoxContext context, Map<Key, Object> namedArguments, Argument[] arguments, ArgumentsScope scope,
 	    Key functionName ) {
+		return createArgumentsScope( context, namedArguments, arguments, scope, functionName, runtime.getConfiguration().enforceUDFTypeChecks );
+	}
+
+	/**
+	 * Create an arguments scope from the named arguments
+	 *
+	 * @param context        The context of the execution
+	 * @param namedArguments The named arguments
+	 * @param arguments      The declared arguments
+	 * @param scope          The scope to add the arguments to
+	 * @param functionName   The name of the function
+	 * @param enforceTypes   Whether to enforce argument types
+	 *
+	 * @return The arguments scope
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static ArgumentsScope createArgumentsScope( IBoxContext context, Map<Key, Object> namedArguments, Argument[] arguments, ArgumentsScope scope,
+	    Key functionName, boolean enforceTypes ) {
 
 		// If argumentCollection exists, add it
 		if ( namedArguments.containsKey( Function.ARGUMENT_COLLECTION ) ) {
@@ -185,11 +226,11 @@ public class ArgumentUtil {
 				}
 				// Make sure the default value is valid
 				scope.put( argument.name(),
-				    ensureArgumentType( context, argument.name(), argument.getDefaultValue( context ), argument.type(), functionName ) );
+				    ensureArgumentType( context, argument.name(), argument.getDefaultValue( context ), argument.type(), functionName, enforceTypes ) );
 				// If they are here, confirm their types
 			} else {
 				scope.put( argument.name(),
-				    ensureArgumentType( context, argument.name(), scope.get( argument.name() ), argument.type(), functionName ) );
+				    ensureArgumentType( context, argument.name(), scope.get( argument.name() ), argument.type(), functionName, enforceTypes ) );
 			}
 		}
 		return scope;
@@ -246,7 +287,23 @@ public class ArgumentUtil {
 	 * @return The arguments scope
 	 */
 	public static ArgumentsScope createArgumentsScope( IBoxContext context, Argument[] arguments, ArgumentsScope scope, Key functionName ) {
-		return createArgumentsScope( context, new Object[] {}, arguments, scope, functionName );
+		return createArgumentsScope( context, new Object[] {}, arguments, scope, functionName, runtime.getConfiguration().enforceUDFTypeChecks );
+	}
+
+	/**
+	 * Create an arguments scope from no arguments
+	 *
+	 * @param context      The context of the execution
+	 * @param arguments    The declared arguments
+	 * @param scope        The scope to add the arguments to
+	 * @param functionName The name of the function
+	 * @param enforceTypes Whether to enforce argument types
+	 *
+	 * @return The arguments scope
+	 */
+	public static ArgumentsScope createArgumentsScope( IBoxContext context, Argument[] arguments, ArgumentsScope scope, Key functionName,
+	    boolean enforceTypes ) {
+		return createArgumentsScope( context, new Object[] {}, arguments, scope, functionName, enforceTypes );
 	}
 
 	/**
@@ -262,6 +319,26 @@ public class ArgumentUtil {
 	 *
 	 */
 	public static Object ensureArgumentType( IBoxContext context, Key name, Object value, String type, Key functionName ) {
+		return ensureArgumentType( context, name, value, type, functionName, true );
+	}
+
+	/**
+	 * Ensure the argument is the correct type
+	 *
+	 * @param context      The context of the execution
+	 * @param name         The name of the argument
+	 * @param value        The value of the argument
+	 * @param type         The type of the argument
+	 * @param functionName The name of the function
+	 * @param enforceTypes Whether to enforce argument types
+	 *
+	 * @return The value of the argument
+	 *
+	 */
+	public static Object ensureArgumentType( IBoxContext context, Key name, Object value, String type, Key functionName, boolean enforceTypes ) {
+		if ( !enforceTypes )
+			return value;
+
 		if ( value == null ) {
 			return null;
 		}
@@ -277,7 +354,7 @@ public class ArgumentUtil {
 			    )
 			);
 		}
-		// Should we actually return the casted value??? Not CFML Compat! If so, return typeCheck.get() with check for NullValue instances.
+
 		Object result = typeCheck.get();
 		if ( result instanceof NullValue ) {
 			return null;

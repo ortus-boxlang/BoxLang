@@ -163,7 +163,12 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	/**
 	 * The interceptor service helper
 	 */
-	protected InterceptorService		interceptorService	= BoxRuntime.getInstance().getInterceptorService();
+	protected static InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
+
+	/**
+	 * Runtime instance
+	 */
+	protected static BoxRuntime			runtime				= BoxRuntime.getInstance();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -361,9 +366,15 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * @return the value, cast to the correct type if necessary
 	 */
 	protected Object ensureReturnType( IBoxContext context, Object value ) {
+		// If we're not enforcing type checks, just return the value as-is
+		if ( !runtime.getConfiguration().enforceUDFTypeChecks ) {
+			return value;
+		}
+
 		if ( value == null ) {
 			return null;
 		}
+
 		CastAttempt<Object> typeCheck = GenericCaster.attempt( context, value, getReturnType(), true );
 		if ( !typeCheck.wasSuccessful() ) {
 			throw new BoxRuntimeException(

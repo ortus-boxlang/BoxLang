@@ -20,6 +20,9 @@ package ortus.boxlang.runtime.bifs.global.system;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.io.IOException;
+import java.nio.file.Paths;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -70,6 +73,19 @@ public class GetClassMetadataTest {
 		assertThat( metadata.containsKey( "type" ) ).isTrue();
 		assertThat( metadata.getAsString( Key._name ) ).isEqualTo( "src.test.bx.Person" );
 		assertThat( metadata.getAsString( Key.type ) ).isEqualTo( "Class" );
+	}
+
+	@DisplayName( "It can get the metadata for a bx class with correct case on file path" )
+	@Test
+	public void testClassCaseSensitive() throws IOException {
+		runtime.executeSource(
+		    """
+		    result = getClassMetadata( "SRC.test.BX.pErSoN" );
+		    """,
+		    context );
+
+		var metadata = variables.getAsStruct( result );
+		assertThat( metadata.getAsString( Key.path ) ).isEqualTo( Paths.get( "src/test/bx/Person.bx" ).toAbsolutePath().toRealPath().toString() );
 	}
 
 	@DisplayName( "It can get the metadata for a class with constructor args" )

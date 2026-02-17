@@ -408,6 +408,42 @@ public class DateTimeCasterTest {
 	}
 
 	@Test
+	@DisplayName( "Test casting ODBC Date format {d yyyy-mm-dd} to DateTime" )
+	public void testCastODBCDateFormat() {
+		String		dateString	= "{d 2024-04-02}";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd" ) ).isEqualTo( "2024-04-02" );
+	}
+
+	@Test
+	@DisplayName( "Test casting ODBC Time format {t HH:mm:ss} to DateTime" )
+	public void testCastODBCTimeFormat() {
+		String		timeString	= "{t 14:30:45}";
+		DateTime	result		= DateTimeCaster.cast( timeString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "HH:mm:ss" ) ).isEqualTo( "14:30:45" );
+	}
+
+	@Test
+	@DisplayName( "Test casting ODBC Timestamp format {ts yyyy-mm-dd HH:mm:ss} to DateTime" )
+	public void testCastODBCTimestampFormat() {
+		String		timestampString	= "{ts 2024-04-02 14:30:45}";
+		DateTime	result			= DateTimeCaster.cast( timestampString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd HH:mm:ss" ) ).isEqualTo( "2024-04-02 14:30:45" );
+	}
+
+	@Test
+	@DisplayName( "Test casting MM-DD-YYYY HH:mm:ss format to DateTime" )
+	public void testCastMMDDYYYYWithTime() {
+		String		dateString	= "01-31-2026 23:59:59";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "MM-dd-yyyy HH:mm:ss" ) ).isEqualTo( "01-31-2026 23:59:59" );
+	}
+
+	@Test
 	@DisplayName( "Test date parsing with German (de_DE) JVM locale to replicate locale-specific parsing issues" )
 	public void testDateParsingWithGermanLocale() {
 		// Store the original default locale to restore later

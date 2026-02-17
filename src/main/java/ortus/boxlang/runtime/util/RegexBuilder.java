@@ -66,6 +66,8 @@ public class RegexBuilder {
 	public static final Pattern	STARTS_WITH_DIGIT			= Pattern.compile( "^\\d.*" );
 	public static final Pattern	SSN							= Pattern.compile( "^(?!219099999|078051120)(?!666|000|9\\d{2})\\d{3}(?!00)\\d{2}(?!0{4})\\d{4}$" );
 	public static final Pattern	TIMESTAMP					= Pattern.compile( "^\\{ts ([^\\}]*)\\}" );
+	public static final Pattern	ODBC_DATE					= Pattern.compile( "^\\{d ([^\\}]*)\\}" );
+	public static final Pattern	ODBC_TIME					= Pattern.compile( "^\\{t ([^\\}]*)\\}" );
 	public static final Pattern	TELEPHONE					= Pattern.compile(
 	    "^(?:(?:\\+?1\\s*(?:[.-]\\s*)?)?(?:\\(\\s*([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9])\\s*\\)|([2-9]1[02-9]|[2-9][02-8]1|[2-9][02-8][02-9]))\\s*(?:[.-]\\s*)?)?([2-9]1[02-9]|[2-9][02-9]1|[2-9][02-9]{2})\\s*(?:[.-]\\s*)?([0-9]{4})(?:\\s*(?:#|x\\.?|ext\\.?|extension)\\s*(\\d+))?$" );
 	public static final Pattern	TWO_DOTS					= Pattern.compile( "\\.{2}" );

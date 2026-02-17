@@ -35,7 +35,7 @@ public class ClassMetadataVisitorTest {
 	public void testMetadataVisitor() {
 
 		ParsingResult result = new Parser()
-		    .parse( Paths.get( "src/test/java/ortus/boxlang/compiler/MyClassMDVistor.bx" ).toAbsolutePath().toFile() );
+		    .parse( Paths.get( "src/test/java/ortus/boxlang/compiler/MyClassMDVisitor.bx" ).toAbsolutePath().toFile() );
 		if ( !result.isCorrect() ) {
 			throw new ParseException( result.getIssues(), "" );
 		}
@@ -44,9 +44,9 @@ public class ClassMetadataVisitorTest {
 
 		var meta = visitor.getMetadata();
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "class" );
-		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "MyClassMDVistor" );
-		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.ortus.boxlang.compiler.MyClassMDVistor" );
-		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClassMDVistor.bx" ) ).isTrue();
+		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "MyClassMDVisitor" );
+		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.ortus.boxlang.compiler.MyClassMDVisitor" );
+		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClassMDVisitor.bx" ) ).isTrue();
 		assertThat( meta.get( Key.of( "properties" ) ) instanceof Array ).isTrue();
 		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
 
@@ -92,7 +92,7 @@ public class ClassMetadataVisitorTest {
 
 	@Test
 	public void testMetadataVisitorCF() {
-		ParsingResult result = new Parser().parse( Paths.get( "src/test/java/ortus/boxlang/compiler/MyClassMDVistorCF.cfc" ).toAbsolutePath().toFile() );
+		ParsingResult result = new Parser().parse( Paths.get( "src/test/java/ortus/boxlang/compiler/MyClassMDVisitorCF.cfc" ).toAbsolutePath().toFile() );
 		if ( !result.isCorrect() ) {
 			throw new ParseException( result.getIssues(), "" );
 		}
@@ -101,16 +101,16 @@ public class ClassMetadataVisitorTest {
 
 		var meta = visitor.getMetadata();
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "class" );
-		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.ortus.boxlang.compiler.MyClassMDVistorCF" );
-		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "MyClassMDVistorCF" );
-		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClassMDVistorCF.cfc" ) ).isTrue();
+		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.ortus.boxlang.compiler.MyClassMDVisitorCF" );
+		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "MyClassMDVisitorCF" );
+		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClassMDVisitorCF.cfc" ) ).isTrue();
 		assertThat( meta.get( Key.of( "properties" ) ) instanceof Array ).isTrue();
 		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
 
 		assertThat( meta.get( Key.of( "extends" ) ) ).isInstanceOf( IStruct.class );
 		IStruct extendsMeta = meta.getAsStruct( Key.of( "extends" ) );
-		assertThat( extendsMeta.getAsString( Key.of( "name" ) ) ).isEqualTo( "MyClassMDVistorCFParent" );
-		assertThat( extendsMeta.getAsString( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.ortus.boxlang.compiler.MyClassMDVistorCFParent" );
+		assertThat( extendsMeta.getAsString( Key.of( "name" ) ) ).isEqualTo( "MyClassMDVisitorCFParent" );
+		assertThat( extendsMeta.getAsString( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.ortus.boxlang.compiler.MyClassMDVisitorCFParent" );
 		assertThat( extendsMeta.getAsString( Key.of( "type" ) ) ).isEqualTo( "class" );
 
 		// functions array has two functions
@@ -147,7 +147,7 @@ public class ClassMetadataVisitorTest {
 
 	@Test
 	public void testMetadataVisitorCFTag() {
-		ParsingResult result = new Parser().parse( Paths.get( "src/test/java/ortus/boxlang/compiler/MyClassMDVistorCFTag.cfc" ).toAbsolutePath().toFile() );
+		ParsingResult result = new Parser().parse( Paths.get( "src/test/java/ortus/boxlang/compiler/MyClassMDVisitorCFTag.cfc" ).toAbsolutePath().toFile() );
 		if ( !result.isCorrect() ) {
 			throw new ParseException( result.getIssues(), "" );
 		}
