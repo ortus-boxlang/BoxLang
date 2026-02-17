@@ -14,7 +14,7 @@
  */
 package ortus.boxlang.runtime.bifs.global.math;
 
-import java.util.Random;
+import java.security.SecureRandom;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -60,7 +60,7 @@ public class Rand extends BIF {
 	 * @return A random double between 0 and 1
 	 */
 	public static double _invoke( String algorithm, Long seed ) {
-		Random randomInstance = EncryptionUtil.getRandom( algorithm );
+		SecureRandom randomInstance = EncryptionUtil.getRandom( algorithm );
 		if ( seed != null ) {
 			randomInstance.setSeed( seed );
 		}
