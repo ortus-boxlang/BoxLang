@@ -333,6 +333,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		end									= Key.of( "end" );
 	public static final Key		endRow								= Key.of( "endRow" );
 	public static final Key		enforceExplicitOutput				= Key.of( "enforceExplicitOutput" );
+	public static final Key		enforceUDFTypeChecks				= Key.of( "enforceUDFTypeChecks" );
 	public static final Key		entryPath							= Key.of( "entryPath" );
 	public static final Key		entryPaths							= Key.of( "entryPaths" );
 	public static final Key		environment							= Key.of( "environment" );

@@ -44,6 +44,8 @@
 	// Store the compiled class files on disk for reuse between restarts
 	// If disabled, the class files will be stored in memory only and lost on restart
 	"storeClassFilesOnDisk": true,
+	// This enforces argument type checking and return value type checking for UDFs, closures, and lambdas.
+	"enforceUDFTypeChecks": true,
 	// The default timezone for the runtime; defaults to the JVM timezone if empty
 	// Please use the IANA timezone database values
 	"timezone": "",
