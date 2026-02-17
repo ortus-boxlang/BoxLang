@@ -650,7 +650,7 @@ public class BoxSoapClient implements IReferenceable {
 		    || lower.equals( "withtimeout" )
 		    || lower.equals( "withheaders" )
 		    || lower.equals( "header" )
-		    || lower.equals( "toString" )
+		    || lower.equals( "tostring" )
 		    || lower.equals( "equals" )
 		    || lower.equals( "hashcode" )
 		    || lower.equals( "getclass" );
