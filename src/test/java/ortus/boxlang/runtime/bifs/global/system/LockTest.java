@@ -278,4 +278,39 @@ public class LockTest {
 		assertThat( variables.get( result ) ).isEqualTo( "inthreadafterlock" );
 	}
 
+	@DisplayName( "It can exclusive" )
+	@Test
+	public void testExclusive2() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+			import java.util.concurrent.atomic.AtomicInteger;
+
+			request.threadsInLock = new AtomicInteger( 0 );
+			request.maxThreadsInLock = 0;
+				function doLock( string threadname ) {
+					lock name="createGamesLock/clientID=E2CE1A48-50A0-4C54-A754-C9DCE2F86902" timeout=10 type="exclusive" {
+						println( ">>" & threadname & " acquired lock" );
+						request.threadsInLock.incrementAndGet();
+						request.maxThreadsInLock = max( request.threadsInLock.get(), request.maxThreadsInLock );
+						sleep( 500 );
+						println( "<<" & threadname & " releasing lock" );
+						request.threadsInLock.decrementAndGet();
+					}
+			}
+			bx:loop times=5 index="i" {
+				thread name="Thread #i#" threadNo=i {
+					doLock( "Thread #attributes.threadNo#" );
+				}
+			}
+			thread action="join" name="Thread 1,Thread 2,Thread 3,Thread 4,Thread 5";
+			println( "Max threads in lock: " & request.maxThreadsInLock );
+			if( request.maxThreadsInLock > 1 ) {
+				throw( "Lock was not exclusive! #request.maxThreadsInLock# threads allowed" );
+			}
+		    """,
+		    context );
+		// @formatter:on
+	}
+
 }
