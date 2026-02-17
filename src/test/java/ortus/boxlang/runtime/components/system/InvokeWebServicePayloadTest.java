@@ -234,43 +234,19 @@ public class InvokeWebServicePayloadTest {
 		String wsdlUrl = "http://localhost:" + wireMock.getPort() + "/calculator?wsdl";
 
 		// Execute invoke webservice call with struct parameters
-		try {
-			instance.executeSource(
-			    String.format( """
-			                   params = { intA : 10, intB : 4 };
-			                   bx:invoke
-			                       webservice="%s"
-			                       method="divide"
-			                       argumentCollection=params
-			                       returnVariable="result";
-			                   """, wsdlUrl ),
-			    context );
-		} catch ( Exception e ) {
-			System.err.println( "Exception during SOAP invocation: " + e.getMessage() );
-			e.printStackTrace();
-			throw e;
-		}
+		instance.executeSource(
+		    String.format( """
+		                   params = { intA : 10, intB : 4 };
+		                   bx:invoke
+		                       webservice="%s"
+		                       method="divide"
+		                       argumentCollection=params
+		                       returnVariable="result";
+		                   """, wsdlUrl ),
+		    context );
 
 		// Verify the result
 		assertThat( variables.get( result ) ).isEqualTo( 2.5 );
-
-		// Add a delay to ensure all HTTP requests are processed and logged by WireMock
-		try {
-			Thread.sleep( 500 );  // Increased delay
-		} catch ( InterruptedException e ) {
-			Thread.currentThread().interrupt();
-		}
-
-		// Debug: Print all recorded requests
-		System.out.println( "=== ALL RECORDED REQUESTS ===" );
-		wireMock.findAll( postRequestedFor( urlEqualTo( "/calculator" ) ) ).forEach( request -> {
-			System.out.println( "Request URL: " + request.getUrl() );
-			System.out.println( "Request Headers: " + request.getHeaders() );
-			System.out.println( "Request Body: " + request.getBodyAsString() );
-			System.out.println( "---" );
-		} );
-		System.out.println( "=== END RECORDED REQUESTS ===" );
-
 		// Verify the SOAP request was made correctly
 		wireMock.verify( postRequestedFor( urlEqualTo( "/calculator" ) )
 		    .withHeader( "Content-Type", matching( "text/xml.*" ) )
