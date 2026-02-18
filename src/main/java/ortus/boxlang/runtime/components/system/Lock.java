@@ -141,8 +141,7 @@ public class Lock extends Component {
 		// Will be set to false if we time out
 		boolean acquired;
 		if ( attributes.get( Key.cacheName ) == null ) {
-			ReentrantReadWriteLock lock = getLockByName( lockName );
-			Reference.reachabilityFence( lock );
+			ReentrantReadWriteLock				lock		= getLockByName( lockName );
 			ReentrantReadWriteLock.ReadLock		readLock	= lock.readLock();
 			ReentrantReadWriteLock.WriteLock	writeLock	= lock.writeLock();
 			java.util.concurrent.locks.Lock		lockToUse	= null;
@@ -193,7 +192,16 @@ public class Lock extends Component {
 				} finally {
 					// unlock the lock
 					lockToUse.unlock();
-					lock.getClass();
+					// `lock` must be considered "strongly reachable" until this point.
+					// Runtime analysis can find that we don't reference this
+					// anywhere except to pull the read/write locks out of it, which
+					// themselves do not contain references to `lock`. The net effect
+					// being that, without this reachability fence, `lock` may be considered
+					// collectible during `processBody`, and another thread can come along,
+					// ask for a lock by the current lock's name, see that the WeakReference
+					// containing the lock for that name contains nothing, and create a brand new lock.
+					// Then there are 2+ callers in a single locked section.
+					Reference.reachabilityFence( lock );
 				}
 
 			} catch ( InterruptedException e ) {
