@@ -258,11 +258,9 @@ public class Lock extends Component {
 			if ( lock != null ) {
 				return lock;
 			}
-			// lockRef.reachabilityFence( lockRef );
 
 			// If we reach here, it means the WeakReference was garbage collected between the computeIfAbsent and get calls.
 			// We remove the entry from the map and try again.
-			System.out.println( "Lock [" + lockName + "] was garbage collected. Removing from lockMap and trying again." );
 			lockMap.remove( lockName, lockRef );
 		}
 	}
