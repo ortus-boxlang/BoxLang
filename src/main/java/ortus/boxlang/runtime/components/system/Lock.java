@@ -141,8 +141,7 @@ public class Lock extends Component {
 		// Will be set to false if we time out
 		boolean acquired;
 		if ( attributes.get( Key.cacheName ) == null ) {
-			ReentrantReadWriteLock lock = getLockByName( lockName );
-			Reference.reachabilityFence( lock );
+			ReentrantReadWriteLock				lock		= getLockByName( lockName );
 			ReentrantReadWriteLock.ReadLock		readLock	= lock.readLock();
 			ReentrantReadWriteLock.WriteLock	writeLock	= lock.writeLock();
 			java.util.concurrent.locks.Lock		lockToUse	= null;
@@ -193,7 +192,7 @@ public class Lock extends Component {
 				} finally {
 					// unlock the lock
 					lockToUse.unlock();
-					lock.getClass();
+					Reference.reachabilityFence( lock );
 				}
 
 			} catch ( InterruptedException e ) {
