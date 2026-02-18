@@ -201,7 +201,8 @@ public class ExceptionUtil {
 				    // lambda$_invoke$ means we're in a lambda inside of that same template (Java boxpiler).
 				    // argumentDefaultValue is true when this is next stack AFTER a call to Argument.getDefaultValue()
 				    && ( fileName.contains( "._pseudoConstructor(" ) || fileName.contains( "._invoke(" )
-				        || methodName.startsWith( IBoxpiler.INVOKE_FUNCTION_PREFIX ) || methodName.startsWith( "invokeLambda_" ) || methodName.startsWith( "invokeClosure_" )
+				        || methodName.startsWith( IBoxpiler.INVOKE_FUNCTION_PREFIX ) || methodName.startsWith( "invokeLambda_" )
+				        || methodName.startsWith( "invokeClosure_" )
 				        || ( isInComponent = isComponentBody( methodName ) ) || argumentDefaultValue ) ) {
 
 					// If we're just inside the nested lambda for a component, skip subssequent lines of the stack trace
