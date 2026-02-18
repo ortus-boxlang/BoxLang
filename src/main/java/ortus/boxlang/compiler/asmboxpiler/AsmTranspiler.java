@@ -783,9 +783,9 @@ public class AsmTranspiler extends Transpiler {
 					init		= transform( defaultAnnotation.getValue(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL );
 					initLambda	= List.of( new InsnNode( Opcodes.ACONST_NULL ) );
 				} else {
-					init = List.of( new InsnNode( Opcodes.ACONST_NULL ) );
+					init		= List.of( new InsnNode( Opcodes.ACONST_NULL ) );
 
-					initLambda = AsmHelper.getDefaultExpression( this, defaultAnnotation.getValue() );
+					initLambda	= AsmHelper.getDefaultExpression( this, defaultAnnotation.getValue() );
 				}
 			} else {
 				init		= List.of( new InsnNode( Opcodes.ACONST_NULL ) );

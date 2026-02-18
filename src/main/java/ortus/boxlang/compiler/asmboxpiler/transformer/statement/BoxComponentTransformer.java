@@ -170,15 +170,15 @@ public class BoxComponentTransformer extends AbstractTransformer {
 			return List.of( new InsnNode( Opcodes.ACONST_NULL ) );
 		}
 
-		List<AbstractInsnNode>	nodes				= new ArrayList<>();
+		List<AbstractInsnNode>				nodes			= new ArrayList<>();
 
-		String					methodName			= "componentBody_" + transpiler.incrementAndGetLambdaCounter();
+		String								methodName		= "componentBody_" + transpiler.incrementAndGetLambdaCounter();
 
-		Type					declaringType		= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
+		Type								declaringType	= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
 		    + "/" + transpiler.getProperty( "classname" )
 		    + ";" );
 
-		org.objectweb.asm.tree.ClassNode owningClass = transpiler.getOwningClass();
+		org.objectweb.asm.tree.ClassNode	owningClass		= transpiler.getOwningClass();
 
 		// Generate the static method: static Component.BodyResult componentBody_N(IBoxContext context) { ... }
 		AsmHelper.methodWithContextAndClassLocator( owningClass, methodName, Type.getType( IBoxContext.class ),

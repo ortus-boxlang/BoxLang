@@ -94,15 +94,15 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 	 */
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxLambda	boxLambda			= ( BoxLambda ) node;
-		String		enclosingClassName	= transpiler.getProperty( "classname" );
-		int			lambdaIndex			= transpiler.incrementAndGetLambdaCounter();
-		String		invokerMethodName	= "invokeLambda_" + lambdaIndex;
+		BoxLambda									boxLambda			= ( BoxLambda ) node;
+		String										enclosingClassName	= transpiler.getProperty( "classname" );
+		int											lambdaIndex			= transpiler.incrementAndGetLambdaCounter();
+		String										invokerMethodName	= "invokeLambda_" + lambdaIndex;
 
 		// Reserve our slot in the lambdaInvokers list BEFORE transforming the body
 		// This ensures nested lambdas get correct indices
-		List<Pair<MethodDeclaration, Expression>> lambdaInvokers = ( ( JavaTranspiler ) transpiler ).getLambdaInvokers();
-		int mySlot = lambdaInvokers.size();
+		List<Pair<MethodDeclaration, Expression>>	lambdaInvokers		= ( ( JavaTranspiler ) transpiler ).getLambdaInvokers();
+		int											mySlot				= lambdaInvokers.size();
 		lambdaInvokers.add( null ); // Placeholder
 
 		// Transform arguments
@@ -118,16 +118,16 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 		argumentsArray.setInitializer( argInitializer );
 
 		// Transform annotations
-		Expression annotationStruct = transformAnnotations( boxLambda.getAnnotations() );
+		Expression						annotationStruct	= transformAnnotations( boxLambda.getAnnotations() );
 
-		Map<String, String> values = Map.ofEntries(
+		Map<String, String>				values				= Map.ofEntries(
 		    Map.entry( "enclosingClassName", enclosingClassName ),
 		    Map.entry( "invokerMethodName", invokerMethodName ),
 		    Map.entry( "lambdaIndex", String.valueOf( mySlot ) )
 		);
 
 		// Create the invoker method using javaParser.parseMethodDeclaration
-		String							invokerCode	= PlaceholderHelper.resolve( invokerTemplate, values );
+		String							invokerCode			= PlaceholderHelper.resolve( invokerTemplate, values );
 		ParseResult<MethodDeclaration>	result;
 		try {
 			result = javaParser.parseMethodDeclaration( invokerCode );
@@ -160,8 +160,8 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 		transpiler.popContextName();
 
 		// Create the instantiation expression
-		String					instantiationCode	= PlaceholderHelper.resolve( instantiationTemplate, values );
-		ObjectCreationExpr		instantiationExpr	= ( ObjectCreationExpr ) parseExpression( instantiationCode, values );
+		String				instantiationCode	= PlaceholderHelper.resolve( instantiationTemplate, values );
+		ObjectCreationExpr	instantiationExpr	= ( ObjectCreationExpr ) parseExpression( instantiationCode, values );
 
 		// Replace arguments (position 1) and annotations (position 4) using setArgument
 		instantiationExpr.setArgument( 1, argumentsArray );

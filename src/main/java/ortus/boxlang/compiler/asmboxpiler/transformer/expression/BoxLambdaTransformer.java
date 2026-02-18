@@ -74,9 +74,9 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 		    + ";" );
 
 		// Generate the static invoker method on the owning class
-		ClassNode owningClass = transpiler.getOwningClass();
+		ClassNode	owningClass			= transpiler.getOwningClass();
 
-		int componentCounter = transpiler.getComponentCounter();
+		int			componentCounter	= transpiler.getComponentCounter();
 		transpiler.setComponentCounter( 0 );
 		transpiler.incrementfunctionBodyCounter();
 		AsmHelper.methodWithContextAndClassLocator( owningClass, invokerMethodName, Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ),
@@ -137,7 +137,7 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 		instantiation.addAll(
 		    AsmHelper.array(
 		        Type.getType( BoxMethodDeclarationModifier.class ),
-		        List.<BoxMethodDeclarationModifier> of(),
+		        List.<BoxMethodDeclarationModifier>of(),
 		        ( bmdm, i ) -> List.of(
 		            new FieldInsnNode(
 		                Opcodes.GETSTATIC,

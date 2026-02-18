@@ -112,7 +112,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		    + ";" );
 
 		// Generate the static invoker method on the owning class
-		ClassNode owningClass = transpiler.getOwningClass();
+		ClassNode			owningClass			= transpiler.getOwningClass();
 
 		transpiler.incrementfunctionBodyCounter();
 		AsmHelper.methodWithContextAndClassLocator( owningClass, invokerMethodName, Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ),

@@ -422,13 +422,13 @@ public class AsmHelper {
 	}
 
 	public static List<AbstractInsnNode> getDefaultExpression( AsmTranspiler transpiler, BoxExpression body ) {
-		String					methodName		= "defaultExpr_" + transpiler.incrementAndGetLambdaCounter();
+		String		methodName		= "defaultExpr_" + transpiler.incrementAndGetLambdaCounter();
 
-		Type					declaringType	= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
+		Type		declaringType	= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
 		    + "/" + transpiler.getProperty( "classname" )
 		    + ";" );
 
-		ClassNode				owningClass		= transpiler.getOwningClass();
+		ClassNode	owningClass		= transpiler.getOwningClass();
 
 		// Generate static method: static Object defaultExpr_N(IBoxContext context) { ... }
 		methodWithContextAndClassLocator( owningClass, methodName, Type.getType( IBoxContext.class ),
@@ -438,7 +438,7 @@ public class AsmHelper {
 			    return transpiler.transform( body, TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL );
 		    } );
 
-		List<AbstractInsnNode>	nodes			= new ArrayList<AbstractInsnNode>();
+		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
 
 		// Use INVOKEDYNAMIC to create DefaultExpression from static method reference
 		nodes.add( new InvokeDynamicInsnNode(
@@ -1528,13 +1528,13 @@ public class AsmHelper {
 	}
 
 	public static List<AbstractInsnNode> generateArgumentProducerLambda( Transpiler transpiler, Supplier<List<AbstractInsnNode>> nodeSupplier ) {
-		String					methodName		= "argProducer_" + transpiler.incrementAndGetLambdaCounter();
+		String		methodName		= "argProducer_" + transpiler.incrementAndGetLambdaCounter();
 
-		Type					declaringType	= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
+		Type		declaringType	= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
 		    + "/" + transpiler.getProperty( "classname" )
 		    + ";" );
 
-		ClassNode				owningClass		= transpiler.getOwningClass();
+		ClassNode	owningClass		= transpiler.getOwningClass();
 
 		// Generate static method: static Object argProducer_N(Object context) { ... }
 		methodWithContextAndClassLocator( owningClass, methodName, Type.getType( Object.class ),
@@ -1544,7 +1544,7 @@ public class AsmHelper {
 			    return nodeSupplier.get();
 		    } );
 
-		List<AbstractInsnNode>	nodes			= new ArrayList<AbstractInsnNode>();
+		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
 
 		// Use INVOKEDYNAMIC to create Function<Object, Object> from static method reference
 		nodes.add( new InvokeDynamicInsnNode(

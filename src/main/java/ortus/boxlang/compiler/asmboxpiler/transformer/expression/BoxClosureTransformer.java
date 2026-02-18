@@ -154,7 +154,7 @@ public class BoxClosureTransformer extends AbstractTransformer {
 		instantiation.addAll(
 		    AsmHelper.array(
 		        Type.getType( BoxMethodDeclarationModifier.class ),
-		        List.<BoxMethodDeclarationModifier> of(),
+		        List.<BoxMethodDeclarationModifier>of(),
 		        ( bmdm, i ) -> List.of(
 		            new FieldInsnNode(
 		                Opcodes.GETSTATIC,

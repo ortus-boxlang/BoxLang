@@ -344,8 +344,8 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 			}
 		}
 		// Get the class declaration and defaultMethods field initializer to populate
-		ClassOrInterfaceDeclaration thisClass = entryPoint.getClassByName( classname ).orElseThrow();
-		MethodCallExpr defaultMethodsInit = ( MethodCallExpr ) thisClass.getFieldByName( "defaultMethods" ).orElseThrow()
+		ClassOrInterfaceDeclaration	thisClass			= entryPoint.getClassByName( classname ).orElseThrow();
+		MethodCallExpr				defaultMethodsInit	= ( MethodCallExpr ) thisClass.getFieldByName( "defaultMethods" ).orElseThrow()
 		    .getVariable( 0 ).getInitializer().get();
 
 		// loop over UDF invokers, add the static method to the class, and the function instance to the defaultMethods map
