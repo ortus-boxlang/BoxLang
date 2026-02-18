@@ -313,4 +313,79 @@ public class LockTest {
 		// @formatter:on
 	}
 
+	@DisplayName( "It can avoid race conditions" )
+	@Test
+	public void testAvoidRaceConditions() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				makeGarbage = () => {
+					var z = []
+					for (var i = 0; i < 1000; i++) {
+						z.append({}) // make a bunch of garbage
+					}
+				}
+
+				randlock = () => { // random in the sense that it uses random lock names
+					lock name="#createGUID()#" throwOnTimeout=true timeout=5 {
+						makeGarbage()
+					}
+				}
+
+				sharedInt = createObject("java", "java.util.concurrent.atomic.AtomicInteger").init()
+
+				sharedLock = () => { // shared in the sense that it always uses the same lock name
+					lock name="the-exclusive-lock" throwOnTimeout=true timeout=5 {
+						try {
+							sharedInt.incrementAndGet();
+							sleep(5)
+							if (sharedInt.get() != 1) {
+								throw "whiff (#sharedInt.get()#)"
+							}
+						}
+						finally {
+							sharedInt.decrementAndGet();
+						}
+					}
+				}
+
+				runOne = () => {
+					var fs = []
+					for (var i = 0; i < 500; i++) {
+						var m = ((i) => () => {
+							randLock()
+							randLock()
+							if (i%2) {
+								sharedLock()
+							}
+							randLock()
+							randLock()
+							randLock()
+							randLock()
+							randLock()
+							randLock()
+							if (!(i%2)) {
+								sharedLock()
+							}
+							randLock()
+							randLock()
+							randLock()
+							randLock()
+						})(i);
+
+						fs.append(runAsync(m))
+					}
+
+					for (var f in fs) {
+						f.get()
+					}
+				}
+
+				if (sharedInt.get() != 0) { throw "start conditions sanity check" }
+				runOne()
+		    """,
+		    context );
+		// @formatter:on
+	}
+
 }

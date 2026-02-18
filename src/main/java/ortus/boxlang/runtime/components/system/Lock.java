@@ -43,25 +43,39 @@ import ortus.boxlang.runtime.validation.Validator;
 public class Lock extends Component {
 
 	/**
+	 * A WeakReference that remembers the map key it was stored under, so we can remove
+	 * it from the map in O(1) without iterating when the referent is garbage collected.
+	 */
+	private static class KeyedWeakReference extends WeakReference<ReentrantReadWriteLock> {
+
+		private final String key;
+
+		KeyedWeakReference( String key, ReentrantReadWriteLock referent, ReferenceQueue<ReentrantReadWriteLock> queue ) {
+			super( referent, queue );
+			this.key = key;
+		}
+	}
+
+	/**
 	 * A map of lock names to their corresponding locks. We use a ConcurrentHashMap for thread safety and performance.
 	 * The locks are stored as WeakReferences so that they can be garbage collected when not in use.
 	 */
-	private static ConcurrentHashMap<String, WeakReference<ReentrantReadWriteLock>>	lockMap			= new ConcurrentHashMap<>();
+	private static ConcurrentHashMap<String, KeyedWeakReference>	lockMap			= new ConcurrentHashMap<>();
 
 	/**
 	 * A reference queue to track garbage collected locks. When a lock is garbage collected, its corresponding WeakReference is added to this queue, allowing us to clean up the lockMap.
 	 */
-	private static ReferenceQueue<ReentrantReadWriteLock>							queue			= new ReferenceQueue<>();
+	private static ReferenceQueue<ReentrantReadWriteLock>			queue			= new ReferenceQueue<>();
 
 	/**
 	 * The type of lock to acquire. "readonly" allows multiple requests to read shared data.
 	 */
-	private static final String														READ_ONLY_TYPE	= "readonly";
+	private static final String										READ_ONLY_TYPE	= "readonly";
 
 	/**
 	 * The type of lock to acquire. "exclusive" allows one request to read or write shared data.
 	 */
-	private static final String														EXCLUSIVE_TYPE	= "exclusive";
+	private static final String										EXCLUSIVE_TYPE	= "exclusive";
 
 	/**
 	 * Constructor
@@ -127,7 +141,8 @@ public class Lock extends Component {
 		// Will be set to false if we time out
 		boolean acquired;
 		if ( attributes.get( Key.cacheName ) == null ) {
-			ReentrantReadWriteLock				lock		= getLockByName( lockName );
+			ReentrantReadWriteLock lock = getLockByName( lockName );
+			Reference.reachabilityFence( lock );
 			ReentrantReadWriteLock.ReadLock		readLock	= lock.readLock();
 			ReentrantReadWriteLock.WriteLock	writeLock	= lock.writeLock();
 			java.util.concurrent.locks.Lock		lockToUse	= null;
@@ -178,6 +193,7 @@ public class Lock extends Component {
 				} finally {
 					// unlock the lock
 					lockToUse.unlock();
+					lock.getClass();
 				}
 
 			} catch ( InterruptedException e ) {
@@ -235,16 +251,18 @@ public class Lock extends Component {
 		// For high concurrency, this opts for possibly attempting to create the lock more than once for the
 		// benifit of never locking the entire map.
 		while ( true ) {
-			WeakReference<ReentrantReadWriteLock>	lockRef	= lockMap.computeIfAbsent( lockName,
-			    key -> new WeakReference<>( new ReentrantReadWriteLock(), queue ) );
-			ReentrantReadWriteLock					lock	= lockRef.get();
+			KeyedWeakReference		lockRef	= lockMap.computeIfAbsent( lockName,
+			    key -> new KeyedWeakReference( key, new ReentrantReadWriteLock(), queue ) );
+			ReentrantReadWriteLock	lock	= lockRef.get();
 
 			if ( lock != null ) {
 				return lock;
 			}
+			// lockRef.reachabilityFence( lockRef );
 
 			// If we reach here, it means the WeakReference was garbage collected between the computeIfAbsent and get calls.
 			// We remove the entry from the map and try again.
+			System.out.println( "Lock [" + lockName + "] was garbage collected. Removing from lockMap and trying again." );
 			lockMap.remove( lockName, lockRef );
 		}
 	}
@@ -255,14 +273,17 @@ public class Lock extends Component {
 	private void cleanUp() {
 		Reference<? extends ReentrantReadWriteLock> ref;
 		while ( ( ref = queue.poll() ) != null ) {
-			lockMap.values().remove( ref );
+			// O(1) thread-safe removal using the key stored in the reference.
+			// The two-arg remove ensures we only delete if the value is still this exact reference.
+			KeyedWeakReference keyedRef = ( KeyedWeakReference ) ref;
+			lockMap.remove( keyedRef.key, keyedRef );
 		}
 	}
 
 	/**
 	 * For debugging, get the current hash map of locks.
 	 */
-	public static ConcurrentHashMap<String, WeakReference<ReentrantReadWriteLock>> getLockMap() {
+	public static ConcurrentHashMap<String, KeyedWeakReference> getLockMap() {
 		return lockMap;
 	}
 
