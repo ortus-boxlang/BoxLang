@@ -43,6 +43,8 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.interop.DynamicInteropService;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.net.BoxHttpClient;
 import ortus.boxlang.runtime.scopes.Key;
@@ -502,7 +504,7 @@ public class BoxSoapClient implements IReferenceable {
 		String methodName = name.getName();
 
 		// Check if this is a known SoapClient method
-		if ( isKnownMethod( methodName ) ) {
+		if ( DynamicObject.of( this ).hasMethodNoCase( methodName ) ) {
 			// Return a reference to this client's method - the actual invocation will come via dereferenceAndInvoke
 			return this;
 		}
@@ -538,9 +540,9 @@ public class BoxSoapClient implements IReferenceable {
 		String methodName = name.getName();
 
 		// Check if this is a known SoapClient method
-		if ( isKnownMethod( methodName ) ) {
+		if ( DynamicObject.of( this ).hasMethodNoCase( methodName ) ) {
 			// Handle built-in methods like invoke(), getOperations(), etc.
-			return handleBuiltInMethod( methodName, positionalArguments );
+			return DynamicInteropService.invoke( context, this, methodName, safe, positionalArguments );
 		}
 
 		// Check if this is a SOAP operation
@@ -582,9 +584,8 @@ public class BoxSoapClient implements IReferenceable {
 		String methodName = name.getName();
 
 		// Check if this is a known SoapClient method
-		if ( isKnownMethod( methodName ) ) {
-			// Handle built-in methods like invoke(), getOperations(), etc.
-			return handleBuiltInMethod( methodName, namedArguments );
+		if ( DynamicObject.of( this ).hasMethodNoCase( methodName ) ) {
+			return DynamicInteropService.invoke( context, this, methodName, safe, namedArguments );
 		}
 
 		// Check if this is a SOAP operation
@@ -627,137 +628,6 @@ public class BoxSoapClient implements IReferenceable {
 	@Override
 	public Object assign( IBoxContext context, Key name, Object value ) {
 		throw new BoxRuntimeException( "Cannot assign properties to SOAP client objects" );
-	}
-
-	/**
-	 * Check if a method name is a known SoapClient method
-	 *
-	 * @param methodName The method name to check
-	 *
-	 * @return true if this is a known method
-	 */
-	private boolean isKnownMethod( String methodName ) {
-		String lower = methodName.toLowerCase();
-		return lower.equals( "invoke" )
-		    || lower.equals( "getoperations" )
-		    || lower.equals( "listoperations" )
-		    || lower.equals( "getstatistics" )
-		    || lower.equals( "getstats" )
-		    || lower.equals( "getoperationinfo" )
-		    || lower.equals( "tostruct" )
-		    || lower.equals( "withbasicauth" )
-		    || lower.equals( "withhttpsprotocol" )
-		    || lower.equals( "withtimeout" )
-		    || lower.equals( "withheaders" )
-		    || lower.equals( "header" )
-		    || lower.equals( "tostring" )
-		    || lower.equals( "equals" )
-		    || lower.equals( "hashcode" )
-		    || lower.equals( "getclass" );
-	}
-
-	/**
-	 * Handle built-in method calls
-	 *
-	 * @param methodName The method name
-	 * @param arguments  The arguments (either Object[] or Map<Key, Object>)
-	 *
-	 * @return The method result
-	 */
-	private Object handleBuiltInMethod( String methodName, Object arguments ) {
-		String lower = methodName.toLowerCase();
-
-		switch ( lower ) {
-			case "invoke" :
-				if ( arguments instanceof Object[] args ) {
-					if ( args.length < 1 ) {
-						throw new BoxRuntimeException( "invoke() requires at least 1 argument (operation name)" );
-					}
-					String	operationName	= StringCaster.cast( args[ 0 ] );
-					Object	operationArgs	= args.length > 1 ? args[ 1 ] : null;
-					return invoke( operationName, operationArgs );
-				} else if ( arguments instanceof Map<?, ?> namedArgs ) {
-					// Handle named arguments for invoke()
-					@SuppressWarnings( "unchecked" )
-					Map<Key, Object>	argMap			= ( Map<Key, Object> ) namedArgs;
-					String				operationName	= StringCaster.cast( argMap.get( Key.of( "method" ) ) );
-					if ( operationName == null ) {
-						operationName = StringCaster.cast( argMap.get( Key.of( "operationName" ) ) );
-					}
-					Object operationArgs = argMap.get( Key.of( "arguments" ) );
-					if ( operationArgs == null ) {
-						operationArgs = argMap.get( Key.of( "args" ) );
-					}
-					return invoke( operationName, operationArgs );
-				}
-				throw new BoxRuntimeException( "Invalid arguments for invoke() method" );
-
-			case "getoperations" :
-			case "listoperations" :
-				return getOperations();
-
-			case "getstatistics" :
-			case "getstats" :
-				return getStatistics();
-
-			case "getoperationinfo" :
-				if ( arguments instanceof Object[] args && args.length > 0 ) {
-					String operationName = StringCaster.cast( args[ 0 ] );
-					return getOperationInfo( operationName );
-				} else if ( arguments instanceof Map<?, ?> namedArgs ) {
-					@SuppressWarnings( "unchecked" )
-					Map<Key, Object>	argMap			= ( Map<Key, Object> ) namedArgs;
-					String				operationName	= StringCaster.cast( argMap.get( Key.of( "operationName" ) ) );
-					return getOperationInfo( operationName );
-				}
-				throw new BoxRuntimeException( "getOperationInfo() requires an operation name argument" );
-
-			case "tostruct" :
-				return toStruct();
-
-			case "withbasicauth" :
-				if ( arguments instanceof Object[] args && args.length >= 2 ) {
-					String	username	= StringCaster.cast( args[ 0 ] );
-					String	password	= StringCaster.cast( args[ 1 ] );
-					return withBasicAuth( username, password );
-				} else if ( arguments instanceof Map<?, ?> namedArgs ) {
-					@SuppressWarnings( "unchecked" )
-					Map<Key, Object>	argMap		= ( Map<Key, Object> ) namedArgs;
-					String				username	= StringCaster.cast( argMap.get( Key.of( "username" ) ) );
-					String				password	= StringCaster.cast( argMap.get( Key.of( "password" ) ) );
-					return withBasicAuth( username, password );
-				}
-				throw new BoxRuntimeException( "withBasicAuth() requires username and password arguments" );
-
-			case "header" :
-				if ( arguments instanceof Object[] args && args.length >= 2 ) {
-					String	headerName	= StringCaster.cast( args[ 0 ] );
-					String	headerValue	= StringCaster.cast( args[ 1 ] );
-					return header( headerName, headerValue );
-				} else if ( arguments instanceof Map<?, ?> namedArgs ) {
-					@SuppressWarnings( "unchecked" )
-					Map<Key, Object>	argMap		= ( Map<Key, Object> ) namedArgs;
-					String				headerName	= StringCaster.cast( argMap.get( Key.of( "name" ) ) );
-					String				headerValue	= StringCaster.cast( argMap.get( Key.of( "value" ) ) );
-					return header( headerName, headerValue );
-				}
-				throw new BoxRuntimeException( "header() requires name and value arguments" );
-
-			case "withtimeout" :
-				if ( arguments instanceof Object[] args && args.length >= 1 ) {
-					Integer timeout = IntegerCaster.cast( args[ 0 ] );
-					return withTimeout( timeout );
-				} else if ( arguments instanceof Map<?, ?> namedArgs ) {
-					@SuppressWarnings( "unchecked" )
-					Map<Key, Object>	argMap	= ( Map<Key, Object> ) namedArgs;
-					Integer				timeout	= IntegerCaster.cast( argMap.get( Key.of( "timeout" ) ) );
-					return withTimeout( timeout );
-				}
-				throw new BoxRuntimeException( "withTimeout() requires a timeout value" );
-
-			default :
-				throw new BoxRuntimeException( "Unknown built-in method: " + methodName );
-		}
 	}
 
 	/**
