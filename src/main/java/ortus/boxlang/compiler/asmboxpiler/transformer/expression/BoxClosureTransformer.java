@@ -17,12 +17,15 @@ package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.InvokeDynamicInsnNode;
+import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 
@@ -34,6 +37,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxClosure;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
@@ -41,15 +45,18 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Closure;
+import ortus.boxlang.runtime.types.ClosureDefinition;
 import ortus.boxlang.runtime.types.Function;
-import ortus.boxlang.runtime.types.Function.Access;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.meta.FunctionMeta;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
- * Transform a Lambda in the equivalent Java Class
+ * Transform a Closure using the static method + method handle pattern.
+ * Instead of generating a separate inner class, this generates:
+ * 1. A static invoker method on the enclosing class
+ * 2. An instantiation of ClosureDefinition with a method reference to the static invoker
+ * 3. At runtime, closures.get(index).newInstance(context) creates a Closure wrapping the declaring context
  */
 public class BoxClosureTransformer extends AbstractTransformer {
 
@@ -59,217 +66,30 @@ public class BoxClosureTransformer extends AbstractTransformer {
 
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
-		BoxClosure	boxClosure	= ( BoxClosure ) node;
+		BoxClosure	boxClosure		= ( BoxClosure ) node;
 
-		Type		type		= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
-		    + "/" + transpiler.getProperty( "classname" )
-		    + "$Closure_" + transpiler.incrementAndGetLambdaCounter() + ";" );
+		// Reserve a slot in the closureInstantiations list to prevent nested closures from getting the same index
+		int			closureIndex	= transpiler.getClosureInstantiations().size();
+		transpiler.getClosureInstantiations().add( null );
 
-		ClassNode	classNode	= new ClassNode();
-		classNode.visitSource( transpiler.getProperty( "filePath" ), null );
+		String		invokerMethodName	= "invokeClosure_" + closureIndex;
 
-		AsmHelper.init( classNode, true, type, Type.getType( Closure.class ), methodVisitor -> {
-		} );
-
-		// Add the @BoxByteCodeVersion annotation to the generated class
-		AsmHelper.addBoxByteCodeVersionAnnotation( classNode );
-
-		// create our constructor
-		MethodVisitor contextConstructorVistior = classNode.visitMethod( Opcodes.ACC_PUBLIC,
-		    "<init>",
-		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( IBoxContext.class ) ),
-		    null,
-		    null );
-		contextConstructorVistior.visitCode();
-		contextConstructorVistior.visitVarInsn( Opcodes.ALOAD, 0 );
-		contextConstructorVistior.visitVarInsn( Opcodes.ALOAD, 1 );
-		contextConstructorVistior.visitMethodInsn( Opcodes.INVOKESPECIAL,
-		    Type.getType( Closure.class ).getInternalName(),
-		    "<init>",
-		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( IBoxContext.class ) ),
-		    false );
-		contextConstructorVistior.visitInsn( Opcodes.RETURN );
-		contextConstructorVistior.visitEnd();
-
-		AsmHelper.addStaticFieldGetter( classNode,
-		    type,
-		    "name",
-		    "getName",
-		    Type.getType( Key.class ),
-		    null );
-		AsmHelper.addStaticFieldGetter( classNode,
-		    type,
-		    "arguments",
-		    "getArguments",
-		    Type.getType( Argument[].class ),
-		    null );
-		AsmHelper.addStaticFieldGetter( classNode,
-		    type,
-		    "returnType",
-		    "getReturnType",
-		    Type.getType( String.class ),
-		    "any" );
-		AsmHelper.addStaticFieldGetter( classNode,
-		    type,
-		    "annotations",
-		    "getAnnotations",
-		    Type.getType( IStruct.class ),
-		    null );
-		AsmHelper.addStaticFieldGetter( classNode,
-		    type,
-		    "documentation",
-		    "getDocumentation",
-		    Type.getType( IStruct.class ),
-		    null );
-		AsmHelper.addStaticFieldGetter( classNode,
-		    type,
-		    "access",
-		    "getAccess",
-		    Type.getType( Function.Access.class ),
-		    null );
-
-		Type declaringType = Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
+		Type		declaringType		= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
 		    + "/" + transpiler.getProperty( "classname" )
 		    + ";" );
 
-		// Add metadata cache fields (private static, non-final for lazy init)
-		classNode.visitField( Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
-		    "metadata",
-		    Type.getDescriptor( IStruct.class ),
-		    null,
-		    null ).visitEnd();
-		classNode.visitField( Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
-		    "legacyMetadata",
-		    Type.getDescriptor( IStruct.class ),
-		    null,
-		    null ).visitEnd();
+		// Generate the static invoker method on the owning class
+		ClassNode	owningClass			= transpiler.getOwningClass();
 
-		// Add isClosure, isLambda static fields (closures have isClosure=true, isLambda=false)
-		AsmHelper.addStaticFieldGetter( classNode,
-		    type,
-		    "isClosure",
-		    "isClosure",
-		    Type.BOOLEAN_TYPE,
-		    true );
-		AsmHelper.addStaticFieldGetter( classNode,
-		    type,
-		    "isLambda",
-		    "isLambda",
-		    Type.BOOLEAN_TYPE,
-		    false );
+		boolean		isBlock				= boxClosure.getBody() instanceof BoxStatementBlock;
 
-		// Add getMetaDataStatic() method with double-check locking
-		AsmHelper.addDoubleCheckLockedStaticMethod(
-		    classNode,
-		    type,
-		    "getMetaDataStatic",
-		    "legacyMetadata",
-		    Type.getType( IStruct.class ),
-		    mv -> {
-			    // Function.getMetaDataStatic( class, documentation, annotations, name, returnType, sourceType, access, arguments, isClosure, isLambda, canOutput, modifiers )
-			    mv.visitLdcInsn( type );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "documentation", Type.getDescriptor( IStruct.class ) );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "annotations", Type.getDescriptor( IStruct.class ) );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "name", Type.getDescriptor( Key.class ) );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "returnType", Type.getDescriptor( String.class ) );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, declaringType.getInternalName(), "sourceType", Type.getDescriptor( BoxSourceType.class ) );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, Type.getInternalName( Access.class ), "PUBLIC", Type.getDescriptor( Access.class ) );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "arguments", Type.getDescriptor( Argument[].class ) );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "isClosure", Type.BOOLEAN_TYPE.getDescriptor() );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "isLambda", Type.BOOLEAN_TYPE.getDescriptor() );
-			    mv.visitInsn( Opcodes.ICONST_0 ); // canOutput = false
-			    mv.visitMethodInsn( Opcodes.INVOKESTATIC, Type.getInternalName( java.util.Collections.class ), "emptyList",
-			        Type.getMethodDescriptor( Type.getType( List.class ) ), false );
-			    mv.visitMethodInsn( Opcodes.INVOKESTATIC,
-			        Type.getInternalName( Function.class ),
-			        "getMetaDataStatic",
-			        Type.getMethodDescriptor(
-			            Type.getType( IStruct.class ),
-			            Type.getType( Class.class ),
-			            Type.getType( IStruct.class ),
-			            Type.getType( IStruct.class ),
-			            Type.getType( Key.class ),
-			            Type.getType( String.class ),
-			            Type.getType( BoxSourceType.class ),
-			            Type.getType( Access.class ),
-			            Type.getType( Argument[].class ),
-			            Type.BOOLEAN_TYPE,
-			            Type.BOOLEAN_TYPE,
-			            Type.BOOLEAN_TYPE,
-			            Type.getType( List.class )
-			        ),
-			        false );
-		    }
-		);
-
-		// Add getMetaStatic() method with double-check locking
-		AsmHelper.addDoubleCheckLockedStaticMethod(
-		    classNode,
-		    type,
-		    "getMetaStatic",
-		    "metadata",
-		    Type.getType( IStruct.class ),
-		    mv -> {
-			    // FunctionMeta.generateMeta( class, documentation, annotations, name, returnType, sourceType, access, arguments, isClosure, isLambda, canOutput, modifiers )
-			    mv.visitLdcInsn( type );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "documentation", Type.getDescriptor( IStruct.class ) );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "annotations", Type.getDescriptor( IStruct.class ) );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "name", Type.getDescriptor( Key.class ) );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "returnType", Type.getDescriptor( String.class ) );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, declaringType.getInternalName(), "sourceType", Type.getDescriptor( BoxSourceType.class ) );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, Type.getInternalName( Access.class ), "PUBLIC", Type.getDescriptor( Access.class ) );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "arguments", Type.getDescriptor( Argument[].class ) );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "isClosure", Type.BOOLEAN_TYPE.getDescriptor() );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "isLambda", Type.BOOLEAN_TYPE.getDescriptor() );
-			    mv.visitInsn( Opcodes.ICONST_0 ); // canOutput = false
-			    mv.visitMethodInsn( Opcodes.INVOKESTATIC, Type.getInternalName( java.util.Collections.class ), "emptyList",
-			        Type.getMethodDescriptor( Type.getType( List.class ) ), false );
-			    mv.visitMethodInsn( Opcodes.INVOKESTATIC,
-			        Type.getInternalName( FunctionMeta.class ),
-			        "generateMeta",
-			        Type.getMethodDescriptor(
-			            Type.getType( IStruct.class ),
-			            Type.getType( Class.class ),
-			            Type.getType( IStruct.class ),
-			            Type.getType( IStruct.class ),
-			            Type.getType( Key.class ),
-			            Type.getType( String.class ),
-			            Type.getType( BoxSourceType.class ),
-			            Type.getType( Access.class ),
-			            Type.getType( Argument[].class ),
-			            Type.BOOLEAN_TYPE,
-			            Type.BOOLEAN_TYPE,
-			            Type.BOOLEAN_TYPE,
-			            Type.getType( List.class )
-			        ),
-			        false );
-		    }
-		);
-
-		AsmHelper.addParentGetter( classNode,
-		    declaringType,
-		    "imports",
-		    "getImports",
-		    Type.getType( List.class ) );
-		AsmHelper.addParentGetter( classNode,
-		    declaringType,
-		    "path",
-		    "getRunnablePath",
-		    Type.getType( ResolvedFilePath.class ) );
-		AsmHelper.addParentGetter( classNode,
-		    declaringType,
-		    "sourceType",
-		    "getSourceType",
-		    Type.getType( BoxSourceType.class ) );
-
-		boolean	isBlock				= boxClosure.getBody() instanceof BoxStatementBlock;
-
-		int		componentCounter	= transpiler.getComponentCounter();
+		int			componentCounter	= transpiler.getComponentCounter();
 		transpiler.setComponentCounter( 0 );
 		transpiler.incrementfunctionBodyCounter();
 
 		ReturnValueContext closureReturnContext = isBlock ? ReturnValueContext.EMPTY : ReturnValueContext.VALUE_OR_NULL;
-		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ), false,
+		AsmHelper.methodWithContextAndClassLocator( owningClass, invokerMethodName, Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ),
+		    true,
 		    transpiler, isBlock,
 		    () -> {
 			    List<AbstractInsnNode> bodyNodes = new ArrayList<AbstractInsnNode>();
@@ -291,68 +111,162 @@ public class BoxClosureTransformer extends AbstractTransformer {
 		transpiler.decrementfunctionBodyCounter();
 		transpiler.setComponentCounter( componentCounter );
 
-		AsmHelper.complete( classNode, type, methodVisitor -> {
-			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
-			    Type.getInternalName( Closure.class ),
-			    "defaultName",
-			    Type.getDescriptor( Key.class ) );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "name",
-			    Type.getDescriptor( Key.class ) );
+		// Generate the ClosureDefinition instantiation bytecode
+		List<AbstractInsnNode> instantiation = new ArrayList<>();
 
-			methodVisitor.visitLdcInsn( "any" );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "returnType",
-			    Type.getDescriptor( String.class ) );
-			AsmHelper.array(
-			    Type.getType( Argument.class ),
-			    boxClosure.getArgs().stream().map( decl -> transpiler.transform( decl, TransformerContext.NONE, ReturnValueContext.VALUE ) ).toList() )
-			    .forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "arguments",
-			    Type.getDescriptor( Argument[].class ) );
+		// NEW ClosureDefinition
+		instantiation.add( new TypeInsnNode( Opcodes.NEW, Type.getInternalName( ClosureDefinition.class ) ) );
+		instantiation.add( new InsnNode( Opcodes.DUP ) );
 
-			transpiler.transformAnnotations( boxClosure.getAnnotations() ).forEach( abstractInsnNode -> abstractInsnNode.accept( methodVisitor ) );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "annotations",
-			    Type.getDescriptor( IStruct.class ) );
+		// Arg 1: name (Key) - Closure.defaultName
+		instantiation.add( new FieldInsnNode( Opcodes.GETSTATIC,
+		    Type.getInternalName( Closure.class ),
+		    "defaultName",
+		    Type.getDescriptor( Key.class ) ) );
 
-			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
-			    Type.getInternalName( Struct.class ),
-			    "EMPTY",
-			    Type.getDescriptor( IStruct.class ) );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "documentation",
-			    Type.getDescriptor( IStruct.class ) );
+		// Arg 2: arguments (Argument[])
+		instantiation.addAll(
+		    AsmHelper.array(
+		        Type.getType( Argument.class ),
+		        boxClosure.getArgs().stream().map( decl -> transpiler.transform( decl, TransformerContext.NONE, ReturnValueContext.VALUE ) ).toList()
+		    )
+		);
 
-			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
-			    Type.getInternalName( Function.Access.class ),
-			    "PUBLIC",
-			    Type.getDescriptor( Function.Access.class ) );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "access",
-			    Type.getDescriptor( Function.Access.class ) );
-		} );
+		// Arg 3: returnType (String) - "any"
+		instantiation.add( new LdcInsnNode( "any" ) );
 
-		transpiler.setAuxiliary( type.getClassName(), classNode );
+		// Arg 4: access (Function.Access) - PUBLIC
+		instantiation.add( new FieldInsnNode( Opcodes.GETSTATIC,
+		    Type.getInternalName( Function.Access.class ),
+		    "PUBLIC",
+		    Type.getDescriptor( Function.Access.class ) ) );
 
-		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
+		// Arg 5: annotations (IStruct)
+		instantiation.addAll( transpiler.transformAnnotations( boxClosure.getAnnotations() ) );
 
-		nodes.add( new TypeInsnNode( Opcodes.NEW, type.getInternalName() ) );
-		nodes.add( new InsnNode( Opcodes.DUP ) );
+		// Arg 6: documentation (IStruct) - Struct.EMPTY
+		instantiation.add( new FieldInsnNode( Opcodes.GETSTATIC,
+		    Type.getInternalName( Struct.class ),
+		    "EMPTY",
+		    Type.getDescriptor( IStruct.class ) ) );
 
-		nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
+		// Arg 7: modifiers (List) - empty list
+		instantiation.addAll(
+		    AsmHelper.array(
+		        Type.getType( BoxMethodDeclarationModifier.class ),
+		        List.<BoxMethodDeclarationModifier> of(),
+		        ( bmdm, i ) -> List.of(
+		            new FieldInsnNode(
+		                Opcodes.GETSTATIC,
+		                Type.getInternalName( BoxMethodDeclarationModifier.class ),
+		                bmdm.toString().toUpperCase(),
+		                Type.getDescriptor( BoxMethodDeclarationModifier.class )
+		            )
+		        )
+		    )
+		);
+		instantiation.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+		    Type.getInternalName( List.class ),
+		    "of",
+		    Type.getMethodDescriptor( Type.getType( List.class ), Type.getType( Object[].class ) ),
+		    true ) );
 
-		nodes.add( new MethodInsnNode( Opcodes.INVOKESPECIAL,
-		    type.getInternalName(),
+		// Arg 8: defaultOutput (boolean) - true
+		instantiation.add( new InsnNode( Opcodes.ICONST_1 ) );
+
+		// Arg 9: imports (List) - from enclosing class static field
+		instantiation.add( new FieldInsnNode( Opcodes.GETSTATIC,
+		    declaringType.getInternalName(),
+		    "imports",
+		    Type.getDescriptor( List.class ) ) );
+
+		// Arg 10: sourceType (BoxSourceType) - from enclosing class static field
+		instantiation.add( new FieldInsnNode( Opcodes.GETSTATIC,
+		    declaringType.getInternalName(),
+		    "sourceType",
+		    Type.getDescriptor( BoxSourceType.class ) ) );
+
+		// Arg 11: path (ResolvedFilePath) - from enclosing class static field
+		instantiation.add( new FieldInsnNode( Opcodes.GETSTATIC,
+		    declaringType.getInternalName(),
+		    "path",
+		    Type.getDescriptor( ResolvedFilePath.class ) ) );
+
+		// Arg 12: method reference - ClassName::invokerMethodName as Function<FunctionBoxContext, Object>
+		instantiation.add( new InvokeDynamicInsnNode(
+		    "apply",
+		    "()Ljava/util/function/Function;",
+		    new Handle(
+		        Opcodes.H_INVOKESTATIC,
+		        "java/lang/invoke/LambdaMetafactory",
+		        "metafactory",
+		        "(Ljava/lang/invoke/MethodHandles$Lookup;"
+		            + "Ljava/lang/String;"
+		            + "Ljava/lang/invoke/MethodType;"
+		            + "Ljava/lang/invoke/MethodType;"
+		            + "Ljava/lang/invoke/MethodHandle;"
+		            + "Ljava/lang/invoke/MethodType;)"
+		            + "Ljava/lang/invoke/CallSite;",
+		        false
+		    ),
+		    Type.getMethodType( "(Ljava/lang/Object;)Ljava/lang/Object;" ),
+		    new Handle(
+		        Opcodes.H_INVOKESTATIC,
+		        declaringType.getInternalName(),
+		        invokerMethodName,
+		        "(Lortus/boxlang/runtime/context/FunctionBoxContext;)Ljava/lang/Object;",
+		        false
+		    ),
+		    Type.getMethodType( "(Lortus/boxlang/runtime/context/FunctionBoxContext;)Ljava/lang/Object;" )
+		) );
+
+		// INVOKESPECIAL ClosureDefinition.<init>(Key, Argument[], String, Access, IStruct, IStruct, List, boolean, List, BoxSourceType, ResolvedFilePath,
+		// Function)V
+		instantiation.add( new MethodInsnNode( Opcodes.INVOKESPECIAL,
+		    Type.getInternalName( ClosureDefinition.class ),
 		    "<init>",
-		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( IBoxContext.class ) ),
+		    Type.getMethodDescriptor(
+		        Type.VOID_TYPE,
+		        Type.getType( Key.class ),
+		        Type.getType( Argument[].class ),
+		        Type.getType( String.class ),
+		        Type.getType( Function.Access.class ),
+		        Type.getType( IStruct.class ),
+		        Type.getType( IStruct.class ),
+		        Type.getType( List.class ),
+		        Type.BOOLEAN_TYPE,
+		        Type.getType( List.class ),
+		        Type.getType( BoxSourceType.class ),
+		        Type.getType( ResolvedFilePath.class ),
+		        Type.getType( java.util.function.Function.class )
+		    ),
+		    false ) );
+
+		// Store the ClosureDefinition instantiation bytecode in the reserved slot
+		transpiler.getClosureInstantiations().set( closureIndex, instantiation );
+
+		// Return: closures.get(closureIndex).newInstance(context)
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+
+		// closures.get(closureIndex)
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
+		    declaringType.getInternalName(),
+		    "closures",
+		    Type.getDescriptor( List.class ) ) );
+		nodes.add( new LdcInsnNode( closureIndex ) );
+		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+		    Type.getInternalName( List.class ),
+		    "get",
+		    Type.getMethodDescriptor( Type.getType( Object.class ), Type.INT_TYPE ),
+		    true ) );
+		nodes.add( new TypeInsnNode( Opcodes.CHECKCAST, Type.getInternalName( ClosureDefinition.class ) ) );
+
+		// .newInstance(context)
+		nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
+		nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
+		    Type.getInternalName( ClosureDefinition.class ),
+		    "newInstance",
+		    Type.getMethodDescriptor( Type.getType( Closure.class ), Type.getType( IBoxContext.class ) ),
 		    false ) );
 
 		return AsmHelper.addLineNumberLabels( nodes, node );

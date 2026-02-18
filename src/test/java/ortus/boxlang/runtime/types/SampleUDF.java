@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.types;
 import java.nio.file.Path;
 import java.util.List;
 
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.loader.ImportDefinition;
@@ -72,6 +73,10 @@ public class SampleUDF extends UDF {
 
 	public BoxSourceType getSourceType() {
 		return BoxSourceType.BOXSCRIPT;
+	}
+
+	public List<BoxMethodDeclarationModifier> getModifiers() {
+		return List.of();
 	}
 
 	public SampleUDF( Access access, Key name, String returnType, Argument[] arguments, Object returnVal ) {

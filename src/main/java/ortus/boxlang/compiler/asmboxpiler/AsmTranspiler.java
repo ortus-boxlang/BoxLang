@@ -499,6 +499,11 @@ public class AsmTranspiler extends Transpiler {
 		    Type.getType( BoxSourceType.class ),
 		    null );
 
+		// Add udfs, lambdas, closures static fields for the new function compilation pattern
+		AsmHelper.addNullStaticField( classNode, "udfs", Type.getType( Map.class ), false );
+		AsmHelper.addNullStaticField( classNode, "lambdas", Type.getType( List.class ), false );
+		AsmHelper.addNullStaticField( classNode, "closures", Type.getType( List.class ), false );
+
 		AsmHelper.methodWithContextAndClassLocator(
 		    classNode,
 		    "_invoke",
@@ -571,6 +576,49 @@ public class AsmTranspiler extends Transpiler {
 			    type.getInternalName(),
 			    "keys",
 			    Type.getDescriptor( Key[].class ) );
+
+			// Initialize udfs = new LinkedHashMap<>() and populate with UDF instances
+			methodVisitor.visitTypeInsn( Opcodes.NEW, Type.getInternalName( java.util.LinkedHashMap.class ) );
+			methodVisitor.visitInsn( Opcodes.DUP );
+			methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL, Type.getInternalName( java.util.LinkedHashMap.class ), "<init>",
+			    Type.getMethodDescriptor( Type.VOID_TYPE ), false );
+			for ( var entry : getUDFInstantiations().entrySet() ) {
+				methodVisitor.visitInsn( Opcodes.DUP );
+				createKey( entry.getKey().getName() ).forEach( n -> n.accept( methodVisitor ) );
+				entry.getValue().forEach( n -> n.accept( methodVisitor ) );
+				methodVisitor.visitMethodInsn( Opcodes.INVOKEINTERFACE, Type.getInternalName( Map.class ), "put",
+				    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( Object.class ), Type.getType( Object.class ) ), true );
+				methodVisitor.visitInsn( Opcodes.POP );
+			}
+			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "udfs", Type.getDescriptor( Map.class ) );
+
+			// Initialize lambdas = new ArrayList<>() and populate with Lambda instances
+			methodVisitor.visitTypeInsn( Opcodes.NEW, Type.getInternalName( java.util.ArrayList.class ) );
+			methodVisitor.visitInsn( Opcodes.DUP );
+			methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL, Type.getInternalName( java.util.ArrayList.class ), "<init>",
+			    Type.getMethodDescriptor( Type.VOID_TYPE ), false );
+			for ( List<AbstractInsnNode> lambdaInst : getLambdaInstantiations() ) {
+				methodVisitor.visitInsn( Opcodes.DUP );
+				lambdaInst.forEach( n -> n.accept( methodVisitor ) );
+				methodVisitor.visitMethodInsn( Opcodes.INVOKEINTERFACE, Type.getInternalName( List.class ), "add",
+				    Type.getMethodDescriptor( Type.BOOLEAN_TYPE, Type.getType( Object.class ) ), true );
+				methodVisitor.visitInsn( Opcodes.POP );
+			}
+			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "lambdas", Type.getDescriptor( List.class ) );
+
+			// Initialize closures = new ArrayList<>() and populate with ClosureDefinition instances
+			methodVisitor.visitTypeInsn( Opcodes.NEW, Type.getInternalName( java.util.ArrayList.class ) );
+			methodVisitor.visitInsn( Opcodes.DUP );
+			methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL, Type.getInternalName( java.util.ArrayList.class ), "<init>",
+			    Type.getMethodDescriptor( Type.VOID_TYPE ), false );
+			for ( List<AbstractInsnNode> closureInst : getClosureInstantiations() ) {
+				methodVisitor.visitInsn( Opcodes.DUP );
+				closureInst.forEach( n -> n.accept( methodVisitor ) );
+				methodVisitor.visitMethodInsn( Opcodes.INVOKEINTERFACE, Type.getInternalName( List.class ), "add",
+				    Type.getMethodDescriptor( Type.BOOLEAN_TYPE, Type.getType( Object.class ) ), true );
+				methodVisitor.visitInsn( Opcodes.POP );
+			}
+			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "closures", Type.getDescriptor( List.class ) );
 		} );
 
 		return classNode;
@@ -737,25 +785,7 @@ public class AsmTranspiler extends Transpiler {
 				} else {
 					init = List.of( new InsnNode( Opcodes.ACONST_NULL ) );
 
-					Type		type		= Type.getType( "L" + getProperty( "packageName" ).replace( '.', '/' )
-					    + "/" + getProperty( "classname" )
-					    + "$Lambda_" + incrementAndGetLambdaCounter() + ";" );
-
-					ClassNode	classNode	= new ClassNode();
-					AsmHelper.init( classNode, false, type, Type.getType( Object.class ), methodVisitor -> {
-					}, Type.getType( DefaultExpression.class ) );
-					AsmHelper.methodWithContextAndClassLocator( classNode, "evaluate", Type.getType( IBoxContext.class ), Type.getType( Object.class ), false,
-					    this, false,
-					    () -> {
-						    List<AbstractInsnNode> body = transform( defaultAnnotation.getValue(), TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL );
-						    return body;
-					    } );
-					setAuxiliary( type.getClassName(), classNode );
-
-					initLambda = List.of(
-					    new TypeInsnNode( Opcodes.NEW, type.getInternalName() ),
-					    new InsnNode( Opcodes.DUP ),
-					    new MethodInsnNode( Opcodes.INVOKESPECIAL, type.getInternalName(), "<init>", Type.getMethodDescriptor( Type.VOID_TYPE ), false ) );
+					initLambda = AsmHelper.getDefaultExpression( this, defaultAnnotation.getValue() );
 				}
 			} else {
 				init		= List.of( new InsnNode( Opcodes.ACONST_NULL ) );
