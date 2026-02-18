@@ -24,9 +24,9 @@ import java.io.IOException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.body.VariableDeclarator;
+import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.ObjectCreationExpr;
 
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
@@ -37,10 +37,11 @@ import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.parser.BoxParser;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
+import ortus.boxlang.runtime.util.Pair;
 
 public class TestLambda extends TestBase {
 
-	private Node transformLambda( String expression ) throws IOException {
+	private Pair<MethodDeclaration, Expression> transformLambda( String expression ) throws IOException {
 		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseExpression( expression );
 		assertTrue( result.isCorrect() );
@@ -52,7 +53,7 @@ public class TestLambda extends TestBase {
 		transpiler.setProperty( "mappingPath", "" );
 		transpiler.setProperty( "relativePath", "" );
 		transpiler.transform( result.getRoot() );
-		return transpiler.getCallables().get( 0 );
+		return transpiler.getLambdaInvokers().get( 0 );
 	}
 
 	@Test
@@ -80,11 +81,27 @@ public class TestLambda extends TestBase {
 			} );
 		} );
 
-		CompilationUnit		javaAST		= ( CompilationUnit ) transformLambda( code );
-		VariableDeclarator	arguments	= javaAST.getType( 0 ).getFieldByName( "arguments" ).get().getVariable( 0 );
-		Assertions.assertEquals( 2, arguments.getInitializer().get().asArrayInitializerExpr().getValues().size() );
-		VariableDeclarator annotations = javaAST.getType( 0 ).getFieldByName( "annotations" ).get().getVariable( 0 );
+		// With the new inline lambda architecture, lambdas are stored as Pair<MethodDeclaration, Expression>
+		// The Expression is the "new Lambda(...)" instantiation expression
+		Pair<MethodDeclaration, Expression>	lambdaPair		= transformLambda( code );
+		MethodDeclaration					invokerMethod	= lambdaPair.getFirst();
+		Expression							instantiation	= lambdaPair.getSecond();
 
+		// Verify the invoker method exists
+		Assertions.assertNotNull( invokerMethod );
+		Assertions.assertTrue( invokerMethod.getNameAsString().startsWith( "invokeLambda_" ) );
+
+		// Verify the instantiation expression is a new Lambda(...) call
+		Assertions.assertTrue( instantiation instanceof ObjectCreationExpr );
+		ObjectCreationExpr newLambda = ( ObjectCreationExpr ) instantiation;
+		Assertions.assertEquals( "Lambda", newLambda.getType().getNameAsString() );
+
+		// The Lambda constructor has 12 arguments; argument 2 (index 1) is the Argument[] array
+		// new Lambda(name, arguments, returnType, access, annotations, documentation, modifiers, defaultOutput, imports, sourceType, path, invoker)
+		Expression argumentsExpr = newLambda.getArguments().get( 1 );
+		Assertions.assertTrue( argumentsExpr.isArrayCreationExpr() );
+		// The array should have 2 Argument elements
+		Assertions.assertEquals( 2, argumentsExpr.asArrayCreationExpr().getInitializer().get().getValues().size() );
 	}
 
 }

@@ -593,7 +593,7 @@ public class BoxClassSupport {
 		    thisClass.getSuperClass(),
 		    thisClass.getInterfaces(),
 		    thisClass.getAbstractMethods(),
-		    thisClass.getCompileTimeMethods(),
+		    thisClass.getUDFs(),
 		    thisClass.getAnnotations(),
 		    thisClass.getDocumentation(),
 		    thisClass.getProperties(),
@@ -630,7 +630,7 @@ public class BoxClassSupport {
 	    DynamicObject superClass,
 	    List<BoxInterface> interfaces,
 	    Map<Key, AbstractFunction> abstractMethods,
-	    Map<Key, Class<? extends UDF>> compileTimeMethods,
+	    Map<Key, ? extends Function> udfs,
 	    IStruct annotations,
 	    IStruct documentation,
 	    Map<Key, ortus.boxlang.runtime.types.Property> properties,
@@ -644,8 +644,8 @@ public class BoxClassSupport {
 
 		// Assemble the functions
 		var functions = new ArrayList<Object>();
-		for ( var fun : compileTimeMethods.values() ) {
-			functions.add( DynamicObject.of( fun ).invokeStatic( runtime.getRuntimeContext(), "getMetaDataStatic" ) );
+		for ( var fun : udfs.values() ) {
+			functions.add( fun.getMetaData() );
 		}
 
 		// Add all static methods as well, if any

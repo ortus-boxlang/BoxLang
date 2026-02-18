@@ -35,7 +35,6 @@ import ortus.boxlang.runtime.types.AbstractFunction;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableArray;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
@@ -82,7 +81,7 @@ public class ClassMeta extends BoxMeta<IClassRunnable> {
 		    target.getSuperClass(),
 		    target.getInterfaces(),
 		    target.getAbstractMethods(),
-		    target.getCompileTimeMethods(),
+		    target.getUDFs(),
 		    target.getAnnotations(),
 		    target.getDocumentation(),
 		    target.getProperties(),
@@ -93,18 +92,18 @@ public class ClassMeta extends BoxMeta<IClassRunnable> {
 	/**
 	 * Generate metadata for a class
 	 *
-	 * @param targetClass        The class reference (for future use)
-	 * @param name               The class name key
-	 * @param sourceType         The source type of the class
-	 * @param runnablePath       The path to the class file
-	 * @param superClass         The super class, if any
-	 * @param interfaces         The list of interfaces implemented
-	 * @param abstractMethods    The abstract methods defined
-	 * @param compileTimeMethods The methods known at compile time
-	 * @param annotations        The class annotations
-	 * @param documentation      The class documentation
-	 * @param properties         The class properties
-	 * @param staticScope        The static scope
+	 * @param targetClass     The class reference (for future use)
+	 * @param name            The class name key
+	 * @param sourceType      The source type of the class
+	 * @param runnablePath    The path to the class file
+	 * @param superClass      The super class, if any
+	 * @param interfaces      The list of interfaces implemented
+	 * @param abstractMethods The abstract methods defined
+	 * @param udfs            The UDFs defined in the class
+	 * @param annotations     The class annotations
+	 * @param documentation   The class documentation
+	 * @param properties      The class properties
+	 * @param staticScope     The static scope
 	 *
 	 * @return The metadata as a struct
 	 */
@@ -116,7 +115,7 @@ public class ClassMeta extends BoxMeta<IClassRunnable> {
 	    DynamicObject superClass,
 	    List<BoxInterface> interfaces,
 	    Map<Key, AbstractFunction> abstractMethods,
-	    Map<Key, Class<? extends UDF>> compileTimeMethods,
+	    Map<Key, ? extends Function> udfs,
 	    IStruct annotations,
 	    IStruct documentation,
 	    Map<Key, ortus.boxlang.runtime.types.Property> properties,
@@ -126,10 +125,10 @@ public class ClassMeta extends BoxMeta<IClassRunnable> {
 		var mdFunctions = new ArrayList<Object>();
 
 		// Micro-optimize list allocation
-		mdFunctions.ensureCapacity( compileTimeMethods.size() );
-		// Iterate and add
-		for ( var fun : compileTimeMethods.values() ) {
-			mdFunctions.add( DynamicObject.of( fun ).invokeStatic( BoxRuntime.getInstance().getRuntimeContext(), "getMetaStatic" ) );
+		mdFunctions.ensureCapacity( udfs.size() );
+		// Iterate and add UDF metadata
+		for ( var fun : udfs.values() ) {
+			mdFunctions.add( ( ( FunctionMeta ) fun.getBoxMeta() ).meta );
 		}
 
 		// Add all static methods as well, if any

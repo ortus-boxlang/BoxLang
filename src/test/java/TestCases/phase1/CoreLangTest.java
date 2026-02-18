@@ -6251,4 +6251,42 @@ public class CoreLangTest {
 
 	}
 
+	@Test
+	public void testUDFCosureLamdbdaScript() {
+
+		instance.executeSource(
+		    """
+		     function foo( required string arg ) {
+		        	return arg;
+		     }
+		     bar = arg => arg;
+		     baz = arg -> arg;
+		    println( foo( "test" ) );
+		    println( baz( "test2" ) );
+		    println( baz( "test3" ) );
+		                    """,
+		    context
+		);
+
+	}
+
+	@Test
+	public void testNotAStatement() {
+
+		instance.executeSource(
+		    """
+		    columns = "foo,bar";
+		    columns.listEach( (c) => {
+		    	c = "*";
+		    	listFind( "a",  "a" )
+		    	|| c == "*"
+		    	|| throw( message="boom" );
+		    } );
+
+		                          """,
+		    context
+		);
+
+	}
+
 }

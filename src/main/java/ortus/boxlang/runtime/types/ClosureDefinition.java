@@ -22,42 +22,34 @@ import java.util.List;
 import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
- * Represents a Lambda, which is a function, but has less data than a UDF and performs NO scope lookups outside of itself.
- * Lambdas aim to be "pure" functions, by
- * - being deterministic (same inputs always produce the same output)
- * - having no side effects (no scope lookups outside of itself)
- * - being Unmodifiable (this requires you to pass Unmodifiable arguments to the lambda)
+ * Represents a closure, which is a function, but has less data than a UDF and also retains a reference to the declaring context.
  */
-public class Lambda extends CompiledFunction {
-
-	public static final Key defaultName = Key.of( "Lambda" );
-
-	public Lambda() {
-		super();
-	}
+public class ClosureDefinition extends CompiledFunction {
 
 	/**
 	 * Constructor
 	 *
-	 * @param name          The name of the function
-	 * @param arguments     The arguments of the function
-	 * @param returnType    The return type of the function
-	 * @param access        The access modifier of the function
-	 * @param annotations   The annotations of the function
-	 * @param documentation The documentation of the function
-	 * @param modifiers     The modifiers of the function
-	 * @param defaultOutput Whether the function should output by default
-	 * @param imports       The imports for this function
-	 * @param sourceType    The source type of the function
-	 * @param runnablePath  The path to the runnable
-	 * @param invoker       The functional interface to invoke the function logic
+	 * @param declaringContext The context in which this closure was declared
+	 * @param name             The name of the function
+	 * @param arguments        The arguments of the function
+	 * @param returnType       The return type of the function
+	 * @param access           The access modifier of the function
+	 * @param annotations      The annotations of the function
+	 * @param documentation    The documentation of the function
+	 * @param modifiers        The modifiers of the function
+	 * @param defaultOutput    Whether the function should output by default
+	 * @param imports          The imports for this function
+	 * @param sourceType       The source type of the function
+	 * @param runnablePath     The path to the runnable
+	 * @param invoker          The functional interface to invoke the function logic
 	 */
-	public Lambda(
+	public ClosureDefinition(
 	    Key name,
 	    Argument[] arguments,
 	    String returnType,
@@ -88,13 +80,14 @@ public class Lambda extends CompiledFunction {
 	}
 
 	/**
-	 * Get the BoxLang type name for this type
+	 * Get a new instance of this closure definition with the given declaring context.
 	 * 
-	 * @return The BoxLang type name
+	 * @param declaringContext
+	 * 
+	 * @return A new Closure instance with the given declaring context and this definition as the original definition.
 	 */
-	@Override
-	public String getBoxTypeName() {
-		return "Lambda";
+	public Closure newInstance( IBoxContext declaringContext ) {
+		return new Closure( declaringContext, this );
 	}
 
 }

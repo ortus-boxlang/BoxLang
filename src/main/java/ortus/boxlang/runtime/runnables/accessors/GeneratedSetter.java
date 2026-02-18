@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.runnables.accessors;
 import java.nio.file.Path;
 import java.util.List;
 
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.loader.ImportDefinition;
@@ -150,6 +151,11 @@ public class GeneratedSetter extends UDF {
 	@Override
 	public BoxSourceType getSourceType() {
 		return sourceType;
+	}
+
+	@Override
+	public List<BoxMethodDeclarationModifier> getModifiers() {
+		return List.of();
 	}
 
 }

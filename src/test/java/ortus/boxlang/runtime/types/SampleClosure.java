@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.types;
 import java.nio.file.Path;
 import java.util.List;
 
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -71,6 +72,10 @@ public class SampleClosure extends Closure {
 
 	public BoxSourceType getSourceType() {
 		return BoxSourceType.BOXSCRIPT;
+	}
+
+	public List<BoxMethodDeclarationModifier> getModifiers() {
+		return List.of();
 	}
 
 	public SampleClosure( Argument[] arguments, IBoxContext declaringContext, Object returnVal ) {

@@ -1,5 +1,10 @@
 package ortus.boxlang.compiler.asmboxpiler;
 
+import java.lang.invoke.CallSite;
+import java.lang.invoke.LambdaMetafactory;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -13,6 +18,7 @@ import java.util.stream.Collectors;
 
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.FieldVisitor;
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -21,6 +27,7 @@ import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.InvokeDynamicInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.LineNumberNode;
@@ -44,6 +51,7 @@ import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxType;
+import ortus.boxlang.compiler.asmboxpiler.MethodContextTracker.VarStore;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -414,69 +422,54 @@ public class AsmHelper {
 	}
 
 	public static List<AbstractInsnNode> getDefaultExpression( AsmTranspiler transpiler, BoxExpression body ) {
-		Type		type		= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
+		String		methodName		= "defaultExpr_" + transpiler.incrementAndGetLambdaCounter();
+
+		Type		declaringType	= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
 		    + "/" + transpiler.getProperty( "classname" )
-		    + "$Lambda_" + transpiler.incrementAndGetLambdaCounter() + ";" );
+		    + ";" );
 
-		ClassNode	classNode	= new ClassNode();
-		classNode.visitSource( transpiler.getProperty( "filePath" ), null );
+		ClassNode	owningClass		= transpiler.getOwningClass();
 
-		classNode.visit(
-		    Opcodes.V17,
-		    Opcodes.ACC_PUBLIC,
-		    type.getInternalName(),
-		    null,
-		    Type.getInternalName( Object.class ),
-		    new String[] { Type.getInternalName( DefaultExpression.class ) } );
-
-		MethodVisitor initVisitor = classNode.visitMethod( Opcodes.ACC_PUBLIC,
-		    "<init>",
-		    Type.getMethodDescriptor( Type.VOID_TYPE ),
-		    null,
-		    null );
-		initVisitor.visitCode();
-		initVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
-		initVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL,
-		    Type.getInternalName( Object.class ),
-		    "<init>",
-		    Type.getMethodDescriptor( Type.VOID_TYPE ),
-		    false );
-		initVisitor.visitInsn( Opcodes.RETURN );
-		initVisitor.visitEnd();
-
-		MethodContextTracker t = new MethodContextTracker( false );
-		transpiler.addMethodContextTracker( t );
-		// Object evaluate( IBoxContext context );
-		MethodVisitor methodVisitor = classNode.visitMethod(
-		    Opcodes.ACC_PUBLIC,
-		    "evaluate",
-		    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( IBoxContext.class ) ),
-		    null,
-		    null );
-		methodVisitor.visitCode();
-
-		t.trackNewContext();
-
-		transpiler.transform( body, TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL )
-		    .forEach( ( ins ) -> ins.accept( methodVisitor ) );
-
-		methodVisitor.visitInsn( Opcodes.ARETURN );
-		methodVisitor.visitMaxs( 0, 0 );
-		methodVisitor.visitEnd();
-
-		transpiler.popMethodContextTracker();
-
-		transpiler.setAuxiliary( type.getClassName(), classNode );
+		// Generate static method: static Object defaultExpr_N(IBoxContext context) { ... }
+		methodWithContextAndClassLocator( owningClass, methodName, Type.getType( IBoxContext.class ),
+		    Type.getType( Object.class ), true,
+		    transpiler, false,
+		    () -> {
+			    return transpiler.transform( body, TransformerContext.NONE, ReturnValueContext.VALUE_OR_NULL );
+		    } );
 
 		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
 
-		nodes.add( new TypeInsnNode( Opcodes.NEW, type.getInternalName() ) );
-		nodes.add( new InsnNode( Opcodes.DUP ) );
-		nodes.add( new MethodInsnNode( Opcodes.INVOKESPECIAL,
-		    type.getInternalName(),
-		    "<init>",
-		    Type.getMethodDescriptor( Type.VOID_TYPE ),
-		    false ) );
+		// Use INVOKEDYNAMIC to create DefaultExpression from static method reference
+		nodes.add( new InvokeDynamicInsnNode(
+		    "evaluate",
+		    "()" + Type.getDescriptor( DefaultExpression.class ),
+		    new Handle(
+		        Opcodes.H_INVOKESTATIC,
+		        "java/lang/invoke/LambdaMetafactory",
+		        "metafactory",
+		        Type.getMethodDescriptor(
+		            Type.getType( CallSite.class ),
+		            Type.getType( MethodHandles.Lookup.class ),
+		            Type.getType( String.class ),
+		            Type.getType( MethodType.class ),
+		            Type.getType( MethodType.class ),
+		            Type.getType( MethodHandle.class ),
+		            Type.getType( MethodType.class )
+		        ),
+		        false
+		    ),
+		    Type.getMethodType( "(" + Type.getDescriptor( IBoxContext.class ) + ")" + Type.getDescriptor( Object.class ) ),
+		    new Handle(
+		        Opcodes.H_INVOKESTATIC,
+		        declaringType.getInternalName(),
+		        methodName,
+		        "(" + Type.getDescriptor( IBoxContext.class ) + ")" + Type.getDescriptor( Object.class ),
+		        false
+		    ),
+		    Type.getMethodType( "(" + Type.getDescriptor( IBoxContext.class ) + ")" + Type.getDescriptor( Object.class ) )
+		) );
+
 		return nodes;
 	}
 
@@ -1267,6 +1260,15 @@ public class AsmHelper {
 					}
 					yield delta;
 				}
+				if ( node instanceof InvokeDynamicInsnNode indyNode ) {
+					Type	methodType	= Type.getMethodType( indyNode.desc );
+					int		delta		= -methodType.getArgumentTypes().length;
+					// InvokeDynamic has no receiver to pop
+					if ( methodType.getReturnType() != Type.VOID_TYPE ) {
+						delta++; // Push return value
+					}
+					yield delta;
+				}
 				// For other instructions, assume neutral
 				yield 0;
 			}
@@ -1475,7 +1477,9 @@ public class AsmHelper {
 		    "getInstance",
 		    Type.getMethodDescriptor( Type.getType( ClassLocator.class ) ),
 		    false );
-		tracker.storeNewVariable( Opcodes.ASTORE ).nodes().forEach( ( node ) -> node.accept( methodVisitor ) );
+		VarStore classLocatorStore = tracker.storeNewVariable( Opcodes.ASTORE );
+		tracker.setClassLocatorSlot( classLocatorStore.index() );
+		classLocatorStore.nodes().forEach( ( node ) -> node.accept( methodVisitor ) );
 
 		var				nodes		= supplier.get();
 
@@ -1489,7 +1493,7 @@ public class AsmHelper {
 
 		// Apply method length guard to split large methods if needed
 		// Pass the tracker so we can check for try-catch blocks (which can't be split across methods)
-		var				processedNodes	= methodLengthGuard( mainType, nodes, classNode, name, parameterType, returnType, transpiler, tracker );
+		var				processedNodes	= methodLengthGuard( mainType, nodes, classNode, name, parameterType, returnType, transpiler, tracker, isStatic );
 
 		// Collect labels that remain in the processed nodes (after potential splitting)
 		Set<LabelNode>	remainingLabels	= new HashSet<>();
@@ -1524,67 +1528,54 @@ public class AsmHelper {
 	}
 
 	public static List<AbstractInsnNode> generateArgumentProducerLambda( Transpiler transpiler, Supplier<List<AbstractInsnNode>> nodeSupplier ) {
-		Type		type		= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
+		String		methodName		= "argProducer_" + transpiler.incrementAndGetLambdaCounter();
+
+		Type		declaringType	= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
 		    + "/" + transpiler.getProperty( "classname" )
-		    + "$Lambda_" + transpiler.incrementAndGetLambdaCounter() + ";" );
+		    + ";" );
 
-		ClassNode	classNode	= new ClassNode();
+		ClassNode	owningClass		= transpiler.getOwningClass();
 
-		classNode.visit(
-		    Opcodes.V21,
-		    Opcodes.ACC_PUBLIC,
-		    type.getInternalName(),
-		    null,
-		    Type.getInternalName( Object.class ),
-		    new String[] { Type.getInternalName( java.util.function.Function.class ) } );
-
-		MethodVisitor initVisitor = classNode.visitMethod( Opcodes.ACC_PUBLIC,
-		    "<init>",
-		    Type.getMethodDescriptor( Type.VOID_TYPE ),
-		    null,
-		    null );
-		initVisitor.visitCode();
-		initVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
-		initVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL,
-		    Type.getInternalName( Object.class ),
-		    "<init>",
-		    Type.getMethodDescriptor( Type.VOID_TYPE ),
-		    false );
-		initVisitor.visitInsn( Opcodes.RETURN );
-		initVisitor.visitEnd();
-
-		MethodContextTracker t = new MethodContextTracker( false );
-		transpiler.addMethodContextTracker( t );
-		// Object evaluate( IBoxContext context );
-		MethodVisitor methodVisitor = classNode.visitMethod(
-		    Opcodes.ACC_PUBLIC,
-		    "apply",
-		    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( Object.class ) ),
-		    null,
-		    null );
-		methodVisitor.visitCode();
-
-		t.trackNewContext();
-
-		nodeSupplier.get().forEach( n -> n.accept( methodVisitor ) );
-
-		methodVisitor.visitInsn( Opcodes.ARETURN );
-		methodVisitor.visitMaxs( 0, 0 );
-		methodVisitor.visitEnd();
-
-		transpiler.popMethodContextTracker();
-
-		transpiler.setAuxiliary( type.getClassName(), classNode );
+		// Generate static method: static Object argProducer_N(Object context) { ... }
+		methodWithContextAndClassLocator( owningClass, methodName, Type.getType( Object.class ),
+		    Type.getType( Object.class ), true,
+		    transpiler, false,
+		    () -> {
+			    return nodeSupplier.get();
+		    } );
 
 		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
 
-		nodes.add( new TypeInsnNode( Opcodes.NEW, type.getInternalName() ) );
-		nodes.add( new InsnNode( Opcodes.DUP ) );
-		nodes.add( new MethodInsnNode( Opcodes.INVOKESPECIAL,
-		    type.getInternalName(),
-		    "<init>",
-		    Type.getMethodDescriptor( Type.VOID_TYPE ),
-		    false ) );
+		// Use INVOKEDYNAMIC to create Function<Object, Object> from static method reference
+		nodes.add( new InvokeDynamicInsnNode(
+		    "apply",
+		    "()" + Type.getDescriptor( java.util.function.Function.class ),
+		    new Handle(
+		        Opcodes.H_INVOKESTATIC,
+		        "java/lang/invoke/LambdaMetafactory",
+		        "metafactory",
+		        Type.getMethodDescriptor(
+		            Type.getType( CallSite.class ),
+		            Type.getType( MethodHandles.Lookup.class ),
+		            Type.getType( String.class ),
+		            Type.getType( MethodType.class ),
+		            Type.getType( MethodType.class ),
+		            Type.getType( MethodHandle.class ),
+		            Type.getType( MethodType.class )
+		        ),
+		        false
+		    ),
+		    Type.getMethodType( "(" + Type.getDescriptor( Object.class ) + ")" + Type.getDescriptor( Object.class ) ),
+		    new Handle(
+		        Opcodes.H_INVOKESTATIC,
+		        declaringType.getInternalName(),
+		        methodName,
+		        "(" + Type.getDescriptor( Object.class ) + ")" + Type.getDescriptor( Object.class ),
+		        false
+		    ),
+		    Type.getMethodType( "(" + Type.getDescriptor( Object.class ) + ")" + Type.getDescriptor( Object.class ) )
+		) );
+
 		return nodes;
 	}
 
@@ -1911,9 +1902,8 @@ public class AsmHelper {
 	 */
 	public static List<AbstractInsnNode> loadClass( Transpiler transpiler, BoxIdentifier identifier ) {
 		List<AbstractInsnNode> nodes = new ArrayList<>();
-		// the variable at slot 2 needs to be an instance of ClassLocator
-		// todo convert this to use some specific method like tracker.loadClassLocator()
-		nodes.add( new VarInsnNode( Opcodes.ALOAD, 2 ) );
+		// Load ClassLocator from the tracked slot
+		transpiler.getCurrentMethodContextTracker().ifPresent( ( t ) -> nodes.addAll( t.loadClassLocator() ) );
 		transpiler.getCurrentMethodContextTracker().ifPresent( ( t ) -> nodes.addAll( t.loadCurrentContext() ) );
 		nodes.add( new LdcInsnNode( identifier.getName() ) );
 		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
@@ -1945,7 +1935,7 @@ public class AsmHelper {
 	    Type parameterType,
 	    Type returnType,
 	    Transpiler transpiler ) {
-		return methodLengthGuard( mainType, nodes, classNode, name, parameterType, returnType, transpiler, null );
+		return methodLengthGuard( mainType, nodes, classNode, name, parameterType, returnType, transpiler, null, false );
 	}
 
 	/**
@@ -1972,7 +1962,8 @@ public class AsmHelper {
 	    Type parameterType,
 	    Type returnType,
 	    Transpiler transpiler,
-	    MethodContextTracker tracker ) {
+	    MethodContextTracker tracker,
+	    boolean isStatic ) {
 
 		// First check using bytecode size estimation (more accurate)
 		int estimatedSize = MethodSplitter.estimateBytecodeSize( nodes );
@@ -1989,7 +1980,7 @@ public class AsmHelper {
 		List<TryCatchBlockNode>	tryCatchBlocks	= tracker != null ? tracker.getTryCatchStack() : null;
 
 		// Use the new MethodSplitter for splitting, passing try-catch blocks for sub-method inheritance
-		MethodSplitter			splitter		= new MethodSplitter( transpiler, classNode, mainType, tryCatchBlocks );
+		MethodSplitter			splitter		= new MethodSplitter( transpiler, classNode, mainType, tryCatchBlocks, isStatic );
 		Type					resultType		= Type.getType( FlowControlResult.class );
 
 		// Split the method - sub-methods return FlowControlResult
@@ -2124,7 +2115,7 @@ public class AsmHelper {
 	 * @param isVolatile   Whether the field should be volatile
 	 */
 	public static void addNullStaticField( ClassVisitor classVisitor, String fieldName, Type fieldType, boolean isVolatile ) {
-		int access = Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC;
+		int access = Opcodes.ACC_STATIC;
 		if ( isVolatile ) {
 			access |= Opcodes.ACC_VOLATILE;
 		}

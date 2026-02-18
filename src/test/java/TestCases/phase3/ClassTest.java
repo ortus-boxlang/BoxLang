@@ -499,7 +499,7 @@ public class ClassTest {
 		assertThat( meta.getAsString( Key.of( "name" ) ).toLowerCase() ).isEqualTo( "src.test.java.testcases.phase3.myclass" );
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
 		assertThat( meta.getAsString( Key.of( "fullname" ) ).toLowerCase() ).isEqualTo( "src.test.java.testcases.phase3.myclass" );
-		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.bx" ) ).isTrue();
+		assertThat( meta.getAsString( Key.of( "path" ) ) ).contains( "MyClass.bx" );
 		// assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) ).isInstanceOf( Array.class );
 		assertThat( meta.getAsArray( Key.of( "properties" ) ) ).hasSize( 1 );
@@ -528,7 +528,7 @@ public class ClassTest {
 		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClassCF" );
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
 		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClassCF" );
-		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClassCF.cfc" ) ).isTrue();
+		assertThat( meta.getAsString( Key.of( "path" ) ) ).contains( "MyClassCF.cfc" );
 		// assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) ).isInstanceOf( Array.class );
 		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
@@ -631,7 +631,7 @@ public class ClassTest {
 		var	meta	= boxMeta.meta;
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Class" );
 		assertThat( meta.getAsString( Key.of( "fullname" ) ).toLowerCase() ).isEqualTo( "src.test.java.testcases.phase3.myclass" );
-		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.bx" ) ).isTrue();
+		assertThat( meta.getAsString( Key.of( "path" ) ) ).contains( "MyClass.bx" );
 		// assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) instanceof Array ).isTrue();
 		assertThat( meta.getAsBoolean( Key.of( "output" ) ) ).isFalse();
@@ -1756,46 +1756,6 @@ public class ClassTest {
 		    new brad()
 		      """,
 		    context );
-	}
-
-	@DisplayName( "udf class has enclosing class reference" )
-	@Test
-	public void testUDFClassEnclosingClassReference() {
-
-		instance.executeSource(
-		    """
-		       import bx:src.test.java.TestCases.phase3.PropertyTestCF as brad;
-		       b = new brad()
-		    outerClass = b.$bx.$class;
-		    innerClass = b.init.getClass();
-		    innerClassesOuterClass = b.init.getClass().getEnclosingClass();
-		    println(outerclass)
-		    println(innerClass)
-		         """,
-		    context );
-		assertThat( ( ( Class<?> ) variables.get( "outerClass" ) ).getName() )
-		    .isEqualTo( "boxgenerated.boxclass.src.test.java.testcases.phase3.Propertytestcf$cfc" );
-		assertThat( ( ( Class<?> ) variables.get( "innerClassesOuterClass" ) ).getName() )
-		    .isEqualTo( "boxgenerated.boxclass.src.test.java.testcases.phase3.Propertytestcf$cfc" );
-		assertThat( ( ( Class<?> ) variables.get( "innerClass" ) ).getName() )
-		    .isEqualTo( "boxgenerated.boxclass.src.test.java.testcases.phase3.Propertytestcf$cfc$Func_init" );
-		assertThat( variables.get( "outerClass" ) ).isEqualTo( variables.get( "innerClassesOuterClass" ) );
-	}
-
-	@DisplayName( "udf class has enclosing class reference" )
-	@Test
-	public void testUDFClassEnclosingClassReferenceInTemplate() {
-
-		instance.executeSource(
-		    """
-		    function test(){
-
-		     }
-		         result = test.getClass().getEnclosingClass();
-		                """,
-		    context );
-
-		assertThat( variables.get( result ) ).isNotNull();
 	}
 
 	@DisplayName( "mixins should be public" )

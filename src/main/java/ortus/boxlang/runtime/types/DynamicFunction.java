@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.function.BiFunction;
 
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.loader.ImportDefinition;
@@ -250,6 +251,11 @@ public class DynamicFunction extends UDF {
 	@Override
 	public Access getAccess() {
 		return Access.PUBLIC;
+	}
+
+	@Override
+	public List<BoxMethodDeclarationModifier> getModifiers() {
+		return List.of();
 	}
 
 }

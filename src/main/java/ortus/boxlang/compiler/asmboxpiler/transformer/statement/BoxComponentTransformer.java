@@ -1,19 +1,24 @@
 package ortus.boxlang.compiler.asmboxpiler.transformer.statement;
 
+import java.lang.invoke.CallSite;
+import java.lang.invoke.LambdaMetafactory;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.InvokeDynamicInsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.TypeInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.MethodContextTracker;
@@ -165,71 +170,67 @@ public class BoxComponentTransformer extends AbstractTransformer {
 			return List.of( new InsnNode( Opcodes.ACONST_NULL ) );
 		}
 
-		List<AbstractInsnNode>	nodes		= new ArrayList<>();
+		List<AbstractInsnNode>				nodes			= new ArrayList<>();
 
-		// create class
-		Type					bodyType	= defineBodyLambdaClass( body );
+		String								methodName		= "componentBody_" + transpiler.incrementAndGetLambdaCounter();
 
-		// instantiate
-		nodes.add( new TypeInsnNode( Opcodes.NEW, bodyType.getInternalName() ) );
-		nodes.add( new InsnNode( Opcodes.DUP ) );
-
-		nodes.add( new MethodInsnNode( Opcodes.INVOKESPECIAL,
-		    bodyType.getInternalName(),
-		    "<init>",
-		    Type.getMethodDescriptor( Type.VOID_TYPE ),
-		    false )
-		);
-
-		return nodes;
-	}
-
-	private Type defineBodyLambdaClass( List<BoxStatement> body ) {
-		Type		type		= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
+		Type								declaringType	= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
 		    + "/" + transpiler.getProperty( "classname" )
-		    + "$ComponentBodyLambda_" + transpiler.incrementAndGetLambdaCounter() + ";" );
+		    + ";" );
 
-		ClassNode	classNode	= new ClassNode();
-		classNode.visitSource( transpiler.getProperty( "filePath" ), null );
+		org.objectweb.asm.tree.ClassNode	owningClass		= transpiler.getOwningClass();
 
-		AsmHelper.init( classNode, false, type, Type.getType( Object.class ), methodVisitor -> {
-		}, Type.getType( Component.ComponentBody.class ) );
-
-		AsmHelper.methodWithContextAndClassLocator( classNode, "process", Type.getType( IBoxContext.class ), Type.getType( Component.BodyResult.class ), false,
+		// Generate the static method: static Component.BodyResult componentBody_N(IBoxContext context) { ... }
+		AsmHelper.methodWithContextAndClassLocator( owningClass, methodName, Type.getType( IBoxContext.class ),
+		    Type.getType( Component.BodyResult.class ), true,
 		    transpiler, false,
 		    () -> {
-			    List<AbstractInsnNode> nodes	= new ArrayList<>();
-			    List<AbstractInsnNode> bodyNodes = body.stream()
+			    List<AbstractInsnNode> methodNodes = new ArrayList<>();
+
+			    methodNodes.addAll( body.stream()
 			        .flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE ).stream() )
-			        .toList();
+			        .toList() );
 
-			    // nodes.addAll(
-			    // body.stream()
-			    // .flatMap( statement -> transpiler.transform( statement, TransformerContext.NONE ).stream() )
-			    // .toList()
-			    // );
-
-			    nodes.addAll(
-			        AsmHelper.methodLengthGuard(
-			            type, bodyNodes, classNode, "process", Type.getType( IBoxContext.class ), Type.getType( Component.BodyResult.class ), transpiler ) );
-
-			    nodes.add(
+			    methodNodes.add(
 			        new FieldInsnNode( Opcodes.GETSTATIC,
 			            Type.getInternalName( Component.class ),
 			            "DEFAULT_RETURN",
 			            Type.getDescriptor( Component.BodyResult.class ) )
 			    );
 
-			    return nodes;
-
+			    return methodNodes;
 		    } );
 
-		AsmHelper.complete( classNode, type, methodVisitor -> {
+		// Use INVOKEDYNAMIC to create ComponentBody from static method reference
+		nodes.add( new InvokeDynamicInsnNode(
+		    "process",
+		    "()" + Type.getDescriptor( Component.ComponentBody.class ),
+		    new Handle(
+		        Opcodes.H_INVOKESTATIC,
+		        "java/lang/invoke/LambdaMetafactory",
+		        "metafactory",
+		        Type.getMethodDescriptor(
+		            Type.getType( CallSite.class ),
+		            Type.getType( MethodHandles.Lookup.class ),
+		            Type.getType( String.class ),
+		            Type.getType( MethodType.class ),
+		            Type.getType( MethodType.class ),
+		            Type.getType( MethodHandle.class ),
+		            Type.getType( MethodType.class )
+		        ),
+		        false
+		    ),
+		    Type.getMethodType( "(" + Type.getDescriptor( IBoxContext.class ) + ")" + Type.getDescriptor( Component.BodyResult.class ) ),
+		    new Handle(
+		        Opcodes.H_INVOKESTATIC,
+		        declaringType.getInternalName(),
+		        methodName,
+		        "(" + Type.getDescriptor( IBoxContext.class ) + ")" + Type.getDescriptor( Component.BodyResult.class ),
+		        false
+		    ),
+		    Type.getMethodType( "(" + Type.getDescriptor( IBoxContext.class ) + ")" + Type.getDescriptor( Component.BodyResult.class ) )
+		) );
 
-		} );
-
-		transpiler.setAuxiliary( type.getClassName(), classNode );
-
-		return type;
+		return nodes;
 	}
 }

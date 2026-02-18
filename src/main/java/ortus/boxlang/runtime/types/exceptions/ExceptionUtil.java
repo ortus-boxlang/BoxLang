@@ -27,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.regex.Matcher;
 
 import org.apache.commons.text.StringEscapeUtils;
 
@@ -47,7 +46,6 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
  * This exception is thrown when a cast can't be done on any type
@@ -194,12 +192,18 @@ public class ExceptionUtil {
 					}
 				}
 
-				String fileName = element.toString();
+				String	fileName	= element.toString();
+				String	methodName	= element.getMethodName();
 				if ( isCompiledSource( fileName )
-				    // _pseudoConstructor means we're in a class pseudoconstructor, ._invoke means we're executing the template or function. lambda$_invoke$ means we're in a lambda inside of that same template for
-				    // function. argumentDefaultValue is true when this is next stack AFTER a call to Argument.getDefaultValue()
+				    // _pseudoConstructor means we're in a class pseudoconstructor, ._invoke means we're executing the template or function.
+				    // invokeFunction_Xxx, invokeLambda_N, invokeClosure_N are the static method patterns for functions/lambdas/closures.
+				    // componentBody_N is the static method pattern for component bodies.
+				    // lambda$_invoke$ means we're in a lambda inside of that same template (Java boxpiler).
+				    // argumentDefaultValue is true when this is next stack AFTER a call to Argument.getDefaultValue()
 				    && ( fileName.contains( "._pseudoConstructor(" ) || fileName.contains( "._invoke(" )
-				        || ( isInComponent = isComponentBody( fileName ) ) || argumentDefaultValue ) ) {
+				        || methodName.startsWith( IBoxpiler.INVOKE_FUNCTION_PREFIX ) || methodName.startsWith( "invokeLambda_" )
+				        || methodName.startsWith( "invokeClosure_" )
+				        || ( isInComponent = isComponentBody( methodName ) ) || argumentDefaultValue ) ) {
 
 					// If we're just inside the nested lambda for a component, skip subssequent lines of the stack trace
 					if ( !skipNext.isEmpty() ) {
@@ -209,10 +213,9 @@ public class ExceptionUtil {
 						skipNext = "";
 					}
 
-					// If this stack trace line was inside of a lambda, skip the next line(s) starting with this
-					if ( isInComponent ) {
-						// take entire string up until ".lambda$_invoke$"
-						skipNext = fileName.substring( 0, Math.max( fileName.indexOf( ".lambda$_invoke$" ), fileName.indexOf( "$ComponentBodyLambda_" ) ) );
+					// If this stack trace line was inside of a component body lambda (Java boxpiler), skip subsequent lines
+					if ( isInComponent && fileName.contains( ".lambda$_invoke$" ) ) {
+						skipNext = fileName.substring( 0, fileName.indexOf( ".lambda$_invoke$" ) );
 					}
 
 					int		lineNo		= element.getLineNumber();
@@ -236,10 +239,13 @@ public class ExceptionUtil {
 
 					String	functionName	= "";
 					String	id				= "";
-					Matcher	m				= RegexBuilder.of( element.getClassName(), RegexBuilder.COMPILED_CLASSNAME_PATTERN ).matcher();
 
-					if ( m.find() ) {
-						functionName	= m.group( 1 );
+					// Static method pattern: invokeFunction_Xxx, invokeLambda_N, invokeClosure_N
+					if ( methodName.startsWith( IBoxpiler.INVOKE_FUNCTION_PREFIX ) ) {
+						functionName	= IBoxpiler.unsanitizeFromJavaIdentifier( methodName.substring( IBoxpiler.INVOKE_FUNCTION_PREFIX.length() ) );
+						id				= id + "()";
+					} else if ( methodName.startsWith( "invokeLambda_" ) || methodName.startsWith( "invokeClosure_" ) ) {
+						functionName	= "";
 						id				= id + "()";
 					}
 
@@ -315,14 +321,15 @@ public class ExceptionUtil {
 	}
 
 	/**
-	 * Check if the given file name is a component body invocation. This differs between the Java and ASM boxpilers
+	 * Check if the given method name is a component body invocation.
+	 * Java boxpiler uses lambda$_invoke$N, ASM boxpiler uses componentBody_N static methods.
 	 * 
-	 * @param fileName The file name
+	 * @param methodName The method name
 	 * 
-	 * @return True if the file name indicates a component body invocation, false otherwise
+	 * @return True if the method name indicates a component body invocation, false otherwise
 	 */
-	private static boolean isComponentBody( String fileName ) {
-		return fileName.contains( ".lambda$_invoke$" ) || ( fileName.contains( "$ComponentBodyLambda_" ) && fileName.contains( ".process(" ) );
+	private static boolean isComponentBody( String methodName ) {
+		return methodName.startsWith( "componentBody_" ) || methodName.startsWith( "lambda$_invoke$" );
 	}
 
 	/**
