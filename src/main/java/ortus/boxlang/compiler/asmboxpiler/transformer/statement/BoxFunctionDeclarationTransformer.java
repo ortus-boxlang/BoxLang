@@ -28,6 +28,8 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.InvokeDynamicInsnNode;
+
+import ortus.boxlang.compiler.IBoxpiler;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.TypeInsnNode;
@@ -105,7 +107,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 
 		BoxAccessModifier	access				= function.getAccessModifier() == null ? BoxAccessModifier.Public : function.getAccessModifier();
 
-		String				invokerMethodName	= "invokeFunction" + function.getName();
+		String				invokerMethodName	= IBoxpiler.INVOKE_FUNCTION_PREFIX + IBoxpiler.sanitizeForJavaIdentifier( function.getName() );
 
 		Type				declaringType		= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
 		    + "/" + transpiler.getProperty( "classname" )

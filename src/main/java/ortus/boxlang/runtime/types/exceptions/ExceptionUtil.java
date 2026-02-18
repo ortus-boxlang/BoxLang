@@ -196,12 +196,12 @@ public class ExceptionUtil {
 				String	methodName	= element.getMethodName();
 				if ( isCompiledSource( fileName )
 				    // _pseudoConstructor means we're in a class pseudoconstructor, ._invoke means we're executing the template or function.
-				    // invokeFunctionXxx, invokeLambda_N, invokeClosure_N are the static method patterns for functions/lambdas/closures.
+				    // invokeFunction_Xxx, invokeLambda_N, invokeClosure_N are the static method patterns for functions/lambdas/closures.
 				    // componentBody_N is the static method pattern for component bodies.
 				    // lambda$_invoke$ means we're in a lambda inside of that same template (Java boxpiler).
 				    // argumentDefaultValue is true when this is next stack AFTER a call to Argument.getDefaultValue()
 				    && ( fileName.contains( "._pseudoConstructor(" ) || fileName.contains( "._invoke(" )
-				        || methodName.startsWith( "invokeFunction" ) || methodName.startsWith( "invokeLambda_" ) || methodName.startsWith( "invokeClosure_" )
+				        || methodName.startsWith( IBoxpiler.INVOKE_FUNCTION_PREFIX ) || methodName.startsWith( "invokeLambda_" ) || methodName.startsWith( "invokeClosure_" )
 				        || ( isInComponent = isComponentBody( methodName ) ) || argumentDefaultValue ) ) {
 
 					// If we're just inside the nested lambda for a component, skip subssequent lines of the stack trace
@@ -239,9 +239,9 @@ public class ExceptionUtil {
 					String	functionName	= "";
 					String	id				= "";
 
-					// Static method pattern: invokeFunctionXxx, invokeLambda_N, invokeClosure_N
-					if ( methodName.startsWith( "invokeFunction" ) ) {
-						functionName	= methodName.substring( "invokeFunction".length() );
+					// Static method pattern: invokeFunction_Xxx, invokeLambda_N, invokeClosure_N
+					if ( methodName.startsWith( IBoxpiler.INVOKE_FUNCTION_PREFIX ) ) {
+						functionName	= IBoxpiler.unsanitizeFromJavaIdentifier( methodName.substring( IBoxpiler.INVOKE_FUNCTION_PREFIX.length() ) );
 						id				= id + "()";
 					} else if ( methodName.startsWith( "invokeLambda_" ) || methodName.startsWith( "invokeClosure_" ) ) {
 						functionName	= "";

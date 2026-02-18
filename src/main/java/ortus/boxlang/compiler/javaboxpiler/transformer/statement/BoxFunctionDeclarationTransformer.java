@@ -19,6 +19,8 @@ import java.util.Map;
 import java.util.Set;
 
 import com.github.javaparser.ParseResult;
+
+import ortus.boxlang.compiler.IBoxpiler;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.ArrayCreationExpr;
@@ -117,7 +119,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		    Map.entry( "access", access.toString().toUpperCase() ),
 		    Map.entry( "modifiers", transformModifiers( function.getModifiers() ) ),
 		    Map.entry( "functionName", createKey( function.getName() ).toString() ),
-		    Map.entry( "invokerMethodName", "invokeFunction" + function.getName() ),
+		    Map.entry( "invokerMethodName", IBoxpiler.INVOKE_FUNCTION_PREFIX + IBoxpiler.sanitizeForJavaIdentifier( function.getName() ) ),
 		    Map.entry( "returnType", returnType.equals( BoxType.Fqn ) ? fqn : returnType.name() ),
 		    Map.entry( "defaultOutput", String.valueOf( defaultOutput ) )
 		);
