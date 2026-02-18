@@ -40,7 +40,11 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.interop.DynamicInteropService;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.net.BoxHttpClient;
 import ortus.boxlang.runtime.scopes.Key;
@@ -62,7 +66,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  * Object result = soapClient.invoke( "methodName", args );
  * </pre>
  */
-public class BoxSoapClient {
+public class BoxSoapClient implements IReferenceable {
 
 	/**
 	 * ------------------------------------------------------------------------------
@@ -74,6 +78,7 @@ public class BoxSoapClient {
 	private static final String		SOAP_12_ENVELOPE_NS		= "http://www.w3.org/2003/05/soap-envelope";
 	private static final String		XSI_NS					= "http://www.w3.org/2001/XMLSchema-instance";
 	private static final String		XSD_NS					= "http://www.w3.org/2001/XMLSchema";
+	private static final String		XSI_TYPE_ATTR			= "xsi:type";
 
 	/**
 	 * ------------------------------------------------------------------------------
@@ -257,6 +262,20 @@ public class BoxSoapClient {
 	}
 
 	/**
+	 * Set the timeout for HTTP requests.
+	 * <p>
+	 * The timeout is specified in seconds. If {@code null} is passed, a default of 30 seconds is used.
+	 *
+	 * @param timeout The timeout in seconds
+	 *
+	 * @return This instance for chaining
+	 */
+	public BoxSoapClient withTimeout( Integer timeout ) {
+		this.timeout = timeout != null ? timeout : 30;
+		return this;
+	}
+
+	/**
 	 * ------------------------------------------------------------------------------
 	 * Information Methods
 	 * ------------------------------------------------------------------------------
@@ -415,7 +434,7 @@ public class BoxSoapClient {
 
 			// Log the request if debug enabled
 			if ( this.logger.isDebugEnabled() ) {
-				this.logger.trace( "SOAP Request to {}: {}", this.getServiceEndpoint(), soapRequest );
+				this.logger.debug( "SOAP Request to {}: {}", this.getServiceEndpoint(), soapRequest );
 			}
 
 			// Execute the HTTP request using a default HTTP client
@@ -432,6 +451,7 @@ public class BoxSoapClient {
 			    .newRequest( this.getServiceEndpoint(), this.executionContext )
 			    .post()
 			    .timeout( this.timeout )
+			    .header( "Accept", "application/soap+xml, text/xml, */*" )
 			    .header(
 			        "Content-Type",
 			        "1.1".equals( this.soapVersion ) ? "text/xml; charset=utf-8" : "application/soap+xml; charset=utf-8"
@@ -471,21 +491,143 @@ public class BoxSoapClient {
 	 */
 
 	/**
-	 * Check if a method name is a known SoapClient method
+	 * Dereference this object by a key and return the value, or throw exception
 	 *
-	 * @param methodName The method name to check
+	 * @param context The context we're executing inside of
+	 * @param name    The key to dereference
+	 * @param safe    Whether to throw an exception if the key is not found
 	 *
-	 * @return true if this is a known method
+	 * @return The requested object
 	 */
-	private boolean isKnownMethod( String methodName ) {
-		String lower = methodName.toLowerCase();
-		return lower.equals( "invoke" )
-		    || lower.equals( "getoperations" )
-		    || lower.equals( "listoperations" )
-		    || lower.equals( "getstatistics" )
-		    || lower.equals( "getstats" )
-		    || lower.equals( "getoperationinfo" )
-		    || lower.equals( "tostruct" );
+	@Override
+	public Object dereference( IBoxContext context, Key name, Boolean safe ) {
+		String methodName = name.getName();
+
+		// Check if this is a known SoapClient method
+		if ( DynamicObject.of( this ).hasMethodNoCase( methodName ) ) {
+			// Return a reference to this client's method - the actual invocation will come via dereferenceAndInvoke
+			return this;
+		}
+
+		// Check if this is a SOAP operation
+		if ( this.wsdlDefinition.hasOperation( name ) ) {
+			// Return a reference to this client - the actual invocation will come via dereferenceAndInvoke
+			return this;
+		}
+
+		if ( safe ) {
+			return null;
+		}
+
+		throw new BoxRuntimeException(
+		    "Property [" + methodName + "] not found on SOAP client. Available operations: "
+		        + this.wsdlDefinition.getOperationNames().toString()
+		);
+	}
+
+	/**
+	 * Dereference this object by a key and invoke the result as an invokable using positional arguments
+	 *
+	 * @param context             The context we're executing inside of
+	 * @param name                The key to dereference
+	 * @param positionalArguments The positional arguments to pass to the invokable
+	 * @param safe                Whether to throw an exception if the key is not found
+	 *
+	 * @return The requested object
+	 */
+	@Override
+	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
+		String methodName = name.getName();
+
+		// Check if this is a known SoapClient method
+		if ( DynamicObject.of( this ).hasMethodNoCase( methodName ) ) {
+			// Handle built-in methods like invoke(), getOperations(), etc.
+			return DynamicInteropService.invoke( context, this, methodName, safe, positionalArguments );
+		}
+
+		// Check if this is a SOAP operation
+		if ( this.wsdlDefinition.hasOperation( name ) ) {
+			// Convert positional arguments to the format expected by invoke()
+			Object arguments = null;
+			if ( positionalArguments != null && positionalArguments.length > 0 ) {
+				if ( positionalArguments.length == 1 ) {
+					arguments = positionalArguments[ 0 ];
+				} else {
+					arguments = Array.fromArray( positionalArguments );
+				}
+			}
+			return invoke( methodName, arguments );
+		}
+
+		if ( safe ) {
+			return null;
+		}
+
+		throw new BoxRuntimeException(
+		    "Method [" + methodName + "] not found on SOAP client. Available operations: "
+		        + this.wsdlDefinition.getOperationNames().toString()
+		);
+	}
+
+	/**
+	 * Dereference this object by a key and invoke the result as an invokable using named arguments
+	 *
+	 * @param context        The context we're executing inside of
+	 * @param name           The key to dereference
+	 * @param namedArguments The named arguments to pass to the invokable
+	 * @param safe           Whether to throw an exception if the key is not found
+	 *
+	 * @return The requested object
+	 */
+	@Override
+	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
+		String methodName = name.getName();
+
+		// Check if this is a known SoapClient method
+		if ( DynamicObject.of( this ).hasMethodNoCase( methodName ) ) {
+			return DynamicInteropService.invoke( context, this, methodName, safe, namedArguments );
+		}
+
+		// Check if this is a SOAP operation
+		if ( this.wsdlDefinition.hasOperation( name ) ) {
+			// Handle argument collection properly
+			Object arguments = null;
+			if ( namedArguments != null && !namedArguments.isEmpty() ) {
+				// Check if this is an argumentCollection call
+				Object argumentCollection = namedArguments.get( Key.argumentCollection );
+				if ( argumentCollection != null ) {
+					// Use the argumentCollection value as the actual arguments
+					arguments = argumentCollection;
+				} else {
+					// Convert named arguments to a struct for invoke()
+					arguments = Struct.fromMap( namedArguments );
+				}
+			}
+			return invoke( methodName, arguments );
+		}
+
+		if ( safe ) {
+			return null;
+		}
+
+		throw new BoxRuntimeException(
+		    "Method [" + methodName + "] not found on SOAP client. Available operations: "
+		        + this.wsdlDefinition.getOperationNames().toString()
+		);
+	}
+
+	/**
+	 * Assign a value to a key in this object
+	 *
+	 * @param context The context we're executing inside of
+	 * @param name    The name of the key to assign to
+	 * @param value   The value to assign
+	 *
+	 * @return The value that was assigned
+	 */
+	@Override
+	public Object assign( IBoxContext context, Key name, Object value ) {
+		throw new BoxRuntimeException( "Cannot assign properties to SOAP client objects" );
 	}
 
 	/**
@@ -566,12 +708,37 @@ public class BoxSoapClient {
 		Map<String, Object> argMap = new HashMap<>();
 
 		if ( arguments instanceof IStruct struct ) {
+			if ( logger.isTraceEnabled() ) {
+				logger.trace( "Processing SOAP struct arguments with keys: " + struct.keySet() );
+				logger.trace( "WSDL parameters: " + params.stream().map( p -> p.getName() ).collect( java.util.stream.Collectors.toList() ) );
+			}
+
 			// Struct arguments - use parameter names as keys
 			for ( WsdlParameter param : params ) {
-				Key		key		= Key.of( param.getName() );
-				Object	value	= struct.get( key );
+				String	paramName	= param.getName();
+				Key		key			= Key.of( paramName );
+				Object	value		= struct.get( key );
+
+				// If exact match not found, try fuzzy matching
+				if ( value == null ) {
+					// If still no match, try partial matches (e.g., intA matches param 'a', intB matches param 'b')
+					if ( value == null ) {
+						for ( Key structKey : struct.keySet() ) {
+							String structKeyName = structKey.getName();
+							// Check if struct key ends with param name (intA -> a, intB -> b)
+							if ( structKeyName.toLowerCase().endsWith( paramName.toLowerCase() ) ) {
+								value = struct.get( structKey );
+								logger.trace( "Found suffix match: " + structKeyName + " -> " + paramName );
+								break;
+							}
+						}
+					}
+				}
+
 				if ( value != null ) {
-					argMap.put( param.getName(), value );
+					argMap.put( paramName, value );
+				} else {
+					logger.trace( "No value found for WSDL param: " + paramName );
 				}
 			}
 		} else if ( arguments instanceof Array array ) {
@@ -597,8 +764,71 @@ public class BoxSoapClient {
 			if ( value != null ) {
 				Element paramElement = doc.createElement( param.getName() );
 				paramElement.setTextContent( String.valueOf( value ) );
+
+				// Add xsi:type attribute if type is available
+				String type = param.getType();
+				if ( type != null && !type.isEmpty() ) {
+					String xsiType = convertWsdlTypeToXsiType( type );
+					if ( xsiType != null ) {
+						paramElement.setAttribute( XSI_TYPE_ATTR, xsiType );
+					}
+				}
+
 				parentElement.appendChild( paramElement );
+				if ( logger.isTraceEnabled() ) {
+					logger.trace( "Added XML element to SOAP Request: <" + param.getName() +
+					    ( type != null ? " xsi:type=\"" + convertWsdlTypeToXsiType( type ) + "\"" : "" ) +
+					    ">" + value + "</" + param.getName() + ">" );
+				}
 			}
+		}
+	}
+
+	/**
+	 * Convert WSDL type to XSI type for the xsi:type attribute
+	 *
+	 * @param wsdlType The WSDL type (e.g., "xsd:double", "xsd:string", "xsd:int")
+	 *
+	 * @return The XSI type for the xsi:type attribute (e.g., "xsd:double")
+	 */
+	private String convertWsdlTypeToXsiType( String wsdlType ) {
+		if ( wsdlType == null || wsdlType.isEmpty() ) {
+			return null;
+		}
+
+		// Handle types that already have a namespace prefix (e.g., "xsd:double")
+		if ( wsdlType.contains( ":" ) ) {
+			return wsdlType;
+		}
+
+		// Handle simple type names - default to xsd namespace for common types
+		switch ( wsdlType.toLowerCase() ) {
+			case "string" :
+				return "xsd:string";
+			case "double" :
+			case "float" :
+				return "xsd:double";
+			case "int" :
+			case "integer" :
+				return "xsd:int";
+			case "long" :
+				return "xsd:long";
+			case "boolean" :
+				return "xsd:boolean";
+			case "datetime" :
+			case "date" :
+				return "xsd:dateTime";
+			case "decimal" :
+				return "xsd:decimal";
+			case "byte" :
+				return "xsd:byte";
+			case "short" :
+				return "xsd:short";
+			case "anytype" :
+				return "xsd:anyType";
+			default :
+				// For unknown types, assume they need the xsd namespace
+				return "xsd:" + wsdlType;
 		}
 	}
 
@@ -612,7 +842,18 @@ public class BoxSoapClient {
 	 */
 	private Object parseSoapResponse( IStruct httpResult, WsdlOperation operation ) {
 		try {
-			String responseBody = httpResult.getAsString( Key.fileContent );
+			// Handle both String and byte[] responses from HTTP client
+			Object	fileContent	= httpResult.get( Key.fileContent );
+			String	responseBody;
+
+			if ( fileContent instanceof String ) {
+				responseBody = ( String ) fileContent;
+			} else if ( fileContent instanceof byte[] castBytes ) {
+				responseBody = new String( castBytes, java.nio.charset.StandardCharsets.UTF_8 );
+			} else {
+				throw new BoxRuntimeException( "Unexpected fileContent type: " +
+				    ( fileContent != null ? fileContent.getClass().getName() : "null" ) );
+			}
 
 			if ( responseBody == null || responseBody.isEmpty() ) {
 				throw new BoxRuntimeException( "Empty SOAP response received" );
@@ -651,7 +892,11 @@ public class BoxSoapClient {
 			return responseBody; // Return raw body if we can't parse it
 
 		} catch ( Exception e ) {
-			throw new BoxRuntimeException( "Failed to parse SOAP response", e );
+			String errorMessage = "Failed to parse SOAP response. " + e.getMessage();
+			if ( logger.isDebugEnabled() ) {
+				errorMessage += " Response body: " + httpResult.get( Key.fileContent );
+			}
+			throw new BoxRuntimeException( errorMessage, e );
 		}
 	}
 
@@ -905,7 +1150,7 @@ public class BoxSoapClient {
 			StreamResult			result			= new StreamResult( outputStream );
 
 			transformer.transform( source, result );
-			return outputStream.toString( StandardCharsets.UTF_8.name() );
+			return outputStream.toString( StandardCharsets.UTF_8 );
 		} catch ( Exception e ) {
 			throw new BoxRuntimeException( "Failed to convert document to string", e );
 		}
