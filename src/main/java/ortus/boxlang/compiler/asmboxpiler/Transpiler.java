@@ -61,7 +61,7 @@ public abstract class Transpiler implements ITranspiler {
 	 * including static functions. This prevents duplicate method generation when the same function
 	 * is encountered through multiple AST traversal paths (e.g., tag-based CFC with cfscript blocks).
 	 */
-	private Set<String>									compiledFunctionNames	= new HashSet<>();
+	private Set<String>										compiledFunctionNames	= new HashSet<>();
 	/**
 	 * Storage for UDF implementations: maps function name (Key) to the instantiation bytecode
 	 * that creates a new UDF instance with a method reference to the static invoker.
