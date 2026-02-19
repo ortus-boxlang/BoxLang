@@ -6271,6 +6271,21 @@ public class CoreLangTest {
 	}
 
 	@Test
+	public void testNewInForLoopWithoutAssignment() {
+
+		instance.executeSource(
+		    """
+		    for( i = 0; i < 5; i++ ) {
+		    	new java:java.lang.Object();
+		    	r = 1;
+		    }
+		    """,
+		    context
+		);
+
+	}
+
+	@Test
 	public void testNotAStatement() {
 
 		instance.executeSource(

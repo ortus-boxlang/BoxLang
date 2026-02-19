@@ -24,6 +24,7 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.FieldInsnNode;
+import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
@@ -95,6 +96,10 @@ public class BoxNewTransformer extends AbstractTransformer {
 		    "unWrapBoxLangClass",
 		    Type.getMethodDescriptor( Type.getType( Object.class ) ),
 		    false ) );
+
+		if ( returnContext.empty ) {
+			nodes.add( new InsnNode( Opcodes.POP ) );
+		}
 
 		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
