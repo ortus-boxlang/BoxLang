@@ -240,7 +240,7 @@ public class ModuleRecord {
 	/**
 	 * The name of the descriptor file for the module based on CommandBox
 	 */
-	private static final String		MODULE_CONFIG_FILE			= "box.json";
+	public static final String		MODULE_CONFIG_FILE			= "box.json";
 
 	/**
 	 * Logger
@@ -341,8 +341,8 @@ public class ModuleRecord {
 		this.moduleConfig = ( IClassRunnable ) DynamicObject.of(
 		    RunnableLoader.getInstance().loadClass(
 		        ResolvedFilePath.of(
-		            null,
-		            null,
+		            "/bxModules/" + name.getName() + "/",
+		            physicalPath.normalize().toString(),
 		            packageName.replace( ".", Matcher.quoteReplacement( File.separator ) ) + File.separator
 		                + ModuleService.MODULE_DESCRIPTOR,
 		            descriptorPath ),
@@ -1227,12 +1227,12 @@ public class ModuleRecord {
 		var					oTargetObject		= ( IClassRunnable ) DynamicObject.of(
 		    RunnableLoader.getInstance().loadClass(
 		        ResolvedFilePath.of(
-		            null,
-		            null,
+		            "/bxModules/" + name.getName() + "/",
+		            physicalPath.normalize().toString(),
 		            ( this.invocationPath + "." + conventionsPath )
 		                .replace( ".", Matcher.quoteReplacement( File.separator ) )
 		                + File.separator
-		                + FilenameUtils.getBaseName( targetFile.getAbsolutePath() ),
+		                + targetFile.getName(),
 		            targetFile.toPath() ),
 		        context ) )
 		    .invokeConstructor( context )
