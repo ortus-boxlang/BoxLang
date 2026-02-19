@@ -1445,4 +1445,20 @@ public class BoxTemplateTest {
 		    context, BoxSourceType.BOXTEMPLATE );
 	}
 
+	@Test
+	public void testIfStatementWithPoundSigns() {
+		instance.executeSource(
+		    """
+		    <bx:script>
+		    	function foo() {
+		    		return "brad";
+		    	}
+		    	x = 1;
+		    </bx:script>
+		       <bx:if #foo()# NEQ #foo()#>
+		    </bx:if>
+		       """,
+		    context, BoxSourceType.BOXTEMPLATE );
+	}
+
 }

@@ -1714,4 +1714,20 @@ public class CFTemplateTest {
 		    context, BoxSourceType.CFTEMPLATE );
 	}
 
+	@Test
+	public void testIfStatementWithPoundSigns() {
+		instance.executeSource(
+		    """
+		    <cfscript>
+		    	function foo() {
+		    		return "brad";
+		    	}
+		    	x = 1;
+		    </cfscript>
+		       <cfif #foo()# NEQ #foo()#>
+		    </cfif>
+		       """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
 }

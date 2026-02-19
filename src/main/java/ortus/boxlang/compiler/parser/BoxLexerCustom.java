@@ -563,8 +563,8 @@ public class BoxLexerCustom extends BoxLexer {
 							System.out.println( "%%%%%%%%%%%% Not switching [" + nextToken.getText() + "] token to identifer" );
 					}
 				}
-				// Track if we just closed a #var# (IDENTIFIER followed by ICHAR)
-				if ( nextToken.getType() == ICHAR && lastToken != null && lastToken.getType() == IDENTIFIER ) {
+				// Track if we just closed a #var# (IDENTIFIER followed by ICHAR) or just closed a function call #foo()# (RPAREN followed by ICHAR)
+				if ( nextToken.getType() == ICHAR && lastToken != null && ( lastToken.getType() == IDENTIFIER || lastToken.getType() == RPAREN ) ) {
 					justClosedPoundVar = true;
 				} else if ( nextToken.getChannel() != HIDDEN ) {
 					justClosedPoundVar = false;
