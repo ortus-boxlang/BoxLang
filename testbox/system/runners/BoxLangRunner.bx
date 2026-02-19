@@ -1,0 +1,333 @@
+/**
+ * TestBox Runner for BoxLang
+ * This script will run TestBox tests from the command line using the BoxLang CLI
+ *
+ * Examples:
+ * 	- `./testbox/bin/run`
+ * 	- `./testbox/bin/run my.bundle`
+ * 	- `./testbox/bin/run --directory=tests.specs`
+ * 	- `./testbox/bin/run --bundles=my.bundle`
+ *
+ * Windows Examples:
+ *  - `./testbox/bin/run.bat`
+ * 	- `./testbox/bin/run.bat my.bundle`
+ * 	- `./testbox/bin/run.bat --directory=tests.specs`
+ * 	- `./testbox/bin/run.bat --bundles=my.bundle`
+ *
+ * Options:
+ * --bundles: A list of test bundles to run, defaults to `*`, ex: `path.to.bundle1,path.to.bundle2`, . Mutually exclusive with `--directory`
+ * --bundles-pattern: A pattern to match test bundles, defaults to `"*Spec*.cfc|*Test*.cfc|*Spec*.bx|*Test*.bx"`
+ * --directory : A list of directories to look for tests to execute.  Please use dot-notation not absolute notation.
+ * 		Mutually exclusive with `--bundles`. Ex: `tests.specs`.  Defaults to `tests.specs`
+ * --reporter : The reporter to use.
+ * --labels : A list of labels to run, defaults to `*`
+ * --excludes : A list of labels to exclude, defaults to empty
+ * --recurse : Recurse into subdirectories, defaults to `true`
+ * --filter-bundles : A list of bundles to filter by, defaults to `*`
+ * --filter-suites : A list of suites to filter by, defaults to `*`
+ * --filter-specs : A list of test names or spec names to filter by, defaults to `*`
+ * --eager-failure : Fail fast, defaults to `false`
+ * --verbose : Verbose output, defaults to `false`. This will stream the output of the status of the tests as they run.
+ * --properties-summary : Generate a properties file with the summary of the test results, defaults to `true`.
+ * --properties-filename : The name of the properties file to generate, defaults to `TEST.properties`
+ * 	If true, it will write them to the report path.
+ * --reportpath : The path to write the report file to, defaults to the `/tests/results` folder by convention
+ * --write-report : Write the report to a file in the report path folder, defaults to `true`
+ * --write-json-report : Write the report as JSON alongside the requested report, defaults to `false`
+ * --write-visualizer : Write the visualizer to a file in the report path folder, defaults to `false`
+ *
+ * Runner Options:
+ * To create runner options just prefix it with the prefix `runner-{optionName}`
+ * For example, to pass a `verbose` option to the runner, you would do `--runner-verbose=true`
+ */
+class{
+
+	// Defaults
+	static final DEFAULT_TEST_DIRECTORY = "tests.specs"
+	static final DEFAULT_REPORTER = "console"
+	static final DEFAULT_PROPERTIES_FILENAME = "TEST.properties"
+	static final DEFAULT_PROPERTIES_SUMMARY = true
+
+	// Seed the location of testbox just in case
+	bx:application
+		action="update"
+		mappings=getApplicationMetadata().mappings.append( {
+			"/testbox" : this.$bx.meta.path.replacenocase( "system/runners/BoxLangRunner.bx", "" )
+		} );
+
+	/**
+	 * The main method to run the TestBox tests
+	 */
+	function main( args=[] ){
+		// CLI Incoming variables
+		var rootPath          = server.cli.executionPath
+		var options           = server.cli.parsed.options
+		var positional         = server.cli.parsed.positionals
+		var defaultReportPath = rootPath & "/tests/results"
+
+		// Gather the test arguments from the options
+		var initArgs = {
+			bundles        : options[ "bundles" ] ?: [],
+			directory       : {
+				mapping : options[ "directory" ] ?: "",
+				recurse : options[ "recurse" ] ?: true
+			},
+			reporter       : options[ "reporter" ] ?: static.DEFAULT_REPORTER,
+			labels          : options[ "labels" ] ?: "",
+			excludes       : options[ "excludes" ] ?: "",
+			bundlesPattern : options[ "bundles-pattern" ] ?: ""
+		};
+
+		// Prepare the run arguments
+		var runArgs = {
+			testBundles   : options[ "filter-bundles" ] ?: [],
+			testSuites     : options[ "filter-suites" ] ?: [],
+			testSpecs     : options[ "filter-specs" ] ?: [],
+			eagerFailure   : options[ "eager-failure" ] ?: false,
+			verbose       : options[ "verbose" ] ?: false,
+			options 	   : {}
+		};
+
+		// Discover and add any runner options to the struct if
+		// they exist using the pattern: runner-{optionName}
+		for( var key in options ){
+			if( key.startsWith( "runner-" ) ){
+				runArgs.options[ key.replacenocase( "runner-", "" ) ] = options[ key ];
+			}
+		}
+
+		// Prepare the after run arguments
+		var afterRunArgs = {
+			propertiesSummary  : options[ "properties-summary" ] ?: static.DEFAULT_PROPERTIES_SUMMARY,
+			propertiesFilename  : options[ "properties-filename" ] ?: static.DEFAULT_PROPERTIES_FILENAME,
+			reportPath          : options[ "reportpath" ] ?: defaultReportPath,
+			writeReport         : options[ "write-report" ] ?: true,
+			writeVisualizer      : options[ "write-visualizer" ] ?: false,
+			writeJsonReport    : options[ "write-json-report" ] ?: false
+		};
+
+		// Verbose Listeners
+		if( runArgs.verbose ){
+			runArgs.callbacks = {
+				onBundleStart = ( target, testResults ) => {
+					println( "> Testing Bundle: #target.$bx.meta.name#" )
+				},
+				onBundleEnd = ( target, testResults ) => {
+					println( "> Bundle Completed: [#target.$bx.meta.name#]" )
+					println( "" );
+				},
+				onSuiteStart = ( target, testResults, suite ) => {
+					println( "+ Starting Suite: #suite.name#" )
+				},
+				onSuiteEnd = ( target, testResults, suite ) => {
+					//println( "+ Suite [#suite.name#] completed #suite.toString()#" )
+				},
+				onSpecStart = ( target, testResults, suite, spec ) => {
+					println( "+ Starting Spec/Test: #spec.name#" )
+				},
+				onSpecEnd = ( target, testResults, suite, spec ) => {
+					// println( "+ Spec [#spec.name#] completed #spec.toString()#" )
+				},
+			}
+		}
+
+		// If we have a positional argument, then we will assume it is a test bundle: Ex: `run my.bundle`
+		// Mutually exclusive with `--directory`, so wipe out the directory
+		if( positional.len() ) {
+			initArgs.bundles = positional[ 1 ]
+			initArgs.directory = {}
+		}
+
+		// If we don't have test-bundles or a test-directory, then default to the DEFAULT_TEST_DIRECTORY
+		if( !initArgs.bundles.len() && !initArgs.directory.mapping.len() ) {
+			initArgs.directory = static.DEFAULT_TEST_DIRECTORY
+		}
+
+		// If we have testBundles, then wipe out the directory
+		if( initArgs.bundles.len() ) {
+			initArgs.directory = {}
+		}
+
+		if( runArgs.verbose ){
+			startTime = getTickCount()
+			println( "Starting TestBox Runner with the following init arguments" )
+			println( initArgs )
+		}
+
+		var testbox = new testbox.system.TestBox( argumentCollection = initArgs )
+		if( runArgs.verbose ){
+			println( "TestBox Runner started in #getTickCount() - startTime# ms" )
+			println( "Running your tests with the following arguments" )
+			println( runArgs )
+		}
+
+		// RUN BABY RUN
+		var report = testbox.run( argumentCollection = runArgs )
+		var testResults = testbox.getResult()
+		var testResultsAsJson = jsonSerialize( testResults.getMemento( includeDebugBuffer = true ) )
+
+		// Print the report
+		println( report )
+
+		// PREPARE RESULTS FOR REPORTING
+		if( !directoryExists( afterRunArgs.reportPath ) ){
+			directoryCreate( afterRunArgs.reportPath );
+		} else {
+			directoryDelete( afterRunArgs.reportPath, true );
+			directoryCreate( afterRunArgs.reportPath );
+		}
+
+		// WRITE THE REPORTS
+		if( afterRunArgs.writeReport ){
+			generateReports( report, testResultsAsJson, initArgs, afterRunArgs );
+		}
+		// WRITE THE VISUALIZER
+		if( afterRunArgs.writeVisualizer ){
+			generateVisualizer( testResultsAsJson, afterRunArgs );
+		}
+		// WRITE THE SUMMARIES
+		if( afterRunArgs.propertiesSummary ) {
+			generatePropertiesSummary( testResults, initArgs, afterRunArgs );
+		}
+		// WRITE THE ANT JUNIT REPORTS
+		if( initArgs.reporter eq "ANTJunit" ){
+			generateAntReports( report, afterRunArgs );
+		}
+	}
+
+	/**
+	 * Generate the reports based on the after run arguments
+	 *
+	 * @report The report to write
+	 * @testResults The test results
+	 * @afterRunArgs The after run arguments
+	 */
+	private function generateReports(
+		required report,
+		required testResults,
+		required initArgs,
+		required afterRunArgs
+	){
+		// REPORTING TIME
+		fileWrite(
+			afterRunArgs.reportPath & "/latestrun.log",
+			"Tests ran at #dateTimeFormat( now(), 'medium' )#"
+		)
+
+		// WRITE THE REPORT
+		var reportFile = afterRunArgs.reportPath & "/report."
+		switch( initArgs.reporter ){
+			case  "min": case "simple" :
+				reportFile &= "html";
+				break;
+			case "json":
+				reportFile &= "json";
+				break;
+			case "xml": case "ANTJunit":
+				reportFile &= "xml";
+				break;
+			default:
+				reportFile &= "txt";
+		}
+		fileWrite(
+			reportFile,
+			report
+		)
+
+		// WRITE THE JSON REPORT IF NEEDED
+		if( afterRunArgs.writeJsonReport ){
+			fileWrite(
+				afterRunArgs.reportPath & "/report.json",
+				testResults
+			)
+		}
+	}
+
+	/**
+	 * Generate the visualizer for the test results
+	 *
+	 * @testResults The test results
+	 * @afterRunArgs The after run arguments
+	 */
+	private function generateVisualizer( required testResults, required afterRunArgs ){
+		directoryCopy(
+			expandPath( "/testbox/test-visualizer" ),
+			afterRunArgs.reportPath & "/visualizer"
+		)
+		fileWrite(
+			afterRunArgs.reportPath & "/visualizer/test-results.json",
+			testResults
+		)
+	}
+
+	/**
+	 * Generate a properties file with the summary of the test results
+	 *
+	 * @testResults The test results
+	 * @initArgs The init arguments
+	 * @afterRunArgs The after run arguments
+	 */
+	private function generatePropertiesSummary( required testResults, required initArgs, required afterRunArgs ){
+		var errors = testResults.getTotalFail() + testResults.getTotalError();
+		var propertiesReport = "## TestBox Summary Report
+test.datetime=#now().toISOString()#
+test.#errors ? 'failed' : 'passed'#=true
+test.labels=#escapePropertyValue( arrayToList( testResults.getLabels() ) )#
+test.excludes=#escapePropertyValue( arrayToList( testResults.getExcludes() ) )#
+test.bundles=#escapePropertyValue( isArray( initArgs.bundles ) ? initArgs.bundles.toList() : initArgs.bundles )#
+test.directory=#escapePropertyValue( initArgs.directory?.mapping )#
+total.bundles=#escapePropertyValue( testResults.getTotalBundles() )#
+total.suites=#escapePropertyValue( testResults.getTotalSuites() )#
+total.specs=#escapePropertyValue( testResults.getTotalSpecs() )#
+total.pass=#escapePropertyValue( testResults.getTotalPass() )#
+total.fail=#escapePropertyValue( testResults.getTotalFail() )#
+total.error=#escapePropertyValue( testResults.getTotalError() )#
+total.skipped=#escapePropertyValue( testResults.getTotalSkipped() )#";
+
+		if( !trim( lcase( afterRunArgs.propertiesfilename ) ).endsWith( '.properties' ) ) {
+			afterRunArgs.propertiesfilename &= '.properties';
+		}
+
+		fileWrite(
+			afterRunArgs.reportPath & "/" & afterRunArgs.propertiesFilename,
+			propertiesReport
+		)
+	}
+
+	/**
+	 * Generate individual JUnit reports for each suite
+	 *
+	 * @report The report to parse
+	 * @afterRunArgs The after run arguments
+	 */
+	private function generateAntReports( required report, required afterRunArgs ){
+		// Produce individual test files due to how ANT JUnit report parses these.
+		var xmlReport = xmlParse( report );
+		for( var thisSuite in xmlReport.testsuites.XMLChildren ){
+			fileWrite( afterRunArgs.reportpath & "/TEST-" & thisSuite.XMLAttributes.package & ".xml", toString( thisSuite ) );
+		}
+	}
+
+
+	/**
+	 * Escape a property value
+	 *
+	 * @value The value to escape
+	 *
+	 * @return The escaped value
+	 */
+	private function escapePropertyValue( required string value ) {
+		if ( len( arguments.value ) == 0 ) {
+			return arguments.value;
+		}
+		local.value = replaceNoCase( arguments.value, '\', '\\', 'all' );
+		value = replaceNoCase( value, char(13), '\r', 'all' );
+		value = replaceNoCase( value, char(10), '\n', 'all' );
+		value = replaceNoCase( value, char(9), '\t', 'all' );
+		value = replaceNoCase( value, char(60), '\u003c', 'all' );
+		value = replaceNoCase( value, char(62), '\u003e', 'all' );
+		value = replaceNoCase( value, char(47), '\u002f', 'all' );
+
+		return replaceNoCase( value, char(32), '\u0020', 'all' );
+	}
+}

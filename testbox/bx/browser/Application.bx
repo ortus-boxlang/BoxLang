@@ -1,0 +1,29 @@
+/**
+ * Copyright Since 2005 Ortus Solutions, Corp
+ * www.ortussolutions.com
+ * *************************************************************************************
+ */
+class {
+	this.name              = "Test Browser";
+
+	// The mapping to easily access the tests
+	this.mappings[ "/tests" ] = getDirectoryFromPath( getCurrentTemplatePath() );
+	// The mapping to easily access the root application usually the parent folder
+	this.mappings[ "/root" ] = expandPath( "/../" );
+
+	// Any application settings go here
+
+	/**
+	 * Executes BEFORE any runner or test requested.
+	 */
+	boolean function onRequestStart( String targetPage ){
+		return true;
+	}
+
+	/**
+	 * Executes AFTER any runner or test requested.
+	 */
+	void function onRequestEnd( String targetPage ){
+	}
+
+}

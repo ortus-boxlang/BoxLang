@@ -1,0 +1,31 @@
+/**
+ * Copyright Since 2005 Ortus Solutions, Corp
+ * www.ortussolutions.com
+ * *************************************************************************************
+ * This is the test harness application file that will be executed by the TestBox in isolation
+ * to a root application.  Usually you mimic your application's Application.bx settings here.
+ */
+class {
+	this.name              = "My Test Harness";
+
+	// The mapping to easily access the tests
+	this.mappings[ "/tests" ] = getDirectoryFromPath( getCurrentTemplatePath() );
+	// The mapping to easily access the root application usually the parent folder
+	this.mappings[ "/root" ] = expandPath( "/../" );
+
+	// Any application settings go here
+
+	/**
+	 * Executes BEFORE any runner or test requested.
+	 */
+	boolean function onRequestStart( String targetPage ){
+		return true;
+	}
+
+	/**
+	 * Executes AFTER any runner or test requested.
+	 */
+	void function onRequestEnd( String targetPage ){
+	}
+
+}

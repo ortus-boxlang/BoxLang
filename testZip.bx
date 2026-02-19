@@ -1,7 +1,0 @@
-zip = new ZipFile()
-    .source( "/tmp/myFolder" )
-    .to( "/tmp/myArchive.zip" );
-
-zip.compress();
-
-println( "ZipFile syntax executed successfully" );
