@@ -2,10 +2,12 @@ package ortus.boxlang.compiler.asmboxpiler;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.objectweb.asm.Opcodes;
@@ -54,7 +56,12 @@ public abstract class Transpiler implements ITranspiler {
 	private List<MethodContextTracker>						methodContextTrackers	= new ArrayList<MethodContextTracker>();
 	private List<BoxStaticInitializer>						staticInitializers		= new ArrayList<>();
 	private ClassNode										owningClassNode			= null;
-
+	/**
+	 * Tracks all function names for which an invokeFunction_* static method has been generated,
+	 * including static functions. This prevents duplicate method generation when the same function
+	 * is encountered through multiple AST traversal paths (e.g., tag-based CFC with cfscript blocks).
+	 */
+	private Set<String>									compiledFunctionNames	= new HashSet<>();
 	/**
 	 * Storage for UDF implementations: maps function name (Key) to the instantiation bytecode
 	 * that creates a new UDF instance with a method reference to the static invoker.
@@ -160,7 +167,11 @@ public abstract class Transpiler implements ITranspiler {
 	}
 
 	public boolean hasCompiledFunction( String name ) {
-		return this.udfs.containsKey( name );
+		return this.compiledFunctionNames.contains( name.toLowerCase() );
+	}
+
+	public void markFunctionCompiled( String name ) {
+		this.compiledFunctionNames.add( name.toLowerCase() );
 	}
 
 	public List<AbstractInsnNode> getUDFRegistrations() {

@@ -116,6 +116,9 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		// Generate the static invoker method on the owning class
 		ClassNode			owningClass			= transpiler.getOwningClass();
 
+		// Mark this function as compiled to prevent duplicate method generation
+		// (e.g., when the same function is encountered via multiple AST traversal paths in tag-based CFCs with cfscript blocks)
+		transpiler.markFunctionCompiled( function.getName() );
 		transpiler.incrementfunctionBodyCounter();
 		AsmHelper.methodWithContextAndClassLocator( owningClass, invokerMethodName, Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ),
 		    true,

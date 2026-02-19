@@ -2225,4 +2225,13 @@ public class ClassTest {
 		    context );
 	}
 
+	@Test
+	public void testDupeMethod() {
+		instance.executeSource(
+		    """
+		    println( getClassMetadata( "src.test.java.TestCases.phase3.DupeMethod" ) )
+		      """,
+		    context );
+	}
+
 }
