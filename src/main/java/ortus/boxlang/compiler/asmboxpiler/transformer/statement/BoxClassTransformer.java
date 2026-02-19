@@ -378,7 +378,7 @@ public class BoxClassTransformer {
 
 		// Add superClass field and getter
 		AsmHelper.addNullStaticField( classNode, "superClass", Type.getType( DynamicObject.class ), false );
-		AsmHelper.addStaticGetterMethodOnly( classNode, type, "superClass", "getSuperClass", Type.getType( DynamicObject.class ) );
+		AsmHelper.addStaticGetterMethodOnly( classNode, type, "superClass", "getBoxSuperClass", Type.getType( DynamicObject.class ) );
 
 		// Add metadata cache fields
 		AsmHelper.addNullStaticField( classNode, "metadata", Type.getType( IStruct.class ), true );

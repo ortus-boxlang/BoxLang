@@ -78,7 +78,7 @@ public class ClassMeta extends BoxMeta<IClassRunnable> {
 		    target.bxGetName(),
 		    target.getSourceType(),
 		    target.getRunnablePath(),
-		    target.getSuperClass(),
+		    target.getBoxSuperClass(),
 		    target.getInterfaces(),
 		    target.getAbstractMethods(),
 		    target.getUDFs(),

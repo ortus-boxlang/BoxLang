@@ -248,4 +248,12 @@ public class StaticClassBoxContext extends BaseBoxContext {
 	public Boolean canOutput() {
 		return BoxClassSupport.canOutput( this, staticBoxClass );
 	}
+
+	/**
+	 * Get the static box class
+	 */
+	public DynamicObject getStaticBoxClass() {
+		return staticBoxClass;
+	}
+
 }

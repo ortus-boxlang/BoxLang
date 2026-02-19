@@ -130,8 +130,20 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 
 	/**
 	 * Get the super class definition. Null if there is none
+	 * 
+	 * Deprecated in favor of getBoxSuperClass, which doesn't overlap method names in the JDK to remove ambiguity.
 	 */
-	public DynamicObject getSuperClass();
+	@Deprecated
+	default DynamicObject getSuperClass() {
+		return getBoxSuperClass();
+	}
+
+	/**
+	 * Get the super class definition. Null if there is none
+	 */
+	default DynamicObject getBoxSuperClass() {
+		return null;
+	}
 
 	/**
 	 * Get the super class instance. Null if there is none

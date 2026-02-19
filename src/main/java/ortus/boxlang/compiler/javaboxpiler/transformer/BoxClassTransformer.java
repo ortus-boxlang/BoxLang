@@ -319,7 +319,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 				this.canInvokeImplicitAccessor = canInvokeImplicitAccessor;
 			}
 
-			public DynamicObject getSuperClass() {
+			public DynamicObject getBoxSuperClass() {
 				return superClass;
 			}
 

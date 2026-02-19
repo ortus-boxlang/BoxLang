@@ -590,7 +590,7 @@ public class BoxClassSupport {
 		    thisClass.bxGetName(),
 		    thisClass.getSourceType(),
 		    thisClass.getRunnablePath(),
-		    thisClass.getSuperClass(),
+		    thisClass.getBoxSuperClass(),
 		    thisClass.getInterfaces(),
 		    thisClass.getAbstractMethods(),
 		    thisClass.getUDFs(),
@@ -1117,6 +1117,8 @@ public class BoxClassSupport {
 				return getClassLocator().load(
 				    staticContext,
 				    superClassName,
+				    ClassLocator.BX_PREFIX,
+				    true,
 				    imports
 				);
 			}

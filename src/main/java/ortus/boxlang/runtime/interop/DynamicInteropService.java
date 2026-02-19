@@ -2891,9 +2891,9 @@ public class DynamicInteropService {
 		classContext.pushTemplate( boxClass );
 
 		try {
-			if ( boxClass.getSuperClass() != null ) {
+			if ( boxClass.getBoxSuperClass() != null ) {
 				// Recursively load the super class
-				IClassRunnable _super = ( IClassRunnable ) ( DynamicObject.of( boxClass.getSuperClass().getTargetClass() )
+				IClassRunnable _super = ( IClassRunnable ) ( DynamicObject.of( boxClass.getBoxSuperClass().getTargetClass() )
 				    // Constructor args are NOT passed. Only the outermost class gets to use those
 				    .invokeConstructor( classContext, new Object[] { Key.noInit } )
 				    .unWrapBoxLangClass() );
