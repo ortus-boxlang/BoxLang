@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -37,7 +38,6 @@ import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
-import ortus.boxlang.runtime.jdbc.drivers.JDBCDriverFeature;
 import ortus.boxlang.runtime.jdbc.qoq.QoQConnection;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
@@ -146,6 +146,13 @@ public class PendingQuery {
 	private DataSource							datasource;
 
 	/**
+	 * Thread-safe list of listeners that observe query lifecycle events.
+	 *
+	 * @see QueryExecutionListener
+	 */
+	private final List<QueryExecutionListener>	executionListeners	= new CopyOnWriteArrayList<>();
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructor(s)
 	 * --------------------------------------------------------------------------
@@ -227,6 +234,50 @@ public class PendingQuery {
 	 */
 	public DataSource getDataSource() {
 		return this.datasource;
+	}
+
+	/**
+	 * Registers a {@link QueryExecutionListener} to receive lifecycle callbacks for this query.
+	 * <p>
+	 * The listener collection is thread-safe; this method may be called concurrently from multiple threads.
+	 * Adding the same listener instance more than once results in duplicate notifications.
+	 *
+	 * @param listener The listener to register. Must not be {@code null}.
+	 *
+	 * @return This {@code PendingQuery} for fluent chaining.
+	 *
+	 * @throws NullPointerException if {@code listener} is {@code null}.
+	 */
+	public PendingQuery addExecutionListener( QueryExecutionListener listener ) {
+		if ( listener == null ) {
+			throw new NullPointerException( "listener must not be null" );
+		}
+		this.executionListeners.add( listener );
+		return this;
+	}
+
+	/**
+	 * Removes a previously registered {@link QueryExecutionListener}.
+	 * <p>
+	 * If the listener was registered more than once, only the first occurrence is removed.
+	 * If the listener was never registered, this method is a no-op.
+	 *
+	 * @param listener The listener to remove.
+	 *
+	 * @return This {@code PendingQuery} for fluent chaining.
+	 */
+	public PendingQuery removeExecutionListener( QueryExecutionListener listener ) {
+		this.executionListeners.remove( listener );
+		return this;
+	}
+
+	/**
+	 * Returns an unmodifiable snapshot of the currently registered execution listeners.
+	 *
+	 * @return Immutable list of registered {@link QueryExecutionListener}s.
+	 */
+	public List<QueryExecutionListener> getExecutionListeners() {
+		return List.copyOf( this.executionListeners );
 	}
 
 	/**
@@ -699,21 +750,6 @@ public class PendingQuery {
 			}
 
 			String sqlStatement = this.sql;
-			// QoQ connections don't have a datasource, so skip this check
-			if ( connection.getDataSource() != null
-			    && connection.getDataSource().getConfiguration().getDriver().hasFeature( JDBCDriverFeature.TRIM_TRAILING_SEMICOLONS ) ) {
-				var trimmed = sqlStatement.trim();
-				// This can be defeated if there is a comment after the semicolon.
-				if ( trimmed.endsWith( ";" ) ) {
-					var lowered = trimmed.toLowerCase();
-					// Exclude if "begin" and "end" appear anywhere in the SQL
-					if ( ! ( lowered.contains( "begin" ) && lowered.contains( "end" ) ) ) {
-						System.out.println( "Trimming trailing semicolon for driver compliance. " + trimmed );
-						sqlStatement = trimmed.substring( 0, trimmed.length() - 1 );
-					}
-				}
-			}
-			final String finalSQLStatement = sqlStatement;
 			try (
 			    // If we have no parameters, we can use a Statement, otherwise we use a PreparedStatement
 			    BoxStatement statement = this.parameters.isEmpty()
@@ -732,6 +768,9 @@ public class PendingQuery {
 				    )
 				);
 
+				// Fire beforeExecution listeners — exceptions are swallowed so they never interrupt the query
+				fireBeforeExecution();
+
 				long			startTick			= System.currentTimeMillis();
 				boolean			hasResults			= true;
 				SQLException	initialSqlException	= null;
@@ -740,7 +779,7 @@ public class PendingQuery {
 				try {
 					hasResults = statement instanceof PreparedStatement preparedStatement
 					    ? preparedStatement.execute()
-					    : statement.execute( sqlStatement, GENERATED_KEYS_SETTING );
+					    : statement.execute( finalSQLStatement, GENERATED_KEYS_SETTING );
 				} catch ( SQLException e ) {
 					// Pass this along.
 					initialSqlException = e;
@@ -769,6 +808,55 @@ public class PendingQuery {
 			    null, // queryError
 			    ListUtil.asString( Array.fromList( this.getParameterValues() ), "," ), // where
 			    e );
+		}
+	}
+
+	/**
+	 * Notifies all registered {@link QueryExecutionListener}s that a query is about to execute.
+	 * <p>
+	 * Any exception thrown by a listener is caught and logged; it will never interrupt the query.
+	 */
+	private void fireBeforeExecution() {
+		for ( QueryExecutionListener listener : this.executionListeners ) {
+			try {
+				listener.beforeExecution( this );
+			} catch ( Exception e ) {
+				logger.warn( "QueryExecutionListener.beforeExecution() threw an exception and will be ignored: {}", e.getMessage(), e );
+			}
+		}
+	}
+
+	/**
+	 * Notifies all registered {@link QueryExecutionListener}s that a query has successfully executed.
+	 * <p>
+	 * Any exception thrown by a listener is caught and logged; it will never interrupt normal processing.
+	 *
+	 * @param executedQuery The result of the execution.
+	 */
+	private void fireAfterExecution( ExecutedQuery executedQuery ) {
+		for ( QueryExecutionListener listener : this.executionListeners ) {
+			try {
+				listener.afterExecution( this, executedQuery );
+			} catch ( Exception e ) {
+				logger.warn( "QueryExecutionListener.afterExecution() threw an exception and will be ignored: {}", e.getMessage(), e );
+			}
+		}
+	}
+
+	/**
+	 * Notifies all registered {@link QueryExecutionListener}s that a query raised an exception.
+	 * <p>
+	 * Any exception thrown by a listener is caught and logged; the original query exception is still propagated.
+	 *
+	 * @param exception The exception that occurred during execution.
+	 */
+	private void fireOnError( Exception exception ) {
+		for ( QueryExecutionListener listener : this.executionListeners ) {
+			try {
+				listener.onError( this, exception );
+			} catch ( Exception e ) {
+				logger.warn( "QueryExecutionListener.onError() threw an exception and will be ignored: {}", e.getMessage(), e );
+			}
 		}
 	}
 
