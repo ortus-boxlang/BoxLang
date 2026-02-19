@@ -155,7 +155,6 @@ public class BoxRunner {
 			if ( message.contains( ExceptionUtil.LICENSE_MODULE_NAME ) || message.contains( ExceptionUtil.LICENSE_SUBSCRIPTION_NAME ) ) {
 				message = String.format( licenseExceptionMessage, e.getMessage() );
 			}
-			System.out.println( message );
 			ExceptionUtil.printBoxLangStackTrace( e, System.err );
 			System.exit( 1 );
 			return;

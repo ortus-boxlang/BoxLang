@@ -136,10 +136,16 @@ public class ExceptionUtil {
 		StringWriter		sw			= new StringWriter();
 		PrintWriter			pw			= new PrintWriter( sw );
 		Array				tagContext	= buildTagContext( e );
-		StackTraceElement[]	elements	= e.getStackTrace();
+		StackTraceElement[]	elements	= getMergedStackTrace( e );
 
-		pw.println( e.getClass().getName() + ": " + e.getMessage() );
-
+		Throwable			current		= e;
+		String				indent		= "";
+		while ( current != null ) {
+			pw.println( indent + current.getClass().getName() + ": " + current.getMessage() );
+			indent	+= "  ";
+			current	= current.getCause();
+		}
+		pw.println();
 		for ( int i = 0; i < elements.length; i++ ) {
 			final int j = i;
 			tagContext.stream()
