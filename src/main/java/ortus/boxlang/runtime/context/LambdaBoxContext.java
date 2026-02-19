@@ -167,9 +167,11 @@ public class LambdaBoxContext extends FunctionBoxContext {
 			}
 
 			// In query loop?
-			var querySearch = queryFindNearby( key );
-			if ( querySearch != null ) {
-				return querySearch;
+			if ( !forAssign ) {
+				var querySearch = queryFindNearby( key );
+				if ( querySearch != null ) {
+					return querySearch;
+				}
 			}
 		}
 

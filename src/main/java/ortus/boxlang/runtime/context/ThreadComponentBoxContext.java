@@ -238,9 +238,11 @@ public class ThreadComponentBoxContext extends BaseBoxContext implements IJDBCCa
 			}
 
 			// In query loop?
-			var querySearch = queryFindNearby( key );
-			if ( querySearch != null ) {
-				return querySearch;
+			if ( !forAssign ) {
+				var querySearch = queryFindNearby( key );
+				if ( querySearch != null ) {
+					return querySearch;
+				}
 			}
 		}
 

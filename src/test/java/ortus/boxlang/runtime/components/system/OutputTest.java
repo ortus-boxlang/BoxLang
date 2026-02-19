@@ -622,4 +622,16 @@ public class OutputTest {
 
 	}
 
+	@Test
+	public void testAssignUnscopedQueryColumnName() {
+		instance.executeSource(
+		    """
+		    qry = querynew( "col", "varchar", [["test"]] )
+		    bx:output query="qry" {
+		    	col = qry.col;
+		    }
+		     """, context, BoxSourceType.BOXSCRIPT );
+
+	}
+
 }
