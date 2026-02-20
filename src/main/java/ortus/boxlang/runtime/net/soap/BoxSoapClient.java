@@ -801,11 +801,6 @@ public class BoxSoapClient implements IReferenceable {
 					String base64Value = EncryptionUtil.base64Encode( value, StandardCharsets.UTF_8 );
 					paramElement.setTextContent( base64Value );
 
-					String xsiType = convertWsdlTypeToXsiType( type );
-					if ( xsiType != null ) {
-						paramElement.setAttribute( XSI_TYPE_ATTR, xsiType );
-					}
-
 					parentElement.appendChild( paramElement );
 					if ( logger.isTraceEnabled() ) {
 						logger.trace( "Added base64Binary element: <" + param.getName() + "> (length: " + base64Value.length() + ")" );
@@ -993,6 +988,8 @@ public class BoxSoapClient implements IReferenceable {
 				return XSD_SHORT_STRING;
 			case "anytype" :
 				return XSD_ANYTYPE_STRING;
+			case "base64binary" :
+				return XSD_BASE64BINARY_STRING;
 			default :
 				// For unknown types, assume they need the xsd namespace
 				return "xsd:" + wsdlType;
