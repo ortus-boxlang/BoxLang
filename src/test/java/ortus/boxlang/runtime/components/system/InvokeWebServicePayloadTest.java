@@ -43,105 +43,193 @@ import ortus.boxlang.runtime.types.IStruct;
  */
 public class InvokeWebServicePayloadTest {
 
-	static BoxRuntime			instance		= BoxRuntime.getInstance( true );
+	static BoxRuntime			instance			= BoxRuntime.getInstance( true );
 	IBoxContext					context;
 	IScope						variables;
-	static Key					result			= new Key( "result" );
+	static Key					result				= new Key( "result" );
 
 	// Mock Calculator WSDL content for testing - Axis format
-	private static final String	CALCULATOR_WSDL	= """
-	                                              <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-	                                              <wsdl:definitions xmlns:apachesoap="http://xml.apache.org/xml-soap"
-	                                                  xmlns:impl="http://local.soaptest/Calculator.cfc"
-	                                                  xmlns:intf="http://local.soaptest/Calculator.cfc"
-	                                                  xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/"
-	                                                  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
-	                                                  xmlns:wsdlsoap="http://schemas.xmlsoap.org/wsdl/soap/"
-	                                                  xmlns:xsd="http://www.w3.org/2001/XMLSchema"
-	                                                  targetNamespace="http://local.soaptest/Calculator.cfc">
-	                                                  <wsdl:types>
-	                                                      <schema xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="http://xml.apache.org/xml-soap">
-	                                                          <import namespace="http://local.soaptest/Calculator.cfc"/>
-	                                                          <import namespace="http://schemas.xmlsoap.org/soap/encoding/"/>
-	                                                          <complexType name="mapItem">
-	                                                              <sequence>
-	                                                                  <element name="key" nillable="true" type="xsd:anyType"/>
-	                                                                  <element name="value" nillable="true" type="xsd:anyType"/>
-	                                                              </sequence>
-	                                                          </complexType>
-	                                                          <complexType name="Map">
-	                                                              <sequence>
-	                                                                  <element maxOccurs="unbounded" minOccurs="0" name="item" type="apachesoap:mapItem"/>
-	                                                              </sequence>
-	                                                          </complexType>
-	                                                      </schema>
-	                                                      <schema xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="http://local.soaptest/Calculator.cfc">
-	                                                          <import namespace="http://xml.apache.org/xml-soap"/>
-	                                                          <import namespace="http://schemas.xmlsoap.org/soap/encoding/"/>
-	                                                          <complexType name="ArrayOf_xsd_anyType">
-	                                                              <complexContent>
-	                                                                  <restriction base="soapenc:Array">
-	                                                                      <attribute ref="soapenc:arrayType" wsdl:arrayType="xsd:anyType[]"/>
-	                                                                  </restriction>
-	                                                              </complexContent>
-	                                                          </complexType>
-	                                                      </schema>
-	                                                  </wsdl:types>
-	                                                  <wsdl:message name="addRequest">
-	                                                      <wsdl:part name="a" type="xsd:double"/>
-	                                                      <wsdl:part name="b" type="xsd:double"/>
-	                                                  </wsdl:message>
-	                                                  <wsdl:message name="addResponse">
-	                                                      <wsdl:part name="addReturn" type="xsd:double"/>
-	                                                  </wsdl:message>
-	                                                  <wsdl:message name="divideRequest">
-	                                                      <wsdl:part name="intA" type="xsd:double"/>
-	                                                      <wsdl:part name="intB" type="xsd:double"/>
-	                                                  </wsdl:message>
-	                                                  <wsdl:message name="divideResponse">
-	                                                      <wsdl:part name="divideReturn" type="xsd:double"/>
-	                                                  </wsdl:message>
-	                                                  <wsdl:portType name="Calculator_wrap">
-	                                                      <wsdl:operation name="add" parameterOrder="intA intB">
-	                                                          <wsdl:input message="impl:addRequest" name="addRequest"/>
-	                                                          <wsdl:output message="impl:addResponse" name="addResponse"/>
-	                                                      </wsdl:operation>
-	                                                      <wsdl:operation name="divide" parameterOrder="intA intB">
-	                                                          <wsdl:input message="impl:divideRequest" name="divideRequest"/>
-	                                                          <wsdl:output message="impl:divideResponse" name="divideResponse"/>
-	                                                      </wsdl:operation>
-	                                                  </wsdl:portType>
-	                                                  <wsdl:binding name="calculator.cfcSoapBinding" type="impl:Calculator_wrap">
-	                                                      <wsdlsoap:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
-	                                                      <wsdl:operation name="add">
-	                                                          <wsdlsoap:operation soapAction=""/>
-	                                                          <wsdl:input name="addRequest">
-	                                                              <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://DefaultNamespace" use="encoded"/>
-	                                                          </wsdl:input>
-	                                                          <wsdl:output name="addResponse">
-	                                                              <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://local.soaptest/Calculator.cfc" use="encoded"/>
-	                                                          </wsdl:output>
-	                                                      </wsdl:operation>
-	                                                      <wsdl:operation name="divide">
-	                                                          <wsdlsoap:operation soapAction=""/>
-	                                                          <wsdl:input name="divideRequest">
-	                                                              <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://DefaultNamespace" use="encoded"/>
-	                                                          </wsdl:input>
-	                                                          <wsdl:output name="divideResponse">
-	                                                              <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://local.soaptest/Calculator.cfc" use="encoded"/>
-	                                                          </wsdl:output>
-	                                                      </wsdl:operation>
-	                                                  </wsdl:binding>
-	                                                  <wsdl:service name="Calculator_wrapService">
-	                                                      <wsdl:port binding="impl:calculator.cfcSoapBinding" name="calculator.cfc">
-	                                                          <wsdlsoap:address location="http://localhost:%d/calculator"/>
-	                                                      </wsdl:port>
-	                                                  </wsdl:service>
-	                                              </wsdl:definitions>
-	                                              """;
+	private static final String	CALCULATOR_WSDL		= """
+	                                                  <?xml version="1.0" encoding="UTF-8" standalone="no"?>
+	                                                  <wsdl:definitions xmlns:apachesoap="http://xml.apache.org/xml-soap"
+	                                                      xmlns:impl="http://local.soaptest/Calculator.cfc"
+	                                                      xmlns:intf="http://local.soaptest/Calculator.cfc"
+	                                                      xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/"
+	                                                      xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+	                                                      xmlns:wsdlsoap="http://schemas.xmlsoap.org/wsdl/soap/"
+	                                                      xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+	                                                      targetNamespace="http://local.soaptest/Calculator.cfc">
+	                                                      <wsdl:types>
+	                                                          <schema xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="http://xml.apache.org/xml-soap">
+	                                                              <import namespace="http://local.soaptest/Calculator.cfc"/>
+	                                                              <import namespace="http://schemas.xmlsoap.org/soap/encoding/"/>
+	                                                              <complexType name="mapItem">
+	                                                                  <sequence>
+	                                                                      <element name="key" nillable="true" type="xsd:anyType"/>
+	                                                                      <element name="value" nillable="true" type="xsd:anyType"/>
+	                                                                  </sequence>
+	                                                              </complexType>
+	                                                              <complexType name="Map">
+	                                                                  <sequence>
+	                                                                      <element maxOccurs="unbounded" minOccurs="0" name="item" type="apachesoap:mapItem"/>
+	                                                                  </sequence>
+	                                                              </complexType>
+	                                                          </schema>
+	                                                          <schema xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="http://local.soaptest/Calculator.cfc">
+	                                                              <import namespace="http://xml.apache.org/xml-soap"/>
+	                                                              <import namespace="http://schemas.xmlsoap.org/soap/encoding/"/>
+	                                                              <complexType name="ArrayOf_xsd_anyType">
+	                                                                  <complexContent>
+	                                                                      <restriction base="soapenc:Array">
+	                                                                          <attribute ref="soapenc:arrayType" wsdl:arrayType="xsd:anyType[]"/>
+	                                                                      </restriction>
+	                                                                  </complexContent>
+	                                                              </complexType>
+	                                                          </schema>
+	                                                      </wsdl:types>
+	                                                      <wsdl:message name="addRequest">
+	                                                          <wsdl:part name="a" type="xsd:double"/>
+	                                                          <wsdl:part name="b" type="xsd:double"/>
+	                                                      </wsdl:message>
+	                                                      <wsdl:message name="addResponse">
+	                                                          <wsdl:part name="addReturn" type="xsd:double"/>
+	                                                      </wsdl:message>
+	                                                      <wsdl:message name="divideRequest">
+	                                                          <wsdl:part name="intA" type="xsd:double"/>
+	                                                          <wsdl:part name="intB" type="xsd:double"/>
+	                                                      </wsdl:message>
+	                                                      <wsdl:message name="divideResponse">
+	                                                          <wsdl:part name="divideReturn" type="xsd:double"/>
+	                                                      </wsdl:message>
+	                                                      <wsdl:portType name="Calculator_wrap">
+	                                                          <wsdl:operation name="add" parameterOrder="intA intB">
+	                                                              <wsdl:input message="impl:addRequest" name="addRequest"/>
+	                                                              <wsdl:output message="impl:addResponse" name="addResponse"/>
+	                                                          </wsdl:operation>
+	                                                          <wsdl:operation name="divide" parameterOrder="intA intB">
+	                                                              <wsdl:input message="impl:divideRequest" name="divideRequest"/>
+	                                                              <wsdl:output message="impl:divideResponse" name="divideResponse"/>
+	                                                          </wsdl:operation>
+	                                                      </wsdl:portType>
+	                                                      <wsdl:binding name="calculator.cfcSoapBinding" type="impl:Calculator_wrap">
+	                                                          <wsdlsoap:binding style="rpc" transport="http://schemas.xmlsoap.org/soap/http"/>
+	                                                          <wsdl:operation name="add">
+	                                                              <wsdlsoap:operation soapAction=""/>
+	                                                              <wsdl:input name="addRequest">
+	                                                                  <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://DefaultNamespace" use="encoded"/>
+	                                                              </wsdl:input>
+	                                                              <wsdl:output name="addResponse">
+	                                                                  <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://local.soaptest/Calculator.cfc" use="encoded"/>
+	                                                              </wsdl:output>
+	                                                          </wsdl:operation>
+	                                                          <wsdl:operation name="divide">
+	                                                              <wsdlsoap:operation soapAction=""/>
+	                                                              <wsdl:input name="divideRequest">
+	                                                                  <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://DefaultNamespace" use="encoded"/>
+	                                                              </wsdl:input>
+	                                                              <wsdl:output name="divideResponse">
+	                                                                  <wsdlsoap:body encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" namespace="http://local.soaptest/Calculator.cfc" use="encoded"/>
+	                                                              </wsdl:output>
+	                                                          </wsdl:operation>
+	                                                      </wsdl:binding>
+	                                                      <wsdl:service name="Calculator_wrapService">
+	                                                          <wsdl:port binding="impl:calculator.cfcSoapBinding" name="calculator.cfc">
+	                                                              <wsdlsoap:address location="http://localhost:%d/calculator"/>
+	                                                          </wsdl:port>
+	                                                      </wsdl:service>
+	                                                  </wsdl:definitions>
+	                                                  """;
+
+	// ObjectUpload WSDL with Apache SOAP Map and base64Binary support
+	private static final String	OBJECT_UPLOAD_WSDL	= """
+	                                                  <?xml version="1.0" encoding="UTF-8"?>
+	                                                  <wsdl:definitions targetNamespace="http://ws.elend" xmlns:apachesoap="http://xml.apache.org/xml-soap"
+	                                                      xmlns:impl="http://ws.elend" xmlns:intf="http://ws.elend" xmlns:tns1="http://rpc.xml.coldfusion"
+	                                                      xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:wsdlsoap="http://schemas.xmlsoap.org/wsdl/soap/"
+	                                                      xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+	                                                      <wsdl:types>
+	                                                          <schema elementFormDefault="qualified" targetNamespace="http://ws.elend" xmlns="http://www.w3.org/2001/XMLSchema">
+	                                                              <import namespace="http://xml.apache.org/xml-soap"/>
+	                                                              <import namespace="http://rpc.xml.coldfusion"/>
+	                                                              <element name="SharedEntryPoint">
+	                                                                  <complexType>
+	                                                                      <sequence>
+	                                                                          <element name="Inputs" type="apachesoap:Map"/>
+	                                                                          <element name="InputFile" type="xsd:base64Binary"/>
+	                                                                      </sequence>
+	                                                                  </complexType>
+	                                                              </element>
+	                                                              <element name="SharedEntryPointResponse">
+	                                                                  <complexType>
+	                                                                      <sequence>
+	                                                                          <element name="SharedEntryPointReturn" type="apachesoap:Map"/>
+	                                                                      </sequence>
+	                                                                  </complexType>
+	                                                              </element>
+	                                                              <element name="fault" type="tns1:CFCInvocationException"/>
+	                                                          </schema>
+	                                                          <schema elementFormDefault="qualified" targetNamespace="http://xml.apache.org/xml-soap" xmlns="http://www.w3.org/2001/XMLSchema">
+	                                                              <import namespace="http://rpc.xml.coldfusion"/>
+	                                                              <complexType name="mapItem">
+	                                                                  <sequence>
+	                                                                      <element name="key" nillable="true" type="xsd:anyType"/>
+	                                                                      <element name="value" nillable="true" type="xsd:anyType"/>
+	                                                                  </sequence>
+	                                                              </complexType>
+	                                                              <complexType name="Map">
+	                                                                  <sequence>
+	                                                                      <element maxOccurs="unbounded" minOccurs="0" name="item" type="apachesoap:mapItem"/>
+	                                                                  </sequence>
+	                                                              </complexType>
+	                                                          </schema>
+	                                                          <schema elementFormDefault="qualified" targetNamespace="http://rpc.xml.coldfusion" xmlns="http://www.w3.org/2001/XMLSchema">
+	                                                              <import namespace="http://xml.apache.org/xml-soap"/>
+	                                                              <complexType name="CFCInvocationException">
+	                                                                  <sequence/>
+	                                                              </complexType>
+	                                                          </schema>
+	                                                      </wsdl:types>
+	                                                      <wsdl:message name="CFCInvocationException">
+	                                                          <wsdl:part element="impl:fault" name="fault"/>
+	                                                      </wsdl:message>
+	                                                      <wsdl:message name="SharedEntryPointRequest">
+	                                                          <wsdl:part element="impl:SharedEntryPoint" name="parameters"/>
+	                                                      </wsdl:message>
+	                                                      <wsdl:message name="SharedEntryPointResponse">
+	                                                          <wsdl:part element="impl:SharedEntryPointResponse" name="parameters"/>
+	                                                      </wsdl:message>
+	                                                      <wsdl:portType name="objectUpload">
+	                                                          <wsdl:operation name="SharedEntryPoint">
+	                                                              <wsdl:input message="impl:SharedEntryPointRequest" name="SharedEntryPointRequest"/>
+	                                                              <wsdl:output message="impl:SharedEntryPointResponse" name="SharedEntryPointResponse"/>
+	                                                              <wsdl:fault message="impl:CFCInvocationException" name="CFCInvocationException"/>
+	                                                          </wsdl:operation>
+	                                                      </wsdl:portType>
+	                                                      <wsdl:binding name="objectUpload.cfcSoapBinding" type="impl:objectUpload">
+	                                                          <wsdlsoap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+	                                                          <wsdl:operation name="SharedEntryPoint">
+	                                                              <wsdlsoap:operation soapAction=""/>
+	                                                              <wsdl:input name="SharedEntryPointRequest">
+	                                                                  <wsdlsoap:body use="literal"/>
+	                                                              </wsdl:input>
+	                                                              <wsdl:output name="SharedEntryPointResponse">
+	                                                                  <wsdlsoap:body use="literal"/>
+	                                                              </wsdl:output>
+	                                                              <wsdl:fault name="CFCInvocationException">
+	                                                                  <wsdlsoap:fault name="CFCInvocationException" use="literal"/>
+	                                                              </wsdl:fault>
+	                                                          </wsdl:operation>
+	                                                      </wsdl:binding>
+	                                                      <wsdl:service name="File Upload Web Services">
+	                                                          <wsdl:port binding="impl:objectUpload.cfcSoapBinding" name="objectUpload.cfc">
+	                                                              <wsdlsoap:address location="http://localhost:%d/objectUpload"/>
+	                                                          </wsdl:port>
+	                                                      </wsdl:service>
+	                                                  </wsdl:definitions>
+	                                                  """;
 
 	@RegisterExtension
-	static WireMockExtension	wireMock		= WireMockExtension.newInstance()
+	static WireMockExtension	wireMock			= WireMockExtension.newInstance()
 	    .options( wireMockConfig().dynamicPort() )
 	    .build();
 
@@ -546,5 +634,195 @@ public class InvokeWebServicePayloadTest {
 		wireMock.verify( postRequestedFor( urlEqualTo( "/calculator" ) )
 		    .withRequestBody( containing( "<a xsi:type=\"xsd:double\">100</a>" ) )
 		    .withRequestBody( containing( "<b xsi:type=\"xsd:double\">100</b>" ) ) );
+	}
+
+	@DisplayName( "Test invoke webservice with Apache SOAP Map type" )
+	@Test
+	public void testInvokeWebServiceApacheSoapMap() {
+		// Set up objectUpload WSDL endpoint
+		wireMock.stubFor( get( urlEqualTo( "/objectUpload?wsdl" ) )
+		    .willReturn( aResponse()
+		        .withStatus( 200 )
+		        .withHeader( "Content-Type", "text/xml" )
+		        .withBody( String.format( OBJECT_UPLOAD_WSDL, wireMock.getPort() ) ) ) );
+
+		// Mock the SOAP operation response
+		wireMock.stubFor( post( urlEqualTo( "/objectUpload" ) )
+		    .willReturn( aResponse()
+		        .withStatus( 200 )
+		        .withHeader( "Content-Type", "text/xml" )
+		        .withBody( """
+		                   <?xml version="1.0" encoding="UTF-8"?>
+		                   <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+		                       <soap:Body>
+		                           <tns:SharedEntryPointResponse xmlns:tns="http://ws.elend">
+		                               <tns:SharedEntryPointReturn>
+		                                   <item>
+		                                       <key>status</key>
+		                                       <value>success</value>
+		                                   </item>
+		                                   <item>
+		                                       <key>id</key>
+		                                       <value>12345</value>
+		                                   </item>
+		                               </tns:SharedEntryPointReturn>
+		                           </tns:SharedEntryPointResponse>
+		                       </soap:Body>
+		                   </soap:Envelope>
+		                   """ ) ) );
+
+		String wsdlUrl = "http://localhost:" + wireMock.getPort() + "/objectUpload?wsdl";
+
+		// Execute invoke webservice with Map parameter and base64Binary file
+		instance.executeSource(
+		    String.format( """
+		                   inputs = { fileName: "test.txt", fileType: "text/plain", uploadDate: "2026-02-20" };
+		                   fileContent = "This is test file content";
+		                   bx:invoke
+		                       webservice="%s"
+		                       method="SharedEntryPoint"
+		                       argumentCollection={ Inputs: inputs, InputFile: fileContent }
+		                       returnVariable="result";
+		                   """, wsdlUrl ),
+		    context );
+
+		// Verify the SOAP request contains Apache SOAP Map structure with proper type attributes
+		wireMock.verify( postRequestedFor( urlEqualTo( "/objectUpload" ) )
+		    .withRequestBody( containing( "<Inputs xsi:type=\"apachesoap:Map\">" ) )
+		    .withRequestBody( containing( "<item xsi:type=\"apachesoap:mapItem\">" ) )
+		    .withRequestBody( containing( "<key xsi:type=\"xsd:string\">fileName</key>" ) )
+		    .withRequestBody( containing( "<value xsi:type=\"xsd:string\">test.txt</value>" ) )
+		    .withRequestBody( containing( "<key xsi:type=\"xsd:string\">fileType</key>" ) )
+		    .withRequestBody( containing( "<value xsi:type=\"xsd:string\">text/plain</value>" ) )
+		    .withRequestBody( containing( "<key xsi:type=\"xsd:string\">uploadDate</key>" ) )
+		    .withRequestBody( containing( "<value xsi:type=\"xsd:string\">2026-02-20</value>" ) )
+		    .withRequestBody( containing( "</item>" ) )
+		    .withRequestBody( containing( "</Inputs>" ) ) );
+
+		// Verify base64Binary encoding
+		wireMock.verify( postRequestedFor( urlEqualTo( "/objectUpload" ) )
+		    .withRequestBody( containing( "<InputFile" ) ) // Match opening tag (with or without attributes)
+		    .withRequestBody( containing( "xsi:type=\"xsd:base64Binary\"" ) ) // Verify type attribute
+		    .withRequestBody( containing( "VGhpcyBpcyB0ZXN0IGZpbGUgY29udGVudA==" ) ) // base64 of "This is test file content"
+		    .withRequestBody( containing( "</InputFile>" ) ) );
+
+		// Verify the result
+		assertThat( variables.get( result ) ).isNotNull();
+	}
+
+	@DisplayName( "Test invoke webservice with base64Binary byte array" )
+	@Test
+	public void testInvokeWebServiceBase64Binary() {
+		// Set up objectUpload WSDL endpoint
+		wireMock.stubFor( get( urlEqualTo( "/objectUpload?wsdl" ) )
+		    .willReturn( aResponse()
+		        .withStatus( 200 )
+		        .withHeader( "Content-Type", "text/xml" )
+		        .withBody( String.format( OBJECT_UPLOAD_WSDL, wireMock.getPort() ) ) ) );
+
+		// Mock the SOAP operation response
+		wireMock.stubFor( post( urlEqualTo( "/objectUpload" ) )
+		    .willReturn( aResponse()
+		        .withStatus( 200 )
+		        .withHeader( "Content-Type", "text/xml" )
+		        .withBody( """
+		                   <?xml version="1.0" encoding="UTF-8"?>
+		                   <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+		                       <soap:Body>
+		                           <tns:SharedEntryPointResponse xmlns:tns="http://ws.elend">
+		                               <tns:SharedEntryPointReturn>
+		                                   <item>
+		                                       <key>uploaded</key>
+		                                       <value>true</value>
+		                                   </item>
+		                               </tns:SharedEntryPointReturn>
+		                           </tns:SharedEntryPointResponse>
+		                       </soap:Body>
+		                   </soap:Envelope>
+		                   """ ) ) );
+
+		String wsdlUrl = "http://localhost:" + wireMock.getPort() + "/objectUpload?wsdl";
+
+		// Execute invoke webservice with binary data
+		instance.executeSource(
+		    String.format( """
+		                   inputs = { action: "upload", documentType: "PDF" };
+		                   // Simulate binary file content
+		                   binaryData = toBinary( toBase64( "Binary file content here" ) );
+		                   bx:invoke
+		                       webservice="%s"
+		                       method="SharedEntryPoint"
+		                       argumentCollection={ Inputs: inputs, InputFile: binaryData }
+		                       returnVariable="result";
+		                   """, wsdlUrl ),
+		    context );
+
+		// Verify Apache SOAP Map structure with proper type attributes
+		wireMock.verify( postRequestedFor( urlEqualTo( "/objectUpload" ) )
+		    .withRequestBody( containing( "<Inputs xsi:type=\"apachesoap:Map\">" ) )
+		    .withRequestBody( containing( "<item xsi:type=\"apachesoap:mapItem\">" ) )
+		    .withRequestBody( containing( "<key xsi:type=\"xsd:string\">action</key>" ) )
+		    .withRequestBody( containing( "<value xsi:type=\"xsd:string\">upload</value>" ) ) );
+
+		// Verify base64Binary element exists (specific encoding may vary)
+		wireMock.verify( postRequestedFor( urlEqualTo( "/objectUpload" ) )
+		    .withRequestBody( containing( "<InputFile" ) ) // Match opening tag (with or without attributes)
+		    .withRequestBody( containing( "</InputFile>" ) ) );
+
+		// Verify the result
+		assertThat( variables.get( result ) ).isNotNull();
+	}
+
+	@DisplayName( "Test invoke webservice with empty Apache SOAP Map" )
+	@Test
+	public void testInvokeWebServiceEmptyApacheSoapMap() {
+		// Set up objectUpload WSDL endpoint
+		wireMock.stubFor( get( urlEqualTo( "/objectUpload?wsdl" ) )
+		    .willReturn( aResponse()
+		        .withStatus( 200 )
+		        .withHeader( "Content-Type", "text/xml" )
+		        .withBody( String.format( OBJECT_UPLOAD_WSDL, wireMock.getPort() ) ) ) );
+
+		// Mock the SOAP operation response
+		wireMock.stubFor( post( urlEqualTo( "/objectUpload" ) )
+		    .willReturn( aResponse()
+		        .withStatus( 200 )
+		        .withHeader( "Content-Type", "text/xml" )
+		        .withBody( """
+		                   <?xml version="1.0" encoding="UTF-8"?>
+		                   <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+		                       <soap:Body>
+		                           <tns:SharedEntryPointResponse xmlns:tns="http://ws.elend">
+		                               <tns:SharedEntryPointReturn/>
+		                           </tns:SharedEntryPointResponse>
+		                       </soap:Body>
+		                   </soap:Envelope>
+		                   """ ) ) );
+
+		String wsdlUrl = "http://localhost:" + wireMock.getPort() + "/objectUpload?wsdl";
+
+		// Execute invoke webservice with empty Map parameter
+		instance.executeSource(
+		    String.format( """
+		                   emptyInputs = {};
+		                   fileContent = "";
+		                   bx:invoke
+		                       webservice="%s"
+		                       method="SharedEntryPoint"
+		                       argumentCollection={ Inputs: emptyInputs, InputFile: fileContent }
+		                       returnVariable="result";
+		                   """, wsdlUrl ),
+		    context );
+
+		// Verify the SOAP request contains empty Map structure (self-closing tag with type attribute)
+		wireMock.verify( postRequestedFor( urlEqualTo( "/objectUpload" ) )
+		    .withRequestBody( containing( "<Inputs xsi:type=\"apachesoap:Map\"" ) ) ); // Match opening tag (may be self-closing for empty map)
+
+		// Verify empty base64Binary element
+		wireMock.verify( postRequestedFor( urlEqualTo( "/objectUpload" ) )
+		    .withRequestBody( containing( "<InputFile" ) ) ); // Match opening tag (with or without attributes)
+
+		// Verify the result
+		assertThat( variables.get( result ) ).isNotNull();
 	}
 }

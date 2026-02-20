@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,9 +40,9 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -53,6 +54,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.EncryptionUtil;
 
 /**
  * A fluent SOAP web service client for BoxLang.
@@ -74,11 +76,33 @@ public class BoxSoapClient implements IReferenceable {
 	 * ------------------------------------------------------------------------------
 	 */
 
-	private static final String		SOAP_11_ENVELOPE_NS		= "http://schemas.xmlsoap.org/soap/envelope/";
-	private static final String		SOAP_12_ENVELOPE_NS		= "http://www.w3.org/2003/05/soap-envelope";
-	private static final String		XSI_NS					= "http://www.w3.org/2001/XMLSchema-instance";
-	private static final String		XSD_NS					= "http://www.w3.org/2001/XMLSchema";
-	private static final String		XSI_TYPE_ATTR			= "xsi:type";
+	private static final String		SOAP_11_ENVELOPE_NS			= "http://schemas.xmlsoap.org/soap/envelope/";
+	private static final String		SOAP_12_ENVELOPE_NS			= "http://www.w3.org/2003/05/soap-envelope";
+	private static final String		XSI_NS						= "http://www.w3.org/2001/XMLSchema-instance";
+	private static final String		XSD_NS						= "http://www.w3.org/2001/XMLSchema";
+	private static final String		XSI_TYPE_ATTR				= "xsi:type";
+
+	// Apache SOAP namespace and types
+	private static final String		APACHESOAP_NS_STRING		= "http://xml.apache.org/xml-soap";
+	private static final String		APACHESOAP_MAP_STRING		= "apachesoap:Map";
+	private static final String		APACHESOAP_MAP_ITEM_STRING	= "apachesoap:mapItem";
+	private static final String		MAP_STRING					= "Map";
+	private static final String		ITEM_STRING					= "item";
+	private static final String		KEY_STRING					= "key";
+	private static final String		VALUE_STRING				= "value";
+
+	// XSD type strings
+	private static final String		XSD_STRING_STRING			= "xsd:string";
+	private static final String		XSD_INT_STRING				= "xsd:int";
+	private static final String		XSD_DOUBLE_STRING			= "xsd:double";
+	private static final String		XSD_BOOLEAN_STRING			= "xsd:boolean";
+	private static final String		XSD_DATETIME_STRING			= "xsd:dateTime";
+	private static final String		XSD_BASE64BINARY_STRING		= "xsd:base64Binary";
+	private static final String		XSD_ANYTYPE_STRING			= "xsd:anyType";
+	private static final String		XSD_LONG_STRING				= "xsd:long";
+	private static final String		XSD_DECIMAL_STRING			= "xsd:decimal";
+	private static final String		XSD_BYTE_STRING				= "xsd:byte";
+	private static final String		XSD_SHORT_STRING			= "xsd:short";
 
 	/**
 	 * ------------------------------------------------------------------------------
@@ -104,7 +128,7 @@ public class BoxSoapClient implements IReferenceable {
 	/**
 	 * Request timeout in seconds (0 = no timeout)
 	 */
-	private int						timeout					= 30;
+	private int						timeout						= 30;
 
 	/**
 	 * Username for HTTP basic authentication
@@ -119,17 +143,17 @@ public class BoxSoapClient implements IReferenceable {
 	/**
 	 * Custom HTTP headers
 	 */
-	private Map<String, String>		customHeaders			= new HashMap<>();
+	private Map<String, String>		customHeaders				= new HashMap<>();
 
 	/**
 	 * SOAP version (1.1 or 1.2)
 	 */
-	private String					soapVersion				= "1.1";
+	private String					soapVersion					= "1.1";
 
 	/**
 	 * The creation timestamp
 	 */
-	private final Instant			createdAt				= Instant.now();
+	private final Instant			createdAt					= Instant.now();
 
 	/**
 	 * The execution context
@@ -139,9 +163,9 @@ public class BoxSoapClient implements IReferenceable {
 	/**
 	 * Statistics tracking
 	 */
-	private long					totalInvocations		= 0;
-	private long					successfulInvocations	= 0;
-	private long					failedInvocations		= 0;
+	private long					totalInvocations			= 0;
+	private long					successfulInvocations		= 0;
+	private long					failedInvocations			= 0;
 
 	/**
 	 * ------------------------------------------------------------------------------
@@ -659,6 +683,7 @@ public class BoxSoapClient implements IReferenceable {
 			envelope.setAttribute( "xmlns:soap", soapNS );
 			envelope.setAttribute( "xmlns:xsi", XSI_NS );
 			envelope.setAttribute( "xmlns:xsd", XSD_NS );
+			envelope.setAttribute( "xmlns:apachesoap", APACHESOAP_NS_STRING );
 
 			// Add target namespace if available
 			if ( operation.getNamespace() != null ) {
@@ -762,26 +787,168 @@ public class BoxSoapClient implements IReferenceable {
 		for ( WsdlParameter param : params ) {
 			Object value = argMap.get( param.getName() );
 			if ( value != null ) {
-				Element paramElement = doc.createElement( param.getName() );
-				paramElement.setTextContent( String.valueOf( value ) );
-
-				// Add xsi:type attribute if type is available
 				String type = param.getType();
-				if ( type != null && !type.isEmpty() ) {
+
+				// Handle special types that need complex serialization
+				if ( type != null && isApacheSoapMapType( type ) && value instanceof IStruct struct ) {
+					// Serialize as Apache SOAP Map
+					Element mapElement = serializeApacheSoapMap( doc, param.getName(), struct );
+					parentElement.appendChild( mapElement );
+				} else if ( type != null && isBase64BinaryType( type ) ) {
+					// Serialize as base64Binary
+					Element paramElement = doc.createElement( param.getName() );
+					paramElement.setAttribute( XSI_TYPE_ATTR, XSD_BASE64BINARY_STRING );
+					String base64Value = EncryptionUtil.base64Encode( value, StandardCharsets.UTF_8 );
+					paramElement.setTextContent( base64Value );
+
 					String xsiType = convertWsdlTypeToXsiType( type );
 					if ( xsiType != null ) {
 						paramElement.setAttribute( XSI_TYPE_ATTR, xsiType );
 					}
-				}
 
-				parentElement.appendChild( paramElement );
-				if ( logger.isTraceEnabled() ) {
-					logger.trace( "Added XML element to SOAP Request: <" + param.getName() +
-					    ( type != null ? " xsi:type=\"" + convertWsdlTypeToXsiType( type ) + "\"" : "" ) +
-					    ">" + value + "</" + param.getName() + ">" );
+					parentElement.appendChild( paramElement );
+					if ( logger.isTraceEnabled() ) {
+						logger.trace( "Added base64Binary element: <" + param.getName() + "> (length: " + base64Value.length() + ")" );
+					}
+				} else {
+					// Standard simple type serialization
+					Element paramElement = doc.createElement( param.getName() );
+					paramElement.setTextContent( String.valueOf( value ) );
+
+					// Add xsi:type attribute if type is available
+					if ( type != null && !type.isEmpty() ) {
+						String xsiType = convertWsdlTypeToXsiType( type );
+						if ( xsiType != null ) {
+							paramElement.setAttribute( XSI_TYPE_ATTR, xsiType );
+						}
+					}
+
+					parentElement.appendChild( paramElement );
+					if ( logger.isTraceEnabled() ) {
+						logger.trace( "Added XML element to SOAP Request: <" + param.getName() +
+						    ( type != null ? " xsi:type=\"" + convertWsdlTypeToXsiType( type ) + "\"" : "" ) +
+						    ">" + value + "</" + param.getName() + ">" );
+					}
 				}
 			}
 		}
+	}
+
+	/**
+	 * Check if the type is an Apache SOAP Map type
+	 *
+	 * @param type The WSDL type
+	 *
+	 * @return True if it's an Apache SOAP Map type
+	 */
+	private boolean isApacheSoapMapType( String type ) {
+		if ( type == null ) {
+			return false;
+		}
+
+		// Check for various representations of Apache SOAP Map type
+		// - apachesoap:Map (namespace prefix)
+		// - {http://xml.apache.org/xml-soap}Map (namespace URL)
+		// - Map with apache in the namespace
+		return type.equals( APACHESOAP_MAP_STRING )
+		    || type.equals( "{http://xml.apache.org/xml-soap}Map" )
+		    || type.endsWith( ":Map" ) && ( type.contains( "apache" ) || type.contains( "xml.apache.org" ) )
+		    || type.equals( MAP_STRING ); // fallback for simple Map reference
+	}
+
+	/**
+	 * Check if the type is a base64Binary type
+	 *
+	 * @param type The WSDL type
+	 *
+	 * @return True if it's a base64Binary type
+	 */
+	private boolean isBase64BinaryType( String type ) {
+		return type != null && type.contains( "base64Binary" );
+	}
+
+	/**
+	 * Serialize an IStruct as an Apache SOAP Map element
+	 * 
+	 * Format:
+	 * <Inputs>
+	 * <item>
+	 * <key>someKey</key>
+	 * <value>someValue</value>
+	 * </item>
+	 * ...
+	 * </Inputs>
+	 *
+	 * @param doc         The XML document
+	 * @param elementName The element name for the map
+	 * @param struct      The struct to serialize
+	 *
+	 * @return The map element
+	 */
+	private Element serializeApacheSoapMap( Document doc, String elementName, IStruct struct ) {
+		Element mapElement = doc.createElement( elementName );
+		// Per WSDL spec: <element name="Inputs" type="apachesoap:Map"/>
+		mapElement.setAttribute( XSI_TYPE_ATTR, APACHESOAP_MAP_STRING );
+
+		// Add each key-value pair as an item element
+		for ( Key key : struct.keySet() ) {
+			Object	value		= struct.get( key );
+
+			Element	itemElement	= doc.createElement( ITEM_STRING );
+			// Per WSDL spec: <element name="item" type="apachesoap:mapItem"/>
+			itemElement.setAttribute( XSI_TYPE_ATTR, APACHESOAP_MAP_ITEM_STRING );
+
+			Element keyElement = doc.createElement( KEY_STRING );
+			// Per WSDL spec: <element name="key" type="xsd:anyType"/>
+			keyElement.setAttribute( XSI_TYPE_ATTR, XSD_STRING_STRING );
+			keyElement.setTextContent( key.getName() );
+			itemElement.appendChild( keyElement );
+
+			Element	valueElement	= doc.createElement( VALUE_STRING );
+			// Per WSDL spec: <element name="value" type="xsd:anyType"/>
+			// Detect the actual type of the value for proper serialization
+			String	valueType		= detectXsdType( value );
+			valueElement.setAttribute( XSI_TYPE_ATTR, valueType );
+			valueElement.setTextContent( String.valueOf( value ) );
+			itemElement.appendChild( valueElement );
+
+			mapElement.appendChild( itemElement );
+		}
+
+		return mapElement;
+	}
+
+	/**
+	 * Detect the XSD type for a BoxLang value
+	 *
+	 * @param value The value to detect the type for
+	 *
+	 * @return The XSD type string (e.g., "xsd:string", "xsd:int", "xsd:boolean")
+	 */
+	private String detectXsdType( Object value ) {
+		if ( value == null ) {
+			return XSD_ANYTYPE_STRING;
+		}
+
+		// Check Java types
+		if ( value instanceof Integer || value instanceof Long || value instanceof Short || value instanceof Byte ) {
+			return XSD_INT_STRING;
+		}
+		if ( value instanceof Double || value instanceof Float ) {
+			return XSD_DOUBLE_STRING;
+		}
+		if ( value instanceof Boolean ) {
+			return XSD_BOOLEAN_STRING;
+		}
+		if ( value instanceof java.util.Date || value instanceof java.time.temporal.Temporal ) {
+			return XSD_DATETIME_STRING;
+		}
+		if ( value instanceof byte[] ) {
+			return XSD_BASE64BINARY_STRING;
+		}
+
+		// Default to string for all other types
+		return XSD_STRING_STRING;
 	}
 
 	/**
@@ -804,28 +971,28 @@ public class BoxSoapClient implements IReferenceable {
 		// Handle simple type names - default to xsd namespace for common types
 		switch ( wsdlType.toLowerCase() ) {
 			case "string" :
-				return "xsd:string";
+				return XSD_STRING_STRING;
 			case "double" :
 			case "float" :
-				return "xsd:double";
+				return XSD_DOUBLE_STRING;
 			case "int" :
 			case "integer" :
-				return "xsd:int";
+				return XSD_INT_STRING;
 			case "long" :
-				return "xsd:long";
+				return XSD_LONG_STRING;
 			case "boolean" :
-				return "xsd:boolean";
+				return XSD_BOOLEAN_STRING;
 			case "datetime" :
 			case "date" :
-				return "xsd:dateTime";
+				return XSD_DATETIME_STRING;
 			case "decimal" :
-				return "xsd:decimal";
+				return XSD_DECIMAL_STRING;
 			case "byte" :
-				return "xsd:byte";
+				return XSD_BYTE_STRING;
 			case "short" :
-				return "xsd:short";
+				return XSD_SHORT_STRING;
 			case "anytype" :
-				return "xsd:anyType";
+				return XSD_ANYTYPE_STRING;
 			default :
 				// For unknown types, assume they need the xsd namespace
 				return "xsd:" + wsdlType;
@@ -943,6 +1110,13 @@ public class BoxSoapClient implements IReferenceable {
 	 * @return The BoxLang value
 	 */
 	private Object xmlElementToBoxLang( Element element ) {
+		// Check if this element is an Apache SOAP Map (via xsi:type attribute)
+		String xsiType = element.getAttributeNS( XSI_NS, "type" );
+		if ( xsiType != null && !xsiType.isEmpty() && isApacheSoapMapType( xsiType ) ) {
+			// Deserialize as Apache SOAP Map
+			return deserializeApacheSoapMap( element );
+		}
+
 		// If the element has child elements, convert to a struct
 		NodeList children = element.getChildNodes();
 		if ( hasChildElements( element ) ) {
@@ -972,10 +1146,9 @@ public class BoxSoapClient implements IReferenceable {
 			return result;
 		} else {
 			// Leaf element - get text content and attempt type casting
-			String	textContent	= element.getTextContent();
+			String textContent = element.getTextContent();
 
 			// Check for xsi:type attribute for explicit type information
-			String	xsiType		= element.getAttributeNS( XSI_NS, "type" );
 			if ( xsiType != null && !xsiType.isEmpty() ) {
 				return castByXsiType( textContent, xsiType );
 			}
@@ -983,6 +1156,63 @@ public class BoxSoapClient implements IReferenceable {
 			// Attempt intelligent type casting based on content
 			return castStringValue( textContent );
 		}
+	}
+
+	/**
+	 * Deserialize an Apache SOAP Map XML element into a BoxLang struct
+	 * 
+	 * Expected format:
+	 * <MapElement xsi:type="apachesoap:Map">
+	 * <item xsi:type="apachesoap:mapItem">
+	 * <key xsi:type="xsd:string">someKey</key>
+	 * <value xsi:type="xsd:string">someValue</value>
+	 * </item>
+	 * ...
+	 * </MapElement>
+	 *
+	 * @param mapElement The Map element to deserialize
+	 *
+	 * @return A BoxLang struct containing the key-value pairs
+	 */
+	private IStruct deserializeApacheSoapMap( Element mapElement ) {
+		IStruct		result		= Struct.of();
+		NodeList	children	= mapElement.getChildNodes();
+
+		for ( int i = 0; i < children.getLength(); i++ ) {
+			Node child = children.item( i );
+			if ( child.getNodeType() == Node.ELEMENT_NODE ) {
+				Element childElement = ( Element ) child;
+				// Each child should be an <item> element
+				if ( ITEM_STRING.equals( childElement.getLocalName() ) ) {
+					// Extract key and value from the item
+					String		key				= null;
+					Object		value			= null;
+
+					NodeList	itemChildren	= childElement.getChildNodes();
+					for ( int j = 0; j < itemChildren.getLength(); j++ ) {
+						Node itemChild = itemChildren.item( j );
+						if ( itemChild.getNodeType() == Node.ELEMENT_NODE ) {
+							Element	itemElement	= ( Element ) itemChild;
+							String	localName	= itemElement.getLocalName();
+
+							if ( KEY_STRING.equals( localName ) ) {
+								key = itemElement.getTextContent();
+							} else if ( VALUE_STRING.equals( localName ) ) {
+								// Recursively deserialize the value (handles nested types)
+								value = xmlElementToBoxLang( itemElement );
+							}
+						}
+					}
+
+					// Add the key-value pair to the result struct
+					if ( key != null ) {
+						result.put( Key.of( key ), value );
+					}
+				}
+			}
+		}
+
+		return result;
 	}
 
 	/**
@@ -1023,6 +1253,9 @@ public class BoxSoapClient implements IReferenceable {
 				case "date" :
 				case "time" :
 					return ortus.boxlang.runtime.dynamic.casters.DateTimeCaster.cast( value );
+				case "base64binary" :
+					return BoxRuntime.getInstance().getFunctionService().getGlobalFunction( Key.toBinary ).invoke( executionContext, new Object[] { value },
+					    false, Key.toBinary );
 				default :
 					// Unknown type, return as string
 					return StringCaster.cast( value );

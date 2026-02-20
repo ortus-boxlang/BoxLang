@@ -881,6 +881,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		timeUnit							= Key.of( "timeUnit" );
 	public static final Key		timezone							= Key.of( "timezone" );
 	public static final Key		to									= Key.of( "to" );
+	public static final Key		toBinary							= Key.of( "toBinary" );
 	public static final Key		toJSON								= Key.of( "toJSON" );
 	public static final Key		token								= Key.of( "token" );
 	public static final Key		toKey								= Key.of( "toKey" );
