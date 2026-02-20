@@ -501,18 +501,18 @@ public class BoxSoapClient implements IReferenceable {
 	 */
 	@Override
 	public Object dereference( IBoxContext context, Key name, Boolean safe ) {
-		String methodName = name.getName();
+		String			methodName		= name.getName();
 
 		// Check if this is a known SoapClient method
-		if ( DynamicObject.of( this ).hasMethodNoCase( methodName ) ) {
+		DynamicObject	dynamicClient	= DynamicObject.of( this );
+		if ( dynamicClient.hasMethodNoCase( methodName ) ) {
 			// Return a reference to this client's method - the actual invocation will come via dereferenceAndInvoke
-			return this;
+			return dynamicClient.getMethod( methodName, true );
 		}
 
 		// Check if this is a SOAP operation
 		if ( this.wsdlDefinition.hasOperation( name ) ) {
-			// Return a reference to this client - the actual invocation will come via dereferenceAndInvoke
-			return this;
+			return this.wsdlDefinition.getOperation( name );
 		}
 
 		if ( safe ) {
