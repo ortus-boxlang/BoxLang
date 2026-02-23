@@ -581,6 +581,33 @@ public class QoQParseTest {
 	}
 
 	@Test
+	public void testDistinctWithParens() {
+		instance.executeSource(
+		    """
+		                 qryEmployees = queryNew(
+		           	"name,age,dept,supervisor",
+		           	"varchar,integer,varchar,varchar",
+		           	[
+		           		["luis",43,"Exec","luis"],
+		           		["brad",44,"IT","luis"],
+		           		["jacob",35,"IT","luis"],
+		           		["Jon",45,"HR","luis"]
+		              		]
+		              	)
+		    // not actualy a function-- just paren-wrapped column name
+		           q = queryExecute( "
+		       select distinct( dept )
+		       from qryEmployees
+		                                           ",
+		                                                 	[],
+		                                                 	{ dbType : "query" }
+		                                                 );
+		                                                 """,
+		    context );
+		assertThat( variables.getAsQuery( q ).size() ).isEqualTo( 3 );
+	}
+
+	@Test
 	public void testNullAggregate() {
 		instance.executeSource(
 		    """
