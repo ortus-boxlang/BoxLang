@@ -318,7 +318,8 @@ while: preFix? WHILE LPAREN expression RPAREN statementOrBlock
     ;
 
 // assert isTrue;
-assert: ASSERT expression
+// assert isTrue : "message";
+assert: ASSERT expression ( COLON expression)?
     ;
 
 // break label;

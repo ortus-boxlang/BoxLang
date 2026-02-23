@@ -45,11 +45,22 @@ public class BoxAssertTransformer extends AbstractTransformer {
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 		nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
 		nodes.addAll( transpiler.transform( boxAssert.getExpression(), TransformerContext.RIGHT, ReturnValueContext.VALUE ) );
-		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-		    Type.getInternalName( Assert.class ),
-		    "invoke",
-		    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( IBoxContext.class ), Type.getType( Object.class ) ),
-		    false ) );
+
+		if ( boxAssert.getMessage() != null ) {
+			nodes.addAll( transpiler.transform( boxAssert.getMessage(), TransformerContext.RIGHT, ReturnValueContext.VALUE ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( Assert.class ),
+			    "invoke",
+			    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( IBoxContext.class ), Type.getType( Object.class ),
+			        Type.getType( Object.class ) ),
+			    false ) );
+		} else {
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( Assert.class ),
+			    "invoke",
+			    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( IBoxContext.class ), Type.getType( Object.class ) ),
+			    false ) );
+		}
 
 		if ( returnContext.empty ) {
 			nodes.add( new InsnNode( Opcodes.POP ) );

@@ -54,11 +54,17 @@ public class BoxAssertTransformer extends AbstractTransformer {
 											{
 												put( "expr", expr.toString() );
 												put( "contextName", transpiler.peekContextName() );
-
 											}
 										};
-		String				template	= "Assert.invoke(context,${expr});";
-		Node				javaStmt	= parseStatement( template, values );
+		String				template;
+		if ( boxAssert.getMessage() != null ) {
+			Expression message = ( Expression ) transpiler.transform( boxAssert.getMessage(), TransformerContext.RIGHT );
+			values.put( "message", message.toString() );
+			template = "Assert.invoke(${contextName},${expr},${message});";
+		} else {
+			template = "Assert.invoke(${contextName},${expr});";
+		}
+		Node javaStmt = parseStatement( template, values );
 		// logger.trace( node.getSourceText() + " -> " + javaStmt );
 		addIndex( javaStmt, node );
 		return javaStmt;
