@@ -21,7 +21,6 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.Strings;
 
@@ -32,15 +31,9 @@ import org.apache.commons.lang3.Strings;
 public class FQN {
 
 	/**
-	 * Pre-compiled pattern for splitting FQN strings by dots.
-	 * This is more performant than calling String.split() which compiles the pattern each time.
-	 */
-	protected static final Pattern	DOT_PATTERN		= Pattern.compile( "\\." );
-
-	/**
 	 * These words cannot appear in a package name.
 	 */
-	static final Set<String>		RESERVED_WORDS	= new HashSet<>( Arrays.asList( "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char",
+	static final Set<String>	RESERVED_WORDS	= new HashSet<>( Arrays.asList( "abstract", "assert", "boolean", "break", "byte", "case", "catch", "char",
 	    "class", "const", "continue", "default", "do", "double", "else", "enum", "extends", "final", "finally", "float", "for", "goto", "if", "implements",
 	    "import", "instanceof", "int", "interface", "long", "native", "new", "package", "private", "protected", "public", "return", "short", "static",
 	    "strictfp", "super", "switch", "synchronized", "this", "throw", "throws", "transient", "try", "void", "volatile", "while" ) );
@@ -48,7 +41,12 @@ public class FQN {
 	/**
 	 * An array of strings representing all the pieces of the FQN.
 	 */
-	protected String[]				parts;
+	protected String[]			parts;
+
+	/**
+	 * Cached fqn
+	 */
+	protected String			fqn				= null;
 
 	/**
 	 * Construct an FQN that uses the root path to generate a relative path based on filePath.
@@ -138,6 +136,18 @@ public class FQN {
 	 * @return String
 	 */
 	public String toString() {
+		if ( fqn == null ) {
+			fqn = _toString();
+		}
+		return fqn;
+	}
+
+	/**
+	 * Get the FQN as a string. Includes both the name and package.
+	 *
+	 * @return String
+	 */
+	private String _toString() {
 		return String.join( ".", parts );
 	}
 
@@ -235,8 +245,7 @@ public class FQN {
 		}
 
 		// parse fqn into array, loop over array and clean/normalize parts
-		String[]	splitParts	= DOT_PATTERN.split( fqn );
-		String[]	result		= new String[ splitParts.length ];
+		String[] splitParts = splitOnDot( fqn );
 		for ( int i = 0; i < splitParts.length; i++ ) {
 			String s = splitParts[ i ];
 			// if starts with number, prefix with _
@@ -246,8 +255,40 @@ public class FQN {
 			if ( RESERVED_WORDS.contains( s ) ) {
 				s = "_" + s;
 			}
-			result[ i ] = s;
+			splitParts[ i ] = s;
 		}
+		return splitParts;
+	}
+
+	/**
+	 * Split a string on dots without using regex.
+	 * Pre-counts segments to allocate the array exactly once.
+	 *
+	 * @param str The string to split.
+	 *
+	 * @return An array of strings split on dots.
+	 */
+	protected static String[] splitOnDot( String str ) {
+		int	len		= str.length();
+
+		// Count dots to determine array size
+		int	count	= 1;
+		for ( int i = 0; i < len; i++ ) {
+			if ( str.charAt( i ) == '.' ) {
+				count++;
+			}
+		}
+
+		String[]	result	= new String[ count ];
+		int			idx		= 0;
+		int			start	= 0;
+		for ( int i = 0; i < len; i++ ) {
+			if ( str.charAt( i ) == '.' ) {
+				result[ idx++ ]	= str.substring( start, i );
+				start			= i + 1;
+			}
+		}
+		result[ idx ] = str.substring( start );
 		return result;
 	}
 
