@@ -46,6 +46,7 @@ public class GeneratedGetter extends UDF {
 	private final Key						name;
 	private final Key						variable;
 	private final String					returnType;
+	private final Key						returnTypeKey;
 	private final BoxSourceType				sourceType;
 
 	/**
@@ -56,10 +57,11 @@ public class GeneratedGetter extends UDF {
 	 */
 	@Deprecated
 	public GeneratedGetter( Key name, Key variable, String type ) {
-		this.name		= name;
-		this.variable	= variable;
-		this.returnType	= type;
-		this.sourceType	= BoxSourceType.BOXSCRIPT;
+		this.name			= name;
+		this.variable		= variable;
+		this.returnType		= type;
+		this.returnTypeKey	= Key.of( type );
+		this.sourceType		= BoxSourceType.BOXSCRIPT;
 	}
 
 	/**
@@ -67,10 +69,11 @@ public class GeneratedGetter extends UDF {
 	 * Create a new abstract function. There is no body to execute, just the metadata
 	 */
 	public GeneratedGetter( Key name, Key variable, String type, BoxSourceType sourceType ) {
-		this.name		= name;
-		this.variable	= variable;
-		this.returnType	= type;
-		this.sourceType	= sourceType;
+		this.name			= name;
+		this.variable		= variable;
+		this.returnType		= type;
+		this.returnTypeKey	= Key.of( type );
+		this.sourceType		= sourceType;
 	}
 
 	/**
@@ -99,6 +102,11 @@ public class GeneratedGetter extends UDF {
 	 */
 	public String getReturnType() {
 		return returnType;
+	}
+
+	@Override
+	public Key getReturnTypeKey() {
+		return returnTypeKey;
 	}
 
 	/**

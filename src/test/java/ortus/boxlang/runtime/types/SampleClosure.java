@@ -30,13 +30,14 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class SampleClosure extends Closure {
 
-	Object				returnVal	= null;
+	Object				returnVal		= null;
 
 	// These are not static just because this is a test class that is always transient! Do not copy this implementation.
-	private Key			name		= Closure.defaultName;
+	private Key			name			= Closure.defaultName;
 	private Argument[]	arguments;
-	private String		returnType	= "any";
-	private Access		access		= Access.PUBLIC;
+	private String		returnType		= "any";
+	private Key			returnTypeKey	= Key._ANY;
+	private Access		access			= Access.PUBLIC;
 
 	public Key getName() {
 		return name;
@@ -48,6 +49,10 @@ public class SampleClosure extends Closure {
 
 	public String getReturnType() {
 		return returnType;
+	}
+
+	public Key getReturnTypeKey() {
+		return returnTypeKey;
 	}
 
 	public IStruct getAnnotations() {

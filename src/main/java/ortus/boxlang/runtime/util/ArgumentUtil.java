@@ -83,12 +83,12 @@ public class ArgumentUtil {
 			Object	value	= positionalArguments[ i ];
 			if ( arguments.length - 1 >= i ) {
 				name	= arguments[ i ].name();
-				value	= ensureArgumentType( context, name, value, arguments[ i ].type(), functionName, enforceTypes );
+				value	= ensureArgumentType( context, name, value, arguments[ i ].typeKey(), functionName, enforceTypes );
 			} else {
 				name = Key.of( i + 1 );
 			}
 			if ( value == null && arguments.length - 1 >= i && arguments[ i ].hasDefaultValue() ) {
-				value = ensureArgumentType( context, name, arguments[ i ].getDefaultValue( context ), arguments[ i ].type(), functionName, enforceTypes );
+				value = ensureArgumentType( context, name, arguments[ i ].getDefaultValue( context ), arguments[ i ].typeKey(), functionName, enforceTypes );
 			}
 			scope.put( name, value );
 		}
@@ -101,7 +101,7 @@ public class ArgumentUtil {
 					    "Required argument [" + arguments[ i ].name().getName() + "] is missing for function [" + functionName.getName() + "]" );
 				}
 				scope.put( arguments[ i ].name(),
-				    ensureArgumentType( context, arguments[ i ].name(), arguments[ i ].getDefaultValue( context ), arguments[ i ].type(), functionName,
+				    ensureArgumentType( context, arguments[ i ].name(), arguments[ i ].getDefaultValue( context ), arguments[ i ].typeKey(), functionName,
 				        enforceTypes )
 				);
 			}
@@ -226,11 +226,11 @@ public class ArgumentUtil {
 				}
 				// Make sure the default value is valid
 				scope.put( argument.name(),
-				    ensureArgumentType( context, argument.name(), argument.getDefaultValue( context ), argument.type(), functionName, enforceTypes ) );
+				    ensureArgumentType( context, argument.name(), argument.getDefaultValue( context ), argument.typeKey(), functionName, enforceTypes ) );
 				// If they are here, confirm their types
 			} else {
 				scope.put( argument.name(),
-				    ensureArgumentType( context, argument.name(), scope.get( argument.name() ), argument.type(), functionName, enforceTypes ) );
+				    ensureArgumentType( context, argument.name(), scope.get( argument.name() ), argument.typeKey(), functionName, enforceTypes ) );
 			}
 		}
 		return scope;
@@ -318,8 +318,47 @@ public class ArgumentUtil {
 	 * @return The value of the argument
 	 *
 	 */
-	public static Object ensureArgumentType( IBoxContext context, Key name, Object value, String type, Key functionName ) {
+	public static Object ensureArgumentType( IBoxContext context, Key name, Object value, Key type, Key functionName ) {
 		return ensureArgumentType( context, name, value, type, functionName, true );
+	}
+
+	/**
+	 * Ensure the argument is the correct type
+	 * 
+	 * @deprecated Use the version of this method that takes a Key type instead of a String type.
+	 *
+	 * @param context      The context of the execution
+	 * @param name         The name of the argument
+	 * @param value        The value of the argument
+	 * @param type         The type of the argument
+	 * @param functionName The name of the function
+	 *
+	 * @return The value of the argument
+	 *
+	 */
+	@Deprecated
+	public static Object ensureArgumentType( IBoxContext context, Key name, Object value, String type, Key functionName ) {
+		return ensureArgumentType( context, name, value, Key.of( type ), functionName );
+	}
+
+	/**
+	 * Ensure the argument is the correct type
+	 * 
+	 * @deprecated Use the version of this method that takes a Key type instead of a String type.
+	 *
+	 * @param context      The context of the execution
+	 * @param name         The name of the argument
+	 * @param value        The value of the argument
+	 * @param type         The type of the argument
+	 * @param functionName The name of the function
+	 * @param enforceTypes Whether to enforce argument types
+	 *
+	 * @return The value of the argument
+	 *
+	 */
+	@Deprecated
+	public static Object ensureArgumentType( IBoxContext context, Key name, Object value, String type, Key functionName, boolean enforceTypes ) {
+		return ensureArgumentType( context, name, value, Key.of( type ), functionName, enforceTypes );
 	}
 
 	/**
@@ -335,7 +374,7 @@ public class ArgumentUtil {
 	 * @return The value of the argument
 	 *
 	 */
-	public static Object ensureArgumentType( IBoxContext context, Key name, Object value, String type, Key functionName, boolean enforceTypes ) {
+	public static Object ensureArgumentType( IBoxContext context, Key name, Object value, Key type, Key functionName, boolean enforceTypes ) {
 		if ( !enforceTypes )
 			return value;
 

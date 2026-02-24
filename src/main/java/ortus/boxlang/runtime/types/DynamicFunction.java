@@ -61,6 +61,11 @@ public class DynamicFunction extends UDF {
 	private String													returnType		= "any";
 
 	/**
+	 * The return type key of the function, default is Key._ANY
+	 */
+	private Key														returnTypeKey	= Key._ANY;
+
+	/**
 	 * The arguments of the function
 	 */
 	private Argument[]												arguments		= EMPTY_ARGUMENTS;
@@ -225,6 +230,14 @@ public class DynamicFunction extends UDF {
 	@Override
 	public String getReturnType() {
 		return this.returnType;
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	@Override
+	public Key getReturnTypeKey() {
+		return this.returnTypeKey;
 	}
 
 	/**
