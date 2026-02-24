@@ -35,6 +35,7 @@ import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.NullValue;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.util.StringUtil;
 import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
@@ -194,7 +195,7 @@ public class GenericCaster implements IBoxCaster {
 		}
 
 		// Allow longTruncate, integerTruncate, shortTruncate, etc to passthru
-		if ( type.endsWith( "truncate" ) ) {
+		if ( StringUtil.endsWithIgnoreCase( typeName, "truncate" ) ) {
 			allowTruncate	= true;
 			type			= type.substring( 0, type.length() - 8 ).trim();
 		}

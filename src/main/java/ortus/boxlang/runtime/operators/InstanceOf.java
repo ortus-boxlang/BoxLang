@@ -24,6 +24,7 @@ import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.types.util.StringUtil;
 
 /**
  * Performs instance of check.
@@ -197,10 +198,30 @@ public class InstanceOf implements IOperator {
 	 */
 	private static boolean looseClassCheck( String actual, String expected ) {
 		// Perform case insensitive check first since it's faster
-		return actual.equals( expected )
-		    || actual.equalsIgnoreCase( expected )
-		    || actual.endsWith( "." + expected )
-		    || actual.toLowerCase().endsWith( "." + expected.toLowerCase() );
+
+		// Qualifies for exact check "string" == "string" or "java.lang.String" == "java.lang.String"
+		if ( actual.length() == expected.length() ) {
+			if ( actual.equals( expected ) ) {
+				return true;
+			}
+			if ( actual.equalsIgnoreCase( expected ) ) {
+				return true;
+			}
+			// Qualifies for suffix check "String" == "java.lang.String"
+		} else if ( actual.length() > expected.length() ) {
+			// if expected contains a dot, then abort. Loop over char array to find out
+			for ( char ch : expected.toCharArray() ) {
+				if ( ch == '.' ) {
+					return false;
+				}
+			}
+
+			// Otherwise, default to a slower case-insensitive suffix check
+			if ( StringUtil.endsWithIgnoreCase( actual, "." + expected ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 }

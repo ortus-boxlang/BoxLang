@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.JavaMethod;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.util.StringUtil;
 import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
@@ -155,18 +156,29 @@ public class FunctionCaster implements IBoxCaster {
 	 */
 	@SuppressWarnings( "rawtypes" )
 	public static String getSAMName( Object object, String SAMClass ) {
-		// Turn shortcuts like producer into java.util.function.Producer
-		SAMClass = expandKnownClasses( SAMClass );
-
-		// Lets load up the class and see if it's valid
-		// TODO: consider using the class loccater, but we'll need the context passed through for that
-		Class<?> clazz;
-		try {
-			clazz = BoxRuntime.getInstance().getClass().getClassLoader().loadClass( SAMClass );
-		} catch ( ClassNotFoundException e ) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		// Rule out a few common cases we know aren't going to be a function
+		if ( object instanceof Number || object instanceof Boolean ) {
 			return null;
+		}
+
+		// Check if this is a known JDK functional interface we can resolve without class loading
+		// One final check. if we have a string, there is only ONE valid SAM
+		if ( object instanceof String && !StringUtil.endsWithIgnoreCase( SAMClass, "Comparable" ) ) {
+			return null;
+		}
+		Class<?> clazz = expandKnownClasses( SAMClass );
+
+		// If not a known class, fall back to dynamic class loading
+		if ( clazz == null ) {
+			// TODO: consider using the class locator, but we'll need the context passed through for that
+			// TODO: Also, cache this lookup of string class name to loaded class.
+			try {
+				clazz = BoxRuntime.getInstance().getClass().getClassLoader().loadClass( SAMClass );
+			} catch ( ClassNotFoundException e ) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				return null;
+			}
 		}
 
 		// If the class exists, is an interface, and the object is not assignable from it, then let's see if it's a SAM.
@@ -237,40 +249,41 @@ public class FunctionCaster implements IBoxCaster {
 
 	}
 
-	private static String expandKnownClasses( String SAMClass ) {
+	@SuppressWarnings( "rawtypes" )
+	private static Class<?> expandKnownClasses( String SAMClass ) {
 		return switch ( SAMClass.toLowerCase() ) {
-			case "consumer", "java.util.function.consumer" -> "java.util.function.Consumer";
-			case "biconsumer", "java.util.function.biconsumer" -> "java.util.function.BiConsumer";
-			case "doubleconsumer", "java.util.function.doubleconsumer" -> "java.util.function.DoubleConsumer";
-			case "intconsumer", "java.util.function.intconsumer" -> "java.util.function.IntConsumer";
-			case "longconsumer", "java.util.function.longconsumer" -> "java.util.function.LongConsumer";
-			case "objdoubleconsumer", "java.util.function.objdoubleconsumer" -> "java.util.function.ObjDoubleConsumer";
-			case "objintconsumer", "java.util.function.objintconsumer" -> "java.util.function.ObjIntConsumer";
-			case "objlongconsumer", "java.util.function.objlongconsumer" -> "java.util.function.ObjLongConsumer";
-			case "doublebinaryoperator", "java.util.function.doublebinaryoperator" -> "java.util.function.DoubleBinaryOperator";
-			case "doublefunction", "java.util.function.doublefunction" -> "java.util.function.DoubleFunction";
-			case "doubletointfunction", "java.util.function.doubletointfunction" -> "java.util.function.DoubleToIntFunction";
-			case "doubletolongfunction", "java.util.function.doubletolongfunction" -> "java.util.function.DoubleToLongFunction";
-			case "unaryoperator", "java.util.function.unaryoperator" -> "java.util.function.UnaryOperator";
-			case "binaryoperator", "java.util.function.binaryoperator" -> "java.util.function.BinaryOperator";
-			case "doubleunaryoperator", "java.util.function.doubleunaryoperator" -> "java.util.function.DoubleUnaryOperator";
-			case "function", "java.util.function.function" -> "java.util.function.Function";
-			case "intbinaryoperator", "java.util.function.intbinaryoperator" -> "java.util.function.IntBinaryOperator";
-			case "intfunction", "java.util.function.intfunction" -> "java.util.function.IntFunction";
-			case "inttodoublefunction", "java.util.function.inttodoublefunction" -> "java.util.function.IntToDoubleFunction";
-			case "inttolongfunction", "java.util.function.inttolongfunction" -> "java.util.function.IntToLongFunction";
-			case "intunaryoperator", "java.util.function.intunaryoperator" -> "java.util.function.IntUnaryOperator";
-			case "longbinaryoperator", "java.util.function.longbinaryoperator" -> "java.util.function.LongBinaryOperator";
-			case "longfunction", "java.util.function.longfunction" -> "java.util.function.LongFunction";
-			case "longtodoublefunction", "java.util.function.longtodoublefunction" -> "java.util.function.LongToDoubleFunction";
-			case "longtointfunction", "java.util.function.longtointfunction" -> "java.util.function.LongToIntFunction";
-			case "longunaryoperator", "java.util.function.longunaryoperator" -> "java.util.function.LongUnaryOperator";
-			case "bifunction", "java.util.function.bifunction" -> "java.util.function.BiFunction";
-			case "predicate", "java.util.function.predicate" -> "java.util.function.Predicate";
-			case "bipredicate", "java.util.function.bipredicate" -> "java.util.function.BiPredicate";
-			case "supplier", "java.util.function.supplier" -> "java.util.function.Supplier";
-			case "comparator", "java.util.comparator" -> "java.util.Comparator";
-			default -> SAMClass;
+			case "consumer", "java.util.function.consumer" -> java.util.function.Consumer.class;
+			case "biconsumer", "java.util.function.biconsumer" -> java.util.function.BiConsumer.class;
+			case "doubleconsumer", "java.util.function.doubleconsumer" -> java.util.function.DoubleConsumer.class;
+			case "intconsumer", "java.util.function.intconsumer" -> java.util.function.IntConsumer.class;
+			case "longconsumer", "java.util.function.longconsumer" -> java.util.function.LongConsumer.class;
+			case "objdoubleconsumer", "java.util.function.objdoubleconsumer" -> java.util.function.ObjDoubleConsumer.class;
+			case "objintconsumer", "java.util.function.objintconsumer" -> java.util.function.ObjIntConsumer.class;
+			case "objlongconsumer", "java.util.function.objlongconsumer" -> java.util.function.ObjLongConsumer.class;
+			case "doublebinaryoperator", "java.util.function.doublebinaryoperator" -> java.util.function.DoubleBinaryOperator.class;
+			case "doublefunction", "java.util.function.doublefunction" -> java.util.function.DoubleFunction.class;
+			case "doubletointfunction", "java.util.function.doubletointfunction" -> java.util.function.DoubleToIntFunction.class;
+			case "doubletolongfunction", "java.util.function.doubletolongfunction" -> java.util.function.DoubleToLongFunction.class;
+			case "unaryoperator", "java.util.function.unaryoperator" -> java.util.function.UnaryOperator.class;
+			case "binaryoperator", "java.util.function.binaryoperator" -> java.util.function.BinaryOperator.class;
+			case "doubleunaryoperator", "java.util.function.doubleunaryoperator" -> java.util.function.DoubleUnaryOperator.class;
+			case "function", "java.util.function.function" -> java.util.function.Function.class;
+			case "intbinaryoperator", "java.util.function.intbinaryoperator" -> java.util.function.IntBinaryOperator.class;
+			case "intfunction", "java.util.function.intfunction" -> java.util.function.IntFunction.class;
+			case "inttodoublefunction", "java.util.function.inttodoublefunction" -> java.util.function.IntToDoubleFunction.class;
+			case "inttolongfunction", "java.util.function.inttolongfunction" -> java.util.function.IntToLongFunction.class;
+			case "intunaryoperator", "java.util.function.intunaryoperator" -> java.util.function.IntUnaryOperator.class;
+			case "longbinaryoperator", "java.util.function.longbinaryoperator" -> java.util.function.LongBinaryOperator.class;
+			case "longfunction", "java.util.function.longfunction" -> java.util.function.LongFunction.class;
+			case "longtodoublefunction", "java.util.function.longtodoublefunction" -> java.util.function.LongToDoubleFunction.class;
+			case "longtointfunction", "java.util.function.longtointfunction" -> java.util.function.LongToIntFunction.class;
+			case "longunaryoperator", "java.util.function.longunaryoperator" -> java.util.function.LongUnaryOperator.class;
+			case "bifunction", "java.util.function.bifunction" -> java.util.function.BiFunction.class;
+			case "predicate", "java.util.function.predicate" -> java.util.function.Predicate.class;
+			case "bipredicate", "java.util.function.bipredicate" -> java.util.function.BiPredicate.class;
+			case "supplier", "java.util.function.supplier" -> java.util.function.Supplier.class;
+			case "comparator", "java.util.comparator" -> java.util.Comparator.class;
+			default -> null;
 		};
 	}
 
