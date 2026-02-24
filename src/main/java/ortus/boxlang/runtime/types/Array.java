@@ -722,18 +722,15 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	 * @return The one-based index value or zero if not found
 	 */
 	public int findIndexWithSubstring( Object value, Boolean caseSensitive ) {
-		return intStream()
-		    .filter(
-		        i -> ( ( !caseSensitive
-		            &&
-		            Strings.CI.containsAny( get( i ).toString(), value.toString() ) )
-		            ||
-		            ( caseSensitive
-		                &&
-		                get( i ).toString().contains( value.toString() ) ) )
-		    )
-		    .findFirst()
-		    .orElse( -1 ) + 1;
+		String	valueStr	= value.toString();
+		int		len			= size();
+		for ( int i = 0; i < len; i++ ) {
+			String elemStr = get( i ).toString();
+			if ( caseSensitive ? elemStr.contains( valueStr ) : Strings.CI.containsAny( elemStr, valueStr ) ) {
+				return i + 1;
+			}
+		}
+		return 0;
 	}
 
 	/**
@@ -745,12 +742,14 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	 * @return The one-based index value or zero if not found
 	 */
 	public int findIndex( Object value, Boolean caseSensitive ) {
-		return intStream()
-		    .filter(
-		        i -> EqualsEquals.invoke( get( i ), value, caseSensitive ) || get( i ).equals( value )
-		    )
-		    .findFirst()
-		    .orElse( -1 ) + 1;
+		int len = size();
+		for ( int i = 0; i < len; i++ ) {
+			Object elem = get( i );
+			if ( EqualsEquals.invoke( elem, value, caseSensitive ) || elem.equals( value ) ) {
+				return i + 1;
+			}
+		}
+		return 0;
 	}
 
 	/**
@@ -773,16 +772,19 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	 * @return The one-based index value or zero if not found
 	 */
 	public int findIndex( Function test, IBoxContext context ) {
-		return intStream()
-		    .filter( i -> BooleanCaster.cast(
-		        test.requiresStrictArguments()
-		            // Java Lambdas
-		            ? context.invokeFunction( test, new Object[] { get( i ) } )
-		            // BoxLang Functions, more args!!=
-		            : context.invokeFunction( test, new Object[] { get( i ), i, this } )
-		    ) )
-		    .findFirst()
-		    .orElse( -1 ) + 1;
+		boolean	strictArgs	= test.requiresStrictArguments();
+		int		len			= size();
+		for ( int i = 0; i < len; i++ ) {
+			Object result = strictArgs
+			    // Java Lambdas
+			    ? context.invokeFunction( test, new Object[] { get( i ) } )
+			    // BoxLang Functions, more args
+			    : context.invokeFunction( test, new Object[] { get( i ), i, this } );
+			if ( BooleanCaster.cast( result ) ) {
+				return i + 1;
+			}
+		}
+		return 0;
 	}
 
 	/**
