@@ -2930,7 +2930,7 @@ public class DynamicInteropService {
 				} else {
 					initKey = Key.init;
 				}
-				if ( boxClass.dereference( context, initKey, true ) != null ) {
+				if ( boxClass.getThisScope().get( initKey ) instanceof Function ) {
 					Object result;
 					if ( positionalArgs != null ) {
 						result = boxClass.dereferenceAndInvoke( classContext, initKey, positionalArgs, false );
