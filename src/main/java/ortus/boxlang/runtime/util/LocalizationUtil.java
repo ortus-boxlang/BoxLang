@@ -1095,6 +1095,13 @@ public final class LocalizationUtil {
 				"description", "International year/month/day format"
 			) );
 
+			// Short form four-digit year (M-d-yyyy)
+			add( Map.of(
+				"regexPattern", "^\\d{1,2}-\\d{1,2}-\\d{4}$",
+				"datePattern", "M-d-yyyy",
+				"description", "Short month-day-year format"
+			) );
+
 			// Short form two-digit year (M-d-yy)
 			add( Map.of(
 				"regexPattern", "^\\d{1,2}-\\d{1,2}-\\d{2}$",

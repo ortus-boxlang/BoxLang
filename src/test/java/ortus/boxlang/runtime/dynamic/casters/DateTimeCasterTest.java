@@ -321,6 +321,15 @@ public class DateTimeCasterTest {
 		assertThat( result.setFormat( "yyyy-MM-dd" ).toString() ).isEqualTo( "2018-09-06" );
 	}
 
+	@DisplayName( "Test short month pattern" )
+	@Test
+	public void testShortMonthPattern() {
+		String		dateString	= "9-30-2010";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.setFormat( "yyyy-MM-dd" ).toString() ).isEqualTo( "2010-09-30" );
+	}
+
 	@Test
 	@DisplayName( "Test medium format date and time with tz" )
 	public void testMedFormatTimezone() {
