@@ -147,7 +147,23 @@ public record ClassInfo(
 	 * @return A new ClassInfo instance for the class
 	 */
 	public static ClassInfo forClass( ResolvedFilePath resolvedFilePath, BoxSourceType sourceType, IBoxpiler boxpiler ) {
-		FQN fqn = resolvedFilePath.getFQN( "boxgenerated.boxclass" );
+		return forClass( resolvedFilePath, sourceType, boxpiler, null );
+	}
+
+	/**
+	 * Create a ClassInfo for a BoxLang class from a file on disk.
+	 *
+	 * @param resolvedFilePath The resolved file path to the class file
+	 * @param sourceType       The type of the source (BoxLang, CFML, etc.)
+	 * @param boxpiler         The boxpiler instance to use for compilation
+	 * @param fqn              The FQN to use for the class (if null, it will be generated from the resolved file path)
+	 *
+	 * @return A new ClassInfo instance for the class
+	 */
+	public static ClassInfo forClass( ResolvedFilePath resolvedFilePath, BoxSourceType sourceType, IBoxpiler boxpiler, FQN fqn ) {
+		if ( fqn == null ) {
+			fqn = resolvedFilePath.getFQN( "boxgenerated.boxclass" );
+		}
 		return new ClassInfo(
 		    fqn,
 		    resolvedFilePath.getBoxFQN(),

@@ -40,6 +40,7 @@ import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IProxyRunnable;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
+import ortus.boxlang.runtime.util.FQN;
 import ortus.boxlang.runtime.util.FRTransService;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
@@ -384,10 +385,41 @@ public abstract class Boxpiler implements IBoxpiler {
 	 */
 	@Override
 	public Class<IBoxRunnable> compileClass( ResolvedFilePath resolvedFilePath ) {
-		ClassInfo	classInfo	= ClassInfo.forClass( resolvedFilePath, Parser.detectFile( resolvedFilePath.absolutePath().toFile(), true ), this );
-		var			classPool	= getClassPool( classInfo.classPoolName() );
-		ensureClassInfo( classPool, classInfo );
+		ClassInfo				classInfo	= null;
+		Map<String, ClassInfo>	classPool	= null;
+		FQN						fqn			= null;
+
+		// In order to try hard to avoid creating a new ClassInfo instance, we'll try some quick attempts at finding an existing one first
+		if ( resolvedFilePath.mappingPath() != null ) {
+			// Start by seeing if there is already a class pool for the mapping path
+			classPool = getClassPool( resolvedFilePath.mappingPath() );
+			if ( classPool != null ) {
+				// If so, see if an exising entry patches our absolute path (the casing could be different on Windows, but there's a good chance it matches)
+				// We're not looping directly over the values() collection as the internal iterator can give ConcurrentModificationExceptions
+				ClassInfo[] snapshot = classPool.values().toArray( new ClassInfo[ 0 ] );
+				for ( ClassInfo entry : snapshot ) {
+					if ( entry.resolvedFilePath().equals( resolvedFilePath ) ) {
+						classInfo = entry;
+						break;
+					}
+				}
+				// Ok, if that didn't work, look for the normalized FQN.
+				if ( classInfo == null ) {
+					fqn			= resolvedFilePath.getFQN( "boxgenerated.boxclass" );
+					classInfo	= classPool.get( fqn.toString() );
+				}
+			}
+		}
+		// Ok, we give up. Now we create a full ClassInfo instance.
+		if ( classInfo == null ) {
+			// If we created an FQN above, don't let that effort be in vain. Pass it here. If it's null, it will be created internally.
+			classInfo	= ClassInfo.forClass( resolvedFilePath, Parser.detectFile( resolvedFilePath.absolutePath().toFile(), true ), this, fqn );
+			classPool	= getClassPool( classInfo.classPoolName() );
+			ensureClassInfo( classPool, classInfo );
+		}
+
 		// If the new class is newer than the one on disk, recompile it
+		@SuppressWarnings( "null" )
 		long	lastModified	= classPool.get( classInfo.fqn().toString() ).lastModified();
 		long	lastModified2	= classInfo.lastModified();
 		// This needs to be tested at decision time since the setting may have changed in the runtime since the compiler was created
