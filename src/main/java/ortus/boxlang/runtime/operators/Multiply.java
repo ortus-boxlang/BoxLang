@@ -39,23 +39,26 @@ public class Multiply implements IOperator {
 	 * @return The the result
 	 */
 	public static Number invoke( Object left, Object right ) {
-		// First turn the operands into numbers
-		Number	nLeft		= NumberCaster.cast( true, left );
-		Number	nRight		= NumberCaster.cast( true, right );
+		return invoke( NumberCaster.cast( true, left ), NumberCaster.cast( true, right ) );
+	}
 
-		// Track if either operand is a BigDecimal so we don't have to cast them again
+	/**
+	 * @param left  The left operand
+	 * @param right The right operand
+	 *
+	 * @return The the result
+	 */
+	public static Number invoke( Number left, Number right ) {
 		boolean	leftIsBD	= false;
 		boolean	rightIsBD	= false;
 
-		// If we're using high precision math, or either operand is already a BigDecimal, we'll use BigDecimal math
-		if ( MathUtil.isHighPrecisionMath() || ( leftIsBD = ( nLeft instanceof BigDecimal ) ) || ( rightIsBD = ( nRight instanceof BigDecimal ) ) ) {
-			BigDecimal	bdLeft	= leftIsBD ? ( BigDecimal ) nLeft : BigDecimalCaster.cast( nLeft );
-			BigDecimal	bdRight	= rightIsBD ? ( BigDecimal ) nRight : BigDecimalCaster.cast( nRight );
+		if ( MathUtil.isHighPrecisionMath() || ( leftIsBD = ( left instanceof BigDecimal ) ) || ( rightIsBD = ( right instanceof BigDecimal ) ) ) {
+			BigDecimal	bdLeft	= leftIsBD ? ( BigDecimal ) left : BigDecimalCaster.cast( left );
+			BigDecimal	bdRight	= rightIsBD ? ( BigDecimal ) right : BigDecimalCaster.cast( right );
 			return bdLeft.multiply( bdRight, MathUtil.getMathContext() );
 		}
 
-		// Otherwise, we can just multiply them
-		return nLeft.doubleValue() * nRight.doubleValue();
+		return left.doubleValue() * right.doubleValue();
 	}
 
 	/**

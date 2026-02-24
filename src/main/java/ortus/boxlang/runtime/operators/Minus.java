@@ -43,42 +43,46 @@ public class Minus implements IOperator {
 	 * @return The result
 	 */
 	public static Number invoke( Object left, Object right ) {
-		Number	nLeft	= NumberCaster.cast( true, left );
-		Number	nRight	= NumberCaster.cast( true, right );
+		return invoke( NumberCaster.cast( true, left ), NumberCaster.cast( true, right ) );
+	}
+
+	/**
+	 * @param left  The left operand
+	 * @param right The right operand
+	 *
+	 * @return The result
+	 */
+	public static Number invoke( Number left, Number right ) {
 		// A couple shortcuts-- if both operands are integers or longs within a certain range, we can just subtract them safely
-		if ( nLeft instanceof Integer li ) {
-			if ( nRight instanceof Integer ri ) {
-				// Check if the result will overflow an int
+		if ( left instanceof Integer li ) {
+			if ( right instanceof Integer ri ) {
 				long result = ( long ) li - ( long ) ri;
 				if ( result > Integer.MAX_VALUE || result < Integer.MIN_VALUE ) {
-					return result; // Return as long if it overflows
+					return result;
 				} else {
-					return ( int ) result; // Return as int if it doesn't overflow
+					return ( int ) result;
 				}
 			}
-			if ( nRight instanceof Long rl && rl <= MAX_SAFE_LONG && rl >= MIN_SAFE_LONG ) {
+			if ( right instanceof Long rl && rl <= MAX_SAFE_LONG && rl >= MIN_SAFE_LONG ) {
 				return ( long ) li - rl;
 			}
 		}
-		if ( nRight instanceof Integer ri ) {
-			if ( nLeft instanceof Long ll && ll <= MAX_SAFE_LONG && ll >= MIN_SAFE_LONG ) {
+		if ( right instanceof Integer ri ) {
+			if ( left instanceof Long ll && ll <= MAX_SAFE_LONG && ll >= MIN_SAFE_LONG ) {
 				return ll - ( long ) ri;
 			}
 		}
 
-		// Track if either operand is a BigDecimal so we don't have to cast them again
 		boolean	leftIsBD	= false;
 		boolean	rightIsBD	= false;
 
-		// If we're using high precision math, or either operand is already a BigDecimal, we'll use BigDecimal math
-		if ( MathUtil.isHighPrecisionMath() || ( leftIsBD = ( nLeft instanceof BigDecimal ) ) || ( rightIsBD = ( nRight instanceof BigDecimal ) ) ) {
-			BigDecimal	bdLeft	= leftIsBD ? ( BigDecimal ) nLeft : BigDecimalCaster.cast( nLeft );
-			BigDecimal	bdRight	= rightIsBD ? ( BigDecimal ) nRight : BigDecimalCaster.cast( nRight );
+		if ( MathUtil.isHighPrecisionMath() || ( leftIsBD = ( left instanceof BigDecimal ) ) || ( rightIsBD = ( right instanceof BigDecimal ) ) ) {
+			BigDecimal	bdLeft	= leftIsBD ? ( BigDecimal ) left : BigDecimalCaster.cast( left );
+			BigDecimal	bdRight	= rightIsBD ? ( BigDecimal ) right : BigDecimalCaster.cast( right );
 			return bdLeft.subtract( bdRight, MathUtil.getMathContext() );
 		}
 
-		// Otherwise, we can just subtract them as doubles
-		return nLeft.doubleValue() - nRight.doubleValue();
+		return left.doubleValue() - right.doubleValue();
 	}
 
 	/**

@@ -38,6 +38,15 @@ public class Decrement implements IOperator {
 	}
 
 	/**
+	 * @param number The number to decrement
+	 *
+	 * @return The result
+	 */
+	public static Number invoke( Number number ) {
+		return Plus.invoke( number, -1 );
+	}
+
+	/**
 	 * Apply this operator to an object/key and set the new value back in the same object/key
 	 *
 	 * @return The result
@@ -55,7 +64,7 @@ public class Decrement implements IOperator {
 	 */
 	public static Number invokePost( IBoxContext context, Object target, Key name ) {
 		Number	original	= NumberCaster.cast( Referencer.get( context, target, name, false ) );
-		Number	result		= invoke( original );
+		Number	result		= Plus.invoke( original, -1 );
 		Referencer.set( context, target, name, result );
 		return original;
 	}

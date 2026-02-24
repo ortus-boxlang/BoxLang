@@ -95,4 +95,14 @@ public class BoxBinaryOperation extends BoxExpression {
 		return v.visit( this );
 	}
 
+	@Override
+	public boolean returnsBoolean() {
+		return this.operator.isBoolean();
+	}
+
+	@Override
+	public boolean returnsNumber() {
+		return this.operator.isNumeric();
+	}
+
 }
