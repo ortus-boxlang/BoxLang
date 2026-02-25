@@ -58,6 +58,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.CustomException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
@@ -6327,13 +6328,12 @@ public class CoreLangTest {
 	@DisplayName( "It can cast array of Box Classes" )
 	@Test
 	void testItCanCastArrayOfBoxClasses() {
-
-		instance.executeSource(
+		assertThrows( BoxCastException.class, () -> instance.executeSource(
 		    """
 		    [ new src.test.java.TestCases.phase3.MyClass() ] castas sdf[];
 		         """,
 		    context
-		);
+		) );
 	}
 
 }
