@@ -6324,4 +6324,16 @@ public class CoreLangTest {
 
 	}
 
+	@DisplayName( "It can cast array of Box Classes" )
+	@Test
+	void testItCanCastArrayOfBoxClasses() {
+
+		instance.executeSource(
+		    """
+		    [ new src.test.java.TestCases.phase3.MyClass() ] castas sdf[];
+		         """,
+		    context
+		);
+	}
+
 }

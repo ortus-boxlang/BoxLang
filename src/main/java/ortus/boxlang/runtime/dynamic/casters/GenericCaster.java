@@ -218,6 +218,10 @@ public class GenericCaster implements IBoxCaster {
 					return null;
 				}
 			}
+			if ( result == null ) {
+				// This should only happen if fail is false.
+				return null;
+			}
 			if ( convertToArray ) {
 				// unsafe cast to Object[] is OK here because the convertToArray flag will never be true
 				// if our target type is an array of primitives, so we know it will have boxed types in it
@@ -248,7 +252,7 @@ public class GenericCaster implements IBoxCaster {
 				return CollectionCaster.cast( object, fail );
 			} else if ( fail ) {
 				throw new BoxCastException(
-				    String.format( "Could not cast object [%s] to type [%s]", object.getClass().getSimpleName(), type.getName() ) );
+				    String.format( "Could not cast object [%s] to type [%s]", TypeUtil.getObjectName( object ), type.getName() ) );
 			} else {
 				return null;
 			}
@@ -429,7 +433,7 @@ public class GenericCaster implements IBoxCaster {
 		}
 		if ( fail ) {
 			throw new BoxCastException(
-			    String.format( "Could not cast object [%s] to type [%s]", object.getClass().getSimpleName(), type.getName() ) );
+			    String.format( "Could not cast object [%s] to type [%s]", TypeUtil.getObjectName( object ), type.getName() ) );
 		} else {
 			return null;
 		}
