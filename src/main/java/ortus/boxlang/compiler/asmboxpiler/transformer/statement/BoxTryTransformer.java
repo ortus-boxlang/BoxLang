@@ -71,6 +71,10 @@ public class BoxTryTransformer extends AbstractTransformer {
 		AsmHelper.addDebugLabel( nodes, "BoxTryBlock" );
 
 		nodes.add( tryStartLabel );
+		// Ensure the try block always contains at least one bytecode instruction (NOP) so the
+		// exception table range [tryStartLabel, tryEndLabel) is never empty. An empty range
+		// causes a ClassFormatError ("Illegal exception table range") when the JVM verifies the class.
+		nodes.add( new InsnNode( Opcodes.NOP ) );
 
 		nodes.addAll( generateBodyNodesWithInlinedFinally( context, returnValueContext, boxTry.getTryBody(), boxTry.getFinallyBody(), () -> tryEndLabel ) );
 

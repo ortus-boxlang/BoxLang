@@ -6304,4 +6304,24 @@ public class CoreLangTest {
 
 	}
 
+	@Test
+	public void testASMBytecodeError() {
+
+		instance.executeSource(
+		    """
+		    try {
+		    	// empty
+		    }
+		    catch (any e) {
+		    	// empty
+		    }
+		    finally {
+		    	writedump(42)
+		    }
+		      """,
+		    context
+		);
+
+	}
+
 }
