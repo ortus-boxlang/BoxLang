@@ -113,7 +113,7 @@ public class Transaction extends Component {
 		}
 
 		if ( body == null ) {
-			switch ( attributes.getAsString( Key.action ) ) {
+			switch ( attributes.getAsString( Key.action ).toLowerCase() ) {
 				case "begin" :
 					transaction.begin();
 					break;
