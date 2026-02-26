@@ -6330,8 +6330,18 @@ public class CoreLangTest {
 	void testItCanCastArrayOfBoxClasses() {
 		assertThrows( BoxCastException.class, () -> instance.executeSource(
 		    """
-		    [ new src.test.java.TestCases.phase3.MyClass() ] castas sdf[];
+		    [ new src.test.java.TestCases.phase3.MyClass() ] castas foo.bar.MyClass[];
 		         """,
+		    context
+		) );
+
+		assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		       foo.bar.MyClass[] function getActive() {
+		       	return [ new src.test.java.TestCases.phase3.MyClass() ];
+		       }
+		    println( getActive() )
+		               """,
 		    context
 		) );
 	}

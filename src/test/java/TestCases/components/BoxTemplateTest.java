@@ -776,7 +776,7 @@ public class BoxTemplateTest {
 		    <bx:set result ="">
 		    	<bx:set vegetable = "bugsBunnySnack" />
 		    	<bx:switch expression="#vegetable#">
-		    <bx:case value="carrot:bugsBunnySnack" delimiter=":">
+		    <bx:case value="carrot:bugsBunnySnack" delimiters=":">
 		    	<bx:set result ="Carrots are orange.">
 		    </bx:case>
 		    <bx:defaultcase>

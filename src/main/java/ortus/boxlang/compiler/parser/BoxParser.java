@@ -892,7 +892,7 @@ public class BoxParser extends AbstractParser {
 			}
 
 			value		= findExprInAnnotations( annotations, "value", true, null, "case", getPosition( node ) );
-			delimiter	= findExprInAnnotations( annotations, "delimiter", false, new BoxStringLiteral( ",", null, null ), "case", getPosition( node ) );
+			delimiter	= findExprInAnnotations( annotations, "delimiters", false, new BoxStringLiteral( ",", null, null ), "case", getPosition( node ) );
 		}
 
 		List<BoxStatement> statements = null;

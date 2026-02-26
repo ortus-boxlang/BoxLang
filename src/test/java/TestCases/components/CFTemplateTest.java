@@ -815,7 +815,7 @@ public class CFTemplateTest {
 		    <cfset result ="">
 		    	<cfset vegetable = "bugsBunnySnack" />
 		    	<cfswitch expression="#vegetable#">
-		    <cfcase value="carrot:bugsBunnySnack" delimiter=":">
+		    <cfcase value="carrot:bugsBunnySnack" delimiters=":">
 		    	<cfset result ="Carrots are orange.">
 		    </cfcase>
 		    <cfdefaultcase>
