@@ -220,9 +220,15 @@ public class QuerySetCellTest {
 
 	}
 
-	@DisplayName( "It coerces empty strings to nulls if configured" )
+	@DisplayName( "queryNullIsString: False by default" )
 	@Test
-	public void testStringAsNull() {
+	public void testQueryNullIsStringDefault() {
+		assertThat( Query.queryNullIsString ).isEqualTo( false );
+	}
+
+	@DisplayName( "queryNullIsString: Coerces empty strings to nulls on non-string columns" )
+	@Test
+	public void testQueryNullIsStringCompatSetting() {
 		try {
 			Query.queryNullIsString = true;
 			// @formatter:off
