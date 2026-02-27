@@ -121,6 +121,34 @@ public class DumpTest {
 		assertThat( baos.toString() ).contains( "98,114,97,100" );
 	}
 
+	@DisplayName( "It can dump empty byte array" )
+	@Test
+	public void testCanDumpEmptyByteArray() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		       	<cfdump var="#''.getBytes()#" format="html">
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+		// @formatter:on
+		assertThat( baos.toString() ).contains( "Raw" );
+		assertThat( baos.toString() ).contains( "[]" );
+	}
+
+	@DisplayName( "It can dump truncated byte array over 1000 chars" )
+	@Test
+	public void testCanDumpTruncatedByteArray() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		       	<cfdump var="#repeatstring("*", 1001).getBytes()#" format="html">
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+		// @formatter:on
+		assertThat( baos.toString() ).contains( "Raw" );
+		assertThat( baos.toString() ).contains( "... truncated" );
+	}
+
 	@DisplayName( "It can dump tag struct with sorted keys" )
 	@Test
 	public void testCanDumpTagStructSorted() {

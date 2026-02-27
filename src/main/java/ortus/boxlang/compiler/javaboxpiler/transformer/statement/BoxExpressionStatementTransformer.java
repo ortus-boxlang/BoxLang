@@ -22,6 +22,7 @@ import com.github.javaparser.ast.stmt.ExpressionStmt;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxDecimalLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
@@ -52,7 +53,7 @@ public class BoxExpressionStatementTransformer extends AbstractTransformer {
 		}
 
 		if ( expr instanceof BoxIntegerLiteral || expr instanceof BoxStringLiteral || expr instanceof BoxBooleanLiteral || expr instanceof BoxDecimalLiteral
-		    || expr instanceof BoxNull ) {
+		    || expr instanceof BoxNull || expr instanceof BoxBinaryOperation ) {
 			// Java doesn't allow literal statements, so we will wrap them up in a form that Java will accept as an expression statement
 			// ObjectRef.echoValue( expr )
 			javaExpr = new MethodCallExpr( new NameExpr( "ObjectRef" ), "echoValue" ).addArgument( ( Expression ) transpiler.transform( expr ) );

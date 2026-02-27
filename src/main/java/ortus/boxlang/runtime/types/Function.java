@@ -137,11 +137,6 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	public static final Key				ARGUMENT_COLLECTION	= Key.argumentCollection;
 
 	/**
-	 * The enclosing class of the function, if any
-	 */
-	private Class<?>					enclosingClass		= null;
-
-	/**
 	 * Cached lookup of the output annotation
 	 */
 	private Boolean						canOutput			= null;
@@ -150,6 +145,9 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * Default can output
 	 */
 	private boolean						defaultOutput		= true;
+
+	private IStruct						metadata;
+	private IStruct						legacyMetadata;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -165,7 +163,12 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	/**
 	 * The interceptor service helper
 	 */
-	protected InterceptorService		interceptorService	= BoxRuntime.getInstance().getInterceptorService();
+	protected static InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
+
+	/**
+	 * Runtime instance
+	 */
+	protected static BoxRuntime			runtime				= BoxRuntime.getInstance();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -264,7 +267,6 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * @return The result of the function, which may be null
 	 */
 	public Object invoke( FunctionBoxContext context ) {
-
 		// We do this, since it's hot code
 		boolean	doEvents	= this.interceptorService.hasState( BoxEvent.PRE_FUNCTION_INVOKE.key() ) ||
 		    this.interceptorService.hasState( BoxEvent.POST_FUNCTION_INVOKE.key() ) ||
@@ -363,10 +365,16 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * @return the value, cast to the correct type if necessary
 	 */
 	protected Object ensureReturnType( IBoxContext context, Object value ) {
+		// If we're not enforcing type checks, just return the value as-is
+		if ( !runtime.getConfiguration().enforceUDFTypeChecks ) {
+			return value;
+		}
+
 		if ( value == null ) {
 			return null;
 		}
-		CastAttempt<Object> typeCheck = GenericCaster.attempt( context, value, getReturnType(), true );
+
+		CastAttempt<Object> typeCheck = GenericCaster.attempt( context, value, getReturnTypeKey(), true );
 		if ( !typeCheck.wasSuccessful() ) {
 			throw new BoxRuntimeException(
 			    String.format( "The return value of the function [%s] is of type [%s] does not match the declared type of [%s]",
@@ -397,7 +405,6 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 *
 	 * @return array of arguments
 	 */
-
 	public abstract Argument[] getArguments();
 
 	/**
@@ -406,6 +413,15 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * @return return type
 	 */
 	public abstract String getReturnType();
+
+	/**
+	 * Get the return type of the function as a Key.
+	 *
+	 * @return return type
+	 */
+	public Key getReturnTypeKey() {
+		return Key.of( getReturnType() );
+	}
 
 	/**
 	 * Get any annotations declared for this function, both the @annotation syntax and inline.
@@ -427,6 +443,27 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * @return function access modifier
 	 */
 	public abstract Access getAccess();
+
+	/**
+	 * Get the imports for this function.
+	 *
+	 * @return list of import definitions
+	 */
+	public abstract java.util.List<ortus.boxlang.runtime.loader.ImportDefinition> getImports();
+
+	/**
+	 * Get the source type of the function.
+	 *
+	 * @return the source type
+	 */
+	public abstract BoxSourceType getSourceType();
+
+	/**
+	 * Get the path to the runnable.
+	 *
+	 * @return the resolved file path
+	 */
+	public abstract ortus.boxlang.runtime.util.ResolvedFilePath getRunnablePath();
 
 	/**
 	 * Implement this method to invoke the actual function logic
@@ -452,7 +489,6 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 */
 	public List<BoxMethodDeclarationModifier> getModifiers() {
 		return List.of();
-
 	}
 
 	/**
@@ -715,7 +751,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 				return false;
 			}
 		}
-		if ( !func.getReturnType().equalsIgnoreCase( "any" ) && !getReturnType().equalsIgnoreCase( func.getReturnType() ) ) {
+		if ( !func.getReturnTypeKey().equals( Key._ANY ) && !getReturnTypeKey().equals( func.getReturnTypeKey() ) ) {
 			return false;
 		}
 
@@ -771,14 +807,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * Lazy loads it
 	 */
 	public Class<?> getEnclosingClass() {
-		if ( enclosingClass == null ) {
-			synchronized ( this.getClass() ) {
-				if ( enclosingClass == null ) {
-					enclosingClass = this.getClass().getEnclosingClass();
-				}
-			}
-		}
-		return enclosingClass;
+		return this.getClass();
 	}
 
 }

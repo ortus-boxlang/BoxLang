@@ -66,7 +66,8 @@ public class BoxInterfaceTransformer {
 		String	mappingName			= transpiler.getProperty( "mappingName" );
 		String	mappingPath			= transpiler.getProperty( "mappingPath" );
 		String	relativePath		= transpiler.getProperty( "relativePath" );
-		String	filePath			= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
+		String	filePath			= source instanceof SourceFile file && file.getFile() != null ? file.getFileAsRealPath().toString()
+		    : "unknown";
 		// trim leading . if exists
 		String	boxInterfaceName	= transpiler.getProperty( "boxFQN" );
 		String	sourceType			= transpiler.getProperty( "sourceType" );
@@ -77,6 +78,7 @@ public class BoxInterfaceTransformer {
 		transpiler.setProperty( "classTypeInternal", type.getInternalName() );
 
 		ClassNode classNode = new ClassNode();
+		transpiler.setOwningClass( classNode );
 
 		AsmHelper.init( classNode, false, type, Type.getType( ortus.boxlang.runtime.runnables.BoxInterface.class ), methodVisitor -> {
 		} );
@@ -258,6 +260,11 @@ public class BoxInterfaceTransformer {
 		    null,
 		    null ).visitEnd();
 
+		// Add udfs, lambdas, closures static fields for the new function compilation pattern
+		AsmHelper.addNullStaticField( classNode, "udfs", Type.getType( Map.class ), false );
+		AsmHelper.addNullStaticField( classNode, "lambdas", Type.getType( List.class ), false );
+		AsmHelper.addNullStaticField( classNode, "closures", Type.getType( List.class ), false );
+
 		AsmHelper.addPrviateStaticFieldGetter( classNode,
 		    type,
 		    "abstractMethods",
@@ -352,7 +359,9 @@ public class BoxInterfaceTransformer {
 													        );
 												        }
 
-												        if ( statement instanceof BoxFunctionDeclaration bfd && bfd.getBody() == null ) {
+												        if ( statement instanceof BoxFunctionDeclaration bfd
+												            && ( bfd.getBody() == null
+												                || bfd.getModifiers().contains( BoxMethodDeclarationModifier.STATIC ) ) ) {
 													        return new ArrayList<InsnNode>().stream();
 												        }
 
@@ -498,6 +507,49 @@ public class BoxInterfaceTransformer {
 
 			abstractMethods.forEach( node -> node.accept( methodVisitor ) );
 			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "abstractMethods", Type.getDescriptor( Map.class ) );
+
+			// Initialize udfs = new LinkedHashMap<>() and populate with UDF instances
+			methodVisitor.visitTypeInsn( Opcodes.NEW, Type.getInternalName( LinkedHashMap.class ) );
+			methodVisitor.visitInsn( Opcodes.DUP );
+			methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL, Type.getInternalName( LinkedHashMap.class ), "<init>",
+			    Type.getMethodDescriptor( Type.VOID_TYPE ), false );
+			for ( Map.Entry<Key, List<AbstractInsnNode>> entry : transpiler.getUDFInstantiations().entrySet() ) {
+				methodVisitor.visitInsn( Opcodes.DUP );
+				transpiler.createKey( entry.getKey().getName() ).forEach( n -> n.accept( methodVisitor ) );
+				entry.getValue().forEach( n -> n.accept( methodVisitor ) );
+				methodVisitor.visitMethodInsn( Opcodes.INVOKEINTERFACE, Type.getInternalName( Map.class ), "put",
+				    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( Object.class ), Type.getType( Object.class ) ), true );
+				methodVisitor.visitInsn( Opcodes.POP );
+			}
+			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "udfs", Type.getDescriptor( Map.class ) );
+
+			// Initialize lambdas = new ArrayList<>() and populate with Lambda instances
+			methodVisitor.visitTypeInsn( Opcodes.NEW, Type.getInternalName( ArrayList.class ) );
+			methodVisitor.visitInsn( Opcodes.DUP );
+			methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL, Type.getInternalName( ArrayList.class ), "<init>",
+			    Type.getMethodDescriptor( Type.VOID_TYPE ), false );
+			for ( List<AbstractInsnNode> lambdaInstantiation : transpiler.getLambdaInstantiations() ) {
+				methodVisitor.visitInsn( Opcodes.DUP );
+				lambdaInstantiation.forEach( n -> n.accept( methodVisitor ) );
+				methodVisitor.visitMethodInsn( Opcodes.INVOKEINTERFACE, Type.getInternalName( List.class ), "add",
+				    Type.getMethodDescriptor( Type.BOOLEAN_TYPE, Type.getType( Object.class ) ), true );
+				methodVisitor.visitInsn( Opcodes.POP );
+			}
+			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "lambdas", Type.getDescriptor( List.class ) );
+
+			// Initialize closures = new ArrayList<>() and populate with ClosureDefinition instances
+			methodVisitor.visitTypeInsn( Opcodes.NEW, Type.getInternalName( ArrayList.class ) );
+			methodVisitor.visitInsn( Opcodes.DUP );
+			methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL, Type.getInternalName( ArrayList.class ), "<init>",
+			    Type.getMethodDescriptor( Type.VOID_TYPE ), false );
+			for ( List<AbstractInsnNode> closureInstantiation : transpiler.getClosureInstantiations() ) {
+				methodVisitor.visitInsn( Opcodes.DUP );
+				closureInstantiation.forEach( n -> n.accept( methodVisitor ) );
+				methodVisitor.visitMethodInsn( Opcodes.INVOKEINTERFACE, Type.getInternalName( List.class ), "add",
+				    Type.getMethodDescriptor( Type.BOOLEAN_TYPE, Type.getType( Object.class ) ), true );
+				methodVisitor.visitInsn( Opcodes.POP );
+			}
+			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC, type.getInternalName(), "closures", Type.getDescriptor( List.class ) );
 		} );
 
 		return classNode;

@@ -19,13 +19,16 @@ import java.util.Map;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.ArrayCreationExpr;
+import com.github.javaparser.ast.expr.CastExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 
 import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.ast.BoxExpression;
@@ -115,7 +118,7 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 			private final static IStruct	annotations;
 			private final static IStruct	documentation;
 			private static Map<Key, AbstractFunction>	abstractMethods	= new LinkedHashMap<>();
-			private static Map<Key, Function>	defaultMethods	= new LinkedHashMap<>();
+			private static Map<Key, Function>	defaultMethods	= StructUtil.<Function>linkedMapOf();
 			private static ${classname} instance;
 			private static Key name = ${boxFQN};
 			private static List<BoxInterface> _supers = new ArrayList();
@@ -249,7 +252,7 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 		String							mappingPath		= transpiler.getProperty( "mappingPath" );
 		String							relativePath	= transpiler.getProperty( "relativePath" );
 		String							fileName		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
-		String							filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath()
+		String							filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFileAsRealPath().toString()
 		    : "unknown";
 		String							sourceType		= transpiler.getProperty( "sourceType" );
 
@@ -340,13 +343,44 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 				throw new ExpressionException( "Statement type not supported in an interface: " + statement.getClass().getSimpleName(), statement );
 			}
 		}
-		// loop over UDF registrations and add them to the _invoke() method
+		// Get the class declaration and defaultMethods field initializer to populate
+		ClassOrInterfaceDeclaration	thisClass			= entryPoint.getClassByName( classname ).orElseThrow();
+		MethodCallExpr				defaultMethodsInit	= ( MethodCallExpr ) thisClass.getFieldByName( "defaultMethods" ).orElseThrow()
+		    .getVariable( 0 ).getInitializer().get();
+
+		// loop over UDF invokers, add the static method to the class, and the function instance to the defaultMethods map
+		( ( JavaTranspiler ) transpiler ).getUDFInvokers().forEach( ( key, value ) -> {
+			defaultMethodsInit.addArgument( createKey( key.getName() ) );
+			defaultMethodsInit.addArgument( value.getSecond() );
+			thisClass.addMember( value.getFirst() );
+		} );
+
+		// loop over UDF registrations and add them to the pseudo-constructor,
+		// rewriting udfs -> defaultMethods with a cast since interfaces store functions as default methods
 		( ( JavaTranspiler ) transpiler ).getUDFDeclarations().forEach( it -> {
+			it.findAll( NameExpr.class ).stream()
+			    .filter( ne -> ne.getNameAsString().equals( "udfs" ) )
+			    .forEach( ne -> ne.setName( "defaultMethods" ) );
+			it.findAll( MethodCallExpr.class ).stream()
+			    .filter( mc -> mc.getNameAsString().equals( "registerUDF" ) )
+			    .forEach( mc -> {
+				    Expression arg = mc.getArgument( 0 );
+				    mc.setArgument( 0, new CastExpr( new ClassOrInterfaceType( null, "UDF" ), arg ) );
+			    } );
 			pseudoConstructorBody.addStatement( 0, it );
 		} );
 
 		// loop over static UDF registrations and add them to the static initializer
 		( ( JavaTranspiler ) transpiler ).getStaticUDFDeclarations().forEach( it -> {
+			it.findAll( NameExpr.class ).stream()
+			    .filter( ne -> ne.getNameAsString().equals( "udfs" ) )
+			    .forEach( ne -> ne.setName( "defaultMethods" ) );
+			it.findAll( MethodCallExpr.class ).stream()
+			    .filter( mc -> mc.getNameAsString().equals( "registerUDF" ) )
+			    .forEach( mc -> {
+				    Expression arg = mc.getArgument( 0 );
+				    mc.setArgument( 0, new CastExpr( new ClassOrInterfaceType( null, "UDF" ), arg ) );
+			    } );
 			staticInitializerMethod.getBody().get().addStatement( it );
 		} );
 

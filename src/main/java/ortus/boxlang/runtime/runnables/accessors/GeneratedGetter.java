@@ -20,8 +20,10 @@ package ortus.boxlang.runtime.runnables.accessors;
 import java.nio.file.Path;
 import java.util.List;
 
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -44,15 +46,34 @@ public class GeneratedGetter extends UDF {
 	private final Key						name;
 	private final Key						variable;
 	private final String					returnType;
+	private final Key						returnTypeKey;
+	private final BoxSourceType				sourceType;
+
+	/**
+	 * Constructor
+	 * Create a new abstract function. There is no body to execute, just the metadata
+	 * 
+	 * This constructor is deprecated. Use GeneratedGetter(Key, Key, String, BoxSourceType) instead.
+	 */
+	@Deprecated
+	public GeneratedGetter( Key name, Key variable, String type ) {
+		this.name			= name;
+		this.variable		= variable;
+		this.returnType		= type;
+		this.returnTypeKey	= Key.of( type );
+		this.sourceType		= BoxSourceType.BOXSCRIPT;
+	}
 
 	/**
 	 * Constructor
 	 * Create a new abstract function. There is no body to execute, just the metadata
 	 */
-	public GeneratedGetter( Key name, Key variable, String type ) {
-		this.name		= name;
-		this.variable	= variable;
-		this.returnType	= type;
+	public GeneratedGetter( Key name, Key variable, String type, BoxSourceType sourceType ) {
+		this.name			= name;
+		this.variable		= variable;
+		this.returnType		= type;
+		this.returnTypeKey	= Key.of( type );
+		this.sourceType		= sourceType;
 	}
 
 	/**
@@ -81,6 +102,11 @@ public class GeneratedGetter extends UDF {
 	 */
 	public String getReturnType() {
 		return returnType;
+	}
+
+	@Override
+	public Key getReturnTypeKey() {
+		return returnTypeKey;
 	}
 
 	/**
@@ -136,7 +162,29 @@ public class GeneratedGetter extends UDF {
 
 	@Override
 	public BoxSourceType getSourceType() {
-		return BoxSourceType.BOXSCRIPT;
+		return sourceType;
+	}
+
+	/**
+	 * Ensure the return value of the function is the correct type
+	 *
+	 * @param context the context to ensure the return type in
+	 * @param value   the value to ensure the type of
+	 *
+	 * @return the value, cast to the correct type if necessary
+	 */
+	@Override
+	protected Object ensureReturnType( IBoxContext context, Object value ) {
+		// Compat-- return types are not enforced on generated getters in CFML.
+		if ( sourceType.equals( BoxSourceType.CFSCRIPT ) || sourceType.equals( BoxSourceType.CFTEMPLATE ) ) {
+			return value;
+		}
+		return super.ensureReturnType( context, value );
+	}
+
+	@Override
+	public List<BoxMethodDeclarationModifier> getModifiers() {
+		return List.of();
 	}
 
 }

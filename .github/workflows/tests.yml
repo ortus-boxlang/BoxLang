@@ -2,6 +2,12 @@ name: Test Suites
 
 on:
   workflow_call:
+    inputs:
+      compilers:
+        required: false
+        type: string
+        default: '["java", "asm"]'
+        description: 'JSON list of compilers to run'
     secrets:
       SLACK_WEBHOOK_URL:
         required: false
@@ -25,13 +31,16 @@ jobs:
         jdkProvider: ["temurin"]
         jdkVersion: ["21"]
         experimental: [false]
-        compiler: ["java", "asm"]
+        compiler: ${{ fromJson(inputs.compilers) }}
         exclude:
           - os: windows-latest
             compiler: java
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v6
+
+      - name: Set Docker API version
+        run: echo "DOCKER_API_VERSION=1.44" >> $GITHUB_ENV
 
       - name: Setup Java
         uses: actions/setup-java@v5
@@ -59,6 +68,7 @@ jobs:
         uses: samin/mysql-action@v1.3
         with:
           host port: 3309
+          mysql version: '8.0'
           mysql database: "myDB"
           mysql root password: "123456Password"
 
@@ -100,7 +110,7 @@ jobs:
           ./gradlew test --stacktrace --console=plain -PaddJavaCompiler=true
 
       - name: Publish Test Reports
-        uses: mikepenz/action-junit-report@v6.1.0
+        uses: mikepenz/action-junit-report@v6.2.0
         if: always()
         with:
           report_paths: |

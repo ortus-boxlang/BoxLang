@@ -13,7 +13,7 @@ plugins {
 	id "application"
 	id 'antlr'
 	// For source code formatting
-	id "com.diffplug.spotless" version "7.2.1"
+	id "com.diffplug.spotless" version "8.2.1"
 	// Shadow
 	id "com.gradleup.shadow" version "9.2.2"
 	// For dependency updates
@@ -23,7 +23,7 @@ plugins {
 	// Maven Publisher
 	id 'maven-publish'
 	id 'signing'
-	id 'com.gradleup.nmcp.aggregation' version "1.4.2"
+	id 'com.gradleup.nmcp.aggregation' version "1.4.4"
     // Download task
     id "de.undercouch.download" version "5.6.0"
 }
@@ -107,7 +107,7 @@ dependencies {
 	testImplementation "commons-cli:commons-cli:1.11.0"
 	testImplementation "org.wiremock:wiremock:3.13.1"
 	testImplementation 'org.apache.derby:derby:10.17.1.0'
-	testImplementation 'io.undertow:undertow-core:2.3.20.Final'
+	testImplementation 'io.undertow:undertow-core:2.3.21.Final'
 	testImplementation 'org.bouncycastle:bcpkix-jdk18on:1.83'
 	// Explicitly declare the JUnit platform launcher (to avoid deprecation)
     testRuntimeOnly "org.junit.platform:junit-platform-launcher"
@@ -134,13 +134,13 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-cli
 	implementation "commons-cli:commons-cli:1.11.0"
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-objects
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.20.1'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.21.0'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-extension-javatime
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-extension-javatime:2.20.1'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-extension-javatime:2.21.0'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-stree
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-stree:2.20.1'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-stree:2.21.0'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-annotation-support
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.20.1'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.21.0'
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-api
 	implementation 'org.slf4j:slf4j-api:2.0.17'
 	// https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
@@ -300,6 +300,102 @@ tasks.named( "startScripts" ) {
 }
 tasks.named( "startShadowScripts" ) {
     dependsOn tasks.named( "jar" )
+}
+
+/**
+ * Customize BoxLang startup scripts to support .env file loading
+ */
+startShadowScripts {
+	doLast {
+		// Customize the Unix script
+		def unixScript = file("${buildDir}/scriptsShadow/boxlang")
+		customizeUnixScript(unixScript)
+
+		// Customize the Windows script
+		def windowsScript = file("${buildDir}/scriptsShadow/boxlang.bat")
+		customizeWindowsScript(windowsScript)
+
+		logger.info("+ BoxLang startup scripts customized with .env support")
+	}
+}
+
+/**
+ * Add .env file loading support to Unix script with --envfile argument support
+ */
+ext.customizeUnixScript = { File scriptFile ->
+	def content = scriptFile.text
+	def envLoaderScript = file('workbench/scripts/env-loader.sh').text
+
+	// Insert sourcing of env-loader.sh before "Determine the Java command to use"
+	def envLoadingInvocation = """
+######################################
+# Load environment variables from .env file
+######################################
+# Source the env-loader script inline (to preserve environment variables)
+${envLoaderScript}
+
+# Update arguments to filtered args (without --envfile)
+set -- \$FILTERED_ARGS
+
+######################################
+# End .env loading
+######################################
+
+"""
+
+	content = content.replace(
+		'# Determine the Java command to use to start the JVM.',
+		envLoadingInvocation + '# Determine the Java command to use to start the JVM.'
+	)
+
+	scriptFile.text = content
+	scriptFile.setExecutable(true, false)
+}
+
+/**
+ * Add .env file loading support to Windows script with --envfile argument support
+ */
+ext.customizeWindowsScript = { File scriptFile ->
+	def content = scriptFile.text
+	def envLoaderScript = file('workbench/scripts/env-loader.bat').text
+
+	// Enable delayed expansion at the beginning of the script (needed for !variable! syntax)
+	if (!content.contains('@setlocal enabledelayedexpansion')) {
+		content = content.replaceFirst(
+			'(@echo off)',
+			'$1\r\n@setlocal enabledelayedexpansion'
+		)
+	}
+
+	// Insert the env loading code before "Setup the command line"
+	def envLoadingInvocation = """
+
+@rem ######################################
+@rem Load environment variables from .env file
+@rem ######################################
+${envLoaderScript}
+
+@rem Update CMD_LINE_ARGS with filtered arguments
+set "CMD_LINE_ARGS_TEMP=%FILTERED_ARGS%"
+
+@rem ######################################
+@rem End .env loading
+@rem ######################################
+
+"""
+
+	content = content.replace(
+		'@rem Setup the command line',
+		envLoadingInvocation + '@rem Setup the command line'
+	)
+
+	// Replace CMD_LINE_ARGS with filtered arguments after it's set
+	content = content.replaceFirst(
+		/(set CMD_LINE_ARGS=%\*)/,
+		'$1\r\nif defined CMD_LINE_ARGS_TEMP set CMD_LINE_ARGS=%CMD_LINE_ARGS_TEMP%'
+	)
+
+	scriptFile.text = content
 }
 /**
  * Main BoxLang Distribution JAR
@@ -1292,6 +1388,8 @@ test {
 	if ( project.hasProperty( 'addJavaCompiler' ) && project.property( 'addJavaCompiler' ) == 'true' ) {
 		dependsOn jarJavaCompiler
 		classpath += files("$buildDir/libs/boxlang-compiler-java-${version}.jar")
+		// Tell BoxLang to use the Java compiler
+		systemProperty 'boxlang.compiler', 'java'
 	}
 
 	// Dependencies

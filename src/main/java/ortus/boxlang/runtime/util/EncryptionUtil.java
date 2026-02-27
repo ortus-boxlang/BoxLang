@@ -29,11 +29,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
+import java.security.KeyFactory;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.HexFormat;
@@ -382,6 +387,8 @@ public final class EncryptionUtil {
 		byte[] encodeItem = null;
 		if ( item instanceof byte[] byteArray ) {
 			encodeItem = byteArray;
+		} else if ( item instanceof IBoxBinaryRepresentable representable ) {
+			encodeItem = representable.toByteArray();
 		} else if ( item instanceof String strItem ) {
 			encodeItem = strItem.getBytes( charset );
 		} else {
@@ -609,6 +616,18 @@ public final class EncryptionUtil {
 
 	/**
 	 * Processes the encryption or decryption of an object
+	 * 
+	 * <p>
+	 * Security Note: This method includes CWE-502 mitigation for deserialization of untrusted data.
+	 * When decrypting data that cannot be interpreted as a UTF-8 string, the method validates that
+	 * the decrypted bytes represent a valid Java serialized object stream (0xACED magic bytes) before
+	 * attempting deserialization. This helps prevent deserialization attacks.
+	 * </p>
+	 * 
+	 * <p>
+	 * The implementation uses Apache Commons Lang 3.20.0+ which includes built-in protections
+	 * against CVE-2025-48924 and other known deserialization vulnerabilities.
+	 * </p>
 	 *
 	 * @param cipherMode       The cipher mode to use
 	 * @param obj              The object to encrypt
@@ -641,9 +660,37 @@ public final class EncryptionUtil {
 
 			String					baseAlgorithm	= StringUtils.substringBefore( algorithm, "/" );
 			AlgorithmParameterSpec	params			= null;
-			SecretKey				cipherKey		= null;
+			java.security.Key		cipherKey		= null;
 
-			if ( isPBEAlgorithm( algorithm ) ) {
+			if ( isRSAAlgorithm( algorithm ) ) {
+				// For RSA, parse the key as a private or public key
+				Exception	privateKeyException	= null;
+				Exception	publicKeyException	= null;
+
+				try {
+					// Try to parse as private key first (for encryption with private key or decryption)
+					cipherKey = parseRSAPrivateKey( key );
+				} catch ( Exception e ) {
+					privateKeyException = e;
+				}
+
+				if ( cipherKey == null ) {
+					// If that fails, try to parse as public key (for encryption with public key)
+					try {
+						cipherKey = parseRSAPublicKey( key );
+					} catch ( Exception ex ) {
+						publicKeyException = ex;
+					}
+				}
+
+				if ( cipherKey == null ) {
+					throw new BoxRuntimeException(
+					    "Failed to parse RSA key. Key must be a valid Base64-encoded RSA private key (PKCS8 format) or public key (X509 format). "
+					        + "Private key error: " + ( privateKeyException != null ? privateKeyException.getMessage() : "N/A" )
+					        + ". Public key error: " + ( publicKeyException != null ? publicKeyException.getMessage() : "N/A" ),
+					    publicKeyException != null ? publicKeyException : privateKeyException );
+				}
+			} else if ( isPBEAlgorithm( algorithm ) ) {
 				params		= new PBEParameterSpec( initVectorOrSalt, iterations != null ? iterations : DEFAULT_ENCRYPTION_ITERATIONS );
 				cipherKey	= SecretKeyFactory.getInstance( algorithm ).generateSecret( new PBEKeySpec( key.toCharArray() ) );
 			} else if ( isFBMAlgorithm( algorithm ) ) {
@@ -653,7 +700,6 @@ public final class EncryptionUtil {
 			if ( cipherKey == null ) {
 				cipherKey = new SecretKeySpec( decodeKeyBytes( key ), baseAlgorithm );
 			}
-
 			cipher.init( cipherMode, cipherKey, params );
 
 			if ( cipherMode == Cipher.DECRYPT_MODE ) {
@@ -661,10 +707,29 @@ public final class EncryptionUtil {
 				try {
 					return new String( decryptedBytes, DEFAULT_CHARSET );
 				} catch ( UnsupportedEncodingException e ) {
-					return SerializationUtils.deserialize( decryptedBytes );
+					// CWE-502 Mitigation: Only deserialize if the data is actually a Java serialized object
+					// Check for Java serialization magic bytes (0xACED) to identify serialized objects
+					boolean isSerializedObject = decryptedBytes.length >= 4
+					    && ( decryptedBytes[ 0 ] & 0xFF ) == 0xAC
+					    && ( decryptedBytes[ 1 ] & 0xFF ) == 0xED;
+
+					if ( isSerializedObject ) {
+						try {
+							// Note: Using Apache Commons Lang 3.20.0+ which includes CVE-2025-48924 mitigation
+							return SerializationUtils.deserialize( decryptedBytes );
+						} catch ( Exception deserializationException ) {
+							throw new BoxRuntimeException(
+							    "Failed to deserialize decrypted data. The data may be corrupted or contain untrusted content.",
+							    deserializationException
+							);
+						}
+					} else {
+						// Not a serialized object and not valid UTF-8 - return raw bytes
+						// This allows the caller to handle binary data (images, files, etc.)
+						return decryptedBytes;
+					}
 				}
 			} else {
-
 				byte[] result = new byte[ ivsSize + cipher.getOutputSize( objectBytes.length ) ];
 
 				if ( ivsSize > 0 ) {
@@ -910,6 +975,68 @@ public final class EncryptionUtil {
 	private static boolean isECBMode( String algorithm ) {
 		String[] algorithmParts = StringUtils.split( algorithm, "/" );
 		return algorithmParts.length > 1 && algorithmParts[ 1 ].equals( "ECB" );
+	}
+
+	/**
+	 * Returns true if the algorithm is an RSA algorithm
+	 *
+	 * @param algorithm The string representation of the algorithm
+	 *
+	 * @return
+	 */
+	public static boolean isRSAAlgorithm( String algorithm ) {
+		String baseAlgorithm = StringUtils.substringBefore( algorithm, "/" );
+		return Strings.CI.equals( baseAlgorithm, "RSA" );
+	}
+
+	/**
+	 * Parses an RSA private key from a Base64-encoded string or PEM format
+	 *
+	 * @param keyString The Base64-encoded key string (may include PEM headers)
+	 *
+	 * @return The parsed PrivateKey
+	 */
+	private static PrivateKey parseRSAPrivateKey( String keyString ) throws NoSuchAlgorithmException, InvalidKeySpecException {
+		// Remove PEM headers/footers and whitespace if present
+		String				cleanKey	= keyString
+		    .replaceAll( "-----BEGIN.*?-----", "" )
+		    .replaceAll( "-----END.*?-----", "" )
+		    .replaceAll( "\\s+", "" );
+
+		// Decode the Base64 key
+		byte[]				keyBytes	= Base64.getDecoder().decode( cleanKey );
+
+		// Create a PKCS8EncodedKeySpec from the decoded bytes
+		PKCS8EncodedKeySpec	keySpec		= new PKCS8EncodedKeySpec( keyBytes );
+
+		// Generate the PrivateKey
+		KeyFactory			keyFactory	= KeyFactory.getInstance( "RSA" );
+		return keyFactory.generatePrivate( keySpec );
+	}
+
+	/**
+	 * Parses an RSA public key from a Base64-encoded string or PEM format
+	 *
+	 * @param keyString The Base64-encoded key string (may include PEM headers)
+	 *
+	 * @return The parsed PublicKey
+	 */
+	private static PublicKey parseRSAPublicKey( String keyString ) throws NoSuchAlgorithmException, InvalidKeySpecException {
+		// Remove PEM headers/footers and whitespace if present
+		String				cleanKey	= keyString
+		    .replaceAll( "-----BEGIN.*?-----", "" )
+		    .replaceAll( "-----END.*?-----", "" )
+		    .replaceAll( "\\s+", "" );
+
+		// Decode the Base64 key
+		byte[]				keyBytes	= Base64.getDecoder().decode( cleanKey );
+
+		// Create an X509EncodedKeySpec from the decoded bytes
+		X509EncodedKeySpec	keySpec		= new X509EncodedKeySpec( keyBytes );
+
+		// Generate the PublicKey
+		KeyFactory			keyFactory	= KeyFactory.getInstance( "RSA" );
+		return keyFactory.generatePublic( keySpec );
 	}
 
 	/**

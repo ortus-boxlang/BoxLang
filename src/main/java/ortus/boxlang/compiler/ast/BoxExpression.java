@@ -42,6 +42,24 @@ public abstract class BoxExpression extends BoxNode {
 	}
 
 	/**
+	 * Returns true if this expression is guaranteed to return a boolean value.
+	 *
+	 * @return true if the expression always returns a boolean
+	 */
+	public boolean returnsBoolean() {
+		return false;
+	}
+
+	/**
+	 * Returns true if this expression is guaranteed to return a Number value.
+	 *
+	 * @return true if the expression always returns a Number
+	 */
+	public boolean returnsNumber() {
+		return false;
+	}
+
+	/**
 	 * Constructor
 	 *
 	 * @param position   position of the expression in the source code

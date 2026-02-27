@@ -101,6 +101,13 @@ public class CFLexerCustom extends CFLexer {
 	boolean										classBodyStarted		= false;
 
 	/**
+	 * Tracks if we just closed a #var# (IDENTIFIER followed by ICHAR).
+	 * This prevents incorrect parsing of expressions like #foo# EQ #bar#
+	 * where EQ appears to be encased in pound signs but is not.
+	 */
+	boolean										justClosedPoundVar		= false;
+
+	/**
 	 * Tokens that end an operator. Instead of having "less than" or "less than or equal to" as a single token sequence,
 	 * we'll just check for the ending token ("than", or "to")
 	 */
@@ -526,8 +533,10 @@ public class CFLexerCustom extends CFLexer {
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because next chars are the start of an operator" );
 						isIdentifier = true;
-					} else if ( lastTokenWas( ICHAR ) && nextNonWhiteSpaceCharIs( '#' ) && ( hasMode( hashMode ) || lastModeWas( DEFAULT_SCRIPT_MODE ) ) ) {
+					} else if ( lastTokenWas( ICHAR ) && nextNonWhiteSpaceCharIs( '#' ) && ( hasMode( hashMode ) || lastModeWas( DEFAULT_SCRIPT_MODE ) )
+					    && !justClosedPoundVar ) {
 						// The token is encased in #hash# signs
+						// Skip this check if we just closed a #var# to handle #foo# EQ #bar# correctly
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because it is encased in #hash# signs" );
 						isIdentifier = true;
@@ -579,6 +588,12 @@ public class CFLexerCustom extends CFLexer {
 						if ( debug )
 							System.out.println( "%%%%%%%%%%%% Not switching [" + nextToken.getText() + "] token to identifer" );
 					}
+				}
+				// Track if we just closed a #var# (IDENTIFIER followed by ICHAR) or just closed a function call #foo()# (RPAREN followed by ICHAR)
+				if ( nextToken.getType() == ICHAR && lastToken != null && ( lastToken.getType() == IDENTIFIER || lastToken.getType() == RPAREN ) ) {
+					justClosedPoundVar = true;
+				} else if ( nextToken.getChannel() != HIDDEN ) {
+					justClosedPoundVar = false;
 				}
 				return setLastToken( nextToken );
 		}
@@ -663,6 +678,7 @@ public class CFLexerCustom extends CFLexer {
 		lastToken				= null;
 		classBodyStarted		= false;
 		classTokenReached		= false;
+		justClosedPoundVar		= false;
 	}
 
 	/**

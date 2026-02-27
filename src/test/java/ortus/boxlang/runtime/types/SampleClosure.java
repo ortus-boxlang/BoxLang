@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.types;
 import java.nio.file.Path;
 import java.util.List;
 
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -29,13 +30,14 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class SampleClosure extends Closure {
 
-	Object				returnVal	= null;
+	Object				returnVal		= null;
 
 	// These are not static just because this is a test class that is always transient! Do not copy this implementation.
-	private Key			name		= Closure.defaultName;
+	private Key			name			= Closure.defaultName;
 	private Argument[]	arguments;
-	private String		returnType	= "any";
-	private Access		access		= Access.PUBLIC;
+	private String		returnType		= "any";
+	private Key			returnTypeKey	= Key._ANY;
+	private Access		access			= Access.PUBLIC;
 
 	public Key getName() {
 		return name;
@@ -47,6 +49,10 @@ public class SampleClosure extends Closure {
 
 	public String getReturnType() {
 		return returnType;
+	}
+
+	public Key getReturnTypeKey() {
+		return returnTypeKey;
 	}
 
 	public IStruct getAnnotations() {
@@ -71,6 +77,10 @@ public class SampleClosure extends Closure {
 
 	public BoxSourceType getSourceType() {
 		return BoxSourceType.BOXSCRIPT;
+	}
+
+	public List<BoxMethodDeclarationModifier> getModifiers() {
+		return List.of();
 	}
 
 	public SampleClosure( Argument[] arguments, IBoxContext declaringContext, Object returnVal ) {

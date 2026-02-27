@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.1] - 2026-02-04
+
+- <https://boxlang.ortusbooks.com/readme/release-history/1.10.0>
+
+## [1.10.0] - 2026-02-02
+
+- <https://boxlang.ortusbooks.com/readme/release-history/1.10.0>
+
 ## [1.9.0] - 2026-01-08
 
 - <https://boxlang.ortusbooks.com/readme/release-history/1.9.0>
@@ -53,7 +61,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - <https://boxlang.ortusbooks.com/readme/release-history/1.0.0>
 
-[unreleased]: https://github.com/ortus-boxlang/BoxLang/compare/v1.9.0...HEAD
+[unreleased]: https://github.com/ortus-boxlang/BoxLang/compare/v1.10.1...HEAD
+[1.10.1]: https://github.com/ortus-boxlang/BoxLang/compare/v1.10.0...v1.10.1
+[1.10.0]: https://github.com/ortus-boxlang/BoxLang/compare/v1.9.0...v1.10.0
 [1.9.0]: https://github.com/ortus-boxlang/BoxLang/compare/v1.8.0...v1.9.0
 [1.8.0]: https://github.com/ortus-boxlang/BoxLang/compare/v1.7.0...v1.8.0
 [1.7.0]: https://github.com/ortus-boxlang/BoxLang/compare/v1.6.0...v1.7.0

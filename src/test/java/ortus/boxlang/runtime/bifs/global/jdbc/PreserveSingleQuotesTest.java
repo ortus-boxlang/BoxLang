@@ -143,4 +143,80 @@ public class PreserveSingleQuotesTest extends BaseJDBCTest {
 		assertThat( variables.getAsQuery( result ).getRowAsStruct( 0 ).get( "name" ) ).isEqualTo( "Bob O'Reily" );
 	}
 
+	@Test
+	public void testListQualifyWithSingleQuoteQualifier() {
+		instance.executeSource(
+		    """
+		    <bx:output>
+		    	<bx:set qry = queryNew( "name", "varchar", [["Brad"],["Luis"],["O'Neil"]] )>
+		    	<bx:set names = "Brad,O'Neil">
+		    	<bx:query name="result" dbtype="query">
+		    		SELECT *
+		    		FROM qry
+		    		WHERE name in ( #listQualify( names, "'" )# )
+		    	</bx:query>
+		    </bx:output>
+		    		  """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 2 );
+		assertThat( variables.getAsQuery( result ).getRowAsStruct( 0 ).get( "name" ) ).isEqualTo( "Brad" );
+		assertThat( variables.getAsQuery( result ).getRowAsStruct( 1 ).get( "name" ) ).isEqualTo( "O'Neil" );
+	}
+
+	@Test
+	public void testListQualifyWithNonSingleQuoteQualifier() {
+		instance.executeSource(
+		    """
+		    <bx:output>
+		    	<bx:set qry = queryNew( "name", "varchar", [["*Brad*,*O'Neil*"]] )>
+		    	<bx:set names = "Brad,O'Neil">
+		    	<bx:query name="result" dbtype="query">
+		    		SELECT *
+		    		FROM qry
+		    		WHERE name in ( '#listQualify( names, "*" )#' )
+		    	</bx:query>
+		    </bx:output>
+		    		  """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 1 );
+		assertThat( variables.getAsQuery( result ).getRowAsStruct( 0 ).get( "name" ) ).isEqualTo( "*Brad*,*O'Neil*" );
+	}
+
+	@Test
+	public void testODBCDateBIFs() {
+		instance.executeSource(
+		    """
+		    <bx:output>
+		    	<bx:set qry = queryNew( "date", "date", [[now()]] )>
+		    	<bx:query name="result" dbtype="query">
+		    		SELECT *
+		    		FROM qry
+		    		WHERE date <= #createODBCDateTime( now() )#
+		    			AND date <= #createODBCDate( now() )#
+		    			AND date <= #createODBCTime( now() )#
+		    	</bx:query>
+		    </bx:output>
+		    		  """,
+		    context, BoxSourceType.BOXTEMPLATE );
+	}
+
+	@Test
+	public void testODBCDateValue() {
+		instance.executeSource(
+		    """
+		       <bx:output>
+		    <!--- remove milliseconds --->
+		     <bx:set theDate = now().toString() castas Date >
+		       	<bx:set qry = queryNew( "date", "date", [[theDate]] )>
+		       	<bx:query name="result" dbtype="query">
+		       		SELECT *
+		       		FROM qry
+		       		WHERE date = #theDate#
+		       	</bx:query>
+		       </bx:output>
+		       		  """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 1 );
+	}
+
 }

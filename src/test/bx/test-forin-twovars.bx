@@ -1,0 +1,28 @@
+// Test two-variable for-in loop support
+
+// Test with struct (key, value)
+println( "=== Testing struct iteration (key, value) ===" );
+myStruct = { "name": "BoxLang", "version": "1.0", "type": "JVM Language" };
+for ( key, value in myStruct ) {
+    println( "Key: #key#, Value: #value#" );
+}
+
+// Test with array (item, index)
+println( "\n=== Testing array iteration (item, index) ===" );
+myArray = [ "apple", "banana", "cherry", "date" ];
+for ( item, index in myArray ) {
+    println( "Index: #index#, Item: #item#" );
+}
+
+// Test with query (row, rowNum)
+println( "\n=== Testing query iteration (row, rowNum) ===" );
+myQuery = queryNew( "id,name", "integer,varchar", [
+    [ 1, "Alice" ],
+    [ 2, "Bob" ],
+    [ 3, "Charlie" ]
+] );
+for ( row, rowNum in myQuery ) {
+    println( "Row #rowNum#: id=#row.id#, name=#row.name#" );
+}
+
+println( "\n=== All tests complete ===" );

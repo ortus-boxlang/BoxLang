@@ -35,6 +35,7 @@ import java.time.chrono.ChronoLocalDateTime;
 import java.time.chrono.ChronoZonedDateTime;
 import java.time.chrono.Chronology;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.FormatStyle;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
@@ -116,9 +117,28 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	public static final DateTimeFormatter	ISO_OFFSET_DATE_TIME_NOMILLIS_FORMATTER	= DateTimeFormatter.ofPattern( "yyyy-MM-dd'T'HH:mm:ssXXX" );
 	public static final DateTimeFormatter	ISO_DATE_TIME_MILIS_NO_T_FORMATTER		= DateTimeFormatter.ofPattern( "yyyy-MM-dd HH:mm:ss.SSS" );
 	// <a href="https://learn.microsoft.com/en-us/sql/odbc/reference/develop-app/date-time-and-timestamp-literals">The ODBC default format masks</a>
-	public static final DateTimeFormatter	ODBC_DATE_TIME_FORMATTER				= TS_FORMATTER;
-	public static final DateTimeFormatter	ODBC_DATE_FORMATTER						= DateTimeFormatter.ofPattern( "'{d '''yyyy-MM-dd'''}'" );
-	public static final DateTimeFormatter	ODBC_TIME_FORMATTER						= DateTimeFormatter.ofPattern( "'{t '''HH:mm:ss'''}'" );
+	// ODBC Formatters with optional single quotes around the date string
+	public static final DateTimeFormatter	ODBC_DATE_TIME_FORMATTER				= new DateTimeFormatterBuilder()
+	    .appendLiteral( "{ts " )
+	    .optionalStart().appendLiteral( '\'' ).optionalEnd()
+	    .appendPattern( "yyyy-MM-dd HH:mm:ss" )
+	    .optionalStart().appendLiteral( '\'' ).optionalEnd()
+	    .appendLiteral( '}' )
+	    .toFormatter();
+	public static final DateTimeFormatter	ODBC_DATE_FORMATTER						= new DateTimeFormatterBuilder()
+	    .appendLiteral( "{d " )
+	    .optionalStart().appendLiteral( '\'' ).optionalEnd()
+	    .appendPattern( "yyyy-MM-dd" )
+	    .optionalStart().appendLiteral( '\'' ).optionalEnd()
+	    .appendLiteral( '}' )
+	    .toFormatter();
+	public static final DateTimeFormatter	ODBC_TIME_FORMATTER						= new DateTimeFormatterBuilder()
+	    .appendLiteral( "{t " )
+	    .optionalStart().appendLiteral( '\'' ).optionalEnd()
+	    .appendPattern( "HH:mm:ss" )
+	    .optionalStart().appendLiteral( '\'' ).optionalEnd()
+	    .appendLiteral( '}' )
+	    .toFormatter();
 	// The format used by most browsers when calling toString on a Javascript date object - note that this is implementation dependent and may not be reliable
 	public static final DateTimeFormatter	JS_COMMON_TO_STRING_FORMATTER			= DateTimeFormatter
 	    .ofPattern( "EEE MMM dd yyyy HH:mm:ss 'GMT'Z (zzzz)" );
@@ -159,6 +179,8 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	    "ISODateTime", ISO_OFFSET_DATE_TIME_NOMILLIS_FORMATTER,
 	    "ISO8601DateTime", DateTimeFormatter.ISO_OFFSET_DATE_TIME,
 	    "ODBCDateTime", ODBC_DATE_TIME_FORMATTER,
+	    "ODBCDate", ODBC_DATE_FORMATTER,
+	    "ODBCTime", ODBC_TIME_FORMATTER,
 	    "javascriptDateTime", JS_COMMON_TO_STRING_FORMATTER,
 	    "fullDate", DateTimeFormatter.ofLocalizedDate( FormatStyle.FULL ),
 	    "longDate", DateTimeFormatter.ofLocalizedDate( FormatStyle.LONG ),
@@ -1074,6 +1096,18 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	public int compare( Object other, boolean lenient ) {
 		int comparison = compareTo( other, lenient );
 		return comparison == 0 ? 0 : ( comparison < 0 ? -1 : 1 );
+	}
+
+	/**
+	 * Comparable interface method
+	 *
+	 * @param other The other Object reference to compare to
+	 *
+	 * @return The comparison result which adheres to the ChronoZonedDateTime compareTo contract
+	 */
+	public int compareTo( Comparable<?> other ) {
+		boolean isLenientComparison = Compare.lenientDateComparison;
+		return compareTo( other, isLenientComparison );
 	}
 
 	/**

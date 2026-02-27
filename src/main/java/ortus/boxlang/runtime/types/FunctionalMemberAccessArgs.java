@@ -41,6 +41,7 @@ public class FunctionalMemberAccessArgs extends Closure {
 
 	private final Key													name;
 	private final String												returnType		= "any";
+	private final Key													returnTypeKey	= Key._ANY;
 	private java.util.function.Function<IBoxContext, Map<Key, Object>>	namedArgumentsGenerator;
 	private java.util.function.Function<IBoxContext, Object[]>			positionalArgumentsGenerator;
 
@@ -86,6 +87,15 @@ public class FunctionalMemberAccessArgs extends Closure {
 	 */
 	public String getReturnType() {
 		return returnType;
+	}
+
+	/**
+	 * Get the return type key of the function.
+	 *
+	 * @return return type key
+	 */
+	public Key getReturnTypeKey() {
+		return returnTypeKey;
 	}
 
 	/**

@@ -34,7 +34,9 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent( description = "Invoke methods on objects dynamically", allowsBody = true )
@@ -46,9 +48,10 @@ public class Invoke extends Component {
 	private static final ClassLocator	classLocator			= BoxRuntime.getInstance().getClassLocator();
 
 	/**
-	 * Reserved attribute names including class, method, returnVariable, argumentCollection, and webservice
+	 * Reserved attribute names including class, method, returnVariable, argumentCollection, webservice, username, password, and timeout
 	 */
-	private static final Set<Key>		reservedAttributeNames	= Set.of( Key._CLASS, Key.method, Key.returnVariable, Key.argumentCollection, Key.webservice );
+	private static final Set<Key>		reservedAttributeNames	= Set.of( Key._CLASS, Key.method, Key.returnVariable, Key.argumentCollection, Key.webservice,
+	    Key.username, Key.password, Key.timeout );
 
 	/**
 	 * Constructor
@@ -60,7 +63,10 @@ public class Invoke extends Component {
 		    new Attribute( Key.webservice, "string", "" ),
 		    new Attribute( Key.method, "string", Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) ),
 		    new Attribute( Key.returnVariable, "string", Set.of( Validator.NON_EMPTY ) ),
-		    new Attribute( Key.argumentCollection, "any" )
+		    new Attribute( Key.argumentCollection, "any" ),
+		    new Attribute( Key.username, "string", "" ),
+		    new Attribute( Key.password, "string", "" ),
+		    new Attribute( Key.timeout, "numeric", "" )
 		};
 	}
 
@@ -81,6 +87,12 @@ public class Invoke extends Component {
 	 * @attribute.returnVariable The variable to store the result of the method invocation.
 	 *
 	 * @attribute.argumentCollection An array or struct of arguments to pass to the method being invoked.
+	 *
+	 * @attribute.username The username for basic authentication when invoking web services.
+	 *
+	 * @attribute.password The password for basic authentication when invoking web services.
+	 *
+	 * @attribute.timeout The timeout in seconds for web service requests.
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
@@ -114,13 +126,45 @@ public class Invoke extends Component {
 			return bodyResult;
 		}
 
+		// Merge any arguments from child invoke argument components
+		IStruct invokeArgs = executionState.getAsStruct( Key.invokeArgs );
+		if ( invokeArgs != null ) {
+			invokeArgs.entrySet().forEach( entry -> {
+				if ( !entry.getKey().equals( Key.argumentCollection ) ) {
+					argCollection.put( entry.getKey(), entry.getValue() );
+				}
+			} );
+		}
+
 		// Handle webservice invocations
 		if ( webserviceUrl != null && !webserviceUrl.isEmpty() ) {
 			BoxSoapClient	soapClient	= BoxRuntime.getInstance().getHttpService().getOrCreateSoapClient( webserviceUrl, context );
 
+			// Configure authentication if provided
+			String			username	= attributes.getAsString( Key.username );
+			String			password	= attributes.getAsString( Key.password );
+			if ( username != null && !username.isEmpty() && password != null && !password.isEmpty() ) {
+				soapClient.withBasicAuth( username, password );
+			}
+
+			// Configure timeout if provided - use safe casting to handle potential String values
+			Object timeoutValue = attributes.get( Key.timeout );
+			if ( timeoutValue != null ) {
+				try {
+					Integer timeout = IntegerCaster.cast( timeoutValue );
+					soapClient.withTimeout( timeout );
+				} catch ( BoxCastException e ) {
+					// Ignore invalid timeout values rather than failing
+				}
+			}
 			// Extract the actual arguments to pass to SOAP
-			// We used the pre-existing argCollection to hold all args
-			Object			soapArgs	= argCollection.get( Key.argumentCollection );
+			// We used the pre-existing argCollection to hold all args, now including invoke arguments
+			Object soapArgs = argCollection.get( Key.argumentCollection );
+
+			// If we have no argumentCollection but have individual arguments, use them directly
+			if ( soapArgs == null && argCollection.size() > 0 ) {
+				soapArgs = argCollection;
+			}
 
 			// Invoke the SOAP operation
 			result = soapClient.invoke( methodname.getName(), soapArgs );

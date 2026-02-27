@@ -35,24 +35,28 @@ public class ArrayFirst extends BIF {
 	public ArrayFirst() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "array", Key.array )
+		    new Argument( true, "array", Key.array ),
+		    new Argument( false, "any", Key.defaultValue )
 		};
 	}
 
 	/**
 	 * Return first item in array
-	 * 
+	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @argument.array The array to get the first item from.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Array actualArray = arguments.getAsArray( Key.array );
+		Array	actualArray		= arguments.getAsArray( Key.array );
+		Object	defaultValue	= arguments.get( Key.defaultValue );
 		if ( actualArray.size() > 0 ) {
 			return actualArray.get( 0 );
+		} else if ( defaultValue != null ) {
+			return defaultValue;
 		} else {
-			throw new BoxRuntimeException( "Cannot return first element of array; array is empty " );
+			throw new BoxRuntimeException( "Cannot return first element of array; array is empty" );
 		}
 	}
 

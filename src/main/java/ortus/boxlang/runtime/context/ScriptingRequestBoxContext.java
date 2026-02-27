@@ -233,9 +233,11 @@ public class ScriptingRequestBoxContext extends RequestBoxContext {
 
 		if ( !isKeyVisibleScope( key ) ) {
 			// In query loop?
-			var querySearch = queryFindNearby( key );
-			if ( querySearch != null ) {
-				return querySearch;
+			if ( !forAssign ) {
+				var querySearch = queryFindNearby( key );
+				if ( querySearch != null ) {
+					return querySearch;
+				}
 			}
 
 			// In Variables scope? (thread-safe lookup and get)

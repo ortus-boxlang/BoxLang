@@ -581,6 +581,11 @@ public class UDFFunctionTest {
 			}
 
 			@Override
+			public Key getReturnTypeKey() {
+				return Key._ANY;
+			}
+
+			@Override
 			public IStruct getAnnotations() {
 				return Struct.EMPTY;
 			}

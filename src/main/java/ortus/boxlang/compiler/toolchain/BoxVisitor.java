@@ -359,19 +359,34 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 
 	@Override
 	public BoxNode visitFor( ForContext ctx ) {
-		var					pos			= tools.getPosition( ctx );
-		var					src			= tools.getSourceText( ctx );
-		BoxStatement		body		= tools.toStatementOrError( () -> ( BoxStatement ) ctx.statementOrBlock().accept( this ), ctx.statementOrBlock() );
-		String				label		= Optional.ofNullable( ctx.preFix() ).map( preFix -> preFix.identifier().getText() ).orElse( null );
-		List<BoxExpression>	expressions	= Optional.ofNullable( ctx.expression() ).orElse( Collections.emptyList() ).stream()
-		    .map( expression -> expression.accept( expressionVisitor ) ).toList();
+		var				pos		= tools.getPosition( ctx );
+		var				src		= tools.getSourceText( ctx );
+		BoxStatement	body	= tools.toStatementOrError( () -> ( BoxStatement ) ctx.statementOrBlock().accept( this ), ctx.statementOrBlock() );
+		String			label	= Optional.ofNullable( ctx.preFix() ).map( preFix -> preFix.identifier().getText() ).orElse( null );
 
-		// If this is the IN style, then we are guaranteed to have two expressions
+		// If this is the IN style, parse the variable(s)
 		if ( ctx.IN() != null ) {
-			return new BoxForIn( label, expressions.get( 0 ), expressions.get( 1 ), body, ctx.VAR() != null, pos, src );
+			// The grammar is: VAR? expression (COMMA expression)? IN expression
+			// Last expression is always the collection
+			int				numExpressions	= ctx.expression().size();
+			BoxExpression	collection		= ctx.expression( numExpressions - 1 ).accept( expressionVisitor );
+
+			// Check if we have two-variable syntax: expr, expr in collection
+			if ( ctx.COMMA() != null ) {
+				// Two-variable syntax
+				BoxExpression	firstVar	= ctx.expression( 0 ).accept( expressionVisitor );
+				BoxExpression	secondVar	= ctx.expression( 1 ).accept( expressionVisitor );
+				return new BoxForIn( label, firstVar, secondVar, collection, body, ctx.VAR() != null, pos, src );
+			} else {
+				// Single-variable syntax: expression in expression
+				BoxExpression variable = ctx.expression( 0 ).accept( expressionVisitor );
+				return new BoxForIn( label, variable, null, collection, body, ctx.VAR() != null, pos, src );
+			}
 		}
 
 		// Otherwise we have an index with 0 <= n <= 3 expressions
+		List<BoxExpression> expressions = Optional.ofNullable( ctx.expression() ).orElse( Collections.emptyList() ).stream()
+		    .map( expression -> expression.accept( expressionVisitor ) ).toList();
 		return new BoxForIndex(
 		    label,
 		    Optional.ofNullable( ctx.intializer ).map( init -> init.accept( expressionVisitor ) ).orElse( null ),
@@ -602,8 +617,9 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 	public BoxNode visitAssert( AssertContext ctx ) {
 		var				pos			= tools.getPosition( ctx );
 		var				src			= tools.getSourceText( ctx );
-		BoxExpression	condition	= ctx.expression().accept( expressionVisitor );
-		return new BoxAssert( condition, pos, src );
+		BoxExpression	condition	= ctx.expression( 0 ).accept( expressionVisitor );
+		BoxExpression	message		= ctx.expression().size() > 1 ? ctx.expression( 1 ).accept( expressionVisitor ) : null;
+		return new BoxAssert( condition, message, pos, src );
 	}
 
 	@Override

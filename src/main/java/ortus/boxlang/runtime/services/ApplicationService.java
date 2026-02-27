@@ -258,7 +258,6 @@ public class ApplicationService extends BaseService {
 				// resolved via a mapping declared in the Application class, which we haven't yet created
 
 				templatePath = FileSystemUtil.expandPath( context, template.getPath() );
-				// templatePath = FileSystemUtil.expandPath( runtime.getConfiguration().mappings, template.getPath(), null, false );
 
 				Path	rootPath			= Paths.get( templatePath.mappingPath() );
 				Path	currentDirectory	= templatePath.absolutePath().getParent();

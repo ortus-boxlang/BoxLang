@@ -590,10 +590,10 @@ public class BoxClassSupport {
 		    thisClass.bxGetName(),
 		    thisClass.getSourceType(),
 		    thisClass.getRunnablePath(),
-		    thisClass.getSuperClass(),
+		    thisClass.getBoxSuperClass(),
 		    thisClass.getInterfaces(),
 		    thisClass.getAbstractMethods(),
-		    thisClass.getCompileTimeMethods(),
+		    thisClass.getUDFs(),
 		    thisClass.getAnnotations(),
 		    thisClass.getDocumentation(),
 		    thisClass.getProperties(),
@@ -630,7 +630,7 @@ public class BoxClassSupport {
 	    DynamicObject superClass,
 	    List<BoxInterface> interfaces,
 	    Map<Key, AbstractFunction> abstractMethods,
-	    Map<Key, Class<? extends UDF>> compileTimeMethods,
+	    Map<Key, ? extends Function> udfs,
 	    IStruct annotations,
 	    IStruct documentation,
 	    Map<Key, ortus.boxlang.runtime.types.Property> properties,
@@ -644,8 +644,8 @@ public class BoxClassSupport {
 
 		// Assemble the functions
 		var functions = new ArrayList<Object>();
-		for ( var fun : compileTimeMethods.values() ) {
-			functions.add( DynamicObject.of( fun ).invokeStatic( runtime.getRuntimeContext(), "getMetaDataStatic" ) );
+		for ( var fun : udfs.values() ) {
+			functions.add( fun.getMetaData() );
 		}
 
 		// Add all static methods as well, if any
@@ -1041,9 +1041,9 @@ public class BoxClassSupport {
 
 		// This is a hack still and not a full solution. It will work for a mixin on a parent class, ignoring it on the lower classes it was copied to,
 		// but will NOT work for a mixin which was mixed explicitly into both the child and the parent class.
-		// As it currently stands. there is no way to tell if a mixin in a child class was simply coied down from the parent class, or if it was explicitly mixed in there.
+		// As it currently stands. there is no way to tell if a mixin in a child class was simply copied down from the parent class, or if it was explicitly mixed in there.
 		// The full fix for this will require some additional tracking.
-		IClassRunnable	highestClassWithUDFInstance	= thisClass.getVariablesScope().containsValue( udf ) ? thisClass : null;
+		IClassRunnable	highestClassWithUDFInstance	= thisClass.getVariablesScope().get( udf.getName() ) == udf ? thisClass : null;
 
 		// Otherwise, let's climb the supers (if they even exist) and see if one of them declared it
 		IClassRunnable	thisSuper					= thisClass.getSuper();
@@ -1051,7 +1051,7 @@ public class BoxClassSupport {
 			if ( enclosingClass == thisSuper.getClass() ) {
 				return thisSuper;
 			}
-			highestClassWithUDFInstance	= thisSuper.getVariablesScope().containsValue( udf ) ? thisSuper : highestClassWithUDFInstance;
+			highestClassWithUDFInstance	= thisSuper.getVariablesScope().get( udf.getName() ) == udf ? thisSuper : highestClassWithUDFInstance;
 			thisSuper					= thisSuper.getSuper();
 		}
 		// If the original class and no supers were the enclosing class, then this is prolly a mixin. Just return the original value.
@@ -1117,6 +1117,8 @@ public class BoxClassSupport {
 				return getClassLocator().load(
 				    staticContext,
 				    superClassName,
+				    ClassLocator.BX_PREFIX,
+				    true,
 				    imports
 				);
 			}

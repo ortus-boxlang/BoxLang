@@ -125,4 +125,15 @@ public class PrintlnTest {
 		assertThat( new String( outContent.toByteArray() ).replaceAll( "[ \\t]", "" ) ).contains( "[97,98,99]" + System.lineSeparator() );
 	}
 
+	@DisplayName( "It can printlln() to console" )
+	@Test
+	public void testPrintln() {
+		instance.executeSource(
+		    """
+		    println()
+		    """,
+		    context );
+		assertThat( new String( outContent.toByteArray() ) ).contains( System.lineSeparator() );
+	}
+
 }

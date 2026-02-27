@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.util;
 
-import java.io.IOException;
 import java.nio.file.Path;
 
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -46,7 +45,7 @@ public record ResolvedFilePath( String mappingName, String mappingPath, String r
 		    mappingName,
 		    mappingPath,
 		    relativePath,
-		    absolutePath != null ? makeReal( absolutePath.normalize() ) : null
+		    absolutePath != null ? absolutePath.normalize() : null
 		);
 	}
 
@@ -65,7 +64,7 @@ public record ResolvedFilePath( String mappingName, String mappingPath, String r
 	public static ResolvedFilePath ofReal( String mappingName, String mappingPath, String relativePath, Path absolutePath ) {
 		return new ResolvedFilePath(
 		    mappingName,
-		    mappingPath,
+		    normalizeMappingPath( mappingPath ),
 		    relativePath,
 		    absolutePath
 		);
@@ -84,7 +83,7 @@ public record ResolvedFilePath( String mappingName, String mappingPath, String r
 	public static ResolvedFilePath of( String mappingName, String mappingPath, String relativePath, String absolutePath ) {
 		return ResolvedFilePath.of(
 		    mappingName,
-		    mappingPath,
+		    normalizeMappingPath( mappingPath ),
 		    relativePath,
 		    Path.of( absolutePath )
 		);
@@ -102,7 +101,7 @@ public record ResolvedFilePath( String mappingName, String mappingPath, String r
 		    null,
 		    null,
 		    absolutePath != null ? absolutePath.normalize().toString() : null,
-		    makeReal( absolutePath )
+		    absolutePath
 		);
 	}
 
@@ -198,17 +197,22 @@ public record ResolvedFilePath( String mappingName, String mappingPath, String r
 
 	}
 
-	private static Path makeReal( Path path ) {
-		// if exists, make it real
-		if ( path != null ) {
-			try {
-				return path.toRealPath();
-			} catch ( IOException e ) {
-				// Doesn't exist. Trying to avoid the IO overhead of running the exists() check first!
-				return path;
-			}
+	/**
+	 * Ensure forward slashes and trailing slash. This is important since we use the mapping path for the classpool name.
+	 * 
+	 * @param mappingPath
+	 * 
+	 * @return
+	 */
+	private static String normalizeMappingPath( String mappingPath ) {
+		if ( mappingPath == null ) {
+			return null;
 		}
-		return path;
+		mappingPath = mappingPath.replace( "\\", "/" );
+		if ( !mappingPath.endsWith( "/" ) ) {
+			mappingPath += "/";
+		}
+		return mappingPath;
 	}
 
 }

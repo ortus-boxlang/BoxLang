@@ -58,6 +58,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.CustomException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
@@ -5973,7 +5974,6 @@ public class CoreLangTest {
 	}
 
 	@Test
-	@Disabled( "not working in ASM Boxpiler" )
 	public void testClosureInTernaryCF() {
 
 		instance.executeSource(
@@ -5984,11 +5984,9 @@ public class CoreLangTest {
 		    context, BoxSourceType.CFSCRIPT
 		);
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "foo" );
-
 	}
 
 	@Test
-	@Disabled( "not working in ASM Boxpiler" )
 	public void testClosureInTernary() {
 
 		instance.executeSource(
@@ -6230,6 +6228,122 @@ public class CoreLangTest {
 		);
 		assertThat( variables.getAsInteger( Key.of( "result" ) ) ).isEqualTo( 1 );
 
+	}
+
+	@Test
+	public void testAvoidStringHashCollisions() {
+
+		instance.executeSource(
+		    """
+		       key1 = "1ot" castas Key;
+		       key2 = "1q6" castas Key;
+		    equalsResult = key1.equals( key2 );
+		    result = {};
+		    result[ "1ot" ]	= "value1";
+		    result[ "1q6" ]	= "value2";
+		                """,
+		    context
+		);
+		assertThat( variables.getAsBoolean( Key.of( "equalsResult" ) ) ).isFalse();
+		IStruct result = variables.getAsStruct( Key.of( "result" ) );
+		assertThat( result.size() ).isEqualTo( 2 );
+		assertThat( result.get( Key.of( "1ot" ) ) ).isEqualTo( "value1" );
+		assertThat( result.get( Key.of( "1q6" ) ) ).isEqualTo( "value2" );
+
+	}
+
+	@Test
+	public void testUDFCosureLamdbdaScript() {
+
+		instance.executeSource(
+		    """
+		     function foo( required string arg ) {
+		        	return arg;
+		     }
+		     bar = arg => arg;
+		     baz = arg -> arg;
+		    println( foo( "test" ) );
+		    println( baz( "test2" ) );
+		    println( baz( "test3" ) );
+		                    """,
+		    context
+		);
+
+	}
+
+	@Test
+	public void testNewInForLoopWithoutAssignment() {
+
+		instance.executeSource(
+		    """
+		    for( i = 0; i < 5; i++ ) {
+		    	new java:java.lang.Object();
+		    	r = 1;
+		    }
+		    """,
+		    context
+		);
+
+	}
+
+	@Test
+	public void testNotAStatement() {
+
+		instance.executeSource(
+		    """
+		    columns = "foo,bar";
+		    columns.listEach( (c) => {
+		    	c = "*";
+		    	listFind( "a",  "a" )
+		    	|| c == "*"
+		    	|| throw( message="boom" );
+		    } );
+
+		                          """,
+		    context
+		);
+
+	}
+
+	@Test
+	public void testASMBytecodeError() {
+
+		instance.executeSource(
+		    """
+		    try {
+		    	// empty
+		    }
+		    catch (any e) {
+		    	// empty
+		    }
+		    finally {
+		    	writedump(42)
+		    }
+		      """,
+		    context
+		);
+
+	}
+
+	@DisplayName( "It can cast array of Box Classes" )
+	@Test
+	void testItCanCastArrayOfBoxClasses() {
+		assertThrows( BoxCastException.class, () -> instance.executeSource(
+		    """
+		    [ new src.test.java.TestCases.phase3.MyClass() ] castas foo.bar.MyClass[];
+		         """,
+		    context
+		) );
+
+		assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		       foo.bar.MyClass[] function getActive() {
+		       	return [ new src.test.java.TestCases.phase3.MyClass() ];
+		       }
+		    println( getActive() )
+		               """,
+		    context
+		) );
 	}
 
 }

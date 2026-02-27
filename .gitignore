@@ -14,6 +14,25 @@ docs/
 
 # IDEA files
 .idea
+*.iml
+*.ipr
+*.iws
+
+# VS Code
+.vscode/
+
+# Eclipse/IDEA metadata
+.classpath
+.project
+.settings/
+**/.classpath
+**/.project
+**/.settings/
+
+# Eclipse files
+.classpath
+.project
+.settings/
 
 # Mac Files
 .DS_Store

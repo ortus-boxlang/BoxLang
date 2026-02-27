@@ -14,23 +14,29 @@
  */
 package ortus.boxlang.compiler.javaboxpiler.transformer.statement;
 
+import java.io.IOException;
 import java.util.Map;
 
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.ArrayCreationExpr;
+import com.github.javaparser.ast.expr.ArrayInitializerExpr;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.NullLiteralExpr;
+import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.EmptyStmt;
 import com.github.javaparser.ast.stmt.ExpressionStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 
 import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.compiler.ast.BoxExpression;
@@ -91,6 +97,8 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		import java.nio.file.Path;
 		import java.nio.file.Paths;
 		import java.time.LocalDateTime;
+		import java.util.ArrayList;
+		import java.util.Arrays;
 		import java.util.HashMap;
 		import java.util.Iterator;
 		import java.util.LinkedHashMap;
@@ -107,6 +115,9 @@ public class BoxScriptTransformer extends AbstractTransformer {
 			private static final ResolvedFilePath					path			= ${resolvedFilePath};
 			private static final BoxSourceType			sourceType		= BoxSourceType.${sourceType};
 			public static final Key[]					keys			= new Key[] {};
+			private static List<Lambda>					lambdas			= new ArrayList<>( Arrays.asList( new Lambda[] {} ) );
+			private static List<ClosureDefinition>		closures		= new ArrayList<>( Arrays.asList( new ClosureDefinition[] {} ) );
+			private static Map<Key,UDF>					udfs			= StructUtil.<UDF>linkedMapOf();
 
 			public ${className}() {
 			}
@@ -176,9 +187,14 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		String		mappingName		= transpiler.getProperty( "mappingName" );
 		String		mappingPath		= transpiler.getProperty( "mappingPath" );
 		String		relativePath	= transpiler.getProperty( "relativePath" );
-		String		fileName		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
-		String		fileExt			= fileName.substring( fileName.lastIndexOf( "." ) + 1 );
-		String		filePath		= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath() : "unknown";
+		String		filePath		= "unknown";
+		if ( source instanceof SourceFile file && file.getFile() != null ) {
+			try {
+				filePath = file.getFile().toPath().toRealPath().toString();
+			} catch ( IOException e ) {
+				// If the file no longer exists or can't be accessed, then ignore.
+			}
+		}
 
 		//
 		className	= transpiler.getProperty( "classname" ) != null ? transpiler.getProperty( "classname" ) : className;
@@ -191,14 +207,12 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		Map<String, String>				values		= Map.ofEntries(
 		    Map.entry( "packagename", packageName ),
 		    Map.entry( "className", className ),
-		    Map.entry( "fileName", fileName ),
 		    Map.entry( "baseclass", baseClass ),
 		    Map.entry( "resolvedFilePath", transpiler.getResolvedFilePath( mappingName, mappingPath, relativePath, filePath ) ),
 		    Map.entry( "returnType", returnType ),
 		    Map.entry( "sourceType", sourceType ),
 		    Map.entry( "boxlangVersion", BoxRuntime.getInstance().getVersionInfo().getAsString( Key.version ) ),
-		    Map.entry( "bytecodeVersion", String.valueOf( IBoxpiler.BYTECODE_VERSION ) ),
-		    Map.entry( "fileExtension", fileExt )
+		    Map.entry( "bytecodeVersion", String.valueOf( IBoxpiler.BYTECODE_VERSION ) )
 		);
 		String							code		= PlaceholderHelper.resolve( template, values );
 		ParseResult<CompilationUnit>	result;
@@ -214,19 +228,17 @@ public class BoxScriptTransformer extends AbstractTransformer {
 			throw new BoxRuntimeException( result.toString() + "\n" + code );
 		}
 
-		CompilationUnit		entryPoint		= result.getResult().get();
+		CompilationUnit				entryPoint		= result.getResult().get();
+		ClassOrInterfaceDeclaration	thisClass		= entryPoint.getClassByName( className ).orElseThrow();
 
-		MethodDeclaration	invokeMethod	= entryPoint.findCompilationUnit().orElseThrow()
-		    .getClassByName( className ).orElseThrow()
-		    .getMethodsByName( "_invoke" ).get( 0 );
+		MethodDeclaration			invokeMethod	= thisClass.getMethodsByName( "_invoke" ).get( 0 );
 
-		FieldDeclaration	imports			= entryPoint.findCompilationUnit().orElseThrow()
-		    .getClassByName( className ).orElseThrow()
-		    .getFieldByName( "imports" ).orElseThrow();
+		FieldDeclaration			imports			= thisClass.getFieldByName( "imports" ).orElseThrow();
 
-		FieldDeclaration	keys			= entryPoint.findCompilationUnit().orElseThrow()
-		    .getClassByName( className ).orElseThrow()
-		    .getFieldByName( "keys" ).orElseThrow();
+		FieldDeclaration			keys			= thisClass.getFieldByName( "keys" ).orElseThrow();
+
+		MethodCallExpr				udfs			= ( MethodCallExpr ) thisClass.getFieldByName( "udfs" ).orElseThrow()
+		    .getVariable( 0 ).getInitializer().get();
 
 		transpiler.pushContextName( "context" );
 
@@ -262,6 +274,39 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		( ( JavaTranspiler ) transpiler ).getUDFDeclarations().forEach( it -> {
 			invokeBody.addStatement( 0, it );
 		} );
+
+		// loop over UDF registrations, add the static method to the class, and the UDF instantiation to the static block that initializes the UDFs map
+		( ( JavaTranspiler ) transpiler ).getUDFInvokers().forEach( ( key, value ) -> {
+			udfs.addArgument( createKey( key.getName() ) );
+			udfs.addArgument( value.getSecond() );
+			thisClass.addMember( value.getFirst() );
+		} );
+
+		// Process lambda invokers - add static methods and build the lambdas list initializer
+		FieldDeclaration		lambdasField	= thisClass.getFieldByName( "lambdas" ).orElseThrow();
+		ArrayCreationExpr		lambdasArray	= new ArrayCreationExpr( new ClassOrInterfaceType( null, "Lambda" ) );
+		ArrayInitializerExpr	lambdasInit		= new ArrayInitializerExpr();
+		lambdasArray.setInitializer( lambdasInit );
+		( ( JavaTranspiler ) transpiler ).getLambdaInvokers().forEach( value -> {
+			lambdasInit.getValues().add( value.getSecond() );
+			thisClass.addMember( value.getFirst() );
+		} );
+		ObjectCreationExpr lambdasListExpr = new ObjectCreationExpr( null, new ClassOrInterfaceType( null, "ArrayList<>" ), new NodeList<>() );
+		lambdasListExpr.addArgument( new MethodCallExpr( new NameExpr( "Arrays" ), "asList", new NodeList<>( lambdasArray ) ) );
+		lambdasField.getVariable( 0 ).setInitializer( lambdasListExpr );
+
+		// Process closure invokers - add static methods and build the closures list initializer
+		FieldDeclaration		closuresField	= thisClass.getFieldByName( "closures" ).orElseThrow();
+		ArrayCreationExpr		closuresArray	= new ArrayCreationExpr( new ClassOrInterfaceType( null, "ClosureDefinition" ) );
+		ArrayInitializerExpr	closuresInit	= new ArrayInitializerExpr();
+		closuresArray.setInitializer( closuresInit );
+		( ( JavaTranspiler ) transpiler ).getClosureInvokers().forEach( value -> {
+			closuresInit.getValues().add( value.getSecond() );
+			thisClass.addMember( value.getFirst() );
+		} );
+		ObjectCreationExpr closuresListExpr = new ObjectCreationExpr( null, new ClassOrInterfaceType( null, "ArrayList<>" ), new NodeList<>() );
+		closuresListExpr.addArgument( new MethodCallExpr( new NameExpr( "Arrays" ), "asList", new NodeList<>( closuresArray ) ) );
+		closuresField.getVariable( 0 ).setInitializer( closuresListExpr );
 
 		// For import statements, we add an argument to the constructor of the static List of imports
 		MethodCallExpr imp = ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();

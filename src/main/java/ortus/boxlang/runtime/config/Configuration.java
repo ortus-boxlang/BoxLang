@@ -142,6 +142,11 @@ public class Configuration implements IConfigSegment {
 	public Boolean									trustedCache					= false;
 
 	/**
+	 * Enforce UDF type checks. If enabled, the runtime will enforce that the types of the arguments passed to a UDF match the types declared in the UDF definition.
+	 */
+	public Boolean									enforceUDFTypeChecks			= true;
+
+	/**
 	 * Store the compiled class files on disk for reuse between restarts
 	 */
 	public Boolean									storeClassFilesOnDisk			= true;
@@ -241,6 +246,7 @@ public class Configuration implements IConfigSegment {
 	 * A sorted struct of mappings
 	 */
 	public IStruct									mappings						= new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR )
+	    .setCacheableHashCode( true )
 	    // ensure all keys to this struct have a trailing slash
 	    .registerChangeListener( forceMappingTrailingSlash );
 
@@ -380,7 +386,7 @@ public class Configuration implements IConfigSegment {
 	public Configuration process( IStruct config ) {
 
 		// Store original config
-		this.originalConfig = config;
+		this.originalConfig.addAll( config.getWrapped() );
 
 		// Debug Mode || Debbuging Enabled (cfconfig)
 		if ( config.containsKey( Key.debugMode ) ) {
@@ -398,6 +404,11 @@ public class Configuration implements IConfigSegment {
 		// Trusted Cache
 		if ( config.containsKey( Key.trustedCache ) ) {
 			this.trustedCache = BooleanCaster.cast( config.get( Key.trustedCache ) );
+		}
+
+		// enforceUDFTypeChecks
+		if ( config.containsKey( Key.enforceUDFTypeChecks ) ) {
+			this.enforceUDFTypeChecks = BooleanCaster.cast( config.get( Key.enforceUDFTypeChecks ) );
 		}
 
 		// Store Class Files on Disk
@@ -1033,7 +1044,8 @@ public class Configuration implements IConfigSegment {
 	 * @return A struct representation of the configuration segment
 	 */
 	public IStruct asStruct() {
-		IStruct mappingsCopy = new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR ).registerChangeListener( forceMappingTrailingSlash );
+		IStruct mappingsCopy = new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR ).setCacheableHashCode( true )
+		    .registerChangeListener( forceMappingTrailingSlash );
 		mappingsCopy.putAll( this.mappings );
 
 		IStruct cachesCopy = new Struct( false );
@@ -1090,6 +1102,7 @@ public class Configuration implements IConfigSegment {
 		    Key.scheduler, this.scheduler.asStruct(),
 		    Key.timezone, this.timezone,
 		    Key.trustedCache, this.trustedCache,
+		    Key.enforceUDFTypeChecks, this.enforceUDFTypeChecks,
 		    Key.storeClassFilesOnDisk, this.storeClassFilesOnDisk,
 		    Key.useHighPrecisionMath, this.useHighPrecisionMath,
 		    Key.maxTrackedCompletedThreads, this.maxTrackedCompletedThreads,

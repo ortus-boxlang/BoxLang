@@ -94,4 +94,29 @@ public enum BoxBinaryOperator {
 				return "";
 		}
 	}
+
+	/**
+	 * Returns true if this operator always returns a boolean value.
+	 *
+	 * @return true if this is a boolean operator
+	 */
+	public boolean isBoolean() {
+		return switch ( this ) {
+			case And, Or, Xor, Contains, NotContains, InstanceOf -> true;
+			default -> false;
+		};
+	}
+
+	/**
+	 * Returns true if this operator always returns a numeric value.
+	 *
+	 * @return true if this is a numeric operator
+	 */
+	public boolean isNumeric() {
+		return switch ( this ) {
+			case Plus, Minus, Star, Slash, Power, Backslash, Mod, BitwiseAnd, BitwiseOr, BitwiseXor, BitwiseSignedLeftShift, BitwiseSignedRightShift,
+			    BitwiseUnsignedRightShift -> true;
+			default -> false;
+		};
+	}
 }

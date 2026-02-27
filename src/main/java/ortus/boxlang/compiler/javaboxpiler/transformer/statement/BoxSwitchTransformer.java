@@ -87,7 +87,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 					Expression delimiter = ( Expression ) transpiler.transform( c.getDelimiter(), TransformerContext.RIGHT );
 					values.put( "delimiter", delimiter.toString() );
 					caseTemplate = """
-					               	if( ${caseEnteredName} || ListUtil.containsNoCase( StringCaster.cast( ${condition} ), StringCaster.cast( ${switchValueName} ), ${delimiter} ) ) {
+					               if( ${caseEnteredName} || ( ${switchValueName} != null && ListUtil.containsNoCase( StringCaster.cast( ${condition} ), StringCaster.cast( ${switchValueName} ), ${delimiter} ) ) ) {
 					               		${caseEnteredName} = true;
 					               }
 					               """;

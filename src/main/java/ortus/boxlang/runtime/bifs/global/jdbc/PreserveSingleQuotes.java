@@ -36,6 +36,9 @@ public class PreserveSingleQuotes extends BIF {
 
 	/**
 	 * Prevents from automatically escaping single quotation mark characters that are contained in a variable.
+	 * 
+	 * It is not neccesary to use this function around listQualify() when the qualifier is a single quote, or around quotedValueList()
+	 * as those automatically preserve and escape single quotes as needed when used inside a query component.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.

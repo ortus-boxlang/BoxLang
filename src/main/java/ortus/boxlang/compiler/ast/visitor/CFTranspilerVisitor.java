@@ -212,6 +212,13 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	private static Map<String, Map<String, String>>	componentAttrMap			= new HashMap<>();
 
 	/**
+	 * Maps BIF names to their argument rename mappings.
+	 * Outer key is BIF name (lowercase), inner map is old->new argument names (lowercase keys).
+	 * Only applies when named arguments are used.
+	 */
+	private static Map<String, Map<String, String>>	BIFArgMap					= new HashMap<>();
+
+	/**
 	 * Configuration keys for transpiler settings
 	 */
 	private static Key								transpilerKey				= Key.of( "transpiler" );
@@ -297,6 +304,13 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		componentAttrMap.put( "procparam", Map.of( "cfsqltype", "sqltype" ) );
 		componentAttrMap.put( "queryparam", Map.of( "cfsqltype", "sqltype" ) );
 		componentAttrMap.put( "object", Map.of( "component", "className" ) );
+
+		/*
+		 * Outer string is name of BIF (lowercase)
+		 * inner map is old arg name (lowercase) to new arg name
+		 * Only kicks in when named args are used
+		 */
+		BIFArgMap.put( "directorylist", Map.of( "absolute_path", "path" ) );
 
 		/*
 		 * These are BIFs that return something useless like true, but would be much more useful to return the actual data structure.
@@ -597,6 +611,20 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		if ( BIFMap.containsKey( name ) ) {
 			node.setName( BIFMap.get( name ) );
 		}
+
+		// Rename named arguments for BIFs that have changed arg names
+		if ( BIFArgMap.containsKey( name ) && node.isNamedArgs() ) {
+			Map<String, String> argMap = BIFArgMap.get( name );
+			for ( BoxArgument arg : node.getArguments() ) {
+				String argName = arg.getName().getAsSimpleValue().toString().toLowerCase();
+				if ( argMap.containsKey( argName ) ) {
+					if ( arg.getName() instanceof BoxStringLiteral bsl ) {
+						bsl.setValue( argMap.get( argName ) );
+					}
+				}
+			}
+		}
+
 		// look for "params" named arg, or 2nd positional arg, and if it's a struct literal, any of the values which are also a struct literal,
 		// rename any keys from cfsqltype to sqltype and remove "cf_sql_" from the values of any sqltype
 		if ( name.equals( "queryexecute" ) && node.getArguments().size() >= 2 ) {
@@ -1080,13 +1108,44 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 
 	// quotedValueList( delimiter ) -> queryColumnData().map().toList( delimiter )
 	private BoxNode transpileQuotedValueList( BoxFunctionInvocation node ) {
-		BoxAccess			queryCol		= ( BoxAccess ) node.getArguments().get( 0 ).getValue();
-		List<BoxArgument>	toListArguments	= new ArrayList<>();
+		boolean				inQueryComponent	= node.getFirstAncestorOfType( BoxComponent.class, c -> c.getName().equalsIgnoreCase( "query" ) ) != null;
+		BoxAccess			queryCol			= ( BoxAccess ) node.getArguments().get( 0 ).getValue();
+		List<BoxArgument>	toListArguments		= new ArrayList<>();
 		// If there was a delimiter, pass it on to the toList() call
 		if ( node.getArguments().size() > 1 ) {
 			toListArguments.add( node.getArguments().get( 1 ) );
 		}
 
+		BoxExpression itemAccess = new BoxIdentifier( "arr", null, null );
+		if ( inQueryComponent ) {
+			itemAccess = new BoxFunctionInvocation(
+			    "replace",
+			    List.of(
+			        new BoxArgument(
+			            itemAccess,
+			            null,
+			            null
+			        ),
+			        new BoxArgument(
+			            new BoxStringLiteral( "'", null, null ),
+			            null,
+			            null
+			        ),
+			        new BoxArgument(
+			            new BoxStringLiteral( "''", null, null ),
+			            null,
+			            null
+			        ),
+			        new BoxArgument(
+			            new BoxStringLiteral( "all", null, null ),
+			            null,
+			            null
+			        )
+			    ),
+			    null,
+			    null
+			);
+		}
 		// queryColumnData( qry, col ).map()
 		BoxMethodInvocation	mapExpr			= new BoxMethodInvocation(
 		    new BoxIdentifier( "map", null, null ),
@@ -1114,9 +1173,9 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		                List.of(),
 		                new BoxExpressionStatement(
 		                    new BoxStringConcat( List.of(
-		                        new BoxStringLiteral( "\"", null, null ),
-		                        new BoxIdentifier( "arr", null, null ),
-		                        new BoxStringLiteral( "\"", null, null )
+		                        new BoxStringLiteral( "'", null, null ),
+		                        itemAccess,
+		                        new BoxStringLiteral( "'", null, null )
 		                    ),
 		                        null,
 		                        null ),
@@ -1138,6 +1197,24 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		    null,
 		    null
 		);
+		// wrap in preserveSingleQuotes()
+		if ( inQueryComponent ) {
+			BoxFunctionInvocation preserveSingleQuoteInvocation = new BoxFunctionInvocation(
+			    "preserveSingleQuotes",
+			    List.of(
+			        new BoxArgument(
+			            newInvocation,
+			            null,
+			            null
+			        )
+			    ),
+			    null,
+			    null
+			);
+			// Need a separate visit() call for this path so we call the correct overloaded visit() method
+			return super.visit( preserveSingleQuoteInvocation );
+
+		}
 		return super.visit( newInvocation );
 
 	}

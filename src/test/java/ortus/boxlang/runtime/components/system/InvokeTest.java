@@ -543,4 +543,48 @@ public class InvokeTest {
 		assertThat( foundFrance ).isTrue();
 	}
 
+	@DisplayName( "Test web service returning array of countries" )
+	@Test
+	public void testInvokeWebServiceCountriesUsingCurrencyAndParams() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				bx:invoke
+					webservice="%s"
+					method="CountriesUsingCurrency"
+					returnVariable="results"{
+						bx:invokeArgument name="sISOCurrencyCode" value="EUR";
+					};
+
+				println( results )
+		    """.formatted( testWSDL ),
+		    context );
+		// @formatter:on
+		Array results = variables.getAsArray( Key.of( "results" ) );
+
+		// EUR is used by multiple European countries
+		assertThat( results.size() ).isGreaterThan( 10 );
+
+		// Each item should be a struct with country information
+		IStruct firstCountry = ( IStruct ) results.get( 0 );
+		assertThat( firstCountry.get( Key.of( "sISOCode" ) ) ).isNotNull();
+		assertThat( firstCountry.get( Key.of( "sName" ) ) ).isNotNull();
+
+		// Verify at least some expected countries are in the list
+		boolean	foundGermany	= false;
+		boolean	foundFrance		= false;
+		for ( Object country : results ) {
+			IStruct	countryStruct	= ( IStruct ) country;
+			String	isoCode			= countryStruct.get( Key.of( "sISOCode" ) ).toString();
+			if ( "DE".equals( isoCode ) ) {
+				foundGermany = true;
+			}
+			if ( "FR".equals( isoCode ) ) {
+				foundFrance = true;
+			}
+		}
+		assertThat( foundGermany ).isTrue();
+		assertThat( foundFrance ).isTrue();
+	}
+
 }

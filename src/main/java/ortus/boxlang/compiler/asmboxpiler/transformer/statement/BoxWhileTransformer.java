@@ -78,11 +78,13 @@ public class BoxWhileTransformer extends AbstractTransformer {
 		// }
 
 		nodes.addAll( transpiler.transform( boxWhile.getCondition(), TransformerContext.RIGHT, ReturnValueContext.VALUE ) );
-		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-		    Type.getInternalName( BooleanCaster.class ),
-		    "cast",
-		    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ) ),
-		    false ) );
+		if ( !boxWhile.getCondition().returnsBoolean() ) {
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( BooleanCaster.class ),
+			    "cast",
+			    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ) ),
+			    false ) );
+		}
 		nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
 		    Type.getInternalName( Boolean.class ),
 		    "booleanValue",

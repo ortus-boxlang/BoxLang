@@ -28,13 +28,14 @@ import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class SampleLambda extends Lambda {
 
-	Object				returnVal	= null;
+	Object				returnVal		= null;
 
 	// These are not static just because this is a test class that is always transient! Do not copy this implementation.
-	private Key			name		= Lambda.defaultName;
+	private Key			name			= Lambda.defaultName;
 	private Argument[]	arguments;
-	private String		returnType	= "any";
-	private Access		access		= Access.PUBLIC;
+	private String		returnType		= "any";
+	private Key			returnTypeKey	= Key._ANY;
+	private Access		access			= Access.PUBLIC;
 
 	public Key getName() {
 		return name;
@@ -46,6 +47,10 @@ public class SampleLambda extends Lambda {
 
 	public String getReturnType() {
 		return returnType;
+	}
+
+	public Key getReturnTypeKey() {
+		return returnTypeKey;
 	}
 
 	public IStruct getAnnotations() {

@@ -130,8 +130,20 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 
 	/**
 	 * Get the super class definition. Null if there is none
+	 * 
+	 * Deprecated in favor of getBoxSuperClass, which doesn't overlap method names in the JDK to remove ambiguity.
 	 */
-	public DynamicObject getSuperClass();
+	@Deprecated
+	default DynamicObject getSuperClass() {
+		return getBoxSuperClass();
+	}
+
+	/**
+	 * Get the super class definition. Null if there is none
+	 */
+	default DynamicObject getBoxSuperClass() {
+		return null;
+	}
 
 	/**
 	 * Get the super class instance. Null if there is none
@@ -178,11 +190,22 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 	public Set<Key> getCompileTimeMethodNames();
 
 	/**
-	 * Get compile time methods
-	 * 
-	 * @return Map of compile time methods
+	 * Get compile time methods (legacy - for backwards compatibility)
+	 *
+	 * @return Map of compile time method classes
 	 */
-	public Map<Key, Class<? extends UDF>> getCompileTimeMethods();
+	default Map<Key, Class<? extends UDF>> getCompileTimeMethods() {
+		return Map.of();
+	}
+
+	/**
+	 * Get UDFs defined in this class
+	 *
+	 * @return Map of UDF instances
+	 */
+	default Map<Key, UDF> getUDFs() {
+		return Map.of();
+	}
 
 	public Map<Key, AbstractFunction> getAllAbstractMethods();
 

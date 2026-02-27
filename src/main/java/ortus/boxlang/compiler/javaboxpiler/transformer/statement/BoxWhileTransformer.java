@@ -45,7 +45,7 @@ public class BoxWhileTransformer extends AbstractTransformer {
 		}
 
 		String template = "while(  ${condition}  ) {}";
-		if ( requiresBooleanCaster( boxWhile.getCondition() ) ) {
+		if ( !boxWhile.getCondition().returnsBoolean() ) {
 			template = "while( BooleanCaster.cast( ${condition} ) ) {}";
 		}
 		Map<String, String>	values		= new HashMap<>() {

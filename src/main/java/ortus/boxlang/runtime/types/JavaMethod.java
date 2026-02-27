@@ -39,6 +39,7 @@ public class JavaMethod extends Function {
 	    "I am a wrapped Java method.  Since I may be overloaded, my return type and arguments will be determined when I am invoked" );
 
 	private static final String		RETURN_TYPE		= "any";
+	private static final Key		RETURN_TYPE_KEY	= Key._ANY;
 	private final Key				name;
 	private DynamicObject			dynamicObject;
 
@@ -78,6 +79,11 @@ public class JavaMethod extends Function {
 	 */
 	public String getReturnType() {
 		return RETURN_TYPE;
+	}
+
+	@Override
+	public Key getReturnTypeKey() {
+		return RETURN_TYPE_KEY;
 	}
 
 	/**

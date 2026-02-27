@@ -36,6 +36,7 @@ public class AbstractFunction extends Function {
 	private final Key			name;
 	private final Argument[]	arguments;
 	private final String		returnType;
+	private final Key			returnTypeKey;
 	private final Access		access;
 	private final IStruct		annotations;
 	private final IStruct		documentation;
@@ -53,6 +54,7 @@ public class AbstractFunction extends Function {
 		this.name				= name;
 		this.arguments			= arguments;
 		this.returnType			= returnType;
+		this.returnTypeKey		= Key.of( returnType );
 		this.access				= access;
 		this.annotations		= annotations;
 		this.documentation		= documentation;
@@ -86,6 +88,11 @@ public class AbstractFunction extends Function {
 	 */
 	public String getReturnType() {
 		return this.returnType;
+	}
+
+	@Override
+	public Key getReturnTypeKey() {
+		return this.returnTypeKey;
 	}
 
 	/**

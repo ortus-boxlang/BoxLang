@@ -321,6 +321,15 @@ public class DateTimeCasterTest {
 		assertThat( result.setFormat( "yyyy-MM-dd" ).toString() ).isEqualTo( "2018-09-06" );
 	}
 
+	@DisplayName( "Test short month pattern" )
+	@Test
+	public void testShortMonthPattern() {
+		String		dateString	= "9-30-2010";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.setFormat( "yyyy-MM-dd" ).toString() ).isEqualTo( "2010-09-30" );
+	}
+
 	@Test
 	@DisplayName( "Test medium format date and time with tz" )
 	public void testMedFormatTimezone() {
@@ -408,6 +417,42 @@ public class DateTimeCasterTest {
 	}
 
 	@Test
+	@DisplayName( "Test casting ODBC Date format {d yyyy-mm-dd} to DateTime" )
+	public void testCastODBCDateFormat() {
+		String		dateString	= "{d 2024-04-02}";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd" ) ).isEqualTo( "2024-04-02" );
+	}
+
+	@Test
+	@DisplayName( "Test casting ODBC Time format {t HH:mm:ss} to DateTime" )
+	public void testCastODBCTimeFormat() {
+		String		timeString	= "{t 14:30:45}";
+		DateTime	result		= DateTimeCaster.cast( timeString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "HH:mm:ss" ) ).isEqualTo( "14:30:45" );
+	}
+
+	@Test
+	@DisplayName( "Test casting ODBC Timestamp format {ts yyyy-mm-dd HH:mm:ss} to DateTime" )
+	public void testCastODBCTimestampFormat() {
+		String		timestampString	= "{ts 2024-04-02 14:30:45}";
+		DateTime	result			= DateTimeCaster.cast( timestampString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd HH:mm:ss" ) ).isEqualTo( "2024-04-02 14:30:45" );
+	}
+
+	@Test
+	@DisplayName( "Test casting MM-DD-YYYY HH:mm:ss format to DateTime" )
+	public void testCastMMDDYYYYWithTime() {
+		String		dateString	= "01-31-2026 23:59:59";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "MM-dd-yyyy HH:mm:ss" ) ).isEqualTo( "01-31-2026 23:59:59" );
+	}
+
+	@Test
 	@DisplayName( "Test date parsing with German (de_DE) JVM locale to replicate locale-specific parsing issues" )
 	public void testDateParsingWithGermanLocale() {
 		// Store the original default locale to restore later
@@ -441,5 +486,95 @@ public class DateTimeCasterTest {
 			// Always restore the original locale
 			Locale.setDefault( originalLocale );
 		}
+	}
+
+	@Test
+	@DisplayName( "Test MMM-d-yyyy h:mm a pattern with dash delimiter" )
+	public void testMMMdyyyyHmmaDash() {
+		String		dateString	= "Nov-05-2025 8:43 AM";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "MMM-dd-yyyy h:mm a" ) ).isEqualTo( "Nov-05-2025 8:43 AM" );
+	}
+
+	@Test
+	@DisplayName( "Test MMM-d-yyyy h:mm a pattern with slash delimiter" )
+	public void testMMMdyyyyHmmaSlash() {
+		String		dateString	= "Nov/05/2025 8:43 AM";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "MMM-dd-yyyy h:mm a" ) ).isEqualTo( "Nov-05-2025 8:43 AM" );
+	}
+
+	@Test
+	@DisplayName( "Test MMM-d-yyyy HH:mm:ss pattern with dash delimiter" )
+	public void testMMMdyyyyHHmmssWithDash() {
+		String		dateString	= "Nov-05-2025 14:43:00";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "MMM-dd-yyyy HH:mm:ss" ) ).isEqualTo( "Nov-05-2025 14:43:00" );
+	}
+
+	@Test
+	@DisplayName( "Test MMM-d-yyyy HH:mm:ss pattern with slash delimiter" )
+	public void testMMMdyyyyHHmmssWithSlash() {
+		String		dateString	= "Nov/05/2025 14:43:00";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "MMM-dd-yyyy HH:mm:ss" ) ).isEqualTo( "Nov-05-2025 14:43:00" );
+	}
+
+	@Test
+	@DisplayName( "Test MMM-d-yyyy HH:mm pattern (no seconds) with dash delimiter" )
+	public void testMMMdyyyyHHmmWithDash() {
+		String		dateString	= "Nov-05-2025 14:43";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "MMM-dd-yyyy HH:mm" ) ).isEqualTo( "Nov-05-2025 14:43" );
+	}
+
+	@Test
+	@DisplayName( "Test MMM-d-yyyy HH:mm pattern (no seconds) with slash delimiter" )
+	public void testMMMdyyyyHHmmWithSlash() {
+		String		dateString	= "Nov/05/2025 14:43";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "MMM-dd-yyyy HH:mm" ) ).isEqualTo( "Nov-05-2025 14:43" );
+	}
+
+	@Test
+	@DisplayName( "Test d-MMM-yyyy HH:mm:ss pattern with dash delimiter" )
+	public void testdMMMyyyyHHmmssWithDash() {
+		String		dateString	= "05-Nov-2025 14:43:00";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "dd-MMM-yyyy HH:mm:ss" ) ).isEqualTo( "05-Nov-2025 14:43:00" );
+	}
+
+	@Test
+	@DisplayName( "Test d-MMM-yyyy HH:mm:ss pattern with slash delimiter" )
+	public void testdMMMyyyyHHmmssWithSlash() {
+		String		dateString	= "05/Nov/2025 14:43:00";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "dd-MMM-yyyy HH:mm:ss" ) ).isEqualTo( "05-Nov-2025 14:43:00" );
+	}
+
+	@Test
+	@DisplayName( "Test d-MMM-yyyy HH:mm pattern (no seconds) with dash delimiter" )
+	public void testdMMMyyyyHHmmWithDash() {
+		String		dateString	= "05-Nov-2025 14:43";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "dd-MMM-yyyy HH:mm" ) ).isEqualTo( "05-Nov-2025 14:43" );
+	}
+
+	@Test
+	@DisplayName( "Test d-MMM-yyyy HH:mm pattern (no seconds) with slash delimiter" )
+	public void testdMMMyyyyHHmmWithSlash() {
+		String		dateString	= "05/Nov/2025 14:43";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "dd-MMM-yyyy HH:mm" ) ).isEqualTo( "05-Nov-2025 14:43" );
 	}
 }

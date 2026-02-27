@@ -54,6 +54,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
 import ortus.boxlang.runtime.types.meta.IChangeListener;
+import ortus.boxlang.runtime.types.meta.IIndexedChangeListener;
 import ortus.boxlang.runtime.types.meta.IListenable;
 import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableArray;
 import ortus.boxlang.runtime.types.util.TypeUtil;
@@ -297,14 +298,14 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	@Override
 	public boolean add( Object e ) {
 		synchronized ( wrapped ) {
-			return wrapped.add( notifyListeners( wrapped.size(), e ) );
+			return wrapped.add( notifyListeners( wrapped.size(), e, true ) );
 		}
 	}
 
 	@Override
 	public void add( int index, Object element ) {
 		synchronized ( wrapped ) {
-			wrapped.add( index, notifyListeners( index, element ) );
+			wrapped.add( index, notifyListeners( index, element, true ) );
 		}
 	}
 
@@ -413,7 +414,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	public Object set( int index, Object element ) {
 		return wrapped.set(
 		    index,
-		    notifyListeners( index, element )
+		    notifyListeners( index, element, false )
 		);
 	}
 
@@ -708,7 +709,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 		}
 		synchronized ( wrapped ) {
 			remove( index - 1 );
-			notifyListeners( index - 1, null );
+			notifyListeners( index - 1, null, false );
 		}
 		return this;
 	}
@@ -722,18 +723,15 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	 * @return The one-based index value or zero if not found
 	 */
 	public int findIndexWithSubstring( Object value, Boolean caseSensitive ) {
-		return intStream()
-		    .filter(
-		        i -> ( ( !caseSensitive
-		            &&
-		            Strings.CI.containsAny( get( i ).toString(), value.toString() ) )
-		            ||
-		            ( caseSensitive
-		                &&
-		                get( i ).toString().contains( value.toString() ) ) )
-		    )
-		    .findFirst()
-		    .orElse( -1 ) + 1;
+		String	valueStr	= value.toString();
+		int		len			= size();
+		for ( int i = 0; i < len; i++ ) {
+			String elemStr = get( i ).toString();
+			if ( caseSensitive ? elemStr.contains( valueStr ) : Strings.CI.containsAny( elemStr, valueStr ) ) {
+				return i + 1;
+			}
+		}
+		return 0;
 	}
 
 	/**
@@ -745,12 +743,14 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	 * @return The one-based index value or zero if not found
 	 */
 	public int findIndex( Object value, Boolean caseSensitive ) {
-		return intStream()
-		    .filter(
-		        i -> EqualsEquals.invoke( get( i ), value, caseSensitive ) || get( i ).equals( value )
-		    )
-		    .findFirst()
-		    .orElse( -1 ) + 1;
+		int len = size();
+		for ( int i = 0; i < len; i++ ) {
+			Object elem = get( i );
+			if ( EqualsEquals.invoke( elem, value, caseSensitive ) || elem.equals( value ) ) {
+				return i + 1;
+			}
+		}
+		return 0;
 	}
 
 	/**
@@ -773,16 +773,19 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	 * @return The one-based index value or zero if not found
 	 */
 	public int findIndex( Function test, IBoxContext context ) {
-		return intStream()
-		    .filter( i -> BooleanCaster.cast(
-		        test.requiresStrictArguments()
-		            // Java Lambdas
-		            ? context.invokeFunction( test, new Object[] { get( i ) } )
-		            // BoxLang Functions, more args!!=
-		            : context.invokeFunction( test, new Object[] { get( i ), i, this } )
-		    ) )
-		    .findFirst()
-		    .orElse( -1 ) + 1;
+		boolean	strictArgs	= test.requiresStrictArguments();
+		int		len			= size();
+		for ( int i = 0; i < len; i++ ) {
+			Object result = strictArgs
+			    // Java Lambdas
+			    ? context.invokeFunction( test, new Object[] { get( i ) } )
+			    // BoxLang Functions, more args
+			    : context.invokeFunction( test, new Object[] { get( i ), i, this } );
+			if ( BooleanCaster.cast( result ) ) {
+				return i + 1;
+			}
+		}
+		return 0;
 	}
 
 	/**
@@ -949,12 +952,13 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	/**
 	 * Notify listeners of a change
 	 *
-	 * @param i     The index of the change
-	 * @param value The value of the change
+	 * @param i        The index of the change
+	 * @param value    The value of the change
+	 * @param isInsert Whether this is an insert (true) or a set/replace (false)
 	 *
 	 * @return The value after notifying listeners
 	 */
-	private Object notifyListeners( int i, Object value ) {
+	private Object notifyListeners( int i, Object value, boolean isInsert ) {
 		if ( listeners == null ) {
 			return value;
 		}
@@ -966,7 +970,11 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 		if ( listener == null ) {
 			return value;
 		}
-		return listener.notify( key, value, i < wrapped.size() ? wrapped.get( i ) : null, this );
+		Object oldValue = i < wrapped.size() ? wrapped.get( i ) : null;
+		if ( listener instanceof IIndexedChangeListener<Array> indexedListener ) {
+			return indexedListener.notify( key, value, oldValue, this, isInsert );
+		}
+		return listener.notify( key, value, oldValue, this );
 	}
 
 	/**

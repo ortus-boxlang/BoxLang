@@ -220,6 +220,23 @@ public class OracleDriverTest extends AbstractDriverTest {
 
 	}
 
+	@DisplayName( "It doesn't error with trailing semicolons" )
+	@Test
+	public void testTrailingSemicolons() {
+		instance.executeStatement(
+		    String.format(
+		        """
+		        result = queryExecute( "SELECT * FROM developers;",
+		        {},
+		        { "datasource" : "%s" }
+		        );
+
+		                                                   """,
+		        getDatasourceName() ),
+		    context );
+
+	}
+
 	@DisplayName( "It can select from char 15 field" )
 	@Test
 	public void testSelectFromCharFields() {
@@ -582,4 +599,24 @@ public class OracleDriverTest extends AbstractDriverTest {
 		assertThat( query.size() ).isEqualTo( 1 );
 		assertThat( query.getRowAsStruct( 0 ).getAsNumber( Key.of( "floatValue" ) ).doubleValue() ).isEqualTo( 220692.03D );
 	}
+
+	@DisplayName( "It can run a proc inside a transaction" )
+	@Test
+	public void testRunProcInsideTransaction() {
+		instance.executeStatement(
+		    """
+		       transaction {
+		    	bx:storedproc procedure="testProcedureCursorInMiddle" datasource="OracleDatasource" result="variables.result" debug=true {
+		    		bx:procparam value="10" type="in" sqltype="integer";
+		    		bx:procparam value="5" type="inout" sqltype="integer" variable="inout1";
+		    		bx:procresult name="resultSet1" resultSet=1;
+		    		bx:procparam value="world" type="in" sqltype="nvarchar";
+		    		bx:procparam type="out" sqltype="nvarchar" variable="out1";
+		    	}
+		    }
+		       """,
+		    context );
+
+	}
+
 }

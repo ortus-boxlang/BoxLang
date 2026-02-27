@@ -16,17 +16,23 @@ package ortus.boxlang.compiler.asmboxpiler.transformer.statement;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.objectweb.asm.Handle;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldInsnNode;
 import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.InvokeDynamicInsnNode;
+
+import ortus.boxlang.compiler.IBoxpiler;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.TypeInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
@@ -50,12 +56,16 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Function;
-import ortus.boxlang.runtime.types.Function.Access;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.UDF;
-import ortus.boxlang.runtime.types.meta.FunctionMeta;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
+/**
+ * Transform a Function Declaration using the static method + method handle pattern.
+ * Instead of generating a separate inner class per function, this generates:
+ * 1. A static invoker method on the enclosing class
+ * 2. An instantiation of UDF with a method reference to the static invoker
+ */
 public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 
 	public BoxFunctionDeclarationTransformer( AsmTranspiler transpiler ) {
@@ -69,12 +79,20 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		TransformerContext		safe		= function.getName().equalsIgnoreCase( "isnull" ) ? TransformerContext.SAFE : context;
 
 		if ( transpiler.hasCompiledFunction( function.getName() ) ) {
-			throw new IllegalStateException( "Cannot define multiple functions with the same name: " + function.getName() );
-		}
+			if ( transpiler.getProperty( "sourceType" ).equals( BoxSourceType.BOXSCRIPT.name() )
+			    || transpiler.getProperty( "sourceType" ).equals( BoxSourceType.BOXTEMPLATE.name() ) ) {
+				throw new IllegalStateException( "Cannot define multiple functions with the same name: " + function.getName() );
+			} else {
+				ArrayList<AbstractInsnNode> blankResult = new ArrayList<>();
 
-		Type			type			= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
-		    + "/" + transpiler.getProperty( "classname" )
-		    + "$Func_" + function.getName() + ";" );
+				if ( returnContext == ReturnValueContext.VALUE || returnContext == ReturnValueContext.VALUE_OR_NULL ) {
+					blankResult.add( new InsnNode( Opcodes.ACONST_NULL ) );
+				}
+
+				return blankResult;
+			}
+
+		}
 
 		BoxReturnType	boxReturnType	= function.getType();
 		BoxType			returnType		= BoxType.Any;
@@ -85,230 +103,25 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 				fqn = boxReturnType.getFqn();
 			}
 		}
-		String				returnTypeName	= returnType.equals( BoxType.Fqn ) ? fqn : returnType.name();
+		String				returnTypeName		= returnType.equals( BoxType.Fqn ) ? fqn : returnType.name();
 
-		BoxAccessModifier	access			= function.getAccessModifier() == null ? BoxAccessModifier.Public : function.getAccessModifier();
+		BoxAccessModifier	access				= function.getAccessModifier() == null ? BoxAccessModifier.Public : function.getAccessModifier();
 
-		Type				superClass		= Type.getType( UDF.class );
-		ClassNode			classNode		= AsmHelper.initializeClassDefinition( type, superClass, null );
+		String				invokerMethodName	= IBoxpiler.INVOKE_FUNCTION_PREFIX + IBoxpiler.sanitizeForJavaIdentifier( function.getName() );
 
-		// Add the @BoxByteCodeVersion annotation to the generated class
-		AsmHelper.addBoxByteCodeVersionAnnotation( classNode );
-
-		classNode.visitSource( transpiler.getProperty( "filePath" ), null );
-		classNode.visitNestHost( transpiler.getProperty( "enclosingClassInternalName" ) );
-		classNode.visitInnerClass( type.getInternalName(), transpiler.getProperty( "enclosingClassInternalName" ),
-		    "Func_" + function.getName(),
-		    Opcodes.ACC_PUBLIC );
-
-		AsmHelper.addGetInstance( classNode, type );
-
-		AsmHelper.addConstructor(
-		    classNode,
-		    true,
-		    superClass,
-		    new Type[] { Type.BOOLEAN_TYPE },
-		    ( mv ) -> {
-			    new LdcInsnNode( shouldDefaultOutput( function ) ? 1 : 0 ).accept( mv );
-		    },
-		    ( mv ) -> {
-		    }
-		);
-
-		ClassNode owningClass = transpiler.getOwningClass();
-		if ( owningClass != null ) {
-			owningClass.visitInnerClass( type.getInternalName(), transpiler.getProperty( "enclosingClassInternalName" ),
-			    "Func_" + function.getName(),
-			    Opcodes.ACC_PUBLIC );
-		}
-
-		transpiler.setAuxiliary( type.getClassName(), classNode );
-
-		AsmHelper.addStaticFieldGetter( classNode,
-		    type,
-		    "modifiers",
-		    "getModifiers",
-		    Type.getType( List.class ),
-		    null
-		);
-
-		AsmHelper.addStaticFieldGetter( classNode,
-		    type,
-		    "name",
-		    "getName",
-		    Type.getType( Key.class ),
-		    null );
-		AsmHelper.addStaticFieldGetter( classNode,
-		    type,
-		    "arguments",
-		    "getArguments",
-		    Type.getType( Argument[].class ),
-		    null );
-		AsmHelper.addStaticFieldGetter( classNode,
-		    type,
-		    "returnType",
-		    "getReturnType",
-		    Type.getType( String.class ),
-		    returnTypeName );
-		AsmHelper.addStaticFieldGetter( classNode,
-		    type,
-		    "access",
-		    "getAccess",
-		    Type.getType( Function.Access.class ),
-		    null );
-		AsmHelper.addStaticFieldGetter( classNode,
-		    type,
-		    "annotations",
-		    "getAnnotations",
-		    Type.getType( IStruct.class ),
-		    null );
-		AsmHelper.addStaticFieldGetter( classNode,
-		    type,
-		    "documentation",
-		    "getDocumentation",
-		    Type.getType( IStruct.class ),
-		    null );
-
-		Type declaringType = Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
+		Type				declaringType		= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
 		    + "/" + transpiler.getProperty( "classname" )
 		    + ";" );
 
-		// Add metadata cache fields (private static, non-final for lazy init)
-		classNode.visitField( Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
-		    "metadata",
-		    Type.getDescriptor( IStruct.class ),
-		    null,
-		    null ).visitEnd();
-		classNode.visitField( Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC,
-		    "legacyMetadata",
-		    Type.getDescriptor( IStruct.class ),
-		    null,
-		    null ).visitEnd();
+		// Generate the static invoker method on the owning class
+		ClassNode			owningClass			= transpiler.getOwningClass();
 
-		// Add isClosure, isLambda, defaultOutput static fields
-		AsmHelper.addStaticFieldGetter( classNode,
-		    type,
-		    "isClosure",
-		    "isClosure",
-		    Type.BOOLEAN_TYPE,
-		    false );
-		AsmHelper.addStaticFieldGetter( classNode,
-		    type,
-		    "isLambda",
-		    "isLambda",
-		    Type.BOOLEAN_TYPE,
-		    false );
-		AsmHelper.addStaticFieldGetter( classNode,
-		    type,
-		    "defaultOutput",
-		    "getDefaultOutput",
-		    Type.BOOLEAN_TYPE,
-		    shouldDefaultOutput( function ) );
-
-		// Add getMetaDataStatic() method with double-check locking
-		AsmHelper.addDoubleCheckLockedStaticMethod(
-		    classNode,
-		    type,
-		    "getMetaDataStatic",
-		    "legacyMetadata",
-		    Type.getType( IStruct.class ),
-		    mv -> {
-			    // Function.getMetaDataStatic( class, documentation, annotations, name, returnType, sourceType, access, arguments, isClosure, isLambda, defaultOutput, modifiers )
-			    mv.visitLdcInsn( type );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "documentation", Type.getDescriptor( IStruct.class ) );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "annotations", Type.getDescriptor( IStruct.class ) );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "name", Type.getDescriptor( Key.class ) );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "returnType", Type.getDescriptor( String.class ) );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, declaringType.getInternalName(), "sourceType", Type.getDescriptor( BoxSourceType.class ) );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "access", Type.getDescriptor( Access.class ) );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "arguments", Type.getDescriptor( Argument[].class ) );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "isClosure", Type.BOOLEAN_TYPE.getDescriptor() );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "isLambda", Type.BOOLEAN_TYPE.getDescriptor() );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "defaultOutput", Type.BOOLEAN_TYPE.getDescriptor() );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "modifiers", Type.getDescriptor( List.class ) );
-			    mv.visitMethodInsn( Opcodes.INVOKESTATIC,
-			        Type.getInternalName( Function.class ),
-			        "getMetaDataStatic",
-			        Type.getMethodDescriptor(
-			            Type.getType( IStruct.class ),
-			            Type.getType( Class.class ),
-			            Type.getType( IStruct.class ),
-			            Type.getType( IStruct.class ),
-			            Type.getType( Key.class ),
-			            Type.getType( String.class ),
-			            Type.getType( BoxSourceType.class ),
-			            Type.getType( Access.class ),
-			            Type.getType( Argument[].class ),
-			            Type.BOOLEAN_TYPE,
-			            Type.BOOLEAN_TYPE,
-			            Type.BOOLEAN_TYPE,
-			            Type.getType( List.class )
-			        ),
-			        false );
-		    }
-		);
-
-		// Add getMetaStatic() method with double-check locking
-		AsmHelper.addDoubleCheckLockedStaticMethod(
-		    classNode,
-		    type,
-		    "getMetaStatic",
-		    "metadata",
-		    Type.getType( IStruct.class ),
-		    mv -> {
-			    // FunctionMeta.generateMeta( class, documentation, annotations, name, returnType, sourceType, access, arguments, isClosure, isLambda, defaultOutput, modifiers )
-			    mv.visitLdcInsn( type );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "documentation", Type.getDescriptor( IStruct.class ) );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "annotations", Type.getDescriptor( IStruct.class ) );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "name", Type.getDescriptor( Key.class ) );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "returnType", Type.getDescriptor( String.class ) );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, declaringType.getInternalName(), "sourceType", Type.getDescriptor( BoxSourceType.class ) );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "access", Type.getDescriptor( Access.class ) );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "arguments", Type.getDescriptor( Argument[].class ) );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "isClosure", Type.BOOLEAN_TYPE.getDescriptor() );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "isLambda", Type.BOOLEAN_TYPE.getDescriptor() );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "defaultOutput", Type.BOOLEAN_TYPE.getDescriptor() );
-			    mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "modifiers", Type.getDescriptor( List.class ) );
-			    mv.visitMethodInsn( Opcodes.INVOKESTATIC,
-			        Type.getInternalName( FunctionMeta.class ),
-			        "generateMeta",
-			        Type.getMethodDescriptor(
-			            Type.getType( IStruct.class ),
-			            Type.getType( Class.class ),
-			            Type.getType( IStruct.class ),
-			            Type.getType( IStruct.class ),
-			            Type.getType( Key.class ),
-			            Type.getType( String.class ),
-			            Type.getType( BoxSourceType.class ),
-			            Type.getType( Access.class ),
-			            Type.getType( Argument[].class ),
-			            Type.BOOLEAN_TYPE,
-			            Type.BOOLEAN_TYPE,
-			            Type.BOOLEAN_TYPE,
-			            Type.getType( List.class )
-			        ),
-			        false );
-		    }
-		);
-
-		AsmHelper.addParentGetter( classNode,
-		    declaringType,
-		    "imports",
-		    "getImports",
-		    Type.getType( List.class ) );
-		AsmHelper.addParentGetter( classNode,
-		    declaringType,
-		    "path",
-		    "getRunnablePath",
-		    Type.getType( ResolvedFilePath.class ) );
-		AsmHelper.addParentGetter( classNode,
-		    declaringType,
-		    "sourceType",
-		    "getSourceType",
-		    Type.getType( BoxSourceType.class ) );
-
+		// Mark this function as compiled to prevent duplicate method generation
+		// (e.g., when the same function is encountered via multiple AST traversal paths in tag-based CFCs with cfscript blocks)
+		transpiler.markFunctionCompiled( function.getName() );
 		transpiler.incrementfunctionBodyCounter();
-		AsmHelper.methodWithContextAndClassLocator( classNode, "_invoke", Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ), false,
+		AsmHelper.methodWithContextAndClassLocator( owningClass, invokerMethodName, Type.getType( FunctionBoxContext.class ), Type.getType( Object.class ),
+		    true,
 		    transpiler, true,
 		    () -> {
 
@@ -323,80 +136,152 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		    } );
 		transpiler.decrementfunctionBodyCounter();
 
-		AsmHelper.complete( classNode, type, methodVisitor -> {
-			transpiler.createKey( function.getName() ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "name",
-			    Type.getDescriptor( Key.class ) );
-			methodVisitor.visitLdcInsn( returnTypeName );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "returnType",
-			    Type.getDescriptor( String.class ) );
-			methodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
-			    Type.getInternalName( Function.Access.class ),
-			    access.name().toUpperCase(),
-			    Type.getDescriptor( Function.Access.class ) );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "access",
-			    Type.getDescriptor( Function.Access.class ) );
-			AsmHelper.array( Type.getType( Argument.class ), function.getArgs(), ( arg, i ) -> transpiler.transform( arg, safe ) )
-			    .forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
+		// Generate the UDF instantiation bytecode: new UDF(name, arguments, returnType, access, annotations, documentation, modifiers, defaultOutput,
+		// imports, sourceType, path, ClassName::invokerMethodName)
+		List<AbstractInsnNode> instantiation = new ArrayList<>();
 
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "arguments",
-			    Type.getDescriptor( Argument[].class ) );
-			transpiler.transformAnnotations( function.getAnnotations() ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "annotations",
-			    Type.getDescriptor( IStruct.class ) );
-			transpiler.transformDocumentation( function.getDocumentation() ).forEach( methodInsnNode -> methodInsnNode.accept( methodVisitor ) );
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "documentation",
-			    Type.getDescriptor( IStruct.class ) );
+		// NEW UDF
+		instantiation.add( new TypeInsnNode( Opcodes.NEW, Type.getInternalName( UDF.class ) ) );
+		instantiation.add( new InsnNode( Opcodes.DUP ) );
 
-			AsmHelper.array(
-			    Type.getType( BoxMethodDeclarationModifier.class ),
-			    function.getModifiers(),
-			    ( bmdm, i ) -> List.of(
-			        new FieldInsnNode(
-			            Opcodes.GETSTATIC,
-			            Type.getInternalName( BoxMethodDeclarationModifier.class ),
-			            bmdm.toString().toUpperCase(),
-			            Type.getDescriptor( BoxMethodDeclarationModifier.class )
-			        )
-			    )
-			).stream()
-			    .forEach( modifierNode -> modifierNode.accept( methodVisitor ) );
+		// Arg 1: name (Key)
+		instantiation.addAll( transpiler.createKey( function.getName() ) );
 
-			methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
-			    Type.getInternalName( List.class ),
-			    "of",
-			    Type.getMethodDescriptor( Type.getType( List.class ), Type.getType( Object[].class ) ),
-			    true );
-
-			methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "modifiers",
-			    Type.getDescriptor( List.class ) );
-		} );
-
-		List<AbstractInsnNode> nodes = new ArrayList<>();
-
-		nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
-		nodes.add(
-		    new MethodInsnNode( Opcodes.INVOKESTATIC,
-		        type.getInternalName(),
-		        "getInstance",
-		        Type.getMethodDescriptor( type ),
-		        false )
+		// Arg 2: arguments (Argument[])
+		instantiation.addAll(
+		    AsmHelper.array( Type.getType( Argument.class ), function.getArgs(), ( arg, i ) -> transpiler.transform( arg, safe ) )
 		);
-		nodes.add(
+
+		// Arg 3: returnType (String)
+		instantiation.add( new LdcInsnNode( returnTypeName ) );
+
+		// Arg 4: access (Function.Access)
+		instantiation.add( new FieldInsnNode( Opcodes.GETSTATIC,
+		    Type.getInternalName( Function.Access.class ),
+		    access.name().toUpperCase(),
+		    Type.getDescriptor( Function.Access.class ) ) );
+
+		// Arg 5: annotations (IStruct)
+		instantiation.addAll( transpiler.transformAnnotations( function.getAnnotations() ) );
+
+		// Arg 6: documentation (IStruct)
+		instantiation.addAll( transpiler.transformDocumentation( function.getDocumentation() ) );
+
+		// Arg 7: modifiers (List)
+		instantiation.addAll(
+		    AsmHelper.array(
+		        Type.getType( BoxMethodDeclarationModifier.class ),
+		        function.getModifiers(),
+		        ( bmdm, i ) -> List.of(
+		            new FieldInsnNode(
+		                Opcodes.GETSTATIC,
+		                Type.getInternalName( BoxMethodDeclarationModifier.class ),
+		                bmdm.toString().toUpperCase(),
+		                Type.getDescriptor( BoxMethodDeclarationModifier.class )
+		            )
+		        )
+		    )
+		);
+		instantiation.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+		    Type.getInternalName( List.class ),
+		    "of",
+		    Type.getMethodDescriptor( Type.getType( List.class ), Type.getType( Object[].class ) ),
+		    true ) );
+
+		// Arg 8: defaultOutput (boolean)
+		instantiation.add( new InsnNode( shouldDefaultOutput( function ) ? Opcodes.ICONST_1 : Opcodes.ICONST_0 ) );
+
+		// Arg 9: imports (List) - from enclosing class static field
+		instantiation.add( new FieldInsnNode( Opcodes.GETSTATIC,
+		    declaringType.getInternalName(),
+		    "imports",
+		    Type.getDescriptor( List.class ) ) );
+
+		// Arg 10: sourceType (BoxSourceType) - from enclosing class static field
+		instantiation.add( new FieldInsnNode( Opcodes.GETSTATIC,
+		    declaringType.getInternalName(),
+		    "sourceType",
+		    Type.getDescriptor( BoxSourceType.class ) ) );
+
+		// Arg 11: path (ResolvedFilePath) - from enclosing class static field
+		instantiation.add( new FieldInsnNode( Opcodes.GETSTATIC,
+		    declaringType.getInternalName(),
+		    "path",
+		    Type.getDescriptor( ResolvedFilePath.class ) ) );
+
+		// Arg 12: method reference - ClassName::invokerMethodName as Function<FunctionBoxContext, Object>
+		instantiation.add( new InvokeDynamicInsnNode(
+		    "apply",
+		    "()Ljava/util/function/Function;",
+		    new Handle(
+		        Opcodes.H_INVOKESTATIC,
+		        "java/lang/invoke/LambdaMetafactory",
+		        "metafactory",
+		        "(Ljava/lang/invoke/MethodHandles$Lookup;"
+		            + "Ljava/lang/String;"
+		            + "Ljava/lang/invoke/MethodType;"
+		            + "Ljava/lang/invoke/MethodType;"
+		            + "Ljava/lang/invoke/MethodHandle;"
+		            + "Ljava/lang/invoke/MethodType;)"
+		            + "Ljava/lang/invoke/CallSite;",
+		        false
+		    ),
+		    Type.getMethodType( "(Ljava/lang/Object;)Ljava/lang/Object;" ),
+		    new Handle(
+		        Opcodes.H_INVOKESTATIC,
+		        declaringType.getInternalName(),
+		        invokerMethodName,
+		        "(Lortus/boxlang/runtime/context/FunctionBoxContext;)Ljava/lang/Object;",
+		        false
+		    ),
+		    Type.getMethodType( "(Lortus/boxlang/runtime/context/FunctionBoxContext;)Ljava/lang/Object;" )
+		) );
+
+		// INVOKESPECIAL UDF.<init>(Key, Argument[], String, Access, IStruct, IStruct, List, boolean, List, BoxSourceType, ResolvedFilePath, Function)V
+		instantiation.add( new MethodInsnNode( Opcodes.INVOKESPECIAL,
+		    Type.getInternalName( UDF.class ),
+		    "<init>",
+		    Type.getMethodDescriptor(
+		        Type.VOID_TYPE,
+		        Type.getType( Key.class ),
+		        Type.getType( Argument[].class ),
+		        Type.getType( String.class ),
+		        Type.getType( Function.Access.class ),
+		        Type.getType( IStruct.class ),
+		        Type.getType( IStruct.class ),
+		        Type.getType( List.class ),
+		        Type.BOOLEAN_TYPE,
+		        Type.getType( List.class ),
+		        Type.getType( BoxSourceType.class ),
+		        Type.getType( ResolvedFilePath.class ),
+		        Type.getType( java.util.function.Function.class )
+		    ),
+		    false ) );
+
+		// Store the UDF instantiation bytecode in the transpiler for later clinit population
+		transpiler.getUDFInstantiations().put( Key.of( function.getName() ), instantiation );
+
+		// Generate registration bytecode: context.registerUDF( udfs.get( Key.of("name") ) )
+		// NOTE: Do NOT add loadCurrentContext() here. The registration nodes may be generated inside a
+		// static component body method (e.g., componentBody_N) but consumed inside the non-static _invoke method,
+		// which has a different context slot. The context loading is deferred to getUDFRegistrations().
+		List<AbstractInsnNode> registrationNodes = new ArrayList<>();
+
+		// udfs.get( Key.of("name") )
+		registrationNodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
+		    declaringType.getInternalName(),
+		    "udfs",
+		    Type.getDescriptor( Map.class ) ) );
+		registrationNodes.addAll( transpiler.createKey( function.getName() ) );
+		registrationNodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
+		    Type.getInternalName( Map.class ),
+		    "get",
+		    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( Object.class ) ),
+		    true ) );
+		registrationNodes.add( new TypeInsnNode( Opcodes.CHECKCAST, Type.getInternalName( UDF.class ) ) );
+
+		// context.registerUDF( udf )
+		registrationNodes.add(
 		    new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 		        Type.getInternalName( IBoxContext.class ),
 		        "registerUDF",
@@ -406,11 +291,16 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 
 		if ( !function.getModifiers().contains( BoxMethodDeclarationModifier.STATIC )
 		    && !function.getModifiers().contains( BoxMethodDeclarationModifier.ABSTRACT ) ) {
-			transpiler.addUDFRegistration( function.getName(), nodes );
+			transpiler.addUDFRegistration( function.getName(), registrationNodes );
 		}
 
 		if ( function.getModifiers().contains( BoxMethodDeclarationModifier.STATIC ) ) {
-			return nodes;
+			// Static UDF registrations are returned inline (not deferred), so they need
+			// context loading from the current (correct) tracker right here.
+			List<AbstractInsnNode> staticResult = new ArrayList<>();
+			staticResult.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
+			staticResult.addAll( registrationNodes );
+			return staticResult;
 		}
 
 		ArrayList<AbstractInsnNode> blankResult = new ArrayList<>();
