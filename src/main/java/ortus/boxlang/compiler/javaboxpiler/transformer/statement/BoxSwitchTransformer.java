@@ -87,14 +87,10 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 					Expression delimiter = ( Expression ) transpiler.transform( c.getDelimiter(), TransformerContext.RIGHT );
 					values.put( "delimiter", delimiter.toString() );
 					caseTemplate = """
-					               switch( null ) {
-					                 case null:
-					                   println( "I am null" )
-					                   break;
-					               }					               \tif( ${caseEnteredName} || ( ${switchValueName} != null && ListUtil.containsNoCase( StringCaster.cast( ${condition} ), StringCaster.cast( ${switchValueName} ), ${delimiter} ) ) ) {
-					               					               		${caseEnteredName} = true;
-					               					               }
-					               					               """;
+					               if( ${caseEnteredName} || ( ${switchValueName} != null && ListUtil.containsNoCase( StringCaster.cast( ${condition} ), StringCaster.cast( ${switchValueName} ), ${delimiter} ) ) ) {
+					               		${caseEnteredName} = true;
+					               }
+					               """;
 				}
 				Expression switchExpr = ( Expression ) transpiler.transform( c.getCondition(), TransformerContext.RIGHT );
 
