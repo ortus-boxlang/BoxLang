@@ -793,17 +793,18 @@ public class CFTemplateTest {
 	public void testSwitchList() {
 		instance.executeSource(
 		    """
-		    <cfset result ="">
-		    	<cfset vegetable = "bugsBunnySnack" />
-		    	<cfswitch expression="#vegetable#">
-		    <cfcase value="carrot,bugsBunnySnack">
-		    	<cfset result ="Carrots are orange.">
-		    </cfcase>
-		    <cfdefaultcase>
-		    	<cfset result ="You don't have any vegetables!">
-		    </cfdefaultcase>
-		    	</cfswitch>
-		    										""", context, BoxSourceType.CFTEMPLATE );
+		      <cfset result ="">
+		      	<cfset vegetable = "bugsBunnySnack" />
+		      	<cfswitch expression="#vegetable#">
+		    <!--- list-based matching is default --->
+		      <cfcase value="carrot,bugsBunnySnack">
+		      	<cfset result ="Carrots are orange.">
+		      </cfcase>
+		      <cfdefaultcase>
+		      	<cfset result ="You don't have any vegetables!">
+		      </cfdefaultcase>
+		      	</cfswitch>
+		      										""", context, BoxSourceType.CFTEMPLATE );
 
 		assertThat( variables.get( result ) ).isEqualTo( "Carrots are orange." );
 	}
@@ -1727,6 +1728,44 @@ public class CFTemplateTest {
 		       <cfif #foo()# NEQ #foo()#>
 		    </cfif>
 		       """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testSwithWithNullExpression() {
+		instance.executeSource(
+		    """
+		    <cfswitch expression="#javacast( "null", "" )#">
+		    <cfcase value="Y">
+		    	<cfdump var="It's a yes!">
+		    </cfcase>
+		    <cfcase value="N">
+		    	<cfdump var="It's a no!">
+		    </cfcase>
+		    <cfdefaultcase>
+		    	<cfdump var="It's neither!">
+		    </cfdefaultcase>
+		    </cfswitch>
+		         """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testSwithWithNullExpressionDelim() {
+		instance.executeSource(
+		    """
+		    <cfswitch expression="#javacast( "null", "" )#">
+		    <cfcase value="Y,Yes" delimiters=",">
+		    	<cfdump var="It's a yes!">
+		    </cfcase>
+		    <cfcase value="N,No" delimiters=",">
+		    	<cfdump var="It's a no!">
+		    </cfcase>
+		    <cfdefaultcase>
+		    	<cfdump var="It's neither!">
+		    </cfdefaultcase>
+		    </cfswitch>
+		         """,
 		    context, BoxSourceType.CFTEMPLATE );
 	}
 
