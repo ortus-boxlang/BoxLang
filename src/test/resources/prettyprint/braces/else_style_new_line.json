@@ -1,0 +1,7 @@
+{
+	"braces": {
+		"else": {
+			"style": "new-line"
+		}
+	}
+}

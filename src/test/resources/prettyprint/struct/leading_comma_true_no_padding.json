@@ -1,0 +1,10 @@
+{
+    "struct": {
+        "multiline": {
+            "leading_comma": {
+                "enabled": true,
+                "padding": false
+            }
+        }
+    }
+}

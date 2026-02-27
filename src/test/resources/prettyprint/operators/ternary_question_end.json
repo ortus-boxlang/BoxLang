@@ -1,0 +1,8 @@
+{
+  "operators": {
+    "ternary": {
+      "style": "always-multiline",
+      "question_position": "end"
+    }
+  }
+}

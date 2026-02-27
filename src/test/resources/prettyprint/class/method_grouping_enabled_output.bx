@@ -1,0 +1,14 @@
+class {
+
+	public function publicMethod() {
+		return "public";
+	}
+
+	private function privateMethod() {
+		return "private";
+	}
+
+	private function anotherPrivate() {
+		return "another private";
+	}
+}

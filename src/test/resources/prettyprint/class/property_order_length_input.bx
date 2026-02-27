@@ -1,0 +1,8 @@
+class {
+    property name="mediumLength";
+    property name="x";
+    property name="veryLongPropertyName";
+    function init() {
+        return this;
+    }
+}

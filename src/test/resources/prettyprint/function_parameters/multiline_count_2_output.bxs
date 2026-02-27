@@ -1,0 +1,16 @@
+function foo(
+	a,
+	b
+) {
+
+}
+function bar(
+	a,
+	b,
+	c
+) {
+
+}
+function baz(a) {
+
+}

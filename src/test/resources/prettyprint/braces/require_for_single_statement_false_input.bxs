@@ -1,0 +1,17 @@
+// Single statement if without braces
+if (x > 5)
+	println("x is greater than 5");
+
+// Single statement if/else without braces
+if (y < 10)
+	println("y is less than 10");
+else
+	println("y is 10 or greater");
+
+// For loop without braces
+for (i = 0; i < 10; i++)
+	println(i);
+
+// While loop without braces
+while (count < 100)
+	count++;

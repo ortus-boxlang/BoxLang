@@ -1,0 +1,18 @@
+// Single statement if-else without braces, else style new-line
+if (x > 5) {
+	println("greater");
+}
+else {
+	println("not greater");
+}
+
+// Else-if chain without braces
+if (x == 1) {
+	println("one");
+}
+else if (x == 2) {
+	println("two");
+}
+else {
+	println("other");
+}

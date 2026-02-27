@@ -1,197 +1,258 @@
 {
-	// Use IntelliSense to learn about possible attributes.
-	// Hover to view descriptions of existing attributes.
-	// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
-	"version": "0.2.0",
-	"configurations": [
-		{
-			"type": "java",
-			"name": "BoxRepl",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.cli.BoxRepl",
-			"projectName": "boxlang"
-		},
-		{
-			"type": "java",
-			"name": "BoxRepl",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.BoxRepl",
-			"projectName": "boxlang"
-		},
-		{
-			"type": "java",
-			"name": "FeatureAudit",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.compiler.FeatureAudit",
-			"projectName": "boxlang"
-		},
-		{
-			"type": "java",
-			"name": "FeatureAudit Help",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.compiler.FeatureAudit",
-			"projectName": "boxlang",
-			"args": [
-				"--help"
-			]
-		},
-		{
-			"type": "java",
-			"name": "BXCompiler",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.compiler.BXCompiler",
-			"projectName": "boxlang"
-		},
-		{
-			"type": "java",
-			"name": "BXCompiler Help",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.compiler.BXCompiler",
-			"projectName": "boxlang",
-			"args": [
-				"--help"
-			]
-		},
-		{
-			"type": "java",
-			"name": "CFTranspiler",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.compiler.CFTranspiler",
-			"projectName": "boxlang"
-		},
-		{
-			"type": "java",
-			"name": "CFTranspiler Help",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.compiler.CFTranspiler",
-			"projectName": "boxlang",
-			"args": [
-				"--help"
-			]
-		},
-		{
-			"type": "java",
-			"name": "BoxLang Debugger",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.debugger.DebugMain",
-			"projectName": "boxlang"
-		},
-		{
-			"type": "java",
-			"name": "BoxRunner Help",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.BoxRunner",
-			"projectName": "boxlang",
-			"args": [
-				"--help"
-			]
-		},
-		{
-			"type": "java",
-			"name": "BoxRunner With Input",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.BoxRunner",
-			"projectName": "boxlang",
-			"args": [
-				"${input:actionCommand}",
-				"${input:arg1}"
-			]
-		},
-		{
-			"type": "java",
-			"name": "Print AST",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.BoxRunner",
-			"projectName": "boxlang",
-			"args": [
-				"--printAST",
-				"-c",
-				"${input:boxlangScript}"
-			]
-		},
-		{
-			"type": "java",
-			"name": "BoxLang Test Scheduler",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.BoxRunner",
-			"projectName": "boxlang",
-			"args": [
-				"schedule",
-				"src/test/bx/Scheduler.bx"
-			]
-		},
-		{
-			"type": "java",
-			"name": "BoxLang Schedule Help",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.BoxRunner",
-			"projectName": "boxlang",
-			"args": [
-				"schedule",
-				"--help"
-			]
-		},
-		{
-			"type": "java",
-			"name": "BoxLang MiniServer",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.web.MiniServer",
-			"projectName": "boxlang",
-			"args": [
-				"--debug",
-				"--webroot",
-				"workbench/www"
-			]
-		},
-		{
-			"type": "java",
-			"name": "REPL",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.BoxRunner",
-			"projectName": "boxlang"
-		},
-		{
-			"type": "java",
-			"name": "Current File",
-			"request": "launch",
-			"mainClass": "${file}"
-		},
-		{
-			"type": "java",
-			"name": "BoxRunner Task",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.BoxRunner",
-			"projectName": "boxlang",
-			"args": [
-				"src/test/bx/Task.bx"
-			]
-		},
-		{
-			"type": "java",
-			"name": "Run Module",
-			"request": "launch",
-			"mainClass": "ortus.boxlang.runtime.BoxRunner",
-			"projectName": "boxlang",
-			"args": [
-				"module:test"
-			]
-		}
-	],
-	"inputs": [
-		{
-			"id": "boxlangScript",
-			"description": "Enter text to see the AST JSON",
-			"type": "promptString"
-		},
-		{
-			"id": "actionCommand",
-			"description": "Enter the action command",
-			"type": "promptString"
-		},
-		{
-			"id": "arg1",
-			"description": "Enter the action command arg1",
-			"type": "promptString"
-		}
-	]
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "BoxRepl",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.cli.BoxRepl",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
+            "name": "BoxRepl",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRepl",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
+            "name": "FeatureAudit",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.compiler.FeatureAudit",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
+            "name": "FeatureAudit Help",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.compiler.FeatureAudit",
+            "projectName": "boxlang",
+            "args": [
+                "--help"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "BXCompiler",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.compiler.BXCompiler",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
+            "name": "BXCompiler Help",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.compiler.BXCompiler",
+            "projectName": "boxlang",
+            "args": [
+                "--help"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "CFTranspiler",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.compiler.CFTranspiler",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
+            "name": "CFTranspiler Help",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.compiler.CFTranspiler",
+            "projectName": "boxlang",
+            "args": [
+                "--help"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "BoxLang Debugger",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.debugger.DebugMain",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
+            "name": "BoxRunner Help",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRunner",
+            "projectName": "boxlang",
+            "args": [
+                "--help"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "BoxRunner With Input",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRunner",
+            "projectName": "boxlang",
+            "args": [
+                "${input:actionCommand}",
+                "${input:arg1}"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "Print AST",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRunner",
+            "projectName": "boxlang",
+            "args": [
+                "--printAST",
+                "-c",
+                "${input:boxlangScript}"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "BoxLang Test Scheduler",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRunner",
+            "projectName": "boxlang",
+            "args": [
+                "schedule",
+                "src/test/bx/Scheduler.bx"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "BoxLang Schedule Help",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRunner",
+            "projectName": "boxlang",
+            "args": [
+                "schedule",
+                "--help"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "BoxLang MiniServer",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.web.MiniServer",
+            "projectName": "boxlang",
+            "args": [
+                "--debug",
+                "--webroot",
+                "workbench/www"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "REPL",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRunner",
+            "projectName": "boxlang"
+        },
+        {
+            "type": "java",
+            "name": "Current File",
+            "request": "launch",
+            "mainClass": "${file}"
+        },
+        {
+            "type": "java",
+            "name": "BoxRunner Task",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRunner",
+            "projectName": "boxlang",
+            "args": [
+                "src/test/bx/Task.bx"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "Run Module",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRunner",
+            "projectName": "boxlang",
+            "args": [
+                "module:test"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "Run Formatter - initConfig",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRunner",
+            "projectName": "boxlang",
+            "args": [
+                "format",
+                "--initConfig"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "Run Formatter - run formatter on directory",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRunner",
+            "projectName": "boxlang",
+            "args": [
+                "format",
+                "--input",
+                "./format-test"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "Run Formatter - run formatter on file",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRunner",
+            "projectName": "boxlang",
+            "args": [
+                "format",
+                "--input",
+                "${file}"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "Run Formatter - run formatter on file",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRunner",
+            "projectName": "boxlang",
+            "args": [
+                "format",
+                "--check",
+                "--input",
+                "${file}"
+            ]
+        },
+        {
+            "type": "java",
+            "name": "Run Formatter - convert cfformat",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRunner",
+            "projectName": "boxlang",
+            "args": [
+                "format",
+                "--convertConfig",
+                "--input",
+                "${file}"
+            ]
+        }
+    ],
+    "inputs": [
+        {
+            "id": "boxlangScript",
+            "description": "Enter text to see the AST JSON",
+            "type": "promptString"
+        },
+        {
+            "id": "actionCommand",
+            "description": "Enter the action command",
+            "type": "promptString"
+        },
+        {
+            "id": "arg1",
+            "description": "Enter the action command arg1",
+            "type": "promptString"
+        }
+    ]
 }
