@@ -23,6 +23,7 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -299,6 +300,30 @@ public class QueryAddRowTest {
 		Query qry = variables.getAsQuery( result );
 		assertThat( qry.size() ).isEqualTo( 1 );
 		assertThat( variables.get( Key.of( "recordCount" ) ) ).isEqualTo( 1 );
+	}
+
+	@Disabled( "No query data validation/casting from queryAddRow, so this test is not valid" )
+	@DisplayName( "It treats empty strings as nulls" )
+	@Test
+	public void testEmptyStringAsNull() {
+		try {
+			Query.queryNullIsString = true;
+			instance.executeSource(
+			    """
+			    result = queryNew("col1,col2","string,date");
+			    lastRow = result.addRow([ "Jon", "" ]);
+			    recordCount = result.recordCount;
+			    	""",
+			    context );
+			assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+			assertThat( variables.get( Key.of( "lastRow" ) ) ).isEqualTo( 1 );
+			Query qry = variables.getAsQuery( result );
+			assertThat( qry.size() ).isEqualTo( 1 );
+			assertThat( variables.get( Key.of( "recordCount" ) ) ).isEqualTo( 1 );
+			assertThat( qry.getRowAsStruct( 0 ).get( Key.of( "col2" ) ) ).isEqualTo( null );
+		} finally {
+			Query.queryNullIsString = false;
+		}
 	}
 
 }

@@ -18,12 +18,13 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Query;
-import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
+import ortus.boxlang.runtime.types.QueryColumnType;
 
 @BoxBIF( description = "Set the value of a specific cell in a query" )
 @BoxMember( type = BoxLangType.QUERY )
@@ -66,7 +67,10 @@ public class QuerySetCell extends BIF {
 			rowNumber = query.size();
 		}
 
-		String columnType = query.getColumn( columnName ).getType().toString();
-		return query.setCell( columnName, rowNumber - 1, GenericCaster.cast( context, value, columnType ) );
+		QueryColumnType columnType = query.getColumn( columnName ).getType();
+		if ( Query.queryNullIsString && !QueryColumnType.isStringType( columnType ) && value instanceof String castValue && castValue.isEmpty() ) {
+			value = null;
+		}
+		return query.setCell( columnName, rowNumber - 1, value != null ? GenericCaster.cast( context, value, columnType.toString() ) : null );
 	}
 }

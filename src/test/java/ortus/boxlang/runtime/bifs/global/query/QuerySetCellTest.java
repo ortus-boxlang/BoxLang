@@ -37,6 +37,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class QuerySetCellTest {
@@ -217,6 +218,31 @@ public class QuerySetCellTest {
 		result = variables.getAsDouble( Key.of( "result" ) ).intValue();
 		assertEquals( result, 1 );
 
+	}
+
+	@DisplayName( "It coerces empty strings to nulls if configured" )
+	@Test
+	public void testStringAsNull() {
+		try {
+			Query.queryNullIsString = true;
+			// @formatter:off
+			instance.executeSource(
+			    """
+			    result = queryNew("name,createdDate","string,date");
+			    queryAddRow(result);
+			    querySetCell(result, "name", "", 1);
+			    querySetCell(result, "createdDate", "", 1);
+			    """,
+			    context
+			);
+			// @formatter:on
+
+			Query query = variables.getAsQuery( result );
+			assertThat( query.getCell( Key.of( "name" ), 0 ) ).isEqualTo( "" );
+			assertThat( query.getCell( Key.of( "createdDate" ), 0 ) ).isEqualTo( null );
+		} finally {
+			Query.queryNullIsString = false;
+		}
 	}
 
 }

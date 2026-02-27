@@ -96,6 +96,11 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	private static final long				serialVersionUID	= 1L;
 
 	/**
+	 * Flag to allow compat to influence the empty-string-to-null coercion when setting cell values to an empty string on a non-string-typed column.
+	 */
+	public static boolean					queryNullIsString	= false;
+
+	/**
 	 * -----------------------------------------------------------
 	 * Properties
 	 * -----------------------------------------------------------
@@ -657,38 +662,6 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
-	 * Add a row to the query
-	 *
-	 * @param row row data as array of objects
-	 *
-	 * @return the row number that was added (1-based)
-	 */
-	public int addRow( Object[] row ) {
-		interceptorService.announce(
-		    BoxEvent.QUERY_ADD_ROW,
-		    () -> Struct.ofNonConcurrent(
-		        Key.query, this,
-		        Key.row, row
-		    )
-		);
-		// TODO: validate types
-		int newRow = size.incrementAndGet();
-		if ( actualSize < newRow + 50 ) {
-			synchronized ( data ) {
-				if ( actualSize < newRow + 50 ) {
-					// Add 200 more rows with nulls
-					for ( int i = 0; i < 200; i++ ) {
-						data.add( null );
-					}
-					actualSize = actualSize + 200;
-				}
-			}
-		}
-		data.set( newRow - 1, row );
-		return newRow;
-	}
-
-	/**
 	 * Add a row to the query. If the array has fewer items than columns in the query, add nulls for the missing values.
 	 *
 	 * @param row row data as array of objects
@@ -708,17 +681,6 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
-	 * Add a row to the query
-	 *
-	 * @param row row data as a BoxLang array
-	 *
-	 * @return the row number that was added (1-based)
-	 */
-	public int addRow( Array row ) {
-		return addRowDefaultMissing( row.toArray() );
-	}
-
-	/**
 	 * Swap a row with another row in the query
 	 *
 	 * @param sourceRow      The row to swap from
@@ -735,6 +697,17 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			data.set( destinationRow, temp );
 		}
 		return this;
+	}
+
+	/**
+	 * Add a row to the query
+	 *
+	 * @param row row data as a BoxLang array
+	 *
+	 * @return the row number that was added (1-based)
+	 */
+	public int addRow( Array row ) {
+		return addRowDefaultMissing( row.toArray() );
 	}
 
 	/**
@@ -765,6 +738,38 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		// We're ignoring extra keys in the struct that aren't query columns. Lucee
 		// compat, but not CF compat.
 		return addRow( rowData );
+	}
+
+	/**
+	 * Add a row to the query
+	 *
+	 * @param row row data as array of objects
+	 *
+	 * @return the row number that was added (1-based)
+	 */
+	public int addRow( Object[] row ) {
+		interceptorService.announce(
+		    BoxEvent.QUERY_ADD_ROW,
+		    () -> Struct.ofNonConcurrent(
+		        Key.query, this,
+		        Key.row, row
+		    )
+		);
+		// TODO: validate types
+		int newRow = size.incrementAndGet();
+		if ( actualSize < newRow + 50 ) {
+			synchronized ( data ) {
+				if ( actualSize < newRow + 50 ) {
+					// Add 200 more rows with nulls
+					for ( int i = 0; i < 200; i++ ) {
+						data.add( null );
+					}
+					actualSize = actualSize + 200;
+				}
+			}
+		}
+		data.set( newRow - 1, row );
+		return newRow;
 	}
 
 	/**
