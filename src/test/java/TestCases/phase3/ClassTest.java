@@ -2234,4 +2234,53 @@ public class ClassTest {
 		    context );
 	}
 
+	@DisplayName( "class file recompilation on change" )
+	@Test
+	public void testClassRecompilation() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+			tmpDir = expandPath( "/src/test/resources/tmp" );
+			if( !directoryExists( tmpDir ) ) {
+				directoryCreate( tmpDir );
+			}
+			classFile = tmpDir & "/RecompileTest.bx";
+
+			// Write first version of class
+			fileWrite( classFile, '
+				class {
+					function getMessage() {
+						return "version1";
+					}
+				}
+			' );
+
+			obj = new src.test.resources.tmp.RecompileTest();
+			result = obj.getMessage();
+
+			// Ensure file timestamp changes
+			sleep( 1000 );
+
+			// Overwrite with second version
+			fileWrite( classFile, '
+				class {
+					function getMessage() {
+						return "version2";
+					}
+				}
+			' );
+
+			obj2 = new src.test.resources.tmp.RecompileTest();
+			result2 = obj2.getMessage();
+
+			// Clean up
+			fileDelete( classFile );
+		    """,
+		    context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isEqualTo( "version1" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "version2" );
+	}
+
 }
