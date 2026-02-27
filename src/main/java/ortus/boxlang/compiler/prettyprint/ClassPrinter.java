@@ -190,7 +190,7 @@ public class ClassPrinter {
 			bodyDoc.append( Line.HARD );
 			property.accept( visitor );
 		}
-		List<BoxStatement>	sortedBody			= sortClassBody( classNode.getBody(), methodOrder, methodGrouping );
+		List<BoxStatement> sortedBody = sortClassBody( classNode.getBody(), methodOrder, methodGrouping );
 		for ( var statement : sortedBody ) {
 			statement.accept( visitor );
 		}
@@ -330,11 +330,11 @@ public class ClassPrinter {
 	}
 
 	private void printProperties( List<BoxProperty> properties ) {
-		var	currentDoc		= visitor.getCurrentDoc();
-		var	propertyOrder	= visitor.config.getClassConfig().getPropertyOrder();
+		var					currentDoc			= visitor.getCurrentDoc();
+		var					propertyOrder		= visitor.config.getClassConfig().getPropertyOrder();
 
 		// Sort properties based on configuration
-		List<BoxProperty> sortedProperties = sortProperties( properties, propertyOrder );
+		List<BoxProperty>	sortedProperties	= sortProperties( properties, propertyOrder );
 
 		for ( int i = 0; i < sortedProperties.size(); i++ ) {
 			sortedProperties.get( i ).accept( visitor );

@@ -312,8 +312,8 @@ public final class Config {
 	 * @throws RuntimeException if requireConfig is true and no config file is found
 	 */
 	public static Config loadConfigWithFallback( String directory, boolean requireConfig ) {
-		File bxFormatFile = new File( directory, ".bxformat.json" );
-		File cfFormatFile = new File( directory, ".cfformat.json" );
+		File	bxFormatFile	= new File( directory, ".bxformat.json" );
+		File	cfFormatFile	= new File( directory, ".cfformat.json" );
 
 		// First, try .bxformat.json
 		if ( bxFormatFile.exists() ) {

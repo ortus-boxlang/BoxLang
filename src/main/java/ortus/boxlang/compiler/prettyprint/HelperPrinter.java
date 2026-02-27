@@ -45,7 +45,7 @@ public class HelperPrinter {
 		BoxStatement	previousStatement	= null;
 
 		// Get member spacing for class members (default is 1 blank line between functions)
-		int memberSpacing = visitor.config.getClassConfig().getMemberSpacing();
+		int				memberSpacing		= visitor.config.getClassConfig().getMemberSpacing();
 
 		for ( var statement : statements ) {
 			// Check if this is a class member (function in a class or interface)
@@ -213,7 +213,7 @@ public class HelperPrinter {
 			statement.accept( visitor );
 		} else if ( requireBraces ) {
 			// Single statement and we need to wrap it in braces
-			var currentDoc = visitor.getCurrentDoc();
+			var		currentDoc		= visitor.getCurrentDoc();
 
 			// Determine if opening brace should be on a new line based on braces.style config
 			String	braceStyle		= visitor.config.getBraces().getStyle();
@@ -243,8 +243,8 @@ public class HelperPrinter {
 			    .append( "}" );
 		} else {
 			// Single statement without braces - need to indent it
-			var currentDoc = visitor.getCurrentDoc();
-			var blockDoc = visitor.pushDoc( DocType.INDENT );
+			var	currentDoc	= visitor.getCurrentDoc();
+			var	blockDoc	= visitor.pushDoc( DocType.INDENT );
 			blockDoc.append( Line.HARD );
 
 			statement.accept( visitor );

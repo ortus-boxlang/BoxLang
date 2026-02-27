@@ -96,10 +96,10 @@ public class PrettyPrintMainTest {
 
 	@Test
 	public void testInputFilesCanBeParsed() throws IOException {
-		Parser parser = new Parser();
+		Parser			parser	= new Parser();
 
 		// Test test1.bxs
-		ParsingResult result1 = parser.parse( new File( TEST_RESOURCES_PATH + "input/test1.bxs" ), false );
+		ParsingResult	result1	= parser.parse( new File( TEST_RESOURCES_PATH + "input/test1.bxs" ), false );
 		assertTrue( result1.isCorrect(), "test1.bxs should parse correctly" );
 
 		// Test test2.cfm
@@ -113,8 +113,8 @@ public class PrettyPrintMainTest {
 
 	@Test
 	public void testInputFilesCanBeFormattedWithDefaultConfig() throws IOException {
-		Parser	parser	= new Parser();
-		Config	config	= new Config();
+		Parser			parser	= new Parser();
+		Config			config	= new Config();
 
 		// Test formatting test1.bxs
 		File			file1	= new File( TEST_RESOURCES_PATH + "input/test1.bxs" );
@@ -131,8 +131,8 @@ public class PrettyPrintMainTest {
 
 	@Test
 	public void testInputFilesCanBeFormattedWithCustomConfig() throws Exception {
-		Parser	parser	= new Parser();
-		Config	config	= Config.loadConfig( TEST_RESOURCES_PATH + "custom-config.json" );
+		Parser			parser	= new Parser();
+		Config			config	= Config.loadConfig( TEST_RESOURCES_PATH + "custom-config.json" );
 
 		// Test formatting with custom config (indentSize: 2)
 		File			file1	= new File( TEST_RESOURCES_PATH + "input/test1.bxs" );
@@ -149,11 +149,11 @@ public class PrettyPrintMainTest {
 	@Test
 	public void testAllTestFilesAreUnformatted() throws IOException {
 		// Verify that our test files actually need formatting (they should be intentionally unformatted)
-		Parser	parser	= new Parser();
-		Config	config	= new Config();
+		Parser			parser		= new Parser();
+		Config			config		= new Config();
 
-		File	file1		= new File( TEST_RESOURCES_PATH + "input/test1.bxs" );
-		String	original1	= Files.readString( file1.toPath() );
+		File			file1		= new File( TEST_RESOURCES_PATH + "input/test1.bxs" );
+		String			original1	= Files.readString( file1.toPath() );
 
 		ParsingResult	result1		= parser.parse( file1, false );
 		String			formatted1	= PrettyPrint.prettyPrint( result1.getRoot(), config );
@@ -165,19 +165,19 @@ public class PrettyPrintMainTest {
 	@Test
 	public void testFormattingIsIdempotent() throws IOException {
 		// Formatting an already-formatted file should produce the same output
-		Parser	parser	= new Parser();
-		Config	config	= new Config();
+		Parser			parser		= new Parser();
+		Config			config		= new Config();
 
-		File			file1			= new File( TEST_RESOURCES_PATH + "input/test1.bxs" );
-		ParsingResult	result1			= parser.parse( file1, false );
-		String			formatted1		= PrettyPrint.prettyPrint( result1.getRoot(), config );
+		File			file1		= new File( TEST_RESOURCES_PATH + "input/test1.bxs" );
+		ParsingResult	result1		= parser.parse( file1, false );
+		String			formatted1	= PrettyPrint.prettyPrint( result1.getRoot(), config );
 
 		// Parse the formatted output and format it again
-		Path			tempFile		= Files.createTempFile( "test-idempotent", ".bxs" );
+		Path			tempFile	= Files.createTempFile( "test-idempotent", ".bxs" );
 		Files.writeString( tempFile, formatted1 );
 
-		ParsingResult	result2			= parser.parse( tempFile.toFile(), false );
-		String			formatted2		= PrettyPrint.prettyPrint( result2.getRoot(), config );
+		ParsingResult	result2		= parser.parse( tempFile.toFile(), false );
+		String			formatted2	= PrettyPrint.prettyPrint( result2.getRoot(), config );
 
 		// Should be identical
 		assertTrue( formatted1.equals( formatted2 ), "Formatting should be idempotent" );

@@ -255,8 +255,8 @@ public class RemainingConfigsTest {
 	@Test
 	@DisplayName( "Config toMap includes all new config objects" )
 	public void testConfigToMapIncludesAll() {
-		Config config = new Config();
-		Map<String, Object> map = config.toMap();
+		Config				config	= new Config();
+		Map<String, Object>	map		= config.toMap();
 
 		assertNotNull( map.get( "arguments" ) );
 		assertNotNull( map.get( "braces" ) );

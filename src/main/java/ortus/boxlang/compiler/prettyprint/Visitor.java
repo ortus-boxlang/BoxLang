@@ -356,18 +356,18 @@ public class Visitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxBinaryOperation node ) {
-		var	currentDoc		= getCurrentDoc();
+		var		currentDoc			= getCurrentDoc();
 
-		var	needsPadding	= config.getBinaryOperatorsPadding();
-		String operatorPosition = config.getOperators().getPosition();
+		var		needsPadding		= config.getBinaryOperatorsPadding();
+		String	operatorPosition	= config.getOperators().getPosition();
 
 		// Always create a GROUP for each binary operation
 		// This allows each operation to decide independently whether to break
-		var	binaryDoc	= pushDoc( DocType.GROUP );
-		var	indentDoc	= pushDoc( DocType.INDENT );
-		
+		var		binaryDoc			= pushDoc( DocType.GROUP );
+		var		indentDoc			= pushDoc( DocType.INDENT );
+
 		node.getLeft().accept( this );
-		
+
 		if ( operatorPosition.equals( "start" ) ) {
 			// Operator at start of next line: left \n op right
 			indentDoc
@@ -381,7 +381,7 @@ public class Visitor extends VoidBoxVisitor {
 			    .append( node.getOperator().getSymbol() )
 			    .append( needsPadding ? Line.LINE : Line.SOFT );
 		}
-		
+
 		node.getRight().accept( this );
 		binaryDoc.append( popDoc() );
 
@@ -389,15 +389,15 @@ public class Visitor extends VoidBoxVisitor {
 	}
 
 	public void visit( BoxComparisonOperation node ) {
-		var	currentDoc	= getCurrentDoc();
-		String operatorPosition = config.getOperators().getPosition();
+		var		currentDoc			= getCurrentDoc();
+		String	operatorPosition	= config.getOperators().getPosition();
 
 		// Always create a GROUP for each comparison operation
-		var	binaryDoc	= pushDoc( DocType.GROUP );
-		var	indentDoc	= pushDoc( DocType.INDENT );
-		
+		var		binaryDoc			= pushDoc( DocType.GROUP );
+		var		indentDoc			= pushDoc( DocType.INDENT );
+
 		node.getLeft().accept( this );
-		
+
 		if ( operatorPosition.equals( "start" ) ) {
 			// Operator at start of next line
 			indentDoc
@@ -411,7 +411,7 @@ public class Visitor extends VoidBoxVisitor {
 			    .append( node.getOperator().getSymbol() )
 			    .append( Line.LINE );
 		}
-		
+
 		node.getRight().accept( this );
 		binaryDoc.append( popDoc() );
 
@@ -456,11 +456,11 @@ public class Visitor extends VoidBoxVisitor {
 	public void visit( BoxLambda node ) {
 		printPreComments( node );
 
-		var	args		= node.getArgs();
-		var	arrowParens	= config.getFunction().getArrow().getParens();
+		var		args			= node.getArgs();
+		var		arrowParens		= config.getFunction().getArrow().getParens();
 
 		// Check if we can omit parentheses: "avoid" mode, single param, no explicit type, no default, not required, no annotations
-		boolean canOmitParens = false;
+		boolean	canOmitParens	= false;
 		if ( arrowParens.equals( "avoid" ) && args.size() == 1 ) {
 			var		arg				= args.get( 0 );
 			// Check if type was explicitly specified (not just default "Any")
@@ -516,14 +516,14 @@ public class Visitor extends VoidBoxVisitor {
 		}
 		root.accept( this );
 
-		int		chainSize		= chain.size();
-		int		breakCount		= config.getChain().getBreakCount();
-		int		breakLength		= config.getChain().getBreakLength();
-		int		chainLength		= calculateChainLength( chain, root );
-		boolean	shouldBreak		= chainSize >= breakCount || chainLength >= breakLength;
+		int		chainSize	= chain.size();
+		int		breakCount	= config.getChain().getBreakCount();
+		int		breakLength	= config.getChain().getBreakLength();
+		int		chainLength	= calculateChainLength( chain, root );
+		boolean	shouldBreak	= chainSize >= breakCount || chainLength >= breakLength;
 
-		var		chainGroup		= pushDoc( DocType.GROUP );
-		var		indentGroup		= pushDoc( DocType.INDENT );
+		var		chainGroup	= pushDoc( DocType.GROUP );
+		var		indentGroup	= pushDoc( DocType.INDENT );
 
 		// Force break if chain is long enough (by count or by length)
 		if ( shouldBreak ) {
@@ -782,14 +782,14 @@ public class Visitor extends VoidBoxVisitor {
 
 	public void visit( BoxTernaryOperation node ) {
 		printPreComments( node );
-		
+
 		String ternaryStyle = config.getOperators().getTernary().getStyle();
-		
+
 		switch ( ternaryStyle ) {
-			case "always-multiline":
+			case "always-multiline" :
 				printTernaryMultiline( node );
 				break;
-			case "preserve":
+			case "preserve" :
 				// Check if original source spans multiple lines
 				if ( isMultilineInSource( node ) ) {
 					printTernaryMultiline( node );
@@ -797,16 +797,16 @@ public class Visitor extends VoidBoxVisitor {
 					printTernaryFlat( node );
 				}
 				break;
-			case "flat":
-			default:
+			case "flat" :
+			default :
 				// Use GROUP to let the printer decide based on line length
 				printTernaryWithGroup( node );
 				break;
 		}
-		
+
 		printPostComments( node );
 	}
-	
+
 	/**
 	 * Print ternary on a single line (no line break opportunity)
 	 */
@@ -817,7 +817,7 @@ public class Visitor extends VoidBoxVisitor {
 		print( " : " );
 		node.getWhenFalse().accept( this );
 	}
-	
+
 	/**
 	 * Print ternary with GROUP allowing line breaks if needed
 	 */
@@ -826,8 +826,8 @@ public class Visitor extends VoidBoxVisitor {
 		String	questionPosition	= config.getOperators().getTernary().getQuestionPosition();
 
 		// Create a GROUP that can break if line is too long
-		var ternaryDoc	= pushDoc( DocType.GROUP );
-		var indentDoc	= pushDoc( DocType.INDENT );
+		var		ternaryDoc			= pushDoc( DocType.GROUP );
+		var		indentDoc			= pushDoc( DocType.INDENT );
 
 		node.getCondition().accept( this );
 
@@ -861,8 +861,8 @@ public class Visitor extends VoidBoxVisitor {
 		String	questionPosition	= config.getOperators().getTernary().getQuestionPosition();
 
 		// Create a GROUP with BREAK_PARENT to force multiline
-		var ternaryDoc	= pushDoc( DocType.GROUP );
-		var indentDoc	= pushDoc( DocType.INDENT );
+		var		ternaryDoc			= pushDoc( DocType.GROUP );
+		var		indentDoc			= pushDoc( DocType.INDENT );
 
 		node.getCondition().accept( this );
 
@@ -890,7 +890,7 @@ public class Visitor extends VoidBoxVisitor {
 		ternaryDoc.append( popDoc() );
 		currentDoc.append( popDoc() );
 	}
-	
+
 	/**
 	 * Check if a ternary operation spans multiple lines in source
 	 */
@@ -898,8 +898,8 @@ public class Visitor extends VoidBoxVisitor {
 		if ( node.getPosition() == null ) {
 			return false;
 		}
-		int startLine = node.getPosition().getStart().getLine();
-		int endLine = node.getPosition().getEnd().getLine();
+		int	startLine	= node.getPosition().getStart().getLine();
+		int	endLine		= node.getPosition().getEnd().getLine();
 		return startLine != endLine;
 	}
 
@@ -1270,10 +1270,10 @@ public class Visitor extends VoidBoxVisitor {
 			print( "if " );
 			helperPrinter.printParensExpression( node.getCondition() );
 			print( " " );
-			
+
 			boolean thenBodyIsBlock = node.getThenBody() instanceof BoxStatementBlock;
 			helperPrinter.printStatementBody( node, node.getThenBody() );
-			
+
 			if ( node.getElseBody() != null ) {
 				// Check for else-if pattern: else body is a block containing a single if statement
 				boolean isElseIf = false;
@@ -1282,13 +1282,13 @@ public class Visitor extends VoidBoxVisitor {
 				    elseBlock.getBody().get( 0 ) instanceof BoxIfElse ) {
 					isElseIf = true;
 				}
-				
+
 				// Check if else body is a direct if statement (not in a block)
-				boolean isDirectElseIf = node.getElseBody() instanceof BoxIfElse;
-				
+				boolean	isDirectElseIf	= node.getElseBody() instanceof BoxIfElse;
+
 				// Determine spacing before "else" based on configuration
-				String elseStyle = config.getBraces().getElseConfig().getStyle();
-				
+				String	elseStyle		= config.getBraces().getElseConfig().getStyle();
+
 				if ( elseStyle.equals( "new-line" ) ) {
 					// Always put else on a new line
 					newLine();
@@ -1307,13 +1307,13 @@ public class Visitor extends VoidBoxVisitor {
 						newLine();
 					}
 				}
-				
+
 				print( "else " );
-				
+
 				// For else-if, just visit the if statement directly
 				if ( isElseIf ) {
-					BoxStatementBlock elseBlock = ( BoxStatementBlock ) node.getElseBody();
-					BoxIfElse elseIfNode = ( BoxIfElse ) elseBlock.getBody().get( 0 );
+					BoxStatementBlock	elseBlock	= ( BoxStatementBlock ) node.getElseBody();
+					BoxIfElse			elseIfNode	= ( BoxIfElse ) elseBlock.getBody().get( 0 );
 					doBoxIfElse( elseIfNode, false );
 				} else if ( isDirectElseIf ) {
 					node.getElseBody().accept( this );
@@ -1760,15 +1760,15 @@ public class Visitor extends VoidBoxVisitor {
 		for ( ChainElement element : chain ) {
 			// Each element's source text includes the dot/accessor prefix
 			if ( element.isMethodInvocation() ) {
-				var m = element.asMethodInvocation();
+				var		m			= element.asMethodInvocation();
 				// Source text already includes the dot for method invocations built from dot access
-				String sourceText = m.getSourceText();
+				String	sourceText	= m.getSourceText();
 				if ( sourceText != null ) {
 					length += sourceText.length();
 				}
 			} else {
-				var d = element.asDotAccess();
-				String sourceText = d.getSourceText();
+				var		d			= element.asDotAccess();
+				String	sourceText	= d.getSourceText();
 				if ( sourceText != null ) {
 					length += sourceText.length();
 				}

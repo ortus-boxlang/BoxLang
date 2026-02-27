@@ -99,8 +99,8 @@ public class ConfigTest {
 	@Test
 	@DisplayName( "Config toMap includes all nested objects" )
 	public void testToMapIncludesAllNested() {
-		Config config = new Config();
-		Map<String, Object> map = config.toMap();
+		Config				config	= new Config();
+		Map<String, Object>	map		= config.toMap();
 
 		assertNotNull( map.get( "struct" ) );
 		assertNotNull( map.get( "array" ) );
