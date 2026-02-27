@@ -14,7 +14,7 @@
 					<strong>
 						<bx:if label.len() >#label# - </bx:if>
 						Array:
-						<bx:if !isNull( top ) && top lt var.len()>#top#/</bx:if>#var.len()#
+						<bx:if !isNull( maxRows ) && maxRows lt var.len()>#maxRows#/</bx:if>#var.len()#
 					</strong>
 				</caption>
 			<bx:else>
@@ -28,11 +28,9 @@
 			<tbody
 				<bx:if !expandRoot>class="d-none"</bx:if>
 			>
-				<bx:loop array="#var#" index="i" item="value">
-						<!--- Top limit only if > 0 --->
-						<bx:if  !isNull( top ) and i GT top >
-							<bx:break>
-						</bx:if>
+			<bx:set maxItems = isNull( maxRows ) ? var.len() : min( maxRows, var.len() )>
+			<bx:loop from="1" to="#maxItems#" index="i">
+				<bx:set value = var[i]>
 						<tr>
 							<th
 								aria-expanded="true"
@@ -48,6 +46,7 @@
 									<bx:set dump(
 										var : value ?: null,
 										top : isNull( top ) ? null : top - 1,
+										maxRows : maxRows,
 										expand : expand ?: null
 									)>
 								</div>

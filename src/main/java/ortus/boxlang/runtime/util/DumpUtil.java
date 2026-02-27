@@ -109,6 +109,7 @@ public class DumpUtil {
 	    Object target,
 	    String label,
 	    @Nullable Integer top,
+		@Nullable Integer maxRows,
 	    Boolean expand,
 	    Boolean abort,
 	    String output,
@@ -177,6 +178,7 @@ public class DumpUtil {
 		            Key.target, target,
 		            Key.label, label,
 		            Key.top, top,
+					Key.maxRows, maxRows,
 		            Key.expand, expand,
 		            Key.abort, abort,
 		            Key.output, outputFinal,
@@ -187,7 +189,7 @@ public class DumpUtil {
 
 		String dumpOutput;
 		if ( format.equals( "html" ) ) {
-			dumpOutput = generateDumpHTML( context, target, label, top, expand, abort, output, format, showUDFs );
+			dumpOutput = generateDumpHTML( context, target, label, top, maxRows, expand, abort, output, format, showUDFs );
 		} else {
 			dumpOutput = generateDumpText( context, target, label );
 		}
@@ -251,6 +253,7 @@ public class DumpUtil {
 					            Key.target, target,
 					            Key.label, label,
 					            Key.top, top,
+								Key.maxRows, maxRows,
 					            Key.expand, expand,
 					            Key.abort, abort,
 					            Key.output, outputFinal,
@@ -346,6 +349,7 @@ public class DumpUtil {
 	    Object target,
 	    String label,
 	    @Nullable Integer top,
+		@Nullable Integer maxRows,
 	    Boolean expand,
 	    Boolean abort,
 	    String output,
@@ -401,6 +405,7 @@ public class DumpUtil {
 			        Key.var, target,
 			        Key.label, label,
 			        Key.top, top,
+					Key.maxRows, maxRows,
 			        Key.expand, expand,
 			        Key.abort, abort,
 			        Key.showUDFs, showUDFs,
