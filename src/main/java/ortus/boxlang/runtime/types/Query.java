@@ -98,7 +98,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	/**
 	 * Flag to allow compat to influence the empty-string-to-null coercion when setting cell values to an empty string on a non-string-typed column.
 	 */
-	public static boolean					queryNullIsString	= false;
+	public static boolean					queryNullToEmpty	= false;
 
 	/**
 	 * -----------------------------------------------------------

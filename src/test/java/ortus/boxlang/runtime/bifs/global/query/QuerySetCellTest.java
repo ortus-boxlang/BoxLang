@@ -223,14 +223,14 @@ public class QuerySetCellTest {
 	@DisplayName( "queryNullIsString: False by default" )
 	@Test
 	public void testQueryNullIsStringDefault() {
-		assertThat( Query.queryNullIsString ).isEqualTo( false );
+		assertThat( Query.queryNullToEmpty ).isEqualTo( false );
 	}
 
 	@DisplayName( "queryNullIsString: Coerces empty strings to nulls on non-string columns" )
 	@Test
 	public void testQueryNullIsStringCompatSetting() {
 		try {
-			Query.queryNullIsString = true;
+			Query.queryNullToEmpty = true;
 			// @formatter:off
 			instance.executeSource(
 			    """
@@ -247,7 +247,7 @@ public class QuerySetCellTest {
 			assertThat( query.getCell( Key.of( "name" ), 0 ) ).isEqualTo( "" );
 			assertThat( query.getCell( Key.of( "createdDate" ), 0 ) ).isEqualTo( null );
 		} finally {
-			Query.queryNullIsString = false;
+			Query.queryNullToEmpty = false;
 		}
 	}
 

@@ -68,7 +68,8 @@ public class QuerySetCell extends BIF {
 		}
 
 		QueryColumnType columnType = query.getColumn( columnName ).getType();
-		if ( Query.queryNullIsString && !QueryColumnType.isStringType( columnType ) && value instanceof String castValue && castValue.isEmpty() ) {
+		if ( Query.queryNullToEmpty && !QueryColumnType.isStringType( columnType ) && value instanceof String castValue
+		    && castValue.isEmpty() ) {
 			value = null;
 		}
 		return query.setCell( columnName, rowNumber - 1, value != null ? GenericCaster.cast( context, value, columnType.toString() ) : null );

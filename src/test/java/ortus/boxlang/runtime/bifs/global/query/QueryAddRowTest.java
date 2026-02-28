@@ -307,7 +307,7 @@ public class QueryAddRowTest {
 	@Test
 	public void testEmptyStringAsNull() {
 		try {
-			Query.queryNullIsString = true;
+			Query.queryNullToEmpty = true;
 			instance.executeSource(
 			    """
 			    result = queryNew("col1,col2","string,date");
@@ -322,7 +322,7 @@ public class QueryAddRowTest {
 			assertThat( variables.get( Key.of( "recordCount" ) ) ).isEqualTo( 1 );
 			assertThat( qry.getRowAsStruct( 0 ).get( Key.of( "col2" ) ) ).isEqualTo( null );
 		} finally {
-			Query.queryNullIsString = false;
+			Query.queryNullToEmpty = false;
 		}
 	}
 
