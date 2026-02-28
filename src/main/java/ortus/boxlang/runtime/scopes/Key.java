@@ -540,6 +540,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		max									= Key.of( "max" );
 	public static final Key		maxAge								= Key.of( "max-age" );
 	public static final Key		maxFileSize							= Key.of( "maxFileSize" );
+	public static final Key		maxDepth							= Key.of( "maxDepth" );
 	public static final Key		maxFrames							= Key.of( "maxFrames" );
 	public static final Key		maxLength							= Key.of( "maxLength" );
 	public static final Key		maxLogDays							= Key.of( "maxLogDays" );

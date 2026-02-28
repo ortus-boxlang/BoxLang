@@ -47,7 +47,8 @@
 								<div class="bx-onoff">
 									<bx:set dump(
 										var : value ?: null,
-										top : isNull( top ) ? null : top - 1,
+										top : top ?: null,
+										maxDepth : isNull( maxDepth ) ? null : maxDepth - 1,
 										expand : expand ?: null
 									)>
 								</div>

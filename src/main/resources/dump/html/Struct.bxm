@@ -61,7 +61,11 @@
 								</th>
 								<td>
 									<div class="bx-onoff">
-										<bx:set dump( var : var[ key ], top : ( isNull( top ) ? null : top - 1 ), expand : expand ?: null, output : "buffer", format : format ) >
+										<bx:if !isNull( maxDepth ) && maxDepth <= 1 >
+											<div><em>Max Depth reached (Skipping dump)</em></div>
+										<bx:else>
+											<bx:set dump( var : var[ key ], top : top, maxDepth : isNull( maxDepth ) ? null : maxDepth - 1, expand : expand ?: null, output : "buffer", format : format ) >
+										</bx:if>
 									</div>
 								</td>
 							</tr>

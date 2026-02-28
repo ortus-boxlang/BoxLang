@@ -47,6 +47,7 @@ public class Dump extends Component {
 		    new Attribute( Key.label, "string", "" ),
 		    new Attribute( Key.top, "numeric" ),
 		    new Attribute( Key.expand, "boolean" ),
+		    new Attribute( Key.maxDepth, "numeric" ),
 		    new Attribute( Key.abort, "any", false ),
 		    new Attribute( Key.output, "string", Set.of( Validator.NON_EMPTY ) ),
 		    new Attribute( Key.format, "string", Set.of( Validator.valueOneOf( "html", "text" ), Validator.NON_EMPTY ) ),
@@ -75,6 +76,8 @@ public class Dump extends Component {
 	 *
 	 * @attributes.abort Whether to do a hard abort the request after dumping. Default is false
 	 *
+	 * @attributes.maxDepth The maximum depth of nested levels to display (depth). Default is infinity. (Only in HTML output)
+	 * 
 	 * @attributes.output The output format which can be "buffer", "console", or "{absolute file path}". The default is "buffer".
 	 *
 	 * @attributes.format The format of the output to a <strong>filename</strong>. Can be "html" or "text". The default is according to the output location.
@@ -94,13 +97,15 @@ public class Dump extends Component {
 			attributes.put( Key.abort, true );
 		}
 
-		Object top = attributes.get( Key.top );
+		Object	top			= attributes.get( Key.top );
+		Object	maxDepth	= attributes.get( Key.maxDepth );
 
 		DumpUtil.dump(
 		    context,
 		    DynamicObject.unWrap( attributes.get( Key.var ) ),
 		    attributes.getAsString( Key.label ),
 		    top == null ? null : IntegerCaster.cast( top ),
+		    maxDepth == null ? null : IntegerCaster.cast( maxDepth ),
 		    attributes.getAsBoolean( Key.expand ),
 		    BooleanCaster.cast( attributes.get( Key.abort ) ),
 		    attributes.getAsString( Key.output ),

@@ -178,7 +178,8 @@
 											<td>
 												#writeDump(
 													var : variablesScope[ prop.name ] ?: null,
-													top : isNull( top ) ? null : top - 1,
+													top : top ?: null,
+													maxDepth : isNull( maxDepth ) ? null : maxDepth - 1,
 													expand : variables?.expand,
 													showUDFs : variables?.showUDFs
 												)#
@@ -233,7 +234,8 @@
 											<td>
 												#writeDump(
 													var : thisData ?: null,
-													top : isNull( top ) ? null : top - 1,
+													top : top ?: null,
+													maxDepth : isNull( maxDepth ) ? null : maxDepth - 1,
 													expand : variables?.expand,
 													showUDFs : variables?.showUDFs
 												)#
@@ -285,7 +287,8 @@
 										<td>
 											#writeDump( 
 												var : thisMethod ?: null,
-												top : isNull( top ) ? null : top - 1,
+												top : top ?: null,
+												maxDepth : isNull( maxDepth ) ? null : maxDepth - 1,
 												expand : variables?.expand,
 												output : "buffer",
 												format : format
@@ -341,7 +344,8 @@
 												<td>
 													#writeDump(
 														var : thisMethod ?: null,
-														top : isNull( top ) ? null : top - 1,
+														top : top ?: null,
+														maxDepth : isNull( maxDepth ) ? null : maxDepth - 1,
 														expand : variables?.expand
 													)#
 												</td>
@@ -396,7 +400,8 @@
 												<td>
 													#writeDump(
 														var : thisMethod ?: null,
-														top : isNull( top ) ? null : top - 1,
+														top : top ?: null,
+														maxDepth : isNull( maxDepth ) ? null : maxDepth - 1,
 														expand : variables?.expand
 													)#
 												</td>

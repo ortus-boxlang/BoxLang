@@ -65,6 +65,8 @@ public class Dump extends BIF {
 		    new Argument( false, Argument.STRING, Key.label, "" ),
 		    // The number of levels to display when dumping collections. Great to avoid dumping the entire world!
 		    new Argument( false, Argument.NUMERIC, Key.top ),
+		    new Argument( false, Argument.NUMERIC, Key.maxDepth ),
+		    // Whether to expand the dump. By default, the dump is expanded on the first level only
 		    // Whether to expand the dump. By default, the dump is expanded on the first level only
 		    new Argument( false, Argument.BOOLEAN, Key.expand, true ),
 		    // Whether to do a hard abort the request after dumping
@@ -104,6 +106,8 @@ public class Dump extends BIF {
 	 * @argument.expand Whether to expand the dump. Be default, we try to expand as much as possible. (Only in HTML output)
 	 *
 	 * @argument.abort Whether to do a hard abort the request after dumping. Default is false
+	 * 
+	 * @argument.maxDepth The maximum depth of nested levels to display (depth). Default is infinity. (Only in HTML output)
 	 *
 	 * @argument.output The output format which can be "buffer", "console", or "{absolute file path}". The default is "buffer".
 	 *
@@ -118,7 +122,8 @@ public class Dump extends BIF {
 			arguments.put( Key.abort, true );
 		}
 
-		Object top = arguments.get( Key.top );
+		Object	top			= arguments.get( Key.top );
+		Object	maxDepth	= arguments.get( Key.maxDepth );
 
 		// Dump the object
 		DumpUtil.dump(
@@ -126,6 +131,7 @@ public class Dump extends BIF {
 		    DynamicObject.unWrap( arguments.get( Key.var ) ),
 		    arguments.getAsString( Key.label ),
 		    top == null ? null : IntegerCaster.cast( top ),
+		    maxDepth == null ? null : IntegerCaster.cast( maxDepth ),
 		    arguments.getAsBoolean( Key.expand ),
 		    BooleanCaster.cast( arguments.get( Key.abort ) ),
 		    arguments.getAsString( Key.output ),
