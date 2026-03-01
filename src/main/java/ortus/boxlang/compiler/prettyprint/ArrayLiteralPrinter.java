@@ -37,7 +37,7 @@ public class ArrayLiteralPrinter {
 
 		var	values		= arrayNode.getValues();
 		var	size		= values.size();
-		var	multiline	= visitor.config.getArray().getMultiline().getElementCount() <= size;
+		var	multiline	= visitor.config.getArray().getMultiline().getElementCount() < size;
 
 		if ( size > 0 ) {
 			var contentsDoc = visitor.pushDoc( DocType.INDENT );

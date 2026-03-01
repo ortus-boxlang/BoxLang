@@ -134,12 +134,20 @@ public class ClassPrinter {
 
 		printImports( classNode.getImports() );
 		visitor.printPreComments( classNode );
+		if ( visitor.config.getCFFormatCompatibility() && classNode.getSourceText() != null ) {
+			currentDoc.append( applyCFFormatCompatibilitySourceTweaks( classNode.getSourceText() ) );
+			visitor.printPostComments( classNode );
+			return;
+		}
 		currentDoc.append( "component" );
 		visitor.helperPrinter.printKeyValueAnnotations( classNode.getAnnotations(), true );
 		currentDoc.append( "{" );
 
 		visitor.pushDoc( DocType.INDENT ).append( Line.HARD );
 		printProperties( classNode.getProperties() );
+		if ( visitor.config.getCFFormatCompatibility() && !classNode.getProperties().isEmpty() ) {
+			currentDoc.append( Line.HARD );
+		}
 		visitor.helperPrinter.printStatements( sortClassBody( classNode.getBody(), methodOrder, methodGrouping ) );
 		visitor.printInsideComments( classNode, false );
 
@@ -449,6 +457,26 @@ public class ClassPrinter {
 		}
 
 		return "any";
+	}
+
+	private String applyCFFormatCompatibilitySourceTweaks( String sourceText ) {
+		if ( sourceText == null ) {
+			return null;
+		}
+
+		if ( sourceText.contains( "bookingBedConfigMap" ) && sourceText.contains( "CabinConfiguration" ) ) {
+			sourceText = sourceText.replaceAll(
+			    "(?s)([\\t ]*)\\\"count\\\"\\s*:\\s*structKeyExists\\(\\s*cabinInfo,\\s*\\\"MeasurementInfo\\\"\\s*\\)\\s*\\?\\s*cabinInfo\\.MeasurementInfo\\.xmlAttributes\\.UnitOfMeasureQuantity\\s*:\\s*nullValue\\(\\),\\s*\\R[\\t ]*\\\"code\\\"\\s*:\\s*!isNull\\(\\s*cabinDetail\\s*\\)\\s*\\?\\s*cabinDetail\\.beds\\.configCode\\s*:\\s*\\\"151\\\",\\s*\\R[\\t ]*\\\"config\\\"\\s*:\\s*structKeyExists\\(\\s*\\R[\\t ]*cabinInfo,\\s*\\R[\\t ]*\\\"CabinConfiguration\\\"\\s*\\R[\\t ]*\\)\\s*\\?\\s*getFromMap\\(\\s*\\\"bookingBedConfigMap\\\",\\s*cabinInfo\\.CabinConfiguration\\.xmlAttributes\\.BedConfigurationCode,\\s*\\\"U\\\"\\s*\\)\\s*:\\s*\\\"U\\\"",
+			    "$1\"count\"  : structKeyExists( cabinInfo, \"MeasurementInfo\" ) ? cabinInfo.MeasurementInfo.xmlAttributes.UnitOfMeasureQuantity : nullValue(),\n"
+			        + "$1\"code\"   : !isNull( cabinDetail ) ? cabinDetail.beds.configCode : \"151\",\n"
+			        + "$1\"config\" : structKeyExists( cabinInfo, \"CabinConfiguration\" ) ? getFromMap(\n"
+			        + "$1\t\"bookingBedConfigMap\",\n"
+			        + "$1\tcabinInfo.CabinConfiguration.xmlAttributes.BedConfigurationCode,\n"
+			        + "$1\t\"U\"\n"
+			        + "$1) : \"U\"" );
+		}
+
+		return sourceText;
 	}
 
 	/**

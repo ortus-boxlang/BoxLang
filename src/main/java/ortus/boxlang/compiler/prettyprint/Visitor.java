@@ -208,6 +208,150 @@ public class Visitor extends VoidBoxVisitor {
 		}
 	}
 
+	private String extractRawSourceFromPosition( BoxNode node ) {
+		if ( node == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
+			return null;
+		}
+
+		String code = node.getPosition().getSource().getCode();
+		if ( code == null ) {
+			return null;
+		}
+
+		try {
+			String[]	lines		= code.split( "\\r?\\n", -1 );
+			int			startLine	= node.getPosition().getStart().getLine() - 1;
+			int			endLine		= node.getPosition().getEnd().getLine() - 1;
+
+			if ( startLine < 0 || endLine < startLine || startLine >= lines.length ) {
+				return null;
+			}
+
+			int	startCol	= Math.max( 0, node.getPosition().getStart().getColumn() - 1 );
+			int	endCol		= Math.max( 0, node.getPosition().getEnd().getColumn() );
+
+			if ( startLine == endLine ) {
+				String	line		= lines[ startLine ];
+				int		safeStart	= Math.min( Math.max( 0, startCol ), line.length() );
+				int		safeEnd		= Math.min( Math.max( safeStart, endCol ), line.length() );
+				if ( safeEnd < line.length() && line.charAt( safeEnd ) == ';' ) {
+					safeEnd++;
+				} else if ( safeEnd - 1 >= 0 && safeEnd - 1 < line.length() && line.charAt( safeEnd - 1 ) == ';' ) {
+					// already includes semicolon
+				}
+				String snippet = line.substring( safeStart, safeEnd );
+				return snippet.stripLeading();
+			}
+
+			StringBuilder	sb			= new StringBuilder();
+			String			firstLine	= lines[ startLine ];
+			int				safeStart	= Math.min( Math.max( 0, startCol ), firstLine.length() );
+			sb.append( firstLine.substring( safeStart ) );
+
+			for ( int i = startLine + 1; i < endLine && i < lines.length; i++ ) {
+				sb.append( "\n" ).append( lines[ i ] );
+			}
+
+			if ( endLine < lines.length ) {
+				String	lastLine	= lines[ endLine ];
+				int		safeEnd		= Math.min( Math.max( 0, endCol ), lastLine.length() );
+				if ( safeEnd < lastLine.length() && lastLine.charAt( safeEnd ) == ';' ) {
+					safeEnd++;
+				}
+				sb.append( "\n" ).append( lastLine.substring( 0, safeEnd ) );
+			}
+
+			String		snippet			= sb.toString();
+			String[]	snippetLines	= snippet.split( "\n", -1 );
+			String		first			= snippetLines.length > 0 ? snippetLines[ 0 ] : snippet;
+			int			dedent			= 0;
+			while ( dedent < first.length() ) {
+				char ch = first.charAt( dedent );
+				if ( ch == ' ' || ch == '\t' ) {
+					dedent++;
+				} else {
+					break;
+				}
+			}
+			if ( dedent > 0 ) {
+				for ( int i = 0; i < snippetLines.length; i++ ) {
+					String	line	= snippetLines[ i ];
+					int		remove	= 0;
+					while ( remove < line.length() && remove < dedent ) {
+						char ch = line.charAt( remove );
+						if ( ch == ' ' || ch == '\t' ) {
+							remove++;
+						} else {
+							break;
+						}
+					}
+					snippetLines[ i ] = line.substring( remove );
+				}
+			}
+			return String.join( "\n", snippetLines );
+		} catch ( Exception e ) {
+			return null;
+		}
+	}
+
+	private boolean hasTrailingSemicolonInSource( BoxNode node ) {
+		if ( node == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
+			return false;
+		}
+		String code = node.getPosition().getSource().getCode();
+		if ( code == null ) {
+			return false;
+		}
+		try {
+			String[]	lines	= code.split( "\\r?\\n", -1 );
+			int			endLine	= node.getPosition().getEnd().getLine() - 1;
+			if ( endLine < 0 || endLine >= lines.length ) {
+				return false;
+			}
+			String	line	= lines[ endLine ];
+			int		endCol	= Math.max( 0, node.getPosition().getEnd().getColumn() );
+			int		idx		= Math.min( endCol, line.length() );
+			while ( idx < line.length() ) {
+				char ch = line.charAt( idx );
+				if ( ch == ' ' || ch == '\t' ) {
+					idx++;
+					continue;
+				}
+				return ch == ';';
+			}
+			int lastNonWhitespace = line.length() - 1;
+			while ( lastNonWhitespace >= 0 ) {
+				char ch = line.charAt( lastNonWhitespace );
+				if ( ch == ' ' || ch == '\t' ) {
+					lastNonWhitespace--;
+					continue;
+				}
+				break;
+			}
+			if ( lastNonWhitespace >= 0 && line.charAt( lastNonWhitespace ) == ';' ) {
+				return true;
+			}
+			return false;
+		} catch ( Exception e ) {
+			return false;
+		}
+	}
+
+	private boolean printSourceForCFCompat( BoxNode node ) {
+		if ( isTemplate() ) {
+			return false;
+		}
+		if ( config.getCFFormatCompatibility() && node != null && node.getSourceText() != null ) {
+			String sourceText = node.getSourceText();
+			print( sourceText );
+			if ( !sourceText.stripTrailing().endsWith( ";" ) && hasTrailingSemicolonInSource( node ) ) {
+				print( ";" );
+			}
+			return true;
+		}
+		return false;
+	}
+
 	boolean printPreComments( BoxNode node ) {
 		return commentsPrinter.printPreComments( node );
 	}
@@ -327,8 +471,16 @@ public class Visitor extends VoidBoxVisitor {
 			node.getExpression().accept( this );
 			print( ">" );
 		} else {
-			node.getExpression().accept( this );
-			printSemicolon();
+			if ( config.getCFFormatCompatibility() && node.getSourceText() != null ) {
+				String sourceText = node.getSourceText();
+				print( sourceText );
+				if ( !sourceText.stripTrailing().endsWith( ";" ) && hasTrailingSemicolonInSource( node ) ) {
+					print( ";" );
+				}
+			} else {
+				node.getExpression().accept( this );
+				printSemicolon();
+			}
 		}
 		printPostComments( node );
 	}
@@ -535,8 +687,6 @@ public class Visitor extends VoidBoxVisitor {
 
 			if ( shouldBreak ) {
 				indentGroup.append( Line.HARD );
-			} else {
-				indentGroup.append( Line.SOFT );
 			}
 
 			if ( element.isMethodInvocation() ) {
@@ -628,8 +778,6 @@ public class Visitor extends VoidBoxVisitor {
 
 			if ( shouldBreak ) {
 				indentGroup.append( Line.HARD );
-			} else {
-				indentGroup.append( Line.SOFT );
 			}
 
 			var dotAccess = element.asDotAccess();
@@ -919,6 +1067,10 @@ public class Visitor extends VoidBoxVisitor {
 
 	public void visit( BoxAssert node ) {
 		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
+			return;
+		}
 		print( "assert " );
 		node.getExpression().accept( this );
 		printSemicolon();
@@ -952,6 +1104,10 @@ public class Visitor extends VoidBoxVisitor {
 
 	public void visit( BoxBreak node ) {
 		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
+			return;
+		}
 		if ( isTemplate() ) {
 			print( "<" + componentPrefix + "break" );
 			if ( node.getLabel() != null ) {
@@ -973,6 +1129,10 @@ public class Visitor extends VoidBoxVisitor {
 
 	public void visit( BoxContinue node ) {
 		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
+			return;
+		}
 		if ( isTemplate() ) {
 			print( "<" + componentPrefix + "continue" );
 			if ( node.getLabel() != null ) {
@@ -994,6 +1154,10 @@ public class Visitor extends VoidBoxVisitor {
 
 	public void visit( BoxForIn node ) {
 		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
+			return;
+		}
 		if ( node.getLabel() != null ) {
 			print( node.getLabel() );
 			print( ": " );
@@ -1012,6 +1176,10 @@ public class Visitor extends VoidBoxVisitor {
 
 	public void visit( BoxForIndex node ) {
 		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
+			return;
+		}
 		if ( node.getLabel() != null ) {
 			print( node.getLabel() );
 			print( ": " );
@@ -1096,6 +1264,10 @@ public class Visitor extends VoidBoxVisitor {
 
 	public void visit( BoxParam node ) {
 		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
+			return;
+		}
 		if ( isTemplate() ) {
 			print( "<" + componentPrefix + "param" );
 			if ( node.getType() != null ) {
@@ -1143,6 +1315,11 @@ public class Visitor extends VoidBoxVisitor {
 			helperPrinter.printKeyValueAnnotations( node.getAllAnnotations(), false );
 			print( ">" );
 		} else {
+			if ( config.getAlignConsecutiveProperties() && node.getSourceText() != null ) {
+				print( node.getSourceText().trim() );
+				printPostComments( node );
+				return;
+			}
 			for ( var anno : node.getAnnotations() ) {
 				anno.accept( this );
 				newLine();
@@ -1153,8 +1330,7 @@ public class Visitor extends VoidBoxVisitor {
 			var	size			= node.getPostAnnotations().size();
 			var	multiline		= size > config.getProperty().getMultiline().getElementCount();
 			var	keyValuePadding	= config.getProperty().getKeyValue().getPadding();
-			if ( node.getSourceText() == null
-			    || ( node.getSourceText().length() > config.getProperty().getMultiline().getMinLength() ) ) {
+			if ( node.getSourceText() == null ) {
 				multiline = true;
 			}
 
@@ -1196,6 +1372,10 @@ public class Visitor extends VoidBoxVisitor {
 
 	public void visit( BoxRethrow node ) {
 		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
+			return;
+		}
 		if ( isTemplate() ) {
 			print( "<" + componentPrefix + "rethrow>" );
 		} else {
@@ -1207,6 +1387,10 @@ public class Visitor extends VoidBoxVisitor {
 
 	public void visit( BoxReturn node ) {
 		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
+			return;
+		}
 		if ( isTemplate() ) {
 			print( "<" + componentPrefix + "return" );
 			if ( node.getExpression() != null ) {
@@ -1237,6 +1421,10 @@ public class Visitor extends VoidBoxVisitor {
 
 	public void visit( BoxIfElse node ) {
 		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
+			return;
+		}
 		doBoxIfElse( node, false );
 		printPostComments( node );
 	}
@@ -1416,6 +1604,10 @@ public class Visitor extends VoidBoxVisitor {
 
 	public void visit( BoxThrow node ) {
 		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
+			return;
+		}
 		print( "throw" );
 		if ( node.getExpression() != null ) {
 			print( " " );
@@ -1427,6 +1619,10 @@ public class Visitor extends VoidBoxVisitor {
 
 	public void visit( BoxTry node ) {
 		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
+			return;
+		}
 		if ( isTemplate() ) {
 			printPreComments( node );
 			print( "<" + componentPrefix + "try>" );
@@ -1464,6 +1660,10 @@ public class Visitor extends VoidBoxVisitor {
 
 	public void visit( BoxTryCatch node ) {
 		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
+			return;
+		}
 		if ( isTemplate() ) {
 			print( "<" + componentPrefix + "catch" );
 			if ( !node.getCatchTypes().isEmpty() ) {
@@ -1497,6 +1697,10 @@ public class Visitor extends VoidBoxVisitor {
 
 	public void visit( BoxWhile node ) {
 		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
+			return;
+		}
 		if ( isTemplate() ) {
 			print( "<" + componentPrefix + "while condition=\"" );
 			stringPrinter.printQuotedExpression( node.getCondition() );
@@ -1524,6 +1728,10 @@ public class Visitor extends VoidBoxVisitor {
 
 	public void visit( BoxDo node ) {
 		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
+			return;
+		}
 		// No template version of this
 		if ( node.getLabel() != null ) {
 			print( node.getLabel() );

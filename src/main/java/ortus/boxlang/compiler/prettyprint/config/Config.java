@@ -31,36 +31,40 @@ import ortus.boxlang.runtime.types.util.JSONUtil;
 
 public final class Config {
 
-	private int					indentSize				= 4;
-	private boolean				tabIndent				= true;
-	private int					maxLineLength			= 80;
-	private String				newLine					= "os";
-	private boolean				singleQuote				= false;
-	private boolean				bracketPadding			= false;
-	private boolean				parensPadding			= false;
-	private boolean				binaryOperatorsPadding	= true;
-	private boolean				semicolons				= true;
-	private StructConfig		struct					= new StructConfig();
-	private PropertyConfig		property				= new PropertyConfig();
-	private ArrayConfig			array					= new ArrayConfig();
+	private int					indentSize					= 4;
+	private boolean				tabIndent					= true;
+	private int					maxLineLength				= 80;
+	private String				newLine						= "os";
+	private boolean				singleQuote					= false;
+	private boolean				preserveStringQuotes		= false;
+	private boolean				alignConsecutiveAssignments	= false;
+	private boolean				alignConsecutiveProperties	= false;
+	private boolean				bracketPadding				= false;
+	private boolean				parensPadding				= false;
+	private boolean				binaryOperatorsPadding		= true;
+	private boolean				semicolons					= true;
+	private boolean				cfFormatCompatibility		= false;
+	private StructConfig		struct						= new StructConfig();
+	private PropertyConfig		property					= new PropertyConfig();
+	private ArrayConfig			array						= new ArrayConfig();
 
 	@JsonProperty( "for_loop_semicolons" )
-	private ForLoopSemicolons	forLoopSemicolons		= new ForLoopSemicolons();
+	private ForLoopSemicolons	forLoopSemicolons			= new ForLoopSemicolons();
 
-	private FunctionConfig		function				= new FunctionConfig();
-	private ArgumentsConfig		arguments				= new ArgumentsConfig();
-	private BracesConfig		braces					= new BracesConfig();
-	private OperatorsConfig		operators				= new OperatorsConfig();
-	private ChainConfig			chain					= new ChainConfig();
-	private TemplateConfig		template				= new TemplateConfig();
+	private FunctionConfig		function					= new FunctionConfig();
+	private ArgumentsConfig		arguments					= new ArgumentsConfig();
+	private BracesConfig		braces						= new BracesConfig();
+	private OperatorsConfig		operators					= new OperatorsConfig();
+	private ChainConfig			chain						= new ChainConfig();
+	private TemplateConfig		template					= new TemplateConfig();
 
 	@JsonProperty( "import" )
-	private ImportConfig		importConfig			= new ImportConfig();
-	private CommentsConfig		comments				= new CommentsConfig();
+	private ImportConfig		importConfig				= new ImportConfig();
+	private CommentsConfig		comments					= new CommentsConfig();
 
 	@JsonProperty( "class" )
-	private ClassConfig			classConfig				= new ClassConfig();
-	private SqlConfig			sql						= new SqlConfig();
+	private ClassConfig			classConfig					= new ClassConfig();
+	private SqlConfig			sql							= new SqlConfig();
 
 	public Config() {
 	}
@@ -89,6 +93,15 @@ public final class Config {
 
 	public Config setSemicolons( boolean semicolons ) {
 		this.semicolons = semicolons;
+		return this;
+	}
+
+	public boolean getCFFormatCompatibility() {
+		return cfFormatCompatibility;
+	}
+
+	public Config setCFFormatCompatibility( boolean cfFormatCompatibility ) {
+		this.cfFormatCompatibility = cfFormatCompatibility;
 		return this;
 	}
 
@@ -134,6 +147,33 @@ public final class Config {
 
 	public Config setSingleQuote( boolean singleQuote ) {
 		this.singleQuote = singleQuote;
+		return this;
+	}
+
+	public boolean getPreserveStringQuotes() {
+		return preserveStringQuotes;
+	}
+
+	public Config setPreserveStringQuotes( boolean preserveStringQuotes ) {
+		this.preserveStringQuotes = preserveStringQuotes;
+		return this;
+	}
+
+	public boolean getAlignConsecutiveAssignments() {
+		return alignConsecutiveAssignments;
+	}
+
+	public Config setAlignConsecutiveAssignments( boolean alignConsecutiveAssignments ) {
+		this.alignConsecutiveAssignments = alignConsecutiveAssignments;
+		return this;
+	}
+
+	public boolean getAlignConsecutiveProperties() {
+		return alignConsecutiveProperties;
+	}
+
+	public Config setAlignConsecutiveProperties( boolean alignConsecutiveProperties ) {
+		this.alignConsecutiveProperties = alignConsecutiveProperties;
 		return this;
 	}
 
@@ -375,7 +415,11 @@ public final class Config {
 	 * @return true if the file is a .cfformat.json file
 	 */
 	public static boolean isCFFormatConfig( String filePath ) {
-		return filePath != null && filePath.toLowerCase().endsWith( ".cfformat.json" );
+		if ( filePath == null ) {
+			return false;
+		}
+		String lowerPath = filePath.toLowerCase();
+		return lowerPath.endsWith( ".cfformat.json" ) || lowerPath.endsWith( ".cfconfig.json" );
 	}
 
 	/**
@@ -435,10 +479,14 @@ public final class Config {
 		map.put( "maxLineLength", maxLineLength );
 		map.put( "newLine", newLine );
 		map.put( "singleQuote", singleQuote );
+		map.put( "preserveStringQuotes", preserveStringQuotes );
+		map.put( "alignConsecutiveAssignments", alignConsecutiveAssignments );
+		map.put( "alignConsecutiveProperties", alignConsecutiveProperties );
 		map.put( "bracketPadding", bracketPadding );
 		map.put( "parensPadding", parensPadding );
 		map.put( "binaryOperatorsPadding", binaryOperatorsPadding );
 		map.put( "semicolons", semicolons );
+		map.put( "cfFormatCompatibility", cfFormatCompatibility );
 		map.put( "struct", struct.toMap() );
 		map.put( "property", property.toMap() );
 		map.put( "array", array.toMap() );
@@ -482,6 +530,16 @@ public final class Config {
 		}
 		if ( config.containsKey( "singleQuote" ) && config.get( "singleQuote" ) instanceof Boolean singleQuote ) {
 			this.singleQuote = singleQuote;
+		}
+		if ( config.containsKey( "preserveStringQuotes" ) && config.get( "preserveStringQuotes" ) instanceof Boolean preserveStringQuotes ) {
+			this.preserveStringQuotes = preserveStringQuotes;
+		}
+		if ( config.containsKey( "alignConsecutiveAssignments" )
+		    && config.get( "alignConsecutiveAssignments" ) instanceof Boolean alignConsecutiveAssignments ) {
+			this.alignConsecutiveAssignments = alignConsecutiveAssignments;
+		}
+		if ( config.containsKey( "alignConsecutiveProperties" ) && config.get( "alignConsecutiveProperties" ) instanceof Boolean alignConsecutiveProperties ) {
+			this.alignConsecutiveProperties = alignConsecutiveProperties;
 		}
 		if ( config.containsKey( "bracketPadding" ) && config.get( "bracketPadding" ) instanceof Boolean bracketPadding ) {
 			this.bracketPadding = bracketPadding;
@@ -600,6 +658,12 @@ public final class Config {
 	}
 
 	private void applyParametersConfig( Map<String, Object> config ) {
+		if ( config.containsKey( "padding" ) && config.get( "padding" ) instanceof Boolean padding ) {
+			this.function.getParameters().setPadding( padding );
+		}
+		if ( config.containsKey( "empty_padding" ) && config.get( "empty_padding" ) instanceof Boolean emptyPadding ) {
+			this.function.getParameters().setEmptyPadding( emptyPadding );
+		}
 		if ( config.containsKey( "comma_dangle" ) && config.get( "comma_dangle" ) instanceof Boolean commaDangle ) {
 			this.function.getParameters().setCommaDangle( commaDangle );
 		}
@@ -634,6 +698,12 @@ public final class Config {
 	}
 
 	private void applyArgumentsConfig( Map<String, Object> config ) {
+		if ( config.containsKey( "padding" ) && config.get( "padding" ) instanceof Boolean padding ) {
+			this.arguments.setPadding( padding );
+		}
+		if ( config.containsKey( "empty_padding" ) && config.get( "empty_padding" ) instanceof Boolean emptyPadding ) {
+			this.arguments.setEmptyPadding( emptyPadding );
+		}
 		if ( config.containsKey( "comma_dangle" ) && config.get( "comma_dangle" ) instanceof Boolean commaDangle ) {
 			this.arguments.setCommaDangle( commaDangle );
 		}
@@ -748,7 +818,9 @@ public final class Config {
 			case ":" -> Separator.COLON;
 			case "=" -> Separator.EQUALS;
 			case ": " -> Separator.COLON_SPACE;
+			case " : " -> Separator.COLON_BOTH_SPACE;
 			case "= " -> Separator.EQUALS_SPACE;
+			case " = " -> Separator.EQUALS_BOTH_SPACE;
 			default -> Separator.COLON_SPACE;
 		};
 	}

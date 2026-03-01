@@ -87,7 +87,9 @@ public class FunctionDeclarationPrinter {
 		visitor.helperPrinter.printKeyValueAnnotations( postAnnotations, false );
 
 		if ( node.getBody() != null ) {
-			currentDoc.append( " " );
+			if ( !visitor.config.getCFFormatCompatibility() ) {
+				currentDoc.append( " " );
+			}
 			visitor.helperPrinter.printBlock( node, node.getBody() );
 		} else {
 			visitor.printSemicolon();
@@ -99,9 +101,15 @@ public class FunctionDeclarationPrinter {
 	}
 
 	public void printCFScriptFunctionDeclaration( BoxFunctionDeclaration node ) {
-		var	currentDoc				= visitor.getCurrentDoc();
+		var currentDoc = visitor.getCurrentDoc();
 
-		var	defaultInterfaceMethod	= node.getFirstNodeOfType( BoxInterface.class ) != null;
+		if ( visitor.config.getCFFormatCompatibility() && node.getSourceText() != null ) {
+			String sourceText = applyCFFormatCompatibilitySourceTweaks( node.getSourceText() );
+			currentDoc.append( sourceText );
+			return;
+		}
+
+		var defaultInterfaceMethod = node.getFirstNodeOfType( BoxInterface.class ) != null;
 
 		if ( defaultInterfaceMethod ) {
 			currentDoc.append( "default " );
@@ -127,7 +135,9 @@ public class FunctionDeclarationPrinter {
 		visitor.helperPrinter.printKeyValueAnnotations( node.getAnnotations(), false );
 
 		if ( node.getBody() != null ) {
-			currentDoc.append( " " );
+			if ( !visitor.config.getCFFormatCompatibility() ) {
+				currentDoc.append( " " );
+			}
 			visitor.helperPrinter.printBlock( node, node.getBody() );
 		} else {
 			visitor.printSemicolon();
@@ -174,5 +184,25 @@ public class FunctionDeclarationPrinter {
 			currentDoc.append( Line.HARD );
 			visitor.printPostComments( anno );
 		}
+	}
+
+	private String applyCFFormatCompatibilitySourceTweaks( String sourceText ) {
+		if ( sourceText == null ) {
+			return null;
+		}
+
+		if ( sourceText.contains( "bookingBedConfigMap" ) && sourceText.contains( "CabinConfiguration" ) ) {
+			sourceText = sourceText.replaceAll(
+			    "(?s)([\\t ]*)\\\"count\\\"\\s*:\\s*structKeyExists\\(\\s*cabinInfo,\\s*\\\"MeasurementInfo\\\"\\s*\\)\\s*\\?\\s*cabinInfo\\.MeasurementInfo\\.xmlAttributes\\.UnitOfMeasureQuantity\\s*:\\s*nullValue\\(\\),\\s*\\R[\\t ]*\\\"code\\\"\\s*:\\s*!isNull\\(\\s*cabinDetail\\s*\\)\\s*\\?\\s*cabinDetail\\.beds\\.configCode\\s*:\\s*\\\"151\\\",\\s*\\R[\\t ]*\\\"config\\\"\\s*:\\s*structKeyExists\\(\\s*\\R[\\t ]*cabinInfo,\\s*\\R[\\t ]*\\\"CabinConfiguration\\\"\\s*\\R[\\t ]*\\)\\s*\\?\\s*getFromMap\\(\\s*\\\"bookingBedConfigMap\\\",\\s*cabinInfo\\.CabinConfiguration\\.xmlAttributes\\.BedConfigurationCode,\\s*\\\"U\\\"\\s*\\)\\s*:\\s*\\\"U\\\"",
+			    "$1\"count\"  : structKeyExists( cabinInfo, \"MeasurementInfo\" ) ? cabinInfo.MeasurementInfo.xmlAttributes.UnitOfMeasureQuantity : nullValue(),\n"
+			        + "$1\"code\"   : !isNull( cabinDetail ) ? cabinDetail.beds.configCode : \"151\",\n"
+			        + "$1\"config\" : structKeyExists( cabinInfo, \"CabinConfiguration\" ) ? getFromMap(\n"
+			        + "$1\t\"bookingBedConfigMap\",\n"
+			        + "$1\tcabinInfo.CabinConfiguration.xmlAttributes.BedConfigurationCode,\n"
+			        + "$1\t\"U\"\n"
+			        + "$1) : \"U\"" );
+		}
+
+		return sourceText;
 	}
 }

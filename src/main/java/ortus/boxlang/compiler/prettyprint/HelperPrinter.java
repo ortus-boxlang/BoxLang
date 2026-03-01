@@ -26,7 +26,6 @@ import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
-import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 
 public class HelperPrinter {
 
@@ -168,15 +167,32 @@ public class HelperPrinter {
 	}
 
 	public void printKeyValueAnnotations( List<BoxAnnotation> attrs, boolean padded, boolean forceLineBreaks ) {
-		var	currentDoc	= visitor.getCurrentDoc();
-		var	attrsDoc	= visitor.pushDoc( DocType.GROUP );
+		var	currentDoc		= visitor.getCurrentDoc();
+		var	attrsDoc		= visitor.pushDoc( DocType.GROUP );
+		int	maxKeyLength	= 0;
+		if ( visitor.config.getAlignConsecutiveAssignments() ) {
+			for ( var attr : attrs ) {
+				if ( attr.getValue() != null && attr.getKey() != null ) {
+					maxKeyLength = Math.max( maxKeyLength, attr.getKey().getSourceText() != null ? attr.getKey().getSourceText().length() : 0 );
+				}
+			}
+		}
 		if ( attrs.size() > 0 ) {
 			var contentsDoc = visitor.pushDoc( DocType.INDENT );
 			for ( var attr : attrs ) {
 				// Use HARD line breaks when forceLineBreaks is true (single_attribute_per_line)
 				contentsDoc.append( forceLineBreaks ? Line.HARD : Line.LINE );
-				attr.getKey().accept( visitor );
+				String keyText = attr.getKey().getSourceText();
+				if ( keyText != null ) {
+					contentsDoc.append( keyText );
+				} else {
+					attr.getKey().accept( visitor );
+					keyText = "";
+				}
 				if ( attr.getValue() != null ) {
+					if ( visitor.config.getAlignConsecutiveAssignments() && maxKeyLength > 0 ) {
+						contentsDoc.append( " ".repeat( Math.max( 0, maxKeyLength - keyText.length() ) ) );
+					}
 					contentsDoc.append( "=\"" );
 					visitor.stringPrinter.printQuotedExpression( attr.getValue() );
 					contentsDoc.append( "\"" );

@@ -31,18 +31,54 @@ public class StructLiteralPrinter {
 	public void print( BoxStructLiteral structNode ) {
 		visitor.printPreComments( structNode );
 
-		var	currentDoc				= visitor.getCurrentDoc();
+		if ( visitor.config.getCFFormatCompatibility() && structNode.getSourceText() != null ) {
+			String sourceText = structNode.getSourceText();
+			if ( ( sourceText.contains( "//" ) || sourceText.contains( "/*" ) ) ) {
+				visitor.getCurrentDoc().append( sourceText );
+				visitor.printPostComments( structNode );
+				return;
+			}
+		}
 
-		var	structDoc				= visitor.pushDoc( DocType.GROUP );
+		var		currentDoc				= visitor.getCurrentDoc();
 
-		var	isOrdered				= structNode.getType().equals( BoxStructType.Ordered );
-		var	openBrace				= isOrdered ? "[" : "{";
-		var	closeBrace				= isOrdered ? "]" : "}";
-		var	separator				= visitor.config.getStruct().getSeparator().getSymbol();
+		var		structDoc				= visitor.pushDoc( DocType.GROUP );
 
-		var	values					= structNode.getValues();
-		var	size					= values.size();
-		var	isMultiline				= shouldBeMultiline( structNode );
+		var		isOrdered				= structNode.getType().equals( BoxStructType.Ordered );
+		var		openBrace				= isOrdered ? "[" : "{";
+		var		closeBrace				= isOrdered ? "]" : "}";
+		var		separator				= visitor.config.getStruct().getSeparator().getSymbol();
+
+		var		values					= structNode.getValues();
+		var		size					= values.size();
+		var		isMultiline				= shouldBeMultiline( structNode );
+		int[]	alignmentMaxByPairIndex	= new int[ size / 2 ];
+		if ( isMultiline && visitor.config.getAlignConsecutiveAssignments() ) {
+			for ( int start = 0; start < size; ) {
+				int end = size - 2;
+				for ( int j = start; j < size; j += 2 ) {
+					String valueSource = values.get( j + 1 ).getSourceText();
+					if ( valueSource != null && ( valueSource.contains( "\n" ) || valueSource.contains( "\r" ) ) ) {
+						end = j;
+						break;
+					}
+				}
+
+				int runMaxKeyLength = 0;
+				for ( int j = start; j <= end; j += 2 ) {
+					String keyText = values.get( j ).getSourceText();
+					if ( keyText != null ) {
+						runMaxKeyLength = Math.max( runMaxKeyLength, keyText.length() );
+					}
+				}
+
+				for ( int j = start; j <= end; j += 2 ) {
+					alignmentMaxByPairIndex[ j / 2 ] = runMaxKeyLength;
+				}
+
+				start = end + 2;
+			}
+		}
 		var	shouldHaveDanglingComma	= isMultiline
 		    && visitor.config.getStruct().getMultiline().getCommaDangle();
 		var	useLeadingComma			= isMultiline
@@ -60,12 +96,17 @@ public class StructLiteralPrinter {
 					contentsDoc.append( "," ).append( visitor.config.getStruct().getMultiline().getLeadingComma().getPadding() ? " " : "" );
 				}
 
+				String keyText = values.get( i ).getSourceText();
 				if ( visitor.config.getStruct().getQuoteKeys() ) {
 					contentsDoc.append( visitor.config.getSingleQuote() ? "'" : "\"" );
 				}
 				values.get( i ).accept( visitor );
 				if ( visitor.config.getStruct().getQuoteKeys() ) {
 					contentsDoc.append( visitor.config.getSingleQuote() ? "'" : "\"" );
+				}
+				int maxKeyLength = alignmentMaxByPairIndex[ i / 2 ];
+				if ( isMultiline && visitor.config.getAlignConsecutiveAssignments() && maxKeyLength > 0 && keyText != null ) {
+					contentsDoc.append( " ".repeat( Math.max( 0, maxKeyLength - keyText.length() ) ) );
 				}
 				contentsDoc.append( separator );
 
@@ -100,6 +141,10 @@ public class StructLiteralPrinter {
 	}
 
 	private boolean shouldBeMultiline( BoxStructLiteral structNode ) {
+		if ( visitor.config.getCFFormatCompatibility() && structNode.getSourceText() != null
+		    && ( structNode.getSourceText().contains( "\n" ) || structNode.getSourceText().contains( "\r" ) ) ) {
+			return true;
+		}
 		try {
 			if ( visitor.config.getStruct().getMultiline().getMinLength() < structNode.getSourceText().length() ) {
 				return true;
@@ -109,7 +154,7 @@ public class StructLiteralPrinter {
 		}
 		var	size		= structNode.getValues().size();
 		var	isMultiline	= visitor.config.getStruct().getMultiline().getElementCount() > 0
-		    && size / 2 >= visitor.config.getStruct().getMultiline().getElementCount();
+		    && size / 2 > visitor.config.getStruct().getMultiline().getElementCount();
 		return isMultiline;
 	}
 

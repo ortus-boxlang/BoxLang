@@ -213,6 +213,20 @@
         },
         {
             "type": "java",
+            "name": "Run Formatter - run formatter on file with config",
+            "request": "launch",
+            "mainClass": "ortus.boxlang.runtime.BoxRunner",
+            "projectName": "boxlang",
+            "args": [
+                "format",
+                "--config",
+                "${input:formatterConfigPath}",
+                "--input",
+                "${file}"
+            ]
+        },
+        {
+            "type": "java",
             "name": "Run Formatter - run formatter on file",
             "request": "launch",
             "mainClass": "ortus.boxlang.runtime.BoxRunner",
@@ -253,6 +267,12 @@
             "id": "arg1",
             "description": "Enter the action command arg1",
             "type": "promptString"
+        },
+        {
+            "id": "formatterConfigPath",
+            "description": "Enter formatter config file path",
+            "type": "promptString",
+            "default": "${workspaceFolder}/.bxformat.json"
         }
     ]
 }

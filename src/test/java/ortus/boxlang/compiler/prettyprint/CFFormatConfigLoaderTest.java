@@ -233,6 +233,7 @@ public class CFFormatConfigLoaderTest {
 		assertTrue( Config.isCFFormatConfig( ".cfformat.json" ) );
 		assertTrue( Config.isCFFormatConfig( "/path/to/.cfformat.json" ) );
 		assertTrue( Config.isCFFormatConfig( "test.cfformat.json" ) );
+		assertTrue( Config.isCFFormatConfig( "test.cfconfig.json" ) );
 		assertFalse( Config.isCFFormatConfig( ".bxformat.json" ) );
 		assertFalse( Config.isCFFormatConfig( "config.json" ) );
 		assertFalse( Config.isCFFormatConfig( null ) );
@@ -246,7 +247,7 @@ public class CFFormatConfigLoaderTest {
 		// Test " : " separator
 		cfConfig.put( "struct.separator", " : " );
 		Config config1 = CFFormatConfigLoader.convertCFFormatToConfig( cfConfig );
-		assertEquals( Separator.COLON_SPACE, config1.getStruct().getSeparator() );
+		assertEquals( Separator.COLON_BOTH_SPACE, config1.getStruct().getSeparator() );
 
 		// Test ":" separator
 		cfConfig.put( "struct.separator", ":" );
@@ -261,6 +262,6 @@ public class CFFormatConfigLoaderTest {
 		// Test " = " separator
 		cfConfig.put( "struct.separator", " = " );
 		Config config4 = CFFormatConfigLoader.convertCFFormatToConfig( cfConfig );
-		assertEquals( Separator.EQUALS_SPACE, config4.getStruct().getSeparator() );
+		assertEquals( Separator.EQUALS_BOTH_SPACE, config4.getStruct().getSeparator() );
 	}
 }

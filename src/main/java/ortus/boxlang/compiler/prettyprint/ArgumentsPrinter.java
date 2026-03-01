@@ -69,19 +69,51 @@ public class ArgumentsPrinter {
 	}
 
 	public void print( BoxNode parentNode, List<BoxArgument> arguments ) {
-		var	currentDoc			= visitor.getCurrentDoc();
-		var	argumentsDoc		= visitor.pushDoc( DocType.GROUP );
+		var		currentDoc			= visitor.getCurrentDoc();
+		var		argumentsDoc		= visitor.pushDoc( DocType.GROUP );
 
-		var	size				= arguments.size();
-		var	assignmentOperator	= " = "; // TODO: use config
-		var	multiline			= size >= visitor.config.getArguments().getMultilineCount()
-		    || calculateArgumentListLength( arguments ) >= visitor.config.getArguments().getMultilineLength();
+		var		size				= arguments.size();
+		var		assignmentOperator	= " = "; // TODO: use config
+		var		padding				= visitor.config.getArguments().getPadding() || visitor.config.getParensPadding();
+		boolean	multilineByCount;
+		boolean	multilineByLength;
+		if ( visitor.config.getCFFormatCompatibility() ) {
+			multilineByCount	= size >= visitor.config.getArguments().getMultilineCount();
+			multilineByLength	= false;
+		} else {
+			multilineByCount	= size > ( visitor.config.getArguments().getMultilineCount() - 1 );
+			multilineByLength	= calculateArgumentListLength( arguments ) >= visitor.config.getArguments().getMultilineLength();
+		}
+		var	multiline				= multilineByCount || multilineByLength;
+
+		int	maxArgumentNameLength	= 0;
+		if ( multiline && visitor.config.getAlignConsecutiveAssignments() ) {
+			for ( var arg : arguments ) {
+				if ( arg.getName() == null ) {
+					continue;
+				}
+				int nameLength;
+				if ( arg.getName() instanceof BoxStringLiteral str ) {
+					nameLength = str.getValue().length();
+				} else {
+					String nameSource = arg.getName().getSourceText();
+					nameLength = nameSource != null ? nameSource.length() : 0;
+				}
+				maxArgumentNameLength = Math.max( maxArgumentNameLength, nameLength );
+			}
+		}
 
 		argumentsDoc.append( "(" );
 
 		if ( size > 0 ) {
 			var contentsDoc = visitor.pushDoc( DocType.INDENT );
-			contentsDoc.append( multiline || visitor.config.getParensPadding() ? Line.LINE : Line.SOFT );
+			if ( multiline ) {
+				contentsDoc.append( Line.LINE );
+			} else if ( padding ) {
+				contentsDoc.append( " " );
+			} else {
+				contentsDoc.append( Line.SOFT );
+			}
 
 			// Note: handling BoxArgument here, so that eventually we can
 			// align named arguments if they print on multiple lines.
@@ -90,10 +122,20 @@ public class ArgumentsPrinter {
 
 				visitor.printPreComments( arg );
 				if ( arg.getName() != null ) {
+					int currentNameLength = 0;
 					if ( arg.getName() instanceof BoxStringLiteral str ) {
-						contentsDoc.append( str.getValue() );
+						String value = str.getValue();
+						contentsDoc.append( value );
+						currentNameLength = value.length();
 					} else {
+						String nameSource = arg.getName().getSourceText();
+						currentNameLength = nameSource != null ? nameSource.length() : 0;
 						arg.getName().accept( visitor );
+					}
+					if ( multiline && visitor.config.getAlignConsecutiveAssignments() && maxArgumentNameLength > 0 ) {
+						for ( int j = 0; j < ( maxArgumentNameLength - currentNameLength ); j++ ) {
+							contentsDoc.append( " " );
+						}
 					}
 					contentsDoc.append( assignmentOperator );
 				}
@@ -117,10 +159,18 @@ public class ArgumentsPrinter {
 			visitor.printInsideComments( parentNode, false );
 
 			argumentsDoc.append( visitor.popDoc() );
-			argumentsDoc.append( multiline || visitor.config.getParensPadding() ? Line.LINE : Line.SOFT );
+			if ( multiline ) {
+				argumentsDoc.append( Line.LINE );
+			} else if ( padding ) {
+				argumentsDoc.append( " " );
+			} else {
+				argumentsDoc.append( Line.SOFT );
+			}
 		} else {
 			visitor.printInsideComments( parentNode, false );
-			// argumentsDoc.append( Line.SOFT );
+			if ( visitor.config.getArguments().getEmptyPadding() ) {
+				argumentsDoc.append( " " );
+			}
 		}
 
 		argumentsDoc.append( ")" );

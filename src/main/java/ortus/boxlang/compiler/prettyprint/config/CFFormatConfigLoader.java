@@ -57,7 +57,11 @@ public final class CFFormatConfigLoader {
 	public static Config loadCFFormatConfig( String filePath ) throws IOException {
 		File				file		= new File( filePath );
 		Map<String, Object>	cfConfig	= ( Map<String, Object> ) JSONUtil.fromJSON( file );
-		return convertCFFormatToConfig( cfConfig );
+		Config				config		= convertCFFormatToConfig( cfConfig );
+		if ( " : ".equals( toString( cfConfig.get( "struct.separator" ) ) ) ) {
+			config.getStruct().setSeparator( Separator.COLON_SPACE );
+		}
+		return config;
 	}
 
 	/**
@@ -71,8 +75,12 @@ public final class CFFormatConfigLoader {
 	 */
 	@SuppressWarnings( "unchecked" )
 	public static Config loadCFFormatConfig( File file ) throws IOException {
-		Map<String, Object> cfConfig = ( Map<String, Object> ) JSONUtil.fromJSON( file );
-		return convertCFFormatToConfig( cfConfig );
+		Map<String, Object>	cfConfig	= ( Map<String, Object> ) JSONUtil.fromJSON( file );
+		Config				config		= convertCFFormatToConfig( cfConfig );
+		if ( " : ".equals( toString( cfConfig.get( "struct.separator" ) ) ) ) {
+			config.getStruct().setSeparator( Separator.COLON_SPACE );
+		}
+		return config;
 	}
 
 	/**
@@ -84,6 +92,7 @@ public final class CFFormatConfigLoader {
 	 */
 	public static Config convertCFFormatToConfig( Map<String, Object> cfConfig ) {
 		Config config = new Config();
+		config.setCFFormatCompatibility( true );
 
 		// Top-level settings
 		applyIfPresent( cfConfig, "indent_size", value -> config.setIndentSize( toInt( value ) ) );
@@ -94,13 +103,25 @@ public final class CFFormatConfigLoader {
 		// Quote style - cfformat uses "single" or "double", bxformat uses boolean singleQuote
 		applyIfPresent( cfConfig, "strings.quote", value -> {
 			String quote = toString( value );
-			config.setSingleQuote( "single".equalsIgnoreCase( quote ) );
+			if ( "ignored".equalsIgnoreCase( quote ) ) {
+				config.setPreserveStringQuotes( true );
+			} else {
+				config.setPreserveStringQuotes( false );
+				config.setSingleQuote( "single".equalsIgnoreCase( quote ) );
+			}
 		} );
 
 		// Padding settings
 		applyIfPresent( cfConfig, "brackets.padding", value -> config.setBracketPadding( toBool( value ) ) );
 		applyIfPresent( cfConfig, "parentheses.padding", value -> config.setParensPadding( toBool( value ) ) );
 		applyIfPresent( cfConfig, "binary_operators.padding", value -> config.setBinaryOperatorsPadding( toBool( value ) ) );
+		applyIfPresent( cfConfig, "alignment.consecutive.assignments", value -> config.setAlignConsecutiveAssignments( toBool( value ) ) );
+		applyIfPresent( cfConfig, "alignment.consecutive.params", value -> {
+			if ( toBool( value ) ) {
+				config.setAlignConsecutiveAssignments( true );
+			}
+		} );
+		applyIfPresent( cfConfig, "alignment.consecutive.properties", value -> config.setAlignConsecutiveProperties( toBool( value ) ) );
 
 		// For loop semicolons
 		applyIfPresent( cfConfig, "for_loop_semicolons.padding", value -> config.getForLoopSemicolons().setPadding( toBool( value ) ) );
@@ -116,6 +137,13 @@ public final class CFFormatConfigLoader {
 
 		// Function call settings (maps to arguments)
 		applyFunctionCallSettings( cfConfig, config );
+
+		// Method call chain settings
+		applyIfPresent( cfConfig, "method_call.chain.multiline", value -> {
+			config.getChain().setBreakCount( toInt( value ) );
+			// cfformat chain multiline primarily keys off chain count, not a separate line-length threshold
+			config.getChain().setBreakLength( Integer.MAX_VALUE );
+		} );
 
 		// Property settings
 		applyPropertySettings( cfConfig, config );
@@ -198,6 +226,8 @@ public final class CFFormatConfigLoader {
 	private static void applyFunctionDeclarationSettings( Map<String, Object> cfConfig, Config config ) {
 		FunctionConfig.ParametersConfig params = config.getFunction().getParameters();
 
+		applyIfPresent( cfConfig, "function_declaration.padding", value -> params.setPadding( toBool( value ) ) );
+		applyIfPresent( cfConfig, "function_declaration.empty_padding", value -> params.setEmptyPadding( toBool( value ) ) );
 		applyIfPresent( cfConfig, "function_declaration.multiline.element_count", value -> params.setMultilineCount( toInt( value ) ) );
 		applyIfPresent( cfConfig, "function_declaration.multiline.min_length", value -> params.setMultilineLength( toInt( value ) ) );
 	}
@@ -205,6 +235,8 @@ public final class CFFormatConfigLoader {
 	private static void applyFunctionCallSettings( Map<String, Object> cfConfig, Config config ) {
 		ArgumentsConfig args = config.getArguments();
 
+		applyIfPresent( cfConfig, "function_call.padding", value -> args.setPadding( toBool( value ) ) );
+		applyIfPresent( cfConfig, "function_call.empty_padding", value -> args.setEmptyPadding( toBool( value ) ) );
 		applyIfPresent( cfConfig, "function_call.multiline.element_count", value -> args.setMultilineCount( toInt( value ) ) );
 		applyIfPresent( cfConfig, "function_call.multiline.min_length", value -> args.setMultilineLength( toInt( value ) ) );
 	}
@@ -266,14 +298,18 @@ public final class CFFormatConfigLoader {
 	}
 
 	private static Separator parseSeparator( String separator ) {
-		// Check if it contains spaces
-		boolean hasSpace = separator.contains( " " );
+		if ( " : ".equals( separator ) ) {
+			return Separator.COLON_BOTH_SPACE;
+		}
+		if ( " = ".equals( separator ) ) {
+			return Separator.EQUALS_BOTH_SPACE;
+		}
 
-		// Determine the base character (colon or equals)
 		if ( separator.contains( ":" ) ) {
-			return hasSpace ? Separator.COLON_SPACE : Separator.COLON;
-		} else if ( separator.contains( "=" ) ) {
-			return hasSpace ? Separator.EQUALS_SPACE : Separator.EQUALS;
+			return separator.contains( " " ) ? Separator.COLON_SPACE : Separator.COLON;
+		}
+		if ( separator.contains( "=" ) ) {
+			return separator.contains( " " ) ? Separator.EQUALS_SPACE : Separator.EQUALS;
 		}
 
 		// Default

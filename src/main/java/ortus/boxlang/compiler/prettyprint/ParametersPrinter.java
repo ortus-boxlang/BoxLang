@@ -76,13 +76,42 @@ public class ParametersPrinter {
 		var	paramsDoc	= visitor.pushDoc( DocType.GROUP );
 		paramsDoc.append( "(" );
 
-		var	size		= params.size();
-		var	multiline	= size >= visitor.config.getFunction().getParameters().getMultilineCount()
+		var	size				= params.size();
+		var	padding				= visitor.config.getFunction().getParameters().getPadding() || visitor.config.getParensPadding();
+		var	multiline			= size >= visitor.config.getFunction().getParameters().getMultilineCount()
 		    || calculateParameterListLength( params ) >= visitor.config.getFunction().getParameters().getMultilineLength();
+
+		int	maxParamLeftLength	= 0;
+		if ( multiline && visitor.config.getAlignConsecutiveAssignments() ) {
+			for ( var node : params ) {
+				if ( node.getValue() == null ) {
+					continue;
+				}
+				int leftLength = 0;
+				if ( node.getRequired() != null && node.getRequired() ) {
+					leftLength += 9;
+				}
+				if ( node.getType() != null ) {
+					var	type			= node.getType();
+					var	typeIsPrinted	= type != "Any" || node.getSourceText().contains( "Any " );
+					if ( typeIsPrinted ) {
+						leftLength += type.length() + 1;
+					}
+				}
+				leftLength			+= node.getName().length();
+				maxParamLeftLength	= Math.max( maxParamLeftLength, leftLength );
+			}
+		}
 
 		if ( size > 0 ) {
 			var contentsDoc = visitor.pushDoc( DocType.INDENT );
-			contentsDoc.append( multiline || visitor.config.getParensPadding() ? Line.LINE : Line.SOFT );
+			if ( multiline ) {
+				contentsDoc.append( Line.LINE );
+			} else if ( padding ) {
+				contentsDoc.append( " " );
+			} else {
+				contentsDoc.append( Line.SOFT );
+			}
 
 			for ( int i = 0; i < size; i++ ) {
 				var node = params.get( i );
@@ -99,6 +128,23 @@ public class ParametersPrinter {
 				}
 				contentsDoc.append( node.getName() );
 				if ( node.getValue() != null ) {
+					if ( multiline && visitor.config.getAlignConsecutiveAssignments() && maxParamLeftLength > 0 ) {
+						int currentLeftLength = 0;
+						if ( node.getRequired() != null && node.getRequired() ) {
+							currentLeftLength += 9;
+						}
+						if ( node.getType() != null ) {
+							var	type			= node.getType();
+							var	typeIsPrinted	= type != "Any" || node.getSourceText().contains( "Any " );
+							if ( typeIsPrinted ) {
+								currentLeftLength += type.length() + 1;
+							}
+						}
+						currentLeftLength += node.getName().length();
+						for ( int j = 0; j < ( maxParamLeftLength - currentLeftLength ); j++ ) {
+							contentsDoc.append( " " );
+						}
+					}
 					contentsDoc.append( " = " );
 					node.getValue().accept( visitor );
 				}
@@ -120,9 +166,20 @@ public class ParametersPrinter {
 				contentsDoc.append( Line.BREAK_PARENT );
 			}
 
-			paramsDoc.append( visitor.popDoc() ).append( multiline || visitor.config.getParensPadding() ? Line.LINE : Line.SOFT );
+			paramsDoc.append( visitor.popDoc() );
+			if ( multiline ) {
+				paramsDoc.append( Line.LINE );
+			} else if ( padding ) {
+				paramsDoc.append( " " );
+			} else {
+				paramsDoc.append( Line.SOFT );
+			}
 		} else {
-			paramsDoc.append( Line.SOFT );
+			if ( visitor.config.getFunction().getParameters().getEmptyPadding() ) {
+				paramsDoc.append( " " );
+			} else {
+				paramsDoc.append( Line.SOFT );
+			}
 		}
 
 		paramsDoc.append( ")" );
