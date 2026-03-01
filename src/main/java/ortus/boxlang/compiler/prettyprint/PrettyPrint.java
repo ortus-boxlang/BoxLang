@@ -346,7 +346,9 @@ public final class PrettyPrint {
 
 	public static String prettyPrint( BoxNode node, Config config ) {
 		var doc = generateDoc( node, config );
-		return printDoc( doc, config );
+		String output = printDoc( doc, config );
+		output = output.replaceAll( "(?m)(^\\s*param\\s+[^=\\r\\n]*?)\\s+=\\s+", "$1 = " );
+		return output;
 	}
 
 	public static Doc generateDoc( BoxNode node, Config config ) {

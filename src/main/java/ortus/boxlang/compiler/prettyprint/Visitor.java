@@ -343,6 +343,9 @@ public class Visitor extends VoidBoxVisitor {
 		}
 		if ( config.getCFFormatCompatibility() && node != null && node.getSourceText() != null ) {
 			String sourceText = node.getSourceText();
+			if ( sourceText.stripLeading().startsWith( "param " ) ) {
+				sourceText = sourceText.replaceAll( "(\\bparam\\s+[^=\\r\\n]*?)\\s+=\\s+", "$1 = " );
+			}
 			print( sourceText );
 			if ( !sourceText.stripTrailing().endsWith( ";" ) && hasTrailingSemicolonInSource( node ) ) {
 				print( ";" );
@@ -471,12 +474,8 @@ public class Visitor extends VoidBoxVisitor {
 			node.getExpression().accept( this );
 			print( ">" );
 		} else {
-			if ( config.getCFFormatCompatibility() && node.getSourceText() != null ) {
-				String sourceText = node.getSourceText();
-				print( sourceText );
-				if ( !sourceText.stripTrailing().endsWith( ";" ) && hasTrailingSemicolonInSource( node ) ) {
-					print( ";" );
-				}
+			if ( printSourceForCFCompat( node ) ) {
+				// no-op
 			} else {
 				node.getExpression().accept( this );
 				printSemicolon();
@@ -1964,25 +1963,26 @@ public class Visitor extends VoidBoxVisitor {
 	 * @return The total length of the chain
 	 */
 	private int calculateChainLength( List<ChainElement> chain, BoxNode root ) {
-		int length = root.getSourceText() != null ? root.getSourceText().length() : 0;
+		int length = getNormalizedSourceLength( root );
 		for ( ChainElement element : chain ) {
 			// Each element's source text includes the dot/accessor prefix
 			if ( element.isMethodInvocation() ) {
 				var		m			= element.asMethodInvocation();
 				// Source text already includes the dot for method invocations built from dot access
-				String	sourceText	= m.getSourceText();
-				if ( sourceText != null ) {
-					length += sourceText.length();
-				}
+				length += getNormalizedSourceLength( m );
 			} else {
-				var		d			= element.asDotAccess();
-				String	sourceText	= d.getSourceText();
-				if ( sourceText != null ) {
-					length += sourceText.length();
-				}
+				var d = element.asDotAccess();
+				length += getNormalizedSourceLength( d );
 			}
 		}
 		return length;
+	}
+
+	private int getNormalizedSourceLength( BoxNode node ) {
+		if ( node == null || node.getSourceText() == null ) {
+			return 0;
+		}
+		return node.getSourceText().replaceAll( "\\s+", "" ).length();
 	}
 
 	/**
