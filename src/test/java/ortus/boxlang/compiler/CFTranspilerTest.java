@@ -601,4 +601,17 @@ public class CFTranspilerTest {
 		assertThat( variables.get( result ) ).isInstanceOf( Array.class );
 	}
 
+	@DisplayName( "It can get an anonymous lock" )
+	@Test
+	public void testAnonymousLock() {
+		instance.executeSource(
+		    """
+		    cflock( timeout=10 ) {
+		    	result = "bar";
+		    }
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+	}
+
 }
