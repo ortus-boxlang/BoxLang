@@ -132,7 +132,7 @@
 												<strong>#encodeForHTML( thisAnnotation )#</strong>
 											</td>
 											<td>
-												#writeDump( var : annotations[ thisAnnotation ], output : "buffer", format : format )#
+												#writeDump( var : annotations[ thisAnnotation ], top : isNull( top ) ? null : top - 1, maxRows : maxRows, output : "buffer", format : format )#
 											</td>
 										</tr>
 									</bx:loop>
@@ -159,33 +159,36 @@
 							<bx:if isEmpty(sortedProperties)>
 								<p><em>None</em></p>
 							<bx:else>
-								<table class="bx-table-default">
+							<table class="bx-table-default">
+								<tr>
+									<th>Name</th>
+									<th>Value</th>
+								</tr>
+								<bx:set maxItems = isNull( maxRows ) ? sortedProperties.len() : min( maxRows, sortedProperties.len() )>
+								<bx:loop from="1" to="#maxItems#" index="idx">
+									<bx:set prop = sortedProperties[idx]>
 									<tr>
-										<th>Name</th>
-										<th>Value</th>
+										<td
+											valign="top"
+											onclick="
+												this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+												this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+											"
+											>
+											<strong>#encodeForHTML( prop.name )#</strong>
+										</td>
+										<td>
+										#writeDump(
+											var : variablesScope[ prop.name ] ?: null,
+											top : isNull( top ) ? null : top - 1,
+											maxRows : maxRows,
+											expand : variables?.expand,
+											showUDFs : variables?.showUDFs
+										)#
+										</td>
 									</tr>
-									<bx:loop array="#sortedProperties#" index="prop">
-										<tr>
-											<td
-												valign="top"
-												onclick="
-													this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
-													this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
-												"
-												>
-												<strong>#encodeForHTML( prop.name )#</strong>
-											</td>
-											<td>
-												#writeDump(
-													var : variablesScope[ prop.name ] ?: null,
-													top : isNull( top ) ? null : top - 1,
-													expand : variables?.expand,
-													showUDFs : variables?.showUDFs
-												)#
-											</td>
-										</tr>
-									</bx:loop>
-								</table>
+								</bx:loop>
+							</table>
 							</bx:if>
 						</div>
 					</td>
@@ -208,39 +211,41 @@
 							<bx:if thisScope.valueArray().filter( ( v ) => !isNull( v ) && !(v instanceOf "ortus.boxlang.runtime.types.Function") ).len() == 0 >
 								<p><em>None</em></p>
 							<bx:else>
-								<table class="bx-table-default">
+							<table class="bx-table-default">
+								<tr>
+									<th>Name</th>
+									<th>Value</th>
+								</tr>
+								<bx:set dataKeys = thisScope.keyArray().filter( ( k ) => {
+									thisData = thisScope[ k ] ?: null;
+									return !isNull( thisData ) && !(thisData instanceOf "ortus.boxlang.runtime.types.Function");
+								} )>
+								<bx:set maxItems = isNull( maxRows ) ? dataKeys.len() : min( maxRows, dataKeys.len() )>
+								<bx:loop from="1" to="#maxItems#" index="idx">
+									<bx:set dataProperty = dataKeys[idx]>
+									<bx:set thisData = thisScope[ dataProperty ] ?: null>
 									<tr>
-										<th>Name</th>
-										<th>Value</th>
+										<td
+											valign="top"
+											onclick="
+												this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+												this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+											"
+											>
+											<strong>#encodeForHTML( dataProperty )#</strong>
+										</td>
+										<td>
+										#writeDump(
+											var : thisData ?: null,
+											top : isNull( top ) ? null : top - 1,
+											maxRows : maxRows,
+											expand : variables?.expand,
+											showUDFs : variables?.showUDFs
+										)#
+										</td>
 									</tr>
-									<bx:loop collection="#thisScope#" item="dataProperty">
-										<bx:script>
-											thisData = thisScope[ dataProperty ] ?: null;
-											if( !isNull( thisData ) && (thisData instanceOf "ortus.boxlang.runtime.types.Function") ){
-												continue;
-											}
-										</bx:script>
-										<tr>
-											<td
-												valign="top"
-												onclick="
-													this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
-													this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
-												"
-												>
-												<strong>#encodeForHTML( dataProperty )#</strong>
-											</td>
-											<td>
-												#writeDump(
-													var : thisData ?: null,
-													top : isNull( top ) ? null : top - 1,
-													expand : variables?.expand,
-													showUDFs : variables?.showUDFs
-												)#
-											</td>
-										</tr>
-									</bx:loop>
-								</table>
+								</bx:loop>
+							</table>
 							</bx:if>
 						</div>
 					</td>
@@ -260,40 +265,42 @@
 					</th>
 					<td>
 						<div class="bx-onoff">
-							<table class="bx-table-default">
+						<table class="bx-table-default">
+							<tr>
+								<th>Name</th>
+								<th>Signature</th>
+							</tr>
+							<bx:set methodKeys = staticScope.keyArray().filter( ( k ) => {
+								thisMethod = staticScope[ k ] ?: null;
+								return !isNull( thisMethod ) && (thisMethod instanceOf "ortus.boxlang.runtime.types.Function");
+							} )>
+							<bx:set maxItems = isNull( maxRows ) ? methodKeys.len() : min( maxRows, methodKeys.len() )>
+							<bx:loop from="1" to="#maxItems#" index="idx">
+								<bx:set methodName = methodKeys[idx]>
+								<bx:set thisMethod = staticScope[ methodName ] ?: null>
 								<tr>
-									<th>Name</th>
-									<th>Signature</th>
+									<td
+										valign="top"
+										onclick="
+											this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+											this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+										"
+										>
+										<strong>#encodeForHTML( methodName )#</strong>
+									</td>
+									<td>
+									#writeDump( 
+										var : thisMethod ?: null,
+										top : isNull( top ) ? null : top - 1,
+										maxRows : maxRows,
+										expand : variables?.expand,
+										output : "buffer",
+										format : format
+									)#
+									</td>
 								</tr>
-								<bx:loop collection="#staticScope#" item="methodName">
-									<bx:script>
-										thisMethod = staticScope[ methodName ] ?: null;
-										if( isNull( thisMethod ) || !(thisMethod instanceOf "ortus.boxlang.runtime.types.Function") ){
-											continue;
-										}
-									</bx:script>
-									<tr>
-										<td
-											valign="top"
-											onclick="
-												this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
-												this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
-											"
-											>
-											<strong>#encodeForHTML( methodName )#</strong>
-										</td>
-										<td>
-											#writeDump( 
-												var : thisMethod ?: null,
-												top : isNull( top ) ? null : top - 1,
-												expand : variables?.expand,
-												output : "buffer",
-												format : format
-											)#
-										</td>
-									</tr>
-								</bx:loop>
-							</table>
+							</bx:loop>
+						</table>
 						</div>
 					</td>
 				</tr>
@@ -316,46 +323,48 @@
 								<bx:if thisScope.valueArray().filter( ( v ) => !isNull( v ) && v instanceOf "ortus.boxlang.runtime.types.Function" ).len() == 0 >
 									<p><em>None</em></p>
 								<bx:else>
-									<table class="bx-table-default">
+								<table class="bx-table-default">
+									<tr>
+										<th>Name</th>
+										<th>Signature</th>
+									</tr>
+									<bx:set methodKeys = thisScope.keyArray().filter( ( k ) => {
+										thisMethod = thisScope[ k ] ?: null;
+										return !isNull( thisMethod ) && (thisMethod instanceOf "ortus.boxlang.runtime.types.Function");
+									} )>
+									<bx:set maxItems = isNull( maxRows ) ? methodKeys.len() : min( maxRows, methodKeys.len() )>
+									<bx:loop from="1" to="#maxItems#" index="idx">
+										<bx:set methodName = methodKeys[idx]>
+										<bx:set thisMethod = thisScope[ methodName ] ?: null>
 										<tr>
-											<th>Name</th>
-											<th>Signature</th>
-										</tr>
-										<bx:loop collection="#thisScope#" item="methodName">
-											<bx:script>
-												thisMethod = thisScope[ methodName ] ?: null;
-												if( isNull( thisMethod ) || !(thisMethod instanceOf "ortus.boxlang.runtime.types.Function") ){
-													continue;
-												}
-											</bx:script>
-											<tr>
-												<td
-													valign="top"
-													onclick="
-														this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
-														this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
-													"
-													>
-													<strong>#encodeForHTML( methodName )#</strong>
-												</td>
-												<td>
-													#writeDump(
-														var : thisMethod ?: null,
-														top : isNull( top ) ? null : top - 1,
-														expand : variables?.expand
-													)#
-												</td>
-											</tr>
-										</bx:loop>
-									</table>
-								</bx:if>
-							</div>
-						</td>
-					</tr>
-				</bx:if>
+											<td
+												valign="top"
+												onclick="
+													this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+													this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+												"
+										>
+											<strong>#encodeForHTML( methodName )#</strong>
+										</td>
+										<td>
+											#writeDump(
+												var : thisMethod ?: null,
+												top : isNull( top ) ? null : top - 1,
+												maxRows : maxRows,
+												expand : variables?.expand
+											)#
+										</td>
+									</tr>
+								</bx:loop>
+							</table>
+							</bx:if>
+						</div>
+					</td>
+				</tr>
+			</bx:if>
 
-				<!--- PRIVATE METHODS  --->
-				<bx:if showUDFs>
+			<!--- PRIVATE METHODS  --->
+			<bx:if showUDFs>
 					<tr>
 						<th
 							aria-expanded="true"
@@ -371,44 +380,43 @@
 								<bx:if variablesScope.valueArray().filter( ( v ) => !isNull( v ) && v instanceOf "ortus.boxlang.runtime.types.Function" ).len() == 0 >
 									<p><em>None</em></p>
 								<bx:else>
-									<table class="bx-table-default">
+								<table class="bx-table-default">
+									<tr>
+										<th>Name</th>
+										<th>Signature</th>
+									</tr>
+									<bx:set methodKeys = variablesScope.keyArray().filter( ( k ) => {
+										thisMethod = variablesScope[ k ] ?: null;
+										return !isNull( thisMethod ) && (thisMethod instanceOf "ortus.boxlang.runtime.types.Function") && thisMethod.getAccess().toString() != "public";
+									} )>
+									<bx:set maxItems = isNull( maxRows ) ? methodKeys.len() : min( maxRows, methodKeys.len() )>
+									<bx:loop from="1" to="#maxItems#" index="idx">
+										<bx:set methodName = methodKeys[idx]>
+										<bx:set thisMethod = variablesScope[ methodName ] ?: null>
 										<tr>
-											<th>Name</th>
-											<th>Signature</th>
-										</tr>
-										<bx:loop collection="#variablesScope#" item="methodName">
-											<bx:script>
-												thisMethod = variablesScope[ methodName ] ?: null;
-												if( isNull( thisMethod ) || !(thisMethod instanceOf "ortus.boxlang.runtime.types.Function") ){
-													continue;
-												}
-												if( thisMethod.getAccess().toString() == "public" ){
-													continue;
-												}
-											</bx:script>
-											<tr>
-												<td
-													valign="top"
-													onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
-													>
-													<strong>#encodeForHTML( methodName )#</strong>
-												</td>
-												<td>
-													#writeDump(
-														var : thisMethod ?: null,
-														top : isNull( top ) ? null : top - 1,
-														expand : variables?.expand
-													)#
-												</td>
-											</tr>
-										</bx:loop>
-									</table>
-								</bx:if>
-							</div>
-						</td>
-					</tr>
-				</bx:if>
-			</tbody>
-		</table>
-	</div>
+											<td
+												valign="top"
+												onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
+										>
+											<strong>#encodeForHTML( methodName )#</strong>
+										</td>
+										<td>
+											#writeDump(
+												var : thisMethod ?: null,
+												top : isNull( top ) ? null : top - 1,
+												maxRows : maxRows,
+												expand : variables?.expand
+											)#
+										</td>
+									</tr>
+								</bx:loop>
+							</table>
+							</bx:if>
+						</div>
+					</td>
+				</tr>
+			</bx:if>
+		</tbody>
+	</table>
+</div>
 </bx:output>
