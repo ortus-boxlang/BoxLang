@@ -109,6 +109,7 @@ public class DumpUtil {
 	    Object target,
 	    String label,
 	    @Nullable Integer top,
+	    @Nullable Integer maxDepth,
 		@Nullable Integer maxRows,
 	    Boolean expand,
 	    Boolean abort,
@@ -178,6 +179,7 @@ public class DumpUtil {
 		            Key.target, target,
 		            Key.label, label,
 		            Key.top, top,
+		            Key.maxDepth, maxDepth,
 					Key.maxRows, maxRows,
 		            Key.expand, expand,
 		            Key.abort, abort,
@@ -189,6 +191,7 @@ public class DumpUtil {
 
 		String dumpOutput;
 		if ( format.equals( "html" ) ) {
+			dumpOutput = generateDumpHTML( context, target, label, top, maxDepth, expand, abort, output, format, showUDFs );
 			dumpOutput = generateDumpHTML( context, target, label, top, maxRows, expand, abort, output, format, showUDFs );
 		} else {
 			dumpOutput = generateDumpText( context, target, label );
@@ -349,6 +352,7 @@ public class DumpUtil {
 	    Object target,
 	    String label,
 	    @Nullable Integer top,
+	    @Nullable Integer maxDepth,
 		@Nullable Integer maxRows,
 	    Boolean expand,
 	    Boolean abort,
@@ -369,6 +373,12 @@ public class DumpUtil {
 		// Reached the top limit, so return to prevent dumping the entire world
 		if ( top != null && top <= 0 ) {
 			context.writeToBuffer( "<div><em>Top Limit reached (Skipping dump)</em></div>", true );
+			return null;
+		}
+
+		// Reached the max depth limit, so return to prevent dumping too deep
+		if ( maxDepth != null && maxDepth <= 0 ) {
+			context.writeToBuffer( "<div><em>Max Depth reached (Skipping dump)</em></div>", true );
 			return null;
 		}
 
@@ -405,6 +415,7 @@ public class DumpUtil {
 			        Key.var, target,
 			        Key.label, label,
 			        Key.top, top,
+			        Key.maxDepth, maxDepth,
 					Key.maxRows, maxRows,
 			        Key.expand, expand,
 			        Key.abort, abort,

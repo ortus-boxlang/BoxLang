@@ -187,6 +187,29 @@
 										)#
 										</td>
 									</tr>
+									<bx:loop array="#sortedProperties#" index="prop">
+										<tr>
+											<td
+												valign="top"
+												onclick="
+													this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+													this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+												"
+												>
+												<strong>#encodeForHTML( prop.name )#</strong>
+											</td>
+											<td>
+												#writeDump(
+													var : variablesScope[ prop.name ] ?: null,
+													top : top ?: null,
+													maxDepth : isNull( maxDepth ) ? null : maxDepth - 1,
+													expand : variables?.expand,
+													showUDFs : variables?.showUDFs
+												)#
+											</td>
+										</tr>
+									</bx:loop>
+								</table>
 								</bx:loop>
 							</table>
 							</bx:if>
@@ -244,6 +267,35 @@
 										)#
 										</td>
 									</tr>
+									<bx:loop collection="#thisScope#" item="dataProperty">
+										<bx:script>
+											thisData = thisScope[ dataProperty ] ?: null;
+											if( !isNull( thisData ) && (thisData instanceOf "ortus.boxlang.runtime.types.Function") ){
+												continue;
+											}
+										</bx:script>
+										<tr>
+											<td
+												valign="top"
+												onclick="
+													this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+													this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+												"
+												>
+												<strong>#encodeForHTML( dataProperty )#</strong>
+											</td>
+											<td>
+												#writeDump(
+													var : thisData ?: null,
+													top : top ?: null,
+													maxDepth : isNull( maxDepth ) ? null : maxDepth - 1,
+													expand : variables?.expand,
+													showUDFs : variables?.showUDFs
+												)#
+											</td>
+										</tr>
+									</bx:loop>
+								</table>
 								</bx:loop>
 							</table>
 							</bx:if>
@@ -299,6 +351,36 @@
 									)#
 									</td>
 								</tr>
+								<bx:loop collection="#staticScope#" item="methodName">
+									<bx:script>
+										thisMethod = staticScope[ methodName ] ?: null;
+										if( isNull( thisMethod ) || !(thisMethod instanceOf "ortus.boxlang.runtime.types.Function") ){
+											continue;
+										}
+									</bx:script>
+									<tr>
+										<td
+											valign="top"
+											onclick="
+												this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+												this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+											"
+											>
+											<strong>#encodeForHTML( methodName )#</strong>
+										</td>
+										<td>
+											#writeDump( 
+												var : thisMethod ?: null,
+												top : top ?: null,
+												maxDepth : isNull( maxDepth ) ? null : maxDepth - 1,
+												expand : variables?.expand,
+												output : "buffer",
+												format : format
+											)#
+										</td>
+									</tr>
+								</bx:loop>
+							</table>
 							</bx:loop>
 						</table>
 						</div>
@@ -337,6 +419,42 @@
 										<bx:set methodName = methodKeys[idx]>
 										<bx:set thisMethod = thisScope[ methodName ] ?: null>
 										<tr>
+											<th>Name</th>
+											<th>Signature</th>
+										</tr>
+										<bx:loop collection="#thisScope#" item="methodName">
+											<bx:script>
+												thisMethod = thisScope[ methodName ] ?: null;
+												if( isNull( thisMethod ) || !(thisMethod instanceOf "ortus.boxlang.runtime.types.Function") ){
+													continue;
+												}
+											</bx:script>
+											<tr>
+												<td
+													valign="top"
+													onclick="
+														this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none';
+														this.style.fontStyle = this.nextElementSibling.style.display === 'none' ? 'italic' : 'normal'
+													"
+													>
+													<strong>#encodeForHTML( methodName )#</strong>
+												</td>
+												<td>
+													#writeDump(
+														var : thisMethod ?: null,
+														top : top ?: null,
+														maxDepth : isNull( maxDepth ) ? null : maxDepth - 1,
+														expand : variables?.expand
+													)#
+												</td>
+											</tr>
+										</bx:loop>
+									</table>
+								</bx:if>
+							</div>
+						</td>
+					</tr>
+				</bx:if>
 											<td
 												valign="top"
 												onclick="
@@ -394,6 +512,45 @@
 										<bx:set methodName = methodKeys[idx]>
 										<bx:set thisMethod = variablesScope[ methodName ] ?: null>
 										<tr>
+											<th>Name</th>
+											<th>Signature</th>
+										</tr>
+										<bx:loop collection="#variablesScope#" item="methodName">
+											<bx:script>
+												thisMethod = variablesScope[ methodName ] ?: null;
+												if( isNull( thisMethod ) || !(thisMethod instanceOf "ortus.boxlang.runtime.types.Function") ){
+													continue;
+												}
+												if( thisMethod.getAccess().toString() == "public" ){
+													continue;
+												}
+											</bx:script>
+											<tr>
+												<td
+													valign="top"
+													onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"
+													>
+													<strong>#encodeForHTML( methodName )#</strong>
+												</td>
+												<td>
+													#writeDump(
+														var : thisMethod ?: null,
+														top : top ?: null,
+														maxDepth : isNull( maxDepth ) ? null : maxDepth - 1,
+														expand : variables?.expand
+													)#
+												</td>
+											</tr>
+										</bx:loop>
+									</table>
+								</bx:if>
+							</div>
+						</td>
+					</tr>
+				</bx:if>
+			</tbody>
+		</table>
+	</div>
 											<td
 												valign="top"
 												onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'"

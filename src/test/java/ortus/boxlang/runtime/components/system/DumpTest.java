@@ -18,9 +18,6 @@
 
 package ortus.boxlang.runtime.components.system;
 
-import static com.google.common.truth.Truth.assertThat;
-import static com.google.common.truth.Truth.assertWithMessage;
-
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.file.Path;
@@ -31,6 +28,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -828,15 +828,49 @@ public class DumpTest {
 		assertThat( output ).contains( "b" );
 		assertThat( output ).contains( "c" );
 
+	@DisplayName( "It can limit the recursion depth when dumping" )
+	@Test
+	public void topTest() {
+
+		IStruct	level4		= Struct.of( Key.of( "deepest" ), "level-4-value" ); // we create the struct object of eahc differnet level so that they point towards each other.
+		IStruct	level3		= Struct.of( Key.of( "level-3" ), level4 );
+		IStruct	level2		= Struct.of( Key.of( "level-2" ), level3 );
+
+		IStruct	rootStruct	= Struct.of(
+
+		    Key.of( "a" ), level2,
+		    Key.of( "b" ), level2,
+		    Key.of( "c" ), level2
+
+		);
+
+		variables.put( Key.of( "testData" ), rootStruct );
+
+		instance.executeSource(
+		    """
+		    	dump( var = testData, top =3, format="html");
+
+		    """,
+		    context,
+		    BoxSourceType.BOXSCRIPT
+		);
+
+		String output = baos.toString();
+
+		assertThat( output ).contains( "a" );
+		assertThat( output ).contains( "b" );
+		assertThat( output ).contains( "c" );
+
 		assertThat( output ).contains( "level-2" );
 		assertThat( output ).contains( "level-3" );
 
 	}
 
-	@DisplayName( "It can control whether to expand the dump or not" )
+	@DisplayName( "It uses maxDepth to control depth limiting" )
 	@Test
-	public void testTopValuesProduceDifferentDepths() {
-		IStruct	level4	= Struct.of( Key.of( "level4" ), "deepest" ); // we create the struct object of eahc differnet level so that they point towards each other.
+	public void testMaxDepthValuesProduceDifferentDepths() {
+
+		IStruct	level4	= Struct.of( Key.of( "level4" ), "deepest" );
 		IStruct	level3	= Struct.of( Key.of( "level3" ), level4 );
 		IStruct	level2	= Struct.of( Key.of( "level2" ), level3 );
 		IStruct	level1	= Struct.of( Key.of( "level1" ), level2 );
@@ -844,42 +878,145 @@ public class DumpTest {
 		variables.put( Key.of( "data" ), level1 );
 
 		instance.executeSource(
-			"""
-				dump( var = data, top = 1, format="html");
+		    """
+		    	dump( var = data, maxDepth = 1, format="html");
 
-			""",
-			context,
-			BoxSourceType.BOXSCRIPT
+		    """,
+		    context,
+		    BoxSourceType.BOXSCRIPT
 		);
 
-		String outputTop1 = baos.toString();
+		String outputDepth1 = baos.toString();
 		// Should see root key
-		assertThat( outputTop1 ).contains( "level1" );
-		// Sh
-		assertThat( outputTop1 ).doesNotContain( "level2" );
-		assertThat( outputTop1 ).contains( "Top Limit reached" );
+		assertThat( outputDepth1 ).contains( "level1" );
+		// Depth 1 means we can only go 1 level deep; level2 should not render
+		assertThat( outputDepth1 ).doesNotContain( "level2" );
+		assertThat( outputDepth1 ).contains( "Max Depth reached" );
 
 		baos.reset();
 
 		instance.executeSource(
-			"""
-				dump(var=data, top=2, format="html");
-			""",
-			context,
-			BoxSourceType.BOXSCRIPT
+		    """
+		        dump(var=data, maxDepth=2, format="html");
+		    """,
+		    context,
+		    BoxSourceType.BOXSCRIPT
 		);
-		String outputTop2 = baos.toString();
+		String outputDepth2 = baos.toString();
 
-		assertThat( outputTop2 ).contains( "level1" );
-		assertThat( outputTop2 ).contains( "level2" );
-		assertThat( outputTop2 ).doesNotContain( "level3" );
+		assertThat( outputDepth2 ).contains( "level1" );
+		assertThat( outputDepth2 ).contains( "level2" );
+		assertThat( outputDepth2 ).doesNotContain( "level3" );
 
-		assertWithMessage( "top=1 and top=2 should produce different output" )
-			.that( outputTop1 )
-			.isNotEqualTo( outputTop2 );
-		assertWithMessage( "top=2 should render deeper than top=1" )
-			.that( outputTop2.length() )
-			.isGreaterThan( outputTop1.length() );
+		assertWithMessage( "maxDepth=1 and maxDepth=2 should produce different output" )
+		    .that( outputDepth1 )
+		    .isNotEqualTo( outputDepth2 );
+		assertWithMessage( "maxDepth=2 should render deeper than maxDepth=1" )
+		    .that( outputDepth2.length() )
+		    .isGreaterThan( outputDepth1.length() );
+
 	}
-	*/
+
+	@DisplayName( "It uses top to limit breadth (entries per level) without limiting depth" )
+	@Test
+	public void testTopLimitsBreadthNotDepth() {
+
+		// Create a struct with 5 top-level keys, each with nested data
+		IStruct	inner	= Struct.of( Key.of( "nested" ), "deep-value" );
+		IStruct	root	= Struct.of(
+		    Key.of( "aaa" ), inner,
+		    Key.of( "bbb" ), inner,
+		    Key.of( "ccc" ), inner,
+		    Key.of( "ddd" ), inner,
+		    Key.of( "eee" ), inner
+		);
+
+		variables.put( Key.of( "data" ), root );
+
+		instance.executeSource(
+		    """
+		    	dump( var = data, top = 2, format="html");
+		    """,
+		    context,
+		    BoxSourceType.BOXSCRIPT
+		);
+
+		String output = baos.toString();
+
+		// top=2 should limit to 2 entries (breadth), so only first 2 alphabetical keys render
+		assertThat( output ).contains( "aaa" );
+		assertThat( output ).contains( "bbb" );
+		// The remaining 3 keys should NOT appear
+		assertThat( output ).doesNotContain( "ccc" );
+		assertThat( output ).doesNotContain( "ddd" );
+		assertThat( output ).doesNotContain( "eee" );
+		// But depth should NOT be limited — nested values should still render
+		assertThat( output ).contains( "nested" );
+		assertThat( output ).contains( "deep-value" );
+	}
+
+	@DisplayName( "It limits dump depth on a mixed-depth struct tree using maxDepth" )
+	@Test
+	public void testMaxDepthLimitsMixedDepthStruct() {
+		instance.executeSource(
+		    """
+		    	val = {
+		    		"alpha": 'a',
+		    		"beta" : {
+		    			"charlie": 'c',
+		    			"delta": 'd'
+		    		},
+		    		"echo" : {
+		    			"foxtrot" : {
+		    				"golf" : 'g',
+		    				"hotel" : 'h'
+		    			}
+		    		},
+		    		"india" : {
+		    			"juliet" : {
+		    				"kilo" : {
+		    					"lima" : 'l',
+		    					"mike" : 'm'
+		    				}
+		    			}
+		    		},
+		    		"november" : {
+		    			"oscar" : {
+		    				"papa" : {
+		    					"quebec" : {
+		    						"romeo" : 'r',
+		    						"sierra" : 's'
+		    					}
+		    				}
+		    			}
+		    		}
+		    	};
+		    	dump( var = val, format = "html", maxDepth = 3 );
+		    """,
+		    context
+		);
+
+		String output = baos.toString();
+
+		// Level 1 keys: all should be visible
+		assertThat( output ).contains( "alpha" );
+		assertThat( output ).contains( "beta" );
+
+		// Level 2: charlie/delta are at depth 2, should be visible
+		assertThat( output ).contains( "charlie" );
+		assertThat( output ).contains( "delta" );
+
+		// Level 3: foxtrot is at depth 2, golf/hotel at depth 3 — should be visible
+		assertThat( output ).contains( "foxtrot" );
+		assertThat( output ).contains( "golf" );
+
+		// Level 4+: kilo is at depth 3 but lima/mike at depth 4 — should NOT appear
+		// quebec at depth 4, romeo/sierra at depth 5 — should NOT appear
+		assertThat( output ).doesNotContain( "lima" );
+		assertThat( output ).doesNotContain( "mike" );
+		assertThat( output ).doesNotContain( "quebec" );
+		assertThat( output ).doesNotContain( "romeo" );
+		assertThat( output ).doesNotContain( "sierra" );
+	}
+
 }

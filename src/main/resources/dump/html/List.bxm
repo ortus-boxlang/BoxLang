@@ -28,6 +28,28 @@
 			<tbody
 				<bx:if !expandRoot>class="d-none"</bx:if>
 			>
+					<bx:loop array="#var#" index="i" item="value">
+						<!--- Top limit only if > 0 --->
+						<bx:if !isNull( top ) and i GT top >
+							<bx:break>
+						</bx:if>
+							<tr>
+								<th
+									aria-expanded="true"
+									data-bx-toggle="onoff"
+									scope="row"
+									valign="top"
+									tabindex="0"
+								>
+									#i#
+								</th>
+								<td>
+									<div class="bx-onoff">
+										<bx:set dump( var : value, top : top ?: null, maxDepth : isNull( maxDepth ) ? null : maxDepth - 1, expand : expand ?: null, output : "buffer", format : format )>
+									</div>
+								</td>
+							</tr>
+					</bx:loop>
 				<bx:set maxItems = isNull( maxRows ) ? var.size() : min( maxRows, var.size() )>
 				<bx:loop from="1" to="#maxItems#" index="i">
 					<bx:set value = var[i-1]>

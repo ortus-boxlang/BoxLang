@@ -65,6 +65,8 @@ public class Dump extends BIF {
 		    new Argument( false, Argument.STRING, Key.label, "" ),
 		    // The maximum recursion depth when dumping nested structures
 		    new Argument( false, Argument.NUMERIC, Key.top ),
+		    new Argument( false, Argument.NUMERIC, Key.maxDepth ),
+		    // Whether to expand the dump. By default, the dump is expanded on the first level only
 		    // The maximum number of keys/rows to display in collections
 		    new Argument( false, Argument.NUMERIC, Key.maxRows ),
 		    // Whether to expand the dump. By default, the dump is expanded on the first level only
@@ -108,6 +110,8 @@ public class Dump extends BIF {
 	 * @argument.expand Whether to expand the dump. Be default, we try to expand as much as possible. (Only in HTML output)
 	 *
 	 * @argument.abort Whether to do a hard abort the request after dumping. Default is false
+	 * 
+	 * @argument.maxDepth The maximum depth of nested levels to display (depth). Default is infinity. (Only in HTML output)
 	 *
 	 * @argument.output The output format which can be "buffer", "console", or "{absolute file path}". The default is "buffer".
 	 *
@@ -122,6 +126,8 @@ public class Dump extends BIF {
 			arguments.put( Key.abort, true );
 		}
 
+		Object	top			= arguments.get( Key.top );
+		Object	maxDepth	= arguments.get( Key.maxDepth );
 		Object top = arguments.get( Key.top );
 		Object maxRows = arguments.get( Key.maxRows );
 
@@ -131,6 +137,7 @@ public class Dump extends BIF {
 		    DynamicObject.unWrap( arguments.get( Key.var ) ),
 		    arguments.getAsString( Key.label ),
 		    top == null ? null : IntegerCaster.cast( top ),
+		    maxDepth == null ? null : IntegerCaster.cast( maxDepth ),
 		    maxRows == null ? null : IntegerCaster.cast( maxRows ),
 		    arguments.getAsBoolean( Key.expand ),
 		    BooleanCaster.cast( arguments.get( Key.abort ) ),

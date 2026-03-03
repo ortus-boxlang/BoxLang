@@ -65,6 +65,33 @@
 							</td>
 						</tr>
 					</bx:if>
+					<bx:loop array="#keys#" item="key">
+						<bx:if  !isNull( top ) and index++ GT top >
+							<bx:break>
+						</bx:if>
+						<bx:if NOT isCustomFunction( var[ key ] ) >
+							<tr>
+								<th
+									aria-expanded="true"
+									data-bx-toggle="onoff"
+									scope="row"
+									valign="top"
+									tabindex="0"
+									>
+									#encodeForHTML( key )#
+								</th>
+								<td>
+									<div class="bx-onoff">
+										<bx:if !isNull( maxDepth ) && maxDepth <= 1 >
+											<div><em>Max Depth reached (Skipping dump)</em></div>
+										<bx:else>
+											<bx:set dump( var : var[ key ], top : top, maxDepth : isNull( maxDepth ) ? null : maxDepth - 1, expand : expand ?: null, output : "buffer", format : format ) >
+										</bx:if>
+									</div>
+								</td>
+							</tr>
+						</bx:if>
+					</bx:loop>
 				</bx:loop>
 			</tbody>
 		</table>
