@@ -18,31 +18,52 @@
 						<bx:if expandRoot>open aria-expanded="true"<bx:else>aria-expanded="false"</bx:if>
 						data-bx-toggle="siblings"
 					>
-						<strong>
-							<bx:if label.len() >#label# - </bx:if>
-							#dumpTitle#
-							<bx:if !isNull( top ) && top lt var.len()>#top#/</bx:if>#var.len()#
-						</strong>
-					</caption>
-				<bx:else>
-					<caption>
-						<strong>
-							<bx:if label.len() >#label# - </bx:if>
-							#dumpTitle#
-							<bx:if !isNull( top ) && top lt var.len()>#top#/</bx:if>#var.len()#
-						</strong>
-					</caption>
+					<strong>
+						<bx:if label.len() >#label# - </bx:if>
+						#dumpTitle#
+						<bx:if !isNull( maxRows ) && maxRows lt var.len()>#maxRows#/</bx:if>#var.len()#
+					</strong>
+				</caption>
+			<bx:else>
+				<caption>
+					<strong>
+						<bx:if label.len() >#label# - </bx:if>
+						#dumpTitle#
+						<bx:if !isNull( maxRows ) && maxRows lt var.len()>#maxRows#/</bx:if>#var.len()#
+					</strong>
+				</caption>
 				</bx:if>
 
 			<!--- STRUCT BODY --->
 			<tbody
 				<bx:if !expandRoot>class="d-none"</bx:if>
 			>
-					<bx:set index = 1>
-					<bx:set keys = structKeyArray( var )>
-					<!--- If this isn't some sort of sorted or linked struct, then sort the keys for dumping --->
-					<bx:if !('LINKED_CASE_SENSITIVE,LINKED,SORTED'.listFindNoCase(var.getType().toString()))>
-					  <bx:set keys = keys.sort("textnocase")>
+				<bx:set index = 1>
+				<bx:set keys = structKeyArray( var )>
+				<!--- If this isn't some sort of sorted or linked struct, then sort the keys for dumping --->
+				<bx:if !('LINKED_CASE_SENSITIVE,LINKED,SORTED'.listFindNoCase(var.getType().toString()))>
+				  <bx:set keys = keys.sort("textnocase")>
+				</bx:if>
+				<bx:set maxItems = isNull( maxRows ) ? keys.len() : min( maxRows, keys.len() )>
+				<bx:loop from="1" to="#maxItems#" index="idx">
+					<bx:set key = keys[idx]>
+					<bx:if NOT isCustomFunction( var[ key ] ) >
+						<tr>
+							<th
+								aria-expanded="true"
+								data-bx-toggle="onoff"
+								scope="row"
+								valign="top"
+								tabindex="0"
+								>
+								#encodeForHTML( key )#
+							</th>
+							<td>
+								<div class="bx-onoff">
+									<bx:set dump( var : var[ key ], top : ( isNull( top ) ? null : top - 1 ), maxRows : maxRows, expand : expand ?: null, output : "buffer", format : format ) >
+								</div>
+							</td>
+						</tr>
 					</bx:if>
 					<bx:loop array="#keys#" item="key">
 						<bx:if  !isNull( top ) and index++ GT top >
@@ -71,6 +92,7 @@
 							</tr>
 						</bx:if>
 					</bx:loop>
+				</bx:loop>
 			</tbody>
 		</table>
 	</div>

@@ -63,10 +63,12 @@ public class Dump extends BIF {
 		    new Argument( false, "any", Key.var ),
 		    // A custom label to display above the dump (Only in HTML output)
 		    new Argument( false, Argument.STRING, Key.label, "" ),
-		    // The number of levels to display when dumping collections. Great to avoid dumping the entire world!
+		    // The maximum recursion depth when dumping nested structures
 		    new Argument( false, Argument.NUMERIC, Key.top ),
 		    new Argument( false, Argument.NUMERIC, Key.maxDepth ),
 		    // Whether to expand the dump. By default, the dump is expanded on the first level only
+		    // The maximum number of keys/rows to display in collections
+		    new Argument( false, Argument.NUMERIC, Key.maxRows ),
 		    // Whether to expand the dump. By default, the dump is expanded on the first level only
 		    new Argument( false, Argument.BOOLEAN, Key.expand, true ),
 		    // Whether to do a hard abort the request after dumping
@@ -101,7 +103,9 @@ public class Dump extends BIF {
 	 *
 	 * @argument.label A custom label to display above the dump (Only in HTML output)
 	 *
-	 * @argument.top The number of levels to display when dumping collections. Great to avoid dumping the entire world! Default is inifinity. (Only in HTML output)
+	 * @argument.top The depth of the levels to display when dumping collections. (Only in HTML output)
+	 *
+	 * @argument.maxRows The maximum number of keys/rows to display in structures, arrays, and queries. Default is to show all. (Only in HTML output)
 	 *
 	 * @argument.expand Whether to expand the dump. Be default, we try to expand as much as possible. (Only in HTML output)
 	 *
@@ -124,6 +128,8 @@ public class Dump extends BIF {
 
 		Object	top			= arguments.get( Key.top );
 		Object	maxDepth	= arguments.get( Key.maxDepth );
+		Object top = arguments.get( Key.top );
+		Object maxRows = arguments.get( Key.maxRows );
 
 		// Dump the object
 		DumpUtil.dump(
@@ -132,6 +138,7 @@ public class Dump extends BIF {
 		    arguments.getAsString( Key.label ),
 		    top == null ? null : IntegerCaster.cast( top ),
 		    maxDepth == null ? null : IntegerCaster.cast( maxDepth ),
+		    maxRows == null ? null : IntegerCaster.cast( maxRows ),
 		    arguments.getAsBoolean( Key.expand ),
 		    BooleanCaster.cast( arguments.get( Key.abort ) ),
 		    arguments.getAsString( Key.output ),

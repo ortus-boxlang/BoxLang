@@ -11,11 +11,11 @@
 					<bx:if expandRoot>open aria-expanded="true"<bx:else>aria-expanded="false"</bx:if>
 					data-bx-toggle="siblings"
 				>
-					<strong>
-						<bx:if label.len() >#label# - </bx:if>
-						#var.getClass().getName()#
-						<bx:if !isNull( top ) && top lt var.size()>#top#/</bx:if>#var.size()#
-					</strong>
+				<strong>
+					<bx:if label.len() >#label# - </bx:if>
+					#var.getClass().getName()#
+					<bx:if !isNull( maxRows ) && maxRows lt var.size()>#maxRows#/</bx:if>#var.size()#
+				</strong>
 				</caption>
 			<bx:else>
 			<caption class="bx-dhAy">
@@ -50,6 +50,26 @@
 								</td>
 							</tr>
 					</bx:loop>
+				<bx:set maxItems = isNull( maxRows ) ? var.size() : min( maxRows, var.size() )>
+				<bx:loop from="1" to="#maxItems#" index="i">
+					<bx:set value = var[i-1]>
+					<tr>
+						<th
+							aria-expanded="true"
+							data-bx-toggle="onoff"
+							scope="row"
+							valign="top"
+							tabindex="0"
+						>
+							#i#
+						</th>
+						<td>
+							<div class="bx-onoff">
+								<bx:set dump( var : value, top : isNull( top ) ? null : top - 1, maxRows : maxRows, expand : expand ?: null, output : "buffer", format : format )>
+							</div>
+						</td>
+					</tr>
+				</bx:loop>
 			</tbody>
 		</table>
 	</div>

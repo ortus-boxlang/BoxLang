@@ -10,11 +10,11 @@
 					<bx:if expandRoot>open aria-expanded="true"<bx:else>aria-expanded="false"</bx:if>
 					data-bx-toggle="siblings"
 				>
-					<strong>
-						<bx:if label.len() >#label# - </bx:if>
-						Query:
-						<bx:if !isNull( top ) && top lt var.recordcount>#top#/</bx:if>#var.recordcount# rows
-					</strong>
+			<strong>
+				<bx:if label.len() >#label# - </bx:if>
+				Query:
+				<bx:if !isNull( maxRows ) && maxRows lt var.recordcount>#maxRows#/</bx:if>#var.recordcount# rows
+			</strong>
 				</caption>
 				<thead
 					<bx:if !expandRoot>class="d-none"</bx:if>
@@ -25,26 +25,30 @@
 						</bx:loop>
 					</tr>
 				</thead>
-				<tbody
-					<bx:if !expandRoot>class="d-none"</bx:if>
-				>
-					<bx:loop query="#var#" item="row" index="index">
-						<bx:if !isNull( top ) and var.currentRow gt top >
-							<bx:break/>
-						</bx:if>
+			<tbody
+				<bx:if !expandRoot>class="d-none"</bx:if>
+			>
+				<bx:set maxItems = isNull( maxRows ) ? var.recordcount : min( maxRows, var.recordcount )>
+				<bx:set index = 0>
+				<bx:loop query="#var#" item="row">
+					<bx:set index = index + 1>
+					<bx:if index lte maxItems>
 						<tr>
 							<bx:loop array="#var.getColumns().keyArray()#" index="column">
 								<td>
 									<bx:if isSimpleValue( var[ column ] )>
 										#encodeForHTML( var[ column ] )#
 									<bx:else>
-										<bx:dump var="#var[ column ]#"/>
+										#writeDump( var : var[ column ], top : isNull( top ) ? null : top - 1, maxRows : maxRows, output : "buffer", format : format )#
 									</bx:if>
 								</td>
 							</bx:loop>
 						</tr>
-					</bx:loop>
-				</tbody>
+					<bx:else>
+						<bx:break>
+					</bx:if>
+				</bx:loop>
+			</tbody>
 		</table>
 	</div>
 </bx:output>

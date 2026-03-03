@@ -740,6 +740,93 @@ public class DumpTest {
 		assertThat( output ).contains( "12:34:56" );
 
 	}
+	
+	@DisplayName( "It can dump the specified number of items depending on the nested structure")
+	@Test
+	public void topTest() {
+		// @formatter:off
+			instance.executeSource(
+				"""
+					val = { "alpha": "a",
+							"beta" : {
+								"charlie": "c",
+								"delta": "d"
+							},
+							"echo" : {
+								"foxtrot" : {
+									"golf" : "g",
+									"hotel" : "h"
+								}
+							},
+							"india" : {
+								"juliet" : {
+									"kilo" : {
+										"lima" : "l",
+										"mike" : "m"
+									}
+								}
+							},
+							"november" : {
+								"oscar" : {
+									"papa" : {
+										"quebec" : {
+											"romeo" : "r",
+											"sierra" : "s"
+										}
+									}
+								}
+							}
+						};
+						
+					dump( var = val, format = "html", top = 1, maxRows = 3 );
+				""",
+				context );
+			// @formatter:on
+		String output = baos.toString();
+		assertThat( output ).contains( "alpha" );
+		assertThat( output ).contains( "beta" );
+		
+		assertThat( output ).contains( "echo" );
+		assertThat( output ).doesNotContain( "golf");
+		
+	}
+	// In terminal, type: 
+	// ./gradlew test --tests "ortus.boxlang.runtime.components.system.DumpTest.topTest" and click
+	// to run tests
+
+	/*
+	@DisplayName( "It can limit the recursion depth when dumping" )
+	@Test
+	public void topTestG() {
+
+		IStruct level4		= Struct.of( Key.of( "deepest" ), "level-4-value" ); // we create the struct object of eahc differnet level so that they point towards each other.
+		IStruct	level3		= Struct.of( Key.of( "level-3" ), level4 );
+		IStruct	level2		= Struct.of( Key.of( "level-2" ), level3 );
+
+		IStruct	rootStruct	= Struct.of(
+
+			Key.of( "a" ), level2,
+			Key.of( "b" ), level2,
+			Key.of( "c" ), level2
+
+		);
+
+		variables.put( Key.of( "testData" ), rootStruct );
+
+		instance.executeSource(
+			"""
+				dump( var = testData, top = 3, format = "html" );
+
+			""",
+			context,
+			BoxSourceType.BOXSCRIPT
+		);
+
+		String output = baos.toString();
+
+		assertThat( output ).contains( "a" );
+		assertThat( output ).contains( "b" );
+		assertThat( output ).contains( "c" );
 
 	@DisplayName( "It can limit the recursion depth when dumping" )
 	@Test
