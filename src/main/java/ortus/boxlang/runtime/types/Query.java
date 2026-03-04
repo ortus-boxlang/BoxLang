@@ -43,7 +43,6 @@ import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
-import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
@@ -281,31 +280,6 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
-	 * Create a new query with columns and data, applying type casting and validation to all
-	 * cell values.
-	 *
-	 * @param columnNames List of column names
-	 * @param columnTypes List of column types
-	 * @param rowData     List of row data
-	 * @param context     The context used for type casting
-	 *
-	 * @return Query object
-	 */
-	public static Query fromArray( Array columnNames, Array columnTypes, Object rowData, IBoxContext context ) {
-		Query	q	= new Query();
-		int		i	= 0;
-		for ( var columnName : columnNames ) {
-			q.addColumn( Key.of( columnName ), QueryColumnType.fromString( ( String ) columnTypes.get( i ) ) );
-			i++;
-		}
-		if ( rowData == null ) {
-			return q;
-		}
-		q.addData( context, rowData );
-		return q;
-	}
-
-	/**
 	 * Create a new query with columns and data
 	 *
 	 * @param columnNames List of column names
@@ -315,7 +289,17 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @return Query object
 	 */
 	public static Query fromArray( Array columnNames, Array columnTypes, Object rowData ) {
-		return fromArray( columnNames, columnTypes, rowData, BoxRuntime.getInstance().getRuntimeContext() );
+		Query	q	= new Query();
+		int		i	= 0;
+		for ( var columnName : columnNames ) {
+			q.addColumn( Key.of( columnName ), QueryColumnType.fromString( ( String ) columnTypes.get( i ) ) );
+			i++;
+		}
+		if ( rowData == null ) {
+			return q;
+		}
+		q.addData( rowData );
+		return q;
 	}
 
 	/**
@@ -723,27 +707,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @return the row number that was added (1-based)
 	 */
 	public int addRow( Array row ) {
-		return addRow( BoxRuntime.getInstance().getRuntimeContext(), row );
-	}
-
-	/**
-	 * Add a row to the query with type casting applied to each cell value.
-	 *
-	 * @param context The context in which the row is being added, used for type casting.
-	 * @param row     row data as a BoxLang array
-	 *
-	 * @return the row number that was added (1-based)
-	 */
-	public int addRow( IBoxContext context, Array row ) {
-		Object[]	rawRow		= row.toArray();
-		Object[]	castedRow	= new Object[ columns.size() ];
-		int			i			= 0;
-		for ( QueryColumn column : columns.values() ) {
-			Object value = i < rawRow.length ? rawRow[ i ] : null;
-			castedRow[ i ] = castCellValue( context, value, column.getType() );
-			i++;
-		}
-		return addRowDefaultMissing( castedRow );
+		return addRowDefaultMissing( row.toArray() );
 	}
 
 	/**
@@ -763,27 +727,15 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @return the row number that was added (1-based)
 	 */
 	public int addRow( IStruct row ) {
-		return addRow( BoxRuntime.getInstance().getRuntimeContext(), row );
-	}
-
-	/**
-	 * Add a row to the query with type casting applied to each cell value.
-	 *
-	 * @param context The context in which the row is being added, used for type casting.
-	 * @param row     row data as Struct
-	 *
-	 * @return the row number that was added (1-based)
-	 */
-	public int addRow( IBoxContext context, IStruct row ) {
 		Object[]	rowData	= new Object[ columns.size() ];
 		int			i		= 0;
 		for ( QueryColumn column : columns.values() ) {
 			// Missing keys in the struct go in the query as an empty string (CF compat)
-			Object value = row.containsKey( column.getName() ) ? row.get( column.getName() ) : "";
-			rowData[ i ] = castCellValue( context, value, column.getType() );
+			rowData[ i ] = row.containsKey( column.getName() ) ? row.get( column.getName() ) : "";
 			i++;
 		}
-
+		// We're ignoring extra keys in the struct that aren't query columns. Lucee
+		// compat, but not CF compat.
 		return addRow( rowData );
 	}
 
@@ -883,28 +835,21 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	/**
 	 * Helper method for queryNew() and queryAddRow() to handle the different
-	 * scenarios for adding data to a query.
-	 * This overload applies type-casting and validation to each cell value, consistent with
-	 * QuerySetCell behaviour.
+	 * scenarios for adding data to a query
 	 *
-	 * @param context The context in which the data is being added, used for type casting.
 	 * @param rowData Data to populate the query. Can be a struct (with keys
 	 *                matching column names), an array of structs, or an array of
 	 *                arrays (in
 	 *                same order as columnList)
 	 *
-	 * @throws BoxRuntimeException if the rowData is not a struct, an array of structs, or an array of arrays, or if the data cannot be cast to the appropriate column types.
-	 *
 	 * @return index of last row added
 	 */
-	public int addData( IBoxContext context, Object rowData ) {
+	public int addData( Object rowData ) {
 		CastAttempt<IStruct> structCastAttempt = StructCaster.attempt( rowData );
-
 		// Add a single row as a struct
 		if ( structCastAttempt.wasSuccessful() ) {
-			return addRow( context, structCastAttempt.get() );
+			return addRow( structCastAttempt.get() );
 		}
-
 		// Add multiple rows as an array of structs
 		CastAttempt<Array> arrayCastAttempt = ArrayCaster.attempt( rowData );
 		if ( arrayCastAttempt.wasSuccessful() ) {
@@ -921,64 +866,21 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 				for ( Object row : arrData ) {
 					if ( isArray ) {
 						// Will throw if the first row is an array, but the rest are not
-						lastRow = addRow( context, ArrayCaster.cast( row ) );
+						lastRow = addRow( ArrayCaster.cast( row ) );
 					} else {
 						// Will throw if the first row is an struct, but the rest are not
-						lastRow = addRow( context, StructCaster.cast( row ) );
+						lastRow = addRow( StructCaster.cast( row ) );
 					}
 				}
 				return lastRow;
 			} else {
 				// A single array of simple values to be set into the cells of the first row
-				return addRow( context, arrData );
+				return addRow( arrData );
 			}
 		}
-
 		throw new BoxRuntimeException(
-		    "rowData must be a struct, an array of structs, or an array of arrays.  " +
-		        rowData.getClass().getName() +
-		        " was passed."
-		);
-	}
-
-	/**
-	 * Helper method for internal use (e.g. duplication, JDBC) to add data without type casting.
-	 * This overload does NOT apply type-casting and validation to each cell value.
-	 *
-	 * @param rowData Data to populate the query. Can be a struct (with keys
-	 *                matching column names), an array of structs, or an array of
-	 *                arrays (in
-	 *                same order as columnList)
-	 *
-	 * @return index of last row added
-	 */
-	public int addData( Object rowData ) {
-		return addData( BoxRuntime.getInstance().getRuntimeContext(), rowData );
-	}
-
-	/**
-	 * Cast a cell value to the appropriate type for a query column.
-	 * Applies the same type-casting and validation logic as QuerySetCell, ensuring consistent
-	 * behaviour when populating query rows.
-	 *
-	 * @param context    The context used for casting (e.g. locale-aware date parsing).
-	 * @param value      The value to cast.
-	 * @param columnType The target column type.
-	 *
-	 * @return The cast value, or null if the value is null.
-	 */
-	private Object castCellValue( IBoxContext context, Object value, QueryColumnType columnType ) {
-		if ( value == null ) {
-			return null;
-		}
-		if ( queryNullToEmpty && !QueryColumnType.isStringType( columnType ) && value instanceof String castValue && castValue.isEmpty() ) {
-			return null;
-		}
-		// OBJECT and OTHER columns accept any value without casting
-		if ( columnType == QueryColumnType.OBJECT || columnType == QueryColumnType.OTHER || columnType == QueryColumnType.NULL ) {
-			return value;
-		}
-		return GenericCaster.cast( context, value, columnType.toString() );
+		    "rowData must be a struct, an array of structs, or an array of arrays.  " + rowData.getClass().getName()
+		        + " was passed." );
 	}
 
 	/**

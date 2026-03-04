@@ -69,7 +69,7 @@ public class QueryAddRow extends BIF {
 		}
 
 		// If rowData is provided, it must be an array of arrays or structs, or a single struct
-		return query.addData( context, rowData );
+		return query.addData( rowData );
 	}
 
 }

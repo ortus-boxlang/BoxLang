@@ -130,7 +130,7 @@ public class QueryNew extends BIF {
 			throw new BoxRuntimeException( "columnList and columnTypeList must have the same number of elements" );
 		}
 
-		return Query.fromArray( columnNames, columnTypes, rowData, context );
+		return Query.fromArray( columnNames, columnTypes, rowData );
 	}
 
 }

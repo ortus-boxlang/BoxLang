@@ -24,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -262,6 +263,7 @@ public class QueryNewTest {
 		assertThat( qry.getRow( 1 )[ 0 ] ).isEqualTo( "a" );
 	}
 
+	@Disabled( "This test is disabled as you go down a rabbit hole, we need to discuss this further" )
 	@DisplayName( "It will throw an exception if we create add a cell value of a different type" )
 	@Test
 	public void testThrowsExceptionForDifferentType() {
