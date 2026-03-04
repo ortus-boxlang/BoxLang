@@ -1575,6 +1575,12 @@ public class ClassTest {
 		      """, context ) );
 		assertThat( t.getMessage() ).contains( "Cannot instantiate an abstract class" );
 
+		t = assertThrows( AbstractClassException.class, () -> instance.executeSource(
+		    """
+		    clazz = createObject( "src.test.java.TestCases.phase3.AbstractClass" );
+		      """, context ) );
+		assertThat( t.getMessage() ).contains( "Cannot instantiate an abstract class" );
+
 		instance.executeSource(
 		    """
 		       clazz = new src.test.java.TestCases.phase3.ConcreteClass();
@@ -2299,6 +2305,26 @@ public class ClassTest {
 		    """
 		    // beta2 does NOT fully satisfy the interface implemented by Alpha and should error
 		       x = new src.test.java.TestCases.phase3.Beta2();
+		           """,
+		    context ) );
+	}
+
+	@Test
+	public void testAbstractClassNotEnforceInterfaceCreateObject() {
+		// don't reject the abstract class- defer the enforcement of the interface until we have a concrete class
+		instance.executeSource(
+		    """
+		    	x = createObject( "src.test.java.TestCases.phase3.Beta" );
+		    println( x.echo( "Echo" ) );
+		    println( x.greet( "World" ) );
+		         """,
+		    context );
+
+		// Ensure we actually enforce the deferred interface
+		assertThrows( AbstractClassException.class, () -> instance.executeSource(
+		    """
+		    // beta2 does NOT fully satisfy the interface implemented by Alpha and should error
+		       x = createObject( "src.test.java.TestCases.phase3.Beta2" );
 		           """,
 		    context ) );
 	}

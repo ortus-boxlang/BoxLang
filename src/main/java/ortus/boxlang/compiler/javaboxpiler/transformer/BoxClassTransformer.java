@@ -202,13 +202,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			}
 
 			public Map<Key, AbstractFunction> getAllAbstractMethods() {
-				// get from parent and override
-				Map<Key, AbstractFunction> allAbstractMethods = new LinkedHashMap<>();
-				if ( this._super != null ) {
-					allAbstractMethods.putAll( this._super.getAllAbstractMethods() );
-				}
-				allAbstractMethods.putAll( this.abstractMethods );
-				return allAbstractMethods;
+				return BoxClassSupport.getAllAbstractMethods( this );
 			}
 
 			public Set<Key> getCompileTimeMethodNames() {

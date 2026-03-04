@@ -490,6 +490,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		isNew								= Key.of( "isNew" );
 	public static final Key		iso									= Key.of( "iso" );
 	public static final Key		isShutdown							= Key.of( "isShutdown" );
+	public static final Key		isSuper								= Key.of( "isSuper" );
 	public static final Key		isValid								= Key.of( "isValid" );
 	public static final Key		item								= Key.of( "item" );
 	public static final Key		itemCount							= Key.of( "itemCount" );
