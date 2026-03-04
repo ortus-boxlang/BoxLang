@@ -397,8 +397,12 @@ public abstract class Boxpiler implements IBoxpiler {
 			if ( classPool != null ) {
 				// If so, see if an exising entry patches our absolute path (the casing could be different on Windows, but there's a good chance it matches)
 				// We're not looping directly over the values() collection as the internal iterator can give ConcurrentModificationExceptions
-				ClassInfo[] snapshot = classPool.values().toArray( new ClassInfo[ 0 ] );
+				// Pre-size with headroom to prevent AIOOBE if another thread adds entries during toArray()
+				ClassInfo[] snapshot = classPool.values().toArray( new ClassInfo[ classPool.size() + 50 ] );
 				for ( ClassInfo entry : snapshot ) {
+					if ( entry == null ) {
+						break;
+					}
 					if ( entry.resolvedFilePath().equals( resolvedFilePath ) ) {
 						classInfo			= entry;
 						// The classInfo may be cached, but get a fresh modified date
