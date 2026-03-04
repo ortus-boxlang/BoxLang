@@ -440,6 +440,10 @@ public final class LocalizationUtil {
 
 		// Let the lib run it's course
 		try {
+			if ( requestedLocale.length() == 2 ) {
+				// treat a 2 letter locale as a language code
+				requestedLocale = requestedLocale.toLowerCase();
+			}
 			oLocale = LocaleUtils.toLocale( requestedLocale );
 			// Make sure it's a valid locale for this machine or return null
 			return LocaleUtils.isAvailableLocale( oLocale ) ? oLocale : null;
