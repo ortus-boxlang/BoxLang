@@ -142,7 +142,7 @@ jobs:
           echo "🔐 **View results in the [Security tab](../../security/code-scanning)**" >> $GITHUB_STEP_SUMMARY
 
       - name: Upload Security Reports as Artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: security-scan-reports-${{ env.BRANCH }}-${{ github.run_number }}
