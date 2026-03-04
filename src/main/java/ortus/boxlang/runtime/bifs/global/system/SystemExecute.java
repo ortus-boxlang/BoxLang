@@ -178,6 +178,8 @@ public class SystemExecute extends BIF {
 				}
 			}
 
+			response.put( Key.exitCode, process.exitValue() );
+
 			return response;
 
 		} catch ( IOException e ) {
