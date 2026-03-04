@@ -50,8 +50,9 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
 import ortus.boxlang.runtime.util.FileSystemUtil;
+import ortus.boxlang.runtime.util.IBoxBinaryRepresentable;
 
-public class File implements IType, IReferenceable {
+public class File implements IType, IReferenceable, IBoxBinaryRepresentable {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -525,6 +526,20 @@ public class File implements IType, IReferenceable {
 		}
 
 		return DynamicInteropService.invoke( context, this, name.getName(), safe, namedArguments );
+	}
+
+	/**
+	 * Get the byte array representation of this file.
+	 *
+	 * @return The byte array representation of this file.
+	 */
+	@Override
+	public byte[] toByteArray() {
+		try {
+			return Files.readAllBytes( this.path );
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
 	}
 
 }

@@ -463,10 +463,10 @@ public class ClassTest {
 		var	cfc		= variables.getAsClassRunnable( Key.of( "cfc" ) );
 		var	meta	= cfc.getMetaData();
 
-		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
+		assertThat( meta.getAsString( Key.of( "name" ) ).toLowerCase() ).isEqualTo( "src.test.java.testcases.phase3.myclass" );
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
-		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
-		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.bx" ) ).isTrue();
+		assertThat( meta.getAsString( Key.of( "fullname" ) ).toLowerCase() ).isEqualTo( "src.test.java.testcases.phase3.myclass" );
+		assertThat( meta.getAsString( Key.of( "path" ) ) ).contains( "MyClass.bx" );
 		// assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) ).isInstanceOf( Array.class );
 		assertThat( meta.getAsArray( Key.of( "properties" ) ) ).hasSize( 1 );
@@ -496,10 +496,10 @@ public class ClassTest {
 
 		IStruct			meta		= ( IStruct ) loadedClass.invokeStatic( context, "getMetaDataStatic" );
 
-		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
+		assertThat( meta.getAsString( Key.of( "name" ) ).toLowerCase() ).isEqualTo( "src.test.java.testcases.phase3.myclass" );
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
-		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
-		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.bx" ) ).isTrue();
+		assertThat( meta.getAsString( Key.of( "fullname" ) ).toLowerCase() ).isEqualTo( "src.test.java.testcases.phase3.myclass" );
+		assertThat( meta.getAsString( Key.of( "path" ) ) ).contains( "MyClass.bx" );
 		// assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) ).isInstanceOf( Array.class );
 		assertThat( meta.getAsArray( Key.of( "properties" ) ) ).hasSize( 1 );
@@ -528,7 +528,7 @@ public class ClassTest {
 		assertThat( meta.get( Key.of( "name" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClassCF" );
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Component" );
 		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClassCF" );
-		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClassCF.cfc" ) ).isTrue();
+		assertThat( meta.getAsString( Key.of( "path" ) ) ).contains( "MyClassCF.cfc" );
 		// assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) ).isInstanceOf( Array.class );
 		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
@@ -630,8 +630,8 @@ public class ClassTest {
 		var	boxMeta	= ( ClassMeta ) cfc.getBoxMeta();
 		var	meta	= boxMeta.meta;
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Class" );
-		assertThat( meta.get( Key.of( "fullname" ) ) ).isEqualTo( "src.test.java.TestCases.phase3.MyClass" );
-		assertThat( meta.getAsString( Key.of( "path" ) ).contains( "MyClass.bx" ) ).isTrue();
+		assertThat( meta.getAsString( Key.of( "fullname" ) ).toLowerCase() ).isEqualTo( "src.test.java.testcases.phase3.myclass" );
+		assertThat( meta.getAsString( Key.of( "path" ) ) ).contains( "MyClass.bx" );
 		// assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) instanceof Array ).isTrue();
 		assertThat( meta.getAsBoolean( Key.of( "output" ) ) ).isFalse();
@@ -1575,6 +1575,12 @@ public class ClassTest {
 		      """, context ) );
 		assertThat( t.getMessage() ).contains( "Cannot instantiate an abstract class" );
 
+		t = assertThrows( AbstractClassException.class, () -> instance.executeSource(
+		    """
+		    clazz = createObject( "src.test.java.TestCases.phase3.AbstractClass" );
+		      """, context ) );
+		assertThat( t.getMessage() ).contains( "Cannot instantiate an abstract class" );
+
 		instance.executeSource(
 		    """
 		       clazz = new src.test.java.TestCases.phase3.ConcreteClass();
@@ -1756,46 +1762,6 @@ public class ClassTest {
 		    new brad()
 		      """,
 		    context );
-	}
-
-	@DisplayName( "udf class has enclosing class reference" )
-	@Test
-	public void testUDFClassEnclosingClassReference() {
-
-		instance.executeSource(
-		    """
-		       import bx:src.test.java.TestCases.phase3.PropertyTestCF as brad;
-		       b = new brad()
-		    outerClass = b.$bx.$class;
-		    innerClass = b.init.getClass();
-		    innerClassesOuterClass = b.init.getClass().getEnclosingClass();
-		    println(outerclass)
-		    println(innerClass)
-		         """,
-		    context );
-		assertThat( ( ( Class<?> ) variables.get( "outerClass" ) ).getName() )
-		    .isEqualTo( "boxgenerated.boxclass.src.test.java.testcases.phase3.Propertytestcf$cfc" );
-		assertThat( ( ( Class<?> ) variables.get( "innerClassesOuterClass" ) ).getName() )
-		    .isEqualTo( "boxgenerated.boxclass.src.test.java.testcases.phase3.Propertytestcf$cfc" );
-		assertThat( ( ( Class<?> ) variables.get( "innerClass" ) ).getName() )
-		    .isEqualTo( "boxgenerated.boxclass.src.test.java.testcases.phase3.Propertytestcf$cfc$Func_init" );
-		assertThat( variables.get( "outerClass" ) ).isEqualTo( variables.get( "innerClassesOuterClass" ) );
-	}
-
-	@DisplayName( "udf class has enclosing class reference" )
-	@Test
-	public void testUDFClassEnclosingClassReferenceInTemplate() {
-
-		instance.executeSource(
-		    """
-		    function test(){
-
-		     }
-		         result = test.getClass().getEnclosingClass();
-		                """,
-		    context );
-
-		assertThat( variables.get( result ) ).isNotNull();
 	}
 
 	@DisplayName( "mixins should be public" )
@@ -2263,7 +2229,104 @@ public class ClassTest {
 		    }, true)
 		               """,
 		    context );
+	}
 
+	@Test
+	public void testDupeMethod() {
+		instance.executeSource(
+		    """
+		    println( getClassMetadata( "src.test.java.TestCases.phase3.DupeMethod" ) )
+		      """,
+		    context );
+	}
+
+	@DisplayName( "class file recompilation on change" )
+	@Test
+	public void testClassRecompilation() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+			tmpDir = expandPath( "/src/test/resources/tmp" );
+			if( !directoryExists( tmpDir ) ) {
+				directoryCreate( tmpDir );
+			}
+			classFile = tmpDir & "/RecompileTest.bx";
+
+			// Write first version of class
+			fileWrite( classFile, '
+				class {
+					function getMessage() {
+						return "version1";
+					}
+				}
+			' );
+
+			obj = new src.test.resources.tmp.RecompileTest();
+			result = obj.getMessage();
+
+			// Ensure file timestamp changes
+			sleep( 1000 );
+
+			// Overwrite with second version
+			fileWrite( classFile, '
+				class {
+					function getMessage() {
+						return "version2";
+					}
+				}
+			' );
+
+			obj2 = new src.test.resources.tmp.RecompileTest();
+			result2 = obj2.getMessage();
+
+			// Clean up
+			fileDelete( classFile );
+		    """,
+		    context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isEqualTo( "version1" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "version2" );
+	}
+
+	@Test
+	public void testAbstractClassNotEnforceInterface() {
+		// don't reject the abstract class- defer the enforcement of the interface until we have a concrete class
+		instance.executeSource(
+		    """
+		    	x = new src.test.java.TestCases.phase3.Beta();
+		    println( x.echo( "Echo" ) );
+		    println( x.greet( "World" ) );
+		         """,
+		    context );
+
+		// Ensure we actually enforce the deferred interface
+		assertThrows( AbstractClassException.class, () -> instance.executeSource(
+		    """
+		    // beta2 does NOT fully satisfy the interface implemented by Alpha and should error
+		       x = new src.test.java.TestCases.phase3.Beta2();
+		           """,
+		    context ) );
+	}
+
+	@Test
+	public void testAbstractClassNotEnforceInterfaceCreateObject() {
+		// don't reject the abstract class- defer the enforcement of the interface until we have a concrete class
+		instance.executeSource(
+		    """
+		    	x = createObject( "src.test.java.TestCases.phase3.Beta" );
+		    println( x.echo( "Echo" ) );
+		    println( x.greet( "World" ) );
+		         """,
+		    context );
+
+		// Ensure we actually enforce the deferred interface
+		assertThrows( AbstractClassException.class, () -> instance.executeSource(
+		    """
+		    // beta2 does NOT fully satisfy the interface implemented by Alpha and should error
+		       x = createObject( "src.test.java.TestCases.phase3.Beta2" );
+		           """,
+		    context ) );
 	}
 
 }

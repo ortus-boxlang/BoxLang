@@ -71,4 +71,9 @@ public class BoxDecimalLiteral extends BoxExpression implements IBoxSimpleLitera
 		return v.visit( this );
 	}
 
+	@Override
+	public boolean returnsNumber() {
+		return true;
+	}
+
 }

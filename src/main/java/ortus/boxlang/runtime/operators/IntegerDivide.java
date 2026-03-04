@@ -38,20 +38,23 @@ public class IntegerDivide implements IOperator {
 	 * @return The the result
 	 */
 	public static Number invoke( Object left, Object right ) {
+		return invoke( NumberCaster.cast( left ), NumberCaster.cast( right ) );
+	}
 
-		// First turn the operands into numbers
-		Number	nLeft		= NumberCaster.cast( left );
-		Number	nRight		= NumberCaster.cast( right );
-
-		// Track if either operand is a BigDecimal so we don't have to cast them again
+	/**
+	 * @param left  The left operand
+	 * @param right The right operand
+	 *
+	 * @return The the result
+	 */
+	public static Number invoke( Number left, Number right ) {
 		boolean	leftIsBD	= false;
 		boolean	rightIsBD	= false;
 
-		// If we're using high precision math, or either operand is already a BigDecimal, we'll use BigDecimal math
-		if ( MathUtil.isHighPrecisionMath() || ( leftIsBD = ( nLeft instanceof BigDecimal ) ) || ( rightIsBD = ( nRight instanceof BigDecimal ) ) ) {
+		if ( MathUtil.isHighPrecisionMath() || ( leftIsBD = ( left instanceof BigDecimal ) ) || ( rightIsBD = ( right instanceof BigDecimal ) ) ) {
 
-			BigDecimal	bdLeft	= leftIsBD ? ( BigDecimal ) nLeft : BigDecimalCaster.cast( nLeft );
-			BigDecimal	bdRight	= rightIsBD ? ( BigDecimal ) nRight : BigDecimalCaster.cast( nRight );
+			BigDecimal	bdLeft	= leftIsBD ? ( BigDecimal ) left : BigDecimalCaster.cast( left );
+			BigDecimal	bdRight	= rightIsBD ? ( BigDecimal ) right : BigDecimalCaster.cast( right );
 
 			bdLeft	= bdLeft.setScale( 0, RoundingMode.FLOOR );
 			bdRight	= bdRight.setScale( 0, RoundingMode.FLOOR );
@@ -62,12 +65,11 @@ public class IntegerDivide implements IOperator {
 			return bdLeft.divideToIntegralValue( bdRight, MathUtil.getMathContext() );
 		}
 
-		if ( nRight.doubleValue() == 0 ) {
+		if ( right.doubleValue() == 0 ) {
 			throw new BoxRuntimeException( "You cannot divide by zero." );
 		}
 
-		// Otherwise, we can just divide them
-		return nLeft.intValue() / nRight.intValue();
+		return left.intValue() / right.intValue();
 	}
 
 }

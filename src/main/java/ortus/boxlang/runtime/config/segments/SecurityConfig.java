@@ -51,13 +51,13 @@ public class SecurityConfig implements IConfigSegment {
 	 * Disallowed BIFs in the runtime
 	 * Ex: "disallowedBifs": ["createObject", "systemExecute"]
 	 */
-	public Set<String>			disallowedBIFs						= new HashSet<>();
+	public Set<Key>				disallowedBIFs						= new HashSet<>();
 
 	/**
 	 * Disallowed Components in the runtime
 	 * Ex: "disallowedComponents": [ "execute", "http" ]
 	 */
-	public Set<String>			disallowedComponents				= new HashSet<>();
+	public Set<Key>				disallowedComponents				= new HashSet<>();
 
 	/**
 	 * File extensions which are disallowed for file operations. The allowed array overrides any items in the disallow list.
@@ -74,8 +74,6 @@ public class SecurityConfig implements IConfigSegment {
 	/**
 	 * Maps of allowed BIFs so lookups get faster as we go
 	 */
-	public Map<String, Boolean>	allowedBIFsLookup					= new ConcurrentHashMap<>();
-	public Map<String, Boolean>	allowedComponentsLookup				= new ConcurrentHashMap<>();
 	public Map<String, Boolean>	allowedImportsLookup				= new ConcurrentHashMap<>();
 
 	/**
@@ -96,18 +94,29 @@ public class SecurityConfig implements IConfigSegment {
 	 * The search is case-insensitive.
 	 * If it's disallowed, it will throw a SecurityException, else it will return true
 	 */
-	public boolean isBIFAllowed( String name ) {
-		// Is it allowed already?
-		if ( this.allowedBIFsLookup.containsKey( name ) ) {
+	public boolean isBIFAllowed( Key name ) {
+		if ( this.disallowedBIFs.isEmpty() ) {
+			// All BIFs are allowed
 			return true;
 		}
+
 		// Check if it's disallowed
-		if ( this.disallowedBIFs.stream().anyMatch( name::equalsIgnoreCase ) ) {
+		if ( this.disallowedBIFs.contains( name ) ) {
 			throw new SecurityException( "The BIF '" + name + "' is disallowed, please check your security configuration in the language configuration file." );
 		}
-		// Add it
-		this.allowedBIFsLookup.put( name, true );
 		return true;
+	}
+
+	/**
+	 * This function takes in the name of a BIF to test if it is disallowed.
+	 * The search is case-insensitive.
+	 * If it's disallowed, it will throw a SecurityException, else it will return true
+	 * 
+	 * Deprecated: Use isBIFAllowed( Key name ) instead
+	 */
+	@Deprecated
+	public boolean isBIFAllowed( String name ) {
+		return isBIFAllowed( Key.of( name ) );
 	}
 
 	/**
@@ -115,19 +124,25 @@ public class SecurityConfig implements IConfigSegment {
 	 * The search is case-insensitive.
 	 * If it's disallowed, it will throw a SecurityException, else it will return true
 	 */
-	public boolean isComponentAllowed( String name ) {
-		// Is it allowed already?
-		if ( this.allowedComponentsLookup.containsKey( name ) ) {
-			return true;
-		}
+	public boolean isComponentAllowed( Key name ) {
 		// Check if it's disallowed
-		if ( this.disallowedComponents.stream().anyMatch( name::equalsIgnoreCase ) ) {
+		if ( this.disallowedComponents.contains( name ) ) {
 			throw new SecurityException(
 			    "The Component '" + name + "' is disallowed, please check your security configuration in the language configuration file." );
 		}
-		// Add it
-		this.allowedComponentsLookup.put( name, true );
 		return true;
+	}
+
+	/**
+	 * This function takes in the name of a Component to test if it is disallowed.
+	 * The search is case-insensitive.
+	 * If it's disallowed, it will throw a SecurityException, else it will return true
+	 * 
+	 * Deprecated: Use isComponentAllowed( Key name ) instead
+	 */
+	@Deprecated
+	public boolean isComponentAllowed( String name ) {
+		return isComponentAllowed( Key.of( name ) );
 	}
 
 	/**
@@ -162,8 +177,8 @@ public class SecurityConfig implements IConfigSegment {
 	@Override
 	public IConfigSegment process( IStruct config ) {
 		PropertyHelper.processListToSet( config, Key.disallowedImports, this.disallowedImports );
-		PropertyHelper.processListToSet( config, Key.disallowedBIFs, this.disallowedBIFs );
-		PropertyHelper.processListToSet( config, Key.disallowedComponents, this.disallowedComponents );
+		PropertyHelper.processListToSetKey( config, Key.disallowedBIFs, this.disallowedBIFs );
+		PropertyHelper.processListToSetKey( config, Key.disallowedComponents, this.disallowedComponents );
 		PropertyHelper.processStringOrArrayToList( config, Key.allowedFileOperationExtensions, this.allowedFileOperationExtensions );
 		PropertyHelper.processStringOrArrayToList( config, Key.disallowedFileOperationExtensions, this.disallowedFileOperationExtensions );
 		this.populateServerSystemScope = PropertyHelper.processBoolean( config, Key.populateServerSystemScope, this.populateServerSystemScope );

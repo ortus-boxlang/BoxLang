@@ -23,10 +23,10 @@ import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.sql.Time;
@@ -300,12 +300,23 @@ public class DynamicInteropService {
 		// This might be a super class, so we need to skip the initialization
 		if ( IClassRunnable.class.isAssignableFrom( targetClass ) ) {
 			// This tells us to skip the initialization because it's a super class
-			if ( args.length == 1 && args[ 0 ] != null && args[ 0 ].equals( Key.noInit ) ) {
+			boolean isSuper = false;
+			if ( args.length == 1 && args[ 0 ] != null && ( args[ 0 ].equals( Key.noInit ) || ( isSuper = args[ 0 ].equals( Key.isSuper ) ) ) ) {
 				noInit = true;
 			} else {
 				BLArgs = args;
 			}
 			args = EMPTY_ARGS;
+
+			IClassRunnable boxClass;
+			try {
+				boxClass = ( IClassRunnable ) targetClass.getConstructor().newInstance();
+				return bootstrapBLClass( context, boxClass, BLArgs, null, noInit, isSuper );
+			} catch ( InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException
+			    | SecurityException e ) {
+				throw new BoxRuntimeException( "Error creating instance of class " + targetClass.getName(), e );
+			}
+
 		}
 
 		// Unwrap any DynamicObject instances
@@ -348,11 +359,6 @@ public class DynamicInteropService {
 			@SuppressWarnings( "unchecked" )
 			T thisInstance = ( T ) constructorInvoker.invokeWithArguments( expandVarargs( castedArgumentValues, constructor.isVarArgs(), false, constructor ) );
 
-			// If this is a Box Class, some additional initialization is needed
-			if ( thisInstance instanceof IClassRunnable boxClass ) {
-				return bootstrapBLClass( context, boxClass, BLArgs, null, noInit );
-			}
-
 			// Announce it to the world
 			BoxRuntime
 			    .getInstance()
@@ -388,41 +394,17 @@ public class DynamicInteropService {
 			throw new BoxRuntimeException( "Cannot invoke a constructor on an interface" );
 		}
 		// check if targetClass is an IClassRunnable
-		if ( !IClassRunnable.class.isAssignableFrom( targetClass ) ) {
-			throw new BoxRuntimeException( "Cannot use named arguments on a Java constructor." );
-		}
-		// Method signature for a constructor is void (Object...)
-		MethodType		constructorType	= MethodType.methodType( void.class, argumentsToClasses( EMPTY_ARGS ) );
-		// Define the bootstrap method
-		MethodHandle	constructorHandle;
-		try {
-			constructorHandle = METHOD_LOOKUP.findConstructor( targetClass, constructorType );
-		} catch ( NoSuchMethodException | IllegalAccessException e ) {
-			throw new BoxRuntimeException( "Error getting constructor for class " + targetClass.getName(), e );
-		}
-		// Create a callsite using the constructor handle
-		CallSite		callSite			= new ConstantCallSite( constructorHandle );
-		// Bind the CallSite and invoke the constructor with the provided arguments
-		// Invoke Dynamic tries to do argument coercion, so we need to convert the arguments to the right types
-		MethodHandle	constructorInvoker	= callSite.dynamicInvoker();
-		try {
-			@SuppressWarnings( "unchecked" )
-			T thisInstance = ( T ) constructorInvoker.invokeWithArguments( EMPTY_ARGS );
-
-			// If this is a Box Class, some additional initialization is needed
-			if ( thisInstance instanceof IClassRunnable boxClass ) {
-				return bootstrapBLClass( context, boxClass, null, args, false );
+		if ( IClassRunnable.class.isAssignableFrom( targetClass ) ) {
+			IClassRunnable boxClass;
+			try {
+				boxClass = ( IClassRunnable ) targetClass.getConstructor().newInstance();
+				return bootstrapBLClass( context, boxClass, null, args, false, true );
+			} catch ( InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException
+			    | SecurityException e ) {
+				throw new BoxRuntimeException( "Error creating instance of class " + targetClass.getName(), e );
 			}
-			return thisInstance;
-		} catch ( RuntimeException e ) {
-			throw e;
-		} catch ( Throwable e ) {
-			throw new BoxRuntimeException(
-			    "Error invoking constructor for class " + targetClass.getName() +
-			        ". Caused by " + e.getMessage(),
-			    e.getClass().getName(),
-			    e
-			);
+		} else {
+			throw new BoxRuntimeException( "Cannot use named arguments on a Java constructor." );
 		}
 	}
 
@@ -2901,7 +2883,8 @@ public class DynamicInteropService {
 	 * @return The instance of the class
 	 */
 	@SuppressWarnings( "unchecked" )
-	private static <T> T bootstrapBLClass( IBoxContext context, IClassRunnable boxClass, Object[] positionalArgs, Map<Key, Object> namedArgs, boolean noInit ) {
+	private static <T> T bootstrapBLClass( IBoxContext context, IClassRunnable boxClass, Object[] positionalArgs, Map<Key, Object> namedArgs, boolean noInit,
+	    boolean isSuper ) {
 		// This class context is really only used while boostrapping the pseudoConstructor. It will NOT be used as a parent
 		// context once the boxClass is initialized. Methods called on this boxClass will have access to the variables/this scope via their
 		// FunctionBoxContext, but their parent context will be whatever context they are called from.
@@ -2910,15 +2893,15 @@ public class DynamicInteropService {
 		classContext.pushTemplate( boxClass );
 
 		try {
-			if ( boxClass.getSuperClass() != null ) {
+			if ( boxClass.getBoxSuperClass() != null ) {
 				// Recursively load the super class
-				IClassRunnable _super = ( IClassRunnable ) ( DynamicObject.of( boxClass.getSuperClass().getTargetClass() )
+				IClassRunnable _super = ( IClassRunnable ) ( DynamicObject.of( boxClass.getBoxSuperClass().getTargetClass() )
 				    // Constructor args are NOT passed. Only the outermost class gets to use those
-				    .invokeConstructor( classContext, new Object[] { Key.noInit } )
+				    .invokeConstructor( classContext, new Object[] { Key.isSuper } )
 				    .unWrapBoxLangClass() );
 
 				// Check for final annotation and throw if we're trying to extend a final class
-				if ( _super.getAnnotations().get( Key._final ) != null ) {
+				if ( _super.isFinalClass() ) {
 					throw new BoxRuntimeException( "Cannot extend final class: " + _super.bxGetName() );
 				}
 				// Set in our super class
@@ -2928,18 +2911,45 @@ public class DynamicInteropService {
 			// Run the pseudo constructor
 			boxClass.pseudoConstructor( classContext );
 
-			// Now that UDFs are defined, let's enforce any interfaces
+			// Now that UDFs are defined, let's enforce any interfaces (abstract classes will skip the enforcement and only apply the default methods)
 			for ( BoxInterface _interface : boxClass.getInterfaces() ) {
 				boxClass.registerInterface( _interface );
 			}
 
-			if ( !noInit ) {
-				if ( boxClass.getAnnotations().get( Key._ABSTRACT ) != null ) {
+			boolean			isAbstract	= boxClass.isAbstractClass();
+			IClassRunnable	_super		= boxClass.getSuper();
+
+			// If this is the original class being created (not a super class).
+			if ( !isSuper ) {
+				// Ensure it's not marked as abstract.
+				if ( isAbstract ) {
 					throw new AbstractClassException( "Cannot instantiate an abstract class: " + boxClass.bxGetName() );
 				}
-				if ( boxClass.getSuper() != null ) {
-					BoxClassSupport.validateAbstractMethods( boxClass, boxClass.getSuper().getAllAbstractMethods() );
+				// validate that we've implemented all abstract methods from our super class(es).
+				// The get ALL abstract methods call here recursivley climbs the super chain, so we do this in one fell swoop.
+				BoxClassSupport.validateAbstractMethods( boxClass, boxClass.getAllAbstractMethods() );
+
+			}
+
+			// If this is a concrete class...
+			if ( !isAbstract ) {
+				// Find all abstract super classes, and enforce any interfaces they skipped earlier.
+				while ( _super != null ) {
+					// If this super was abstract
+					if ( _super.isAbstractClass() ) {
+						for ( BoxInterface _interface : _super.getInterfaces() ) {
+							_interface.validateClass( boxClass );
+						}
+					} else {
+						// If we've hit a non-abstract class, we can stop since it won't have any abstract methods or interface requirements
+						break;
+					}
+					_super = _super.getSuper();
 				}
+			}
+
+			if ( !noInit ) {
+
 				// Call constructor
 				// look for initMethod annotation
 				Object	initMethod	= boxClass.getAnnotations().get( Key.initMethod );
@@ -2949,7 +2959,7 @@ public class DynamicInteropService {
 				} else {
 					initKey = Key.init;
 				}
-				if ( boxClass.dereference( context, initKey, true ) != null ) {
+				if ( boxClass.getThisScope().get( initKey ) instanceof Function ) {
 					Object result;
 					if ( positionalArgs != null ) {
 						result = boxClass.dereferenceAndInvoke( classContext, initKey, positionalArgs, false );

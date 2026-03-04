@@ -53,7 +53,7 @@ public class SQLLexerCustom extends SQLLexer {
 	/**
 	 * These tokens are not function names. cast and convert have a special rule to match them, so they don't use the FUNCTION_NAME token type
 	 */
-	private static final Set<Integer>	notFunctionNames	= Set.of( NOT_, AND_, WHERE_, HAVING_, FROM_, IN_, ON_, CAST_, CONVERT_ );
+	private static final Set<Integer>	notFunctionNames	= Set.of( NOT_, AND_, WHERE_, HAVING_, FROM_, IN_, ON_, CAST_, CONVERT_, DISTINCT_ );
 
 	/**
 	 * ASCII Character code for left parenthesis

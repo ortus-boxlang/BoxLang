@@ -58,6 +58,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.CustomException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
@@ -6249,6 +6250,100 @@ public class CoreLangTest {
 		assertThat( result.get( Key.of( "1ot" ) ) ).isEqualTo( "value1" );
 		assertThat( result.get( Key.of( "1q6" ) ) ).isEqualTo( "value2" );
 
+	}
+
+	@Test
+	public void testUDFCosureLamdbdaScript() {
+
+		instance.executeSource(
+		    """
+		     function foo( required string arg ) {
+		        	return arg;
+		     }
+		     bar = arg => arg;
+		     baz = arg -> arg;
+		    println( foo( "test" ) );
+		    println( baz( "test2" ) );
+		    println( baz( "test3" ) );
+		                    """,
+		    context
+		);
+
+	}
+
+	@Test
+	public void testNewInForLoopWithoutAssignment() {
+
+		instance.executeSource(
+		    """
+		    for( i = 0; i < 5; i++ ) {
+		    	new java:java.lang.Object();
+		    	r = 1;
+		    }
+		    """,
+		    context
+		);
+
+	}
+
+	@Test
+	public void testNotAStatement() {
+
+		instance.executeSource(
+		    """
+		    columns = "foo,bar";
+		    columns.listEach( (c) => {
+		    	c = "*";
+		    	listFind( "a",  "a" )
+		    	|| c == "*"
+		    	|| throw( message="boom" );
+		    } );
+
+		                          """,
+		    context
+		);
+
+	}
+
+	@Test
+	public void testASMBytecodeError() {
+
+		instance.executeSource(
+		    """
+		    try {
+		    	// empty
+		    }
+		    catch (any e) {
+		    	// empty
+		    }
+		    finally {
+		    	writedump(42)
+		    }
+		      """,
+		    context
+		);
+
+	}
+
+	@DisplayName( "It can cast array of Box Classes" )
+	@Test
+	void testItCanCastArrayOfBoxClasses() {
+		assertThrows( BoxCastException.class, () -> instance.executeSource(
+		    """
+		    [ new src.test.java.TestCases.phase3.MyClass() ] castas foo.bar.MyClass[];
+		         """,
+		    context
+		) );
+
+		assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		       foo.bar.MyClass[] function getActive() {
+		       	return [ new src.test.java.TestCases.phase3.MyClass() ];
+		       }
+		    println( getActive() )
+		               """,
+		    context
+		) );
 	}
 
 }

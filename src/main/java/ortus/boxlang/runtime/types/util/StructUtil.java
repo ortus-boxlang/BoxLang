@@ -107,6 +107,28 @@ public class StructUtil {
 	public static final Key scopeAll = Key.of( "all" );
 
 	/**
+	 * Create a linked map from a list of key-value pairs with a specific value type.
+	 * The values must be in pairs: key, value, key, value, etc.
+	 * This allows for proper generic typing without unchecked casts.
+	 *
+	 * @param <V>    The value type
+	 * @param values The key-value pairs
+	 *
+	 * @return A LinkedHashMap with the specified key-value pairs
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static <V> Map<Key, V> linkedMapOf( Object... values ) {
+		if ( values.length % 2 != 0 ) {
+			throw new BoxRuntimeException( "Invalid number of arguments.  Must be an even number." );
+		}
+		Map<Key, V> map = new LinkedHashMap<>();
+		for ( int i = 0; i < values.length; i += 2 ) {
+			map.put( Key.of( values[ i ].toString() ), ( V ) values[ i + 1 ] );
+		}
+		return map;
+	}
+
+	/**
 	 * Method to invoke a function for every item in a struct
 	 *
 	 * @param struct          The struct to iterate

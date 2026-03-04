@@ -129,11 +129,7 @@ public class StoredProc extends Component {
 
 			callString = buildCallString( procedureName, params, hasReturnCode, debug, driver );
 		} catch ( SQLException e ) {
-			try {
-				conn.close();
-			} catch ( SQLException e2 ) {
-				throw new DatabaseException( e2 );
-			}
+			connectionManager.releaseConnection( conn );
 			throw new DatabaseException( e );
 		}
 		try (
@@ -185,11 +181,7 @@ public class StoredProc extends Component {
 		} catch ( SQLException e ) {
 			throw new DatabaseException( e );
 		} finally {
-			try {
-				conn.close();
-			} catch ( SQLException e ) {
-				throw new DatabaseException( e );
-			}
+			connectionManager.releaseConnection( conn );
 		}
 		return DEFAULT_RETURN;
 	}

@@ -27,11 +27,12 @@ import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
- * AST Node representing an assigment statement
+ * AST Node representing an assert statement
  */
 public class BoxAssert extends BoxStatement {
 
-	private BoxExpression expression;
+	private BoxExpression	expression;
+	private BoxExpression	message;
 
 	/**
 	 * Creates the AST node
@@ -41,12 +42,25 @@ public class BoxAssert extends BoxStatement {
 	 * @param sourceText source code that originated the Node
 	 */
 	public BoxAssert( BoxExpression expression, Position position, String sourceText ) {
+		this( expression, null, position, sourceText );
+	}
+
+	/**
+	 * Creates the AST node with an optional failure message
+	 *
+	 * @param expression argument expression to assert
+	 * @param message    optional expression evaluated as the assertion failure message
+	 * @param position   position of the statement in the source code
+	 * @param sourceText source code that originated the Node
+	 */
+	public BoxAssert( BoxExpression expression, BoxExpression message, Position position, String sourceText ) {
 		super( position, sourceText );
 		setExpression( expression );
+		setMessage( message );
 	}
 
 	public BoxExpression getExpression() {
-		return expression;
+		return this.expression;
 	}
 
 	public void setExpression( BoxExpression expression ) {
@@ -55,11 +69,28 @@ public class BoxAssert extends BoxStatement {
 		this.expression.setParent( this );
 	}
 
+	public BoxExpression getMessage() {
+		return this.message;
+	}
+
+	public void setMessage( BoxExpression message ) {
+		replaceChildren( this.message, message );
+		this.message = message;
+		if ( this.message != null ) {
+			this.message.setParent( this );
+		}
+	}
+
 	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
 		map.put( "expression", expression.toMap() );
+		if ( this.message != null ) {
+			map.put( "message", this.message.toMap() );
+		} else {
+			map.put( "message", null );
+		}
 		return map;
 	}
 

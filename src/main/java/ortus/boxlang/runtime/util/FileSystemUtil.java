@@ -1372,6 +1372,7 @@ public final class FileSystemUtil {
 		Map.Entry<Key, Object>	matchingMappingEntry	= mappings
 		    .entrySet()
 		    .stream()
+		    .parallel()
 		    .filter( entry -> {
 															    if ( externalOnly && ! ( ( Mapping ) entry.getValue() ).external() ) {
 																    return false;
@@ -1571,20 +1572,15 @@ public final class FileSystemUtil {
 	}
 
 	/**
-	 * Performs case insensitive path resolution. This will return the real path, which may be different in case than the incoming path.
+	 * Performs case insensitive path resolution. This will return a path, which may be different in case than the incoming path.
 	 *
 	 * @param path The path to check
 	 *
 	 * @return The resolved path or null if not found
 	 */
 	public static Path pathExistsCaseInsensitive( Path path ) {
-		Boolean defaultCheck = path.toFile().exists();
-		if ( defaultCheck ) {
-			try {
-				return path.toRealPath();
-			} catch ( IOException e ) {
-				return null;
-			}
+		if ( Files.exists( path ) ) {
+			return path;
 		}
 		if ( isCaseSensitiveFS ) {
 			String		realPath		= "";

@@ -22,8 +22,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import org.apache.commons.lang3.Strings;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 import com.fasterxml.jackson.jr.ob.JSON;
 
@@ -321,6 +321,96 @@ public class StringUtil {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Fast case-insensitive suffix check using bitwise OR with 0x20.
+	 * This avoids allocating a new lowercase string just to check a suffix.
+	 * Bitwise OR with 0x20 converts ASCII uppercase to lowercase (e.g. 'A' (0x41) | 0x20 = 'a' (0x61)).
+	 *
+	 * <p>
+	 * <b>Safe characters</b> (no false collisions):
+	 * </p>
+	 * <ul>
+	 * <li>Letters: {@code A-Z}, {@code a-z} (intentional case folding)</li>
+	 * <li>Digits: {@code 0-9}</li>
+	 * <li>Punctuation: {@code ! " # $ % & ' ( ) * + , - . / : ; < = > ? _}</li>
+	 * <li>Space</li>
+	 * </ul>
+	 *
+	 * <p>
+	 * <b>Unsafe characters</b> (these pairs collide — differ only in bit 5):
+	 * </p>
+	 * <ul>
+	 * <li>{@code @} (0x40) collides with {@code `} (0x60)</li>
+	 * <li>{@code [} (0x5B) collides with <code>{</code> (0x7B)</li>
+	 * <li>{@code \} (0x5C) collides with {@code |} (0x7C)</li>
+	 * <li>{@code ]} (0x5D) collides with <code>}</code> (0x7D)</li>
+	 * <li>{@code ^} (0x5E) collides with {@code ~} (0x7E)</li>
+	 * </ul>
+	 *
+	 * @param str    The string to check
+	 * @param suffix The suffix to match (case-insensitive)
+	 *
+	 * @return True if the string ends with the suffix (case-insensitive)
+	 */
+	public static boolean endsWithIgnoreCase( String str, String suffix ) {
+		int	strLen		= str.length();
+		int	suffixLen	= suffix.length();
+		if ( suffixLen > strLen ) {
+			return false;
+		}
+		for ( int i = 0; i < suffixLen; i++ ) {
+			if ( ( str.charAt( strLen - suffixLen + i ) | 0x20 ) != ( suffix.charAt( i ) | 0x20 ) ) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Fast case-insensitive prefix check using bitwise OR with 0x20.
+	 * This avoids allocating a new lowercase string just to check a prefix.
+	 * Bitwise OR with 0x20 converts ASCII uppercase to lowercase (e.g. 'A' (0x41) | 0x20 = 'a' (0x61)).
+	 *
+	 * <p>
+	 * <b>Safe characters</b> (no false collisions):
+	 * </p>
+	 * <ul>
+	 * <li>Letters: {@code A-Z}, {@code a-z} (intentional case folding)</li>
+	 * <li>Digits: {@code 0-9}</li>
+	 * <li>Punctuation: {@code ! " # $ % & ' ( ) * + , - . / : ; < = > ? _}</li>
+	 * <li>Space</li>
+	 * </ul>
+	 *
+	 * <p>
+	 * <b>Unsafe characters</b> (these pairs collide — differ only in bit 5):
+	 * </p>
+	 * <ul>
+	 * <li>{@code @} (0x40) collides with {@code `} (0x60)</li>
+	 * <li>{@code [} (0x5B) collides with <code>{</code> (0x7B)</li>
+	 * <li>{@code \} (0x5C) collides with {@code |} (0x7C)</li>
+	 * <li>{@code ]} (0x5D) collides with <code>}</code> (0x7D)</li>
+	 * <li>{@code ^} (0x5E) collides with {@code ~} (0x7E)</li>
+	 * </ul>
+	 *
+	 * @param str    The string to check
+	 * @param prefix The prefix to match (case-insensitive)
+	 *
+	 * @return True if the string starts with the prefix (case-insensitive)
+	 */
+	public static boolean startsWithIgnoreCase( String str, String prefix ) {
+		int	strLen		= str.length();
+		int	prefixLen	= prefix.length();
+		if ( prefixLen > strLen ) {
+			return false;
+		}
+		for ( int i = 0; i < prefixLen; i++ ) {
+			if ( ( str.charAt( i ) | 0x20 ) != ( prefix.charAt( i ) | 0x20 ) ) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 }

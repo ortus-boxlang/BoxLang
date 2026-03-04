@@ -16,6 +16,8 @@
 package ortus.boxlang.runtime.bifs.global.io;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Optional;
 
 import ortus.boxlang.runtime.bifs.BIF;
@@ -54,15 +56,22 @@ public class ExpandPath extends BIF {
 		// base path is base template, or the original template that started the request, NOT the currently-executing template
 
 		try {
-			String pathStr = FileSystemUtil.expandPath(
+			Path pathPath = FileSystemUtil.expandPath(
 			    context,
 			    path,
 			    Optional.ofNullable( context.getRequestContext() )
 			        .map( rc -> rc.getApplicationListener().getBaseTemplatePath() )
 			        .orElse( null )
 			)
-			    .absolutePath().toString();
+			    .absolutePath();
+			try {
+				// We must do this separate in a try/catch because if the path doesn't exist yet, toRealPath will throw an exception
+				pathPath = pathPath.toRealPath();
+			} catch ( IOException e ) {
+				// If the path doesn't exist yet, we can't resolve it to a real path, so just use the expanded path
+			}
 
+			String pathStr = pathPath.toString();
 			if ( hasTrailingSlash ) {
 				if ( !pathStr.endsWith( "/" ) || !pathStr.endsWith( "\\" ) ) {
 					pathStr += File.separator;

@@ -127,9 +127,11 @@ public class StaticClassBoxContext extends BaseBoxContext {
 
 		if ( !isKeyVisibleScope( key ) ) {
 			// In query loop?
-			var querySearch = queryFindNearby( key );
-			if ( querySearch != null ) {
-				return querySearch;
+			if ( !forAssign ) {
+				var querySearch = queryFindNearby( key );
+				if ( querySearch != null ) {
+					return querySearch;
+				}
 			}
 		}
 
@@ -246,4 +248,12 @@ public class StaticClassBoxContext extends BaseBoxContext {
 	public Boolean canOutput() {
 		return BoxClassSupport.canOutput( this, staticBoxClass );
 	}
+
+	/**
+	 * Get the static box class
+	 */
+	public DynamicObject getStaticBoxClass() {
+		return staticBoxClass;
+	}
+
 }

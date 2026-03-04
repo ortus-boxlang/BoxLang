@@ -473,9 +473,39 @@ class XMLTest {
 		    """,
 		    context, BoxSourceType.CFSCRIPT );
 
-		System.out.println( variables.get( Key.of( "xmlString" ) ) );
-
 		assertThat( variables.getAsInteger( result ) ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "It can insert XML children at currently-used index" )
+	@Test
+	public void testInsertChildrenAtCurrentIndex() {
+		instance.executeSource(
+		    """
+			// It's important this XML has the whitespace so we make sure we ignore text nodes
+			xmlObj = xmlParse( '<Ortus>
+				<Products>
+					<Product>CommandBox</Product>
+					<Product>BoxLang</Product>
+				</Products>
+			</Ortus>' );
+			
+			product = xmlElemNew( xmlObj, "Product" );
+			product.xmlText = "ContentBox";
+			arrayInsertAt( xmlObj.xmlRoot.Products.xmlChildren, 2, product );
+			result = xmlObj.xmlRoot.Products.xmlChildren.len();
+			xmlString = toString( xmlObj );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.getAsInteger( result ) ).isEqualTo( 3 );
+		// Verify the order of the children elements
+		XML products = variables.getAsXML( Key.of( "xmlObj" ) ).getAsXML( Key.of("Ortus" ) ).getAsXML( Key.of( "Products" ) );
+		assertThat( products.dereference( context, Key.XMLChildren, false ) ).isInstanceOf( Array.class );
+		Array children = products.getAsArray( Key.XMLChildren );
+		assertThat( children.size() ).isEqualTo( 3 );
+		assertThat( ( ( XML ) children.get( 0 ) ).dereference( context, Key.XMLText, false ) ).isEqualTo( "CommandBox" );
+		assertThat( ( ( XML ) children.get( 1 ) ).dereference( context, Key.XMLText, false ) ).isEqualTo( "ContentBox" );
+		assertThat( ( ( XML ) children.get( 2 ) ).dereference( context, Key.XMLText, false ) ).isEqualTo( "BoxLang" );
 	}
 
 	@DisplayName( "Can do keyExists on XML nodes" )

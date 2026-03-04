@@ -1339,7 +1339,7 @@ public class BoxHttpClient {
 			    formFields.stream()
 			        .map( formField -> {
 				        String value = StringCaster.cast( formField.get( Key.value ) );
-				        if ( BooleanCaster.cast( formField.getOrDefault( Key.encoded, false ) ) ) {
+				        if ( BooleanCaster.cast( formField.getOrDefault( Key.encoded, true ) ) ) {
 					        value = EncryptionUtil.urlEncode( value, StandardCharsets.UTF_8 );
 				        }
 				        return StringCaster.cast( formField.get( Key._name ) ) + "=" + value;
@@ -1560,10 +1560,11 @@ public class BoxHttpClient {
 			// found
 			bodyPublisher = processParams( uriBuilder, requestBuilder, formFields, files, bodyPublisher );
 
-			// Process Files
+			// Process Files - multipart/form-data
 			if ( !files.isEmpty() ) {
 				bodyPublisher = processFiles( requestBuilder, bodyPublisher, formFields, files );
 			} else if ( !formFields.isEmpty() ) {
+				// application/x-www-form-urlencoded
 				// Process Form Fields
 				bodyPublisher = processFormFields( requestBuilder, bodyPublisher, formFields );
 			}

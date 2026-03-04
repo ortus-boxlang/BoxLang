@@ -303,8 +303,8 @@ public class DBInfo extends Component {
 			ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
 			buildQueryColumns( result, resultSetMetaData );
 
-			result.addColumn( Key.of( "IS_PRIMARYKEY" ), QueryColumnType.BIT );
-			result.addColumn( Key.of( "IS_FOREIGNKEY" ), QueryColumnType.BIT );
+			result.addColumn( Key.of( "IS_PRIMARYKEY" ), QueryColumnType.BOOLEAN );
+			result.addColumn( Key.of( "IS_FOREIGNKEY" ), QueryColumnType.BOOLEAN );
 			result.addColumn( Key.of( "REFERENCED_PRIMARYKEY" ), QueryColumnType.VARCHAR );
 			result.addColumn( Key.of( "REFERENCED_PRIMARYKEY_TABLE" ), QueryColumnType.VARCHAR );
 
@@ -434,6 +434,8 @@ public class DBInfo extends Component {
 		try ( ResultSet resultSet = databaseMetadata.getIndexInfo( databaseName, schema, tableName, false, true ) ) {
 			ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
 			buildQueryColumns( result, resultSetMetaData );
+			// The JDBC INDEX_TYPE column is a short/integer, but we store descriptive strings - override to VARCHAR
+			result.getColumn( Key.type ).setType( QueryColumnType.VARCHAR );
 
 			while ( resultSet.next() ) {
 				IStruct	row				= buildQueryRow( resultSet, resultSetMetaData );

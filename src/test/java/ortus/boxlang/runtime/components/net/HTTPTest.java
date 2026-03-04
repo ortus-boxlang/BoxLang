@@ -159,7 +159,7 @@ public class HTTPTest {
 		instance.executeSource(
 		    String.format( """
 					bx:http url="%s" {
-						bx:httpparam type="header" name="User-Agent" value="Mozilla" proxyServer="" proxyPort="80" proxyUser="" proxyPassword="";
+						bx:httpparam type="header" name="User-Agent" value="Mozilla" proxyServer="" proxyPort="" proxyUser="" proxyPassword="";
 					}
 					result = bxhttp
 				""",
