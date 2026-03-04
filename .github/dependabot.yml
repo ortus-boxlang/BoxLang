@@ -4,7 +4,7 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/" # Where your .github/workflows/ folder is
     schedule:
-      interval: "monthly"
+      interval: "quarterly"
 
   # Gradle - updates dependencies in build.gradle or build.gradle.kts
   - package-ecosystem: "gradle"
