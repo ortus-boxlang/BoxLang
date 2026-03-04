@@ -153,20 +153,37 @@ public class SystemExecute extends BIF {
 			processBuilder.redirectError( Path.of( errorTarget ).toFile() );
 		}
 
-		Process process = null;
+		Process	process		= null;
+		Integer	exitCode	= null;
 
 		try {
 			process = processBuilder.start();
 			response.put( Key.pid, process.pid() );
-			if ( timeout != null && timeout != 0l ) {
-				process.waitFor( timeout, TimeUnit.SECONDS );
-				response.put( Key.timeout, true );
-				if ( terminateOnTimeout && process.isAlive() ) {
+
+			if ( timeout != null && timeout != 0L ) {
+				boolean finished = process.waitFor( timeout, TimeUnit.SECONDS );
+				response.put( Key.timeout, !finished );
+
+				if ( finished ) {
+					exitCode = process.exitValue();
+				} else if ( terminateOnTimeout && process.isAlive() ) {
+					// "destroy()" is polite; may not stop the process quickly.
 					process.destroy();
+
+					// Optional: wait a short grace period, then force kill if still alive
+					if ( !process.waitFor( 2, TimeUnit.SECONDS ) && process.isAlive() ) {
+						process.destroyForcibly();
+						process.waitFor(); // wait until it actually exits
+					}
+
 					response.put( Key.terminated, true );
+
+					// Now that it exited, you can capture its exit code
+					exitCode = process.exitValue();
 				}
 			} else {
-				process.waitFor();
+				exitCode = process.waitFor(); // this returns int exit code
+				response.put( Key.timeout, false );
 			}
 
 			if ( !response.getAsBoolean( Key.terminated ) ) {
@@ -178,7 +195,9 @@ public class SystemExecute extends BIF {
 				}
 			}
 
-			response.put( Key.exitCode, process.exitValue() );
+			if ( exitCode != null ) {
+				response.put( Key.exitCode, exitCode );
+			}
 
 			return response;
 
