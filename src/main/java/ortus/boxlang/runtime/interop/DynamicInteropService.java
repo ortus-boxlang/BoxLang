@@ -2918,8 +2918,23 @@ public class DynamicInteropService {
 				if ( boxClass.getAnnotations().get( Key._ABSTRACT ) != null ) {
 					throw new AbstractClassException( "Cannot instantiate an abstract class: " + boxClass.bxGetName() );
 				}
-				if ( boxClass.getSuper() != null ) {
-					BoxClassSupport.validateAbstractMethods( boxClass, boxClass.getSuper().getAllAbstractMethods() );
+				IClassRunnable _super = boxClass.getSuper();
+				// validate that we've implemented all abstract methods from our super class.
+				if ( _super != null ) {
+					BoxClassSupport.validateAbstractMethods( boxClass, _super.getAllAbstractMethods() );
+				}
+				// For all abstract super classes, now enforce any interfaces.
+				while ( _super != null ) {
+					// If this super was abstract
+					if ( _super.getAnnotations().get( Key._ABSTRACT ) != null ) {
+						for ( BoxInterface _interface : _super.getInterfaces() ) {
+							_interface.validateClass( boxClass );
+						}
+					} else {
+						// If we've hit a non-abstract class, we can stop since it won't have any abstract methods or interface requirements
+						break;
+					}
+					_super = _super.getSuper();
 				}
 				// Call constructor
 				// look for initMethod annotation

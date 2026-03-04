@@ -989,13 +989,19 @@ public class BoxClassSupport {
 	 * @throws BoxValidationException If the class does not satisfy the interface
 	 */
 	public static void validateAbstractMethods( IClassRunnable thisClass, Map<Key, AbstractFunction> abstractMethods ) {
-		String className = thisClass.bxGetName().getName();
 
 		// Having an onMissingMethod() UDF is the golden ticket to implementing any interface
 		if ( thisClass.getThisScope().get( Key.onMissingMethod ) instanceof Function ) {
 			return;
 		}
 
+		// If the class has the abstract annotation, then don't enforce
+		// TODO: cache this with getter.
+		if ( thisClass.getAnnotations().containsKey( Key._ABSTRACT ) ) {
+			return;
+		}
+
+		String className = thisClass.bxGetName().getName();
 		for ( Map.Entry<Key, AbstractFunction> abstractMethod : abstractMethods.entrySet() ) {
 			if ( thisClass.getThisScope().containsKey( abstractMethod.getKey() )
 			    && thisClass.getThisScope().get( abstractMethod.getKey() ) instanceof Function classMethod ) {

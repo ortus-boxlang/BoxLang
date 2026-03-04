@@ -332,7 +332,7 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 				} else {
 					// process abstract function (no body)
 					pseudoConstructorBody.addStatement( 0,
-					    ( ( JavaTranspiler ) transpiler ).createAbstractMethod( bfd, this, classname, "interface" )
+					    ( ( JavaTranspiler ) transpiler ).createAbstractMethod( bfd, this, boxFQN, "interface" )
 					);
 				}
 			} else if ( statement instanceof BoxImport ) {

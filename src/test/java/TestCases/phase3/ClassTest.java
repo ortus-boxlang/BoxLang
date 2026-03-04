@@ -2283,4 +2283,24 @@ public class ClassTest {
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "version2" );
 	}
 
+	@Test
+	public void testAbstractClassNotEnforceInterface() {
+		// don't reject the abstract class- defer the enforcement of the interface until we have a concrete class
+		instance.executeSource(
+		    """
+		    	x = new src.test.java.TestCases.phase3.Beta();
+		    println( x.echo( "Echo" ) );
+		    println( x.greet( "World" ) );
+		         """,
+		    context );
+
+		// Ensure we actually enforce the deferred interface
+		assertThrows( AbstractClassException.class, () -> instance.executeSource(
+		    """
+		    // beta2 does NOT fully satisfy the interface implemented by Alpha and should error
+		       x = new src.test.java.TestCases.phase3.Beta2();
+		           """,
+		    context ) );
+	}
+
 }
