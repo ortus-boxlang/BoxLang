@@ -992,8 +992,7 @@ public class BoxClassSupport {
 	public static void validateAbstractMethods( IClassRunnable thisClass, Map<Key, AbstractFunction> abstractMethods ) {
 
 		// If the class has the abstract annotation, then don't enforce
-		// TODO: cache this with getter.
-		if ( thisClass.getAnnotations().containsKey( Key._ABSTRACT ) ) {
+		if ( thisClass.isAbstractClass() ) {
 			return;
 		}
 

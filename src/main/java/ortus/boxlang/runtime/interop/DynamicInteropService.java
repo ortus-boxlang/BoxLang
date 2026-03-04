@@ -2901,7 +2901,7 @@ public class DynamicInteropService {
 				    .unWrapBoxLangClass() );
 
 				// Check for final annotation and throw if we're trying to extend a final class
-				if ( _super.getAnnotations().get( Key._final ) != null ) {
+				if ( _super.isFinalClass() ) {
 					throw new BoxRuntimeException( "Cannot extend final class: " + _super.bxGetName() );
 				}
 				// Set in our super class
@@ -2915,8 +2915,8 @@ public class DynamicInteropService {
 			for ( BoxInterface _interface : boxClass.getInterfaces() ) {
 				boxClass.registerInterface( _interface );
 			}
-			// TODO: cache this and add getter to class runnable
-			boolean			isAbstract	= boxClass.getAnnotations().get( Key._ABSTRACT ) != null;
+
+			boolean			isAbstract	= boxClass.isAbstractClass();
 			IClassRunnable	_super		= boxClass.getSuper();
 
 			// If this is the original class being created (not a super class).
@@ -2938,7 +2938,7 @@ public class DynamicInteropService {
 				// Find all abstract super classes, and enforce any interfaces they skipped earlier.
 				while ( _super != null ) {
 					// If this super was abstract
-					if ( _super.getAnnotations().get( Key._ABSTRACT ) != null ) {
+					if ( _super.isAbstractClass() ) {
 						for ( BoxInterface _interface : _super.getInterfaces() ) {
 							_interface.validateClass( boxClass );
 						}
