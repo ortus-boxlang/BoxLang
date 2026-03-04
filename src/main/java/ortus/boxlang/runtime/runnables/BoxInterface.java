@@ -355,7 +355,7 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 	 *
 	 * @throws BoxValidationException If the class does not satisfy the interface
 	 */
-	void validateClass( IClassRunnable boxClass ) {
+	public void validateClass( IClassRunnable boxClass ) {
 		BoxClassSupport.validateAbstractMethods( boxClass, getAllAbstractMethods() );
 	}
 

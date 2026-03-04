@@ -37,15 +37,10 @@ import com.github.javaparser.ast.stmt.Statement;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
-import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
-import ortus.boxlang.compiler.ast.expression.BoxBinaryOperator;
 import ortus.boxlang.compiler.ast.expression.BoxClosure;
-import ortus.boxlang.compiler.ast.expression.BoxComparisonOperation;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
-import ortus.boxlang.compiler.ast.expression.BoxUnaryOperation;
-import ortus.boxlang.compiler.ast.expression.BoxUnaryOperator;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxDo;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
@@ -162,38 +157,6 @@ public abstract class AbstractTransformer implements Transformer {
 	 */
 	public Expression createKey( String expr ) {
 		return createKey( new BoxStringLiteral( expr, null, expr ) );
-	}
-
-	/**
-	 * Detects if a statement requires a BooleanCaster
-	 *
-	 * @param condition the expression to evaluate
-	 *
-	 * @return true if the BooleanCaster is required
-	 */
-	protected boolean requiresBooleanCaster( BoxExpression condition ) {
-		if ( condition instanceof BoxBinaryOperation op ) {
-			if ( op.getOperator() == BoxBinaryOperator.Or )
-				return false;
-			if ( op.getOperator() == BoxBinaryOperator.And )
-				return false;
-			if ( op.getOperator() == BoxBinaryOperator.Contains )
-				return false;
-			if ( op.getOperator() == BoxBinaryOperator.InstanceOf )
-				return false;
-			if ( op.getOperator() == BoxBinaryOperator.NotContains )
-				return false;
-			if ( op.getOperator() == BoxBinaryOperator.Xor )
-				return false;
-		}
-		if ( condition instanceof BoxUnaryOperation op ) {
-			if ( op.getOperator() == BoxUnaryOperator.Not )
-				return false;
-		}
-		if ( condition instanceof BoxComparisonOperation ) {
-			return false;
-		}
-		return true;
 	}
 
 	/**

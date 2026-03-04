@@ -58,6 +58,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.CustomException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
@@ -6302,6 +6303,47 @@ public class CoreLangTest {
 		    context
 		);
 
+	}
+
+	@Test
+	public void testASMBytecodeError() {
+
+		instance.executeSource(
+		    """
+		    try {
+		    	// empty
+		    }
+		    catch (any e) {
+		    	// empty
+		    }
+		    finally {
+		    	writedump(42)
+		    }
+		      """,
+		    context
+		);
+
+	}
+
+	@DisplayName( "It can cast array of Box Classes" )
+	@Test
+	void testItCanCastArrayOfBoxClasses() {
+		assertThrows( BoxCastException.class, () -> instance.executeSource(
+		    """
+		    [ new src.test.java.TestCases.phase3.MyClass() ] castas foo.bar.MyClass[];
+		         """,
+		    context
+		) );
+
+		assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		       foo.bar.MyClass[] function getActive() {
+		       	return [ new src.test.java.TestCases.phase3.MyClass() ];
+		       }
+		    println( getActive() )
+		               """,
+		    context
+		) );
 	}
 
 }

@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -212,6 +213,13 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	private static Map<String, Map<String, String>>	componentAttrMap			= new HashMap<>();
 
 	/**
+	 * Maps BIF names to their argument rename mappings.
+	 * Outer key is BIF name (lowercase), inner map is old->new argument names (lowercase keys).
+	 * Only applies when named arguments are used.
+	 */
+	private static Map<String, Map<String, String>>	BIFArgMap					= new HashMap<>();
+
+	/**
 	 * Configuration keys for transpiler settings
 	 */
 	private static Key								transpilerKey				= Key.of( "transpiler" );
@@ -297,6 +305,13 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		componentAttrMap.put( "procparam", Map.of( "cfsqltype", "sqltype" ) );
 		componentAttrMap.put( "queryparam", Map.of( "cfsqltype", "sqltype" ) );
 		componentAttrMap.put( "object", Map.of( "component", "className" ) );
+
+		/*
+		 * Outer string is name of BIF (lowercase)
+		 * inner map is old arg name (lowercase) to new arg name
+		 * Only kicks in when named args are used
+		 */
+		BIFArgMap.put( "directorylist", Map.of( "absolute_path", "path" ) );
 
 		/*
 		 * These are BIFs that return something useless like true, but would be much more useful to return the actual data structure.
@@ -597,6 +612,20 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		if ( BIFMap.containsKey( name ) ) {
 			node.setName( BIFMap.get( name ) );
 		}
+
+		// Rename named arguments for BIFs that have changed arg names
+		if ( BIFArgMap.containsKey( name ) && node.isNamedArgs() ) {
+			Map<String, String> argMap = BIFArgMap.get( name );
+			for ( BoxArgument arg : node.getArguments() ) {
+				String argName = arg.getName().getAsSimpleValue().toString().toLowerCase();
+				if ( argMap.containsKey( argName ) ) {
+					if ( arg.getName() instanceof BoxStringLiteral bsl ) {
+						bsl.setValue( argMap.get( argName ) );
+					}
+				}
+			}
+		}
+
 		// look for "params" named arg, or 2nd positional arg, and if it's a struct literal, any of the values which are also a struct literal,
 		// rename any keys from cfsqltype to sqltype and remove "cf_sql_" from the values of any sqltype
 		if ( name.equals( "queryexecute" ) && node.getArguments().size() >= 2 ) {
@@ -1359,6 +1388,22 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 				    bsl.setValue( newValue );
 			    } );
 		}
+
+		// If cflock has no name or scope attribute, set a name attribute to a UUID
+		if ( componentName.equals( "lock" ) ) {
+			boolean	hasName		= node.getAttributes().stream().anyMatch( a -> a.getKey().getValue().equalsIgnoreCase( "name" ) );
+			boolean	hasScope	= node.getAttributes().stream().anyMatch( a -> a.getKey().getValue().equalsIgnoreCase( "scope" ) );
+			if ( !hasName && !hasScope ) {
+				node.getAttributes().add(
+				    new BoxAnnotation(
+				        new BoxFQN( "name", null, null ),
+				        new BoxStringLiteral( UUID.randomUUID().toString(), null, null ),
+				        null,
+				        null )
+				);
+			}
+		}
+
 		// Ignore invalid values for cfquery dbtype. If it's a string literal, and not query or hql, then literally delete the attribute entirely
 		if ( componentName.equals( "query" ) ) {
 			node.getAttributes()

@@ -1575,6 +1575,12 @@ public class ClassTest {
 		      """, context ) );
 		assertThat( t.getMessage() ).contains( "Cannot instantiate an abstract class" );
 
+		t = assertThrows( AbstractClassException.class, () -> instance.executeSource(
+		    """
+		    clazz = createObject( "src.test.java.TestCases.phase3.AbstractClass" );
+		      """, context ) );
+		assertThat( t.getMessage() ).contains( "Cannot instantiate an abstract class" );
+
 		instance.executeSource(
 		    """
 		       clazz = new src.test.java.TestCases.phase3.ConcreteClass();
@@ -2232,6 +2238,95 @@ public class ClassTest {
 		    println( getClassMetadata( "src.test.java.TestCases.phase3.DupeMethod" ) )
 		      """,
 		    context );
+	}
+
+	@DisplayName( "class file recompilation on change" )
+	@Test
+	public void testClassRecompilation() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+			tmpDir = expandPath( "/src/test/resources/tmp" );
+			if( !directoryExists( tmpDir ) ) {
+				directoryCreate( tmpDir );
+			}
+			classFile = tmpDir & "/RecompileTest.bx";
+
+			// Write first version of class
+			fileWrite( classFile, '
+				class {
+					function getMessage() {
+						return "version1";
+					}
+				}
+			' );
+
+			obj = new src.test.resources.tmp.RecompileTest();
+			result = obj.getMessage();
+
+			// Ensure file timestamp changes
+			sleep( 1000 );
+
+			// Overwrite with second version
+			fileWrite( classFile, '
+				class {
+					function getMessage() {
+						return "version2";
+					}
+				}
+			' );
+
+			obj2 = new src.test.resources.tmp.RecompileTest();
+			result2 = obj2.getMessage();
+
+			// Clean up
+			fileDelete( classFile );
+		    """,
+		    context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isEqualTo( "version1" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "version2" );
+	}
+
+	@Test
+	public void testAbstractClassNotEnforceInterface() {
+		// don't reject the abstract class- defer the enforcement of the interface until we have a concrete class
+		instance.executeSource(
+		    """
+		    	x = new src.test.java.TestCases.phase3.Beta();
+		    println( x.echo( "Echo" ) );
+		    println( x.greet( "World" ) );
+		         """,
+		    context );
+
+		// Ensure we actually enforce the deferred interface
+		assertThrows( AbstractClassException.class, () -> instance.executeSource(
+		    """
+		    // beta2 does NOT fully satisfy the interface implemented by Alpha and should error
+		       x = new src.test.java.TestCases.phase3.Beta2();
+		           """,
+		    context ) );
+	}
+
+	@Test
+	public void testAbstractClassNotEnforceInterfaceCreateObject() {
+		// don't reject the abstract class- defer the enforcement of the interface until we have a concrete class
+		instance.executeSource(
+		    """
+		    	x = createObject( "src.test.java.TestCases.phase3.Beta" );
+		    println( x.echo( "Echo" ) );
+		    println( x.greet( "World" ) );
+		         """,
+		    context );
+
+		// Ensure we actually enforce the deferred interface
+		assertThrows( AbstractClassException.class, () -> instance.executeSource(
+		    """
+		    // beta2 does NOT fully satisfy the interface implemented by Alpha and should error
+		       x = createObject( "src.test.java.TestCases.phase3.Beta2" );
+		           """,
+		    context ) );
 	}
 
 }

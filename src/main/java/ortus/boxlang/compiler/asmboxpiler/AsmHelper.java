@@ -1,7 +1,6 @@
 package ortus.boxlang.compiler.asmboxpiler;
 
 import java.lang.invoke.CallSite;
-import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -35,14 +34,15 @@ import org.objectweb.asm.tree.MethodInsnNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TryCatchBlockNode;
 import org.objectweb.asm.tree.TypeInsnNode;
-import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.BoxByteCodeVersion;
 import ortus.boxlang.compiler.IBoxpiler;
+import ortus.boxlang.compiler.asmboxpiler.MethodContextTracker.VarStore;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
@@ -51,7 +51,6 @@ import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxType;
-import ortus.boxlang.compiler.asmboxpiler.MethodContextTracker.VarStore;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -281,21 +280,22 @@ public class AsmHelper {
 	}
 
 	public static List<AbstractInsnNode> generateMapOfAbstractMethodNames( Transpiler transpiler, BoxNode classOrInterface ) {
-		List<List<AbstractInsnNode>>	methodKeyLists	= classOrInterface.getDescendantsOfType( BoxFunctionDeclaration.class )
+		String							sourceObjectType	= classOrInterface instanceof BoxInterface ? "interface" : "class";
+		List<List<AbstractInsnNode>>	methodKeyLists		= classOrInterface.getDescendantsOfType( BoxFunctionDeclaration.class )
 		    .stream()
 		    .filter( func -> func.getBody() == null )
 		    .map( func -> {
-															    List<List<AbstractInsnNode>> absFunc = List.of(
-															        transpiler.createKey( func.getName() ),
-															        createAbstractFunction( transpiler, func )
-															    );
+																    List<List<AbstractInsnNode>> absFunc = List.of(
+																        transpiler.createKey( func.getName() ),
+																        createAbstractFunction( transpiler, func, sourceObjectType )
+																    );
 
-															    return absFunc;
-														    } )
+																    return absFunc;
+															    } )
 		    .flatMap( x -> x.stream() )
 		    .collect( java.util.stream.Collectors.toList() );
 
-		List<AbstractInsnNode>			nodes			= new ArrayList<AbstractInsnNode>();
+		List<AbstractInsnNode>			nodes				= new ArrayList<AbstractInsnNode>();
 
 		nodes.addAll( AsmHelper.array( Type.getType( Object.class ), methodKeyLists ) );
 
@@ -347,7 +347,7 @@ public class AsmHelper {
 		return returnType.getType().name();
 	}
 
-	public static List<AbstractInsnNode> createAbstractFunction( Transpiler transpiler, BoxFunctionDeclaration func ) {
+	public static List<AbstractInsnNode> createAbstractFunction( Transpiler transpiler, BoxFunctionDeclaration func, String sourceObjectType ) {
 		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
 
 		nodes.add( new TypeInsnNode( Opcodes.NEW, Type.getInternalName( AbstractFunction.class ) ) );
@@ -387,7 +387,7 @@ public class AsmHelper {
 		// String sourceObjectName
 		nodes.add( new LdcInsnNode( transpiler.getProperty( "boxClassName" ) ) );
 		// String sourceObjectType
-		nodes.add( new LdcInsnNode( "class" ) );
+		nodes.add( new LdcInsnNode( sourceObjectType ) );
 
 		nodes.add(
 		    new MethodInsnNode(

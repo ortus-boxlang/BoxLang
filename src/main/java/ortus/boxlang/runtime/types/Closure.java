@@ -146,6 +146,11 @@ public class Closure extends CompiledFunction {
 		return this.closureDefinition.getReturnType();
 	}
 
+	@Override
+	public Key getReturnTypeKey() {
+		return this.closureDefinition.getReturnTypeKey();
+	}
+
 	/**
 	 * Get any annotations declared for this function, both the @annotation syntax and inline.
 	 *

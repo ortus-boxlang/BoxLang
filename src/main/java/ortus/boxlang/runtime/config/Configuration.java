@@ -246,6 +246,7 @@ public class Configuration implements IConfigSegment {
 	 * A sorted struct of mappings
 	 */
 	public IStruct									mappings						= new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR )
+	    .setCacheableHashCode( true )
 	    // ensure all keys to this struct have a trailing slash
 	    .registerChangeListener( forceMappingTrailingSlash );
 
@@ -1043,7 +1044,8 @@ public class Configuration implements IConfigSegment {
 	 * @return A struct representation of the configuration segment
 	 */
 	public IStruct asStruct() {
-		IStruct mappingsCopy = new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR ).registerChangeListener( forceMappingTrailingSlash );
+		IStruct mappingsCopy = new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR ).setCacheableHashCode( true )
+		    .registerChangeListener( forceMappingTrailingSlash );
 		mappingsCopy.putAll( this.mappings );
 
 		IStruct cachesCopy = new Struct( false );

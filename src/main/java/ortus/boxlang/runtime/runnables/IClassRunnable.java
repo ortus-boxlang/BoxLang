@@ -152,6 +152,24 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 
 	public boolean isJavaExtends();
 
+	/**
+	 * Is there a final annotation. Cached at compiled time and faster than the annotation map lookup.
+	 * 
+	 * @return Whether this class is final
+	 */
+	default boolean isFinalClass() {
+		return false;
+	}
+
+	/**
+	 * Is there an abstract annotation. Cached at compiled time and faster than the annotation map lookup.
+	 * 
+	 * @return Whether this class is abstract
+	 */
+	default boolean isAbstractClass() {
+		return false;
+	}
+
 	public MethodHandle lookupPrivateMethod( Method method );
 
 	public MethodHandle lookupPrivateField( Field field );

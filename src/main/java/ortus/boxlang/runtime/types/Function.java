@@ -267,7 +267,6 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * @return The result of the function, which may be null
 	 */
 	public Object invoke( FunctionBoxContext context ) {
-
 		// We do this, since it's hot code
 		boolean	doEvents	= this.interceptorService.hasState( BoxEvent.PRE_FUNCTION_INVOKE.key() ) ||
 		    this.interceptorService.hasState( BoxEvent.POST_FUNCTION_INVOKE.key() ) ||
@@ -375,7 +374,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 			return null;
 		}
 
-		CastAttempt<Object> typeCheck = GenericCaster.attempt( context, value, getReturnType(), true );
+		CastAttempt<Object> typeCheck = GenericCaster.attempt( context, value, getReturnTypeKey(), true );
 		if ( !typeCheck.wasSuccessful() ) {
 			throw new BoxRuntimeException(
 			    String.format( "The return value of the function [%s] is of type [%s] does not match the declared type of [%s]",
@@ -414,6 +413,15 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * @return return type
 	 */
 	public abstract String getReturnType();
+
+	/**
+	 * Get the return type of the function as a Key.
+	 *
+	 * @return return type
+	 */
+	public Key getReturnTypeKey() {
+		return Key.of( getReturnType() );
+	}
 
 	/**
 	 * Get any annotations declared for this function, both the @annotation syntax and inline.
@@ -743,7 +751,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 				return false;
 			}
 		}
-		if ( !func.getReturnType().equalsIgnoreCase( "any" ) && !getReturnType().equalsIgnoreCase( func.getReturnType() ) ) {
+		if ( !func.getReturnTypeKey().equals( Key._ANY ) && !getReturnTypeKey().equals( func.getReturnTypeKey() ) ) {
 			return false;
 		}
 

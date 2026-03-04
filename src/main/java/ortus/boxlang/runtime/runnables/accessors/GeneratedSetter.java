@@ -98,6 +98,16 @@ public class GeneratedSetter extends UDF {
 	}
 
 	/**
+	 * Get the return type key of the function.
+	 *
+	 * @return return type key
+	 */
+	@Override
+	public Key getReturnTypeKey() {
+		return Key._ANY;
+	}
+
+	/**
 	 * Get any annotations declared for this function, both the @annotation syntax and inline.
 	 *
 	 * @return function metadata

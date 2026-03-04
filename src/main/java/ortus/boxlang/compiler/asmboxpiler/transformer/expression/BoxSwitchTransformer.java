@@ -88,6 +88,12 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 				    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ), Type.getType( Object.class ) ),
 				    false ) );
 			} else {
+				// If the switch value is null, skip the containsNoCase check and push false
+				LabelNode	nullSkipLabel	= new LabelNode();
+				LabelNode	afterNullCheck	= new LabelNode();
+				nodes.add( new InsnNode( Opcodes.DUP ) );
+				nodes.add( new JumpInsnNode( Opcodes.IFNULL, nullSkipLabel ) );
+
 				nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 				    Type.getInternalName( StringCaster.class ),
 				    "cast",
@@ -111,6 +117,18 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 				    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( String.class ), Type.getType( String.class ),
 				        Type.getType( String.class ) ),
 				    false ) );
+				nodes.add( new JumpInsnNode( Opcodes.GOTO, afterNullCheck ) );
+
+				// Null path: pop the null value and push Boolean.FALSE
+				nodes.add( nullSkipLabel );
+				nodes.add( new InsnNode( Opcodes.POP ) );
+				nodes.add( new InsnNode( Opcodes.ICONST_0 ) );
+				nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+				    Type.getInternalName( Boolean.class ),
+				    "valueOf",
+				    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.BOOLEAN_TYPE ),
+				    false ) );
+				nodes.add( afterNullCheck );
 			}
 			nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
 			    Type.getInternalName( Boolean.class ),
