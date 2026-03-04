@@ -2927,8 +2927,6 @@ public class DynamicInteropService {
 				}
 				// validate that we've implemented all abstract methods from our super class(es).
 				// The get ALL abstract methods call here recursivley climbs the super chain, so we do this in one fell swoop.
-				System.out.println( "Validating abstract methods for class: " + boxClass.bxGetName() );
-				System.out.println( "Abstract methods to implement: " + boxClass.getAllAbstractMethods() );
 				BoxClassSupport.validateAbstractMethods( boxClass, boxClass.getAllAbstractMethods() );
 
 			}

@@ -19,6 +19,7 @@
 package ortus.boxlang.runtime.bifs.global.query;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -302,28 +303,17 @@ public class QueryAddRowTest {
 		assertThat( variables.get( Key.of( "recordCount" ) ) ).isEqualTo( 1 );
 	}
 
-	@Disabled( "No query data validation/casting from queryAddRow, so this test is not valid" )
-	@DisplayName( "It treats empty strings as nulls" )
+	@Disabled( "This test is disabled as you go down a rabbit hole, we need to discuss this further" )
+	@DisplayName( "It can validate cell types" )
 	@Test
-	public void testEmptyStringAsNull() {
-		try {
-			Query.queryNullToEmpty = true;
-			instance.executeSource(
-			    """
-			    result = queryNew("col1,col2","string,date");
-			    lastRow = result.addRow([ "Jon", "" ]);
-			    recordCount = result.recordCount;
-			    	""",
-			    context );
-			assertThat( variables.get( result ) ).isInstanceOf( Query.class );
-			assertThat( variables.get( Key.of( "lastRow" ) ) ).isEqualTo( 1 );
-			Query qry = variables.getAsQuery( result );
-			assertThat( qry.size() ).isEqualTo( 1 );
-			assertThat( variables.get( Key.of( "recordCount" ) ) ).isEqualTo( 1 );
-			assertThat( qry.getRowAsStruct( 0 ).get( Key.of( "col2" ) ) ).isEqualTo( null );
-		} finally {
-			Query.queryNullToEmpty = false;
-		}
+	public void testValidateCellTypes() {
+		// @formatter:off
+		assertThrows( RuntimeException.class, () -> instance.executeSource( """
+			myQuery = queryNew( "title,pageLength,createdDate", "string,integer,date" )
+			myQuery.addRow(  [ "The Fellowship Of the Ring", "not_an_integer", "not_a_date" ] )
+			println( myQuery )
+		""", context ) );
+		// @formatter:on
 	}
 
 }
