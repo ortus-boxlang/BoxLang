@@ -158,7 +158,7 @@ dependencies {
 
 	// Compile Only Dependencies
 	// Java Annotations Checks, this are for compile documentation only. It's not included in the final build
-	compileOnly 'org.checkerframework:checker-qual:3.52.1'
+	compileOnly 'org.checkerframework:checker-qual:3.53.1'
 
 }
 
