@@ -1010,7 +1010,7 @@ public class DynamicInteropServiceTest {
 		// @formatter:on
 
 		assertThat( variables.get( Key.result ) ).isNotNull();
-		assertThat( variables.get( Key.result ) ).isInstanceOf( int[].class );
+		assertThat( variables.get( Key.result ) ).isInstanceOf( Object[].class );
 	}
 
 	@SuppressWarnings( "unchecked" )
