@@ -1374,9 +1374,9 @@ test {
 		showStandardStreams = true
         displayGranularity = 1
 		events "PASSED", "FAILED", "SKIPPED", "STANDARD_ERROR"
-		exceptionFormat = "full"
-		showExceptions = true
-		showCauses = true
+        exceptionFormat "full"
+        showExceptions true
+        showCauses true
 	}
 
 	// Set system properties for consistent behavior across OS
