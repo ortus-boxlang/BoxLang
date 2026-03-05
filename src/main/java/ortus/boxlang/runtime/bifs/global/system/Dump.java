@@ -122,8 +122,8 @@ public class Dump extends BIF {
 			arguments.put( Key.abort, true );
 		}
 
-		Object top = arguments.get( Key.top );
-		Object maxRows = arguments.get( Key.maxRows );
+		Object	top		= arguments.get( Key.top );
+		Object	maxRows	= arguments.get( Key.maxRows );
 
 		// Dump the object
 		DumpUtil.dump(
