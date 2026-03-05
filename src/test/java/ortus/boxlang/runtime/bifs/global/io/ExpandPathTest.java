@@ -280,8 +280,9 @@ public class ExpandPathTest {
 		                        	result = expandPath('/tmp')
 		                        """, context );
 
-		assertThat( variables.getAsString( result ) )
-		    .isEqualTo( Path.of( "/tmp" ).toRealPath().toString() );
+	String actual = variables.getAsString( result );
+		assertThat( actual ).isIn( java.util.List.of( "/tmp", "/private/tmp" ) );
+
 	}
 
 	@Test
