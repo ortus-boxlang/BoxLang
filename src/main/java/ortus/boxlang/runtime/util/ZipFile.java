@@ -1,7 +1,5 @@
 package ortus.boxlang.runtime.util;
-
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
