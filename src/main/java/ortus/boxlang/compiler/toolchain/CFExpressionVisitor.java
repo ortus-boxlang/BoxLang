@@ -67,6 +67,8 @@ import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
+import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringBinding;
+import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
@@ -101,6 +103,7 @@ import ortus.boxlang.parser.antlr.CFGrammar.ExprCatContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprDotFloatContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprDotFloatIDContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprDotOrColonAccessContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprDestructuringAssignContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprElvisContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprEqualContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprFunctionCallContext;
@@ -131,6 +134,9 @@ import ortus.boxlang.parser.antlr.CFGrammar.LambdaFuncContext;
 import ortus.boxlang.parser.antlr.CFGrammar.LiteralsContext;
 import ortus.boxlang.parser.antlr.CFGrammar.NamedArgumentContext;
 import ortus.boxlang.parser.antlr.CFGrammar.NewContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ObjectDestructuringBindingContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ObjectDestructuringPatternContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ObjectDestructuringValueContext;
 import ortus.boxlang.parser.antlr.CFGrammar.PositionalArgumentContext;
 import ortus.boxlang.parser.antlr.CFGrammar.RelOpsContext;
 import ortus.boxlang.parser.antlr.CFGrammar.StringLiteralContext;
@@ -658,7 +664,40 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		var	left	= ctx.el2().accept( this );
 		var	right	= ctx.expression().accept( this );
 		var	op		= buildAssignOp( ctx.op );
+		if ( op == BoxAssignmentOperator.Equal ) {
+			BoxObjectDestructuringPattern destructuringPattern = tryBuildDestructuringPatternFromExpression( left );
+			if ( destructuringPattern != null ) {
+				left = destructuringPattern;
+			}
+		}
 		return new BoxAssignment( left, op, right, List.of(), pos, src );
+	}
+
+	@Override
+	public BoxExpression visitExprDestructuringAssign( ExprDestructuringAssignContext ctx ) {
+		var	pos		= tools.getPosition( ctx );
+		var	src		= tools.getSourceText( ctx );
+		var	left	= ctx.objectDestructuringPattern().accept( this );
+		var	right	= ctx.expression().accept( this );
+		return new BoxAssignment( left, BoxAssignmentOperator.Equal, right, List.of(), pos, src );
+	}
+
+	@Override
+	public BoxExpression visitObjectDestructuringPattern( ObjectDestructuringPatternContext ctx ) {
+		var									pos			= tools.getPosition( ctx );
+		var									src			= tools.getSourceText( ctx );
+		var									members		= ctx.objectDestructuringMembers();
+		List<BoxObjectDestructuringBinding>	bindings	= new ArrayList<>();
+		if ( members != null ) {
+			processIfNotNull( members.objectDestructuringBinding(), binding -> bindings.add( buildObjectDestructuringBinding( binding ) ) );
+			if ( members.objectDestructuringRest() != null ) {
+				var	restTarget	= buildObjectDestructuringTarget( members.objectDestructuringRest().fqn() );
+				var	restPos		= tools.getPosition( members.objectDestructuringRest() );
+				var	restSrc		= tools.getSourceText( members.objectDestructuringRest() );
+				bindings.add( new BoxObjectDestructuringBinding( null, restTarget, null, null, true, restPos, restSrc ) );
+			}
+		}
+		return new BoxObjectDestructuringPattern( bindings, pos, src );
 	}
 
 	@Override
@@ -1002,6 +1041,95 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		                        .orElse( new BoxIntegerLiteral( src, pos, src ) ) ) ) ) );
 	}
 
+	private BoxObjectDestructuringPattern tryBuildDestructuringPatternFromStructLiteral( BoxStructLiteral structLiteral ) {
+		if ( structLiteral.getType() != BoxStructType.Unordered ) {
+			return null;
+		}
+
+		List<BoxExpression> values = structLiteral.getValues();
+		if ( values == null || values.size() % 2 != 0 ) {
+			return null;
+		}
+
+		List<BoxObjectDestructuringBinding> bindings = new ArrayList<>();
+		for ( int i = 0; i < values.size(); i += 2 ) {
+			BoxExpression					key				= normalizeDestructuringKey( values.get( i ) );
+			BoxExpression					value			= values.get( i + 1 );
+			BoxExpression					target			= null;
+			BoxObjectDestructuringPattern	nestedPattern	= null;
+			BoxExpression					defaultValue	= null;
+
+			if ( value instanceof BoxAssignment valueAssignment ) {
+				if ( valueAssignment.getOp() != BoxAssignmentOperator.Equal || !valueAssignment.getModifiers().isEmpty() || valueAssignment.getRight() == null
+				    || !isDestructuringTargetExpression( valueAssignment.getLeft() ) ) {
+					return null;
+				}
+				target			= valueAssignment.getLeft();
+				defaultValue	= valueAssignment.getRight();
+			} else if ( value instanceof BoxStructLiteral nestedStructLiteral ) {
+				nestedPattern = tryBuildDestructuringPatternFromStructLiteral( nestedStructLiteral );
+				if ( nestedPattern == null ) {
+					return null;
+				}
+			} else if ( value instanceof BoxObjectDestructuringPattern parsedPattern ) {
+				nestedPattern = parsedPattern;
+			} else if ( isDestructuringTargetExpression( value ) ) {
+				target = value;
+			} else {
+				return null;
+			}
+
+			Position	bindingPosition	= value.getPosition() != null ? value.getPosition() : structLiteral.getPosition();
+			String		bindingSource	= value.getSourceText() != null ? value.getSourceText() : structLiteral.getSourceText();
+			bindings.add( new BoxObjectDestructuringBinding( key, target, nestedPattern, defaultValue, false, bindingPosition, bindingSource ) );
+		}
+
+		return new BoxObjectDestructuringPattern( bindings, structLiteral.getPosition(), structLiteral.getSourceText() );
+	}
+
+	private BoxObjectDestructuringPattern tryBuildDestructuringPatternFromExpression( BoxExpression expression ) {
+		BoxExpression current = expression;
+		while ( current instanceof BoxParenthesis parenthesis ) {
+			current = parenthesis.getExpression();
+		}
+		if ( current instanceof BoxStructLiteral structLiteral ) {
+			return tryBuildDestructuringPatternFromStructLiteral( structLiteral );
+		}
+		return null;
+	}
+
+	private BoxExpression normalizeDestructuringKey( BoxExpression key ) {
+		if ( key instanceof BoxScope scope ) {
+			return new BoxIdentifier( scope.getName(), scope.getPosition(), scope.getSourceText() );
+		}
+		return key;
+	}
+
+	private boolean isDestructuringTargetExpression( BoxExpression expression ) {
+		if ( expression instanceof BoxIdentifier || expression instanceof BoxScope ) {
+			return true;
+		}
+		if ( expression instanceof BoxDotAccess dotAccess ) {
+			BoxExpression current = dotAccess;
+			while ( current instanceof BoxDotAccess dot ) {
+				if ( dot.isSafe() || ! ( dot.getAccess() instanceof BoxIdentifier ) ) {
+					return false;
+				}
+				current = dot.getContext();
+			}
+			return current instanceof BoxScope || ( current instanceof BoxIdentifier id && isExplicitDestructuringScope( id.getName() ) );
+		}
+		return false;
+	}
+
+	private boolean isExplicitDestructuringScope( String scopeName ) {
+		return switch ( scopeName.toLowerCase() ) {
+			case "application", "arguments", "cgi", "client", "cookie", "form", "local", "request", "server", "session", "static", "this", "thread",
+			    "url", "variables" -> true;
+			default -> false;
+		};
+	}
+
 	@Override
 	public BoxExpression visitExprAtoms( ExprAtomsContext ctx ) {
 		return ctx.atoms().accept( this );
@@ -1039,6 +1167,65 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 	//
 	// Builders perform specialized task for the visitor functions where the task
 	// is too complex to be done inline or otherwise obfuscates what the visitor is doing
+
+	private BoxObjectDestructuringBinding buildObjectDestructuringBinding( ObjectDestructuringBindingContext ctx ) {
+		var								pos				= tools.getPosition( ctx );
+		var								src				= tools.getSourceText( ctx );
+		BoxExpression					key				= buildObjectDestructuringKey( ctx.structKey() );
+		BoxExpression					target			= null;
+		BoxExpression					defaultValue	= ctx.expression() != null ? ctx.expression().accept( this ) : null;
+		BoxObjectDestructuringPattern	nestedPattern	= null;
+
+		ObjectDestructuringValueContext	valueCtx		= ctx.objectDestructuringValue();
+		if ( valueCtx != null ) {
+			if ( valueCtx.objectDestructuringPattern() != null ) {
+				nestedPattern = ( BoxObjectDestructuringPattern ) valueCtx.objectDestructuringPattern().accept( this );
+			} else {
+				target = buildObjectDestructuringTarget( valueCtx.fqn() );
+			}
+		} else if ( key instanceof BoxIdentifier id ) {
+			target = new BoxIdentifier( id.getName(), id.getPosition(), id.getSourceText() );
+		} else {
+			String keyText = key.getSourceText() != null ? key.getSourceText() : "<key>";
+			tools.reportError(
+			    "Destructuring key [" + keyText + "] cannot use shorthand. Use an explicit binding such as { " + keyText + ": myVar }.",
+			    pos
+			);
+			target = new BoxIdentifier( key.getSourceText(), key.getPosition(), key.getSourceText() );
+		}
+
+		return new BoxObjectDestructuringBinding( key, target, nestedPattern, defaultValue, false, pos, src );
+	}
+
+	private BoxExpression buildObjectDestructuringKey( StructKeyContext ctx ) {
+		BoxExpression key = ctx.accept( this );
+		if ( key instanceof BoxScope scope ) {
+			return new BoxIdentifier( scope.getName(), scope.getPosition(), scope.getSourceText() );
+		}
+		return key;
+	}
+
+	private BoxExpression buildObjectDestructuringTarget( FqnContext ctx ) {
+		var				identifiers	= ctx.identifier();
+		var				rootCtx		= identifiers.get( 0 );
+		BoxExpression	root		= rootCtx.accept( this );
+		if ( identifiers.size() == 1 ) {
+			return root;
+		}
+		if ( root instanceof BoxIdentifier id && isExplicitDestructuringScope( id.getName() ) ) {
+			root = new BoxScope( id.getName(), id.getPosition(), id.getSourceText() );
+		}
+		if ( ! ( root instanceof BoxScope ) ) {
+			tools.reportError( "Scoped destructuring targets must start with a scope name", tools.getPosition( rootCtx ) );
+		}
+		BoxExpression current = root;
+		for ( int i = 1; i < identifiers.size(); i++ ) {
+			var				targetIdCtx	= identifiers.get( i );
+			BoxIdentifier	targetId	= new BoxIdentifier( targetIdCtx.getText(), tools.getPosition( targetIdCtx ), tools.getSourceText( targetIdCtx ) );
+			current = new BoxDotAccess( current, false, targetId, tools.getPosition( ctx ), tools.getSourceText( ctx ) );
+		}
+		return current;
+	}
 
 	private void checkArgTypes( ParserRuleContext ctx, List<BoxArgument> args ) {
 		var		pos				= tools.getPosition( ctx );

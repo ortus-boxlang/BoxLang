@@ -406,11 +406,15 @@ public class CFLexerCustom extends CFLexer {
 					} else if ( nextTokenType == REQUIRED && !lastTokenWas( DOT ) && getParenCount() > 0 && nextNonWhiteSpaceIsAnyChar() ) {
 						// function foo( required string bar )
 						isIdentifier = false;
-					} else if ( nextTokenType == VAR && !lastTokenWas( DOT )
-					    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '\'' ) || nextNonWhiteSpaceCharIs( '"' ) )
+					} else if ( ( nextTokenType == VAR || nextTokenType == FINAL || nextTokenType == STATIC ) && !lastTokenWas( DOT )
+					    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '\'' ) || nextNonWhiteSpaceCharIs( '"'
+					    ) || nextNonWhiteSpaceCharIs( '{' ) )
 					    && !nextNonWhiteSpaceCharsAre( operatorStartingChars )
 					    && ( lastToken != null && !operatorEndingTokens.contains( lastToken.getType() ) ) ) {
 						// var foo = "bar"
+						// final foo = "bar"
+						// static foo = "bar"
+						// var { foo } = data
 						isIdentifier = false;
 					} else if ( nextTokenType == NEW && !lastTokenWas( DOT )
 					    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '\'' ) || nextNonWhiteSpaceCharIs( '"' )
