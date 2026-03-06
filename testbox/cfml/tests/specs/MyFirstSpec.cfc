@@ -1,0 +1,15 @@
+component extends="testbox.system.BaseSpec"{
+
+    function run(){
+		describe( "My First Test", ()=>{
+			test( "it can add", ()=>{
+				expect( sum( 1, 2 ) ).toBe( 3 )
+			} )
+		} )
+    }
+
+    private function sum( a, b ){
+        return a + b
+    }
+
+}

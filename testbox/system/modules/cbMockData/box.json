@@ -1,0 +1,62 @@
+{
+    "name":"cbMockData",
+    "version":"4.1.0+3",
+    "location":"https://downloads.ortussolutions.com/ortussolutions/coldbox-modules/cbMockData/4.1.0/cbMockData-4.1.0.zip",
+    "author":"Ortus Solutions",
+    "homepage":"https://github.com/coldbox-modules/cbMockData",
+    "documentation":"https://github.com/coldbox-modules/cbMockData",
+    "repository":{
+        "type":"git",
+        "URL":"https://github.com/coldbox-modules/cbMockData"
+    },
+    "license":[
+        {
+            "type":"MIT",
+            "URL":"https://github.com/coldbox-modules/cbMockData/LICENSE"
+        }
+    ],
+    "bugs":"https://github.com/coldbox-modules/cbMockData/issues",
+    "slug":"cbMockData",
+    "shortDescription":"cbMockData is a service to generate fake JSON data via command line arguments, class calls or an embedded RESTFul service",
+    "type":"modules",
+    "keywords":[
+        "Mock Data"
+    ],
+    "contributors":[
+        "Ray Camden",
+        "Luis Majano <lmajano@ortussolutions.com>"
+    ],
+    "dependencies":{},
+    "devDependencies":{
+        "commandbox-boxlang":"*",
+        "commandbox-cfformat":"*",
+        "commandbox-docbox":"*"
+    },
+    "installPaths":{},
+    "ignore":[
+        "**/.*",
+        "build/**",
+        "test-harness",
+        "/server*.json"
+    ],
+    "testbox":{
+        "runner":"http://localhost:60299/tests/runner.cfm"
+    },
+    "scripts":{
+        "build:module":"task run taskFile=build/Build.cfc :projectName=`package show slug` :version=`package show version`",
+        "build:docs":"task run taskFile=build/Build.cfc target=docs :projectName=`package show slug` :version=`package show version`",
+        "release":"recipe build/release.boxr",
+        "format":"cfformat run helpers,models,test-harness/tests/,ModuleConfig.cfc --overwrite",
+        "format:watch":"cfformat watch helpers,models,test-harness/tests/,ModuleConfig.cfc ./.cfformat.json",
+        "format:check":"cfformat check helpers,models,test-harness/tests/,ModuleConfig.cfc ./.cfformat.json",
+        "start:boxlang":"server start serverConfigFile=server-boxlang@1.json",
+        "start:lucee":"server start serverConfigFile=server-lucee@5.json",
+        "start:2023":"server start serverConfigFile=server-adobe@2023.json",
+        "stop:boxlang":"server stop serverConfigFile=server-boxlang@1.json",
+        "stop:lucee":"server stop serverConfigFile=server-lucee@5.json",
+        "stop:2023":"server stop serverConfigFile=server-adobe@2023.json",
+        "logs:boxlang":"server log serverConfigFile=server-boxlang@1.json --follow",
+        "logs:lucee":"server log serverConfigFile=server-lucee@5.json --follow",
+        "logs:2023":"server log serverConfigFile=server-adobe@2023.json --follow"
+    }
+}

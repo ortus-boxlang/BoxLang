@@ -1,0 +1,5 @@
+{
+    "jvm":{
+        "classPathDirectories":"build/classes/java/main"
+    }
+}

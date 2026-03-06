@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# Get the path to the directory where this script is located
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Go baby go!
+boxlang $DIR/system/runners/BoxLangRunner.bx $@
