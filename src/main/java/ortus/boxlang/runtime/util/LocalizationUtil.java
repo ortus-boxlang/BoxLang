@@ -1049,6 +1049,14 @@ public final class LocalizationUtil {
 				"description", "US date MM/dd/yyyy with time no seconds"
 			) );
 
+			// European dot format date (e.g., 02.04.2024)
+			add( Map.of(
+				"regexPattern",
+				"^\\d{1,2}\\.\\d{1,2}\\.\\d{4}$",
+				"datePattern", "d.M.yyyy",
+				"description", "European DD.MM.YYYY format"
+			) );
+
 			// European dot format datetime (e.g., 02.04.2024 21:01:00)
 			add( Map.of(
 				"regexPattern",
