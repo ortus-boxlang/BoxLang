@@ -42,6 +42,7 @@ import static ortus.boxlang.parser.antlr.CFGrammar.INSTANCEOF;
 import static ortus.boxlang.parser.antlr.CFGrammar.INTERFACE;
 import static ortus.boxlang.parser.antlr.CFGrammar.IS;
 import static ortus.boxlang.parser.antlr.CFGrammar.JAVA;
+import static ortus.boxlang.parser.antlr.CFGrammar.LBRACE;
 import static ortus.boxlang.parser.antlr.CFGrammar.LBRACKET;
 import static ortus.boxlang.parser.antlr.CFGrammar.LE;
 import static ortus.boxlang.parser.antlr.CFGrammar.LESS;
@@ -192,7 +193,8 @@ public abstract class CFParserControl extends Parser {
 	 */
 	protected boolean isAssignmentModifier( TokenStream input ) {
 		int thisType = input.LT( 1 ).getType();
-		return ( thisType == VAR || thisType == FINAL || thisType == STATIC ) && identifiers.contains( input.LT( 2 ).getType() );
+		return ( thisType == VAR || thisType == FINAL || thisType == STATIC )
+		    && ( identifiers.contains( input.LT( 2 ).getType() ) || input.LT( 2 ).getType() == LBRACE );
 	}
 
 	/**

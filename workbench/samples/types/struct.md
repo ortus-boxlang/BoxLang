@@ -36,3 +36,18 @@ orderedAnimals = [
   pig: "oink"
 ];
 ```
+
+### Object destructuring assignment
+
+```java
+data = { a: 10, b: 20, c: { d: 40, e: 50 }, f: 60 };
+
+// Basic destructuring into the default assignment scope
+({ a, b } = data);
+
+// Scoped assignment via explicit rename
+({ a: variables.a, b: request.b } = data);
+
+// Defaults, nested destructuring, and rest
+({ a, z = 999, c: { d }, ...rest } = data);
+```

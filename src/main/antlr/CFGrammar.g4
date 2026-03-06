@@ -420,6 +420,49 @@ structMember: structKey (COLON | EQUALSIGN) expression
 structKey: identifier | stringLiteral | INTEGER_LITERAL | ILLEGAL_IDENTIFIER | fqn | SWITCH
     ;
 
+/*
+ var { a } = obj
+ ({ a: variables.a, b: request.foo } = obj)
+ var { important, ...rest } = obj
+ */
+objectDestructuringPattern: LBRACE objectDestructuringMembers? RBRACE
+    ;
+
+/*
+ { a }
+ { a: variables.a, b: request.foo }
+ { a, ...others }
+ */
+objectDestructuringMembers
+    : (objectDestructuringBinding (COMMA objectDestructuringBinding)* (COMMA objectDestructuringRest)? COMMA?)
+    | (objectDestructuringRest COMMA?)
+    ;
+
+/*
+ a
+ a : request.a
+ a = 'foo'
+ a : request.a = 'foo'
+ */
+objectDestructuringBinding
+    : structKey (COLON objectDestructuringValue)? (EQUALSIGN expression)?
+    ;
+
+/*
+ ...rest
+ */
+objectDestructuringRest: ELLIPSIS fqn
+    ;
+
+/*
+ user = { name: 'John', address: { city: 'New York', zip: '10001' } }
+ ({ name, address: { city } } = user)
+ println(name)
+ println(city)
+ */
+objectDestructuringValue: fqn | objectDestructuringPattern
+    ;
+
 new: NEW preFix? (fqn | stringLiteral) LPAREN argumentList? RPAREN
     ;
 
@@ -487,6 +530,7 @@ el2
         | MODEQUAL
         | CONCATEQUAL
     ) expression # exprAssign // foo = bar
+    | objectDestructuringPattern EQUALSIGN expression # exprDestructuringAssign // ({ a } = foo)
 
     // Ternary operations are right associative, which means that if they are nested,
     // the rightmost operation is evaluated first.

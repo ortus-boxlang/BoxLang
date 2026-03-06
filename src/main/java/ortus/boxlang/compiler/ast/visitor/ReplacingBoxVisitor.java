@@ -52,6 +52,8 @@ import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNegateOperation;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
+import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringBinding;
+import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
@@ -513,6 +515,50 @@ public abstract class ReplacingBoxVisitor {
 	}
 
 	public BoxNode visit( BoxNull node ) {
+		return node;
+	}
+
+	public BoxNode visit( BoxObjectDestructuringPattern node ) {
+		for ( int i = 0; i < node.getBindings().size(); i++ ) {
+			BoxObjectDestructuringBinding	binding		= node.getBindings().get( i );
+			BoxNode							newBinding	= binding.accept( this );
+			if ( newBinding != binding ) {
+				node.replaceChildren( binding, newBinding );
+				node.getBindings().set( i, ( BoxObjectDestructuringBinding ) newBinding );
+			}
+		}
+		return node;
+	}
+
+	public BoxNode visit( BoxObjectDestructuringBinding node ) {
+		BoxExpression key = node.getKey();
+		if ( key != null ) {
+			BoxNode newKey = key.accept( this );
+			if ( newKey != key ) {
+				node.setKey( ( BoxExpression ) newKey );
+			}
+		}
+		BoxExpression target = node.getTarget();
+		if ( target != null ) {
+			BoxNode newTarget = target.accept( this );
+			if ( newTarget != target ) {
+				node.setTarget( ( BoxExpression ) newTarget );
+			}
+		}
+		BoxObjectDestructuringPattern pattern = node.getPattern();
+		if ( pattern != null ) {
+			BoxNode newPattern = pattern.accept( this );
+			if ( newPattern != pattern ) {
+				node.setPattern( ( BoxObjectDestructuringPattern ) newPattern );
+			}
+		}
+		BoxExpression defaultValue = node.getDefaultValue();
+		if ( defaultValue != null ) {
+			BoxNode newDefault = defaultValue.accept( this );
+			if ( newDefault != defaultValue ) {
+				node.setDefaultValue( ( BoxExpression ) newDefault );
+			}
+		}
 		return node;
 	}
 

@@ -333,6 +333,7 @@ BACKSLASH   : '\\';
 COMMA       : ',';
 COLON       : ':';
 COLONCOLON  : '::';
+ELLIPSIS    : '...';
 DOT         : '.';
 ELVIS       : '?:';
 EQUALSIGN   : '=';

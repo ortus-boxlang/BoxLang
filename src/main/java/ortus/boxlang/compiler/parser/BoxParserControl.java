@@ -40,6 +40,7 @@ import static ortus.boxlang.parser.antlr.BoxGrammar.IS;
 import static ortus.boxlang.parser.antlr.BoxGrammar.JAVA;
 import static ortus.boxlang.parser.antlr.BoxGrammar.LE;
 import static ortus.boxlang.parser.antlr.BoxGrammar.LESS;
+import static ortus.boxlang.parser.antlr.BoxGrammar.LBRACE;
 import static ortus.boxlang.parser.antlr.BoxGrammar.LPAREN;
 import static ortus.boxlang.parser.antlr.BoxGrammar.LT;
 import static ortus.boxlang.parser.antlr.BoxGrammar.LTE;
@@ -181,7 +182,8 @@ public abstract class BoxParserControl extends Parser {
 		// System.out.println( "LT(2): " + input.LT( 2 ).getType() );
 		// System.out
 		// .println( "( thisType == VAR || thisType == FINAL || thisType == STATIC ): " + ( thisType == VAR || thisType == FINAL || thisType == STATIC ) );
-		return ( thisType == VAR || thisType == FINAL || thisType == STATIC ) && identifiers.contains( input.LT( 2 ).getType() );
+		return ( thisType == VAR || thisType == FINAL || thisType == STATIC )
+		    && ( identifiers.contains( input.LT( 2 ).getType() ) || input.LT( 2 ).getType() == LBRACE );
 	}
 
 	/**

@@ -51,6 +51,8 @@ import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNegateOperation;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
+import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringBinding;
+import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
@@ -833,6 +835,44 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	public void visit( BoxNull node ) {
 		printPreComments( node );
 		print( "null" );
+		printPostComments( node );
+	}
+
+	public void visit( BoxObjectDestructuringPattern node ) {
+		printPreComments( node );
+		print( "{ " );
+		int size = node.getBindings().size();
+		for ( int i = 0; i < size; i++ ) {
+			node.getBindings().get( i ).accept( this );
+			if ( i < size - 1 ) {
+				print( ", " );
+			}
+		}
+		print( " }" );
+		printPostComments( node );
+	}
+
+	public void visit( BoxObjectDestructuringBinding node ) {
+		printPreComments( node );
+		if ( node.isRest() ) {
+			print( "..." );
+			node.getTarget().accept( this );
+			printPostComments( node );
+			return;
+		}
+
+		node.getKey().accept( this );
+		if ( node.getPattern() != null ) {
+			print( " : " );
+			node.getPattern().accept( this );
+		} else if ( node.getTarget() != null && !isDestructuringShorthand( node ) ) {
+			print( " : " );
+			node.getTarget().accept( this );
+		}
+		if ( node.getDefaultValue() != null ) {
+			print( " = " );
+			node.getDefaultValue().accept( this );
+		}
 		printPostComments( node );
 	}
 
@@ -1997,6 +2037,12 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		}
 		print( "*" );
 		printPostComments( node );
+	}
+
+	private boolean isDestructuringShorthand( BoxObjectDestructuringBinding node ) {
+		return node.getKey() instanceof BoxIdentifier key
+		    && node.getTarget() instanceof BoxIdentifier target
+		    && key.getName().equals( target.getName() );
 	}
 
 }
