@@ -126,7 +126,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		author								= Key.of( "author" );
 	public static final Key		autoCreate							= Key.of( "autoCreate" );
 	public static final Key		authType							= Key.of( "authType" );
-	public static final Key		base64_or_object					= Key.of( "base64_or_object" );
+	public static final Key		base64_or_object					= Key.of( "base64_or_object " );
 	public static final Key		baseTag								= Key.of( "baseTag" );
 	public static final Key		beforeAnyTask						= Key.of( "beforeAnyTask" );
 	public static final Key		bif									= Key.of( "bif" );
@@ -407,6 +407,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		getFileInfo							= Key.of( "getFileInfo" );
 	public static final Key		getName								= Key.of( "getName" );
 	public static final Key		global								= Key.of( "global" );
+	public static final Key		globalErrorTemplate					= Key.of( "globalErrorTemplate" );
 	public static final Key		group								= Key.of( "group" );
 	public static final Key		groupCaseSensitive					= Key.of( "groupCaseSensitive" );
 	public static final Key		groupData							= Key.of( "groupData" );
@@ -555,7 +556,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		methodname							= Key.of( "methodname" );
 	public static final Key		millisecond							= Key.of( "millisecond" );
 	public static final Key		milliseconds						= Key.of( "milliseconds" );
-	public static final Key		mimetype							= Key.of( "mimetype" );
+	public static final Key		mimetype							= Key.of( "mimetype " );
 	public static final Key		min									= Key.of( "min" );
 	public static final Key		minute								= Key.of( "minute" );
 	public static final Key		minutes								= Key.of( "minutes" );

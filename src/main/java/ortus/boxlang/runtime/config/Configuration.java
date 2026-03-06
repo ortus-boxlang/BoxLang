@@ -131,6 +131,12 @@ public class Configuration implements IConfigSegment {
 	public Boolean									debugMode						= false;
 
 	/**
+	 * Path to render a custom global error template for unhandled errors
+	 * An empty string indicates use of boxlang's default error
+	 */
+	public String									globalErrorTemplate				= "";
+
+	/**
 	 * Turn on/off the resolver cache for Class Locators of Java/Box classes
 	 * {@code true} by default
 	 */
@@ -388,6 +394,11 @@ public class Configuration implements IConfigSegment {
 		}
 		if ( config.containsKey( Key.debuggingEnabled ) ) {
 			this.debugMode = BooleanCaster.cast( config.get( Key.debuggingEnabled ) );
+		}
+
+		// Global Error Template
+		if ( config.containsKey( Key.globalErrorTemplate ) ) {
+			this.globalErrorTemplate = StringCaster.cast( config.get( Key.globalErrorTemplate ) );
 		}
 
 		// Class Resolver Cache
@@ -1065,6 +1076,7 @@ public class Configuration implements IConfigSegment {
 		    Key.classPaths, Array.copyFromList( this.classPaths ),
 		    Key.datasources, datasourcesCopy,
 		    Key.debugMode, this.debugMode,
+		    Key.globalErrorTemplate, this.globalErrorTemplate,
 		    Key.classResolverCache, this.classResolverCache,
 		    Key.defaultDatasource, this.defaultDatasource,
 		    Key.defaultRemoteMethodReturnFormat, this.defaultRemoteMethodReturnFormat,
