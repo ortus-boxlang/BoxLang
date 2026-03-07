@@ -1,0 +1,7 @@
+{
+  "operators": {
+    "ternary": {
+      "style": "always-multiline"
+    }
+  }
+}

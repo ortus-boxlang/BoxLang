@@ -1,0 +1,9 @@
+class {
+	property name="apple";
+	property name="mango";
+	property name="zebra";
+
+	function init() {
+		return this;
+	}
+}

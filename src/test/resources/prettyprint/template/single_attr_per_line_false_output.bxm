@@ -1,0 +1,3 @@
+<bx:output>
+<bx:abort foo="bar" baz="qux" name="test" />
+</bx:output>

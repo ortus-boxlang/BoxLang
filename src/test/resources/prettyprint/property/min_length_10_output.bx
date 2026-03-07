@@ -1,0 +1,10 @@
+class {
+	property
+		name="prop_a";
+	property
+		name="prop_b"
+		type="string"
+		default="hello";
+
+
+}
