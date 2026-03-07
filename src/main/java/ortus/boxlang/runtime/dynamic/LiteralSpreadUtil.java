@@ -31,6 +31,11 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class LiteralSpreadUtil {
 
+	private enum AmbiguousSpreadType {
+		ARRAY,
+		STRUCT
+	}
+
 	public static SpreadValue spread( Object value ) {
 		return new SpreadValue( value );
 	}
@@ -45,6 +50,44 @@ public class LiteralSpreadUtil {
 			}
 		}
 		return result;
+	}
+
+	/**
+	 * Resolve ambiguous spread-only bracket literals such as <code>[ ...value ]</code>.
+	 * <p>
+	 * If all spread sources are structs, this returns an ordered struct.
+	 * If all spread sources are arrays (or array-castable), this returns an array.
+	 * Mixing array and struct spread sources is rejected.
+	 */
+	public static Object arrayOrOrderedStruct( Object... values ) {
+		if ( values.length == 0 ) {
+			return array( values );
+		}
+
+		AmbiguousSpreadType spreadType = null;
+		for ( Object value : values ) {
+			if ( ! ( value instanceof SpreadValue spreadValue ) ) {
+				return array( values );
+			}
+
+			AmbiguousSpreadType valueType = detectAmbiguousSpreadType( spreadValue.getValue() );
+			if ( spreadType == null ) {
+				spreadType = valueType;
+			} else if ( spreadType != valueType ) {
+				throw new BoxRuntimeException(
+				    "Cannot mix array and struct spread values in an ambiguous bracket literal. Use explicit keyed struct member syntax to force an ordered struct literal." );
+			}
+		}
+
+		if ( spreadType == AmbiguousSpreadType.STRUCT ) {
+			IStruct result = new Struct( IStruct.TYPES.LINKED );
+			for ( Object value : values ) {
+				appendStructSpread( result, ( ( SpreadValue ) value ).getValue() );
+			}
+			return result;
+		}
+
+		return array( values );
 	}
 
 	public static IStruct struct( IStruct.TYPES type, Object... values ) {
@@ -91,6 +134,20 @@ public class LiteralSpreadUtil {
 		for ( int i = 1; i <= spreadArray.size(); i++ ) {
 			target.put( Key.of( i ), spreadArray.getAt( i ) );
 		}
+	}
+
+	private static AmbiguousSpreadType detectAmbiguousSpreadType( Object spreadValue ) {
+		if ( spreadValue instanceof IStruct ) {
+			return AmbiguousSpreadType.STRUCT;
+		}
+
+		CastAttempt<Array> casted = ArrayCaster.attempt( spreadValue );
+		if ( casted.wasSuccessful() ) {
+			return AmbiguousSpreadType.ARRAY;
+		}
+
+		throw new BoxRuntimeException(
+		    "Cannot spread value of type [" + describeType( spreadValue ) + "] into an ambiguous bracket literal." );
 	}
 
 	private static String describeType( Object value ) {

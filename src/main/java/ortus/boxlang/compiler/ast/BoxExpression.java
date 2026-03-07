@@ -119,6 +119,31 @@ public abstract class BoxExpression extends BoxNode {
 			return fqn.getValue();
 		}
 		if ( this instanceof BoxArrayLiteral arr ) {
+			boolean ambiguousSpreadOnly = !arr.getValues().isEmpty()
+			    && arr.getValues().stream().allMatch( value -> value instanceof BoxSpreadExpression );
+			if ( ambiguousSpreadOnly ) {
+				Array	arrayResult		= Array.of();
+				IStruct	structResult	= new Struct( IStruct.TYPES.LINKED );
+				boolean	hasArraySpread	= false;
+				boolean	hasStructSpread	= false;
+				for ( BoxExpression value : arr.getValues() ) {
+					BoxSpreadExpression	spread		= ( BoxSpreadExpression ) value;
+					Object				spreadValue	= spread.getExpression().getAsLiteralValue();
+					if ( spreadValue instanceof IStruct spreadStruct ) {
+						hasStructSpread = true;
+						spreadStruct.forEach( structResult::put );
+					} else {
+						hasArraySpread = true;
+						Array spreadArray = Array.copyOf( spreadValue );
+						arrayResult.addAll( spreadArray );
+					}
+					if ( hasArraySpread && hasStructSpread ) {
+						throw new ExpressionException( "Cannot mix array and struct spread values in an ambiguous bracket literal.", this );
+					}
+				}
+				return hasStructSpread ? structResult : arrayResult;
+			}
+
 			Array array = Array.of();
 			arr.getValues().forEach( value -> {
 				if ( value instanceof BoxSpreadExpression spread ) {
