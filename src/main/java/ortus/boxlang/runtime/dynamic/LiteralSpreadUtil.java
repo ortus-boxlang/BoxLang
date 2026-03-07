@@ -41,6 +41,7 @@ public class LiteralSpreadUtil {
 	}
 
 	public static Array array( Object... values ) {
+		values = normalizeVarargs( values );
 		Array result = new Array();
 		for ( Object value : values ) {
 			if ( value instanceof SpreadValue spreadValue ) {
@@ -60,6 +61,7 @@ public class LiteralSpreadUtil {
 	 * Mixing array and struct spread sources is rejected.
 	 */
 	public static Object arrayOrOrderedStruct( Object... values ) {
+		values = normalizeVarargs( values );
 		if ( values.length == 0 ) {
 			return array( values );
 		}
@@ -91,6 +93,7 @@ public class LiteralSpreadUtil {
 	}
 
 	public static IStruct struct( IStruct.TYPES type, Object... values ) {
+		values = normalizeVarargs( values );
 		IStruct result = new Struct( type );
 		for ( int i = 0; i < values.length; ) {
 			Object current = values[ i ];
@@ -152,6 +155,14 @@ public class LiteralSpreadUtil {
 
 	private static String describeType( Object value ) {
 		return value == null ? "null" : value.getClass().getName();
+	}
+
+	/**
+	 * Java varargs calls like {@code fn(null)} can arrive as a null varargs array.
+	 * Treat that shape as one explicit null argument instead of crashing.
+	 */
+	private static Object[] normalizeVarargs( Object[] values ) {
+		return values == null ? new Object[] { null } : values;
 	}
 
 	public static final class SpreadValue {
