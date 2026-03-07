@@ -29,6 +29,10 @@ animals = {
   pig: "oink"
 };
 
+// JavaScript-style key shorthand
+sound = "moo";
+animal = { sound }; // same as { sound: sound }
+
 // Create an ordered struct which will maintain key order of insertion
 // Note that you must provide the ordered struct with data to prevent confusion as to whether it is an array or struct
 orderedAnimals = [

@@ -31,6 +31,7 @@ import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringBinding;
 import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -104,6 +105,22 @@ public class ObjectDestructuringASTTest {
 		    ? scope.getName()
 		    : ( ( BoxIdentifier ) secondTarget.getContext() ).getName();
 		assertEquals( "arguments", secondScopeName );
+	}
+
+	@Test
+	public void testSimpleShorthandDestructuringAst() {
+		Parser			parser	= new Parser();
+		ParsingResult	result	= parser.parseExpression( "{ a } = data" );
+		assertTrue( result.isCorrect() );
+		assertTrue( result.getRoot() instanceof BoxAssignment );
+		BoxAssignment assignment = ( BoxAssignment ) result.getRoot();
+		assertTrue( assignment.getLeft() instanceof BoxObjectDestructuringPattern );
+		BoxObjectDestructuringPattern pattern = ( BoxObjectDestructuringPattern ) assignment.getLeft();
+		assertEquals( 1, pattern.getBindings().size() );
+		assertTrue( pattern.getBindings().get( 0 ).getKey() instanceof BoxStringLiteral );
+		assertEquals( "a", ( ( BoxStringLiteral ) pattern.getBindings().get( 0 ).getKey() ).getValue() );
+		assertTrue( pattern.getBindings().get( 0 ).getTarget() instanceof BoxIdentifier );
+		assertEquals( "a", ( ( BoxIdentifier ) pattern.getBindings().get( 0 ).getTarget() ).getName() );
 	}
 
 	@Test
