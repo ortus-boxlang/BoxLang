@@ -66,6 +66,21 @@ public class ToBase64Test {
 	}
 
 	@Test
+	public void testCanEncodeFileObject() {
+		instance.executeSource(
+		    """
+		    tmpFile = getTempDirectory() & "toBase64FileTest.txt"
+		    fileWrite( tmpFile, "Hello World" )
+		    f = fileOpen( tmpFile, "read" )
+		    result = toBase64( f )
+		    fileClose( f )
+		    fileDelete( tmpFile )
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "SGVsbG8gV29ybGQ=" );
+	}
+
+	@Test
 	public void testCanEncodeBytes() {
 		instance.executeSource(
 		    """

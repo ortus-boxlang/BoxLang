@@ -387,6 +387,8 @@ public final class EncryptionUtil {
 		byte[] encodeItem = null;
 		if ( item instanceof byte[] byteArray ) {
 			encodeItem = byteArray;
+		} else if ( item instanceof IBoxBinaryRepresentable representable ) {
+			encodeItem = representable.toByteArray();
 		} else if ( item instanceof String strItem ) {
 			encodeItem = strItem.getBytes( charset );
 		} else {

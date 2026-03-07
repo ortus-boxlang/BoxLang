@@ -2,10 +2,12 @@ package ortus.boxlang.compiler.asmboxpiler;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.objectweb.asm.Opcodes;
@@ -47,12 +49,36 @@ public abstract class Transpiler implements ITranspiler {
 	private Map<String, ClassNode>							auxiliaries				= new LinkedHashMap<String, ClassNode>();
 	private List<TryCatchBlockNode>							tryCatchBlockNodes		= new ArrayList<TryCatchBlockNode>();
 	private int												lambdaCounter			= 0;
+	private int												closureCounter			= 0;
 	private int												componentCounter		= 0;
 	private int												functionBodyCounter		= 0;
 	private List<ImportDefinition>							imports					= new ArrayList<>();
 	private List<MethodContextTracker>						methodContextTrackers	= new ArrayList<MethodContextTracker>();
 	private List<BoxStaticInitializer>						staticInitializers		= new ArrayList<>();
 	private ClassNode										owningClassNode			= null;
+	/**
+	 * Tracks all function names for which an invokeFunction_* static method has been generated,
+	 * including static functions. This prevents duplicate method generation when the same function
+	 * is encountered through multiple AST traversal paths (e.g., tag-based CFC with cfscript blocks).
+	 */
+	private Set<String>										compiledFunctionNames	= new HashSet<>();
+	/**
+	 * Storage for UDF implementations: maps function name (Key) to the instantiation bytecode
+	 * that creates a new UDF instance with a method reference to the static invoker.
+	 */
+	private Map<Key, List<AbstractInsnNode>>				udfInstantiations		= new LinkedHashMap<>();
+
+	/**
+	 * Storage for Lambda implementations: list of instantiation bytecodes
+	 * that create new Lambda instances with method references to the static invokers.
+	 */
+	private List<List<AbstractInsnNode>>					lambdaInstantiations	= new ArrayList<>();
+
+	/**
+	 * Storage for Closure implementations: list of instantiation bytecodes
+	 * that create new ClosureDefinition instances with method references to the static invokers.
+	 */
+	private List<List<AbstractInsnNode>>					closureInstantiations	= new ArrayList<>();
 	/**
 	 * Manually debugging properties
 	 */
@@ -141,11 +167,23 @@ public abstract class Transpiler implements ITranspiler {
 	}
 
 	public boolean hasCompiledFunction( String name ) {
-		return this.udfs.containsKey( name );
+		return this.compiledFunctionNames.contains( name.toLowerCase() );
+	}
+
+	public void markFunctionCompiled( String name ) {
+		this.compiledFunctionNames.add( name.toLowerCase() );
 	}
 
 	public List<AbstractInsnNode> getUDFRegistrations() {
-		return this.udfs.values().stream().flatMap( l -> l.stream() ).collect( Collectors.toList() );
+		Optional<MethodContextTracker> tracker = getCurrentMethodContextTracker();
+		return this.udfs.values().stream().flatMap( l -> {
+			List<AbstractInsnNode> result = new ArrayList<>();
+			if ( tracker.isPresent() ) {
+				result.addAll( tracker.get().loadCurrentContext() );
+			}
+			result.addAll( l );
+			return result.stream();
+		} ).collect( Collectors.toList() );
 	}
 
 	public abstract List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnValueContext );
@@ -218,6 +256,31 @@ public abstract class Transpiler implements ITranspiler {
 
 	public int incrementAndGetLambdaCounter() {
 		return ++lambdaCounter;
+	}
+
+	public int incrementAndGetClosureCounter() {
+		return ++closureCounter;
+	}
+
+	/**
+	 * Get the map of UDF instantiation bytecodes keyed by function name.
+	 */
+	public Map<Key, List<AbstractInsnNode>> getUDFInstantiations() {
+		return udfInstantiations;
+	}
+
+	/**
+	 * Get the list of Lambda instantiation bytecodes.
+	 */
+	public List<List<AbstractInsnNode>> getLambdaInstantiations() {
+		return lambdaInstantiations;
+	}
+
+	/**
+	 * Get the list of Closure instantiation bytecodes.
+	 */
+	public List<List<AbstractInsnNode>> getClosureInstantiations() {
+		return closureInstantiations;
 	}
 
 	public abstract List<List<AbstractInsnNode>> transformProperties( Type declaringType, List<BoxProperty> properties, String sourceType );

@@ -757,6 +757,7 @@ public class BoxTemplateTest {
 		    <bx:set result ="">
 		    	<bx:set vegetable = "bugsBunnySnack" />
 		    	<bx:switch expression="#vegetable#">
+		    <!--- list-based matching is default --->
 		    <bx:case value="carrot,bugsBunnySnack">
 		    	<bx:set result ="Carrots are orange.">
 		    </bx:case>
@@ -776,7 +777,7 @@ public class BoxTemplateTest {
 		    <bx:set result ="">
 		    	<bx:set vegetable = "bugsBunnySnack" />
 		    	<bx:switch expression="#vegetable#">
-		    <bx:case value="carrot:bugsBunnySnack" delimiter=":">
+		    <bx:case value="carrot:bugsBunnySnack" delimiters=":">
 		    	<bx:set result ="Carrots are orange.">
 		    </bx:case>
 		    <bx:defaultcase>
@@ -1442,6 +1443,60 @@ public class BoxTemplateTest {
 		    	</bx:if>
 		    </bx:output>
 		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+	}
+
+	@Test
+	public void testIfStatementWithPoundSigns() {
+		instance.executeSource(
+		    """
+		    <bx:script>
+		    	function foo() {
+		    		return "brad";
+		    	}
+		    	x = 1;
+		    </bx:script>
+		       <bx:if #foo()# NEQ #foo()#>
+		    </bx:if>
+		       """,
+		    context, BoxSourceType.BOXTEMPLATE );
+	}
+
+	@Test
+	public void testSwithWithNullExpression() {
+		instance.executeSource(
+		    """
+		    <bx:switch expression="#javacast( "null", "" )#">
+		    <bx:case value="Y">
+		    	<bx:dump var="It's a yes!">
+		    </bx:case>
+		    <bx:case value="N">
+		    	<bx:dump var="It's a no!">
+		    </bx:case>
+		    <bx:defaultcase>
+		    	<bx:dump var="It's neither!">
+		    </bx:defaultcase>
+		    </bx:switch>
+		         """,
+		    context, BoxSourceType.BOXTEMPLATE );
+	}
+
+	@Test
+	public void testSwithWithNullExpressionDelim() {
+		instance.executeSource(
+		    """
+		    <bx:switch expression="#javacast( "null", "" )#">
+		    <bx:case value="Y,Yes" delimiters=",">
+		    	<bx:dump var="It's a yes!">
+		    </bx:case>
+		    <bx:case value="N,No" delimiters=",">
+		    	<bx:dump var="It's a no!">
+		    </bx:case>
+		    <bx:defaultcase>
+		    	<bx:dump var="It's neither!">
+		    </bx:defaultcase>
+		    </bx:switch>
+		         """,
 		    context, BoxSourceType.BOXTEMPLATE );
 	}
 

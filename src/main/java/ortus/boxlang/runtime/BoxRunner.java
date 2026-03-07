@@ -155,7 +155,6 @@ public class BoxRunner {
 			if ( message.contains( ExceptionUtil.LICENSE_MODULE_NAME ) || message.contains( ExceptionUtil.LICENSE_SUBSCRIPTION_NAME ) ) {
 				message = String.format( licenseExceptionMessage, e.getMessage() );
 			}
-			System.out.println( message );
 			ExceptionUtil.printBoxLangStackTrace( e, System.err );
 			System.exit( 1 );
 			return;
@@ -174,8 +173,29 @@ public class BoxRunner {
 				System.out.println( "https://boxlang.io" );
 			}
 			// Print AST
-			else if ( options.printAST() && options.code() != null ) {
-				boxRuntime.printSourceAST( options.code() );
+			else if ( options.printAST() ) {
+				String source;
+				// If --bx-code is present, use inline code
+				if ( options.code() != null ) {
+					source = options.code();
+				}
+				// If a file path argument is present, read the file
+				else if ( options.templatePath() != null ) {
+					try {
+						source = Files.readString( Paths.get( options.templatePath() ) );
+					} catch ( IOException e ) {
+						throw new BoxRuntimeException( "Failed to read file: " + options.templatePath(), e );
+					}
+				}
+				// Otherwise, read from STDIN
+				else {
+					try {
+						source = new String( System.in.readAllBytes() );
+					} catch ( IOException e ) {
+						throw new BoxRuntimeException( "Failed to read from STDIN", e );
+					}
+				}
+				boxRuntime.printSourceAST( source );
 			}
 			// Transpile to Java
 			else if ( options.transpile() ) {
@@ -801,6 +821,8 @@ public class BoxRunner {
 		System.out.println();
 		System.out.println( "  # 🌳 Print AST for code analysis" );
 		System.out.println( "  boxlang --bx-printAST --bx-code \"x = 1 + 2\"" );
+		System.out.println( "  boxlang --bx-printAST myfile.bx" );
+		System.out.println( "  echo \"x = 1 + 2\" | boxlang --bx-printAST" );
 		System.out.println();
 		System.out.println( "🔄 REPL MODE:" );
 		System.out.println( "  • When no arguments are provided, BoxLang starts in REPL mode" );

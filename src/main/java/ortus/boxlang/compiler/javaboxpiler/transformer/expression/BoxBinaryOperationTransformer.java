@@ -20,6 +20,7 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.BinaryExpr;
+import com.github.javaparser.ast.expr.CastExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.LambdaExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
@@ -27,6 +28,7 @@ import com.github.javaparser.ast.expr.NameExpr;
 import com.github.javaparser.ast.expr.UnaryExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.UnknownType;
 
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -68,60 +70,78 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 
 		Node				javaExpr	= switch ( operation.getOperator() ) {
 											case Plus -> // "Plus.invoke(${left},${right})";
-											    generateBinaryMethodCallExpr( "Plus", left, right );
+											    generateNumericBinaryMethodCallExpr( "Plus", operation, left, right );
 
 											case Minus -> // "Minus.invoke(${left},${right})";
-											    generateBinaryMethodCallExpr( "Minus", left, right );
+											    generateNumericBinaryMethodCallExpr( "Minus", operation, left, right );
 
 											case Star -> // "Multiply.invoke(${left},${right})";
-											    generateBinaryMethodCallExpr( "Multiply", left, right );
+											    generateNumericBinaryMethodCallExpr( "Multiply", operation, left, right );
 
 											case Slash -> // "Divide.invoke(${left},${right})";
-											    generateBinaryMethodCallExpr( "Divide", left, right );
+											    generateNumericBinaryMethodCallExpr( "Divide", operation, left, right );
 
 											case Backslash -> // "IntegerDivide.invoke(${left},${right})";
-											    generateBinaryMethodCallExpr( "IntegerDivide", left, right );
+											    generateNumericBinaryMethodCallExpr( "IntegerDivide", operation, left, right );
 
 											case Power -> // "Power.invoke(${left},${right})";
-											    generateBinaryMethodCallExpr( "Power", left, right );
+											    generateNumericBinaryMethodCallExpr( "Power", operation, left, right );
 
 											case Xor -> // "XOR.invoke(${left},${right})";
 											    generateBinaryMethodCallExpr( "XOR", left, right );
 
 											case Mod -> // "Modulus.invoke(${left},${right})";
-											    generateBinaryMethodCallExpr( "Modulus", left, right );
+											    generateNumericBinaryMethodCallExpr( "Modulus", operation, left, right );
 
 											case And -> {
 												// "BooleanCaster.cast( ${left} ) && BooleanCaster.cast( ${right} )";
-												BinaryExpr		binaryExpr		= new BinaryExpr();
-												NameExpr		booleanNameExpr	= new NameExpr( "BooleanCaster" );
+												BinaryExpr binaryExpr = new BinaryExpr();
 
-												MethodCallExpr	leftExpr		= new MethodCallExpr( booleanNameExpr, "cast" );
-												leftExpr.addArgument( left );
-												binaryExpr.setLeft( leftExpr );
+												if ( operation.getLeft().returnsBoolean() ) {
+													binaryExpr.setLeft( left );
+												} else {
+													NameExpr		booleanNameExpr	= new NameExpr( "BooleanCaster" );
+													MethodCallExpr	leftExpr		= new MethodCallExpr( booleanNameExpr, "cast" );
+													leftExpr.addArgument( left );
+													binaryExpr.setLeft( leftExpr );
+												}
 
 												binaryExpr.setOperator( BinaryExpr.Operator.AND );
 
-												MethodCallExpr rightExpr = new MethodCallExpr( booleanNameExpr, "cast" );
-												rightExpr.addArgument( right );
-												binaryExpr.setRight( rightExpr );
+												if ( operation.getRight().returnsBoolean() ) {
+													binaryExpr.setRight( right );
+												} else {
+													NameExpr		booleanNameExpr2	= new NameExpr( "BooleanCaster" );
+													MethodCallExpr	rightExpr			= new MethodCallExpr( booleanNameExpr2, "cast" );
+													rightExpr.addArgument( right );
+													binaryExpr.setRight( rightExpr );
+												}
 
 												yield binaryExpr;
 											}
 											case Or -> {
 												// "BooleanCaster.cast( ${left} ) || BooleanCaster.cast( ${right} )";
-												BinaryExpr		binaryExpr		= new BinaryExpr();
-												NameExpr		booleanNameExpr	= new NameExpr( "BooleanCaster" );
+												BinaryExpr binaryExpr = new BinaryExpr();
 
-												MethodCallExpr	leftExpr		= new MethodCallExpr( booleanNameExpr, "cast" );
-												leftExpr.addArgument( left );
-												binaryExpr.setLeft( leftExpr );
+												if ( operation.getLeft().returnsBoolean() ) {
+													binaryExpr.setLeft( left );
+												} else {
+													NameExpr		booleanNameExpr	= new NameExpr( "BooleanCaster" );
+													MethodCallExpr	leftExpr		= new MethodCallExpr( booleanNameExpr, "cast" );
+													leftExpr.addArgument( left );
+													binaryExpr.setLeft( leftExpr );
+												}
 
 												binaryExpr.setOperator( BinaryExpr.Operator.OR );
 
-												MethodCallExpr rightExpr = new MethodCallExpr( booleanNameExpr, "cast" );
-												rightExpr.addArgument( right );
-												binaryExpr.setRight( rightExpr );
+												if ( operation.getRight().returnsBoolean() ) {
+													binaryExpr.setRight( right );
+												} else {
+													NameExpr		booleanNameExpr2	= new NameExpr( "BooleanCaster" );
+													MethodCallExpr	rightExpr			= new MethodCallExpr( booleanNameExpr2, "cast" );
+													rightExpr.addArgument( right );
+													binaryExpr.setRight( rightExpr );
+												}
 
 												yield binaryExpr;
 											}
@@ -212,6 +232,27 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 			}
 		}
 		return methodCallExpr;
+	}
+
+	/**
+	 * Generate a binary method call expression for numeric operators, casting operands to Number
+	 * when both are known to return Number values to avoid unnecessary NumberCaster calls.
+	 *
+	 * @param methodName the operator class name (e.g. "Plus", "Minus")
+	 * @param operation  the BoxBinaryOperation AST node
+	 * @param left       the left operand expression
+	 * @param right      the right operand expression
+	 *
+	 * @return the method call expression
+	 */
+	@NonNull
+	private static MethodCallExpr generateNumericBinaryMethodCallExpr( String methodName, BoxBinaryOperation operation, Expression left, Expression right ) {
+		if ( operation.getLeft().returnsNumber() && operation.getRight().returnsNumber() ) {
+			return generateBinaryMethodCallExpr( methodName,
+			    new CastExpr( new ClassOrInterfaceType( null, "Number" ), left ),
+			    new CastExpr( new ClassOrInterfaceType( null, "Number" ), right ) );
+		}
+		return generateBinaryMethodCallExpr( methodName, left, right );
 	}
 
 }

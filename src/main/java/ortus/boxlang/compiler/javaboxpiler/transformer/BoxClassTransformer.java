@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.compiler.javaboxpiler.transformer;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -24,19 +25,23 @@ import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.ArrayCreationExpr;
+import com.github.javaparser.ast.expr.ArrayInitializerExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
 import com.github.javaparser.ast.expr.LambdaExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.stmt.BlockStmt;
 import com.github.javaparser.ast.stmt.EmptyStmt;
 import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.stmt.Statement;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.UnknownType;
 
 import ortus.boxlang.compiler.IBoxpiler;
@@ -119,6 +124,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 		import java.nio.file.Paths;
 		import java.time.LocalDateTime;
 		import java.util.ArrayList;
+		import java.util.Arrays;
 		import java.util.Collections;
 		import java.util.HashMap;
 		import java.util.Iterator;
@@ -149,16 +155,20 @@ public class BoxClassTransformer extends AbstractTransformer {
 			private static final Map<Key,Property>	getterLookup=null;
 			private static final Map<Key,Property>	setterLookup=null;
 			private static Map<Key, AbstractFunction>	abstractMethods	= new LinkedHashMap<>();
-			private static Map<Key, Class<? extends UDF>> compileTimeMethods = ${compileTimeMethods};
 			private static final boolean isJavaExtends=${isJavaExtends};
 			private static StaticScope staticScope = new StaticScope();
 			// This is public so the ClassLocator can check it easily
 			public static boolean staticInitialized = false;
 			public static final Key name = ${boxFQN};
+			private static List<Lambda>					lambdas			= new ArrayList<>( Arrays.asList( new Lambda[] {} ) );
+			private static List<ClosureDefinition>		closures		= new ArrayList<>( Arrays.asList( new ClosureDefinition[] {} ) );
+			private static Map<Key,UDF>					udfs			= StructUtil.<UDF>linkedMapOf();
 			// Used to cached modern metadata (created on-demand)
 			public static IStruct metadata = null;
 			// Used to cached legacy metadata (created on-demand, never used if compat isn't installed)
 			public static IStruct legacyMetadata = null;
+			private static final boolean isFinal = ${isFinal};
+			private static final boolean isAbstract = ${isAbstract};
 
 			static {
 				superClass = BoxClassSupport.runStaticInitializer( ${className}::staticInitializer, ${className}.class, ${className}.staticScope, ${className}.path, imports, interfaces, annotations );
@@ -194,21 +204,15 @@ public class BoxClassTransformer extends AbstractTransformer {
 			}
 
 			public Map<Key, AbstractFunction> getAllAbstractMethods() {
-				// get from parent and override
-				Map<Key, AbstractFunction> allAbstractMethods = new LinkedHashMap<>();
-				if ( this._super != null ) {
-					allAbstractMethods.putAll( this._super.getAllAbstractMethods() );
-				}
-				allAbstractMethods.putAll( this.abstractMethods );
-				return allAbstractMethods;
+				return BoxClassSupport.getAllAbstractMethods( this );
 			}
 
 			public Set<Key> getCompileTimeMethodNames() {
-				return ${className}.compileTimeMethods.keySet();
+				return ${className}.udfs.keySet();
 			}
 
-			public Map<Key, Class<? extends UDF>> getCompileTimeMethods() {
-				return ${className}.compileTimeMethods;
+			public Map<Key, UDF> getUDFs() {
+				return ${className}.udfs;
 			}
 
 			public BoxMeta _getbx() {
@@ -311,7 +315,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 				this.canInvokeImplicitAccessor = canInvokeImplicitAccessor;
 			}
 
-			public DynamicObject getSuperClass() {
+			public DynamicObject getBoxSuperClass() {
 				return superClass;
 			}
 
@@ -337,6 +341,14 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 			public IClassRunnable getBottomClass() {
 				return BoxClassSupport.getBottomClass( this );
+			}
+				
+			public boolean isFinalClass() {
+				return ${className}.isFinal;
+			}
+
+			public boolean isAbstractClass() {
+				return ${className}.isAbstract;
 			}
 
 			/**
@@ -390,7 +402,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 								${className}.superClass,
 								${className}.interfaces,
 								${className}.abstractMethods,
-								${className}.compileTimeMethods,
+								${className}.udfs,
 								${className}.annotations,
 								${className}.documentation,
 								${className}.properties,
@@ -415,7 +427,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 								${className}.superClass,
 								${className}.interfaces,
 								${className}.abstractMethods,
-								${className}.compileTimeMethods,
+								${className}.udfs,
 								${className}.annotations,
 								${className}.documentation,
 								${className}.properties,
@@ -571,16 +583,20 @@ public class BoxClassTransformer extends AbstractTransformer {
 		 * Prep the class template properties
 		 * --------------------------------------------------------------------------
 		 */
-		String							fileName	= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getName() : "unknown";
-		String							filePath	= source instanceof SourceFile file && file.getFile() != null ? file.getFile().getAbsolutePath()
-		    : "unknown";
+		String filePath = "unknown";
+		if ( source instanceof SourceFile file && file.getFile() != null ) {
+			try {
+				filePath = file.getFile().toPath().toRealPath().toString();
+			} catch ( IOException e ) {
+				// If the file no longer exists or can't be accessed, then ignore.
+			}
+		}
 		String							sourceType	= transpiler.getProperty( "sourceType" );
 
 		// This map replaces the string template
 		Map<String, String>				values		= Map.ofEntries(
 		    Map.entry( "packagename", packageName ),
 		    Map.entry( "className", className ),
-		    Map.entry( "fileName", fileName ),
 		    Map.entry( "interfaceMethods", interfaceMethods ),
 		    Map.entry( "interfaceList", interfaces.stream().collect( java.util.stream.Collectors.joining( ", " ) ) ),
 		    Map.entry( "extendsTemplate", extendsTemplate ),
@@ -593,7 +609,12 @@ public class BoxClassTransformer extends AbstractTransformer {
 		    // Don't use the transpiler helper method for this so it's always a Key.of() call. When re-defining a class, we want this to be a Key.of() call.
 		    // Casting input to Object to match the same bytecode the ASM boxpiler uses, which the DiskClassLoader ASM vistor looks for.
 		    Map.entry( "boxFQN", "Key.of( (Object)\"" + boxFQN + "\" )" ),
-		    Map.entry( "compileTimeMethods", generateCompileTimeMethods( boxClass ) )
+		    Map.entry( "isFinal", String.valueOf( boxClass.getAnnotations().stream()
+		        .filter( it -> it.getKey().getValue().equalsIgnoreCase( "final" ) )
+		        .findFirst().isPresent() ) ),
+		    Map.entry( "isAbstract", String.valueOf( boxClass.getAnnotations().stream()
+		        .filter( it -> it.getKey().getValue().equalsIgnoreCase( "abstract" ) )
+		        .findFirst().isPresent() ) )
 		);
 		String							code		= PlaceholderHelper.resolve( CLASS_TEMPLATE, values );
 		ParseResult<CompilationUnit>	result;
@@ -610,25 +631,21 @@ public class BoxClassTransformer extends AbstractTransformer {
 			    "Error parsing class" + packageName + "." + className + ". The message received was:" + result.toString() + "\n" + code );
 		}
 
-		CompilationUnit		entryPoint				= result.getResult().get();
+		CompilationUnit				entryPoint				= result.getResult().get();
+		ClassOrInterfaceDeclaration	thisClass				= entryPoint.getClassByName( className ).orElseThrow();
 
-		MethodDeclaration	pseudoConstructorMethod	= entryPoint.findCompilationUnit().orElseThrow()
-		    .getClassByName( className ).orElseThrow()
-		    .getMethodsByName( "_pseudoConstructor" ).get( 0 );
+		MethodDeclaration			pseudoConstructorMethod	= thisClass.getMethodsByName( "_pseudoConstructor" ).get( 0 );
 
-		MethodDeclaration	staticInitializerMethod	= entryPoint.findCompilationUnit().orElseThrow()
-		    .getClassByName( className ).orElseThrow()
-		    .getMethodsByName( "staticInitializer" ).get( 0 );
+		MethodDeclaration			staticInitializerMethod	= thisClass.getMethodsByName( "staticInitializer" ).get( 0 );
 
-		FieldDeclaration	imports					= entryPoint.findCompilationUnit().orElseThrow()
-		    .getClassByName( className ).orElseThrow()
-		    .getFieldByName( "imports" ).orElseThrow();
+		FieldDeclaration			imports					= thisClass.getFieldByName( "imports" ).orElseThrow();
 
-		FieldDeclaration	keys					= entryPoint.findCompilationUnit().orElseThrow()
-		    .getClassByName( className ).orElseThrow()
-		    .getFieldByName( "keys" ).orElseThrow();
+		FieldDeclaration			keys					= thisClass.getFieldByName( "keys" ).orElseThrow();
 
-		Expression			annotationStruct		= transformAnnotations( boxClass.getAnnotations() );
+		MethodCallExpr				udfs					= ( MethodCallExpr ) thisClass.getFieldByName( "udfs" ).orElseThrow()
+		    .getVariable( 0 ).getInitializer().get();
+
+		Expression					annotationStruct		= transformAnnotations( boxClass.getAnnotations() );
 		result.getResult().orElseThrow().getType( 0 ).getFieldByName( "annotations" ).orElseThrow().getVariable( 0 ).setInitializer( annotationStruct );
 
 		/* Transform the documentation creating the initialization value */
@@ -703,6 +720,39 @@ public class BoxClassTransformer extends AbstractTransformer {
 			staticInitializerMethod.getBody().get().addStatement( it );
 		} );
 
+		// loop over UDF registrations, add the static method to the class, and the UDF instantiation to the static block that initializes the UDFs map
+		( ( JavaTranspiler ) transpiler ).getUDFInvokers().forEach( ( key, value ) -> {
+			udfs.addArgument( createKey( key.getName() ) );
+			udfs.addArgument( value.getSecond() );
+			thisClass.addMember( value.getFirst() );
+		} );
+
+		// Process lambda invokers - add static methods and build the lambdas list initializer
+		FieldDeclaration		lambdasField	= thisClass.getFieldByName( "lambdas" ).orElseThrow();
+		ArrayCreationExpr		lambdasArray	= new ArrayCreationExpr( new ClassOrInterfaceType( null, "Lambda" ) );
+		ArrayInitializerExpr	lambdasInit		= new ArrayInitializerExpr();
+		lambdasArray.setInitializer( lambdasInit );
+		( ( JavaTranspiler ) transpiler ).getLambdaInvokers().forEach( value -> {
+			lambdasInit.getValues().add( value.getSecond() );
+			thisClass.addMember( value.getFirst() );
+		} );
+		ObjectCreationExpr lambdasListExpr = new ObjectCreationExpr( null, new ClassOrInterfaceType( null, "ArrayList<>" ), new NodeList<>() );
+		lambdasListExpr.addArgument( new MethodCallExpr( new NameExpr( "Arrays" ), "asList", new NodeList<>( lambdasArray ) ) );
+		lambdasField.getVariable( 0 ).setInitializer( lambdasListExpr );
+
+		// Process closure invokers - add static methods and build the closures list initializer
+		FieldDeclaration		closuresField	= thisClass.getFieldByName( "closures" ).orElseThrow();
+		ArrayCreationExpr		closuresArray	= new ArrayCreationExpr( new ClassOrInterfaceType( null, "ClosureDefinition" ) );
+		ArrayInitializerExpr	closuresInit	= new ArrayInitializerExpr();
+		closuresArray.setInitializer( closuresInit );
+		( ( JavaTranspiler ) transpiler ).getClosureInvokers().forEach( value -> {
+			closuresInit.getValues().add( value.getSecond() );
+			thisClass.addMember( value.getFirst() );
+		} );
+		ObjectCreationExpr closuresListExpr = new ObjectCreationExpr( null, new ClassOrInterfaceType( null, "ArrayList<>" ), new NodeList<>() );
+		closuresListExpr.addArgument( new MethodCallExpr( new NameExpr( "Arrays" ), "asList", new NodeList<>( closuresArray ) ) );
+		closuresField.getVariable( 0 ).setInitializer( closuresListExpr );
+
 		// For import statements, we add an argument to the constructor of the static List of imports
 		MethodCallExpr imp = ( MethodCallExpr ) imports.getVariable( 0 ).getInitializer().orElseThrow();
 		imp.getArguments().addAll( transpiler.getJImports() );
@@ -727,16 +777,6 @@ public class BoxClassTransformer extends AbstractTransformer {
 		transpiler.popContextName();
 
 		return entryPoint;
-	}
-
-	private String generateCompileTimeMethods( BoxClass boxClass ) {
-		List<String> entries = boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
-		    .stream()
-		    // Filter out abstract methods as they do not have a class
-		    .filter( bfd -> bfd.getBody() != null )
-		    .map( func -> "Map.entry(" + this.createKey( func.getName() ).toString() + ", Func_" + func.getName() + ".class)" )
-		    .collect( java.util.stream.Collectors.toList() );
-		return "Map.ofEntries(" + entries.stream().collect( java.util.stream.Collectors.joining( ", " ) ) + ")";
 	}
 
 	/**

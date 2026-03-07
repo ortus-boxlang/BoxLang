@@ -16,6 +16,7 @@ package ortus.boxlang.runtime.runnables;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -590,10 +591,10 @@ public class BoxClassSupport {
 		    thisClass.bxGetName(),
 		    thisClass.getSourceType(),
 		    thisClass.getRunnablePath(),
-		    thisClass.getSuperClass(),
+		    thisClass.getBoxSuperClass(),
 		    thisClass.getInterfaces(),
 		    thisClass.getAbstractMethods(),
-		    thisClass.getCompileTimeMethods(),
+		    thisClass.getUDFs(),
 		    thisClass.getAnnotations(),
 		    thisClass.getDocumentation(),
 		    thisClass.getProperties(),
@@ -630,7 +631,7 @@ public class BoxClassSupport {
 	    DynamicObject superClass,
 	    List<BoxInterface> interfaces,
 	    Map<Key, AbstractFunction> abstractMethods,
-	    Map<Key, Class<? extends UDF>> compileTimeMethods,
+	    Map<Key, ? extends Function> udfs,
 	    IStruct annotations,
 	    IStruct documentation,
 	    Map<Key, ortus.boxlang.runtime.types.Property> properties,
@@ -644,8 +645,8 @@ public class BoxClassSupport {
 
 		// Assemble the functions
 		var functions = new ArrayList<Object>();
-		for ( var fun : compileTimeMethods.values() ) {
-			functions.add( DynamicObject.of( fun ).invokeStatic( runtime.getRuntimeContext(), "getMetaDataStatic" ) );
+		for ( var fun : udfs.values() ) {
+			functions.add( fun.getMetaData() );
 		}
 
 		// Add all static methods as well, if any
@@ -989,13 +990,18 @@ public class BoxClassSupport {
 	 * @throws BoxValidationException If the class does not satisfy the interface
 	 */
 	public static void validateAbstractMethods( IClassRunnable thisClass, Map<Key, AbstractFunction> abstractMethods ) {
-		String className = thisClass.bxGetName().getName();
+
+		// If the class has the abstract annotation, then don't enforce
+		if ( thisClass.isAbstractClass() ) {
+			return;
+		}
 
 		// Having an onMissingMethod() UDF is the golden ticket to implementing any interface
 		if ( thisClass.getThisScope().get( Key.onMissingMethod ) instanceof Function ) {
 			return;
 		}
 
+		String className = thisClass.bxGetName().getName();
 		for ( Map.Entry<Key, AbstractFunction> abstractMethod : abstractMethods.entrySet() ) {
 			if ( thisClass.getThisScope().containsKey( abstractMethod.getKey() )
 			    && thisClass.getThisScope().get( abstractMethod.getKey() ) instanceof Function classMethod ) {
@@ -1041,9 +1047,9 @@ public class BoxClassSupport {
 
 		// This is a hack still and not a full solution. It will work for a mixin on a parent class, ignoring it on the lower classes it was copied to,
 		// but will NOT work for a mixin which was mixed explicitly into both the child and the parent class.
-		// As it currently stands. there is no way to tell if a mixin in a child class was simply coied down from the parent class, or if it was explicitly mixed in there.
+		// As it currently stands. there is no way to tell if a mixin in a child class was simply copied down from the parent class, or if it was explicitly mixed in there.
 		// The full fix for this will require some additional tracking.
-		IClassRunnable	highestClassWithUDFInstance	= thisClass.getVariablesScope().containsValue( udf ) ? thisClass : null;
+		IClassRunnable	highestClassWithUDFInstance	= thisClass.getVariablesScope().get( udf.getName() ) == udf ? thisClass : null;
 
 		// Otherwise, let's climb the supers (if they even exist) and see if one of them declared it
 		IClassRunnable	thisSuper					= thisClass.getSuper();
@@ -1051,7 +1057,7 @@ public class BoxClassSupport {
 			if ( enclosingClass == thisSuper.getClass() ) {
 				return thisSuper;
 			}
-			highestClassWithUDFInstance	= thisSuper.getVariablesScope().containsValue( udf ) ? thisSuper : highestClassWithUDFInstance;
+			highestClassWithUDFInstance	= thisSuper.getVariablesScope().get( udf.getName() ) == udf ? thisSuper : highestClassWithUDFInstance;
 			thisSuper					= thisSuper.getSuper();
 		}
 		// If the original class and no supers were the enclosing class, then this is prolly a mixin. Just return the original value.
@@ -1117,6 +1123,8 @@ public class BoxClassSupport {
 				return getClassLocator().load(
 				    staticContext,
 				    superClassName,
+				    ClassLocator.BX_PREFIX,
+				    true,
 				    imports
 				);
 			}
@@ -1171,6 +1179,24 @@ public class BoxClassSupport {
 			}
 		}
 		return classLocator;
+	}
+
+	/**
+	 * Get all abstract methods for a class, including those inherited from parent classes.
+	 * The child class's abstract methods will override the parent class's abstract methods if there are any with the same name.
+	 * 
+	 * @param thisClass The class to get the abstract methods for
+	 * 
+	 * @return A map of all abstract methods for the class, including inherited ones.
+	 */
+	public static Map<Key, AbstractFunction> getAllAbstractMethods( IClassRunnable thisClass ) {
+		// get from parent and override
+		Map<Key, AbstractFunction> allAbstractMethods = new LinkedHashMap<>();
+		if ( thisClass.getSuper() != null ) {
+			allAbstractMethods.putAll( getAllAbstractMethods( thisClass.getSuper() ) );
+		}
+		allAbstractMethods.putAll( thisClass.getAbstractMethods() );
+		return allAbstractMethods;
 	}
 
 }

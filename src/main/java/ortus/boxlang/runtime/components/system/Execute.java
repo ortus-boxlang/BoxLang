@@ -54,7 +54,8 @@ public class Execute extends Component {
 		    new Attribute( Key.directory, "string" ),
 		    new Attribute( outputFileKey, "string" ),
 		    new Attribute( errorFileKey, "string" ),
-		    new Attribute( errorVariableKey, "string" )
+		    new Attribute( errorVariableKey, "string" ),
+		    new Attribute( Key.exitCode, "string" )
 		};
 	}
 
@@ -83,6 +84,8 @@ public class Execute extends Component {
 	 * @attribute.ouptutFile An optional file path to write the command output to
 	 *
 	 * @attribute.errorFile An optional file path to write errors to
+	 * 
+	 * @attribute.exitCode An optional variable to set the exit code into
 	 *
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
@@ -96,13 +99,17 @@ public class Execute extends Component {
 		IStruct response = StructCaster
 		    .cast( runtime.getFunctionService().getGlobalFunction( Key.systemExecute ).invoke( context, attributes, false, Key.execute ) );
 
+		if ( attributes.getAsString( Key.exitCode ) != null ) {
+			ExpressionInterpreter.setVariable( context, attributes.getAsString( Key.exitCode ), response.getAsInteger( Key.exitCode ) );
+		}
+
 		if ( attributes.getAsString( Key.variable ) != null ) {
 			// Set the result(s) back into the page
 			ExpressionInterpreter.setVariable( context, attributes.getAsString( Key.variable ), response.getAsString( Key.output ) );
 		}
 
-		if ( attributes.containsKey( errorFileKey ) ) {
-			ExpressionInterpreter.setVariable( context, attributes.getAsString( errorFileKey ), response.getAsString( Key.error ) );
+		if ( attributes.containsKey( errorVariableKey ) ) {
+			ExpressionInterpreter.setVariable( context, attributes.getAsString( errorVariableKey ), response.getAsString( Key.error ) );
 		}
 
 		return DEFAULT_RETURN;

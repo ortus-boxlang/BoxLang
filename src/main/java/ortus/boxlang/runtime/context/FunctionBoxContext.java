@@ -92,6 +92,11 @@ public class FunctionBoxContext extends BaseBoxContext {
 	protected Key				functionCalledName;
 
 	/**
+	 * A cached reference to the closest variables scope
+	 */
+	protected IScope			cachedVariablesScope	= null;
+
+	/**
 	 * Creates a new execution context with a bounded function instance and parent
 	 * context
 	 *
@@ -356,9 +361,11 @@ public class FunctionBoxContext extends BaseBoxContext {
 			}
 
 			// In query loop?
-			var querySearch = queryFindNearby( key );
-			if ( querySearch != null ) {
-				return querySearch;
+			if ( !forAssign ) {
+				var querySearch = queryFindNearby( key );
+				if ( querySearch != null ) {
+					return querySearch;
+				}
 			}
 		}
 
@@ -522,7 +529,11 @@ public class FunctionBoxContext extends BaseBoxContext {
 				return getParent().getDefaultAssignmentScope();
 			} else {
 				// Otherwise, non-static functions in a class use the closest variables scope
-				return getScopeNearby( VariablesScope.name );
+				if ( this.cachedVariablesScope != null ) {
+					return this.cachedVariablesScope;
+				}
+				this.cachedVariablesScope = getScopeNearby( VariablesScope.name );
+				return this.cachedVariablesScope;
 			}
 		} else {
 			return localScope;

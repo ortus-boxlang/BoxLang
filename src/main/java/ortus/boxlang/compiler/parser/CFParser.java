@@ -1031,7 +1031,7 @@ public class CFParser extends AbstractParser {
 			}
 
 			value		= findExprInAnnotations( annotations, "value", true, null, "case", getPosition( node ) );
-			delimiter	= findExprInAnnotations( annotations, "delimiter", false, new BoxStringLiteral( ",", null, null ), "case", getPosition( node ) );
+			delimiter	= findExprInAnnotations( annotations, "delimiters", false, new BoxStringLiteral( ",", null, null ), "case", getPosition( node ) );
 		}
 
 		List<BoxStatement> statements = null;
@@ -1723,7 +1723,7 @@ public class CFParser extends AbstractParser {
 		var	cache	= CFGrammar.getParseCache();
 		int	size	= 0;
 		for ( int d = 0; d < cache.length; d++ ) {
-			size += cache[ d ].getStates().size();
+			size += cache[ d ].states.size();
 		}
 		return size;
 	}

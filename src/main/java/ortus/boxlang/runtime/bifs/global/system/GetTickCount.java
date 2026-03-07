@@ -18,6 +18,9 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF( description = "Get the system tick count" )
 public class GetTickCount extends BIF {
@@ -27,16 +30,32 @@ public class GetTickCount extends BIF {
 	 */
 	public GetTickCount() {
 		super();
+		this.declaredArguments = new Argument[] {
+		    new Argument( false, Argument.STRING, Key.unit, "milli" )
+		};
 	}
 
 	/**
-	 * Returns the current value of an internal millisecond timer.
+	 * Returns the current value of an internal timer.
+	 * The unit argument controls the time unit returned.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
+	 * @argument.unit The time unit to return. Valid values are: nano, milli (default), second.
+	 *
+	 * @return The current tick count in the specified unit.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return System.currentTimeMillis();
+		String unit = arguments.getAsString( Key.unit ).trim().toLowerCase();
+
+		return switch ( unit ) {
+			case "nano" -> System.nanoTime();
+			case "milli" -> System.currentTimeMillis();
+			case "second" -> System.currentTimeMillis() / 1000;
+			default -> throw new BoxRuntimeException(
+			    String.format( "Invalid unit [%s] for getTickCount(). Valid units are: nano, milli, second.", unit )
+			);
+		};
 	}
 }
