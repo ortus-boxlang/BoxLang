@@ -39,6 +39,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxAccess;
+import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringBinding;
 import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
@@ -180,6 +181,16 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 				accessKeys.add( 0, transpiler.createKey( currentObjectAccess.getAccess() ) );
 			}
 			furthestLeft = currentObjectAccess.getContext();
+		}
+
+		// CF parses `var["foo"] = "bar"` as a `var` modifier + array literal LHS.
+		// Treat it as assignment to identifier `var` with bracket access key(s).
+		if ( hasVar && furthestLeft instanceof BoxArrayLiteral arrayLiteral ) {
+			hasVar = false;
+			for ( BoxExpression value : arrayLiteral.getValues() ) {
+				accessKeys.add( transpiler.createKey( value ) );
+			}
+			furthestLeft = new BoxIdentifier( "var", null, null );
 		}
 
 		if ( hasStatic && hasVar ) {
