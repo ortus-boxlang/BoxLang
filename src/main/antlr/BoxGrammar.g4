@@ -126,7 +126,15 @@ preAnnotation: AT preAnnotationName ( LPAREN annotation (COMMA annotation)* RPAR
 preAnnotationName: identifier ( (MINUS identifier) | (DOT identifier))*
     ;
 
-arrayLiteral: LBRACKET expressionList? RBRACKET
+arrayLiteral: LBRACKET arrayLiteralMembers? RBRACKET
+    ;
+
+arrayLiteralMembers: arrayLiteralMember (COMMA arrayLiteralMember)* COMMA?
+    ;
+
+arrayLiteralMember
+    : expression
+    | ELLIPSIS expression
     ;
 
 // foo=bar baz="bum"
@@ -407,11 +415,16 @@ stringLiteralPart: STRING_LITERAL | HASHHASH
 // { foo: "bar", baz = "bum" }
 structExpression
     : LBRACE structMembersWithShorthand? RBRACE
-    | LBRACKET structMembers RBRACKET
+    | LBRACKET orderedStructMembers RBRACKET
     | LBRACKET (COLON | EQUALSIGN) RBRACKET
     ;
 
-structMembersWithShorthand: structMemberWithShorthand (COMMA structMemberWithShorthand)* COMMA?
+structMembersWithShorthand: structMemberWithShorthandOrSpread (COMMA structMemberWithShorthandOrSpread)* COMMA?
+    ;
+
+structMemberWithShorthandOrSpread
+    : structMemberWithShorthand
+    | structSpread
     ;
 
 /*
@@ -423,7 +436,26 @@ structMemberWithShorthand
     | identifier
     ;
 
-structMembers: structMember (COMMA structMember)* COMMA?
+structSpread: ELLIPSIS expression
+    ;
+
+// Ordered struct spread support while avoiding ambiguity with array literals:
+// at least one keyed member (foo:bar / foo=bar) must exist in [] structs.
+orderedStructMembers
+    : orderedStructMembersWithLeadingKey
+    | orderedStructMembersWithLeadingSpread
+    ;
+
+orderedStructMembersWithLeadingKey: structMember (COMMA orderedStructMemberOrSpread)* COMMA?
+    ;
+
+orderedStructMembersWithLeadingSpread
+    : structSpread (COMMA structSpread)* COMMA structMember (COMMA orderedStructMemberOrSpread)* COMMA?
+    ;
+
+orderedStructMemberOrSpread
+    : structMember
+    | structSpread
     ;
 
 /*

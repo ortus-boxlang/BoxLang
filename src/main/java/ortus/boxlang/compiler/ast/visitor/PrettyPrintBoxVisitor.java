@@ -57,6 +57,7 @@ import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringBinding;
 import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxSpreadExpression;
 import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
 import ortus.boxlang.compiler.ast.expression.BoxStaticMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
@@ -984,6 +985,13 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	public void visit( BoxSpreadExpression node ) {
+		printPreComments( node );
+		print( "..." );
+		node.getExpression().accept( this );
+		printPostComments( node );
+	}
+
 	public void visit( BoxStructLiteral node ) {
 		printPreComments( node );
 		increaseIndent();
@@ -999,14 +1007,21 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			else
 				print( "{" );
 		}
-		// Every other value is key/value
-		for ( int i = 0; i < size; i = i + 2 ) {
-			var key = node.getValues().get( i );
-			key.accept( this );
-			print( " : " );
-			var value = node.getValues().get( i + 1 );
-			value.accept( this );
-			if ( i < size - 2 ) {
+		for ( int i = 0; i < size; ) {
+			var current = node.getValues().get( i );
+			if ( current instanceof BoxSpreadExpression spread ) {
+				spread.accept( this );
+				i++;
+			} else {
+				current.accept( this );
+				if ( i + 1 < size ) {
+					print( " : " );
+					var value = node.getValues().get( i + 1 );
+					value.accept( this );
+				}
+				i += 2;
+			}
+			if ( i < size ) {
 				println( ", " );
 			} else {
 				newLine();

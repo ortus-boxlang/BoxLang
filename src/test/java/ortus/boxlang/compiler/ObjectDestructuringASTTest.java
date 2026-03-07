@@ -57,7 +57,11 @@ public class ObjectDestructuringASTTest {
 		assertEquals( 4, pattern.getBindings().size() );
 
 		BoxObjectDestructuringBinding first = pattern.getBindings().get( 0 );
-		assertTrue( first.getKey() instanceof BoxIdentifier );
+		assertTrue( first.getKey() instanceof BoxIdentifier || first.getKey() instanceof BoxStringLiteral );
+		String firstKey = first.getKey() instanceof BoxIdentifier
+		    ? ( ( BoxIdentifier ) first.getKey() ).getName()
+		    : ( ( BoxStringLiteral ) first.getKey() ).getValue();
+		assertEquals( "a", firstKey );
 		assertTrue( first.getTarget() instanceof BoxIdentifier );
 
 		BoxObjectDestructuringBinding second = pattern.getBindings().get( 1 );
