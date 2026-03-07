@@ -1103,14 +1103,27 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 
 	@Override
 	public BoxExpression visitStructExpression( StructExpressionContext ctx ) {
-		var					pos				= tools.getPosition( ctx );
-		var					src				= tools.getSourceText( ctx );
-		var					type			= ctx.RBRACKET() != null ? BoxStructType.Ordered : BoxStructType.Unordered;
-		var					structMembers	= ctx.structMembers();
-		List<BoxExpression>	values			= new ArrayList<>();
+		var					pos							= tools.getPosition( ctx );
+		var					src							= tools.getSourceText( ctx );
+		var					type						= ctx.RBRACKET() != null ? BoxStructType.Ordered : BoxStructType.Unordered;
+		var					structMembers				= ctx.structMembers();
+		var					structMembersWithShorthand	= ctx.structMembersWithShorthand();
+		List<BoxExpression>	values						= new ArrayList<>();
 
-		if ( structMembers != null ) {
-			boolean isKey = true;
+		if ( structMembersWithShorthand != null ) {
+			for ( var structMemberWithShorthand : structMembersWithShorthand.structMemberWithShorthand() ) {
+				if ( structMemberWithShorthand.identifier() != null ) {
+					var	shorthandIdentifier	= structMemberWithShorthand.identifier();
+					var	shorthandSource		= tools.getSourceText( shorthandIdentifier );
+					values.add( new BoxStringLiteral( shorthandSource, tools.getPosition( shorthandIdentifier ), shorthandSource ) );
+					values.add( shorthandIdentifier.accept( this ) );
+				} else {
+					var structMember = structMemberWithShorthand.structMember();
+					values.add( structMember.structKey().accept( this ) );
+					values.add( structMember.expression().accept( this ) );
+				}
+			}
+		} else if ( structMembers != null ) {
 			for ( StructMemberContext structMember : structMembers.structMember() ) {
 				values.add( structMember.structKey().accept( this ) );
 				values.add( structMember.expression().accept( this ) );

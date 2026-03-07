@@ -406,9 +406,21 @@ stringLiteralPart: STRING_LITERAL | HASHHASH
 
 // { foo: "bar", baz = "bum" }
 structExpression
-    : LBRACE structMembers? RBRACE
+    : LBRACE structMembersWithShorthand? RBRACE
     | LBRACKET structMembers RBRACKET
     | LBRACKET (COLON | EQUALSIGN) RBRACKET
+    ;
+
+structMembersWithShorthand: structMemberWithShorthand (COMMA structMemberWithShorthand)* COMMA?
+    ;
+
+/*
+ foo
+ foo : bar
+ */
+structMemberWithShorthand
+    : structMember
+    | identifier
     ;
 
 structMembers: structMember (COMMA structMember)* COMMA?

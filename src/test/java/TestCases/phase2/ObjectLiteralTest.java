@@ -90,6 +90,17 @@ public class ObjectLiteralTest {
 
 		instance.executeSource(
 		    """
+		    a = "alpha";
+		    result = [a];
+		    """,
+		    context );
+		assertThat( variables.get( result ) instanceof Array ).isEqualTo( true );
+		arr = ( Array ) variables.get( result );
+		assertThat( arr.size() ).isEqualTo( 1 );
+		assertThat( arr.dereference( context, one, false ) ).isEqualTo( "alpha" );
+
+		instance.executeSource(
+		    """
 		      result = [
 		    "foo",
 		    'bar'
@@ -200,6 +211,28 @@ public class ObjectLiteralTest {
 		str = ( IStruct ) variables.get( result );
 		assertThat( str.get( Key.of( "brad" ) ) ).isEqualTo( "wood" );
 		assertThat( str.keySet().toArray( new Key[ 0 ] )[ 0 ].getName() ).isEqualTo( "brad" );
+
+		instance.executeSource(
+		    """
+		    a = "wood";
+		    b = "majano";
+		    result = { a, b };
+		    """,
+		    context );
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
+		assertThat( variables.getAsStruct( result ).getType() ).isEqualTo( Struct.TYPES.DEFAULT );
+		assertThat( ( ( IStruct ) variables.get( result ) ).size() ).isEqualTo( 2 );
+		str = ( IStruct ) variables.get( result );
+		assertThat( str.get( Key.of( "a" ) ) ).isEqualTo( "wood" );
+		assertThat( str.get( Key.of( "b" ) ) ).isEqualTo( "majano" );
+
+		instance.executeSource(
+		    """
+		    fooBar = "wood";
+		    result = { fooBar }.keyList();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "fooBar" );
 
 		instance.executeSource(
 		    """
@@ -547,6 +580,14 @@ public class ObjectLiteralTest {
 		       """,
 		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "BRAD" );
+
+		instance.executeSource(
+		    """
+		    fooBar = 'wood';
+		    result = { fooBar }.keyList()
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "fooBar" );
 
 	}
 

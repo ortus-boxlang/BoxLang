@@ -1004,13 +1004,35 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 	@Override
 	public BoxExpression visitStructExpression( StructExpressionContext ctx ) {
 
-		var					pos				= tools.getPosition( ctx );
-		var					src				= tools.getSourceText( ctx );
-		var					type			= ctx.RBRACKET() != null ? BoxStructType.Ordered : BoxStructType.Unordered;
-		var					structMembers	= ctx.structMembers();
-		List<BoxExpression>	values			= new ArrayList<>();
+		var					pos							= tools.getPosition( ctx );
+		var					src							= tools.getSourceText( ctx );
+		var					type						= ctx.RBRACKET() != null ? BoxStructType.Ordered : BoxStructType.Unordered;
+		var					structMembers				= ctx.structMembers();
+		var					structMembersWithShorthand	= ctx.structMembersWithShorthand();
+		List<BoxExpression>	values						= new ArrayList<>();
 
-		if ( structMembers != null ) {
+		if ( structMembersWithShorthand != null ) {
+			for ( var structMemberWithShorthand : structMembersWithShorthand.structMemberWithShorthand() ) {
+				if ( structMemberWithShorthand.identifier() != null ) {
+					var	shorthandIdentifier	= structMemberWithShorthand.identifier();
+					var	shorthandSource		= tools.getSourceText( shorthandIdentifier );
+					values.add( new BoxStringLiteral( shorthandSource, tools.getPosition( shorthandIdentifier ), shorthandSource ) );
+					values.add( shorthandIdentifier.accept( this ) );
+				} else {
+					var	structMember	= structMemberWithShorthand.structMember();
+					var	key				= structMember.structKey().accept( this );
+					if ( key instanceof BoxFQN ) {
+						// Lucee creates nested structs, adobe errors. We're just going to turn foo.bar into a quoted string for now.
+						key = new BoxStringLiteral( structMember.structKey().fqn().getText(),
+						    tools.getPosition( structMember.structKey().fqn() ),
+						    tools.getSourceText( structMember.structKey().fqn() ) );
+
+					}
+					values.add( key );
+					values.add( structMember.expression().accept( this ) );
+				}
+			}
+		} else if ( structMembers != null ) {
 			for ( StructMemberContext structMember : structMembers.structMember() ) {
 
 				var key = structMember.structKey().accept( this );
