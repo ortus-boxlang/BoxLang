@@ -752,9 +752,13 @@ public class LoggingService {
 	 * @return The logging service
 	 */
 	public LoggingService shutdownAppenders() {
-		this.appendersMap.values().forEach( Appender::stop );
-		return instance;
-	}
+
+	List.copyOf( this.appendersMap.values() )
+		.forEach( Appender::stop );
+
+	return instance;
+}
+	
 
 	/**
 	 * Shutdown the logging service
