@@ -65,8 +65,11 @@ public class BoxArrayLiteralTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxArrayLiteral	arrayLiteral	= ( BoxArrayLiteral ) node;
+		boolean			ambiguous		= isAmbiguousSpreadOnlyArrayLiteral( arrayLiteral );
 
-		MethodCallExpr	javaExpr		= ( MethodCallExpr ) parseExpression( "ortus.boxlang.runtime.dynamic.LiteralSpreadUtil.array()", java.util.Map.of() );
+		MethodCallExpr	javaExpr		= ( MethodCallExpr ) parseExpression(
+		    ambiguous ? "ortus.boxlang.runtime.dynamic.LiteralSpreadUtil.arrayOrOrderedStruct()" : "ortus.boxlang.runtime.dynamic.LiteralSpreadUtil.array()",
+		    java.util.Map.of() );
 		for ( BoxExpression expr : arrayLiteral.getValues() ) {
 			if ( expr instanceof BoxSpreadExpression spread ) {
 				MethodCallExpr spreadExpr = ( MethodCallExpr ) parseExpression( "ortus.boxlang.runtime.dynamic.LiteralSpreadUtil.spread()",
@@ -80,5 +83,10 @@ public class BoxArrayLiteralTransformer extends AbstractTransformer {
 
 		addIndex( javaExpr, node );
 		return javaExpr;
+	}
+
+	private boolean isAmbiguousSpreadOnlyArrayLiteral( BoxArrayLiteral arrayLiteral ) {
+		return !arrayLiteral.getValues().isEmpty()
+		    && arrayLiteral.getValues().stream().allMatch( value -> value instanceof BoxSpreadExpression );
 	}
 }

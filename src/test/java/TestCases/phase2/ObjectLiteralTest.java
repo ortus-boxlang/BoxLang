@@ -173,6 +173,81 @@ public class ObjectLiteralTest {
 		    context ) );
 	}
 
+	@DisplayName( "spread only bracket literal resolves to ordered struct when source is struct" )
+	@Test
+	public void testSpreadOnlyBracketLiteralResolvesToOrderedStructForStructSources() {
+		instance.executeSource(
+		    """
+		    s1 = { a: 1, b: 2 };
+		    result = [ ...s1 ];
+		    """,
+		    context );
+
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
+		IStruct str = ( IStruct ) variables.get( result );
+		assertThat( str.getType() ).isEqualTo( Struct.TYPES.LINKED );
+		assertThat( str.size() ).isEqualTo( 2 );
+		assertThat( str.get( Key.of( "a" ) ) ).isEqualTo( 1 );
+		assertThat( str.get( Key.of( "b" ) ) ).isEqualTo( 2 );
+
+		Key[] keys = str.keySet().toArray( new Key[ 0 ] );
+		assertThat( keys[ 0 ].getName() ).isEqualTo( "a" );
+		assertThat( keys[ 1 ].getName() ).isEqualTo( "b" );
+	}
+
+	@DisplayName( "spread only bracket literal with struct sources preserves ordered struct override precedence" )
+	@Test
+	public void testSpreadOnlyBracketLiteralStructOverridePrecedence() {
+		instance.executeSource(
+		    """
+		    left = [ a: 1, shared: "left" ];
+		    right = [ b: 2, shared: "right" ];
+		    result = [ ...left, ...right ];
+		    """,
+		    context );
+
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
+		IStruct str = ( IStruct ) variables.get( result );
+		assertThat( str.getType() ).isEqualTo( Struct.TYPES.LINKED );
+		assertThat( str.get( Key.of( "a" ) ) ).isEqualTo( 1 );
+		assertThat( str.get( Key.of( "b" ) ) ).isEqualTo( 2 );
+		assertThat( str.get( Key.of( "shared" ) ) ).isEqualTo( "right" );
+
+		Key[] keys = str.keySet().toArray( new Key[ 0 ] );
+		assertThat( keys[ 0 ].getName() ).isEqualTo( "a" );
+		assertThat( keys[ 1 ].getName() ).isEqualTo( "shared" );
+		assertThat( keys[ 2 ].getName() ).isEqualTo( "b" );
+	}
+
+	@DisplayName( "spread only bracket literal resolves to array when source is array" )
+	@Test
+	public void testSpreadOnlyBracketLiteralResolvesToArrayForArraySources() {
+		instance.executeSource(
+		    """
+		    values = [ 1, 2 ];
+		    result = [ ...values ];
+		    """,
+		    context );
+
+		assertThat( variables.get( result ) instanceof Array ).isEqualTo( true );
+		Array arr = ( Array ) variables.get( result );
+		assertThat( arr.size() ).isEqualTo( 2 );
+		assertThat( arr.dereference( context, Key.of( 1 ), false ) ).isEqualTo( 1 );
+		assertThat( arr.dereference( context, Key.of( 2 ), false ) ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "spread only bracket literal rejects mixed array and struct sources" )
+	@Test
+	public void testSpreadOnlyBracketLiteralRejectsMixedSourceTypes() {
+		assertThrows( BoxLangException.class, () -> instance.executeSource(
+		    """
+		    arr = [ 1 ];
+		    str = { a: 2 };
+		    result = [ ...arr, ...str ];
+		    """,
+		    context ) );
+	}
+
 	@Test
 	public void testfqnKey() {
 		// Workaround for Lucee compat. I'm not inclined to support this in BL.
