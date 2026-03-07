@@ -22,6 +22,7 @@ public enum BoxBinaryOperator {
 	NotContains,
 	Plus,
 	Minus,
+	Range,
 	Star,
 	Slash,
 	Power,
@@ -54,6 +55,8 @@ public enum BoxBinaryOperator {
 				return "+";
 			case Minus :
 				return "-";
+			case Range :
+				return "..";
 			case Star :
 				return "*";
 			case Slash :

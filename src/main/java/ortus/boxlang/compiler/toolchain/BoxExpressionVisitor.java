@@ -138,6 +138,7 @@ import ortus.boxlang.parser.antlr.BoxGrammar.ExprPostfixContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprPowerContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprPrecedenceContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprPrefixContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprRangeContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprRelationalContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprStatInvocableContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprTernaryContext;
@@ -560,6 +561,15 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 						default -> throw new ExpressionException( "Unknown binary operator", pos, src );
 					};
 		return new BoxBinaryOperation( left, op, right, pos, src );
+	}
+
+	@Override
+	public BoxExpression visitExprRange( ExprRangeContext ctx ) {
+		var	pos		= tools.getPosition( ctx );
+		var	src		= tools.getSourceText( ctx );
+		var	left	= ctx.el2( 0 ).accept( this );
+		var	right	= ctx.el2( 1 ).accept( this );
+		return new BoxBinaryOperation( left, BoxBinaryOperator.Range, right, pos, src );
 	}
 
 	@Override
