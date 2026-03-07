@@ -18,11 +18,13 @@
 package ortus.boxlang.compiler;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxSpreadExpression;
 import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
@@ -30,6 +32,7 @@ import ortus.boxlang.compiler.ast.expression.BoxStructType;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 public class LiteralSpreadASTTest {
 
@@ -98,5 +101,25 @@ public class LiteralSpreadASTTest {
 		BoxArrayLiteral arrayLiteral = ( BoxArrayLiteral ) result.getRoot();
 		assertEquals( 1, arrayLiteral.getValues().size() );
 		assertTrue( arrayLiteral.getValues().get( 0 ) instanceof BoxSpreadExpression );
+	}
+
+	@Test
+	public void testArrayLiteralSpreadNullThrowsExpressionException() {
+		Parser			parser	= new Parser();
+		ParsingResult	result	= parser.parseExpression( "[ ...null ]" );
+		assertTrue( result.isCorrect(), result.getIssues().toString() );
+
+		ExpressionException exception = assertThrows( ExpressionException.class, () -> ( ( BoxExpression ) result.getRoot() ).getAsLiteralValue() );
+		assertTrue( exception.getMessage().contains( "Cannot spread value of type [null] into an ambiguous bracket literal." ) );
+	}
+
+	@Test
+	public void testStructLiteralSpreadNullThrowsExpressionException() {
+		Parser			parser	= new Parser();
+		ParsingResult	result	= parser.parseExpression( "{ ...null }" );
+		assertTrue( result.isCorrect(), result.getIssues().toString() );
+
+		ExpressionException exception = assertThrows( ExpressionException.class, () -> ( ( BoxExpression ) result.getRoot() ).getAsLiteralValue() );
+		assertTrue( exception.getMessage().contains( "Cannot spread value of type [null] into a struct literal." ) );
 	}
 }
