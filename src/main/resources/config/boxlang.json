@@ -30,6 +30,9 @@
 	// Which will produce lots of debug output and metrics
 	// Also the debugging error template will be used if turned on
 	"debugMode": false,
+	//This is for adding a path (.bxm) to render a custom global error template for unhandled errors
+	//If empty, default boxlang error page is rendered
+	"globalErrorTemplate": "",
 	// This setting if enabled will remove all the class files from the class generation directory
 	// This is useful for debugging and testing, but not recommended for production
 	"clearClassFilesOnStartup": false,

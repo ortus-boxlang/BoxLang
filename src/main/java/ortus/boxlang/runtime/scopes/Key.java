@@ -421,6 +421,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		getFileInfo							= Key.of( "getFileInfo" );
 	public static final Key		getName								= Key.of( "getName" );
 	public static final Key		global								= Key.of( "global" );
+	public static final Key		globalErrorTemplate					= Key.of( "globalErrorTemplate" );
 	public static final Key		group								= Key.of( "group" );
 	public static final Key		groupCaseSensitive					= Key.of( "groupCaseSensitive" );
 	public static final Key		groupData							= Key.of( "groupData" );
