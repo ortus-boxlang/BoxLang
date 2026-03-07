@@ -1064,6 +1064,10 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 	}
 
 	private BoxObjectDestructuringPattern tryBuildDestructuringPatternFromStructLiteral( BoxStructLiteral structLiteral ) {
+		return tryBuildDestructuringPatternFromStructLiteral( structLiteral, true );
+	}
+
+	private BoxObjectDestructuringPattern tryBuildDestructuringPatternFromStructLiteral( BoxStructLiteral structLiteral, boolean allowShorthandDefaults ) {
 		if ( structLiteral.getType() != BoxStructType.Unordered ) {
 			return null;
 		}
@@ -1089,14 +1093,22 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 				target			= valueAssignment.getLeft();
 				defaultValue	= valueAssignment.getRight();
 			} else if ( value instanceof BoxStructLiteral nestedStructLiteral ) {
-				nestedPattern = tryBuildDestructuringPatternFromStructLiteral( nestedStructLiteral );
+				nestedPattern = tryBuildDestructuringPatternFromStructLiteral( nestedStructLiteral, false );
 				if ( nestedPattern == null ) {
-					return null;
+					if ( allowShorthandDefaults && key instanceof BoxIdentifier id ) {
+						target			= new BoxIdentifier( id.getName(), id.getPosition(), id.getSourceText() );
+						defaultValue	= value;
+					} else {
+						return null;
+					}
 				}
 			} else if ( value instanceof BoxObjectDestructuringPattern parsedPattern ) {
 				nestedPattern = parsedPattern;
 			} else if ( isDestructuringTargetExpression( value ) ) {
 				target = value;
+			} else if ( allowShorthandDefaults && key instanceof BoxIdentifier id ) {
+				target			= new BoxIdentifier( id.getName(), id.getPosition(), id.getSourceText() );
+				defaultValue	= value;
 			} else {
 				return null;
 			}

@@ -152,6 +152,35 @@ public class ObjectDestructuringAssignmentTest {
 		assertThat( local.get( Key.of( "b" ) ) ).isEqualTo( 2 );
 	}
 
+	@DisplayName( "var declaration object destructuring supports shorthand defaults in function scope" )
+	@Test
+	public void testVarDeclarationObjectDestructuringSupportsShorthandDefaultsInFunctionScope() {
+		instance.executeSource(
+		    """
+		    function drawChart( struct options = {} ) {
+		    	var { size = "big", coords = { x: 0, y: 0 }, radius = 25 } = options;
+		    	return { size: size, x: coords.x, y: coords.y, radius: radius };
+		    }
+
+		    result1 = drawChart( { coords: { x: 18, y: 30 }, radius: 30 } );
+		    result2 = drawChart();
+		    """,
+		    context );
+
+		IStruct	result1	= ( IStruct ) variables.get( Key.of( "result1" ) );
+		IStruct	result2	= ( IStruct ) variables.get( Key.of( "result2" ) );
+
+		assertThat( result1.get( Key.of( "size" ) ) ).isEqualTo( "big" );
+		assertThat( result1.get( Key.of( "x" ) ) ).isEqualTo( 18 );
+		assertThat( result1.get( Key.of( "y" ) ) ).isEqualTo( 30 );
+		assertThat( result1.get( Key.of( "radius" ) ) ).isEqualTo( 30 );
+
+		assertThat( result2.get( Key.of( "size" ) ) ).isEqualTo( "big" );
+		assertThat( result2.get( Key.of( "x" ) ) ).isEqualTo( 0 );
+		assertThat( result2.get( Key.of( "y" ) ) ).isEqualTo( 0 );
+		assertThat( result2.get( Key.of( "radius" ) ) ).isEqualTo( 25 );
+	}
+
 	@DisplayName( "scoped targets are disallowed for declaration destructuring" )
 	@Test
 	public void testScopedTargetsDisallowedForDeclarationDestructuring() {
