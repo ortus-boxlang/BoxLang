@@ -32,6 +32,8 @@ import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
 import ortus.boxlang.compiler.ast.expression.BoxAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
+import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringBinding;
+import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
@@ -515,6 +517,43 @@ public abstract class ReplacingBoxVisitor {
 	}
 
 	public BoxNode visit( BoxNull node ) {
+		return node;
+	}
+
+	public BoxNode visit( BoxArrayDestructuringPattern node ) {
+		for ( int i = 0; i < node.getBindings().size(); i++ ) {
+			BoxArrayDestructuringBinding	binding		= node.getBindings().get( i );
+			BoxNode							newBinding	= binding.accept( this );
+			if ( newBinding != binding ) {
+				node.replaceChildren( binding, newBinding );
+				node.getBindings().set( i, ( BoxArrayDestructuringBinding ) newBinding );
+			}
+		}
+		return node;
+	}
+
+	public BoxNode visit( BoxArrayDestructuringBinding node ) {
+		BoxExpression target = node.getTarget();
+		if ( target != null ) {
+			BoxNode newTarget = target.accept( this );
+			if ( newTarget != target ) {
+				node.setTarget( ( BoxExpression ) newTarget );
+			}
+		}
+		BoxArrayDestructuringPattern pattern = node.getPattern();
+		if ( pattern != null ) {
+			BoxNode newPattern = pattern.accept( this );
+			if ( newPattern != pattern ) {
+				node.setPattern( ( BoxArrayDestructuringPattern ) newPattern );
+			}
+		}
+		BoxExpression defaultValue = node.getDefaultValue();
+		if ( defaultValue != null ) {
+			BoxNode newDefault = defaultValue.accept( this );
+			if ( newDefault != defaultValue ) {
+				node.setDefaultValue( ( BoxExpression ) newDefault );
+			}
+		}
 		return node;
 	}
 

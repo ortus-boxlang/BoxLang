@@ -45,6 +45,8 @@ import ortus.boxlang.compiler.ast.Point;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
+import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringBinding;
+import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentModifier;
@@ -87,6 +89,9 @@ import ortus.boxlang.compiler.parser.CFParser;
 import ortus.boxlang.parser.antlr.CFGrammar.AnnotationContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ArgumentContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ArrayLiteralContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ArrayDestructuringBindingContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ArrayDestructuringPatternContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ArrayDestructuringValueContext;
 import ortus.boxlang.parser.antlr.CFGrammar.AssignmentModifierContext;
 import ortus.boxlang.parser.antlr.CFGrammar.AtomsContext;
 import ortus.boxlang.parser.antlr.CFGrammar.AttributeSimpleContext;
@@ -95,6 +100,7 @@ import ortus.boxlang.parser.antlr.CFGrammar.ClosureFuncContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprAddContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprAndContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprArrayAccessContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprArrayDestructuringAssignContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprArrayLiteralContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprAssignContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprAtomsContext;
@@ -665,9 +671,14 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		var	right	= ctx.expression().accept( this );
 		var	op		= buildAssignOp( ctx.op );
 		if ( op == BoxAssignmentOperator.Equal ) {
-			BoxObjectDestructuringPattern destructuringPattern = tryBuildDestructuringPatternFromExpression( left );
-			if ( destructuringPattern != null ) {
-				left = destructuringPattern;
+			BoxObjectDestructuringPattern objectDestructuringPattern = tryBuildDestructuringPatternFromExpression( left );
+			if ( objectDestructuringPattern != null ) {
+				left = objectDestructuringPattern;
+			} else {
+				BoxArrayDestructuringPattern arrayDestructuringPattern = tryBuildArrayDestructuringPatternFromExpression( left );
+				if ( arrayDestructuringPattern != null ) {
+					left = arrayDestructuringPattern;
+				}
 			}
 		}
 		return new BoxAssignment( left, op, right, List.of(), pos, src );
@@ -678,6 +689,15 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		var	pos		= tools.getPosition( ctx );
 		var	src		= tools.getSourceText( ctx );
 		var	left	= ctx.objectDestructuringPattern().accept( this );
+		var	right	= ctx.expression().accept( this );
+		return new BoxAssignment( left, BoxAssignmentOperator.Equal, right, List.of(), pos, src );
+	}
+
+	@Override
+	public BoxExpression visitExprArrayDestructuringAssign( ExprArrayDestructuringAssignContext ctx ) {
+		var	pos		= tools.getPosition( ctx );
+		var	src		= tools.getSourceText( ctx );
+		var	left	= ctx.arrayDestructuringPattern().accept( this );
 		var	right	= ctx.expression().accept( this );
 		return new BoxAssignment( left, BoxAssignmentOperator.Equal, right, List.of(), pos, src );
 	}
@@ -698,6 +718,32 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 			}
 		}
 		return new BoxObjectDestructuringPattern( bindings, pos, src );
+	}
+
+	@Override
+	public BoxExpression visitArrayDestructuringPattern( ArrayDestructuringPatternContext ctx ) {
+		var									pos			= tools.getPosition( ctx );
+		var									src			= tools.getSourceText( ctx );
+		var									members		= ctx.arrayDestructuringMembers();
+		List<BoxArrayDestructuringBinding>	bindings	= new ArrayList<>();
+		if ( members != null ) {
+			int restCount = 0;
+			for ( var member : members.arrayDestructuringMember() ) {
+				if ( member.arrayDestructuringRest() != null ) {
+					var	restTarget	= buildObjectDestructuringTarget( member.arrayDestructuringRest().fqn() );
+					var	restPos		= tools.getPosition( member.arrayDestructuringRest() );
+					var	restSrc		= tools.getSourceText( member.arrayDestructuringRest() );
+					bindings.add( new BoxArrayDestructuringBinding( restTarget, null, null, true, restPos, restSrc ) );
+					restCount++;
+				} else if ( member.arrayDestructuringBinding() != null ) {
+					bindings.add( buildArrayDestructuringBinding( member.arrayDestructuringBinding() ) );
+				}
+			}
+			if ( restCount > 1 ) {
+				tools.reportError( "Array destructuring patterns may only contain one rest binding.", pos );
+			}
+		}
+		return new BoxArrayDestructuringPattern( bindings, pos, src );
 	}
 
 	@Override
@@ -1132,6 +1178,108 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		return null;
 	}
 
+	private BoxArrayDestructuringPattern tryBuildArrayDestructuringPatternFromArrayLiteral( BoxArrayLiteral arrayLiteral ) {
+		return tryBuildArrayDestructuringPatternFromArrayLiteral( arrayLiteral, true );
+	}
+
+	private BoxArrayDestructuringPattern tryBuildArrayDestructuringPatternFromArrayLiteral( BoxArrayLiteral arrayLiteral, boolean allowShorthandDefaults ) {
+		List<BoxExpression> values = arrayLiteral.getValues();
+		if ( values == null ) {
+			return null;
+		}
+
+		List<BoxArrayDestructuringBinding> bindings = new ArrayList<>();
+		for ( BoxExpression value : values ) {
+			BoxExpression					target			= null;
+			BoxArrayDestructuringPattern	nestedPattern	= null;
+			BoxExpression					defaultValue	= null;
+
+			if ( value instanceof BoxAssignment valueAssignment ) {
+				if ( valueAssignment.getOp() != BoxAssignmentOperator.Equal || !valueAssignment.getModifiers().isEmpty()
+				    || valueAssignment.getRight() == null ) {
+					return null;
+				}
+				if ( valueAssignment.getLeft() instanceof BoxArrayLiteral nestedArrayLiteral ) {
+					nestedPattern = tryBuildArrayDestructuringPatternFromArrayLiteral( nestedArrayLiteral, false );
+					if ( nestedPattern == null ) {
+						return null;
+					}
+				} else if ( isDestructuringTargetExpression( valueAssignment.getLeft() ) ) {
+					target = valueAssignment.getLeft();
+				} else {
+					return null;
+				}
+				defaultValue = valueAssignment.getRight();
+			} else if ( value instanceof BoxArrayLiteral nestedArrayLiteral ) {
+				nestedPattern = tryBuildArrayDestructuringPatternFromArrayLiteral( nestedArrayLiteral, false );
+				if ( nestedPattern == null ) {
+					return null;
+				}
+			} else if ( value instanceof BoxArrayDestructuringPattern parsedPattern ) {
+				nestedPattern = parsedPattern;
+			} else if ( isDestructuringTargetExpression( value ) ) {
+				target = value;
+			} else if ( allowShorthandDefaults ) {
+				return null;
+			} else {
+				return null;
+			}
+
+			Position	bindingPosition	= value.getPosition() != null ? value.getPosition() : arrayLiteral.getPosition();
+			String		bindingSource	= value.getSourceText() != null ? value.getSourceText() : arrayLiteral.getSourceText();
+			bindings.add( new BoxArrayDestructuringBinding( target, nestedPattern, defaultValue, false, bindingPosition, bindingSource ) );
+		}
+
+		return new BoxArrayDestructuringPattern( bindings, arrayLiteral.getPosition(), arrayLiteral.getSourceText() );
+	}
+
+	private BoxArrayDestructuringPattern tryBuildArrayDestructuringPatternFromOrderedStructLiteral( BoxStructLiteral structLiteral ) {
+		if ( structLiteral.getType() != BoxStructType.Ordered ) {
+			return null;
+		}
+
+		List<BoxExpression> values = structLiteral.getValues();
+		if ( values == null || values.size() % 2 != 0 ) {
+			return null;
+		}
+
+		List<BoxArrayDestructuringBinding> bindings = new ArrayList<>();
+		for ( int i = 0; i < values.size(); i += 2 ) {
+			BoxExpression key = normalizeArrayDestructuringShorthandTarget( values.get( i ) );
+			if ( ! ( key instanceof BoxIdentifier || key instanceof BoxScope ) ) {
+				return null;
+			}
+
+			BoxExpression	defaultValue	= values.get( i + 1 );
+			Position		bindingPosition	= defaultValue.getPosition() != null ? defaultValue.getPosition() : structLiteral.getPosition();
+			String			bindingSource	= defaultValue.getSourceText() != null ? defaultValue.getSourceText() : structLiteral.getSourceText();
+			bindings.add( new BoxArrayDestructuringBinding( key, null, defaultValue, false, bindingPosition, bindingSource ) );
+		}
+
+		return new BoxArrayDestructuringPattern( bindings, structLiteral.getPosition(), structLiteral.getSourceText() );
+	}
+
+	private BoxExpression normalizeArrayDestructuringShorthandTarget( BoxExpression key ) {
+		if ( key instanceof BoxScope scope ) {
+			return new BoxIdentifier( scope.getName(), scope.getPosition(), scope.getSourceText() );
+		}
+		return key;
+	}
+
+	private BoxArrayDestructuringPattern tryBuildArrayDestructuringPatternFromExpression( BoxExpression expression ) {
+		BoxExpression current = expression;
+		while ( current instanceof BoxParenthesis parenthesis ) {
+			current = parenthesis.getExpression();
+		}
+		if ( current instanceof BoxArrayLiteral arrayLiteral ) {
+			return tryBuildArrayDestructuringPatternFromArrayLiteral( arrayLiteral );
+		}
+		if ( current instanceof BoxStructLiteral structLiteral ) {
+			return tryBuildArrayDestructuringPatternFromOrderedStructLiteral( structLiteral );
+		}
+		return null;
+	}
+
 	private BoxExpression normalizeDestructuringKey( BoxExpression key ) {
 		if ( key instanceof BoxScope scope ) {
 			return new BoxIdentifier( scope.getName(), scope.getPosition(), scope.getSourceText() );
@@ -1229,6 +1377,23 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		}
 
 		return new BoxObjectDestructuringBinding( key, target, nestedPattern, defaultValue, false, pos, src );
+	}
+
+	private BoxArrayDestructuringBinding buildArrayDestructuringBinding( ArrayDestructuringBindingContext ctx ) {
+		var								pos				= tools.getPosition( ctx );
+		var								src				= tools.getSourceText( ctx );
+		BoxExpression					target			= null;
+		BoxExpression					defaultValue	= ctx.expression() != null ? ctx.expression().accept( this ) : null;
+		BoxArrayDestructuringPattern	nestedPattern	= null;
+
+		ArrayDestructuringValueContext	valueCtx		= ctx.arrayDestructuringValue();
+		if ( valueCtx.arrayDestructuringPattern() != null ) {
+			nestedPattern = ( BoxArrayDestructuringPattern ) valueCtx.arrayDestructuringPattern().accept( this );
+		} else {
+			target = buildObjectDestructuringTarget( valueCtx.fqn() );
+		}
+
+		return new BoxArrayDestructuringBinding( target, nestedPattern, defaultValue, false, pos, src );
 	}
 
 	private BoxExpression buildObjectDestructuringKey( StructKeyContext ctx ) {
