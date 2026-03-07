@@ -334,6 +334,7 @@ COMMA       : ',';
 COLON       : ':';
 COLONCOLON  : '::';
 ELLIPSIS    : '...';
+RANGE       : '..';
 DOT         : '.';
 ELVIS       : '?:';
 EQUALSIGN   : '=';
