@@ -281,7 +281,7 @@ public class ExpandPathTest {
 		                        """, context );
 
 	String actual = variables.getAsString( result );
-		assertThat( actual ).isIn( java.util.List.of( "/tmp", "/private/tmp" ) );
+assertThat( actual ).isIn( java.util.List.of( "/tmp", "/private/tmp" ) );
 
 	}
 
