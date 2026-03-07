@@ -158,8 +158,8 @@ public class ObjectDestructuringAssignmentTest {
 		instance.executeSource(
 		    """
 		    function drawChart( struct options = {} ) {
-		    	var { size = "big", coords = { x: 0, y: 0 }, radius = 25 } = options;
-		    	return { size: size, x: coords.x, y: coords.y, radius: radius };
+		    	var { size = "big", coords: chartCoords = { x: 0, y: 0 }, radius = 25 } = options;
+		    	return { size: size, x: chartCoords.x, y: chartCoords.y, radius: radius };
 		    }
 
 		    result1 = drawChart( { coords: { x: 18, y: 30 }, radius: 30 } );
