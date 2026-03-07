@@ -30,8 +30,11 @@ import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxSpreadExpression;
+import ortus.boxlang.runtime.dynamic.LiteralSpreadUtil;
 import ortus.boxlang.runtime.types.Array;
 
 public class BoxArrayLiteralTransformer extends AbstractTransformer {
@@ -44,14 +47,42 @@ public class BoxArrayLiteralTransformer extends AbstractTransformer {
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
 		BoxArrayLiteral			arrayLiteral	= ( BoxArrayLiteral ) node;
 		List<AbstractInsnNode>	nodes			= new ArrayList<>();
+		boolean					ambiguous		= isAmbiguousSpreadOnlyArrayLiteral( arrayLiteral );
 		nodes.addAll( AsmHelper.array( Type.getType( Object.class ), arrayLiteral.getValues(),
-		    ( value, i ) -> transpiler.transform( value, context, ReturnValueContext.VALUE_OR_NULL ) ) );
-		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-		    Type.getInternalName( Array.class ),
-		    "of",
-		    Type.getMethodDescriptor( Type.getType( Array.class ), Type.getType( Object[].class ) ),
-		    false ) );
+		    ( value, i ) -> transformArrayMember( value, context ) ) );
+		if ( ambiguous ) {
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( LiteralSpreadUtil.class ),
+			    "arrayOrOrderedStruct",
+			    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( Object[].class ) ),
+			    false ) );
+		} else {
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( LiteralSpreadUtil.class ),
+			    "array",
+			    Type.getMethodDescriptor( Type.getType( Array.class ), Type.getType( Object[].class ) ),
+			    false ) );
+		}
 		return nodes;
 		// return AsmHelper.addLineNumberLabels( nodes, node );
+	}
+
+	private boolean isAmbiguousSpreadOnlyArrayLiteral( BoxArrayLiteral arrayLiteral ) {
+		return !arrayLiteral.getValues().isEmpty()
+		    && arrayLiteral.getValues().stream().allMatch( value -> value instanceof BoxSpreadExpression );
+	}
+
+	private List<AbstractInsnNode> transformArrayMember( BoxExpression value, TransformerContext context ) {
+		if ( value instanceof BoxSpreadExpression spread ) {
+			List<AbstractInsnNode> spreadNodes = new ArrayList<>( transpiler.transform( spread.getExpression(), context, ReturnValueContext.VALUE_OR_NULL ) );
+			spreadNodes.add(
+			    new MethodInsnNode( Opcodes.INVOKESTATIC,
+			        Type.getInternalName( LiteralSpreadUtil.class ),
+			        "spread",
+			        Type.getMethodDescriptor( Type.getType( LiteralSpreadUtil.SpreadValue.class ), Type.getType( Object.class ) ),
+			        false ) );
+			return spreadNodes;
+		}
+		return transpiler.transform( value, context, ReturnValueContext.VALUE_OR_NULL );
 	}
 }

@@ -1368,6 +1368,10 @@ test {
 	// systemProperty 'boxlang.experimental.compiler', System.getProperty('boxlang.experimental.compiler', "java")
 	useJUnitPlatform()
 
+	// Isolate test runtime from developer ~/.boxlang modules (e.g. bx-compat-cfml)
+	// so local environment state does not affect test outcomes.
+	def isolatedTestHome = file( "$buildDir/test-home" ).absolutePath
+
 	// Detailed  logging
 	testLogging {
 
@@ -1383,6 +1387,8 @@ test {
 	systemProperty 'junit.jupiter.testclass.order.default', 'org.junit.jupiter.api.ClassOrderer$ClassName'
     systemProperty 'file.encoding', 'UTF-8'
     systemProperty 'user.timezone', 'UTC'
+	systemProperty 'user.home', isolatedTestHome
+	environment 'HOME', isolatedTestHome
 
 	// Add Java Compiler JAR to classpath if specified (for CI testing with java compiler)
 	if ( project.hasProperty( 'addJavaCompiler' ) && project.property( 'addJavaCompiler' ) == 'true' ) {
@@ -1395,6 +1401,10 @@ test {
 	// Dependencies
 	dependsOn compileJava, compileTestJava
 	//exclude '**/resources/**'
+
+	doFirst {
+		file( isolatedTestHome ).mkdirs()
+	}
 
 	// Uncomment to take a heap dump after the conclusion of tests
 	// finalizedBy( createHeapDump )

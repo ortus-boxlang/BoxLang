@@ -60,7 +60,9 @@ import ortus.boxlang.runtime.operators.Multiply;
 import ortus.boxlang.runtime.operators.NotContains;
 import ortus.boxlang.runtime.operators.Plus;
 import ortus.boxlang.runtime.operators.Power;
+import ortus.boxlang.runtime.operators.Range;
 import ortus.boxlang.runtime.operators.XOR;
+import ortus.boxlang.runtime.types.Array;
 
 public class BoxBinaryOperationTransformer extends AbstractTransformer {
 
@@ -82,6 +84,9 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 
 												case Minus -> // "Minus.invoke(${left},${right})";
 												    generateNumericBinaryMethodCallNodes( Minus.class, Number.class, operation, left, right );
+
+												case Range -> // "Range.invoke(${left},${right})";
+												    generateBinaryMethodCallNodes( Range.class, Array.class, left, right );
 
 												case Star -> // "Multiply.invoke(${left},${right})";
 												    generateNumericBinaryMethodCallNodes( Multiply.class, Number.class, operation, left, right );

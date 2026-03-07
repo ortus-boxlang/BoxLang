@@ -126,7 +126,15 @@ preAnnotation: AT preAnnotationName ( LPAREN annotation (COMMA annotation)* RPAR
 preAnnotationName: identifier ( (MINUS identifier) | (DOT identifier))*
     ;
 
-arrayLiteral: LBRACKET expressionList? RBRACKET
+arrayLiteral: LBRACKET arrayLiteralMembers? RBRACKET
+    ;
+
+arrayLiteralMembers: arrayLiteralMember (COMMA arrayLiteralMember)* COMMA?
+    ;
+
+arrayLiteralMember
+    : expression
+    | ELLIPSIS expression
     ;
 
 // foo=bar baz="bum"
@@ -406,12 +414,48 @@ stringLiteralPart: STRING_LITERAL | HASHHASH
 
 // { foo: "bar", baz = "bum" }
 structExpression
-    : LBRACE structMembers? RBRACE
-    | LBRACKET structMembers RBRACKET
+    : LBRACE structMembersWithShorthand? RBRACE
+    | LBRACKET orderedStructMembers RBRACKET
     | LBRACKET (COLON | EQUALSIGN) RBRACKET
     ;
 
-structMembers: structMember (COMMA structMember)* COMMA?
+structMembersWithShorthand: structMemberWithShorthandOrSpread (COMMA structMemberWithShorthandOrSpread)* COMMA?
+    ;
+
+structMemberWithShorthandOrSpread
+    : structMemberWithShorthand
+    | structSpread
+    ;
+
+/*
+ foo
+ foo : bar
+ */
+structMemberWithShorthand
+    : structMember
+    | identifier
+    ;
+
+structSpread: ELLIPSIS expression
+    ;
+
+// Ordered struct spread support while avoiding ambiguity with array literals:
+// at least one keyed member (foo:bar / foo=bar) must exist in [] structs.
+orderedStructMembers
+    : orderedStructMembersWithLeadingKey
+    | orderedStructMembersWithLeadingSpread
+    ;
+
+orderedStructMembersWithLeadingKey: structMember (COMMA orderedStructMemberOrSpread)* COMMA?
+    ;
+
+orderedStructMembersWithLeadingSpread
+    : structSpread (COMMA structSpread)* COMMA structMember (COMMA orderedStructMemberOrSpread)* COMMA?
+    ;
+
+orderedStructMemberOrSpread
+    : structMember
+    | structSpread
     ;
 
 /*
@@ -423,6 +467,100 @@ structMember: structKey (COLON | EQUALSIGN) expression
     ;
 
 structKey: identifier | stringLiteral | INTEGER_LITERAL | ILLEGAL_IDENTIFIER | SWITCH
+    ;
+
+/*
+ var { a } = obj
+ ({ a: variables.a, b: request.foo } = obj)
+ var { important, ...rest } = obj
+ */
+objectDestructuringPattern: LBRACE objectDestructuringMembers? RBRACE
+    ;
+
+/*
+ { a }
+ { a: variables.a, b: request.foo }
+ { a, ...others }
+ */
+objectDestructuringMembers
+    : (objectDestructuringBinding (COMMA objectDestructuringBinding)* (COMMA objectDestructuringRest)? COMMA?)
+    | (objectDestructuringRest COMMA?)
+    ;
+
+/*
+ a
+ a : request.a
+ a = 'foo'
+ a : request.a = 'foo'
+ */
+objectDestructuringBinding
+    : structKey (COLON objectDestructuringValue)? (EQUALSIGN expression)?
+    ;
+
+/*
+ ...rest
+ */
+objectDestructuringRest: ELLIPSIS fqn
+    ;
+
+/*
+ user = { name: 'John', address: { city: 'New York', zip: '10001' } }
+ ({ name, address: { city } } = user)
+ println(name)
+ println(city)
+ */
+objectDestructuringValue: fqn | objectDestructuringPattern
+    ;
+
+/*
+ var [ a, b ] = arr
+ [ variables.a, arguments.b ] = arr
+ var [ first, ...rest ] = arr
+ */
+arrayDestructuringPattern: LBRACKET arrayDestructuringMembers? RBRACKET
+    ;
+
+/*
+ [ a, b, c = 10 ]
+ [ [ x, y ], ...rest ]
+ [ first, ...middle, last ]
+ */
+arrayDestructuringMembers
+    : arrayDestructuringMember (COMMA arrayDestructuringMember)* COMMA?
+    ;
+
+/*
+ a
+ a = 1
+ ...rest
+ */
+arrayDestructuringMember
+    : arrayDestructuringBinding
+    | arrayDestructuringRest
+    ;
+
+/*
+ a
+ variables.a
+ [ nested ]
+ a = 'foo'
+ [ nested ] = []
+ */
+arrayDestructuringBinding
+    : arrayDestructuringValue (EQUALSIGN expression)?
+    ;
+
+/*
+ ...rest
+ */
+arrayDestructuringRest: ELLIPSIS fqn
+    ;
+
+/*
+ user = [ [1, 2], 3 ]
+ [ [x, y], z ] = user
+ */
+arrayDestructuringValue: fqn | arrayDestructuringPattern
     ;
 
 new: NEW preFix? (fqn (AT moduleName)? | stringLiteral) LPAREN argumentList? RPAREN
@@ -476,6 +614,7 @@ el2
     | el2 POWER el2                                                         # exprPower             // foo ^ bar
     | el2 op = (STAR | SLASH | PERCENT | MOD | BACKSLASH) el2               # exprMult              // foo * bar
     | el2 op = (PLUS | MINUS) el2                                           # exprAdd               // foo + bar
+    | el2 RANGE el2                                                         # exprRange             // 1..5
     | el2 op = (
         BITWISE_SIGNED_LEFT_SHIFT
         | BITWISE_SIGNED_RIGHT_SHIFT
@@ -513,6 +652,8 @@ el2
         | MODEQUAL
         | CONCATEQUAL
     ) expression # exprAssign // foo = bar
+    | objectDestructuringPattern EQUALSIGN expression # exprDestructuringAssign // ({ a } = foo)
+    | arrayDestructuringPattern EQUALSIGN expression  # exprArrayDestructuringAssign // [ a ] = foo
 
     // Ternary operations are right associative, which means that if they are nested,
     // the rightmost operation is evaluated first.

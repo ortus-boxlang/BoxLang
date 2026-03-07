@@ -331,6 +331,7 @@ BACKSLASH  : '\\';
 COMMA      : ',';
 COLON      : ':';
 COLONCOLON : '::';
+ELLIPSIS   : '...';
 DOT        : '.';
 // CF allows for null ? : 'default'
 ELVIS       : '?' [ \t\r\n]* ':';
