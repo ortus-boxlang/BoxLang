@@ -134,7 +134,7 @@ public abstract class BoxExpression extends BoxNode {
 						spreadStruct.forEach( structResult::put );
 					} else {
 						hasArraySpread = true;
-						Array spreadArray = Array.copyOf( spreadValue );
+						Array spreadArray = spreadToArrayOrThrow( spreadValue, "ambiguous bracket", spread );
 						arrayResult.addAll( spreadArray );
 					}
 					if ( hasArraySpread && hasStructSpread ) {
@@ -147,7 +147,7 @@ public abstract class BoxExpression extends BoxNode {
 			Array array = Array.of();
 			arr.getValues().forEach( value -> {
 				if ( value instanceof BoxSpreadExpression spread ) {
-					Array spreadArray = Array.copyOf( spread.getExpression().getAsLiteralValue() );
+					Array spreadArray = spreadToArrayOrThrow( spread.getExpression().getAsLiteralValue(), "array", spread );
 					array.addAll( spreadArray );
 				} else {
 					array.add( value.getAsLiteralValue() );
@@ -165,7 +165,7 @@ public abstract class BoxExpression extends BoxNode {
 					if ( spreadValue instanceof IStruct spreadStruct ) {
 						spreadStruct.forEach( struct::put );
 					} else {
-						Array spreadArray = Array.copyOf( spreadValue );
+						Array spreadArray = spreadToArrayOrThrow( spreadValue, "struct", spread );
 						for ( int i = 1; i <= spreadArray.size(); i++ ) {
 							struct.put( Key.of( i ), spreadArray.getAt( i ) );
 						}
@@ -184,6 +184,18 @@ public abstract class BoxExpression extends BoxNode {
 		}
 		// return "[Runtime Expression]";
 		throw new ExpressionException( "Non-literal value in BoxExpr type: " + this.getClass().getSimpleName(), this );
+	}
+
+	private static Array spreadToArrayOrThrow( Object spreadValue, String literalType, BoxNode node ) {
+		String typeDescription = spreadValue == null ? "null" : spreadValue.getClass().getName();
+		try {
+			return Array.copyOf( spreadValue );
+		} catch ( RuntimeException e ) {
+			if ( "ambiguous bracket".equals( literalType ) ) {
+				throw new ExpressionException( "Cannot spread value of type [" + typeDescription + "] into an ambiguous bracket literal.", node );
+			}
+			throw new ExpressionException( "Cannot spread value of type [" + typeDescription + "] into a " + literalType + " literal.", node );
+		}
 	}
 
 }
