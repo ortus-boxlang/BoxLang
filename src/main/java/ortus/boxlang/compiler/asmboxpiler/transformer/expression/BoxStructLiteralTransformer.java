@@ -24,23 +24,23 @@ import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.FieldInsnNode;
-import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
-import org.objectweb.asm.tree.TypeInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxSpreadExpression;
 import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStructType;
+import ortus.boxlang.runtime.dynamic.LiteralSpreadUtil;
 import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.Struct;
 
 public class BoxStructLiteralTransformer extends AbstractTransformer {
 
@@ -50,85 +50,65 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) {
-		BoxStructLiteral	structLiteral	= ( BoxStructLiteral ) node;
-		boolean				empty			= structLiteral.getValues().isEmpty();
+		BoxStructLiteral				structLiteral	= ( BoxStructLiteral ) node;
+		List<AbstractInsnNode>			nodes			= new ArrayList<>();
+		String							structTypeField	= structLiteral.getType() == BoxStructType.Ordered ? "LINKED" : "DEFAULT";
+		List<List<AbstractInsnNode>>	structArguments	= transformStructArguments( structLiteral, context );
 
-		if ( structLiteral.getType() == BoxStructType.Unordered ) {
-			if ( empty ) {
-				List<AbstractInsnNode> nodes = new ArrayList<>();
-				nodes.addAll( List.of(
-				    new TypeInsnNode( Opcodes.NEW, Type.getInternalName( Struct.class ) ),
-				    new InsnNode( Opcodes.DUP ),
-				    new MethodInsnNode( Opcodes.INVOKESPECIAL,
-				        Type.getInternalName( Struct.class ),
-				        "<init>",
-				        Type.getMethodDescriptor( Type.VOID_TYPE ),
-				        false )
-				) );
-				return AsmHelper.addLineNumberLabels( nodes, node );
+		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
+		    Type.getInternalName( IStruct.TYPES.class ),
+		    structTypeField,
+		    Type.getDescriptor( IStruct.TYPES.class ) ) );
+		nodes.addAll( AsmHelper.array( Type.getType( Object.class ), structArguments ) );
+		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+		    Type.getInternalName( LiteralSpreadUtil.class ),
+		    "struct",
+		    Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( IStruct.TYPES.class ), Type.getType( Object[].class ) ),
+		    false ) );
+		return AsmHelper.addLineNumberLabels( nodes, node );
+	}
+
+	private List<List<AbstractInsnNode>> transformStructArguments( BoxStructLiteral structLiteral, TransformerContext context ) {
+		List<List<AbstractInsnNode>>	arguments	= new ArrayList<>();
+		List<BoxExpression>				values		= structLiteral.getValues();
+
+		for ( int i = 0; i < values.size(); ) {
+			BoxExpression current = values.get( i );
+			if ( current instanceof BoxSpreadExpression spread ) {
+				arguments.add( transformSpread( spread, context ) );
+				i++;
+				continue;
 			}
 
-			List<AbstractInsnNode> nodes = new ArrayList<>();
-
-			nodes.addAll( AsmHelper.array( Type.getType( Object.class ), structLiteral.getValues(), ( value, i ) -> {
-				if ( value instanceof BoxIdentifier bi && i % 2 != 1 ) {
-					// { foo : "bar" }
-					return List.of( new LdcInsnNode( bi.getName() ) );
-				} else if ( value instanceof BoxScope bs && i % 2 != 1 ) {
-					// { this : "bar" }
-					return List.of( new LdcInsnNode( bs.getName() ) );
-				} else {
-					// { "foo" : "bar" }
-					return transpiler.transform( value, context, ReturnValueContext.VALUE );
-				}
-			} ) );
-
-			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-			    Type.getInternalName( Struct.class ),
-			    "of",
-			    Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),
-			    false ) );
-			return AsmHelper.addLineNumberLabels( nodes, node );
-		} else {
-			if ( empty ) {
-				List<AbstractInsnNode> nodes = new ArrayList<>();
-				nodes.addAll( List.of(
-				    new TypeInsnNode( Opcodes.NEW, Type.getInternalName( Struct.class ) ),
-				    new InsnNode( Opcodes.DUP ),
-				    new FieldInsnNode( Opcodes.GETSTATIC,
-				        Type.getInternalName( IStruct.TYPES.class ),
-				        "LINKED",
-				        Type.getDescriptor( IStruct.TYPES.class ) ),
-				    new MethodInsnNode( Opcodes.INVOKESPECIAL,
-				        Type.getInternalName( Struct.class ),
-				        "<init>",
-				        Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( IStruct.TYPES.class ) ),
-				        false )
-				) );
-				return AsmHelper.addLineNumberLabels( nodes, node );
+			if ( i + 1 >= values.size() ) {
+				throw new IllegalStateException( "Invalid struct literal data while transforming spread values." );
 			}
-			List<AbstractInsnNode> nodes = new ArrayList<>();
 
-			nodes.addAll( AsmHelper.array( Type.getType( Object.class ), structLiteral.getValues(), ( value, i ) -> {
-				if ( value instanceof BoxIdentifier bi && i % 2 != 1 ) {
-					// { foo : "bar" }
-					return List.of( new LdcInsnNode( bi.getName() ) );
-				} else if ( value instanceof BoxScope bs && i % 2 != 1 ) {
-					// { this : "bar" }
-					return List.of( new LdcInsnNode( bs.getName() ) );
-				} else {
-					// { "foo" : "bar" }
-					return transpiler.transform( value, context, ReturnValueContext.VALUE );
-				}
-			} ) );
-
-			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-			    Type.getInternalName( Struct.class ),
-			    "linkedOf",
-			    Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),
-			    false ) );
-
-			return AsmHelper.addLineNumberLabels( nodes, node );
+			arguments.add( transformKey( current, context ) );
+			arguments.add( transpiler.transform( values.get( i + 1 ), context, ReturnValueContext.VALUE ) );
+			i += 2;
 		}
+
+		return arguments;
+	}
+
+	private List<AbstractInsnNode> transformKey( BoxExpression keyExpr, TransformerContext context ) {
+		if ( keyExpr instanceof BoxIdentifier identifier ) {
+			return List.of( new LdcInsnNode( identifier.getName() ) );
+		}
+		if ( keyExpr instanceof BoxScope scope ) {
+			return List.of( new LdcInsnNode( scope.getName() ) );
+		}
+		return transpiler.transform( keyExpr, context, ReturnValueContext.VALUE );
+	}
+
+	private List<AbstractInsnNode> transformSpread( BoxSpreadExpression spread, TransformerContext context ) {
+		List<AbstractInsnNode> spreadNodes = new ArrayList<>( transpiler.transform( spread.getExpression(), context, ReturnValueContext.VALUE_OR_NULL ) );
+		spreadNodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+		    Type.getInternalName( LiteralSpreadUtil.class ),
+		    "spread",
+		    Type.getMethodDescriptor( Type.getType( LiteralSpreadUtil.SpreadValue.class ), Type.getType( Object.class ) ),
+		    false ) );
+		return spreadNodes;
 	}
 }

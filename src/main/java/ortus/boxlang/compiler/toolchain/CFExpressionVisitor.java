@@ -73,6 +73,7 @@ import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringBinding;
 import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxSpreadExpression;
 import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
 import ortus.boxlang.compiler.ast.expression.BoxStaticMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
@@ -798,8 +799,15 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 	public BoxExpression visitArrayLiteral( ArrayLiteralContext ctx ) {
 		var	pos		= tools.getPosition( ctx );
 		var	src		= tools.getSourceText( ctx );
-		var	values	= Optional.ofNullable( ctx.expressionList() )
-		    .map( expressionList -> expressionList.expression().stream().map( expr -> expr.accept( this ) ).collect( Collectors.toList() ) )
+		var	values	= Optional.ofNullable( ctx.arrayLiteralMembers() )
+		    .map( members -> members.arrayLiteralMember().stream().map( member -> {
+						    if ( member.ELLIPSIS() != null ) {
+							    BoxExpression spreadExpr = member.expression().accept( this );
+							    return ( BoxExpression ) new BoxSpreadExpression( spreadExpr, tools.getPosition( member ), tools.getSourceText( member ) );
+						    }
+						    return member.expression().accept( this );
+					    } )
+		        .collect( Collectors.toList() ) )
 		    .orElse( Collections.emptyList() );
 		return new BoxArrayLiteral( values, pos, src );
 	}
@@ -1053,47 +1061,69 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		var					pos							= tools.getPosition( ctx );
 		var					src							= tools.getSourceText( ctx );
 		var					type						= ctx.RBRACKET() != null ? BoxStructType.Ordered : BoxStructType.Unordered;
-		var					structMembers				= ctx.structMembers();
 		var					structMembersWithShorthand	= ctx.structMembersWithShorthand();
+		var					orderedStructMembers		= ctx.orderedStructMembers();
 		List<BoxExpression>	values						= new ArrayList<>();
 
 		if ( structMembersWithShorthand != null ) {
-			for ( var structMemberWithShorthand : structMembersWithShorthand.structMemberWithShorthand() ) {
-				if ( structMemberWithShorthand.identifier() != null ) {
-					var	shorthandIdentifier	= structMemberWithShorthand.identifier();
+			for ( var member : structMembersWithShorthand.structMemberWithShorthandOrSpread() ) {
+				if ( member.structSpread() != null ) {
+					var				spreadCtx	= member.structSpread();
+					BoxExpression	spreadExpr	= spreadCtx.expression().accept( this );
+					values.add( new BoxSpreadExpression( spreadExpr, tools.getPosition( spreadCtx ), tools.getSourceText( spreadCtx ) ) );
+				} else if ( member.structMemberWithShorthand().identifier() != null ) {
+					var	shorthandIdentifier	= member.structMemberWithShorthand().identifier();
 					var	shorthandSource		= tools.getSourceText( shorthandIdentifier );
 					values.add( new BoxStringLiteral( shorthandSource, tools.getPosition( shorthandIdentifier ), shorthandSource ) );
 					values.add( shorthandIdentifier.accept( this ) );
 				} else {
-					var	structMember	= structMemberWithShorthand.structMember();
-					var	key				= structMember.structKey().accept( this );
-					if ( key instanceof BoxFQN ) {
-						// Lucee creates nested structs, adobe errors. We're just going to turn foo.bar into a quoted string for now.
-						key = new BoxStringLiteral( structMember.structKey().fqn().getText(),
-						    tools.getPosition( structMember.structKey().fqn() ),
-						    tools.getSourceText( structMember.structKey().fqn() ) );
-
-					}
-					values.add( key );
-					values.add( structMember.expression().accept( this ) );
+					addStructMember( values, member.structMemberWithShorthand().structMember() );
 				}
 			}
-		} else if ( structMembers != null ) {
-			for ( StructMemberContext structMember : structMembers.structMember() ) {
-
-				var key = structMember.structKey().accept( this );
-				if ( key instanceof BoxFQN ) {
-					// Lucee creates nested structs, adobe errors. We're just going to turn foo.bar into a quoted string for now.
-					key = new BoxStringLiteral( structMember.structKey().fqn().getText(), tools.getPosition( structMember.structKey().fqn() ),
-					    tools.getSourceText( structMember.structKey().fqn() ) );
-
+		} else if ( orderedStructMembers != null ) {
+			var leadingKeyMembers = orderedStructMembers.orderedStructMembersWithLeadingKey();
+			if ( leadingKeyMembers != null ) {
+				addStructMember( values, leadingKeyMembers.structMember() );
+				for ( var member : leadingKeyMembers.orderedStructMemberOrSpread() ) {
+					if ( member.structSpread() != null ) {
+						var				spreadCtx	= member.structSpread();
+						BoxExpression	spreadExpr	= spreadCtx.expression().accept( this );
+						values.add( new BoxSpreadExpression( spreadExpr, tools.getPosition( spreadCtx ), tools.getSourceText( spreadCtx ) ) );
+					} else {
+						addStructMember( values, member.structMember() );
+					}
 				}
-				values.add( key );
-				values.add( structMember.expression().accept( this ) );
+			} else {
+				var leadingSpreadMembers = orderedStructMembers.orderedStructMembersWithLeadingSpread();
+				for ( var spreadCtx : leadingSpreadMembers.structSpread() ) {
+					BoxExpression spreadExpr = spreadCtx.expression().accept( this );
+					values.add( new BoxSpreadExpression( spreadExpr, tools.getPosition( spreadCtx ), tools.getSourceText( spreadCtx ) ) );
+				}
+				addStructMember( values, leadingSpreadMembers.structMember() );
+				for ( var member : leadingSpreadMembers.orderedStructMemberOrSpread() ) {
+					if ( member.structSpread() != null ) {
+						var				spreadCtx	= member.structSpread();
+						BoxExpression	spreadExpr	= spreadCtx.expression().accept( this );
+						values.add( new BoxSpreadExpression( spreadExpr, tools.getPosition( spreadCtx ), tools.getSourceText( spreadCtx ) ) );
+					} else {
+						addStructMember( values, member.structMember() );
+					}
+				}
 			}
 		}
 
 		return new BoxStructLiteral( type, values, pos, src );
+	}
+
+	private void addStructMember( List<BoxExpression> values, StructMemberContext structMember ) {
+		var key = structMember.structKey().accept( this );
+		if ( key instanceof BoxFQN ) {
+			// Lucee creates nested structs, adobe errors. We're just going to turn foo.bar into a quoted string for now.
+			key = new BoxStringLiteral( structMember.structKey().fqn().getText(), tools.getPosition( structMember.structKey().fqn() ),
+			    tools.getSourceText( structMember.structKey().fqn() ) );
+		}
+		values.add( key );
+		values.add( structMember.expression().accept( this ) );
 	}
 
 	@Override
@@ -1119,13 +1149,38 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		}
 
 		List<BoxExpression> values = structLiteral.getValues();
-		if ( values == null || values.size() % 2 != 0 ) {
+		if ( values == null ) {
 			return null;
 		}
 
-		List<BoxObjectDestructuringBinding> bindings = new ArrayList<>();
-		for ( int i = 0; i < values.size(); i += 2 ) {
-			BoxExpression					key				= normalizeDestructuringKey( values.get( i ) );
+		List<BoxObjectDestructuringBinding>	bindings	= new ArrayList<>();
+		int									restCount	= 0;
+		for ( int i = 0; i < values.size(); ) {
+			BoxExpression current = values.get( i );
+			if ( current instanceof BoxSpreadExpression spread ) {
+				if ( i != values.size() - 1 ) {
+					tools.reportError( "Object destructuring rest binding must be the last binding.", spread.getPosition() );
+					return null;
+				}
+
+				BoxExpression spreadTarget = spread.getExpression();
+				if ( !isDestructuringTargetExpression( spreadTarget ) ) {
+					return null;
+				}
+
+				Position	bindingPosition	= spread.getPosition() != null ? spread.getPosition() : structLiteral.getPosition();
+				String		bindingSource	= spread.getSourceText() != null ? spread.getSourceText() : structLiteral.getSourceText();
+				bindings.add( new BoxObjectDestructuringBinding( null, spreadTarget, null, null, true, bindingPosition, bindingSource ) );
+				restCount++;
+				i++;
+				continue;
+			}
+
+			if ( i + 1 >= values.size() ) {
+				return null;
+			}
+
+			BoxExpression					key				= normalizeDestructuringKey( current );
 			BoxExpression					value			= values.get( i + 1 );
 			BoxExpression					target			= null;
 			BoxObjectDestructuringPattern	nestedPattern	= null;
@@ -1139,7 +1194,7 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 				target			= valueAssignment.getLeft();
 				defaultValue	= valueAssignment.getRight();
 			} else if ( value instanceof BoxStructLiteral nestedStructLiteral ) {
-				nestedPattern = tryBuildDestructuringPatternFromStructLiteral( nestedStructLiteral, false );
+				nestedPattern = tryBuildDestructuringPatternFromStructLiteral( nestedStructLiteral, allowShorthandDefaults );
 				if ( nestedPattern == null ) {
 					if ( allowShorthandDefaults && key instanceof BoxIdentifier id ) {
 						target			= new BoxIdentifier( id.getName(), id.getPosition(), id.getSourceText() );
@@ -1162,6 +1217,12 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 			Position	bindingPosition	= value.getPosition() != null ? value.getPosition() : structLiteral.getPosition();
 			String		bindingSource	= value.getSourceText() != null ? value.getSourceText() : structLiteral.getSourceText();
 			bindings.add( new BoxObjectDestructuringBinding( key, target, nestedPattern, defaultValue, false, bindingPosition, bindingSource ) );
+			i += 2;
+		}
+
+		if ( restCount > 1 ) {
+			tools.reportError( "Object destructuring patterns may only contain one rest binding.", structLiteral.getPosition() );
+			return null;
 		}
 
 		return new BoxObjectDestructuringPattern( bindings, structLiteral.getPosition(), structLiteral.getSourceText() );
@@ -1194,6 +1255,18 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 			BoxArrayDestructuringPattern	nestedPattern	= null;
 			BoxExpression					defaultValue	= null;
 
+			if ( value instanceof BoxSpreadExpression spread ) {
+				if ( isDestructuringTargetExpression( spread.getExpression() ) ) {
+					target = spread.getExpression();
+				} else {
+					return null;
+				}
+				Position	bindingPosition	= value.getPosition() != null ? value.getPosition() : arrayLiteral.getPosition();
+				String		bindingSource	= value.getSourceText() != null ? value.getSourceText() : arrayLiteral.getSourceText();
+				bindings.add( new BoxArrayDestructuringBinding( target, null, null, true, bindingPosition, bindingSource ) );
+				continue;
+			}
+
 			if ( value instanceof BoxAssignment valueAssignment ) {
 				if ( valueAssignment.getOp() != BoxAssignmentOperator.Equal || !valueAssignment.getModifiers().isEmpty()
 				    || valueAssignment.getRight() == null ) {
@@ -1215,6 +1288,11 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 				if ( nestedPattern == null ) {
 					return null;
 				}
+			} else if ( value instanceof BoxStructLiteral nestedStructLiteral ) {
+				nestedPattern = tryBuildArrayDestructuringPatternFromOrderedStructLiteral( nestedStructLiteral );
+				if ( nestedPattern == null ) {
+					return null;
+				}
 			} else if ( value instanceof BoxArrayDestructuringPattern parsedPattern ) {
 				nestedPattern = parsedPattern;
 			} else if ( isDestructuringTargetExpression( value ) ) {
@@ -1228,6 +1306,12 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 			Position	bindingPosition	= value.getPosition() != null ? value.getPosition() : arrayLiteral.getPosition();
 			String		bindingSource	= value.getSourceText() != null ? value.getSourceText() : arrayLiteral.getSourceText();
 			bindings.add( new BoxArrayDestructuringBinding( target, nestedPattern, defaultValue, false, bindingPosition, bindingSource ) );
+		}
+
+		long restCount = bindings.stream().filter( BoxArrayDestructuringBinding::isRest ).count();
+		if ( restCount > 1 ) {
+			tools.reportError( "Array destructuring patterns may only contain one rest binding.", arrayLiteral.getPosition() );
+			return null;
 		}
 
 		return new BoxArrayDestructuringPattern( bindings, arrayLiteral.getPosition(), arrayLiteral.getSourceText() );

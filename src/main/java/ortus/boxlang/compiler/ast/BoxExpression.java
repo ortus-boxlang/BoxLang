@@ -19,6 +19,7 @@ import java.util.Iterator;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
+import ortus.boxlang.compiler.ast.expression.BoxSpreadExpression;
 import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
 import ortus.boxlang.compiler.ast.expression.IBoxSimpleLiteral;
 import ortus.boxlang.runtime.scopes.Key;
@@ -120,7 +121,12 @@ public abstract class BoxExpression extends BoxNode {
 		if ( this instanceof BoxArrayLiteral arr ) {
 			Array array = Array.of();
 			arr.getValues().forEach( value -> {
-				array.add( value.getAsLiteralValue() );
+				if ( value instanceof BoxSpreadExpression spread ) {
+					Array spreadArray = Array.copyOf( spread.getExpression().getAsLiteralValue() );
+					array.addAll( spreadArray );
+				} else {
+					array.add( value.getAsLiteralValue() );
+				}
 			} );
 			return array;
 		}
@@ -128,13 +134,25 @@ public abstract class BoxExpression extends BoxNode {
 			IStruct					struct		= Struct.of();
 			Iterator<BoxExpression>	iterator	= str.getValues().iterator();
 			while ( iterator.hasNext() ) {
-				BoxExpression key = iterator.next();
-				if ( iterator.hasNext() ) {
-					BoxExpression value = iterator.next();
-					struct.put( Key.of( key.getAsSimpleValue( null, true ) ), value.getAsLiteralValue() );
+				BoxExpression current = iterator.next();
+				if ( current instanceof BoxSpreadExpression spread ) {
+					Object spreadValue = spread.getExpression().getAsLiteralValue();
+					if ( spreadValue instanceof IStruct spreadStruct ) {
+						spreadStruct.forEach( struct::put );
+					} else {
+						Array spreadArray = Array.copyOf( spreadValue );
+						for ( int i = 1; i <= spreadArray.size(); i++ ) {
+							struct.put( Key.of( i ), spreadArray.getAt( i ) );
+						}
+					}
 				} else {
-					// Handle odd number of values
-					throw new IllegalArgumentException( "Invalid number of values in BoxStructLiteral" );
+					if ( iterator.hasNext() ) {
+						BoxExpression value = iterator.next();
+						struct.put( Key.of( current.getAsSimpleValue( null, true ) ), value.getAsLiteralValue() );
+					} else {
+						// Handle odd number of values
+						throw new IllegalArgumentException( "Invalid number of values in BoxStructLiteral" );
+					}
 				}
 			}
 			return struct;

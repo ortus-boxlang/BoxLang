@@ -18,6 +18,7 @@
 package TestCases.phase2;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 
@@ -37,6 +38,7 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 
 public class ObjectLiteralTest {
 
@@ -138,6 +140,37 @@ public class ObjectLiteralTest {
 
 		assertThat( arr.dereference( context, three, false ) ).isEqualTo( "brad" );
 
+	}
+
+	@DisplayName( "array literal spread" )
+	@Test
+	public void testArrayLiteralSpread() {
+		instance.executeSource(
+		    """
+		    values = [ 2, 3 ];
+		    result = [ 1, ...values, 4, ...[ 5, 6 ] ];
+		    """,
+		    context );
+
+		assertThat( variables.get( result ) instanceof Array ).isEqualTo( true );
+		Array arr = ( Array ) variables.get( result );
+		assertThat( arr.size() ).isEqualTo( 6 );
+		assertThat( arr.dereference( context, Key.of( 1 ), false ) ).isEqualTo( 1 );
+		assertThat( arr.dereference( context, Key.of( 2 ), false ) ).isEqualTo( 2 );
+		assertThat( arr.dereference( context, Key.of( 3 ), false ) ).isEqualTo( 3 );
+		assertThat( arr.dereference( context, Key.of( 4 ), false ) ).isEqualTo( 4 );
+		assertThat( arr.dereference( context, Key.of( 5 ), false ) ).isEqualTo( 5 );
+		assertThat( arr.dereference( context, Key.of( 6 ), false ) ).isEqualTo( 6 );
+	}
+
+	@DisplayName( "array literal spread rejects non-array values" )
+	@Test
+	public void testArrayLiteralSpreadRejectsNonArrayValues() {
+		assertThrows( BoxLangException.class, () -> instance.executeSource(
+		    """
+		    result = [ ...123 ];
+		    """,
+		    context ) );
 	}
 
 	@Test
@@ -307,6 +340,119 @@ public class ObjectLiteralTest {
 		assertThat( str.get( Key.of( "brad" ) ) ).isEqualTo( "wood" );
 		assertThat( str.keySet().toArray( new Key[ 0 ] )[ 0 ].getName() ).isEqualTo( "brad" );
 
+	}
+
+	@DisplayName( "unordered struct spread from array uses 1 based keys" )
+	@Test
+	public void testUnorderedStructSpreadFromArrayUsesOneBasedKeys() {
+		instance.executeSource(
+		    """
+		    values = [ "a", "b" ];
+		    result = { ...values };
+		    """,
+		    context );
+
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
+		IStruct str = ( IStruct ) variables.get( result );
+		assertThat( str.size() ).isEqualTo( 2 );
+		assertThat( str.get( Key.of( 1 ) ) ).isEqualTo( "a" );
+		assertThat( str.get( Key.of( 2 ) ) ).isEqualTo( "b" );
+	}
+
+	@DisplayName( "unordered struct spread merge precedence follows declaration order" )
+	@Test
+	public void testUnorderedStructSpreadMergePrecedenceFollowsDeclarationOrder() {
+		instance.executeSource(
+		    """
+		    result = { 1 : "first", ...[ "x", "y" ], 2 : "override" };
+		    """,
+		    context );
+
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
+		IStruct str = ( IStruct ) variables.get( result );
+		assertThat( str.get( Key.of( 1 ) ) ).isEqualTo( "x" );
+		assertThat( str.get( Key.of( 2 ) ) ).isEqualTo( "override" );
+	}
+
+	@DisplayName( "unordered struct spread merge precedence follows declaration order with struct sources" )
+	@Test
+	public void testUnorderedStructSpreadMergePrecedenceFromStructSources() {
+		instance.executeSource(
+		    """
+		    left = { a: 1, shared: "left" };
+		    right = { b: 2, shared: "right" };
+		    result = { ...left, middle: 3, ...right, shared: "literal" };
+		    """,
+		    context );
+
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
+		IStruct str = ( IStruct ) variables.get( result );
+		assertThat( str.size() ).isEqualTo( 4 );
+		assertThat( str.get( Key.of( "a" ) ) ).isEqualTo( 1 );
+		assertThat( str.get( Key.of( "middle" ) ) ).isEqualTo( 3 );
+		assertThat( str.get( Key.of( "b" ) ) ).isEqualTo( 2 );
+		assertThat( str.get( Key.of( "shared" ) ) ).isEqualTo( "literal" );
+	}
+
+	@DisplayName( "ordered struct spread from array uses 1 based keys" )
+	@Test
+	public void testOrderedStructSpreadFromArrayUsesOneBasedKeys() {
+		instance.executeSource(
+		    """
+		    values = [ "a", "b" ];
+		    result = [ ...values, tail: true ];
+		    """,
+		    context );
+
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
+		IStruct str = ( IStruct ) variables.get( result );
+		assertThat( str.getType() ).isEqualTo( Struct.TYPES.LINKED );
+		assertThat( str.size() ).isEqualTo( 3 );
+		assertThat( str.get( Key.of( 1 ) ) ).isEqualTo( "a" );
+		assertThat( str.get( Key.of( 2 ) ) ).isEqualTo( "b" );
+		assertThat( str.get( Key.of( "tail" ) ) ).isEqualTo( true );
+
+		Key[] keys = str.keySet().toArray( new Key[ 0 ] );
+		assertThat( keys[ 0 ].getName() ).isEqualTo( "1" );
+		assertThat( keys[ 1 ].getName() ).isEqualTo( "2" );
+		assertThat( keys[ 2 ].getName() ).isEqualTo( "tail" );
+	}
+
+	@DisplayName( "ordered struct spread merge precedence follows declaration order" )
+	@Test
+	public void testOrderedStructSpreadMergePrecedenceFollowsDeclarationOrder() {
+		instance.executeSource(
+		    """
+		    left = [ a: 1, shared: "left" ];
+		    right = [ b: 2, shared: "right" ];
+		    result = [ ...left, middle: 3, ...right, shared: "literal" ];
+		    """,
+		    context );
+
+		assertThat( variables.get( result ) instanceof IStruct ).isEqualTo( true );
+		IStruct str = ( IStruct ) variables.get( result );
+		assertThat( str.getType() ).isEqualTo( Struct.TYPES.LINKED );
+		assertThat( str.size() ).isEqualTo( 4 );
+		assertThat( str.get( Key.of( "a" ) ) ).isEqualTo( 1 );
+		assertThat( str.get( Key.of( "middle" ) ) ).isEqualTo( 3 );
+		assertThat( str.get( Key.of( "b" ) ) ).isEqualTo( 2 );
+		assertThat( str.get( Key.of( "shared" ) ) ).isEqualTo( "literal" );
+
+		Key[] keys = str.keySet().toArray( new Key[ 0 ] );
+		assertThat( keys[ 0 ].getName() ).isEqualTo( "a" );
+		assertThat( keys[ 1 ].getName() ).isEqualTo( "shared" );
+		assertThat( keys[ 2 ].getName() ).isEqualTo( "middle" );
+		assertThat( keys[ 3 ].getName() ).isEqualTo( "b" );
+	}
+
+	@DisplayName( "ordered struct spread rejects non spreadable values" )
+	@Test
+	public void testOrderedStructSpreadRejectsNonSpreadableValues() {
+		assertThrows( BoxLangException.class, () -> instance.executeSource(
+		    """
+		    result = [ a: 1, ...42 ];
+		    """,
+		    context ) );
 	}
 
 	@DisplayName( "Function in struct" )
