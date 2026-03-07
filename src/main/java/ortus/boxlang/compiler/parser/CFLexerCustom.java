@@ -416,6 +416,13 @@ public class CFLexerCustom extends CFLexer {
 						// static foo = "bar"
 						// var { foo } = data
 						isIdentifier = false;
+					} else if ( ( nextTokenType == VAR || nextTokenType == FINAL || nextTokenType == STATIC ) && !lastTokenWas( DOT )
+					    && nextNonWhiteSpaceCharIs( '[' )
+					    && ( lastToken == null || lastTokenWas( SEMICOLON ) || lastTokenWas( LBRACE ) || lastTokenWas( RBRACE )
+					        || lastTokenWas( RPAREN ) || ( inForParen && lastTokenWas( LPAREN ) ) ) ) {
+						// var [ first, second ] = data
+						// final [ first, ...rest ] = data
+						isIdentifier = false;
 					} else if ( nextTokenType == NEW && !lastTokenWas( DOT )
 					    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '\'' ) || nextNonWhiteSpaceCharIs( '"' )
 					        || nextNonWhiteSpaceCharIs( '_' ) )

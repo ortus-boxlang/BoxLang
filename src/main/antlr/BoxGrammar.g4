@@ -480,6 +480,57 @@ objectDestructuringRest: ELLIPSIS fqn
 objectDestructuringValue: fqn | objectDestructuringPattern
     ;
 
+/*
+ var [ a, b ] = arr
+ [ variables.a, arguments.b ] = arr
+ var [ first, ...rest ] = arr
+ */
+arrayDestructuringPattern: LBRACKET arrayDestructuringMembers? RBRACKET
+    ;
+
+/*
+ [ a, b, c = 10 ]
+ [ [ x, y ], ...rest ]
+ [ first, ...middle, last ]
+ */
+arrayDestructuringMembers
+    : arrayDestructuringMember (COMMA arrayDestructuringMember)* COMMA?
+    ;
+
+/*
+ a
+ a = 1
+ ...rest
+ */
+arrayDestructuringMember
+    : arrayDestructuringBinding
+    | arrayDestructuringRest
+    ;
+
+/*
+ a
+ variables.a
+ [ nested ]
+ a = 'foo'
+ [ nested ] = []
+ */
+arrayDestructuringBinding
+    : arrayDestructuringValue (EQUALSIGN expression)?
+    ;
+
+/*
+ ...rest
+ */
+arrayDestructuringRest: ELLIPSIS fqn
+    ;
+
+/*
+ user = [ [1, 2], 3 ]
+ [ [x, y], z ] = user
+ */
+arrayDestructuringValue: fqn | arrayDestructuringPattern
+    ;
+
 new: NEW preFix? (fqn (AT moduleName)? | stringLiteral) LPAREN argumentList? RPAREN
     ;
 
@@ -569,6 +620,7 @@ el2
         | CONCATEQUAL
     ) expression # exprAssign // foo = bar
     | objectDestructuringPattern EQUALSIGN expression # exprDestructuringAssign // ({ a } = foo)
+    | arrayDestructuringPattern EQUALSIGN expression  # exprArrayDestructuringAssign // [ a ] = foo
 
     // Ternary operations are right associative, which means that if they are nested,
     // the rightmost operation is evaluated first.

@@ -30,6 +30,8 @@ import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
 import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
+import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringBinding;
+import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentModifier;
@@ -835,6 +837,41 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	public void visit( BoxNull node ) {
 		printPreComments( node );
 		print( "null" );
+		printPostComments( node );
+	}
+
+	public void visit( BoxArrayDestructuringPattern node ) {
+		printPreComments( node );
+		print( "[ " );
+		int size = node.getBindings().size();
+		for ( int i = 0; i < size; i++ ) {
+			node.getBindings().get( i ).accept( this );
+			if ( i < size - 1 ) {
+				print( ", " );
+			}
+		}
+		print( " ]" );
+		printPostComments( node );
+	}
+
+	public void visit( BoxArrayDestructuringBinding node ) {
+		printPreComments( node );
+		if ( node.isRest() ) {
+			print( "..." );
+			node.getTarget().accept( this );
+			printPostComments( node );
+			return;
+		}
+
+		if ( node.getPattern() != null ) {
+			node.getPattern().accept( this );
+		} else if ( node.getTarget() != null ) {
+			node.getTarget().accept( this );
+		}
+		if ( node.getDefaultValue() != null ) {
+			print( " = " );
+			node.getDefaultValue().accept( this );
+		}
 		printPostComments( node );
 	}
 

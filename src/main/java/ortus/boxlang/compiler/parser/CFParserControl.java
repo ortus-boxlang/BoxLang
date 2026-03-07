@@ -194,7 +194,7 @@ public abstract class CFParserControl extends Parser {
 	protected boolean isAssignmentModifier( TokenStream input ) {
 		int thisType = input.LT( 1 ).getType();
 		return ( thisType == VAR || thisType == FINAL || thisType == STATIC )
-		    && ( identifiers.contains( input.LT( 2 ).getType() ) || input.LT( 2 ).getType() == LBRACE );
+		    && ( identifiers.contains( input.LT( 2 ).getType() ) || input.LT( 2 ).getType() == LBRACE || input.LT( 2 ).getType() == LBRACKET );
 	}
 
 	/**

@@ -27,6 +27,8 @@ import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
 import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
+import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringBinding;
+import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
@@ -263,6 +265,14 @@ public abstract class VoidBoxVisitor {
 	}
 
 	public void visit( BoxNull node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxArrayDestructuringPattern node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxArrayDestructuringBinding node ) {
 		visitChildren( node );
 	}
 
