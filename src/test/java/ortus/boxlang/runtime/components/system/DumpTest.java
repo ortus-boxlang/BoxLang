@@ -788,35 +788,35 @@ public class DumpTest {
 		assertThat( output ).doesNotContain( "golf" );
 
 	}
-	// In terminal, type:
-	// ./gradlew test --tests "ortus.boxlang.runtime.components.system.DumpTest.topTest" and click
-	// to run tests
 
 	/*
-	 * @DisplayName( "It can limit the recursion depth when dumping" )
+	 * NOTE: Additional scenarios for the "top" / "maxRows" behavior were previously
+	 * prototyped here as commented-out test code. That experimental code has been
+	 * removed to keep this test class focused on active, automated tests. If you
+	 * need to cover more cases, please add new @Test methods instead of
+	 * commenting them out.
 	 * 
-	 * @Test
-	 * public void topTestG() {
+	 * The existing topTest() above already verifies basic recursion limiting by
+	 * asserting that shallow keys are present while deeper nested keys are
+	 * omitted from the dump output.
 	 * 
-	 * IStruct level4 = Struct.of( Key.of( "deepest" ), "level-4-value" ); // we create the struct object of eahc differnet level so that they point towards each other.
-	 * IStruct level3 = Struct.of( Key.of( "level-3" ), level4 );
-	 * IStruct level2 = Struct.of( Key.of( "level-2" ), level3 );
+	 * (Legacy commented-out implementation removed.)
 	 * 
-	 * IStruct rootStruct = Struct.of(
 	 * 
-	 * Key.of( "a" ), level2,
-	 * Key.of( "b" ), level2,
-	 * Key.of( "c" ), level2
 	 * 
-	 * );
 	 * 
-	 * variables.put( Key.of( "testData" ), rootStruct );
 	 * 
-	 * instance.executeSource(
-	 * """
-	 * dump( var = testData, top = 3, format = "html" );
 	 * 
-	 * """,
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
 	 * context,
 	 * BoxSourceType.BOXSCRIPT
 	 * );
