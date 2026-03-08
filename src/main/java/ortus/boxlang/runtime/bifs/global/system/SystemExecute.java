@@ -26,7 +26,6 @@ import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -46,6 +45,12 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 @BoxBIF( description = "Execute a system command" )
 
 public class SystemExecute extends BIF {
+
+	/**
+	 * Grace period in milliseconds to wait for stream reader threads to finish
+	 * after the process exits. Handles cases where child processes keep pipes open.
+	 */
+	private static final long STREAM_DRAIN_GRACE_MS = 5000;
 
 	/**
 	 * Constructor
@@ -160,6 +165,33 @@ public class SystemExecute extends BIF {
 			process = processBuilder.start();
 			response.put( Key.pid, process.pid() );
 
+			// Close stdin since we are not writing to the process
+			process.getOutputStream().close();
+
+			// Start draining stdout and stderr concurrently in background threads.
+			// Reading both streams in parallel prevents buffer deadlocks (where one
+			// full buffer blocks the process while we're stuck reading the other).
+			// It also prevents hangs when child processes inherit the pipe file
+			// descriptors and keep them open after the main process exits.
+			final Process	finalProcess	= process;
+			StringBuilder	stdoutBuilder	= new StringBuilder();
+			StringBuilder	stderrBuilder	= new StringBuilder();
+			Thread			stdoutThread	= null;
+			Thread			stderrThread	= null;
+
+			if ( outputTarget == null ) {
+				stdoutThread = new Thread( () -> drainStream( finalProcess.inputReader(), stdoutBuilder ), "SystemExecute-stdout" );
+				stdoutThread.setDaemon( true );
+				stdoutThread.start();
+			}
+
+			if ( errorTarget == null ) {
+				stderrThread = new Thread( () -> drainStream( finalProcess.errorReader(), stderrBuilder ), "SystemExecute-stderr" );
+				stderrThread.setDaemon( true );
+				stderrThread.start();
+			}
+
+			// Wait for the process to complete
 			if ( timeout != null && timeout != 0L ) {
 				boolean finished = process.waitFor( timeout, TimeUnit.SECONDS );
 				response.put( Key.timeout, !finished );
@@ -186,12 +218,17 @@ public class SystemExecute extends BIF {
 				response.put( Key.timeout, false );
 			}
 
+			// After the process exits, wait for stream reader threads to finish.
+			// If child processes keep the pipes open, force-close the streams after a grace period.
+			joinStreamThread( stdoutThread, finalProcess.getInputStream() );
+			joinStreamThread( stderrThread, finalProcess.getErrorStream() );
+
 			if ( !response.getAsBoolean( Key.terminated ) ) {
-				if ( process != null && outputTarget == null && process.getInputStream() != null ) {
-					response.put( Key.output, process.inputReader().lines().collect( Collectors.joining( "\n" ) ) );
+				if ( outputTarget == null ) {
+					response.put( Key.output, stdoutBuilder.toString() );
 				}
-				if ( process != null && errorTarget == null && process.getErrorStream() != null ) {
-					response.put( Key.error, process.errorReader().lines().collect( Collectors.joining( "\n" ) ) );
+				if ( errorTarget == null ) {
+					response.put( Key.error, stderrBuilder.toString() );
 				}
 			}
 
@@ -203,7 +240,7 @@ public class SystemExecute extends BIF {
 
 		} catch ( IOException e ) {
 			throw new BoxRuntimeException(
-			    String.format( "An exception occurred while attempting to execute the statement [%s]", StringUtils.join( cmd, " " ) ),
+			    String.format( "An exception occurred while attempting to execute the command [%s]", StringUtils.join( cmd, " " ) ),
 			    e
 			);
 		} catch ( InterruptedException ie ) {
@@ -214,6 +251,54 @@ public class SystemExecute extends BIF {
 			);
 		}
 
+	}
+
+	/**
+	 * Drains a BufferedReader line-by-line into a StringBuilder.
+	 * Designed to be run in a background thread to prevent blocking the main thread.
+	 *
+	 * @param reader  The reader to drain
+	 * @param builder The StringBuilder to append lines to
+	 */
+	private void drainStream( java.io.BufferedReader reader, StringBuilder builder ) {
+		try {
+			String line;
+			while ( ( line = reader.readLine() ) != null ) {
+				if ( builder.length() > 0 ) {
+					builder.append( "\n" );
+				}
+				builder.append( line );
+			}
+		} catch ( IOException e ) {
+			// Stream was closed or errored - stop reading silently.
+			// This is expected when we force-close the stream after the grace period.
+		}
+	}
+
+	/**
+	 * Waits for a stream-reader thread to finish within a grace period.
+	 * If it doesn't finish in time (e.g. child processes keep the pipe open),
+	 * force-closes the underlying stream to unblock the reader.
+	 *
+	 * @param thread The stream reader thread (may be null)
+	 * @param stream The underlying input stream to force-close if needed (may be null)
+	 */
+	private void joinStreamThread( Thread thread, java.io.InputStream stream ) {
+		if ( thread == null ) {
+			return;
+		}
+		try {
+			thread.join( STREAM_DRAIN_GRACE_MS );
+			if ( thread.isAlive() && stream != null ) {
+				// Force-close the stream to unblock the reader thread
+				stream.close();
+				thread.join( 1000 );
+			}
+		} catch ( InterruptedException e ) {
+			Thread.currentThread().interrupt();
+		} catch ( IOException e ) {
+			// Ignore close errors
+		}
 	}
 
 }
