@@ -66,7 +66,7 @@ public class Dump extends BIF {
 		    // The maximum recursion depth when dumping nested structures
 		    new Argument( false, Argument.NUMERIC, Key.top ),
 		    // The maximum number of keys/rows to display in collections
-		    new Argument( false, Argument.NUMERIC, Key.maxRows ),
+		    new Argument( false, Argument.NUMERIC, Key.maxRows, Set.of( Validator.min( 0 ) ) ),
 		    // Whether to expand the dump. By default, the dump is expanded on the first level only
 		    new Argument( false, Argument.BOOLEAN, Key.expand, true ),
 		    // Whether to do a hard abort the request after dumping
