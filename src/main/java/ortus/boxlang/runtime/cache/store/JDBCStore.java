@@ -277,7 +277,8 @@ public class JDBCStore extends AbstractStore {
 		);
 
 		if ( !result.isEmpty() ) {
-			return getResultItemCount( result );
+			IStruct firstRow = ( IStruct ) result.get( 0 );
+			return IntegerCaster.cast( firstRow.getOrDefault( Key.itemCount, 0 ) );
 		}
 		return 0;
 	}
@@ -417,7 +418,8 @@ public class JDBCStore extends AbstractStore {
 		);
 
 		if ( !result.isEmpty() ) {
-			return getResultItemCount( result ) > 0;
+			IStruct firstRow = ( IStruct ) result.get( 0 );
+			return IntegerCaster.cast( firstRow.getOrDefault( Key.itemCount, 0 ) ) > 0;
 		}
 		return false;
 	}
@@ -1037,20 +1039,5 @@ public class JDBCStore extends AbstractStore {
 				    + " FETCH FIRST " + limit + " ROWS ONLY"
 				    + ")";
 		}
-	}
-
-	/**
-	 * Extract the item count from a query result, taking care to cast if necessary.
-	 * 
-	 * @param result The query result array
-	 * 
-	 * @return The item count as an integer, or 0 if not found
-	 */
-	private Integer getResultItemCount( Array result ) {
-		IStruct firstRow = ( IStruct ) result.get( 0 );
-		if ( firstRow.containsKey( Key.itemCount ) ) {
-			return IntegerCaster.cast( firstRow.get( Key.itemCount ) );
-		}
-		return 0;
 	}
 }

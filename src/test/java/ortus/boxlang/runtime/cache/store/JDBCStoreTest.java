@@ -116,6 +116,7 @@ class JDBCStoreTest extends BaseStoreTest {
 		mockConfig.properties.put( Key.datasource, "mysqlStoreTest" );
 		mockConfig.properties.put( Key.table, "cacheStore" );
 		mockConfig.properties.put( Key.autoCreate, true );
+
 		IObjectStore	mysqlStore	= new JDBCStore().init( mockProvider, mockConfig.properties );
 
 		var				testEntry	= newTestEntry( "test" );
@@ -123,5 +124,6 @@ class JDBCStoreTest extends BaseStoreTest {
 		mysqlStore.lookup( Key.of( "test" ) );
 		assertThat( mysqlStore.lookup( Key.of( "test" ) ) ).isTrue();
 		assertThat( mysqlStore.get( Key.of( "test" ) ) ).isEqualTo( testEntry );
+		assertThat( mysqlStore.getSize() ).isEqualTo( 1 );
 	}
 }
