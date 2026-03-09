@@ -155,12 +155,10 @@ public class JDBCStore extends AbstractStore {
 		this.context	= new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() );
 
 		// Get the datasource, because it needs to exist in order for it to work
-		this.datasource	= BoxRuntime.getInstance().getDataSourceService().get( Key.of( datasourceName ) );
+		this.datasource	= this.context.getConnectionManager().getDatasourceOrThrow( Key.of( datasourceName ) );
 		if ( this.datasource == null ) {
 			throw new BoxRuntimeException( "JDBCStore datasource '" + datasourceName + "' not found." );
 		}
-
-		this.context.getConnectionManager().register( this.datasource );
 
 		// Detect the database vendor once at initialization
 		this.vendor = detectDatabaseVendor();
