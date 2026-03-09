@@ -17,14 +17,21 @@
  */
 package ortus.boxlang.runtime.cache.store;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.DatasourceService;
+import ortus.boxlang.runtime.types.Struct;
 import tools.JDBCTestUtils;
 
 class JDBCStoreTest extends BaseStoreTest {
@@ -87,4 +94,34 @@ class JDBCStoreTest extends BaseStoreTest {
 		store = new JDBCStore().init( mockProvider, mockConfig.properties );
 	}
 
+	@EnabledIf( "tools.JDBCTestUtils#hasMySQLModule" )
+	@Test
+	@DisplayName( "Can set entries in MySQL" )
+	public void testGetOrSet() {
+		DataSource			testDS				= DataSource.fromStruct(
+		    "mysqlStoreTest",
+		    Struct.of(
+		        "username", "root",
+		        "password", "123456Password",
+		        "host", "localhost",
+		        "port", "3309",
+		        "driver", "mysql",
+		        "database", "myDB",
+		        "custom", "allowMultiQueries=true"
+		    ) );
+		DatasourceService	datasourceService	= runtime.getDataSourceService();
+		datasourceService.register( Key.of( "mysqlStoreTest" ), testDS );
+		runtime.getConfiguration().datasources.put( Key.of( "mysqlStoreTest" ), testDS.getConfiguration() );
+
+		mockConfig.properties.put( Key.datasource, "mysqlStoreTest" );
+		mockConfig.properties.put( Key.table, "cacheStore" );
+		mockConfig.properties.put( Key.autoCreate, true );
+		IObjectStore	mysqlStore	= new JDBCStore().init( mockProvider, mockConfig.properties );
+
+		var				testEntry	= newTestEntry( "test" );
+		mysqlStore.set( Key.of( "test" ), testEntry );
+		mysqlStore.lookup( Key.of( "test" ) );
+		assertThat( mysqlStore.lookup( Key.of( "test" ) ) ).isTrue();
+		assertThat( mysqlStore.get( Key.of( "test" ) ) ).isEqualTo( testEntry );
+	}
 }
