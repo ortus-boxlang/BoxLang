@@ -18,8 +18,6 @@
 
 package ortus.boxlang.runtime.components.system;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.io.IOException;
 
 import org.junit.jupiter.api.AfterAll;
@@ -35,6 +33,8 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.util.FileSystemUtil;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ExecuteComponentTest {
 
@@ -70,45 +70,56 @@ public class ExecuteComponentTest {
 	public void testExecuteCF() throws IOException {
 		instance.executeSource(
 		    """
-		    <cfexecute variable="result" name="java" arguments="--version" />
+		    <cfexecute variable="result" exitCode="exitCode" name="java" arguments="--version" />
 		    """,
 		    context, BoxSourceType.CFTEMPLATE );
 
+		assertEquals( 0, variables.get( Key.exitCode ) );
 		assertTrue( variables.get( result ) instanceof String );
 		assertTrue( variables.getAsString( result ).length() > 0 );
+	}
 
+	@Test
+	public void testExecuteCFFailure() throws IOException {
 		instance.executeSource(
 		    """
-		    <cfexecute variable="blah" errorVariable="result" name="java" arguments="--blah" />
+		    <cfexecute variable="blah" exitCode="exitCode" errorVariable="result" name="java" arguments="--blah" />
 		    """,
 		    context, BoxSourceType.CFTEMPLATE );
 
+		assertNotEquals( 0, variables.get( Key.exitCode ) );
+		String errorOutput = variables.getAsString( result );
+		assertNotNull( errorOutput );
 		assertTrue( variables.get( result ) instanceof String );
-		assertTrue( variables.getAsString( result ).length() > 0 );
-
+		assertTrue( errorOutput.length() > 0 );
 	}
 
 	@Test
 	public void testExecuteBX() throws IOException {
 		instance.executeSource(
 		    """
-		    <bx:execute variable="result" name="java" arguments="--version" />
+		    <bx:execute variable="result" exitCode="exitCode" name="java" arguments="--version" />
 		    """,
 		    context, BoxSourceType.BOXTEMPLATE );
 
-		System.out.println( "Result variable:" + variables.get( result ) );
-
+		assertEquals( 0, variables.get( Key.exitCode ) );
 		assertTrue( variables.get( result ) instanceof String );
 		assertTrue( variables.getAsString( result ).length() > 0 );
+	}
 
+	@Test
+	public void testExecuteBXFailure() throws IOException {
 		instance.executeSource(
 		    """
-		    <bx:execute variable="blah" errorVariable="result" name="java" arguments="--blah" />
+		    <bx:execute variable="blah" exitCode="exitCode" errorVariable="result" name="java" arguments="--blah" />
 		    """,
 		    context, BoxSourceType.BOXTEMPLATE );
 
+		assertNotEquals( 0, variables.get( Key.exitCode ) );
+		String errorOutput = variables.getAsString( result );
+		assertNotNull( errorOutput );
 		assertTrue( variables.get( result ) instanceof String );
-		assertTrue( variables.getAsString( result ).length() > 0 );
+		assertTrue( errorOutput.length() > 0 );
 
 	}
 

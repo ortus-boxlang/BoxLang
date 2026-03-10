@@ -1734,7 +1734,7 @@ public class CFParser extends AbstractParser {
 		var	cache	= CFGrammar.getParseCache();
 		int	size	= 0;
 		for ( int d = 0; d < cache.length; d++ ) {
-			size += cache[ d ].getStates().size();
+			size += cache[ d ].states.size();
 		}
 		return size;
 	}

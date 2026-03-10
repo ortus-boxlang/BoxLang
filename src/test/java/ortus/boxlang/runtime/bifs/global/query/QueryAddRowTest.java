@@ -19,10 +19,12 @@
 package ortus.boxlang.runtime.bifs.global.query;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -299,6 +301,19 @@ public class QueryAddRowTest {
 		Query qry = variables.getAsQuery( result );
 		assertThat( qry.size() ).isEqualTo( 1 );
 		assertThat( variables.get( Key.of( "recordCount" ) ) ).isEqualTo( 1 );
+	}
+
+	@Disabled( "This test is disabled as you go down a rabbit hole, we need to discuss this further" )
+	@DisplayName( "It can validate cell types" )
+	@Test
+	public void testValidateCellTypes() {
+		// @formatter:off
+		assertThrows( RuntimeException.class, () -> instance.executeSource( """
+			myQuery = queryNew( "title,pageLength,createdDate", "string,integer,date" )
+			myQuery.addRow(  [ "The Fellowship Of the Ring", "not_an_integer", "not_a_date" ] )
+			println( myQuery )
+		""", context ) );
+		// @formatter:on
 	}
 
 }

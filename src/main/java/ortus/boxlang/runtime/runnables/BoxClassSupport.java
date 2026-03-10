@@ -16,6 +16,7 @@ package ortus.boxlang.runtime.runnables;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -989,13 +990,18 @@ public class BoxClassSupport {
 	 * @throws BoxValidationException If the class does not satisfy the interface
 	 */
 	public static void validateAbstractMethods( IClassRunnable thisClass, Map<Key, AbstractFunction> abstractMethods ) {
-		String className = thisClass.bxGetName().getName();
+
+		// If the class has the abstract annotation, then don't enforce
+		if ( thisClass.isAbstractClass() ) {
+			return;
+		}
 
 		// Having an onMissingMethod() UDF is the golden ticket to implementing any interface
 		if ( thisClass.getThisScope().get( Key.onMissingMethod ) instanceof Function ) {
 			return;
 		}
 
+		String className = thisClass.bxGetName().getName();
 		for ( Map.Entry<Key, AbstractFunction> abstractMethod : abstractMethods.entrySet() ) {
 			if ( thisClass.getThisScope().containsKey( abstractMethod.getKey() )
 			    && thisClass.getThisScope().get( abstractMethod.getKey() ) instanceof Function classMethod ) {
@@ -1173,6 +1179,24 @@ public class BoxClassSupport {
 			}
 		}
 		return classLocator;
+	}
+
+	/**
+	 * Get all abstract methods for a class, including those inherited from parent classes.
+	 * The child class's abstract methods will override the parent class's abstract methods if there are any with the same name.
+	 * 
+	 * @param thisClass The class to get the abstract methods for
+	 * 
+	 * @return A map of all abstract methods for the class, including inherited ones.
+	 */
+	public static Map<Key, AbstractFunction> getAllAbstractMethods( IClassRunnable thisClass ) {
+		// get from parent and override
+		Map<Key, AbstractFunction> allAbstractMethods = new LinkedHashMap<>();
+		if ( thisClass.getSuper() != null ) {
+			allAbstractMethods.putAll( getAllAbstractMethods( thisClass.getSuper() ) );
+		}
+		allAbstractMethods.putAll( thisClass.getAbstractMethods() );
+		return allAbstractMethods;
 	}
 
 }

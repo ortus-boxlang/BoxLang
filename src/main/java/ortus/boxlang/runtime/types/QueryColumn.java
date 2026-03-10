@@ -164,6 +164,18 @@ public class QueryColumn implements IReferenceable, Serializable {
 	}
 
 	/**
+	 * Set the type of this column
+	 *
+	 * @param type The new type of the column
+	 *
+	 * @return This column, for chaining
+	 */
+	public QueryColumn setType( QueryColumnType type ) {
+		this.type = type;
+		return this;
+	}
+
+	/**
 	 * Get the original SQL type of this column
 	 *
 	 * @return The original SQL type of the column, or null if not applicable

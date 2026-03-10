@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -1387,6 +1388,22 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 				    bsl.setValue( newValue );
 			    } );
 		}
+
+		// If cflock has no name or scope attribute, set a name attribute to a UUID
+		if ( componentName.equals( "lock" ) ) {
+			boolean	hasName		= node.getAttributes().stream().anyMatch( a -> a.getKey().getValue().equalsIgnoreCase( "name" ) );
+			boolean	hasScope	= node.getAttributes().stream().anyMatch( a -> a.getKey().getValue().equalsIgnoreCase( "scope" ) );
+			if ( !hasName && !hasScope ) {
+				node.getAttributes().add(
+				    new BoxAnnotation(
+				        new BoxFQN( "name", null, null ),
+				        new BoxStringLiteral( UUID.randomUUID().toString(), null, null ),
+				        null,
+				        null )
+				);
+			}
+		}
+
 		// Ignore invalid values for cfquery dbtype. If it's a string literal, and not query or hql, then literally delete the attribute entirely
 		if ( componentName.equals( "query" ) ) {
 			node.getAttributes()

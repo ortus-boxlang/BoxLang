@@ -167,6 +167,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 			public static IStruct metadata = null;
 			// Used to cached legacy metadata (created on-demand, never used if compat isn't installed)
 			public static IStruct legacyMetadata = null;
+			private static final boolean isFinal = ${isFinal};
+			private static final boolean isAbstract = ${isAbstract};
 
 			static {
 				superClass = BoxClassSupport.runStaticInitializer( ${className}::staticInitializer, ${className}.class, ${className}.staticScope, ${className}.path, imports, interfaces, annotations );
@@ -202,13 +204,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			}
 
 			public Map<Key, AbstractFunction> getAllAbstractMethods() {
-				// get from parent and override
-				Map<Key, AbstractFunction> allAbstractMethods = new LinkedHashMap<>();
-				if ( this._super != null ) {
-					allAbstractMethods.putAll( this._super.getAllAbstractMethods() );
-				}
-				allAbstractMethods.putAll( this.abstractMethods );
-				return allAbstractMethods;
+				return BoxClassSupport.getAllAbstractMethods( this );
 			}
 
 			public Set<Key> getCompileTimeMethodNames() {
@@ -345,6 +341,14 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 			public IClassRunnable getBottomClass() {
 				return BoxClassSupport.getBottomClass( this );
+			}
+				
+			public boolean isFinalClass() {
+				return ${className}.isFinal;
+			}
+
+			public boolean isAbstractClass() {
+				return ${className}.isAbstract;
 			}
 
 			/**
@@ -604,7 +608,13 @@ public class BoxClassTransformer extends AbstractTransformer {
 		    Map.entry( "bytecodeVersion", String.valueOf( IBoxpiler.BYTECODE_VERSION ) ),
 		    // Don't use the transpiler helper method for this so it's always a Key.of() call. When re-defining a class, we want this to be a Key.of() call.
 		    // Casting input to Object to match the same bytecode the ASM boxpiler uses, which the DiskClassLoader ASM vistor looks for.
-		    Map.entry( "boxFQN", "Key.of( (Object)\"" + boxFQN + "\" )" )
+		    Map.entry( "boxFQN", "Key.of( (Object)\"" + boxFQN + "\" )" ),
+		    Map.entry( "isFinal", String.valueOf( boxClass.getAnnotations().stream()
+		        .filter( it -> it.getKey().getValue().equalsIgnoreCase( "final" ) )
+		        .findFirst().isPresent() ) ),
+		    Map.entry( "isAbstract", String.valueOf( boxClass.getAnnotations().stream()
+		        .filter( it -> it.getKey().getValue().equalsIgnoreCase( "abstract" ) )
+		        .findFirst().isPresent() ) )
 		);
 		String							code		= PlaceholderHelper.resolve( CLASS_TEMPLATE, values );
 		ParseResult<CompilationUnit>	result;

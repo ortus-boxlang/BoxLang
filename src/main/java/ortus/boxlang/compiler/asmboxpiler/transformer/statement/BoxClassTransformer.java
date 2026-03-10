@@ -208,7 +208,14 @@ public class BoxClassTransformer {
 			isJavaExtends = false;
 		}
 
-		ClassNode classNode = new ClassNode();
+		boolean		isFinal		= boxClass.getAnnotations().stream()
+		    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "final" ) )
+		    .findFirst().isPresent();
+		boolean		isAbstract	= boxClass.getAnnotations().stream()
+		    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "abstract" ) )
+		    .findFirst().isPresent();
+
+		ClassNode	classNode	= new ClassNode();
 		transpiler.setOwningClass( classNode );
 		transpiler.setProperty( "enclosingClassInternalName", type.getInternalName() );
 
@@ -322,6 +329,20 @@ public class BoxClassTransformer {
 		    "isJavaExtends",
 		    Type.BOOLEAN_TYPE,
 		    isJavaExtends ? 1 : 0,
+		    false );
+		AsmHelper.addStaticFieldGetter( classNode,
+		    type,
+		    "isFinal",
+		    "isFinalClass",
+		    Type.BOOLEAN_TYPE,
+		    isFinal ? 1 : 0,
+		    false );
+		AsmHelper.addStaticFieldGetter( classNode,
+		    type,
+		    "isAbstract",
+		    "isAbstractClass",
+		    Type.BOOLEAN_TYPE,
+		    isAbstract ? 1 : 0,
 		    false );
 		AsmHelper.addStaticFieldGetterWithStaticGetter( classNode,
 		    type,
@@ -491,7 +512,7 @@ public class BoxClassTransformer {
 		    "getAbstractMethods",
 		    Type.getType( Map.class ),
 		    null );
-		// TODO this is on the right track but needs need to match the body of the java version
+		// return BoxClassSupport.getAllAbstractMethods( this );
 		MethodVisitor getAllAbstractMethodsMethodVisitor = classNode.visitMethod( Opcodes.ACC_PUBLIC,
 		    "getAllAbstractMethods",
 		    Type.getMethodDescriptor( Type.getType( Map.class ) ),
@@ -499,11 +520,12 @@ public class BoxClassTransformer {
 		    null );
 		getAllAbstractMethodsMethodVisitor.visitCode();
 		getAllAbstractMethodsMethodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
-		getAllAbstractMethodsMethodVisitor.visitFieldInsn( Opcodes.GETSTATIC,
-		    type.getInternalName(),
-		    "abstractMethods",
-		    Type.getType( Map.class ).getDescriptor() );
-		getAllAbstractMethodsMethodVisitor.visitInsn( Type.getType( Map.class ).getOpcode( Opcodes.IRETURN ) );
+		getAllAbstractMethodsMethodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
+		    Type.getInternalName( BoxClassSupport.class ),
+		    "getAllAbstractMethods",
+		    Type.getMethodDescriptor( Type.getType( Map.class ), Type.getType( IClassRunnable.class ) ),
+		    false );
+		getAllAbstractMethodsMethodVisitor.visitInsn( Opcodes.ARETURN );
 		getAllAbstractMethodsMethodVisitor.visitMaxs( 0, 0 );
 		getAllAbstractMethodsMethodVisitor.visitEnd();
 
