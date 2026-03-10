@@ -244,6 +244,7 @@ public class Visitor extends VoidBoxVisitor {
 		newLine();
 	}
 
+	@Override
 	public void visit( BoxClass node ) {
 		classPrinter.print( node, currentSourceType.peek() );
 	}
