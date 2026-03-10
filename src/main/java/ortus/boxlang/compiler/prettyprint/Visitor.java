@@ -220,19 +220,23 @@ public class Visitor extends VoidBoxVisitor {
 		return commentsPrinter.printInsideComments( node, indent );
 	}
 
+	@Override
 	public void visit( BoxSingleLineComment node ) {
 		commentsPrinter.print( node );
 
 	}
 
+	@Override
 	public void visit( BoxMultiLineComment node ) {
 		commentsPrinter.print( node );
 	}
 
+	@Override
 	public void visit( BoxDocComment node ) {
 		commentsPrinter.print( node );
 	}
 
+	@Override
 	public void visit( BoxScript node ) {
 		printPreComments( node );
 		helperPrinter.printStatements( node.getStatements() );
