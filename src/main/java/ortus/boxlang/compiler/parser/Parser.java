@@ -50,8 +50,6 @@ public class Parser {
 	 *
 	 * @return a ParsingResult containing the AST with a BoxScript as root and the list of errors (if any)
 	 *
-	 * @throws IOException
-	 *
 	 * @see BoxScript
 	 * @see ParsingResult
 	 */
@@ -67,8 +65,6 @@ public class Parser {
 	 * @param transpileCFML whether to transpile CFML to BoxLang
 	 *
 	 * @return a ParsingResult containing the AST with a BoxScript as root and the list of errors (if any)
-	 *
-	 * @throws IOException
 	 *
 	 * @see BoxScript
 	 * @see ParsingResult
