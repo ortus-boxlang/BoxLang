@@ -1742,6 +1742,7 @@ public class Visitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( SQLStarExpression node ) {
 		printPreComments( node );
 		// TODO, actually track in the SQLColumn node what we had for the original table reference
