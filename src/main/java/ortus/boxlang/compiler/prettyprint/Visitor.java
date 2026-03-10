@@ -1734,6 +1734,7 @@ public class Visitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	@Override
 	public void visit( SQLParenthesis node ) {
 		printPreComments( node );
 		print( "( " );
