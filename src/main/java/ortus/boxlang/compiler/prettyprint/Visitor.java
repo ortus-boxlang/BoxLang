@@ -227,6 +227,7 @@ public class Visitor extends VoidBoxVisitor {
 	}
 
 	@Override
+	@Override
 	public void visit( BoxMultiLineComment node ) {
 		commentsPrinter.print( node );
 	}
