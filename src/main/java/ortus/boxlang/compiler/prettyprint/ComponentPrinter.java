@@ -76,7 +76,7 @@ public class ComponentPrinter {
 	}
 
 	private void printScript( BoxComponent node ) {
-		if ( visitor.componentPrefix == "bx:" ) {
+		if ( "bx:".equals( visitor.componentPrefix ) ) {
 			visitor.print( visitor.componentPrefix );
 		}
 		visitor.print( node.getName() );
