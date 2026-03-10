@@ -181,7 +181,7 @@ public class CommentsPrinter {
 		}
 	}
 
-	public void print( BoxSingleLineComment node ) {
+	public void printSingleLineComment( BoxSingleLineComment node ) {
 		var		currentDoc	= visitor.getCurrentDoc();
 		boolean	wrap		= visitor.config.getComments().getWrap();
 		String	text		= node.getCommentText();
@@ -201,7 +201,7 @@ public class CommentsPrinter {
 		}
 	}
 
-	public void print( BoxMultiLineComment node ) {
+	public void printMultiLineComment( BoxMultiLineComment node ) {
 		var		currentDoc	= visitor.getCurrentDoc();
 		boolean	wrap		= visitor.config.getComments().getWrap();
 		String	text		= node.getCommentText();
@@ -228,7 +228,7 @@ public class CommentsPrinter {
 		}
 	}
 
-	public void print( BoxDocComment node ) {
+	public void printDocComment( BoxDocComment node ) {
 		var		currentDoc	= visitor.getCurrentDoc();
 		boolean	wrap		= visitor.config.getComments().getWrap();
 		String	text		= node.getCommentText();

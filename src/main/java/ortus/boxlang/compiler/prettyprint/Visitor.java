@@ -222,20 +222,18 @@ public class Visitor extends VoidBoxVisitor {
 
 	@Override
 	public void visit( BoxSingleLineComment node ) {
-		commentsPrinter.print( node );
+		commentsPrinter.printSingleLineComment( node );
 
 	}
 
-	@Override
 	@Override
 	public void visit( BoxMultiLineComment node ) {
-		commentsPrinter.print( node );
+		commentsPrinter.printMultiLineComment( node );
 	}
 
 	@Override
-	@Override
 	public void visit( BoxDocComment node ) {
-		commentsPrinter.print( node );
+		commentsPrinter.printDocComment( node );
 	}
 
 	@Override
