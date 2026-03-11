@@ -333,7 +333,9 @@ BACKSLASH   : '\\';
 COMMA       : ',';
 COLON       : ':';
 COLONCOLON  : '::';
+// [a, ...rest] or { ...other }
 ELLIPSIS    : '...';
+// 1..5
 RANGE       : '..';
 DOT         : '.';
 ELVIS       : '?:';

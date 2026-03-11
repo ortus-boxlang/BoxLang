@@ -129,9 +129,17 @@ preAnnotationName: identifier ( (MINUS identifier) | (DOT identifier))*
 arrayLiteral: LBRACKET arrayLiteralMembers? RBRACKET
     ;
 
+/*
+ [foo, bar]
+ [foo, ...rest]
+ */
 arrayLiteralMembers: arrayLiteralMember (COMMA arrayLiteralMember)* COMMA?
     ;
 
+/*
+ foo
+ ...rest
+ */
 arrayLiteralMember
     : expression
     | ELLIPSIS expression
@@ -419,9 +427,18 @@ structExpression
     | LBRACKET (COLON | EQUALSIGN) RBRACKET
     ;
 
+/*
+ foo: bar
+ baz
+ ...extra
+ */
 structMembersWithShorthand: structMemberWithShorthandOrSpread (COMMA structMemberWithShorthandOrSpread)* COMMA?
     ;
 
+/*
+ foo
+ ...extra
+ */
 structMemberWithShorthandOrSpread
     : structMemberWithShorthand
     | structSpread
@@ -436,23 +453,40 @@ structMemberWithShorthand
     | identifier
     ;
 
+/*
+ ...extra
+ */
 structSpread: ELLIPSIS expression
     ;
 
 // Ordered struct spread support while avoiding ambiguity with array literals:
 // at least one keyed member (foo:bar / foo=bar) must exist in [] structs.
+/*
+ [foo: bar, ...extra]
+ [...first, foo: bar, ...last]
+ */
 orderedStructMembers
     : orderedStructMembersWithLeadingKey
     | orderedStructMembersWithLeadingSpread
     ;
 
+/*
+ [foo: bar, ...extra]
+ */
 orderedStructMembersWithLeadingKey: structMember (COMMA orderedStructMemberOrSpread)* COMMA?
     ;
 
+/*
+ [...first, ...second, foo: bar, ...tail]
+ */
 orderedStructMembersWithLeadingSpread
     : structSpread (COMMA structSpread)* COMMA structMember (COMMA orderedStructMemberOrSpread)* COMMA?
     ;
 
+/*
+ foo: bar
+ ...extra
+ */
 orderedStructMemberOrSpread
     : structMember
     | structSpread
@@ -614,6 +648,7 @@ el2
     | el2 POWER el2                                                         # exprPower             // foo ^ bar
     | el2 op = (STAR | SLASH | PERCENT | MOD | BACKSLASH) el2               # exprMult              // foo * bar
     | el2 op = (PLUS | MINUS) el2                                           # exprAdd               // foo + bar
+    // 1..5
     | el2 RANGE el2                                                         # exprRange             // 1..5
     | el2 op = (
         BITWISE_SIGNED_LEFT_SHIFT
@@ -652,7 +687,9 @@ el2
         | MODEQUAL
         | CONCATEQUAL
     ) expression # exprAssign // foo = bar
+    // ({ a } = foo)
     | objectDestructuringPattern EQUALSIGN expression # exprDestructuringAssign // ({ a } = foo)
+    // [ a ] = foo
     | arrayDestructuringPattern EQUALSIGN expression  # exprArrayDestructuringAssign // [ a ] = foo
 
     // Ternary operations are right associative, which means that if they are nested,
