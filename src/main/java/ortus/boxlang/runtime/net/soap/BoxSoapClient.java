@@ -50,120 +50,29 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-/**
- * A fluent SOAP web service client for BoxLang.
- * Provides human-friendly methods for invoking SOAP operations discovered from WSDL documents.
- *
- * Usage:
- *
- * <pre>
- * soapClient = SoapClient.fromWsdl( "http://example.com/service.wsdl" );
- * Object result = soapClient.invoke( "methodName", args );
- * </pre>
- */
 public class BoxSoapClient {
-
-	/**
-	 * ------------------------------------------------------------------------------
-	 * Constants
-	 * ------------------------------------------------------------------------------
-	 */
 
 	private static final String SOAP_11_ENVELOPE_NS = "http://schemas.xmlsoap.org/soap/envelope/";
 	private static final String SOAP_12_ENVELOPE_NS = "http://www.w3.org/2003/05/soap-envelope";
 	private static final String XSI_NS = "http://www.w3.org/2001/XMLSchema-instance";
 	private static final String XSD_NS = "http://www.w3.org/2001/XMLSchema";
 
-	/**
-	 * ------------------------------------------------------------------------------
-	 * Properties
-	 * ------------------------------------------------------------------------------
-	 */
-
-	/**
-	 * The WSDL definition for this client
-	 */
 	private final WsdlDefinition wsdlDefinition;
-
-	/**
-	 * The HTTP service for making requests
-	 */
 	private final HttpService httpService;
-
-	/**
-	 * The logger
-	 */
 	private final BoxLangLogger logger;
 
-	/**
-	 * Request timeout in seconds (0 = no timeout)
-	 */
 	private int timeout = 30;
-
-	/**
-	 * Username for HTTP basic authentication
-	 */
 	private String username;
-
-	/**
-	 * Password for HTTP basic authentication
-	 */
 	private String password;
-
-	/**
-	 * Custom HTTP headers
-	 */
 	private Map<String, String> customHeaders = new HashMap<>();
-
-	/**
-	 * SOAP headers to include in the SOAP envelope
-	 *
-	 * SOAP Spec:
-	 * - <soap:Header> is optional
-	 * - If present, it must be the first child of <soap:Envelope> (before <soap:Body>)
-	 * - There is only ONE <soap:Header> section per request
-	 *
-	 * Storage approach:
-	 * - Store simple key/value headers using BoxLang Struct (IStruct)
-	 * - Example: { "AuthToken" : "abc123", "SessionId" : "session-456" }
-	 */
 	private IStruct soapHeaders;
-
-	/**
-	 * SOAP version (1.1 or 1.2)
-	 */
 	private String soapVersion = "1.1";
-
-	/**
-	 * The creation timestamp
-	 */
 	private final Instant createdAt = Instant.now();
-
-	/**
-	 * The execution context
-	 */
 	private IBoxContext executionContext;
-
-	/**
-	 * Statistics tracking
-	 */
 	private long totalInvocations = 0;
 	private long successfulInvocations = 0;
 	private long failedInvocations = 0;
 
-	/**
-	 * ------------------------------------------------------------------------------
-	 * Constructors
-	 * ------------------------------------------------------------------------------
-	 */
-
-	/**
-	 * Private constructor - use static factory methods
-	 *
-	 * @param wsdlDefinition The WSDL definition
-	 * @param httpService    The HTTP service
-	 * @param context        The BoxLang execution context
-	 */
 	private BoxSoapClient( WsdlDefinition wsdlDefinition, HttpService httpService, IBoxContext context ) {
 		this.wsdlDefinition = wsdlDefinition;
 		this.httpService = httpService;
@@ -173,80 +82,27 @@ public class BoxSoapClient {
 		this.soapHeaders = Struct.of();
 	}
 
-	/**
-	 * ------------------------------------------------------------------------------
-	 * Static Factory Methods
-	 * ------------------------------------------------------------------------------
-	 */
-
-	/**
-	 * Create a new SOAP client from a WSDL URL
-	 *
-	 * @param wsdlUrl     The WSDL URL to parse
-	 * @param httpService The HTTP service to use
-	 * @param context     The BoxLang execution context
-	 *
-	 * @return A new SOAP client instance
-	 *
-	 * @throws BoxRuntimeException If WSDL parsing fails
-	 */
 	public static BoxSoapClient fromWsdl( String wsdlUrl, HttpService httpService, IBoxContext context ) {
 		WsdlDefinition definition = WsdlParser.parse( wsdlUrl );
 		return new BoxSoapClient( definition, httpService, context );
 	}
 
-	/**
-	 * ------------------------------------------------------------------------------
-	 * Configuration Methods (Fluent)
-	 * ------------------------------------------------------------------------------
-	 */
-
-	/**
-	 * Set the request timeout
-	 *
-	 * @param timeout The timeout in seconds
-	 *
-	 * @return This instance for chaining
-	 */
 	public BoxSoapClient timeout( int timeout ) {
 		this.timeout = timeout;
 		return this;
 	}
 
-	/**
-	 * Set HTTP basic authentication credentials
-	 *
-	 * @param username The username
-	 * @param password The password
-	 *
-	 * @return This instance for chaining
-	 */
 	public BoxSoapClient withBasicAuth( String username, String password ) {
 		this.username = username;
 		this.password = password;
 		return this;
 	}
 
-	/**
-	 * Add a custom HTTP header
-	 *
-	 * @param name  The header name
-	 * @param value The header value
-	 *
-	 * @return This instance for chaining
-	 */
 	public BoxSoapClient header( String name, String value ) {
 		this.customHeaders.put( name, value );
 		return this;
 	}
 
-	/**
-	 * Set the SOAP version to use (1.1 or 1.2).
-	 *
-	 * @param version The SOAP version ("1.1" or "1.2")
-	 *
-	 * @return This instance for chaining
-	 */
 	public BoxSoapClient soapVersion( String version ) {
 		if ( !"1.1".equals( version ) && !"1.2".equals( version ) ) {
 			throw new BoxRuntimeException( "Invalid SOAP version: " + version + ". Must be '1.1' or '1.2'" );
@@ -255,36 +111,16 @@ public class BoxSoapClient {
 		return this;
 	}
 
-	/**
-	 * Seed a new execution context for this client.
-	 *
-	 * @param context The BoxLang execution context
-	 *
-	 * @return This instance for chaining
-	 */
 	public BoxSoapClient withContext( IBoxContext context ) {
 		this.executionContext = context;
 		return this;
 	}
 
-	/**
-	 * Set SOAP headers to be included in the SOAP envelope.
-	 *
-	 * @param headers A struct of simple key/value pairs
-	 *
-	 * @return This instance for chaining
-	 */
 	public BoxSoapClient withSoapHeaders( IStruct headers ) {
 		validateSoapHeaders( headers );
 		this.soapHeaders = headers;
 		return this;
 	}
-
-	/**
-	 * ------------------------------------------------------------------------------
-	 * Information Methods
-	 * ------------------------------------------------------------------------------
-	 */
 
 	public String getSoapVersion() {
 		return this.soapVersion;
@@ -340,12 +176,6 @@ public class BoxSoapClient {
 		    "statistics", this.getStatistics()
 		);
 	}
-
-	/**
-	 * ------------------------------------------------------------------------------
-	 * Operation Invocation Methods
-	 * ------------------------------------------------------------------------------
-	 */
 
 	public Object invoke( String operationName ) {
 		return invoke( operationName, null );
@@ -410,16 +240,6 @@ public class BoxSoapClient {
 		}
 	}
 
-	/**
-	 * ------------------------------------------------------------------------------
-	 * SOAP Message Building and Parsing
-	 * ------------------------------------------------------------------------------
-	 */
-
-	/**
-	 * Validate SOAP header input.
-	 * Only simple key/value pairs are allowed.
-	 */
 	private void validateSoapHeaders( IStruct headers ) {
 		if ( headers == null ) {
 			throw new BoxRuntimeException( "SOAP headers cannot be null" );
@@ -450,14 +270,6 @@ public class BoxSoapClient {
 		}
 	}
 
-	/**
-	 * Build a SOAP request envelope for an operation
-	 *
-	 * @param operation The operation to invoke
-	 * @param arguments The arguments (Array, Struct, or Object[])
-	 *
-	 * @return The SOAP XML request as a string
-	 */
 	private String buildSoapRequest( WsdlOperation operation, Object arguments ) {
 		try {
 			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -478,25 +290,21 @@ public class BoxSoapClient {
 
 			doc.appendChild( envelope );
 
-			// Create optional SOAP Header first
 			if ( this.soapHeaders != null && !this.soapHeaders.isEmpty() ) {
 				Element header = doc.createElementNS( soapNS, "soap:Header" );
 				envelope.appendChild( header );
 				addSoapHeadersToRequest( doc, header, this.soapHeaders );
 			}
 
-			// Create Body
 			Element body = doc.createElementNS( soapNS, "soap:Body" );
 			envelope.appendChild( body );
 
-			// Create operation element
 			Element operationElement = doc.createElement( operation.getName() );
 			if ( operation.getNamespace() != null ) {
 				operationElement.setAttribute( "xmlns", operation.getNamespace() );
 			}
 			body.appendChild( operationElement );
 
-			// Add parameters
 			addParametersToRequest( doc, operationElement, operation, arguments );
 
 			return documentToString( doc );
@@ -506,13 +314,6 @@ public class BoxSoapClient {
 		}
 	}
 
-	/**
-	 * Add SOAP headers to the SOAP request.
-	 *
-	 * @param doc           The XML document
-	 * @param headerElement The soap:Header element
-	 * @param headers       The SOAP headers
-	 */
 	private void addSoapHeadersToRequest( Document doc, Element headerElement, IStruct headers ) {
 		for ( Key key : headers.keySet() ) {
 			String headerName = key.getName();
@@ -537,14 +338,6 @@ public class BoxSoapClient {
 		}
 	}
 
-	/**
-	 * Add parameters to the SOAP request
-	 *
-	 * @param doc           The XML document
-	 * @param parentElement The parent element to add parameters to
-	 * @param operation     The operation definition
-	 * @param arguments     The arguments
-	 */
 	private void addParametersToRequest( Document doc, Element parentElement, WsdlOperation operation, Object arguments ) {
 		List<WsdlParameter> params = operation.getInputParameters();
 
@@ -586,14 +379,6 @@ public class BoxSoapClient {
 		}
 	}
 
-	/**
-	 * Parse a SOAP response and extract the result
-	 *
-	 * @param httpResult The HTTP result struct
-	 * @param operation  The operation that was invoked
-	 *
-	 * @return The parsed result
-	 */
 	private Object parseSoapResponse( IStruct httpResult, WsdlOperation operation ) {
 		try {
 			String responseBody = httpResult.getAsString( Key.fileContent );
@@ -633,13 +418,6 @@ public class BoxSoapClient {
 		}
 	}
 
-	/**
-	 * Parse a SOAP fault into a BoxLang exception
-	 *
-	 * @param faultElement The Fault element
-	 *
-	 * @return Never returns, always throws
-	 */
 	private Object parseSoapFault( Element faultElement ) {
 		String faultCode = "";
 		String faultString = "";
@@ -668,13 +446,6 @@ public class BoxSoapClient {
 		);
 	}
 
-	/**
-	 * Convert an XML element to a BoxLang type
-	 *
-	 * @param element The XML element
-	 *
-	 * @return The BoxLang value
-	 */
 	private Object xmlElementToBoxLang( Element element ) {
 		NodeList children = element.getChildNodes();
 		if ( hasChildElements( element ) ) {
@@ -711,9 +482,6 @@ public class BoxSoapClient {
 		}
 	}
 
-	/**
-	 * Cast a string value using xsi:type information
-	 */
 	private Object castByXsiType( Object value, String xsiType ) {
 		if ( value == null ) {
 			return value;
@@ -752,9 +520,6 @@ public class BoxSoapClient {
 		}
 	}
 
-	/**
-	 * Attempt to intelligently cast a string value
-	 */
 	private Object castStringValue( String value ) {
 		if ( value == null || value.isEmpty() ) {
 			return value;
@@ -778,9 +543,6 @@ public class BoxSoapClient {
 		return value;
 	}
 
-	/**
-	 * Unwrap single-property structs from SOAP responses.
-	 */
 	private Object unwrapResponse( Object value ) {
 		if ( value instanceof IStruct struct ) {
 			if ( struct.size() == 1 ) {
@@ -791,9 +553,6 @@ public class BoxSoapClient {
 		return value;
 	}
 
-	/**
-	 * Check if an element has child elements
-	 */
 	private boolean hasChildElements( Element element ) {
 		NodeList children = element.getChildNodes();
 		for ( int i = 0; i < children.getLength(); i++ ) {
@@ -804,9 +563,6 @@ public class BoxSoapClient {
 		return false;
 	}
 
-	/**
-	 * Get the first child element of a node
-	 */
 	private Element getFirstChildElement( Node parent ) {
 		NodeList children = parent.getChildNodes();
 		for ( int i = 0; i < children.getLength(); i++ ) {
@@ -818,9 +574,6 @@ public class BoxSoapClient {
 		return null;
 	}
 
-	/**
-	 * Convert an XML document to a string
-	 */
 	private String documentToString( Document doc ) {
 		try {
 			TransformerFactory transformerFactory = TransformerFactory.newInstance();
