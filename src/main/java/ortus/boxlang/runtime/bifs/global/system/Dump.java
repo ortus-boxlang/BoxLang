@@ -64,7 +64,7 @@ public class Dump extends BIF {
 		    // A custom label to display above the dump (Only in HTML output)
 		    new Argument( false, Argument.STRING, Key.label, "" ),
 		    // The maximum recursion depth when dumping nested structures
-		    new Argument( false, Argument.NUMERIC, Key.top ),
+		    new Argument( false, Argument.NUMERIC, Key.depth ),
 		    // The maximum number of keys/rows to display in collections
 		    new Argument( false, Argument.NUMERIC, Key.maxRows, Set.of( Validator.min( 0 ) ) ),
 		    // Whether to expand the dump. By default, the dump is expanded on the first level only
@@ -101,7 +101,7 @@ public class Dump extends BIF {
 	 *
 	 * @argument.label A custom label to display above the dump (Only in HTML output)
 	 *
-	 * @argument.top The depth of the levels to display when dumping collections. (Only in HTML output)
+	 * @argument.depth The depth of the levels to display when dumping collections. (Only in HTML output)
 	 *
 	 * @argument.maxRows The maximum number of keys/rows to display in structures, arrays, and queries. Default is to show all. (Only in HTML output)
 	 *
@@ -122,7 +122,7 @@ public class Dump extends BIF {
 			arguments.put( Key.abort, true );
 		}
 
-		Object	top		= arguments.get( Key.top );
+		Object	top		= arguments.get( Key.depth );
 		Object	maxRows	= arguments.get( Key.maxRows );
 
 		// Dump the object

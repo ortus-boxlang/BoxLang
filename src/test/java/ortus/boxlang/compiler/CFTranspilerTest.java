@@ -614,4 +614,45 @@ public class CFTranspilerTest {
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 	}
 
+	@DisplayName( "It transpiles cfdump top attribute to depth in tag syntax" )
+	@Test
+	public void testCFDumpTopToDepthTag() {
+		ParsingResult parsingResult = instance.parse(
+		    """
+		    <cfdump var="#myVar#" top="3">
+		    """,
+		    BoxSourceType.CFTEMPLATE );
+		assertThat( parsingResult.isCorrect() ).isTrue();
+		String transpiledSource = parsingResult.getRoot().toString();
+		assertThat( transpiledSource ).contains( "depth" );
+		assertThat( transpiledSource ).doesNotContain( "top=" );
+	}
+
+	@DisplayName( "It transpiles dump() top named arg to depth in script syntax" )
+	@Test
+	public void testDumpTopToDepthScript() {
+		ParsingResult parsingResult = instance.parse(
+		    """
+		    dump( var=myVar, top=3 );
+		    """,
+		    BoxSourceType.CFSCRIPT );
+		assertThat( parsingResult.isCorrect() ).isTrue();
+		String transpiledSource = parsingResult.getRoot().toString();
+		assertThat( transpiledSource ).contains( "depth" );
+		assertThat( transpiledSource ).doesNotContain( "top=" );
+	}
+
+	@DisplayName( "It transpiles writeDump() top named arg to depth in script syntax" )
+	@Test
+	public void testWriteDumpTopToDepthScript() {
+		ParsingResult parsingResult = instance.parse(
+		    """
+		    writeDump( var=myVar, top=3 );
+		    """,
+		    BoxSourceType.CFSCRIPT );
+		assertThat( parsingResult.isCorrect() ).isTrue();
+		String transpiledSource = parsingResult.getRoot().toString();
+		assertThat( transpiledSource ).contains( "depth" );
+		assertThat( transpiledSource ).doesNotContain( "top=" );
+	}
 }

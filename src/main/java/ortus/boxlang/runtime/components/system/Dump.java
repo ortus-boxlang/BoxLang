@@ -45,7 +45,7 @@ public class Dump extends Component {
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.var, "any" ),
 		    new Attribute( Key.label, "string", "" ),
-		    new Attribute( Key.top, "numeric" ),
+		    new Attribute( Key.depth, "numeric" ),
 		    new Attribute( Key.maxRows, "numeric" ),
 		    new Attribute( Key.expand, "boolean" ),
 		    new Attribute( Key.abort, "any", false ),
@@ -70,7 +70,7 @@ public class Dump extends Component {
 	 *
 	 * @attributes.label A custom label to display above the dump (Only in HTML output)
 	 *
-	 * @attributes.top The depth of the levels to display when dumping collections. (Only in HTML output)
+	 * @attributes.depth The depth of the levels to display when dumping collections. (Only in HTML output)
 	 *
 	 * @attributes.maxRows The maximum number of keys/rows to display in structures, arrays, and queries. Default is to show all.
 	 *
@@ -97,7 +97,7 @@ public class Dump extends Component {
 			attributes.put( Key.abort, true );
 		}
 
-		Object	top		= attributes.get( Key.top );
+		Object	top		= attributes.get( Key.depth );
 		Object	maxRows	= attributes.get( Key.maxRows );
 
 		DumpUtil.dump(
