@@ -136,12 +136,12 @@ public class BoxSoapClient {
 	 */
 
 	private IStruct					soapHeaders;
-  private String soapVersion = "1.1";
-	private final Instant createdAt = Instant.now();
-	private IBoxContext executionContext;
-	private long totalInvocations = 0;
-	private long successfulInvocations = 0;
-	private long failedInvocations = 0;
+	private String					soapVersion				= "1.1";
+	private final Instant			createdAt				= Instant.now();
+	private IBoxContext				executionContext;
+	private long					totalInvocations		= 0;
+	private long					successfulInvocations	= 0;
+	private long					failedInvocations		= 0;
 
 	private BoxSoapClient( WsdlDefinition wsdlDefinition, HttpService httpService, IBoxContext context ) {
 		this.wsdlDefinition		= wsdlDefinition;
@@ -166,8 +166,8 @@ public class BoxSoapClient {
 	}
 
 	public BoxSoapClient withBasicAuth( String username, String password ) {
-		this.username = username;
-		this.password = password;
+		this.username	= username;
+		this.password	= password;
 		return this;
 	}
 
@@ -274,7 +274,7 @@ public class BoxSoapClient {
 				this.logger.trace( "SOAP Request to {}: {}", this.getServiceEndpoint(), soapRequest );
 			}
 
-			BoxHttpClient httpClient = this.httpService.getOrBuildClient(
+			BoxHttpClient					httpClient	= this.httpService.getOrBuildClient(
 			    "HTTP/2",
 			    true,
 			    BoxHttpClient.DEFAULT_CONNECTION_TIMEOUT,
@@ -282,7 +282,7 @@ public class BoxSoapClient {
 			    null, null
 			);
 
-			BoxHttpClient.BoxHttpRequest request = httpClient
+			BoxHttpClient.BoxHttpRequest	request		= httpClient
 			    .newRequest( this.getServiceEndpoint(), this.executionContext )
 			    .post()
 			    .timeout( this.timeout )
@@ -301,8 +301,8 @@ public class BoxSoapClient {
 				request.withBasicAuth( this.username, this.password );
 			}
 
-			IStruct httpResult = ( IStruct ) request.send();
-			Object result = parseSoapResponse( httpResult, operation );
+			IStruct	httpResult	= ( IStruct ) request.send();
+			Object	result		= parseSoapResponse( httpResult, operation );
 
 			this.successfulInvocations++;
 			return result;
@@ -396,12 +396,12 @@ public class BoxSoapClient {
 		try {
 			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 			factory.setNamespaceAware( true );
-			DocumentBuilder builder = factory.newDocumentBuilder();
-			Document doc = builder.newDocument();
+			DocumentBuilder	builder		= factory.newDocumentBuilder();
+			Document		doc			= builder.newDocument();
 
-			String soapNS = "1.1".equals( this.soapVersion ) ? SOAP_11_ENVELOPE_NS : SOAP_12_ENVELOPE_NS;
+			String			soapNS		= "1.1".equals( this.soapVersion ) ? SOAP_11_ENVELOPE_NS : SOAP_12_ENVELOPE_NS;
 
-			Element envelope = doc.createElementNS( soapNS, "soap:Envelope" );
+			Element			envelope	= doc.createElementNS( soapNS, "soap:Envelope" );
 			envelope.setAttribute( "xmlns:soap", soapNS );
 			envelope.setAttribute( "xmlns:xsi", XSI_NS );
 			envelope.setAttribute( "xmlns:xsd", XSD_NS );
@@ -438,10 +438,10 @@ public class BoxSoapClient {
 
 	private void addSoapHeadersToRequest( Document doc, Element headerElement, IStruct headers ) {
 		for ( Key key : headers.keySet() ) {
-			String headerName = key.getName();
-			Object headerValue = headers.get( key );
+			String	headerName	= key.getName();
+			Object	headerValue	= headers.get( key );
 
-			Element headerChild = doc.createElement( headerName );
+			Element	headerChild	= doc.createElement( headerName );
 
 			if ( headerValue != null ) {
 				headerChild.setTextContent( String.valueOf( headerValue ) );
@@ -471,8 +471,8 @@ public class BoxSoapClient {
 
 		if ( arguments instanceof IStruct struct ) {
 			for ( WsdlParameter param : params ) {
-				Key key = Key.of( param.getName() );
-				Object value = struct.get( key );
+				Key		key		= Key.of( param.getName() );
+				Object	value	= struct.get( key );
 				if ( value != null ) {
 					argMap.put( param.getName(), value );
 				}
@@ -515,18 +515,18 @@ public class BoxSoapClient {
 
 			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 			factory.setNamespaceAware( true );
-			DocumentBuilder builder = factory.newDocumentBuilder();
-			Document doc = builder.parse( new InputSource( new StringReader( responseBody ) ) );
+			DocumentBuilder	builder	= factory.newDocumentBuilder();
+			Document		doc		= builder.parse( new InputSource( new StringReader( responseBody ) ) );
 
-			NodeList faults = doc.getElementsByTagNameNS( "*", "Fault" );
+			NodeList		faults	= doc.getElementsByTagNameNS( "*", "Fault" );
 			if ( faults.getLength() > 0 ) {
 				return parseSoapFault( ( Element ) faults.item( 0 ) );
 			}
 
 			NodeList bodies = doc.getElementsByTagNameNS( "*", "Body" );
 			if ( bodies.getLength() > 0 ) {
-				Element body = ( Element ) bodies.item( 0 );
-				Element response = getFirstChildElement( body );
+				Element	body		= ( Element ) bodies.item( 0 );
+				Element	response	= getFirstChildElement( body );
 				if ( response != null ) {
 					Object result = xmlElementToBoxLang( response );
 					return unwrapResponse( result );
@@ -541,16 +541,16 @@ public class BoxSoapClient {
 	}
 
 	private Object parseSoapFault( Element faultElement ) {
-		String faultCode = "";
-		String faultString = "";
-		String faultDetail = "";
+		String		faultCode	= "";
+		String		faultString	= "";
+		String		faultDetail	= "";
 
-		NodeList children = faultElement.getChildNodes();
+		NodeList	children	= faultElement.getChildNodes();
 		for ( int i = 0; i < children.getLength(); i++ ) {
 			Node child = children.item( i );
 			if ( child.getNodeType() == Node.ELEMENT_NODE ) {
-				Element element = ( Element ) child;
-				String localName = element.getLocalName();
+				Element	element		= ( Element ) child;
+				String	localName	= element.getLocalName();
 
 				if ( "faultcode".equalsIgnoreCase( localName ) || "Code".equalsIgnoreCase( localName ) ) {
 					faultCode = element.getTextContent();
@@ -576,9 +576,9 @@ public class BoxSoapClient {
 			for ( int i = 0; i < children.getLength(); i++ ) {
 				Node child = children.item( i );
 				if ( child.getNodeType() == Node.ELEMENT_NODE ) {
-					Element childElement = ( Element ) child;
-					String childName = childElement.getLocalName();
-					Object childValue = xmlElementToBoxLang( childElement );
+					Element	childElement	= ( Element ) child;
+					String	childName		= childElement.getLocalName();
+					Object	childValue		= xmlElementToBoxLang( childElement );
 
 					if ( result.containsKey( Key.of( childName ) ) ) {
 						Object existing = result.get( Key.of( childName ) );
@@ -595,8 +595,8 @@ public class BoxSoapClient {
 
 			return result;
 		} else {
-			String textContent = element.getTextContent();
-			String xsiType = element.getAttributeNS( XSI_NS, "type" );
+			String	textContent	= element.getTextContent();
+			String	xsiType		= element.getAttributeNS( XSI_NS, "type" );
 			if ( xsiType != null && !xsiType.isEmpty() ) {
 				return castByXsiType( textContent, xsiType );
 			}
@@ -698,14 +698,14 @@ public class BoxSoapClient {
 
 	private String documentToString( Document doc ) {
 		try {
-			TransformerFactory transformerFactory = TransformerFactory.newInstance();
-			Transformer transformer = transformerFactory.newTransformer();
+			TransformerFactory	transformerFactory	= TransformerFactory.newInstance();
+			Transformer			transformer			= transformerFactory.newTransformer();
 			transformer.setOutputProperty( OutputKeys.OMIT_XML_DECLARATION, "no" );
 			transformer.setOutputProperty( OutputKeys.INDENT, "no" );
 
-			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-			DOMSource source = new DOMSource( doc );
-			StreamResult result = new StreamResult( outputStream );
+			ByteArrayOutputStream	outputStream	= new ByteArrayOutputStream();
+			DOMSource				source			= new DOMSource( doc );
+			StreamResult			result			= new StreamResult( outputStream );
 
 			transformer.transform( source, result );
 			return outputStream.toString( StandardCharsets.UTF_8.name() );

@@ -21,15 +21,15 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class BoxSoapClientSoapHeadersTest {
 
-	static BoxRuntime instance;
-	private IBoxContext context;
-	private HttpService httpService;
-	private static String calculatorWsdlUrl;
+	static BoxRuntime		instance;
+	private IBoxContext		context;
+	private HttpService		httpService;
+	private static String	calculatorWsdlUrl;
 
 	@BeforeAll
 	public static void setUpAll() {
-		instance = BoxRuntime.getInstance( true );
-		calculatorWsdlUrl = Paths.get( "src/test/resources/wsdl/calculator.wsdl" )
+		instance			= BoxRuntime.getInstance( true );
+		calculatorWsdlUrl	= Paths.get( "src/test/resources/wsdl/calculator.wsdl" )
 		    .toAbsolutePath()
 		    .toUri()
 		    .toString();
@@ -37,8 +37,8 @@ public class BoxSoapClientSoapHeadersTest {
 
 	@BeforeEach
 	public void setUp() {
-		this.context = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		this.httpService = BoxRuntime.getInstance().getHttpService();
+		this.context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		this.httpService	= BoxRuntime.getInstance().getHttpService();
 		this.httpService.clearAllSoapClients();
 	}
 
@@ -69,8 +69,8 @@ public class BoxSoapClientSoapHeadersTest {
 	@DisplayName( "withSoapHeaders throws on non-scalar value" )
 	@Test
 	void withSoapHeaders_non_scalar_value_throws() {
-		BoxSoapClient client = httpService.getOrCreateSoapClient( calculatorWsdlUrl, context );
-		IStruct headers = Struct.of( Key.of( "Nested" ), new Struct() );
+		BoxSoapClient	client	= httpService.getOrCreateSoapClient( calculatorWsdlUrl, context );
+		IStruct			headers	= Struct.of( Key.of( "Nested" ), new Struct() );
 
 		org.junit.jupiter.api.Assertions.assertThrows( BoxRuntimeException.class, () -> client.withSoapHeaders( headers ) );
 	}
