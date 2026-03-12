@@ -225,7 +225,7 @@ public class BoxRunner {
 				// Start the interactive REPL
 				new BoxRepl( boxRuntime ).start();
 			}
-		} catch ( BoxRuntimeException e ) {
+		} catch ( Throwable e ) {
 			ExceptionUtil.printBoxLangStackTrace( e, System.err );
 			exitCode = 1;
 		} finally {

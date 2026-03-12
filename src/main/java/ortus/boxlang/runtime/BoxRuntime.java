@@ -49,6 +49,7 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
+import ortus.boxlang.debug.DebuggerExternalConnectionUtil;
 import ortus.boxlang.runtime.application.BaseApplicationListener;
 import ortus.boxlang.runtime.config.CLIOptions;
 import ortus.boxlang.runtime.config.ConfigLoader;
@@ -75,7 +76,6 @@ import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.services.DatasourceService;
-import ortus.boxlang.debug.DebuggerExternalConnectionUtil;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.HttpService;
 import ortus.boxlang.runtime.services.IService;
@@ -1512,7 +1512,7 @@ public class BoxRuntime implements java.io.Closeable {
 				// Opps, an error while handling the missing template error
 				errorToHandle = t;
 			}
-		} catch ( Exception e ) {
+		} catch ( Throwable e ) {
 			errorToHandle = e;
 		} finally {
 
