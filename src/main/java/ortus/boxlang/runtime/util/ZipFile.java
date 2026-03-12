@@ -1,18 +1,20 @@
 package ortus.boxlang.runtime.util;
+
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.*;
-import java.util.ArrayList;
+
 import java.util.List;
-import java.util.zip.*;
 
 /**
  * Provides a fluent API for performing ZIP operations within BoxLang.
  *
  * <p>
- * This utility supports:
+ * This class is a thin fluent delegator — all actual ZIP logic lives in
+ * {@link ZipUtil}. This follows the same pattern as {@link PropertyFile},
+ * which delegates to its underlying utility.
+ * </p>
+ *
+ * <p>
+ * Supported operations:
  * <ul>
  * <li>Compressing files or directories into a ZIP archive</li>
  * <li>Extracting ZIP archives into directories</li>
@@ -21,7 +23,7 @@ import java.util.zip.*;
  *
  * <p>
  * Example usage:
- * 
+ *
  * <pre>
  * new ZipFile()
  *     .source( "/path/to/folder" )
@@ -44,10 +46,19 @@ public class ZipFile {
 	}
 
 	/**
+	 * Constructor with source path.
+	 *
+	 * @param source Absolute or relative path to source file/directory
+	 */
+	public ZipFile( String source ) {
+		this.source = source;
+	}
+
+	/**
 	 * Sets the source file or directory for the ZIP operation.
 	 *
 	 * @param path Absolute or relative path to source file/directory
-	 * 
+	 *
 	 * @return This ZipFile instance for method chaining
 	 */
 	public ZipFile source( String path ) {
@@ -56,10 +67,19 @@ public class ZipFile {
 	}
 
 	/**
+	 * Gets the source path.
+	 *
+	 * @return The source path
+	 */
+	public String getSource() {
+		return this.source;
+	}
+
+	/**
 	 * Sets the destination file or directory for the ZIP operation.
 	 *
 	 * @param path Absolute or relative path to destination
-	 * 
+	 *
 	 * @return This ZipFile instance for method chaining
 	 */
 	public ZipFile to( String path ) {
@@ -68,148 +88,67 @@ public class ZipFile {
 	}
 
 	/**
-	 * Compresses the source file or directory into a ZIP archive.
+	 * Gets the destination path.
 	 *
-	 * <p>
-	 * If the source is a directory, it recursively walks the directory
-	 * and preserves relative paths inside the ZIP file.
-	 * </p>
-	 *
-	 * @throws BoxRuntimeException if compression fails
+	 * @return The destination path
 	 */
-	public void compress() {
-
-		validateSourceAndDestination();
-
-		Path	sourcePath	= Paths.get( source );       // Convert source string to Path
-		Path	zipPath		= Paths.get( destination );     // Convert destination to Path
-
-		if ( !Files.exists( sourcePath ) ) {
-			throw new BoxRuntimeException( "Source path does not exist: " + source );
-		}
-
-		try ( ZipOutputStream zos = new ZipOutputStream( new FileOutputStream( zipPath.toFile() ) ) ) {
-
-			if ( Files.isDirectory( sourcePath ) ) {
-
-				// Walk directory tree and process files only
-				try ( var paths = Files.walk( sourcePath ) ) {
-
-					paths
-					    .filter( path -> !Files.isDirectory( path ) )
-					    .forEach( path -> {
-
-						    // Create relative entry name inside ZIP
-						    ZipEntry zipEntry = new ZipEntry( sourcePath.relativize( path ).toString() );
-
-						    try {
-							    zos.putNextEntry( zipEntry );     // Start ZIP entry
-							    Files.copy( path, zos );          // Copy file contents
-							    zos.closeEntry();                 // Close entry
-						    } catch ( IOException e ) {
-							    throw new BoxRuntimeException(
-							        "Error compressing file: " + path, e
-							    );
-						    }
-					    } );
-				}
-
-			} else {
-
-				// Single file compression
-				ZipEntry zipEntry = new ZipEntry( sourcePath.getFileName().toString() );
-
-				zos.putNextEntry( zipEntry );
-				Files.copy( sourcePath, zos );
-				zos.closeEntry();
-			}
-
-		} catch ( IOException e ) {
-			throw new BoxRuntimeException( "Compression failed", e );
-		}
+	public String getDestination() {
+		return this.destination;
 	}
 
 	/**
-	 * Extracts a ZIP archive into the destination directory.
+	 * Compresses the source file or directory into a ZIP archive
+	 * at the destination path.
 	 *
 	 * <p>
-	 * Includes protection against ZIP Slip vulnerability.
+	 * Delegates to {@link ZipUtil#compress(String, String)}.
 	 * </p>
 	 *
-	 * @throws BoxRuntimeException if extraction fails
+	 * @return This ZipFile instance for method chaining
+	 *
+	 * @throws BoxRuntimeException if source or destination is not set,
+	 *                             or if compression fails
 	 */
-	public void extract() {
-
+	public ZipFile compress() {
 		validateSourceAndDestination();
-
-		Path	zipPath	= Paths.get( source );
-		Path	destDir	= Paths.get( destination );
-
-		try ( ZipInputStream zis = new ZipInputStream( new FileInputStream( zipPath.toFile() ) ) ) {
-
-			ZipEntry entry;
-
-			while ( ( entry = zis.getNextEntry() ) != null ) {
-
-				Path newFile = destDir.resolve( entry.getName() ).normalize();
-
-				// Prevent ZIP Slip vulnerability
-				if ( !newFile.startsWith( destDir ) ) {
-					throw new BoxRuntimeException(
-					    "Invalid ZIP entry (possible ZIP Slip attack): "
-					        + entry.getName()
-					);
-				}
-
-				if ( entry.isDirectory() ) {
-
-					Files.createDirectories( newFile );
-
-				} else {
-
-					Files.createDirectories( newFile.getParent() );
-
-					try ( FileOutputStream fos = new FileOutputStream( newFile.toFile() ) ) {
-
-						zis.transferTo( fos );
-					}
-				}
-
-				zis.closeEntry();
-			}
-
-		} catch ( IOException e ) {
-			throw new BoxRuntimeException( "Extraction failed", e );
-		}
+		ZipUtil.compress( this.source, this.destination );
+		return this;
 	}
 
 	/**
-	 * Lists the contents of a ZIP archive without extracting it.
+	 * Extracts the source ZIP archive into the destination directory.
+	 *
+	 * <p>
+	 * Delegates to {@link ZipUtil#extract(String, String)}.
+	 * </p>
+	 *
+	 * @return This ZipFile instance for method chaining
+	 *
+	 * @throws BoxRuntimeException if source or destination is not set,
+	 *                             or if extraction fails
+	 */
+	public ZipFile extract() {
+		validateSourceAndDestination();
+		ZipUtil.extract( this.source, this.destination );
+		return this;
+	}
+
+	/**
+	 * Lists the contents of the source ZIP archive without extracting it.
+	 *
+	 * <p>
+	 * Delegates to {@link ZipUtil#list(String)}.
+	 * </p>
 	 *
 	 * @return List of entry names inside the ZIP archive
-	 * 
-	 * @throws BoxRuntimeException if listing fails
+	 *
+	 * @throws BoxRuntimeException if source is not set, or if listing fails
 	 */
 	public List<String> list() {
-
-		if ( source == null ) {
+		if ( this.source == null ) {
 			throw new BoxRuntimeException( "Source zip file not set" );
 		}
-
-		List<String> entries = new ArrayList<>();
-
-		try ( java.util.zip.ZipFile zipFile = new java.util.zip.ZipFile( source ) ) {
-
-			zipFile.stream()
-			    .forEach( entry -> entries.add( entry.getName() ) );
-
-		} catch ( IOException e ) {
-			throw new BoxRuntimeException(
-			    "Failed to list zip contents", e
-			);
-		}
-
-		return entries;
+		return ZipUtil.list( this.source );
 	}
 
 	/**
@@ -218,8 +157,7 @@ public class ZipFile {
 	 * @throws BoxRuntimeException if either value is missing
 	 */
 	private void validateSourceAndDestination() {
-
-		if ( source == null || destination == null ) {
+		if ( this.source == null || this.destination == null ) {
 			throw new BoxRuntimeException(
 			    "Source and destination must be specified"
 			);
