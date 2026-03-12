@@ -52,6 +52,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+
 /**
  * A fluent SOAP web service client for BoxLang.
  * Provides human-friendly methods for invoking SOAP operations discovered from WSDL documents.
@@ -126,7 +127,7 @@ public class BoxSoapClient {
 	 * - If present it must be the first child of <soap:Envelope> (before <soap:Body>)
 	 * - There is onlt ONE <soap:Header> section per request
 	 * 
-	 *  Storage approach (STEP 1):
+	 * Storage approach (STEP 1):
 	 * - We store simple key/value headers using BoxLang Struct (IStruct)
 	 * - Example: {AuthToken" : "abc123", "SessionId" : "session-456"}
 	 * 
@@ -134,7 +135,7 @@ public class BoxSoapClient {
 	 * later we will actually inject these into the XML request
 	 */
 
-	private IStruct soapHeaders;
+	private IStruct					soapHeaders;
 
 	/**
 	 * SOAP version (1.1 or 1.2)
@@ -180,7 +181,7 @@ public class BoxSoapClient {
 		this.executionContext	= context;
 		// Initialize SOAP headers storage as an empty Struct
 		// This avoids NullPointerExceptions later when we add header
-		this.soapHeaders = Struct.of();
+		this.soapHeaders		= Struct.of();
 	}
 
 	/**
@@ -521,6 +522,7 @@ public class BoxSoapClient {
 	 * Set SOAP headers to be included in the SOAP envelope.
 	 *
 	 * @param headers A struct of simple key/value pairs
+	 * 
 	 * @return This instance for chaining
 	 */
 	public BoxSoapClient withSoapHeaders( IStruct headers ) {
@@ -544,7 +546,7 @@ public class BoxSoapClient {
 			// Key must be a string
 			if ( key.getName() == null || key.getName().isEmpty() ) {
 				throw new BoxRuntimeException(
-					"SOAP header keys must be non-empty strings"
+				    "SOAP header keys must be non-empty strings"
 				);
 			}
 
@@ -554,16 +556,15 @@ public class BoxSoapClient {
 			}
 
 			if ( value instanceof String
-				|| value instanceof Number
-				|| value instanceof Boolean
-				|| value instanceof java.time.temporal.Temporal
-			) {
+			    || value instanceof Number
+			    || value instanceof Boolean
+			    || value instanceof java.time.temporal.Temporal ) {
 				continue;
 			}
 
 			throw new BoxRuntimeException(
-				"Invalid SOAP header value for key '" + key.getName() +
-				"'. Only simple scalar values are allowed."
+			    "Invalid SOAP header value for key '" + key.getName() +
+			        "'. Only simple scalar values are allowed."
 			);
 		}
 	}
