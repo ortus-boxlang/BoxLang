@@ -53,8 +53,8 @@ public class BoxSoapClientSoapHeadersTest {
 
 	@BeforeEach
 	public void setUp() {
-		this.context = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		this.httpService = BoxRuntime.getInstance().getHttpService();
+		this.context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		this.httpService	= BoxRuntime.getInstance().getHttpService();
 		this.httpService.clearAllSoapClients();
 	}
 
@@ -155,7 +155,7 @@ public class BoxSoapClientSoapHeadersTest {
 		    Key.of( "RetryCount" ), 2,
 		    Key.of( "Enabled" ), false
 		) );
-    assertThat( client ).isNotNull();
+		assertThat( client ).isNotNull();
 	}
 
 	// J

@@ -374,20 +374,20 @@ public class BoxSoapClient {
 				);
 			}
 			// XML Name Check / TASK 3
-			if ( !key.getName().matches( "[a-zA-Z_][a-zA-Z0-9_]*") ) {
+			if ( !key.getName().matches( "[a-zA-Z_][a-zA-Z0-9_]*" ) ) {
 				throw new BoxRuntimeException(
-					"SOAP header keys must be a valid XML name"
+				    "SOAP header keys must be a valid XML name"
 				);
 			}
 
 			if ( value == null ) {
 				continue;
 			}
-			String valueStr = String.valueOf( value);
-			if(!isValidXMLCharData(valueStr)) {
+			String valueStr = String.valueOf( value );
+			if ( !isValidXMLCharData( valueStr ) ) {
 				throw new BoxRuntimeException(
-					"This is an Invalid SOAP header value for key '" + key.getName() +
-					"'. Only simple scalar values are allowed."
+				    "This is an Invalid SOAP header value for key '" + key.getName() +
+				        "'. Only simple scalar values are allowed."
 				);
 			}
 
@@ -404,16 +404,18 @@ public class BoxSoapClient {
 			);
 		}
 	}
-	private static boolean isValidXMLCharData(String s) {
-		if (s == null) return true;
-		for(int i = 0; i<s.length(); i++){
-			char c = s.charAt(i);
+
+	private static boolean isValidXMLCharData( String s ) {
+		if ( s == null )
+			return true;
+		for ( int i = 0; i < s.length(); i++ ) {
+			char c = s.charAt( i );
 			if ( c >= 0x00 && c <= 0x1F && c != 0x09 && c != 0x0A && c != 0x0D ) {
 				return false;
 			}
 		}
 		return true;
-		}
+	}
 
 	private String buildSoapRequest( WsdlOperation operation, Object arguments ) {
 		try {
@@ -436,21 +438,21 @@ public class BoxSoapClient {
 			doc.appendChild( envelope );
 			// adding the SOAP XML Headers
 
-      // Add SOAP headers if present
-      if ( this.soapHeaders != null && !this.soapHeaders.isEmpty() ) {
-          Element headerElement = doc.createElementNS( soapNS, "soap:Header" );
-          envelope.appendChild( headerElement );
+			// Add SOAP headers if present
+			if ( this.soapHeaders != null && !this.soapHeaders.isEmpty() ) {
+				Element headerElement = doc.createElementNS( soapNS, "soap:Header" );
+				envelope.appendChild( headerElement );
 
-          for ( Key key : this.soapHeaders.keySet() ) {
-              Object value = this.soapHeaders.get( key );
+				for ( Key key : this.soapHeaders.keySet() ) {
+					Object	value		= this.soapHeaders.get( key );
 
-              Element headerChild = doc.createElement( key.getName() );
-              if ( value != null ) {
-                  headerChild.setTextContent( String.valueOf( value ) );
-              }
-              headerElement.appendChild( headerChild );
-          }
-      }
+					Element	headerChild	= doc.createElement( key.getName() );
+					if ( value != null ) {
+						headerChild.setTextContent( String.valueOf( value ) );
+					}
+					headerElement.appendChild( headerChild );
+				}
+			}
 
 			if ( this.soapHeaders != null && !this.soapHeaders.isEmpty() ) {
 				Element header = doc.createElementNS( soapNS, "soap:Header" );
