@@ -1406,7 +1406,6 @@ public class StructUtil {
 		dynObject.getFieldsAsStream()
 		    .filter( field -> Modifier.isPublic( field.getModifiers() ) )
 		    .forEach( field -> {
-			    System.out.println( "field: " + field.getName() );
 			    try {
 				    thisResult.put( field.getName(), dynObject.getField( field.getName() ).orElse( null ) );
 			    } catch ( Exception e ) {

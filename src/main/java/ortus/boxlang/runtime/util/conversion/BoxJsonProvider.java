@@ -29,6 +29,7 @@ import com.fasterxml.jackson.jr.ob.impl.JSONReader;
 import com.fasterxml.jackson.jr.ob.impl.JSONWriter;
 
 import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.Query;
@@ -45,6 +46,7 @@ import ortus.boxlang.runtime.util.conversion.serializers.BoxStructSerializer;
 import ortus.boxlang.runtime.util.conversion.serializers.DynamicObjectSerializer;
 import ortus.boxlang.runtime.util.conversion.serializers.ExceptionSerializer;
 import ortus.boxlang.runtime.util.conversion.serializers.JavaArraySerializer;
+import ortus.boxlang.runtime.util.conversion.serializers.KeySerializer;
 
 /**
  * This class provides a JSON provider for BoxLang using our lib: Jackson JR
@@ -87,6 +89,10 @@ public class BoxJsonProvider extends ReaderWriterProvider {
 
 		if ( type.isArray() ) {
 			return new JavaArraySerializer();
+		}
+
+		if ( Key.class.isAssignableFrom( type ) ) {
+			return new KeySerializer();
 		}
 
 		// Fall back for all other objects that aren't "simple"

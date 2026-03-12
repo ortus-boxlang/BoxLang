@@ -129,7 +129,6 @@ public class JSONSerializeTest {
 					localDate: LocalDate.now(),
 					sqlDate: Date.valueOf( "2024-01-01" )
 				} )
-				println( result )
 		    """,
 		    context );
 		// @formatter:on
@@ -430,7 +429,6 @@ public class JSONSerializeTest {
 		// @formatter:on
 
 		var json = variables.getAsString( result );
-		System.out.println( json );
 		assertThat( json ).isNotEmpty();
 	}
 
@@ -442,7 +440,6 @@ public class JSONSerializeTest {
 		    """
 		    	test = new src.test.bx.NotSerializable()
 				result = jsonSerialize( test )
-				println( result )
 		    """,
 		context );
 		// @formatter:on
@@ -503,7 +500,6 @@ public class JSONSerializeTest {
 				foo.put( "bar", bar )
 
 				result = jsonSerialize( foo )
-				println( result )
 		    """,
 		context );
 		// @formatter:on
@@ -523,7 +519,6 @@ public class JSONSerializeTest {
 				foo.append( bar )
 
 				result = jsonSerialize( foo )
-				println( result )
 		    """,
 		context );
 		// @formatter:on
@@ -548,7 +543,6 @@ public class JSONSerializeTest {
 				foo.add( bar )
 
 				result = jsonSerialize( foo )
-				println( result )
 		    """,
 		context );
 		// @formatter:on
@@ -573,7 +567,6 @@ public class JSONSerializeTest {
 					"six" : true
 				}, pretty=true )
 
-				println( result )
 			""",
 		    context );
 		// @formatter:on
@@ -601,7 +594,6 @@ public class JSONSerializeTest {
 				}
 		    	result = jsonSerialize( data: matrix )
 
-				println( result )
 			""",
 		    context );
 		// @formatter:on
@@ -623,7 +615,6 @@ public class JSONSerializeTest {
 					result = jsonSerialize( data: e )
 				}
 
-				println( result )
 			""",
 		    context );
 		// @formatter:on
