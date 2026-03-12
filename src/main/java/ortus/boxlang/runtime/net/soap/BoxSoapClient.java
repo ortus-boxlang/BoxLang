@@ -50,23 +50,93 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
+
+/**
+ * A fluent SOAP web service client for BoxLang.
+ * Provides human-friendly methods for invoking SOAP operations discovered from WSDL documents.
+ *
+ * Usage:
+ *
+ * <pre>
+ *
+ * soapClient = SoapClient.fromWsdl( "http://example.com/service.wsdl" );
+ * Object result = soapClient.invoke( "methodName", args );
+ * </pre>
+ */
 public class BoxSoapClient {
 
-	private static final String SOAP_11_ENVELOPE_NS = "http://schemas.xmlsoap.org/soap/envelope/";
-	private static final String SOAP_12_ENVELOPE_NS = "http://www.w3.org/2003/05/soap-envelope";
-	private static final String XSI_NS = "http://www.w3.org/2001/XMLSchema-instance";
-	private static final String XSD_NS = "http://www.w3.org/2001/XMLSchema";
+	/**
+	 * ------------------------------------------------------------------------------
+	 * Constants
+	 * ------------------------------------------------------------------------------
+	 */
 
-	private final WsdlDefinition wsdlDefinition;
-	private final HttpService httpService;
-	private final BoxLangLogger logger;
+	private static final String		SOAP_11_ENVELOPE_NS		= "http://schemas.xmlsoap.org/soap/envelope/";
+	private static final String		SOAP_12_ENVELOPE_NS		= "http://www.w3.org/2003/05/soap-envelope";
+	private static final String		XSI_NS					= "http://www.w3.org/2001/XMLSchema-instance";
+	private static final String		XSD_NS					= "http://www.w3.org/2001/XMLSchema";
 
-	private int timeout = 30;
-	private String username;
-	private String password;
-	private Map<String, String> customHeaders = new HashMap<>();
-	private IStruct soapHeaders;
-	private String soapVersion = "1.1";
+	/**
+	 * ------------------------------------------------------------------------------
+	 * Properties
+	 * ------------------------------------------------------------------------------
+	 */
+
+	/**
+	 * The WSDL definition for this client
+	 */
+	private final WsdlDefinition	wsdlDefinition;
+
+	/**
+	 * The HTTP service for making requests
+	 */
+	private final HttpService		httpService;
+
+	/**
+	 * The logger
+	 */
+	private final BoxLangLogger		logger;
+
+	/**
+	 * Request timeout in seconds (0 = no timeout)
+	 */
+	private int						timeout					= 30;
+
+	/**
+	 * Username for HTTP basic authentication
+	 */
+	private String					username;
+
+	/**
+	 * Password for HTTP basic authentication
+	 */
+	private String					password;
+
+	/**
+	 * Custom HTTP headers
+	 */
+	private Map<String, String>		customHeaders			= new HashMap<>();
+
+	/**
+	 * SOAP headers to include in the SOAP envelope
+	 * 
+	 * SOAP Spec:
+	 * - <soap:Header> is OPTINAL.
+	 * - If present it must be the first child of <soap:Envelope> (before <soap:Body>)
+	 * - There is onlt ONE <soap:Header> section per request
+	 * 
+	 * Storage approach (STEP 1):
+	 * - We store simple key/value headers using BoxLang Struct (IStruct)
+	 * - Example: {AuthToken" : "abc123", "SessionId" : "session-456"}
+	 * 
+	 * NOTE: Right now this is only storage
+	 * later we will actually inject these into the XML request
+	 */
+
+	private IStruct					soapHeaders;
+  private String soapVersion = "1.1";
 	private final Instant createdAt = Instant.now();
 	private IBoxContext executionContext;
 	private long totalInvocations = 0;
@@ -74,12 +144,15 @@ public class BoxSoapClient {
 	private long failedInvocations = 0;
 
 	private BoxSoapClient( WsdlDefinition wsdlDefinition, HttpService httpService, IBoxContext context ) {
-		this.wsdlDefinition = wsdlDefinition;
-		this.httpService = httpService;
-		this.logger = this.httpService.getLogger();
-		this.soapVersion = wsdlDefinition.getSoapVersion();
-		this.executionContext = context;
-		this.soapHeaders = Struct.of();
+		this.wsdlDefinition		= wsdlDefinition;
+		this.httpService		= httpService;
+		this.logger				= this.httpService.getLogger();
+		// Initialize SOAP version from WSDL definition (can be overridden later)
+		this.soapVersion		= wsdlDefinition.getSoapVersion();
+		this.executionContext	= context;
+		// Initialize SOAP headers storage as an empty Struct
+		// This avoids NullPointerExceptions later when we add header
+		this.soapHeaders		= Struct.of();
 	}
 
 	public static BoxSoapClient fromWsdl( String wsdlUrl, HttpService httpService, IBoxContext context ) {
@@ -240,6 +313,53 @@ public class BoxSoapClient {
 		}
 	}
 
+	/**
+	 * ------------------------------------------------------------------------------
+	 * IReferenceable Implementation
+	 * ------------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Check if a method name is a known SoapClient method
+	 *
+	 * @param methodName The method name to check
+	 *
+	 * @return true if this is a known method
+	 */
+	private boolean isKnownMethod( String methodName ) {
+		String lower = methodName.toLowerCase();
+		return lower.equals( "invoke" )
+		    || lower.equals( "getoperations" )
+		    || lower.equals( "listoperations" )
+		    || lower.equals( "getstatistics" )
+		    || lower.equals( "getstats" )
+		    || lower.equals( "getoperationinfo" )
+		    || lower.equals( "tostruct" );
+	}
+
+	/**
+	 * ------------------------------------------------------------------------------
+	 * SOAP Message Building and Parsing
+	 * ------------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Set SOAP headers to be included in the SOAP envelope.
+	 *
+	 * @param headers A struct of simple key/value pairs
+	 * 
+	 * @return This instance for chaining
+	 */
+	public BoxSoapClient withSoapHeaders( IStruct headers ) {
+		validateSoapHeaders( headers );
+		this.soapHeaders = headers;
+		return this;
+	}
+
+	/**
+	 * Validate SOAP header input.
+	 * Only simple key/value pairs are allowed.
+	 */
 	private void validateSoapHeaders( IStruct headers ) {
 		if ( headers == null ) {
 			throw new BoxRuntimeException( "SOAP headers cannot be null" );
@@ -249,7 +369,9 @@ public class BoxSoapClient {
 			Object value = headers.get( key );
 
 			if ( key.getName() == null || key.getName().isEmpty() ) {
-				throw new BoxRuntimeException( "SOAP header keys must be non-empty strings" );
+				throw new BoxRuntimeException(
+				    "SOAP header keys must be non-empty strings"
+				);
 			}
 
 			if ( value == null ) {
@@ -264,8 +386,8 @@ public class BoxSoapClient {
 			}
 
 			throw new BoxRuntimeException(
-			    "Invalid SOAP header value for key '" + key.getName()
-			        + "'. Only simple scalar values are allowed."
+			    "Invalid SOAP header value for key '" + key.getName() +
+			        "'. Only simple scalar values are allowed."
 			);
 		}
 	}

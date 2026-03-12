@@ -6,6 +6,13 @@
 	"configurations": [
 		{
 			"type": "java",
+			"name": "Phase1",
+			"request": "launch",
+			"mainClass": "ortus.boxlang.runtime.testing.Phase1",
+			"projectName": "BoxLang-SOAP-Headers-"
+		},
+		{
+			"type": "java",
 			"name": "BoxRepl",
 			"request": "launch",
 			"mainClass": "ortus.boxlang.runtime.cli.BoxRepl",
