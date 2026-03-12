@@ -669,4 +669,42 @@ public class JSONSerializeTest {
 		assertThat( json ).isEqualTo( "{\"q\":0.0000000}" );
 	}
 
+	@DisplayName( "It will serialize stream" )
+	@Test
+	public void testWillSerializeStream() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+			data = {
+			myStream : [1,2,3].stream()
+			}
+
+			result = JSONSerialize( data );
+			""",
+		    context );
+		// @formatter:on
+
+		assertThat( variables.getAsString( result ) ).contains( "\"myStream\":{" );
+	}
+
+	@DisplayName( "It will serialize random java obects" )
+	@Test
+	public void testWillSerializeRandomJavaObjects() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				uri = createObject( "java", "java.net.URI" ).init( "/foo" );
+				result = JSONSerialize( { "uri" : uri } );
+			""",
+		    context );
+		// @formatter:on
+
+		assertThat( variables.getAsString( result ) ).contains( "\"RawPath\"" );
+		assertThat( variables.getAsString( result ) ).contains( "\"RawAuthority\"" );
+		assertThat( variables.getAsString( result ) ).contains( "\"Scheme\"" );
+		assertThat( variables.getAsString( result ) ).contains( "\"RawFragment\"" );
+		assertThat( variables.getAsString( result ) ).contains( "\"SchemeSpecificPart\"" );
+		assertThat( variables.getAsString( result ) ).contains( "\"/foo\"" );
+	}
+
 }

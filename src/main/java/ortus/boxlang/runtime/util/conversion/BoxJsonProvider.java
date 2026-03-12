@@ -28,7 +28,6 @@ import com.fasterxml.jackson.jr.ob.api.ValueWriter;
 import com.fasterxml.jackson.jr.ob.impl.JSONReader;
 import com.fasterxml.jackson.jr.ob.impl.JSONWriter;
 
-import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Function;
@@ -82,10 +81,6 @@ public class BoxJsonProvider extends ReaderWriterProvider {
 			return new BoxStructSerializer();
 		}
 
-		if ( type == DynamicObject.class ) {
-			return new DynamicObjectSerializer();
-		}
-
 		if ( Throwable.class.isAssignableFrom( type ) ) {
 			return new ExceptionSerializer();
 		}
@@ -94,6 +89,12 @@ public class BoxJsonProvider extends ReaderWriterProvider {
 			return new JavaArraySerializer();
 		}
 
+		// Fall back for all other objects that aren't "simple"
+		if ( !String.class.isAssignableFrom( type ) && !Number.class.isAssignableFrom( type ) && !Boolean.class.isAssignableFrom( type ) ) {
+			return new DynamicObjectSerializer();
+		}
+
+		// Let Jackson decide
 		return null;
 	}
 
