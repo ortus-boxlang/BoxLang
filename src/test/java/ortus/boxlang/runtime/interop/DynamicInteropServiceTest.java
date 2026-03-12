@@ -1005,7 +1005,7 @@ public class DynamicInteropServiceTest {
 			"""
 				import java.util.Arrays;
 
-				result = Arrays.stream( [ 1,2,3 ] ).toArray()
+				result = Arrays.stream( [ 1,2,3 ] castas int[] ).toArray()
 			""", context);
 		// @formatter:on
 
