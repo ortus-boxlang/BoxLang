@@ -75,6 +75,9 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 											case Minus -> // "Minus.invoke(${left},${right})";
 											    generateNumericBinaryMethodCallExpr( "Minus", operation, left, right );
 
+											case Range -> // "Range.invoke(${left},${right})";
+											    generateBinaryMethodCallExpr( "Range", left, right );
+
 											case Star -> // "Multiply.invoke(${left},${right})";
 											    generateNumericBinaryMethodCallExpr( "Multiply", operation, left, right );
 
@@ -214,6 +217,14 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 		return javaExpr;
 	}
 
+	/**
+	 * Build an operator runtime invocation expression.
+	 *
+	 * @param methodName operator helper class name
+	 * @param args       arguments passed to the helper's invoke method
+	 *
+	 * @return invoke method call expression
+	 */
 	@NonNull private static MethodCallExpr generateBinaryMethodCallExpr( String methodName, Object... args ) {
 		NameExpr		nameExpr		= new NameExpr( methodName );
 		MethodCallExpr	methodCallExpr	= new MethodCallExpr( nameExpr, "invoke" );

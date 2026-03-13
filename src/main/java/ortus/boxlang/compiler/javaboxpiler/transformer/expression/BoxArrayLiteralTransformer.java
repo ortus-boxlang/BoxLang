@@ -17,21 +17,14 @@
  */
 package ortus.boxlang.compiler.javaboxpiler.transformer.expression;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.NodeList;
-import com.github.javaparser.ast.expr.ArrayCreationExpr;
-import com.github.javaparser.ast.expr.ArrayInitializerExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
-import com.github.javaparser.ast.type.ArrayType;
-import com.github.javaparser.ast.type.ClassOrInterfaceType;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxSpreadExpression;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
@@ -71,46 +64,32 @@ public class BoxArrayLiteralTransformer extends AbstractTransformer {
 	 */
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxArrayLiteral		arrayLiteral	= ( BoxArrayLiteral ) node;
-		Map<String, String>	values			= new HashMap<>() {
+		BoxArrayLiteral	arrayLiteral	= ( BoxArrayLiteral ) node;
+		boolean			ambiguous		= isAmbiguousSpreadOnlyArrayLiteral( arrayLiteral );
 
-												{
-													put( "contextName", transpiler.peekContextName() );
-												}
-											};
-
-		if ( arrayLiteral.getValues().isEmpty() ) {
-			Node javaExpr = parseExpression( "new Array()", values );
-			// logger.trace( "{} -> {}", node.getSourceText(), javaExpr );
-			addIndex( javaExpr, node );
-			return javaExpr;
-		}
-		// Create an Object[] array literal with the values as Expressions
-		Expression[]	exprArray	= new Expression[ arrayLiteral.getValues().size() ];
-		int				i			= 0;
+		MethodCallExpr	javaExpr		= ( MethodCallExpr ) parseExpression(
+		    ambiguous ? "ortus.boxlang.runtime.dynamic.LiteralSpreadUtil.arrayOrOrderedStruct()" : "ortus.boxlang.runtime.dynamic.LiteralSpreadUtil.array()",
+		    java.util.Map.of() );
 		for ( BoxExpression expr : arrayLiteral.getValues() ) {
-			exprArray[ i++ ] = ( Expression ) transpiler.transform( expr, context );
+			if ( expr instanceof BoxSpreadExpression spread ) {
+				MethodCallExpr spreadExpr = ( MethodCallExpr ) parseExpression( "ortus.boxlang.runtime.dynamic.LiteralSpreadUtil.spread()",
+				    java.util.Map.of() );
+				spreadExpr.getArguments().add( ( Expression ) transpiler.transform( spread.getExpression(), context ) );
+				javaExpr.getArguments().add( spreadExpr );
+			} else {
+				javaExpr.getArguments().add( ( Expression ) transpiler.transform( expr, context ) );
+			}
 		}
-		// Create the array initializer expression
-		ArrayInitializerExpr	arrayInitExpr	= new ArrayInitializerExpr(
-		    NodeList.nodeList( exprArray )
-		);
-		ArrayCreationExpr		arrayExpr		= new ArrayCreationExpr(
-		    new ArrayType(
-		        new ClassOrInterfaceType( null, "Object" )
-		    ),
-		    NodeList.nodeList(),
-		    arrayInitExpr
-		);
 
-		MethodCallExpr			javaExpr		= new MethodCallExpr(
-		    null,
-		    "Array.of",
-		    NodeList.nodeList( arrayExpr )
-		);
-		// logger.trace( "{} -> {}", node.getSourceText(), javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;
+	}
 
+	/**
+	 * isAmbiguousSpreadOnlyArrayLiteral.
+	 */
+	private boolean isAmbiguousSpreadOnlyArrayLiteral( BoxArrayLiteral arrayLiteral ) {
+		return !arrayLiteral.getValues().isEmpty()
+		    && arrayLiteral.getValues().stream().allMatch( value -> value instanceof BoxSpreadExpression );
 	}
 }
