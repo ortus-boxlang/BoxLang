@@ -67,4 +67,41 @@ public class GetTickCountTest {
 		assertThat( variables.get( result ) ).isInstanceOf( Long.class );
 	}
 
+	@DisplayName( "It can get tick count in milliseconds" )
+	@Test
+	public void testMilli() {
+		instance.executeSource(
+		    """
+		    result = getTickCount( "milli" );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Long.class );
+	}
+
+	@DisplayName( "It can get tick count in nanoseconds" )
+	@Test
+	public void testNano() {
+		instance.executeSource(
+		    """
+		    result = getTickCount( "nano" );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Long.class );
+	}
+
+	@DisplayName( "It can get tick count in seconds" )
+	@Test
+	public void testSecond() {
+		instance.executeSource(
+		    """
+		    result = getTickCount( "second" );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Long.class );
+		// Seconds should be much smaller than millis
+		long seconds = ( Long ) variables.get( result );
+		assertThat( seconds ).isGreaterThan( 0 );
+		assertThat( seconds ).isLessThan( System.currentTimeMillis() );
+	}
+
 }

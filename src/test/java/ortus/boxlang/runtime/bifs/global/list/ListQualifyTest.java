@@ -27,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -137,6 +138,53 @@ public class ListQualifyTest {
 		    context );
 
 		assertEquals( variables.getAsString( result ), "@a@,@b@,@c@,@d@,@e@" );
+	}
+
+	@DisplayName( "It does not escape single quotes outside of a query component" )
+	@Test
+	public void testListQualifySingleQuotesNoQuery() {
+		instance.executeSource(
+		    """
+		    myList="brad,luis,O'neil";
+		    result = myList.listQualify( "'" );
+		    """,
+		    context );
+
+		assertEquals( variables.getAsString( result ), "'brad','luis','O'neil'" );
+	}
+
+	@DisplayName( "It does escape single quotes outside of a query component" )
+	@Test
+	public void testListQualifySingleQuotesWithQuery() {
+		instance.executeSource(
+		    """
+		       <bx:set myList="brad,luis,O'neil">
+		    <bx:set qry = queryNew( "col", "varchar", [] )>
+		    <bx:query name="foo" dbtype="query">
+		       	<bx:set result = myList.listQualify( "'" )>
+		    	select * from qry
+		    </bx:query>
+		       """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		assertEquals( variables.getAsString( result ), "'brad','luis','O''neil'" );
+	}
+
+	@DisplayName( "It does not escape single quotes inside of a query component with a non single quote qualifier" )
+	@Test
+	public void testListQualifySingleQuotesWithQueryNonSingleQuoteQualifier() {
+		instance.executeSource(
+		    """
+		       <bx:set myList="brad,luis,O'neil">
+		    <bx:set qry = queryNew( "col", "varchar", [] )>
+		    <bx:query name="foo" dbtype="query">
+		       	<bx:set result = myList.listQualify( "*" )>
+		    	select * from qry
+		    </bx:query>
+		       """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		assertEquals( variables.getAsString( result ), "*brad*,*luis*,*O'neil*" );
 	}
 
 }

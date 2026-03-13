@@ -21,6 +21,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +41,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -53,6 +55,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.EncryptionUtil;
 
 /**
  * A fluent SOAP web service client for BoxLang.
@@ -74,10 +77,33 @@ public class BoxSoapClient implements IReferenceable {
 	 * ------------------------------------------------------------------------------
 	 */
 
-	private static final String		SOAP_11_ENVELOPE_NS		= "http://schemas.xmlsoap.org/soap/envelope/";
-	private static final String		SOAP_12_ENVELOPE_NS		= "http://www.w3.org/2003/05/soap-envelope";
-	private static final String		XSI_NS					= "http://www.w3.org/2001/XMLSchema-instance";
-	private static final String		XSD_NS					= "http://www.w3.org/2001/XMLSchema";
+	private static final String		SOAP_11_ENVELOPE_NS			= "http://schemas.xmlsoap.org/soap/envelope/";
+	private static final String		SOAP_12_ENVELOPE_NS			= "http://www.w3.org/2003/05/soap-envelope";
+	private static final String		XSI_NS						= "http://www.w3.org/2001/XMLSchema-instance";
+	private static final String		XSD_NS						= "http://www.w3.org/2001/XMLSchema";
+	private static final String		XSI_TYPE_ATTR				= "xsi:type";
+
+	// Apache SOAP namespace and types
+	private static final String		APACHESOAP_NS_STRING		= "http://xml.apache.org/xml-soap";
+	private static final String		APACHESOAP_MAP_STRING		= "apachesoap:Map";
+	private static final String		APACHESOAP_MAP_ITEM_STRING	= "apachesoap:mapItem";
+	private static final String		MAP_STRING					= "Map";
+	private static final String		ITEM_STRING					= "item";
+	private static final String		KEY_STRING					= "key";
+	private static final String		VALUE_STRING				= "value";
+
+	// XSD type strings
+	private static final String		XSD_STRING_STRING			= "xsd:string";
+	private static final String		XSD_INT_STRING				= "xsd:int";
+	private static final String		XSD_DOUBLE_STRING			= "xsd:double";
+	private static final String		XSD_BOOLEAN_STRING			= "xsd:boolean";
+	private static final String		XSD_DATETIME_STRING			= "xsd:dateTime";
+	private static final String		XSD_BASE64BINARY_STRING		= "xsd:base64Binary";
+	private static final String		XSD_ANYTYPE_STRING			= "xsd:anyType";
+	private static final String		XSD_LONG_STRING				= "xsd:long";
+	private static final String		XSD_DECIMAL_STRING			= "xsd:decimal";
+	private static final String		XSD_BYTE_STRING				= "xsd:byte";
+	private static final String		XSD_SHORT_STRING			= "xsd:short";
 
 	/**
 	 * ------------------------------------------------------------------------------
@@ -103,7 +129,7 @@ public class BoxSoapClient implements IReferenceable {
 	/**
 	 * Request timeout in seconds (0 = no timeout)
 	 */
-	private int						timeout					= 30;
+	private int						timeout						= 30;
 
 	/**
 	 * Username for HTTP basic authentication
@@ -118,7 +144,7 @@ public class BoxSoapClient implements IReferenceable {
 	/**
 	 * Custom HTTP headers
 	 */
-	private Map<String, String>		customHeaders			= new HashMap<>();
+	private Map<String, String>		customHeaders				= new HashMap<>();
 
 	/**
 	 * SOAP headers to include in the SOAP envelope.
@@ -278,7 +304,7 @@ public class BoxSoapClient implements IReferenceable {
 			String soapRequest = buildSoapRequest( operation, arguments );
 
 			if ( this.logger.isDebugEnabled() ) {
-				this.logger.trace( "SOAP Request to {}: {}", this.getServiceEndpoint(), soapRequest );
+				this.logger.debug( "SOAP Request to {}: {}", this.getServiceEndpoint(), soapRequest );
 			}
 
 			BoxHttpClient					httpClient	= this.httpService.getOrBuildClient(
@@ -293,6 +319,7 @@ public class BoxSoapClient implements IReferenceable {
 			    .newRequest( this.getServiceEndpoint(), this.executionContext )
 			    .post()
 			    .timeout( this.timeout )
+			    .header( "Accept", "application/soap+xml, text/xml, */*" )
 			    .header(
 			        "Content-Type",
 			        "1.1".equals( this.soapVersion ) ? "text/xml; charset=utf-8" : "application/soap+xml; charset=utf-8"
@@ -469,19 +496,15 @@ public class BoxSoapClient implements IReferenceable {
 	/**
 	 * Check if a method name is a known SoapClient method
 	 *
-	 * @param methodName The method name to check
+	 * @param context The context we're executing inside of
+	 * @param name    The name of the key to assign to
+	 * @param value   The value to assign
 	 *
-	 * @return true if this is a known method
+	 * @return The value that was assigned
 	 */
-	private boolean isKnownMethod( String methodName ) {
-		String lower = methodName.toLowerCase();
-		return lower.equals( "invoke" )
-		    || lower.equals( "getoperations" )
-		    || lower.equals( "listoperations" )
-		    || lower.equals( "getstatistics" )
-		    || lower.equals( "getstats" )
-		    || lower.equals( "getoperationinfo" )
-		    || lower.equals( "tostruct" );
+	@Override
+	public Object assign( IBoxContext context, Key name, Object value ) {
+		throw new BoxRuntimeException( "Cannot assign properties to SOAP client objects" );
 	}
 
 	/**
@@ -565,6 +588,7 @@ public class BoxSoapClient implements IReferenceable {
 			envelope.setAttribute( "xmlns:soap", soapNS );
 			envelope.setAttribute( "xmlns:xsi", XSI_NS );
 			envelope.setAttribute( "xmlns:xsd", XSD_NS );
+			envelope.setAttribute( "xmlns:apachesoap", APACHESOAP_NS_STRING );
 
 			if ( operation.getNamespace() != null ) {
 				envelope.setAttribute( "xmlns:tns", operation.getNamespace() );
@@ -638,10 +662,30 @@ public class BoxSoapClient implements IReferenceable {
 
 		if ( arguments instanceof IStruct struct ) {
 			for ( WsdlParameter param : params ) {
-				Key		key		= Key.of( param.getName() );
-				Object	value	= struct.get( key );
+				String	paramName	= param.getName();
+				Key		key			= Key.of( paramName );
+				Object	value		= struct.get( key );
+
+				// If exact match not found, try fuzzy matching
+				if ( value == null ) {
+					// If still no match, try partial matches (e.g., intA matches param 'a', intB matches param 'b')
+					if ( value == null ) {
+						for ( Key structKey : struct.keySet() ) {
+							String structKeyName = structKey.getName();
+							// Check if struct key ends with param name (intA -> a, intB -> b)
+							if ( structKeyName.toLowerCase().endsWith( paramName.toLowerCase() ) ) {
+								value = struct.get( structKey );
+								logger.trace( "Found suffix match: " + structKeyName + " -> " + paramName );
+								break;
+							}
+						}
+					}
+				}
+
 				if ( value != null ) {
-					argMap.put( param.getName(), value );
+					argMap.put( paramName, value );
+				} else {
+					logger.trace( "No value found for WSDL param: " + paramName );
 				}
 			}
 		} else if ( arguments instanceof Array array ) {
@@ -661,16 +705,62 @@ public class BoxSoapClient implements IReferenceable {
 		for ( WsdlParameter param : params ) {
 			Object value = argMap.get( param.getName() );
 			if ( value != null ) {
-				Element paramElement = doc.createElement( param.getName() );
-				paramElement.setTextContent( String.valueOf( value ) );
-				parentElement.appendChild( paramElement );
+				String type = param.getType();
+
+				// Handle special types that need complex serialization
+				if ( type != null && isApacheSoapMapType( type ) && value instanceof IStruct struct ) {
+					// Serialize as Apache SOAP Map
+					Element mapElement = serializeApacheSoapMap( doc, param.getName(), struct );
+					parentElement.appendChild( mapElement );
+				} else if ( type != null && isBase64BinaryType( type ) ) {
+					// Serialize as base64Binary
+					Element paramElement = doc.createElement( param.getName() );
+					paramElement.setAttribute( XSI_TYPE_ATTR, XSD_BASE64BINARY_STRING );
+					String base64Value = EncryptionUtil.base64Encode( value, StandardCharsets.UTF_8 );
+					paramElement.setTextContent( base64Value );
+
+					parentElement.appendChild( paramElement );
+					if ( logger.isTraceEnabled() ) {
+						logger.trace( "Added base64Binary element: <" + param.getName() + "> (length: " + base64Value.length() + ")" );
+					}
+				} else {
+					// Standard simple type serialization
+					Element paramElement = doc.createElement( param.getName() );
+					paramElement.setTextContent( String.valueOf( value ) );
+
+					// Add xsi:type attribute if type is available
+					if ( type != null && !type.isEmpty() ) {
+						String xsiType = convertWsdlTypeToXsiType( type );
+						if ( xsiType != null ) {
+							paramElement.setAttribute( XSI_TYPE_ATTR, xsiType );
+						}
+					}
+
+					parentElement.appendChild( paramElement );
+					if ( logger.isTraceEnabled() ) {
+						logger.trace( "Added XML element to SOAP Request: <" + param.getName() +
+						    ( type != null ? " xsi:type=\"" + convertWsdlTypeToXsiType( type ) + "\"" : "" ) +
+						    ">" + value + "</" + param.getName() + ">" );
+					}
+				}
 			}
 		}
 	}
 
 	private Object parseSoapResponse( IStruct httpResult, WsdlOperation operation ) {
 		try {
-			String responseBody = httpResult.getAsString( Key.fileContent );
+			// Handle both String and byte[] responses from HTTP client
+			Object	fileContent	= httpResult.get( Key.fileContent );
+			String	responseBody;
+
+			if ( fileContent instanceof String ) {
+				responseBody = ( String ) fileContent;
+			} else if ( fileContent instanceof byte[] castBytes ) {
+				responseBody = new String( castBytes, java.nio.charset.StandardCharsets.UTF_8 );
+			} else {
+				throw new BoxRuntimeException( "Unexpected fileContent type: " +
+				    ( fileContent != null ? fileContent.getClass().getName() : "null" ) );
+			}
 
 			if ( responseBody == null || responseBody.isEmpty() ) {
 				throw new BoxRuntimeException( "Empty SOAP response received" );
@@ -703,7 +793,11 @@ public class BoxSoapClient implements IReferenceable {
 			return responseBody;
 
 		} catch ( Exception e ) {
-			throw new BoxRuntimeException( "Failed to parse SOAP response", e );
+			String errorMessage = "Failed to parse SOAP response. " + e.getMessage();
+			if ( logger.isDebugEnabled() ) {
+				errorMessage += " Response body: " + httpResult.get( Key.fileContent );
+			}
+			throw new BoxRuntimeException( errorMessage, e );
 		}
 	}
 
@@ -800,6 +894,9 @@ public class BoxSoapClient implements IReferenceable {
 				case "date" :
 				case "time" :
 					return ortus.boxlang.runtime.dynamic.casters.DateTimeCaster.cast( value );
+				case "base64binary" :
+					return BoxRuntime.getInstance().getFunctionService().getGlobalFunction( Key.toBinary ).invoke( executionContext, new Object[] { value },
+					    false, Key.toBinary );
 				default :
 					return StringCaster.cast( value );
 			}
@@ -875,7 +972,7 @@ public class BoxSoapClient implements IReferenceable {
 			StreamResult			result			= new StreamResult( outputStream );
 
 			transformer.transform( source, result );
-			return outputStream.toString( StandardCharsets.UTF_8.name() );
+			return outputStream.toString( StandardCharsets.UTF_8 );
 		} catch ( Exception e ) {
 			throw new BoxRuntimeException( "Failed to convert document to string", e );
 		}

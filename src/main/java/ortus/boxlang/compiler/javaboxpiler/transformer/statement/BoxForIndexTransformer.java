@@ -81,7 +81,7 @@ public class BoxForIndexTransformer extends AbstractTransformer {
 		values.put( "contextName", transpiler.peekContextName() );
 
 		String template2 = "while( ${condition} ) {}";
-		if ( requiresBooleanCaster( boxFor.getCondition() ) ) {
+		if ( boxFor.getCondition() != null && !boxFor.getCondition().returnsBoolean() ) {
 			template2 = "while( BooleanCaster.cast( ${condition} ) ) {}";
 		}
 		BlockStmt stmt = new BlockStmt();

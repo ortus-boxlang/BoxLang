@@ -194,7 +194,7 @@ public class BIFDescriptor {
 	public Object invoke( IBoxContext context, Object[] positionalArguments, boolean isMember, Key name ) {
 		ArgumentsScope	scope				= new ArgumentsScope();
 		Argument[]		declaredArguments	= getBIF().getDeclaredArguments();
-		ArgumentUtil.createArgumentsScope( context, positionalArguments, declaredArguments, scope, name );
+		ArgumentUtil.createArgumentsScope( context, positionalArguments, declaredArguments, scope, name, true );
 		scope.put( BIF.__isMemberExecution, isMember );
 		scope.put( BIF.__functionName, name );
 		// call validators on arguments
@@ -217,7 +217,7 @@ public class BIFDescriptor {
 	public Object invoke( IBoxContext context, Map<Key, Object> namedArguments, boolean isMember, Key name ) {
 		ArgumentsScope	scope				= new ArgumentsScope();
 		Argument[]		declaredArguments	= getBIF().getDeclaredArguments();
-		ArgumentUtil.createArgumentsScope( context, namedArguments, declaredArguments, scope, name );
+		ArgumentUtil.createArgumentsScope( context, namedArguments, declaredArguments, scope, name, true );
 		scope.put( BIF.__isMemberExecution, isMember );
 		scope.put( BIF.__functionName, name );
 		// call validators on arguments

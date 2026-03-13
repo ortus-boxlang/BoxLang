@@ -19,10 +19,20 @@ import java.util.List;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
+import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
+import ortus.boxlang.compiler.ast.expression.BoxBinaryOperator;
+import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
+import ortus.boxlang.compiler.ast.expression.BoxExpressionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
+import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxTernaryOperation;
+import ortus.boxlang.compiler.ast.expression.IBoxSimpleLiteral;
+import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
+import ortus.boxlang.compiler.ast.statement.BoxReturn;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 
 /**
@@ -44,6 +54,12 @@ import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
  * but that's a bit of an edge case and this simplifies things quite a bit.
  * 
  * Adobe, Lucee, and BoxLang all leave stand-alone string literals untouched.
+ * 
+ * The following BIFs have caveats when used in a cfquery
+ * - The output of quotedValueList() inside of a cfquery will NOT have its single quotes escaped, even if not wrapped in preserveSingleQuotes().Buggy and allows SQL injection attacks!
+ * - The output of valueList() inside of a cfquery will NOT have its single quotes escaped, even if not wrapped in preserveSingleQuotes(). Buggy and allows SQL injection attacks!
+ * - The output of listQualify() inside of a cfquery will NOT have its single quotes escaped, but it WILL automatically double up any single quotes inside the values themselves.
+ * Useful and secure, but inconsistent since the doubling of quotes does NOT happen when this BIF is called from outside a cfquery.
  * 
  * Only use this visitor prior to compiling. Otherwise, the rewritten AST will show up in transpiled or pretty printed code.
  */
@@ -106,6 +122,50 @@ public class QueryEscapeSingleQuoteVisitor extends VoidBoxVisitor {
 	}
 
 	/**
+	 * Is the expression a call to listQualify() with a single quote as the qualifier?
+	 * 
+	 * @param e the expression to check
+	 * 
+	 * @return true if the expression is a call to listQualify() with a single quote as the qualifier
+	 */
+	private boolean isListQualifyWithSingleQuoteQualifier( BoxExpression e ) {
+		if ( e instanceof BoxFunctionInvocation bfi && bfi.getName().equalsIgnoreCase( "listQualify" ) && bfi.getArguments().size() >= 2 ) {
+			// Positional args
+			if ( bfi.getArguments().get( 0 ).getName() == null ) {
+				BoxExpression qualifier = bfi.getArguments().get( 1 ).getValue();
+				return qualifier instanceof BoxStringLiteral bsl && bsl.getValue().equals( "'" );
+			} else {
+				// named args
+				for ( BoxArgument arg : bfi.getArguments() ) {
+					if ( arg.getName() instanceof IBoxSimpleLiteral ibsl && ibsl.getValue() != null
+					    && ibsl.getValue().toString().equalsIgnoreCase( "qualifier" ) ) {
+						BoxExpression qualifier = arg.getValue();
+						return qualifier instanceof BoxStringLiteral bsl && bsl.getValue().equals( "'" );
+					}
+				}
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Is the expression a call to createODBCDateTime(), createODBCDate(), or createODBCTime()?
+	 * 
+	 * @param e the expression to check
+	 * 
+	 * @return true if the expression is a call to createODBCDateTime(), createODBCDate(), or createODBCTime()
+	 */
+	private boolean isODBCDateFunction( BoxExpression e ) {
+		if ( e instanceof BoxFunctionInvocation bfi ) {
+			String functionName = bfi.getName().toLowerCase();
+			return functionName.equals( "createodbcdatetime" )
+			    || functionName.equals( "createodbcdate" )
+			    || functionName.equals( "createodbctime" );
+		}
+		return false;
+	}
+
+	/**
 	 * Escape single quotes in a string concatenation. This can be a BoxStringConcat or a BoxStringInterpolation instance.
 	 * 
 	 * @param bsc
@@ -135,16 +195,71 @@ public class QueryEscapeSingleQuoteVisitor extends VoidBoxVisitor {
 	 * @return the escaped expression
 	 */
 	private BoxExpression escapeExpression( BoxExpression e ) {
-		return new BoxFunctionInvocation(
-		    "replaceNoCase",
-		    List.of(
-		        new BoxArgument( e, null, null ),
-		        new BoxArgument( new BoxStringLiteral( "'", null, null ), null, null ),
-		        new BoxArgument( new BoxStringLiteral( "''", null, null ), null, null ),
-		        new BoxArgument( new BoxStringLiteral( "all", null, null ), null, null )
+
+		// Do not escape the output of listQualify() if it's using a qualifier of 'since it already handles escaping single quotes by doubling them up
+		if ( isListQualifyWithSingleQuoteQualifier( e ) ) {
+			return e;
+		}
+
+		// Do not escape the output of createODBCDateTime(), createODBCDate(), or createODBCTime()
+		if ( isODBCDateFunction( e ) ) {
+			return e;
+		}
+
+		// Build: ((val) -> arguments.val instanceof "DateTime" ? arguments.val : replaceNoCase( arguments.val, "'", "''", "all" ))(expr)
+		// This ensures expr is only evaluated once
+
+		// arguments.val
+		BoxExpression argumentsVal = new BoxDotAccess(
+		    new BoxIdentifier( "arguments", null, null ),
+		    false,
+		    new BoxIdentifier( "val", null, null ),
+		    null,
+		    null
+		);
+
+		// arguments.val instanceof "DateTime" ? arguments.val : replaceNoCase( arguments.val, "'", "''", "all" )
+		BoxExpression ternary = new BoxTernaryOperation(
+		    new BoxBinaryOperation(
+		        argumentsVal,
+		        BoxBinaryOperator.InstanceOf,
+		        new BoxStringLiteral( "DateTime", null, null ),
+		        null,
+		        null
 		    ),
+		    argumentsVal,
+		    new BoxFunctionInvocation(
+		        "replaceNoCase",
+		        List.of(
+		            new BoxArgument( argumentsVal, null, null ),
+		            new BoxArgument( new BoxStringLiteral( "'", null, null ), null, null ),
+		            new BoxArgument( new BoxStringLiteral( "''", null, null ), null, null ),
+		            new BoxArgument( new BoxStringLiteral( "all", null, null ), null, null )
+		        ),
+		        null,
+		        null
+		    ),
+		    null,
+		    null
+		);
+
+		// (val) -> ...
+		BoxLambda lambda = new BoxLambda(
+		    List.of( new BoxArgumentDeclaration( false, null, "val", null, List.of(), List.of(), null, null ) ),
+		    List.of(),
+		    new BoxReturn( ternary, null, null ),
+		    null,
+		    null
+		);
+
+		// ((val) -> ...)(expr)
+		return new BoxExpressionInvocation(
+		    lambda,
+		    List.of( new BoxArgument( e, null, null ) ),
 		    e.getPosition(),
-		    e.getSourceText() );
+		    e.getSourceText()
+		);
+
 	}
 
 	/**

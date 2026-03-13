@@ -172,9 +172,11 @@ public class ThreadBoxContext extends BaseBoxContext implements IJDBCCapableCont
 			}
 
 			// In query loop?
-			var querySearch = queryFindNearby( key );
-			if ( querySearch != null ) {
-				return querySearch;
+			if ( !forAssign ) {
+				var querySearch = queryFindNearby( key );
+				if ( querySearch != null ) {
+					return querySearch;
+				}
 			}
 		}
 

@@ -131,6 +131,12 @@ public class Configuration implements IConfigSegment {
 	public Boolean									debugMode						= false;
 
 	/**
+	 * Path to render a custom global error template for unhandled errors
+	 * An empty string indicates use of boxlang's default error
+	 */
+	public String									globalErrorTemplate				= "";
+
+	/**
 	 * Turn on/off the resolver cache for Class Locators of Java/Box classes
 	 * {@code true} by default
 	 */
@@ -140,6 +146,11 @@ public class Configuration implements IConfigSegment {
 	 * Trusted cache setting - if enabled, once compiled a template will never be inspected for changes
 	 */
 	public Boolean									trustedCache					= false;
+
+	/**
+	 * Enforce UDF type checks. If enabled, the runtime will enforce that the types of the arguments passed to a UDF match the types declared in the UDF definition.
+	 */
+	public Boolean									enforceUDFTypeChecks			= true;
 
 	/**
 	 * Store the compiled class files on disk for reuse between restarts
@@ -241,6 +252,7 @@ public class Configuration implements IConfigSegment {
 	 * A sorted struct of mappings
 	 */
 	public IStruct									mappings						= new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR )
+	    .setCacheableHashCode( true )
 	    // ensure all keys to this struct have a trailing slash
 	    .registerChangeListener( forceMappingTrailingSlash );
 
@@ -390,6 +402,11 @@ public class Configuration implements IConfigSegment {
 			this.debugMode = BooleanCaster.cast( config.get( Key.debuggingEnabled ) );
 		}
 
+		// Global Error Template
+		if ( config.containsKey( Key.globalErrorTemplate ) ) {
+			this.globalErrorTemplate = StringCaster.cast( config.get( Key.globalErrorTemplate ) );
+		}
+
 		// Class Resolver Cache
 		if ( config.containsKey( Key.classResolverCache ) ) {
 			this.classResolverCache = BooleanCaster.cast( config.get( Key.classResolverCache ) );
@@ -398,6 +415,11 @@ public class Configuration implements IConfigSegment {
 		// Trusted Cache
 		if ( config.containsKey( Key.trustedCache ) ) {
 			this.trustedCache = BooleanCaster.cast( config.get( Key.trustedCache ) );
+		}
+
+		// enforceUDFTypeChecks
+		if ( config.containsKey( Key.enforceUDFTypeChecks ) ) {
+			this.enforceUDFTypeChecks = BooleanCaster.cast( config.get( Key.enforceUDFTypeChecks ) );
 		}
 
 		// Store Class Files on Disk
@@ -1033,7 +1055,8 @@ public class Configuration implements IConfigSegment {
 	 * @return A struct representation of the configuration segment
 	 */
 	public IStruct asStruct() {
-		IStruct mappingsCopy = new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR ).registerChangeListener( forceMappingTrailingSlash );
+		IStruct mappingsCopy = new Struct( Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR ).setCacheableHashCode( true )
+		    .registerChangeListener( forceMappingTrailingSlash );
 		mappingsCopy.putAll( this.mappings );
 
 		IStruct cachesCopy = new Struct( false );
@@ -1065,6 +1088,7 @@ public class Configuration implements IConfigSegment {
 		    Key.classPaths, Array.copyFromList( this.classPaths ),
 		    Key.datasources, datasourcesCopy,
 		    Key.debugMode, this.debugMode,
+		    Key.globalErrorTemplate, this.globalErrorTemplate,
 		    Key.classResolverCache, this.classResolverCache,
 		    Key.defaultDatasource, this.defaultDatasource,
 		    Key.defaultRemoteMethodReturnFormat, this.defaultRemoteMethodReturnFormat,
@@ -1090,6 +1114,7 @@ public class Configuration implements IConfigSegment {
 		    Key.scheduler, this.scheduler.asStruct(),
 		    Key.timezone, this.timezone,
 		    Key.trustedCache, this.trustedCache,
+		    Key.enforceUDFTypeChecks, this.enforceUDFTypeChecks,
 		    Key.storeClassFilesOnDisk, this.storeClassFilesOnDisk,
 		    Key.useHighPrecisionMath, this.useHighPrecisionMath,
 		    Key.maxTrackedCompletedThreads, this.maxTrackedCompletedThreads,

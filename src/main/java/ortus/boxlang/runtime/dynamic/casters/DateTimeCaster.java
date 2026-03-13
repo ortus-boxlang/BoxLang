@@ -18,11 +18,13 @@
 package ortus.boxlang.runtime.dynamic.casters;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import java.util.regex.Matcher;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -264,14 +266,42 @@ public class DateTimeCaster implements IBoxCaster {
 		targetString = DateTime.sanitizeStringSpaces( targetString );
 
 		try {
-			// Timestamp string "^\{ts ([^\}])*\}" - {ts 2023-01-01 12:00:00}
-			if ( RegexBuilder.of( targetString, RegexBuilder.TIMESTAMP ).matches() ) {
-				return new DateTime(
-				    LocalDateTime.parse(
-				        targetString.trim(),
-				        ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "ODBCDateTime" )
-				    ), timezone
-				);
+			// Timestamp string "^\{ts ([^\}])*\}" - {ts 2023-01-01 12:00:00} or {ts '2023-01-01 12:00:00'}
+			if ( targetString.trim().startsWith( "{ts" ) ) {
+				Matcher tsMatcher = RegexBuilder.TIMESTAMP.matcher( targetString );
+				if ( tsMatcher.matches() ) {
+					return new DateTime(
+					    LocalDateTime.parse(
+					        targetString.trim(),
+					        ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "ODBCDateTime" )
+					    ),
+					    timezone
+					);
+				}
+			}
+			// ODBC Date string "^\{d ([^\}])*\}" - {d 2023-01-01} or {d '2023-01-01'}
+			else if ( targetString.trim().startsWith( "{d" ) ) {
+				Matcher dateMatcher = RegexBuilder.ODBC_DATE.matcher( targetString );
+				if ( dateMatcher.matches() ) {
+					return new DateTime(
+					    LocalDate.parse(
+					        targetString.trim(),
+					        ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "ODBCDate" )
+					    ).atStartOfDay(), timezone
+					);
+				}
+			}
+			// ODBC Time string "^\{t ([^\}])*\}" - {t 12:00:00} or {t '12:00:00'}
+			else if ( targetString.startsWith( "{t" ) ) {
+				Matcher timeMatcher = RegexBuilder.ODBC_TIME.matcher( targetString );
+				if ( timeMatcher.matches() ) {
+					return new DateTime(
+					    LocalTime.parse(
+					        targetString.trim(),
+					        ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "ODBCTime" )
+					    )
+					);
+				}
 			}
 		} catch ( Throwable e2 ) {
 			if ( fail ) {

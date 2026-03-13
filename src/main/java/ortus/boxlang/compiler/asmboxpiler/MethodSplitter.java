@@ -78,6 +78,11 @@ public class MethodSplitter {
 	private final List<TryCatchBlockNode>	tryCatchBlocks;
 
 	/**
+	 * Whether the method being split is static
+	 */
+	private final boolean					isStatic;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructor
 	 * --------------------------------------------------------------------------
@@ -91,7 +96,7 @@ public class MethodSplitter {
 	 * @param mainType   The type of the main class
 	 */
 	public MethodSplitter( Transpiler transpiler, ClassNode classNode, Type mainType ) {
-		this( transpiler, classNode, mainType, null );
+		this( transpiler, classNode, mainType, null, false );
 	}
 
 	/**
@@ -103,10 +108,24 @@ public class MethodSplitter {
 	 * @param tryCatchBlocks Try-catch blocks from the parent method tracker
 	 */
 	public MethodSplitter( Transpiler transpiler, ClassNode classNode, Type mainType, List<TryCatchBlockNode> tryCatchBlocks ) {
+		this( transpiler, classNode, mainType, tryCatchBlocks, false );
+	}
+
+	/**
+	 * Create a new MethodSplitter with try-catch blocks and static method support
+	 *
+	 * @param transpiler     The transpiler instance
+	 * @param classNode      The class node to add sub-methods to
+	 * @param mainType       The type of the main class
+	 * @param tryCatchBlocks Try-catch blocks from the parent method tracker
+	 * @param isStatic       Whether the method being split is static
+	 */
+	public MethodSplitter( Transpiler transpiler, ClassNode classNode, Type mainType, List<TryCatchBlockNode> tryCatchBlocks, boolean isStatic ) {
 		this.transpiler		= transpiler;
 		this.classNode		= classNode;
 		this.mainType		= mainType;
 		this.tryCatchBlocks	= tryCatchBlocks != null ? tryCatchBlocks : new ArrayList<>();
+		this.isStatic		= isStatic;
 	}
 
 	/**
@@ -481,7 +500,7 @@ public class MethodSplitter {
 		    name,
 		    parameterType,
 		    returnType,
-		    false,
+		    this.isStatic,
 		    this.transpiler,
 		    false,
 		    this.tryCatchBlocks,
@@ -635,20 +654,32 @@ public class MethodSplitter {
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 		Type					resultType	= Type.getType( FlowControlResult.class );
 
-		// Load this
-		nodes.add( new VarInsnNode( Opcodes.ALOAD, 0 ) );
+		if ( this.isStatic ) {
+			// Static method: slot 0 = context, no `this`
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, 0 ) );
 
-		// Load context parameter
-		nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
+			// Invoke the sub-method as static
+			nodes.add( new MethodInsnNode(
+			    Opcodes.INVOKESTATIC,
+			    this.mainType.getInternalName(),
+			    subMethodName,
+			    Type.getMethodDescriptor( resultType, parameterType ),
+			    false
+			) );
+		} else {
+			// Instance method: slot 0 = this, slot 1 = context
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, 0 ) );
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, 1 ) );
 
-		// Invoke the sub-method
-		nodes.add( new MethodInsnNode(
-		    Opcodes.INVOKEVIRTUAL,
-		    this.mainType.getInternalName(),
-		    subMethodName,
-		    Type.getMethodDescriptor( resultType, parameterType ),
-		    false
-		) );
+			// Invoke the sub-method as instance
+			nodes.add( new MethodInsnNode(
+			    Opcodes.INVOKEVIRTUAL,
+			    this.mainType.getInternalName(),
+			    subMethodName,
+			    Type.getMethodDescriptor( resultType, parameterType ),
+			    false
+			) );
+		}
 
 		// If this segment might have flow control, we need to check and propagate
 		if ( hasFlowControl ) {

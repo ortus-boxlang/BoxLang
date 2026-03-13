@@ -271,7 +271,7 @@ public class ExpandPathTest {
 	}
 
 	@Test
-	public void testUnixTmp() {
+	public void testUnixTmp() throws IOException {
 		if ( FileSystemUtil.IS_WINDOWS ) {
 			return;
 		}
@@ -281,7 +281,7 @@ public class ExpandPathTest {
 		                        """, context );
 
 		assertThat( variables.getAsString( result ) )
-		    .isEqualTo( ResolvedFilePath.of( "/tmp" ).absolutePath().toString() );
+		    .isEqualTo( Path.of( "/tmp" ).toRealPath().toString() );
 	}
 
 	@Test

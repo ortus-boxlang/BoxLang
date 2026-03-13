@@ -155,12 +155,10 @@ public class JDBCStore extends AbstractStore {
 		this.context	= new ScriptingRequestBoxContext( BoxRuntime.getInstance().getRuntimeContext() );
 
 		// Get the datasource, because it needs to exist in order for it to work
-		this.datasource	= BoxRuntime.getInstance().getDataSourceService().get( Key.of( datasourceName ) );
+		this.datasource	= this.context.getConnectionManager().getDatasourceOrThrow( Key.of( datasourceName ) );
 		if ( this.datasource == null ) {
 			throw new BoxRuntimeException( "JDBCStore datasource '" + datasourceName + "' not found." );
 		}
-
-		this.context.getConnectionManager().register( this.datasource );
 
 		// Detect the database vendor once at initialization
 		this.vendor = detectDatabaseVendor();
@@ -279,7 +277,8 @@ public class JDBCStore extends AbstractStore {
 		);
 
 		if ( !result.isEmpty() ) {
-			return ( ( IStruct ) result.get( 0 ) ).getAsInteger( Key.itemCount );
+			IStruct firstRow = ( IStruct ) result.get( 0 );
+			return IntegerCaster.cast( firstRow.getOrDefault( Key.itemCount, 0 ) );
 		}
 		return 0;
 	}
@@ -419,7 +418,8 @@ public class JDBCStore extends AbstractStore {
 		);
 
 		if ( !result.isEmpty() ) {
-			return ( ( IStruct ) result.get( 0 ) ).getAsInteger( Key.itemCount ) > 0;
+			IStruct firstRow = ( IStruct ) result.get( 0 );
+			return IntegerCaster.cast( firstRow.getOrDefault( Key.itemCount, 0 ) ) > 0;
 		}
 		return false;
 	}

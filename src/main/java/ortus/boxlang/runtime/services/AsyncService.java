@@ -41,12 +41,17 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 /**
- * The BoxLang Async Service is a service that allows you to create and manage executors.
- * Every time a new executor is created it will be automatically registered with the service.
- * You can then use the service to get the executor by name and perform operations on it.
+ * The BoxLang Async Service is a service that allows you to create and manage
+ * executors.
+ * Every time a new executor is created it will be automatically registered with
+ * the service.
+ * You can then use the service to get the executor by name and perform
+ * operations on it.
  *
- * When you get an executor by name, you will get an {@link BoxExecutor} which contains the executor
- * and some metadata about it. You can also get a map of all the executors and their metadata.
+ * When you get an executor by name, you will get an {@link BoxExecutor} which
+ * contains the executor
+ * and some metadata about it. You can also get a map of all the executors and
+ * their metadata.
  *
  * The available executor types are:
  *
@@ -60,14 +65,18 @@ import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
  * <li>WORK_STEALING</li>
  * </ul>
  *
- * The default max threads is 20, you can override this by passing in a maxThreads value for some of the executors.
- * We also use a default timeout of 30 seconds for shutdown and await termination, you can override this as well.
+ * The default max threads is 20, you can override this by passing in a
+ * maxThreads value for some of the executors.
+ * We also use a default timeout of 30 seconds for shutdown and await
+ * termination, you can override this as well.
  *
- * Please note that we do not use direct forced shutdown of the executors, we use the
+ * Please note that we do not use direct forced shutdown of the executors, we
+ * use the
  * {@link ortus.boxlang.runtime.async.tasks.BaseScheduler#shutdown()}
  * and
  * {@link BoxExecutor#shutdownAndAwaitTermination(Long, TimeUnit)}
- * methods to allow the tasks to finish gracefully. If you want to force shutdown, you can do so by passing in a {code force = true}
+ * methods to allow the tasks to finish gracefully. If you want to force
+ * shutdown, you can do so by passing in a {code force = true}
  */
 public class AsyncService extends BaseService {
 
@@ -81,13 +90,13 @@ public class AsyncService extends BaseService {
 	 * Executor types we support
 	 */
 	public enum ExecutorType {
-		CACHED,  // Cached thread pool executor
-		FIXED,   // Fixed-size thread pool executor
+		CACHED, // Cached thread pool executor
+		FIXED, // Fixed-size thread pool executor
 		FORK_JOIN, // Fork join pool,
 		SCHEDULED, // Scheduled thread pool
-		SINGLE,  // Single-threaded executor
+		SINGLE, // Single-threaded executor
 		VIRTUAL, // Virtual thread executor
-		WORK_STEALING  // Work-stealing executor,
+		WORK_STEALING // Work-stealing executor,
 	}
 
 	/**
@@ -135,7 +144,8 @@ public class AsyncService extends BaseService {
 	 */
 
 	/**
-	 * The configuration load event is fired when the runtime loads the configuration
+	 * The configuration load event is fired when the runtime loads the
+	 * configuration
 	 */
 	@Override
 	public void onConfigurationLoad() {
@@ -153,7 +163,8 @@ public class AsyncService extends BaseService {
 		    .forEach( entry -> {
 			    ExecutorConfig thisConfig = ( ExecutorConfig ) entry.getValue();
 			    newExecutor( thisConfig.name, ExecutorType.valueOf( thisConfig.type ), thisConfig.maxThreads );
-			    logger.debug( "+ Registered executor [{}] with type [{}] and max threads [{}]", thisConfig.name, thisConfig.type, thisConfig.maxThreads );
+			    logger.debug( "+ Registered executor [{}] with type [{}] and max threads [{}]", thisConfig.name,
+			        thisConfig.type, thisConfig.maxThreads );
 		    } );
 		logger.info( "AsyncService.onStartup()" );
 	}
@@ -226,7 +237,8 @@ public class AsyncService extends BaseService {
 	 */
 	public BoxExecutor getExecutor( String name ) {
 		if ( !hasExecutor( name ) ) {
-			throw new KeyNotFoundException( "Executor [" + name + "] does not exist. Valid executors are " + this.executors.keySet().toString() );
+			throw new KeyNotFoundException( "Executor [" + name + "] does not exist. Valid executors are "
+			    + this.executors.keySet().toString() );
 		}
 		return this.executors.get( name );
 	}
@@ -248,13 +260,17 @@ public class AsyncService extends BaseService {
 	}
 
 	/**
-	 * Shutdown an executor or force it to shutdown, you can also do this from the Executor themselves.
+	 * Shutdown an executor or force it to shutdown, you can also do this from the
+	 * Executor themselves.
 	 * If an un-registered executor name is passed, it will ignore it
 	 *
 	 * @param name    The name of the executor
 	 * @param force   Use the shutdownNow() instead of the shutdown() method
-	 * @param timeout The timeout to use when force=false, to make sure all tasks finish gracefully. Deafult is 30 seconds.
-	 * @param unit    The time unit to use, available units are: days, hours, microseconds, milliseconds, minutes, nanoseconds, and seconds. The default
+	 * @param timeout The timeout to use when force=false, to make sure all tasks
+	 *                finish gracefully. Deafult is 30 seconds.
+	 * @param unit    The time unit to use, available units are: days, hours,
+	 *                microseconds, milliseconds, minutes, nanoseconds, and seconds.
+	 *                The default
 	 */
 	public AsyncService shutdownExecutor(
 	    String name,
@@ -276,18 +292,21 @@ public class AsyncService extends BaseService {
 				getExecutor( name ).shutdownAndAwaitTermination( timeout, unit );
 			}
 
+			// Now remove it
+			this.executors.remove( name );
+
 			logger.debug(
 			    "+ Shutdown executor ({}) in [{}]",
 			    name,
-			    getTimerUtil().stop( "shutdown-executor-" + name )
-			);
+			    getTimerUtil().stop( "shutdown-executor-" + name ) );
 		}
 
 		return this;
 	}
 
 	/**
-	 * Shutdown all executors or force them to shutdown, you can also do this from the Executor themselves.
+	 * Shutdown all executors or force them to shutdown, you can also do this from
+	 * the Executor themselves.
 	 * This uses a force of false and a default timeout of 30 seconds.
 	 */
 	public AsyncService shutdownAllExecutors() {
@@ -295,12 +314,16 @@ public class AsyncService extends BaseService {
 	}
 
 	/**
-	 * Shutdown all executors or force them to shutdown, you can also do this from the Executor themselves.
+	 * Shutdown all executors or force them to shutdown, you can also do this from
+	 * the Executor themselves.
 	 * We do this in parallel to speed things up.
 	 *
 	 * @param force   Use the shutdownNow() instead of the shutdown() method
-	 * @param timeout The timeout to use when force=false, to make sure all tasks finish gracefully. Deafult is 30 seconds.
-	 * @param unit    The time unit to use, available units are: days, hours, microseconds, milliseconds, minutes, nanoseconds, and seconds. The default
+	 * @param timeout The timeout to use when force=false, to make sure all tasks
+	 *                finish gracefully. Deafult is 30 seconds.
+	 * @param unit    The time unit to use, available units are: days, hours,
+	 *                microseconds, milliseconds, minutes, nanoseconds, and seconds.
+	 *                The default
 	 */
 	public AsyncService shutdownAllExecutors(
 	    Boolean force,
@@ -310,8 +333,10 @@ public class AsyncService extends BaseService {
 		logger.debug( "+ Starting to shutdown all executors..." );
 
 		// IMPORTANT: Do NOT use parallelStream() here.
-		// parallelStream() uses ForkJoinPool.commonPool(), and shutdown can block awaiting executor termination.
-		// If shutdown work itself runs on (or depends on) the common pool, this can lead to starvation/hangs.
+		// parallelStream() uses ForkJoinPool.commonPool(), and shutdown can block
+		// awaiting executor termination.
+		// If shutdown work itself runs on (or depends on) the common pool, this can
+		// lead to starvation/hangs.
 		// Also take a snapshot of the keys to avoid concurrent modification concerns.
 		List<String> executorNames = new ArrayList<>( this.executors.keySet() );
 		for ( String executorName : executorNames ) {
@@ -324,8 +349,7 @@ public class AsyncService extends BaseService {
 
 		logger.debug(
 		    "+ Shutdown all async executor services in [{}]",
-		    getTimerUtil().stop( "shutdownAllExecutors" )
-		);
+		    getTimerUtil().stop( "shutdownAllExecutors" ) );
 
 		return this;
 	}
@@ -348,12 +372,11 @@ public class AsyncService extends BaseService {
 		return new Struct(
 		    this.executors
 		        .entrySet()
-		        .parallelStream()
+		        .stream()
 		        .collect( Collectors.toMap(
 		            Map.Entry::getKey, // Key remains the same
 		            entry -> entry.getValue().getStats() // Method call on the stats
-		        ) )
-		);
+		        ) ) );
 	}
 
 	/**
@@ -376,7 +399,8 @@ public class AsyncService extends BaseService {
 	 * --------------------------------------------------------------------------
 	 * These are useful aliases to build executors without having to use the
 	 * {@link #newExecutor(String, ExecutorType, int, int)} method directly.
-	 * They are used to create executors with the most common types and configurations.
+	 * They are used to create executors with the most common types and
+	 * configurations.
 	 * --------------------------------------------------------------------------
 	 */
 
@@ -486,7 +510,8 @@ public class AsyncService extends BaseService {
 	 * Build an executor without registering it using BoxLang specs
 	 *
 	 * @param name       The name of the executor
-	 * @param type       The executor type: CACHED, FIXED, SINGLE, SCHEDULED, WORK_STEALING, VIRTUAL
+	 * @param type       The executor type: CACHED, FIXED, SINGLE, SCHEDULED,
+	 *                   WORK_STEALING, VIRTUAL
 	 * @param maxThreads The max threads, if applicable
 	 *
 	 * @return The executor
@@ -525,8 +550,7 @@ public class AsyncService extends BaseService {
 				break;
 			case VIRTUAL :
 				executor = Executors.newThreadPerTaskExecutor(
-				    Thread.ofVirtual().name( name + "-vt-", 0 ).factory()
-				);
+				    Thread.ofVirtual().name( name + "-vt-", 0 ).factory() );
 				break;
 			default :
 				executor = null;
@@ -535,10 +559,13 @@ public class AsyncService extends BaseService {
 	}
 
 	/**
-	 * Get an executor record from any object, this is useful for BIFs that accept an executor as an argument.
-	 * It will return the executor record if it is a string or an BoxExecutor, otherwise it will throw an exception.
+	 * Get an executor record from any object, this is useful for BIFs that accept
+	 * an executor as an argument.
+	 * It will return the executor record if it is a string or an BoxExecutor,
+	 * otherwise it will throw an exception.
 	 *
-	 * @param executor The executor to get the record from or null if no executor is provided
+	 * @param executor The executor to get the record from or null if no executor is
+	 *                 provided
 	 *
 	 * @throws BoxRuntimeException If the executor is not a string or an BoxExecutor
 	 *
@@ -567,7 +594,8 @@ public class AsyncService extends BaseService {
 	 */
 	public static BoxExecutor chooseParallelExecutor( String prefix, int maxThreads, boolean virtual ) {
 		if ( virtual ) {
-			return AsyncService.buildExecutor( prefix + UUID.randomUUID().toString(), AsyncService.ExecutorType.VIRTUAL, 0 );
+			return AsyncService.buildExecutor( prefix + UUID.randomUUID().toString(), AsyncService.ExecutorType.VIRTUAL,
+			    0 );
 		} else {
 			return AsyncService.buildExecutor(
 			    prefix + UUID.randomUUID().toString(),

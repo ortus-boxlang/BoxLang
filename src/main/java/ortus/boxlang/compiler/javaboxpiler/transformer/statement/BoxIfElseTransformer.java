@@ -41,7 +41,7 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 		Expression	condition	= ( Expression ) transpiler.transform( ifElse.getCondition(), TransformerContext.RIGHT );
 
 		String		template	= "if(  ${condition}  ) {}";
-		if ( requiresBooleanCaster( ifElse.getCondition() ) ) {
+		if ( !ifElse.getCondition().returnsBoolean() ) {
 			template = "if( BooleanCaster.cast( ${condition} ) ) {}";
 		}
 		Map<String, String>	values		= new HashMap<>() {

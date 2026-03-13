@@ -30,6 +30,7 @@ import ortus.boxlang.compiler.ast.sql.select.expression.SQLParam;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLParenthesis;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLStarExpression;
 import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLBooleanLiteral;
+import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLDateLiteral;
 import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLNullLiteral;
 import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLNumberLiteral;
 import ortus.boxlang.compiler.ast.sql.select.expression.literal.SQLStringLiteral;
@@ -57,6 +58,7 @@ import ortus.boxlang.parser.antlr.SQLGrammar.SubqueryContext;
 import ortus.boxlang.parser.antlr.SQLGrammar.TableContext;
 import ortus.boxlang.parser.antlr.SQLGrammar.Table_or_subqueryContext;
 import ortus.boxlang.parser.antlr.SQLGrammarBaseVisitor;
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.QueryColumnType;
 
@@ -696,11 +698,43 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 			return new SQLBooleanLiteral( false, pos, src );
 		} else if ( ctx.STRING_LITERAL() != null ) {
 			return processStringLiteral( ctx.STRING_LITERAL() );
+		} else if ( ctx.ODBCDATETIME_LITERAL() != null ) {
+			return processDateLiteral( ctx.ODBCDATETIME_LITERAL() );
 		} else {
 			throw new UnsupportedOperationException( "Unimplemented literal expression: " + src );
 		}
 	}
 
+	/**
+	 * Visit the class or interface context to generate the AST node for the date
+	 * 
+	 * @param ctx the parse tree
+	 * 
+	 * @return the AST node representing the date
+	 */
+	private SQLDateLiteral processDateLiteral( TerminalNode ctx ) {
+		var		pos	= tools.getPosition( ctx );
+		String	str	= ctx.getText();
+		// Remove { and '} from the ends
+		str = str.substring( 1, str.length() - 2 ).trim();
+		if ( str.startsWith( "ts '" ) ) {
+			str = str.substring( 4 );
+		} else if ( str.startsWith( "d '" ) ) {
+			str = str.substring( 3 );
+		} else if ( str.startsWith( "t '" ) ) {
+			str = str.substring( 3 );
+		}
+
+		return new SQLDateLiteral( DateTimeCaster.cast( str ), pos, str );
+	}
+
+	/**
+	 * Visit the class or interface context to generate the AST node for the string
+	 * 
+	 * @param ctx the parse tree
+	 * 
+	 * @return the AST node representing the string
+	 */
 	private SQLStringLiteral processStringLiteral( TerminalNode ctx ) {
 		var		pos	= tools.getPosition( ctx );
 

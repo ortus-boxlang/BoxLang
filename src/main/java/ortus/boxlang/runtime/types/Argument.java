@@ -41,6 +41,7 @@ import ortus.boxlang.runtime.validation.Validator;
 public record Argument(
     boolean required,
     String type,
+    Key typeKey,
     Key name,
     Object defaultValue,
     DefaultExpression defaultExpression,
@@ -115,8 +116,19 @@ public record Argument(
 
 	public Argument( boolean required, String type, Key name, Object defaultValue, DefaultExpression defaultExpression, IStruct annotations,
 	    IStruct documentation, Set<Validator> validators ) {
+		this( required, type, Key.of( type ), name, defaultValue, defaultExpression, annotations, documentation, validators );
+	}
+
+	public Argument( boolean required, Key typeKey, Key name, Object defaultValue, DefaultExpression defaultExpression, IStruct annotations,
+	    IStruct documentation, Set<Validator> validators ) {
+		this( required, typeKey.getName(), typeKey, name, defaultValue, defaultExpression, annotations, documentation, validators );
+	}
+
+	public Argument( boolean required, String type, Key typeKey, Key name, Object defaultValue, DefaultExpression defaultExpression, IStruct annotations,
+	    IStruct documentation, Set<Validator> validators ) {
 		this.required			= required;
 		this.type				= type;
+		this.typeKey			= typeKey;
 		this.name				= name;
 		this.defaultValue		= defaultValue;
 		this.defaultExpression	= defaultExpression;
