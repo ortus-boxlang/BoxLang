@@ -258,9 +258,9 @@ public class Configuration implements IConfigSegment {
 	 */
 	public IStruct																mappings						= new Struct(
 	    Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR )
-	        .setCacheableHashCode( true )
-	        // ensure all keys to this struct have a trailing slash
-	        .registerChangeListener( forceMappingTrailingSlash );
+	    .setCacheableHashCode( true )
+	    // ensure all keys to this struct have a trailing slash
+	    .registerChangeListener( forceMappingTrailingSlash );
 
 	/**
 	 * An array of directories where modules are located and loaded from.
