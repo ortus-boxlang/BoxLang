@@ -120,19 +120,18 @@ public class BoxSoapClient {
 	private Map<String, String>		customHeaders			= new HashMap<>();
 
 	/**
-	 * SOAP headers to include in the SOAP envelope
+	 * SOAP headers to include in the SOAP envelope.
 	 * 
 	 * SOAP Spec:
-	 * - <soap:Header> is OPTINAL.
-	 * - If present it must be the first child of <soap:Envelope> (before <soap:Body>)
-	 * - There is onlt ONE <soap:Header> section per request
+	 * - <soap:Header> is OPTIONAL.
+	 * - If present it must be the first child of <soap:Envelope> (before <soap:Body>).
+	 * - There is only ONE <soap:Header> section per request.
 	 * 
-	 * Storage approach (STEP 1):
-	 * - We store simple key/value headers using BoxLang Struct (IStruct)
-	 * - Example: {AuthToken" : "abc123", "SessionId" : "session-456"}
-	 * 
-	 * NOTE: Right now this is only storage
-	 * later we will actually inject these into the XML request
+	 * Storage and injection:
+	 * - We store simple key/value headers using a BoxLang Struct (IStruct).
+	 * - Example: { "AuthToken" : "abc123", "SessionId" : "session-456" }.
+	 * - When building the SOAP request (e.g., in buildSoapRequest), these stored headers
+	 *   are injected into the <soap:Header> section of the SOAP envelope.
 	 */
 
 	private IStruct					soapHeaders;
