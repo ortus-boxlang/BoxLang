@@ -70,4 +70,9 @@ public class BoxIntegerLiteral extends BoxExpression implements IBoxSimpleLitera
 	public BoxNode accept( ReplacingBoxVisitor v ) {
 		return v.visit( this );
 	}
+
+	@Override
+	public boolean returnsNumber() {
+		return true;
+	}
 }

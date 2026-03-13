@@ -64,7 +64,7 @@ public record ResolvedFilePath( String mappingName, String mappingPath, String r
 	public static ResolvedFilePath ofReal( String mappingName, String mappingPath, String relativePath, Path absolutePath ) {
 		return new ResolvedFilePath(
 		    mappingName,
-		    mappingPath,
+		    normalizeMappingPath( mappingPath ),
 		    relativePath,
 		    absolutePath
 		);
@@ -83,7 +83,7 @@ public record ResolvedFilePath( String mappingName, String mappingPath, String r
 	public static ResolvedFilePath of( String mappingName, String mappingPath, String relativePath, String absolutePath ) {
 		return ResolvedFilePath.of(
 		    mappingName,
-		    mappingPath,
+		    normalizeMappingPath( mappingPath ),
 		    relativePath,
 		    Path.of( absolutePath )
 		);
@@ -195,6 +195,24 @@ public record ResolvedFilePath( String mappingName, String mappingPath, String r
 		// if the new path had ../ in it, we may need another mapping, or it may not match any mappings at all.
 		return FileSystemUtil.contractPath( mappings, newAbsolutePath.toString(), this.mappingName );
 
+	}
+
+	/**
+	 * Ensure forward slashes and trailing slash. This is important since we use the mapping path for the classpool name.
+	 * 
+	 * @param mappingPath
+	 * 
+	 * @return
+	 */
+	private static String normalizeMappingPath( String mappingPath ) {
+		if ( mappingPath == null ) {
+			return null;
+		}
+		mappingPath = mappingPath.replace( "\\", "/" );
+		if ( !mappingPath.endsWith( "/" ) ) {
+			mappingPath += "/";
+		}
+		return mappingPath;
 	}
 
 }

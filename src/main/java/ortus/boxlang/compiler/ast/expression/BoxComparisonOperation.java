@@ -92,4 +92,9 @@ public class BoxComparisonOperation extends BoxExpression {
 	public BoxNode accept( ReplacingBoxVisitor v ) {
 		return v.visit( this );
 	}
+
+	@Override
+	public boolean returnsBoolean() {
+		return true;
+	}
 }

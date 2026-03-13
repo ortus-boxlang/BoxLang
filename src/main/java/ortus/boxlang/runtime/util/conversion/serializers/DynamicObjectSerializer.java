@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.util.conversion.serializers;
 
 import java.io.IOException;
-import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Map;
 
@@ -26,50 +25,48 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.jr.ob.api.ValueWriter;
 import com.fasterxml.jackson.jr.ob.impl.JSONWriter;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.types.util.StructUtil;
 
 /**
- * This class provides JSON Serialization of a BoxLang Dynamic Object
+ * This class provides JSON Serialization of a BoxLang Dynamic Object or any other object
  */
 public class DynamicObjectSerializer implements ValueWriter {
 
 	@Override
 	public void writeValue( JSONWriter context, JsonGenerator g, Object value ) throws IOException {
-		DynamicObject dynamicObject = ( DynamicObject ) value;
+		DynamicObject	dynamicObject;
+		// Unwrap the DO.
+		Object			realValue	= DynamicObject.unWrap( value );
+		// If we didn't get a DO, make one.
+		if ( value instanceof DynamicObject dob ) {
+			dynamicObject = dob;
+		} else {
+			dynamicObject = DynamicObject.of( value );
+		}
 
 		// If the object is a BoxClass, then serialize it as a BoxClass
-		if ( dynamicObject.unWrap() instanceof IClassRunnable bxClass ) {
+		if ( realValue instanceof IClassRunnable bxClass ) {
 			context.writeValue( bxClass );
 			return;
 		}
 
 		// If it's a list, then serialize it as a list
-		if ( dynamicObject.unWrap() instanceof List<?> castedList ) {
+		if ( realValue instanceof List<?> castedList ) {
 			context.writeValue( castedList );
 			return;
 		}
 
 		// If it's a map, then serialize it as a map
-		if ( dynamicObject.unWrap() instanceof Map<?, ?> castedMap ) {
+		if ( realValue instanceof Map<?, ?> castedMap ) {
 			context.writeValue( castedMap );
 			return;
 		}
 
-		// Get all the public fields for this object
-		g.writeStartObject();
-		dynamicObject.getFieldsAsStream()
-		    // Fiter ONLY public fields
-		    .filter( field -> Modifier.isPublic( field.getModifiers() ) )
-		    // Write it to the JSON
-		    .forEach( field -> {
-			    try {
-				    g.writeObjectField( field.getName(), dynamicObject.getField( field.getName() ).orElse( "" ).toString() );
-			    } catch ( IOException e ) {
-				    e.printStackTrace();
-			    }
-		    } );
-		g.writeEndObject();
+		// Serialize as generic struct
+		context.writeValue( StructUtil.objectToStruct( realValue, BoxRuntime.getInstance().getRuntimeContext() ) );
 	}
 
 	@Override

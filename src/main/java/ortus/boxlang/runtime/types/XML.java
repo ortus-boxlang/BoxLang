@@ -272,7 +272,9 @@ public class XML implements Serializable, IStruct {
 		}
 		attributes.registerChangeListener( ( key, newValue, oldValue, object ) -> {
 			if ( newValue == null ) {
-				node.getAttributes().removeNamedItem( key.getName() );
+				if ( node.getAttributes().getNamedItem( key.getName() ) != null ) {
+					node.getAttributes().removeNamedItem( key.getName() );
+				}
 			} else {
 				( ( Element ) node ).setAttribute( key.getName(), StringCaster.cast( newValue ) );
 			}

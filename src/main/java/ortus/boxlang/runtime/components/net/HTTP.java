@@ -138,7 +138,7 @@ public class HTTP extends Component {
 		    new Attribute( Key.onComplete, "function" ),
 		    // Proxy configuration
 		    new Attribute( Key.proxyServer, "string", Set.of( Validator.requires( Key.proxyPort ) ) ),
-		    new Attribute( Key.proxyPort, "integer", Set.of( Validator.requires( Key.proxyServer ) ) ),
+		    new Attribute( Key.proxyPort, "any", Set.of( Validator.requires( Key.proxyServer ) ) ),
 		    new Attribute( Key.proxyUser, "string", Set.of( Validator.requires( Key.proxyPassword ) ) ),
 		    new Attribute( Key.proxyPassword, "string", Set.of( Validator.requires( Key.proxyUser ) ) ),
 		    // ----------------------------------------------------------------------------
@@ -398,6 +398,13 @@ public class HTTP extends Component {
 			}
 		}
 
+		// Backwards compat to allow empty strings for any proxy setting (which will be ignored)
+		if ( attributes.containsKey( Key.proxyPort ) ) {
+			if ( attributes.get( Key.proxyPort ) instanceof String proxyPortStr && proxyPortStr.isEmpty() ) {
+				attributes.put( Key.proxyPort, 0 );
+			}
+			attributes.put( Key.proxyPort, IntegerCaster.cast( attributes.get( Key.proxyPort ) ) );
+		}
 		// Get a new or existing BoxHttpClient
 		BoxHttpClient	boxHttpClient	= httpService.getOrBuildClient(
 		    attributes.getAsString( Key.httpVersion ),

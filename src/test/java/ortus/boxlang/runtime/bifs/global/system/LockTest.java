@@ -278,4 +278,114 @@ public class LockTest {
 		assertThat( variables.get( result ) ).isEqualTo( "inthreadafterlock" );
 	}
 
+	@DisplayName( "It can exclusive" )
+	@Test
+	public void testExclusive2() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+			import java.util.concurrent.atomic.AtomicInteger;
+
+			request.threadsInLock = new AtomicInteger( 0 );
+			request.maxThreadsInLock = 0;
+				function doLock( string threadname ) {
+					lock name="createGamesLock/clientID=E2CE1A48-50A0-4C54-A754-C9DCE2F86902" timeout=10 type="exclusive" {
+						println( ">>" & threadname & " acquired lock" );
+						request.threadsInLock.incrementAndGet();
+						request.maxThreadsInLock = max( request.threadsInLock.get(), request.maxThreadsInLock );
+						sleep( 500 );
+						println( "<<" & threadname & " releasing lock" );
+						request.threadsInLock.decrementAndGet();
+					}
+			}
+			bx:loop times=5 index="i" {
+				thread name="Thread #i#" threadNo=i {
+					doLock( "Thread #attributes.threadNo#" );
+				}
+			}
+			thread action="join" name="Thread 1,Thread 2,Thread 3,Thread 4,Thread 5";
+			println( "Max threads in lock: " & request.maxThreadsInLock );
+			if( request.maxThreadsInLock > 1 ) {
+				throw( "Lock was not exclusive! #request.maxThreadsInLock# threads allowed" );
+			}
+		    """,
+		    context );
+		// @formatter:on
+	}
+
+	@DisplayName( "It can avoid race conditions" )
+	@Test
+	public void testAvoidRaceConditions() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				makeGarbage = () => {
+					var z = []
+					for (var i = 0; i < 1000; i++) {
+						z.append({}) // make a bunch of garbage
+					}
+				}
+
+				randlock = () => { // random in the sense that it uses random lock names
+					lock name="#createGUID()#" throwOnTimeout=true timeout=5 {
+						makeGarbage()
+					}
+				}
+
+				sharedInt = createObject("java", "java.util.concurrent.atomic.AtomicInteger").init()
+
+				sharedLock = () => { // shared in the sense that it always uses the same lock name
+					lock name="the-exclusive-lock" throwOnTimeout=true timeout=5 {
+						try {
+							sharedInt.incrementAndGet();
+							sleep(5)
+							if (sharedInt.get() != 1) {
+								throw "whiff (#sharedInt.get()#)"
+							}
+						}
+						finally {
+							sharedInt.decrementAndGet();
+						}
+					}
+				}
+
+				runOne = () => {
+					var fs = []
+					for (var i = 0; i < 500; i++) {
+						var m = ((i) => () => {
+							randLock()
+							randLock()
+							if (i%2) {
+								sharedLock()
+							}
+							randLock()
+							randLock()
+							randLock()
+							randLock()
+							randLock()
+							randLock()
+							if (!(i%2)) {
+								sharedLock()
+							}
+							randLock()
+							randLock()
+							randLock()
+							randLock()
+						})(i);
+
+						fs.append(runAsync(m))
+					}
+
+					for (var f in fs) {
+						f.get()
+					}
+				}
+
+				if (sharedInt.get() != 0) { throw "start conditions sanity check" }
+				runOne()
+		    """,
+		    context );
+		// @formatter:on
+	}
+
 }

@@ -42,6 +42,7 @@ public class FunctionalBIFAccess extends Function {
 
 	private final Key								name;
 	private final String							returnType		= "any";
+	private final Key								returnTypeKey	= Key._ANY;
 
 	public static FunctionalBIFAccess of( Key name ) {
 		return cache.computeIfAbsent( name, FunctionalBIFAccess::new );
@@ -82,6 +83,11 @@ public class FunctionalBIFAccess extends Function {
 	 */
 	public String getReturnType() {
 		return returnType;
+	}
+
+	@Override
+	public Key getReturnTypeKey() {
+		return this.returnTypeKey;
 	}
 
 	/**

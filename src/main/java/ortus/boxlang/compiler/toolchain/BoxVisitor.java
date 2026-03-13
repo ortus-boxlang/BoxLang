@@ -615,8 +615,9 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 	public BoxNode visitAssert( AssertContext ctx ) {
 		var				pos			= tools.getPosition( ctx );
 		var				src			= tools.getSourceText( ctx );
-		BoxExpression	condition	= ctx.expression().accept( expressionVisitor );
-		return new BoxAssert( condition, pos, src );
+		BoxExpression	condition	= ctx.expression( 0 ).accept( expressionVisitor );
+		BoxExpression	message		= ctx.expression().size() > 1 ? ctx.expression( 1 ).accept( expressionVisitor ) : null;
+		return new BoxAssert( condition, message, pos, src );
 	}
 
 	@Override

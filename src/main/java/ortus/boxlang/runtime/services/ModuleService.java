@@ -38,6 +38,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
+import ortus.boxlang.runtime.util.DataNavigator;
 
 /**
  * This service is in charge of managing BoxLang modules
@@ -729,10 +730,20 @@ public class ModuleService extends BaseService {
 			    // Only where a ModuleConfig.bx exists in the root
 			    .filter( filePath -> Files.exists( filePath.resolve( MODULE_DESCRIPTOR ) ) )
 			    // Filter out already registered modules
-			    .filter( filePath -> !this.registry.containsKey( Key.of( filePath.getFileName().toString() ) ) )
+			    .filter( filePath -> {
+				    Key	moduleName		= Key.of( filePath.getFileName().toString() );
+				    Path moduleBoxJSON	= filePath.resolve( ModuleRecord.MODULE_CONFIG_FILE );
+				    if ( Files.exists( moduleBoxJSON ) ) {
+					    moduleName = DataNavigator
+					        .of( moduleBoxJSON )
+					        .from( "boxlang" )
+					        .getAsKey( "moduleName", moduleName );
+				    }
+
+				    return !this.registry.containsKey( moduleName );
+			    } )
 			    // Convert each filePath to a discovered ModuleRecord
 			    .map( filePath -> new ModuleRecord( filePath.toString() ) )
-			    // Collect the stream into the module registry
 			    .forEach( moduleRecord -> this.registry.put( moduleRecord.name, moduleRecord ) );
 		} catch ( IOException e ) {
 			String message = "Error walking and registering module path: " + modulesDirectory.toString();

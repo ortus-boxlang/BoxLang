@@ -48,7 +48,7 @@ public class BoxDoTransformer extends AbstractTransformer {
 		}
 
 		String template = "do  {} while(  ${condition}  );";
-		if ( requiresBooleanCaster( boxDo.getCondition() ) ) {
+		if ( !boxDo.getCondition().returnsBoolean() ) {
 			template = "do {} while( BooleanCaster.cast( ${condition} ) );";
 		}
 		Map<String, String>	values	= new HashMap<>() {

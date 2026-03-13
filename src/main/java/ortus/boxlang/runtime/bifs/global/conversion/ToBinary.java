@@ -28,6 +28,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.util.IBoxBinaryRepresentable;
 
 @BoxBIF( description = "Convert data to binary format" )
 @BoxMember( type = BoxLangType.STRING_STRICT )
@@ -57,6 +58,10 @@ public class ToBinary extends BIF {
 
 		if ( base64_or_object instanceof byte[] b ) {
 			return b;
+		}
+
+		if ( base64_or_object instanceof IBoxBinaryRepresentable r ) {
+			return r.toByteArray();
 		}
 
 		String	string	= StringCaster.cast( base64_or_object ).trim();

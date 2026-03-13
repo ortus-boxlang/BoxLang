@@ -143,6 +143,13 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 	protected static final int						INITIAL_CAPACITY					= 32;
 
 	/**
+	 * If this struct will only have simple values, we can cache the hashcode
+	 */
+	protected boolean								cacheableHashCode					= false;
+
+	protected int									cachedHashCode						= 0;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructors
 	 * --------------------------------------------------------------------------
@@ -599,7 +606,7 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 		    isCaseSensitive() && ! ( key instanceof KeyCased ) ? new KeyCased( key.getName() ) : key,
 		    value
 		);
-
+		this.cachedHashCode = 0;
 		return result;
 	}
 
@@ -651,6 +658,7 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 	 */
 	@Override
 	public Object remove( Object key ) {
+		this.cachedHashCode = 0;
 		if ( key instanceof Key keyKey ) {
 			return remove( keyKey );
 		}
@@ -675,6 +683,7 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 	 * @param key The String key to remove
 	 */
 	public Object remove( Key key ) {
+		this.cachedHashCode = 0;
 		notifyListeners( key, null );
 		return isCaseSensitive()
 		    ? wrapped.remove( keySet().stream().filter( k -> KeyCaster.cast( k ).equalsWithCase( key ) ).findFirst().orElse( Key.EMPTY ) )
@@ -719,6 +728,7 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 			keySet().forEach( key -> notifyListeners( key, null ) );
 		}
 		wrapped.clear();
+		this.cachedHashCode = 0;
 	}
 
 	/**
@@ -771,6 +781,9 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 
 	@Override
 	public int computeHashCode( Set<IType> visited ) {
+		if ( this.cacheableHashCode && this.cachedHashCode != 0 ) {
+			return this.cachedHashCode;
+		}
 		if ( visited.contains( this ) ) {
 			return 0;
 		}
@@ -784,6 +797,9 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 			} else {
 				result = 31 * result + ( value == null ? 0 : value.hashCode() );
 			}
+		}
+		if ( this.cacheableHashCode ) {
+			this.cachedHashCode = result;
 		}
 		return result;
 	}
@@ -1131,6 +1147,14 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 	 */
 	public Map<? extends Object, Object> getWrapped() {
 		return wrapped;
+	}
+
+	/**
+	 * Set whether hashcode is cachable. Only set to true if storing simple/immutable values
+	 */
+	public Struct setCacheableHashCode( boolean cachable ) {
+		this.cacheableHashCode = cachable;
+		return this;
 	}
 
 	/**

@@ -21,10 +21,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import ortus.boxlang.compiler.ast.BoxClass;
+import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
@@ -45,6 +47,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 
 	private static Map<String, String>			BIFMap					= new HashMap<String, String>();
 	private static Map<String, String>			componentMap			= new HashMap<String, String>();
+	private static Map<String, String>			serviceMap				= new HashMap<String, String>();
 	private BoxRuntime							runtime;
 	private FunctionService						functionService;
 	private ComponentService					componentService;
@@ -1047,6 +1050,20 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		componentMap.put( "xml", "core" );
 		componentMap.put( "zip", "core" );
 		componentMap.put( "zipparam", "core" );
+
+		// CFC-based services
+		serviceMap.put( "query", "bx-compat-cfml" );
+		serviceMap.put( "ldap", "bx-compat-cfml" );
+		serviceMap.put( "http", "bx-compat-cfml" );
+		serviceMap.put( "ftp", "bx-compat-cfml" );
+		serviceMap.put( "storedproc", "bx-compat-cfml" );
+		serviceMap.put( "mail", "bx-compat-cfml" );
+		serviceMap.put( "pdf", "bx-compat-cfml" );
+		serviceMap.put( "pop", "bx-compat-cfml" );
+		serviceMap.put( "feed", "bx-compat-cfml" );
+		serviceMap.put( "collection", "bx-compat-cfml" );
+		serviceMap.put( "dbinfo", "bx-compat-cfml" );
+		serviceMap.put( "search", "bx-compat-cfml" );
 	}
 
 	public FeatureAuditVisitor() {
@@ -1074,8 +1091,75 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 				aggregateFeaturesUsed.put( aggregateKey,
 				    new AggregateFeatureUsed( name, FeatureType.BIF, module, missing, 1 ) );
 			}
+			// Look for creation of component called "query", "ftp", "http", "storedproc", "mail", "pdf", "pop", "feed", "collection", "ldap", "search" or "dbinfo"
+			if ( name.equals( "createobject" ) ) {
+				String boxClassName = null;
+				// If using named args, the "type" arg must have a value of "class" or "component" and then the class name is in className
+				// alternatively, using positional args, the type is the first arg and the class name is the second arg
+				// alternativley, using positional args, if there is only 1 arg, then the class name is the first arg.
+				if ( node.getArguments().size() > 0 && node.getArguments().get( 0 ).isNamed() ) {
+					// Is there an arg with name "type" and value "component" or "class"?
+					boolean isClassType = node.getArguments().stream()
+					    .filter( arg -> arg.getName().getAsSimpleValue( "", true ).toString().equalsIgnoreCase( "type" )
+					        && arg.getValue() instanceof BoxStringLiteral str
+					        && ( str.getValue().equalsIgnoreCase( "component" ) || str.getValue().equalsIgnoreCase( "class" ) ) )
+					    .findFirst().isPresent();
+					if ( isClassType ) {
+						// If there is a classname arg, use that.
+						boxClassName = node.getArguments().stream()
+						    .filter( arg -> arg.getName().getAsSimpleValue( "", true ).toString().equalsIgnoreCase( "classname" )
+						        && arg.getValue() instanceof BoxStringLiteral )
+						    .map( arg -> ( ( BoxStringLiteral ) arg.getValue() ).getValue() ).findFirst().orElse( null );
+					}
+				} else {
+					// Positional args. If there are 2 or more args, and the first arg is "component" or "class", then the second arg is the class name
+					if ( node.getArguments().size() > 1 && node.getArguments().get( 0 ).getValue() instanceof BoxStringLiteral str
+					    && ( str.getValue().equalsIgnoreCase( "component" ) || str.getValue().equalsIgnoreCase( "class" ) ) ) {
+						boxClassName = node.getArguments().get( 1 ).getValue() instanceof BoxStringLiteral
+						    ? ( ( BoxStringLiteral ) node.getArguments().get( 1 ).getValue() ).getValue()
+						    : null;
+					} else if ( node.getArguments().size() == 1 && node.getArguments().get( 0 ).getValue() instanceof BoxStringLiteral ) {
+						// If there is only one arg, assume it's the class name
+						boxClassName = ( ( BoxStringLiteral ) node.getArguments().get( 0 ).getValue() ).getValue();
+					}
+				}
+				// if we found a class name, check it
+				if ( boxClassName != null ) {
+					processPossibleService( boxClassName, node );
+				}
+
+			}
 		}
 		super.visit( node );
+	}
+
+	public void visit( BoxNew node ) {
+		String classname = node.getExpression().getAsSimpleValue( "", true ).toString();
+		processPossibleService( classname, node );
+		super.visit( node );
+	}
+
+	/**
+	 * Determine if the given class name matches a known CFC-based service, and if so, add it to the list of features used.
+	 * 
+	 * @param className The name of the class to check
+	 * @param node      The BoxNode where the class name was found, used for reporting the position of the feature usage
+	 */
+	private void processPossibleService( String className, BoxNode node ) {
+		String classNameLower = className.toLowerCase();
+		if ( serviceMap.containsKey( classNameLower ) ) {
+			String	module	= serviceMap.get( classNameLower );
+			boolean	missing	= !runtime.getClassLocator().getBoxResolver().resolve( runtime.getRuntimeContext(), className, false ).isPresent();
+			featuresUsed.add(
+			    new FeatureUsed( "CFC Service: " + classNameLower, FeatureType.SERVICE, module, missing, node.getPosition() ) );
+			String aggregateKey = "CFC Service: " + classNameLower + FeatureType.SERVICE;
+			if ( aggregateFeaturesUsed.containsKey( aggregateKey ) ) {
+				aggregateFeaturesUsed.put( aggregateKey, aggregateFeaturesUsed.get( aggregateKey ).increment() );
+			} else {
+				aggregateFeaturesUsed.put( aggregateKey,
+				    new AggregateFeatureUsed( "CFC Service: " + classNameLower, FeatureType.SERVICE, module, missing, 1 ) );
+			}
+		}
 	}
 
 	public void visit( BoxComponent node ) {
@@ -1243,7 +1327,8 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 	public enum FeatureType {
 		BIF,
 		MEMBER_METHOD,
-		COMPONENT
+		COMPONENT,
+		SERVICE
 	}
 
 	public List<FeatureUsed> getFeaturesUsed() {

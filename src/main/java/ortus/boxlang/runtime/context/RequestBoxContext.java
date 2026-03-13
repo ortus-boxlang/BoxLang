@@ -515,7 +515,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	}
 
 	/**
-	 * Contexts can optionallky cache their config. If so, they must override this method
+	 * Contexts can optionally cache their config. If so, they must override this method
 	 * to clear the cache when requested, and propagate the request to their parent context
 	 */
 	public void clearConfigCache() {

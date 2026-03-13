@@ -123,7 +123,7 @@ public class GetMetaDataTest {
 	public void testAbstractMethodInClassMeta() {
 		instance.executeSource(
 		    """
-		    result = getMetadata( new src.test.java.ortus.boxlang.runtime.bifs.global.type.AbstractMethod() );
+		    result = getClassMetadata( "src.test.java.ortus.boxlang.runtime.bifs.global.type.AbstractMethod" );
 		             """,
 		    context );
 		// confirm that the meta includes myMethod and it has the foo="bar" annotation.

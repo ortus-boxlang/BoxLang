@@ -174,6 +174,20 @@ public class TimeUnitsTest {
 		assertEquals( result, refMonthAsString );
 	}
 
+	@DisplayName( "It tests the BIF MonthAsString with a locale argument" )
+	@Test
+	public void testBifMonthAsStringWithLocale() {
+		String refMonthAsString = new DateTime().format( LocalizationUtil.parseLocale( "es-SV" ), "MMMM" );
+		instance.executeSource(
+		    """
+		    now = now();
+		       result = monthAsString( date=now, locale="es-SV" );
+		       """,
+		    context );
+		String result = variables.getAsString( Key.of( "result" ) );
+		assertEquals( result, refMonthAsString );
+	}
+
 	@DisplayName( "It tests the member function DateTime.monthAsString" )
 	@Test
 	public void testMemberMonthAsString() {

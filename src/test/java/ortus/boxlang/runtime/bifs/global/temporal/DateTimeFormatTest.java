@@ -530,6 +530,20 @@ public class DateTimeFormatTest {
 		assertEquals( result, dateRef.format( formatter.withLocale( LocalizationUtil.parseLocale( "es-ES" ) ) ) );
 	}
 
+	@DisplayName( "It tests the BIF DateFormat using a German locale with lang only" )
+	@Test
+	public void testLocalizedDateFormatGermany() {
+		DateTime dateRef = new DateTime( ZoneId.of( "UTC" ) );
+		variables.put( Key.date, dateRef );
+		instance.executeSource(
+		    """
+		    result = DateFormat( date=date, mask="MMMM", locale="DE" );
+		    """,
+		    context );
+		String result = variables.getAsString( Key.of( "result" ) );
+		assertEquals( "März", result );
+	}
+
 	@DisplayName( "It tests the Member function DateTime.DateFormat" )
 	@Test
 	public void testLocalizedDateFormatMember() {

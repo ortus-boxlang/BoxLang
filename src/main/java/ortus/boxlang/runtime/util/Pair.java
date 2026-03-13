@@ -44,6 +44,20 @@ public class Pair<T, U> {
 	}
 
 	/**
+	 * Static factory method to create a new Pair.
+	 *
+	 * @param <T>    The type of the first element
+	 * @param <U>    The type of the second element
+	 * @param first  The first value
+	 * @param second The second value
+	 *
+	 * @return A new Pair containing the given values
+	 */
+	public static <T, U> Pair<T, U> of( T first, U second ) {
+		return new Pair<>( first, second );
+	}
+
+	/**
 	 * Returns the first value in the pair.
 	 *
 	 * @return The first value
