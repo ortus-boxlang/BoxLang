@@ -33,6 +33,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -40,7 +41,10 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.interop.DynamicInteropService;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.net.BoxHttpClient;
 import ortus.boxlang.runtime.scopes.Key;
@@ -49,9 +53,6 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-
-import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.Struct;
 
 /**
  * A fluent SOAP web service client for BoxLang.
@@ -65,7 +66,7 @@ import ortus.boxlang.runtime.types.Struct;
  * Object result = soapClient.invoke( "methodName", args );
  * </pre>
  */
-public class BoxSoapClient {
+public class BoxSoapClient implements IReferenceable {
 
 	/**
 	 * ------------------------------------------------------------------------------
@@ -120,19 +121,18 @@ public class BoxSoapClient {
 	private Map<String, String>		customHeaders			= new HashMap<>();
 
 	/**
-	 * SOAP headers to include in the SOAP envelope
-	 * 
+	 * SOAP headers to include in the SOAP envelope.
+	 *
 	 * SOAP Spec:
-	 * - <soap:Header> is OPTINAL.
-	 * - If present it must be the first child of <soap:Envelope> (before <soap:Body>)
-	 * - There is onlt ONE <soap:Header> section per request
-	 * 
-	 * Storage approach (STEP 1):
-	 * - We store simple key/value headers using BoxLang Struct (IStruct)
-	 * - Example: {AuthToken" : "abc123", "SessionId" : "session-456"}
-	 * 
-	 * NOTE: Right now this is only storage
-	 * later we will actually inject these into the XML request
+	 * - <soap:Header> is OPTIONAL.
+	 * - If present it must be the first child of <soap:Envelope> (before <soap:Body>).
+	 * - There is only ONE <soap:Header> section per request.
+	 *
+	 * Storage and injection (implemented):
+	 * - We store simple key/value headers using a BoxLang Struct (IStruct).
+	 * - Example: { "AuthToken" : "abc123", "SessionId" : "session-456" }.
+	 * - When building the SOAP request (e.g., in buildSoapRequest), stored headers are
+	 *   injected into the <soap:Header> section of the SOAP envelope.
 	 */
 
 	private IStruct					soapHeaders;
@@ -189,6 +189,13 @@ public class BoxSoapClient {
 		return this;
 	}
 
+	/**
+	 * Set SOAP headers to be included in the SOAP envelope.
+	 *
+	 * @param headers A struct of simple key/value pairs
+	 *
+	 * @return This instance for chaining
+	 */
 	public BoxSoapClient withSoapHeaders( IStruct headers ) {
 		validateSoapHeaders( headers );
 		this.soapHeaders = headers;
@@ -320,6 +327,146 @@ public class BoxSoapClient {
 	 */
 
 	/**
+	 * Dereference this object by a key and return the value, or throw exception
+	 *
+	 * @param context The context we're executing inside of
+	 * @param name    The key to dereference
+	 * @param safe    Whether to throw an exception if the key is not found
+	 *
+	 * @return The requested object
+	 */
+	@Override
+	public Object dereference( IBoxContext context, Key name, Boolean safe ) {
+		String			methodName		= name.getName();
+
+		// Check if this is a known SoapClient method
+		DynamicObject	dynamicClient	= DynamicObject.of( this );
+		if ( dynamicClient.hasMethodNoCase( methodName ) ) {
+			// Return a reference to this client's method - the actual invocation will come via dereferenceAndInvoke
+			return dynamicClient.getMethod( methodName, true );
+		}
+
+		// Check if this is a SOAP operation
+		if ( this.wsdlDefinition.hasOperation( name ) ) {
+			return this.wsdlDefinition.getOperation( name );
+		}
+
+		if ( safe ) {
+			return null;
+		}
+
+		throw new BoxRuntimeException(
+		    "Property [" + methodName + "] not found on SOAP client. Available operations: "
+		        + this.wsdlDefinition.getOperationNames().toString()
+		);
+	}
+
+	/**
+	 * Dereference this object by a key and invoke the result as an invokable using positional arguments
+	 *
+	 * @param context             The context we're executing inside of
+	 * @param name                The key to dereference
+	 * @param positionalArguments The positional arguments to pass to the invokable
+	 * @param safe                Whether to throw an exception if the key is not found
+	 *
+	 * @return The requested object
+	 */
+	@Override
+	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
+		String methodName = name.getName();
+
+		// Check if this is a known SoapClient method
+		if ( DynamicObject.of( this ).hasMethodNoCase( methodName ) ) {
+			// Handle built-in methods like invoke(), getOperations(), etc.
+			return DynamicInteropService.invoke( context, this, methodName, safe, positionalArguments );
+		}
+
+		// Check if this is a SOAP operation
+		if ( this.wsdlDefinition.hasOperation( name ) ) {
+			// Convert positional arguments to the format expected by invoke()
+			Object arguments = null;
+			if ( positionalArguments != null && positionalArguments.length > 0 ) {
+				if ( positionalArguments.length == 1 ) {
+					arguments = positionalArguments[ 0 ];
+				} else {
+					arguments = Array.fromArray( positionalArguments );
+				}
+			}
+			return invoke( methodName, arguments );
+		}
+
+		if ( safe ) {
+			return null;
+		}
+
+		throw new BoxRuntimeException(
+		    "Method [" + methodName + "] not found on SOAP client. Available operations: "
+		        + this.wsdlDefinition.getOperationNames().toString()
+		);
+	}
+
+	/**
+	 * Dereference this object by a key and invoke the result as an invokable using named arguments
+	 *
+	 * @param context        The context we're executing inside of
+	 * @param name           The key to dereference
+	 * @param namedArguments The named arguments to pass to the invokable
+	 * @param safe           Whether to throw an exception if the key is not found
+	 *
+	 * @return The requested object
+	 */
+	@Override
+	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
+		String methodName = name.getName();
+
+		// Check if this is a known SoapClient method
+		if ( DynamicObject.of( this ).hasMethodNoCase( methodName ) ) {
+			return DynamicInteropService.invoke( context, this, methodName, safe, namedArguments );
+		}
+
+		// Check if this is a SOAP operation
+		if ( this.wsdlDefinition.hasOperation( name ) ) {
+			// Handle argument collection properly
+			Object arguments = null;
+			if ( namedArguments != null && !namedArguments.isEmpty() ) {
+				// Check if this is an argumentCollection call
+				Object argumentCollection = namedArguments.get( Key.argumentCollection );
+				if ( argumentCollection != null ) {
+					// Use the argumentCollection value as the actual arguments
+					arguments = argumentCollection;
+				} else {
+					// Convert named arguments to a struct for invoke()
+					arguments = Struct.fromMap( namedArguments );
+				}
+			}
+			return invoke( methodName, arguments );
+		}
+
+		if ( safe ) {
+			return null;
+		}
+
+		throw new BoxRuntimeException(
+		    "Method [" + methodName + "] not found on SOAP client. Available operations: "
+		        + this.wsdlDefinition.getOperationNames().toString()
+		);
+	}
+
+	/**
+	 * Assign a value to a key in this object
+	 *
+	 * @param context The context we're executing inside of
+	 * @param name    The name of the key to assign to
+	 * @param value   The value to assign
+	 *
+	 * @return The value that was assigned
+	 */
+	@Override
+	public Object assign( IBoxContext context, Key name, Object value ) {
+		throw new BoxRuntimeException( "Cannot assign properties to SOAP client objects" );
+	}
+
+	/**
 	 * Check if a method name is a known SoapClient method
 	 *
 	 * @param methodName The method name to check
@@ -344,19 +491,6 @@ public class BoxSoapClient {
 	 */
 
 	/**
-	 * Set SOAP headers to be included in the SOAP envelope.
-	 *
-	 * @param headers A struct of simple key/value pairs
-	 * 
-	 * @return This instance for chaining
-	 */
-	public BoxSoapClient withSoapHeaders( IStruct headers ) {
-		validateSoapHeaders( headers );
-		this.soapHeaders = headers;
-		return this;
-	}
-
-	/**
 	 * Validate SOAP header input.
 	 * Only simple key/value pairs are allowed.
 	 */
@@ -373,21 +507,14 @@ public class BoxSoapClient {
 				    "SOAP header keys must be non-empty strings"
 				);
 			}
-			// XML Name Check / TASK 3
-			if ( !key.getName().matches( "[a-zA-Z_][a-zA-Z0-9_]*") ) {
-				throw new BoxRuntimeException(
-					"SOAP header keys must be a valid XML name"
-				);
-			}
-
 			if ( value == null ) {
 				continue;
 			}
-			String valueStr = String.valueOf( value);
-			if(!isValidXMLCharData(valueStr)) {
+			String valueStr = StringCaster.cast( value );
+			if ( !isValidXMLCharData( valueStr ) ) {
 				throw new BoxRuntimeException(
-					"This is an Invalid SOAP header value for key '" + key.getName() +
-					"'. Only simple scalar values are allowed."
+				    "This is an Invalid SOAP header value for key '" + key.getName() +
+				        "'. Only simple scalar values are allowed."
 				);
 			}
 
@@ -404,17 +531,27 @@ public class BoxSoapClient {
 			);
 		}
 	}
-	private static boolean isValidXMLCharData(String s) {
-		if (s == null) return true;
-		for(int i = 0; i<s.length(); i++){
-			char c = s.charAt(i);
+	private static boolean isValidXMLCharData( String s ) {
+		if ( s == null ) {
+			return true;
+		}
+		for ( int i = 0; i < s.length(); i++ ) {
+			char c = s.charAt( i );
 			if ( c >= 0x00 && c <= 0x1F && c != 0x09 && c != 0x0A && c != 0x0D ) {
 				return false;
 			}
 		}
 		return true;
-		}
+	}
 
+	/**
+	 * Build a SOAP request envelope for an operation
+	 *
+	 * @param operation The operation to invoke
+	 * @param arguments The arguments (Array, Struct, or Object[])
+	 *
+	 * @return The SOAP XML request as a string
+	 */
 	private String buildSoapRequest( WsdlOperation operation, Object arguments ) {
 		try {
 			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -434,23 +571,6 @@ public class BoxSoapClient {
 			}
 
 			doc.appendChild( envelope );
-			// adding the SOAP XML Headers
-
-      // Add SOAP headers if present
-      if ( this.soapHeaders != null && !this.soapHeaders.isEmpty() ) {
-          Element headerElement = doc.createElementNS( soapNS, "soap:Header" );
-          envelope.appendChild( headerElement );
-
-          for ( Key key : this.soapHeaders.keySet() ) {
-              Object value = this.soapHeaders.get( key );
-
-              Element headerChild = doc.createElement( key.getName() );
-              if ( value != null ) {
-                  headerChild.setTextContent( String.valueOf( value ) );
-              }
-              headerElement.appendChild( headerChild );
-          }
-      }
 
 			if ( this.soapHeaders != null && !this.soapHeaders.isEmpty() ) {
 				Element header = doc.createElementNS( soapNS, "soap:Header" );
@@ -471,6 +591,8 @@ public class BoxSoapClient {
 
 			return documentToString( doc );
 
+		} catch ( BoxRuntimeException e ) {
+			throw e;
 		} catch ( Exception e ) {
 			throw new BoxRuntimeException( "Failed to build SOAP request", e );
 		}
@@ -481,10 +603,15 @@ public class BoxSoapClient {
 			String	headerName	= key.getName();
 			Object	headerValue	= headers.get( key );
 
-			Element	headerChild	= doc.createElement( headerName );
+			Element	headerChild;
+			try {
+				headerChild = doc.createElement( headerName );
+			} catch ( DOMException e ) {
+				throw new BoxRuntimeException( "SOAP header keys must be a valid XML name: " + headerName, e );
+			}
 
 			if ( headerValue != null ) {
-				headerChild.setTextContent( String.valueOf( headerValue ) );
+				headerChild.setTextContent( StringCaster.cast( headerValue ) );
 			}
 
 			headerElement.appendChild( headerChild );
