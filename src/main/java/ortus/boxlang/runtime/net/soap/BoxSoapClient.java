@@ -131,7 +131,7 @@ public class BoxSoapClient {
 	 * - We store simple key/value headers using a BoxLang Struct (IStruct).
 	 * - Example: { "AuthToken" : "abc123", "SessionId" : "session-456" }.
 	 * - When building the SOAP request (e.g., in buildSoapRequest), these stored headers
-	 *   are injected into the <soap:Header> section of the SOAP envelope.
+	 * are injected into the <soap:Header> section of the SOAP envelope.
 	 */
 
 	private IStruct					soapHeaders;
