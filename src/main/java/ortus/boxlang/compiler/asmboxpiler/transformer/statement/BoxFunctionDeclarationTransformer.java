@@ -80,7 +80,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 	// @formatter:on
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
-		BoxFunctionDeclaration	function	= ( BoxFunctionDeclaration ) node;
+		BoxFunctionDeclaration function = ( BoxFunctionDeclaration ) node;
 
 		if ( isNestedFunction( function ) ) {
 			return transformNestedFunction( function, context, returnContext );
@@ -116,18 +116,18 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 				fqn = boxReturnType.getFqn();
 			}
 		}
-		String				returnTypeName		= returnType.equals( BoxType.Fqn ) ? fqn : returnType.name();
-		BoxAccessModifier	access				= function.getAccessModifier() == null ? BoxAccessModifier.Public : function.getAccessModifier();
+		String				returnTypeName	= returnType.equals( BoxType.Fqn ) ? fqn : returnType.name();
+		BoxAccessModifier	access			= function.getAccessModifier() == null ? BoxAccessModifier.Public : function.getAccessModifier();
 
-		int					closureIndex		= transpiler.getClosureInstantiations().size();
+		int					closureIndex	= transpiler.getClosureInstantiations().size();
 		transpiler.getClosureInstantiations().add( null );
-		String				invokerMethodName	= "invokeClosure_" + closureIndex;
+		String		invokerMethodName	= "invokeClosure_" + closureIndex;
 
-		Type				declaringType		= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
+		Type		declaringType		= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
 		    + "/" + transpiler.getProperty( "classname" )
 		    + ";" );
 
-		ClassNode			owningClass			= transpiler.getOwningClass();
+		ClassNode	owningClass			= transpiler.getOwningClass();
 
 		// Generate the static invoker method for the nested function body
 		transpiler.incrementfunctionBodyCounter();

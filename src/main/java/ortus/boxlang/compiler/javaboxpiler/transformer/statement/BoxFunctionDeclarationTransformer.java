@@ -156,9 +156,11 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		}
 
 		@SuppressWarnings( "unchecked" )
-		BoxNode				ancestor		= function.getFirstNodeOfTypes( BoxTemplate.class, BoxScript.class, BoxExpression.class, BoxScriptIsland.class,
+		BoxNode										ancestor			= function.getFirstNodeOfTypes( BoxTemplate.class, BoxScript.class, BoxExpression.class,
+		    BoxScriptIsland.class,
 		    BoxTemplateIsland.class );
-		boolean				defaultOutput	= ancestor == null || !Set.of( BoxTemplate.class, BoxTemplateIsland.class ).contains( ancestor.getClass() );
+		boolean										defaultOutput		= ancestor == null
+		    || !Set.of( BoxTemplate.class, BoxTemplateIsland.class ).contains( ancestor.getClass() );
 
 		int											closureIndex		= transpiler.incrementAndGetClosureCounter();
 		String										invokerMethodName	= "invokeClosure_" + closureIndex;
@@ -167,7 +169,7 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		int											mySlot				= closureInvokers.size();
 		closureInvokers.add( null );
 
-		Map<String, String>	values			= Map.ofEntries(
+		Map<String, String>				values	= Map.ofEntries(
 		    Map.entry( "className", className ),
 		    Map.entry( "access", access.toString().toUpperCase() ),
 		    Map.entry( "modifiers", transformModifiers( function.getModifiers() ) ),
@@ -239,11 +241,11 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 	 * Transform a top-level function declaration as a hoisted UDF registration (original behavior).
 	 */
 	private Node transformTopLevelFunction( BoxFunctionDeclaration function, TransformerContext context ) {
-		BoxAccessModifier		access			= function.getAccessModifier();
-		String					className		= transpiler.getProperty( "classname" );
-		BoxReturnType			boxReturnType	= function.getType();
-		BoxType					returnType		= BoxType.Any;
-		String					fqn				= null;
+		BoxAccessModifier	access			= function.getAccessModifier();
+		String				className		= transpiler.getProperty( "classname" );
+		BoxReturnType		boxReturnType	= function.getType();
+		BoxType				returnType		= BoxType.Any;
+		String				fqn				= null;
 		if ( boxReturnType != null ) {
 			returnType = boxReturnType.getType();
 			if ( returnType.equals( BoxType.Fqn ) ) {
