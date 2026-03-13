@@ -1,7 +1,6 @@
 package ortus.boxlang.compiler.asmboxpiler.transformer.statement;
 
 import java.lang.invoke.CallSite;
-import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;

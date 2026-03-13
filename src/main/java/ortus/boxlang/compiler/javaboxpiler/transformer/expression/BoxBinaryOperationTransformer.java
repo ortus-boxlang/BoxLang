@@ -214,8 +214,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 		return javaExpr;
 	}
 
-	@NonNull
-	private static MethodCallExpr generateBinaryMethodCallExpr( String methodName, Object... args ) {
+	@NonNull private static MethodCallExpr generateBinaryMethodCallExpr( String methodName, Object... args ) {
 		NameExpr		nameExpr		= new NameExpr( methodName );
 		MethodCallExpr	methodCallExpr	= new MethodCallExpr( nameExpr, "invoke" );
 		for ( Object o : args ) {
@@ -245,8 +244,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 	 *
 	 * @return the method call expression
 	 */
-	@NonNull
-	private static MethodCallExpr generateNumericBinaryMethodCallExpr( String methodName, BoxBinaryOperation operation, Expression left, Expression right ) {
+	@NonNull private static MethodCallExpr generateNumericBinaryMethodCallExpr( String methodName, BoxBinaryOperation operation, Expression left, Expression right ) {
 		if ( operation.getLeft().returnsNumber() && operation.getRight().returnsNumber() ) {
 			return generateBinaryMethodCallExpr( methodName,
 			    new CastExpr( new ClassOrInterfaceType( null, "Number" ), left ),
