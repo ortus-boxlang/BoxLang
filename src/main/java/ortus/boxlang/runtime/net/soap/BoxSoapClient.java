@@ -50,9 +50,6 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-import ortus.boxlang.runtime.types.IStruct;
-import ortus.boxlang.runtime.types.Struct;
-
 /**
  * A fluent SOAP web service client for BoxLang.
  * Provides human-friendly methods for invoking SOAP operations discovered from WSDL documents.
