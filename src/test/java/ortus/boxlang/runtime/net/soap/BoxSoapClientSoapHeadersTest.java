@@ -179,13 +179,13 @@ public class BoxSoapClientSoapHeadersTest {
 	@DisplayName( "SOAP request contains exactly one header before the body for SOAP 1.1" )
 	@Test
 	void soapRequest_serializesSingleHeaderBeforeBody_forSoap11() throws Exception {
-		BoxSoapClient client = this.httpService.getOrCreateSoapClient( calculatorWsdlUrl, this.context )
+		BoxSoapClient	client		= this.httpService.getOrCreateSoapClient( calculatorWsdlUrl, this.context )
 		    .withSoapHeaders( Struct.of( Key.of( "AuthToken" ), "abc123", Key.of( "RetryCount" ), 3 ) )
 		    .soapVersion( "1.1" );
 
-		Document request = parseRequest( buildSoapRequest( client ) );
-		Element envelope = request.getDocumentElement();
-		Element header = getFirstChildElement( envelope );
+		Document		request		= parseRequest( buildSoapRequest( client ) );
+		Element			envelope	= request.getDocumentElement();
+		Element			header		= getFirstChildElement( envelope );
 
 		assertThat( envelope.getNamespaceURI() ).isEqualTo( "http://schemas.xmlsoap.org/soap/envelope/" );
 		assertThat( header.getLocalName() ).isEqualTo( "Header" );
@@ -198,13 +198,13 @@ public class BoxSoapClientSoapHeadersTest {
 	@DisplayName( "SOAP request contains exactly one header before the body for SOAP 1.2" )
 	@Test
 	void soapRequest_serializesSingleHeaderBeforeBody_forSoap12() throws Exception {
-		BoxSoapClient client = this.httpService.getOrCreateSoapClient( calculatorWsdlUrl, this.context )
+		BoxSoapClient	client		= this.httpService.getOrCreateSoapClient( calculatorWsdlUrl, this.context )
 		    .withSoapHeaders( Struct.of( Key.of( "SessionId" ), "session-456" ) )
 		    .soapVersion( "1.2" );
 
-		Document request = parseRequest( buildSoapRequest( client ) );
-		Element envelope = request.getDocumentElement();
-		Element header = getFirstChildElement( envelope );
+		Document		request		= parseRequest( buildSoapRequest( client ) );
+		Element			envelope	= request.getDocumentElement();
+		Element			header		= getFirstChildElement( envelope );
 
 		assertThat( envelope.getNamespaceURI() ).isEqualTo( "http://www.w3.org/2003/05/soap-envelope" );
 		assertThat( header.getLocalName() ).isEqualTo( "Header" );
@@ -214,8 +214,8 @@ public class BoxSoapClientSoapHeadersTest {
 	}
 
 	private String buildSoapRequest( BoxSoapClient client ) throws Exception {
-		WsdlOperation operation = client.getWsdlDefinition().getOperation( Key.of( String.valueOf( client.getOperations().get( 0 ) ) ) );
-		Method buildSoapRequest = BoxSoapClient.class.getDeclaredMethod( "buildSoapRequest", WsdlOperation.class, Object.class );
+		WsdlOperation	operation			= client.getWsdlDefinition().getOperation( Key.of( String.valueOf( client.getOperations().get( 0 ) ) ) );
+		Method			buildSoapRequest	= BoxSoapClient.class.getDeclaredMethod( "buildSoapRequest", WsdlOperation.class, Object.class );
 		buildSoapRequest.setAccessible( true );
 		return ( String ) buildSoapRequest.invoke( client, operation, null );
 	}
