@@ -303,6 +303,9 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		return javaExpr;
 	}
 
+	/**
+	 * transformDestructuringEquals.
+	 */
 	private Node transformDestructuringEquals( BoxObjectDestructuringPattern pattern, Expression jRight, List<BoxAssignmentModifier> modifiers ) {
 		boolean	hasVar			= hasVar( modifiers );
 		boolean	hasStatic		= hasStatic( modifiers );
@@ -339,6 +342,9 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		return parseExpression( template, values );
 	}
 
+	/**
+	 * transformArrayDestructuringEquals.
+	 */
 	private Node transformArrayDestructuringEquals( BoxArrayDestructuringPattern pattern, Expression jRight, List<BoxAssignmentModifier> modifiers ) {
 		boolean	hasVar			= hasVar( modifiers );
 		boolean	hasStatic		= hasStatic( modifiers );
@@ -375,6 +381,9 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		return parseExpression( template, values );
 	}
 
+	/**
+	 * buildDestructuringBindingsExpression.
+	 */
 	private String buildDestructuringBindingsExpression( List<BoxObjectDestructuringBinding> bindings, boolean isDeclaration ) {
 		if ( bindings.isEmpty() ) {
 			return "new ortus.boxlang.runtime.dynamic.ObjectDestructurer.Binding[] {}";
@@ -384,6 +393,9 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		    + " }";
 	}
 
+	/**
+	 * buildDestructuringBindingExpression.
+	 */
 	private String buildDestructuringBindingExpression( BoxObjectDestructuringBinding binding, boolean isDeclaration ) {
 		if ( binding.isRest() ) {
 			return "ortus.boxlang.runtime.dynamic.ObjectDestructurer.rest("
@@ -408,6 +420,9 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		    + ")";
 	}
 
+	/**
+	 * buildArrayDestructuringBindingsExpression.
+	 */
 	private String buildArrayDestructuringBindingsExpression( List<BoxArrayDestructuringBinding> bindings, boolean isDeclaration ) {
 		if ( bindings.isEmpty() ) {
 			return "new ortus.boxlang.runtime.dynamic.ArrayDestructurer.Binding[] {}";
@@ -417,6 +432,9 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		    + " }";
 	}
 
+	/**
+	 * buildArrayDestructuringBindingExpression.
+	 */
 	private String buildArrayDestructuringBindingExpression( BoxArrayDestructuringBinding binding, boolean isDeclaration ) {
 		if ( binding.isRest() ) {
 			return "ortus.boxlang.runtime.dynamic.ArrayDestructurer.rest("
@@ -439,18 +457,27 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		    + ")";
 	}
 
+	/**
+	 * buildDestructuringTargetExpression.
+	 */
 	private String buildDestructuringTargetExpression( BoxExpression target, boolean isDeclaration ) {
 		DestructuringTargetDescriptor	descriptor	= describeDestructuringTarget( target, isDeclaration );
 		String							path		= descriptor.path().stream().map( this::quoteJavaString ).collect( Collectors.joining( ", " ) );
 		return "ortus.boxlang.runtime.dynamic.ObjectDestructurer.target(" + ( descriptor.scoped() ? "true" : "false" ) + ", " + path + ")";
 	}
 
+	/**
+	 * buildArrayDestructuringTargetExpression.
+	 */
 	private String buildArrayDestructuringTargetExpression( BoxExpression target, boolean isDeclaration ) {
 		DestructuringTargetDescriptor	descriptor	= describeDestructuringTarget( target, isDeclaration );
 		String							path		= descriptor.path().stream().map( this::quoteJavaString ).collect( Collectors.joining( ", " ) );
 		return "ortus.boxlang.runtime.dynamic.ArrayDestructurer.target(" + ( descriptor.scoped() ? "true" : "false" ) + ", " + path + ")";
 	}
 
+	/**
+	 * describeDestructuringTarget.
+	 */
 	private DestructuringTargetDescriptor describeDestructuringTarget( BoxExpression target, boolean isDeclaration ) {
 		if ( target instanceof BoxIdentifier id ) {
 			return new DestructuringTargetDescriptor( false, List.of( id.getName() ) );
@@ -501,6 +528,9 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		    target.getSourceText() );
 	}
 
+	/**
+	 * extractDestructuringKeyName.
+	 */
 	private String extractDestructuringKeyName( BoxExpression key, BoxObjectDestructuringBinding binding ) {
 		if ( key instanceof BoxIdentifier id ) {
 			return id.getName();
@@ -524,10 +554,16 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		    binding.getSourceText() );
 	}
 
+	/**
+	 * quoteJavaString.
+	 */
 	private String quoteJavaString( String value ) {
 		return "\"" + value.replace( "\\", "\\\\" ).replace( "\"", "\\\"" ) + "\"";
 	}
 
+	/**
+	 * isExplicitDestructuringScope.
+	 */
 	private boolean isExplicitDestructuringScope( String scopeName ) {
 		return switch ( scopeName.toLowerCase() ) {
 			case "application", "arguments", "cgi", "client", "cookie", "form", "local", "request", "server", "session", "static", "this", "thread",
@@ -536,6 +572,9 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		};
 	}
 
+	/**
+	 * DestructuringTargetDescriptor.
+	 */
 	private record DestructuringTargetDescriptor( boolean scoped, List<String> path ) {
 	}
 

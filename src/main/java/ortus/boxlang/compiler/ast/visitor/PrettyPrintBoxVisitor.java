@@ -841,6 +841,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	/** {@inheritDoc} */
 	public void visit( BoxArrayDestructuringPattern node ) {
 		printPreComments( node );
 		print( "[ " );
@@ -855,6 +856,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	/** {@inheritDoc} */
 	public void visit( BoxArrayDestructuringBinding node ) {
 		printPreComments( node );
 		if ( node.isRest() ) {
@@ -876,6 +878,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	/** {@inheritDoc} */
 	public void visit( BoxObjectDestructuringPattern node ) {
 		printPreComments( node );
 		print( "{ " );
@@ -890,6 +893,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	/** {@inheritDoc} */
 	public void visit( BoxObjectDestructuringBinding node ) {
 		printPreComments( node );
 		if ( node.isRest() ) {
@@ -985,6 +989,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	/** {@inheritDoc} */
 	public void visit( BoxSpreadExpression node ) {
 		printPreComments( node );
 		print( "..." );
@@ -2091,6 +2096,13 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	/**
+	 * Determine whether a destructuring binding uses key shorthand syntax.
+	 *
+	 * @param node binding to inspect
+	 *
+	 * @return true when key and target are the same identifier
+	 */
 	private boolean isDestructuringShorthand( BoxObjectDestructuringBinding node ) {
 		return node.getKey() instanceof BoxIdentifier key
 		    && node.getTarget() instanceof BoxIdentifier target

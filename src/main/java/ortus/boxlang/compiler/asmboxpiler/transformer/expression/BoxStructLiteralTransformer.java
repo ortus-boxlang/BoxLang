@@ -68,6 +68,9 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 
+	/**
+	 * transformStructArguments.
+	 */
 	private List<List<AbstractInsnNode>> transformStructArguments( BoxStructLiteral structLiteral, TransformerContext context ) {
 		List<List<AbstractInsnNode>>	arguments	= new ArrayList<>();
 		List<BoxExpression>				values		= structLiteral.getValues();
@@ -92,6 +95,9 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 		return arguments;
 	}
 
+	/**
+	 * transformKey.
+	 */
 	private List<AbstractInsnNode> transformKey( BoxExpression keyExpr, TransformerContext context ) {
 		if ( keyExpr instanceof BoxIdentifier identifier ) {
 			return List.of( new LdcInsnNode( identifier.getName() ) );
@@ -102,6 +108,9 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 		return transpiler.transform( keyExpr, context, ReturnValueContext.VALUE );
 	}
 
+	/**
+	 * transformSpread.
+	 */
 	private List<AbstractInsnNode> transformSpread( BoxSpreadExpression spread, TransformerContext context ) {
 		List<AbstractInsnNode> spreadNodes = new ArrayList<>( transpiler.transform( spread.getExpression(), context, ReturnValueContext.VALUE_OR_NULL ) );
 		spreadNodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,

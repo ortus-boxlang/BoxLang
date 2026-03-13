@@ -563,6 +563,13 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		return new BoxBinaryOperation( left, op, right, pos, src );
 	}
 
+	/**
+	 * Build a range binary operation from the parse context.
+	 *
+	 * @param ctx parse context
+	 *
+	 * @return range operation node
+	 */
 	@Override
 	public BoxExpression visitExprRange( ExprRangeContext ctx ) {
 		var	pos		= tools.getPosition( ctx );
@@ -781,6 +788,13 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		return new BoxAssignment( left, op, right, List.of(), pos, src );
 	}
 
+	/**
+	 * Build an explicit object destructuring assignment node.
+	 *
+	 * @param ctx parse context
+	 *
+	 * @return assignment node
+	 */
 	@Override
 	public BoxExpression visitExprDestructuringAssign( ExprDestructuringAssignContext ctx ) {
 		var	pos		= tools.getPosition( ctx );
@@ -790,6 +804,13 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		return new BoxAssignment( left, BoxAssignmentOperator.Equal, right, List.of(), pos, src );
 	}
 
+	/**
+	 * Build an explicit array destructuring assignment node.
+	 *
+	 * @param ctx parse context
+	 *
+	 * @return assignment node
+	 */
 	@Override
 	public BoxExpression visitExprArrayDestructuringAssign( ExprArrayDestructuringAssignContext ctx ) {
 		var	pos		= tools.getPosition( ctx );
@@ -799,6 +820,13 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		return new BoxAssignment( left, BoxAssignmentOperator.Equal, right, List.of(), pos, src );
 	}
 
+	/**
+	 * Build an object destructuring pattern node.
+	 *
+	 * @param ctx parse context
+	 *
+	 * @return object destructuring pattern
+	 */
 	@Override
 	public BoxExpression visitObjectDestructuringPattern( ObjectDestructuringPatternContext ctx ) {
 		var									pos			= tools.getPosition( ctx );
@@ -817,6 +845,13 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		return new BoxObjectDestructuringPattern( bindings, pos, src );
 	}
 
+	/**
+	 * Build an array destructuring pattern node.
+	 *
+	 * @param ctx parse context
+	 *
+	 * @return array destructuring pattern
+	 */
 	@Override
 	public BoxExpression visitArrayDestructuringPattern( ArrayDestructuringPatternContext ctx ) {
 		var									pos			= tools.getPosition( ctx );
@@ -1224,6 +1259,12 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		return new BoxStructLiteral( type, values, pos, src );
 	}
 
+	/**
+	 * Add a key/value pair from a struct member context to the flat struct values list.
+	 *
+	 * @param values       destination values list
+	 * @param structMember parsed struct member
+	 */
 	private void addStructMember( List<BoxExpression> values, StructMemberContext structMember ) {
 		values.add( structMember.structKey().accept( this ) );
 		values.add( structMember.expression().accept( this ) );
@@ -1240,10 +1281,25 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		                .orElse( new BoxIntegerLiteral( src, pos, src ) ) ) ) );
 	}
 
+	/**
+	 * Try converting a struct literal into an object destructuring pattern.
+	 *
+	 * @param structLiteral struct literal candidate
+	 *
+	 * @return destructuring pattern, or null when not representable
+	 */
 	private BoxObjectDestructuringPattern tryBuildDestructuringPatternFromStructLiteral( BoxStructLiteral structLiteral ) {
 		return tryBuildDestructuringPatternFromStructLiteral( structLiteral, true );
 	}
 
+	/**
+	 * Try converting a struct literal into an object destructuring pattern.
+	 *
+	 * @param structLiteral          struct literal candidate
+	 * @param allowShorthandDefaults true to translate shorthand value forms into defaults
+	 *
+	 * @return destructuring pattern, or null when not representable
+	 */
 	private BoxObjectDestructuringPattern tryBuildDestructuringPatternFromStructLiteral( BoxStructLiteral structLiteral, boolean allowShorthandDefaults ) {
 		if ( structLiteral.getType() != BoxStructType.Unordered ) {
 			return null;
@@ -1329,6 +1385,13 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		return new BoxObjectDestructuringPattern( bindings, structLiteral.getPosition(), structLiteral.getSourceText() );
 	}
 
+	/**
+	 * Try extracting an object destructuring pattern from an expression.
+	 *
+	 * @param expression expression to inspect
+	 *
+	 * @return destructuring pattern, or null when not representable
+	 */
 	private BoxObjectDestructuringPattern tryBuildDestructuringPatternFromExpression( BoxExpression expression ) {
 		BoxExpression current = expression;
 		while ( current instanceof BoxParenthesis parenthesis ) {
@@ -1340,10 +1403,25 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		return null;
 	}
 
+	/**
+	 * Try converting an array literal into an array destructuring pattern.
+	 *
+	 * @param arrayLiteral array literal candidate
+	 *
+	 * @return destructuring pattern, or null when not representable
+	 */
 	private BoxArrayDestructuringPattern tryBuildArrayDestructuringPatternFromArrayLiteral( BoxArrayLiteral arrayLiteral ) {
 		return tryBuildArrayDestructuringPatternFromArrayLiteral( arrayLiteral, true );
 	}
 
+	/**
+	 * Try converting an array literal into an array destructuring pattern.
+	 *
+	 * @param arrayLiteral           array literal candidate
+	 * @param allowShorthandDefaults true when shorthand values may become defaults
+	 *
+	 * @return destructuring pattern, or null when not representable
+	 */
 	private BoxArrayDestructuringPattern tryBuildArrayDestructuringPatternFromArrayLiteral( BoxArrayLiteral arrayLiteral, boolean allowShorthandDefaults ) {
 		List<BoxExpression> values = arrayLiteral.getValues();
 		if ( values == null ) {
@@ -1418,6 +1496,13 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		return new BoxArrayDestructuringPattern( bindings, arrayLiteral.getPosition(), arrayLiteral.getSourceText() );
 	}
 
+	/**
+	 * Try converting an ordered struct literal into an array destructuring pattern.
+	 *
+	 * @param structLiteral ordered struct literal candidate
+	 *
+	 * @return destructuring pattern, or null when not representable
+	 */
 	private BoxArrayDestructuringPattern tryBuildArrayDestructuringPatternFromOrderedStructLiteral( BoxStructLiteral structLiteral ) {
 		if ( structLiteral.getType() != BoxStructType.Ordered ) {
 			return null;
@@ -1444,6 +1529,13 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		return new BoxArrayDestructuringPattern( bindings, structLiteral.getPosition(), structLiteral.getSourceText() );
 	}
 
+	/**
+	 * Normalize shorthand entries in ordered-struct-based array destructuring.
+	 *
+	 * @param key parsed key expression
+	 *
+	 * @return normalized target expression
+	 */
 	private BoxExpression normalizeArrayDestructuringShorthandTarget( BoxExpression key ) {
 		if ( key instanceof BoxScope scope ) {
 			return new BoxIdentifier( scope.getName(), scope.getPosition(), scope.getSourceText() );
@@ -1451,6 +1543,13 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		return key;
 	}
 
+	/**
+	 * Try extracting an array destructuring pattern from an expression.
+	 *
+	 * @param expression expression to inspect
+	 *
+	 * @return destructuring pattern, or null when not representable
+	 */
 	private BoxArrayDestructuringPattern tryBuildArrayDestructuringPatternFromExpression( BoxExpression expression ) {
 		BoxExpression current = expression;
 		while ( current instanceof BoxParenthesis parenthesis ) {
@@ -1465,6 +1564,13 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		return null;
 	}
 
+	/**
+	 * Normalize object destructuring keys so scope literals behave like identifiers.
+	 *
+	 * @param key parsed key expression
+	 *
+	 * @return normalized key expression
+	 */
 	private BoxExpression normalizeDestructuringKey( BoxExpression key ) {
 		if ( key instanceof BoxScope scope ) {
 			return new BoxIdentifier( scope.getName(), scope.getPosition(), scope.getSourceText() );
@@ -1472,6 +1578,13 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		return key;
 	}
 
+	/**
+	 * Check whether an expression is a valid destructuring assignment target.
+	 *
+	 * @param expression expression to inspect
+	 *
+	 * @return true when expression can appear on the left side of a destructuring binding
+	 */
 	private boolean isDestructuringTargetExpression( BoxExpression expression ) {
 		if ( expression instanceof BoxIdentifier || expression instanceof BoxScope ) {
 			return true;
@@ -1489,6 +1602,13 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		return false;
 	}
 
+	/**
+	 * Check whether an identifier is treated as an explicit scope root for destructuring targets.
+	 *
+	 * @param scopeName candidate scope name
+	 *
+	 * @return true when the name is an explicit scope
+	 */
 	private boolean isExplicitDestructuringScope( String scopeName ) {
 		return switch ( scopeName.toLowerCase() ) {
 			case "application", "arguments", "cgi", "client", "cookie", "form", "local", "request", "server", "session", "static", "this", "thread",
@@ -1535,6 +1655,13 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 	// Builders perform specialized task for the visitor functions where the task
 	// is too complex to be done inline or otherwise obfuscates what the visitor is doing
 
+	/**
+	 * Build an object destructuring binding node from parser context.
+	 *
+	 * @param ctx parser context
+	 *
+	 * @return binding node
+	 */
 	private BoxObjectDestructuringBinding buildObjectDestructuringBinding( ObjectDestructuringBindingContext ctx ) {
 		var								pos				= tools.getPosition( ctx );
 		var								src				= tools.getSourceText( ctx );
@@ -1564,6 +1691,13 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		return new BoxObjectDestructuringBinding( key, target, nestedPattern, defaultValue, false, pos, src );
 	}
 
+	/**
+	 * Build an array destructuring binding node from parser context.
+	 *
+	 * @param ctx parser context
+	 *
+	 * @return binding node
+	 */
 	private BoxArrayDestructuringBinding buildArrayDestructuringBinding( ArrayDestructuringBindingContext ctx ) {
 		var								pos				= tools.getPosition( ctx );
 		var								src				= tools.getSourceText( ctx );
@@ -1581,6 +1715,13 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		return new BoxArrayDestructuringBinding( target, nestedPattern, defaultValue, false, pos, src );
 	}
 
+	/**
+	 * Build and normalize an object destructuring key expression.
+	 *
+	 * @param ctx struct key parser context
+	 *
+	 * @return key expression
+	 */
 	private BoxExpression buildObjectDestructuringKey( StructKeyContext ctx ) {
 		BoxExpression key = ctx.accept( this );
 		if ( key instanceof BoxScope scope ) {
@@ -1589,6 +1730,13 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		return key;
 	}
 
+	/**
+	 * Build a target expression for object/array destructuring assignment.
+	 *
+	 * @param ctx fully-qualified-name parser context
+	 *
+	 * @return target expression
+	 */
 	private BoxExpression buildObjectDestructuringTarget( FqnContext ctx ) {
 		var				identifiers	= ctx.identifier();
 		var				rootCtx		= identifiers.get( 0 );

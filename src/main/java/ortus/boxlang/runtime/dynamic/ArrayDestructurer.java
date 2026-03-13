@@ -51,19 +51,31 @@ public class ArrayDestructurer {
 		return sourceValue;
 	}
 
+	/**
+	 * binding.
+	 */
 	public static Binding binding( Target target, Binding[] nested, Function<Object, Object> defaultValueSupplier ) {
 		return new Binding( target, nested == null ? new Binding[] {} : nested, defaultValueSupplier, false );
 	}
 
+	/**
+	 * rest.
+	 */
 	public static Binding rest( Target target ) {
 		return new Binding( target, new Binding[] {}, null, true );
 	}
 
+	/**
+	 * target.
+	 */
 	public static Target target( boolean scoped, String... path ) {
 		Key[] keys = Arrays.stream( path ).map( Key::of ).toArray( Key[]::new );
 		return new Target( scoped, keys );
 	}
 
+	/**
+	 * applyBindings.
+	 */
 	private static void applyBindings( IBoxContext context, Array source, boolean isFinal, Key mustBeScopeName, Binding[] bindings, String pathPrefix ) {
 		Binding[]	safeBindings	= bindings == null ? new Binding[] {} : bindings;
 
@@ -142,6 +154,9 @@ public class ArrayDestructurer {
 		assignTarget( context, restBinding.getTarget(), rest, isFinal, mustBeScopeName );
 	}
 
+	/**
+	 * applyBinding.
+	 */
 	private static void applyBinding( IBoxContext context, Array source, boolean isFinal, Key mustBeScopeName, Binding binding, Integer sourceIndex,
 	    String keyPath ) {
 		boolean	hasValue	= sourceIndex != null && sourceIndex >= 1 && sourceIndex <= source.size();
@@ -171,6 +186,9 @@ public class ArrayDestructurer {
 		assignTarget( context, binding.getTarget(), value, isFinal, mustBeScopeName );
 	}
 
+	/**
+	 * applyMissingBinding.
+	 */
 	private static void applyMissingBinding( IBoxContext context, Binding binding, boolean isFinal, Key mustBeScopeName, String pathPrefix ) {
 		if ( binding.isRest() ) {
 			assignTarget( context, binding.getTarget(), new Array(), isFinal, mustBeScopeName );
@@ -195,6 +213,9 @@ public class ArrayDestructurer {
 		assignTarget( context, binding.getTarget(), value, isFinal, mustBeScopeName );
 	}
 
+	/**
+	 * assignTarget.
+	 */
 	private static void assignTarget( IBoxContext context, Target target, Object value, boolean isFinal, Key mustBeScopeName ) {
 		if ( target == null || target.getPath().length == 0 ) {
 			throw new BoxRuntimeException( "Invalid destructuring target" );
@@ -229,6 +250,9 @@ public class ArrayDestructurer {
 		Referencer.setDeep( context, isFinal, null, scope, value );
 	}
 
+	/**
+	 * toArrayOrThrow.
+	 */
 	private static Array toArrayOrThrow( Object value, String path ) {
 		CastAttempt<Array> casted = ArrayCaster.attempt( value );
 		if ( !casted.wasSuccessful() ) {
@@ -238,10 +262,16 @@ public class ArrayDestructurer {
 		return casted.get();
 	}
 
+	/**
+	 * describeType.
+	 */
 	private static String describeType( Object value ) {
 		return value == null ? "null" : value.getClass().getName();
 	}
 
+	/**
+	 * joinPath.
+	 */
 	private static String joinPath( String prefix, String key ) {
 		if ( prefix == null || prefix.isEmpty() ) {
 			return key;
@@ -263,25 +293,40 @@ public class ArrayDestructurer {
 			this.rest					= rest;
 		}
 
-		public Target getTarget() {
-			return target;
-		}
+			/**
+			 * @return assignment target descriptor.
+			 */
+			public Target getTarget() {
+				return target;
+			}
 
-		public Binding[] getNested() {
-			return nested;
-		}
+			/**
+			 * @return nested destructuring bindings, or null when none.
+			 */
+			public Binding[] getNested() {
+				return nested;
+			}
 
-		public Function<Object, Object> getDefaultValueSupplier() {
-			return defaultValueSupplier;
-		}
+			/**
+			 * @return default value supplier, or null when no default is configured.
+			 */
+			public Function<Object, Object> getDefaultValueSupplier() {
+				return defaultValueSupplier;
+			}
 
-		public boolean isRest() {
-			return rest;
-		}
+			/**
+			 * @return true when this binding captures the rest segment.
+			 */
+			public boolean isRest() {
+				return rest;
+			}
 
-		public boolean hasNested() {
-			return nested != null && nested.length > 0;
-		}
+			/**
+			 * @return true when this binding has nested bindings.
+			 */
+			public boolean hasNested() {
+				return nested != null && nested.length > 0;
+			}
 	}
 
 	public static final class Target {
@@ -294,12 +339,18 @@ public class ArrayDestructurer {
 			this.path	= path;
 		}
 
-		public boolean isScoped() {
-			return scoped;
-		}
+			/**
+			 * @return true when assignment targets an explicit scope path.
+			 */
+			public boolean isScoped() {
+				return scoped;
+			}
 
-		public Key[] getPath() {
-			return path;
-		}
+			/**
+			 * @return key path representing the assignment target.
+			 */
+			public Key[] getPath() {
+				return path;
+			}
 	}
 }

@@ -565,6 +565,9 @@ public class BoxParser extends AbstractParser {
 		}
 	}
 
+	/**
+	 * isLikelyUnparenthesizedObjectDestructuring.
+	 */
 	private boolean isLikelyUnparenthesizedObjectDestructuring( Position position ) {
 		if ( ! ( sourceToParse instanceof SourceCode sourceCode ) ) {
 			return false;

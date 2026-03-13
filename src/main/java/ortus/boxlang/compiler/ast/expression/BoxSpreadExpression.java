@@ -32,15 +32,26 @@ public class BoxSpreadExpression extends BoxExpression {
 
 	private BoxExpression expression;
 
+	/**
+	 * BoxSpreadExpression.
+	 */
 	public BoxSpreadExpression( BoxExpression expression, Position position, String sourceText ) {
 		super( position, sourceText );
 		setExpression( expression );
 	}
 
+	/**
+	 * @return spread source expression.
+	 */
 	public BoxExpression getExpression() {
 		return expression;
 	}
 
+	/**
+	 * Set the spread source expression.
+	 *
+	 * @param expression spread expression
+	 */
 	public void setExpression( BoxExpression expression ) {
 		replaceChildren( this.expression, expression );
 		this.expression = expression;
@@ -49,11 +60,17 @@ public class BoxSpreadExpression extends BoxExpression {
 		}
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public boolean isLiteral() {
 		return expression != null && expression.isLiteral();
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
@@ -61,10 +78,22 @@ public class BoxSpreadExpression extends BoxExpression {
 		return map;
 	}
 
+	/**
+	 * Accept a non-mutating visitor.
+	 *
+	 * @param v visitor instance
+	 */
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
 	}
 
+	/**
+	 * Accept a replacing visitor.
+	 *
+	 * @param v visitor instance
+	 *
+	 * @return replacement node
+	 */
 	public BoxNode accept( ReplacingBoxVisitor v ) {
 		return v.visit( this );
 	}

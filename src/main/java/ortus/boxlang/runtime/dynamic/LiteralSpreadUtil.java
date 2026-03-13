@@ -36,10 +36,16 @@ public class LiteralSpreadUtil {
 		STRUCT
 	}
 
+	/**
+	 * spread.
+	 */
 	public static SpreadValue spread( Object value ) {
 		return new SpreadValue( value );
 	}
 
+	/**
+	 * array.
+	 */
 	public static Array array( Object... values ) {
 		values = normalizeVarargs( values );
 		Array result = new Array();
@@ -92,6 +98,9 @@ public class LiteralSpreadUtil {
 		return array( values );
 	}
 
+	/**
+	 * struct.
+	 */
 	public static IStruct struct( IStruct.TYPES type, Object... values ) {
 		values = normalizeVarargs( values );
 		IStruct result = new Struct( type );
@@ -112,6 +121,9 @@ public class LiteralSpreadUtil {
 		return result;
 	}
 
+	/**
+	 * appendArraySpread.
+	 */
 	private static void appendArraySpread( Array target, Object spreadValue ) {
 		CastAttempt<Array> casted = ArrayCaster.attempt( spreadValue );
 		if ( !casted.wasSuccessful() ) {
@@ -121,6 +133,9 @@ public class LiteralSpreadUtil {
 		target.addAll( casted.get() );
 	}
 
+	/**
+	 * appendStructSpread.
+	 */
 	private static void appendStructSpread( IStruct target, Object spreadValue ) {
 		if ( spreadValue instanceof IStruct spreadStruct ) {
 			spreadStruct.forEach( target::put );
@@ -139,6 +154,9 @@ public class LiteralSpreadUtil {
 		}
 	}
 
+	/**
+	 * detectAmbiguousSpreadType.
+	 */
 	private static AmbiguousSpreadType detectAmbiguousSpreadType( Object spreadValue ) {
 		if ( spreadValue instanceof IStruct ) {
 			return AmbiguousSpreadType.STRUCT;
@@ -153,6 +171,9 @@ public class LiteralSpreadUtil {
 		    "Cannot spread value of type [" + describeType( spreadValue ) + "] into an ambiguous bracket literal." );
 	}
 
+	/**
+	 * describeType.
+	 */
 	private static String describeType( Object value ) {
 		return value == null ? "null" : value.getClass().getName();
 	}
@@ -173,8 +194,11 @@ public class LiteralSpreadUtil {
 			this.value = value;
 		}
 
-		public Object getValue() {
-			return value;
-		}
+			/**
+			 * @return wrapped spread value.
+			 */
+			public Object getValue() {
+				return value;
+			}
 	}
 }

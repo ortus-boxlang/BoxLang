@@ -265,22 +265,27 @@ public abstract class VoidBoxVisitor {
 		visitChildren( node );
 	}
 
+	/** {@inheritDoc} */
 	public void visit( BoxNull node ) {
 		visitChildren( node );
 	}
 
+	/** {@inheritDoc} */
 	public void visit( BoxArrayDestructuringPattern node ) {
 		visitChildren( node );
 	}
 
+	/** {@inheritDoc} */
 	public void visit( BoxArrayDestructuringBinding node ) {
 		visitChildren( node );
 	}
 
+	/** {@inheritDoc} */
 	public void visit( BoxObjectDestructuringPattern node ) {
 		visitChildren( node );
 	}
 
+	/** {@inheritDoc} */
 	public void visit( BoxObjectDestructuringBinding node ) {
 		visitChildren( node );
 	}
@@ -289,10 +294,14 @@ public abstract class VoidBoxVisitor {
 		visitChildren( node );
 	}
 
+	/**
+	 * visit.
+	 */
 	public void visit( BoxScope node ) {
 		visitChildren( node );
 	}
 
+	/** {@inheritDoc} */
 	public void visit( BoxSpreadExpression node ) {
 		visitChildren( node );
 	}

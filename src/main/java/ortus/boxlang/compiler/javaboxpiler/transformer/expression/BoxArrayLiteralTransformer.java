@@ -85,6 +85,9 @@ public class BoxArrayLiteralTransformer extends AbstractTransformer {
 		return javaExpr;
 	}
 
+	/**
+	 * isAmbiguousSpreadOnlyArrayLiteral.
+	 */
 	private boolean isAmbiguousSpreadOnlyArrayLiteral( BoxArrayLiteral arrayLiteral ) {
 		return !arrayLiteral.getValues().isEmpty()
 		    && arrayLiteral.getValues().stream().allMatch( value -> value instanceof BoxSpreadExpression );

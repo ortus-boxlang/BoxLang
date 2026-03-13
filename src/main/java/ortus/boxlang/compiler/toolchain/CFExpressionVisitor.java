@@ -686,6 +686,9 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 	}
 
 	@Override
+	/**
+	 * visitExprDestructuringAssign.
+	 */
 	public BoxExpression visitExprDestructuringAssign( ExprDestructuringAssignContext ctx ) {
 		var	pos		= tools.getPosition( ctx );
 		var	src		= tools.getSourceText( ctx );
@@ -695,6 +698,9 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 	}
 
 	@Override
+	/**
+	 * visitExprArrayDestructuringAssign.
+	 */
 	public BoxExpression visitExprArrayDestructuringAssign( ExprArrayDestructuringAssignContext ctx ) {
 		var	pos		= tools.getPosition( ctx );
 		var	src		= tools.getSourceText( ctx );
@@ -704,6 +710,9 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 	}
 
 	@Override
+	/**
+	 * visitObjectDestructuringPattern.
+	 */
 	public BoxExpression visitObjectDestructuringPattern( ObjectDestructuringPatternContext ctx ) {
 		var									pos			= tools.getPosition( ctx );
 		var									src			= tools.getSourceText( ctx );
@@ -722,6 +731,9 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 	}
 
 	@Override
+	/**
+	 * visitArrayDestructuringPattern.
+	 */
 	public BoxExpression visitArrayDestructuringPattern( ArrayDestructuringPatternContext ctx ) {
 		var									pos			= tools.getPosition( ctx );
 		var									src			= tools.getSourceText( ctx );
@@ -1115,6 +1127,9 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		return new BoxStructLiteral( type, values, pos, src );
 	}
 
+	/**
+	 * addStructMember.
+	 */
 	private void addStructMember( List<BoxExpression> values, StructMemberContext structMember ) {
 		var key = structMember.structKey().accept( this );
 		if ( key instanceof BoxFQN ) {
@@ -1139,10 +1154,16 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		                        .orElse( new BoxIntegerLiteral( src, pos, src ) ) ) ) ) );
 	}
 
+	/**
+	 * tryBuildDestructuringPatternFromStructLiteral.
+	 */
 	private BoxObjectDestructuringPattern tryBuildDestructuringPatternFromStructLiteral( BoxStructLiteral structLiteral ) {
 		return tryBuildDestructuringPatternFromStructLiteral( structLiteral, true );
 	}
 
+	/**
+	 * tryBuildDestructuringPatternFromStructLiteral.
+	 */
 	private BoxObjectDestructuringPattern tryBuildDestructuringPatternFromStructLiteral( BoxStructLiteral structLiteral, boolean allowShorthandDefaults ) {
 		if ( structLiteral.getType() != BoxStructType.Unordered ) {
 			return null;
@@ -1228,6 +1249,9 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		return new BoxObjectDestructuringPattern( bindings, structLiteral.getPosition(), structLiteral.getSourceText() );
 	}
 
+	/**
+	 * tryBuildDestructuringPatternFromExpression.
+	 */
 	private BoxObjectDestructuringPattern tryBuildDestructuringPatternFromExpression( BoxExpression expression ) {
 		BoxExpression current = expression;
 		while ( current instanceof BoxParenthesis parenthesis ) {
@@ -1239,10 +1263,16 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		return null;
 	}
 
+	/**
+	 * tryBuildArrayDestructuringPatternFromArrayLiteral.
+	 */
 	private BoxArrayDestructuringPattern tryBuildArrayDestructuringPatternFromArrayLiteral( BoxArrayLiteral arrayLiteral ) {
 		return tryBuildArrayDestructuringPatternFromArrayLiteral( arrayLiteral, true );
 	}
 
+	/**
+	 * tryBuildArrayDestructuringPatternFromArrayLiteral.
+	 */
 	private BoxArrayDestructuringPattern tryBuildArrayDestructuringPatternFromArrayLiteral( BoxArrayLiteral arrayLiteral, boolean allowShorthandDefaults ) {
 		List<BoxExpression> values = arrayLiteral.getValues();
 		if ( values == null ) {
@@ -1317,6 +1347,9 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		return new BoxArrayDestructuringPattern( bindings, arrayLiteral.getPosition(), arrayLiteral.getSourceText() );
 	}
 
+	/**
+	 * tryBuildArrayDestructuringPatternFromOrderedStructLiteral.
+	 */
 	private BoxArrayDestructuringPattern tryBuildArrayDestructuringPatternFromOrderedStructLiteral( BoxStructLiteral structLiteral ) {
 		if ( structLiteral.getType() != BoxStructType.Ordered ) {
 			return null;
@@ -1343,6 +1376,9 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		return new BoxArrayDestructuringPattern( bindings, structLiteral.getPosition(), structLiteral.getSourceText() );
 	}
 
+	/**
+	 * normalizeArrayDestructuringShorthandTarget.
+	 */
 	private BoxExpression normalizeArrayDestructuringShorthandTarget( BoxExpression key ) {
 		if ( key instanceof BoxScope scope ) {
 			return new BoxIdentifier( scope.getName(), scope.getPosition(), scope.getSourceText() );
@@ -1350,6 +1386,9 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		return key;
 	}
 
+	/**
+	 * tryBuildArrayDestructuringPatternFromExpression.
+	 */
 	private BoxArrayDestructuringPattern tryBuildArrayDestructuringPatternFromExpression( BoxExpression expression ) {
 		BoxExpression current = expression;
 		while ( current instanceof BoxParenthesis parenthesis ) {
@@ -1364,6 +1403,9 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		return null;
 	}
 
+	/**
+	 * normalizeDestructuringKey.
+	 */
 	private BoxExpression normalizeDestructuringKey( BoxExpression key ) {
 		if ( key instanceof BoxScope scope ) {
 			return new BoxIdentifier( scope.getName(), scope.getPosition(), scope.getSourceText() );
@@ -1371,6 +1413,9 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		return key;
 	}
 
+	/**
+	 * isDestructuringTargetExpression.
+	 */
 	private boolean isDestructuringTargetExpression( BoxExpression expression ) {
 		if ( expression instanceof BoxIdentifier || expression instanceof BoxScope ) {
 			return true;
@@ -1388,6 +1433,9 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		return false;
 	}
 
+	/**
+	 * isExplicitDestructuringScope.
+	 */
 	private boolean isExplicitDestructuringScope( String scopeName ) {
 		return switch ( scopeName.toLowerCase() ) {
 			case "application", "arguments", "cgi", "client", "cookie", "form", "local", "request", "server", "session", "static", "this", "thread",
@@ -1434,6 +1482,9 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 	// Builders perform specialized task for the visitor functions where the task
 	// is too complex to be done inline or otherwise obfuscates what the visitor is doing
 
+	/**
+	 * buildObjectDestructuringBinding.
+	 */
 	private BoxObjectDestructuringBinding buildObjectDestructuringBinding( ObjectDestructuringBindingContext ctx ) {
 		var								pos				= tools.getPosition( ctx );
 		var								src				= tools.getSourceText( ctx );
@@ -1463,6 +1514,9 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		return new BoxObjectDestructuringBinding( key, target, nestedPattern, defaultValue, false, pos, src );
 	}
 
+	/**
+	 * buildArrayDestructuringBinding.
+	 */
 	private BoxArrayDestructuringBinding buildArrayDestructuringBinding( ArrayDestructuringBindingContext ctx ) {
 		var								pos				= tools.getPosition( ctx );
 		var								src				= tools.getSourceText( ctx );
@@ -1480,6 +1534,9 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		return new BoxArrayDestructuringBinding( target, nestedPattern, defaultValue, false, pos, src );
 	}
 
+	/**
+	 * buildObjectDestructuringKey.
+	 */
 	private BoxExpression buildObjectDestructuringKey( StructKeyContext ctx ) {
 		BoxExpression key = ctx.accept( this );
 		if ( key instanceof BoxScope scope ) {
@@ -1488,6 +1545,9 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		return key;
 	}
 
+	/**
+	 * buildObjectDestructuringTarget.
+	 */
 	private BoxExpression buildObjectDestructuringTarget( FqnContext ctx ) {
 		var				identifiers	= ctx.identifier();
 		var				rootCtx		= identifiers.get( 0 );

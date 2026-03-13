@@ -369,6 +369,9 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		return nodes;
 	}
 
+	/**
+	 * transformDestructuringEquals.
+	 */
 	private List<AbstractInsnNode> transformDestructuringEquals( BoxObjectDestructuringPattern pattern, List<AbstractInsnNode> jRight,
 	    List<BoxAssignmentModifier> modifiers ) {
 		boolean							hasVar			= hasVar( modifiers );
@@ -419,6 +422,9 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		return nodes;
 	}
 
+	/**
+	 * transformArrayDestructuringEquals.
+	 */
 	private List<AbstractInsnNode> transformArrayDestructuringEquals( BoxArrayDestructuringPattern pattern, List<AbstractInsnNode> jRight,
 	    List<BoxAssignmentModifier> modifiers ) {
 		boolean							hasVar			= hasVar( modifiers );
@@ -469,11 +475,17 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		return nodes;
 	}
 
+	/**
+	 * buildDestructuringBindingsArrayNodes.
+	 */
 	private List<AbstractInsnNode> buildDestructuringBindingsArrayNodes( List<BoxObjectDestructuringBinding> bindings, boolean isDeclaration ) {
 		return AsmHelper.array( Type.getType( ObjectDestructurer.Binding.class ), bindings,
 		    ( binding, i ) -> buildDestructuringBindingNodes( binding, isDeclaration ) );
 	}
 
+	/**
+	 * buildDestructuringBindingNodes.
+	 */
 	private List<AbstractInsnNode> buildDestructuringBindingNodes( BoxObjectDestructuringBinding binding, boolean isDeclaration ) {
 		List<AbstractInsnNode> nodes = new ArrayList<>();
 		if ( binding.isRest() ) {
@@ -524,11 +536,17 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		return nodes;
 	}
 
+	/**
+	 * buildArrayDestructuringBindingsArrayNodes.
+	 */
 	private List<AbstractInsnNode> buildArrayDestructuringBindingsArrayNodes( List<BoxArrayDestructuringBinding> bindings, boolean isDeclaration ) {
 		return AsmHelper.array( Type.getType( ArrayDestructurer.Binding.class ), bindings,
 		    ( binding, i ) -> buildArrayDestructuringBindingNodes( binding, isDeclaration ) );
 	}
 
+	/**
+	 * buildArrayDestructuringBindingNodes.
+	 */
 	private List<AbstractInsnNode> buildArrayDestructuringBindingNodes( BoxArrayDestructuringBinding binding, boolean isDeclaration ) {
 		List<AbstractInsnNode> nodes = new ArrayList<>();
 		if ( binding.isRest() ) {
@@ -576,6 +594,9 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		return nodes;
 	}
 
+	/**
+	 * buildDestructuringTargetNodes.
+	 */
 	private List<AbstractInsnNode> buildDestructuringTargetNodes( BoxExpression target, boolean isDeclaration ) {
 		DestructuringTargetDescriptor	descriptor	= describeDestructuringTarget( target, isDeclaration );
 		List<AbstractInsnNode>			nodes		= new ArrayList<>();
@@ -594,6 +615,9 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		return nodes;
 	}
 
+	/**
+	 * buildArrayDestructuringTargetNodes.
+	 */
 	private List<AbstractInsnNode> buildArrayDestructuringTargetNodes( BoxExpression target, boolean isDeclaration ) {
 		DestructuringTargetDescriptor	descriptor	= describeDestructuringTarget( target, isDeclaration );
 		List<AbstractInsnNode>			nodes		= new ArrayList<>();
@@ -612,6 +636,9 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		return nodes;
 	}
 
+	/**
+	 * describeDestructuringTarget.
+	 */
 	private DestructuringTargetDescriptor describeDestructuringTarget( BoxExpression target, boolean isDeclaration ) {
 		if ( target instanceof BoxIdentifier id ) {
 			return new DestructuringTargetDescriptor( false, List.of( id.getName() ) );
@@ -662,6 +689,9 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		    target.getSourceText() );
 	}
 
+	/**
+	 * extractDestructuringKeyName.
+	 */
 	private String extractDestructuringKeyName( BoxObjectDestructuringBinding binding ) {
 		BoxExpression key = binding.getKey();
 		if ( key instanceof BoxIdentifier id ) {
@@ -697,6 +727,9 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		}
 	}
 
+	/**
+	 * isExplicitDestructuringScope.
+	 */
 	private boolean isExplicitDestructuringScope( String scopeName ) {
 		return switch ( scopeName.toLowerCase() ) {
 			case "application", "arguments", "cgi", "client", "cookie", "form", "local", "request", "server", "session", "static", "this", "thread",

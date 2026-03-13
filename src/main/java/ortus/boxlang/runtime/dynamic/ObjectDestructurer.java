@@ -54,19 +54,31 @@ public class ObjectDestructurer {
 		return sourceValue;
 	}
 
+	/**
+	 * binding.
+	 */
 	public static Binding binding( String sourceKey, Target target, Binding[] nested, Function<Object, Object> defaultValueSupplier ) {
 		return new Binding( Key.of( sourceKey ), target, nested == null ? new Binding[] {} : nested, defaultValueSupplier, false );
 	}
 
+	/**
+	 * rest.
+	 */
 	public static Binding rest( Target target ) {
 		return new Binding( null, target, new Binding[] {}, null, true );
 	}
 
+	/**
+	 * target.
+	 */
 	public static Target target( boolean scoped, String... path ) {
 		Key[] keys = Arrays.stream( path ).map( Key::of ).toArray( Key[]::new );
 		return new Target( scoped, keys );
 	}
 
+	/**
+	 * applyBindings.
+	 */
 	private static void applyBindings( IBoxContext context, IStruct source, boolean isFinal, Key mustBeScopeName, Binding[] bindings, String pathPrefix ) {
 		Set<Key>	consumed	= new HashSet<>();
 		Binding		restBinding	= null;
@@ -119,6 +131,9 @@ public class ObjectDestructurer {
 		}
 	}
 
+	/**
+	 * applyMissingBinding.
+	 */
 	private static void applyMissingBinding( IBoxContext context, Binding binding, boolean isFinal, Key mustBeScopeName, String pathPrefix ) {
 		if ( binding.isRest() ) {
 			assignTarget( context, binding.getTarget(), new Struct(), isFinal, mustBeScopeName );
@@ -144,6 +159,9 @@ public class ObjectDestructurer {
 		assignTarget( context, binding.getTarget(), value, isFinal, mustBeScopeName );
 	}
 
+	/**
+	 * assignTarget.
+	 */
 	private static void assignTarget( IBoxContext context, Target target, Object value, boolean isFinal, Key mustBeScopeName ) {
 		if ( target == null || target.getPath().length == 0 ) {
 			throw new BoxRuntimeException( "Invalid destructuring target" );
@@ -178,6 +196,9 @@ public class ObjectDestructurer {
 		Referencer.setDeep( context, isFinal, null, scope, value );
 	}
 
+	/**
+	 * toStructOrThrow.
+	 */
 	private static IStruct toStructOrThrow( Object value, String path ) {
 		CastAttempt<IStruct> casted = StructCaster.attempt( value );
 		if ( !casted.wasSuccessful() ) {
@@ -187,10 +208,16 @@ public class ObjectDestructurer {
 		return casted.get();
 	}
 
+	/**
+	 * describeType.
+	 */
 	private static String describeType( Object value ) {
 		return value == null ? "null" : value.getClass().getName();
 	}
 
+	/**
+	 * joinPath.
+	 */
 	private static String joinPath( String prefix, String key ) {
 		if ( prefix == null || prefix.isEmpty() ) {
 			return key;
@@ -214,29 +241,47 @@ public class ObjectDestructurer {
 			this.rest					= rest;
 		}
 
-		public Key getSourceKey() {
-			return sourceKey;
-		}
+			/**
+			 * @return source key read from the source struct.
+			 */
+			public Key getSourceKey() {
+				return sourceKey;
+			}
 
-		public Target getTarget() {
-			return target;
-		}
+			/**
+			 * @return assignment target descriptor.
+			 */
+			public Target getTarget() {
+				return target;
+			}
 
-		public Binding[] getNested() {
-			return nested;
-		}
+			/**
+			 * @return nested destructuring bindings, or null when none.
+			 */
+			public Binding[] getNested() {
+				return nested;
+			}
 
-		public Function<Object, Object> getDefaultValueSupplier() {
-			return defaultValueSupplier;
-		}
+			/**
+			 * @return default value supplier, or null when no default is configured.
+			 */
+			public Function<Object, Object> getDefaultValueSupplier() {
+				return defaultValueSupplier;
+			}
 
-		public boolean isRest() {
-			return rest;
-		}
+			/**
+			 * @return true when this binding captures the rest segment.
+			 */
+			public boolean isRest() {
+				return rest;
+			}
 
-		public boolean hasNested() {
-			return nested != null && nested.length > 0;
-		}
+			/**
+			 * @return true when this binding has nested bindings.
+			 */
+			public boolean hasNested() {
+				return nested != null && nested.length > 0;
+			}
 	}
 
 	public static final class Target {
@@ -249,12 +294,18 @@ public class ObjectDestructurer {
 			this.path	= path;
 		}
 
-		public boolean isScoped() {
-			return scoped;
-		}
+			/**
+			 * @return true when assignment targets an explicit scope path.
+			 */
+			public boolean isScoped() {
+				return scoped;
+			}
 
-		public Key[] getPath() {
-			return path;
-		}
+			/**
+			 * @return key path representing the assignment target.
+			 */
+			public Key[] getPath() {
+				return path;
+			}
 	}
 }

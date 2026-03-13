@@ -584,6 +584,9 @@ public class CFParser extends AbstractParser {
 		}
 	}
 
+	/**
+	 * isLikelyUnparenthesizedObjectDestructuring.
+	 */
 	private boolean isLikelyUnparenthesizedObjectDestructuring( Position position ) {
 		if ( ! ( sourceToParse instanceof SourceCode sourceCode ) ) {
 			return false;

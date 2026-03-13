@@ -67,11 +67,17 @@ public class BoxArrayLiteralTransformer extends AbstractTransformer {
 		// return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 
+	/**
+	 * isAmbiguousSpreadOnlyArrayLiteral.
+	 */
 	private boolean isAmbiguousSpreadOnlyArrayLiteral( BoxArrayLiteral arrayLiteral ) {
 		return !arrayLiteral.getValues().isEmpty()
 		    && arrayLiteral.getValues().stream().allMatch( value -> value instanceof BoxSpreadExpression );
 	}
 
+	/**
+	 * transformArrayMember.
+	 */
 	private List<AbstractInsnNode> transformArrayMember( BoxExpression value, TransformerContext context ) {
 		if ( value instanceof BoxSpreadExpression spread ) {
 			List<AbstractInsnNode> spreadNodes = new ArrayList<>( transpiler.transform( spread.getExpression(), context, ReturnValueContext.VALUE_OR_NULL ) );

@@ -186,6 +186,9 @@ public abstract class BoxExpression extends BoxNode {
 		throw new ExpressionException( "Non-literal value in BoxExpr type: " + this.getClass().getSimpleName(), this );
 	}
 
+	/**
+	 * spreadToArrayOrThrow.
+	 */
 	private static Array spreadToArrayOrThrow( Object spreadValue, String literalType, BoxNode node ) {
 		String typeDescription = spreadValue == null ? "null" : spreadValue.getClass().getName();
 		try {

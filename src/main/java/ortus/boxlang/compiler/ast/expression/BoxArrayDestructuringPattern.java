@@ -34,21 +34,35 @@ public class BoxArrayDestructuringPattern extends BoxExpression {
 
 	private List<BoxArrayDestructuringBinding> bindings;
 
+	/**
+	 * BoxArrayDestructuringPattern.
+	 */
 	public BoxArrayDestructuringPattern( List<BoxArrayDestructuringBinding> bindings, Position position, String sourceText ) {
 		super( position, sourceText );
 		setBindings( bindings );
 	}
 
+	/**
+	 * @return binding entries in source order.
+	 */
 	public List<BoxArrayDestructuringBinding> getBindings() {
 		return bindings;
 	}
 
+	/**
+	 * Replace the binding list.
+	 *
+	 * @param bindings binding entries
+	 */
 	public void setBindings( List<BoxArrayDestructuringBinding> bindings ) {
 		replaceChildren( this.bindings, bindings );
 		this.bindings = bindings;
 		this.bindings.forEach( binding -> binding.setParent( this ) );
 	}
 
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
@@ -56,10 +70,22 @@ public class BoxArrayDestructuringPattern extends BoxExpression {
 		return map;
 	}
 
+	/**
+	 * Accept a non-mutating visitor.
+	 *
+	 * @param v visitor instance
+	 */
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
 	}
 
+	/**
+	 * Accept a replacing visitor.
+	 *
+	 * @param v visitor instance
+	 *
+	 * @return replacement node
+	 */
 	public BoxNode accept( ReplacingBoxVisitor v ) {
 		return v.visit( this );
 	}

@@ -517,10 +517,12 @@ public abstract class ReplacingBoxVisitor {
 		return node;
 	}
 
+	/** {@inheritDoc} */
 	public BoxNode visit( BoxNull node ) {
 		return node;
 	}
 
+	/** {@inheritDoc} */
 	public BoxNode visit( BoxArrayDestructuringPattern node ) {
 		for ( int i = 0; i < node.getBindings().size(); i++ ) {
 			BoxArrayDestructuringBinding	binding		= node.getBindings().get( i );
@@ -533,6 +535,7 @@ public abstract class ReplacingBoxVisitor {
 		return node;
 	}
 
+	/** {@inheritDoc} */
 	public BoxNode visit( BoxArrayDestructuringBinding node ) {
 		BoxExpression target = node.getTarget();
 		if ( target != null ) {
@@ -558,6 +561,7 @@ public abstract class ReplacingBoxVisitor {
 		return node;
 	}
 
+	/** {@inheritDoc} */
 	public BoxNode visit( BoxObjectDestructuringPattern node ) {
 		for ( int i = 0; i < node.getBindings().size(); i++ ) {
 			BoxObjectDestructuringBinding	binding		= node.getBindings().get( i );
@@ -570,6 +574,7 @@ public abstract class ReplacingBoxVisitor {
 		return node;
 	}
 
+	/** {@inheritDoc} */
 	public BoxNode visit( BoxObjectDestructuringBinding node ) {
 		BoxExpression key = node.getKey();
 		if ( key != null ) {
@@ -611,10 +616,14 @@ public abstract class ReplacingBoxVisitor {
 		return node;
 	}
 
+	/**
+	 * visit.
+	 */
 	public BoxNode visit( BoxScope node ) {
 		return node;
 	}
 
+	/** {@inheritDoc} */
 	public BoxNode visit( BoxSpreadExpression node ) {
 		BoxExpression	expr	= node.getExpression();
 		BoxNode			newExpr	= expr.accept( this );
