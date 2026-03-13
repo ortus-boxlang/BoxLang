@@ -293,40 +293,40 @@ public class ArrayDestructurer {
 			this.rest					= rest;
 		}
 
-			/**
-			 * @return assignment target descriptor.
-			 */
-			public Target getTarget() {
-				return target;
-			}
+		/**
+		 * @return assignment target descriptor.
+		 */
+		public Target getTarget() {
+			return target;
+		}
 
-			/**
-			 * @return nested destructuring bindings, or null when none.
-			 */
-			public Binding[] getNested() {
-				return nested;
-			}
+		/**
+		 * @return nested destructuring bindings, or null when none.
+		 */
+		public Binding[] getNested() {
+			return nested;
+		}
 
-			/**
-			 * @return default value supplier, or null when no default is configured.
-			 */
-			public Function<Object, Object> getDefaultValueSupplier() {
-				return defaultValueSupplier;
-			}
+		/**
+		 * @return default value supplier, or null when no default is configured.
+		 */
+		public Function<Object, Object> getDefaultValueSupplier() {
+			return defaultValueSupplier;
+		}
 
-			/**
-			 * @return true when this binding captures the rest segment.
-			 */
-			public boolean isRest() {
-				return rest;
-			}
+		/**
+		 * @return true when this binding captures the rest segment.
+		 */
+		public boolean isRest() {
+			return rest;
+		}
 
-			/**
-			 * @return true when this binding has nested bindings.
-			 */
-			public boolean hasNested() {
-				return nested != null && nested.length > 0;
-			}
+		/**
+		 * @return true when this binding has nested bindings.
+		 */
+		public boolean hasNested() {
+			return nested != null && nested.length > 0;
+		}
 	}
 
 	public static final class Target {
@@ -339,18 +339,18 @@ public class ArrayDestructurer {
 			this.path	= path;
 		}
 
-			/**
-			 * @return true when assignment targets an explicit scope path.
-			 */
-			public boolean isScoped() {
-				return scoped;
-			}
+		/**
+		 * @return true when assignment targets an explicit scope path.
+		 */
+		public boolean isScoped() {
+			return scoped;
+		}
 
-			/**
-			 * @return key path representing the assignment target.
-			 */
-			public Key[] getPath() {
-				return path;
-			}
+		/**
+		 * @return key path representing the assignment target.
+		 */
+		public Key[] getPath() {
+			return path;
+		}
 	}
 }

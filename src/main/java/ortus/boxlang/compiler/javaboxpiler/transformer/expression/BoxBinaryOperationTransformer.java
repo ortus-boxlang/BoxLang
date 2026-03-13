@@ -225,8 +225,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 	 *
 	 * @return invoke method call expression
 	 */
-	@NonNull
-	private static MethodCallExpr generateBinaryMethodCallExpr( String methodName, Object... args ) {
+	@NonNull private static MethodCallExpr generateBinaryMethodCallExpr( String methodName, Object... args ) {
 		NameExpr		nameExpr		= new NameExpr( methodName );
 		MethodCallExpr	methodCallExpr	= new MethodCallExpr( nameExpr, "invoke" );
 		for ( Object o : args ) {

@@ -194,11 +194,11 @@ public class LiteralSpreadUtil {
 			this.value = value;
 		}
 
-			/**
-			 * @return wrapped spread value.
-			 */
-			public Object getValue() {
-				return value;
-			}
+		/**
+		 * @return wrapped spread value.
+		 */
+		public Object getValue() {
+			return value;
+		}
 	}
 }
