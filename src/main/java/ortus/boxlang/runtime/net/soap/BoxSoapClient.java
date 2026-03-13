@@ -184,8 +184,8 @@ public class BoxSoapClient implements IReferenceable {
 	private long					totalInvocations			= 0;
 	private long					successfulInvocations		= 0;
 	private long					failedInvocations			= 0;
-  
-  /**
+
+	/**
 	 * ------------------------------------------------------------------------------
 	 * Constructors
 	 * ------------------------------------------------------------------------------
@@ -209,8 +209,8 @@ public class BoxSoapClient implements IReferenceable {
 		// This avoids NullPointerExceptions later when we add header
 		this.soapHeaders		= Struct.of();
 	}
-  
-  /**
+
+	/**
 	 * ------------------------------------------------------------------------------
 	 * Static Factory Methods
 	 * ------------------------------------------------------------------------------
@@ -224,15 +224,15 @@ public class BoxSoapClient implements IReferenceable {
 	 * @param context     The BoxLang execution context
 	 *
 	 * @return A new SOAP client instance
-   *
+	 *
 	 * @throws BoxRuntimeException If WSDL parsing fails
 	 */
 	public static BoxSoapClient fromWsdl( String wsdlUrl, HttpService httpService, IBoxContext context ) {
 		WsdlDefinition definition = WsdlParser.parse( wsdlUrl );
 		return new BoxSoapClient( definition, httpService, context );
 	}
-  
-  /**
+
+	/**
 	 * ------------------------------------------------------------------------------
 	 * Configuration Methods (Fluent)
 	 * ------------------------------------------------------------------------------
@@ -319,15 +319,15 @@ public class BoxSoapClient implements IReferenceable {
 		this.timeout = timeout != null ? timeout : 30;
 		return this;
 	}
-  
-  /**
-  * Set SOAP headers to be included in the SOAP envelope.
+
+	/**
+	 * Set SOAP headers to be included in the SOAP envelope.
 	 *
 	 * @param headers A struct of simple key/value pairs
 	 *
 	 * @return This instance for chaining
-   */
-  public BoxSoapClient withSoapHeaders( IStruct headers ) {
+	 */
+	public BoxSoapClient withSoapHeaders( IStruct headers ) {
 		validateSoapHeaders( headers );
 		this.soapHeaders = headers;
 		return this;
@@ -453,8 +453,8 @@ public class BoxSoapClient implements IReferenceable {
 	public Object invoke( String operationName ) {
 		return invoke( operationName, null );
 	}
-  
-  /**
+
+	/**
 	 * ------------------------------------------------------------------------------
 	 * Operation Invocation Methods
 	 * ------------------------------------------------------------------------------
@@ -467,14 +467,14 @@ public class BoxSoapClient implements IReferenceable {
 	 * @param arguments     The arguments (array or struct)
 	 *
 	 * @return The operation result
-   *
+	 *
 	 * @throws BoxRuntimeException If the operation fails
 	 */
 	public Object invoke( String operationName, Object arguments ) {
 		this.totalInvocations++;
 
 		try {
-      // Get the operation definition
+			// Get the operation definition
 			WsdlOperation operation = this.wsdlDefinition.getOperation( Key.of( operationName ) );
 			if ( operation == null ) {
 				throw new BoxRuntimeException(
@@ -485,15 +485,15 @@ public class BoxSoapClient implements IReferenceable {
 				);
 			}
 
-      // Build the SOAP request
+			// Build the SOAP request
 			String soapRequest = buildSoapRequest( operation, arguments );
 
-      // Log the request if debug enabled
+			// Log the request if debug enabled
 			if ( this.logger.isDebugEnabled() ) {
 				this.logger.debug( "SOAP Request to {}: {}", this.getServiceEndpoint(), soapRequest );
 			}
 
-      // Execute the HTTP request using a default HTTP client
+			// Execute the HTTP request using a default HTTP client
 			BoxHttpClient					httpClient	= this.httpService.getOrBuildClient(
 			    "HTTP/2", // HTTP version
 			    true, // follow redirects
@@ -502,7 +502,7 @@ public class BoxSoapClient implements IReferenceable {
 			    null, null // no client cert
 			);
 
-      // Build the request
+			// Build the request
 			BoxHttpClient.BoxHttpRequest	request		= httpClient
 			    .newRequest( this.getServiceEndpoint(), this.executionContext )
 			    .post()
@@ -515,20 +515,20 @@ public class BoxSoapClient implements IReferenceable {
 			    .header( "SOAPAction", operation.getSoapAction() != null ? operation.getSoapAction() : "" )
 			    .body( soapRequest );
 
-      // Do we have any custom headers to add?
+			// Do we have any custom headers to add?
 			for ( Map.Entry<String, String> header : this.customHeaders.entrySet() ) {
 				request.header( header.getKey(), header.getValue() );
 			}
 
-      // Add authentication if provided
+			// Add authentication if provided
 			if ( this.username != null && this.password != null ) {
 				request.withBasicAuth( this.username, this.password );
 			}
 
-      // Execute the request
+			// Execute the request
 			IStruct	httpResult	= ( IStruct ) request.send();
-      
-      // Parse the SOAP response
+
+			// Parse the SOAP response
 			Object	result		= parseSoapResponse( httpResult, operation );
 
 			this.successfulInvocations++;
@@ -782,17 +782,17 @@ public class BoxSoapClient implements IReferenceable {
 			DocumentBuilder	builder		= createDocumentBuilder();
 			Document		doc			= builder.newDocument();
 
-      // Determine SOAP namespace
+			// Determine SOAP namespace
 			String			soapNS		= "1.1".equals( this.soapVersion ) ? SOAP_11_ENVELOPE_NS : SOAP_12_ENVELOPE_NS;
 
-      // Create Envelope
+			// Create Envelope
 			Element			envelope	= doc.createElementNS( soapNS, "soap:Envelope" );
 			envelope.setAttribute( "xmlns:soap", soapNS );
 			envelope.setAttribute( "xmlns:xsi", XSI_NS );
 			envelope.setAttribute( "xmlns:xsd", XSD_NS );
 			envelope.setAttribute( "xmlns:apachesoap", APACHESOAP_NS_STRING );
 
-      // Add target namespace if available
+			// Add target namespace if available
 			if ( operation.getNamespace() != null ) {
 				envelope.setAttribute( "xmlns:tns", operation.getNamespace() );
 			}
@@ -805,21 +805,21 @@ public class BoxSoapClient implements IReferenceable {
 				addSoapHeadersToRequest( doc, header, this.soapHeaders );
 			}
 
-      // Create Body
+			// Create Body
 			Element body = doc.createElementNS( soapNS, "soap:Body" );
 			envelope.appendChild( body );
 
-      // Create operation element
+			// Create operation element
 			Element operationElement = doc.createElement( operation.getName() );
 			if ( operation.getNamespace() != null ) {
 				operationElement.setAttribute( "xmlns", operation.getNamespace() );
 			}
 			body.appendChild( operationElement );
 
-      // Add parameters
+			// Add parameters
 			addParametersToRequest( doc, operationElement, operation, arguments );
 
-      // Convert to string
+			// Convert to string
 			return documentToString( doc );
 
 		} catch ( Exception e ) {
@@ -873,11 +873,11 @@ public class BoxSoapClient implements IReferenceable {
 			return;
 		}
 
-    // Convert arguments to a map for easy access
+		// Convert arguments to a map for easy access
 		Map<String, Object> argMap = new HashMap<>();
 
 		if ( arguments instanceof IStruct struct ) {
-      
+
 			if ( logger.isTraceEnabled() ) {
 				logger.trace( "Processing SOAP struct arguments with keys: " + struct.keySet() );
 				logger.trace( "WSDL parameters: " + params.stream().map( p -> p.getName() ).collect( java.util.stream.Collectors.toList() ) );
@@ -912,23 +912,23 @@ public class BoxSoapClient implements IReferenceable {
 				}
 			}
 		} else if ( arguments instanceof Array array ) {
-      // Array arguments - map by position
+			// Array arguments - map by position
 			for ( int i = 0; i < params.size() && i < array.size(); i++ ) {
 				argMap.put( params.get( i ).getName(), array.get( i ) );
 			}
 		} else if ( arguments instanceof Object[] array ) {
-      // Object array arguments - map by position
+			// Object array arguments - map by position
 			for ( int i = 0; i < params.size() && i < array.length; i++ ) {
 				argMap.put( params.get( i ).getName(), array[ i ] );
 			}
 		} else {
-      // Single argument - assign to first parameter
+			// Single argument - assign to first parameter
 			if ( !params.isEmpty() ) {
 				argMap.put( params.get( 0 ).getName(), arguments );
 			}
 		}
 
-    // Add each parameter as an element
+		// Add each parameter as an element
 		for ( WsdlParameter param : params ) {
 			Object value = argMap.get( param.getName() );
 			if ( value != null ) {
@@ -1168,32 +1168,32 @@ public class BoxSoapClient implements IReferenceable {
 				throw new BoxRuntimeException( "Empty SOAP response received" );
 			}
 
-      // Log the response if debug enabled
+			// Log the response if debug enabled
 			if ( this.logger.isTraceEnabled() ) {
 				this.logger.trace( "SOAP Response: {}", responseBody );
 			}
 
-      // Parse the XML response
+			// Parse the XML response
 			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 			factory.setNamespaceAware( true );
 			DocumentBuilder	builder	= factory.newDocumentBuilder();
 			Document		doc		= builder.parse( new InputSource( new StringReader( responseBody ) ) );
 
-      // Check for SOAP Fault
+			// Check for SOAP Fault
 			NodeList		faults	= doc.getElementsByTagNameNS( "*", "Fault" );
 			if ( faults.getLength() > 0 ) {
 				return parseSoapFault( ( Element ) faults.item( 0 ) );
 			}
 
-      // Extract the response body
+			// Extract the response body
 			NodeList bodies = doc.getElementsByTagNameNS( "*", "Body" );
 			if ( bodies.getLength() > 0 ) {
 				Element	body		= ( Element ) bodies.item( 0 );
-        // The first child of Body should be the response element
+				// The first child of Body should be the response element
 				Element	response	= getFirstChildElement( body );
 				if ( response != null ) {
 					Object result = xmlElementToBoxLang( response );
-          // Unwrap single-property structs (common SOAP pattern)
+					// Unwrap single-property structs (common SOAP pattern)
 					return unwrapResponse( result );
 				}
 			}
@@ -1271,7 +1271,7 @@ public class BoxSoapClient implements IReferenceable {
 					String	childName		= childElement.getLocalName();
 					Object	childValue		= xmlElementToBoxLang( childElement );
 
-          // Handle multiple elements with the same name (convert to array)
+					// Handle multiple elements with the same name (convert to array)
 					if ( result.containsKey( Key.of( childName ) ) ) {
 						Object existing = result.get( Key.of( childName ) );
 						if ( existing instanceof Array array ) {
@@ -1290,14 +1290,14 @@ public class BoxSoapClient implements IReferenceable {
 			String	textContent	= element.getTextContent();
 			String	xsiType		= element.getAttributeNS( XSI_NS, "type" );
 			// Leaf element - get text content and attempt type casting
-			String textContent = element.getTextContent();
+			String	textContent	= element.getTextContent();
 
 			// Check for xsi:type attribute for explicit type information
 			if ( xsiType != null && !xsiType.isEmpty() ) {
 				return castByXsiType( textContent, xsiType );
 			}
-      
-      // Attempt intelligent type casting based on content
+
+			// Attempt intelligent type casting based on content
 			return castStringValue( textContent );
 		}
 	}
@@ -1372,7 +1372,7 @@ public class BoxSoapClient implements IReferenceable {
 			return value;
 		}
 
-    // Remove namespace prefix if present
+		// Remove namespace prefix if present
 		String type = xsiType.contains( ":" ) ? xsiType.substring( xsiType.indexOf( ':' ) + 1 ) : xsiType;
 		type = type.toLowerCase();
 
@@ -1401,11 +1401,11 @@ public class BoxSoapClient implements IReferenceable {
 					return BoxRuntime.getInstance().getFunctionService().getGlobalFunction( Key.toBinary ).invoke( executionContext, new Object[] { value },
 					    false, Key.toBinary );
 				default :
-          // Unknown type, return as string
+					// Unknown type, return as string
 					return StringCaster.cast( value );
 			}
 		} catch ( Exception e ) {
-      // If casting fails, return as string
+			// If casting fails, return as string
 			this.logger.trace( "Failed to cast value '{}' using xsi-type '{}': {}", value, xsiType, e.getMessage() );
 			return value;
 		}
@@ -1423,25 +1423,25 @@ public class BoxSoapClient implements IReferenceable {
 			return value;
 		}
 
-    // Try integer (before double to avoid losing precision)
+		// Try integer (before double to avoid losing precision)
 		var intAttempt = ortus.boxlang.runtime.dynamic.casters.IntegerCaster.attempt( value );
 		if ( intAttempt.wasSuccessful() ) {
 			return intAttempt.get();
 		}
 
-    // Try double/float
+		// Try double/float
 		var doubleAttempt = ortus.boxlang.runtime.dynamic.casters.DoubleCaster.attempt( value );
 		if ( doubleAttempt.wasSuccessful() ) {
 			return doubleAttempt.get();
 		}
 
-    // Try datetime (ISO formats and common date patterns)
+		// Try datetime (ISO formats and common date patterns)
 		var dateAttempt = ortus.boxlang.runtime.dynamic.casters.DateTimeCaster.attempt( value );
 		if ( dateAttempt.wasSuccessful() ) {
 			return dateAttempt.get();
 		}
 
-    // Return as string if no casting worked
+		// Return as string if no casting worked
 		return value;
 	}
 
@@ -1455,18 +1455,18 @@ public class BoxSoapClient implements IReferenceable {
 	 *
 	 * This only unwraps if the struct has exactly ONE property, preserving
 	 * multi-property responses unchanged.
-   *
+	 *
 	 * @param value The value to potentially unwrap
 	 *
 	 * @return The unwrapped value or the original value if not a single-property struct
 	 */
 	private Object unwrapResponse( Object value ) {
 		if ( value instanceof IStruct struct ) {
-      // Only unwrap if there's exactly one property
+			// Only unwrap if there's exactly one property
 			if ( struct.size() == 1 ) {
-        // Get the single value
+				// Get the single value
 				Object unwrapped = struct.values().iterator().next();
-        // Recursively unwrap in case of nested single-property structs
+				// Recursively unwrap in case of nested single-property structs
 				return unwrapResponse( unwrapped );
 			}
 		}
