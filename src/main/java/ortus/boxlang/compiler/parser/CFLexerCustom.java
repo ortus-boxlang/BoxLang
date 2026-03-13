@@ -600,8 +600,9 @@ public class CFLexerCustom extends CFLexer {
 							System.out.println( "%%%%%%%%%%%% Not switching [" + nextToken.getText() + "] token to identifer" );
 					}
 				}
-				// Track if we just closed a #var# (IDENTIFIER followed by ICHAR) or just closed a function call #foo()# (RPAREN followed by ICHAR)
-				if ( nextToken.getType() == ICHAR && lastToken != null && ( lastToken.getType() == IDENTIFIER || lastToken.getType() == RPAREN ) ) {
+				// Track if we just closed a #var# (IDENTIFIER followed by ICHAR) or just closed a function call #foo()# (RPAREN followed by ICHAR) or just closed array access #foo[1]# (RBRACKET folowed by an ICHAR)
+				if ( nextToken.getType() == ICHAR && lastToken != null
+				    && ( lastToken.getType() == IDENTIFIER || lastToken.getType() == RPAREN || lastToken.getType() == RBRACKET ) ) {
 					justClosedPoundVar = true;
 				} else if ( nextToken.getChannel() != HIDDEN ) {
 					justClosedPoundVar = false;
