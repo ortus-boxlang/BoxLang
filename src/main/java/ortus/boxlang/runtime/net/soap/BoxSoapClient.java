@@ -44,6 +44,7 @@ import org.xml.sax.InputSource;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -722,14 +723,16 @@ public class BoxSoapClient implements IReferenceable {
 			if ( value == null ) {
 				continue;
 			}
-			String valueStr = StringCaster.cast( value, false );
-			if ( valueStr == null ) {
-				throw new BoxRuntimeException(
-				    "Invalid SOAP header value for key '" + key.getName() +
-				        "'. Only simple scalar values are allowed."
-				);
-			}
-			if ( !isValidXMLCharData( valueStr ) ) {
+			CastAttempt<String> valueStrAttempt = StringCaster.attempt( value );
+			if ( valueStrAttempt.wasSuccessful() ) {
+				String valueStr = valueStrAttempt.get();
+				if ( !isValidXMLCharData( valueStr ) ) {
+					throw new BoxRuntimeException(
+					    "Invalid SOAP header value for key '" + key.getName() +
+					        "'. Only simple scalar values are allowed."
+					);
+				}
+			} else {
 				throw new BoxRuntimeException(
 				    "Invalid SOAP header value for key '" + key.getName() +
 				        "'. Only simple scalar values are allowed."
