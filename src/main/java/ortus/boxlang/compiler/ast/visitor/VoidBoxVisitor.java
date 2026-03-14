@@ -27,6 +27,8 @@ import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
 import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
+import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringBinding;
+import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
@@ -47,8 +49,11 @@ import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNegateOperation;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
+import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringBinding;
+import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxSpreadExpression;
 import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
 import ortus.boxlang.compiler.ast.expression.BoxStaticMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
@@ -260,7 +265,28 @@ public abstract class VoidBoxVisitor {
 		visitChildren( node );
 	}
 
+	/** {@inheritDoc} */
 	public void visit( BoxNull node ) {
+		visitChildren( node );
+	}
+
+	/** {@inheritDoc} */
+	public void visit( BoxArrayDestructuringPattern node ) {
+		visitChildren( node );
+	}
+
+	/** {@inheritDoc} */
+	public void visit( BoxArrayDestructuringBinding node ) {
+		visitChildren( node );
+	}
+
+	/** {@inheritDoc} */
+	public void visit( BoxObjectDestructuringPattern node ) {
+		visitChildren( node );
+	}
+
+	/** {@inheritDoc} */
+	public void visit( BoxObjectDestructuringBinding node ) {
 		visitChildren( node );
 	}
 
@@ -268,7 +294,15 @@ public abstract class VoidBoxVisitor {
 		visitChildren( node );
 	}
 
+	/**
+	 * visit.
+	 */
 	public void visit( BoxScope node ) {
+		visitChildren( node );
+	}
+
+	/** {@inheritDoc} */
+	public void visit( BoxSpreadExpression node ) {
 		visitChildren( node );
 	}
 
