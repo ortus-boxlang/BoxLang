@@ -731,36 +731,10 @@ public class BoxSoapClient implements IReferenceable {
 				        "'. Only simple scalar values are allowed."
 				);
 			}
-			String valueStr = valueStrAttempt.get();
-			if ( !isValidXMLCharData( valueStr ) ) {
-				throw new BoxRuntimeException(
-				    "Invalid SOAP header value for key '" + key.getName() +
-				        "'. Only simple scalar values are allowed."
-				);
-			}
-			normalizedHeaders.put( key, valueStr );
+			normalizedHeaders.put( key, valueStrAttempt.get() );
 		}
 
 		return normalizedHeaders;
-	}
-
-	/**
-	 * Check whether a string contains characters that are illegal in XML character data.
-	 *
-	 * @param value The string value to validate
-	 *
-	 * @return True when the string contains only valid XML character data
-	 */
-	private static boolean isValidXMLCharData( String s ) {
-		if ( s == null )
-			return true;
-		for ( int i = 0; i < s.length(); i++ ) {
-			char c = s.charAt( i );
-			if ( c >= 0x00 && c <= 0x1F && c != 0x09 && c != 0x0A && c != 0x0D ) {
-				return false;
-			}
-		}
-		return true;
 	}
 
 	/**
@@ -836,7 +810,14 @@ public class BoxSoapClient implements IReferenceable {
 			Element	headerChild	= createHeaderElement( doc, headerName );
 
 			if ( headerValue != null ) {
-				headerChild.setTextContent( headerValue );
+				try {
+					headerChild.setTextContent( headerValue );
+				} catch ( DOMException e ) {
+					throw new BoxRuntimeException(
+					    "Invalid SOAP header value for key '" + headerName + "'",
+					    e
+					);
+				}
 			}
 
 			headerElement.appendChild( headerChild );
