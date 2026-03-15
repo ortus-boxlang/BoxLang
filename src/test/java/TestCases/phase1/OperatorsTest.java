@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
@@ -168,6 +169,25 @@ public class OperatorsTest {
 	public void testMathPower() {
 		Number result = ( Number ) instance.executeStatement( "2^3", context );
 		assertThat( result.doubleValue() ).isEqualTo( 8 );
+	}
+
+	@DisplayName( "range operator" )
+	@Test
+	public void testRangeOperator() {
+		Object result = instance.executeStatement( "1..5", context );
+		assertThat( result ).isEqualTo( Array.of( 1, 2, 3, 4, 5 ) );
+
+		result = instance.executeStatement( "(5..1)", context );
+		assertThat( result ).isEqualTo( Array.of( 5, 4, 3, 2, 1 ) );
+
+		instance.executeSource(
+		    """
+		    a = 2;
+		    b = 4;
+		    result = a..b;
+		    """,
+		    context );
+		assertThat( variables.get( resultKey ) ).isEqualTo( Array.of( 2, 3, 4 ) );
 	}
 
 	@DisplayName( "math plus plus literals" )

@@ -387,11 +387,22 @@ public class BoxLexerCustom extends BoxLexer {
 					} else if ( nextTokenType == REQUIRED && !lastTokenWas( DOT ) && getParenCount() > 0 && nextNonWhiteSpaceIsAnyChar() ) {
 						// function foo( required string bar )
 						isIdentifier = false;
-					} else if ( nextTokenType == VAR && !lastTokenWas( DOT )
-					    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '\'' ) || nextNonWhiteSpaceCharIs( '"' ) )
+					} else if ( ( nextTokenType == VAR || nextTokenType == FINAL || nextTokenType == STATIC ) && !lastTokenWas( DOT )
+					    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '\'' ) || nextNonWhiteSpaceCharIs( '"'
+					    ) || nextNonWhiteSpaceCharIs( '{' ) )
 					    && !nextNonWhiteSpaceCharsAre( operatorStartingChars )
 					    && ( lastToken != null && !operatorEndingTokens.contains( lastToken.getType() ) ) ) {
 						// var foo = "bar"
+						// final foo = "bar"
+						// static foo = "bar"
+						// var { foo } = data
+						isIdentifier = false;
+					} else if ( ( nextTokenType == VAR || nextTokenType == FINAL || nextTokenType == STATIC ) && !lastTokenWas( DOT )
+					    && nextNonWhiteSpaceCharIs( '[' )
+					    && ( lastToken == null || lastTokenWas( SEMICOLON ) || lastTokenWas( LBRACE ) || lastTokenWas( RBRACE )
+					        || lastTokenWas( RPAREN ) || ( inForParen && lastTokenWas( LPAREN ) ) ) ) {
+						// var [ first, second ] = data
+						// final [ first, ...rest ] = data
 						isIdentifier = false;
 					} else if ( nextTokenType == NEW && !lastTokenWas( DOT )
 					    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '\'' ) || nextNonWhiteSpaceCharIs( '"' )
@@ -564,7 +575,8 @@ public class BoxLexerCustom extends BoxLexer {
 					}
 				}
 				// Track if we just closed a #var# (IDENTIFIER followed by ICHAR) or just closed a function call #foo()# (RPAREN followed by ICHAR)
-				if ( nextToken.getType() == ICHAR && lastToken != null && ( lastToken.getType() == IDENTIFIER || lastToken.getType() == RPAREN ) ) {
+				if ( nextToken.getType() == ICHAR && lastToken != null
+				    && ( lastToken.getType() == IDENTIFIER || lastToken.getType() == RPAREN || lastToken.getType() == RBRACKET ) ) {
 					justClosedPoundVar = true;
 				} else if ( nextToken.getChannel() != HIDDEN ) {
 					justClosedPoundVar = false;

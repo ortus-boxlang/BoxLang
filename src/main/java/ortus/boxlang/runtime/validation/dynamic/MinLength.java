@@ -17,8 +17,6 @@
  */
 package ortus.boxlang.runtime.validation.dynamic;
 
-import ortus.boxlang.runtime.components.Attribute;
-import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;

@@ -647,9 +647,6 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	 * @return The array
 	 */
 	public Array insertAt( int index, Object element ) {
-		if ( index < 1 || index > wrapped.size() ) {
-			throw new BoxRuntimeException( "Index [" + index + "] out of bounds for list with " + wrapped.size() + " elements." );
-		}
 		add( index - 1, element );
 		return this;
 	}
