@@ -724,32 +724,19 @@ public class BoxSoapClient implements IReferenceable {
 				continue;
 			}
 			CastAttempt<String> valueStrAttempt = StringCaster.attempt( value );
-			if ( valueStrAttempt.wasSuccessful() ) {
-				String valueStr = valueStrAttempt.get();
-				if ( !isValidXMLCharData( valueStr ) ) {
-					throw new BoxRuntimeException(
-					    "Invalid SOAP header value for key '" + key.getName() +
-					        "'. Only simple scalar values are allowed."
-					);
-				}
-			} else {
+			if ( !valueStrAttempt.wasSuccessful() ) {
 				throw new BoxRuntimeException(
 				    "Invalid SOAP header value for key '" + key.getName() +
 				        "'. Only simple scalar values are allowed."
 				);
 			}
-
-			if ( value instanceof String
-			    || value instanceof Number
-			    || value instanceof Boolean
-			    || value instanceof java.time.temporal.Temporal ) {
-				continue;
+			String valueStr = valueStrAttempt.get();
+			if ( !isValidXMLCharData( valueStr ) ) {
+				throw new BoxRuntimeException(
+				    "Invalid SOAP header value for key '" + key.getName() +
+				        "'. Only simple scalar values are allowed."
+				);
 			}
-
-			throw new BoxRuntimeException(
-			    "Invalid SOAP header value for key '" + key.getName() +
-			        "'. Only simple scalar values are allowed."
-			);
 		}
 	}
 
