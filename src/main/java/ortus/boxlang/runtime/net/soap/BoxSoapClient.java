@@ -328,8 +328,7 @@ public class BoxSoapClient implements IReferenceable {
 	 * @return This instance for chaining
 	 */
 	public BoxSoapClient withSoapHeaders( IStruct headers ) {
-		validateSoapHeaders( headers );
-		this.soapHeaders = headers;
+		this.soapHeaders = normalizeSoapHeaders( headers );
 		return this;
 	}
 
@@ -697,10 +696,12 @@ public class BoxSoapClient implements IReferenceable {
 	 *
 	 * @param headers A struct of simple key/value pairs
 	 */
-	private void validateSoapHeaders( IStruct headers ) {
+	private IStruct normalizeSoapHeaders( IStruct headers ) {
 		if ( headers == null ) {
 			throw new BoxRuntimeException( "SOAP headers cannot be null" );
 		}
+
+		IStruct normalizedHeaders = Struct.of();
 
 		for ( Key key : headers.keySet() ) {
 			Object value = headers.get( key );
@@ -720,6 +721,7 @@ public class BoxSoapClient implements IReferenceable {
 			}
 
 			if ( value == null ) {
+				normalizedHeaders.put( key, null );
 				continue;
 			}
 			CastAttempt<String> valueStrAttempt = StringCaster.attempt( value );
@@ -736,7 +738,10 @@ public class BoxSoapClient implements IReferenceable {
 				        "'. Only simple scalar values are allowed."
 				);
 			}
+			normalizedHeaders.put( key, valueStr );
 		}
+
+		return normalizedHeaders;
 	}
 
 	/**
@@ -826,12 +831,12 @@ public class BoxSoapClient implements IReferenceable {
 	private void addSoapHeadersToRequest( Document doc, Element headerElement, IStruct headers ) {
 		for ( Key key : headers.keySet() ) {
 			String	headerName	= key.getName();
-			Object	headerValue	= headers.get( key );
+			String	headerValue	= ( String ) headers.get( key );
 
 			Element	headerChild	= createHeaderElement( doc, headerName );
 
 			if ( headerValue != null ) {
-				headerChild.setTextContent( StringCaster.cast( headerValue ) );
+				headerChild.setTextContent( headerValue );
 			}
 
 			headerElement.appendChild( headerChild );
