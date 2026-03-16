@@ -72,6 +72,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxForIndexTrans
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxFunctionDeclarationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxIfElseTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxInterfaceTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxLocalClassTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxParamTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxRethrowTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxScriptIslandTransformer;
@@ -85,6 +86,7 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
+import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.BoxStaticInitializer;
 import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.SourceFile;
@@ -133,6 +135,7 @@ import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
+import ortus.boxlang.compiler.ast.statement.BoxLocalClass;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
@@ -435,6 +438,8 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxParam.class, new BoxParamTransformer( this ) );
 		registry.put( BoxFunctionalBIFAccess.class, new BoxFunctionalBIFAccessTransformer( this ) );
 		registry.put( BoxFunctionalMemberAccess.class, new BoxFunctionalMemberAccessTransformer( this ) );
+		// Local class definitions inside scripts/templates — pre-compiled; transformer is a no-op
+		registry.put( BoxLocalClass.class, new BoxLocalClassTransformer( this ) );
 	}
 
 	@Override
@@ -503,6 +508,15 @@ public class AsmTranspiler extends Transpiler {
 		AsmHelper.addNullStaticField( classNode, "udfs", Type.getType( Map.class ), false );
 		AsmHelper.addNullStaticField( classNode, "lambdas", Type.getType( List.class ), false );
 		AsmHelper.addNullStaticField( classNode, "closures", Type.getType( List.class ), false );
+
+		// Pre-compile any named local classes (class Foo {}) defined in this script/template.
+		// Each local class is compiled to a sibling JVM class (an "auxiliary") and registered
+		// in the local class registry so that BoxNewTransformer can emit direct bytecode for
+		// "new Foo()" expressions without going through ClassLocator at runtime.
+		String	outerClassname			= getProperty( "classname" );
+		String	outerPackage			= getProperty( "packageName" );
+		String	outerPackageInternal	= outerPackage.replace( '.', '/' );
+		preCompileLocalClasses( boxScript.getStatements(), outerClassname, outerPackage, outerPackageInternal );
 
 		AsmHelper.methodWithContextAndClassLocator(
 		    classNode,
@@ -622,6 +636,64 @@ public class AsmTranspiler extends Transpiler {
 		} );
 
 		return classNode;
+	}
+
+	/**
+	 * Recursively scan a list of statements for {@link BoxLocalClass} declarations, compiling each
+	 * one into an auxiliary JVM class and registering it in the local class registry.
+	 * <p>
+	 * This also descends into {@link BoxTemplateIsland}, {@link BoxScriptIsland}, and {@link BoxComponent} nodes
+	 * so that local classes defined inside {@code <bx:script>} islands in templates are handled correctly.
+	 *
+	 * @param statements           the statement list to scan
+	 * @param outerClassname       simple JVM class name of the enclosing script/template class
+	 * @param outerPackage         dot-separated package name of the enclosing class
+	 * @param outerPackageInternal slash-separated package path of the enclosing class
+	 */
+	private void preCompileLocalClasses( List<BoxStatement> statements, String outerClassname, String outerPackage, String outerPackageInternal ) {
+		for ( BoxStatement stmt : statements ) {
+			if ( stmt instanceof BoxLocalClass localClass ) {
+				String		localName				= localClass.getName().getName();
+				String		syntheticClassname		= outerClassname + "$LocalClass$" + localName;
+				String		syntheticDotFQN			= outerPackage + "." + syntheticClassname;
+				String		syntheticJvmInternal	= outerPackageInternal + "/" + syntheticClassname;
+
+				// Create a fresh child transpiler configured for the synthetic inner class name
+				Transpiler	child					= Transpiler.getTranspiler();
+				child.setProperty( "classname", syntheticClassname );
+				child.setProperty( "packageName", outerPackage );
+				child.setProperty( "boxFQN", syntheticDotFQN );
+				child.setProperty( "baseclass", "BoxClass" );
+				child.setProperty( "sourceType", getProperty( "sourceType" ) );
+				child.setProperty( "mappingName", getProperty( "mappingName" ) );
+				child.setProperty( "mappingPath", getProperty( "mappingPath" ) );
+				child.setProperty( "relativePath", getProperty( "relativePath" ) );
+
+				// Adapt the BoxLocalClass node to a BoxClass so BoxClassTransformer can compile it
+				BoxClass	asBoxClass		= new BoxClass( localClass.getImports(), localClass.getBody(),
+				    localClass.getAnnotations(), localClass.getDocumentation(), localClass.getProperties(),
+				    localClass.getPosition(), localClass.getSourceText() );
+
+				// Compile to a JVM ClassNode and register as an auxiliary — ASMBoxpiler will defineClass() it
+				ClassNode	localClassNode	= BoxClassTransformer.transpile( child, asBoxClass );
+				setAuxiliary( syntheticDotFQN, localClassNode );
+
+				// Pull in any nested auxiliaries produced by the local class (lambda, closure, UDF bodies)
+				child.getAuxiliary().forEach( this::setAuxiliary );
+
+				// Register the alias so BoxNewTransformer emits a direct class reference
+				registerLocalClass( localName, syntheticJvmInternal );
+			} else if ( stmt instanceof BoxTemplateIsland island ) {
+				// Recurse into component-island content (template text between tags)
+				preCompileLocalClasses( island.getStatements(), outerClassname, outerPackage, outerPackageInternal );
+			} else if ( stmt instanceof BoxScriptIsland island ) {
+				// <bx:script>...</bx:script> in template mode produces a BoxScriptIsland
+				preCompileLocalClasses( island.getStatements(), outerClassname, outerPackage, outerPackageInternal );
+			} else if ( stmt instanceof BoxComponent component && component.getBody() != null ) {
+				// Recurse into general component bodies for completeness
+				preCompileLocalClasses( component.getBody(), outerClassname, outerPackage, outerPackageInternal );
+			}
+		}
 	}
 
 	@Override

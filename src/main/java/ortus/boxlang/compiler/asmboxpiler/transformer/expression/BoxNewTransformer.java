@@ -34,6 +34,8 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.expression.BoxFQN;
+import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -48,9 +50,57 @@ public class BoxNewTransformer extends AbstractTransformer {
 
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
-		BoxNew					boxNew	= ( BoxNew ) node;
+		BoxNew					boxNew			= ( BoxNew ) node;
 
-		List<AbstractInsnNode>	nodes	= new ArrayList<>();
+		List<AbstractInsnNode>	nodes			= new ArrayList<>();
+
+		// Fast path: if the target is a simple identifier that names a local class in this script/template,
+		// emit a direct class reference (LDC + DynamicObject.of) instead of going through ClassLocator.
+		// This avoids classloader-hierarchy problems because the local class is already defined in the
+		// compile-time DiskClassLoader, not the request-time DynamicClassLoader.
+		//
+		// The grammar rule for `new` uses `fqn` internally, so `new Counter()` produces a BoxFQN("Counter"),
+		// not a BoxIdentifier. We therefore check for both: a bare BoxIdentifier, AND a single-segment
+		// BoxFQN (one with no dots, meaning there is no package qualifier).
+		String					localClassAlias	= null;
+		if ( boxNew.getExpression() instanceof BoxIdentifier identifier ) {
+			localClassAlias = identifier.getName();
+		} else if ( boxNew.getExpression() instanceof BoxFQN fqn && !fqn.getValue().contains( "." ) ) {
+			// Single-segment FQN like "Counter" — no package qualifier, treat as a simple name
+			localClassAlias = fqn.getValue();
+		}
+		if ( localClassAlias != null ) {
+			String localClassJvmName = transpiler.getLocalClassJvmName( localClassAlias );
+			if ( localClassJvmName != null ) {
+				// Push Class<?> literal: equivalent to MyScript$LocalClass$Foo.class
+				nodes.add( new LdcInsnNode( Type.getType( "L" + localClassJvmName + ";" ) ) );
+				// Push IBoxContext
+				nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
+				// DynamicObject.of(Class<?>, IBoxContext) → DynamicObject
+				nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+				    Type.getInternalName( DynamicObject.class ),
+				    "of",
+				    Type.getMethodDescriptor( Type.getType( DynamicObject.class ),
+				        Type.getType( Class.class ),
+				        Type.getType( IBoxContext.class ) ),
+				    false ) );
+				// Push context + args, call invokeConstructor → DynamicObject
+				nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
+				nodes.addAll( AsmHelper.callDynamicObjectInvokeConstructor( transpiler, boxNew.getArguments(), context ) );
+				// Unwrap to the BoxLang class instance
+				nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
+				    Type.getInternalName( DynamicObject.class ),
+				    "unWrapBoxLangClass",
+				    Type.getMethodDescriptor( Type.getType( Object.class ) ),
+				    false ) );
+				if ( returnContext.empty ) {
+					nodes.add( new InsnNode( Opcodes.POP ) );
+				}
+				return AsmHelper.addLineNumberLabels( nodes, node );
+			}
+		}
+
+		// Default path: resolve class at runtime using ClassLocator (imports + Java / BoxLang class loading)
 		// nodes.add( new VarInsnNode( Opcodes.ALOAD, 2 ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 		    Type.getInternalName( ClassLocator.class ),

@@ -77,6 +77,7 @@ import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
+import ortus.boxlang.compiler.ast.statement.BoxLocalClass;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
@@ -165,6 +166,43 @@ public abstract class ReplacingBoxVisitor {
 	}
 
 	public BoxNode visit( BoxClass node ) {
+		handleStatements( node.getBody(), node );
+		for ( int i = 0; i < node.getImports().size(); i++ ) {
+			BoxImport	importNode	= node.getImports().get( i );
+			BoxNode		newImport	= importNode.accept( this );
+			if ( newImport != importNode ) {
+				node.replaceChildren( importNode, newImport );
+				node.getImports().set( i, ( BoxImport ) newImport );
+			}
+		}
+		for ( int i = 0; i < node.getAnnotations().size(); i++ ) {
+			BoxAnnotation	annotationNode	= node.getAnnotations().get( i );
+			BoxNode			newAnnotation	= annotationNode.accept( this );
+			if ( newAnnotation != annotationNode ) {
+				node.replaceChildren( annotationNode, newAnnotation );
+				node.getAnnotations().set( i, ( BoxAnnotation ) newAnnotation );
+			}
+		}
+		for ( int i = 0; i < node.getDocumentation().size(); i++ ) {
+			BoxDocumentationAnnotation	documentationNode	= node.getDocumentation().get( i );
+			BoxNode						newDocumentation	= documentationNode.accept( this );
+			if ( newDocumentation != documentationNode ) {
+				node.replaceChildren( documentationNode, newDocumentation );
+				node.getDocumentation().set( i, ( BoxDocumentationAnnotation ) newDocumentation );
+			}
+		}
+		for ( int i = 0; i < node.getProperties().size(); i++ ) {
+			BoxProperty	propertyNode	= node.getProperties().get( i );
+			BoxNode		newProperty		= propertyNode.accept( this );
+			if ( newProperty != propertyNode ) {
+				node.replaceChildren( propertyNode, newProperty );
+				node.getProperties().set( i, ( BoxProperty ) newProperty );
+			}
+		}
+		return node;
+	}
+
+	public BoxNode visit( BoxLocalClass node ) {
 		handleStatements( node.getBody(), node );
 		for ( int i = 0; i < node.getImports().size(); i++ ) {
 			BoxImport	importNode	= node.getImports().get( i );
