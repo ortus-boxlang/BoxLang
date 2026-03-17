@@ -1259,9 +1259,6 @@ public class BoxSoapClient implements IReferenceable {
 			return result;
 		} else {
 			String	textContent	= element.getTextContent();
-			String	xsiType		= element.getAttributeNS( XSI_NS, "type" );
-			// Leaf element - get text content and attempt type casting
-			String	textContent	= element.getTextContent();
 
 			// Check for xsi:type attribute for explicit type information
 			if ( xsiType != null && !xsiType.isEmpty() ) {
