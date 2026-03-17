@@ -154,13 +154,13 @@ public class BoxSoapClient implements IReferenceable {
 	 * - There is only ONE <soap:Header> section per request.
 	 * 
 	 * Storage and injection:
-	 * - We store simple key/value headers using a BoxLang Struct (IStruct).
+	 * - We store normalized key/value headers as a Java Map<String, String>.
 	 * - Example: { "AuthToken" : "abc123", "SessionId" : "session-456" }.
 	 * - When building the SOAP request (e.g., in buildSoapRequest), these stored headers
 	 * are injected into the <soap:Header> section of the SOAP envelope.
 	 */
 
-	private IStruct					soapHeaders;
+	private Map<String, String>		soapHeaders;
 
 	/**
 	 * SOAP version (1.1 or 1.2)
@@ -204,9 +204,9 @@ public class BoxSoapClient implements IReferenceable {
 		// Initialize SOAP version from WSDL definition (can be overridden later)
 		this.soapVersion		= wsdlDefinition.getSoapVersion();
 		this.executionContext	= context;
-		// Initialize SOAP headers storage as an empty Struct
+		// Initialize SOAP headers storage as an empty map
 		// This avoids NullPointerExceptions later when we add header
-		this.soapHeaders		= Struct.of();
+		this.soapHeaders		= new HashMap<>();
 	}
 
 	/**
@@ -695,12 +695,12 @@ public class BoxSoapClient implements IReferenceable {
 	 *
 	 * @param headers A struct of simple key/value pairs
 	 */
-	private IStruct normalizeSoapHeaders( IStruct headers ) {
+	private Map<String, String> normalizeSoapHeaders( IStruct headers ) {
 		if ( headers == null ) {
 			throw new BoxRuntimeException( "SOAP headers cannot be null" );
 		}
 
-		IStruct normalizedHeaders = Struct.of();
+		Map<String, String> normalizedHeaders = new HashMap<>();
 
 		for ( Key key : headers.keySet() ) {
 			Object value = headers.get( key );
@@ -720,11 +720,11 @@ public class BoxSoapClient implements IReferenceable {
 			}
 
 			if ( value == null ) {
-				normalizedHeaders.put( key, null );
+				normalizedHeaders.put( key.getName(), null );
 				continue;
 			}
 			normalizedHeaders.put(
-			    key,
+			    key.getName(),
 			    StringCaster.attempt( value )
 			        .orThrow( "Invalid SOAP header value for key '" + key.getName() + "'. Only simple scalar values are allowed." )
 			);
@@ -798,10 +798,10 @@ public class BoxSoapClient implements IReferenceable {
 	 * @param headerElement The SOAP header element
 	 * @param headers       The headers to serialize
 	 */
-	private void addSoapHeadersToRequest( Document doc, Element headerElement, IStruct headers ) {
-		for ( Key key : headers.keySet() ) {
-			String	headerName	= key.getName();
-			String	headerValue	= ( String ) headers.get( key );
+	private void addSoapHeadersToRequest( Document doc, Element headerElement, Map<String, String> headers ) {
+		for ( Map.Entry<String, String> header : headers.entrySet() ) {
+			String	headerName	= header.getKey();
+			String	headerValue	= header.getValue();
 
 			Element	headerChild	= createHeaderElement( doc, headerName );
 
