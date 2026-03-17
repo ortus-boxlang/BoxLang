@@ -90,7 +90,11 @@ public class ClassPrinter {
 
 		visitor.pushDoc( DocType.INDENT ).append( Line.HARD );
 		printProperties( classNode.getProperties() );
-		visitor.helperPrinter.printStatements( sortClassBody( classNode.getBody(), methodOrder, methodGrouping ) );
+		List<BoxStatement> sortedBody = sortClassBody( classNode.getBody(), methodOrder, methodGrouping );
+		if ( !classNode.getProperties().isEmpty() && sortedBody.isEmpty() ) {
+			visitor.newLine();
+		}
+		visitor.helperPrinter.printStatements( sortedBody );
 		visitor.printInsideComments( classNode, false );
 
 		currentDoc
@@ -134,21 +138,23 @@ public class ClassPrinter {
 
 		printImports( classNode.getImports() );
 		visitor.printPreComments( classNode );
-		if ( visitor.config.getCFFormatCompatibility() && classNode.getSourceText() != null ) {
-			currentDoc.append( applyCFFormatCompatibilitySourceTweaks( classNode.getSourceText() ) );
-			visitor.printPostComments( classNode );
-			return;
-		}
 		currentDoc.append( "component" );
-		visitor.helperPrinter.printKeyValueAnnotations( classNode.getAnnotations(), true );
+		visitor.helperPrinter.printKeyValueAnnotations( classNode.getAnnotations(), true, visitor.config.getCFFormatCompatibility() );
 		currentDoc.append( "{" );
 
 		visitor.pushDoc( DocType.INDENT ).append( Line.HARD );
 		printProperties( classNode.getProperties() );
+		List<BoxStatement> sortedBody = sortClassBody( classNode.getBody(), methodOrder, methodGrouping );
 		if ( visitor.config.getCFFormatCompatibility() && !classNode.getProperties().isEmpty() ) {
 			currentDoc.append( Line.HARD );
+			if ( !sortedBody.isEmpty() ) {
+				visitor.newLine();
+			}
 		}
-		visitor.helperPrinter.printStatements( sortClassBody( classNode.getBody(), methodOrder, methodGrouping ) );
+		visitor.helperPrinter.printStatements( sortedBody );
+		if ( !sortedBody.isEmpty() ) {
+			visitor.newLine();
+		}
 		visitor.printInsideComments( classNode, false );
 
 		currentDoc

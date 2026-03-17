@@ -58,9 +58,6 @@ public final class CFFormatConfigLoader {
 		File				file		= new File( filePath );
 		Map<String, Object>	cfConfig	= ( Map<String, Object> ) JSONUtil.fromJSON( file );
 		Config				config		= convertCFFormatToConfig( cfConfig );
-		if ( " : ".equals( toString( cfConfig.get( "struct.separator" ) ) ) ) {
-			config.getStruct().setSeparator( Separator.COLON_SPACE );
-		}
 		return config;
 	}
 
@@ -77,9 +74,6 @@ public final class CFFormatConfigLoader {
 	public static Config loadCFFormatConfig( File file ) throws IOException {
 		Map<String, Object>	cfConfig	= ( Map<String, Object> ) JSONUtil.fromJSON( file );
 		Config				config		= convertCFFormatToConfig( cfConfig );
-		if ( " : ".equals( toString( cfConfig.get( "struct.separator" ) ) ) ) {
-			config.getStruct().setSeparator( Separator.COLON_SPACE );
-		}
 		return config;
 	}
 

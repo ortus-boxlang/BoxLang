@@ -87,7 +87,7 @@ public class CFFormatConfigLoaderTest {
 		// Check struct settings
 		assertTrue( config.getStruct().getPadding(), "struct.padding should be true" );
 		assertFalse( config.getStruct().getEmptyPadding(), "struct.emptyPadding should be false" );
-		assertEquals( Separator.COLON_SPACE, config.getStruct().getSeparator(), "struct.separator should be COLON_SPACE" );
+		assertEquals( Separator.COLON_BOTH_SPACE, config.getStruct().getSeparator(), "struct.separator should be COLON_BOTH_SPACE" );
 		assertEquals( 2, config.getStruct().getMultiline().getElementCount(), "struct.multiline.elementCount should be 2" );
 		assertEquals( 40, config.getStruct().getMultiline().getMinLength(), "struct.multiline.minLength should be 40" );
 		assertFalse( config.getStruct().getMultiline().getLeadingComma().getEnabled(), "struct.multiline.leadingComma should be false" );

@@ -101,15 +101,9 @@ public class FunctionDeclarationPrinter {
 	}
 
 	public void printCFScriptFunctionDeclaration( BoxFunctionDeclaration node ) {
-		var currentDoc = visitor.getCurrentDoc();
+		var	currentDoc				= visitor.getCurrentDoc();
 
-		if ( visitor.config.getCFFormatCompatibility() && node.getSourceText() != null ) {
-			String sourceText = applyCFFormatCompatibilitySourceTweaks( node.getSourceText() );
-			currentDoc.append( sourceText );
-			return;
-		}
-
-		var defaultInterfaceMethod = node.getFirstNodeOfType( BoxInterface.class ) != null;
+		var	defaultInterfaceMethod	= node.getFirstNodeOfType( BoxInterface.class ) != null;
 
 		if ( defaultInterfaceMethod ) {
 			currentDoc.append( "default " );

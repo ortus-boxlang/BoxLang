@@ -338,20 +338,6 @@ public class Visitor extends VoidBoxVisitor {
 	}
 
 	private boolean printSourceForCFCompat( BoxNode node ) {
-		if ( isTemplate() ) {
-			return false;
-		}
-		if ( config.getCFFormatCompatibility() && node != null && node.getSourceText() != null ) {
-			String sourceText = node.getSourceText();
-			if ( sourceText.stripLeading().startsWith( "param " ) ) {
-				sourceText = sourceText.replaceAll( "(\\bparam\\s+[^=\\r\\n]*?)\\s+=\\s+", "$1 = " );
-			}
-			print( sourceText );
-			if ( !sourceText.stripTrailing().endsWith( ";" ) && hasTrailingSemicolonInSource( node ) ) {
-				print( ";" );
-			}
-			return true;
-		}
 		return false;
 	}
 
@@ -1327,10 +1313,13 @@ public class Visitor extends VoidBoxVisitor {
 			// TODO: Handle these accounting for shorcut syntax
 			// also need to seperate pre and inline annotations
 			var	size			= node.getPostAnnotations().size();
-			var	multiline		= size > config.getProperty().getMultiline().getElementCount();
+			var	multiline		= size >= config.getProperty().getMultiline().getElementCount();
 			var	keyValuePadding	= config.getProperty().getKeyValue().getPadding();
 			if ( node.getSourceText() == null ) {
 				multiline = true;
+			}
+			if ( !multiline && node.getSourceText() != null ) {
+				multiline = config.getProperty().getMultiline().getMinLength() < node.getSourceText().trim().length();
 			}
 
 			Doc	currentDoc	= getCurrentDoc();
@@ -1589,7 +1578,6 @@ public class Visitor extends VoidBoxVisitor {
 			if ( node.getBody().size() == 1 && node.getBody().get( 0 ) instanceof BoxStatementBlock ) {
 				currentDoc.append( " " );
 				node.getBody().get( 0 ).accept( this );
-				newLine();
 			} else {
 				var caseDoc = pushDoc( DocType.INDENT );
 				caseDoc.append( Line.HARD );
@@ -1967,7 +1955,7 @@ public class Visitor extends VoidBoxVisitor {
 		for ( ChainElement element : chain ) {
 			// Each element's source text includes the dot/accessor prefix
 			if ( element.isMethodInvocation() ) {
-				var		m			= element.asMethodInvocation();
+				var m = element.asMethodInvocation();
 				// Source text already includes the dot for method invocations built from dot access
 				length += getNormalizedSourceLength( m );
 			} else {

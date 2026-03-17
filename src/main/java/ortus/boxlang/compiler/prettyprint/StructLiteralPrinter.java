@@ -31,15 +31,6 @@ public class StructLiteralPrinter {
 	public void print( BoxStructLiteral structNode ) {
 		visitor.printPreComments( structNode );
 
-		if ( visitor.config.getCFFormatCompatibility() && structNode.getSourceText() != null ) {
-			String sourceText = structNode.getSourceText();
-			if ( ( sourceText.contains( "//" ) || sourceText.contains( "/*" ) ) ) {
-				visitor.getCurrentDoc().append( sourceText );
-				visitor.printPostComments( structNode );
-				return;
-			}
-		}
-
 		var		currentDoc				= visitor.getCurrentDoc();
 
 		var		structDoc				= visitor.pushDoc( DocType.GROUP );
@@ -153,8 +144,11 @@ public class StructLiteralPrinter {
 			e.printStackTrace();
 		}
 		var	size		= structNode.getValues().size();
+		// CFFormat uses strict "more than" semantics for element_count; BoxLang native mode uses "at least"
 		var	isMultiline	= visitor.config.getStruct().getMultiline().getElementCount() > 0
-		    && size / 2 > visitor.config.getStruct().getMultiline().getElementCount();
+		    && ( visitor.config.getCFFormatCompatibility()
+		        ? size / 2 > visitor.config.getStruct().getMultiline().getElementCount()
+		        : size / 2 >= visitor.config.getStruct().getMultiline().getElementCount() );
 		return isMultiline;
 	}
 

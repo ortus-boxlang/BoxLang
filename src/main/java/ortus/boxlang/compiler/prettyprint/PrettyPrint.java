@@ -348,6 +348,10 @@ public final class PrettyPrint {
 		var doc = generateDoc( node, config );
 		String output = printDoc( doc, config );
 		output = output.replaceAll( "(?m)(^\\s*param\\s+[^=\\r\\n]*?)\\s+=\\s+", "$1 = " );
+		// cfformat always produces a trailing newline; match this behaviour in CF compat mode
+		if ( config.getCFFormatCompatibility() && !output.endsWith( "\n" ) ) {
+			output = output + "\n";
+		}
 		return output;
 	}
 

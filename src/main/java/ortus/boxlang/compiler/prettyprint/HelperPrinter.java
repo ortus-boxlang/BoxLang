@@ -200,9 +200,12 @@ public class HelperPrinter {
 			}
 			attrsDoc.append( visitor.popDoc() );
 		}
-		// When forceLineBreaks is true, don't add trailing soft line (it would break unnecessarily)
+		// When forceLineBreaks is true, add a trailing HARD to put the following { on its own line
 		if ( !forceLineBreaks ) {
 			attrsDoc.append( padded ? Line.LINE : Line.SOFT );
+		} else if ( padded ) {
+			// Only add trailing HARD/LINE for padded contexts (e.g. class declarations, not template attributes)
+			attrsDoc.append( attrs.size() > 0 ? Line.HARD : Line.LINE );
 		}
 		currentDoc.append( visitor.popDoc() );
 	}
