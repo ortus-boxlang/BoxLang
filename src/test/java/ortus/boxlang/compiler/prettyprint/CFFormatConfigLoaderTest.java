@@ -87,7 +87,7 @@ public class CFFormatConfigLoaderTest {
 		// Check struct settings
 		assertTrue( config.getStruct().getPadding(), "struct.padding should be true" );
 		assertFalse( config.getStruct().getEmptyPadding(), "struct.emptyPadding should be false" );
-		assertEquals( Separator.COLON_SPACE, config.getStruct().getSeparator(), "struct.separator should be COLON_SPACE" );
+		assertEquals( Separator.COLON_BOTH_SPACE, config.getStruct().getSeparator(), "struct.separator should be COLON_BOTH_SPACE" );
 		assertEquals( 2, config.getStruct().getMultiline().getElementCount(), "struct.multiline.elementCount should be 2" );
 		assertEquals( 40, config.getStruct().getMultiline().getMinLength(), "struct.multiline.minLength should be 40" );
 		assertFalse( config.getStruct().getMultiline().getLeadingComma().getEnabled(), "struct.multiline.leadingComma should be false" );
@@ -233,6 +233,7 @@ public class CFFormatConfigLoaderTest {
 		assertTrue( Config.isCFFormatConfig( ".cfformat.json" ) );
 		assertTrue( Config.isCFFormatConfig( "/path/to/.cfformat.json" ) );
 		assertTrue( Config.isCFFormatConfig( "test.cfformat.json" ) );
+		assertTrue( Config.isCFFormatConfig( "test.cfconfig.json" ) );
 		assertFalse( Config.isCFFormatConfig( ".bxformat.json" ) );
 		assertFalse( Config.isCFFormatConfig( "config.json" ) );
 		assertFalse( Config.isCFFormatConfig( null ) );
@@ -246,7 +247,7 @@ public class CFFormatConfigLoaderTest {
 		// Test " : " separator
 		cfConfig.put( "struct.separator", " : " );
 		Config config1 = CFFormatConfigLoader.convertCFFormatToConfig( cfConfig );
-		assertEquals( Separator.COLON_SPACE, config1.getStruct().getSeparator() );
+		assertEquals( Separator.COLON_BOTH_SPACE, config1.getStruct().getSeparator() );
 
 		// Test ":" separator
 		cfConfig.put( "struct.separator", ":" );
@@ -261,6 +262,6 @@ public class CFFormatConfigLoaderTest {
 		// Test " = " separator
 		cfConfig.put( "struct.separator", " = " );
 		Config config4 = CFFormatConfigLoader.convertCFFormatToConfig( cfConfig );
-		assertEquals( Separator.EQUALS_SPACE, config4.getStruct().getSeparator() );
+		assertEquals( Separator.EQUALS_BOTH_SPACE, config4.getStruct().getSeparator() );
 	}
 }

@@ -27,6 +27,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class ArgumentsConfig {
 
+	private boolean	padding			= false;
+
+	@JsonProperty( "empty_padding" )
+	private boolean	emptyPadding	= false;
+
 	@JsonProperty( "comma_dangle" )
 	private boolean	commaDangle		= false;
 
@@ -37,6 +42,24 @@ public class ArgumentsConfig {
 	private int		multilineLength	= 60;
 
 	public ArgumentsConfig() {
+	}
+
+	public boolean getPadding() {
+		return padding;
+	}
+
+	public ArgumentsConfig setPadding( boolean padding ) {
+		this.padding = padding;
+		return this;
+	}
+
+	public boolean getEmptyPadding() {
+		return emptyPadding;
+	}
+
+	public ArgumentsConfig setEmptyPadding( boolean emptyPadding ) {
+		this.emptyPadding = emptyPadding;
+		return this;
 	}
 
 	public boolean getCommaDangle() {
@@ -68,6 +91,8 @@ public class ArgumentsConfig {
 
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = new LinkedHashMap<>();
+		map.put( "padding", padding );
+		map.put( "empty_padding", emptyPadding );
 		map.put( "comma_dangle", commaDangle );
 		map.put( "multiline_count", multilineCount );
 		map.put( "multiline_length", multilineLength );

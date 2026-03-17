@@ -74,6 +74,11 @@ public class FunctionConfig {
 	 */
 	public static class ParametersConfig {
 
+		private boolean	padding			= false;
+
+		@JsonProperty( "empty_padding" )
+		private boolean	emptyPadding	= false;
+
 		@JsonProperty( "comma_dangle" )
 		private boolean	commaDangle		= false;
 
@@ -84,6 +89,24 @@ public class FunctionConfig {
 		private int		multilineLength	= 60;
 
 		public ParametersConfig() {
+		}
+
+		public boolean getPadding() {
+			return padding;
+		}
+
+		public ParametersConfig setPadding( boolean padding ) {
+			this.padding = padding;
+			return this;
+		}
+
+		public boolean getEmptyPadding() {
+			return emptyPadding;
+		}
+
+		public ParametersConfig setEmptyPadding( boolean emptyPadding ) {
+			this.emptyPadding = emptyPadding;
+			return this;
 		}
 
 		public boolean getCommaDangle() {
@@ -115,6 +138,8 @@ public class FunctionConfig {
 
 		public Map<String, Object> toMap() {
 			Map<String, Object> map = new LinkedHashMap<>();
+			map.put( "padding", padding );
+			map.put( "empty_padding", emptyPadding );
 			map.put( "comma_dangle", commaDangle );
 			map.put( "multiline_count", multilineCount );
 			map.put( "multiline_length", multilineLength );

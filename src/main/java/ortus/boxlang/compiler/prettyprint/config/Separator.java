@@ -31,8 +31,14 @@ public enum Separator {
 	@JsonProperty( ": " )
 	COLON_SPACE(": " ),
 
+	@JsonProperty( " : " )
+	COLON_BOTH_SPACE(" : " ),
+
 	@JsonProperty( "= " )
-	EQUALS_SPACE("= " );
+	EQUALS_SPACE("= " ),
+
+	@JsonProperty( " = " )
+	EQUALS_BOTH_SPACE(" = " );
 
 	private final String symbol;
 

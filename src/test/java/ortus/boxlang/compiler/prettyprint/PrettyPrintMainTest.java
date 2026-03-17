@@ -21,11 +21,13 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -183,5 +185,59 @@ public class PrettyPrintMainTest {
 		assertTrue( formatted1.equals( formatted2 ), "Formatting should be idempotent" );
 
 		Files.delete( tempFile );
+	}
+
+	@Test
+	public void testOverwriteFalsePrintsToStdoutWithoutMutatingFile() throws IOException {
+		Path tempFile = Files.createTempFile( "prettyprint-overwrite-false", ".cfc" );
+		try {
+			Files.writeString( tempFile, "component{function foo(){return {\"a\":1};}}", StandardCharsets.UTF_8 );
+			String					original	= Files.readString( tempFile, StandardCharsets.UTF_8 );
+
+			ByteArrayOutputStream	stdout		= new ByteArrayOutputStream();
+			ByteArrayOutputStream	stderr		= new ByteArrayOutputStream();
+
+			int						exitCode	= PrettyPrint.run(
+			    new String[] {
+			        "--input", tempFile.toString(),
+			        "--overwrite", "false"
+			    },
+			    new PrintStream( stdout ),
+			    new PrintStream( stderr )
+			);
+
+			assertTrue( exitCode == 0, "Formatter should exit successfully" );
+			assertTrue( stderr.toString( StandardCharsets.UTF_8 ).isEmpty(), "No stderr output expected" );
+			assertTrue( stdout.toString( StandardCharsets.UTF_8 ).contains( "=== " + tempFile.toString() + " ===" ), "Stdout should include per-file header" );
+			assertTrue( Files.readString( tempFile, StandardCharsets.UTF_8 ).equals( original ), "Input file should not be overwritten" );
+		} finally {
+			Files.deleteIfExists( tempFile );
+		}
+	}
+
+	@Test
+	public void testOverwriteFalseWithOutputPathReturnsError() throws IOException {
+		Path tempFile = Files.createTempFile( "prettyprint-overwrite-output", ".cfc" );
+		try {
+			Files.writeString( tempFile, "component{}", StandardCharsets.UTF_8 );
+
+			ByteArrayOutputStream	stdout		= new ByteArrayOutputStream();
+			ByteArrayOutputStream	stderr		= new ByteArrayOutputStream();
+
+			int						exitCode	= PrettyPrint.run(
+			    new String[] {
+			        "--input", tempFile.toString(),
+			        "--overwrite", "false",
+			        "--output", tempFile.getParent().toString()
+			    },
+			    new PrintStream( stdout ),
+			    new PrintStream( stderr )
+			);
+
+			assertTrue( exitCode == 1, "Formatter should return error for incompatible options" );
+			assertTrue( stderr.toString( StandardCharsets.UTF_8 ).contains( "--output cannot be used when --overwrite=false" ) );
+		} finally {
+			Files.deleteIfExists( tempFile );
+		}
 	}
 }

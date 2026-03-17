@@ -33,7 +33,7 @@ public class StringPrinter {
 	}
 
 	public void printStringLiteral( BoxStringLiteral node ) {
-		var quote = visitor.config.getSingleQuote() ? "'" : "\"";
+		var quote = resolveQuote( node );
 
 		visitor.printPreComments( node );
 		visitor.print( quote + escapeString( node.getValue(), quote ) + quote );
@@ -55,7 +55,7 @@ public class StringPrinter {
 	}
 
 	public void printStringInterpolation( BoxStringInterpolation node ) {
-		var quote = visitor.config.getSingleQuote() ? "'" : "\"";
+		var quote = resolveQuote( node );
 
 		visitor.printPreComments( node );
 		visitor.print( quote );
@@ -108,5 +108,21 @@ public class StringPrinter {
 		    .replace( quote, quote + quote )
 		    .replace( "#", "##" );
 
+	}
+
+	private String resolveQuote( ortus.boxlang.compiler.ast.BoxNode node ) {
+		if ( visitor.config.getPreserveStringQuotes() ) {
+			String source = node.getSourceText();
+			if ( source != null && source.length() > 0 ) {
+				char first = source.charAt( 0 );
+				if ( first == '\'' ) {
+					return "'";
+				}
+				if ( first == '"' ) {
+					return "\"";
+				}
+			}
+		}
+		return visitor.config.getSingleQuote() ? "'" : "\"";
 	}
 }

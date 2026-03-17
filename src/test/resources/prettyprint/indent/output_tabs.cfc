@@ -1,3 +1,4 @@
 component {
 	this.test = true;
+
 }

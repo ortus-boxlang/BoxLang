@@ -17,9 +17,12 @@
  */
 package ortus.boxlang.compiler.prettyprint;
 
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Stream;
 
 import ortus.boxlang.compiler.ast.BoxClass;
@@ -161,6 +164,10 @@ public final class PrettyPrint {
 	}
 
 	public static void main( String[] args ) {
+		System.exit( run( args, System.out, System.err ) );
+	}
+
+	static int run( String[] args, PrintStream out, PrintStream err ) {
 		// initialize BoxRuntime if not already done
 		BoxRuntime.getInstance();
 
@@ -169,6 +176,7 @@ public final class PrettyPrint {
 		// -c, --config <config file> (defaults to .bxformat.json in the current working directory, falls back to .cfformat.json)
 		// -i, --input <input file/folder> (defaults to current working directory)
 		// -o, --output <output file/folder> (optional, if not provided, overwrite input files)
+		// --overwrite <true|false> (optional, default true. when false, print to stdout)
 		// --convertConfig (convert .cfformat.json to .bxformat.json)
 		try {
 			boolean	checkMode		= false;
@@ -176,18 +184,21 @@ public final class PrettyPrint {
 			String	inputPath		= System.getProperty( "user.dir" );
 			String	outputPath		= null;
 			boolean	convertConfig	= false;
+			boolean	overwrite		= true;
 
 			for ( int i = 0; i < args.length; i++ ) {
 				if ( args[ i ].equalsIgnoreCase( "--help" ) || args[ i ].equalsIgnoreCase( "-h" ) ) {
-					printHelp();
-					System.exit( 0 );
+					printHelp( out );
+					return 0;
 				} else if ( args[ i ].equalsIgnoreCase( "--initConfig" ) ) {
-					initConfig();
-					System.exit( 0 );
+					initConfig( out, err );
+					return 0;
 				} else if ( args[ i ].equalsIgnoreCase( "--convertConfig" ) ) {
 					convertConfig = true;
 				} else if ( args[ i ].equalsIgnoreCase( "--check" ) ) {
 					checkMode = true;
+				} else if ( args[ i ].equalsIgnoreCase( "--overwrite" ) && i + 1 < args.length ) {
+					overwrite = Boolean.parseBoolean( args[ ++i ] );
 				} else if ( ( args[ i ].equalsIgnoreCase( "--config" ) || args[ i ].equalsIgnoreCase( "-c" ) ) && i + 1 < args.length ) {
 					configPath = args[ ++i ];
 				} else if ( ( args[ i ].equalsIgnoreCase( "--input" ) || args[ i ].equalsIgnoreCase( "-i" ) ) && i + 1 < args.length ) {
@@ -199,8 +210,12 @@ public final class PrettyPrint {
 
 			// Handle --convertConfig option
 			if ( convertConfig ) {
-				convertCFFormatConfig( inputPath );
-				System.exit( 0 );
+				return convertCFFormatConfig( inputPath, out, err );
+			}
+
+			if ( !overwrite && outputPath != null ) {
+				err.println( "Error: --output cannot be used when --overwrite=false" );
+				return 1;
 			}
 
 			// Load config with fallback logic if no explicit path provided
@@ -227,57 +242,75 @@ public final class PrettyPrint {
 				filesToProcess = Stream.of( Paths.get( inputPath ) );
 			}
 
-			final boolean	finalCheckMode	= checkMode;
-			final String	finalOutputPath	= outputPath;
-			filesToProcess.forEach( path -> {
+			List<Path> pathsToProcess = new ArrayList<>();
+			try ( filesToProcess ) {
+				filesToProcess.forEach( pathsToProcess::add );
+			}
+
+			boolean needsFormatting = false;
+
+			for ( Path path : pathsToProcess ) {
 				try {
 					var		parser			= new Parser();
 					var		parsingResult	= parser.parse( path.toFile(), false );
 					String	formattedCode	= PrettyPrint.prettyPrint( parsingResult.getRoot(), config );
 
-					if ( finalCheckMode ) {
+					if ( checkMode ) {
 						String originalCode = Files.readString( path );
 						if ( !originalCode.equals( formattedCode ) ) {
-							System.out.println( "File needs formatting: " + path.toString() );
-							System.exit( 1 );
+							out.println( "File needs formatting: " + path.toString() );
+							needsFormatting = true;
+						}
+						continue;
+					}
+
+					if ( !overwrite ) {
+						out.println( "=== " + path.toString() + " ===" );
+						out.print( formattedCode );
+						if ( !formattedCode.endsWith( config.lineSeparator() ) ) {
+							out.println();
+						}
+						continue;
+					}
+
+					Path outputFilePath;
+					if ( outputPath != null ) {
+						outputFilePath = Paths.get( outputPath );
+						if ( Files.isDirectory( outputFilePath ) ) {
+							outputFilePath = outputFilePath.resolve( path.getFileName() );
 						}
 					} else {
-						Path outputFilePath;
-						if ( finalOutputPath != null ) {
-							outputFilePath = Paths.get( finalOutputPath );
-							if ( Files.isDirectory( outputFilePath ) ) {
-								outputFilePath = outputFilePath.resolve( path.getFileName() );
-							}
-						} else {
-							outputFilePath = path;
-						}
-						Files.writeString( outputFilePath, formattedCode );
-						System.out.println( "Formatted file: " + outputFilePath.toString() );
+						outputFilePath = path;
 					}
+					Files.writeString( outputFilePath, formattedCode );
+					out.println( "Formatted file: " + outputFilePath.toString() );
 				} catch ( Exception e ) {
-					System.err.println( "Error processing file " + path.toString() + ": " + e.getMessage() );
+					err.println( "Error processing file " + path.toString() + ": " + e.getMessage() );
+					return 1;
 				}
-			} );
+			}
+
+			return needsFormatting ? 1 : 0;
 
 		} catch ( Exception e ) {
-			System.err.println( "Error: " + e.getMessage() );
-			System.exit( 1 );
+			err.println( "Error: " + e.getMessage() );
+			return 1;
 		}
 	}
 
-	private static void initConfig() {
+	private static void initConfig( PrintStream out, PrintStream err ) {
 		// check if file exists
 		java.io.File configFile = new java.io.File( System.getProperty( "user.dir" ) + "/.bxformat.json" );
 		if ( configFile.exists() ) {
-			System.err.println( "Configuration file already exists at " + configFile.getAbsolutePath() );
+			err.println( "Configuration file already exists at " + configFile.getAbsolutePath() );
 			return;
 		}
 
 		try ( java.io.FileWriter writer = new java.io.FileWriter( configFile ) ) {
 			writer.write( DEFAULT_CONFIG );
-			System.out.println( "Default configuration file created at " + configFile.getAbsolutePath() );
+			out.println( "Default configuration file created at " + configFile.getAbsolutePath() );
 		} catch ( java.io.IOException e ) {
-			System.err.println( "Error creating configuration file: " + e.getMessage() );
+			err.println( "Error creating configuration file: " + e.getMessage() );
 		}
 	}
 
@@ -286,7 +319,7 @@ public final class PrettyPrint {
 	 *
 	 * @param directory The directory containing the .cfformat.json file (or path to the file itself)
 	 */
-	private static void convertCFFormatConfig( String directory ) {
+	private static int convertCFFormatConfig( String directory, PrintStream out, PrintStream err ) {
 		java.io.File	inputFile;
 		java.io.File	outputFile;
 
@@ -302,24 +335,25 @@ public final class PrettyPrint {
 		}
 
 		if ( !inputFile.exists() ) {
-			System.err.println( "CFFormat configuration file not found: " + inputFile.getAbsolutePath() );
-			System.exit( 1 );
+			err.println( "CFFormat configuration file not found: " + inputFile.getAbsolutePath() );
+			return 1;
 		}
 
 		if ( outputFile.exists() ) {
-			System.err.println( "BoxLang format configuration already exists: " + outputFile.getAbsolutePath() );
-			System.err.println( "Please remove or rename it before converting." );
-			System.exit( 1 );
+			err.println( "BoxLang format configuration already exists: " + outputFile.getAbsolutePath() );
+			err.println( "Please remove or rename it before converting." );
+			return 1;
 		}
 
 		try {
 			CFFormatConfigLoader.convertAndWriteBoxFormatFile( inputFile.getAbsolutePath(), outputFile.getAbsolutePath() );
-			System.out.println( "Successfully converted CFFormat configuration!" );
-			System.out.println( "  From: " + inputFile.getAbsolutePath() );
-			System.out.println( "  To:   " + outputFile.getAbsolutePath() );
+			out.println( "Successfully converted CFFormat configuration!" );
+			out.println( "  From: " + inputFile.getAbsolutePath() );
+			out.println( "  To:   " + outputFile.getAbsolutePath() );
+			return 0;
 		} catch ( java.io.IOException e ) {
-			System.err.println( "Error converting configuration: " + e.getMessage() );
-			System.exit( 1 );
+			err.println( "Error converting configuration: " + e.getMessage() );
+			return 1;
 		}
 	}
 
@@ -329,7 +363,13 @@ public final class PrettyPrint {
 
 	public static String prettyPrint( BoxNode node, Config config ) {
 		var doc = generateDoc( node, config );
-		return printDoc( doc, config );
+		String output = printDoc( doc, config );
+		output = output.replaceAll( "(?m)(^\\s*param\\s+[^=\\r\\n]*?)\\s+=\\s+", "$1 = " );
+		// cfformat always produces a trailing newline; match this behaviour in CF compat mode
+		if ( config.getCFFormatCompatibility() && !output.endsWith( "\n" ) ) {
+			output = output + "\n";
+		}
+		return output;
 	}
 
 	public static Doc generateDoc( BoxNode node, Config config ) {
@@ -361,52 +401,53 @@ public final class PrettyPrint {
 	/**
 	 * Prints the help message for the BoxLang Formatter tool.
 	 */
-	private static void printHelp() {
-		System.out.println( "BoxLang Formatter - A CLI tool for formatting BoxLang code" );
-		System.out.println();
-		System.out.println( "USAGE:" );
-		System.out.println( "  boxlang format [OPTIONS]" );
-		System.out.println( "  java -jar boxlang.jar ortus.boxlang.compiler.PrettyPrint [OPTIONS]" );
-		System.out.println();
-		System.out.println( "OPTIONS:" );
-		System.out.println( "  -h, --help                  Show this help message and exit" );
-		System.out.println( "  -i, --input <PATH>          Path to source directory or file to format (default: current directory)" );
-		System.out.println( "  -o, --output <PATH>         Path to output directory or file (default: overwrite input files)" );
-		System.out.println( "  -c, --config <PATH>         Path to configuration file (default: .bxformat.json or .cfformat.json)" );
-		System.out.println( "      --check                 Only check if files need formatting (exit code 1 if changes needed)" );
-		System.out.println( "      --initConfig            Create a default .bxformat.json configuration file" );
-		System.out.println( "      --convertConfig         Convert .cfformat.json to .bxformat.json" );
-		System.out.println();
-		System.out.println( "CONFIGURATION:" );
-		System.out.println( "  The formatter looks for configuration files in this order:" );
-		System.out.println( "    1. .bxformat.json (preferred)" );
-		System.out.println( "    2. .cfformat.json (CFFormat compatibility - auto-converted)" );
-		System.out.println( "    3. Default settings" );
-		System.out.println();
-		System.out.println( "  You can also specify a config file explicitly with -c/--config." );
-		System.out.println( "  Both .bxformat.json and .cfformat.json formats are supported." );
-		System.out.println();
-		System.out.println( "EXAMPLES:" );
-		System.out.println( "  # Format all BoxLang files in the current directory" );
-		System.out.println( "  boxlang format" );
-		System.out.println();
-		System.out.println( "  # Check files for formatting needs" );
-		System.out.println( "  boxlang format --check" );
-		System.out.println();
-		System.out.println( "  # Format a single file" );
-		System.out.println( "  boxlang format --input /path/to/file.cfm" );
-		System.out.println();
-		System.out.println( "  # Use a specific config file" );
-		System.out.println( "  boxlang format --config /path/to/.bxformat.json" );
-		System.out.println();
-		System.out.println( "  # Convert CFFormat config to BoxLang format" );
-		System.out.println( "  boxlang format --convertConfig" );
-		System.out.println();
-		System.out.println( "More Information:" );
-		System.out.println( "  Documentation: https://boxlang.ortusbooks.com/" );
-		System.out.println( "  Community: https://community.ortussolutions.com/c/boxlang/42" );
-		System.out.println( "  GitHub: https://github.com/ortus-boxlang" );
-		System.out.println();
+	private static void printHelp( PrintStream out ) {
+		out.println( "BoxLang Formatter - A CLI tool for formatting BoxLang code" );
+		out.println();
+		out.println( "USAGE:" );
+		out.println( "  boxlang format [OPTIONS]" );
+		out.println( "  java -jar boxlang.jar ortus.boxlang.compiler.PrettyPrint [OPTIONS]" );
+		out.println();
+		out.println( "OPTIONS:" );
+		out.println( "  -h, --help                  Show this help message and exit" );
+		out.println( "  -i, --input <PATH>          Path to source directory or file to format (default: current directory)" );
+		out.println( "  -o, --output <PATH>         Path to output directory or file (default: overwrite input files)" );
+		out.println( "      --overwrite <true|false> Overwrite files (default: true). false prints formatted source to stdout" );
+		out.println( "  -c, --config <PATH>         Path to configuration file (default: .bxformat.json or .cfformat.json)" );
+		out.println( "      --check                 Only check if files need formatting (exit code 1 if changes needed)" );
+		out.println( "      --initConfig            Create a default .bxformat.json configuration file" );
+		out.println( "      --convertConfig         Convert .cfformat.json to .bxformat.json" );
+		out.println();
+		out.println( "CONFIGURATION:" );
+		out.println( "  The formatter looks for configuration files in this order:" );
+		out.println( "    1. .bxformat.json (preferred)" );
+		out.println( "    2. .cfformat.json (CFFormat compatibility - auto-converted)" );
+		out.println( "    3. Default settings" );
+		out.println();
+		out.println( "  You can also specify a config file explicitly with -c/--config." );
+		out.println( "  Both .bxformat.json and .cfformat.json formats are supported." );
+		out.println();
+		out.println( "EXAMPLES:" );
+		out.println( "  # Format all BoxLang files in the current directory" );
+		out.println( "  boxlang format" );
+		out.println();
+		out.println( "  # Check files for formatting needs" );
+		out.println( "  boxlang format --check" );
+		out.println();
+		out.println( "  # Print formatted output to stdout without overwriting files" );
+		out.println( "  boxlang format --overwrite false --input /path/to/file.cfc" );
+		out.println();
+		out.println( "  # Use a specific config file" );
+		out.println( "  boxlang format --config /path/to/.bxformat.json" );
+		out.println();
+		out.println( "  # Convert CFFormat config to BoxLang format" );
+		out.println( "  boxlang format --convertConfig" );
+		out.println();
+		out.println( "More Information:" );
+		out.println( "  Documentation: https://boxlang.ortusbooks.com/" );
+		out.println( "  Community: https://community.ortussolutions.com/c/boxlang/42" );
+		out.println( "  GitHub: https://github.com/ortus-boxlang" );
+		out.println();
 	}
 
 }
