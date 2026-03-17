@@ -273,4 +273,19 @@ public class SpreadArgumentTest {
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 7 );
 	}
+
+	@DisplayName( "spread struct into expression invocation with named arguments" )
+	@Test
+	public void testSpreadStructIntoExpressionInvocation() {
+		instance.executeSource(
+		    """
+		    function getGreeter() {
+		    	return ( first, last ) => "Hi, " & first & " " & last;
+		    }
+		    args = { first: "Jane", last: "Doe" };
+		    result = getGreeter()( ...args );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "Hi, Jane Doe" );
+	}
 }
