@@ -6380,6 +6380,9 @@ public class CoreLangTest {
 
 	@DisplayName( "Parser ignores special whitespace BoxLang script" )
 	@Test
+	void testParserIgnoresSpecialWhitespaceBoxLangScript() {
+		// \u00A0 = non-breaking space, \u2003 = em space, \u2002 = en space, \u2009 = thin space
+		instance.executeSource(
 		    """
 		    foo\u00A0=\u2003"bar"
 		    baz\u2002=\u2009"bum"
