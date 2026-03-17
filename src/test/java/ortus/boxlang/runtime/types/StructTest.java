@@ -334,4 +334,38 @@ class StructTest {
 
 	}
 
+	@DisplayName( "entrySet should not call hashCode on values" )
+	@Test
+	void testEntrySetDoesNotCallHashCodeOnValues() {
+		// Object with a hashCode() that sleeps for 10 seconds - if entrySet triggers it, the test will timeout
+		Object slowHashCodeObject = new Object() {
+
+			@Override
+			public int hashCode() {
+				try {
+					Thread.sleep( 10000 );
+				} catch ( InterruptedException e ) {
+					Thread.currentThread().interrupt();
+				}
+				return 42;
+			}
+		};
+
+		variables.put( Key.of( "javaObj" ), slowHashCodeObject );
+
+		// @formatter:off
+		instance.executeSource(
+		    """
+			start = getTickCount();
+			variables.entrySet().toArray();
+			time = getTickCount() - start;
+			""",
+			context );
+		// @formatter:on
+		int elapsed = variables.getAsNumber( Key.of( "time" ) ).intValue();
+
+		// If entrySet() called hashCode(), this would take 10+ seconds
+		assertThat( elapsed ).isLessThan( 5000 );
+	}
+
 }
