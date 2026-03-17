@@ -266,7 +266,7 @@ componentAttribute: identifier ((EQUALSIGN | COLON) expression)?
 argumentList: argument (COMMA argument)* COMMA?
     ;
 
-argument: (namedArgument | positionalArgument)
+argument: (namedArgument | positionalArgument | spreadArgument)
     ;
 
 /*
@@ -281,6 +281,12 @@ namedArgument: (identifier | stringLiteral) (EQUALSIGN | COLON) expression
 
 // func( foo, bar, baz )
 positionalArgument: expression
+    ;
+
+// Spread an array or struct into function arguments:
+// func( ...myArray )
+// func( ...myStruct )
+spreadArgument: ELLIPSIS expression
     ;
 
 // The generic component syntax won't capture all access expressions so we need this rule too param
