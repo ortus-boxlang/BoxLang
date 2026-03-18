@@ -49,7 +49,7 @@ public abstract class Transpiler implements ITranspiler {
 	private Map<String, ClassNode>							auxiliaries				= new LinkedHashMap<String, ClassNode>();
 	/**
 	 * Registry of named local classes defined inside a script or template.
-	 * Maps the simple class name (alias) to the JVM internal name of the compiled auxiliary class.
+	 * Maps the simple class name (alias) to the Java class name of the compiled auxiliary class.
 	 * e.g. "Person" -&gt; "boxgenerated/scripts/MyScript$LocalClass$Person"
 	 */
 	private Map<String, String>								localClasses			= new LinkedHashMap<String, String>();
@@ -257,23 +257,23 @@ public abstract class Transpiler implements ITranspiler {
 	 * Register a named local class for the current compilation unit.
 	 * Called during script/template transpilation, before the body is compiled.
 	 *
-	 * @param alias           the simple name as written in source (e.g. {@code "Person"})
-	 * @param jvmInternalName the JVM internal name of the generated class
-	 *                        (e.g. {@code "boxgenerated/scripts/MyScript$LocalClass$Person"})
+	 * @param alias         the simple name as written in source (e.g. {@code "Person"})
+	 * @param javaClassName the Java class name of the generated class
+	 *                      (e.g. {@code "boxgenerated/scripts/MyScript$LocalClass$Person"})
 	 */
-	public void registerLocalClass( String alias, String jvmInternalName ) {
-		this.localClasses.put( alias, jvmInternalName );
+	public void registerLocalClass( String alias, String javaClassName ) {
+		this.localClasses.put( alias, javaClassName );
 	}
 
 	/**
-	 * Returns the JVM internal name of a local class if the given alias refers to one, or
+	 * Returns the Java class name of a local class if the given alias refers to one, or
 	 * {@code null} if it is not a local class.
 	 *
 	 * @param alias the simple name as written in source (e.g. {@code "Person"})
 	 *
-	 * @return the JVM internal name, or {@code null}
+	 * @return the Java class name, or {@code null}
 	 */
-	public String getLocalClassJvmName( String alias ) {
+	public String getLocalClassName( String alias ) {
 		return this.localClasses.get( alias );
 	}
 
