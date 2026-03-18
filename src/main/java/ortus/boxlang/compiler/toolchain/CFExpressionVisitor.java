@@ -146,6 +146,7 @@ import ortus.boxlang.parser.antlr.CFGrammar.ObjectDestructuringPatternContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ObjectDestructuringValueContext;
 import ortus.boxlang.parser.antlr.CFGrammar.PositionalArgumentContext;
 import ortus.boxlang.parser.antlr.CFGrammar.RelOpsContext;
+import ortus.boxlang.parser.antlr.CFGrammar.SpreadArgumentContext;
 import ortus.boxlang.parser.antlr.CFGrammar.StringLiteralContext;
 import ortus.boxlang.parser.antlr.CFGrammar.StringLiteralPartContext;
 import ortus.boxlang.parser.antlr.CFGrammar.StructExpressionContext;
@@ -959,7 +960,30 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		if ( ctx.namedArgument() != null ) {
 			return ctx.namedArgument().accept( this );
 		}
+		if ( ctx.spreadArgument() != null ) {
+			return ctx.spreadArgument().accept( this );
+		}
 		return ctx.positionalArgument().accept( this );
+	}
+
+	/**
+	 * Visit a spread argument such as {@code func( ...myArray )} or {@code func( ...myStruct )}.
+	 * <p>
+	 * The spread operator in a function call is syntactic sugar that converts to a named
+	 * {@code argumentCollection} argument, reusing the existing runtime plumbing for
+	 * argument collection expansion.
+	 *
+	 * @param ctx the parse tree node for the spread argument
+	 *
+	 * @return a {@link BoxArgument} with name {@code "argumentCollection"} wrapping the spread expression
+	 */
+	@Override
+	public BoxExpression visitSpreadArgument( SpreadArgumentContext ctx ) {
+		var				pos		= tools.getPosition( ctx );
+		var				src		= tools.getSourceText( ctx );
+		BoxExpression	name	= new BoxStringLiteral( "argumentCollection", pos, src );
+		BoxExpression	value	= ctx.expression().accept( this );
+		return new BoxArgument( name, value, pos, src );
 	}
 
 	@Override
