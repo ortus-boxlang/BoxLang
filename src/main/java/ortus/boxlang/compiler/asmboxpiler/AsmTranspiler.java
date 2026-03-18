@@ -653,10 +653,10 @@ public class AsmTranspiler extends Transpiler {
 	private void preCompileLocalClasses( List<BoxStatement> statements, String outerClassname, String outerPackage, String outerPackageInternal ) {
 		for ( BoxStatement stmt : statements ) {
 			if ( stmt instanceof BoxLocalClass localClass ) {
-				String		localName				= localClass.getName().getName();
-				String		syntheticClassname		= outerClassname + "$LocalClass$" + localName;
-				String		syntheticDotFQN			= outerPackage + "." + syntheticClassname;
-				String		syntheticJvmInternal	= outerPackageInternal + "/" + syntheticClassname;
+				String		localName					= localClass.getName().getName();
+				String		syntheticClassname			= outerClassname + "$LocalClass$" + localName;
+				String		syntheticDotFQN				= outerPackage + "." + syntheticClassname;
+				String		syntheticJavaClassName		= outerPackageInternal + "/" + syntheticClassname;
 
 				// Create a fresh child transpiler configured for the synthetic inner class name
 				Transpiler	child					= Transpiler.getTranspiler();
@@ -674,7 +674,7 @@ public class AsmTranspiler extends Transpiler {
 				    localClass.getAnnotations(), localClass.getDocumentation(), localClass.getProperties(),
 				    localClass.getPosition(), localClass.getSourceText() );
 
-				// Compile to a JVM ClassNode and register as an auxiliary — ASMBoxpiler will defineClass() it
+				// Compile to a ClassNode and register as an auxiliary — ASMBoxpiler will defineClass() it
 				ClassNode	localClassNode	= BoxClassTransformer.transpile( child, asBoxClass );
 				setAuxiliary( syntheticDotFQN, localClassNode );
 
@@ -682,7 +682,7 @@ public class AsmTranspiler extends Transpiler {
 				child.getAuxiliary().forEach( this::setAuxiliary );
 
 				// Register the alias so BoxNewTransformer emits a direct class reference
-				registerLocalClass( localName, syntheticJvmInternal );
+				registerLocalClass( localName, syntheticJavaClassName );
 			} else if ( stmt instanceof BoxTemplateIsland island ) {
 				// Recurse into component-island content (template text between tags)
 				preCompileLocalClasses( island.getStatements(), outerClassname, outerPackage, outerPackageInternal );

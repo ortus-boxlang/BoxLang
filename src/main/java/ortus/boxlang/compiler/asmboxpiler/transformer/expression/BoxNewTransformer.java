@@ -70,10 +70,10 @@ public class BoxNewTransformer extends AbstractTransformer {
 			localClassAlias = fqn.getValue();
 		}
 		if ( localClassAlias != null ) {
-			String localClassJvmName = transpiler.getLocalClassJvmName( localClassAlias );
-			if ( localClassJvmName != null ) {
+			String localClassName = transpiler.getLocalClassName( localClassAlias );
+			if ( localClassName != null ) {
 				// Push Class<?> literal: equivalent to MyScript$LocalClass$Foo.class
-				nodes.add( new LdcInsnNode( Type.getType( "L" + localClassJvmName + ";" ) ) );
+				nodes.add( new LdcInsnNode( Type.getType( "L" + localClassName + ";" ) ) );
 				// Push IBoxContext
 				nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
 				// DynamicObject.of(Class<?>, IBoxContext) → DynamicObject
