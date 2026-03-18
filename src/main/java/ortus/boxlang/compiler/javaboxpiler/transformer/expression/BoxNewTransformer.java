@@ -25,6 +25,8 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.NameExpr;
 
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.expression.BoxFQN;
+import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
@@ -48,7 +50,43 @@ public class BoxNewTransformer extends AbstractTransformer {
 	 */
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
-		BoxNew		boxNew	= ( BoxNew ) node;
+		BoxNew boxNew = ( BoxNew ) node;
+
+		// Local classes are pre-compiled as nested classes and can be instantiated directly.
+		if ( boxNew.getPrefix() == null ) {
+			String localClassAlias = null;
+			if ( boxNew.getExpression() instanceof BoxIdentifier identifier ) {
+				localClassAlias = identifier.getName();
+			} else if ( boxNew.getExpression() instanceof BoxFQN fqn ) {
+				localClassAlias = fqn.getValue();
+			}
+
+			if ( localClassAlias != null ) {
+				String localClassName = ( ( JavaTranspiler ) transpiler ).getLocalClassName( localClassAlias );
+				if ( localClassName != null ) {
+					Map<String, String> localValues = new HashMap<>() {
+
+						{
+							put( "className", localClassName );
+							put( "contextName", transpiler.peekContextName() );
+						}
+					};
+
+					for ( int i = 0; i < boxNew.getArguments().size(); i++ ) {
+						Expression argExpr = ( Expression ) transpiler.transform( ( BoxNode ) boxNew.getArguments().get( i ), context );
+						localValues.put( "arg" + i, argExpr.toString() );
+					}
+
+					String	localTemplate	= "DynamicObject.of( ${className}.class ).invokeConstructor( ${contextName}, "
+					    + generateArguments( boxNew.getArguments() ) + " ).unWrapBoxLangClass()";
+
+					Node	localStmt		= parseExpression( localTemplate, localValues );
+					addIndex( localStmt, node );
+					return localStmt;
+				}
+			}
+		}
+
 		Expression	expr	= ( Expression ) transpiler.transform( boxNew.getExpression(), TransformerContext.RIGHT );
 
 		String		fqn		= expr.toString();

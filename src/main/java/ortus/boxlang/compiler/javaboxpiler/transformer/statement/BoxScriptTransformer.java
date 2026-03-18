@@ -75,9 +75,12 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.dynamic.Referencer;
 		import ortus.boxlang.runtime.interop.DynamicObject;
 		import ortus.boxlang.runtime.interop.DynamicObject;
+		import ortus.boxlang.runtime.dynamic.IReferenceable;
 		import ortus.boxlang.runtime.loader.ClassLocator;
 		import ortus.boxlang.runtime.loader.ImportDefinition;
 		import ortus.boxlang.runtime.operators.*;
+		import ortus.boxlang.runtime.runnables.IClassRunnable;
+		import ortus.boxlang.runtime.runnables.BoxInterface;
 		import ortus.boxlang.runtime.runnables.BoxScript;
 		import ortus.boxlang.runtime.runnables.BoxTemplate;
 		import ortus.boxlang.runtime.runnables.IBoxRunnable;
@@ -86,8 +89,11 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.types.*;
 		import ortus.boxlang.runtime.types.util.*;
 		import ortus.boxlang.runtime.types.exceptions.*;
+		import ortus.boxlang.runtime.types.meta.BoxMeta;
+		import ortus.boxlang.runtime.types.meta.ClassMeta;
 		import ortus.boxlang.runtime.types.meta.FunctionMeta;
 		import ortus.boxlang.runtime.util.*;
+		import ortus.boxlang.runtime.util.conversion.ObjectMarshaller;
 		import ortus.boxlang.compiler.parser.BoxSourceType;
 		import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 		import ortus.boxlang.runtime.runnables.BoxClassSupport;
@@ -96,6 +102,13 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		// Java Imports
 		import java.nio.file.Path;
 		import java.nio.file.Paths;
+		import java.io.*;
+		import java.io.ObjectStreamException;
+		import java.lang.invoke.MethodHandle;
+		import java.lang.invoke.MethodHandles;
+		import java.lang.invoke.MethodType;
+		import java.lang.reflect.Field;
+		import java.lang.reflect.Method;
 		import java.time.LocalDateTime;
 		import java.util.ArrayList;
 		import java.util.Arrays;
@@ -105,6 +118,7 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		import java.util.List;
 		import java.util.Map;
 		import java.util.Optional;
+		import java.util.Set;
 
 		@BoxByteCodeVersion(boxlangVersion="${boxlangVersion}", bytecodeVersion=${bytecodeVersion})
 		public class ${className} extends ${baseclass} {
