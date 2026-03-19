@@ -359,7 +359,6 @@ if [ -n "$BL_JAR" ]; then
     BL_JAVA="${BL_JAVA:-java}"
     if [ ! -f "$BL_JSA" ] && command -v "$BL_JAVA" > /dev/null 2>&1; then
         mkdir -p "$BL_JSA_DIR"
-        #printf ">> BoxLang: generating startup cache (one-time, ~3s)...\n" >&2
         BL_CLASSLIST="$BL_JSA_DIR/boxlang-$BL_VER.classlist"
         "$BL_JAVA" -XX:DumpLoadedClassList="$BL_CLASSLIST" -cp "$BL_JAR" ortus.boxlang.runtime.BoxRunner --version > /dev/null 2>&1
         "$BL_JAVA" -Xshare:dump -XX:SharedClassListFile="$BL_CLASSLIST" -XX:SharedArchiveFile="$BL_JSA.tmp" -cp "$BL_JAR" ortus.boxlang.runtime.BoxRunner > /dev/null 2>&1 && mv "$BL_JSA.tmp" "$BL_JSA"
@@ -412,7 +411,6 @@ ext.customizeWindowsScript = { File scriptFile ->
 		'  if defined JAVA_HOME (set "BL_JAVA=%JAVA_HOME%\\bin\\java.exe") else (set "BL_JAVA=java.exe")\r\n' +
 		'  if not exist "!BL_JSA!" (\r\n' +
 		'    if not exist "!BL_JSA_DIR!" mkdir "!BL_JSA_DIR!"\r\n' +
-		'    @rem echo ^>^> BoxLang: generating startup cache (one-time)... 1>&2\r\n' +
 		'    set "BL_CLASSLIST=!BL_JSA_DIR!\\boxlang-!BL_VER!.classlist"\r\n' +
 		'    "!BL_JAVA!" -XX:DumpLoadedClassList="!BL_CLASSLIST!" -cp "%BL_JAR%" ortus.boxlang.runtime.BoxRunner --version >nul 2>&1\r\n' +
 		'    "!BL_JAVA!" -Xshare:dump -XX:SharedClassListFile="!BL_CLASSLIST!" -XX:SharedArchiveFile="!BL_JSA!" -cp "%BL_JAR%" ortus.boxlang.runtime.BoxRunner >nul 2>&1\r\n' +
