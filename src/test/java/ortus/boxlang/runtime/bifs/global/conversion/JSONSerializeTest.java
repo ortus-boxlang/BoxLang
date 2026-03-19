@@ -698,4 +698,20 @@ public class JSONSerializeTest {
 		assertThat( variables.getAsString( result ) ).contains( "\"/foo\"" );
 	}
 
+	@DisplayName( "It will serialize Java Instant" )
+	@Test
+	public void testWillSerializeJavaInstant() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				instant = createObject( "java", "java.time.Instant" ).EPOCH;
+				result = JSONSerialize( { "instant" : instant } );
+				println(result)
+			""",
+		    context );
+		// @formatter:on
+
+		assertThat( variables.getAsString( result ) ).contains( "1970-01-01T00:00:00Z" );
+	}
+
 }

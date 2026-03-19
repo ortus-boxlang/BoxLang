@@ -1392,6 +1392,17 @@ public class StructUtil {
 	 * @param context The context to use
 	 */
 	public static IStruct objectToStruct( Object object, IBoxContext context ) {
+		return objectToStruct( object, context, true );
+	}
+
+	/**
+	 * Converts any object to a struct
+	 * 
+	 * @param object        The object to convert
+	 * @param context       The context to use
+	 * @param includeStatic Whether to include static fields and methods if the object is a Class
+	 */
+	public static IStruct objectToStruct( Object object, IBoxContext context, boolean includeStatic ) {
 
 		IStruct thisResult = new Struct();
 
@@ -1404,7 +1415,7 @@ public class StructUtil {
 		// Get the fields and methods of the class
 		dynObject = DynamicObject.of( object );
 		dynObject.getFieldsAsStream()
-		    .filter( field -> Modifier.isPublic( field.getModifiers() ) )
+		    .filter( field -> Modifier.isPublic( field.getModifiers() ) && ( includeStatic || !Modifier.isStatic( field.getModifiers() ) ) )
 		    .forEach( field -> {
 			    try {
 				    thisResult.put( field.getName(), dynObject.getField( field.getName() ).orElse( null ) );
@@ -1417,6 +1428,7 @@ public class StructUtil {
 		dynObject.getMethodNames( true ).forEach( methodName -> {
 			Method m;
 			if ( methodName.startsWith( "get" ) && Modifier.isPublic( ( m = dynObject.getMethod( methodName, true ) ).getModifiers() )
+			    && ( includeStatic || !Modifier.isStatic( m.getModifiers() ) )
 			    && m.getParameterCount() == 0 && !methodName.equals( "getClass" ) ) {
 				try {
 					thisResult.put( methodName.substring( 3 ), dynObject.invoke( context, methodName ) );
@@ -1428,7 +1440,7 @@ public class StructUtil {
 
 		// Force the overloaded method expecting a class.
 		// Get the static methods and fields of the Class that the Class represents
-		if ( object instanceof Class clazz ) {
+		if ( includeStatic && object instanceof Class clazz ) {
 			DynamicObject dynObject2 = DynamicObject.of( clazz );
 			dynObject2.getFieldsAsStream()
 			    // get public, static fields
