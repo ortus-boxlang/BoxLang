@@ -74,7 +74,6 @@ public class BoxScriptTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 		import ortus.boxlang.runtime.dynamic.Referencer;
 		import ortus.boxlang.runtime.interop.DynamicObject;
-		import ortus.boxlang.runtime.interop.DynamicObject;
 		import ortus.boxlang.runtime.dynamic.IReferenceable;
 		import ortus.boxlang.runtime.loader.ClassLocator;
 		import ortus.boxlang.runtime.loader.ImportDefinition;
