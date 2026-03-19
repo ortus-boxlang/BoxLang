@@ -27,10 +27,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.context.ClassBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
-import ortus.boxlang.runtime.context.StaticClassBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocation;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
@@ -247,54 +245,29 @@ public class JavaResolver extends BaseResolver {
 	 */
 	@SuppressWarnings( "null" )
 	public Optional<ClassLocation> findFromSystem( String fullyQualifiedName, List<ImportDefinition> imports, IBoxContext context ) {
-		Class<?> clazz = null;
+		// Let's see if we get the request box context, so we can get the current request class loader
+		RequestBoxContext	requestContext	= context.getRequestContext();
+		DynamicClassLoader	classLoader		= ( requestContext == null ? getSystemClassLoader() : requestContext.getRequestClassLoader() );
 
-		// 1) Search the context chain for any context bound to a Box Class, and check its classloader.
-		IBoxContext currentContext = context;
-		while ( currentContext != null ) {
-			ClassLoader loader = null;
-			if ( currentContext instanceof StaticClassBoxContext sctx ) {
-				loader = sctx.getStaticBoxClass().getTargetClass().getClassLoader();
-			} else if ( currentContext instanceof ClassBoxContext cctx ) {
-				loader = cctx.getThisClass().getClass().getClassLoader();
-			}
-
-			if ( loader != null ) {
-				try {
-					clazz = loader.loadClass( fullyQualifiedName );
-					break;
-				} catch ( ClassNotFoundException e ) {
-					// Ignore and continue looking up the context chain
-				}
-			}
-			currentContext = currentContext.getParent();
+		Class<?>			clazz;
+		try {
+			clazz = classLoader.loadClass( fullyQualifiedName );
+			return Optional.of(
+			    new ClassLocation(
+			        ClassUtils.getSimpleName( clazz ),
+			        this.name,
+			        ClassUtils.getPackageName( clazz ),
+			        ClassLocator.TYPE_JAVA,
+			        clazz,
+			        null,
+			        true,
+			        context.getApplicationName(),
+			        null
+			    )
+			);
+		} catch ( ClassNotFoundException e ) {
+			return Optional.empty();
 		}
-
-		// 2) If not found in the immediate class contexts, fallback to the request class loader
-		if ( clazz == null ) {
-			RequestBoxContext	requestContext	= context.getRequestContext();
-			DynamicClassLoader	classLoader		= ( requestContext == null ? getSystemClassLoader() : requestContext.getRequestClassLoader() );
-
-			try {
-				clazz = classLoader.loadClass( fullyQualifiedName );
-			} catch ( ClassNotFoundException e ) {
-				return Optional.empty();
-			}
-		}
-
-		return Optional.of(
-		    new ClassLocation(
-		        ClassUtils.getSimpleName( clazz ),
-		        this.name,
-		        ClassUtils.getPackageName( clazz ),
-		        ClassLocator.TYPE_JAVA,
-		        clazz,
-		        null,
-		        true,
-		        context.getApplicationName(),
-		        null
-		    )
-		);
 	}
 
 	/**

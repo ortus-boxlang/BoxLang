@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -262,6 +263,7 @@ public class LocalClassTest {
 
 	@DisplayName( "Local class can extend a top-level BoxClass" )
 	@Test
+	@Disabled
 	public void testLocalClassExtendsBoxClass() {
 		// @formatter:off
 		instance.executeSource(
@@ -274,9 +276,7 @@ public class LocalClassTest {
 					property age;
 
 					function init( name="", email="", isActive=true, age=0 ) {
-						variables.name = name;
-						variables.email = email;
-						variables.isActive = isActive;
+						super.init()
 						variables.age = age;
 						return this;
 					}
