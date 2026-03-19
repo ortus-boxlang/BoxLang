@@ -516,7 +516,11 @@ public class AsmTranspiler extends Transpiler {
 		String	outerClassname			= getProperty( "classname" );
 		String	outerPackage			= getProperty( "packageName" );
 		String	outerPackageInternal	= outerPackage.replace( '.', '/' );
-		preCompileLocalClasses( boxScript.getStatements(), outerClassname, outerPackage, outerPackageInternal );
+		List<BoxImport>	enclosingImports	= boxScript.getStatements().stream()
+		    .filter( s -> s instanceof BoxImport )
+		    .map( s -> ( BoxImport ) s )
+		    .collect( Collectors.toList() );
+		preCompileLocalClasses( boxScript.getStatements(), enclosingImports, outerClassname, outerPackage, outerPackageInternal );
 
 		AsmHelper.methodWithContextAndClassLocator(
 		    classNode,
@@ -650,13 +654,14 @@ public class AsmTranspiler extends Transpiler {
 	 * @param outerPackage         dot-separated package name of the enclosing class
 	 * @param outerPackageInternal slash-separated package path of the enclosing class
 	 */
-	private void preCompileLocalClasses( List<BoxStatement> statements, String outerClassname, String outerPackage, String outerPackageInternal ) {
+	private void preCompileLocalClasses( List<BoxStatement> statements, List<BoxImport> enclosingImports, String outerClassname, String outerPackage,
+	    String outerPackageInternal ) {
 		for ( BoxStatement stmt : statements ) {
 			if ( stmt instanceof BoxLocalClass localClass ) {
-				String		localName					= localClass.getName().getName();
-				String		syntheticClassname			= outerClassname + "$LocalClass$" + localName;
-				String		syntheticDotFQN				= outerPackage + "." + syntheticClassname;
-				String		syntheticJavaClassName		= outerPackageInternal + "/" + syntheticClassname;
+				String		localName				= localClass.getName().getName();
+				String		syntheticClassname		= outerClassname + "$LocalClass$" + localName;
+				String		syntheticDotFQN			= outerPackage + "." + syntheticClassname;
+				String		syntheticJavaClassName	= outerPackageInternal + "/" + syntheticClassname;
 
 				// Create a fresh child transpiler configured for the synthetic inner class name
 				Transpiler	child					= Transpiler.getTranspiler();
@@ -669,8 +674,9 @@ public class AsmTranspiler extends Transpiler {
 				child.setProperty( "mappingPath", getProperty( "mappingPath" ) );
 				child.setProperty( "relativePath", getProperty( "relativePath" ) );
 
-				// Adapt the BoxLocalClass node to a BoxClass so BoxClassTransformer can compile it
-				BoxClass	asBoxClass		= new BoxClass( List.of(), localClass.getBody(),
+				// Adapt the BoxLocalClass node to a BoxClass so BoxClassTransformer can compile it,
+				// passing the enclosing script/template imports so the class can resolve them at runtime.
+				BoxClass	asBoxClass		= new BoxClass( enclosingImports, localClass.getBody(),
 				    localClass.getAnnotations(), localClass.getDocumentation(), localClass.getProperties(),
 				    localClass.getPosition(), localClass.getSourceText() );
 
@@ -685,13 +691,13 @@ public class AsmTranspiler extends Transpiler {
 				registerLocalClass( localName, syntheticJavaClassName );
 			} else if ( stmt instanceof BoxTemplateIsland island ) {
 				// Recurse into component-island content (template text between tags)
-				preCompileLocalClasses( island.getStatements(), outerClassname, outerPackage, outerPackageInternal );
+				preCompileLocalClasses( island.getStatements(), enclosingImports, outerClassname, outerPackage, outerPackageInternal );
 			} else if ( stmt instanceof BoxScriptIsland island ) {
 				// <bx:script>...</bx:script> in template mode produces a BoxScriptIsland
-				preCompileLocalClasses( island.getStatements(), outerClassname, outerPackage, outerPackageInternal );
+				preCompileLocalClasses( island.getStatements(), enclosingImports, outerClassname, outerPackage, outerPackageInternal );
 			} else if ( stmt instanceof BoxComponent component && component.getBody() != null ) {
 				// Recurse into general component bodies for completeness
-				preCompileLocalClasses( component.getBody(), outerClassname, outerPackage, outerPackageInternal );
+				preCompileLocalClasses( component.getBody(), enclosingImports, outerClassname, outerPackage, outerPackageInternal );
 			}
 		}
 	}

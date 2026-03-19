@@ -207,4 +207,30 @@ public class LocalClassTest {
 		    context, BoxSourceType.BOXTEMPLATE );
 		assertThat( variables.get( result ) ).isEqualTo( "(3,4)" );
 	}
+
+	@DisplayName( "Local class can use imports from the enclosing script" )
+	@Test
+	public void testLocalClassCanUseEnclosingImports() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    import java.util.Date;
+			class Event {
+		        function init( name ) {
+		            variables.name = name;
+		            variables.timestamp = new Date();
+		            return this;
+		        }
+		        function getInfo() {
+		            return variables.name & " at " & variables.timestamp.toString();
+		        }
+		    }
+			result = new Event( "Party" ).getInfo();
+		    """,
+			context
+		);
+		// @formatter:on
+		String info = ( String ) variables.get( result );
+		assertThat( info ).startsWith( "Party at " );
+	}
 }

@@ -36,7 +36,7 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
  * enclosing script and may only be instantiated within it via {@code new Name()}.
  * <p>
  * Example:
- * 
+ *
  * <pre>{@code
  * class Person {
  *     function init( required String name ) {

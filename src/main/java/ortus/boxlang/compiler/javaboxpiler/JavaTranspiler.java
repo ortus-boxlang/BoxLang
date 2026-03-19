@@ -375,9 +375,11 @@ public class JavaTranspiler extends Transpiler {
 	public TranspiledCode transpile( BoxNode node ) throws BoxRuntimeException {
 		this.localClasses.clear();
 		if ( node instanceof BoxScript boxScript ) {
-			preCompileLocalClasses( boxScript.getStatements() );
+			List<BoxImport> enclosingImports = extractImports( boxScript.getStatements() );
+			preCompileLocalClasses( boxScript.getStatements(), enclosingImports );
 		} else if ( node instanceof BoxTemplate boxTemplate ) {
-			preCompileLocalClasses( boxTemplate.getStatements() );
+			List<BoxImport> enclosingImports = extractImports( boxTemplate.getStatements() );
+			preCompileLocalClasses( boxTemplate.getStatements(), enclosingImports );
 		}
 
 		CompilationUnit			entryPoint		= ( CompilationUnit ) transform( node );
@@ -407,7 +409,14 @@ public class JavaTranspiler extends Transpiler {
 		return this.localClasses.get( alias );
 	}
 
-	private void preCompileLocalClasses( List<BoxStatement> statements ) {
+	private static List<BoxImport> extractImports( List<BoxStatement> statements ) {
+		return statements.stream()
+		    .filter( s -> s instanceof BoxImport )
+		    .map( s -> ( BoxImport ) s )
+		    .collect( Collectors.toList() );
+	}
+
+	private void preCompileLocalClasses( List<BoxStatement> statements, List<BoxImport> enclosingImports ) {
 		for ( BoxStatement statement : statements ) {
 			if ( statement instanceof BoxLocalClass localClass ) {
 				String			localName			= localClass.getName().getName();
@@ -425,7 +434,7 @@ public class JavaTranspiler extends Transpiler {
 				child.setProperty( "relativePath", this.getProperty( "relativePath" ) );
 
 				BoxClass		asBoxClass		= new BoxClass(
-				    List.of(),
+				    enclosingImports,
 				    localClass.getBody(),
 				    localClass.getAnnotations(),
 				    localClass.getDocumentation(),
@@ -439,11 +448,11 @@ public class JavaTranspiler extends Transpiler {
 				this.callables.addAll( localClassCode.getCallables() );
 				registerLocalClass( localName, syntheticClassName );
 			} else if ( statement instanceof BoxTemplateIsland island ) {
-				preCompileLocalClasses( island.getStatements() );
+				preCompileLocalClasses( island.getStatements(), enclosingImports );
 			} else if ( statement instanceof BoxScriptIsland island ) {
-				preCompileLocalClasses( island.getStatements() );
+				preCompileLocalClasses( island.getStatements(), enclosingImports );
 			} else if ( statement instanceof BoxComponent component && component.getBody() != null ) {
-				preCompileLocalClasses( component.getBody() );
+				preCompileLocalClasses( component.getBody(), enclosingImports );
 			}
 		}
 	}

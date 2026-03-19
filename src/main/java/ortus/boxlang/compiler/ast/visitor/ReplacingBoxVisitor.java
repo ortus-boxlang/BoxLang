@@ -204,14 +204,6 @@ public abstract class ReplacingBoxVisitor {
 
 	public BoxNode visit( BoxLocalClass node ) {
 		handleStatements( node.getBody(), node );
-		for ( int i = 0; i < node.getImports().size(); i++ ) {
-			BoxImport	importNode	= node.getImports().get( i );
-			BoxNode		newImport	= importNode.accept( this );
-			if ( newImport != importNode ) {
-				node.replaceChildren( importNode, newImport );
-				node.getImports().set( i, ( BoxImport ) newImport );
-			}
-		}
 		for ( int i = 0; i < node.getAnnotations().size(); i++ ) {
 			BoxAnnotation	annotationNode	= node.getAnnotations().get( i );
 			BoxNode			newAnnotation	= annotationNode.accept( this );
