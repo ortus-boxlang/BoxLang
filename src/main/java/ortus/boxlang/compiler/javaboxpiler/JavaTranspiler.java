@@ -425,7 +425,7 @@ public class JavaTranspiler extends Transpiler {
 				child.setProperty( "relativePath", this.getProperty( "relativePath" ) );
 
 				BoxClass		asBoxClass		= new BoxClass(
-				    localClass.getImports(),
+				    List.of(),
 				    localClass.getBody(),
 				    localClass.getAnnotations(),
 				    localClass.getDocumentation(),

@@ -54,9 +54,6 @@ public class BoxLocalClass extends BoxStatement {
 	/** The unqualified name of the class as written in source (e.g. {@code Person}). */
 	private BoxIdentifier						name;
 
-	/** Imports declared inside the local class body. */
-	private List<BoxImport>						imports;
-
 	/** Executable statements and function declarations in the class body. */
 	private List<BoxStatement>					body;
 
@@ -73,7 +70,6 @@ public class BoxLocalClass extends BoxStatement {
 	 * Creates an AST node for a named local class.
 	 *
 	 * @param name          the simple class name identifier
-	 * @param imports       import statements declared inside the class
 	 * @param body          class body statements
 	 * @param annotations   class-level annotations
 	 * @param documentation documentation annotations
@@ -83,7 +79,6 @@ public class BoxLocalClass extends BoxStatement {
 	 */
 	public BoxLocalClass(
 	    BoxIdentifier name,
-	    List<BoxImport> imports,
 	    List<BoxStatement> body,
 	    List<BoxAnnotation> annotations,
 	    List<BoxDocumentationAnnotation> documentation,
@@ -92,7 +87,6 @@ public class BoxLocalClass extends BoxStatement {
 	    String sourceText ) {
 		super( position, sourceText );
 		setName( name );
-		setImports( imports );
 		setBody( body );
 		setAnnotations( annotations );
 		setDocumentation( documentation );
@@ -105,10 +99,6 @@ public class BoxLocalClass extends BoxStatement {
 
 	public BoxIdentifier getName() {
 		return this.name;
-	}
-
-	public List<BoxImport> getImports() {
-		return this.imports;
 	}
 
 	public List<BoxStatement> getBody() {
@@ -137,12 +127,6 @@ public class BoxLocalClass extends BoxStatement {
 		if ( this.name != null ) {
 			this.name.setParent( this );
 		}
-	}
-
-	public void setImports( List<BoxImport> imports ) {
-		replaceChildren( this.imports, imports );
-		this.imports = imports;
-		this.imports.forEach( arg -> arg.setParent( this ) );
 	}
 
 	public void setBody( List<BoxStatement> body ) {
@@ -191,7 +175,6 @@ public class BoxLocalClass extends BoxStatement {
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 		map.put( "name", this.name != null ? this.name.toMap() : null );
-		map.put( "imports", this.imports.stream().map( BoxImport::toMap ).collect( java.util.stream.Collectors.toList() ) );
 		map.put( "body", this.body.stream().map( BoxStatement::toMap ).collect( java.util.stream.Collectors.toList() ) );
 		map.put( "annotations", this.annotations.stream().map( BoxAnnotation::toMap ).collect( java.util.stream.Collectors.toList() ) );
 		map.put( "documentation", this.documentation.stream().map( BoxDocumentationAnnotation::toMap ).collect( java.util.stream.Collectors.toList() ) );

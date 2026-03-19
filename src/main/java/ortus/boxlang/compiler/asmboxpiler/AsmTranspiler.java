@@ -670,7 +670,7 @@ public class AsmTranspiler extends Transpiler {
 				child.setProperty( "relativePath", getProperty( "relativePath" ) );
 
 				// Adapt the BoxLocalClass node to a BoxClass so BoxClassTransformer can compile it
-				BoxClass	asBoxClass		= new BoxClass( localClass.getImports(), localClass.getBody(),
+				BoxClass	asBoxClass		= new BoxClass( List.of(), localClass.getBody(),
 				    localClass.getAnnotations(), localClass.getDocumentation(), localClass.getProperties(),
 				    localClass.getPosition(), localClass.getSourceText() );
 

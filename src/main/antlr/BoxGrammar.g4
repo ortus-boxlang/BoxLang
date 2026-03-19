@@ -69,8 +69,9 @@ boxClass
     ;
 
 // class Foo {}  -- named local class inside a script/template (not a top-level class file)
+// They do not have imports it uses the context imports.
 localClass
-    : importStatement* preAnnotation* ABSTRACT? FINAL? CLASS identifier postAnnotation* LBRACE property* classBody RBRACE
+    : preAnnotation* ABSTRACT? FINAL? CLASS identifier postAnnotation* LBRACE property* classBody RBRACE
     ;
 
 classBody: (classBodyStatement | SEMICOLON)*

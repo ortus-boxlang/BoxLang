@@ -281,12 +281,10 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 
 		BoxIdentifier						name			= ( BoxIdentifier ) ctx.identifier().accept( expressionVisitor );
 		List<BoxStatement>					body			= buildClassBody( ctx.classBody() );
-		List<BoxImport>						imports			= new ArrayList<>();
 		List<BoxAnnotation>					annotations		= new ArrayList<>();
 		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
 		List<BoxProperty>					property		= new ArrayList<>();
 
-		processIfNotNull( ctx.importStatement(), stmt -> imports.add( ( BoxImport ) stmt.accept( this ) ) );
 		processIfNotNull( ctx.preAnnotation(), a -> annotations.add( ( BoxAnnotation ) a.accept( this ) ) );
 		processIfNotNull( ctx.postAnnotation(), a -> annotations.add( ( BoxAnnotation ) a.accept( this ) ) );
 		processIfNotNull( ctx.property(), p -> property.add( ( BoxProperty ) p.accept( this ) ) );
@@ -302,7 +300,7 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 			    tools.getPosition( ctx.FINAL() ), ctx.FINAL().getText() ) );
 		}
 
-		return new BoxLocalClass( name, imports, body, annotations, documentation, property, pos, src );
+		return new BoxLocalClass( name, body, annotations, documentation, property, pos, src );
 	}
 
 	@Override
