@@ -365,7 +365,7 @@ if [ -n "$BL_JAR" ]; then
         rm -f "$BL_CLASSLIST" "$BL_JSA.tmp"
     fi
     if [ -f "$BL_JSA" ]; then
-        JAVA_OPTS="$JAVA_OPTS -Xshare:auto -XX:SharedArchiveFile=$BL_JSA"
+        JAVA_OPTS="$JAVA_OPTS -XX:TieredStopAtLevel=1 -Xshare:auto -XX:SharedArchiveFile=$BL_JSA"
     fi
 fi
 ######################################
@@ -417,7 +417,7 @@ ext.customizeWindowsScript = { File scriptFile ->
 		'    del "!BL_CLASSLIST!" >nul 2>&1\r\n' +
 		'  )\r\n' +
 		'  if exist "!BL_JSA!" (\r\n' +
-		'    set "JAVA_OPTS=%JAVA_OPTS% -Xshare:auto -XX:SharedArchiveFile=!BL_JSA!"\r\n' +
+		'    set "JAVA_OPTS=%JAVA_OPTS% -XX:TieredStopAtLevel=1 -Xshare:auto -XX:SharedArchiveFile=!BL_JSA!"\r\n' +
 		'  )\r\n' +
 		')\r\n' +
 		'@rem ######################################\r\n' +
