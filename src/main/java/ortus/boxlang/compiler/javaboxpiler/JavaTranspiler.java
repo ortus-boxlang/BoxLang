@@ -417,6 +417,10 @@ public class JavaTranspiler extends Transpiler {
 	}
 
 	private void preCompileLocalClasses( List<BoxStatement> statements, List<BoxImport> enclosingImports ) {
+		// Build hoisted imports: every local class in this scope gets a synthetic java: import
+		// so that sibling classes can reference each other by simple name at runtime.
+		List<BoxImport> allImports = buildHoistedImports( statements, enclosingImports );
+
 		for ( BoxStatement statement : statements ) {
 			if ( statement instanceof BoxLocalClass localClass ) {
 				String			localName			= localClass.getName().getName();
@@ -434,7 +438,7 @@ public class JavaTranspiler extends Transpiler {
 				child.setProperty( "relativePath", this.getProperty( "relativePath" ) );
 
 				BoxClass		asBoxClass		= new BoxClass(
-				    enclosingImports,
+				    allImports,
 				    localClass.getBody(),
 				    localClass.getAnnotations(),
 				    localClass.getDocumentation(),
@@ -455,6 +459,33 @@ public class JavaTranspiler extends Transpiler {
 				preCompileLocalClasses( component.getBody(), enclosingImports );
 			}
 		}
+	}
+
+	/**
+	 * Scan {@code statements} for top-level {@link BoxLocalClass} nodes and produce a combined
+	 * import list that includes both the original {@code enclosingImports} and one synthetic
+	 * {@code java:<dotFQN> as <simpleName>} import for every local class found.
+	 * <p>
+	 * Adding these synthetic imports means that at runtime, when a local class's
+	 * {@code extends="Animal"} annotation is resolved via
+	 * {@link ortus.boxlang.runtime.runnables.BoxClassSupport#loadSuperClass}, the Java resolver
+	 * can find the sibling class by simple name without any annotation rewriting.
+	 */
+	private List<BoxImport> buildHoistedImports( List<BoxStatement> statements, List<BoxImport> enclosingImports ) {
+		List<BoxImport>	hoisted		= new ArrayList<>( enclosingImports );
+		String			packageName	= this.getProperty( "packageName" );
+		for ( BoxStatement stmt : statements ) {
+			if ( stmt instanceof BoxLocalClass localClass ) {
+				String	localName		= localClass.getName().getName();
+				String	syntheticFQN	= packageName + ".LocalClass$" + localName;
+				hoisted.add( new BoxImport(
+				    new BoxFQN( "java:" + syntheticFQN, null, null ),
+				    new BoxIdentifier( localName, null, null ),
+				    null, null
+				) );
+			}
+		}
+		return hoisted;
 	}
 
 	/**

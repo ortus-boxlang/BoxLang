@@ -513,10 +513,10 @@ public class AsmTranspiler extends Transpiler {
 		// Each local class is compiled to a sibling JVM class (an "auxiliary") and registered
 		// in the local class registry so that BoxNewTransformer can emit direct bytecode for
 		// "new Foo()" expressions without going through ClassLocator at runtime.
-		String	outerClassname			= getProperty( "classname" );
-		String	outerPackage			= getProperty( "packageName" );
-		String	outerPackageInternal	= outerPackage.replace( '.', '/' );
-		List<BoxImport>	enclosingImports	= boxScript.getStatements().stream()
+		String			outerClassname			= getProperty( "classname" );
+		String			outerPackage			= getProperty( "packageName" );
+		String			outerPackageInternal	= outerPackage.replace( '.', '/' );
+		List<BoxImport>	enclosingImports		= boxScript.getStatements().stream()
 		    .filter( s -> s instanceof BoxImport )
 		    .map( s -> ( BoxImport ) s )
 		    .collect( Collectors.toList() );
@@ -654,17 +654,38 @@ public class AsmTranspiler extends Transpiler {
 	 * @param outerPackage         dot-separated package name of the enclosing class
 	 * @param outerPackageInternal slash-separated package path of the enclosing class
 	 */
+	/**
+	 * Recursively scan a list of statements for {@link BoxLocalClass} declarations, compiling each
+	 * one into an auxiliary JVM class and registering it in the local class registry.
+	 * <p>
+	 * Before any local class is compiled, every local class defined in the same statement list is
+	 * hoisted as a synthetic {@code java:}-prefixed import. This ensures that sibling local classes
+	 * can reference each other by simple name (e.g., {@code extends="Animal"}) via the normal import
+	 * resolution mechanism — no annotation-patching needed at compile time.
+	 * <p>
+	 * This also descends into {@link BoxTemplateIsland}, {@link BoxScriptIsland}, and {@link BoxComponent}
+	 * nodes so that local classes defined inside {@code <bx:script>} islands in templates are handled.
+	 *
+	 * @param statements           the statement list to scan
+	 * @param enclosingImports     imports already visible in the enclosing script/template
+	 * @param outerClassname       simple JVM class name of the enclosing script/template class
+	 * @param outerPackage         dot-separated package name of the enclosing class
+	 * @param outerPackageInternal slash-separated package path of the enclosing class
+	 */
 	private void preCompileLocalClasses( List<BoxStatement> statements, List<BoxImport> enclosingImports, String outerClassname, String outerPackage,
 	    String outerPackageInternal ) {
+		// Build hoisted imports: every local class in this scope gets a synthetic java: import
+		// so that sibling classes can reference each other by simple name at runtime.
+		List<BoxImport> allImports = buildHoistedImports( statements, enclosingImports, outerClassname, outerPackage, outerPackageInternal );
+
 		for ( BoxStatement stmt : statements ) {
 			if ( stmt instanceof BoxLocalClass localClass ) {
-				String		localName				= localClass.getName().getName();
-				String		syntheticClassname		= outerClassname + "$LocalClass$" + localName;
-				String		syntheticDotFQN			= outerPackage + "." + syntheticClassname;
-				String		syntheticJavaClassName	= outerPackageInternal + "/" + syntheticClassname;
+				String		localName			= localClass.getName().getName();
+				String		syntheticClassname	= outerClassname + "$LocalClass$" + localName;
+				String		syntheticDotFQN		= outerPackage + "." + syntheticClassname;
+				String		syntheticInternal	= outerPackageInternal + "/" + syntheticClassname;
 
-				// Create a fresh child transpiler configured for the synthetic inner class name
-				Transpiler	child					= Transpiler.getTranspiler();
+				Transpiler	child				= Transpiler.getTranspiler();
 				child.setProperty( "classname", syntheticClassname );
 				child.setProperty( "packageName", outerPackage );
 				child.setProperty( "boxFQN", syntheticDotFQN );
@@ -674,32 +695,54 @@ public class AsmTranspiler extends Transpiler {
 				child.setProperty( "mappingPath", getProperty( "mappingPath" ) );
 				child.setProperty( "relativePath", getProperty( "relativePath" ) );
 
-				// Adapt the BoxLocalClass node to a BoxClass so BoxClassTransformer can compile it,
-				// passing the enclosing script/template imports so the class can resolve them at runtime.
-				BoxClass	asBoxClass		= new BoxClass( enclosingImports, localClass.getBody(),
+				// Compile with the enriched import list (enclosing + all sibling local class imports)
+				BoxClass	asBoxClass		= new BoxClass( allImports, localClass.getBody(),
 				    localClass.getAnnotations(), localClass.getDocumentation(), localClass.getProperties(),
 				    localClass.getPosition(), localClass.getSourceText() );
 
-				// Compile to a ClassNode and register as an auxiliary — ASMBoxpiler will defineClass() it
 				ClassNode	localClassNode	= BoxClassTransformer.transpile( child, asBoxClass );
 				setAuxiliary( syntheticDotFQN, localClassNode );
 
 				// Pull in any nested auxiliaries produced by the local class (lambda, closure, UDF bodies)
 				child.getAuxiliary().forEach( this::setAuxiliary );
 
-				// Register the alias so BoxNewTransformer emits a direct class reference
-				registerLocalClass( localName, syntheticJavaClassName );
+				// Register so BoxNewTransformer can emit a direct class reference for "new Animal()"
+				registerLocalClass( localName, syntheticInternal );
 			} else if ( stmt instanceof BoxTemplateIsland island ) {
-				// Recurse into component-island content (template text between tags)
 				preCompileLocalClasses( island.getStatements(), enclosingImports, outerClassname, outerPackage, outerPackageInternal );
 			} else if ( stmt instanceof BoxScriptIsland island ) {
-				// <bx:script>...</bx:script> in template mode produces a BoxScriptIsland
 				preCompileLocalClasses( island.getStatements(), enclosingImports, outerClassname, outerPackage, outerPackageInternal );
 			} else if ( stmt instanceof BoxComponent component && component.getBody() != null ) {
-				// Recurse into general component bodies for completeness
 				preCompileLocalClasses( component.getBody(), enclosingImports, outerClassname, outerPackage, outerPackageInternal );
 			}
 		}
+	}
+
+	/**
+	 * Scan {@code statements} for top-level {@link BoxLocalClass} nodes and produce a combined
+	 * import list that includes both the original {@code enclosingImports} and one synthetic
+	 * {@code java:<dotFQN> as <simpleName>} import for every local class found.
+	 * <p>
+	 * Adding these synthetic imports means that at runtime, when a local class's
+	 * {@code extends="Animal"} annotation is resolved through
+	 * {@link ortus.boxlang.runtime.runnables.BoxClassSupport#loadSuperClass}, the Java resolver
+	 * can find the sibling local class by its simple name without any annotation rewriting.
+	 */
+	private List<BoxImport> buildHoistedImports( List<BoxStatement> statements, List<BoxImport> enclosingImports, String outerClassname, String outerPackage,
+	    String outerPackageInternal ) {
+		List<BoxImport> hoisted = new java.util.ArrayList<>( enclosingImports );
+		for ( BoxStatement stmt : statements ) {
+			if ( stmt instanceof BoxLocalClass localClass ) {
+				String	localName		= localClass.getName().getName();
+				String	syntheticFQN	= outerPackage + "." + outerClassname + "$LocalClass$" + localName;
+				hoisted.add( new BoxImport(
+				    new BoxFQN( "java:" + syntheticFQN, null, null ),
+				    new BoxIdentifier( localName, null, null ),
+				    null, null
+				) );
+			}
+		}
+		return hoisted;
 	}
 
 	@Override

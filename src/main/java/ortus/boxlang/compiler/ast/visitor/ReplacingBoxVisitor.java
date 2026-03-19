@@ -203,32 +203,13 @@ public abstract class ReplacingBoxVisitor {
 	}
 
 	public BoxNode visit( BoxLocalClass node ) {
-		handleStatements( node.getBody(), node );
-		for ( int i = 0; i < node.getAnnotations().size(); i++ ) {
-			BoxAnnotation	annotationNode	= node.getAnnotations().get( i );
-			BoxNode			newAnnotation	= annotationNode.accept( this );
-			if ( newAnnotation != annotationNode ) {
-				node.replaceChildren( annotationNode, newAnnotation );
-				node.getAnnotations().set( i, ( BoxAnnotation ) newAnnotation );
+		if ( node.getName() != null ) {
+			BoxNode newName = node.getName().accept( this );
+			if ( newName != node.getName() ) {
+				node.setName( ( BoxIdentifier ) newName );
 			}
 		}
-		for ( int i = 0; i < node.getDocumentation().size(); i++ ) {
-			BoxDocumentationAnnotation	documentationNode	= node.getDocumentation().get( i );
-			BoxNode						newDocumentation	= documentationNode.accept( this );
-			if ( newDocumentation != documentationNode ) {
-				node.replaceChildren( documentationNode, newDocumentation );
-				node.getDocumentation().set( i, ( BoxDocumentationAnnotation ) newDocumentation );
-			}
-		}
-		for ( int i = 0; i < node.getProperties().size(); i++ ) {
-			BoxProperty	propertyNode	= node.getProperties().get( i );
-			BoxNode		newProperty		= propertyNode.accept( this );
-			if ( newProperty != propertyNode ) {
-				node.replaceChildren( propertyNode, newProperty );
-				node.getProperties().set( i, ( BoxProperty ) newProperty );
-			}
-		}
-		return node;
+		return visit( ( BoxClass ) node );
 	}
 
 	public BoxNode visit( BoxStaticInitializer node ) {

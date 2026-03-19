@@ -19,6 +19,7 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -233,4 +234,60 @@ public class LocalClassTest {
 		String info = ( String ) variables.get( result );
 		assertThat( info ).startsWith( "Party at " );
 	}
+
+	@DisplayName( "Local class can extend another local class" )
+	@Test
+	public void testLocalClassExtendsAnotherLocalClass() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				class Animal {
+					function speak() {
+						return "...";
+					}
+				}
+
+				class Dog extends="Animal" {
+					function speak() {
+						return "Woof!";
+					}
+				}
+
+				result = new Dog().speak();
+			""",
+			context
+		);
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "Woof!" );
+	}
+
+	@DisplayName( "Local class can extend a top-level BoxClass" )
+	@Test
+	@Disabled
+	public void testLocalClassExtendsBoxClass() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				test = new src.test.bx.SimpleUser()
+				println( test.toJson() )
+
+				class CoolUser extends="src.test.bx.SimpleUser" {
+
+					property age;
+
+					function init( name="", email="", isActive=true, age=0 ) {
+						super.init()
+						variables.age = age;
+						return this;
+					}
+				}
+
+				result = new CoolUser( "luis", "lmajano@lmajano.com", true, 30 ).getName()
+			""",
+			context
+		);
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "luis" );
+	}
+
 }
