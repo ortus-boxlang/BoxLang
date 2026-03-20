@@ -261,15 +261,12 @@ public class IsDateTest {
 	@DisplayName( "It tests the BIF IsDate will return false on an empty string or null date" )
 	@Test
 	public void testIsDateEmptyOrNull() {
-		assertThrows(
-		    BoxRuntimeException.class,
-		    () -> instance.executeSource(
-		        """
-		              result = IsDate( "" );
-		        result2 = IsDate( nullValue() );
-		              """,
-		        context )
-		);
+		instance.executeSource(
+		    """
+		    		result = IsDate( "" );
+		    result2 = IsDate( nullValue() );
+		    		""",
+		    context );
 		assertFalse( variables.getAsBoolean( result ) );
 		assertFalse( variables.getAsBoolean( Key.of( "result2" ) ) );
 	}
