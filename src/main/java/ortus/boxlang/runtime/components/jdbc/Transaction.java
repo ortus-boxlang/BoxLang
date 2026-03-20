@@ -99,11 +99,10 @@ public class Transaction extends Component {
 		if ( isTransactionBeginning ) {
 			if ( connectionManager.isInTransaction() && !enableNestedTransactions ) {
 				transaction = connectionManager.getTransactionOrThrow();
-				logger.warn(
+				logger.debug(
 				    "Nested JDBC transactions are disabled by configuration; ignoring this transaction begin and returning the existing transaction context" );
 				try {
 					bodyResult = processBody( context, body );
-					transaction.commit();
 				} catch ( AbortException e ) {
 					// Ignore aborts
 					throw e;
