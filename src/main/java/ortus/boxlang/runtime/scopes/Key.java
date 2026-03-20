@@ -1027,6 +1027,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		loadSystemClassPath					= Key.of( "loadSystemClassPath" );
 	public static final Key		secureJson							= Key.of( "secureJson" );
 	public static final Key		secureJsonPrefix					= Key.of( "secureJsonPrefix" );
+	public static final Key		enableNestedTransactions			= Key.of( "enableNestedTransactions" );
 
 	// Datasource configuration keys
 	public static final Key		blockfactor							= Key.of( "blockfactor" );
