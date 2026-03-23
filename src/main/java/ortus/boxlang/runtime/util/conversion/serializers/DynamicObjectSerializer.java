@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.util.conversion.serializers;
 
 import java.io.IOException;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -35,6 +36,9 @@ import ortus.boxlang.runtime.types.util.StructUtil;
  */
 public class DynamicObjectSerializer implements ValueWriter {
 
+	// ThreadLocal to keep track of seen objects in the current thread
+	private static final ThreadLocal<IdentityHashMap<Object, Boolean>> visitedObjects = ThreadLocal.withInitial( IdentityHashMap::new );
+
 	@Override
 	public void writeValue( JSONWriter context, JsonGenerator g, Object value ) throws IOException {
 		DynamicObject	dynamicObject;
@@ -47,26 +51,42 @@ public class DynamicObjectSerializer implements ValueWriter {
 			dynamicObject = DynamicObject.of( value );
 		}
 
-		// If the object is a BoxClass, then serialize it as a BoxClass
-		if ( realValue instanceof IClassRunnable bxClass ) {
-			context.writeValue( bxClass );
+		// Get the current thread's set of visited objects
+		IdentityHashMap<Object, Boolean> visited = visitedObjects.get();
+
+		if ( visited.containsKey( realValue ) ) {
+			g.writeString( "recursive-object-skipping" );
 			return;
 		}
 
-		// If it's a list, then serialize it as a list
-		if ( realValue instanceof List<?> castedList ) {
-			context.writeValue( castedList );
-			return;
-		}
+		// Add the object to the set of visited objects
+		visited.put( realValue, Boolean.TRUE );
 
-		// If it's a map, then serialize it as a map
-		if ( realValue instanceof Map<?, ?> castedMap ) {
-			context.writeValue( castedMap );
-			return;
-		}
+		try {
+			// If the object is a BoxClass, then serialize it as a BoxClass
+			if ( realValue instanceof IClassRunnable bxClass ) {
+				context.writeValue( bxClass );
+				return;
+			}
 
-		// Serialize as generic struct
-		context.writeValue( StructUtil.objectToStruct( realValue, BoxRuntime.getInstance().getRuntimeContext() ) );
+			// If it's a list, then serialize it as a list
+			if ( realValue instanceof List<?> castedList ) {
+				context.writeValue( castedList );
+				return;
+			}
+
+			// If it's a map, then serialize it as a map
+			if ( realValue instanceof Map<?, ?> castedMap ) {
+				context.writeValue( castedMap );
+				return;
+			}
+
+			// Serialize as generic struct
+			context.writeValue( StructUtil.objectToStruct( realValue, BoxRuntime.getInstance().getRuntimeContext(), false ) );
+		} finally {
+			// Remove the object from the set of visited objects
+			visited.remove( realValue );
+		}
 	}
 
 	@Override

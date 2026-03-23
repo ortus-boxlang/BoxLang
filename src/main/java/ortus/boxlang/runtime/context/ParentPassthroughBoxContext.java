@@ -24,6 +24,7 @@ import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
@@ -225,6 +226,16 @@ public abstract class ParentPassthroughBoxContext extends BaseBoxContext {
 	@Override
 	public ResolvedFilePath[] getTemplates() {
 		return getParent().getTemplates();
+	}
+
+	@Override
+	public void registerUDF( UDF udf ) {
+		getParent().registerUDF( udf );
+	}
+
+	@Override
+	public void registerUDF( UDF udf, boolean override ) {
+		getParent().registerUDF( udf, override );
 	}
 
 }
