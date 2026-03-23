@@ -303,6 +303,12 @@ public class Configuration implements IConfigSegment {
 	public IStruct																datasources						= new Struct();
 
 	/**
+	 * True: Treat nested transactional operations as savepoints on the parent transaction.
+	 * False: ignore nested transactions and apply commits/rollbacks/transactional events to the entire transaction.
+	 */
+	public boolean																enableNestedTransactions		= true;
+
+	/**
 	 * Default remote class method return format when executing a method from web
 	 * runtimes.
 	 * The default is JSON
@@ -745,6 +751,10 @@ public class Configuration implements IConfigSegment {
 			}
 		}
 
+		// Process JDBC configuration
+		if ( config.containsKey( Key.enableNestedTransactions ) ) {
+			this.enableNestedTransactions = BooleanCaster.cast( config.get( Key.enableNestedTransactions ) );
+		}
 		// Process modules
 		if ( config.containsKey( Key.modules ) ) {
 			if ( config.get( Key.modules ) instanceof IStruct castedModules ) {

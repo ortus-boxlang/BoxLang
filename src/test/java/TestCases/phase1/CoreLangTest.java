@@ -6410,4 +6410,23 @@ public class CoreLangTest {
 
 	}
 
+	@DisplayName( "declare UDF in catch block" )
+	@Test
+	void testDeclareUDFInCatchBlock() {
+		instance.executeSource(
+		    """
+		    try {
+		    	1/0;
+		    } catch (any e) {
+		    	include "src/test/java/TestCases/phase1/testDeclareUDFInCatchBlock.bxs";
+		    }
+		    result = foo();
+
+		               """,
+		    context
+		);
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( "bar" );
+
+	}
+
 }

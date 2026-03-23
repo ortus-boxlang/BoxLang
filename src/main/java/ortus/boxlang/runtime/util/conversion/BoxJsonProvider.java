@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.util.conversion;
 
 import java.time.LocalDate;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -28,6 +27,7 @@ import com.fasterxml.jackson.jr.ob.api.ValueWriter;
 import com.fasterxml.jackson.jr.ob.impl.JSONReader;
 import com.fasterxml.jackson.jr.ob.impl.JSONWriter;
 
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.DateTime;
@@ -59,7 +59,7 @@ public class BoxJsonProvider extends ReaderWriterProvider {
 	@Override
 	public ValueWriter findValueWriter( JSONWriter writeContext, Class<?> type ) {
 
-		if ( type == DateTime.class || type == LocalDate.class || type == Date.class || type == java.sql.Date.class ) {
+		if ( DateTimeCaster.isKnownDateClass( type ) ) {
 			return new DateTime();
 		}
 

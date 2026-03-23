@@ -89,12 +89,30 @@ public class Transaction extends Component {
 	 * @attribute.datasource The name of the datasource to use for the transaction. If not provided, the first query execution inside the transaction will set the datasource.
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		boolean				isTransactionBeginning	= attributes.getAsString( Key.action ).equalsIgnoreCase( "begin" ) || body != null;
-		IJDBCCapableContext	jdbcContext				= context.getParentOfType( IJDBCCapableContext.class );
-		ConnectionManager	connectionManager		= jdbcContext.getConnectionManager();
+		boolean				isTransactionBeginning		= attributes.getAsString( Key.action ).equalsIgnoreCase( "begin" ) || body != null;
+		IJDBCCapableContext	jdbcContext					= context.getParentOfType( IJDBCCapableContext.class );
+		ConnectionManager	connectionManager			= jdbcContext.getConnectionManager();
+		boolean				enableNestedTransactions	= BoxRuntime.getInstance().getConfiguration().enableNestedTransactions;
 		ITransaction		transaction;
+		BodyResult			bodyResult					= null;
 
 		if ( isTransactionBeginning ) {
+			if ( connectionManager.isInTransaction() && !enableNestedTransactions ) {
+				transaction = connectionManager.getTransactionOrThrow();
+				logger.debug(
+				    "Nested JDBC transactions are disabled by configuration; ignoring this transaction begin and returning the existing transaction context" );
+				try {
+					bodyResult = processBody( context, body );
+				} catch ( AbortException e ) {
+					// Ignore aborts
+					throw e;
+				} catch ( Throwable e ) {
+					logger.error( "Encountered database exception while processing transaction; rolling back", e );
+					transaction.rollback();
+					ExceptionUtil.throwException( e );
+				}
+				return bodyResult == null ? DEFAULT_RETURN : bodyResult;
+			}
 			DataSource dataSource = attributes.containsKey( Key.datasource )
 			    ? connectionManager.getDatasource( Key.of( attributes.getAsString( Key.datasource ) ) )
 			    : null;
@@ -140,7 +158,6 @@ public class Transaction extends Component {
 			}
 		} else {
 			transaction.begin();
-			BodyResult bodyResult = null;
 			try {
 				bodyResult = processBody( context, body );
 				transaction.commit();

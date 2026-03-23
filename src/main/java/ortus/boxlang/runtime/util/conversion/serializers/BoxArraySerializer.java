@@ -49,18 +49,20 @@ public class BoxArraySerializer implements ValueWriter {
 		} else {
 			visited.put( bxArray, Boolean.TRUE );
 
-			// Write each array element
-			g.writeStartArray();
+			try {
+				// Write each array element
+				g.writeStartArray();
 
-			// iterate over the array elements
-			for ( Object element : bxArray ) {
-				context.writeValue( element );
+				// iterate over the array elements
+				for ( Object element : bxArray ) {
+					context.writeValue( element );
+				}
+
+				g.writeEndArray();
+			} finally {
+				// Remove the array from the set of seen arrays
+				visited.remove( bxArray );
 			}
-
-			g.writeEndArray();
-
-			// Remove the struct from the set of seen structs
-			visited.remove( bxArray );
 		}
 	}
 
