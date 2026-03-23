@@ -746,23 +746,24 @@ public class LoggingService {
 		return new ArrayList<>( this.appendersMap.keySet() );
 	}
 
+	/*
+	 * Shutdown the logging service
+	 */
+	public LoggingService shutdown() {
+		shutdownAppenders();
+		getLoggerContext().stop();
+		return instance;
+	}
+
 	/**
 	 * Shutdown all the appenders
 	 *
 	 * @return The logging service
 	 */
 	public LoggingService shutdownAppenders() {
-		this.appendersMap.values().forEach( Appender::stop );
-		return instance;
-	}
+		List.copyOf( this.appendersMap.values() )
+		    .forEach( Appender::stop );
 
-	/**
-	 * Shutdown the logging service
-	 */
-	public LoggingService shutdown() {
-		// Shutdown all the appenders
-		shutdownAppenders();
-		getLoggerContext().stop();
 		return instance;
 	}
 
