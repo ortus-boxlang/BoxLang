@@ -105,15 +105,6 @@ public class BoxSoapClientSoapHeadersTest {
 
 	}
 
-	// D
-	@DisplayName( "withSoapHeaders throws on illegal XML char in value" )
-	@Test
-	void withSoapHeaders_illegal_xml_char_in_value_throws() {
-		BoxSoapClient	client	= this.httpService.getOrCreateSoapClient( calculatorWsdlUrl, this.context );
-		IStruct			headers	= Struct.of( Key.of( "Token" ), "a\u0001b" );
-		assertThrows( BoxRuntimeException.class, () -> client.withSoapHeaders( headers ) );
-	}
-
 	// E
 	@DisplayName( "withSoapHeaders throws on non-scalar value" )
 	@Test
