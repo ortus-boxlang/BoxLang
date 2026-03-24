@@ -317,4 +317,27 @@ public class ClosureBoxContext extends FunctionBoxContext {
 		return null;
 	}
 
+	/**
+	 * Find a function in the current context. Will search known scopes for a UDF.
+	 *
+	 * @param name The name of the function to find
+	 *
+	 * @return The function instance
+	 */
+	@Override
+	protected Function findFunction( Key name ) {
+		// perform normal lookups
+		Function result = super.findFunction( name );
+		if ( result != null ) {
+			return result;
+		}
+		// If not found, we are a closure, so we need to give our declaring context a chance to find the function, but this should only apply if the parent is also a function context.
+		// I'm avoiding just blindly calling getFunction().getDeclaringContext().findFunction( name ) because the call above will have already ran the scopeFindNearby() on the declaring context, so no need for that again.
+		IBoxContext declaringContext = getFunction().getDeclaringContext();
+		if ( declaringContext instanceof FunctionBoxContext fbc ) {
+			return fbc.findFunctionInOwner( name );
+		}
+		return null;
+	}
+
 }
