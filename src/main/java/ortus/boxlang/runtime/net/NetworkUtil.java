@@ -32,11 +32,11 @@ public class NetworkUtil {
 
 	private static volatile String[]	localIpsCache;
 
-	private static final Pattern	IPV4_PATTERN	= Pattern.compile(
+	private static final Pattern		IPV4_PATTERN	= Pattern.compile(
 	    "^(?:(?:25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)\\.){3}(?:25[0-5]|2[0-4]\\d|1\\d\\d|[1-9]?\\d)$"
 	);
 
-	private static final Pattern	IPV6_PATTERN	= Pattern.compile(
+	private static final Pattern		IPV6_PATTERN	= Pattern.compile(
 	    "^(?:"
 	        + "(?:[0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}|"
 	        + "(?:[0-9A-Fa-f]{1,4}:){1,7}:|"
@@ -94,8 +94,8 @@ public class NetworkUtil {
 				var interfaces = NetworkInterface.getNetworkInterfaces();
 				if ( interfaces != null ) {
 					while ( interfaces.hasMoreElements() ) {
-						var networkInterface = interfaces.nextElement();
-						var addresses = networkInterface.getInetAddresses();
+						var	networkInterface	= interfaces.nextElement();
+						var	addresses			= networkInterface.getInetAddresses();
 						while ( addresses.hasMoreElements() ) {
 							var hostAddress = addresses.nextElement().getHostAddress();
 							if ( hostAddress == null || hostAddress.isBlank() ) {
