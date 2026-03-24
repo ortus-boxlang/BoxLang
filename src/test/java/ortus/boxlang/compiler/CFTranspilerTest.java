@@ -614,4 +614,27 @@ public class CFTranspilerTest {
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 	}
 
+	@DisplayName( "It allows invalid types" )
+	@Test
+	public void testInvalidTypes() {
+		instance.executeSource(
+		    """
+		    result = "";
+		    // same as readonly
+		    cflock( timeout=1, type="read" ) {
+		    	result &= "read";
+		    }
+		    // same as exclusive
+		    cflock( timeout=1, type="write" ) {
+		    	result &= "write";
+		    }
+		    // same as readonly
+		    cflock( timeout=1, type="sdfsdf" ) {
+		    	result &= "sdfsdf";
+		    }
+		             """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "readwritesdfsdf" );
+	}
+
 }
