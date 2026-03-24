@@ -339,7 +339,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "getlocaledisplayname", "core" );
 		BIFMap.put( "getlocaleinfo", "core" );
 		BIFMap.put( "getlocalelanguage", "" );
-		BIFMap.put( "getlocalhostip", "" );
+		BIFMap.put( "getlocalhostip", "core" );
 		BIFMap.put( "getluceeid", "" );
 		BIFMap.put( "getmemoryusage", "bx-oshi" );
 		BIFMap.put( "getmetadata", "core" );
