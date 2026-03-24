@@ -528,7 +528,6 @@ public class DynamicInteropService {
 			if ( safe ) {
 				return null;
 			} else {
-				e.printStackTrace();
 				throw new BoxRuntimeException( "Error getting method [" + methodName + "] for class [" + targetClass.getName() + "]", e );
 			}
 		}
