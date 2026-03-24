@@ -1389,8 +1389,9 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 			    } );
 		}
 
-		// If cflock has no name or scope attribute, set a name attribute to a UUID
+		// fixes for cflock tag
 		if ( componentName.equals( "lock" ) ) {
+			// If cflock has no name or scope attribute, set a name attribute to a UUID
 			boolean	hasName		= node.getAttributes().stream().anyMatch( a -> a.getKey().getValue().equalsIgnoreCase( "name" ) );
 			boolean	hasScope	= node.getAttributes().stream().anyMatch( a -> a.getKey().getValue().equalsIgnoreCase( "scope" ) );
 			if ( !hasName && !hasScope ) {
@@ -1402,6 +1403,17 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 				        null )
 				);
 			}
+			// CF allows various "incorrect" type attribute values. If "type" is set, "write" changes to "exclusive", all other values other than "readonly" change to "readonly"
+			node.getAttributes().stream()
+			    .filter( a -> a.getKey().getValue().equalsIgnoreCase( "type" ) && a.getValue() instanceof BoxStringLiteral )
+			    .forEach( a -> {
+				    BoxStringLiteral bsl = ( BoxStringLiteral ) a.getValue();
+				    if ( bsl.getValue().equalsIgnoreCase( "write" ) ) {
+					    bsl.setValue( "exclusive" );
+				    } else if ( !bsl.getValue().equalsIgnoreCase( "readonly" ) ) {
+					    bsl.setValue( "readonly" );
+				    }
+			    } );
 		}
 
 		// Ignore invalid values for cfquery dbtype. If it's a string literal, and not query or hql, then literally delete the attribute entirely
