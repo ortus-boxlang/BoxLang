@@ -185,7 +185,7 @@ public class DynamicInteropService {
 	 * This caches the method handles for the class so we don't have to look them up every time.
 	 * Keyed by {@link MethodHandleCacheKey} to include classloader identity and avoid string-intern pollution.
 	 */
-	private static final ConcurrentHashMap<MethodHandleCacheKey, MethodRecord>	methodHandleCache		= new ConcurrentHashMap<>( 32 );
+	private static final ConcurrentHashMap<MethodHandleCacheKey, MethodRecord>	methodHandleCache	= new ConcurrentHashMap<>( 32 );
 
 	/**
 	 * Number of lock stripes for method-handle cache miss-path serialization.
