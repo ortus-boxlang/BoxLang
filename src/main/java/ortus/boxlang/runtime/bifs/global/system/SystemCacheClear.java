@@ -24,7 +24,6 @@ import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.cache.filters.WildcardFilter;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.jdbc.PendingQuery;
-import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -88,7 +87,7 @@ public class SystemCacheClear extends BIF {
 
 		// Page Pool region
 		if ( clearAll || cacheName.equals( "page" ) ) {
-			RunnableLoader.getInstance().getBoxpiler().clearPagePool();
+			PagePoolClear.clear();
 		}
 
 		// Class resolvers: component, cfc, left for compat
