@@ -36,6 +36,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -1327,6 +1332,64 @@ public class DynamicInteropServiceTest {
 
 		var result = variables.get( Key.result );
 		assertThat( result ).isEqualTo( "brad" );
+	}
+
+	// =========================================================================
+	// MethodHandleCacheKey tests
+	// =========================================================================
+
+	@DisplayName( "MethodHandleCacheKey: equal keys have equal hashCode" )
+	@Test
+	void testCacheKeyEqualityAndHashCode() {
+		MethodHandleCacheKey	a	= new MethodHandleCacheKey( 42, "app", "java.lang.String", "valueOf", 12345 );
+		MethodHandleCacheKey	b	= new MethodHandleCacheKey( 42, "app", "java.lang.String", "valueOf", 12345 );
+
+		assertThat( a ).isEqualTo( b );
+		assertThat( a.hashCode() ).isEqualTo( b.hashCode() );
+	}
+
+	@DisplayName( "MethodHandleCacheKey: different classLoaderIdentity produces different key" )
+	@Test
+	void testCacheKeyClassLoaderIsolation() {
+		MethodHandleCacheKey	appLoader		= new MethodHandleCacheKey( 100, "app", "com.example.Foo", "bar", 0 );
+		MethodHandleCacheKey	moduleLoader	= new MethodHandleCacheKey( 200, "bx-mymodule", "com.example.Foo", "bar", 0 );
+
+		// Same class name + method, different classloader — must NOT be considered equal
+		assertThat( appLoader ).isNotEqualTo( moduleLoader );
+	}
+
+	@DisplayName( "MethodHandleCacheKey: cache miss path is thread-safe under high concurrency" )
+	@Test
+	void testConcurrentCacheMissIsSafe() throws Exception {
+		DynamicInteropService.clearMethodHandleCache();
+
+		int				threadCount	= 32;
+		CyclicBarrier	barrier		= new CyclicBarrier( threadCount );
+		CountDownLatch	done		= new CountDownLatch( threadCount );
+		AtomicInteger	errors		= new AtomicInteger( 0 );
+		ExecutorService	pool		= Executors.newFixedThreadPool( threadCount );
+
+		for ( int i = 0; i < threadCount; i++ ) {
+			pool.submit( () -> {
+				try {
+					barrier.await();	// all threads start invoking simultaneously
+					DynamicInteropService.invoke( context, Duration.class, "ofSeconds", false, new Object[] { 60L } );
+				} catch ( Exception e ) {
+					errors.incrementAndGet();
+				} finally {
+					done.countDown();
+				}
+			} );
+		}
+
+		done.await();
+		pool.shutdown();
+
+		assertThat( errors.get() ).isEqualTo( 0 );
+		// All 32 threads resolved the same method — exactly one cache entry should exist
+		assertThat( DynamicInteropService.getMethodHandleCacheSize() ).isEqualTo( 1 );
+
+		DynamicInteropService.clearMethodHandleCache();
 	}
 
 }

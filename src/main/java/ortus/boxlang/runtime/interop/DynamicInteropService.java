@@ -140,7 +140,7 @@ public class DynamicInteropService {
 	/**
 	 * Helper for all class utility methods from apache commons lang 3
 	 */
-	public static final Class<ClassUtils>							CLASS_UTILS			= ClassUtils.class;
+	public static final Class<ClassUtils>										CLASS_UTILS			= ClassUtils.class;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -151,7 +151,7 @@ public class DynamicInteropService {
 	/**
 	 * These keys are always available on all throwables. If the key is not found, then we return an empty string
 	 */
-	private static final Set<Key>									exceptionKeys		= new HashSet<>( Arrays.asList(
+	private static final Set<Key>												exceptionKeys		= new HashSet<>( Arrays.asList(
 	    Key.message,
 	    Key.detail,
 	    Key.type,
@@ -166,56 +166,77 @@ public class DynamicInteropService {
 	 * This is a map of primitive types to their native Java counterparts
 	 * so we can do the right casting for primitives
 	 */
-	private static final Map<Class<?>, Class<?>>					PRIMITIVE_MAP;
+	private static final Map<Class<?>, Class<?>>								PRIMITIVE_MAP;
 
 	/**
 	 * This is a map of wrapper types to their native Java primitives counterparts
 	 * so we can do the right casting for wrappers
 	 */
-	private static final Map<Class<?>, Class<?>>					WRAPPERS_MAP;
+	private static final Map<Class<?>, Class<?>>								WRAPPERS_MAP;
 
 	/**
 	 * This is the method handle lookup
 	 *
 	 * @see https://docs.oracle.com/javase/21/docs/api/java/lang/invoke/MethodHandles.Lookup.html
 	 */
-	private static final MethodHandles.Lookup						METHOD_LOOKUP;
+	private static final MethodHandles.Lookup									METHOD_LOOKUP;
 
 	/**
-	 * This caches the method handles for the class so we don't have to look them up every time
+	 * This caches the method handles for the class so we don't have to look them up every time.
+	 * Keyed by {@link MethodHandleCacheKey} to include classloader identity and avoid string-intern pollution.
 	 */
-	private static final ConcurrentHashMap<String, MethodRecord>	methodHandleCache	= new ConcurrentHashMap<>( 32 );
+	private static final ConcurrentHashMap<MethodHandleCacheKey, MethodRecord>	methodHandleCache		= new ConcurrentHashMap<>( 32 );
+
+	/**
+	 * Number of lock stripes for method-handle cache miss-path serialization.
+	 * Must be a power of two so the stripe index can be computed with a bitmask.
+	 */
+	private static final int													LOCK_STRIPE_COUNT	= 256;
+
+	/**
+	 * Striped locks used to guard the double-check miss path in {@link #getMethodHandle}.
+	 * Using 256 independent monitors dramatically reduces contention compared to a single global lock:
+	 * two threads only block each other when their cache keys map to the same stripe (~0.4% probability).
+	 * The stripe index is derived with a spread hash to prevent clustering from poorly distributed hashCodes.
+	 */
+	private static final Object[]												CACHE_LOCKS;
+	static {
+		CACHE_LOCKS = new Object[ LOCK_STRIPE_COUNT ];
+		for ( int i = 0; i < LOCK_STRIPE_COUNT; i++ ) {
+			CACHE_LOCKS[ i ] = new Object();
+		}
+	}
 
 	/**
 	 * Name of key to get length of native arrays
 	 */
-	private static Key												lengthKey			= Key.of( "length" );
+	private static Key				lengthKey			= Key.of( "length" );
 
 	/**
 	 * Empty arguments array
 	 */
-	public static final Object[]									EMPTY_ARGS			= new Object[] {};
+	public static final Object[]	EMPTY_ARGS			= new Object[] {};
 
 	/**
 	 * This enables or disables the method handles cache
 	 */
-	private static Boolean											handlesCacheEnabled	= true;
+	private static Boolean			handlesCacheEnabled	= true;
 
 	/**
 	 * This is the class locator
 	 */
-	private static ClassLocator										classLocator		= null;
+	private static ClassLocator		classLocator		= null;
 
 	/**
 	 * This is the function service for invoking functions
 	 */
-	private static FunctionService									functionService		= null;
+	private static FunctionService	functionService		= null;
 
 	/**
 	 * Coercion maps
 	 */
-	private static List<String>										numberTargets		= List.of( "boolean", "byte", "character", "string" );
-	private static List<String>										booleanTargets		= List.of( "string", "character" );
+	private static List<String>		numberTargets		= List.of( "boolean", "byte", "character", "string" );
+	private static List<String>		booleanTargets		= List.of( "string", "character" );
 
 	/**
 	 * Static Initializer
@@ -248,7 +269,7 @@ public class DynamicInteropService {
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Setters & Getters
+	 * Cache Management
 	 * --------------------------------------------------------------------------
 	 */
 
@@ -268,6 +289,36 @@ public class DynamicInteropService {
 	 */
 	public static void setHandlesCacheEnabled( Boolean enabled ) {
 		handlesCacheEnabled = enabled;
+	}
+
+	/**
+	 * How many method handles are currently cached
+	 *
+	 * @return the size of the method handle cache
+	 */
+	public static int getMethodHandleCacheSize() {
+		return methodHandleCache.size();
+	}
+
+	/**
+	 * Get the keys of the method handle cache, which are the signatures of the methods.
+	 * Returns a {@code Set<String>} for API compatibility; each entry is the string
+	 * representation of a {@link MethodHandleCacheKey} in the form
+	 * {@code classLoaderIdentity|targetClassName|methodName|argumentTypesHash}.
+	 *
+	 * @return the set of keys in the method handle cache as human-readable strings
+	 */
+	public static Set<String> getMethodHandleCacheKeys() {
+		return methodHandleCache.keySet().stream()
+		    .map( MethodHandleCacheKey::toString )
+		    .collect( Collectors.toSet() );
+	}
+
+	/**
+	 * Clear the method handle cache
+	 */
+	public static void clearMethodHandleCache() {
+		methodHandleCache.clear();
 	}
 
 	/**
@@ -1205,14 +1256,27 @@ public class DynamicInteropService {
 	    Object[] castedArgumentValues,
 	    Object... arguments ) {
 
-		// We use the method signature as the cache key
-		String			cacheKey		= targetClass.hashCode() + methodName + Arrays.hashCode( argumentsAsClasses );
-		MethodRecord	methodRecord	= methodHandleCache.get( cacheKey );
-		boolean			fromCache		= true;
+		// Build a classloader-aware, intern-free cache key for this method signature.
+		// classLoaderName is carried for diagnostics only and does not affect cache correctness.
+		ClassLoader				targetClassLoader		= targetClass.getClassLoader();
+		String					targetClassLoaderName	= targetClassLoader == null ? "bootstrap"
+		    : ( targetClassLoader.getName() != null ? targetClassLoader.getName() : "unnamed" );
+		MethodHandleCacheKey	cacheKey				= new MethodHandleCacheKey(
+		    targetClassLoader != null ? System.identityHashCode( targetClassLoader ) : 0,
+		    targetClassLoaderName,
+		    targetClass.getName(),
+		    methodName,
+		    Arrays.hashCode( argumentsAsClasses )
+		);
+		MethodRecord			methodRecord			= methodHandleCache.get( cacheKey );
+		boolean					fromCache				= true;
 
-		// Double lock to avoid race-conditions
+		// Double-checked locking with a striped monitor to minimise contention on the miss path.
+		// Spread hash: XOR upper 16 bits into lower 16 to improve distribution before masking.
 		if ( methodRecord == null || !handlesCacheEnabled ) {
-			synchronized ( cacheKey.intern() ) {
+			int		h		= cacheKey.hashCode();
+			Object	lock	= CACHE_LOCKS[ ( h ^ ( h >>> 16 ) ) & ( LOCK_STRIPE_COUNT - 1 ) ];
+			synchronized ( lock ) {
 				if ( methodRecord == null || !handlesCacheEnabled ) {
 					BooleanRef isCachable = new BooleanRef( true );
 					// The process of discovering the method handle will cast/coerce the arguments, so there's no need to do it again in this code path
@@ -3027,13 +3091,13 @@ public class DynamicInteropService {
 	 * Coerce a single value to the expected type
 	 * Unlike our BL Casters, this is directly tied to Java types for our Java interop. It uses
 	 * the same logic used for method argument coercion, but just on a single value.
-	 * 
+	 *
 	 * Throws a BoxCastException if the value cannot be coerced to the expected type.
-	 * 
+	 *
 	 * @param context The context to use for the method invocation
 	 * @param value   The value to coerce
 	 * @param type    The expected type
-	 * 
+	 *
 	 * @return The coerced value
 	 */
 	public static Object coerceValue(
@@ -3067,6 +3131,13 @@ public class DynamicInteropService {
 		return args[ 0 ];
 	}
 
+	/**
+	 * Internal record used to keep track of coercion attempts for method matching
+	 *
+	 * @param executable           The executable we are attempting to match
+	 * @param matchScore           The score of the match, lower is better
+	 * @param castedArgumentValues The argument values after coercion attempts, to be used if this is the best match
+	 */
 	private record CoerceAttempt( Executable executable, AtomicInteger matchScore, Object[] castedArgumentValues ) {
 
 		public static CoerceAttempt of( Executable executable, AtomicInteger matchScore, Object[] castedArgumentValues ) {
