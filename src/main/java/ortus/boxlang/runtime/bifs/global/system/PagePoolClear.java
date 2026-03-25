@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.bifs.global.system;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 
@@ -51,6 +50,5 @@ public class PagePoolClear extends BIF {
 	 */
 	public static void clear() {
 		RunnableLoader.getInstance().getBoxpiler().clearPagePool();
-		DynamicInteropService.clearMethodHandleCache();
 	}
 }

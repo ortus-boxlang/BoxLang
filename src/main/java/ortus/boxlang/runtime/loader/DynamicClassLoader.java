@@ -40,6 +40,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.global.type.NullValue;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
+import ortus.boxlang.runtime.interop.MethodRecord;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
@@ -50,48 +51,54 @@ public class DynamicClassLoader extends URLClassLoader {
 	/**
 	 * The name of the class loader as a {@link Key}
 	 */
-	private Key											nameAsKey;
+	private Key												nameAsKey;
 
 	/**
 	 * The parent class loader
 	 */
-	private ClassLoader									parent			= null;
+	private ClassLoader										parent				= null;
 
 	/**
 	 * Track if the class loader is closed for better debugging. We can remove this later if we don't need it, but it's useful for now
 	 */
-	private boolean										closed			= false;
+	private boolean											closed				= false;
 
 	/**
 	 * The stack trace of the thread that closed this class loader
 	 */
-	private String										closedStack		= "";
+	private String											closedStack			= "";
 
 	/**
 	 * The cache of loaded classes
 	 */
-	private final ConcurrentHashMap<String, Class<?>>	loadedClasses	= new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, Class<?>>		loadedClasses		= new ConcurrentHashMap<>();
 
 	/**
 	 * The cache of unfound classes, for performance reasons
 	 */
-	private final ConcurrentHashMap<String, Class<?>>	unfoundClasses	= new ConcurrentHashMap<>();
+	private final ConcurrentHashMap<String, Class<?>>		unfoundClasses		= new ConcurrentHashMap<>();
+
+	/**
+	 * This caches the method handles for the class so we don't have to look them up every time. This is used by the DynamicInteropService, but stored here
+	 * so when a DCL is GC'd the cache goes with it.
+	 */
+	private final ConcurrentHashMap<String, MethodRecord>	methodHandleCache	= new ConcurrentHashMap<>( 32 );
 
 	/**
 	 * Logger. Lazy init to avoid deadlocks on runtime startup
 	 */
-	private static Logger								logger			= null;
+	private static Logger									logger				= null;
 
 	/**
 	 * The BoxLang Runtime instance
 	 */
-	private static final BoxRuntime						runtime			= BoxRuntime.getInstance();
+	private static final BoxRuntime							runtime				= BoxRuntime.getInstance();
 
 	/**
 	 * Runtime special prefixes Set that MUST come from the parent class loader
 	 * THIS IS SPECIAL CASE FOR LOGGING FRAMEWORKS WHERE THIRD PARTY JARS MAY BE LOADED AND DELEGATED TO THE PARENT
 	 */
-	private static final Set<String>					PARENT_CLASSES	= Set.of(
+	private static final Set<String>						PARENT_CLASSES		= Set.of(
 	    "ch.qos.logback",
 	    "org.slf4j"
 	);
@@ -352,6 +359,7 @@ public class DynamicClassLoader extends URLClassLoader {
 	 */
 	public void clearCache() {
 		this.loadedClasses.clear();
+		this.methodHandleCache.clear();
 	}
 
 	/**
@@ -566,6 +574,13 @@ public class DynamicClassLoader extends URLClassLoader {
 	 */
 	public static ClassLoader getContextClassLoader() {
 		return Thread.currentThread().getContextClassLoader();
+	}
+
+	/**
+	 * Get the method handle cache
+	 */
+	public ConcurrentHashMap<String, MethodRecord> getMethodHandleCache() {
+		return methodHandleCache;
 	}
 
 }
