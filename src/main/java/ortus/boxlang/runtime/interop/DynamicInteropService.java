@@ -68,6 +68,7 @@ import ortus.boxlang.runtime.dynamic.casters.TimeCaster;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyService;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.loader.DiskClassLoader;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.BoxInterface;
@@ -1291,8 +1292,12 @@ public class DynamicInteropService {
 	 */
 	private static ConcurrentHashMap<String, MethodRecord> findMethodHandleCache( Class<?> targetClass ) {
 		ClassLoader classLoader = targetClass.getClassLoader();
-		// This is for a module, javasettings, or a BoxPiler-loaded class.
+		// This is for a module, or javasettings-loaded class.
 		if ( classLoader instanceof DynamicClassLoader dcl ) {
+			return dcl.getMethodHandleCache();
+		}
+		// This is for a BoxPiler-loaded class.
+		if ( classLoader instanceof DiskClassLoader dcl ) {
 			return dcl.getMethodHandleCache();
 		}
 		// This will be used for all JDK or core classes
