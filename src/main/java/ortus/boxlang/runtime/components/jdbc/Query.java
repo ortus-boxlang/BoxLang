@@ -48,7 +48,7 @@ public class Query extends Component {
 		super();
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key._NAME, "string" ),
-		    new Attribute( Key.datasource, "string" ),
+		    new Attribute( Key.datasource, "any" ),
 		    new Attribute( Key.returnType, "string", "query", Set.of(
 		        Validator.valueRequires( "struct", Key.columnKey ),
 		        Validator.valueOneOf( "query", "array", "struct" )
@@ -91,7 +91,7 @@ public class Query extends Component {
 	 *
 	 * @attribute.name The name of the variable to store the query results in.
 	 *
-	 * @attribute.datasource The datasource to execute the query against.
+	 * @attribute.datasource The name of the datasource to execute the query against, or a struct of datasource settings for on-the-fly connections.
 	 *
 	 * @attribute.returnType The type of the result to return. One of: `query`, `struct`, `array`.
 	 *
