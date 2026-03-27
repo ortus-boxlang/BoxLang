@@ -6432,4 +6432,30 @@ public class CoreLangTest {
 
 	}
 
+	@DisplayName( "operator precedence" )
+	@Test
+	void testOperatorPrecedence() {
+		instance.executeSource(
+		    """
+		    result = "foo" eq "foo" XOR "bar" eq "bar"
+
+		                 """,
+		    context
+		);
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "operator precedence CF" )
+	@Test
+	void testOperatorPrecedenceCF() {
+		instance.executeSource(
+		    """
+		    result = "foo" eq "foo" XOR "bar" eq "bar"
+
+		                 """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( false );
+	}
+
 }
