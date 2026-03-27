@@ -2180,6 +2180,13 @@ public class ClassTest {
 		instance.executeSource(
 		    """
 		    result = new src.test.java.TestCases.phase3.TagComponentParse();
+		    result = new src.test.java.TestCases.phase3.TagComponentParse2();
+		    result = new src.test.java.TestCases.phase3.TagComponentParse3();
+		    result = new src.test.java.TestCases.phase3.TagComponentParse4();
+		    result = new src.test.java.TestCases.phase3.TagComponentParse5();
+		    result = new src.test.java.TestCases.phase3.TagComponentParse6();
+		    result = new src.test.java.TestCases.phase3.TagComponentParse7();
+		    result = new src.test.java.TestCases.phase3.TagComponentParse8();
 		       """,
 		    context );
 	}
