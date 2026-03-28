@@ -106,7 +106,8 @@ public class LoggingService {
 	public BoxLangLogger							HTTP_LOGGER			= null;
 	public BoxLangLogger							MODULES_LOGGER		= null;
 	public BoxLangLogger							RUNTIME_LOGGER		= null;
-	public BoxLangLogger							SCHEDULER_LOGGER	= null;	public BoxLangLogger								BLACKHOLE_LOGGER	= null;
+	public BoxLangLogger							SCHEDULER_LOGGER	= null;
+	public BoxLangLogger							BLACKHOLE_LOGGER	= null;
 	/**
 	 * The log format for the BoxLang runtime
 	 *
@@ -788,7 +789,7 @@ public class LoggingService {
 		// Check if we have the logger configuration or else build a vanilla one
 		LoggerConfig	loggerConfig	= ( LoggerConfig ) this.runtime
 		    .getConfiguration().logging.loggers
-		    .computeIfAbsent( loggerKey, key -> new LoggerConfig( key.getName().toUpperCase(), this.runtime.getConfiguration().logging ) );
+		        .computeIfAbsent( loggerKey, key -> new LoggerConfig( key.getName().toUpperCase(), this.runtime.getConfiguration().logging ) );
 		Level			configLevel		= Level.toLevel( LogLevel.valueOf( loggerConfig.level.getName(), false ).getName() );
 
 		// Seed the properties

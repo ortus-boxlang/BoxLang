@@ -71,8 +71,8 @@ public class LoggingServiceTest {
 	@Test
 	public void testLoggerCategoriesWiring() {
 		// Register a test logger config with a category before requesting the logger
-		var			loggingConfig	= runtime.getConfiguration().logging;
-		Key			loggerKey		= Key.of( "testcategorylogger" );
+		var				loggingConfig	= runtime.getConfiguration().logging;
+		Key				loggerKey		= Key.of( "testcategorylogger" );
 		LoggerConfig	loggerConfig	= new LoggerConfig( loggerKey, loggingConfig );
 		loggerConfig.categories.add( "com.test.category.package" );
 		loggingConfig.loggers.put( loggerKey, loggerConfig );
