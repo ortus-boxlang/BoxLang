@@ -87,6 +87,10 @@ public final class CFFormatConfigLoader {
 	public static Config convertCFFormatToConfig( Map<String, Object> cfConfig ) {
 		Config config = new Config();
 		config.setCFFormatCompatibility( true );
+		// cfformat preserves operator forms (EQ stays EQ, == stays ==)
+		config.getOperators().setComparisonStyle( "preserve" );
+		// cfformat emits open tags without self-closing slash: <cfdump ...> not <cfdump ... />
+		config.getTemplate().setSelfClosing( false );
 
 		// Top-level settings
 		applyIfPresent( cfConfig, "indent_size", value -> config.setIndentSize( toInt( value ) ) );

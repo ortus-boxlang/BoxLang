@@ -1145,6 +1145,9 @@ public class Visitor extends VoidBoxVisitor {
 
 	@Override
 	public void visit( BoxBreak node ) {
+		if ( isTemplate() && node.isImplicit() ) {
+			return;
+		}
 		printPreComments( node );
 		if ( printSourceForCFCompat( node ) ) {
 			printPostComments( node );
@@ -1618,7 +1621,7 @@ public class Visitor extends VoidBoxVisitor {
 				print( "<" + componentPrefix + "case value=\"" );
 				stringPrinter.printQuotedExpression( node.getCondition() );
 				print( "\"" );
-				if ( node.getDelimiter() != null ) {
+				if ( node.getDelimiter() != null && !node.isImplicitDelimiter() ) {
 					print( " delimiters=\"" );
 					stringPrinter.printQuotedExpression( node.getDelimiter() );
 					print( "\"" );

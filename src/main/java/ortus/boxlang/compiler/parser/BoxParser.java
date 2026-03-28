@@ -892,7 +892,7 @@ public class BoxParser extends AbstractParser {
 			}
 
 			value		= findExprInAnnotations( annotations, "value", true, null, "case", getPosition( node ) );
-			delimiter	= findExprInAnnotations( annotations, "delimiters", false, new BoxStringLiteral( ",", null, null ), "case", getPosition( node ) );
+			delimiter	= findExprInAnnotations( annotations, "delimiters", false, null, "case", getPosition( node ) );
 		}
 
 		List<BoxStatement> statements = null;
@@ -903,10 +903,17 @@ public class BoxParser extends AbstractParser {
 
 		if ( statements != null ) {
 			// In component mode, the break is implied
-			statements.add( new BoxBreak( null, null ) );
+			var implicitBreak = new BoxBreak( null, null );
+			implicitBreak.setImplicit( true );
+			statements.add( implicitBreak );
 		}
 
-		return new BoxSwitchCase( value, delimiter, statements, getPosition( node ), getSourceText( node ) );
+		var switchCase = new BoxSwitchCase( value, delimiter, statements, getPosition( node ), getSourceText( node ) );
+		if ( delimiter == null && value != null ) {
+			switchCase.setDelimiter( new BoxStringLiteral( ",", null, null ) );
+			switchCase.setImplicitDelimiter( true );
+		}
+		return switchCase;
 	}
 
 	private BoxStatement toAst( File file, Template_throwContext node ) {
