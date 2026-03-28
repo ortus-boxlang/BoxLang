@@ -25,6 +25,7 @@ import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
+import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.BoxStaticInitializer;
 import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.comment.BoxDocComment;
@@ -125,6 +126,7 @@ public class Visitor extends VoidBoxVisitor {
 
 	Config							config;
 	String							componentPrefix;
+	boolean							stripBufferLeadingWhitespace	= false;
 
 	CommentsPrinter					commentsPrinter;
 	ClassPrinter					classPrinter;
@@ -393,19 +395,14 @@ public class Visitor extends VoidBoxVisitor {
 		boolean isTemplate = isTemplate();
 		currentSourceType.push( BoxSourceType.BOXSCRIPT );
 		if ( isTemplate ) {
-			print( "<bx:script>" );
-			pushDoc( DocType.INDENT );
+			print( "<" + componentPrefix + "script>" );
 			newLine();
 		}
 
 		helperPrinter.printStatements( node.getStatements() );
 
 		if ( isTemplate ) {
-			var contentsDoc = popDoc(); // pop the indent doc
-			getCurrentDoc()
-			    .append( contentsDoc )
-			    .append( Line.HARD )
-			    .append( "</bx:script>" );
+			getCurrentDoc().append( Line.HARD ).append( "</" + componentPrefix + "script>" );
 		}
 		currentSourceType.pop();
 		printPostComments( node );
@@ -447,6 +444,12 @@ public class Visitor extends VoidBoxVisitor {
 				// If we're in an output component, we need to escape pound signs
 				if ( node.getFirstAncestorOfType( BoxComponent.class, comp -> comp.getName().equalsIgnoreCase( "output" ) ) != null ) {
 					value = value.replace( "#", "##" );
+				}
+				// When inside printTemplateBody, structural indentation is controlled externally.
+				// Strip leading and trailing newline+whitespace so we don't produce spurious blank lines.
+				if ( stripBufferLeadingWhitespace ) {
+					value = value.replaceFirst( "^[\\r\\n][\\t ]*", "" );
+					value = value.replaceFirst( "[\\r\\n][\\t ]*$", "" );
 				}
 				print( value );
 			} else if ( node.getExpression() instanceof BoxStringInterpolation sInt ) {
@@ -1566,11 +1569,7 @@ public class Visitor extends VoidBoxVisitor {
 			print( "<" + componentPrefix + "switch expression=\"" );
 			stringPrinter.printQuotedExpression( node.getCondition() );
 			print( "\">" );
-			for ( var caseNode : node.getCases() ) {
-				newLine();
-				caseNode.accept( this );
-			}
-			newLine();
+			helperPrinter.printTemplateBody( node.getCases() );
 			print( "</" + componentPrefix + "switch>" );
 		} else {
 			var currentDoc = getCurrentDoc();
@@ -1612,16 +1611,20 @@ public class Visitor extends VoidBoxVisitor {
 			if ( node.getCondition() != null ) {
 				print( "<" + componentPrefix + "case value=\"" );
 				stringPrinter.printQuotedExpression( node.getCondition() );
-				print( "\">" );
+				print( "\"" );
+				if ( node.getDelimiter() != null ) {
+					print( " delimiters=\"" );
+					stringPrinter.printQuotedExpression( node.getDelimiter() );
+					print( "\"" );
+				}
+				print( ">" );
 			} else if ( node.getBody() != null ) {
 				print( "<" + componentPrefix + "defaultcase>" );
 			} else {
 				print( "<" + componentPrefix + "defaultcase/>" );
 			}
 			if ( node.getBody() != null ) {
-				for ( var statement : node.getBody() ) {
-					statement.accept( this );
-				}
+				helperPrinter.printTemplateBody( node.getBody() );
 			}
 			if ( node.getCondition() != null ) {
 				print( "</" + componentPrefix + "case>" );
@@ -1676,20 +1679,20 @@ public class Visitor extends VoidBoxVisitor {
 		if ( isTemplate() ) {
 			printPreComments( node );
 			print( "<" + componentPrefix + "try>" );
-
-			for ( var statement : node.getTryBody() ) {
-				statement.accept( this );
-			}
-			for ( var catchNode : node.getCatches() ) {
-				catchNode.accept( this );
-			}
+			// Combine try body, catches, and finally into one sequence so they all
+			// print at the same indent level (one level inside <cftry>).
+			var tryCombined = new ArrayList<BoxStatement>( node.getTryBody() );
+			tryCombined.addAll( node.getCatches() );
 			if ( node.getFinallyBody() != null && !node.getFinallyBody().isEmpty() ) {
-				print( "<" + componentPrefix + "finally>" );
-				for ( var statement : node.getFinallyBody() ) {
-					statement.accept( this );
-				}
-				print( "</" + componentPrefix + "finally>" );
+				tryCombined.add( new ortus.boxlang.compiler.ast.statement.component.BoxComponent(
+				    componentPrefix + "finally",
+				    List.of(),
+				    node.getFinallyBody(),
+				    node.getPosition(),
+				    null
+				) );
 			}
+			helperPrinter.printTemplateBody( tryCombined );
 			print( "</" + componentPrefix + "try>" );
 		} else {
 			print( "try " );
@@ -1724,9 +1727,7 @@ public class Visitor extends VoidBoxVisitor {
 				print( "\"" );
 			}
 			print( ">" );
-			for ( var statement : node.getCatchBody() ) {
-				statement.accept( this );
-			}
+			helperPrinter.printTemplateBody( node.getCatchBody() );
 			print( "</" + componentPrefix + "catch>" );
 		} else {
 			print( " catch (" );

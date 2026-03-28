@@ -56,11 +56,7 @@ public class ComponentPrinter {
 			} else {
 				// existing body with statements gives us <bx:componentName> statements... </bx:componentName>
 				currentDoc.append( ">" );
-				// visitor.pushDoc( DocType.INDENT );
-				for ( var statement : node.getBody() ) {
-					statement.accept( visitor );
-				}
-				// currentDoc.append( visitor.popDoc() );
+				visitor.helperPrinter.printTemplateBody( node.getBody() );
 				currentDoc.append( "</" + visitor.componentPrefix );
 				currentDoc.append( node.getName() );
 				currentDoc.append( ">" );

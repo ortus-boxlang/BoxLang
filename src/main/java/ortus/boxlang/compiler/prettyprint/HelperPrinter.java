@@ -24,7 +24,9 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
+import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 
 public class HelperPrinter {
@@ -81,12 +83,66 @@ public class HelperPrinter {
 		}
 	}
 
-	public void printBlock( BoxNode node, List<BoxStatement> statements ) {
-		var currentDoc = visitor.getCurrentDoc();
-		if ( visitor.isTemplate() ) {
+	/**
+	 * Prints template body statements with indent_content support.
+	 * When indent_content is true, whitespace-only buffer outputs are filtered
+	 * and replaced with structured Line.HARD separators, indenting body content
+	 * by one level. A trailing Line.HARD is appended so the caller can follow
+	 * immediately with a closing tag at the outer indent level.
+	 * When indent_content is false, statements are visited as-is.
+	 */
+	public void printTemplateBody( List<? extends BoxStatement> statements ) {
+		if ( !visitor.config.getTemplate().getIndentContent() ) {
 			for ( var statement : statements ) {
 				statement.accept( visitor );
 			}
+			return;
+		}
+
+		var meaningful = statements.stream()
+		    .filter( s -> s != null && !isWhitespaceOnlyBuffer( s ) )
+		    .toList();
+
+		if ( meaningful.isEmpty() ) {
+			return;
+		}
+
+		var		indentDoc		= visitor.pushDoc( DocType.INDENT );
+		boolean	lastWasBuffer	= false;
+		visitor.stripBufferLeadingWhitespace = true;
+		for ( var statement : meaningful ) {
+			if ( statement == null ) continue;
+			boolean isBuffer = statement instanceof BoxBufferOutput;
+			// Only break before the first BufferOutput in a consecutive run, so that
+			// inline HTML like <p>text #expr#</p> (multiple adjacent BufferOutputs) stays on one line
+			if ( !isBuffer || !lastWasBuffer ) {
+				indentDoc.append( Line.HARD );
+			}
+			lastWasBuffer = isBuffer;
+			statement.accept( visitor );
+		}
+		visitor.stripBufferLeadingWhitespace = false;
+		var contentsDoc = visitor.popDoc();
+		visitor.getCurrentDoc()
+		    .append( contentsDoc )
+		    .append( Line.HARD );
+	}
+
+	private boolean isWhitespaceOnlyBuffer( BoxStatement statement ) {
+		if ( !( statement instanceof BoxBufferOutput bufOutput ) ) {
+			return false;
+		}
+		var expr = bufOutput.getExpression();
+		if ( !( expr instanceof BoxStringLiteral str ) ) {
+			return false;
+		}
+		return str.getValue().isBlank();
+	}
+
+	public void printBlock( BoxNode node, List<BoxStatement> statements ) {
+		var currentDoc = visitor.getCurrentDoc();
+		if ( visitor.isTemplate() ) {
+			printTemplateBody( statements );
 		} else {
 			// Determine if opening brace should be on a new line based on braces.style config
 			String	braceStyle		= visitor.config.getBraces().getStyle();
@@ -170,7 +226,8 @@ public class HelperPrinter {
 		var	currentDoc		= visitor.getCurrentDoc();
 		var	attrsDoc		= visitor.pushDoc( DocType.GROUP );
 		int	maxKeyLength	= 0;
-		if ( visitor.config.getAlignConsecutiveAssignments() ) {
+		// Alignment only applies to script mode (e.g. struct literals), not template tag attributes
+		if ( visitor.config.getAlignConsecutiveAssignments() && !visitor.isTemplate() ) {
 			for ( var attr : attrs ) {
 				if ( attr.getValue() != null && attr.getKey() != null ) {
 					maxKeyLength = Math.max( maxKeyLength, attr.getKey().getSourceText() != null ? attr.getKey().getSourceText().length() : 0 );

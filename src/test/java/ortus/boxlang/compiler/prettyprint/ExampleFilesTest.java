@@ -40,4 +40,16 @@ public class ExampleFilesTest extends PrettyPrintTest {
 		singlePrintTest( FOLDER + "fileB.cfc", FOLDER + "fileB_expected.cfc", config );
 	}
 
+	@Test
+	public void testTemplateA() throws IOException {
+		Config config = Config.loadConfigAutoDetect( CONFIG_PATH );
+		singlePrintTest( FOLDER + "templateA.cfm", FOLDER + "templateA_expected.cfm", config );
+	}
+
+	@Test
+	public void testTemplateB() throws IOException {
+		Config config = Config.loadConfigAutoDetect( CONFIG_PATH );
+		singlePrintTest( FOLDER + "templateB.cfm", FOLDER + "templateB_expected.cfm", config );
+	}
+
 }

@@ -59,5 +59,6 @@
     "struct.multiline.leading_comma.padding": true,
     "struct.multiline.element_count": 2,
     "struct.multiline.min_length": 60,
-    "tab_indent": true
+    "tab_indent": true,
+    "tags.lowercase": true
 }
