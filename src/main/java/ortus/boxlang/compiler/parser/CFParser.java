@@ -552,7 +552,15 @@ public class CFParser extends AbstractParser {
 					extraText.append( token.getText() );
 					token = lexer.nextToken();
 				}
-				errorListener.semanticError( "Extra char(s) [" + extraText + "] at the end of parsing.", position );
+				if ( isLikelyUnparenthesizedObjectDestructuring( position ) ) {
+					errorListener.semanticError(
+					    "Object destructuring assignment must be wrapped in parentheses when not using var/final/static. "
+					        + "Use syntax like ({ a } = source).",
+					    position
+					);
+				} else {
+					errorListener.semanticError( "Extra char(s) [" + extraText + "] at the end of parsing.", position );
+				}
 			}
 		}
 
@@ -584,6 +592,39 @@ public class CFParser extends AbstractParser {
 				    unclosedBracket.getCharPositionInLine() + 1 ) );
 			}
 		}
+	}
+
+	/**
+	 * isLikelyUnparenthesizedObjectDestructuring.
+	 */
+	private boolean isLikelyUnparenthesizedObjectDestructuring( Position position ) {
+		if ( ! ( sourceToParse instanceof SourceCode sourceCode ) ) {
+			return false;
+		}
+
+		String code = sourceCode.getCode();
+		if ( code == null ) {
+			return false;
+		}
+
+		String[]	lines	= code.split( "\\R", -1 );
+		int			line	= position.getStart().getLine() - 1;
+		int			col		= position.getStart().getColumn();
+		boolean		linePatternMatch;
+		if ( line >= 0 && line < lines.length ) {
+			String	currentLine		= lines[ line ];
+			int		safeCol			= Math.min( Math.max( col, 0 ), currentLine.length() );
+			String	beforeEquals	= currentLine.substring( 0, safeCol ).trim();
+			linePatternMatch = beforeEquals.startsWith( "{" ) && beforeEquals.endsWith( "}" );
+		} else {
+			linePatternMatch = false;
+		}
+
+		String	trimmed				= code.trim();
+		int		firstEquals			= trimmed.indexOf( '=' );
+		int		firstCloseBrace		= trimmed.indexOf( '}' );
+		boolean	globalPatternMatch	= trimmed.startsWith( "{" ) && firstCloseBrace > 0 && firstEquals > firstCloseBrace;
+		return linePatternMatch || globalPatternMatch;
 	}
 
 	private void extractComments( CFLexerCustom lexer ) throws IOException {

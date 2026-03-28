@@ -86,6 +86,11 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	protected final List<Object>						wrapped;
 
 	/**
+	 * Whether this array is synchronized (thread-safe)
+	 */
+	private final boolean								isSynchronized;
+
+	/**
 	 * Metadata object
 	 */
 	public transient BoxMeta<?>							$bx;
@@ -106,25 +111,67 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	private static final long							serialVersionUID	= 1L;
 
 	/**
+	 * Dimension
+	 */
+	public int											dimensions			= 1;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructors
 	 * --------------------------------------------------------------------------
 	 */
 
 	/**
-	 * Constructor to create default array
+	 * Constructor to create default array (synchronized)
 	 */
 	public Array() {
 		this( 10 );
 	}
 
 	/**
-	 * Constructor to create array with an initial capacity
+	 * Constructor to create array with synchronization control
+	 *
+	 * @param isSynchronized Whether the array should be thread-safe (synchronized)
+	 * @param dimensions     The number of dimensions for the array
+	 */
+	public Array( boolean isSynchronized, int dimensions ) {
+		this( 10, isSynchronized, dimensions );
+	}
+
+	/**
+	 * Constructor to create array with an initial capacity (synchronized by default)
 	 *
 	 * @param initialCapactity The initialCapactity of Array to create
 	 */
 	public Array( int initialCapactity ) {
-		this.wrapped = Collections.synchronizedList( new ArrayList<Object>( initialCapactity ) );
+		this( initialCapactity, true );
+	}
+
+	/**
+	 * Constructor to create array with an initial capacity and synchronization control
+	 *
+	 * @param initialCapactity The initial capacity of Array to create
+	 * @param isSynchronized   Whether the array should be thread-safe (synchronized)
+	 */
+	public Array( int initialCapactity, boolean isSynchronized ) {
+		this( initialCapactity, isSynchronized, 1 );
+	}
+
+	/**
+	 * Constructor to create array with an initial capacity and synchronization control
+	 *
+	 * @param initialCapactity The initial capacity of Array to create
+	 * @param isSynchronized   Whether the array should be thread-safe (synchronized)
+	 * @param dimensions       The number of dimensions for the array
+	 */
+	public Array( int initialCapactity, boolean isSynchronized, int dimensions ) {
+		this.isSynchronized	= isSynchronized;
+		this.dimensions		= dimensions;
+		if ( isSynchronized ) {
+			this.wrapped = Collections.synchronizedList( new ArrayList<Object>( initialCapactity ) );
+		} else {
+			this.wrapped = new ArrayList<Object>( initialCapactity );
+		}
 	}
 
 	/**
@@ -134,7 +181,8 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	 * @param arr The array to create the Array from
 	 */
 	public Array( Object[] arr ) {
-		this.wrapped = Collections.synchronizedList( new ArrayList<Object>( Arrays.asList( arr ) ) );
+		this.isSynchronized	= true;
+		this.wrapped		= Collections.synchronizedList( new ArrayList<Object>( Arrays.asList( arr ) ) );
 	}
 
 	/**
@@ -144,7 +192,8 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	 */
 	@SuppressWarnings( "unchecked" )
 	public Array( List<? extends Object> list ) {
-		this.wrapped = ( List<Object> ) list;
+		this.isSynchronized	= list.getClass().getName().contains( "SynchronizedList" );
+		this.wrapped		= ( List<Object> ) list;
 	}
 
 	/**
@@ -244,6 +293,15 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 		Object array = java.lang.reflect.Array.newInstance( varArgType, wrapped.size() );
 		System.arraycopy( wrapped.toArray(), 0, array, 0, wrapped.size() );
 		return array;
+	}
+
+	/**
+	 * Check if this array is synchronized (thread-safe).
+	 *
+	 * @return true if the array is synchronized, false otherwise
+	 */
+	public boolean isSynchronized() {
+		return this.isSynchronized;
 	}
 
 	/**
@@ -647,9 +705,6 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	 * @return The array
 	 */
 	public Array insertAt( int index, Object element ) {
-		if ( index < 1 || index > wrapped.size() ) {
-			throw new BoxRuntimeException( "Index [" + index + "] out of bounds for list with " + wrapped.size() + " elements." );
-		}
 		add( index - 1, element );
 		return this;
 	}
@@ -834,8 +889,9 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	/**
 	 * Assign a value to a key
 	 *
-	 * @param key   The key to assign
-	 * @param value The value to assign
+	 * @param context The context in which the assignment is being performed
+	 * @param key     The key to assign
+	 * @param value   The value to assign
 	 *
 	 * @return The assigned value
 	 */
@@ -874,6 +930,13 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 		Integer index = Array.validateAndGetIntForDereference( key, wrapped.size(), safe );
 		// non-existant indexes or keys which could not be turned into an int return null when dereferencing safely
 		if ( safe && ( index == null || Math.abs( index ) > wrapped.size() || index == 0 ) ) {
+			// If this is a safe access to a non-existant index on a multi-dimensional array, seed an empty nested array in place
+			if ( dimensions > 1 && index != null && index > -1 ) {
+				var newVal = new Array( isSynchronized, dimensions - 1 );
+				assign( context, key, newVal );
+				return newVal;
+			}
+			// For 1-dimensional arrays, it's just not found
 			return null;
 		}
 		if ( index < 0 ) {

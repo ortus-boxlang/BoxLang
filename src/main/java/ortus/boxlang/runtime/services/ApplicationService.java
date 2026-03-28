@@ -408,6 +408,13 @@ public class ApplicationService extends BaseService {
 		return null;
 	}
 
+	/**
+	 * Clears the application descriptor cache.
+	 */
+	public void clearApplicationDescriptorCache() {
+		this.applicationDescriptorCache.clear();
+	}
+
 	private record ApplicationDescriptorSearch( Path path, ApplicationDescriptorType type ) {
 	}
 

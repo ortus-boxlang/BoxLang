@@ -152,6 +152,21 @@ public class OracleDriverTest extends AbstractDriverTest {
 		    """,
 		    context
 		);
+
+		// Stored procedure with cursor at the end of params
+		dataSource.execute(
+		    """
+		    CREATE OR REPLACE PROCEDURE testProcedureCursorAtEnd (
+		    	in1 IN NUMBER,
+		    	cursor1 OUT SYS_REFCURSOR
+		    )
+		    IS
+		    BEGIN
+		    	OPEN cursor1 FOR SELECT in1 as numVal FROM dual;
+		    END testProcedureCursorAtEnd;
+		    """,
+		    context
+		);
 	}
 
 	@DisplayName( "It sets generatedKey in query meta" )
@@ -510,6 +525,24 @@ public class OracleDriverTest extends AbstractDriverTest {
 		assertThat( rs1.getRowAsStruct( 0 ).getAsNumber( Key.of( "sumVal" ) ).doubleValue() ).isEqualTo( 15D );
 	}
 
+	@DisplayName( "It can call stored proc with cursor at end of params (named)" )
+	@Test
+	public void testCallStoredProcCursorAtEndNamed() {
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedureCursorAtEnd" datasource="OracleDatasource" result="variables.result" debug=true>
+		        <bx:procparam value="10" type="in" sqltype="integer" dbvarname="in1" />
+		        <bx:procresult name="resultSet1" resultSet=1 />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		assertThat( variables.get( "resultSet1" ) ).isInstanceOf( Query.class );
+		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
+		assertThat( rs1.size() ).isEqualTo( 1 );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsNumber( Key.of( "numVal" ) ).doubleValue() ).isEqualTo( 10D );
+	}
+
 	@DisplayName( "It can call stored proc with ref cursor only (positional)" )
 	@Test
 	public void testCallStoredProcCursorOnlyPositional() {
@@ -577,6 +610,24 @@ public class OracleDriverTest extends AbstractDriverTest {
 		assertThat( rs1.getRowAsStruct( 0 ).getAsNumber( Key.of( "numVal" ) ).doubleValue() ).isEqualTo( 10D );
 		assertThat( rs1.getRowAsStruct( 0 ).getAsString( Key.of( "strVal" ) ) ).isEqualTo( "world" );
 		assertThat( rs1.getRowAsStruct( 0 ).getAsNumber( Key.of( "sumVal" ) ).doubleValue() ).isEqualTo( 15D );
+	}
+
+	@DisplayName( "It can call stored proc with cursor at end of params (positional)" )
+	@Test
+	public void testCallStoredProcCursorAtEndPositional() {
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedureCursorAtEnd" datasource="OracleDatasource" result="variables.result" debug=true>
+		        <bx:procparam value="10" type="in" sqltype="integer" />
+		        <bx:procresult name="resultSet1" resultSet=1 />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		assertThat( variables.get( "resultSet1" ) ).isInstanceOf( Query.class );
+		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
+		assertThat( rs1.size() ).isEqualTo( 1 );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsNumber( Key.of( "numVal" ) ).doubleValue() ).isEqualTo( 10D );
 	}
 
 	@DisplayName( "It can handle float query param with leading space" )

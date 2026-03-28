@@ -38,6 +38,7 @@ import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.jdbc.BoxConnection;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.jdbc.DataSource;
+import ortus.boxlang.runtime.jdbc.QueryOptions;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -92,7 +93,7 @@ public class DBInfo extends Component {
 		        Validator.REQUIRED,
 		        Validator.NON_EMPTY
 		    ) ),
-		    new Attribute( Key.datasource, "string" ),
+		    new Attribute( Key.datasource, "any" ),
 		    new Attribute( Key.table, "string" ),
 		    new Attribute( Key.pattern, "string" ),
 		    new Attribute( Key.dbname, "string" ),
@@ -112,7 +113,7 @@ public class DBInfo extends Component {
 	 *
 	 * @attribute.table Table name for which to retrieve metadata. Required for `columns`, `foreignkeys`, and `index` types.
 	 *
-	 * @attribute.datasource Name of the datasource to check metadata on. If not provided, the default datasource will be used.
+	 * @attribute.datasource Name of the datasource to check metadata on, or a struct of datasource settings for on-the-fly connections. If not provided, the default datasource will be used.
 	 * 
 	 * @attribute.pattern Table name pattern to filter by. Can use wildcards or any `LIKE`-compatible pattern such as `tbl_%`. Can use `schemaName.tableName` syntax to additionally filter by schema.
 	 * 
@@ -138,11 +139,8 @@ public class DBInfo extends Component {
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		IJDBCCapableContext	jdbcContext			= context.getParentOfType( IJDBCCapableContext.class );
 		ConnectionManager	connectionManager	= jdbcContext.getConnectionManager();
-
-		// Prep arguments
-		DataSource			datasource			= attributes.containsKey( Key.datasource )
-		    ? connectionManager.getDatasourceOrThrow( Key.of( attributes.getAsString( Key.datasource ) ) )
-		    : connectionManager.getDefaultDatasourceOrThrow();
+		QueryOptions		options				= new QueryOptions( attributes );
+		DataSource			datasource			= connectionManager.getDataSource( options );
 		String				tableNameLookup		= attributes.getAsString( Key.table );
 		if ( tableNameLookup == null ) {
 			tableNameLookup = attributes.getAsString( Key.pattern );

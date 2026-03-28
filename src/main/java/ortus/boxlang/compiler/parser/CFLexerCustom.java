@@ -406,11 +406,22 @@ public class CFLexerCustom extends CFLexer {
 					} else if ( nextTokenType == REQUIRED && !lastTokenWas( DOT ) && getParenCount() > 0 && nextNonWhiteSpaceIsAnyChar() ) {
 						// function foo( required string bar )
 						isIdentifier = false;
-					} else if ( nextTokenType == VAR && !lastTokenWas( DOT )
-					    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '\'' ) || nextNonWhiteSpaceCharIs( '"' ) )
+					} else if ( ( nextTokenType == VAR || nextTokenType == FINAL || nextTokenType == STATIC ) && !lastTokenWas( DOT )
+					    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '\'' ) || nextNonWhiteSpaceCharIs( '"'
+					    ) || nextNonWhiteSpaceCharIs( '{' ) )
 					    && !nextNonWhiteSpaceCharsAre( operatorStartingChars )
 					    && ( lastToken != null && !operatorEndingTokens.contains( lastToken.getType() ) ) ) {
 						// var foo = "bar"
+						// final foo = "bar"
+						// static foo = "bar"
+						// var { foo } = data
+						isIdentifier = false;
+					} else if ( ( nextTokenType == VAR || nextTokenType == FINAL || nextTokenType == STATIC ) && !lastTokenWas( DOT )
+					    && nextNonWhiteSpaceCharIs( '[' )
+					    && ( lastToken == null || lastTokenWas( SEMICOLON ) || lastTokenWas( LBRACE ) || lastTokenWas( RBRACE )
+					        || lastTokenWas( RPAREN ) || ( inForParen && lastTokenWas( LPAREN ) ) ) ) {
+						// var [ first, second ] = data
+						// final [ first, ...rest ] = data
 						isIdentifier = false;
 					} else if ( nextTokenType == NEW && !lastTokenWas( DOT )
 					    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '\'' ) || nextNonWhiteSpaceCharIs( '"' )
@@ -589,8 +600,9 @@ public class CFLexerCustom extends CFLexer {
 							System.out.println( "%%%%%%%%%%%% Not switching [" + nextToken.getText() + "] token to identifer" );
 					}
 				}
-				// Track if we just closed a #var# (IDENTIFIER followed by ICHAR) or just closed a function call #foo()# (RPAREN followed by ICHAR)
-				if ( nextToken.getType() == ICHAR && lastToken != null && ( lastToken.getType() == IDENTIFIER || lastToken.getType() == RPAREN ) ) {
+				// Track if we just closed a #var# (IDENTIFIER followed by ICHAR) or just closed a function call #foo()# (RPAREN followed by ICHAR) or just closed array access #foo[1]# (RBRACKET folowed by an ICHAR)
+				if ( nextToken.getType() == ICHAR && lastToken != null
+				    && ( lastToken.getType() == IDENTIFIER || lastToken.getType() == RPAREN || lastToken.getType() == RBRACKET ) ) {
 					justClosedPoundVar = true;
 				} else if ( nextToken.getChannel() != HIDDEN ) {
 					justClosedPoundVar = false;

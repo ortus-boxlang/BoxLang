@@ -164,8 +164,7 @@ public class NameValuePair {
 	 *
 	 * @return the name (never null)
 	 */
-	@NonNull
-	public String getName() {
+	@NonNull public String getName() {
 		return name;
 	}
 
@@ -174,8 +173,7 @@ public class NameValuePair {
 	 *
 	 * @return the value, or null if this pair represents a name-only entry
 	 */
-	@Nullable
-	public String getValue() {
+	@Nullable public String getValue() {
 		return value;
 	}
 

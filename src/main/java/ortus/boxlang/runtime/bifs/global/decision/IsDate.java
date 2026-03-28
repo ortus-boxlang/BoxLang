@@ -71,6 +71,10 @@ public class IsDate extends BIF {
 		String	timezone		= arguments.getAsString( Key.timezone );
 		String	localeString	= arguments.getAsString( Key.locale );
 
+		if ( dateRef == null || dateRef instanceof String stringDate && stringDate.isBlank() ) {
+			return false;
+		}
+
 		if ( bifMethodKey.equals( numericDateFunction ) ) {
 			return DoubleCaster.attempt( dateRef ).wasSuccessful();
 		} else if ( dateRef instanceof DateTime ) {

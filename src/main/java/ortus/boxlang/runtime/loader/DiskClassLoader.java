@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
@@ -42,6 +43,7 @@ import org.objectweb.asm.tree.MethodNode;
 import ortus.boxlang.compiler.ClassInfo;
 import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.interop.MethodRecord;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.ObjectRef;
@@ -134,7 +136,13 @@ public class DiskClassLoader extends URLClassLoader {
 	 * introduce read locking overhead.
 	 * </p>
 	 */
-	private final java.util.Map<String, java.lang.ref.WeakReference<Class<?>>>	loadedClasses	= new java.util.HashMap<>();
+	private final java.util.Map<String, java.lang.ref.WeakReference<Class<?>>>	loadedClasses		= new java.util.HashMap<>();
+
+	/**
+	 * This caches the method handles for the class so we don't have to look them up every time. This is used by the DynamicInteropService, but stored here
+	 * so when a DCL is GC'd the cache goes with it.
+	 */
+	private final ConcurrentHashMap<String, MethodRecord>						methodHandleCache	= new ConcurrentHashMap<>( 32 );
 
 	/**
 	 * Constructs a new DiskClassLoader with the specified configuration.
@@ -309,7 +317,7 @@ public class DiskClassLoader extends URLClassLoader {
 			return loadClass( name );
 		}
 
-		// In all other scenarios, the BoxPiler should have compiled the class and written it to disk
+		// In all other scenarios, the BoxPiler ould have compiled the class and written it to disk
 		byte[] bytes;
 		try {
 			bytes = Files.readAllBytes( diskPath );
@@ -869,6 +877,14 @@ public class DiskClassLoader extends URLClassLoader {
 		synchronized ( loadedClasses ) {
 			loadedClasses.clear();
 		}
+		methodHandleCache.clear();
+	}
+
+	/**
+	 * Get the method handle cache
+	 */
+	public ConcurrentHashMap<String, MethodRecord> getMethodHandleCache() {
+		return methodHandleCache;
 	}
 
 }

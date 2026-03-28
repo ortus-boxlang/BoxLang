@@ -208,6 +208,54 @@ class DatasourceConfigTest {
 		assertThat( name.getName().split( "_" )[ 1 ] ).matches( "\\d+" );
 	}
 
+	@DisplayName( "Its unique name matches as long as properties are the same" )
+	@Test
+	void testUniqueNameMatches() {
+		DatasourceConfig	datasource1	= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
+		    "driver", "postgresql",
+		    "host", "localhost",
+		    "port", 5432,
+		    "database", "foo",
+		    "custom", "useSSL=false"
+		) );
+
+		DatasourceConfig	datasource2	= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
+		    "database", "foo",
+		    "host", "localhost",
+		    "port", 5432,
+		    "driver", "postgresql",
+		    "CUSTOM", "useSSL=false"
+		) );
+		Key					name1		= datasource1.getUniqueName();
+		Key					name2		= datasource2.getUniqueName();
+
+		assertThat( name1.getName() ).isEqualTo( name2.getName() );
+	}
+
+	@DisplayName( "Its unique name does NOT match when config properties differ" )
+	@Test
+	void testUniqueNameWontMatch() {
+		DatasourceConfig	datasource1	= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
+		    "driver", "postgresql",
+		    "host", "localhost",
+		    "port", 5432,
+		    "database", "foo",
+		    "custom", "useSSL=false"
+		) );
+
+		DatasourceConfig	datasource2	= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
+		    "driver", "postgresql",
+		    "host", "127.0.0.1",
+		    "port", 5432,
+		    "database", "foo",
+		    "custom", "useSSL=false"
+		) );
+		Key					name1		= datasource1.getUniqueName();
+		Key					name2		= datasource2.getUniqueName();
+
+		assertThat( name1.getName() ).isNotEqualTo( name2.getName() );
+	}
+
 	@DisplayName( "I can get a unique hash code for a datasource" )
 	@Test
 	void testItCanGetUniqueHashCode() {

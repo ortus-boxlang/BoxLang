@@ -94,6 +94,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		addToken							= Key.of( "addToken" );
 	public static final Key		afterAnyTask						= Key.of( "afterAnyTask" );
 	public static final Key		algorithm							= Key.of( "algorithm" );
+	public static final Key		all									= Key.of( "all" );
 	public static final Key		allow								= Key.of( "allow" );
 	public static final Key		allowedFileOperationExtensions		= Key.of( "allowedFileOperationExtensions" );
 	public static final Key		allowRealPath						= Key.of( "allowRealPath" );
@@ -492,6 +493,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		iso									= Key.of( "iso" );
 	public static final Key		isShutdown							= Key.of( "isShutdown" );
 	public static final Key		isSuper								= Key.of( "isSuper" );
+	public static final Key		isSynchronized						= Key.of( "isSynchronized" );
 	public static final Key		isValid								= Key.of( "isValid" );
 	public static final Key		item								= Key.of( "item" );
 	public static final Key		itemCount							= Key.of( "itemCount" );
@@ -737,6 +739,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		recurse								= Key.of( "recurse" );
 	public static final Key		recursive							= Key.of( "recursive" );
 	public static final Key		redirect							= Key.of( "redirect" );
+	public static final Key		refresh								= Key.of( "refresh" );
 	public static final Key		reFindNoCase						= Key.of( "reFindNoCase" );
 	public static final Key		reg_expression						= Key.of( "reg_expression" );
 	public static final Key		regex								= Key.of( "regex" );
@@ -1027,6 +1030,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		loadSystemClassPath					= Key.of( "loadSystemClassPath" );
 	public static final Key		secureJson							= Key.of( "secureJson" );
 	public static final Key		secureJsonPrefix					= Key.of( "secureJsonPrefix" );
+	public static final Key		enableNestedTransactions			= Key.of( "enableNestedTransactions" );
 
 	// Datasource configuration keys
 	public static final Key		blockfactor							= Key.of( "blockfactor" );

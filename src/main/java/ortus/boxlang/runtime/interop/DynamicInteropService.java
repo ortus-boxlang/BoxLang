@@ -68,6 +68,8 @@ import ortus.boxlang.runtime.dynamic.casters.TimeCaster;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyService;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.loader.DiskClassLoader;
+import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
@@ -182,7 +184,7 @@ public class DynamicInteropService {
 	private static final MethodHandles.Lookup						METHOD_LOOKUP;
 
 	/**
-	 * This caches the method handles for the class so we don't have to look them up every time
+	 * This caches the method handles for the class so we don't have to look them up every time.
 	 */
 	private static final ConcurrentHashMap<String, MethodRecord>	methodHandleCache	= new ConcurrentHashMap<>( 32 );
 
@@ -248,7 +250,7 @@ public class DynamicInteropService {
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Setters & Getters
+	 * Cache Management
 	 * --------------------------------------------------------------------------
 	 */
 
@@ -268,6 +270,33 @@ public class DynamicInteropService {
 	 */
 	public static void setHandlesCacheEnabled( Boolean enabled ) {
 		handlesCacheEnabled = enabled;
+	}
+
+	/**
+	 * How many method handles are currently cached
+	 *
+	 * @return the size of the method handle cache
+	 */
+	public static int getMethodHandleCacheSize() {
+		return methodHandleCache.size();
+	}
+
+	/**
+	 * Get the keys of the method handle cache, which are the signatures of the methods.
+	 *
+	 * @return the set of keys in the method handle cache as human-readable strings
+	 */
+	public static Set<String> getMethodHandleCacheKeys() {
+		return methodHandleCache.keySet().stream()
+		    .map( Object::toString )
+		    .collect( Collectors.toSet() );
+	}
+
+	/**
+	 * Clear the method handle cache
+	 */
+	public static void clearMethodHandleCache() {
+		methodHandleCache.clear();
 	}
 
 	/**
@@ -528,7 +557,6 @@ public class DynamicInteropService {
 			if ( safe ) {
 				return null;
 			} else {
-				e.printStackTrace();
 				throw new BoxRuntimeException( "Error getting method [" + methodName + "] for class [" + targetClass.getName() + "]", e );
 			}
 		}
@@ -1206,14 +1234,18 @@ public class DynamicInteropService {
 	    Object[] castedArgumentValues,
 	    Object... arguments ) {
 
+		var				methodHandleCache	= findMethodHandleCache( targetClass );
 		// We use the method signature as the cache key
-		String			cacheKey		= targetClass.hashCode() + methodName + Arrays.hashCode( argumentsAsClasses );
-		MethodRecord	methodRecord	= methodHandleCache.get( cacheKey );
-		boolean			fromCache		= true;
+		String			cacheKey			= targetClass.hashCode() + methodName + Arrays.hashCode( argumentsAsClasses );
 
-		// Double lock to avoid race-conditions
+		MethodRecord	methodRecord		= methodHandleCache.get( cacheKey );
+		boolean			fromCache			= true;
+
+		// Double-checked locking with a striped monitor to minimise contention on the miss path.
+		// Spread hash: XOR upper 16 bits into lower 16 to improve distribution before masking.
 		if ( methodRecord == null || !handlesCacheEnabled ) {
-			synchronized ( cacheKey.intern() ) {
+			// Instead of interning the cache key, we'll syncronize on the class. This means only one method can be discovered at a time per class, but it avoids the overhead of interning strings.
+			synchronized ( targetClass ) {
 				if ( methodRecord == null || !handlesCacheEnabled ) {
 					BooleanRef isCachable = new BooleanRef( true );
 					// The process of discovering the method handle will cast/coerce the arguments, so there's no need to do it again in this code path
@@ -1249,6 +1281,27 @@ public class DynamicInteropService {
 			);
 		}
 		return methodRecord;
+	}
+
+	/**
+	 * Get the correct method handle cache based on the class.
+	 * 
+	 * @param targetClass The class we're going to call a method on
+	 * 
+	 * @return The method handle cache to use for this class
+	 */
+	private static ConcurrentHashMap<String, MethodRecord> findMethodHandleCache( Class<?> targetClass ) {
+		ClassLoader classLoader = targetClass.getClassLoader();
+		// This is for a module, or javasettings-loaded class.
+		if ( classLoader instanceof DynamicClassLoader dcl ) {
+			return dcl.getMethodHandleCache();
+		}
+		// This is for a BoxPiler-loaded class.
+		if ( classLoader instanceof DiskClassLoader dcl ) {
+			return dcl.getMethodHandleCache();
+		}
+		// This will be used for all JDK or core classes
+		return methodHandleCache;
 	}
 
 	/**
@@ -3028,13 +3081,13 @@ public class DynamicInteropService {
 	 * Coerce a single value to the expected type
 	 * Unlike our BL Casters, this is directly tied to Java types for our Java interop. It uses
 	 * the same logic used for method argument coercion, but just on a single value.
-	 * 
+	 *
 	 * Throws a BoxCastException if the value cannot be coerced to the expected type.
-	 * 
+	 *
 	 * @param context The context to use for the method invocation
 	 * @param value   The value to coerce
 	 * @param type    The expected type
-	 * 
+	 *
 	 * @return The coerced value
 	 */
 	public static Object coerceValue(
@@ -3068,6 +3121,13 @@ public class DynamicInteropService {
 		return args[ 0 ];
 	}
 
+	/**
+	 * Internal record used to keep track of coercion attempts for method matching
+	 *
+	 * @param executable           The executable we are attempting to match
+	 * @param matchScore           The score of the match, lower is better
+	 * @param castedArgumentValues The argument values after coercion attempts, to be used if this is the best match
+	 */
 	private record CoerceAttempt( Executable executable, AtomicInteger matchScore, Object[] castedArgumentValues ) {
 
 		public static CoerceAttempt of( Executable executable, AtomicInteger matchScore, Object[] castedArgumentValues ) {
