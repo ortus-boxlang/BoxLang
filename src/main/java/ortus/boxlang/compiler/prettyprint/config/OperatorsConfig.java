@@ -27,8 +27,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class OperatorsConfig {
 
-	private String			position	= "end";
-	private TernaryConfig	ternary		= new TernaryConfig();
+	private String			position			= "end";
+
+	@JsonProperty( "comparison_style" )
+	private String			comparisonStyle		= "symbols";
+
+	private TernaryConfig	ternary				= new TernaryConfig();
 
 	public OperatorsConfig() {
 	}
@@ -39,6 +43,15 @@ public class OperatorsConfig {
 
 	public OperatorsConfig setPosition( String position ) {
 		this.position = position;
+		return this;
+	}
+
+	public String getComparisonStyle() {
+		return comparisonStyle;
+	}
+
+	public OperatorsConfig setComparisonStyle( String comparisonStyle ) {
+		this.comparisonStyle = comparisonStyle;
 		return this;
 	}
 
@@ -54,6 +67,7 @@ public class OperatorsConfig {
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put( "position", position );
+		map.put( "comparison_style", comparisonStyle );
 		map.put( "ternary", ternary.toMap() );
 		return map;
 	}

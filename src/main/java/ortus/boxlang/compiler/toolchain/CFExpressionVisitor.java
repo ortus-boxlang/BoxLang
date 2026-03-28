@@ -544,21 +544,28 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 
 	@Override
 	public BoxExpression visitExprRelational( ExprRelationalContext ctx ) {
-		var	pos		= tools.getPosition( ctx );
-		var	src		= tools.getSourceText( ctx );
-		var	left	= ctx.el2( 0 ).accept( this );
-		var	right	= ctx.el2( 1 ).accept( this );
-		var	op		= buildRelOp( ctx.relOps() );
-		return new BoxComparisonOperation( left, op, right, pos, src );
+		var		pos			= tools.getPosition( ctx );
+		var		src			= tools.getSourceText( ctx );
+		var		left		= ctx.el2( 0 ).accept( this );
+		var		right		= ctx.el2( 1 ).accept( this );
+		var		op			= buildRelOp( ctx.relOps() );
+		var		opText		= RegexBuilder.stripWhitespace( ctx.relOps().getText() ).toUpperCase();
+		boolean	wasKeyword	= opText.matches( "[A-Z]+" );
+		var		node		= new BoxComparisonOperation( left, op, right, pos, src );
+		node.setWasKeyword( wasKeyword );
+		return node;
 	}
 
 	@Override
 	public BoxExpression visitExprEqual( ExprEqualContext ctx ) {
-		var	pos		= tools.getPosition( ctx );
-		var	src		= tools.getSourceText( ctx );
-		var	left	= ctx.el2( 0 ).accept( this );
-		var	right	= ctx.el2( 1 ).accept( this );
-		return new BoxComparisonOperation( left, BoxComparisonOperator.Equal, right, pos, src );
+		var		pos			= tools.getPosition( ctx );
+		var		src			= tools.getSourceText( ctx );
+		var		left		= ctx.el2( 0 ).accept( this );
+		var		right		= ctx.el2( 1 ).accept( this );
+		boolean	wasKeyword	= !ctx.getChild( 1 ).getText().equals( "==" );
+		var		node		= new BoxComparisonOperation( left, BoxComparisonOperator.Equal, right, pos, src );
+		node.setWasKeyword( wasKeyword );
+		return node;
 	}
 
 	@Override

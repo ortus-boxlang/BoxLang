@@ -545,6 +545,12 @@ public class Visitor extends VoidBoxVisitor {
 	public void visit( BoxComparisonOperation node ) {
 		var		currentDoc			= getCurrentDoc();
 		String	operatorPosition	= config.getOperators().getPosition();
+		String	comparisonStyle		= config.getOperators().getComparisonStyle();
+		String	operatorStr			= switch ( comparisonStyle ) {
+										case "keywords" -> node.getOperator().getKeyword();
+										case "preserve" -> node.isWasKeyword() ? node.getOperator().getKeyword() : node.getOperator().getSymbol();
+										default -> node.getOperator().getSymbol();
+									};
 
 		// Always create a GROUP for each comparison operation
 		var		binaryDoc			= pushDoc( DocType.GROUP );
@@ -556,13 +562,13 @@ public class Visitor extends VoidBoxVisitor {
 			// Operator at start of next line
 			indentDoc
 			    .append( Line.LINE )
-			    .append( node.getOperator().getSymbol() )
+			    .append( operatorStr )
 			    .append( " " );
 		} else {
 			// Operator at end of line (default "end")
 			indentDoc
 			    .append( " " )
-			    .append( node.getOperator().getSymbol() )
+			    .append( operatorStr )
 			    .append( Line.LINE );
 		}
 
