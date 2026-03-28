@@ -106,8 +106,7 @@ public class LoggingService {
 	public BoxLangLogger							HTTP_LOGGER			= null;
 	public BoxLangLogger							MODULES_LOGGER		= null;
 	public BoxLangLogger							RUNTIME_LOGGER		= null;
-	public BoxLangLogger							SCHEDULER_LOGGER	= null;
-
+	public BoxLangLogger							SCHEDULER_LOGGER	= null;	public BoxLangLogger								BLACKHOLE_LOGGER	= null;
 	/**
 	 * The log format for the BoxLang runtime
 	 *
@@ -413,6 +412,7 @@ public class LoggingService {
 		this.RUNTIME_LOGGER		= getLogger( "runtime" );
 		this.SCHEDULER_LOGGER	= getLogger( "scheduler" );
 		this.HTTP_LOGGER		= getLogger( "http" );
+		this.BLACKHOLE_LOGGER	= getLogger( "blackhole" );
 
 		return instance;
 	}
@@ -795,6 +795,17 @@ public class LoggingService {
 		oLogger.setLevel( configLevel );
 		oLogger.setAdditive( loggerConfig.additive );
 		oLogger.addAppender( getOrBuildAppender( loggerFilePath, targetContext, loggerConfig ) );
+
+		// Wire category loggers: redirect each named Java package/class to this logger's appender
+		if ( !loggerConfig.categories.isEmpty() ) {
+			Appender<ILoggingEvent> categoryAppender = getOrBuildAppender( loggerFilePath, targetContext, loggerConfig );
+			for ( String category : loggerConfig.categories ) {
+				Logger categoryLogger = targetContext.getLogger( category );
+				categoryLogger.setLevel( configLevel );
+				categoryLogger.setAdditive( false );
+				categoryLogger.addAppender( categoryAppender );
+			}
+		}
 
 		return new BoxLangLogger( oLogger );
 	}
