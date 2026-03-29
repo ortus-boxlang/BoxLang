@@ -1,0 +1,982 @@
+/**
+ * [BoxLang]
+ *
+ * Copyright [2023] [Ortus Solutions, Corp]
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package ortus.boxlang.runtime.components.async;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import ortus.boxlang.runtime.async.tasks.BaseScheduler;
+import ortus.boxlang.runtime.async.tasks.ScheduledTask;
+import ortus.boxlang.runtime.async.tasks.TaskRecord;
+import ortus.boxlang.runtime.components.Attribute;
+import ortus.boxlang.runtime.components.BoxComponent;
+import ortus.boxlang.runtime.components.Component;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.net.BoxHttpClient;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.HttpService;
+import ortus.boxlang.runtime.services.SchedulerService;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.JSONUtil;
+import ortus.boxlang.runtime.util.FileSystemUtil;
+import ortus.boxlang.runtime.validation.Validator;
+
+/**
+ * The BX:schedule component manages scheduled tasks: create/update, delete, pause, resume, list,
+ * pauseall, resumeall, and run immediately via the BoxLang scheduler infrastructure.
+ *
+ * Tasks are persisted to disk at {@code ${boxLangHome}/config/tasks.json} and automatically
+ * reloaded when the runtime starts up.
+ *
+ * @attribute.action       The action to perform: create, update, modify, delete, run, pause, resume, list, pauseall, resumeall.
+ *
+ * @attribute.task         The name of the task (required for all actions except list/pauseall/resumeall).
+ *
+ * @attribute.scheduler    The name of the BoxLang scheduler to use. Defaults to "bxschedule".
+ *
+ * @attribute.group        Task group name for organizational purposes.
+ *
+ * @attribute.url          The URL to request when the task fires (required for create/update/modify).
+ *
+ * @attribute.operation    The type of operation. Must be "HTTPRequest" (the only supported mode).
+ *
+ * @attribute.interval     Scheduling interval: "once", "daily", "weekly", "monthly", or seconds (>=60).
+ *
+ * @attribute.isDaily      Shorthand for interval="daily".
+ *
+ * @attribute.cronTime     A cron expression (5 or 6 fields). Mutually exclusive with interval.
+ *
+ * @attribute.startDate    Start date constraint (yyyy-mm-dd or similar parseable format).
+ *
+ * @attribute.startTime    Start time (HH:mm).
+ *
+ * @attribute.endDate      End date constraint.
+ *
+ * @attribute.endTime      End time (HH:mm).
+ *
+ * @attribute.repeat       Maximum number of executions before the task self-disables.
+ *
+ * @attribute.exclude      Comma-separated dates or date ranges to skip.
+ *
+ * @attribute.port         HTTP port override for the URL. Defaults to 80.
+ *
+ * @attribute.username     HTTP basic auth username.
+ *
+ * @attribute.password     HTTP basic auth password.
+ *
+ * @attribute.proxyServer  Proxy hostname.
+ *
+ * @attribute.proxyPort    Proxy port.
+ *
+ * @attribute.proxyUser    Proxy auth username.
+ *
+ * @attribute.proxyPassword Proxy auth password.
+ *
+ * @attribute.publish      If true, write the HTTP response body to a file.
+ *
+ * @attribute.path         Directory for the published output file.
+ *
+ * @attribute.file         Output filename (required if publish=true).
+ *
+ * @attribute.overwrite    If true, overwrite an existing output file. Defaults to true.
+ *
+ * @attribute.resolveURL   If true, resolve relative URLs in the response output.
+ *
+ * @attribute.priority     Task priority 1-10. Stored as metadata. Defaults to 5.
+ *
+ * @attribute.retryCount   Number of retries on failure 0-3. Stored as metadata. Defaults to 3.
+ *
+ * @attribute.mode         "server" or "application". Used to scope list/pauseall/resumeall. Defaults to "server".
+ *
+ * @attribute.onException  How to handle task exceptions: "refire", "pause", or "invokeHandler".
+ *
+ * @attribute.oncomplete   URL/path to invoke on task completion (success or failure).
+ *
+ * @attribute.onMisfire    Misfire policy stored as metadata.
+ *
+ * @attribute.eventhandler URL/path invoked when onException="invokeHandler".
+ *
+ * @attribute.cluster      Cluster-aware flag stored as metadata.
+ *
+ * @attribute.result       Variable name to store list output in.
+ */
+@BoxComponent( name = "schedule", allowsBody = false, description = "Manages scheduled tasks: create/update, delete, pause, resume, list, and run immediately via the BoxLang scheduler infrastructure." )
+public class Schedule extends Component {
+
+	/**
+	 * The default scheduler name used when none is specified.
+	 */
+	public static final String		DEFAULT_SCHEDULER_NAME	= "bxschedule";
+
+	/**
+	 * Lock object for thread-safe tasks.json access.
+	 */
+	private static final Object		TASKS_FILE_LOCK			= new Object();
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Constructor(s)
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Constructor
+	 */
+	public Schedule() {
+		super();
+		declaredAttributes = new Attribute[] {
+		    new Attribute( Key.action, "string", Set.of( Validator.REQUIRED,
+		        Validator.valueOneOf( "create", "update", "modify", "delete", "run", "pause", "resume", "list", "pauseall", "resumeall" )
+		    ) ),
+		    new Attribute( Key.task, "string" ),
+		    new Attribute( Key.scheduler, "string", DEFAULT_SCHEDULER_NAME ),
+		    new Attribute( Key.group, "string", "" ),
+		    new Attribute( Key.URL, "string" ),
+		    new Attribute( Key.operation, "string", "HTTPRequest" ),
+		    new Attribute( Key.interval, "string" ),
+		    new Attribute( Key.isDaily, "boolean", false ),
+		    new Attribute( Key.cronTime, "string" ),
+		    new Attribute( Key.startDate, "string" ),
+		    new Attribute( Key.startTime, "string" ),
+		    new Attribute( Key.endDate, "string" ),
+		    new Attribute( Key.endTime, "string" ),
+		    new Attribute( Key.repeat, "integer" ),
+		    new Attribute( Key.exclude, "string" ),
+		    new Attribute( Key.port, "integer", 80 ),
+		    new Attribute( Key.username, "string" ),
+		    new Attribute( Key.password, "string" ),
+		    new Attribute( Key.proxyServer, "string" ),
+		    new Attribute( Key.proxyPort, "integer" ),
+		    new Attribute( Key.proxyUser, "string" ),
+		    new Attribute( Key.proxyPassword, "string" ),
+		    new Attribute( Key.publish, "boolean", false ),
+		    new Attribute( Key.path, "string" ),
+		    new Attribute( Key.file, "string" ),
+		    new Attribute( Key.overwrite, "boolean", true ),
+		    new Attribute( Key.resolveUrl, "boolean", false ),
+		    new Attribute( Key.priority, "integer", 5 ),
+		    new Attribute( Key.retryCount, "integer", 3 ),
+		    new Attribute( Key.mode, "string", "server", Set.of(
+		        Validator.valueOneOf( "server", "application" )
+		    ) ),
+		    new Attribute( Key.onException, "string", "refire", Set.of(
+		        Validator.valueOneOf( "refire", "pause", "invokeHandler" )
+		    ) ),
+		    new Attribute( Key.onComplete, "string" ),
+		    new Attribute( Key.onMisfire, "string" ),
+		    new Attribute( Key.eventHandler, "string" ),
+		    new Attribute( Key.cluster, "boolean", false ),
+		    new Attribute( Key.result, "string" )
+		};
+	}
+
+	/**
+	 * Manages scheduled tasks in the BoxLang scheduler.
+	 *
+	 * @param context        The context in which the Component is being invoked
+	 * @param attributes     The attributes to the Component
+	 * @param body           The body of the Component
+	 * @param executionState The execution state of the Component
+	 */
+	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
+		String action = attributes.getAsString( Key.action ).toLowerCase();
+
+		// Normalize action aliases
+		if ( action.equals( "create" ) || action.equals( "modify" ) ) {
+			action = "update";
+		}
+
+		// All actions except list/pauseall/resumeall require a task name
+		if ( !action.equals( "list" ) && !action.equals( "pauseall" ) && !action.equals( "resumeall" ) ) {
+			requireTaskName( attributes );
+		}
+
+		switch ( action ) {
+			case "update" :
+				doUpdate( context, attributes );
+				break;
+			case "delete" :
+				doDelete( context, attributes );
+				break;
+			case "run" :
+				doRun( context, attributes );
+				break;
+			case "pause" :
+				doPause( context, attributes );
+				break;
+			case "resume" :
+				doResume( context, attributes );
+				break;
+			case "list" :
+				doList( context, attributes );
+				break;
+			case "pauseall" :
+				doPauseAll( context, attributes );
+				break;
+			case "resumeall" :
+				doResumeAll( context, attributes );
+				break;
+			default :
+				throw new BoxRuntimeException( "Invalid schedule action [" + action + "]" );
+		}
+
+		return DEFAULT_RETURN;
+	}
+
+	// --------------------------------------------------------------------------
+	// Action handlers
+	// --------------------------------------------------------------------------
+
+	/**
+	 * Create or update a scheduled task.
+	 */
+	private void doUpdate( IBoxContext context, IStruct attributes ) {
+		String	taskName		= attributes.getAsString( Key.task );
+		String	schedulerName	= attributes.getAsString( Key.scheduler );
+		String	group			= attributes.getAsString( Key.group );
+		String	url				= attributes.getAsString( Key.URL );
+		String	interval		= attributes.getAsString( Key.interval );
+		String	cronTime		= attributes.getAsString( Key.cronTime );
+		boolean	isDaily			= BooleanCaster.cast( attributes.getOrDefault( Key.isDaily, false ) );
+		String	startDate		= attributes.getAsString( Key.startDate );
+		String	startTime		= attributes.getAsString( Key.startTime );
+		String	endDate			= attributes.getAsString( Key.endDate );
+		String	endTime			= attributes.getAsString( Key.endTime );
+		Integer	repeat			= attributes.getAsInteger( Key.repeat );
+		String	exclude			= attributes.getAsString( Key.exclude );
+		String	operation		= attributes.getAsString( Key.operation );
+		String	onException		= attributes.getAsString( Key.onException );
+		String	onComplete		= attributes.getAsString( Key.onComplete );
+		String	eventHandler	= attributes.getAsString( Key.eventHandler );
+		String	onMisfire		= attributes.getAsString( Key.onMisfire );
+		Integer	priority		= attributes.getAsInteger( Key.priority );
+		Integer	retryCount		= attributes.getAsInteger( Key.retryCount );
+		String	mode			= attributes.getAsString( Key.mode );
+		boolean	cluster			= BooleanCaster.cast( attributes.getOrDefault( Key.cluster, false ) );
+
+		// Validate required attributes
+		if ( url == null || url.isBlank() ) {
+			throw new BoxRuntimeException( "The [url] attribute is required for schedule action [update]" );
+		}
+
+		if ( cronTime == null && interval == null && !isDaily ) {
+			throw new BoxRuntimeException( "Either [interval], [cronTime], or [isDaily=true] is required for schedule action [update]" );
+		}
+
+		if ( operation != null && !operation.equalsIgnoreCase( "HTTPRequest" ) ) {
+			throw new BoxRuntimeException( "The [operation] attribute must be 'HTTPRequest'. Got: " + operation );
+		}
+
+		// Get or create scheduler
+		BaseScheduler scheduler = getOrCreateScheduler( context, schedulerName );
+
+		// Remove existing task if present (re-register)
+		if ( scheduler.hasTask( taskName ) ) {
+			scheduler.removeTask( taskName );
+		}
+
+		// Build the HTTP callable
+		Runnable callable = buildTaskCallable( context, attributes );
+
+		// Register task
+		ScheduledTask task = scheduler.task( taskName, group ).call( callable );
+
+		// Apply scheduling
+		if ( cronTime != null && !cronTime.isBlank() ) {
+			task.cron( cronTime );
+		} else if ( isDaily || "daily".equalsIgnoreCase( interval ) ) {
+			try {
+				if ( startTime != null && !startTime.isBlank() ) {
+					task.everyDayAt( startTime );
+				} else {
+					task.everyDay();
+				}
+			} catch ( Exception e ) {
+				throw new BoxRuntimeException( "Failed to apply daily scheduling: " + e.getMessage(), e );
+			}
+		} else {
+			applyInterval( task, interval, startDate, startTime, endDate, endTime );
+		}
+
+		// Apply date constraints for non-daily, non-cron schedules
+		if ( cronTime == null && !isDaily && !"daily".equalsIgnoreCase( interval ) ) {
+			try {
+				if ( startDate != null && !startDate.isBlank() ) {
+					task.startOn( startDate, startTime != null ? startTime : "00:00" );
+				}
+				if ( endDate != null && !endDate.isBlank() ) {
+					task.endOn( endDate, endTime != null ? endTime : "00:00" );
+				}
+			} catch ( Exception e ) {
+				throw new BoxRuntimeException( "Failed to apply date constraints: " + e.getMessage(), e );
+			}
+		}
+
+		// Apply repeat limit
+		if ( repeat != null && repeat > 0 ) {
+			final int			maxRuns		= repeat;
+			AtomicInteger		runCount	= new AtomicInteger( 0 );
+			final ScheduledTask	finalTask	= task;
+			final Runnable		original	= callable;
+			task.call( () -> {
+				original.run();
+				if ( runCount.incrementAndGet() >= maxRuns ) {
+					finalTask.disable();
+				}
+			} );
+		}
+
+		// Apply exclude dates predicate
+		if ( exclude != null && !exclude.isBlank() ) {
+			final List<String> excludeList = Arrays.asList( exclude.split( "," ) );
+			task.when( t -> !isExcludedDate( t.getNow(), excludeList ) );
+		}
+
+		// Wire onFailure callback based on onException attribute
+		if ( "pause".equalsIgnoreCase( onException ) ) {
+			task.onFailure( ( t, e ) -> t.disable() );
+		} else if ( "invokeHandler".equalsIgnoreCase( onException ) && eventHandler != null && !eventHandler.isBlank() ) {
+			final String		handler			= eventHandler;
+			final IBoxContext	runtimeContext	= runtime.getRuntimeContext();
+			task.onFailure( ( t, ex ) -> httpGet( handler, null, runtimeContext ) );
+		}
+
+		// Wire after callback for oncomplete
+		if ( onComplete != null && !onComplete.isBlank() ) {
+			final String		completeUrl		= onComplete;
+			final IBoxContext	runtimeContext	= runtime.getRuntimeContext();
+			task.after( ( t, result ) -> httpGet( completeUrl, null, runtimeContext ) );
+		}
+
+		// Store metadata
+		task.setMetaKey( "priority", priority );
+		task.setMetaKey( "retryCount", retryCount );
+		task.setMetaKey( "mode", mode );
+		task.setMetaKey( "cluster", cluster );
+		task.setMetaKey( "onMisfire", onMisfire );
+		task.setMetaKey( "onException", onException );
+		task.setMetaKey( "eventhandler", eventHandler );
+		task.setMetaKey( "oncomplete", onComplete );
+		task.setMetaKey( "url", url );
+
+		// Start the task if the scheduler is already running
+		if ( scheduler.hasStarted() ) {
+			scheduler.startupTask( taskName );
+		}
+
+		// Persist to disk
+		persistTask( attributes );
+	}
+
+	/**
+	 * Delete a scheduled task.
+	 */
+	private void doDelete( IBoxContext context, IStruct attributes ) {
+		String			taskName		= attributes.getAsString( Key.task );
+		String			schedulerName	= attributes.getAsString( Key.scheduler );
+		BaseScheduler	scheduler		= getExistingSchedulerOrFail( schedulerName );
+
+		if ( !scheduler.hasTask( taskName ) ) {
+			throw new BoxRuntimeException( "Task [" + taskName + "] does not exist in scheduler [" + schedulerName + "]" );
+		}
+
+		scheduler.removeTask( taskName );
+		removeTaskFromDisk( taskName, schedulerName );
+	}
+
+	/**
+	 * Run a scheduled task immediately.
+	 */
+	private void doRun( IBoxContext context, IStruct attributes ) {
+		String			taskName		= attributes.getAsString( Key.task );
+		String			schedulerName	= attributes.getAsString( Key.scheduler );
+		BaseScheduler	scheduler		= getExistingSchedulerOrFail( schedulerName );
+		TaskRecord		record			= scheduler.getTaskRecord( taskName );
+
+		if ( record == null ) {
+			throw new BoxRuntimeException( "Task [" + taskName + "] does not exist in scheduler [" + schedulerName + "]" );
+		}
+
+		record.task.run( true );
+	}
+
+	/**
+	 * Pause a scheduled task.
+	 */
+	private void doPause( IBoxContext context, IStruct attributes ) {
+		String			taskName		= attributes.getAsString( Key.task );
+		String			schedulerName	= attributes.getAsString( Key.scheduler );
+		BaseScheduler	scheduler		= getExistingSchedulerOrFail( schedulerName );
+		TaskRecord		record			= scheduler.getTaskRecord( taskName );
+
+		if ( record == null ) {
+			throw new BoxRuntimeException( "Task [" + taskName + "] does not exist in scheduler [" + schedulerName + "]" );
+		}
+
+		record.task.disable();
+		record.disabled = true;
+		if ( record.future != null ) {
+			record.future.cancel( false );
+		}
+
+		updateTaskPausedState( taskName, schedulerName, true );
+	}
+
+	/**
+	 * Resume a paused task.
+	 */
+	private void doResume( IBoxContext context, IStruct attributes ) {
+		String			taskName		= attributes.getAsString( Key.task );
+		String			schedulerName	= attributes.getAsString( Key.scheduler );
+		BaseScheduler	scheduler		= getExistingSchedulerOrFail( schedulerName );
+		TaskRecord		record			= scheduler.getTaskRecord( taskName );
+
+		if ( record == null ) {
+			throw new BoxRuntimeException( "Task [" + taskName + "] does not exist in scheduler [" + schedulerName + "]" );
+		}
+
+		record.task.enable();
+		record.disabled		= false;
+		record.scheduledAt	= null; // Reset so startupTask will re-schedule it
+		scheduler.startupTask( taskName );
+
+		updateTaskPausedState( taskName, schedulerName, false );
+	}
+
+	/**
+	 * List all tasks in a scheduler.
+	 */
+	private void doList( IBoxContext context, IStruct attributes ) {
+		String			schedulerName	= attributes.getAsString( Key.scheduler );
+		String			resultVar		= attributes.getAsString( Key.result );
+		String			mode			= attributes.getAsString( Key.mode );
+		String			group			= attributes.getAsString( Key.group );
+
+		Array			taskList		= new Array();
+
+		// Only list if scheduler exists
+		SchedulerService	svc				= runtime.getSchedulerService();
+		Key					schedulerKey	= Key.of( schedulerName );
+
+		if ( svc.hasScheduler( schedulerKey ) ) {
+			Object schedulerObj = svc.getScheduler( schedulerKey );
+			if ( schedulerObj instanceof BaseScheduler ) {
+				BaseScheduler scheduler = ( BaseScheduler ) schedulerObj;
+				for ( TaskRecord record : scheduler.getTasks().values() ) {
+					// Filter by group if specified
+					if ( group != null && !group.isBlank() && !group.equals( record.group ) ) {
+						continue;
+					}
+					// Filter by mode if application-scoped
+					if ( "application".equalsIgnoreCase( mode ) ) {
+						Object taskMode = record.task.getMeta().get( Key.of( "mode" ) );
+						if ( taskMode == null || !"application".equalsIgnoreCase( taskMode.toString() ) ) {
+							continue;
+						}
+					}
+					taskList.add( buildTaskStruct( record ) );
+				}
+			}
+		}
+
+		if ( resultVar != null && !resultVar.isBlank() ) {
+			ExpressionInterpreter.setVariable( context, resultVar, taskList );
+		} else {
+			// Write to output buffer
+			try {
+				context.writeToBuffer( JSONUtil.getJSONBuilder( true ).asString( taskList ) );
+			} catch ( Exception e ) {
+				throw new BoxRuntimeException( "Failed to write task list to output: " + e.getMessage(), e );
+			}
+		}
+	}
+
+	/**
+	 * Pause all tasks in a scheduler.
+	 */
+	private void doPauseAll( IBoxContext context, IStruct attributes ) {
+		String			schedulerName	= attributes.getAsString( Key.scheduler );
+		String			group			= attributes.getAsString( Key.group );
+		String			mode			= attributes.getAsString( Key.mode );
+
+		SchedulerService	svc				= runtime.getSchedulerService();
+		Key					schedulerKey	= Key.of( schedulerName );
+
+		if ( !svc.hasScheduler( schedulerKey ) )
+			return;
+		Object schedulerObj = svc.getScheduler( schedulerKey );
+		if ( !( schedulerObj instanceof BaseScheduler ) )
+			return;
+
+		BaseScheduler scheduler = ( BaseScheduler ) schedulerObj;
+
+		for ( TaskRecord record : scheduler.getTasks().values() ) {
+			if ( shouldIncludeTask( record, group, mode ) ) {
+				record.task.disable();
+				record.disabled = true;
+				if ( record.future != null ) {
+					record.future.cancel( false );
+				}
+				updateTaskPausedState( record.name, schedulerName, true );
+			}
+		}
+	}
+
+	/**
+	 * Resume all tasks in a scheduler.
+	 */
+	private void doResumeAll( IBoxContext context, IStruct attributes ) {
+		String			schedulerName	= attributes.getAsString( Key.scheduler );
+		String			group			= attributes.getAsString( Key.group );
+		String			mode			= attributes.getAsString( Key.mode );
+
+		SchedulerService	svc				= runtime.getSchedulerService();
+		Key					schedulerKey	= Key.of( schedulerName );
+
+		if ( !svc.hasScheduler( schedulerKey ) )
+			return;
+		Object schedulerObj = svc.getScheduler( schedulerKey );
+		if ( !( schedulerObj instanceof BaseScheduler ) )
+			return;
+
+		BaseScheduler scheduler = ( BaseScheduler ) schedulerObj;
+
+		for ( TaskRecord record : scheduler.getTasks().values() ) {
+			if ( shouldIncludeTask( record, group, mode ) ) {
+				record.task.enable();
+				record.disabled		= false;
+				record.scheduledAt	= null;
+				scheduler.startupTask( record.name );
+				updateTaskPausedState( record.name, schedulerName, false );
+			}
+		}
+	}
+
+	// --------------------------------------------------------------------------
+	// Helper methods
+	// --------------------------------------------------------------------------
+
+	/**
+	 * Require that the task attribute is present and non-blank.
+	 */
+	private void requireTaskName( IStruct attributes ) {
+		String taskName = attributes.getAsString( Key.task );
+		if ( taskName == null || taskName.isBlank() ) {
+			throw new BoxRuntimeException( "The [task] attribute is required for this schedule action" );
+		}
+	}
+
+	/**
+	 * Get or create a named {@link BaseScheduler}. If the scheduler doesn't exist it is
+	 * registered and started.
+	 */
+	public static BaseScheduler getOrCreateScheduler( IBoxContext context, String name ) {
+		SchedulerService	svc				= ortus.boxlang.runtime.BoxRuntime.getInstance().getSchedulerService();
+		Key					schedulerKey	= Key.of( name );
+
+		if ( svc.hasScheduler( schedulerKey ) ) {
+			Object existing = svc.getScheduler( schedulerKey );
+			if ( existing instanceof BaseScheduler ) {
+				return ( BaseScheduler ) existing;
+			}
+		}
+
+		BaseScheduler scheduler = new BaseScheduler( name, context );
+		svc.registerAndStartScheduler( scheduler, false );
+		return scheduler;
+	}
+
+	/**
+	 * Get an existing scheduler by name, throwing if it doesn't exist or is not a BaseScheduler.
+	 */
+	private BaseScheduler getExistingSchedulerOrFail( String name ) {
+		SchedulerService	svc				= runtime.getSchedulerService();
+		Key					schedulerKey	= Key.of( name );
+
+		if ( !svc.hasScheduler( schedulerKey ) ) {
+			throw new BoxRuntimeException( "Scheduler [" + name + "] does not exist" );
+		}
+		Object schedulerObj = svc.getScheduler( schedulerKey );
+		if ( !( schedulerObj instanceof BaseScheduler ) ) {
+			throw new BoxRuntimeException( "Scheduler [" + name + "] is not a managed schedule scheduler" );
+		}
+		return ( BaseScheduler ) schedulerObj;
+	}
+
+	/**
+	 * Build a {@link Runnable} that performs an HTTP GET request to the configured URL.
+	 * Captures the runtime context (not the request context) for long-lived use.
+	 */
+	public static Runnable buildTaskCallable( IBoxContext context, IStruct attributes ) {
+		String	url				= attributes.getAsString( Key.URL );
+		Integer	port			= attributes.getAsInteger( Key.port );
+		String	username		= attributes.getAsString( Key.username );
+		String	password		= attributes.getAsString( Key.password );
+		String	proxyServer		= attributes.getAsString( Key.proxyServer );
+		Integer	proxyPort		= attributes.getAsInteger( Key.proxyPort );
+		String	proxyUser		= attributes.getAsString( Key.proxyUser );
+		String	proxyPass		= attributes.getAsString( Key.proxyPassword );
+		boolean	publish			= BooleanCaster.cast( attributes.getOrDefault( Key.publish, false ) );
+		String	path			= attributes.getAsString( Key.path );
+		String	file			= attributes.getAsString( Key.file );
+		boolean	overwrite		= BooleanCaster.cast( attributes.getOrDefault( Key.overwrite, true ) );
+
+		// Capture runtime context — NOT request context (request contexts are recycled per request)
+		ortus.boxlang.runtime.BoxRuntime	rt				= ortus.boxlang.runtime.BoxRuntime.getInstance();
+		IBoxContext							runtimeContext	= rt.getRuntimeContext();
+		HttpService							httpService		= rt.getHttpService();
+
+		return () -> {
+			BoxHttpClient client = httpService.getOrBuildClient(
+			    BoxHttpClient.HTTP_2,
+			    true,
+			    null,
+			    proxyServer,
+			    proxyPort,
+			    proxyUser,
+			    proxyPass,
+			    null,
+			    null
+			);
+
+			var request = client
+			    .newRequest( url, runtimeContext )
+			    .method( "GET" )
+			    .port( port );
+
+			if ( username != null && !username.isBlank() ) {
+				request.withBasicAuth( username, password );
+			}
+
+			IStruct response = ( IStruct ) request.send();
+
+			if ( publish && path != null && !path.isBlank() && file != null && !file.isBlank() ) {
+				handlePublish( response, path, file, overwrite );
+			}
+		};
+	}
+
+	/**
+	 * Write the HTTP response body to a file when publish=true.
+	 */
+	private static void handlePublish( IStruct response, String path, String file, boolean overwrite ) {
+		try {
+			String content		= "";
+			Object fileContent	= response.get( Key.of( "fileContent" ) );
+			if ( fileContent != null ) {
+				content = fileContent.toString();
+			}
+			Path outputPath = Paths.get( path, file );
+			if ( overwrite || !Files.exists( outputPath ) ) {
+				Files.createDirectories( outputPath.getParent() );
+				Files.writeString( outputPath, content );
+			}
+		} catch ( Exception e ) {
+			throw new BoxRuntimeException( "Failed to publish schedule output: " + e.getMessage(), e );
+		}
+	}
+
+	/**
+	 * Apply an interval-based schedule to the task.
+	 * Handles "once", "weekly", "monthly", and numeric-second intervals.
+	 */
+	public static void applyInterval( ScheduledTask task, String interval, String startDate, String startTime, String endDate, String endTime ) {
+		if ( interval == null || interval.isBlank() ) {
+			throw new BoxRuntimeException( "The [interval] attribute is required" );
+		}
+		try {
+			switch ( interval.toLowerCase() ) {
+				case "once" : {
+					// Schedule to run once using a very large interval; expire after first fire
+					task.every( Long.MAX_VALUE / 2, TimeUnit.MILLISECONDS );
+					String date = startDate != null ? startDate : task.getNow().toLocalDate().toString();
+					String time = startTime != null ? startTime : "00:00";
+					task.startOn( date, time );
+					task.endOn( date, time.equals( "00:00" ) ? "00:01" : time );
+					break;
+				}
+				case "weekly" : {
+					task.everyWeek();
+					break;
+				}
+				case "monthly" : {
+					task.everyMonth();
+					break;
+				}
+				default : {
+					// Numeric seconds
+					long seconds;
+					try {
+						seconds = Long.parseLong( interval );
+					} catch ( NumberFormatException e ) {
+						throw new BoxRuntimeException( "Invalid interval value [" + interval + "]. Must be 'once', 'daily', 'weekly', 'monthly', or a number of seconds >= 60." );
+					}
+					if ( seconds < 60 ) {
+						throw new BoxRuntimeException( "Interval in seconds must be >= 60. Got: " + seconds );
+					}
+					task.every( seconds, TimeUnit.SECONDS );
+				}
+			}
+		} catch ( BoxRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BoxRuntimeException( "Failed to apply interval [" + interval + "]: " + e.getMessage(), e );
+		}
+	}
+
+	/**
+	 * Perform an HTTP GET to the given URL using the runtime context.
+	 */
+	private static void httpGet( String url, Integer port, IBoxContext context ) {
+		try {
+			HttpService		httpService	= ortus.boxlang.runtime.BoxRuntime.getInstance().getHttpService();
+			BoxHttpClient	client		= httpService.getOrBuildClient( BoxHttpClient.HTTP_2, true, null, null, null, null, null, null, null );
+			client.newRequest( url, context ).method( "GET" ).port( port ).send();
+		} catch ( Exception e ) {
+			// Log but don't rethrow — callback failures should not crash the task
+			ortus.boxlang.runtime.BoxRuntime.getInstance().getLoggingService().SCHEDULER_LOGGER
+			    .warn( "Schedule callback HTTP request failed for URL [{}]: {}", url, e.getMessage() );
+		}
+	}
+
+	/**
+	 * Determine if a datetime falls on an excluded date.
+	 */
+	private static boolean isExcludedDate( java.time.LocalDateTime now, List<String> excludeList ) {
+		String today = now.toLocalDate().toString(); // yyyy-MM-dd
+		for ( String entry : excludeList ) {
+			String trimmed = entry.trim();
+			if ( trimmed.contains( "-" ) && trimmed.split( "-" ).length == 2 && !trimmed.matches( "\\d{4}-\\d{2}-\\d{2}" ) ) {
+				// Range like "2024-01-01 to 2024-01-31" — stored simply as two dates
+				// Simple check: just skip for now; full range parsing not required for MVP
+			}
+			if ( today.equals( trimmed ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Check if a task record should be included in group/mode filtering.
+	 */
+	private boolean shouldIncludeTask( TaskRecord record, String group, String mode ) {
+		if ( group != null && !group.isBlank() && !group.equals( record.group ) ) {
+			return false;
+		}
+		if ( "application".equalsIgnoreCase( mode ) ) {
+			Object taskMode = record.task.getMeta().get( Key.of( "mode" ) );
+			if ( taskMode == null || !"application".equalsIgnoreCase( taskMode.toString() ) ) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/**
+	 * Build a struct representation of a task record for list output.
+	 */
+	private IStruct buildTaskStruct( TaskRecord record ) {
+		IStruct meta = record.task.getMeta();
+		return Struct.ofNonConcurrent(
+		    "name", record.name,
+		    "group", record.group,
+		    "disabled", record.disabled,
+		    "url", meta.getOrDefault( Key.of( "url" ), "" ),
+		    "cronTime", meta.getOrDefault( Key.of( "cronExpression" ), "" ),
+		    "priority", meta.getOrDefault( Key.of( "priority" ), 5 ),
+		    "retryCount", meta.getOrDefault( Key.of( "retryCount" ), 3 ),
+		    "mode", meta.getOrDefault( Key.of( "mode" ), "server" ),
+		    "scheduledAt", record.scheduledAt,
+		    "registeredAt", record.registeredAt,
+		    "error", record.error,
+		    "errorMessage", record.errorMessage
+		);
+	}
+
+	// --------------------------------------------------------------------------
+	// Persistence helpers
+	// --------------------------------------------------------------------------
+
+	/**
+	 * Load the persisted task array from disk.
+	 */
+	public static Array loadTasksFromDisk() {
+		Path tasksFile = ortus.boxlang.runtime.BoxRuntime.getInstance().getRuntimeHome().resolve( "config/tasks.json" );
+		if ( !Files.exists( tasksFile ) ) {
+			return new Array();
+		}
+		try {
+			Object parsed = JSONUtil.fromJSON( tasksFile.toFile(), true );
+			if ( parsed instanceof Array ) {
+				return ( Array ) parsed;
+			}
+			return new Array();
+		} catch ( Exception e ) {
+			return new Array();
+		}
+	}
+
+	/**
+	 * Save the task array to disk.
+	 */
+	public static void saveTasksToDisk( Array tasks ) {
+		Path tasksFile = ortus.boxlang.runtime.BoxRuntime.getInstance().getRuntimeHome().resolve( "config/tasks.json" );
+		try {
+			String json = JSONUtil.getJSONBuilder( true ).asString( tasks );
+			FileSystemUtil.write( tasksFile.toString(), json, "UTF-8", true );
+		} catch ( Exception e ) {
+			throw new BoxRuntimeException( "Failed to persist tasks to disk: " + e.getMessage(), e );
+		}
+	}
+
+	/**
+	 * Persist (upsert) a task definition to tasks.json based on its attributes.
+	 */
+	private void persistTask( IStruct attributes ) {
+		synchronized ( TASKS_FILE_LOCK ) {
+			Array	tasks		= loadTasksFromDisk();
+			String	taskName	= attributes.getAsString( Key.task );
+			String	scheduler	= attributes.getAsString( Key.scheduler );
+
+			// Build the task definition struct
+			IStruct taskDef = Struct.ofNonConcurrent(
+			    "task", taskName,
+			    "scheduler", scheduler,
+			    "group", attributes.getAsString( Key.group ),
+			    "url", attributes.getAsString( Key.URL ),
+			    "interval", attributes.getAsString( Key.interval ),
+			    "cronTime", attributes.getAsString( Key.cronTime ),
+			    "startDate", attributes.getAsString( Key.startDate ),
+			    "startTime", attributes.getAsString( Key.startTime ),
+			    "endDate", attributes.getAsString( Key.endDate ),
+			    "endTime", attributes.getAsString( Key.endTime ),
+			    "repeat", attributes.getAsInteger( Key.repeat ),
+			    "exclude", attributes.getAsString( Key.exclude ),
+			    "port", attributes.getAsInteger( Key.port ),
+			    "username", attributes.getAsString( Key.username ),
+			    "password", attributes.getAsString( Key.password ),
+			    "proxyServer", attributes.getAsString( Key.proxyServer ),
+			    "proxyPort", attributes.getAsInteger( Key.proxyPort ),
+			    "proxyUser", attributes.getAsString( Key.proxyUser ),
+			    "proxyPassword", attributes.getAsString( Key.proxyPassword ),
+			    "publish", BooleanCaster.cast( attributes.getOrDefault( Key.publish, false ) ),
+			    "path", attributes.getAsString( Key.path ),
+			    "file", attributes.getAsString( Key.file ),
+			    "overwrite", BooleanCaster.cast( attributes.getOrDefault( Key.overwrite, true ) ),
+			    "resolveURL", BooleanCaster.cast( attributes.getOrDefault( Key.resolveUrl, false ) ),
+			    "priority", attributes.getAsInteger( Key.priority ),
+			    "retryCount", attributes.getAsInteger( Key.retryCount ),
+			    "mode", attributes.getAsString( Key.mode ),
+			    "onException", attributes.getAsString( Key.onException ),
+			    "oncomplete", attributes.getAsString( Key.onComplete ),
+			    "onMisfire", attributes.getAsString( Key.onMisfire ),
+			    "eventhandler", attributes.getAsString( Key.eventHandler ),
+			    "cluster", BooleanCaster.cast( attributes.getOrDefault( Key.cluster, false ) ),
+			    "isDaily", BooleanCaster.cast( attributes.getOrDefault( Key.isDaily, false ) ),
+			    "paused", false
+			);
+
+			// Upsert: remove existing entry with same task + scheduler
+			tasks.removeIf( entry -> {
+				if ( entry instanceof IStruct ) {
+					IStruct existing = ( IStruct ) entry;
+					return taskName.equals( existing.getAsString( Key.task ) )
+					    && scheduler.equals( existing.getAsString( Key.scheduler ) );
+				}
+				return false;
+			} );
+			tasks.add( taskDef );
+
+			saveTasksToDisk( tasks );
+		}
+	}
+
+	/**
+	 * Remove a task from tasks.json.
+	 */
+	private void removeTaskFromDisk( String taskName, String schedulerName ) {
+		synchronized ( TASKS_FILE_LOCK ) {
+			Array tasks = loadTasksFromDisk();
+			tasks.removeIf( entry -> {
+				if ( entry instanceof IStruct ) {
+					IStruct existing = ( IStruct ) entry;
+					return taskName.equals( existing.getAsString( Key.task ) )
+					    && schedulerName.equals( existing.getAsString( Key.scheduler ) );
+				}
+				return false;
+			} );
+			saveTasksToDisk( tasks );
+		}
+	}
+
+	/**
+	 * Update the paused flag for a task in tasks.json.
+	 */
+	private void updateTaskPausedState( String taskName, String schedulerName, boolean paused ) {
+		synchronized ( TASKS_FILE_LOCK ) {
+			Array tasks = loadTasksFromDisk();
+			for ( Object entry : tasks ) {
+				if ( entry instanceof IStruct ) {
+					IStruct existing = ( IStruct ) entry;
+					if ( taskName.equals( existing.getAsString( Key.task ) )
+					    && schedulerName.equals( existing.getAsString( Key.scheduler ) ) ) {
+						existing.put( Key.of( "paused" ), paused );
+						break;
+					}
+				}
+			}
+			saveTasksToDisk( tasks );
+		}
+	}
+
+	/**
+	 * Update the paused flag for all tasks in a given scheduler in tasks.json.
+	 */
+	public static void updateAllTasksPausedState( String schedulerName, String group, String mode, boolean paused ) {
+		synchronized ( TASKS_FILE_LOCK ) {
+			Array tasks = loadTasksFromDisk();
+			for ( Object entry : tasks ) {
+				if ( entry instanceof IStruct ) {
+					IStruct existing = ( IStruct ) entry;
+					if ( !schedulerName.equals( existing.getAsString( Key.scheduler ) ) ) {
+						continue;
+					}
+					if ( group != null && !group.isBlank() && !group.equals( existing.getAsString( Key.group ) ) ) {
+						continue;
+					}
+					existing.put( Key.of( "paused" ), paused );
+				}
+			}
+			saveTasksToDisk( tasks );
+		}
+	}
+}

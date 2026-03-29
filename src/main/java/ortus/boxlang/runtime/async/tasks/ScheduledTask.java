@@ -1565,6 +1565,31 @@ public class ScheduledTask implements Runnable {
 	}
 
 	/**
+	 * Schedule this task using a cron expression.
+	 * Supports both 5-field Unix (min hour dom mon dow) and 6-field Quartz (sec min hour dom mon dow) formats.
+	 *
+	 * @param expression The cron expression string
+	 *
+	 * @return The ScheduledTask instance
+	 */
+	public ScheduledTask cron( String expression ) {
+		debugLog( "cron", () -> Struct.ofNonConcurrent( "expression", expression ) );
+
+		ortus.boxlang.runtime.async.CronExpression cronExpr = ortus.boxlang.runtime.async.CronExpression.parse( expression );
+
+		long		pollPeriod		= cronExpr.isSecondsField() ? 1L : 60L;
+		TimeUnit	pollUnit		= cronExpr.isSecondsField() ? TimeUnit.SECONDS : TimeUnit.MINUTES;
+		long		initialDelayMs	= cronExpr.nextFireDelayMillis( this.getTimezone() );
+
+		this.setMetaKey( "cronExpression", expression );
+		this.delay( initialDelayMs, TimeUnit.MILLISECONDS )
+		    .every( pollPeriod, pollUnit )
+		    .when( task -> cronExpr.matches( task.getNow() ) );
+
+		return this;
+	}
+
+	/**
 	 * Run the task on saturday and sundays at midnight
 	 *
 	 * @throws InvalidAttributeValueException When the time format is invalid

@@ -114,6 +114,9 @@ public class SchedulerService extends BaseService {
 		// This will look in the configuration for the global scheduler and start it up
 		registerGlobalSchedulers();
 
+		// Load and register any persisted bxschedule tasks from tasks.json
+		registerPersistedScheduleTasks();
+
 		// Startup all the schedulers
 		startupRegisteredSchedulers();
 
@@ -156,6 +159,99 @@ public class SchedulerService extends BaseService {
 			    // Register the scheduler
 			    registerScheduler( target, true );
 		    } );
+	}
+
+	/**
+	 * Load persisted scheduled tasks from {@code ${boxLangHome}/config/tasks.json} and register them
+	 * in their respective schedulers. This is called during startup before {@link #startupRegisteredSchedulers()}.
+	 */
+	public void registerPersistedScheduleTasks() {
+		java.nio.file.Path tasksFile = runtime.getRuntimeHome().resolve( "config/tasks.json" );
+		if ( !java.nio.file.Files.exists( tasksFile ) ) {
+			return;
+		}
+
+		this.logger.info( "+ Loading persisted schedule tasks from [{}]", tasksFile );
+
+		ortus.boxlang.runtime.types.Array	tasks			= ortus.boxlang.runtime.components.async.Schedule.loadTasksFromDisk();
+		IBoxContext							runtimeContext	= runtime.getRuntimeContext();
+
+		for ( Object entry : tasks ) {
+			if ( !( entry instanceof IStruct ) ) {
+				continue;
+			}
+			IStruct taskDef = ( IStruct ) entry;
+
+			String	taskName		= taskDef.getAsString( Key.task );
+
+			// Get the scheduler name from the task definition
+			Object schedulerField = taskDef.get( Key.of( "scheduler" ) );
+			String schedulerName = schedulerField != null ? schedulerField.toString() : null;
+			if ( schedulerName == null || schedulerName.isBlank() ) {
+				schedulerName = ortus.boxlang.runtime.components.async.Schedule.DEFAULT_SCHEDULER_NAME;
+			}
+			if ( taskName == null || taskName.isBlank() ) {
+				this.logger.warn( "Skipping persisted task with no name" );
+				continue;
+			}
+
+			boolean paused = ortus.boxlang.runtime.dynamic.casters.BooleanCaster.cast( taskDef.getOrDefault( Key.of( "paused" ), false ) );
+
+			// Get or create the named scheduler (register only — startup happens later via startupRegisteredSchedulers)
+			Key schedulerKey = Key.of( schedulerName );
+			if ( !hasScheduler( schedulerKey ) ) {
+				ortus.boxlang.runtime.async.tasks.BaseScheduler s = new ortus.boxlang.runtime.async.tasks.BaseScheduler( schedulerName, runtimeContext );
+				registerScheduler( s, false );
+			}
+			ortus.boxlang.runtime.async.tasks.BaseScheduler scheduler = ( ortus.boxlang.runtime.async.tasks.BaseScheduler ) getScheduler( schedulerKey );
+
+			// Build callable
+			Runnable callable = ortus.boxlang.runtime.components.async.Schedule.buildTaskCallable( runtimeContext, taskDef );
+
+			// Register the task
+			String	group			= taskDef.getAsString( Key.group );
+			ortus.boxlang.runtime.async.tasks.ScheduledTask scheduledTask = scheduler.task( taskName, group != null ? group : "" ).call( callable );
+
+			// Apply scheduling: cron or interval
+			String	cronTime	= taskDef.getAsString( Key.cronTime );
+			String	interval	= taskDef.getAsString( Key.interval );
+			boolean	isDaily		= ortus.boxlang.runtime.dynamic.casters.BooleanCaster.cast( taskDef.getOrDefault( Key.isDaily, false ) );
+
+			if ( cronTime != null && !cronTime.isBlank() ) {
+				scheduledTask.cron( cronTime );
+			} else if ( isDaily || "daily".equalsIgnoreCase( interval ) ) {
+				try {
+					String startTime = taskDef.getAsString( Key.startTime );
+					if ( startTime != null && !startTime.isBlank() ) {
+						scheduledTask.everyDayAt( startTime );
+					} else {
+						scheduledTask.everyDay();
+					}
+				} catch ( Exception e ) {
+					this.logger.error( "Failed to apply daily scheduling for persisted task [{}]: {}", taskName, e.getMessage() );
+				}
+			} else if ( interval != null && !interval.isBlank() ) {
+				try {
+					ortus.boxlang.runtime.components.async.Schedule.applyInterval(
+					    scheduledTask,
+					    interval,
+					    taskDef.getAsString( Key.startDate ),
+					    taskDef.getAsString( Key.startTime ),
+					    taskDef.getAsString( Key.endDate ),
+					    taskDef.getAsString( Key.endTime )
+					);
+				} catch ( Exception e ) {
+					this.logger.error( "Failed to apply interval for persisted task [{}]: {}", taskName, e.getMessage() );
+				}
+			}
+
+			// Restore paused state
+			if ( paused ) {
+				scheduledTask.disable();
+			}
+
+			this.logger.info( "  + Loaded persisted task [{}] in scheduler [{}]", taskName, schedulerName );
+		}
 	}
 
 	/**
