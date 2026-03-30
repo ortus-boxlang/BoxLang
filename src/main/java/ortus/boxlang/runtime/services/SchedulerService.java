@@ -42,6 +42,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.JSONUtil;
+import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
@@ -86,6 +87,12 @@ public class SchedulerService extends BaseService {
 	 * Lock object for thread-safe tasks.json access.
 	 */
 	private final Object			tasksFileLock				= new Object();
+
+	/**
+	 * Cached AES encryption key used to protect credentials in tasks.json.
+	 * Lazily initialised by {@link #getOrCreateEncryptionKey()}.
+	 */
+	private volatile String			tasksEncryptionKey			= null;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -187,8 +194,14 @@ public class SchedulerService extends BaseService {
 
 		this.logger.info( "+ Loading persisted schedule tasks from [{}]", tasksFile );
 
-		Array		tasks			= loadTasksFromDisk();
+		Array		tasks;
 		IBoxContext	runtimeContext	= runtime.getRuntimeContext();
+		try {
+			tasks = loadTasksFromDisk();
+		} catch ( Exception e ) {
+			this.logger.error( "Failed to load persisted schedule tasks — startup will continue without them: {}", e.getMessage() );
+			return;
+		}
 
 		for ( Object entry : tasks ) {
 			if ( !( entry instanceof IStruct ) ) {
@@ -219,45 +232,19 @@ public class SchedulerService extends BaseService {
 			}
 			ortus.boxlang.runtime.async.tasks.BaseScheduler scheduler = ( ortus.boxlang.runtime.async.tasks.BaseScheduler ) getScheduler( schedulerKey );
 
-			// Build callable
+			// Decrypt credentials before passing to the callable builder
+			decryptTaskCredentials( taskDef );
+
+			// Build callable and register the task
 			Runnable callable = ortus.boxlang.runtime.components.async.Schedule.buildTaskCallable( runtimeContext, taskDef );
 
-
-			// Register the task
-			String	group			= taskDef.getAsString( Key.group );
+			String group = taskDef.getAsString( Key.group );
 			ortus.boxlang.runtime.async.tasks.ScheduledTask scheduledTask = scheduler.task( taskName, group != null ? group : "" ).call( callable );
 
-			// Apply scheduling: cron or interval
-			String	cronTime	= taskDef.getAsString( Key.cronTime );
-			String	interval	= taskDef.getAsString( Key.interval );
-			boolean	isDaily		= BooleanCaster.cast( taskDef.getOrDefault( Key.isDaily, false ) );
+			// Apply full configuration (identical to doUpdate — repeat, exclude, callbacks, metadata, scheduling)
+			ortus.boxlang.runtime.components.async.Schedule.applyTaskConfiguration( scheduledTask, callable, taskDef, runtimeContext );
 
-			if ( cronTime != null && !cronTime.isBlank() ) {
-				scheduledTask.cron( cronTime );
-			} else if ( isDaily || "daily".equalsIgnoreCase( interval ) ) {
-				try {
-					String startTime = taskDef.getAsString( Key.startTime );
-					if ( startTime != null && !startTime.isBlank() ) {
-						scheduledTask.everyDayAt( startTime );
-					} else {
-						scheduledTask.everyDay();
-					}
-				} catch ( Exception e ) {
-					this.logger.error( "Failed to apply daily scheduling for persisted task [{}]: {}", taskName, e.getMessage() );
-				}
-			} else if ( interval != null && !interval.isBlank() ) {
-				try {
-					ortus.boxlang.runtime.components.async.Schedule.applyInterval( scheduledTask, interval,
-					    taskDef.getAsString( Key.startDate ),
-					    taskDef.getAsString( Key.startTime ),
-					    taskDef.getAsString( Key.endDate ),
-					    taskDef.getAsString( Key.endTime ) );
-				} catch ( Exception e ) {
-					this.logger.error( "Failed to apply interval for persisted task [{}]: {}", taskName, e.getMessage() );
-				}
-			}
-
-			// Restore paused state
+			// Restore paused state last so it overrides any enable set by configuration
 			if ( paused ) {
 				scheduledTask.disable();
 			}
@@ -663,8 +650,14 @@ public class SchedulerService extends BaseService {
 
 	/**
 	 * Load the persisted task array from {@code ${boxLangHome}/config/tasks.json}.
+	 * Returns an empty array when the file does not yet exist.
+	 * Throws when the file exists but cannot be read or parsed, so callers that
+	 * would subsequently write back to disk do not overwrite a temporarily
+	 * unreadable file with an empty array.
 	 *
-	 * @return The array of persisted task definition structs, or an empty array if none exist.
+	 * @return The array of persisted task definition structs, or an empty array if the file does not exist.
+	 *
+	 * @throws BoxRuntimeException if the file exists but cannot be read or parsed.
 	 */
 	public Array loadTasksFromDisk() {
 		Path tasksFile = runtime.getRuntimeHome().resolve( "config/tasks.json" );
@@ -676,9 +669,12 @@ public class SchedulerService extends BaseService {
 			if ( parsed instanceof Array ) {
 				return ( Array ) parsed;
 			}
-			return new Array();
+			// File exists but contains non-array JSON — treat as corrupt
+			throw new BoxRuntimeException( "tasks.json exists but does not contain a JSON array; refusing to overwrite." );
+		} catch ( BoxRuntimeException e ) {
+			throw e;
 		} catch ( Exception e ) {
-			return new Array();
+			throw new BoxRuntimeException( "Failed to read tasks.json: " + e.getMessage(), e );
 		}
 	}
 
@@ -708,6 +704,7 @@ public class SchedulerService extends BaseService {
 			String	taskName	= attributes.getAsString( Key.task );
 			String	scheduler	= attributes.getAsString( Key.scheduler );
 
+			String	encKey	= getOrCreateEncryptionKey();
 			IStruct taskDef = Struct.ofNonConcurrent(
 			    "task", taskName,
 			    "scheduler", scheduler,
@@ -722,12 +719,12 @@ public class SchedulerService extends BaseService {
 			    "repeat", attributes.getAsInteger( Key.repeat ),
 			    "exclude", attributes.getAsString( Key.exclude ),
 			    "port", attributes.getAsInteger( Key.port ),
-			    "username", attributes.getAsString( Key.username ),
-			    "password", attributes.getAsString( Key.password ),
+			    "username", encryptCredential( attributes.getAsString( Key.username ), encKey ),
+			    "password", encryptCredential( attributes.getAsString( Key.password ), encKey ),
 			    "proxyServer", attributes.getAsString( Key.proxyServer ),
 			    "proxyPort", attributes.getAsInteger( Key.proxyPort ),
-			    "proxyUser", attributes.getAsString( Key.proxyUser ),
-			    "proxyPassword", attributes.getAsString( Key.proxyPassword ),
+			    "proxyUser", encryptCredential( attributes.getAsString( Key.proxyUser ), encKey ),
+			    "proxyPassword", encryptCredential( attributes.getAsString( Key.proxyPassword ), encKey ),
 			    "publish", BooleanCaster.cast( attributes.getOrDefault( Key.publish, false ) ),
 			    "path", attributes.getAsString( Key.path ),
 			    "file", attributes.getAsString( Key.file ),
@@ -827,6 +824,76 @@ public class SchedulerService extends BaseService {
 				}
 			}
 			saveTasksToDisk( tasks );
+		}
+	}
+
+	/**
+	 * Returns the AES encryption key used to protect task credentials in tasks.json,
+	 * generating and persisting a new key on first use.
+	 *
+	 * @return Base64-encoded AES-256 key string.
+	 */
+	private String getOrCreateEncryptionKey() {
+		if ( tasksEncryptionKey != null ) {
+			return tasksEncryptionKey;
+		}
+		synchronized ( tasksFileLock ) {
+			if ( tasksEncryptionKey != null ) {
+				return tasksEncryptionKey;
+			}
+			Path keyFile = runtime.getRuntimeHome().resolve( "config/.tasks.key" );
+			if ( Files.exists( keyFile ) ) {
+				try {
+					tasksEncryptionKey = new String( Files.readAllBytes( keyFile ), java.nio.charset.StandardCharsets.UTF_8 ).trim();
+				} catch ( Exception e ) {
+					throw new BoxRuntimeException( "Failed to read tasks encryption key: " + e.getMessage(), e );
+				}
+			} else {
+				tasksEncryptionKey = EncryptionUtil.generateKeyAsString();
+				try {
+					FileSystemUtil.write( keyFile.toString(), tasksEncryptionKey, "UTF-8", true );
+				} catch ( Exception e ) {
+					throw new BoxRuntimeException( "Failed to write tasks encryption key: " + e.getMessage(), e );
+				}
+			}
+			return tasksEncryptionKey;
+		}
+	}
+
+	/**
+	 * Encrypts a credential value using the tasks AES key.
+	 * Returns an empty string if the value is null or blank.
+	 *
+	 * @param value  The plaintext credential.
+	 * @param encKey The AES key string from {@link #getOrCreateEncryptionKey()}.
+	 *
+	 * @return Encrypted Base64-encoded string, or empty string.
+	 */
+	private String encryptCredential( String value, String encKey ) {
+		if ( value == null || value.isBlank() ) {
+			return "";
+		}
+		return EncryptionUtil.encrypt( value, EncryptionUtil.DEFAULT_ENCRYPTION_ALGORITHM, encKey, EncryptionUtil.DEFAULT_ENCRYPTION_ENCODING, null, null );
+	}
+
+	/**
+	 * Decrypts the credential fields (username, password, proxyUser, proxyPassword) in a
+	 * persisted task definition struct in-place, so callers receive plaintext values.
+	 *
+	 * @param taskDef The task definition struct loaded from disk.
+	 */
+	private void decryptTaskCredentials( IStruct taskDef ) {
+		String encKey = getOrCreateEncryptionKey();
+		for ( Key credKey : new Key[] { Key.username, Key.password, Key.proxyUser, Key.proxyPassword } ) {
+			String encrypted = taskDef.getAsString( credKey );
+			if ( encrypted != null && !encrypted.isBlank() ) {
+				try {
+					taskDef.put( credKey, ( String ) EncryptionUtil.decrypt( encrypted, EncryptionUtil.DEFAULT_ENCRYPTION_ALGORITHM, encKey, EncryptionUtil.DEFAULT_ENCRYPTION_ENCODING, null, null ) );
+				} catch ( Exception e ) {
+					this.logger.warn( "Failed to decrypt credential [{}] for task [{}] — using empty value: {}", credKey.getName(), taskDef.getAsString( Key.task ), e.getMessage() );
+					taskDef.put( credKey, "" );
+				}
+			}
 		}
 	}
 

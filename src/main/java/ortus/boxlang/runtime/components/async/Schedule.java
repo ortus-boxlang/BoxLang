@@ -246,17 +246,6 @@ public class Schedule extends Component {
 		String	interval		= attributes.getAsString( Key.interval );
 		String	cronTime		= attributes.getAsString( Key.cronTime );
 		boolean	isDaily			= BooleanCaster.cast( attributes.getOrDefault( Key.isDaily, false ) );
-		String	startDate		= attributes.getAsString( Key.startDate );
-		String	startTime		= attributes.getAsString( Key.startTime );
-		String	endDate			= attributes.getAsString( Key.endDate );
-		String	endTime			= attributes.getAsString( Key.endTime );
-		Integer	repeat			= attributes.getAsInteger( Key.repeat );
-		String	exclude			= attributes.getAsString( Key.exclude );
-		String	onException		= attributes.getAsString( Key.onException );
-		String	onComplete		= attributes.getAsString( Key.onComplete );
-		String	eventHandler	= attributes.getAsString( Key.eventHandler );
-		Integer	retryCount		= attributes.getAsInteger( Key.retryCount );
-		boolean	cluster			= BooleanCaster.cast( attributes.getOrDefault( Key.cluster, false ) );
 
 		// Validate required attributes
 		if ( url == null || url.isBlank() ) {
@@ -278,83 +267,9 @@ public class Schedule extends Component {
 		// Build the HTTP callable
 		Runnable callable = buildTaskCallable( context, attributes );
 
-		// Register task
+		// Register task and apply full configuration
 		ScheduledTask task = scheduler.task( taskName, group ).call( callable );
-
-		// Apply scheduling
-		if ( cronTime != null && !cronTime.isBlank() ) {
-			task.cron( cronTime );
-		} else if ( isDaily || "daily".equalsIgnoreCase( interval ) ) {
-			try {
-				if ( startTime != null && !startTime.isBlank() ) {
-					task.everyDayAt( startTime );
-				} else {
-					task.everyDay();
-				}
-			} catch ( Exception e ) {
-				throw new BoxRuntimeException( "Failed to apply daily scheduling: " + e.getMessage(), e );
-			}
-		} else {
-			applyInterval( task, interval, startDate, startTime, endDate, endTime );
-		}
-
-		// Apply date constraints for non-daily, non-cron schedules
-		if ( cronTime == null && !isDaily && !"daily".equalsIgnoreCase( interval ) ) {
-			try {
-				if ( startDate != null && !startDate.isBlank() ) {
-					task.startOn( startDate, startTime != null ? startTime : "00:00" );
-				}
-				if ( endDate != null && !endDate.isBlank() ) {
-					task.endOn( endDate, endTime != null ? endTime : "00:00" );
-				}
-			} catch ( Exception e ) {
-				throw new BoxRuntimeException( "Failed to apply date constraints: " + e.getMessage(), e );
-			}
-		}
-
-		// Apply repeat limit
-		if ( repeat != null && repeat > 0 ) {
-			final int			maxRuns		= repeat;
-			AtomicInteger		runCount	= new AtomicInteger( 0 );
-			final ScheduledTask	finalTask	= task;
-			final Runnable		original	= callable;
-			task.call( () -> {
-				original.run();
-				if ( runCount.incrementAndGet() >= maxRuns ) {
-					finalTask.disable();
-				}
-			} );
-		}
-
-		// Apply exclude dates predicate
-		if ( exclude != null && !exclude.isBlank() ) {
-			final List<String> excludeList = Arrays.asList( exclude.split( "," ) );
-			task.when( t -> !isExcludedDate( t.getNow(), excludeList ) );
-		}
-
-		// Wire onFailure callback based on onException attribute
-		if ( "pause".equalsIgnoreCase( onException ) ) {
-			task.onFailure( ( t, e ) -> t.disable() );
-		} else if ( "invokeHandler".equalsIgnoreCase( onException ) && eventHandler != null && !eventHandler.isBlank() ) {
-			final String		handler			= eventHandler;
-			final IBoxContext	runtimeContext	= runtime.getRuntimeContext();
-			task.onFailure( ( t, ex ) -> httpGet( handler, null, runtimeContext ) );
-		}
-
-		// Wire after callback for oncomplete
-		if ( onComplete != null && !onComplete.isBlank() ) {
-			final String		completeUrl		= onComplete;
-			final IBoxContext	runtimeContext	= runtime.getRuntimeContext();
-			task.after( ( t, result ) -> httpGet( completeUrl, null, runtimeContext ) );
-		}
-
-		// Store metadata
-		task.setMetaKey( "retryCount", retryCount );
-		task.setMetaKey( "cluster", cluster );
-		task.setMetaKey( "onException", onException );
-		task.setMetaKey( "eventhandler", eventHandler );
-		task.setMetaKey( "oncomplete", onComplete );
-		task.setMetaKey( "url", url );
+		applyTaskConfiguration( task, callable, attributes, runtime.getRuntimeContext() );
 
 		// Start the task if the scheduler is already running
 		if ( scheduler.hasStarted() ) {
@@ -588,6 +503,111 @@ public class Schedule extends Component {
 			throw new BoxRuntimeException( "Scheduler [" + name + "] is not a managed schedule scheduler" );
 		}
 		return ( BaseScheduler ) schedulerObj;
+	}
+
+	/**
+	 * Build a {@link Runnable} that performs an HTTP GET request to the configured URL.
+	 * Captures the runtime context (not the request context) for long-lived use.
+	 */
+	/**
+	 * Apply the full task configuration (scheduling, callbacks, metadata) to an already-registered
+	 * {@link ScheduledTask}. Used by both {@code doUpdate} and {@code registerPersistedScheduleTasks}
+	 * so a reloaded task is configured identically to a freshly-created one.
+	 *
+	 * @param task           The task to configure.
+	 * @param callable       The callable already assigned to the task (needed for the repeat wrapper).
+	 * @param taskDef        Struct of task fields — accepts both live attribute structs and persisted JSON structs.
+	 * @param runtimeContext The runtime context used for HTTP callbacks.
+	 */
+	public static void applyTaskConfiguration( ScheduledTask task, Runnable callable, IStruct taskDef, IBoxContext runtimeContext ) {
+		String	cronTime	= taskDef.getAsString( Key.cronTime );
+		String	interval	= taskDef.getAsString( Key.interval );
+		boolean	isDaily		= BooleanCaster.cast( taskDef.getOrDefault( Key.isDaily, false ) );
+		String	startDate	= taskDef.getAsString( Key.startDate );
+		String	startTime	= taskDef.getAsString( Key.startTime );
+		String	endDate		= taskDef.getAsString( Key.endDate );
+		String	endTime		= taskDef.getAsString( Key.endTime );
+		Integer	repeat		= taskDef.getAsInteger( Key.repeat );
+		String	exclude		= taskDef.getAsString( Key.exclude );
+		String	onException	= taskDef.getAsString( Key.onException );
+		String	onComplete	= taskDef.getAsString( Key.onComplete );
+		String	eventHandler = taskDef.getAsString( Key.eventHandler );
+		Integer	retryCount	= taskDef.getAsInteger( Key.retryCount );
+		boolean	cluster		= BooleanCaster.cast( taskDef.getOrDefault( Key.cluster, false ) );
+		String	url			= taskDef.getAsString( Key.URL );
+
+		// Apply scheduling
+		if ( cronTime != null && !cronTime.isBlank() ) {
+			task.cron( cronTime );
+		} else if ( isDaily || "daily".equalsIgnoreCase( interval ) ) {
+			try {
+				if ( startTime != null && !startTime.isBlank() ) {
+					task.everyDayAt( startTime );
+				} else {
+					task.everyDay();
+				}
+			} catch ( Exception e ) {
+				throw new BoxRuntimeException( "Failed to apply daily scheduling: " + e.getMessage(), e );
+			}
+		} else if ( interval != null && !interval.isBlank() ) {
+			applyInterval( task, interval, startDate, startTime, endDate, endTime );
+		}
+
+		// Apply date constraints for non-daily, non-cron schedules
+		if ( cronTime == null && !isDaily && !"daily".equalsIgnoreCase( interval ) ) {
+			try {
+				if ( startDate != null && !startDate.isBlank() ) {
+					task.startOn( startDate, startTime != null ? startTime : "00:00" );
+				}
+				if ( endDate != null && !endDate.isBlank() ) {
+					task.endOn( endDate, endTime != null ? endTime : "00:00" );
+				}
+			} catch ( Exception e ) {
+				throw new BoxRuntimeException( "Failed to apply date constraints: " + e.getMessage(), e );
+			}
+		}
+
+		// Apply repeat limit
+		if ( repeat != null && repeat > 0 ) {
+			final int			maxRuns		= repeat;
+			AtomicInteger		runCount	= new AtomicInteger( 0 );
+			final ScheduledTask	finalTask	= task;
+			final Runnable		original	= callable;
+			task.call( () -> {
+				original.run();
+				if ( runCount.incrementAndGet() >= maxRuns ) {
+					finalTask.disable();
+				}
+			} );
+		}
+
+		// Apply exclude dates predicate
+		if ( exclude != null && !exclude.isBlank() ) {
+			final List<String> excludeList = Arrays.asList( exclude.split( "," ) );
+			task.when( t -> !isExcludedDate( t.getNow(), excludeList ) );
+		}
+
+		// Wire onFailure callback based on onException
+		if ( "pause".equalsIgnoreCase( onException ) ) {
+			task.onFailure( ( t, e ) -> t.disable() );
+		} else if ( "invokeHandler".equalsIgnoreCase( onException ) && eventHandler != null && !eventHandler.isBlank() ) {
+			final String handler = eventHandler;
+			task.onFailure( ( t, ex ) -> httpGet( handler, null, runtimeContext ) );
+		}
+
+		// Wire after callback for oncomplete
+		if ( onComplete != null && !onComplete.isBlank() ) {
+			final String completeUrl = onComplete;
+			task.after( ( t, result ) -> httpGet( completeUrl, null, runtimeContext ) );
+		}
+
+		// Store metadata
+		task.setMetaKey( "retryCount", retryCount );
+		task.setMetaKey( "cluster", cluster );
+		task.setMetaKey( "onException", onException );
+		task.setMetaKey( "eventhandler", eventHandler );
+		task.setMetaKey( "oncomplete", onComplete );
+		task.setMetaKey( "url", url );
 	}
 
 	/**

@@ -1577,8 +1577,10 @@ public class ScheduledTask implements Runnable {
 
 		ortus.boxlang.runtime.async.CronExpression cronExpr = ortus.boxlang.runtime.async.CronExpression.parse( expression );
 
-		long		pollPeriod		= cronExpr.isSecondsField() ? 1L : 60L;
-		TimeUnit	pollUnit		= cronExpr.isSecondsField() ? TimeUnit.SECONDS : TimeUnit.MINUTES;
+		// Poll every 1 s for second-level crons, every 60 s (1 min) for minute-level crons.
+		// Both use SECONDS so the when-predicate is evaluated at the correct granularity.
+		long		pollPeriod	= cronExpr.isSecondsField() ? 1L : 60L;
+		TimeUnit	pollUnit	= TimeUnit.SECONDS;
 		long		initialDelayMs	= cronExpr.nextFireDelayMillis( this.getTimezone() );
 
 		this.setMetaKey( "cronExpression", expression );
