@@ -75,7 +75,7 @@ public class LoggingServiceTest {
 		Key				loggerKey		= Key.of( "testcategorylogger" );
 		LoggerConfig	loggerConfig	= new LoggerConfig( loggerKey, loggingConfig );
 		loggerConfig.categories.add( "com.test.category.package" );
-		LoggerConfig	previousConfig	= ( LoggerConfig ) loggingConfig.loggers.get( loggerKey );
+		LoggerConfig previousConfig = ( LoggerConfig ) loggingConfig.loggers.get( loggerKey );
 		loggingConfig.loggers.put( loggerKey, loggerConfig );
 
 		try {
