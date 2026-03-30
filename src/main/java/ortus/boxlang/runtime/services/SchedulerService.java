@@ -828,10 +828,11 @@ public class SchedulerService extends BaseService {
 	}
 
 	/**
-	 * Returns the AES encryption key used to protect task credentials in tasks.json,
-	 * generating and persisting a new key on first use.
+	 * Returns the AES encryption key used to protect task credentials in tasks.json.
+	 * Reads the runtime seed from {@code ${boxLangHome}/config/.seed}, which BoxRuntime
+	 * auto-generates on first startup — no separate key file needed.
 	 *
-	 * @return Base64-encoded AES-256 key string.
+	 * @return Base64-encoded AES key string.
 	 */
 	private String getOrCreateEncryptionKey() {
 		if ( tasksEncryptionKey != null ) {
@@ -841,20 +842,11 @@ public class SchedulerService extends BaseService {
 			if ( tasksEncryptionKey != null ) {
 				return tasksEncryptionKey;
 			}
-			Path keyFile = runtime.getRuntimeHome().resolve( "config/.tasks.key" );
-			if ( Files.exists( keyFile ) ) {
-				try {
-					tasksEncryptionKey = new String( Files.readAllBytes( keyFile ), java.nio.charset.StandardCharsets.UTF_8 ).trim();
-				} catch ( Exception e ) {
-					throw new BoxRuntimeException( "Failed to read tasks encryption key: " + e.getMessage(), e );
-				}
-			} else {
-				tasksEncryptionKey = EncryptionUtil.generateKeyAsString();
-				try {
-					FileSystemUtil.write( keyFile.toString(), tasksEncryptionKey, "UTF-8", true );
-				} catch ( Exception e ) {
-					throw new BoxRuntimeException( "Failed to write tasks encryption key: " + e.getMessage(), e );
-				}
+			Path seedPath = runtime.getRuntimeHome().resolve( "config/.seed" );
+			try {
+				tasksEncryptionKey = new String( Files.readAllBytes( seedPath ), java.nio.charset.StandardCharsets.UTF_8 ).trim();
+			} catch ( Exception e ) {
+				throw new BoxRuntimeException( "Failed to read runtime seed for task credential encryption: " + e.getMessage(), e );
 			}
 			return tasksEncryptionKey;
 		}
