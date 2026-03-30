@@ -65,8 +65,6 @@ import ortus.boxlang.runtime.validation.Validator;
  *
  * @attribute.url          The URL to request when the task fires (required for create/update/modify).
  *
- * @attribute.operation    The type of operation. Must be "HTTPRequest" (the only supported mode).
- *
  * @attribute.interval     Scheduling interval: "once", "daily", "weekly", "monthly", or seconds (>=60).
  *
  * @attribute.isDaily      Shorthand for interval="daily".
@@ -109,17 +107,11 @@ import ortus.boxlang.runtime.validation.Validator;
  *
  * @attribute.resolveURL   If true, resolve relative URLs in the response output.
  *
- * @attribute.priority     Task priority 1-10. Stored as metadata. Defaults to 5.
- *
  * @attribute.retryCount   Number of retries on failure 0-3. Stored as metadata. Defaults to 3.
- *
- * @attribute.mode         "server" or "application". Used to scope list/pauseall/resumeall. Defaults to "server".
  *
  * @attribute.onException  How to handle task exceptions: "refire", "pause", or "invokeHandler".
  *
  * @attribute.oncomplete   URL/path to invoke on task completion (success or failure).
- *
- * @attribute.onMisfire    Misfire policy stored as metadata.
  *
  * @attribute.eventhandler URL/path invoked when onException="invokeHandler".
  *
@@ -154,7 +146,6 @@ public class Schedule extends Component {
 		    new Attribute( Key.scheduler, "string", DEFAULT_SCHEDULER_NAME ),
 		    new Attribute( Key.group, "string", "" ),
 		    new Attribute( Key.URL, "string" ),
-		    new Attribute( Key.operation, "string", "HTTPRequest" ),
 		    new Attribute( Key.interval, "string" ),
 		    new Attribute( Key.isDaily, "boolean", false ),
 		    new Attribute( Key.cronTime, "string" ),
@@ -176,16 +167,11 @@ public class Schedule extends Component {
 		    new Attribute( Key.file, "string" ),
 		    new Attribute( Key.overwrite, "boolean", true ),
 		    new Attribute( Key.resolveUrl, "boolean", false ),
-		    new Attribute( Key.priority, "integer", 5 ),
 		    new Attribute( Key.retryCount, "integer", 3 ),
-		    new Attribute( Key.mode, "string", "server", Set.of(
-		        Validator.valueOneOf( "server", "application" )
-		    ) ),
 		    new Attribute( Key.onException, "string", "refire", Set.of(
 		        Validator.valueOneOf( "refire", "pause", "invokeHandler" )
 		    ) ),
 		    new Attribute( Key.onComplete, "string" ),
-		    new Attribute( Key.onMisfire, "string" ),
 		    new Attribute( Key.eventHandler, "string" ),
 		    new Attribute( Key.cluster, "boolean", false ),
 		    new Attribute( Key.result, "string" )
@@ -266,14 +252,10 @@ public class Schedule extends Component {
 		String	endTime			= attributes.getAsString( Key.endTime );
 		Integer	repeat			= attributes.getAsInteger( Key.repeat );
 		String	exclude			= attributes.getAsString( Key.exclude );
-		String	operation		= attributes.getAsString( Key.operation );
 		String	onException		= attributes.getAsString( Key.onException );
 		String	onComplete		= attributes.getAsString( Key.onComplete );
 		String	eventHandler	= attributes.getAsString( Key.eventHandler );
-		String	onMisfire		= attributes.getAsString( Key.onMisfire );
-		Integer	priority		= attributes.getAsInteger( Key.priority );
 		Integer	retryCount		= attributes.getAsInteger( Key.retryCount );
-		String	mode			= attributes.getAsString( Key.mode );
 		boolean	cluster			= BooleanCaster.cast( attributes.getOrDefault( Key.cluster, false ) );
 
 		// Validate required attributes
@@ -283,10 +265,6 @@ public class Schedule extends Component {
 
 		if ( cronTime == null && interval == null && !isDaily ) {
 			throw new BoxRuntimeException( "Either [interval], [cronTime], or [isDaily=true] is required for schedule action [update]" );
-		}
-
-		if ( operation != null && !operation.equalsIgnoreCase( "HTTPRequest" ) ) {
-			throw new BoxRuntimeException( "The [operation] attribute must be 'HTTPRequest'. Got: " + operation );
 		}
 
 		// Get or create scheduler
@@ -371,11 +349,8 @@ public class Schedule extends Component {
 		}
 
 		// Store metadata
-		task.setMetaKey( "priority", priority );
 		task.setMetaKey( "retryCount", retryCount );
-		task.setMetaKey( "mode", mode );
 		task.setMetaKey( "cluster", cluster );
-		task.setMetaKey( "onMisfire", onMisfire );
 		task.setMetaKey( "onException", onException );
 		task.setMetaKey( "eventhandler", eventHandler );
 		task.setMetaKey( "oncomplete", onComplete );
@@ -471,7 +446,6 @@ public class Schedule extends Component {
 	private void doList( IBoxContext context, IStruct attributes ) {
 		String			schedulerName	= attributes.getAsString( Key.scheduler );
 		String			resultVar		= attributes.getAsString( Key.result );
-		String			mode			= attributes.getAsString( Key.mode );
 		String			group			= attributes.getAsString( Key.group );
 
 		Array			taskList		= new Array();
@@ -488,13 +462,6 @@ public class Schedule extends Component {
 					// Filter by group if specified
 					if ( group != null && !group.isBlank() && !group.equals( record.group ) ) {
 						continue;
-					}
-					// Filter by mode if application-scoped
-					if ( "application".equalsIgnoreCase( mode ) ) {
-						Object taskMode = record.task.getMeta().get( Key.mode );
-						if ( taskMode == null || !"application".equalsIgnoreCase( taskMode.toString() ) ) {
-							continue;
-						}
 					}
 					taskList.add( buildTaskStruct( record ) );
 				}
@@ -519,7 +486,6 @@ public class Schedule extends Component {
 	private void doPauseAll( IBoxContext context, IStruct attributes ) {
 		String			schedulerName	= attributes.getAsString( Key.scheduler );
 		String			group			= attributes.getAsString( Key.group );
-		String			mode			= attributes.getAsString( Key.mode );
 
 		SchedulerService	svc				= runtime.getSchedulerService();
 		Key					schedulerKey	= Key.of( schedulerName );
@@ -532,17 +498,16 @@ public class Schedule extends Component {
 
 		BaseScheduler scheduler = ( BaseScheduler ) schedulerObj;
 
-		SchedulerService svcRef = runtime.getSchedulerService();
 		for ( TaskRecord record : scheduler.getTasks().values() ) {
-			if ( shouldIncludeTask( record, group, mode ) ) {
+			if ( shouldIncludeTask( record, group ) ) {
 				record.task.disable();
 				record.disabled = true;
 				if ( record.future != null ) {
 					record.future.cancel( false );
 				}
-				svcRef.updateTaskPausedState( record.name, schedulerName, true );
 			}
 		}
+		svc.updateAllTasksPausedState( schedulerName, group, null, true );
 	}
 
 	/**
@@ -551,7 +516,6 @@ public class Schedule extends Component {
 	private void doResumeAll( IBoxContext context, IStruct attributes ) {
 		String			schedulerName	= attributes.getAsString( Key.scheduler );
 		String			group			= attributes.getAsString( Key.group );
-		String			mode			= attributes.getAsString( Key.mode );
 
 		SchedulerService	svc				= runtime.getSchedulerService();
 		Key					schedulerKey	= Key.of( schedulerName );
@@ -565,14 +529,14 @@ public class Schedule extends Component {
 		BaseScheduler scheduler = ( BaseScheduler ) schedulerObj;
 
 		for ( TaskRecord record : scheduler.getTasks().values() ) {
-			if ( shouldIncludeTask( record, group, mode ) ) {
+			if ( shouldIncludeTask( record, group ) ) {
 				record.task.enable();
 				record.disabled		= false;
 				record.scheduledAt	= null;
 				scheduler.startupTask( record.name );
-				svc.updateTaskPausedState( record.name, schedulerName, false );
 			}
 		}
+		svc.updateAllTasksPausedState( schedulerName, group, null, false );
 	}
 
 	// --------------------------------------------------------------------------
@@ -783,15 +747,9 @@ public class Schedule extends Component {
 	/**
 	 * Check if a task record should be included in group/mode filtering.
 	 */
-	private boolean shouldIncludeTask( TaskRecord record, String group, String mode ) {
+	private boolean shouldIncludeTask( TaskRecord record, String group ) {
 		if ( group != null && !group.isBlank() && !group.equals( record.group ) ) {
 			return false;
-		}
-		if ( "application".equalsIgnoreCase( mode ) ) {
-			Object taskMode = record.task.getMeta().get( Key.mode );
-			if ( taskMode == null || !"application".equalsIgnoreCase( taskMode.toString() ) ) {
-				return false;
-			}
 		}
 		return true;
 	}
@@ -807,9 +765,7 @@ public class Schedule extends Component {
 		    "disabled", record.disabled,
 		    "url", meta.getOrDefault( Key.url, "" ),
 		    "cronTime", meta.getOrDefault( Key.cronExpression, "" ),
-		    "priority", meta.getOrDefault( Key.priority, 5 ),
 		    "retryCount", meta.getOrDefault( Key.retryCount, 3 ),
-		    "mode", meta.getOrDefault( Key.mode, "server" ),
 		    "scheduledAt", record.scheduledAt,
 		    "registeredAt", record.registeredAt,
 		    "error", record.error,
