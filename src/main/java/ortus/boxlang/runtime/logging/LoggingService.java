@@ -801,7 +801,11 @@ public class LoggingService {
 		if ( !loggerConfig.categories.isEmpty() ) {
 			Appender<ILoggingEvent> categoryAppender = getOrBuildAppender( loggerFilePath, targetContext, loggerConfig );
 			for ( String category : loggerConfig.categories ) {
-				Logger categoryLogger = targetContext.getLogger( category );
+				String trimmedCategory = category.trim();
+				if ( trimmedCategory.isEmpty() ) {
+					continue;
+				}
+				Logger categoryLogger = targetContext.getLogger( trimmedCategory );
 				categoryLogger.setLevel( configLevel );
 				categoryLogger.setAdditive( false );
 				categoryLogger.addAppender( categoryAppender );
