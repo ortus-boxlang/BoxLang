@@ -24,8 +24,11 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.LoggerContext;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.config.segments.LoggerConfig;
+import ortus.boxlang.runtime.scopes.Key;
 
 public class LoggingServiceTest {
 
@@ -54,6 +57,43 @@ public class LoggingServiceTest {
 	public void testLoggingServiceLog() {
 		// assert it doesn't fail
 		assertDoesNotThrow( () -> loggingService.logMessage( "This is a test message" ) );
+	}
+
+	@DisplayName( "Blackhole logger is initialized and has level OFF" )
+	@Test
+	public void testBlackholeLoggerIsOff() {
+		assertThat( loggingService.BLACKHOLE_LOGGER ).isNotNull();
+		ch.qos.logback.classic.Logger backingLogger = loggingService.getLoggerContext().getLogger( "BLACKHOLE" );
+		assertThat( backingLogger.getLevel() ).isEqualTo( Level.OFF );
+	}
+
+	@DisplayName( "Categories in a logger config are wired to the same appender" )
+	@Test
+	public void testLoggerCategoriesWiring() {
+		// Register a test logger config with a category before requesting the logger
+		var				loggingConfig	= runtime.getConfiguration().logging;
+		Key				loggerKey		= Key.of( "testcategorylogger" );
+		LoggerConfig	loggerConfig	= new LoggerConfig( loggerKey, loggingConfig );
+		loggerConfig.categories.add( "com.test.category.package" );
+		LoggerConfig	previousConfig	= ( LoggerConfig ) loggingConfig.loggers.get( loggerKey );
+		loggingConfig.loggers.put( loggerKey, loggerConfig );
+
+		try {
+			// Requesting the logger triggers createLogger() which wires the categories
+			loggingService.getLogger( "testcategorylogger" );
+
+			// The Logback logger for the category should now have the named logger's appender attached
+			ch.qos.logback.classic.Logger categoryLogger = loggingService.getLoggerContext().getLogger( "com.test.category.package" );
+			assertThat( categoryLogger ).isNotNull();
+			assertThat( categoryLogger.getAppender( "testcategorylogger" ) ).isNotNull();
+			assertThat( categoryLogger.isAdditive() ).isFalse();
+		} finally {
+			if ( previousConfig != null ) {
+				loggingConfig.loggers.put( loggerKey, previousConfig );
+			} else {
+				loggingConfig.loggers.remove( loggerKey );
+			}
+		}
 	}
 
 }
