@@ -795,11 +795,28 @@ public class LoggingService {
 		// Seed the properties
 		oLogger.setLevel( configLevel );
 		oLogger.setAdditive( loggerConfig.additive );
-		oLogger.addAppender( getOrBuildAppender( loggerFilePath, targetContext, loggerConfig ) );
 
-		// Wire category loggers: redirect each named Java package/class to this logger's appender
-		if ( !loggerConfig.categories.isEmpty() ) {
-			Appender<ILoggingEvent> categoryAppender = getOrBuildAppender( loggerFilePath, targetContext, loggerConfig );
+		// Only build/attach appenders when the logger is not effectively disabled
+		if ( configLevel != Level.OFF ) {
+			Appender<ILoggingEvent> loggerAppender = getOrBuildAppender( loggerFilePath, targetContext, loggerConfig );
+			oLogger.addAppender( loggerAppender );
+
+			// Wire category loggers: redirect each named Java package/class to this logger's appender
+			if ( !loggerConfig.categories.isEmpty() ) {
+				for ( String category : loggerConfig.categories ) {
+					String trimmedCategory = category.trim();
+					if ( trimmedCategory.isEmpty() ) {
+						continue;
+					}
+					Logger categoryLogger = targetContext.getLogger( trimmedCategory );
+					categoryLogger.setLevel( configLevel );
+					categoryLogger.setAdditive( false );
+					categoryLogger.addAppender( loggerAppender );
+				}
+			}
+		} else {
+			// For OFF-level loggers, avoid creating/starting appenders entirely.
+			// Still configure category loggers to be OFF and non-additive so they don't propagate to parents.
 			for ( String category : loggerConfig.categories ) {
 				String trimmedCategory = category.trim();
 				if ( trimmedCategory.isEmpty() ) {
@@ -808,7 +825,6 @@ public class LoggingService {
 				Logger categoryLogger = targetContext.getLogger( trimmedCategory );
 				categoryLogger.setLevel( configLevel );
 				categoryLogger.setAdditive( false );
-				categoryLogger.addAppender( categoryAppender );
 			}
 		}
 

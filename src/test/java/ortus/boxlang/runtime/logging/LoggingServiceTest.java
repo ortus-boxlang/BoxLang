@@ -75,16 +75,25 @@ public class LoggingServiceTest {
 		Key				loggerKey		= Key.of( "testcategorylogger" );
 		LoggerConfig	loggerConfig	= new LoggerConfig( loggerKey, loggingConfig );
 		loggerConfig.categories.add( "com.test.category.package" );
+		LoggerConfig	previousConfig	= ( LoggerConfig ) loggingConfig.loggers.get( loggerKey );
 		loggingConfig.loggers.put( loggerKey, loggerConfig );
 
-		// Requesting the logger triggers createLogger() which wires the categories
-		loggingService.getLogger( "testcategorylogger" );
+		try {
+			// Requesting the logger triggers createLogger() which wires the categories
+			loggingService.getLogger( "testcategorylogger" );
 
-		// The Logback logger for the category should now have the named logger's appender attached
-		ch.qos.logback.classic.Logger categoryLogger = loggingService.getLoggerContext().getLogger( "com.test.category.package" );
-		assertThat( categoryLogger ).isNotNull();
-		assertThat( categoryLogger.getAppender( "testcategorylogger" ) ).isNotNull();
-		assertThat( categoryLogger.isAdditive() ).isFalse();
+			// The Logback logger for the category should now have the named logger's appender attached
+			ch.qos.logback.classic.Logger categoryLogger = loggingService.getLoggerContext().getLogger( "com.test.category.package" );
+			assertThat( categoryLogger ).isNotNull();
+			assertThat( categoryLogger.getAppender( "testcategorylogger" ) ).isNotNull();
+			assertThat( categoryLogger.isAdditive() ).isFalse();
+		} finally {
+			if ( previousConfig != null ) {
+				loggingConfig.loggers.put( loggerKey, previousConfig );
+			} else {
+				loggingConfig.loggers.remove( loggerKey );
+			}
+		}
 	}
 
 }
