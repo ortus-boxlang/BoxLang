@@ -76,6 +76,48 @@ class CronExpressionTest {
 		assertThrows( BoxRuntimeException.class, () -> CronExpression.parse( "* * * *" ) );  // 4 fields
 	}
 
+	@DisplayName( "It throws on step value of zero" )
+	@Test
+	public void testStepZeroThrows() {
+		assertThrows( BoxRuntimeException.class, () -> CronExpression.parse( "*/0 * * * *" ) );
+	}
+
+	@DisplayName( "It throws on step value less than zero" )
+	@Test
+	public void testStepNegativeThrows() {
+		assertThrows( BoxRuntimeException.class, () -> CronExpression.parse( "*/-1 * * * *" ) );
+	}
+
+	@DisplayName( "It throws on minute value out of range" )
+	@Test
+	public void testMinuteOutOfRangeThrows() {
+		assertThrows( BoxRuntimeException.class, () -> CronExpression.parse( "60 * * * *" ) );
+	}
+
+	@DisplayName( "It throws on hour value out of range" )
+	@Test
+	public void testHourOutOfRangeThrows() {
+		assertThrows( BoxRuntimeException.class, () -> CronExpression.parse( "* 24 * * *" ) );
+	}
+
+	@DisplayName( "It throws on range start greater than end" )
+	@Test
+	public void testRangeStartGreaterThanEndThrows() {
+		assertThrows( BoxRuntimeException.class, () -> CronExpression.parse( "* 17-9 * * *" ) );
+	}
+
+	@DisplayName( "It throws on range value out of bounds" )
+	@Test
+	public void testRangeOutOfBoundsThrows() {
+		assertThrows( BoxRuntimeException.class, () -> CronExpression.parse( "* 0-25 * * *" ) );
+	}
+
+	@DisplayName( "It throws on step base start out of bounds" )
+	@Test
+	public void testStepBaseOutOfBoundsThrows() {
+		assertThrows( BoxRuntimeException.class, () -> CronExpression.parse( "70/5 * * * *" ) );
+	}
+
 	// --------------------------------------------------------------------------
 	// matches() tests
 	// --------------------------------------------------------------------------

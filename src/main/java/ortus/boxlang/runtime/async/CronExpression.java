@@ -355,6 +355,9 @@ public class CronExpression {
 						throw new BoxRuntimeException( "Invalid step expression: " + part );
 					}
 					int	stepVal	= Integer.parseInt( stepParts[ 1 ] );
+					if ( stepVal <= 0 ) {
+						throw new BoxRuntimeException( "Step value must be greater than zero in cron field: " + part );
+					}
 					int	start;
 					if ( stepParts[ 0 ].equals( "*" ) ) {
 						start = min;
@@ -362,12 +365,14 @@ public class CronExpression {
 						String[] rangeParts = stepParts[ 0 ].split( "-" );
 						start = resolveValue( rangeParts[ 0 ], nameMap );
 						int end = resolveValue( rangeParts[ 1 ], nameMap );
+						validateRange( start, end, min, max, part );
 						for ( int i = start; i <= end; i += stepVal ) {
 							result.add( i );
 						}
 						continue;
 					} else {
 						start = resolveValue( stepParts[ 0 ], nameMap );
+						validateValue( start, min, max, part );
 					}
 					for ( int i = start; i <= max; i += stepVal ) {
 						result.add( i );
@@ -380,6 +385,7 @@ public class CronExpression {
 					}
 					int	rangeStart	= resolveValue( rangeParts[ 0 ], nameMap );
 					int	rangeEnd	= resolveValue( rangeParts[ 1 ], nameMap );
+					validateRange( rangeStart, rangeEnd, min, max, part );
 					for ( int i = rangeStart; i <= rangeEnd; i++ ) {
 						result.add( i );
 					}
@@ -389,6 +395,7 @@ public class CronExpression {
 					if ( val == 7 && max == 6 ) {
 						val = 0; // 7 is an alias for SUN (0)
 					}
+					validateValue( val, min, max, part );
 					result.add( val );
 				}
 			}
@@ -403,6 +410,24 @@ public class CronExpression {
 					return mapped;
 			}
 			return Integer.parseInt( token );
+		}
+
+		private static void validateValue( int value, int min, int max, String context ) {
+			if ( value < min || value > max ) {
+				throw new BoxRuntimeException(
+				    "Value " + value + " is out of range [" + min + "," + max + "] in cron field: " + context
+				);
+			}
+		}
+
+		private static void validateRange( int start, int end, int min, int max, String context ) {
+			if ( start > end ) {
+				throw new BoxRuntimeException(
+				    "Range start " + start + " is greater than end " + end + " in cron field: " + context
+				);
+			}
+			validateValue( start, min, max, context );
+			validateValue( end, min, max, context );
 		}
 
 		boolean matches( int value ) {
