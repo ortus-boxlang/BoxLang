@@ -46,7 +46,6 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.JSONUtil;
-import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.validation.Validator;
 
 /**
@@ -134,12 +133,7 @@ public class Schedule extends Component {
 	/**
 	 * The default scheduler name used when none is specified.
 	 */
-	public static final String		DEFAULT_SCHEDULER_NAME	= "bxschedule";
-
-	/**
-	 * Lock object for thread-safe tasks.json access.
-	 */
-	private static final Object		TASKS_FILE_LOCK			= new Object();
+	public static final String		DEFAULT_SCHEDULER_NAME	= SchedulerService.DEFAULT_SCHEDULER_NAME;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -393,7 +387,7 @@ public class Schedule extends Component {
 		}
 
 		// Persist to disk
-		persistTask( attributes );
+		runtime.getSchedulerService().persistTask( attributes );
 	}
 
 	/**
@@ -409,7 +403,7 @@ public class Schedule extends Component {
 		}
 
 		scheduler.removeTask( taskName );
-		removeTaskFromDisk( taskName, schedulerName );
+		runtime.getSchedulerService().removeTaskFromDisk( taskName, schedulerName );
 	}
 
 	/**
@@ -447,7 +441,7 @@ public class Schedule extends Component {
 			record.future.cancel( false );
 		}
 
-		updateTaskPausedState( taskName, schedulerName, true );
+		runtime.getSchedulerService().updateTaskPausedState( taskName, schedulerName, true );
 	}
 
 	/**
@@ -468,7 +462,7 @@ public class Schedule extends Component {
 		record.scheduledAt	= null; // Reset so startupTask will re-schedule it
 		scheduler.startupTask( taskName );
 
-		updateTaskPausedState( taskName, schedulerName, false );
+		runtime.getSchedulerService().updateTaskPausedState( taskName, schedulerName, false );
 	}
 
 	/**
@@ -538,6 +532,7 @@ public class Schedule extends Component {
 
 		BaseScheduler scheduler = ( BaseScheduler ) schedulerObj;
 
+		SchedulerService svcRef = runtime.getSchedulerService();
 		for ( TaskRecord record : scheduler.getTasks().values() ) {
 			if ( shouldIncludeTask( record, group, mode ) ) {
 				record.task.disable();
@@ -545,7 +540,7 @@ public class Schedule extends Component {
 				if ( record.future != null ) {
 					record.future.cancel( false );
 				}
-				updateTaskPausedState( record.name, schedulerName, true );
+				svcRef.updateTaskPausedState( record.name, schedulerName, true );
 			}
 		}
 	}
@@ -575,7 +570,7 @@ public class Schedule extends Component {
 				record.disabled		= false;
 				record.scheduledAt	= null;
 				scheduler.startupTask( record.name );
-				updateTaskPausedState( record.name, schedulerName, false );
+				svc.updateTaskPausedState( record.name, schedulerName, false );
 			}
 		}
 	}
@@ -822,161 +817,4 @@ public class Schedule extends Component {
 		);
 	}
 
-	// --------------------------------------------------------------------------
-	// Persistence helpers
-	// --------------------------------------------------------------------------
-
-	/**
-	 * Load the persisted task array from disk.
-	 */
-	public static Array loadTasksFromDisk() {
-		Path tasksFile = ortus.boxlang.runtime.BoxRuntime.getInstance().getRuntimeHome().resolve( "config/tasks.json" );
-		if ( !Files.exists( tasksFile ) ) {
-			return new Array();
-		}
-		try {
-			Object parsed = JSONUtil.fromJSON( tasksFile.toFile(), true );
-			if ( parsed instanceof Array ) {
-				return ( Array ) parsed;
-			}
-			return new Array();
-		} catch ( Exception e ) {
-			return new Array();
-		}
-	}
-
-	/**
-	 * Save the task array to disk.
-	 */
-	public static void saveTasksToDisk( Array tasks ) {
-		Path tasksFile = ortus.boxlang.runtime.BoxRuntime.getInstance().getRuntimeHome().resolve( "config/tasks.json" );
-		try {
-			String json = JSONUtil.getJSONBuilder( true ).asString( tasks );
-			FileSystemUtil.write( tasksFile.toString(), json, "UTF-8", true );
-		} catch ( Exception e ) {
-			throw new BoxRuntimeException( "Failed to persist tasks to disk: " + e.getMessage(), e );
-		}
-	}
-
-	/**
-	 * Persist (upsert) a task definition to tasks.json based on its attributes.
-	 */
-	private void persistTask( IStruct attributes ) {
-		synchronized ( TASKS_FILE_LOCK ) {
-			Array	tasks		= loadTasksFromDisk();
-			String	taskName	= attributes.getAsString( Key.task );
-			String	scheduler	= attributes.getAsString( Key.scheduler );
-
-			// Build the task definition struct
-			IStruct taskDef = Struct.ofNonConcurrent(
-			    "task", taskName,
-			    "scheduler", scheduler,
-			    "group", attributes.getAsString( Key.group ),
-			    "url", attributes.getAsString( Key.URL ),
-			    "interval", attributes.getAsString( Key.interval ),
-			    "cronTime", attributes.getAsString( Key.cronTime ),
-			    "startDate", attributes.getAsString( Key.startDate ),
-			    "startTime", attributes.getAsString( Key.startTime ),
-			    "endDate", attributes.getAsString( Key.endDate ),
-			    "endTime", attributes.getAsString( Key.endTime ),
-			    "repeat", attributes.getAsInteger( Key.repeat ),
-			    "exclude", attributes.getAsString( Key.exclude ),
-			    "port", attributes.getAsInteger( Key.port ),
-			    "username", attributes.getAsString( Key.username ),
-			    "password", attributes.getAsString( Key.password ),
-			    "proxyServer", attributes.getAsString( Key.proxyServer ),
-			    "proxyPort", attributes.getAsInteger( Key.proxyPort ),
-			    "proxyUser", attributes.getAsString( Key.proxyUser ),
-			    "proxyPassword", attributes.getAsString( Key.proxyPassword ),
-			    "publish", BooleanCaster.cast( attributes.getOrDefault( Key.publish, false ) ),
-			    "path", attributes.getAsString( Key.path ),
-			    "file", attributes.getAsString( Key.file ),
-			    "overwrite", BooleanCaster.cast( attributes.getOrDefault( Key.overwrite, true ) ),
-			    "resolveURL", BooleanCaster.cast( attributes.getOrDefault( Key.resolveUrl, false ) ),
-			    "priority", attributes.getAsInteger( Key.priority ),
-			    "retryCount", attributes.getAsInteger( Key.retryCount ),
-			    "mode", attributes.getAsString( Key.mode ),
-			    "onException", attributes.getAsString( Key.onException ),
-			    "oncomplete", attributes.getAsString( Key.onComplete ),
-			    "onMisfire", attributes.getAsString( Key.onMisfire ),
-			    "eventhandler", attributes.getAsString( Key.eventHandler ),
-			    "cluster", BooleanCaster.cast( attributes.getOrDefault( Key.cluster, false ) ),
-			    "isDaily", BooleanCaster.cast( attributes.getOrDefault( Key.isDaily, false ) ),
-			    "paused", false
-			);
-
-			// Upsert: remove existing entry with same task + scheduler
-			tasks.removeIf( entry -> {
-				if ( entry instanceof IStruct ) {
-					IStruct existing = ( IStruct ) entry;
-					return taskName.equals( existing.getAsString( Key.task ) )
-					    && scheduler.equals( existing.getAsString( Key.scheduler ) );
-				}
-				return false;
-			} );
-			tasks.add( taskDef );
-
-			saveTasksToDisk( tasks );
-		}
-	}
-
-	/**
-	 * Remove a task from tasks.json.
-	 */
-	private void removeTaskFromDisk( String taskName, String schedulerName ) {
-		synchronized ( TASKS_FILE_LOCK ) {
-			Array tasks = loadTasksFromDisk();
-			tasks.removeIf( entry -> {
-				if ( entry instanceof IStruct ) {
-					IStruct existing = ( IStruct ) entry;
-					return taskName.equals( existing.getAsString( Key.task ) )
-					    && schedulerName.equals( existing.getAsString( Key.scheduler ) );
-				}
-				return false;
-			} );
-			saveTasksToDisk( tasks );
-		}
-	}
-
-	/**
-	 * Update the paused flag for a task in tasks.json.
-	 */
-	private void updateTaskPausedState( String taskName, String schedulerName, boolean paused ) {
-		synchronized ( TASKS_FILE_LOCK ) {
-			Array tasks = loadTasksFromDisk();
-			for ( Object entry : tasks ) {
-				if ( entry instanceof IStruct ) {
-					IStruct existing = ( IStruct ) entry;
-					if ( taskName.equals( existing.getAsString( Key.task ) )
-					    && schedulerName.equals( existing.getAsString( Key.scheduler ) ) ) {
-						existing.put( Key.of( "paused" ), paused );
-						break;
-					}
-				}
-			}
-			saveTasksToDisk( tasks );
-		}
-	}
-
-	/**
-	 * Update the paused flag for all tasks in a given scheduler in tasks.json.
-	 */
-	public static void updateAllTasksPausedState( String schedulerName, String group, String mode, boolean paused ) {
-		synchronized ( TASKS_FILE_LOCK ) {
-			Array tasks = loadTasksFromDisk();
-			for ( Object entry : tasks ) {
-				if ( entry instanceof IStruct ) {
-					IStruct existing = ( IStruct ) entry;
-					if ( !schedulerName.equals( existing.getAsString( Key.scheduler ) ) ) {
-						continue;
-					}
-					if ( group != null && !group.isBlank() && !group.equals( existing.getAsString( Key.group ) ) ) {
-						continue;
-					}
-					existing.put( Key.of( "paused" ), paused );
-				}
-			}
-			saveTasksToDisk( tasks );
-		}
-	}
 }

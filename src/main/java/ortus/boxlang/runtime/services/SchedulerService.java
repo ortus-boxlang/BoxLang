@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.services;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
@@ -27,6 +28,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.tasks.BoxScheduler;
 import ortus.boxlang.runtime.async.tasks.IScheduler;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
@@ -39,6 +41,8 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.BLCollector;
+import ortus.boxlang.runtime.types.util.JSONUtil;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
@@ -58,6 +62,11 @@ public class SchedulerService extends BaseService {
 	public static final long		DEFAULT_SHUTDOWN_TIMEOUT	= 30;
 
 	/**
+	 * The default scheduler name used by the bx:schedule component when none is specified.
+	 */
+	public static final String		DEFAULT_SCHEDULER_NAME		= "bxschedule";
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Private Variables
 	 * --------------------------------------------------------------------------
@@ -72,6 +81,11 @@ public class SchedulerService extends BaseService {
 	 * The logger for this service
 	 */
 	private BoxLangLogger			logger;
+
+	/**
+	 * Lock object for thread-safe tasks.json access.
+	 */
+	private final Object			tasksFileLock				= new Object();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -173,8 +187,8 @@ public class SchedulerService extends BaseService {
 
 		this.logger.info( "+ Loading persisted schedule tasks from [{}]", tasksFile );
 
-		ortus.boxlang.runtime.types.Array	tasks			= ortus.boxlang.runtime.components.async.Schedule.loadTasksFromDisk();
-		IBoxContext							runtimeContext	= runtime.getRuntimeContext();
+		Array		tasks			= loadTasksFromDisk();
+		IBoxContext	runtimeContext	= runtime.getRuntimeContext();
 
 		for ( Object entry : tasks ) {
 			if ( !( entry instanceof IStruct ) ) {
@@ -188,14 +202,14 @@ public class SchedulerService extends BaseService {
 			Object schedulerField = taskDef.get( Key.of( "scheduler" ) );
 			String schedulerName = schedulerField != null ? schedulerField.toString() : null;
 			if ( schedulerName == null || schedulerName.isBlank() ) {
-				schedulerName = ortus.boxlang.runtime.components.async.Schedule.DEFAULT_SCHEDULER_NAME;
+				schedulerName = DEFAULT_SCHEDULER_NAME;
 			}
 			if ( taskName == null || taskName.isBlank() ) {
 				this.logger.warn( "Skipping persisted task with no name" );
 				continue;
 			}
 
-			boolean paused = ortus.boxlang.runtime.dynamic.casters.BooleanCaster.cast( taskDef.getOrDefault( Key.of( "paused" ), false ) );
+			boolean paused = BooleanCaster.cast( taskDef.getOrDefault( Key.of( "paused" ), false ) );
 
 			// Get or create the named scheduler (register only — startup happens later via startupRegisteredSchedulers)
 			Key schedulerKey = Key.of( schedulerName );
@@ -208,6 +222,7 @@ public class SchedulerService extends BaseService {
 			// Build callable
 			Runnable callable = ortus.boxlang.runtime.components.async.Schedule.buildTaskCallable( runtimeContext, taskDef );
 
+
 			// Register the task
 			String	group			= taskDef.getAsString( Key.group );
 			ortus.boxlang.runtime.async.tasks.ScheduledTask scheduledTask = scheduler.task( taskName, group != null ? group : "" ).call( callable );
@@ -215,7 +230,7 @@ public class SchedulerService extends BaseService {
 			// Apply scheduling: cron or interval
 			String	cronTime	= taskDef.getAsString( Key.cronTime );
 			String	interval	= taskDef.getAsString( Key.interval );
-			boolean	isDaily		= ortus.boxlang.runtime.dynamic.casters.BooleanCaster.cast( taskDef.getOrDefault( Key.isDaily, false ) );
+			boolean	isDaily		= BooleanCaster.cast( taskDef.getOrDefault( Key.isDaily, false ) );
 
 			if ( cronTime != null && !cronTime.isBlank() ) {
 				scheduledTask.cron( cronTime );
@@ -232,14 +247,11 @@ public class SchedulerService extends BaseService {
 				}
 			} else if ( interval != null && !interval.isBlank() ) {
 				try {
-					ortus.boxlang.runtime.components.async.Schedule.applyInterval(
-					    scheduledTask,
-					    interval,
+					ortus.boxlang.runtime.components.async.Schedule.applyInterval( scheduledTask, interval,
 					    taskDef.getAsString( Key.startDate ),
 					    taskDef.getAsString( Key.startTime ),
 					    taskDef.getAsString( Key.endDate ),
-					    taskDef.getAsString( Key.endTime )
-					);
+					    taskDef.getAsString( Key.endTime ) );
 				} catch ( Exception e ) {
 					this.logger.error( "Failed to apply interval for persisted task [{}]: {}", taskName, e.getMessage() );
 				}
@@ -641,6 +653,184 @@ public class SchedulerService extends BaseService {
 	 */
 	public void shutdownScheduler( Key scheduler, boolean force, long timeout ) {
 		shutdownScheduler( getSchedulerOrFail( scheduler ), force, timeout );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Task Persistence Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Load the persisted task array from {@code ${boxLangHome}/config/tasks.json}.
+	 *
+	 * @return The array of persisted task definition structs, or an empty array if none exist.
+	 */
+	public Array loadTasksFromDisk() {
+		Path tasksFile = runtime.getRuntimeHome().resolve( "config/tasks.json" );
+		if ( !Files.exists( tasksFile ) ) {
+			return new Array();
+		}
+		try {
+			Object parsed = JSONUtil.fromJSON( tasksFile.toFile(), true );
+			if ( parsed instanceof Array ) {
+				return ( Array ) parsed;
+			}
+			return new Array();
+		} catch ( Exception e ) {
+			return new Array();
+		}
+	}
+
+	/**
+	 * Save the task array to {@code ${boxLangHome}/config/tasks.json}.
+	 *
+	 * @param tasks The array of task definition structs to persist.
+	 */
+	public void saveTasksToDisk( Array tasks ) {
+		Path tasksFile = runtime.getRuntimeHome().resolve( "config/tasks.json" );
+		try {
+			String json = JSONUtil.getJSONBuilder( true ).asString( tasks );
+			FileSystemUtil.write( tasksFile.toString(), json, "UTF-8", true );
+		} catch ( Exception e ) {
+			throw new BoxRuntimeException( "Failed to persist tasks to disk: " + e.getMessage(), e );
+		}
+	}
+
+	/**
+	 * Persist (upsert) a task definition to tasks.json based on its component attributes.
+	 *
+	 * @param attributes The component attribute struct containing the task definition fields.
+	 */
+	public void persistTask( IStruct attributes ) {
+		synchronized ( tasksFileLock ) {
+			Array	tasks		= loadTasksFromDisk();
+			String	taskName	= attributes.getAsString( Key.task );
+			String	scheduler	= attributes.getAsString( Key.scheduler );
+
+			IStruct taskDef = Struct.ofNonConcurrent(
+			    "task", taskName,
+			    "scheduler", scheduler,
+			    "group", attributes.getAsString( Key.group ),
+			    "url", attributes.getAsString( Key.URL ),
+			    "interval", attributes.getAsString( Key.interval ),
+			    "cronTime", attributes.getAsString( Key.cronTime ),
+			    "startDate", attributes.getAsString( Key.startDate ),
+			    "startTime", attributes.getAsString( Key.startTime ),
+			    "endDate", attributes.getAsString( Key.endDate ),
+			    "endTime", attributes.getAsString( Key.endTime ),
+			    "repeat", attributes.getAsInteger( Key.repeat ),
+			    "exclude", attributes.getAsString( Key.exclude ),
+			    "port", attributes.getAsInteger( Key.port ),
+			    "username", attributes.getAsString( Key.username ),
+			    "password", attributes.getAsString( Key.password ),
+			    "proxyServer", attributes.getAsString( Key.proxyServer ),
+			    "proxyPort", attributes.getAsInteger( Key.proxyPort ),
+			    "proxyUser", attributes.getAsString( Key.proxyUser ),
+			    "proxyPassword", attributes.getAsString( Key.proxyPassword ),
+			    "publish", BooleanCaster.cast( attributes.getOrDefault( Key.publish, false ) ),
+			    "path", attributes.getAsString( Key.path ),
+			    "file", attributes.getAsString( Key.file ),
+			    "overwrite", BooleanCaster.cast( attributes.getOrDefault( Key.overwrite, true ) ),
+			    "resolveURL", BooleanCaster.cast( attributes.getOrDefault( Key.resolveUrl, false ) ),
+			    "priority", attributes.getAsInteger( Key.priority ),
+			    "retryCount", attributes.getAsInteger( Key.retryCount ),
+			    "mode", attributes.getAsString( Key.mode ),
+			    "onException", attributes.getAsString( Key.onException ),
+			    "oncomplete", attributes.getAsString( Key.onComplete ),
+			    "onMisfire", attributes.getAsString( Key.onMisfire ),
+			    "eventhandler", attributes.getAsString( Key.eventHandler ),
+			    "cluster", BooleanCaster.cast( attributes.getOrDefault( Key.cluster, false ) ),
+			    "isDaily", BooleanCaster.cast( attributes.getOrDefault( Key.isDaily, false ) ),
+			    "paused", false
+			);
+
+			// Upsert: remove existing entry with same task + scheduler
+			tasks.removeIf( entry -> {
+				if ( entry instanceof IStruct ) {
+					IStruct existing = ( IStruct ) entry;
+					return taskName.equals( existing.getAsString( Key.task ) )
+					    && scheduler.equals( existing.getAsString( Key.scheduler ) );
+				}
+				return false;
+			} );
+			tasks.add( taskDef );
+
+			saveTasksToDisk( tasks );
+		}
+	}
+
+	/**
+	 * Remove a task from tasks.json.
+	 *
+	 * @param taskName      The name of the task to remove.
+	 * @param schedulerName The name of the scheduler the task belongs to.
+	 */
+	public void removeTaskFromDisk( String taskName, String schedulerName ) {
+		synchronized ( tasksFileLock ) {
+			Array tasks = loadTasksFromDisk();
+			tasks.removeIf( entry -> {
+				if ( entry instanceof IStruct ) {
+					IStruct existing = ( IStruct ) entry;
+					return taskName.equals( existing.getAsString( Key.task ) )
+					    && schedulerName.equals( existing.getAsString( Key.scheduler ) );
+				}
+				return false;
+			} );
+			saveTasksToDisk( tasks );
+		}
+	}
+
+	/**
+	 * Update the paused flag for a single task in tasks.json.
+	 *
+	 * @param taskName      The name of the task.
+	 * @param schedulerName The name of the scheduler the task belongs to.
+	 * @param paused        The new paused state.
+	 */
+	public void updateTaskPausedState( String taskName, String schedulerName, boolean paused ) {
+		synchronized ( tasksFileLock ) {
+			Array tasks = loadTasksFromDisk();
+			for ( Object entry : tasks ) {
+				if ( entry instanceof IStruct ) {
+					IStruct existing = ( IStruct ) entry;
+					if ( taskName.equals( existing.getAsString( Key.task ) )
+					    && schedulerName.equals( existing.getAsString( Key.scheduler ) ) ) {
+						existing.put( Key.of( "paused" ), paused );
+						break;
+					}
+				}
+			}
+			saveTasksToDisk( tasks );
+		}
+	}
+
+	/**
+	 * Update the paused flag for all tasks in a given scheduler in tasks.json.
+	 * Optionally filter by group.
+	 *
+	 * @param schedulerName The name of the scheduler.
+	 * @param group         Optional group filter; pass null or blank to match all groups.
+	 * @param mode          Reserved for future mode filtering; currently unused.
+	 * @param paused        The new paused state.
+	 */
+	public void updateAllTasksPausedState( String schedulerName, String group, String mode, boolean paused ) {
+		synchronized ( tasksFileLock ) {
+			Array tasks = loadTasksFromDisk();
+			for ( Object entry : tasks ) {
+				if ( entry instanceof IStruct ) {
+					IStruct existing = ( IStruct ) entry;
+					if ( !schedulerName.equals( existing.getAsString( Key.scheduler ) ) ) {
+						continue;
+					}
+					if ( group != null && !group.isBlank() && !group.equals( existing.getAsString( Key.group ) ) ) {
+						continue;
+					}
+					existing.put( Key.of( "paused" ), paused );
+				}
+			}
+			saveTasksToDisk( tasks );
+		}
 	}
 
 }
