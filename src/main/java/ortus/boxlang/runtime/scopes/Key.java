@@ -251,6 +251,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		createObject						= Key.of( "createObject" );
 	public static final Key		createPath							= Key.of( "createPath" );
 	public static final Key		cronTime							= Key.of( "cronTime" );
+	public static final Key		cronExpression						= Key.of( "cronExpression" );
 	public static final Key		currentRow							= Key.of( "currentRow" );
 	public static final Key		customComponentName					= Key.of( "customComponentName" );
 	public static final Key		customComponentPath					= Key.of( "customComponentPath" );
@@ -701,6 +702,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		path_info							= Key.of( "path_info" );
 	public static final Key		path_translated						= Key.of( "path_translated" );
 	public static final Key		pattern								= Key.of( "pattern" );
+	public static final Key		paused								= Key.of( "paused" );
 	public static final Key		pendingQuery						= Key.of( "pendingQuery" );
 	public static final Key		persisent							= Key.of( "persisent" );
 	public static final Key		pid									= Key.of( "pid" );
@@ -955,6 +957,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		updateCounts						= Key.of( "updateCounts" );
 	public static final Key		upload								= Key.of( "upload" );
 	public static final Key		uploadAll							= Key.of( "uploadAll" );
+	public static final Key		url									= Key.of( "url" );
 	public static final Key		URL									= Key.of( "URL" );
 	public static final Key		urlToken							= Key.of( "urlToken" );
 	public static final Key		US									= Key.of( "US" );

@@ -199,7 +199,7 @@ public class SchedulerService extends BaseService {
 			String	taskName		= taskDef.getAsString( Key.task );
 
 			// Get the scheduler name from the task definition
-			Object schedulerField = taskDef.get( Key.of( "scheduler" ) );
+			Object schedulerField = taskDef.get( Key.scheduler );
 			String schedulerName = schedulerField != null ? schedulerField.toString() : null;
 			if ( schedulerName == null || schedulerName.isBlank() ) {
 				schedulerName = DEFAULT_SCHEDULER_NAME;
@@ -209,7 +209,7 @@ public class SchedulerService extends BaseService {
 				continue;
 			}
 
-			boolean paused = BooleanCaster.cast( taskDef.getOrDefault( Key.of( "paused" ), false ) );
+			boolean paused = BooleanCaster.cast( taskDef.getOrDefault( Key.paused, false ) );
 
 			// Get or create the named scheduler (register only — startup happens later via startupRegisteredSchedulers)
 			Key schedulerKey = Key.of( schedulerName );
@@ -796,7 +796,7 @@ public class SchedulerService extends BaseService {
 					IStruct existing = ( IStruct ) entry;
 					if ( taskName.equals( existing.getAsString( Key.task ) )
 					    && schedulerName.equals( existing.getAsString( Key.scheduler ) ) ) {
-						existing.put( Key.of( "paused" ), paused );
+						existing.put( Key.paused, paused );
 						break;
 					}
 				}
@@ -826,7 +826,7 @@ public class SchedulerService extends BaseService {
 					if ( group != null && !group.isBlank() && !group.equals( existing.getAsString( Key.group ) ) ) {
 						continue;
 					}
-					existing.put( Key.of( "paused" ), paused );
+					existing.put( Key.paused, paused );
 				}
 			}
 			saveTasksToDisk( tasks );

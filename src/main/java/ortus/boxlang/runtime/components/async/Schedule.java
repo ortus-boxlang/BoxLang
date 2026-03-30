@@ -491,7 +491,7 @@ public class Schedule extends Component {
 					}
 					// Filter by mode if application-scoped
 					if ( "application".equalsIgnoreCase( mode ) ) {
-						Object taskMode = record.task.getMeta().get( Key.of( "mode" ) );
+						Object taskMode = record.task.getMeta().get( Key.mode );
 						if ( taskMode == null || !"application".equalsIgnoreCase( taskMode.toString() ) ) {
 							continue;
 						}
@@ -685,7 +685,7 @@ public class Schedule extends Component {
 	private static void handlePublish( IStruct response, String path, String file, boolean overwrite ) {
 		try {
 			String content		= "";
-			Object fileContent	= response.get( Key.of( "fileContent" ) );
+			Object fileContent	= response.get( Key.fileContent );
 			if ( fileContent != null ) {
 				content = fileContent.toString();
 			}
@@ -788,7 +788,7 @@ public class Schedule extends Component {
 			return false;
 		}
 		if ( "application".equalsIgnoreCase( mode ) ) {
-			Object taskMode = record.task.getMeta().get( Key.of( "mode" ) );
+			Object taskMode = record.task.getMeta().get( Key.mode );
 			if ( taskMode == null || !"application".equalsIgnoreCase( taskMode.toString() ) ) {
 				return false;
 			}
@@ -805,11 +805,11 @@ public class Schedule extends Component {
 		    "name", record.name,
 		    "group", record.group,
 		    "disabled", record.disabled,
-		    "url", meta.getOrDefault( Key.of( "url" ), "" ),
-		    "cronTime", meta.getOrDefault( Key.of( "cronExpression" ), "" ),
-		    "priority", meta.getOrDefault( Key.of( "priority" ), 5 ),
-		    "retryCount", meta.getOrDefault( Key.of( "retryCount" ), 3 ),
-		    "mode", meta.getOrDefault( Key.of( "mode" ), "server" ),
+		    "url", meta.getOrDefault( Key.url, "" ),
+		    "cronTime", meta.getOrDefault( Key.cronExpression, "" ),
+		    "priority", meta.getOrDefault( Key.priority, 5 ),
+		    "retryCount", meta.getOrDefault( Key.retryCount, 3 ),
+		    "mode", meta.getOrDefault( Key.mode, "server" ),
 		    "scheduledAt", record.scheduledAt,
 		    "registeredAt", record.registeredAt,
 		    "error", record.error,
