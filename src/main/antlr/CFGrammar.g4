@@ -645,11 +645,11 @@ el2
     | el2 POWER el2                                                         # exprPower             // foo ^ bar
     | el2 op = (STAR | SLASH | PERCENT | MOD | BACKSLASH) el2               # exprMult              // foo * bar
     | el2 op = (PLUS | MINUS) el2                                           # exprAdd               // foo + bar
-    | el2 XOR el2                                                           # exprXor               // foo XOR bar
     | el2 AMPERSAND el2                                                     # exprCat               // foo & bar - string concatenation
     | el2 binOps el2                                                        # exprBinary            // foo eqv bar
     | el2 relOps el2                                                        # exprRelational        // foo > bar
     | el2 (EQ | EQUAL | EQEQ | IS) el2                                      # exprEqual             // foo == bar
+    | el2 XOR el2                                                           # exprXor               // foo XOR bar
     | el2 ELVIS el2                                                         # exprElvis             // Elvis operator
     | el2 DOES NOT CONTAIN el2                                              # exprNotContains       // foo DOES NOT CONTAIN bar
     | el2 (AND | AMPAMP) el2                                                # exprAnd               // foo AND bar
