@@ -126,7 +126,7 @@ public class ScheduleTest {
 		BaseScheduler scheduler = ( BaseScheduler ) svc.getScheduler( SCHEDULER_KEY );
 		assertThat( scheduler.hasTask( "cronTask" ) ).isTrue();
 		TaskRecord record = scheduler.getTaskRecord( "cronTask" );
-		assertThat( record.task.getMeta().get( Key.of( "cronExpression" ) ) ).isNotNull();
+		assertThat( record.task.getMeta().get( Key.cronExpression ) ).isNotNull();
 	}
 
 	@DisplayName( "It can create a task with interval=daily" )
@@ -559,7 +559,7 @@ public class ScheduleTest {
 		Path	tasksFile	= instance.getRuntimeHome().resolve( "config/tasks.json" );
 		assertThat( Files.exists( tasksFile ) ).isTrue();
 
-		Array tasks = Schedule.loadTasksFromDisk();
+		Array tasks = instance.getSchedulerService().loadTasksFromDisk();
 		assertThat( tasks.size() ).isAtLeast( 1 );
 		boolean found = tasks.stream().anyMatch( entry -> {
 			if ( entry instanceof IStruct ) {
@@ -583,7 +583,7 @@ public class ScheduleTest {
 		);
 		// @formatter:on
 
-		Array tasks = Schedule.loadTasksFromDisk();
+		Array tasks = instance.getSchedulerService().loadTasksFromDisk();
 		boolean found = tasks.stream().anyMatch( entry -> {
 			if ( entry instanceof IStruct ) {
 				return "removeFromDisk".equals( ( ( IStruct ) entry ).getAsString( Key.task ) );
@@ -606,10 +606,10 @@ public class ScheduleTest {
 		);
 		// @formatter:on
 
-		Array tasks = Schedule.loadTasksFromDisk();
+		Array tasks = instance.getSchedulerService().loadTasksFromDisk();
 		Object paused = tasks.stream()
 		    .filter( e -> e instanceof IStruct && "pauseFlag".equals( ( ( IStruct ) e ).getAsString( Key.task ) ) )
-		    .map( e -> ( ( IStruct ) e ).get( Key.of( "paused" ) ) )
+		    .map( e -> ( ( IStruct ) e ).get( Key.paused ) )
 		    .findFirst().orElse( null );
 		assertThat( paused ).isNotNull();
 		assertThat( paused.toString() ).isEqualTo( "true" );
@@ -629,10 +629,10 @@ public class ScheduleTest {
 		);
 		// @formatter:on
 
-		Array tasks = Schedule.loadTasksFromDisk();
+		Array tasks = instance.getSchedulerService().loadTasksFromDisk();
 		Object paused = tasks.stream()
 		    .filter( e -> e instanceof IStruct && "resumeFlag".equals( ( ( IStruct ) e ).getAsString( Key.task ) ) )
-		    .map( e -> ( ( IStruct ) e ).get( Key.of( "paused" ) ) )
+		    .map( e -> ( ( IStruct ) e ).get( Key.paused ) )
 		    .findFirst().orElse( null );
 		assertThat( paused ).isNotNull();
 		assertThat( paused.toString() ).isEqualTo( "false" );
