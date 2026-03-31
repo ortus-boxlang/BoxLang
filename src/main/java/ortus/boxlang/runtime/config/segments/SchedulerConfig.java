@@ -49,9 +49,11 @@ public class SchedulerConfig implements IConfigSegment {
 	public Array	schedulers	= new Array();
 
 	/**
-	 * The array of tasks to startup once the runtime starts up
+	 * The path to the JSON file where bx:schedule tasks are persisted.
+	 * Supports ${boxlang-home} and other placeholder variables.
+	 * Defaults to ${boxlang-home}/config/tasks.json.
 	 */
-	public Array	tasks		= new Array();
+	public String	tasksFile	= "${boxlang-home}/config/tasks.json";
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -77,7 +79,7 @@ public class SchedulerConfig implements IConfigSegment {
 		PropertyHelper.processString( config, Key.executor, this.executor );
 		PropertyHelper.processString( config, Key.cacheName, this.cacheName );
 		PropertyHelper.processStringOrArrayToArray( config, Key.schedulers, this.schedulers );
-		// TODO: Process tasks on next final release
+		this.tasksFile = PropertyHelper.processString( config, Key.tasksFile, this.tasksFile );
 
 		return this;
 	}
@@ -91,7 +93,7 @@ public class SchedulerConfig implements IConfigSegment {
 		    Key.executor, this.executor,
 		    Key.cacheName, this.cacheName,
 		    Key.schedulers, Array.fromList( this.schedulers ),
-		    Key.tasks, this.tasks
+		    Key.tasksFile, this.tasksFile
 		);
 	}
 

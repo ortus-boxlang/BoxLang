@@ -183,11 +183,11 @@ public class SchedulerService extends BaseService {
 	}
 
 	/**
-	 * Load persisted scheduled tasks from {@code ${boxLangHome}/config/tasks.json} and register them
+	 * Load persisted scheduled tasks from the configured {@code tasksFile} and register them
 	 * in their respective schedulers. This is called during startup before {@link #startupRegisteredSchedulers()}.
 	 */
 	public void registerPersistedScheduleTasks() {
-		java.nio.file.Path tasksFile = runtime.getRuntimeHome().resolve( "config/tasks.json" );
+		java.nio.file.Path tasksFile = getTasksFilePath();
 		if ( !java.nio.file.Files.exists( tasksFile ) ) {
 			return;
 		}
@@ -649,7 +649,15 @@ public class SchedulerService extends BaseService {
 	 */
 
 	/**
-	 * Load the persisted task array from {@code ${boxLangHome}/config/tasks.json}.
+	 * Returns the resolved {@link Path} for the tasks persistence file,
+	 * taken from {@code scheduler.tasksFile} in boxlang.json.
+	 */
+	private Path getTasksFilePath() {
+		return Paths.get( runtime.getConfiguration().scheduler.tasksFile );
+	}
+
+	/**
+	 * Load the persisted task array from the configured {@code tasksFile}.
 	 * Returns an empty array when the file does not yet exist.
 	 * Throws when the file exists but cannot be read or parsed, so callers that
 	 * would subsequently write back to disk do not overwrite a temporarily
@@ -660,7 +668,7 @@ public class SchedulerService extends BaseService {
 	 * @throws BoxRuntimeException if the file exists but cannot be read or parsed.
 	 */
 	public Array loadTasksFromDisk() {
-		Path tasksFile = runtime.getRuntimeHome().resolve( "config/tasks.json" );
+		Path tasksFile = getTasksFilePath();
 		if ( !Files.exists( tasksFile ) ) {
 			return new Array();
 		}
@@ -679,12 +687,12 @@ public class SchedulerService extends BaseService {
 	}
 
 	/**
-	 * Save the task array to {@code ${boxLangHome}/config/tasks.json}.
+	 * Save the task array to the configured {@code tasksFile}.
 	 *
 	 * @param tasks The array of task definition structs to persist.
 	 */
 	public void saveTasksToDisk( Array tasks ) {
-		Path tasksFile = runtime.getRuntimeHome().resolve( "config/tasks.json" );
+		Path tasksFile = getTasksFilePath();
 		try {
 			String json = JSONUtil.getJSONBuilder( true ).asString( tasks );
 			FileSystemUtil.write( tasksFile.toString(), json, "UTF-8", true );
