@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.components.async;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
@@ -36,7 +35,6 @@ import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.net.BoxHttpClient;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.HttpService;
@@ -55,69 +53,69 @@ import ortus.boxlang.runtime.validation.Validator;
  * Tasks are persisted to disk at {@code ${boxLangHome}/config/tasks.json} and automatically
  * reloaded when the runtime starts up.
  *
- * @attribute.action       The action to perform: create (new task, throws if exists), update/modify (create or overwrite), delete, run, pause, resume, list, pauseall, resumeall.
+ * @attribute.action The action to perform: create (new task, throws if exists), update/modify (create or overwrite), delete, run, pause, resume, list, pauseall, resumeall.
  *
- * @attribute.task         The name of the task (required for all actions except list/pauseall/resumeall).
+ * @attribute.task The name of the task (required for all actions except list/pauseall/resumeall).
  *
- * @attribute.scheduler    The name of the BoxLang scheduler to use. Defaults to "bxschedule".
+ * @attribute.scheduler The name of the BoxLang scheduler to use. Defaults to "bxschedule".
  *
- * @attribute.group        Task group name for organizational purposes.
+ * @attribute.group Task group name for organizational purposes.
  *
- * @attribute.url          The URL to request when the task fires (required for create/update/modify).
+ * @attribute.url The URL to request when the task fires (required for create/update/modify).
  *
- * @attribute.interval     Scheduling interval: "once", "daily", "weekly", "monthly", or seconds (>=60).
+ * @attribute.interval Scheduling interval: "once", "daily", "weekly", "monthly", or seconds (>=60).
  *
- * @attribute.isDaily      Shorthand for interval="daily".
+ * @attribute.isDaily Shorthand for interval="daily".
  *
- * @attribute.cronTime     A cron expression (5 or 6 fields). Mutually exclusive with interval.
+ * @attribute.cronTime A cron expression (5 or 6 fields). Mutually exclusive with interval.
  *
- * @attribute.startDate    Start date constraint (yyyy-mm-dd or similar parseable format).
+ * @attribute.startDate Start date constraint (yyyy-mm-dd or similar parseable format).
  *
- * @attribute.startTime    Start time (HH:mm).
+ * @attribute.startTime Start time (HH:mm).
  *
- * @attribute.endDate      End date constraint.
+ * @attribute.endDate End date constraint.
  *
- * @attribute.endTime      End time (HH:mm).
+ * @attribute.endTime End time (HH:mm).
  *
- * @attribute.repeat       Maximum number of executions before the task self-disables.
+ * @attribute.repeat Maximum number of executions before the task self-disables.
  *
- * @attribute.exclude      Comma-separated dates or date ranges to skip.
+ * @attribute.exclude Comma-separated dates or date ranges to skip.
  *
- * @attribute.port         HTTP port override for the URL. Defaults to 80.
+ * @attribute.port HTTP port override for the URL. Defaults to 80.
  *
- * @attribute.username     HTTP basic auth username.
+ * @attribute.username HTTP basic auth username.
  *
- * @attribute.password     HTTP basic auth password.
+ * @attribute.password HTTP basic auth password.
  *
- * @attribute.proxyServer  Proxy hostname.
+ * @attribute.proxyServer Proxy hostname.
  *
- * @attribute.proxyPort    Proxy port.
+ * @attribute.proxyPort Proxy port.
  *
- * @attribute.proxyUser    Proxy auth username.
+ * @attribute.proxyUser Proxy auth username.
  *
  * @attribute.proxyPassword Proxy auth password.
  *
- * @attribute.publish      If true, write the HTTP response body to a file.
+ * @attribute.publish If true, write the HTTP response body to a file.
  *
- * @attribute.path         Directory for the published output file.
+ * @attribute.path Directory for the published output file.
  *
- * @attribute.file         Output filename (required if publish=true).
+ * @attribute.file Output filename (required if publish=true).
  *
- * @attribute.overwrite    If true, overwrite an existing output file. Defaults to true.
+ * @attribute.overwrite If true, overwrite an existing output file. Defaults to true.
  *
- * @attribute.resolveURL   If true, resolve relative URLs in the response output.
+ * @attribute.resolveURL If true, resolve relative URLs in the response output.
  *
- * @attribute.retryCount   Number of retries on failure 0-3. Stored as metadata. Defaults to 3.
+ * @attribute.retryCount Number of retries on failure 0-3. Stored as metadata. Defaults to 3.
  *
- * @attribute.onException  How to handle task exceptions: "refire", "pause", or "invokeHandler".
+ * @attribute.onException How to handle task exceptions: "refire", "pause", or "invokeHandler".
  *
- * @attribute.oncomplete   URL/path to invoke on task completion (success or failure).
+ * @attribute.oncomplete URL/path to invoke on task completion (success or failure).
  *
  * @attribute.eventhandler URL/path invoked when onException="invokeHandler".
  *
- * @attribute.cluster      Cluster-aware flag stored as metadata.
+ * @attribute.cluster Cluster-aware flag stored as metadata.
  *
- * @attribute.result       Variable name to store list output in.
+ * @attribute.result Variable name to store list output in.
  */
 @BoxComponent( name = "schedule", allowsBody = false, description = "Manages scheduled tasks: create/update, delete, pause, resume, list, and run immediately via the BoxLang scheduler infrastructure." )
 public class Schedule extends Component {
@@ -125,7 +123,7 @@ public class Schedule extends Component {
 	/**
 	 * The default scheduler name used when none is specified.
 	 */
-	public static final String		DEFAULT_SCHEDULER_NAME	= SchedulerService.DEFAULT_SCHEDULER_NAME;
+	public static final String DEFAULT_SCHEDULER_NAME = SchedulerService.DEFAULT_SCHEDULER_NAME;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -233,7 +231,7 @@ public class Schedule extends Component {
 
 		// After any task-modifying action, ensure the scheduler is started.
 		// - New schedulers: startup() is called here after tasks have been registered, so the
-		//   executor is created with all tasks already in place.
+		// executor is created with all tasks already in place.
 		// - Already-running schedulers: startupScheduler() is a no-op (guards against double-start).
 		// - Read-only "list" action is excluded to avoid unintended side effects.
 		if ( !action.equals( "list" ) ) {
@@ -300,10 +298,10 @@ public class Schedule extends Component {
 		}
 
 		// Build the HTTP callable
-		Runnable callable = buildTaskCallable( context, attributes );
+		Runnable		callable	= buildTaskCallable( context, attributes );
 
 		// Register task and apply full configuration
-		ScheduledTask task = scheduler.task( taskName, group ).call( callable );
+		ScheduledTask	task		= scheduler.task( taskName, group ).call( callable );
 		applyTaskConfiguration( task, callable, attributes, runtime.getRuntimeContext() );
 
 		// Start the task if the scheduler is already running
@@ -394,11 +392,11 @@ public class Schedule extends Component {
 	 * List all tasks in a scheduler.
 	 */
 	private void doList( IBoxContext context, IStruct attributes ) {
-		String			schedulerName	= attributes.getAsString( Key.scheduler );
-		String			resultVar		= attributes.getAsString( Key.result );
-		String			group			= attributes.getAsString( Key.group );
+		String				schedulerName	= attributes.getAsString( Key.scheduler );
+		String				resultVar		= attributes.getAsString( Key.result );
+		String				group			= attributes.getAsString( Key.group );
 
-		Array			taskList		= new Array();
+		Array				taskList		= new Array();
 
 		// Only list if scheduler exists
 		SchedulerService	svc				= runtime.getSchedulerService();
@@ -434,8 +432,8 @@ public class Schedule extends Component {
 	 * Pause all tasks in a scheduler.
 	 */
 	private void doPauseAll( IBoxContext context, IStruct attributes ) {
-		String			schedulerName	= attributes.getAsString( Key.scheduler );
-		String			group			= attributes.getAsString( Key.group );
+		String				schedulerName	= attributes.getAsString( Key.scheduler );
+		String				group			= attributes.getAsString( Key.group );
 
 		SchedulerService	svc				= runtime.getSchedulerService();
 		Key					schedulerKey	= Key.of( schedulerName );
@@ -443,7 +441,7 @@ public class Schedule extends Component {
 		if ( !svc.hasScheduler( schedulerKey ) )
 			return;
 		Object schedulerObj = svc.getScheduler( schedulerKey );
-		if ( !( schedulerObj instanceof BaseScheduler ) )
+		if ( ! ( schedulerObj instanceof BaseScheduler ) )
 			return;
 
 		BaseScheduler scheduler = ( BaseScheduler ) schedulerObj;
@@ -464,8 +462,8 @@ public class Schedule extends Component {
 	 * Resume all tasks in a scheduler.
 	 */
 	private void doResumeAll( IBoxContext context, IStruct attributes ) {
-		String			schedulerName	= attributes.getAsString( Key.scheduler );
-		String			group			= attributes.getAsString( Key.group );
+		String				schedulerName	= attributes.getAsString( Key.scheduler );
+		String				group			= attributes.getAsString( Key.group );
 
 		SchedulerService	svc				= runtime.getSchedulerService();
 		Key					schedulerKey	= Key.of( schedulerName );
@@ -473,7 +471,7 @@ public class Schedule extends Component {
 		if ( !svc.hasScheduler( schedulerKey ) )
 			return;
 		Object schedulerObj = svc.getScheduler( schedulerKey );
-		if ( !( schedulerObj instanceof BaseScheduler ) )
+		if ( ! ( schedulerObj instanceof BaseScheduler ) )
 			return;
 
 		BaseScheduler scheduler = ( BaseScheduler ) schedulerObj;
@@ -537,7 +535,7 @@ public class Schedule extends Component {
 			throw new BoxRuntimeException( "Scheduler [" + name + "] does not exist" );
 		}
 		Object schedulerObj = svc.getScheduler( schedulerKey );
-		if ( !( schedulerObj instanceof BaseScheduler ) ) {
+		if ( ! ( schedulerObj instanceof BaseScheduler ) ) {
 			throw new BoxRuntimeException( "Scheduler [" + name + "] is not a managed schedule scheduler" );
 		}
 		return ( BaseScheduler ) schedulerObj;
@@ -558,21 +556,21 @@ public class Schedule extends Component {
 	 * @param runtimeContext The runtime context used for HTTP callbacks.
 	 */
 	public static void applyTaskConfiguration( ScheduledTask task, Runnable callable, IStruct taskDef, IBoxContext runtimeContext ) {
-		String	cronTime	= taskDef.getAsString( Key.cronTime );
-		String	interval	= taskDef.getAsString( Key.interval );
-		boolean	isDaily		= BooleanCaster.cast( taskDef.getOrDefault( Key.isDaily, false ) );
-		String	startDate	= taskDef.getAsString( Key.startDate );
-		String	startTime	= taskDef.getAsString( Key.startTime );
-		String	endDate		= taskDef.getAsString( Key.endDate );
-		String	endTime		= taskDef.getAsString( Key.endTime );
-		Integer	repeat		= taskDef.getAsInteger( Key.repeat );
-		String	exclude		= taskDef.getAsString( Key.exclude );
-		String	onException	= taskDef.getAsString( Key.onException );
-		String	onComplete	= taskDef.getAsString( Key.onComplete );
-		String	eventHandler = taskDef.getAsString( Key.eventHandler );
-		Integer	retryCount	= taskDef.getAsInteger( Key.retryCount );
-		boolean	cluster		= BooleanCaster.cast( taskDef.getOrDefault( Key.cluster, false ) );
-		String	url			= taskDef.getAsString( Key.URL );
+		String	cronTime		= taskDef.getAsString( Key.cronTime );
+		String	interval		= taskDef.getAsString( Key.interval );
+		boolean	isDaily			= BooleanCaster.cast( taskDef.getOrDefault( Key.isDaily, false ) );
+		String	startDate		= taskDef.getAsString( Key.startDate );
+		String	startTime		= taskDef.getAsString( Key.startTime );
+		String	endDate			= taskDef.getAsString( Key.endDate );
+		String	endTime			= taskDef.getAsString( Key.endTime );
+		Integer	repeat			= taskDef.getAsInteger( Key.repeat );
+		String	exclude			= taskDef.getAsString( Key.exclude );
+		String	onException		= taskDef.getAsString( Key.onException );
+		String	onComplete		= taskDef.getAsString( Key.onComplete );
+		String	eventHandler	= taskDef.getAsString( Key.eventHandler );
+		Integer	retryCount		= taskDef.getAsInteger( Key.retryCount );
+		boolean	cluster			= BooleanCaster.cast( taskDef.getOrDefault( Key.cluster, false ) );
+		String	url				= taskDef.getAsString( Key.URL );
 
 		// Apply scheduling
 		if ( cronTime != null && !cronTime.isBlank() ) {
@@ -653,18 +651,18 @@ public class Schedule extends Component {
 	 * Captures the runtime context (not the request context) for long-lived use.
 	 */
 	public static Runnable buildTaskCallable( IBoxContext context, IStruct attributes ) {
-		String	url				= attributes.getAsString( Key.URL );
-		Integer	port			= attributes.getAsInteger( Key.port );
-		String	username		= attributes.getAsString( Key.username );
-		String	password		= attributes.getAsString( Key.password );
-		String	proxyServer		= attributes.getAsString( Key.proxyServer );
-		Integer	proxyPort		= attributes.getAsInteger( Key.proxyPort );
-		String	proxyUser		= attributes.getAsString( Key.proxyUser );
-		String	proxyPass		= attributes.getAsString( Key.proxyPassword );
-		boolean	publish			= BooleanCaster.cast( attributes.getOrDefault( Key.publish, false ) );
-		String	path			= attributes.getAsString( Key.path );
-		String	file			= attributes.getAsString( Key.file );
-		boolean	overwrite		= BooleanCaster.cast( attributes.getOrDefault( Key.overwrite, true ) );
+		String								url				= attributes.getAsString( Key.URL );
+		Integer								port			= attributes.getAsInteger( Key.port );
+		String								username		= attributes.getAsString( Key.username );
+		String								password		= attributes.getAsString( Key.password );
+		String								proxyServer		= attributes.getAsString( Key.proxyServer );
+		Integer								proxyPort		= attributes.getAsInteger( Key.proxyPort );
+		String								proxyUser		= attributes.getAsString( Key.proxyUser );
+		String								proxyPass		= attributes.getAsString( Key.proxyPassword );
+		boolean								publish			= BooleanCaster.cast( attributes.getOrDefault( Key.publish, false ) );
+		String								path			= attributes.getAsString( Key.path );
+		String								file			= attributes.getAsString( Key.file );
+		boolean								overwrite		= BooleanCaster.cast( attributes.getOrDefault( Key.overwrite, true ) );
 
 		// Capture runtime context — NOT request context (request contexts are recycled per request)
 		ortus.boxlang.runtime.BoxRuntime	rt				= ortus.boxlang.runtime.BoxRuntime.getInstance();
@@ -672,7 +670,7 @@ public class Schedule extends Component {
 		HttpService							httpService		= rt.getHttpService();
 
 		return () -> {
-			BoxHttpClient client = httpService.getOrBuildClient(
+			BoxHttpClient	client	= httpService.getOrBuildClient(
 			    BoxHttpClient.HTTP_2,
 			    true,
 			    null,
@@ -684,7 +682,7 @@ public class Schedule extends Component {
 			    null
 			);
 
-			var request = client
+			var				request	= client
 			    .newRequest( url, runtimeContext )
 			    .method( "GET" )
 			    .port( port );
@@ -706,8 +704,8 @@ public class Schedule extends Component {
 	 */
 	private static void handlePublish( IStruct response, String path, String file, boolean overwrite ) {
 		try {
-			String content		= "";
-			Object fileContent	= response.get( Key.fileContent );
+			String	content		= "";
+			Object	fileContent	= response.get( Key.fileContent );
 			if ( fileContent != null ) {
 				content = fileContent.toString();
 			}
@@ -734,8 +732,8 @@ public class Schedule extends Component {
 				case "once" : {
 					// Schedule to run once using a very large interval; expire after first fire
 					task.every( Long.MAX_VALUE / 2, TimeUnit.MILLISECONDS );
-					String date = startDate != null ? startDate : task.getNow().toLocalDate().toString();
-					String time = startTime != null ? startTime : "00:00";
+					String	date	= startDate != null ? startDate : task.getNow().toLocalDate().toString();
+					String	time	= startTime != null ? startTime : "00:00";
 					task.startOn( date, time );
 					task.endOn( date, time.equals( "00:00" ) ? "00:01" : time );
 					break;
@@ -754,7 +752,8 @@ public class Schedule extends Component {
 					try {
 						seconds = Long.parseLong( interval );
 					} catch ( NumberFormatException e ) {
-						throw new BoxRuntimeException( "Invalid interval value [" + interval + "]. Must be 'once', 'daily', 'weekly', 'monthly', or a number of seconds >= 60." );
+						throw new BoxRuntimeException(
+						    "Invalid interval value [" + interval + "]. Must be 'once', 'daily', 'weekly', 'monthly', or a number of seconds >= 60." );
 					}
 					if ( seconds < 60 ) {
 						throw new BoxRuntimeException( "Interval in seconds must be >= 60. Got: " + seconds );

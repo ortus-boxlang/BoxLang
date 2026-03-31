@@ -568,7 +568,7 @@ public class ScheduleTest {
 		);
 		// @formatter:on
 
-		Path	tasksFile	= instance.getRuntimeHome().resolve( "config/tasks.json" );
+		Path tasksFile = instance.getRuntimeHome().resolve( "config/tasks.json" );
 		assertThat( Files.exists( tasksFile ) ).isTrue();
 
 		Array tasks = instance.getSchedulerService().loadTasksFromDisk();
@@ -595,13 +595,13 @@ public class ScheduleTest {
 		);
 		// @formatter:on
 
-		Array tasks = instance.getSchedulerService().loadTasksFromDisk();
-		boolean found = tasks.stream().anyMatch( entry -> {
-			if ( entry instanceof IStruct ) {
-				return "removeFromDisk".equals( ( ( IStruct ) entry ).getAsString( Key.task ) );
-			}
-			return false;
-		} );
+		Array	tasks	= instance.getSchedulerService().loadTasksFromDisk();
+		boolean	found	= tasks.stream().anyMatch( entry -> {
+							if ( entry instanceof IStruct ) {
+								return "removeFromDisk".equals( ( ( IStruct ) entry ).getAsString( Key.task ) );
+							}
+							return false;
+						} );
 		assertThat( found ).isFalse();
 	}
 
@@ -618,8 +618,8 @@ public class ScheduleTest {
 		);
 		// @formatter:on
 
-		Array tasks = instance.getSchedulerService().loadTasksFromDisk();
-		Object paused = tasks.stream()
+		Array	tasks	= instance.getSchedulerService().loadTasksFromDisk();
+		Object	paused	= tasks.stream()
 		    .filter( e -> e instanceof IStruct && "pauseFlag".equals( ( ( IStruct ) e ).getAsString( Key.task ) ) )
 		    .map( e -> ( ( IStruct ) e ).get( Key.paused ) )
 		    .findFirst().orElse( null );
@@ -641,8 +641,8 @@ public class ScheduleTest {
 		);
 		// @formatter:on
 
-		Array tasks = instance.getSchedulerService().loadTasksFromDisk();
-		Object paused = tasks.stream()
+		Array	tasks	= instance.getSchedulerService().loadTasksFromDisk();
+		Object	paused	= tasks.stream()
 		    .filter( e -> e instanceof IStruct && "resumeFlag".equals( ( ( IStruct ) e ).getAsString( Key.task ) ) )
 		    .map( e -> ( ( IStruct ) e ).get( Key.paused ) )
 		    .findFirst().orElse( null );

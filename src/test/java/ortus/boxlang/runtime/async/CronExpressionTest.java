@@ -125,26 +125,26 @@ class CronExpressionTest {
 	@DisplayName( "5-field wildcard matches any minute" )
 	@Test
 	public void testMatchesWildcard() {
-		CronExpression expr = CronExpression.parse( "* * * * *" );
+		CronExpression	expr	= CronExpression.parse( "* * * * *" );
 		// At second 0 (5-field fires at second 0)
-		LocalDateTime dt = LocalDateTime.of( 2024, 6, 15, 10, 30, 0 );
+		LocalDateTime	dt		= LocalDateTime.of( 2024, 6, 15, 10, 30, 0 );
 		assertThat( expr.matches( dt ) ).isTrue();
 	}
 
 	@DisplayName( "5-field wildcard does not match non-zero seconds" )
 	@Test
 	public void testDoesNotMatchNonZeroSecond() {
-		CronExpression expr = CronExpression.parse( "* * * * *" );
-		LocalDateTime dt = LocalDateTime.of( 2024, 6, 15, 10, 30, 1 );
+		CronExpression	expr	= CronExpression.parse( "* * * * *" );
+		LocalDateTime	dt		= LocalDateTime.of( 2024, 6, 15, 10, 30, 1 );
 		assertThat( expr.matches( dt ) ).isFalse();
 	}
 
 	@DisplayName( "6-field noon expression matches noon" )
 	@Test
 	public void testMatchesNoon() {
-		CronExpression expr = CronExpression.parse( "0 0 12 * * ?" );
-		LocalDateTime match = LocalDateTime.of( 2024, 6, 15, 12, 0, 0 );
-		LocalDateTime noMatch = LocalDateTime.of( 2024, 6, 15, 11, 0, 0 );
+		CronExpression	expr	= CronExpression.parse( "0 0 12 * * ?" );
+		LocalDateTime	match	= LocalDateTime.of( 2024, 6, 15, 12, 0, 0 );
+		LocalDateTime	noMatch	= LocalDateTime.of( 2024, 6, 15, 11, 0, 0 );
 		assertThat( expr.matches( match ) ).isTrue();
 		assertThat( expr.matches( noMatch ) ).isFalse();
 	}
@@ -164,11 +164,11 @@ class CronExpressionTest {
 	@Test
 	public void testRangeWeekdays() {
 		// "0 9-17 * * MON-FRI" — 5-field
-		CronExpression expr = CronExpression.parse( "0 9-17 * * MON-FRI" );
+		CronExpression	expr			= CronExpression.parse( "0 9-17 * * MON-FRI" );
 		// Monday 2024-06-17 at 10:00
-		LocalDateTime weekdayMatch = LocalDateTime.of( 2024, 6, 17, 10, 0, 0 );
+		LocalDateTime	weekdayMatch	= LocalDateTime.of( 2024, 6, 17, 10, 0, 0 );
 		// Sunday 2024-06-16
-		LocalDateTime weekendNoMatch = LocalDateTime.of( 2024, 6, 16, 10, 0, 0 );
+		LocalDateTime	weekendNoMatch	= LocalDateTime.of( 2024, 6, 16, 10, 0, 0 );
 		assertThat( expr.matches( weekdayMatch ) ).isTrue();
 		assertThat( expr.matches( weekendNoMatch ) ).isFalse();
 	}
@@ -176,9 +176,9 @@ class CronExpressionTest {
 	@DisplayName( "First of month at midnight" )
 	@Test
 	public void testFirstOfMonth() {
-		CronExpression expr = CronExpression.parse( "0 0 1 * *" );
-		LocalDateTime match = LocalDateTime.of( 2024, 3, 1, 0, 0, 0 );
-		LocalDateTime noMatch = LocalDateTime.of( 2024, 3, 2, 0, 0, 0 );
+		CronExpression	expr	= CronExpression.parse( "0 0 1 * *" );
+		LocalDateTime	match	= LocalDateTime.of( 2024, 3, 1, 0, 0, 0 );
+		LocalDateTime	noMatch	= LocalDateTime.of( 2024, 3, 2, 0, 0, 0 );
 		assertThat( expr.matches( match ) ).isTrue();
 		assertThat( expr.matches( noMatch ) ).isFalse();
 	}
@@ -186,10 +186,10 @@ class CronExpressionTest {
 	@DisplayName( "Last day of month (L)" )
 	@Test
 	public void testLastDayOfMonth() {
-		CronExpression expr = CronExpression.parse( "0 0 L * *" );
+		CronExpression	expr	= CronExpression.parse( "0 0 L * *" );
 		// Feb 29, 2024 (leap year) — last day
-		LocalDateTime match = LocalDateTime.of( 2024, 2, 29, 0, 0, 0 );
-		LocalDateTime noMatch = LocalDateTime.of( 2024, 2, 28, 0, 0, 0 );
+		LocalDateTime	match	= LocalDateTime.of( 2024, 2, 29, 0, 0, 0 );
+		LocalDateTime	noMatch	= LocalDateTime.of( 2024, 2, 28, 0, 0, 0 );
 		assertThat( expr.matches( match ) ).isTrue();
 		assertThat( expr.matches( noMatch ) ).isFalse();
 	}
@@ -198,10 +198,10 @@ class CronExpressionTest {
 	@Test
 	public void testMonthNames() {
 		// 5-field: "* * * JAN,DEC *"
-		CronExpression expr = CronExpression.parse( "* * * JAN,DEC *" );
-		LocalDateTime jan = LocalDateTime.of( 2024, 1, 15, 10, 0, 0 );
-		LocalDateTime dec = LocalDateTime.of( 2024, 12, 15, 10, 0, 0 );
-		LocalDateTime jun = LocalDateTime.of( 2024, 6, 15, 10, 0, 0 );
+		CronExpression	expr	= CronExpression.parse( "* * * JAN,DEC *" );
+		LocalDateTime	jan		= LocalDateTime.of( 2024, 1, 15, 10, 0, 0 );
+		LocalDateTime	dec		= LocalDateTime.of( 2024, 12, 15, 10, 0, 0 );
+		LocalDateTime	jun		= LocalDateTime.of( 2024, 6, 15, 10, 0, 0 );
 		assertThat( expr.matches( jan ) ).isTrue();
 		assertThat( expr.matches( dec ) ).isTrue();
 		assertThat( expr.matches( jun ) ).isFalse();
@@ -211,11 +211,11 @@ class CronExpressionTest {
 	@Test
 	public void testSundayAlias() {
 		// 5-field: "* * * * SUN" — every Sunday
-		CronExpression expr = CronExpression.parse( "* * * * SUN" );
+		CronExpression	expr	= CronExpression.parse( "* * * * SUN" );
 		// Sunday 2024-06-16
-		LocalDateTime sunday = LocalDateTime.of( 2024, 6, 16, 10, 0, 0 );
+		LocalDateTime	sunday	= LocalDateTime.of( 2024, 6, 16, 10, 0, 0 );
 		// Monday 2024-06-17
-		LocalDateTime monday = LocalDateTime.of( 2024, 6, 17, 10, 0, 0 );
+		LocalDateTime	monday	= LocalDateTime.of( 2024, 6, 17, 10, 0, 0 );
 		assertThat( expr.matches( sunday ) ).isTrue();
 		assertThat( expr.matches( monday ) ).isFalse();
 	}
@@ -223,10 +223,10 @@ class CronExpressionTest {
 	@DisplayName( "Star/question mark for DOW works as wildcard" )
 	@Test
 	public void testQuestionMarkWildcard() {
-		CronExpression expr = CronExpression.parse( "0 0 12 * * ?" );
+		CronExpression	expr	= CronExpression.parse( "0 0 12 * * ?" );
 		// Any day of week should match at noon
-		LocalDateTime monday = LocalDateTime.of( 2024, 6, 17, 12, 0, 0 );
-		LocalDateTime sunday = LocalDateTime.of( 2024, 6, 16, 12, 0, 0 );
+		LocalDateTime	monday	= LocalDateTime.of( 2024, 6, 17, 12, 0, 0 );
+		LocalDateTime	sunday	= LocalDateTime.of( 2024, 6, 16, 12, 0, 0 );
 		assertThat( expr.matches( monday ) ).isTrue();
 		assertThat( expr.matches( sunday ) ).isTrue();
 	}
@@ -239,9 +239,9 @@ class CronExpressionTest {
 	@Test
 	public void testNextFireTime5Field() {
 		// Every minute at :15
-		CronExpression	expr	= CronExpression.parse( "15 * * * *" );
-		LocalDateTime	from	= LocalDateTime.of( 2024, 6, 15, 10, 0, 0 );
-		Optional<LocalDateTime> next = expr.nextFireTime( from );
+		CronExpression			expr	= CronExpression.parse( "15 * * * *" );
+		LocalDateTime			from	= LocalDateTime.of( 2024, 6, 15, 10, 0, 0 );
+		Optional<LocalDateTime>	next	= expr.nextFireTime( from );
 		assertThat( next.isPresent() ).isTrue();
 		assertThat( next.get().getMinute() ).isEqualTo( 15 );
 	}
@@ -249,9 +249,9 @@ class CronExpressionTest {
 	@DisplayName( "nextFireTime for noon each day" )
 	@Test
 	public void testNextFireTimeNoon() {
-		CronExpression	expr	= CronExpression.parse( "0 0 12 * * ?" );
-		LocalDateTime	from	= LocalDateTime.of( 2024, 6, 15, 10, 0, 0 );
-		Optional<LocalDateTime> next = expr.nextFireTime( from );
+		CronExpression			expr	= CronExpression.parse( "0 0 12 * * ?" );
+		LocalDateTime			from	= LocalDateTime.of( 2024, 6, 15, 10, 0, 0 );
+		Optional<LocalDateTime>	next	= expr.nextFireTime( from );
 		assertThat( next.isPresent() ).isTrue();
 		assertThat( next.get().getHour() ).isEqualTo( 12 );
 		assertThat( next.get().getMinute() ).isEqualTo( 0 );

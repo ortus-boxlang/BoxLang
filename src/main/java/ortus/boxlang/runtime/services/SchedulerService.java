@@ -204,16 +204,16 @@ public class SchedulerService extends BaseService {
 		}
 
 		for ( Object entry : tasks ) {
-			if ( !( entry instanceof IStruct ) ) {
+			if ( ! ( entry instanceof IStruct ) ) {
 				continue;
 			}
-			IStruct taskDef = ( IStruct ) entry;
+			IStruct	taskDef			= ( IStruct ) entry;
 
 			String	taskName		= taskDef.getAsString( Key.task );
 
 			// Get the scheduler name from the task definition
-			Object schedulerField = taskDef.get( Key.scheduler );
-			String schedulerName = schedulerField != null ? schedulerField.toString() : null;
+			Object	schedulerField	= taskDef.get( Key.scheduler );
+			String	schedulerName	= schedulerField != null ? schedulerField.toString() : null;
 			if ( schedulerName == null || schedulerName.isBlank() ) {
 				schedulerName = DEFAULT_SCHEDULER_NAME;
 			}
@@ -222,10 +222,10 @@ public class SchedulerService extends BaseService {
 				continue;
 			}
 
-			boolean paused = BooleanCaster.cast( taskDef.getOrDefault( Key.paused, false ) );
+			boolean	paused			= BooleanCaster.cast( taskDef.getOrDefault( Key.paused, false ) );
 
 			// Get or create the named scheduler (register only — startup happens later via startupRegisteredSchedulers)
-			Key schedulerKey = Key.of( schedulerName );
+			Key		schedulerKey	= Key.of( schedulerName );
 			if ( !hasScheduler( schedulerKey ) ) {
 				ortus.boxlang.runtime.async.tasks.BaseScheduler s = new ortus.boxlang.runtime.async.tasks.BaseScheduler( schedulerName, runtimeContext );
 				registerScheduler( s, false );
@@ -236,10 +236,11 @@ public class SchedulerService extends BaseService {
 			decryptTaskCredentials( taskDef );
 
 			// Build callable and register the task
-			Runnable callable = ortus.boxlang.runtime.components.async.Schedule.buildTaskCallable( runtimeContext, taskDef );
+			Runnable										callable		= ortus.boxlang.runtime.components.async.Schedule.buildTaskCallable( runtimeContext,
+			    taskDef );
 
-			String group = taskDef.getAsString( Key.group );
-			ortus.boxlang.runtime.async.tasks.ScheduledTask scheduledTask = scheduler.task( taskName, group != null ? group : "" ).call( callable );
+			String											group			= taskDef.getAsString( Key.group );
+			ortus.boxlang.runtime.async.tasks.ScheduledTask	scheduledTask	= scheduler.task( taskName, group != null ? group : "" ).call( callable );
 
 			// Apply full configuration (identical to doUpdate — repeat, exclude, callbacks, metadata, scheduling)
 			ortus.boxlang.runtime.components.async.Schedule.applyTaskConfiguration( scheduledTask, callable, taskDef, runtimeContext );
@@ -712,8 +713,8 @@ public class SchedulerService extends BaseService {
 			String	taskName	= attributes.getAsString( Key.task );
 			String	scheduler	= attributes.getAsString( Key.scheduler );
 
-			String	encKey	= getOrCreateEncryptionKey();
-			IStruct taskDef = Struct.ofNonConcurrent(
+			String	encKey		= getOrCreateEncryptionKey();
+			IStruct	taskDef		= Struct.ofNonConcurrent(
 			    "task", taskName,
 			    "scheduler", scheduler,
 			    "group", attributes.getAsString( Key.group ),
@@ -887,9 +888,11 @@ public class SchedulerService extends BaseService {
 			String encrypted = taskDef.getAsString( credKey );
 			if ( encrypted != null && !encrypted.isBlank() ) {
 				try {
-					taskDef.put( credKey, ( String ) EncryptionUtil.decrypt( encrypted, EncryptionUtil.DEFAULT_ENCRYPTION_ALGORITHM, encKey, EncryptionUtil.DEFAULT_ENCRYPTION_ENCODING, null, null ) );
+					taskDef.put( credKey, ( String ) EncryptionUtil.decrypt( encrypted, EncryptionUtil.DEFAULT_ENCRYPTION_ALGORITHM, encKey,
+					    EncryptionUtil.DEFAULT_ENCRYPTION_ENCODING, null, null ) );
 				} catch ( Exception e ) {
-					this.logger.warn( "Failed to decrypt credential [{}] for task [{}] — using empty value: {}", credKey.getName(), taskDef.getAsString( Key.task ), e.getMessage() );
+					this.logger.warn( "Failed to decrypt credential [{}] for task [{}] — using empty value: {}", credKey.getName(),
+					    taskDef.getAsString( Key.task ), e.getMessage() );
 					taskDef.put( credKey, "" );
 				}
 			}

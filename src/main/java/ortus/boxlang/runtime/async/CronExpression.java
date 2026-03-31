@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.async;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
@@ -58,7 +57,7 @@ public class CronExpression {
 	// Name mappings
 	// --------------------------------------------------------------------------
 
-	private static final Map<String, Integer> MONTH_NAMES = Map.ofEntries(
+	private static final Map<String, Integer>	MONTH_NAMES	= Map.ofEntries(
 	    Map.entry( "JAN", 1 ), Map.entry( "FEB", 2 ), Map.entry( "MAR", 3 ),
 	    Map.entry( "APR", 4 ), Map.entry( "MAY", 5 ), Map.entry( "JUN", 6 ),
 	    Map.entry( "JUL", 7 ), Map.entry( "AUG", 8 ), Map.entry( "SEP", 9 ),
@@ -66,7 +65,7 @@ public class CronExpression {
 	);
 
 	// 0=SUN, 1=MON, ..., 6=SAT (Java DayOfWeek: MON=1 ... SUN=7, so we normalize)
-	private static final Map<String, Integer> DOW_NAMES = Map.of(
+	private static final Map<String, Integer>	DOW_NAMES	= Map.of(
 	    "SUN", 0, "MON", 1, "TUE", 2, "WED", 3, "THU", 4, "FRI", 5, "SAT", 6
 	);
 
@@ -74,16 +73,16 @@ public class CronExpression {
 	// Fields
 	// --------------------------------------------------------------------------
 
-	private final String		expression;
-	private final boolean		hasSeconds;
-	private final CronField		secondsField;
-	private final CronField		minutesField;
-	private final CronField		hoursField;
-	private final CronField		domField;
-	private final CronField		monthsField;
-	private final CronField		dowField;
-	private final boolean		domRestricted;
-	private final boolean		dowRestricted;
+	private final String						expression;
+	private final boolean						hasSeconds;
+	private final CronField						secondsField;
+	private final CronField						minutesField;
+	private final CronField						hoursField;
+	private final CronField						domField;
+	private final CronField						monthsField;
+	private final CronField						dowField;
+	private final boolean						domRestricted;
+	private final boolean						dowRestricted;
 
 	// --------------------------------------------------------------------------
 	// Constructor (private — use parse())
@@ -122,10 +121,10 @@ public class CronExpression {
 			throw new BoxRuntimeException( "Cron expression cannot be null or empty" );
 		}
 
-		String[] parts = expression.trim().split( "\\s+" );
+		String[]	parts	= expression.trim().split( "\\s+" );
 
-		boolean hasSeconds;
-		int		offset;
+		boolean		hasSeconds;
+		int			offset;
 
 		if ( parts.length == 5 ) {
 			// Unix 5-field: prepend a "0" for seconds
@@ -145,12 +144,12 @@ public class CronExpression {
 		}
 
 		try {
-			CronField secondsField;
-			CronField minutesField;
-			CronField hoursField;
-			CronField domField;
-			CronField monthsField;
-			CronField dowField;
+			CronField	secondsField;
+			CronField	minutesField;
+			CronField	hoursField;
+			CronField	domField;
+			CronField	monthsField;
+			CronField	dowField;
 
 			if ( !hasSeconds ) {
 				// 5-field: min hour dom month dow
@@ -208,16 +207,16 @@ public class CronExpression {
 			return false;
 
 		// DOM / DOW
-		boolean domMatch = domField.lastDay
+		boolean	domMatch	= domField.lastDay
 		    ? dt.getDayOfMonth() == dt.toLocalDate().lengthOfMonth()
 		    : domField.values == null || domField.values.contains( dt.getDayOfMonth() );
 
 		// Java DayOfWeek: MON=1 ... SUN=7; normalize to 0=SUN, 1=MON ... 6=SAT
-		int javaDow = dt.getDayOfWeek().getValue(); // 1=MON ... 7=SUN
-		int cronDow = javaDow % 7;                  // MON=1, ..., SAT=6, SUN=0
-		boolean dowMatch = dowField.values == null || dowField.values.contains( cronDow );
+		int		javaDow		= dt.getDayOfWeek().getValue(); // 1=MON ... 7=SUN
+		int		cronDow		= javaDow % 7;                  // MON=1, ..., SAT=6, SUN=0
+		boolean	dowMatch	= dowField.values == null || dowField.values.contains( cronDow );
 
-		boolean domLastDay = domField.lastDay;
+		boolean	domLastDay	= domField.lastDay;
 
 		if ( domRestricted && dowRestricted ) {
 			// Quartz OR semantics: either DOM or DOW must match
@@ -314,10 +313,10 @@ public class CronExpression {
 		/**
 		 * Parse a single cron field token.
 		 *
-		 * @param field     The raw token string
-		 * @param min       Minimum allowed value for this field
-		 * @param max       Maximum allowed value for this field
-		 * @param nameMap   Optional name-to-int mapping (months, days of week); may be null
+		 * @param field   The raw token string
+		 * @param min     Minimum allowed value for this field
+		 * @param max     Maximum allowed value for this field
+		 * @param nameMap Optional name-to-int mapping (months, days of week); may be null
 		 */
 		CronField( String field, int min, int max, Map<String, Integer> nameMap ) {
 			if ( field == null ) {
@@ -350,15 +349,15 @@ public class CronExpression {
 			for ( String part : upper.split( "," ) ) {
 				if ( part.contains( "/" ) ) {
 					// Step expression: base/step
-					String[]	stepParts	= part.split( "/" );
+					String[] stepParts = part.split( "/" );
 					if ( stepParts.length != 2 ) {
 						throw new BoxRuntimeException( "Invalid step expression: " + part );
 					}
-					int	stepVal	= Integer.parseInt( stepParts[ 1 ] );
+					int stepVal = Integer.parseInt( stepParts[ 1 ] );
 					if ( stepVal <= 0 ) {
 						throw new BoxRuntimeException( "Step value must be greater than zero in cron field: " + part );
 					}
-					int	start;
+					int start;
 					if ( stepParts[ 0 ].equals( "*" ) ) {
 						start = min;
 					} else if ( stepParts[ 0 ].contains( "-" ) ) {
