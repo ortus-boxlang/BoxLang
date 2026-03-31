@@ -78,31 +78,15 @@ public final class ExecutedQuery implements Serializable {
 	private IStruct							queryMeta;
 
 	/**
-	 * Datasource used to execute this query. This will be null if the query was
-	 * loaded from cache.
-	 */
-	private DataSource						datasource;
-
-	/**
 	 * Constructor
 	 *
 	 * @param results      The results of the query, i.e. the actual Query object.
 	 * @param generatedKey The generated key of the query, if any.
 	 */
-	public ExecutedQuery( @NonNull Query results, @Nullable Object generatedKey, DataSource datasource ) {
+	public ExecutedQuery( @NonNull Query results, @Nullable Object generatedKey ) {
 		this.results		= results;
 		this.generatedKey	= generatedKey;
 		this.queryMeta		= results.getMetaData();
-		this.datasource		= datasource;
-	}
-
-	/**
-	 * Get the datasource used to execute this query.
-	 * 
-	 * @return The datasource used to execute this query.
-	 */
-	public DataSource getDataSource() {
-		return this.datasource;
 	}
 
 	/**
@@ -171,6 +155,23 @@ public final class ExecutedQuery implements Serializable {
 		}
 	}
 
+	/**
+	 * Creates an ExecutedQuery instance from a PendingQuery instance and a JDBC
+	 * Statement.
+	 *
+	 * @param pendingQuery        The {@link PendingQuery} executed.
+	 * @param statement           The {@link Statement} instance executed.
+	 * @param executionTime       The execution time the query took.
+	 * @param hasResults          Boolean flag from
+	 *                            {@link PreparedStatement#execute()} designating
+	 *                            if the execution returned any results.
+	 * @param initialSqlException An initial SQLException raised during execution,
+	 *                            if any.
+	 *
+	 * @return An ExecutedQuery instance representing the results of the query.
+	 *
+	 * @throws DatabaseException If an error occurs during processing the results.
+	 */
 	public static ExecutedQuery fromPendingQuery(
 	    @NonNull PendingQuery pendingQuery,
 	    @NonNull BoxStatement statement,
@@ -340,13 +341,14 @@ public final class ExecutedQuery implements Serializable {
 			recordCount = totalUpdateCount;
 		}
 
-		IStruct queryMeta = Struct.of(
+		IStruct queryMeta = Struct.ofNonConcurrent(
 		    Key.cached, false,
 		    Key.cacheKey, pendingQuery.getCacheKey(),
 		    Key.sql, pendingQuery.getSQLWithParamValues(),
 		    Key.sqlParameters, Array.fromList( pendingQuery.getParameterValues() ),
 		    Key.executionTime, executionTime,
-		    Key.recordCount, recordCount );
+		    Key.recordCount, recordCount
+		);
 
 		if ( generatedKey != null ) {
 			// Oracle, for example, sends back a ROWID instead of a generated key
@@ -382,17 +384,23 @@ public final class ExecutedQuery implements Serializable {
 		// important that we set the metadata on the Query object for later
 		// getBoxMeta(), i.e. $bx.meta calls.
 		results.setMetadata( queryMeta );
-		ExecutedQuery executedQuery = new ExecutedQuery( results, generatedKey, pendingQuery.getDataSource() );
+		ExecutedQuery	executedQuery	= new ExecutedQuery( results, generatedKey );
 
-		interceptorService.announce( BoxEvent.POST_QUERY_EXECUTE,
-		    Struct.of(
+		// Announce post query execute event
+		final Query		iResults		= results;
+		interceptorService.announce(
+		    BoxEvent.POST_QUERY_EXECUTE,
+		    () -> Struct.ofNonConcurrent(
 		        Key.sql, queryMeta.getAsString( Key.sql ),
 		        Key.bindings, pendingQuery.getParameterValues(),
 		        Key.executionTime, executionTime,
-		        Key.data, results,
+		        Key.data, iResults,
 		        Key.result, queryMeta,
 		        Key.pendingQuery, pendingQuery,
-		        Key.executedQuery, executedQuery ) );
+		        Key.executedQuery, executedQuery
+		    )
+		);
+
 		return executedQuery;
 	}
 

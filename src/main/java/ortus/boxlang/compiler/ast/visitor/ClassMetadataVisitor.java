@@ -14,7 +14,7 @@
  */
 package ortus.boxlang.compiler.ast.visitor;
 
-import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Iterator;
@@ -296,16 +296,20 @@ public class ClassMetadataVisitor extends VoidBoxVisitor {
 	 */
 	private void processName( BoxNode node ) {
 		if ( node.getPosition() != null && node.getPosition().getSource() != null && node.getPosition().getSource() instanceof SourceFile sf ) {
-			File sourceFile = sf.getFile();
-			this.sourcePath = sourceFile.toPath();
-			var		contractedPath	= FileSystemUtil.contractPath( context, sourceFile.toString() );
-			String	name			= sourceFile.getName().replaceFirst( "[.][^.]+$", "" );
+			this.sourcePath = sf.getFile().toPath();
+			try {
+				sourcePath = sourcePath.toAbsolutePath().toRealPath();
+			} catch ( IOException e ) {
+				// Ignore issues with permissions or missing files
+			}
+			var		contractedPath	= FileSystemUtil.contractPath( context, sourcePath.toString() );
+			String	name			= sf.getFile().getName().replaceFirst( "[.][^.]+$", "" );
 			String	packageName		= FQN.of( Paths.get( contractedPath.relativePath() ) ).getPackageString();
 			String	fullName		= packageName.length() > 0 ? packageName + "." + name : name;
 			this.meta.put( Key._NAME, name );
 			this.meta.put( Key.fullname, fullName );
 			this.meta.put( Key.nameAsKey, Key.of( fullName ) );
-			this.meta.put( Key.path, sourceFile.getAbsolutePath() );
+			this.meta.put( Key.path, sourcePath.toString() );
 		}
 	}
 

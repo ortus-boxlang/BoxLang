@@ -56,10 +56,10 @@ public class Val extends BIF {
 
 		var		result		= new StringBuilder();
 		boolean	foundDot	= false;
-		boolean	foundMinus	= false;
+		boolean	foundDigit	= false;
 		// Loop over each character in the string
 		for ( var c : input.getBytes() ) {
-			// If the character is not a digit
+			// If the character is not a digit, period, or minus
 			if ( ( c < 48 || c > 57 ) && c != 46 && c != 45 ) {
 				// we're done
 				break;
@@ -72,23 +72,22 @@ public class Val extends BIF {
 				}
 				foundDot = true;
 			}
-			// The first minus is allowed
+			// A minus is ONLY allowed as the first character
 			if ( c == 45 ) {
-				// But subsequent minus signs are not
-				if ( foundMinus ) {
+				// If we've already started building the result, a minus ends parsing
+				if ( result.length() > 0 ) {
 					break;
 				}
-				foundMinus = true;
+			}
+			// Track if we've found at least one digit
+			if ( c >= 48 && c <= 57 ) {
+				foundDigit = true;
 			}
 			// Build up the result
 			result.append( ( char ) c );
 		}
 		// If no digits were found, return 0
-		if ( result.length() == 0 ) {
-			return 0;
-		}
-		// A single period is not a valid number
-		if ( result.toString().equals( "." ) ) {
+		if ( !foundDigit ) {
 			return 0;
 		}
 		// Return the result as a number

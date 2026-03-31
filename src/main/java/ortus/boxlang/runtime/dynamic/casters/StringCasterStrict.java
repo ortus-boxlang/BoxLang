@@ -23,6 +23,7 @@ import java.math.BigInteger;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.util.MathUtil;
 import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
@@ -143,15 +144,14 @@ public class StringCasterStrict implements IBoxCaster {
 		if ( object instanceof Integer || object instanceof Long || object instanceof Short || object instanceof Byte || object instanceof BigInteger ) {
 			return object.toString();
 		}
+
+		if ( object instanceof Float || object instanceof Double ) {
+			// convert to BigDecimal to avoid scientific notation and let it get handled in the next block
+			object = new BigDecimal( ( ( Number ) object ).toString(), MathUtil.getMathContext() );
+		}
+
 		if ( object instanceof BigDecimal bd ) {
 			return bd.stripTrailingZeros().toPlainString();
-		}
-		if ( object instanceof Float || object instanceof Double ) {
-			String result = object.toString();
-			if ( result.endsWith( ".0" ) ) {
-				return result.substring( 0, result.length() - 2 );
-			}
-			return result;
 		}
 
 		// This is prolly redundant given all the checks above

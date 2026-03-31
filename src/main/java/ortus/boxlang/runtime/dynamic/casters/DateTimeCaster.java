@@ -18,11 +18,13 @@
 package ortus.boxlang.runtime.dynamic.casters;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+import java.util.regex.Matcher;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -245,11 +247,8 @@ public class DateTimeCaster implements IBoxCaster {
 		}
 
 		// Test if it is a numeric and is zero - which is the epoch
-		var numberAttempt = NumberCaster.attempt( object );
-		if ( numberAttempt.wasSuccessful() ) {
-			if ( numberAttempt.get().intValue() == 0 ) {
-				return new DateTime( Instant.EPOCH.atZone( ZoneId.of( "UTC" ) ) );
-			}
+		if ( object instanceof Number nObject && nObject.doubleValue() == 0 ) {
+			return new DateTime( Instant.EPOCH.atZone( ZoneId.of( "UTC" ) ) );
 		}
 
 		// Try to cast it to a String and see if we can parse it
@@ -267,14 +266,42 @@ public class DateTimeCaster implements IBoxCaster {
 		targetString = DateTime.sanitizeStringSpaces( targetString );
 
 		try {
-			// Timestamp string "^\{ts ([^\}])*\}" - {ts 2023-01-01 12:00:00}
-			if ( RegexBuilder.of( targetString, RegexBuilder.TIMESTAMP ).matches() ) {
-				return new DateTime(
-				    LocalDateTime.parse(
-				        targetString.trim(),
-				        ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "ODBCDateTime" )
-				    )
-				);
+			// Timestamp string "^\{ts ([^\}])*\}" - {ts 2023-01-01 12:00:00} or {ts '2023-01-01 12:00:00'}
+			if ( targetString.trim().startsWith( "{ts" ) ) {
+				Matcher tsMatcher = RegexBuilder.TIMESTAMP.matcher( targetString );
+				if ( tsMatcher.matches() ) {
+					return new DateTime(
+					    LocalDateTime.parse(
+					        targetString.trim(),
+					        ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "ODBCDateTime" )
+					    ),
+					    timezone
+					);
+				}
+			}
+			// ODBC Date string "^\{d ([^\}])*\}" - {d 2023-01-01} or {d '2023-01-01'}
+			else if ( targetString.trim().startsWith( "{d" ) ) {
+				Matcher dateMatcher = RegexBuilder.ODBC_DATE.matcher( targetString );
+				if ( dateMatcher.matches() ) {
+					return new DateTime(
+					    LocalDate.parse(
+					        targetString.trim(),
+					        ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "ODBCDate" )
+					    ).atStartOfDay(), timezone
+					);
+				}
+			}
+			// ODBC Time string "^\{t ([^\}])*\}" - {t 12:00:00} or {t '12:00:00'}
+			else if ( targetString.startsWith( "{t" ) ) {
+				Matcher timeMatcher = RegexBuilder.ODBC_TIME.matcher( targetString );
+				if ( timeMatcher.matches() ) {
+					return new DateTime(
+					    LocalTime.parse(
+					        targetString.trim(),
+					        ( DateTimeFormatter ) DateTime.COMMON_FORMATTERS.get( "ODBCTime" )
+					    )
+					);
+				}
 			}
 		} catch ( Throwable e2 ) {
 			if ( fail ) {
@@ -317,32 +344,25 @@ public class DateTimeCaster implements IBoxCaster {
 	 * @return True if the object is a known date class
 	 */
 	public static boolean isKnownDateClass( Object object ) {
-		return switch ( object ) {
-			case DateTime d -> {
-				yield true;
-			}
-			case java.time.ZonedDateTime d -> {
-				yield true;
-			}
-			case java.util.Calendar d -> {
-				yield true;
-			}
-			case java.time.LocalDateTime d -> {
-				yield true;
-			}
-			case java.time.LocalDate d -> {
-				yield true;
-			}
-			case java.sql.Date d -> {
-				yield true;
-			}
-			case java.util.Date d -> {
-				yield true;
-			}
-			default -> {
-				yield false;
-			}
-		};
+		return object != null && isKnownDateClass( object.getClass() );
+	}
+
+	/**
+	 * Checks if the given class is a known date class that can be successfully cast to a DateTime.
+	 *
+	 * @param clazz The class to check
+	 *
+	 * @return True if the class is a known date class
+	 */
+	public static boolean isKnownDateClass( Class<?> clazz ) {
+		return DateTime.class.isAssignableFrom( clazz )
+		    || java.time.ZonedDateTime.class.isAssignableFrom( clazz )
+		    || java.util.Calendar.class.isAssignableFrom( clazz )
+		    || java.time.LocalDateTime.class.isAssignableFrom( clazz )
+		    || java.time.LocalDate.class.isAssignableFrom( clazz )
+		    || java.sql.Date.class.isAssignableFrom( clazz )
+		    || java.util.Date.class.isAssignableFrom( clazz )
+		    || java.time.Instant.class.isAssignableFrom( clazz );
 	}
 
 }

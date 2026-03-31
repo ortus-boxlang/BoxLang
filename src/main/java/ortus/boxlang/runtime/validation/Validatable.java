@@ -12,7 +12,9 @@ public interface Validatable {
 
 	public String type();
 
-	public Object defaultValue();
+	public boolean hasDefaultValue();
+
+	public Object getDefaultValue( IBoxContext context );
 
 	public Set<Validator> validators();
 

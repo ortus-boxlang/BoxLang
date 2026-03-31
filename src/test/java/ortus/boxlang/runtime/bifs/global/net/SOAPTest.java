@@ -149,6 +149,7 @@ public class SOAPTest {
 		    """
 		    ws = soap( "%s" )
 		    operations = ws.getOperations()
+			println( operations )
 		    hasOperations = !isNull( operations )
 		    """.formatted( calculatorWsdlUrl ),
 		    this.context
@@ -161,7 +162,10 @@ public class SOAPTest {
 	@Test
 	@DisplayName( "It can work with live WSDL services" )
 	void testLiveWSDLService() {
-		String liveWsdlUrl = "https://soap-test-server.mock.beeceptor.com/CountryInfoService?wsdl";
+		// Use a real, publicly available WSDL service for testing
+		// This service is specifically designed for testing and doesn't block Java clients
+		// Alternative: https://www.dataaccess.com/webservicesserver/NumberConversion.wso?WSDL
+		String liveWsdlUrl = "https://www.w3schools.com/xml/tempconvert.asmx?WSDL";
 
 		try {
 			// @formatter:off
@@ -177,6 +181,7 @@ public class SOAPTest {
 
 			assertThat( this.variables.getAsBoolean( Key.of( "hasOps" ) ) ).isTrue();
 		} catch ( Exception e ) {
+			e.printStackTrace();
 			// Network issues are acceptable in tests
 			org.junit.jupiter.api.Assumptions.assumeTrue( false, "Network request failed: " + e.getMessage() );
 		}
@@ -203,22 +208,22 @@ public class SOAPTest {
 	@DisplayName( "It can be used with method invocation" )
 	void testMethodInvocation() {
 		try {
-			String liveWsdlUrl = "https://soap-test-server.mock.beeceptor.com/CountryInfoService?wsdl";
+			String liveWsdlUrl = "https://www.w3schools.com/xml/tempconvert.asmx?WSDL";
 
 			// @formatter:off
 			instance.executeSource(
 			    """
 			    ws = soap( "%s" )
 
-			    // Test that operations are callable
-			    continents = ws.ListOfContinentsByName()
-			    hasContinents = !isNull( continents )
+			    // Test that operations are callable - CelsiusToFahrenheit method
+			    result = ws.invoke( "CelsiusToFahrenheit", 0 )
+			    hasResult = !isNull( result )
 			    """.formatted( liveWsdlUrl ),
 			    this.context
 			);
 			// @formatter:on
 
-			assertThat( this.variables.getAsBoolean( Key.of( "hasContinents" ) ) ).isTrue();
+			assertThat( this.variables.getAsBoolean( Key.of( "hasResult" ) ) ).isTrue();
 		} catch ( Exception e ) {
 			// Network issues are acceptable in tests
 			org.junit.jupiter.api.Assumptions.assumeTrue( false, "Network request failed: " + e.getMessage() );
@@ -250,7 +255,7 @@ public class SOAPTest {
 	@Test
 	@DisplayName( "It creates independent clients for different WSDLs" )
 	void testMultipleWSDLClients() {
-		String liveWsdlUrl = "https://soap-test-server.mock.beeceptor.com/CountryInfoService?wsdl";
+		String liveWsdlUrl = "https://www.w3schools.com/xml/tempconvert.asmx?WSDL";
 
 		try {
 			// @formatter:off

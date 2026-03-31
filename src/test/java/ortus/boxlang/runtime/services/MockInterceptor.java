@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.services;
 
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class MockInterceptor {
 
@@ -33,6 +34,15 @@ public class MockInterceptor {
 			int counter = ( int ) data.get( counterKey ) + 1;
 			data.put( counterKey, counter );
 		}
+	}
+
+	/**
+	 * Test interception that throws an error during session end
+	 * 
+	 * @param data
+	 */
+	public void onSessionEnd( IStruct data ) {
+		throw new BoxRuntimeException( "Simulated error during session end" );
 	}
 
 }

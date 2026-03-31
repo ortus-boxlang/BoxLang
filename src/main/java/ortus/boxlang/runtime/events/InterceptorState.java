@@ -186,4 +186,13 @@ public class InterceptorState {
 		}
 	}
 
+	/**
+	 * Get the observers for this state
+	 * 
+	 * @return The observers for this state
+	 */
+	public List<InterceptorEntry> getObservers() {
+		return observers;
+	}
+
 }

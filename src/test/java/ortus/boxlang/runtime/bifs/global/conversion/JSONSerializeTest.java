@@ -129,7 +129,6 @@ public class JSONSerializeTest {
 					localDate: LocalDate.now(),
 					sqlDate: Date.valueOf( "2024-01-01" )
 				} )
-				println( result )
 		    """,
 		    context );
 		// @formatter:on
@@ -430,7 +429,6 @@ public class JSONSerializeTest {
 		// @formatter:on
 
 		var json = variables.getAsString( result );
-		System.out.println( json );
 		assertThat( json ).isNotEmpty();
 	}
 
@@ -442,7 +440,6 @@ public class JSONSerializeTest {
 		    """
 		    	test = new src.test.bx.NotSerializable()
 				result = jsonSerialize( test )
-				println( result )
 		    """,
 		context );
 		// @formatter:on
@@ -503,7 +500,6 @@ public class JSONSerializeTest {
 				foo.put( "bar", bar )
 
 				result = jsonSerialize( foo )
-				println( result )
 		    """,
 		context );
 		// @formatter:on
@@ -523,7 +519,6 @@ public class JSONSerializeTest {
 				foo.append( bar )
 
 				result = jsonSerialize( foo )
-				println( result )
 		    """,
 		context );
 		// @formatter:on
@@ -548,7 +543,6 @@ public class JSONSerializeTest {
 				foo.add( bar )
 
 				result = jsonSerialize( foo )
-				println( result )
 		    """,
 		context );
 		// @formatter:on
@@ -573,7 +567,6 @@ public class JSONSerializeTest {
 					"six" : true
 				}, pretty=true )
 
-				println( result )
 			""",
 		    context );
 		// @formatter:on
@@ -601,7 +594,6 @@ public class JSONSerializeTest {
 				}
 		    	result = jsonSerialize( data: matrix )
 
-				println( result )
 			""",
 		    context );
 		// @formatter:on
@@ -623,7 +615,6 @@ public class JSONSerializeTest {
 					result = jsonSerialize( data: e )
 				}
 
-				println( result )
 			""",
 		    context );
 		// @formatter:on
@@ -648,6 +639,79 @@ public class JSONSerializeTest {
 		assertThat( json ).isNotEmpty();
 		assertThat( json ).isEqualTo( "[{\"columns\":[\"col\"],\"data\":[[\"brad\"]]}]" );
 
+	}
+
+	@DisplayName( "It will serialize doubles without using scientific notation" )
+	@Test
+	public void testWillSerializeDoublesWithoutScientificNotation() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				result = JSONserialize( {
+					"q": 0.0000000 + 0
+				} );
+			""",
+		    context );
+		// @formatter:on
+
+		var json = variables.getAsString( result );
+		assertThat( json ).isNotEmpty();
+		assertThat( json ).doesNotContain( "E" );
+		assertThat( json ).isEqualTo( "{\"q\":0.0000000}" );
+	}
+
+	@DisplayName( "It will serialize stream" )
+	@Test
+	public void testWillSerializeStream() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+			data = {
+			myStream : [1,2,3].stream()
+			}
+
+			result = JSONSerialize( data );
+			""",
+		    context );
+		// @formatter:on
+
+		assertThat( variables.getAsString( result ) ).contains( "\"myStream\":{" );
+	}
+
+	@DisplayName( "It will serialize random java obects" )
+	@Test
+	public void testWillSerializeRandomJavaObjects() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				uri = createObject( "java", "java.net.URI" ).init( "/foo" );
+				result = JSONSerialize( { "uri" : uri } );
+			""",
+		    context );
+		// @formatter:on
+
+		assertThat( variables.getAsString( result ) ).contains( "\"RawPath\"" );
+		assertThat( variables.getAsString( result ) ).contains( "\"RawAuthority\"" );
+		assertThat( variables.getAsString( result ) ).contains( "\"Scheme\"" );
+		assertThat( variables.getAsString( result ) ).contains( "\"RawFragment\"" );
+		assertThat( variables.getAsString( result ) ).contains( "\"SchemeSpecificPart\"" );
+		assertThat( variables.getAsString( result ) ).contains( "\"/foo\"" );
+	}
+
+	@DisplayName( "It will serialize Java Instant" )
+	@Test
+	public void testWillSerializeJavaInstant() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				instant = createObject( "java", "java.time.Instant" ).EPOCH;
+				result = JSONSerialize( { "instant" : instant } );
+				println(result)
+			""",
+		    context );
+		// @formatter:on
+
+		assertThat( variables.getAsString( result ) ).contains( "1970-01-01T00:00:00Z" );
 	}
 
 }

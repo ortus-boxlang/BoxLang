@@ -57,12 +57,18 @@ public class QueryAddRow extends BIF {
 		Query					query		= arguments.getAsQuery( Key.query );
 		Object					rowData		= arguments.get( Key.rowData );
 		CastAttempt<Integer>	castAttempt	= IntegerCaster.attempt( rowData );
+
+		// If rowData is an integer, add that many empty rows
 		if ( castAttempt.wasSuccessful() ) {
 			return query.addRows( castAttempt.get() );
 		}
-		if ( arguments.get( Key.rowData ) == null )
-			return query.addEmptyRow();
 
+		// Otherwise, add a single row with the provided data (if any)
+		if ( arguments.get( Key.rowData ) == null ) {
+			return query.addEmptyRow();
+		}
+
+		// If rowData is provided, it must be an array of arrays or structs, or a single struct
 		return query.addData( rowData );
 	}
 

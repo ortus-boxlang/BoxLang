@@ -23,7 +23,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
-import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
@@ -104,7 +103,7 @@ public class ConnectionManager {
 	public ConnectionManager( IBoxContext context ) {
 		this.context = context;
 
-		RequestBoxContext requestContext = this.context.getParentOfType( RequestBoxContext.class );
+		RequestBoxContext requestContext = this.context.getRequestContext();
 		if ( requestContext != null ) {
 			requestContext.getApplicationListener()
 			    .getInterceptorPool()
@@ -508,20 +507,9 @@ public class ConnectionManager {
 		if ( defaultDSN.isEmpty() ) {
 			return null;
 		}
-		Key		defaultDSNKey		= Key.of( defaultDSN );
-		IStruct	configDatasources	= ( IStruct ) this.context.getConfigItems( Key.datasources );
-		if ( !configDatasources.containsKey( defaultDSNKey ) ) {
-			throwNoDefaultDatasourceDefined( defaultDSNKey.getName() );
-		}
 
-		// Get the datasource config and incorporate the application name
-		IStruct				targetConfig	= configDatasources.getAsStruct( defaultDSNKey );
-
-		// Build the DataSourceConfig object from the incoming struct of settings
-		DatasourceConfig	dsn				= new DatasourceConfig( defaultDSNKey )
-		    .process( targetConfig )
-		    .withAppName( getApplicationName() );
-		this.defaultDatasource = this.datasourceService.register( dsn ).beginPooling();
+		// Look it up following the normal rules
+		this.defaultDatasource = getDatasource( Key.of( defaultDSN ) );
 
 		return this.defaultDatasource;
 	}
@@ -564,19 +552,36 @@ public class ConnectionManager {
 	 * @return The datasource object, or null if not found.
 	 */
 	public DataSource getDatasource( Key datasourceName ) {
-		return this.datasources.computeIfAbsent( datasourceName, ( uniqueName ) -> {
+		return this.datasources.computeIfAbsent( datasourceName, ( thisName ) -> {
 			// Try to discover now: These come from the context, so overrides are already applied
 			IStruct configDatasources = this.context.getConfig().getAsStruct( Key.datasources );
 
 			// If the name doesn't exist in the datasources map, we return null
-			if ( !configDatasources.containsKey( uniqueName ) ) {
+			if ( !configDatasources.containsKey( thisName ) ) {
 				return null;
 			}
+			IStruct	properties		= configDatasources.getAsStruct( thisName );
+			String	applicationName	= properties.getOrDefault( Key.applicationName, "" ).toString();
 
-			// Build out the config from the struct first.
-			DatasourceConfig dsnConfig = new DatasourceConfig( uniqueName )
-			    .process( configDatasources.getAsStruct( uniqueName ) )
-			    .withAppName( getApplicationName() );
+			// What is the "unique" name of this datasource definition
+			Key		uniqueName		= DatasourceConfig.getUniqueName( applicationName, false, thisName.getName(), properties );
+
+			// See if the datasource service already has this definition
+			if ( this.datasourceService.has( uniqueName ) ) {
+				// We begin pooling just in case the datasource is registered, but never used until now.
+				// beginPooling() is idempotent, so it's safe to call multiple times.
+				return this.datasourceService.get( uniqueName ).beginPooling();
+			}
+
+			// if this is truly the first time, then build out the config and register it
+			DatasourceConfig dsnConfig = new DatasourceConfig( thisName )
+			    .process( properties );
+
+			// Only add application name if this datasource definition came from an application config
+			if ( applicationName != null && !applicationName.isEmpty() ) {
+				dsnConfig.withAppName( Key.of( applicationName ) );
+			}
+
 			return this.datasourceService.register( dsnConfig ).beginPooling();
 		} );
 	}
@@ -637,13 +642,23 @@ public class ConnectionManager {
 	 */
 	public DataSource getOnTheFlyDataSource( IStruct properties ) {
 		Key datasourceName = Key.of( "onthefly_" + properties.hashCode() );
-		return this.datasources.computeIfAbsent( datasourceName, ( uniqueName ) -> {
-			// Build out the config
+		return this.datasources.computeIfAbsent( datasourceName, ( theName ) -> {
+
+			// What is the "unique" name of this datasource definition
+			Key uniqueName = DatasourceConfig.getUniqueName( "", true, theName.getName(), properties );
+
+			// See if the datasource service already has this definition
+			if ( this.datasourceService.has( uniqueName ) ) {
+				// We begin pooling just in case the datasource is registered, but never used until now.
+				// beginPooling() is idempotent, so it's safe to call multiple times.
+				return this.datasourceService.get( uniqueName ).beginPooling();
+			}
+
+			// if this is truly the first time, then build out the config and register it
 			DatasourceConfig config = new DatasourceConfig(
 			    Key.of( datasourceName.getName() ),
 			    properties
 			)
-			    .withAppName( getApplicationName() )
 			    .setOnTheFly();
 
 			// Register it
@@ -758,22 +773,4 @@ public class ConnectionManager {
 		// Anything else to do here?
 	}
 
-	/**
-	 * --------------------------------------------------------------------------
-	 * Private Helper Methods
-	 * --------------------------------------------------------------------------
-	 */
-
-	/**
-	 * Get the application name for this connection manager.
-	 *
-	 * @return The application name, or an empty key if not found.
-	 */
-	private Key getApplicationName() {
-		var appContext = this.context.getParentOfType( ApplicationBoxContext.class );
-		if ( appContext != null ) {
-			return appContext.getApplication().getName();
-		}
-		return Key._EMPTY;
-	}
 }

@@ -19,7 +19,6 @@ package ortus.boxlang.runtime.bifs.global.system;
 
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 
 @BoxBIF( description = "Unregister a request-level interceptor" )
@@ -43,7 +42,7 @@ public class BoxUnregisterRequestInterceptor extends BoxUnregisterInterceptor {
 	 * @argument.states An array of events to unregister to along side the points discovered in the incoming interceptor. If not passed, all states
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		this.interceptorTarget = context.getParentOfType( RequestBoxContext.class )
+		this.interceptorTarget = context.getRequestContextOrFail()
 		    .getApplicationListener()
 		    .getInterceptorPool();
 

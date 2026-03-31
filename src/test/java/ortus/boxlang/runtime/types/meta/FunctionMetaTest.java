@@ -20,15 +20,22 @@ package ortus.boxlang.runtime.types.meta;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
+import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.Struct;
@@ -37,7 +44,24 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class FunctionMetaTest {
 
-	private IBoxContext context = new ScriptingRequestBoxContext();
+	static BoxRuntime	instance;
+	IBoxContext			context;
+	IScope				variables;
+
+	@BeforeAll
+	public static void setUp() {
+		instance = BoxRuntime.getInstance( true );
+	}
+
+	@AfterAll
+	public static void teardown() {
+	}
+
+	@BeforeEach
+	public void setupEach() {
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
+	}
 
 	@DisplayName( "Test function meta" )
 	@Test
@@ -83,12 +107,14 @@ public class FunctionMetaTest {
 		assertThat( $bx.meta.containsKey( "documentation" ) ).isTrue();
 		assertThat( $bx.meta.containsKey( "closure" ) ).isTrue();
 		assertThat( $bx.meta.containsKey( "lambda" ) ).isTrue();
+		assertThat( $bx.meta.containsKey( "static" ) ).isTrue();
 
 		assertThat( $bx.meta.get( "name" ) ).isEqualTo( "foo" );
 		assertThat( $bx.meta.get( "access" ) ).isEqualTo( "public" );
 		assertThat( $bx.meta.get( "returnType" ) ).isEqualTo( "String" );
 		assertThat( $bx.meta.get( "closure" ) ).isEqualTo( false );
 		assertThat( $bx.meta.get( "lambda" ) ).isEqualTo( false );
+		assertThat( $bx.meta.get( "static" ) ).isEqualTo( false );
 
 		assertThat( $bx.meta.get( "parameters" ) instanceof Array ).isTrue();
 		assertThat( $bx.meta.get( "annotations" ) instanceof IStruct ).isTrue();
@@ -153,6 +179,59 @@ public class FunctionMetaTest {
 			return newValue;
 		} ) );
 
+	}
+
+	@DisplayName( "Test static function metadata property" )
+	@Test
+	void testStaticFunctionMeta() {
+		// Create a non-static UDF for comparison
+		UDF				nonStaticUDF	= new SampleUDF(
+		    UDF.Access.PUBLIC,
+		    Key.of( "myInstanceFunc" ),
+		    "any",
+		    new Argument[] {},
+		    "Brad"
+		);
+
+		// Get metadata for non-static function
+		FunctionMeta	nonStaticMeta	= ( FunctionMeta ) Referencer.get( context, nonStaticUDF, BoxMeta.key, false );
+
+		// Verify the non-static function has static = false
+		assertThat( nonStaticMeta.meta.containsKey( "static" ) ).isTrue();
+		assertThat( nonStaticMeta.meta.get( "static" ) ).isEqualTo( false );
+
+		// Test with a real static function from a BoxLang class
+		// @formatter: off
+		instance.executeSource(
+		    """
+		            myStaticFunc = src.test.java.TestCases.phase3.StaticTest::myStaticFunc
+		            myInstanceFunc = new src.test.java.TestCases.phase3.StaticTest().myInstanceFunc
+
+		    staticFunctions = getClassMetadata( "src.test.java.TestCases.phase3.StaticTest" )
+		    	.functions
+		    	.filter( target  => target.static == true )
+		    	.map( target => target.name )
+		            """,
+		    context
+		);
+		// @formatter: on
+
+		Function	staticFunc		= ( Function ) variables.get( Key.of( "myStaticFunc" ) );
+		Function	instanceFunc	= ( Function ) variables.get( Key.of( "myInstanceFunc" ) );
+		Array		staticFunctions	= variables.getAsArray( Key.of( "staticFunctions" ) );
+
+		assertThat( staticFunctions ).contains( "sayHello" );
+		assertThat( staticFunctions ).contains( "getInstance" );
+
+		// Get metadata for the static function
+		FunctionMeta staticMeta = ( FunctionMeta ) Referencer.get( context, staticFunc, BoxMeta.key, false );
+		assertThat( staticMeta.meta.containsKey( "static" ) ).isTrue();
+		assertThat( staticMeta.meta.get( "static" ) ).isEqualTo( true );
+
+		// Get metadata for the instance function
+		FunctionMeta instanceMeta = ( FunctionMeta ) Referencer.get( context, instanceFunc, BoxMeta.key, false );
+		assertThat( instanceMeta.meta.containsKey( "static" ) ).isTrue();
+		assertThat( instanceMeta.meta.get( "static" ) ).isEqualTo( false );
 	}
 
 }

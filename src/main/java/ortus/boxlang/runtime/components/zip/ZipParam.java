@@ -49,12 +49,12 @@ public class ZipParam extends Component {
 		        }
 		    ) ),
 		    new Attribute( Key.filter, Argument.ANY ),
-		    new Attribute( Key.filterDelimiters, Argument.STRING, Validator.NOT_IMPLEMENTED ),
+		    new Attribute( Key.filterDelimiters, Argument.STRING, Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    new Attribute( Key.prefix, Argument.STRING ),
 		    new Attribute( Key.source, Argument.STRING ),
 		    new Attribute( Key.recurse, Argument.BOOLEAN, true ),
-		    new Attribute( Key.password, Argument.STRING, Validator.NOT_IMPLEMENTED ),
-		    new Attribute( Key.encryptionAlgorithm, Argument.STRING, Validator.NOT_IMPLEMENTED )
+		    new Attribute( Key.password, Argument.STRING, Set.of( Validator.NOT_IMPLEMENTED ) ),
+		    new Attribute( Key.encryptionAlgorithm, Argument.STRING, Set.of( Validator.NOT_IMPLEMENTED ) )
 		};
 	}
 

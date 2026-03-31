@@ -149,6 +149,24 @@ public class QoQParseTest {
 	}
 
 	@Test
+	public void testNestedQueryTable() {
+		instance.executeSource(
+		    """
+		                foo.bar.baz.qryDept = queryNew( "name,code", "varchar,integer", [["IT",404],["Exec",200],["Janitor",200]] )
+		                q = queryExecute( "
+		                select name as col from foo.bar.baz.qryDept
+		          union select name from foo.bar.baz.qryDept
+		    order by col desc
+		                        ",
+		                              	[],
+		                              	{ dbType : "query" }
+		                              );
+		                           println( q )
+		                              """,
+		    context );
+	}
+
+	@Test
 	public void testRunQoQUnionDistinct() {
 		instance.executeSource(
 		    """
@@ -581,6 +599,33 @@ public class QoQParseTest {
 	}
 
 	@Test
+	public void testDistinctWithParens() {
+		instance.executeSource(
+		    """
+		                 qryEmployees = queryNew(
+		           	"name,age,dept,supervisor",
+		           	"varchar,integer,varchar,varchar",
+		           	[
+		           		["luis",43,"Exec","luis"],
+		           		["brad",44,"IT","luis"],
+		           		["jacob",35,"IT","luis"],
+		           		["Jon",45,"HR","luis"]
+		              		]
+		              	)
+		    // not actualy a function-- just paren-wrapped column name
+		           q = queryExecute( "
+		       select distinct( dept )
+		       from qryEmployees
+		                                           ",
+		                                                 	[],
+		                                                 	{ dbType : "query" }
+		                                                 );
+		                                                 """,
+		    context );
+		assertThat( variables.getAsQuery( q ).size() ).isEqualTo( 3 );
+	}
+
+	@Test
 	public void testNullAggregate() {
 		instance.executeSource(
 		    """
@@ -723,6 +768,25 @@ public class QoQParseTest {
 		assertThat( variables.get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
 		ortus.boxlang.runtime.types.Query query = variables.getAsQuery( result );
 		assertEquals( 3, query.size() );
+	}
+
+	@Test
+	public void testNullLike() {
+		instance.executeSource(
+		    """
+		       q = queryNew( "col","string",[[null]] )
+		    result = queryExecute("
+		    select 'cool'
+		    from q
+		    where col like '%'
+		    ", [], { dbtype="query" } )
+		              """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		ortus.boxlang.runtime.types.Query query = variables.getAsQuery( result );
+		// TODO: THis matches Lucee but isn't actually correct. Any comparison operatino including null should evaluate false
+		// but we need some refactoring to allow that as my internal methods aren't using boxed booleans so I can't return nulls right now
+		assertEquals( 1, query.size() );
 	}
 
 }

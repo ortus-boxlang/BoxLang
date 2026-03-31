@@ -31,7 +31,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  * - BOXCACHE: The default BoxLang cache provider
  *
  * @author Ortus Solutions, Corp
- * 
+ *
  * @since 1.0.0
  */
 public enum CoreProviderType {
@@ -71,6 +71,10 @@ public enum CoreProviderType {
 			if ( value.getKey().equals( key ) ) {
 				return value;
 			}
+			// Check for BoxCache alias (accepts both "BoxCache" and "BoxCacheProvider")
+			if ( value == BOXCACHE && Key.boxCache.equals( key ) ) {
+				return value;
+			}
 		}
 		throw new BoxRuntimeException( "No Core Provider " + CoreProviderType.class.getCanonicalName() + " with key " + key );
 	}
@@ -93,6 +97,10 @@ public enum CoreProviderType {
 	public static boolean isCore( Key key ) {
 		for ( CoreProviderType value : CoreProviderType.values() ) {
 			if ( value.getKey().equals( key ) ) {
+				return true;
+			}
+			// Check for BoxCache alias (accepts both "BoxCache" and "BoxCacheProvider")
+			if ( value == BOXCACHE && Key.boxCache.equals( key ) ) {
 				return true;
 			}
 		}

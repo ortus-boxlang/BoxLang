@@ -62,13 +62,22 @@ public class Associate extends Component {
 	 * @attributes.dataCollection The collection of data to associate with the base tag
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
-		String	baseTag				= attributes.getAsString( Key.baseTag );
-		Key		dataCollectionName	= Key.of( attributes.getAsString( Key.dataCollection ) );
-		IStruct	childState			= context.findClosestComponent( Key.component );
-		IStruct	childAttributes		= childState.getAsStruct( Key.attributes ).getAsStruct( Key.attributes );
+		String baseTag = attributes.getAsString( Key.baseTag );
+		// Strip cf_ if it exists (case insensitive)
+		if ( baseTag.toLowerCase().startsWith( "cf_" ) ) {
+			baseTag = baseTag.substring( 3 );
+		}
+		// now the same with bx:_
+		if ( baseTag.toLowerCase().startsWith( "bx:_" ) ) {
+			baseTag = baseTag.substring( 4 );
+		}
+		final Key	baseTagKey			= Key.of( baseTag );
+		Key			dataCollectionName	= Key.of( attributes.getAsString( Key.dataCollection ) );
+		IStruct		childState			= context.findClosestComponent( Key.component );
+		IStruct		childAttributes		= childState.getAsStruct( Key.attributes ).getAsStruct( Key.attributes );
 
-		IStruct	parentState			= context.findClosestComponent( Key.component,
-		    ( s ) -> s != childState && s.getAsKey( Key.customTagName ).equals( Key.of( baseTag ) ) );
+		IStruct		parentState			= context.findClosestComponent( Key.component,
+		    ( s ) -> s != childState && s.getAsKey( Key.customTagName ).equals( baseTagKey ) );
 		if ( parentState == null ) {
 			throw new RuntimeException( "Associate component is not nested in the body of a custom tag named [" + baseTag + "]" );
 		}

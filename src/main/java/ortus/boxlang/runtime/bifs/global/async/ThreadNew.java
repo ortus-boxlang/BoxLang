@@ -22,7 +22,6 @@ import ortus.boxlang.runtime.async.RequestThreadManager;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ThreadComponentBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
@@ -75,7 +74,7 @@ public class ThreadNew extends BIF {
 		String						name			= arguments.getAsString( Key._NAME );
 		String						priority		= arguments.getAsString( Key.priority );
 		IStruct						attributes		= arguments.getAsStruct( Key.attributes );
-		RequestThreadManager		threadManager	= context.getParentOfType( RequestBoxContext.class ).getThreadManager();
+		RequestThreadManager		threadManager	= context.getRequestContextOrFail().getThreadManager();
 		final Key					nameKey			= RequestThreadManager.ensureThreadName( name );
 		ThreadComponentBoxContext	tContext		= threadManager.createThreadContext( context, nameKey, attributes );
 

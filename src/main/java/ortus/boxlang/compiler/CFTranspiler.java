@@ -26,15 +26,12 @@ import java.nio.file.Paths;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * I am a CLI tool for transpiling ColdFusion code to BoxLang
  */
 public class CFTranspiler {
-
-	private static final BoxLangLogger logger = BoxRuntime.getInstance().getLoggingService().getLogger( CFTranspiler.class.getSimpleName() );
 
 	/**
 	 * Prints the help message for the CFTranspiler tool.
@@ -137,7 +134,7 @@ public class CFTranspiler {
 			}
 
 			if ( !sourcePath.toFile().exists() ) {
-				logger.error( "Source Path does not exist: " + sourcePath.toString() );
+				System.out.println( "Source Path does not exist: " + sourcePath.toString() );
 				System.exit( 1 );
 			}
 			if ( target == null ) {
@@ -164,7 +161,6 @@ public class CFTranspiler {
 					System.out.println( "🔍 Looking for: .cfm, .cfc, .cfs files" );
 					System.out.println();
 				}
-				logger.debug( "Transpiling all .cfm/.cfc/.cfs files in " + sourcePath.toString() + " to " + targetPath.toString() );
 				// Transpile all .cfm, .cfs, and .cfc files in sourcePath to targetPath
 				final Path		finalTargetPath	= targetPath;
 				final Boolean	finalVerbose	= verbose;
@@ -250,13 +246,11 @@ public class CFTranspiler {
 		if ( verbose ) {
 			System.out.println( "⚙️  Parsing: " + sourcePath.getFileName().toString() );
 		}
-		logger.debug( "Writing " + targetPath.toString() );
 		ParsingResult result = new Parser().parse( sourcePath.toFile() );
 		if ( result.isCorrect() ) {
 			if ( verbose ) {
 				System.out.println( "📝 Writing: " + targetPath.getFileName().toString() );
 			}
-			// logger.debug( result.getRoot().toString() );
 			try {
 				Files.write( targetPath, result.getRoot().toString().getBytes( StandardCharsets.UTF_8 ) );
 				if ( verbose ) {
@@ -272,8 +266,6 @@ public class CFTranspiler {
 				System.out.println( "   Parsing errors found:" );
 				result.getIssues().forEach( issue -> System.out.println( "   • " + issue.toString() ) );
 			}
-			logger.error( "Parsing failed for " + sourcePath.toString() );
-			result.getIssues().forEach( issue -> logger.error( issue.toString() ) );
 			if ( stopOnError ) {
 				System.exit( 1 );
 			}

@@ -15,15 +15,19 @@
 
 package ortus.boxlang.runtime.bifs.global.io;
 
+import java.nio.charset.Charset;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.File;
-import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF( description = "Append content to a file" )
 
@@ -37,7 +41,8 @@ public class FileAppend extends BIF {
 		declaredArguments = new Argument[] {
 		    new Argument( true, "any", Key.file ),
 		    new Argument( true, "any", Key.data ),
-		    new Argument( false, "string", Key.charset, "utf-8" )
+		    new Argument( false, "string", Key.charset, "utf-8" ),
+		    new Argument( false, "boolean", Key.addnewline, false )
 		};
 	}
 
@@ -55,16 +60,29 @@ public class FileAppend extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		File file = null;
-		if ( arguments.get( Key.file ) instanceof File ) {
-			file = ( File ) arguments.get( Key.file );
+		if ( arguments.get( Key.file ) instanceof File castFile ) {
+			file = castFile;
 		} else if ( arguments.get( Key.file ) instanceof String ) {
 			String filePath = FileSystemUtil.expandPath( context, arguments.getAsString( Key.file ) ).absolutePath().toString();
 			file = new File( filePath, "append", arguments.getAsString( Key.charset ), false );
 		} else {
 			throw new BoxRuntimeException( "The file argumennt [" + arguments.getAsString( Key.file ) + "] is not an open file stream or string path." );
 		}
+		Object	data	= arguments.get( Key.data );
+		String	content	= null;
+		if ( data instanceof byte[] dataBytes ) {
+			content = new String( dataBytes, Charset.forName( arguments.getAsString( Key.charset ) ) );
+			return null;
+		} else {
+			content = StringCaster.cast( data );
+		}
 
-		file.append( arguments.getAsString( Key.data ) );
+		if ( BooleanCaster.cast( arguments.get( Key.addnewline ) ) ) {
+			content += FileSystemUtil.LINE_SEPARATOR;
+		}
+
+		file.append( content );
+
 		// For strings file args we need to close the buffer
 		if ( arguments.get( Key.file ) instanceof String ) {
 			file.close();

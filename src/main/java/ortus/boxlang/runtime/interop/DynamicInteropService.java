@@ -23,10 +23,10 @@ import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.sql.Time;
@@ -68,6 +68,8 @@ import ortus.boxlang.runtime.dynamic.casters.TimeCaster;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyService;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.loader.DiskClassLoader;
+import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
@@ -95,7 +97,6 @@ import ortus.boxlang.runtime.types.exceptions.NoMethodException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.GenericMeta;
 import ortus.boxlang.runtime.types.util.BooleanRef;
-import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.types.util.ObjectRef;
 import ortus.boxlang.runtime.types.util.TypeUtil;
 
@@ -183,7 +184,7 @@ public class DynamicInteropService {
 	private static final MethodHandles.Lookup						METHOD_LOOKUP;
 
 	/**
-	 * This caches the method handles for the class so we don't have to look them up every time
+	 * This caches the method handles for the class so we don't have to look them up every time.
 	 */
 	private static final ConcurrentHashMap<String, MethodRecord>	methodHandleCache	= new ConcurrentHashMap<>( 32 );
 
@@ -249,7 +250,7 @@ public class DynamicInteropService {
 
 	/**
 	 * --------------------------------------------------------------------------
-	 * Setters & Getters
+	 * Cache Management
 	 * --------------------------------------------------------------------------
 	 */
 
@@ -269,6 +270,33 @@ public class DynamicInteropService {
 	 */
 	public static void setHandlesCacheEnabled( Boolean enabled ) {
 		handlesCacheEnabled = enabled;
+	}
+
+	/**
+	 * How many method handles are currently cached
+	 *
+	 * @return the size of the method handle cache
+	 */
+	public static int getMethodHandleCacheSize() {
+		return methodHandleCache.size();
+	}
+
+	/**
+	 * Get the keys of the method handle cache, which are the signatures of the methods.
+	 *
+	 * @return the set of keys in the method handle cache as human-readable strings
+	 */
+	public static Set<String> getMethodHandleCacheKeys() {
+		return methodHandleCache.keySet().stream()
+		    .map( Object::toString )
+		    .collect( Collectors.toSet() );
+	}
+
+	/**
+	 * Clear the method handle cache
+	 */
+	public static void clearMethodHandleCache() {
+		methodHandleCache.clear();
 	}
 
 	/**
@@ -301,12 +329,23 @@ public class DynamicInteropService {
 		// This might be a super class, so we need to skip the initialization
 		if ( IClassRunnable.class.isAssignableFrom( targetClass ) ) {
 			// This tells us to skip the initialization because it's a super class
-			if ( args.length == 1 && args[ 0 ] != null && args[ 0 ].equals( Key.noInit ) ) {
+			boolean isSuper = false;
+			if ( args.length == 1 && args[ 0 ] != null && ( args[ 0 ].equals( Key.noInit ) || ( isSuper = args[ 0 ].equals( Key.isSuper ) ) ) ) {
 				noInit = true;
 			} else {
 				BLArgs = args;
 			}
 			args = EMPTY_ARGS;
+
+			IClassRunnable boxClass;
+			try {
+				boxClass = ( IClassRunnable ) targetClass.getConstructor().newInstance();
+				return bootstrapBLClass( context, boxClass, BLArgs, null, noInit, isSuper );
+			} catch ( InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException
+			    | SecurityException e ) {
+				throw new BoxRuntimeException( "Error creating instance of class " + targetClass.getName(), e );
+			}
+
 		}
 
 		// Unwrap any DynamicObject instances
@@ -349,11 +388,6 @@ public class DynamicInteropService {
 			@SuppressWarnings( "unchecked" )
 			T thisInstance = ( T ) constructorInvoker.invokeWithArguments( expandVarargs( castedArgumentValues, constructor.isVarArgs(), false, constructor ) );
 
-			// If this is a Box Class, some additional initialization is needed
-			if ( thisInstance instanceof IClassRunnable boxClass ) {
-				return bootstrapBLClass( context, boxClass, BLArgs, null, noInit );
-			}
-
 			// Announce it to the world
 			BoxRuntime
 			    .getInstance()
@@ -389,41 +423,17 @@ public class DynamicInteropService {
 			throw new BoxRuntimeException( "Cannot invoke a constructor on an interface" );
 		}
 		// check if targetClass is an IClassRunnable
-		if ( !IClassRunnable.class.isAssignableFrom( targetClass ) ) {
-			throw new BoxRuntimeException( "Cannot use named arguments on a Java constructor." );
-		}
-		// Method signature for a constructor is void (Object...)
-		MethodType		constructorType	= MethodType.methodType( void.class, argumentsToClasses( EMPTY_ARGS ) );
-		// Define the bootstrap method
-		MethodHandle	constructorHandle;
-		try {
-			constructorHandle = METHOD_LOOKUP.findConstructor( targetClass, constructorType );
-		} catch ( NoSuchMethodException | IllegalAccessException e ) {
-			throw new BoxRuntimeException( "Error getting constructor for class " + targetClass.getName(), e );
-		}
-		// Create a callsite using the constructor handle
-		CallSite		callSite			= new ConstantCallSite( constructorHandle );
-		// Bind the CallSite and invoke the constructor with the provided arguments
-		// Invoke Dynamic tries to do argument coercion, so we need to convert the arguments to the right types
-		MethodHandle	constructorInvoker	= callSite.dynamicInvoker();
-		try {
-			@SuppressWarnings( "unchecked" )
-			T thisInstance = ( T ) constructorInvoker.invokeWithArguments( EMPTY_ARGS );
-
-			// If this is a Box Class, some additional initialization is needed
-			if ( thisInstance instanceof IClassRunnable boxClass ) {
-				return bootstrapBLClass( context, boxClass, null, args, false );
+		if ( IClassRunnable.class.isAssignableFrom( targetClass ) ) {
+			IClassRunnable boxClass;
+			try {
+				boxClass = ( IClassRunnable ) targetClass.getConstructor().newInstance();
+				return bootstrapBLClass( context, boxClass, null, args, false, true );
+			} catch ( InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException
+			    | SecurityException e ) {
+				throw new BoxRuntimeException( "Error creating instance of class " + targetClass.getName(), e );
 			}
-			return thisInstance;
-		} catch ( RuntimeException e ) {
-			throw e;
-		} catch ( Throwable e ) {
-			throw new BoxRuntimeException(
-			    "Error invoking constructor for class " + targetClass.getName() +
-			        ". Caused by " + e.getMessage(),
-			    e.getClass().getName(),
-			    e
-			);
+		} else {
+			throw new BoxRuntimeException( "Cannot use named arguments on a Java constructor." );
 		}
 	}
 
@@ -547,7 +557,6 @@ public class DynamicInteropService {
 			if ( safe ) {
 				return null;
 			} else {
-				e.printStackTrace();
 				throw new BoxRuntimeException( "Error getting method [" + methodName + "] for class [" + targetClass.getName() + "]", e );
 			}
 		}
@@ -1225,14 +1234,18 @@ public class DynamicInteropService {
 	    Object[] castedArgumentValues,
 	    Object... arguments ) {
 
+		var				methodHandleCache	= findMethodHandleCache( targetClass );
 		// We use the method signature as the cache key
-		String			cacheKey		= targetClass.hashCode() + methodName + Arrays.hashCode( argumentsAsClasses );
-		MethodRecord	methodRecord	= methodHandleCache.get( cacheKey );
-		boolean			fromCache		= true;
+		String			cacheKey			= targetClass.hashCode() + methodName + Arrays.hashCode( argumentsAsClasses );
 
-		// Double lock to avoid race-conditions
+		MethodRecord	methodRecord		= methodHandleCache.get( cacheKey );
+		boolean			fromCache			= true;
+
+		// Double-checked locking with a striped monitor to minimise contention on the miss path.
+		// Spread hash: XOR upper 16 bits into lower 16 to improve distribution before masking.
 		if ( methodRecord == null || !handlesCacheEnabled ) {
-			synchronized ( cacheKey.intern() ) {
+			// Instead of interning the cache key, we'll syncronize on the class. This means only one method can be discovered at a time per class, but it avoids the overhead of interning strings.
+			synchronized ( targetClass ) {
 				if ( methodRecord == null || !handlesCacheEnabled ) {
 					BooleanRef isCachable = new BooleanRef( true );
 					// The process of discovering the method handle will cast/coerce the arguments, so there's no need to do it again in this code path
@@ -1268,6 +1281,27 @@ public class DynamicInteropService {
 			);
 		}
 		return methodRecord;
+	}
+
+	/**
+	 * Get the correct method handle cache based on the class.
+	 * 
+	 * @param targetClass The class we're going to call a method on
+	 * 
+	 * @return The method handle cache to use for this class
+	 */
+	private static ConcurrentHashMap<String, MethodRecord> findMethodHandleCache( Class<?> targetClass ) {
+		ClassLoader classLoader = targetClass.getClassLoader();
+		// This is for a module, or javasettings-loaded class.
+		if ( classLoader instanceof DynamicClassLoader dcl ) {
+			return dcl.getMethodHandleCache();
+		}
+		// This is for a BoxPiler-loaded class.
+		if ( classLoader instanceof DiskClassLoader dcl ) {
+			return dcl.getMethodHandleCache();
+		}
+		// This will be used for all JDK or core classes
+		return methodHandleCache;
 	}
 
 	/**
@@ -2792,6 +2826,24 @@ public class DynamicInteropService {
 			}
 		}
 
+		// If actual is a Class instance and expected is not, then see if the actual class is assignable to expected, if so we want to attempt to instantiate it using the no-arg constructor
+		if ( value instanceof Class<?> cls && !isInterface( cls ) && expected != Class.class ) {
+			// See if the class is assignable to the expected type
+			if ( expected.isAssignableFrom( cls ) ) {
+				try {
+					// Try to instantiate it using the no-arg constructor
+					Object instance = invokeConstructor( context, cls );
+					// Type casting from Class to instance is a pretty loose match
+					matchScore.addAndGet( 4 );
+					return Optional.of( instance );
+				} catch ( BoxRuntimeException e ) {
+					// Ignore things like NoConstructorException
+					// This is a bit of a wide net, but there are many reasons why instantiation could fail, and in any case, it just means we can't coerce it so we ignore it.
+					// We could do more checks above before attempting to instantiate, but then we'd have to duplicate quite a lot of logic to actually check the constructors available on the class, etc
+				}
+			}
+		}
+
 		// EXPECTED: FunctionInterfaces and/or SAMs
 		Class<?> functionalInterface = InterfaceProxyService.getFunctionalInterface( expected );
 		// If the target is a functional interface and the actual value is a Funcion or Runnable, coerce it
@@ -2884,7 +2936,8 @@ public class DynamicInteropService {
 	 * @return The instance of the class
 	 */
 	@SuppressWarnings( "unchecked" )
-	private static <T> T bootstrapBLClass( IBoxContext context, IClassRunnable boxClass, Object[] positionalArgs, Map<Key, Object> namedArgs, boolean noInit ) {
+	private static <T> T bootstrapBLClass( IBoxContext context, IClassRunnable boxClass, Object[] positionalArgs, Map<Key, Object> namedArgs, boolean noInit,
+	    boolean isSuper ) {
 		// This class context is really only used while boostrapping the pseudoConstructor. It will NOT be used as a parent
 		// context once the boxClass is initialized. Methods called on this boxClass will have access to the variables/this scope via their
 		// FunctionBoxContext, but their parent context will be whatever context they are called from.
@@ -2893,58 +2946,63 @@ public class DynamicInteropService {
 		classContext.pushTemplate( boxClass );
 
 		try {
-			// First, we load the super class if it exists
-			Object superClassObject = boxClass.getAnnotations().get( Key._EXTENDS );
-			if ( superClassObject != null ) {
-				String superClassName = StringCaster.cast( superClassObject );
-				if ( superClassName != null && superClassName.length() > 0 && !superClassName.toLowerCase().startsWith( "java:" ) ) {
-					// Recursively load the super class
-					IClassRunnable _super = ( IClassRunnable ) getClassLocator().load( classContext,
-					    superClassName,
-					    classContext.getCurrentImports()
-					)
-					    // Constructor args are NOT passed. Only the outermost class gets to use those
-					    .invokeConstructor( classContext, new Object[] { Key.noInit } )
-					    .unWrapBoxLangClass();
+			if ( boxClass.getBoxSuperClass() != null ) {
+				// Recursively load the super class
+				IClassRunnable _super = ( IClassRunnable ) ( DynamicObject.of( boxClass.getBoxSuperClass().getTargetClass() )
+				    // Constructor args are NOT passed. Only the outermost class gets to use those
+				    .invokeConstructor( classContext, new Object[] { Key.isSuper } )
+				    .unWrapBoxLangClass() );
 
-					// Check for final annotation and throw if we're trying to extend a final class
-					if ( _super.getAnnotations().get( Key._final ) != null ) {
-						throw new BoxRuntimeException( "Cannot extend final class: " + _super.bxGetName() );
-					}
-					// Set in our super class
-					boxClass.setSuper( _super );
+				// Check for final annotation and throw if we're trying to extend a final class
+				if ( _super.isFinalClass() ) {
+					throw new BoxRuntimeException( "Cannot extend final class: " + _super.bxGetName() );
 				}
+				// Set in our super class
+				boxClass.setSuper( _super );
 			}
 
 			// Run the pseudo constructor
 			boxClass.pseudoConstructor( classContext );
 
-			// Now that UDFs are defined, let's enforce any interfaces
-			Object oInterfaces = boxClass.getAnnotations().get( Key._IMPLEMENTS );
-			if ( oInterfaces != null ) {
-				List<String> interfaceNames = ListUtil.asList( StringCaster.cast( oInterfaces ), "," )
-				    .stream()
-				    .map( String::valueOf )
-				    .map( String::trim )
-				    // ignore anything starting with java: (case insensitive)
-				    .filter( name -> !name.toLowerCase().startsWith( "java:" ) )
-				    .toList();
+			// Now that UDFs are defined, let's enforce any interfaces (abstract classes will skip the enforcement and only apply the default methods)
+			for ( BoxInterface _interface : boxClass.getInterfaces() ) {
+				boxClass.registerInterface( _interface );
+			}
 
-				for ( String interfaceName : interfaceNames ) {
-					BoxInterface thisInterface = ( BoxInterface ) getClassLocator().load( classContext, interfaceName, classContext.getCurrentImports() )
-					    .unWrapBoxLangClass();
-					boxClass.registerInterface( thisInterface );
+			boolean			isAbstract	= boxClass.isAbstractClass();
+			IClassRunnable	_super		= boxClass.getSuper();
+
+			// If this is the original class being created (not a super class).
+			if ( !isSuper ) {
+				// Ensure it's not marked as abstract.
+				if ( isAbstract ) {
+					throw new AbstractClassException( "Cannot instantiate an abstract class: " + boxClass.bxGetName() );
 				}
+				// validate that we've implemented all abstract methods from our super class(es).
+				// The get ALL abstract methods call here recursivley climbs the super chain, so we do this in one fell swoop.
+				BoxClassSupport.validateAbstractMethods( boxClass, boxClass.getAllAbstractMethods() );
 
 			}
 
+			// If this is a concrete class...
+			if ( !isAbstract ) {
+				// Find all abstract super classes, and enforce any interfaces they skipped earlier.
+				while ( _super != null ) {
+					// If this super was abstract
+					if ( _super.isAbstractClass() ) {
+						for ( BoxInterface _interface : _super.getInterfaces() ) {
+							_interface.validateClass( boxClass );
+						}
+					} else {
+						// If we've hit a non-abstract class, we can stop since it won't have any abstract methods or interface requirements
+						break;
+					}
+					_super = _super.getSuper();
+				}
+			}
+
 			if ( !noInit ) {
-				if ( boxClass.getAnnotations().get( Key._ABSTRACT ) != null ) {
-					throw new AbstractClassException( "Cannot instantiate an abstract class: " + boxClass.bxGetName() );
-				}
-				if ( boxClass.getSuper() != null ) {
-					BoxClassSupport.validateAbstractMethods( boxClass, boxClass.getSuper().getAllAbstractMethods() );
-				}
+
 				// Call constructor
 				// look for initMethod annotation
 				Object	initMethod	= boxClass.getAnnotations().get( Key.initMethod );
@@ -2954,7 +3012,7 @@ public class DynamicInteropService {
 				} else {
 					initKey = Key.init;
 				}
-				if ( boxClass.dereference( context, initKey, true ) != null ) {
+				if ( boxClass.getThisScope().get( initKey ) instanceof Function ) {
 					Object result;
 					if ( positionalArgs != null ) {
 						result = boxClass.dereferenceAndInvoke( classContext, initKey, positionalArgs, false );
@@ -3007,7 +3065,9 @@ public class DynamicInteropService {
 					}
 				}
 			}
-		} finally {
+		} finally
+
+		{
 			// This is for any output written in the pseudoconstructor that needs to be flushed
 			classContext.flushBuffer( false );
 			classContext.popTemplate();
@@ -3021,13 +3081,13 @@ public class DynamicInteropService {
 	 * Coerce a single value to the expected type
 	 * Unlike our BL Casters, this is directly tied to Java types for our Java interop. It uses
 	 * the same logic used for method argument coercion, but just on a single value.
-	 * 
+	 *
 	 * Throws a BoxCastException if the value cannot be coerced to the expected type.
-	 * 
+	 *
 	 * @param context The context to use for the method invocation
 	 * @param value   The value to coerce
 	 * @param type    The expected type
-	 * 
+	 *
 	 * @return The coerced value
 	 */
 	public static Object coerceValue(
@@ -3061,6 +3121,13 @@ public class DynamicInteropService {
 		return args[ 0 ];
 	}
 
+	/**
+	 * Internal record used to keep track of coercion attempts for method matching
+	 *
+	 * @param executable           The executable we are attempting to match
+	 * @param matchScore           The score of the match, lower is better
+	 * @param castedArgumentValues The argument values after coercion attempts, to be used if this is the best match
+	 */
 	private record CoerceAttempt( Executable executable, AtomicInteger matchScore, Object[] castedArgumentValues ) {
 
 		public static CoerceAttempt of( Executable executable, AtomicInteger matchScore, Object[] castedArgumentValues ) {

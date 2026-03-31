@@ -23,6 +23,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.IntConsumer;
+import java.util.function.IntFunction;
 import java.util.function.IntPredicate;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -35,10 +36,13 @@ import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.operators.CollatorStringCompare;
 import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.operators.StringCompare;
+import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.types.Array;
@@ -947,6 +951,24 @@ public class ListUtil {
 		);
 	}
 
+	public static Array filter(
+	    Array array,
+	    Function callback,
+	    IBoxContext callbackContext,
+	    Boolean parallel,
+	    Integer maxThreads,
+	    boolean virtual ) {
+		return filter(
+		    array,
+		    callback,
+		    callbackContext,
+		    parallel,
+		    maxThreads,
+		    virtual,
+		    true // Default to normal filter instead of reject
+		);
+	}
+
 	/**
 	 * Method to filter an list with a function callback and context
 	 *
@@ -965,7 +987,8 @@ public class ListUtil {
 	    IBoxContext callbackContext,
 	    Boolean parallel,
 	    Integer maxThreads,
-	    boolean virtual ) {
+	    boolean virtual,
+	    boolean keepIfTrue ) {
 
 		// Parameter validation
 		Objects.requireNonNull( array, "Array cannot be null" );
@@ -981,13 +1004,19 @@ public class ListUtil {
 		// Otherwise we pass the item, the index, and the array itself
 		IntPredicate test;
 		if ( callback.requiresStrictArguments() ) {
-			test = idx -> BooleanCaster
-			    .cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
-			        new Object[] { array.size() > idx ? array.get( idx ) : null } ) ) );
+			test = idx -> {
+				Boolean testValue = BooleanCaster
+				    .cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+				        new Object[] { array.size() > idx ? array.get( idx ) : null } ) ) );
+				return keepIfTrue ? testValue : !testValue;
+			};
 		} else {
-			test = idx -> BooleanCaster
-			    .cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
-			        new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) ) );
+			test = idx -> {
+				Boolean testValue = BooleanCaster
+				    .cast( ThreadBoxContext.runInContext( callbackContext, parallel, ctx -> ctx.invokeFunction( callback,
+				        new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) ) );
+				return keepIfTrue ? testValue : !testValue;
+			};
 		}
 
 		// Create a stream of what we want, usage is determined internally by the
@@ -1117,17 +1146,6 @@ public class ListUtil {
 		return map( array, callback, callbackContext, parallel, maxThreads, false );
 	}
 
-	/**
-	 * Maps an existing array to a new array
-	 *
-	 * @param array           The array object to map
-	 * @param callback        The callback Function object
-	 * @param callbackContext The context in which to execute the callback
-	 * @param parallel        Whether to process the map in parallel
-	 * @param maxThreads      Optional max threads for parallel execution
-	 *
-	 * @return The boolean value as to whether the test is met
-	 */
 	public static Array map(
 	    Array array,
 	    Function callback,
@@ -1135,14 +1153,8 @@ public class ListUtil {
 	    Boolean parallel,
 	    Integer maxThreads,
 	    boolean virtual ) {
-
-		// Parameter validation
-		Objects.requireNonNull( array, "Array cannot be null" );
 		Objects.requireNonNull( callback, "Callback cannot be null" );
 		Objects.requireNonNull( callbackContext, "Callback context cannot be null" );
-		if ( maxThreads == null ) {
-			maxThreads = 0; // Default to 0 if not provided
-		}
 
 		// Build the mapper based on the callback
 		// If the callback requires strict arguments, we only pass the item (Usually
@@ -1159,6 +1171,32 @@ public class ListUtil {
 			    ctx -> array.copyData( idx, ctx.invokeFunction(
 			        callback,
 			        new Object[] { array.size() > idx ? array.get( idx ) : null, idx + 1, array } ) ) );
+		}
+		return map( array, mapper, parallel, maxThreads, virtual );
+	}
+
+	/**
+	 * Maps an existing array to a new array
+	 *
+	 * @param array      The array object to map
+	 * @param mapper     The Java IntFunction mapper to use
+	 * @param parallel   Whether to process the map in parallel
+	 * @param maxThreads Optional max threads for parallel execution
+	 *
+	 * @return The boolean value as to whether the test is met
+	 */
+	public static Array map(
+	    Array array,
+	    IntFunction<Object> mapper,
+	    Boolean parallel,
+	    Integer maxThreads,
+	    boolean virtual ) {
+
+		// Parameter validation
+		Objects.requireNonNull( array, "Array cannot be null" );
+
+		if ( maxThreads == null ) {
+			maxThreads = 0; // Default to 0 if not provided
 		}
 
 		Stream<Object> arrayStream = array
@@ -1326,6 +1364,75 @@ public class ListUtil {
 				    }
 			    }
 			);
+		}
+	}
+
+	public static Array flatten( Array array, Integer depth ) {
+		Array results = Array.of();
+		for ( int i = 0; i < array.size(); i++ ) {
+			Object item = array.get( i );
+			if ( item instanceof Array nested ) {
+				if ( depth != null && depth == 1 ) {
+					results.addAll( nested );
+				} else {
+					results.addAll( ListUtil.flatten( nested, depth == null ? null : depth - 1 ) );
+				}
+			} else {
+				results.add( item );
+			}
+		}
+		return results;
+	}
+
+	/**
+	 * Resolves parallel execution settings from arguments.
+	 *
+	 * @param arguments The arguments scope containing maxThreads and virtual settings
+	 *
+	 * @return ParallelSettings object with resolved maxThreads and virtual flags
+	 */
+	public static ParallelSettings resolveParallelSettings( ArgumentsScope arguments ) {
+		Object maxThreads = arguments.get( Key.maxThreads );
+		if ( maxThreads instanceof Boolean castBoolean ) {
+			// If maxThreads is a boolean, we assign it to virtual
+			arguments.put( Key.virtual, castBoolean );
+			maxThreads = null;
+		}
+
+		CastAttempt<Integer>	maxThreadsAttempt	= IntegerCaster.attempt( maxThreads );
+		boolean					virtual				= BooleanCaster.cast( arguments.getOrDefault( Key.virtual, false ) );
+		return new ParallelSettings( maxThreadsAttempt.getOrDefault( 0 ), virtual );
+	}
+
+	/**
+	 * Container class for parallel execution settings.
+	 */
+	public static final class ParallelSettings {
+
+		private final int		maxThreads;
+		private final boolean	virtual;
+
+		private ParallelSettings( int maxThreads, boolean virtual ) {
+			this.maxThreads	= maxThreads;
+			this.virtual	= virtual;
+		}
+
+		/**
+		 * Gets the maximum number of threads to use for parallel execution.
+		 *
+		 * @return The maximum number of threads, or 0 for default pool size
+		 */
+		public int maxThreads() {
+			return this.maxThreads;
+		}
+
+		/**
+		 * Checks if virtual threads should be used for parallel execution.
+		 *
+		 * @return true if virtual threads should be used, false otherwise
+		 */
+		public boolean virtual() {
+			return this.virtual;
 		}
 	}
 }

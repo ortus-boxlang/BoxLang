@@ -47,11 +47,13 @@ public class BoxIfElseTransformer extends AbstractTransformer {
 		List<AbstractInsnNode>	nodes	= new ArrayList<>();
 		AsmHelper.addDebugLabel( nodes, "BoxIf" );
 		nodes.addAll( transpiler.transform( ifElse.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
-		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-		    Type.getInternalName( BooleanCaster.class ),
-		    "cast",
-		    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ) ),
-		    false ) );
+		if ( !ifElse.getCondition().returnsBoolean() ) {
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( BooleanCaster.class ),
+			    "cast",
+			    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ) ),
+			    false ) );
+		}
 		nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
 		    Type.getInternalName( Boolean.class ),
 		    "booleanValue",

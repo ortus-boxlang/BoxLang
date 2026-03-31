@@ -32,6 +32,10 @@ public interface IBoxSimpleLiteral extends IBoxLiteral {
 	 * Helper method to remove leading zeros from a string
 	 */
 	default String removeLeadingZeros( String value ) {
+		// exclude any scientific notation
+		if ( value.contains( "e" ) || value.contains( "E" ) ) {
+			return value;
+		}
 		return value.replaceFirst( "^0+(?!$)", "" );
 	}
 }

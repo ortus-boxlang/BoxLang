@@ -40,6 +40,7 @@ import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IProxyRunnable;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
+import ortus.boxlang.runtime.util.FQN;
 import ortus.boxlang.runtime.util.FRTransService;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
@@ -325,17 +326,36 @@ public abstract class Boxpiler implements IBoxpiler {
 		// This needs to be tested at decision time since the setting may have changed in the runtime since the compiler was created
 		Boolean	trustedCache	= runtime.getConfiguration().trustedCache;
 		if ( ( lastModified > 0 ) && ( lastModified2 > 0 ) && !trustedCache && ( lastModified != lastModified2 ) ) {
-			try {
-				// Don't know if this does anything, but calling it for good measure
-				classPool.get( classInfo.fqn().toString() ).getClassLoader().close();
-			} catch ( IOException e ) {
-				e.printStackTrace();
+			// Double check lock using the class name as the lockn. This ensures only one thread recompiles a class at a time
+			String internedFQN = classInfo.fqn().toString().intern();
+			synchronized ( internedFQN ) {
+
+				lastModified	= classPool.get( classInfo.fqn().toString() ).lastModified();
+				lastModified2	= classInfo.lastModified();
+				if ( ( lastModified > 0 ) && ( lastModified2 > 0 ) && !trustedCache && ( lastModified != lastModified2 ) ) {
+					try {
+						// Don't know if this does anything, but calling it for good measure
+						classPool.get( classInfo.fqn().toString() ).getClassLoader().close();
+					} catch ( IOException e ) {
+						e.printStackTrace();
+					}
+					try {
+						// Mark the class info instance as not ready to use yet
+						classInfo.startCompiling();
+						classPool.put( classInfo.fqn().toString(), classInfo );
+						compileClassInfo( classInfo.classPoolName(), classInfo.fqn().toString() );
+					} finally {
+						// It's ready now
+						classInfo.doneCompiling();
+					}
+				} else {
+					classInfo = classPool.get( classInfo.fqn().toString() );
+				}
 			}
-			classPool.put( classInfo.fqn().toString(), classInfo );
-			compileClassInfo( classInfo.classPoolName(), classInfo.fqn().toString() );
 		} else {
 			classInfo = classPool.get( classInfo.fqn().toString() );
 		}
+		// This will block if the class info is still being compiled
 		return classInfo.getDiskClass();
 	}
 
@@ -365,26 +385,85 @@ public abstract class Boxpiler implements IBoxpiler {
 	 */
 	@Override
 	public Class<IBoxRunnable> compileClass( ResolvedFilePath resolvedFilePath ) {
-		ClassInfo	classInfo	= ClassInfo.forClass( resolvedFilePath, Parser.detectFile( resolvedFilePath.absolutePath().toFile(), true ), this );
-		var			classPool	= getClassPool( classInfo.classPoolName() );
-		ensureClassInfo( classPool, classInfo );
-		// If the new class is newer than the one on disk, recompile it
-		long	lastModified	= classPool.get( classInfo.fqn().toString() ).lastModified();
-		long	lastModified2	= classInfo.lastModified();
-		// This needs to be tested at decision time since the setting may have changed in the runtime since the compiler was created
-		Boolean	trustedCache	= runtime.getConfiguration().trustedCache;
-		if ( ( lastModified > 0 ) && ( lastModified2 > 0 ) && !trustedCache && ( lastModified != lastModified2 ) ) {
-			try {
-				// Don't know if this does anything, but calling it for good measure
-				classPool.get( classInfo.fqn().toString() ).getClassLoader().close();
-			} catch ( IOException e ) {
-				e.printStackTrace();
+		ClassInfo				classInfo			= null;
+		Map<String, ClassInfo>	classPool			= null;
+		FQN						fqn					= null;
+		long					lastModifiedCurrent	= 0;
+
+		// In order to try hard to avoid creating a new ClassInfo instance, we'll try some quick attempts at finding an existing one first
+		if ( resolvedFilePath.mappingPath() != null ) {
+			// Start by seeing if there is already a class pool for the mapping path
+			classPool = getClassPool( resolvedFilePath.mappingPath() );
+			if ( classPool != null ) {
+				// If so, see if an exising entry patches our absolute path (the casing could be different on Windows, but there's a good chance it matches)
+				// We're not looping directly over the values() collection as the internal iterator can give ConcurrentModificationExceptions
+				// Pre-size with headroom to prevent AIOOBE if another thread adds entries during toArray()
+				ClassInfo[] snapshot = classPool.values().toArray( new ClassInfo[ classPool.size() + 50 ] );
+				for ( ClassInfo entry : snapshot ) {
+					if ( entry == null ) {
+						break;
+					}
+					if ( entry.resolvedFilePath().equals( resolvedFilePath ) ) {
+						classInfo			= entry;
+						// The classInfo may be cached, but get a fresh modified date
+						lastModifiedCurrent	= classInfo.getFreshLastModified();
+						break;
+					}
+				}
+				// Ok, if that didn't work, look for the normalized FQN.
+				if ( classInfo == null ) {
+					fqn			= resolvedFilePath.getFQN( "boxgenerated.boxclass" );
+					classInfo	= classPool.get( fqn.toString() );
+					if ( classInfo != null ) {
+						// The classInfo may be cached, but get a fresh modified date
+						lastModifiedCurrent = classInfo.getFreshLastModified();
+					}
+				}
 			}
-			classPool.put( classInfo.fqn().toString(), classInfo );
-			compileClassInfo( classInfo.classPoolName(), classInfo.fqn().toString() );
+		}
+		// Ok, we give up. Now we create a full ClassInfo instance.
+		if ( classInfo == null ) {
+			// If we created an FQN above, don't let that effort be in vain. Pass it here. If it's null, it will be created internally.
+			classInfo			= ClassInfo.forClass( resolvedFilePath, Parser.detectFile( resolvedFilePath.absolutePath().toFile(), true ), this, fqn );
+			// This date will be fresh since we just created the ClassInfo.
+			lastModifiedCurrent	= classInfo.lastModified();
+			classPool			= getClassPool( classInfo.classPoolName() );
+			ensureClassInfo( classPool, classInfo );
+		}
+
+		// If the new class is newer than the one on disk, recompile it
+		@SuppressWarnings( "null" )
+		long	lastModifiedPrevious	= classPool.get( classInfo.fqn().toString() ).lastModified();
+		// This needs to be tested at decision time since the setting may have changed in the runtime since the compiler was created
+		Boolean	trustedCache			= runtime.getConfiguration().trustedCache;
+		if ( ( lastModifiedPrevious > 0 ) && ( lastModifiedCurrent > 0 ) && !trustedCache && ( lastModifiedPrevious != lastModifiedCurrent ) ) {
+			// Double check lock using the class name as the lock. This ensures only one thread recompiles a class at a time
+			String internedFQN = classInfo.fqn().toString().intern();
+			synchronized ( internedFQN ) {
+
+				lastModifiedPrevious	= classPool.get( classInfo.fqn().toString() ).lastModified();
+				lastModifiedCurrent		= classInfo.getFreshLastModified();
+				if ( ( lastModifiedPrevious > 0 ) && ( lastModifiedCurrent > 0 ) && !trustedCache && ( lastModifiedPrevious != lastModifiedCurrent ) ) {
+					classPool.get( classInfo.fqn().toString() ).shutdownClassLoader();
+					// Get a fresh class info since we may have had a used one from above with an outdated modified date and class loader
+					classInfo = ClassInfo.forClass( resolvedFilePath, Parser.detectFile( resolvedFilePath.absolutePath().toFile(), true ), this, fqn );
+					try {
+						// Mark the class info instance as not ready to use yet
+						classInfo.startCompiling();
+						classPool.put( classInfo.fqn().toString(), classInfo );
+						compileClassInfo( classInfo.classPoolName(), classInfo.fqn().toString() );
+					} finally {
+						// It's ready now
+						classInfo.doneCompiling();
+					}
+				} else {
+					classInfo = classPool.get( classInfo.fqn().toString() );
+				}
+			}
 		} else {
 			classInfo = classPool.get( classInfo.fqn().toString() );
 		}
+		// This will block if the class info is still being compiled
 		return classInfo.getDiskClass();
 	}
 

@@ -33,7 +33,6 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -67,62 +66,62 @@ public class SetTimezoneTest {
 	@Test
 	public void testSetTimezone() {
 		ZoneId testZone = ZoneId.of( "America/Los_Angeles" );
-		context.getParentOfType( RequestBoxContext.class ).setTimezone( ZoneId.of( "UTC" ) );
-		assertNotEquals( context.getParentOfType( RequestBoxContext.class ).getTimezone(), testZone );
+		context.getRequestContext().setTimezone( ZoneId.of( "UTC" ) );
+		assertNotEquals( context.getRequestContext().getTimezone(), testZone );
 		instance.executeSource(
 		    """
 		    setTimezone( "America/Los_Angeles" );
 		    """,
 		    context );
-		assertEquals( context.getParentOfType( RequestBoxContext.class ).getTimezone(), testZone );
+		assertEquals( context.getRequestContext().getTimezone(), testZone );
 	}
 
 	@DisplayName( "It tests the BIF SetTimezone with a three letter alias zone code" )
 	@Test
 	public void testSetTimezoneCode() {
 		ZoneId testZone = ZoneId.of( "America/Los_Angeles" );
-		context.getParentOfType( RequestBoxContext.class ).setTimezone( ZoneId.of( "UTC" ) );
-		assertNotEquals( context.getParentOfType( RequestBoxContext.class ).getTimezone(), testZone );
+		context.getRequestContext().setTimezone( ZoneId.of( "UTC" ) );
+		assertNotEquals( context.getRequestContext().getTimezone(), testZone );
 		instance.executeSource(
 		    """
 		    setTimezone( "PST" );
 		    """,
 		    context );
-		assertEquals( context.getParentOfType( RequestBoxContext.class ).getTimezone(), testZone );
+		assertEquals( context.getRequestContext().getTimezone(), testZone );
 	}
 
 	@DisplayName( "It tests the BIF SetTimezone with case-insensitivity" )
 	@Test
 	public void setSetTimezoneInsensitive() {
 		ZoneId testZone = ZoneId.of( "America/Los_Angeles" );
-		context.getParentOfType( RequestBoxContext.class ).setTimezone( ZoneId.of( "UTC" ) );
-		assertNotEquals( context.getParentOfType( RequestBoxContext.class ).getTimezone(), testZone );
+		context.getRequestContext().setTimezone( ZoneId.of( "UTC" ) );
+		assertNotEquals( context.getRequestContext().getTimezone(), testZone );
 		instance.executeSource(
 		    """
 		    setTimezone( "pst" );
 		    """,
 		    context );
-		assertEquals( context.getParentOfType( RequestBoxContext.class ).getTimezone(), testZone );
+		assertEquals( context.getRequestContext().getTimezone(), testZone );
 		instance.executeSource(
 		    """
 		    setTimezone( "america/los_angeles" );
 		    """,
 		    context );
-		assertEquals( context.getParentOfType( RequestBoxContext.class ).getTimezone(), testZone );
+		assertEquals( context.getRequestContext().getTimezone(), testZone );
 	}
 
 	@DisplayName( "It tests the BIF SetTimezone with a GMT Offset" )
 	@Test
 	public void testSetTimezoneOffset() {
 		ZoneId testZone = ZoneId.of( "GMT-05:00" );
-		context.getParentOfType( RequestBoxContext.class ).setTimezone( ZoneId.of( "GMT" ) );
-		assertNotEquals( context.getParentOfType( RequestBoxContext.class ).getTimezone(), testZone );
+		context.getRequestContext().setTimezone( ZoneId.of( "GMT" ) );
+		assertNotEquals( context.getRequestContext().getTimezone(), testZone );
 		instance.executeSource(
 		    """
 		    setTimezone( "GMT-05:00" );
 		    """,
 		    context );
-		assertEquals( context.getParentOfType( RequestBoxContext.class ).getTimezone(), testZone );
+		assertEquals( context.getRequestContext().getTimezone(), testZone );
 	}
 
 	@DisplayName( "It tests the BIF SetTimezone will throw an error with an invalid timezone" )

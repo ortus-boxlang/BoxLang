@@ -37,6 +37,7 @@ import ortus.boxlang.compiler.ast.statement.BoxBreak;
 import ortus.boxlang.compiler.ast.statement.BoxContinue;
 import ortus.boxlang.compiler.ast.statement.BoxDo;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
+import ortus.boxlang.compiler.ast.statement.BoxEmptyStatement;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.statement.BoxForIn;
 import ortus.boxlang.compiler.ast.statement.BoxForIndex;
@@ -349,7 +350,7 @@ public class CFVisitor extends CFGrammarBaseVisitor<BoxNode> {
 
 		// If this is the IN style, then we are guaranteed to have two expressions
 		if ( ctx.IN() != null ) {
-			return new BoxForIn( label, expressions.get( 0 ), expressions.get( 1 ), body, ctx.VAR() != null, pos, src );
+			return new BoxForIn( label, expressions.get( 0 ), null, expressions.get( 1 ), body, ctx.VAR() != null, pos, src );
 		}
 
 		// Otherwise we have an index with 0 <= n <= 3 expressions
@@ -507,7 +508,12 @@ public class CFVisitor extends CFGrammarBaseVisitor<BoxNode> {
 		if ( ctx.emptyStatementBlock() != null ) {
 			return ctx.emptyStatementBlock().accept( this );
 		}
-		return ctx.statement().accept( this );
+		if ( ctx.statement() != null ) {
+			return ctx.statement().accept( this );
+		}
+		// SEMICOLON case
+		// If we get here, there will only be one semicolon, even thoguh the previous alternative may have matched 1 or more.
+		return new BoxEmptyStatement( tools.getPosition( ctx.SEMICOLON( 0 ) ), ctx.SEMICOLON( 0 ).getText() );
 	}
 
 	@Override

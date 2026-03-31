@@ -137,11 +137,6 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	public static final Key				ARGUMENT_COLLECTION	= Key.argumentCollection;
 
 	/**
-	 * The enclosing class of the function, if any
-	 */
-	private Class<?>					enclosingClass		= null;
-
-	/**
 	 * Cached lookup of the output annotation
 	 */
 	private Boolean						canOutput			= null;
@@ -150,6 +145,9 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * Default can output
 	 */
 	private boolean						defaultOutput		= true;
+
+	private IStruct						metadata;
+	private IStruct						legacyMetadata;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -165,7 +163,12 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	/**
 	 * The interceptor service helper
 	 */
-	protected InterceptorService		interceptorService	= BoxRuntime.getInstance().getInterceptorService();
+	protected static InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
+
+	/**
+	 * Runtime instance
+	 */
+	protected static BoxRuntime			runtime				= BoxRuntime.getInstance();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -264,7 +267,6 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * @return The result of the function, which may be null
 	 */
 	public Object invoke( FunctionBoxContext context ) {
-
 		// We do this, since it's hot code
 		boolean	doEvents	= this.interceptorService.hasState( BoxEvent.PRE_FUNCTION_INVOKE.key() ) ||
 		    this.interceptorService.hasState( BoxEvent.POST_FUNCTION_INVOKE.key() ) ||
@@ -287,6 +289,17 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 
 		Object result = null;
 		context.pushTemplate( this );
+
+		// If this UDF is in a class, we need to set the template to the class path, but we still need the push above which sets the current imports to the original source file
+		if ( context.isInClass() ) {
+			context.popTemplate();
+			context.pushTemplate( context.getThisClass().getRunnablePath() );
+		} else if ( context.isInStaticClass() ) {
+			// Ignoring this for now. It would only apply to injected/mixed in static methods.
+			// I don't want to add the invokeStatic overhead to every static method execution
+			// context.pushTemplate( context.getThisStaticClass().getField( "path" ) );
+			// extraPop = true;
+		}
 		try {
 			result = ensureReturnType( context, _invoke( context ) );
 
@@ -309,7 +322,10 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 
 			// For remote methods, save their return format to use later
 			if ( getAccess().equals( Access.REMOTE ) && getAnnotations().containsKey( Key.returnFormat ) ) {
-				context.getParentOfType( RequestBoxContext.class ).putAttachment( Key.returnFormat, getAnnotations().get( Key.returnFormat ).toString() );
+				RequestBoxContext requestContext = context.getRequestContext();
+				if ( requestContext != null ) {
+					context.getRequestContext().putAttachment( Key.returnFormat, getAnnotations().get( Key.returnFormat ).toString() );
+				}
 			}
 		} catch ( AbortException e ) {
 			if ( e.isLoop() ) {
@@ -349,10 +365,16 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * @return the value, cast to the correct type if necessary
 	 */
 	protected Object ensureReturnType( IBoxContext context, Object value ) {
+		// If we're not enforcing type checks, just return the value as-is
+		if ( !runtime.getConfiguration().enforceUDFTypeChecks ) {
+			return value;
+		}
+
 		if ( value == null ) {
 			return null;
 		}
-		CastAttempt<Object> typeCheck = GenericCaster.attempt( context, value, getReturnType(), true );
+
+		CastAttempt<Object> typeCheck = GenericCaster.attempt( context, value, getReturnTypeKey(), true );
 		if ( !typeCheck.wasSuccessful() ) {
 			throw new BoxRuntimeException(
 			    String.format( "The return value of the function [%s] is of type [%s] does not match the declared type of [%s]",
@@ -383,7 +405,6 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 *
 	 * @return array of arguments
 	 */
-
 	public abstract Argument[] getArguments();
 
 	/**
@@ -392,6 +413,15 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * @return return type
 	 */
 	public abstract String getReturnType();
+
+	/**
+	 * Get the return type of the function as a Key.
+	 *
+	 * @return return type
+	 */
+	public Key getReturnTypeKey() {
+		return Key.of( getReturnType() );
+	}
 
 	/**
 	 * Get any annotations declared for this function, both the @annotation syntax and inline.
@@ -413,6 +443,27 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * @return function access modifier
 	 */
 	public abstract Access getAccess();
+
+	/**
+	 * Get the imports for this function.
+	 *
+	 * @return list of import definitions
+	 */
+	public abstract java.util.List<ortus.boxlang.runtime.loader.ImportDefinition> getImports();
+
+	/**
+	 * Get the source type of the function.
+	 *
+	 * @return the source type
+	 */
+	public abstract BoxSourceType getSourceType();
+
+	/**
+	 * Get the path to the runnable.
+	 *
+	 * @return the resolved file path
+	 */
+	public abstract ortus.boxlang.runtime.util.ResolvedFilePath getRunnablePath();
 
 	/**
 	 * Implement this method to invoke the actual function logic
@@ -438,7 +489,6 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 */
 	public List<BoxMethodDeclarationModifier> getModifiers() {
 		return List.of();
-
 	}
 
 	/**
@@ -455,34 +505,81 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	/**
 	 * Get the combined metadata for this function and all it's parameters
 	 * This follows the format of Lucee and Adobe's "combined" metadata
-	 * TODO: Move this to compat module
 	 *
 	 * @return The metadata as a struct
 	 */
 	public IStruct getMetaData() {
+		return getMetaDataStatic(
+		    this.getClass(),
+		    getDocumentation(),
+		    getAnnotations(),
+		    getName(),
+		    getReturnType(),
+		    getSourceType(),
+		    getAccess(),
+		    getArguments(),
+		    this instanceof Closure,
+		    this instanceof Lambda,
+		    canOutput( getAnnotations(), getSourceType(), getDefaultOutput() ),
+		    getModifiers()
+		);
+	}
+
+	/**
+	 * Get the combined metadata for this function and all it's parameters
+	 * This follows the format of Lucee and Adobe's "combined" metadata
+	 * 
+	 * @param functionClass The function class
+	 * @param documentation The documentation struct
+	 * @param annotations   The annotations struct
+	 * @param name          The function name
+	 * @param returnType    The return type
+	 * @param sourceType    The source type
+	 * @param access        The access level
+	 * @param arguments     The function arguments
+	 * @param isClosure     Whether the function is a closure
+	 * @param isLambda      Whether the function is a lambda
+	 * @param defaultOutput The default output value
+	 * @param modifiers     The function modifiers
+	 *
+	 * @return The metadata as a struct
+	 */
+	public static IStruct getMetaDataStatic(
+	    Class<? extends Function> functionClass,
+	    IStruct documentation,
+	    IStruct annotations,
+	    Key name,
+	    String returnType,
+	    BoxSourceType sourceType,
+	    Access access,
+	    Argument[] arguments,
+	    boolean isClosure,
+	    boolean isLambda,
+	    boolean defaultOutput,
+	    List<BoxMethodDeclarationModifier> modifiers ) {
+
 		IStruct meta = new Struct( IStruct.TYPES.LINKED );
-		if ( getDocumentation() != null ) {
-			getDocumentation().forEach( ( k, v ) -> {
+		if ( documentation != null ) {
+			documentation.forEach( ( k, v ) -> {
 				if ( !legacyMetaFunctionReservedAnnotations.contains( k ) ) {
 					meta.put( k, v );
 				}
 			} );
 		}
-		if ( getAnnotations() != null ) {
-			getAnnotations().forEach( ( k, v ) -> {
+		if ( annotations != null ) {
+			annotations.forEach( ( k, v ) -> {
 				if ( !legacyMetaFunctionReservedAnnotations.contains( k ) ) {
 					meta.put( k, v );
 				}
 			} );
 		}
-		meta.put( Key._NAME, getName().getName() );
-		meta.put( Key.returnType, getReturnType() );
+		meta.put( Key._NAME, name.getName() );
+		meta.put( Key.returnType, returnType );
 		meta.putIfAbsent( Key.hint, "" );
-		// Passing null to canOutput will skip the class check
-		meta.putIfAbsent( Key.output, canOutput( null ) );
-		meta.put( Key.access, getAccess().getLowerName() );
+		meta.putIfAbsent( Key.output, canOutput( annotations, sourceType, defaultOutput ) );
+		meta.put( Key.access, access.getLowerName() );
 		Array params = new Array();
-		for ( Argument argument : getArguments() ) {
+		for ( Argument argument : arguments ) {
 			IStruct arg = new Struct( IStruct.TYPES.LINKED );
 			arg.put( Key._NAME, argument.name().getName() );
 			arg.put( Key.required, argument.required() );
@@ -511,14 +608,12 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 		// polymorphism is a pain due to storing the metadata as static values on the class, so we'll just add the closure and lambda checks here
 		// Adobe and Lucee only set the following flags when they are true, but that's inconsistent, so we will always set them.
 
-		boolean isClosure = this instanceof Closure;
 		// Adobe and Lucee have this
 		meta.put( Key.closure, isClosure );
 		// Adobe and Lucee have this
 		meta.put( Key.ANONYMOUSCLOSURE, isClosure );
 
 		// Adobe and Lucee don't have "lambdas" in the same way we have where the actual implementation is a pure function
-		boolean isLambda = this instanceof Lambda;
 		// Neither Adobe nor Lucee have this, but we're setting it for consistency
 		meta.put( Key.lambda, isLambda );
 		// Lucee has this, but it's true for fat arrow functions. We're setting it true only for skinny arrow (true lambda) functions
@@ -575,7 +670,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	public boolean canOutput( FunctionBoxContext context ) {
 		// Check for function annotation
 		if ( this.canOutput == null ) {
-			Object anno = getAnnotations().get( Key.output );
+			Object anno = canOutput( getAnnotations() );
 			if ( anno != null ) {
 				this.canOutput = BooleanCaster.cast( anno );
 			}
@@ -594,10 +689,50 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 
 		// Default based on source type
 		if ( this.canOutput == null ) {
-			this.canOutput = getSourceType().equals( BoxSourceType.CFSCRIPT ) || getSourceType().equals( BoxSourceType.CFTEMPLATE ) ? true : getDefaultOutput();
+			this.canOutput = defaultCanOutput( getSourceType(), getDefaultOutput() );
 		}
 
 		return this.canOutput;
+	}
+
+	/**
+	 * A helper to look at the "output" annotation, null if not set
+	 * 
+	 * @param annotations The annotations struct
+	 * 
+	 * @return Whether the function can output
+	 */
+	public static Object canOutput( IStruct annotations ) {
+		return annotations.get( Key.output );
+	}
+
+	/**
+	 * If there is no explicit output annotation on this function, what should the default be?
+	 * 
+	 * @param sourceType The source type of the function
+	 * 
+	 * @return true if the function should output by default
+	 */
+	public static boolean defaultCanOutput( BoxSourceType sourceType, boolean defaultOutput ) {
+		return sourceType.equals( BoxSourceType.CFSCRIPT ) || sourceType.equals( BoxSourceType.CFTEMPLATE ) ? true : defaultOutput;
+	}
+
+	/**
+	 * A helper to look at the "output" annotation, caching the result. Does not look at
+	 * any enclosing class. Just for metadata.
+	 * 
+	 * @param annotations The annotations struct
+	 * @param sourceType  The source type of the function
+	 * 
+	 * @return Whether the function can output
+	 */
+	public static boolean canOutput( IStruct annotations, BoxSourceType sourceType, boolean defaultOutput ) {
+		Object anno = canOutput( annotations );
+		if ( anno != null ) {
+			return BooleanCaster.cast( anno );
+		} else {
+			return defaultCanOutput( sourceType, defaultOutput );
+		}
 	}
 
 	/**
@@ -616,7 +751,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 				return false;
 			}
 		}
-		if ( !func.getReturnType().equalsIgnoreCase( "any" ) && !getReturnType().equalsIgnoreCase( func.getReturnType() ) ) {
+		if ( !func.getReturnTypeKey().equals( Key._ANY ) && !getReturnTypeKey().equals( func.getReturnTypeKey() ) ) {
 			return false;
 		}
 
@@ -663,7 +798,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 *
 	 * @return true if the function should output by default
 	 */
-	protected boolean getDefaultOutput() {
+	public boolean getDefaultOutput() {
 		return defaultOutput;
 	}
 
@@ -672,14 +807,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	 * Lazy loads it
 	 */
 	public Class<?> getEnclosingClass() {
-		if ( enclosingClass == null ) {
-			synchronized ( this.getClass() ) {
-				if ( enclosingClass == null ) {
-					enclosingClass = this.getClass().getEnclosingClass();
-				}
-			}
-		}
-		return enclosingClass;
+		return this.getClass();
 	}
 
 }

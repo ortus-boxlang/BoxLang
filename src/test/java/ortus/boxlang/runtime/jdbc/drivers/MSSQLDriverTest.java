@@ -312,7 +312,7 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 		IStruct resultStruct = variables.getAsStruct( result );
 
-		assertThat( resultStruct.get( "returnCode" ) ).isEqualTo( 42 );
+		assertThat( resultStruct.get( "statusCode" ) ).isEqualTo( 42 );
 		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
 	}
 
@@ -349,7 +349,7 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 		IStruct resultStruct = variables.getAsStruct( result );
 
-		assertThat( resultStruct.get( "returnCode" ) ).isEqualTo( 42 );
+		assertThat( resultStruct.get( "statusCode" ) ).isEqualTo( 42 );
 		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
 	}
 
@@ -411,7 +411,7 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		assertThat( variables.get( Key.of( "bxstoredproc" ) ) ).isInstanceOf( IStruct.class );
 		IStruct resultStruct = variables.getAsStruct( Key.of( "bxstoredproc" ) );
 
-		assertThat( resultStruct.get( "returnCode" ) ).isEqualTo( 42 );
+		assertThat( resultStruct.get( "statusCode" ) ).isEqualTo( 42 );
 		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
 	}
 
@@ -447,7 +447,7 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 		IStruct resultStruct = variables.getAsStruct( result );
 
-		assertThat( resultStruct.get( "returnCode" ) ).isEqualTo( 42 );
+		assertThat( resultStruct.get( "statusCode" ) ).isEqualTo( 42 );
 		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
 	}
 
@@ -483,7 +483,7 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 		IStruct resultStruct = variables.getAsStruct( result );
 
-		assertThat( resultStruct.get( "returnCode" ) ).isEqualTo( 42 );
+		assertThat( resultStruct.get( "statusCode" ) ).isEqualTo( 42 );
 		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
 	}
 
@@ -519,7 +519,7 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 		IStruct resultStruct = variables.getAsStruct( result );
 
-		assertThat( resultStruct.get( "returnCode" ) ).isEqualTo( 42 );
+		assertThat( resultStruct.get( "statusCode" ) ).isEqualTo( 42 );
 		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
 	}
 
@@ -555,7 +555,7 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 		IStruct resultStruct = variables.getAsStruct( result );
 
-		assertThat( resultStruct.get( "returnCode" ) ).isEqualTo( 0 );
+		assertThat( resultStruct.get( "statusCode" ) ).isEqualTo( 0 );
 		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
 	}
 
@@ -578,7 +578,7 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 		IStruct resultStruct = variables.getAsStruct( result );
 
-		assertThat( resultStruct.get( "returnCode" ) ).isEqualTo( 0 );
+		assertThat( resultStruct.get( "statusCode" ) ).isEqualTo( 0 );
 		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
 	}
 
@@ -609,7 +609,7 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 		IStruct resultStruct = variables.getAsStruct( result );
 
-		assertThat( resultStruct.get( "returnCode" ) ).isEqualTo( 0 );
+		assertThat( resultStruct.get( "statusCode" ) ).isEqualTo( 0 );
 		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
 	}
 
@@ -645,7 +645,7 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 		IStruct resultStruct = variables.getAsStruct( result );
 
-		assertThat( resultStruct.get( "returnCode" ) ).isEqualTo( 42 );
+		assertThat( resultStruct.get( "statusCode" ) ).isEqualTo( 42 );
 		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
 	}
 
@@ -995,6 +995,38 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 				);
 			""",
 		    context );
+		// @formatter:on
+	}
+
+	@DisplayName( "CF code ignores invalid or empty dbtype attribute" )
+	@Test
+	public void testIgnoreInvalidOrEmptyDbtypeAttribute() {
+		// @formatter:off
+		instance.executeStatement("""
+				<cfquery name="result" datasource="MSSQLdatasource" dbtype="">
+					select * from developers
+				</cfquery>
+				<cfquery name="result" datasource="MSSQLdatasource" dbtype="ODBC">
+					select * from developers
+				</cfquery>
+				<cfquery name="result" datasource="MSSQLdatasource" dbtype="Oracle73">
+					select * from developers
+				</cfquery>
+				<cfquery name="result" datasource="MSSQLdatasource" dbtype="Oracle80">
+					select * from developers
+				</cfquery>
+				<cfquery name="result" datasource="MSSQLdatasource" dbtype="DB2">
+					select * from developers
+				</cfquery>
+				<cfquery name="result" datasource="MSSQLdatasource" dbtype="sdfsdfsdf">
+					select * from developers
+				</cfquery>
+				<cfset dbtype="query">
+				<cfquery name="result" datasource="MSSQLdatasource" dbtype="#dbtype#">
+					select * from result
+				</cfquery>
+			""",
+		    context, BoxSourceType.CFTEMPLATE );
 		// @formatter:on
 	}
 

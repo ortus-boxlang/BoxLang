@@ -22,7 +22,6 @@ package ortus.boxlang.runtime.bifs.global.system;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.SessionBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
@@ -49,7 +48,7 @@ public class SessionStartTime extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		SessionBoxContext sessionContext = context.getParentOfType( SessionBoxContext.class );
 		return sessionContext == null
-		    ? context.getParentOfType( RequestBoxContext.class ).getRequestStart()
+		    ? context.getRequestContextOrFail().getRequestStart()
 		    : DateTimeCaster.cast( sessionContext.getSession().getSessionScope().get( Key.timeCreated ), context );
 	}
 

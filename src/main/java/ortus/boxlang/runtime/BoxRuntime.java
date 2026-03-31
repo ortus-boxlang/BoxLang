@@ -49,6 +49,7 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
+import ortus.boxlang.debug.DebuggerExternalConnectionUtil;
 import ortus.boxlang.runtime.application.BaseApplicationListener;
 import ortus.boxlang.runtime.config.CLIOptions;
 import ortus.boxlang.runtime.config.ConfigLoader;
@@ -380,7 +381,7 @@ public class BoxRuntime implements java.io.Closeable {
 
 		// Add the following directories to the runtime home if they don't exist
 		// Common directories to ensure
-		List<String> directories = Arrays.asList( "classes", "config", "global", "logs", "lib", "modules" );
+		List<String> directories = Arrays.asList( "bin", "classes", "config", "global", "logs", "lib", "modules" );
 		directories.forEach( dir -> FileSystemUtil.createDirectoryIfMissing( this.runtimeHome.resolve( dir ) ) );
 
 		// If we're starting a version of BoxLang with a different bytecode version, we need to clear the classes folder IF it exists.
@@ -553,6 +554,14 @@ public class BoxRuntime implements java.io.Closeable {
 		    Instant.now(),
 		    timerUtil.stopAndGetMillis( "runtime-startup" ) );
 
+		// Start the DebuggerExternalConnectionUtil when debugMode is enabled.
+		// This starts the invoker and worker threads that the debugger uses
+		// for expression evaluation and method invocations via JDI.
+		if ( Boolean.TRUE.equals( this.debugMode ) ) {
+			DebuggerExternalConnectionUtil.start();
+			this.logger.debug( "+ DebuggerExternalConnectionUtil started for debug mode" );
+		}
+
 		// Announce it baby! Runtime is up
 		this.interceptorService.announce(
 		    BoxEvent.ON_RUNTIME_START );
@@ -678,9 +687,15 @@ public class BoxRuntime implements java.io.Closeable {
 				try {
 					instance.startup();
 				} catch ( Throwable t ) {
-					// Capture the startup exception for any other threads waiting for the instance to be available
-					instance.startupException = t;
-					throw t;
+					// Allow bx-plus commands like activation and info to pass through so that an expired license or trial doesn't block registration or info
+					if ( !ExceptionUtil.isValidLicenseAction( instance, t ) ) {
+						// Capture the startup exception for any other threads waiting for the instance to be available
+						instance.startupException = t;
+						throw t;
+					} else {
+						instance.getLoggingService().getRootLogger()
+						    .warn( "License module action detected during startup failure, allowing it to continue: " + t.getMessage() );
+					}
 				}
 			}
 		}
@@ -1224,6 +1239,13 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @param args         The arguments to pass to the template
 	 */
 	public void executeTemplate( String templatePath, IBoxContext context, String[] args ) {
+		// Signal to debugger that user code is about to start (only in debug mode)
+		// This must be called BEFORE loading the class so the debugger can set up
+		// ClassPrepareRequest with SUSPEND_EVENT_THREAD before the class loads
+		if ( Boolean.TRUE.equals( instance.debugMode ) ) {
+			DebuggerExternalConnectionUtil.signalUserCodeStart( templatePath );
+		}
+
 		// If the templatePath is a .cfs, .cfm then use the loadTemplateAbsolute, if
 		// it's a .cfc, .bx then use the loadClass
 		if ( Strings.CI.endsWithAny( templatePath, ".cfc", ".bx" ) ) {
@@ -1298,6 +1320,14 @@ public class BoxRuntime implements java.io.Closeable {
 		if ( !getModuleService().hasModule( moduleName ) ) {
 			throw new BoxRuntimeException( "Can't execute module [" + module + "] as it does not exist." );
 		}
+
+		// Signal to debugger that user code is about to start (only in debug mode)
+		// This must be called BEFORE loading the class so the debugger can set up
+		// ClassPrepareRequest with SUSPEND_EVENT_THREAD before the class loads
+		if ( instance.inDebugMode() ) {
+			DebuggerExternalConnectionUtil.signalUserCodeStart( null );
+		}
+
 		// Execute it
 		ScriptingRequestBoxContext scriptingContext = new ScriptingRequestBoxContext( getRuntimeContext() );
 		try {
@@ -1320,8 +1350,16 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @param args         The array of arguments to pass to the main method
 	 */
 	public void executeClass( Class<IBoxRunnable> targetClass, String templatePath, IBoxContext context, String[] args ) {
+		// Signal to debugger that user code is about to start (only in debug mode)
+		// This must be called BEFORE loading the class so the debugger can set up
+		// ClassPrepareRequest with SUSPEND_EVENT_THREAD before the class loads
+		if ( instance.inDebugMode() ) {
+			DebuggerExternalConnectionUtil.signalUserCodeStart( templatePath );
+		}
+
 		IBoxContext				scriptingContext	= ensureRequestTypeContext( context, Paths.get( templatePath ).toUri() );
-		BaseApplicationListener	listener			= scriptingContext.getParentOfType( RequestBoxContext.class )
+		boolean					shutdownContext		= context != scriptingContext;
+		BaseApplicationListener	listener			= scriptingContext.getRequestContext()
 		    .getApplicationListener();
 		Throwable				errorToHandle		= null;
 		IClassRunnable			target				= ( IClassRunnable ) DynamicObject.of( targetClass )
@@ -1330,13 +1368,13 @@ public class BoxRuntime implements java.io.Closeable {
 
 		// Does it have a main method?
 		if ( target.getThisScope().containsKey( Key.main ) ) {
-			RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
 			ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
 			// Fire!!!
 			try {
 				boolean result = listener.onRequestStart( scriptingContext, new Object[] { templatePath } );
 				if ( result ) {
-					// Not sure onClassRequest() works here since we already have the class loaded
+					// Note: signalUserCodeStart is called in executeTemplate(String, IBoxContext, String[])
+					// before the class is loaded, so we don't need to call it here
 					target.dereferenceAndInvoke( scriptingContext, Key.main, new Object[] { Array.fromArray( args ) },
 					    false );
 				}
@@ -1398,8 +1436,15 @@ public class BoxRuntime implements java.io.Closeable {
 				scriptingContext.flushBuffer( false );
 				RequestBoxContext.removeCurrent();
 				Thread.currentThread().setContextClassLoader( oldClassLoader );
+				if ( shutdownContext ) {
+					scriptingContext.getRequestContext().shutdown();
+				}
 			}
 		} else {
+			RequestBoxContext.removeCurrent();
+			if ( shutdownContext ) {
+				scriptingContext.getRequestContext().shutdown();
+			}
 			throw new BoxRuntimeException(
 			    "Class [" + targetClass.getName() + "] does not have a main method to execute." );
 		}
@@ -1433,19 +1478,15 @@ public class BoxRuntime implements java.io.Closeable {
 		scriptingContext = ensureRequestTypeContext( context, FileSystemUtil.createFileUri( templatePath ) );
 		boolean					shutdownContext	= context != scriptingContext;
 		BaseApplicationListener	listener		= scriptingContext
-		    .getParentOfType( RequestBoxContext.class )
+		    .getRequestContext()
 		    .getApplicationListener();
 		Throwable				errorToHandle	= null;
-		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
-		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
+		ClassLoader				oldClassLoader	= Thread.currentThread().getContextClassLoader();
 		try {
 			boolean result = listener.onRequestStart( scriptingContext, new Object[] { templatePath } );
 			if ( result ) {
-				// Not sure if this works in this concext, since it's expected to include the
-				// template itself, but in this case our template is a loaded
-				// class, not a path which may or may not be a file and may or may not be inside
-				// of a mapping allowing a relative path to it
-				// listener.onRequest( scriptingContext, new Object[] { templatePath } );
+				// Note: signalUserCodeStart is called in executeTemplate(String, IBoxContext, String[])
+				// before the template is loaded, so we don't need to call it here
 				template.invoke( scriptingContext );
 			}
 		} catch ( AbortException e ) {
@@ -1471,7 +1512,7 @@ public class BoxRuntime implements java.io.Closeable {
 				// Opps, an error while handling the missing template error
 				errorToHandle = t;
 			}
-		} catch ( Exception e ) {
+		} catch ( Throwable e ) {
 			errorToHandle = e;
 		} finally {
 
@@ -1564,10 +1605,11 @@ public class BoxRuntime implements java.io.Closeable {
 	public Object executeStatement( BoxScript scriptRunnable, IBoxContext context ) {
 		IBoxContext	scriptingContext	= ensureRequestTypeContext( context );
 		boolean		shutdownContext		= context != scriptingContext;
-		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
-		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
+		ClassLoader	oldClassLoader		= Thread.currentThread().getContextClassLoader();
 		try {
-			// Fire!!!
+			// Note: signalUserCodeStart should be called before compiling the script.
+			// Since this method receives an already-compiled BoxScript, the caller
+			// is responsible for signaling if needed.
 			return scriptRunnable.invoke( scriptingContext );
 		} catch ( AbortException e ) {
 			scriptingContext.flushBuffer( true );
@@ -1635,11 +1677,18 @@ public class BoxRuntime implements java.io.Closeable {
 		/* timerUtil.start( "execute-" + source.hashCode() ); */
 		IBoxContext	scriptingContext	= ensureRequestTypeContext( context );
 		boolean		shutdownContext		= context != scriptingContext;
-		BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadSource( scriptingContext, source, type );
-		Object		results				= null;
 
-		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
-		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
+		// Signal to debugger that user code is about to start (only in debug mode)
+		// This must be called BEFORE loading the source so the debugger can set up
+		// ClassPrepareRequest with SUSPEND_EVENT_THREAD before the class loads
+		if ( Boolean.TRUE.equals( instance.debugMode ) ) {
+			DebuggerExternalConnectionUtil.signalUserCodeStart( null );
+		}
+
+		BoxScript	scriptRunnable	= RunnableLoader.getInstance().loadSource( scriptingContext, source, type );
+		Object		results			= null;
+
+		ClassLoader	oldClassLoader	= Thread.currentThread().getContextClassLoader();
 		try {
 			// Fire!!!
 			results = scriptRunnable.invoke( scriptingContext );
@@ -1672,8 +1721,7 @@ public class BoxRuntime implements java.io.Closeable {
 		IBoxContext		scriptingContext	= ensureRequestTypeContext( context );
 		BufferedReader	reader				= new BufferedReader( new InputStreamReader( sourceStream ) );
 		String			source;
-		RequestBoxContext.setCurrent( scriptingContext.getParentOfType( RequestBoxContext.class ) );
-		ClassLoader oldClassLoader = Thread.currentThread().getContextClassLoader();
+		ClassLoader		oldClassLoader		= Thread.currentThread().getContextClassLoader();
 
 		try {
 			while ( ( source = reader.readLine() ) != null ) {
@@ -1828,19 +1876,28 @@ public class BoxRuntime implements java.io.Closeable {
 	 * new scripting
 	 * context that has a request scope and return that with the original context as
 	 * the parent.
+	 * This will set the request context into the thread local. Be sure to remove it when you are finished!
 	 *
 	 * @param context  The context to check
 	 * @param template The template to use for the context if needed
 	 *
-	 * @return The context with a request scope
+	 * @return The context which is guaranteed to have a request context visible
 	 */
+	@SuppressWarnings( "unused" )
 	private IBoxContext ensureRequestTypeContext( IBoxContext context, URI template ) {
-		if ( context.getParentOfType( RequestBoxContext.class ) != null ) {
+		RequestBoxContext currentRequestContext = context.getRequestContext();
+		if ( currentRequestContext != null ) {
+			RequestBoxContext.setCurrent( currentRequestContext );
 			return context;
 		} else if ( template != null ) {
-			return new ScriptingRequestBoxContext( context, template );
+			currentRequestContext = new ScriptingRequestBoxContext( context, false );
+			RequestBoxContext.setCurrent( currentRequestContext );
+			currentRequestContext.loadApplicationDescriptor( template );
+			return currentRequestContext;
 		} else {
-			return new ScriptingRequestBoxContext( context );
+			currentRequestContext = new ScriptingRequestBoxContext( context );
+			RequestBoxContext.setCurrent( currentRequestContext );
+			return currentRequestContext;
 		}
 	}
 

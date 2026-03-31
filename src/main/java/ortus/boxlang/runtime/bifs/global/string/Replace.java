@@ -58,7 +58,7 @@ public class Replace extends BIF {
 	 *
 	 * @argument.obj The string to replace substring1 with
 	 *
-	 * @argument.scope The scope to search in
+	 * @argument.scope The scope to search in. Valid values are "one" or "all"
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

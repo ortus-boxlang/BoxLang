@@ -17,13 +17,14 @@
  */
 package ortus.boxlang.runtime.config.segments;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import ortus.boxlang.runtime.scopes.Key;
 
 public class SecurityConfigTest {
 
@@ -37,31 +38,27 @@ public class SecurityConfigTest {
 	@Test
 	public void testIsBIFDisallowed_AllowedBIF() {
 		String bifName = "allowedBIF";
-		assertTrue( securityConfig.isBIFAllowed( bifName ) );
-		// Verify it's in the allowedBIFSLookup
-		assertTrue( securityConfig.allowedBIFsLookup.containsKey( bifName ) );
+		assertTrue( securityConfig.isBIFAllowed( Key.of( bifName ) ) );
 	}
 
 	@Test
 	public void testisBIFAllowed_DisallowedBIF() {
 		String bifName = "disallowedBIF";
-		securityConfig.disallowedBIFs.add( bifName );
-		assertThrows( SecurityException.class, () -> securityConfig.isBIFAllowed( bifName ) );
+		securityConfig.disallowedBIFs.add( Key.of( bifName ) );
+		assertThrows( SecurityException.class, () -> securityConfig.isBIFAllowed( Key.of( bifName ) ) );
 	}
 
 	@Test
 	public void testisComponentAllowed_AllowedComponent() {
 		String componentName = "allowedComponent";
-		assertTrue( securityConfig.isComponentAllowed( componentName ) );
-		// Verify it's in the allowedComponentsLookup
-		assertTrue( securityConfig.allowedComponentsLookup.containsKey( componentName ) );
+		assertTrue( securityConfig.isComponentAllowed( Key.of( componentName ) ) );
 	}
 
 	@Test
 	public void testisComponentAllowed_DisallowedComponent() {
 		String componentName = "disallowedComponent";
-		securityConfig.disallowedComponents.add( componentName );
-		assertThrows( SecurityException.class, () -> securityConfig.isComponentAllowed( componentName ) );
+		securityConfig.disallowedComponents.add( Key.of( componentName ) );
+		assertThrows( SecurityException.class, () -> securityConfig.isComponentAllowed( Key.of( componentName ) ) );
 	}
 
 	@DisplayName( "Check if a class import is allowed" )

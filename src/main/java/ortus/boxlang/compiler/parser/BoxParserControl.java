@@ -40,6 +40,8 @@ import static ortus.boxlang.parser.antlr.BoxGrammar.IS;
 import static ortus.boxlang.parser.antlr.BoxGrammar.JAVA;
 import static ortus.boxlang.parser.antlr.BoxGrammar.LE;
 import static ortus.boxlang.parser.antlr.BoxGrammar.LESS;
+import static ortus.boxlang.parser.antlr.BoxGrammar.LBRACE;
+import static ortus.boxlang.parser.antlr.BoxGrammar.LBRACKET;
 import static ortus.boxlang.parser.antlr.BoxGrammar.LPAREN;
 import static ortus.boxlang.parser.antlr.BoxGrammar.LT;
 import static ortus.boxlang.parser.antlr.BoxGrammar.LTE;
@@ -116,27 +118,27 @@ public abstract class BoxParserControl extends Parser {
 		return true;
 		/*
 		 * var nextToken = input.LT( 1 );
-		 * 
+		 *
 		 * // Short circuit if not an identifier
 		 * if ( !identifiers.contains( nextToken.getType() ) ) {
 		 * return false;
 		 * }
-		 * 
+		 *
 		 * var tokText = input.LT( 1 ).getText();
-		 * 
+		 *
 		 * // It is not a component if it is not registered in the component service
 		 * if ( !componentService.hasComponent( tokText ) ) {
 		 * return false;
 		 * }
-		 * 
+		 *
 		 * // If a function call, then ( will be next so reject the component
 		 * if ( input.LT( 2 ).getType() == LPAREN )
 		 * return false;
-		 * 
+		 *
 		 * // If array access, then [ will be next so reject the component
 		 * if ( input.LT( 2 ).getType() == LBRACKET )
 		 * return false;
-		 * 
+		 *
 		 * // Some components accept a type parameter, such as PARAM and if so we let them got through
 		 * // the standard rules and not component
 		 * //
@@ -150,19 +152,19 @@ public abstract class BoxParserControl extends Parser {
 		 * // NB: It is possible that we could just check LT(1) == "PARAM" - but it is not clear to
 		 * // me that PARAM always should be parsed using its own rule. If so, you can simplify this
 		 * // method by just checking for PARAM.
-		 * 
+		 *
 		 * if ( isType( input.LT( 2 ).getType() ) ) {
 		 * // If what looks like a type is actually assigned to, then it is in fact a component
 		 * return input.LT( 3 ).getType() == EQUALSIGN;
 		 * }
-		 * 
+		 *
 		 * // Sill looks like a component but components can't be named x.access, so it is a FQN of some sort if that is the name
 		 * if ( input.LT( 2 ).getType() == DOT ) {
 		 * return false;
 		 * }
 		 * // param x.y - component attributes cannot be FQN, so this is param or something similar
 		 * return input.LT( 3 ).getType() != DOT;
-		 * 
+		 *
 		 * // Having elimnated all possible ways that this is not a component,
 		 * // we know it must be a component
 		 */
@@ -181,7 +183,8 @@ public abstract class BoxParserControl extends Parser {
 		// System.out.println( "LT(2): " + input.LT( 2 ).getType() );
 		// System.out
 		// .println( "( thisType == VAR || thisType == FINAL || thisType == STATIC ): " + ( thisType == VAR || thisType == FINAL || thisType == STATIC ) );
-		return ( thisType == VAR || thisType == FINAL || thisType == STATIC ) && identifiers.contains( input.LT( 2 ).getType() );
+		return ( thisType == VAR || thisType == FINAL || thisType == STATIC )
+		    && ( identifiers.contains( input.LT( 2 ).getType() ) || input.LT( 2 ).getType() == LBRACE || input.LT( 2 ).getType() == LBRACKET );
 	}
 
 	/**

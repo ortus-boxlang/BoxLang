@@ -1,3 +1,8 @@
+/**
+ * INotifiable interface
+ * @foo bar
+ */
+@Anno( "value" )
 interface displayName="INotifiable" {
 
     public string function getNotifiableId();

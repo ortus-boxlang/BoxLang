@@ -44,6 +44,11 @@ public class FQN {
 	protected String[]			parts;
 
 	/**
+	 * Cached fqn
+	 */
+	protected String			fqn				= null;
+
+	/**
 	 * Construct an FQN that uses the root path to generate a relative path based on filePath.
 	 *
 	 * For example, given root = "c:\foo\bar" and filePath = "c:\foo\bar\test\Car.bx" this will create an FQN
@@ -131,6 +136,18 @@ public class FQN {
 	 * @return String
 	 */
 	public String toString() {
+		if ( fqn == null ) {
+			fqn = _toString();
+		}
+		return fqn;
+	}
+
+	/**
+	 * Get the FQN as a string. Includes both the name and package.
+	 *
+	 * @return String
+	 */
+	private String _toString() {
 		return String.join( ".", parts );
 	}
 
@@ -189,7 +206,7 @@ public class FQN {
 
 		// Remove any non alpha-numeric chars.
 		// Replace any character not a-z, A-Z, 0-9, $, or . with "__"
-		StringBuilder sb = new StringBuilder();
+		StringBuilder sb = new StringBuilder( fqn.length() + 10 );
 		for ( int i = 0; i < fqn.length(); i++ ) {
 			char c = fqn.charAt( i );
 			if ( ( c >= 'a' && c <= 'z' ) ||
@@ -228,8 +245,7 @@ public class FQN {
 		}
 
 		// parse fqn into array, loop over array and clean/normalize parts
-		String[]	splitParts	= fqn.split( "\\." );
-		String[]	result		= new String[ splitParts.length ];
+		String[] splitParts = splitOnDot( fqn );
 		for ( int i = 0; i < splitParts.length; i++ ) {
 			String s = splitParts[ i ];
 			// if starts with number, prefix with _
@@ -239,8 +255,40 @@ public class FQN {
 			if ( RESERVED_WORDS.contains( s ) ) {
 				s = "_" + s;
 			}
-			result[ i ] = s;
+			splitParts[ i ] = s;
 		}
+		return splitParts;
+	}
+
+	/**
+	 * Split a string on dots without using regex.
+	 * Pre-counts segments to allocate the array exactly once.
+	 *
+	 * @param str The string to split.
+	 *
+	 * @return An array of strings split on dots.
+	 */
+	protected static String[] splitOnDot( String str ) {
+		int	len		= str.length();
+
+		// Count dots to determine array size
+		int	count	= 1;
+		for ( int i = 0; i < len; i++ ) {
+			if ( str.charAt( i ) == '.' ) {
+				count++;
+			}
+		}
+
+		String[]	result	= new String[ count ];
+		int			idx		= 0;
+		int			start	= 0;
+		for ( int i = 0; i < len; i++ ) {
+			if ( str.charAt( i ) == '.' ) {
+				result[ idx++ ]	= str.substring( start, i );
+				start			= i + 1;
+			}
+		}
+		result[ idx ] = str.substring( start );
 		return result;
 	}
 

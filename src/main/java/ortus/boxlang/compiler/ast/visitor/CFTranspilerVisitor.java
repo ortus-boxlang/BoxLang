@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -87,6 +88,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
@@ -211,6 +213,13 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	private static Map<String, Map<String, String>>	componentAttrMap			= new HashMap<>();
 
 	/**
+	 * Maps BIF names to their argument rename mappings.
+	 * Outer key is BIF name (lowercase), inner map is old->new argument names (lowercase keys).
+	 * Only applies when named arguments are used.
+	 */
+	private static Map<String, Map<String, String>>	BIFArgMap					= new HashMap<>();
+
+	/**
 	 * Configuration keys for transpiler settings
 	 */
 	private static Key								transpilerKey				= Key.of( "transpiler" );
@@ -296,6 +305,13 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		componentAttrMap.put( "procparam", Map.of( "cfsqltype", "sqltype" ) );
 		componentAttrMap.put( "queryparam", Map.of( "cfsqltype", "sqltype" ) );
 		componentAttrMap.put( "object", Map.of( "component", "className" ) );
+
+		/*
+		 * Outer string is name of BIF (lowercase)
+		 * inner map is old arg name (lowercase) to new arg name
+		 * Only kicks in when named args are used
+		 */
+		BIFArgMap.put( "directorylist", Map.of( "absolute_path", "path" ) );
 
 		/*
 		 * These are BIFs that return something useless like true, but would be much more useful to return the actual data structure.
@@ -596,6 +612,20 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		if ( BIFMap.containsKey( name ) ) {
 			node.setName( BIFMap.get( name ) );
 		}
+
+		// Rename named arguments for BIFs that have changed arg names
+		if ( BIFArgMap.containsKey( name ) && node.isNamedArgs() ) {
+			Map<String, String> argMap = BIFArgMap.get( name );
+			for ( BoxArgument arg : node.getArguments() ) {
+				String argName = arg.getName().getAsSimpleValue().toString().toLowerCase();
+				if ( argMap.containsKey( argName ) ) {
+					if ( arg.getName() instanceof BoxStringLiteral bsl ) {
+						bsl.setValue( argMap.get( argName ) );
+					}
+				}
+			}
+		}
+
 		// look for "params" named arg, or 2nd positional arg, and if it's a struct literal, any of the values which are also a struct literal,
 		// rename any keys from cfsqltype to sqltype and remove "cf_sql_" from the values of any sqltype
 		if ( name.equals( "queryexecute" ) && node.getArguments().size() >= 2 ) {
@@ -654,13 +684,80 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		if ( BIFReturnTypeFixSet.contains( name ) && returnValueIsUsed( node ) ) {
 			return transpileBIFReturnType( node, name );
 		}
-		// look for rewritten variable names passed to insDefined()
+		// look for listAppend() so we can default includeEmptyFields to true
+		if ( name.equals( "listappend" ) ) {
+			return transpileListAppend( node );
+		}
+		// look for rewritten variable names passed to isDefined()
 		if ( name.equals( "isdefined" ) && node.getArguments().size() > 0 && node.getArguments().get( 0 ).getValue() instanceof BoxStringLiteral bsl ) {
 			identifierMap.entrySet().stream().forEach( e -> {
 				bsl.setValue( replaceIdentifiersInString( bsl.getValue(), e.getKey(), e.getValue() ) );
 			} );
 		}
 
+		// swap "once" for "one"
+		// Only handling position args for now. We can add named arg support later if needed.
+		if ( ( name.equals( "replacenocase" ) || name.equals( "replace" ) || name.equals( "rereplace" ) || name.equals( "rereplacenocase" ) )
+		    && node.getArguments().size() > 3
+		    && node.getArguments().get( 0 ).getName() == null ) {
+			if ( node.getArguments().get( 3 ).getValue() instanceof BoxStringLiteral bsl ) {
+				String val = bsl.getValue().toLowerCase();
+				if ( val.equals( "once" ) ) {
+					bsl.setValue( "one" );
+				}
+			}
+		}
+
+		return super.visit( node );
+	}
+
+	private BoxNode transpileListAppend( BoxFunctionInvocation node ) {
+		var args = node.getArguments();
+		if ( args.isEmpty() ) {
+			return super.visit( node );
+		}
+		// Check if named args
+		if ( args.get( 0 ).getName() != null ) {
+			// named args
+			boolean hasIncludeEmptyFields = args.stream().anyMatch( a -> a.getName().getAsSimpleValue().toString().equalsIgnoreCase( "includeEmptyFields" ) );
+			if ( !hasIncludeEmptyFields ) {
+				args.add(
+				    new BoxArgument(
+				        new BoxStringLiteral( "includeEmptyFields", null, null ),
+				        new BoxBooleanLiteral( true, null, null ),
+				        null,
+				        null
+				    )
+				);
+				node.setArguments( args );
+			}
+		} else {
+			// positional args
+			if ( args.size() < 4 ) {
+				if ( args.size() == 2 ) {
+					// add delimiter as 3rd positional arg
+					args.add(
+					    new BoxArgument(
+					        null,
+					        new BoxStringLiteral( ListUtil.DEFAULT_DELIMITER, null, null ),
+					        null,
+					        null
+					    )
+					);
+				}
+				// add includeEmptyFields as 4th positional arg
+				args.add(
+				    new BoxArgument(
+				        null,
+				        new BoxBooleanLiteral( true, null, null ),
+				        null,
+				        null
+				    )
+				);
+				// Always re-set args and don't just modify the list so the AST model can be updated
+				node.setArguments( args );
+			}
+		}
 		return super.visit( node );
 	}
 
@@ -1012,13 +1109,44 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 
 	// quotedValueList( delimiter ) -> queryColumnData().map().toList( delimiter )
 	private BoxNode transpileQuotedValueList( BoxFunctionInvocation node ) {
-		BoxAccess			queryCol		= ( BoxAccess ) node.getArguments().get( 0 ).getValue();
-		List<BoxArgument>	toListArguments	= new ArrayList<>();
+		boolean				inQueryComponent	= node.getFirstAncestorOfType( BoxComponent.class, c -> c.getName().equalsIgnoreCase( "query" ) ) != null;
+		BoxAccess			queryCol			= ( BoxAccess ) node.getArguments().get( 0 ).getValue();
+		List<BoxArgument>	toListArguments		= new ArrayList<>();
 		// If there was a delimiter, pass it on to the toList() call
 		if ( node.getArguments().size() > 1 ) {
 			toListArguments.add( node.getArguments().get( 1 ) );
 		}
 
+		BoxExpression itemAccess = new BoxIdentifier( "arr", null, null );
+		if ( inQueryComponent ) {
+			itemAccess = new BoxFunctionInvocation(
+			    "replace",
+			    List.of(
+			        new BoxArgument(
+			            itemAccess,
+			            null,
+			            null
+			        ),
+			        new BoxArgument(
+			            new BoxStringLiteral( "'", null, null ),
+			            null,
+			            null
+			        ),
+			        new BoxArgument(
+			            new BoxStringLiteral( "''", null, null ),
+			            null,
+			            null
+			        ),
+			        new BoxArgument(
+			            new BoxStringLiteral( "all", null, null ),
+			            null,
+			            null
+			        )
+			    ),
+			    null,
+			    null
+			);
+		}
 		// queryColumnData( qry, col ).map()
 		BoxMethodInvocation	mapExpr			= new BoxMethodInvocation(
 		    new BoxIdentifier( "map", null, null ),
@@ -1046,9 +1174,9 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		                List.of(),
 		                new BoxExpressionStatement(
 		                    new BoxStringConcat( List.of(
-		                        new BoxStringLiteral( "\"", null, null ),
-		                        new BoxIdentifier( "arr", null, null ),
-		                        new BoxStringLiteral( "\"", null, null )
+		                        new BoxStringLiteral( "'", null, null ),
+		                        itemAccess,
+		                        new BoxStringLiteral( "'", null, null )
 		                    ),
 		                        null,
 		                        null ),
@@ -1070,6 +1198,24 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		    null,
 		    null
 		);
+		// wrap in preserveSingleQuotes()
+		if ( inQueryComponent ) {
+			BoxFunctionInvocation preserveSingleQuoteInvocation = new BoxFunctionInvocation(
+			    "preserveSingleQuotes",
+			    List.of(
+			        new BoxArgument(
+			            newInvocation,
+			            null,
+			            null
+			        )
+			    ),
+			    null,
+			    null
+			);
+			// Need a separate visit() call for this path so we call the correct overloaded visit() method
+			return super.visit( preserveSingleQuoteInvocation );
+
+		}
 		return super.visit( newInvocation );
 
 	}
@@ -1242,6 +1388,46 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 				    bsl.setValue( newValue );
 			    } );
 		}
+
+		// fixes for cflock tag
+		if ( componentName.equals( "lock" ) ) {
+			// If cflock has no name or scope attribute, set a name attribute to a UUID
+			boolean	hasName		= node.getAttributes().stream().anyMatch( a -> a.getKey().getValue().equalsIgnoreCase( "name" ) );
+			boolean	hasScope	= node.getAttributes().stream().anyMatch( a -> a.getKey().getValue().equalsIgnoreCase( "scope" ) );
+			if ( !hasName && !hasScope ) {
+				node.getAttributes().add(
+				    new BoxAnnotation(
+				        new BoxFQN( "name", null, null ),
+				        new BoxStringLiteral( UUID.randomUUID().toString(), null, null ),
+				        null,
+				        null )
+				);
+			}
+			// CF allows various "incorrect" type attribute values. If "type" is set, "write" changes to "exclusive", all other values other than "readonly" change to "readonly"
+			node.getAttributes().stream()
+			    .filter( a -> a.getKey().getValue().equalsIgnoreCase( "type" ) && a.getValue() instanceof BoxStringLiteral )
+			    .forEach( a -> {
+				    BoxStringLiteral bsl = ( BoxStringLiteral ) a.getValue();
+				    if ( bsl.getValue().equalsIgnoreCase( "write" ) ) {
+					    bsl.setValue( "exclusive" );
+				    } else if ( !bsl.getValue().equalsIgnoreCase( "readonly" ) ) {
+					    bsl.setValue( "readonly" );
+				    }
+			    } );
+		}
+
+		// Ignore invalid values for cfquery dbtype. If it's a string literal, and not query or hql, then literally delete the attribute entirely
+		if ( componentName.equals( "query" ) ) {
+			node.getAttributes()
+			    .stream()
+			    .filter( a -> a.getKey().getValue().equalsIgnoreCase( "dbtype" ) && a.getValue() instanceof BoxStringLiteral )
+			    .filter( a -> {
+				    String value = ( ( BoxStringLiteral ) a.getValue() ).getValue();
+				    return !value.equalsIgnoreCase( "query" ) && !value.equalsIgnoreCase( "hql" );
+			    } )
+			    .toList()
+			    .forEach( a -> node.getAttributes().remove( a ) );
+		}
 		return super.visit( node );
 	}
 
@@ -1389,7 +1575,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		if ( isClass ) {
 			BoxExpression expr = node.getExpression();
 			// only contains white space
-			if ( expr instanceof BoxStringLiteral str && str.getValue().trim().isEmpty() ) {
+			if ( expr instanceof BoxStringLiteral str && str.getValue().isBlank() ) {
 				if ( node.getFirstAncestorOfType( BoxTemplateIsland.class ) == null
 				    // This is prolly not comprehensive. Maybe there's a better approach, but let's try to detect if we're in a componenet that's actually outputting something
 				    // The main problem here is that any whitespace COULD POTENTIALLY be significant depending on what the code is doing.

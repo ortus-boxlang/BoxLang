@@ -31,7 +31,6 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -59,7 +58,7 @@ public class GetLocaleDisplayNameTest {
 	public void setupEach() {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
-		context.getParentOfType( RequestBoxContext.class ).setLocale( LocalizationUtil.buildLocale( "en", "US" ) );
+		context.getRequestContext().setLocale( LocalizationUtil.buildLocale( "en", "US" ) );
 	}
 
 	@DisplayName( "It tests the BIF GetLocaleDisplayName with no arguments" )
@@ -97,7 +96,7 @@ public class GetLocaleDisplayNameTest {
 		Locale	contextLocale	= ( Locale ) context.getConfig().get( Key.locale );
 		String	refDisplayName	= contextLocale.getDisplayName( contextLocale );
 		// Set a different locale to test whether our explicit args are being honored
-		context.getParentOfType( RequestBoxContext.class ).setLocale( Locale.GERMANY );
+		context.getRequestContext().setLocale( Locale.GERMANY );
 		instance.executeSource(
 		    """
 		    result = GetLocaleDisplayName( "en-US", "en-US" );

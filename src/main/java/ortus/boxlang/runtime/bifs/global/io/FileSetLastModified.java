@@ -61,7 +61,7 @@ public class FileSetLastModified extends BIF {
 			file = new File( FileSystemUtil.expandPath( context, arguments.getAsString( Key.file ) ).absolutePath().toString(), "append",
 			    arguments.getAsString( Key.charset ), false );
 		} else {
-			throw new BoxRuntimeException( "The file argumennt [" + arguments.getAsString( Key.file ) + "] is not an open file stream or string path." );
+			throw new BoxRuntimeException( "The file argumennt [" + arguments.get( Key.file ).toString() + "] is not an open file stream or string path." );
 		}
 		file.setLastModifiedTime( arguments.getAsDateTime( Key.date ) );
 		// For strings file args we need to close the buffer

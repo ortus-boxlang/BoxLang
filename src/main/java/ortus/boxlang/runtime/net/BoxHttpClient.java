@@ -88,6 +88,7 @@ public class BoxHttpClient {
 	public static final String											DEFAULT_CHARSET				= StandardCharsets.UTF_8.name();
 	public static final String											DEFAULT_METHOD				= "GET";
 	public static final int												DEFAULT_CONNECTION_TIMEOUT	= 15;
+	public static final int												DEFAULT_READ_TIMEOUT		= 15;
 	public static final int												DEFAULT_REQUEST_TIMEOUT		= 0;
 	public static final boolean											DEFAULT_THROW_ON_ERROR		= false;
 
@@ -1040,12 +1041,7 @@ public class BoxHttpClient {
 		 * @return This builder for chaining
 		 */
 		public BoxHttpRequest file( String name, String filePath ) {
-			ortus.boxlang.runtime.types.IStruct param = new ortus.boxlang.runtime.types.Struct();
-			param.put( ortus.boxlang.runtime.scopes.Key.type, "file" );
-			param.put( ortus.boxlang.runtime.scopes.Key._NAME, name );
-			param.put( ortus.boxlang.runtime.scopes.Key.file, filePath );
-			this.params.add( param );
-			return this;
+			return this.file( name, filePath, null );
 		}
 
 		/**
@@ -1058,12 +1054,13 @@ public class BoxHttpClient {
 		 * @return This builder for chaining
 		 */
 		public BoxHttpRequest file( String name, String filePath, String mimeType ) {
-			ortus.boxlang.runtime.types.IStruct param = new ortus.boxlang.runtime.types.Struct();
-			param.put( ortus.boxlang.runtime.scopes.Key.type, "file" );
-			param.put( ortus.boxlang.runtime.scopes.Key._NAME, name );
-			param.put( ortus.boxlang.runtime.scopes.Key.file, filePath );
-			param.put( ortus.boxlang.runtime.scopes.Key.mimetype, mimeType );
+			IStruct param = new Struct( false );
+			param.put( Key.type, "file" );
+			param.put( Key._NAME, name );
+			param.put( Key.file, filePath );
+			param.put( Key.mimetype, mimeType );
 			this.params.add( param );
+			this.multipart = true;
 			return this;
 		}
 
@@ -1342,7 +1339,7 @@ public class BoxHttpClient {
 			    formFields.stream()
 			        .map( formField -> {
 				        String value = StringCaster.cast( formField.get( Key.value ) );
-				        if ( BooleanCaster.cast( formField.getOrDefault( Key.encoded, false ) ) ) {
+				        if ( BooleanCaster.cast( formField.getOrDefault( Key.encoded, true ) ) ) {
 					        value = EncryptionUtil.urlEncode( value, StandardCharsets.UTF_8 );
 				        }
 				        return StringCaster.cast( formField.get( Key._name ) ) + "=" + value;
@@ -1563,10 +1560,11 @@ public class BoxHttpClient {
 			// found
 			bodyPublisher = processParams( uriBuilder, requestBuilder, formFields, files, bodyPublisher );
 
-			// Process Files
+			// Process Files - multipart/form-data
 			if ( !files.isEmpty() ) {
 				bodyPublisher = processFiles( requestBuilder, bodyPublisher, formFields, files );
 			} else if ( !formFields.isEmpty() ) {
+				// application/x-www-form-urlencoded
 				// Process Form Fields
 				bodyPublisher = processFormFields( requestBuilder, bodyPublisher, formFields );
 			}

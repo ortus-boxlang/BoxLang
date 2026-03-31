@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.dynamic.casters.XMLCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.events.InterceptorPool;
 import ortus.boxlang.runtime.interop.DynamicObject;
@@ -49,6 +50,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.BLCollector;
@@ -176,6 +178,7 @@ public abstract class BaseApplicationListener {
 	    Key.sessionManagement, runtime.getConfiguration().sessionManagement,
 	    Key.sessionStorage, runtime.getConfiguration().sessionStorage,
 	    Key.sessionTimeout, runtime.getConfiguration().sessionTimeout,
+	    Key.sessionType, runtime.getConfiguration().sessionType,
 	    // Cookie Management
 	    Key.setClientCookies, runtime.getConfiguration().setClientCookies,
 	    Key.setDomainCookies, runtime.getConfiguration().setDomainCookies,
@@ -408,6 +411,11 @@ public abstract class BaseApplicationListener {
 	 * Update or create the session management in an application if enabled.
 	 */
 	private void createOrUpdateSessionManagement() {
+		// Defer this until AFTER any application start methods are done. Otherwise, recursive application updating starts the session too soon.
+		if ( context.getAttachment( Key.onApplicationStart ) != null ) {
+			return;
+		}
+
 		// Check for existing session context
 		SessionBoxContext	existingSessionContext		= this.context.getParentOfType( SessionBoxContext.class );
 		boolean				sessionManagementEnabled	= BooleanCaster.cast( this.settings.get( Key.sessionManagement ) );
@@ -850,6 +858,17 @@ public abstract class BaseApplicationListener {
 					break;
 				case "wddx" :
 				case "xml" :
+					// first check if we have an xml object or xml string
+					CastAttempt<XML> xmlAttempt = XMLCaster.attempt( result );
+					if ( xmlAttempt.wasSuccessful() ) {
+						stringResult = xmlAttempt.get().asString( Struct.of(
+						    "omit-xml-declaration", "no",
+						    "method", "xml",
+						    "indent", "no"
+						) );
+						break;
+					}
+					// If it's an not XML object/string, we would need to serialize it to WDDX
 					if ( context.getRuntime().getModuleService().hasModule( Key.wddx ) ) {
 						DynamicObject WDDXUtil = context.getRuntime()
 						    .getClassLocator()

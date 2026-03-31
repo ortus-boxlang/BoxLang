@@ -17,7 +17,6 @@
  */
 package ortus.boxlang.runtime.loader.resolvers;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -241,6 +240,7 @@ public class BoxResolver extends BaseResolver {
 	 *
 	 * @return The ClassLocation record wrapped in an optional if found, empty otherwise
 	 */
+	@SuppressWarnings( "null" )
 	public Optional<ClassLocation> findFromModule( String fullyQualifiedName, Key moduleName, List<ImportDefinition> imports, IBoxContext context ) {
 		ModuleService moduleService = BoxRuntime.getInstance().getModuleService();
 
@@ -322,6 +322,7 @@ public class BoxResolver extends BaseResolver {
 	 *
 	 * @return An Optional of {@link ClassLocation} if found, {@link Optional#empty()} otherwise
 	 */
+	@SuppressWarnings( "null" )
 	private Optional<ClassLocation> findByMapping(
 	    IBoxContext context,
 	    String slashName,
@@ -360,31 +361,27 @@ public class BoxResolver extends BaseResolver {
 				    // Verify that the file exists
 				    absolutePath = FileSystemUtil.pathExistsCaseInsensitive( absolutePath );
 				    if ( absolutePath != null ) {
-					    try {
-						    String mappingName		= entry.getKey().getName();
-						    String mappingDirectory	= entry.getValue().toString();
-						    String relativePath;
+					    String mappingName		= entry.getKey().getName();
+					    String mappingDirectory	= entry.getValue().toString();
+					    String relativePath;
 
-						    // Java not smart enough to ignore a path part of just / and it will wind up with \\ in windows
-						    if ( mappingName.equals( "/" ) || mappingName.equals( "\\" ) ) {
-							    relativePath = Paths.get( mappingDirectory ).toRealPath().relativize( absolutePath ).toString();
-						    } else {
-							    relativePath = Paths
-							        .get( mappingName, Paths.get( mappingDirectory ).toRealPath().relativize( absolutePath ).toString() )
-							        .toString();
-						    }
-
-						    paths.add(
-						        ResolvedFilePath.of(
-						            mappingName,
-						            mappingDirectory,
-						            relativePath,
-						            absolutePath
-						        )
-						    );
-					    } catch ( IOException e ) {
-						    // Ignore these errors-- file either got deleted or there was a disk issue
+					    // Java not smart enough to ignore a path part of just / and it will wind up with \\ in windows
+					    if ( mappingName.equals( "/" ) || mappingName.equals( "\\" ) ) {
+						    relativePath = Paths.get( mappingDirectory ).normalize().relativize( absolutePath ).toString();
+					    } else {
+						    relativePath = Paths
+						        .get( mappingName, Paths.get( mappingDirectory ).normalize().relativize( absolutePath ).toString() )
+						        .toString();
 					    }
+
+					    paths.add(
+					        ResolvedFilePath.of(
+					            mappingName,
+					            mappingDirectory,
+					            relativePath,
+					            absolutePath
+					        )
+					    );
 				    }
 			    }
 
@@ -421,6 +418,7 @@ public class BoxResolver extends BaseResolver {
 	 *
 	 * @return An Optional of {@link ClassLocation} if found, {@link Optional#empty()} otherwise
 	 */
+	@SuppressWarnings( "null" )
 	private Optional<ClassLocation> findByRelativeLocation(
 	    IBoxContext context,
 	    String slashName,
@@ -475,6 +473,7 @@ public class BoxResolver extends BaseResolver {
 	 *
 	 * @return An Optional of {@link ClassLocation} if found, {@link Optional#empty()} otherwise
 	 */
+	@SuppressWarnings( "null" )
 	private Optional<ClassLocation> findByLookupDirectory(
 	    IBoxContext context,
 	    String slashName,

@@ -258,7 +258,6 @@ public class ApplicationService extends BaseService {
 				// resolved via a mapping declared in the Application class, which we haven't yet created
 
 				templatePath = FileSystemUtil.expandPath( context, template.getPath() );
-				// templatePath = FileSystemUtil.expandPath( runtime.getConfiguration().mappings, template.getPath(), null, false );
 
 				Path	rootPath			= Paths.get( templatePath.mappingPath() );
 				Path	currentDirectory	= templatePath.absolutePath().getParent();
@@ -407,6 +406,13 @@ public class ApplicationService extends BaseService {
 		}
 		// Nothing found in this directory
 		return null;
+	}
+
+	/**
+	 * Clears the application descriptor cache.
+	 */
+	public void clearApplicationDescriptorCache() {
+		this.applicationDescriptorCache.clear();
 	}
 
 	private record ApplicationDescriptorSearch( Path path, ApplicationDescriptorType type ) {

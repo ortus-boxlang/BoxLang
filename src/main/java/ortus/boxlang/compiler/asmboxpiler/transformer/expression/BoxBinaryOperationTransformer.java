@@ -27,6 +27,7 @@ import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.TypeInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.MethodContextTracker;
@@ -59,7 +60,9 @@ import ortus.boxlang.runtime.operators.Multiply;
 import ortus.boxlang.runtime.operators.NotContains;
 import ortus.boxlang.runtime.operators.Plus;
 import ortus.boxlang.runtime.operators.Power;
+import ortus.boxlang.runtime.operators.Range;
 import ortus.boxlang.runtime.operators.XOR;
+import ortus.boxlang.runtime.types.Array;
 
 public class BoxBinaryOperationTransformer extends AbstractTransformer {
 
@@ -77,38 +80,43 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 
 		List<AbstractInsnNode>	nodes		= switch ( operation.getOperator() ) {
 												case Plus -> // "Plus.invoke(${left},${right})";
-												    generateBinaryMethodCallNodes( Plus.class, Number.class, left, right );
+												    generateNumericBinaryMethodCallNodes( Plus.class, Number.class, operation, left, right );
 
 												case Minus -> // "Minus.invoke(${left},${right})";
-												    generateBinaryMethodCallNodes( Minus.class, Number.class, left, right );
+												    generateNumericBinaryMethodCallNodes( Minus.class, Number.class, operation, left, right );
+
+												case Range -> // "Range.invoke(${left},${right})";
+												    generateBinaryMethodCallNodes( Range.class, Array.class, left, right );
 
 												case Star -> // "Multiply.invoke(${left},${right})";
-												    generateBinaryMethodCallNodes( Multiply.class, Number.class, left, right );
+												    generateNumericBinaryMethodCallNodes( Multiply.class, Number.class, operation, left, right );
 
 												case Slash -> // "Divide.invoke(${left},${right})";
-												    generateBinaryMethodCallNodes( Divide.class, Number.class, left, right );
+												    generateNumericBinaryMethodCallNodes( Divide.class, Number.class, operation, left, right );
 
 												case Backslash -> // "IntegerDivide.invoke(${left},${right})";
-												    generateBinaryMethodCallNodes( IntegerDivide.class, Number.class, left, right );
+												    generateNumericBinaryMethodCallNodes( IntegerDivide.class, Number.class, operation, left, right );
 
 												case Power -> // "Power.invoke(${left},${right})";
-												    generateBinaryMethodCallNodes( Power.class, Number.class, left, right );
+												    generateNumericBinaryMethodCallNodes( Power.class, Number.class, operation, left, right );
 
 												case Xor -> // "XOR.invoke(${left},${right})";
 												    generateBinaryMethodCallNodes( XOR.class, Boolean.class, left, right );
 
 												case Mod -> // "Modulus.invoke(${left},${right})";
-												    generateBinaryMethodCallNodes( Modulus.class, Number.class, left, right );
+												    generateNumericBinaryMethodCallNodes( Modulus.class, Number.class, operation, left, right );
 
 												case And -> {
 													LabelNode				ifFalse		= new LabelNode(), end = new LabelNode();
 													List<AbstractInsnNode>	expression	= new ArrayList<>();
 													expression.addAll( left );
-													expression.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-													    Type.getInternalName( BooleanCaster.class ),
-													    "cast",
-													    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ) ),
-													    false ) );
+													if ( !operation.getLeft().returnsBoolean() ) {
+														expression.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+														    Type.getInternalName( BooleanCaster.class ),
+														    "cast",
+														    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ) ),
+														    false ) );
+													}
 													expression.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
 													    Type.getInternalName( Boolean.class ),
 													    "booleanValue",
@@ -116,11 +124,13 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 													    false ) );
 													expression.add( new JumpInsnNode( Opcodes.IFEQ, ifFalse ) );
 													expression.addAll( right );
-													expression.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-													    Type.getInternalName( BooleanCaster.class ),
-													    "cast",
-													    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ) ),
-													    false ) );
+													if ( !operation.getRight().returnsBoolean() ) {
+														expression.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+														    Type.getInternalName( BooleanCaster.class ),
+														    "cast",
+														    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ) ),
+														    false ) );
+													}
 													expression.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
 													    Type.getInternalName( Boolean.class ),
 													    "booleanValue",
@@ -144,11 +154,13 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 													LabelNode				ifTrue		= new LabelNode(), end = new LabelNode();
 													List<AbstractInsnNode>	expression	= new ArrayList<>();
 													expression.addAll( left );
-													expression.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-													    Type.getInternalName( BooleanCaster.class ),
-													    "cast",
-													    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ) ),
-													    false ) );
+													if ( !operation.getLeft().returnsBoolean() ) {
+														expression.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+														    Type.getInternalName( BooleanCaster.class ),
+														    "cast",
+														    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ) ),
+														    false ) );
+													}
 													expression.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
 													    Type.getInternalName( Boolean.class ),
 													    "booleanValue",
@@ -156,11 +168,13 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 													    false ) );
 													expression.add( new JumpInsnNode( Opcodes.IFNE, ifTrue ) );
 													expression.addAll( right );
-													expression.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-													    Type.getInternalName( BooleanCaster.class ),
-													    "cast",
-													    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ) ),
-													    false ) );
+													if ( !operation.getRight().returnsBoolean() ) {
+														expression.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+														    Type.getInternalName( BooleanCaster.class ),
+														    "cast",
+														    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ) ),
+														    false ) );
+													}
 													expression.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
 													    Type.getInternalName( Boolean.class ),
 													    "booleanValue",
@@ -247,8 +261,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 
-	@NonNull
-	private static List<AbstractInsnNode> generateBinaryMethodCallNodes( Class<?> dispatcher, Class<?> returned, List<AbstractInsnNode> left,
+	@NonNull private static List<AbstractInsnNode> generateBinaryMethodCallNodes( Class<?> dispatcher, Class<?> returned, List<AbstractInsnNode> left,
 	    List<AbstractInsnNode> right ) {
 		List<AbstractInsnNode> nodes = new ArrayList<>();
 		nodes.addAll( left );
@@ -261,8 +274,37 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 		return nodes;
 	}
 
-	@NonNull
-	private static List<AbstractInsnNode> generateBinaryMethodCallNodesWithContext( Transpiler transpiler, Class<?> dispatcher, Class<?> returned,
+	/**
+	 * Generate binary method call nodes for numeric operators, using the invoke(Number, Number) overload
+	 * when both operands are known to return Number values to avoid unnecessary NumberCaster calls.
+	 *
+	 * @param dispatcher the operator class
+	 * @param returned   the return type class
+	 * @param operation  the BoxBinaryOperation AST node
+	 * @param left       the left operand instructions
+	 * @param right      the right operand instructions
+	 *
+	 * @return the instruction list
+	 */
+	@NonNull private static List<AbstractInsnNode> generateNumericBinaryMethodCallNodes( Class<?> dispatcher, Class<?> returned,
+	    BoxBinaryOperation operation, List<AbstractInsnNode> left, List<AbstractInsnNode> right ) {
+		if ( operation.getLeft().returnsNumber() && operation.getRight().returnsNumber() ) {
+			List<AbstractInsnNode> nodes = new ArrayList<>();
+			nodes.addAll( left );
+			nodes.add( new TypeInsnNode( Opcodes.CHECKCAST, Type.getInternalName( Number.class ) ) );
+			nodes.addAll( right );
+			nodes.add( new TypeInsnNode( Opcodes.CHECKCAST, Type.getInternalName( Number.class ) ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( dispatcher ),
+			    "invoke",
+			    Type.getMethodDescriptor( Type.getType( returned ), Type.getType( Number.class ), Type.getType( Number.class ) ),
+			    false ) );
+			return nodes;
+		}
+		return generateBinaryMethodCallNodes( dispatcher, returned, left, right );
+	}
+
+	@NonNull private static List<AbstractInsnNode> generateBinaryMethodCallNodesWithContext( Transpiler transpiler, Class<?> dispatcher, Class<?> returned,
 	    List<AbstractInsnNode> left,
 	    List<AbstractInsnNode> right ) {
 		List<AbstractInsnNode> nodes = new ArrayList<>();

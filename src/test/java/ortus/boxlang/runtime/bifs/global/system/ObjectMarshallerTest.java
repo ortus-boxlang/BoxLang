@@ -23,16 +23,19 @@ import static com.google.common.truth.Truth.assertThat;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.util.conversion.ObjectMarshaller;
 
 public class ObjectMarshallerTest {
 
@@ -129,6 +132,32 @@ public class ObjectMarshallerTest {
 		    """,
 		context );
 		// @formatter:on
+	}
+
+	@DisplayName( "Can serialize/deserialize bx classes using a mapped path" )
+	@Test
+	@Disabled( "Currently throws `The requested class [root.bx.MyThreadingClass] has not been located in the [bx] resolver`" )
+	public void testSerializationDeserializationBxClassesOnMappedPath() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+			 bx:application mappings={
+		    	"/root" : expandPath( "src/test" )
+		     };
+			// Class
+			person = new root.bx.Person()
+			person.setName( "Luis" )
+			person.setSurname( "Majano" )
+			person.setAge( 1 )
+			println( person.toJson() )
+
+			serialized = objectSerialize( person )
+		    """,
+		context );
+		// @formatter:on
+		// Currently throws `The requested class [root.bx.MyThreadingClass] has not been located in the [bx] resolver`
+		Object deserialized = ObjectMarshaller.deserialize( context, ( byte[] ) variables.get( Key.of( "serialized" ) ) );
+		assertThat( deserialized ).isInstanceOf( IClassRunnable.class );
 	}
 
 }

@@ -90,6 +90,7 @@ literal_value:
     | NULL_
     | TRUE_
     | FALSE_
+    | ODBCDATETIME_LITERAL
 ;
 
 value_row:
@@ -137,7 +138,8 @@ factored_select_stmt:
 ;
 
 table:
-    (schema_name DOT)? table_name (AS_? table_alias)?
+    // We allow foo.bar.baz.myQry
+    (schema_name DOT)* table_name (AS_? table_alias)?
 ;
 
 subquery:

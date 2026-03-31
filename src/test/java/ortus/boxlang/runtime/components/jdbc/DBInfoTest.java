@@ -452,4 +452,23 @@ public class DBInfoTest extends BaseJDBCTest {
 		    .orElse( null );
 		assertNotNull( testTableRow );
 	}
+
+	@DisplayName( "It can retrieve metadata with a struct datasource" )
+	@Test
+	public void testStructDatasource() {
+		getInstance().executeSource(
+		    """
+		    <bx:set myDS = { driver : 'derby', connectionString : 'jdbc:derby:memory:structDSDBInfoTest;create=true' }>
+		    <bx:query datasource="#myDS#">
+		        CREATE TABLE test_struct_ds ( id INTEGER, name VARCHAR(155) )
+		    </bx:query>
+		    <bx:dbinfo type="tables" name="result" datasource="#myDS#">
+		    """,
+		    getContext(), BoxSourceType.BOXTEMPLATE );
+
+		Object theResult = getVariables().get( result );
+		assertThat( theResult ).isInstanceOf( Query.class );
+		Query resultQuery = ( Query ) theResult;
+		assertThat( resultQuery.size() ).isGreaterThan( 0 );
+	}
 }

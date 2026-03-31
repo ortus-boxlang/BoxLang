@@ -191,4 +191,73 @@ public class StructUtilTest {
 
 	}
 
+	@DisplayName( "Can sort struct with nested path containing null and incomparable values" )
+	@Test
+	void testStructSortWithNullAndIncomparableValues() {
+		// This test verifies the fix for: "Comparison method violates its general contract!"
+		// when sorting structs with nested paths that may contain null or incomparable values
+
+		Struct	struct	= new Struct();
+
+		// Create nested structs with various value types including nulls
+		Struct	item1	= new Struct();
+		item1.put( "timestamp", 100 );
+		struct.put( "key1", item1 );
+
+		Struct item2 = new Struct();
+		item2.put( "timestamp", null ); // null value
+		struct.put( "key2", item2 );
+
+		Struct item3 = new Struct();
+		item3.put( "timestamp", 50 );
+		struct.put( "key3", item3 );
+
+		Struct item4 = new Struct();
+		item4.put( "timestamp", "notanumber" ); // incomparable with numbers
+		struct.put( "key4", item4 );
+
+		Struct item5 = new Struct();
+		item5.put( "timestamp", 75 );
+		struct.put( "key5", item5 );
+
+		// This should not throw "Comparison method violates its general contract!"
+		Array sortedKeys = StructUtil.sort( struct, "numeric", "asc", "timestamp" );
+
+		// Verify we got results back
+		assertThat( sortedKeys ).isNotNull();
+		assertThat( sortedKeys.size() ).isEqualTo( 5 );
+
+		// Verify comparable numeric values are sorted correctly (nulls and incomparable values treated as equal)
+		// The exact order of null/incomparable values is undefined, but numeric values should be in order
+		assertThat( sortedKeys ).contains( "key3" ); // 50
+		assertThat( sortedKeys ).contains( "key5" ); // 75
+		assertThat( sortedKeys ).contains( "key1" ); // 100
+	}
+
+	@DisplayName( "Can sort struct with nested path in descending order" )
+	@Test
+	void testStructSortWithNestedPathDescending() {
+		Struct	struct	= new Struct();
+
+		Struct	item1	= new Struct();
+		item1.put( "value", "apple" );
+		struct.put( "key1", item1 );
+
+		Struct item2 = new Struct();
+		item2.put( "value", "zebra" );
+		struct.put( "key2", item2 );
+
+		Struct item3 = new Struct();
+		item3.put( "value", "banana" );
+		struct.put( "key3", item3 );
+
+		Array sortedKeys = StructUtil.sort( struct, "text", "desc", "value" );
+
+		assertThat( sortedKeys ).isNotNull();
+		assertThat( sortedKeys.size() ).isEqualTo( 3 );
+		assertThat( sortedKeys.get( 0 ) ).isEqualTo( "key2" ); // zebra
+		assertThat( sortedKeys.get( 1 ) ).isEqualTo( "key3" ); // banana
+		assertThat( sortedKeys.get( 2 ) ).isEqualTo( "key1" ); // apple
+	}
+
 }

@@ -61,7 +61,7 @@ public class Setting extends Component {
 		Boolean				showDebugOutput		= attributes.getAsBoolean( Key.showDebugOutput );
 		Boolean				enableOutputOnly	= attributes.getAsBoolean( Key.enableOutputOnly );
 		Long				requestTimeout		= attributes.getAsLong( Key.requestTimeout );
-		RequestBoxContext	requestContext		= context.getParentOfType( RequestBoxContext.class );
+		RequestBoxContext	requestContext		= context.getRequestContextOrFail();
 
 		if ( enableOutputOnly != null ) {
 			// This will change the setting for the request of the request

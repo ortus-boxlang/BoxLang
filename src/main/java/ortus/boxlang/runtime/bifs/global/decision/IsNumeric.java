@@ -63,7 +63,7 @@ public class IsNumeric extends BIF {
 			return false;
 		}
 		// If we have a string which can be cast to boolean strings, it's not numeric
-		if ( value instanceof String str && BooleanCaster.getBooleanStrings().keySet().contains( Key.of( str ) ) ) {
+		if ( value instanceof String str && BooleanCaster.parseBooleanString( str ) != null ) {
 			return false;
 		}
 		if ( GenericCaster.attempt( context, value, "numeric" ).wasSuccessful() ) {

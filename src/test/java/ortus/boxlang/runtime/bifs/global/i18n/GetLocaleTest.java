@@ -31,7 +31,6 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -65,7 +64,7 @@ public class GetLocaleTest {
 	@DisplayName( "It tests the BIF GetLocale will find a known alias" )
 	@Test
 	public void testBif() {
-		context.getParentOfType( RequestBoxContext.class ).setLocale( LocalizationUtil.COMMON_LOCALES.get( Key.of( "US" ) ) );
+		context.getRequestContext().setLocale( LocalizationUtil.COMMON_LOCALES.get( Key.of( "US" ) ) );
 		instance.executeSource(
 		    """
 		    result = getLocale();
@@ -79,7 +78,7 @@ public class GetLocaleTest {
 	@DisplayName( "It tests the BIF GetLocale will return `Language (Country)` without a known alias" )
 	@Test
 	public void testBifNoAlias() {
-		context.getParentOfType( RequestBoxContext.class ).setLocale( LocalizationUtil.buildLocale( "ar", "TR" ) );
+		context.getRequestContext().setLocale( LocalizationUtil.buildLocale( "ar", "TR" ) );
 		Locale	localeRef	= LocalizationUtil.buildLocale( "ar", "TR" );
 		String	refResult	= String.format(
 		    "%s (%s)",

@@ -38,7 +38,6 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.ListUtil;
 
@@ -550,8 +549,9 @@ public class InterceptorPool {
 	public InterceptorPool unregister( DynamicObject interceptor, Key... states ) {
 		Arrays.stream( states )
 		    .forEach( state -> {
-			    if ( hasState( state ) ) {
-				    getState( state ).unregister( interceptor );
+			    var interceptorState = getState( state );
+			    if ( interceptorState != null ) {
+				    interceptorState.unregister( interceptor );
 			    }
 		    } );
 		return this;
@@ -687,16 +687,9 @@ public class InterceptorPool {
 	 * @param context The context to pass to the interceptors
 	 */
 	public void announce( Key state, Supplier<IStruct> dataProducer, IBoxContext context ) {
-		if ( hasState( state ) ) {
-			try {
-				getState( state ).announce( dataProducer.get(), context );
-			} catch ( AbortException e ) {
-				throw e;
-			} catch ( Exception e ) {
-				String errorMessage = String.format( "Errors announcing [%s] interception", state.getName() );
-				getLogger().error( errorMessage, e );
-				throw new BoxRuntimeException( errorMessage, e );
-			}
+		var interceptorState = getState( state );
+		if ( interceptorState != null ) {
+			interceptorState.announce( dataProducer.get(), context );
 		} else {
 			getLogger().trace( "InterceptorService.announce() - No state found for: {}", state.getName() );
 		}
@@ -775,16 +768,11 @@ public class InterceptorPool {
 	 * @return A CompletableFuture of the data or null if the state does not exist
 	 */
 	public CompletableFuture<IStruct> announceAsync( Key state, IStruct data, IBoxContext context ) {
-		if ( hasState( state ) ) {
+		var interceptorState = getState( state );
+		if ( interceptorState != null ) {
 			return CompletableFuture.supplyAsync( () -> {
-				try {
-					getState( state ).announce( data, context );
-					return data;
-				} catch ( Exception e ) {
-					String errorMessage = String.format( "Errors announcing [%s] interception", state.getName() );
-					getLogger().error( errorMessage, e );
-					throw new BoxRuntimeException( errorMessage, e );
-				}
+				interceptorState.announce( data, context );
+				return data;
 			} );
 		}
 

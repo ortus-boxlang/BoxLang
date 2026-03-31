@@ -58,6 +58,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.CustomException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
@@ -5913,7 +5914,66 @@ public class CoreLangTest {
 	}
 
 	@Test
-	@Disabled( "not working in ASM Boxpiler" )
+	public void testExpressionInterpreterSetInFunctionLocal() {
+
+		instance.executeSource(
+		    """
+		    	import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
+		    	function foo() {
+		    		ExpressionInterpreter.setVariable( getBoxContext(), "local.bar", "baz" );
+		    		return local.bar;
+		    	}
+		    	result = foo();
+		    """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( "baz" );
+	}
+
+	@Test
+	public void testDoubleToString() {
+
+		instance.executeSource(
+		    """
+		    import java.lang.Double;
+		    myDoubleInstance = Double.valueOf( 15852073 );
+		    result = "" & myDoubleInstance;
+		      """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( "15852073" );
+	}
+
+	@Test
+	public void testCustomCatchTypes() {
+
+		instance.executeSource(
+		    """
+		    function boom() {
+		    	throw(
+		    		type="MyCustom.Exception",
+		    		message="thrown in boom"
+		    	);
+		    }
+		    function foo() {
+		    	try {
+		    		boom();
+		    	} catch ( MyCustom e ) {
+		    		return "custom";
+		    	} catch ( any e ) {
+		    		return "generic";
+		    	}
+		    	return "done";
+		    }
+		    result = foo();
+		            """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( "custom" );
+
+	}
+
+	@Test
 	public void testClosureInTernaryCF() {
 
 		instance.executeSource(
@@ -5924,11 +5984,9 @@ public class CoreLangTest {
 		    context, BoxSourceType.CFSCRIPT
 		);
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "foo" );
-
 	}
 
 	@Test
-	@Disabled( "not working in ASM Boxpiler" )
 	public void testClosureInTernary() {
 
 		instance.executeSource(
@@ -5940,6 +5998,486 @@ public class CoreLangTest {
 		);
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "foo" );
 
+	}
+
+	@Test
+	public void testEmptyStatementWhileCF() {
+
+		instance.executeSource(
+		    """
+		    while(false);
+		                  """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+	}
+
+	@Test
+	public void testEmptyStatementForCF() {
+
+		instance.executeSource(
+		    """
+		    for(i=0; i<10; i++);
+		                  """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+	}
+
+	@Test
+	public void testEmptyStatementDoWhileCF() {
+
+		instance.executeSource(
+		    """
+		    do; while(false);
+		                  """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+	}
+
+	@Test
+	public void testEmptyStatementIfElseCF() {
+
+		instance.executeSource(
+		    """
+		    if(false);
+		    else;
+		                  """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+	}
+
+	@Test
+	public void testEmptyStatementSwitchCaseCF() {
+
+		instance.executeSource(
+		    """
+		    switch(42) {
+		    	case 42:
+		    		;
+		    		break;
+		    	default:
+		    		;
+		    }
+		                             """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+	}
+
+	@Test
+	public void testEmptyStatementWhile() {
+
+		instance.executeSource(
+		    """
+		    while(false);
+		                  """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+	}
+
+	@Test
+	public void testEmptyStatementFor() {
+
+		instance.executeSource(
+		    """
+		    for(i=0; i<10; i++);
+		                  """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+	}
+
+	@Test
+	public void testEmptyStatementDoWhile() {
+
+		instance.executeSource(
+		    """
+		    do; while(false);
+		                  """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+	}
+
+	@Test
+	public void testEmptyStatementIfElse() {
+
+		instance.executeSource(
+		    """
+		    if(false);
+		    else;
+		                  """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+	}
+
+	@Test
+	public void testEmptyStatementSwitchCase() {
+
+		instance.executeSource(
+		    """
+		    switch(42) {
+		    	case 42:
+		    		;
+		    		break;
+		    	default:
+		    		;
+		    }
+		                             """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+	}
+
+	@Test
+	public void testSciNotationWithLeadingZero() {
+
+		instance.executeSource(
+		    """
+		    	result = 0E-7
+		    """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+		assertThat( variables.getAsNumber( Key.of( "result" ) ).doubleValue() ).isEqualTo( 0 );
+	}
+
+	@Test
+	public void testCompileThreadSafety() {
+		// print PID to console
+		System.out.println( "PID: " + ProcessHandle.current().pid() );
+		instance.executeSource(
+		// @formatter:off
+		    """
+				relPath = "src/test/java/TestCases/phase1/includeMe.bxs"
+				function runner() {
+					try {
+						include relPath;
+					} catch ( any e ) {
+						variables.error = e;
+						stop = 0;
+						rethrow;
+					}
+				}
+				// pre-compile
+				runner();
+
+				fullPath = expandPath( relPath );
+				start = getTickCount();
+				stop = start + 2000;
+
+				thread name="updater" {
+					while( getTickCount() < stop ) {
+						// repeatedly touch the file to force recompile
+						fileWrite( fullPath, fileRead( fullPath ) );
+						sleep( 500 );
+					}
+				}
+				thread name="compiler1" {
+					while( getTickCount() < stop ) {
+						runner();
+					}
+				}
+				thread name="compiler2" {
+					while( getTickCount() < stop ) {
+						runner();
+					}
+				}
+
+				thread action="join" name="updater,compiler1,compiler2";
+
+				if( !isNull( variables.error ) ) {
+					throw variables.error;
+				}
+            """,
+			// @formatter:on
+		    context );
+	}
+
+	@Test
+	public void testIterateOverPrimitiveArray() {
+
+		instance.executeSource(
+		    """
+		      	string = "hello"
+		    result = ""
+		    for( char in string.toCharArray() ) {
+		    	result &= char;
+		    }
+		      """,
+		    context
+		);
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "hello" );
+	}
+
+	@Test
+	public void testAllowNumericTruncateTypes() {
+
+		assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		      function foo( required Integer arg ) {
+		    return arg;
+		      }
+		      foo( 1.2 )
+		          """,
+		    context
+		) );
+
+		instance.executeSource(
+		    """
+		      function foo( required IntegerTruncate arg ) {
+		    return arg;
+		      }
+		      result = foo( 1.2 )
+		          """,
+		    context
+		);
+		assertThat( variables.getAsInteger( Key.of( "result" ) ) ).isEqualTo( 1 );
+
+	}
+
+	@Test
+	public void testAvoidStringHashCollisions() {
+
+		instance.executeSource(
+		    """
+		       key1 = "1ot" castas Key;
+		       key2 = "1q6" castas Key;
+		    equalsResult = key1.equals( key2 );
+		    result = {};
+		    result[ "1ot" ]	= "value1";
+		    result[ "1q6" ]	= "value2";
+		                """,
+		    context
+		);
+		assertThat( variables.getAsBoolean( Key.of( "equalsResult" ) ) ).isFalse();
+		IStruct result = variables.getAsStruct( Key.of( "result" ) );
+		assertThat( result.size() ).isEqualTo( 2 );
+		assertThat( result.get( Key.of( "1ot" ) ) ).isEqualTo( "value1" );
+		assertThat( result.get( Key.of( "1q6" ) ) ).isEqualTo( "value2" );
+
+	}
+
+	@Test
+	public void testUDFCosureLamdbdaScript() {
+
+		instance.executeSource(
+		    """
+		     function foo( required string arg ) {
+		        	return arg;
+		     }
+		     bar = arg => arg;
+		     baz = arg -> arg;
+		    println( foo( "test" ) );
+		    println( baz( "test2" ) );
+		    println( baz( "test3" ) );
+		                    """,
+		    context
+		);
+
+	}
+
+	@Test
+	public void testNewInForLoopWithoutAssignment() {
+
+		instance.executeSource(
+		    """
+		    for( i = 0; i < 5; i++ ) {
+		    	new java:java.lang.Object();
+		    	r = 1;
+		    }
+		    """,
+		    context
+		);
+
+	}
+
+	@Test
+	public void testNotAStatement() {
+
+		instance.executeSource(
+		    """
+		    columns = "foo,bar";
+		    columns.listEach( (c) => {
+		    	c = "*";
+		    	listFind( "a",  "a" )
+		    	|| c == "*"
+		    	|| throw( message="boom" );
+		    } );
+
+		                          """,
+		    context
+		);
+
+	}
+
+	@Test
+	public void testASMBytecodeError() {
+
+		instance.executeSource(
+		    """
+		    try {
+		    	// empty
+		    }
+		    catch (any e) {
+		    	// empty
+		    }
+		    finally {
+		    	writedump(42)
+		    }
+		      """,
+		    context
+		);
+
+	}
+
+	@DisplayName( "It can cast array of Box Classes" )
+	@Test
+	void testItCanCastArrayOfBoxClasses() {
+		assertThrows( BoxCastException.class, () -> instance.executeSource(
+		    """
+		    [ new src.test.java.TestCases.phase3.MyClass() ] castas foo.bar.MyClass[];
+		         """,
+		    context
+		) );
+
+		assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		       foo.bar.MyClass[] function getActive() {
+		       	return [ new src.test.java.TestCases.phase3.MyClass() ];
+		       }
+		    println( getActive() )
+		               """,
+		    context
+		) );
+	}
+
+	@DisplayName( "Parser ignores special whitespace script" )
+	@Test
+	void testParserIgnoresSpecialWhitespaceScript() {
+		// \u00A0 = non-breaking space, \u2003 = em space, \u2002 = en space, \u2009 = thin space
+		instance.executeSource(
+		    """
+		    foo\u00A0=\u2003"bar"
+		    baz\u2002=\u2009"bum"
+		            """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+		assertThat( variables.get( Key.of( "foo" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.get( Key.of( "baz" ) ) ).isEqualTo( "bum" );
+
+	}
+
+	@DisplayName( "Parser ignores special whitespace tag" )
+	@Test
+	void testParserIgnoresSpecialWhitespaceTag() {
+		// \u00A0 = non-breaking space, \u2003 = em space, \u2002 = en space, \u2009 = thin space
+		instance.executeSource(
+		    """
+		       <cfset\u00A0foo\u00A0=\u2003"bar"\u00A0>
+		       <cfset\u2002baz\u2002=\u2009"bum"\u2003>
+		    <cfinclude template="/src/test/java/TestCases/phase1/includeWhitespace.cfm">
+		               """,
+		    context, BoxSourceType.CFTEMPLATE
+		);
+		assertThat( variables.get( Key.of( "foo" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.get( Key.of( "baz" ) ) ).isEqualTo( "bum" );
+		assertThat( variables.get( Key.of( "test" ) ) ).isEqualTo( "test" );
+		assertThat( variables.get( Key.of( "test2" ) ) ).isEqualTo( "test2" );
+
+	}
+
+	@DisplayName( "Parser ignores special whitespace BoxLang script" )
+	@Test
+	void testParserIgnoresSpecialWhitespaceBoxLangScript() {
+		// \u00A0 = non-breaking space, \u2003 = em space, \u2002 = en space, \u2009 = thin space
+		instance.executeSource(
+		    """
+		    foo\u00A0=\u2003"bar"
+		    baz\u2002=\u2009"bum"
+		            """,
+		    context, BoxSourceType.BOXSCRIPT
+		);
+		assertThat( variables.get( Key.of( "foo" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.get( Key.of( "baz" ) ) ).isEqualTo( "bum" );
+
+	}
+
+	@DisplayName( "Parser ignores special whitespace BoxLang template" )
+	@Test
+	void testParserIgnoresSpecialWhitespaceBoxLangTemplate() {
+		// \u00A0 = non-breaking space, \u2003 = em space, \u2002 = en space, \u2009 = thin space
+		instance.executeSource(
+		    """
+		    <bx:set\u00A0foo\u00A0=\u2003"bar"\u00A0>
+		    <bx:set\u2002baz\u2002=\u2009"bum"\u2003>
+		            """,
+		    context, BoxSourceType.BOXTEMPLATE
+		);
+		assertThat( variables.get( Key.of( "foo" ) ) ).isEqualTo( "bar" );
+		assertThat( variables.get( Key.of( "baz" ) ) ).isEqualTo( "bum" );
+
+	}
+
+	@DisplayName( "declare UDF in catch block" )
+	@Test
+	void testDeclareUDFInCatchBlock() {
+		instance.executeSource(
+		    """
+		    try {
+		    	1/0;
+		    } catch (any e) {
+		    	include "src/test/java/TestCases/phase1/testDeclareUDFInCatchBlock.bxs";
+		    }
+		    result = foo();
+
+		               """,
+		    context
+		);
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( "bar" );
+
+	}
+
+	@DisplayName( "operator precedence" )
+	@Test
+	void testOperatorPrecedence() {
+		instance.executeSource(
+		    """
+		    result = "foo" eq "foo" XOR "bar" eq "bar"
+
+		                 """,
+		    context
+		);
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "operator precedence CF" )
+	@Test
+	void testOperatorPrecedenceCF() {
+		instance.executeSource(
+		    """
+		    result = "foo" eq "foo" XOR "bar" eq "bar"
+
+		                 """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "operator precedes dot" )
+	@Test
+	void testOperatorPrecedesDotCF() {
+		instance.executeSource(
+		    """
+		    if ( 5 GTE .75 ) {}
+		                 """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+	}
+
+	@DisplayName( "operator precedes dot" )
+	@Test
+	void testOperatorPrecedesDot() {
+		instance.executeSource(
+		    """
+		    if ( 5 GTE .75 ) {}
+		                 """,
+		    context
+		);
 	}
 
 }

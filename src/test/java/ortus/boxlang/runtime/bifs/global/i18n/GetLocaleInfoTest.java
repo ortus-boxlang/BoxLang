@@ -31,7 +31,6 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -67,7 +66,7 @@ public class GetLocaleInfoTest {
 	@DisplayName( "It tests the BIF GetLocaleInfo with no args" )
 	@Test
 	public void testGetLocaleInfoNoArgs() {
-		context.getParentOfType( RequestBoxContext.class ).setLocale( LocalizationUtil.buildLocale( "en", "US" ) );
+		context.getRequestContext().setLocale( LocalizationUtil.buildLocale( "en", "US" ) );
 		instance.executeSource(
 		    """
 		    result = getLocaleInfo();

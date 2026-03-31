@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.ArrayCreationExpr;
 import com.github.javaparser.ast.expr.ArrayInitializerExpr;
 import com.github.javaparser.ast.expr.Expression;
@@ -89,6 +90,7 @@ import ortus.boxlang.compiler.ast.statement.BoxBreak;
 import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.statement.BoxContinue;
 import ortus.boxlang.compiler.ast.statement.BoxDo;
+import ortus.boxlang.compiler.ast.statement.BoxEmptyStatement;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.statement.BoxForIn;
 import ortus.boxlang.compiler.ast.statement.BoxForIndex;
@@ -151,6 +153,7 @@ import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxBreakTransfo
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxBufferOutputTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxContinueTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxDoTransformer;
+import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxEmptyStatementTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxExpressionStatementTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxForInTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxForIndexTransformer;
@@ -172,6 +175,7 @@ import ortus.boxlang.compiler.javaboxpiler.transformer.statement.component.BoxSc
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.component.BoxTemplateIslandTransformer;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.Pair;
 
 /**
  * BoxLang AST to Java AST transpiler
@@ -182,14 +186,17 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class JavaTranspiler extends Transpiler {
 
-	static Logger							logger					= LoggerFactory.getLogger( JavaTranspiler.class );
+	static Logger											logger					= LoggerFactory.getLogger( JavaTranspiler.class );
 
-	private HashMap<Class<?>, Transformer>	registry				= new HashMap<>();
-	private List<Statement>					statements				= new ArrayList<>();
-	private Map<Key, CompilationUnit>		UDFcallables			= new HashMap<Key, CompilationUnit>();
-	private List<CompilationUnit>			callables				= new ArrayList<>();
-	private List<Statement>					UDFDeclarations			= new ArrayList<>();
-	private List<Statement>					staticUDFDeclarations	= new ArrayList<>();
+	private HashMap<Class<?>, Transformer>					registry				= new HashMap<>();
+	private List<Statement>									statements				= new ArrayList<>();
+	private Map<Key, CompilationUnit>						UDFcallables			= new HashMap<Key, CompilationUnit>();
+	private Map<Key, Pair<MethodDeclaration, Expression>>	UDFImplementations		= new HashMap<Key, Pair<MethodDeclaration, Expression>>();
+	private List<Pair<MethodDeclaration, Expression>>		lambdaInvokers			= new ArrayList<>();
+	private List<Pair<MethodDeclaration, Expression>>		closureInvokers			= new ArrayList<>();
+	private List<CompilationUnit>							callables				= new ArrayList<>();
+	private List<Statement>									UDFDeclarations			= new ArrayList<>();
+	private List<Statement>									staticUDFDeclarations	= new ArrayList<>();
 
 	public JavaTranspiler() {
 		registry.put( BoxScript.class, new BoxScriptTransformer( this ) );
@@ -250,6 +257,7 @@ public class JavaTranspiler extends Transpiler {
 		registry.put( BoxClass.class, new BoxClassTransformer( this ) );
 		registry.put( BoxParam.class, new BoxParamTransformer( this ) );
 		registry.put( BoxStatementBlock.class, new BoxStatementBlockTransformer( this ) );
+		registry.put( BoxEmptyStatement.class, new BoxEmptyStatementTransformer( this ) );
 		registry.put( BoxStaticInitializer.class, new BoxStaticInitializerTransformer( this ) );
 		registry.put( BoxFunctionalMemberAccess.class, new BoxFunctionalMemberAccessTransformer( this ) );
 		registry.put( BoxFunctionalBIFAccess.class, new BoxFunctionalBIFAccessTransformer( this ) );
@@ -383,6 +391,35 @@ public class JavaTranspiler extends Transpiler {
 	 */
 	public Map<Key, CompilationUnit> getUDFcallables() {
 		return UDFcallables;
+	}
+
+	/**
+	 * Get the map of UDF invokers, which maps a UDF key to the corresponding Java method that invokes the UDF
+	 * 
+	 * @return the map of UDF invokers
+	 */
+	public Map<Key, Pair<MethodDeclaration, Expression>> getUDFInvokers() {
+		return UDFImplementations;
+	}
+
+	/**
+	 * Get the list of Lambda invokers, which contains pairs of (invoker method, instantiation expression)
+	 * for each lambda in the script.
+	 * 
+	 * @return the list of lambda invokers
+	 */
+	public List<Pair<MethodDeclaration, Expression>> getLambdaInvokers() {
+		return lambdaInvokers;
+	}
+
+	/**
+	 * Get the list of Closure invokers, which contains pairs of (invoker method, instantiation expression)
+	 * for each closure in the script.
+	 * 
+	 * @return the list of closure invokers
+	 */
+	public List<Pair<MethodDeclaration, Expression>> getClosureInvokers() {
+		return closureInvokers;
 	}
 
 	/**

@@ -69,7 +69,7 @@ public class SystemOutput extends BIF {
 			obj = t.asString();
 		}
 		PrintStream			stream;
-		RequestBoxContext	rCon	= context.getParentOfType( RequestBoxContext.class );
+		RequestBoxContext	rCon	= context.getRequestContext();
 		if ( rCon != null ) {
 			stream = rCon.getOut();
 		} else {

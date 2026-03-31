@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.function.BiFunction;
 
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.loader.ImportDefinition;
@@ -58,6 +59,11 @@ public class DynamicFunction extends UDF {
 	 * The return type of the function, default is 'any'
 	 */
 	private String													returnType		= "any";
+
+	/**
+	 * The return type key of the function, default is Key._ANY
+	 */
+	private Key														returnTypeKey	= Key._ANY;
 
 	/**
 	 * The arguments of the function
@@ -230,6 +236,14 @@ public class DynamicFunction extends UDF {
 	 * @inheritDoc
 	 */
 	@Override
+	public Key getReturnTypeKey() {
+		return this.returnTypeKey;
+	}
+
+	/**
+	 * @inheritDoc
+	 */
+	@Override
 	public IStruct getAnnotations() {
 		return this.annotations;
 	}
@@ -250,6 +264,11 @@ public class DynamicFunction extends UDF {
 	@Override
 	public Access getAccess() {
 		return Access.PUBLIC;
+	}
+
+	@Override
+	public List<BoxMethodDeclarationModifier> getModifiers() {
+		return List.of();
 	}
 
 }

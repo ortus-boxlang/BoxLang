@@ -1,5 +1,6 @@
 package ortus.boxlang.compiler;
 
+import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Paths;
 
@@ -30,7 +31,8 @@ public record ClassInfo(
     InterfaceProxyDefinition interfaceProxyDefinition,
     IBoxpiler boxpiler,
     ResolvedFilePath resolvedFilePath,
-    int _hashCode ) {
+    int _hashCode,
+    boolean[] compiling ) {
 
 	/**
 	 * Hash Code
@@ -52,6 +54,15 @@ public record ClassInfo(
 		return false;
 	}
 
+	/**
+	 * Create a ClassInfo for a BoxLang script from source code.
+	 *
+	 * @param source     The source code of the script
+	 * @param sourceType The type of the source (BoxLang, CFML, etc.)
+	 * @param boxpiler   The boxpiler instance to use for compilation
+	 *
+	 * @return A new ClassInfo instance for the script
+	 */
 	public static ClassInfo forScript( String source, BoxSourceType sourceType, IBoxpiler boxpiler ) {
 		FQN fqn = FQN.of( "boxgenerated.scripts", "Script_" + IBoxpiler.MD5( sourceType.toString() + source ) );
 		return new ClassInfo(
@@ -66,10 +77,20 @@ public record ClassInfo(
 		    null,
 		    boxpiler,
 		    null,
-		    fqn.toString().hashCode()
+		    fqn.toString().hashCode(),
+		    new boolean[] { false }
 		);
 	}
 
+	/**
+	 * Create a ClassInfo for a BoxLang statement from source code.
+	 *
+	 * @param source     The source code of the statement
+	 * @param sourceType The type of the source (BoxLang, CFML, etc.)
+	 * @param boxpiler   The boxpiler instance to use for compilation
+	 *
+	 * @return A new ClassInfo instance for the statement
+	 */
 	public static ClassInfo forStatement( String source, BoxSourceType sourceType, IBoxpiler boxpiler ) {
 		FQN fqn = FQN.of( "boxgenerated.scripts", "Statement_" + IBoxpiler.MD5( sourceType.toString() + source ) );
 		return new ClassInfo(
@@ -84,10 +105,20 @@ public record ClassInfo(
 		    null,
 		    boxpiler,
 		    null,
-		    fqn.toString().hashCode()
+		    fqn.toString().hashCode(),
+		    new boolean[] { false }
 		);
 	}
 
+	/**
+	 * Create a ClassInfo for a BoxLang template from a file on disk.
+	 *
+	 * @param resolvedFilePath The resolved file path to the template
+	 * @param sourceType       The type of the source (BoxLang, CFML, etc.)
+	 * @param boxpiler         The boxpiler instance to use for compilation
+	 *
+	 * @return A new ClassInfo instance for the template
+	 */
 	public static ClassInfo forTemplate( ResolvedFilePath resolvedFilePath, BoxSourceType sourceType, IBoxpiler boxpiler ) {
 		FQN fqn = resolvedFilePath.getFQN( "boxgenerated.templates" );
 		return new ClassInfo(
@@ -102,12 +133,38 @@ public record ClassInfo(
 		    null,
 		    boxpiler,
 		    resolvedFilePath,
-		    fqn.toString().hashCode()
+		    fqn.toString().hashCode(),
+		    new boolean[] { false }
 		);
 	}
 
+	/**
+	 * Create a ClassInfo for a BoxLang class from a file on disk.
+	 *
+	 * @param resolvedFilePath The resolved file path to the class file
+	 * @param sourceType       The type of the source (BoxLang, CFML, etc.)
+	 * @param boxpiler         The boxpiler instance to use for compilation
+	 *
+	 * @return A new ClassInfo instance for the class
+	 */
 	public static ClassInfo forClass( ResolvedFilePath resolvedFilePath, BoxSourceType sourceType, IBoxpiler boxpiler ) {
-		FQN fqn = resolvedFilePath.getFQN( "boxgenerated.boxclass" );
+		return forClass( resolvedFilePath, sourceType, boxpiler, null );
+	}
+
+	/**
+	 * Create a ClassInfo for a BoxLang class from a file on disk.
+	 *
+	 * @param resolvedFilePath The resolved file path to the class file
+	 * @param sourceType       The type of the source (BoxLang, CFML, etc.)
+	 * @param boxpiler         The boxpiler instance to use for compilation
+	 * @param fqn              The FQN to use for the class (if null, it will be generated from the resolved file path)
+	 *
+	 * @return A new ClassInfo instance for the class
+	 */
+	public static ClassInfo forClass( ResolvedFilePath resolvedFilePath, BoxSourceType sourceType, IBoxpiler boxpiler, FQN fqn ) {
+		if ( fqn == null ) {
+			fqn = resolvedFilePath.getFQN( "boxgenerated.boxclass" );
+		}
 		return new ClassInfo(
 		    fqn,
 		    resolvedFilePath.getBoxFQN(),
@@ -120,10 +177,20 @@ public record ClassInfo(
 		    null,
 		    boxpiler,
 		    resolvedFilePath,
-		    fqn.toString().hashCode()
+		    fqn.toString().hashCode(),
+		    new boolean[] { false }
 		);
 	}
 
+	/**
+	 * Create a ClassInfo for a BoxLang class from source code.
+	 *
+	 * @param source     The source code of the class
+	 * @param sourceType The type of the source (BoxLang, CFML, etc.)
+	 * @param boxpiler   The boxpiler instance to use for compilation
+	 *
+	 * @return A new ClassInfo instance for the class
+	 */
 	public static ClassInfo forClass( String source, BoxSourceType sourceType, IBoxpiler boxpiler ) {
 		FQN fqn = FQN.of( "boxgenerated.boxclass", "Class_" + IBoxpiler.MD5( source ) );
 		return new ClassInfo(
@@ -138,10 +205,20 @@ public record ClassInfo(
 		    null,
 		    boxpiler,
 		    null,
-		    fqn.toString().hashCode()
+		    fqn.toString().hashCode(),
+		    new boolean[] { false }
 		);
 	}
 
+	/**
+	 * Create a ClassInfo for an interface proxy.
+	 *
+	 * @param name                     The name of the proxy
+	 * @param interfaceProxyDefinition The definition of the interface proxy
+	 * @param boxpiler                 The boxpiler instance to use for compilation
+	 *
+	 * @return A new ClassInfo instance for the interface proxy
+	 */
 	public static ClassInfo forInterfaceProxy( String name, InterfaceProxyDefinition interfaceProxyDefinition, IBoxpiler boxpiler ) {
 		FQN fqn = FQN.of( "boxgenerated.dynamicProxy", "InterfaceProxy_" + name );
 		return new ClassInfo(
@@ -156,10 +233,16 @@ public record ClassInfo(
 		    interfaceProxyDefinition,
 		    boxpiler,
 		    null,
-		    fqn.toString().hashCode()
+		    fqn.toString().hashCode(),
+		    new boolean[] { false }
 		);
 	}
 
+	/**
+	 * Get a string representation of this ClassInfo.
+	 *
+	 * @return A string describing this ClassInfo
+	 */
 	public String toString() {
 		if ( resolvedFilePath != null )
 			return "Class Info-- sourcePath: [" + resolvedFilePath.absolutePath().toString() + "], fqn: [" + fqn().toString() + "]";
@@ -172,6 +255,12 @@ public record ClassInfo(
 			return "Class Info-- fqn: [" + fqn().toString() + "]";
 	}
 
+	/**
+	 * Get or create the DiskClassLoader for this class.
+	 * Uses double-checked locking to ensure thread-safe lazy initialization.
+	 *
+	 * @return The DiskClassLoader for this class
+	 */
 	public DiskClassLoader getClassLoader() {
 		if ( diskClassLoader[ 0 ] != null ) {
 			return diskClassLoader[ 0 ];
@@ -192,12 +281,33 @@ public record ClassInfo(
 	}
 
 	/**
-	 * Get a class for a class name from disk
+	 * Get or create the DiskClassLoader for this class.
+	 * Uses double-checked locking to ensure thread-safe lazy initialization.
+	 *
+	 * @return The DiskClassLoader for this class
+	 */
+	public void shutdownClassLoader() {
+		synchronized ( this ) {
+			if ( diskClassLoader[ 0 ] != null ) {
+				try {
+					diskClassLoader[ 0 ].close();
+				} catch ( IOException e ) {
+					e.printStackTrace();
+				}
+				diskClassLoader[ 0 ] = null;
+			}
+		}
+	}
+
+	/**
+	 * Get a class for a class name from disk.
+	 * Will block if the class is currently being compiled.
 	 *
 	 * @return The loaded class
 	 */
 	@SuppressWarnings( "unchecked" )
 	public Class<IBoxRunnable> getDiskClass() {
+		waitWhileCompiling();
 		try {
 			return ( Class<IBoxRunnable> ) getClassLoader().loadClass( fqn().toString() );
 		} catch ( ClassNotFoundException e ) {
@@ -206,12 +316,64 @@ public record ClassInfo(
 	}
 
 	/**
-	 * Get a proxy class for a class name from disk
+	 * Mark this class as currently being compiled.
+	 * Any calls to getDiskClass() or getDiskClassProxy() will block until doneCompiling() is called.
+	 */
+	public void startCompiling() {
+		synchronized ( this ) {
+			compiling[ 0 ] = true;
+		}
+	}
+
+	/**
+	 * Mark this class as done compiling.
+	 * Wakes up any threads waiting in getDiskClass() or getDiskClassProxy().
+	 */
+	public void doneCompiling() {
+		synchronized ( this ) {
+			compiling[ 0 ] = false;
+			this.notifyAll();
+		}
+	}
+
+	/**
+	 * Check if currently compiling
+	 *
+	 * @return true if compiling
+	 */
+	public boolean isCompiling() {
+		return compiling[ 0 ];
+	}
+
+	/**
+	 * Wait while the class is being compiled.
+	 * Uses double-checked locking to avoid synchronization when not compiling.
+	 */
+	private void waitWhileCompiling() {
+		if ( !isCompiling() ) {
+			return;
+		}
+		synchronized ( this ) {
+			while ( isCompiling() ) {
+				try {
+					this.wait();
+				} catch ( InterruptedException e ) {
+					Thread.currentThread().interrupt();
+					throw new BoxRuntimeException( "Interrupted while waiting for class compilation", e );
+				}
+			}
+		}
+	}
+
+	/**
+	 * Get a proxy class for a class name from disk.
+	 * Will block if the class is currently being compiled.
 	 *
 	 * @return The loaded class
 	 */
 	@SuppressWarnings( "unchecked" )
 	public Class<IProxyRunnable> getDiskClassProxy() {
+		waitWhileCompiling();
 		try {
 			return ( Class<IProxyRunnable> ) getClassLoader().loadClass( fqn().toString() );
 		} catch ( ClassNotFoundException e ) {
@@ -219,18 +381,38 @@ public record ClassInfo(
 		}
 	}
 
+	/**
+	 * Get the package name for this class.
+	 *
+	 * @return The package name as a string
+	 */
 	public String packageName() {
 		return fqn().getPackageString();
 	}
 
+	/**
+	 * Get the class name (without package) for this class.
+	 *
+	 * @return The class name as a string
+	 */
 	public String className() {
 		return fqn().getClassName();
 	}
 
+	/**
+	 * Check if this ClassInfo represents a BoxLang class (as opposed to a template or script).
+	 *
+	 * @return true if this is a BoxLang class, false otherwise
+	 */
 	public Boolean isClass() {
 		return packageName().toString().startsWith( "boxgenerated.boxclass" );
 	}
 
+	/**
+	 * Get the class pool name for this class info
+	 * 
+	 * @return The class pool name
+	 */
 	public String classPoolName() {
 		if ( resolvedFilePath() != null ) {
 			if ( resolvedFilePath().mappingPath() != null ) {
@@ -243,10 +425,20 @@ public record ClassInfo(
 		}
 	}
 
+	/**
+	 * Check if we are using a trusted cache
+	 * 
+	 * @return true if we are using a trusted cache
+	 */
 	public static boolean isTrustedCache() {
 		return BoxRuntime.getInstance().getConfiguration().trustedCache;
 	}
 
+	/**
+	 * Get the source type, loading from disk if necessary
+	 * 
+	 * @return The source type
+	 */
 	public BoxSourceType sourceType() {
 		if ( sourceType != null ) {
 			return sourceType;
@@ -261,6 +453,18 @@ public record ClassInfo(
 	public void clearCacheClass() {
 		if ( diskClassLoader[ 0 ] != null ) {
 			diskClassLoader[ 0 ].clearClassesCache();
+		}
+	}
+
+	/**
+	 * Get fresh last modified from path, regardless of what's currenlty cached in the record.
+	 * If trusted cache is enabled, this will always return 0,
+	 */
+	public long getFreshLastModified() {
+		if ( resolvedFilePath != null ) {
+			return isTrustedCache() ? 0 : resolvedFilePath.absolutePath().toFile().lastModified();
+		} else {
+			return 0L;
 		}
 	}
 }

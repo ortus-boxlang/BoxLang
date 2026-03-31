@@ -64,6 +64,24 @@ public class PropertyHelper {
 	}
 
 	/**
+	 * This processes a JSON array list to a HashSet, converting each item to a key
+	 *
+	 * @param config The configuration object
+	 * @param key    The target key to look and process
+	 * @param target The target set to populate
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static void processListToSetKey( IStruct config, Key key, Set<Key> target ) {
+		if ( config.containsKey( key ) ) {
+			if ( config.get( key ) instanceof List<?> castedList ) {
+				target.addAll( ( ( Collection<String> ) castedList ).stream().map( Key::of ).toList() );
+			} else {
+				logger.warn( "The property [{}] must be a JSON Array", key );
+			}
+		}
+	}
+
+	/**
 	 * This processes:
 	 * - A string to a list (comma separated or a single string)
 	 * - A JSON array to a list

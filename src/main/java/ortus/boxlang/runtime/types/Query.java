@@ -21,7 +21,6 @@ import java.io.Serializable;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -97,6 +96,11 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	private static final long				serialVersionUID	= 1L;
 
 	/**
+	 * Flag to allow compat to influence the empty-string-to-null coercion when setting cell values to an empty string on a non-string-typed column.
+	 */
+	public static boolean					queryNullToEmpty	= false;
+
+	/**
 	 * -----------------------------------------------------------
 	 * Properties
 	 * -----------------------------------------------------------
@@ -132,11 +136,6 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	public transient QueryMeta				$bx;
 
 	/**
-	 * Metadata for the query, used to populate QueryMeta
-	 */
-	private IStruct							metadata;
-
-	/**
 	 * Denormalized list of column names for fast access. Initialized on first use.
 	 */
 	private transient String				columnNameList		= null;
@@ -152,7 +151,6 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @param meta Struct of metadata, most likely JDBC metadata such as sql, cache parameters, etc.
 	 */
 	public Query( IStruct meta, int initialSize ) {
-		this.metadata = meta == null ? new Struct( IStruct.TYPES.SORTED ) : meta;
 		if ( initialSize > 0 ) {
 			this.data	= new ArrayList<Object[]>( initialSize );
 			// add nulls and increment for each row
@@ -569,7 +567,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	/**
 	 * Get the QueryColumn meta object for a column
-	 * 
+	 *
 	 * Same as getBoxMeta().getColumnsMeta().get( name )
 	 *
 	 * @param name column name
@@ -586,7 +584,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	/**
 	 * Get the meta for all columns
-	 * 
+	 *
 	 * Same as getBoxMeta().getColumnsMeta()
 	 *
 	 * @return Struct of column meta
@@ -664,38 +662,6 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
-	 * Add a row to the query
-	 *
-	 * @param row row data as array of objects
-	 *
-	 * @return the row number that was added (1-based)
-	 */
-	public int addRow( Object[] row ) {
-		interceptorService.announce(
-		    BoxEvent.QUERY_ADD_ROW,
-		    () -> Struct.ofNonConcurrent(
-		        Key.query, this,
-		        Key.row, row
-		    )
-		);
-		// TODO: validate types
-		int newRow = size.incrementAndGet();
-		if ( actualSize < newRow + 50 ) {
-			synchronized ( data ) {
-				if ( actualSize < newRow + 50 ) {
-					// Add 200 more rows with nulls
-					for ( int i = 0; i < 200; i++ ) {
-						data.add( null );
-					}
-					actualSize = actualSize + 200;
-				}
-			}
-		}
-		data.set( newRow - 1, row );
-		return newRow;
-	}
-
-	/**
 	 * Add a row to the query. If the array has fewer items than columns in the query, add nulls for the missing values.
 	 *
 	 * @param row row data as array of objects
@@ -712,17 +678,6 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			row = newRow;
 		}
 		return addRow( row );
-	}
-
-	/**
-	 * Add a row to the query
-	 *
-	 * @param row row data as a BoxLang array
-	 *
-	 * @return the row number that was added (1-based)
-	 */
-	public int addRow( Array row ) {
-		return addRowDefaultMissing( row.toArray() );
 	}
 
 	/**
@@ -745,6 +700,17 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
+	 * Add a row to the query
+	 *
+	 * @param row row data as a BoxLang array
+	 *
+	 * @return the row number that was added (1-based)
+	 */
+	public int addRow( Array row ) {
+		return addRowDefaultMissing( row.toArray() );
+	}
+
+	/**
 	 * Add an empty row to the query
 	 *
 	 * @return the row number that was added (1-based)
@@ -762,7 +728,6 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	public int addRow( IStruct row ) {
 		Object[]	rowData	= new Object[ columns.size() ];
-		// TODO: validate types
 		int			i		= 0;
 		for ( QueryColumn column : columns.values() ) {
 			// Missing keys in the struct go in the query as an empty string (CF compat)
@@ -772,6 +737,37 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		// We're ignoring extra keys in the struct that aren't query columns. Lucee
 		// compat, but not CF compat.
 		return addRow( rowData );
+	}
+
+	/**
+	 * Add a row to the query
+	 *
+	 * @param row row data as array of objects
+	 *
+	 * @return the row number that was added (1-based)
+	 */
+	public int addRow( Object[] row ) {
+		interceptorService.announce(
+		    BoxEvent.QUERY_ADD_ROW,
+		    () -> Struct.ofNonConcurrent(
+		        Key.query, this,
+		        Key.row, row
+		    )
+		);
+		int newRow = size.incrementAndGet();
+		if ( actualSize < newRow + 50 ) {
+			synchronized ( data ) {
+				if ( actualSize < newRow + 50 ) {
+					// Add 200 more rows with nulls
+					for ( int i = 0; i < 200; i++ ) {
+						data.add( null );
+					}
+					actualSize = actualSize + 200;
+				}
+			}
+		}
+		data.set( newRow - 1, row );
+		return newRow;
 	}
 
 	/**
@@ -1317,7 +1313,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	/**
 	 * Get the BoxLang type name for this type
-	 * 
+	 *
 	 * @return The BoxLang type name
 	 */
 	@Override
@@ -1353,16 +1349,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @return The metadata as a struct
 	 */
 	public IStruct getMetaData() {
-		this.metadata.putIfAbsent( Key.executionTime, 0 );
-		this.metadata.putIfAbsent( Key.cached, false );
-		this.metadata.putIfAbsent( Key.cacheKey, null );
-		this.metadata.putIfAbsent( Key.cacheProvider, null );
-		this.metadata.computeIfAbsent( Key.cacheTimeout, key -> Duration.ZERO );
-		this.metadata.computeIfAbsent( Key.cacheLastAccessTimeout, key -> Duration.ZERO );
-		this.metadata.computeIfAbsent( Key.recordCount, key -> size.get() );
-		this.metadata.computeIfAbsent( Key.columnList, key -> this.getColumnList() );
-		this.metadata.computeIfAbsent( Key._HASHCODE, key -> this.hashCode() );
-		return this.metadata;
+		return getBoxMeta().getMeta();
 	}
 
 	/**
@@ -1373,8 +1360,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @return this query
 	 */
 	public Query setMetadata( IStruct meta ) {
-		this.metadata	= meta;
-		this.$bx		= null;
+		getBoxMeta().mergeMeta( meta );
 		return this;
 	}
 
@@ -1392,7 +1378,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 
 	/**
 	 * Duplicate the current query.
-	 * 
+	 *
 	 * @param context The context to use for duplication of nested objects
 	 *
 	 * @return A copy of the current query.
@@ -1418,24 +1404,37 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	/**
 	 * Duplicate the current query.
 	 *
+	 * @param newQuery The query object to duplicate into
+	 * @param deep     If true, nested objects will be duplicated as well.
+	 * @param context  The context to use for duplication of nested objects
+	 *
+	 * @return A copy of the current query.
+	 */
+	public Query duplicate( Query newQuery, boolean deep, IBoxContext context ) {
+
+		this.getColumns().entrySet().stream().forEach( entry -> {
+			newQuery.addColumn( entry.getKey(), entry.getValue().getType(), null, entry.getValue().getSQLType() );
+		} );
+
+		if ( deep ) {
+			newQuery.addData( DuplicationUtil.duplicate( this.getData(), deep, context ) );
+		} else {
+			newQuery.addData( this.getData() );
+		}
+		return newQuery;
+	}
+
+	/**
+	 * Duplicate the current query.
+	 *
 	 * @param deep    If true, nested objects will be duplicated as well.
 	 * @param context The context to use for duplication of nested objects
 	 *
 	 * @return A copy of the current query.
 	 */
 	public Query duplicate( boolean deep, IBoxContext context ) {
-		Query q = new Query();
-
-		this.getColumns().entrySet().stream().forEach( entry -> {
-			q.addColumn( entry.getKey(), entry.getValue().getType(), null, entry.getValue().getSQLType() );
-		} );
-
-		if ( deep ) {
-			q.addData( DuplicationUtil.duplicate( this.getData(), deep, context ) );
-		} else {
-			q.addData( this.getData() );
-		}
-		return q;
+		Query newQuery = new Query();
+		return duplicate( newQuery, deep, context );
 	}
 
 	@Override

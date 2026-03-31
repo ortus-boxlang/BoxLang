@@ -167,7 +167,7 @@ public class ApplicationLookups {
 		return new ScriptingRequestBoxContext( new ConfigOverrideBoxContext( instance.getRuntimeContext(), config -> {
 			config.getAsStruct( Key.mappings ).put( "/", Mapping.ofExternal( "/", new java.io.File( rootPath ).getAbsolutePath() ) );
 			return config;
-		} ), FileSystemUtil.createFileUri( template ) );
+		} ), false ).loadApplicationDescriptor( FileSystemUtil.createFileUri( template ) );
 	}
 
 }

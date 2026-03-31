@@ -35,7 +35,7 @@ public class Mid extends BIF {
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.string ),
 		    new Argument( true, "integer", Key.start ),
-		    new Argument( true, "integer", Key.count )
+		    new Argument( false, "integer", Key.count )
 		};
 	}
 
@@ -58,8 +58,11 @@ public class Mid extends BIF {
 			return "";
 		}
 
-		int	start	= arguments.getAsInteger( Key.start );
-		int	count	= arguments.getAsInteger( Key.count );
+		int		start	= arguments.getAsInteger( Key.start );
+		Integer	count	= arguments.getAsInteger( Key.count );
+		if ( count == null ) {
+			count = input.length(); // If count is not provided, extract to the end of the string
+		}
 
 		// Check if start and count are within valid bounds
 		if ( start < 1 ) {

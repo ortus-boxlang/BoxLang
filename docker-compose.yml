@@ -1,6 +1,7 @@
 services:
   mariadb:
     image: mariadb:latest
+    restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${MARIADB_PASSWORD}
       MYSQL_DATABASE: ${MARIADB_DATABASE}
@@ -11,6 +12,7 @@ services:
 
   mysql:
     platform: linux/x86_64 # Needed for Mac's on the M1 chip
+    restart: always
     image: mysql:5
     environment:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
@@ -20,6 +22,7 @@ services:
 
   postgres:
     image: postgres:11.3
+    restart: always
     environment:
       POSTGRES_USER: ${POSTGRES_USERNAME}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -29,6 +32,7 @@ services:
 
   mssql:
     image: mcr.microsoft.com/mssql/server:2019-latest
+    restart: always
     environment:
       MSSQL_SA_PASSWORD: ${MSSQL_PASSWORD}
       ACCEPT_EULA: "Y"

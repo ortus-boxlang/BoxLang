@@ -1,0 +1,7 @@
+class {
+	sleep( 100 );
+	
+	function doParent() {
+		return this;
+	}
+}

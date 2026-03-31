@@ -30,6 +30,8 @@ import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
 import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
+import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringBinding;
+import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentModifier;
@@ -51,8 +53,11 @@ import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNegateOperation;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
+import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringBinding;
+import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxSpreadExpression;
 import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
 import ortus.boxlang.compiler.ast.expression.BoxStaticMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
@@ -89,6 +94,7 @@ import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.statement.BoxContinue;
 import ortus.boxlang.compiler.ast.statement.BoxDo;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
+import ortus.boxlang.compiler.ast.statement.BoxEmptyStatement;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.statement.BoxForIn;
 import ortus.boxlang.compiler.ast.statement.BoxForIndex;
@@ -835,6 +841,83 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	/** {@inheritDoc} */
+	public void visit( BoxArrayDestructuringPattern node ) {
+		printPreComments( node );
+		print( "[ " );
+		int size = node.getBindings().size();
+		for ( int i = 0; i < size; i++ ) {
+			node.getBindings().get( i ).accept( this );
+			if ( i < size - 1 ) {
+				print( ", " );
+			}
+		}
+		print( " ]" );
+		printPostComments( node );
+	}
+
+	/** {@inheritDoc} */
+	public void visit( BoxArrayDestructuringBinding node ) {
+		printPreComments( node );
+		if ( node.isRest() ) {
+			print( "..." );
+			node.getTarget().accept( this );
+			printPostComments( node );
+			return;
+		}
+
+		if ( node.getPattern() != null ) {
+			node.getPattern().accept( this );
+		} else if ( node.getTarget() != null ) {
+			node.getTarget().accept( this );
+		}
+		if ( node.getDefaultValue() != null ) {
+			print( " = " );
+			node.getDefaultValue().accept( this );
+		}
+		printPostComments( node );
+	}
+
+	/** {@inheritDoc} */
+	public void visit( BoxObjectDestructuringPattern node ) {
+		printPreComments( node );
+		print( "{ " );
+		int size = node.getBindings().size();
+		for ( int i = 0; i < size; i++ ) {
+			node.getBindings().get( i ).accept( this );
+			if ( i < size - 1 ) {
+				print( ", " );
+			}
+		}
+		print( " }" );
+		printPostComments( node );
+	}
+
+	/** {@inheritDoc} */
+	public void visit( BoxObjectDestructuringBinding node ) {
+		printPreComments( node );
+		if ( node.isRest() ) {
+			print( "..." );
+			node.getTarget().accept( this );
+			printPostComments( node );
+			return;
+		}
+
+		node.getKey().accept( this );
+		if ( node.getPattern() != null ) {
+			print( " : " );
+			node.getPattern().accept( this );
+		} else if ( node.getTarget() != null && !isDestructuringShorthand( node ) ) {
+			print( " : " );
+			node.getTarget().accept( this );
+		}
+		if ( node.getDefaultValue() != null ) {
+			print( " = " );
+			node.getDefaultValue().accept( this );
+		}
+		printPostComments( node );
+	}
+
 	public void visit( BoxParenthesis node ) {
 		printPreComments( node );
 		print( "(" );
@@ -906,6 +989,14 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	/** {@inheritDoc} */
+	public void visit( BoxSpreadExpression node ) {
+		printPreComments( node );
+		print( "..." );
+		node.getExpression().accept( this );
+		printPostComments( node );
+	}
+
 	public void visit( BoxStructLiteral node ) {
 		printPreComments( node );
 		increaseIndent();
@@ -921,14 +1012,21 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			else
 				print( "{" );
 		}
-		// Every other value is key/value
-		for ( int i = 0; i < size; i = i + 2 ) {
-			var key = node.getValues().get( i );
-			key.accept( this );
-			print( " : " );
-			var value = node.getValues().get( i + 1 );
-			value.accept( this );
-			if ( i < size - 2 ) {
+		for ( int i = 0; i < size; ) {
+			var current = node.getValues().get( i );
+			if ( current instanceof BoxSpreadExpression spread ) {
+				spread.accept( this );
+				i++;
+			} else {
+				current.accept( this );
+				if ( i + 1 < size ) {
+					print( " : " );
+					var value = node.getValues().get( i + 1 );
+					value.accept( this );
+				}
+				i += 2;
+			}
+			if ( i < size ) {
 				println( ", " );
 			} else {
 				newLine();
@@ -1131,6 +1229,10 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			print( "var " );
 		}
 		node.getVariable().accept( this );
+		if ( node.hasTwoVariables() ) {
+			print( ", " );
+			node.getSecondVariable().accept( this );
+		}
 		print( " in " );
 		node.getExpression().accept( this );
 		print( " ) " );
@@ -1731,6 +1833,12 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		printPostComments( node );
 	}
 
+	public void visit( BoxEmptyStatement node ) {
+		printPreComments( node );
+		print( ";" );
+		printPostComments( node );
+	}
+
 	public void visit( BoxFunctionalBIFAccess node ) {
 		printPreComments( node );
 		print( "::" );
@@ -1986,6 +2094,19 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		}
 		print( "*" );
 		printPostComments( node );
+	}
+
+	/**
+	 * Determine whether a destructuring binding uses key shorthand syntax.
+	 *
+	 * @param node binding to inspect
+	 *
+	 * @return true when key and target are the same identifier
+	 */
+	private boolean isDestructuringShorthand( BoxObjectDestructuringBinding node ) {
+		return node.getKey() instanceof BoxIdentifier key
+		    && node.getTarget() instanceof BoxIdentifier target
+		    && key.getName().equals( target.getName() );
 	}
 
 }

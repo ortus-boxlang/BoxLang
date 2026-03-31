@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.bifs.global.system;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -47,7 +46,7 @@ public class GetApplicationMetadata extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct settings = new Struct();
-		settings.putAll( context.getParentOfType( RequestBoxContext.class ).getSettings() );
+		settings.putAll( context.getRequestContextOrFail().getSettings() );
 		if ( settings.get( Key.invokeImplicitAccessor ) == null ) {
 			// We don't actually know the value if it's not set since it's based on the source type
 			// BX files default this to true, but CFCs default this to false

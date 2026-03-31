@@ -234,7 +234,7 @@ public class CacheConfig {
 		this.properties = resolvedProperties;
 
 		// Merge defaults if it's a BoxLang cache
-		if ( this.provider.equals( Key.boxCacheProvider ) ) {
+		if ( this.provider.equals( Key.boxCacheProvider ) || this.provider.equals( Key.boxCache ) ) {
 			DEFAULTS
 			    .entrySet()
 			    .stream()

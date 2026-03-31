@@ -100,8 +100,17 @@ public class CollectionCaster implements IBoxCaster {
 		}
 
 		if ( object.getClass().isArray() ) {
-			Object[] array = ( Object[] ) object;
-			return Arrays.asList( array );
+			if ( object instanceof Object[] array ) {
+				return Arrays.asList( array );
+			}
+			// Handle primitive arrays
+			// This sort of duplicates the genericCaster, but it's pretty simple
+			int			length		= java.lang.reflect.Array.getLength( object );
+			Object[]	boxedArray	= new Object[ length ];
+			for ( int i = 0; i < length; i++ ) {
+				boxedArray[ i ] = java.lang.reflect.Array.get( object, i );
+			}
+			return Arrays.asList( boxedArray );
 		}
 
 		// A class just uses the public this scope as the collection

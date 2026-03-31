@@ -123,7 +123,7 @@ public class CFTranspilerTest {
 		    result = quotedValueList( qry.id );
 		       """,
 		    context, BoxSourceType.CFSCRIPT );
-		assertThat( variables.get( result ) ).isEqualTo( "\"1\",\"2\",\"3\"" );
+		assertThat( variables.get( result ) ).isEqualTo( "'1','2','3'" );
 	}
 
 	@DisplayName( "Test QuotedvalueList() to queryColumnData().toList( delimiter )" )
@@ -135,7 +135,7 @@ public class CFTranspilerTest {
 		    result = quotedValueList( qry.id, "|" );
 		       """,
 		    context, BoxSourceType.CFSCRIPT );
-		assertThat( variables.get( result ) ).isEqualTo( "\"1\"|\"2\"|\"3\"" );
+		assertThat( variables.get( result ) ).isEqualTo( "'1'|'2'|'3'" );
 	}
 
 	@DisplayName( "Test QuotedvalueList() to queryColumnData().toList( delimiter ) array access" )
@@ -147,7 +147,39 @@ public class CFTranspilerTest {
 		    result = quotedValueList( qry["id"] );
 		       """,
 		    context, BoxSourceType.CFSCRIPT );
-		assertThat( variables.get( result ) ).isEqualTo( "\"1\",\"2\",\"3\"" );
+		assertThat( variables.get( result ) ).isEqualTo( "'1','2','3'" );
+	}
+
+	@DisplayName( "Test QuotedvalueList() outside query" )
+	@Test
+	public void testQuotedValueListOutsideQuery() {
+		instance.executeSource(
+		    """
+		    qry = queryNew("name", "varchar", [["Brad"],["Luis"],["O'Neil"]]);
+
+		    result = quotedValueList( qry.name );
+		       """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "'Brad','Luis','O'Neil'" );
+	}
+
+	@DisplayName( "Test QuotedvalueList() inside query" )
+	@Test
+	public void testQuotedValueListInsideQuery() {
+		instance.executeSource(
+		    """
+		       <cfset qry = queryNew("name", "varchar", [["Brad"],["Luis"],["O'Neil"]]) >
+		    <cfquery name="result" dbtype="query">
+		    	SELECT *
+		    	FROM qry
+		    	WHERE name IN ( #quotedValueList( qry.name )# )
+		    </cfquery>
+		          """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 3 );
+		assertThat( variables.getAsQuery( result ).getRowAsStruct( 0 ).get( "name" ) ).isEqualTo( "Brad" );
+		assertThat( variables.getAsQuery( result ).getRowAsStruct( 1 ).get( "name" ) ).isEqualTo( "Luis" );
+		assertThat( variables.getAsQuery( result ).getRowAsStruct( 2 ).get( "name" ) ).isEqualTo( "O'Neil" );
 	}
 
 	@DisplayName( "Test new java()" )
@@ -490,6 +522,119 @@ public class CFTranspilerTest {
 		assertThat( variables.get( Key.of( "result12" ) ) ).isEqualTo( true );
 		assertThat( variables.get( Key.of( "result13" ) ) ).isEqualTo( true );
 		assertThat( variables.get( Key.of( "result14" ) ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "Can append a number in a string list with includeEmptyFields defaulting to true" )
+	@Test
+	public void testAppendNumber() {
+		instance.executeSource(
+		    """
+		        nums = ",1,2,3,4,5";
+		        result = listAppend( nums, 6 );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( result ) ).isEqualTo( ",1,2,3,4,5,6" );
+
+		instance.executeSource(
+		    """
+		        nums = ",1,2,3,4,5";
+		        result = listAppend( nums, 6, "," );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( result ) ).isEqualTo( ",1,2,3,4,5,6" );
+
+		instance.executeSource(
+		    """
+		        nums = ",1,2,3,4,5";
+		        result = listAppend( nums, 6, ",", false );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "1,2,3,4,5,6" );
+
+		instance.executeSource(
+		    """
+		        nums = ",1,2,3,4,5";
+		        result = listAppend( list=nums, value=6 );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( result ) ).isEqualTo( ",1,2,3,4,5,6" );
+
+		instance.executeSource(
+		    """
+		        nums = ",1,2,3,4,5";
+		        result = listAppend( list=nums, value=6, includeEmptyFields=false );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "1,2,3,4,5,6" );
+	}
+
+	@DisplayName( "Can replace once with one in replaceNoCase" )
+	@Test
+	public void testReplaceNoCaseOnce() {
+		instance.executeSource(
+		    """
+		    result = ReplaceNoCase( "redgreenbluered", "RED", 'brad', "once" );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "bradgreenbluered" );
+	}
+
+	@DisplayName( "Can replace once with one in replace" )
+	@Test
+	public void testReplaceOnce() {
+		instance.executeSource(
+		    """
+		    result = Replace( "redgreenbluered", "red", 'brad', "once" );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "bradgreenbluered" );
+	}
+
+	@DisplayName( "It transpiles directoryList absolute_path arg to path" )
+	@Test
+	public void testDirectoryListArgRename() {
+		instance.executeSource(
+		    """
+		    result = directoryList( absolute_path=getTempDirectory() );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isInstanceOf( Array.class );
+	}
+
+	@DisplayName( "It can get an anonymous lock" )
+	@Test
+	public void testAnonymousLock() {
+		instance.executeSource(
+		    """
+		    cflock( timeout=10 ) {
+		    	result = "bar";
+		    }
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "bar" );
+	}
+
+	@DisplayName( "It allows invalid types" )
+	@Test
+	public void testInvalidTypes() {
+		instance.executeSource(
+		    """
+		    result = "";
+		    // same as readonly
+		    cflock( timeout=1, type="read" ) {
+		    	result &= "read";
+		    }
+		    // same as exclusive
+		    cflock( timeout=1, type="write" ) {
+		    	result &= "write";
+		    }
+		    // same as readonly
+		    cflock( timeout=1, type="sdfsdf" ) {
+		    	result &= "sdfsdf";
+		    }
+		             """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "readwritesdfsdf" );
 	}
 
 }

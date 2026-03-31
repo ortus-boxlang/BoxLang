@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.types;
 import java.nio.file.Path;
 import java.util.List;
 
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.loader.ImportDefinition;
@@ -34,6 +35,7 @@ public class SampleUDF extends UDF {
 	private Key			name;
 	private Argument[]	arguments;
 	private String		returnType;
+	private Key			returnTypeKey;
 	private Access		access;
 	private IStruct		annotations;
 	private IStruct		documentation;
@@ -48,6 +50,10 @@ public class SampleUDF extends UDF {
 
 	public String getReturnType() {
 		return returnType;
+	}
+
+	public Key getReturnTypeKey() {
+		return returnTypeKey;
 	}
 
 	public IStruct getAnnotations() {
@@ -74,6 +80,10 @@ public class SampleUDF extends UDF {
 		return BoxSourceType.BOXSCRIPT;
 	}
 
+	public List<BoxMethodDeclarationModifier> getModifiers() {
+		return List.of();
+	}
+
 	public SampleUDF( Access access, Key name, String returnType, Argument[] arguments, Object returnVal ) {
 		this( access, name, returnType, arguments, returnVal, Struct.EMPTY, Struct.EMPTY );
 	}
@@ -87,6 +97,7 @@ public class SampleUDF extends UDF {
 		this.access			= access;
 		this.name			= name;
 		this.returnType		= returnType;
+		this.returnTypeKey	= returnType == null ? null : Key.of( returnType );
 		this.arguments		= arguments;
 		this.returnVal		= returnVal;
 		this.annotations	= annotations;

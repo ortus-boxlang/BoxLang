@@ -119,8 +119,8 @@ public class BoxFQN extends FQN {
 			return new String[] {};
 		}
 
-		// parse fqn into array of parts
-		return fqn.split( "\\." );
+		// parse fqn into array of parts using pre-compiled pattern
+		return splitOnDot( fqn );
 	}
 
 	/**

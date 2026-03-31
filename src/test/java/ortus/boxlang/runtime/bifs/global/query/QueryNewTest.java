@@ -19,14 +19,17 @@
 package ortus.boxlang.runtime.bifs.global.query;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -116,6 +119,44 @@ public class QueryNewTest {
 		assertThat( row.getAsInteger( Key.of( "col2" ) ) ).isEqualTo( 42 );
 	}
 
+	@DisplayName( "It can create new with simple array data using long column type" )
+	@Test
+	public void testCreateNewWithSimpleArrayDataUsingLongColumnType() {
+
+		instance.executeSource(
+		    """
+		       result = queryNew("col1,col2","string, long", [ "foo", 42 ]);
+		    columnList = result.columnList;
+		       """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		assertThat( variables.get( "columnList" ) ).isEqualTo( "col1,col2" );
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.size() ).isEqualTo( 1 );
+		IStruct row = qry.getRowAsStruct( 0 );
+		assertThat( row.getAsString( Key.of( "col1" ) ) ).isEqualTo( "foo" );
+		assertThat( LongCaster.cast( row.get( Key.of( "col2" ) ) ) ).isEqualTo( 42L );
+	}
+
+	@DisplayName( "It can create new with array of names" )
+	@Test
+	public void testCreateNewWithArrayOfNames() {
+
+		instance.executeSource(
+		    """
+		       result = queryNew(["col1","col2"],"string, integer", [ "foo", 42 ]);
+		    columnList = result.columnList;
+		       """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		assertThat( variables.get( "columnList" ) ).isEqualTo( "col1,col2" );
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.size() ).isEqualTo( 1 );
+		IStruct row = qry.getRowAsStruct( 0 );
+		assertThat( row.getAsString( Key.of( "col1" ) ) ).isEqualTo( "foo" );
+		assertThat( row.getAsInteger( Key.of( "col2" ) ) ).isEqualTo( 42 );
+	}
+
 	@DisplayName( "It can create new with struct data" )
 	@Test
 	public void testCreateNewWithStructData() {
@@ -144,7 +185,7 @@ public class QueryNewTest {
 		         result = queryNew([
 		    	["id": 10, "label": "ten"],
 		    	["id": 20, "label": "twenty"]
-		    ]);;
+		    ]);
 		      columnList = result.columnList;
 		         """,
 		    context );
@@ -240,6 +281,22 @@ public class QueryNewTest {
 		assertThat( qry.getRow( 0 )[ 0 ] ).isNull();
 		assertThat( qry.getRow( 1 ).length ).isEqualTo( 1 );
 		assertThat( qry.getRow( 1 )[ 0 ] ).isEqualTo( "a" );
+	}
+
+	@Disabled( "This test is disabled as you go down a rabbit hole, we need to discuss this further" )
+	@DisplayName( "It will throw an exception if we create add a cell value of a different type" )
+	@Test
+	public void testThrowsExceptionForDifferentType() {
+		// @formatter:off
+		assertThrows( RuntimeException.class, () -> instance.executeSource( """
+			q = queryNew(
+				"title,pageLength,createdDate",
+				"string,integer,date",
+				[ "The Fellowship Of the Ring", "not_an_integer", "not_a_date" ]
+			)
+			println( q )
+		""", context ) );
+		// @formatter:on
 	}
 
 }

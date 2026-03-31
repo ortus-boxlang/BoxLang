@@ -94,6 +94,9 @@ IDENTIFIER:
 
 NUMERIC_LITERAL: ((DIGIT+ ('.' DIGIT*)?) | ('.' DIGIT+)) ('E' [-+]? DIGIT+)? | '0x' HEX_DIGIT+;
 
+// ODBC date/time escape sequences: {ts '...'}, {d '...'}, {t '...'}
+ODBCDATETIME_LITERAL: ODBC_TIMESTAMP_LITERAL | ODBC_DATE_LITERAL | ODBC_TIME_LITERAL;
+
 BIND_PARAMETER: '?' | ':' IDENTIFIER;
 
 STRING_LITERAL: '\'' ( ~'\'' | '\'\'')* '\'';
@@ -104,9 +107,16 @@ SINGLE_LINE_COMMENT: '--' ~[\r\n]* (('\r'? '\n') | EOF) -> channel(HIDDEN);
 
 MULTILINE_COMMENT: '/*' .*? '*/' -> channel(HIDDEN);
 
-SPACES: [ \u000B\t\r\n] -> channel(HIDDEN);
+SPACES: [\p{White_Space}]+ -> channel(HIDDEN);
 
 UNEXPECTED_CHAR: .;
 
 fragment HEX_DIGIT: [0-9A-F];
 fragment DIGIT: [0-9];
+
+// ODBC date/time escape sequences per ODBC spec
+fragment ODBC_DATE_PART: DIGIT DIGIT DIGIT DIGIT '-' DIGIT DIGIT '-' DIGIT DIGIT;
+fragment ODBC_TIME_PART: DIGIT DIGIT ':' DIGIT DIGIT ':' DIGIT DIGIT ('.' DIGIT+)?;
+fragment ODBC_TIMESTAMP_LITERAL: '{ts \'' ODBC_DATE_PART ' ' ODBC_TIME_PART '\'}';
+fragment ODBC_DATE_LITERAL: '{d \'' ODBC_DATE_PART '\'}';
+fragment ODBC_TIME_LITERAL: '{t \'' ODBC_TIME_PART '\'}';

@@ -126,4 +126,16 @@ public class MidTest {
 		assertThat( variables.get( result ) ).isEqualTo( "234" );
 	}
 
+	@DisplayName( "count is optional" )
+	@Test
+	public void testCountIsOptional() {
+		instance.executeSource(
+		    """
+		    result = mid( "1234", 2 );
+		    """,
+		    context );
+		;
+		assertThat( variables.get( result ) ).isEqualTo( "234" );
+	}
+
 }

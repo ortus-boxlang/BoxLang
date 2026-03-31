@@ -225,4 +225,27 @@ public class StoredProcTest extends BaseJDBCTest {
 		assertEquals( initiallyActive, subsequentActive );
 	}
 
+	@DisplayName( "It can execute a stored procedure with a struct datasource" )
+	@Test
+	public void testStructDatasource() {
+		// Create a stored proc on a struct-based datasource
+		getInstance().executeSource(
+		    """
+		    <bx:set myDS = { driver : 'derby', connectionString : 'jdbc:derby:memory:structDSStoredProcTest;create=true' }>
+		    <bx:query datasource="#myDS#">
+		        CREATE TABLE developers ( id INTEGER, name VARCHAR(155), role VARCHAR(155) )
+		    </bx:query>
+		    <bx:query datasource="#myDS#">
+		        CREATE PROCEDURE doNothing()
+		        PARAMETER STYLE JAVA
+		        READS SQL DATA
+		        LANGUAGE JAVA
+		        EXTERNAL NAME 'ortus.boxlang.runtime.components.jdbc.StoredProcTest.doNothing'
+		    </bx:query>
+		    <bx:storedproc procedure="doNothing" datasource="#myDS#">
+		    </bx:storedproc>
+		    """,
+		    getContext(), BoxSourceType.BOXTEMPLATE );
+	}
+
 }

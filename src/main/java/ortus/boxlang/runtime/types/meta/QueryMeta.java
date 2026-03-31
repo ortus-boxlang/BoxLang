@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.types.meta;
 
+import java.time.Duration;
+
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
@@ -48,11 +50,25 @@ public class QueryMeta extends BoxMeta<Query> {
 		this.$class	= target.getClass();
 
 		// one might say this method call is a bit meta...
-		IStruct metadata = target.getMetaData();
-		metadata.put( Key.type, "Query" );
-		this.meta = new UnmodifiableStruct( metadata );
+		IStruct metadata = new Struct( false );
 
+		// Build out the query metadata
+		metadata.put( Key.type, "Query" );
+		metadata.put( Key.executionTime, 0 );
+		metadata.put( Key.cached, false );
+		metadata.put( Key.cacheKey, null );
+		metadata.put( Key.cacheProvider, null );
+		metadata.put( Key.cacheTimeout, Duration.ZERO );
+		metadata.put( Key.cacheLastAccessTimeout, Duration.ZERO );
+		metadata.put( Key.recordCount, target.size() );
+		metadata.put( Key.columnList, target.getColumnList() );
+		metadata.put( Key._HASHCODE, target.hashCode() );
+		// Build columns metadata
 		buildColumnsMeta();
+		metadata.put( Key.columnMetadata, this.columnsMeta );
+
+		// Make unmodifiable
+		this.meta = new UnmodifiableStruct( metadata );
 	}
 
 	/**
@@ -93,6 +109,31 @@ public class QueryMeta extends BoxMeta<Query> {
 	 */
 	public IStruct getColumnsMeta() {
 		return this.columnsMeta;
+	}
+
+	/**
+	 * This metadata method merges into the target struct's metadata
+	 *
+	 * This is usually called by query execution to update information on the running metadata
+	 *
+	 * @param source The source struct to merge from
+	 *
+	 * @return The merged metadata struct
+	 */
+	public IStruct mergeMeta( IStruct source ) {
+		Struct modifiableMeta = ( Struct ) this.meta;
+
+		if ( this.meta instanceof UnmodifiableStruct targetMeta ) {
+			modifiableMeta = targetMeta.toModifiable();
+		}
+
+		for ( var entry : source.entrySet() ) {
+			modifiableMeta.put( entry.getKey(), entry.getValue() );
+		}
+
+		// Lock it again
+		this.meta = modifiableMeta.toUnmodifiable();
+		return this.meta;
 	}
 
 }

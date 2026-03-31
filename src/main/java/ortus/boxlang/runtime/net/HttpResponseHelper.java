@@ -437,7 +437,7 @@ public class HttpResponseHelper {
 	 */
 	public static String resolveOutputFilename( IStruct headers, String outputFile, java.net.URI requestUri ) {
 		// Use explicit outputFile if provided
-		if ( outputFile != null && !outputFile.trim().isEmpty() ) {
+		if ( outputFile != null && !outputFile.isBlank() ) {
 			return outputFile;
 		}
 
@@ -453,12 +453,12 @@ public class HttpResponseHelper {
 		}
 
 		// Fallback to URL path
-		if ( filename == null || filename.trim().isEmpty() ) {
+		if ( filename == null || filename.isBlank() ) {
 			filename = java.nio.file.Path.of( requestUri.getPath() ).getFileName().toString();
 		}
 
 		// Final validation
-		if ( filename == null || filename.trim().isEmpty() ) {
+		if ( filename == null || filename.isBlank() ) {
 			throw new RuntimeException( "Unable to determine filename from response" );
 		}
 

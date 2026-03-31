@@ -111,6 +111,14 @@ public class NumberFormat extends BIF {
 			} else if ( format.equals( "ls$" ) ) {
 				formatter = LocalizationUtil.localizedCurrencyFormatter( locale );
 			} else {
+				// Pre-replace any 9's before the decimal to ensure no leading blanks
+				if ( format.contains( "." ) ) {
+					String[] parts = format.split( "\\." );
+					if ( !parts[ 0 ].contains( "," ) ) {
+						parts[ 0 ]	= parts[ 0 ].replaceAll( "9", "_" );
+						format		= String.join( ".", parts );
+					}
+				}
 
 				for ( Map.Entry<String, String> entry : formatReplacements.entrySet() ) {
 					format = format.replace( entry.getKey(), entry.getValue() );

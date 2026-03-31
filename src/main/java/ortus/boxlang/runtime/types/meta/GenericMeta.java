@@ -22,7 +22,6 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 
 /**
  * This class represents generic BoxLang metadata for a an object which has no object-specifc properties

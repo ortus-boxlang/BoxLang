@@ -55,4 +55,27 @@ public class CacheTest extends BaseCacheTest {
 		assertThat( cache.getName().getName() ).isEqualTo( "bxSessions" );
 	}
 
+	@Test
+	@DisplayName( "It can get a per-app cache" )
+	public void canGetPerAppCache() {
+		runtime.executeSource(
+		    """
+		       bx:application name="unit-test-sm"
+		    caches={
+		    	"default" : {
+		    		provider : "BoxCache",
+		    		properties : {
+		    			maxObjects : 10
+		    		}
+		    	}
+		    };
+		      result = cache( "default" )
+		      """,
+		    context );
+
+		ICacheProvider cache = ( ICacheProvider ) variables.get( result );
+		assertNotNull( cache );
+		assertThat( cache.getName().getName() ).isEqualTo( "unit-test-sm:default" );
+	}
+
 }

@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.DateTime;
 
 public class BoxScriptingEngineTest {
 
@@ -57,7 +58,20 @@ public class BoxScriptingEngineTest {
 	}
 
 	@Test
+	public void testMethodCallOnClass() throws ScriptException, NoSuchMethodException {
+		engine.eval( "myClass = new src.test.java.ortus.boxlang.runtime.scripting.MyClass()" );
+		Invocable	invocable	= ( Invocable ) engine;
+
+		Object		result		= invocable.invokeMethod( engine.get( "myClass" ), "myMethod" );
+		assertThat( result ).isEqualTo( "Hello, World!" );
+
+		result = invocable.invokeMethod( engine.get( "myClass" ), "myMethod", "Dom" );
+		assertThat( result ).isEqualTo( "Hello, Dom!" );
+	}
+
+	@Test
 	public void testMethodCall() throws ScriptException, NoSuchMethodException {
+
 		engine.eval( "myStr = { foo : 'bar' }" );
 		Invocable	invocable	= ( Invocable ) engine;
 		Object		result		= invocable.invokeMethod( engine.get( "myStr" ), "count" );
@@ -70,6 +84,20 @@ public class BoxScriptingEngineTest {
 		Invocable	invocable	= ( Invocable ) engine;
 		Object		result		= invocable.invokeFunction( "testFunction" );
 		assertThat( result ).isEqualTo( "Hello, World!" );
+	}
+
+	@Test
+	public void testBIFCallWithNoArguments() throws ScriptException, NoSuchMethodException {
+		Invocable	invocable	= ( Invocable ) engine;
+		Object		result		= invocable.invokeFunction( "now" );
+		assertThat( result ).isInstanceOf( DateTime.class );
+	}
+
+	@Test
+	public void testBIFCallWithArguments() throws ScriptException, NoSuchMethodException {
+		Invocable	invocable	= ( Invocable ) engine;
+		Object		result		= invocable.invokeFunction( "reverse", "Brad" );
+		assertThat( result ).isEqualTo( "darB" );
 	}
 
 	@Test

@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.loader;
 
+import java.util.Objects;
+
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -45,14 +47,60 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  * @param className      The class name
  * @param resolverPrefix The resolver prefix
  * @param alias          The alias
+ * @param moduleName     The module name
+ * @param cachedHashCode The pre-computed hash code
  */
-public record ImportDefinition( String className, String resolverPrefix, String alias, String moduleName ) {
+public record ImportDefinition( String className, String resolverPrefix, String alias, String moduleName, int cachedHashCode ) {
 
-	// Compact constructor disallows null className
-	public ImportDefinition {
+	/**
+	 * Canonical constructor. Validates className and computes hashCode.
+	 *
+	 * @param className      The class name
+	 * @param resolverPrefix The resolver prefix
+	 * @param alias          The alias
+	 * @param moduleName     The module name
+	 * @param cachedHashCode Ignored; always recomputed
+	 */
+	public ImportDefinition( String className, String resolverPrefix, String alias, String moduleName, int cachedHashCode ) {
 		if ( className == null ) {
 			throw new BoxRuntimeException( "Class name cannot be null." );
 		}
+		this.className		= className;
+		this.resolverPrefix	= resolverPrefix;
+		this.alias			= alias;
+		this.moduleName		= moduleName;
+		this.cachedHashCode	= computeHashCode( className, resolverPrefix, alias, moduleName );
+	}
+
+	/**
+	 * Convenience constructor without hashCode parameter.
+	 *
+	 * @param className      The class name
+	 * @param resolverPrefix The resolver prefix
+	 * @param alias          The alias
+	 * @param moduleName     The module name
+	 */
+	public ImportDefinition( String className, String resolverPrefix, String alias, String moduleName ) {
+		this( className, resolverPrefix, alias, moduleName, 0 );
+	}
+
+	/**
+	 * Computes the hash code from the four string fields.
+	 */
+	private static int computeHashCode( String className, String resolverPrefix, String alias, String moduleName ) {
+		int result = 31 + className.hashCode();
+		result	= 31 * result + Objects.hashCode( resolverPrefix );
+		result	= 31 * result + Objects.hashCode( alias );
+		result	= 31 * result + Objects.hashCode( moduleName );
+		return result;
+	}
+
+	/**
+	 * Returns the pre-computed hash code.
+	 */
+	@Override
+	public int hashCode() {
+		return this.cachedHashCode;
 	}
 
 	/**

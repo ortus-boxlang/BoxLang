@@ -185,8 +185,8 @@ public class ExpandPathTest {
 	@Test
 	public void testRelative() {
 		String abs = Path.of( "src/test/java/ortus/boxlang/runtime/bifs/global/io/expandPathTest.txt" ).toAbsolutePath().toString();
-		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext(),
-		    Path.of( "src/test/java/ortus/boxlang/runtime/bifs/global/io/ExpandPathTest.java" ).toAbsolutePath().toUri() );
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext(), false )
+		    .loadApplicationDescriptor( Path.of( "src/test/java/ortus/boxlang/runtime/bifs/global/io/ExpandPathTest.java" ).toAbsolutePath().toUri() );
 		variables	= context.getScopeNearby( VariablesScope.name );
 		instance.executeSource(
 		    """
@@ -271,7 +271,7 @@ public class ExpandPathTest {
 	}
 
 	@Test
-	public void testUnixTmp() {
+	public void testUnixTmp() throws IOException {
 		if ( FileSystemUtil.IS_WINDOWS ) {
 			return;
 		}
@@ -281,7 +281,7 @@ public class ExpandPathTest {
 		                        """, context );
 
 		assertThat( variables.getAsString( result ) )
-		    .isEqualTo( ResolvedFilePath.of( "/tmp" ).absolutePath().toString() );
+		    .isEqualTo( Path.of( "/tmp" ).toRealPath().toString() );
 	}
 
 	@Test

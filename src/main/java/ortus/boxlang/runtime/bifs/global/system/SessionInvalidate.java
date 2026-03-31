@@ -44,7 +44,7 @@ public class SessionInvalidate extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		RequestBoxContext requestContext = context.getParentOfType( RequestBoxContext.class );
+		RequestBoxContext requestContext = context.getRequestContextOrFail();
 		requestContext.resetSession();
 		SessionBoxContext sessionContext = requestContext.getParentOfType( SessionBoxContext.class );
 		if ( sessionContext != null ) {

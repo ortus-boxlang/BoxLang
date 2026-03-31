@@ -55,6 +55,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.SchedulerService;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
+import ortus.boxlang.runtime.types.exceptions.BoxLicenseException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
@@ -135,9 +136,30 @@ public class BoxRunner {
 			timer.start( "BoxRunner" );
 		}
 
+		BoxRuntime		boxRuntime				= null;
+
+		final String	licenseExceptionMessage	= "BoxLang License Exception: [{}]%n%n"
+		    + "💡 It looks like you're trying to use BoxLang+ features or modules (https://boxlang.ortusbooks.com/boxlang-framework/boxlang-plus/modules) without a valid license.%n"
+		    + "Please visit https://boxlang.io to learn more about BoxLang+ and how to obtain, activate or renew a license.%n";
+
 		// Get a runtime going using the CLI options
-		BoxRuntime	boxRuntime	= BoxRuntime.getInstance( options );
-		int			exitCode	= 0;
+		try {
+			boxRuntime = BoxRuntime.getInstance( options );
+		} catch ( BoxLicenseException le ) {
+			System.out.println( String.format( licenseExceptionMessage, le.getMessage() ) );
+			ExceptionUtil.printBoxLangStackTrace( le, System.err );
+			System.exit( 1 );
+			return;
+		} catch ( Throwable e ) {
+			String message = "An exception ocurred while initializing the BoxLang runtime: " + e.getMessage();
+			if ( message.contains( ExceptionUtil.LICENSE_MODULE_NAME ) || message.contains( ExceptionUtil.LICENSE_SUBSCRIPTION_NAME ) ) {
+				message = String.format( licenseExceptionMessage, e.getMessage() );
+			}
+			ExceptionUtil.printBoxLangStackTrace( e, System.err );
+			System.exit( 1 );
+			return;
+		}
+		int exitCode = 0;
 
 		try {
 			// Show version
@@ -151,8 +173,29 @@ public class BoxRunner {
 				System.out.println( "https://boxlang.io" );
 			}
 			// Print AST
-			else if ( options.printAST() && options.code() != null ) {
-				boxRuntime.printSourceAST( options.code() );
+			else if ( options.printAST() ) {
+				String source;
+				// If --bx-code is present, use inline code
+				if ( options.code() != null ) {
+					source = options.code();
+				}
+				// If a file path argument is present, read the file
+				else if ( options.templatePath() != null ) {
+					try {
+						source = Files.readString( Paths.get( options.templatePath() ) );
+					} catch ( IOException e ) {
+						throw new BoxRuntimeException( "Failed to read file: " + options.templatePath(), e );
+					}
+				}
+				// Otherwise, read from STDIN
+				else {
+					try {
+						source = new String( System.in.readAllBytes() );
+					} catch ( IOException e ) {
+						throw new BoxRuntimeException( "Failed to read from STDIN", e );
+					}
+				}
+				boxRuntime.printSourceAST( source );
 			}
 			// Transpile to Java
 			else if ( options.transpile() ) {
@@ -182,7 +225,7 @@ public class BoxRunner {
 				// Start the interactive REPL
 				new BoxRepl( boxRuntime ).start();
 			}
-		} catch ( BoxRuntimeException e ) {
+		} catch ( Throwable e ) {
 			ExceptionUtil.printBoxLangStackTrace( e, System.err );
 			exitCode = 1;
 		} finally {
@@ -292,13 +335,14 @@ public class BoxRunner {
 		}
 
 		// Prep the execution
-		Path					targetSchedulerPath	= Paths.get( schedulerPath ).normalize().toAbsolutePath();
-		IBoxContext				runtimeContext		= runtime.getRuntimeContext();
-		IBoxContext				scriptingContext	= new ScriptingRequestBoxContext( runtimeContext, targetSchedulerPath.toUri() );
-		BaseApplicationListener	listener			= scriptingContext.getRequestContext().getApplicationListener();
-		RequestBoxContext.setCurrent( scriptingContext.getRequestContext() );
-		Throwable			errorToHandle		= null;
-		SchedulerService	schedulerService	= runtime.getSchedulerService();
+		Path				targetSchedulerPath	= Paths.get( schedulerPath ).normalize().toAbsolutePath();
+		IBoxContext			runtimeContext		= runtime.getRuntimeContext();
+		RequestBoxContext	scriptingContext	= new ScriptingRequestBoxContext( runtimeContext, false );
+		RequestBoxContext.setCurrent( scriptingContext );
+		scriptingContext.loadApplicationDescriptor( targetSchedulerPath.toUri() );
+		BaseApplicationListener	listener			= scriptingContext.getApplicationListener();
+		Throwable				errorToHandle		= null;
+		SchedulerService		schedulerService	= runtime.getSchedulerService();
 
 		// FIRE!
 		try {
@@ -568,6 +612,12 @@ public class BoxRunner {
 			cliArgs.add( currentArgument );
 		}
 
+		// If no file, code, module, or action command was specified, but we have cliArgs,
+		// treat the first arg as a potential module name (shortcut for module:name syntax)
+		if ( file == null && code == null && targetModule == null && actionCommand == null && !cliArgs.isEmpty() ) {
+			targetModule = cliArgs.remove( 0 );
+		}
+
 		return new CLIOptions(
 		    file,
 		    debug,
@@ -771,6 +821,8 @@ public class BoxRunner {
 		System.out.println();
 		System.out.println( "  # 🌳 Print AST for code analysis" );
 		System.out.println( "  boxlang --bx-printAST --bx-code \"x = 1 + 2\"" );
+		System.out.println( "  boxlang --bx-printAST myfile.bx" );
+		System.out.println( "  echo \"x = 1 + 2\" | boxlang --bx-printAST" );
 		System.out.println();
 		System.out.println( "🔄 REPL MODE:" );
 		System.out.println( "  • When no arguments are provided, BoxLang starts in REPL mode" );

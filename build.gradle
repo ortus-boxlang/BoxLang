@@ -13,7 +13,7 @@ plugins {
 	id "application"
 	id 'antlr'
 	// For source code formatting
-	id "com.diffplug.spotless" version "7.2.1"
+	id "com.diffplug.spotless" version "8.3.0"
 	// Shadow
 	id "com.gradleup.shadow" version "9.2.2"
 	// For dependency updates
@@ -23,7 +23,7 @@ plugins {
 	// Maven Publisher
 	id 'maven-publish'
 	id 'signing'
-	id 'com.gradleup.nmcp.aggregation' version "1.3.0"
+	id 'com.gradleup.nmcp.aggregation' version "1.4.4"
     // Download task
     id "de.undercouch.download" version "5.6.0"
 }
@@ -102,15 +102,19 @@ repositories {
  */
 dependencies {
     // Testing Dependencies
-    testImplementation "org.junit.jupiter:junit-jupiter:6.0.1"
+    testImplementation "org.junit.jupiter:junit-jupiter:6.0.3"
 	testImplementation "org.mockito:mockito-core:5.+"
 	testImplementation "com.google.truth:truth:1.+"
-	testImplementation "commons-cli:commons-cli:1.10.0"
-	testImplementation "org.wiremock:wiremock:3.13.1"
-	testImplementation 'io.undertow:undertow-core:2.3.20.Final'
+	testImplementation "commons-cli:commons-cli:1.11.0"
+	testImplementation "org.wiremock:wiremock:3.13.2"
+	testImplementation 'org.apache.derby:derby:10.17.1.0'
+	testImplementation 'io.undertow:undertow-core:2.3.23.Final'
 	testImplementation 'org.bouncycastle:bcpkix-jdk18on:1.83'
 	// Explicitly declare the JUnit platform launcher (to avoid deprecation)
     testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+
+	// Uncomment for MiniServer testing
+	//implementation files( '../boxlang-miniserver/build/distributions/boxlang-miniserver-1.10.0-snapshot.jar' )
 
 	// Antlr
 	antlr "org.antlr:antlr4:$antlrVersion"
@@ -131,31 +135,31 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-cli
 	implementation "commons-cli:commons-cli:1.11.0"
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-objects
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.20.1'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.21.1'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-extension-javatime
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-extension-javatime:2.20.1'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-extension-javatime:2.21.1'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-stree
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-stree:2.20.1'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-stree:2.21.1'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-annotation-support
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.20.1'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.21.1'
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-api
 	implementation 'org.slf4j:slf4j-api:2.0.17'
 	// https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
-	implementation 'ch.qos.logback:logback-classic:1.5.21'
+	implementation 'ch.qos.logback:logback-classic:1.5.32'
 	// https://mvnrepository.com/artifact/com.zaxxer/HikariCP
 	implementation 'com.zaxxer:HikariCP:6.3.0'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-tree
-	implementation 'org.ow2.asm:asm-tree:9.9'
+	implementation 'org.ow2.asm:asm-tree:9.9.1'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-util
-	implementation 'org.ow2.asm:asm-util:9.9'
+	implementation 'org.ow2.asm:asm-util:9.9.1'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-commons
-	implementation 'org.ow2.asm:asm-commons:9.9'
+	implementation 'org.ow2.asm:asm-commons:9.9.1'
 	// https://mvnrepository.com/artifact/org.semver4j/semver4j
 	implementation 'org.semver4j:semver4j:6.0.0'
 
 	// Compile Only Dependencies
 	// Java Annotations Checks, this are for compile documentation only. It's not included in the final build
-	compileOnly 'org.checkerframework:checker-qual:3.52.0'
+	compileOnly 'org.checkerframework:checker-qual:3.54.0'
 
 }
 
@@ -297,6 +301,160 @@ tasks.named( "startScripts" ) {
 }
 tasks.named( "startShadowScripts" ) {
     dependsOn tasks.named( "jar" )
+}
+
+/**
+ * Customize BoxLang startup scripts to support .env file loading
+ */
+startShadowScripts {
+	doLast {
+		// Customize the Unix script
+		def unixScript = file("${buildDir}/scriptsShadow/boxlang")
+		customizeUnixScript(unixScript)
+
+		// Customize the Windows script
+		def windowsScript = file("${buildDir}/scriptsShadow/boxlang.bat")
+		customizeWindowsScript(windowsScript)
+
+		logger.info("+ BoxLang startup scripts customized with .env support")
+	}
+}
+
+/**
+ * Add .env file loading support to Unix script with --envfile argument support.
+ * Also injects AppCDS -Xshare:on flag when boxlang.jsa is present alongside the JAR.
+ */
+ext.customizeUnixScript = { File scriptFile ->
+	def content = scriptFile.text
+	def envLoaderScript = file('workbench/scripts/env-loader.sh').text
+
+	def envLoadingInvocation = """
+######################################
+# Load environment variables from .env file
+######################################
+# Source the env-loader script inline (to preserve environment variables)
+${envLoaderScript}
+
+# Update arguments to filtered args (without --envfile)
+set -- \$FILTERED_ARGS
+
+######################################
+# End .env loading
+######################################
+
+"""
+
+	// AppCDS: auto-generate a class-data archive on first run into ~/.boxlang/cache/
+	// and activate it on subsequent runs.  No .jsa is shipped in the distribution —
+	// it is created once per BoxLang version on the user's machine.
+	def appCdsSnippet = '''
+######################################
+# AppCDS: auto-generate and cache a class-data archive for faster startup
+######################################
+BL_JAR=$(ls "$APP_HOME/lib"/boxlang-*.jar 2>/dev/null | head -1)
+if [ -n "$BL_JAR" ]; then
+    BL_VER=$(basename "$BL_JAR" .jar | sed 's/^boxlang-//')
+    BL_JSA_DIR="$HOME/.boxlang/cache"
+    BL_JSA="$BL_JSA_DIR/boxlang-$BL_VER.jsa"
+    BL_JAVA="${JAVA_HOME:+$JAVA_HOME/bin/java}"
+    BL_JAVA="${BL_JAVA:-java}"
+    if [ ! -f "$BL_JSA" ] && command -v "$BL_JAVA" > /dev/null 2>&1; then
+        mkdir -p "$BL_JSA_DIR"
+        BL_CLASSLIST="$BL_JSA_DIR/boxlang-$BL_VER.classlist"
+        "$BL_JAVA" -XX:DumpLoadedClassList="$BL_CLASSLIST" -cp "$BL_JAR" ortus.boxlang.runtime.BoxRunner --version > /dev/null 2>&1
+        "$BL_JAVA" -Xshare:dump -XX:SharedClassListFile="$BL_CLASSLIST" -XX:SharedArchiveFile="$BL_JSA.tmp" -cp "$BL_JAR" ortus.boxlang.runtime.BoxRunner > /dev/null 2>&1 && mv "$BL_JSA.tmp" "$BL_JSA"
+        rm -f "$BL_CLASSLIST" "$BL_JSA.tmp"
+    fi
+    if [ -f "$BL_JSA" ]; then
+        JAVA_OPTS="$JAVA_OPTS -XX:TieredStopAtLevel=1 -Xshare:auto -XX:SharedArchiveFile=$BL_JSA"
+    fi
+fi
+######################################
+# End AppCDS
+######################################
+'''
+
+	// Insert env-loader and AppCDS together before the JVM detection line.
+	content = content.replace(
+		'# Determine the Java command to use to start the JVM.',
+		appCdsSnippet + envLoadingInvocation + '# Determine the Java command to use to start the JVM.'
+	)
+
+	scriptFile.text = content
+	scriptFile.setExecutable(true, false)
+}
+
+/**
+ * Add .env file loading support to Windows script with --envfile argument support.
+ * Also injects AppCDS -Xshare:on flag when boxlang.jsa is present alongside the JAR.
+ */
+ext.customizeWindowsScript = { File scriptFile ->
+	def content = scriptFile.text
+	def envLoaderScript = file('workbench/scripts/env-loader.bat').text
+
+	// Enable delayed expansion at the beginning of the script (needed for !variable! syntax)
+	if (!content.contains('@setlocal enabledelayedexpansion')) {
+		content = content.replaceFirst(
+			'(@echo off)',
+			'$1\r\n@setlocal enabledelayedexpansion'
+		)
+	}
+
+	// Inject AppCDS JVM flags for Windows: auto-generate into %USERPROFILE%\.boxlang\cache on first run.
+	def appCdsSnippet = '@rem ######################################\r\n' +
+		'@rem AppCDS: auto-generate and cache a class-data archive for faster startup\r\n' +
+		'@rem ######################################\r\n' +
+		'set "BL_JSA_DIR=%USERPROFILE%\\.boxlang\\cache"\r\n' +
+		'for %%F in ("%APP_HOME%\\lib\\boxlang-*.jar") do set "BL_JAR=%%~fF" & set "BL_JARNAME=%%~nF"\r\n' +
+		'if defined BL_JAR (\r\n' +
+		'  set "BL_VER=!BL_JARNAME:boxlang-=!"\r\n' +
+		'  set "BL_JSA=!BL_JSA_DIR!\\boxlang-!BL_VER!.jsa"\r\n' +
+		'  if defined JAVA_HOME (set "BL_JAVA=%JAVA_HOME%\\bin\\java.exe") else (set "BL_JAVA=java.exe")\r\n' +
+		'  if not exist "!BL_JSA!" (\r\n' +
+		'    if not exist "!BL_JSA_DIR!" mkdir "!BL_JSA_DIR!"\r\n' +
+		'    set "BL_CLASSLIST=!BL_JSA_DIR!\\boxlang-!BL_VER!.classlist"\r\n' +
+		'    "!BL_JAVA!" -XX:DumpLoadedClassList="!BL_CLASSLIST!" -cp "%BL_JAR%" ortus.boxlang.runtime.BoxRunner --version >nul 2>&1\r\n' +
+		'    "!BL_JAVA!" -Xshare:dump -XX:SharedClassListFile="!BL_CLASSLIST!" -XX:SharedArchiveFile="!BL_JSA!" -cp "%BL_JAR%" ortus.boxlang.runtime.BoxRunner >nul 2>&1\r\n' +
+		'    del "!BL_CLASSLIST!" >nul 2>&1\r\n' +
+		'  )\r\n' +
+		'  if exist "!BL_JSA!" (\r\n' +
+		'    set "JAVA_OPTS=%JAVA_OPTS% -XX:TieredStopAtLevel=1 -Xshare:auto -XX:SharedArchiveFile=!BL_JSA!"\r\n' +
+		'  )\r\n' +
+		')\r\n' +
+		'@rem ######################################\r\n' +
+		'@rem End AppCDS\r\n' +
+		'@rem ######################################\r\n\r\n'
+
+	// Insert the env loading code before "Setup the command line"
+	def envLoadingInvocation = """
+
+@rem ######################################
+@rem Load environment variables from .env file
+@rem ######################################
+${envLoaderScript}
+
+@rem Update CMD_LINE_ARGS with filtered arguments
+set "CMD_LINE_ARGS_TEMP=%FILTERED_ARGS%"
+
+@rem ######################################
+@rem End .env loading
+@rem ######################################
+
+"""
+
+	// Insert both blocks together: AppCDS first, then env-loader, both before "Setup the command line"
+	content = content.replace(
+		'@rem Setup the command line',
+		appCdsSnippet + envLoadingInvocation + '@rem Setup the command line'
+	)
+
+	// Replace CMD_LINE_ARGS with filtered arguments after it's set
+	content = content.replaceFirst(
+		/(set CMD_LINE_ARGS=%\*)/,
+		'$1\r\nif defined CMD_LINE_ARGS_TEMP set CMD_LINE_ARGS=%CMD_LINE_ARGS_TEMP%'
+	)
+
+	scriptFile.text = content
 }
 /**
  * Main BoxLang Distribution JAR
@@ -569,7 +727,86 @@ tasks.shadowDistTar.setEnabled( false )
 tasks.shadowDistZip.setEnabled( false )
 
 /**
- * This is necessary to create a single level instead of what shadow does
+ * ================================================================================
+ * AppCDS (Application Class-Data Sharing)
+ *
+ * Two tasks that together build a .jsa class-data archive:
+ *
+ * 1. generateCdsClassList — Runs BoxLang briefly with -XX:DumpLoadedClassList
+ *    to record every class touched during startup.
+ *
+ * 2. generateCdsArchive — Consumes the class list and produces boxlang.jsa,
+ *    a memory-mapped binary the JVM can share across processes at startup.
+ *
+ * The archive is included in the distribution ZIP and the launch scripts are
+ * updated to use -Xshare:on when the archive is present.
+ *
+ * To regenerate manually:
+ *   ./gradlew generateCdsArchive
+ * ================================================================================
+ */
+def cdsDir       = file( "${buildDir}/appcds" )
+def cdsClassList = file( "${cdsDir}/boxlang.classlist" )
+def cdsArchive   = file( "${cdsDir}/boxlang.jsa" )
+
+task generateCdsClassList( type: JavaExec ) {
+	dependsOn shadowJar
+	group = 'AppCDS'
+	description = 'Runs BoxLang with -XX:DumpLoadedClassList to record startup classes for AppCDS.'
+
+	inputs.file  shadowJar.archiveFile
+	outputs.file cdsClassList
+
+	classpath = files( shadowJar.archiveFile )
+	mainClass  = 'ortus.boxlang.runtime.BoxRunner'
+	args       = [ '--version' ]
+	ignoreExitValue = true
+
+	doFirst {
+		cdsDir.mkdirs()
+		logger.lifecycle( "+  Generating AppCDS class list from ${shadowJar.archiveFile.get().asFile}" )
+		jvmArgs "-XX:DumpLoadedClassList=${cdsClassList.absolutePath}"
+	}
+
+	doLast {
+		if ( !cdsClassList.exists() || cdsClassList.length() == 0 ) {
+			throw new GradleException( "AppCDS class list was not generated at ${cdsClassList}" )
+		}
+		logger.lifecycle( "+  Class list written: ${cdsClassList} (${cdsClassList.length()} bytes)" )
+	}
+}
+
+task generateCdsArchive( type: JavaExec ) {
+	dependsOn generateCdsClassList
+	group = 'AppCDS'
+	description = 'Builds the boxlang.jsa AppCDS archive from the generated class list.'
+
+	inputs.file  cdsClassList
+	outputs.file cdsArchive
+
+	classpath = files( shadowJar.archiveFile )
+	mainClass  = 'ortus.boxlang.runtime.BoxRunner'
+	args       = []
+	ignoreExitValue = true
+
+	doFirst {
+		logger.lifecycle( "+  Building AppCDS archive at ${cdsArchive}" )
+		jvmArgs '-Xshare:dump',
+			"-XX:SharedClassListFile=${cdsClassList.absolutePath}",
+			"-XX:SharedArchiveFile=${cdsArchive.absolutePath}"
+	}
+
+	doLast {
+		if ( !cdsArchive.exists() || cdsArchive.length() == 0 ) {
+			throw new GradleException( "AppCDS archive was not generated at ${cdsArchive}" )
+		}
+		logger.lifecycle( "+  AppCDS archive written: ${cdsArchive} (${cdsArchive.length()} bytes)" )
+	}
+}
+
+/**
+ * This is necessary to create a single level instead of what shadow does.
+ * Includes the AppCDS .jsa archive in the distribution when it has been generated.
  */
 task createDistributionFile( type: Zip ){
 	dependsOn startShadowScripts
@@ -582,6 +819,10 @@ task createDistributionFile( type: Zip ){
 		include 'boxlang-' + version + '.jar'
 		into 'lib'
 	}
+
+	// The AppCDS .jsa archive is NOT bundled in the distribution — it is generated
+	// automatically on first run into the user's ~/.boxlang/cache/ directory.
+	// This keeps the distribution ZIP at its original size (~7 MB).
 
 	archiveFileName = "boxlang-${version}.zip"
 
@@ -1207,6 +1448,8 @@ spotless {
         }
         eclipse().configFile( "workbench/ortus-java-style.xml" )
 		toggleOffOn()
+        removeUnusedImports()
+        formatAnnotations()
     }
 }
 
@@ -1269,6 +1512,10 @@ test {
 	// systemProperty 'boxlang.experimental.compiler', System.getProperty('boxlang.experimental.compiler', "java")
 	useJUnitPlatform()
 
+	// Isolate test runtime from developer ~/.boxlang modules (e.g. bx-compat-cfml)
+	// so local environment state does not affect test outcomes.
+	def isolatedTestHome = file( "$buildDir/test-home" ).absolutePath
+
 	// Detailed  logging
 	testLogging {
 
@@ -1284,16 +1531,24 @@ test {
 	systemProperty 'junit.jupiter.testclass.order.default', 'org.junit.jupiter.api.ClassOrderer$ClassName'
     systemProperty 'file.encoding', 'UTF-8'
     systemProperty 'user.timezone', 'UTC'
+	systemProperty 'user.home', isolatedTestHome
+	environment 'HOME', isolatedTestHome
 
 	// Add Java Compiler JAR to classpath if specified (for CI testing with java compiler)
 	if ( project.hasProperty( 'addJavaCompiler' ) && project.property( 'addJavaCompiler' ) == 'true' ) {
 		dependsOn jarJavaCompiler
 		classpath += files("$buildDir/libs/boxlang-compiler-java-${version}.jar")
+		// Tell BoxLang to use the Java compiler
+		systemProperty 'boxlang.compiler', 'java'
 	}
 
 	// Dependencies
 	dependsOn compileJava, compileTestJava
 	//exclude '**/resources/**'
+
+	doFirst {
+		file( isolatedTestHome ).mkdirs()
+	}
 
 	// Uncomment to take a heap dump after the conclusion of tests
 	// finalizedBy( createHeapDump )

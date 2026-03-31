@@ -49,7 +49,8 @@ public class Zip extends Component {
 		    new Attribute(
 		        Key.action,
 		        "string",
-		        "zip", Set.of(
+		        "zip",
+		        Set.of(
 		            Validator.NON_EMPTY,
 		            Validator.valueOneOf( "delete", "list", "read", "readBinary", "unzip", "zip" )
 		        )

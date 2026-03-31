@@ -32,6 +32,8 @@ import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
 import ortus.boxlang.compiler.ast.expression.BoxAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
+import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringBinding;
+import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
@@ -52,8 +54,11 @@ import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNegateOperation;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
+import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringBinding;
+import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxSpreadExpression;
 import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
 import ortus.boxlang.compiler.ast.expression.BoxStaticMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
@@ -70,6 +75,7 @@ import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.statement.BoxContinue;
 import ortus.boxlang.compiler.ast.statement.BoxDo;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
+import ortus.boxlang.compiler.ast.statement.BoxEmptyStatement;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.statement.BoxForIn;
 import ortus.boxlang.compiler.ast.statement.BoxForIndex;
@@ -110,6 +116,10 @@ public abstract class ReplacingBoxVisitor {
 
 	public BoxNode visit( BoxStatementBlock node ) {
 		handleStatements( node.getBody(), node );
+		return node;
+	}
+
+	public BoxNode visit( BoxEmptyStatement node ) {
 		return node;
 	}
 
@@ -507,7 +517,93 @@ public abstract class ReplacingBoxVisitor {
 		return node;
 	}
 
+	/** {@inheritDoc} */
 	public BoxNode visit( BoxNull node ) {
+		return node;
+	}
+
+	/** {@inheritDoc} */
+	public BoxNode visit( BoxArrayDestructuringPattern node ) {
+		for ( int i = 0; i < node.getBindings().size(); i++ ) {
+			BoxArrayDestructuringBinding	binding		= node.getBindings().get( i );
+			BoxNode							newBinding	= binding.accept( this );
+			if ( newBinding != binding ) {
+				node.replaceChildren( binding, newBinding );
+				node.getBindings().set( i, ( BoxArrayDestructuringBinding ) newBinding );
+			}
+		}
+		return node;
+	}
+
+	/** {@inheritDoc} */
+	public BoxNode visit( BoxArrayDestructuringBinding node ) {
+		BoxExpression target = node.getTarget();
+		if ( target != null ) {
+			BoxNode newTarget = target.accept( this );
+			if ( newTarget != target ) {
+				node.setTarget( ( BoxExpression ) newTarget );
+			}
+		}
+		BoxArrayDestructuringPattern pattern = node.getPattern();
+		if ( pattern != null ) {
+			BoxNode newPattern = pattern.accept( this );
+			if ( newPattern != pattern ) {
+				node.setPattern( ( BoxArrayDestructuringPattern ) newPattern );
+			}
+		}
+		BoxExpression defaultValue = node.getDefaultValue();
+		if ( defaultValue != null ) {
+			BoxNode newDefault = defaultValue.accept( this );
+			if ( newDefault != defaultValue ) {
+				node.setDefaultValue( ( BoxExpression ) newDefault );
+			}
+		}
+		return node;
+	}
+
+	/** {@inheritDoc} */
+	public BoxNode visit( BoxObjectDestructuringPattern node ) {
+		for ( int i = 0; i < node.getBindings().size(); i++ ) {
+			BoxObjectDestructuringBinding	binding		= node.getBindings().get( i );
+			BoxNode							newBinding	= binding.accept( this );
+			if ( newBinding != binding ) {
+				node.replaceChildren( binding, newBinding );
+				node.getBindings().set( i, ( BoxObjectDestructuringBinding ) newBinding );
+			}
+		}
+		return node;
+	}
+
+	/** {@inheritDoc} */
+	public BoxNode visit( BoxObjectDestructuringBinding node ) {
+		BoxExpression key = node.getKey();
+		if ( key != null ) {
+			BoxNode newKey = key.accept( this );
+			if ( newKey != key ) {
+				node.setKey( ( BoxExpression ) newKey );
+			}
+		}
+		BoxExpression target = node.getTarget();
+		if ( target != null ) {
+			BoxNode newTarget = target.accept( this );
+			if ( newTarget != target ) {
+				node.setTarget( ( BoxExpression ) newTarget );
+			}
+		}
+		BoxObjectDestructuringPattern pattern = node.getPattern();
+		if ( pattern != null ) {
+			BoxNode newPattern = pattern.accept( this );
+			if ( newPattern != pattern ) {
+				node.setPattern( ( BoxObjectDestructuringPattern ) newPattern );
+			}
+		}
+		BoxExpression defaultValue = node.getDefaultValue();
+		if ( defaultValue != null ) {
+			BoxNode newDefault = defaultValue.accept( this );
+			if ( newDefault != defaultValue ) {
+				node.setDefaultValue( ( BoxExpression ) newDefault );
+			}
+		}
 		return node;
 	}
 
@@ -520,7 +616,20 @@ public abstract class ReplacingBoxVisitor {
 		return node;
 	}
 
+	/**
+	 * visit.
+	 */
 	public BoxNode visit( BoxScope node ) {
+		return node;
+	}
+
+	/** {@inheritDoc} */
+	public BoxNode visit( BoxSpreadExpression node ) {
+		BoxExpression	expr	= node.getExpression();
+		BoxNode			newExpr	= expr.accept( this );
+		if ( newExpr != expr ) {
+			node.setExpression( ( BoxExpression ) newExpr );
+		}
 		return node;
 	}
 
@@ -698,6 +807,13 @@ public abstract class ReplacingBoxVisitor {
 		BoxNode			newVar		= variable.accept( this );
 		if ( newVar != variable ) {
 			node.setVariable( ( BoxExpression ) newVar );
+		}
+		BoxExpression secondVariable = node.getSecondVariable();
+		if ( secondVariable != null ) {
+			BoxNode newSecondVar = secondVariable.accept( this );
+			if ( newSecondVar != secondVariable ) {
+				node.setSecondVariable( ( BoxExpression ) newSecondVar );
+			}
 		}
 		BoxExpression	expression	= node.getExpression();
 		BoxNode			newExpr		= expression.accept( this );

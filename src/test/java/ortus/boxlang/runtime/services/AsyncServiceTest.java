@@ -99,9 +99,9 @@ class AsyncServiceTest {
 
 		asyncService.shutdownAllExecutors();
 
-		assertThat( asyncService.getExecutor( "tdd" ).executor().isShutdown() ).isTrue();
-		assertThat( asyncService.getExecutor( "tdd2" ).executor().isShutdown() ).isTrue();
-		assertThat( asyncService.getExecutor( "tdd3" ).executor().isShutdown() ).isTrue();
+		assertThat( asyncService.hasExecutor( "tdd" ) ).isFalse();
+		assertThat( asyncService.hasExecutor( "tdd2" ) ).isFalse();
+		assertThat( asyncService.hasExecutor( "tdd3" ) ).isFalse();
 	}
 
 }

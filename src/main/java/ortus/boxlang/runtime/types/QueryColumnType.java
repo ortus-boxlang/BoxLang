@@ -80,6 +80,7 @@ public enum QueryColumnType {
 			case "struct" :
 			case "sqlxml" :
 				return OTHER;
+			case "long" :
 			case "bigint" :
 				return BIGINT;
 			case "binary" :
@@ -303,7 +304,7 @@ public enum QueryColumnType {
 		}
 		try {
 			return switch ( type ) {
-				case QueryColumnType.INTEGER -> IntegerCaster.cast( value );
+				case QueryColumnType.INTEGER -> IntegerCaster.cast( true, value );
 				case QueryColumnType.BIGINT -> BigIntegerCaster.cast( value );
 				case QueryColumnType.DOUBLE -> DoubleCaster.cast( value );
 				case QueryColumnType.DECIMAL -> DoubleCaster.cast( value );

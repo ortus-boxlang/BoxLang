@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.types.util;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -43,6 +45,7 @@ import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.operators.StringCompare;
 import ortus.boxlang.runtime.scopes.Key;
@@ -105,6 +108,28 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
 public class StructUtil {
 
 	public static final Key scopeAll = Key.of( "all" );
+
+	/**
+	 * Create a linked map from a list of key-value pairs with a specific value type.
+	 * The values must be in pairs: key, value, key, value, etc.
+	 * This allows for proper generic typing without unchecked casts.
+	 *
+	 * @param <V>    The value type
+	 * @param values The key-value pairs
+	 *
+	 * @return A LinkedHashMap with the specified key-value pairs
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static <V> Map<Key, V> linkedMapOf( Object... values ) {
+		if ( values.length % 2 != 0 ) {
+			throw new BoxRuntimeException( "Invalid number of arguments.  Must be an even number." );
+		}
+		Map<Key, V> map = new LinkedHashMap<>();
+		for ( int i = 0; i < values.length; i += 2 ) {
+			map.put( Key.of( values[ i ].toString() ), ( V ) values[ i + 1 ] );
+		}
+		return map;
+	}
 
 	/**
 	 * Method to invoke a function for every item in a struct
@@ -655,14 +680,22 @@ public class StructUtil {
 			        .toArray()
 			);
 		} else {
-			Boolean isDescending = Key.of( sortOrder ).equals( Key.of( "desc" ) );
-			return new Array( struct.entrySet().stream().sorted(
-			    ( a, b ) -> Compare.invoke(
-			        StructUtil.getAtPath( StructCaster.cast( isDescending ? b.getValue() : a.getValue() ), path ),
-			        StructUtil.getAtPath( StructCaster.cast( isDescending ? a.getValue() : b.getValue() ), path ),
-			        sortType.toLowerCase().contains( "nocase" ) ? false : true
-			    )
-			).map( e -> e.getKey().getName() ).toArray()
+			Boolean	isDescending	= Key.of( sortOrder ).equals( Key.of( "desc" ) );
+			boolean	caseSensitive	= !sortType.toLowerCase().contains( "nocase" );
+			return new Array(
+			    struct.entrySet()
+			        .stream()
+			        // Convert the values now so that we don't have repeated getAtPath calls during sorting
+			        .map( entry -> new AbstractMap.SimpleEntry<>( entry.getKey(), StructUtil.getAtPath( StructCaster.cast( entry.getValue() ), path ) ) )
+			        .sorted(
+			            ( a, b ) -> {
+				            Object leftValue = isDescending ? b.getValue() : a.getValue();
+				            Object rightValue = isDescending ? a.getValue() : b.getValue();
+				            Integer result = Compare.attempt( leftValue, rightValue, caseSensitive );
+				            // If comparison fails (returns null), treat values as equal to maintain comparator contract consistency
+				            return result != null ? result : 0;
+			            }
+			        ).map( e -> e.getKey().getName() ).toArray()
 			);
 		}
 
@@ -840,7 +873,7 @@ public class StructUtil {
 		return Stream.concat( regularMatches, arrayMatches );
 	}
 
-	/**
+	/***
 	 * Helper method to find values within arrays/lists in a flattened struct
 	 *
 	 * @param flatMap        the flattened map to search within
@@ -1054,9 +1087,9 @@ public class StructUtil {
 	/**
 	 * Analyzes all keys in the struct to determine which dotted keys should be unflattened.
 	 * Uses heuristics to distinguish between original dotted keys and flattened keys.
-	 * 
+	 *
 	 * @param struct the struct to analyze
-	 * 
+	 *
 	 * @return a set of key names that should be unflattened
 	 */
 	private static Set<String> determineKeysToUnflatten( IStruct struct ) {
@@ -1105,7 +1138,7 @@ public class StructUtil {
 	 *
 	 * @param keyName the dotted key to evaluate
 	 * @param struct  the struct containing all keys
-	 * 
+	 *
 	 * @return true if the key should be unflattened, false if it should be preserved as-is
 	 */
 	/**
@@ -1130,7 +1163,15 @@ public class StructUtil {
 			if ( !destination.containsKey( destinationKey ) ) {
 				destination.put( destinationKey, new Struct() );
 			}
-			destination = destination.getAsStruct( destinationKey );
+			Object tmpDestination = destination.get( destinationKey );
+			if ( tmpDestination instanceof IStruct ) {
+				destination = ( IStruct ) tmpDestination;
+			} else {
+				// If we're trying to unflatting a struct, but the key already exists and is not a struct, throw an error. These are basically invalid env vars.
+				throw new BoxRuntimeException(
+				    String.format( "While importing BOXLANG_XXX env vars, error un-flattening key [%s] because [%s] is not a struct, but instead [%s]",
+				        key.getName(), destinationKey.getName(), TypeUtil.getObjectName( tmpDestination ) ) );
+			}
 		} while ( ( index = keyValue.indexOf( '.' ) ) != -1 );
 		// final put of the last key in the delimited string
 		destination.put( Key.of( keyValue ), value );
@@ -1342,6 +1383,89 @@ public class StructUtil {
 				);
 			}
 		};
+	}
+
+	/**
+	 * Converts any object to a struct
+	 * 
+	 * @param object  The object to convert
+	 * @param context The context to use
+	 */
+	public static IStruct objectToStruct( Object object, IBoxContext context ) {
+		return objectToStruct( object, context, true );
+	}
+
+	/**
+	 * Converts any object to a struct
+	 * 
+	 * @param object        The object to convert
+	 * @param context       The context to use
+	 * @param includeStatic Whether to include static fields and methods if the object is a Class
+	 */
+	public static IStruct objectToStruct( Object object, IBoxContext context, boolean includeStatic ) {
+
+		IStruct thisResult = new Struct();
+
+		if ( object == null ) {
+			return thisResult;
+		}
+
+		DynamicObject dynObject;
+
+		// Get the fields and methods of the class
+		dynObject = DynamicObject.of( object );
+		dynObject.getFieldsAsStream()
+		    .filter( field -> Modifier.isPublic( field.getModifiers() ) && ( includeStatic || !Modifier.isStatic( field.getModifiers() ) ) )
+		    .forEach( field -> {
+			    try {
+				    thisResult.put( field.getName(), dynObject.getField( field.getName() ).orElse( null ) );
+			    } catch ( Exception e ) {
+				    // We're gonna ignore any invalid fields that error out. Some times public fields cannot be accessed
+			    }
+		    } );
+		// also add fields for all public methods starting with "get" that take no arguments
+
+		dynObject.getMethodNames( true ).forEach( methodName -> {
+			Method m;
+			if ( methodName.startsWith( "get" ) && Modifier.isPublic( ( m = dynObject.getMethod( methodName, true ) ).getModifiers() )
+			    && ( includeStatic || !Modifier.isStatic( m.getModifiers() ) )
+			    && m.getParameterCount() == 0 && !methodName.equals( "getClass" ) ) {
+				try {
+					thisResult.put( methodName.substring( 3 ), dynObject.invoke( context, methodName ) );
+				} catch ( Exception e ) {
+					// We're gonna ignore any invalid methods that error out.
+				}
+			}
+		} );
+
+		// Force the overloaded method expecting a class.
+		// Get the static methods and fields of the Class that the Class represents
+		if ( includeStatic && object instanceof Class clazz ) {
+			DynamicObject dynObject2 = DynamicObject.of( clazz );
+			dynObject2.getFieldsAsStream()
+			    // get public, static fields
+			    .filter( field -> Modifier.isPublic( field.getModifiers() ) && Modifier.isStatic( field.getModifiers() ) )
+			    .forEach( field -> {
+				    thisResult.put( field.getName(), dynObject2.getField( field.getName() ).orElse( null ) );
+			    } );
+			// also add fields for all public methods starting with "get" that take no arguments
+			dynObject2.getMethodNames( true ).forEach( methodName -> {
+				if ( methodName.startsWith( "get" ) ) {
+					Method	m			= dynObject2.getMethod( methodName, true );
+					int		modifiers	= m.getModifiers();
+					if ( Modifier.isPublic( modifiers ) && Modifier.isStatic( modifiers ) && m.getParameterCount() == 0 ) {
+						try {
+							thisResult.put( methodName.substring( 3 ),
+							    dynObject2.invokeStatic( context, methodName ) );
+						} catch ( Exception e ) {
+							// We're gonna ignore any invalid methods that error out.
+						}
+					}
+				}
+			} );
+		}
+
+		return thisResult;
 	}
 
 }

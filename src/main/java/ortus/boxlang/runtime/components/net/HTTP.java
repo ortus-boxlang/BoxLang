@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.net.BoxHttpClient;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.HttpService;
@@ -137,7 +138,7 @@ public class HTTP extends Component {
 		    new Attribute( Key.onComplete, "function" ),
 		    // Proxy configuration
 		    new Attribute( Key.proxyServer, "string", Set.of( Validator.requires( Key.proxyPort ) ) ),
-		    new Attribute( Key.proxyPort, "integer", Set.of( Validator.requires( Key.proxyServer ) ) ),
+		    new Attribute( Key.proxyPort, "any", Set.of( Validator.requires( Key.proxyServer ) ) ),
 		    new Attribute( Key.proxyUser, "string", Set.of( Validator.requires( Key.proxyPassword ) ) ),
 		    new Attribute( Key.proxyPassword, "string", Set.of( Validator.requires( Key.proxyUser ) ) ),
 		    // ----------------------------------------------------------------------------
@@ -397,11 +398,18 @@ public class HTTP extends Component {
 			}
 		}
 
+		// Backwards compat to allow empty strings for any proxy setting (which will be ignored)
+		if ( attributes.containsKey( Key.proxyPort ) ) {
+			if ( attributes.get( Key.proxyPort ) instanceof String proxyPortStr && proxyPortStr.isEmpty() ) {
+				attributes.put( Key.proxyPort, 0 );
+			}
+			attributes.put( Key.proxyPort, IntegerCaster.cast( attributes.get( Key.proxyPort ) ) );
+		}
 		// Get a new or existing BoxHttpClient
 		BoxHttpClient	boxHttpClient	= httpService.getOrBuildClient(
 		    attributes.getAsString( Key.httpVersion ),
 		    attributes.getAsBoolean( Key.redirect ),
-		    attributes.getAsInteger( Key.connectionTimeout ),
+		    IntegerCaster.cast( attributes.get( Key.connectionTimeout ) ),
 		    attributes.getAsString( Key.proxyServer ),
 		    attributes.getAsInteger( Key.proxyPort ),
 		    attributes.getAsString( Key.proxyUser ),
@@ -419,7 +427,7 @@ public class HTTP extends Component {
 		    // Special URL Port if any
 		    .port( attributes.getAsInteger( Key.port ) )
 		    // Timeout in seconds
-		    .timeout( attributes.getAsInteger( Key.timeout ) )
+		    .timeout( IntegerCaster.cast( attributes.get( Key.timeout ) ) )
 		    // Charset for the request
 		    .charset( attributes.getAsString( Key.charset ) )
 		    // Whether to throw an error if the HTTP response status code is 400 or greater. Default is true.

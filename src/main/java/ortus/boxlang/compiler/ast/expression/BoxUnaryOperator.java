@@ -70,4 +70,16 @@ public enum BoxUnaryOperator {
 				return true;
 		}
 	}
+
+	/**
+	 * Returns true if this operator always returns a numeric value.
+	 *
+	 * @return true if this is a numeric operator
+	 */
+	public boolean isNumeric() {
+		return switch ( this ) {
+			case Plus, Minus, PrePlusPlus, PreMinusMinus, PostPlusPlus, PostMinusMinus, BitwiseComplement -> true;
+			default -> false;
+		};
+	}
 }

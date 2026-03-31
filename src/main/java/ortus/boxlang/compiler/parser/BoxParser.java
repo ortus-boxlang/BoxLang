@@ -376,6 +376,14 @@ public class BoxParser extends AbstractParser {
 		// Uncomment to use ANTLR GUI tree viewer for debugging
 		// org.antlr.v4.gui.Trees.inspect( parseTree, parser );
 
+		/*
+		 * try {
+		 * Thread.sleep( 1000000 );
+		 * } catch ( InterruptedException e ) {
+		 * // Ignore
+		 * }
+		 */
+
 		// This must run FIRST before resetting the lexer
 		validateParse( lexer );
 
@@ -515,7 +523,15 @@ public class BoxParser extends AbstractParser {
 					extraText.append( token.getText() );
 					token = lexer.nextToken();
 				}
-				errorListener.semanticError( "Extra char(s) [" + extraText + "] at the end of parsing.", position );
+				if ( isLikelyUnparenthesizedObjectDestructuring( position ) ) {
+					errorListener.semanticError(
+					    "Object destructuring assignment must be wrapped in parentheses when not using var/final/static. "
+					        + "Use syntax like ({ a } = source).",
+					    position
+					);
+				} else {
+					errorListener.semanticError( "Extra char(s) [" + extraText + "] at the end of parsing.", position );
+				}
 			}
 		}
 
@@ -547,6 +563,39 @@ public class BoxParser extends AbstractParser {
 				    unclosedBracket.getCharPositionInLine() + 1 ) );
 			}
 		}
+	}
+
+	/**
+	 * isLikelyUnparenthesizedObjectDestructuring.
+	 */
+	private boolean isLikelyUnparenthesizedObjectDestructuring( Position position ) {
+		if ( ! ( sourceToParse instanceof SourceCode sourceCode ) ) {
+			return false;
+		}
+
+		String code = sourceCode.getCode();
+		if ( code == null ) {
+			return false;
+		}
+
+		String[]	lines	= code.split( "\\R", -1 );
+		int			line	= position.getStart().getLine() - 1;
+		int			col		= position.getStart().getColumn();
+		boolean		linePatternMatch;
+		if ( line >= 0 && line < lines.length ) {
+			String	currentLine		= lines[ line ];
+			int		safeCol			= Math.min( Math.max( col, 0 ), currentLine.length() );
+			String	beforeEquals	= currentLine.substring( 0, safeCol ).trim();
+			linePatternMatch = beforeEquals.startsWith( "{" ) && beforeEquals.endsWith( "}" );
+		} else {
+			linePatternMatch = false;
+		}
+
+		String	trimmed				= code.trim();
+		int		firstEquals			= trimmed.indexOf( '=' );
+		int		firstCloseBrace		= trimmed.indexOf( '}' );
+		boolean	globalPatternMatch	= trimmed.startsWith( "{" ) && firstCloseBrace > 0 && firstEquals > firstCloseBrace;
+		return linePatternMatch || globalPatternMatch;
 	}
 
 	private void extractComments( BoxLexerCustom lexer ) throws IOException {
@@ -707,8 +756,8 @@ public class BoxParser extends AbstractParser {
 						statements.add(
 						    new BoxScriptIsland(
 						        scriptNode.getStatements(),
-						        getPosition( script.script() ),
-						        getSourceText( script.script() )
+						        getPosition( script ),
+						        getSourceText( script )
 						    )
 						);
 					}
@@ -884,7 +933,7 @@ public class BoxParser extends AbstractParser {
 			}
 
 			value		= findExprInAnnotations( annotations, "value", true, null, "case", getPosition( node ) );
-			delimiter	= findExprInAnnotations( annotations, "delimiter", false, new BoxStringLiteral( ",", null, null ), "case", getPosition( node ) );
+			delimiter	= findExprInAnnotations( annotations, "delimiters", false, new BoxStringLiteral( ",", null, null ), "case", getPosition( node ) );
 		}
 
 		List<BoxStatement> statements = null;
@@ -1261,7 +1310,7 @@ public class BoxParser extends AbstractParser {
 			return null;
 		}
 		if ( expr instanceof BoxStringLiteral str ) {
-			if ( !allowEmpty && str.getValue().trim().isEmpty() ) {
+			if ( !allowEmpty && str.getValue().isBlank() ) {
 				issues.add( new Issue( "Attribute [" + name + "] cannot be empty", expr.getPosition() ) );
 			}
 			return str.getValue();
@@ -1576,7 +1625,7 @@ public class BoxParser extends AbstractParser {
 		var	cache	= BoxGrammar.getParseCache();
 		int	size	= 0;
 		for ( int d = 0; d < cache.length; d++ ) {
-			size += cache[ d ].getStates().size();
+			size += cache[ d ].states.size();
 		}
 		return size;
 	}

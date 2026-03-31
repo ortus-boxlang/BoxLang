@@ -328,6 +328,38 @@ public class ParseDateTimeTest {
 		assertThat( IntegerCaster.cast( result.format( "n" ) ) ).isEqualTo( 0 );
 	}
 
+	@DisplayName( "It tests the BIF ParseDateTime using traditional european ISO-ish format" )
+	@Test
+	public void testParseDateTimeEuropeanISO() {
+		instance.executeSource(
+		    """
+		    setLocale("de-CH");
+		       result = ParseDateTime( date="1.4.2011", locale="de-CH" );
+		       result2 = ParseDateTime( date="01.04.2011", locale="de-CH" );
+		       """,
+		    context );
+		DateTime result = ( DateTime ) variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( DateTime.class );
+		assertThat( result.toString() ).isInstanceOf( String.class );
+		assertThat( IntegerCaster.cast( result.format( "yyyy" ) ) ).isEqualTo( 2011 );
+		assertThat( IntegerCaster.cast( result.format( "M" ) ) ).isEqualTo( 4 );
+		assertThat( IntegerCaster.cast( result.format( "d" ) ) ).isEqualTo( 1 );
+		assertThat( IntegerCaster.cast( result.format( "H" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "m" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "s" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "n" ) ) ).isEqualTo( 0 );
+		DateTime result2 = ( DateTime ) variables.get( Key.of( "result2" ) );
+		assertThat( result2 ).isInstanceOf( DateTime.class );
+		assertThat( result2.toString() ).isInstanceOf( String.class );
+		assertThat( IntegerCaster.cast( result2.format( "yyyy" ) ) ).isEqualTo( 2011 );
+		assertThat( IntegerCaster.cast( result2.format( "M" ) ) ).isEqualTo( 4 );
+		assertThat( IntegerCaster.cast( result2.format( "d" ) ) ).isEqualTo( 1 );
+		assertThat( IntegerCaster.cast( result2.format( "H" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result2.format( "m" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result2.format( "s" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result2.format( "n" ) ) ).isEqualTo( 0 );
+	}
+
 	@DisplayName( "It tests the BIF ParseDateTime using the common Chrome/Firefox Javascript toString format" )
 	@Test
 	public void testParseJSStringDate() {
@@ -468,6 +500,17 @@ public class ParseDateTimeTest {
 		    context );
 	}
 
+	@DisplayName( "It tests the BIF ParseDateTime with the result format of getHTTPTimeString" )
+	@Test
+	public void testHTTPTimestringFormat() {
+		instance.executeSource(
+		    """
+		    result = ParseDateTime( "Tue, 23 Dec 2025 21:24:20 UTC" );
+		          """,
+		    context );
+		assertThat( variables.get( Key.of( "result" ) ) ).isInstanceOf( DateTime.class );
+	}
+
 	@DisplayName( "It tests the speed of both masked and non-masked parsing" )
 	@Test
 	@Disabled( "Disabled for CI performance. Comment to test locally" )
@@ -486,6 +529,8 @@ public class ParseDateTimeTest {
 			}
 
 			result = [
+				"singleMillisTimestamp" : parseIt( "2025-11-12 00:45:00.0" ),
+				"singleMillisTimestampWithMask" : parseIt( "2025-11-12 00:45:00.0", "yyyy-MM-dd HH:mm:ss.S" ),
 				"isoTimestamp" : parseIt( "2024-04-02T21:01:00Z" ),
 				"isoTimestampWMask" : parseIt( "2024-04-02T21:01:00Z", "yyyy-MM-dd'T'HH:mm:ssXXX" ),
 				"mediumFormatZoned" : parseIt( "Nov 22, 2022 11:01:51 CET" ),

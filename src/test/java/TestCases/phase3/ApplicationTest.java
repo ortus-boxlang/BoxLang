@@ -227,7 +227,7 @@ public class ApplicationTest {
 	@Test
 	public void testJavaSettingsRelativePaths() {
 
-		RequestBoxContext		requestContext	= context.getParentOfType( RequestBoxContext.class );
+		RequestBoxContext		requestContext	= context.getRequestContext();
 		BaseApplicationListener	listener		= requestContext.getApplicationListener();
 
 		// Mock the relative path

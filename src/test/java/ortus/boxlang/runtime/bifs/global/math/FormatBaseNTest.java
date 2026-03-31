@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -97,6 +98,18 @@ public class FormatBaseNTest {
 		      """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "1101010110010101101001101000010010101101110011011111111001110110011" );
+
+		// Test that a long value will pass through
+
+		variables.put( Key.of( "longValue" ), LongCaster.cast( 123123 ) );
+
+		instance.executeSource(
+		    """
+		    	result = longValue.formatBaseN(2);
+		    """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( "11110000011110011" );
 
 	}
 

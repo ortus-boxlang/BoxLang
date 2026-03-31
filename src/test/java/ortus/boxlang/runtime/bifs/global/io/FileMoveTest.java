@@ -35,7 +35,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -112,7 +111,7 @@ public class FileMoveTest {
 	public void testBifSecurity() {
 		variables.put( Key.of( "targetFile" ), Path.of( source ).toAbsolutePath().toString() );
 		variables.put( Key.of( "badFile" ), Path.of( tmpDirectory, "blah.exe" ).toAbsolutePath().toString() );
-		context.getParentOfType( RequestBoxContext.class ).getApplicationListener().updateSettings( Struct.of( "disallowedFileOperationExtensions", "exe" ) );
+		context.getRequestContext().getApplicationListener().updateSettings( Struct.of( "disallowedFileOperationExtensions", "exe" ) );
 
 		try {
 			assertThrows(
@@ -131,7 +130,7 @@ public class FileMoveTest {
 			    """,
 			    context );
 		} finally {
-			context.getParentOfType( RequestBoxContext.class ).getApplicationListener()
+			context.getRequestContext().getApplicationListener()
 			    .updateSettings( Struct.of( "disallowedFileOperationExtensions", new Array() ) );
 		}
 	}

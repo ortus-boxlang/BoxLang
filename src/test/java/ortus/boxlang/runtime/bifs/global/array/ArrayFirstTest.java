@@ -82,4 +82,34 @@ public class ArrayFirstTest {
 		assertThat( variables.get( result ) ).isEqualTo( "a" );
 	}
 
+	@DisplayName( "It can return a default value if no value is found" )
+	@Test
+	public void testDefaultValue() {
+
+		instance.executeSource(
+		    """
+		    arr = [];
+		    result = arr.first( 'default' );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "default" );
+	}
+
+	@DisplayName( "It returns an exception if the array is empty" )
+	@Test
+	public void testException() {
+		instance.executeSource(
+		    """
+		    arr = [];
+		    try {
+		    	result = arr.first();
+		    } catch ( any e ) {
+		    	result = e.message;
+		    }
+		    """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( "Cannot return first element of array; array is empty" );
+	}
+
 }

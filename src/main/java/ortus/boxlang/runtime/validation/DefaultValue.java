@@ -17,8 +17,6 @@
  */
 package ortus.boxlang.runtime.validation;
 
-import ortus.boxlang.runtime.components.Attribute;
-import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -30,9 +28,9 @@ public class DefaultValue implements Validator {
 
 	public void validate( IBoxContext context, Key caller, Validatable record, IStruct records ) {
 		// If there is a default on the record, enforce it
-		if ( record.defaultValue() != null ) {
+		if ( record.hasDefaultValue() ) {
 			if ( records.get( record.name() ) == null ) {
-				records.put( record.name(), record.defaultValue() );
+				records.put( record.name(), record.getDefaultValue( context ) );
 			}
 		}
 	}

@@ -38,6 +38,7 @@ import ortus.boxlang.compiler.ast.statement.BoxBreak;
 import ortus.boxlang.compiler.ast.statement.BoxContinue;
 import ortus.boxlang.compiler.ast.statement.BoxDo;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
+import ortus.boxlang.compiler.ast.statement.BoxEmptyStatement;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.statement.BoxForIn;
 import ortus.boxlang.compiler.ast.statement.BoxForIndex;
@@ -313,7 +314,7 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		if ( tools.isClassOrInterface() && ctx.importStatement() != null ) {
 			var pos = tools.getPosition( ctx );
 			// import statements are not allowed here
-			tools.reportError( "Import statements are not allowed here.  They must be at the top of the class.", pos );
+			tools.reportError( "Import statements are not allowed here.  They must be above the class definition.", pos );
 			new BoxStatementError( pos, tools.getSourceText( ctx ) );
 		}
 
@@ -356,19 +357,34 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 
 	@Override
 	public BoxNode visitFor( ForContext ctx ) {
-		var					pos			= tools.getPosition( ctx );
-		var					src			= tools.getSourceText( ctx );
-		BoxStatement		body		= tools.toStatementOrError( () -> ( BoxStatement ) ctx.statementOrBlock().accept( this ), ctx.statementOrBlock() );
-		String				label		= Optional.ofNullable( ctx.preFix() ).map( preFix -> preFix.identifier().getText() ).orElse( null );
-		List<BoxExpression>	expressions	= Optional.ofNullable( ctx.expression() ).orElse( Collections.emptyList() ).stream()
-		    .map( expression -> expression.accept( expressionVisitor ) ).toList();
+		var				pos		= tools.getPosition( ctx );
+		var				src		= tools.getSourceText( ctx );
+		BoxStatement	body	= tools.toStatementOrError( () -> ( BoxStatement ) ctx.statementOrBlock().accept( this ), ctx.statementOrBlock() );
+		String			label	= Optional.ofNullable( ctx.preFix() ).map( preFix -> preFix.identifier().getText() ).orElse( null );
 
-		// If this is the IN style, then we are guaranteed to have two expressions
+		// If this is the IN style, parse the variable(s)
 		if ( ctx.IN() != null ) {
-			return new BoxForIn( label, expressions.get( 0 ), expressions.get( 1 ), body, ctx.VAR() != null, pos, src );
+			// The grammar is: VAR? expression (COMMA expression)? IN expression
+			// Last expression is always the collection
+			int				numExpressions	= ctx.expression().size();
+			BoxExpression	collection		= ctx.expression( numExpressions - 1 ).accept( expressionVisitor );
+
+			// Check if we have two-variable syntax: expr, expr in collection
+			if ( ctx.COMMA() != null ) {
+				// Two-variable syntax
+				BoxExpression	firstVar	= ctx.expression( 0 ).accept( expressionVisitor );
+				BoxExpression	secondVar	= ctx.expression( 1 ).accept( expressionVisitor );
+				return new BoxForIn( label, firstVar, secondVar, collection, body, ctx.VAR() != null, pos, src );
+			} else {
+				// Single-variable syntax: expression in expression
+				BoxExpression variable = ctx.expression( 0 ).accept( expressionVisitor );
+				return new BoxForIn( label, variable, null, collection, body, ctx.VAR() != null, pos, src );
+			}
 		}
 
 		// Otherwise we have an index with 0 <= n <= 3 expressions
+		List<BoxExpression> expressions = Optional.ofNullable( ctx.expression() ).orElse( Collections.emptyList() ).stream()
+		    .map( expression -> expression.accept( expressionVisitor ) ).toList();
 		return new BoxForIndex(
 		    label,
 		    Optional.ofNullable( ctx.intializer ).map( init -> init.accept( expressionVisitor ) ).orElse( null ),
@@ -515,7 +531,12 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		if ( ctx.emptyStatementBlock() != null ) {
 			return ctx.emptyStatementBlock().accept( this );
 		}
-		return ctx.statement().accept( this );
+		if ( ctx.statement() != null ) {
+			return ctx.statement().accept( this );
+		}
+		// SEMICOLON case
+		// If we get here, there will only be one semicolon, even thoguh the previous alternative may have matched 1 or more.
+		return new BoxEmptyStatement( tools.getPosition( ctx.SEMICOLON( 0 ) ), ctx.SEMICOLON( 0 ).getText() );
 	}
 
 	@Override
@@ -594,8 +615,9 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 	public BoxNode visitAssert( AssertContext ctx ) {
 		var				pos			= tools.getPosition( ctx );
 		var				src			= tools.getSourceText( ctx );
-		BoxExpression	condition	= ctx.expression().accept( expressionVisitor );
-		return new BoxAssert( condition, pos, src );
+		BoxExpression	condition	= ctx.expression( 0 ).accept( expressionVisitor );
+		BoxExpression	message		= ctx.expression().size() > 1 ? ctx.expression( 1 ).accept( expressionVisitor ) : null;
+		return new BoxAssert( condition, message, pos, src );
 	}
 
 	@Override

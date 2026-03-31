@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.bifs.global.temporal;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 
 @BoxBIF( description = "Remove timezone information from a datetime" )
@@ -42,7 +41,7 @@ public class ClearTimezone extends BIF {
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		context.getParentOfType( RequestBoxContext.class ).setTimezone( null );
+		context.getRequestContextOrFail().setTimezone( null );
 		return null;
 	}
 

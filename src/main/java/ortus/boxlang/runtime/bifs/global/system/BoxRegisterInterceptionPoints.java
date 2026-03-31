@@ -22,7 +22,6 @@ import java.util.Set;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.events.InterceptorPool;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -81,7 +80,7 @@ public class BoxRegisterInterceptionPoints extends BIF {
 	protected InterceptorPool getTargetPool( String poolName, IBoxContext context ) {
 		return poolName.equalsIgnoreCase( "global" )
 		    ? runtime.getInterceptorService()
-		    : context.getParentOfType( RequestBoxContext.class ).getApplicationListener().getInterceptorPool();
+		    : context.getRequestContextOrFail().getApplicationListener().getInterceptorPool();
 	}
 
 }

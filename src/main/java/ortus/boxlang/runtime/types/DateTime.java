@@ -35,9 +35,11 @@ import java.time.chrono.ChronoLocalDateTime;
 import java.time.chrono.ChronoZonedDateTime;
 import java.time.chrono.Chronology;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.FormatStyle;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
+import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
@@ -64,6 +66,7 @@ import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
+import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -114,9 +117,28 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	public static final DateTimeFormatter	ISO_OFFSET_DATE_TIME_NOMILLIS_FORMATTER	= DateTimeFormatter.ofPattern( "yyyy-MM-dd'T'HH:mm:ssXXX" );
 	public static final DateTimeFormatter	ISO_DATE_TIME_MILIS_NO_T_FORMATTER		= DateTimeFormatter.ofPattern( "yyyy-MM-dd HH:mm:ss.SSS" );
 	// <a href="https://learn.microsoft.com/en-us/sql/odbc/reference/develop-app/date-time-and-timestamp-literals">The ODBC default format masks</a>
-	public static final DateTimeFormatter	ODBC_DATE_TIME_FORMATTER				= TS_FORMATTER;
-	public static final DateTimeFormatter	ODBC_DATE_FORMATTER						= DateTimeFormatter.ofPattern( "'{d '''yyyy-MM-dd'''}'" );
-	public static final DateTimeFormatter	ODBC_TIME_FORMATTER						= DateTimeFormatter.ofPattern( "'{t '''HH:mm:ss'''}'" );
+	// ODBC Formatters with optional single quotes around the date string
+	public static final DateTimeFormatter	ODBC_DATE_TIME_FORMATTER				= new DateTimeFormatterBuilder()
+	    .appendLiteral( "{ts " )
+	    .optionalStart().appendLiteral( '\'' ).optionalEnd()
+	    .appendPattern( "yyyy-MM-dd HH:mm:ss" )
+	    .optionalStart().appendLiteral( '\'' ).optionalEnd()
+	    .appendLiteral( '}' )
+	    .toFormatter();
+	public static final DateTimeFormatter	ODBC_DATE_FORMATTER						= new DateTimeFormatterBuilder()
+	    .appendLiteral( "{d " )
+	    .optionalStart().appendLiteral( '\'' ).optionalEnd()
+	    .appendPattern( "yyyy-MM-dd" )
+	    .optionalStart().appendLiteral( '\'' ).optionalEnd()
+	    .appendLiteral( '}' )
+	    .toFormatter();
+	public static final DateTimeFormatter	ODBC_TIME_FORMATTER						= new DateTimeFormatterBuilder()
+	    .appendLiteral( "{t " )
+	    .optionalStart().appendLiteral( '\'' ).optionalEnd()
+	    .appendPattern( "HH:mm:ss" )
+	    .optionalStart().appendLiteral( '\'' ).optionalEnd()
+	    .appendLiteral( '}' )
+	    .toFormatter();
 	// The format used by most browsers when calling toString on a Javascript date object - note that this is implementation dependent and may not be reliable
 	public static final DateTimeFormatter	JS_COMMON_TO_STRING_FORMATTER			= DateTimeFormatter
 	    .ofPattern( "EEE MMM dd yyyy HH:mm:ss 'GMT'Z (zzzz)" );
@@ -157,6 +179,8 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	    "ISODateTime", ISO_OFFSET_DATE_TIME_NOMILLIS_FORMATTER,
 	    "ISO8601DateTime", DateTimeFormatter.ISO_OFFSET_DATE_TIME,
 	    "ODBCDateTime", ODBC_DATE_TIME_FORMATTER,
+	    "ODBCDate", ODBC_DATE_FORMATTER,
+	    "ODBCTime", ODBC_TIME_FORMATTER,
 	    "javascriptDateTime", JS_COMMON_TO_STRING_FORMATTER,
 	    "fullDate", DateTimeFormatter.ofLocalizedDate( FormatStyle.FULL ),
 	    "longDate", DateTimeFormatter.ofLocalizedDate( FormatStyle.LONG ),
@@ -346,36 +370,50 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 */
 	public DateTime( String dateTime, String mask, ZoneId timezone ) {
 		ZonedDateTime parsed = null;
-		// try parsing if it fails then our time does not contain timezone info so we fall back to a local zoned date
 		try {
-			parsed = ZonedDateTime.parse( dateTime, getFormatter( mask ) );
-		} catch ( java.time.format.DateTimeParseException e ) {
-			// First fallback - it has a time without a zone
-			try {
-				parsed = ZonedDateTime.of( LocalDateTime.parse( dateTime, getFormatter( mask ) ), timezone );
-				// Second fallback - it is only a date and we need to supply a time
-			} catch ( java.time.format.DateTimeParseException x ) {
-				try {
-					parsed = ZonedDateTime.of( LocalDateTime.of( LocalDate.parse( dateTime, getFormatter( mask ) ), LocalTime.MIN ), timezone );
-					// last fallback - this is a time only value
-				} catch ( java.time.format.DateTimeParseException z ) {
-					parsed = ZonedDateTime.of( LocalDate.MIN, LocalTime.parse( dateTime, getFormatter( mask ) ), timezone );
-				}
-			} catch ( Exception x ) {
+			TemporalAccessor date = getFormatter( mask ).parseBest(
+			    dateTime,
+			    LocalizationUtil.CommonFormatter.determineOptimalTemporalQueries( mask )
+			);
+
+			if ( date instanceof ZonedDateTime castZonedDateTime ) {
+				parsed = castZonedDateTime;
+			} else if ( date instanceof OffsetDateTime castOffsetDateTime ) {
+				parsed = castOffsetDateTime.toZonedDateTime();
+			} else if ( date instanceof LocalDateTime castLocalDateTime ) {
+				// Apply timezone if provided, otherwise use the existing DateTime constructor behavior
+				parsed = timezone != null
+				    ? ZonedDateTime.of( castLocalDateTime, timezone )
+				    : ZonedDateTime.of( castLocalDateTime, ZoneId.systemDefault() );
+			} else if ( date instanceof LocalDate castLocalDate ) {
+				// Apply timezone if provided, otherwise use the existing DateTime constructor behavior
+				parsed = timezone != null
+				    ? ZonedDateTime.of( castLocalDate.atStartOfDay(), timezone )
+				    : ZonedDateTime.of( castLocalDate.atStartOfDay(), ZoneId.systemDefault() );
+			} else if ( date instanceof LocalTime castLocalTime ) {
+				// Apply timezone if provided, otherwise use the existing DateTime constructor behavior
+				parsed = timezone != null
+				    ? ZonedDateTime.of( castLocalTime.atDate( LocalDate.now() ), timezone )
+				    : ZonedDateTime.of( castLocalTime.atDate( LocalDate.now() ), ZoneId.systemDefault() );
+			} else if ( date instanceof Instant castInstant ) {
+				parsed = ZonedDateTime.ofInstant( castInstant, timezone );
+			} else {
 				throw new BoxRuntimeException(
 				    String.format(
-				        "The date time value of [%s] could not be parsed as a valid date or datetime",
-				        dateTime
-				    ), x );
+				        "The TemporalAccessor instanceof [%s] does not have a valid DateTime constructor",
+				        date.getClass().getName()
+				    )
+				);
 			}
-		} catch ( Exception e ) {
+
+		} catch ( java.time.format.DateTimeParseException e ) {
 			throw new BoxRuntimeException(
 			    String.format(
-			        "The date time value of [%s] could not be parsed using the mask [%s]",
-			        dateTime,
-			        mask
-			    ), e );
+			        "The date time value of [%s] could not be parsed as a valid date or datetime",
+			        dateTime
+			    ), dateTime );
 		}
+
 		this.wrapped = parsed;
 	}
 
@@ -501,6 +539,19 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 */
 	private static DateTimeFormatter getFormatter( String pattern ) {
 		return LocalizationUtil.getPatternFormatter( pattern );
+	}
+
+	/**
+	 * Returns a cached DateTime formatter from a pattern passed in.
+	 * Uses LocalizationUtil for memory-sensitive caching with SoftReference.
+	 *
+	 * @param pattern the pattern to use
+	 * @param locale  the locale to use
+	 *
+	 * @return the cached or newly created DateTimeFormatter object with the pattern
+	 */
+	private static DateTimeFormatter getFormatter( String pattern, Locale locale ) {
+		return LocalizationUtil.getPatternFormatter( pattern, locale );
 	}
 
 	/**
@@ -773,6 +824,8 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 * @return the DateTime instance
 	 */
 	public DateTime modify( String unit, Long quantity ) {
+		// We can safely lowercase the unit for comparison
+		unit = unit.toLowerCase();
 		// No modifications are being requested so we can skip out of processing
 		if ( quantity == 0 ) {
 			return this;
@@ -826,6 +879,8 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 			case "l" :
 				wrapped = Long.signum( quantity ) == 1 ? wrapped.plus( quantity, ChronoUnit.MILLIS ) : wrapped.minus( Math.abs( quantity ), ChronoUnit.MILLIS );
 				break;
+			default :
+				throw new BoxRuntimeException( String.format( "The datepart unit of [%s] is not recognized.", unit ) );
 		}
 		return this;
 	}
@@ -1020,22 +1075,100 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	}
 
 	/**
+	 * Compare method with default leniency
+	 *
+	 * @param other The other DateTime object to compare to
+	 *
+	 * @return A -1, 0, or 1 as this object is less than, equal to, or greater than the specified object.
+	 */
+	public int compare( Object other ) {
+		return compare( other, Compare.lenientDateComparison );
+	}
+
+	/**
+	 * Compare method with leniency option
+	 *
+	 * @param other   The other DateTime object to compare to
+	 * @param lenient Whether to perform a lenient comparison (seconds precision) or strict (nanoseconds precision)
+	 *
+	 * @return A -1, 0, or 1 as this object is less than, equal to, or greater than the specified object.
+	 */
+	public int compare( Object other, boolean lenient ) {
+		int comparison = compareTo( other, lenient );
+		return comparison == 0 ? 0 : ( comparison < 0 ? -1 : 1 );
+	}
+
+	/**
+	 * Comparable interface method
+	 *
+	 * @param other The other Object reference to compare to
+	 *
+	 * @return The comparison result which adheres to the ChronoZonedDateTime compareTo contract
+	 */
+	public int compareTo( Comparable<?> other ) {
+		boolean isLenientComparison = Compare.lenientDateComparison;
+		return compareTo( other, isLenientComparison );
+	}
+
+	/**
 	 * Comparable interface method
 	 *
 	 * @param other The other DateTime object to compare to
 	 *
-	 * @return The comparison result: -1 if less, 0 if equal, 1 if greater
+	 * @return The comparison result which adheres to the ChronoZonedDateTime compareTo contract
 	 */
 	@Override
 	public int compareTo( ChronoZonedDateTime<?> other ) {
+		boolean isLenientComparison = Compare.lenientDateComparison;
+		return compareTo( other, isLenientComparison );
+	}
+
+	/**
+	 * CompareTo with leniency option
+	 *
+	 * @param other   The other DateTime object to compare to
+	 * @param lenient Whether to perform a lenient comparison (seconds precision) or strict (nanoseconds precision)
+	 *
+	 * @return The comparison result which adheres to the ChronoZonedDateTime compareTo contract
+	 */
+	public int compareTo( Object other, boolean lenient ) {
+		ZonedDateTime localRef = getWrapped();
+		if ( lenient ) {
+			localRef = localRef.truncatedTo( ChronoUnit.SECONDS );
+		}
 		if ( other instanceof DateTime castedDateTime ) {
-			return getWrapped().compareTo( castedDateTime.getWrapped() );
+			ZonedDateTime otherRef = castedDateTime.getWrapped();
+			if ( lenient ) {
+				otherRef = otherRef.withZoneSameInstant( localRef.getZone() ).truncatedTo( ChronoUnit.SECONDS );
+			}
+
+			return localRef.compareTo( otherRef );
 		}
 		if ( other instanceof ZonedDateTime castedDateTime ) {
-			return getWrapped().compareTo( castedDateTime );
+			ZonedDateTime otherRef = castedDateTime;
+			if ( lenient ) {
+				otherRef = otherRef.withZoneSameInstant( localRef.getZone() ).truncatedTo( ChronoUnit.SECONDS );
+			}
+			return localRef.compareTo( otherRef );
 		}
 
-		return getWrapped().compareTo( DateTimeCaster.cast( other, BoxRuntime.getInstance().getRuntimeContext() ).getWrapped() );
+		CastAttempt<DateTime> attempt = DateTimeCaster.attempt( other, BoxRuntime.getInstance().getRuntimeContext() );
+
+		if ( !attempt.wasSuccessful() ) {
+			throw new BoxRuntimeException(
+			    String.format(
+			        "The object of type [%s] could not be cast to a DateTime for comparison.",
+			        other.getClass().getSimpleName()
+			    )
+			);
+		}
+		DateTime		castResult	= attempt.get();
+		ZonedDateTime	otherRef	= castResult.getWrapped();
+		if ( lenient ) {
+			otherRef = otherRef.withZoneSameInstant( localRef.getZone() ).truncatedTo( ChronoUnit.SECONDS );
+		}
+
+		return localRef.compareTo( otherRef );
 	}
 
 	/**
@@ -1093,7 +1226,26 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 
 	@Override
 	public boolean isEqual( ChronoZonedDateTime<?> other ) {
-		return this.wrapped.isEqual( other );
+		boolean isLenientComparison = Compare.lenientDateComparison;
+		return isEqual( other, isLenientComparison );
+	}
+
+	/**
+	 * isEqual with leniency option
+	 *
+	 * @param other   The other DateTime object to compare to
+	 * @param lenient Whether to perform a lenient comparison (seconds precision) or strict (nanoseconds precision)
+	 *
+	 * @return true if the two date times are equal, false otherwise
+	 */
+	public boolean isEqual( ChronoZonedDateTime<?> other, boolean lenient ) {
+		if ( !lenient && other instanceof DateTime castDateTime ) {
+			return this.wrapped.isEqual( castDateTime.getWrapped() );
+		} else if ( !lenient && other instanceof ZonedDateTime castZonedDateTime ) {
+			return this.wrapped.isEqual( castZonedDateTime );
+		} else {
+			return this.compare( other, lenient ) == 0;
+		}
 	}
 
 	@Override

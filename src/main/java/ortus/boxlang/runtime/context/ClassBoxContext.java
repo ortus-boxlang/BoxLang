@@ -159,9 +159,11 @@ public class ClassBoxContext extends BaseBoxContext {
 
 		if ( !isKeyVisibleScope( key ) ) {
 			// In query loop?
-			var querySearch = queryFindNearby( key );
-			if ( querySearch != null ) {
-				return querySearch;
+			if ( !forAssign ) {
+				var querySearch = queryFindNearby( key );
+				if ( querySearch != null ) {
+					return querySearch;
+				}
 			}
 
 			Object result = variablesScope.getRaw( key );

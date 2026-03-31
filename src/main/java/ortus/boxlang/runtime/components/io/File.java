@@ -58,8 +58,6 @@ public class File extends Component {
 		actionsMap.put( Key.move, BoxRuntime.getInstance().getFunctionService().getGlobalFunction( fileMoveKey ) );
 		actionsMap.put( Key.read, BoxRuntime.getInstance().getFunctionService().getGlobalFunction( fileReadKey ) );
 		actionsMap.put( Key.readBinary, BoxRuntime.getInstance().getFunctionService().getGlobalFunction( fileReadBinaryKey ) );
-		actionsMap.put( Key.upload, BoxRuntime.getInstance().getFunctionService().getGlobalFunction( fileUploadKey ) );
-		actionsMap.put( Key.uploadAll, BoxRuntime.getInstance().getFunctionService().getGlobalFunction( fileUploadAllKey ) );
 		actionsMap.put( Key.write, BoxRuntime.getInstance().getFunctionService().getGlobalFunction( fileWriteKey ) );
 	}
 
@@ -80,7 +78,7 @@ public class File extends Component {
 		    new Attribute( Key.file, "string" ),
 		    new Attribute( Key.mode, "string" ),
 		    new Attribute( Key.output, "string" ),
-		    new Attribute( Key.addnewline, "boolean", false ),
+		    new Attribute( Key.addnewline, "boolean" ),
 		    new Attribute( Key.attributes, "string" ),
 		    new Attribute( Key.charset, "string", "utf-8" ),
 		    new Attribute( Key.source, "string" ),
@@ -145,6 +143,7 @@ public class File extends Component {
 
 		if ( variable == null && attributes.containsKey( Key.result ) ) {
 			variable = attributes.getAsString( Key.result );
+			attributes.put( Key.variable, variable );
 		}
 
 		if ( action.equals( Key.write ) ) {
@@ -152,6 +151,7 @@ public class File extends Component {
 			actionsMap.get( Key.write ).invoke( context, attributes, false, fileWriteKey );
 		} else if ( action.equals( Key.append ) ) {
 			attributes.put( Key.data, output );
+			attributes.putIfAbsent( Key.addnewline, true );
 			actionsMap.get( Key.append ).invoke( context, attributes, false, fileAppendKey );
 		} else if ( action.equals( Key.copy ) ) {
 			actionsMap.get( Key.copy ).invoke( context, attributes, false, fileCopyKey );

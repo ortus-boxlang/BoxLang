@@ -641,7 +641,7 @@ public class ClassLocator extends ClassLoader {
 		URL[]				loadPathsUrls	= DynamicClassLoader.inflateClassPaths(
 		    classPaths
 		        .stream()
-		        .map( item -> FileSystemUtil.expandPath( context.getRequestContext(), ( String ) item ).absolutePath().toString() )
+		        .map( item -> FileSystemUtil.expandPath( context, ( String ) item ).absolutePath().toString() )
 		        .collect( BLCollector.toArray() )
 		);
 		String				loaderCacheKey	= EncryptionUtil.hash( Arrays.toString( loadPathsUrls ) );
@@ -804,14 +804,10 @@ public class ClassLocator extends ClassLoader {
 
 		// This builds a unique cache key for the class requested with as much information as possible
 		// To guarantee uniqueness
-		String	cacheKey	= useCaching ? new StringBuilder( context.getApplicationName() )
-		    .append( COLON )
+		String	cacheKey	= useCaching ? new StringBuilder( 100 ).append( context.getApplicationName() )
 		    .append( Objects.hash( imports ) )
-		    .append( COLON )
 		    .append( Objects.hash( context.getConfig().getAsStruct( Key.mappings ) ) )
-		    .append( COLON )
 		    .append( getTemplatePathPrefix( context ) )
-		    .append( COLON )
 		    .append( name )
 		    .toString() : "";
 

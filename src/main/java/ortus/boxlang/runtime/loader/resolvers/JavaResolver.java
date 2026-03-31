@@ -243,9 +243,10 @@ public class JavaResolver extends BaseResolver {
 	 *
 	 * @return The {@link ClassLocation} record wrapped in an optional if found, empty otherwise
 	 */
+	@SuppressWarnings( "null" )
 	public Optional<ClassLocation> findFromSystem( String fullyQualifiedName, List<ImportDefinition> imports, IBoxContext context ) {
 		// Let's see if we get the request box context, so we can get the current request class loader
-		RequestBoxContext	requestContext	= context.getParentOfType( RequestBoxContext.class );
+		RequestBoxContext	requestContext	= context.getRequestContext();
 		DynamicClassLoader	classLoader		= ( requestContext == null ? getSystemClassLoader() : requestContext.getRequestClassLoader() );
 
 		Class<?>			clazz;

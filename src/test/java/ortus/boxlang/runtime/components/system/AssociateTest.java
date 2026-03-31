@@ -113,6 +113,28 @@ public class AssociateTest {
 	}
 
 	@Test
+	public void testCanAssociateCustomWithPrefix() {
+
+		instance.executeSource(
+		    """
+		    <cf_OuterTag3>
+		    	<cf_InnerTag3 brad="wood" luis="majano" />
+		    	<cf_InnerTag3 gavin="pickin" jorge="reyes" />
+		    </cf_OuterTag3>
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.get( result ) ).isInstanceOf( Array.class );
+		Array assocttribs = variables.getAsArray( result );
+		assertThat( assocttribs.size() ).isEqualTo( 2 );
+		assertThat( ( ( Struct ) assocttribs.get( 0 ) ).getAsString( Key.of( "brad" ) ) ).isEqualTo( "wood" );
+		assertThat( ( ( Struct ) assocttribs.get( 0 ) ).getAsString( Key.of( "luis" ) ) ).isEqualTo( "majano" );
+		assertThat( ( ( Struct ) assocttribs.get( 1 ) ).getAsString( Key.of( "gavin" ) ) ).isEqualTo( "pickin" );
+		assertThat( ( ( Struct ) assocttribs.get( 1 ) ).getAsString( Key.of( "jorge" ) ) ).isEqualTo( "reyes" );
+
+	}
+
+	@Test
 	public void testComponentsInRightOrder() {
 
 		instance.executeSource(

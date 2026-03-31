@@ -81,8 +81,9 @@ public class QueryNew extends BIF {
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object	rowData		= arguments.get( Key.rowData );
-		Object	columnList	= arguments.get( Key.columnList );
+		Object	rowData			= arguments.get( Key.rowData );
+		Object	columnList		= arguments.get( Key.columnList );
+		String	columnTypeList	= arguments.getAsString( Key.columnTypeList );
 		Array	columnNames;
 
 		// Build out Column Names
@@ -96,7 +97,7 @@ public class QueryNew extends BIF {
 			);
 		}
 		// If it's an array, then it's data
-		else if ( columnList instanceof Array castedRowData ) {
+		else if ( columnList instanceof Array castedRowData && columnTypeList.isEmpty() && rowData == null ) {
 			rowData		= castedRowData;
 			columnNames	= new Array();
 			if ( !castedRowData.isEmpty() ) {
@@ -107,13 +108,15 @@ public class QueryNew extends BIF {
 					castedRowData.stream().map( StringCaster::cast ).forEach( columnNames::add );
 				}
 			}
+		} else if ( columnList instanceof Array castedRowData ) {
+			columnNames = castedRowData;
 		} else {
 			throw new BoxRuntimeException( "The [columnList] must be a string, or an array of data, or" );
 		}
 
 		// Verify Column Types
 		Array columnTypes = ListUtil
-		    .asList( arguments.getAsString( Key.columnTypeList ), "," )
+		    .asList( columnTypeList, "," )
 		    .stream()
 		    .map( String::valueOf )
 		    .map( String::trim )

@@ -17,10 +17,15 @@
  */
 package ortus.boxlang.runtime.types.meta;
 
+import java.util.List;
+
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Closure;
 import ortus.boxlang.runtime.types.Function;
+import ortus.boxlang.runtime.types.Function.Access;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Lambda;
 import ortus.boxlang.runtime.types.Struct;
@@ -43,11 +48,58 @@ public class FunctionMeta extends BoxMeta<Function> {
 		super();
 		this.target	= target;
 		this.$class	= target.getClass();
+		this.meta	= generateMeta(
+		    target.getClass(),
+		    target.getDocumentation(),
+		    target.getAnnotations(),
+		    target.getName(),
+		    target.getReturnType(),
+		    target.getSourceType(),
+		    target.getAccess(),
+		    target.getArguments(),
+		    target instanceof Closure,
+		    target instanceof Lambda,
+		    Function.canOutput( target.getAnnotations(), target.getSourceType(), target.getDefaultOutput() ),
+		    target.getModifiers()
+		);
+	}
+
+	/**
+	 * Generate metadata for a function
+	 * 
+	 * @param functionClass The function class
+	 * @param documentation The documentation struct
+	 * @param annotations   The annotations struct
+	 * @param name          The function name
+	 * @param returnType    The return type
+	 * @param sourceType    The source type
+	 * @param access        The access level
+	 * @param arguments     The function arguments
+	 * @param isClosure     Whether the function is a closure
+	 * @param isLambda      Whether the function is a lambda
+	 * @param defaultOutput The default output value
+	 * @param modifiers     The function modifiers
+	 *
+	 * @return The metadata as a struct
+	 */
+	public static IStruct generateMeta(
+	    Class<? extends Function> functionClass,
+	    IStruct documentation,
+	    IStruct annotations,
+	    Key name,
+	    String returnType,
+	    BoxSourceType sourceType,
+	    Access access,
+	    Argument[] arguments,
+	    boolean isClosure,
+	    boolean isLambda,
+	    boolean defaultOutput,
+	    List<BoxMethodDeclarationModifier> modifiers ) {
 
 		// prepare args first
-		Object[]	params	= new Object[ target.getArguments().length ];
+		Object[]	params	= new Object[ arguments.length ];
 		int			i		= 0;
-		for ( Argument argument : target.getArguments() ) {
+		for ( Argument argument : arguments ) {
 			params[ i++ ] = Struct.of(
 			    Key._NAME, argument.name().getName(),
 			    Key.nameAsKey, argument.name(),
@@ -59,18 +111,21 @@ public class FunctionMeta extends BoxMeta<Function> {
 			);
 		}
 		// Assemble the metadata
-		this.meta = Struct.of(
-		    Key._NAME, target.getName().getName(),
-		    Key.nameAsKey, target.getName(),
-		    Key.returnType, target.getReturnType(),
-		    Key.access, target.getAccess().toString().toLowerCase(),
-		    Key.documentation, target.getDocumentation(),
-		    Key.annotations, target.getAnnotations(),
+		IStruct meta = Struct.of(
+		    Key._NAME, name.getName(),
+		    Key.nameAsKey, name,
+		    Key.returnType, returnType,
+		    Key.access, access.toString().toLowerCase(),
+		    Key.documentation, documentation,
+		    Key.annotations, annotations,
 		    Key.parameters, new UnmodifiableArray( params ),
-		    Key.closure, target instanceof Closure,
-		    Key.lambda, target instanceof Lambda,
-		    Key.output, target.canOutput( null )
+		    Key.closure, isClosure,
+		    Key.lambda, isLambda,
+		    Key.output, defaultOutput,
+		    Key._STATIC, modifiers.contains( BoxMethodDeclarationModifier.STATIC )
 		);
+
+		return meta;
 	}
 
 	/**

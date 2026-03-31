@@ -138,8 +138,8 @@ public class BoxAST extends BIF {
 		String	sourceType	= arguments.getAsString( Key.of( "sourceType" ) );
 
 		// Validate that at least one argument is provided
-		if ( ( source == null || source.trim().isEmpty() ) &&
-		    ( filePath == null || filePath.trim().isEmpty() ) ) {
+		if ( ( source == null || source.isBlank() ) &&
+		    ( filePath == null || filePath.isBlank() ) ) {
 			throw new BoxRuntimeException(
 			    "Either 'source' or 'filepath' argument must be provided to boxAST(). "
 			        + "Please provide BoxLang source code via 'source' or a file path via 'filepath'."
@@ -157,7 +157,7 @@ public class BoxAST extends BIF {
 
 		BoxNode			root			= null;
 		try {
-			if ( source != null && !source.trim().isEmpty() ) {
+			if ( source != null && !source.isBlank() ) {
 				// Parse source string directly with specified source type
 				root = new Parser().parse( source, boxSourceType ).getRoot();
 			} else {

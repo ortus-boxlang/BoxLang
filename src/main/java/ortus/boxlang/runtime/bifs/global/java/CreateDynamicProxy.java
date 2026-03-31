@@ -14,11 +14,12 @@
  */
 package ortus.boxlang.runtime.bifs.global.java;
 
+import java.util.Optional;
+
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -71,7 +72,9 @@ public class CreateDynamicProxy extends BIF {
 		Object			oClass		= arguments.get( Key._CLASS );
 		Object			oInterfaces	= arguments.get( Key.interfaces );
 		ClassLoader		cl			= arguments.getAsAttempt( Key.classLoader, ClassLoader.class ).orElse(
-		    context.getParentOfType( RequestBoxContext.class ).getRequestClassLoader()
+		    Optional.ofNullable( context.getRequestContext() )
+		        .map( rc -> rc.getRequestClassLoader() )
+		        .orElse( BoxRuntime.getInstance().getRuntimeLoader() )
 		);
 		IClassRunnable	classToProxy;
 		Array			interfacesToImplement;

@@ -30,6 +30,9 @@
 	// Which will produce lots of debug output and metrics
 	// Also the debugging error template will be used if turned on
 	"debugMode": false,
+	//This is for adding a path (.bxm) to render a custom global error template for unhandled errors
+	//If empty, default boxlang error page is rendered
+	"globalErrorTemplate": "",
 	// This setting if enabled will remove all the class files from the class generation directory
 	// This is useful for debugging and testing, but not recommended for production
 	"clearClassFilesOnStartup": false,
@@ -44,6 +47,8 @@
 	// Store the compiled class files on disk for reuse between restarts
 	// If disabled, the class files will be stored in memory only and lost on restart
 	"storeClassFilesOnDisk": true,
+	// This enforces argument type checking and return value type checking for UDFs, closures, and lambdas.
+	"enforceUDFTypeChecks": true,
 	// The default timezone for the runtime; defaults to the JVM timezone if empty
 	// Please use the IANA timezone database values
 	"timezone": "",
@@ -65,6 +70,12 @@
 	// or the keyword "memory" to indicate our auto-created cache.
 	// This will apply to ALL applications unless overridden in the Application.cfc
 	"sessionStorage": "memory",
+	// Whether session management is enabled globally. Default is false.
+	// This can be overridden per application in the Application.cfc/Application.bx
+	"sessionManagement": false,
+	// Whether session clustering is enabled. Default is false.
+	// When enabled, sessions can be shared across clustered instances.
+	"sessionCluster": false,
 	// The maximum number of completed threads to track for a single request. Old threads will be flushed out to prevent memory from filling.
 	// This only applies to the "thread" component bx:thread name="mythread" {} which tracks execution status and scopes for the remainder of the request that fired it.
 	// ONLY threads which have been completed will be eligible to be flushed.
@@ -187,7 +198,11 @@
 				"encoder": "text",
 				// Additive logging: true means that this logger will inherit the appenders from the root logger
 				// If false, it will only use the appenders defined in this logger
-				"additive": false
+				"additive": false,
+				// An optional array of Java class or package names whose log events should also be
+				// redirected to this logger's appender at the same log level.
+				// Example: [ "com.zaxxer.hikari", "org.apache.commons.dbcp2" ]
+				"categories": []
 			},
 			// The modules log is used by the module service and records all module activity
 			"modules": {
@@ -256,6 +271,20 @@
 				// Additive logging: true means that this logger will inherit the appenders from the root logger
 				// If false, it will only use the appenders defined in this logger
 				"additive": false
+			},
+			// The blackhole logger silences all log events. Its level is OFF by default, meaning nothing is ever written.
+			// Add Java class or package names to "categories" to suppress noisy third-party libraries.
+			// Example: "categories": [ "com.zaxxer.hikari", "org.springframework" ]
+			"blackhole": {
+				// OFF means no events pass through regardless of appender
+				"level": "OFF",
+				"appender": "file",
+				"appenderArguments": {},
+				"encoder": "text",
+				// Must be false: blackhole does not propagate to root/console
+				"additive": false,
+				// Add class/package names here to silence them
+				"categories": []
 			}
 		}
 	},
@@ -330,6 +359,9 @@
 		// 	  "database": "test"
 		// }
 	},
+	// If enabled, this will treat nested transactional operations as savepoints on the parent transaction.
+	// If disabled, nested transactions will be ignored and all commits and rollbacks will apply to the entire transaction.
+	"enableNestedTransactions": true,
 	// The default return format for class invocations via web runtimes
 	"defaultRemoteMethodReturnFormat": "json",
 	/**

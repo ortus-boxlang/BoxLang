@@ -148,4 +148,37 @@ public class CreateTimeSpanTest {
 		assertEquals( Duration.ofMillis( 500l ), variables.get( Key.of( "result" ) ) );
 	}
 
+	@DisplayName( "It tests the BIF CreateTimeSpan with BigDecimal values" )
+	@Test
+	public void testMathGeneratedBigDecimals() {
+		Duration refDuration = Duration.ofMinutes( 30 );
+		//@formatter:off
+		instance.executeSource(
+		    """
+		    SessionTimeoutSeconds    = 1800;
+			SessionTimeoutDays       = Floor(SessionTimeoutSeconds         / 86400);
+			SessionTimeoutSeconds      =   SessionTimeoutSeconds - (SessionTimeoutDays  * 86400);
+			SessionTimeoutHours       = Floor(SessionTimeoutSeconds         / 3600);
+			SessionTimeoutSeconds      =   SessionTimeoutSeconds - (SessionTimeoutHours  * 3600);
+			SessionTimeoutMinutes      = Floor(SessionTimeoutSeconds         / 60);
+			SessionTimeoutSeconds      =   SessionTimeoutSeconds - (SessionTimeoutMinutes * 60);
+			timeouts = {
+			SessionTimeoutDays    : SessionTimeoutDays,
+			SessionTimeoutHours   : SessionTimeoutHours,
+			SessionTimeoutMinutes : SessionTimeoutMinutes,
+			SessionTimeoutSeconds : SessionTimeoutSeconds
+			};
+			result = CreateTimeSpan (
+				timeouts.SessionTimeoutDays,
+				timeouts.SessionTimeoutHours,
+				timeouts.SessionTimeoutMinutes,
+				timeouts.SessionTimeoutSeconds
+			);
+		    """,
+		    context );
+		//@formatter:on
+		Duration duration = ( Duration ) variables.get( Key.of( "result" ) );
+		assertEquals( refDuration, duration );
+	}
+
 }

@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
 /**
- * This class acts as a wrapper around the target BoxLang scheduler.
+ * This class acts as a wrapper around the a target BoxLang scheduler not JAVA
  * It implements the {@link IScheduler} interface and provides
  * the life-cycle callbacks that are required by the BoxLang
  * scheduler system.

@@ -184,6 +184,21 @@ public class DateAddTest {
 		assertThat( result ).isEqualTo( "2025-01-01T00:00:00.000Z" );
 	}
 
+	@DisplayName( "It tests the BIF DateAdd with incorrect casing on the year" )
+	@Test
+	public void testBIFCaseSensitivity() {
+		instance.executeSource(
+		    """
+		    dateVal = parseDateTime( "2000-01-01T00:00:00Z" );
+		       updatedDate = dateAdd( "YYYY", 1, dateVal );
+		       result = dateTimeFormat( updatedDate, "yyyy-MM-dd'T'HH:mm:ss.SSSX", "UTC" );
+		          """,
+		    context );
+		Object result = variables.get( Key.of( "result" ) );
+		assertThat( result ).isInstanceOf( String.class );
+		assertThat( result ).isEqualTo( "2001-01-01T00:00:00.000Z" );
+	}
+
 	@DisplayName( "It tests the BIF DateAdd various weekend overlaps" )
 	@Test
 	public void testBIFWithPositiveNegativeWeekOverlaps() {

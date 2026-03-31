@@ -83,8 +83,8 @@ public class SessionInvalidateTest {
 	@DisplayName( "It tests onSessionEnd" )
 	@Test
 	public void testOnSessionEnd() {
-		context = new ScriptingRequestBoxContext( instance.getRuntimeContext(),
-		    FileSystemUtil.createFileUri( "src/test/java/ortus/boxlang/runtime/bifs/global/system/testApp/index.bxm" ) );
+		context = new ScriptingRequestBoxContext( instance.getRuntimeContext(), false )
+		    .loadApplicationDescriptor( FileSystemUtil.createFileUri( "src/test/java/ortus/boxlang/runtime/bifs/global/system/testApp/index.bxm" ) );
 		instance.executeSource(
 		    """
 		    	application.brad = "wood";

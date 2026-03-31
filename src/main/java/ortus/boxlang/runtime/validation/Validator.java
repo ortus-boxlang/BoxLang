@@ -19,9 +19,11 @@ package ortus.boxlang.runtime.validation;
 
 import java.util.Set;
 
+import ortus.boxlang.runtime.config.util.ConfigItem;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.validation.dynamic.ConfigSet;
 import ortus.boxlang.runtime.validation.dynamic.Max;
 import ortus.boxlang.runtime.validation.dynamic.MaxLength;
 import ortus.boxlang.runtime.validation.dynamic.Min;
@@ -159,6 +161,17 @@ public interface Validator {
 	 */
 	public static Validator typeOneOf( String... validTypes ) {
 		return new TypeOneOf( Set.of( validTypes ) );
+	}
+
+	/**
+	 * Builder method to create a configSet validator
+	 *
+	 * @param configSet The valid config set
+	 *
+	 * @return The configSet validator
+	 */
+	public static Validator configSet( ConfigItem... configSet ) {
+		return new ConfigSet( Set.of( configSet ) );
 	}
 
 }

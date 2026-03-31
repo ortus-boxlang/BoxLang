@@ -23,8 +23,10 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.junit.Ignore;
 import org.junit.jupiter.api.AfterAll;
@@ -97,6 +99,18 @@ public class GetCanonicalPathTest {
 		    """,
 		    context );
 		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( "C:foo/bar/C:foo/bar/test.txt" );
+	}
+
+	@DisplayName( "It preseves trailing slash on directories" )
+	@Test
+	public void testPreservesTrailingSlashOnDirectories() throws IOException {
+		variables.put( Key.of( "testDir" ), tmpDirectory );
+		instance.executeSource(
+		    """
+		    result = GetCanonicalPath( variables.testDir );
+		    """,
+		    context );
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( Paths.get( tmpDirectory ).toAbsolutePath().toRealPath().toString() + File.separator );
 	}
 
 }

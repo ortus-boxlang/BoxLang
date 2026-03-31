@@ -69,6 +69,7 @@ public class BoxForInTransformer extends AbstractTransformer {
 		String						jisStructName			= "isStruct" + forInCount;
 		String						jCollectionName			= "collection" + forInCount;
 		String						originalQueryIndexName	= "originalQueryLoop" + forInCount;
+		boolean						hasTwoVars				= boxFor.hasTwoVariables();
 
 		BlockStmt					stmt					= new BlockStmt();
 
@@ -90,6 +91,20 @@ public class BoxForInTransformer extends AbstractTransformer {
 		if ( boxFor.getHasVar() ) {
 			modifiers.add( BoxAssignmentModifier.VAR );
 		}
+
+		// Generate different code for single vs two variables
+		if ( hasTwoVars ) {
+			return transformTwoVariables( boxFor, collection, values, modifiers, stmt, context, forInCount );
+		} else {
+			return transformSingleVariable( boxFor, collection, values, modifiers, stmt, context );
+		}
+	}
+
+	/**
+	 * Transform for-in loop with single variable (backward compatible)
+	 */
+	private Node transformSingleVariable( BoxForIn boxFor, Expression collection, Map<String, String> values,
+	    List<BoxAssignmentModifier> modifiers, BlockStmt stmt, TransformerContext context ) {
 		Node loopAssignment = new BoxAssignmentTransformer( ( JavaTranspiler ) transpiler ).transformEquals(
 		    boxFor.getVariable(),
 		    ( Expression ) parseExpression( "${isStructName} ? ${jVarName}.next() : ${jVarName}.next()", values ),
@@ -175,10 +190,153 @@ public class BoxForInTransformer extends AbstractTransformer {
 		tryStmt.setFinallyBlock( new BlockStmt().addStatement( ( Statement ) parseStatement( template3, values ) ) );
 
 		stmt.addStatement( tryStmt );
-		// logger.trace( node.getSourceText() + " -> " + stmt );
-		addIndex( stmt, node );
+		// logger.trace( boxFor.getSourceText() + " -> " + stmt );
+		addIndex( stmt, boxFor );
 		// loop over statements in stmt block statement and add index to each statement (the compiler unwraps the block statement so it gets lost)
-		stmt.getStatements().forEach( s -> addIndex( s, node ) );
+		stmt.getStatements().forEach( s -> addIndex( s, boxFor ) );
+		return stmt;
+	}
+
+	/**
+	 * Transform for-in loop with two variables (item, index) or (key, value)
+	 * For structs: iterate over entrySet() to get key and value
+	 * For arrays/queries: maintain index counter (1-based) alongside item
+	 */
+	private Node transformTwoVariables( BoxForIn boxFor, Expression collection, Map<String, String> values,
+	    List<BoxAssignmentModifier> modifiers, BlockStmt stmt, TransformerContext context, int forInCount ) {
+		String	jIndexName				= "forInIndex" + forInCount;
+		String	jEntryName				= "forInEntry" + forInCount;
+		String	jIteratorName			= "forInIterator" + forInCount;
+		String	jCollectionName			= values.get( "collectionName" );
+		String	jisQueryName			= values.get( "isQueryName" );
+		String	jisStructName			= values.get( "isStructName" );
+		String	originalQueryIndexName	= values.get( "originalQueryIndexName" );
+		String	contextName				= values.get( "contextName" );
+
+		values.put( "indexName", jIndexName );
+		values.put( "entryName", jEntryName );
+		values.put( "iteratorName", jIteratorName );
+
+		// First variable assignment (item/key)
+		Node	firstVarAssignment	= new BoxAssignmentTransformer( ( JavaTranspiler ) transpiler ).transformEquals(
+		    boxFor.getVariable(),
+		    ( Expression ) parseExpression(
+		        "${isStructName} ? ((Key)((Map.Entry) ${entryName}).getKey()).getName() : ${entryName}",
+		        values ),
+		    BoxAssignmentOperator.Equal,
+		    modifiers,
+		    ( boxFor.getHasVar() ? "var " : "" ) + boxFor.getVariable().getSourceText(),
+		    context );
+
+		// Second variable assignment (index/value)
+		Node	secondVarAssignment	= new BoxAssignmentTransformer( ( JavaTranspiler ) transpiler ).transformEquals(
+		    boxFor.getSecondVariable(),
+		    ( Expression ) parseExpression( "${isStructName} ? ((Map.Entry) ${entryName}).getValue() : ${indexName}", values ),
+		    BoxAssignmentOperator.Equal,
+		    modifiers,
+		    ( boxFor.getHasVar() ? "var " : "" ) + boxFor.getSecondVariable().getSourceText(),
+		    context );
+
+		values.put( "firstVarAssignment", firstVarAssignment.toString() );
+		values.put( "secondVarAssignment", secondVarAssignment.toString() );
+
+		// @formatter:off
+		String template1 = """
+			Object ${collectionName} = DynamicObject.unWrap(  );
+			""";
+		String template1a = """
+			Boolean ${isQueryName} = ${collectionName} instanceof Query;
+			""";
+		String template1b = """
+			Boolean ${isStructName} = ${collectionName} instanceof Struct;
+			""";
+		String template1bb = """
+			int ${originalQueryIndexName} = -1;
+			""";
+		String template1c = """
+			if( ${isQueryName} ) {
+				${originalQueryIndexName} = ${contextName}.getQueryRow( (Query) ${collectionName}, -1 );
+				${contextName}.registerQueryLoop( (Query) ${collectionName}, 0 );
+			}
+			""";
+
+		// For two variables, we need different iterator strategies
+		// For structs: use entrySet().iterator() to get Map.Entry objects
+		// For arrays/queries: use regular iterator but track index separately (1-based)
+		String template1d = """
+			Iterator ${iteratorName} = ${isStructName} ? ((IStruct) ${collectionName}).entrySet().iterator() : CollectionCaster.cast( ${collectionName} ).iterator();
+			""";
+
+		String template1dd = """
+			int ${indexName} = 1;
+			""";
+
+		String template1ddd = """
+			Object ${entryName} = null;
+			""";
+
+		// Loop body with both variable assignments
+		String template2a = """
+			while( ${iteratorName}.hasNext() ) {
+				${entryName} = ${iteratorName}.next();
+				${firstVarAssignment};
+				${secondVarAssignment};
+			}
+			""";
+		String template2b = """
+			if( ${isQueryName} ) {
+				${contextName}.incrementQueryLoop( (Query) ${collectionName} );
+			}
+			""";
+		String template3 = """
+			if( ${isQueryName} ) {
+				if ( ${originalQueryIndexName} > -1 ) {
+					${contextName}.registerQueryLoop( (Query) ${collectionName}, ${originalQueryIndexName} );
+				} else {
+					${contextName}.unregisterQueryLoop( (Query) ${collectionName} );
+				}
+			}
+			""";
+		// @formatter:on
+
+		WhileStmt	whileStmt			= ( WhileStmt ) parseStatement( template2a, values );
+		IfStmt		incrementQueryStmt	= ( IfStmt ) parseStatement( template2b, values );
+		Statement	tempStmt			= ( Statement ) parseStatement( template1, values );
+		( ( MethodCallExpr ) ( ( VariableDeclarationExpr ) ( ( ExpressionStmt ) tempStmt ).getExpression() ).getVariable( 0 ).getInitializer().get() )
+		    .addArgument( collection );
+		stmt.addStatement( tempStmt );
+		stmt.addStatement( ( Statement ) parseStatement( template1a, values ) );
+		stmt.addStatement( ( Statement ) parseStatement( template1b, values ) );
+		stmt.addStatement( ( Statement ) parseStatement( template1bb, values ) );
+		stmt.addStatement( ( Statement ) parseStatement( template1c, values ) );
+
+		TryStmt tryStmt = new TryStmt();
+		tryStmt.getTryBlock().addStatement( ( Statement ) parseStatement( template1d, values ) );
+		tryStmt.getTryBlock().addStatement( ( Statement ) parseStatement( template1dd, values ) );
+		tryStmt.getTryBlock().addStatement( ( Statement ) parseStatement( template1ddd, values ) );
+
+		// May be a single statement or a block statement, which is still a single statement :)
+		BlockStmt loopBody = whileStmt.getBody().asBlockStmt();
+		loopBody.addStatement( ( Statement ) transpiler.transform( boxFor.getBody() ) );
+		loopBody.addStatement( incrementQueryStmt );
+
+		// Increment index for non-struct collections (arrays/queries) - must be after incrementQueryLoop
+		Statement incrementIndexStmt = ( Statement ) parseStatement( "if( !${isStructName} ) { ${indexName}++; }", values );
+		loopBody.addStatement( incrementIndexStmt );
+
+		if ( boxFor.getLabel() != null ) {
+			LabeledStmt labeledWhile = new LabeledStmt( boxFor.getLabel().toLowerCase(), whileStmt );
+			tryStmt.getTryBlock().addStatement( labeledWhile );
+		} else {
+			tryStmt.getTryBlock().addStatement( whileStmt );
+		}
+		tryStmt.setFinallyBlock( new BlockStmt().addStatement( ( Statement ) parseStatement( template3, values ) ) );
+
+		stmt.addStatement( tryStmt );
+		// logger.trace( boxFor.getSourceText() + " -> " + stmt );
+		addIndex( stmt, boxFor );
+		// loop over statements in stmt block statement and add index to each statement (the compiler unwraps the block statement so it gets lost)
+		stmt.getStatements().forEach( s -> addIndex( s, boxFor ) );
 		return stmt;
 	}
 }

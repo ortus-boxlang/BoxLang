@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.StaticScope;
 import ortus.boxlang.runtime.scopes.ThisScope;
@@ -37,6 +38,7 @@ import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Property;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 
@@ -93,7 +95,6 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 	/**
 	 * Get the combined metadata for this class and all it's functions
 	 * This follows the format of Lucee and Adobe's "combined" metadata
-	 * TODO: Move this to compat module
 	 *
 	 * @return The metadata as a struct
 	 */
@@ -128,11 +129,46 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 	public void setCanInvokeImplicitAccessor( Boolean canInvokeImplicitAccessor );
 
 	/**
-	 * Get the super class. Null if there is none
+	 * Get the super class definition. Null if there is none
+	 * 
+	 * Deprecated in favor of getBoxSuperClass, which doesn't overlap method names in the JDK to remove ambiguity.
+	 */
+	@Deprecated
+	default DynamicObject getSuperClass() {
+		return getBoxSuperClass();
+	}
+
+	/**
+	 * Get the super class definition. Null if there is none
+	 */
+	default DynamicObject getBoxSuperClass() {
+		return null;
+	}
+
+	/**
+	 * Get the super class instance. Null if there is none
 	 */
 	public IClassRunnable getSuper();
 
 	public boolean isJavaExtends();
+
+	/**
+	 * Is there a final annotation. Cached at compiled time and faster than the annotation map lookup.
+	 * 
+	 * @return Whether this class is final
+	 */
+	default boolean isFinalClass() {
+		return false;
+	}
+
+	/**
+	 * Is there an abstract annotation. Cached at compiled time and faster than the annotation map lookup.
+	 * 
+	 * @return Whether this class is abstract
+	 */
+	default boolean isAbstractClass() {
+		return false;
+	}
 
 	public MethodHandle lookupPrivateMethod( Method method );
 
@@ -170,6 +206,24 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 	public Map<Key, AbstractFunction> getAbstractMethods();
 
 	public Set<Key> getCompileTimeMethodNames();
+
+	/**
+	 * Get compile time methods (legacy - for backwards compatibility)
+	 *
+	 * @return Map of compile time method classes
+	 */
+	default Map<Key, Class<? extends UDF>> getCompileTimeMethods() {
+		return Map.of();
+	}
+
+	/**
+	 * Get UDFs defined in this class
+	 *
+	 * @return Map of UDF instances
+	 */
+	default Map<Key, UDF> getUDFs() {
+		return Map.of();
+	}
 
 	public Map<Key, AbstractFunction> getAllAbstractMethods();
 

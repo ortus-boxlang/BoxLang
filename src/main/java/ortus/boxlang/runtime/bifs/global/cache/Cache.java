@@ -57,6 +57,6 @@ public class Cache extends BIF {
 	 */
 	public ICacheProvider _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Get the requested cache, validator makes sure the cache exists and the name is a key.
-		return cacheService.getCache( arguments.getAsKey( Key.cacheName ) );
+		return context.getApplicationCache( arguments.getAsKey( Key.cacheName ) );
 	}
 }

@@ -71,7 +71,7 @@ public class CreateObjectWebServiceTest {
 		instance.executeSource(
 		    """
 		    ws = createObject( "webservice", "%s" );
-		    result = ws.NumberToWords( 123 );
+		    result = ws.invoke( "NumberToWords", 123 );
 		    """.formatted( numberConversionWSDL ),
 		    context );
 		// @formatter:on
@@ -88,7 +88,7 @@ public class CreateObjectWebServiceTest {
 		instance.executeSource(
 		    """
 		    ws = createObject( "webservice", "%s" );
-		    result = ws.NumberToDollars( 1234.56 );
+		    result = ws.invoke( "NumberToDollars", 1234.56 );
 		    """.formatted( numberConversionWSDL ),
 		    context );
 		// @formatter:on
@@ -110,7 +110,7 @@ public class CreateObjectWebServiceTest {
 		instance.executeSource(
 		    """
 		    ws = createObject( "webservice", "%s" );
-		    result = ws.ListOfContinentsByName();
+		    result = ws.invoke( "ListOfContinentsByName" );
 		    """.formatted( countryInfoWSDL ),
 		    context );
 		// @formatter:on
@@ -146,7 +146,7 @@ public class CreateObjectWebServiceTest {
 		instance.executeSource(
 		    """
 		    ws = createObject( "webservice", "%s" );
-		    result = ws.CountryCurrency( "CA" );
+		    result = ws.invoke( "CountryCurrency", "CA" );
 		    """.formatted( countryInfoWSDL ),
 		    context );
 		// @formatter:on
@@ -162,7 +162,7 @@ public class CreateObjectWebServiceTest {
 		instance.executeSource(
 		    """
 		    ws = createObject( "webservice", "%s" );
-		    result = ws.FullCountryInfo( "GB" );
+		    result = ws.invoke( "FullCountryInfo", "GB" );
 		    """.formatted( countryInfoWSDL ),
 		    context );
 		// @formatter:on
@@ -181,7 +181,7 @@ public class CreateObjectWebServiceTest {
 		instance.executeSource(
 		    """
 		    ws = createObject( "webservice", "%s" );
-		    result = ws.CapitalCity( "FR" );
+		    result = ws.invoke( "CapitalCity", "FR" );
 		    """.formatted( countryInfoWSDL ),
 		    context );
 		// @formatter:on
@@ -200,7 +200,7 @@ public class CreateObjectWebServiceTest {
 		instance.executeSource(
 		    """
 		    ws = createObject( "webservice", "%s" );
-		    result = ws.CelsiusToFahrenheit( 0 );
+		    result = ws.invoke( "CelsiusToFahrenheit", 0 );
 		    """.formatted( tempConvertWSDL ),
 		    context );
 		// @formatter:on
@@ -214,7 +214,7 @@ public class CreateObjectWebServiceTest {
 		instance.executeSource(
 		    """
 		    ws = createObject( "webservice", "%s" );
-		    result = ws.FahrenheitToCelsius( 212 );
+		    result = ws.invoke( "FahrenheitToCelsius", 212 );
 		    """.formatted( tempConvertWSDL ),
 		    context );
 		// @formatter:on
@@ -246,9 +246,9 @@ public class CreateObjectWebServiceTest {
 		instance.executeSource(
 		    """
 		    ws = createObject( "webservice", "%s" );
-		    result1 = ws.CapitalCity( "FR" );
-		    result2 = ws.CapitalCity( "IT" );
-		    result3 = ws.CapitalCity( "ES" );
+		    result1 = ws.invoke( "CapitalCity", "FR" );
+		    result2 = ws.invoke( "CapitalCity", "IT" );
+		    result3 = ws.invoke( "CapitalCity", "ES" );
 		    """.formatted( countryInfoWSDL ),
 		    context );
 		// @formatter:on

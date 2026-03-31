@@ -362,7 +362,7 @@ public class Transaction implements ITransaction {
 	 * Announce a transactional event on BOTH the runtime-level and application-level interceptor pools.
 	 */
 	private void announce( BoxEvent event, IStruct eventData ) {
-		RequestBoxContext requestContext = this.context.getParentOfType( RequestBoxContext.class );
+		RequestBoxContext requestContext = this.context.getRequestContext();
 		if ( requestContext != null ) {
 			requestContext.getApplicationListener()
 			    .getInterceptorPool()

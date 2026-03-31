@@ -1,0 +1,11 @@
+class extends="SuperClassInitParent" {
+
+	function init( required string key ) {
+		this.key = arguments.key;
+	}
+
+	function doChild() {
+		return doParent();
+	}
+
+}

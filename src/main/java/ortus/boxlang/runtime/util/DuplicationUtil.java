@@ -19,10 +19,11 @@ package ortus.boxlang.runtime.util;
 
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
-import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.ClassUtils;
@@ -50,6 +51,9 @@ import ortus.boxlang.runtime.util.conversion.ObjectMarshaller;
  */
 public class DuplicationUtil {
 
+	// ThreadLocal to keep track of seen objects in the current thread
+	private static final ThreadLocal<IdentityHashMap<Object, Object>> visitedObjects = ThreadLocal.withInitial( IdentityHashMap::new );
+
 	/**
 	 * Duplicate an object according to type and deep flag
 	 *
@@ -76,9 +80,17 @@ public class DuplicationUtil {
 	 */
 	public static Object duplicate( Object target, Boolean deep, IBoxContext context ) {
 		target = DynamicObject.unWrap( target );
+
 		if ( target == null ) {
 			return null;
-		} else if ( ClassUtils.isPrimitiveOrWrapper( target.getClass() ) ) {
+		}
+
+		var visited = visitedObjects.get();
+		if ( visited.containsKey( target ) ) {
+			return visited.get( target );
+		}
+
+		if ( ClassUtils.isPrimitiveOrWrapper( target.getClass() ) ) {
 			return target;
 		} else if ( target instanceof String || target instanceof Number || target instanceof Character ) {
 			return target;
@@ -97,7 +109,7 @@ public class DuplicationUtil {
 		} else if ( target instanceof DateTime dateTimeInstance ) {
 			return dateTimeInstance.clone();
 		} else if ( target instanceof Optional optionalInstance ) {
-			return duplicate( optionalInstance.orElse( null ), deep, context );
+			return Optional.ofNullable( duplicate( ( ( Optional<?> ) optionalInstance ).orElse( null ), deep, context ) );
 		} else if ( target instanceof Function ) {
 			// functions should never be duplicated
 			return target;
@@ -125,32 +137,37 @@ public class DuplicationUtil {
 		    | SecurityException e ) {
 			throw new BoxRuntimeException( "An exception occurred while duplicating the class", e );
 		}
+		var visited = visitedObjects.get();
+		visited.put( originalClass, newClass );
+		try {
 
-		// variables scope
-		if ( deep ) {
-			newClass.getVariablesScope().putAll( duplicateStruct( originalClass.getVariablesScope(), deep, context ) );
-		} else {
-			newClass.getVariablesScope().putAll( originalClass.getVariablesScope() );
+			// variables scope
+			if ( deep ) {
+				newClass.getVariablesScope().putAll( duplicateStruct( originalClass.getVariablesScope(), deep, context ) );
+			} else {
+				newClass.getVariablesScope().putAll( originalClass.getVariablesScope() );
+			}
+
+			// this scope
+			if ( deep ) {
+				newClass.getThisScope().putAll( duplicateStruct( originalClass.getThisScope(), deep, context ) );
+			} else {
+				newClass.getThisScope().putAll( originalClass.getThisScope() );
+			}
+
+			// super scope
+			if ( originalClass.getSuper() != null ) {
+				IClassRunnable newSuper = duplicateClass( originalClass.getSuper(), deep, context );
+				newSuper.setChild( newClass );
+				newClass._setSuper( newSuper );
+
+			}
+
+			// interfaces (these are singletons with no instance state, so nothing to really duplicate)
+			newClass.getInterfaces().addAll( originalClass.getInterfaces() );
+		} finally {
+			visited.remove( originalClass );
 		}
-
-		// this scope
-		if ( deep ) {
-			newClass.getThisScope().putAll( duplicateStruct( originalClass.getThisScope(), deep, context ) );
-		} else {
-			newClass.getThisScope().putAll( originalClass.getThisScope() );
-		}
-
-		// super scope
-		if ( originalClass.getSuper() != null ) {
-			IClassRunnable newSuper = duplicateClass( originalClass.getSuper(), deep, context );
-			newSuper.setChild( newClass );
-			newClass._setSuper( newSuper );
-
-		}
-
-		// interfaces (these are singletons with no instance state, so nothing to really duplicate)
-		newClass.getInterfaces().addAll( originalClass.getInterfaces() );
-
 		return newClass;
 	}
 
@@ -182,54 +199,56 @@ public class DuplicationUtil {
 	 * @return A new Struct copy
 	 */
 	public static IStruct duplicateStruct( IStruct target, Boolean deep, IBoxContext context ) {
-		var entries = target.entrySet().stream();
+		var		visited		= visitedObjects.get();
+		IStruct	newStruct	= new Struct( target.getType() );
 
-		if ( target.getType().equals( Struct.TYPES.LINKED ) ) {
-			return new Struct(
-			    target.getType(),
-			    entries.collect(
-			        Collectors.toMap(
-			            Entry::getKey,
-			            entry -> {
-				            Object val = entry.getValue();
-				            // If it's a null value, we need to wrap it, concurrent maps don't accept nulls.
-				            if ( val == null ) {
-					            val = new NullValue();
-				            }
-				            return deep && val instanceof IStruct ? duplicateStruct( StructCaster.cast( val ), deep, context )
-				                : val instanceof Array ? duplicateArray( ArrayCaster.cast( val ), deep, context ) : val;
-			            },
-			            ( existingValue, newValue ) -> existingValue, // Keep the existing value in case of a conflict,
-			            LinkedHashMap<Key, Object>::new
-			        )
-			    )
-			);
-		} else if ( target.getType().equals( Struct.TYPES.SORTED ) ) {
-			return new Struct(
-			    target.getType(),
-			    entries.collect(
-			        Collectors.toMap(
-			            Entry::getKey,
-			            entry -> {
-				            Object val = entry.getValue();
-				            return processStructAssignment( val, deep, context );
-			            },
-			            ( existingValue, newValue ) -> existingValue, // Keep the existing value in case of a conflict,
-			            ConcurrentSkipListMap<Key, Object>::new
-			        )
-			    )
-			);
-		} else {
-			return new Struct(
-			    target.getType(),
-			    entries.collect(
-			        Collectors.toConcurrentMap(
-			            Entry::getKey,
-			            entry -> processStructAssignment( entry.getValue(), deep, context ),
-			            ( existingValue, newValue ) -> existingValue // Keep the existing value in case of a conflict
-			        )
-			    )
-			);
+		visited.put( target, newStruct );
+		try {
+			var entries = target.entrySet().stream();
+
+			if ( target.getType().equals( Struct.TYPES.LINKED ) ) {
+				newStruct.addAll( entries.collect(
+				    Collectors.toMap(
+				        Entry::getKey,
+				        entry -> {
+					        Object val = entry.getValue();
+					        // If it's a null value, we need to wrap it, concurrent maps don't accept nulls.
+					        if ( val == null ) {
+						        val = new NullValue();
+					        }
+					        return deep && val instanceof IStruct ? duplicateStruct( StructCaster.cast( val ), deep, context )
+					            : val instanceof Array ? duplicateArray( ArrayCaster.cast( val ), deep, context ) : val;
+				        },
+				        ( existingValue, newValue ) -> existingValue, // Keep the existing value in case of a conflict,
+				        LinkedHashMap<Key, Object>::new
+				    )
+				) );
+			} else if ( target.getType().equals( Struct.TYPES.SORTED ) ) {
+				newStruct.addAll( entries.collect(
+				    Collectors.toMap(
+				        Entry::getKey,
+				        entry -> {
+					        Object val = entry.getValue();
+					        return processStructAssignment( val, deep, context );
+				        },
+				        ( existingValue, newValue ) -> existingValue, // Keep the existing value in case of a conflict,
+				        ConcurrentSkipListMap<Key, Object>::new
+				    )
+				) );
+			} else {
+				newStruct.addAll( entries.collect(
+				    Collectors.toConcurrentMap(
+				        Entry::getKey,
+				        entry -> processStructAssignment( entry.getValue(), deep, context ),
+				        ( existingValue, newValue ) -> existingValue // Keep the existing value in case of a conflict
+				    )
+				)
+				);
+			}
+			return newStruct;
+
+		} finally {
+			visited.remove( target );
 		}
 	}
 
@@ -277,11 +296,19 @@ public class DuplicationUtil {
 	 * @return A new Array copy
 	 */
 	public static Array duplicateArray( Array target, Boolean deep, IBoxContext context ) {
-		return new Array(
-		    target.intStream()
-		        .mapToObj( idx -> deep ? ( Object ) duplicate( target.get( idx ), deep, context ) : ( Object ) target.get( idx ) )
-		        .toArray()
-		);
+		var	visited		= visitedObjects.get();
+		var	newArray	= new Array();
+		visited.put( target, newArray );
+		try {
+			newArray.addAll(
+			    target.intStream()
+			        .mapToObj( idx -> deep ? ( Object ) duplicate( target.get( idx ), deep, context ) : ( Object ) target.get( idx ) )
+			        .toList()
+			);
+			return newArray;
+		} finally {
+			visited.remove( target );
+		}
 	}
 
 	/**
@@ -293,7 +320,14 @@ public class DuplicationUtil {
 	 * @return A new Query copy
 	 */
 	private static Object duplicateQuery( Query target, Boolean deep, IBoxContext context ) {
-		return target.duplicate( deep, context );
+		Query	newQuery	= new Query();
+		var		visited		= visitedObjects.get();
+		visited.put( target, newQuery );
+		try {
+			return target.duplicate( newQuery, deep, context );
+		} finally {
+			visited.remove( target );
+		}
 	}
 
 }

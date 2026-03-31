@@ -17,11 +17,11 @@ options {
 
 // These facilitate our cache management methods
 @members {
- 
+
  	public static DFA[] getParseCache() {
 		return BoxGrammar._decisionToDFA;
 	}
- 
+
  	public static ATN getStaticATN() {
 		return _ATN;
 	}
@@ -126,7 +126,23 @@ preAnnotation: AT preAnnotationName ( LPAREN annotation (COMMA annotation)* RPAR
 preAnnotationName: identifier ( (MINUS identifier) | (DOT identifier))*
     ;
 
-arrayLiteral: LBRACKET expressionList? RBRACKET
+arrayLiteral: LBRACKET arrayLiteralMembers? RBRACKET
+    ;
+
+/*
+ [foo, bar]
+ [foo, ...rest]
+ */
+arrayLiteralMembers: arrayLiteralMember (COMMA arrayLiteralMember)* COMMA?
+    ;
+
+/*
+ foo
+ ...rest
+ */
+arrayLiteralMember
+    : expression
+    | ELLIPSIS expression
     ;
 
 // foo=bar baz="bum"
@@ -140,7 +156,7 @@ postAnnotation: postAnnotationName ((EQUALSIGN | COLON) attributeSimple)?
 postAnnotationName: identifier ( (MINUS identifier) | (DOT identifier))*
     ;
 
-// This allows [1, 2, 3], "foo", or foo 
+// This allows [1, 2, 3], "foo", or foo
 attributeSimple: annotation | fqn
     ;
 
@@ -183,8 +199,8 @@ emptyStatementBlock: LBRACE RBRACE
 normalStatementBlock: LBRACE (statement | SEMICOLON)* RBRACE
     ;
 
-// This is used only for top level statements, where we're ok consuming an extra semicolon at the end (see below)
-statementOrBlock: emptyStatementBlock | statement SEMICOLON*
+// This is used only for top level statements, where we're ok consuming an extra semicolon at the end (see below).  We also allow an "empty statement" here (just a semicolon).
+statementOrBlock: emptyStatementBlock | statement SEMICOLON* | SEMICOLON
     ;
 
 // This exists basically for anonymous functions who end with a statement or block, but CANNOT consume any trailing seimicolons
@@ -193,6 +209,7 @@ statementOrBlockExpression: emptyStatementBlock | statement
     ;
 
 // Any top-level statement that can be in a block.
+// Don't ever match semi-colons directly here as it will mess up expressions which includes statements-- namely anonymous functions
 statement
     : importStatement
     | function
@@ -249,7 +266,7 @@ componentAttribute: identifier ((EQUALSIGN | COLON) expression)?
 argumentList: argument (COMMA argument)* COMMA?
     ;
 
-argument: (namedArgument | positionalArgument)
+argument: (namedArgument | positionalArgument | spreadArgument)
     ;
 
 /*
@@ -264,6 +281,12 @@ namedArgument: (identifier | stringLiteral) (EQUALSIGN | COLON) expression
 
 // func( foo, bar, baz )
 positionalArgument: expression
+    ;
+
+// Spread an array or struct into function arguments:
+// func( ...myArray )
+// func( ...myStruct )
+spreadArgument: ELLIPSIS expression
     ;
 
 // The generic component syntax won't capture all access expressions so we need this rule too param
@@ -289,11 +312,13 @@ if: IF LPAREN expression RPAREN ifStmt = statementOrBlock (ELSE elseStmt = state
  foo
  in bar ) {}
  or...
+ for( item, index in arr )
+ for( key, value in struct )
  for( var foo in bar ) echo(i)
  */
 for
     : preFix? FOR LPAREN (
-        VAR? expression IN expression
+        VAR? expression (COMMA expression)? IN expression
         | intializer = expression? SEMICOLON condition = expression? SEMICOLON increment = expression?
     ) RPAREN statementOrBlock
     ;
@@ -315,7 +340,8 @@ while: preFix? WHILE LPAREN expression RPAREN statementOrBlock
     ;
 
 // assert isTrue;
-assert: ASSERT expression
+// assert isTrue : "message";
+assert: ASSERT expression ( COLON expression)?
     ;
 
 // break label;
@@ -402,12 +428,74 @@ stringLiteralPart: STRING_LITERAL | HASHHASH
 
 // { foo: "bar", baz = "bum" }
 structExpression
-    : LBRACE structMembers? RBRACE
-    | LBRACKET structMembers RBRACKET
+    : LBRACE structMembersWithShorthand? RBRACE
+    | LBRACKET orderedStructMembers RBRACKET
     | LBRACKET (COLON | EQUALSIGN) RBRACKET
     ;
 
-structMembers: structMember (COMMA structMember)* COMMA?
+/*
+ foo: bar
+ baz
+ ...extra
+ */
+structMembersWithShorthand: structMemberWithShorthandOrSpread (COMMA structMemberWithShorthandOrSpread)* COMMA?
+    ;
+
+/*
+ foo
+ ...extra
+ */
+structMemberWithShorthandOrSpread
+    : structMemberWithShorthand
+    | structSpread
+    ;
+
+/*
+ foo
+ foo : bar
+ */
+structMemberWithShorthand
+    : structMember
+    | identifier
+    ;
+
+/*
+ ...extra
+ */
+structSpread: ELLIPSIS expression
+    ;
+
+// Ordered struct spread support while avoiding ambiguity with array literals:
+// at least one keyed member (foo:bar / foo=bar) must exist in [] structs.
+/*
+ [foo: bar, ...extra]
+ [...first, foo: bar, ...last]
+ */
+orderedStructMembers
+    : orderedStructMembersWithLeadingKey
+    | orderedStructMembersWithLeadingSpread
+    ;
+
+/*
+ [foo: bar, ...extra]
+ */
+orderedStructMembersWithLeadingKey: structMember (COMMA orderedStructMemberOrSpread)* COMMA?
+    ;
+
+/*
+ [...first, ...second, foo: bar, ...tail]
+ */
+orderedStructMembersWithLeadingSpread
+    : structSpread (COMMA structSpread)* COMMA structMember (COMMA orderedStructMemberOrSpread)* COMMA?
+    ;
+
+/*
+ foo: bar
+ ...extra
+ */
+orderedStructMemberOrSpread
+    : structMember
+    | structSpread
     ;
 
 /*
@@ -419,6 +507,100 @@ structMember: structKey (COLON | EQUALSIGN) expression
     ;
 
 structKey: identifier | stringLiteral | INTEGER_LITERAL | ILLEGAL_IDENTIFIER | SWITCH
+    ;
+
+/*
+ var { a } = obj
+ ({ a: variables.a, b: request.foo } = obj)
+ var { important, ...rest } = obj
+ */
+objectDestructuringPattern: LBRACE objectDestructuringMembers? RBRACE
+    ;
+
+/*
+ { a }
+ { a: variables.a, b: request.foo }
+ { a, ...others }
+ */
+objectDestructuringMembers
+    : (objectDestructuringBinding (COMMA objectDestructuringBinding)* (COMMA objectDestructuringRest)? COMMA?)
+    | (objectDestructuringRest COMMA?)
+    ;
+
+/*
+ a
+ a : request.a
+ a = 'foo'
+ a : request.a = 'foo'
+ */
+objectDestructuringBinding
+    : structKey (COLON objectDestructuringValue)? (EQUALSIGN expression)?
+    ;
+
+/*
+ ...rest
+ */
+objectDestructuringRest: ELLIPSIS fqn
+    ;
+
+/*
+ user = { name: 'John', address: { city: 'New York', zip: '10001' } }
+ ({ name, address: { city } } = user)
+ println(name)
+ println(city)
+ */
+objectDestructuringValue: fqn | objectDestructuringPattern
+    ;
+
+/*
+ var [ a, b ] = arr
+ [ variables.a, arguments.b ] = arr
+ var [ first, ...rest ] = arr
+ */
+arrayDestructuringPattern: LBRACKET arrayDestructuringMembers? RBRACKET
+    ;
+
+/*
+ [ a, b, c = 10 ]
+ [ [ x, y ], ...rest ]
+ [ first, ...middle, last ]
+ */
+arrayDestructuringMembers
+    : arrayDestructuringMember (COMMA arrayDestructuringMember)* COMMA?
+    ;
+
+/*
+ a
+ a = 1
+ ...rest
+ */
+arrayDestructuringMember
+    : arrayDestructuringBinding
+    | arrayDestructuringRest
+    ;
+
+/*
+ a
+ variables.a
+ [ nested ]
+ a = 'foo'
+ [ nested ] = []
+ */
+arrayDestructuringBinding
+    : arrayDestructuringValue (EQUALSIGN expression)?
+    ;
+
+/*
+ ...rest
+ */
+arrayDestructuringRest: ELLIPSIS fqn
+    ;
+
+/*
+ user = [ [1, 2], 3 ]
+ [ [x, y], z ] = user
+ */
+arrayDestructuringValue: fqn | arrayDestructuringPattern
     ;
 
 new: NEW preFix? (fqn (AT moduleName)? | stringLiteral) LPAREN argumentList? RPAREN
@@ -472,6 +654,8 @@ el2
     | el2 POWER el2                                                         # exprPower             // foo ^ bar
     | el2 op = (STAR | SLASH | PERCENT | MOD | BACKSLASH) el2               # exprMult              // foo * bar
     | el2 op = (PLUS | MINUS) el2                                           # exprAdd               // foo + bar
+    // 1..5
+    | el2 RANGE el2                                                         # exprRange             // 1..5
     | el2 op = (
         BITWISE_SIGNED_LEFT_SHIFT
         | BITWISE_SIGNED_RIGHT_SHIFT
@@ -480,13 +664,13 @@ el2
     | el2 BITWISE_AND el2 # exprBAnd       // foo b& bar
     | el2 BITWISE_XOR el2 # exprBXor       // foo b^ bar
     | el2 BITWISE_OR el2  # exprBor        // foo |b bar
-    | el2 XOR el2         # exprXor        // foo XOR bar
     | el2 INSTANCEOF el2  # exprInstanceOf // InstanceOf operator
     | el2 AMPERSAND el2   # exprCat        // foo & bar - string concatenation
     // TODO: Maybe need to merge these three sets of ops as they are all given equal precedence in the original grammar
     | el2 binOps el2                   # exprBinary      // foo eqv bar
     | el2 relOps el2                   # exprRelational  // foo > bar
     | el2 (EQ | EQUAL | EQEQ | IS) el2 # exprEqual       // foo == bar
+    | el2 XOR el2                      # exprXor         // foo XOR bar
     | el2 ELVIS el2                    # exprElvis       // Elvis operator
     | el2 CASTAS (type | el2)          # exprCastAs      // CastAs operator
     | el2 DOES NOT CONTAIN el2         # exprNotContains // foo DOES NOT CONTAIN bar
@@ -509,6 +693,10 @@ el2
         | MODEQUAL
         | CONCATEQUAL
     ) expression # exprAssign // foo = bar
+    // ({ a } = foo)
+    | objectDestructuringPattern EQUALSIGN expression # exprDestructuringAssign // ({ a } = foo)
+    // [ a ] = foo
+    | arrayDestructuringPattern EQUALSIGN expression  # exprArrayDestructuringAssign // [ a ] = foo
 
     // Ternary operations are right associative, which means that if they are nested,
     // the rightmost operation is evaluated first.

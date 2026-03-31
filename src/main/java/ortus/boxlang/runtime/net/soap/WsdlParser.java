@@ -18,7 +18,9 @@
 package ortus.boxlang.runtime.net.soap;
 
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,6 +32,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import ortus.boxlang.runtime.net.BoxHttpClient;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -41,9 +44,16 @@ public class WsdlParser {
 	/**
 	 * WSDL namespace constants
 	 */
-	private static final String	WSDL_NS		= "http://schemas.xmlsoap.org/wsdl/";
-	private static final String	SOAP_NS		= "http://schemas.xmlsoap.org/wsdl/soap/";
-	private static final String	SOAP12_NS	= "http://schemas.xmlsoap.org/wsdl/soap12/";
+	private static final String	WSDL_NS								= "http://schemas.xmlsoap.org/wsdl/";
+	private static final String	SOAP_NS								= "http://schemas.xmlsoap.org/wsdl/soap/";
+	private static final String	SOAP12_NS							= "http://schemas.xmlsoap.org/wsdl/soap12/";
+
+	private static final String	XSD_NS								= "http://www.w3.org/2001/XMLSchema";
+	private static final String	DISALLOW_DOCTYPE_DECL_FEATURE		= "http://apache.org/xml/features/disallow-doctype-decl";
+	private static final String	EXTERNAL_GENERAL_ENTITIES_FEATURE	= "http://xml.org/sax/features/external-general-entities";
+	private static final String	EXTERNAL_PARAMETER_ENTITIES_FEATURE	= "http://xml.org/sax/features/external-parameter-entities";
+
+	private static final String	XMLNS_PREFIX						= "xmlns:";
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -64,9 +74,9 @@ public class WsdlParser {
 		try {
 			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 			factory.setNamespaceAware( true );
-			factory.setFeature( "http://apache.org/xml/features/disallow-doctype-decl", true );
-			factory.setFeature( "http://xml.org/sax/features/external-general-entities", false );
-			factory.setFeature( "http://xml.org/sax/features/external-parameter-entities", false );
+			factory.setFeature( DISALLOW_DOCTYPE_DECL_FEATURE, true );
+			factory.setFeature( EXTERNAL_GENERAL_ENTITIES_FEATURE, false );
+			factory.setFeature( EXTERNAL_PARAMETER_ENTITIES_FEATURE, false );
 
 			DocumentBuilder	builder	= factory.newDocumentBuilder();
 			Document		document;
@@ -87,9 +97,17 @@ public class WsdlParser {
 					document = builder.parse( input );
 				}
 			} else {
-				// HTTP/HTTPS URL - use URL.openStream()
-				try ( InputStream input = uri.toURL().openStream() ) {
+				// HTTP/HTTPS URL - use HttpURLConnection with proper User-Agent header
+				URL					url			= uri.toURL();
+				HttpURLConnection	connection	= ( HttpURLConnection ) url.openConnection();
+				connection.setRequestProperty( "User-Agent", BoxHttpClient.DEFAULT_USER_AGENT );
+				connection.setConnectTimeout( BoxHttpClient.DEFAULT_CONNECTION_TIMEOUT * 1000 );
+				connection.setReadTimeout( BoxHttpClient.DEFAULT_READ_TIMEOUT * 1000 );
+
+				try ( InputStream input = connection.getInputStream() ) {
 					document = builder.parse( input );
+				} finally {
+					connection.disconnect();
 				}
 			}
 
@@ -146,8 +164,8 @@ public class WsdlParser {
 		org.w3c.dom.NamedNodeMap attributes = root.getAttributes();
 		for ( int i = 0; i < attributes.getLength(); i++ ) {
 			Node attr = attributes.item( i );
-			if ( attr.getNodeName().startsWith( "xmlns:" ) ) {
-				String prefix = attr.getNodeName().substring( 6 );
+			if ( attr.getNodeName().startsWith( XMLNS_PREFIX ) ) {
+				String prefix = attr.getNodeName().substring( XMLNS_PREFIX.length() );
 				definition.addNamespace( prefix, attr.getNodeValue() );
 			}
 		}
@@ -374,12 +392,12 @@ public class WsdlParser {
 		Element		typesElement	= ( Element ) types.item( 0 );
 
 		// Find schema elements
-		NodeList	schemas			= typesElement.getElementsByTagNameNS( "http://www.w3.org/2001/XMLSchema", "schema" );
+		NodeList	schemas			= typesElement.getElementsByTagNameNS( XSD_NS, "schema" );
 		for ( int i = 0; i < schemas.getLength(); i++ ) {
 			Element		schema		= ( Element ) schemas.item( i );
 
 			// Find the element definition with matching name
-			NodeList	elements	= schema.getElementsByTagNameNS( "http://www.w3.org/2001/XMLSchema", "element" );
+			NodeList	elements	= schema.getElementsByTagNameNS( XSD_NS, "element" );
 			for ( int j = 0; j < elements.getLength(); j++ ) {
 				Element	element	= ( Element ) elements.item( j );
 				String	name	= element.getAttribute( "name" );
@@ -387,13 +405,13 @@ public class WsdlParser {
 				if ( elementName.equals( name ) ) {
 					// Found the element - now extract its children (the actual parameters)
 					// Look for complexType/sequence/element children
-					NodeList complexTypes = element.getElementsByTagNameNS( "http://www.w3.org/2001/XMLSchema", "complexType" );
+					NodeList complexTypes = element.getElementsByTagNameNS( XSD_NS, "complexType" );
 					if ( complexTypes.getLength() > 0 ) {
 						Element		complexType	= ( Element ) complexTypes.item( 0 );
-						NodeList	sequences	= complexType.getElementsByTagNameNS( "http://www.w3.org/2001/XMLSchema", "sequence" );
+						NodeList	sequences	= complexType.getElementsByTagNameNS( XSD_NS, "sequence" );
 						if ( sequences.getLength() > 0 ) {
 							Element		sequence		= ( Element ) sequences.item( 0 );
-							NodeList	paramElements	= sequence.getElementsByTagNameNS( "http://www.w3.org/2001/XMLSchema", "element" );
+							NodeList	paramElements	= sequence.getElementsByTagNameNS( XSD_NS, "element" );
 
 							for ( int k = 0; k < paramElements.getLength(); k++ ) {
 								Element			paramElement	= ( Element ) paramElements.item( k );
@@ -423,7 +441,8 @@ public class WsdlParser {
 	}
 
 	/**
-	 * Find the SOAP action for an operation from the binding section
+	 * Find the SOAP action for an operation from the binding section.
+	 * Supports both standard WSDL SOAP bindings and Axis-style bindings.
 	 *
 	 * @param root          The root element
 	 * @param operationName The operation name
@@ -439,20 +458,51 @@ public class WsdlParser {
 			for ( int i = 0; i < operations.getLength(); i++ ) {
 				Element operationElement = ( Element ) operations.item( i );
 				if ( operationName.equals( operationElement.getAttribute( "name" ) ) ) {
-					// Get SOAP operation (try both SOAP 1.1 and 1.2)
-					NodeList soapOperations = operationElement.getElementsByTagNameNS( SOAP_NS, "operation" );
-					if ( soapOperations.getLength() == 0 ) {
-						soapOperations = operationElement.getElementsByTagNameNS( SOAP12_NS, "operation" );
-					}
-
-					if ( soapOperations.getLength() > 0 ) {
-						Element soapOperation = ( Element ) soapOperations.item( 0 );
-						return soapOperation.getAttribute( "soapAction" );
+					// Try to find SOAP operation element from multiple possible namespaces
+					String soapAction = extractSoapAction( operationElement );
+					if ( soapAction != null ) {
+						return soapAction;
 					}
 				}
 			}
 		}
 		return "";
+	}
+
+	/**
+	 * Extract soapAction from operation element, trying multiple SOAP namespace variants.
+	 * This supports both standard WSDL generators and Axis-style generators.
+	 *
+	 * @param operationElement The operation element from the binding
+	 *
+	 * @return The soapAction value, or null if not found
+	 */
+	private static String extractSoapAction( Element operationElement ) {
+		// Array of namespace URIs to check for SOAP operations
+		String[] soapNamespaces = { SOAP_NS, SOAP12_NS };
+
+		for ( String namespace : soapNamespaces ) {
+			NodeList soapOperations = operationElement.getElementsByTagNameNS( namespace, "operation" );
+			if ( soapOperations.getLength() > 0 ) {
+				Element	soapOperation	= ( Element ) soapOperations.item( 0 );
+				String	soapAction		= soapOperation.getAttribute( "soapAction" );
+				if ( soapAction != null ) {
+					return soapAction; // Return even if empty string - this is valid for Axis
+				}
+			}
+		}
+
+		// Also try looking for wsdlsoap:operation (some Axis generators use this pattern)
+		NodeList wsdlSoapOps = operationElement.getElementsByTagName( "wsdlsoap:operation" );
+		if ( wsdlSoapOps.getLength() > 0 ) {
+			Element	soapOperation	= ( Element ) wsdlSoapOps.item( 0 );
+			String	soapAction		= soapOperation.getAttribute( "soapAction" );
+			if ( soapAction != null ) {
+				return soapAction;
+			}
+		}
+
+		return null;
 	}
 
 	/**

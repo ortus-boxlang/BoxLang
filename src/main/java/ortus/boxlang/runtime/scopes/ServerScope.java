@@ -130,6 +130,7 @@ public class ServerScope extends BaseScope {
 		        "buildDate", versionInfo.get( "buildDate" ),
 		        "boxlangId", versionInfo.get( "boxlangId" ),
 		        "codename", versionInfo.get( "codename" ),
+		        "compiler", runtime.getConfiguration().compiler,
 		        "cliMode", runtime.inCLIMode(),
 		        "debugMode", runtime.inDebugMode(),
 		        "jarMode", runtime.inJarMode(),
@@ -194,7 +195,8 @@ public class ServerScope extends BaseScope {
 		        .toList(),
 		    "totalMemory", javaRuntime.totalMemory(),
 		    "vendor", System.getProperty( "java.vendor", "" ),
-		    "version", System.getProperty( "java.version", "" )
+		    "version", System.getProperty( "java.version", "" ),
+		    "pid", ProcessHandle.current().pid()
 		) );
 
 		/**
@@ -213,6 +215,14 @@ public class ServerScope extends BaseScope {
 			) );
 		}
 
+	}
+
+	/**
+	 * Unlock the server scope to allow modifications to unmodifiable keys.
+	 * This is primarily used for testing purposes.
+	 */
+	public void unLock() {
+		this.initialized = false;
 	}
 
 }

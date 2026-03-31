@@ -44,6 +44,7 @@ import ortus.boxlang.runtime.types.util.TypeUtil;
 @BoxMember( type = BoxLangType.QUERY )
 @BoxMember( type = BoxLangType.DATETIME, name = "len" )
 @BoxMember( type = BoxLangType.DATE, name = "len" )
+@BoxMember( type = BoxLangType.CUSTOM, customType = java.util.Set.class, name = "len" )
 public class Len extends BIF {
 
 	private static Key stringLenKey = Key.of( "StringLen" );
@@ -101,6 +102,11 @@ public class Len extends BIF {
 
 		if ( object instanceof Query q ) {
 			return q.size();
+		}
+
+		// handle Set
+		if ( object instanceof java.util.Set<?> set ) {
+			return set.size();
 		}
 
 		if ( !arguments.getAsKey( __functionName ).equals( stringLenKey ) ) {
