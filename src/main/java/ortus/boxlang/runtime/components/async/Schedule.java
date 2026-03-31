@@ -231,6 +231,20 @@ public class Schedule extends Component {
 				throw new BoxRuntimeException( "Invalid schedule action [" + action + "]" );
 		}
 
+		// After any task-modifying action, ensure the scheduler is started.
+		// - New schedulers: startup() is called here after tasks have been registered, so the
+		//   executor is created with all tasks already in place.
+		// - Already-running schedulers: startupScheduler() is a no-op (guards against double-start).
+		// - Read-only "list" action is excluded to avoid unintended side effects.
+		if ( !action.equals( "list" ) ) {
+			String				schedulerName	= attributes.getAsString( Key.scheduler );
+			SchedulerService	svc				= runtime.getSchedulerService();
+			var					scheduler		= svc.getScheduler( Key.of( schedulerName ) );
+			if ( scheduler != null ) {
+				svc.startupScheduler( scheduler );
+			}
+		}
+
 		return DEFAULT_RETURN;
 	}
 
@@ -491,7 +505,9 @@ public class Schedule extends Component {
 
 	/**
 	 * Get or create a named {@link BaseScheduler}. If the scheduler doesn't exist it is
-	 * registered and started.
+	 * registered but NOT yet started — tasks must be added before startup so the executor
+	 * is created with all tasks already registered. The caller is responsible for invoking
+	 * {@link SchedulerService#startupScheduler} after tasks have been configured.
 	 */
 	public static BaseScheduler getOrCreateScheduler( IBoxContext context, String name ) {
 		SchedulerService	svc				= ortus.boxlang.runtime.BoxRuntime.getInstance().getSchedulerService();
@@ -504,8 +520,9 @@ public class Schedule extends Component {
 			}
 		}
 
+		// Register only — do NOT start. Startup happens after tasks are added (see _invoke post-switch).
 		BaseScheduler scheduler = new BaseScheduler( name, context );
-		svc.registerAndStartScheduler( scheduler, false );
+		svc.registerScheduler( scheduler, false );
 		return scheduler;
 	}
 
