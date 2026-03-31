@@ -903,7 +903,12 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 			synchronized ( wrapped ) {
 				// If the index is larger than the array, pad the array with nulls
 				for ( int i = wrapped.size(); i < index; i++ ) {
-					wrapped.add( null );
+					if ( dimensions > 1 ) {
+						// If this is a multi-dimensional array, seed empty nested arrays in place of nulls
+						wrapped.add( new Array( isSynchronized, dimensions - 1 ) );
+					} else {
+						wrapped.add( null );
+					}
 				}
 			}
 		}
@@ -927,21 +932,28 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 			return getBoxMeta();
 		}
 
-		Integer index = Array.validateAndGetIntForDereference( key, wrapped.size(), safe );
+		Integer index = Array.validateAndGetIntForDereference( key, wrapped.size(), safe || dimensions > 1 );
+
+		// If this is access to a non-existant index on a multi-dimensional array, seed an empty nested array in place
+		if ( dimensions > 1 && index != null && index > 0 && index > wrapped.size() ) {
+			var newVal = new Array( isSynchronized, dimensions - 1 );
+			assign( context, key, newVal );
+			return newVal;
+		}
+
 		// non-existant indexes or keys which could not be turned into an int return null when dereferencing safely
 		if ( safe && ( index == null || Math.abs( index ) > wrapped.size() || index == 0 ) ) {
-			// If this is a safe access to a non-existant index on a multi-dimensional array, seed an empty nested array in place
-			if ( dimensions > 1 && index != null && index > -1 ) {
-				var newVal = new Array( isSynchronized, dimensions - 1 );
-				assign( context, key, newVal );
-				return newVal;
-			}
-			// For 1-dimensional arrays, it's just not found
 			return null;
 		}
+
 		if ( index < 0 ) {
 			return wrapped.get( wrapped.size() + index );
 		}
+
+		if ( index == 0 ) {
+			throw new BoxRuntimeException( "Arrays cannot be accessed by an index of 0." );
+		}
+
 		return wrapped.get( index - 1 );
 	}
 
@@ -1071,9 +1083,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 		// negative indexes are allowed, and offset from the right had side of the array
 
 		if ( index == 0 ) {
-			throw new BoxRuntimeException( String.format(
-			    "Arrays cannot be accessed by an index of 0.", index, size
-			) );
+			throw new BoxRuntimeException( "Arrays cannot be accessed by an index of 0." );
 		}
 
 		// Disallow out of bounds indexes foo[5] or foo[-5]

@@ -183,4 +183,24 @@ public class ArrayNewTest {
 		assertThat( variables.get( Key.of( "r7" ) ) ).isEqualTo( "f" );
 	}
 
+	@DisplayName( "Multi-dimensional arrays initialize sub arrays just by looking for the index" )
+	@Test
+	public void testMultiDimensionalArrayInitialization() {
+
+		instance.executeSource(
+		    """
+		    arr = ArrayNew(2);
+		    result = arr[1]
+		    result2 = arr[2]
+		    result3 = arr;
+		         """,
+		    context );
+		assertThat( variables.get( Key.of( "result" ) ) ).isInstanceOf( Array.class );
+		assertThat( variables.getAsArray( Key.of( "result" ) ) ).isEmpty();
+		assertThat( variables.get( Key.of( "result2" ) ) ).isInstanceOf( Array.class );
+		assertThat( variables.getAsArray( Key.of( "result2" ) ) ).isEmpty();
+		assertThat( variables.get( Key.of( "result3" ) ) ).isInstanceOf( Array.class );
+		assertThat( variables.getAsArray( Key.of( "result3" ) ) ).hasSize( 2 );
+	}
+
 }
