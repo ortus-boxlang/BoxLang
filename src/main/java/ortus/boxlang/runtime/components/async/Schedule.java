@@ -55,7 +55,7 @@ import ortus.boxlang.runtime.validation.Validator;
  * Tasks are persisted to disk at {@code ${boxLangHome}/config/tasks.json} and automatically
  * reloaded when the runtime starts up.
  *
- * @attribute.action       The action to perform: create, update, modify, delete, run, pause, resume, list, pauseall, resumeall.
+ * @attribute.action       The action to perform: create (new task, throws if exists), update/modify (create or overwrite), delete, run, pause, resume, list, pauseall, resumeall.
  *
  * @attribute.task         The name of the task (required for all actions except list/pauseall/resumeall).
  *
@@ -190,7 +190,7 @@ public class Schedule extends Component {
 		String action = attributes.getAsString( Key.action ).toLowerCase();
 
 		// Normalize action aliases
-		if ( action.equals( "create" ) || action.equals( "modify" ) ) {
+		if ( action.equals( "modify" ) ) {
 			action = "update";
 		}
 
@@ -200,6 +200,9 @@ public class Schedule extends Component {
 		}
 
 		switch ( action ) {
+			case "create" :
+				doCreate( context, attributes );
+				break;
 			case "update" :
 				doUpdate( context, attributes );
 				break;
@@ -236,7 +239,25 @@ public class Schedule extends Component {
 	// --------------------------------------------------------------------------
 
 	/**
-	 * Create or update a scheduled task.
+	 * Create a new scheduled task. Throws if a task with the same name already exists in the scheduler.
+	 * Use {@code action="update"} to overwrite an existing task.
+	 */
+	private void doCreate( IBoxContext context, IStruct attributes ) {
+		String			taskName		= attributes.getAsString( Key.task );
+		String			schedulerName	= attributes.getAsString( Key.scheduler );
+		BaseScheduler	scheduler		= getOrCreateScheduler( context, schedulerName );
+
+		if ( scheduler.hasTask( taskName ) ) {
+			throw new BoxRuntimeException(
+			    "Task [" + taskName + "] already exists in scheduler [" + schedulerName + "]. Use action=\"update\" to overwrite it."
+			);
+		}
+
+		doUpdate( context, attributes );
+	}
+
+	/**
+	 * Create or overwrite a scheduled task.
 	 */
 	private void doUpdate( IBoxContext context, IStruct attributes ) {
 		String	taskName		= attributes.getAsString( Key.task );

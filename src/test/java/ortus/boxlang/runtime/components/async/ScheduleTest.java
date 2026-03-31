@@ -247,9 +247,9 @@ public class ScheduleTest {
 	// Action aliases
 	// --------------------------------------------------------------------------
 
-	@DisplayName( "create action is an alias for update" )
+	@DisplayName( "create action registers a new task" )
 	@Test
-	public void testCreateIsAliasForUpdate() {
+	public void testCreateRegistersNewTask() {
 		// @formatter:off
 		instance.executeSource(
 		    """
@@ -261,6 +261,18 @@ public class ScheduleTest {
 
 		BaseScheduler scheduler = ( BaseScheduler ) svc.getScheduler( SCHEDULER_KEY );
 		assertThat( scheduler.hasTask( "createTask" ) ).isTrue();
+	}
+
+	@DisplayName( "create action throws if task already exists" )
+	@Test
+	public void testCreateThrowsIfTaskAlreadyExists() {
+		assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    <bx:schedule action="create" task="dupTask" url="http://localhost/test" interval="120">
+		    <bx:schedule action="create" task="dupTask" url="http://localhost/test" interval="120">
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE
+		) );
 	}
 
 	@DisplayName( "modify action is an alias for update" )
