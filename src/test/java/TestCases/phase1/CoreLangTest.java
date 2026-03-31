@@ -6458,4 +6458,26 @@ public class CoreLangTest {
 		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( false );
 	}
 
+	@DisplayName( "operator precedes dot" )
+	@Test
+	void testOperatorPrecedesDotCF() {
+		instance.executeSource(
+		    """
+		    if ( 5 GTE .75 ) {}
+		                 """,
+		    context, BoxSourceType.CFSCRIPT
+		);
+	}
+
+	@DisplayName( "operator precedes dot" )
+	@Test
+	void testOperatorPrecedesDot() {
+		instance.executeSource(
+		    """
+		    if ( 5 GTE .75 ) {}
+		                 """,
+		    context
+		);
+	}
+
 }
