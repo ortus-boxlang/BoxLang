@@ -443,7 +443,7 @@ public class Schedule extends Component {
 				}
 			}
 		}
-		svc.updateAllTasksPausedState( schedulerName, group, null, true );
+		svc.updateAllTasksPausedState( schedulerName, group, true );
 	}
 
 	/**
@@ -472,7 +472,7 @@ public class Schedule extends Component {
 				scheduler.startupTask( record.name );
 			}
 		}
-		svc.updateAllTasksPausedState( schedulerName, group, null, false );
+		svc.updateAllTasksPausedState( schedulerName, group, false );
 	}
 
 	// --------------------------------------------------------------------------
@@ -786,7 +786,7 @@ public class Schedule extends Component {
 	}
 
 	/**
-	 * Check if a task record should be included in group/mode filtering.
+	 * Check if a task record should be included based on group filtering.
 	 */
 	private boolean shouldIncludeTask( TaskRecord record, String group ) {
 		if ( group != null && !group.isBlank() && !group.equals( record.group ) ) {

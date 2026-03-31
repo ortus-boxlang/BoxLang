@@ -813,10 +813,9 @@ public class SchedulerService extends BaseService {
 	 *
 	 * @param schedulerName The name of the scheduler.
 	 * @param group         Optional group filter; pass null or blank to match all groups.
-	 * @param mode          Reserved for future mode filtering; currently unused.
 	 * @param paused        The new paused state.
 	 */
-	public void updateAllTasksPausedState( String schedulerName, String group, String mode, boolean paused ) {
+	public void updateAllTasksPausedState( String schedulerName, String group, boolean paused ) {
 		synchronized ( tasksFileLock ) {
 			Array tasks = loadTasksFromDisk();
 			for ( Object entry : tasks ) {
