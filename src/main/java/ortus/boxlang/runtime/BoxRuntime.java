@@ -1901,4 +1901,12 @@ public class BoxRuntime implements java.io.Closeable {
 		}
 	}
 
+	/**
+	 * Get the path to the config file used to initialize the runtime
+	 * Null if using defaults
+	 */
+	public String getConfigPath() {
+		return this.configPath;
+	}
+
 }
