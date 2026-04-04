@@ -347,7 +347,7 @@ public class BoxRuntime implements java.io.Closeable {
 			overridesApplied = true;
 			overrideFiles.add( runtimeHomeConfigPath );
 			overrideConfig.addAll( loader.deserializeConfig( runtimeHomeConfigPath ) );
-			this.logger.debug( "+ Loaded configuration overrides from runtime home config file at [{}]", runtimeHomeConfigPath );
+			this.loggingService.getRootLogger().debug( "+ Loaded configuration overrides from runtime home config file at [{}]", runtimeHomeConfigPath );
 
 		}
 
@@ -356,7 +356,7 @@ public class BoxRuntime implements java.io.Closeable {
 			overridesApplied = true;
 			overrideFiles.add( configPath );
 			overrideConfig.addAll( loader.deserializeConfig( configPath ) );
-			this.logger.debug( "+ Loaded configuration overrides from config path at [{}]", configPath );
+			this.loggingService.getRootLogger().debug( "+ Loaded configuration overrides from config path at [{}]", configPath );
 		}
 
 		if ( overridesApplied ) {
