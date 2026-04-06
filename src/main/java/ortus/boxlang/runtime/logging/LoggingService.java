@@ -107,6 +107,7 @@ public class LoggingService {
 	public BoxLangLogger							MODULES_LOGGER		= null;
 	public BoxLangLogger							RUNTIME_LOGGER		= null;
 	public BoxLangLogger							SCHEDULER_LOGGER	= null;
+	public BoxLangLogger							WATCHER_LOGGER		= null;
 	public BoxLangLogger							BLACKHOLE_LOGGER	= null;
 	/**
 	 * The log format for the BoxLang runtime
@@ -412,6 +413,7 @@ public class LoggingService {
 		this.MODULES_LOGGER		= getLogger( "modules" );
 		this.RUNTIME_LOGGER		= getLogger( "runtime" );
 		this.SCHEDULER_LOGGER	= getLogger( "scheduler" );
+		this.WATCHER_LOGGER		= getLogger( "watcher" );
 		this.HTTP_LOGGER		= getLogger( "http" );
 		this.BLACKHOLE_LOGGER	= getLogger( "blackhole" );
 

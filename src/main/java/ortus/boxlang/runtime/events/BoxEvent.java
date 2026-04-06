@@ -177,6 +177,19 @@ public enum BoxEvent {
 	ON_SCHEDULER_REGISTRATION( "onSchedulerRegistration" ),
 
 	/**
+	 * Watcher Service Events
+	 */
+	ON_WATCHER_SERVICE_STARTUP( "onWatcherServiceStartup" ),
+	ON_WATCHER_SERVICE_SHUTDOWN( "onWatcherServiceShutdown" ),
+	ON_ALL_WATCHERS_STARTED( "onAllWatchersStarted" ),
+	ON_WATCHER_REGISTRATION( "onWatcherRegistration" ),
+	ON_WATCHER_REMOVAL( "onWatcherRemoval" ),
+	ON_WATCHER_STARTUP( "onWatcherStartup" ),
+	ON_WATCHER_SHUTDOWN( "onWatcherShutdown" ),
+	ON_WATCHER_RESTART( "onWatcherRestart" ),
+	ON_WATCHER_ERROR( "onWatcherError" ),
+
+	/**
 	 * Object Marshaller Events
 	 */
 	BEFORE_OBJECT_MARSHALL_SERIALIZE( "beforeObjectMarshallSerialize" ),
