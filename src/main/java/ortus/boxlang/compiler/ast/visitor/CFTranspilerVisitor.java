@@ -47,11 +47,13 @@ import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxClosure;
 import ortus.boxlang.compiler.ast.expression.BoxComparisonOperation;
 import ortus.boxlang.compiler.ast.expression.BoxComparisonOperator;
+import ortus.boxlang.compiler.ast.expression.BoxDecimalLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxExpressionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
+import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
@@ -705,6 +707,31 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 				if ( val.equals( "once" ) ) {
 					bsl.setValue( "one" );
 				}
+			}
+		}
+
+		// If second arg (positional) or "mask" arg (named) is a BoxIntegerLiteral or BoxDecimalLiteral, force it to a string literal with the original text
+		// So, 000.000 becomes "000.000" when passed to numberFormat()
+		if ( name.equals( "numberformat" ) ) {
+			BoxArgument arg = null;
+			if ( node.isNamedArgs() ) {
+				arg = node.getArguments().stream()
+				    .filter( a -> a.getName().getAsSimpleValue().toString().equalsIgnoreCase( "mask" ) )
+				    .findFirst()
+				    .orElse( null );
+			} else if ( node.getArguments().size() > 1 ) {
+				arg = node.getArguments().get( 1 );
+			}
+			if ( arg != null && ( arg.getValue() instanceof BoxIntegerLiteral || arg.getValue() instanceof BoxDecimalLiteral ) ) {
+				// Favor original text, as our parser strips leading zeros in the AST
+				String originalText = arg.getValue() instanceof BoxIntegerLiteral ? ( ( BoxIntegerLiteral ) arg.getValue() ).getSourceText()
+				    : ( ( BoxDecimalLiteral ) arg.getValue() ).getSourceText();
+				// If this AST has no source text, fall back on the value
+				if ( originalText == null ) {
+					originalText = arg.getValue() instanceof BoxIntegerLiteral ? ( ( BoxIntegerLiteral ) arg.getValue() ).getValue()
+					    : ( ( BoxDecimalLiteral ) arg.getValue() ).getValue();
+				}
+				arg.setValue( new BoxStringLiteral( originalText, arg.getValue().getPosition(), "\"" + originalText + "\"" ) );
 			}
 		}
 
@@ -1757,4 +1784,5 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		    .map( n -> n instanceof BoxScript || n instanceof BoxScriptIsland )
 		    .orElse( false );
 	}
+
 }

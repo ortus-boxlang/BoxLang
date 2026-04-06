@@ -637,4 +637,15 @@ public class CFTranspilerTest {
 		assertThat( variables.get( result ) ).isEqualTo( "readwritesdfsdf" );
 	}
 
+	@DisplayName( "It formats numbers with a string pattern" )
+	@Test
+	public void testNumberFormatSecondArgAsString() {
+		instance.executeSource(
+		    """
+		    result = numberFormat( 1, 000.000 );
+		             """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "001.000" );
+	}
+
 }
