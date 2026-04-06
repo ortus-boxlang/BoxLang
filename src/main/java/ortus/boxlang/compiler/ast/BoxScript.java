@@ -54,6 +54,10 @@ public class BoxScript extends BoxNode {
 		return boxSourceType;
 	}
 
+	public void setBoxSourceType( BoxSourceType boxSourceType ) {
+		this.boxSourceType = boxSourceType;
+	}
+
 	public void setStatements( List<BoxStatement> statements ) {
 		replaceChildren( this.statements, statements );
 		this.statements = statements;

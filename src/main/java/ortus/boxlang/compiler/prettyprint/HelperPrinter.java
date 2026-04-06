@@ -24,6 +24,7 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxBreak;
@@ -114,7 +115,8 @@ public class HelperPrinter {
 		boolean	lastWasBuffer	= false;
 		visitor.stripBufferLeadingWhitespace = true;
 		for ( var statement : meaningful ) {
-			if ( statement == null ) continue;
+			if ( statement == null )
+				continue;
 			boolean isBuffer = statement instanceof BoxBufferOutput;
 			// Only break before the first BufferOutput in a consecutive run, so that
 			// inline HTML like <p>text #expr#</p> (multiple adjacent BufferOutputs) stays on one line
@@ -136,11 +138,11 @@ public class HelperPrinter {
 	}
 
 	private boolean isWhitespaceOnlyBuffer( BoxStatement statement ) {
-		if ( !( statement instanceof BoxBufferOutput bufOutput ) ) {
+		if ( ! ( statement instanceof BoxBufferOutput bufOutput ) ) {
 			return false;
 		}
 		var expr = bufOutput.getExpression();
-		if ( !( expr instanceof BoxStringLiteral str ) ) {
+		if ( ! ( expr instanceof BoxStringLiteral str ) ) {
 			return false;
 		}
 		return str.getValue().isBlank();
@@ -237,7 +239,8 @@ public class HelperPrinter {
 		if ( visitor.config.getAlignConsecutiveAssignments() && !visitor.isTemplate() ) {
 			for ( var attr : attrs ) {
 				if ( attr.getValue() != null && attr.getKey() != null ) {
-					maxKeyLength = Math.max( maxKeyLength, attr.getKey().getSourceText() != null ? attr.getKey().getSourceText().length() : 0 );
+					String effectiveKey = getEffectiveKeyText( attr.getKey() );
+					maxKeyLength = Math.max( maxKeyLength, effectiveKey != null ? effectiveKey.length() : 0 );
 				}
 			}
 		}
@@ -246,7 +249,7 @@ public class HelperPrinter {
 			for ( var attr : attrs ) {
 				// Use HARD line breaks when forceLineBreaks is true (single_attribute_per_line)
 				contentsDoc.append( forceLineBreaks ? Line.HARD : Line.LINE );
-				String keyText = attr.getKey().getSourceText();
+				String keyText = getEffectiveKeyText( attr.getKey() );
 				if ( keyText != null ) {
 					contentsDoc.append( keyText );
 				} else {
@@ -272,6 +275,24 @@ public class HelperPrinter {
 			attrsDoc.append( attrs.size() > 0 ? Line.HARD : Line.LINE );
 		}
 		currentDoc.append( visitor.popDoc() );
+	}
+
+	/**
+	 * Returns the effective key text for an annotation key node, preferring the current
+	 * AST value (from BoxFQN.getValue()) over the original source text. This correctly
+	 * handles cases where the transpiler has modified the key (e.g. cfsqltype -> sqltype).
+	 *
+	 * @param keyNode The annotation key expression node
+	 *
+	 * @return The effective key text to use for printing, or null if not determinable
+	 */
+	private String getEffectiveKeyText( BoxExpression keyNode ) {
+		if ( keyNode instanceof BoxFQN fqn ) {
+			// BoxFQN.getValue() reflects any transpiler mutations, while getSourceText()
+			// retains the original source. Prefer the current logical value.
+			return fqn.getValue() != null ? fqn.getValue() : fqn.getSourceText();
+		}
+		return keyNode.getSourceText();
 	}
 
 	/**
