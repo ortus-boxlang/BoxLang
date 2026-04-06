@@ -58,9 +58,8 @@ public class FileInfo extends BIF {
 		Object	file		= arguments.get( Key.file );
 		Path	filePath	= null;
 
-		if ( file instanceof File ) {
-			File fileObj = ( File ) file;
-			filePath = fileObj.getPath();
+		if ( file instanceof File castFile ) {
+			filePath = castFile.getPath();
 		} else {
 			filePath = FileSystemUtil.expandPath( context, StringCaster.cast( file ) ).absolutePath();
 		}

@@ -1176,6 +1176,7 @@ public class Configuration implements IConfigSegment {
 		    Key.scheduler, this.scheduler.asStruct(),
 		    Key.timezone, this.timezone,
 		    Key.trustedCache, this.trustedCache,
+		    Key.enableNestedTransactions, this.enableNestedTransactions,
 		    Key.enforceUDFTypeChecks, this.enforceUDFTypeChecks,
 		    Key.storeClassFilesOnDisk, this.storeClassFilesOnDisk,
 		    Key.useHighPrecisionMath, this.useHighPrecisionMath,

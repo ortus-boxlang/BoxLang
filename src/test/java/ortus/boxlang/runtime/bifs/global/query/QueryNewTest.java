@@ -29,6 +29,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -116,6 +117,25 @@ public class QueryNewTest {
 		IStruct row = qry.getRowAsStruct( 0 );
 		assertThat( row.getAsString( Key.of( "col1" ) ) ).isEqualTo( "foo" );
 		assertThat( row.getAsInteger( Key.of( "col2" ) ) ).isEqualTo( 42 );
+	}
+
+	@DisplayName( "It can create new with simple array data using long column type" )
+	@Test
+	public void testCreateNewWithSimpleArrayDataUsingLongColumnType() {
+
+		instance.executeSource(
+		    """
+		       result = queryNew("col1,col2","string, long", [ "foo", 42 ]);
+		    columnList = result.columnList;
+		       """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		assertThat( variables.get( "columnList" ) ).isEqualTo( "col1,col2" );
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.size() ).isEqualTo( 1 );
+		IStruct row = qry.getRowAsStruct( 0 );
+		assertThat( row.getAsString( Key.of( "col1" ) ) ).isEqualTo( "foo" );
+		assertThat( LongCaster.cast( row.get( Key.of( "col2" ) ) ) ).isEqualTo( 42L );
 	}
 
 	@DisplayName( "It can create new with array of names" )
