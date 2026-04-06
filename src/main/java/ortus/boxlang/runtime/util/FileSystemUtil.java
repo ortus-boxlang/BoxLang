@@ -72,6 +72,7 @@ import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.BoxFile;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
@@ -639,10 +640,10 @@ public final class FileSystemUtil {
 			path = pathPath;
 		} else if ( filePath instanceof File filePathFile ) {
 			path = filePathFile.toPath();
-		} else if ( filePath instanceof ortus.boxlang.runtime.types.BoxFile filePathFile ) {
+		} else if ( filePath instanceof BoxFile filePathFile ) {
 			path = filePathFile.getPath();
 		} else {
-			throw new BoxRuntimeException( "The provided filePath argument must be a string, Path, or File instance." );
+			throw new BoxRuntimeException( "The provided filePath argument must be a string, Path, File, or BoxFile instance." );
 		}
 		IStruct infoStruct = new Struct();
 		try {

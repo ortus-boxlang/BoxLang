@@ -24,6 +24,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxFile;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF( description = "Move the file pointer to a specific position" )
 @BoxBIF( alias = "FileSkipBytes" )
@@ -55,9 +56,11 @@ public class FileSeek extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxFile file = arguments.getAsBoxFile( Key.file );
-		// Seek works on any open seekable file; only open as readbinary if not already open
-		if ( file.mode == BoxFile.Mode.NONE ) {
-			file.openAs( BoxFile.Mode.READBINARY );
+		if ( file.implicitlyCast ) {
+			throw new BoxRuntimeException( "fileSeek() requires an existing file object to be passed that was created with fileOpen()." );
+		}
+		if ( !file.seekable ) {
+			throw new BoxRuntimeException( "The provided file does not support seeking." );
 		}
 		try {
 			file.seek( arguments.getAsInteger( Key.position ) );

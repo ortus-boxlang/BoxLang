@@ -203,6 +203,22 @@ public class FileReadTest {
 		assertThat( result ).isInstanceOf( byte[].class );
 	}
 
+	@DisplayName( "It tests the ability to read a text file using a file object" )
+	@Test
+	public void testTextFileReadWithFileObject() {
+		String streamFile = tmpDirectory + "/stream-read.txt";
+		variables.put( Key.of( "testFile" ), Path.of( streamFile ).toAbsolutePath().toString() );
+		instance.executeSource(
+		    """
+		    FileWrite( testFile, "read via file object" );
+		    fileObj = fileOpen( testFile, "read" );
+		    result = fileRead( fileObj );
+		    fileClose( fileObj );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "read via file object" );
+	}
+
 	@DisplayName( "Will correctly detect common cert extensions as text" )
 	@Test
 	public void testCertExtensions() {
@@ -225,6 +241,57 @@ public class FileReadTest {
 		result = variables.get( Key.of( "result" ) );
 		assertTrue( result instanceof String );
 		assertThat( result ).isEqualTo( "-----BEGIN CERTIFICATE-----" );
+	}
+
+	@DisplayName( "It can read remaining content from an open file object" )
+	@Test
+	public void testReadRemainingFromOpenFile() {
+		String streamFile = tmpDirectory + "/stream-remaining.txt";
+		variables.put( Key.of( "testFile" ), Path.of( streamFile ).toAbsolutePath().toString() );
+		instance.executeSource(
+		    """
+		    FileWrite( testFile, "line1\nline2\nline3" );
+		    fileObj = fileOpen( testFile, "read" );
+		    first = fileReadLine( fileObj );
+		    result = fileRead( fileObj );
+		    fileClose( fileObj );
+		    """,
+		    context );
+		assertThat( variables.getAsString( Key.of( "first" ) ) ).isEqualTo( "line1" );
+		assertThat( variables.get( result ) ).isEqualTo( "line2\nline3" );
+	}
+
+	@DisplayName( "It can read entire file content from an open file object at position 0" )
+	@Test
+	public void testReadEntireFileFromOpenObject() {
+		String streamFile = tmpDirectory + "/stream-entire.txt";
+		variables.put( Key.of( "testFile" ), Path.of( streamFile ).toAbsolutePath().toString() );
+		instance.executeSource(
+		    """
+		    FileWrite( testFile, "complete content" );
+		    fileObj = fileOpen( testFile, "read" );
+		    result = fileRead( fileObj );
+		    fileClose( fileObj );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "complete content" );
+	}
+
+	@DisplayName( "It returns empty string when reading from an open file at EOF" )
+	@Test
+	public void testReadFromOpenFileAtEOF() {
+		String streamFile = tmpDirectory + "/stream-eof.txt";
+		variables.put( Key.of( "testFile" ), Path.of( streamFile ).toAbsolutePath().toString() );
+		instance.executeSource(
+		    """
+		    FileWrite( testFile, "short" );
+		    fileObj = fileOpen( testFile, "read" );
+		    discard = fileRead( fileObj );
+		    result = fileRead( fileObj );
+		    fileClose( fileObj );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "" );
 	}
 
 }

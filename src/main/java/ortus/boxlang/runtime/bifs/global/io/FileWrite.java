@@ -43,23 +43,36 @@ public class FileWrite extends BIF {
 	}
 
 	/**
-	 * Writes the contents of a string or binary data to a file
+	 * Writes the contents of a string or binary data to a file.
+	 * <p>
+	 * When called with a <b>file path</b> (string, Path, or File), the file is created/overwritten on disk.
+	 * When called with an <b>open BoxFile object</b> (from {@code fileOpen()}), the data is written through
+	 * the file's existing stream, respecting the current mode (write or append) and position.
+	 * The caller is responsible for closing the file object afterward.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.file The file path or file object
+	 * @argument.file A file path (string, Path, File) to create/overwrite, or an open BoxFile object to write through its stream.
 	 *
-	 * @argument.data The string or binary byte array of the file content
+	 * @argument.data The string or binary byte array of the file content.
 	 *
-	 * @arguments.charset The charset encoding ( ignored for binary data )
+	 * @argument.charset The charset encoding (ignored for binary data). Only applies to path-based writes.
 	 *
-	 * @aguments.createPath [false] ( Boxlang only ) When true will ensure all directories to file destination are created
+	 * @argument.createPath [false] (BoxLang only) When true, ensures all directories to the file destination are created. Only applies to path-based writes.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxFile	file		= arguments.getAsBoxFile( Key.file );
-		String	filePath	= file.filepath;
 		Object	fileContent	= arguments.get( Key.data );
+
+		// Explicit file object — write through the open stream
+		if ( !file.implicitlyCast ) {
+			file.write( fileContent );
+			return null;
+		}
+
+		// Implicit (path) — create/overwrite the file on disk
+		String	filePath	= file.filepath;
 		String	charset		= arguments.getAsString( Key.charset );
 		Boolean	createPath	= arguments.getAsBoolean( Key.createPath );
 

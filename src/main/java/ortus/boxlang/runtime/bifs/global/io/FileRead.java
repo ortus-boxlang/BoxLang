@@ -24,6 +24,7 @@ import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.BoxFile;
 import ortus.boxlang.runtime.types.util.StringUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
@@ -47,27 +48,39 @@ public class FileRead extends BIF {
 	}
 
 	/**
-	 * Reads the contents of a file and returns it as a string or binary object
+	 * Reads the contents of a file and returns it as a string or binary object.
+	 * <p>
+	 * When called with a <b>file path</b> (string, Path, or File), the entire file is read from disk.
+	 * HTTP URLs are also supported as string paths.
+	 * When called with an <b>open BoxFile object</b> (from {@code fileOpen()}), the remaining content
+	 * is read from the current stream position to EOF. For text mode files, returns a String.
+	 * For binary mode files, returns a byte[]. The caller is responsible for closing the file object afterward.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.filepath The path to the file to read.
+	 * @argument.filepath A file path (string, Path, File, or HTTP URL) to read entirely, or an open BoxFile object to read remaining content from.
 	 *
-	 * @argument.charsetOrBufferSize Either the charset to use when reading the file, or the buffer size to use when reading the file. If providing a buffer size, the next argument can be the charset.
+	 * @argument.charsetOrBufferSize Either the charset to use when reading the file, or the buffer size. Only applies to path-based reads.
 	 *
-	 * @argument.charset The explicit charset to use when reading the file.
+	 * @argument.charset The explicit charset to use when reading the file. Only applies to path-based reads.
 	 *
-	 * @argument.buffersize The explicit buffer size to use when reading the file.
+	 * @argument.buffersize The explicit buffer size to use when reading the file. Only applies to path-based reads.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		Object	rawFilePath		= arguments.get( Key.filepath );
+		Key		bifMethodKey	= arguments.getAsKey( BIF.__functionName );
+
+		// Explicit file object — read remaining content from open stream
+		if ( rawFilePath instanceof BoxFile boxFile && !boxFile.implicitlyCast ) {
+			return boxFile.readAll();
+		}
+
+		// Path-based read — determine the file path string
 		String	charsetOrBufferSize	= arguments.getAsString( Key.charsetOrBufferSize );
 		String	charset				= arguments.getAsString( Key.charset );
 		Integer	bufferSize			= arguments.getAsInteger( Key.buffersize );
-		Object	rawFilePath			= arguments.get( Key.filepath );
-		Key		bifMethodKey		= arguments.getAsKey( BIF.__functionName );
 
-		// Determine the file path string - HTTP URLs stay as strings, everything else goes through BoxFile
 		String	filePath;
 		if ( rawFilePath instanceof String str && StringUtil.startsWithIgnoreCase( str, "http" ) ) {
 			filePath = str;

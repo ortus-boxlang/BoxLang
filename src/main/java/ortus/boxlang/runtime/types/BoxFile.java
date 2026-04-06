@@ -42,6 +42,7 @@ import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
@@ -558,6 +559,81 @@ public class BoxFile implements IType, IReferenceable, IBoxBinaryRepresentable {
 			throw new BoxIOException( e );
 		}
 		return this;
+	}
+
+	/**
+	 * Writes data to the file's open stream. Supports both String and byte[] data.
+	 * The file must be opened in a write or append mode.
+	 *
+	 * @param data The data to write — either a String or byte[]
+	 *
+	 * @return This file object
+	 */
+	public BoxFile write( Object data ) {
+		if ( !this.mode.isWriteMode() ) {
+			throw new BoxRuntimeException( "Cannot write to file [" + this.filepath + "] — it is not opened in a write or append mode." );
+		}
+		try {
+			if ( data instanceof byte[] bytes ) {
+				if ( this.byteChannel != null ) {
+					this.byteChannel.write( ByteBuffer.wrap( bytes ) );
+				} else {
+					// No byte channel, need to write through the writer
+					this.writer.write( new String( bytes, Charset.forName( this.charset ) ) );
+					this.writer.flush();
+				}
+			} else {
+				String str = data instanceof String s ? s : StringCaster.cast( data );
+				if ( this.byteChannel != null ) {
+					this.byteChannel.write( ByteBuffer.wrap( str.getBytes( Charset.forName( this.charset ) ) ) );
+				} else if ( this.writer != null ) {
+					this.writer.write( str );
+					this.writer.flush();
+				} else {
+					throw new BoxRuntimeException( "This file object is not writeable. Operation disallowed." );
+				}
+			}
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
+		return this;
+	}
+
+	/**
+	 * Reads remaining content from the file's open read stream, from the current position to EOF.
+	 * For text mode (READ), returns a String.
+	 * For binary mode (READBINARY), returns a byte[].
+	 *
+	 * @return The remaining content as a String or byte[]
+	 */
+	public Object readAll() {
+		if ( !this.mode.isReadMode() ) {
+			throw new BoxRuntimeException( "Cannot read from file [" + this.filepath + "] — it is not opened in a read mode." );
+		}
+		try {
+			if ( this.reader != null ) {
+				StringBuilder	sb	= new StringBuilder();
+				char[]			buf	= new char[ 8192 ];
+				int				numRead;
+				while ( ( numRead = this.reader.read( buf ) ) != -1 ) {
+					sb.append( buf, 0, numRead );
+				}
+				return sb.toString();
+			} else if ( this.byteChannel != null ) {
+				java.io.ByteArrayOutputStream	baos	= new java.io.ByteArrayOutputStream();
+				ByteBuffer						buf		= ByteBuffer.allocate( 8192 );
+				while ( this.byteChannel.read( buf ) != -1 ) {
+					buf.flip();
+					baos.write( buf.array(), 0, buf.limit() );
+					buf.clear();
+				}
+				return baos.toByteArray();
+			} else {
+				throw new BoxRuntimeException( "This file object was not opened in read mode." );
+			}
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
 	}
 
 	/**

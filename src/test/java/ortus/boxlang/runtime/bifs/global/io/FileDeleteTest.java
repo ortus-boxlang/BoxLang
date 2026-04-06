@@ -21,6 +21,7 @@ package ortus.boxlang.runtime.bifs.global.io;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.nio.file.Path;
@@ -37,6 +38,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class FileDeleteTest {
@@ -75,6 +77,57 @@ public class FileDeleteTest {
 		    """,
 		    context );
 		assertFalse( FileSystemUtil.exists( testFile ) );
+	}
+
+	@DisplayName( "It can delete a file using a Java Path object" )
+	@Test
+	public void testFileDeleteWithJavaPath() throws IOException {
+		String testFile = "src/test/resources/tmp/deletable-path.txt";
+		FileSystemUtil.write( testFile, "file delete path test!".getBytes( "UTF-8" ), true );
+		assertTrue( FileSystemUtil.exists( testFile ) );
+		variables.put( Key.of( "testPath" ), Path.of( testFile ).toAbsolutePath() );
+		instance.executeSource(
+		    """
+		    fileDelete( variables.testPath );
+		    """,
+		    context );
+		assertFalse( FileSystemUtil.exists( testFile ) );
+	}
+
+	@DisplayName( "It can delete a file using a Java File object" )
+	@Test
+	public void testFileDeleteWithJavaFile() throws IOException {
+		String testFile = "src/test/resources/tmp/deletable-file.txt";
+		FileSystemUtil.write( testFile, "file delete file test!".getBytes( "UTF-8" ), true );
+		assertTrue( FileSystemUtil.exists( testFile ) );
+		variables.put( Key.of( "testFile" ), Path.of( testFile ).toAbsolutePath().toFile() );
+		instance.executeSource(
+		    """
+		    fileDelete( variables.testFile );
+		    """,
+		    context );
+		assertFalse( FileSystemUtil.exists( testFile ) );
+	}
+
+	@DisplayName( "It rejects an explicit BoxFile object" )
+	@Test
+	public void testFileDeleteRejectsBoxFile() throws IOException {
+		String testFile = "src/test/resources/tmp/deletable-reject.txt";
+		FileSystemUtil.write( testFile, "reject test!".getBytes( "UTF-8" ), true );
+		variables.put( Key.of( "testFile" ), Path.of( testFile ).toAbsolutePath().toString() );
+		assertThrows(
+		    BoxRuntimeException.class,
+		    () -> instance.executeSource(
+		        """
+		        fileObj = fileOpen( testFile, "read" );
+		        try {
+		            fileDelete( fileObj );
+		        } finally {
+		            fileClose( fileObj );
+		        }
+		        """,
+		        context )
+		);
 	}
 
 }

@@ -22,6 +22,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxFile;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF( description = "Check if file pointer is at end of file" )
 
@@ -47,14 +48,14 @@ public class FileIsEOF extends BIF {
 	 * @argument.file The currently open file object
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		BoxFile file = arguments.getAsBoxFile( Key.file ).openAs( BoxFile.Mode.READ );
-		try {
-			return file.isEOF();
-		} finally {
-			if ( file.implicitlyCast ) {
-				file.close();
-			}
+		BoxFile file = arguments.getAsBoxFile( Key.file );
+		if ( file.implicitlyCast ) {
+			throw new BoxRuntimeException( "fileIsEOF() requires an existing file object to be passed that was created with fileOpen()." );
 		}
+		if ( !file.mode.isReadMode() ) {
+			throw new BoxRuntimeException( "fileIsEOF() requires a file opened in a read mode to be passed." );
+		}
+		return file.isEOF();
 	}
 
 }
