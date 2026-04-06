@@ -639,7 +639,7 @@ public final class FileSystemUtil {
 			path = pathPath;
 		} else if ( filePath instanceof File filePathFile ) {
 			path = filePathFile.toPath();
-		} else if ( filePath instanceof ortus.boxlang.runtime.types.File filePathFile ) {
+		} else if ( filePath instanceof ortus.boxlang.runtime.types.BoxFile filePathFile ) {
 			path = filePathFile.getPath();
 		} else {
 			throw new BoxRuntimeException( "The provided filePath argument must be a string, Path, or File instance." );

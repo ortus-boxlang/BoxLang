@@ -18,11 +18,13 @@ package ortus.boxlang.runtime.bifs.global.io;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BoxFileCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.util.StringUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF( description = "Read content from a file" )
@@ -37,7 +39,7 @@ public class FileRead extends BIF {
 	public FileRead() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "string", Key.filepath ),
+		    new Argument( true, Argument.ANY, Key.filepath ),
 		    new Argument( false, "string", Key.charsetOrBufferSize ),
 		    new Argument( false, "string", Key.charset ),
 		    new Argument( false, "string", Key.buffersize )
@@ -62,8 +64,16 @@ public class FileRead extends BIF {
 		String	charsetOrBufferSize	= arguments.getAsString( Key.charsetOrBufferSize );
 		String	charset				= arguments.getAsString( Key.charset );
 		Integer	bufferSize			= arguments.getAsInteger( Key.buffersize );
-		String	filePath			= arguments.getAsString( Key.filepath );
+		Object	rawFilePath			= arguments.get( Key.filepath );
 		Key		bifMethodKey		= arguments.getAsKey( BIF.__functionName );
+
+		// Determine the file path string - HTTP URLs stay as strings, everything else goes through BoxFile
+		String	filePath;
+		if ( rawFilePath instanceof String str && StringUtil.startsWithIgnoreCase( str, "http" ) ) {
+			filePath = str;
+		} else {
+			filePath = BoxFileCaster.cast( context, rawFilePath ).filepath;
+		}
 
 		if ( charsetOrBufferSize != null ) {
 			CastAttempt<Integer> castAttempt = IntegerCaster.attempt( charsetOrBufferSize );
@@ -72,10 +82,6 @@ public class FileRead extends BIF {
 			} else {
 				charset = charsetOrBufferSize;
 			}
-		}
-
-		if ( !filePath.substring( 0, 4 ).equalsIgnoreCase( "http" ) ) {
-			filePath = FileSystemUtil.expandPath( context, filePath ).absolutePath().toString();
 		}
 
 		return FileSystemUtil.read( filePath, charset, bufferSize, bifMethodKey.equals( stringOnlyBif ) );

@@ -39,7 +39,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.File;
+import ortus.boxlang.runtime.types.BoxFile;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
@@ -53,8 +53,8 @@ public class FileIsEOFTest {
 	private static String	tmpDirectory	= "src/test/resources/tmp/fileIsEOFTest";
 	private static String	testFile		= "src/test/resources/tmp/fileIsEOFTest/file-test.txt";
 	private static String	emptyFile		= "src/test/resources/tmp/fileIsEOFTest/file-write-test.txt";
-	private static File		readFile		= null;
-	private static File		writeFile		= null;
+	private static BoxFile	readFile		= null;
+	private static BoxFile	writeFile		= null;
 
 	@BeforeAll
 	public static void setUp() throws IOException {
@@ -83,7 +83,7 @@ public class FileIsEOFTest {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
 		if ( !FileSystemUtil.exists( testFile ) ) {
-			File testFileObj = new File( testFile, "write", "utf-8", false );
+			BoxFile testFileObj = new BoxFile( testFile, BoxFile.Mode.WRITE, "utf-8", false );
 			for ( var i = 1; i <= 100; i++ ) {
 				testFileObj.writeLine( "Line number " + i + "!" );
 			}
@@ -120,7 +120,7 @@ public class FileIsEOFTest {
 	@Test
 	@Ignore
 	public void testWriteFileEOF() {
-		writeFile = new File( emptyFile, "write" );
+		writeFile = new BoxFile( emptyFile, BoxFile.Mode.WRITE );
 		variables.put( Key.of( "testFile" ), writeFile );
 		assertThrows(
 		    BoxRuntimeException.class,

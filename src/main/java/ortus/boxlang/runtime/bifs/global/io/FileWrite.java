@@ -22,6 +22,7 @@ import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.BoxFile;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF( description = "Write content to a file" )
@@ -34,7 +35,7 @@ public class FileWrite extends BIF {
 	public FileWrite() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "string", Key.file ),
+		    new Argument( true, "boxfile", Key.file ),
 		    new Argument( true, "any", Key.data ),
 		    new Argument( false, "string", Key.charset, FileSystemUtil.DEFAULT_CHARSET.name() ),
 		    new Argument( false, "boolean", Key.createPath, false )
@@ -47,7 +48,7 @@ public class FileWrite extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.file The string path of the file - either root relative or absolute
+	 * @argument.file The file path or file object
 	 *
 	 * @argument.data The string or binary byte array of the file content
 	 *
@@ -56,7 +57,8 @@ public class FileWrite extends BIF {
 	 * @aguments.createPath [false] ( Boxlang only ) When true will ensure all directories to file destination are created
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	filePath	= FileSystemUtil.expandPath( context, arguments.getAsString( Key.file ) ).absolutePath().toString();
+		BoxFile	file		= arguments.getAsBoxFile( Key.file );
+		String	filePath	= file.filepath;
 		Object	fileContent	= arguments.get( Key.data );
 		String	charset		= arguments.getAsString( Key.charset );
 		Boolean	createPath	= arguments.getAsBoolean( Key.createPath );

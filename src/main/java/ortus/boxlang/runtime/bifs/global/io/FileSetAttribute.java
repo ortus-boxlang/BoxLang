@@ -29,8 +29,8 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.BoxFile;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.File;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
@@ -47,7 +47,7 @@ public class FileSetAttribute extends BIF {
 	public FileSetAttribute() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.file, Set.of( Validator.REQUIRED ) ),
+		    new Argument( true, "boxfile", Key.file, Set.of( Validator.REQUIRED ) ),
 		    new Argument( true, "string", Key.attribute, Set.of( Validator.REQUIRED ) )
 		};
 	}
@@ -63,21 +63,15 @@ public class FileSetAttribute extends BIF {
 	 * @argument.attribute The attribute to set true
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	file	= null;
-		File	fileObj	= null;
-		if ( arguments.get( Key.file ) instanceof File ) {
-			fileObj	= ( File ) arguments.get( Key.file );
-			file	= fileObj.filepath;
-		} else {
-			file = FileSystemUtil.expandPath( context, arguments.getAsString( Key.file ) ).absolutePath().toString();
-		}
+		BoxFile	fileObj			= arguments.getAsBoxFile( Key.file );
+		String	file			= fileObj.filepath;
 
 		String	attribute		= arguments.getAsString( Key.attribute );
 		String	permissionSet	= null;
 		Path	filePath		= Path.of( file );
 		Boolean	isPosix			= filePath.getFileSystem().supportedFileAttributeViews().contains( "posix" );
 		boolean	isWindows		= FileSystemUtil.IS_WINDOWS;
-		Object	returnItem		= fileObj != null ? fileObj : null;
+		Object	returnItem		= fileObj.implicitlyCast ? null : fileObj;
 		switch ( attribute.toLowerCase() ) {
 			case "normal" :
 			case "default" : {

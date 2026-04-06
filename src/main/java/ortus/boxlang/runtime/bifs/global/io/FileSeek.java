@@ -22,9 +22,8 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.BoxFile;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.File;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF( description = "Move the file pointer to a specific position" )
 @BoxBIF( alias = "FileSkipBytes" )
@@ -39,7 +38,7 @@ public class FileSeek extends BIF {
 	public FileSeek() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.file ),
+		    new Argument( true, "boxfile", Key.file ),
 		    new Argument( true, "integer", Key.position )
 		};
 	}
@@ -55,14 +54,19 @@ public class FileSeek extends BIF {
 	 * @argument.position The cursor position to move forward in the file
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		File file = null;
-		if ( arguments.get( Key.file ) instanceof File ) {
-			file = ( File ) arguments.get( Key.file );
-		} else {
-			throw new BoxRuntimeException( "The file argumennt [" + arguments.getAsString( Key.file ) + "] is not an open file stream." );
+		BoxFile file = arguments.getAsBoxFile( Key.file );
+		// Seek works on any open seekable file; only open as readbinary if not already open
+		if ( file.mode == BoxFile.Mode.NONE ) {
+			file.openAs( BoxFile.Mode.READBINARY );
 		}
-		file.seek( arguments.getAsInteger( Key.position ) );
-		return null;
+		try {
+			file.seek( arguments.getAsInteger( Key.position ) );
+			return null;
+		} finally {
+			if ( file.implicitlyCast ) {
+				file.close();
+			}
+		}
 	}
 
 }
