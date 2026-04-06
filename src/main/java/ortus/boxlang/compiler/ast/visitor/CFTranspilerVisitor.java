@@ -87,6 +87,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -220,6 +221,11 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 * Only applies when named arguments are used.
 	 */
 	private static Map<String, Map<String, String>>	BIFArgMap					= new HashMap<>();
+
+	/**
+	 * The function service
+	 */
+	private static FunctionService					functionService;
 
 	/**
 	 * Configuration keys for transpiler settings
@@ -362,6 +368,8 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	public CFTranspilerVisitor() {
 		// This may change when moving this visitor to the actual compat module
 		this( moduleService.hasModule( compatKey ) ? StructCaster.cast( moduleService.getModuleSettings( compatKey ) ) : Struct.EMPTY );
+
+		functionService = runtime.getFunctionService();
 	}
 
 	/**
@@ -682,6 +690,27 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		if ( name.equals( "quotedvaluelist" ) && node.getArguments().size() > 0 && node.getArguments().get( 0 ).getValue() instanceof BoxAccess ) {
 			return transpileQuotedValueList( node );
 		}
+
+		// UDF calls inside of a query get wrapped in preserveSingleQuotes()
+		boolean inQueryComponent = node.getFirstAncestorOfType( BoxComponent.class, c -> c.getName().equalsIgnoreCase( "query" ) ) != null;
+		if ( inQueryComponent && !functionService.hasGlobalFunction( Key.of( name ) ) ) {
+			// wrap in preserveSingleQuotes()
+			BoxFunctionInvocation preserveSingleQuoteInvocation = new BoxFunctionInvocation(
+			    "preserveSingleQuotes",
+			    List.of(
+			        new BoxArgument(
+			            node,
+			            null,
+			            null
+			        )
+			    ),
+			    null,
+			    null
+			);
+			// Need a separate visit() call for this path so we call the correct overloaded visit() method
+			return super.visit( preserveSingleQuoteInvocation );
+		}
+
 		// look for BIFs whose return type has changed
 		if ( BIFReturnTypeFixSet.contains( name ) && returnValueIsUsed( node ) ) {
 			return transpileBIFReturnType( node, name );
@@ -1772,7 +1801,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 
 	/**
 	 * Determine if a node is inside a script or template
-	 * TODO: Does this deserve to exist on BoxNode?
+	 * TODO: Does this method deserve to just be added directly on BoxNode?
 	 *
 	 * @param node The node to check
 	 *

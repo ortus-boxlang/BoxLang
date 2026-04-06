@@ -648,4 +648,21 @@ public class CFTranspilerTest {
 		assertThat( variables.get( result ) ).isEqualTo( "001.000" );
 	}
 
+	@DisplayName( "It doesn't escape single quotes in SQL output from UDF" )
+	@Test
+	public void testItDoesntEscapeSingleQuotesInSqlOutputFromUDF() {
+		instance.executeSource(
+		    """
+		    	<cfset myQry = queryNew( "name", "varchar", [["Brad"], ["Luis"]] ) >
+		    	<cffunction name="getSQL">
+		    		<cfreturn mySQL = "SELECT * FROM myQry WHERE name = 'Brad'" >
+		    	</cffunction>
+		    	<cfquery name="result" dbtype="query">
+		    		#getSQL()#
+		    	</cfquery>
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 1 );
+	}
+
 }
