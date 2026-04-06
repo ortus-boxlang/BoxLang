@@ -107,7 +107,7 @@ dependencies {
 	testImplementation "commons-cli:commons-cli:1.11.0"
 	testImplementation "org.wiremock:wiremock:3.13.2"
 	testImplementation 'org.apache.derby:derby:10.17.1.0'
-	testImplementation 'io.undertow:undertow-core:2.3.23.Final'
+	testImplementation 'io.undertow:undertow-core:2.3.24.Final'
 	testImplementation 'org.bouncycastle:bcpkix-jdk18on:1.83'
 	// Explicitly declare the JUnit platform launcher (to avoid deprecation)
     testRuntimeOnly "org.junit.platform:junit-platform-launcher"
@@ -134,13 +134,13 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-cli
 	implementation "commons-cli:commons-cli:1.11.0"
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-objects
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.21.1'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.21.2'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-extension-javatime
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-extension-javatime:2.21.1'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-extension-javatime:2.21.2'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-stree
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-stree:2.21.1'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-stree:2.21.2'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-annotation-support
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.21.1'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.21.2'
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-api
 	implementation 'org.slf4j:slf4j-api:2.0.17'
 	// https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
@@ -353,7 +353,26 @@ set -- \$FILTERED_ARGS
 BL_JAR=$(ls "$APP_HOME/lib"/boxlang-*.jar 2>/dev/null | head -1)
 if [ -n "$BL_JAR" ]; then
     BL_VER=$(basename "$BL_JAR" .jar | sed 's/^boxlang-//')
-    BL_JSA_DIR="$HOME/.boxlang/cache"
+    # Resolve BoxLang home: BOXLANG_HOME env > --bx-home arg > user home
+    if [ -n "$BOXLANG_HOME" ]; then
+        BL_HOME_DIR="$BOXLANG_HOME"
+    else
+        BL_HOME_DIR=""
+        _BL_PREV_HOME=0
+        for _bl_arg in "$@"; do
+            if [ "$_BL_PREV_HOME" = "1" ]; then
+                BL_HOME_DIR="$_bl_arg"
+                break
+            fi
+            if [ "$_bl_arg" = "--bx-home" ]; then
+                _BL_PREV_HOME=1
+            fi
+        done
+        if [ -z "$BL_HOME_DIR" ]; then
+            BL_HOME_DIR="$HOME/.boxlang"
+        fi
+    fi
+    BL_JSA_DIR="$BL_HOME_DIR/cache"
     BL_JSA="$BL_JSA_DIR/boxlang-$BL_VER.jsa"
     BL_JAVA="${JAVA_HOME:+$JAVA_HOME/bin/java}"
     BL_JAVA="${BL_JAVA:-java}"
@@ -403,7 +422,22 @@ ext.customizeWindowsScript = { File scriptFile ->
 	def appCdsSnippet = '@rem ######################################\r\n' +
 		'@rem AppCDS: auto-generate and cache a class-data archive for faster startup\r\n' +
 		'@rem ######################################\r\n' +
-		'set "BL_JSA_DIR=%USERPROFILE%\\.boxlang\\cache"\r\n' +
+		'if defined BOXLANG_HOME (\r\n' +
+		'  set "BL_HOME_DIR=%BOXLANG_HOME%"\r\n' +
+		') else (\r\n' +
+		'  set "BL_HOME_DIR="\r\n' +
+		'  set "_BL_PREV_HOME=0"\r\n' +
+		'  for %%A in (%*) do (\r\n' +
+		'    if "!_BL_PREV_HOME!"=="1" (\r\n' +
+		'      set "BL_HOME_DIR=%%~A"\r\n' +
+		'      set "_BL_PREV_HOME=0"\r\n' +
+		'    ) else if "%%~A"=="--bx-home" (\r\n' +
+		'      set "_BL_PREV_HOME=1"\r\n' +
+		'    )\r\n' +
+		'  )\r\n' +
+		'  if not defined BL_HOME_DIR set "BL_HOME_DIR=%USERPROFILE%\\.boxlang"\r\n' +
+		')\r\n' +
+		'set "BL_JSA_DIR=!BL_HOME_DIR!\\cache"\r\n' +
 		'for %%F in ("%APP_HOME%\\lib\\boxlang-*.jar") do set "BL_JAR=%%~fF" & set "BL_JARNAME=%%~nF"\r\n' +
 		'if defined BL_JAR (\r\n' +
 		'  set "BL_VER=!BL_JARNAME:boxlang-=!"\r\n' +

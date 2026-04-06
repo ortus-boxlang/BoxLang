@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.services;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Map;
@@ -27,6 +28,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.tasks.BoxScheduler;
 import ortus.boxlang.runtime.async.tasks.IScheduler;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
@@ -39,6 +41,9 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.BLCollector;
+import ortus.boxlang.runtime.types.util.JSONUtil;
+import ortus.boxlang.runtime.util.EncryptionUtil;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
@@ -58,6 +63,11 @@ public class SchedulerService extends BaseService {
 	public static final long		DEFAULT_SHUTDOWN_TIMEOUT	= 30;
 
 	/**
+	 * The default scheduler name used by the bx:schedule component when none is specified.
+	 */
+	public static final String		DEFAULT_SCHEDULER_NAME		= "bxschedule";
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Private Variables
 	 * --------------------------------------------------------------------------
@@ -72,6 +82,17 @@ public class SchedulerService extends BaseService {
 	 * The logger for this service
 	 */
 	private BoxLangLogger			logger;
+
+	/**
+	 * Lock object for thread-safe tasks.json access.
+	 */
+	private final Object			tasksFileLock				= new Object();
+
+	/**
+	 * Cached AES encryption key used to protect credentials in tasks.json.
+	 * Lazily initialised by {@link #getOrCreateEncryptionKey()}.
+	 */
+	private volatile String			tasksEncryptionKey			= null;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -113,6 +134,9 @@ public class SchedulerService extends BaseService {
 		// Register the Global Scheduler
 		// This will look in the configuration for the global scheduler and start it up
 		registerGlobalSchedulers();
+
+		// Load and register any persisted bxschedule tasks from tasks.json
+		registerPersistedScheduleTasks();
 
 		// Startup all the schedulers
 		startupRegisteredSchedulers();
@@ -156,6 +180,78 @@ public class SchedulerService extends BaseService {
 			    // Register the scheduler
 			    registerScheduler( target, true );
 		    } );
+	}
+
+	/**
+	 * Load persisted scheduled tasks from the configured {@code tasksFile} and register them
+	 * in their respective schedulers. This is called during startup before {@link #startupRegisteredSchedulers()}.
+	 */
+	public void registerPersistedScheduleTasks() {
+		java.nio.file.Path tasksFile = getTasksFilePath();
+		if ( !java.nio.file.Files.exists( tasksFile ) ) {
+			return;
+		}
+
+		this.logger.info( "+ Loading persisted schedule tasks from [{}]", tasksFile );
+
+		Array		tasks;
+		IBoxContext	runtimeContext	= runtime.getRuntimeContext();
+		try {
+			tasks = loadTasksFromDisk();
+		} catch ( Exception e ) {
+			this.logger.error( "Failed to load persisted schedule tasks — startup will continue without them: {}", e.getMessage() );
+			return;
+		}
+
+		for ( Object entry : tasks ) {
+			if ( ! ( entry instanceof IStruct ) ) {
+				continue;
+			}
+			IStruct	taskDef			= ( IStruct ) entry;
+
+			String	taskName		= taskDef.getAsString( Key.task );
+
+			// Get the scheduler name from the task definition
+			Object	schedulerField	= taskDef.get( Key.scheduler );
+			String	schedulerName	= schedulerField != null ? schedulerField.toString() : null;
+			if ( schedulerName == null || schedulerName.isBlank() ) {
+				schedulerName = DEFAULT_SCHEDULER_NAME;
+			}
+			if ( taskName == null || taskName.isBlank() ) {
+				this.logger.warn( "Skipping persisted task with no name" );
+				continue;
+			}
+
+			boolean	paused			= BooleanCaster.cast( taskDef.getOrDefault( Key.paused, false ) );
+
+			// Get or create the named scheduler (register only — startup happens later via startupRegisteredSchedulers)
+			Key		schedulerKey	= Key.of( schedulerName );
+			if ( !hasScheduler( schedulerKey ) ) {
+				ortus.boxlang.runtime.async.tasks.BaseScheduler s = new ortus.boxlang.runtime.async.tasks.BaseScheduler( schedulerName, runtimeContext );
+				registerScheduler( s, false );
+			}
+			ortus.boxlang.runtime.async.tasks.BaseScheduler scheduler = ( ortus.boxlang.runtime.async.tasks.BaseScheduler ) getScheduler( schedulerKey );
+
+			// Decrypt credentials before passing to the callable builder
+			decryptTaskCredentials( taskDef );
+
+			// Build callable and register the task
+			Runnable										callable		= ortus.boxlang.runtime.components.async.Schedule.buildTaskCallable( runtimeContext,
+			    taskDef );
+
+			String											group			= taskDef.getAsString( Key.group );
+			ortus.boxlang.runtime.async.tasks.ScheduledTask	scheduledTask	= scheduler.task( taskName, group != null ? group : "" ).call( callable );
+
+			// Apply full configuration (identical to doUpdate — repeat, exclude, callbacks, metadata, scheduling)
+			ortus.boxlang.runtime.components.async.Schedule.applyTaskConfiguration( scheduledTask, callable, taskDef, runtimeContext );
+
+			// Restore paused state last so it overrides any enable set by configuration
+			if ( paused ) {
+				scheduledTask.disable();
+			}
+
+			this.logger.info( "  + Loaded persisted task [{}] in scheduler [{}]", taskName, schedulerName );
+		}
 	}
 
 	/**
@@ -545,6 +641,262 @@ public class SchedulerService extends BaseService {
 	 */
 	public void shutdownScheduler( Key scheduler, boolean force, long timeout ) {
 		shutdownScheduler( getSchedulerOrFail( scheduler ), force, timeout );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Task Persistence Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Returns the resolved {@link Path} for the tasks persistence file,
+	 * taken from {@code scheduler.tasksFile} in boxlang.json.
+	 */
+	private Path getTasksFilePath() {
+		return Paths.get( runtime.getConfiguration().scheduler.tasksFile );
+	}
+
+	/**
+	 * Load the persisted task array from the configured {@code tasksFile}.
+	 * Returns an empty array when the file does not yet exist.
+	 * Throws when the file exists but cannot be read or parsed, so callers that
+	 * would subsequently write back to disk do not overwrite a temporarily
+	 * unreadable file with an empty array.
+	 *
+	 * @return The array of persisted task definition structs, or an empty array if the file does not exist.
+	 *
+	 * @throws BoxRuntimeException if the file exists but cannot be read or parsed.
+	 */
+	public Array loadTasksFromDisk() {
+		Path tasksFile = getTasksFilePath();
+		if ( !Files.exists( tasksFile ) ) {
+			return new Array();
+		}
+		try {
+			Object parsed = JSONUtil.fromJSON( tasksFile.toFile(), true );
+			if ( parsed instanceof Array ) {
+				return ( Array ) parsed;
+			}
+			// File exists but contains non-array JSON — treat as corrupt
+			throw new BoxRuntimeException( "tasks.json exists but does not contain a JSON array; refusing to overwrite." );
+		} catch ( BoxRuntimeException e ) {
+			throw e;
+		} catch ( Exception e ) {
+			throw new BoxRuntimeException( "Failed to read tasks.json: " + e.getMessage(), e );
+		}
+	}
+
+	/**
+	 * Save the task array to the configured {@code tasksFile}.
+	 *
+	 * @param tasks The array of task definition structs to persist.
+	 */
+	public void saveTasksToDisk( Array tasks ) {
+		Path tasksFile = getTasksFilePath();
+		try {
+			String json = JSONUtil.getJSONBuilder( true ).asString( tasks );
+			FileSystemUtil.write( tasksFile.toString(), json, "UTF-8", true );
+		} catch ( Exception e ) {
+			throw new BoxRuntimeException( "Failed to persist tasks to disk: " + e.getMessage(), e );
+		}
+	}
+
+	/**
+	 * Persist (upsert) a task definition to tasks.json based on its component attributes.
+	 *
+	 * @param attributes The component attribute struct containing the task definition fields.
+	 */
+	public void persistTask( IStruct attributes ) {
+		synchronized ( tasksFileLock ) {
+			Array	tasks		= loadTasksFromDisk();
+			String	taskName	= attributes.getAsString( Key.task );
+			String	scheduler	= attributes.getAsString( Key.scheduler );
+
+			String	encKey		= getOrCreateEncryptionKey();
+			IStruct	taskDef		= Struct.ofNonConcurrent(
+			    "task", taskName,
+			    "scheduler", scheduler,
+			    "group", attributes.getAsString( Key.group ),
+			    "url", attributes.getAsString( Key.URL ),
+			    "interval", attributes.getAsString( Key.interval ),
+			    "cronTime", attributes.getAsString( Key.cronTime ),
+			    "startDate", attributes.getAsString( Key.startDate ),
+			    "startTime", attributes.getAsString( Key.startTime ),
+			    "endDate", attributes.getAsString( Key.endDate ),
+			    "endTime", attributes.getAsString( Key.endTime ),
+			    "repeat", attributes.getAsInteger( Key.repeat ),
+			    "exclude", attributes.getAsString( Key.exclude ),
+			    "port", attributes.getAsInteger( Key.port ),
+			    "username", encryptCredential( attributes.getAsString( Key.username ), encKey ),
+			    "password", encryptCredential( attributes.getAsString( Key.password ), encKey ),
+			    "proxyServer", attributes.getAsString( Key.proxyServer ),
+			    "proxyPort", attributes.getAsInteger( Key.proxyPort ),
+			    "proxyUser", encryptCredential( attributes.getAsString( Key.proxyUser ), encKey ),
+			    "proxyPassword", encryptCredential( attributes.getAsString( Key.proxyPassword ), encKey ),
+			    "publish", BooleanCaster.cast( attributes.getOrDefault( Key.publish, false ) ),
+			    "path", attributes.getAsString( Key.path ),
+			    "file", attributes.getAsString( Key.file ),
+			    "overwrite", BooleanCaster.cast( attributes.getOrDefault( Key.overwrite, true ) ),
+			    "resolveURL", BooleanCaster.cast( attributes.getOrDefault( Key.resolveUrl, false ) ),
+			    "retryCount", attributes.getAsInteger( Key.retryCount ),
+			    "onException", attributes.getAsString( Key.onException ),
+			    "oncomplete", attributes.getAsString( Key.onComplete ),
+			    "eventhandler", attributes.getAsString( Key.eventHandler ),
+			    "cluster", BooleanCaster.cast( attributes.getOrDefault( Key.cluster, false ) ),
+			    "isDaily", BooleanCaster.cast( attributes.getOrDefault( Key.isDaily, false ) ),
+			    "paused", false
+			);
+
+			// Upsert: remove existing entry with same task + scheduler
+			tasks.removeIf( entry -> {
+				if ( entry instanceof IStruct ) {
+					IStruct existing = ( IStruct ) entry;
+					return taskName.equals( existing.getAsString( Key.task ) )
+					    && scheduler.equals( existing.getAsString( Key.scheduler ) );
+				}
+				return false;
+			} );
+			tasks.add( taskDef );
+
+			saveTasksToDisk( tasks );
+		}
+	}
+
+	/**
+	 * Remove a task from tasks.json.
+	 *
+	 * @param taskName      The name of the task to remove.
+	 * @param schedulerName The name of the scheduler the task belongs to.
+	 */
+	public void removeTaskFromDisk( String taskName, String schedulerName ) {
+		synchronized ( tasksFileLock ) {
+			Array tasks = loadTasksFromDisk();
+			tasks.removeIf( entry -> {
+				if ( entry instanceof IStruct ) {
+					IStruct existing = ( IStruct ) entry;
+					return taskName.equals( existing.getAsString( Key.task ) )
+					    && schedulerName.equals( existing.getAsString( Key.scheduler ) );
+				}
+				return false;
+			} );
+			saveTasksToDisk( tasks );
+		}
+	}
+
+	/**
+	 * Update the paused flag for a single task in tasks.json.
+	 *
+	 * @param taskName      The name of the task.
+	 * @param schedulerName The name of the scheduler the task belongs to.
+	 * @param paused        The new paused state.
+	 */
+	public void updateTaskPausedState( String taskName, String schedulerName, boolean paused ) {
+		synchronized ( tasksFileLock ) {
+			Array tasks = loadTasksFromDisk();
+			for ( Object entry : tasks ) {
+				if ( entry instanceof IStruct ) {
+					IStruct existing = ( IStruct ) entry;
+					if ( taskName.equals( existing.getAsString( Key.task ) )
+					    && schedulerName.equals( existing.getAsString( Key.scheduler ) ) ) {
+						existing.put( Key.paused, paused );
+						break;
+					}
+				}
+			}
+			saveTasksToDisk( tasks );
+		}
+	}
+
+	/**
+	 * Update the paused flag for all tasks in a given scheduler in tasks.json.
+	 * Optionally filter by group.
+	 *
+	 * @param schedulerName The name of the scheduler.
+	 * @param group         Optional group filter; pass null or blank to match all groups.
+	 * @param paused        The new paused state.
+	 */
+	public void updateAllTasksPausedState( String schedulerName, String group, boolean paused ) {
+		synchronized ( tasksFileLock ) {
+			Array tasks = loadTasksFromDisk();
+			for ( Object entry : tasks ) {
+				if ( entry instanceof IStruct ) {
+					IStruct existing = ( IStruct ) entry;
+					if ( !schedulerName.equals( existing.getAsString( Key.scheduler ) ) ) {
+						continue;
+					}
+					if ( group != null && !group.isBlank() && !group.equals( existing.getAsString( Key.group ) ) ) {
+						continue;
+					}
+					existing.put( Key.paused, paused );
+				}
+			}
+			saveTasksToDisk( tasks );
+		}
+	}
+
+	/**
+	 * Returns the AES encryption key used to protect task credentials in tasks.json.
+	 * Reads the runtime seed from {@code ${boxLangHome}/config/.seed}, which BoxRuntime
+	 * auto-generates on first startup — no separate key file needed.
+	 *
+	 * @return Base64-encoded AES key string.
+	 */
+	private String getOrCreateEncryptionKey() {
+		if ( tasksEncryptionKey != null ) {
+			return tasksEncryptionKey;
+		}
+		synchronized ( tasksFileLock ) {
+			if ( tasksEncryptionKey != null ) {
+				return tasksEncryptionKey;
+			}
+			Path seedPath = runtime.getRuntimeHome().resolve( "config/.seed" );
+			try {
+				tasksEncryptionKey = new String( Files.readAllBytes( seedPath ), java.nio.charset.StandardCharsets.UTF_8 ).trim();
+			} catch ( Exception e ) {
+				throw new BoxRuntimeException( "Failed to read runtime seed for task credential encryption: " + e.getMessage(), e );
+			}
+			return tasksEncryptionKey;
+		}
+	}
+
+	/**
+	 * Encrypts a credential value using the tasks AES key.
+	 * Returns an empty string if the value is null or blank.
+	 *
+	 * @param value  The plaintext credential.
+	 * @param encKey The AES key string from {@link #getOrCreateEncryptionKey()}.
+	 *
+	 * @return Encrypted Base64-encoded string, or empty string.
+	 */
+	private String encryptCredential( String value, String encKey ) {
+		if ( value == null || value.isBlank() ) {
+			return "";
+		}
+		return EncryptionUtil.encrypt( value, EncryptionUtil.DEFAULT_ENCRYPTION_ALGORITHM, encKey, EncryptionUtil.DEFAULT_ENCRYPTION_ENCODING, null, null );
+	}
+
+	/**
+	 * Decrypts the credential fields (username, password, proxyUser, proxyPassword) in a
+	 * persisted task definition struct in-place, so callers receive plaintext values.
+	 *
+	 * @param taskDef The task definition struct loaded from disk.
+	 */
+	private void decryptTaskCredentials( IStruct taskDef ) {
+		String encKey = getOrCreateEncryptionKey();
+		for ( Key credKey : new Key[] { Key.username, Key.password, Key.proxyUser, Key.proxyPassword } ) {
+			String encrypted = taskDef.getAsString( credKey );
+			if ( encrypted != null && !encrypted.isBlank() ) {
+				try {
+					taskDef.put( credKey, ( String ) EncryptionUtil.decrypt( encrypted, EncryptionUtil.DEFAULT_ENCRYPTION_ALGORITHM, encKey,
+					    EncryptionUtil.DEFAULT_ENCRYPTION_ENCODING, null, null ) );
+				} catch ( Exception e ) {
+					this.logger.warn( "Failed to decrypt credential [{}] for task [{}] — using empty value: {}", credKey.getName(),
+					    taskDef.getAsString( Key.task ), e.getMessage() );
+					taskDef.put( credKey, "" );
+				}
+			}
+		}
 	}
 
 }

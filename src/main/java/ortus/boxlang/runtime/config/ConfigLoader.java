@@ -57,7 +57,7 @@ public class ConfigLoader {
 	/**
 	 * Path to the core config file in the `resources` folder
 	 */
-	private static final String	DEFAULT_CONFIG_FILE	= "config/boxlang.json";
+	public static final String	DEFAULT_CONFIG_FILE	= "config/boxlang.json";
 
 	/**
 	 * The ConfigLoader instance
@@ -128,7 +128,6 @@ public class ConfigLoader {
 	 *
 	 * @return The parsed configuration
 	 */
-	@SuppressWarnings( "unchecked" )
 	public Configuration loadFromResources( String configFile ) {
 		// Parse it natively to Java objects
 		Object rawConfig = JSONUtil.fromJSON(
@@ -177,7 +176,10 @@ public class ConfigLoader {
 	 * @param source The source to load the configuration from
 	 *
 	 * @return The parsed configuration
+	 * 
+	 * @deprecated This method is deprecated since we deserialize the config in the runtime. This method is never called outside of tests. It will be removed in a future version.
 	 */
+	@Deprecated( since = "1.12.0", forRemoval = true )
 	public Configuration loadFromFile( File source ) {
 		IStruct rawConfig = deserializeConfig( source );
 		logger.debug( "Loaded custom BoxLang configuration file [{}]", source );
@@ -190,7 +192,11 @@ public class ConfigLoader {
 	 * @param source The source to load the configuration from
 	 *
 	 * @return The parsed configuration
+	 *
+	 * 
+	 * @deprecated This method is deprecated since we deserialize the config in the runtime. This method is never called outside of tests. It will be removed in a future version.
 	 */
+	@Deprecated( since = "1.12.0", forRemoval = true )
 	public Configuration loadFromFile( Path source ) {
 		return loadFromFile( source.toFile() );
 	}
@@ -200,8 +206,9 @@ public class ConfigLoader {
 	 *
 	 * @param source The source to load the configuration from
 	 *
-	 * @return The parsed configuration
+	 * @deprecated This method is deprecated since we deserialize the config in the runtime. This method is never called outside of tests. It will be removed in a future version.
 	 */
+	@Deprecated( since = "1.12.0", forRemoval = true )
 	public Configuration loadFromFile( URL source ) {
 		return loadFromFile( new File( source.getFile() ) );
 	}
@@ -210,9 +217,10 @@ public class ConfigLoader {
 	 * Load the config from a String file source
 	 *
 	 * @param source The source to load the configuration from
-	 *
-	 * @return The parsed configuration
+	 * 
+	 * @deprecated This method is deprecated since we deserialize the config in the runtime. This method is never called outside of tests. It will be removed in a future version.
 	 */
+	@Deprecated( since = "1.12.0", forRemoval = true )
 	public Configuration loadFromFile( String source ) {
 		return loadFromFile( new File( source ) );
 	}

@@ -1266,6 +1266,8 @@ public class ClassTest {
 								result11 = src.test.java.TestCases.phase3.StaticTest::finalStatic;
 								result12 = src.test.java.TestCases.phase3.StaticTest::finalStatic2;
 								result13 = src.test.java.TestCases.phase3.StaticTest::IAmStatic()
+								result14 = src.test.java.TestCases.phase3.StaticTest::IAmStatic2()
+								result15 = src.test.java.TestCases.phase3.StaticTest::ImWithStaticResult;
 		                                                                                                                      """, context,
 		    BoxSourceType.BOXSCRIPT );
 		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 9000 );
@@ -1280,6 +1282,8 @@ public class ClassTest {
 		assertThat( variables.get( Key.of( "result11" ) ) ).isEqualTo( "finalStatic" );
 		assertThat( variables.get( Key.of( "result12" ) ) ).isEqualTo( "finalStatic2" );
 		assertThat( variables.get( Key.of( "result13" ) ) ).isEqualTo( "bradfinalStatic" );
+		assertThat( variables.get( Key.of( "result14" ) ) ).isEqualTo( "bradfinalStatic" );
+		assertThat( variables.get( Key.of( "result15" ) ) ).isEqualTo( "Hello" );
 	}
 
 	@Test
@@ -2176,6 +2180,13 @@ public class ClassTest {
 		instance.executeSource(
 		    """
 		    result = new src.test.java.TestCases.phase3.TagComponentParse();
+		    result = new src.test.java.TestCases.phase3.TagComponentParse2();
+		    result = new src.test.java.TestCases.phase3.TagComponentParse3();
+		    result = new src.test.java.TestCases.phase3.TagComponentParse4();
+		    result = new src.test.java.TestCases.phase3.TagComponentParse5();
+		    result = new src.test.java.TestCases.phase3.TagComponentParse6();
+		    result = new src.test.java.TestCases.phase3.TagComponentParse7();
+		    result = new src.test.java.TestCases.phase3.TagComponentParse8();
 		       """,
 		    context );
 	}

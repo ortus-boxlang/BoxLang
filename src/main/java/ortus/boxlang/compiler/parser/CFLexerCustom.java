@@ -525,7 +525,7 @@ public class CFLexerCustom extends CFLexer {
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because last token was a period" );
 						isIdentifier = true;
-					} else if ( nextNonWhiteSpaceCharIs( '.' ) && nextTokenType != RETURN ) {
+					} else if ( nextNonWhiteSpaceCharIsDotButNotNumeric() && nextTokenType != RETURN ) {
 						// next char is a period (.)
 						// but allow return .functionMemberWrapper();
 						if ( debug )
@@ -611,6 +611,14 @@ public class CFLexerCustom extends CFLexer {
 		}
 	}
 
+	/**
+	 * Store the last non-hidden token and update lexer state flags for class tracking,
+	 * switch body tracking, and for-loop paren tracking.
+	 *
+	 * @param token the token to set as the last token
+	 *
+	 * @return the token passed in
+	 */
 	private Token setLastToken( Token token ) {
 		if ( token.getChannel() != HIDDEN ) {
 			lastToken = token;
@@ -675,6 +683,9 @@ public class CFLexerCustom extends CFLexer {
 		return null;
 	}
 
+	/**
+	 * Reset the lexer state, pushing the default mode and clearing all tracking flags.
+	 */
 	public void reset() {
 		super.reset();
 		pushMode( defaultMode );
@@ -733,11 +744,37 @@ public class CFLexerCustom extends CFLexer {
 		return results;
 	}
 
+	/**
+	 * Check if the next non-whitespace character in the input stream matches the given character code.
+	 *
+	 * @param charCode the character code to check against
+	 *
+	 * @return true if the next non-whitespace character matches the given character code
+	 */
 	private boolean nextNonWhiteSpaceCharIs( int charCode ) {
 		int nextChar = getInputStream().LA( skipWhiteSpace( 1 ) );
 		return nextChar == charCode;
 	}
 
+	/**
+	 * Check if the next non-whitespace character is a dot (period) that is NOT followed by a digit.
+	 * This distinguishes property access (e.g. {@code foo.bar}) from numeric literals (e.g. {@code .5}).
+	 *
+	 * @return true if the next non-whitespace character is a dot not followed by a digit
+	 */
+	private boolean nextNonWhiteSpaceCharIsDotButNotNumeric() {
+		int	pos			= skipWhiteSpace( 1 );
+		int	nextChar	= getInputStream().LA( pos );
+		return nextChar == '.' && !Character.isDigit( getInputStream().LA( pos + 1 ) );
+	}
+
+	/**
+	 * Check if the next non-whitespace character in the input stream matches any of the given character codes.
+	 *
+	 * @param charCodes an array of character codes to check against
+	 *
+	 * @return true if the next non-whitespace character matches any of the given character codes
+	 */
 	private boolean nextNonWhiteSpaceCharIsOneOf( int[] charCodes ) {
 		int nextChar = getInputStream().LA( skipWhiteSpace( 1 ) );
 
@@ -749,16 +786,34 @@ public class CFLexerCustom extends CFLexer {
 		return false;
 	}
 
+	/**
+	 * Check if the next non-whitespace character in the input stream is any alphabetic character.
+	 *
+	 * @return true if the next non-whitespace character is alphabetic
+	 */
 	private boolean nextNonWhiteSpaceIsAnyChar() {
 		int nextChar = getInputStream().LA( skipWhiteSpace( 1 ) );
 		return Character.isAlphabetic( nextChar );
 	}
 
+	/**
+	 * Check if the next non-whitespace character in the input stream is any digit character.
+	 *
+	 * @return true if the next non-whitespace character is a digit
+	 */
 	private boolean nextNonWhiteSpaceIsAnyDigit() {
 		int nextChar = getInputStream().LA( skipWhiteSpace( 1 ) );
 		return Character.isDigit( nextChar );
 	}
 
+	/**
+	 * Check if the next non-whitespace characters in the input stream match any operator
+	 * sequence defined in the given character map (a trie structure).
+	 *
+	 * @param charMap the operator trie map to match against
+	 *
+	 * @return true if the next non-whitespace characters match an operator in the map
+	 */
 	private boolean nextNonWhiteSpaceCharsAre( Map<Integer, Object> charMap ) {
 		int	pos			= skipWhiteSpace( 1 );
 		int	nextChar	= Character.toUpperCase( getInputStream().LA( pos++ ) );
@@ -767,6 +822,18 @@ public class CFLexerCustom extends CFLexer {
 		return matchOperator( getInputStream(), pos, charMap, nextChar, false );
 	}
 
+	/**
+	 * Recursively match characters from the input stream against an operator trie.
+	 * Walks the trie character-by-character until a complete operator is matched or matching fails.
+	 *
+	 * @param input          the character stream to read from
+	 * @param pos            the current position in the input stream
+	 * @param current        the current node in the operator trie
+	 * @param nextChar       the next character to match (already uppercased)
+	 * @param isTextOperator true if the operator being matched consists of alphabetic characters
+	 *
+	 * @return true if a valid operator match is found
+	 */
 	private boolean matchOperator( CharStream input, int pos, Map<Integer, Object> current, int nextChar, boolean isTextOperator ) {
 		if ( current == null || current.containsKey( -99 ) && isValidNextChar( nextChar, isTextOperator ) ) {
 			// We've reached a leaf node, so we need to verify the next character
@@ -787,6 +854,16 @@ public class CFLexerCustom extends CFLexer {
 		return matchOperator( input, pos + 1, nextMap, nextChar, nextIsText );
 	}
 
+	/**
+	 * Determine if the character following a matched operator is valid, confirming the operator
+	 * is complete. For text-based operators (e.g. AND, OR), the next character must be whitespace
+	 * or an opening bracket. For symbol-based operators, any character is valid.
+	 *
+	 * @param nextChar       the character immediately after the matched operator
+	 * @param isTextOperator true if the matched operator consists of alphabetic characters
+	 *
+	 * @return true if the next character is valid for ending the operator
+	 */
 	private boolean isValidNextChar( int nextChar, boolean isTextOperator ) {
 		if ( Character.isWhitespace( nextChar ) ) {
 			return true;
@@ -799,14 +876,35 @@ public class CFLexerCustom extends CFLexer {
 		}
 	}
 
+	/**
+	 * Check if the given character is a punctuation character used in operator or expression contexts.
+	 *
+	 * @param c the character code to check
+	 *
+	 * @return true if the character is a recognized punctuation character
+	 */
 	private boolean isPunctuation( int c ) {
 		return "&*()-_=+[]{};:'<>?/".indexOf( c ) != -1;
 	}
 
+	/**
+	 * Check if the last non-hidden token was of the specified type.
+	 *
+	 * @param type the token type to check against
+	 *
+	 * @return true if the last token matches the given type
+	 */
 	private boolean lastTokenWas( int type ) {
 		return lastToken != null && lastToken.getType() == type;
 	}
 
+	/**
+	 * Check if the last non-hidden token was one of the specified types.
+	 *
+	 * @param type an array of token types to check against
+	 *
+	 * @return true if the last token matches any of the given types
+	 */
 	private boolean lastTokenOneOf( int[] type ) {
 		if ( lastToken == null ) {
 			return false;

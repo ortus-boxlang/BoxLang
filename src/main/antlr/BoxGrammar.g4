@@ -664,13 +664,13 @@ el2
     | el2 BITWISE_AND el2 # exprBAnd       // foo b& bar
     | el2 BITWISE_XOR el2 # exprBXor       // foo b^ bar
     | el2 BITWISE_OR el2  # exprBor        // foo |b bar
-    | el2 XOR el2         # exprXor        // foo XOR bar
     | el2 INSTANCEOF el2  # exprInstanceOf // InstanceOf operator
     | el2 AMPERSAND el2   # exprCat        // foo & bar - string concatenation
     // TODO: Maybe need to merge these three sets of ops as they are all given equal precedence in the original grammar
     | el2 binOps el2                   # exprBinary      // foo eqv bar
     | el2 relOps el2                   # exprRelational  // foo > bar
     | el2 (EQ | EQUAL | EQEQ | IS) el2 # exprEqual       // foo == bar
+    | el2 XOR el2                      # exprXor         // foo XOR bar
     | el2 ELVIS el2                    # exprElvis       // Elvis operator
     | el2 CASTAS (type | el2)          # exprCastAs      // CastAs operator
     | el2 DOES NOT CONTAIN el2         # exprNotContains // foo DOES NOT CONTAIN bar

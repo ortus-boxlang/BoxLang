@@ -57,7 +57,7 @@ public class StoredProc extends Component {
 		super();
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.procedure, "string", Set.of( Validator.REQUIRED, Validator.NON_EMPTY ) ),
-		    new Attribute( Key.datasource, "string" ),
+		    new Attribute( Key.datasource, "any" ),
 		    new Attribute( Key.blockfactor, "integer", Set.of( Validator.NOT_IMPLEMENTED ) ),
 		    new Attribute( Key.debug, "boolean", false ),
 		    new Attribute( Key.returnCode, "boolean", false ),
@@ -78,7 +78,7 @@ public class StoredProc extends Component {
 	 *
 	 * @attribute.procedure The name of the procedure to execute.
 	 *
-	 * @attribute.datasource The name of the datasource where the stored procedure is registered.
+	 * @attribute.datasource The name of the datasource where the stored procedure is registered, or a struct of datasource settings for on-the-fly connections.
 	 *
 	 * @attribute.blockfactor The fetch size to use for batching rows and reducing network round trips when reading results.
 	 *

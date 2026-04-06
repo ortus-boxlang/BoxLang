@@ -149,6 +149,24 @@ public class QoQParseTest {
 	}
 
 	@Test
+	public void testNestedQueryTable() {
+		instance.executeSource(
+		    """
+		                foo.bar.baz.qryDept = queryNew( "name,code", "varchar,integer", [["IT",404],["Exec",200],["Janitor",200]] )
+		                q = queryExecute( "
+		                select name as col from foo.bar.baz.qryDept
+		          union select name from foo.bar.baz.qryDept
+		    order by col desc
+		                        ",
+		                              	[],
+		                              	{ dbType : "query" }
+		                              );
+		                           println( q )
+		                              """,
+		    context );
+	}
+
+	@Test
 	public void testRunQoQUnionDistinct() {
 		instance.executeSource(
 		    """

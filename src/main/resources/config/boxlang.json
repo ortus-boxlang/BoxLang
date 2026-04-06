@@ -198,7 +198,11 @@
 				"encoder": "text",
 				// Additive logging: true means that this logger will inherit the appenders from the root logger
 				// If false, it will only use the appenders defined in this logger
-				"additive": false
+				"additive": false,
+				// An optional array of Java class or package names whose log events should also be
+				// redirected to this logger's appender at the same log level.
+				// Example: [ "com.zaxxer.hikari", "org.apache.commons.dbcp2" ]
+				"categories": []
 			},
 			// The modules log is used by the module service and records all module activity
 			"modules": {
@@ -267,6 +271,20 @@
 				// Additive logging: true means that this logger will inherit the appenders from the root logger
 				// If false, it will only use the appenders defined in this logger
 				"additive": false
+			},
+			// The blackhole logger silences all log events. Its level is OFF by default, meaning nothing is ever written.
+			// Add Java class or package names to "categories" to suppress noisy third-party libraries.
+			// Example: "categories": [ "com.zaxxer.hikari", "org.springframework" ]
+			"blackhole": {
+				// OFF means no events pass through regardless of appender
+				"level": "OFF",
+				"appender": "file",
+				"appenderArguments": {},
+				"encoder": "text",
+				// Must be false: blackhole does not propagate to root/console
+				"additive": false,
+				// Add class/package names here to silence them
+				"categories": []
 			}
 		}
 	},
@@ -316,15 +334,9 @@
 		// You can use the ${user-dir} or ${boxlang-home} variables or any other environment variable
 		// Example: "schedulers": [ "/path/to/Scheduler.bx" ]
 		"schedulers": [],
-		// You can also define tasks manually here
-		// Every task is an object defined by a unique name
-		// The task object is a struct with the following properties:
-		// - `crontime:string` - The cron time to run the task (optional), defaults to empty string
-		// - `eventhandler:path` - The absolute path to the task event handler(optional), defaults to empty string
-		// - `exclude:any` - Comma-separated list of dates or date range (d1 to d2) on which to not execute the scheduled task
-		// - `file:name` - Name of the log file to store output of the task (optional), defaults to `scheduler`
-		// - `group:string` - The group name of the task (optional), defaults to empty string
-		"tasks": {}
+		// The path to the JSON file where bx:schedule tasks are persisted across restarts.
+		// Supports ${boxlang-home} and other placeholder variables.
+		"tasksFile": "${boxlang-home}/config/tasks.json"
 	},
 	"defaultDatasource": "",
 	// The registered global datasources in the language
