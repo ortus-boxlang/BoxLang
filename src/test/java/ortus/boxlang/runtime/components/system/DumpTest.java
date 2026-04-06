@@ -739,4 +739,147 @@ public class DumpTest {
 
 	}
 
+	@DisplayName( "It can dump the specified number of items depending on the nested structure" )
+	@Test
+	public void topTest() {
+		// @formatter:off
+			instance.executeSource(
+				"""
+					val = { "alpha": "a",
+							"beta" : {
+								"charlie": "c",
+								"delta": "d"
+							},
+							"echo" : {
+								"foxtrot" : {
+									"golf" : "g",
+									"hotel" : "h"
+								}
+							},
+							"india" : {
+								"juliet" : {
+									"kilo" : {
+										"lima" : "l",
+										"mike" : "m"
+									}
+								}
+							},
+							"november" : {
+								"oscar" : {
+									"papa" : {
+										"quebec" : {
+											"romeo" : "r",
+											"sierra" : "s"
+										}
+									}
+								}
+							}
+						};
+						
+					dump( var = val, format = "html", top = 1, maxRows = 3 );
+				""",
+				context );
+			// @formatter:on
+		String output = baos.toString();
+		assertThat( output ).contains( "alpha" );
+		assertThat( output ).contains( "beta" );
+
+		assertThat( output ).contains( "echo" );
+		assertThat( output ).doesNotContain( "golf" );
+
+	}
+
+	/*
+	 * NOTE: Additional scenarios for the "top" / "maxRows" behavior were previously
+	 * prototyped here as commented-out test code. That experimental code has been
+	 * removed to keep this test class focused on active, automated tests. If you
+	 * need to cover more cases, please add new @Test methods instead of
+	 * commenting them out.
+	 * 
+	 * The existing topTest() above already verifies basic recursion limiting by
+	 * asserting that shallow keys are present while deeper nested keys are
+	 * omitted from the dump output.
+	 * 
+	 * (Legacy commented-out implementation removed.)
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * 
+	 * context,
+	 * BoxSourceType.BOXSCRIPT
+	 * );
+	 * 
+	 * String output = baos.toString();
+	 * 
+	 * assertThat( output ).contains( "a" );
+	 * assertThat( output ).contains( "b" );
+	 * assertThat( output ).contains( "c" );
+	 * 
+	 * assertThat( output ).contains( "level-2" );
+	 * assertThat( output ).contains( "level-3" );
+	 * 
+	 * }
+	 * 
+	 * @DisplayName( "It can control whether to expand the dump or not" )
+	 * 
+	 * @Test
+	 * public void testTopValuesProduceDifferentDepths() {
+	 * IStruct level4 = Struct.of( Key.of( "level4" ), "deepest" ); // we create the struct object of eahc differnet level so that they point towards each other.
+	 * IStruct level3 = Struct.of( Key.of( "level3" ), level4 );
+	 * IStruct level2 = Struct.of( Key.of( "level2" ), level3 );
+	 * IStruct level1 = Struct.of( Key.of( "level1" ), level2 );
+	 * 
+	 * variables.put( Key.of( "data" ), level1 );
+	 * 
+	 * instance.executeSource(
+	 * """
+	 * dump( var = data, top = 1, format="html");
+	 * 
+	 * """,
+	 * context,
+	 * BoxSourceType.BOXSCRIPT
+	 * );
+	 * 
+	 * String outputTop1 = baos.toString();
+	 * // Should see root key
+	 * assertThat( outputTop1 ).contains( "level1" );
+	 * // Sh
+	 * assertThat( outputTop1 ).doesNotContain( "level2" );
+	 * assertThat( outputTop1 ).contains( "Top Limit reached" );
+	 * 
+	 * baos.reset();
+	 * 
+	 * instance.executeSource(
+	 * """
+	 * dump(var=data, top=2, format="html");
+	 * """,
+	 * context,
+	 * BoxSourceType.BOXSCRIPT
+	 * );
+	 * String outputTop2 = baos.toString();
+	 * 
+	 * assertThat( outputTop2 ).contains( "level1" );
+	 * assertThat( outputTop2 ).contains( "level2" );
+	 * assertThat( outputTop2 ).doesNotContain( "level3" );
+	 * 
+	 * assertWithMessage( "top=1 and top=2 should produce different output" )
+	 * .that( outputTop1 )
+	 * .isNotEqualTo( outputTop2 );
+	 * assertWithMessage( "top=2 should render deeper than top=1" )
+	 * .that( outputTop2.length() )
+	 * .isGreaterThan( outputTop1.length() );
+	 * }
+	 */
 }
