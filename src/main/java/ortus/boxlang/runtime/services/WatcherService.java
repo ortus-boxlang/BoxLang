@@ -94,25 +94,21 @@ public class WatcherService extends BaseService {
 		timerUtil.start( "watcherservice-startup" );
 		logger.info( "+ Starting up Watcher Service..." );
 
+		// Load config-driven watchers
 		registerGlobalWatchers();
 
-		watchers.values()
-		    .parallelStream()
-		    .forEach( w -> {
-			    try {
-				    w.start();
-			    } catch ( Exception e ) {
-				    logger.error( "Failed to start watcher [{}]: {}", w.getName().getName(), e.getMessage() );
-			    }
-		    } );
+		// Startup all the watchers
+		for ( WatcherInstance watcher : this.watchers.values() ) {
+			try {
+				watcher.start();
+			} catch ( Exception e ) {
+				logger.error( "Failed to start watcher [{}]: {}", watcher.getName().getName(), e.getMessage() );
+			}
+		}
 
 		announce(
 		    BoxEvent.ON_WATCHER_SERVICE_STARTUP,
 		    Struct.of( Key.watcherService, this )
-		);
-		announce(
-		    BoxEvent.ON_ALL_WATCHERS_STARTED,
-		    Struct.of( Key.watchers, getWatcherNames() )
 		);
 
 		logger.info( "+ Watcher Service started in [{}] ms", timerUtil.stopAndGetMillis( "watcherservice-startup" ) );
@@ -127,17 +123,7 @@ public class WatcherService extends BaseService {
 	public void onShutdown( Boolean force ) {
 		logger.info( "+ Shutting down Watcher Service..." );
 
-		watchers.values()
-		    .parallelStream()
-		    .forEach( w -> {
-			    try {
-				    w.stop();
-			    } catch ( Exception e ) {
-				    logger.error( "Error stopping watcher [{}] during shutdown: {}", w.getName().getName(), e.getMessage() );
-			    }
-		    } );
-
-		watchers.clear();
+		shutdownAll( force );
 
 		announce(
 		    BoxEvent.ON_WATCHER_SERVICE_SHUTDOWN,
@@ -158,20 +144,21 @@ public class WatcherService extends BaseService {
 	 * @param force   if true, replaces an existing watcher with the same name (stopping it first)
 	 *
 	 * @return the registered watcher
+	 *
 	 * @throws BoxRuntimeException if a watcher with the same name already exists and force is false
 	 */
 	public WatcherInstance register( WatcherInstance watcher, boolean force ) {
 		Key key = watcher.getName();
 
-		if ( watchers.containsKey( key ) ) {
+		if ( this.watchers.containsKey( key ) ) {
 			if ( force ) {
-				watchers.get( key ).stop();
+				this.watchers.get( key ).stop();
 			} else {
 				throw new BoxRuntimeException( "A watcher named [" + key.getName() + "] is already registered. Use force=true to replace it." );
 			}
 		}
 
-		watchers.put( key, watcher );
+		this.watchers.put( key, watcher );
 		announce( BoxEvent.ON_WATCHER_REGISTRATION, Struct.of( Key.watcher, watcher ) );
 		return watcher;
 	}
@@ -198,7 +185,7 @@ public class WatcherService extends BaseService {
 	 * @return the watcher, or null if not found
 	 */
 	public WatcherInstance getWatcher( Key name ) {
-		return watchers.get( name );
+		return this.watchers.get( name );
 	}
 
 	/**
@@ -207,10 +194,11 @@ public class WatcherService extends BaseService {
 	 * @param name the watcher name
 	 *
 	 * @return the watcher
+	 *
 	 * @throws BoxRuntimeException if not found
 	 */
 	public WatcherInstance getWatcherOrFail( Key name ) {
-		WatcherInstance w = watchers.get( name );
+		WatcherInstance w = this.watchers.get( name );
 		if ( w == null ) {
 			throw new BoxRuntimeException( "No watcher named [" + name.getName() + "] is registered." );
 		}
@@ -225,7 +213,7 @@ public class WatcherService extends BaseService {
 	 * @return true if registered
 	 */
 	public boolean hasWatcher( Key name ) {
-		return watchers.containsKey( name );
+		return this.watchers.containsKey( name );
 	}
 
 	/**
@@ -236,7 +224,7 @@ public class WatcherService extends BaseService {
 	 * @return true if found and removed, false if not present
 	 */
 	public boolean removeWatcher( Key name ) {
-		WatcherInstance w = watchers.remove( name );
+		WatcherInstance w = this.watchers.remove( name );
 		if ( w != null ) {
 			w.stop();
 			announce( BoxEvent.ON_WATCHER_REMOVAL, Struct.of( Key.watcher, w ) );
@@ -251,7 +239,7 @@ public class WatcherService extends BaseService {
 	 * @return map of Key → WatcherInstance
 	 */
 	public Map<Key, WatcherInstance> getWatchers() {
-		return Map.copyOf( watchers );
+		return Map.copyOf( this.watchers );
 	}
 
 	/**
@@ -261,7 +249,7 @@ public class WatcherService extends BaseService {
 	 */
 	public Array getWatcherNames() {
 		Array names = new Array();
-		watchers.keySet().forEach( k -> names.add( k.getName() ) );
+		this.watchers.keySet().forEach( k -> names.add( k.getName() ) );
 		return names;
 	}
 
@@ -269,13 +257,13 @@ public class WatcherService extends BaseService {
 	 * Stop all running watchers without removing them from the registry.
 	 */
 	public void stopAll() {
-		watchers.values().parallelStream().forEach( w -> {
+		for ( WatcherInstance watcher : this.watchers.values() ) {
 			try {
-				w.stop();
+				watcher.stop();
 			} catch ( Exception e ) {
-				logger.error( "Error stopping watcher [{}]: {}", w.getName().getName(), e.getMessage() );
+				logger.error( "Error stopping watcher [{}]: {}", watcher.getName().getName(), e.getMessage() );
 			}
-		} );
+		}
 	}
 
 	/**
@@ -285,7 +273,7 @@ public class WatcherService extends BaseService {
 	 */
 	public void shutdownAll( Boolean force ) {
 		stopAll();
-		watchers.clear();
+		this.watchers.clear();
 	}
 
 	/**
@@ -294,7 +282,7 @@ public class WatcherService extends BaseService {
 	 * @return watcher count
 	 */
 	public int size() {
-		return watchers.size();
+		return this.watchers.size();
 	}
 
 	// -------------------------------------------------------------------------
@@ -334,17 +322,19 @@ public class WatcherService extends BaseService {
 				return;
 			}
 
-			String listenerClass = StringCaster.cast( def.get( Key.listener ) );
+			String					listenerClass		= StringCaster.cast( def.get( Key.listener ) );
 
 			// Inherit defaults → override with per-definition values
-			boolean	defRecursive		= def.containsKey( Key.recursive ) ? BooleanCaster.cast( def.get( Key.recursive ) ) : config.recursive;
-			long	defDebounce			= def.containsKey( Key.debounce ) ? LongCaster.cast( def.get( Key.debounce ) ) : config.debounce;
-			long	defThrottle			= def.containsKey( Key.throttle ) ? LongCaster.cast( def.get( Key.throttle ) ) : config.throttle;
-			boolean	defAtomicWrites		= def.containsKey( Key.atomicWrites ) ? BooleanCaster.cast( def.get( Key.atomicWrites ) ) : config.atomicWrites;
-			int		defErrorThreshold	= def.containsKey( Key.errorThreshold ) ? IntegerCaster.cast( def.get( Key.errorThreshold ) ) : config.errorThreshold;
+			boolean					defRecursive		= def.containsKey( Key.recursive ) ? BooleanCaster.cast( def.get( Key.recursive ) ) : config.recursive;
+			long					defDebounce			= def.containsKey( Key.debounce ) ? LongCaster.cast( def.get( Key.debounce ) ) : config.debounce;
+			long					defThrottle			= def.containsKey( Key.throttle ) ? LongCaster.cast( def.get( Key.throttle ) ) : config.throttle;
+			boolean					defAtomicWrites		= def.containsKey( Key.atomicWrites ) ? BooleanCaster.cast( def.get( Key.atomicWrites ) )
+			    : config.atomicWrites;
+			int						defErrorThreshold	= def.containsKey( Key.errorThreshold ) ? IntegerCaster.cast( def.get( Key.errorThreshold ) )
+			    : config.errorThreshold;
 
 			// Build path list
-			WatcherInstance.Builder builder = WatcherInstance.builder( watcherName )
+			WatcherInstance.Builder	builder				= WatcherInstance.builder( watcherName )
 			    .recursive( defRecursive )
 			    .debounce( defDebounce )
 			    .throttle( defThrottle )
@@ -353,7 +343,7 @@ public class WatcherService extends BaseService {
 			    .parentContext( runtimeContext )
 			    .listener( new ClassListener( listenerClass, runtimeContext ) );
 
-			Object pathsRaw = def.get( Key.paths );
+			Object					pathsRaw			= def.get( Key.paths );
 			if ( pathsRaw instanceof Array pathArray ) {
 				pathArray.forEach( p -> builder.addPath( StringCaster.cast( p ) ) );
 			} else {

@@ -181,7 +181,6 @@ public enum BoxEvent {
 	 */
 	ON_WATCHER_SERVICE_STARTUP( "onWatcherServiceStartup" ),
 	ON_WATCHER_SERVICE_SHUTDOWN( "onWatcherServiceShutdown" ),
-	ON_ALL_WATCHERS_STARTED( "onAllWatchersStarted" ),
 	ON_WATCHER_REGISTRATION( "onWatcherRegistration" ),
 	ON_WATCHER_REMOVAL( "onWatcherRemoval" ),
 	ON_WATCHER_STARTUP( "onWatcherStartup" ),
