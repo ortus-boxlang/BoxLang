@@ -155,6 +155,21 @@ public class QueryColumn implements IReferenceable, Serializable {
 	}
 
 	/**
+	 * Set the name of this column
+	 *
+	 * @param name The new name for the column
+	 */
+	void setName( Key name ) {
+		if ( name.equals( this.name ) ) {
+			return;
+		}
+		this.name = name;
+		if ( this.query != null ) {
+			this.query.invalidateColumnCaches();
+		}
+	}
+
+	/**
 	 * Get the type of this column
 	 *
 	 * @return The type of the column
