@@ -28,7 +28,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -113,35 +112,43 @@ public class WatcherNew extends BIF {
 	@Override
 	public WatcherInstance _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Determine watcher name (auto-generate if not supplied)
-		String					nameArg		= arguments.getAsString( Key._name );
-		Key						name		= ( nameArg != null && !nameArg.isBlank() ) ? Key.of( nameArg ) : Key.of( "watcher-" + System.nanoTime() );
+		String				nameArg		= arguments.getAsString( Key._name );
+		Key					name		= ( nameArg != null && !nameArg.isBlank() ) ? Key.of( nameArg ) : Key.of( "watcher-" + System.nanoTime() );
 
 		// Resolve listener
-		Object					listenerArg	= arguments.get( Key.listener );
-		IWatcherListener		listener	= resolveListener( listenerArg, context );
+		Object				listenerArg	= arguments.get( Key.listener );
+		IWatcherListener	listener	= resolveListener( listenerArg, context );
+
+		// If the incoming paths is a string, convert it to a single-element array for easier processing
+		Object				pathsArg	= arguments.get( Key.paths );
+		Array				pathArray	= new Array();
+		if ( pathsArg instanceof String singlePath ) {
+			pathArray.add( singlePath );
+			arguments.put( Key.paths, pathArray );
+		} else if ( pathsArg instanceof Array arr ) {
+			pathArray = arr;
+		} else {
+			throw new BoxRuntimeException( "watcherNew: 'paths' argument must be a string or an array of strings." );
+		}
 
 		// Build the watcher
-		WatcherInstance.Builder	builder		= WatcherInstance.builder( name )
+		WatcherInstance watcher = WatcherInstance.builder( name )
+		    .paths( pathArray )
 		    .recursive( BooleanCaster.cast( arguments.get( Key.recursive ) ) )
 		    .debounce( LongCaster.cast( arguments.get( Key.debounce ) ) )
 		    .throttle( LongCaster.cast( arguments.get( Key.throttle ) ) )
 		    .atomicWrites( BooleanCaster.cast( arguments.get( Key.atomicWrites ) ) )
 		    .errorThreshold( IntegerCaster.cast( arguments.get( Key.errorThreshold ) ) )
 		    .parentContext( context )
-		    .listener( listener );
+		    .listener( listener )
+		    .build();
 
-		// Add paths
-		Object					pathsArg	= arguments.get( Key.paths );
-		if ( pathsArg instanceof Array pathArray ) {
-			pathArray.forEach( p -> builder.addPath( StringCaster.cast( p ) ) );
-		} else {
-			builder.addPath( StringCaster.cast( pathsArg ) );
-		}
-
-		WatcherInstance	watcher	= builder.build();
-		boolean			force	= BooleanCaster.cast( arguments.get( Key.force ) );
-
-		return runtime.getWatcherService().register( watcher, force );
+		return this.runtime
+		    .getWatcherService()
+		    .register(
+		        watcher,
+		        BooleanCaster.cast( arguments.get( Key.force ) )
+		    );
 	}
 
 	/**
@@ -150,23 +157,25 @@ public class WatcherNew extends BIF {
 	 * @param listenerArg The listener argument, which can be a Function, IStruct, or String.
 	 * @param context     The BoxContext, required for ClassListener instantiation.
 	 *
+	 * @throws BoxRuntimeException If the listenerArg is not a supported type or if class instantiation fails.
+	 *
 	 * @return An IWatcherListener instance corresponding to the input argument.
 	 */
 	private IWatcherListener resolveListener( Object listenerArg, IBoxContext context ) {
+		// A Function becomes a ClosureListener; an IStruct becomes a StructListener; a String becomes a ClassListener
+
 		if ( listenerArg instanceof Function fn ) {
 			return new ClosureListener( fn );
 		}
+
 		if ( listenerArg instanceof IStruct structArg ) {
 			return new StructListener( structArg );
 		}
+
 		if ( listenerArg instanceof String className ) {
 			return new ClassListener( className, context );
 		}
-		// Try coercing to String
-		String asString = StringCaster.cast( listenerArg );
-		if ( asString != null && !asString.isBlank() ) {
-			return new ClassListener( asString, context );
-		}
+
 		throw new BoxRuntimeException( "watcherNew: listener must be a Function, IStruct of functions, or a class name String." );
 	}
 
