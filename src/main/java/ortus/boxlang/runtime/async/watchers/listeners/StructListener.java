@@ -19,7 +19,7 @@ package ortus.boxlang.runtime.async.watchers.listeners;
 
 import ortus.boxlang.runtime.async.watchers.WatcherContext;
 import ortus.boxlang.runtime.async.watchers.WatcherEvent;
-import ortus.boxlang.runtime.context.FunctionBoxContext;
+import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.types.IStruct;
  * <li>{@code onModify} — invoked for MODIFIED events</li>
  * <li>{@code onDelete} — invoked for DELETED events</li>
  * <li>{@code onOverflow} — invoked for OVERFLOW events</li>
+ * <li>{@code onEvent} — invoked for all event kinds (alternative to per-kind handlers)</li>
  * <li>{@code onError} — invoked when another handler throws</li>
  * </ul>
  * All keys are optional — unmatched events are silently ignored.
@@ -40,6 +41,9 @@ import ortus.boxlang.runtime.types.IStruct;
  */
 public class StructListener implements IWatcherListener {
 
+	/**
+	 * The struct containing handler functions. Expected keys: onCreate, onModify, onDelete, onOverflow, onEvent, onError. All optional.
+	 */
 	private final IStruct handlers;
 
 	/**
@@ -54,29 +58,45 @@ public class StructListener implements IWatcherListener {
 	/**
 	 * {@inheritDoc}
 	 * Dispatches to the matching per-kind handler if present.
+	 * If no per-kind handler is found, the {@code onEvent} handler is invoked if present.
 	 */
 	@Override
 	public void onEvent( WatcherEvent event, WatcherContext ctx ) {
-		Key		handlerKey	= switch ( event.getKind() ) {
-								case CREATED -> Key.onCreate;
-								case MODIFIED -> Key.onModify;
-								case DELETED -> Key.onDelete;
-								case OVERFLOW -> Key.onOverflow;
-							};
+		// @formatter:off
+		Key handlerKey = switch ( event.getKind() ) {
+			case CREATED -> Key.onCreate;
+			case MODIFIED -> Key.onModify;
+			case DELETED -> Key.onDelete;
+			case OVERFLOW -> Key.onOverflow;
+		};
+		// @formatter:on
 
+		// Try the per-kind handler first
 		Object	raw			= handlers.get( handlerKey );
-
+		// Verify it's a Function before invoking
 		if ( raw instanceof Function targetFunction ) {
-			FunctionBoxContext functionContext = Function.generateFunctionContext(
-			    targetFunction,
+			ThreadBoxContext.runInContext(
 			    ctx.getBoxContext(),
-			    handlerKey,
-			    new Object[] { event.toStruct() },
-			    null,
-			    null,
-			    null
+			    true,
+			    threadCtx -> threadCtx.invokeFunction(
+			        targetFunction,
+			        new Object[] { event.toStruct() }
+			    )
 			);
-			targetFunction.invoke( functionContext );
+		}
+
+		// Verify if we have a global onEvent handler and invoke it if so
+		// This allows for a catch-all handler that receives all event kinds, even if specific handlers are defined for some kinds
+		Object globalRaw = handlers.get( Key.onEvent );
+		if ( globalRaw instanceof Function globalFunction ) {
+			ThreadBoxContext.runInContext(
+			    ctx.getBoxContext(),
+			    true,
+			    threadCtx -> threadCtx.invokeFunction(
+			        globalFunction,
+			        new Object[] { event.toStruct() }
+			    )
+			);
 		}
 	}
 
@@ -88,16 +108,14 @@ public class StructListener implements IWatcherListener {
 	public void onError( Exception exception, WatcherContext ctx ) {
 		Object raw = handlers.get( Key.onError );
 		if ( raw instanceof Function targetFunction ) {
-			FunctionBoxContext functionContext = Function.generateFunctionContext(
-			    targetFunction,
+			ThreadBoxContext.runInContext(
 			    ctx.getBoxContext(),
-			    Key.onError,
-			    new Object[] { exception.getMessage(), exception },
-			    null,
-			    null,
-			    null
+			    true,
+			    threadCtx -> threadCtx.invokeFunction(
+			        targetFunction,
+			        new Object[] { exception }
+			    )
 			);
-			targetFunction.invoke( functionContext );
 		}
 	}
 

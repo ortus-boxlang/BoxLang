@@ -59,16 +59,20 @@ public class WatcherNewTest {
 	@DisplayName( "It creates and registers a new watcher instance" )
 	@Test
 	public void testWatcherNew() {
+		// @formatter:off
 		instance.executeSource(
 		    """
-		    result = watcherNew( "myWatcher", [ "./src" ], ( event, watcherContext ) => {} )
-		    """,
+		       	result = watcherNew( "myWatcher", [ "./src" ], ( event, watcherContext ) => {} )
+		    	running = result.isRunning()
+		       """,
 		    this.context
 		);
+		// @formatter:on
 
 		WatcherInstance watcher = ( WatcherInstance ) this.variables.get( Key.of( "result" ) );
 		assertThat( watcher ).isNotNull();
 		assertThat( instance.getWatcherService().hasWatcher( Key.of( "myWatcher" ) ) ).isTrue();
+		assertThat( this.variables.getAsBoolean( Key.of( "running" ) ) ).isFalse();
 	}
 
 }

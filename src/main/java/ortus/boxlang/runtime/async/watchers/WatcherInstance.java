@@ -252,9 +252,11 @@ public class WatcherInstance {
 	 * Stop the watcher. Cancels the watch loop, closes the NIO watch service, and
 	 * shuts down the executor. The watcher can be restarted via {@link #restart()}.
 	 *
+	 * @param force if true, forces an immediate stop by interrupting the watch loop thread and closing the WatchService to unblock it. This may cause events to be lost but allows for a faster shutdown in cases where the loop is unresponsive.
+	 *
 	 * @return this instance (fluent)
 	 */
-	public synchronized WatcherInstance stop() {
+	public synchronized WatcherInstance stop( boolean force ) {
 		// If not running, do nothing
 		if ( this.state != State.RUNNING ) {
 			return this;
@@ -295,7 +297,7 @@ public class WatcherInstance {
 	 * @return this instance (fluent)
 	 */
 	public WatcherInstance restart() {
-		this.stop();
+		this.stop( true );
 		this.announceEvent( BoxEvent.ON_WATCHER_RESTART );
 		return this.start();
 	}
@@ -555,18 +557,62 @@ public class WatcherInstance {
 		return this.name;
 	}
 
+	/**
+	 * Check if the watcher is currently running. This is true if the state is RUNNING, which means the watch loop is active and events are being processed.
+	 * Note that this does not guarantee that the watch loop thread is currently executing (it may be
+	 * between polls), but it indicates that the watcher has been started and has not been stopped.
+	 *
+	 * @return {@code true} if the watcher is running, {@code false} otherwise
+	 */
 	public boolean isRunning() {
 		return this.state == State.RUNNING;
 	}
 
+	/**
+	 * Check if the watcher is currently stopped. This is true if the state is STOPPED, which means the watch loop has been stopped and no further events will be processed until it is started again.
+	 *
+	 * @return {@code true} if the watcher is stopped, {@code false} otherwise
+	 */
+	public boolean isStopped() {
+		return this.state == State.STOPPED;
+	}
+
+	/**
+	 * Get the current lifecycle state of the watcher. This can be CREATED (not started), RUNNING (started and processing events), or STOPPED (stopped and not processing events).
+	 * The state is updated synchronously during lifecycle transitions to ensure thread safety.
+	 * Note that even if the state is RUNNING, the watch loop may not be actively processing events at the moment (e.g. it may be between polls), but it indicates that the watcher has been started and has not been stopped.
+	 *
+	 * @return the current State of the watcher
+	 */
 	public State getState() {
 		return this.state;
 	}
 
+	/**
+	 * Helper method to get the current state as a string, which can be useful for debugging or when passing the state to contexts that expect strings. This simply returns the name of the current State enum value.
+	 *
+	 * @return the current state of the watcher as a string
+	 */
+	public String getStateAsString() {
+		return this.state.name();
+	}
+
+	/**
+	 * Get the list of paths this watcher is configured to watch. These are the paths that were registered with the WatchService on start. Note that if the watcher is configured with recursive=true, subdirectories of these paths are also being watched,
+	 * but only the top-level paths are returned here.
+	 *
+	 * @return the list of paths this watcher is configured to watch
+	 */
 	public List<Path> getWatchPaths() {
 		return this.watchPaths;
 	}
 
+	/**
+	 * Get the listener associated with this watcher. The listener is responsible for handling events and errors dispatched by this watcher.
+	 * This is the same listener that was provided during construction via the Builder.
+	 *
+	 * @return the listener associated with this watcher
+	 */
 	public IWatcherListener getListener() {
 		return this.listener;
 	}
@@ -583,7 +629,7 @@ public class WatcherInstance {
 
 		return Struct.ofNonConcurrent(
 		    Key._name, this.name.getName(),
-		    Key.of( "state" ), this.state.name(),
+		    Key.state, this.state.name(),
 		    Key.paths, pathArray,
 		    Key.recursive, this.recursive,
 		    Key.debounce, this.debounce,

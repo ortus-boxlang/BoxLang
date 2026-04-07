@@ -21,6 +21,8 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Argument;
 
 /**
  * Stop all running watchers without removing them from the registry.
@@ -30,6 +32,9 @@ public class WatcherStopAll extends BIF {
 
 	public WatcherStopAll() {
 		super();
+		declaredArguments = new Argument[] {
+		    new Argument( false, Argument.BOOLEAN, Key.force, false )
+		};
 	}
 
 	/**
@@ -38,13 +43,15 @@ public class WatcherStopAll extends BIF {
 	 * Watchers remain registered after this call and can be started again later.
 	 *
 	 * @param context   The BoxContext of the caller.
-	 * @param arguments The arguments passed to the BIF. This BIF does not accept user arguments.
+	 * @param arguments The arguments passed to the BIF. This BIF accepts a "force" argument to forcefully stop all watchers.
 	 *
 	 * @return {@code null}. This BIF performs side effects only.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		runtime.getWatcherService().stopAll();
+		this.runtime
+		    .getWatcherService()
+		    .stopAll( arguments.getAsBoolean( Key.force ) );
 		return null;
 	}
 

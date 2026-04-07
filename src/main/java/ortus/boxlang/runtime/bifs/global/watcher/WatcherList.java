@@ -21,6 +21,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
+import ortus.boxlang.runtime.types.Array;
 
 /**
  * Return an Array of all registered watcher names.
@@ -44,8 +45,8 @@ public class WatcherList extends BIF {
 	 * @return An {@link ortus.boxlang.runtime.types.Array} of watcher names. Returns an empty array when no watchers are registered.
 	 */
 	@Override
-	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return runtime.getWatcherService().getWatcherNames();
+	public Array _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		return this.runtime.getWatcherService().getWatcherNames();
 	}
 
 }

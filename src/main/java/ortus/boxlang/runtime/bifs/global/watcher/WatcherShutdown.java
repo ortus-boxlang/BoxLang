@@ -19,7 +19,6 @@ package ortus.boxlang.runtime.bifs.global.watcher;
 
 import java.util.Set;
 
-import ortus.boxlang.runtime.async.watchers.WatcherInstance;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -29,12 +28,12 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.validation.Validator;
 
 /**
- * Restart a watcher by name (stop + start).
+ * Stop and unregister a watcher by name.
  */
-@BoxBIF( description = "Restart a filesystem watcher by name (stop then start)." )
-public class WatcherRestart extends BIF {
+@BoxBIF( description = "Stop and unregister a filesystem watcher by name." )
+public class WatcherShutdown extends BIF {
 
-	public WatcherRestart() {
+	public WatcherShutdown() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, Argument.STRING, Key._name, Set.of( Validator.NON_EMPTY ) )
@@ -42,25 +41,23 @@ public class WatcherRestart extends BIF {
 	}
 
 	/**
-	 * Restarts a registered watcher by performing {@code stop()} then {@code start()}.
+	 * Stops and removes a registered watcher from the watcher registry.
 	 *
-	 * This is useful when refreshing watcher state after path changes or listener updates.
+	 * This is the destructive single-watcher lifecycle operation. After this call,
+	 * the watcher is no longer registered and must be recreated before use.
 	 *
 	 * @param context   The BoxContext of the caller.
 	 * @param arguments The arguments passed to the BIF.
 	 *
-	 * @argument.name The unique watcher name to restart.
+	 * @argument.name The unique watcher name to shut down.
 	 *
-	 * @return The restarted {@link ortus.boxlang.runtime.watchers.WatcherInstance}.
-	 *
-	 * @throws ortus.boxlang.runtime.types.exceptions.BoxRuntimeException If no watcher with the given name is registered.
+	 * @return {@code true} if the watcher was removed; otherwise {@code false}.
 	 */
 	@Override
-	public WatcherInstance _invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Boolean _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return this.runtime
 		    .getWatcherService()
-		    .getWatcherOrFail( Key.of( arguments.getAsString( Key._name ) ) )
-		    .restart();
+		    .removeWatcher( Key.of( arguments.getAsString( Key._name ) ) );
 	}
 
 }

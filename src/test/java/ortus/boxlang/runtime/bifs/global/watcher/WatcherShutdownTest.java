@@ -32,7 +32,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 
-public class WatcherShutdownAllTest {
+public class WatcherShutdownTest {
 
 	static BoxRuntime	instance;
 	IBoxContext			context;
@@ -55,26 +55,27 @@ public class WatcherShutdownAllTest {
 		instance.getWatcherService().shutdownAll( false );
 	}
 
-	@DisplayName( "It stops all watchers and removes them from the registry" )
+	@DisplayName( "It shuts down and unregisters only the requested watcher" )
 	@Test
-	public void testWatcherShutdownAll() {
+	public void testWatcherShutdown() {
 		// @formatter:off
 		instance.executeSource(
 		    """
-				one = watcherNew( "watcherOne", [ "./src" ], ( event, watcherContext ) => {} )
-				two = watcherNew( "watcherTwo", [ "./src" ], ( event, watcherContext ) => {} )
-				watcherShutdownAll( true )
-				result = watcherList()
-				oneRunning = one.isRunning()
-				twoRunning = two.isRunning()
-		       """,
+		    watcherNew( "watcherOne", [ "./src" ], ( event, watcherContext ) => {} )
+		    watcherNew( "watcherTwo", [ "./src" ], ( event, watcherContext ) => {} )
+			removed = watcherShutdown( "watcherOne" )
+			existsOne = watcherExists( "watcherOne" )
+			existsTwo = watcherExists( "watcherTwo" )
+			result = watcherList()
+		    """,
 		    this.context
 		);
 		// @formatter:on
 
-		assertThat( this.variables.getAsArray( Key.of( "result" ) ).size() ).isEqualTo( 0 );
-		assertThat( this.variables.getAsBoolean( Key.of( "oneRunning" ) ) ).isFalse();
-		assertThat( this.variables.getAsBoolean( Key.of( "twoRunning" ) ) ).isFalse();
+		assertThat( this.variables.getAsBoolean( Key.of( "removed" ) ) ).isTrue();
+		assertThat( this.variables.getAsBoolean( Key.of( "existsOne" ) ) ).isFalse();
+		assertThat( this.variables.getAsBoolean( Key.of( "existsTwo" ) ) ).isTrue();
+		assertThat( this.variables.getAsArray( Key.of( "result" ) ).size() ).isEqualTo( 1 );
 	}
 
 }

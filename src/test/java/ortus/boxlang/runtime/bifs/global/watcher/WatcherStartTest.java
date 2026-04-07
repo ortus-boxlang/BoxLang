@@ -59,17 +59,21 @@ public class WatcherStartTest {
 	@DisplayName( "It starts a registered watcher and returns the instance" )
 	@Test
 	public void testWatcherStart() {
+		// @formatter:off
 		instance.executeSource(
 		    """
-		    created = watcherNew( "myWatcher", [ "./src" ], ( event, watcherContext ) => {} )
-		    result  = watcherStart( "myWatcher" )
-		    """,
+		       	created = watcherNew( "myWatcher", [ "./src" ], ( event, watcherContext ) => {} )
+		       	result  = watcherStart( "myWatcher" )
+		    	status = result.isRunning()
+		       """,
 		    this.context
 		);
+		// @formatter:on
 
-		WatcherInstance created = ( WatcherInstance ) this.variables.get( Key.of( "created" ) );
-		WatcherInstance started = ( WatcherInstance ) this.variables.get( Key.of( "result" ) );
+		WatcherInstance	created	= ( WatcherInstance ) this.variables.get( Key.of( "created" ) );
+		WatcherInstance	started	= ( WatcherInstance ) this.variables.get( Key.of( "result" ) );
 		assertThat( started ).isEqualTo( created );
+		assertThat( this.variables.getAsBoolean( Key.of( "status" ) ) ).isTrue();
 	}
 
 }

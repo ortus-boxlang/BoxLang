@@ -152,7 +152,7 @@ public class WatcherService extends BaseService {
 
 		if ( this.watchers.containsKey( key ) ) {
 			if ( force ) {
-				this.watchers.get( key ).stop();
+				this.watchers.get( key ).stop( force );
 			} else {
 				throw new BoxRuntimeException( "A watcher named [" + key.getName() + "] is already registered. Use force=true to replace it." );
 			}
@@ -226,7 +226,7 @@ public class WatcherService extends BaseService {
 	public boolean removeWatcher( Key name ) {
 		WatcherInstance w = this.watchers.remove( name );
 		if ( w != null ) {
-			w.stop();
+			w.stop( true );
 			announce( BoxEvent.ON_WATCHER_REMOVAL, Struct.of( Key.watcher, w ) );
 			return true;
 		}
@@ -255,11 +255,13 @@ public class WatcherService extends BaseService {
 
 	/**
 	 * Stop all running watchers without removing them from the registry.
+	 *
+	 * @param force if true, forces an immediate stop
 	 */
-	public void stopAll() {
+	public void stopAll( boolean force ) {
 		for ( WatcherInstance watcher : this.watchers.values() ) {
 			try {
-				watcher.stop();
+				watcher.stop( force );
 			} catch ( Exception e ) {
 				logger.error( "Error stopping watcher [{}]: {}", watcher.getName().getName(), e.getMessage() );
 			}
@@ -271,8 +273,8 @@ public class WatcherService extends BaseService {
 	 *
 	 * @param force if true, forces immediate shutdown
 	 */
-	public void shutdownAll( Boolean force ) {
-		stopAll();
+	public void shutdownAll( boolean force ) {
+		stopAll( force );
 		this.watchers.clear();
 	}
 

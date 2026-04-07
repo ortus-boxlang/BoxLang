@@ -48,10 +48,10 @@ public class WatcherExists extends BIF {
 	 * @return {@code true} if a watcher with the given name is registered, {@code false} otherwise.
 	 */
 	@Override
-	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public Boolean _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return this.runtime
-			.getWatcherService()
-			.hasWatcher( Key.of( arguments.getAsString( Key._name ) ) );
+		    .getWatcherService()
+		    .hasWatcher( Key.of( arguments.getAsString( Key._name ) ) );
 	}
 
 }

@@ -21,6 +21,7 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 /**
@@ -46,7 +47,7 @@ public class WatcherGetAll extends BIF {
 	 * @return A struct of watcher name to watcher instance mappings. Returns an empty struct when no watchers are registered.
 	 */
 	@Override
-	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public IStruct _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Struct result = new Struct();
 		this.runtime
 		    .getWatcherService()

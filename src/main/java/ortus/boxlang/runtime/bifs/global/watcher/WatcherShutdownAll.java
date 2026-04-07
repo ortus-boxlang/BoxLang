@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.bifs.global.watcher;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -34,7 +33,7 @@ public class WatcherShutdownAll extends BIF {
 	public WatcherShutdownAll() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( false, Argument.BOOLEAN, Key.of( "force" ), false )
+		    new Argument( false, Argument.BOOLEAN, Key.force, false )
 		};
 	}
 
@@ -54,7 +53,9 @@ public class WatcherShutdownAll extends BIF {
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		runtime.getWatcherService().shutdownAll( BooleanCaster.cast( arguments.get( Key.of( "force" ) ) ) );
+		this.runtime
+		    .getWatcherService()
+		    .shutdownAll( arguments.getAsBoolean( Key.force ) );
 		return null;
 	}
 

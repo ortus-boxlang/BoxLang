@@ -19,8 +19,7 @@ package ortus.boxlang.runtime.async.watchers.listeners;
 
 import ortus.boxlang.runtime.async.watchers.WatcherContext;
 import ortus.boxlang.runtime.async.watchers.WatcherEvent;
-import ortus.boxlang.runtime.context.FunctionBoxContext;
-import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.types.Function;
 
 /**
@@ -70,16 +69,14 @@ public class ClosureListener implements IWatcherListener {
 	 */
 	@Override
 	public void onEvent( WatcherEvent event, WatcherContext ctx ) {
-		FunctionBoxContext functionContext = Function.generateFunctionContext(
-		    onEventFn,
+		ThreadBoxContext.runInContext(
 		    ctx.getBoxContext(),
-		    Key.onEvent,
-		    new Object[] { event.toStruct() },
-		    null,
-		    null,
-		    null
+		    true,
+		    threadCtx -> threadCtx.invokeFunction(
+		        this.onEventFn,
+		        new Object[] { event.toStruct() }
+		    )
 		);
-		onEventFn.invoke( functionContext );
 	}
 
 	/**
@@ -90,17 +87,15 @@ public class ClosureListener implements IWatcherListener {
 	 */
 	@Override
 	public void onError( Exception exception, WatcherContext ctx ) {
-		if ( onErrorFn != null ) {
-			FunctionBoxContext functionContext = Function.generateFunctionContext(
-			    onErrorFn,
+		if ( this.onErrorFn != null ) {
+			ThreadBoxContext.runInContext(
 			    ctx.getBoxContext(),
-			    Key.onError,
-			    new Object[] { exception.getMessage(), exception },
-			    null,
-			    null,
-			    null
+			    true,
+			    threadCtx -> threadCtx.invokeFunction(
+			        this.onErrorFn,
+			        new Object[] { exception }
+			    )
 			);
-			onErrorFn.invoke( functionContext );
 		}
 	}
 

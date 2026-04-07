@@ -58,18 +58,22 @@ public class WatcherStopTest {
 	@DisplayName( "It stops a running watcher without removing it from the registry" )
 	@Test
 	public void testWatcherStop() {
+		// @formatter:off
 		instance.executeSource(
 		    """
 		    watcherNew( "myWatcher", [ "./src" ], ( event, watcherContext ) => {} )
 		    watcherStart( "myWatcher" )
-		    watcherStop( "myWatcher" )
+		    instance = watcherStop( "myWatcher" )
+			stopped = instance.isStopped()
 		    result = watcherExists( "myWatcher" )
 		    """,
 		    this.context
 		);
+		// @formatter:on
 
 		// Watcher still registered after stop, just not running
 		assertThat( this.variables.getAsBoolean( Key.of( "result" ) ) ).isTrue();
+		assertThat( this.variables.getAsBoolean( Key.of( "stopped" ) ) ).isTrue();
 	}
 
 }

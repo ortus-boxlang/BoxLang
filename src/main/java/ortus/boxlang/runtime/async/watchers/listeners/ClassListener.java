@@ -21,13 +21,25 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.watchers.WatcherContext;
 import ortus.boxlang.runtime.async.watchers.WatcherEvent;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ThreadBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 
 /**
- * A listener that resolves a BoxLang class by name and delegates events to its
- * {@code onEvent(event)} and {@code onError(message, exception)} methods.
+ * A listener that resolves a BoxLang class by name and delegates events to the different methods on that class.
+ * The only mandatory method is {@code onEvent}.
+ * <p>
+ * Methods allowed are:
+ * <ul>
+ * <li>{@code onCreate} — invoked for CREATED events</li>
+ * <li>{@code onModify} — invoked for MODIFIED events</li>
+ * <li>{@code onDelete} — invoked for DELETED events</li>
+ * <li>{@code onOverflow} — invoked for OVERFLOW events</li>
+ * <li>{@code onEvent} — invoked for all event kinds (alternative to per-kind handlers)</li>
+ * <li>{@code onError} — invoked when another handler throws</li>
+ * </ul>
+ * </p>
  * <p>
  * Class resolution uses the exact pattern from
  * {@code SchedulerStart.startScheduler()}: calling the global {@code createObject}
@@ -63,7 +75,31 @@ public class ClassListener implements IWatcherListener {
 	 */
 	@Override
 	public void onEvent( WatcherEvent event, WatcherContext ctx ) {
-		this.instance.dereferenceAndInvoke( this.context, Key.onEvent, new Object[] { event.toStruct() }, false );
+		// @formatter:off
+		Key methodKey = switch ( event.getKind() ) {
+			case CREATED -> Key.onCreate;
+			case MODIFIED -> Key.onModify;
+			case DELETED -> Key.onDelete;
+			case OVERFLOW -> Key.onOverflow;
+		};
+		// @formatter:on
+
+		// Verify if the class has the method, if so, call it.
+		if ( this.instance.getThisScope().containsKey( methodKey ) ) {
+			ThreadBoxContext.runInContext(
+			    ctx.getBoxContext(),
+			    true,
+			    threadCtx -> this.instance.dereferenceAndInvoke( threadCtx, methodKey, new Object[] { event.toStruct() }, false )
+			);
+		}
+
+		// Send to the generic onEvent handler if it exists and wasn't already handled by a specific method
+		// This is a mandatory signature for ClassListener, so we can skip the existence check
+		ThreadBoxContext.runInContext(
+		    ctx.getBoxContext(),
+		    true,
+		    threadCtx -> this.instance.dereferenceAndInvoke( threadCtx, Key.onEvent, new Object[] { event.toStruct() }, false )
+		);
 	}
 
 	/**
@@ -73,10 +109,12 @@ public class ClassListener implements IWatcherListener {
 	 */
 	@Override
 	public void onError( Exception exception, WatcherContext ctx ) {
-		try {
-			this.instance.dereferenceAndInvoke( this.context, Key.onError, new Object[] { exception.getMessage(), exception }, false );
-		} catch ( Exception ignored ) {
-			// WatcherInstance logs to watcher.log
+		if ( this.instance.getThisScope().containsKey( Key.onError ) ) {
+			ThreadBoxContext.runInContext(
+			    ctx.getBoxContext(),
+			    true,
+			    threadCtx -> this.instance.dereferenceAndInvoke( threadCtx, Key.onError, new Object[] { exception }, false )
+			);
 		}
 	}
 

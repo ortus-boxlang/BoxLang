@@ -19,12 +19,14 @@ package ortus.boxlang.runtime.bifs.global.watcher;
 
 import java.util.Set;
 
+import ortus.boxlang.runtime.async.watchers.WatcherInstance;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.validation.Validator;
 
 /**
@@ -56,9 +58,9 @@ public class WatcherGet extends BIF {
 	 * @throws BoxRuntimeException If no watcher with the given name is registered.
 	 */
 	@Override
-	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public WatcherInstance _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return this.runtime
-			.getWatcherService()
+		    .getWatcherService()
 		    .getWatcherOrFail( Key.of( arguments.getAsString( Key._name ) ) );
 	}
 

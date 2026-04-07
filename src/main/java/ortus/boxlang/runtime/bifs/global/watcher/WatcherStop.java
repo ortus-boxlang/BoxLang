@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.bifs.global.watcher;
 
 import java.util.Set;
 
+import ortus.boxlang.runtime.async.watchers.WatcherInstance;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -36,7 +37,8 @@ public class WatcherStop extends BIF {
 	public WatcherStop() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, Argument.STRING, Key._name, Set.of( Validator.NON_EMPTY ) )
+		    new Argument( true, Argument.STRING, Key._name, Set.of( Validator.NON_EMPTY ) ),
+		    new Argument( false, Argument.BOOLEAN, Key.force, false )
 		};
 	}
 
@@ -51,16 +53,18 @@ public class WatcherStop extends BIF {
 	 *
 	 * @argument.name The unique watcher name to stop.
 	 *
-	 * @return {@code null}. This BIF performs a side effect and does not return a watcher value.
+	 * @argument.force Whether to force an immediate stop by interrupting the watch loop and closing the WatchService, which may cause event loss but allows for faster shutdown in unresponsive scenarios.
+	 *
+	 * @return The stopped {@link ortus.boxlang.runtime.watchers.WatcherInstance}.
 	 *
 	 * @throws ortus.boxlang.runtime.types.exceptions.BoxRuntimeException If no watcher with the given name is registered.
 	 */
 	@Override
-	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		runtime.getWatcherService()
+	public WatcherInstance _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		return this.runtime
+		    .getWatcherService()
 		    .getWatcherOrFail( Key.of( arguments.getAsString( Key._name ) ) )
-		    .stop();
-		return null;
+		    .stop( arguments.getAsBoolean( Key.force ) );
 	}
 
 }

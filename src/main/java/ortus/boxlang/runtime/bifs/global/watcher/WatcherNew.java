@@ -64,7 +64,7 @@ public class WatcherNew extends BIF {
 		    new Argument( false, Argument.BOOLEAN, Key.atomicWrites, true ),
 		    new Argument( false, Argument.LONG, Key.delay, 0L ),
 		    new Argument( false, Argument.INTEGER, Key.errorThreshold, 10 ),
-		    new Argument( false, Argument.BOOLEAN, Key.of( "force" ), false )
+		    new Argument( false, Argument.BOOLEAN, Key.force, false )
 		};
 	}
 
@@ -72,13 +72,13 @@ public class WatcherNew extends BIF {
 	 * Creates and registers a new watcher instance in the watcher service.
 	 *
 	 * The watcher is registered but not started. Call {@code watcherStart( name )} to
-	 * begin processing filesystem events.
+	 * begin processing filesystem events or {@code start()} on the returned WatcherInstance.
 	 *
-	 * Listener resolution supports three input shapes:
+	 * You can register three types of listeners, which BoxLang will automatically wrap into an IWatcherListener implementation:
 	 * <ul>
-	 * <li>{@link Function}: wrapped as a {@code ClosureListener}</li>
-	 * <li>{@link IStruct}: wrapped as a {@code StructListener}</li>
-	 * <li>{@link String}: treated as a class name and wrapped as a {@code ClassListener}</li>
+	 * <li>{@link Function}: wrapped as a {@code ClosureListener}. Can only handle the {@code onEvent} method.</li>
+	 * <li>{@link IStruct}: wrapped as a {@code StructListener}. Can handle {@code onEvent} and {@code onError} methods.</li>
+	 * <li>{@link String}: treated as a class name and wrapped as a {@code ClassListener}. The class must implement {@code IWatcherListener}.</li>
 	 * </ul>
 	 *
 	 * If {@code name} is omitted or blank, a unique watcher name is auto-generated.
@@ -111,7 +111,7 @@ public class WatcherNew extends BIF {
 	 * @throws BoxRuntimeException If listener resolution fails or the watcher cannot be registered.
 	 */
 	@Override
-	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public WatcherInstance _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Determine watcher name (auto-generate if not supplied)
 		String					nameArg		= arguments.getAsString( Key._name );
 		Key						name		= ( nameArg != null && !nameArg.isBlank() ) ? Key.of( nameArg ) : Key.of( "watcher-" + System.nanoTime() );
@@ -139,7 +139,7 @@ public class WatcherNew extends BIF {
 		}
 
 		WatcherInstance	watcher	= builder.build();
-		boolean			force	= BooleanCaster.cast( arguments.get( Key.of( "force" ) ) );
+		boolean			force	= BooleanCaster.cast( arguments.get( Key.force ) );
 
 		return runtime.getWatcherService().register( watcher, force );
 	}
