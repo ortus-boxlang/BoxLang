@@ -123,22 +123,22 @@ public class WatcherStartTest {
 	@DisplayName( "It starts the watch loop and dispatches create events" )
 	@Test
 	public void testWatcherStartDispatchesFilesystemEvent() throws IOException, InterruptedException {
-		Path tempRoot = Files.createTempDirectory( "watcher-start-test-" );
-		CountDownLatch latch = new CountDownLatch( 1 );
-		AtomicReference<WatcherEvent> capturedEvent = new AtomicReference<>();
+		Path							tempRoot		= Files.createTempDirectory( "watcher-start-test-" );
+		CountDownLatch					latch			= new CountDownLatch( 1 );
+		AtomicReference<WatcherEvent>	capturedEvent	= new AtomicReference<>();
 
-		IWatcherListener listener = new IWatcherListener() {
+		IWatcherListener				listener		= new IWatcherListener() {
 
-			@Override
-			public void onEvent( WatcherEvent event, WatcherContext watcherContext ) {
-				if ( event.getKind() == WatcherEvent.Kind.CREATED ) {
-					capturedEvent.set( event );
-					latch.countDown();
-				}
-			}
-		};
+															@Override
+															public void onEvent( WatcherEvent event, WatcherContext watcherContext ) {
+																if ( event.getKind() == WatcherEvent.Kind.CREATED ) {
+																	capturedEvent.set( event );
+																	latch.countDown();
+																}
+															}
+														};
 
-		WatcherInstance watcher = WatcherInstance.builder( Key.of( "eventWatcher" ) )
+		WatcherInstance					watcher			= WatcherInstance.builder( Key.of( "eventWatcher" ) )
 		    .addPath( tempRoot.toString() )
 		    .recursive( false )
 		    .parentContext( this.context )
