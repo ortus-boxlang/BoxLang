@@ -29,8 +29,10 @@ import ortus.boxlang.runtime.async.watchers.WatcherEvent;
  * neither the listener nor its {@code onError} override handles the exception.
  * </p>
  *
- * <p>Implementations <strong>must not</strong> throw from {@code onEvent} — catch and
- * handle internally or let the {@code WatcherInstance} handle it via {@code onError}.</p>
+ * <p>
+ * Implementations <strong>must not</strong> throw from {@code onEvent} — catch and
+ * handle internally or let the {@code WatcherInstance} handle it via {@code onError}.
+ * </p>
  */
 public interface IWatcherListener {
 
@@ -49,7 +51,9 @@ public interface IWatcherListener {
 	 * {@link ortus.boxlang.runtime.async.watchers.exceptions.WatcherException} wrapping it with
 	 * event context when available.
 	 * </p>
-	 * <p>Default implementation is a no-op; the WatcherInstance logs to {@code watcher.log}.</p>
+	 * <p>
+	 * Default implementation is a no-op; the WatcherInstance logs to {@code watcher.log}.
+	 * </p>
 	 *
 	 * @param exception the error that occurred
 	 * @param context   the watcher execution context

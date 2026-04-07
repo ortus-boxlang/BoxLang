@@ -68,8 +68,8 @@ public class WatcherRestartTest {
 		    this.context
 		);
 
-		WatcherInstance created   = ( WatcherInstance ) this.variables.get( Key.of( "created" ) );
-		WatcherInstance restarted = ( WatcherInstance ) this.variables.get( Key.of( "result" ) );
+		WatcherInstance	created		= ( WatcherInstance ) this.variables.get( Key.of( "created" ) );
+		WatcherInstance	restarted	= ( WatcherInstance ) this.variables.get( Key.of( "result" ) );
 		assertThat( restarted ).isEqualTo( created );
 	}
 

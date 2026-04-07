@@ -69,8 +69,8 @@ public class WatcherGetTest {
 		    this.context
 		);
 
-		WatcherInstance created = ( WatcherInstance ) this.variables.get( Key.of( "created" ) );
-		WatcherInstance fetched = ( WatcherInstance ) this.variables.get( Key.of( "result" ) );
+		WatcherInstance	created	= ( WatcherInstance ) this.variables.get( Key.of( "created" ) );
+		WatcherInstance	fetched	= ( WatcherInstance ) this.variables.get( Key.of( "result" ) );
 		assertThat( fetched ).isEqualTo( created );
 	}
 

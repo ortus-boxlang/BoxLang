@@ -37,7 +37,7 @@ public class WatcherContext {
 	 * Construct a watcher context.
 	 *
 	 * @param boxContext the BoxLang execution context for closure/function invocation
-	 * @param watcher   the owning WatcherInstance
+	 * @param watcher    the owning WatcherInstance
 	 */
 	public WatcherContext( IBoxContext boxContext, WatcherInstance watcher ) {
 		this.boxContext	= boxContext;
