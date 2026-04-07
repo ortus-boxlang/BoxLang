@@ -44,6 +44,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
@@ -63,12 +64,15 @@ import ortus.boxlang.runtime.watchers.listeners.IWatcherListener;
  * </p>
  *
  * <h3>Lifecycle</h3>
+ * 
  * <pre>
  *   CREATED ──► RUNNING ──► STOPPED
  *                  ▲____________|  (restart)
  * </pre>
  *
- * <p>Use the {@link Builder} to construct instances.</p>
+ * <p>
+ * Use the {@link Builder} to construct instances.
+ * </p>
  */
 public class WatcherInstance {
 
@@ -138,6 +142,7 @@ public class WatcherInstance {
 	 * submits the watch loop to a virtual-thread executor.
 	 *
 	 * @return this instance (fluent)
+	 * 
 	 * @throws WatcherException if a path cannot be registered
 	 */
 	public synchronized WatcherInstance start() {
@@ -148,7 +153,7 @@ public class WatcherInstance {
 		logger.info( "+ Starting WatcherInstance [{}]...", name.getName() );
 
 		try {
-			this.nioWatchService	= FileSystems.getDefault().newWatchService();
+			this.nioWatchService = FileSystems.getDefault().newWatchService();
 			this.watchedKeys.clear();
 			for ( Path p : watchPaths ) {
 				registerPath( p );
@@ -336,8 +341,8 @@ public class WatcherInstance {
 	}
 
 	private void handleLoopError( Exception e, WatcherEvent event ) {
-		WatcherException wrapped = ( e instanceof WatcherException we ) ? we : new WatcherException( e.getMessage(), event, e );
-		int count = consecutiveErrors.incrementAndGet();
+		WatcherException	wrapped	= ( e instanceof WatcherException we ) ? we : new WatcherException( e.getMessage(), event, e );
+		int					count	= consecutiveErrors.incrementAndGet();
 
 		try {
 			listener.onError( wrapped, watcherContext );
@@ -360,15 +365,15 @@ public class WatcherInstance {
 	// -------------------------------------------------------------------------
 
 	private boolean shouldDebounce( Path path ) {
-		long now	= System.currentTimeMillis();
-		long last	= lastEventTime.getOrDefault( path, 0L );
+		long	now		= System.currentTimeMillis();
+		long	last	= lastEventTime.getOrDefault( path, 0L );
 		lastEventTime.put( path, now );
 		return ( now - last ) < debounce;
 	}
 
 	private boolean shouldThrottle( Path path ) {
-		long now	= System.currentTimeMillis();
-		long last	= lastFireTime.getOrDefault( path, 0L );
+		long	now		= System.currentTimeMillis();
+		long	last	= lastFireTime.getOrDefault( path, 0L );
 		if ( ( now - last ) < throttle ) {
 			return true;
 		}
@@ -381,9 +386,12 @@ public class WatcherInstance {
 	// -------------------------------------------------------------------------
 
 	private WatcherEvent.Kind toEventKind( WatchEvent.Kind<?> kind ) {
-		if ( kind == ENTRY_CREATE ) return WatcherEvent.Kind.CREATED;
-		if ( kind == ENTRY_MODIFY ) return WatcherEvent.Kind.MODIFIED;
-		if ( kind == ENTRY_DELETE ) return WatcherEvent.Kind.DELETED;
+		if ( kind == ENTRY_CREATE )
+			return WatcherEvent.Kind.CREATED;
+		if ( kind == ENTRY_MODIFY )
+			return WatcherEvent.Kind.MODIFIED;
+		if ( kind == ENTRY_DELETE )
+			return WatcherEvent.Kind.DELETED;
 		return WatcherEvent.Kind.OVERFLOW;
 	}
 
@@ -469,6 +477,11 @@ public class WatcherInstance {
 
 		private Builder( Key name ) {
 			this.name = name;
+		}
+
+		public Builder paths( Array paths ) {
+			paths.forEach( p -> this.watchPaths.add( Paths.get( StringCaster.cast( p ) ) ) );
+			return this;
 		}
 
 		public Builder paths( String... paths ) {

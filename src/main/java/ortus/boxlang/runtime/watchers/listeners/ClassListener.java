@@ -63,7 +63,7 @@ public class ClassListener implements IWatcherListener {
 	 */
 	@Override
 	public void onEvent( WatcherEvent event, WatcherContext ctx ) {
-		DynamicObject.of( instance ).invoke( ctx.getBoxContext(), "onEvent", new Object[] { event.toStruct() } );
+		this.instance.dereferenceAndInvoke( this.context, Key.onEvent, new Object[] { event.toStruct() }, false );
 	}
 
 	/**
@@ -74,9 +74,9 @@ public class ClassListener implements IWatcherListener {
 	@Override
 	public void onError( Exception exception, WatcherContext ctx ) {
 		try {
-			DynamicObject.of( instance ).invoke( ctx.getBoxContext(), "onError", new Object[] { exception.getMessage(), exception } );
+			this.instance.dereferenceAndInvoke( this.context, Key.onError, new Object[] { exception.getMessage(), exception }, false );
 		} catch ( Exception ignored ) {
-			// Method may not exist — WatcherInstance logs to watcher.log
+			// WatcherInstance logs to watcher.log
 		}
 	}
 

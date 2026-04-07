@@ -64,11 +64,13 @@ public class ClosureListener implements IWatcherListener {
 
 	/**
 	 * {@inheritDoc}
-	 * <p>Invokes the BoxLang function with the event struct as its first argument.</p>
+	 * <p>
+	 * Invokes the BoxLang function with the event struct as its first argument.
+	 * </p>
 	 */
 	@Override
 	public void onEvent( WatcherEvent event, WatcherContext ctx ) {
-		FunctionBoxContext fCtx = Function.generateFunctionContext(
+		FunctionBoxContext functionContext = Function.generateFunctionContext(
 		    onEventFn,
 		    ctx.getBoxContext(),
 		    Key.onEvent,
@@ -77,17 +79,19 @@ public class ClosureListener implements IWatcherListener {
 		    null,
 		    null
 		);
-		onEventFn.invoke( fCtx );
+		onEventFn.invoke( functionContext );
 	}
 
 	/**
 	 * {@inheritDoc}
-	 * <p>Invokes the optional error function if one was supplied.</p>
+	 * <p>
+	 * Invokes the optional error function if one was supplied.
+	 * </p>
 	 */
 	@Override
 	public void onError( Exception exception, WatcherContext ctx ) {
 		if ( onErrorFn != null ) {
-			FunctionBoxContext fCtx = Function.generateFunctionContext(
+			FunctionBoxContext functionContext = Function.generateFunctionContext(
 			    onErrorFn,
 			    ctx.getBoxContext(),
 			    Key.onError,
@@ -96,7 +100,7 @@ public class ClosureListener implements IWatcherListener {
 			    null,
 			    null
 			);
-			onErrorFn.invoke( fCtx );
+			onErrorFn.invoke( functionContext );
 		}
 	}
 

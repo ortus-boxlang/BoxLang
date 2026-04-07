@@ -29,11 +29,11 @@ import ortus.boxlang.runtime.watchers.WatcherEvent;
  * <p>
  * Keys recognized in the struct:
  * <ul>
- *   <li>{@code onCreate}   — invoked for CREATED events</li>
- *   <li>{@code onModify}   — invoked for MODIFIED events</li>
- *   <li>{@code onDelete}   — invoked for DELETED events</li>
- *   <li>{@code onOverflow} — invoked for OVERFLOW events</li>
- *   <li>{@code onError}    — invoked when another handler throws</li>
+ * <li>{@code onCreate} — invoked for CREATED events</li>
+ * <li>{@code onModify} — invoked for MODIFIED events</li>
+ * <li>{@code onDelete} — invoked for DELETED events</li>
+ * <li>{@code onOverflow} — invoked for OVERFLOW events</li>
+ * <li>{@code onError} — invoked when another handler throws</li>
  * </ul>
  * All keys are optional — unmatched events are silently ignored.
  * </p>
@@ -57,17 +57,18 @@ public class StructListener implements IWatcherListener {
 	 */
 	@Override
 	public void onEvent( WatcherEvent event, WatcherContext ctx ) {
-		Key handlerKey = switch ( event.getKind() ) {
-			case CREATED -> Key.onCreate;
-			case MODIFIED -> Key.onModify;
-			case DELETED -> Key.onDelete;
-			case OVERFLOW -> Key.onOverflow;
-		};
+		Key		handlerKey	= switch ( event.getKind() ) {
+								case CREATED -> Key.onCreate;
+								case MODIFIED -> Key.onModify;
+								case DELETED -> Key.onDelete;
+								case OVERFLOW -> Key.onOverflow;
+							};
 
-		Object raw = handlers.get( handlerKey );
-		if ( raw instanceof Function fn ) {
-			FunctionBoxContext fCtx = Function.generateFunctionContext(
-			    fn,
+		Object	raw			= handlers.get( handlerKey );
+
+		if ( raw instanceof Function targetFunction ) {
+			FunctionBoxContext functionContext = Function.generateFunctionContext(
+			    targetFunction,
 			    ctx.getBoxContext(),
 			    handlerKey,
 			    new Object[] { event.toStruct() },
@@ -75,7 +76,7 @@ public class StructListener implements IWatcherListener {
 			    null,
 			    null
 			);
-			fn.invoke( fCtx );
+			targetFunction.invoke( functionContext );
 		}
 	}
 
@@ -86,9 +87,9 @@ public class StructListener implements IWatcherListener {
 	@Override
 	public void onError( Exception exception, WatcherContext ctx ) {
 		Object raw = handlers.get( Key.onError );
-		if ( raw instanceof Function fn ) {
-			FunctionBoxContext fCtx = Function.generateFunctionContext(
-			    fn,
+		if ( raw instanceof Function targetFunction ) {
+			FunctionBoxContext functionContext = Function.generateFunctionContext(
+			    targetFunction,
 			    ctx.getBoxContext(),
 			    Key.onError,
 			    new Object[] { exception.getMessage(), exception },
@@ -96,7 +97,7 @@ public class StructListener implements IWatcherListener {
 			    null,
 			    null
 			);
-			fn.invoke( fCtx );
+			targetFunction.invoke( functionContext );
 		}
 	}
 
