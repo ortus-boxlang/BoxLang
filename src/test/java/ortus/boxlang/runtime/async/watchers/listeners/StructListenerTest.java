@@ -48,12 +48,12 @@ class StructListenerTest {
 	@Test
 	@DisplayName( "onEvent invokes matching per-kind handler" )
 	void testOnEventInvokesPerKindHandler() {
-		ortus.boxlang.runtime.types.Function onCreate = mock( ortus.boxlang.runtime.types.Function.class );
-		IBoxContext baseCtx = mock( IBoxContext.class );
-		IBoxContext threadCtx = mock( IBoxContext.class );
-		StructListener listener = new StructListener( Struct.ofNonConcurrent( Key.onCreate, onCreate ) );
-		WatcherContext ctx = new WatcherContext( baseCtx, null );
-		WatcherEvent event = new WatcherEvent(
+		ortus.boxlang.runtime.types.Function	onCreate	= mock( ortus.boxlang.runtime.types.Function.class );
+		IBoxContext								baseCtx		= mock( IBoxContext.class );
+		IBoxContext								threadCtx	= mock( IBoxContext.class );
+		StructListener							listener	= new StructListener( Struct.ofNonConcurrent( Key.onCreate, onCreate ) );
+		WatcherContext							ctx			= new WatcherContext( baseCtx, null );
+		WatcherEvent							event		= new WatcherEvent(
 		    WatcherEvent.Kind.CREATED,
 		    Path.of( "/tmp/watched/file.txt" ),
 		    Path.of( "file.txt" ),
@@ -66,9 +66,9 @@ class StructListenerTest {
 		try ( MockedStatic<ThreadBoxContext> mockedStatic = Mockito.mockStatic( ThreadBoxContext.class ) ) {
 			mockedStatic.when( () -> ThreadBoxContext.runInContext( eq( baseCtx ), eq( true ), any() ) )
 			    .thenAnswer( invocation -> {
-					Function<IBoxContext, Object> runnable = invocation.getArgument( 2 );
-					return runnable.apply( threadCtx );
-				} );
+				    Function<IBoxContext, Object> runnable = invocation.getArgument( 2 );
+				    return runnable.apply( threadCtx );
+			    } );
 
 			listener.onEvent( event, ctx );
 
@@ -86,13 +86,13 @@ class StructListenerTest {
 	@Test
 	@DisplayName( "onEvent invokes both per-kind and global onEvent handlers when both exist" )
 	void testOnEventInvokesBothSpecificAndGlobalHandlers() {
-		ortus.boxlang.runtime.types.Function onDelete = mock( ortus.boxlang.runtime.types.Function.class );
-		ortus.boxlang.runtime.types.Function onEvent = mock( ortus.boxlang.runtime.types.Function.class );
-		IBoxContext baseCtx = mock( IBoxContext.class );
-		IBoxContext threadCtx = mock( IBoxContext.class );
-		StructListener listener = new StructListener( Struct.ofNonConcurrent( Key.onDelete, onDelete, Key.onEvent, onEvent ) );
-		WatcherContext ctx = new WatcherContext( baseCtx, null );
-		WatcherEvent event = new WatcherEvent(
+		ortus.boxlang.runtime.types.Function	onDelete	= mock( ortus.boxlang.runtime.types.Function.class );
+		ortus.boxlang.runtime.types.Function	onEvent		= mock( ortus.boxlang.runtime.types.Function.class );
+		IBoxContext								baseCtx		= mock( IBoxContext.class );
+		IBoxContext								threadCtx	= mock( IBoxContext.class );
+		StructListener							listener	= new StructListener( Struct.ofNonConcurrent( Key.onDelete, onDelete, Key.onEvent, onEvent ) );
+		WatcherContext							ctx			= new WatcherContext( baseCtx, null );
+		WatcherEvent							event		= new WatcherEvent(
 		    WatcherEvent.Kind.DELETED,
 		    Path.of( "/tmp/watched/file.txt" ),
 		    Path.of( "file.txt" ),
@@ -106,9 +106,9 @@ class StructListenerTest {
 		try ( MockedStatic<ThreadBoxContext> mockedStatic = Mockito.mockStatic( ThreadBoxContext.class ) ) {
 			mockedStatic.when( () -> ThreadBoxContext.runInContext( eq( baseCtx ), eq( true ), any() ) )
 			    .thenAnswer( invocation -> {
-					Function<IBoxContext, Object> runnable = invocation.getArgument( 2 );
-					return runnable.apply( threadCtx );
-				} );
+				    Function<IBoxContext, Object> runnable = invocation.getArgument( 2 );
+				    return runnable.apply( threadCtx );
+			    } );
 
 			listener.onEvent( event, ctx );
 
@@ -122,21 +122,21 @@ class StructListenerTest {
 	@Test
 	@DisplayName( "onEvent invokes global onEvent handler when no per-kind handler exists" )
 	void testOnEventUsesGlobalHandlerAsFallback() {
-		ortus.boxlang.runtime.types.Function onEvent = mock( ortus.boxlang.runtime.types.Function.class );
-		IBoxContext baseCtx = mock( IBoxContext.class );
-		IBoxContext threadCtx = mock( IBoxContext.class );
-		StructListener listener = new StructListener( Struct.ofNonConcurrent( Key.onEvent, onEvent ) );
-		WatcherContext ctx = new WatcherContext( baseCtx, null );
-		WatcherEvent event = new WatcherEvent( Instant.parse( "2026-04-07T12:00:00Z" ) );
+		ortus.boxlang.runtime.types.Function	onEvent		= mock( ortus.boxlang.runtime.types.Function.class );
+		IBoxContext								baseCtx		= mock( IBoxContext.class );
+		IBoxContext								threadCtx	= mock( IBoxContext.class );
+		StructListener							listener	= new StructListener( Struct.ofNonConcurrent( Key.onEvent, onEvent ) );
+		WatcherContext							ctx			= new WatcherContext( baseCtx, null );
+		WatcherEvent							event		= new WatcherEvent( Instant.parse( "2026-04-07T12:00:00Z" ) );
 
 		when( threadCtx.invokeFunction( eq( onEvent ), any( Object[].class ) ) ).thenReturn( null );
 
 		try ( MockedStatic<ThreadBoxContext> mockedStatic = Mockito.mockStatic( ThreadBoxContext.class ) ) {
 			mockedStatic.when( () -> ThreadBoxContext.runInContext( eq( baseCtx ), eq( true ), any() ) )
 			    .thenAnswer( invocation -> {
-					Function<IBoxContext, Object> runnable = invocation.getArgument( 2 );
-					return runnable.apply( threadCtx );
-				} );
+				    Function<IBoxContext, Object> runnable = invocation.getArgument( 2 );
+				    return runnable.apply( threadCtx );
+			    } );
 
 			listener.onEvent( event, ctx );
 
@@ -149,21 +149,21 @@ class StructListenerTest {
 	@Test
 	@DisplayName( "onError invokes onError handler when present" )
 	void testOnErrorInvokesHandlerWhenPresent() {
-		ortus.boxlang.runtime.types.Function onError = mock( ortus.boxlang.runtime.types.Function.class );
-		IBoxContext baseCtx = mock( IBoxContext.class );
-		IBoxContext threadCtx = mock( IBoxContext.class );
-		StructListener listener = new StructListener( Struct.ofNonConcurrent( Key.onError, onError ) );
-		WatcherContext ctx = new WatcherContext( baseCtx, null );
-		Exception error = new RuntimeException( "boom" );
+		ortus.boxlang.runtime.types.Function	onError		= mock( ortus.boxlang.runtime.types.Function.class );
+		IBoxContext								baseCtx		= mock( IBoxContext.class );
+		IBoxContext								threadCtx	= mock( IBoxContext.class );
+		StructListener							listener	= new StructListener( Struct.ofNonConcurrent( Key.onError, onError ) );
+		WatcherContext							ctx			= new WatcherContext( baseCtx, null );
+		Exception								error		= new RuntimeException( "boom" );
 
 		when( threadCtx.invokeFunction( eq( onError ), any( Object[].class ) ) ).thenReturn( null );
 
 		try ( MockedStatic<ThreadBoxContext> mockedStatic = Mockito.mockStatic( ThreadBoxContext.class ) ) {
 			mockedStatic.when( () -> ThreadBoxContext.runInContext( eq( baseCtx ), eq( true ), any() ) )
 			    .thenAnswer( invocation -> {
-					Function<IBoxContext, Object> runnable = invocation.getArgument( 2 );
-					return runnable.apply( threadCtx );
-				} );
+				    Function<IBoxContext, Object> runnable = invocation.getArgument( 2 );
+				    return runnable.apply( threadCtx );
+			    } );
 
 			listener.onError( error, ctx );
 
@@ -180,10 +180,10 @@ class StructListenerTest {
 	@Test
 	@DisplayName( "onError does nothing when handler is missing" )
 	void testOnErrorNoHandler() {
-		IBoxContext baseCtx = mock( IBoxContext.class );
-		StructListener listener = new StructListener( Struct.ofNonConcurrent() );
-		WatcherContext ctx = new WatcherContext( baseCtx, null );
-		Exception error = new RuntimeException( "boom" );
+		IBoxContext		baseCtx		= mock( IBoxContext.class );
+		StructListener	listener	= new StructListener( Struct.ofNonConcurrent() );
+		WatcherContext	ctx			= new WatcherContext( baseCtx, null );
+		Exception		error		= new RuntimeException( "boom" );
 
 		try ( MockedStatic<ThreadBoxContext> mockedStatic = Mockito.mockStatic( ThreadBoxContext.class ) ) {
 			listener.onError( error, ctx );
@@ -194,10 +194,10 @@ class StructListenerTest {
 	@Test
 	@DisplayName( "onEvent ignores non-function handler values" )
 	void testOnEventIgnoresNonFunctionHandlers() {
-		IBoxContext baseCtx = mock( IBoxContext.class );
-		StructListener listener = new StructListener( Struct.ofNonConcurrent( Key.onModify, "not-a-function" ) );
-		WatcherContext ctx = new WatcherContext( baseCtx, null );
-		WatcherEvent event = new WatcherEvent(
+		IBoxContext		baseCtx		= mock( IBoxContext.class );
+		StructListener	listener	= new StructListener( Struct.ofNonConcurrent( Key.onModify, "not-a-function" ) );
+		WatcherContext	ctx			= new WatcherContext( baseCtx, null );
+		WatcherEvent	event		= new WatcherEvent(
 		    WatcherEvent.Kind.MODIFIED,
 		    Path.of( "/tmp/watched/file.txt" ),
 		    Path.of( "file.txt" ),
