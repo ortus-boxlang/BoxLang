@@ -158,6 +158,22 @@ public class FileWriteTest {
 		assertThat( FileSystemUtil.read( testNestedFile, ( String ) null, ( Integer ) null ) ).isEqualTo( "I am nested!" );
 	}
 
+	@DisplayName( "It tests the ability to write a text file using a file object" )
+	@Test
+	public void testTextFileWriteWithFileObject() throws IOException {
+		variables.put( Key.of( "testFile" ), Path.of( testTextFile ).toAbsolutePath().toString() );
+		instance.executeSource(
+		    """
+		    fileObj = fileOpen( testFile, "write" );
+		    FileWrite( fileObj, "Written via file object!" );
+		    fileClose( fileObj );
+		    """,
+		    context );
+
+		assertTrue( FileSystemUtil.exists( testTextFile ) );
+		assertThat( FileSystemUtil.read( testTextFile, ( String ) null, ( Integer ) null ) ).isEqualTo( "Written via file object!" );
+	}
+
 	@DisplayName( "It tests the ability to write a binary file" )
 	@Test
 	public void testBinaryFileWrite() throws IOException {
@@ -173,6 +189,65 @@ public class FileWriteTest {
 		    context );
 		assertTrue( FileSystemUtil.exists( testBinaryFile ) );
 		assertThat( FileSystemUtil.read( testBinaryFile, ( String ) null, ( Integer ) null ) ).isEqualTo( binaryContent );
+	}
+
+	@DisplayName( "It can write a string through an open file object in write mode" )
+	@Test
+	public void testWriteStringThroughOpenFile() throws IOException {
+		if ( FileSystemUtil.exists( testTextFile ) ) {
+			FileSystemUtil.deleteFile( testTextFile );
+		}
+		variables.put( Key.of( "testFile" ), Path.of( testTextFile ).toAbsolutePath().toString() );
+		instance.executeSource(
+		    """
+		    fileObj = fileOpen( testFile, "write" );
+		    fileWrite( fileObj, "Hello " );
+		    fileWrite( fileObj, "World!" );
+		    fileClose( fileObj );
+		    """,
+		    context );
+
+		assertThat( FileSystemUtil.read( testTextFile, ( String ) null, ( Integer ) null ) ).isEqualTo( "Hello World!" );
+	}
+
+	@DisplayName( "It can write binary chunks through an open file object in append mode" )
+	@Test
+	public void testWriteBinaryChunksThroughOpenFile() throws IOException {
+		if ( FileSystemUtil.exists( testTextFile ) ) {
+			FileSystemUtil.deleteFile( testTextFile );
+		}
+		variables.put( Key.of( "testFile" ), Path.of( testTextFile ).toAbsolutePath().toString() );
+		variables.put( Key.of( "chunk1" ), "chunk1-".getBytes( "UTF-8" ) );
+		variables.put( Key.of( "chunk2" ), "chunk2-".getBytes( "UTF-8" ) );
+		variables.put( Key.of( "chunk3" ), "chunk3".getBytes( "UTF-8" ) );
+		instance.executeSource(
+		    """
+		    fileObj = fileOpen( testFile, "append" );
+		    fileWrite( fileObj, chunk1 );
+		    fileWrite( fileObj, chunk2 );
+		    fileWrite( fileObj, chunk3 );
+		    fileClose( fileObj );
+		    """,
+		    context );
+
+		assertThat( FileSystemUtil.read( testTextFile, ( String ) null, ( Integer ) null ) ).isEqualTo( "chunk1-chunk2-chunk3" );
+	}
+
+	@DisplayName( "It can append a string through an open file object in append mode" )
+	@Test
+	public void testAppendStringThroughOpenFile() throws IOException {
+		variables.put( Key.of( "testFile" ), Path.of( testTextFile ).toAbsolutePath().toString() );
+		// Seed the file first
+		FileSystemUtil.write( testTextFile, "original", "UTF-8", false );
+		instance.executeSource(
+		    """
+		    fileObj = fileOpen( testFile, "append" );
+		    fileWrite( fileObj, "-appended" );
+		    fileClose( fileObj );
+		    """,
+		    context );
+
+		assertThat( FileSystemUtil.read( testTextFile, ( String ) null, ( Integer ) null ) ).isEqualTo( "original-appended" );
 	}
 
 }

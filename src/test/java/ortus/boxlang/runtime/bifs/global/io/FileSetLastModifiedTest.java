@@ -38,8 +38,8 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.BoxFile;
 import ortus.boxlang.runtime.types.DateTime;
-import ortus.boxlang.runtime.types.File;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class FileSetLastModifiedTest {
@@ -51,7 +51,7 @@ public class FileSetLastModifiedTest {
 	static String		testTextFile	= "src/test/resources/tmp/FileSetLastModifiedTest/time.txt";
 	static String		tmpDirectory	= "src/test/resources/tmp/FileSetLastModifiedTest";
 	static Instant		creationTime	= null;
-	static File			modFile			= null;
+	static BoxFile		modFile			= null;
 
 	@BeforeAll
 	public static void setUp() throws IOException {
@@ -61,7 +61,7 @@ public class FileSetLastModifiedTest {
 			FileSystemUtil.write( testTextFile, "file modified time test!".getBytes( "UTF-8" ), true );
 		}
 
-		modFile = new File( testTextFile );
+		modFile = new BoxFile( testTextFile );
 
 		modFile.setLastModifiedTime( new DateTime().modify( "m", -1l ) );
 
