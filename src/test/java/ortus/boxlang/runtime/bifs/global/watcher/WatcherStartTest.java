@@ -63,17 +63,51 @@ public class WatcherStartTest {
 		instance.executeSource(
 		    """
 		       	created = watcherNew( "myWatcher", [ "./src" ], ( event, watcherContext ) => {} )
+		       	beforeState = created.getStateAsString()
+		       	beforeRunning = created.isRunning()
 		       	result  = watcherStart( "myWatcher" )
-		    	status = result.isRunning()
+		    	afterState = result.getStateAsString()
+		    	afterRunning = result.isRunning()
+		       """,
+		    this.context
+		);
+		// @formatter:on
+
+		WatcherInstance	created			= ( WatcherInstance ) this.variables.get( Key.of( "created" ) );
+		WatcherInstance	started			= ( WatcherInstance ) this.variables.get( Key.of( "result" ) );
+		WatcherInstance	serviceWatcher	= instance.getWatcherService().getWatcherOrFail( Key.of( "myWatcher" ) );
+		assertThat( started ).isEqualTo( created );
+		assertThat( serviceWatcher ).isEqualTo( started );
+		assertThat( this.variables.getAsString( Key.of( "beforeState" ) ) ).isEqualTo( "CREATED" );
+		assertThat( this.variables.getAsBoolean( Key.of( "beforeRunning" ) ) ).isFalse();
+		assertThat( this.variables.getAsString( Key.of( "afterState" ) ) ).isEqualTo( "RUNNING" );
+		assertThat( this.variables.getAsBoolean( Key.of( "afterRunning" ) ) ).isTrue();
+	}
+
+	@DisplayName( "It is idempotent when starting an already running watcher" )
+	@Test
+	public void testWatcherStartWhenAlreadyRunning() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		       	created = watcherNew( "myWatcher", [ "./src" ], ( event, watcherContext ) => {} )
+		       	first = watcherStart( "myWatcher" )
+		       	second = watcherStart( "myWatcher" )
+		       	firstRunning = first.isRunning()
+		       	secondRunning = second.isRunning()
 		       """,
 		    this.context
 		);
 		// @formatter:on
 
 		WatcherInstance	created	= ( WatcherInstance ) this.variables.get( Key.of( "created" ) );
-		WatcherInstance	started	= ( WatcherInstance ) this.variables.get( Key.of( "result" ) );
-		assertThat( started ).isEqualTo( created );
-		assertThat( this.variables.getAsBoolean( Key.of( "status" ) ) ).isTrue();
+		WatcherInstance	first	= ( WatcherInstance ) this.variables.get( Key.of( "first" ) );
+		WatcherInstance	second	= ( WatcherInstance ) this.variables.get( Key.of( "second" ) );
+
+		assertThat( first ).isEqualTo( created );
+		assertThat( second ).isEqualTo( created );
+		assertThat( this.variables.getAsBoolean( Key.of( "firstRunning" ) ) ).isTrue();
+		assertThat( this.variables.getAsBoolean( Key.of( "secondRunning" ) ) ).isTrue();
 	}
 
 }

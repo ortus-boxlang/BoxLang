@@ -222,6 +222,7 @@ public class WatcherInstance {
 	public synchronized WatcherInstance start() {
 		// If already running, do nothing
 		if ( this.state == State.RUNNING ) {
+			this.logger.trace( "WatcherInstance [{}] start() ignored because it is already RUNNING.", this.name.getName() );
 			return this;
 		}
 
@@ -259,6 +260,7 @@ public class WatcherInstance {
 	public synchronized WatcherInstance stop( boolean force ) {
 		// If not running, do nothing
 		if ( this.state != State.RUNNING ) {
+			this.logger.trace( "WatcherInstance [{}] stop({}) ignored because state is [{}].", this.name.getName(), force, this.state );
 			return this;
 		}
 
@@ -374,6 +376,8 @@ public class WatcherInstance {
 
 				// OVERFLOW: no specific file context available, so dispatch a generic OVERFLOW event and continue to scan
 				if ( rawKind == OVERFLOW ) {
+					this.logger.warn( "WatcherInstance [{}] received OVERFLOW from WatchService; some filesystem events may have been lost.",
+					    this.name.getName() );
 					this.dispatchEvent( WatcherEvent.Kind.OVERFLOW, null, null );
 					continue;
 				}
@@ -410,6 +414,7 @@ public class WatcherInstance {
 			// If there are no more valid keys, stop the watcher since we have no paths to watch.
 			boolean valid = watchKey.reset();
 			if ( !valid ) {
+				this.logger.debug( "WatcherInstance [{}] watch key became invalid for path [{}].", this.name.getName(), watchKey.watchable() );
 				this.watchedKeys.remove( watchKey );
 				if ( this.watchedKeys.isEmpty() ) {
 					this.logger.warn( "WatcherInstance [{}]: all watched directories have been removed; stopping.", this.name.getName() );
@@ -493,13 +498,30 @@ public class WatcherInstance {
 		long	now		= System.currentTimeMillis();
 		long	last	= this.lastEventTime.getOrDefault( path, 0L );
 		this.lastEventTime.put( path, now );
-		return ( now - last ) < this.debounce;
+		boolean dropped = ( now - last ) < this.debounce;
+		if ( dropped ) {
+			this.logger.trace(
+			    "WatcherInstance [{}] debounced event for [{}]; delta={}ms < debounce={}ms.",
+			    this.name.getName(),
+			    path,
+			    ( now - last ),
+			    this.debounce
+			);
+		}
+		return dropped;
 	}
 
 	private boolean shouldThrottle( Path path ) {
 		long	now		= System.currentTimeMillis();
 		long	last	= this.lastFireTime.getOrDefault( path, 0L );
 		if ( ( now - last ) < this.throttle ) {
+			this.logger.trace(
+			    "WatcherInstance [{}] throttled event for [{}]; delta={}ms < throttle={}ms.",
+			    this.name.getName(),
+			    path,
+			    ( now - last ),
+			    this.throttle
+			);
 			return true;
 		}
 		this.lastFireTime.put( path, now );
