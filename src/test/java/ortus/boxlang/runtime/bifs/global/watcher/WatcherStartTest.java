@@ -19,6 +19,13 @@ package ortus.boxlang.runtime.bifs.global.watcher;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,7 +33,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.async.watchers.WatcherContext;
+import ortus.boxlang.runtime.async.watchers.WatcherEvent;
 import ortus.boxlang.runtime.async.watchers.WatcherInstance;
+import ortus.boxlang.runtime.async.watchers.listeners.IWatcherListener;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -108,6 +118,51 @@ public class WatcherStartTest {
 		assertThat( second ).isEqualTo( created );
 		assertThat( this.variables.getAsBoolean( Key.of( "firstRunning" ) ) ).isTrue();
 		assertThat( this.variables.getAsBoolean( Key.of( "secondRunning" ) ) ).isTrue();
+	}
+
+	@DisplayName( "It starts the watch loop and dispatches create events" )
+	@Test
+	public void testWatcherStartDispatchesFilesystemEvent() throws IOException, InterruptedException {
+		Path tempRoot = Files.createTempDirectory( "watcher-start-test-" );
+		CountDownLatch latch = new CountDownLatch( 1 );
+		AtomicReference<WatcherEvent> capturedEvent = new AtomicReference<>();
+
+		IWatcherListener listener = new IWatcherListener() {
+
+			@Override
+			public void onEvent( WatcherEvent event, WatcherContext watcherContext ) {
+				if ( event.getKind() == WatcherEvent.Kind.CREATED ) {
+					capturedEvent.set( event );
+					latch.countDown();
+				}
+			}
+		};
+
+		WatcherInstance watcher = WatcherInstance.builder( Key.of( "eventWatcher" ) )
+		    .addPath( tempRoot.toString() )
+		    .recursive( false )
+		    .parentContext( this.context )
+		    .listener( listener )
+		    .build();
+
+		instance.getWatcherService().register( watcher, false );
+		instance.executeSource( "started = watcherStart( \"eventWatcher\" )", this.context );
+
+		Path createdDir = tempRoot.resolve( "created-dir" );
+		Files.createDirectory( createdDir );
+
+		boolean received = latch.await( 5, TimeUnit.SECONDS );
+		assertThat( received ).isTrue();
+		assertThat( watcher.isRunning() ).isTrue();
+
+		WatcherEvent event = capturedEvent.get();
+		assertThat( event ).isNotNull();
+		assertThat( event.getKind() ).isEqualTo( WatcherEvent.Kind.CREATED );
+		assertThat( event.getPath() ).isEqualTo( createdDir.toAbsolutePath().normalize() );
+		assertThat( event.getWatchRoot() ).isEqualTo( tempRoot.toAbsolutePath().normalize() );
+		assertThat( event.getRelativePath().toString() ).isEqualTo( "created-dir" );
+
+		watcher.stop( true );
 	}
 
 }
