@@ -25,12 +25,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.async.watchers.WatcherContext;
+import ortus.boxlang.runtime.async.watchers.WatcherEvent;
+import ortus.boxlang.runtime.async.watchers.WatcherInstance;
+import ortus.boxlang.runtime.async.watchers.listeners.IWatcherListener;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.watchers.WatcherContext;
-import ortus.boxlang.runtime.watchers.WatcherEvent;
-import ortus.boxlang.runtime.watchers.WatcherInstance;
-import ortus.boxlang.runtime.watchers.listeners.IWatcherListener;
 
 class WatcherServiceTest {
 

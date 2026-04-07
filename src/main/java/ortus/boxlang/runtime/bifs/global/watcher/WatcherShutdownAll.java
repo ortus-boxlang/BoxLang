@@ -38,6 +38,20 @@ public class WatcherShutdownAll extends BIF {
 		};
 	}
 
+	/**
+	 * Stops all watchers and removes them from the watcher registry.
+	 *
+	 * This is the destructive bulk operation for watcher lifecycle management.
+	 * After this call, all previous watcher registrations are cleared and must be
+	 * recreated before use.
+	 *
+	 * @param context   The BoxContext of the caller.
+	 * @param arguments The arguments passed to the BIF.
+	 *
+	 * @argument.force Whether the shutdown should be treated as a forced shutdown.
+	 *
+	 * @return {@code null}. This BIF performs side effects only.
+	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		runtime.getWatcherService().shutdownAll( BooleanCaster.cast( arguments.get( Key.of( "force" ) ) ) );

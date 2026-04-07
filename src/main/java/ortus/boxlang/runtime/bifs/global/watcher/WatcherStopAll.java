@@ -32,6 +32,16 @@ public class WatcherStopAll extends BIF {
 		super();
 	}
 
+	/**
+	 * Stops all registered watchers in the watcher service.
+	 *
+	 * Watchers remain registered after this call and can be started again later.
+	 *
+	 * @param context   The BoxContext of the caller.
+	 * @param arguments The arguments passed to the BIF. This BIF does not accept user arguments.
+	 *
+	 * @return {@code null}. This BIF performs side effects only.
+	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		runtime.getWatcherService().stopAll();

@@ -40,6 +40,21 @@ public class WatcherStop extends BIF {
 		};
 	}
 
+	/**
+	 * Stops a registered watcher by name.
+	 *
+	 * This operation does not remove the watcher from the registry; it only transitions
+	 * the watcher to a stopped state. Use {@code watcherShutdownAll()} to stop and unregister.
+	 *
+	 * @param context   The BoxContext of the caller.
+	 * @param arguments The arguments passed to the BIF.
+	 *
+	 * @argument.name The unique watcher name to stop.
+	 *
+	 * @return {@code null}. This BIF performs a side effect and does not return a watcher value.
+	 *
+	 * @throws ortus.boxlang.runtime.types.exceptions.BoxRuntimeException If no watcher with the given name is registered.
+	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		runtime.getWatcherService()

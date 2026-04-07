@@ -40,6 +40,20 @@ public class WatcherRestart extends BIF {
 		};
 	}
 
+	/**
+	 * Restarts a registered watcher by performing {@code stop()} then {@code start()}.
+	 *
+	 * This is useful when refreshing watcher state after path changes or listener updates.
+	 *
+	 * @param context   The BoxContext of the caller.
+	 * @param arguments The arguments passed to the BIF.
+	 *
+	 * @argument.name The unique watcher name to restart.
+	 *
+	 * @return The restarted {@link ortus.boxlang.runtime.watchers.WatcherInstance}.
+	 *
+	 * @throws ortus.boxlang.runtime.types.exceptions.BoxRuntimeException If no watcher with the given name is registered.
+	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return runtime.getWatcherService()

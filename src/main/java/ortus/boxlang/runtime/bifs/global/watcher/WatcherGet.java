@@ -40,9 +40,25 @@ public class WatcherGet extends BIF {
 		};
 	}
 
+	/**
+	 * Retrieves a registered watcher instance by name.
+	 *
+	 * Unlike {@code watcherExists()}, this operation is strict and fails when no
+	 * watcher with the provided name exists.
+	 *
+	 * @param context   The BoxContext of the caller.
+	 * @param arguments The arguments passed to the BIF.
+	 *
+	 * @argument.name The unique watcher name to retrieve.
+	 *
+	 * @return The registered {@link ortus.boxlang.runtime.async.watchers.WatcherInstance}.
+	 *
+	 * @throws BoxRuntimeException If no watcher with the given name is registered.
+	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return runtime.getWatcherService()
+		return this.runtime
+			.getWatcherService()
 		    .getWatcherOrFail( Key.of( arguments.getAsString( Key._name ) ) );
 	}
 

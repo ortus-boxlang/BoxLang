@@ -27,9 +27,6 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.validation.Validator;
 
-/**
- * Check whether a watcher with the given name is registered.
- */
 @BoxBIF( description = "Check whether a filesystem watcher with the given name is registered." )
 public class WatcherExists extends BIF {
 
@@ -40,9 +37,21 @@ public class WatcherExists extends BIF {
 		};
 	}
 
+	/**
+	 * Checks whether a named watcher is currently registered in the watcher service.
+	 *
+	 * @param context   The BoxContext of the caller.
+	 * @param arguments The arguments passed to the BIF.
+	 *
+	 * @argument.name The unique watcher name to look up.
+	 *
+	 * @return {@code true} if a watcher with the given name is registered, {@code false} otherwise.
+	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return runtime.getWatcherService().hasWatcher( Key.of( arguments.getAsString( Key._name ) ) );
+		return this.runtime
+			.getWatcherService()
+			.hasWatcher( Key.of( arguments.getAsString( Key._name ) ) );
 	}
 
 }

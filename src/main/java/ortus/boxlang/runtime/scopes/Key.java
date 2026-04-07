@@ -229,6 +229,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		condition							= Key.of( "condition" );
 	public static final Key		config								= Key.of( "config" );
 	public static final Key		configuration						= Key.of( "configuration" );
+	public static final Key		consecutiveErrors					= Key.of( "consecutiveErrors" );
 	public static final Key		configure							= Key.of( "configure" );
 	public static final Key		connectionFailures					= Key.of( "connectionFailures" );
 	public static final Key		connectionLimit						= Key.of( "connectionLimit" );

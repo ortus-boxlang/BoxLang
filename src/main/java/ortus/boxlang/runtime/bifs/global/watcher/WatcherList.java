@@ -32,6 +32,17 @@ public class WatcherList extends BIF {
 		super();
 	}
 
+	/**
+	 * Lists the names of all watchers currently registered in the watcher service.
+	 *
+	 * This returns only watcher identifiers and does not include watcher metadata.
+	 * Use {@code watcherGetAll()} when you need full watcher instances.
+	 *
+	 * @param context   The BoxContext of the caller.
+	 * @param arguments The arguments passed to the BIF. This BIF does not accept user arguments.
+	 *
+	 * @return An {@link ortus.boxlang.runtime.types.Array} of watcher names. Returns an empty array when no watchers are registered.
+	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return runtime.getWatcherService().getWatcherNames();

@@ -15,11 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ortus.boxlang.runtime.watchers.exceptions;
+package ortus.boxlang.runtime.async.watchers.exceptions;
 
+import ortus.boxlang.runtime.async.watchers.WatcherEvent;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.watchers.WatcherEvent;
 
 /**
  * Exception thrown by the WatcherService when an error occurs during file watching.

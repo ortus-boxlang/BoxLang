@@ -17,6 +17,11 @@
  */
 package ortus.boxlang.runtime.bifs.global.watcher;
 
+import ortus.boxlang.runtime.async.watchers.WatcherInstance;
+import ortus.boxlang.runtime.async.watchers.listeners.ClassListener;
+import ortus.boxlang.runtime.async.watchers.listeners.ClosureListener;
+import ortus.boxlang.runtime.async.watchers.listeners.IWatcherListener;
+import ortus.boxlang.runtime.async.watchers.listeners.StructListener;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -31,21 +36,17 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.watchers.WatcherInstance;
-import ortus.boxlang.runtime.watchers.listeners.ClassListener;
-import ortus.boxlang.runtime.watchers.listeners.ClosureListener;
-import ortus.boxlang.runtime.watchers.listeners.IWatcherListener;
-import ortus.boxlang.runtime.watchers.listeners.StructListener;
 
 /**
  * Create and register a new {@link WatcherInstance} without starting it.
  * Call {@code watcherStart(name)} to begin watching.
  *
- * <p>The {@code listener} argument accepts three forms:
+ * <p>
+ * The {@code listener} argument accepts three forms:
  * <ul>
- *   <li>A <strong>Function</strong> (closure/lambda) — invoked for every event</li>
- *   <li>An <strong>IStruct</strong> of named functions — keys: {@code onCreate}, {@code onModify}, {@code onDelete}, {@code onOverflow}, {@code onError}</li>
- *   <li>A <strong>String</strong> class name — the class is instantiated and its {@code onEvent} method is called</li>
+ * <li>A <strong>Function</strong> (closure/lambda) — invoked for every event</li>
+ * <li>An <strong>IStruct</strong> of named functions — keys: {@code onCreate}, {@code onModify}, {@code onDelete}, {@code onOverflow}, {@code onError}</li>
+ * <li>A <strong>String</strong> class name — the class is instantiated and its {@code onEvent} method is called</li>
  * </ul>
  */
 @BoxBIF( description = "Create and register a new filesystem watcher. Returns the WatcherInstance." )
@@ -67,18 +68,60 @@ public class WatcherNew extends BIF {
 		};
 	}
 
+	/**
+	 * Creates and registers a new watcher instance in the watcher service.
+	 *
+	 * The watcher is registered but not started. Call {@code watcherStart( name )} to
+	 * begin processing filesystem events.
+	 *
+	 * Listener resolution supports three input shapes:
+	 * <ul>
+	 * <li>{@link Function}: wrapped as a {@code ClosureListener}</li>
+	 * <li>{@link IStruct}: wrapped as a {@code StructListener}</li>
+	 * <li>{@link String}: treated as a class name and wrapped as a {@code ClassListener}</li>
+	 * </ul>
+	 *
+	 * If {@code name} is omitted or blank, a unique watcher name is auto-generated.
+	 *
+	 * @param context   The BoxContext of the caller.
+	 * @param arguments The arguments passed to the BIF.
+	 *
+	 * @argument.name Optional watcher name. If blank, an auto-generated name is used.
+	 *
+	 * @argument.paths A directory path string or an array of directory path strings to watch.
+	 *
+	 * @argument.listener Listener definition: function, struct listener map, or listener class name string.
+	 *
+	 * @argument.recursive Whether to watch subdirectories recursively.
+	 *
+	 * @argument.debounce Debounce window in milliseconds.
+	 *
+	 * @argument.throttle Throttle window in milliseconds.
+	 *
+	 * @argument.atomicWrites Whether atomic write filtering is enabled.
+	 *
+	 * @argument.delay Startup delay in milliseconds.
+	 *
+	 * @argument.errorThreshold Consecutive listener errors before auto-stop.
+	 *
+	 * @argument.force Whether to replace an existing watcher with the same name.
+	 *
+	 * @return The registered {@link WatcherInstance}.
+	 *
+	 * @throws BoxRuntimeException If listener resolution fails or the watcher cannot be registered.
+	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// Determine watcher name (auto-generate if not supplied)
-		String	nameArg	= arguments.getAsString( Key._name );
-		Key		name	= ( nameArg != null && !nameArg.isBlank() ) ? Key.of( nameArg ) : Key.of( "watcher-" + System.nanoTime() );
+		String					nameArg		= arguments.getAsString( Key._name );
+		Key						name		= ( nameArg != null && !nameArg.isBlank() ) ? Key.of( nameArg ) : Key.of( "watcher-" + System.nanoTime() );
 
 		// Resolve listener
-		Object				listenerArg	= arguments.get( Key.listener );
-		IWatcherListener	listener	= resolveListener( listenerArg, context );
+		Object					listenerArg	= arguments.get( Key.listener );
+		IWatcherListener		listener	= resolveListener( listenerArg, context );
 
 		// Build the watcher
-		WatcherInstance.Builder builder = WatcherInstance.builder( name )
+		WatcherInstance.Builder	builder		= WatcherInstance.builder( name )
 		    .recursive( BooleanCaster.cast( arguments.get( Key.recursive ) ) )
 		    .debounce( LongCaster.cast( arguments.get( Key.debounce ) ) )
 		    .throttle( LongCaster.cast( arguments.get( Key.throttle ) ) )
@@ -88,7 +131,7 @@ public class WatcherNew extends BIF {
 		    .listener( listener );
 
 		// Add paths
-		Object pathsArg = arguments.get( Key.paths );
+		Object					pathsArg	= arguments.get( Key.paths );
 		if ( pathsArg instanceof Array pathArray ) {
 			pathArray.forEach( p -> builder.addPath( StringCaster.cast( p ) ) );
 		} else {
@@ -101,6 +144,14 @@ public class WatcherNew extends BIF {
 		return runtime.getWatcherService().register( watcher, force );
 	}
 
+	/**
+	 * Resolves the listener argument into an IWatcherListener implementation.
+	 *
+	 * @param listenerArg The listener argument, which can be a Function, IStruct, or String.
+	 * @param context     The BoxContext, required for ClassListener instantiation.
+	 *
+	 * @return An IWatcherListener instance corresponding to the input argument.
+	 */
 	private IWatcherListener resolveListener( Object listenerArg, IBoxContext context ) {
 		if ( listenerArg instanceof Function fn ) {
 			return new ClosureListener( fn );

@@ -33,10 +33,25 @@ public class WatcherGetAll extends BIF {
 		super();
 	}
 
+	/**
+	 * Retrieves all registered watchers as a struct keyed by watcher name.
+	 *
+	 * The returned struct is a snapshot of the service registry at invocation time,
+	 * where each key is the watcher name and each value is the corresponding
+	 * {@link ortus.boxlang.runtime.async.watchers.WatcherInstance}.
+	 *
+	 * @param context   The BoxContext of the caller.
+	 * @param arguments The arguments passed to the BIF. This BIF does not accept user arguments.
+	 *
+	 * @return A struct of watcher name to watcher instance mappings. Returns an empty struct when no watchers are registered.
+	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Struct result = new Struct();
-		runtime.getWatcherService().getWatchers().forEach( ( k, v ) -> result.put( k, v ) );
+		this.runtime
+		    .getWatcherService()
+		    .getWatchers()
+		    .forEach( ( k, v ) -> result.put( k, v ) );
 		return result;
 	}
 
