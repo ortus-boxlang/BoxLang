@@ -47,6 +47,7 @@ class ClosureListenerTest {
 
 	@Test
 	@DisplayName( "onEvent delegates to onEvent function with event struct" )
+	@SuppressWarnings( "null" )
 	void testOnEventInvokesHandlerWithStruct() {
 		ortus.boxlang.runtime.types.Function	onEventFn	= mock( ortus.boxlang.runtime.types.Function.class );
 		IBoxContext								baseCtx		= mock( IBoxContext.class );
@@ -63,7 +64,8 @@ class ClosureListenerTest {
 
 		when( threadCtx.invokeFunction( eq( onEventFn ), any( Object[].class ) ) ).thenReturn( null );
 
-		try ( MockedStatic<ThreadBoxContext> mockedStatic = Mockito.mockStatic( ThreadBoxContext.class ) ) {
+		try (
+		    MockedStatic<ThreadBoxContext> mockedStatic = Mockito.mockStatic( ThreadBoxContext.class ) ) {
 			mockedStatic.when( () -> ThreadBoxContext.runInContext( eq( baseCtx ), eq( true ), any() ) )
 			    .thenAnswer( invocation -> {
 				    Function<IBoxContext, Object> runnable = invocation.getArgument( 2 );
@@ -83,11 +85,12 @@ class ClosureListenerTest {
 		assertThat( args[ 0 ] ).isInstanceOf( IStruct.class );
 		IStruct eventStruct = ( IStruct ) args[ 0 ];
 		assertThat( eventStruct.getAsString( Key.kind ) ).isEqualTo( "created" );
-		assertThat( eventStruct.getAsString( Key.path ) ).isEqualTo( "/tmp/watched/file.txt" );
+		assertThat( eventStruct.getAsString( Key.path ).replace( "\\", "/" ) ).isEqualTo( "/tmp/watched/file.txt" );
 	}
 
 	@Test
 	@DisplayName( "onError does nothing when no error handler is configured" )
+	@SuppressWarnings( "null" )
 	void testOnErrorNoHandler() {
 		ortus.boxlang.runtime.types.Function	onEventFn	= mock( ortus.boxlang.runtime.types.Function.class );
 		IBoxContext								baseCtx		= mock( IBoxContext.class );
