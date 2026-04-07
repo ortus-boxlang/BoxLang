@@ -51,8 +51,8 @@ public class WatchersTest {
 
 	@BeforeEach
 	public void setupEach() {
-		this.context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		this.variables		= this.context.getScopeNearby( VariablesScope.name );
+		this.context	= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		this.variables	= this.context.getScopeNearby( VariablesScope.name );
 		instance.getWatcherService().shutdownAll( false );
 	}
 
@@ -87,14 +87,14 @@ public class WatchersTest {
 		    this.context
 		);
 
-		WatcherInstance watcherOne = ( WatcherInstance ) this.variables.get( Key.of( "watcherOne" ) );
-		WatcherInstance fetchedOne = ( WatcherInstance ) this.variables.get( Key.of( "fetchedOne" ) );
-		WatcherInstance started = ( WatcherInstance ) this.variables.get( Key.of( "started" ) );
-		WatcherInstance restarted = ( WatcherInstance ) this.variables.get( Key.of( "restarted" ) );
-		IStruct allWatchers = this.variables.getAsStruct( Key.of( "allWatchers" ) );
-		Array watcherNames = this.variables.getAsArray( Key.of( "watcherNames" ) );
-		Array namesAfterShutdown = this.variables.getAsArray( Key.of( "namesAfterShutdown" ) );
-		IStruct allAfterShutdown = this.variables.getAsStruct( Key.of( "allAfterShutdown" ) );
+		WatcherInstance	watcherOne			= ( WatcherInstance ) this.variables.get( Key.of( "watcherOne" ) );
+		WatcherInstance	fetchedOne			= ( WatcherInstance ) this.variables.get( Key.of( "fetchedOne" ) );
+		WatcherInstance	started				= ( WatcherInstance ) this.variables.get( Key.of( "started" ) );
+		WatcherInstance	restarted			= ( WatcherInstance ) this.variables.get( Key.of( "restarted" ) );
+		IStruct			allWatchers			= this.variables.getAsStruct( Key.of( "allWatchers" ) );
+		Array			watcherNames		= this.variables.getAsArray( Key.of( "watcherNames" ) );
+		Array			namesAfterShutdown	= this.variables.getAsArray( Key.of( "namesAfterShutdown" ) );
+		IStruct			allAfterShutdown	= this.variables.getAsStruct( Key.of( "allAfterShutdown" ) );
 
 		assertThat( this.variables.getAsBoolean( Key.of( "existsOne" ) ) ).isTrue();
 		assertThat( this.variables.getAsBoolean( Key.of( "existsAfterShutdown" ) ) ).isFalse();
