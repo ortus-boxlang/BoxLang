@@ -82,6 +82,7 @@ import ortus.boxlang.runtime.services.IService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.services.SchedulerService;
+import ortus.boxlang.runtime.services.WatcherService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -234,6 +235,11 @@ public class BoxRuntime implements java.io.Closeable {
 	 * The Scheduler service in charge of all schedulers
 	 */
 	private SchedulerService					schedulerService;
+
+	/**
+	 * The Watcher service in charge of all filesystem watchers
+	 */
+	private WatcherService						watcherService;
 
 	/**
 	 * The datasource manager which stores a registry of configured datasources.
@@ -489,6 +495,7 @@ public class BoxRuntime implements java.io.Closeable {
 		this.applicationService	= new ApplicationService( this );
 		this.moduleService		= new ModuleService( this );
 		this.schedulerService	= new SchedulerService( this );
+		this.watcherService		= new WatcherService( this );
 		this.dataSourceService	= new DatasourceService( this );
 		this.httpService		= new HttpService( this );
 
@@ -522,6 +529,7 @@ public class BoxRuntime implements java.io.Closeable {
 		this.applicationService.onConfigurationLoad();
 		this.moduleService.onConfigurationLoad();
 		this.schedulerService.onConfigurationLoad();
+		this.watcherService.onConfigurationLoad();
 		this.dataSourceService.onConfigurationLoad();
 		this.httpService.onConfigurationLoad();
 
@@ -549,6 +557,8 @@ public class BoxRuntime implements java.io.Closeable {
 		// Now all schedulers can be started, this allows for modules to register
 		// schedulers
 		this.schedulerService.onStartup();
+		// Now all watchers can be started
+		this.watcherService.onStartup();
 		// Now the HTTP service can be started, this allows for modules to register
 		// HTTP clients or settings
 		this.httpService.onStartup();
@@ -774,6 +784,15 @@ public class BoxRuntime implements java.io.Closeable {
 	 */
 	public SchedulerService getSchedulerService() {
 		return schedulerService;
+	}
+
+	/**
+	 * Get the watcher service
+	 *
+	 * @return {@link WatcherService} or null if the runtime has not started
+	 */
+	public WatcherService getWatcherService() {
+		return watcherService;
 	}
 
 	/**
@@ -1074,6 +1093,9 @@ public class BoxRuntime implements java.io.Closeable {
 		instance.applicationService.onShutdown( force );
 		instance.moduleService.onShutdown( force );
 		instance.cacheService.onShutdown( force );
+		// Watcher service must shut down BEFORE asyncService so virtual-thread loops
+		// can be cancelled before their executor is terminated
+		instance.watcherService.onShutdown( force );
 		instance.asyncService.onShutdown( force );
 		instance.functionService.onShutdown( force );
 		instance.componentService.onShutdown( force );

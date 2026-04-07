@@ -230,6 +230,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		condition							= Key.of( "condition" );
 	public static final Key		config								= Key.of( "config" );
 	public static final Key		configuration						= Key.of( "configuration" );
+	public static final Key		consecutiveErrors					= Key.of( "consecutiveErrors" );
 	public static final Key		configure							= Key.of( "configure" );
 	public static final Key		connectionFailures					= Key.of( "connectionFailures" );
 	public static final Key		connectionLimit						= Key.of( "connectionLimit" );
@@ -1110,6 +1111,30 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		onTransactionCommit					= Key.of( "onTransactionCommit" );
 	public static final Key		onTransactionRollback				= Key.of( "onTransactionRollback" );
 	public static final Key		onTransactionSetSavepoint			= Key.of( "onTransactionSetSavepoint" );
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Watcher Service Keys
+	 * --------------------------------------------------------------------------
+	 */
+	public static final Key		watcherService						= Key.of( "watcherService" );
+	public static final Key		watcher								= Key.of( "watcher" );
+	public static final Key		watchers							= Key.of( "watchers" );
+	public static final Key		watchRoot							= Key.of( "watchRoot" );
+	public static final Key		relativePath						= Key.of( "relativePath" );
+	public static final Key		kind								= Key.of( "kind" );
+	public static final Key		paths								= Key.of( "paths" );
+	public static final Key		debounce							= Key.of( "debounce" );
+	public static final Key		throttle							= Key.of( "throttle" );
+	public static final Key		atomicWrites						= Key.of( "atomicWrites" );
+	public static final Key		errorThreshold						= Key.of( "errorThreshold" );
+	public static final Key		definitions							= Key.of( "definitions" );
+	public static final Key		onEvent								= Key.of( "onEvent" );
+	public static final Key		onCreate							= Key.of( "onCreate" );
+	public static final Key		onModify							= Key.of( "onModify" );
+	public static final Key		onDelete							= Key.of( "onDelete" );
+	public static final Key		onOverflow							= Key.of( "onOverflow" );
+
 	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
