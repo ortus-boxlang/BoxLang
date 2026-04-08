@@ -70,6 +70,18 @@ public class ClassListener implements IWatcherListener {
 	}
 
 	/**
+	 * Wrap an already-instantiated {@link IClassRunnable} as a listener.
+	 * The instance is used as-is; no class resolution is performed.
+	 *
+	 * @param instance the pre-instantiated BoxLang class instance
+	 * @param context  the IBoxContext used for method invocation
+	 */
+	public ClassListener( IClassRunnable instance, IBoxContext context ) {
+		this.context	= context;
+		this.instance	= instance;
+	}
+
+	/**
 	 * {@inheritDoc}
 	 * Invokes {@code instance.onEvent(eventStruct)} via {@link DynamicObject}.
 	 */

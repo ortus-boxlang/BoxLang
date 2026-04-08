@@ -22,6 +22,7 @@ import ortus.boxlang.runtime.async.watchers.listeners.ClassListener;
 import ortus.boxlang.runtime.async.watchers.listeners.ClosureListener;
 import ortus.boxlang.runtime.async.watchers.listeners.IWatcherListener;
 import ortus.boxlang.runtime.async.watchers.listeners.StructListener;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -170,6 +171,10 @@ public class WatcherNew extends BIF {
 
 		if ( listenerArg instanceof IStruct structArg ) {
 			return new StructListener( structArg );
+		}
+
+		if ( listenerArg instanceof IClassRunnable icr ) {
+			return new ClassListener( icr, context );
 		}
 
 		if ( listenerArg instanceof String className ) {
