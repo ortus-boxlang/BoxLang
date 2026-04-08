@@ -708,6 +708,30 @@ public class OracleDriverTest extends AbstractDriverTest {
 		assertThat( query.getRowAsStruct( 0 ).getAsNumber( Key.of( "floatValue" ) ).doubleValue() ).isEqualTo( 220692.03D );
 	}
 
+	@DisplayName( "It can use cfquery with cfqueryparam attributeCollection provided by a UDF" )
+	@Test
+	public void testCfqueryWithCfqueryparamAttributeCollectionFromUDF() {
+		instance.executeSource(
+		    """
+		    <cffunction name="buildParamAttrs" returntype="struct">
+		        <cfargument name="value" type="string" required="true" />
+		        <cfargument name="sqltype" type="string" required="true" />
+		        <cfreturn { value: arguments.value, sqltype: arguments.sqltype } />
+		    </cffunction>
+
+		    <cfquery name="result" datasource="OracleDatasource">
+		        SELECT * FROM developers WHERE role = <cfqueryparam attributeCollection="#buildParamAttrs( 'Developer', 'varchar' )#" />
+		    </cfquery>
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertThat( query.size() ).isEqualTo( 2 );
+		assertThat( query.getRowAsStruct( 0 ).getAsString( Key.of( "role" ) ) ).isEqualTo( "Developer" );
+		assertThat( query.getRowAsStruct( 1 ).getAsString( Key.of( "role" ) ) ).isEqualTo( "Developer" );
+	}
+
 	@DisplayName( "It can run a proc inside a transaction" )
 	@Test
 	public void testRunProcInsideTransaction() {
