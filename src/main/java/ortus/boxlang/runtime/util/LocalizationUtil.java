@@ -440,6 +440,10 @@ public final class LocalizationUtil {
 
 		// Let the lib run it's course
 		try {
+			if ( requestedLocale.length() == 2 ) {
+				// treat a 2 letter locale as a language code
+				requestedLocale = requestedLocale.toLowerCase();
+			}
 			oLocale = LocaleUtils.toLocale( requestedLocale );
 			// Make sure it's a valid locale for this machine or return null
 			return LocaleUtils.isAvailableLocale( oLocale ) ? oLocale : null;
@@ -1043,6 +1047,14 @@ public final class LocalizationUtil {
 				"^\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{2}$",
 				"datePattern", "M/d/yyyy H:mm",
 				"description", "US date MM/dd/yyyy with time no seconds"
+			) );
+
+			// European dot format date (e.g., 02.04.2024)
+			add( Map.of(
+				"regexPattern",
+				"^\\d{1,2}\\.\\d{1,2}\\.\\d{4}$",
+				"datePattern", "d.M.yyyy",
+				"description", "European DD.MM.YYYY format"
 			) );
 
 			// European dot format datetime (e.g., 02.04.2024 21:01:00)

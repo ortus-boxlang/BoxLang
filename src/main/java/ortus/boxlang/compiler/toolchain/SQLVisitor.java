@@ -353,7 +353,20 @@ public class SQLVisitor extends SQLGrammarBaseVisitor<BoxNode> {
 		String	alias	= null;
 
 		if ( ctx.schema_name() != null ) {
-			schema = unwrapBracket( ctx.schema_name().getText() );
+			var schemas = ctx.schema_name();
+			if ( !schemas.isEmpty() ) {
+				// First scheme is the actual schema
+				schema = unwrapBracket( schemas.get( 0 ).getText() );
+				// If we have more than 2 parts, slap them on the start of the name.
+				if ( schemas.size() > 1 ) {
+					String alsoName = "";
+					for ( int i = 1; i < schemas.size(); i++ ) {
+						alsoName += unwrapBracket( schemas.get( i ).getText() ) + ".";
+					}
+					name = alsoName + name;
+				}
+			}
+
 		}
 
 		if ( ctx.table_alias() != null ) {

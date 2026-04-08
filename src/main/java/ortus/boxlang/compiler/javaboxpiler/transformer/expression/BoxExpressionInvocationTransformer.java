@@ -19,7 +19,6 @@ package ortus.boxlang.compiler.javaboxpiler.transformer.expression;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
@@ -42,27 +41,24 @@ public class BoxExpressionInvocationTransformer extends AbstractTransformer {
 
 		Expression				expr		= ( Expression ) transpiler.transform( invocation.getExpr(), context );
 
-		String					args		= invocation.getArguments().stream()
-		    .map( it -> transpiler.transform( it ).toString() )
-		    .collect( Collectors.joining( ", " ) );
-
-		String					template	= """
-		                                      ${contextName}.invokeFunction(
-		                                        ${expr},
-		                                        new Object[] { ${args} }
-		                                      )
-		                                      """;
-
 		Map<String, String>		values		= new HashMap<>() {
 
 												{
 													put( "contextName", transpiler.peekContextName() );
 													put( "expr", expr.toString() );
-													put( "args", args );
 												}
 											};
 
-		Node					javaExpr	= parseExpression( template, values );
+		for ( int i = 0; i < invocation.getArguments().size(); i++ ) {
+			Expression argExpr = ( Expression ) transpiler.transform( invocation.getArguments().get( i ), context );
+			values.put( "arg" + i, argExpr.toString() );
+		}
+
+		String	template	= "${contextName}.invokeFunction( ${expr}, "
+		    + generateArguments( invocation.getArguments() )
+		    + " )";
+
+		Node	javaExpr	= parseExpression( template, values );
 		// logger.trace( node.getSourceText() + " -> " + javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;

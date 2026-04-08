@@ -614,4 +614,55 @@ public class CFTranspilerTest {
 		assertThat( variables.get( result ) ).isEqualTo( "bar" );
 	}
 
+	@DisplayName( "It allows invalid types" )
+	@Test
+	public void testInvalidTypes() {
+		instance.executeSource(
+		    """
+		    result = "";
+		    // same as readonly
+		    cflock( timeout=1, type="read" ) {
+		    	result &= "read";
+		    }
+		    // same as exclusive
+		    cflock( timeout=1, type="write" ) {
+		    	result &= "write";
+		    }
+		    // same as readonly
+		    cflock( timeout=1, type="sdfsdf" ) {
+		    	result &= "sdfsdf";
+		    }
+		             """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "readwritesdfsdf" );
+	}
+
+	@DisplayName( "It formats numbers with a string pattern" )
+	@Test
+	public void testNumberFormatSecondArgAsString() {
+		instance.executeSource(
+		    """
+		    result = numberFormat( 1, 000.000 );
+		             """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "001.000" );
+	}
+
+	@DisplayName( "It doesn't escape single quotes in SQL output from UDF" )
+	@Test
+	public void testItDoesntEscapeSingleQuotesInSqlOutputFromUDF() {
+		instance.executeSource(
+		    """
+		    	<cfset myQry = queryNew( "name", "varchar", [["Brad"], ["Luis"]] ) >
+		    	<cffunction name="getSQL">
+		    		<cfreturn mySQL = "SELECT * FROM myQry WHERE name = 'Brad'" >
+		    	</cffunction>
+		    	<cfquery name="result" dbtype="query">
+		    		#getSQL()#
+		    	</cfquery>
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 1 );
+	}
+
 }

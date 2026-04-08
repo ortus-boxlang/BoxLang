@@ -724,7 +724,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	}
 
 	/**
-	 * Find a function in the corrent context. Will search known scopes for a UDF.
+	 * Find a function in the current context. Will search known scopes for a UDF.
 	 *
 	 * @param name The name of the function to find
 	 *
@@ -751,6 +751,18 @@ public class FunctionBoxContext extends BaseBoxContext {
 				    "Variable '" + name + "' of type  '" + TypeUtil.getObjectName( value ) + "'  is not a function." );
 			}
 		}
+
+		return findFunctionInOwner( name );
+	}
+
+	/**
+	 * Find a function in the current context if we are in an interface, class, or static class.
+	 *
+	 * @param name The name of the function to find
+	 *
+	 * @return The function instance, null if not found
+	 */
+	protected Function findFunctionInOwner( Key name ) {
 
 		// Check for a function if it's in an interface
 		if ( isInInterface() ) {

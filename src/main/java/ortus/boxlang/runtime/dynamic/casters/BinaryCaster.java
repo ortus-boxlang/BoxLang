@@ -17,8 +17,6 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
-import java.nio.charset.StandardCharsets;
-
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.util.TypeUtil;
 

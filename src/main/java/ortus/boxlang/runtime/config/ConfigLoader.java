@@ -57,7 +57,7 @@ public class ConfigLoader {
 	/**
 	 * Path to the core config file in the `resources` folder
 	 */
-	private static final String	DEFAULT_CONFIG_FILE	= "config/boxlang.json";
+	public static final String	DEFAULT_CONFIG_FILE	= "config/boxlang.json";
 
 	/**
 	 * The ConfigLoader instance
@@ -128,7 +128,6 @@ public class ConfigLoader {
 	 *
 	 * @return The parsed configuration
 	 */
-	@SuppressWarnings( "unchecked" )
 	public Configuration loadFromResources( String configFile ) {
 		// Parse it natively to Java objects
 		Object rawConfig = JSONUtil.fromJSON(
@@ -199,8 +198,6 @@ public class ConfigLoader {
 	 * Load the config from a URL file source
 	 *
 	 * @param source The source to load the configuration from
-	 *
-	 * @return The parsed configuration
 	 */
 	public Configuration loadFromFile( URL source ) {
 		return loadFromFile( new File( source.getFile() ) );
@@ -210,8 +207,6 @@ public class ConfigLoader {
 	 * Load the config from a String file source
 	 *
 	 * @param source The source to load the configuration from
-	 *
-	 * @return The parsed configuration
 	 */
 	public Configuration loadFromFile( String source ) {
 		return loadFromFile( new File( source ) );
@@ -338,7 +333,7 @@ public class ConfigLoader {
 
 	/**
 	 * Apply an override to the flattened configuration
-	 * 
+	 *
 	 * @param entry
 	 * @param flatConfig
 	 */

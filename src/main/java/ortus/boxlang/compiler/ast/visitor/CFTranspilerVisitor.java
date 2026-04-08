@@ -47,11 +47,13 @@ import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxClosure;
 import ortus.boxlang.compiler.ast.expression.BoxComparisonOperation;
 import ortus.boxlang.compiler.ast.expression.BoxComparisonOperator;
+import ortus.boxlang.compiler.ast.expression.BoxDecimalLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxExpressionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
+import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
@@ -85,6 +87,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -218,6 +221,11 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 * Only applies when named arguments are used.
 	 */
 	private static Map<String, Map<String, String>>	BIFArgMap					= new HashMap<>();
+
+	/**
+	 * The function service
+	 */
+	private static FunctionService					functionService;
 
 	/**
 	 * Configuration keys for transpiler settings
@@ -360,6 +368,8 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	public CFTranspilerVisitor() {
 		// This may change when moving this visitor to the actual compat module
 		this( moduleService.hasModule( compatKey ) ? StructCaster.cast( moduleService.getModuleSettings( compatKey ) ) : Struct.EMPTY );
+
+		functionService = runtime.getFunctionService();
 	}
 
 	/**
@@ -680,6 +690,27 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		if ( name.equals( "quotedvaluelist" ) && node.getArguments().size() > 0 && node.getArguments().get( 0 ).getValue() instanceof BoxAccess ) {
 			return transpileQuotedValueList( node );
 		}
+
+		// UDF calls inside of a query get wrapped in preserveSingleQuotes()
+		boolean inQueryComponent = node.getFirstAncestorOfType( BoxComponent.class, c -> c.getName().equalsIgnoreCase( "query" ) ) != null;
+		if ( inQueryComponent && !functionService.hasGlobalFunction( Key.of( name ) ) ) {
+			// wrap in preserveSingleQuotes()
+			BoxFunctionInvocation preserveSingleQuoteInvocation = new BoxFunctionInvocation(
+			    "preserveSingleQuotes",
+			    List.of(
+			        new BoxArgument(
+			            node,
+			            null,
+			            null
+			        )
+			    ),
+			    null,
+			    null
+			);
+			// Need a separate visit() call for this path so we call the correct overloaded visit() method
+			return super.visit( preserveSingleQuoteInvocation );
+		}
+
 		// look for BIFs whose return type has changed
 		if ( BIFReturnTypeFixSet.contains( name ) && returnValueIsUsed( node ) ) {
 			return transpileBIFReturnType( node, name );
@@ -705,6 +736,31 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 				if ( val.equals( "once" ) ) {
 					bsl.setValue( "one" );
 				}
+			}
+		}
+
+		// If second arg (positional) or "mask" arg (named) is a BoxIntegerLiteral or BoxDecimalLiteral, force it to a string literal with the original text
+		// So, 000.000 becomes "000.000" when passed to numberFormat()
+		if ( name.equals( "numberformat" ) ) {
+			BoxArgument arg = null;
+			if ( node.isNamedArgs() ) {
+				arg = node.getArguments().stream()
+				    .filter( a -> a.getName().getAsSimpleValue().toString().equalsIgnoreCase( "mask" ) )
+				    .findFirst()
+				    .orElse( null );
+			} else if ( node.getArguments().size() > 1 ) {
+				arg = node.getArguments().get( 1 );
+			}
+			if ( arg != null && ( arg.getValue() instanceof BoxIntegerLiteral || arg.getValue() instanceof BoxDecimalLiteral ) ) {
+				// Favor original text, as our parser strips leading zeros in the AST
+				String originalText = arg.getValue() instanceof BoxIntegerLiteral ? ( ( BoxIntegerLiteral ) arg.getValue() ).getSourceText()
+				    : ( ( BoxDecimalLiteral ) arg.getValue() ).getSourceText();
+				// If this AST has no source text, fall back on the value
+				if ( originalText == null ) {
+					originalText = arg.getValue() instanceof BoxIntegerLiteral ? ( ( BoxIntegerLiteral ) arg.getValue() ).getValue()
+					    : ( ( BoxDecimalLiteral ) arg.getValue() ).getValue();
+				}
+				arg.setValue( new BoxStringLiteral( originalText, arg.getValue().getPosition(), "\"" + originalText + "\"" ) );
 			}
 		}
 
@@ -1389,8 +1445,9 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 			    } );
 		}
 
-		// If cflock has no name or scope attribute, set a name attribute to a UUID
+		// fixes for cflock tag
 		if ( componentName.equals( "lock" ) ) {
+			// If cflock has no name or scope attribute, set a name attribute to a UUID
 			boolean	hasName		= node.getAttributes().stream().anyMatch( a -> a.getKey().getValue().equalsIgnoreCase( "name" ) );
 			boolean	hasScope	= node.getAttributes().stream().anyMatch( a -> a.getKey().getValue().equalsIgnoreCase( "scope" ) );
 			if ( !hasName && !hasScope ) {
@@ -1402,6 +1459,17 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 				        null )
 				);
 			}
+			// CF allows various "incorrect" type attribute values. If "type" is set, "write" changes to "exclusive", all other values other than "readonly" change to "readonly"
+			node.getAttributes().stream()
+			    .filter( a -> a.getKey().getValue().equalsIgnoreCase( "type" ) && a.getValue() instanceof BoxStringLiteral )
+			    .forEach( a -> {
+				    BoxStringLiteral bsl = ( BoxStringLiteral ) a.getValue();
+				    if ( bsl.getValue().equalsIgnoreCase( "write" ) ) {
+					    bsl.setValue( "exclusive" );
+				    } else if ( !bsl.getValue().equalsIgnoreCase( "readonly" ) ) {
+					    bsl.setValue( "readonly" );
+				    }
+			    } );
 		}
 
 		// Ignore invalid values for cfquery dbtype. If it's a string literal, and not query or hql, then literally delete the attribute entirely
@@ -1733,7 +1801,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 
 	/**
 	 * Determine if a node is inside a script or template
-	 * TODO: Does this deserve to exist on BoxNode?
+	 * TODO: Does this method deserve to just be added directly on BoxNode?
 	 *
 	 * @param node The node to check
 	 *
@@ -1745,4 +1813,5 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		    .map( n -> n instanceof BoxScript || n instanceof BoxScriptIsland )
 		    .orElse( false );
 	}
+
 }

@@ -21,7 +21,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.*;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 import java.util.function.BiFunction;
 

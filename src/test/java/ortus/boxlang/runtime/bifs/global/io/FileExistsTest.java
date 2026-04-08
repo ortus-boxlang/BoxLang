@@ -21,6 +21,7 @@ package ortus.boxlang.runtime.bifs.global.io;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
@@ -38,6 +39,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class FileExistsTest {
@@ -145,6 +147,55 @@ public class FileExistsTest {
 		       """,
 		    context );
 		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "It can check file existence using a Java Path object" )
+	@Test
+	public void testFileExistsWithJavaPath() throws IOException {
+		String testFile = tmpDirectory + "exists-path.txt";
+		FileSystemUtil.write( testFile, "path test!".getBytes( "UTF-8" ), true );
+		variables.put( Key.of( "testPath" ), Path.of( testFile ).toAbsolutePath() );
+		instance.executeSource(
+		    """
+		    result = fileExists( variables.testPath );
+		    """,
+		    context );
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "It can check file existence using a Java File object" )
+	@Test
+	public void testFileExistsWithJavaFile() throws IOException {
+		String testFile = tmpDirectory + "exists-file.txt";
+		FileSystemUtil.write( testFile, "file test!".getBytes( "UTF-8" ), true );
+		variables.put( Key.of( "testFile" ), Path.of( testFile ).toAbsolutePath().toFile() );
+		instance.executeSource(
+		    """
+		    result = fileExists( variables.testFile );
+		    """,
+		    context );
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "It rejects an explicit BoxFile object" )
+	@Test
+	public void testFileExistsRejectsBoxFile() throws IOException {
+		String testFile = tmpDirectory + "exists-reject.txt";
+		FileSystemUtil.write( testFile, "reject test!".getBytes( "UTF-8" ), true );
+		variables.put( Key.of( "testFile" ), Path.of( testFile ).toAbsolutePath().toString() );
+		assertThrows(
+		    BoxRuntimeException.class,
+		    () -> instance.executeSource(
+		        """
+		        fileObj = fileOpen( testFile, "read" );
+		        try {
+		            fileExists( fileObj );
+		        } finally {
+		            fileClose( fileObj );
+		        }
+		        """,
+		        context )
+		);
 	}
 
 }

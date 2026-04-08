@@ -80,6 +80,7 @@ public enum QueryColumnType {
 			case "struct" :
 			case "sqlxml" :
 				return OTHER;
+			case "long" :
 			case "bigint" :
 				return BIGINT;
 			case "binary" :

@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.types;
 
 import java.io.Serializable;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -519,10 +520,14 @@ public class StructMapWrapper implements IStruct, IListenable<IStruct>, Serializ
 	 * Returns a {@link Set} view of the mappings contained in this map.
 	 */
 	@Override
+	@SuppressWarnings( "unchecked" )
 	public Set<Entry<Key, Object>> entrySet() {
-		return wrapped.entrySet().stream()
-		    .map( entry -> new SimpleEntry<>( Key.of( entry.getKey() ), entry.getValue() ) )
-		    .collect( Collectors.toCollection( LinkedHashSet::new ) );
+		Map.Entry<Object, Object>[]		snapshot	= wrapped.entrySet().toArray( new Map.Entry[ 0 ] );
+		ArrayList<Entry<Key, Object>>	entries		= new ArrayList<>( snapshot.length );
+		for ( Map.Entry<Object, Object> entry : snapshot ) {
+			entries.add( new SimpleEntry<>( Key.of( entry.getKey() ), entry.getValue() ) );
+		}
+		return new Struct.ListBackedSet<>( entries );
 	}
 
 	/**

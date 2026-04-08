@@ -260,4 +260,39 @@ public class QueryTest {
 		assertThat( qry.getColumnList() ).isEqualTo( "id,name" );
 	}
 
+	@DisplayName( "setColumnNames renames columns positionally" )
+	@Test
+	void testSetColumnNames() {
+		instance.executeSource(
+		    """
+		    qry = QueryNew( "col1,col2,col3", "varchar,integer,varchar" );
+		    QueryAddRow( qry, { col1="a", col2=1, col3="b" } );
+
+		    // Rename all columns
+		    qry.setColumnNames( [ "name", "age", "city" ] );
+		    colList1 = qry.columnList;
+		    val1 = qry.name[1];
+		    val2 = qry.age[1];
+		    val3 = qry.city[1];
+
+		    // Fewer names than columns - only first 2 renamed
+		    qry.setColumnNames( [ "first", "second" ] );
+		    colList2 = qry.columnList;
+
+		    // More names than columns - extras ignored
+		    qry.setColumnNames( [ "x", "y", "z", "extra" ] );
+		    colList3 = qry.columnList;
+		    valX = qry.x[1];
+		    """,
+		    context );
+
+		assertThat( variables.getAsString( Key.of( "colList1" ) ) ).isEqualTo( "name,age,city" );
+		assertThat( variables.get( Key.of( "val1" ) ) ).isEqualTo( "a" );
+		assertThat( variables.get( Key.of( "val2" ) ) ).isEqualTo( 1 );
+		assertThat( variables.get( Key.of( "val3" ) ) ).isEqualTo( "b" );
+		assertThat( variables.getAsString( Key.of( "colList2" ) ) ).isEqualTo( "first,second,city" );
+		assertThat( variables.getAsString( Key.of( "colList3" ) ) ).isEqualTo( "x,y,z" );
+		assertThat( variables.get( Key.of( "valX" ) ) ).isEqualTo( "a" );
+	}
+
 }

@@ -30,6 +30,9 @@
 	// Which will produce lots of debug output and metrics
 	// Also the debugging error template will be used if turned on
 	"debugMode": false,
+	//This is for adding a path (.bxm) to render a custom global error template for unhandled errors
+	//If empty, default boxlang error page is rendered
+	"globalErrorTemplate": "",
 	// This setting if enabled will remove all the class files from the class generation directory
 	// This is useful for debugging and testing, but not recommended for production
 	"clearClassFilesOnStartup": false,
@@ -195,7 +198,11 @@
 				"encoder": "text",
 				// Additive logging: true means that this logger will inherit the appenders from the root logger
 				// If false, it will only use the appenders defined in this logger
-				"additive": false
+				"additive": false,
+				// An optional array of Java class or package names whose log events should also be
+				// redirected to this logger's appender at the same log level.
+				// Example: [ "com.zaxxer.hikari", "org.apache.commons.dbcp2" ]
+				"categories": []
 			},
 			// The modules log is used by the module service and records all module activity
 			"modules": {
@@ -248,6 +255,23 @@
 				// If false, it will only use the appenders defined in this logger
 				"additive": false
 			},
+			// All filesystem watcher lifecycle events and listener errors log here
+			"watcher": {
+				// Valid values are in order of severity: ERROR, WARN, INFO, DEBUG, TRACE, OFF
+				// Leave out if it should inherit from the root logger
+				"level": "INFO",
+				// Valid values are: "file", "console",
+				// Coming soon: "smtp", "socket", "db", "syslog" or "java class name"
+				// Please note that we only use Rolling File Appenders
+				"appender": "file",
+				// Use the defaults from the runtime
+				"appenderArguments": {},
+				// The available options are "text" and "json"
+				"encoder": "text",
+				// Additive logging: true means that this logger will inherit the appenders from the root logger
+				// If false, it will only use the appenders defined in this logger
+				"additive": false
+			},
 			// All http related logging will go here
 			"http": {
 				// Valid values are in order of severity: ERROR, WARN, INFO, DEBUG, TRACE, OFF
@@ -264,6 +288,20 @@
 				// Additive logging: true means that this logger will inherit the appenders from the root logger
 				// If false, it will only use the appenders defined in this logger
 				"additive": false
+			},
+			// The blackhole logger silences all log events. Its level is OFF by default, meaning nothing is ever written.
+			// Add Java class or package names to "categories" to suppress noisy third-party libraries.
+			// Example: "categories": [ "com.zaxxer.hikari", "org.springframework" ]
+			"blackhole": {
+				// OFF means no events pass through regardless of appender
+				"level": "OFF",
+				"appender": "file",
+				"appenderArguments": {},
+				"encoder": "text",
+				// Must be false: blackhole does not propagate to root/console
+				"additive": false,
+				// Add class/package names here to silence them
+				"categories": []
 			}
 		}
 	},
@@ -313,15 +351,87 @@
 		// You can use the ${user-dir} or ${boxlang-home} variables or any other environment variable
 		// Example: "schedulers": [ "/path/to/Scheduler.bx" ]
 		"schedulers": [],
-		// You can also define tasks manually here
-		// Every task is an object defined by a unique name
-		// The task object is a struct with the following properties:
-		// - `crontime:string` - The cron time to run the task (optional), defaults to empty string
-		// - `eventhandler:path` - The absolute path to the task event handler(optional), defaults to empty string
-		// - `exclude:any` - Comma-separated list of dates or date range (d1 to d2) on which to not execute the scheduled task
-		// - `file:name` - Name of the log file to store output of the task (optional), defaults to `scheduler`
-		// - `group:string` - The group name of the task (optional), defaults to empty string
-		"tasks": {}
+		// The path to the JSON file where bx:schedule tasks are persisted across restarts.
+		// Supports ${boxlang-home} and other placeholder variables.
+		"tasksFile": "${boxlang-home}/config/tasks.json"
+	},
+	// BoxLang Watcher Service
+	// Manages filesystem watchers that fire BoxLang listeners whenever files change.
+	// Watchers defined in "definitions" are auto-registered and started at runtime startup.
+	//
+	// All top-level properties are DEFAULTS inherited by every named watcher definition.
+	// A per-definition value always overrides the corresponding default.
+	"watcher": {
+		// Whether watchers recurse into subdirectories when registering paths.
+		// Set to false to watch only the top-level directory (non-recursive).
+		"recursive": true,
+		// Debounce window in milliseconds.
+		// Suppresses events until no new event arrives within this window.
+		// 0 = disabled (every event fires immediately).
+		// Useful for editors that write a swap/temp file before renaming to the real path —
+		// a 300ms debounce prevents double-firing on a single logical save.
+		"debounce": 0,
+		// Throttle window in milliseconds.
+		// Fires the listener at most once per window; any additional events in the window are dropped.
+		// 0 = disabled.
+		// Use when you only want one notification per burst of activity, e.g. 1000ms = at most once/sec.
+		"throttle": 0,
+		// Whether to skip noisy intermediate ENTRY_MODIFY events caused by atomic writes.
+		// Most editors (vim, IntelliJ, VS Code) write to a temp file then rename it,
+		// which generates a rapid CREATE+MODIFY storm.  Keeping this true avoids spurious firings.
+		"atomicWrites": true,
+		// Startup delay in milliseconds before the watch loop begins processing events.
+		// Useful when watched paths are populated asynchronously during application startup.
+		// 0 = start watching immediately.
+		"delay": 0,
+		// Number of consecutive listener errors that trigger an automatic watcher shutdown.
+		// The watcher stops itself and announces ON_WATCHER_ERROR so the application can react.
+		// 0 = never auto-shutdown on errors (the watch loop runs until explicitly stopped).
+		"errorThreshold": 10,
+		// Named watcher definitions.
+		// Each key is the watcher's unique ID and the value is a configuration struct.
+		// All watchers defined here are auto-registered and started at runtime startup,
+		// mirroring how scheduler definitions work in the "scheduler" section above.
+		//
+		// IMPORTANT: the "listener" value must be a fully-qualified BoxLang class path string.
+		// Inline closures are not supported in JSON — use watcherNew() in BoxLang code instead.
+		// The class is resolved via createObject() so module classes and path mappings both work.
+		//
+		// The listener class must implement:
+		//   function onEvent( struct event )  — receives { kind, path, relativePath, watchRoot, timestamp }
+		// Optionally:
+		//   function onError( string message, any exception )
+		"definitions": {
+			// ----- Example 1: class-based listener — recommended for production -----
+			// "hot-reload": {
+			//     // The directory (or directories) to watch. Can be a string or an array.
+			//     "paths": [ "${user-dir}/src" ],
+			//     // Per-watcher overrides (omit any key to inherit the default above)
+			//     "recursive": true,
+			//     "debounce": 300,
+			//     "atomicWrites": true,
+			//     "errorThreshold": 5,
+			//     // BoxLang class path that implements onEvent( eventStruct )
+			//     "listener": "app.listeners.HotReloadListener"
+			// },
+
+			// ----- Example 2: multiple paths with all options shown -----
+			// "asset-pipeline": {
+			//     "paths": [
+			//         "${user-dir}/resources/css",
+			//         "${user-dir}/resources/js"
+			//     ],
+			//     "recursive": false,
+			//     // Allow at most one rebuild notification per 500ms burst
+			//     "throttle": 500,
+			//     "debounce": 0,
+			//     "atomicWrites": true,
+			//     // Wait 2 seconds after startup before watching (assets compiled during boot)
+			//     "delay": 2000,
+			//     "errorThreshold": 3,
+			//     "listener": "app.listeners.AssetPipelineListener"
+			// }
+		}
 	},
 	"defaultDatasource": "",
 	// The registered global datasources in the language
@@ -338,6 +448,9 @@
 		// 	  "database": "test"
 		// }
 	},
+	// If enabled, this will treat nested transactional operations as savepoints on the parent transaction.
+	// If disabled, nested transactions will be ignored and all commits and rollbacks will apply to the entire transaction.
+	"enableNestedTransactions": true,
 	// The default return format for class invocations via web runtimes
 	"defaultRemoteMethodReturnFormat": "json",
 	/**

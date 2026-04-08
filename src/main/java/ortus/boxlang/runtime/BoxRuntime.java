@@ -49,6 +49,7 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
+import ortus.boxlang.debug.DebuggerExternalConnectionUtil;
 import ortus.boxlang.runtime.application.BaseApplicationListener;
 import ortus.boxlang.runtime.config.CLIOptions;
 import ortus.boxlang.runtime.config.ConfigLoader;
@@ -75,13 +76,13 @@ import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.services.ComponentService;
 import ortus.boxlang.runtime.services.DatasourceService;
-import ortus.boxlang.debug.DebuggerExternalConnectionUtil;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.HttpService;
 import ortus.boxlang.runtime.services.IService;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.services.SchedulerService;
+import ortus.boxlang.runtime.services.WatcherService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -236,6 +237,11 @@ public class BoxRuntime implements java.io.Closeable {
 	private SchedulerService					schedulerService;
 
 	/**
+	 * The Watcher service in charge of all filesystem watchers
+	 */
+	private WatcherService						watcherService;
+
+	/**
 	 * The datasource manager which stores a registry of configured datasources.
 	 */
 	private DatasourceService					dataSourceService;
@@ -331,33 +337,47 @@ public class BoxRuntime implements java.io.Closeable {
 	 */
 	private void loadConfiguration( String configPath ) {
 		ConfigLoader loader = ConfigLoader.getInstance();
-		// 1. Load Core Configuration file : resources/config/boxlang.json
+
+		// Load our core configuration first - otherwise mapped paths in the configuration may not be loaded properly
+		// And our compilation directories need to be expanded from the environment
 		this.configuration = loader.loadCore();
 
-		// Announce so any runtime additions can incorporate settings or override them.
-		this.interceptorService.announce(
-		    BoxEvent.ON_CONFIGURATION_LOAD,
-		    Struct.of( "config", this.configuration ) );
+		boolean	overridesApplied		= false;
+		IStruct	overrideConfig			= new Struct();
+		Array	overrideFiles			= new Array();
 
 		// 2. Runtime Home Override? Check runtime home for a
 		// ${boxlang-home}/config/boxlang.json
-		String runtimeHomeConfigPath = Paths.get( getRuntimeHome().toString(), "config", "boxlang.json" ).toString();
+		String	runtimeHomeConfigPath	= Paths.get( getRuntimeHome().toString(), "config", "boxlang.json" ).toString();
 		if ( Files.exists( Path.of( runtimeHomeConfigPath ) ) ) {
-			IStruct appliedConfig = loader.mergeEnvironmentOverrides( loader.deserializeConfig( runtimeHomeConfigPath ) );
-			this.configuration.process( appliedConfig );
-			this.interceptorService.announce(
-			    BoxEvent.ON_CONFIGURATION_OVERRIDE_LOAD,
-			    Struct.of( "config", this.configuration, "configOverride", runtimeHomeConfigPath ) );
+			overridesApplied = true;
+			overrideFiles.add( runtimeHomeConfigPath );
+			overrideConfig.addAll( loader.deserializeConfig( runtimeHomeConfigPath ) );
+			this.loggingService.getRootLogger().debug( "+ Loaded configuration overrides from runtime home config file at [{}]", runtimeHomeConfigPath );
+
 		}
 
 		// 3. CLI or ENV Config Path Override, which comes via the arguments
 		if ( configPath != null ) {
-			IStruct appliedConfig = loader.mergeEnvironmentOverrides( loader.deserializeConfig( configPath ) );
-			this.configuration.process( appliedConfig );
+			overridesApplied = true;
+			overrideFiles.add( configPath );
+			overrideConfig.addAll( loader.deserializeConfig( configPath ) );
+			this.loggingService.getRootLogger().debug( "+ Loaded configuration overrides from config path at [{}]", configPath );
+		}
+
+		if ( overridesApplied ) {
 			this.interceptorService.announce(
 			    BoxEvent.ON_CONFIGURATION_OVERRIDE_LOAD,
-			    Struct.of( "config", this.configuration, "configOverride", configPath ) );
+			    Struct.of( "config", this.configuration, "overrides", overrideConfig, "configOverrides", overrideFiles )
+			);
 		}
+
+		this.configuration.process( loader.mergeEnvironmentOverrides( overrideConfig ) );
+
+		// Announce so any runtime additions - after all configuration settings have been applied
+		this.interceptorService.announce(
+		    BoxEvent.ON_CONFIGURATION_LOAD,
+		    Struct.of( "config", this.configuration ) );
 
 		// Finally verify if we overwrote the debugmode in one of the configs above
 		if ( this.debugMode == null ) {
@@ -475,6 +495,7 @@ public class BoxRuntime implements java.io.Closeable {
 		this.applicationService	= new ApplicationService( this );
 		this.moduleService		= new ModuleService( this );
 		this.schedulerService	= new SchedulerService( this );
+		this.watcherService		= new WatcherService( this );
 		this.dataSourceService	= new DatasourceService( this );
 		this.httpService		= new HttpService( this );
 
@@ -508,6 +529,7 @@ public class BoxRuntime implements java.io.Closeable {
 		this.applicationService.onConfigurationLoad();
 		this.moduleService.onConfigurationLoad();
 		this.schedulerService.onConfigurationLoad();
+		this.watcherService.onConfigurationLoad();
 		this.dataSourceService.onConfigurationLoad();
 		this.httpService.onConfigurationLoad();
 
@@ -535,6 +557,8 @@ public class BoxRuntime implements java.io.Closeable {
 		// Now all schedulers can be started, this allows for modules to register
 		// schedulers
 		this.schedulerService.onStartup();
+		// Now all watchers can be started
+		this.watcherService.onStartup();
 		// Now the HTTP service can be started, this allows for modules to register
 		// HTTP clients or settings
 		this.httpService.onStartup();
@@ -760,6 +784,15 @@ public class BoxRuntime implements java.io.Closeable {
 	 */
 	public SchedulerService getSchedulerService() {
 		return schedulerService;
+	}
+
+	/**
+	 * Get the watcher service
+	 *
+	 * @return {@link WatcherService} or null if the runtime has not started
+	 */
+	public WatcherService getWatcherService() {
+		return watcherService;
 	}
 
 	/**
@@ -1060,6 +1093,9 @@ public class BoxRuntime implements java.io.Closeable {
 		instance.applicationService.onShutdown( force );
 		instance.moduleService.onShutdown( force );
 		instance.cacheService.onShutdown( force );
+		// Watcher service must shut down BEFORE asyncService so virtual-thread loops
+		// can be cancelled before their executor is terminated
+		instance.watcherService.onShutdown( force );
 		instance.asyncService.onShutdown( force );
 		instance.functionService.onShutdown( force );
 		instance.componentService.onShutdown( force );
@@ -1512,7 +1548,7 @@ public class BoxRuntime implements java.io.Closeable {
 				// Opps, an error while handling the missing template error
 				errorToHandle = t;
 			}
-		} catch ( Exception e ) {
+		} catch ( Throwable e ) {
 			errorToHandle = e;
 		} finally {
 
@@ -1899,6 +1935,14 @@ public class BoxRuntime implements java.io.Closeable {
 			RequestBoxContext.setCurrent( currentRequestContext );
 			return currentRequestContext;
 		}
+	}
+
+	/**
+	 * Get the path to the config file used to initialize the runtime
+	 * Null if using defaults
+	 */
+	public String getConfigPath() {
+		return this.configPath;
 	}
 
 }
