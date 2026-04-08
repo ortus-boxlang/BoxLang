@@ -553,12 +553,12 @@ public class ApplicationTest {
 
 		// @formatter:off
 		instance.executeSource(
-		    
+
 		    """
 		        bx:application name="myAppsdfsdf21" sessionmanagement="true" sessionTimeout=".5";
 				result = GetApplicationMetadata();
 			""", context );
-			
+
 		// @formatter:on
 
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
@@ -573,10 +573,10 @@ public class ApplicationTest {
 
 		// @formatter:off
 		instance.executeSource(
-		    
+
 		    """
-		        bx:application 
-					name="myAppWithAltCache" 
+		        bx:application
+					name="myAppWithAltCache"
 					sessionmanagement="true"
 					caches = {
 						sessionCache = {
@@ -589,7 +589,7 @@ public class ApplicationTest {
 				sessionStorage="sessionCache";
 				result = GetApplicationMetadata();
 			""", context );
-			
+
 		// @formatter:on
 
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
