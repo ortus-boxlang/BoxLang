@@ -460,7 +460,7 @@ public class ApplicationTest {
 			""" , context );
 		// @formatter:on
 
-		IStruct	watchers	= variables.getAsStruct( Key.result );
+		IStruct watchers = variables.getAsStruct( Key.result );
 		assertThat( watchers ).isNotNull();
 		assertThat( watchers.containsKey( Key.of( "myWatcher" ) ) ).isTrue();
 
@@ -497,7 +497,7 @@ public class ApplicationTest {
 			""" , context );
 		// @formatter:on
 
-		IStruct	watchers	= variables.getAsStruct( Key.result );
+		IStruct watchers = variables.getAsStruct( Key.result );
 		assertThat( watchers ).isNotNull();
 		assertThat( watchers.containsKey( Key.of( "closureWatcher" ) ) ).isTrue();
 
@@ -535,7 +535,7 @@ public class ApplicationTest {
 			""" , context );
 		// @formatter:on
 
-		IStruct	watchers	= variables.getAsStruct( Key.result );
+		IStruct watchers = variables.getAsStruct( Key.result );
 		assertThat( watchers ).isNotNull();
 		assertThat( watchers.containsKey( Key.of( "structWatcher" ) ) ).isTrue();
 
