@@ -24,8 +24,6 @@ public class JDBCTestUtils {
 	 * <code>
 	 * &#64;EnabledIf( "tools.JDBCTestUtils#hasMariaDBModule" )
 	 * </code>
-	 *
-	 * @return
 	 */
 	private static boolean hasModuleByName( Key moduleName ) {
 		// System.out.println( String.format( "hasModuleByName(), checking for %s, loaded module names: %s", moduleName,
@@ -41,8 +39,6 @@ public class JDBCTestUtils {
 	 * <code>
 	 * &#64;EnabledIf( "tools.JDBCTestUtils#hasPostgresModule" )
 	 * </code>
-	 *
-	 * @return
 	 */
 	public static boolean hasPostgresModule() {
 		return hasModuleByName( Key.of( "postgresql" ) );
@@ -56,8 +52,6 @@ public class JDBCTestUtils {
 	 * <code>
 	 * &#64;EnabledIf( "tools.JDBCTestUtils#hasOracleModule" )
 	 * </code>
-	 *
-	 * @return
 	 */
 	public static boolean hasOracleModule() {
 		return hasModuleByName( Key.of( "oracle" ) );
@@ -71,8 +65,6 @@ public class JDBCTestUtils {
 	 * <code>
 	 * &#64;EnabledIf( "tools.JDBCTestUtils#hasSQLiteModule" )
 	 * </code>
-	 *
-	 * @return
 	 */
 	public static boolean hasSQLiteModule() {
 		return hasModuleByName( Key.of( "sqlite" ) );
@@ -86,8 +78,6 @@ public class JDBCTestUtils {
 	 * <code>
 	 * &#64;EnabledIf( "tools.JDBCTestUtils#hasHyperSQLModule" )
 	 * </code>
-	 *
-	 * @return
 	 */
 	public static boolean hasHyperSQLModule() {
 		return hasModuleByName( Key.of( "hypersql" ) );
@@ -101,8 +91,6 @@ public class JDBCTestUtils {
 	 * <code>
 	 * &#64;EnabledIf( "tools.JDBCTestUtils#hasMariaDBModule" )
 	 * </code>
-	 *
-	 * @return
 	 */
 	public static boolean hasMariaDBModule() {
 		return hasModuleByName( Key.of( "mariadb" ) );
@@ -116,8 +104,6 @@ public class JDBCTestUtils {
 	 * <code>
 	 * &#64;EnabledIf( "tools.JDBCTestUtils#hasMySQLModule" )
 	 * </code>
-	 *
-	 * @return
 	 */
 	public static boolean hasMySQLModule() {
 		return hasModuleByName( Key.of( "mysql" ) );
@@ -131,11 +117,22 @@ public class JDBCTestUtils {
 	 * <code>
 	 * &#64;EnabledIf( "tools.JDBCTestUtils#hasMSSQLModule" )
 	 * </code>
-	 *
-	 * @return
 	 */
 	public static boolean hasMSSQLModule() {
 		return hasModuleByName( Key.of( "mssql" ) );
+	}
+
+	/**
+	 * Boolean test for the presence of the BoxLang Derby module.
+	 * <p>
+	 * Useful in `@EnabledIf` annotations for conditional test execution based on the loaded JDBC drivers:
+	 * <p>
+	 * <code>
+	 * &#64;EnabledIf( "tools.JDBCTestUtils#hasDerbyModule" )
+	 * </code>
+	 */
+	public static boolean hasDerbyModule() {
+		return hasModuleByName( Key.of( "derby" ) );
 	}
 
 	/**
@@ -213,9 +210,7 @@ public class JDBCTestUtils {
 	 * This method is useful for creating a DataSource for use in testing, and is especially useful for in-memory databases like Apache Derby.
 	 *
 	 * @param databaseName String database name; must be unique for each test. In the future, we can change this to use either reflection or a stack trace
-	 *                     to grab the caller class name and thus ensure uniqueness.
-	 *
-	 * @return A DataSource instance with a consistent `DEVELOPERS` table created.
+	 *                     to grab the caller class name and thus ensure uniqueness. A DataSource instance with a consistent `DEVELOPERS` table created.
 	 */
 	public static DataSource constructTestDataSource( String databaseName, IBoxContext context ) {
 		DataSource datasource = DataSource.fromStruct(

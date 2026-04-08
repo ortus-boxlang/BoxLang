@@ -212,7 +212,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 */
 	public DatasourceConfig() {
 		// Default all things
-		this.properties.putIfAbsent( Key.custom, new Struct() );
+		this( new Struct() );
 	}
 
 	/**
@@ -238,7 +238,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	}
 
 	/**
-	 * Constructor an unnamed datasource with properties.
+	 * Construct an unnamed datasource with properties.
 	 * This usually happens when you are creating a datasource on the fly.
 	 * The pre-generated name of the form: <code>unnamed_{randomUUID}</code>
 	 *
@@ -254,8 +254,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 * @param name The key name of the datasource
 	 */
 	public DatasourceConfig( Key name ) {
-		this.name = name;
-		this.properties.putIfAbsent( Key.custom, new Struct() );
+		this( name, new Struct() );
 	}
 
 	/**
@@ -264,7 +263,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	 * @param name The string name of the datasource
 	 */
 	public DatasourceConfig( String name ) {
-		this( Key.of( name ) );
+		this( Key.of( name ), new Struct() );
 	}
 
 	/**
