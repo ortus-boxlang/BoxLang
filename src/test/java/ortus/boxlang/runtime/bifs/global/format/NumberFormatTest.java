@@ -354,4 +354,15 @@ public class NumberFormatTest {
 		assertEquals( "1,234", variables.getAsString( result ) );
 	}
 
+	@DisplayName( "It will fix malformed pattern" )
+	@Test
+	public void testFixMalformedPattern() {
+		instance.executeSource(
+		    """
+		    result = numberFormat(1234,",.99") ;
+		    """,
+		    context );
+		assertEquals( "1,234.00", variables.getAsString( result ) );
+	}
+
 }
