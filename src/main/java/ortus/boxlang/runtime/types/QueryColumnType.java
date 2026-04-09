@@ -73,7 +73,8 @@ public enum QueryColumnType {
 	 * Create a new QueryColumnType from a string value.
 	 */
 	public static QueryColumnType fromString( String type ) {
-		type = type.toLowerCase();
+		// Legacy CF code can prefix types with "cf_sql_", so we'll strip that if it's present.
+		type = type.toLowerCase().replace( "cf_sql_", "" );
 
 		switch ( type ) {
 			case "array" :

@@ -37,7 +37,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.File;
+import ortus.boxlang.runtime.types.BoxFile;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class FileAppendTest {
@@ -49,7 +49,7 @@ public class FileAppendTest {
 
 	private static String	tmpDirectory	= "src/test/resources/tmp/fileAppendTest";
 	private static String	emptyFile		= "src/test/resources/tmp/fileAppendTest/file-append-test.txt";
-	private static File		writeFile		= null;
+	private static BoxFile	writeFile		= null;
 
 	@BeforeAll
 	public static void setUp() throws IOException {
@@ -102,7 +102,7 @@ public class FileAppendTest {
 	@Test
 	@Ignore
 	public void testAppendFileAppendMode() throws IOException {
-		File testFileObj = new File( Path.of( emptyFile ).toAbsolutePath().toString(), "append" );
+		BoxFile testFileObj = new BoxFile( Path.of( emptyFile ).toAbsolutePath().toString(), BoxFile.Mode.APPEND );
 		testFileObj.append( "a" );
 		variables.put( Key.of( "testFile" ), testFileObj );
 

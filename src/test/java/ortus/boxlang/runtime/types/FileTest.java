@@ -35,8 +35,8 @@ public class FileTest {
 	private static String	tmpDirectory	= "src/test/resources/tmp/FileTest";
 	private static String	testFile		= "src/test/resources/tmp/FileTest/file-test.txt";
 	private static String	emptyFile		= "src/test/resources/tmp/FileTest/file-write-test.txt";
-	private static File		readFile		= null;
-	private static File		writeFile		= null;
+	private static BoxFile	readFile		= null;
+	private static BoxFile	writeFile		= null;
 
 	@AfterAll
 	public static void teardown() throws IOException {
@@ -64,14 +64,16 @@ public class FileTest {
 	@DisplayName( "Test Constructors" )
 	@Test
 	void testConstructors() {
-		// tests the default constructor
-		readFile = new File( testFile );
+		// tests the default constructor - creates a reference without opening
+		readFile = new BoxFile( testFile );
 		assertThat( readFile.filename ).isEqualTo( "file-test.txt" );
+		assertThat( readFile.mode ).isEqualTo( BoxFile.Mode.NONE );
+		readFile.openAs( BoxFile.Mode.READ );
 		assertFalse( readFile.isEOF() );
 		readFile.close();
 
 		// tests the constructor with the read mode
-		readFile = new File( testFile, "read" );
+		readFile = new BoxFile( testFile, BoxFile.Mode.READ );
 		assertThat( readFile.filename ).isEqualTo( "file-test.txt" );
 		assertFalse( readFile.isEOF() );
 		assertThat( readFile.readLine() ).isEqualTo( "open file test!" );
@@ -79,15 +81,15 @@ public class FileTest {
 		readFile.close();
 
 		// tests the constructor with the read mode
-		writeFile = new File( testFile, "write" );
+		writeFile = new BoxFile( testFile, BoxFile.Mode.WRITE );
 		assertThat( writeFile.filename ).isEqualTo( "file-test.txt" );
-		assertThat( writeFile.mode ).isEqualTo( "write" );
+		assertThat( writeFile.mode ).isEqualTo( BoxFile.Mode.WRITE );
 		writeFile.close();
 
 		// tests the constructor with the append mode
-		writeFile = new File( testFile, "append" );
+		writeFile = new BoxFile( testFile, BoxFile.Mode.APPEND );
 		assertThat( writeFile.filename ).isEqualTo( "file-test.txt" );
-		assertThat( writeFile.mode ).isEqualTo( "append" );
+		assertThat( writeFile.mode ).isEqualTo( BoxFile.Mode.APPEND );
 		writeFile.close();
 	}
 

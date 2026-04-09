@@ -115,7 +115,7 @@ public class JavaBoxpiler extends Boxpiler {
 	 */
 	@SuppressWarnings( "unused" )
 	public String generateJavaSource( BoxNode node, ClassInfo classInfo ) {
-		node.accept( new QueryEscapeSingleQuoteVisitor() );
+		node.accept( new QueryEscapeSingleQuoteVisitor( classInfo.sourceType() ) );
 		Transpiler transpiler = Transpiler.getTranspiler();
 		transpiler.setProperty( "classname", classInfo.className() );
 		transpiler.setProperty( "packageName", classInfo.packageName().toString() );

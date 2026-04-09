@@ -22,10 +22,8 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.BoxFile;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.File;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF( description = "Write a line to a file" )
 @BoxMember( type = BoxLangType.FILE )
@@ -38,7 +36,7 @@ public class FileWriteLine extends BIF {
 	public FileWriteLine() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.file ),
+		    new Argument( true, "boxfile", Key.file ),
 		    new Argument( true, "string", Key.data )
 		};
 	}
@@ -54,22 +52,18 @@ public class FileWriteLine extends BIF {
 	 * @argument.data The line of data to be written
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		File file = null;
-		if ( arguments.get( Key.file ) instanceof File ) {
-			file = ( File ) arguments.get( Key.file );
-		} else if ( arguments.get( Key.file ) instanceof String ) {
-			file = new File( FileSystemUtil.expandPath( context, arguments.getAsString( Key.file ) ).absolutePath().toString(), "append",
-			    arguments.getAsString( Key.charset ), false );
-		} else {
-			throw new BoxRuntimeException( "The file argumennt [" + arguments.getAsString( Key.file ) + "] is not an open file stream or string path." );
-		}
-		file.writeLine( arguments.getAsString( Key.data ) );
-		// For strings file args we need to close the buffer
-		if ( arguments.get( Key.file ) instanceof String ) {
-			file.close();
-			return null;
-		} else {
-			return file;
+		BoxFile file = arguments.getAsBoxFile( Key.file ).openAs( BoxFile.Mode.APPEND );
+		try {
+			file.writeLine( arguments.getAsString( Key.data ) );
+			if ( file.implicitlyCast ) {
+				return null;
+			} else {
+				return file;
+			}
+		} finally {
+			if ( file.implicitlyCast ) {
+				file.close();
+			}
 		}
 	}
 

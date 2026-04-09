@@ -22,11 +22,13 @@ import java.nio.file.Path;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BoxFileCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.StringUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF( description = "Get the MIME type of a file" )
@@ -39,7 +41,7 @@ public class FileGetMimeType extends BIF {
 	public FileGetMimeType() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "string", Key.file ),
+		    new Argument( true, Argument.ANY, Key.file ),
 		    new Argument( false, "boolean", Key.strict, true )
 		};
 	}
@@ -55,17 +57,22 @@ public class FileGetMimeType extends BIF {
 	 * @argument.strict If true, throws an exception if the file does not exist or is empty. If false, returns "application/octet-stream" for non-existent or empty files.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	filePath	= FileSystemUtil.expandPath( context, arguments.getAsString( Key.file ) ).absolutePath().toString();
-		Boolean	strict		= arguments.getAsBoolean( Key.strict );
+		Object	rawFile	= arguments.get( Key.file );
+		Boolean	strict	= arguments.getAsBoolean( Key.strict );
 
-		if ( !filePath.substring( 0, 4 ).equalsIgnoreCase( "http" ) ) {
-			filePath = FileSystemUtil.expandPath( context, filePath ).absolutePath().toString();
-		} else if ( strict ) {
-			throw new BoxRuntimeException(
-			    "The file ["
-			        + arguments.getAsString( Key.file )
-			        + "] is a URL. To retrieve the mimetype of a URL set the strict argument to false."
-			);
+		// Determine the file path string - HTTP URLs stay as strings, everything else goes through BoxFile
+		String	filePath;
+		if ( rawFile instanceof String str && StringUtil.startsWithIgnoreCase( str, "http" ) ) {
+			if ( strict ) {
+				throw new BoxRuntimeException(
+				    "The file ["
+				        + str
+				        + "] is a URL. To retrieve the mimetype of a URL set the strict argument to false."
+				);
+			}
+			filePath = str;
+		} else {
+			filePath = BoxFileCaster.cast( context, rawFile ).filepath;
 		}
 
 		String mimeType = null;

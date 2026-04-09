@@ -37,7 +37,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.File;
+import ortus.boxlang.runtime.types.BoxFile;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class FileWriteLineTest {
@@ -49,7 +49,7 @@ public class FileWriteLineTest {
 
 	private static String	tmpDirectory	= "src/test/resources/tmp/fileWriteLineTest";
 	private static String	emptyFile		= "src/test/resources/tmp/fileWriteLineTest/file-write-line-test.txt";
-	private static File		writeFile		= null;
+	private static BoxFile	writeFile		= null;
 
 	@BeforeAll
 	public static void setUp() throws IOException {
