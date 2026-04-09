@@ -196,6 +196,7 @@ public class NameValuePair {
 	 *
 	 * @return string representation of the pair
 	 */
+	@Override
 	public String toString() {
 		if ( this.value == null ) {
 			return this.name;

@@ -1,0 +1,9 @@
+class {
+	property String apple;
+	property Numeric count;
+	property String zebra;
+
+	function init() {
+		return this;
+	}
+}

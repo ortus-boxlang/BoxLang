@@ -23,6 +23,7 @@ import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.compiler.parser.BoxSourceType;
 
 /**
  * Root node for an Interface
@@ -34,6 +35,7 @@ public class BoxInterface extends BoxNode implements IBoxDocumentableNode {
 	private List<BoxAnnotation>					annotations;
 	private List<BoxAnnotation>					postAnnotations;
 	private List<BoxDocumentationAnnotation>	documentation;
+	private BoxSourceType						boxSourceType;
 
 	/**
 	 * Creates an AST for a Class
@@ -51,13 +53,14 @@ public class BoxInterface extends BoxNode implements IBoxDocumentableNode {
 	 */
 	public BoxInterface( List<BoxImport> imports, List<BoxStatement> body, List<BoxAnnotation> annotations, List<BoxAnnotation> postAnnotations,
 	    List<BoxDocumentationAnnotation> documentation, Position position,
-	    String sourceText ) {
+	    String sourceText, BoxSourceType boxSourceType ) {
 		super( position, sourceText );
 		setImports( imports );
 		setBody( body );
 		setAnnotations( annotations );
 		setPostAnnotations( postAnnotations );
 		setDocumentation( documentation );
+		this.boxSourceType = boxSourceType;
 	}
 
 	public List<BoxStatement> getBody() {
@@ -85,6 +88,10 @@ public class BoxInterface extends BoxNode implements IBoxDocumentableNode {
 
 	public List<BoxImport> getImports() {
 		return imports;
+	}
+
+	public BoxSourceType getBoxSourceType() {
+		return boxSourceType;
 	}
 
 	public void setBody( List<BoxStatement> body ) {

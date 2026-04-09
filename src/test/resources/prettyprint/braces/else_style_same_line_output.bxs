@@ -1,0 +1,24 @@
+// Simple if-else with braces
+if (x > 5) {
+	println("greater");
+} else {
+	println("not greater");
+}
+
+// Else-if chain
+if (x == 1) {
+	println("one");
+} else if (x == 2) {
+	println("two");
+} else {
+	println("other");
+}
+
+// Nested if-else
+if (a > 0) {
+	if (b > 0) {
+		println("both positive");
+	} else {
+		println("a positive, b not");
+	}
+}

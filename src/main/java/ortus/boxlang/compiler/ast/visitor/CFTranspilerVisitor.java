@@ -83,6 +83,7 @@ import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
@@ -399,6 +400,38 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 *
 	 * @return The transformed AST node with CFML-compatible structure
 	 */
+	/**
+	 * Transforms BoxScript nodes (CFSCRIPT source type) by updating the source type
+	 * to BOXSCRIPT so the pretty printer renders BoxLang syntax (bx: prefix, etc.)
+	 *
+	 * @param node The BoxScript node to transform
+	 *
+	 * @return The transformed BoxScript node
+	 */
+	@Override
+	public BoxNode visit( BoxScript node ) {
+		if ( node.getBoxSourceType() == BoxSourceType.CFSCRIPT ) {
+			node.setBoxSourceType( BoxSourceType.BOXSCRIPT );
+		}
+		return super.visit( node );
+	}
+
+	/**
+	 * Transforms BoxTemplate nodes (CFTEMPLATE source type) by updating the source type
+	 * to BOXTEMPLATE so the pretty printer renders BoxLang syntax (bx: prefix, etc.)
+	 *
+	 * @param node The BoxTemplate node to transform
+	 *
+	 * @return The transformed BoxTemplate node
+	 */
+	@Override
+	public BoxNode visit( BoxTemplate node ) {
+		if ( node.getBoxSourceType() == BoxSourceType.CFTEMPLATE ) {
+			node.setBoxSourceType( BoxSourceType.BOXTEMPLATE );
+		}
+		return super.visit( node );
+	}
+
 	@Override
 	public BoxNode visit( BoxClass node ) {
 		var annotations = node.getAnnotations();

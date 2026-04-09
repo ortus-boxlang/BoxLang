@@ -1,0 +1,8 @@
+{
+	"function": {
+		"parameters": {
+			"comma_dangle": false,
+			"multiline_count": 2
+		}
+	}
+}

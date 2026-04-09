@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(./gradlew compileJava)",
+      "Bash(./gradlew clean:*)",
+      "Bash(find /home/jacob/dev/ortus-boxlang/BoxLang/build -name TEST-*.xml)"
+    ]
+  }
+}
