@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.bifs.global.format;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -37,6 +38,15 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
 @BoxBIF( alias = "LSNumberFormat" )
 
 public class NumberFormat extends BIF {
+
+	/**
+	 * Static regex patterns for performance optimization
+	 */
+	private static final Pattern	AFTER_COMMA_PATTERN						= Pattern.compile( "[90_#]*\\.?[90_#]*" );
+	private static final Pattern	DECIMAL_SPLIT_PATTERN					= Pattern.compile( "\\." );
+	private static final Pattern	NINE_REPLACEMENT_PATTERN				= Pattern.compile( "9" );
+	private static final Pattern	ALL_ZEROS_GROUPED_PATTERN				= Pattern.compile( "0+(,0+)+" );
+	private static final Pattern	ALL_ZEROS_GROUPED_WITH_DECIMAL_PATTERN	= Pattern.compile( "0+(,0+)+\\..*" );
 
 	/**
 	 * Constructor
@@ -85,11 +95,14 @@ public class NumberFormat extends BIF {
 
 																	{
 																		put( "9", "0" );
+																		// Fix incorrect number positionals with dollar notation
+																		put( "_$", "$_" );
 																		// This is a special case to ensure preceeding zeroes before the decimal. Using `#` will leave those blank
 																		put( "_.", "0." );
 																		// Standard replacement
 																		put( "_", "#" );
 																		put( "#,.", "#,##0." );
+																		put( "$#,0", "$#,##0" ); // Fix currency with single digit grouping
 																		put( "#$,0", "$#,##0" );
 																	}
 																};
@@ -111,11 +124,19 @@ public class NumberFormat extends BIF {
 			} else if ( format.equals( "ls$" ) ) {
 				formatter = LocalizationUtil.localizedCurrencyFormatter( locale );
 			} else {
+				// A leading comma (e.g. ",9") is incorrect but is parsed in other engines"
+				if ( format.startsWith( "," ) ) {
+					String afterComma = format.substring( 1 );
+					if ( afterComma.isEmpty() || AFTER_COMMA_PATTERN.matcher( afterComma ).matches() ) {
+						format = "#,##0" + ( afterComma.contains( "." ) ? afterComma.substring( afterComma.indexOf( '.' ) ) : "" );
+					}
+				}
+
 				// Pre-replace any 9's before the decimal to ensure no leading blanks
 				if ( format.contains( "." ) ) {
-					String[] parts = format.split( "\\." );
+					String[] parts = DECIMAL_SPLIT_PATTERN.split( format );
 					if ( !parts[ 0 ].contains( "," ) ) {
-						parts[ 0 ]	= parts[ 0 ].replaceAll( "9", "_" );
+						parts[ 0 ]	= NINE_REPLACEMENT_PATTERN.matcher( parts[ 0 ] ).replaceAll( "_" );
 						format		= String.join( ".", parts );
 					}
 				}
@@ -124,12 +145,24 @@ public class NumberFormat extends BIF {
 					format = format.replace( entry.getKey(), entry.getValue() );
 				}
 
+				// Collapse patterns like "000,000,000" (all-zero groups) into "#,##0" to suppress leading zeros.
+				// This handles incorrect masks like "999,999,999" where 9 means optional digit, not forced zero.
+				if ( ALL_ZEROS_GROUPED_PATTERN.matcher( format ).matches() ) {
+					format = "#,##0";
+				} else if ( ALL_ZEROS_GROUPED_WITH_DECIMAL_PATTERN.matcher( format ).matches() ) {
+					format = "#,##0" + format.substring( format.indexOf( '.' ) );
+				}
+
 				if ( format.substring( 0, 1 ).equals( "L" ) ) {
 					format = format.substring( 1, format.length() );
 				} else if ( format.substring( 0, 1 ).equals( "C" ) ) {
 					format = format.substring( 1, format.length() ).replace( "0", "#" );
 				}
-				formatter = LocalizationUtil.localizedDecimalFormatter( locale, format );
+				try {
+					formatter = LocalizationUtil.localizedDecimalFormatter( locale, format );
+				} catch ( IllegalArgumentException e ) {
+					throw new RuntimeException( "Invalid number format pattern mask: " + arguments.getAsString( Key.mask ), e );
+				}
 			}
 		}
 

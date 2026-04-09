@@ -321,4 +321,37 @@ public class NumberFormatTest {
 		assertEquals( "0.00", variables.getAsString( result ) );
 	}
 
+	@DisplayName( "It will rearrange incorrect mask orders" )
+	@Test
+	public void testRearrangeIncorrectMaskOrders() {
+		instance.executeSource(
+		    """
+		    result = numberFormat(1.99,"_$,.99");
+		    """,
+		    context );
+		assertEquals( "$1.99", variables.getAsString( result ) );
+	}
+
+	@DisplayName( "It will trim extraneous optionals" )
+	@Test
+	public void testTrimExtraneousOptionals() {
+		instance.executeSource(
+		    """
+		    result = numberFormat(2, "999,999,999");
+		    """,
+		    context );
+		assertEquals( "2", variables.getAsString( result ) );
+	}
+
+	@DisplayName( "It will fix incorrect thousands separators" )
+	@Test
+	public void testFixIncorrectThousandsSeparators() {
+		instance.executeSource(
+		    """
+		    result = numberFormat(1234,",9");
+		    """,
+		    context );
+		assertEquals( "1,234", variables.getAsString( result ) );
+	}
+
 }
