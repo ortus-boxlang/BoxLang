@@ -184,7 +184,7 @@ public class DiskClassUtil {
 
 	/**
 	 * Check if the file is a Java bytecode file or source file
-	 * 
+	 *
 	 * Deprecated
 	 * Use the static method isJavaByteCode(File) instead
 	 *
