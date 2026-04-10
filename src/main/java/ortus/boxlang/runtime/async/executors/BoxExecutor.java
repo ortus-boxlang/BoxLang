@@ -404,6 +404,23 @@ public class BoxExecutor {
 	 * @param timeout The maximum time to wait
 	 * @param unit    The time unit to use, available units are: days, hours, microseconds, milliseconds, minutes, nanoseconds, and seconds. The default
 	 */
+	public void shutdownAndAwaitTermination( Long timeout, String unit ) {
+		TimeUnit timeUnit;
+		try {
+			timeUnit = TimeUnit.valueOf( unit.toUpperCase() );
+		} catch ( IllegalArgumentException e ) {
+			throw new BoxRuntimeException( "Invalid time unit: " + unit, e );
+		}
+		shutdownAndAwaitTermination( timeout, timeUnit );
+	}
+
+	/**
+	 * Blocks until all tasks have completed execution after a shutdown request, or the timeout occurs, or
+	 * the current thread is interrupted, whichever happens first.
+	 *
+	 * @param timeout The maximum time to wait
+	 * @param unit    The time unit to use, available units are: days, hours, microseconds, milliseconds, minutes, nanoseconds, and seconds. The default
+	 */
 	public void shutdownAndAwaitTermination( Long timeout, TimeUnit unit ) {
 		if ( executor == null )
 			return;

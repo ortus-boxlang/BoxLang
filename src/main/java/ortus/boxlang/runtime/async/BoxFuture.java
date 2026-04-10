@@ -36,9 +36,11 @@ import java.util.stream.Collectors;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.AsyncService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -57,7 +59,11 @@ import ortus.boxlang.runtime.types.util.TypeUtil;
 public class BoxFuture<T> extends CompletableFuture<T> {
 
 	// The logger for this class
-	private BoxLangLogger logger;
+	private BoxLangLogger				logger;
+
+	// Static Helpers
+	private static final BoxRuntime		runtime			= BoxRuntime.getInstance();
+	private static final AsyncService	asyncService	= runtime.getAsyncService();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -307,17 +313,6 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	}
 
 	/**
-	 * Alias to thenApplyAsync for fluency
-	 *
-	 * @param function The function to apply
-	 *
-	 * @return The future
-	 */
-	public <U> BoxFuture<U> thenAsync( Function<T, U> function ) {
-		return new BoxFuture<>( this.thenApplyAsync( function ) );
-	}
-
-	/**
 	 * Alias to thenApply for fluency
 	 *
 	 * @param function The function to apply
@@ -330,6 +325,30 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	}
 
 	/**
+	 * Alias to thenApply for fluency
+	 *
+	 * @param function The function to apply
+	 * @param executor The executor to run the function on
+	 *
+	 * @return The future
+	 */
+	public <U> BoxFuture<U> then( Function<T, U> function, String executor ) {
+		BoxExecutor executorRecord = asyncService.getExecutor( executor );
+		return then( function, executorRecord.executor() );
+	}
+
+	/**
+	 * Alias to thenApplyAsync for fluency
+	 *
+	 * @param function The function to apply
+	 *
+	 * @return The future
+	 */
+	public <U> BoxFuture<U> thenAsync( Function<T, U> function ) {
+		return new BoxFuture<>( this.thenApplyAsync( function ) );
+	}
+
+	/**
 	 * Alias to thenApplyAsync for fluency
 	 *
 	 * @param function The function to apply
@@ -339,6 +358,19 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 */
 	public <U> BoxFuture<U> thenAsync( Function<T, U> function, Executor executor ) {
 		return new BoxFuture<>( this.thenApplyAsync( function, executor ) );
+	}
+
+	/**
+	 * Alias to thenApplyAsync for fluency, using an executor name to get the executor from the AsyncService
+	 *
+	 * @param function The function to apply
+	 * @param executor The name of the executor to run the function on
+	 *
+	 * @return The future
+	 */
+	public <U> BoxFuture<U> thenAsync( Function<T, U> function, String executor ) {
+		BoxExecutor executorRecord = asyncService.getExecutor( executor );
+		return thenAsync( function, executorRecord.executor() );
 	}
 
 	/**
@@ -376,6 +408,19 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 */
 	public static <T> BoxFuture<T> run( Supplier<T> supplier, Executor executor ) {
 		return new BoxFuture<>( CompletableFuture.supplyAsync( supplier, executor ) );
+	}
+
+	/**
+	 * Alias to supplyAsync for fluency, mostly used by BoxLang directly using a specific executor
+	 *
+	 * @param supplier The supplier to run
+	 * @param executor The executor to run the supplier on
+	 *
+	 * @return The future of the supplier
+	 */
+	public static <T> BoxFuture<T> run( Supplier<T> supplier, String executor ) {
+		BoxExecutor executorRecord = asyncService.getExecutor( executor );
+		return run( supplier, executorRecord.executor() );
 	}
 
 	/**
@@ -435,6 +480,21 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	}
 
 	/**
+	 * Shortcut method to call all() without a context, which will use the RequestBoxContext for the execution
+	 * This is so we can use it from BoxLang without having to pass the context explicitly, since the context will be available in the RequestBoxContext for the current thread.
+	 *
+	 * @param futures The array of futures to execute
+	 *
+	 * @return A future that will return the results in an array
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static BoxFuture<Array> all( Array futures ) {
+		return ( BoxFuture<Array> ) RequestBoxContext.runInContext( context -> {
+			return all( context, futures );
+		} );
+	}
+
+	/**
 	 * This method accepts an array of future objects, closures or an array of future objects/closures
 	 * in order to execute them in parallel. It will return back to you a future that will return back an array
 	 * of results from every future that was executed. This way you can further attach processing and pipelining
@@ -478,6 +538,22 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 			        .map( BoxFuture::join )
 			        .collect( BLCollector.toArray() );
 		    } ) );
+	}
+
+	/**
+	 * Shortcut method to call all() without a context, which will use the RequestBoxContext for the execution
+	 * This is so we can use it from BoxLang without having to pass the context explicitly, since the context will be available in the RequestBoxContext for the current thread.
+	 *
+	 * @param futures        The array of futures to execute
+	 * @param executorRecord The executor to use
+	 *
+	 * @return A future that will return the results in an array
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static BoxFuture<Array> all( Array futures, BoxExecutor executorRecord ) {
+		return ( BoxFuture<Array> ) RequestBoxContext.runInContext( context -> {
+			return all( context, futures, executorRecord );
+		} );
 	}
 
 	/**
@@ -616,6 +692,26 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	}
 
 	/**
+	 * Shortcut method to call allApply() without a context, which will use the RequestBoxContext for the execution
+	 * This is so we can use it from BoxLang without having to pass the context explicitly, since the context will be available in the RequestBoxContext for the current thread.
+	 * The timeout will be infinite by default and in the passed executor.
+	 *
+	 * @param items        The items to apply the function to, this can be an array or a struct
+	 * @param mapper       The function to apply to each item
+	 * @param errorHandler The function to handle any errors that occur, this can be null
+	 *
+	 * @return An array or struct of the results
+	 */
+	public static Object allApply(
+	    Object items,
+	    ortus.boxlang.runtime.types.Function mapper,
+	    ortus.boxlang.runtime.types.Function errorHandler ) {
+		return RequestBoxContext.runInContext( context -> {
+			return allApply( context, items, mapper, errorHandler );
+		} );
+	}
+
+	/**
 	 * This function can accept an array of items or a struct of items and apply a function
 	 * to each of the item's in parallel. The `mapper` argument receives the appropriate item
 	 * and must return a result.
@@ -647,6 +743,16 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 		return allApply( context, items, mapper, errorHandler, 0, TimeUnit.MILLISECONDS, executor );
 	}
 
+	public static Object allApply(
+	    Object items,
+	    ortus.boxlang.runtime.types.Function mapper,
+	    ortus.boxlang.runtime.types.Function errorHandler,
+	    BoxExecutor executor ) {
+		return RequestBoxContext.runInContext( context -> {
+			return allApply( context, items, mapper, errorHandler, executor );
+		} );
+	}
+
 	/**
 	 * This function can accept an array of items or a struct of items and apply a function
 	 * to each of the item's in parallel. The `mapper` argument receives the appropriate item
@@ -676,6 +782,17 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	    long timeout,
 	    Object unit ) {
 		return allApply( context, items, mapper, errorHandler, timeout, unit, null );
+	}
+
+	public static Object allApply(
+	    Object items,
+	    ortus.boxlang.runtime.types.Function mapper,
+	    ortus.boxlang.runtime.types.Function errorHandler,
+	    long timeout,
+	    Object unit ) {
+		return RequestBoxContext.runInContext( context -> {
+			return allApply( context, items, mapper, errorHandler, timeout, unit );
+		} );
 	}
 
 	/**
@@ -727,6 +844,18 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 		else {
 			throw new BoxRuntimeException( "The items argument must be an array or a struct" );
 		}
+	}
+
+	public static Object allApply(
+	    Object items,
+	    ortus.boxlang.runtime.types.Function mapper,
+	    ortus.boxlang.runtime.types.Function errorHandler,
+	    long timeout,
+	    Object unit,
+	    BoxExecutor executor ) {
+		return RequestBoxContext.runInContext( context -> {
+			return allApply( context, items, mapper, errorHandler, timeout, unit, executor );
+		} );
 	}
 
 	/**
