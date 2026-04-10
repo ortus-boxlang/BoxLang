@@ -39,8 +39,10 @@ import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.util.BoxFQN;
 import ortus.boxlang.runtime.util.FileSystemUtil;
@@ -242,81 +244,23 @@ public class ApplicationService extends BaseService {
 	 *         found
 	 */
 	public BaseApplicationListener createApplicationListener( RequestBoxContext context, URI template ) {
-		BaseApplicationListener		listener;
-		ApplicationDescriptorSearch	searchResult	= null;
-		ResolvedFilePath			templatePath	= null;
+		BaseApplicationListener listener;
+
 		if ( template != null ) {
-			// Look for an Application descriptor based on our lookup rules
-			String	directoryOfTemplate	= null;
-			String	packagePath			= "";
-			if ( template.isAbsolute() ) {
-				templatePath		= ResolvedFilePath.of( Paths.get( template ) );
-				directoryOfTemplate	= new File( template ).getParent();
-				searchResult		= fileLookup( directoryOfTemplate );
-			} else {
-				// This may not be the actual absolute path of the file if we're including a file which is being
-				// resolved via a mapping declared in the Application class, which we haven't yet created
+			IStruct				loadResult			= loadDescriptorTemplate( context, template );
+			ResolvedFilePath	templatePath		= ( ResolvedFilePath ) loadResult.get( Key.path );
+			Object				returnedListener	= loadResult.get( Key.listener );
 
-				templatePath = FileSystemUtil.expandPath( context, template.getPath() );
-
-				Path	rootPath			= Paths.get( templatePath.mappingPath() );
-				Path	currentDirectory	= templatePath.absolutePath().getParent();
-				while ( currentDirectory != null && ( currentDirectory.startsWith( rootPath ) || currentDirectory.equals( rootPath ) ) ) {
-					searchResult = fileLookup( currentDirectory.toString() );
-					if ( searchResult != null ) {
-						// Combine the mapping name with the relative path still left to the template
-						String mappingDotPath = templatePath.mappingName().equals( "/" ) ? ""
-						    : templatePath.mappingName().substring( 1 ).replace( File.separator, "." );
-						if ( !mappingDotPath.isBlank() && !mappingDotPath.endsWith( "." ) ) {
-							mappingDotPath += ".";
-						}
-						packagePath = new BoxFQN(
-						    mappingDotPath + currentDirectory.toString().substring( rootPath.toString().length() ).replace( File.separator, "." ) ).toString();
-						break;
-					}
-					currentDirectory = currentDirectory.getParent();
-				}
-			}
-			// If we found an Application class, instantiate it
-			if ( searchResult != null ) {
-				if ( searchResult.type() == ApplicationDescriptorType.CLASS ) {
-					// If we found a class, load it and instantiate it
-					listener = new ApplicationClassListener( ( IClassRunnable ) DynamicObject.of(
-					    RunnableLoader.getInstance()
-					        .loadClass(
-					            ResolvedFilePath.of(
-					                templatePath.mappingName(),
-					                templatePath.mappingPath(),
-					                packagePath.replace( ".", File.separator ) + File.separator
-					                    + searchResult.path().getFileName(),
-					                searchResult.path() ),
-					            context ) )
-					    // We do NOT invoke init() on the Application class for CF compat
-					    .invokeConstructor( context, Key.noInit )
-					    .getTargetInstance(),
-					    context,
-					    templatePath );
-				} else {
-					// If we found a template, return a new empty ApplicationListener
-					listener = new ApplicationTemplateListener(
-					    RunnableLoader.getInstance().loadTemplateAbsolute(
-					        context,
-					        ResolvedFilePath.of(
-					            templatePath.mappingName(),
-					            templatePath.mappingPath(),
-					            packagePath.replace( ".", File.separator )
-					                + File.separator
-					                + searchResult.path().getFileName(),
-					            searchResult.path() ) ),
-					    context, templatePath );
-				}
+			if ( returnedListener instanceof IClassRunnable runnableListener ) {
+				listener = new ApplicationClassListener( runnableListener, context, templatePath );
+			} else if ( returnedListener instanceof BoxTemplate templateListener ) {
+				listener = new ApplicationTemplateListener( templateListener, context, templatePath );
 			} else {
-				// If we didn't find an Application, return a new empty ApplicationListener
 				listener = new ApplicationDefaultListener( context, templatePath );
 			}
 		} else {
 			// If we didn't have a template, return a new empty ApplicationListener
-			listener = new ApplicationDefaultListener( context, templatePath );
+			listener = new ApplicationDefaultListener( context, null );
 		}
 
 		// Announce event so modules can hook in
@@ -344,6 +288,97 @@ public class ApplicationService extends BaseService {
 		);
 
 		return listener;
+	}
+
+	/**
+	 * Load an Application descriptor based on a template path. We look for both
+	 * Application classes and Application templates based on the configured
+	 * extensions, and return the first one we find based on our lookup rules.
+	 *
+	 * @param context  The request context requesting the application
+	 * @param template The template path to search for an Application descriptor
+	 *
+	 * @return A struct containing the listener (if found), the path to the
+	 *         descriptor, and the type of descriptor (class or template)
+	 */
+	private IStruct loadDescriptorTemplate( RequestBoxContext context, URI template ) {
+
+		ApplicationDescriptorSearch	searchResult		= null;
+		ResolvedFilePath			templatePath		= null;
+
+		// Look for an Application descriptor based on our lookup rules
+		String						directoryOfTemplate	= null;
+		String						packagePath			= "";
+		if ( template.isAbsolute() ) {
+			templatePath		= ResolvedFilePath.of( Paths.get( template ) );
+			directoryOfTemplate	= new File( template ).getParent();
+			searchResult		= fileLookup( directoryOfTemplate );
+		} else {
+			// This may not be the actual absolute path of the file if we're including a file which is being
+			// resolved via a mapping declared in the Application class, which we haven't yet created
+
+			templatePath = FileSystemUtil.expandPath( context, template.getPath() );
+
+			Path	rootPath			= Paths.get( templatePath.mappingPath() );
+			Path	currentDirectory	= templatePath.absolutePath().getParent();
+			while ( currentDirectory != null && ( currentDirectory.startsWith( rootPath ) || currentDirectory.equals( rootPath ) ) ) {
+				searchResult = fileLookup( currentDirectory.toString() );
+				if ( searchResult != null ) {
+					// Combine the mapping name with the relative path still left to the template
+					String mappingDotPath = templatePath.mappingName().equals( "/" ) ? ""
+					    : templatePath.mappingName().substring( 1 ).replace( File.separator, "." );
+					if ( !mappingDotPath.isBlank() && !mappingDotPath.endsWith( "." ) ) {
+						mappingDotPath += ".";
+					}
+					packagePath = new BoxFQN(
+					    mappingDotPath + currentDirectory.toString().substring( rootPath.toString().length() ).replace( File.separator, "." ) ).toString();
+					break;
+				}
+				currentDirectory = currentDirectory.getParent();
+			}
+		}
+		// If we found an Application class, instantiate it
+		if ( searchResult != null ) {
+			if ( searchResult.type() == ApplicationDescriptorType.CLASS ) {
+				// If we found a class, load it and return it as a class type
+				return Struct.of(
+				    Key.listener, ( IClassRunnable ) DynamicObject.of(
+				        RunnableLoader.getInstance()
+				            .loadClass(
+				                ResolvedFilePath.of(
+				                    templatePath.mappingName(),
+				                    templatePath.mappingPath(),
+				                    packagePath.replace( ".", File.separator ) + File.separator
+				                        + searchResult.path().getFileName(),
+				                    searchResult.path() ),
+				                context ) )
+				        // We do NOT invoke init() on the Application class for CF compat
+				        .invokeConstructor( context, Key.noInit )
+				        .getTargetInstance(),
+				    Key.path, templatePath
+				);
+
+			} else {
+				// If we found a template, return a template listener
+				return Struct.of(
+				    Key.listener, RunnableLoader.getInstance().loadTemplateAbsolute(
+				        context,
+				        ResolvedFilePath.of(
+				            templatePath.mappingName(),
+				            templatePath.mappingPath(),
+				            packagePath.replace( ".", File.separator )
+				                + File.separator
+				                + searchResult.path().getFileName(),
+				            searchResult.path() ) ),
+				    Key.path, templatePath
+				);
+			}
+		} else {
+			return Struct.of(
+			    Key.listener, null,
+			    Key.path, templatePath
+			);
+		}
 	}
 
 	/**
