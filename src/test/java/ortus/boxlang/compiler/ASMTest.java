@@ -145,7 +145,7 @@ public class ASMTest {
 	@DisplayName( "large switch template should compile without recursive splitting" )
 	@Test
 	public void testLargeSwitchTemplateShouldCompileWithoutRecursiveSplitting() {
-		ResolvedFilePath resolvedPath = ResolvedFilePath.of( Path.of( "overflow.cfm" ) );
+		ResolvedFilePath resolvedPath = ResolvedFilePath.of( Path.of( "src/test/resources/test-templates/overflow.cfm" ) );
 
 		assertDoesNotThrow( () -> RunnableLoader.getInstance().getBoxpiler().compileTemplate( resolvedPath ) );
 	}
