@@ -174,4 +174,23 @@ public record FlowControlResult( int resultType, Object returnValue, String labe
 		return this.returnValue;
 	}
 
+	/**
+	 * Recursively unwrap nested FlowControlResult values until a non-sentinel value is reached.
+	 * This prevents internal flow-control sentinels from leaking into normal runtime data when
+	 * multiple compiler transforms wrap the same control flow.
+	 *
+	 * @param value The value to unwrap
+	 *
+	 * @return The innermost non-FlowControlResult value, or null
+	 */
+	public static Object unwrapValue( Object value ) {
+		Object current = value;
+
+		while ( current instanceof FlowControlResult flowControlResult ) {
+			current = flowControlResult.getValue();
+		}
+
+		return current;
+	}
+
 }

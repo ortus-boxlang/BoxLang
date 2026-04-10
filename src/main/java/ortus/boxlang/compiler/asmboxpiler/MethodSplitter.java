@@ -731,7 +731,8 @@ public class MethodSplitter {
 	 * @return Instructions for flow control checking
 	 */
 	private List<AbstractInsnNode> generateFlowControlCheck( boolean isLast ) {
-		List<AbstractInsnNode> nodes = new ArrayList<>();
+		List<AbstractInsnNode>	nodes		= new ArrayList<>();
+		boolean					canReturn	= this.transpiler.canReturn();
 
 		// DUP the result
 		nodes.add( new InsnNode( Opcodes.DUP ) );
@@ -759,7 +760,19 @@ public class MethodSplitter {
 		    Type.getMethodDescriptor( Type.getType( Object.class ) ),
 		    false
 		) );
-		nodes.add( new InsnNode( Opcodes.ARETURN ) );
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( FlowControlResult.class ),
+		    "unwrapValue",
+		    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( Object.class ) ),
+		    false
+		) );
+		if ( canReturn ) {
+			nodes.add( new InsnNode( Opcodes.ARETURN ) );
+		} else {
+			nodes.add( new InsnNode( Opcodes.POP ) );
+			nodes.add( new InsnNode( Opcodes.RETURN ) );
+		}
 
 		// Continue label
 		nodes.add( continueLabel );

@@ -2373,7 +2373,6 @@ public class ClassTest {
 	}
 
 	@Test
-	@Disabled
 	public void testSemVerCFC() {
 		instance.executeSource(
 		    """

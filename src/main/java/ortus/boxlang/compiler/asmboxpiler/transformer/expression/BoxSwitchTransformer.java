@@ -63,19 +63,14 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
-		BoxSwitch					boxSwitch		= ( BoxSwitch ) node;
-		List<AbstractInsnNode>		condition		= transpiler.transform( boxSwitch.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE );
-		MethodContextTracker		tracker			= transpiler.getCurrentMethodContextTracker().get();
+		BoxSwitch				boxSwitch	= ( BoxSwitch ) node;
+		List<AbstractInsnNode>	condition	= transpiler.transform( boxSwitch.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE );
+		MethodContextTracker	tracker		= transpiler.getCurrentMethodContextTracker().get();
 
-		List<BoxSwitchCase>			regularCases	= boxSwitch.getCases().stream().filter( c -> c.getCondition() != null ).toList();
-		List<List<BoxSwitchCase>>	caseChunks		= createCaseChunks( regularCases );
-		if ( caseChunks.size() > 1 ) {
-			return transformChunkedSwitch( boxSwitch, condition, tracker, returnContext, caseChunks );
-		}
-
-		List<AbstractInsnNode> inlineNodes = transformInlineSwitch( boxSwitch, condition, tracker, returnContext );
+		List<AbstractInsnNode>	inlineNodes	= transformInlineSwitch( boxSwitch, condition, tracker, returnContext );
 		if ( MethodSplitter.estimateBytecodeSize( inlineNodes ) >= MethodSplitter.BYTECODE_SIZE_LIMIT ) {
-			List<List<BoxSwitchCase>> fallbackChunks = createFallbackCaseChunks( regularCases );
+			List<BoxSwitchCase>			regularCases	= boxSwitch.getCases().stream().filter( c -> c.getCondition() != null ).toList();
+			List<List<BoxSwitchCase>>	fallbackChunks	= createFallbackCaseChunks( regularCases );
 			if ( fallbackChunks.size() > 1 ) {
 				return transformChunkedSwitch( boxSwitch, condition, tracker, returnContext, fallbackChunks );
 			}
@@ -245,6 +240,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 		boolean					isStatic	= isStaticMethod( tracker );
+		boolean					canReturn	= transpiler.canReturn();
 
 		AsmHelper.addDebugLabel( nodes, "BoxSwitch" );
 		nodes.addAll( condition );
@@ -316,7 +312,19 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 			    Type.getMethodDescriptor( OBJECT_TYPE ),
 			    false
 			) );
-			nodes.add( new InsnNode( Opcodes.ARETURN ) );
+			nodes.add( new MethodInsnNode(
+			    Opcodes.INVOKESTATIC,
+			    Type.getInternalName( FlowControlResult.class ),
+			    "unwrapValue",
+			    Type.getMethodDescriptor( OBJECT_TYPE, OBJECT_TYPE ),
+			    false
+			) );
+			if ( canReturn ) {
+				nodes.add( new InsnNode( Opcodes.ARETURN ) );
+			} else {
+				nodes.add( new InsnNode( Opcodes.POP ) );
+				nodes.add( new InsnNode( Opcodes.RETURN ) );
+			}
 
 			nodes.add( normalResult );
 			nodes.add( new VarInsnNode( Opcodes.ALOAD, chunkResultStore.index() ) );
@@ -325,6 +333,13 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 			    Type.getInternalName( FlowControlResult.class ),
 			    "getValue",
 			    Type.getMethodDescriptor( OBJECT_TYPE ),
+			    false
+			) );
+			nodes.add( new MethodInsnNode(
+			    Opcodes.INVOKESTATIC,
+			    Type.getInternalName( FlowControlResult.class ),
+			    "unwrapValue",
+			    Type.getMethodDescriptor( OBJECT_TYPE, OBJECT_TYPE ),
 			    false
 			) );
 			nodes.add( new TypeInsnNode( Opcodes.CHECKCAST, Type.getInternalName( Boolean.class ) ) );
@@ -465,7 +480,6 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 		classLocatorStore.nodes().forEach( node -> node.accept( methodVisitor ) );
 
 		List<AbstractInsnNode> helperNodes = buildChunkMethodNodes( boxSwitch, chunkCases, helperTracker, switchValueSlot, matchedParamSlot );
-		transformReturnInstructions( helperNodes );
 		helperNodes.forEach( node -> node.accept( methodVisitor ) );
 		methodVisitor.visitMaxs( 0, 0 );
 		methodVisitor.visitEnd();
@@ -494,6 +508,8 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 		for ( BoxSwitchCase c : chunkCases ) {
 			appendCaseNodes( nodes, c, switchValueSlot, matchedStore.index() );
 		}
+
+		transformReturnInstructions( nodes );
 
 		nodes.add( new VarInsnNode( Opcodes.ILOAD, matchedStore.index() ) );
 		nodes.add( new MethodInsnNode(
