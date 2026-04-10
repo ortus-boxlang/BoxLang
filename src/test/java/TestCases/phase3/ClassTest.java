@@ -2372,4 +2372,15 @@ public class ClassTest {
 		assertThat( variables.getAsString( Key.of( "superResult" ) ) ).isEqualTo( "from super" );
 	}
 
+	@Test
+	@Disabled
+	public void testSemVerCFC() {
+		instance.executeSource(
+		    """
+		       semver = new src.test.java.TestCases.phase3.SemanticVersion();
+		    semver.satisfies( "1.2.3", "^1.0.0" );
+		           """,
+		    context );
+	}
+
 }
