@@ -298,8 +298,8 @@ public class ApplicationService extends BaseService {
 	 * @param context  The request context requesting the application
 	 * @param template The template path to search for an Application descriptor
 	 *
-	 * @return A struct containing the listener (if found), the path to the
-	 *         descriptor, and the type of descriptor (class or template)
+	 * @return A struct containing the resolved listener (if found) and the
+	 *         resolved request template path used during descriptor lookup
 	 */
 	private IStruct loadDescriptorTemplate( RequestBoxContext context, URI template ) {
 
