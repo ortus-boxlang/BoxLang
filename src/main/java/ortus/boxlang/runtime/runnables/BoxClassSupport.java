@@ -1110,7 +1110,7 @@ public class BoxClassSupport {
 	 * @param annotations   The annotations to check
 	 * @param imports       The imports to use
 	 * @param staticContext The static context to use
-	 * 
+	 *
 	 * @return The loaded super class or null if none exists
 	 */
 	public static DynamicObject loadSuperClass( IStruct annotations, List<ImportDefinition> imports, StaticClassBoxContext staticContext ) {
@@ -1118,15 +1118,17 @@ public class BoxClassSupport {
 		Object superClassObject = annotations.get( Key._EXTENDS );
 		if ( superClassObject != null ) {
 			String superClassName = StringCaster.cast( superClassObject );
-			if ( superClassName != null && superClassName.length() > 0 && !superClassName.toLowerCase().startsWith( "java:" ) ) {
-				// Recursively load the super class
-				return getClassLocator().load(
-				    staticContext,
-				    superClassName,
-				    ClassLocator.BX_PREFIX,
-				    true,
-				    imports
-				);
+			if ( superClassName != null && superClassName.length() > 0 ) {
+				// A genuine Java class used as an extends target (e.g. extends="java:some.JavaClass")
+				// is handled at the JVM level via the compiled bytecode; there is no BoxLang super-class
+				// delegation chain to establish, so we return null here.
+				if ( superClassName.toLowerCase().startsWith( "java:" ) ) {
+					return null;
+				}
+				// Use resolver-neutral load (tries BX resolver first, then Java resolver) so that
+				// hoisted java: imports for sibling local classes are picked up by the Java resolver
+				// and resolved to the correct compiled JVM class.
+				return getClassLocator().load( staticContext, superClassName, imports );
 			}
 		}
 		return null;
@@ -1139,7 +1141,7 @@ public class BoxClassSupport {
 	 * @param imports       The imports to use
 	 * @param staticContext The static context to use
 	 * @param interfaces    The list to populate with loaded interfaces
-	 * 
+	 *
 	 * @return The loaded interfaces
 	 */
 	public static void loadInterfaces(
@@ -1184,9 +1186,9 @@ public class BoxClassSupport {
 	/**
 	 * Get all abstract methods for a class, including those inherited from parent classes.
 	 * The child class's abstract methods will override the parent class's abstract methods if there are any with the same name.
-	 * 
+	 *
 	 * @param thisClass The class to get the abstract methods for
-	 * 
+	 *
 	 * @return A map of all abstract methods for the class, including inherited ones.
 	 */
 	public static Map<Key, AbstractFunction> getAllAbstractMethods( IClassRunnable thisClass ) {

@@ -82,6 +82,7 @@ import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
+import ortus.boxlang.compiler.ast.statement.BoxLocalClass;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
@@ -204,6 +205,16 @@ public abstract class ReplacingBoxVisitor {
 			}
 		}
 		return node;
+	}
+
+	public BoxNode visit( BoxLocalClass node ) {
+		if ( node.getName() != null ) {
+			BoxNode newName = node.getName().accept( this );
+			if ( newName != node.getName() ) {
+				node.setName( ( BoxIdentifier ) newName );
+			}
+		}
+		return visit( ( BoxClass ) node );
 	}
 
 	public BoxNode visit( BoxStaticInitializer node ) {

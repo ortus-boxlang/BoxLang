@@ -50,7 +50,6 @@ public class BoxNewTransformer extends AbstractTransformer {
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxNew		boxNew	= ( BoxNew ) node;
 		Expression	expr	= ( Expression ) transpiler.transform( boxNew.getExpression(), TransformerContext.RIGHT );
-
 		String		fqn		= expr.toString();
 		if ( expr instanceof NameExpr ) {
 			fqn = fqn.startsWith( "\"" ) ? fqn : "\"" + fqn + "\"";

@@ -338,6 +338,19 @@ public class BoxLexerCustom extends BoxLexer {
 					// Let's run a series of tests to determine if this keyword is being used as an identifier (variable, function name) and is NOT a keyword
 					boolean isIdentifier = false;
 
+					// Short-circuit: `class Name {}` inside a script/template is a named local class declaration.
+					// We keep CLASS as a keyword whenever it is (a) not in a class file and (b) the very next
+					// non-whitespace character starts an identifier (letter, underscore, or dollar sign).
+					// We must do this check BEFORE the long else-if chain below, because several of those
+					// conditions (e.g. operator-right-side, comma-preceded) can fire independently of the
+					// class keyword and would incorrectly reclassify CLASS as IDENTIFIER first.
+					if ( nextTokenType == CLASS && !classIsExpected && !lastTokenWas( DOT )
+					    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '_' ) || nextNonWhiteSpaceCharIs( '$' ) ) ) {
+						if ( debug )
+							System.out.println( "Short-circuit: keeping [class] as keyword because next char starts an identifier (local class declaration)" );
+						return setLastToken( nextToken );
+					}
+
 					if ( nextTokenType == NULL && !nextNonWhiteSpaceCharIs( '(' )
 					    && !nextNonWhiteSpaceCharIs( '.' )
 					    && !nextNonWhiteSpaceCharIs( '=' )
@@ -563,9 +576,23 @@ public class BoxLexerCustom extends BoxLexer {
 						isIdentifier = true;
 					} else if ( nextTokenType == ABSTRACT || nextTokenType == CLASS || nextTokenType == INTERFACE ) {
 						if ( !classIsExpected ) {
-							if ( debug )
-								System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because the file is not a class" );
-							isIdentifier = true;
+							// In a script or template, `class Name {}` is a named local class declaration
+							// and CLASS must remain a keyword (not become an identifier). We detect this by
+							// checking whether the next non-whitespace character begins an identifier (letter,
+							// underscore, or dollar). If it does, this looks like `class Name ...` and we
+							// keep CLASS as the keyword. Otherwise `class` is being used as a scope name
+							// (e.g. `class.foo` has `.` next) and we allow the reclassification to IDENTIFIER.
+							if ( nextTokenType == CLASS
+							    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '_' ) || nextNonWhiteSpaceCharIs( '$' ) ) ) {
+								if ( debug )
+									System.out
+									    .println( "Not switching [class] to identifier because next char starts an identifier (local class declaration)" );
+								// keep isIdentifier = false
+							} else {
+								if ( debug )
+									System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because the file is not a class" );
+								isIdentifier = true;
+							}
 						} else if ( classTokenReached && !classBodyStarted ) {
 							if ( debug )
 								System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because we are in the class annotations" );
@@ -691,10 +718,10 @@ public class BoxLexerCustom extends BoxLexer {
 	/**
 	 * Get the last token of a specific type and the next x siblings
 	 * Returns empty list if not found
-	 * 
+	 *
 	 * @param type  type of token to find
 	 * @param count number of siblings to find
-	 * 
+	 *
 	 * @return the list of tokens starting from the specified type
 	 */
 	public List<Token> findPreviousTokenAndXSiblings( int type, int count ) {
@@ -890,9 +917,9 @@ public class BoxLexerCustom extends BoxLexer {
 	/**
 	 * Check if the next characters are the start of a function declaration
 	 * That means the function token is followed by a valid function name and then a left parenthesis
-	 * 
+	 *
 	 * @param nextToken the function token
-	 * 
+	 *
 	 * @return true if the next characters are a function declaration
 	 */
 	private boolean isFunctionDeclaration( Token nextToken ) {
@@ -914,9 +941,9 @@ public class BoxLexerCustom extends BoxLexer {
 
 	/**
 	 * Check if the next sequence of characters matches a specific word
-	 * 
+	 *
 	 * @param word the word to match. Pass as upper case
-	 * 
+	 *
 	 * @return true if the next sequence of characters matches the word
 	 */
 	private boolean nextCharsAreWord( String word ) {
@@ -935,9 +962,9 @@ public class BoxLexerCustom extends BoxLexer {
 	/**
 	 * Given a position in the input stream, skip over any whitespace characters
 	 * and return the position of the next non-whitespace character.
-	 * 
+	 *
 	 * @param pos the position in the input stream
-	 * 
+	 *
 	 * @return the position of the next non-whitespace character
 	 */
 	private int skipWhiteSpace( int pos ) {
@@ -952,9 +979,9 @@ public class BoxLexerCustom extends BoxLexer {
 
 	/**
 	 * Set the classIsExpected flag
-	 * 
+	 *
 	 * @param classIsExpected true if a class is expected
-	 * 
+	 *
 	 * @return this
 	 */
 	public BoxLexerCustom setClassIsExpected( boolean classIsExpected ) {
@@ -964,9 +991,9 @@ public class BoxLexerCustom extends BoxLexer {
 
 	/**
 	 * Decide if a token is wrapped in #pound# signs.
-	 * 
+	 *
 	 * @param token the token to check
-	 * 
+	 *
 	 * @return true if the token is wrapped in #pound# signs
 	 */
 	private boolean wrappedInPounds( Token token ) {

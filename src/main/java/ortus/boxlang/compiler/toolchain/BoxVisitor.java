@@ -45,6 +45,7 @@ import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
+import ortus.boxlang.compiler.ast.statement.BoxLocalClass;
 import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
@@ -126,6 +127,7 @@ import ortus.boxlang.parser.antlr.BoxGrammar.ImportStatementContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.IncludeContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.InterfaceContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.InvocableContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.LocalClassContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ModifierContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.NormalStatementBlockContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.NotContext;
@@ -265,6 +267,42 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		return new BoxClass( imports, body, annotations, documentation, property, pos, src );
 	}
 
+	/**
+	 * Visit the localClass context to generate the AST node for a named class defined inside a script or template.
+	 *
+	 * @param ctx the parse tree
+	 *
+	 * @return the AST node representing the local class
+	 */
+	@Override
+	public BoxNode visitLocalClass( LocalClassContext ctx ) {
+		var									pos				= tools.getPositionStartingAt( ctx, ctx.CLASS().getSymbol() );
+		var									src				= tools.getSourceText( ctx );
+
+		BoxIdentifier						name			= ( BoxIdentifier ) ctx.identifier().accept( expressionVisitor );
+		List<BoxStatement>					body			= buildClassBody( ctx.classBody() );
+		List<BoxAnnotation>					annotations		= new ArrayList<>();
+		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();
+		List<BoxProperty>					property		= new ArrayList<>();
+
+		processIfNotNull( ctx.preAnnotation(), a -> annotations.add( ( BoxAnnotation ) a.accept( this ) ) );
+		processIfNotNull( ctx.postAnnotation(), a -> annotations.add( ( BoxAnnotation ) a.accept( this ) ) );
+		processIfNotNull( ctx.property(), p -> property.add( ( BoxProperty ) p.accept( this ) ) );
+
+		// Convert abstract keyword to an annotation of null value
+		if ( ctx.ABSTRACT() != null ) {
+			annotations.add( new BoxAnnotation( new BoxFQN( "abstract", tools.getPosition( ctx.ABSTRACT() ), ctx.ABSTRACT().getText() ), null,
+			    tools.getPosition( ctx.ABSTRACT() ), ctx.ABSTRACT().getText() ) );
+		}
+		// Convert final keyword to an annotation of null value
+		if ( ctx.FINAL() != null ) {
+			annotations.add( new BoxAnnotation( new BoxFQN( "final", tools.getPosition( ctx.FINAL() ), ctx.FINAL().getText() ), null,
+			    tools.getPosition( ctx.FINAL() ), ctx.FINAL().getText() ) );
+		}
+
+		return new BoxLocalClass( name, body, annotations, documentation, property, pos, src );
+	}
+
 	@Override
 	public BoxNode visitClassBodyStatement( ClassBodyStatementContext ctx ) {
 		return Optional.ofNullable( ctx.staticInitializer() ).map( init -> init.accept( this ) ).orElseGet( () -> ctx.functionOrStatement().accept( this ) );
@@ -323,7 +361,7 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		    StatementContext::try_, StatementContext::while_, BoxGrammar.StatementContext::expressionStatement, StatementContext::include,
 		    StatementContext::component, BoxGrammar.StatementContext::statementBlock, StatementContext::simpleStatement,
 		    BoxGrammar.StatementContext::componentIsland, StatementContext::throw_,
-		    StatementContext::emptyStatementBlock, StatementContext::function );
+		    StatementContext::emptyStatementBlock, StatementContext::function, StatementContext::localClass );
 
 		// Iterate over the functions
 		for ( Function<BoxGrammar.StatementContext, ParserRuleContext> function : functions ) {

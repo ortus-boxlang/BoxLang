@@ -47,6 +47,12 @@ public abstract class Transpiler implements ITranspiler {
 	private final HashMap<String, List<AbstractInsnNode>>	udfs					= new HashMap<String, List<AbstractInsnNode>>();
 	private Map<String, BoxExpression>						keys					= new LinkedHashMap<String, BoxExpression>();
 	private Map<String, ClassNode>							auxiliaries				= new LinkedHashMap<String, ClassNode>();
+	/**
+	 * Registry of named local classes defined inside a script or template.
+	 * Maps the simple class name (alias) to the Java class name of the compiled auxiliary class.
+	 * e.g. "Person" -&gt; "boxgenerated/scripts/MyScript$LocalClass$Person"
+	 */
+	private Map<String, String>								localClasses			= new LinkedHashMap<String, String>();
 	private List<TryCatchBlockNode>							tryCatchBlockNodes		= new ArrayList<TryCatchBlockNode>();
 	private int												lambdaCounter			= 0;
 	private int												closureCounter			= 0;
@@ -247,6 +253,30 @@ public abstract class Transpiler implements ITranspiler {
 		return auxiliaries;
 	}
 
+	/**
+	 * Register a named local class for the current compilation unit.
+	 * Called during script/template transpilation, before the body is compiled.
+	 *
+	 * @param alias         the simple name as written in source (e.g. {@code "Person"})
+	 * @param javaClassName the Java class name of the generated class
+	 *                      (e.g. {@code "boxgenerated/scripts/MyScript$LocalClass$Person"})
+	 */
+	public void registerLocalClass( String alias, String javaClassName ) {
+		this.localClasses.put( alias, javaClassName );
+	}
+
+	/**
+	 * Returns the Java class name of a local class if the given alias refers to one, or
+	 * {@code null} if it is not a local class.
+	 *
+	 * @param alias the simple name as written in source (e.g. {@code "Person"})
+	 *
+	 * @return the Java class name, or {@code null}
+	 */
+	public String getLocalClassName( String alias ) {
+		return this.localClasses.get( alias );
+	}
+
 	public void setAuxiliary( String name, ClassNode classNode ) {
 		auxiliaries.put( name, classNode );
 		// if ( auxiliaries.putIfAbsent( name, classNode ) != null ) {
@@ -287,9 +317,9 @@ public abstract class Transpiler implements ITranspiler {
 
 	/**
 	 * Create a key and register it in the list compiled array of pre-calculated keys.
-	 * 
+	 *
 	 * @param expr the string name of the key
-	 * 
+	 *
 	 * @return a list of instructions that will create the key
 	 */
 	public List<AbstractInsnNode> createKey( String expr ) {
@@ -298,9 +328,9 @@ public abstract class Transpiler implements ITranspiler {
 
 	/**
 	 * Create a key and register it in the list compiled array of pre-calculated keys.
-	 * 
+	 *
 	 * @param expr the Box expression name of the key
-	 * 
+	 *
 	 * @return a list of instructions that will create the key
 	 */
 	public List<AbstractInsnNode> createKey( BoxExpression expr ) {
@@ -331,9 +361,9 @@ public abstract class Transpiler implements ITranspiler {
 
 	/**
 	 * Create a key ad-hoc, without registering it in the list of pre-calculated keys.
-	 * 
+	 *
 	 * @param name the name of the key
-	 * 
+	 *
 	 * @return a list of instructions that will create the key
 	 */
 	public List<AbstractInsnNode> createKeyAdHoc( String name ) {
@@ -342,9 +372,9 @@ public abstract class Transpiler implements ITranspiler {
 
 	/**
 	 * Create a key ad-hoc, without registering it in the list of pre-calculated keys.
-	 * 
+	 *
 	 * @param expr the Box expression name of the key
-	 * 
+	 *
 	 * @return a list of instructions that will create the key
 	 */
 	public List<AbstractInsnNode> createKeyAdHoc( BoxExpression expr ) {

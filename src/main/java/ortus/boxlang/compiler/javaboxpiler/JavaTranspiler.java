@@ -49,6 +49,7 @@ import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
+import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.BoxStaticInitializer;
 import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
@@ -97,6 +98,7 @@ import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
+import ortus.boxlang.compiler.ast.statement.BoxLocalClass;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
@@ -197,6 +199,7 @@ public class JavaTranspiler extends Transpiler {
 	private List<CompilationUnit>							callables				= new ArrayList<>();
 	private List<Statement>									UDFDeclarations			= new ArrayList<>();
 	private List<Statement>									staticUDFDeclarations	= new ArrayList<>();
+	private Map<String, String>								localClasses			= new HashMap<>();
 
 	public JavaTranspiler() {
 		registry.put( BoxScript.class, new BoxScriptTransformer( this ) );
@@ -261,6 +264,7 @@ public class JavaTranspiler extends Transpiler {
 		registry.put( BoxStaticInitializer.class, new BoxStaticInitializerTransformer( this ) );
 		registry.put( BoxFunctionalMemberAccess.class, new BoxFunctionalMemberAccessTransformer( this ) );
 		registry.put( BoxFunctionalBIFAccess.class, new BoxFunctionalBIFAccessTransformer( this ) );
+		registry.put( BoxLocalClass.class, new ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxLocalClassTransformer( this ) );
 
 		// Templating Components
 		registry.put( BoxTemplate.class, new BoxTemplateTransformer( this ) );
@@ -369,10 +373,119 @@ public class JavaTranspiler extends Transpiler {
 	 */
 	@Override
 	public TranspiledCode transpile( BoxNode node ) throws BoxRuntimeException {
+		this.localClasses.clear();
+		if ( node instanceof BoxScript boxScript ) {
+			List<BoxImport> enclosingImports = extractImports( boxScript.getStatements() );
+			preCompileLocalClasses( boxScript.getStatements(), enclosingImports );
+		} else if ( node instanceof BoxTemplate boxTemplate ) {
+			List<BoxImport> enclosingImports = extractImports( boxTemplate.getStatements() );
+			preCompileLocalClasses( boxTemplate.getStatements(), enclosingImports );
+		}
+
 		CompilationUnit			entryPoint		= ( CompilationUnit ) transform( node );
 		List<CompilationUnit>	allCallables	= getCallables();
 		allCallables.addAll( getUDFcallables().values() );
 		return new TranspiledCode( entryPoint, allCallables );
+	}
+
+	/**
+	 * Register a named local class alias to a generated Java inner class name.
+	 *
+	 * @param alias         local class identifier used in source code
+	 * @param javaClassName generated Java class name used as nested type
+	 */
+	public void registerLocalClass( String alias, String javaClassName ) {
+		this.localClasses.put( alias, javaClassName );
+	}
+
+	/**
+	 * Resolve a local class alias to its generated Java class name.
+	 *
+	 * @param alias local class identifier used in source code
+	 *
+	 * @return generated Java class name, or null when alias is not a local class
+	 */
+	public String getLocalClassName( String alias ) {
+		return this.localClasses.get( alias );
+	}
+
+	private static List<BoxImport> extractImports( List<BoxStatement> statements ) {
+		return statements.stream()
+		    .filter( s -> s instanceof BoxImport )
+		    .map( s -> ( BoxImport ) s )
+		    .collect( Collectors.toList() );
+	}
+
+	private void preCompileLocalClasses( List<BoxStatement> statements, List<BoxImport> enclosingImports ) {
+		// Build hoisted imports: every local class in this scope gets a synthetic java: import
+		// so that sibling classes can reference each other by simple name at runtime.
+		List<BoxImport> allImports = buildHoistedImports( statements, enclosingImports );
+
+		for ( BoxStatement statement : statements ) {
+			if ( statement instanceof BoxLocalClass localClass ) {
+				String			localName			= localClass.getName().getName();
+				String			syntheticClassName	= "LocalClass$" + localName;
+
+				JavaTranspiler	child				= new JavaTranspiler();
+				child.setProperty( "classname", syntheticClassName );
+				child.setProperty( "packageName", this.getProperty( "packageName" ) );
+				child.setProperty( "boxFQN", this.getProperty( "packageName" ) + "." + syntheticClassName );
+				child.setProperty( "baseclass", "BoxClass" );
+				child.setProperty( "returnType", "void" );
+				child.setProperty( "sourceType", this.getProperty( "sourceType" ) );
+				child.setProperty( "mappingName", this.getProperty( "mappingName" ) );
+				child.setProperty( "mappingPath", this.getProperty( "mappingPath" ) );
+				child.setProperty( "relativePath", this.getProperty( "relativePath" ) );
+
+				BoxClass		asBoxClass		= new BoxClass(
+				    allImports,
+				    localClass.getBody(),
+				    localClass.getAnnotations(),
+				    localClass.getDocumentation(),
+				    localClass.getProperties(),
+				    localClass.getPosition(),
+				    localClass.getSourceText()
+				);
+
+				TranspiledCode	localClassCode	= child.transpile( asBoxClass );
+				this.callables.add( localClassCode.getEntryPoint() );
+				this.callables.addAll( localClassCode.getCallables() );
+				registerLocalClass( localName, syntheticClassName );
+			} else if ( statement instanceof BoxTemplateIsland island ) {
+				preCompileLocalClasses( island.getStatements(), enclosingImports );
+			} else if ( statement instanceof BoxScriptIsland island ) {
+				preCompileLocalClasses( island.getStatements(), enclosingImports );
+			} else if ( statement instanceof BoxComponent component && component.getBody() != null ) {
+				preCompileLocalClasses( component.getBody(), enclosingImports );
+			}
+		}
+	}
+
+	/**
+	 * Scan {@code statements} for top-level {@link BoxLocalClass} nodes and produce a combined
+	 * import list that includes both the original {@code enclosingImports} and one synthetic
+	 * {@code java:<dotFQN> as <simpleName>} import for every local class found.
+	 * <p>
+	 * Adding these synthetic imports means that at runtime, when a local class's
+	 * {@code extends="Animal"} annotation is resolved via
+	 * {@link ortus.boxlang.runtime.runnables.BoxClassSupport#loadSuperClass}, the Java resolver
+	 * can find the sibling class by simple name without any annotation rewriting.
+	 */
+	private List<BoxImport> buildHoistedImports( List<BoxStatement> statements, List<BoxImport> enclosingImports ) {
+		List<BoxImport>	hoisted		= new ArrayList<>( enclosingImports );
+		String			packageName	= this.getProperty( "packageName" );
+		for ( BoxStatement stmt : statements ) {
+			if ( stmt instanceof BoxLocalClass localClass ) {
+				String	localName		= localClass.getName().getName();
+				String	syntheticFQN	= packageName + ".LocalClass$" + localName;
+				hoisted.add( new BoxImport(
+				    new BoxFQN( "java:" + syntheticFQN, null, null ),
+				    new BoxIdentifier( localName, null, null ),
+				    null, null
+				) );
+			}
+		}
+		return hoisted;
 	}
 
 	/**
@@ -395,7 +508,7 @@ public class JavaTranspiler extends Transpiler {
 
 	/**
 	 * Get the map of UDF invokers, which maps a UDF key to the corresponding Java method that invokes the UDF
-	 * 
+	 *
 	 * @return the map of UDF invokers
 	 */
 	public Map<Key, Pair<MethodDeclaration, Expression>> getUDFInvokers() {
@@ -405,7 +518,7 @@ public class JavaTranspiler extends Transpiler {
 	/**
 	 * Get the list of Lambda invokers, which contains pairs of (invoker method, instantiation expression)
 	 * for each lambda in the script.
-	 * 
+	 *
 	 * @return the list of lambda invokers
 	 */
 	public List<Pair<MethodDeclaration, Expression>> getLambdaInvokers() {
@@ -415,7 +528,7 @@ public class JavaTranspiler extends Transpiler {
 	/**
 	 * Get the list of Closure invokers, which contains pairs of (invoker method, instantiation expression)
 	 * for each closure in the script.
-	 * 
+	 *
 	 * @return the list of closure invokers
 	 */
 	public List<Pair<MethodDeclaration, Expression>> getClosureInvokers() {
