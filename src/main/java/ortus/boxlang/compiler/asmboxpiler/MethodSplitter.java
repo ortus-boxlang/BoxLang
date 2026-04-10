@@ -288,8 +288,38 @@ public class MethodSplitter {
 		// Split the method into segments
 		List<MethodSegment> segments = splitIntoSegments( nodes, methodName );
 
+		// If splitting made no progress, return the original nodes unchanged.
+		// This prevents recursive re-wrapping of oversized but unsplittable regions,
+		// which can happen with large switch/case blocks that have no safe boundaries.
+		if ( segments.size() == 1 && isSameAsOriginalSegment( nodes, segments.getFirst() ) ) {
+			return stripDividerNodes( nodes );
+		}
+
 		// Generate sub-methods and call sites
 		return generateSplitMethod( segments, methodName, parameterType, returnType );
+	}
+
+	private boolean isSameAsOriginalSegment( List<AbstractInsnNode> nodes, MethodSegment segment ) {
+		List<AbstractInsnNode>	originalNodes	= stripDividerNodes( nodes );
+		List<AbstractInsnNode>	segmentNodes	= segment.nodes();
+
+		if ( originalNodes.size() != segmentNodes.size() ) {
+			return false;
+		}
+
+		for ( int i = 0; i < originalNodes.size(); i++ ) {
+			if ( originalNodes.get( i ) != segmentNodes.get( i ) ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	private List<AbstractInsnNode> stripDividerNodes( List<AbstractInsnNode> nodes ) {
+		return nodes.stream()
+		    .filter( n -> ! ( n instanceof DividerNode ) )
+		    .collect( java.util.stream.Collectors.toList() );
 	}
 
 	/**

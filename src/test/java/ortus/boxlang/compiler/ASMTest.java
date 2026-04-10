@@ -14,17 +14,26 @@
  */
 package ortus.boxlang.compiler;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+
+import java.nio.file.Path;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class ASMTest {
 
@@ -130,6 +139,74 @@ public class ASMTest {
 
 		assert result.equals( "function result" );
 		assert lambdaResult.equals( "lambda result" );
+	}
+
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
+	@DisplayName( "large switch template should compile without recursive splitting" )
+	@Test
+	public void testLargeSwitchTemplateShouldCompileWithoutRecursiveSplitting() {
+		ResolvedFilePath resolvedPath = ResolvedFilePath.of( Path.of( "overflow.cfm" ) );
+
+		assertDoesNotThrow( () -> RunnableLoader.getInstance().getBoxpiler().compileTemplate( resolvedPath ) );
+	}
+
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
+	@DisplayName( "very large switch template should compile" )
+	@Test
+	public void testVeryLargeSwitchTemplateShouldCompile() {
+		assertDoesNotThrow( () -> RunnableLoader.getInstance().getBoxpiler().compileScript( buildVeryLargeSwitchTemplate(), BoxSourceType.CFTEMPLATE ) );
+	}
+
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
+	@DisplayName( "large 99-case switch template should compile" )
+	@Test
+	public void testLargeNinetyNineCaseSwitchTemplateShouldCompile() {
+		assertDoesNotThrow(
+		    () -> RunnableLoader.getInstance().getBoxpiler().compileScript( buildLargeNinetyNineCaseSwitchTemplate(), BoxSourceType.CFTEMPLATE ) );
+	}
+
+	private String buildVeryLargeSwitchTemplate() {
+		StringBuilder source = new StringBuilder();
+
+		source.append( "<cfset result = ''>\n" );
+		source.append( "<cfswitch expression=\"case0\">\n" );
+
+		for ( int i = 0; i < 1200; i++ ) {
+			source.append( "<cfcase value=\"case" ).append( i ).append( "\">\n" );
+			source.append( "<cfset result = 'case" ).append( i ).append( "'>\n" );
+			source.append( "<cfbreak>\n" );
+			source.append( "</cfcase>\n" );
+		}
+
+		source.append( "<cfdefaultcase>\n" );
+		source.append( "<cfset result = 'default'>\n" );
+		source.append( "</cfdefaultcase>\n" );
+		source.append( "</cfswitch>\n" );
+
+		return source.toString();
+	}
+
+	private String buildLargeNinetyNineCaseSwitchTemplate() {
+		StringBuilder source = new StringBuilder();
+
+		source.append( "<cfset result = ''>\n" );
+		source.append( "<cfswitch expression=\"case0\">\n" );
+
+		for ( int i = 0; i < 99; i++ ) {
+			source.append( "<cfcase value=\"case" ).append( i ).append( "\">\n" );
+			for ( int j = 0; j < 30; j++ ) {
+				source.append( "<cfset result = 'case" ).append( i ).append( "-segment" ).append( j ).append( "'>\n" );
+			}
+			source.append( "<cfbreak>\n" );
+			source.append( "</cfcase>\n" );
+		}
+
+		source.append( "<cfdefaultcase>\n" );
+		source.append( "<cfset result = 'default'>\n" );
+		source.append( "</cfdefaultcase>\n" );
+		source.append( "</cfswitch>\n" );
+
+		return source.toString();
 	}
 
 }
