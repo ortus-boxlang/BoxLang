@@ -308,11 +308,19 @@ public record ClassInfo(
 	@SuppressWarnings( "unchecked" )
 	public Class<IBoxRunnable> getDiskClass() {
 		waitWhileCompiling();
+		Class<IBoxRunnable> clazz;
 		try {
-			return ( Class<IBoxRunnable> ) getClassLoader().loadClass( fqn().toString() );
+			// use forName() so we can force the static initializers to run...
+			clazz = ( Class<IBoxRunnable> ) Class.forName( fqn().toString(), true, getClassLoader() );
 		} catch ( ClassNotFoundException e ) {
 			throw new BoxRuntimeException( "Error compiling source " + fqn().toString(), e );
+		} catch ( ExceptionInInitializerError e ) {
+			// This can happen if the super class isn't found, but this CL will NEVER TRY TO LOAD THIS CLASS AGAIN.
+			// Shutdown this tainted CL, so the next time we try, it will create a new one and try again
+			shutdownClassLoader();
+			throw e;
 		}
+		return clazz;
 	}
 
 	/**

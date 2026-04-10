@@ -2340,4 +2340,36 @@ public class ClassTest {
 		    context ) );
 	}
 
+	@DisplayName( "It can recover from a failed class load when super class mapping is added later" )
+	@Test
+	public void testRecoverFromMissingSuperClassMapping() {
+		instance.executeSource(
+		    """
+		       // First attempt: try to instantiate the child class — this will fail because the super class mapping doesn't exist yet
+		       try {
+		           new src.test.java.TestCases.phase3.UnmappedSuperChild();
+		           result = "should have thrown";
+		       } catch( any e ) {
+		           result = "failed as expected";
+		       }
+
+		       // Now register the mapping so the super class can be found
+		       getBoxRuntime().getConfiguration().registerMapping(
+		           "/unmappedSuperLib",
+		           expandPath( "/src/test/java/TestCases/phase3/unmapped-super" )
+		       );
+		    getBoxContext().clearConfigCache();
+
+		       // Second attempt: should now succeed since the tainted classloader was shut down and the mapping is registered
+		       child = new src.test.java.TestCases.phase3.UnmappedSuperChild();
+		       childResult = child.childMethod();
+		       superResult = child.superMethod();
+		          """,
+		    context );
+
+		assertThat( variables.getAsString( result ) ).isEqualTo( "failed as expected" );
+		assertThat( variables.getAsString( Key.of( "childResult" ) ) ).isEqualTo( "from child" );
+		assertThat( variables.getAsString( Key.of( "superResult" ) ) ).isEqualTo( "from super" );
+	}
+
 }
