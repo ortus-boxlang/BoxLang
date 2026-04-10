@@ -350,7 +350,7 @@ set -- \$FILTERED_ARGS
 ######################################
 # AppCDS: auto-generate and cache a class-data archive for faster startup
 ######################################
-BL_JAR=$(ls "$APP_HOME/lib"/boxlang-*.jar 2>/dev/null | head -1)
+BL_JAR=$(ls "$APP_HOME/lib"/boxlang-[0-9]*.jar 2>/dev/null | head -1)
 if [ -n "$BL_JAR" ]; then
     BL_VER=$(basename "$BL_JAR" .jar | sed 's/^boxlang-//')
     # Resolve BoxLang home: BOXLANG_HOME env > --bx-home arg > user home
@@ -438,7 +438,7 @@ ext.customizeWindowsScript = { File scriptFile ->
 		'  if not defined BL_HOME_DIR set "BL_HOME_DIR=%USERPROFILE%\\.boxlang"\r\n' +
 		')\r\n' +
 		'set "BL_JSA_DIR=!BL_HOME_DIR!\\cache"\r\n' +
-		'for %%F in ("%APP_HOME%\\lib\\boxlang-*.jar") do set "BL_JAR=%%~fF" & set "BL_JARNAME=%%~nF"\r\n' +
+		'for %%F in ("%APP_HOME%\\lib\\boxlang-[0-9]*.jar") do set "BL_JAR=%%~fF" & set "BL_JARNAME=%%~nF"\r\n' +
 		'if defined BL_JAR (\r\n' +
 		'  set "BL_VER=!BL_JARNAME:boxlang-=!"\r\n' +
 		'  set "BL_JSA=!BL_JSA_DIR!\\boxlang-!BL_VER!.jsa"\r\n' +
