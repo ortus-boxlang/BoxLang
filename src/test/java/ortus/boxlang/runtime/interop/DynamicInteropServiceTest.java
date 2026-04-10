@@ -1060,6 +1060,9 @@ public class DynamicInteropServiceTest {
 				result3 = TestClassOverloadedMethods.go( "5" );
 				result4 = TestClassOverloadedMethods.go( javacast( 'char', '5' ) );
 				result5 = TestClassOverloadedMethods.go( BigDecimal.valueOf( 5 ) );
+				result6 = TestClassOverloadedMethods.runStyle( () -> {
+					return "Task Done!";
+				} );
 			""", context);
 		// @formatter:on
 		assertThat( variables.get( Key.result ) ).isEqualTo( "Integer boxed" );
@@ -1067,6 +1070,7 @@ public class DynamicInteropServiceTest {
 		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "String" );
 		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "char" );
 		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "BigDecimal" );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "Callable:Task Done!" );
 	}
 
 	@Test

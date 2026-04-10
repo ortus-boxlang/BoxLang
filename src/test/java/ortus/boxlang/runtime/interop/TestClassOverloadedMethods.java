@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.interop;
  */
 
 import java.math.BigDecimal;
+import java.util.concurrent.Callable;
 
 /**
  * For the life of me, I can't find a JDK class that has overloaded methods which accept the same number of arguments which can both be casted to the same type
@@ -44,6 +45,15 @@ public class TestClassOverloadedMethods {
 
 	static public String go( BigDecimal p ) {
 		return "BigDecimal";
+	}
+
+	static public String runStyle( Runnable task ) {
+		task.run();
+		return "Runnable";
+	}
+
+	static public String runStyle( Callable<Object> task ) throws Exception {
+		return "Callable:" + task.call();
 	}
 
 }
