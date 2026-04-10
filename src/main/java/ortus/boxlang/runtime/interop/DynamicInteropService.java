@@ -1285,9 +1285,9 @@ public class DynamicInteropService {
 
 	/**
 	 * Get the correct method handle cache based on the class.
-	 * 
+	 *
 	 * @param targetClass The class we're going to call a method on
-	 * 
+	 *
 	 * @return The method handle cache to use for this class
 	 */
 	private static ConcurrentHashMap<String, MethodRecord> findMethodHandleCache( Class<?> targetClass ) {
