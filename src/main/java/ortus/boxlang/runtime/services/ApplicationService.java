@@ -83,7 +83,7 @@ public class ApplicationService extends BaseService {
 	 * The types of application listeners we support: Application classes and
 	 * Application templates
 	 */
-	private enum ApplicationDescriptorType {
+	public enum ApplicationDescriptorType {
 		CLASS,
 		TEMPLATE
 	}
@@ -299,7 +299,7 @@ public class ApplicationService extends BaseService {
 	 * @return A struct containing the resolved listener (if found) and the
 	 *         resolved request template path used during descriptor lookup
 	 */
-	private ApplicationDescriptorTemplate loadDescriptorTemplate( RequestBoxContext context, URI template ) {
+	public ApplicationDescriptorTemplate loadDescriptorTemplate( RequestBoxContext context, URI template ) {
 
 		ApplicationDescriptorSearch	searchResult		= null;
 		ResolvedFilePath			templatePath		= null;
@@ -453,7 +453,7 @@ public class ApplicationService extends BaseService {
 	/**
 	 * A record to hold the results of loading an Application descriptor, including the descriptor itself, the resolved file path, and the type of descriptor.
 	 */
-	private record ApplicationDescriptorTemplate( Object descriptor, ResolvedFilePath path, ApplicationDescriptorType type ) {
+	public record ApplicationDescriptorTemplate( Object descriptor, ResolvedFilePath path, ApplicationDescriptorType type ) {
 	}
 
 }
