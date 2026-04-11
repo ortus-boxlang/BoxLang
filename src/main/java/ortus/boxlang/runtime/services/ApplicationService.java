@@ -42,7 +42,6 @@ import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.util.BoxFQN;
 import ortus.boxlang.runtime.util.FileSystemUtil;
@@ -247,14 +246,13 @@ public class ApplicationService extends BaseService {
 		BaseApplicationListener listener;
 
 		if ( template != null ) {
-			IStruct				loadResult			= loadDescriptorTemplate( context, template );
-			ResolvedFilePath	templatePath		= ( ResolvedFilePath ) loadResult.get( Key.path );
-			Object				returnedListener	= loadResult.get( Key.listener );
+			ApplicationDescriptorTemplate	loadResult		= loadDescriptorTemplate( context, template );
+			ResolvedFilePath				templatePath	= loadResult.path();
 
-			if ( returnedListener instanceof IClassRunnable runnableListener ) {
-				listener = new ApplicationClassListener( runnableListener, context, templatePath );
-			} else if ( returnedListener instanceof BoxTemplate templateListener ) {
-				listener = new ApplicationTemplateListener( templateListener, context, templatePath );
+			if ( loadResult.type() == ApplicationDescriptorType.CLASS ) {
+				listener = new ApplicationClassListener( ( IClassRunnable ) loadResult.descriptor(), context, templatePath );
+			} else if ( loadResult.type() == ApplicationDescriptorType.TEMPLATE ) {
+				listener = new ApplicationTemplateListener( ( BoxTemplate ) loadResult.descriptor(), context, templatePath );
 			} else {
 				listener = new ApplicationDefaultListener( context, templatePath );
 			}
@@ -301,7 +299,7 @@ public class ApplicationService extends BaseService {
 	 * @return A struct containing the resolved listener (if found) and the
 	 *         resolved request template path used during descriptor lookup
 	 */
-	private IStruct loadDescriptorTemplate( RequestBoxContext context, URI template ) {
+	private ApplicationDescriptorTemplate loadDescriptorTemplate( RequestBoxContext context, URI template ) {
 
 		ApplicationDescriptorSearch	searchResult		= null;
 		ResolvedFilePath			templatePath		= null;
@@ -341,8 +339,8 @@ public class ApplicationService extends BaseService {
 		if ( searchResult != null ) {
 			if ( searchResult.type() == ApplicationDescriptorType.CLASS ) {
 				// If we found a class, load it and return it as a class type
-				return Struct.of(
-				    Key.listener, ( IClassRunnable ) DynamicObject.of(
+				return new ApplicationDescriptorTemplate(
+				    ( IClassRunnable ) DynamicObject.of(
 				        RunnableLoader.getInstance()
 				            .loadClass(
 				                ResolvedFilePath.of(
@@ -355,29 +353,25 @@ public class ApplicationService extends BaseService {
 				        // We do NOT invoke init() on the Application class for CF compat
 				        .invokeConstructor( context, Key.noInit )
 				        .getTargetInstance(),
-				    Key.path, templatePath
-				);
+				    templatePath,
+				    searchResult.type() );
 
 			} else {
 				// If we found a template, return a template listener
-				return Struct.of(
-				    Key.listener, RunnableLoader.getInstance().loadTemplateAbsolute(
+				return new ApplicationDescriptorTemplate(
+				    RunnableLoader.getInstance().loadTemplateAbsolute(
 				        context,
 				        ResolvedFilePath.of(
 				            templatePath.mappingName(),
 				            templatePath.mappingPath(),
-				            packagePath.replace( ".", File.separator )
-				                + File.separator
+				            packagePath.replace( ".", File.separator ) + File.separator
 				                + searchResult.path().getFileName(),
 				            searchResult.path() ) ),
-				    Key.path, templatePath
-				);
+				    templatePath,
+				    searchResult.type() );
 			}
 		} else {
-			return Struct.of(
-			    Key.listener, null,
-			    Key.path, templatePath
-			);
+			return new ApplicationDescriptorTemplate( null, templatePath, null );
 		}
 	}
 
@@ -450,7 +444,16 @@ public class ApplicationService extends BaseService {
 		this.applicationDescriptorCache.clear();
 	}
 
+	/**
+	 * A record to hold the results of searching for an Application descriptor, including the path and type of descriptor found.
+	 */
 	private record ApplicationDescriptorSearch( Path path, ApplicationDescriptorType type ) {
+	}
+
+	/**
+	 * A record to hold the results of loading an Application descriptor, including the descriptor itself, the resolved file path, and the type of descriptor.
+	 */
+	private record ApplicationDescriptorTemplate( Object descriptor, ResolvedFilePath path, ApplicationDescriptorType type ) {
 	}
 
 }
