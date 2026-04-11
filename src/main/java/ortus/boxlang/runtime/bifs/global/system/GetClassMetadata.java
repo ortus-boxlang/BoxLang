@@ -18,6 +18,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
@@ -27,7 +28,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
-@BoxBIF( description = "Get metadata about a Java class" )
+@BoxBIF( description = "Get metadata about a instance or class given an instantiation path or an instance of the object." )
 public class GetClassMetadata extends BIF {
 
 	private static final ClassLocator CLASS_LOCATOR = BoxRuntime.getInstance().getClassLocator();
@@ -43,7 +44,7 @@ public class GetClassMetadata extends BIF {
 	}
 
 	/**
-	 * Returns the current value of an internal millisecond timer.
+	 * Get metadata about a instance or class given an instantiation path or an instance of the object.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
@@ -61,7 +62,7 @@ public class GetClassMetadata extends BIF {
 		// Else we have a path, let's get the data
 		DynamicObject loadedClass = CLASS_LOCATOR.load(
 		    context,
-		    ( String ) path,
+		    StringCaster.cast( path ),
 		    ClassLocator.BX_PREFIX,
 		    true,
 		    context.getCurrentImports()
