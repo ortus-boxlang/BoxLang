@@ -65,7 +65,7 @@ public class GetClassMetadata extends BIF {
 			return castedObject.getBoxMeta().getMeta();
 		}
 
-		String			strPath		= StringCaster.cast( path );
+		String			strPath	= StringCaster.cast( path );
 		DynamicObject	loadedClass;
 
 		// If an absolute OS filesystem path is given, bypass ClassLocator/mappings and load directly
