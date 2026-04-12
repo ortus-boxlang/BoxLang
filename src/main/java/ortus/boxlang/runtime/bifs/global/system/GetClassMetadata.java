@@ -14,6 +14,9 @@
  */
 package ortus.boxlang.runtime.bifs.global.system;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -24,11 +27,14 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.ResolvedFilePath;
 
-@BoxBIF( description = "Get metadata about a instance or class given an instantiation path or an instance of the object." )
+@BoxBIF( description = "Get metadata about a instance or class given an instantiation path, an absolute OS filesystem path, or an instance of the object." )
 public class GetClassMetadata extends BIF {
 
 	private static final ClassLocator CLASS_LOCATOR = BoxRuntime.getInstance().getClassLocator();
@@ -44,12 +50,12 @@ public class GetClassMetadata extends BIF {
 	}
 
 	/**
-	 * Get metadata about a instance or class given an instantiation path or an instance of the object.
+	 * Get metadata about a instance or class given an instantiation path, an absolute OS filesystem path, or an instance of the object.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.path The path to the class or interface or an instance of the object to get the metadata for.
+	 * @argument.path The path to the class or interface, an absolute OS filesystem path (e.g. /path/to/MyClass.bx), or an instance of the object to get the metadata for.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object path = arguments.get( Key.path );
@@ -59,14 +65,27 @@ public class GetClassMetadata extends BIF {
 			return castedObject.getBoxMeta().getMeta();
 		}
 
-		// Else we have a path, let's get the data
-		DynamicObject loadedClass = CLASS_LOCATOR.load(
-		    context,
-		    StringCaster.cast( path ),
-		    ClassLocator.BX_PREFIX,
-		    true,
-		    context.getCurrentImports()
-		);
+		String			strPath		= StringCaster.cast( path );
+		DynamicObject	loadedClass;
+
+		// If an absolute OS filesystem path is given, bypass ClassLocator/mappings and load directly
+		if ( Path.of( strPath ).isAbsolute() ) {
+			Path absolutePath = Path.of( strPath );
+			if ( !Files.exists( absolutePath ) ) {
+				throw new BoxRuntimeException( "The class file [" + strPath + "] does not exist on the filesystem." );
+			}
+			Class<?> clazz = RunnableLoader.getInstance().loadClass( ResolvedFilePath.of( absolutePath ), context );
+			loadedClass = DynamicObject.of( clazz, context );
+		} else {
+			// Dot-notation or relative path — use normal mapping-based resolver
+			loadedClass = CLASS_LOCATOR.load(
+			    context,
+			    strPath,
+			    ClassLocator.BX_PREFIX,
+			    true,
+			    context.getCurrentImports()
+			);
+		}
 
 		// Check if the class is an interface
 		if ( DynamicInteropService.isInterface( loadedClass.getTargetClass() ) ) {

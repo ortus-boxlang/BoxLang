@@ -88,6 +88,38 @@ public class GetClassMetadataTest {
 		assertThat( metadata.getAsString( Key.path ) ).isEqualTo( Paths.get( "src/test/bx/Person.bx" ).toAbsolutePath().toRealPath().toString() );
 	}
 
+	@DisplayName( "It can get the metadata for a bx class using an absolute filesystem path" )
+	@Test
+	public void testClassAbsolutePath() throws IOException {
+		String absolutePath = Paths.get( "src/test/bx/Person.bx" ).toAbsolutePath().toRealPath().toString();
+		// @formatter:off
+		runtime.executeSource(
+		    """
+		       result = getClassMetadata( "#absolutePath#" );
+		    	println( result )
+		    """.replace( "#absolutePath#", absolutePath ),
+		    context
+		);
+		// @formatter:on
+
+		var metadata = variables.getAsStruct( result );
+		assertThat( metadata.containsKey( "name" ) ).isTrue();
+		assertThat( metadata.containsKey( "type" ) ).isTrue();
+		assertThat( metadata.getAsString( Key.type ) ).isEqualTo( "Class" );
+	}
+
+	@DisplayName( "It throws when an absolute path does not exist on the filesystem" )
+	@Test
+	public void testClassAbsolutePathNotFound() {
+		org.junit.jupiter.api.Assertions.assertThrows( ortus.boxlang.runtime.types.exceptions.BoxRuntimeException.class, () -> {
+			runtime.executeSource(
+			    """
+			    result = getClassMetadata( "/nonexistent/path/to/DoesNotExist.bx" );
+			    """,
+			    context );
+		} );
+	}
+
 	@DisplayName( "It can get the metadata for a class with constructor args" )
 	@Test
 	public void testClassWithConstructorArgs() {
