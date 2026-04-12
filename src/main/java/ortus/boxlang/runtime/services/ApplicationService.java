@@ -249,10 +249,10 @@ public class ApplicationService extends BaseService {
 			ApplicationDescriptorTemplate	loadResult		= loadDescriptorTemplate( context, template );
 			ResolvedFilePath				templatePath	= loadResult.path();
 
-			if ( loadResult.type() == ApplicationDescriptorType.CLASS ) {
-				listener = new ApplicationClassListener( ( IClassRunnable ) loadResult.descriptor(), context, templatePath );
-			} else if ( loadResult.type() == ApplicationDescriptorType.TEMPLATE ) {
-				listener = new ApplicationTemplateListener( ( BoxTemplate ) loadResult.descriptor(), context, templatePath );
+			if ( loadResult.runnable() != null ) {
+				listener = new ApplicationClassListener( loadResult.runnable(), context, templatePath );
+			} else if ( loadResult.template() != null ) {
+				listener = new ApplicationTemplateListener( loadResult.template(), context, templatePath );
 			} else {
 				listener = new ApplicationDefaultListener( context, templatePath );
 			}
@@ -340,6 +340,7 @@ public class ApplicationService extends BaseService {
 			if ( searchResult.type() == ApplicationDescriptorType.CLASS ) {
 				// If we found a class, load it and return it as a class type
 				return new ApplicationDescriptorTemplate(
+				    templatePath,
 				    ( IClassRunnable ) DynamicObject.of(
 				        RunnableLoader.getInstance()
 				            .loadClass(
@@ -353,12 +354,13 @@ public class ApplicationService extends BaseService {
 				        // We do NOT invoke init() on the Application class for CF compat
 				        .invokeConstructor( context, Key.noInit )
 				        .getTargetInstance(),
-				    templatePath,
-				    searchResult.type() );
+				    null );
 
 			} else {
 				// If we found a template, return a template listener
 				return new ApplicationDescriptorTemplate(
+				    templatePath,
+				    null,
 				    RunnableLoader.getInstance().loadTemplateAbsolute(
 				        context,
 				        ResolvedFilePath.of(
@@ -366,12 +368,10 @@ public class ApplicationService extends BaseService {
 				            templatePath.mappingPath(),
 				            packagePath.replace( ".", File.separator ) + File.separator
 				                + searchResult.path().getFileName(),
-				            searchResult.path() ) ),
-				    templatePath,
-				    searchResult.type() );
+				            searchResult.path() ) ) );
 			}
 		} else {
-			return new ApplicationDescriptorTemplate( null, templatePath, null );
+			return new ApplicationDescriptorTemplate( templatePath, null, null );
 		}
 	}
 
@@ -453,7 +453,7 @@ public class ApplicationService extends BaseService {
 	/**
 	 * A record to hold the results of loading an Application descriptor, including the descriptor itself, the resolved file path, and the type of descriptor.
 	 */
-	public record ApplicationDescriptorTemplate( Object descriptor, ResolvedFilePath path, ApplicationDescriptorType type ) {
+	public record ApplicationDescriptorTemplate( ResolvedFilePath path, IClassRunnable runnable, BoxTemplate template ) {
 	}
 
 }
