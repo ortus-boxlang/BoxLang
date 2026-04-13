@@ -26,6 +26,7 @@ import java.nio.file.Paths;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -90,6 +91,7 @@ public class GetClassMetadataTest {
 
 	@DisplayName( "It can get the metadata for a bx class using an absolute filesystem path" )
 	@Test
+	@Disabled( "Feature reverted" )Z
 	public void testClassAbsolutePath() throws IOException {
 		String absolutePath = Paths.get( "src/test/bx/Person.bx" ).toAbsolutePath().toRealPath().toString();
 		// @formatter:off
@@ -110,6 +112,7 @@ public class GetClassMetadataTest {
 
 	@DisplayName( "It throws when an absolute path does not exist on the filesystem" )
 	@Test
+	@Disabled( "Feature reverted" )Z
 	public void testClassAbsolutePathNotFound() {
 		org.junit.jupiter.api.Assertions.assertThrows( ortus.boxlang.runtime.types.exceptions.BoxRuntimeException.class, () -> {
 			runtime.executeSource(
