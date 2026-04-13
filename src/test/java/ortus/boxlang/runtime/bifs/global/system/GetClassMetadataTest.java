@@ -91,7 +91,7 @@ public class GetClassMetadataTest {
 
 	@DisplayName( "It can get the metadata for a bx class using an absolute filesystem path" )
 	@Test
-	@Disabled( "Feature reverted" )Z
+	@Disabled( "Feature reverted" )
 	public void testClassAbsolutePath() throws IOException {
 		String absolutePath = Paths.get( "src/test/bx/Person.bx" ).toAbsolutePath().toRealPath().toString();
 		// @formatter:off
@@ -112,7 +112,7 @@ public class GetClassMetadataTest {
 
 	@DisplayName( "It throws when an absolute path does not exist on the filesystem" )
 	@Test
-	@Disabled( "Feature reverted" )Z
+	@Disabled( "Feature reverted" )
 	public void testClassAbsolutePathNotFound() {
 		org.junit.jupiter.api.Assertions.assertThrows( ortus.boxlang.runtime.types.exceptions.BoxRuntimeException.class, () -> {
 			runtime.executeSource(
