@@ -92,7 +92,11 @@ public class Transaction extends Component {
 		boolean				isTransactionBeginning		= attributes.getAsString( Key.action ).equalsIgnoreCase( "begin" ) || body != null;
 		IJDBCCapableContext	jdbcContext					= context.getParentOfType( IJDBCCapableContext.class );
 		ConnectionManager	connectionManager			= jdbcContext.getConnectionManager();
-		boolean				enableNestedTransactions	= BoxRuntime.getInstance().getConfiguration().enableNestedTransactions;
+		Boolean				enableNestedTransactions	= BoxRuntime.getInstance().getConfiguration().enableNestedTransactions;
+		if( enableNestedTransactions == null ) {
+			// Default to true if not explicitly configured.
+			enableNestedTransactions = true;
+		}
 		ITransaction		transaction;
 		BodyResult			bodyResult					= null;
 
