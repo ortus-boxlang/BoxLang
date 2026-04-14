@@ -954,6 +954,13 @@ public class PendingQuery {
 				statement.setFetchSize( fetchSize );
 			}
 		}
+		// This is an alias for fetchSize. (CF compat) Not handling via transpiler since apps like MASA specify as attributeCollection.
+		if ( options.containsKey( Key.blockfactor ) ) {
+			Integer blockFactor = ( Integer ) options.getOrDefault( Key.blockfactor, 0 );
+			if ( blockFactor > 0 ) {
+				statement.setFetchSize( blockFactor );
+			}
+		}
 		/**
 		 * TODO: Implement the following options:
 		 * ormoptions

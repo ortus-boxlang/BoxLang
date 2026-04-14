@@ -60,8 +60,8 @@ public class Query extends Component {
 
 		    // connection options
 		    new Attribute( Key.maxRows, "integer", -1 ),
-		    new Attribute( Key.blockfactor, "integer", Set.of( Validator.min( 1 ), Validator.max( 100 ) ) ),
-		    new Attribute( Key.fetchSize, "integer", Set.of( Validator.min( 1 ), Validator.max( 100 ) ) ),
+		    new Attribute( Key.blockfactor, "integer", Set.of( Validator.min( 0 ), Validator.max( 100 ) ) ),
+		    new Attribute( Key.fetchSize, "integer", Set.of( Validator.min( 0 ), Validator.max( 100 ) ) ),
 		    new Attribute( Key.timeout, "integer" ),
 
 		    // cache options
@@ -101,9 +101,9 @@ public class Query extends Component {
 	 *
 	 * @attribute.maxRows The maximum number of rows to return. -1 for no limit.
 	 *
-	 * @attribute.blockfactor Maximum rows per block to fetch from the server. Ranges from 1-100.
+	 * @attribute.blockfactor Maximum rows per block to fetch from the server. Ranges from 1-100. (0 means use default)
 	 *
-	 * @attribute.fetchSize The number of rows to fetch at a time. Ranges from 1-100.
+	 * @attribute.fetchSize The number of rows to fetch at a time. Ranges from 1-100. (0 means use default)
 	 *
 	 * @attribute.timeout The timeout for the query in seconds.
 	 *
