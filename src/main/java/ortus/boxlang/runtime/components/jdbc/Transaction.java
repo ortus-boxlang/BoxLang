@@ -93,12 +93,12 @@ public class Transaction extends Component {
 		IJDBCCapableContext	jdbcContext					= context.getParentOfType( IJDBCCapableContext.class );
 		ConnectionManager	connectionManager			= jdbcContext.getConnectionManager();
 		Boolean				enableNestedTransactions	= BoxRuntime.getInstance().getConfiguration().enableNestedTransactions;
-		if( enableNestedTransactions == null ) {
+		if ( enableNestedTransactions == null ) {
 			// Default to true if not explicitly configured.
 			enableNestedTransactions = true;
 		}
-		ITransaction		transaction;
-		BodyResult			bodyResult					= null;
+		ITransaction	transaction;
+		BodyResult		bodyResult	= null;
 
 		if ( isTransactionBeginning ) {
 			if ( connectionManager.isInTransaction() && !enableNestedTransactions ) {
