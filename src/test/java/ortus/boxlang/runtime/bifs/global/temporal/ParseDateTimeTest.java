@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -509,6 +510,24 @@ public class ParseDateTimeTest {
 		          """,
 		    context );
 		assertThat( variables.get( Key.of( "result" ) ) ).isInstanceOf( DateTime.class );
+	}
+
+	@DisplayName( "It tests the BIF ParseDateTime will parse a MM/yyyy pattern with a first day of month assumption" )
+	@Test
+	public void testMMYYYYPattern() {
+		instance.executeSource(
+		    """
+		    result = ParseDateTime( "12/2025" );
+		          """,
+		    context );
+		assertThat( variables.get( Key.of( "result" ) ) ).isInstanceOf( DateTime.class );
+		DateTime result = DateTimeCaster.cast( variables.get( Key.of( "result" ) ) );
+		assertThat( IntegerCaster.cast( result.format( "yyyy" ) ) ).isEqualTo( 2025 );
+		assertThat( IntegerCaster.cast( result.format( "M" ) ) ).isEqualTo( 12 );
+		assertThat( IntegerCaster.cast( result.format( "d" ) ) ).isEqualTo( 1 );
+		assertThat( IntegerCaster.cast( result.format( "H" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "m" ) ) ).isEqualTo( 0 );
+		assertThat( IntegerCaster.cast( result.format( "s" ) ) ).isEqualTo( 0 );
 	}
 
 	@DisplayName( "It tests the speed of both masked and non-masked parsing" )

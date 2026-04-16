@@ -463,12 +463,19 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 				addRow( row );
 			}
 		}
-		columnNameList	= null;
-		columnNameArray	= null;
+		invalidateColumnCaches();
+		return this;
+	}
+
+	/**
+	 * Invalidate cached column name data. Called when columns are added, removed, or renamed.
+	 */
+	void invalidateColumnCaches() {
+		this.columnNameList		= null;
+		this.columnNameArray	= null;
 		if ( this.$bx != null ) {
 			this.$bx.buildColumnsMeta();
 		}
-		return this;
 	}
 
 	/**
@@ -809,11 +816,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			System.arraycopy( row, index + 1, newRow, index, row.length - index - 1 );
 			data.set( i, newRow );
 		}
-		columnNameList	= null;
-		columnNameArray	= null;
-		if ( this.$bx != null ) {
-			this.$bx.buildColumnsMeta();
-		}
+		invalidateColumnCaches();
 	}
 
 	/**
@@ -1492,6 +1495,27 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	public Array getColumnNames() {
 		return getColumnArray();
+	}
+
+	/**
+	 * Set the column names from an array. The array values are mapped positionally to the existing columns.
+	 * If the array has fewer names than columns, only the first N columns are renamed.
+	 * If the array has more names than columns, the extra names are ignored.
+	 *
+	 * @param names Array of new column names
+	 *
+	 * @return this query
+	 */
+	public synchronized Query setColumnNames( Array names ) {
+		List<QueryColumn> cols = new ArrayList<>( this.columns.values() );
+		for ( int i = 0; i < cols.size() && i < names.size(); i++ ) {
+			cols.get( i ).setName( Key.of( names.get( i ) ) );
+		}
+		this.columns.clear();
+		for ( QueryColumn col : cols ) {
+			this.columns.put( col.getName(), col );
+		}
+		return this;
 	}
 
 }

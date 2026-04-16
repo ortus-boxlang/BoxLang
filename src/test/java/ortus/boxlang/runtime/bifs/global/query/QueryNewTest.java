@@ -29,9 +29,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -81,6 +81,20 @@ public class QueryNewTest {
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
 		assertThat( variables.get( "columnList" ) ).isEqualTo( "col1,col2" );
+	}
+
+	@DisplayName( "It ignores cf_sql_ prefix" )
+	@Test
+	public void testIgnoresCfSqlPrefix() {
+
+		instance.executeSource(
+		    """
+		    result = querynew( "col", "cf_sql_varchar", [] );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.getColumns().get( Key.of( "col" ) ).getType() ).isEqualTo( QueryColumnType.VARCHAR );
 	}
 
 	@DisplayName( "It can create new with no type" )

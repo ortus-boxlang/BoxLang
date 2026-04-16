@@ -184,7 +184,7 @@ public class DiskClassUtil {
 
 	/**
 	 * Check if the file is a Java bytecode file or source file
-	 * 
+	 *
 	 * Deprecated
 	 * Use the static method isJavaByteCode(File) instead
 	 *
@@ -205,6 +205,9 @@ public class DiskClassUtil {
 	 * @return true if the file is a Java bytecode file
 	 */
 	public static boolean isJavaByteCode( File sourceFile ) {
+		if ( sourceFile == null || !sourceFile.isFile() || !sourceFile.canRead() ) {
+			return false;
+		}
 		try ( FileInputStream fis = new FileInputStream( sourceFile );
 		    DataInputStream dis = new DataInputStream( fis ) ) {
 			// File may be empty! At least 4 bytes are needed to read an int
@@ -214,7 +217,7 @@ public class DiskClassUtil {
 			// Are we the Java Magic number?
 			return dis.readInt() == 0xCAFEBABE;
 		} catch ( IOException e ) {
-			throw new RuntimeException( "Failed to read file", e );
+			return false;
 		}
 	}
 

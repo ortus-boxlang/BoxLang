@@ -22,10 +22,8 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.BoxFile;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.File;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF( description = "Set the last modified timestamp of a file" )
 @BoxMember( type = BoxLangType.FILE )
@@ -38,7 +36,7 @@ public class FileSetLastModified extends BIF {
 	public FileSetLastModified() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.file ),
+		    new Argument( true, "boxfile", Key.file ),
 		    new Argument( true, "any", Key.date )
 		};
 	}
@@ -54,19 +52,9 @@ public class FileSetLastModified extends BIF {
 	 * @argument.date A date time object or string
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		File file = null;
-		if ( arguments.get( Key.file ) instanceof File ) {
-			file = ( File ) arguments.get( Key.file );
-		} else if ( arguments.get( Key.file ) instanceof String ) {
-			file = new File( FileSystemUtil.expandPath( context, arguments.getAsString( Key.file ) ).absolutePath().toString(), "append",
-			    arguments.getAsString( Key.charset ), false );
-		} else {
-			throw new BoxRuntimeException( "The file argumennt [" + arguments.get( Key.file ).toString() + "] is not an open file stream or string path." );
-		}
+		BoxFile file = arguments.getAsBoxFile( Key.file );
 		file.setLastModifiedTime( arguments.getAsDateTime( Key.date ) );
-		// For strings file args we need to close the buffer
-		if ( arguments.get( Key.file ) instanceof String ) {
-			file.close();
+		if ( file.implicitlyCast ) {
 			return null;
 		} else {
 			return file;

@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.application.Application;
 import ortus.boxlang.runtime.application.BaseApplicationListener;
 import ortus.boxlang.runtime.async.tasks.IScheduler;
+import ortus.boxlang.runtime.async.watchers.WatcherInstance;
 import ortus.boxlang.runtime.cache.providers.ICacheProvider;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.BaseBoxContext;
@@ -436,18 +437,128 @@ public class ApplicationTest {
 		assertThat( variables.getAsBoolean( Key.of( "started" ) ) ).isTrue();
 	}
 
+	@DisplayName( "Create this.watchers for an application using a class-name listener" )
+	@Test
+	public void testCreateWatchersWithClassListener() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        bx:application
+					action    = "update"
+					name      = "watcherTestApp"
+					watchers  = {
+						myWatcher = {
+							paths    : [ "./src" ],
+							listener : "src.test.bx.Watcher"
+						}
+					}
+					;
+
+					result   = getApplicationMetadata().watchers
+					watcher  = watcherGet( "watcherTestApp:myWatcher" )
+					running  = watcher.isRunning()
+			""" , context );
+		// @formatter:on
+
+		IStruct watchers = variables.getAsStruct( Key.result );
+		assertThat( watchers ).isNotNull();
+		assertThat( watchers.containsKey( Key.of( "myWatcher" ) ) ).isTrue();
+
+		WatcherInstance watcher = ( WatcherInstance ) variables.get( Key.of( "watcher" ) );
+		assertThat( watcher ).isNotNull();
+		assertThat( variables.getAsBoolean( Key.of( "running" ) ) ).isTrue();
+
+		// Cleanup
+		instance.getWatcherService().removeWatcher( Key.of( "watcherTestApp:myWatcher" ) );
+	}
+
+	@DisplayName( "Create this.watchers for an application using a closure listener" )
+	@Test
+	public void testCreateWatchersWithClosureListener() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        bx:application
+					action    = "update"
+					name      = "watcherClosureApp"
+					watchers  = {
+						closureWatcher = {
+							paths    : [ "./src" ],
+							listener : ( event ) -> {
+								println( "Got event: " & event.kind )
+							}
+						}
+					}
+					;
+
+					result  = getApplicationMetadata().watchers
+					watcher = watcherGet( "watcherClosureApp:closureWatcher" )
+					running = watcher.isRunning()
+			""" , context );
+		// @formatter:on
+
+		IStruct watchers = variables.getAsStruct( Key.result );
+		assertThat( watchers ).isNotNull();
+		assertThat( watchers.containsKey( Key.of( "closureWatcher" ) ) ).isTrue();
+
+		WatcherInstance watcher = ( WatcherInstance ) variables.get( Key.of( "watcher" ) );
+		assertThat( watcher ).isNotNull();
+		assertThat( variables.getAsBoolean( Key.of( "running" ) ) ).isTrue();
+
+		// Cleanup
+		instance.getWatcherService().removeWatcher( Key.of( "watcherClosureApp:closureWatcher" ) );
+	}
+
+	@DisplayName( "Create this.watchers for an application using a struct listener" )
+	@Test
+	public void testCreateWatchersWithStructListener() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		        bx:application
+					action    = "update"
+					name      = "watcherStructApp"
+					watchers  = {
+						structWatcher = {
+							paths    : [ "./src" ],
+							listener : {
+								onEvent : ( event ) -> println( "event: " & event.kind ),
+								onError : ( error ) -> println( "error: " & error.message )
+							}
+						}
+					}
+					;
+
+					result  = getApplicationMetadata().watchers
+					watcher = watcherGet( "watcherStructApp:structWatcher" )
+					running = watcher.isRunning()
+			""" , context );
+		// @formatter:on
+
+		IStruct watchers = variables.getAsStruct( Key.result );
+		assertThat( watchers ).isNotNull();
+		assertThat( watchers.containsKey( Key.of( "structWatcher" ) ) ).isTrue();
+
+		WatcherInstance watcher = ( WatcherInstance ) variables.get( Key.of( "watcher" ) );
+		assertThat( watcher ).isNotNull();
+		assertThat( variables.getAsBoolean( Key.of( "running" ) ) ).isTrue();
+
+		// Cleanup
+		instance.getWatcherService().removeWatcher( Key.of( "watcherStructApp:structWatcher" ) );
+	}
+
 	@DisplayName( "Use a decimal value as fractional days for session timeout" )
 	@Test
 	public void testFractionalSessionTimeout() {
 
 		// @formatter:off
 		instance.executeSource(
-		    
+
 		    """
 		        bx:application name="myAppsdfsdf21" sessionmanagement="true" sessionTimeout=".5";
 				result = GetApplicationMetadata();
 			""", context );
-			
+
 		// @formatter:on
 
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
@@ -462,10 +573,10 @@ public class ApplicationTest {
 
 		// @formatter:off
 		instance.executeSource(
-		    
+
 		    """
-		        bx:application 
-					name="myAppWithAltCache" 
+		        bx:application
+					name="myAppWithAltCache"
 					sessionmanagement="true"
 					caches = {
 						sessionCache = {
@@ -478,7 +589,7 @@ public class ApplicationTest {
 				sessionStorage="sessionCache";
 				result = GetApplicationMetadata();
 			""", context );
-			
+
 		// @formatter:on
 
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );

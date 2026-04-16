@@ -176,10 +176,7 @@ public class ConfigLoader {
 	 * @param source The source to load the configuration from
 	 *
 	 * @return The parsed configuration
-	 * 
-	 * @deprecated This method is deprecated since we deserialize the config in the runtime. This method is never called outside of tests. It will be removed in a future version.
 	 */
-	@Deprecated( since = "1.12.0", forRemoval = true )
 	public Configuration loadFromFile( File source ) {
 		IStruct rawConfig = deserializeConfig( source );
 		logger.debug( "Loaded custom BoxLang configuration file [{}]", source );
@@ -192,11 +189,7 @@ public class ConfigLoader {
 	 * @param source The source to load the configuration from
 	 *
 	 * @return The parsed configuration
-	 *
-	 * 
-	 * @deprecated This method is deprecated since we deserialize the config in the runtime. This method is never called outside of tests. It will be removed in a future version.
 	 */
-	@Deprecated( since = "1.12.0", forRemoval = true )
 	public Configuration loadFromFile( Path source ) {
 		return loadFromFile( source.toFile() );
 	}
@@ -205,10 +198,7 @@ public class ConfigLoader {
 	 * Load the config from a URL file source
 	 *
 	 * @param source The source to load the configuration from
-	 *
-	 * @deprecated This method is deprecated since we deserialize the config in the runtime. This method is never called outside of tests. It will be removed in a future version.
 	 */
-	@Deprecated( since = "1.12.0", forRemoval = true )
 	public Configuration loadFromFile( URL source ) {
 		return loadFromFile( new File( source.getFile() ) );
 	}
@@ -217,10 +207,7 @@ public class ConfigLoader {
 	 * Load the config from a String file source
 	 *
 	 * @param source The source to load the configuration from
-	 * 
-	 * @deprecated This method is deprecated since we deserialize the config in the runtime. This method is never called outside of tests. It will be removed in a future version.
 	 */
-	@Deprecated( since = "1.12.0", forRemoval = true )
 	public Configuration loadFromFile( String source ) {
 		return loadFromFile( new File( source ) );
 	}
@@ -346,7 +333,7 @@ public class ConfigLoader {
 
 	/**
 	 * Apply an override to the flattened configuration
-	 * 
+	 *
 	 * @param entry
 	 * @param flatConfig
 	 */

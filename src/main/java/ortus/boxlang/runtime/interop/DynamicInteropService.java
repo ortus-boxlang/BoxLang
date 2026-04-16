@@ -1285,9 +1285,9 @@ public class DynamicInteropService {
 
 	/**
 	 * Get the correct method handle cache based on the class.
-	 * 
+	 *
 	 * @param targetClass The class we're going to call a method on
-	 * 
+	 *
 	 * @return The method handle cache to use for this class
 	 */
 	private static ConcurrentHashMap<String, MethodRecord> findMethodHandleCache( Class<?> targetClass ) {
@@ -2850,8 +2850,9 @@ public class DynamicInteropService {
 		// To the functional interface
 		if ( functionalInterface != null && ( value instanceof IClassRunnable || value instanceof Function ) ) {
 
-			// Type casting from Class or Function to functional interface is a loose-ish match, increment 2
-			matchScore.addAndGet( 2 );
+			// Type casting from Class or Function to functional interface is a loose-ish match.
+			// Prefer value-returning SAMs over void SAMs to avoid ambiguous overloads such as Callable vs Runnable.
+			matchScore.addAndGet( 2 + getFunctionalInterfaceCoercionPenalty( functionalInterface ) );
 
 			// logger.debug( "Coerce attempt: Castable to Functional Interface " + actualClass );
 			return Optional.of(
@@ -2864,6 +2865,24 @@ public class DynamicInteropService {
 		// logger.debug( "Coerce attempt FAILED for [" + expected + "] from [" + actual + "] with value [" + value.toString() + "]" );
 
 		return Optional.empty();
+	}
+
+	/**
+	 * Returns a coercion penalty for functional interfaces.
+	 *
+	 * Value-returning SAM interfaces are preferred over void SAM interfaces when coercing a BoxLang Function,
+	 * which helps deterministic overload selection in ambiguous Java APIs.
+	 *
+	 * @param functionalInterface The functional interface being targeted
+	 *
+	 * @return 1 for void-returning SAM interfaces, 0 otherwise
+	 */
+	private static int getFunctionalInterfaceCoercionPenalty( Class<?> functionalInterface ) {
+		return Arrays.stream( functionalInterface.getMethods() )
+		    .filter( method -> Modifier.isAbstract( method.getModifiers() ) )
+		    .findFirst()
+		    .map( method -> method.getReturnType() == Void.TYPE ? 1 : 0 )
+		    .orElse( 0 );
 	}
 
 	/**

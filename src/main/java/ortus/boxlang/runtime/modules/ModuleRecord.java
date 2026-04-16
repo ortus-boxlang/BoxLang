@@ -49,6 +49,7 @@ import ortus.boxlang.runtime.components.Component.ComponentBody;
 import ortus.boxlang.runtime.components.ComponentDescriptor;
 import ortus.boxlang.runtime.config.segments.ModuleConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.events.IInterceptor;
@@ -74,6 +75,7 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.DynamicFunction;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.types.util.StructUtil;
@@ -338,7 +340,7 @@ public class ModuleRecord {
 		    + EncryptionUtil.hash( physicalPath.toString() );
 
 		// Load the ModuleConfig.bx, Construct it and store it
-		this.moduleConfig = ( IClassRunnable ) DynamicObject.of(
+		this.moduleConfig = ( IClassRunnable ) RequestBoxContext.runInContext( context, ctx -> DynamicObject.of(
 		    RunnableLoader.getInstance().loadClass(
 		        ResolvedFilePath.of(
 		            "/bxModules/" + name.getName() + "/",
@@ -346,9 +348,9 @@ public class ModuleRecord {
 		            packageName.replace( ".", Matcher.quoteReplacement( File.separator ) ) + File.separator
 		                + ModuleService.MODULE_DESCRIPTOR,
 		            descriptorPath ),
-		        context ) )
-		    .invokeConstructor( context )
-		    .getTargetInstance();
+		        ctx ) )
+		    .invokeConstructor( ctx )
+		    .getTargetInstance() );
 
 		// Nice References
 		ThisScope		thisScope		= this.moduleConfig.getThisScope();
@@ -457,11 +459,11 @@ public class ModuleRecord {
 
 		// Call the configure() method if it exists in the descriptor
 		if ( thisScope.containsKey( Key.configure ) ) {
-			this.moduleConfig.dereferenceAndInvoke(
-			    context,
+			RequestBoxContext.runInContext( context, ctx -> this.moduleConfig.dereferenceAndInvoke(
+			    ctx,
 			    Key.configure,
 			    DynamicObject.EMPTY_ARGS,
-			    false );
+			    false ) );
 		}
 
 		// Register descriptor configurations into the record
@@ -584,11 +586,13 @@ public class ModuleRecord {
 		// Call the onLoad() method if it exists in the descriptor
 		if ( thisScope.containsKey( Key.onUnload ) ) {
 			try {
-				this.moduleConfig.dereferenceAndInvoke(
-				    context,
+				RequestBoxContext.runInContext( context, ctx -> this.moduleConfig.dereferenceAndInvoke(
+				    ctx,
 				    Key.onUnload,
 				    DynamicObject.EMPTY_ARGS,
-				    false );
+				    false ) );
+			} catch ( AbortException ae ) {
+				throw ae;
 			} catch ( Exception e ) {
 				this.logger.error( "Error while unloading module [{}]", this.name, e );
 			}
@@ -775,11 +779,11 @@ public class ModuleRecord {
 		 */
 		// Call the onLoad() method if it exists in the descriptor
 		if ( thisScope.containsKey( Key.onLoad ) ) {
-			this.moduleConfig.dereferenceAndInvoke(
-			    context,
+			RequestBoxContext.runInContext( context, ctx -> this.moduleConfig.dereferenceAndInvoke(
+			    ctx,
 			    Key.onLoad,
 			    DynamicObject.EMPTY_ARGS,
-			    false );
+			    false ) );
 		}
 
 		// Finalize
@@ -823,11 +827,13 @@ public class ModuleRecord {
 		}
 
 		try {
-			this.moduleConfig.dereferenceAndInvoke(
-			    context,
+			RequestBoxContext.runInContext( context, ctx -> this.moduleConfig.dereferenceAndInvoke(
+			    ctx,
 			    Key.main,
 			    new Object[] { Array.fromArray( args ) },
-			    false );
+			    false ) );
+		} catch ( AbortException ae ) {
+			throw ae;
 		} catch ( Exception e ) {
 			runtime.getLoggingService().getExceptionLogger().error( e.getMessage(), e );
 			throw new BoxRuntimeException( e.getMessage(), e );

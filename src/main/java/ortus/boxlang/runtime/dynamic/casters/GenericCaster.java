@@ -393,16 +393,8 @@ public class GenericCaster implements IBoxCaster {
 			}
 		}
 
-		if ( type.equals( Key._FILE ) ) {
-			// No real "casting" to do, just return it if it is one
-			if ( object instanceof ortus.boxlang.runtime.types.File ) {
-				return object;
-			}
-			if ( fail ) {
-				throwCastException( type, object );
-			} else {
-				return null;
-			}
+		if ( type.equals( Key._FILE ) || type.equals( Key.boxfile ) ) {
+			return BoxFileCaster.cast( context, object, fail );
 		}
 
 		if ( type.equals( Key.stream ) && ! ( object instanceof IClassRunnable ) ) {

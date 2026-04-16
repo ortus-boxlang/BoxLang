@@ -302,6 +302,7 @@ public abstract class BaseApplicationListener {
 				createOrUpdateClassLoaderPaths();
 				createOrUpdateCaches();
 				createOrUpdateSchedulers();
+				createOrUpdateWatchers();
 				createOrUpdateSessionManagement();
 			}
 			// Cleanups
@@ -408,6 +409,13 @@ public abstract class BaseApplicationListener {
 	}
 
 	/**
+	 * Update or create the application watchers
+	 */
+	private void createOrUpdateWatchers() {
+		this.application.startupAppWatchers( this.context );
+	}
+
+	/**
 	 * Update or create the session management in an application if enabled.
 	 */
 	private void createOrUpdateSessionManagement() {
@@ -422,8 +430,8 @@ public abstract class BaseApplicationListener {
 
 		// Create session management if enabled
 		if ( existingSessionContext == null ) {
-			// if session management is enabled, add it
 			if ( sessionManagementEnabled ) {
+				// if session management is enabled, add it
 				initializeSession( this.context.getSessionID() );
 			}
 		}

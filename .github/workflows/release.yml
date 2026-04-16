@@ -89,7 +89,7 @@ jobs:
           ./gradlew build -x test --stacktrace --console=plain
 
       - name: Commit Changelog [unreleased] with latest version
-        uses: EndBug/add-and-commit@v9.1.4
+        uses: EndBug/add-and-commit@v10.0.0
         if: env.SNAPSHOT == 'false'
         with:
           author_name: Github Actions
@@ -169,7 +169,7 @@ jobs:
           MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
 
       - name: Create Github Release
-        uses: taiki-e/create-gh-release-action@v1.9.2
+        uses: taiki-e/create-gh-release-action@v1.9.3
         continue-on-error: true
         if: env.SNAPSHOT == 'false'
         id: create_release
@@ -234,7 +234,7 @@ jobs:
           git pull
 
       - name: Commit Version Bump
-        uses: EndBug/add-and-commit@v9.1.4
+        uses: EndBug/add-and-commit@v10.0.0
         with:
           author_name: Github Actions
           author_email: info@ortussolutions.com

@@ -35,6 +35,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.FormatStyle;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalQuery;
+import java.time.temporal.ChronoField;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -112,6 +113,24 @@ public final class LocalizationUtil {
 			this.datePattern		= datePattern;
 			this.pattern			= Pattern.compile( regexPattern );
 			this.formatter			= LocalizationUtil.getPatternFormatter( datePattern, Locale.US );
+			this.description		= description;
+			this.optimizedQueries	= determineOptimalTemporalQueries( datePattern );
+		}
+
+		/**
+		 * Constructor for cases where a pre-built DateTimeFormatter is required,
+		 * e.g. when parseDefaulting is needed to supply missing temporal fields.
+		 *
+		 * @param regexPattern the regex used to identify matching input strings
+		 * @param datePattern  the date pattern string (used only for query determination)
+		 * @param formatter    the pre-built DateTimeFormatter to use for parsing
+		 * @param description  a human-readable description of this formatter
+		 */
+		public CommonFormatter( String regexPattern, String datePattern, DateTimeFormatter formatter, String description ) {
+			this.regexPattern		= regexPattern;
+			this.datePattern		= datePattern;
+			this.pattern			= Pattern.compile( regexPattern );
+			this.formatter			= formatter;
 			this.description		= description;
 			this.optimizedQueries	= determineOptimalTemporalQueries( datePattern );
 		}
@@ -1470,6 +1489,23 @@ public final class LocalizationUtil {
 			    definition.get( "description" )
 			) );
 		}
+
+		// Month/year only (MM/yyyy or MM-yyyy) - requires parseDefaulting to supply day=1.
+		// Must be added after the loop since Map<String,String> cannot carry a pre-built formatter.
+		DateTimeFormatter mmYyyyFormatter = new DateTimeFormatterBuilder()
+		    .parseCaseInsensitive()
+		    .appendPattern( "MM" )
+		    .optionalStart().appendLiteral( '/' ).optionalEnd()
+		    .optionalStart().appendLiteral( '-' ).optionalEnd()
+		    .appendPattern( "yyyy" )
+		    .parseDefaulting( ChronoField.DAY_OF_MONTH, 1 )
+		    .toFormatter( Locale.US );
+		formatters.add( new CommonFormatter(
+		    "^(1[0-2]|0?[1-9])[/-]\\d{4}$",
+		    "MM<-/>yyyy",
+		    mmYyyyFormatter,
+		    "Month/year format with first-of-month assumption (12/2025 or 12-2025)"
+		) );
 
 		return formatters;
 	}

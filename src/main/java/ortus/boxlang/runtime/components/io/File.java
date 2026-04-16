@@ -75,7 +75,7 @@ public class File extends Component {
 		        Validator.valueRequires( "upload", Key.destination ),
 		        Validator.valueRequires( "uploadAll", Key.destination )
 		    ) ),
-		    new Attribute( Key.file, "string" ),
+		    new Attribute( Key.file, "any" ),
 		    new Attribute( Key.mode, "string" ),
 		    new Attribute( Key.output, "string" ),
 		    new Attribute( Key.addnewline, "boolean" ),

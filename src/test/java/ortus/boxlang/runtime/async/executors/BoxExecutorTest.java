@@ -304,6 +304,14 @@ public class BoxExecutorTest {
 	}
 
 	@Test
+	@DisplayName( "Test shutdownAndAwaitTermination with seconds" )
+	void testShutdownAndAwaitTerminationWithSeconds() {
+		// This should complete without throwing exceptions
+		fixedExecutor.shutdownAndAwaitTermination( 1L, "seconds" );
+		assertTrue( fixedExecutor.isShutdown() );
+	}
+
+	@Test
 	@DisplayName( "Test task creation methods" )
 	void testTaskCreation() {
 		// Test creating named task

@@ -107,7 +107,7 @@ public class ASMBoxpiler extends Boxpiler {
 	}
 
 	private List<byte[]> doWriteClassInfo( BoxNode node, ClassInfo classInfo ) {
-		node.accept( new QueryEscapeSingleQuoteVisitor() );
+		node.accept( new QueryEscapeSingleQuoteVisitor( classInfo.sourceType() ) );
 		final List<byte[]>					classes		= new ArrayList<>();
 		final Map<String, ClassNode>		allClasses	= new LinkedHashMap<>();
 		final BiConsumer<String, ClassNode>	collector	= ( fqn, classNode ) -> allClasses.put( fqn, classNode );
