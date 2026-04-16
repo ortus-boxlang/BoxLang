@@ -52,7 +52,7 @@ public abstract class PrettyPrintTest extends TestBase {
 		ParsingResult	result			= parser.parse( inputFile, false );
 		String			actualOutput	= PrettyPrint.prettyPrint( result.getRoot(), config );
 		String			expectedOutput	= readFile( TEST_RESOURCES_PATH + expectedFilePath );
-		assertEquals( expectedOutput, actualOutput );
+		assertEqualsIgnoringLineEndings( expectedOutput, actualOutput );
 	}
 
 	protected void singlePrintTest( String inputFilePath, String expectedFilePath, String configFilePath ) throws IOException {
@@ -60,7 +60,7 @@ public abstract class PrettyPrintTest extends TestBase {
 		ParsingResult	result			= parser.parse( inputFile, false );
 		String			actualOutput	= PrettyPrint.prettyPrint( result.getRoot(), new Config().loadFromConfigFile( TEST_RESOURCES_PATH + configFilePath ) );
 		String			expectedOutput	= readFile( TEST_RESOURCES_PATH + expectedFilePath );
-		assertEquals( expectedOutput, actualOutput );
+		assertEqualsIgnoringLineEndings( expectedOutput, actualOutput );
 	}
 
 	protected void printTestWithConfigFile( String resourceFolder, String name ) throws IOException {
@@ -78,7 +78,7 @@ public abstract class PrettyPrintTest extends TestBase {
 				ParsingResult	result			= parser.parse( inputFile, false );
 				String			actualOutput	= PrettyPrint.prettyPrint( result.getRoot(), config );
 				String			expectedOutput	= readFile( TEST_RESOURCES_PATH + resourceFolder + "/" + name + "_output." + ext );
-				assertEquals( expectedOutput, actualOutput );
+				assertEqualsIgnoringLineEndings( expectedOutput, actualOutput );
 			}
 		}
 	}
@@ -90,9 +90,17 @@ public abstract class PrettyPrintTest extends TestBase {
 				ParsingResult	result			= parser.parse( inputFile, false );
 				String			actualOutput	= PrettyPrint.prettyPrint( result.getRoot(), config );
 				String			expectedOutput	= readFile( TEST_RESOURCES_PATH + resourceFolder + "/output_" + outputExt + "." + ext );
-				assertEquals( expectedOutput, actualOutput );
+				assertEqualsIgnoringLineEndings( expectedOutput, actualOutput );
 			}
 		}
+	}
+
+	protected void assertEqualsIgnoringLineEndings( String expected, String actual ) {
+		assertEquals( normalizeLineEndings( expected ), normalizeLineEndings( actual ) );
+	}
+
+	protected String normalizeLineEndings( String value ) {
+		return value.replace( "\r\n", "\n" ).replace( '\r', '\n' );
 	}
 
 	protected String readFile( String filePath ) throws IOException {
