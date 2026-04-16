@@ -36,7 +36,6 @@ import ortus.boxlang.compiler.prettyprint.config.CFFormatConfigLoader;
 import ortus.boxlang.compiler.prettyprint.config.Config;
 import ortus.boxlang.runtime.BoxRuntime;
 
-
 public final class PrettyPrint {
 
 	// @formatter:on

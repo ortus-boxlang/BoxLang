@@ -30,7 +30,6 @@ import ortus.boxlang.compiler.ast.comment.BoxDocComment;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.visitor.BoxVisitable;
-import ortus.boxlang.compiler.ast.visitor.PrettyPrintBoxVisitor;
 import ortus.boxlang.compiler.prettyprint.PrettyPrint;
 import ortus.boxlang.runtime.util.RegexBuilder;
 

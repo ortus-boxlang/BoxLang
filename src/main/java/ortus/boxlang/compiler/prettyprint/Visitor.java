@@ -121,8 +121,8 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class Visitor extends VoidBoxVisitor {
 
-	private Stack<BoxSourceType>	currentSourceType	= new Stack<>();
-	private Stack<Doc>				docStack			= new Stack<>();
+	private Stack<BoxSourceType>	currentSourceType				= new Stack<>();
+	private Stack<Doc>				docStack						= new Stack<>();
 
 	Config							config;
 	String							componentPrefix;
@@ -448,8 +448,8 @@ public class Visitor extends VoidBoxVisitor {
 				// When inside printTemplateBody, structural indentation is controlled externally.
 				// Strip leading and trailing newline+whitespace so we don't produce spurious blank lines.
 				if ( stripBufferLeadingWhitespace ) {
-					value = value.replaceFirst( "^[\\r\\n][\\t ]*", "" );
-					value = value.replaceFirst( "[\\r\\n][\\t ]*$", "" );
+					value	= value.replaceFirst( "^[\\r\\n][\\t ]*", "" );
+					value	= value.replaceFirst( "[\\r\\n][\\t ]*$", "" );
 				}
 				print( value );
 			} else if ( node.getExpression() instanceof BoxStringInterpolation sInt ) {

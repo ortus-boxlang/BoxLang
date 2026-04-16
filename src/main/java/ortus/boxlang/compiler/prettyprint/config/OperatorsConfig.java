@@ -27,12 +27,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class OperatorsConfig {
 
-	private String			position			= "end";
+	private String			position		= "end";
 
 	@JsonProperty( "comparison_style" )
-	private String			comparisonStyle		= "symbols";
+	private String			comparisonStyle	= "symbols";
 
-	private TernaryConfig	ternary				= new TernaryConfig();
+	private TernaryConfig	ternary			= new TernaryConfig();
 
 	public OperatorsConfig() {
 	}
