@@ -1,0 +1,7 @@
+{
+	"function": {
+		"arrow": {
+			"parens": "avoid"
+		}
+	}
+}

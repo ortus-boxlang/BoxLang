@@ -3538,7 +3538,7 @@ public class CoreLangTest {
 		ParsingResult	result;
 		try {
 			result = new DocParser().parse( null, comment );
-			assertThat( result.getRoot().toString().trim() ).isEqualTo( comment.trim() );
+			assertThat( normalizeLineEndings( result.getRoot().toString().trim() ) ).isEqualTo( normalizeLineEndings( comment.trim() ) );
 		} catch ( IOException e ) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -3571,11 +3571,15 @@ public class CoreLangTest {
 		ParsingResult	result;
 		try {
 			result = new DocParser().parse( null, comment );
-			assertThat( result.getRoot().toString().trim() ).isEqualTo( comment.trim() );
+			assertThat( normalizeLineEndings( result.getRoot().toString().trim() ) ).isEqualTo( normalizeLineEndings( comment.trim() ) );
 		} catch ( IOException e ) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+
+	private static String normalizeLineEndings( String value ) {
+		return value.replace( "\r\n", "\n" ).replace( '\r', '\n' );
 	}
 
 	@Test

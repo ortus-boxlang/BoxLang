@@ -1,0 +1,359 @@
+/**
+ * [BoxLang]
+ *
+ * Copyright [2023] [Ortus Solutions, Corp]
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package ortus.boxlang.compiler.prettyprint;
+
+import java.util.List;
+
+import ortus.boxlang.compiler.ast.BoxClass;
+import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.BoxInterface;
+import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.expression.BoxFQN;
+import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
+import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
+import ortus.boxlang.compiler.ast.statement.BoxBreak;
+import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
+import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
+
+public class HelperPrinter {
+
+	private Visitor visitor;
+
+	public HelperPrinter( Visitor visitor ) {
+		this.visitor = visitor;
+	}
+
+	public void printStatements( List<BoxStatement> statements ) {
+		if ( statements == null || statements.isEmpty() ) {
+			return;
+		}
+
+		BoxStatement	lastStatement		= statements.get( statements.size() - 1 );
+		BoxStatement	previousStatement	= null;
+
+		// Get member spacing for class members (default is 1 blank line between functions)
+		int				memberSpacing		= visitor.config.getClassConfig().getMemberSpacing();
+
+		for ( var statement : statements ) {
+			// Check if this is a class member (function in a class or interface)
+			boolean isClassMember = statement instanceof BoxFunctionDeclaration &&
+			    ( statement.getParent() instanceof BoxClass || statement.getParent() instanceof BoxInterface );
+
+			// if there is a previous statement, check for empty lines in source
+			// if so, add a hard line break
+			if ( previousStatement != null && statement.hasLinesBetweenWithComments( previousStatement ) ) {
+				// Check if we should preserve blank lines before comments
+				boolean	preserveBlankLines	= visitor.config.getComments().getPreserveBlankLines();
+				boolean	hasPreComments		= statement.getComments().stream().anyMatch( c -> c.isBefore( statement ) );
+
+				// If the statement has pre-comments, respect the preserve_blank_lines setting
+				// Otherwise, always preserve blank lines between statements
+				if ( !hasPreComments || preserveBlankLines ) {
+					visitor.newLine();
+				}
+			} else if ( isClassMember ) {
+				// For class members, add configured member_spacing blank lines
+				for ( int i = 0; i < memberSpacing; i++ ) {
+					visitor.newLine();
+				}
+			}
+
+			statement.accept( visitor );
+
+			// if the statement is not the last one, append a hard line break
+			if ( statement != lastStatement ) {
+				visitor.newLine();
+			}
+
+			previousStatement = statement;
+		}
+	}
+
+	/**
+	 * Prints template body statements with indent_content support.
+	 * When indent_content is true, whitespace-only buffer outputs are filtered
+	 * and replaced with structured Line.HARD separators, indenting body content
+	 * by one level. A trailing Line.HARD is appended so the caller can follow
+	 * immediately with a closing tag at the outer indent level.
+	 * When indent_content is false, statements are visited as-is.
+	 */
+	public void printTemplateBody( List<? extends BoxStatement> statements ) {
+		if ( !visitor.config.getTemplate().getIndentContent() ) {
+			for ( var statement : statements ) {
+				if ( statement != null ) {
+					statement.accept( visitor );
+				}
+			}
+			return;
+		}
+
+		var meaningful = statements.stream()
+		    .filter( s -> s != null && !isWhitespaceOnlyBuffer( s ) && !isImplicitBreak( s ) )
+		    .toList();
+
+		if ( meaningful.isEmpty() ) {
+			return;
+		}
+
+		var		indentDoc		= visitor.pushDoc( DocType.INDENT );
+		boolean	lastWasBuffer	= false;
+		visitor.stripBufferLeadingWhitespace = true;
+		for ( var statement : meaningful ) {
+			if ( statement == null )
+				continue;
+			boolean isBuffer = statement instanceof BoxBufferOutput;
+			// Only break before the first BufferOutput in a consecutive run, so that
+			// inline HTML like <p>text #expr#</p> (multiple adjacent BufferOutputs) stays on one line
+			if ( !isBuffer || !lastWasBuffer ) {
+				indentDoc.append( Line.HARD );
+			}
+			lastWasBuffer = isBuffer;
+			statement.accept( visitor );
+		}
+		visitor.stripBufferLeadingWhitespace = false;
+		var contentsDoc = visitor.popDoc();
+		visitor.getCurrentDoc()
+		    .append( contentsDoc )
+		    .append( Line.HARD );
+	}
+
+	private boolean isImplicitBreak( BoxStatement statement ) {
+		return statement instanceof BoxBreak b && b.isImplicit();
+	}
+
+	private boolean isWhitespaceOnlyBuffer( BoxStatement statement ) {
+		if ( ! ( statement instanceof BoxBufferOutput bufOutput ) ) {
+			return false;
+		}
+		var expr = bufOutput.getExpression();
+		if ( ! ( expr instanceof BoxStringLiteral str ) ) {
+			return false;
+		}
+		return str.getValue().isBlank();
+	}
+
+	public void printBlock( BoxNode node, List<BoxStatement> statements ) {
+		var currentDoc = visitor.getCurrentDoc();
+		if ( visitor.isTemplate() ) {
+			printTemplateBody( statements );
+		} else {
+			// Determine if opening brace should be on a new line based on braces.style config
+			String	braceStyle		= visitor.config.getBraces().getStyle();
+			boolean	braceOnNewLine	= false;
+
+			if ( braceStyle.equals( "new-line" ) ) {
+				braceOnNewLine = true;
+			} else if ( braceStyle.equals( "preserve" ) ) {
+				// Check if the original source had the brace on a new line
+				braceOnNewLine = hasBraceOnNewLine( node );
+			}
+			// "same-line" (default) keeps braceOnNewLine as false
+
+			if ( braceOnNewLine ) {
+				currentDoc.append( Line.HARD );
+			}
+			currentDoc.append( "{" );
+
+			var blockDoc = visitor.pushDoc( DocType.INDENT );
+			blockDoc.append( Line.HARD );
+
+			printStatements( statements );
+
+			var	insideCommentsDoc	= visitor.pushDoc( DocType.ARRAY );
+			var	printed				= visitor.printInsideComments( node, false );
+			visitor.popDoc(); // pop inside comments doc
+
+			if ( printed ) {
+				if ( !statements.isEmpty() ) {
+					blockDoc.append( Line.HARD );
+				}
+				blockDoc.append( insideCommentsDoc );
+			}
+
+			currentDoc
+			    .append( visitor.popDoc() )
+			    .append( Line.HARD )
+			    .append( "}" );
+		}
+	}
+
+	/**
+	 * Check if the original source code had the opening brace on a new line.
+	 * Used for "preserve" brace style mode.
+	 */
+	private boolean hasBraceOnNewLine( BoxNode node ) {
+		String sourceText = node.getSourceText();
+		if ( sourceText == null ) {
+			return false;
+		}
+
+		// Find the opening brace and check if there's a newline before it
+		int braceIndex = sourceText.indexOf( '{' );
+		if ( braceIndex <= 0 ) {
+			return false;
+		}
+
+		// Check if there's a newline between the start and the brace
+		String beforeBrace = sourceText.substring( 0, braceIndex );
+		return beforeBrace.contains( "\n" ) || beforeBrace.contains( "\r" );
+	}
+
+	public void printParensExpression( BoxExpression node ) {
+		var	currentDoc	= visitor.getCurrentDoc();
+		var	parensDoc	= visitor.pushDoc( DocType.GROUP ).append( "(" );
+		visitor.pushDoc( DocType.INDENT ).append( visitor.config.getParensPadding() ? Line.LINE : Line.SOFT );
+		node.accept( visitor );
+		parensDoc
+		    .append( visitor.popDoc() )
+		    .append( visitor.config.getParensPadding() ? Line.LINE : Line.SOFT )
+		    .append( ")" );
+
+		currentDoc.append( visitor.popDoc() );
+	}
+
+	public void printKeyValueAnnotations( List<BoxAnnotation> attrs, boolean padded ) {
+		printKeyValueAnnotations( attrs, padded, false );
+	}
+
+	public void printKeyValueAnnotations( List<BoxAnnotation> attrs, boolean padded, boolean forceLineBreaks ) {
+		var	currentDoc		= visitor.getCurrentDoc();
+		var	attrsDoc		= visitor.pushDoc( DocType.GROUP );
+		int	maxKeyLength	= 0;
+		// Alignment only applies to script mode (e.g. struct literals), not template tag attributes
+		if ( visitor.config.getAlignConsecutiveAssignments() && !visitor.isTemplate() ) {
+			for ( var attr : attrs ) {
+				if ( attr.getValue() != null && attr.getKey() != null ) {
+					String effectiveKey = getEffectiveKeyText( attr.getKey() );
+					maxKeyLength = Math.max( maxKeyLength, effectiveKey != null ? effectiveKey.length() : 0 );
+				}
+			}
+		}
+		if ( attrs.size() > 0 ) {
+			var contentsDoc = visitor.pushDoc( DocType.INDENT );
+			for ( var attr : attrs ) {
+				// Use HARD line breaks when forceLineBreaks is true (single_attribute_per_line)
+				contentsDoc.append( forceLineBreaks ? Line.HARD : Line.LINE );
+				String keyText = getEffectiveKeyText( attr.getKey() );
+				if ( keyText != null ) {
+					contentsDoc.append( keyText );
+				} else {
+					attr.getKey().accept( visitor );
+					keyText = "";
+				}
+				if ( attr.getValue() != null ) {
+					if ( visitor.config.getAlignConsecutiveAssignments() && maxKeyLength > 0 ) {
+						contentsDoc.append( " ".repeat( Math.max( 0, maxKeyLength - keyText.length() ) ) );
+					}
+					contentsDoc.append( "=\"" );
+					visitor.stringPrinter.printQuotedExpression( attr.getValue() );
+					contentsDoc.append( "\"" );
+				}
+			}
+			attrsDoc.append( visitor.popDoc() );
+		}
+		// When forceLineBreaks is true, add a trailing HARD to put the following { on its own line
+		if ( !forceLineBreaks ) {
+			attrsDoc.append( padded ? Line.LINE : Line.SOFT );
+		} else if ( padded ) {
+			// Only add trailing HARD/LINE for padded contexts (e.g. class declarations, not template attributes)
+			attrsDoc.append( attrs.size() > 0 ? Line.HARD : Line.LINE );
+		}
+		currentDoc.append( visitor.popDoc() );
+	}
+
+	/**
+	 * Returns the effective key text for an annotation key node, preferring the current
+	 * AST value (from BoxFQN.getValue()) over the original source text. This correctly
+	 * handles cases where the transpiler has modified the key (e.g. cfsqltype -> sqltype).
+	 *
+	 * @param keyNode The annotation key expression node
+	 *
+	 * @return The effective key text to use for printing, or null if not determinable
+	 */
+	private String getEffectiveKeyText( BoxExpression keyNode ) {
+		if ( keyNode instanceof BoxFQN fqn ) {
+			// BoxFQN.getValue() reflects any transpiler mutations, while getSourceText()
+			// retains the original source. Prefer the current logical value.
+			return fqn.getValue() != null ? fqn.getValue() : fqn.getSourceText();
+		}
+		return keyNode.getSourceText();
+	}
+
+	/**
+	 * Print a statement body, optionally wrapping single statements in braces
+	 * based on the braces.require_for_single_statement configuration.
+	 *
+	 * @param node      The parent node (for source info if needed)
+	 * @param statement The statement to print
+	 */
+	public void printStatementBody( BoxNode node, BoxStatement statement ) {
+		if ( visitor.isTemplate() ) {
+			// Template mode doesn't use braces
+			statement.accept( visitor );
+			return;
+		}
+
+		boolean requireBraces = visitor.config.getBraces().getRequireForSingleStatement();
+
+		// Check if the statement is a block statement
+		if ( statement instanceof ortus.boxlang.compiler.ast.statement.BoxStatementBlock ) {
+			// Already a block, just visit it normally
+			statement.accept( visitor );
+		} else if ( requireBraces ) {
+			// Single statement and we need to wrap it in braces
+			var		currentDoc		= visitor.getCurrentDoc();
+
+			// Determine if opening brace should be on a new line based on braces.style config
+			String	braceStyle		= visitor.config.getBraces().getStyle();
+			boolean	braceOnNewLine	= false;
+
+			if ( braceStyle.equals( "new-line" ) ) {
+				braceOnNewLine = true;
+			} else if ( braceStyle.equals( "preserve" ) ) {
+				// For single statements being wrapped, default to same-line
+				// since there was no original brace to preserve
+				braceOnNewLine = false;
+			}
+
+			if ( braceOnNewLine ) {
+				currentDoc.append( Line.HARD );
+			}
+			currentDoc.append( "{" );
+
+			var blockDoc = visitor.pushDoc( DocType.INDENT );
+			blockDoc.append( Line.HARD );
+
+			statement.accept( visitor );
+
+			currentDoc
+			    .append( visitor.popDoc() )
+			    .append( Line.HARD )
+			    .append( "}" );
+		} else {
+			// Single statement without braces - need to indent it
+			var	currentDoc	= visitor.getCurrentDoc();
+			var	blockDoc	= visitor.pushDoc( DocType.INDENT );
+			blockDoc.append( Line.HARD );
+
+			statement.accept( visitor );
+
+			currentDoc.append( visitor.popDoc() );
+		}
+	}
+}

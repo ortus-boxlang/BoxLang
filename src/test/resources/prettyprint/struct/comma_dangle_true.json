@@ -1,0 +1,7 @@
+{
+    "struct": {
+        "multiline": {
+            "comma_dangle": true
+        }
+    }
+}

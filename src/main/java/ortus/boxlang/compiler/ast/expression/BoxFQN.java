@@ -45,6 +45,11 @@ public class BoxFQN extends BoxExpression {
 		return value;
 	}
 
+	@Override
+	public String toString() {
+		return value;
+	}
+
 	public void setValue( String value ) {
 		this.value = value;
 	}

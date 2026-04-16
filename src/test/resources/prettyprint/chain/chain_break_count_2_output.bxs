@@ -1,0 +1,13 @@
+// Single call - should stay on one line
+result = obj.foo();
+
+// 2 calls - should break with break_count=2
+result = obj
+	.foo()
+	.bar();
+
+// 3 calls - should definitely break
+result = obj
+	.foo()
+	.bar()
+	.baz();
