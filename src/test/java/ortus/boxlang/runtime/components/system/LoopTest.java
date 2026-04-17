@@ -1138,4 +1138,20 @@ public class LoopTest {
 		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.getAsString( result ) ).isEqualTo( "234" );
 	}
+
+	@Test
+	public void testEndRowZero() {
+		instance.executeSource(
+		    """
+		         data = queryNew( "col", "varchar", [[1],[2],[3],[4],[5]] )
+		      result = "";
+		    // end row of zero just doesn't loop at all
+		         cfloop( query=data, startRow=1, endRow=0) {
+		         	result &= col;
+		         }
+		                  """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "" );
+	}
+
 }

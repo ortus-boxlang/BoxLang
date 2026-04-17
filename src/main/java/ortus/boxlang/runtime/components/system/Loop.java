@@ -112,7 +112,7 @@ public class Loop extends Component {
 		    new Attribute( Key.group, "string", Set.of( Validator.NON_EMPTY ) ),
 		    new Attribute( Key.groupCaseSensitive, "boolean", false ),
 		    new Attribute( Key.startRow, "integerTruncate", Set.of( Validator.min( 1 ) ) ),
-		    new Attribute( Key.endRow, "integerTruncate", Set.of( Validator.min( 1 ) ) ),
+		    new Attribute( Key.endRow, "integerTruncate", Set.of( Validator.min( 0 ) ) ),
 
 		    // Loop control attributes
 		    new Attribute( Key.label, "string", Set.of( Validator.NON_EMPTY ) ),
