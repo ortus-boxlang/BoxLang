@@ -311,7 +311,7 @@ public record ClassInfo(
 		Class<IBoxRunnable> clazz;
 		try {
 			// use forName() so we can force the static initializers to run...
-			clazz = ( Class<IBoxRunnable> ) Class.forName( fqn().toString(), true, getClassLoader() );
+			clazz = ( Class<IBoxRunnable> ) getClassLoader().loadClass( fqn().toString() );
 		} catch ( ClassNotFoundException e ) {
 			throw new BoxRuntimeException( "Error compiling source " + fqn().toString(), e );
 		} catch ( ExceptionInInitializerError e ) {

@@ -169,6 +169,9 @@ public class BoxClassTransformer extends AbstractTransformer {
 			public static IStruct legacyMetadata = null;
 			private static final boolean isFinal = ${isFinal};
 			private static final boolean isAbstract = ${isAbstract};
+			private static final Key initMethod = ${initMethod};
+			private static Boolean canOutput = null;
+			private static Boolean canInvokeImplicitAccessor = null;
 
 			static {
 				superClass = BoxClassSupport.runStaticInitializer( ${className}::staticInitializer, ${className}.class, ${className}.staticScope, ${className}.path, imports, interfaces, annotations );
@@ -179,8 +182,6 @@ public class BoxClassTransformer extends AbstractTransformer {
 			private ThisScope thisScope = new ThisScope();
 			private IClassRunnable _super = null;
 			private IClassRunnable child = null;
-			private Boolean canOutput = null;
-			private Boolean canInvokeImplicitAccessor = null;
 
 			// Public instance fields
 			public transient BoxMeta		$bx;
@@ -349,6 +350,10 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 			public boolean isAbstractClass() {
 				return ${className}.isAbstract;
+			}
+
+			public Key getInitMethod() {
+				return ${className}.initMethod;
 			}
 
 			/**
@@ -614,7 +619,18 @@ public class BoxClassTransformer extends AbstractTransformer {
 		        .findFirst().isPresent() ) ),
 		    Map.entry( "isAbstract", String.valueOf( boxClass.getAnnotations().stream()
 		        .filter( it -> it.getKey().getValue().equalsIgnoreCase( "abstract" ) )
-		        .findFirst().isPresent() ) )
+		        .findFirst().isPresent() ) ),
+		    Map.entry( "initMethod", boxClass.getAnnotations().stream()
+		        .filter( it -> it.getKey().getValue().equalsIgnoreCase( "initMethod" ) )
+		        .findFirst()
+		        .map( it -> {
+			        if ( it.getValue() instanceof BoxStringLiteral str ) {
+				        return "Key.of( (Object)\"" + str.getValue() + "\" )";
+			        } else {
+				        throw new BoxRuntimeException( "The value of the [initMethod] annotation must be a string literal." );
+			        }
+		        } )
+		        .orElse( "Key.init" ) )
 		);
 		String							code		= PlaceholderHelper.resolve( CLASS_TEMPLATE, values );
 		ParseResult<CompilationUnit>	result;

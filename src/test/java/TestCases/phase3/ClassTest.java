@@ -1738,6 +1738,19 @@ public class ClassTest {
 	}
 
 	@Test
+	public void testNewInterpolated() {
+		instance.executeSource(
+		    """
+		    name = "src.test.java.TestCases.phase3.sub-folder.Funky-Class";
+		         	cfc = new "#name#"();
+		       meta = cfc.$bx.meta;
+		         """, context );
+		assertThat( variables.get( "meta" ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.getAsStruct( Key.of( "meta" ) ).getAsString( Key.fullname ) )
+		    .isEqualTo( "src.test.java.TestCases.phase3.sub-folder.Funky-Class" );
+	}
+
+	@Test
 	public void testColdBoxRenderer() {
 		instance.executeSource(
 		    """

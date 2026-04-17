@@ -64,7 +64,7 @@ public class ClassBoxContext extends BaseBoxContext {
 	protected IClassRunnable	thisClass;
 
 	/**
-	 * Override the outpout behavior. This is needed for implicit onRequest methods when the Application class has output=false
+	 * Override the output behavior. This is needed for implicit onRequest methods when the Application class has output=false
 	 * null means not set. non-null is the overriden value
 	 */
 	protected Boolean			outputOverride	= null;

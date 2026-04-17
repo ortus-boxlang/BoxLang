@@ -170,6 +170,15 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 		return false;
 	}
 
+	/**
+	 * What is the init method
+	 * 
+	 * @return The init method key
+	 */
+	default Key getInitMethod() {
+		return Key.init;
+	}
+
 	public MethodHandle lookupPrivateMethod( Method method );
 
 	public MethodHandle lookupPrivateField( Field field );

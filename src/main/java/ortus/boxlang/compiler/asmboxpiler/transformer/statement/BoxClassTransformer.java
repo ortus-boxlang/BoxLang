@@ -208,14 +208,26 @@ public class BoxClassTransformer {
 			isJavaExtends = false;
 		}
 
-		boolean		isFinal		= boxClass.getAnnotations().stream()
+		boolean		isFinal			= boxClass.getAnnotations().stream()
 		    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "final" ) )
 		    .findFirst().isPresent();
-		boolean		isAbstract	= boxClass.getAnnotations().stream()
+		boolean		isAbstract		= boxClass.getAnnotations().stream()
 		    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "abstract" ) )
 		    .findFirst().isPresent();
 
-		ClassNode	classNode	= new ClassNode();
+		String		initMethodValue	= boxClass.getAnnotations().stream()
+		    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "initMethod" ) )
+		    .findFirst()
+		    .map( it -> {
+										    if ( it.getValue() instanceof BoxStringLiteral str ) {
+											    return str.getValue();
+										    } else {
+											    throw new BoxRuntimeException( "The value of the [initMethod] annotation must be a string literal." );
+										    }
+									    } )
+		    .orElse( null );
+
+		ClassNode	classNode		= new ClassNode();
 		transpiler.setOwningClass( classNode );
 		transpiler.setProperty( "enclosingClassInternalName", type.getInternalName() );
 
@@ -343,6 +355,13 @@ public class BoxClassTransformer {
 		    "isAbstractClass",
 		    Type.BOOLEAN_TYPE,
 		    isAbstract ? 1 : 0,
+		    false );
+		AsmHelper.addStaticFieldGetter( classNode,
+		    type,
+		    "initMethod",
+		    "getInitMethod",
+		    Type.getType( Key.class ),
+		    null,
 		    false );
 		AsmHelper.addStaticFieldGetterWithStaticGetter( classNode,
 		    type,
@@ -580,13 +599,15 @@ public class BoxClassTransformer {
 		    "setChild",
 		    Type.getType( IClassRunnable.class ),
 		    null );
-		AsmHelper.addPrivateFieldGetterAndSetter( classNode,
+		AsmHelper.addFieldGetterAndSetter( classNode,
 		    type,
 		    "canOutput",
 		    "getCanOutput",
 		    "setCanOutput",
 		    Type.getType( Boolean.class ),
-		    null );
+		    null,
+		    mv -> {
+		    } );
 		AsmHelper.addPrivateFieldGetterAndSetter( classNode,
 		    type,
 		    "$bx",
@@ -594,13 +615,15 @@ public class BoxClassTransformer {
 		    "_setbx",
 		    Type.getType( BoxMeta.class ),
 		    null );
-		AsmHelper.addPrivateFieldGetterAndSetter( classNode,
+		AsmHelper.addFieldGetterAndSetter( classNode,
 		    type,
 		    "canInvokeImplicitAccessor",
 		    "getCanInvokeImplicitAccessor",
 		    "setCanInvokeImplicitAccessor",
 		    Type.getType( Boolean.class ),
-		    null );
+		    null,
+		    mv -> {
+		    } );
 
 		AsmHelper.boxClassSupport( classNode, "pseudoConstructor", Type.VOID_TYPE, Type.getType( IBoxContext.class ) );
 		AsmHelper.boxClassSupport( classNode, "canOutput", Type.getType( Boolean.class ) );
@@ -794,6 +817,22 @@ public class BoxClassTransformer {
 
 			clinitNodes.add( new LdcInsnNode( isJavaExtends ? 1 : 0 ) );
 			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "isJavaExtends", Type.getDescriptor( boolean.class ) ) );
+
+			// Initialize initMethod field
+			if ( initMethodValue != null ) {
+				clinitNodes.add( new LdcInsnNode( initMethodValue ) );
+				clinitNodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+				    Type.getInternalName( Key.class ),
+				    "of",
+				    Type.getMethodDescriptor( Type.getType( Key.class ), Type.getType( Object.class ) ),
+				    false ) );
+			} else {
+				clinitNodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
+				    Type.getInternalName( Key.class ),
+				    "init",
+				    Type.getDescriptor( Key.class ) ) );
+			}
+			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "initMethod", Type.getDescriptor( Key.class ) ) );
 
 			// Note: serialVersionUID is already initialized in the field declaration with a constant value,
 			// so we don't need to write to it in <clinit>

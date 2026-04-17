@@ -421,6 +421,7 @@ public abstract class Boxpiler implements IBoxpiler {
 				}
 			}
 		}
+
 		// Ok, we give up. Now we create a full ClassInfo instance.
 		if ( classInfo == null ) {
 			// If we created an FQN above, don't let that effort be in vain. Pass it here. If it's null, it will be created internally.
