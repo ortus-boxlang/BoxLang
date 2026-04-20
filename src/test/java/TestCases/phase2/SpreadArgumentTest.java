@@ -469,6 +469,7 @@ public class SpreadArgumentTest {
 		instance.executeSource(
 		    """
 		    import java.lang.String;
+
 		    result = new String( ...[ "multi" ], ...[] );
 		    """,
 		    context );
