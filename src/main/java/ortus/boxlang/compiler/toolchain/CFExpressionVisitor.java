@@ -1460,7 +1460,8 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 	 */
 	private boolean isExplicitDestructuringScope( String scopeName ) {
 		return switch ( scopeName.toLowerCase() ) {
-			case "application", "arguments", "cgi", "client", "cookie", "form", "local", "request", "server", "session", "static", "this", "thread", "url", "variables" -> true;
+			case "application", "arguments", "cgi", "client", "cookie", "form", "local", "request", "server", "session", "static", "this", "thread", "url",
+			    "variables" -> true;
 			default -> false;
 		};
 	}
