@@ -279,6 +279,35 @@ public class TransactionTest extends BaseJDBCTest {
 		);
 	}
 
+	@DisplayName( "Can roll back from finally block" )
+	@Test
+	public void testRollbackFromFinally() {
+		// @formatter:off
+		getInstance().executeSource(
+		    """
+			transaction{
+				try{
+					queryExecute( "INSERT INTO developers ( id, name, role ) VALUES ( 33, 'Jon Clausen', 'Developer' )", {} );
+				} catch ( any e ){
+					rethrow;
+				} finally {
+					transaction action="rollback";
+				}
+			}
+			variables.result = queryExecute( "SELECT * FROM developers", {} );
+		    """,
+		    getContext()
+		);
+		// @formatter:on
+		assertNull(
+		    getVariables().getAsQuery( result )
+		        .stream()
+		        .filter( row -> row.getAsString( Key._NAME ).equals( "Jon Clausen" ) )
+		        .findFirst()
+		        .orElse( null )
+		);
+	}
+
 	@DisplayName( "Commits persist despite rollbacks" )
 	@Test
 	public void testCommitWithRollback() {

@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.loader;
 
 import java.net.URL;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -549,44 +548,39 @@ public class ClassLocator extends ClassLoader {
 			imports = List.of();
 		}
 
-		boolean							useCaching	= ( Boolean ) properties.getOrDefault( Key.useCaching, true );
-
-		// Must be final for the lambda to use it
-		final List<ImportDefinition>	thisImports	= imports;
-		// Unique Cache Key
-		String							cacheKey	= useCaching ? new StringBuilder( resolverPrefix )
-		    .append( COLON )
-		    .append( context.getApplicationName() )
-		    .append( COLON )
-		    .append( Objects.hash( imports ) )
-		    .append( COLON )
-		    .append( Objects.hash( context.getConfig().getAsStruct( Key.mappings ) ) )
-		    .append( COLON )
-		    .append( getTemplatePathPrefix( context ) )
-		    .append( COLON )
-		    .append( name )
-		    .toString() : "";
+		boolean useCaching = ( Boolean ) properties.getOrDefault( Key.useCaching, true );
 
 		// Are we in debug mode, if so disable caching
-		if ( !runtime.getConfiguration().classResolverCache ) {
+		if ( useCaching && !this.runtime.getConfiguration().classResolverCache ) {
 			useCaching = false;
 		}
-		final boolean			finalUseCaching	= useCaching;
 
-		// Try to resolve it
-		Optional<ClassLocation>	resolvedClass	= ( useCaching ? getClass( cacheKey ) : Optional.<ClassLocation>empty() )
-		    // Resolve it
-		    .or( () -> getResolver( resolverPrefix ).resolve( context, name, thisImports, properties ) )
-		    // If found, cache it
-		    .map( target -> {
-			    if ( finalUseCaching && target.cacheable() ) {
-				    this.resolverCache.put( cacheKey, target );
-			    }
-			    return target;
-		    } );
+		// Fast path: build cache key and do direct map lookup to avoid Optional/lambda allocations on cache hits
+		if ( useCaching ) {
+			String			cacheKey	= buildPrefixedCacheKey( context, name, resolverPrefix, imports );
+			ClassLocation	cached		= this.resolverCache.get( cacheKey );
+			if ( cached != null ) {
+				return DynamicObject.of( cached.clazz( context ), context );
+			}
 
-		if ( resolvedClass.isPresent() ) {
-			return DynamicObject.of( resolvedClass.get().clazz( context ), context );
+			// Cache miss: resolve it
+			Optional<ClassLocation> resolvedClass = getResolver( resolverPrefix ).resolve( context, name, imports, properties );
+
+			if ( resolvedClass.isPresent() ) {
+				ClassLocation target = resolvedClass.get();
+				if ( target.cacheable() ) {
+					this.resolverCache.put( cacheKey, target );
+				}
+				return DynamicObject.of( target.clazz( context ), context );
+			}
+		} else {
+			// No caching path
+			final List<ImportDefinition>	thisImports		= imports;
+			Optional<ClassLocation>			resolvedClass	= getResolver( resolverPrefix ).resolve( context, name, thisImports, properties );
+
+			if ( resolvedClass.isPresent() ) {
+				return DynamicObject.of( resolvedClass.get().clazz( context ), context );
+			}
 		}
 
 		if ( throwException ) {
@@ -599,6 +593,28 @@ public class ClassLocator extends ClassLoader {
 	}
 
 	/**
+	 * Build a cache key for prefixed resolver lookups.
+	 *
+	 * @param context        The current context of execution
+	 * @param name           The class name being resolved
+	 * @param resolverPrefix The resolver prefix
+	 * @param imports        The list of imports
+	 *
+	 * @return The cache key string
+	 */
+	private String buildPrefixedCacheKey( IBoxContext context, String name, String resolverPrefix, List<ImportDefinition> imports ) {
+		int h = imports.hashCode() + Objects.hashCode( context.getConfig().getAsStruct( Key.mappings ) );
+		return new StringBuilder( resolverPrefix )
+		    .append( COLON )
+		    .append( context.getApplicationName() )
+		    .append( ( char ) ( h >>> 16 ) ).append( ( char ) ( h & 0xFFFF ) )
+		    .append( getTemplatePathPrefix( context ) )
+		    .append( COLON )
+		    .append( name )
+		    .toString();
+	}
+
+	/**
 	 * Get the template path prefix for the requested resolution. This is to account for the same name of clases
 	 * that could potentially be in different packages.
 	 *
@@ -607,16 +623,18 @@ public class ClassLocator extends ClassLoader {
 	 * @return The template path prefix
 	 */
 	private String getTemplatePathPrefix( IBoxContext context ) {
-		String				pathPrefix			= "";
-		ResolvedFilePath	resolvedFilePath	= context.findClosestTemplate();
+		ResolvedFilePath resolvedFilePath = context.findClosestTemplate();
 		if ( resolvedFilePath != null ) {
-			Path parent = resolvedFilePath.absolutePath().getParent();
-			if ( parent != null ) {
-				pathPrefix = parent.toString();
+			String path = resolvedFilePath.absolutePath().toString();
+			// Get the directory from the path. This many loop is faster than using the Path.getParent() in hot code
+			for ( int i = path.length() - 1; i >= 0; i-- ) {
+				char c = path.charAt( i );
+				if ( c == '/' || c == '\\' ) {
+					return path.substring( 0, i );
+				}
 			}
 		}
-
-		return pathPrefix;
+		return "";
 	}
 
 	/**
@@ -800,40 +818,40 @@ public class ClassLocator extends ClassLoader {
 	    List<ImportDefinition> imports,
 	    IStruct properties ) {
 
-		Boolean	useCaching	= ( Boolean ) properties.getOrDefault( Key.useCaching, true );
-
-		// This builds a unique cache key for the class requested with as much information as possible
-		// To guarantee uniqueness
-		String	cacheKey	= useCaching ? new StringBuilder( 100 ).append( context.getApplicationName() )
-		    .append( Objects.hash( imports ) )
-		    .append( Objects.hash( context.getConfig().getAsStruct( Key.mappings ) ) )
-		    .append( getTemplatePathPrefix( context ) )
-		    .append( name )
-		    .toString() : "";
+		Boolean useCaching = ( Boolean ) properties.getOrDefault( Key.useCaching, true );
 
 		// No Setting, No Full Caching
-		if ( !runtime.getConfiguration().classResolverCache ) {
+		if ( useCaching && !this.runtime.getConfiguration().classResolverCache ) {
 			useCaching = false;
 		}
-		final boolean			finalUseCaching	= useCaching;
 
-		// Try to get it from cache
-		Optional<ClassLocation>	resolvedClass	= ( useCaching ? getClass( cacheKey ) : Optional.<ClassLocation>empty() )
-		    // Is it a BoxClass?
-		    .or( () -> getResolver( BX_PREFIX ).resolve( context, name, imports, properties ) )
-		    // Is it a JavaClass?
-		    .or( () -> getResolver( JAVA_PREFIX ).resolve( context, name, imports, properties ) )
-		    // If found, cache it
-		    .map( target -> {
-			    if ( finalUseCaching && target.cacheable() ) {
-				    this.resolverCache.put( cacheKey, target );
-			    }
-			    return target;
-		    } );
+		// Fast path: build cache key and do direct map lookup to avoid Optional/lambda allocations on cache hits
+		if ( useCaching ) {
+			String			cacheKey	= buildSystemCacheKey( context, name, imports );
+			ClassLocation	cached		= this.resolverCache.get( cacheKey );
+			if ( cached != null ) {
+				return cached;
+			}
 
-		// If we got it, return it
-		if ( resolvedClass.isPresent() ) {
-			return resolvedClass.get();
+			// Cache miss: resolve it
+			Optional<ClassLocation> resolvedClass = getResolver( BX_PREFIX ).resolve( context, name, imports, properties )
+			    .or( () -> getResolver( JAVA_PREFIX ).resolve( context, name, imports, properties ) );
+
+			if ( resolvedClass.isPresent() ) {
+				ClassLocation target = resolvedClass.get();
+				if ( target.cacheable() ) {
+					this.resolverCache.put( cacheKey, target );
+				}
+				return target;
+			}
+		} else {
+			// No caching path
+			Optional<ClassLocation> resolvedClass = getResolver( BX_PREFIX ).resolve( context, name, imports, properties )
+			    .or( () -> getResolver( JAVA_PREFIX ).resolve( context, name, imports, properties ) );
+
+			if ( resolvedClass.isPresent() ) {
+				return resolvedClass.get();
+			}
 		}
 
 		if ( throwException ) {
@@ -843,6 +861,26 @@ public class ClassLocator extends ClassLoader {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Build a cache key for resolveFromSystem lookups.
+	 *
+	 * @param context The current context of execution
+	 * @param name    The class name being resolved
+	 * @param imports The list of imports
+	 *
+	 * @return The cache key string
+	 */
+	private String buildSystemCacheKey( IBoxContext context, String name, List<ImportDefinition> imports ) {
+		int h = imports.hashCode() + Objects.hashCode( context.getConfig().getAsStruct( Key.mappings ) );
+		return new StringBuilder( 100 )
+		    .append( context.getApplicationName() )
+		    // This is a faster way to encode the hash into the string without doing Integer.toString()
+		    .append( ( char ) ( h >>> 16 ) ).append( ( char ) ( h & 0xFFFF ) )
+		    .append( getTemplatePathPrefix( context ) )
+		    .append( name )
+		    .toString();
 	}
 
 	/**

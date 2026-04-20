@@ -1011,9 +1011,8 @@ public class AsmHelper {
 		    null,
 		    null );
 		methodVisitor.visitCode();
-		methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
 		methodVisitor.visitVarInsn( Opcodes.ALOAD, 1 );
-		methodVisitor.visitFieldInsn( Opcodes.PUTFIELD,
+		methodVisitor.visitFieldInsn( Opcodes.PUTSTATIC,
 		    type.getInternalName(),
 		    field,
 		    property.getDescriptor() );

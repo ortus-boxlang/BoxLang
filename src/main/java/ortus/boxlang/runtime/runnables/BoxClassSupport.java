@@ -56,9 +56,9 @@ import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.ClassMeta;
 import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.types.util.StringUtil;
 import ortus.boxlang.runtime.types.util.TypeUtil;
 import ortus.boxlang.runtime.util.ArgumentUtil;
-import ortus.boxlang.runtime.util.BoxFQN;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
@@ -202,7 +202,7 @@ public class BoxClassSupport {
 		    Key.output,
 		    // output defaults to true for Application.bx, but false for all others
 		    // Strip just the class name from the FQN foo.com.bar.Application
-		    new BoxFQN( className ).getClassName().equalsIgnoreCase( "application" )
+		    ( className.length() == 11 && className.equalsIgnoreCase( "application" ) ) || StringUtil.endsWithIgnoreCase( className, ".application" )
 		) );
 	}
 
@@ -435,19 +435,7 @@ public class BoxClassSupport {
 		// Look for function in this scope
 		Object value = scope.get( name );
 		if ( value instanceof Function function ) {
-			FunctionBoxContext functionContext = Function.generateFunctionContext(
-			    function,
-			    // Function contexts' parent is the caller. The function will "know" about the class it's executing in
-			    // because we've pushed the class onto the template stack in the function context.
-			    context,
-			    name,
-			    positionalArguments,
-			    thisClass,
-			    null,
-			    null
-			);
-
-			return function.invoke( functionContext );
+			return dereferenceAndInvoke( function, thisClass, context, name, positionalArguments, safe );
 		}
 
 		// Look for function in the parent class if any
@@ -498,6 +486,36 @@ public class BoxClassSupport {
 	}
 
 	/**
+	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method) using positional arguments
+	 * Call this if you already have a function whcih you know to exist on the class.
+	 *
+	 * @param function            The function to invoke
+	 * @param thisClass           The class to dereference
+	 * @param context             The context to use
+	 * @param name                The key to dereference
+	 * @param positionalArguments The positional arguments to pass to the invokable
+	 * @param safe                Whether to throw an exception if the key is not found
+	 *
+	 * @return The requested object
+	 */
+	public static Object dereferenceAndInvoke( Function function, IClassRunnable thisClass, IBoxContext context, Key name, Object[] positionalArguments,
+	    Boolean safe ) {
+		FunctionBoxContext functionContext = Function.generateFunctionContext(
+		    function,
+		    // Function contexts' parent is the caller. The function will "know" about the class it's executing in
+		    // because we've pushed the class onto the template stack in the function context.
+		    context,
+		    name,
+		    positionalArguments,
+		    thisClass,
+		    null,
+		    null
+		);
+
+		return function.invoke( functionContext );
+	}
+
+	/**
 	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
 	 *
 	 * @param thisClass      The class to dereference
@@ -522,19 +540,7 @@ public class BoxClassSupport {
 		// Look for function in this scope
 		Object value = scope.get( name );
 		if ( value instanceof Function function ) {
-			FunctionBoxContext functionContext = Function.generateFunctionContext(
-			    function,
-			    // Function contexts' parent is the caller. The function will "know" about the class it's executing in
-			    // because we've pushed the class onto the template stack in the function context.
-			    context,
-			    name,
-			    namedArguments,
-			    thisClass,
-			    null,
-			    null
-			);
-
-			return function.invoke( functionContext );
+			return dereferenceAndInvoke( function, thisClass, context, name, namedArguments, safe );
 		}
 
 		// Look for function in the parent class if any
@@ -574,6 +580,36 @@ public class BoxClassSupport {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
+	 * Call this if you already have a function which you know to exist on the class.
+	 *
+	 * @param function       The function to invoke
+	 * @param thisClass      The class to dereference
+	 * @param context        The context to use
+	 * @param name           The name of the key to dereference, which becomes the method name
+	 * @param namedArguments The arguments to pass to the invokable
+	 * @param safe           If true, return null if the method is not found, otherwise throw an exception
+	 *
+	 * @return The requested return value or null
+	 */
+	public static Object dereferenceAndInvoke( Function function, IClassRunnable thisClass, IBoxContext context, Key name, Map<Key, Object> namedArguments,
+	    Boolean safe ) {
+		FunctionBoxContext functionContext = Function.generateFunctionContext(
+		    function,
+		    // Function contexts' parent is the caller. The function will "know" about the class it's executing in
+		    // because we've pushed the class onto the template stack in the function context.
+		    context,
+		    name,
+		    namedArguments,
+		    thisClass,
+		    null,
+		    null
+		);
+
+		return function.invoke( functionContext );
 	}
 
 	/**
@@ -996,6 +1032,11 @@ public class BoxClassSupport {
 			return;
 		}
 
+		// If there are no abstract methods, then nothing to enforce
+		if ( abstractMethods.isEmpty() ) {
+			return;
+		}
+
 		// Having an onMissingMethod() UDF is the golden ticket to implementing any interface
 		if ( thisClass.getThisScope().get( Key.onMissingMethod ) instanceof Function ) {
 			return;
@@ -1191,9 +1232,13 @@ public class BoxClassSupport {
 	 */
 	public static Map<Key, AbstractFunction> getAllAbstractMethods( IClassRunnable thisClass ) {
 		// get from parent and override
-		Map<Key, AbstractFunction> allAbstractMethods = new LinkedHashMap<>();
+		Map<Key, AbstractFunction> allAbstractMethods;
 		if ( thisClass.getSuper() != null ) {
+			allAbstractMethods = new LinkedHashMap<>();
 			allAbstractMethods.putAll( getAllAbstractMethods( thisClass.getSuper() ) );
+		} else {
+			// short circuit if we have no parent
+			return thisClass.getAbstractMethods();
 		}
 		allAbstractMethods.putAll( thisClass.getAbstractMethods() );
 		return allAbstractMethods;
