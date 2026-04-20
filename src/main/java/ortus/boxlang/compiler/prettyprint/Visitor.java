@@ -121,23 +121,23 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class Visitor extends VoidBoxVisitor {
 
-	private Stack<BoxSourceType> currentSourceType = new Stack<>();
-	private Stack<Doc> docStack = new Stack<>();
+	private Stack<BoxSourceType>	currentSourceType				= new Stack<>();
+	private Stack<Doc>				docStack						= new Stack<>();
 
-	Config config;
-	String componentPrefix;
-	boolean stripBufferLeadingWhitespace = false;
+	Config							config;
+	String							componentPrefix;
+	boolean							stripBufferLeadingWhitespace	= false;
 
-	CommentsPrinter commentsPrinter;
-	ClassPrinter classPrinter;
-	StringPrinter stringPrinter;
-	ComponentPrinter componentPrinter;
-	HelperPrinter helperPrinter;
-	ArgumentsPrinter argumentsPrinter;
-	ParametersPrinter parametersPrinter;
-	FunctionDeclarationPrinter functionDeclaration;
-	StructLiteralPrinter structLiteralPrinter;
-	ArrayLiteralPrinter arrayLiteralPrinter;
+	CommentsPrinter					commentsPrinter;
+	ClassPrinter					classPrinter;
+	StringPrinter					stringPrinter;
+	ComponentPrinter				componentPrinter;
+	HelperPrinter					helperPrinter;
+	ArgumentsPrinter				argumentsPrinter;
+	ParametersPrinter				parametersPrinter;
+	FunctionDeclarationPrinter		functionDeclaration;
+	StructLiteralPrinter			structLiteralPrinter;
+	ArrayLiteralPrinter				arrayLiteralPrinter;
 
 	/**
 	 * Constructor
@@ -145,26 +145,26 @@ public class Visitor extends VoidBoxVisitor {
 	 * @param sourceType The source type of the node being visited
 	 * @param config     The configuration for printing
 	 */
-	public Visitor(BoxSourceType sourceType, Config config) {
+	public Visitor( BoxSourceType sourceType, Config config ) {
 		this.config = config;
-		currentSourceType.push(sourceType);
-		pushDoc(DocType.ARRAY);
+		currentSourceType.push( sourceType );
+		pushDoc( DocType.ARRAY );
 
-		this.componentPrefix = switch (sourceType) {
-			case BOXSCRIPT, BOXTEMPLATE -> "bx:";
-			default -> "cf";
-		};
+		this.componentPrefix		= switch ( sourceType ) {
+										case BOXSCRIPT, BOXTEMPLATE -> "bx:";
+										default -> "cf";
+									};
 
-		this.commentsPrinter = new CommentsPrinter(this);
-		this.classPrinter = new ClassPrinter(this);
-		this.stringPrinter = new StringPrinter(this);
-		this.componentPrinter = new ComponentPrinter(this);
-		this.helperPrinter = new HelperPrinter(this);
-		this.structLiteralPrinter = new StructLiteralPrinter(this);
-		this.arrayLiteralPrinter = new ArrayLiteralPrinter(this);
-		this.functionDeclaration = new FunctionDeclarationPrinter(this);
-		this.parametersPrinter = new ParametersPrinter(this);
-		this.argumentsPrinter = new ArgumentsPrinter(this);
+		this.commentsPrinter		= new CommentsPrinter( this );
+		this.classPrinter			= new ClassPrinter( this );
+		this.stringPrinter			= new StringPrinter( this );
+		this.componentPrinter		= new ComponentPrinter( this );
+		this.helperPrinter			= new HelperPrinter( this );
+		this.structLiteralPrinter	= new StructLiteralPrinter( this );
+		this.arrayLiteralPrinter	= new ArrayLiteralPrinter( this );
+		this.functionDeclaration	= new FunctionDeclarationPrinter( this );
+		this.parametersPrinter		= new ParametersPrinter( this );
+		this.argumentsPrinter		= new ArgumentsPrinter( this );
 	}
 
 	public Doc getRoot() {
@@ -172,7 +172,7 @@ public class Visitor extends VoidBoxVisitor {
 	}
 
 	boolean isTemplate() {
-		return switch (currentSourceType.peek()) {
+		return switch ( currentSourceType.peek() ) {
 			case BOXTEMPLATE, CFTEMPLATE -> true;
 			default -> false;
 		};
@@ -182,9 +182,9 @@ public class Visitor extends VoidBoxVisitor {
 		return docStack.peek();
 	}
 
-	Doc pushDoc(DocType docType) {
-		var doc = new Doc(docType);
-		docStack.push(doc);
+	Doc pushDoc( DocType docType ) {
+		var doc = new Doc( docType );
+		docStack.push( doc );
 		return doc;
 	}
 
@@ -193,11 +193,11 @@ public class Visitor extends VoidBoxVisitor {
 	}
 
 	public void newLine() {
-		getCurrentDoc().append(Line.HARD);
+		getCurrentDoc().append( Line.HARD );
 	}
 
-	public void print(String text) {
-		getCurrentDoc().append(text);
+	public void print( String text ) {
+		getCurrentDoc().append( text );
 	}
 
 	/**
@@ -205,1844 +205,1844 @@ public class Visitor extends VoidBoxVisitor {
 	 * Only applies to BoxScript source type (not templates).
 	 */
 	public void printSemicolon() {
-		if (config.getSemicolons()) {
-			getCurrentDoc().append(";");
+		if ( config.getSemicolons() ) {
+			getCurrentDoc().append( ";" );
 		}
 	}
 
-	private String extractRawSourceFromPosition(BoxNode node) {
-		if (node == null || node.getPosition() == null || node.getPosition().getSource() == null) {
+	private String extractRawSourceFromPosition( BoxNode node ) {
+		if ( node == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
 			return null;
 		}
 
 		String code = node.getPosition().getSource().getCode();
-		if (code == null) {
+		if ( code == null ) {
 			return null;
 		}
 
 		try {
-			String[] lines = code.split("\\r?\\n", -1);
-			int startLine = node.getPosition().getStart().getLine() - 1;
-			int endLine = node.getPosition().getEnd().getLine() - 1;
+			String[]	lines		= code.split( "\\r?\\n", -1 );
+			int			startLine	= node.getPosition().getStart().getLine() - 1;
+			int			endLine		= node.getPosition().getEnd().getLine() - 1;
 
-			if (startLine < 0 || endLine < startLine || startLine >= lines.length) {
+			if ( startLine < 0 || endLine < startLine || startLine >= lines.length ) {
 				return null;
 			}
 
-			int startCol = Math.max(0, node.getPosition().getStart().getColumn() - 1);
-			int endCol = Math.max(0, node.getPosition().getEnd().getColumn());
+			int	startCol	= Math.max( 0, node.getPosition().getStart().getColumn() - 1 );
+			int	endCol		= Math.max( 0, node.getPosition().getEnd().getColumn() );
 
-			if (startLine == endLine) {
-				String line = lines[startLine];
-				int safeStart = Math.min(Math.max(0, startCol), line.length());
-				int safeEnd = Math.min(Math.max(safeStart, endCol), line.length());
-				if (safeEnd < line.length() && line.charAt(safeEnd) == ';') {
+			if ( startLine == endLine ) {
+				String	line		= lines[ startLine ];
+				int		safeStart	= Math.min( Math.max( 0, startCol ), line.length() );
+				int		safeEnd		= Math.min( Math.max( safeStart, endCol ), line.length() );
+				if ( safeEnd < line.length() && line.charAt( safeEnd ) == ';' ) {
 					safeEnd++;
-				} else if (safeEnd - 1 >= 0 && safeEnd - 1 < line.length() && line.charAt(safeEnd - 1) == ';') {
+				} else if ( safeEnd - 1 >= 0 && safeEnd - 1 < line.length() && line.charAt( safeEnd - 1 ) == ';' ) {
 					// already includes semicolon
 				}
-				String snippet = line.substring(safeStart, safeEnd);
+				String snippet = line.substring( safeStart, safeEnd );
 				return snippet.stripLeading();
 			}
 
-			StringBuilder sb = new StringBuilder();
-			String firstLine = lines[startLine];
-			int safeStart = Math.min(Math.max(0, startCol), firstLine.length());
-			sb.append(firstLine.substring(safeStart));
+			StringBuilder	sb			= new StringBuilder();
+			String			firstLine	= lines[ startLine ];
+			int				safeStart	= Math.min( Math.max( 0, startCol ), firstLine.length() );
+			sb.append( firstLine.substring( safeStart ) );
 
-			for (int i = startLine + 1; i < endLine && i < lines.length; i++) {
-				sb.append("\n").append(lines[i]);
+			for ( int i = startLine + 1; i < endLine && i < lines.length; i++ ) {
+				sb.append( "\n" ).append( lines[ i ] );
 			}
 
-			if (endLine < lines.length) {
-				String lastLine = lines[endLine];
-				int safeEnd = Math.min(Math.max(0, endCol), lastLine.length());
-				if (safeEnd < lastLine.length() && lastLine.charAt(safeEnd) == ';') {
+			if ( endLine < lines.length ) {
+				String	lastLine	= lines[ endLine ];
+				int		safeEnd		= Math.min( Math.max( 0, endCol ), lastLine.length() );
+				if ( safeEnd < lastLine.length() && lastLine.charAt( safeEnd ) == ';' ) {
 					safeEnd++;
 				}
-				sb.append("\n").append(lastLine.substring(0, safeEnd));
+				sb.append( "\n" ).append( lastLine.substring( 0, safeEnd ) );
 			}
 
-			String snippet = sb.toString();
-			String[] snippetLines = snippet.split("\n", -1);
-			String first = snippetLines.length > 0 ? snippetLines[0] : snippet;
-			int dedent = 0;
-			while (dedent < first.length()) {
-				char ch = first.charAt(dedent);
-				if (ch == ' ' || ch == '\t') {
+			String		snippet			= sb.toString();
+			String[]	snippetLines	= snippet.split( "\n", -1 );
+			String		first			= snippetLines.length > 0 ? snippetLines[ 0 ] : snippet;
+			int			dedent			= 0;
+			while ( dedent < first.length() ) {
+				char ch = first.charAt( dedent );
+				if ( ch == ' ' || ch == '\t' ) {
 					dedent++;
 				} else {
 					break;
 				}
 			}
-			if (dedent > 0) {
-				for (int i = 0; i < snippetLines.length; i++) {
-					String line = snippetLines[i];
-					int remove = 0;
-					while (remove < line.length() && remove < dedent) {
-						char ch = line.charAt(remove);
-						if (ch == ' ' || ch == '\t') {
+			if ( dedent > 0 ) {
+				for ( int i = 0; i < snippetLines.length; i++ ) {
+					String	line	= snippetLines[ i ];
+					int		remove	= 0;
+					while ( remove < line.length() && remove < dedent ) {
+						char ch = line.charAt( remove );
+						if ( ch == ' ' || ch == '\t' ) {
 							remove++;
 						} else {
 							break;
 						}
 					}
-					snippetLines[i] = line.substring(remove);
+					snippetLines[ i ] = line.substring( remove );
 				}
 			}
-			return String.join("\n", snippetLines);
-		} catch (Exception e) {
+			return String.join( "\n", snippetLines );
+		} catch ( Exception e ) {
 			return null;
 		}
 	}
 
-	private boolean hasTrailingSemicolonInSource(BoxNode node) {
-		if (node == null || node.getPosition() == null || node.getPosition().getSource() == null) {
+	private boolean hasTrailingSemicolonInSource( BoxNode node ) {
+		if ( node == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
 			return false;
 		}
 		String code = node.getPosition().getSource().getCode();
-		if (code == null) {
+		if ( code == null ) {
 			return false;
 		}
 		try {
-			String[] lines = code.split("\\r?\\n", -1);
-			int endLine = node.getPosition().getEnd().getLine() - 1;
-			if (endLine < 0 || endLine >= lines.length) {
+			String[]	lines	= code.split( "\\r?\\n", -1 );
+			int			endLine	= node.getPosition().getEnd().getLine() - 1;
+			if ( endLine < 0 || endLine >= lines.length ) {
 				return false;
 			}
-			String line = lines[endLine];
-			int endCol = Math.max(0, node.getPosition().getEnd().getColumn());
-			int idx = Math.min(endCol, line.length());
-			while (idx < line.length()) {
-				char ch = line.charAt(idx);
-				if (ch == ' ' || ch == '\t') {
+			String	line	= lines[ endLine ];
+			int		endCol	= Math.max( 0, node.getPosition().getEnd().getColumn() );
+			int		idx		= Math.min( endCol, line.length() );
+			while ( idx < line.length() ) {
+				char ch = line.charAt( idx );
+				if ( ch == ' ' || ch == '\t' ) {
 					idx++;
 					continue;
 				}
 				return ch == ';';
 			}
 			int lastNonWhitespace = line.length() - 1;
-			while (lastNonWhitespace >= 0) {
-				char ch = line.charAt(lastNonWhitespace);
-				if (ch == ' ' || ch == '\t') {
+			while ( lastNonWhitespace >= 0 ) {
+				char ch = line.charAt( lastNonWhitespace );
+				if ( ch == ' ' || ch == '\t' ) {
 					lastNonWhitespace--;
 					continue;
 				}
 				break;
 			}
-			if (lastNonWhitespace >= 0 && line.charAt(lastNonWhitespace) == ';') {
+			if ( lastNonWhitespace >= 0 && line.charAt( lastNonWhitespace ) == ';' ) {
 				return true;
 			}
 			return false;
-		} catch (Exception e) {
+		} catch ( Exception e ) {
 			return false;
 		}
 	}
 
-	private boolean printSourceForCFCompat(BoxNode node) {
+	private boolean printSourceForCFCompat( BoxNode node ) {
 		return false;
 	}
 
-	boolean printPreComments(BoxNode node) {
-		return commentsPrinter.printPreComments(node);
+	boolean printPreComments( BoxNode node ) {
+		return commentsPrinter.printPreComments( node );
 	}
 
-	boolean printPostComments(BoxNode node) {
-		return commentsPrinter.printPostComments(node);
+	boolean printPostComments( BoxNode node ) {
+		return commentsPrinter.printPostComments( node );
 	}
 
-	boolean printInsideComments(BoxNode node, boolean indent) {
-		return commentsPrinter.printInsideComments(node, indent);
-	}
-
-	@Override
-	public void visit(BoxSingleLineComment node) {
-		commentsPrinter.printSingleLineComment(node);
-
+	boolean printInsideComments( BoxNode node, boolean indent ) {
+		return commentsPrinter.printInsideComments( node, indent );
 	}
 
 	@Override
-	public void visit(BoxMultiLineComment node) {
-		commentsPrinter.printMultiLineComment(node);
+	public void visit( BoxSingleLineComment node ) {
+		commentsPrinter.printSingleLineComment( node );
+
 	}
 
 	@Override
-	public void visit(BoxDocComment node) {
-		commentsPrinter.printDocComment(node);
+	public void visit( BoxMultiLineComment node ) {
+		commentsPrinter.printMultiLineComment( node );
 	}
 
 	@Override
-	public void visit(BoxScript node) {
-		printPreComments(node);
-		helperPrinter.printStatements(node.getStatements());
-		printPostComments(node);
+	public void visit( BoxDocComment node ) {
+		commentsPrinter.printDocComment( node );
+	}
+
+	@Override
+	public void visit( BoxScript node ) {
+		printPreComments( node );
+		helperPrinter.printStatements( node.getStatements() );
+		printPostComments( node );
 		newLine();
 	}
 
 	@Override
-	public void visit(BoxClass node) {
-		classPrinter.print(node, currentSourceType.peek());
+	public void visit( BoxClass node ) {
+		classPrinter.print( node, currentSourceType.peek() );
 	}
 
 	@Override
-	public void visit(BoxInterface node) {
-		classPrinter.print(node, currentSourceType.peek());
+	public void visit( BoxInterface node ) {
+		classPrinter.print( node, currentSourceType.peek() );
 	}
 
 	@Override
-	public void visit(BoxScriptIsland node) {
-		printPreComments(node);
+	public void visit( BoxScriptIsland node ) {
+		printPreComments( node );
 		boolean isTemplate = isTemplate();
-		currentSourceType.push(BoxSourceType.BOXSCRIPT);
-		if (isTemplate) {
-			print("<" + componentPrefix + "script>");
+		currentSourceType.push( BoxSourceType.BOXSCRIPT );
+		if ( isTemplate ) {
+			print( "<" + componentPrefix + "script>" );
 			newLine();
 		}
 
-		helperPrinter.printStatements(node.getStatements());
+		helperPrinter.printStatements( node.getStatements() );
 
-		if (isTemplate) {
-			getCurrentDoc().append(Line.HARD).append("</" + componentPrefix + "script>");
+		if ( isTemplate ) {
+			getCurrentDoc().append( Line.HARD ).append( "</" + componentPrefix + "script>" );
 		}
 		currentSourceType.pop();
-		printPostComments(node);
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxTemplate node) {
-		currentSourceType.push(BoxSourceType.BOXTEMPLATE);
-		printPreComments(node);
-		for (var statement : node.getStatements()) {
-			statement.accept(this);
+	public void visit( BoxTemplate node ) {
+		currentSourceType.push( BoxSourceType.BOXTEMPLATE );
+		printPreComments( node );
+		for ( var statement : node.getStatements() ) {
+			statement.accept( this );
 		}
-		printInsideComments(node, false);
-		printPostComments(node);
+		printInsideComments( node, false );
+		printPostComments( node );
 		currentSourceType.pop();
 	}
 
 	@Override
-	public void visit(BoxTemplateIsland node) {
-		printPreComments(node);
-		print("```");
-		currentSourceType.push(BoxSourceType.BOXTEMPLATE);
-		for (var statement : node.getStatements()) {
-			statement.accept(this);
+	public void visit( BoxTemplateIsland node ) {
+		printPreComments( node );
+		print( "```" );
+		currentSourceType.push( BoxSourceType.BOXTEMPLATE );
+		for ( var statement : node.getStatements() ) {
+			statement.accept( this );
 		}
 		currentSourceType.pop();
-		print("```");
-		printPostComments(node);
+		print( "```" );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxBufferOutput node) {
-		printPreComments(node);
+	public void visit( BoxBufferOutput node ) {
+		printPreComments( node );
 		// printPreComments( node.getExpression() );
 		// This node SHOULD only exist in templates
-		if (isTemplate()) {
-			if (node.getExpression() instanceof BoxStringLiteral sLit) {
+		if ( isTemplate() ) {
+			if ( node.getExpression() instanceof BoxStringLiteral sLit ) {
 				String value = sLit.getValue();
 				// If we're in an output component, we need to escape pound signs
-				if (node.getFirstAncestorOfType(BoxComponent.class,
-						comp -> comp.getName().equalsIgnoreCase("output")) != null) {
-					value = value.replace("#", "##");
+				if ( node.getFirstAncestorOfType( BoxComponent.class,
+				    comp -> comp.getName().equalsIgnoreCase( "output" ) ) != null ) {
+					value = value.replace( "#", "##" );
 				}
 				// When inside printTemplateBody, structural indentation is controlled
 				// externally.
 				// Strip leading and trailing newline+whitespace so we don't produce spurious
 				// blank lines.
-				if (stripBufferLeadingWhitespace) {
-					value = value.replaceFirst("^(?:\\r\\n|\\r|\\n)[\\t ]*", "");
-					value = value.replaceFirst("[\\t ]*(?:\\r\\n|\\r|\\n)[\\t ]*$", "");
+				if ( stripBufferLeadingWhitespace ) {
+					value	= value.replaceFirst( "^(?:\\r\\n|\\r|\\n)[\\t ]*", "" );
+					value	= value.replaceFirst( "[\\t ]*(?:\\r\\n|\\r|\\n)[\\t ]*$", "" );
 				}
-				print(value);
-			} else if (node.getExpression() instanceof BoxStringInterpolation sInt) {
-				stringPrinter.processStringInterp(sInt, null);
+				print( value );
+			} else if ( node.getExpression() instanceof BoxStringInterpolation sInt ) {
+				stringPrinter.processStringInterp( sInt, null );
 			} else {
 				throw new BoxRuntimeException(
-						"Unexpected expression in buffer output: " + node.getExpression().getClass().getName());
+				    "Unexpected expression in buffer output: " + node.getExpression().getClass().getName() );
 			}
 		} else {
-			print("echo( \"");
-			stringPrinter.printQuotedExpression(node.getExpression());
-			print("\" )");
+			print( "echo( \"" );
+			stringPrinter.printQuotedExpression( node.getExpression() );
+			print( "\" )" );
 		}
-		printPostComments(node.getExpression());
-		printPostComments(node);
+		printPostComments( node.getExpression() );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxExpressionStatement node) {
-		printPreComments(node);
-		if (isTemplate()) {
-			print("<" + componentPrefix + "set ");
-			node.getExpression().accept(this);
-			print(">");
+	public void visit( BoxExpressionStatement node ) {
+		printPreComments( node );
+		if ( isTemplate() ) {
+			print( "<" + componentPrefix + "set " );
+			node.getExpression().accept( this );
+			print( ">" );
 		} else {
-			if (printSourceForCFCompat(node)) {
+			if ( printSourceForCFCompat( node ) ) {
 				// no-op
 			} else {
-				node.getExpression().accept(this);
+				node.getExpression().accept( this );
 				printSemicolon();
 			}
 		}
-		printPostComments(node);
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxAssignment node) {
+	public void visit( BoxAssignment node ) {
 		var currentDoc = getCurrentDoc();
 
-		if (node.getModifiers().contains(BoxAssignmentModifier.VAR)) {
-			currentDoc.append("var ");
+		if ( node.getModifiers().contains( BoxAssignmentModifier.VAR ) ) {
+			currentDoc.append( "var " );
 		}
 
-		if (node.getModifiers().contains(BoxAssignmentModifier.FINAL)) {
-			currentDoc.append("final ");
+		if ( node.getModifiers().contains( BoxAssignmentModifier.FINAL ) ) {
+			currentDoc.append( "final " );
 		}
 
-		if (node.getModifiers().contains(BoxAssignmentModifier.STATIC)) {
-			currentDoc.append("static ");
+		if ( node.getModifiers().contains( BoxAssignmentModifier.STATIC ) ) {
+			currentDoc.append( "static " );
 		}
 
-		node.getLeft().accept(this);
-		currentDoc.append(" ");
-		currentDoc.append(node.getOp().getSymbol());
-		currentDoc.append(" ");
-		node.getRight().accept(this);
+		node.getLeft().accept( this );
+		currentDoc.append( " " );
+		currentDoc.append( node.getOp().getSymbol() );
+		currentDoc.append( " " );
+		node.getRight().accept( this );
 	}
 
 	@Override
-	public void visit(BoxBinaryOperation node) {
-		var currentDoc = getCurrentDoc();
+	public void visit( BoxBinaryOperation node ) {
+		var		currentDoc			= getCurrentDoc();
 
-		var needsPadding = config.getBinaryOperatorsPadding();
-		String operatorPosition = config.getOperators().getPosition();
+		var		needsPadding		= config.getBinaryOperatorsPadding();
+		String	operatorPosition	= config.getOperators().getPosition();
 
 		// Always create a GROUP for each binary operation
 		// This allows each operation to decide independently whether to break
-		var binaryDoc = pushDoc(DocType.GROUP);
-		var indentDoc = pushDoc(DocType.INDENT);
+		var		binaryDoc			= pushDoc( DocType.GROUP );
+		var		indentDoc			= pushDoc( DocType.INDENT );
 
-		node.getLeft().accept(this);
+		node.getLeft().accept( this );
 
-		if (operatorPosition.equals("start")) {
+		if ( operatorPosition.equals( "start" ) ) {
 			// Operator at start of next line: left \n op right
 			indentDoc
-					.append(needsPadding ? Line.LINE : Line.SOFT)
-					.append(node.getOperator().getSymbol())
-					.append(needsPadding ? " " : "");
+			    .append( needsPadding ? Line.LINE : Line.SOFT )
+			    .append( node.getOperator().getSymbol() )
+			    .append( needsPadding ? " " : "" );
 		} else {
 			// Operator at end of line (default "end"): left op \n right
 			indentDoc
-					.append(needsPadding ? " " : "")
-					.append(node.getOperator().getSymbol())
-					.append(needsPadding ? Line.LINE : Line.SOFT);
+			    .append( needsPadding ? " " : "" )
+			    .append( node.getOperator().getSymbol() )
+			    .append( needsPadding ? Line.LINE : Line.SOFT );
 		}
 
-		node.getRight().accept(this);
-		binaryDoc.append(popDoc());
+		node.getRight().accept( this );
+		binaryDoc.append( popDoc() );
 
-		currentDoc.append(popDoc());
+		currentDoc.append( popDoc() );
 	}
 
 	@Override
-	public void visit(BoxComparisonOperation node) {
-		var currentDoc = getCurrentDoc();
-		String operatorPosition = config.getOperators().getPosition();
-		String comparisonStyle = config.getOperators().getComparisonStyle();
-		String operatorStr = switch (comparisonStyle) {
-			case "keywords" -> node.getOperator().getKeyword();
-			case "preserve" -> node.isWasKeyword() ? node.getOperator().getKeyword() : node.getOperator().getSymbol();
-			default -> node.getOperator().getSymbol();
-		};
+	public void visit( BoxComparisonOperation node ) {
+		var		currentDoc			= getCurrentDoc();
+		String	operatorPosition	= config.getOperators().getPosition();
+		String	comparisonStyle		= config.getOperators().getComparisonStyle();
+		String	operatorStr			= switch ( comparisonStyle ) {
+										case "keywords" -> node.getOperator().getKeyword();
+										case "preserve" -> node.isWasKeyword() ? node.getOperator().getKeyword() : node.getOperator().getSymbol();
+										default -> node.getOperator().getSymbol();
+									};
 
 		// Always create a GROUP for each comparison operation
-		var binaryDoc = pushDoc(DocType.GROUP);
-		var indentDoc = pushDoc(DocType.INDENT);
+		var		binaryDoc			= pushDoc( DocType.GROUP );
+		var		indentDoc			= pushDoc( DocType.INDENT );
 
-		node.getLeft().accept(this);
+		node.getLeft().accept( this );
 
-		if (operatorPosition.equals("start")) {
+		if ( operatorPosition.equals( "start" ) ) {
 			// Operator at start of next line
 			indentDoc
-					.append(Line.LINE)
-					.append(operatorStr)
-					.append(" ");
+			    .append( Line.LINE )
+			    .append( operatorStr )
+			    .append( " " );
 		} else {
 			// Operator at end of line (default "end")
 			indentDoc
-					.append(" ")
-					.append(operatorStr)
-					.append(Line.LINE);
+			    .append( " " )
+			    .append( operatorStr )
+			    .append( Line.LINE );
 		}
 
-		node.getRight().accept(this);
-		binaryDoc.append(popDoc());
+		node.getRight().accept( this );
+		binaryDoc.append( popDoc() );
 
-		currentDoc.append(popDoc());
+		currentDoc.append( popDoc() );
 	}
 
 	@Override
-	public void visit(BoxParenthesis node) {
-		helperPrinter.printParensExpression(node.getExpression());
+	public void visit( BoxParenthesis node ) {
+		helperPrinter.printParensExpression( node.getExpression() );
 	}
 
 	@Override
-	public void visit(BoxFunctionDeclaration node) {
-		printPreComments(node);
-		functionDeclaration.print(node, currentSourceType.peek());
-		printPostComments(node);
+	public void visit( BoxFunctionDeclaration node ) {
+		printPreComments( node );
+		functionDeclaration.print( node, currentSourceType.peek() );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxClosure node) {
-		printPreComments(node);
+	public void visit( BoxClosure node ) {
+		printPreComments( node );
 		// TODO: Make AST "remember" difference between original function(){} and ()=>{}
 		// for now check the source text to see if it starts with "function"
-		var isLambda = !node.getSourceText().startsWith("function");
-		if (!isLambda) {
-			print("function");
+		var isLambda = !node.getSourceText().startsWith( "function" );
+		if ( !isLambda ) {
+			print( "function" );
 		}
-		parametersPrinter.print(node.getArgs());
-		print(isLambda ? " => " : " ");
+		parametersPrinter.print( node.getArgs() );
+		print( isLambda ? " => " : " " );
 
 		// if the closure is a lambda, and the body is a single expression,
 		// the AST has it as an expression statement, not just an expression
 		// handle it here to avoid printing the semicolon
-		if (isLambda && node.getBody() instanceof BoxExpressionStatement exprStmt) {
-			printPreComments(exprStmt);
-			exprStmt.getExpression().accept(this);
-			printPostComments(exprStmt);
+		if ( isLambda && node.getBody() instanceof BoxExpressionStatement exprStmt ) {
+			printPreComments( exprStmt );
+			exprStmt.getExpression().accept( this );
+			printPostComments( exprStmt );
 		} else {
 			// otherwise, just visit the body
-			node.getBody().accept(this);
+			node.getBody().accept( this );
 		}
-		printPostComments(node);
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxLambda node) {
-		printPreComments(node);
+	public void visit( BoxLambda node ) {
+		printPreComments( node );
 
-		var args = node.getArgs();
-		var arrowParens = config.getFunction().getArrow().getParens();
+		var		args			= node.getArgs();
+		var		arrowParens		= config.getFunction().getArrow().getParens();
 
 		// Check if we can omit parentheses: "avoid" mode, single param, no explicit
 		// type, no default, not required, no annotations
-		boolean canOmitParens = false;
-		if (arrowParens.equals("avoid") && args.size() == 1) {
-			var arg = args.get(0);
+		boolean	canOmitParens	= false;
+		if ( arrowParens.equals( "avoid" ) && args.size() == 1 ) {
+			var		arg				= args.get( 0 );
 			// Check if type was explicitly specified (not just default "Any")
-			boolean hasExplicitType = arg.getType() != null
-					&& (!arg.getType().equals("Any")
-							|| (arg.getSourceText() != null && arg.getSourceText().contains("Any ")));
-			boolean hasDefault = arg.getValue() != null;
-			boolean isRequired = arg.getRequired() != null && arg.getRequired();
-			boolean hasAnnotations = arg.getAnnotations() != null && !arg.getAnnotations().isEmpty();
+			boolean	hasExplicitType	= arg.getType() != null
+			    && ( !arg.getType().equals( "Any" )
+			        || ( arg.getSourceText() != null && arg.getSourceText().contains( "Any " ) ) );
+			boolean	hasDefault		= arg.getValue() != null;
+			boolean	isRequired		= arg.getRequired() != null && arg.getRequired();
+			boolean	hasAnnotations	= arg.getAnnotations() != null && !arg.getAnnotations().isEmpty();
 
 			canOmitParens = !hasExplicitType && !hasDefault && !isRequired && !hasAnnotations;
 		}
 
-		if (canOmitParens) {
-			print(args.get(0).getName());
+		if ( canOmitParens ) {
+			print( args.get( 0 ).getName() );
 		} else {
-			parametersPrinter.print(args);
+			parametersPrinter.print( args );
 		}
 
-		print(" -> ");
-		node.getBody().accept(this);
-		printPostComments(node);
+		print( " -> " );
+		node.getBody().accept( this );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxFunctionInvocation node) {
-		printPreComments(node);
-		getCurrentDoc().append(node.getName());
-		argumentsPrinter.print(node, node.getArguments());
-		printPostComments(node);
+	public void visit( BoxFunctionInvocation node ) {
+		printPreComments( node );
+		getCurrentDoc().append( node.getName() );
+		argumentsPrinter.print( node, node.getArguments() );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxMethodInvocation node) {
-		var currentDoc = getCurrentDoc();
-		List<ChainElement> chain = new ArrayList<>();
-		BoxNode currentNode = node;
+	public void visit( BoxMethodInvocation node ) {
+		var					currentDoc	= getCurrentDoc();
+		List<ChainElement>	chain		= new ArrayList<>();
+		BoxNode				currentNode	= node;
 
 		// Collect the entire chain (method invocations and dot accesses)
-		while (currentNode instanceof BoxMethodInvocation methodNode) {
-			chain.add(new ChainElement(methodNode));
+		while ( currentNode instanceof BoxMethodInvocation methodNode ) {
+			chain.add( new ChainElement( methodNode ) );
 			currentNode = methodNode.getObj();
 			// Also collect any dot accesses in between
-			while (currentNode instanceof BoxDotAccess dotAccess) {
-				chain.add(new ChainElement(dotAccess));
+			while ( currentNode instanceof BoxDotAccess dotAccess ) {
+				chain.add( new ChainElement( dotAccess ) );
 				currentNode = dotAccess.getContext();
 			}
 		}
 
 		// Get the root of the chain
 		BoxNode root = currentNode;
-		if (!chain.isEmpty() && chain.getLast().isMethodInvocation()) {
+		if ( !chain.isEmpty() && chain.getLast().isMethodInvocation() ) {
 			root = chain.getLast().asMethodInvocation().getObj();
-		} else if (!chain.isEmpty() && chain.getLast().isDotAccess()) {
+		} else if ( !chain.isEmpty() && chain.getLast().isDotAccess() ) {
 			root = chain.getLast().asDotAccess().getContext();
 		}
-		root.accept(this);
+		root.accept( this );
 
-		int chainSize = chain.size();
-		int breakCount = config.getChain().getBreakCount();
-		int breakLength = config.getChain().getBreakLength();
-		int chainLength = calculateChainLength(chain, root);
-		boolean shouldBreak = chainSize >= breakCount || chainLength >= breakLength;
+		int		chainSize	= chain.size();
+		int		breakCount	= config.getChain().getBreakCount();
+		int		breakLength	= config.getChain().getBreakLength();
+		int		chainLength	= calculateChainLength( chain, root );
+		boolean	shouldBreak	= chainSize >= breakCount || chainLength >= breakLength;
 
-		var chainGroup = pushDoc(DocType.GROUP);
-		var indentGroup = pushDoc(DocType.INDENT);
+		var		chainGroup	= pushDoc( DocType.GROUP );
+		var		indentGroup	= pushDoc( DocType.INDENT );
 
 		// Force break if chain is long enough (by count or by length)
-		if (shouldBreak) {
-			indentGroup.append(Line.BREAK_PARENT);
+		if ( shouldBreak ) {
+			indentGroup.append( Line.BREAK_PARENT );
 		}
 
-		for (int i = chain.size() - 1; i >= 0; i--) {
-			var element = chain.get(i);
+		for ( int i = chain.size() - 1; i >= 0; i-- ) {
+			var element = chain.get( i );
 
-			if (shouldBreak) {
-				indentGroup.append(Line.HARD);
+			if ( shouldBreak ) {
+				indentGroup.append( Line.HARD );
 			}
 
-			if (element.isMethodInvocation()) {
+			if ( element.isMethodInvocation() ) {
 				var methodNode = element.asMethodInvocation();
-				printPreComments(methodNode);
+				printPreComments( methodNode );
 
-				if (methodNode.getUsedDotAccess()) {
-					if (methodNode.isSafe()) {
-						print("?");
+				if ( methodNode.getUsedDotAccess() ) {
+					if ( methodNode.isSafe() ) {
+						print( "?" );
 					}
-					print(".");
-					methodNode.getName().accept(this);
+					print( "." );
+					methodNode.getName().accept( this );
 				} else {
-					print("[ ");
-					methodNode.getName().accept(this);
-					print(" ]");
+					print( "[ " );
+					methodNode.getName().accept( this );
+					print( " ]" );
 				}
-				argumentsPrinter.print(methodNode, methodNode.getArguments());
-				printPostComments(methodNode);
-			} else if (element.isDotAccess()) {
+				argumentsPrinter.print( methodNode, methodNode.getArguments() );
+				printPostComments( methodNode );
+			} else if ( element.isDotAccess() ) {
 				var dotAccess = element.asDotAccess();
-				printPreComments(dotAccess);
-				if (dotAccess.isSafe()) {
-					print("?");
+				printPreComments( dotAccess );
+				if ( dotAccess.isSafe() ) {
+					print( "?" );
 				}
-				print(".");
-				dotAccess.getAccess().accept(this);
-				printPostComments(dotAccess);
+				print( "." );
+				dotAccess.getAccess().accept( this );
+				printPostComments( dotAccess );
 			}
 		}
-		chainGroup.append(popDoc());
-		currentDoc.append(popDoc());
+		chainGroup.append( popDoc() );
+		currentDoc.append( popDoc() );
 	}
 
 	@Override
-	public void visit(BoxStaticMethodInvocation node) {
-		printPreComments(node);
-		node.getObj().accept(this);
-		print("::");
-		node.getName().accept(this);
-		argumentsPrinter.print(node, node.getArguments());
-		printPostComments(node);
+	public void visit( BoxStaticMethodInvocation node ) {
+		printPreComments( node );
+		node.getObj().accept( this );
+		print( "::" );
+		node.getName().accept( this );
+		argumentsPrinter.print( node, node.getArguments() );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxDotAccess node) {
+	public void visit( BoxDotAccess node ) {
 		// Check if this dot access is already being processed as part of a method chain
 		// by checking if its parent is a method invocation
-		if (node.getParent() instanceof BoxMethodInvocation) {
+		if ( node.getParent() instanceof BoxMethodInvocation ) {
 			// This will be handled by the method invocation visitor
-			printPreComments(node);
-			node.getContext().accept(this);
-			if (node.isSafe()) {
-				print("?");
+			printPreComments( node );
+			node.getContext().accept( this );
+			if ( node.isSafe() ) {
+				print( "?" );
 			}
-			print(".");
-			node.getAccess().accept(this);
-			printPostComments(node);
+			print( "." );
+			node.getAccess().accept( this );
+			printPostComments( node );
 			return;
 		}
 
-		var currentDoc = getCurrentDoc();
-		List<ChainElement> chain = new ArrayList<>();
-		BoxNode currentNode = node;
+		var					currentDoc	= getCurrentDoc();
+		List<ChainElement>	chain		= new ArrayList<>();
+		BoxNode				currentNode	= node;
 
 		// Collect the entire dot access chain
-		while (currentNode instanceof BoxDotAccess dotAccess) {
-			chain.add(new ChainElement(dotAccess));
+		while ( currentNode instanceof BoxDotAccess dotAccess ) {
+			chain.add( new ChainElement( dotAccess ) );
 			currentNode = dotAccess.getContext();
 		}
 
 		// Get the root of the chain
-		currentNode.accept(this);
+		currentNode.accept( this );
 
-		int chainSize = chain.size();
-		int breakCount = config.getChain().getBreakCount();
-		int breakLength = config.getChain().getBreakLength();
-		int chainLength = calculateChainLength(chain, currentNode);
-		boolean shouldBreak = chainSize >= breakCount || chainLength >= breakLength;
+		int		chainSize	= chain.size();
+		int		breakCount	= config.getChain().getBreakCount();
+		int		breakLength	= config.getChain().getBreakLength();
+		int		chainLength	= calculateChainLength( chain, currentNode );
+		boolean	shouldBreak	= chainSize >= breakCount || chainLength >= breakLength;
 
-		var chainGroup = pushDoc(DocType.GROUP);
-		var indentGroup = pushDoc(DocType.INDENT);
+		var		chainGroup	= pushDoc( DocType.GROUP );
+		var		indentGroup	= pushDoc( DocType.INDENT );
 
 		// Force break if chain is long enough (by count or by length)
-		if (shouldBreak) {
-			indentGroup.append(Line.BREAK_PARENT);
+		if ( shouldBreak ) {
+			indentGroup.append( Line.BREAK_PARENT );
 		}
 
-		for (int i = chain.size() - 1; i >= 0; i--) {
-			var element = chain.get(i);
+		for ( int i = chain.size() - 1; i >= 0; i-- ) {
+			var element = chain.get( i );
 
-			if (shouldBreak) {
-				indentGroup.append(Line.HARD);
+			if ( shouldBreak ) {
+				indentGroup.append( Line.HARD );
 			}
 
 			var dotAccess = element.asDotAccess();
-			printPreComments(dotAccess);
-			if (dotAccess.isSafe()) {
-				print("?");
+			printPreComments( dotAccess );
+			if ( dotAccess.isSafe() ) {
+				print( "?" );
 			}
-			print(".");
-			dotAccess.getAccess().accept(this);
-			printPostComments(dotAccess);
+			print( "." );
+			dotAccess.getAccess().accept( this );
+			printPostComments( dotAccess );
 		}
-		chainGroup.append(popDoc());
-		currentDoc.append(popDoc());
+		chainGroup.append( popDoc() );
+		currentDoc.append( popDoc() );
 	}
 
 	@Override
-	public void visit(BoxStaticAccess node) {
-		printPreComments(node);
-		node.getContext().accept(this);
-		print("::");
-		node.getAccess().accept(this);
-		printPostComments(node);
+	public void visit( BoxStaticAccess node ) {
+		printPreComments( node );
+		node.getContext().accept( this );
+		print( "::" );
+		node.getAccess().accept( this );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxArrayAccess node) {
-		printPreComments(node);
-		node.getContext().accept(this);
-		print("[ ");
-		node.getAccess().accept(this);
-		print(" ]");
-		printPostComments(node);
+	public void visit( BoxArrayAccess node ) {
+		printPreComments( node );
+		node.getContext().accept( this );
+		print( "[ " );
+		node.getAccess().accept( this );
+		print( " ]" );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxFunctionalBIFAccess node) {
-		printPreComments(node);
-		print("::");
-		print(node.getName());
-		printPostComments(node);
+	public void visit( BoxFunctionalBIFAccess node ) {
+		printPreComments( node );
+		print( "::" );
+		print( node.getName() );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxFunctionalMemberAccess node) {
-		printPreComments(node);
-		print(".");
-		print(node.getName());
-		argumentsPrinter.print(node, node.getArguments());
-		printPostComments(node);
+	public void visit( BoxFunctionalMemberAccess node ) {
+		printPreComments( node );
+		print( "." );
+		print( node.getName() );
+		argumentsPrinter.print( node, node.getArguments() );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxExpressionInvocation node) {
-		printPreComments(node);
-		node.getExpr().accept(this);
-		print("(");
+	public void visit( BoxExpressionInvocation node ) {
+		printPreComments( node );
+		node.getExpr().accept( this );
+		print( "(" );
 		int size = node.getArguments().size();
-		if (size > 0) {
-			print(" ");
+		if ( size > 0 ) {
+			print( " " );
 		}
-		for (int i = 0; i < size; i++) {
-			node.getArguments().get(i).accept(this);
-			if (i < size - 1) {
-				print(", ");
+		for ( int i = 0; i < size; i++ ) {
+			node.getArguments().get( i ).accept( this );
+			if ( i < size - 1 ) {
+				print( ", " );
 			}
 		}
-		if (size > 0) {
-			print(" ");
+		if ( size > 0 ) {
+			print( " " );
 		}
-		print(")");
-		printPostComments(node);
+		print( ")" );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxIdentifier node) {
-		printPreComments(node);
-		print(node.getName());
-		printPostComments(node);
+	public void visit( BoxIdentifier node ) {
+		printPreComments( node );
+		print( node.getName() );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxBooleanLiteral node) {
-		printPreComments(node);
-		print(node.getValue() ? "true" : "false");
-		printPostComments(node);
+	public void visit( BoxBooleanLiteral node ) {
+		printPreComments( node );
+		print( node.getValue() ? "true" : "false" );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxIntegerLiteral node) {
-		printPreComments(node);
-		print(node.getValue());
-		printPostComments(node);
+	public void visit( BoxIntegerLiteral node ) {
+		printPreComments( node );
+		print( node.getValue() );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxDecimalLiteral node) {
-		printPreComments(node);
-		print(node.getValue());
-		printPostComments(node);
+	public void visit( BoxDecimalLiteral node ) {
+		printPreComments( node );
+		print( node.getValue() );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxNull node) {
-		printPreComments(node);
-		print("null");
-		printPostComments(node);
+	public void visit( BoxNull node ) {
+		printPreComments( node );
+		print( "null" );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxScope node) {
-		printPreComments(node);
-		print(node.getName());
-		printPostComments(node);
+	public void visit( BoxScope node ) {
+		printPreComments( node );
+		print( node.getName() );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxFQN node) {
-		printPreComments(node);
-		print(node.getValue());
-		printPostComments(node);
+	public void visit( BoxFQN node ) {
+		printPreComments( node );
+		print( node.getValue() );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxStringLiteral node) {
-		stringPrinter.printStringLiteral(node);
+	public void visit( BoxStringLiteral node ) {
+		stringPrinter.printStringLiteral( node );
 	}
 
 	@Override
-	public void visit(BoxStringConcat node) {
-		stringPrinter.printStringConcat(node);
+	public void visit( BoxStringConcat node ) {
+		stringPrinter.printStringConcat( node );
 	}
 
 	@Override
-	public void visit(BoxStringInterpolation node) {
-		stringPrinter.printStringInterpolation(node);
+	public void visit( BoxStringInterpolation node ) {
+		stringPrinter.printStringInterpolation( node );
 	}
 
 	@Override
-	public void visit(BoxArrayLiteral node) {
-		arrayLiteralPrinter.print(node);
+	public void visit( BoxArrayLiteral node ) {
+		arrayLiteralPrinter.print( node );
 	}
 
 	@Override
-	public void visit(BoxStructLiteral node) {
-		structLiteralPrinter.print(node);
+	public void visit( BoxStructLiteral node ) {
+		structLiteralPrinter.print( node );
 	}
 
 	@Override
-	public void visit(BoxNegateOperation node) {
-		printPreComments(node);
-		print("not ");
-		node.getExpr().accept(this);
-		printPostComments(node);
+	public void visit( BoxNegateOperation node ) {
+		printPreComments( node );
+		print( "not " );
+		node.getExpr().accept( this );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxUnaryOperation node) {
-		printPreComments(node);
+	public void visit( BoxUnaryOperation node ) {
+		printPreComments( node );
 		String symbol = node.getOperator().getSymbol();
-		if (node.getOperator().isPre()) {
-			print(symbol);
-			node.getExpr().accept(this);
+		if ( node.getOperator().isPre() ) {
+			print( symbol );
+			node.getExpr().accept( this );
 		} else {
-			node.getExpr().accept(this);
-			print(symbol);
+			node.getExpr().accept( this );
+			print( symbol );
 		}
-		printPostComments(node);
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxTernaryOperation node) {
-		printPreComments(node);
+	public void visit( BoxTernaryOperation node ) {
+		printPreComments( node );
 
 		String ternaryStyle = config.getOperators().getTernary().getStyle();
 
-		switch (ternaryStyle) {
-			case "always-multiline":
-				printTernaryMultiline(node);
+		switch ( ternaryStyle ) {
+			case "always-multiline" :
+				printTernaryMultiline( node );
 				break;
-			case "preserve":
+			case "preserve" :
 				// Check if original source spans multiple lines
-				if (isMultilineInSource(node)) {
-					printTernaryMultiline(node);
+				if ( isMultilineInSource( node ) ) {
+					printTernaryMultiline( node );
 				} else {
-					printTernaryFlat(node);
+					printTernaryFlat( node );
 				}
 				break;
-			case "flat":
-			default:
+			case "flat" :
+			default :
 				// Use GROUP to let the printer decide based on line length
-				printTernaryWithGroup(node);
+				printTernaryWithGroup( node );
 				break;
 		}
 
-		printPostComments(node);
+		printPostComments( node );
 	}
 
 	/**
 	 * Print ternary on a single line (no line break opportunity)
 	 */
-	private void printTernaryFlat(BoxTernaryOperation node) {
-		node.getCondition().accept(this);
-		print(" ? ");
-		node.getWhenTrue().accept(this);
-		print(" : ");
-		node.getWhenFalse().accept(this);
+	private void printTernaryFlat( BoxTernaryOperation node ) {
+		node.getCondition().accept( this );
+		print( " ? " );
+		node.getWhenTrue().accept( this );
+		print( " : " );
+		node.getWhenFalse().accept( this );
 	}
 
 	/**
 	 * Print ternary with GROUP allowing line breaks if needed
 	 */
-	private void printTernaryWithGroup(BoxTernaryOperation node) {
-		var currentDoc = getCurrentDoc();
-		String questionPosition = config.getOperators().getTernary().getQuestionPosition();
+	private void printTernaryWithGroup( BoxTernaryOperation node ) {
+		var		currentDoc			= getCurrentDoc();
+		String	questionPosition	= config.getOperators().getTernary().getQuestionPosition();
 
 		// Create a GROUP that can break if line is too long
-		var ternaryDoc = pushDoc(DocType.GROUP);
-		var indentDoc = pushDoc(DocType.INDENT);
+		var		ternaryDoc			= pushDoc( DocType.GROUP );
+		var		indentDoc			= pushDoc( DocType.INDENT );
 
-		node.getCondition().accept(this);
+		node.getCondition().accept( this );
 
-		if (questionPosition.equals("end")) {
+		if ( questionPosition.equals( "end" ) ) {
 			// Operators at end of line: condition ? \n valueIfTrue : \n valueIfFalse
-			indentDoc.append(" ?");
-			indentDoc.append(Line.LINE);
-			node.getWhenTrue().accept(this);
-			indentDoc.append(" :");
-			indentDoc.append(Line.LINE);
-			node.getWhenFalse().accept(this);
+			indentDoc.append( " ?" );
+			indentDoc.append( Line.LINE );
+			node.getWhenTrue().accept( this );
+			indentDoc.append( " :" );
+			indentDoc.append( Line.LINE );
+			node.getWhenFalse().accept( this );
 		} else {
 			// Operators at start of line (default "start"): condition \n ? valueIfTrue \n :
 			// valueIfFalse
-			indentDoc.append(Line.LINE);
-			indentDoc.append("? ");
-			node.getWhenTrue().accept(this);
-			indentDoc.append(Line.LINE);
-			indentDoc.append(": ");
-			node.getWhenFalse().accept(this);
+			indentDoc.append( Line.LINE );
+			indentDoc.append( "? " );
+			node.getWhenTrue().accept( this );
+			indentDoc.append( Line.LINE );
+			indentDoc.append( ": " );
+			node.getWhenFalse().accept( this );
 		}
 
-		ternaryDoc.append(popDoc());
-		currentDoc.append(popDoc());
+		ternaryDoc.append( popDoc() );
+		currentDoc.append( popDoc() );
 	}
 
 	/**
 	 * Print ternary always on multiple lines
 	 */
-	private void printTernaryMultiline(BoxTernaryOperation node) {
-		var currentDoc = getCurrentDoc();
-		String questionPosition = config.getOperators().getTernary().getQuestionPosition();
+	private void printTernaryMultiline( BoxTernaryOperation node ) {
+		var		currentDoc			= getCurrentDoc();
+		String	questionPosition	= config.getOperators().getTernary().getQuestionPosition();
 
 		// Create a GROUP with BREAK_PARENT to force multiline
-		var ternaryDoc = pushDoc(DocType.GROUP);
-		var indentDoc = pushDoc(DocType.INDENT);
+		var		ternaryDoc			= pushDoc( DocType.GROUP );
+		var		indentDoc			= pushDoc( DocType.INDENT );
 
-		node.getCondition().accept(this);
+		node.getCondition().accept( this );
 
 		// Force line breaks with BREAK_PARENT
-		indentDoc.append(Line.BREAK_PARENT);
+		indentDoc.append( Line.BREAK_PARENT );
 
-		if (questionPosition.equals("end")) {
+		if ( questionPosition.equals( "end" ) ) {
 			// Operators at end of line: condition ? \n valueIfTrue : \n valueIfFalse
-			indentDoc.append(" ?");
-			indentDoc.append(Line.HARD);
-			node.getWhenTrue().accept(this);
-			indentDoc.append(" :");
-			indentDoc.append(Line.HARD);
-			node.getWhenFalse().accept(this);
+			indentDoc.append( " ?" );
+			indentDoc.append( Line.HARD );
+			node.getWhenTrue().accept( this );
+			indentDoc.append( " :" );
+			indentDoc.append( Line.HARD );
+			node.getWhenFalse().accept( this );
 		} else {
 			// Operators at start of line (default "start"): condition \n ? valueIfTrue \n :
 			// valueIfFalse
-			indentDoc.append(Line.HARD);
-			indentDoc.append("? ");
-			node.getWhenTrue().accept(this);
-			indentDoc.append(Line.HARD);
-			indentDoc.append(": ");
-			node.getWhenFalse().accept(this);
+			indentDoc.append( Line.HARD );
+			indentDoc.append( "? " );
+			node.getWhenTrue().accept( this );
+			indentDoc.append( Line.HARD );
+			indentDoc.append( ": " );
+			node.getWhenFalse().accept( this );
 		}
 
-		ternaryDoc.append(popDoc());
-		currentDoc.append(popDoc());
+		ternaryDoc.append( popDoc() );
+		currentDoc.append( popDoc() );
 	}
 
 	/**
 	 * Check if a ternary operation spans multiple lines in source
 	 */
-	private boolean isMultilineInSource(BoxTernaryOperation node) {
-		if (node.getPosition() == null) {
+	private boolean isMultilineInSource( BoxTernaryOperation node ) {
+		if ( node.getPosition() == null ) {
 			return false;
 		}
-		int startLine = node.getPosition().getStart().getLine();
-		int endLine = node.getPosition().getEnd().getLine();
+		int	startLine	= node.getPosition().getStart().getLine();
+		int	endLine		= node.getPosition().getEnd().getLine();
 		return startLine != endLine;
 	}
 
 	@Override
-	public void visit(BoxNew node) {
-		printPreComments(node);
-		print("new ");
-		if (node.getPrefix() != null) {
-			node.getPrefix().accept(this);
-			print(":");
+	public void visit( BoxNew node ) {
+		printPreComments( node );
+		print( "new " );
+		if ( node.getPrefix() != null ) {
+			node.getPrefix().accept( this );
+			print( ":" );
 		}
-		node.getExpression().accept(this);
-		argumentsPrinter.print(node, node.getArguments());
-		printPostComments(node);
+		node.getExpression().accept( this );
+		argumentsPrinter.print( node, node.getArguments() );
+		printPostComments( node );
 	}
 
 	// statement visitors
 
 	@Override
-	public void visit(BoxAssert node) {
-		printPreComments(node);
-		if (printSourceForCFCompat(node)) {
-			printPostComments(node);
+	public void visit( BoxAssert node ) {
+		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
 			return;
 		}
-		print("assert ");
-		node.getExpression().accept(this);
+		print( "assert " );
+		node.getExpression().accept( this );
 		printSemicolon();
-		printPostComments(node);
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxDocumentationAnnotation node) {
-		printPreComments(node);
-		node.getKey().accept(this);
-		if (node.getValue() != null) {
-			print(" ");
-			node.getValue().accept(this);
+	public void visit( BoxDocumentationAnnotation node ) {
+		printPreComments( node );
+		node.getKey().accept( this );
+		if ( node.getValue() != null ) {
+			print( " " );
+			node.getValue().accept( this );
 		}
-		printPostComments(node);
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxStatementBlock node) {
-		printPreComments(node);
-		helperPrinter.printBlock(node, node.getBody());
-		printPostComments(node);
+	public void visit( BoxStatementBlock node ) {
+		printPreComments( node );
+		helperPrinter.printBlock( node, node.getBody() );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxStaticInitializer node) {
-		if (!isTemplate()) {
-			printPreComments(node);
-			print("static ");
-			helperPrinter.printBlock(node, node.getBody());
-			printPostComments(node);
+	public void visit( BoxStaticInitializer node ) {
+		if ( !isTemplate() ) {
+			printPreComments( node );
+			print( "static " );
+			helperPrinter.printBlock( node, node.getBody() );
+			printPostComments( node );
 		}
 	}
 
 	@Override
-	public void visit(BoxBreak node) {
-		if (isTemplate() && node.isImplicit()) {
+	public void visit( BoxBreak node ) {
+		if ( isTemplate() && node.isImplicit() ) {
 			return;
 		}
-		printPreComments(node);
-		if (printSourceForCFCompat(node)) {
-			printPostComments(node);
+		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
 			return;
 		}
-		if (isTemplate()) {
-			print("<" + componentPrefix + "break");
-			if (node.getLabel() != null) {
-				print(" label=\"");
-				print(node.getLabel());
-				print("\"");
+		if ( isTemplate() ) {
+			print( "<" + componentPrefix + "break" );
+			if ( node.getLabel() != null ) {
+				print( " label=\"" );
+				print( node.getLabel() );
+				print( "\"" );
 			}
-			print(">");
+			print( ">" );
 		} else {
-			print("break");
-			if (node.getLabel() != null) {
-				print(" ");
-				print(node.getLabel());
+			print( "break" );
+			if ( node.getLabel() != null ) {
+				print( " " );
+				print( node.getLabel() );
 			}
 			printSemicolon();
 		}
-		printPostComments(node);
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxContinue node) {
-		printPreComments(node);
-		if (printSourceForCFCompat(node)) {
-			printPostComments(node);
+	public void visit( BoxContinue node ) {
+		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
 			return;
 		}
-		if (isTemplate()) {
-			print("<" + componentPrefix + "continue");
-			if (node.getLabel() != null) {
-				print(" label=\"");
-				print(node.getLabel());
-				print("\"");
+		if ( isTemplate() ) {
+			print( "<" + componentPrefix + "continue" );
+			if ( node.getLabel() != null ) {
+				print( " label=\"" );
+				print( node.getLabel() );
+				print( "\"" );
 			}
-			print(">");
+			print( ">" );
 		} else {
-			print("continue");
-			if (node.getLabel() != null) {
-				print(" ");
-				print(node.getLabel());
+			print( "continue" );
+			if ( node.getLabel() != null ) {
+				print( " " );
+				print( node.getLabel() );
 			}
 			printSemicolon();
 		}
-		printPostComments(node);
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxForIn node) {
-		printPreComments(node);
-		if (printSourceForCFCompat(node)) {
-			printPostComments(node);
+	public void visit( BoxForIn node ) {
+		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
 			return;
 		}
-		if (node.getLabel() != null) {
-			print(node.getLabel());
-			print(": ");
+		if ( node.getLabel() != null ) {
+			print( node.getLabel() );
+			print( ": " );
 		}
-		print("for (");
-		if (node.getHasVar()) {
-			print("var ");
+		print( "for (" );
+		if ( node.getHasVar() ) {
+			print( "var " );
 		}
-		node.getVariable().accept(this);
-		print(" in ");
-		node.getExpression().accept(this);
-		print(") ");
-		helperPrinter.printStatementBody(node, node.getBody());
-		printPostComments(node);
+		node.getVariable().accept( this );
+		print( " in " );
+		node.getExpression().accept( this );
+		print( ") " );
+		helperPrinter.printStatementBody( node, node.getBody() );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxForIndex node) {
-		printPreComments(node);
-		if (printSourceForCFCompat(node)) {
-			printPostComments(node);
+	public void visit( BoxForIndex node ) {
+		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
 			return;
 		}
-		if (node.getLabel() != null) {
-			print(node.getLabel());
-			print(": ");
+		if ( node.getLabel() != null ) {
+			print( node.getLabel() );
+			print( ": " );
 		}
-		print("for (");
-		if (node.getInitializer() != null) {
-			node.getInitializer().accept(this);
-		}
-
-		print(";");
-		if (config.getForLoopSemicolons().getPadding()) {
-			print(" ");
+		print( "for (" );
+		if ( node.getInitializer() != null ) {
+			node.getInitializer().accept( this );
 		}
 
-		if (node.getCondition() != null) {
-			node.getCondition().accept(this);
+		print( ";" );
+		if ( config.getForLoopSemicolons().getPadding() ) {
+			print( " " );
 		}
 
-		print(";");
-		if (config.getForLoopSemicolons().getPadding()) {
-			print(" ");
+		if ( node.getCondition() != null ) {
+			node.getCondition().accept( this );
 		}
 
-		if (node.getStep() != null) {
-			node.getStep().accept(this);
+		print( ";" );
+		if ( config.getForLoopSemicolons().getPadding() ) {
+			print( " " );
 		}
-		print(") ");
-		helperPrinter.printStatementBody(node, node.getBody());
-		printPostComments(node);
+
+		if ( node.getStep() != null ) {
+			node.getStep().accept( this );
+		}
+		print( ") " );
+		helperPrinter.printStatementBody( node, node.getBody() );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxImport node) {
-		printPreComments(node);
+	public void visit( BoxImport node ) {
+		printPreComments( node );
 		// work around for unsupported taglib imports
-		if (node.getExpression() == null) {
+		if ( node.getExpression() == null ) {
 			return;
 		}
-		if (isTemplate()) {
+		if ( isTemplate() ) {
 			// TODO: See about just changing the type of this
-			BoxFQN fqn = (BoxFQN) node.getExpression();
-			String prefix = null;
-			String className = null;
-			if (fqn.getValue().contains(":")) {
-				String[] parts = fqn.getValue().split(":");
-				prefix = parts[0];
-				className = parts[1];
+			BoxFQN	fqn			= ( BoxFQN ) node.getExpression();
+			String	prefix		= null;
+			String	className	= null;
+			if ( fqn.getValue().contains( ":" ) ) {
+				String[] parts = fqn.getValue().split( ":" );
+				prefix		= parts[ 0 ];
+				className	= parts[ 1 ];
 			} else {
 				className = fqn.getValue();
 			}
-			print("<bx:import");
-			if (prefix != null) {
-				print(" prefix=\"");
-				print(prefix);
-				print("\"");
+			print( "<bx:import" );
+			if ( prefix != null ) {
+				print( " prefix=\"" );
+				print( prefix );
+				print( "\"" );
 			}
 
-			print(" name=\"");
-			print(className);
-			print("\"");
+			print( " name=\"" );
+			print( className );
+			print( "\"" );
 
-			if (node.getAlias() != null) {
-				print(" alias=\"");
-				node.getAlias().accept(this);
-				print("\"");
+			if ( node.getAlias() != null ) {
+				print( " alias=\"" );
+				node.getAlias().accept( this );
+				print( "\"" );
 			}
-			print(">");
+			print( ">" );
 		} else {
-			print("import ");
-			node.getExpression().accept(this);
-			if (node.getAlias() != null) {
-				print(" as ");
-				node.getAlias().accept(this);
+			print( "import " );
+			node.getExpression().accept( this );
+			if ( node.getAlias() != null ) {
+				print( " as " );
+				node.getAlias().accept( this );
 			}
 			printSemicolon();
 		}
-		printPostComments(node);
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxComponent node) {
-		componentPrinter.print(node);
+	public void visit( BoxComponent node ) {
+		componentPrinter.print( node );
 	}
 
 	@Override
-	public void visit(BoxParam node) {
-		printPreComments(node);
-		if (printSourceForCFCompat(node)) {
-			printPostComments(node);
+	public void visit( BoxParam node ) {
+		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
 			return;
 		}
-		if (isTemplate()) {
-			print("<" + componentPrefix + "param");
-			if (node.getType() != null) {
-				print(" type=\"");
-				node.getType().accept(this);
-				print("\"");
+		if ( isTemplate() ) {
+			print( "<" + componentPrefix + "param" );
+			if ( node.getType() != null ) {
+				print( " type=\"" );
+				node.getType().accept( this );
+				print( "\"" );
 			}
-			print(" name=\"");
-			node.getVariable().accept(this);
-			print("\"");
-			if (node.getDefaultValue() != null) {
-				print(" default=\"");
-				stringPrinter.printQuotedExpression(node.getDefaultValue());
-				print("\"");
+			print( " name=\"" );
+			node.getVariable().accept( this );
+			print( "\"" );
+			if ( node.getDefaultValue() != null ) {
+				print( " default=\"" );
+				stringPrinter.printQuotedExpression( node.getDefaultValue() );
+				print( "\"" );
 			}
-			print(">");
+			print( ">" );
 		} else {
-			print("param ");
-			if (node.getType() != null) {
-				if (node.getType() instanceof BoxStringLiteral str) {
-					print(str.getValue());
+			print( "param " );
+			if ( node.getType() != null ) {
+				if ( node.getType() instanceof BoxStringLiteral str ) {
+					print( str.getValue() );
 				} else {
-					node.getType().accept(this);
+					node.getType().accept( this );
 				}
-				print(" ");
+				print( " " );
 			}
-			if (node.getVariable() instanceof BoxStringLiteral str) {
-				print(str.getValue());
+			if ( node.getVariable() instanceof BoxStringLiteral str ) {
+				print( str.getValue() );
 			} else {
-				node.getVariable().accept(this);
+				node.getVariable().accept( this );
 			}
-			if (node.getDefaultValue() != null) {
-				print(" = ");
-				node.getDefaultValue().accept(this);
+			if ( node.getDefaultValue() != null ) {
+				print( " = " );
+				node.getDefaultValue().accept( this );
 			}
 			printSemicolon();
 		}
-		printPostComments(node);
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxProperty node) {
-		printPreComments(node);
-		if (isTemplate()) {
-			print("<" + componentPrefix + "property");
-			helperPrinter.printKeyValueAnnotations(node.getAllAnnotations(), false);
-			print(">");
+	public void visit( BoxProperty node ) {
+		printPreComments( node );
+		if ( isTemplate() ) {
+			print( "<" + componentPrefix + "property" );
+			helperPrinter.printKeyValueAnnotations( node.getAllAnnotations(), false );
+			print( ">" );
 		} else {
-			if (config.getAlignConsecutiveProperties() && node.getSourceText() != null) {
-				print(node.getSourceText().trim());
-				printPostComments(node);
+			if ( config.getAlignConsecutiveProperties() && node.getSourceText() != null ) {
+				print( node.getSourceText().trim() );
+				printPostComments( node );
 				return;
 			}
-			for (var anno : node.getAnnotations()) {
-				anno.accept(this);
+			for ( var anno : node.getAnnotations() ) {
+				anno.accept( this );
 				newLine();
 			}
-			print("property");
+			print( "property" );
 			// TODO: Handle these accounting for shorcut syntax
 			// also need to seperate pre and inline annotations
-			var size = node.getPostAnnotations().size();
-			var multiline = size >= config.getProperty().getMultiline().getElementCount();
-			var keyValuePadding = config.getProperty().getKeyValue().getPadding();
-			if (node.getSourceText() == null) {
+			var	size			= node.getPostAnnotations().size();
+			var	multiline		= size >= config.getProperty().getMultiline().getElementCount();
+			var	keyValuePadding	= config.getProperty().getKeyValue().getPadding();
+			if ( node.getSourceText() == null ) {
 				multiline = true;
 			}
-			if (!multiline && node.getSourceText() != null) {
+			if ( !multiline && node.getSourceText() != null ) {
 				multiline = config.getProperty().getMultiline().getMinLength() < node.getSourceText().trim().length();
 			}
 
-			Doc currentDoc = getCurrentDoc();
-			Doc propDoc = currentDoc;
+			Doc	currentDoc	= getCurrentDoc();
+			Doc	propDoc		= currentDoc;
 
-			if (multiline) {
-				propDoc = pushDoc(DocType.INDENT);
+			if ( multiline ) {
+				propDoc = pushDoc( DocType.INDENT );
 			}
 
-			for (int i = 0; i < size; i++) {
-				var anno = node.getPostAnnotations().get(i);
+			for ( int i = 0; i < size; i++ ) {
+				var anno = node.getPostAnnotations().get( i );
 
-				if (i < size) {
-					if (multiline) {
-						propDoc.append(Line.HARD);
+				if ( i < size ) {
+					if ( multiline ) {
+						propDoc.append( Line.HARD );
 					} else {
-						propDoc.append(" ");
+						propDoc.append( " " );
 					}
 				}
 
-				anno.getKey().accept(this);
-				if (anno.getValue() != null) {
-					propDoc.append(keyValuePadding ? " = " : "=");
-					anno.getValue().accept(this);
+				anno.getKey().accept( this );
+				if ( anno.getValue() != null ) {
+					propDoc.append( keyValuePadding ? " = " : "=" );
+					anno.getValue().accept( this );
 				}
 			}
-			if (config.getSemicolons()) {
-				propDoc.append(";");
+			if ( config.getSemicolons() ) {
+				propDoc.append( ";" );
 			}
 
-			if (multiline) {
+			if ( multiline ) {
 				popDoc();
-				currentDoc.append(propDoc);
+				currentDoc.append( propDoc );
 			}
 		}
-		printPostComments(node);
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxRethrow node) {
-		printPreComments(node);
-		if (printSourceForCFCompat(node)) {
-			printPostComments(node);
+	public void visit( BoxRethrow node ) {
+		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
 			return;
 		}
-		if (isTemplate()) {
-			print("<" + componentPrefix + "rethrow>");
+		if ( isTemplate() ) {
+			print( "<" + componentPrefix + "rethrow>" );
 		} else {
-			print("rethrow");
+			print( "rethrow" );
 			printSemicolon();
 		}
-		printPostComments(node);
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxReturn node) {
-		printPreComments(node);
-		if (printSourceForCFCompat(node)) {
-			printPostComments(node);
+	public void visit( BoxReturn node ) {
+		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
 			return;
 		}
-		if (isTemplate()) {
-			print("<" + componentPrefix + "return");
-			if (node.getExpression() != null) {
-				print(" ");
-				node.getExpression().accept(this);
+		if ( isTemplate() ) {
+			print( "<" + componentPrefix + "return" );
+			if ( node.getExpression() != null ) {
+				print( " " );
+				node.getExpression().accept( this );
 			}
-			print(">");
+			print( ">" );
 		} else {
-			print("return");
-			if (node.getExpression() != null) {
-				print(" ");
-				node.getExpression().accept(this);
+			print( "return" );
+			if ( node.getExpression() != null ) {
+				print( " " );
+				node.getExpression().accept( this );
 			}
 			printSemicolon();
 		}
-		printPostComments(node);
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxReturnType node) {
-		printPreComments(node);
-		if (node.getType().equals(BoxType.Fqn)) {
-			print(node.getFqn());
+	public void visit( BoxReturnType node ) {
+		printPreComments( node );
+		if ( node.getType().equals( BoxType.Fqn ) ) {
+			print( node.getFqn() );
 		} else {
-			print(node.getType().toString().toLowerCase());
+			print( node.getType().toString().toLowerCase() );
 		}
-		printPostComments(node);
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxIfElse node) {
-		printPreComments(node);
-		if (printSourceForCFCompat(node)) {
-			printPostComments(node);
+	public void visit( BoxIfElse node ) {
+		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
 			return;
 		}
-		doBoxIfElse(node, false);
-		printPostComments(node);
+		doBoxIfElse( node, false );
+		printPostComments( node );
 	}
 
-	private void doBoxIfElse(BoxIfElse node, boolean elseif) {
-		if (isTemplate()) {
-			if (elseif) {
-				print("if ");
+	private void doBoxIfElse( BoxIfElse node, boolean elseif ) {
+		if ( isTemplate() ) {
+			if ( elseif ) {
+				print( "if " );
 			} else {
-				print("<" + componentPrefix + "if ");
+				print( "<" + componentPrefix + "if " );
 			}
-			node.getCondition().accept(this);
-			print(">");
-			node.getThenBody().accept(this);
+			node.getCondition().accept( this );
+			print( ">" );
+			node.getThenBody().accept( this );
 
-			if (node.getElseBody() != null) {
-				if (node.getElseBody() instanceof BoxStatementBlock elseBlock &&
-						elseBlock.getBody().size() == 1 &&
-						elseBlock.getBody().get(0) instanceof BoxIfElse elseNode) {
-					print("<" + componentPrefix + "else");
-					doBoxIfElse(elseNode, true);
+			if ( node.getElseBody() != null ) {
+				if ( node.getElseBody() instanceof BoxStatementBlock elseBlock &&
+				    elseBlock.getBody().size() == 1 &&
+				    elseBlock.getBody().get( 0 ) instanceof BoxIfElse elseNode ) {
+					print( "<" + componentPrefix + "else" );
+					doBoxIfElse( elseNode, true );
 				} else {
-					print("<" + componentPrefix + "else>");
-					node.getElseBody().accept(this);
-					print("</" + componentPrefix + "if>");
+					print( "<" + componentPrefix + "else>" );
+					node.getElseBody().accept( this );
+					print( "</" + componentPrefix + "if>" );
 				}
 			} else {
-				print("</" + componentPrefix + "if>");
+				print( "</" + componentPrefix + "if>" );
 			}
 		} else {
-			print("if ");
-			helperPrinter.printParensExpression(node.getCondition());
-			print(" ");
+			print( "if " );
+			helperPrinter.printParensExpression( node.getCondition() );
+			print( " " );
 
 			boolean thenBodyIsBlock = node.getThenBody() instanceof BoxStatementBlock;
-			helperPrinter.printStatementBody(node, node.getThenBody());
+			helperPrinter.printStatementBody( node, node.getThenBody() );
 
-			if (node.getElseBody() != null) {
+			if ( node.getElseBody() != null ) {
 				// Check for else-if pattern: else body is a block containing a single if
 				// statement
 				boolean isElseIf = false;
-				if (node.getElseBody() instanceof BoxStatementBlock elseBlock &&
-						elseBlock.getBody().size() == 1 &&
-						elseBlock.getBody().get(0) instanceof BoxIfElse) {
+				if ( node.getElseBody() instanceof BoxStatementBlock elseBlock &&
+				    elseBlock.getBody().size() == 1 &&
+				    elseBlock.getBody().get( 0 ) instanceof BoxIfElse ) {
 					isElseIf = true;
 				}
 
 				// Check if else body is a direct if statement (not in a block)
-				boolean isDirectElseIf = node.getElseBody() instanceof BoxIfElse;
+				boolean	isDirectElseIf	= node.getElseBody() instanceof BoxIfElse;
 
 				// Determine spacing before "else" based on configuration
-				String elseStyle = config.getBraces().getElseConfig().getStyle();
+				String	elseStyle		= config.getBraces().getElseConfig().getStyle();
 
-				if (elseStyle.equals("new-line")) {
+				if ( elseStyle.equals( "new-line" ) ) {
 					// Always put else on a new line
 					newLine();
-				} else if (elseStyle.equals("same-line")) {
+				} else if ( elseStyle.equals( "same-line" ) ) {
 					// Put else on same line if then body is a block, otherwise new line
-					if (thenBodyIsBlock || config.getBraces().getRequireForSingleStatement()) {
-						print(" ");
+					if ( thenBodyIsBlock || config.getBraces().getRequireForSingleStatement() ) {
+						print( " " );
 					} else {
 						newLine();
 					}
 				} else {
 					// Default to same-line behavior
-					if (thenBodyIsBlock || config.getBraces().getRequireForSingleStatement()) {
-						print(" ");
+					if ( thenBodyIsBlock || config.getBraces().getRequireForSingleStatement() ) {
+						print( " " );
 					} else {
 						newLine();
 					}
 				}
 
-				print("else ");
+				print( "else " );
 
 				// For else-if, just visit the if statement directly
-				if (isElseIf) {
-					BoxStatementBlock elseBlock = (BoxStatementBlock) node.getElseBody();
-					BoxIfElse elseIfNode = (BoxIfElse) elseBlock.getBody().get(0);
-					doBoxIfElse(elseIfNode, false);
-				} else if (isDirectElseIf) {
-					node.getElseBody().accept(this);
+				if ( isElseIf ) {
+					BoxStatementBlock	elseBlock	= ( BoxStatementBlock ) node.getElseBody();
+					BoxIfElse			elseIfNode	= ( BoxIfElse ) elseBlock.getBody().get( 0 );
+					doBoxIfElse( elseIfNode, false );
+				} else if ( isDirectElseIf ) {
+					node.getElseBody().accept( this );
 				} else {
-					helperPrinter.printStatementBody(node, node.getElseBody());
+					helperPrinter.printStatementBody( node, node.getElseBody() );
 				}
 			}
 		}
 	}
 
 	@Override
-	public void visit(BoxSwitch node) {
-		printPreComments(node);
-		if (isTemplate()) {
-			print("<" + componentPrefix + "switch expression=\"");
-			stringPrinter.printQuotedExpression(node.getCondition());
-			print("\">");
-			helperPrinter.printTemplateBody(node.getCases());
-			print("</" + componentPrefix + "switch>");
+	public void visit( BoxSwitch node ) {
+		printPreComments( node );
+		if ( isTemplate() ) {
+			print( "<" + componentPrefix + "switch expression=\"" );
+			stringPrinter.printQuotedExpression( node.getCondition() );
+			print( "\">" );
+			helperPrinter.printTemplateBody( node.getCases() );
+			print( "</" + componentPrefix + "switch>" );
 		} else {
 			var currentDoc = getCurrentDoc();
 
-			currentDoc.append("switch ");
-			helperPrinter.printParensExpression(node.getCondition());
-			currentDoc.append(" ").append("{");
+			currentDoc.append( "switch " );
+			helperPrinter.printParensExpression( node.getCondition() );
+			currentDoc.append( " " ).append( "{" );
 
-			var blockDoc = pushDoc(DocType.INDENT);
-			blockDoc.append(Line.HARD);
+			var blockDoc = pushDoc( DocType.INDENT );
+			blockDoc.append( Line.HARD );
 
 			var cases = node.getCases();
-			if (cases != null && !cases.isEmpty()) {
-				var lastCase = cases.get(cases.size() - 1);
-				for (var caseNode : cases) {
-					caseNode.accept(this);
+			if ( cases != null && !cases.isEmpty() ) {
+				var lastCase = cases.get( cases.size() - 1 );
+				for ( var caseNode : cases ) {
+					caseNode.accept( this );
 					// if the statement is not the last one, append a hard line break
-					if (caseNode != lastCase) {
-						blockDoc.append(Line.HARD);
+					if ( caseNode != lastCase ) {
+						blockDoc.append( Line.HARD );
 					}
 				}
 			}
 
 			currentDoc
-					.append(popDoc())
-					.append(Line.HARD)
-					.append("}");
+			    .append( popDoc() )
+			    .append( Line.HARD )
+			    .append( "}" );
 		}
 
-		printPostComments(node);
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxSwitchCase node) {
+	public void visit( BoxSwitchCase node ) {
 		var currentDoc = getCurrentDoc();
 
-		printPreComments(node);
-		if (isTemplate()) {
-			if (node.getCondition() != null) {
-				print("<" + componentPrefix + "case value=\"");
-				stringPrinter.printQuotedExpression(node.getCondition());
-				print("\"");
-				if (node.getDelimiter() != null && !node.isImplicitDelimiter()) {
-					print(" delimiters=\"");
-					stringPrinter.printQuotedExpression(node.getDelimiter());
-					print("\"");
+		printPreComments( node );
+		if ( isTemplate() ) {
+			if ( node.getCondition() != null ) {
+				print( "<" + componentPrefix + "case value=\"" );
+				stringPrinter.printQuotedExpression( node.getCondition() );
+				print( "\"" );
+				if ( node.getDelimiter() != null && !node.isImplicitDelimiter() ) {
+					print( " delimiters=\"" );
+					stringPrinter.printQuotedExpression( node.getDelimiter() );
+					print( "\"" );
 				}
-				print(">");
-			} else if (node.getBody() != null) {
-				print("<" + componentPrefix + "defaultcase>");
+				print( ">" );
+			} else if ( node.getBody() != null ) {
+				print( "<" + componentPrefix + "defaultcase>" );
 			} else {
-				print("<" + componentPrefix + "defaultcase/>");
+				print( "<" + componentPrefix + "defaultcase/>" );
 			}
-			if (node.getBody() != null) {
-				helperPrinter.printTemplateBody(node.getBody());
+			if ( node.getBody() != null ) {
+				helperPrinter.printTemplateBody( node.getBody() );
 			}
-			if (node.getCondition() != null) {
-				print("</" + componentPrefix + "case>");
-			} else if (node.getBody() != null) {
-				print("</" + componentPrefix + "defaultcase>");
+			if ( node.getCondition() != null ) {
+				print( "</" + componentPrefix + "case>" );
+			} else if ( node.getBody() != null ) {
+				print( "</" + componentPrefix + "defaultcase>" );
 			}
 		} else {
-			if (node.getCondition() == null) {
-				currentDoc.append("default:");
+			if ( node.getCondition() == null ) {
+				currentDoc.append( "default:" );
 			} else {
-				currentDoc.append("case ");
-				node.getCondition().accept(this);
-				currentDoc.append(":");
+				currentDoc.append( "case " );
+				node.getCondition().accept( this );
+				currentDoc.append( ":" );
 			}
-			if (node.getBody().size() == 1 && node.getBody().get(0) instanceof BoxStatementBlock) {
-				currentDoc.append(" ");
-				node.getBody().get(0).accept(this);
+			if ( node.getBody().size() == 1 && node.getBody().get( 0 ) instanceof BoxStatementBlock ) {
+				currentDoc.append( " " );
+				node.getBody().get( 0 ).accept( this );
 			} else {
-				var caseDoc = pushDoc(DocType.INDENT);
-				caseDoc.append(Line.HARD);
-				helperPrinter.printStatements(node.getBody());
-				currentDoc.append(popDoc());
+				var caseDoc = pushDoc( DocType.INDENT );
+				caseDoc.append( Line.HARD );
+				helperPrinter.printStatements( node.getBody() );
+				currentDoc.append( popDoc() );
 			}
 		}
 
-		printPostComments(node);
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxThrow node) {
-		printPreComments(node);
-		if (printSourceForCFCompat(node)) {
-			printPostComments(node);
+	public void visit( BoxThrow node ) {
+		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
 			return;
 		}
-		print("throw");
-		if (node.getExpression() != null) {
-			print(" ");
-			node.getExpression().accept(this);
+		print( "throw" );
+		if ( node.getExpression() != null ) {
+			print( " " );
+			node.getExpression().accept( this );
 		}
 		printSemicolon();
-		printPostComments(node);
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxTry node) {
-		printPreComments(node);
-		if (printSourceForCFCompat(node)) {
-			printPostComments(node);
+	public void visit( BoxTry node ) {
+		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
 			return;
 		}
-		if (isTemplate()) {
-			printPreComments(node);
-			print("<" + componentPrefix + "try>");
+		if ( isTemplate() ) {
+			printPreComments( node );
+			print( "<" + componentPrefix + "try>" );
 			// Combine try body, catches, and finally into one sequence so they all
 			// print at the same indent level (one level inside <cftry>).
-			var tryCombined = new ArrayList<BoxStatement>(node.getTryBody());
-			tryCombined.addAll(node.getCatches());
-			if (node.getFinallyBody() != null && !node.getFinallyBody().isEmpty()) {
-				tryCombined.add(new ortus.boxlang.compiler.ast.statement.component.BoxComponent(
-						componentPrefix + "finally",
-						List.of(),
-						node.getFinallyBody(),
-						node.getPosition(),
-						null));
+			var tryCombined = new ArrayList<BoxStatement>( node.getTryBody() );
+			tryCombined.addAll( node.getCatches() );
+			if ( node.getFinallyBody() != null && !node.getFinallyBody().isEmpty() ) {
+				tryCombined.add( new ortus.boxlang.compiler.ast.statement.component.BoxComponent(
+				    componentPrefix + "finally",
+				    List.of(),
+				    node.getFinallyBody(),
+				    node.getPosition(),
+				    null ) );
 			}
-			helperPrinter.printTemplateBody(tryCombined);
-			print("</" + componentPrefix + "try>");
+			helperPrinter.printTemplateBody( tryCombined );
+			print( "</" + componentPrefix + "try>" );
 		} else {
-			print("try ");
-			helperPrinter.printBlock(node, node.getTryBody());
-			if (!node.getCatches().isEmpty()) {
-				for (var catchNode : node.getCatches()) {
-					catchNode.accept(this);
+			print( "try " );
+			helperPrinter.printBlock( node, node.getTryBody() );
+			if ( !node.getCatches().isEmpty() ) {
+				for ( var catchNode : node.getCatches() ) {
+					catchNode.accept( this );
 				}
 			}
-			if (node.getFinallyBody() != null && !node.getFinallyBody().isEmpty()) {
-				print(" finally ");
-				helperPrinter.printBlock(node, node.getFinallyBody());
+			if ( node.getFinallyBody() != null && !node.getFinallyBody().isEmpty() ) {
+				print( " finally " );
+				helperPrinter.printBlock( node, node.getFinallyBody() );
 			}
 		}
 
-		printPostComments(node);
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxTryCatch node) {
-		printPreComments(node);
-		if (printSourceForCFCompat(node)) {
-			printPostComments(node);
+	public void visit( BoxTryCatch node ) {
+		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
 			return;
 		}
-		if (isTemplate()) {
-			print("<" + componentPrefix + "catch");
-			if (!node.getCatchTypes().isEmpty()) {
-				print(" type=\"");
+		if ( isTemplate() ) {
+			print( "<" + componentPrefix + "catch" );
+			if ( !node.getCatchTypes().isEmpty() ) {
+				print( " type=\"" );
 				// should only be one when in tags
-				stringPrinter.printQuotedExpression(node.getCatchTypes().get(0));
-				print("\"");
+				stringPrinter.printQuotedExpression( node.getCatchTypes().get( 0 ) );
+				print( "\"" );
 			}
-			print(">");
-			helperPrinter.printTemplateBody(node.getCatchBody());
-			print("</" + componentPrefix + "catch>");
+			print( ">" );
+			helperPrinter.printTemplateBody( node.getCatchBody() );
+			print( "</" + componentPrefix + "catch>" );
 		} else {
-			print(" catch (");
+			print( " catch (" );
 			int numCatchTypes = node.getCatchTypes().size();
-			for (int i = 0; i < numCatchTypes; i++) {
-				var type = node.getCatchTypes().get(i);
-				type.accept(this);
-				if (i < numCatchTypes - 1) {
-					print(" | ");
+			for ( int i = 0; i < numCatchTypes; i++ ) {
+				var type = node.getCatchTypes().get( i );
+				type.accept( this );
+				if ( i < numCatchTypes - 1 ) {
+					print( " | " );
 				}
 			}
-			print(" ");
-			node.getException().accept(this);
-			print(") ");
-			helperPrinter.printBlock(node, node.getCatchBody());
+			print( " " );
+			node.getException().accept( this );
+			print( ") " );
+			helperPrinter.printBlock( node, node.getCatchBody() );
 		}
-		printPostComments(node);
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxWhile node) {
-		printPreComments(node);
-		if (printSourceForCFCompat(node)) {
-			printPostComments(node);
+	public void visit( BoxWhile node ) {
+		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
 			return;
 		}
-		if (isTemplate()) {
-			print("<" + componentPrefix + "while condition=\"");
-			stringPrinter.printQuotedExpression(node.getCondition());
-			print("\"");
-			if (node.getLabel() != null) {
-				print(" label=\"");
-				print(node.getLabel());
-				print("\"");
+		if ( isTemplate() ) {
+			print( "<" + componentPrefix + "while condition=\"" );
+			stringPrinter.printQuotedExpression( node.getCondition() );
+			print( "\"" );
+			if ( node.getLabel() != null ) {
+				print( " label=\"" );
+				print( node.getLabel() );
+				print( "\"" );
 			}
-			print(">");
-			node.getBody().accept(this);
-			print("</" + componentPrefix + "while>");
+			print( ">" );
+			node.getBody().accept( this );
+			print( "</" + componentPrefix + "while>" );
 		} else {
-			if (node.getLabel() != null) {
-				print(node.getLabel());
-				print(": ");
+			if ( node.getLabel() != null ) {
+				print( node.getLabel() );
+				print( ": " );
 			}
-			print("while ");
-			helperPrinter.printParensExpression(node.getCondition());
-			print(" ");
-			helperPrinter.printStatementBody(node, node.getBody());
+			print( "while " );
+			helperPrinter.printParensExpression( node.getCondition() );
+			print( " " );
+			helperPrinter.printStatementBody( node, node.getBody() );
 		}
-		printPostComments(node);
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(BoxDo node) {
-		printPreComments(node);
-		if (printSourceForCFCompat(node)) {
-			printPostComments(node);
+	public void visit( BoxDo node ) {
+		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
 			return;
 		}
 		// No template version of this
-		if (node.getLabel() != null) {
-			print(node.getLabel());
-			print(": ");
+		if ( node.getLabel() != null ) {
+			print( node.getLabel() );
+			print( ": " );
 		}
-		print("do ");
-		node.getBody().accept(this);
-		print(" while ");
-		helperPrinter.printParensExpression(node.getCondition());
+		print( "do " );
+		node.getBody().accept( this );
+		print( " while " );
+		helperPrinter.printParensExpression( node.getCondition() );
 		printSemicolon();
-		printPostComments(node);
+		printPostComments( node );
 	}
 
 	// SQL AST Nodes
 
 	@Override
-	public void visit(SQLBooleanLiteral node) {
-		printPreComments(node);
-		print(String.valueOf(node.getValue()));
-		printPostComments(node);
+	public void visit( SQLBooleanLiteral node ) {
+		printPreComments( node );
+		print( String.valueOf( node.getValue() ) );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(SQLNullLiteral node) {
-		printPreComments(node);
-		print("null");
-		printPostComments(node);
+	public void visit( SQLNullLiteral node ) {
+		printPreComments( node );
+		print( "null" );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(SQLNumberLiteral node) {
-		printPreComments(node);
-		print(String.valueOf(node.getValue()));
-		printPostComments(node);
+	public void visit( SQLNumberLiteral node ) {
+		printPreComments( node );
+		print( String.valueOf( node.getValue() ) );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(SQLStringLiteral node) {
-		printPreComments(node);
-		print("'");
-		print(node.getValue().replace("'", "''"));
-		print("'");
-		printPostComments(node);
+	public void visit( SQLStringLiteral node ) {
+		printPreComments( node );
+		print( "'" );
+		print( node.getValue().replace( "'", "''" ) );
+		print( "'" );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(SQLBetweenOperation node) {
-		printPreComments(node);
-		node.getExpression().accept(this);
-		if (node.isNot()) {
-			print(" not");
+	public void visit( SQLBetweenOperation node ) {
+		printPreComments( node );
+		node.getExpression().accept( this );
+		if ( node.isNot() ) {
+			print( " not" );
 		}
-		print(" between ");
-		node.getLeft().accept(this);
-		print(" and ");
-		node.getRight().accept(this);
-		printPostComments(node);
+		print( " between " );
+		node.getLeft().accept( this );
+		print( " and " );
+		node.getRight().accept( this );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(SQLBinaryOperation node) {
-		printPreComments(node);
-		node.getLeft().accept(this);
-		print(" ");
-		print(node.getOperator().getSymbol());
-		print(" ");
-		node.getRight().accept(this);
-		printPostComments(node);
+	public void visit( SQLBinaryOperation node ) {
+		printPreComments( node );
+		node.getLeft().accept( this );
+		print( " " );
+		print( node.getOperator().getSymbol() );
+		print( " " );
+		node.getRight().accept( this );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(SQLInOperation node) {
-		printPreComments(node);
-		node.getExpression().accept(this);
-		if (node.isNot()) {
-			print(" not");
+	public void visit( SQLInOperation node ) {
+		printPreComments( node );
+		node.getExpression().accept( this );
+		if ( node.isNot() ) {
+			print( " not" );
 		}
-		print(" in (");
+		print( " in (" );
 		int size = node.getValues().size();
-		if (size > 0) {
-			print(" ");
+		if ( size > 0 ) {
+			print( " " );
 		}
-		for (int i = 0; i < size; i++) {
-			node.getValues().get(i).accept(this);
-			if (i < size - 1) {
-				print(", ");
+		for ( int i = 0; i < size; i++ ) {
+			node.getValues().get( i ).accept( this );
+			if ( i < size - 1 ) {
+				print( ", " );
 			}
 		}
-		if (size > 0) {
-			print(" ");
+		if ( size > 0 ) {
+			print( " " );
 		}
-		print(")");
-		printPostComments(node);
+		print( ")" );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(SQLInSubQueryOperation node) {
-		printPreComments(node);
-		node.getExpression().accept(this);
-		if (node.isNot()) {
-			print(" not");
+	public void visit( SQLInSubQueryOperation node ) {
+		printPreComments( node );
+		node.getExpression().accept( this );
+		if ( node.isNot() ) {
+			print( " not" );
 		}
-		print(" in (");
-		node.getSubQuery().accept(this);
-		print(")");
-		printPostComments(node);
+		print( " in (" );
+		node.getSubQuery().accept( this );
+		print( ")" );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(SQLUnaryOperation node) {
-		printPreComments(node);
-		print(node.getOperator().getSymbol());
-		node.getExpression().accept(this);
-		printPostComments(node);
+	public void visit( SQLUnaryOperation node ) {
+		printPreComments( node );
+		print( node.getOperator().getSymbol() );
+		node.getExpression().accept( this );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(SQLCase node) {
-		printPreComments(node);
-		print("case");
-		if (node.getInputExpression() != null) {
-			print(" ");
-			node.getInputExpression().accept(this);
+	public void visit( SQLCase node ) {
+		printPreComments( node );
+		print( "case" );
+		if ( node.getInputExpression() != null ) {
+			print( " " );
+			node.getInputExpression().accept( this );
 		}
 		// increaseIndent();
-		for (var whenThen : node.getWhenThens()) {
-			whenThen.accept(this);
+		for ( var whenThen : node.getWhenThens() ) {
+			whenThen.accept( this );
 		}
-		if (node.getElseExpression() != null) {
-			print(" else ");
-			node.getElseExpression().accept(this);
+		if ( node.getElseExpression() != null ) {
+			print( " else " );
+			node.getElseExpression().accept( this );
 		}
 		// decreaseIndent();
-		print(" end");
-		printPostComments(node);
+		print( " end" );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(SQLCaseWhenThen node) {
-		printPreComments(node);
-		print(" when ");
-		node.getWhenExpression().accept(this);
-		print(" then ");
-		node.getThenExpression().accept(this);
-		printPostComments(node);
+	public void visit( SQLCaseWhenThen node ) {
+		printPreComments( node );
+		print( " when " );
+		node.getWhenExpression().accept( this );
+		print( " then " );
+		node.getThenExpression().accept( this );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(SQLColumn node) {
-		printPreComments(node);
+	public void visit( SQLColumn node ) {
+		printPreComments( node );
 		// TODO, actually track in the SQLColumn node what we had for the original table
 		// reference
-		if (node.getTable() != null && node.getTable() instanceof SQLTableVariable stv) {
-			print(stv.getAlias() != null ? stv.getAlias().getName() : stv.getName().getName());
-			print(".");
+		if ( node.getTable() != null && node.getTable() instanceof SQLTableVariable stv ) {
+			print( stv.getAlias() != null ? stv.getAlias().getName() : stv.getName().getName() );
+			print( "." );
 		}
-		print(node.getName().getName());
-		printPostComments(node);
+		print( node.getName().getName() );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(SQLCountFunction node) {
-		printPreComments(node);
-		print("count( ");
-		if (node.isDistinct()) {
-			print("distinct ");
+	public void visit( SQLCountFunction node ) {
+		printPreComments( node );
+		print( "count( " );
+		if ( node.isDistinct() ) {
+			print( "distinct " );
 		}
-		node.getArguments().get(0).accept(this);
-		print(" )");
-		printPostComments(node);
+		node.getArguments().get( 0 ).accept( this );
+		print( " )" );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(SQLFunction node) {
-		printPreComments(node);
-		print(node.getName().getName());
-		print("(");
+	public void visit( SQLFunction node ) {
+		printPreComments( node );
+		print( node.getName().getName() );
+		print( "(" );
 		int size = node.getArguments().size();
-		if (size > 0) {
-			print(" ");
+		if ( size > 0 ) {
+			print( " " );
 		}
-		for (int i = 0; i < size; i++) {
-			node.getArguments().get(i).accept(this);
-			if (i < size - 1) {
-				print(", ");
+		for ( int i = 0; i < size; i++ ) {
+			node.getArguments().get( i ).accept( this );
+			if ( i < size - 1 ) {
+				print( ", " );
 			}
 		}
-		if (size > 0) {
-			print(" ");
+		if ( size > 0 ) {
+			print( " " );
 		}
-		print(")");
-		printPostComments(node);
+		print( ")" );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(SQLOrderBy node) {
-		printPreComments(node);
-		node.getExpression().accept(this);
-		if (!node.isAscending()) {
-			print(" desc");
+	public void visit( SQLOrderBy node ) {
+		printPreComments( node );
+		node.getExpression().accept( this );
+		if ( !node.isAscending() ) {
+			print( " desc" );
 		}
-		printPostComments(node);
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(SQLParam node) {
-		printPreComments(node);
-		if (node.getName() != null) {
-			print(":");
-			print(node.getName());
+	public void visit( SQLParam node ) {
+		printPreComments( node );
+		if ( node.getName() != null ) {
+			print( ":" );
+			print( node.getName() );
 		} else {
 			// I need this to be a unique for each ordered param
-			print("? /* position: ");
-			print(String.valueOf(node.getPosition()));
-			print(" */");
+			print( "? /* position: " );
+			print( String.valueOf( node.getPosition() ) );
+			print( " */" );
 
 		}
-		printPostComments(node);
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(SQLParenthesis node) {
-		printPreComments(node);
-		print("( ");
-		node.getExpression().accept(this);
-		print(" )");
-		printPostComments(node);
+	public void visit( SQLParenthesis node ) {
+		printPreComments( node );
+		print( "( " );
+		node.getExpression().accept( this );
+		print( " )" );
+		printPostComments( node );
 	}
 
 	@Override
-	public void visit(SQLStarExpression node) {
-		printPreComments(node);
+	public void visit( SQLStarExpression node ) {
+		printPreComments( node );
 		// TODO, actually track in the SQLColumn node what we had for the original table
 		// reference
-		if (node.getTable() != null && node.getTable() instanceof SQLTableVariable stv) {
-			print(stv.getAlias() != null ? stv.getAlias().getName() : stv.getName().getName());
-			print(".");
+		if ( node.getTable() != null && node.getTable() instanceof SQLTableVariable stv ) {
+			print( stv.getAlias() != null ? stv.getAlias().getName() : stv.getName().getName() );
+			print( "." );
 		}
-		print("*");
-		printPostComments(node);
+		print( "*" );
+		printPostComments( node );
 	}
 
 	/**
@@ -2054,28 +2054,28 @@ public class Visitor extends VoidBoxVisitor {
 	 *
 	 * @return The total length of the chain
 	 */
-	private int calculateChainLength(List<ChainElement> chain, BoxNode root) {
-		int length = getNormalizedSourceLength(root);
-		for (ChainElement element : chain) {
+	private int calculateChainLength( List<ChainElement> chain, BoxNode root ) {
+		int length = getNormalizedSourceLength( root );
+		for ( ChainElement element : chain ) {
 			// Each element's source text includes the dot/accessor prefix
-			if (element.isMethodInvocation()) {
+			if ( element.isMethodInvocation() ) {
 				var m = element.asMethodInvocation();
 				// Source text already includes the dot for method invocations built from dot
 				// access
-				length += getNormalizedSourceLength(m);
+				length += getNormalizedSourceLength( m );
 			} else {
 				var d = element.asDotAccess();
-				length += getNormalizedSourceLength(d);
+				length += getNormalizedSourceLength( d );
 			}
 		}
 		return length;
 	}
 
-	private int getNormalizedSourceLength(BoxNode node) {
-		if (node == null || node.getSourceText() == null) {
+	private int getNormalizedSourceLength( BoxNode node ) {
+		if ( node == null || node.getSourceText() == null ) {
 			return 0;
 		}
-		return node.getSourceText().replaceAll("\\s+", "").length();
+		return node.getSourceText().replaceAll( "\\s+", "" ).length();
 	}
 
 	/**
@@ -2084,17 +2084,17 @@ public class Visitor extends VoidBoxVisitor {
 	 */
 	private static class ChainElement {
 
-		private final BoxMethodInvocation methodInvocation;
-		private final BoxDotAccess dotAccess;
+		private final BoxMethodInvocation	methodInvocation;
+		private final BoxDotAccess			dotAccess;
 
-		ChainElement(BoxMethodInvocation methodInvocation) {
-			this.methodInvocation = methodInvocation;
-			this.dotAccess = null;
+		ChainElement( BoxMethodInvocation methodInvocation ) {
+			this.methodInvocation	= methodInvocation;
+			this.dotAccess			= null;
 		}
 
-		ChainElement(BoxDotAccess dotAccess) {
-			this.methodInvocation = null;
-			this.dotAccess = dotAccess;
+		ChainElement( BoxDotAccess dotAccess ) {
+			this.methodInvocation	= null;
+			this.dotAccess			= dotAccess;
 		}
 
 		boolean isMethodInvocation() {
