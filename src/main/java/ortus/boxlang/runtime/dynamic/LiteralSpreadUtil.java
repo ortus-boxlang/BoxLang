@@ -17,9 +17,13 @@
  */
 package ortus.boxlang.runtime.dynamic;
 
+import java.util.Map;
+
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -184,6 +188,101 @@ public class LiteralSpreadUtil {
 	 */
 	private static Object[] normalizeVarargs( Object[] values ) {
 		return values == null ? new Object[] { null } : values;
+	}
+
+	/**
+	 * Build a positional Object[] from arguments that may contain SpreadValue entries.
+	 * Delegates to {@link #array(Object...)} and converts to a native array.
+	 */
+	public static Object[] positionalArgs( Object... values ) {
+		return array( values ).toArray();
+	}
+
+	/**
+	 * Build a named argument Map from key/value pairs that may contain SpreadValue entries.
+	 * Delegates to {@link #struct(IStruct.TYPES, Object...)} with LINKED ordering.
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static Map<Key, Object> namedArgs( Object... values ) {
+		return ( Map<Key, Object> ) ( Map<?, ?> ) struct( IStruct.TYPES.LINKED, values ).getWrapped();
+	}
+
+	/**
+	 * Handle spread-only function arguments where the positional/named determination
+	 * must be made at runtime based on the spread values' types.
+	 * Delegates to {@link #arrayOrOrderedStruct(Object...)} for type detection.
+	 * If the result is a struct, returns its underlying Map; otherwise returns Object[].
+	 *
+	 * @return Either Object[] (positional) or Map&lt;Key, Object&gt; (named)
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static Object spreadOnlyFunctionArgs( Object... spreadValues ) {
+		spreadValues = normalizeVarargs( spreadValues );
+		// Wrap each raw value as a SpreadValue so arrayOrOrderedStruct can handle them
+		Object[] wrapped = new Object[ spreadValues.length ];
+		for ( int i = 0; i < spreadValues.length; i++ ) {
+			wrapped[ i ] = spread( spreadValues[ i ] );
+		}
+		Object result = arrayOrOrderedStruct( wrapped );
+		if ( result instanceof IStruct resultStruct ) {
+			return ( Map<Key, Object> ) ( Map<?, ?> ) resultStruct.getWrapped();
+		}
+		return ( ( Array ) result ).toArray();
+	}
+
+	/**
+	 * Invoke a function with spread-only arguments, dispatching to either positional or named
+	 * based on the runtime type of the spread values.
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static Object invokeSpreadOnlyFunction( IBoxContext context, Key name, Object... spreadValues ) {
+		Object args = spreadOnlyFunctionArgs( spreadValues );
+		if ( args instanceof Object[] positionalArgs ) {
+			return context.invokeFunction( name, positionalArgs );
+		} else {
+			return context.invokeFunction( name, ( Map<Key, Object> ) args );
+		}
+	}
+
+	/**
+	 * Invoke a function (by expression) with spread-only arguments, dispatching to either positional or named
+	 * based on the runtime type of the spread values.
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static Object invokeSpreadOnlyFunction( IBoxContext context, Object function, Object... spreadValues ) {
+		Object args = spreadOnlyFunctionArgs( spreadValues );
+		if ( args instanceof Object[] positionalArgs ) {
+			return context.invokeFunction( function, positionalArgs );
+		} else {
+			return context.invokeFunction( function, ( Map<Key, Object> ) args );
+		}
+	}
+
+	/**
+	 * Invoke a method with spread-only arguments, dispatching to either positional or named
+	 * based on the runtime type of the spread values.
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static Object invokeSpreadOnlyMethod( IBoxContext context, Object object, Key methodName, boolean safe, Object... spreadValues ) {
+		Object args = spreadOnlyFunctionArgs( spreadValues );
+		if ( args instanceof Object[] positionalArgs ) {
+			return Referencer.getAndInvoke( context, object, methodName, positionalArgs, safe );
+		} else {
+			return Referencer.getAndInvoke( context, object, methodName, ( Map<Key, Object> ) args, safe );
+		}
+	}
+
+	/**
+	 * Invoke a constructor with spread-only arguments via DynamicObject.
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static DynamicObject invokeSpreadOnlyConstructor( DynamicObject dynObj, IBoxContext context, Object... spreadValues ) {
+		Object args = spreadOnlyFunctionArgs( spreadValues );
+		if ( args instanceof Object[] positionalArgs ) {
+			return dynObj.invokeConstructor( context, positionalArgs );
+		} else {
+			return dynObj.invokeConstructor( context, ( Map<Key, Object> ) args );
+		}
 	}
 
 	public static final class SpreadValue {

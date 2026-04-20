@@ -93,10 +93,10 @@ import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.parser.BoxParser;
 import ortus.boxlang.parser.antlr.BoxGrammar.AnnotationContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ArgumentContext;
-import ortus.boxlang.parser.antlr.BoxGrammar.ArrayLiteralContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ArrayDestructuringBindingContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ArrayDestructuringPatternContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ArrayDestructuringValueContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ArrayLiteralContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.AssignmentModifierContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.AtomsContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.AttributeSimpleContext;
@@ -117,10 +117,10 @@ import ortus.boxlang.parser.antlr.BoxGrammar.ExprBitShiftContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprBorContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprCastAsContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprCatContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprDestructuringAssignContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprDotFloatContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprDotFloatIDContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprDotOrColonAccessContext;
-import ortus.boxlang.parser.antlr.BoxGrammar.ExprDestructuringAssignContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprElvisContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprEqualContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprFunctionCallContext;
@@ -1095,21 +1095,19 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 	/**
 	 * Visit a spread argument such as {@code func( ...myArray )} or {@code func( ...myStruct )}.
 	 * <p>
-	 * The spread operator in a function call is syntactic sugar that converts to a named
-	 * {@code argumentCollection} argument, reusing the existing runtime plumbing for
-	 * argument collection expansion.
+	 * The spread operator preserves the {@link BoxSpreadExpression} in the AST so that
+	 * the transformers can handle spread expansion at compile time, similar to array/struct literals.
 	 *
 	 * @param ctx the parse tree node for the spread argument
 	 *
-	 * @return a {@link BoxArgument} with name {@code "argumentCollection"} wrapping the spread expression
+	 * @return a positional {@link BoxArgument} whose value is a {@link BoxSpreadExpression}
 	 */
 	@Override
 	public BoxExpression visitSpreadArgument( SpreadArgumentContext ctx ) {
 		var				pos		= tools.getPosition( ctx );
 		var				src		= tools.getSourceText( ctx );
-		BoxExpression	name	= new BoxStringLiteral( "argumentCollection", pos, src );
 		BoxExpression	value	= ctx.expression().accept( this );
-		return new BoxArgument( name, value, pos, src );
+		return new BoxArgument( new BoxSpreadExpression( value, pos, src ), pos, src );
 	}
 
 	@Override
@@ -1635,8 +1633,7 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 	 */
 	private boolean isExplicitDestructuringScope( String scopeName ) {
 		return switch ( scopeName.toLowerCase() ) {
-			case "application", "arguments", "cgi", "client", "cookie", "form", "local", "request", "server", "session", "static", "this", "thread",
-			    "url", "variables" -> true;
+			case "application", "arguments", "cgi", "client", "cookie", "form", "local", "request", "server", "session", "static", "this", "thread", "url", "variables" -> true;
 			default -> false;
 		};
 	}
@@ -1789,6 +1786,9 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		boolean	hasAnonymous	= false;
 
 		for ( BoxArgument arg : args ) {
+			if ( arg.isSpread() ) {
+				continue;
+			}
 			if ( arg.getName() != null ) {
 				hasName = true;
 			} else {

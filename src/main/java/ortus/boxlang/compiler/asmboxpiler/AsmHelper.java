@@ -47,6 +47,7 @@ import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
+import ortus.boxlang.compiler.ast.expression.BoxSpreadExpression;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
@@ -55,6 +56,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.dynamic.LiteralSpreadUtil;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
@@ -473,23 +475,91 @@ public class AsmHelper {
 		return nodes;
 	}
 
+	/**
+	 * Check if all arguments in the list are spread expressions.
+	 */
+	private static boolean isAllSpread( List<BoxArgument> args ) {
+		for ( BoxArgument arg : args ) {
+			if ( !arg.isSpread() ) {
+				return false;
+			}
+		}
+		return !args.isEmpty();
+	}
+
+	/**
+	 * Transform a single argument for a spread context: wrap spread args in LiteralSpreadUtil.spread().
+	 */
+	private static List<AbstractInsnNode> transformSpreadArg( Transpiler transpiler, BoxArgument arg, TransformerContext context ) {
+		BoxSpreadExpression		spread		= ( BoxSpreadExpression ) arg.getValue();
+		List<AbstractInsnNode>	spreadNodes	= new ArrayList<>( transpiler.transform( spread.getExpression(), context, ReturnValueContext.VALUE ) );
+		spreadNodes.add(
+		    new MethodInsnNode( Opcodes.INVOKESTATIC,
+		        Type.getInternalName( LiteralSpreadUtil.class ),
+		        "spread",
+		        Type.getMethodDescriptor( Type.getType( LiteralSpreadUtil.SpreadValue.class ), Type.getType( Object.class ) ),
+		        false ) );
+		return spreadNodes;
+	}
+
 	public static List<AbstractInsnNode> callinvokeFunction(
 	    Transpiler transpiler,
 	    Type invokeType,
 	    List<BoxArgument> args,
 	    List<AbstractInsnNode> name,
 	    TransformerContext context,
-	    boolean safe ) {
-		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
+	    boolean safe,
+	    boolean isNamed,
+	    boolean hasSpread ) {
+		List<AbstractInsnNode>	nodes		= new ArrayList<AbstractInsnNode>();
+
+		boolean					allSpread	= hasSpread && isAllSpread( args );
+
+		// All-spread case: use runtime dispatch to determine positional vs named
+		if ( allSpread ) {
+			nodes.addAll( name );
+			// Build varargs of raw inner expressions for spreadOnlyFunctionArgs
+			List<List<AbstractInsnNode>> elements = new ArrayList<>();
+			for ( BoxArgument arg : args ) {
+				BoxSpreadExpression spread = ( BoxSpreadExpression ) arg.getValue();
+				elements.add( transpiler.transform( spread.getExpression(), context, ReturnValueContext.VALUE ) );
+			}
+			nodes.addAll( AsmHelper.array( Type.getType( Object.class ), elements ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( LiteralSpreadUtil.class ),
+			    "invokeSpreadOnlyFunction",
+			    Type.getMethodDescriptor( Type.getType( Object.class ),
+			        Type.getType( IBoxContext.class ), invokeType, Type.getType( Object[].class ) ),
+			    false ) );
+			return nodes;
+		}
 
 		nodes.addAll( name );
 
 		// handle positional args
-		if ( args.size() == 0 || args.get( 0 ).getName() == null ) {
-			nodes.addAll(
-			    AsmHelper.array( Type.getType( Object.class ), args,
-			        ( argument, i ) -> transpiler.transform( args.get( i ), context, ReturnValueContext.VALUE ) )
-			);
+		if ( args.size() == 0 || !isNamed ) {
+			if ( hasSpread ) {
+				// Build varargs for LiteralSpreadUtil.positionalArgs(Object...)
+				List<List<AbstractInsnNode>> elements = new ArrayList<>();
+				for ( BoxArgument arg : args ) {
+					if ( arg.isSpread() ) {
+						elements.add( transformSpreadArg( transpiler, arg, context ) );
+					} else {
+						elements.add( transpiler.transform( arg, context, ReturnValueContext.VALUE ) );
+					}
+				}
+				nodes.addAll( AsmHelper.array( Type.getType( Object.class ), elements ) );
+				nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+				    Type.getInternalName( LiteralSpreadUtil.class ),
+				    "positionalArgs",
+				    Type.getMethodDescriptor( Type.getType( Object[].class ), Type.getType( Object[].class ) ),
+				    false ) );
+			} else {
+				nodes.addAll(
+				    AsmHelper.array( Type.getType( Object.class ), args,
+				        ( argument, i ) -> transpiler.transform( args.get( i ), context, ReturnValueContext.VALUE ) )
+				);
+			}
 
 			nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 			    Type.getInternalName( IBoxContext.class ),
@@ -500,28 +570,47 @@ public class AsmHelper {
 			return nodes;
 		}
 
-		List<List<AbstractInsnNode>> keyValues = args.stream()
-		    .map( arg -> {
-			    List<List<AbstractInsnNode>> kv = List.of(
-			        transpiler.createKey( arg.getName() ),
-			        transpiler.transform( arg, context, ReturnValueContext.VALUE )
-			    );
+		if ( hasSpread ) {
+			// Named args with spread: build varargs for LiteralSpreadUtil.namedArgs(Object...)
+			List<List<AbstractInsnNode>> elements = new ArrayList<>();
+			for ( BoxArgument arg : args ) {
+				if ( arg.isSpread() ) {
+					elements.add( transformSpreadArg( transpiler, arg, context ) );
+				} else {
+					elements.add( transpiler.createKey( arg.getName() ) );
+					elements.add( transpiler.transform( arg, context, ReturnValueContext.VALUE ) );
+				}
+			}
+			nodes.addAll( AsmHelper.array( Type.getType( Object.class ), elements ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( LiteralSpreadUtil.class ),
+			    "namedArgs",
+			    Type.getMethodDescriptor( Type.getType( Map.class ), Type.getType( Object[].class ) ),
+			    false ) );
+		} else {
+			List<List<AbstractInsnNode>> keyValues = args.stream()
+			    .map( arg -> {
+				    List<List<AbstractInsnNode>> kv = List.of(
+				        transpiler.createKey( arg.getName() ),
+				        transpiler.transform( arg, context, ReturnValueContext.VALUE )
+				    );
 
-			    return kv;
-		    } )
-		    .flatMap( x -> x.stream() )
-		    .collect( Collectors.toList() );
+				    return kv;
+			    } )
+			    .flatMap( x -> x.stream() )
+			    .collect( Collectors.toList() );
 
-		nodes.addAll( AsmHelper.array( Type.getType( Object.class ), keyValues ) );
+			nodes.addAll( AsmHelper.array( Type.getType( Object.class ), keyValues ) );
 
-		nodes.add(
-		    new MethodInsnNode( Opcodes.INVOKESTATIC,
-		        Type.getInternalName( Struct.class ),
-		        "linkedOf",
-		        Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),
-		        false
-		    )
-		);
+			nodes.add(
+			    new MethodInsnNode( Opcodes.INVOKESTATIC,
+			        Type.getInternalName( Struct.class ),
+			        "linkedOf",
+			        Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),
+			        false
+			    )
+			);
+		}
 
 		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
 		    Type.getInternalName( IBoxContext.class ),
@@ -538,8 +627,10 @@ public class AsmHelper {
 	    List<BoxArgument> args,
 	    String name,
 	    TransformerContext context,
-	    boolean safe ) {
-		return callReferencerGetAndInvoke( transpiler, args, transpiler.createKey( name ), context, safe );
+	    boolean safe,
+	    boolean isNamed,
+	    boolean hasSpread ) {
+		return callReferencerGetAndInvoke( transpiler, args, transpiler.createKey( name ), context, safe, isNamed, hasSpread );
 	}
 
 	public static List<AbstractInsnNode> callReferencerGetAndInvoke(
@@ -547,17 +638,65 @@ public class AsmHelper {
 	    List<BoxArgument> args,
 	    List<AbstractInsnNode> name,
 	    TransformerContext context,
-	    boolean safe ) {
-		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
+	    boolean safe,
+	    boolean isNamed,
+	    boolean hasSpread ) {
+		List<AbstractInsnNode>	nodes		= new ArrayList<AbstractInsnNode>();
+
+		boolean					allSpread	= hasSpread && isAllSpread( args );
+
+		// All-spread case: use runtime dispatch to determine positional vs named
+		if ( allSpread ) {
+			nodes.addAll( name );
+			nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, Type.getInternalName( Boolean.class ), safe ? "TRUE" : "FALSE",
+			    Type.getDescriptor( Boolean.class ) ) );
+			// Unbox Boolean to boolean
+			nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL, Type.getInternalName( Boolean.class ), "booleanValue",
+			    Type.getMethodDescriptor( Type.BOOLEAN_TYPE ), false ) );
+			List<List<AbstractInsnNode>> elements = new ArrayList<>();
+			for ( BoxArgument arg : args ) {
+				BoxSpreadExpression spread = ( BoxSpreadExpression ) arg.getValue();
+				elements.add( transpiler.transform( spread.getExpression(), context, ReturnValueContext.VALUE ) );
+			}
+			nodes.addAll( AsmHelper.array( Type.getType( Object.class ), elements ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( LiteralSpreadUtil.class ),
+			    "invokeSpreadOnlyMethod",
+			    Type.getMethodDescriptor( Type.getType( Object.class ),
+			        Type.getType( IBoxContext.class ),
+			        Type.getType( Object.class ),
+			        Type.getType( Key.class ),
+			        Type.BOOLEAN_TYPE,
+			        Type.getType( Object[].class ) ),
+			    false ) );
+			return nodes;
+		}
 
 		nodes.addAll( name );
 
 		// handle positional args
-		if ( args.size() == 0 || args.get( 0 ).getName() == null ) {
-			nodes.addAll(
-			    AsmHelper.array( Type.getType( Object.class ), args,
-			        ( argument, i ) -> transpiler.transform( args.get( i ), context, ReturnValueContext.VALUE ) )
-			);
+		if ( args.size() == 0 || !isNamed ) {
+			if ( hasSpread ) {
+				List<List<AbstractInsnNode>> elements = new ArrayList<>();
+				for ( BoxArgument arg : args ) {
+					if ( arg.isSpread() ) {
+						elements.add( transformSpreadArg( transpiler, arg, context ) );
+					} else {
+						elements.add( transpiler.transform( arg, context, ReturnValueContext.VALUE ) );
+					}
+				}
+				nodes.addAll( AsmHelper.array( Type.getType( Object.class ), elements ) );
+				nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+				    Type.getInternalName( LiteralSpreadUtil.class ),
+				    "positionalArgs",
+				    Type.getMethodDescriptor( Type.getType( Object[].class ), Type.getType( Object[].class ) ),
+				    false ) );
+			} else {
+				nodes.addAll(
+				    AsmHelper.array( Type.getType( Object.class ), args,
+				        ( argument, i ) -> transpiler.transform( args.get( i ), context, ReturnValueContext.VALUE ) )
+				);
+			}
 
 			nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, Type.getInternalName( Boolean.class ), safe ? "TRUE" : "FALSE",
 			    Type.getDescriptor( Boolean.class ) ) );
@@ -579,28 +718,46 @@ public class AsmHelper {
 			return nodes;
 		}
 
-		List<List<AbstractInsnNode>> keyValues = args.stream()
-		    .map( arg -> {
-			    List<List<AbstractInsnNode>> kv = List.of(
-			        transpiler.createKey( arg.getName() ),
-			        transpiler.transform( arg, context, ReturnValueContext.VALUE )
-			    );
+		if ( hasSpread ) {
+			List<List<AbstractInsnNode>> elements = new ArrayList<>();
+			for ( BoxArgument arg : args ) {
+				if ( arg.isSpread() ) {
+					elements.add( transformSpreadArg( transpiler, arg, context ) );
+				} else {
+					elements.add( transpiler.createKey( arg.getName() ) );
+					elements.add( transpiler.transform( arg, context, ReturnValueContext.VALUE ) );
+				}
+			}
+			nodes.addAll( AsmHelper.array( Type.getType( Object.class ), elements ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( LiteralSpreadUtil.class ),
+			    "namedArgs",
+			    Type.getMethodDescriptor( Type.getType( Map.class ), Type.getType( Object[].class ) ),
+			    false ) );
+		} else {
+			List<List<AbstractInsnNode>> keyValues = args.stream()
+			    .map( arg -> {
+				    List<List<AbstractInsnNode>> kv = List.of(
+				        transpiler.createKey( arg.getName() ),
+				        transpiler.transform( arg, context, ReturnValueContext.VALUE )
+				    );
 
-			    return kv;
-		    } )
-		    .flatMap( x -> x.stream() )
-		    .collect( Collectors.toList() );
+				    return kv;
+			    } )
+			    .flatMap( x -> x.stream() )
+			    .collect( Collectors.toList() );
 
-		nodes.addAll( AsmHelper.array( Type.getType( Object.class ), keyValues ) );
+			nodes.addAll( AsmHelper.array( Type.getType( Object.class ), keyValues ) );
 
-		nodes.add(
-		    new MethodInsnNode( Opcodes.INVOKESTATIC,
-		        Type.getInternalName( Struct.class ),
-		        "linkedOf",
-		        Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),
-		        false
-		    )
-		);
+			nodes.add(
+			    new MethodInsnNode( Opcodes.INVOKESTATIC,
+			        Type.getInternalName( Struct.class ),
+			        "linkedOf",
+			        Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),
+			        false
+			    )
+			);
+		}
 
 		nodes.add( new FieldInsnNode( Opcodes.GETSTATIC, Type.getInternalName( Boolean.class ), safe ? "TRUE" : "FALSE",
 		    Type.getDescriptor( Boolean.class ) ) );
@@ -623,15 +780,56 @@ public class AsmHelper {
 
 	}
 
-	public static List<AbstractInsnNode> callDynamicObjectInvokeConstructor( Transpiler transpiler, List<BoxArgument> args, TransformerContext context ) {
-		List<AbstractInsnNode> nodes = new ArrayList<AbstractInsnNode>();
+	public static List<AbstractInsnNode> callDynamicObjectInvokeConstructor( Transpiler transpiler, List<BoxArgument> args, TransformerContext context,
+	    boolean isNamed, boolean hasSpread ) {
+		List<AbstractInsnNode>	nodes		= new ArrayList<AbstractInsnNode>();
+
+		boolean					allSpread	= hasSpread && isAllSpread( args );
+
+		// All-spread case: use runtime dispatch
+		if ( allSpread ) {
+			// Stack already has: [..., dynamicObject, context]
+			// But we need: [..., dynamicObject, context, spreadValues[]]
+			List<List<AbstractInsnNode>> elements = new ArrayList<>();
+			for ( BoxArgument arg : args ) {
+				BoxSpreadExpression spread = ( BoxSpreadExpression ) arg.getValue();
+				elements.add( transpiler.transform( spread.getExpression(), context, ReturnValueContext.VALUE ) );
+			}
+			nodes.addAll( AsmHelper.array( Type.getType( Object.class ), elements ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( LiteralSpreadUtil.class ),
+			    "invokeSpreadOnlyConstructor",
+			    Type.getMethodDescriptor( Type.getType( DynamicObject.class ),
+			        Type.getType( DynamicObject.class ),
+			        Type.getType( IBoxContext.class ),
+			        Type.getType( Object[].class ) ),
+			    false ) );
+			return nodes;
+		}
 
 		// handle positional args
-		if ( args.size() == 0 || args.get( 0 ).getName() == null ) {
-			nodes.addAll(
-			    AsmHelper.array( Type.getType( Object.class ), args,
-			        ( argument, i ) -> transpiler.transform( args.get( i ), context, ReturnValueContext.VALUE ) )
-			);
+		if ( args.size() == 0 || !isNamed ) {
+			if ( hasSpread ) {
+				List<List<AbstractInsnNode>> elements = new ArrayList<>();
+				for ( BoxArgument arg : args ) {
+					if ( arg.isSpread() ) {
+						elements.add( transformSpreadArg( transpiler, arg, context ) );
+					} else {
+						elements.add( transpiler.transform( arg, context, ReturnValueContext.VALUE ) );
+					}
+				}
+				nodes.addAll( AsmHelper.array( Type.getType( Object.class ), elements ) );
+				nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+				    Type.getInternalName( LiteralSpreadUtil.class ),
+				    "positionalArgs",
+				    Type.getMethodDescriptor( Type.getType( Object[].class ), Type.getType( Object[].class ) ),
+				    false ) );
+			} else {
+				nodes.addAll(
+				    AsmHelper.array( Type.getType( Object.class ), args,
+				        ( argument, i ) -> transpiler.transform( args.get( i ), context, ReturnValueContext.VALUE ) )
+				);
+			}
 
 			nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
 			    Type.getInternalName( DynamicObject.class ),
@@ -644,28 +842,46 @@ public class AsmHelper {
 			return nodes;
 		}
 
-		List<List<AbstractInsnNode>> keyValues = args.stream()
-		    .map( arg -> {
-			    List<List<AbstractInsnNode>> kv = List.of(
-			        transpiler.createKey( arg.getName() ),
-			        transpiler.transform( arg, context, ReturnValueContext.VALUE )
-			    );
+		if ( hasSpread ) {
+			List<List<AbstractInsnNode>> elements = new ArrayList<>();
+			for ( BoxArgument arg : args ) {
+				if ( arg.isSpread() ) {
+					elements.add( transformSpreadArg( transpiler, arg, context ) );
+				} else {
+					elements.add( transpiler.createKey( arg.getName() ) );
+					elements.add( transpiler.transform( arg, context, ReturnValueContext.VALUE ) );
+				}
+			}
+			nodes.addAll( AsmHelper.array( Type.getType( Object.class ), elements ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( LiteralSpreadUtil.class ),
+			    "namedArgs",
+			    Type.getMethodDescriptor( Type.getType( Map.class ), Type.getType( Object[].class ) ),
+			    false ) );
+		} else {
+			List<List<AbstractInsnNode>> keyValues = args.stream()
+			    .map( arg -> {
+				    List<List<AbstractInsnNode>> kv = List.of(
+				        transpiler.createKey( arg.getName() ),
+				        transpiler.transform( arg, context, ReturnValueContext.VALUE )
+				    );
 
-			    return kv;
-		    } )
-		    .flatMap( x -> x.stream() )
-		    .collect( Collectors.toList() );
+				    return kv;
+			    } )
+			    .flatMap( x -> x.stream() )
+			    .collect( Collectors.toList() );
 
-		nodes.addAll( AsmHelper.array( Type.getType( Object.class ), keyValues ) );
+			nodes.addAll( AsmHelper.array( Type.getType( Object.class ), keyValues ) );
 
-		nodes.add(
-		    new MethodInsnNode( Opcodes.INVOKESTATIC,
-		        Type.getInternalName( Struct.class ),
-		        "linkedOf",
-		        Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),
-		        false
-		    )
-		);
+			nodes.add(
+			    new MethodInsnNode( Opcodes.INVOKESTATIC,
+			        Type.getInternalName( Struct.class ),
+			        "linkedOf",
+			        Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),
+			        false
+			    )
+			);
+		}
 
 		nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
 		    Type.getInternalName( DynamicObject.class ),
@@ -1198,23 +1414,13 @@ public class AsmHelper {
 
 		return switch ( opcode ) {
 			// Push single value onto stack
-			case Opcodes.ACONST_NULL, Opcodes.ICONST_M1, Opcodes.ICONST_0, Opcodes.ICONST_1, Opcodes.ICONST_2, Opcodes.ICONST_3, Opcodes.ICONST_4,
-			    Opcodes.ICONST_5, Opcodes.LCONST_0, Opcodes.LCONST_1, Opcodes.FCONST_0, Opcodes.FCONST_1, Opcodes.FCONST_2, Opcodes.DCONST_0, Opcodes.DCONST_1,
-			    Opcodes.BIPUSH, Opcodes.SIPUSH, Opcodes.LDC, Opcodes.ILOAD, Opcodes.LLOAD, Opcodes.FLOAD, Opcodes.DLOAD, Opcodes.ALOAD, Opcodes.GETSTATIC,
-			    Opcodes.NEW -> 1;
+			case Opcodes.ACONST_NULL, Opcodes.ICONST_M1, Opcodes.ICONST_0, Opcodes.ICONST_1, Opcodes.ICONST_2, Opcodes.ICONST_3, Opcodes.ICONST_4, Opcodes.ICONST_5, Opcodes.LCONST_0, Opcodes.LCONST_1, Opcodes.FCONST_0, Opcodes.FCONST_1, Opcodes.FCONST_2, Opcodes.DCONST_0, Opcodes.DCONST_1, Opcodes.BIPUSH, Opcodes.SIPUSH, Opcodes.LDC, Opcodes.ILOAD, Opcodes.LLOAD, Opcodes.FLOAD, Opcodes.DLOAD, Opcodes.ALOAD, Opcodes.GETSTATIC, Opcodes.NEW -> 1;
 
 			// Pop single value from stack
-			case Opcodes.ISTORE, Opcodes.LSTORE, Opcodes.FSTORE, Opcodes.DSTORE, Opcodes.ASTORE, Opcodes.POP, Opcodes.IRETURN, Opcodes.LRETURN, Opcodes.FRETURN,
-			    Opcodes.DRETURN, Opcodes.ARETURN, Opcodes.ATHROW, Opcodes.MONITORENTER, Opcodes.MONITOREXIT, Opcodes.IFNULL, Opcodes.IFNONNULL, Opcodes.IFEQ,
-			    Opcodes.IFNE, Opcodes.IFLT, Opcodes.IFGE, Opcodes.IFGT, Opcodes.IFLE, Opcodes.TABLESWITCH, Opcodes.LOOKUPSWITCH -> -1;
+			case Opcodes.ISTORE, Opcodes.LSTORE, Opcodes.FSTORE, Opcodes.DSTORE, Opcodes.ASTORE, Opcodes.POP, Opcodes.IRETURN, Opcodes.LRETURN, Opcodes.FRETURN, Opcodes.DRETURN, Opcodes.ARETURN, Opcodes.ATHROW, Opcodes.MONITORENTER, Opcodes.MONITOREXIT, Opcodes.IFNULL, Opcodes.IFNONNULL, Opcodes.IFEQ, Opcodes.IFNE, Opcodes.IFLT, Opcodes.IFGE, Opcodes.IFGT, Opcodes.IFLE, Opcodes.TABLESWITCH, Opcodes.LOOKUPSWITCH -> -1;
 
 			// Pop 2 values from stack
-			case Opcodes.POP2, Opcodes.IF_ICMPEQ, Opcodes.IF_ICMPNE, Opcodes.IF_ICMPLT, Opcodes.IF_ICMPGE, Opcodes.IF_ICMPGT, Opcodes.IF_ICMPLE,
-			    Opcodes.IF_ACMPEQ, Opcodes.IF_ACMPNE, Opcodes.IADD, Opcodes.LADD, Opcodes.FADD, Opcodes.DADD, Opcodes.ISUB, Opcodes.LSUB, Opcodes.FSUB,
-			    Opcodes.DSUB, Opcodes.IMUL, Opcodes.LMUL, Opcodes.FMUL, Opcodes.DMUL, Opcodes.IDIV, Opcodes.LDIV, Opcodes.FDIV, Opcodes.DDIV, Opcodes.IREM,
-			    Opcodes.LREM, Opcodes.FREM, Opcodes.DREM, Opcodes.ISHL, Opcodes.LSHL, Opcodes.ISHR, Opcodes.LSHR, Opcodes.IUSHR, Opcodes.LUSHR, Opcodes.IAND,
-			    Opcodes.LAND, Opcodes.IOR, Opcodes.LOR, Opcodes.IXOR, Opcodes.LXOR, Opcodes.LCMP, Opcodes.FCMPL, Opcodes.FCMPG, Opcodes.DCMPL, Opcodes.DCMPG,
-			    Opcodes.PUTFIELD -> -2;
+			case Opcodes.POP2, Opcodes.IF_ICMPEQ, Opcodes.IF_ICMPNE, Opcodes.IF_ICMPLT, Opcodes.IF_ICMPGE, Opcodes.IF_ICMPGT, Opcodes.IF_ICMPLE, Opcodes.IF_ACMPEQ, Opcodes.IF_ACMPNE, Opcodes.IADD, Opcodes.LADD, Opcodes.FADD, Opcodes.DADD, Opcodes.ISUB, Opcodes.LSUB, Opcodes.FSUB, Opcodes.DSUB, Opcodes.IMUL, Opcodes.LMUL, Opcodes.FMUL, Opcodes.DMUL, Opcodes.IDIV, Opcodes.LDIV, Opcodes.FDIV, Opcodes.DDIV, Opcodes.IREM, Opcodes.LREM, Opcodes.FREM, Opcodes.DREM, Opcodes.ISHL, Opcodes.LSHL, Opcodes.ISHR, Opcodes.LSHR, Opcodes.IUSHR, Opcodes.LUSHR, Opcodes.IAND, Opcodes.LAND, Opcodes.IOR, Opcodes.LOR, Opcodes.IXOR, Opcodes.LXOR, Opcodes.LCMP, Opcodes.FCMPL, Opcodes.FCMPG, Opcodes.DCMPL, Opcodes.DCMPG, Opcodes.PUTFIELD -> -2;
 
 			// Pop 3 values from stack
 			case Opcodes.IASTORE, Opcodes.LASTORE, Opcodes.FASTORE, Opcodes.DASTORE, Opcodes.AASTORE, Opcodes.BASTORE, Opcodes.CASTORE, Opcodes.SASTORE -> -3;
