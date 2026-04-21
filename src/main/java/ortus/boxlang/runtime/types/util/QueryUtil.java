@@ -52,7 +52,7 @@ public class QueryUtil {
 	 * @return true if the column exists, false otherwise
 	 */
 	public static Boolean columnExists( Query query, String column ) {
-		return query.hasColumn( Key.of( column ) );
+		return query.hasColumn( Key.of( column.trim() ) );
 	}
 
 	/**

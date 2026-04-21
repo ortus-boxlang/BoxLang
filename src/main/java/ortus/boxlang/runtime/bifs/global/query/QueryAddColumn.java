@@ -58,7 +58,7 @@ public class QueryAddColumn extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Query	query		= arguments.getAsQuery( Key.query );
-		String	columnName	= arguments.getAsString( Key.columnName );
+		String	columnName	= arguments.getAsString( Key.columnName ).trim();
 		String	columnType	= "";
 		Array	array		= arguments.getAsArray( Key.array );
 

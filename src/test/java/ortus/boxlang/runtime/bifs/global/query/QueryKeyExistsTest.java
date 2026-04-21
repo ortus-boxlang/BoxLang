@@ -95,4 +95,17 @@ public class QueryKeyExistsTest {
 		assertThat( variables.get( result ) ).isEqualTo( true );
 	}
 
+	@DisplayName( "It should trim whitespace from column name" )
+	@Test
+	public void testColumnNameTrimming() {
+		instance.executeSource(
+		    """
+		    query = QueryNew( "id,name", "integer,varchar" );
+		    result = QueryKeyExists( query, " name " );
+		    """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
 }

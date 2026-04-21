@@ -251,4 +251,53 @@ public class QuerySetCellTest {
 		}
 	}
 
+	@DisplayName( "It should trim whitespace from column names" )
+	@Test
+	public void testColumnNameTrimming() {
+		instance.executeSource(
+		    """
+		    myQry = querynew( "col1", "varchar", [[""]] );
+		    myQry.setCell( " col1 ", "value" );
+		    result = myQry.getCell( " col1 ", 1 );
+		    """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( "value" );
+	}
+
+	@DisplayName( "It should trim whitespace from column names across query BIFs" )
+	@Test
+	public void testColumnNameTrimmingAcrossBIFs() {
+		instance.executeSource(
+		    """
+		    myQry = querynew( "col1", "varchar", [[""]] );
+
+		    // setCell with padded column name
+		    querySetCell( myQry, " col1 ", "trimmed", 1 );
+
+		    // getCell with padded column name
+		    cellVal = queryGetCell( myQry, " col1 ", 1 );
+
+		    // columnExists with padded column name
+		    exists = queryColumnExists( myQry, " col1 " );
+
+		    // columnData with padded column name
+		    data = myQry.columnData( " col1 " );
+
+		    // addColumn with padded column name
+		    queryAddColumn( myQry, " col2 ", "varchar", ["test"] );
+		    col2Exists = queryColumnExists( myQry, "col2" );
+
+		    // deleteColumn with padded column name
+		    queryDeleteColumn( myQry, " col2 " );
+		    col2Gone = !queryColumnExists( myQry, "col2" );
+		    """,
+		    context );
+
+		assertThat( variables.get( Key.of( "cellVal" ) ) ).isEqualTo( "trimmed" );
+		assertThat( variables.get( Key.of( "exists" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "col2Exists" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "col2Gone" ) ) ).isEqualTo( true );
+	}
+
 }
