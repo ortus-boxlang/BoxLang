@@ -415,7 +415,7 @@ public class SpreadArgumentTest {
 	// BoxNew: new Foo( ...args )
 	// =========================================================================
 
-	@DisplayName( "new: single spread into Java constructor" )
+	@DisplayName( "new: single spread into Java constructor." )
 	@Test
 	public void testNewSingleSpreadJava() {
 		instance.executeSource(
