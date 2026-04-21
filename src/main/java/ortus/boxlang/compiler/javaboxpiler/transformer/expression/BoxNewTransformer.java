@@ -28,6 +28,7 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
+import ortus.boxlang.compiler.ast.expression.BoxSpreadExpression;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
@@ -79,13 +80,32 @@ public class BoxNewTransformer extends AbstractTransformer {
 
 			}
 		};
+		boolean	allSpread	= isAllSpread( boxNew.getArguments() );
 		for ( int i = 0; i < boxNew.getArguments().size(); i++ ) {
-			Expression expr2 = ( Expression ) transpiler.transform( ( BoxNode ) boxNew.getArguments().get( i ), context );
-			values.put( "arg" + i, expr2.toString() );
+			if ( allSpread && boxNew.getArguments().get( i ).isSpread() ) {
+				// For allSpread path, transform the inner expression directly (not wrapped in SpreadValue)
+				BoxSpreadExpression spread = ( BoxSpreadExpression ) boxNew.getArguments().get( i ).getValue();
+				Expression expr2 = ( Expression ) transpiler.transform( spread.getExpression(), context );
+				values.put( "arg" + i, expr2.toString() );
+			} else {
+				Expression expr2 = ( Expression ) transpiler.transform( ( BoxNode ) boxNew.getArguments().get( i ), context );
+				values.put( "arg" + i, expr2.toString() );
+			}
 		}
 
-		String	template	= "classLocator.load(${contextName}, ${expr}, imports).invokeConstructor( ${contextName}, "
-		    + generateArguments( boxNew.getArguments() ) + " ).unWrapBoxLangClass()";
+		String	template;
+		if ( allSpread ) {
+			StringBuilder sb = new StringBuilder(
+			    "ortus.boxlang.runtime.dynamic.LiteralSpreadUtil.invokeSpreadOnlyConstructor( classLocator.load(${contextName}, ${expr}, imports), ${contextName}" );
+			for ( int i = 0; i < boxNew.getArguments().size(); i++ ) {
+				sb.append( ", ${arg" ).append( i ).append( "}" );
+			}
+			sb.append( " ).unWrapBoxLangClass()" );
+			template = sb.toString();
+		} else {
+			template = "classLocator.load(${contextName}, ${expr}, imports).invokeConstructor( ${contextName}, "
+			    + generateArguments( boxNew.getArguments() ) + " ).unWrapBoxLangClass()";
+		}
 		Node	javaStmt	= parseExpression( template, values );
 		// logger.trace( node.getSourceText() + " -> " + javaStmt );
 		addIndex( javaStmt, node );
