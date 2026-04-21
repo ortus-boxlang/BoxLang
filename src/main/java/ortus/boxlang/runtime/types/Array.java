@@ -327,7 +327,21 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 
 	@Override
 	public Iterator<Object> iterator() {
-		return wrapped.iterator();
+		return new Iterator<Object>() {
+
+			private final int	max		= wrapped.size();
+			private int			index	= 0;
+
+			@Override
+			public boolean hasNext() {
+				return index < max && index < wrapped.size();
+			}
+
+			@Override
+			public Object next() {
+				return wrapped.get( index++ );
+			}
+		};
 	}
 
 	@Override
@@ -409,6 +423,13 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 		// TODO: deal with listeners
 		synchronized ( wrapped ) {
 			return wrapped.removeAll( c );
+		}
+	}
+
+	@Override
+	public boolean removeIf( java.util.function.Predicate<? super Object> filter ) {
+		synchronized ( wrapped ) {
+			return wrapped.removeIf( filter );
 		}
 	}
 

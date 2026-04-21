@@ -6484,4 +6484,35 @@ public class CoreLangTest {
 		);
 	}
 
+	@DisplayName( "concurrent array modification with for-in loop" )
+	@Test
+	public void testConcurrentArrayModificationForIn() {
+		instance.executeSource(
+		    """
+		    shared = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ];
+		    names = [];
+
+		    for( i in 1..3 ) {
+		        names.append( "t#i#" );
+		        thread name="t#i#" {
+		            for( j = 1; j <= 50; j++ ) {
+		                for( item in shared ) { x = item * 2; }
+		                shared.append( randRange( 1, 1000 ) );
+		            }
+		        }
+		    }
+
+		    thread action="join" name="#names.toList()#";
+
+		    for( name in names ) {
+		        if( !isNull( bxthread[ name ].error ) ) {
+		            throw( bxthread[ name ].error );
+		        }
+		    }
+
+		    result = shared.len();
+		    """,
+		    context );
+	}
+
 }
