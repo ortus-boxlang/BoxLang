@@ -72,20 +72,20 @@ public class BoxNewTransformer extends AbstractTransformer {
 		} else {
 			throw new ExpressionException( "BoxNew expression must be a string literal or FQN, but was a " + expr.getClass().getSimpleName(), expr );
 		}
-		Map<String, String> values = new HashMap<>() {
+		Map<String, String>	values		= new HashMap<>() {
 
-			{
-				put( "expr", exprSource );
-				put( "contextName", transpiler.peekContextName() );
+											{
+												put( "expr", exprSource );
+												put( "contextName", transpiler.peekContextName() );
 
-			}
-		};
-		boolean	allSpread	= isAllSpread( boxNew.getArguments() );
+											}
+										};
+		boolean				allSpread	= isAllSpread( boxNew.getArguments() );
 		for ( int i = 0; i < boxNew.getArguments().size(); i++ ) {
 			if ( allSpread && boxNew.getArguments().get( i ).isSpread() ) {
 				// For allSpread path, transform the inner expression directly (not wrapped in SpreadValue)
-				BoxSpreadExpression spread = ( BoxSpreadExpression ) boxNew.getArguments().get( i ).getValue();
-				Expression expr2 = ( Expression ) transpiler.transform( spread.getExpression(), context );
+				BoxSpreadExpression	spread	= ( BoxSpreadExpression ) boxNew.getArguments().get( i ).getValue();
+				Expression			expr2	= ( Expression ) transpiler.transform( spread.getExpression(), context );
 				values.put( "arg" + i, expr2.toString() );
 			} else {
 				Expression expr2 = ( Expression ) transpiler.transform( ( BoxNode ) boxNew.getArguments().get( i ), context );
@@ -93,7 +93,7 @@ public class BoxNewTransformer extends AbstractTransformer {
 			}
 		}
 
-		String	template;
+		String template;
 		if ( allSpread ) {
 			StringBuilder sb = new StringBuilder(
 			    "ortus.boxlang.runtime.dynamic.LiteralSpreadUtil.invokeSpreadOnlyConstructor( classLocator.load(${contextName}, ${expr}, imports), ${contextName}" );
@@ -106,7 +106,7 @@ public class BoxNewTransformer extends AbstractTransformer {
 			template = "classLocator.load(${contextName}, ${expr}, imports).invokeConstructor( ${contextName}, "
 			    + generateArguments( boxNew.getArguments() ) + " ).unWrapBoxLangClass()";
 		}
-		Node	javaStmt	= parseExpression( template, values );
+		Node javaStmt = parseExpression( template, values );
 		// logger.trace( node.getSourceText() + " -> " + javaStmt );
 		addIndex( javaStmt, node );
 		return javaStmt;
