@@ -118,7 +118,7 @@ public class JSONSerializeTest {
 
 	@DisplayName( "It can serialize using the BoxLang DateTime methods" )
 	@Test
-	public void testCanSerializeDateTimeUsingMethods() {
+	public void s() {
 		// @formatter:off
 		instance.executeSource(
 		    """

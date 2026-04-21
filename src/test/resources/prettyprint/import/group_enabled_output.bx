@@ -1,0 +1,12 @@
+import java.io.File;
+import java.util.Map;
+
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Struct;
+
+class {
+
+	function init() {
+		return this;
+	}
+}

@@ -1,0 +1,6 @@
+result = a EQ b;
+result = a NEQ b;
+result = a GT b;
+result = a GTE b;
+result = a LT b;
+result = a LTE b;

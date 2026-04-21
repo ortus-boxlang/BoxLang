@@ -147,6 +147,7 @@ public class CFParser extends AbstractParser {
 	public ComponentService		componentService	= BoxRuntime.getInstance().getComponentService();
 	private CFExpressionVisitor	expressionVisitor	= new CFExpressionVisitor( this, new CFVisitor( this ) );
 	private boolean				classOrInterface	= false;
+	private boolean				transpile			= true;
 
 	/**
 	 * Constructor
@@ -170,6 +171,11 @@ public class CFParser extends AbstractParser {
 
 	public void setInOutputBlock( boolean inOutputBlock ) {
 		this.inOutputBlock = inOutputBlock;
+	}
+
+	public CFParser withTranspilation( boolean transpile ) {
+		this.transpile = transpile;
+		return this;
 	}
 
 	/**
@@ -440,8 +446,12 @@ public class CFParser extends AbstractParser {
 		// associate all comments in the source with the appropriate AST nodes
 		rootNode.associateComments( this.comments );
 
-		// Transpile CF to BoxLang
-		return rootNode.accept( new CFTranspilerVisitor() );
+		if ( this.transpile ) {
+			// Transpile CF to BoxLang
+			return rootNode.accept( new CFTranspilerVisitor() );
+		} else {
+			return rootNode;
+		}
 	}
 
 	private void validateParse( CFLexerCustom lexer ) {
@@ -736,7 +746,8 @@ public class CFParser extends AbstractParser {
 			body.add( funDec );
 		} );
 
-		return new BoxInterface( imports, body, annotations, postAnnotations, documentation, getPosition( interface_ ), getSourceText( interface_ ) );
+		return new BoxInterface( imports, body, annotations, postAnnotations, documentation, getPosition( interface_ ), getSourceText( interface_ ),
+		    BoxSourceType.CFTEMPLATE );
 	}
 
 	private BoxTemplate toAst( File file, TemplateContext rule ) throws IOException {
@@ -744,7 +755,7 @@ public class CFParser extends AbstractParser {
 		if ( rule.template_statements() != null ) {
 			statements = toAst( file, rule.template_statements() );
 		}
-		return new BoxTemplate( statements, getPosition( rule ), getSourceText( rule ) );
+		return new BoxTemplate( statements, getPosition( rule ), getSourceText( rule ), BoxSourceType.CFTEMPLATE );
 	}
 
 	private BoxNode toAst( File file, Template_componentContext node ) {
@@ -777,7 +788,7 @@ public class CFParser extends AbstractParser {
 			properties.add( toAst( file, annotation ) );
 		}
 
-		return new BoxClass( imports, body, annotations, documentation, properties, getPosition( node ), getSourceText( node ) );
+		return new BoxClass( imports, body, annotations, documentation, properties, getPosition( node ), getSourceText( node ), BoxSourceType.CFTEMPLATE );
 	}
 
 	private BoxProperty toAst( File file, Template_propertyContext node ) {
@@ -1072,7 +1083,7 @@ public class CFParser extends AbstractParser {
 			}
 
 			value		= findExprInAnnotations( annotations, "value", true, null, "case", getPosition( node ) );
-			delimiter	= findExprInAnnotations( annotations, "delimiters", false, new BoxStringLiteral( ",", null, null ), "case", getPosition( node ) );
+			delimiter	= findExprInAnnotations( annotations, "delimiters", false, null, "case", getPosition( node ) );
 		}
 
 		List<BoxStatement> statements = null;
@@ -1083,10 +1094,17 @@ public class CFParser extends AbstractParser {
 
 		if ( statements != null ) {
 			// In component mode, the break is implied
-			statements.add( new BoxBreak( null, null ) );
+			var implicitBreak = new BoxBreak( null, null );
+			implicitBreak.setImplicit( true );
+			statements.add( implicitBreak );
 		}
 
-		return new BoxSwitchCase( value, delimiter, statements, getPosition( node ), getSourceText( node ) );
+		var switchCase = new BoxSwitchCase( value, delimiter, statements, getPosition( node ), getSourceText( node ) );
+		if ( delimiter == null && value != null ) {
+			switchCase.setDelimiter( new BoxStringLiteral( ",", null, null ) );
+			switchCase.setImplicitDelimiter( true );
+		}
+		return switchCase;
 	}
 
 	private BoxStatement toAst( File file, Template_throwContext node ) {

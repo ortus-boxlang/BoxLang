@@ -1,0 +1,3 @@
+foo(a);
+bar(a, b);
+baz(a, b, c);

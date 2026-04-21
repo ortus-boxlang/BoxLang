@@ -1,0 +1,16 @@
+function singleParam(a) {
+
+}
+function multiParams(
+	a,
+	b
+) {
+
+}
+function threeParams(
+	a,
+	b,
+	c
+) {
+
+}
