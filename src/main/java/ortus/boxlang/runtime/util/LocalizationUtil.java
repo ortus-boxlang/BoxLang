@@ -1298,19 +1298,19 @@ public final class LocalizationUtil {
 			// Pattern for "Mar 22 2025 05:21 PM" - medium format without comma and seconds
 			add( Map.of(
 				"regexPattern",
-				"^[A-Za-z]{3}\\s+\\d{1,2}\\s+\\d{4}\\s+\\d{1,2}:\\d{2}\\s+[APap][Mm]$",
-				"datePattern", "MMM d yyyy h:mm a",
+				"^[A-Za-z]{3}\\s+\\d{1,2}\\s+\\d{4}\\s+\\d{1,2}:\\d{2}\\s*[APap][Mm]$",
+				"datePattern", "MMM d yyyy h:mm[ ]a",
 				"description",
-				"Medium format without comma no seconds with AM/PM"
+				"Medium format without comma no seconds with AM/PM (optional space)"
 			) );
 
-			// Pattern for "March 22 2025 5:21 PM" - full month name without comma
+			// Pattern for "March 22 2025 5:21 PM" - full month name without comma  
 			add( Map.of(
 				"regexPattern",
-				"^[A-Za-z]{3,}\\s+\\d{1,2}\\s+\\d{4}\\s+\\d{1,2}:\\d{2}\\s+[APap][Mm]$",
-				"datePattern", "MMMM d yyyy h:mm a",
+				"^[A-Za-z]{3,}\\s+\\d{1,2}\\s+\\d{4}\\s+\\d{1,2}:\\d{2}\\s*[APap][Mm]$",
+				"datePattern", "MMMM d yyyy h:mm[ ]a",
 				"description",
-				"Full month name without comma no seconds with AM/PM"
+				"Full month name without comma no seconds with AM/PM (optional space)"
 			) );
 
 			// Pattern for single digit month/day formats like "1/1/2024"

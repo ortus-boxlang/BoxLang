@@ -341,6 +341,16 @@ public class DateTimeCasterTest {
 	}
 
 	@Test
+	@DisplayName( "Test medium format date and time with AM/PM scrunched" )
+	public void testMedFormatAMPMScrunched() {
+		// Med string example Aug 26, 2024 22:05:00 UTC
+		String		dateString	= "Mar 12 2026 12:00AM";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd hh:mm:ss a" ) ).isEqualTo( "2026-03-12 12:00:00 AM" );
+	}
+
+	@Test
 	@DisplayName( "Test medium format datetime with no comma separator between year and time and narrow no-break space unicode char" )
 	public void testMedFormatWithMeridianAndNoSeparator() {
 		// Do not change the no-break space character here; it's intentional
