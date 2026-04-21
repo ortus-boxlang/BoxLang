@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -139,12 +140,16 @@ public class DiskClassUtil {
 		Path diskPath = generateDiskpath( classPoolName, fqn, extension );
 		diskPath.toFile().getParentFile().mkdirs();
 		try {
-			Files.write( diskPath, bytes );
+			// Write to a temp file first, then atomically move to the final path to prevent
+			// other threads from reading partially-written files
+			Path tempPath = diskPath.resolveSibling( diskPath.getFileName() + ".tmp" );
+			Files.write( tempPath, bytes );
 			if ( lastModifiedDate > 0 ) {
-				diskPath.toFile().setLastModified( lastModifiedDate );
+				tempPath.toFile().setLastModified( lastModifiedDate );
 			}
+			Files.move( tempPath, diskPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE );
 		} catch ( IOException e ) {
-			throw new BoxRuntimeException( "Unable to write Java Sourece file to disk", e );
+			throw new BoxRuntimeException( "Unable to write Java Source file to disk", e );
 		}
 	}
 

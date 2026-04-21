@@ -325,10 +325,16 @@ public class DiskClassLoader extends URLClassLoader {
 			return loadClass( name );
 		}
 
-		// In all other scenarios, the BoxPiler ould have compiled the class and written it to disk
+		// In all other scenarios, the BoxPiler should have compiled the class and written it to disk
 		byte[] bytes;
 		try {
 			bytes = Files.readAllBytes( diskPath );
+			// Guard against empty or corrupt class files (e.g. from a concurrent write race)
+			if ( bytes.length < 8 ) {
+				Files.deleteIfExists( diskPath );
+				boxPiler.compileClassInfo( classPoolName, baseName );
+				return loadClass( name );
+			}
 			if ( isBaseClass ) {
 				// Validate bytecode version
 				validateByteCodeVersion( bytes, name, diskPath );
