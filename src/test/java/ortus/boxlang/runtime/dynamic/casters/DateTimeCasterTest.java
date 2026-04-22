@@ -587,4 +587,31 @@ public class DateTimeCasterTest {
 		assertThat( result ).isNotNull();
 		assertThat( result.format( "dd-MMM-yyyy HH:mm" ) ).isEqualTo( "05-Nov-2025 14:43" );
 	}
+
+	@Test
+	@DisplayName( "Test European DD/MM/YYYY format with day > 12 to distinguish from US format" )
+	public void testEuropeanDDMMYYYYFormat() {
+		String		dateString	= "15/04/2024";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "dd/MM/yyyy" ) ).isEqualTo( "15/04/2024" );
+	}
+
+	@Test
+	@DisplayName( "Test European DD/MM/YYYY format with time and day > 12" )
+	public void testEuropeanDDMMYYYYWithTime() {
+		String		dateString	= "25/12/2024 14:30:45";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "dd/MM/yyyy HH:mm:ss" ) ).isEqualTo( "25/12/2024 14:30:45" );
+	}
+
+	@Test
+	@DisplayName( "Test European DD.MM.YYYY format with day > 12 to distinguish from US format" )
+	public void testEuropeanDDMMYYYYDotFormat() {
+		String		dateString	= "13.03.2024";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "dd.MM.yyyy" ) ).isEqualTo( "13.03.2024" );
+	}
 }

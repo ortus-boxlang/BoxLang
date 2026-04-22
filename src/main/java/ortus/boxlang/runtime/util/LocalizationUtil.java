@@ -1046,7 +1046,7 @@ public final class LocalizationUtil {
 			// US Short DateTime with AM/PM no seconds (e.g., 02/04/2024 04:01 PM)
 			add( Map.of(
 				"regexPattern",
-				"^\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{2}\\s+[APap][Mm]$",
+				"^(1[0-2]|[1-9])/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{2}\\s+[APap][Mm]$",
 				"datePattern", "M/d/yyyy h:mm a",
 				"description", "US date MM/dd/yyyy with time AM/PM no seconds"
 			) );
@@ -1063,9 +1063,17 @@ public final class LocalizationUtil {
 			// US Short DateTime with no seconds and no meridian (e.g., 11/21/2025 1:05)
 			add( Map.of(
 				"regexPattern",
-				"^\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{2}$",
+				"^(1[0-2]|[1-9])/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{2}$",
 				"datePattern", "M/d/yyyy H:mm",
 				"description", "US date MM/dd/yyyy with time no seconds"
+			) );
+
+			// European slash format date (e.g., 02/04/2024)
+			add( Map.of(
+				"regexPattern",
+				"^\\d{1,2}/\\d{1,2}/\\d{4}$",
+				"datePattern", "d/M/yyyy",
+				"description", "European DD/MM/YYYY format"
 			) );
 
 			// European dot format date (e.g., 02.04.2024)
@@ -1074,6 +1082,14 @@ public final class LocalizationUtil {
 				"^\\d{1,2}\\.\\d{1,2}\\.\\d{4}$",
 				"datePattern", "d.M.yyyy",
 				"description", "European DD.MM.YYYY format"
+			) );
+
+			// European slash format datetime (e.g., 02/04/2024 21:01:00)
+			add( Map.of(
+				"regexPattern",
+				"^\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{2}:\\d{2}(?::\\d{2})?$",
+				"datePattern", "d/M/yyyy HH:mm[:ss]",
+				"description", "European DD/MM/YYYY with time"
 			) );
 
 			// European dot format datetime (e.g., 02.04.2024 21:01:00)
@@ -1161,7 +1177,7 @@ public final class LocalizationUtil {
 
 			// Short Date with flexible separators (e.g., 04 02 2024, 04-02-2024, 04/02/2024, 04.02.2024)
 			add( Map.of(
-				"regexPattern", "^\\d{2}[ ./-]\\d{1,2}[ ./-]\\d{4}$",
+				"regexPattern", "^(1[0-2]|0[1-9])[ ./-]\\d{1,2}[ ./-]\\d{4}$",
 				"datePattern", "MM< ./->d< ./->yyyy",
 				"description", "MM dd yyyy with flexible separators"
 			) );
@@ -1315,7 +1331,7 @@ public final class LocalizationUtil {
 
 			// Pattern for single digit month/day formats like "1/1/2024"
 			add( Map.of(
-				"regexPattern", "^\\d{1,2}/\\d{1,2}/\\d{4}$",
+				"regexPattern", "^(1[0-2]|[1-9])/\\d{1,2}/\\d{4}$",
 				"datePattern", "M/d/yyyy",
 				"description", "US date with single digit month/day (1/1/2024)"
 			) );
@@ -1440,7 +1456,7 @@ public final class LocalizationUtil {
 			// Pattern for slash date with lowercase pm "7/20/2025 1:00 pm"
 			add( Map.of(
 				"regexPattern",
-				"^\\d{1,2}/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{2}\\s+[APap][Mm]$",
+				"^(1[0-2]|[1-9])/\\d{1,2}/\\d{4}\\s+\\d{1,2}:\\d{2}\\s+[APap][Mm]$",
 				"datePattern", "M/d/yyyy h:mm a",
 				"description", "US date format with lowercase am/pm"
 			) );
