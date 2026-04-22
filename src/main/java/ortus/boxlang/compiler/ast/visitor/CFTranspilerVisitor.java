@@ -481,12 +481,13 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	@Override
 	public BoxNode visit( BoxFunctionDeclaration node ) {
 		mergeDocsIntoAnnotations( node.getAnnotations(), node.getDocumentation() );
-		// Don't touch UDFs in a class, otherwise they won't inherit from the class's output annotation.
 		if ( isClass ) {
-			enableOutput( node.getAnnotations() );
 			if ( node.getName().equalsIgnoreCase( "onCFCRequest" ) && className.equalsIgnoreCase( "application" ) ) {
 				node.setName( "onClassRequest" );
 			}
+		} else {
+			// Don't touch UDFs in a class, otherwise they won't inherit from the class's output annotation.
+			enableOutput( node.getAnnotations() );
 		}
 		return super.visit( node );
 	}
