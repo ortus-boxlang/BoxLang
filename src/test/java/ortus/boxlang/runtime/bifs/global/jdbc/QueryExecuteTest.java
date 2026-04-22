@@ -676,6 +676,65 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertNotEquals( query1, query3 );
 	}
 
+	@DisplayName( "It caches zero timeout as infinite" )
+	@Test
+	public void testZeroCacheTimeout() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				sql = "SELECT id,name,role FROM developers WHERE role = ?";
+				params = [ 'Developer' ];
+
+				result  = queryExecute( sql, params, { "cache": true, "cacheTimeout": createTimespan( 0, 0, 0, 0 ), "result" : "queryMeta", "returnType" : "array" } );
+				assert queryMeta.cached == false;
+
+				result2 = queryExecute( sql, params, { "cache": true, "cacheTimeout": createTimespan( 0, 0, 0, 0 ), "result" : "queryMeta2", "returnType" : "array" } );
+				// println( "============QUERY META 2===============" );
+				// println( queryMeta2 );
+				assert queryMeta2.cached == true;
+			   """,
+		    context );
+		// @formatter:on
+
+		Array	query1	= variables.getAsArray( result );
+		Array	query2	= variables.getAsArray( Key.of( "result2" ) );
+
+		// Both queries should have identical return values
+		assertEquals( query1, query2 );
+	}
+
+	@DisplayName( "It CAN cache zero-duration cache timeout as no cache IF configured as such" )
+	@Test
+	public void testZeroCacheTimeoutAsNoCache() {
+		try {
+			getInstance().getConfiguration().cacheDurationZeroAsInfinite = false;
+			// @formatter:off
+			instance.executeSource(
+				"""
+					sql = "SELECT id,name,role FROM developers WHERE role = ?";
+					params = [ 'Developer' ];
+
+					result  = queryExecute( sql, params, { "cache": true, "cacheTimeout": createTimespan( 0, 0, 0, 0 ), "result" : "queryMeta", "returnType" : "array" } );
+					assert queryMeta.cached == false;
+
+					result2 = queryExecute( sql, params, { "cache": true, "cacheTimeout": createTimespan( 0, 0, 0, 0 ), "result" : "queryMeta2", "returnType" : "array" } );
+					// println( "============QUERY META 2===============" );
+					// println( queryMeta2 );
+					assert queryMeta2.cached == false;
+				""",
+				context );
+			// @formatter:on
+
+			Array	query1	= variables.getAsArray( result );
+			Array	query2	= variables.getAsArray( Key.of( "result2" ) );
+
+			// Both queries should have identical return values
+			assertEquals( query1, query2 );
+		} finally {
+			getInstance().getConfiguration().cacheDurationZeroAsInfinite = true;
+		}
+	}
+
 	@DisplayName( "It can name a cache provider" )
 	@Test
 	public void testCustomCacheProvider() {
