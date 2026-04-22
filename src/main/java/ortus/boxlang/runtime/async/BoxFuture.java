@@ -646,7 +646,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 * @return A future that is completed by executing the supplier on the default executor
 	 */
 	public static BoxFuture<?> ofFunction( IBoxContext context, ortus.boxlang.runtime.types.Function function ) {
-		return run( new ortus.boxlang.runtime.interop.proxies.Supplier<>( function, context, null ) );
+		return run( wrapSupplier( new ortus.boxlang.runtime.interop.proxies.Supplier<>( function, context, null ), context ) );
 	}
 
 	/**
@@ -659,7 +659,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 * @return A future that is completed by executing the supplier on the default executor
 	 */
 	public static BoxFuture<?> ofFunction( IBoxContext context, ortus.boxlang.runtime.types.Function function, Executor executor ) {
-		return run( new ortus.boxlang.runtime.interop.proxies.Supplier<>( function, context, null ), executor );
+		return run( wrapSupplier( new ortus.boxlang.runtime.interop.proxies.Supplier<>( function, context, null ), context ), executor );
 	}
 
 	/**
@@ -887,6 +887,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 		List<CompletableFuture<Object>>	futures		= array
 		    .stream()
 		    .map( item -> {
+				RequestBoxContext.registerDependentThread( context );
 				return CompletableFuture.supplyAsync( () -> {
 						try {
 							// Apply the mapper function directly to each item
@@ -906,6 +907,8 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 							else {
 								return ExceptionUtil.throwableToStruct( e );
 							}
+						} finally {
+							RequestBoxContext.unregisterDependentThread( context );
 						}
 					},
 						// Bound the executor to the CompletableFuture
@@ -982,6 +985,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 			// and return a key-value pair with the processed value
 			// If an error occurs, it will return the key with an error struct
 		    .map( entry -> {
+				RequestBoxContext.registerDependentThread( context );
 				CompletableFuture<Map.Entry<Key, Object>> future = CompletableFuture
 					.supplyAsync( () -> {
 							try {
@@ -1014,6 +1018,8 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 								}
 								// Return the key-error pair
 								return new AbstractMap.SimpleEntry<>( entry.getKey(), errorResult );
+							} finally {
+								RequestBoxContext.unregisterDependentThread( context );
 							}
 						},
 					executor != null ? executor.executor() : ForkJoinPool.commonPool()
@@ -1112,6 +1118,27 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 			    return resultFuture;
 		    } )
 		    .toArray( BoxFuture[]::new );
+	}
+
+	/**
+	 * Wraps a supplier with dependent thread tracking on the request context.
+	 * Registers the dependent thread immediately on the calling thread, and
+	 * unregisters it in a finally block when the supplier completes.
+	 *
+	 * @param supplier The supplier to wrap
+	 * @param context  The context to track dependent threads on
+	 *
+	 * @return A wrapped supplier that handles thread registration
+	 */
+	public static <T> Supplier<T> wrapSupplier( Supplier<T> supplier, IBoxContext context ) {
+		RequestBoxContext.registerDependentThread( context );
+		return () -> {
+			try {
+				return supplier.get();
+			} finally {
+				RequestBoxContext.unregisterDependentThread( context );
+			}
+		};
 	}
 
 }
