@@ -312,6 +312,13 @@ public class Configuration implements IConfigSegment {
 	public Boolean																enableNestedTransactions		= null;
 
 	/**
+	 * When using caching with a duration of 0, treat that as an infinite duration instead of no caching. This allows users to specify a cache duration of 0 without accidentally disabling caching entirely.
+	 * 
+	 * @since 1.13.0
+	 */
+	public Boolean																cacheDurationZeroAsInfinite		= null;
+
+	/**
 	 * Default remote class method return format when executing a method from web
 	 * runtimes.
 	 * The default is JSON

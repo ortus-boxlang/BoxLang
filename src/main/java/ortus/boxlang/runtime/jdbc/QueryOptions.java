@@ -168,22 +168,33 @@ public class QueryOptions {
 	 * @param options Struct of query options. Backwards-compatible with the old-style <code>&lt;query&gt;</code> from BL.
 	 */
 	public QueryOptions( IStruct options ) {
-		CacheService cacheService = BoxRuntime.getInstance().getCacheService();
+		BoxRuntime   runtime                     = BoxRuntime.getInstance();
+		CacheService cacheService                = runtime.getCacheService();
+		Boolean      cacheDurationZeroAsInfinite = runtime.getConfiguration().cacheDurationZeroAsInfinite;
 
-		this.options				= options;
-		this.resultVariableName		= options.getAsString( Key.result );
-		this.username				= options.getAsString( Key.username );
-		this.password				= options.getAsString( Key.password );
-		this.queryTimeout			= options.getAsInteger( Key.timeout );
-		this.datasource				= options.get( Key.datasource );
-		this.fetchSize				= ( Integer ) options.getOrDefault( Key.fetchSize, 0 );
+		if ( cacheDurationZeroAsInfinite == null ) {
+			// Default to true if not explicitly configured.
+			cacheDurationZeroAsInfinite = true;
+		}
+
+		this.options			= options;
+		this.resultVariableName	= options.getAsString( Key.result );
+		this.username			= options.getAsString( Key.username );
+		this.password			= options.getAsString( Key.password );
+		this.queryTimeout		= options.getAsInteger( Key.timeout );
+		this.datasource			= options.get( Key.datasource );
+		this.fetchSize			= ( Integer ) options.getOrDefault( Key.fetchSize, 0 );
 
 		// Caching options
-		this.cache					= BooleanCaster.attempt( options.get( Key.cache ) ).getOrDefault( false );
+		Boolean isCacheable = BooleanCaster.attempt( options.get( Key.cache ) ).getOrDefault( false );
 		this.cacheKey				= options.getAsString( Key.cacheKey );
 		this.cacheTimeout			= ( Duration ) options.getOrDefault( Key.cacheTimeout, null );
 		this.cacheLastAccessTimeout	= ( Duration ) options.getOrDefault( Key.cacheLastAccessTimeout, null );
 		this.cacheProvider			= ( String ) options.getOrDefault( Key.cacheProvider, cacheService.getDefaultCache().getName().toString() );
+		if ( !cacheDurationZeroAsInfinite && this.cacheTimeout != null && this.cacheTimeout.isZero() ) {
+			isCacheable = null;
+		}
+		this.cache = isCacheable;
 
 		Integer intMaxRows = options.getAsInteger( Key.maxRows );
 		this.maxRows	= Long.valueOf( intMaxRows != null ? intMaxRows : -1 );
