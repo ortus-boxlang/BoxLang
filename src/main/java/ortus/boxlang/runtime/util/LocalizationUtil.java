@@ -1068,6 +1068,14 @@ public final class LocalizationUtil {
 				"description", "US date MM/dd/yyyy with time no seconds"
 			) );
 
+			// US date format with month validation (1-12) and flexible delimiters
+			// This must come before the ambiguous European pattern to ensure US dates are parsed correctly
+			add( Map.of(
+				"regexPattern", "^(1[0-2]|0?[1-9])[./-]\\d{1,2}[./-]\\d{4}$",
+				"datePattern", "M<-/.>d<-/.>yyyy",
+				"description", "US month-day-year format with month validation (1-12)"
+			) );
+
 			// European slash format date (e.g., 02/04/2024)
 			add( Map.of(
 				"regexPattern",
@@ -1149,14 +1157,6 @@ public final class LocalizationUtil {
 				"regexPattern", "^\\d{4}/\\d{1,2}/\\d{1,2}$",
 				"datePattern", "yyyy/M/d",
 				"description", "International year/month/day format"
-			) );
-
-			// US date format with month validation (1-12) and flexible delimiters
-			// This must come before the ambiguous M<-/.>d<-/.>yyyy pattern to ensure US dates are parsed correctly
-			add( Map.of(
-				"regexPattern", "^(1[0-2]|0?[1-9])[./-]\\d{1,2}[./-]\\d{4}$",
-				"datePattern", "M<-/.>d<-/.>yyyy",
-				"description", "US month-day-year format with month validation (1-12)"
 			) );
 
 			// Short form two-digit year (M-d-yy)

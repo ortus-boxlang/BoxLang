@@ -310,18 +310,31 @@ public class DateTimeCaster implements IBoxCaster {
 			return null;
 		}
 
-		// Now let's check common patterns and then fall back to the full localization parsing
+		if ( targetString.trim().length() == 0 ) {
+			if ( fail ) {
+				throw new BoxCastException( "Can't cast an empty string to a DateTime." );
+			}
+			return null;
+		}
+
+		// If we have a locale, try locale-specific parsing first
+		if ( locale != null ) {
+			try {
+				return new DateTime( targetString, locale, timezone );
+			} catch ( Throwable e ) {
+				// If locale-specific parsing failed, fall back to common patterns
+			}
+		}
+
+		// Try common patterns as fallback
 		DateTime parsed = LocalizationUtil.parseFromCommonPatterns( targetString, timezone );
 
 		if ( parsed != null ) {
 			return parsed;
 		} else {
+			// No locale specified or both locale and common patterns failed, try default locale parsing
 			try {
-				if ( locale != null ) {
-					return new DateTime( targetString, locale, timezone );
-				} else {
-					return new DateTime( targetString, timezone );
-				}
+				return new DateTime( targetString, timezone );
 			} catch ( Throwable e ) {
 				if ( fail ) {
 					throw new BoxCastException( "Can't cast [" + targetString + "] to a DateTime." );
