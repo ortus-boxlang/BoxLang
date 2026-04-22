@@ -168,9 +168,9 @@ public class QueryOptions {
 	 * @param options Struct of query options. Backwards-compatible with the old-style <code>&lt;query&gt;</code> from BL.
 	 */
 	public QueryOptions( IStruct options ) {
-		BoxRuntime   runtime                     = BoxRuntime.getInstance();
-		CacheService cacheService                = runtime.getCacheService();
-		Boolean      cacheDurationZeroAsInfinite = runtime.getConfiguration().cacheDurationZeroAsInfinite;
+		BoxRuntime		runtime						= BoxRuntime.getInstance();
+		CacheService	cacheService				= runtime.getCacheService();
+		Boolean			cacheDurationZeroAsInfinite	= runtime.getConfiguration().cacheDurationZeroAsInfinite;
 
 		if ( cacheDurationZeroAsInfinite == null ) {
 			// Default to true if not explicitly configured.
