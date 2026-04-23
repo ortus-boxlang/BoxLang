@@ -27,25 +27,32 @@ for %%a in (%*) do (
     )
 )
 
-@rem Load the environment file if it exists
-if exist "%ENV_FILE%" (
-    @rem Uncomment for debugging: echo Loading environment variables from %ENV_FILE%
-    for /f "usebackq tokens=1,* delims==" %%a in ("%ENV_FILE%") do (
-        set "line=%%a"
-        setlocal enabledelayedexpansion
-        @rem Skip comments and empty lines
-        if not "!line:~0,1!"=="#" if not "%%a"=="" (
-            @rem Remove quotes from value if present
-            set "value=%%b"
-            if not "!value!"=="" (
-                set "value=!value:"=!"
-                endlocal
-                set "%%a=!value!"
-            ) else (
-                endlocal
-            )
+@rem Load the user's home secrets file first, then the project-level env file
+call :load_env_file "%USERPROFILE%\.box.env"
+call :load_env_file "%ENV_FILE%"
+goto :eof
+
+@rem Subroutine: load_env_file <filepath>
+@rem Reads key=value pairs from the given file and exports them as environment variables
+:load_env_file
+if not exist "%~1" goto :eof
+@rem Uncomment for debugging: echo Loading environment variables from %~1
+for /f "usebackq tokens=1,* delims==" %%a in ("%~1") do (
+    set "line=%%a"
+    setlocal enabledelayedexpansion
+    @rem Skip comments and empty lines
+    if not "!line:~0,1!"=="#" if not "%%a"=="" (
+        @rem Remove quotes from value if present
+        set "value=%%b"
+        if not "!value!"=="" (
+            set "value=!value:"=!"
+            endlocal
+            set "%%a=!value!"
         ) else (
             endlocal
         )
+    ) else (
+        endlocal
     )
 )
+goto :eof
