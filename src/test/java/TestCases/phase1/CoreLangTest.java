@@ -6143,7 +6143,7 @@ public class CoreLangTest {
 	@Test
 	public void testCompileThreadSafety() {
 		org.junit.jupiter.api.Assumptions.assumeTrue(
-		    !( ortus.boxlang.runtime.runnables.RunnableLoader.getInstance().getBoxpiler() instanceof ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler ),
+		    ! ( ortus.boxlang.runtime.runnables.RunnableLoader.getInstance().getBoxpiler() instanceof ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler ),
 		    "Skipping testCompileThreadSafety for JavaBoxpiler" );
 		instance.executeSource(
 		// @formatter:off
