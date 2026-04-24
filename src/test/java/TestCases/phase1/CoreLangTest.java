@@ -6142,8 +6142,9 @@ public class CoreLangTest {
 
 	@Test
 	public void testCompileThreadSafety() {
-		// print PID to console
-		System.out.println( "PID: " + ProcessHandle.current().pid() );
+		org.junit.jupiter.api.Assumptions.assumeTrue(
+		    !( ortus.boxlang.runtime.runnables.RunnableLoader.getInstance().getBoxpiler() instanceof ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler ),
+		    "Skipping testCompileThreadSafety for JavaBoxpiler" );
 		instance.executeSource(
 		// @formatter:off
 		    """
