@@ -743,6 +743,51 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertThat( result.get( Key.cacheLastAccessTimeout ) ).isEqualTo( Duration.ofMinutes( 30 ) );
 	}
 
+	@DisplayName( "It caches zero timeout as infinite" )
+	@Test
+	public void testZeroCacheTimeout() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				sql = "SELECT id,name,role FROM developers WHERE role = ?";
+				params = [ 'Developer' ];
+
+				result  = queryExecute( sql, params, { "cache": true, "cacheTimeout": createTimespan( 0, 0, 0, 0 ), "result" : "queryMeta", "returnType" : "array" } );
+				assert queryMeta.cached == false;
+
+				result2 = queryExecute( sql, params, { "cache": true, "cacheTimeout": createTimespan( 0, 0, 0, 0 ), "result" : "queryMeta2", "returnType" : "array" } );
+				// println( "============QUERY META 2===============" );
+				// println( queryMeta2 );
+				assert queryMeta2.cached == true;
+			   """,
+		    context );
+		// @formatter:on
+
+		Array	query1	= variables.getAsArray( result );
+		Array	query2	= variables.getAsArray( Key.of( "result2" ) );
+
+		// Both queries should have identical return values
+		assertEquals( query1, query2 );
+	}
+
+	@DisplayName( "It will not cache negative timeouts" )
+	@Test
+	public void testNegativeCacheTimeout() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				sql = "SELECT id,name,role FROM developers WHERE role = ?";
+				params = [ 'Developer' ];
+
+				queryExecute( sql, params, { "cache": true, "cacheTimeout": createTimespan( 0, 0, 0, -1 ), "result" : "queryMeta", "returnType" : "array" } );
+				result = queryMeta;
+			   """,
+		    context );
+		// @formatter:on
+
+		assertThat( variables.getAsStruct( result ).getAsBoolean( Key.cached ) ).isEqualTo( false );
+	}
+
 	@DisplayName( "It can properly handle duplicate column names in the result set" )
 	@Test
 	public void testDuplicateColumnResultSets() {

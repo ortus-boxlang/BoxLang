@@ -972,8 +972,10 @@ public class PendingQuery {
 
 	/**
 	 * Check the cacheable option to determine if the query should be cached.
+	 * ( i.e. `cache` = true and `cacheTimeout` is not negative. )
 	 */
-	private boolean isCacheable() {
-		return Boolean.TRUE.equals( this.queryOptions.cache );
+	private Boolean isCacheable() {
+		return Boolean.TRUE.equals( this.queryOptions.cache )
+		    && !this.queryOptions.cacheTimeout.isNegative();
 	}
 }
