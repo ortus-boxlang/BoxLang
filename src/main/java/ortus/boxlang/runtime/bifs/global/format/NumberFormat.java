@@ -97,6 +97,8 @@ public class NumberFormat extends BIF {
 																		put( "9", "0" );
 																		// Fix incorrect number positionals with dollar notation
 																		put( "_$", "$_" );
+																		// Ensure number optional always comes before the comma
+																		put( "$,.00", "$_,.00" );
 																		// This is a special case to ensure preceeding zeroes before the decimal. Using `#` will leave those blank
 																		put( "_.", "0." );
 																		// Standard replacement

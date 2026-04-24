@@ -111,6 +111,13 @@ public class NumberFormatTest {
 
 		instance.executeSource(
 		    """
+		    result = numberFormat( 432342, "$,.00" );
+		    """,
+		    context );
+		assertEquals( "$432,342.00", variables.getAsString( result ) );
+
+		instance.executeSource(
+		    """
 		    result = numberFormat( 1.2, '9999.0' );
 		    """,
 		    context );
