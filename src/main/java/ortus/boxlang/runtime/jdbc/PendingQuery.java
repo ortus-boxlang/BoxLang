@@ -976,6 +976,6 @@ public class PendingQuery {
 	 */
 	private Boolean isCacheable() {
 		return Boolean.TRUE.equals( this.queryOptions.cache )
-		    && !this.queryOptions.cacheTimeout.isNegative();
+		    && ( this.queryOptions.cacheTimeout == null || !this.queryOptions.cacheTimeout.isNegative() );
 	}
 }
