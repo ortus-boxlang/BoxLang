@@ -110,6 +110,9 @@ public class Query extends Component {
 	 * @attribute.cache Whether or not to cache the results of the query.
 	 *
 	 * @attribute.cacheTimeout The timeout for the cached query, using a duration object like `createTimespan( 0, 1, 0, 0 )`.
+	 *                         If the timeout duration is zero (aka `createTimespan( 0, 0, 0, 0 )`), the cache will never expire
+	 *                         based on time, but can still be evicted based on other factors like memory pressure.
+	 *                         If the timeout duration is negative (aka `createTimespan( 0, -1, 0, 0 )`), the item will not be cached.
 	 *
 	 * @attribute.cacheLastAccessTimeout The timeout for the cached query, using a duration object like `createTimespan( 0, 1, 0, 0 )`.
 	 *

@@ -141,6 +141,10 @@ public class QueryOptions {
 	 * Max time the query will be cached for.
 	 * <p>
 	 * This must be populated with a timespan value using `createTimespan()`.
+	 * <ul>
+	 * <li>A duration of zero (aka `createTimespan( 0, 0, 0, 0 )`) means the cache will never expire.</li>
+	 * <li>Negative timeout (aka `createTimespan( 0, -1, 0, 0 )`) means the item will not be cached.</li>
+	 * </ul>
 	 */
 	public final Duration			cacheTimeout;
 
