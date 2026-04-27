@@ -485,10 +485,9 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 			if ( node.getName().equalsIgnoreCase( "onCFCRequest" ) && className.equalsIgnoreCase( "application" ) ) {
 				node.setName( "onClassRequest" );
 			}
-		} else {
-			// Don't touch UDFs in a class, otherwise they won't inherit from the class's output annotation.
-			enableOutput( node.getAnnotations() );
 		}
+		// Default UDFs whether they are in or out of a class. Unlike BoxLang, ColdFusion does NOT inherit the `output` annotation from the class the UDF lives in.
+		enableOutput( node.getAnnotations() );
 		return super.visit( node );
 	}
 
