@@ -34,7 +34,7 @@ call :load_env_file "%ENV_FILE%"
 @rem goto :eof This was exiting out of the script completely without ctually starting java
 
 @rem To Skip over the subroutine we needed to have a label for it to skip to. 
-goto :runJava
+goto :postenv
 
 @rem Subroutine: load_env_file <filepath>
 @rem Reads key=value pairs from the given file and exports them as environment variables
@@ -78,3 +78,5 @@ goto :eof
 @rem ######################################
 @rem End .env loading
 @rem ######################################
+
+:postenv
