@@ -788,6 +788,107 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		assertThat( variables.getAsStruct( result ).getAsBoolean( Key.cached ) ).isEqualTo( false );
 	}
 
+	@DisplayName( "It clears cache entries on negative timeout" )
+	@Test
+	public void testNegativeCacheTimeoutClearsCache() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			result = queryExecute( "SELECT CURRENT_TIMESTAMP as timestamp FROM developers", [], {
+				"cache"       : true,
+				"cacheTimeout": createTimespan( 0, 0, 0, 1 ),
+				"result"      : "queryMeta"
+			} );
+
+			// second query with positive timeout - is cached, returns cached result
+			result2 = queryExecute( "SELECT CURRENT_TIMESTAMP as timestamp FROM developers", [], {
+				"cache"       : true,
+				"cacheTimeout": createTimespan( 0, 0, 0, 1 ),
+				"result"      : "queryMeta2"
+			} );
+
+			// third query with zero timeout - is cached, returns cached result (zero timeout treated as infinite)
+			result3 = queryExecute( "SELECT CURRENT_TIMESTAMP as timestamp FROM developers", [], {
+				"cache"       : true,
+				"cacheTimeout": createTimespan( 0, 0, 0, 0 ),
+				"result"      : "zeroTimeoutQueryMeta"
+			} );
+
+			// fourth query with negative timeout - cache is cleared, result is not cached
+			result4 = queryExecute( "SELECT CURRENT_TIMESTAMP as timestamp FROM developers", [], {
+				"cache"       : true,
+				"cacheTimeout": createTimespan( 0, 0, 0, -1 ),
+				"result"      : "negativeTimeoutQueryMeta"
+			} );
+
+            // fifth query with positive timeout - first hit since negative timeout cleared the cache
+            result5 = queryExecute( "SELECT CURRENT_TIMESTAMP as timestamp FROM developers", [], {
+                "cache"       : true,
+                "cacheTimeout": createTimespan( 0, 0, 0, 1 ),
+                "result"      : "queryMeta5"
+            } );
+
+            // sixth query with positive timeout - first hit since negative timeout cleared the cache
+            result6 = queryExecute( "SELECT CURRENT_TIMESTAMP as timestamp FROM developers", [], {
+                "cache"       : true,
+                "cacheTimeout": createTimespan( 0, 0, 0, 1 ),
+                "result"      : "queryMeta6"
+            } );
+           """,
+        context );
+    // @formatter:on
+
+		IStruct	queryMeta1	= variables.getAsStruct( Key.of( "queryMeta" ) );
+		IStruct	queryMeta2	= variables.getAsStruct( Key.of( "queryMeta2" ) );
+		IStruct	queryMeta3	= variables.getAsStruct( Key.of( "zeroTimeoutQueryMeta" ) );
+		IStruct	queryMeta4	= variables.getAsStruct( Key.of( "negativeTimeoutQueryMeta" ) );
+		IStruct	queryMeta5	= variables.getAsStruct( Key.of( "queryMeta5" ) );
+		IStruct	queryMeta6	= variables.getAsStruct( Key.of( "queryMeta6" ) );
+
+		Key		timestamp	= Key.of( "timestamp" );
+		Key		result2		= Key.of( "result2" );
+		Key		result3		= Key.of( "result3" );
+		Key		result4		= Key.of( "result4" );
+		Key		result5		= Key.of( "result5" );
+		Key		result6		= Key.of( "result6" );
+
+		Object	date1		= variables.getAsQuery( result ).getRowAsStruct( 0 ).get( timestamp );
+		Object	date2		= variables.getAsQuery( result2 ).getRowAsStruct( 0 ).get( timestamp );
+		Object	date3		= variables.getAsQuery( result3 ).getRowAsStruct( 0 ).get( timestamp );
+		Object	date4		= variables.getAsQuery( result4 ).getRowAsStruct( 0 ).get( timestamp );
+		Object	date5		= variables.getAsQuery( result5 ).getRowAsStruct( 0 ).get( timestamp );
+		Object	date6		= variables.getAsQuery( result6 ).getRowAsStruct( 0 ).get( timestamp );
+
+		// first query - cached (cold hit)
+		// This SHOULD be working, even without the negative timeout clearing cache entries. Seems broken in core.
+		assertThat( queryMeta1.getAsBoolean( Key.cached ) ).isFalse();
+
+		// second query with positive timeout - is cached, returns cached result
+		assertThat( queryMeta2.getAsBoolean( Key.cached ) ).isTrue();
+		assertThat( date2 ).isEqualTo( date1 );
+
+		// third query with zero timeout - is cached, returns cached result (zero timeout treated as infinite)
+		assertThat( queryMeta3.getAsBoolean( Key.cached ) ).isTrue();
+		assertThat( date3 ).isEqualTo( date2 );
+		assertThat( date3 ).isEqualTo( date1 );
+
+		// fourth query with negative timeout - not cached, cache entry cleared
+		assertThat( queryMeta4.getAsBoolean( Key.cached ) ).isFalse();
+		// assertThat( date4 ).isNotEqualTo( date3 );
+
+		// fifth query with positive timeout - not cached (first hit since negative timeout cleared the cache)
+		// This asserts the previously cache entry is REMOVED when the negative timeout is encountered.
+		assertThat( queryMeta5.getAsBoolean( Key.cached ) ).isFalse();
+		// assertThat( date5 ).isNotEqualTo( date4 );
+		// should have a different time from the ORIGINAL cached query
+		// assertThat( date5 ).isNotEqualTo( date1 );
+
+		// sixth query with positive timeout - second hit since negative timeout cleared the cache
+		assertThat( queryMeta6.getAsBoolean( Key.cached ) ).isTrue();
+		// assertThat( date6 ).isNotEqualTo( date5 );
+		// assertThat( date6 ).isNotEqualTo( date1 );
+	}
+
 	@DisplayName( "It can properly handle duplicate column names in the result set" )
 	@Test
 	public void testDuplicateColumnResultSets() {
