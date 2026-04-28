@@ -794,6 +794,7 @@ public class PendingQuery {
 		// We set the metadata on the results to indicate this was a cached query
 		Query	results		= cachedQuery
 		    .getResults()
+		    .duplicate( context )
 		    .setMetadata( cacheMeta );
 
 		// Return a new ExecutedQuery instance with the cached results and generated key

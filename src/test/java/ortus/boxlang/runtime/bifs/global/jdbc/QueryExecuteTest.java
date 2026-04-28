@@ -712,35 +712,57 @@ public class QueryExecuteTest extends BaseJDBCTest {
 	@DisplayName( "It properly sets query results with cache metadata" )
 	@Test
 	public void testCacheResultMeta() {
+		// @formatter:off
 		instance.executeSource(
 		    """
-		    queryExecute(
-		    	"SELECT * FROM developers WHERE role = ?",
-		    	[ 'Admin' ],
-		    	{ "cache" : true, "cacheProvider" : "default", "cacheKey": "adminDevs", "cacheTimeout": createTimespan( 0, 1, 0, 0 ), "cacheLastAccessTimeout": createTimespan( 0, 0, 30, 0 ) }
-		    );
-		    result = queryExecute(
-		    	"SELECT * FROM developers WHERE role = ?",
-		    	[ 'Admin' ],
-		    	 { "result": "queryResults", "cache" : true, "cacheProvider" : "default", "cacheKey": "adminDevs", "cacheTimeout": createTimespan( 0, 1, 0, 0 ), "cacheLastAccessTimeout": createTimespan( 0, 0, 30, 0 ) }
-		    );
-		    """,
+		     result = queryExecute(
+		      	"SELECT * FROM developers WHERE role = ?",
+		      	[ 'Admin' ],
+		      	{
+					"cache"                 : true,
+					"cacheProvider"         : "default",
+					"cacheKey"              : "adminDevs",
+					"cacheTimeout"          : createTimespan( 0, 1, 0, 0 ),
+					"cacheLastAccessTimeout": createTimespan( 0, 0, 30, 0 ),
+					"result"                : "queryMeta"
+				}
+		      );
+		      result2 = queryExecute(
+		      	"SELECT * FROM developers WHERE role = ?",
+		      	[ 'Admin' ],
+				{
+					"cache"                 : true,
+					"cacheProvider"         : "default",
+					"cacheKey"              : "adminDevs",
+					"cacheTimeout"          : createTimespan( 0, 1, 0, 0 ),
+					"cacheLastAccessTimeout": createTimespan( 0, 0, 30, 0 ),
+					"result"                : "queryMeta2"
+				}
+		      );
+		      """,
 		    context );
-		Object resultObject = variables.get( Key.of( "queryResults" ) );
+		// @formatter:on
+		Object	resultObject	= variables.get( Key.of( "queryMeta" ) );
+		Object	resultObject2	= variables.get( Key.of( "queryMeta2" ) );
 		assertInstanceOf( IStruct.class, resultObject );
-		IStruct result = ( IStruct ) resultObject;
+		assertInstanceOf( IStruct.class, resultObject2 );
 
-		assertThat( result ).containsKey( Key.cached );
-		assertThat( result ).containsKey( Key.cacheProvider );
-		assertThat( result ).containsKey( Key.cacheKey );
-		assertThat( result ).containsKey( Key.cacheTimeout );
-		assertThat( result ).containsKey( Key.cacheLastAccessTimeout );
+		IStruct	result	= ( IStruct ) resultObject;
+		IStruct	result2	= ( IStruct ) resultObject2;
+		assertThat( result.getAsBoolean( Key.cached ) ).isFalse();
+		assertThat( result2.getAsBoolean( Key.cached ) ).isTrue();
 
-		assertThat( result.getAsBoolean( Key.cached ) ).isEqualTo( true );
-		assertThat( result.getAsString( Key.cacheProvider ) ).isEqualTo( "default" );
-		assertThat( result.getAsString( Key.cacheKey ) ).isEqualTo( "adminDevs" );
-		assertThat( result.get( Key.cacheTimeout ) ).isEqualTo( Duration.ofHours( 1 ) );
-		assertThat( result.get( Key.cacheLastAccessTimeout ) ).isEqualTo( Duration.ofMinutes( 30 ) );
+		assertThat( result2 ).containsKey( Key.cached );
+		assertThat( result2 ).containsKey( Key.cacheProvider );
+		assertThat( result2 ).containsKey( Key.cacheKey );
+		assertThat( result2 ).containsKey( Key.cacheTimeout );
+		assertThat( result2 ).containsKey( Key.cacheLastAccessTimeout );
+
+		assertThat( result2.getAsBoolean( Key.cached ) ).isEqualTo( true );
+		assertThat( result2.getAsString( Key.cacheProvider ) ).isEqualTo( "default" );
+		assertThat( result2.getAsString( Key.cacheKey ) ).isEqualTo( "adminDevs" );
+		assertThat( result2.get( Key.cacheTimeout ) ).isEqualTo( Duration.ofHours( 1 ) );
+		assertThat( result2.get( Key.cacheLastAccessTimeout ) ).isEqualTo( Duration.ofMinutes( 30 ) );
 	}
 
 	@DisplayName( "It caches zero timeout as infinite" )
