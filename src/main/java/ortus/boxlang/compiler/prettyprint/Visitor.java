@@ -1743,6 +1743,12 @@ public class Visitor extends VoidBoxVisitor {
 				stringPrinter.printQuotedExpression( node.getCatchTypes().get( 0 ) );
 				print( "\"" );
 			}
+			if ( node.getException() != null && node.getException() instanceof BoxIdentifier exceptionIdentifier
+			    && !exceptionIdentifier.getName().equals( "bxcatch" ) ) {
+				print( " name=\"" );
+				node.getException().accept( this );
+				print( "\"" );
+			}
 			print( ">" );
 			helperPrinter.printTemplateBody( node.getCatchBody() );
 			print( "</" + componentPrefix + "catch>" );

@@ -32,4 +32,11 @@
 			<p>Error: #errorMsg#</p>
 		</cfcatch>
 	</cftry>
+	<cftry>
+		<cfset result = doSomething( arg1 = "value1", arg2 = "value2" )>
+		<cfcatch type="any" name="myError">
+			<cfset errorMsg = myError.message>
+			<p>Error: #errorMsg#</p>
+		</cfcatch>
+	</cftry>
 </cfoutput>

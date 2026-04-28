@@ -1322,7 +1322,7 @@ public class CFParser extends AbstractParser {
 	}
 
 	private BoxTryCatch toAst( File file, Template_catchBlockContext node ) {
-		BoxExpression		exception	= new BoxIdentifier( "bxcatch", null, null );
+		BoxExpression		exception;
 		List<BoxExpression>	catchTypes;
 		List<BoxStatement>	catchBody	= new ArrayList<>();
 
@@ -1340,8 +1340,21 @@ public class CFParser extends AbstractParser {
 			} else {
 				catchTypes = List.of( new BoxFQN( "any", null, null ) );
 			}
+
+			// look for name attribute
+			var nameSearch = annotations.stream()
+			    .filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "name" ) && it.getValue() != null )
+			    .findFirst();
+			if ( nameSearch.isPresent() ) {
+				exception = new BoxIdentifier( getBoxExprAsString( nameSearch.get().getValue(), "name", false ),
+				    nameSearch.get().getPosition(),
+				    nameSearch.get().getSourceText() );
+			} else {
+				exception = new BoxIdentifier( "bxcatch", null, null );
+			}
 		} else {
-			catchTypes = List.of( new BoxFQN( "any", null, null ) );
+			catchTypes	= List.of( new BoxFQN( "any", null, null ) );
+			exception	= new BoxIdentifier( "bxcatch", null, null );
 		}
 		if ( node.template_statements() != null ) {
 			catchBody = toAst( file, node.template_statements() );

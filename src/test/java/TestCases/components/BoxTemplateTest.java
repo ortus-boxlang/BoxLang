@@ -643,6 +643,25 @@ public class BoxTemplateTest {
 	}
 
 	@Test
+	public void testCatchWithName() {
+		instance.executeSource(
+		    """
+		    <bx:try>
+		    	<bx:set 1/0>
+		    	<bx:catch type="any" name="anyError">
+		    		<bx:set result = anyError>
+		    	</bx:catch>
+		    </bx:try>
+		             """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		Object resultObj = variables.get( result );
+		assertThat( resultObj ).isInstanceOf( BoxRuntimeException.class );
+		BoxRuntimeException bre = ( BoxRuntimeException ) resultObj;
+		assertThat( bre.getMessage() ).contains( "zero" );
+	}
+
+	@Test
 	public void testSwitchEmptyDefaultCase() {
 
 		instance.executeSource(
