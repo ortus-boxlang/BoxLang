@@ -421,6 +421,9 @@ public abstract class BoxNode implements BoxVisitable {
 	 * @return true if this node has lines between it and the other node
 	 */
 	public boolean hasLinesBetween( BoxNode node ) {
+		if ( this.getPosition() == null || node.getPosition() == null ) {
+			return false;
+		}
 		int	thisStartLine	= this.getPosition()
 		    .getStart()
 		    .getLine();
@@ -450,6 +453,9 @@ public abstract class BoxNode implements BoxVisitable {
 	 * @return true if there are empty lines between this node and the other node, accounting for their closest comments
 	 */
 	public boolean hasLinesBetweenWithComments( BoxNode node ) {
+		if ( this.getPosition() == null || node.getPosition() == null ) {
+			return false;
+		}
 		// Determine node order once
 		boolean				isThisBefore	= this.isBefore( node );
 		BoxNode				firstNode		= isThisBefore ? this : node;

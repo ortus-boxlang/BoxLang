@@ -599,7 +599,7 @@ public class Visitor extends VoidBoxVisitor {
 		printPreComments( node );
 		// TODO: Make AST "remember" difference between original function(){} and ()=>{}
 		// for now check the source text to see if it starts with "function"
-		var isLambda = !node.getSourceText().startsWith( "function" );
+		var isLambda = node.getSourceText() != null && !node.getSourceText().startsWith( "function" );
 		if ( !isLambda ) {
 			print( "function" );
 		}
