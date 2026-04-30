@@ -47,22 +47,22 @@ import ortus.boxlang.runtime.BoxRuntime;
  * For manual CLI testing, use the test files in src/test/resources/prettyprint/cli/:
  *
  * Test single file formatting:
- * ./gradlew run --args="ortus.boxlang.compiler.prettyprint.PrettyPrint -i src/test/resources/prettyprint/cli/input/test1.bxs -o
+ * ./gradlew run --args="ortus.boxlang.compiler.prettyprint.PrettyPrint --source src/test/resources/prettyprint/cli/input/test1.bxs --target
  * /tmp/test1-out.bxs"
  *
  * Test directory formatting:
- * ./gradlew run --args="ortus.boxlang.compiler.prettyprint.PrettyPrint -i src/test/resources/prettyprint/cli/input -o /tmp/output"
+ * ./gradlew run --args="ortus.boxlang.compiler.prettyprint.PrettyPrint --source src/test/resources/prettyprint/cli/input --target /tmp/output"
  *
  * Test custom config:
- * ./gradlew run --args="ortus.boxlang.compiler.prettyprint.PrettyPrint -c src/test/resources/prettyprint/cli/custom-config.json -i
- * src/test/resources/prettyprint/cli/input/test1.bxs -o /tmp/test1-custom.bxs"
+ * ./gradlew run --args="ortus.boxlang.compiler.prettyprint.PrettyPrint -c src/test/resources/prettyprint/cli/custom-config.json --source
+ * src/test/resources/prettyprint/cli/input/test1.bxs --target /tmp/test1-custom.bxs"
  *
  * Test check mode (with unformatted file):
- * ./gradlew run --args="ortus.boxlang.compiler.prettyprint.PrettyPrint --check -i src/test/resources/prettyprint/cli/input/test1.bxs"
+ * ./gradlew run --args="ortus.boxlang.compiler.prettyprint.PrettyPrint --check --source src/test/resources/prettyprint/cli/input/test1.bxs"
  *
  * Test in-place formatting (make a copy first):
  * cp src/test/resources/prettyprint/cli/input/test1.bxs /tmp/test1-copy.bxs
- * ./gradlew run --args="ortus.boxlang.compiler.prettyprint.PrettyPrint -i /tmp/test1-copy.bxs"
+ * ./gradlew run --args="ortus.boxlang.compiler.prettyprint.PrettyPrint --source /tmp/test1-copy.bxs"
  */
 public class PrettyPrintMainTest {
 
@@ -199,7 +199,7 @@ public class PrettyPrintMainTest {
 
 			int						exitCode	= PrettyPrint.run(
 			    new String[] {
-			        "--input", tempFile.toString(),
+			        "--source", tempFile.toString(),
 			        "--overwrite", "false"
 			    },
 			    new PrintStream( stdout ),
@@ -226,16 +226,16 @@ public class PrettyPrintMainTest {
 
 			int						exitCode	= PrettyPrint.run(
 			    new String[] {
-			        "--input", tempFile.toString(),
+			        "--source", tempFile.toString(),
 			        "--overwrite", "false",
-			        "--output", tempFile.getParent().toString()
+			        "--target", tempFile.getParent().toString()
 			    },
 			    new PrintStream( stdout ),
 			    new PrintStream( stderr )
 			);
 
 			assertTrue( exitCode == 1, "Formatter should return error for incompatible options" );
-			assertTrue( stderr.toString( StandardCharsets.UTF_8 ).contains( "--output cannot be used when --overwrite=false" ) );
+			assertTrue( stderr.toString( StandardCharsets.UTF_8 ).contains( "--target cannot be used when --overwrite=false" ) );
 		} finally {
 			Files.deleteIfExists( tempFile );
 		}

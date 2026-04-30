@@ -172,15 +172,15 @@ public final class PrettyPrint {
 		// process cli args
 		// --check (make no changes, just check if the file is already formatted, return an error code if not)
 		// -c, --config <config file> (defaults to .bxformat.json in the current working directory, falls back to .cfformat.json)
-		// -i, --input <input file/folder> (defaults to current working directory)
-		// -o, --output <output file/folder> (optional, if not provided, overwrite input files)
+		// --source <source file/folder> (defaults to current working directory)
+		// --target <target file/folder> (optional, if not provided, overwrite source files)
 		// --overwrite <true|false> (optional, default true. when false, print to stdout)
 		// --convertConfig (convert .cfformat.json to .bxformat.json)
 		try {
 			boolean	checkMode		= false;
 			String	configPath		= null; // null means use fallback logic
-			String	inputPath		= System.getProperty( "user.dir" );
-			String	outputPath		= null;
+			String	sourcePath		= System.getProperty( "user.dir" );
+			String	targetPath		= null;
 			boolean	convertConfig	= false;
 			boolean	overwrite		= true;
 
@@ -199,20 +199,20 @@ public final class PrettyPrint {
 					overwrite = Boolean.parseBoolean( args[ ++i ] );
 				} else if ( ( args[ i ].equalsIgnoreCase( "--config" ) || args[ i ].equalsIgnoreCase( "-c" ) ) && i + 1 < args.length ) {
 					configPath = args[ ++i ];
-				} else if ( ( args[ i ].equalsIgnoreCase( "--input" ) || args[ i ].equalsIgnoreCase( "-i" ) ) && i + 1 < args.length ) {
-					inputPath = args[ ++i ];
-				} else if ( ( args[ i ].equalsIgnoreCase( "--output" ) || args[ i ].equalsIgnoreCase( "-o" ) ) && i + 1 < args.length ) {
-					outputPath = args[ ++i ];
+				} else if ( args[ i ].equalsIgnoreCase( "--source" ) && i + 1 < args.length ) {
+					sourcePath = args[ ++i ];
+				} else if ( args[ i ].equalsIgnoreCase( "--target" ) && i + 1 < args.length ) {
+					targetPath = args[ ++i ];
 				}
 			}
 
 			// Handle --convertConfig option
 			if ( convertConfig ) {
-				return convertCFFormatConfig( inputPath, out, err );
+				return convertCFFormatConfig( sourcePath, out, err );
 			}
 
-			if ( !overwrite && outputPath != null ) {
-				err.println( "Error: --output cannot be used when --overwrite=false" );
+			if ( !overwrite && targetPath != null ) {
+				err.println( "Error: --target cannot be used when --overwrite=false" );
 				return 1;
 			}
 
@@ -228,8 +228,8 @@ public final class PrettyPrint {
 			// get a stream of files to process either from a single file or a directory
 			Stream<Path> filesToProcess;
 
-			if ( Files.isDirectory( Paths.get( inputPath ) ) ) {
-				filesToProcess = Files.walk( Paths.get( inputPath ) )
+			if ( Files.isDirectory( Paths.get( sourcePath ) ) ) {
+				filesToProcess = Files.walk( Paths.get( sourcePath ) )
 				    .filter( p -> !Files.isDirectory( p ) )
 				    .filter( p -> {
 					    String fileName = p.getFileName().toString().toLowerCase();
@@ -237,7 +237,7 @@ public final class PrettyPrint {
 					        || fileName.endsWith( ".cfm" ) || fileName.endsWith( ".cfc" ) || fileName.endsWith( ".cfs" );
 				    } );
 			} else {
-				filesToProcess = Stream.of( Paths.get( inputPath ) );
+				filesToProcess = Stream.of( Paths.get( sourcePath ) );
 			}
 
 			List<Path> pathsToProcess = new ArrayList<>();
@@ -272,8 +272,8 @@ public final class PrettyPrint {
 					}
 
 					Path outputFilePath;
-					if ( outputPath != null ) {
-						outputFilePath = Paths.get( outputPath );
+					if ( targetPath != null ) {
+						outputFilePath = Paths.get( targetPath );
 						if ( Files.isDirectory( outputFilePath ) ) {
 							outputFilePath = outputFilePath.resolve( path.getFileName() );
 						}
@@ -412,8 +412,8 @@ public final class PrettyPrint {
 		out.println();
 		out.println( "OPTIONS:" );
 		out.println( "  -h, --help                  Show this help message and exit" );
-		out.println( "  -i, --input <PATH>          Path to source directory or file to format (default: current directory)" );
-		out.println( "  -o, --output <PATH>         Path to output directory or file (default: overwrite input files)" );
+		out.println( "      --source <PATH>         Path to source directory or file to format (default: current directory)" );
+		out.println( "      --target <PATH>         Path to target directory or file (default: overwrite source files)" );
 		out.println( "      --overwrite <true|false> Overwrite files (default: true). false prints formatted source to stdout" );
 		out.println( "  -c, --config <PATH>         Path to configuration file (default: .bxformat.json or .cfformat.json)" );
 		out.println( "      --check                 Only check if files need formatting (exit code 1 if changes needed)" );
@@ -437,7 +437,7 @@ public final class PrettyPrint {
 		out.println( "  boxlang format --check" );
 		out.println();
 		out.println( "  # Print formatted output to stdout without overwriting files" );
-		out.println( "  boxlang format --overwrite false --input /path/to/file.cfc" );
+		out.println( "  boxlang format --overwrite false --source /path/to/file.cfc" );
 		out.println();
 		out.println( "  # Use a specific config file" );
 		out.println( "  boxlang format --config /path/to/.bxformat.json" );
