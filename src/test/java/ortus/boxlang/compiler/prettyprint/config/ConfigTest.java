@@ -38,11 +38,11 @@ public class ConfigTest {
 
 		assertEquals( 4, config.getIndentSize() );
 		assertTrue( config.getTabIndent() );
-		assertEquals( 80, config.getMaxLineLength() );
-		assertEquals( "os", config.getNewLine() );
+		assertEquals( 115, config.getMaxLineLength() );
+		assertEquals( "\n", config.getNewLine() );
 		assertFalse( config.getSingleQuote() );
-		assertFalse( config.getBracketPadding() );
-		assertFalse( config.getParensPadding() );
+		assertTrue( config.getBracketPadding() );
+		assertTrue( config.getParensPadding() );
 		assertTrue( config.getBinaryOperatorsPadding() );
 		assertTrue( config.getSemicolons() );
 	}
@@ -123,7 +123,7 @@ public class ConfigTest {
 		assertFalse( config.getTabIndent() );
 
 		// Unchanged defaults
-		assertEquals( 80, config.getMaxLineLength() );
+		assertEquals( 115, config.getMaxLineLength() );
 		assertTrue( config.getSemicolons() );
 	}
 
@@ -167,11 +167,11 @@ public class ConfigTest {
 	public void testLineSeparator() {
 		Config config = new Config();
 
-		// Default is "os"
-		assertEquals( System.lineSeparator(), config.lineSeparator() );
-
-		config.setNewLine( "\n" );
+		// Default is "\n"
 		assertEquals( "\n", config.lineSeparator() );
+
+		config.setNewLine( "os" );
+		assertEquals( System.lineSeparator(), config.lineSeparator() );
 
 		config.setNewLine( "\r\n" );
 		assertEquals( "\r\n", config.lineSeparator() );

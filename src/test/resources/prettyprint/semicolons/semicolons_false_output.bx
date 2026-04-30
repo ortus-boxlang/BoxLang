@@ -1,5 +1,5 @@
 class {
-	property name="foo"
+	property name="foo";
 
 	function init() {
 		var x = 1

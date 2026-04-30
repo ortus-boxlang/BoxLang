@@ -50,8 +50,11 @@ public class PaddingTest extends PrettyPrintTest {
 	}
 
 	static Stream<Arguments> parensPaddingConfigs() {
+		Config paddingFalse = new Config().setParensPadding( false );
+		paddingFalse.getArguments().setPadding( false );
+		paddingFalse.getFunction().getParameters().setPadding( false );
 		return Stream.of(
-		    Arguments.of( "padding disabled", new Config().setParensPadding( false ), "padding_false" ),
+		    Arguments.of( "padding disabled", paddingFalse, "padding_false" ),
 		    Arguments.of( "padding enabled", new Config().setParensPadding( true ), "padding_true" )
 		);
 	}

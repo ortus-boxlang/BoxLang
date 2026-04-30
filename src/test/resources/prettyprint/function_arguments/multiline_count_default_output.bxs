@@ -1,4 +1,8 @@
-foo(a, b, c);
+foo(
+	a,
+	b,
+	c
+);
 bar(
 	a,
 	b,

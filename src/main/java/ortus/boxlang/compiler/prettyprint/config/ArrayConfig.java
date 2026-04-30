@@ -39,7 +39,7 @@ public class ArrayConfig {
 	 * arr = [1, 2, 3];
 	 * </pre>
 	 */
-	private boolean			padding			= false;
+	private boolean			padding			= true;
 
 	/**
 	 * Add a space inside empty array literals.
@@ -63,6 +63,12 @@ public class ArrayConfig {
 	 * @see MultilineConfig
 	 */
 	private MultilineConfig	multiline		= new MultilineConfig();
+
+	/** Default constructor. */
+	public ArrayConfig() {
+		this.multiline.setElementCount( 2 );
+		this.multiline.setMinLength( 50 );
+	}
 
 	/**
 	 * Get the multiline formatting configuration for array literals.

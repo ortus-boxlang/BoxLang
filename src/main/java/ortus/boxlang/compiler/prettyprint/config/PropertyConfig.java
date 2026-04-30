@@ -41,6 +41,12 @@ public class PropertyConfig {
 	@JsonProperty( "key_value" )
 	private KeyValue		keyValue	= new KeyValue();
 
+	/** Default constructor. */
+	public PropertyConfig() {
+		this.multiline.setElementCount( 3 );
+		this.multiline.setMinLength( 30 );
+	}
+
 	/**
 	 * Get the multiline formatting configuration for properties.
 	 *

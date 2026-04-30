@@ -11,6 +11,6 @@ function bar(
 ) {
 
 }
-function baz(a) {
+function baz( a ) {
 
 }

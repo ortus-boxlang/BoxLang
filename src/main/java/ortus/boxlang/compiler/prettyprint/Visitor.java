@@ -1218,12 +1218,18 @@ public class Visitor extends VoidBoxVisitor {
 			print( ": " );
 		}
 		print( "for (" );
+		if ( config.getParensPadding() ) {
+			print( " " );
+		}
 		if ( node.getHasVar() ) {
 			print( "var " );
 		}
 		node.getVariable().accept( this );
 		print( " in " );
 		node.getExpression().accept( this );
+		if ( config.getParensPadding() ) {
+			print( " " );
+		}
 		print( ") " );
 		helperPrinter.printStatementBody( node, node.getBody() );
 		printPostComments( node );
@@ -1241,6 +1247,9 @@ public class Visitor extends VoidBoxVisitor {
 			print( ": " );
 		}
 		print( "for (" );
+		if ( config.getParensPadding() ) {
+			print( " " );
+		}
 		if ( node.getInitializer() != null ) {
 			node.getInitializer().accept( this );
 		}
@@ -1261,6 +1270,9 @@ public class Visitor extends VoidBoxVisitor {
 
 		if ( node.getStep() != null ) {
 			node.getStep().accept( this );
+		}
+		if ( config.getParensPadding() ) {
+			print( " " );
 		}
 		print( ") " );
 		helperPrinter.printStatementBody( node, node.getBody() );

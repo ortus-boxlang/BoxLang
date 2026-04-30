@@ -42,7 +42,7 @@ public class StructConfig {
 	 * data = {key: "value"};
 	 * </pre>
 	 */
-	private boolean			padding			= false;
+	private boolean			padding			= true;
 
 	/**
 	 * Add a space inside empty struct literals and ordered struct markers.
@@ -92,7 +92,7 @@ public class StructConfig {
 	 *
 	 * @see Separator
 	 */
-	private Separator		separator		= Separator.COLON_SPACE;
+	private Separator		separator		= Separator.COLON_BOTH_SPACE;
 
 	/**
 	 * Multiline formatting thresholds for struct literals. Controls when structs
@@ -105,6 +105,8 @@ public class StructConfig {
 
 	/** Default constructor. */
 	public StructConfig() {
+		this.multiline.setElementCount( 2 );
+		this.multiline.setMinLength( 60 );
 	}
 
 	/**

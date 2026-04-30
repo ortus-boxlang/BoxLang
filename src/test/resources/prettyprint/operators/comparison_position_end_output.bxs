@@ -1,2 +1,1 @@
-result = veryLongVariableName > anotherLongVariableName &&
-	yetAnotherVariable < maximumValue;
+result = veryLongVariableName > anotherLongVariableName && yetAnotherVariable < maximumValue;

@@ -46,8 +46,8 @@ public class FunctionConfigTest {
 		FunctionConfig.ParametersConfig params = new FunctionConfig.ParametersConfig();
 
 		assertFalse( params.getCommaDangle() );
-		assertEquals( 4, params.getMultilineCount() );
-		assertEquals( 60, params.getMultilineLength() );
+		assertEquals( 3, params.getMultilineCount() );
+		assertEquals( 50, params.getMultilineLength() );
 	}
 
 	@Test

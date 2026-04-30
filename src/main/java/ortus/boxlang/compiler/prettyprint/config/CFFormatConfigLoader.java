@@ -86,6 +86,7 @@ public final class CFFormatConfigLoader {
 	 */
 	public static Config convertCFFormatToConfig( Map<String, Object> cfConfig ) {
 		Config config = new Config();
+		applyLegacyDefaults( config );
 		config.setCFFormatCompatibility( true );
 		// cfformat preserves operator forms (EQ stays EQ, == stays ==)
 		config.getOperators().setComparisonStyle( "preserve" );
@@ -380,5 +381,47 @@ public final class CFFormatConfigLoader {
 
 		// Default
 		return Separator.COLON_SPACE;
+	}
+
+	/**
+	 * Apply legacy cfformat-era defaults to a Config object.
+	 * These were the BoxLang formatter defaults before the Ortus gold standard update.
+	 * When loading a cfformat.json, we use these as the baseline so that unspecified
+	 * settings match the behavior users expected from the cfformat tool.
+	 *
+	 * @param config the Config to apply legacy defaults to
+	 */
+	private static void applyLegacyDefaults( Config config ) {
+		// Top-level defaults
+		config.setMaxLineLength( 80 );
+		config.setNewLine( "os" );
+		config.setBracketPadding( false );
+		config.setParensPadding( false );
+		config.setAlignConsecutiveAssignments( false );
+		config.setAlignConsecutiveProperties( false );
+
+		// Struct defaults
+		config.getStruct().setPadding( false );
+		config.getStruct().getMultiline().setElementCount( 4 );
+		config.getStruct().getMultiline().setMinLength( 40 );
+
+		// Array defaults
+		config.getArray().setPadding( false );
+		config.getArray().getMultiline().setElementCount( 4 );
+		config.getArray().getMultiline().setMinLength( 40 );
+
+		// Arguments defaults
+		config.getArguments().setPadding( false );
+		config.getArguments().setMultilineCount( 4 );
+		config.getArguments().setMultilineLength( 40 );
+
+		// Function parameters defaults
+		config.getFunction().getParameters().setPadding( false );
+		config.getFunction().getParameters().setMultilineCount( 4 );
+		config.getFunction().getParameters().setMultilineLength( 40 );
+
+		// Property defaults
+		config.getProperty().getMultiline().setElementCount( 4 );
+		config.getProperty().getMultiline().setMinLength( 40 );
 	}
 }

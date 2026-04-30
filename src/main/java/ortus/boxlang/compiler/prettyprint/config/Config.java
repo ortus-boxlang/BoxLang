@@ -85,7 +85,7 @@ public final class Config {
 	 * foo( arg1, arg2, arg3 );
 	 * </pre>
 	 */
-	private int					maxLineLength				= 80;
+	private int					maxLineLength				= 115;
 
 	/**
 	 * Line separator to use in output. Set to {@code "os"} to use the operating system default
@@ -98,7 +98,7 @@ public final class Config {
 	 * // newLine: "\r\n" - always Windows line endings
 	 * </pre>
 	 */
-	private String				newLine						= "os";
+	private String				newLine						= "\n";
 
 	/**
 	 * Use single quotes for string literals and struct keys instead of double quotes.
@@ -152,7 +152,7 @@ public final class Config {
 	 * }
 	 * </pre>
 	 */
-	private boolean				alignConsecutiveAssignments	= false;
+	private boolean				alignConsecutiveAssignments	= true;
 
 	/**
 	 * Vertically align attributes in consecutive {@code property} declarations within
@@ -168,7 +168,7 @@ public final class Config {
 	 * property name="name" type="string";
 	 * </pre>
 	 */
-	private boolean				alignConsecutiveProperties	= false;
+	private boolean				alignConsecutiveProperties	= true;
 
 	/**
 	 * Add spaces inside square brackets in array literals. Acts as the default for
@@ -182,7 +182,7 @@ public final class Config {
 	 * arr = [1, 2, 3];
 	 * </pre>
 	 */
-	private boolean				bracketPadding				= false;
+	private boolean				bracketPadding				= true;
 
 	/**
 	 * Add spaces inside parentheses for function calls and function definitions. Acts as
@@ -190,16 +190,16 @@ public final class Config {
 	 * {@code function.parameters.padding}.
 	 *
 	 * <pre>
-	 * // parensPadding: true
+	 * // parensPadding: true (default)
 	 * foo( arg1, arg2 );
 	 * function bar( required string name ) {}
 	 *
-	 * // parensPadding: false (default)
+	 * // parensPadding: false
 	 * foo(arg1, arg2);
 	 * function bar(required string name) {}
 	 * </pre>
 	 */
-	private boolean				parensPadding				= false;
+	private boolean				parensPadding				= true;
 
 	/**
 	 * Add spaces around binary operators such as {@code +}, {@code -}, {@code ==},
@@ -947,7 +947,7 @@ public final class Config {
 	 * @throws IOException         if the file cannot be read
 	 */
 	public static Config loadConfig( String filePath ) throws JSONObjectException, IOException {
-		return JSONUtil.getJSONBuilder().beanFrom( Config.class, new File( filePath ) );
+		return new Config().loadFromConfigFile( filePath );
 	}
 
 	/**
@@ -1492,6 +1492,9 @@ public final class Config {
 		if ( config.containsKey( "position" ) && config.get( "position" ) instanceof String position ) {
 			this.operators.setPosition( position );
 		}
+		if ( config.containsKey( "comparison_style" ) && config.get( "comparison_style" ) instanceof String comparisonStyle ) {
+			this.operators.setComparisonStyle( comparisonStyle );
+		}
 		if ( config.containsKey( "ternary" ) && config.get( "ternary" ) instanceof Map ternaryMap ) {
 			applyTernaryConfig( ( Map<String, Object> ) ternaryMap );
 		}
@@ -1584,6 +1587,15 @@ public final class Config {
 		}
 		if ( config.containsKey( "member_spacing" ) && config.get( "member_spacing" ) instanceof Number memberSpacing ) {
 			this.classConfig.setMemberSpacing( memberSpacing.intValue() );
+		}
+		if ( config.containsKey( "property_order" ) && config.get( "property_order" ) instanceof String propertyOrder ) {
+			this.classConfig.setPropertyOrder( propertyOrder );
+		}
+		if ( config.containsKey( "method_order" ) && config.get( "method_order" ) instanceof String methodOrder ) {
+			this.classConfig.setMethodOrder( methodOrder );
+		}
+		if ( config.containsKey( "method_grouping" ) && config.get( "method_grouping" ) instanceof Boolean methodGrouping ) {
+			this.classConfig.setMethodGrouping( methodGrouping );
 		}
 	}
 

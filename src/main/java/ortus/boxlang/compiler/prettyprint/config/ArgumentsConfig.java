@@ -38,7 +38,7 @@ public class ArgumentsConfig {
 	 * foo( arg1, arg2 );
 	 * </pre>
 	 */
-	private boolean	padding			= false;
+	private boolean	padding			= true;
 
 	/**
 	 * Add a space inside empty argument parentheses.
@@ -47,7 +47,6 @@ public class ArgumentsConfig {
 	 * 
 	 * // emptyPadding: true
 	 * foo();
-	 * 
 	 * 
 	 * // emptyPadding: false (default)
 	 * foo();
@@ -81,14 +80,14 @@ public class ArgumentsConfig {
 	 * count meets or exceeds this threshold, each argument is placed on its own line.
 	 */
 	@JsonProperty( "multiline_count" )
-	private int		multilineCount	= 4;
+	private int		multilineCount	= 3;
 
 	/**
 	 * Total character length of the argument list that triggers multiline formatting.
 	 * If the flat-printed argument list exceeds this length, it switches to multiline.
 	 */
 	@JsonProperty( "multiline_length" )
-	private int		multilineLength	= 60;
+	private int		multilineLength	= 50;
 
 	/** Default constructor. */
 	public ArgumentsConfig() {

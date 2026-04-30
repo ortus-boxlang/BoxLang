@@ -28,6 +28,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 @DisplayName( "ArgumentsConfig Tests" )
+
 public class ArgumentsConfigTest {
 
 	@Test
@@ -36,8 +37,8 @@ public class ArgumentsConfigTest {
 		ArgumentsConfig config = new ArgumentsConfig();
 
 		assertFalse( config.getCommaDangle() );
-		assertEquals( 4, config.getMultilineCount() );
-		assertEquals( 60, config.getMultilineLength() );
+		assertEquals( 3, config.getMultilineCount() );
+		assertEquals( 50, config.getMultilineLength() );
 	}
 
 	@Test

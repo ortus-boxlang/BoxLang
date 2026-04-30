@@ -143,7 +143,7 @@ public class FunctionConfig {
 		 * function foo(required string name, numeric age) {}
 		 * </pre>
 		 */
-		private boolean	padding			= false;
+		private boolean	padding			= true;
 
 		/**
 		 * Add a space inside empty parameter parentheses.
@@ -188,14 +188,14 @@ public class FunctionConfig {
 		 * count meets or exceeds this threshold, each parameter is placed on its own line.
 		 */
 		@JsonProperty( "multiline_count" )
-		private int		multilineCount	= 4;
+		private int		multilineCount	= 3;
 
 		/**
 		 * Total character length of the parameter list that triggers multiline formatting.
 		 * If the flat-printed parameter list exceeds this length, it switches to multiline.
 		 */
 		@JsonProperty( "multiline_length" )
-		private int		multilineLength	= 60;
+		private int		multilineLength	= 50;
 
 		/** Default constructor. */
 		public ParametersConfig() {

@@ -40,16 +40,22 @@ public class ClassConfig {
 	 * <pre>
 	 * 
 	 * // memberSpacing: 1 (default)
-	 * function foo(){}
+	 * function foo() {
+	 * }
 	 *
-	 * function bar(){}
+	 * function bar() {
+	 * }
 	 *
 	 * // memberSpacing: 2
-	 * function foo(){}
+	 * function foo() {
+	 * }
 	 *
-	 * function bar(){}</pre>
+	 * function bar() {
+	 * }
+	 * </pre>
 	 */
-	@JsonProperty( "mmvate int		memberSpacing	= 1;
+	@JsonProperty( "member_spacing" )
+	private int		memberSpacing	= 1;
 
 	/**
 	 * Strategy for ordering property declarations within a class.

@@ -1,4 +1,4 @@
-if (true) {
+if ( true ) {
 	x = 1;
 }
 
@@ -6,6 +6,6 @@ function foo() {
 	return 1;
 }
 
-for (i = 0; i < 10; i++) {
-	print(i);
+for ( i = 0; i < 10; i++ ) {
+	print( i );
 }

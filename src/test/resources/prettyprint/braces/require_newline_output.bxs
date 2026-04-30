@@ -1,15 +1,15 @@
 // Test with braces on new line
-if (x > 5)
+if ( x > 5 )
 {
-	println("x is greater than 5");
+	println( "x is greater than 5" );
 }
 
-for (i = 0; i < 10; i++)
+for ( i = 0; i < 10; i++ )
 {
-	println(i);
+	println( i );
 }
 
-while (count < 100)
+while ( count < 100 )
 {
 	count++;
 }

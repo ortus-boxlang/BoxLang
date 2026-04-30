@@ -1,4 +1,4 @@
-function singleParam(a) {
+function singleParam( a ) {
 
 }
 function multiParams(

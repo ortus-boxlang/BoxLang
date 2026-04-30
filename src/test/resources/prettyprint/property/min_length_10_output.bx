@@ -1,10 +1,6 @@
 class {
-	property
-		name="prop_a";
-	property
-		name="prop_b"
-		type="string"
-		default="hello";
+	property name = "prop_a";
+	property name = "prop_b" type="string" default="hello";
 
 
 }
