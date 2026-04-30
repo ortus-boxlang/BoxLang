@@ -2991,12 +2991,13 @@ public class DynamicInteropService {
 		classContext.pushTemplate( boxClass );
 
 		try {
-			if ( boxClass.getBoxSuperClass() != null ) {
+			if ( boxClass.getBoxSuperClassName() != null ) {
 				// Recursively load the super class
-				IClassRunnable _super = ( IClassRunnable ) ( DynamicObject.of( boxClass.getBoxSuperClass().getTargetClass() )
+				IClassRunnable _super = ( IClassRunnable ) BoxClassSupport
+				    .loadSuperClass( boxClass.getBoxSuperClassName(), classContext.getCurrentImports(), classContext, boxClass.getRunnablePath() )
 				    // Constructor args are NOT passed. Only the outermost class gets to use those
 				    .invokeConstructor( classContext, new Object[] { Key.isSuper } )
-				    .unWrapBoxLangClass() );
+				    .unWrapBoxLangClass();
 
 				// Check for final annotation and throw if we're trying to extend a final class
 				if ( _super.isFinalClass() ) {
@@ -3010,6 +3011,11 @@ public class DynamicInteropService {
 			boxClass.pseudoConstructor( classContext );
 
 			// Now that UDFs are defined, let's enforce any interfaces (abstract classes will skip the enforcement and only apply the default methods)
+			boxClass.getInterfaces().addAll( BoxClassSupport.loadInterfaces(
+			    boxClass.getBoxInterfaceNames(),
+			    classContext.getCurrentImports(),
+			    classContext,
+			    boxClass.getRunnablePath() ) );
 			for ( BoxInterface _interface : boxClass.getInterfaces() ) {
 				boxClass.registerInterface( _interface );
 			}

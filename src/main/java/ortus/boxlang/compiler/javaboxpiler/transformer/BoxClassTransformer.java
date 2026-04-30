@@ -147,8 +147,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 			// public so the static initializer can access it
 			public static final ResolvedFilePath path = ${resolvedFilePath};
 			private static final BoxSourceType sourceType = BoxSourceType.${sourceType};
-			private static DynamicObject superClass = null;
-			private static List<BoxInterface> interfaces = new ArrayList<>();
+			private static String superClassName = ${superClassName};
+			private static String[] interfaceNames = ${interfaceNames};
 			private static final IStruct annotations;
 			private static final IStruct documentation;
 			private static final Map<Key,Property>	properties;
@@ -174,7 +174,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			private static Boolean canInvokeImplicitAccessor = null;
 
 			static {
-				superClass = BoxClassSupport.runStaticInitializer( ${className}::staticInitializer, ${className}.class, ${className}.staticScope, ${className}.path, imports, interfaces, annotations );
+				BoxClassSupport.runStaticInitializer( ${className}::staticInitializer, ${className}.class, ${className}.staticScope, ${className}.path );
 			}
 
 			// Private instance fields
@@ -182,6 +182,7 @@ public class BoxClassTransformer extends AbstractTransformer {
 			private ThisScope thisScope = new ThisScope();
 			private IClassRunnable _super = null;
 			private IClassRunnable child = null;
+			private List<BoxInterface> interfaces = new ArrayList<>();
 
 			// Public instance fields
 			public transient BoxMeta		$bx;
@@ -316,8 +317,12 @@ public class BoxClassTransformer extends AbstractTransformer {
 				this.canInvokeImplicitAccessor = canInvokeImplicitAccessor;
 			}
 
-			public DynamicObject getBoxSuperClass() {
-				return superClass;
+			public String getBoxSuperClassName() {
+				return ${className}.superClassName;
+			}
+
+			public String[] getBoxInterfaceNames() {
+				return ${className}.interfaceNames;
 			}
 
 			public IClassRunnable getSuper() {
@@ -404,8 +409,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 								${className}.name,
 								${className}.sourceType,
 								${className}.path,
-								${className}.superClass,
-								${className}.interfaces,
+								BoxClassSupport.loadSuperClass( ${className}.superClassName, imports, null, ${className}.path ),
+								BoxClassSupport.loadInterfaces( ${className}.interfaceNames, imports, null, ${className}.path ),
 								${className}.abstractMethods,
 								${className}.udfs,
 								${className}.annotations,
@@ -429,8 +434,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 								${className}.name,
 								${className}.sourceType,
 								${className}.path,
-								${className}.superClass,
-								${className}.interfaces,
+								BoxClassSupport.loadSuperClass( ${className}.superClassName, imports, null, ${className}.path ),
+								BoxClassSupport.loadInterfaces( ${className}.interfaceNames, imports, null, ${className}.path ),
 								${className}.abstractMethods,
 								${className}.udfs,
 								${className}.annotations,
@@ -523,6 +528,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 		String			extendsTemplate		= "";
 		String			extendsMethods		= "";
 		String			isJavaExtends		= "false";
+		String			superClassName		= "null";
+		String			interfaceNames		= "new String[0]";
 		// The list of automatically implemented interfaces
 		List<String>	interfaces			= new ArrayList<>();
 		interfaces.add( "IClassRunnable" );
@@ -541,17 +548,24 @@ public class BoxClassTransformer extends AbstractTransformer {
 		    .map( it -> it.getValue() )
 		    .orElse( null );
 		if ( implementsValue instanceof BoxStringLiteral str ) {
-			String	implementsStringList		= str.getValue();
+			String	implementsStringList	= str.getValue();
 			// Collect and trim all strings starting with "java:"
-			Array	implementsArray				= ListUtil.asList( implementsStringList, "," ).stream()
+			Array	implementsArray			= ListUtil.asList( implementsStringList, "," ).stream()
 			    .map( String::valueOf )
 			    .map( String::trim )
 			    .filter( it -> it.toLowerCase().startsWith( "java:" ) )
 			    .map( it -> it.substring( 5 ) )
 			    .collect( BLCollector.toArray() );
 
+			interfaceNames = ListUtil.asList( implementsStringList, "," ).stream()
+			    .map( String::valueOf )
+			    .map( String::trim )
+			    .filter( it -> !it.toLowerCase().startsWith( "java:" ) )
+			    .map( it -> '"' + it + '"' )
+			    .collect( java.util.stream.Collectors.joining( ", ", "new String[] {", "}" ) );
+
 			// var interfaceProxyDefinition = InterfaceProxyService.generateDefinition( new ScriptingRequestBoxContext(), implementsArray );
-			var		interfaceProxyDefinition	= InterfaceProxyService.generateDefinition( BoxRuntime.getInstance().getRuntimeContext(), implementsArray );
+			var interfaceProxyDefinition = InterfaceProxyService.generateDefinition( BoxRuntime.getInstance().getRuntimeContext(), implementsArray );
 
 			// TODO: Remove methods that already have a @overrideJava UDF definition to avoid duplicates
 			interfaces.addAll( interfaceProxyDefinition.interfaces() );
@@ -580,6 +594,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 				    .filter( it -> it.getAnnotations().stream().anyMatch( anno -> anno.getKey().getValue().equalsIgnoreCase( EXTENDS_ANNOTATION_MARKER ) ) )
 				    .map( this::createJavaMethodStub )
 				    .collect( java.util.stream.Collectors.joining( "\n" ) );
+			} else {
+				superClassName = '"' + extendsStringValue + '"';
 			}
 		}
 
@@ -607,6 +623,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 		    Map.entry( "extendsTemplate", extendsTemplate ),
 		    Map.entry( "extendsMethods", extendsMethods ),
 		    Map.entry( "isJavaExtends", isJavaExtends ),
+		    Map.entry( "superClassName", superClassName ),
+		    Map.entry( "interfaceNames", interfaceNames ),
 		    Map.entry( "sourceType", sourceType ),
 		    Map.entry( "resolvedFilePath", transpiler.getResolvedFilePath( mappingName, mappingPath, relativePath, filePath ) ),
 		    Map.entry( "boxlangVersion", BoxRuntime.getInstance().getVersionInfo().getAsString( Key.version ) ),
