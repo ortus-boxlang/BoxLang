@@ -29,7 +29,6 @@ import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
-
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.prettyprint.config.CFFormatConfigLoader;
@@ -372,7 +371,8 @@ public final class PrettyPrint {
 	}
 
 	public static Doc generateDoc( BoxNode node, Config config ) {
-		Visitor visitor = new Visitor( resolveSourceType( node ), config );
+		BoxSourceType sourceType = config.getSourceType() != null ? config.getSourceType() : resolveSourceType( node );
+		Visitor      visitor     = new Visitor( sourceType, config );
 		node.accept( visitor );
 		var doc = visitor.getRoot();
 		doc.condense();

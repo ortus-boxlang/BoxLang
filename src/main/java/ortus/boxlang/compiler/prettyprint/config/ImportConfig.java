@@ -25,30 +25,88 @@ import java.util.Map;
  */
 public class ImportConfig {
 
+	/**
+	 * Sort import statements alphabetically.
+	 *
+	 * <pre>
+	 * 
+	 * // sort: true
+	 * import java.io.File;
+	 * import java.util.List;
+	 * import ortus.boxlang.runtime.BoxRuntime;
+	 *
+	 * // sort: false (default) - preserves original order
+	 * </pre>
+	 */
 	private boolean	sort	= false;
+
+	/**
+	 * Group imports by top-level package with blank lines between groups.
+	 *
+	 * <pre>
+	 * 
+	 * // group: true
+	 * import java.io.File;
+	 * import java.util.List;
+	 *
+	 * import ortus.boxlang.runtime.BoxRuntime;
+	 *
+	 * // group: false (default) - no blank lines between imports
+	 * </pre>
+	 */
 	private boolean	group	= false;
 
+	/** Default constructor. */
 	public ImportConfig() {
 	}
 
+	/**
+	 * Get whether imports are sorted alphabetically.
+	 *
+	 * @return true if sorting is enabled
+	 */
 	public boolean getSort() {
 		return sort;
 	}
 
+	/**
+	 * Set whether imports are sorted alphabetically.
+	 *
+	 * @param sort true to enable sorting
+	 *
+	 * @return this config for chaining
+	 */
 	public ImportConfig setSort( boolean sort ) {
 		this.sort = sort;
 		return this;
 	}
 
+	/**
+	 * Get whether imports are grouped by package.
+	 *
+	 * @return true if grouping is enabled
+	 */
 	public boolean getGroup() {
 		return group;
 	}
 
+	/**
+	 * Set whether imports are grouped by package.
+	 *
+	 * @param group true to enable grouping
+	 *
+	 * @return this config for chaining
+	 */
 	public ImportConfig setGroup( boolean group ) {
 		this.group = group;
 		return this;
 	}
 
+	/**
+	 * Convert this configuration to a map for JSON serialization.
+	 *
+	 * @return a map representation of this configuration
+	 */
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put( "sort", sort );

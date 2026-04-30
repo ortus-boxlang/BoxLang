@@ -23,8 +23,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
+import ortus.boxlang.compiler.prettyprint.config.Config;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -252,7 +254,10 @@ public class CFTranspiler {
 				System.out.println( "📝 Writing: " + targetPath.getFileName().toString() );
 			}
 			try {
-				Files.write( targetPath, result.getRoot().toString().getBytes( StandardCharsets.UTF_8 ) );
+				String			targetFile			= targetPath.getFileName().toString().toLowerCase();
+				BoxSourceType	targetSourceType	= targetFile.endsWith( ".bxm" ) ? BoxSourceType.BOXTEMPLATE : BoxSourceType.BOXSCRIPT;
+				Config			config				= new Config().setSourceType( targetSourceType );
+				Files.write( targetPath, result.getRoot().toString( config ).getBytes( StandardCharsets.UTF_8 ) );
 				if ( verbose ) {
 					System.out.println( "✅ Success: " + sourcePath.getFileName().toString() + " → " + targetPath.getFileName().toString() );
 				}

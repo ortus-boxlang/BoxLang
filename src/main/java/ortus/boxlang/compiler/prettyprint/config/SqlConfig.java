@@ -23,37 +23,99 @@ import java.util.Map;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
- * Configuration options for embedded SQL formatting.
+ * Configuration options for embedded SQL formatting within {@code queryExecute} and
+ * {@code <bx:query>} blocks.
  */
 public class SqlConfig {
 
+	/**
+	 * Convert SQL keywords to uppercase.
+	 *
+	 * <pre>
+	 * // uppercaseKeywords: true (default)
+	 * SELECT name FROM users WHERE id = :id
+	 *
+	 * // uppercaseKeywords: false
+	 * select name from users where id = :id
+	 * </pre>
+	 */
 	@JsonProperty( "uppercase_keywords" )
 	private boolean	uppercaseKeywords	= true;
 
+	/**
+	 * Indent SQL clauses ({@code SELECT}, {@code FROM}, {@code WHERE}, etc.)
+	 * relative to the opening tag or function call.
+	 *
+	 * <pre>
+	 * // indentClauses: true (default)
+	 * queryExecute( "
+	 *     SELECT name
+	 *     FROM users
+	 *     WHERE id = :id
+	 * " );
+	 *
+	 * // indentClauses: false
+	 * queryExecute( "
+	 * SELECT name
+	 * FROM users
+	 * WHERE id = :id
+	 * " );
+	 * </pre>
+	 */
 	@JsonProperty( "indent_clauses" )
 	private boolean	indentClauses		= true;
 
+	/** Default constructor. */
 	public SqlConfig() {
 	}
 
+	/**
+	 * Get whether SQL keywords are uppercased.
+	 *
+	 * @return true if keywords are uppercased
+	 */
 	public boolean getUppercaseKeywords() {
 		return uppercaseKeywords;
 	}
 
+	/**
+	 * Set whether SQL keywords are uppercased.
+	 *
+	 * @param uppercaseKeywords true to uppercase keywords
+	 *
+	 * @return this config for chaining
+	 */
 	public SqlConfig setUppercaseKeywords( boolean uppercaseKeywords ) {
 		this.uppercaseKeywords = uppercaseKeywords;
 		return this;
 	}
 
+	/**
+	 * Get whether SQL clauses are indented.
+	 *
+	 * @return true if clause indentation is enabled
+	 */
 	public boolean getIndentClauses() {
 		return indentClauses;
 	}
 
+	/**
+	 * Set whether SQL clauses are indented.
+	 *
+	 * @param indentClauses true to indent clauses
+	 *
+	 * @return this config for chaining
+	 */
 	public SqlConfig setIndentClauses( boolean indentClauses ) {
 		this.indentClauses = indentClauses;
 		return this;
 	}
 
+	/**
+	 * Convert this configuration to a map for JSON serialization.
+	 *
+	 * @return a map representation of this configuration
+	 */
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put( "uppercase_keywords", uppercaseKeywords );

@@ -20,32 +20,61 @@ package ortus.boxlang.compiler.prettyprint.config;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 
+/**
+ * Enum representing the separator style between keys and values in struct literals.
+ * Each value defines the exact string used to separate a key from its value.
+ *
+ * <pre>
+ * // COLON: {key:"value"}
+ * // EQUALS: {key="value"}
+ * // COLON_SPACE: {key: "value"} (default)
+ * // COLON_BOTH_SPACE: {key : "value"}
+ * // EQUALS_SPACE: {key= "value"}
+ * // EQUALS_BOTH_SPACE:{key = "value"}
+ * </pre>
+ */
 public enum Separator {
 
+	/** Colon with no spacing: {@code ":"} */
 	@JsonProperty( ":" )
 	COLON(":" ),
 
+	/** Equals with no spacing: {@code "="} */
 	@JsonProperty( "=" )
 	EQUALS("=" ),
 
+	/** Colon with trailing space: {@code ": "} */
 	@JsonProperty( ": " )
 	COLON_SPACE(": " ),
 
+	/** Colon with spaces on both sides: {@code " : "} */
 	@JsonProperty( " : " )
 	COLON_BOTH_SPACE(" : " ),
 
+	/** Equals with trailing space: {@code "= "} */
 	@JsonProperty( "= " )
 	EQUALS_SPACE("= " ),
 
+	/** Equals with spaces on both sides: {@code " = "} */
 	@JsonProperty( " = " )
 	EQUALS_BOTH_SPACE(" = " );
 
 	private final String symbol;
 
+	/**
+	 * Construct a Separator with the given symbol string.
+	 *
+	 * @param symbol the separator string
+	 */
 	Separator( String symbol ) {
 		this.symbol = symbol;
 	}
 
+	/**
+	 * Get the separator symbol string.
+	 *
+	 * @return the separator string
+	 */
 	@JsonValue
 	public String getSymbol() {
 		return symbol;

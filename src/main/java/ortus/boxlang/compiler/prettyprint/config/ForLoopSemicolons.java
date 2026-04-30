@@ -20,22 +20,56 @@ package ortus.boxlang.compiler.prettyprint.config;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+/**
+ * Configuration options for semicolon formatting within {@code for(;;)} loop headers.
+ */
 public class ForLoopSemicolons {
 
+	/**
+	 * Add a space after each semicolon in a for-loop header.
+	 *
+	 * <pre>
+	 * // padding: true (default)
+	 * for ( i = 0; i &lt; 10; i++ ) {
+	 * }
+	 *
+	 * // padding: false
+	 * for ( i = 0; i &lt; 10; i++ ) {
+	 * }
+	 * </pre>
+	 */
 	private boolean padding = true;
 
+	/** Default constructor. */
 	public ForLoopSemicolons() {
 	}
 
+	/**
+	 * Get whether spaces are added after for-loop semicolons.
+	 *
+	 * @return true if padding is enabled
+	 */
 	public boolean getPadding() {
 		return padding;
 	}
 
+	/**
+	 * Set whether spaces are added after for-loop semicolons.
+	 *
+	 * @param padding true to enable padding
+	 *
+	 * @return this config for chaining
+	 */
 	public ForLoopSemicolons setPadding( boolean padding ) {
 		this.padding = padding;
 		return this;
 	}
 
+	/**
+	 * Convert this configuration to a map for JSON serialization.
+	 *
+	 * @return a map representation of this configuration
+	 */
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put( "padding", padding );

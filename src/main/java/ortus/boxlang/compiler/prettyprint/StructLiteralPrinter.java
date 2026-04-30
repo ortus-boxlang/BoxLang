@@ -136,12 +136,9 @@ public class StructLiteralPrinter {
 		    && ( structNode.getSourceText().contains( "\n" ) || structNode.getSourceText().contains( "\r" ) ) ) {
 			return true;
 		}
-		try {
-			if ( visitor.config.getStruct().getMultiline().getMinLength() < structNode.getSourceText().length() ) {
-				return true;
-			}
-		} catch ( Exception e ) {
-			e.printStackTrace();
+		if ( structNode.getSourceText() != null
+		    && visitor.config.getStruct().getMultiline().getMinLength() < structNode.getSourceText().length() ) {
+			return true;
 		}
 		var	size		= structNode.getValues().size();
 		// CFFormat uses strict "more than" semantics for element_count; BoxLang native mode uses "at least"

@@ -31,6 +31,7 @@ import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.visitor.BoxVisitable;
 import ortus.boxlang.compiler.prettyprint.PrettyPrint;
+import ortus.boxlang.compiler.prettyprint.config.Config;
 import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
@@ -720,6 +721,10 @@ public abstract class BoxNode implements BoxVisitable {
 
 	public String toString() {
 		return PrettyPrint.prettyPrint( this );
+	}
+
+	public String toString( Config config ) {
+		return PrettyPrint.prettyPrint( this, config );
 	}
 
 	/**

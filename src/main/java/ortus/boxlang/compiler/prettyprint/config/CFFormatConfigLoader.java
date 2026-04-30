@@ -181,6 +181,12 @@ public final class CFFormatConfigLoader {
 
 	// ========== Private helper methods ==========
 
+	/**
+	 * Apply array-related CFFormat settings to a Config.
+	 *
+	 * @param cfConfig the flat CFFormat settings map
+	 * @param config   the Config to update
+	 */
 	private static void applyArraySettings( Map<String, Object> cfConfig, Config config ) {
 		ArrayConfig array = config.getArray();
 
@@ -198,6 +204,12 @@ public final class CFFormatConfigLoader {
 		applyIfPresent( cfConfig, "array.multiline.leading_comma.padding", value -> leadingComma.setPadding( toBool( value ) ) );
 	}
 
+	/**
+	 * Apply struct-related CFFormat settings to a Config.
+	 *
+	 * @param cfConfig the flat CFFormat settings map
+	 * @param config   the Config to update
+	 */
 	private static void applyStructSettings( Map<String, Object> cfConfig, Config config ) {
 		StructConfig struct = config.getStruct();
 
@@ -221,6 +233,12 @@ public final class CFFormatConfigLoader {
 		applyIfPresent( cfConfig, "struct.multiline.leading_comma.padding", value -> leadingComma.setPadding( toBool( value ) ) );
 	}
 
+	/**
+	 * Apply function declaration CFFormat settings to a Config.
+	 *
+	 * @param cfConfig the flat CFFormat settings map
+	 * @param config   the Config to update
+	 */
 	private static void applyFunctionDeclarationSettings( Map<String, Object> cfConfig, Config config ) {
 		FunctionConfig.ParametersConfig params = config.getFunction().getParameters();
 
@@ -230,6 +248,12 @@ public final class CFFormatConfigLoader {
 		applyIfPresent( cfConfig, "function_declaration.multiline.min_length", value -> params.setMultilineLength( toInt( value ) ) );
 	}
 
+	/**
+	 * Apply function call CFFormat settings to a Config.
+	 *
+	 * @param cfConfig the flat CFFormat settings map
+	 * @param config   the Config to update
+	 */
 	private static void applyFunctionCallSettings( Map<String, Object> cfConfig, Config config ) {
 		ArgumentsConfig args = config.getArguments();
 
@@ -239,6 +263,12 @@ public final class CFFormatConfigLoader {
 		applyIfPresent( cfConfig, "function_call.multiline.min_length", value -> args.setMultilineLength( toInt( value ) ) );
 	}
 
+	/**
+	 * Apply property-related CFFormat settings to a Config.
+	 *
+	 * @param cfConfig the flat CFFormat settings map
+	 * @param config   the Config to update
+	 */
 	private static void applyPropertySettings( Map<String, Object> cfConfig, Config config ) {
 		PropertyConfig	property	= config.getProperty();
 		MultilineConfig	multiline	= property.getMultiline();
@@ -247,6 +277,12 @@ public final class CFFormatConfigLoader {
 		applyIfPresent( cfConfig, "property.multiline.min_length", value -> multiline.setMinLength( toInt( value ) ) );
 	}
 
+	/**
+	 * Apply comment-related CFFormat settings to a Config.
+	 *
+	 * @param cfConfig the flat CFFormat settings map
+	 * @param config   the Config to update
+	 */
 	private static void applyCommentSettings( Map<String, Object> cfConfig, Config config ) {
 		CommentsConfig comments = config.getComments();
 
@@ -259,7 +295,11 @@ public final class CFFormatConfigLoader {
 	}
 
 	/**
-	 * Helper to apply a value if the key exists in the config map.
+	 * Apply a value from the config map if the key exists.
+	 *
+	 * @param config the CFFormat settings map
+	 * @param key    the dot-notation config key to look up
+	 * @param setter consumer to apply the value
 	 */
 	private static void applyIfPresent( Map<String, Object> config, String key, java.util.function.Consumer<Object> setter ) {
 		if ( config.containsKey( key ) ) {
@@ -267,6 +307,13 @@ public final class CFFormatConfigLoader {
 		}
 	}
 
+	/**
+	 * Convert a value to a boolean.
+	 *
+	 * @param value the value to convert
+	 *
+	 * @return the boolean value, or false if conversion fails
+	 */
 	private static boolean toBool( Object value ) {
 		if ( value instanceof Boolean b ) {
 			return b;
@@ -277,6 +324,13 @@ public final class CFFormatConfigLoader {
 		return false;
 	}
 
+	/**
+	 * Convert a value to an integer.
+	 *
+	 * @param value the value to convert
+	 *
+	 * @return the integer value, or 0 if conversion fails
+	 */
 	private static int toInt( Object value ) {
 		if ( value instanceof Number n ) {
 			return n.intValue();
@@ -291,10 +345,24 @@ public final class CFFormatConfigLoader {
 		return 0;
 	}
 
+	/**
+	 * Convert a value to a string.
+	 *
+	 * @param value the value to convert
+	 *
+	 * @return the string representation, or empty string if null
+	 */
 	private static String toString( Object value ) {
 		return value != null ? value.toString() : "";
 	}
 
+	/**
+	 * Parse a CFFormat separator string into a {@link Separator} enum value.
+	 *
+	 * @param separator the separator string (e.g. {@code " : "}, {@code "="})
+	 *
+	 * @return the matching {@link Separator} value, defaulting to {@link Separator#COLON_SPACE}
+	 */
 	private static Separator parseSeparator( String separator ) {
 		if ( " : ".equals( separator ) ) {
 			return Separator.COLON_BOTH_SPACE;

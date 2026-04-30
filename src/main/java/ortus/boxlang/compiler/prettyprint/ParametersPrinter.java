@@ -45,7 +45,7 @@ public class ParametersPrinter {
 
 			if ( node.getType() != null ) {
 				var	type			= node.getType();
-				var	typeIsPrinted	= type != "Any" || node.getSourceText().contains( "Any " );
+				var	typeIsPrinted	= type != "Any" || ( node.getSourceText() != null && node.getSourceText().contains( "Any " ) );
 				if ( typeIsPrinted ) {
 					length += type.length() + 1; // type + " "
 				}
@@ -93,7 +93,7 @@ public class ParametersPrinter {
 				}
 				if ( node.getType() != null ) {
 					var	type			= node.getType();
-					var	typeIsPrinted	= type != "Any" || node.getSourceText().contains( "Any " );
+					var	typeIsPrinted	= type != "Any" || ( node.getSourceText() != null && node.getSourceText().contains( "Any " ) );
 					if ( typeIsPrinted ) {
 						leftLength += type.length() + 1;
 					}
@@ -121,7 +121,7 @@ public class ParametersPrinter {
 				}
 				if ( node.getType() != null ) {
 					var	type			= node.getType();
-					var	typeIsPrinted	= !type.equals( "Any" ) || node.getSourceText().contains( "Any " );
+					var	typeIsPrinted	= !type.equals( "Any" ) || ( node.getSourceText() != null && node.getSourceText().contains( "Any " ) );
 					if ( typeIsPrinted ) {
 						contentsDoc.append( type ).append( " " );
 					}
@@ -135,7 +135,7 @@ public class ParametersPrinter {
 						}
 						if ( node.getType() != null ) {
 							var	type			= node.getType();
-							var	typeIsPrinted	= type != "Any" || node.getSourceText().contains( "Any " );
+							var	typeIsPrinted	= type != "Any" || ( node.getSourceText() != null && node.getSourceText().contains( "Any " ) );
 							if ( typeIsPrinted ) {
 								currentLeftLength += type.length() + 1;
 							}
