@@ -1,14 +1,14 @@
 <cfscript>
-function greet( required string name, string greeting = "Hello" ){
-	return greeting & ", " & name & "!";
-}
-variables.items = [
-	"apple",
-	"banana",
-	"cherry",
-	"date",
-	"elderberry"
-];
+	function greet( required string name, string greeting = "Hello" ){
+		return greeting & ", " & name & "!";
+	}
+	variables.items = [
+		"apple",
+		"banana",
+		"cherry",
+		"date",
+		"elderberry"
+	];
 </cfscript>
 <cfoutput>
 	<cfset message = greet( name = "World" )>
