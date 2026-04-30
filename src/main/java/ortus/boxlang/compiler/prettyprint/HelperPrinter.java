@@ -145,7 +145,10 @@ public class HelperPrinter {
 		if ( ! ( expr instanceof BoxStringLiteral str ) ) {
 			return false;
 		}
-		return str.getValue().isBlank();
+		// Only treat as discardable whitespace if it contains a newline (structural indent).
+		// Pure horizontal spaces (e.g., between #expr1# #expr2#) are meaningful inline content.
+		String value = str.getValue();
+		return value.isBlank() && ( value.contains( "\n" ) || value.contains( "\r" ) );
 	}
 
 	public void printBlock( BoxNode node, List<BoxStatement> statements ) {

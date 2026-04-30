@@ -62,6 +62,10 @@ public class Printer {
 			var			content	= cmd.getContent();
 
 			if ( content instanceof String str ) {
+				// Raw strings containing newlines end the current line — treat like Line.HARD
+				if ( str.indexOf( '\n' ) >= 0 || str.indexOf( '\r' ) >= 0 ) {
+					return true;
+				}
 				remainingSpace -= str.length();
 			} else if ( content instanceof List<?> listContent ) {
 				for ( int i = listContent.size() - 1; i >= 0; i-- ) {
@@ -109,7 +113,14 @@ public class Printer {
 
 			if ( content instanceof String str ) {
 				sb.append( str );
-				currentColumn += str.length();
+				// Track newlines in raw strings (e.g., template HTML content) so currentColumn
+				// reflects the actual position on the last line, not total string length.
+				int lastNewline = Math.max( str.lastIndexOf( '\n' ), str.lastIndexOf( '\r' ) );
+				if ( lastNewline >= 0 ) {
+					currentColumn = str.length() - lastNewline - 1;
+				} else {
+					currentColumn += str.length();
+				}
 			} else if ( content instanceof List<?> listContent ) {
 				// iterate in reverse order to maintain order in the stack
 				for ( int i = listContent.size() - 1; i >= 0; i-- ) {

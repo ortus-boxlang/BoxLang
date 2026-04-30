@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.compiler.prettyprint;
 
+import ortus.boxlang.compiler.ast.expression.BoxClosure;
+import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
+import ortus.boxlang.compiler.ast.statement.BoxReturn;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 
 public class ComponentPrinter {
@@ -43,6 +46,11 @@ public class ComponentPrinter {
 		currentDoc
 		    .append( "<" + visitor.componentPrefix )
 		    .append( node.getName() );
+
+		// Unwrap condition closures: the CF parser wraps cfloop condition expressions
+		// in a BoxClosure(BoxReturn(expr)). For pretty printing, we want to output
+		// just the original expression text, not the closure wrapper.
+		unwrapConditionClosures( node );
 
 		// Check if single_attribute_per_line is enabled for templates
 		boolean singleAttributePerLine = visitor.config.getTemplate().getSingleAttributePerLine();
@@ -85,6 +93,38 @@ public class ComponentPrinter {
 			visitor.helperPrinter.printBlock( node, node.getBody() );
 		} else {
 			visitor.printSemicolon();
+		}
+	}
+
+	/**
+	 * Unwrap the condition closure on a loop component. The CF parser wraps
+	 * cfloop condition expressions in a BoxClosure(BoxReturn(expr)) for runtime
+	 * evaluation. For pretty printing, we replace the closure with a BoxStringLiteral
+	 * containing the original expression text so it prints as a plain attribute value.
+	 * This ONLY applies to the "condition" attribute of the "loop" component.
+	 */
+	private void unwrapConditionClosures( BoxComponent node ) {
+		if ( !node.getName().equalsIgnoreCase( "loop" ) ) {
+			return;
+		}
+		for ( var attr : node.getAttributes() ) {
+			if ( attr.getKey().getSourceText() != null
+			    && attr.getKey().getSourceText().equalsIgnoreCase( "condition" )
+			    && attr.getValue() instanceof BoxClosure closure
+			    && closure.getArgs().isEmpty()
+			    && closure.getBody() instanceof BoxReturn retStmt ) {
+				// Use the closure's source text (original condition expression) if available,
+				// otherwise toString() the return expression
+				String conditionText;
+				if ( closure.getSourceText() != null ) {
+					conditionText = closure.getSourceText();
+				} else if ( retStmt.getExpression() != null ) {
+					conditionText = retStmt.getExpression().toString();
+				} else {
+					continue;
+				}
+				attr.setValue( new BoxStringLiteral( conditionText, null, null ) );
+			}
 		}
 	}
 }

@@ -343,6 +343,45 @@ public class Visitor extends VoidBoxVisitor {
 		return false;
 	}
 
+	/**
+	 * Dedent a multi-line buffer string by stripping the common leading whitespace
+	 * from all non-empty lines. This rebases the content to column 0 so the doc
+	 * model's indentation controls the final indent level.
+	 */
+	private String dedentBuffer( String value ) {
+		String[] lines = value.split( "\\r?\\n", -1 );
+		if ( lines.length <= 1 ) {
+			return value;
+		}
+		// Find minimum indentation across non-empty lines (skip the first line, it's already stripped)
+		int minIndent = Integer.MAX_VALUE;
+		for ( int i = 1; i < lines.length; i++ ) {
+			String line = lines[ i ];
+			if ( line.isBlank() ) {
+				continue;
+			}
+			int indent = 0;
+			while ( indent < line.length() && ( line.charAt( indent ) == '\t' || line.charAt( indent ) == ' ' ) ) {
+				indent++;
+			}
+			minIndent = Math.min( minIndent, indent );
+		}
+		if ( minIndent == 0 || minIndent == Integer.MAX_VALUE ) {
+			return value;
+		}
+		StringBuilder sb = new StringBuilder();
+		sb.append( lines[ 0 ] );
+		for ( int i = 1; i < lines.length; i++ ) {
+			sb.append( '\n' );
+			if ( lines[ i ].length() > minIndent ) {
+				sb.append( lines[ i ].substring( minIndent ) );
+			} else {
+				sb.append( lines[ i ] );
+			}
+		}
+		return sb.toString();
+	}
+
 	boolean printPreComments( BoxNode node ) {
 		return commentsPrinter.printPreComments( node );
 	}
@@ -396,13 +435,16 @@ public class Visitor extends VoidBoxVisitor {
 		currentSourceType.push( BoxSourceType.BOXSCRIPT );
 		if ( isTemplate ) {
 			print( "<" + componentPrefix + "script>" );
-			newLine();
-		}
 
-		helperPrinter.printStatements( node.getStatements() );
+			var indentDoc = pushDoc( DocType.INDENT );
+			indentDoc.append( Line.HARD );
+			helperPrinter.printStatements( node.getStatements() );
+			var completedIndent = popDoc();
+			getCurrentDoc().append( completedIndent );
 
-		if ( isTemplate ) {
 			getCurrentDoc().append( Line.HARD ).append( "</" + componentPrefix + "script>" );
+		} else {
+			helperPrinter.printStatements( node.getStatements() );
 		}
 		currentSourceType.pop();
 		printPostComments( node );
@@ -449,10 +491,11 @@ public class Visitor extends VoidBoxVisitor {
 				// When inside printTemplateBody, structural indentation is controlled
 				// externally.
 				// Strip leading and trailing newline+whitespace so we don't produce spurious
-				// blank lines.
+				// blank lines, and dedent the content so internal lines are rebased to column 0.
 				if ( stripBufferLeadingWhitespace ) {
 					value	= value.replaceFirst( "^(?:\\r\\n|\\r|\\n)[\\t ]*", "" );
 					value	= value.replaceFirst( "[\\t ]*(?:\\r\\n|\\r|\\n)[\\t ]*$", "" );
+					value	= dedentBuffer( value );
 				}
 				print( value );
 			} else if ( node.getExpression() instanceof BoxStringInterpolation sInt ) {
@@ -606,6 +649,8 @@ public class Visitor extends VoidBoxVisitor {
 		parametersPrinter.print( node.getArgs() );
 		print( isLambda ? " => " : " " );
 
+		// Closure bodies are always script, even when embedded in template attributes
+		currentSourceType.push( BoxSourceType.BOXSCRIPT );
 		// if the closure is a lambda, and the body is a single expression,
 		// the AST has it as an expression statement, not just an expression
 		// handle it here to avoid printing the semicolon
@@ -617,6 +662,7 @@ public class Visitor extends VoidBoxVisitor {
 			// otherwise, just visit the body
 			node.getBody().accept( this );
 		}
+		currentSourceType.pop();
 		printPostComments( node );
 	}
 
@@ -650,7 +696,10 @@ public class Visitor extends VoidBoxVisitor {
 		}
 
 		print( " -> " );
+		// Lambda bodies are always script, even when embedded in template attributes
+		currentSourceType.push( BoxSourceType.BOXSCRIPT );
 		node.getBody().accept( this );
+		currentSourceType.pop();
 		printPostComments( node );
 	}
 

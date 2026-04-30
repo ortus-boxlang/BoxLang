@@ -877,7 +877,7 @@ public class BoxParser extends AbstractParser {
 					    List.of(),
 					    new BoxReturn( condition, null, null ),
 					    null,
-					    null );
+					    condition.getSourceText() );
 					attr.setValue( newCondition );
 				}
 			}

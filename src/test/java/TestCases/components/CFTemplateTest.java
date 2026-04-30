@@ -987,7 +987,7 @@ public class CFTemplateTest {
 		    """
 		      <cfset result = "">
 		    <cfset counter=0>
-		             <cfloop condition="counter LT 5">
+		             <cfloop condition="counter LT 5" >
 		             	<cfset counter++>
 		    	<cfset result &= counter>
 		        </cfloop>
