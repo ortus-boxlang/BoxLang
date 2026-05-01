@@ -188,6 +188,9 @@ public final class ExecutedQuery implements Serializable {
 		int					affectedCount					= -1;
 		Array				allGeneratedKeys				= new Array();
 		ObjectRef<Boolean>	generatedKeyIsActuallyRowID		= new ObjectRef<>( false );
+		// Collects column name→value pairs from the first row of generated keys / RETURNING result.
+		// Populated by processGeneratedKeys() to support Lucee-compatible result.columnName access.
+		IStruct				returningValues					= Struct.ofNonConcurrent();
 		if ( debug )
 			System.out.println( "****************************** process query result. hasResults: " + hasResults );
 
@@ -217,7 +220,7 @@ public final class ExecutedQuery implements Serializable {
 						// hates us.
 						if ( generatedKeysComeAsResultSet && isResultSetGeneratedKeys( rs ) ) {
 							generatedKey = processGeneratedKeys( rs, allGeneratedKeys, generatedKey, -1,
-							    generatedKeyIsActuallyRowID );
+							    generatedKeyIsActuallyRowID, returningValues );
 						} else {
 							// Only take first result set. We don't break here though because we need to
 							// keep looping in case a later result raised an exception
@@ -254,7 +257,7 @@ public final class ExecutedQuery implements Serializable {
 									System.out.println( "retrieving generated keys" );
 								if ( keys != null ) {
 									generatedKey = processGeneratedKeys( keys, allGeneratedKeys, generatedKey,
-									    affectedCount, generatedKeyIsActuallyRowID );
+									    affectedCount, generatedKeyIsActuallyRowID, returningValues );
 									try {
 										keys.close();
 									} catch ( SQLException | NullPointerException e ) {
@@ -376,6 +379,16 @@ public final class ExecutedQuery implements Serializable {
 			queryMeta.put( Key.updateCounts, updateCounts );
 		}
 
+		// Add all column name→value pairs captured from the generated keys / RETURNING result set.
+		// This provides Lucee-compatible behavior where result.columnName = value
+		// (e.g. result.id for INSERT ... RETURNING id in PostgreSQL).
+		// We add these after the well-known keys so they do not overwrite them.
+		if ( !returningValues.isEmpty() ) {
+			for ( var entry : returningValues.entrySet() ) {
+				queryMeta.put( entry.getKey(), entry.getValue() );
+			}
+		}
+
 		// If we only had an update or insert, we need an empty query object to return
 		if ( results == null ) {
 			results = new Query();
@@ -412,6 +425,12 @@ public final class ExecutedQuery implements Serializable {
 	 * @param generatedKey     The generated key for the current insert/update
 	 *                         operation.
 	 * @param affectedCount    The number of rows affected by the operation.
+	 * @param returningValues  An optional struct to populate with all column
+	 *                         name→value pairs from the first row of the result
+	 *                         set. Used to expose RETURNING clause columns
+	 *                         (e.g. PostgreSQL) in the query result struct.
+	 *                         Only populated when the struct is empty (i.e. on
+	 *                         the first call).
 	 *
 	 * @return The processed generated key.
 	 *
@@ -419,7 +438,8 @@ public final class ExecutedQuery implements Serializable {
 	 */
 	private static Object processGeneratedKeys( ResultSet rs, Array allGeneratedKeys, Object generatedKey,
 	    int affectedCount,
-	    ObjectRef<Boolean> generatedKeyIsActuallyRowID ) throws SQLException {
+	    ObjectRef<Boolean> generatedKeyIsActuallyRowID,
+	    IStruct returningValues ) throws SQLException {
 		if ( debug ) {
 			// dumpResultSet( rs );
 		}
@@ -433,15 +453,24 @@ public final class ExecutedQuery implements Serializable {
 		// future statements, so we should never take more keys than the updated count
 		// showed.
 		try {
+			boolean firstRow = true;
 			while ( rs.next() && ( affectedCount == -1 || affectedCount > theseKeys.size() ) ) {
-				boolean first = true;
 				if ( debug ) {
 					System.out.println( "acquired generated key: " + rs.getObject( 1 ) );
 				}
-				// Check if column name is ROWID
-				if ( first ) {
-					generatedKeyIsActuallyRowID.set( rs.getMetaData().getColumnLabel( 1 ).equalsIgnoreCase( "ROWID" ) );
-					first = false;
+				if ( firstRow ) {
+					ResultSetMetaData meta = rs.getMetaData();
+					generatedKeyIsActuallyRowID.set( meta.getColumnLabel( 1 ).equalsIgnoreCase( "ROWID" ) );
+					// Populate returningValues with all column name→value pairs from the first row.
+					// This provides Lucee-compatible behavior where result.columnName = value
+					// (e.g. result.id for INSERT ... RETURNING id).
+					if ( returningValues != null && returningValues.isEmpty() ) {
+						int columnCount = meta.getColumnCount();
+						for ( int i = 1; i <= columnCount; i++ ) {
+							returningValues.put( Key.of( meta.getColumnLabel( i ) ), rs.getObject( i ) );
+						}
+					}
+					firstRow = false;
 				}
 				theseKeys.add( rs.getObject( 1 ) );
 			}
