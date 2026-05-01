@@ -40,9 +40,9 @@ import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 @EnabledIf( "tools.JDBCTestUtils#hasPostgresModule" )
 public class PostgreSQLDriverTest extends AbstractDriverTest {
 
-	public static DataSource	postgresDatasource;
+	public static DataSource	postgresqlDatasource;
 
-	protected static Key		datasourceName		= Key.of( "PostgreSQLdatasource" );
+	protected static Key		datasourceName		= Key.of( "postgresqlDatasource" );
 
 	protected static IStruct	datasourceConfig	= Struct.of(
 	    "username", "postgres",
@@ -57,14 +57,14 @@ public class PostgreSQLDriverTest extends AbstractDriverTest {
 	public static void setUp() {
 		instance = BoxRuntime.getInstance( true );
 		IBoxContext setUpContext = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		postgresDatasource = AbstractDriverTest.setupTestDatasource( instance, setUpContext, datasourceName, datasourceConfig );
-		PostgreSQLDriverTest.createGeneratedKeyTable( postgresDatasource, setUpContext );
+		postgresqlDatasource = AbstractDriverTest.setupTestDatasource( instance, setUpContext, datasourceName, datasourceConfig );
+		PostgreSQLDriverTest.createGeneratedKeyTable( postgresqlDatasource, setUpContext );
 	}
 
 	@AfterAll
 	public static void teardown() throws SQLException {
 		IBoxContext tearDownContext = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		AbstractDriverTest.teardownTestDatasource( tearDownContext, postgresDatasource );
+		AbstractDriverTest.teardownTestDatasource( tearDownContext, postgresqlDatasource );
 	}
 
 	/**
@@ -85,7 +85,7 @@ public class PostgreSQLDriverTest extends AbstractDriverTest {
 	 */
 	@Override
 	String getDatasourceName() {
-		return "PostgreSQLdatasource";
+		return "postgresqlDatasource";
 	}
 
 	@DisplayName( "INSERT ... RETURNING populates result struct with returned column names" )

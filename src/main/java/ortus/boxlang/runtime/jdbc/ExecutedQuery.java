@@ -425,12 +425,11 @@ public final class ExecutedQuery implements Serializable {
 	 * @param generatedKey     The generated key for the current insert/update
 	 *                         operation.
 	 * @param affectedCount    The number of rows affected by the operation.
-	 * @param returningValues  An optional struct to populate with all column
-	 *                         name→value pairs from the first row of the result
-	 *                         set. Used to expose RETURNING clause columns
-	 *                         (e.g. PostgreSQL) in the query result struct.
-	 *                         Only populated when the struct is empty (i.e. on
-	 *                         the first call).
+	 * @param returningValues  A struct to populate with all column name→value pairs
+	 *                         from the first row of the result set. Used to expose
+	 *                         RETURNING clause columns (e.g. PostgreSQL) in the
+	 *                         query result struct. Only populated when the struct
+	 *                         is empty (i.e. on the first call).
 	 *
 	 * @return The processed generated key.
 	 *
@@ -464,7 +463,7 @@ public final class ExecutedQuery implements Serializable {
 					// Populate returningValues with all column name→value pairs from the first row.
 					// This provides Lucee-compatible behavior where result.columnName = value
 					// (e.g. result.id for INSERT ... RETURNING id).
-					if ( returningValues != null && returningValues.isEmpty() ) {
+					if ( returningValues.isEmpty() ) {
 						int columnCount = meta.getColumnCount();
 						for ( int i = 1; i <= columnCount; i++ ) {
 							returningValues.put( Key.of( meta.getColumnLabel( i ) ), rs.getObject( i ) );
