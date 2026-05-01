@@ -106,6 +106,22 @@ public class FileTest {
 	}
 
 	@Test
+	public void testBinaryFileWrite() throws IOException {
+		assertFalse( FileSystemUtil.exists( testBinaryFile ) );
+		variables.put( Key.of( "testFile" ), Path.of( testBinaryFile ).toAbsolutePath().toString() );
+		variables.put( Key.of( "testURLImage" ), testURLImage );
+		instance.executeSource(
+		    """
+		    <cffile action="readBinary" file="#testURLImage#" variable="imageData">
+		       <cffile action="write" file="#testFile#" output="#imageData#" >
+		       """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( FileSystemUtil.exists( testBinaryFile ) ).isTrue();
+		assertThat( FileSystemUtil.read( testBinaryFile, ( String ) null, ( Integer ) null ) ).isInstanceOf( byte[].class );
+	}
+
+	@Test
 	public void testTextFileWriteScript() throws IOException {
 		assertFalse( FileSystemUtil.exists( testTextFile ) );
 		variables.put( Key.of( "testFile" ), Path.of( testTextFile ).toAbsolutePath().toString() );

@@ -288,8 +288,38 @@ public class MethodSplitter {
 		// Split the method into segments
 		List<MethodSegment> segments = splitIntoSegments( nodes, methodName );
 
+		// If splitting made no progress, return the original nodes unchanged.
+		// This prevents recursive re-wrapping of oversized but unsplittable regions,
+		// which can happen with large switch/case blocks that have no safe boundaries.
+		if ( segments.size() == 1 && isSameAsOriginalSegment( nodes, segments.getFirst() ) ) {
+			return stripDividerNodes( nodes );
+		}
+
 		// Generate sub-methods and call sites
 		return generateSplitMethod( segments, methodName, parameterType, returnType );
+	}
+
+	private boolean isSameAsOriginalSegment( List<AbstractInsnNode> nodes, MethodSegment segment ) {
+		List<AbstractInsnNode>	originalNodes	= stripDividerNodes( nodes );
+		List<AbstractInsnNode>	segmentNodes	= segment.nodes();
+
+		if ( originalNodes.size() != segmentNodes.size() ) {
+			return false;
+		}
+
+		for ( int i = 0; i < originalNodes.size(); i++ ) {
+			if ( originalNodes.get( i ) != segmentNodes.get( i ) ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	private List<AbstractInsnNode> stripDividerNodes( List<AbstractInsnNode> nodes ) {
+		return nodes.stream()
+		    .filter( n -> ! ( n instanceof DividerNode ) )
+		    .collect( java.util.stream.Collectors.toList() );
 	}
 
 	/**
@@ -701,7 +731,8 @@ public class MethodSplitter {
 	 * @return Instructions for flow control checking
 	 */
 	private List<AbstractInsnNode> generateFlowControlCheck( boolean isLast ) {
-		List<AbstractInsnNode> nodes = new ArrayList<>();
+		List<AbstractInsnNode>	nodes		= new ArrayList<>();
+		boolean					canReturn	= this.transpiler.canReturn();
 
 		// DUP the result
 		nodes.add( new InsnNode( Opcodes.DUP ) );
@@ -729,7 +760,19 @@ public class MethodSplitter {
 		    Type.getMethodDescriptor( Type.getType( Object.class ) ),
 		    false
 		) );
-		nodes.add( new InsnNode( Opcodes.ARETURN ) );
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( FlowControlResult.class ),
+		    "unwrapValue",
+		    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( Object.class ) ),
+		    false
+		) );
+		if ( canReturn ) {
+			nodes.add( new InsnNode( Opcodes.ARETURN ) );
+		} else {
+			nodes.add( new InsnNode( Opcodes.POP ) );
+			nodes.add( new InsnNode( Opcodes.RETURN ) );
+		}
 
 		// Continue label
 		nodes.add( continueLabel );

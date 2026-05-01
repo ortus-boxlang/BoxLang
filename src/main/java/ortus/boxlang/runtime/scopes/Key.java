@@ -187,6 +187,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		cfid								= Key.of( "cfid" );
 	public static final Key		cftoken								= Key.of( "cftoken" );
 	public static final Key		cfvar								= Key.of( "cfvar" );
+	public static final Key		chars								= Key.of( "chars" );
 	public static final Key		charset								= Key.of( "charset" );
 	public static final Key		charsetOrBufferSize					= Key.of( "charsetOrBufferSize" );
 	public static final Key		childname							= Key.of( "childname" );
@@ -489,6 +490,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		interceptor							= Key.of( "interceptor" );
 	public static final Key		interceptors						= Key.of( "interceptors" );
 	public static final Key		interceptorService					= Key.of( "interceptorService" );
+	public static final Key		inheritEnvironment					= Key.of( "inheritEnvironment" );
 	public static final Key		interfaces							= Key.of( "interfaces" );
 	public static final Key		interrupted							= Key.of( "interrupted" );
 	public static final Key		interval							= Key.of( "interval" );

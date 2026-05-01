@@ -21,7 +21,9 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxSpreadExpression;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
@@ -39,6 +41,7 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 		String					methodName			= function.getName();
 		boolean					isSafeMethodCall	= methodName.equalsIgnoreCase( "isnull" );
 		TransformerContext		safe				= isSafeMethodCall ? TransformerContext.SAFE : context;
+		boolean					allSpread			= isAllSpread( function.getArguments() );
 
 		// logger.trace( side + node.getSourceText() );
 
@@ -51,17 +54,38 @@ public class BoxFunctionInvocationTransformer extends AbstractTransformer {
 													};
 
 		for ( int i = 0; i < function.getArguments().size(); i++ ) {
-			Expression expr = ( Expression ) transpiler.transform( function.getArguments().get( i ), safe );
-			values.put( "arg" + i, expr.toString() );
+			BoxArgument arg = function.getArguments().get( i );
+			if ( arg.isSpread() ) {
+				BoxSpreadExpression	spread		= ( BoxSpreadExpression ) arg.getValue();
+				Expression			innerExpr	= ( Expression ) transpiler.transform( spread.getExpression(), safe );
+				if ( allSpread ) {
+					// For all-spread: pass raw inner values (dispatch handles them)
+					values.put( "arg" + i, innerExpr.toString() );
+				} else {
+					values.put( "arg" + i, "ortus.boxlang.runtime.dynamic.LiteralSpreadUtil.spread(" + innerExpr.toString() + ")" );
+				}
+			} else {
+				Expression expr = ( Expression ) transpiler.transform( arg, safe );
+				values.put( "arg" + i, expr.toString() );
+			}
 		}
-		String	template	= getTemplate( function );
+		String	template	= getTemplate( function, allSpread );
 		Node	javaExpr	= parseExpression( template, values );
 		// logger.trace( side + node.getSourceText() + " -> " + javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;
 	}
 
-	private String getTemplate( BoxFunctionInvocation function ) {
+	private String getTemplate( BoxFunctionInvocation function, boolean allSpread ) {
+		if ( allSpread ) {
+			StringBuilder sb = new StringBuilder(
+			    "ortus.boxlang.runtime.dynamic.LiteralSpreadUtil.invokeSpreadOnlyFunction( ${contextName}, ${functionName}" );
+			for ( int i = 0; i < function.getArguments().size(); i++ ) {
+				sb.append( ", ${arg" ).append( i ).append( "}" );
+			}
+			sb.append( ")" );
+			return sb.toString();
+		}
 		StringBuilder sb = new StringBuilder( "${contextName}.invokeFunction( ${functionName}, " );
 		sb.append( generateArguments( function.getArguments() ) );
 		sb.append( ")" );

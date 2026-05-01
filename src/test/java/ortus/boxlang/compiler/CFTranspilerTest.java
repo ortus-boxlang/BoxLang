@@ -665,4 +665,16 @@ public class CFTranspilerTest {
 		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 1 );
 	}
 
+	@DisplayName( "CF output save content" )
+	@Test
+	public void testCFOutputSaveContent() {
+
+		instance.executeSource(
+		    """
+		    result = new src.test.java.ortus.boxlang.runtime.components.system.testCFOutputSaveContent().run();
+		                """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( result ).trim() ).isEqualTo( "hello world" );
+	}
+
 }

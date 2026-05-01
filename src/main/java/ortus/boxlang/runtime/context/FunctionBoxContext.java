@@ -267,19 +267,21 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 */
 	@Override
 	public boolean isKeyVisibleScope( Key key, boolean nearby, boolean shallow ) {
-		if ( nearby && ( key.equals( ArgumentsScope.name ) || key.equals( LocalScope.name ) ) ) {
-			return true;
-		}
-		if ( isInClass() ) {
-			if ( key.equals( VariablesScope.name ) || key.equals( StaticScope.name ) || key.equals( ThisScope.name ) ) {
+		if ( nearby ) {
+			if ( key.equals( ArgumentsScope.name ) || key.equals( LocalScope.name ) ) {
 				return true;
 			}
-			if ( key.equals( Key._super ) && ( getThisClass().getSuper() != null || getThisClass().isJavaExtends() ) ) {
-				return true;
+			if ( isInClass() ) {
+				if ( key.equals( VariablesScope.name ) || key.equals( StaticScope.name ) || key.equals( ThisScope.name ) ) {
+					return true;
+				}
+				if ( key.equals( Key._super ) && ( getThisClass().getSuper() != null || getThisClass().isJavaExtends() ) ) {
+					return true;
+				}
 			}
 		}
 
-		return super.isKeyVisibleScope( key, true && nearby, shallow );
+		return super.isKeyVisibleScope( key, nearby, shallow );
 	}
 
 	/**

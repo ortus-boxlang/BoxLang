@@ -32,23 +32,15 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.IStruct;
 
 /**
  * Tests for the spread operator ({@code ...}) in function call arguments.
  * <p>
- * The spread operator allows arrays and structs to be expanded into function
- * arguments. Under the hood it desugars to the {@code argumentCollection}
- * named-argument convention already supported by the BoxLang runtime.
- *
- * <pre>{@code
- * // Spread an array as positional arguments
- * args = [ 1, 2, 3 ];
- * result = myFunc( ...args );
- *
- * // Spread a struct as named arguments
- * opts = { name: "BoxLang", version: 1 };
- * result = myFunc( ...opts );
- * }</pre>
+ * Spread combinations are tested via {@code BoxFunctionInvocation} (the simplest path).
+ * Each additional AST node type ({@code BoxMethodInvocation}, {@code BoxStaticMethodInvocation},
+ * {@code BoxNew}, {@code BoxExpressionInvocation}, {@code BoxFunctionalMemberAccess}, and BIFs)
+ * gets smoke tests to verify spread reaches each code path.
  */
 public class SpreadArgumentTest {
 
@@ -73,122 +65,32 @@ public class SpreadArgumentTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
 
-	@DisplayName( "spread array into positional arguments" )
+	// =========================================================================
+	// BoxFunctionInvocation: spread combinations (all combo tests here)
+	// =========================================================================
+
+	@DisplayName( "single spread array positional" )
 	@Test
-	public void testSpreadArrayPositional() {
+	public void testSingleSpreadArrayPositional() {
 		instance.executeSource(
 		    """
-		    function add( a, b, c ) {
-		    	return a + b + c;
-		    }
-		    args = [ 1, 2, 3 ];
-		    result = add( ...args );
+		    function add( a, b, c ) { return a + b + c; }
+		    result = add( ...[ 1, 2, 3 ] );
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 6 );
 	}
 
-	@DisplayName( "spread struct into named arguments" )
+	@DisplayName( "single spread struct named" )
 	@Test
-	public void testSpreadStructNamed() {
+	public void testSingleSpreadStructNamed() {
 		instance.executeSource(
 		    """
-		    function greet( first, last ) {
-		    	return "Hello, " & first & " " & last;
-		    }
-		    person = { first: "John", last: "Doe" };
-		    result = greet( ...person );
+		    function greet( first, last ) { return first & " " & last; }
+		    result = greet( ...{ first: "John", last: "Doe" } );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "Hello, John Doe" );
-	}
-
-	@DisplayName( "spread array into BIF" )
-	@Test
-	public void testSpreadArrayIntoBIF() {
-		instance.executeSource(
-		    """
-		    args = { string1: "abc", string2: "abc" };
-		    result = compare( ...args );
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 0 );
-	}
-
-	@DisplayName( "spread struct into BIF" )
-	@Test
-	public void testSpreadStructIntoBIF() {
-		instance.executeSource(
-		    """
-		    args = { string1: "hello", string2: "hello" };
-		    result = compare( ...args );
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 0 );
-	}
-
-	@DisplayName( "spread inline array literal" )
-	@Test
-	public void testSpreadInlineArrayLiteral() {
-		instance.executeSource(
-		    """
-		    function add( a, b, c ) {
-		    	return a + b + c;
-		    }
-		    result = add( ...[ 10, 20, 30 ] );
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 60 );
-	}
-
-	@DisplayName( "spread inline struct literal" )
-	@Test
-	public void testSpreadInlineStructLiteral() {
-		instance.executeSource(
-		    """
-		    function greet( first, last ) {
-		    	return first & " " & last;
-		    }
-		    result = greet( ...{ first: "Jane", last: "Smith" } );
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "Jane Smith" );
-	}
-
-	@DisplayName( "spread into method call" )
-	@Test
-	public void testSpreadIntoMethodCall() {
-		instance.executeSource(
-		    """
-		    str = "Hello World";
-		    args = { delimiter: " " };
-		    result = str.listToArray( ...args );
-		    """,
-		    context );
-		Object res = variables.get( result );
-		assertThat( res ).isInstanceOf( Array.class );
-		Array arr = ( Array ) res;
-		assertThat( arr.size() ).isEqualTo( 2 );
-		assertThat( arr.get( 0 ) ).isEqualTo( "Hello" );
-	}
-
-	@DisplayName( "spread array with more args than params uses extra as positional" )
-	@Test
-	public void testSpreadArrayExtraArgs() {
-		instance.executeSource(
-		    """
-		    function sum() {
-		    	var total = 0;
-		    	for( var arg in arguments ) {
-		    		total += arg;
-		    	}
-		    	return total;
-		    }
-		    args = [ 1, 2, 3, 4, 5 ];
-		    result = sum( ...args );
-		    """,
-		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 15 );
+		assertThat( variables.get( result ) ).isEqualTo( "John Doe" );
 	}
 
 	@DisplayName( "spread empty array passes no arguments" )
@@ -196,11 +98,8 @@ public class SpreadArgumentTest {
 	public void testSpreadEmptyArray() {
 		instance.executeSource(
 		    """
-		    function noArgs() {
-		    	return "ok";
-		    }
-		    args = [];
-		    result = noArgs( ...args );
+		    function noArgs() { return "ok"; }
+		    result = noArgs( ...[] );
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "ok" );
@@ -211,81 +110,497 @@ public class SpreadArgumentTest {
 	public void testSpreadEmptyStruct() {
 		instance.executeSource(
 		    """
-		    function noArgs() {
-		    	return "ok";
-		    }
-		    args = {};
-		    result = noArgs( ...args );
+		    function noArgs() { return "ok"; }
+		    result = noArgs( ...{} );
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "ok" );
 	}
 
-	@DisplayName( "spread with closure" )
+	@DisplayName( "explicit arg before spread positional" )
 	@Test
-	public void testSpreadWithClosure() {
+	public void testExplicitBeforeSpreadPositional() {
 		instance.executeSource(
 		    """
-		    myClosure = ( a, b ) => a & b;
-		    args = [ "hello", "world" ];
-		    result = myClosure( ...args );
+		    function foo() { return arguments.asArray(); }
+		    result = foo( "a", ...[ "b", "c" ] );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "helloworld" );
+		Array arr = ( Array ) variables.get( result );
+		assertThat( arr.size() ).isEqualTo( 3 );
+		assertThat( arr.get( 0 ) ).isEqualTo( "a" );
+		assertThat( arr.get( 1 ) ).isEqualTo( "b" );
+		assertThat( arr.get( 2 ) ).isEqualTo( "c" );
 	}
 
-	@DisplayName( "spread with lambda" )
+	@DisplayName( "explicit arg after spread positional" )
 	@Test
-	public void testSpreadWithLambda() {
+	public void testExplicitAfterSpreadPositional() {
 		instance.executeSource(
 		    """
-		    myLambda = function( a, b ) { return a - b; };
-		    args = [ 100, 58 ];
-		    result = myLambda( ...args );
+		    function foo() { return arguments.asArray(); }
+		    result = foo( ...[ "a", "b" ], "c" );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 42 );
+		Array arr = ( Array ) variables.get( result );
+		assertThat( arr.size() ).isEqualTo( 3 );
+		assertThat( arr.get( 0 ) ).isEqualTo( "a" );
+		assertThat( arr.get( 1 ) ).isEqualTo( "b" );
+		assertThat( arr.get( 2 ) ).isEqualTo( "c" );
 	}
 
-	@DisplayName( "spread struct into constructor (new)" )
+	@DisplayName( "explicit args before and after spread positional" )
 	@Test
-	public void testSpreadIntoConstructor() {
+	public void testExplicitBeforeAndAfterSpreadPositional() {
 		instance.executeSource(
 		    """
-		    args = { string1: "hello", string2: "hello" };
-		    result = compare( ...args );
+		    function foo() { return arguments.asArray(); }
+		    result = foo( "a", ...[ "b", "c" ], "d" );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( 0 );
+		Array arr = ( Array ) variables.get( result );
+		assertThat( arr.size() ).isEqualTo( 4 );
+		assertThat( arr.get( 0 ) ).isEqualTo( "a" );
+		assertThat( arr.get( 1 ) ).isEqualTo( "b" );
+		assertThat( arr.get( 2 ) ).isEqualTo( "c" );
+		assertThat( arr.get( 3 ) ).isEqualTo( "d" );
 	}
 
-	@DisplayName( "spread with function expression result" )
+	@DisplayName( "explicit named args before and after spread struct" )
 	@Test
-	public void testSpreadWithExpressionInvocation() {
+	public void testExplicitNamedBeforeAndAfterSpreadStruct() {
 		instance.executeSource(
 		    """
-		    function getAdder() {
-		    	return ( a, b ) => a + b;
+		    function foo() { return arguments; }
+		    result = foo( name="brad", ...{ foo: "bar", baz: "bum" }, age=46 );
+		    """,
+		    context );
+		IStruct s = ( IStruct ) variables.get( result );
+		assertThat( s.get( "name" ) ).isEqualTo( "brad" );
+		assertThat( s.get( "foo" ) ).isEqualTo( "bar" );
+		assertThat( s.get( "baz" ) ).isEqualTo( "bum" );
+		assertThat( s.get( "age" ) ).isEqualTo( 46 );
+	}
+
+	@DisplayName( "multiple spread arrays positional" )
+	@Test
+	public void testMultipleSpreadArraysPositional() {
+		instance.executeSource(
+		    """
+		    function foo() { return arguments.asArray(); }
+		    result = foo( ...[ 1, 2 ], ...[ 3, 4 ] );
+		    """,
+		    context );
+		Array arr = ( Array ) variables.get( result );
+		assertThat( arr.size() ).isEqualTo( 4 );
+		assertThat( arr.get( 0 ) ).isEqualTo( 1 );
+		assertThat( arr.get( 3 ) ).isEqualTo( 4 );
+	}
+
+	@DisplayName( "multiple spread structs named" )
+	@Test
+	public void testMultipleSpreadStructsNamed() {
+		instance.executeSource(
+		    """
+		    function foo() { return arguments; }
+		    result = foo( ...{ a: 1 }, ...{ b: 2 }, ...{ c: 3 } );
+		    """,
+		    context );
+		IStruct s = ( IStruct ) variables.get( result );
+		assertThat( s.get( "a" ) ).isEqualTo( 1 );
+		assertThat( s.get( "b" ) ).isEqualTo( 2 );
+		assertThat( s.get( "c" ) ).isEqualTo( 3 );
+	}
+
+	@DisplayName( "multiple spreads with explicit args interspersed positional" )
+	@Test
+	public void testMultipleSpreadsInterspersedPositional() {
+		instance.executeSource(
+		    """
+		    function foo() { return arguments.asArray(); }
+		    result = foo( 1, ...[ 2, 3 ], 4, ...[ 5, 6 ], 7 );
+		    """,
+		    context );
+		Array arr = ( Array ) variables.get( result );
+		assertThat( arr.size() ).isEqualTo( 7 );
+		for ( int i = 0; i < 7; i++ ) {
+			assertThat( arr.get( i ) ).isEqualTo( i + 1 );
+		}
+	}
+
+	@DisplayName( "multiple spreads with explicit args interspersed named" )
+	@Test
+	public void testMultipleSpreadsInterspersedNamed() {
+		instance.executeSource(
+		    """
+		    function foo() { return arguments; }
+		    result = foo( a=1, ...{ b: 2 }, c=3, ...{ d: 4 }, e=5 );
+		    """,
+		    context );
+		IStruct s = ( IStruct ) variables.get( result );
+		assertThat( s.get( "a" ) ).isEqualTo( 1 );
+		assertThat( s.get( "b" ) ).isEqualTo( 2 );
+		assertThat( s.get( "c" ) ).isEqualTo( 3 );
+		assertThat( s.get( "d" ) ).isEqualTo( 4 );
+		assertThat( s.get( "e" ) ).isEqualTo( 5 );
+	}
+
+	@DisplayName( "empty spreads among explicit args" )
+	@Test
+	public void testEmptySpreadsAmongExplicitArgs() {
+		instance.executeSource(
+		    """
+		    function foo() { return arguments.asArray(); }
+		    result = foo( 1, ...[], 2, ...[], 3 );
+		    """,
+		    context );
+		Array arr = ( Array ) variables.get( result );
+		assertThat( arr.size() ).isEqualTo( 3 );
+	}
+
+	@DisplayName( "later spread overrides earlier named arg" )
+	@Test
+	public void testLaterSpreadOverridesNamedArg() {
+		instance.executeSource(
+		    """
+		    function foo() { return arguments; }
+		    result = foo( name="original", ...{ name: "overridden" } );
+		    """,
+		    context );
+		IStruct s = ( IStruct ) variables.get( result );
+		assertThat( s.get( "name" ) ).isEqualTo( "overridden" );
+	}
+
+	@DisplayName( "later named arg overrides earlier spread" )
+	@Test
+	public void testLaterNamedArgOverridesSpread() {
+		instance.executeSource(
+		    """
+		    function foo() { return arguments; }
+		    result = foo( ...{ name: "original" }, name="overridden" );
+		    """,
+		    context );
+		IStruct s = ( IStruct ) variables.get( result );
+		assertThat( s.get( "name" ) ).isEqualTo( "overridden" );
+	}
+
+	@DisplayName( "spread result of function call" )
+	@Test
+	public void testSpreadResultOfFunctionCall() {
+		instance.executeSource(
+		    """
+		    function getArgs() { return [ 10, 20, 30 ]; }
+		    function sum( a, b, c ) { return a + b + c; }
+		    result = sum( ...getArgs() );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 60 );
+	}
+
+	@DisplayName( "spread result of method call" )
+	@Test
+	public void testSpreadResultOfMethodCall() {
+		instance.executeSource(
+		    """
+		    obj = { getArgs: () => { first: "Brad", last: "Wood" } };
+		    function greet( first, last ) { return first & " " & last; }
+		    result = greet( ...obj.getArgs() );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "Brad Wood" );
+	}
+
+	@DisplayName( "spread variadic args" )
+	@Test
+	public void testSpreadVariadicArgs() {
+		instance.executeSource(
+		    """
+		    function sum() {
+		    	var total = 0;
+		    	for ( var arg in arguments ) { total += arg; }
+		    	return total;
 		    }
-		    args = [ 3, 4 ];
-		    result = getAdder()( ...args );
+		    result = sum( ...[ 1, 2, 3, 4, 5 ] );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 15 );
+	}
+
+	// =========================================================================
+	// BoxMethodInvocation: obj.method( ...args )
+	// =========================================================================
+
+	@DisplayName( "method: single spread" )
+	@Test
+	public void testMethodSingleSpread() {
+		instance.executeSource(
+		    """
+		    str = "a-b-c";
+		    result = str.listToArray( ...[ "-" ] );
+		    """,
+		    context );
+		Array arr = ( Array ) variables.get( result );
+		assertThat( arr.size() ).isEqualTo( 3 );
+	}
+
+	@DisplayName( "method: spread with explicit args before and after" )
+	@Test
+	public void testMethodSpreadWithExplicitArgs() {
+		instance.executeSource(
+		    """
+		    str = "hello world boxlang rocks";
+		    result = str.reReplace( regex="world", ...{ substring: "BL" }, count=1 );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "hello BL boxlang rocks" );
+	}
+
+	@DisplayName( "method: multiple spreads" )
+	@Test
+	public void testMethodMultipleSpreads() {
+		instance.executeSource(
+		    """
+		    function foo() { return arguments.asArray(); }
+		    obj = { foo: foo };
+		    result = obj.foo( ...[ "a" ], ...[ "b" ], ...[ "c" ] );
+		    """,
+		    context );
+		Array arr = ( Array ) variables.get( result );
+		assertThat( arr.size() ).isEqualTo( 3 );
+		assertThat( arr.get( 0 ) ).isEqualTo( "a" );
+		assertThat( arr.get( 2 ) ).isEqualTo( "c" );
+	}
+
+	// =========================================================================
+	// BoxStaticMethodInvocation: Class::method( ...args )
+	// =========================================================================
+
+	@DisplayName( "static: single spread" )
+	@Test
+	public void testStaticSingleSpread() {
+		instance.executeSource(
+		    """
+		    import java.lang.Integer;
+		    result = Integer::parseInt( ...[ "FF", 16 ] );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 255 );
+	}
+
+	@DisplayName( "static: spread with explicit arg before" )
+	@Test
+	public void testStaticSpreadWithExplicitArgBefore() {
+		instance.executeSource(
+		    """
+		    import java.lang.Integer;
+		    result = Integer::parseInt( "A0", ...[ 16 ] );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 160 );
+	}
+
+	@DisplayName( "static: multiple spreads" )
+	@Test
+	public void testStaticMultipleSpreads() {
+		instance.executeSource(
+		    """
+		    import java.lang.Integer;
+		    result = Integer::parseInt( ...[ "1F" ], ...[ 16 ] );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 31 );
+	}
+
+	// =========================================================================
+	// BoxNew: new Foo( ...args )
+	// =========================================================================
+
+	@DisplayName( "new: single spread into Java constructor." )
+	@Test
+	public void testNewSingleSpreadJava() {
+		instance.executeSource(
+		    """
+		    import java.lang.String;
+		    result = new String( ...[ "hello spread" ] );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "hello spread" );
+	}
+
+	@DisplayName( "new: spread with explicit arg before into Java constructor" )
+	@Test
+	public void testNewSpreadWithExplicitArgBeforeJava() {
+		instance.executeSource(
+		    """
+		    import java.lang.String;
+		    result = new String( ...[ "spread constructor" ] );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "spread constructor" );
+	}
+
+	@DisplayName( "new: single spread into BoxLang class constructor" )
+	@Test
+	public void testNewSingleSpreadBoxLang() {
+		instance.executeSource(
+		    """
+		    obj = new src.test.java.TestCases.phase2.SpreadNewTest( ...{ first: "Brad", last: "Wood" } );
+		    result = obj.getFirst() & " " & obj.getLast();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "Brad Wood" );
+	}
+
+	@DisplayName( "new: spread with explicit args into BoxLang class constructor" )
+	@Test
+	public void testNewSpreadWithExplicitArgsBoxLang() {
+		instance.executeSource(
+		    """
+		    obj = new src.test.java.TestCases.phase2.SpreadNewTest( first="Brad", ...{ last: "Wood" }, age=46 );
+		    result = obj.getFirst() & " " & obj.getLast() & " " & obj.getAge();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "Brad Wood 46" );
+	}
+
+	@DisplayName( "new: multiple spreads into constructor" )
+	@Test
+	public void testNewMultipleSpreads() {
+		instance.executeSource(
+		    """
+		    import java.lang.String;
+
+		    result = new String( ...[ "multi" ], ...[] );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "multi" );
+	}
+
+	// =========================================================================
+	// BoxExpressionInvocation: getCallback()( ...args )
+	// =========================================================================
+
+	@DisplayName( "expression invocation: single spread positional" )
+	@Test
+	public void testExpressionInvocationSingleSpread() {
+		instance.executeSource(
+		    """
+		    function getAdder() { return ( a, b ) => a + b; }
+		    result = getAdder()( ...[ 3, 4 ] );
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 7 );
 	}
 
-	@DisplayName( "spread struct into expression invocation with named arguments" )
+	@DisplayName( "expression invocation: single spread named" )
 	@Test
-	public void testSpreadStructIntoExpressionInvocation() {
+	public void testExpressionInvocationSingleSpreadNamed() {
 		instance.executeSource(
 		    """
-		    function getGreeter() {
-		    	return ( first, last ) => "Hi, " & first & " " & last;
-		    }
-		    args = { first: "Jane", last: "Doe" };
-		    result = getGreeter()( ...args );
+		    function getGreeter() { return ( first, last ) => first & " " & last; }
+		    result = getGreeter()( ...{ first: "Jane", last: "Doe" } );
 		    """,
 		    context );
-		assertThat( variables.get( result ) ).isEqualTo( "Hi, Jane Doe" );
+		assertThat( variables.get( result ) ).isEqualTo( "Jane Doe" );
+	}
+
+	@DisplayName( "expression invocation: spread with explicit args" )
+	@Test
+	public void testExpressionInvocationSpreadWithExplicitArgs() {
+		instance.executeSource(
+		    """
+		    function getConcat() { return ( a, b, c ) => a & b & c; }
+		    result = getConcat()( "X", ...[ "Y" ], "Z" );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "XYZ" );
+	}
+
+	@DisplayName( "expression invocation: multiple spreads" )
+	@Test
+	public void testExpressionInvocationMultipleSpreads() {
+		instance.executeSource(
+		    """
+		    function getConcat() { return ( a, b, c, d ) => a & b & c & d; }
+		    result = getConcat()( ...[ "A", "B" ], ...[ "C", "D" ] );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "ABCD" );
+	}
+
+	// =========================================================================
+	// BoxFunctionalMemberAccess: .method( ...args )
+	// =========================================================================
+
+	@DisplayName( "functional member access: single spread" )
+	@Test
+	public void testFunctionalMemberAccessSingleSpread() {
+		instance.executeSource(
+		    """
+		    result = [ "hello", "world" ].map( .ucase( ...[] ) );
+		    """,
+		    context );
+		Array arr = ( Array ) variables.get( result );
+		assertThat( arr.get( 0 ) ).isEqualTo( "HELLO" );
+		assertThat( arr.get( 1 ) ).isEqualTo( "WORLD" );
+	}
+
+	// =========================================================================
+	// BIF: compare( ...args ) — BIFs have their own dispatch path
+	// =========================================================================
+
+	@DisplayName( "BIF: single spread named" )
+	@Test
+	public void testBIFSingleSpreadNamed() {
+		instance.executeSource(
+		    """
+		    result = compare( ...{ string1: "abc", string2: "abc" } );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "BIF: single spread positional" )
+	@Test
+	public void testBIFSingleSpreadPositional() {
+		instance.executeSource(
+		    """
+		    result = compare( ...[ "abc", "abc" ] );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "BIF: spread with explicit args before and after" )
+	@Test
+	public void testBIFSpreadWithExplicitArgs() {
+		instance.executeSource(
+		    """
+		    result = listAppend( list="a,b", ...{ value: "c" }, delimiter="," );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "a,b,c" );
+	}
+
+	@DisplayName( "BIF: multiple spreads" )
+	@Test
+	public void testBIFMultipleSpreads() {
+		instance.executeSource(
+		    """
+		    result = compare( ...{ string1: "abc" }, ...{ string2: "abc" } );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "BIF: spread positional with explicit args" )
+	@Test
+	public void testBIFSpreadPositionalWithExplicitArgs() {
+		instance.executeSource(
+		    """
+		    result = listAppend( "a", ...[ "b" ], "," );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "a,b" );
 	}
 }

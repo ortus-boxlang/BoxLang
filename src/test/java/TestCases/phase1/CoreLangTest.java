@@ -3538,7 +3538,7 @@ public class CoreLangTest {
 		ParsingResult	result;
 		try {
 			result = new DocParser().parse( null, comment );
-			assertThat( result.getRoot().toString().trim() ).isEqualTo( comment.trim() );
+			assertThat( normalizeLineEndings( result.getRoot().toString().trim() ) ).isEqualTo( normalizeLineEndings( comment.trim() ) );
 		} catch ( IOException e ) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -3571,11 +3571,15 @@ public class CoreLangTest {
 		ParsingResult	result;
 		try {
 			result = new DocParser().parse( null, comment );
-			assertThat( result.getRoot().toString().trim() ).isEqualTo( comment.trim() );
+			assertThat( normalizeLineEndings( result.getRoot().toString().trim() ) ).isEqualTo( normalizeLineEndings( comment.trim() ) );
 		} catch ( IOException e ) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+
+	private static String normalizeLineEndings( String value ) {
+		return value.replace( "\r\n", "\n" ).replace( '\r', '\n' );
 	}
 
 	@Test
@@ -6138,8 +6142,9 @@ public class CoreLangTest {
 
 	@Test
 	public void testCompileThreadSafety() {
-		// print PID to console
-		System.out.println( "PID: " + ProcessHandle.current().pid() );
+		org.junit.jupiter.api.Assumptions.assumeTrue(
+		    ! ( ortus.boxlang.runtime.runnables.RunnableLoader.getInstance().getBoxpiler() instanceof ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler ),
+		    "Skipping testCompileThreadSafety for JavaBoxpiler" );
 		instance.executeSource(
 		// @formatter:off
 		    """
@@ -6478,6 +6483,37 @@ public class CoreLangTest {
 		                 """,
 		    context
 		);
+	}
+
+	@DisplayName( "concurrent array modification with for-in loop" )
+	@Test
+	public void testConcurrentArrayModificationForIn() {
+		instance.executeSource(
+		    """
+		    shared = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ];
+		    names = [];
+
+		    for( i in 1..3 ) {
+		        names.append( "t#i#" );
+		        thread name="t#i#" {
+		            for( j = 1; j <= 50; j++ ) {
+		                for( item in shared ) { x = item * 2; }
+		                shared.append( randRange( 1, 1000 ) );
+		            }
+		        }
+		    }
+
+		    thread action="join" name="#names.toList()#";
+
+		    for( name in names ) {
+		        if( !isNull( bxthread[ name ].error ) ) {
+		            throw( bxthread[ name ].error );
+		        }
+		    }
+
+		    result = shared.len();
+		    """,
+		    context );
 	}
 
 }

@@ -90,6 +90,11 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 	 */
 	public void pseudoConstructor( IBoxContext context );
 
+	/**
+	 * Run the internal pseudo constructor implementation
+	 *
+	 * @param context The context to run the pseudo constructor in
+	 */
 	public void _pseudoConstructor( IBoxContext context );
 
 	/**
@@ -103,12 +108,32 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 	// Duplicate from IType
 	public BoxMeta<?> getBoxMeta();
 
+	/**
+	 * Get the internal BoxMeta instance
+	 *
+	 * @return The BoxMeta instance
+	 */
 	public BoxMeta<?> _getbx();
 
+	/**
+	 * Set the internal BoxMeta instance
+	 *
+	 * @param bx The BoxMeta instance to set
+	 */
 	public void _setbx( BoxMeta<?> bx );
 
+	/**
+	 * Register an interface that this class implements
+	 *
+	 * @param _interface The interface to register
+	 */
 	public void registerInterface( BoxInterface _interface );
 
+	/**
+	 * Get the list of interfaces this class implements
+	 *
+	 * @return The list of interfaces
+	 */
 	public List<BoxInterface> getInterfaces();
 
 	/**
@@ -118,20 +143,47 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 	 */
 	public Boolean canOutput();
 
+	/**
+	 * Get the cached canOutput value
+	 *
+	 * @return Whether this class can output, or null if not yet determined
+	 */
 	public Boolean getCanOutput();
 
+	/**
+	 * Set the cached canOutput value
+	 *
+	 * @param canOutput Whether this class can output
+	 */
 	public void setCanOutput( Boolean canOutput );
 
+	/**
+	 * Check if implicit accessors can be invoked on this class
+	 *
+	 * @param context The current context
+	 *
+	 * @return Whether implicit accessors can be invoked
+	 */
 	public Boolean canInvokeImplicitAccessor( IBoxContext context );
 
+	/**
+	 * Get the cached canInvokeImplicitAccessor value
+	 *
+	 * @return Whether implicit accessors can be invoked, or null if not yet determined
+	 */
 	public Boolean getCanInvokeImplicitAccessor();
 
+	/**
+	 * Set the cached canInvokeImplicitAccessor value
+	 *
+	 * @param canInvokeImplicitAccessor Whether implicit accessors can be invoked
+	 */
 	public void setCanInvokeImplicitAccessor( Boolean canInvokeImplicitAccessor );
 
 	/**
 	 * Get the super class definition. Null if there is none
 	 * 
-	 * Deprecated in favor of getBoxSuperClass, which doesn't overlap method names in the JDK to remove ambiguity.
+	 * Deprecated in favor of getBoxSuperClassName
 	 */
 	@Deprecated
 	default DynamicObject getSuperClass() {
@@ -142,7 +194,23 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 	 * Get the super class definition. Null if there is none
 	 */
 	default DynamicObject getBoxSuperClass() {
+		return getSuper() != null ? DynamicObject.of( getSuper() ) : null;
+	}
+
+	/**
+	 * Get the super class name. Null if there is none or if it doesn't extend a Java class
+	 */
+	default String getBoxSuperClassName() {
 		return null;
+	}
+
+	/**
+	 * Get the interface names. Empty array if there are none
+	 * 
+	 * @return Array of interface names implemented by this class
+	 */
+	default String[] getBoxInterfaceNames() {
+		return new String[ 0 ];
 	}
 
 	/**
@@ -150,6 +218,11 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 	 */
 	public IClassRunnable getSuper();
 
+	/**
+	 * Whether this class extends a Java class
+	 *
+	 * @return True if this class extends a Java class
+	 */
 	public boolean isJavaExtends();
 
 	/**
@@ -170,8 +243,31 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 		return false;
 	}
 
+	/**
+	 * What is the init method
+	 * 
+	 * @return The init method key
+	 */
+	default Key getInitMethod() {
+		return Key.init;
+	}
+
+	/**
+	 * Look up a private method handle for the given method
+	 *
+	 * @param method The method to look up
+	 *
+	 * @return The method handle for the private method
+	 */
 	public MethodHandle lookupPrivateMethod( Method method );
 
+	/**
+	 * Look up a private field handle for the given field
+	 *
+	 * @param field The field to look up
+	 *
+	 * @return The method handle for the private field
+	 */
 	public MethodHandle lookupPrivateField( Field field );
 
 	/**
@@ -199,12 +295,32 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 	 */
 	public IClassRunnable getBottomClass();
 
+	/**
+	 * Get the getter lookup map for properties with implicit getters
+	 *
+	 * @return Map of property keys to their Property definitions
+	 */
 	public Map<Key, Property> getGetterLookup();
 
+	/**
+	 * Get the setter lookup map for properties with implicit setters
+	 *
+	 * @return Map of property keys to their Property definitions
+	 */
 	public Map<Key, Property> getSetterLookup();
 
+	/**
+	 * Get the abstract methods declared directly in this class
+	 *
+	 * @return Map of method keys to their AbstractFunction definitions
+	 */
 	public Map<Key, AbstractFunction> getAbstractMethods();
 
+	/**
+	 * Get the set of method names known at compile time
+	 *
+	 * @return Set of compile time method name keys
+	 */
 	public Set<Key> getCompileTimeMethodNames();
 
 	/**
@@ -225,6 +341,11 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 		return Map.of();
 	}
 
+	/**
+	 * Get all abstract methods including those inherited from superclasses and interfaces
+	 *
+	 * @return Map of method keys to their AbstractFunction definitions
+	 */
 	public Map<Key, AbstractFunction> getAllAbstractMethods();
 
 	/*
@@ -442,6 +563,13 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 		return getThisScope().values();
 	}
 
+	/**
+	 * Get a value from the this scope cast as an IClassRunnable
+	 *
+	 * @param key The key to look up
+	 *
+	 * @return The value cast as an IClassRunnable
+	 */
 	default IClassRunnable getAsClassRunnable( Key key ) {
 		return getThisScope().getAsClassRunnable( key );
 	}

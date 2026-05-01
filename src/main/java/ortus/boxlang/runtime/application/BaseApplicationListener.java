@@ -902,7 +902,7 @@ public abstract class BaseApplicationListener {
 				default :
 					throw new BoxRuntimeException( "Unsupported returnFormat [" + returnFormat + "]. Valid options are 'json', 'wddx', 'xml', and 'plain'" );
 			}
-			context.writeToBuffer( stringResult );
+			context.writeToBuffer( stringResult, true );
 			// If this is a web request, we'll set the default content type in the web-support runtime since this code is core and technically runtime-agnostic, even though
 			// the only place we're actually firing the onClassRequest listener right now is in the web-support runtime
 		}

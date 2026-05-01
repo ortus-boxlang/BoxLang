@@ -1,0 +1,7 @@
+class {
+
+	property name="first";
+	property name="last";
+	property name="age";
+
+}

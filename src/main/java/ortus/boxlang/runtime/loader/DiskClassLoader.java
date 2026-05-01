@@ -231,6 +231,8 @@ public class DiskClassLoader extends URLClassLoader {
 			}
 			// Ok, we give up. Load it up.
 			var clazz = super.loadClass( name );
+			// Force the class to initialize here, so we can catch initialization errors in our ClassInfo
+			Class.forName( name, true, this );
 			loadedClasses.put( name, new java.lang.ref.WeakReference<>( clazz ) );
 			return clazz;
 		}
@@ -245,6 +247,12 @@ public class DiskClassLoader extends URLClassLoader {
 	public Class<?> defineClass( String name, byte[] bytes ) {
 		// Define it
 		Class<?> clazz = defineClass( name, bytes, 0, bytes.length );
+		// Force the class to initialize here, so we can catch initialization errors in our ClassInfo
+		try {
+			Class.forName( name, true, this );
+		} catch ( ClassNotFoundException e ) {
+			// This class will always exist because we literally just defined it.
+		}
 		// Add it to our cache
 		synchronized ( loadedClasses ) {
 			loadedClasses.put( name, new java.lang.ref.WeakReference<>( clazz ) );
@@ -317,10 +325,16 @@ public class DiskClassLoader extends URLClassLoader {
 			return loadClass( name );
 		}
 
-		// In all other scenarios, the BoxPiler ould have compiled the class and written it to disk
+		// In all other scenarios, the BoxPiler should have compiled the class and written it to disk
 		byte[] bytes;
 		try {
 			bytes = Files.readAllBytes( diskPath );
+			// Guard against empty or corrupt class files (e.g. from a concurrent write race)
+			if ( bytes.length < 8 ) {
+				Files.deleteIfExists( diskPath );
+				boxPiler.compileClassInfo( classPoolName, baseName );
+				return loadClass( name );
+			}
 			if ( isBaseClass ) {
 				// Validate bytecode version
 				validateByteCodeVersion( bytes, name, diskPath );

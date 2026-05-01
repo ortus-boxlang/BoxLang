@@ -83,6 +83,10 @@ public class BoxArgument extends BoxExpression {
 		return name != null;
 	}
 
+	public boolean isSpread() {
+		return value instanceof BoxSpreadExpression;
+	}
+
 	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();

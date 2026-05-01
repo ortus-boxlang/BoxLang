@@ -23,8 +23,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
+import ortus.boxlang.compiler.prettyprint.config.Config;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -46,6 +48,7 @@ public class CFTranspiler {
 		System.out.println( "⚙️  OPTIONS:" );
 		System.out.println( "  -h, --help                  ❓ Show this help message and exit" );
 		System.out.println( "  -v, --verbose               🔍 Enable verbose output with detailed progress information" );
+		System.out.println( "  -c, --config <PATH>         📄 Path to configuration file (default: .bxformat.json or .cfformat.json)" );
 		System.out.println( "      --source <PATH>         📁 Path to source directory or file to transpile (default: current directory)" );
 		System.out.println( "      --target <PATH>         🎯 Path to target directory or file (required)" );
 		System.out.println( "      --stopOnError [BOOL]    🛑 Stop processing on first error (default: false)" );
@@ -97,6 +100,7 @@ public class CFTranspiler {
 		try {
 			String	source		= ".";
 			String	target		= null;
+			String	configPath	= null;
 			Boolean	stopOnError	= false;
 			Boolean	verbose		= false;
 			for ( int i = 0; i < args.length; i++ ) {
@@ -106,6 +110,9 @@ public class CFTranspiler {
 				}
 				if ( args[ i ].equalsIgnoreCase( "--verbose" ) || args[ i ].equalsIgnoreCase( "-v" ) ) {
 					verbose = true;
+				}
+				if ( ( args[ i ].equalsIgnoreCase( "--config" ) || args[ i ].equalsIgnoreCase( "-c" ) ) && i + 1 < args.length ) {
+					configPath = args[ ++i ];
 				}
 				if ( args[ i ].equalsIgnoreCase( "--source" ) ) {
 					if ( i + 1 >= args.length ) {
@@ -148,6 +155,21 @@ public class CFTranspiler {
 				System.out.println( "🛑 Stop on Error: " + stopOnError );
 				System.out.println();
 			}
+
+			// Load config with fallback logic if no explicit path provided
+			Config config;
+			if ( configPath != null ) {
+				try {
+					config = Config.loadConfigAutoDetect( configPath );
+				} catch ( IOException e ) {
+					System.err.println( "Error loading config file: " + e.getMessage() );
+					System.exit( 1 );
+					return; // unreachable but satisfies compiler
+				}
+			} else {
+				config = Config.loadConfigWithFallback( System.getProperty( "user.dir" ) );
+			}
+
 			Path targetPath = Paths.get( target ).normalize();
 			if ( !targetPath.isAbsolute() ) {
 				targetPath = Paths.get( "" ).resolve( targetPath ).normalize().toAbsolutePath().normalize();
@@ -164,6 +186,7 @@ public class CFTranspiler {
 				// Transpile all .cfm, .cfs, and .cfc files in sourcePath to targetPath
 				final Path		finalTargetPath	= targetPath;
 				final Boolean	finalVerbose	= verbose;
+				final Config	finalConfig		= config;
 				try {
 					final Path		finalSourcePath		= sourcePath;
 					final boolean	finalStopOnError	= stopOnError;
@@ -178,7 +201,7 @@ public class CFTranspiler {
 							        .resolve(
 							            finalSourcePath.relativize( path ).toString().substring( 0, finalSourcePath.relativize( path ).toString().length() - 3 )
 							                + targetExtension );
-							    transpileFile( path, resolvedTargetPath, finalStopOnError, finalVerbose );
+							    transpileFile( path, resolvedTargetPath, finalStopOnError, finalVerbose, finalConfig );
 						    }
 					    } );
 				} catch ( IOException e ) {
@@ -206,7 +229,7 @@ public class CFTranspiler {
 					System.out.println( "🔄 Extension: ." + sourceExtension + " → ." + targetExtension );
 					System.out.println();
 				}
-				transpileFile( sourcePath, targetPath, stopOnError, verbose );
+				transpileFile( sourcePath, targetPath, stopOnError, verbose, config );
 			}
 
 			if ( verbose ) {
@@ -228,7 +251,7 @@ public class CFTranspiler {
 	 *
 	 * @throws BoxRuntimeException If there is an error writing the transpiled file or if parsing fails and stopOnError is true.
 	 */
-	private static void transpileFile( Path sourcePath, Path targetPath, Boolean stopOnError, Boolean verbose ) {
+	private static void transpileFile( Path sourcePath, Path targetPath, Boolean stopOnError, Boolean verbose, Config config ) {
 		if ( verbose ) {
 			System.out.println( "🔄 Transpiling: " + sourcePath.getFileName().toString() );
 		}
@@ -252,7 +275,10 @@ public class CFTranspiler {
 				System.out.println( "📝 Writing: " + targetPath.getFileName().toString() );
 			}
 			try {
-				Files.write( targetPath, result.getRoot().toString().getBytes( StandardCharsets.UTF_8 ) );
+				String			targetFile			= targetPath.getFileName().toString().toLowerCase();
+				BoxSourceType	targetSourceType	= targetFile.endsWith( ".bxm" ) ? BoxSourceType.BOXTEMPLATE : BoxSourceType.BOXSCRIPT;
+				config.setSourceType( targetSourceType );
+				Files.write( targetPath, result.getRoot().toString( config ).getBytes( StandardCharsets.UTF_8 ) );
 				if ( verbose ) {
 					System.out.println( "✅ Success: " + sourcePath.getFileName().toString() + " → " + targetPath.getFileName().toString() );
 				}

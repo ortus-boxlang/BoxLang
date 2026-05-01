@@ -667,6 +667,25 @@ public class CFTemplateTest {
 	}
 
 	@Test
+	public void testCatchWithName() {
+		instance.executeSource(
+		    """
+		    <cftry>
+		    	<cfset 1/0>
+		    	<cfcatch type="any" name="anyError">
+		    		<cfset result = anyError>
+		    	</cfcatch>
+		    </cftry>
+		             """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		Object resultObj = variables.get( result );
+		assertThat( resultObj ).isInstanceOf( BoxRuntimeException.class );
+		BoxRuntimeException bre = ( BoxRuntimeException ) resultObj;
+		assertThat( bre.getMessage() ).contains( "zero" );
+	}
+
+	@Test
 	public void testSwitchCommented() {
 
 		instance.executeSource(
@@ -968,7 +987,7 @@ public class CFTemplateTest {
 		    """
 		      <cfset result = "">
 		    <cfset counter=0>
-		             <cfloop condition="counter LT 5">
+		             <cfloop condition="counter LT 5" >
 		             	<cfset counter++>
 		    	<cfset result &= counter>
 		        </cfloop>

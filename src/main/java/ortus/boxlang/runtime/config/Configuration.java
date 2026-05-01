@@ -306,8 +306,10 @@ public class Configuration implements IConfigSegment {
 	/**
 	 * True: Treat nested transactional operations as savepoints on the parent transaction.
 	 * False: ignore nested transactions and apply commits/rollbacks/transactional events to the entire transaction.
+	 * 
+	 * @since 1.12.0
 	 */
-	public boolean																enableNestedTransactions		= true;
+	public Boolean																enableNestedTransactions		= null;
 
 	/**
 	 * Default remote class method return format when executing a method from web

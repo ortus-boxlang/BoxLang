@@ -89,10 +89,10 @@ import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.parser.CFParser;
 import ortus.boxlang.parser.antlr.CFGrammar.AnnotationContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ArgumentContext;
-import ortus.boxlang.parser.antlr.CFGrammar.ArrayLiteralContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ArrayDestructuringBindingContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ArrayDestructuringPatternContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ArrayDestructuringValueContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ArrayLiteralContext;
 import ortus.boxlang.parser.antlr.CFGrammar.AssignmentModifierContext;
 import ortus.boxlang.parser.antlr.CFGrammar.AtomsContext;
 import ortus.boxlang.parser.antlr.CFGrammar.AttributeSimpleContext;
@@ -107,10 +107,10 @@ import ortus.boxlang.parser.antlr.CFGrammar.ExprAssignContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprAtomsContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprBinaryContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprCatContext;
+import ortus.boxlang.parser.antlr.CFGrammar.ExprDestructuringAssignContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprDotFloatContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprDotFloatIDContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprDotOrColonAccessContext;
-import ortus.boxlang.parser.antlr.CFGrammar.ExprDestructuringAssignContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprElvisContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprEqualContext;
 import ortus.boxlang.parser.antlr.CFGrammar.ExprFunctionCallContext;
@@ -558,21 +558,28 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 
 	@Override
 	public BoxExpression visitExprRelational( ExprRelationalContext ctx ) {
-		var	pos		= tools.getPosition( ctx );
-		var	src		= tools.getSourceText( ctx );
-		var	left	= ctx.el2( 0 ).accept( this );
-		var	right	= ctx.el2( 1 ).accept( this );
-		var	op		= buildRelOp( ctx.relOps() );
-		return new BoxComparisonOperation( left, op, right, pos, src );
+		var		pos			= tools.getPosition( ctx );
+		var		src			= tools.getSourceText( ctx );
+		var		left		= ctx.el2( 0 ).accept( this );
+		var		right		= ctx.el2( 1 ).accept( this );
+		var		op			= buildRelOp( ctx.relOps() );
+		var		opText		= RegexBuilder.stripWhitespace( ctx.relOps().getText() ).toUpperCase();
+		boolean	wasKeyword	= opText.matches( "[A-Z]+" );
+		var		node		= new BoxComparisonOperation( left, op, right, pos, src );
+		node.setWasKeyword( wasKeyword );
+		return node;
 	}
 
 	@Override
 	public BoxExpression visitExprEqual( ExprEqualContext ctx ) {
-		var	pos		= tools.getPosition( ctx );
-		var	src		= tools.getSourceText( ctx );
-		var	left	= ctx.el2( 0 ).accept( this );
-		var	right	= ctx.el2( 1 ).accept( this );
-		return new BoxComparisonOperation( left, BoxComparisonOperator.Equal, right, pos, src );
+		var		pos			= tools.getPosition( ctx );
+		var		src			= tools.getSourceText( ctx );
+		var		left		= ctx.el2( 0 ).accept( this );
+		var		right		= ctx.el2( 1 ).accept( this );
+		boolean	wasKeyword	= !ctx.getChild( 1 ).getText().equals( "==" );
+		var		node		= new BoxComparisonOperation( left, BoxComparisonOperator.Equal, right, pos, src );
+		node.setWasKeyword( wasKeyword );
+		return node;
 	}
 
 	@Override
@@ -969,21 +976,19 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 	/**
 	 * Visit a spread argument such as {@code func( ...myArray )} or {@code func( ...myStruct )}.
 	 * <p>
-	 * The spread operator in a function call is syntactic sugar that converts to a named
-	 * {@code argumentCollection} argument, reusing the existing runtime plumbing for
-	 * argument collection expansion.
+	 * The spread operator preserves the {@link BoxSpreadExpression} in the AST so that
+	 * the transformers can handle spread expansion at compile time, similar to array/struct literals.
 	 *
 	 * @param ctx the parse tree node for the spread argument
 	 *
-	 * @return a {@link BoxArgument} with name {@code "argumentCollection"} wrapping the spread expression
+	 * @return a positional {@link BoxArgument} whose value is a {@link BoxSpreadExpression}
 	 */
 	@Override
 	public BoxExpression visitSpreadArgument( SpreadArgumentContext ctx ) {
 		var				pos		= tools.getPosition( ctx );
 		var				src		= tools.getSourceText( ctx );
-		BoxExpression	name	= new BoxStringLiteral( "argumentCollection", pos, src );
 		BoxExpression	value	= ctx.expression().accept( this );
-		return new BoxArgument( name, value, pos, src );
+		return new BoxArgument( new BoxSpreadExpression( value, pos, src ), pos, src );
 	}
 
 	@Override
@@ -1462,8 +1467,8 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 	 */
 	private boolean isExplicitDestructuringScope( String scopeName ) {
 		return switch ( scopeName.toLowerCase() ) {
-			case "application", "arguments", "cgi", "client", "cookie", "form", "local", "request", "server", "session", "static", "this", "thread",
-			    "url", "variables" -> true;
+			case "application", "arguments", "cgi", "client", "cookie", "form", "local", "request", "server", "session", "static", "this", "thread", "url",
+			    "variables" -> true;
 			default -> false;
 		};
 	}
@@ -1600,6 +1605,9 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		boolean	hasAnonymous	= false;
 
 		for ( BoxArgument arg : args ) {
+			if ( arg.isSpread() ) {
+				continue;
+			}
 			if ( arg.getName() != null ) {
 				hasName = true;
 			} else {

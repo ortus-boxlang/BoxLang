@@ -1,0 +1,7 @@
+class {
+	function init() {
+		// This is a very long comment that should be wrapped because it exceeds the maximum line length configured in the formatter settings
+		var x = 1;
+		return this;
+	}
+}

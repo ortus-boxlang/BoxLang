@@ -26,9 +26,11 @@ for arg in "$@"; do
     esac
 done
 
-# Load the environment file if it exists
-if [ -f "$ENV_FILE" ]; then
-    # Uncomment for debugging: echo "Loading environment variables from $ENV_FILE"
+# Load environment variables from the given file path
+load_env_file() {
+    local file="$1"
+    [ -f "$file" ] || return 0
+    # Uncomment for debugging: echo "Loading environment variables from $file"
     while IFS='=' read -r key value || [ -n "$key" ]; do
         # Skip comments and empty lines
         case "$key" in
@@ -36,17 +38,18 @@ if [ -f "$ENV_FILE" ]; then
                 continue
                 ;;
         esac
-
         # Remove leading/trailing whitespace from key
         key=$(echo "$key" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-
         # Skip if key is empty after trimming
         [ -z "$key" ] && continue
-
         # Remove leading/trailing whitespace and quotes from value
         value=$(echo "$value" | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | sed 's/^"\(.*\)"$/\1/' | sed "s/^'\(.*\)'$/\1/")
-
-        # Export the variable
         export "$key=$value"
-    done < "$ENV_FILE"
-fi
+    done < "$file"
+}
+
+# Load the user's home secrets file first (~/.box.env)
+load_env_file "$HOME/.box.env"
+
+# Load the project-level environment file
+load_env_file "$ENV_FILE"

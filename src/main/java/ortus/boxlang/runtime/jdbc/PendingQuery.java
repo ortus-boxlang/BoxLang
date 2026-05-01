@@ -580,10 +580,14 @@ public class PendingQuery {
 	 * @see ExecutedQuery
 	 */
 	public @NonNull ExecutedQuery execute( ConnectionManager connectionManager, IBoxContext context ) {
-		// We do an early cache check here to avoid the overhead of creating a
-		// connection if we already have a matching cached query.
-		if ( isCacheable() ) {
-
+		if ( shouldEvictFromCache() ) {
+			if ( logger.isDebugEnabled() ) {
+				logger.debug( "Evicting cache for query: {} due to negative cache timeout", this.cacheKey );
+			}
+			this.cacheProvider.clear( this.cacheKey );
+		} else if ( isCacheable() ) {
+			// We do an early cache check here to avoid the overhead of creating a
+			// connection if we already have a matching cached query.
 			if ( logger.isDebugEnabled() ) {
 				logger.debug( "Checking cache for query: {}", this.cacheKey );
 			}
@@ -625,7 +629,12 @@ public class PendingQuery {
 	 */
 	public @NonNull ExecutedQuery execute( BoxConnection connection, IBoxContext context ) {
 		this.datasource = connection.getDataSource();
-		if ( isCacheable() ) {
+		if ( shouldEvictFromCache() ) {
+			if ( logger.isDebugEnabled() ) {
+				logger.debug( "Evicting cache for query: {} due to negative cache timeout", this.cacheKey );
+			}
+			this.cacheProvider.clear( this.cacheKey );
+		} else if ( isCacheable() ) {
 			// we use separate get() and set() calls over a .getOrSet() so we can run
 			// `.setIsCached()` on discovered/cached results.
 			Attempt<Object> cachedQuery = this.cacheProvider.get( this.cacheKey );
@@ -794,6 +803,7 @@ public class PendingQuery {
 		// We set the metadata on the results to indicate this was a cached query
 		Query	results		= cachedQuery
 		    .getResults()
+		    .duplicate( context )
 		    .setMetadata( cacheMeta );
 
 		// Return a new ExecutedQuery instance with the cached results and generated key
@@ -954,6 +964,13 @@ public class PendingQuery {
 				statement.setFetchSize( fetchSize );
 			}
 		}
+		// This is an alias for fetchSize. (CF compat) Not handling via transpiler since apps like MASA specify as attributeCollection.
+		if ( options.containsKey( Key.blockfactor ) ) {
+			Integer blockFactor = ( Integer ) options.getOrDefault( Key.blockfactor, 0 );
+			if ( blockFactor > 0 ) {
+				statement.setFetchSize( blockFactor );
+			}
+		}
 		/**
 		 * TODO: Implement the following options:
 		 * ormoptions
@@ -965,8 +982,18 @@ public class PendingQuery {
 
 	/**
 	 * Check the cacheable option to determine if the query should be cached.
+	 * ( i.e. `cache` = true and `cacheTimeout` is not negative. )
 	 */
-	private boolean isCacheable() {
-		return Boolean.TRUE.equals( this.queryOptions.cache );
+	private Boolean isCacheable() {
+		return Boolean.TRUE.equals( this.queryOptions.cache )
+		    && ( this.queryOptions.cacheTimeout == null || !this.queryOptions.cacheTimeout.isNegative() );
+	}
+
+	/**
+	 * Check if the query should be evicted from cache, which is the case when
+	 * `cacheTimeout` is negative.
+	 */
+	private boolean shouldEvictFromCache() {
+		return this.queryOptions.cacheTimeout != null && this.queryOptions.cacheTimeout.isNegative();
 	}
 }

@@ -83,11 +83,11 @@ import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -221,11 +221,6 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 * Only applies when named arguments are used.
 	 */
 	private static Map<String, Map<String, String>>	BIFArgMap					= new HashMap<>();
-
-	/**
-	 * The function service
-	 */
-	private static FunctionService					functionService;
 
 	/**
 	 * Configuration keys for transpiler settings
@@ -368,8 +363,6 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	public CFTranspilerVisitor() {
 		// This may change when moving this visitor to the actual compat module
 		this( moduleService.hasModule( compatKey ) ? StructCaster.cast( moduleService.getModuleSettings( compatKey ) ) : Struct.EMPTY );
-
-		functionService = runtime.getFunctionService();
 	}
 
 	/**
@@ -407,6 +400,38 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 *
 	 * @return The transformed AST node with CFML-compatible structure
 	 */
+	/**
+	 * Transforms BoxScript nodes (CFSCRIPT source type) by updating the source type
+	 * to BOXSCRIPT so the pretty printer renders BoxLang syntax (bx: prefix, etc.)
+	 *
+	 * @param node The BoxScript node to transform
+	 *
+	 * @return The transformed BoxScript node
+	 */
+	@Override
+	public BoxNode visit( BoxScript node ) {
+		if ( node.getBoxSourceType() == BoxSourceType.CFSCRIPT ) {
+			node.setBoxSourceType( BoxSourceType.BOXSCRIPT );
+		}
+		return super.visit( node );
+	}
+
+	/**
+	 * Transforms BoxTemplate nodes (CFTEMPLATE source type) by updating the source type
+	 * to BOXTEMPLATE so the pretty printer renders BoxLang syntax (bx: prefix, etc.)
+	 *
+	 * @param node The BoxTemplate node to transform
+	 *
+	 * @return The transformed BoxTemplate node
+	 */
+	@Override
+	public BoxNode visit( BoxTemplate node ) {
+		if ( node.getBoxSourceType() == BoxSourceType.CFTEMPLATE ) {
+			node.setBoxSourceType( BoxSourceType.BOXTEMPLATE );
+		}
+		return super.visit( node );
+	}
+
 	@Override
 	public BoxNode visit( BoxClass node ) {
 		var annotations = node.getAnnotations();
@@ -456,13 +481,13 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	@Override
 	public BoxNode visit( BoxFunctionDeclaration node ) {
 		mergeDocsIntoAnnotations( node.getAnnotations(), node.getDocumentation() );
-		// Don't touch UDFs in a class, otherwise they won't inherit from the class's output annotation.
 		if ( isClass ) {
-			enableOutput( node.getAnnotations() );
 			if ( node.getName().equalsIgnoreCase( "onCFCRequest" ) && className.equalsIgnoreCase( "application" ) ) {
 				node.setName( "onClassRequest" );
 			}
 		}
+		// Default UDFs whether they are in or out of a class. Unlike BoxLang, ColdFusion does NOT inherit the `output` annotation from the class the UDF lives in.
+		enableOutput( node.getAnnotations() );
 		return super.visit( node );
 	}
 
@@ -689,26 +714,6 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		// Look for quotedValueList( myQry.columnName ) or valueList( myQry[ "columnName" ] )
 		if ( name.equals( "quotedvaluelist" ) && node.getArguments().size() > 0 && node.getArguments().get( 0 ).getValue() instanceof BoxAccess ) {
 			return transpileQuotedValueList( node );
-		}
-
-		// UDF calls inside of a query get wrapped in preserveSingleQuotes()
-		boolean inQueryComponent = node.getFirstAncestorOfType( BoxComponent.class, c -> c.getName().equalsIgnoreCase( "query" ) ) != null;
-		if ( inQueryComponent && !functionService.hasGlobalFunction( Key.of( name ) ) ) {
-			// wrap in preserveSingleQuotes()
-			BoxFunctionInvocation preserveSingleQuoteInvocation = new BoxFunctionInvocation(
-			    "preserveSingleQuotes",
-			    List.of(
-			        new BoxArgument(
-			            node,
-			            null,
-			            null
-			        )
-			    ),
-			    null,
-			    null
-			);
-			// Need a separate visit() call for this path so we call the correct overloaded visit() method
-			return super.visit( preserveSingleQuoteInvocation );
 		}
 
 		// look for BIFs whose return type has changed

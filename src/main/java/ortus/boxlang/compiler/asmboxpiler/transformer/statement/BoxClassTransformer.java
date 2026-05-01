@@ -125,18 +125,27 @@ public class BoxClassTransformer {
 		    .findFirst()
 		    .map( BoxAnnotation::getValue )
 		    .orElse( null );
+		// Collect BoxLang interface names (non-java:) for lazy loading
+		List<String>		blInterfaceNames	= new ArrayList<>();
 		if ( implementsValue instanceof BoxStringLiteral str ) {
-			String	implementsStringList		= str.getValue();
+			String	implementsStringList	= str.getValue();
 			// Collect and trim all strings starting with "java:"
-			Array	implementsArray				= ListUtil.asList( implementsStringList, "," ).stream()
+			Array	implementsArray			= ListUtil.asList( implementsStringList, "," ).stream()
 			    .map( String::valueOf )
 			    .map( String::trim )
 			    .filter( it -> it.toLowerCase().startsWith( "java:" ) )
 			    .map( it -> it.substring( 5 ) )
 			    .collect( BLCollector.toArray() );
 
+			// Collect non-java: interface names for lazy loading
+			ListUtil.asList( implementsStringList, "," ).stream()
+			    .map( String::valueOf )
+			    .map( String::trim )
+			    .filter( it -> !it.toLowerCase().startsWith( "java:" ) )
+			    .forEach( blInterfaceNames::add );
+
 			// var interfaceProxyDefinition = InterfaceProxyService.generateDefinition( new ScriptingRequestBoxContext(), implementsArray );
-			var		interfaceProxyDefinition	= InterfaceProxyService.generateDefinition( BoxRuntime.getInstance().getRuntimeContext(), implementsArray );
+			var interfaceProxyDefinition = InterfaceProxyService.generateDefinition( BoxRuntime.getInstance().getRuntimeContext(), implementsArray );
 
 			// TODO: Remove methods that already have a @overrideJava UDF definition to avoid duplicates
 			interfaces.addAll( interfaceProxyDefinition.interfaces().stream().map( iface -> Type.getType( "L" + iface.replace( '.', '/' ) + ";" ) ).toList() );
@@ -147,6 +156,7 @@ public class BoxClassTransformer {
 
 		Type				superclass		= Type.getType( Object.class );
 		boolean				isJavaExtends;
+		String				superClassName	= null;
 		List<MethodNode>	extendsMethods	= List.of();
 		BoxExpression		extendsValue	= boxClass.getAnnotations().stream()
 		    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "extends" ) )
@@ -202,20 +212,33 @@ public class BoxClassTransformer {
 								    } )
 				    .toList();
 			} else {
-				isJavaExtends = false;
+				isJavaExtends	= false;
+				superClassName	= extendsStringValue;
 			}
 		} else {
 			isJavaExtends = false;
 		}
 
-		boolean		isFinal		= boxClass.getAnnotations().stream()
+		boolean		isFinal			= boxClass.getAnnotations().stream()
 		    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "final" ) )
 		    .findFirst().isPresent();
-		boolean		isAbstract	= boxClass.getAnnotations().stream()
+		boolean		isAbstract		= boxClass.getAnnotations().stream()
 		    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "abstract" ) )
 		    .findFirst().isPresent();
 
-		ClassNode	classNode	= new ClassNode();
+		String		initMethodValue	= boxClass.getAnnotations().stream()
+		    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "initMethod" ) )
+		    .findFirst()
+		    .map( it -> {
+										    if ( it.getValue() instanceof BoxStringLiteral str ) {
+											    return str.getValue();
+										    } else {
+											    throw new BoxRuntimeException( "The value of the [initMethod] annotation must be a string literal." );
+										    }
+									    } )
+		    .orElse( null );
+
+		ClassNode	classNode		= new ClassNode();
 		transpiler.setOwningClass( classNode );
 		transpiler.setProperty( "enclosingClassInternalName", type.getInternalName() );
 
@@ -243,7 +266,13 @@ public class BoxClassTransformer {
 			    false );
 			methodVisitor.visitFieldInsn( Opcodes.PUTFIELD, type.getInternalName(), "thisScope", Type.getDescriptor( ThisScope.class ) );
 
-			// interfaces field is now static, initialized in <clinit>
+			// Initialize interfaces instance field with new ArrayList<>()
+			methodVisitor.visitVarInsn( Opcodes.ALOAD, 0 );
+			methodVisitor.visitTypeInsn( Opcodes.NEW, Type.getInternalName( ArrayList.class ) );
+			methodVisitor.visitInsn( Opcodes.DUP );
+			methodVisitor.visitMethodInsn( Opcodes.INVOKESPECIAL, Type.getInternalName( ArrayList.class ), "<init>",
+			    Type.getMethodDescriptor( Type.VOID_TYPE ), false );
+			methodVisitor.visitFieldInsn( Opcodes.PUTFIELD, type.getInternalName(), "interfaces", Type.getDescriptor( List.class ) );
 
 		}, interfaces.toArray( Type[]::new ) );
 
@@ -344,6 +373,13 @@ public class BoxClassTransformer {
 		    Type.BOOLEAN_TYPE,
 		    isAbstract ? 1 : 0,
 		    false );
+		AsmHelper.addStaticFieldGetter( classNode,
+		    type,
+		    "initMethod",
+		    "getInitMethod",
+		    Type.getType( Key.class ),
+		    null,
+		    false );
 		AsmHelper.addStaticFieldGetterWithStaticGetter( classNode,
 		    type,
 		    "staticScope",
@@ -397,9 +433,12 @@ public class BoxClassTransformer {
 		// Add getUDFs() that also returns the udfs Map
 		AsmHelper.addStaticGetterMethodOnly( classNode, type, "udfs", "getUDFs", Type.getType( Map.class ) );
 
-		// Add superClass field and getter
-		AsmHelper.addNullStaticField( classNode, "superClass", Type.getType( DynamicObject.class ), false );
-		AsmHelper.addStaticGetterMethodOnly( classNode, type, "superClass", "getBoxSuperClass", Type.getType( DynamicObject.class ) );
+		// Add superClassName field and getter
+		AsmHelper.addNullStaticField( classNode, "superClassName", Type.getType( String.class ), false );
+		AsmHelper.addStaticGetterMethodOnly( classNode, type, "superClassName", "getBoxSuperClassName", Type.getType( String.class ) );
+		// Add interfaceNames field and getter
+		AsmHelper.addNullStaticField( classNode, "interfaceNames", Type.getType( String[].class ), false );
+		AsmHelper.addStaticGetterMethodOnly( classNode, type, "interfaceNames", "getBoxInterfaceNames", Type.getType( String[].class ) );
 
 		// Add metadata cache fields
 		AsmHelper.addNullStaticField( classNode, "metadata", Type.getType( IStruct.class ), true );
@@ -419,8 +458,24 @@ public class BoxClassTransformer {
 			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "name", Type.getDescriptor( Key.class ) ); // name
 			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "sourceType", Type.getDescriptor( BoxSourceType.class ) ); // sourceType
 			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "path", Type.getDescriptor( ResolvedFilePath.class ) ); // path
-			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "superClass", Type.getDescriptor( DynamicObject.class ) ); // superClass
-			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "interfaces", Type.getDescriptor( List.class ) ); // interfaces
+			    // BoxClassSupport.loadSuperClass( superClassName, imports, null, path )
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "superClassName", Type.getDescriptor( String.class ) );
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "imports", Type.getDescriptor( List.class ) );
+			    methodVisitor.visitInsn( Opcodes.ACONST_NULL );
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "path", Type.getDescriptor( ResolvedFilePath.class ) );
+			    methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC, Type.getInternalName( BoxClassSupport.class ), "loadSuperClass",
+			        Type.getMethodDescriptor( Type.getType( DynamicObject.class ), Type.getType( String.class ), Type.getType( List.class ),
+			            Type.getType( IBoxContext.class ), Type.getType( ResolvedFilePath.class ) ),
+			        false );
+			    // BoxClassSupport.loadInterfaces( interfaceNames, imports, null, path )
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "interfaceNames", Type.getDescriptor( String[].class ) );
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "imports", Type.getDescriptor( List.class ) );
+			    methodVisitor.visitInsn( Opcodes.ACONST_NULL );
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "path", Type.getDescriptor( ResolvedFilePath.class ) );
+			    methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC, Type.getInternalName( BoxClassSupport.class ), "loadInterfaces",
+			        Type.getMethodDescriptor( Type.getType( List.class ), Type.getType( String[].class ), Type.getType( List.class ),
+			            Type.getType( IBoxContext.class ), Type.getType( ResolvedFilePath.class ) ),
+			        false );
 			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "abstractMethods", Type.getDescriptor( Map.class ) ); // abstractMethods
 			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "udfs",
 			        Type.getDescriptor( Map.class ) ); // udfs
@@ -463,8 +518,24 @@ public class BoxClassTransformer {
 			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "name", Type.getDescriptor( Key.class ) ); // name
 			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "sourceType", Type.getDescriptor( BoxSourceType.class ) ); // sourceType
 			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "path", Type.getDescriptor( ResolvedFilePath.class ) ); // path
-			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "superClass", Type.getDescriptor( DynamicObject.class ) ); // superClass
-			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "interfaces", Type.getDescriptor( List.class ) ); // interfaces
+			    // BoxClassSupport.loadSuperClass( superClassName, imports, null, path )
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "superClassName", Type.getDescriptor( String.class ) );
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "imports", Type.getDescriptor( List.class ) );
+			    methodVisitor.visitInsn( Opcodes.ACONST_NULL );
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "path", Type.getDescriptor( ResolvedFilePath.class ) );
+			    methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC, Type.getInternalName( BoxClassSupport.class ), "loadSuperClass",
+			        Type.getMethodDescriptor( Type.getType( DynamicObject.class ), Type.getType( String.class ), Type.getType( List.class ),
+			            Type.getType( IBoxContext.class ), Type.getType( ResolvedFilePath.class ) ),
+			        false );
+			    // BoxClassSupport.loadInterfaces( interfaceNames, imports, null, path )
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "interfaceNames", Type.getDescriptor( String[].class ) );
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "imports", Type.getDescriptor( List.class ) );
+			    methodVisitor.visitInsn( Opcodes.ACONST_NULL );
+			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "path", Type.getDescriptor( ResolvedFilePath.class ) );
+			    methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC, Type.getInternalName( BoxClassSupport.class ), "loadInterfaces",
+			        Type.getMethodDescriptor( Type.getType( List.class ), Type.getType( String[].class ), Type.getType( List.class ),
+			            Type.getType( IBoxContext.class ), Type.getType( ResolvedFilePath.class ) ),
+			        false );
 			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "abstractMethods", Type.getDescriptor( Map.class ) ); // abstractMethods
 			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "udfs",
 			        Type.getDescriptor( Map.class ) ); // udfs
@@ -563,9 +634,8 @@ public class BoxClassTransformer {
 		    "getThisScope",
 		    Type.getType( ThisScope.class ),
 		    null );
-		// interfaces is now static - add static field and getter
-		AsmHelper.addNullStaticField( classNode, "interfaces", Type.getType( List.class ), false );
-		AsmHelper.addStaticGetterMethodOnly( classNode, type, "interfaces", "getInterfaces", Type.getType( List.class ) );
+		// interfaces is now an instance field
+		AsmHelper.addPrivateFieldGetter( classNode, type, "interfaces", "getInterfaces", Type.getType( List.class ), null );
 		AsmHelper.addPrivateFieldGetterAndSetter( classNode,
 		    type,
 		    "_super",
@@ -580,13 +650,15 @@ public class BoxClassTransformer {
 		    "setChild",
 		    Type.getType( IClassRunnable.class ),
 		    null );
-		AsmHelper.addPrivateFieldGetterAndSetter( classNode,
+		AsmHelper.addFieldGetterAndSetter( classNode,
 		    type,
 		    "canOutput",
 		    "getCanOutput",
 		    "setCanOutput",
 		    Type.getType( Boolean.class ),
-		    null );
+		    null,
+		    mv -> {
+		    } );
 		AsmHelper.addPrivateFieldGetterAndSetter( classNode,
 		    type,
 		    "$bx",
@@ -594,13 +666,15 @@ public class BoxClassTransformer {
 		    "_setbx",
 		    Type.getType( BoxMeta.class ),
 		    null );
-		AsmHelper.addPrivateFieldGetterAndSetter( classNode,
+		AsmHelper.addFieldGetterAndSetter( classNode,
 		    type,
 		    "canInvokeImplicitAccessor",
 		    "getCanInvokeImplicitAccessor",
 		    "setCanInvokeImplicitAccessor",
 		    Type.getType( Boolean.class ),
-		    null );
+		    null,
+		    mv -> {
+		    } );
 
 		AsmHelper.boxClassSupport( classNode, "pseudoConstructor", Type.VOID_TYPE, Type.getType( IBoxContext.class ) );
 		AsmHelper.boxClassSupport( classNode, "canOutput", Type.getType( Boolean.class ) );
@@ -706,6 +780,9 @@ public class BoxClassTransformer {
 		    }
 		);
 
+		final String		finalSuperClassName		= superClassName;
+		final List<String>	finalBlInterfaceNames	= blInterfaceNames;
+
 		AsmHelper.completeWithSplitting( classNode, type, () -> {
 			List<AbstractInsnNode> clinitNodes = new ArrayList<>();
 
@@ -794,6 +871,22 @@ public class BoxClassTransformer {
 
 			clinitNodes.add( new LdcInsnNode( isJavaExtends ? 1 : 0 ) );
 			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "isJavaExtends", Type.getDescriptor( boolean.class ) ) );
+
+			// Initialize initMethod field
+			if ( initMethodValue != null ) {
+				clinitNodes.add( new LdcInsnNode( initMethodValue ) );
+				clinitNodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+				    Type.getInternalName( Key.class ),
+				    "of",
+				    Type.getMethodDescriptor( Type.getType( Key.class ), Type.getType( Object.class ) ),
+				    false ) );
+			} else {
+				clinitNodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
+				    Type.getInternalName( Key.class ),
+				    "init",
+				    Type.getDescriptor( Key.class ) ) );
+			}
+			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "initMethod", Type.getDescriptor( Key.class ) ) );
 
 			// Note: serialVersionUID is already initialized in the field declaration with a constant value,
 			// so we don't need to write to it in <clinit>
@@ -885,13 +978,29 @@ public class BoxClassTransformer {
 			clinitNodes.addAll( AsmHelper.generateMapOfAbstractMethodNames( transpiler, boxClass ) );
 			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "abstractMethods", Type.getDescriptor( Map.class ) ) );
 
-			// Initialize the interfaces field with an empty ArrayList
-			clinitNodes.add( new TypeInsnNode( Opcodes.NEW, Type.getInternalName( ArrayList.class ) ) );
-			clinitNodes.add( new InsnNode( Opcodes.DUP ) );
-			clinitNodes
-			    .add( new MethodInsnNode( Opcodes.INVOKESPECIAL, Type.getInternalName( ArrayList.class ), "<init>", Type.getMethodDescriptor( Type.VOID_TYPE ),
-			        false ) );
-			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "interfaces", Type.getDescriptor( List.class ) ) );
+			// Initialize superClassName field
+			if ( finalSuperClassName != null ) {
+				clinitNodes.add( new LdcInsnNode( finalSuperClassName ) );
+			} else {
+				clinitNodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+			}
+			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "superClassName", Type.getDescriptor( String.class ) ) );
+
+			// Initialize interfaceNames field
+			if ( finalBlInterfaceNames.isEmpty() ) {
+				clinitNodes.add( new InsnNode( Opcodes.ICONST_0 ) );
+				clinitNodes.add( new TypeInsnNode( Opcodes.ANEWARRAY, Type.getInternalName( String.class ) ) );
+			} else {
+				clinitNodes.add( new LdcInsnNode( finalBlInterfaceNames.size() ) );
+				clinitNodes.add( new TypeInsnNode( Opcodes.ANEWARRAY, Type.getInternalName( String.class ) ) );
+				for ( int i = 0; i < finalBlInterfaceNames.size(); i++ ) {
+					clinitNodes.add( new InsnNode( Opcodes.DUP ) );
+					clinitNodes.add( new LdcInsnNode( i ) );
+					clinitNodes.add( new LdcInsnNode( finalBlInterfaceNames.get( i ) ) );
+					clinitNodes.add( new InsnNode( Opcodes.AASTORE ) );
+				}
+			}
+			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "interfaceNames", Type.getDescriptor( String[].class ) ) );
 
 			// start invoke static initializer
 			clinitNodes.add( new InvokeDynamicInsnNode(
@@ -924,28 +1033,20 @@ public class BoxClassTransformer {
 			clinitNodes.add( new LdcInsnNode( type ) );
 			clinitNodes.add( new FieldInsnNode( Opcodes.GETSTATIC, type.getInternalName(), "staticScope", Type.getDescriptor( StaticScope.class ) ) );
 			clinitNodes.add( new FieldInsnNode( Opcodes.GETSTATIC, type.getInternalName(), "path", Type.getDescriptor( ResolvedFilePath.class ) ) );
-			clinitNodes.add( new FieldInsnNode( Opcodes.GETSTATIC, type.getInternalName(), "imports", Type.getDescriptor( List.class ) ) );
-			clinitNodes.add( new FieldInsnNode( Opcodes.GETSTATIC, type.getInternalName(), "interfaces", Type.getDescriptor( List.class ) ) );
-			clinitNodes.add( new FieldInsnNode( Opcodes.GETSTATIC, type.getInternalName(), "annotations", Type.getDescriptor( IStruct.class ) ) );
 
 			clinitNodes.add( new MethodInsnNode(
 			    Opcodes.INVOKESTATIC,
 			    Type.getInternalName( BoxClassSupport.class ),
 			    "runStaticInitializer",
 			    Type.getMethodDescriptor(
-			        Type.getType( DynamicObject.class ),
+			        Type.VOID_TYPE,
 			        Type.getType( Consumer.class ),
 			        Type.getType( Class.class ),
 			        Type.getType( StaticScope.class ),
-			        Type.getType( ResolvedFilePath.class ),
-			        Type.getType( List.class ),
-			        Type.getType( List.class ),
-			        Type.getType( IStruct.class )
+			        Type.getType( ResolvedFilePath.class )
 			    ),
 			    false
 			) );
-			// Store the returned superClass
-			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "superClass", Type.getDescriptor( DynamicObject.class ) ) );
 			// end invoke static initializer
 
 			return clinitNodes;

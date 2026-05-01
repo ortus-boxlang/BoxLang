@@ -48,6 +48,10 @@ public class GenericProxy extends BaseProxy implements InvocationHandler {
 				args = new Object[] {};
 			}
 
+			if ( method != null && method.isDefault() ) {
+				return InvocationHandler.invokeDefault( proxy, method, args );
+			}
+
 			// If we have a class and an incoming method proxy, run it
 			if ( isClassRunnableTarget() && method != null ) {
 				// Invoke the method

@@ -789,4 +789,17 @@ public class QoQParseTest {
 		assertEquals( 1, query.size() );
 	}
 
+	@Test
+	public void testDoubleParensInWhereClause() {
+		instance.executeSource(
+		    """
+		    q = queryNew( "col", "integer", [[1]] )
+		    result = queryExecute( "
+		    	SELECT col FROM q WHERE ((col = 1))
+		    ", [], { dbType : "query" } )
+		    """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 1 );
+	}
+
 }
