@@ -4722,6 +4722,18 @@ public class CoreLangTest {
 		context ) );
 	// @formatter:on
 		assertThat( t.getMessage() ).contains( "You cannot assign a variable with the same name as an import" );
+
+	// @formatter:off
+	t = assertThrows( BoxRuntimeException.class, () ->
+	instance.executeSource(
+		"""
+			import ortus.boxlang.runtime.context.BaseBoxContext;
+			function brad( BaseBoxContext ) {
+			}
+		""",
+		context ) );
+	// @formatter:on
+		assertThat( t.getMessage() ).contains( "You cannot use a function parameter with the same name as an import" );
 	}
 
 	@Test

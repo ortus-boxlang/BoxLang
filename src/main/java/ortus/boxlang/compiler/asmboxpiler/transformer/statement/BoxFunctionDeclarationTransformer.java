@@ -58,6 +58,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.UDF;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
@@ -143,6 +144,19 @@ public class BoxFunctionDeclarationTransformer extends AbstractTransformer {
 		// NEW UDF
 		instantiation.add( new TypeInsnNode( Opcodes.NEW, Type.getInternalName( UDF.class ) ) );
 		instantiation.add( new InsnNode( Opcodes.DUP ) );
+
+		// Validate function parameter names against imports and register them as keys
+		boolean isBoxSyntax = transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" );
+		function.getArgs().forEach( arg -> {
+			if ( isBoxSyntax && transpiler.matchesImport( arg.getName() ) ) {
+				throw new ExpressionException(
+				    "You cannot use a function parameter with the same name as an import: [" + arg.getName() + "]",
+				    arg.getPosition(),
+				    arg.getSourceText()
+				);
+			}
+			transpiler.createKey( arg.getName() );
+		} );
 
 		// Arg 1: name (Key)
 		instantiation.addAll( transpiler.createKey( function.getName() ) );
