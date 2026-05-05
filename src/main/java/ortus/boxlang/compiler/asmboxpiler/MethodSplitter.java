@@ -489,7 +489,7 @@ public class MethodSplitter {
 	    Type parameterType,
 	    Type returnType ) {
 
-		List<AbstractInsnNode>	result				= new ArrayList<>();
+		List<AbstractInsnNode>	result			= new ArrayList<>();
 		boolean					useBodyResult	= returnType.equals( Type.getType( Component.BodyResult.class ) )
 		    || ( this.transpiler.isInsideComponent() && !this.transpiler.canReturn() );
 
