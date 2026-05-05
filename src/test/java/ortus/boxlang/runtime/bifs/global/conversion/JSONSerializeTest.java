@@ -706,12 +706,43 @@ public class JSONSerializeTest {
 		    """
 				instant = createObject( "java", "java.time.Instant" ).EPOCH;
 				result = JSONSerialize( { "instant" : instant } );
-				println(result)
+			//	println(result)
 			""",
 		    context );
 		// @formatter:on
 
 		assertThat( variables.getAsString( result ) ).contains( "1970-01-01T00:00:00Z" );
+	}
+
+	@DisplayName( "It will serialize Java Duration" )
+	@Test
+	public void testWillSerializeJavaDuration() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				duration = createObject( "java", "java.time.Duration" ).ofSeconds( 60 );
+				result = JSONSerialize( { "duration" : duration } );
+				duration2 = createObject( "java", "java.time.Duration" ).ofDays( 2 );
+				result2 = JSONSerialize( { "duration2" : duration2 } );
+			""",
+		    context );
+		// @formatter:on
+		assertThat( variables.getAsString( result ) ).contains( "0.0006944444444444444" );
+		assertThat( variables.getAsString( Key.of( "result2" ) ) ).contains( "2" );
+	}
+
+	@DisplayName( "It will serialize Java class" )
+	@Test
+	public void testWillSerializeJavaClass() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				result = JSONSerialize( "x".getClass() );
+				//println(result);
+			""",
+		    context );
+		// @formatter:on
+		// Just assert it wasn't a stack overflow
 	}
 
 }

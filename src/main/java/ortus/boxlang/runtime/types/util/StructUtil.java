@@ -1418,7 +1418,11 @@ public class StructUtil {
 		    .filter( field -> Modifier.isPublic( field.getModifiers() ) && ( includeStatic || !Modifier.isStatic( field.getModifiers() ) ) )
 		    .forEach( field -> {
 			    try {
-				    thisResult.put( field.getName(), dynObject.getField( field.getName() ).orElse( null ) );
+				    Object value = dynObject.getField( field.getName() ).orElse( null );
+				    if ( value instanceof Enum<?> e ) {
+					    value = e.name();
+				    }
+				    thisResult.put( field.getName(), value );
 			    } catch ( Exception e ) {
 				    // We're gonna ignore any invalid fields that error out. Some times public fields cannot be accessed
 			    }
@@ -1427,11 +1431,19 @@ public class StructUtil {
 
 		dynObject.getMethodNames( true ).forEach( methodName -> {
 			Method m;
+			// Look for getXXX() methods that are public, non-static (unless includeStatic is true), take no parameters, and are not declared on Object, Enum, or Class to avoid crazy recursion.
 			if ( methodName.startsWith( "get" ) && Modifier.isPublic( ( m = dynObject.getMethod( methodName, true ) ).getModifiers() )
 			    && ( includeStatic || !Modifier.isStatic( m.getModifiers() ) )
-			    && m.getParameterCount() == 0 && !methodName.equals( "getClass" ) ) {
+			    && m.getParameterCount() == 0 && m.getDeclaringClass() != Object.class && m.getDeclaringClass() != Enum.class
+			    && m.getDeclaringClass() != Class.class ) {
 				try {
-					thisResult.put( methodName.substring( 3 ), dynObject.invoke( context, methodName ) );
+					Object value = dynObject.invoke( context, methodName );
+					if ( value instanceof Enum<?> e ) {
+						value = e.name();
+					} else if ( value instanceof Class<?> c ) {
+						value = "class " + c.getName();
+					}
+					thisResult.put( methodName.substring( 3 ), value );
 				} catch ( Exception e ) {
 					// We're gonna ignore any invalid methods that error out.
 				}
@@ -1446,7 +1458,13 @@ public class StructUtil {
 			    // get public, static fields
 			    .filter( field -> Modifier.isPublic( field.getModifiers() ) && Modifier.isStatic( field.getModifiers() ) )
 			    .forEach( field -> {
-				    thisResult.put( field.getName(), dynObject2.getField( field.getName() ).orElse( null ) );
+				    Object value = dynObject2.getField( field.getName() ).orElse( null );
+				    if ( value instanceof Enum<?> e ) {
+					    value = e.name();
+				    } else if ( value instanceof Class<?> c ) {
+					    value = "class " + c.getName();
+				    }
+				    thisResult.put( field.getName(), value );
 			    } );
 			// also add fields for all public methods starting with "get" that take no arguments
 			dynObject2.getMethodNames( true ).forEach( methodName -> {
@@ -1455,8 +1473,13 @@ public class StructUtil {
 					int		modifiers	= m.getModifiers();
 					if ( Modifier.isPublic( modifiers ) && Modifier.isStatic( modifiers ) && m.getParameterCount() == 0 ) {
 						try {
-							thisResult.put( methodName.substring( 3 ),
-							    dynObject2.invokeStatic( context, methodName ) );
+							Object value = dynObject2.invokeStatic( context, methodName );
+							if ( value instanceof Enum<?> e ) {
+								value = e.name();
+							} else if ( value instanceof Class<?> c ) {
+								value = "class " + c.getName();
+							}
+							thisResult.put( methodName.substring( 3 ), value );
 						} catch ( Exception e ) {
 							// We're gonna ignore any invalid methods that error out.
 						}
