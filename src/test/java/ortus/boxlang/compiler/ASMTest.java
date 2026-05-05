@@ -16,6 +16,8 @@ package ortus.boxlang.compiler;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.AfterAll;
@@ -141,6 +143,12 @@ public class ASMTest {
 		assert lambdaResult.equals( "lambda result" );
 	}
 
+	@DisplayName( "large switch template should compile without recursive splitting" )
+	@Test
+	public void testSplit1() {
+		assertDoesNotThrow( () -> RunnableLoader.getInstance().getBoxpiler().compileTemplate( createLargeComponentBodyTemplate() ) );
+	}
+
 	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
 	@DisplayName( "large switch template should compile without recursive splitting" )
 	@Test
@@ -184,6 +192,44 @@ public class ASMTest {
 		source.append( "</cfswitch>\n" );
 
 		return source.toString();
+	}
+
+	private String buildLargeComponentBodyTemplate() {
+		String			block	= readLargeComponentBodyBlock();
+		StringBuilder	source	= new StringBuilder();
+
+		source.append( "<cfparam name=\"variables.datasource\" default=\"testDatasource\">\n" );
+		source.append( "<cfparam name=\"variables.username\" default=\"testUser\">\n" );
+		source.append( "<cfparam name=\"variables.password\" default=\"testPassword\">\n" );
+		source.append(
+		    "<cfstoredproc procedure=\"schema.generic_large_proc\" datasource=\"#variables.datasource#\" username=\"#variables.username#\" password=\"#variables.password#\">\n" );
+
+		for ( int i = 0; i < 500; i++ ) {
+			source.append( block );
+		}
+
+		source.append( "</cfstoredproc>\n" );
+
+		return source.toString();
+	}
+
+	private String readLargeComponentBodyBlock() {
+		try {
+			return Files.readString( Path.of( "src/test/resources/test-templates/genericLargeComponentBodyBlock.cfm" ) );
+		} catch ( IOException e ) {
+			throw new RuntimeException( "Unable to read generic large component body block fixture", e );
+		}
+	}
+
+	private ResolvedFilePath createLargeComponentBodyTemplate() {
+		try {
+			Path tempFile = Files.createTempFile( "generic-large-component-body-", ".cfm" );
+			Files.writeString( tempFile, buildLargeComponentBodyTemplate() );
+			tempFile.toFile().deleteOnExit();
+			return ResolvedFilePath.of( tempFile );
+		} catch ( IOException e ) {
+			throw new RuntimeException( "Unable to create generic large component body template", e );
+		}
 	}
 
 	private String buildLargeNinetyNineCaseSwitchTemplate() {

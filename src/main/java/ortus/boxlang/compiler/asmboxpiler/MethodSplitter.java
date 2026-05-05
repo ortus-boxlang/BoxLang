@@ -37,6 +37,7 @@ import org.objectweb.asm.tree.TableSwitchInsnNode;
 import org.objectweb.asm.tree.TryCatchBlockNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
+import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.types.FlowControlResult;
 
 /**
@@ -405,10 +406,10 @@ public class MethodSplitter {
 				labelPositions.put( labelNode, i );
 			} else if ( node instanceof JumpInsnNode jumpNode ) {
 				jumpReferences.put( i, jumpNode.label );
-			} else if ( node instanceof TableSwitchInsnNode switchNode ) {
+			} else if ( node instanceof TableSwitchInsnNode ) {
 				// TableSwitch has multiple labels
 				// Mark as unsafe to split near switch statements
-			} else if ( node instanceof LookupSwitchInsnNode switchNode ) {
+			} else if ( node instanceof LookupSwitchInsnNode ) {
 				// LookupSwitch has multiple labels
 				// Mark as unsafe to split near switch statements
 			}
@@ -488,7 +489,9 @@ public class MethodSplitter {
 	    Type parameterType,
 	    Type returnType ) {
 
-		List<AbstractInsnNode> result = new ArrayList<>();
+		List<AbstractInsnNode>	result				= new ArrayList<>();
+		boolean					useBodyResult	= returnType.equals( Type.getType( Component.BodyResult.class ) )
+		    || ( this.transpiler.isInsideComponent() && !this.transpiler.canReturn() );
 
 		for ( int i = 0; i < segments.size(); i++ ) {
 			MethodSegment	segment	= segments.get( i );
@@ -496,10 +499,10 @@ public class MethodSplitter {
 			boolean			isLast	= ( i == segments.size() - 1 );
 
 			// Create the sub-method
-			createSubMethod( subName, segment.nodes(), parameterType );
+			createSubMethod( subName, segment.nodes(), parameterType, useBodyResult );
 
 			// Generate the call to the sub-method
-			result.addAll( generateSubMethodCall( subName, parameterType, segment.hasFlowControl(), isLast ) );
+			result.addAll( generateSubMethodCall( subName, parameterType, segment.hasFlowControl(), isLast, useBodyResult ) );
 		}
 
 		return result;
@@ -520,9 +523,10 @@ public class MethodSplitter {
 	 * @param nodes         The instructions for the sub-method body
 	 * @param parameterType The parameter type
 	 */
-	private void createSubMethod( String name, List<AbstractInsnNode> nodes, Type parameterType ) {
-		// Sub-methods return FlowControlResult to handle flow control propagation
-		Type returnType = Type.getType( FlowControlResult.class );
+	private void createSubMethod( String name, List<AbstractInsnNode> nodes, Type parameterType, boolean useBodyResult ) {
+		Type returnType = useBodyResult
+		    ? Type.getType( Component.BodyResult.class )
+		    : Type.getType( FlowControlResult.class );
 
 		// Use the overload that accepts external try-catch blocks from the parent method
 		AsmHelper.methodWithContextAndClassLocator(
@@ -535,26 +539,35 @@ public class MethodSplitter {
 		    false,
 		    this.tryCatchBlocks,
 		    () -> {
-			    // Wrap the nodes to return FlowControlResult.NORMAL_RESULT at the end
 			    List<AbstractInsnNode> wrapped = new ArrayList<>( nodes );
 
-			    // Transform any return instructions to wrap in FlowControlResult.ofReturn()
-			    // This is necessary because returns inside loops/conditions would otherwise
-			    // return raw values instead of FlowControlResult expected by the caller
-			    transformReturnInstructions( wrapped );
+			    if ( !useBodyResult ) {
+				    // Transform any return instructions to wrap in FlowControlResult.ofReturn().
+				    // This is necessary because returns inside loops/conditions would otherwise
+				    // return raw values instead of FlowControlResult expected by the caller.
+				    transformReturnInstructions( wrapped );
+			    }
 
 			    // Remove any trailing POP that would discard our result
 			    while ( !wrapped.isEmpty() && wrapped.get( wrapped.size() - 1 ).getOpcode() == Opcodes.POP ) {
 				    wrapped.remove( wrapped.size() - 1 );
 			    }
 
-			    // Add normal result return
-			    wrapped.add( new FieldInsnNode(
-			        Opcodes.GETSTATIC,
-			        Type.getInternalName( FlowControlResult.class ),
-			        "NORMAL_RESULT",
-			        Type.getDescriptor( FlowControlResult.class )
-			    ) );
+			    if ( useBodyResult ) {
+				    wrapped.add( new FieldInsnNode(
+				        Opcodes.GETSTATIC,
+				        Type.getInternalName( Component.class ),
+				        "DEFAULT_RETURN",
+				        Type.getDescriptor( Component.BodyResult.class )
+				    ) );
+			    } else {
+				    wrapped.add( new FieldInsnNode(
+				        Opcodes.GETSTATIC,
+				        Type.getInternalName( FlowControlResult.class ),
+				        "NORMAL_RESULT",
+				        Type.getDescriptor( FlowControlResult.class )
+				    ) );
+			    }
 
 			    return wrapped;
 		    }
@@ -679,10 +692,13 @@ public class MethodSplitter {
 	    String subMethodName,
 	    Type parameterType,
 	    boolean hasFlowControl,
-	    boolean isLast ) {
+	    boolean isLast,
+	    boolean useBodyResult ) {
 
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
-		Type					resultType	= Type.getType( FlowControlResult.class );
+		Type					resultType	= useBodyResult
+		    ? Type.getType( Component.BodyResult.class )
+		    : Type.getType( FlowControlResult.class );
 
 		if ( this.isStatic ) {
 			// Static method: slot 0 = context, no `this`
@@ -713,7 +729,7 @@ public class MethodSplitter {
 
 		// If this segment might have flow control, we need to check and propagate
 		if ( hasFlowControl ) {
-			nodes.addAll( generateFlowControlCheck( isLast ) );
+			nodes.addAll( generateFlowControlCheck( isLast, useBodyResult ) );
 		} else if ( !isLast ) {
 			// Just pop the result if no flow control and not last
 			nodes.add( new InsnNode( Opcodes.POP ) );
@@ -730,9 +746,31 @@ public class MethodSplitter {
 	 *
 	 * @return Instructions for flow control checking
 	 */
-	private List<AbstractInsnNode> generateFlowControlCheck( boolean isLast ) {
+	private List<AbstractInsnNode> generateFlowControlCheck( boolean isLast, boolean useBodyResult ) {
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 		boolean					canReturn	= this.transpiler.canReturn();
+
+		if ( useBodyResult ) {
+			nodes.add( new InsnNode( Opcodes.DUP ) );
+			nodes.add( new MethodInsnNode(
+			    Opcodes.INVOKEVIRTUAL,
+			    Type.getInternalName( Component.BodyResult.class ),
+			    "isEarlyExit",
+			    Type.getMethodDescriptor( Type.BOOLEAN_TYPE ),
+			    false
+			) );
+
+			LabelNode continueLabel = new LabelNode();
+			nodes.add( new JumpInsnNode( Opcodes.IFEQ, continueLabel ) );
+			nodes.add( new InsnNode( Opcodes.ARETURN ) );
+			nodes.add( continueLabel );
+
+			if ( !isLast ) {
+				nodes.add( new InsnNode( Opcodes.POP ) );
+			}
+
+			return nodes;
+		}
 
 		// DUP the result
 		nodes.add( new InsnNode( Opcodes.DUP ) );
