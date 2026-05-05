@@ -59,16 +59,17 @@ import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.conversion.ObjectMarshaller;
 
 /**
  * A utility class for encryption and encoding
@@ -703,33 +704,28 @@ public final class EncryptionUtil {
 			cipher.init( cipherMode, cipherKey, params );
 
 			if ( cipherMode == Cipher.DECRYPT_MODE ) {
-				byte[] decryptedBytes = cipher.doFinal( objectBytes, ivsSize, objectBytes.length - ivsSize );
-				try {
-					return new String( decryptedBytes, DEFAULT_CHARSET );
-				} catch ( UnsupportedEncodingException e ) {
-					// CWE-502 Mitigation: Only deserialize if the data is actually a Java serialized object
-					// Check for Java serialization magic bytes (0xACED) to identify serialized objects
-					boolean isSerializedObject = decryptedBytes.length >= 4
-					    && ( decryptedBytes[ 0 ] & 0xFF ) == 0xAC
-					    && ( decryptedBytes[ 1 ] & 0xFF ) == 0xED;
+				byte[]	decryptedBytes		= cipher.doFinal( objectBytes, ivsSize, objectBytes.length - ivsSize );
 
-					if ( isSerializedObject ) {
-						try {
-							// Note: Using Apache Commons Lang 3.20.0+ which includes CVE-2025-48924 mitigation
-							return SerializationUtils.deserialize( decryptedBytes );
-						} catch ( Exception deserializationException ) {
-							throw new BoxRuntimeException(
-							    "Failed to deserialize decrypted data. The data may be corrupted or contain untrusted content.",
-							    deserializationException
-							);
-						}
-					} else {
-						// Not a serialized object and not valid UTF-8 - return raw bytes
-						// This allows the caller to handle binary data (images, files, etc.)
+				// CWE-502 Mitigation: Only deserialize if the data is actually a Java serialized object.
+				// Check for Java serialization magic bytes (0xACED 0x0005) to identify serialized objects.
+				// Strings and byte arrays are stored as raw bytes (UTF-8) during encryption, not as
+				// Java-serialized objects, so they must be returned as strings rather than deserialized.
+				boolean	isSerializedObject	= decryptedBytes.length >= 2
+				    && ( decryptedBytes[ 0 ] & 0xFF ) == 0xAC
+				    && ( decryptedBytes[ 1 ] & 0xFF ) == 0xED;
+
+				if ( isSerializedObject ) {
+					return ObjectMarshaller.deserialize( BoxRuntime.getInstance().getRuntimeContext(), decryptedBytes );
+				} else {
+					try {
+						return new String( decryptedBytes, DEFAULT_CHARSET );
+					} catch ( UnsupportedEncodingException e ) {
+						// Fallback: return raw bytes if charset is not supported
 						return decryptedBytes;
 					}
 				}
 			} else {
+
 				byte[] result = new byte[ ivsSize + cipher.getOutputSize( objectBytes.length ) ];
 
 				if ( ivsSize > 0 ) {
