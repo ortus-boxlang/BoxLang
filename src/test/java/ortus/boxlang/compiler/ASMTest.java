@@ -144,6 +144,7 @@ public class ASMTest {
 	}
 
 	@DisplayName( "large switch template should compile without recursive splitting" )
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
 	@Test
 	public void testSplit1() {
 		assertDoesNotThrow( () -> RunnableLoader.getInstance().getBoxpiler().compileTemplate( createLargeComponentBodyTemplate() ) );
