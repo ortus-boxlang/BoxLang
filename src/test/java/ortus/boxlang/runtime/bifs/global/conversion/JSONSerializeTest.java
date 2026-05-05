@@ -738,11 +738,11 @@ public class JSONSerializeTest {
 		instance.executeSource(
 		    """
 				result = JSONSerialize( "x".getClass() );
-				//println(result);
+				result = JSONSerialize( createObject("java","java.net.InetAddress") );
+				result = JSONSerialize( createObject("java","java.net.InetAddress").getLocalHost() );
 			""",
 		    context );
 		// @formatter:on
 		// Just assert it wasn't a stack overflow
 	}
-
 }

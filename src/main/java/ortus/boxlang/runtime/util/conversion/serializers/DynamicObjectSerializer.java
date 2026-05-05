@@ -82,7 +82,7 @@ public class DynamicObjectSerializer implements ValueWriter {
 			}
 
 			// Serialize as generic struct
-			context.writeValue( StructUtil.objectToStruct( realValue, BoxRuntime.getInstance().getRuntimeContext(), false ) );
+			context.writeValue( StructUtil.objectToStruct( realValue, BoxRuntime.getInstance().getRuntimeContext(), true ) );
 		} finally {
 			// Remove the object from the set of visited objects
 			visited.remove( realValue );

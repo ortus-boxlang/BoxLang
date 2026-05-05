@@ -5438,15 +5438,21 @@ public class CoreLangTest {
 				// Call static methods on the class
 				result = createObject("java","java.net.InetAddress").getLocalHost().getHostName();
 				result2 = createObject("java","java.net.InetAddress").localhost.getHostName();
+				result2b = createObject("java","java.net.InetAddress").localhost.hostName;
 				// but also interact directly with the Class instance
 				result3 = getMetadata( createObject("java","java.net.InetAddress") ).getName();
 				result4 = getMetadata( createObject("java","java.net.InetAddress") ).name;
+				// These too are the same
+				result5 = createObject("java","java.net.InetAddress").getLocalHost().getClass().getName();
+				result6 = createObject("java","java.net.InetAddress").getLocalHost().class.name;
 				""",
 				context );
 			// @formatter:on
 
 		assertThat( variables.get( result ) ).isEqualTo( variables.get( Key.of( "result2" ) ) );
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( variables.get( Key.of( "result2b" ) ) );
 		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( variables.get( Key.of( "result4" ) ) );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( variables.get( Key.of( "result6" ) ) );
 	}
 
 	@Test

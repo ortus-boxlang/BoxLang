@@ -1392,17 +1392,17 @@ public class StructUtil {
 	 * @param context The context to use
 	 */
 	public static IStruct objectToStruct( Object object, IBoxContext context ) {
-		return objectToStruct( object, context, true );
+		return objectToStruct( object, context, false );
 	}
 
 	/**
 	 * Converts any object to a struct
 	 * 
-	 * @param object        The object to convert
-	 * @param context       The context to use
-	 * @param includeStatic Whether to include static fields and methods if the object is a Class
+	 * @param object  The object to convert
+	 * @param context The context to use
+	 * @param limited When true, skip static methods, enums, object methods, and class methods
 	 */
-	public static IStruct objectToStruct( Object object, IBoxContext context, boolean includeStatic ) {
+	public static IStruct objectToStruct( Object object, IBoxContext context, boolean limited ) {
 
 		IStruct thisResult = new Struct();
 
@@ -1415,13 +1415,10 @@ public class StructUtil {
 		// Get the fields and methods of the class
 		dynObject = DynamicObject.of( object );
 		dynObject.getFieldsAsStream()
-		    .filter( field -> Modifier.isPublic( field.getModifiers() ) && ( includeStatic || !Modifier.isStatic( field.getModifiers() ) ) )
+		    .filter( field -> Modifier.isPublic( field.getModifiers() ) && !Modifier.isStatic( field.getModifiers() ) )
 		    .forEach( field -> {
 			    try {
-				    Object value = dynObject.getField( field.getName() ).orElse( null );
-				    if ( value instanceof Enum<?> e ) {
-					    value = e.name();
-				    }
+				    Object value = coerceValue( dynObject.getField( field.getName() ).orElse( null ), limited );
 				    thisResult.put( field.getName(), value );
 			    } catch ( Exception e ) {
 				    // We're gonna ignore any invalid fields that error out. Some times public fields cannot be accessed
@@ -1431,18 +1428,15 @@ public class StructUtil {
 
 		dynObject.getMethodNames( true ).forEach( methodName -> {
 			Method m;
-			// Look for getXXX() methods that are public, non-static (unless includeStatic is true), take no parameters, and are not declared on Object, Enum, or Class to avoid crazy recursion.
+			// Look for getXXX() methods that are public, non-static, take no parameters.
+			// When limited, skip methods declared on Object, Enum, or Class to avoid crazy recursion.
 			if ( methodName.startsWith( "get" ) && Modifier.isPublic( ( m = dynObject.getMethod( methodName, true ) ).getModifiers() )
-			    && ( includeStatic || !Modifier.isStatic( m.getModifiers() ) )
-			    && m.getParameterCount() == 0 && m.getDeclaringClass() != Object.class && m.getDeclaringClass() != Enum.class
-			    && m.getDeclaringClass() != Class.class ) {
+			    && !Modifier.isStatic( m.getModifiers() )
+			    && m.getParameterCount() == 0
+			    && ( !limited || ( m.getDeclaringClass() != Object.class && m.getDeclaringClass() != Enum.class
+			        && m.getDeclaringClass() != Class.class ) ) ) {
 				try {
-					Object value = dynObject.invoke( context, methodName );
-					if ( value instanceof Enum<?> e ) {
-						value = e.name();
-					} else if ( value instanceof Class<?> c ) {
-						value = "class " + c.getName();
-					}
+					Object value = coerceValue( dynObject.invoke( context, methodName ), limited );
 					thisResult.put( methodName.substring( 3 ), value );
 				} catch ( Exception e ) {
 					// We're gonna ignore any invalid methods that error out.
@@ -1452,18 +1446,13 @@ public class StructUtil {
 
 		// Force the overloaded method expecting a class.
 		// Get the static methods and fields of the Class that the Class represents
-		if ( includeStatic && object instanceof Class clazz ) {
+		if ( !limited && object instanceof Class clazz ) {
 			DynamicObject dynObject2 = DynamicObject.of( clazz );
 			dynObject2.getFieldsAsStream()
 			    // get public, static fields
 			    .filter( field -> Modifier.isPublic( field.getModifiers() ) && Modifier.isStatic( field.getModifiers() ) )
 			    .forEach( field -> {
-				    Object value = dynObject2.getField( field.getName() ).orElse( null );
-				    if ( value instanceof Enum<?> e ) {
-					    value = e.name();
-				    } else if ( value instanceof Class<?> c ) {
-					    value = "class " + c.getName();
-				    }
+				    Object value = coerceValue( dynObject2.getField( field.getName() ).orElse( null ), false );
 				    thisResult.put( field.getName(), value );
 			    } );
 			// also add fields for all public methods starting with "get" that take no arguments
@@ -1473,12 +1462,7 @@ public class StructUtil {
 					int		modifiers	= m.getModifiers();
 					if ( Modifier.isPublic( modifiers ) && Modifier.isStatic( modifiers ) && m.getParameterCount() == 0 ) {
 						try {
-							Object value = dynObject2.invokeStatic( context, methodName );
-							if ( value instanceof Enum<?> e ) {
-								value = e.name();
-							} else if ( value instanceof Class<?> c ) {
-								value = "class " + c.getName();
-							}
+							Object value = coerceValue( dynObject2.invokeStatic( context, methodName ), false );
 							thisResult.put( methodName.substring( 3 ), value );
 						} catch ( Exception e ) {
 							// We're gonna ignore any invalid methods that error out.
@@ -1489,6 +1473,27 @@ public class StructUtil {
 		}
 
 		return thisResult;
+	}
+
+	/**
+	 * Coerces a value for struct representation. When limited, converts Enums to their name
+	 * and Classes to a string representation. When not limited, returns the value as-is.
+	 *
+	 * @param value   The value to coerce
+	 * @param limited Whether to return simplified representations.
+	 *
+	 * @return The coerced value
+	 */
+	private static Object coerceValue( Object value, boolean limited ) {
+		if ( !limited ) {
+			return value;
+		}
+		if ( value instanceof Enum<?> e ) {
+			return e.name();
+		} else if ( value instanceof Class<?> c ) {
+			return "class " + c.getName();
+		}
+		return value;
 	}
 
 }
