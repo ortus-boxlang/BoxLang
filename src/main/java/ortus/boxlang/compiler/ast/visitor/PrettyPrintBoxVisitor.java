@@ -49,6 +49,13 @@ import ortus.boxlang.compiler.ast.expression.BoxFunctionalMemberAccess;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
+import ortus.boxlang.compiler.ast.expression.BoxMatchArrayPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchBindingPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchCase;
+import ortus.boxlang.compiler.ast.expression.BoxMatchExpression;
+import ortus.boxlang.compiler.ast.expression.BoxMatchLiteralPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchObjectPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchWildcardPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNegateOperation;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
@@ -871,6 +878,71 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	public void visit( BoxNull node ) {
 		printPreComments( node );
 		print( "null" );
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxMatchExpression node ) {
+		printPreComments( node );
+		print( "match " );
+		node.getSubject().accept( this );
+		print( " {" );
+		indentLevel++;
+		for ( BoxMatchCase matchCase : node.getCases() ) {
+			newLine();
+			matchCase.accept( this );
+		}
+		indentLevel--;
+		newLine();
+		print( "}" );
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxMatchCase node ) {
+		printPreComments( node );
+		node.getPattern().accept( this );
+		if ( node.getGuard() != null ) {
+			print( " if " );
+			node.getGuard().accept( this );
+		}
+		print( " -> " );
+		node.getBody().accept( this );
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxMatchLiteralPattern node ) {
+		printPreComments( node );
+		node.getValue().accept( this );
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxMatchWildcardPattern node ) {
+		printPreComments( node );
+		print( "_" );
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxMatchBindingPattern node ) {
+		printPreComments( node );
+		node.getBinding().accept( this );
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxMatchArrayPattern node ) {
+		printPreComments( node );
+		node.getPattern().accept( this );
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxMatchObjectPattern node ) {
+		printPreComments( node );
+		node.getPattern().accept( this );
 		printPostComments( node );
 	}
 

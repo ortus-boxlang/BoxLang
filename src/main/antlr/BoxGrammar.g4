@@ -506,7 +506,21 @@ orderedStructMemberOrSpread
 structMember: structKey (COLON | EQUALSIGN) expression
     ;
 
-structKey: identifier | stringLiteral | INTEGER_LITERAL | ILLEGAL_IDENTIFIER | SWITCH
+structKey: identifier | stringLiteral | INTEGER_LITERAL | ILLEGAL_IDENTIFIER | SWITCH | MATCH
+    ;
+
+matchExpression: MATCH expression LBRACE matchCase+ RBRACE
+    ;
+
+matchCase: matchPattern (IF expression)? ARROW expression
+    ;
+
+matchPattern
+    : stringLiteral              # matchStringLiteralPattern
+    | atoms                      # matchAtomsPattern
+    | objectDestructuringPattern # matchObjectPattern
+    | arrayDestructuringPattern  # matchArrayPattern
+    | identifier                 # matchIdentifierPattern
     ;
 
 /*
@@ -616,6 +630,7 @@ fqn: (identifier DOT)* identifier
 
 expressionStatement
     : anonymousFunction # exprStatAnonymousFunction // function() {} or () => {} or () -> {}
+    | matchExpression   # exprStatMatch
     | el2               # exprStatInvocable
     ;
 
@@ -625,6 +640,7 @@ expressionStatement
 // which will allow .bar = baz to be a separate statement and think param foo is a component
 expression
     : anonymousFunction                             # exprAnonymousFunction // function() {} or () => {} or () -> {}
+    | matchExpression                               # exprMatch
     | el2                                           # invocable
     | DOT identifier (LPAREN argumentList? RPAREN)? # exprHeadless
     ;

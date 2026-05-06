@@ -267,6 +267,7 @@ IS          : 'IS';
 JAVA        : 'JAVA';
 LESS        : 'LESS';
 LOCK        : 'LOCK';
+MATCH       : 'MATCH';
 MOD         : 'MOD';
 NEW         : 'NEW';
 NULL        : 'NULL';

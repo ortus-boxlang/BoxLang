@@ -45,6 +45,13 @@ import ortus.boxlang.compiler.ast.expression.BoxFunctionalMemberAccess;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
+import ortus.boxlang.compiler.ast.expression.BoxMatchArrayPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchBindingPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchCase;
+import ortus.boxlang.compiler.ast.expression.BoxMatchExpression;
+import ortus.boxlang.compiler.ast.expression.BoxMatchLiteralPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchObjectPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchWildcardPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNegateOperation;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
@@ -263,6 +270,34 @@ public abstract class VoidBoxVisitor {
 	}
 
 	public void visit( BoxNew node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxMatchExpression node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxMatchCase node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxMatchLiteralPattern node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxMatchWildcardPattern node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxMatchBindingPattern node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxMatchArrayPattern node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxMatchObjectPattern node ) {
 		visitChildren( node );
 	}
 

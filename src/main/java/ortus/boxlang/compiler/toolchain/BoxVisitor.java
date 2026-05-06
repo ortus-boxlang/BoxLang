@@ -111,6 +111,7 @@ import ortus.boxlang.parser.antlr.BoxGrammar.ExprPrefixContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprRelationalContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprStatAnonymousFunctionContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprStatInvocableContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprStatMatchContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprTernaryContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprUnaryContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprXorContext;
@@ -845,6 +846,11 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 
 	@Override
 	public BoxNode visitExprStatAnonymousFunction( ExprStatAnonymousFunctionContext ctx ) {
+		return buildExprStat( ctx );
+	}
+
+	@Override
+	public BoxNode visitExprStatMatch( ExprStatMatchContext ctx ) {
 		return buildExprStat( ctx );
 	}
 

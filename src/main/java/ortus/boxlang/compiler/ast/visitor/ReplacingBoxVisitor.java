@@ -50,6 +50,14 @@ import ortus.boxlang.compiler.ast.expression.BoxFunctionalMemberAccess;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
+import ortus.boxlang.compiler.ast.expression.BoxMatchArrayPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchBindingPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchCase;
+import ortus.boxlang.compiler.ast.expression.BoxMatchExpression;
+import ortus.boxlang.compiler.ast.expression.BoxMatchLiteralPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchObjectPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchWildcardPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNegateOperation;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
@@ -514,6 +522,85 @@ public abstract class ReplacingBoxVisitor {
 				node.replaceChildren( argument, newArgument );
 				node.getArguments().set( i, ( BoxArgument ) newArgument );
 			}
+		}
+		return node;
+	}
+
+	/** {@inheritDoc} */
+	public BoxNode visit( BoxMatchExpression node ) {
+		BoxExpression	subject		= node.getSubject();
+		BoxNode			newSubject	= subject.accept( this );
+		if ( newSubject != subject ) {
+			node.setSubject( ( BoxExpression ) newSubject );
+		}
+		for ( int i = 0; i < node.getCases().size(); i++ ) {
+			BoxMatchCase	matchCase	= node.getCases().get( i );
+			BoxNode			newCase		= matchCase.accept( this );
+			if ( newCase != matchCase ) {
+				node.replaceChildren( matchCase, newCase );
+				node.getCases().set( i, ( BoxMatchCase ) newCase );
+			}
+		}
+		return node;
+	}
+
+	public BoxNode visit( BoxMatchCase node ) {
+		BoxMatchPattern	pattern		= node.getPattern();
+		BoxNode			newPattern	= pattern.accept( this );
+		if ( newPattern != pattern ) {
+			node.setPattern( ( BoxMatchPattern ) newPattern );
+		}
+		BoxExpression guard = node.getGuard();
+		if ( guard != null ) {
+			BoxNode newGuard = guard.accept( this );
+			if ( newGuard != guard ) {
+				node.setGuard( ( BoxExpression ) newGuard );
+			}
+		}
+		BoxExpression	body	= node.getBody();
+		BoxNode			newBody	= body.accept( this );
+		if ( newBody != body ) {
+			node.setBody( ( BoxExpression ) newBody );
+		}
+		return node;
+	}
+
+	public BoxNode visit( BoxMatchLiteralPattern node ) {
+		BoxExpression	value		= node.getValue();
+		BoxNode			newValue	= value.accept( this );
+		if ( newValue != value ) {
+			node.setValue( ( BoxExpression ) newValue );
+		}
+		return node;
+	}
+
+	public BoxNode visit( BoxMatchWildcardPattern node ) {
+		return node;
+	}
+
+	public BoxNode visit( BoxMatchBindingPattern node ) {
+		BoxIdentifier	binding		= node.getBinding();
+		BoxNode			newBinding	= binding.accept( this );
+		if ( newBinding != binding ) {
+			node.setBinding( ( BoxIdentifier ) newBinding );
+		}
+		return node;
+	}
+
+	public BoxNode visit( BoxMatchArrayPattern node ) {
+		BoxArrayDestructuringPattern	pattern		= node.getPattern();
+		BoxNode							newPattern	= pattern.accept( this );
+		if ( newPattern != pattern ) {
+			node.setPattern( ( BoxArrayDestructuringPattern ) newPattern );
+		}
+		return node;
+	}
+
+	public BoxNode visit( BoxMatchObjectPattern node ) {
+		BoxObjectDestructuringPattern	pattern		= node.getPattern();
+		BoxNode							newPattern	= pattern.accept( this );
+		if ( newPattern != pattern ) {
+			node.setPattern( ( BoxObjectDestructuringPattern ) newPattern );
 		}
 		return node;
 	}
