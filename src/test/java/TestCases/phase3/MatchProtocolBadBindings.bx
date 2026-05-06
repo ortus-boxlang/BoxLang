@@ -1,0 +1,11 @@
+class accessors=true {
+
+	boolean function $matchPredicate( required struct patternDescriptor ) {
+		return patternDescriptor.label == "Email";
+	}
+
+	string function $matchBindings( required struct patternDescriptor ) {
+		return "not-a-struct";
+	}
+
+}

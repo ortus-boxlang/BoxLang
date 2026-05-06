@@ -46,6 +46,16 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  */
 public class MatchExpression {
 
+	private static final Key	PATTERN_MATCH_KEY	= Key.of( "patternMatch" );
+	private static final Key	MATCH_PREDICATE_KEY	= Key.of( "$matchPredicate" );
+	private static final Key	MATCH_BINDINGS_KEY	= Key.of( "$matchBindings" );
+	private static final Key	LABEL_KEY			= Key.of( "label" );
+	private static final Key	ARITY_KEY			= Key.of( "arity" );
+	private static final Key	PATTERNS_KEY		= Key.of( "patterns" );
+	private static final Key	SLOT_KEY			= Key.of( "slot" );
+	private static final Key	KIND_KEY			= Key.of( "kind" );
+	private static final Key	BINDING_NAME_KEY	= Key.of( "bindingName" );
+
 	public static Object invoke( IBoxContext context, Object subject, Case[] cases ) {
 		Case[] safeCases = cases == null ? new Case[] {} : cases;
 		for ( Case matchCase : safeCases ) {
@@ -163,7 +173,7 @@ public class MatchExpression {
 			return List.of();
 		}
 
-		Object rawDescriptor = classRunnable.getAnnotations().get( Key.of( "patternMatch" ) );
+		Object rawDescriptor = classRunnable.getAnnotations().get( PATTERN_MATCH_KEY );
 		if ( rawDescriptor == null ) {
 			return List.of();
 		}
@@ -210,6 +220,119 @@ public class MatchExpression {
 		}
 
 		return new ConstructorDescriptor( label, propertyNames );
+	}
+
+	private static boolean hasMethod( IClassRunnable classRunnable, Key methodName ) {
+		if ( classRunnable.getThisScope().get( methodName ) != null || classRunnable.getStaticScope().get( methodName ) != null ) {
+			return true;
+		}
+		return classRunnable.getSuper() != null && hasMethod( classRunnable.getSuper(), methodName );
+	}
+
+	private static IStruct buildProtocolDescriptor( String label, Pattern[] patterns ) {
+		Array patternDescriptors = new Array();
+		for ( int i = 0; i < patterns.length; i++ ) {
+			patternDescriptors.add( Struct.of(
+			    SLOT_KEY, i + 1,
+			    KIND_KEY, getPatternKind( patterns[ i ] ),
+			    BINDING_NAME_KEY, getBindingName( patterns[ i ] )
+			) );
+		}
+
+		return Struct.of(
+		    LABEL_KEY, label,
+		    ARITY_KEY, patterns.length,
+		    PATTERNS_KEY, patternDescriptors
+		);
+	}
+
+	private static String getPatternKind( Pattern pattern ) {
+		if ( pattern instanceof BindingPattern ) {
+			return "binding";
+		}
+		if ( pattern instanceof WildcardPattern ) {
+			return "wildcard";
+		}
+		if ( pattern instanceof LiteralPattern ) {
+			return "literal";
+		}
+		if ( pattern instanceof ConstructorPattern ) {
+			return "constructor";
+		}
+		if ( pattern instanceof ObjectPattern ) {
+			return "object";
+		}
+		if ( pattern instanceof ArrayPattern ) {
+			return "array";
+		}
+		return pattern.getClass().getSimpleName();
+	}
+
+	private static String getBindingName( Pattern pattern ) {
+		if ( ! ( pattern instanceof BindingPattern bindingPattern ) ) {
+			return null;
+		}
+		Target target = bindingPattern.target;
+		if ( target == null || target.isScoped() || target.getPath().length != 1 ) {
+			return null;
+		}
+		return target.getPath()[ 0 ].getName();
+	}
+
+	private static boolean matchProtocolConstructorPattern( IBoxContext context, IClassRunnable classRunnable, String label, Pattern[] patterns ) {
+		if ( !hasMethod( classRunnable, MATCH_PREDICATE_KEY ) ) {
+			return false;
+		}
+
+		IStruct	descriptor		= buildProtocolDescriptor( label, patterns );
+		Object	predicateResult	= classRunnable.dereferenceAndInvoke( context, MATCH_PREDICATE_KEY, new Object[] { descriptor }, false );
+		if ( !BooleanCaster.cast( predicateResult ) ) {
+			return false;
+		}
+
+		if ( !hasMethod( classRunnable, MATCH_BINDINGS_KEY ) ) {
+			throw new BoxRuntimeException( "$matchBindings must be implemented when $matchPredicate returns true." );
+		}
+
+		CastAttempt<IStruct> bindingsAttempt = StructCaster
+		    .attempt( classRunnable.dereferenceAndInvoke( context, MATCH_BINDINGS_KEY, new Object[] { descriptor }, false ) );
+		if ( !bindingsAttempt.wasSuccessful() ) {
+			throw new BoxRuntimeException( "$matchBindings must return a struct of bound values." );
+		}
+
+		IStruct bindings = bindingsAttempt.get();
+		for ( int i = 0; i < patterns.length; i++ ) {
+			Object value = getProtocolBindingValue( bindings, patterns[ i ], i + 1 );
+			if ( value == ProtocolBindingMissing.INSTANCE ) {
+				throw new BoxRuntimeException( "$matchBindings must provide a value for pattern slot [" + ( i + 1 ) + "]." );
+			}
+			if ( !patterns[ i ].matches( context, value ) ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	private static Object getProtocolBindingValue( IStruct bindings, Pattern pattern, int slot ) {
+		Key slotKey = Key.of( String.valueOf( slot ) );
+		if ( bindings.containsKey( slotKey ) ) {
+			return bindings.get( slotKey );
+		}
+
+		String bindingName = getBindingName( pattern );
+		if ( bindingName != null ) {
+			Key bindingKey = Key.of( bindingName );
+			if ( bindings.containsKey( bindingKey ) ) {
+				return bindings.get( bindingKey );
+			}
+		}
+
+		if ( pattern instanceof WildcardPattern ) {
+			return null;
+		}
+
+		return ProtocolBindingMissing.INSTANCE;
 	}
 
 	private static boolean matchObjectBindings( IBoxContext context, IStruct source, ObjectBinding[] bindings ) {
@@ -406,10 +529,12 @@ public class MatchExpression {
 
 		@Override
 		boolean matches( IBoxContext context, Object subject ) {
+			boolean matchedTagDescriptor = false;
 			for ( ConstructorDescriptor descriptor : getConstructorDescriptors( subject ) ) {
 				if ( !this.label.equalsIgnoreCase( descriptor.label() ) ) {
 					continue;
 				}
+				matchedTagDescriptor = true;
 				if ( descriptor.propertyNames().length != this.patterns.length ) {
 					return false;
 				}
@@ -420,6 +545,12 @@ public class MatchExpression {
 				}
 
 				return matchNestedPatterns( context, this.patterns, values );
+			}
+			if ( matchedTagDescriptor ) {
+				return false;
+			}
+			if ( subject instanceof IClassRunnable classRunnable ) {
+				return matchProtocolConstructorPattern( context, classRunnable, this.label, this.patterns );
 			}
 			return false;
 		}
@@ -551,5 +682,9 @@ public class MatchExpression {
 	}
 
 	private record ConstructorDescriptor( String label, String[] propertyNames ) {
+	}
+
+	private enum ProtocolBindingMissing {
+		INSTANCE
 	}
 }
