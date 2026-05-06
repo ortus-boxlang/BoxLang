@@ -36,6 +36,7 @@ import ortus.boxlang.compiler.prettyprint.PrettyPrint;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -255,5 +256,56 @@ public class MatchConstructorPatternsTest {
 		);
 
 		assertThat( result ).isEqualTo( "Ada" );
+	}
+
+	@Test
+	public void testMatchConstructorPatternSupportsAttemptOkAlias() {
+		this.variables.put( Key.of( "value" ), Attempt.of( "Ada" ) );
+
+		Object result = instance.executeStatement(
+		    """
+		    match value {
+		    	Ok( x ) -> x
+		    	_ -> "fallback"
+		    }
+		    """,
+		    this.context
+		);
+
+		assertThat( result ).isEqualTo( "Ada" );
+	}
+
+	@Test
+	public void testMatchConstructorPatternSupportsAttemptErrAlias() {
+		this.variables.put( Key.of( "value" ), Attempt.fail( "boom" ) );
+
+		Object result = instance.executeStatement(
+		    """
+		    match value {
+		    	Err( problem ) -> problem
+		    	_ -> "fallback"
+		    }
+		    """,
+		    this.context
+		);
+
+		assertThat( result ).isEqualTo( "boom" );
+	}
+
+	@Test
+	public void testMatchConstructorPatternSupportsEmptyAttemptFailureArity() {
+		this.variables.put( Key.of( "value" ), Attempt.empty() );
+
+		Object result = instance.executeStatement(
+		    """
+		    match value {
+		    	Failure() -> "empty"
+		    	_ -> "fallback"
+		    }
+		    """,
+		    this.context
+		);
+
+		assertThat( result ).isEqualTo( "empty" );
 	}
 }

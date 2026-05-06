@@ -128,6 +128,24 @@ public class AttemptTest {
 		assertThat( attempt.toString() ).isEqualTo( "Attempt[test]" );
 	}
 
+	@DisplayName( "Test explicit failure payloads" )
+	@Test
+	void testExplicitFailure() {
+		attempt = Attempt.fail( "boom" );
+
+		assertThat( attempt.hasFailurePayload() ).isTrue();
+		assertThat( attempt.hasFailed() ).isTrue();
+		assertThat( attempt.wasSuccessful() ).isFalse();
+		assertThat( attempt.isEmpty() ).isTrue();
+		assertThat( attempt.getFailure() ).isEqualTo( "boom" );
+		assertThat( attempt.getError() ).isEqualTo( "boom" );
+		assertThat( attempt.map( value -> value ).getFailure() ).isEqualTo( "boom" );
+		assertThat( attempt.toString() ).isEqualTo( "Attempt.failed[boom]" );
+
+		NoElementException exception = assertThrows( NoElementException.class, attempt::get );
+		assertThat( exception ).hasMessageThat().contains( "Attempt failed: boom" );
+	}
+
 	@Test
 	void testValidationPredicate() {
 		attempt = Attempt.of( "test" );

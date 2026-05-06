@@ -209,6 +209,10 @@ public class MatchExpression {
 	}
 
 	private static List<ConstructorDescriptor> getConstructorDescriptors( Object subject ) {
+		if ( subject instanceof Attempt<?> attempt ) {
+			return getAttemptConstructorDescriptors( attempt );
+		}
+
 		if ( ! ( subject instanceof IClassRunnable classRunnable ) ) {
 			return List.of();
 		}
@@ -242,6 +246,47 @@ public class MatchExpression {
 		}
 
 		return List.of( toConstructorDescriptor( classRunnable, descriptor ) );
+	}
+
+	private static List<ConstructorDescriptor> getAttemptConstructorDescriptors( Attempt<?> attempt ) {
+		if ( attempt.wasSuccessful() ) {
+			return List.of(
+			    new ConstructorDescriptor( "Ok", new String[] { "value" } ),
+			    new ConstructorDescriptor( "Success", new String[] { "value" } )
+			);
+		}
+
+		if ( attempt.hasFailurePayload() ) {
+			return List.of(
+			    new ConstructorDescriptor( "Err", new String[] { "error" } ),
+			    new ConstructorDescriptor( "Failure", new String[] { "error" } )
+			);
+		}
+
+		return List.of(
+		    new ConstructorDescriptor( "Err", new String[] {} ),
+		    new ConstructorDescriptor( "Failure", new String[] {} )
+		);
+	}
+
+	private static Object[] getConstructorPatternValues( IBoxContext context, Object subject, ConstructorDescriptor descriptor ) {
+		Object[] values = new Object[ descriptor.propertyNames().length ];
+
+		if ( subject instanceof Attempt<?> attempt ) {
+			for ( int i = 0; i < descriptor.propertyNames().length; i++ ) {
+				values[ i ] = switch ( descriptor.propertyNames()[ i ] ) {
+					case "value" -> attempt.get();
+					case "error" -> attempt.getFailure();
+					default -> null;
+				};
+			}
+			return values;
+		}
+
+		for ( int i = 0; i < descriptor.propertyNames().length; i++ ) {
+			values[ i ] = Referencer.get( context, subject, Key.of( descriptor.propertyNames()[ i ] ), false );
+		}
+		return values;
 	}
 
 	private static ConstructorDescriptor toConstructorDescriptor( IClassRunnable classRunnable, Array descriptor ) {
@@ -585,10 +630,7 @@ public class MatchExpression {
 					return false;
 				}
 
-				Object[] values = new Object[ descriptor.propertyNames().length ];
-				for ( int i = 0; i < descriptor.propertyNames().length; i++ ) {
-					values[ i ] = Referencer.get( context, subject, Key.of( descriptor.propertyNames()[ i ] ), false );
-				}
+				Object[] values = getConstructorPatternValues( context, subject, descriptor );
 
 				return matchNestedPatterns( context, this.patterns, values );
 			}
