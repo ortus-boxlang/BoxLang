@@ -884,7 +884,7 @@ public class CFTemplateTest {
 		    		<cfset result = result & "after-break">
 		    	</cfcase>
 		    	<cfcase value="potato">
-		    		<cfset result = result & "potato">
+		    		<cfset result = result & "potato" >
 		    	</cfcase>
 		    </cfswitch>
 		    """, context, BoxSourceType.CFTEMPLATE );
