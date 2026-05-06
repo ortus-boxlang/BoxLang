@@ -90,6 +90,7 @@ import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
 import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
+import ortus.boxlang.compiler.ast.statement.BoxSwitchBreakingCase;
 import ortus.boxlang.compiler.ast.statement.BoxSwitchCase;
 import ortus.boxlang.compiler.ast.statement.BoxThrow;
 import ortus.boxlang.compiler.ast.statement.BoxTry;
@@ -1057,6 +1058,10 @@ public abstract class ReplacingBoxVisitor {
 		}
 		handleStatements( node.getBody(), node );
 		return node;
+	}
+
+	public BoxNode visit( BoxSwitchBreakingCase node ) {
+		return visit( ( BoxSwitchCase ) node );
 	}
 
 	public BoxNode visit( BoxThrow node ) {

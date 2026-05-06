@@ -27,7 +27,6 @@ import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
-import ortus.boxlang.compiler.ast.statement.BoxBreak;
 import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 
@@ -104,7 +103,7 @@ public class HelperPrinter {
 		}
 
 		var meaningful = statements.stream()
-		    .filter( s -> s != null && !isWhitespaceOnlyBuffer( s ) && !isImplicitBreak( s ) )
+		    .filter( s -> s != null && !isWhitespaceOnlyBuffer( s ) )
 		    .toList();
 
 		if ( meaningful.isEmpty() ) {
@@ -131,10 +130,6 @@ public class HelperPrinter {
 		visitor.getCurrentDoc()
 		    .append( contentsDoc )
 		    .append( Line.HARD );
-	}
-
-	private boolean isImplicitBreak( BoxStatement statement ) {
-		return statement instanceof BoxBreak b && b.isImplicit();
 	}
 
 	private boolean isWhitespaceOnlyBuffer( BoxStatement statement ) {

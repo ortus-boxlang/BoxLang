@@ -102,6 +102,7 @@ import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
 import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
+import ortus.boxlang.compiler.ast.statement.BoxSwitchBreakingCase;
 import ortus.boxlang.compiler.ast.statement.BoxSwitchCase;
 import ortus.boxlang.compiler.ast.statement.BoxThrow;
 import ortus.boxlang.compiler.ast.statement.BoxTry;
@@ -1202,9 +1203,6 @@ public class Visitor extends VoidBoxVisitor {
 
 	@Override
 	public void visit( BoxBreak node ) {
-		if ( isTemplate() && node.isImplicit() ) {
-			return;
-		}
 		printPreComments( node );
 		if ( printSourceForCFCompat( node ) ) {
 			printPostComments( node );
@@ -1730,6 +1728,11 @@ public class Visitor extends VoidBoxVisitor {
 		}
 
 		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxSwitchBreakingCase node ) {
+		visit( ( BoxSwitchCase ) node );
 	}
 
 	@Override

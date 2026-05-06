@@ -103,8 +103,13 @@ public class BoxContinueTransformer extends AbstractTransformer {
 
 	@SuppressWarnings( "unchecked" )
 	public BoxNode getTargetAncestor( BoxNode node ) {
-		return node.getFirstNodeOfTypes( BoxFunctionDeclaration.class, BoxClosure.class, BoxLambda.class, BoxComponent.class, BoxDo.class,
+		BoxNode target = node.getFirstNodeOfTypes( BoxFunctionDeclaration.class, BoxClosure.class, BoxLambda.class, BoxComponent.class, BoxDo.class,
 		    BoxForIndex.class, BoxForIn.class,
 		    BoxWhile.class, BoxSwitch.class );
+		// Skip breaking switches - they are not valid continue targets
+		if ( target instanceof BoxSwitch sw && sw.hasBreakingCases() ) {
+			return getTargetAncestor( target.getParent() );
+		}
+		return target;
 	}
 }

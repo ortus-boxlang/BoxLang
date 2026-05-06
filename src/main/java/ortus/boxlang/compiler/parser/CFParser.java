@@ -89,6 +89,7 @@ import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
 import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
+import ortus.boxlang.compiler.ast.statement.BoxSwitchBreakingCase;
 import ortus.boxlang.compiler.ast.statement.BoxSwitchCase;
 import ortus.boxlang.compiler.ast.statement.BoxTry;
 import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
@@ -346,7 +347,7 @@ public class CFParser extends AbstractParser {
 		this.classOrInterface = classOrInterface;
 		CFLexerCustom	lexer	= new CFLexerCustom( CharStreams.fromStream( stream, StandardCharsets.UTF_8 ),
 		    isScript ? CFLexerCustom.DEFAULT_SCRIPT_MODE : CFLexerCustom.DEFAULT_TEMPLATE_MODE, errorListener, this )
-		    .setClassIsExpected( classOrInterface );
+		        .setClassIsExpected( classOrInterface );
 		CFGrammar		parser	= new CFGrammar( new CommonTokenStream( lexer ) );
 
 		// DEBUG: Will print a trace of all parser rules visited:
@@ -1092,14 +1093,7 @@ public class CFParser extends AbstractParser {
 			statements.addAll( toAst( file, node.template_statements() ) );
 		}
 
-		if ( statements != null ) {
-			// In component mode, the break is implied
-			var implicitBreak = new BoxBreak( null, null );
-			implicitBreak.setImplicit( true );
-			statements.add( implicitBreak );
-		}
-
-		var switchCase = new BoxSwitchCase( value, delimiter, statements, getPosition( node ), getSourceText( node ) );
+		var switchCase = new BoxSwitchBreakingCase( value, delimiter, statements, getPosition( node ), getSourceText( node ) );
 		if ( delimiter == null && value != null ) {
 			switchCase.setDelimiter( new BoxStringLiteral( ",", null, null ) );
 			switchCase.setImplicitDelimiter( true );

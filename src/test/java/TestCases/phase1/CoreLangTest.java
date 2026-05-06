@@ -1513,6 +1513,73 @@ public class CoreLangTest {
 		assertThat( variables.get( result ) ).isEqualTo( "fall through1fall through2" );
 	}
 
+	@DisplayName( "Script switch inside loop - break exits loop" )
+	@Test
+	public void testSwitchInsideLoopBreakExitsLoop() {
+		instance.executeSource(
+		    """
+		    result = 0;
+		    for( i = 1; i <= 10; i++ ) {
+		    	switch( "go" ) {
+		    		case "go":
+		    			result++;
+		    			if( result == 3 ) {
+		    				break;
+		    			}
+		    	}
+		    }
+		    """,
+		    context );
+
+		// In script, break exits the switch, not the loop - so all 10 iterations run
+		assertThat( variables.get( result ) ).isEqualTo( 10 );
+	}
+
+	@DisplayName( "Script switch inside loop - continue exits switch" )
+	@Test
+	public void testSwitchInsideLoopContinue() {
+		instance.executeSource(
+		    """
+		    result = "";
+		    for( i = 1; i <= 5; i++ ) {
+		    	switch( i ) {
+		    		case 3:
+		    			continue;
+		    	}
+		    	result &= i;
+		    }
+		    """,
+		    context );
+
+		// In script, continue inside a switch exits the do-while(false), NOT the for loop
+		// So all iterations still append to result
+		assertThat( variables.get( result ) ).isEqualTo( "12345" );
+	}
+
+	@DisplayName( "Script switch fall-through inside loop" )
+	@Test
+	public void testSwitchFallThroughInsideLoop() {
+		instance.executeSource(
+		    """
+		    result = "";
+		    for( i = 1; i <= 3; i++ ) {
+		    	switch( i ) {
+		    		case 1:
+		    		case 2:
+		    			result &= "matched";
+		    			break;
+		    		default:
+		    			result &= "default";
+		    	}
+		    	result &= i;
+		    }
+		    """,
+		    context );
+
+		// Cases 1 and 2 fall through, break exits switch (not loop), then loop continues
+		assertThat( variables.get( result ) ).isEqualTo( "matched1matched2default3" );
+	}
+
 	@DisplayName( "String as array" )
 	@Test
 	public void testStringAsArray() {

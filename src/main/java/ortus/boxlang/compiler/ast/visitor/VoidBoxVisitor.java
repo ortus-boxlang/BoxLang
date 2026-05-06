@@ -104,6 +104,7 @@ import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
 import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
+import ortus.boxlang.compiler.ast.statement.BoxSwitchBreakingCase;
 import ortus.boxlang.compiler.ast.statement.BoxSwitchCase;
 import ortus.boxlang.compiler.ast.statement.BoxThrow;
 import ortus.boxlang.compiler.ast.statement.BoxTry;
@@ -408,6 +409,10 @@ public abstract class VoidBoxVisitor {
 
 	public void visit( BoxSwitchCase node ) {
 		visitChildren( node );
+	}
+
+	public void visit( BoxSwitchBreakingCase node ) {
+		visit( ( BoxSwitchCase ) node );
 	}
 
 	public void visit( BoxThrow node ) {

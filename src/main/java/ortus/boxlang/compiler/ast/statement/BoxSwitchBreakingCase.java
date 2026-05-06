@@ -14,8 +14,9 @@
  */
 package ortus.boxlang.compiler.ast.statement;
 
-import java.util.Map;
+import java.util.List;
 
+import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
@@ -23,49 +24,26 @@ import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
- * AST Node representing a break statement
+ * AST Node representing a switch case statement in tag-based code (e.g., {@code <cfcase>} or {@code <bx:case>}).
+ * <p>
+ * Unlike script-based switch cases which support fall-through behavior, tag-based cases
+ * implicitly break after execution. Break statements inside a breaking case are ignored
+ * by the switch and propagate up to the nearest enclosing loop.
+ * </p>
  */
-public class BoxBreak extends BoxStatement {
-
-	private String label;
+public class BoxSwitchBreakingCase extends BoxSwitchCase {
 
 	/**
 	 * Creates the AST node
 	 *
+	 * @param condition  expression representing the condition to test, null for the default
+	 * @param delimiter  expression representing the delimiter for list-based case matching
+	 * @param body       list of the statements to execute when the condition is true
 	 * @param position   position of the statement in the source code
 	 * @param sourceText source code that originated the Node
 	 */
-	public BoxBreak( Position position, String sourceText ) {
-		this( null, position, sourceText );
-	}
-
-	/**
-	 * Creates the AST node
-	 *
-	 * @param position   position of the statement in the source code
-	 * @param sourceText source code that originated the Node
-	 */
-	public BoxBreak( String label, Position position, String sourceText ) {
-		super( position, sourceText );
-		setLabel( label );
-	}
-
-	/**
-	 * Gets the label of the break statement
-	 *
-	 * @return the label of the break statement
-	 */
-	public String getLabel() {
-		return label;
-	}
-
-	/**
-	 * Sets the label of the break statement
-	 *
-	 * @param label the label of the break statement
-	 */
-	public void setLabel( String label ) {
-		this.label = label;
+	public BoxSwitchBreakingCase( BoxExpression condition, BoxExpression delimiter, List<BoxStatement> body, Position position, String sourceText ) {
+		super( condition, delimiter, body, position, sourceText );
 	}
 
 	public void accept( VoidBoxVisitor v ) {
@@ -74,16 +52,5 @@ public class BoxBreak extends BoxStatement {
 
 	public BoxNode accept( ReplacingBoxVisitor v ) {
 		return v.visit( this );
-	}
-
-	@Override
-	public Map<String, Object> toMap() {
-		Map<String, Object> map = super.toMap();
-		if ( label != null ) {
-			map.put( "label", label );
-		} else {
-			map.put( "label", null );
-		}
-		return map;
 	}
 }

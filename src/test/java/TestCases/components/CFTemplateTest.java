@@ -849,6 +849,133 @@ public class CFTemplateTest {
 	}
 
 	@Test
+	public void testSwitchNoFallThrough() {
+		instance.executeSource(
+		    """
+		    <cfset result = "">
+		    <cfset vegetable = "carrot" />
+		    <cfswitch expression="#vegetable#">
+		    	<cfcase value="carrot">
+		    		<cfset result = result & "carrot">
+		    	</cfcase>
+		    	<cfcase value="potato">
+		    		<cfset result = result & "potato">
+		    	</cfcase>
+		    	<cfdefaultcase>
+		    		<cfset result = result & "default">
+		    	</cfdefaultcase>
+		    </cfswitch>
+		    """, context, BoxSourceType.CFTEMPLATE );
+
+		// Tag switches do NOT fall through - only the matched case should execute
+		assertThat( variables.get( result ) ).isEqualTo( "carrot" );
+	}
+
+	@Test
+	public void testSwitchBreakIgnoredInTagSwitch() {
+		instance.executeSource(
+		    """
+		    <cfset result = "">
+		    <cfset vegetable = "carrot" />
+		    <cfswitch expression="#vegetable#">
+		    	<cfcase value="carrot">
+		    		<cfset result = result & "carrot">
+		    		<cfbreak>
+		    		<cfset result = result & "after-break">
+		    	</cfcase>
+		    	<cfcase value="potato">
+		    		<cfset result = result & "potato">
+		    	</cfcase>
+		    </cfswitch>
+		    """, context, BoxSourceType.CFTEMPLATE );
+
+		// Break in a tag switch with no enclosing loop is a no-op - code continues
+		assertThat( variables.get( result ) ).isEqualTo( "carrotafter-break" );
+	}
+
+	@Test
+	public void testSwitchBreakInsideLoopBreaksLoop() {
+		instance.executeSource(
+		    """
+		    <cfset result = 0>
+		    <cfloop from="1" to="10" index="i">
+		    	<cfswitch expression="#i#">
+		    		<cfcase value="1,2,3">
+		    			<cfset result = result + 1>
+		    		</cfcase>
+		    	</cfswitch>
+		    	<cfif i EQ 5>
+		    		<cfbreak>
+		    	</cfif>
+		    </cfloop>
+		    """, context, BoxSourceType.CFTEMPLATE );
+
+		// Loop should break at i=5, but switch cases 1,2,3 should have matched
+		assertThat( variables.get( result ) ).isEqualTo( 3 );
+	}
+
+	@Test
+	public void testSwitchBreakInCaseExitsLoop() {
+		instance.executeSource(
+		    """
+		    <cfset result = 0>
+		    <cfloop from="1" to="10" index="i">
+		    	<cfswitch expression="go">
+		    		<cfcase value="go">
+		    			<cfset result = result + 1>
+		    			<cfif result EQ 3>
+		    				<cfbreak>
+		    			</cfif>
+		    		</cfcase>
+		    	</cfswitch>
+		    </cfloop>
+		    """, context, BoxSourceType.CFTEMPLATE );
+
+		// Break inside the case should exit the for loop since tag switches don't consume breaks
+		assertThat( variables.get( result ) ).isEqualTo( 3 );
+	}
+
+	@Test
+	public void testSwitchInsideLoopContinueSkipsIteration() {
+		instance.executeSource(
+		    """
+		    <cfset result = "">
+		    <cfloop from="1" to="5" index="i">
+		    	<cfswitch expression="#i#">
+		    		<cfcase value="3">
+		    			<cfcontinue>
+		    		</cfcase>
+		    	</cfswitch>
+		    	<cfset result = result & i>
+		    </cfloop>
+		    """, context, BoxSourceType.CFTEMPLATE );
+
+		// Continue inside tag switch case exits the loop iteration
+		assertThat( variables.get( result ) ).isEqualTo( "1245" );
+	}
+
+	@Test
+	public void testSwitchInsideWhileLoopBreak() {
+		instance.executeSource(
+		    """
+		    <cfset result = 0>
+		    <cfset i = 0>
+		    <cfloop condition="i LT 10">
+		    	<cfset i = i + 1>
+		    	<cfswitch expression="#i#">
+		    		<cfcase value="5">
+		    			<cfbreak>
+		    		</cfcase>
+		    	</cfswitch>
+		    	<cfset result = result + 1>
+		    </cfloop>
+		    """, context, BoxSourceType.CFTEMPLATE );
+
+		// Break inside case should exit the while loop at i=5
+		assertThat( variables.get( result ) ).isEqualTo( 4 );
+	}
+
+	@Test
 	public void testClass() {
 		instance.executeSource(
 		    """
