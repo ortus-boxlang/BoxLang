@@ -191,4 +191,69 @@ public class MatchConstructorPatternsTest {
 
 		assertThat( exception ).hasMessageThat().contains( "@patternMatch references unknown property [missingValue]" );
 	}
+
+	@Test
+	public void testMatchConstructorPatternSupportsMultipleTagsPerClass() {
+		this.variables.put(
+		    Key.of( "value" ),
+		    instance.executeStatement( "new src.test.java.TestCases.phase3.MatchTaggedValue( value = \"Ada\" )", this.context )
+		);
+
+		Object result = instance.executeStatement(
+		    """
+		    match value {
+		    	Just( x ) -> x
+		    	_ -> "fallback"
+		    }
+		    """,
+		    this.context
+		);
+
+		assertThat( result ).isEqualTo( "Ada" );
+	}
+
+	@Test
+	public void testMatchConstructorPatternUsesFirstMatchingBranch() {
+		this.variables.put(
+		    Key.of( "value" ),
+		    instance.executeStatement( "new src.test.java.TestCases.phase3.MatchTaggedValue( value = \"Ada\" )", this.context )
+		);
+
+		Object result = instance.executeStatement(
+		    """
+		    match value {
+		    	Just( x ) -> x & "-first"
+		    	Just( x ) -> x & "-second"
+		    	_ -> "fallback"
+		    }
+		    """,
+		    this.context
+		);
+
+		assertThat( result ).isEqualTo( "Ada-first" );
+	}
+
+	@Test
+	public void testMatchConstructorPatternSupportsMultipleTagsWithNestedPayloads() {
+		IStruct	meta	= Struct.of( "cached", true );
+		IStruct	payload	= Struct.of( "data", "Ada", "meta", meta );
+
+		this.variables.put( Key.of( "payload" ), payload );
+		this.variables.put(
+		    Key.of( "value" ),
+		    instance.executeStatement( "new src.test.java.TestCases.phase3.MatchTaggedValue( payload = payload )", this.context )
+		);
+
+		Object result = instance.executeStatement(
+		    """
+		    match value {
+		    	Success( { data, meta } ) if meta.cached -> data
+		    	_ -> "fallback"
+		    }
+		    """,
+		    this.context
+		);
+
+		assertThat( result ).isEqualTo( "Ada" );
+	}
 }

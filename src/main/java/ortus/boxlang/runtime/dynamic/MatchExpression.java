@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.dynamic;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -173,6 +174,27 @@ public class MatchExpression {
 		}
 
 		Array descriptor = attempt.get();
+		if ( descriptor.isEmpty() ) {
+			throw new BoxRuntimeException( "@patternMatch metadata must declare a label followed by one or more property names." );
+		}
+
+		CastAttempt<Array> nestedAttempt = ArrayCaster.attempt( descriptor.getAt( 1 ) );
+		if ( nestedAttempt.wasSuccessful() ) {
+			List<ConstructorDescriptor> descriptors = new ArrayList<>();
+			for ( int i = 1; i <= descriptor.size(); i++ ) {
+				CastAttempt<Array> constructorAttempt = ArrayCaster.attempt( descriptor.getAt( i ) );
+				if ( !constructorAttempt.wasSuccessful() ) {
+					throw new BoxRuntimeException( "@patternMatch metadata must declare a label followed by one or more property names." );
+				}
+				descriptors.add( toConstructorDescriptor( classRunnable, constructorAttempt.get() ) );
+			}
+			return descriptors;
+		}
+
+		return List.of( toConstructorDescriptor( classRunnable, descriptor ) );
+	}
+
+	private static ConstructorDescriptor toConstructorDescriptor( IClassRunnable classRunnable, Array descriptor ) {
 		if ( descriptor.size() < 2 ) {
 			throw new BoxRuntimeException( "@patternMatch metadata must declare a label followed by one or more property names." );
 		}
@@ -187,7 +209,7 @@ public class MatchExpression {
 			}
 		}
 
-		return List.of( new ConstructorDescriptor( label, propertyNames ) );
+		return new ConstructorDescriptor( label, propertyNames );
 	}
 
 	private static boolean matchObjectBindings( IBoxContext context, IStruct source, ObjectBinding[] bindings ) {
