@@ -517,6 +517,7 @@ matchCase: matchPattern (IF expression)? ARROW matchCaseBody
 
 matchCaseBody
     : matchExpression
+    | statementBlock
     | el2
     ;
 
@@ -539,8 +540,9 @@ matchPatternNot
 
 matchPatternPrimary
     : stringLiteral              # matchStringLiteralPattern
+    | atoms RANGE atoms          # matchRangePattern
     | atoms                      # matchAtomsPattern
-        | QM LPAREN expression RPAREN # matchPredicatePattern
+    | QM LPAREN expression RPAREN # matchPredicatePattern
     | objectDestructuringPattern # matchObjectPattern
     | arrayDestructuringPattern  # matchArrayPattern
     | constructorPattern         # matchConstructorPattern

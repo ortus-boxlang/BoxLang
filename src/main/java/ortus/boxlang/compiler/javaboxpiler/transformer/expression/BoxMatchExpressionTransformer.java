@@ -23,9 +23,14 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.ReturnStmt;
+import com.github.javaparser.ast.stmt.Statement;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringBinding;
 import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
@@ -43,10 +48,13 @@ import ortus.boxlang.compiler.ast.expression.BoxMatchObjectPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchOrPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchPredicatePattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchRangePattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchWildcardPattern;
 import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringBinding;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
+import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
+import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
@@ -129,6 +137,12 @@ public class BoxMatchExpressionTransformer extends AbstractTransformer {
 			    + buildLambdaExpression( predicatePattern.getPredicate() )
 			    + ")";
 		}
+		if ( pattern instanceof BoxMatchRangePattern rangePattern ) {
+			return "ortus.boxlang.runtime.dynamic.MatchExpression.range("
+			    + transpiler.transform( rangePattern.getFrom(), TransformerContext.RIGHT ) + ", "
+			    + transpiler.transform( rangePattern.getTo(), TransformerContext.RIGHT )
+			    + ")";
+		}
 		if ( pattern instanceof BoxMatchArrayPattern arrayPattern ) {
 			return "ortus.boxlang.runtime.dynamic.MatchExpression.array("
 			    + buildArrayBindingsExpression( arrayPattern.getPattern().getBindings() )
@@ -209,6 +223,48 @@ public class BoxMatchExpressionTransformer extends AbstractTransformer {
 		String expressionSource = transpiler.transform( expression, TransformerContext.RIGHT ).toString();
 		transpiler.popContextName();
 		return "(" + contextName + ") -> " + expressionSource;
+	}
+
+	private String buildLambdaExpression( BoxStatement body ) {
+		if ( body instanceof BoxExpressionStatement expressionStatement ) {
+			return buildLambdaExpression( expressionStatement.getExpression() );
+		}
+
+		String contextName = "matchContext" + transpiler.incrementAndGetLambdaContextCounter();
+		transpiler.pushContextName( contextName );
+		BlockStmt lambdaBody = buildLambdaBlock( body );
+		transpiler.popContextName();
+		return "(" + contextName + ") -> " + lambdaBody;
+	}
+
+	private BlockStmt buildLambdaBlock( BoxStatement body ) {
+		if ( body instanceof BoxStatementBlock statementBlock ) {
+			return buildLambdaBlock( statementBlock );
+		}
+
+		throw new ExpressionException( "Unsupported match case body [" + body.getClass().getSimpleName() + "]", body );
+	}
+
+	private BlockStmt buildLambdaBlock( BoxStatementBlock statementBlock ) {
+		if ( statementBlock.getBody().isEmpty() || !( statementBlock.getBody().getLast() instanceof BoxExpressionStatement finalExpression ) ) {
+			throw new ExpressionException( "Match block bodies must end with an expression.", statementBlock );
+		}
+
+		BlockStmt lambdaBody = new BlockStmt();
+		for ( int i = 0; i < statementBlock.getBody().size() - 1; i++ ) {
+			appendStatement( lambdaBody, transpiler.transform( statementBlock.getBody().get( i ) ) );
+		}
+		Expression returnExpression = ( Expression ) transpiler.transform( finalExpression.getExpression(), TransformerContext.RIGHT );
+		lambdaBody.addStatement( new ReturnStmt( returnExpression ) );
+		return lambdaBody;
+	}
+
+	private void appendStatement( BlockStmt target, Node javaNode ) {
+		if ( javaNode instanceof BlockStmt blockStmt ) {
+			blockStmt.getStatements().forEach( target::addStatement );
+			return;
+		}
+		target.addStatement( ( Statement ) javaNode );
 	}
 
 	private String buildTargetExpression( BoxExpression target, boolean isDeclaration ) {

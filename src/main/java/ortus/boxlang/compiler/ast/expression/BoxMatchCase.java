@@ -21,6 +21,7 @@ import java.util.Map;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
@@ -32,9 +33,9 @@ public class BoxMatchCase extends BoxNode {
 
 	private BoxMatchPattern	pattern;
 	private BoxExpression	guard;
-	private BoxExpression	body;
+	private BoxStatement	body;
 
-	public BoxMatchCase( BoxMatchPattern pattern, BoxExpression guard, BoxExpression body, Position position, String sourceText ) {
+	public BoxMatchCase( BoxMatchPattern pattern, BoxExpression guard, BoxStatement body, Position position, String sourceText ) {
 		super( position, sourceText );
 		setPattern( pattern );
 		setGuard( guard );
@@ -65,11 +66,11 @@ public class BoxMatchCase extends BoxNode {
 		}
 	}
 
-	public BoxExpression getBody() {
+	public BoxStatement getBody() {
 		return this.body;
 	}
 
-	public void setBody( BoxExpression body ) {
+	public void setBody( BoxStatement body ) {
 		replaceChildren( this.body, body );
 		this.body = body;
 		if ( this.body != null ) {

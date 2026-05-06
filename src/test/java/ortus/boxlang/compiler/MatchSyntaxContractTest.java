@@ -20,6 +20,7 @@ package ortus.boxlang.compiler;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -31,6 +32,7 @@ import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.compiler.prettyprint.PrettyPrint;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 public class MatchSyntaxContractTest {
 
@@ -109,18 +111,39 @@ public class MatchSyntaxContractTest {
 	}
 
 	@Test
-	public void testMatchRejectsStatementBlockBranchBodies() {
+	public void testMatchAcceptsStatementBlockBranchBodiesEndingInExpression() {
 		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseExpression(
 		    """
 		    match value {
-		    	0 -> { foo = \"zero\"; }
+		    	0 -> { foo = \"zero\"; foo }
 		    	_ -> \"many\"
 		    }
 		    """
 		);
 
-		assertFalse( result.isCorrect(), result.getIssues().toString() );
+		assertTrue( result.isCorrect(), result.getIssues().toString() );
+	}
+
+	@Test
+	public void testMatchRejectsStatementBlockBranchBodiesWithoutFinalExpression() {
+		Parser parser = new Parser();
+
+		assertThrows(
+		    ExpressionException.class,
+		    () -> parser.parseExpression(
+		        """
+		        match value {
+		        	0 -> {
+		        		if ( true ) {
+		        			foo = \"zero\";
+		        		}
+		        	}
+		        	_ -> \"many\"
+		        }
+		        """
+		    )
+		);
 	}
 
 	@Test
@@ -221,6 +244,21 @@ public class MatchSyntaxContractTest {
 		    match value {
 		    	?( x -> x > 1 ) -> \"many\"
 		    	_ -> \"small\"
+		    }
+		    """
+		);
+
+		assertTrue( result.isCorrect(), result.getIssues().toString() );
+	}
+
+	@Test
+	public void testMatchAcceptsRangePatterns() {
+		Parser			parser	= new Parser();
+		ParsingResult	result	= parser.parseExpression(
+		    """
+		    match value {
+		    	1..5 -> "small"
+		    	_ -> "many"
 		    }
 		    """
 		);

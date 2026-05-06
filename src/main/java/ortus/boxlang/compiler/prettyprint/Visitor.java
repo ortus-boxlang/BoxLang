@@ -62,6 +62,7 @@ import ortus.boxlang.compiler.ast.expression.BoxMatchNotPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchObjectPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchOrPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchPredicatePattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchRangePattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchWildcardPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNegateOperation;
@@ -1791,7 +1792,11 @@ public class Visitor extends VoidBoxVisitor {
 			node.getGuard().accept( this );
 		}
 		print( " -> " );
-		node.getBody().accept( this );
+		if ( node.getBody() instanceof BoxExpressionStatement expressionStatement ) {
+			expressionStatement.getExpression().accept( this );
+		} else {
+			node.getBody().accept( this );
+		}
 		printPostComments( node );
 	}
 
@@ -1883,6 +1888,15 @@ public class Visitor extends VoidBoxVisitor {
 		print( "?(" );
 		node.getPredicate().accept( this );
 		print( ")" );
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxMatchRangePattern node ) {
+		printPreComments( node );
+		node.getFrom().accept( this );
+		print( ".." );
+		node.getTo().accept( this );
 		printPostComments( node );
 	}
 

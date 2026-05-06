@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.context.IBoxContext.ScopeSearchResult;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.operators.EqualsEquals;
@@ -105,6 +106,10 @@ public class MatchExpression {
 
 	public static Pattern predicate( DefaultExpression predicate ) {
 		return new PredicatePattern( predicate );
+	}
+
+	public static Pattern range( Object from, Object to ) {
+		return new RangePattern( from, to );
 	}
 
 	private static boolean containsBindingPattern( Pattern pattern ) {
@@ -302,6 +307,9 @@ public class MatchExpression {
 		}
 		if ( pattern instanceof PredicatePattern ) {
 			return "predicate";
+		}
+		if ( pattern instanceof RangePattern ) {
+			return "range";
 		}
 		return pattern.getClass().getSimpleName();
 	}
@@ -661,6 +669,31 @@ public class MatchExpression {
 		boolean matches( IBoxContext context, Object subject ) {
 			Object predicateFunction = this.predicate.evaluate( context );
 			return BooleanCaster.cast( context.invokeFunction( predicateFunction, new Object[] { subject } ) );
+		}
+	}
+
+	private static final class RangePattern extends Pattern {
+
+		private final int	from;
+		private final int	to;
+
+		private RangePattern( Object from, Object to ) {
+			this.from	= IntegerCaster.cast( from );
+			this.to		= IntegerCaster.cast( to );
+		}
+
+		@Override
+		boolean matches( IBoxContext context, Object subject ) {
+			CastAttempt<Integer> attempt = IntegerCaster.attempt( subject );
+			if ( !attempt.wasSuccessful() ) {
+				return false;
+			}
+
+			int value = attempt.get();
+			if ( this.from <= this.to ) {
+				return value >= this.from && value <= this.to;
+			}
+			return value <= this.from && value >= this.to;
 		}
 	}
 

@@ -22,6 +22,7 @@ import ortus.boxlang.compiler.ast.BoxExpressionError;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
+import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.BoxStatementError;
 import ortus.boxlang.compiler.ast.BoxStaticInitializer;
 import ortus.boxlang.compiler.ast.BoxTemplate;
@@ -60,6 +61,7 @@ import ortus.boxlang.compiler.ast.expression.BoxMatchNotPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchObjectPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchOrPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchPredicatePattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchRangePattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchWildcardPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNegateOperation;
@@ -912,7 +914,12 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			node.getGuard().accept( this );
 		}
 		print( " -> " );
-		node.getBody().accept( this );
+		BoxStatement body = node.getBody();
+		if ( body instanceof ortus.boxlang.compiler.ast.statement.BoxExpressionStatement expressionStatement ) {
+			expressionStatement.getExpression().accept( this );
+		} else {
+			body.accept( this );
+		}
 		printPostComments( node );
 	}
 
@@ -1004,6 +1011,15 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		print( "?(" );
 		node.getPredicate().accept( this );
 		print( ")" );
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxMatchRangePattern node ) {
+		printPreComments( node );
+		node.getFrom().accept( this );
+		print( ".." );
+		node.getTo().accept( this );
 		printPostComments( node );
 	}
 

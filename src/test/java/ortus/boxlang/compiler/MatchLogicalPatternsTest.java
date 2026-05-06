@@ -185,4 +185,36 @@ public class MatchLogicalPatternsTest {
 		    () -> instance.executeStatement( "match value { ?( 1 ) -> \"many\" _ -> \"small\" }", this.context )
 		);
 	}
+
+	@Test
+	public void testMatchRangePatternMatchesInclusiveIntegerRange() {
+		this.variables.put( ortus.boxlang.runtime.scopes.Key.of( "value" ), 3 );
+
+		Object result = instance.executeStatement(
+		    "match value { 1..5 -> \"small\" _ -> \"many\" }",
+		    this.context
+		);
+
+		assertThat( result ).isEqualTo( "small" );
+	}
+
+	@Test
+	public void testMatchBlockBranchReturnsFinalExpression() {
+		this.variables.put( ortus.boxlang.runtime.scopes.Key.of( "value" ), 0 );
+
+		Object result = instance.executeStatement(
+		    """
+		    match value {
+		    	0 -> {
+		    		branchValue = "zero";
+		    		branchValue & "-done"
+		    	}
+		    	_ -> "many"
+		    }
+		    """,
+		    this.context
+		);
+
+		assertThat( result ).isEqualTo( "zero-done" );
+	}
 }
