@@ -31,14 +31,18 @@ import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxMatchAndPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchArrayPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchBindingPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchCase;
 import ortus.boxlang.compiler.ast.expression.BoxMatchConstructorPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchExpression;
 import ortus.boxlang.compiler.ast.expression.BoxMatchLiteralPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchNotPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchObjectPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchOrPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchPredicatePattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchWildcardPattern;
 import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringBinding;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
@@ -103,6 +107,26 @@ public class BoxMatchExpressionTransformer extends AbstractTransformer {
 		if ( pattern instanceof BoxMatchObjectPattern objectPattern ) {
 			return "ortus.boxlang.runtime.dynamic.MatchExpression.object("
 			    + buildObjectBindingsExpression( objectPattern.getPattern().getBindings() )
+			    + ")";
+		}
+		if ( pattern instanceof BoxMatchOrPattern orPattern ) {
+			return "ortus.boxlang.runtime.dynamic.MatchExpression.or("
+			    + buildNestedPatternsExpression( orPattern.getPatterns() )
+			    + ")";
+		}
+		if ( pattern instanceof BoxMatchAndPattern andPattern ) {
+			return "ortus.boxlang.runtime.dynamic.MatchExpression.and("
+			    + buildNestedPatternsExpression( andPattern.getPatterns() )
+			    + ")";
+		}
+		if ( pattern instanceof BoxMatchNotPattern notPattern ) {
+			return "ortus.boxlang.runtime.dynamic.MatchExpression.not("
+			    + buildPatternExpression( notPattern.getPattern() )
+			    + ")";
+		}
+		if ( pattern instanceof BoxMatchPredicatePattern predicatePattern ) {
+			return "ortus.boxlang.runtime.dynamic.MatchExpression.predicate("
+			    + buildLambdaExpression( predicatePattern.getPredicate() )
 			    + ")";
 		}
 		if ( pattern instanceof BoxMatchArrayPattern arrayPattern ) {

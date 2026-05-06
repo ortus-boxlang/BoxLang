@@ -40,7 +40,6 @@ import java.util.stream.Stream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ErrorNode;
-import org.antlr.v4.runtime.tree.ParseTree;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxExpressionError;
@@ -71,14 +70,18 @@ import ortus.boxlang.compiler.ast.expression.BoxFunctionalMemberAccess;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
+import ortus.boxlang.compiler.ast.expression.BoxMatchAndPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchArrayPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchBindingPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchCase;
 import ortus.boxlang.compiler.ast.expression.BoxMatchConstructorPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchExpression;
 import ortus.boxlang.compiler.ast.expression.BoxMatchLiteralPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchNotPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchObjectPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchOrPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchPredicatePattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchWildcardPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
@@ -164,9 +167,20 @@ import ortus.boxlang.parser.antlr.BoxGrammar.IdentifierContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.InvocableContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.LambdaFuncContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.LiteralsContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.MatchArrayPatternContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.MatchAtomsPatternContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.MatchCaseContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.MatchConstructorPatternContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.MatchExpressionContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.MatchIdentifierPatternContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.MatchObjectPatternContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.MatchPatternAndContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.MatchPatternContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.MatchPatternNotContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.MatchPatternOrContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.MatchPatternPrimaryContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.MatchPredicatePatternContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.MatchStringLiteralPatternContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.NamedArgumentContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.NewContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ObjectDestructuringBindingContext;
@@ -1363,27 +1377,67 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 	}
 
 	private BoxMatchPattern buildMatchPattern( MatchPatternContext ctx ) {
-		var			pos		= tools.getPosition( ctx );
-		var			src		= tools.getSourceText( ctx );
-		ParseTree	child	= ctx.getChild( 0 );
+		return buildMatchPatternOr( ctx.matchPatternOr() );
+	}
 
-		if ( child instanceof StringLiteralContext stringLiteral ) {
-			return new BoxMatchLiteralPattern( stringLiteral.accept( this ), pos, src );
-		}
-		if ( child instanceof AtomsContext atoms ) {
-			return new BoxMatchLiteralPattern( atoms.accept( this ), pos, src );
-		}
-		if ( child instanceof ObjectDestructuringPatternContext objectPattern ) {
-			return new BoxMatchObjectPattern( ( BoxObjectDestructuringPattern ) objectPattern.accept( this ), pos, src );
-		}
-		if ( child instanceof ArrayDestructuringPatternContext arrayPattern ) {
-			return new BoxMatchArrayPattern( ( BoxArrayDestructuringPattern ) arrayPattern.accept( this ), pos, src );
-		}
-		if ( child instanceof ConstructorPatternContext constructorPattern ) {
-			return buildMatchConstructorPattern( constructorPattern );
+	private BoxMatchPattern buildMatchPatternOr( MatchPatternOrContext ctx ) {
+		var	pos	= tools.getPosition( ctx );
+		var	src	= tools.getSourceText( ctx );
+
+		if ( ctx.matchPatternAnd().size() > 1 ) {
+			return new BoxMatchOrPattern( ctx.matchPatternAnd().stream().map( this::buildMatchPatternAnd ).toList(), pos, src );
 		}
 
-		BoxIdentifier identifier = ( BoxIdentifier ) ( ( IdentifierContext ) child ).accept( this );
+		return buildMatchPatternAnd( ctx.matchPatternAnd( 0 ) );
+	}
+
+	private BoxMatchPattern buildMatchPatternAnd( MatchPatternAndContext ctx ) {
+		var	pos	= tools.getPosition( ctx );
+		var	src	= tools.getSourceText( ctx );
+
+		if ( ctx.matchPatternNot().size() > 1 ) {
+			return new BoxMatchAndPattern( ctx.matchPatternNot().stream().map( this::buildMatchPatternNot ).toList(), pos, src );
+		}
+
+		return buildMatchPatternNot( ctx.matchPatternNot( 0 ) );
+	}
+
+	private BoxMatchPattern buildMatchPatternNot( MatchPatternNotContext ctx ) {
+		var	pos	= tools.getPosition( ctx );
+		var	src	= tools.getSourceText( ctx );
+
+		if ( ctx.NOT() != null ) {
+			return new BoxMatchNotPattern( buildMatchPatternNot( ctx.matchPatternNot() ), pos, src );
+		}
+
+		return buildMatchPatternPrimary( ctx.matchPatternPrimary() );
+	}
+
+	private BoxMatchPattern buildMatchPatternPrimary( MatchPatternPrimaryContext child ) {
+		ParserRuleContext	primary	= child;
+		var					pos		= tools.getPosition( primary );
+		var					src		= tools.getSourceText( primary );
+
+		if ( child instanceof MatchStringLiteralPatternContext stringLiteralPattern ) {
+			return new BoxMatchLiteralPattern( stringLiteralPattern.stringLiteral().accept( this ), pos, src );
+		}
+		if ( child instanceof MatchAtomsPatternContext atomsPattern ) {
+			return new BoxMatchLiteralPattern( atomsPattern.atoms().accept( this ), pos, src );
+		}
+		if ( child instanceof MatchObjectPatternContext objectPattern ) {
+			return new BoxMatchObjectPattern( ( BoxObjectDestructuringPattern ) objectPattern.objectDestructuringPattern().accept( this ), pos, src );
+		}
+		if ( child instanceof MatchArrayPatternContext arrayPattern ) {
+			return new BoxMatchArrayPattern( ( BoxArrayDestructuringPattern ) arrayPattern.arrayDestructuringPattern().accept( this ), pos, src );
+		}
+		if ( child instanceof MatchConstructorPatternContext constructorPattern ) {
+			return buildMatchConstructorPattern( constructorPattern.constructorPattern() );
+		}
+		if ( child instanceof MatchPredicatePatternContext predicatePattern ) {
+			return new BoxMatchPredicatePattern( predicatePattern.expression().accept( this ), pos, src );
+		}
+
+		BoxIdentifier identifier = ( BoxIdentifier ) ( ( MatchIdentifierPatternContext ) child ).identifier().accept( this );
 		if ( "_".equals( identifier.getName() ) ) {
 			return new BoxMatchWildcardPattern( pos, src );
 		}
@@ -1396,7 +1450,7 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		BoxIdentifier			label		= ( BoxIdentifier ) ctx.identifier().accept( this );
 		List<BoxMatchPattern>	patterns	= ctx.matchPatternList() == null
 		    ? List.of()
-		    : ctx.matchPatternList().matchPattern().stream().map( this::buildMatchPattern ).toList();
+		    : ctx.matchPatternList().matchPatternOr().stream().map( this::buildMatchPatternOr ).toList();
 		return new BoxMatchConstructorPattern( label, patterns, pos, src );
 	}
 

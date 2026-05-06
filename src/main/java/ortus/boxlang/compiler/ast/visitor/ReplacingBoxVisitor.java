@@ -50,14 +50,18 @@ import ortus.boxlang.compiler.ast.expression.BoxFunctionalMemberAccess;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
+import ortus.boxlang.compiler.ast.expression.BoxMatchAndPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchArrayPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchBindingPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchCase;
 import ortus.boxlang.compiler.ast.expression.BoxMatchConstructorPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchExpression;
 import ortus.boxlang.compiler.ast.expression.BoxMatchLiteralPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchNotPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchObjectPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchOrPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchPredicatePattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchWildcardPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNegateOperation;
@@ -613,6 +617,26 @@ public abstract class ReplacingBoxVisitor {
 		if ( newPattern != pattern ) {
 			node.setPattern( ( BoxObjectDestructuringPattern ) newPattern );
 		}
+		return node;
+	}
+
+	public BoxNode visit( BoxMatchAndPattern node ) {
+		node.setPatterns( node.getPatterns().stream().map( pattern -> ( BoxMatchPattern ) pattern.accept( this ) ).toList() );
+		return node;
+	}
+
+	public BoxNode visit( BoxMatchOrPattern node ) {
+		node.setPatterns( node.getPatterns().stream().map( pattern -> ( BoxMatchPattern ) pattern.accept( this ) ).toList() );
+		return node;
+	}
+
+	public BoxNode visit( BoxMatchNotPattern node ) {
+		node.setPattern( ( BoxMatchPattern ) node.getPattern().accept( this ) );
+		return node;
+	}
+
+	public BoxNode visit( BoxMatchPredicatePattern node ) {
+		node.setPredicate( ( BoxExpression ) node.getPredicate().accept( this ) );
 		return node;
 	}
 

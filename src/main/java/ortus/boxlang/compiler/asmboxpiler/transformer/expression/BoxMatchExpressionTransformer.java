@@ -41,14 +41,18 @@ import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxMatchAndPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchArrayPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchBindingPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchCase;
 import ortus.boxlang.compiler.ast.expression.BoxMatchConstructorPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchExpression;
 import ortus.boxlang.compiler.ast.expression.BoxMatchLiteralPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchNotPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchObjectPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchOrPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchPredicatePattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchWildcardPattern;
 import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringBinding;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
@@ -162,6 +166,46 @@ public class BoxMatchExpressionTransformer extends AbstractTransformer {
 			    Type.getInternalName( ortus.boxlang.runtime.dynamic.MatchExpression.class ),
 			    "object",
 			    Type.getMethodDescriptor( Type.getType( Pattern.class ), Type.getType( ObjectBinding[].class ) ),
+			    false ) );
+			return nodes;
+		}
+		if ( pattern instanceof BoxMatchOrPattern orPattern ) {
+			nodes.addAll( AsmHelper.array( Type.getType( Pattern.class ), orPattern.getPatterns(), ( nested, index ) -> buildPatternNodes( nested ) ) );
+			nodes.add( new MethodInsnNode(
+			    Opcodes.INVOKESTATIC,
+			    Type.getInternalName( ortus.boxlang.runtime.dynamic.MatchExpression.class ),
+			    "or",
+			    Type.getMethodDescriptor( Type.getType( Pattern.class ), Type.getType( Pattern[].class ) ),
+			    false ) );
+			return nodes;
+		}
+		if ( pattern instanceof BoxMatchAndPattern andPattern ) {
+			nodes.addAll( AsmHelper.array( Type.getType( Pattern.class ), andPattern.getPatterns(), ( nested, index ) -> buildPatternNodes( nested ) ) );
+			nodes.add( new MethodInsnNode(
+			    Opcodes.INVOKESTATIC,
+			    Type.getInternalName( ortus.boxlang.runtime.dynamic.MatchExpression.class ),
+			    "and",
+			    Type.getMethodDescriptor( Type.getType( Pattern.class ), Type.getType( Pattern[].class ) ),
+			    false ) );
+			return nodes;
+		}
+		if ( pattern instanceof BoxMatchNotPattern notPattern ) {
+			nodes.addAll( buildPatternNodes( notPattern.getPattern() ) );
+			nodes.add( new MethodInsnNode(
+			    Opcodes.INVOKESTATIC,
+			    Type.getInternalName( ortus.boxlang.runtime.dynamic.MatchExpression.class ),
+			    "not",
+			    Type.getMethodDescriptor( Type.getType( Pattern.class ), Type.getType( Pattern.class ) ),
+			    false ) );
+			return nodes;
+		}
+		if ( pattern instanceof BoxMatchPredicatePattern predicatePattern ) {
+			nodes.addAll( AsmHelper.getDefaultExpression( ( ortus.boxlang.compiler.asmboxpiler.AsmTranspiler ) transpiler, predicatePattern.getPredicate() ) );
+			nodes.add( new MethodInsnNode(
+			    Opcodes.INVOKESTATIC,
+			    Type.getInternalName( ortus.boxlang.runtime.dynamic.MatchExpression.class ),
+			    "predicate",
+			    Type.getMethodDescriptor( Type.getType( Pattern.class ), Type.getType( DefaultExpression.class ) ),
 			    false ) );
 			return nodes;
 		}

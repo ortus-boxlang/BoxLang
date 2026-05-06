@@ -521,8 +521,26 @@ matchCaseBody
     ;
 
 matchPattern
+    : matchPatternOr
+    ;
+
+matchPatternOr
+    : matchPatternAnd (OR matchPatternAnd)*
+    ;
+
+matchPatternAnd
+    : matchPatternNot (AND matchPatternNot)*
+    ;
+
+matchPatternNot
+    : NOT matchPatternNot
+    | matchPatternPrimary
+    ;
+
+matchPatternPrimary
     : stringLiteral              # matchStringLiteralPattern
     | atoms                      # matchAtomsPattern
+        | QM LPAREN expression RPAREN # matchPredicatePattern
     | objectDestructuringPattern # matchObjectPattern
     | arrayDestructuringPattern  # matchArrayPattern
     | constructorPattern         # matchConstructorPattern
@@ -534,7 +552,7 @@ constructorPattern
     ;
 
 matchPatternList
-    : matchPattern (COMMA matchPattern)*
+    : matchPatternOr (COMMA matchPatternOr)*
     ;
 
 /*

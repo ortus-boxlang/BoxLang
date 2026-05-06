@@ -91,6 +91,41 @@ public class MatchExpression {
 		return new ConstructorPattern( label, patterns == null ? new Pattern[] {} : patterns );
 	}
 
+	public static Pattern or( Pattern[] patterns ) {
+		return new OrPattern( patterns == null ? new Pattern[] {} : patterns );
+	}
+
+	public static Pattern and( Pattern[] patterns ) {
+		return new AndPattern( patterns == null ? new Pattern[] {} : patterns );
+	}
+
+	public static Pattern not( Pattern pattern ) {
+		return new NotPattern( pattern );
+	}
+
+	public static Pattern predicate( DefaultExpression predicate ) {
+		return new PredicatePattern( predicate );
+	}
+
+	private static boolean containsBindingPattern( Pattern pattern ) {
+		if ( pattern instanceof BindingPattern ) {
+			return true;
+		}
+		if ( pattern instanceof ConstructorPattern constructorPattern ) {
+			return Arrays.stream( constructorPattern.patterns ).anyMatch( MatchExpression::containsBindingPattern );
+		}
+		if ( pattern instanceof OrPattern orPattern ) {
+			return Arrays.stream( orPattern.patterns ).anyMatch( MatchExpression::containsBindingPattern );
+		}
+		if ( pattern instanceof AndPattern andPattern ) {
+			return Arrays.stream( andPattern.patterns ).anyMatch( MatchExpression::containsBindingPattern );
+		}
+		if ( pattern instanceof NotPattern notPattern ) {
+			return containsBindingPattern( notPattern.pattern );
+		}
+		return false;
+	}
+
 	public static Pattern object( ObjectBinding[] bindings ) {
 		return new ObjectPattern( bindings == null ? new ObjectBinding[] {} : bindings );
 	}
@@ -264,6 +299,9 @@ public class MatchExpression {
 		}
 		if ( pattern instanceof ArrayPattern ) {
 			return "array";
+		}
+		if ( pattern instanceof PredicatePattern ) {
+			return "predicate";
 		}
 		return pattern.getClass().getSimpleName();
 	}
@@ -553,6 +591,76 @@ public class MatchExpression {
 				return matchProtocolConstructorPattern( context, classRunnable, this.label, this.patterns );
 			}
 			return false;
+		}
+	}
+
+	private static final class OrPattern extends Pattern {
+
+		private final Pattern[] patterns;
+
+		private OrPattern( Pattern[] patterns ) {
+			this.patterns = patterns;
+		}
+
+		@Override
+		boolean matches( IBoxContext context, Object subject ) {
+			for ( Pattern pattern : this.patterns ) {
+				if ( pattern.matches( context, subject ) ) {
+					return true;
+				}
+			}
+			return false;
+		}
+	}
+
+	private static final class AndPattern extends Pattern {
+
+		private final Pattern[] patterns;
+
+		private AndPattern( Pattern[] patterns ) {
+			this.patterns = patterns;
+		}
+
+		@Override
+		boolean matches( IBoxContext context, Object subject ) {
+			for ( Pattern pattern : this.patterns ) {
+				if ( !pattern.matches( context, subject ) ) {
+					return false;
+				}
+			}
+			return true;
+		}
+	}
+
+	private static final class NotPattern extends Pattern {
+
+		private final Pattern pattern;
+
+		private NotPattern( Pattern pattern ) {
+			if ( containsBindingPattern( pattern ) ) {
+				throw new BoxRuntimeException( "not patterns cannot contain binding patterns" );
+			}
+			this.pattern = pattern;
+		}
+
+		@Override
+		boolean matches( IBoxContext context, Object subject ) {
+			return !this.pattern.matches( context, subject );
+		}
+	}
+
+	private static final class PredicatePattern extends Pattern {
+
+		private final DefaultExpression predicate;
+
+		private PredicatePattern( DefaultExpression predicate ) {
+			this.predicate = predicate;
+		}
+
+		@Override
+		boolean matches( IBoxContext context, Object subject ) {
+			Object predicateFunction = this.predicate.evaluate( context );
+			return BooleanCaster.cast( context.invokeFunction( predicateFunction, new Object[] { subject } ) );
 		}
 	}
 

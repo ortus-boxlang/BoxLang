@@ -167,4 +167,64 @@ public class MatchSyntaxContractTest {
 
 		assertTrue( result.isCorrect(), result.getIssues().toString() );
 	}
+
+	@Test
+	public void testMatchAcceptsOrPatterns() {
+		Parser			parser	= new Parser();
+		ParsingResult	result	= parser.parseExpression(
+		    """
+		    match value {
+		    	1 or 2 -> "small"
+		    	_ -> "many"
+		    }
+		    """
+		);
+
+		assertTrue( result.isCorrect(), result.getIssues().toString() );
+	}
+
+	@Test
+	public void testMatchAcceptsAndPatterns() {
+		Parser			parser	= new Parser();
+		ParsingResult	result	= parser.parseExpression(
+		    """
+		    match value {
+		    	x and _ -> "exact"
+		    	_ -> "fallback"
+		    }
+		    """
+		);
+
+		assertTrue( result.isCorrect(), result.getIssues().toString() );
+	}
+
+	@Test
+	public void testMatchAcceptsNotPatterns() {
+		Parser			parser	= new Parser();
+		ParsingResult	result	= parser.parseExpression(
+		    """
+		    match value {
+		    	not 1 -> "other"
+		    	_ -> "one"
+		    }
+		    """
+		);
+
+		assertTrue( result.isCorrect(), result.getIssues().toString() );
+	}
+
+	@Test
+	public void testMatchAcceptsPredicatePatterns() {
+		Parser			parser	= new Parser();
+		ParsingResult	result	= parser.parseExpression(
+		    """
+		    match value {
+		    	?( x -> x > 1 ) -> \"many\"
+		    	_ -> \"small\"
+		    }
+		    """
+		);
+
+		assertTrue( result.isCorrect(), result.getIssues().toString() );
+	}
 }
