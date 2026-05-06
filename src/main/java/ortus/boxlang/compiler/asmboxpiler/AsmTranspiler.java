@@ -46,6 +46,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxIdentifierTr
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxImportTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxIntegerLiteralTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxLambdaTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxMatchExpressionTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxMethodInvocationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxNewTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxNullTransformer;
@@ -106,6 +107,7 @@ import ortus.boxlang.compiler.ast.expression.BoxFunctionalMemberAccess;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
+import ortus.boxlang.compiler.ast.expression.BoxMatchExpression;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
@@ -399,6 +401,7 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxArgumentDeclaration.class, new BoxArgumentDeclarationTransformer( this ) );
 		registry.put( BoxFQN.class, new BoxFQNTransformer( this ) );
 		registry.put( BoxLambda.class, new BoxLambdaTransformer( this ) );
+		registry.put( BoxMatchExpression.class, new BoxMatchExpressionTransformer( this ) );
 		registry.put( BoxBooleanLiteral.class, new BoxBooleanLiteralTransformer( this ) );
 		registry.put( BoxNull.class, new BoxNullTransformer( this ) );
 		registry.put( BoxNew.class, new BoxNewTransformer( this ) );

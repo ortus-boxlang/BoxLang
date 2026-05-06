@@ -512,7 +512,12 @@ structKey: identifier | stringLiteral | INTEGER_LITERAL | ILLEGAL_IDENTIFIER | S
 matchExpression: MATCH expression LBRACE matchCase+ RBRACE
     ;
 
-matchCase: matchPattern (IF expression)? ARROW expression
+matchCase: matchPattern (IF expression)? ARROW matchCaseBody
+    ;
+
+matchCaseBody
+    : matchExpression
+    | el2
     ;
 
 matchPattern
@@ -520,7 +525,16 @@ matchPattern
     | atoms                      # matchAtomsPattern
     | objectDestructuringPattern # matchObjectPattern
     | arrayDestructuringPattern  # matchArrayPattern
+    | constructorPattern         # matchConstructorPattern
     | identifier                 # matchIdentifierPattern
+    ;
+
+constructorPattern
+    : identifier LPAREN matchPatternList? RPAREN
+    ;
+
+matchPatternList
+    : matchPattern (COMMA matchPattern)*
     ;
 
 /*

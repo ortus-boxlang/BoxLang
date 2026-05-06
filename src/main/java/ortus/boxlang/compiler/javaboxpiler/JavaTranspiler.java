@@ -69,6 +69,7 @@ import ortus.boxlang.compiler.ast.expression.BoxFunctionalMemberAccess;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
+import ortus.boxlang.compiler.ast.expression.BoxMatchExpression;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNegateOperation;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
@@ -133,6 +134,7 @@ import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxFunctionalM
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxIdentifierTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxIntegerLiteralTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxLambdaTransformer;
+import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxMatchExpressionTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxMethodInvocationTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxNegateOperationTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxNewTransformer;
@@ -252,6 +254,7 @@ public class JavaTranspiler extends Transpiler {
 		registry.put( BoxAssignment.class, new BoxAssignmentTransformer( this ) );
 		registry.put( BoxNull.class, new BoxNullTransformer( this ) );
 		registry.put( BoxLambda.class, new BoxLambdaTransformer( this ) );
+		registry.put( BoxMatchExpression.class, new BoxMatchExpressionTransformer( this ) );
 		registry.put( BoxExpressionInvocation.class, new BoxExpressionInvocationTransformer( this ) );
 		registry.put( BoxClosure.class, new BoxClosureTransformer( this ) );
 		registry.put( BoxClass.class, new BoxClassTransformer( this ) );

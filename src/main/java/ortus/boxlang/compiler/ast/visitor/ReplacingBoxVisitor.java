@@ -53,6 +53,7 @@ import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.expression.BoxMatchArrayPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchBindingPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchCase;
+import ortus.boxlang.compiler.ast.expression.BoxMatchConstructorPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchExpression;
 import ortus.boxlang.compiler.ast.expression.BoxMatchLiteralPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchObjectPattern;
@@ -584,6 +585,16 @@ public abstract class ReplacingBoxVisitor {
 		if ( newBinding != binding ) {
 			node.setBinding( ( BoxIdentifier ) newBinding );
 		}
+		return node;
+	}
+
+	public BoxNode visit( BoxMatchConstructorPattern node ) {
+		BoxIdentifier	label		= node.getLabel();
+		BoxNode			newLabel	= label.accept( this );
+		if ( newLabel != label ) {
+			node.setLabel( ( BoxIdentifier ) newLabel );
+		}
+		node.setPatterns( node.getPatterns().stream().map( pattern -> ( BoxMatchPattern ) pattern.accept( this ) ).toList() );
 		return node;
 	}
 

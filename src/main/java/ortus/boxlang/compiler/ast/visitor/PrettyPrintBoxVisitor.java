@@ -52,6 +52,7 @@ import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.expression.BoxMatchArrayPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchBindingPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchCase;
+import ortus.boxlang.compiler.ast.expression.BoxMatchConstructorPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchExpression;
 import ortus.boxlang.compiler.ast.expression.BoxMatchLiteralPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchObjectPattern;
@@ -929,6 +930,21 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	public void visit( BoxMatchBindingPattern node ) {
 		printPreComments( node );
 		node.getBinding().accept( this );
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxMatchConstructorPattern node ) {
+		printPreComments( node );
+		node.getLabel().accept( this );
+		print( "( " );
+		for ( int i = 0; i < node.getPatterns().size(); i++ ) {
+			node.getPatterns().get( i ).accept( this );
+			if ( i < node.getPatterns().size() - 1 ) {
+				print( ", " );
+			}
+		}
+		print( " )" );
 		printPostComments( node );
 	}
 

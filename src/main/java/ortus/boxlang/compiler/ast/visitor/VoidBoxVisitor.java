@@ -48,6 +48,7 @@ import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.expression.BoxMatchArrayPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchBindingPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchCase;
+import ortus.boxlang.compiler.ast.expression.BoxMatchConstructorPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchExpression;
 import ortus.boxlang.compiler.ast.expression.BoxMatchLiteralPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchObjectPattern;
@@ -290,6 +291,10 @@ public abstract class VoidBoxVisitor {
 	}
 
 	public void visit( BoxMatchBindingPattern node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxMatchConstructorPattern node ) {
 		visitChildren( node );
 	}
 

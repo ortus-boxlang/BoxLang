@@ -154,7 +154,7 @@ public class MatchSyntaxContractTest {
 	}
 
 	@Test
-	public void testMatchRejectsConstructorPatternsInV1Contract() {
+	public void testMatchAcceptsConstructorPatterns() {
 		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseExpression(
 		    """
@@ -165,6 +165,6 @@ public class MatchSyntaxContractTest {
 		    """
 		);
 
-		assertFalse( result.isCorrect(), result.getIssues().toString() );
+		assertTrue( result.isCorrect(), result.getIssues().toString() );
 	}
 }

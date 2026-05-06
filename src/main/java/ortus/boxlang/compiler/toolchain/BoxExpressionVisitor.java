@@ -74,6 +74,7 @@ import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.expression.BoxMatchArrayPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchBindingPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchCase;
+import ortus.boxlang.compiler.ast.expression.BoxMatchConstructorPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchExpression;
 import ortus.boxlang.compiler.ast.expression.BoxMatchLiteralPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchObjectPattern;
@@ -111,6 +112,7 @@ import ortus.boxlang.parser.antlr.BoxGrammar.AtomsContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.AttributeSimpleContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.BinOpsContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ClosureFuncContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ConstructorPatternContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprAddContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprAndContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprArrayAccessContext;
@@ -1350,11 +1352,13 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 	}
 
 	private BoxMatchCase buildMatchCase( MatchCaseContext ctx ) {
-		var	pos		= tools.getPosition( ctx );
-		var	src		= tools.getSourceText( ctx );
-		var	pattern	= buildMatchPattern( ctx.matchPattern() );
-		var	guard	= ctx.expression().size() > 1 ? ctx.expression( 0 ).accept( this ) : null;
-		var	body	= ctx.expression().size() > 1 ? ctx.expression( 1 ).accept( this ) : ctx.expression( 0 ).accept( this );
+		var				pos		= tools.getPosition( ctx );
+		var				src		= tools.getSourceText( ctx );
+		var				pattern	= buildMatchPattern( ctx.matchPattern() );
+		BoxExpression	guard	= ctx.expression() == null ? null : ctx.expression().accept( this );
+		var				body	= ctx.matchCaseBody().matchExpression() != null
+		    ? ctx.matchCaseBody().matchExpression().accept( this )
+		    : ctx.matchCaseBody().el2().accept( this );
 		return new BoxMatchCase( pattern, guard, body, pos, src );
 	}
 
@@ -1375,12 +1379,25 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		if ( child instanceof ArrayDestructuringPatternContext arrayPattern ) {
 			return new BoxMatchArrayPattern( ( BoxArrayDestructuringPattern ) arrayPattern.accept( this ), pos, src );
 		}
+		if ( child instanceof ConstructorPatternContext constructorPattern ) {
+			return buildMatchConstructorPattern( constructorPattern );
+		}
 
 		BoxIdentifier identifier = ( BoxIdentifier ) ( ( IdentifierContext ) child ).accept( this );
 		if ( "_".equals( identifier.getName() ) ) {
 			return new BoxMatchWildcardPattern( pos, src );
 		}
 		return new BoxMatchBindingPattern( identifier, pos, src );
+	}
+
+	private BoxMatchConstructorPattern buildMatchConstructorPattern( ConstructorPatternContext ctx ) {
+		var						pos			= tools.getPosition( ctx );
+		var						src			= tools.getSourceText( ctx );
+		BoxIdentifier			label		= ( BoxIdentifier ) ctx.identifier().accept( this );
+		List<BoxMatchPattern>	patterns	= ctx.matchPatternList() == null
+		    ? List.of()
+		    : ctx.matchPatternList().matchPattern().stream().map( this::buildMatchPattern ).toList();
+		return new BoxMatchConstructorPattern( label, patterns, pos, src );
 	}
 
 	/**
