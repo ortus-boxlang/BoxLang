@@ -802,4 +802,65 @@ public class QoQParseTest {
 		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 1 );
 	}
 
+	@Test
+	public void testParensAroundColumn() {
+		instance.executeSource(
+		    """
+		    q = queryNew( "col", "integer", [[1]] )
+		    result = queryExecute( "
+		    	SELECT ( col ) FROM q
+		    ", [], { dbType : "query" } )
+		    """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.getAsQuery( result ).getColumn( Key.of( "col" ) ) ).isNotNull();
+
+		instance.executeSource(
+		    """
+		    q = queryNew( "col", "integer", [[1]] )
+		    result = queryExecute( "
+		    	SELECT distinct( col ) FROM q
+		    ", [], { dbType : "query" } )
+		    """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.getAsQuery( result ).getColumn( Key.of( "col" ) ) ).isNotNull();
+
+	}
+
+	@Test
+	public void testLargeQuerySort1M() {
+		instance.executeSource(
+		    """
+		    // Create 1M rows: a(1-100) x b(1-100) x c(1-100) = 1,000,000 unique combos
+		    source = queryNew( "a,b,c", "integer,integer,integer" );
+		    for( a = 1; a <= 100; a++ ) {
+		        for( b = 1; b <= 100; b++ ) {
+		            for( c = 1; c <= 100; c++ ) {
+		                queryAddRow( source, { a: a, b: b, c: c } );
+		            }
+		        }
+		    }
+		    // Shuffle by sorting on a random column
+		    source = queryExecute( "SELECT a, b, c FROM source ORDER BY a DESC, c ASC, b DESC", [], { dbType: "query" } );
+
+		    // Now sort properly
+		    result = queryExecute( "SELECT a, b, c FROM source ORDER BY a ASC, b ASC, c ASC", [], { dbType: "query" } );
+		    """,
+		    context );
+
+		Query sorted = variables.getAsQuery( result );
+		assertThat( sorted.size() ).isEqualTo( 1000000 );
+		int idx = 0;
+		for ( int a = 1; a <= 100; a++ ) {
+			for ( int b = 1; b <= 100; b++ ) {
+				for ( int c = 1; c <= 100; c++ ) {
+					Object[] row = sorted.getRow( idx );
+					assertThat( row[ 0 ] ).isEqualTo( a );
+					assertThat( row[ 1 ] ).isEqualTo( b );
+					assertThat( row[ 2 ] ).isEqualTo( c );
+					idx++;
+				}
+			}
+		}
+	}
+
 }
