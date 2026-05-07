@@ -717,7 +717,11 @@ public class PendingQuery {
 					var lowered = trimmed.toLowerCase();
 					// Exclude if "begin" and "end" appear anywhere in the SQL
 					if ( ! ( lowered.contains( "begin" ) && lowered.contains( "end" ) ) ) {
-						sqlStatement = trimmed.substring( 0, trimmed.length() - 1 );
+						int end = trimmed.length();
+						while ( end > 0 && ( trimmed.charAt( end - 1 ) == ';' || Character.isWhitespace( trimmed.charAt( end - 1 ) ) ) ) {
+							end--;
+						}
+						sqlStatement = trimmed.substring( 0, end );
 					}
 				}
 			}

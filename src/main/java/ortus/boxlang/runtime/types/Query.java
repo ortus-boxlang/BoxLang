@@ -1049,6 +1049,10 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		}
 	}
 
+	/**
+	 * Internal method to truncate the query to the current size.
+	 * We eagerly allocate additional rows when adding data to optimize for performance, so this method is used to trim those extra rows when needed.
+	 */
 	private void truncateInternal() {
 		// loop and remove all rows over the count
 		while ( data.size() > size.get() ) {
