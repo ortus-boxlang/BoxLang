@@ -151,16 +151,9 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * @param meta Struct of metadata, most likely JDBC metadata such as sql, cache parameters, etc.
 	 */
 	public Query( IStruct meta, int initialSize ) {
-		if ( initialSize > 0 ) {
-			this.data	= new ArrayList<Object[]>( initialSize );
-			// add nulls and increment for each row
-			actualSize	= initialSize;
-			for ( int i = 0; i < initialSize; i++ ) {
-				data.add( null );
-			}
-		} else {
-			this.data = new ArrayList<Object[]>();
-		}
+		initialSize		= Math.max( initialSize, ChunkedArrayList.DEFAULT_CHUNK_SIZE );
+		this.data		= ChunkedArrayList.ofNulls( initialSize );
+		this.actualSize	= initialSize;
 	}
 
 	/**
@@ -276,6 +269,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			throw new DatabaseException( e );
 		}
 
+		query.truncateInternal();
 		return query;
 	}
 
@@ -1053,12 +1047,19 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * Internal method to truncate the query to the current size.
 	 * We eagerly allocate additional rows when adding data to optimize for performance, so this method is used to trim those extra rows when needed.
 	 */
-	private void truncateInternal() {
+	public void truncateInternal() {
 		// loop and remove all rows over the count
 		while ( data.size() > size.get() ) {
 			data.remove( data.size() - 1 );
 		}
 		actualSize = data.size();
+
+		// These backing lists have a way to truncate internal allocations as well
+		if ( data instanceof ChunkedArrayList<?> cal ) {
+			cal.trimToSize();
+		} else if ( data instanceof ArrayList<?> al ) {
+			al.trimToSize();
+		}
 	}
 
 	/***************************

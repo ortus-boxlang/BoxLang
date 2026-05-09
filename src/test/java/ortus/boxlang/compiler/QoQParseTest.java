@@ -863,4 +863,73 @@ public class QoQParseTest {
 		}
 	}
 
+	@Test
+	public void testThreadedSelect() {
+
+		// @formatter:off
+		instance.executeSource(
+		    """
+					param name="rowCount" default="300" type="numeric";
+					param name="iterations" default="500" type="numeric";
+					param name="workers" default="32" type="numeric";
+					function workerRun( required numeric rowCount, required numeric iterations ) {
+					var failures = [];
+							var q = queryNew( "id,name", "integer,varchar" );
+							for ( var r = 1; r <= rowCount; r++ ) {
+								queryAddRow( q );
+								querySetCell( q, "id",   r );
+								querySetCell( q, "name", "row" & numberFormat(r, "000") );
+							}
+					for ( var i = 1; i <= iterations; i++ ) {
+						try {
+							var sorted = queryExecute(
+								"SELECT * FROM q ORDER BY name ASC",
+								{},
+								{ dbtype: "query" }
+							);
+							if ( sorted.recordCount NEQ rowCount ) {
+								arrayAppend( failures, { i: i, kind: "wrong_count", got: sorted.recordCount } );
+							}
+						} catch ( any e ) {
+							arrayAppend( failures, { i: i, kind: "exception", msg: e.message } );
+							if ( arrayLen( failures ) >= 5 ) break;
+						}
+					}
+					return failures;
+					}
+					start   = getTickCount();
+					futures = [];
+					for ( w = 1; w <= workers; w++ ) {
+						futures.append( runAsync( function() {
+							return workerRun( rowCount, iterations );
+						} ) );
+					}
+					allFailures = [];
+					totalRuns   = 0;
+					for ( f in futures ) {
+						workerFails = f.get();
+						totalRuns += iterations;
+						for ( fail in workerFails ) {
+							arrayAppend( allFailures, fail );
+						}
+					}
+					failureCount  = arrayLen( allFailures );
+					/* writeDump( {
+						rowCount     : rowCount,
+						iterations        : iterations,
+						workers      : workers,
+						totalRuns    : totalRuns,
+						failureCount : arrayLen( allFailures ),
+						elapsedMs    : getTickCount() - start,
+						firstFailures: arrayLen( allFailures ) GT 10
+							? arraySlice( allFailures, 1, 10 )
+							: allFailures
+					} ); */
+		                                                    """,
+		    context, BoxSourceType.BOXSCRIPT );
+		// @formatter:on
+
+		assertThat( variables.get( "failureCount" ) ).isEqualTo( 0 );
+	}
+
 }
