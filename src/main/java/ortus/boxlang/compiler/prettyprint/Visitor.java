@@ -1763,9 +1763,9 @@ public class Visitor extends VoidBoxVisitor {
 		printPreComments( node );
 		var currentDoc = getCurrentDoc();
 
-		currentDoc.append( "match " );
+		currentDoc.append( "match( " );
 		node.getSubject().accept( this );
-		currentDoc.append( " {" );
+		currentDoc.append( " ) {" );
 
 		var blockDoc = pushDoc( DocType.INDENT );
 		blockDoc.append( Line.HARD );
@@ -1791,7 +1791,7 @@ public class Visitor extends VoidBoxVisitor {
 			print( " if " );
 			node.getGuard().accept( this );
 		}
-		print( " -> " );
+		print( " => " );
 		if ( node.getBody() instanceof BoxExpressionStatement expressionStatement ) {
 			expressionStatement.getExpression().accept( this );
 		} else {

@@ -891,9 +891,9 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	@Override
 	public void visit( BoxMatchExpression node ) {
 		printPreComments( node );
-		print( "match " );
+		print( "match( " );
 		node.getSubject().accept( this );
-		print( " {" );
+		print( " ) {" );
 		indentLevel++;
 		for ( BoxMatchCase matchCase : node.getCases() ) {
 			newLine();
@@ -913,7 +913,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			print( " if " );
 			node.getGuard().accept( this );
 		}
-		print( " -> " );
+		print( " => " );
 		BoxStatement body = node.getBody();
 		if ( body instanceof ortus.boxlang.compiler.ast.statement.BoxExpressionStatement expressionStatement ) {
 			expressionStatement.getExpression().accept( this );

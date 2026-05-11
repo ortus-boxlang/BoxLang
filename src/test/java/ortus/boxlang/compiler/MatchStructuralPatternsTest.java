@@ -73,9 +73,9 @@ public class MatchStructuralPatternsTest {
 		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseExpression(
 		    """
-		    match value {
-		    	{ user: { name }, ...rest } -> name
-		    	_ -> null
+		    match( value ) {
+		    	{ user: { name }, ...rest } => name
+		    	_ => null
 		    }
 		    """
 		);
@@ -104,9 +104,9 @@ public class MatchStructuralPatternsTest {
 		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseExpression(
 		    """
-		    match value {
-		    	[ head, ...tail ] if head > 0 -> tail
-		    	_ -> []
+		    match( value ) {
+		    	[ head, ...tail ] if head > 0 => tail
+		    	_ => []
 		    }
 		    """
 		);
@@ -135,10 +135,10 @@ public class MatchStructuralPatternsTest {
 		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseExpression(
 		    """
-		    match value {
-		    	{ user: { name }, ...rest } if name != "" -> rest
-		    	[ head, ...tail ] -> tail
-		    	_ -> null
+		    match( value ) {
+		    	{ user: { name }, ...rest } if name != "" => rest
+		    	[ head, ...tail ] => tail
+		    	_ => null
 		    }
 		    """
 		);
@@ -149,7 +149,7 @@ public class MatchStructuralPatternsTest {
 		    .replace( "\t", "    " )
 		    .stripTrailing();
 		assertEquals(
-		    "match value {\n    { user: { name }, ...rest } if name != \"\" -> rest\n    [ head, ...tail ] -> tail\n    _ -> null\n}",
+		    "match( value ) {\n    { user: { name }, ...rest } if name != \"\" => rest\n    [ head, ...tail ] => tail\n    _ => null\n}",
 		    prettyPrinted
 		);
 	}
@@ -167,9 +167,9 @@ public class MatchStructuralPatternsTest {
 
 		Object result = instance.executeStatement(
 		    """
-		    match data {
-		    	{ user: { name }, role, ...rest } if role == "admin" -> name & ":" & rest.active
-		    	_ -> "fallback"
+		    match( data ) {
+		    	{ user: { name }, role, ...rest } if role == "admin" => name & ":" & rest.active
+		    	_ => "fallback"
 		    }
 		    """,
 		    this.context
@@ -189,9 +189,9 @@ public class MatchStructuralPatternsTest {
 
 		Object result = instance.executeStatement(
 		    """
-		    match data {
-		    	[ head, ...tail ] if tail.len() == 3 -> head + tail[ 1 ]
-		    	_ -> 0
+		    match( data ) {
+		    	[ head, ...tail ] if tail.len() == 3 => head + tail[ 1 ]
+		    	_ => 0
 		    }
 		    """,
 		    this.context
@@ -206,9 +206,9 @@ public class MatchStructuralPatternsTest {
 
 		Object result = instance.executeStatement(
 		    """
-		    match {} {
-		    	{ user: { name } } if ( guardRuns = guardRuns + 1 ) > 0 -> name
-		    	_ -> "fallback"
+		    match( {} ) {
+		    	{ user: { name } } if ( guardRuns = guardRuns + 1 ) > 0 => name
+		    	_ => "fallback"
 		    }
 		    """,
 		    this.context
@@ -222,7 +222,7 @@ public class MatchStructuralPatternsTest {
 	public void testMatchParsesGuardedStructuralMissWithFallbackCase() {
 		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseExpression(
-		    "match {} { { user: { name } } if ( guardRuns = guardRuns + 1 ) > 0 -> name _ -> \"fallback\" }"
+		    "match( {} ) { { user: { name } } if ( guardRuns = guardRuns + 1 ) > 0 => name _ => \"fallback\" }"
 		);
 
 		assertTrue( result.isCorrect(), result.getIssues().toString() );
@@ -234,7 +234,7 @@ public class MatchStructuralPatternsTest {
 	@Test
 	public void testMatchWildcardCaseReturnsBody() {
 		Object result = instance.executeStatement(
-		    "match {} { _ -> \"fallback\" }",
+		    "match( {} ) { _ => \"fallback\" }",
 		    this.context
 		);
 
@@ -244,7 +244,7 @@ public class MatchStructuralPatternsTest {
 	@Test
 	public void testMatchStructuralMissFallsThroughWithoutGuard() {
 		Object result = instance.executeStatement(
-		    "match {} { { user: { name } } -> \"bad\" _ -> \"fallback\" }",
+		    "match( {} ) { { user: { name } } => \"bad\" _ => \"fallback\" }",
 		    this.context
 		);
 

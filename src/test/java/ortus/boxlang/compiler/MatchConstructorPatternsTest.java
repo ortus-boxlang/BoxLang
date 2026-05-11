@@ -67,9 +67,9 @@ public class MatchConstructorPatternsTest {
 		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseExpression(
 		    """
-		    match value {
-		    	Some( x ) -> x
-		    	_ -> null
+		    match( value ) {
+		    	Some( x ) => x
+		    	_ => null
 		    }
 		    """
 		);
@@ -88,9 +88,9 @@ public class MatchConstructorPatternsTest {
 		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseExpression(
 		    """
-		    match value {
-		    	Some( x ) -> x
-		    	_ -> null
+		    match( value ) {
+		    	Some( x ) => x
+		    	_ => null
 		    }
 		    """
 		);
@@ -101,7 +101,7 @@ public class MatchConstructorPatternsTest {
 		    .replace( "\t", "    " )
 		    .stripTrailing();
 		assertEquals(
-		    "match value {\n    Some( x ) -> x\n    _ -> null\n}",
+		    "match( value ) {\n    Some( x ) => x\n    _ => null\n}",
 		    prettyPrinted
 		);
 	}
@@ -115,9 +115,9 @@ public class MatchConstructorPatternsTest {
 
 		Object result = instance.executeStatement(
 		    """
-		    match value {
-		    	Some( x ) -> x
-		    	_ -> "fallback"
+		    match( value ) {
+		    	Some( x ) => x
+		    	_ => "fallback"
 		    }
 		    """,
 		    this.context
@@ -135,9 +135,9 @@ public class MatchConstructorPatternsTest {
 
 		Object result = instance.executeStatement(
 		    """
-		    match value {
-		    	Success( x ) -> x
-		    	_ -> "fallback"
+		    match( value ) {
+		    	Success( x ) => x
+		    	_ => "fallback"
 		    }
 		    """,
 		    this.context
@@ -159,9 +159,9 @@ public class MatchConstructorPatternsTest {
 
 		Object result = instance.executeStatement(
 		    """
-		    match value {
-		    	Success( { data, meta } ) if meta.cached -> data
-		    	_ -> "fallback"
+		    match( value ) {
+		    	Success( { data, meta } ) if meta.cached => data
+		    	_ => "fallback"
 		    }
 		    """,
 		    this.context
@@ -181,9 +181,9 @@ public class MatchConstructorPatternsTest {
 		    BoxRuntimeException.class,
 		    () -> instance.executeStatement(
 		        """
-		        match value {
-		        	Broken( x ) -> x
-		        	_ -> "fallback"
+		        match( value ) {
+		        	Broken( x ) => x
+		        	_ => "fallback"
 		        }
 		        """,
 		        this.context
@@ -202,9 +202,9 @@ public class MatchConstructorPatternsTest {
 
 		Object result = instance.executeStatement(
 		    """
-		    match value {
-		    	Just( x ) -> x
-		    	_ -> "fallback"
+		    match( value ) {
+		    	Just( x ) => x
+		    	_ => "fallback"
 		    }
 		    """,
 		    this.context
@@ -222,10 +222,10 @@ public class MatchConstructorPatternsTest {
 
 		Object result = instance.executeStatement(
 		    """
-		    match value {
-		    	Just( x ) -> x & "-first"
-		    	Just( x ) -> x & "-second"
-		    	_ -> "fallback"
+		    match( value ) {
+		    	Just( x ) => x & "-first"
+		    	Just( x ) => x & "-second"
+		    	_ => "fallback"
 		    }
 		    """,
 		    this.context
@@ -247,9 +247,9 @@ public class MatchConstructorPatternsTest {
 
 		Object result = instance.executeStatement(
 		    """
-		    match value {
-		    	Success( { data, meta } ) if meta.cached -> data
-		    	_ -> "fallback"
+		    match( value ) {
+		    	Success( { data, meta } ) if meta.cached => data
+		    	_ => "fallback"
 		    }
 		    """,
 		    this.context
@@ -264,9 +264,9 @@ public class MatchConstructorPatternsTest {
 
 		Object result = instance.executeStatement(
 		    """
-		    match value {
-		    	Ok( x ) -> x
-		    	_ -> "fallback"
+		    match( value ) {
+		    	Ok( x ) => x
+		    	_ => "fallback"
 		    }
 		    """,
 		    this.context
@@ -281,9 +281,9 @@ public class MatchConstructorPatternsTest {
 
 		Object result = instance.executeStatement(
 		    """
-		    match value {
-		    	Err( problem ) -> problem
-		    	_ -> "fallback"
+		    match( value ) {
+		    	Err( problem ) => problem
+		    	_ => "fallback"
 		    }
 		    """,
 		    this.context
@@ -298,9 +298,9 @@ public class MatchConstructorPatternsTest {
 
 		Object result = instance.executeStatement(
 		    """
-		    match value {
-		    	Failure() -> "empty"
-		    	_ -> "fallback"
+		    match( value ) {
+		    	Failure() => "empty"
+		    	_ => "fallback"
 		    }
 		    """,
 		    this.context

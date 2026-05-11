@@ -46,9 +46,9 @@ public class MatchSyntaxContractTest {
 		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseExpression(
 		    """
-		    match value {
-		    	0 -> \"zero\"
-		    	_ -> \"many\"
+		    match( value ) {
+		    	0 => \"zero\"
+		    	_ => \"many\"
 		    }
 		    """
 		);
@@ -63,9 +63,9 @@ public class MatchSyntaxContractTest {
 		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseStatement(
 		    """
-		    match value {
-		    	0 -> \"zero\"
-		    	_ -> \"many\"
+		    match( value ) {
+		    	0 => \"zero\"
+		    	_ => \"many\"
 		    }
 		    """
 		);
@@ -80,9 +80,9 @@ public class MatchSyntaxContractTest {
 		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseExpression(
 		    """
-		    match value {
-		    	0 -> "zero"
-		    	_ -> "many"
+		    match( value ) {
+		    	0 => "zero"
+		    	_ => "many"
 		    }
 		    """
 		);
@@ -92,7 +92,7 @@ public class MatchSyntaxContractTest {
 		    .replace( "\r\n", "\n" )
 		    .replace( "\t", "    " )
 		    .stripTrailing();
-		assertEquals( "match value {\n    0 -> \"zero\"\n    _ -> \"many\"\n}", prettyPrinted );
+		assertEquals( "match( value ) {\n    0 => \"zero\"\n    _ => \"many\"\n}", prettyPrinted );
 	}
 
 	@Test
@@ -100,9 +100,9 @@ public class MatchSyntaxContractTest {
 		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseExpression(
 		    """
-		    match value {
-		    	[ head, ...tail ] if head > 0 -> head
-		    	_ -> null
+		    match( value ) {
+		    	[ head, ...tail ] if( head > 0 ) => head
+		    	_ => null
 		    }
 		    """
 		);
@@ -115,9 +115,9 @@ public class MatchSyntaxContractTest {
 		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseExpression(
 		    """
-		    match value {
-		    	0 -> { foo = \"zero\"; foo }
-		    	_ -> \"many\"
+		    match( value ) {
+		    	0 => { foo = \"zero\"; foo }
+		    	_ => \"many\"
 		    }
 		    """
 		);
@@ -133,13 +133,13 @@ public class MatchSyntaxContractTest {
 		    ExpressionException.class,
 		    () -> parser.parseExpression(
 		        """
-		        match value {
-		        	0 -> {
+		        match( value ) {
+		        	0 => {
 		        		if ( true ) {
 		        			foo = \"zero\";
 		        		}
 		        	}
-		        	_ -> \"many\"
+		        	_ => \"many\"
 		        }
 		        """
 		    )
@@ -151,9 +151,9 @@ public class MatchSyntaxContractTest {
 		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseExpression(
 		    """
-		    match value {
-		    	[ head, *tail ] -> head
-		    	_ -> null
+		    match( value ) {
+		    	[ head, *tail ] => head
+		    	_ => null
 		    }
 		    """
 		);
@@ -166,9 +166,9 @@ public class MatchSyntaxContractTest {
 		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseExpression(
 		    """
-		    match value {
-		    	0 when value > 0 -> \"zero\"
-		    	_ -> \"many\"
+		    match( value ) {
+		    	0 when value > 0 => \"zero\"
+		    	_ => \"many\"
 		    }
 		    """
 		);
@@ -181,9 +181,9 @@ public class MatchSyntaxContractTest {
 		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseExpression(
 		    """
-		    match value {
-		    	Some( x ) -> x
-		    	_ -> null
+		    match( value ) {
+		    	Some( x ) => x
+		    	_ => null
 		    }
 		    """
 		);
@@ -196,9 +196,9 @@ public class MatchSyntaxContractTest {
 		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseExpression(
 		    """
-		    match value {
-		    	1 or 2 -> "small"
-		    	_ -> "many"
+		    match( value ) {
+		    	1 or 2 => "small"
+		    	_ => "many"
 		    }
 		    """
 		);
@@ -211,9 +211,9 @@ public class MatchSyntaxContractTest {
 		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseExpression(
 		    """
-		    match value {
-		    	x and _ -> "exact"
-		    	_ -> "fallback"
+		    match( value ) {
+		    	x and _ => "exact"
+		    	_ => "fallback"
 		    }
 		    """
 		);
@@ -226,9 +226,9 @@ public class MatchSyntaxContractTest {
 		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseExpression(
 		    """
-		    match value {
-		    	not 1 -> "other"
-		    	_ -> "one"
+		    match( value ) {
+		    	not 1 => "other"
+		    	_ => "one"
 		    }
 		    """
 		);
@@ -241,9 +241,9 @@ public class MatchSyntaxContractTest {
 		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseExpression(
 		    """
-		    match value {
-		    	?( x -> x > 1 ) -> \"many\"
-		    	_ -> \"small\"
+		    match( value ) {
+		    	?( x -> x > 1 ) => \"many\"
+		    	_ => \"small\"
 		    }
 		    """
 		);
@@ -256,13 +256,29 @@ public class MatchSyntaxContractTest {
 		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseExpression(
 		    """
-		    match value {
-		    	1..5 -> "small"
-		    	_ -> "many"
+		    match( value ) {
+		    	1..5 => "small"
+		    	_ => "many"
 		    }
 		    """
 		);
 
 		assertTrue( result.isCorrect(), result.getIssues().toString() );
+	}
+
+	@Test
+	public void testMatchRejectsLegacySyntax() {
+		Parser parser = new Parser();
+
+		assertFalse(
+		    parser.parseExpression(
+		        """
+		        match value {
+		        	0 -> "zero"
+		        	_ -> "many"
+		        }
+		        """
+		    ).isCorrect()
+		);
 	}
 }

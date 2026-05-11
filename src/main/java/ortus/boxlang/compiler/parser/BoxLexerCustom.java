@@ -168,7 +168,7 @@ public class BoxLexerCustom extends BoxLexer {
 	 * Keywords that legtimatley have trailing (
 	 */
 	private static final Set<Integer>	keywordsThatComeBeforeLParen	= Set.of( CATCH, FOR, FUNCTION, IF, WHILE, SWITCH, NOT, AND, EQ, EQUAL, EQV, GE, GT,
-	    GTE, IMP, IS, LE, LT, LTE, MOD, NEQ, OR, THAN, XOR, IN ); // , ASSERT -without assert here, you can't use an expression wrapped in parens
+	    GTE, IMP, IS, LE, LT, LTE, MATCH, MOD, NEQ, OR, THAN, XOR, IN ); // , ASSERT -without assert here, you can't use an expression wrapped in parens
 
 	/**
 	 * A flag to track if we are fixing a component prefix

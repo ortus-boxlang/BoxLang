@@ -509,10 +509,10 @@ structMember: structKey (COLON | EQUALSIGN) expression
 structKey: identifier | stringLiteral | INTEGER_LITERAL | ILLEGAL_IDENTIFIER | SWITCH | MATCH
     ;
 
-matchExpression: MATCH expression LBRACE matchCase+ RBRACE
+matchExpression: MATCH LPAREN expression RPAREN LBRACE matchCase+ RBRACE
     ;
 
-matchCase: matchPattern (IF expression)? ARROW matchCaseBody
+matchCase: matchPattern (IF expression)? ARROW_RIGHT matchCaseBody
     ;
 
 matchCaseBody
