@@ -176,7 +176,7 @@ public final class PrettyPrint {
 	/**
 	 * Runs the formatter CLI against the provided arguments and streams.
 	 *
-	 * @param args command-line arguments, including comma-delimited values for {@code --source}
+	 * @param args command-line arguments; {@code --source} and {@code --excludes} both accept comma-delimited values
 	 * @param out standard output stream for user-facing messages
 	 * @param err standard error stream for error messages
 	 *
@@ -288,11 +288,6 @@ public final class PrettyPrint {
 				}
 			}
 
-			if ( targetPath != null && pathsToProcess.size() > 1 && !Files.isDirectory( Paths.get( targetPath ) ) ) {
-				err.println( "Error: --target must be a directory when multiple source files are being processed" );
-				return 1;
-			}
-
 			if ( !excludePaths.isEmpty() ) {
 				List<Path> resolvedExcludePaths = new ArrayList<>();
 				for ( String excludePath : excludePaths ) {
@@ -307,6 +302,11 @@ public final class PrettyPrint {
 					}
 					return false;
 				} );
+			}
+
+			if ( targetPath != null && pathsToProcess.size() > 1 && !Files.isDirectory( Paths.get( targetPath ) ) ) {
+				err.println( "Error: --target must be a directory when multiple source files are being processed" );
+				return 1;
 			}
 
 			boolean needsFormatting = false;

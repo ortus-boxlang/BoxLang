@@ -559,4 +559,31 @@ public class PrettyPrintMainTest {
 			Files.deleteIfExists( thirdFile );
 		}
 	}
+
+	@Test
+	public void testExcludesNonExistentPathIsIgnored() throws IOException {
+		Path tempFile = Files.createTempFile( "prettyprint-exclude-nonexistent", ".cfc" );
+		try {
+			Files.writeString( tempFile, "component{function foo(){return {\"a\":1};}}", StandardCharsets.UTF_8 );
+			String					original	= Files.readString( tempFile, StandardCharsets.UTF_8 );
+
+			ByteArrayOutputStream	stdout		= new ByteArrayOutputStream();
+			ByteArrayOutputStream	stderr		= new ByteArrayOutputStream();
+
+			int						exitCode	= PrettyPrint.run(
+			    new String[] {
+			        "--source", tempFile.toString(),
+			        "--excludes", "/no/such/path/does/not/exist.cfc"
+			    },
+			    new PrintStream( stdout ),
+			    new PrintStream( stderr )
+			);
+
+			assertTrue( exitCode == 0, "Formatter should exit successfully when exclude path does not exist" );
+			assertTrue( stderr.toString( StandardCharsets.UTF_8 ).isEmpty(), "No stderr output expected" );
+			assertFalse( Files.readString( tempFile, StandardCharsets.UTF_8 ).equals( original ), "Source file should still be formatted" );
+		} finally {
+			Files.deleteIfExists( tempFile );
+		}
+	}
 }
