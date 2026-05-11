@@ -243,20 +243,20 @@ public class PrettyPrintMainTest {
 
 	@Test
 	public void testMultipleSourceFilesAreFormatted() throws IOException {
-		Path firstFile = Files.createTempFile( "prettyprint-multi-file-1", ".cfc" );
-		Path secondFile = Files.createTempFile( "prettyprint-multi-file-2", ".cfc" );
+		Path	firstFile	= Files.createTempFile( "prettyprint-multi-file-1", ".cfc" );
+		Path	secondFile	= Files.createTempFile( "prettyprint-multi-file-2", ".cfc" );
 
 		try {
 			Files.writeString( firstFile, "component{function foo(){return {\"a\":1};}}", StandardCharsets.UTF_8 );
 			Files.writeString( secondFile, "component{function bar(){return [1,2,3];}}", StandardCharsets.UTF_8 );
 
-			String originalFirst = Files.readString( firstFile, StandardCharsets.UTF_8 );
-			String originalSecond = Files.readString( secondFile, StandardCharsets.UTF_8 );
+			String					originalFirst	= Files.readString( firstFile, StandardCharsets.UTF_8 );
+			String					originalSecond	= Files.readString( secondFile, StandardCharsets.UTF_8 );
 
-			ByteArrayOutputStream stdout = new ByteArrayOutputStream();
-			ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+			ByteArrayOutputStream	stdout			= new ByteArrayOutputStream();
+			ByteArrayOutputStream	stderr			= new ByteArrayOutputStream();
 
-			int exitCode = PrettyPrint.run(
+			int						exitCode		= PrettyPrint.run(
 			    new String[] {
 			        "--source", firstFile + "," + secondFile
 			    },
@@ -276,22 +276,22 @@ public class PrettyPrintMainTest {
 
 	@Test
 	public void testMultipleSourceDirectoriesAreFormatted() throws IOException {
-		Path firstDir = Files.createTempDirectory( "prettyprint-multi-dir-1" );
-		Path secondDir = Files.createTempDirectory( "prettyprint-multi-dir-2" );
-		Path firstFile = firstDir.resolve( "first.cfc" );
-		Path secondFile = secondDir.resolve( "second.cfc" );
+		Path	firstDir	= Files.createTempDirectory( "prettyprint-multi-dir-1" );
+		Path	secondDir	= Files.createTempDirectory( "prettyprint-multi-dir-2" );
+		Path	firstFile	= firstDir.resolve( "first.cfc" );
+		Path	secondFile	= secondDir.resolve( "second.cfc" );
 
 		try {
 			Files.writeString( firstFile, "component{function foo(){return {\"a\":1};}}", StandardCharsets.UTF_8 );
 			Files.writeString( secondFile, "component{function bar(){return [1,2,3];}}", StandardCharsets.UTF_8 );
 
-			String originalFirst = Files.readString( firstFile, StandardCharsets.UTF_8 );
-			String originalSecond = Files.readString( secondFile, StandardCharsets.UTF_8 );
+			String					originalFirst	= Files.readString( firstFile, StandardCharsets.UTF_8 );
+			String					originalSecond	= Files.readString( secondFile, StandardCharsets.UTF_8 );
 
-			ByteArrayOutputStream stdout = new ByteArrayOutputStream();
-			ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+			ByteArrayOutputStream	stdout			= new ByteArrayOutputStream();
+			ByteArrayOutputStream	stderr			= new ByteArrayOutputStream();
 
-			int exitCode = PrettyPrint.run(
+			int						exitCode		= PrettyPrint.run(
 			    new String[] {
 			        "--source", firstDir + "," + secondDir
 			    },
@@ -313,17 +313,17 @@ public class PrettyPrintMainTest {
 
 	@Test
 	public void testMultipleSourceFilesCheckModeReportsEachFile() throws IOException {
-		Path firstFile = Files.createTempFile( "prettyprint-multi-check-1", ".cfc" );
-		Path secondFile = Files.createTempFile( "prettyprint-multi-check-2", ".cfc" );
+		Path	firstFile	= Files.createTempFile( "prettyprint-multi-check-1", ".cfc" );
+		Path	secondFile	= Files.createTempFile( "prettyprint-multi-check-2", ".cfc" );
 
 		try {
 			Files.writeString( firstFile, "component{function foo(){return {\"a\":1};}}", StandardCharsets.UTF_8 );
 			Files.writeString( secondFile, "component{function bar(){return [1,2,3];}}", StandardCharsets.UTF_8 );
 
-			ByteArrayOutputStream stdout = new ByteArrayOutputStream();
-			ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+			ByteArrayOutputStream	stdout		= new ByteArrayOutputStream();
+			ByteArrayOutputStream	stderr		= new ByteArrayOutputStream();
 
-			int exitCode = PrettyPrint.run(
+			int						exitCode	= PrettyPrint.run(
 			    new String[] {
 			        "--check",
 			        "--source", firstFile + "," + secondFile
@@ -332,7 +332,7 @@ public class PrettyPrintMainTest {
 			    new PrintStream( stderr )
 			);
 
-			String stdoutText = stdout.toString( StandardCharsets.UTF_8 );
+			String					stdoutText	= stdout.toString( StandardCharsets.UTF_8 );
 			assertTrue( exitCode == 1, "Formatter should report formatting needed" );
 			assertTrue( stderr.toString( StandardCharsets.UTF_8 ).isEmpty(), "No stderr output expected" );
 			assertTrue( stdoutText.contains( firstFile.toString() ), "Stdout should mention the first file" );
@@ -345,20 +345,20 @@ public class PrettyPrintMainTest {
 
 	@Test
 	public void testMultipleSourceFilesOverwriteFalsePrintsAllFiles() throws IOException {
-		Path firstFile = Files.createTempFile( "prettyprint-multi-stdout-1", ".cfc" );
-		Path secondFile = Files.createTempFile( "prettyprint-multi-stdout-2", ".cfc" );
+		Path	firstFile	= Files.createTempFile( "prettyprint-multi-stdout-1", ".cfc" );
+		Path	secondFile	= Files.createTempFile( "prettyprint-multi-stdout-2", ".cfc" );
 
 		try {
 			Files.writeString( firstFile, "component{function foo(){return {\"a\":1};}}", StandardCharsets.UTF_8 );
 			Files.writeString( secondFile, "component{function bar(){return [1,2,3];}}", StandardCharsets.UTF_8 );
 
-			String originalFirst = Files.readString( firstFile, StandardCharsets.UTF_8 );
-			String originalSecond = Files.readString( secondFile, StandardCharsets.UTF_8 );
+			String					originalFirst	= Files.readString( firstFile, StandardCharsets.UTF_8 );
+			String					originalSecond	= Files.readString( secondFile, StandardCharsets.UTF_8 );
 
-			ByteArrayOutputStream stdout = new ByteArrayOutputStream();
-			ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+			ByteArrayOutputStream	stdout			= new ByteArrayOutputStream();
+			ByteArrayOutputStream	stderr			= new ByteArrayOutputStream();
 
-			int exitCode = PrettyPrint.run(
+			int						exitCode		= PrettyPrint.run(
 			    new String[] {
 			        "--source", firstFile + "," + secondFile,
 			        "--overwrite", "false"
@@ -367,7 +367,7 @@ public class PrettyPrintMainTest {
 			    new PrintStream( stderr )
 			);
 
-			String stdoutText = stdout.toString( StandardCharsets.UTF_8 );
+			String					stdoutText		= stdout.toString( StandardCharsets.UTF_8 );
 			assertTrue( exitCode == 0, "Formatter should exit successfully" );
 			assertTrue( stderr.toString( StandardCharsets.UTF_8 ).isEmpty(), "No stderr output expected" );
 			assertTrue( stdoutText.contains( "=== " + firstFile + " ===" ), "Stdout should include the first file header" );
@@ -382,18 +382,18 @@ public class PrettyPrintMainTest {
 
 	@Test
 	public void testMultipleSourceFilesRequireDirectoryTarget() throws IOException {
-		Path firstFile = Files.createTempFile( "prettyprint-multi-target-1", ".cfc" );
-		Path secondFile = Files.createTempFile( "prettyprint-multi-target-2", ".cfc" );
-		Path targetFile = Files.createTempFile( "prettyprint-multi-target-output", ".cfc" );
+		Path	firstFile	= Files.createTempFile( "prettyprint-multi-target-1", ".cfc" );
+		Path	secondFile	= Files.createTempFile( "prettyprint-multi-target-2", ".cfc" );
+		Path	targetFile	= Files.createTempFile( "prettyprint-multi-target-output", ".cfc" );
 
 		try {
 			Files.writeString( firstFile, "component{function foo(){return {\"a\":1};}}", StandardCharsets.UTF_8 );
 			Files.writeString( secondFile, "component{function bar(){return [1,2,3];}}", StandardCharsets.UTF_8 );
 
-			ByteArrayOutputStream stdout = new ByteArrayOutputStream();
-			ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+			ByteArrayOutputStream	stdout		= new ByteArrayOutputStream();
+			ByteArrayOutputStream	stderr		= new ByteArrayOutputStream();
 
-			int exitCode = PrettyPrint.run(
+			int						exitCode	= PrettyPrint.run(
 			    new String[] {
 			        "--source", firstFile + "," + secondFile,
 			        "--target", targetFile.toString()
@@ -416,20 +416,20 @@ public class PrettyPrintMainTest {
 
 	@Test
 	public void testMultipleSourceFilesTrimWhitespaceAndIgnoreBlankTokens() throws IOException {
-		Path firstFile = Files.createTempFile( "prettyprint-multi-trim-1", ".cfc" );
-		Path secondFile = Files.createTempFile( "prettyprint-multi-trim-2", ".cfc" );
+		Path	firstFile	= Files.createTempFile( "prettyprint-multi-trim-1", ".cfc" );
+		Path	secondFile	= Files.createTempFile( "prettyprint-multi-trim-2", ".cfc" );
 
 		try {
 			Files.writeString( firstFile, "component{function foo(){return {\"a\":1};}}", StandardCharsets.UTF_8 );
 			Files.writeString( secondFile, "component{function bar(){return [1,2,3];}}", StandardCharsets.UTF_8 );
 
-			String originalFirst = Files.readString( firstFile, StandardCharsets.UTF_8 );
-			String originalSecond = Files.readString( secondFile, StandardCharsets.UTF_8 );
+			String					originalFirst	= Files.readString( firstFile, StandardCharsets.UTF_8 );
+			String					originalSecond	= Files.readString( secondFile, StandardCharsets.UTF_8 );
 
-			ByteArrayOutputStream stdout = new ByteArrayOutputStream();
-			ByteArrayOutputStream stderr = new ByteArrayOutputStream();
+			ByteArrayOutputStream	stdout			= new ByteArrayOutputStream();
+			ByteArrayOutputStream	stderr			= new ByteArrayOutputStream();
 
-			int exitCode = PrettyPrint.run(
+			int						exitCode		= PrettyPrint.run(
 			    new String[] {
 			        "--source", " " + firstFile + " ,, " + secondFile + " "
 			    },
