@@ -176,7 +176,7 @@ public final class PrettyPrint {
 	/**
 	 * Runs the formatter CLI against the provided arguments and streams.
 	 *
-	 * @param args command-line arguments
+	 * @param args command-line arguments, including comma-delimited values for {@code --source}
 	 * @param out standard output stream for user-facing messages
 	 * @param err standard error stream for error messages
 	 *
@@ -189,14 +189,14 @@ public final class PrettyPrint {
 		// process cli args
 		// --check (make no changes, just check if the file is already formatted, return an error code if not)
 		// -c, --config <config file> (defaults to .bxformat.json in the current working directory, falls back to .cfformat.json)
-		// --source <source file/folder> (defaults to current working directory)
+		// --source <source file/folder[,file/folder,...]> (defaults to current working directory)
 		// --target <target file/folder> (optional, if not provided, overwrite source files)
 		// --overwrite <true|false> (optional, default true. when false, print to stdout)
 		// --convertConfig (convert .cfformat.json to .bxformat.json)
 		try {
 			boolean	checkMode		= false;
 			String	configPath		= null; // null means use fallback logic
-			String	sourcePath		= System.getProperty( "user.dir" );
+			List<String>	sourcePaths		= new ArrayList<>( List.of( System.getProperty( "user.dir" ) ) );
 			String	targetPath		= null;
 			boolean	convertConfig	= false;
 			boolean	overwrite		= true;
@@ -217,7 +217,17 @@ public final class PrettyPrint {
 				} else if ( ( args[ i ].equalsIgnoreCase( "--config" ) || args[ i ].equalsIgnoreCase( "-c" ) ) && i + 1 < args.length ) {
 					configPath = args[ ++i ];
 				} else if ( args[ i ].equalsIgnoreCase( "--source" ) && i + 1 < args.length ) {
-					sourcePath = args[ ++i ];
+					sourcePaths.clear();
+					for ( String sourcePart : args[ ++i ].split( "," ) ) {
+						String trimmedSource = sourcePart.trim();
+						if ( !trimmedSource.isEmpty() ) {
+							sourcePaths.add( trimmedSource );
+						}
+					}
+					if ( sourcePaths.isEmpty() ) {
+						err.println( "Error: --source requires at least one file or directory" );
+						return 1;
+					}
 				} else if ( args[ i ].equalsIgnoreCase( "--target" ) && i + 1 < args.length ) {
 					targetPath = args[ ++i ];
 				}
@@ -225,7 +235,13 @@ public final class PrettyPrint {
 
 			// Handle --convertConfig option
 			if ( convertConfig ) {
-				return convertCFFormatConfig( sourcePath, out, err );
+				for ( String sourcePath : sourcePaths ) {
+					int result = convertCFFormatConfig( sourcePath, out, err );
+					if ( result != 0 ) {
+						return result;
+					}
+				}
+				return 0;
 			}
 
 			if ( !overwrite && targetPath != null ) {
@@ -242,24 +258,30 @@ public final class PrettyPrint {
 				// Use fallback logic: .bxformat.json -> .cfformat.json -> default
 				config = Config.loadConfigWithFallback( System.getProperty( "user.dir" ) );
 			}
-			// get a stream of files to process either from a single file or a directory
-			Stream<Path> filesToProcess;
+			List<Path> pathsToProcess = new ArrayList<>();
+			for ( String sourcePath : sourcePaths ) {
+				Stream<Path> filesToProcess;
 
-			if ( Files.isDirectory( Paths.get( sourcePath ) ) ) {
-				filesToProcess = Files.walk( Paths.get( sourcePath ) )
-				    .filter( p -> !Files.isDirectory( p ) )
-				    .filter( p -> {
-					    String fileName = p.getFileName().toString().toLowerCase();
-					    return fileName.endsWith( ".bx" ) || fileName.endsWith( ".bxs" ) || fileName.endsWith( ".bxm" )
-					        || fileName.endsWith( ".cfm" ) || fileName.endsWith( ".cfc" ) || fileName.endsWith( ".cfs" );
-				    } );
-			} else {
-				filesToProcess = Stream.of( Paths.get( sourcePath ) );
+				if ( Files.isDirectory( Paths.get( sourcePath ) ) ) {
+					filesToProcess = Files.walk( Paths.get( sourcePath ) )
+					    .filter( p -> !Files.isDirectory( p ) )
+					    .filter( p -> {
+						    String fileName = p.getFileName().toString().toLowerCase();
+						    return fileName.endsWith( ".bx" ) || fileName.endsWith( ".bxs" ) || fileName.endsWith( ".bxm" )
+						        || fileName.endsWith( ".cfm" ) || fileName.endsWith( ".cfc" ) || fileName.endsWith( ".cfs" );
+					    } );
+				} else {
+					filesToProcess = Stream.of( Paths.get( sourcePath ) );
+				}
+
+				try ( filesToProcess ) {
+					filesToProcess.forEach( pathsToProcess::add );
+				}
 			}
 
-			List<Path> pathsToProcess = new ArrayList<>();
-			try ( filesToProcess ) {
-				filesToProcess.forEach( pathsToProcess::add );
+			if ( targetPath != null && pathsToProcess.size() > 1 && !Files.isDirectory( Paths.get( targetPath ) ) ) {
+				err.println( "Error: --target must be a directory when multiple source files are being processed" );
+				return 1;
 			}
 
 			boolean needsFormatting = false;
@@ -462,51 +484,67 @@ public final class PrettyPrint {
 	 * Prints the help message for the BoxLang Formatter tool.
 	 */
 	private static void printHelp( PrintStream out ) {
-		out.println( "BoxLang Formatter - A CLI tool for formatting BoxLang code" );
+		out.println( "🎨 BoxLang Formatter - A CLI tool for formatting BoxLang code" );
 		out.println();
-		out.println( "USAGE:" );
-		out.println( "  boxlang format [OPTIONS]" );
-		out.println( "  java -jar boxlang.jar ortus.boxlang.compiler.PrettyPrint [OPTIONS]" );
+		out.println( "📋 USAGE:" );
+		out.println( "  boxlang format [OPTIONS]  # 🔧 Using OS binary" );
+		out.println( "  java -jar boxlang.jar ortus.boxlang.compiler.PrettyPrint [OPTIONS] # 🐍 Using Java JAR" );
 		out.println();
-		out.println( "OPTIONS:" );
-		out.println( "  -h, --help                  Show this help message and exit" );
-		out.println( "      --source <PATH>         Path to source directory or file to format (default: current directory)" );
-		out.println( "      --target <PATH>         Path to target directory or file (default: overwrite source files)" );
-		out.println( "      --overwrite <true|false> Overwrite files (default: true). false prints formatted source to stdout" );
-		out.println( "  -c, --config <PATH>         Path to configuration file (default: .bxformat.json or .cfformat.json)" );
-		out.println( "      --check                 Only check if files need formatting (exit code 1 if changes needed)" );
-		out.println( "      --initConfig            Create a default .bxformat.json configuration file" );
-		out.println( "      --convertConfig         Convert .cfformat.json to .bxformat.json" );
+		out.println( "⚙️  OPTIONS:" );
+		out.println( "  -h, --help                  ❓ Show this help message and exit" );
+		out.println( "  -c, --config <PATH>         📄 Path to configuration file (default: .bxformat.json or .cfformat.json)" );
+		out.println( "      --source <PATH[,PATH,...]> 📁 Comma-delimited list of source files/directories to format (default: current directory)" );
+		out.println( "      --target <PATH>         🎯 Path to target directory or file (default: overwrite source files)" );
+		out.println( "      --overwrite <true|false> 📝 Overwrite files (default: true). false prints formatted output to stdout" );
+		out.println( "      --check                 🔍 Only check if files need formatting (exit code 1 if changes are needed)" );
+		out.println( "      --initConfig            ⚙️  Create a default .bxformat.json configuration file" );
+		out.println( "      --convertConfig         🔄 Convert .cfformat.json to .bxformat.json" );
 		out.println();
-		out.println( "CONFIGURATION:" );
-		out.println( "  The formatter looks for configuration files in this order:" );
+		out.println( "🧾 CONFIGURATION:" );
+		out.println( "  • The formatter looks for configuration files in this order:" );
 		out.println( "    1. .bxformat.json (preferred)" );
-		out.println( "    2. .cfformat.json (CFFormat compatibility - auto-converted)" );
+		out.println( "    2. .cfformat.json (CFFormat compatibility)" );
 		out.println( "    3. Default settings" );
+		out.println( "  • You can also specify a config file explicitly with -c/--config" );
+		out.println( "  • Both .bxformat.json and .cfformat.json formats are supported" );
 		out.println();
-		out.println( "  You can also specify a config file explicitly with -c/--config." );
-		out.println( "  Both .bxformat.json and .cfformat.json formats are supported." );
+		out.println( "🔧 SUPPORTED SOURCE FILES:" );
+		out.println( "  .cfm  - ColdFusion markup pages" );
+		out.println( "  .cfc  - ColdFusion components" );
+		out.println( "  .cfs  - ColdFusion script files" );
+		out.println( "  .bx   - BoxLang class files" );
+		out.println( "  .bxs  - BoxLang script files" );
+		out.println( "  .bxm  - BoxLang module files" );
 		out.println();
-		out.println( "EXAMPLES:" );
-		out.println( "  # Format all BoxLang files in the current directory" );
+		out.println( "📂 BEHAVIOR:" );
+		out.println( "  • Directory formatting processes supported files recursively" );
+		out.println( "  • Multiple sources can be passed as a comma-delimited list" );
+		out.println( "  • Single file targets are only valid when formatting one source file" );
+		out.println( "  • Missing configuration falls back to default formatter settings" );
+		out.println();
+		out.println( "💡 EXAMPLES:" );
+		out.println( "  # 🎨 Format all BoxLang files in the current directory" );
 		out.println( "  boxlang format" );
 		out.println();
-		out.println( "  # Check files for formatting needs" );
+		out.println( "  # 🔍 Check files for formatting needs" );
 		out.println( "  boxlang format --check" );
 		out.println();
-		out.println( "  # Print formatted output to stdout without overwriting files" );
+		out.println( "  # 📁 Format multiple directories in one pass" );
+		out.println( "  boxlang format --source commands,models,services" );
+		out.println();
+		out.println( "  # 📝 Print formatted output to stdout without overwriting files" );
 		out.println( "  boxlang format --overwrite false --source /path/to/file.cfc" );
 		out.println();
-		out.println( "  # Use a specific config file" );
+		out.println( "  # 📄 Use a specific config file" );
 		out.println( "  boxlang format --config /path/to/.bxformat.json" );
 		out.println();
-		out.println( "  # Convert CFFormat config to BoxLang format" );
+		out.println( "  # 🔄 Convert CFFormat config to BoxLang format" );
 		out.println( "  boxlang format --convertConfig" );
 		out.println();
-		out.println( "More Information:" );
-		out.println( "  Documentation: https://boxlang.ortusbooks.com/" );
-		out.println( "  Community: https://community.ortussolutions.com/c/boxlang/42" );
-		out.println( "  GitHub: https://github.com/ortus-boxlang" );
+		out.println( "📖 More Information:" );
+		out.println( "  📖 Documentation: https://boxlang.ortusbooks.com/" );
+		out.println( "  💬 Community: https://community.ortussolutions.com/c/boxlang/42" );
+		out.println( "  💾 GitHub: https://github.com/ortus-boxlang" );
 		out.println();
 	}
 
