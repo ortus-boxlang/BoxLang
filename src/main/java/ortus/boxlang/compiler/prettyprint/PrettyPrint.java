@@ -157,14 +157,31 @@ public final class PrettyPrint {
 	                                             """;
 	// @formatter:off
 
+	/**
+	 * Prevents instantiation of this utility class.
+	 */
 	private PrettyPrint() {
 		// Prevent instantiation
 	}
 
+	/**
+	 * Executes the formatter CLI and exits the JVM with the resulting status code.
+	 *
+	 * @param args command-line arguments
+	 */
 	public static void main( String[] args ) {
 		System.exit( run( args, System.out, System.err ) );
 	}
 
+	/**
+	 * Runs the formatter CLI against the provided arguments and streams.
+	 *
+	 * @param args command-line arguments
+	 * @param out standard output stream for user-facing messages
+	 * @param err standard error stream for error messages
+	 *
+	 * @return {@code 0} on success, otherwise a non-zero exit code
+	 */
 	static int run( String[] args, PrintStream out, PrintStream err ) {
 		// initialize BoxRuntime if not already done
 		BoxRuntime.getInstance();
@@ -296,6 +313,12 @@ public final class PrettyPrint {
 		}
 	}
 
+	/**
+	 * Creates a default formatter configuration file in the current working directory.
+	 *
+	 * @param out standard output stream for success messages
+	 * @param err standard error stream for error messages
+	 */
 	private static void initConfig( PrintStream out, PrintStream err ) {
 		// check if file exists
 		java.io.File configFile = new java.io.File( System.getProperty( "user.dir" ) + "/.bxformat.json" );
@@ -316,6 +339,10 @@ public final class PrettyPrint {
 	 * Convert a .cfformat.json file to .bxformat.json
 	 *
 	 * @param directory The directory containing the .cfformat.json file (or path to the file itself)
+	 * @param out standard output stream for status messages
+	 * @param err standard error stream for error messages
+	 *
+	 * @return {@code 0} when conversion succeeds, otherwise a non-zero exit code
 	 */
 	private static int convertCFFormatConfig( String directory, PrintStream out, PrintStream err ) {
 		java.io.File	inputFile;
@@ -355,10 +382,25 @@ public final class PrettyPrint {
 		}
 	}
 
+	/**
+	 * Pretty-prints an AST node using the default formatter configuration.
+	 *
+	 * @param node the AST node to format
+	 *
+	 * @return the formatted source
+	 */
 	public static String prettyPrint( BoxNode node ) {
 		return prettyPrint( node, new Config() );
 	}
 
+	/**
+	 * Pretty-prints an AST node using the provided formatter configuration.
+	 *
+	 * @param node the AST node to format
+	 * @param config the formatter configuration to apply
+	 *
+	 * @return the formatted source
+	 */
 	public static String prettyPrint( BoxNode node, Config config ) {
 		var doc = generateDoc( node, config );
 		String output = printDoc( doc, config );
@@ -370,6 +412,14 @@ public final class PrettyPrint {
 		return output;
 	}
 
+	/**
+	 * Builds the intermediate document model used by the printer for a given AST node.
+	 *
+	 * @param node the AST node to convert
+	 * @param config the formatter configuration to apply
+	 *
+	 * @return the generated document tree
+	 */
 	public static Doc generateDoc( BoxNode node, Config config ) {
 		BoxSourceType sourceType = config.getSourceType() != null ? config.getSourceType() : resolveSourceType( node );
 		Visitor      visitor     = new Visitor( sourceType, config );
@@ -395,6 +445,14 @@ public final class PrettyPrint {
 		return BoxSourceType.BOXSCRIPT;
 	}
 
+	/**
+	 * Renders a generated document tree into formatted source text.
+	 *
+	 * @param doc the document tree to print
+	 * @param config the formatter configuration to apply
+	 *
+	 * @return the formatted source text
+	 */
 	public static String printDoc( Doc doc, Config config ) {
 		var printer = new Printer( config );
 		return printer.print( doc );
