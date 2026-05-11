@@ -446,4 +446,117 @@ public class PrettyPrintMainTest {
 			Files.deleteIfExists( secondFile );
 		}
 	}
+
+	@Test
+	public void testExcludedFileIsSkipped() throws IOException {
+		Path	firstFile	= Files.createTempFile( "prettyprint-exclude-file-1", ".cfc" );
+		Path	secondFile	= Files.createTempFile( "prettyprint-exclude-file-2", ".cfc" );
+
+		try {
+			Files.writeString( firstFile, "component{function foo(){return {\"a\":1};}}", StandardCharsets.UTF_8 );
+			Files.writeString( secondFile, "component{function bar(){return [1,2,3];}}", StandardCharsets.UTF_8 );
+
+			String	originalFirst	= Files.readString( firstFile, StandardCharsets.UTF_8 );
+			String	originalSecond	= Files.readString( secondFile, StandardCharsets.UTF_8 );
+
+			ByteArrayOutputStream	stdout	= new ByteArrayOutputStream();
+			ByteArrayOutputStream	stderr	= new ByteArrayOutputStream();
+
+			int	exitCode = PrettyPrint.run(
+			    new String[] {
+			        "--source", firstFile + "," + secondFile,
+			        "--excludes", secondFile.toString()
+			    },
+			    new PrintStream( stdout ),
+			    new PrintStream( stderr )
+			);
+
+			assertTrue( exitCode == 0, "Formatter should exit successfully" );
+			assertTrue( stderr.toString( StandardCharsets.UTF_8 ).isEmpty(), "No stderr output expected" );
+			assertFalse( Files.readString( firstFile, StandardCharsets.UTF_8 ).equals( originalFirst ), "Non-excluded file should be formatted" );
+			assertTrue( Files.readString( secondFile, StandardCharsets.UTF_8 ).equals( originalSecond ), "Excluded file should be skipped" );
+		} finally {
+			Files.deleteIfExists( firstFile );
+			Files.deleteIfExists( secondFile );
+		}
+	}
+
+	@Test
+	public void testExcludedDirectoryIsSkipped() throws IOException {
+		Path	rootDir			= Files.createTempDirectory( "prettyprint-exclude-dir-root" );
+		Path	includedDir		= Files.createDirectory( rootDir.resolve( "included" ) );
+		Path	excludedDir		= Files.createDirectory( rootDir.resolve( "excluded" ) );
+		Path	includedFile		= includedDir.resolve( "included.cfc" );
+		Path	excludedFile		= excludedDir.resolve( "excluded.cfc" );
+
+		try {
+			Files.writeString( includedFile, "component{function foo(){return {\"a\":1};}}", StandardCharsets.UTF_8 );
+			Files.writeString( excludedFile, "component{function bar(){return [1,2,3];}}", StandardCharsets.UTF_8 );
+
+			String	originalIncluded	= Files.readString( includedFile, StandardCharsets.UTF_8 );
+			String	originalExcluded	= Files.readString( excludedFile, StandardCharsets.UTF_8 );
+
+			ByteArrayOutputStream	stdout	= new ByteArrayOutputStream();
+			ByteArrayOutputStream	stderr	= new ByteArrayOutputStream();
+
+			int	exitCode = PrettyPrint.run(
+			    new String[] {
+			        "--source", rootDir.toString(),
+			        "--excludes", excludedDir.toString()
+			    },
+			    new PrintStream( stdout ),
+			    new PrintStream( stderr )
+			);
+
+			assertTrue( exitCode == 0, "Formatter should exit successfully" );
+			assertTrue( stderr.toString( StandardCharsets.UTF_8 ).isEmpty(), "No stderr output expected" );
+			assertFalse( Files.readString( includedFile, StandardCharsets.UTF_8 ).equals( originalIncluded ), "Included file should be formatted" );
+			assertTrue( Files.readString( excludedFile, StandardCharsets.UTF_8 ).equals( originalExcluded ), "Excluded directory contents should be skipped" );
+		} finally {
+			Files.deleteIfExists( includedFile );
+			Files.deleteIfExists( excludedFile );
+			Files.deleteIfExists( includedDir );
+			Files.deleteIfExists( excludedDir );
+			Files.deleteIfExists( rootDir );
+		}
+	}
+
+	@Test
+	public void testExcludedPathsTrimWhitespaceAndIgnoreBlankTokens() throws IOException {
+		Path	firstFile	= Files.createTempFile( "prettyprint-exclude-trim-1", ".cfc" );
+		Path	secondFile	= Files.createTempFile( "prettyprint-exclude-trim-2", ".cfc" );
+		Path	thirdFile	= Files.createTempFile( "prettyprint-exclude-trim-3", ".cfc" );
+
+		try {
+			Files.writeString( firstFile, "component{function foo(){return {\"a\":1};}}", StandardCharsets.UTF_8 );
+			Files.writeString( secondFile, "component{function bar(){return [1,2,3];}}", StandardCharsets.UTF_8 );
+			Files.writeString( thirdFile, "component{function baz(){return {\"b\":2};}}", StandardCharsets.UTF_8 );
+
+			String	originalFirst	= Files.readString( firstFile, StandardCharsets.UTF_8 );
+			String	originalSecond	= Files.readString( secondFile, StandardCharsets.UTF_8 );
+			String	originalThird	= Files.readString( thirdFile, StandardCharsets.UTF_8 );
+
+			ByteArrayOutputStream	stdout	= new ByteArrayOutputStream();
+			ByteArrayOutputStream	stderr	= new ByteArrayOutputStream();
+
+			int	exitCode = PrettyPrint.run(
+			    new String[] {
+			        "--source", firstFile + "," + secondFile + "," + thirdFile,
+			        "--excludes", " " + firstFile + " ,, " + thirdFile + " "
+			    },
+			    new PrintStream( stdout ),
+			    new PrintStream( stderr )
+			);
+
+			assertTrue( exitCode == 0, "Formatter should exit successfully" );
+			assertTrue( stderr.toString( StandardCharsets.UTF_8 ).isEmpty(), "No stderr output expected" );
+			assertTrue( Files.readString( firstFile, StandardCharsets.UTF_8 ).equals( originalFirst ), "First excluded file should be skipped" );
+			assertFalse( Files.readString( secondFile, StandardCharsets.UTF_8 ).equals( originalSecond ), "Non-excluded file should be formatted" );
+			assertTrue( Files.readString( thirdFile, StandardCharsets.UTF_8 ).equals( originalThird ), "Third excluded file should be skipped" );
+		} finally {
+			Files.deleteIfExists( firstFile );
+			Files.deleteIfExists( secondFile );
+			Files.deleteIfExists( thirdFile );
+		}
+	}
 }

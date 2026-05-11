@@ -190,6 +190,7 @@ public final class PrettyPrint {
 		// --check (make no changes, just check if the file is already formatted, return an error code if not)
 		// -c, --config <config file> (defaults to .bxformat.json in the current working directory, falls back to .cfformat.json)
 		// --source <source file/folder[,file/folder,...]> (defaults to current working directory)
+		// --excludes <file/folder[,file/folder,...]> (comma-delimited list of files or directories to skip)
 		// --target <target file/folder> (optional, if not provided, overwrite source files)
 		// --overwrite <true|false> (optional, default true. when false, print to stdout)
 		// --convertConfig (convert .cfformat.json to .bxformat.json)
@@ -197,6 +198,7 @@ public final class PrettyPrint {
 			boolean	checkMode		= false;
 			String	configPath		= null; // null means use fallback logic
 			List<String>	sourcePaths		= new ArrayList<>( List.of( System.getProperty( "user.dir" ) ) );
+			List<String>	excludePaths	= new ArrayList<>();
 			String	targetPath		= null;
 			boolean	convertConfig	= false;
 			boolean	overwrite		= true;
@@ -227,6 +229,13 @@ public final class PrettyPrint {
 					if ( sourcePaths.isEmpty() ) {
 						err.println( "Error: --source requires at least one file or directory" );
 						return 1;
+					}
+				} else if ( args[ i ].equalsIgnoreCase( "--excludes" ) && i + 1 < args.length ) {
+					for ( String excludePart : args[ ++i ].split( "," ) ) {
+						String trimmedExclude = excludePart.trim();
+						if ( !trimmedExclude.isEmpty() ) {
+							excludePaths.add( trimmedExclude );
+						}
 					}
 				} else if ( args[ i ].equalsIgnoreCase( "--target" ) && i + 1 < args.length ) {
 					targetPath = args[ ++i ];
@@ -282,6 +291,22 @@ public final class PrettyPrint {
 			if ( targetPath != null && pathsToProcess.size() > 1 && !Files.isDirectory( Paths.get( targetPath ) ) ) {
 				err.println( "Error: --target must be a directory when multiple source files are being processed" );
 				return 1;
+			}
+
+			if ( !excludePaths.isEmpty() ) {
+				List<Path> resolvedExcludePaths = new ArrayList<>();
+				for ( String excludePath : excludePaths ) {
+					resolvedExcludePaths.add( Paths.get( excludePath ).toAbsolutePath().normalize() );
+				}
+				pathsToProcess.removeIf( candidatePath -> {
+					Path normalizedCandidatePath = candidatePath.toAbsolutePath().normalize();
+					for ( Path resolvedExcludePath : resolvedExcludePaths ) {
+						if ( normalizedCandidatePath.startsWith( resolvedExcludePath ) ) {
+							return true;
+						}
+					}
+					return false;
+				} );
 			}
 
 			boolean needsFormatting = false;
@@ -494,6 +519,7 @@ public final class PrettyPrint {
 		out.println( "  -h, --help                  ❓ Show this help message and exit" );
 		out.println( "  -c, --config <PATH>         📄 Path to configuration file (default: .bxformat.json or .cfformat.json)" );
 		out.println( "      --source <PATH[,PATH,...]> 📁 Comma-delimited list of source files/directories to format (default: current directory)" );
+		out.println( "      --excludes <PATH[,PATH,...]> 🚫 Comma-delimited list of files/directories to skip" );
 		out.println( "      --target <PATH>         🎯 Path to target directory or file (default: overwrite source files)" );
 		out.println( "      --overwrite <true|false> 📝 Overwrite files (default: true). false prints formatted output to stdout" );
 		out.println( "      --check                 🔍 Only check if files need formatting (exit code 1 if changes are needed)" );
@@ -519,6 +545,7 @@ public final class PrettyPrint {
 		out.println( "📂 BEHAVIOR:" );
 		out.println( "  • Directory formatting processes supported files recursively" );
 		out.println( "  • Multiple sources can be passed as a comma-delimited list" );
+		out.println( "  • Excluded files and directories are removed before formatting begins" );
 		out.println( "  • Single file targets are only valid when formatting one source file" );
 		out.println( "  • Missing configuration falls back to default formatter settings" );
 		out.println();
@@ -531,6 +558,9 @@ public final class PrettyPrint {
 		out.println();
 		out.println( "  # 📁 Format multiple directories in one pass" );
 		out.println( "  boxlang format --source commands,models,services" );
+		out.println();
+		out.println( "  # 🚫 Skip generated and vendor directories" );
+		out.println( "  boxlang format --source . --excludes generated,vendor" );
 		out.println();
 		out.println( "  # 📝 Print formatted output to stdout without overwriting files" );
 		out.println( "  boxlang format --overwrite false --source /path/to/file.cfc" );
