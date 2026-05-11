@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.types.util;
 import java.util.Map;
 import java.util.stream.Collector;
 
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -131,14 +132,37 @@ public class BLCollector {
 	 *
 	 * @return The collector that collects into a Query
 	 */
+	/**
+	 * Returns a Collector that collects the input elements into a Query
+	 *
+	 * @deprecated Use {@link #toQuery(Query, IBoxContext)} instead.
+	 *
+	 * @param template The template Query to use for the new Query
+	 *
+	 * @return The collector that collects into a Query
+	 */
+	@Deprecated
 	public static Collector<IStruct, Query, Query> toQuery( Query template ) {
+		return toQuery( template, null );
+	}
+
+	/**
+	 * Returns a Collector that collects the input elements into a Query, casting values to the appropriate column types
+	 * if a context is provided.
+	 *
+	 * @param template The template Query to use for the new Query
+	 * @param context  The context to use for type casting, or null to skip casting
+	 *
+	 * @return The collector that collects into a Query
+	 */
+	public static Collector<IStruct, Query, Query> toQuery( Query template, IBoxContext context ) {
 		return Collector.of(
 		    // supplier
 		    () -> {
 			    return new Query( template.getColumns() );
 		    },
 		    // accumulator
-		    ( query, row ) -> query.addRow( row ),
+		    ( query, row ) -> query.addRow( row, context ),
 		    // combiner
 		    ( left, right ) -> {
 			    left.addAll( right );

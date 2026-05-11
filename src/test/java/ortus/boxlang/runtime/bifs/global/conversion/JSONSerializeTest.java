@@ -600,7 +600,7 @@ public class JSONSerializeTest {
 
 		var json = variables.getAsString( result );
 		assertThat( json ).isNotEmpty();
-		assertThat( json ).isEqualTo( "{\"test\":[[0.0,0.30420544445599146]]}" );
+		assertThat( json ).isEqualTo( "{\"test\":[[0,0.30420544445599146]]}" );
 	}
 
 	@DisplayName( "It can serialize exception" )
@@ -641,9 +641,27 @@ public class JSONSerializeTest {
 
 	}
 
-	@DisplayName( "It will serialize doubles without using scientific notation" )
+	@DisplayName( "It will serialize doubles" )
 	@Test
-	public void testWillSerializeDoublesWithoutScientificNotation() {
+	public void testWillSerializeDoubles() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				result = JSONserialize( {
+					"q": 5 castas Double
+				} );
+			""",
+		    context );
+		// @formatter:on
+
+		var json = variables.getAsString( result );
+		assertThat( json ).isNotEmpty();
+		assertThat( json ).isEqualTo( "{\"q\":5}" );
+	}
+
+	@DisplayName( "It will serialize BigDecimals without using scientific notation" )
+	@Test
+	public void testWillSerializeBigDecimalsWithoutScientificNotation() {
 		// @formatter:off
 		instance.executeSource(
 		    """
@@ -657,7 +675,7 @@ public class JSONSerializeTest {
 		var json = variables.getAsString( result );
 		assertThat( json ).isNotEmpty();
 		assertThat( json ).doesNotContain( "E" );
-		assertThat( json ).isEqualTo( "{\"q\":0.0000000}" );
+		assertThat( json ).isEqualTo( "{\"q\":0}" );
 	}
 
 	@DisplayName( "It will serialize stream" )

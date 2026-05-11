@@ -28,6 +28,7 @@ import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.jdbc.BoxConnection;
+import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
 /**
  * Represents a column type in a Query object.
@@ -341,7 +342,7 @@ public enum QueryColumnType {
 				case QueryColumnType.REFCURSOR -> value;
 			};
 		} catch ( Exception e ) {
-			throw new IllegalArgumentException( "Cannot convert value to SQL type " + type + ": " + e.getMessage(), e );
+			throw new BoxCastException( "Cannot convert value to SQL type " + type + ": " + e.getMessage(), e );
 		}
 	}
 
