@@ -22,6 +22,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.Parser;
@@ -103,6 +104,8 @@ public class CFTranspiler {
 			String	configPath	= null;
 			Boolean	stopOnError	= false;
 			Boolean	verbose		= false;
+			Boolean	copyOthers	= false;
+			Boolean	deleteOld	= false;
 			for ( int i = 0; i < args.length; i++ ) {
 				if ( args[ i ].equalsIgnoreCase( "--help" ) || args[ i ].equalsIgnoreCase( "-h" ) ) {
 					printHelp();
@@ -110,6 +113,12 @@ public class CFTranspiler {
 				}
 				if ( args[ i ].equalsIgnoreCase( "--verbose" ) || args[ i ].equalsIgnoreCase( "-v" ) ) {
 					verbose = true;
+				}
+				if ( args[ i ].equalsIgnoreCase( "--copy-others" ) ) {
+					copyOthers = true;
+				}
+				if ( args[ i ].equalsIgnoreCase( "--delete-old" ) ) {
+					deleteOld = true;
 				}
 				if ( ( args[ i ].equalsIgnoreCase( "--config" ) || args[ i ].equalsIgnoreCase( "-c" ) ) && i + 1 < args.length ) {
 					configPath = args[ ++i ];
@@ -153,6 +162,8 @@ public class CFTranspiler {
 				System.out.println( "📁 Source: " + source );
 				System.out.println( "🎯 Target: " + target );
 				System.out.println( "🛑 Stop on Error: " + stopOnError );
+				System.out.println( "📄 Copy Others: " + copyOthers );
+				System.out.println( "🗑️ Delete Old: " + deleteOld );
 				System.out.println();
 			}
 
@@ -187,6 +198,8 @@ public class CFTranspiler {
 				final Path		finalTargetPath	= targetPath;
 				final Boolean	finalVerbose	= verbose;
 				final Config	finalConfig		= config;
+				final Boolean	finalCopyOthers	= copyOthers;
+				final Boolean	finalDeleteOld	= deleteOld;
 				try {
 					final Path		finalSourcePath		= sourcePath;
 					final boolean	finalStopOnError	= stopOnError;
@@ -194,14 +207,19 @@ public class CFTranspiler {
 					    .parallel()
 					    .filter( Files::isRegularFile )
 					    .forEach( path -> {
-						    String sourceExtension = path.getFileName().toString().substring( path.getFileName().toString().lastIndexOf( "." ) + 1 );
-						    if ( sourceExtension.equals( "cfm" ) || sourceExtension.equals( "cfc" ) || sourceExtension.equals( "cfs" ) ) {
+						    String sourceExtension = getExtension( path );
+						    if ( isColdFusionExtension( sourceExtension ) ) {
 							    String targetExtension	= mapExtension( sourceExtension );
 							    Path resolvedTargetPath	= finalTargetPath
 							        .resolve(
 							            finalSourcePath.relativize( path ).toString().substring( 0, finalSourcePath.relativize( path ).toString().length() - 3 )
 							                + targetExtension );
-							    transpileFile( path, resolvedTargetPath, finalStopOnError, finalVerbose, finalConfig );
+							    boolean success			= transpileFile( path, resolvedTargetPath, finalStopOnError, finalVerbose, finalConfig );
+							    if ( success && finalDeleteOld && sourceExtension.equals( "cfc" ) ) {
+								    deleteOldSourceFile( path, finalVerbose );
+							    }
+						    } else if ( finalCopyOthers && !isBoxLangExtension( sourceExtension ) ) {
+							    copyOtherFile( path, finalTargetPath.resolve( finalSourcePath.relativize( path ) ), finalVerbose );
 						    }
 					    } );
 				} catch ( IOException e ) {
@@ -212,7 +230,7 @@ public class CFTranspiler {
 					System.out.println( "📄 Single File Mode: Transpiling individual file" );
 					System.out.println( "📍 Source: " + sourcePath.toString() );
 				}
-				String	sourceExtension	= sourcePath.getFileName().toString().substring( sourcePath.getFileName().toString().lastIndexOf( "." ) + 1 );
+				String	sourceExtension	= getExtension( sourcePath );
 				String	targetExtension	= mapExtension( sourceExtension );
 				String	trgName			= targetPath.getFileName().toString();
 				if ( targetPath.toFile().isDirectory() && !trgName.endsWith( ".bx" )
@@ -229,7 +247,10 @@ public class CFTranspiler {
 					System.out.println( "🔄 Extension: ." + sourceExtension + " → ." + targetExtension );
 					System.out.println();
 				}
-				transpileFile( sourcePath, targetPath, stopOnError, verbose, config );
+				boolean success = transpileFile( sourcePath, targetPath, stopOnError, verbose, config );
+				if ( success && deleteOld && sourceExtension.equals( "cfc" ) ) {
+					deleteOldSourceFile( sourcePath, verbose );
+				}
 			}
 
 			if ( verbose ) {
@@ -251,7 +272,7 @@ public class CFTranspiler {
 	 *
 	 * @throws BoxRuntimeException If there is an error writing the transpiled file or if parsing fails and stopOnError is true.
 	 */
-	private static void transpileFile( Path sourcePath, Path targetPath, Boolean stopOnError, Boolean verbose, Config config ) {
+	private static boolean transpileFile( Path sourcePath, Path targetPath, Boolean stopOnError, Boolean verbose, Config config ) {
 		if ( verbose ) {
 			System.out.println( "🔄 Transpiling: " + sourcePath.getFileName().toString() );
 		}
@@ -282,6 +303,7 @@ public class CFTranspiler {
 				if ( verbose ) {
 					System.out.println( "✅ Success: " + sourcePath.getFileName().toString() + " → " + targetPath.getFileName().toString() );
 				}
+				return true;
 			} catch ( IOException e ) {
 				throw new BoxRuntimeException( "Error writing transpiled file", e );
 			}
@@ -296,6 +318,56 @@ public class CFTranspiler {
 				System.exit( 1 );
 			}
 		}
+		return false;
+	}
+
+	private static void copyOtherFile( Path sourcePath, Path targetPath, Boolean verbose ) {
+		try {
+			Path directoryPath = targetPath.getParent();
+			if ( directoryPath != null && !Files.exists( directoryPath ) ) {
+				if ( verbose ) {
+					System.out.println( "Creating directory: " + directoryPath.toString() );
+				}
+				Files.createDirectories( directoryPath );
+			}
+			if ( sourcePath.toAbsolutePath().normalize().equals( targetPath.toAbsolutePath().normalize() ) ) {
+				return;
+			}
+			Files.copy( sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES );
+			if ( verbose ) {
+				System.out.println( "Copied: " + sourcePath.getFileName().toString() + " -> " + targetPath.getFileName().toString() );
+			}
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error copying non-CFML file", e );
+		}
+	}
+
+	private static void deleteOldSourceFile( Path sourcePath, Boolean verbose ) {
+		try {
+			Files.deleteIfExists( sourcePath );
+			if ( verbose ) {
+				System.out.println( "Deleted old source: " + sourcePath.getFileName().toString() );
+			}
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error deleting old source file", e );
+		}
+	}
+
+	private static String getExtension( Path path ) {
+		String	fileName	= path.getFileName().toString();
+		int		dotIndex	= fileName.lastIndexOf( "." );
+		if ( dotIndex < 0 || dotIndex == fileName.length() - 1 ) {
+			return "";
+		}
+		return fileName.substring( dotIndex + 1 ).toLowerCase();
+	}
+
+	private static boolean isColdFusionExtension( String extension ) {
+		return extension.equals( "cfm" ) || extension.equals( "cfc" ) || extension.equals( "cfs" );
+	}
+
+	private static boolean isBoxLangExtension( String extension ) {
+		return extension.equals( "bx" ) || extension.equals( "bxm" ) || extension.equals( "bxs" );
 	}
 
 	/**
