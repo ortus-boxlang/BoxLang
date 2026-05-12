@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.context.IBoxContext.ScopeSearchResult;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
@@ -112,8 +113,19 @@ public class MatchExpression {
 		return new RangePattern( from, to );
 	}
 
+	public static Pattern type( String[] types, Target target ) {
+		return new TypePattern( types, target );
+	}
+
+	public static Pattern type( String type, Target target ) {
+		return type( new String[] { type }, target );
+	}
+
 	private static boolean containsBindingPattern( Pattern pattern ) {
 		if ( pattern instanceof BindingPattern ) {
+			return true;
+		}
+		if ( pattern instanceof TypePattern ) {
 			return true;
 		}
 		if ( pattern instanceof ConstructorPattern constructorPattern ) {
@@ -356,14 +368,21 @@ public class MatchExpression {
 		if ( pattern instanceof RangePattern ) {
 			return "range";
 		}
+		if ( pattern instanceof TypePattern ) {
+			return "type";
+		}
 		return pattern.getClass().getSimpleName();
 	}
 
 	private static String getBindingName( Pattern pattern ) {
-		if ( ! ( pattern instanceof BindingPattern bindingPattern ) ) {
+		Target target = null;
+		if ( pattern instanceof BindingPattern bindingPattern ) {
+			target = bindingPattern.target;
+		} else if ( pattern instanceof TypePattern typePattern ) {
+			target = typePattern.target;
+		} else {
 			return null;
 		}
-		Target target = bindingPattern.target;
 		if ( target == null || target.isScoped() || target.getPath().length != 1 ) {
 			return null;
 		}
@@ -736,6 +755,31 @@ public class MatchExpression {
 				return value >= this.from && value <= this.to;
 			}
 			return value <= this.from && value >= this.to;
+		}
+	}
+
+	private static final class TypePattern extends Pattern {
+
+		private final String[]	types;
+		private final Target	target;
+
+		private TypePattern( String[] types, Target target ) {
+			this.types	= types == null ? new String[] {} : types;
+			this.target	= target;
+		}
+
+		@Override
+		boolean matches( IBoxContext context, Object subject ) {
+			for ( String type : this.types ) {
+				CastAttempt<Object> attempt = GenericCaster.attempt( context, subject, type );
+				if ( !attempt.wasSuccessful() ) {
+					continue;
+				}
+
+				assignTarget( context, this.target, attempt.get() );
+				return true;
+			}
+			return false;
 		}
 	}
 

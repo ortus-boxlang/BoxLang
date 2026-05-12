@@ -83,6 +83,7 @@ import ortus.boxlang.compiler.ast.expression.BoxMatchOrPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchPredicatePattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchRangePattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchTypePattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchWildcardPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
@@ -186,6 +187,7 @@ import ortus.boxlang.parser.antlr.BoxGrammar.MatchPatternPrimaryContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.MatchPredicatePatternContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.MatchRangePatternContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.MatchStringLiteralPatternContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.MatchTypePatternContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.NamedArgumentContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.NewContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ObjectDestructuringBindingContext;
@@ -1394,7 +1396,7 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 	}
 
 	private void validateMatchCaseBlockBody( BoxStatementBlock body ) {
-		if ( body.getBody().isEmpty() || !( body.getBody().getLast() instanceof BoxExpressionStatement ) ) {
+		if ( body.getBody().isEmpty() || ! ( body.getBody().getLast() instanceof BoxExpressionStatement ) ) {
 			throw new ExpressionException( "Match block bodies must end with an expression.", body.getPosition(), body.getSourceText() );
 		}
 	}
@@ -1461,6 +1463,14 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		}
 		if ( child instanceof MatchPredicatePatternContext predicatePattern ) {
 			return new BoxMatchPredicatePattern( predicatePattern.expression().accept( this ), pos, src );
+		}
+		if ( child instanceof MatchTypePatternContext typePattern ) {
+			return new BoxMatchTypePattern(
+			    typePattern.type().stream().map( ParserRuleContext::getText ).toList(),
+			    ( BoxIdentifier ) typePattern.identifier().accept( this ),
+			    pos,
+			    src
+			);
 		}
 
 		BoxIdentifier identifier = ( BoxIdentifier ) ( ( MatchIdentifierPatternContext ) child ).identifier().accept( this );

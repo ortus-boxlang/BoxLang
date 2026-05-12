@@ -545,6 +545,7 @@ matchPatternPrimary
     | QM LPAREN expression RPAREN # matchPredicatePattern
     | objectDestructuringPattern # matchObjectPattern
     | arrayDestructuringPattern  # matchArrayPattern
+    | IS type (COMMA type)* AS identifier      # matchTypePattern
     | constructorPattern         # matchConstructorPattern
     | identifier                 # matchIdentifierPattern
     ;

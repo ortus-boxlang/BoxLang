@@ -54,6 +54,7 @@ import ortus.boxlang.compiler.ast.expression.BoxMatchOrPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchPredicatePattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchRangePattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchTypePattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchWildcardPattern;
 import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringBinding;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
@@ -218,6 +219,18 @@ public class BoxMatchExpressionTransformer extends AbstractTransformer {
 			    Type.getInternalName( ortus.boxlang.runtime.dynamic.MatchExpression.class ),
 			    "range",
 			    Type.getMethodDescriptor( Type.getType( Pattern.class ), Type.getType( Object.class ), Type.getType( Object.class ) ),
+			    false ) );
+			return nodes;
+		}
+		if ( pattern instanceof BoxMatchTypePattern typePattern ) {
+			nodes.addAll( AsmHelper.array( Type.getType( String.class ), typePattern.getTypes(),
+			    ( typeName, index ) -> List.of( new LdcInsnNode( typeName ) ) ) );
+			nodes.addAll( buildTargetNodes( typePattern.getBinding(), false ) );
+			nodes.add( new MethodInsnNode(
+			    Opcodes.INVOKESTATIC,
+			    Type.getInternalName( ortus.boxlang.runtime.dynamic.MatchExpression.class ),
+			    "type",
+			    Type.getMethodDescriptor( Type.getType( Pattern.class ), Type.getType( String[].class ), Type.getType( Target.class ) ),
 			    false ) );
 			return nodes;
 		}

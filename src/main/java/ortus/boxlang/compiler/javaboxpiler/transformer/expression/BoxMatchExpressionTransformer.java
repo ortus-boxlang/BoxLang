@@ -49,6 +49,7 @@ import ortus.boxlang.compiler.ast.expression.BoxMatchOrPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchPredicatePattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchRangePattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchTypePattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchWildcardPattern;
 import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringBinding;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
@@ -143,6 +144,12 @@ public class BoxMatchExpressionTransformer extends AbstractTransformer {
 			    + transpiler.transform( rangePattern.getTo(), TransformerContext.RIGHT )
 			    + ")";
 		}
+		if ( pattern instanceof BoxMatchTypePattern typePattern ) {
+			return "ortus.boxlang.runtime.dynamic.MatchExpression.type("
+			    + buildTypeNamesExpression( typePattern.getTypes() ) + ", "
+			    + buildTargetExpression( typePattern.getBinding(), false )
+			    + ")";
+		}
 		if ( pattern instanceof BoxMatchArrayPattern arrayPattern ) {
 			return "ortus.boxlang.runtime.dynamic.MatchExpression.array("
 			    + buildArrayBindingsExpression( arrayPattern.getPattern().getBindings() )
@@ -150,6 +157,15 @@ public class BoxMatchExpressionTransformer extends AbstractTransformer {
 		}
 		throw new ExpressionException( "Unsupported match pattern [" + pattern.getClass().getSimpleName() + "]", pattern.getPosition(),
 		    pattern.getSourceText() );
+	}
+
+	private String buildTypeNamesExpression( List<String> types ) {
+		if ( types.isEmpty() ) {
+			return "new String[] {}";
+		}
+		return "new String[] { "
+		    + types.stream().map( this::quoteJavaString ).collect( Collectors.joining( ", " ) )
+		    + " }";
 	}
 
 	private String buildNestedPatternsExpression( List<BoxMatchPattern> patterns ) {
@@ -246,7 +262,7 @@ public class BoxMatchExpressionTransformer extends AbstractTransformer {
 	}
 
 	private BlockStmt buildLambdaBlock( BoxStatementBlock statementBlock ) {
-		if ( statementBlock.getBody().isEmpty() || !( statementBlock.getBody().getLast() instanceof BoxExpressionStatement finalExpression ) ) {
+		if ( statementBlock.getBody().isEmpty() || ! ( statementBlock.getBody().getLast() instanceof BoxExpressionStatement finalExpression ) ) {
 			throw new ExpressionException( "Match block bodies must end with an expression.", statementBlock );
 		}
 

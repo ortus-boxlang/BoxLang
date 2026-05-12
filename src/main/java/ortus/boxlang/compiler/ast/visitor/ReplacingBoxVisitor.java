@@ -63,6 +63,7 @@ import ortus.boxlang.compiler.ast.expression.BoxMatchOrPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchPredicatePattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchRangePattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchTypePattern;
 import ortus.boxlang.compiler.ast.expression.BoxMatchWildcardPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNegateOperation;
@@ -563,8 +564,8 @@ public abstract class ReplacingBoxVisitor {
 				node.setGuard( ( BoxExpression ) newGuard );
 			}
 		}
-		BoxNode			body	= node.getBody();
-		BoxNode			newBody	= body.accept( this );
+		BoxNode	body	= node.getBody();
+		BoxNode	newBody	= body.accept( this );
 		if ( newBody != body ) {
 			node.setBody( ( ortus.boxlang.compiler.ast.BoxStatement ) newBody );
 		}
@@ -644,6 +645,15 @@ public abstract class ReplacingBoxVisitor {
 	public BoxNode visit( BoxMatchRangePattern node ) {
 		node.setFrom( ( BoxExpression ) node.getFrom().accept( this ) );
 		node.setTo( ( BoxExpression ) node.getTo().accept( this ) );
+		return node;
+	}
+
+	public BoxNode visit( BoxMatchTypePattern node ) {
+		BoxIdentifier	binding		= node.getBinding();
+		BoxNode			newBinding	= binding.accept( this );
+		if ( newBinding != binding ) {
+			node.setBinding( ( BoxIdentifier ) newBinding );
+		}
 		return node;
 	}
 
