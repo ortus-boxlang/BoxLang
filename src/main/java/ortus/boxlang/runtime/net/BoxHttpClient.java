@@ -1570,8 +1570,11 @@ public class BoxHttpClient {
 			}
 
 			// Set body publisher to noBody if still null
+			// NOTE: We use ofString("") instead of noBody() because noBody() does NOT send
+			// a Content-Length: 0 header, which causes "411 Length Required" errors on
+			// strict servers (e.g., OData security token endpoints).
 			if ( bodyPublisher == null ) {
-				bodyPublisher = HttpRequest.BodyPublishers.noBody();
+				bodyPublisher = HttpRequest.BodyPublishers.ofString( "" );
 			}
 
 			// Finalize Request Building with different settings
