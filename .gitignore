@@ -68,7 +68,6 @@ test.txt
 
 # Secrets
 .env
-.bxformat.json
 
 # Skills
 .agents/**
