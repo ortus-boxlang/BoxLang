@@ -555,7 +555,7 @@ public class SQLBinaryOperation extends SQLExpression {
 			if ( s.isEmpty() ) {
 				nValue = 0;
 			} else {
-				throw new BoxRuntimeException( "Cannot string as a number: [" + s + "]" );
+				nValue = NumberCaster.cast( value );
 			}
 		} else {
 			nValue = NumberCaster.cast( value );
@@ -586,7 +586,7 @@ public class SQLBinaryOperation extends SQLExpression {
 			if ( s.isEmpty() ) {
 				nValue = 0;
 			} else {
-				throw new BoxRuntimeException( "Cannot string as a number: [" + s + "]" );
+				nValue = NumberCaster.cast( value );
 			}
 		} else {
 			nValue = NumberCaster.cast( value );
