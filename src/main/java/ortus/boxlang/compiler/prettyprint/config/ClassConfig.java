@@ -202,4 +202,19 @@ public class ClassConfig {
 		map.put( "method_grouping", methodGrouping );
 		return map;
 	}
+
+	/**
+	 * Create a deep copy of this configuration.
+	 *
+	 * @return a new ClassConfig with the same settings
+	 */
+	public ClassConfig clone() {
+		ClassConfig clone = new ClassConfig();
+		clone.memberOrder		= this.memberOrder;
+		clone.memberSpacing		= this.memberSpacing;
+		clone.propertyOrder		= this.propertyOrder;
+		clone.methodOrder		= this.methodOrder;
+		clone.methodGrouping	= this.methodGrouping;
+		return clone;
+	}
 }

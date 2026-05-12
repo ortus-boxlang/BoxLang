@@ -185,4 +185,18 @@ public class MultilineConfig {
 		map.put( "min_length", minLength );
 		return map;
 	}
+
+	/**
+	 * Create a deep copy of this configuration.
+	 *
+	 * @return a new MultilineConfig with the same settings
+	 */
+	public MultilineConfig clone() {
+		MultilineConfig clone = new MultilineConfig();
+		clone.elementCount	= this.elementCount;
+		clone.commaDangle	= this.commaDangle;
+		clone.leadingComma	= this.leadingComma.clone();
+		clone.minLength		= this.minLength;
+		return clone;
+	}
 }

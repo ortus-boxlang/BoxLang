@@ -128,6 +128,19 @@ public class FunctionConfig {
 	}
 
 	/**
+	 * Create a deep copy of this configuration.
+	 *
+	 * @return a new FunctionConfig with the same settings
+	 */
+	public FunctionConfig clone() {
+		FunctionConfig clone = new FunctionConfig();
+		clone.style			= this.style;
+		clone.parameters	= this.parameters.clone();
+		clone.arrow			= this.arrow.clone();
+		return clone;
+	}
+
+	/**
 	 * Configuration for function parameter list formatting.
 	 */
 	public static class ParametersConfig {
@@ -320,6 +333,21 @@ public class FunctionConfig {
 			map.put( "multiline_length", multilineLength );
 			return map;
 		}
+
+		/**
+		 * Create a deep copy of this configuration.
+		 *
+		 * @return a new ParametersConfig with the same settings
+		 */
+		public ParametersConfig clone() {
+			ParametersConfig clone = new ParametersConfig();
+			clone.padding			= this.padding;
+			clone.emptyPadding		= this.emptyPadding;
+			clone.commaDangle		= this.commaDangle;
+			clone.multilineCount	= this.multilineCount;
+			clone.multilineLength	= this.multilineLength;
+			return clone;
+		}
 	}
 
 	/**
@@ -376,6 +404,17 @@ public class FunctionConfig {
 			Map<String, Object> map = new LinkedHashMap<>();
 			map.put( "parens", parens );
 			return map;
+		}
+
+		/**
+		 * Create a deep copy of this configuration.
+		 *
+		 * @return a new ArrowConfig with the same settings
+		 */
+		public ArrowConfig clone() {
+			ArrowConfig clone = new ArrowConfig();
+			clone.parens = this.parens;
+			return clone;
 		}
 	}
 }

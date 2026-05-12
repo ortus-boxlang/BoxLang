@@ -212,4 +212,19 @@ public class ArgumentsConfig {
 		map.put( "multiline_length", multilineLength );
 		return map;
 	}
+
+	/**
+	 * Create a deep copy of this configuration.
+	 *
+	 * @return a new ArgumentsConfig with the same settings
+	 */
+	public ArgumentsConfig clone() {
+		ArgumentsConfig clone = new ArgumentsConfig();
+		clone.padding			= this.padding;
+		clone.emptyPadding		= this.emptyPadding;
+		clone.commaDangle		= this.commaDangle;
+		clone.multilineCount	= this.multilineCount;
+		clone.multilineLength	= this.multilineLength;
+		return clone;
+	}
 }

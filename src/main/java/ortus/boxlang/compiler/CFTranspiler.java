@@ -52,6 +52,8 @@ public class CFTranspiler {
 		System.out.println( "  -c, --config <PATH>         📄 Path to configuration file (default: .bxformat.json or .cfformat.json)" );
 		System.out.println( "      --source <PATH>         📁 Path to source directory or file to transpile (default: current directory)" );
 		System.out.println( "      --target <PATH>         🎯 Path to target directory or file (required)" );
+		System.out.println( "      --copy-others           📄 Copy non-CFML files to target directory (when source and target differ)" );
+		System.out.println( "      --delete-old            🗑️ Delete original CFML source files after transpilation (when source and target are the same)" );
 		System.out.println( "      --stopOnError [BOOL]    🛑 Stop processing on first error (default: false)" );
 		System.out.println();
 		System.out.println( "🔄 FILE EXTENSION MAPPING:" );
@@ -99,167 +101,189 @@ public class CFTranspiler {
 	public static void main( String[] args ) {
 		BoxRuntime runtime = BoxRuntime.getInstance();
 		try {
-			String	source		= ".";
-			String	target		= null;
-			String	configPath	= null;
-			Boolean	stopOnError	= false;
-			Boolean	verbose		= false;
-			Boolean	copyOthers	= false;
-			Boolean	deleteOld	= false;
-			for ( int i = 0; i < args.length; i++ ) {
-				if ( args[ i ].equalsIgnoreCase( "--help" ) || args[ i ].equalsIgnoreCase( "-h" ) ) {
-					printHelp();
-					System.exit( 0 );
-				}
-				if ( args[ i ].equalsIgnoreCase( "--verbose" ) || args[ i ].equalsIgnoreCase( "-v" ) ) {
-					verbose = true;
-				}
-				if ( args[ i ].equalsIgnoreCase( "--copy-others" ) ) {
-					copyOthers = true;
-				}
-				if ( args[ i ].equalsIgnoreCase( "--delete-old" ) ) {
-					deleteOld = true;
-				}
-				if ( ( args[ i ].equalsIgnoreCase( "--config" ) || args[ i ].equalsIgnoreCase( "-c" ) ) && i + 1 < args.length ) {
-					configPath = args[ ++i ];
-				}
-				if ( args[ i ].equalsIgnoreCase( "--source" ) ) {
-					if ( i + 1 >= args.length ) {
-						throw new BoxRuntimeException( "--source requires a path" );
-					}
-					source = args[ i + 1 ];
-				}
-				if ( args[ i ].equalsIgnoreCase( "--target" ) ) {
-					if ( i + 1 >= args.length ) {
-						throw new BoxRuntimeException( "--target requires a path" );
-					}
-					target = args[ i + 1 ];
-				}
-				if ( args[ i ].equalsIgnoreCase( "--stopOnError" ) ) {
-					if ( i + 1 >= args.length || args[ i + 1 ].startsWith( "--" ) ) {
-						stopOnError = true;
-					} else {
-						stopOnError = Boolean.parseBoolean( args[ i + 1 ] );
-					}
+			int exitCode = run( args );
+			System.exit( exitCode );
+		} finally {
+			runtime.shutdown();
+		}
+	}
 
+	/**
+	 * Runs the CFTranspiler with the given arguments and returns an exit code.
+	 * This method does not call System.exit() or shutdown the runtime, making it testable.
+	 *
+	 * @param args The command-line arguments.
+	 *
+	 * @return 0 on success, 1 on failure.
+	 */
+	public static int run( String[] args ) {
+		String	source		= ".";
+		String	target		= null;
+		String	configPath	= null;
+		Boolean	stopOnError	= false;
+		Boolean	verbose		= false;
+		Boolean	copyOthers	= false;
+		Boolean	deleteOld	= false;
+		for ( int i = 0; i < args.length; i++ ) {
+			if ( args[ i ].equalsIgnoreCase( "--help" ) || args[ i ].equalsIgnoreCase( "-h" ) ) {
+				printHelp();
+				return 0;
+			}
+			if ( args[ i ].equalsIgnoreCase( "--verbose" ) || args[ i ].equalsIgnoreCase( "-v" ) ) {
+				verbose = true;
+			}
+			if ( args[ i ].equalsIgnoreCase( "--copy-others" ) ) {
+				copyOthers = true;
+			}
+			if ( args[ i ].equalsIgnoreCase( "--delete-old" ) ) {
+				deleteOld = true;
+			}
+			if ( ( args[ i ].equalsIgnoreCase( "--config" ) || args[ i ].equalsIgnoreCase( "-c" ) ) && i + 1 < args.length ) {
+				configPath = args[ ++i ];
+			}
+			if ( args[ i ].equalsIgnoreCase( "--source" ) ) {
+				if ( i + 1 >= args.length ) {
+					throw new BoxRuntimeException( "--source requires a path" );
 				}
+				source = args[ i + 1 ];
 			}
-			Path sourcePath = Paths.get( source ).normalize();
-			if ( !sourcePath.isAbsolute() ) {
-				sourcePath = Paths.get( "" ).resolve( sourcePath ).normalize().toAbsolutePath().normalize();
+			if ( args[ i ].equalsIgnoreCase( "--target" ) ) {
+				if ( i + 1 >= args.length ) {
+					throw new BoxRuntimeException( "--target requires a path" );
+				}
+				target = args[ i + 1 ];
 			}
+			if ( args[ i ].equalsIgnoreCase( "--stopOnError" ) ) {
+				if ( i + 1 >= args.length || args[ i + 1 ].startsWith( "--" ) ) {
+					stopOnError = true;
+				} else {
+					stopOnError = Boolean.parseBoolean( args[ i + 1 ] );
+				}
 
-			if ( !sourcePath.toFile().exists() ) {
-				System.out.println( "Source Path does not exist: " + sourcePath.toString() );
-				System.exit( 1 );
 			}
-			if ( target == null ) {
-				throw new BoxRuntimeException( "--target is required " );
-			}
+		}
+		Path sourcePath = Paths.get( source ).normalize();
+		if ( !sourcePath.isAbsolute() ) {
+			sourcePath = Paths.get( "" ).resolve( sourcePath ).normalize().toAbsolutePath().normalize();
+		}
 
+		if ( !sourcePath.toFile().exists() ) {
+			System.out.println( "Source Path does not exist: " + sourcePath.toString() );
+			return 1;
+		}
+		if ( target == null ) {
+			throw new BoxRuntimeException( "--target is required " );
+		}
+
+		if ( verbose ) {
+			System.out.println( "🚀 BoxLang CFTranspiler Starting..." );
+			System.out.println( "📁 Source: " + source );
+			System.out.println( "🎯 Target: " + target );
+			System.out.println( "🛑 Stop on Error: " + stopOnError );
+			System.out.println( "📄 Copy Others: " + copyOthers );
+			System.out.println( "🗑️ Delete Old: " + deleteOld );
+			System.out.println();
+		}
+
+		// Load config with fallback logic if no explicit path provided
+		Config config;
+		if ( configPath != null ) {
+			try {
+				config = Config.loadConfigAutoDetect( configPath );
+			} catch ( IOException e ) {
+				System.err.println( "Error loading config file: " + e.getMessage() );
+				return 1;
+			}
+		} else {
+			config = Config.loadConfigWithFallback( System.getProperty( "user.dir" ) );
+		}
+
+		Path targetPath = Paths.get( target ).normalize();
+		if ( !targetPath.isAbsolute() ) {
+			targetPath = Paths.get( "" ).resolve( targetPath ).normalize().toAbsolutePath().normalize();
+		}
+
+		boolean sameDirectory = sourcePath.toAbsolutePath().normalize().equals( targetPath.toAbsolutePath().normalize() );
+
+		if ( sourcePath.toFile().isDirectory() ) {
 			if ( verbose ) {
-				System.out.println( "🚀 BoxLang CFTranspiler Starting..." );
-				System.out.println( "📁 Source: " + source );
-				System.out.println( "🎯 Target: " + target );
-				System.out.println( "🛑 Stop on Error: " + stopOnError );
-				System.out.println( "📄 Copy Others: " + copyOthers );
-				System.out.println( "🗑️ Delete Old: " + deleteOld );
+				System.out.println( "📂 Directory Mode: Transpiling all ColdFusion files" );
+				System.out.println( "📍 Scanning: " + sourcePath.toString() );
+				System.out.println( "🎯 Output to: " + targetPath.toString() );
+				System.out.println( "🔍 Looking for: .cfm, .cfc, .cfs files" );
 				System.out.println();
 			}
-
-			// Load config with fallback logic if no explicit path provided
-			Config config;
-			if ( configPath != null ) {
-				try {
-					config = Config.loadConfigAutoDetect( configPath );
-				} catch ( IOException e ) {
-					System.err.println( "Error loading config file: " + e.getMessage() );
-					System.exit( 1 );
-					return; // unreachable but satisfies compiler
-				}
-			} else {
-				config = Config.loadConfigWithFallback( System.getProperty( "user.dir" ) );
-			}
-
-			Path targetPath = Paths.get( target ).normalize();
-			if ( !targetPath.isAbsolute() ) {
-				targetPath = Paths.get( "" ).resolve( targetPath ).normalize().toAbsolutePath().normalize();
-			}
-
-			if ( sourcePath.toFile().isDirectory() ) {
-				if ( verbose ) {
-					System.out.println( "📂 Directory Mode: Transpiling all ColdFusion files" );
-					System.out.println( "📍 Scanning: " + sourcePath.toString() );
-					System.out.println( "🎯 Output to: " + targetPath.toString() );
-					System.out.println( "🔍 Looking for: .cfm, .cfc, .cfs files" );
-					System.out.println();
-				}
-				// Transpile all .cfm, .cfs, and .cfc files in sourcePath to targetPath
-				final Path		finalTargetPath	= targetPath;
-				final Boolean	finalVerbose	= verbose;
-				final Config	finalConfig		= config;
-				final Boolean	finalCopyOthers	= copyOthers;
-				final Boolean	finalDeleteOld	= deleteOld;
-				try {
-					final Path		finalSourcePath		= sourcePath;
-					final boolean	finalStopOnError	= stopOnError;
-					Files.walk( finalSourcePath )
+			// Transpile all .cfm, .cfs, and .cfc files in sourcePath to targetPath
+			final Path		finalTargetPath	= targetPath;
+			final Boolean	finalVerbose	= verbose;
+			final Config	finalConfig		= config;
+			final boolean	finalCopyOthers	= copyOthers && !sameDirectory;
+			final boolean	finalDeleteOld	= deleteOld && sameDirectory;
+			try {
+				final Path		finalSourcePath		= sourcePath;
+				final boolean	finalStopOnError	= stopOnError;
+				try ( var fileStream = Files.walk( finalSourcePath ) ) {
+					fileStream
 					    .parallel()
 					    .filter( Files::isRegularFile )
 					    .forEach( path -> {
 						    String sourceExtension = getExtension( path );
-						    if ( isColdFusionExtension( sourceExtension ) ) {
+						    if ( isCFMLExtension( sourceExtension ) ) {
 							    String targetExtension	= mapExtension( sourceExtension );
 							    Path resolvedTargetPath	= finalTargetPath
 							        .resolve(
-							            finalSourcePath.relativize( path ).toString().substring( 0, finalSourcePath.relativize( path ).toString().length() - 3 )
+							            finalSourcePath.relativize( path ).toString().substring( 0,
+							                finalSourcePath.relativize( path ).toString().length() - 3 )
 							                + targetExtension );
 							    boolean success			= transpileFile( path, resolvedTargetPath, finalStopOnError, finalVerbose, finalConfig );
-							    if ( success && finalDeleteOld && sourceExtension.equals( "cfc" ) ) {
+							    if ( success && finalDeleteOld ) {
 								    deleteOldSourceFile( path, finalVerbose );
 							    }
-						    } else if ( finalCopyOthers && !isBoxLangExtension( sourceExtension ) ) {
+						    } else if ( finalCopyOthers ) {
 							    copyOtherFile( path, finalTargetPath.resolve( finalSourcePath.relativize( path ) ), finalVerbose );
 						    }
 					    } );
-				} catch ( IOException e ) {
-					throw new BoxRuntimeException( "Error walking source path", e );
 				}
-			} else {
-				if ( verbose ) {
-					System.out.println( "📄 Single File Mode: Transpiling individual file" );
-					System.out.println( "📍 Source: " + sourcePath.toString() );
-				}
-				String	sourceExtension	= getExtension( sourcePath );
-				String	targetExtension	= mapExtension( sourceExtension );
-				String	trgName			= targetPath.getFileName().toString();
-				if ( targetPath.toFile().isDirectory() && !trgName.endsWith( ".bx" )
-				    && !trgName.endsWith( ".bxs" ) && !trgName.endsWith( ".bxm" ) ) {
-					targetPath = targetPath.resolve( sourcePath.getFileName().toString().replace( sourceExtension, targetExtension ) );
-				} else {
-					if ( !trgName.endsWith( targetExtension ) ) {
-						// append correct extension
-						targetPath = targetPath.resolveSibling( trgName + "." + targetExtension );
-					}
-				}
-				if ( verbose ) {
-					System.out.println( "🎯 Target: " + targetPath.toString() );
-					System.out.println( "🔄 Extension: ." + sourceExtension + " → ." + targetExtension );
-					System.out.println();
-				}
-				boolean success = transpileFile( sourcePath, targetPath, stopOnError, verbose, config );
-				if ( success && deleteOld && sourceExtension.equals( "cfc" ) ) {
-					deleteOldSourceFile( sourcePath, verbose );
-				}
+			} catch ( IOException e ) {
+				throw new BoxRuntimeException( "Error walking source path", e );
 			}
-
+		} else {
 			if ( verbose ) {
-				System.out.println( "✅ CFTranspiler completed successfully!" );
+				System.out.println( "📄 Single File Mode: Transpiling individual file" );
+				System.out.println( "📍 Source: " + sourcePath.toString() );
 			}
-			System.exit( 0 );
-		} finally {
-			runtime.shutdown();
+			String sourceExtension = getExtension( sourcePath );
+			if ( sourceExtension.isEmpty() ) {
+				throw new BoxRuntimeException(
+				    "Source file has no extension: " + sourcePath.toString() + ". Supported source extensions are: .cfm, .cfc, .cfs"
+				);
+			}
+			String	targetExtension	= mapExtension( sourceExtension );
+			String	trgName			= targetPath.getFileName().toString();
+			if ( targetPath.toFile().isDirectory() && !trgName.endsWith( ".bx" )
+			    && !trgName.endsWith( ".bxs" ) && !trgName.endsWith( ".bxm" ) ) {
+				targetPath = targetPath.resolve( sourcePath.getFileName().toString().replace( sourceExtension, targetExtension ) );
+			} else {
+				if ( !trgName.endsWith( targetExtension ) ) {
+					// append correct extension
+					targetPath = targetPath.resolveSibling( trgName + "." + targetExtension );
+				}
+			}
+			if ( verbose ) {
+				System.out.println( "🎯 Target: " + targetPath.toString() );
+				System.out.println( "🔄 Extension: ." + sourceExtension + " → ." + targetExtension );
+				System.out.println();
+			}
+			boolean success = transpileFile( sourcePath, targetPath, stopOnError, verbose, config );
+			if ( success && deleteOld && sameDirectory ) {
+				deleteOldSourceFile( sourcePath, verbose );
+			}
 		}
+
+		if ( verbose ) {
+			System.out.println( "✅ CFTranspiler completed successfully!" );
+		}
+		return 0;
 	}
 
 	/**
@@ -298,6 +322,9 @@ public class CFTranspiler {
 			try {
 				String			targetFile			= targetPath.getFileName().toString().toLowerCase();
 				BoxSourceType	targetSourceType	= targetFile.endsWith( ".bxm" ) ? BoxSourceType.BOXTEMPLATE : BoxSourceType.BOXSCRIPT;
+				// Important since we're sharing the base config across threads
+				config = config.clone();
+				// Set the source type for the current file in OUR cloned config instance
 				config.setSourceType( targetSourceType );
 				Files.write( targetPath, result.getRoot().toString( config ).getBytes( StandardCharsets.UTF_8 ) );
 				if ( verbose ) {
@@ -315,7 +342,7 @@ public class CFTranspiler {
 				result.getIssues().forEach( issue -> System.out.println( "   • " + issue.toString() ) );
 			}
 			if ( stopOnError ) {
-				System.exit( 1 );
+				throw new BoxRuntimeException( "Parsing failed for: " + sourcePath.getFileName().toString() );
 			}
 		}
 		return false;
@@ -329,9 +356,6 @@ public class CFTranspiler {
 					System.out.println( "Creating directory: " + directoryPath.toString() );
 				}
 				Files.createDirectories( directoryPath );
-			}
-			if ( sourcePath.toAbsolutePath().normalize().equals( targetPath.toAbsolutePath().normalize() ) ) {
-				return;
 			}
 			Files.copy( sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.COPY_ATTRIBUTES );
 			if ( verbose ) {
@@ -362,18 +386,14 @@ public class CFTranspiler {
 		return fileName.substring( dotIndex + 1 ).toLowerCase();
 	}
 
-	private static boolean isColdFusionExtension( String extension ) {
+	private static boolean isCFMLExtension( String extension ) {
 		return extension.equals( "cfm" ) || extension.equals( "cfc" ) || extension.equals( "cfs" );
 	}
 
-	private static boolean isBoxLangExtension( String extension ) {
-		return extension.equals( "bx" ) || extension.equals( "bxm" ) || extension.equals( "bxs" );
-	}
-
 	/**
-	 * Maps ColdFusion file extensions to BoxLang file extensions.
+	 * Maps CFML file extensions to BoxLang file extensions.
 	 *
-	 * @param extension The ColdFusion file extension (e.g., "cfm", "cfc", "cfs").
+	 * @param extension The CFML file extension (e.g., "cfm", "cfc", "cfs").
 	 *
 	 * @return The corresponding BoxLang file extension (e.g., "bxm", "bx", "bxs").
 	 *

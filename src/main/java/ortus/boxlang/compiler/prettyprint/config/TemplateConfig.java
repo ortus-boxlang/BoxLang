@@ -194,4 +194,18 @@ public class TemplateConfig {
 		map.put( "self_closing", selfClosing );
 		return map;
 	}
+
+	/**
+	 * Create a deep copy of this configuration.
+	 *
+	 * @return a new TemplateConfig with the same settings
+	 */
+	public TemplateConfig clone() {
+		TemplateConfig clone = new TemplateConfig();
+		clone.componentPrefix			= this.componentPrefix;
+		clone.indentContent				= this.indentContent;
+		clone.singleAttributePerLine	= this.singleAttributePerLine;
+		clone.selfClosing				= this.selfClosing;
+		return clone;
+	}
 }

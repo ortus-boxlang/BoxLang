@@ -146,4 +146,17 @@ public class ArrayConfig {
 		return map;
 	}
 
+	/**
+	 * Create a deep copy of this configuration.
+	 *
+	 * @return a new ArrayConfig with the same settings
+	 */
+	public ArrayConfig clone() {
+		ArrayConfig clone = new ArrayConfig();
+		clone.padding		= this.padding;
+		clone.emptyPadding	= this.emptyPadding;
+		clone.multiline		= this.multiline.clone();
+		return clone;
+	}
+
 }

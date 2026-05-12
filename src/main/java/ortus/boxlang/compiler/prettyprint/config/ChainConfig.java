@@ -110,4 +110,16 @@ public class ChainConfig {
 		map.put( "break_length", breakLength );
 		return map;
 	}
+
+	/**
+	 * Create a deep copy of this configuration.
+	 *
+	 * @return a new ChainConfig with the same settings
+	 */
+	public ChainConfig clone() {
+		ChainConfig clone = new ChainConfig();
+		clone.breakCount	= this.breakCount;
+		clone.breakLength	= this.breakLength;
+		return clone;
+	}
 }

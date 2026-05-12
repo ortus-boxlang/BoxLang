@@ -122,4 +122,16 @@ public class SqlConfig {
 		map.put( "indent_clauses", indentClauses );
 		return map;
 	}
+
+	/**
+	 * Create a deep copy of this configuration.
+	 *
+	 * @return a new SqlConfig with the same settings
+	 */
+	public SqlConfig clone() {
+		SqlConfig clone = new SqlConfig();
+		clone.uppercaseKeywords	= this.uppercaseKeywords;
+		clone.indentClauses		= this.indentClauses;
+		return clone;
+	}
 }

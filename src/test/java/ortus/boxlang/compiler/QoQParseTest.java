@@ -932,4 +932,21 @@ public class QoQParseTest {
 		assertThat( variables.get( "failureCount" ) ).isEqualTo( 0 );
 	}
 
+	@Test
+	public void testNumbersInStringsNoType() {
+		instance.executeSource(
+		    """
+		    myQry = queryNew( "amount")
+		    myQry.addRow( ["1500"] )
+		    result = queryExecute(
+		    	"SELECT amount/100 as col from myQry",
+		    	[],
+		    	{ dbType:"query" }
+		    )
+		      """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.getAsQuery( result ).getColumn( Key.of( "col" ) ).getCell( 0 ) ).isEqualTo( 15.0 );
+
+	}
+
 }

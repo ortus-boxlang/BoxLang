@@ -102,6 +102,18 @@ public class PropertyConfig {
 	}
 
 	/**
+	 * Create a deep copy of this configuration.
+	 *
+	 * @return a new PropertyConfig with the same settings
+	 */
+	public PropertyConfig clone() {
+		PropertyConfig clone = new PropertyConfig();
+		clone.multiline	= this.multiline.clone();
+		clone.keyValue	= this.keyValue.clone();
+		return clone;
+	}
+
+	/**
 	 * Configuration for key-value formatting in property attributes.
 	 */
 	public static class KeyValue {
@@ -149,6 +161,17 @@ public class PropertyConfig {
 			Map<String, Object> map = new LinkedHashMap<>();
 			map.put( "padding", padding );
 			return map;
+		}
+
+		/**
+		 * Create a deep copy of this configuration.
+		 *
+		 * @return a new KeyValue with the same settings
+		 */
+		public KeyValue clone() {
+			KeyValue clone = new KeyValue();
+			clone.padding = this.padding;
+			return clone;
 		}
 	}
 
