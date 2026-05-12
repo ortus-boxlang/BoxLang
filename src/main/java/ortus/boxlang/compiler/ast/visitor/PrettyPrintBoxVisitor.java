@@ -130,6 +130,7 @@ import ortus.boxlang.compiler.ast.statement.BoxTry;
 import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
 import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
+import ortus.boxlang.compiler.ast.statement.BoxYield;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 import ortus.boxlang.compiler.parser.BoxSourceType;
@@ -896,9 +897,13 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 		node.getSubject().accept( this );
 		print( " ) {" );
 		indentLevel++;
-		for ( BoxMatchCase matchCase : node.getCases() ) {
+		for ( int i = 0; i < node.getCases().size(); i++ ) {
+			BoxMatchCase matchCase = node.getCases().get( i );
 			newLine();
 			matchCase.accept( this );
+			if ( i < node.getCases().size() - 1 && ! ( matchCase.getBody() instanceof BoxStatementBlock ) ) {
+				print( ";" );
+			}
 		}
 		indentLevel--;
 		newLine();
@@ -1741,6 +1746,15 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			}
 			print( ";" );
 		}
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxYield node ) {
+		printPreComments( node );
+		print( "yield " );
+		node.getExpression().accept( this );
+		print( ";" );
 		printPostComments( node );
 	}
 

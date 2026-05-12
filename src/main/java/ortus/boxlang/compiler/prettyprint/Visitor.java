@@ -127,6 +127,7 @@ import ortus.boxlang.compiler.ast.statement.BoxTry;
 import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
 import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
+import ortus.boxlang.compiler.ast.statement.BoxYield;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
@@ -1558,6 +1559,19 @@ public class Visitor extends VoidBoxVisitor {
 	}
 
 	@Override
+	public void visit( BoxYield node ) {
+		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
+			return;
+		}
+		print( "yield " );
+		node.getExpression().accept( this );
+		printSemicolon();
+		printPostComments( node );
+	}
+
+	@Override
 	public void visit( BoxReturnType node ) {
 		printPreComments( node );
 		if ( node.getType().equals( BoxType.Fqn ) ) {
@@ -1771,7 +1785,11 @@ public class Visitor extends VoidBoxVisitor {
 		var blockDoc = pushDoc( DocType.INDENT );
 		blockDoc.append( Line.HARD );
 		for ( int i = 0; i < node.getCases().size(); i++ ) {
-			node.getCases().get( i ).accept( this );
+			var matchCase = node.getCases().get( i );
+			matchCase.accept( this );
+			if ( i < node.getCases().size() - 1 && ! ( matchCase.getBody() instanceof BoxStatementBlock ) ) {
+				blockDoc.append( ";" );
+			}
 			if ( i < node.getCases().size() - 1 ) {
 				blockDoc.append( Line.HARD );
 			}

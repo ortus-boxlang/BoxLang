@@ -59,6 +59,7 @@ import ortus.boxlang.compiler.ast.statement.BoxTry;
 import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
 import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
+import ortus.boxlang.compiler.ast.statement.BoxYield;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 import ortus.boxlang.compiler.parser.BoxParser;
@@ -149,9 +150,11 @@ import ortus.boxlang.parser.antlr.BoxGrammar.SwitchContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ThrowContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.TryContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.WhileContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.YieldStatementContext;
 import ortus.boxlang.parser.antlr.BoxGrammarBaseVisitor;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.services.ComponentService;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 /**
  * This class is responsible for creating the AST from the ANTLR generated
@@ -570,7 +573,8 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 
 		List<Function<BoxGrammar.SimpleStatementContext, ParserRuleContext>> functions = Arrays.asList( SimpleStatementContext::break_,
 		    BoxGrammar.SimpleStatementContext::continue_, SimpleStatementContext::rethrow, BoxGrammar.SimpleStatementContext::assert_,
-		    SimpleStatementContext::param, SimpleStatementContext::return_, BoxGrammar.SimpleStatementContext::not );
+		    SimpleStatementContext::param, SimpleStatementContext::return_, SimpleStatementContext::yieldStatement,
+		    BoxGrammar.SimpleStatementContext::not );
 
 		// Iterate over the functions
 		for ( Function<BoxGrammar.SimpleStatementContext, ParserRuleContext> function : functions ) {
@@ -661,6 +665,18 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 
 		BoxExpression	value	= Optional.ofNullable( ctx.expression() ).map( expression -> expression.accept( expressionVisitor ) ).orElse( null );
 		return new BoxReturn( value, pos, src );
+	}
+
+	@Override
+	public BoxNode visitYieldStatement( YieldStatementContext ctx ) {
+		if ( !isInsideMatchCaseBody( ctx ) ) {
+			throw new ExpressionException( "Yield statements are only allowed inside match arm blocks.", tools.getPosition( ctx ), tools.getSourceText( ctx ) );
+		}
+
+		var				pos		= tools.getPosition( ctx );
+		var				src		= tools.getSourceText( ctx );
+		BoxExpression	value	= ctx.expression().accept( expressionVisitor );
+		return new BoxYield( value, pos, src );
 	}
 
 	@Override
@@ -1061,6 +1077,17 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 
 	private <T> void processIfNotNull( List<T> list, Consumer<T> consumer ) {
 		Optional.ofNullable( list ).ifPresent( l -> l.forEach( consumer ) );
+	}
+
+	private boolean isInsideMatchCaseBody( ParserRuleContext ctx ) {
+		ParserRuleContext current = ctx;
+		while ( current != null ) {
+			if ( current instanceof BoxGrammar.MatchCaseBlockContext || current instanceof BoxGrammar.MatchCaseInlineBodyContext ) {
+				return true;
+			}
+			current = current.getParent();
+		}
+		return false;
 	}
 
 	public <T> T getOrNull( List<T> list, int index ) {

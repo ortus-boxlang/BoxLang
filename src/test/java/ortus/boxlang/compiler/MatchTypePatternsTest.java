@@ -59,7 +59,7 @@ public class MatchTypePatternsTest {
 		ParsingResult	result	= parser.parseExpression(
 		    """
 		    match( value ) {
-		    	is numeric,string as n => n
+		    	is numeric,string as n => n;
 		    	_ => null
 		    }
 		    """
@@ -74,7 +74,7 @@ public class MatchTypePatternsTest {
 		ParsingResult	result	= parser.parseExpression(
 		    """
 		    match( value ) {
-		    	is numeric,string as n => n
+		    	is numeric,string as n => n;
 		    	_ => null
 		    }
 		    """
@@ -85,7 +85,7 @@ public class MatchTypePatternsTest {
 		    .replace( "\r\n", "\n" )
 		    .replace( "\t", "    " )
 		    .stripTrailing();
-		assertEquals( "match( value ) {\n    is numeric, string as n => n\n    _ => null\n}", prettyPrinted );
+		assertEquals( "match( value ) {\n    is numeric, string as n => n;\n    _ => null\n}", prettyPrinted );
 	}
 
 	@Test
@@ -95,7 +95,7 @@ public class MatchTypePatternsTest {
 		Object result = instance.executeStatement(
 		    """
 		    match( value ) {
-		    	is numeric as n => n + 1
+		    	is numeric as n => n + 1;
 		    	_ => 0
 		    }
 		    """,
@@ -112,7 +112,7 @@ public class MatchTypePatternsTest {
 		Object result = instance.executeStatement(
 		    """
 		    match( value ) {
-		    	is numeric as n if n > 40 => "big"
+		    	is numeric as n if n > 40 => "big";
 		    	_ => "small"
 		    }
 		    """,
@@ -129,7 +129,7 @@ public class MatchTypePatternsTest {
 		Object result = instance.executeStatement(
 		    """
 		    match( value ) {
-		    	is array,numeric as n => n
+		    	is array,numeric as n => n;
 		    	_ => 0
 		    }
 		    """,

@@ -293,6 +293,7 @@ VAR         : 'VAR';
 WHEN        : 'WHEN';
 WHILE       : 'WHILE';
 XOR         : 'XOR';
+YIELD       : 'YIELD';
 
 CLASS: 'CLASS';
 

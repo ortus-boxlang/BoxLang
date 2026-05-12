@@ -63,6 +63,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxStructLitera
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxSwitchTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxTernaryOperationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxUnaryOperationTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxYieldTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxAssertTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxBufferOutputTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxClassTransformer;
@@ -145,6 +146,7 @@ import ortus.boxlang.compiler.ast.statement.BoxSwitch;
 import ortus.boxlang.compiler.ast.statement.BoxThrow;
 import ortus.boxlang.compiler.ast.statement.BoxTry;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
+import ortus.boxlang.compiler.ast.statement.BoxYield;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 import ortus.boxlang.compiler.parser.BoxSourceType;
@@ -393,6 +395,7 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxStringInterpolation.class, new BoxStringInterpolationTransformer( this ) );
 		registry.put( BoxMethodInvocation.class, new BoxMethodInvocationTransformer( this ) );
 		registry.put( BoxReturn.class, new BoxReturnTransformer( this ) );
+		registry.put( BoxYield.class, new BoxYieldTransformer( this ) );
 		registry.put( BoxStructLiteral.class, new BoxStructLiteralTransformer( this ) );
 		registry.put( BoxIdentifier.class, new BoxIdentifierTransformer( this ) );
 		registry.put( BoxBinaryOperation.class, new BoxBinaryOperationTransformer( this ) );

@@ -124,6 +124,7 @@ import ortus.boxlang.compiler.ast.statement.BoxThrow;
 import ortus.boxlang.compiler.ast.statement.BoxTry;
 import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
+import ortus.boxlang.compiler.ast.statement.BoxYield;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 
@@ -470,6 +471,10 @@ public abstract class VoidBoxVisitor {
 	}
 
 	public void visit( BoxReturnType node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxYield node ) {
 		visitChildren( node );
 	}
 

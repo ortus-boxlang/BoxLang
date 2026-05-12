@@ -68,7 +68,7 @@ public class MatchConstructorPatternsTest {
 		ParsingResult	result	= parser.parseExpression(
 		    """
 		    match( value ) {
-		    	Some( x ) => x
+		    	Some( x ) => x;
 		    	_ => null
 		    }
 		    """
@@ -89,7 +89,7 @@ public class MatchConstructorPatternsTest {
 		ParsingResult	result	= parser.parseExpression(
 		    """
 		    match( value ) {
-		    	Some( x ) => x
+		    	Some( x ) => x;
 		    	_ => null
 		    }
 		    """
@@ -101,7 +101,7 @@ public class MatchConstructorPatternsTest {
 		    .replace( "\t", "    " )
 		    .stripTrailing();
 		assertEquals(
-		    "match( value ) {\n    Some( x ) => x\n    _ => null\n}",
+		    "match( value ) {\n    Some( x ) => x;\n    _ => null\n}",
 		    prettyPrinted
 		);
 	}
@@ -116,7 +116,7 @@ public class MatchConstructorPatternsTest {
 		Object result = instance.executeStatement(
 		    """
 		    match( value ) {
-		    	Some( x ) => x
+		    	Some( x ) => x;
 		    	_ => "fallback"
 		    }
 		    """,
@@ -136,7 +136,7 @@ public class MatchConstructorPatternsTest {
 		Object result = instance.executeStatement(
 		    """
 		    match( value ) {
-		    	Success( x ) => x
+		    	Success( x ) => x;
 		    	_ => "fallback"
 		    }
 		    """,
@@ -160,7 +160,7 @@ public class MatchConstructorPatternsTest {
 		Object result = instance.executeStatement(
 		    """
 		    match( value ) {
-		    	Success( { data, meta } ) if meta.cached => data
+		    	Success( { data, meta } ) if meta.cached => data;
 		    	_ => "fallback"
 		    }
 		    """,
@@ -182,7 +182,7 @@ public class MatchConstructorPatternsTest {
 		    () -> instance.executeStatement(
 		        """
 		        match( value ) {
-		        	Broken( x ) => x
+		        	Broken( x ) => x;
 		        	_ => "fallback"
 		        }
 		        """,
@@ -203,7 +203,7 @@ public class MatchConstructorPatternsTest {
 		Object result = instance.executeStatement(
 		    """
 		    match( value ) {
-		    	Just( x ) => x
+		    	Just( x ) => x;
 		    	_ => "fallback"
 		    }
 		    """,
@@ -223,8 +223,8 @@ public class MatchConstructorPatternsTest {
 		Object result = instance.executeStatement(
 		    """
 		    match( value ) {
-		    	Just( x ) => x & "-first"
-		    	Just( x ) => x & "-second"
+		    	Just( x ) => x & "-first";
+		    	Just( x ) => x & "-second";
 		    	_ => "fallback"
 		    }
 		    """,
@@ -232,6 +232,31 @@ public class MatchConstructorPatternsTest {
 		);
 
 		assertThat( result ).isEqualTo( "Ada-first" );
+	}
+
+	@Test
+	public void testMatchConstructorPatternSupportsYieldInBranchBlocks() {
+		this.variables.put(
+		    Key.of( "value" ),
+		    instance.executeStatement( "new src.test.java.TestCases.phase3.MatchTaggedValue( value = \"Ada\" )", this.context )
+		);
+
+		Object result = instance.executeStatement(
+		    """
+		    match( value ) {
+		    	Just( x ) => {
+		    		if ( x == "Ada" ) {
+		    			yield x & "-yield";
+		    		}
+		    		x & "-fallback"
+		    	}
+		    	_ => "fallback"
+		    }
+		    """,
+		    this.context
+		);
+
+		assertThat( result ).isEqualTo( "Ada-yield" );
 	}
 
 	@Test
@@ -248,7 +273,7 @@ public class MatchConstructorPatternsTest {
 		Object result = instance.executeStatement(
 		    """
 		    match( value ) {
-		    	Success( { data, meta } ) if meta.cached => data
+		    	Success( { data, meta } ) if meta.cached => data;
 		    	_ => "fallback"
 		    }
 		    """,
@@ -265,7 +290,7 @@ public class MatchConstructorPatternsTest {
 		Object result = instance.executeStatement(
 		    """
 		    match( value ) {
-		    	Ok( x ) => x
+		    	Ok( x ) => x;
 		    	_ => "fallback"
 		    }
 		    """,
@@ -282,7 +307,7 @@ public class MatchConstructorPatternsTest {
 		Object result = instance.executeStatement(
 		    """
 		    match( value ) {
-		    	Err( problem ) => problem
+		    	Err( problem ) => problem;
 		    	_ => "fallback"
 		    }
 		    """,
@@ -299,7 +324,7 @@ public class MatchConstructorPatternsTest {
 		Object result = instance.executeStatement(
 		    """
 		    match( value ) {
-		    	Failure() => "empty"
+		    	Failure() => "empty";
 		    	_ => "fallback"
 		    }
 		    """,

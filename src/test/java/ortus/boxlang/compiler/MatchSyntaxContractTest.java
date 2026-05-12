@@ -47,7 +47,7 @@ public class MatchSyntaxContractTest {
 		ParsingResult	result	= parser.parseExpression(
 		    """
 		    match( value ) {
-		    	0 => \"zero\"
+		    	0 => \"zero\";
 		    	_ => \"many\"
 		    }
 		    """
@@ -64,7 +64,7 @@ public class MatchSyntaxContractTest {
 		ParsingResult	result	= parser.parseStatement(
 		    """
 		    match( value ) {
-		    	0 => \"zero\"
+		    	0 => \"zero\";
 		    	_ => \"many\"
 		    }
 		    """
@@ -81,7 +81,7 @@ public class MatchSyntaxContractTest {
 		ParsingResult	result	= parser.parseExpression(
 		    """
 		    match( value ) {
-		    	0 => "zero"
+		    	0 => "zero";
 		    	_ => "many"
 		    }
 		    """
@@ -92,7 +92,7 @@ public class MatchSyntaxContractTest {
 		    .replace( "\r\n", "\n" )
 		    .replace( "\t", "    " )
 		    .stripTrailing();
-		assertEquals( "match( value ) {\n    0 => \"zero\"\n    _ => \"many\"\n}", prettyPrinted );
+		assertEquals( "match( value ) {\n    0 => \"zero\";\n    _ => \"many\"\n}", prettyPrinted );
 	}
 
 	@Test
@@ -101,7 +101,7 @@ public class MatchSyntaxContractTest {
 		ParsingResult	result	= parser.parseExpression(
 		    """
 		    match( value ) {
-		    	[ head, ...tail ] if( head > 0 ) => head
+		    	[ head, ...tail ] if( head > 0 ) => head;
 		    	_ => null
 		    }
 		    """
@@ -126,6 +126,56 @@ public class MatchSyntaxContractTest {
 	}
 
 	@Test
+	public void testMatchAcceptsSemicolonBetweenInlineArms() {
+		Parser			parser	= new Parser();
+		ParsingResult	result	= parser.parseExpression(
+		    """
+		    match( value ) {
+		    	0 => \"zero\";
+		    	_ => \"many\"
+		    }
+		    """
+		);
+
+		assertTrue( result.isCorrect(), result.getIssues().toString() );
+	}
+
+	@Test
+	public void testMatchAcceptsYieldInsideStatementBlockBranchBodies() {
+		Parser			parser	= new Parser();
+		ParsingResult	result	= parser.parseExpression(
+		    """
+		    match( value ) {
+		    	0 => {
+		    		if ( shouldShortCircuit ) {
+		    			yield "zero";
+		    		}
+		    		"many"
+		    	}
+		    	_ => "fallback"
+		    }
+		    """
+		);
+
+		assertTrue( result.isCorrect(), result.getIssues().toString() );
+	}
+
+	@Test
+	public void testMatchRejectsMissingDelimiterBetweenInlineArms() {
+		Parser			parser	= new Parser();
+		ParsingResult	result	= parser.parseExpression(
+		    """
+		    match( value ) {
+		    	0 => "zero"
+		    	_ => "many"
+		    }
+		    """
+		);
+
+		assertFalse( result.isCorrect(), result.getIssues().toString() );
+	}
+
+	@Test
 	public void testMatchRejectsStatementBlockBranchBodiesWithoutFinalExpression() {
 		Parser parser = new Parser();
 
@@ -140,6 +190,27 @@ public class MatchSyntaxContractTest {
 		        		}
 		        	}
 		        	_ => \"many\"
+		        }
+		        """
+		    )
+		);
+	}
+
+	@Test
+	public void testMatchRejectsStatementBlockBranchBodiesWithoutFinalExpressionOrYield() {
+		Parser parser = new Parser();
+
+		assertThrows(
+		    ExpressionException.class,
+		    () -> parser.parseExpression(
+		        """
+		        match( value ) {
+		        	0 => {
+		        		if ( true ) {
+		        			yield "zero";
+		        		}
+		        	}
+		        	_ => "many"
 		        }
 		        """
 		    )
@@ -182,7 +253,7 @@ public class MatchSyntaxContractTest {
 		ParsingResult	result	= parser.parseExpression(
 		    """
 		    match( value ) {
-		    	Some( x ) => x
+		    	Some( x ) => x;
 		    	_ => null
 		    }
 		    """
@@ -197,7 +268,7 @@ public class MatchSyntaxContractTest {
 		ParsingResult	result	= parser.parseExpression(
 		    """
 		    match( value ) {
-		    	1 or 2 => "small"
+		    	1 or 2 => "small";
 		    	_ => "many"
 		    }
 		    """
@@ -212,7 +283,7 @@ public class MatchSyntaxContractTest {
 		ParsingResult	result	= parser.parseExpression(
 		    """
 		    match( value ) {
-		    	x and _ => "exact"
+		    	x and _ => "exact";
 		    	_ => "fallback"
 		    }
 		    """
@@ -227,7 +298,7 @@ public class MatchSyntaxContractTest {
 		ParsingResult	result	= parser.parseExpression(
 		    """
 		    match( value ) {
-		    	not 1 => "other"
+		    	not 1 => "other";
 		    	_ => "one"
 		    }
 		    """
@@ -242,7 +313,7 @@ public class MatchSyntaxContractTest {
 		ParsingResult	result	= parser.parseExpression(
 		    """
 		    match( value ) {
-		    	?( x -> x > 1 ) => \"many\"
+		    	?( x -> x > 1 ) => \"many\";
 		    	_ => \"small\"
 		    }
 		    """
@@ -257,7 +328,7 @@ public class MatchSyntaxContractTest {
 		ParsingResult	result	= parser.parseExpression(
 		    """
 		    match( value ) {
-		    	1..5 => "small"
+		    	1..5 => "small";
 		    	_ => "many"
 		    }
 		    """

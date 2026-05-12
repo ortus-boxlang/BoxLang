@@ -107,6 +107,7 @@ import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
+import ortus.boxlang.compiler.ast.statement.BoxYield;
 import ortus.boxlang.compiler.parser.BoxParser;
 import ortus.boxlang.parser.antlr.BoxGrammar.AnnotationContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ArgumentContext;
@@ -173,8 +174,10 @@ import ortus.boxlang.parser.antlr.BoxGrammar.LambdaFuncContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.LiteralsContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.MatchArrayPatternContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.MatchAtomsPatternContext;
-import ortus.boxlang.parser.antlr.BoxGrammar.MatchCaseBodyContext;
-import ortus.boxlang.parser.antlr.BoxGrammar.MatchCaseContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.MatchCaseBlockContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.MatchCaseInlineBodyContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.MatchCaseInlineContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.MatchCaseSeriesContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.MatchConstructorPatternContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.MatchExpressionContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.MatchIdentifierPatternContext;
@@ -261,7 +264,7 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		var	pos			= tools.getPosition( ctx );
 		var	src			= tools.getSourceText( ctx );
 		var	subject		= ctx.expression().accept( this );
-		var	matchCases	= ctx.matchCase().stream().map( this::buildMatchCase ).collect( Collectors.toList() );
+		var	matchCases	= buildMatchCases( ctx.matchCaseSeries() );
 		return new BoxMatchExpression( subject, matchCases, pos, src );
 	}
 
@@ -1372,22 +1375,45 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		return new BoxIntegerLiteral( src, pos, src );
 	}
 
-	private BoxMatchCase buildMatchCase( MatchCaseContext ctx ) {
+	private List<BoxMatchCase> buildMatchCases( MatchCaseSeriesContext ctx ) {
+		List<BoxMatchCase> matchCases = new ArrayList<>();
+		if ( ctx == null ) {
+			return matchCases;
+		}
+
+		if ( ctx.matchCaseBlock() != null ) {
+			matchCases.add( buildMatchCase( ctx.matchCaseBlock() ) );
+		} else {
+			matchCases.add( buildMatchCase( ctx.matchCaseInline() ) );
+		}
+
+		if ( ctx.matchCaseSeries() != null ) {
+			matchCases.addAll( buildMatchCases( ctx.matchCaseSeries() ) );
+		}
+
+		return matchCases;
+	}
+
+	private BoxMatchCase buildMatchCase( MatchCaseBlockContext ctx ) {
+		var					pos		= tools.getPosition( ctx );
+		var					src		= tools.getSourceText( ctx );
+		var					pattern	= buildMatchPattern( ctx.matchPattern() );
+		BoxExpression		guard	= ctx.expression() == null ? null : ctx.expression().accept( this );
+		BoxStatementBlock	body	= ( BoxStatementBlock ) ctx.statementBlock().accept( statementVisitor );
+		validateMatchCaseBlockBody( body );
+		return new BoxMatchCase( pattern, guard, body, pos, src );
+	}
+
+	private BoxMatchCase buildMatchCase( MatchCaseInlineContext ctx ) {
 		var				pos		= tools.getPosition( ctx );
 		var				src		= tools.getSourceText( ctx );
 		var				pattern	= buildMatchPattern( ctx.matchPattern() );
 		BoxExpression	guard	= ctx.expression() == null ? null : ctx.expression().accept( this );
-		BoxStatement	body	= buildMatchCaseBody( ctx.matchCaseBody() );
+		BoxStatement	body	= buildMatchCaseBody( ctx.matchCaseInlineBody() );
 		return new BoxMatchCase( pattern, guard, body, pos, src );
 	}
 
-	private BoxStatement buildMatchCaseBody( MatchCaseBodyContext ctx ) {
-		if ( ctx.statementBlock() != null ) {
-			BoxStatementBlock body = ( BoxStatementBlock ) ctx.statementBlock().accept( statementVisitor );
-			validateMatchCaseBlockBody( body );
-			return body;
-		}
-
+	private BoxStatement buildMatchCaseBody( MatchCaseInlineBodyContext ctx ) {
 		BoxExpression expressionBody = ctx.matchExpression() != null
 		    ? ctx.matchExpression().accept( this )
 		    : ctx.el2().accept( this );
@@ -1396,8 +1422,13 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 	}
 
 	private void validateMatchCaseBlockBody( BoxStatementBlock body ) {
-		if ( body.getBody().isEmpty() || ! ( body.getBody().getLast() instanceof BoxExpressionStatement ) ) {
-			throw new ExpressionException( "Match block bodies must end with an expression.", body.getPosition(), body.getSourceText() );
+		if ( body.getBody().isEmpty() ) {
+			throw new ExpressionException( "Match block bodies must end with an expression or yield statement.", body.getPosition(), body.getSourceText() );
+		}
+
+		BoxStatement lastStatement = body.getBody().getLast();
+		if ( ! ( lastStatement instanceof BoxExpressionStatement ) && ! ( lastStatement instanceof BoxYield ) ) {
+			throw new ExpressionException( "Match block bodies must end with an expression or yield statement.", body.getPosition(), body.getSourceText() );
 		}
 	}
 

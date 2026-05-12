@@ -109,6 +109,7 @@ import ortus.boxlang.compiler.ast.statement.BoxThrow;
 import ortus.boxlang.compiler.ast.statement.BoxTry;
 import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
+import ortus.boxlang.compiler.ast.statement.BoxYield;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
@@ -172,6 +173,7 @@ import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxTemplateTran
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxThrowTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxTryTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxWhileTransformer;
+import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxYieldTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.component.BoxComponentTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.component.BoxScriptIslandTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.component.BoxTemplateIslandTransformer;
@@ -247,6 +249,7 @@ public class JavaTranspiler extends Transpiler {
 		registry.put( BoxFunctionDeclaration.class, new BoxFunctionDeclarationTransformer( this ) );
 		registry.put( BoxArgumentDeclaration.class, new BoxArgumentDeclarationTransformer( this ) );
 		registry.put( BoxReturn.class, new BoxReturnTransformer( this ) );
+		registry.put( BoxYield.class, new BoxYieldTransformer( this ) );
 		registry.put( BoxRethrow.class, new BoxRethrowTransformer( this ) );
 		registry.put( BoxImport.class, new BoxImportTransformer( this ) );
 		registry.put( BoxArrayLiteral.class, new BoxArrayLiteralTransformer( this ) );

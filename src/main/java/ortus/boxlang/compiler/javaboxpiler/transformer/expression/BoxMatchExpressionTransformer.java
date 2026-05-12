@@ -56,6 +56,7 @@ import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
+import ortus.boxlang.compiler.ast.statement.BoxYield;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
@@ -262,17 +263,26 @@ public class BoxMatchExpressionTransformer extends AbstractTransformer {
 	}
 
 	private BlockStmt buildLambdaBlock( BoxStatementBlock statementBlock ) {
-		if ( statementBlock.getBody().isEmpty() || ! ( statementBlock.getBody().getLast() instanceof BoxExpressionStatement finalExpression ) ) {
-			throw new ExpressionException( "Match block bodies must end with an expression.", statementBlock );
+		if ( statementBlock.getBody().isEmpty() ) {
+			throw new ExpressionException( "Match block bodies must end with an expression or yield statement.", statementBlock );
 		}
 
-		BlockStmt lambdaBody = new BlockStmt();
+		BoxStatement	lastStatement	= statementBlock.getBody().getLast();
+		BlockStmt		lambdaBody		= new BlockStmt();
 		for ( int i = 0; i < statementBlock.getBody().size() - 1; i++ ) {
 			appendStatement( lambdaBody, transpiler.transform( statementBlock.getBody().get( i ) ) );
 		}
-		Expression returnExpression = ( Expression ) transpiler.transform( finalExpression.getExpression(), TransformerContext.RIGHT );
-		lambdaBody.addStatement( new ReturnStmt( returnExpression ) );
-		return lambdaBody;
+		if ( lastStatement instanceof BoxExpressionStatement finalExpression ) {
+			Expression returnExpression = ( Expression ) transpiler.transform( finalExpression.getExpression(), TransformerContext.RIGHT );
+			lambdaBody.addStatement( new ReturnStmt( returnExpression ) );
+			return lambdaBody;
+		}
+		if ( lastStatement instanceof BoxYield ) {
+			appendStatement( lambdaBody, transpiler.transform( lastStatement ) );
+			return lambdaBody;
+		}
+
+		throw new ExpressionException( "Match block bodies must end with an expression or yield statement.", statementBlock );
 	}
 
 	private void appendStatement( BlockStmt target, Node javaNode ) {

@@ -111,6 +111,7 @@ import ortus.boxlang.compiler.ast.statement.BoxThrow;
 import ortus.boxlang.compiler.ast.statement.BoxTry;
 import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
+import ortus.boxlang.compiler.ast.statement.BoxYield;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 
@@ -1131,6 +1132,17 @@ public abstract class ReplacingBoxVisitor {
 	}
 
 	public BoxNode visit( BoxReturn node ) {
+		BoxExpression expression = node.getExpression();
+		if ( expression != null ) {
+			BoxNode newExpr = expression.accept( this );
+			if ( newExpr != expression ) {
+				node.setExpression( ( BoxExpression ) newExpr );
+			}
+		}
+		return node;
+	}
+
+	public BoxNode visit( BoxYield node ) {
 		BoxExpression expression = node.getExpression();
 		if ( expression != null ) {
 			BoxNode newExpr = expression.accept( this );

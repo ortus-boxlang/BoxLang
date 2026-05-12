@@ -243,7 +243,7 @@ assignmentModifier: op = ( VAR | FINAL | STATIC)
     ;
 
 // Simple statements have no body
-simpleStatement: break | continue | rethrow | assert | param | return | not
+simpleStatement: break | continue | rethrow | assert | param | return | yieldStatement | not
     ;
 
 // NOT ( expression ) is a special case when a statement as everything else should
@@ -357,6 +357,9 @@ continue: CONTINUE identifier?
  return foo;
  */
 return: RETURN expression?
+    ;
+
+yieldStatement: YIELD expression
     ;
 
 // rethrow;
@@ -509,15 +512,22 @@ structMember: structKey (COLON | EQUALSIGN) expression
 structKey: identifier | stringLiteral | INTEGER_LITERAL | ILLEGAL_IDENTIFIER | SWITCH | MATCH
     ;
 
-matchExpression: MATCH LPAREN expression RPAREN LBRACE matchCase+ RBRACE
+matchExpression: MATCH LPAREN expression RPAREN LBRACE matchCaseSeries RBRACE
     ;
 
-matchCase: matchPattern (IF expression)? ARROW_RIGHT matchCaseBody
+matchCaseSeries
+    : matchCaseBlock matchCaseSeries?
+    | matchCaseInline (SEMICOLON+ matchCaseSeries)?
     ;
 
-matchCaseBody
+matchCaseBlock: matchPattern (IF expression)? ARROW_RIGHT statementBlock
+    ;
+
+matchCaseInline: matchPattern (IF expression)? ARROW_RIGHT matchCaseInlineBody
+    ;
+
+matchCaseInlineBody
     : matchExpression
-    | statementBlock
     | el2
     ;
 
