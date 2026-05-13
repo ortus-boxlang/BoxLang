@@ -53,6 +53,7 @@ import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
@@ -74,12 +75,6 @@ import ortus.boxlang.runtime.types.util.MapHelper;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class AsmHelper {
-
-	/**
-	 * Legacy instruction count limit (kept for backwards compatibility).
-	 * Prefer using MethodSplitter.BYTECODE_SIZE_LIMIT for byte-accurate estimation.
-	 */
-	private static final int METHOD_SIZE_LIMIT = 25000;
 
 	public record LineNumberIns( List<AbstractInsnNode> start, List<AbstractInsnNode> end ) {
 
@@ -2196,14 +2191,16 @@ public class AsmHelper {
 
 		// Use the new MethodSplitter for splitting, passing try-catch blocks for sub-method inheritance
 		MethodSplitter			splitter		= new MethodSplitter( transpiler, classNode, mainType, tryCatchBlocks, isStatic );
-		Type					resultType		= Type.getType( FlowControlResult.class );
+		Type					splitResultType	= returnType.equals( Type.getType( Component.BodyResult.class ) )
+		    ? returnType
+		    : Type.getType( FlowControlResult.class );
 
-		// Split the method - sub-methods return FlowControlResult
-		List<AbstractInsnNode>	splitNodes		= splitter.processMethod( nodes, name, parameterType, resultType );
+		// Split the method using the correct helper return contract for the enclosing method.
+		List<AbstractInsnNode>	splitNodes		= splitter.processMethod( nodes, name, parameterType, splitResultType );
 
 		// If the return type is Object (typical for BoxLang methods), we need to
 		// unwrap the final FlowControlResult to get the actual value
-		if ( returnType.equals( Type.getType( Object.class ) ) && !splitNodes.isEmpty() ) {
+		if ( returnType.equals( Type.getType( Object.class ) ) && splitResultType.equals( Type.getType( FlowControlResult.class ) ) && !splitNodes.isEmpty() ) {
 			// The last instruction sequence should have a FlowControlResult on the stack
 			// We need to call getValue() to unwrap it
 			List<AbstractInsnNode> unwrapNodes = new ArrayList<>( splitNodes );
