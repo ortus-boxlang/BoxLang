@@ -76,6 +76,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 											    generateNumericBinaryMethodCallExpr( "Minus", operation, left, right );
 
 											case Range -> // "Range.invoke(${left},${right})";
+											    // The runtime operator now returns a first-class Range value.
 											    generateBinaryMethodCallExpr( "Range", left, right );
 
 											case Star -> // "Multiply.invoke(${left},${right})";

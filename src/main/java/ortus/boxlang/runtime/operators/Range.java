@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.operators;
 
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
@@ -31,9 +30,9 @@ public class Range implements IOperator {
 	 * @param left  The left operand
 	 * @param right The right operand
 	 *
-	 * @return The inclusive range as an Array
+	 * @return The inclusive range as a Range value
 	 */
-	public static Array invoke( Object left, Object right ) {
+	public static ortus.boxlang.runtime.types.Range invoke( Object left, Object right ) {
 		return invoke( IntegerCaster.cast( left ), IntegerCaster.cast( right ) );
 	}
 
@@ -41,9 +40,9 @@ public class Range implements IOperator {
 	 * @param from The start of the range
 	 * @param to   The end of the range
 	 *
-	 * @return The inclusive range as an Array
+	 * @return The inclusive range as a Range value
 	 */
-	public static Array invoke( Integer from, Integer to ) {
+	public static ortus.boxlang.runtime.types.Range invoke( Integer from, Integer to ) {
 		long	start	= from.longValue();
 		long	end		= to.longValue();
 		long	size	= Math.abs( end - start ) + 1L;
@@ -52,16 +51,6 @@ public class Range implements IOperator {
 			throw new BoxRuntimeException( "Range operator produced too many results: " + size );
 		}
 
-		Array	result	= new Array( ( int ) size );
-		long	step	= start <= end ? 1L : -1L;
-
-		for ( long current = start;; current += step ) {
-			result.add( ( int ) current );
-			if ( current == end ) {
-				break;
-			}
-		}
-
-		return result;
+		return new ortus.boxlang.runtime.types.Range( from, to );
 	}
 }

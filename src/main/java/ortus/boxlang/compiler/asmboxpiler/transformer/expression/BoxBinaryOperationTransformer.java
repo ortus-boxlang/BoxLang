@@ -62,7 +62,6 @@ import ortus.boxlang.runtime.operators.Plus;
 import ortus.boxlang.runtime.operators.Power;
 import ortus.boxlang.runtime.operators.Range;
 import ortus.boxlang.runtime.operators.XOR;
-import ortus.boxlang.runtime.types.Array;
 
 public class BoxBinaryOperationTransformer extends AbstractTransformer {
 
@@ -86,7 +85,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 												    generateNumericBinaryMethodCallNodes( Minus.class, Number.class, operation, left, right );
 
 												case Range -> // "Range.invoke(${left},${right})";
-												    generateBinaryMethodCallNodes( Range.class, Array.class, left, right );
+												    generateBinaryMethodCallNodes( Range.class, Range.class, left, right );
 
 												case Star -> // "Multiply.invoke(${left},${right})";
 												    generateNumericBinaryMethodCallNodes( Multiply.class, Number.class, operation, left, right );
@@ -261,7 +260,8 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 
-	@NonNull private static List<AbstractInsnNode> generateBinaryMethodCallNodes( Class<?> dispatcher, Class<?> returned, List<AbstractInsnNode> left,
+	@NonNull
+	private static List<AbstractInsnNode> generateBinaryMethodCallNodes( Class<?> dispatcher, Class<?> returned, List<AbstractInsnNode> left,
 	    List<AbstractInsnNode> right ) {
 		List<AbstractInsnNode> nodes = new ArrayList<>();
 		nodes.addAll( left );
@@ -286,7 +286,8 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 	 *
 	 * @return the instruction list
 	 */
-	@NonNull private static List<AbstractInsnNode> generateNumericBinaryMethodCallNodes( Class<?> dispatcher, Class<?> returned,
+	@NonNull
+	private static List<AbstractInsnNode> generateNumericBinaryMethodCallNodes( Class<?> dispatcher, Class<?> returned,
 	    BoxBinaryOperation operation, List<AbstractInsnNode> left, List<AbstractInsnNode> right ) {
 		if ( operation.getLeft().returnsNumber() && operation.getRight().returnsNumber() ) {
 			List<AbstractInsnNode> nodes = new ArrayList<>();
@@ -304,7 +305,8 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 		return generateBinaryMethodCallNodes( dispatcher, returned, left, right );
 	}
 
-	@NonNull private static List<AbstractInsnNode> generateBinaryMethodCallNodesWithContext( Transpiler transpiler, Class<?> dispatcher, Class<?> returned,
+	@NonNull
+	private static List<AbstractInsnNode> generateBinaryMethodCallNodesWithContext( Transpiler transpiler, Class<?> dispatcher, Class<?> returned,
 	    List<AbstractInsnNode> left,
 	    List<AbstractInsnNode> right ) {
 		List<AbstractInsnNode> nodes = new ArrayList<>();
