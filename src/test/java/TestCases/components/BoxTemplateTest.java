@@ -1646,4 +1646,158 @@ public class BoxTemplateTest {
 		    context, BoxSourceType.BOXTEMPLATE );
 	}
 
+	@Test
+	public void testUDFOutputTrueAddsOutputs() {
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <bx:set foo = "bar">
+		       <bx:function name="test2" output=true>
+		       	foo #foo#
+		       	<bx:output>
+		       		foo #foo#
+		       	</bx:output>
+		       </bx:function>
+
+		    <bx:savecontent variable="result">
+		       	<bx:set test2()>
+		    </bx:savecontent>
+		         """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foobarfoobar" );
+
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <bx:set foo = "bar">
+		       <bx:function name="test2" output="true">
+		       	foo #foo#
+		       	<bx:output>
+		       		foo #foo#
+		       	</bx:output>
+		       </bx:function>
+
+		    <bx:savecontent variable="result">
+		       	<bx:set test2()>
+		    </bx:savecontent>
+		         """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foobarfoobar" );
+
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <bx:set foo = "bar">
+		       <bx:function name="test2" output = true >
+		       	foo #foo#
+		       	<bx:output>
+		       		foo #foo#
+		       	</bx:output>
+		       </bx:function>
+
+		    <bx:savecontent variable="result">
+		       	<bx:set test2()>
+		    </bx:savecontent>
+		         """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foobarfoobar" );
+
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <bx:set foo = "bar">
+		       <bx:function name="test2" output  = "true">
+		       	foo #foo#
+		       	<bx:output>
+		       		foo #foo#
+		       	</bx:output>
+		       </bx:function>
+
+		    <bx:savecontent variable="result">
+		       	<bx:set test2()>
+		    </bx:savecontent>
+		         """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foobarfoobar" );
+
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <bx:set foo = "bar">
+		       <bx:function name="test2" output  = 'true'>
+		       	foo #foo#
+		       	<bx:output>
+		       		foo #foo#
+		       	</bx:output>
+		       </bx:function>
+
+		    <bx:savecontent variable="result">
+		       	<bx:set test2()>
+		    </bx:savecontent>
+		         """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foobarfoobar" );
+
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <bx:set foo = "bar">
+		       <bx:function name="test2" output  = #true#>
+		       	foo #foo#
+		       	<bx:output>
+		       		foo #foo#
+		       	</bx:output>
+		       </bx:function>
+
+		    <bx:savecontent variable="result">
+		       	<bx:set test2()>
+		    </bx:savecontent>
+		         """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foobarfoobar" );
+
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <bx:set foo = "bar">
+		       <bx:function name="test2" output  = "#true#">
+		       	foo #foo#
+		       	<bx:output>
+		       		foo #foo#
+		       	</bx:output>
+		       </bx:function>
+
+		    <bx:savecontent variable="result">
+		       	<bx:set test2()>
+		    </bx:savecontent>
+		         """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foobarfoobar" );
+
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <bx:set foo = "bar">
+		       <bx:function name="test2">
+		       	foo #foo#
+		       	<bx:output>
+		       		foo #foo#
+		       	</bx:output>
+		       </bx:function>
+
+		    <bx:savecontent variable="result">
+		       	<bx:set test2()>
+		    </bx:savecontent>
+		         """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		// @Formatter:on
+		// assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foo#foo#foobar" );
+	}
 }

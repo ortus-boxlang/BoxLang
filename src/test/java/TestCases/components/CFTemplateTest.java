@@ -1915,4 +1915,180 @@ public class CFTemplateTest {
 		    context, BoxSourceType.CFTEMPLATE );
 	}
 
+	@Test
+	public void testTemplateFunctionImplicitOutput() {
+		instance.executeSource(
+		    """
+		      <cfset foo = "bar">
+		      <cffunction name="testa">
+		    #foo#
+		      </cffunction>
+		    <cfset testa()>
+		      <cffunction name="testb" output=true>
+		    #foo#
+		      </cffunction>
+		    <cfset testb()>
+		      <cffunction name="testc" output=false>
+		    #foo#
+		      </cffunction>
+		    <cfset testc()>
+		           """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testUDFOutputTrueAddsOutputs() {
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <cfset foo = "bar">
+		       <cffunction name="test2" output=true>
+		       	foo #foo#
+		       	<cfoutput>
+		       		foo #foo#
+		       	</cfoutput>
+		       </cffunction>
+
+		    <cfsavecontent variable="result">
+		       	<cfset test2()>
+		    </cfsavecontent>
+		         """,
+		    context, BoxSourceType.CFTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foobarfoobar" );
+
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <cfset foo = "bar">
+		       <cffunction name="test2" output="true">
+		       	foo #foo#
+		       	<cfoutput>
+		       		foo #foo#
+		       	</cfoutput>
+		       </cffunction>
+
+		    <cfsavecontent variable="result">
+		       	<cfset test2()>
+		    </cfsavecontent>
+		         """,
+		    context, BoxSourceType.CFTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foobarfoobar" );
+
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <cfset foo = "bar">
+		       <cffunction name="test2" output = true >
+		       	foo #foo#
+		       	<cfoutput>
+		       		foo #foo#
+		       	</cfoutput>
+		       </cffunction>
+
+		    <cfsavecontent variable="result">
+		       	<cfset test2()>
+		    </cfsavecontent>
+		         """,
+		    context, BoxSourceType.CFTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foobarfoobar" );
+
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <cfset foo = "bar">
+		       <cffunction name="test2" output  = "true">
+		       	foo #foo#
+		       	<cfoutput>
+		       		foo #foo#
+		       	</cfoutput>
+		       </cffunction>
+
+		    <cfsavecontent variable="result">
+		       	<cfset test2()>
+		    </cfsavecontent>
+		         """,
+		    context, BoxSourceType.CFTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foobarfoobar" );
+
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <cfset foo = "bar">
+		       <cffunction name="test2" output  = 'true'>
+		       	foo #foo#
+		       	<cfoutput>
+		       		foo #foo#
+		       	</cfoutput>
+		       </cffunction>
+
+		    <cfsavecontent variable="result">
+		       	<cfset test2()>
+		    </cfsavecontent>
+		         """,
+		    context, BoxSourceType.CFTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foobarfoobar" );
+
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <cfset foo = "bar">
+		       <cffunction name="test2" output  = #true#>
+		       	foo #foo#
+		       	<cfoutput>
+		       		foo #foo#
+		       	</cfoutput>
+		       </cffunction>
+
+		    <cfsavecontent variable="result">
+		       	<cfset test2()>
+		    </cfsavecontent>
+		         """,
+		    context, BoxSourceType.CFTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foobarfoobar" );
+
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <cfset foo = "bar">
+		       <cffunction name="test2" output  = "#true#">
+		       	foo #foo#
+		       	<cfoutput>
+		       		foo #foo#
+		       	</cfoutput>
+		       </cffunction>
+
+		    <cfsavecontent variable="result">
+		       	<cfset test2()>
+		    </cfsavecontent>
+		         """,
+		    context, BoxSourceType.CFTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foobarfoobar" );
+
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <cfset foo = "bar">
+		       <cffunction name="test2">
+		       	foo #foo#
+		       	<cfoutput>
+		       		foo #foo#
+		       	</cfoutput>
+		       </cffunction>
+
+		    <cfsavecontent variable="result">
+		       	<cfset test2()>
+		    </cfsavecontent>
+		         """,
+		    context, BoxSourceType.CFTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foo#foo#foobar" );
+	}
+
 }
