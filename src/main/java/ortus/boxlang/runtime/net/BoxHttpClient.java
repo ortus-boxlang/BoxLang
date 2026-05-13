@@ -1569,12 +1569,12 @@ public class BoxHttpClient {
 				bodyPublisher = processFormFields( requestBuilder, bodyPublisher, formFields );
 			}
 
-			// Set body publisher to noBody if still null
-			// NOTE: We use ofString("") instead of noBody() because noBody() does NOT send
-			// a Content-Length: 0 header, which causes "411 Length Required" errors on
-			// strict servers (e.g., OData security token endpoints).
+			// Set body publisher to empty string if still null
+			// We also explicitly set the Content-Length: 0 header because even ofString("")
+			// may not reliably include it, especially over HTTP/2 which uses frame-based length.
 			if ( bodyPublisher == null ) {
 				bodyPublisher = HttpRequest.BodyPublishers.ofString( "" );
+				requestBuilder.header( "Content-Length", "0" );
 			}
 
 			// Finalize Request Building with different settings
@@ -1662,7 +1662,7 @@ public class BoxHttpClient {
 		 *     .method( "POST" )
 		 *     .header( "Content-Type", "application/json" )
 		 *     .onComplete( result -> {
-		 * 	} )
+		 * 							} )
 		 *     .send();
 		 *
 		 * IStruct result = request.getHttpResult();
