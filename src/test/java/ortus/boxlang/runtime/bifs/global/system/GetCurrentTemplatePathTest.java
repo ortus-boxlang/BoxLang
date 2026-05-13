@@ -124,4 +124,44 @@ public class GetCurrentTemplatePathTest {
 
 	}
 
+	@Test
+	public void testInjectedUDFCCurrentTemplate() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				injectedUDFCCurrentTemplate = new src.test.java.ortus.boxlang.runtime.bifs.global.system.InjectedUDFCCurrentTemplate();
+				injectedUDFCCurrentTemplate2 = new src.test.java.ortus.boxlang.runtime.bifs.global.system.InjectedUDFCCurrentTemplate2();
+				injectedUDFCCurrentTemplate.test = injectedUDFCCurrentTemplate2.test;
+
+				{ argCurrentTemplate : result1a, funCurrentTemplate : result1b } = injectedUDFCCurrentTemplate2.test();
+
+				{ argCurrentTemplate : result2a, funCurrentTemplate : result2b } = injectedUDFCCurrentTemplate.test();
+
+		      """,
+		    context );
+		// @formatter:on
+		assertThat( variables.getAsString( Key.of( "result1a" ) ) ).contains( "InjectedUDFCCurrentTemplate2.bx" );
+		assertThat( variables.getAsString( Key.of( "result1b" ) ) ).contains( "InjectedUDFCCurrentTemplate2.bx" );
+		assertThat( variables.getAsString( Key.of( "result2a" ) ) ).contains( "InjectedUDFCCurrentTemplate.bx" );
+		assertThat( variables.getAsString( Key.of( "result2b" ) ) ).contains( "InjectedUDFCCurrentTemplate.bx" );
+	}
+
+	@Test
+	public void testIncludedInClassUDFCCurrentTemplate() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				includedInClassUDFCCurrentTemplate = new src.test.java.ortus.boxlang.runtime.bifs.global.system.IncludedInClassUDFCCurrentTemplate();
+
+				{ argCurrentTemplate : result1, funCurrentTemplate : result2 } = includedInClassUDFCCurrentTemplate.test();
+
+				println( result1 );
+				println( result2 );
+		      """,
+		    context );
+		// @formatter:on
+		assertThat( variables.getAsString( Key.of( "result1" ) ) ).contains( "IncludedInClassUDFCCurrentTemplate.bxs" );
+		assertThat( variables.getAsString( Key.of( "result2" ) ) ).contains( "IncludedInClassUDFCCurrentTemplate.bxs" );
+	}
+
 }

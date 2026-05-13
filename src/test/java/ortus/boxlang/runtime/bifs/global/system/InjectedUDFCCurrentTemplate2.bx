@@ -1,0 +1,10 @@
+class {
+
+	function test( argCurrentTemplate=getCurrentTemplatePath() ) {
+		return {
+			argCurrentTemplate : arguments.argCurrentTemplate,
+			funCurrentTemplate : getCurrentTemplatePath()
+		};
+	}
+	
+}
