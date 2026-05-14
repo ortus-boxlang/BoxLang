@@ -30,11 +30,11 @@ import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.LambdaBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.IFunctionRunnable;
@@ -674,7 +674,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 		if ( this.canOutput == null ) {
 			Object anno = canOutput( getAnnotations() );
 			if ( anno != null ) {
-				this.canOutput = BooleanCaster.cast( anno );
+				this.canOutput = BoxClassSupport.castOutputAnnotation( anno );
 			}
 		}
 
@@ -731,7 +731,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	public static boolean canOutput( IStruct annotations, BoxSourceType sourceType, boolean defaultOutput ) {
 		Object anno = canOutput( annotations );
 		if ( anno != null ) {
-			return BooleanCaster.cast( anno );
+			return BoxClassSupport.castOutputAnnotation( anno );
 		} else {
 			return defaultCanOutput( sourceType, defaultOutput );
 		}
