@@ -560,6 +560,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	    boolean defaultOutput,
 	    List<BoxMethodDeclarationModifier> modifiers ) {
 
+		annotations = BoxClassSupport.transformAnnotations( annotations );
 		IStruct meta = new Struct( IStruct.TYPES.LINKED );
 		if ( documentation != null ) {
 			documentation.forEach( ( k, v ) -> {

@@ -191,6 +191,20 @@ public class BoxClassSupport {
 	}
 
 	/**
+	 * If there is an output annotation, use the castOututAnnotation() method to interpret it.
+	 * 
+	 * @param annotations The annotations to check
+	 * 
+	 * @return true if the output annotation is present and evaluates to true, otherwise false
+	 */
+	public static IStruct transformAnnotations( IStruct annotations ) {
+		if ( annotations.containsKey( Key.output ) ) {
+			annotations.put( Key.output, castOutputAnnotation( annotations.get( Key.output ) ) );
+		}
+		return annotations;
+	}
+
+	/**
 	 * A helper to look at the "output" annotation, caching the result
 	 *
 	 * @param thisClass The class to check
@@ -687,7 +701,7 @@ public class BoxClassSupport {
 	    IStruct documentation,
 	    Map<Key, ortus.boxlang.runtime.types.Property> properties,
 	    StaticScope staticScope ) {
-
+		annotations = BoxClassSupport.transformAnnotations( annotations );
 		BoxRuntime	runtime	= BoxRuntime.getInstance();
 		IStruct		meta	= new Struct( IStruct.TYPES.SORTED );
 		meta.putIfAbsent( "hint", "" );
