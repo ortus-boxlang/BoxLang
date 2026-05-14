@@ -382,8 +382,8 @@ public class DataNavigatorTest {
 	@DisplayName( "query() preserves null matches for direct key paths" )
 	@Test
 	void testQueryPlainPathWithNullValue() {
-		Navigator nav = DataNavigator.of( Map.of( "settings", Struct.of( "nullable", null ) ) );
-		Array result = nav.query( "settings.nullable" );
+		Navigator	nav		= DataNavigator.of( Map.of( "settings", Struct.of( "nullable", null ) ) );
+		Array		result	= nav.query( "settings.nullable" );
 		assertThat( result ).hasSize( 1 );
 		assertThat( result.get( 0 ) ).isNull();
 	}
@@ -404,8 +404,8 @@ public class DataNavigatorTest {
 	@DisplayName( "query() tolerates whitespace around wildcard syntax" )
 	@Test
 	void testQueryWildcardWithWhitespace() {
-		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
-		Array result = nav.query( " keywords [ * ] " );
+		Navigator	nav		= DataNavigator.of( "src/modules/test/box.json" );
+		Array		result	= nav.query( " keywords [ * ] " );
 		assertThat( result ).hasSize( 2 );
 		assertThat( result ).containsExactly( "test", "example" ).inOrder();
 	}
