@@ -319,6 +319,19 @@ public class DataNavigator {
 		}
 
 		/**
+		 * Check if an exact key exists in the data segment.
+		 * This method does not interpret dots or brackets as path separators.
+		 *
+		 * @param key The exact key to check for
+		 *
+		 * @return True if the exact key exists, false otherwise
+		 */
+		public boolean hasByKey( String key ) {
+			IStruct navConfig = this.segment == null ? this.config : this.segment;
+			return navConfig.containsKey( Key.of( key ) );
+		}
+
+		/**
 		 * Safely navigate the data structure to a segment without blowing up.
 		 * If the path does not exist then a new empty struct is returned as the segment.
 		 *
@@ -435,6 +448,36 @@ public class DataNavigator {
 			}
 
 			return lastResult;
+		}
+
+		/**
+		 * Get a value from the data structure by exact key.
+		 * This method does not interpret dots or brackets as path separators.
+		 *
+		 * @param key The exact key to retrieve
+		 *
+		 * @return The value of the exact key, or null if it does not exist
+		 */
+		public Object getByKey( String key ) {
+			IStruct navConfig = this.segment == null ? this.config : this.segment;
+
+			if ( !navConfig.containsKey( Key.of( key ) ) ) {
+				return null;
+			}
+
+			Object result = navConfig.get( Key.of( key ) );
+
+			if ( result instanceof Map<?, ?> map ) {
+				return StructCaster.cast( map );
+			}
+			if ( result instanceof List<?> list ) {
+				return ArrayCaster.cast( list );
+			}
+			if ( result instanceof Object[] array ) {
+				return ArrayCaster.cast( array );
+			}
+
+			return result;
 		}
 
 		/**

@@ -92,6 +92,61 @@ public class DataNavigatorTest {
 		assertThat( nav.get( "boxlang", "settings", "bogus" ) ).isNull();
 	}
 
+	@DisplayName( "Can get exact keys without path parsing" )
+	@Test
+	void testGetByKey() {
+		Navigator nav = DataNavigator.of(
+		    Map.of(
+		        "value.sep", "root",
+		        "settings", Struct.of( "value.sep", "nested" )
+		    )
+		);
+
+		assertThat( nav.getByKey( "value.sep" ) ).isEqualTo( "root" );
+		assertThat( nav.getByKey( "settings.value.sep" ) ).isNull();
+		assertThat( nav.from( "settings" ).getByKey( "value.sep" ) ).isEqualTo( "nested" );
+	}
+
+	@DisplayName( "Can detect exact keys without path parsing" )
+	@Test
+	void testHasByKey() {
+		Navigator nav = DataNavigator.of(
+		    Map.of(
+		        "value.sep", "root",
+		        "settings", Struct.of( "value.sep", "nested" )
+		    )
+		);
+
+		assertThat( nav.hasByKey( "value.sep" ) ).isTrue();
+		assertThat( nav.hasByKey( "settings.value.sep" ) ).isFalse();
+		assertThat( nav.from( "settings" ).hasByKey( "value.sep" ) ).isTrue();
+	}
+
+	@DisplayName( "Exact key lookup does not traverse dotted paths" )
+	@Test
+	void testByKeyDoesNotTraverseDots() {
+		Navigator nav = DataNavigator.of(
+		    Map.of(
+		        "settings.value.sep", "exact",
+		        "settings", Struct.of( "value", Struct.of( "sep", "nested" ) )
+		    )
+		);
+
+		assertThat( nav.getByKey( "settings.value.sep" ) ).isEqualTo( "exact" );
+		assertThat( nav.hasByKey( "settings.value.sep" ) ).isTrue();
+		assertThat( nav.get( "settings.value.sep" ) ).isEqualTo( "nested" );
+	}
+
+	@DisplayName( "Exact key lookup preserves null values" )
+	@Test
+	void testByKeyNullValue() {
+		Navigator nav = DataNavigator.of( Map.of( "settings", Struct.of( "nullable", null ) ) );
+
+		assertThat( nav.hasByKey( "settings" ) ).isTrue();
+		assertThat( nav.from( "settings" ).hasByKey( "nullable" ) ).isTrue();
+		assertThat( nav.from( "settings" ).getByKey( "nullable" ) ).isNull();
+	}
+
 	@DisplayName( "Test nested has" )
 	@Test
 	void testNestedHas() {
