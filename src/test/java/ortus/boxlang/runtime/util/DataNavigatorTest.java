@@ -35,8 +35,6 @@ import ortus.boxlang.runtime.util.DataNavigator.Navigator;
 
 public class DataNavigatorTest {
 
-	private DataNavigator dataNavigator;
-
 	@DisplayName( "Test an invalid path" )
 	@Test
 	void testInvalidPath() {
@@ -224,14 +222,15 @@ public class DataNavigatorTest {
 	void testGetBracketIndex() {
 		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
 		assertThat( nav.get( "keywords[1]" ) ).isEqualTo( "test" );
-		assertThat( nav.get( "keywords[2]" ) ).isEqualTo( "example" );
+		assertThat( nav.get( "keywords[ 1  ]" ) ).isEqualTo( "test" );
+		assertThat( nav.get( "keywords[   2]" ) ).isEqualTo( "example" );
 	}
 
 	@DisplayName( "get() with a bracket index out of range returns null" )
 	@Test
 	void testGetBracketIndexOutOfRange() {
 		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
-		assertThat( nav.get( "keywords[99]" ) ).isNull();
+		assertThat( nav.get( "keywords[ 99 ]" ) ).isNull();
 	}
 
 	@DisplayName( "get() with recursive descent (..) returns the first matching value" )
@@ -239,6 +238,7 @@ public class DataNavigatorTest {
 	void testGetRecursiveDescent() {
 		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
 		assertThat( nav.get( "..hello" ) ).isEqualTo( "luis" );
+		assertThat( nav.get( "   ..hello" ) ).isEqualTo( "luis" );
 	}
 
 	@DisplayName( "get() with recursive descent scoped under a parent key" )
@@ -271,6 +271,7 @@ public class DataNavigatorTest {
 	void testHasDotPathTrue() {
 		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
 		assertThat( nav.has( "boxlang.settings.hello" ) ).isTrue();
+		assertThat( nav.has( " boxlang.settings.hello " ) ).isTrue();
 	}
 
 	@DisplayName( "has() with a dot-path returns false when the path is missing" )
@@ -285,7 +286,49 @@ public class DataNavigatorTest {
 	void testHasRecursiveDescent() {
 		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
 		assertThat( nav.has( "..hello" ) ).isTrue();
+		assertThat( nav.has( "   ..hello" ) ).isTrue();
 		assertThat( nav.has( "..nonexistent" ) ).isFalse();
+	}
+
+	@DisplayName( "has() with a wildcard path returns true when any match exists" )
+	@Test
+	void testHasWildcardPath() {
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
+		assertThat( nav.has( "keywords[*]" ) ).isTrue();
+		assertThat( nav.has( " boxlang.settings.* " ) ).isTrue();
+		assertThat( nav.has( "missing[*]" ) ).isFalse();
+	}
+
+	@DisplayName( "has() with a slice path returns true when the slice yields matches" )
+	@Test
+	void testHasSlicePath() {
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
+		assertThat( nav.has( "keywords[1:2]" ) ).isTrue();
+		assertThat( nav.has( "keywords[3:4]" ) ).isFalse();
+	}
+
+	@DisplayName( "has() with a filter path returns true only when filtered matches exist" )
+	@Test
+	void testHasFilterPath() {
+		Navigator nav = DataNavigator.of(
+		    Map.of(
+		        "items", List.of(
+		            Map.of( "name", "alpha", "active", true ),
+		            Map.of( "name", "beta", "active", false )
+		        )
+		    )
+		);
+
+		assertThat( nav.has( "items[?(@.active == true)]" ) ).isTrue();
+		assertThat( nav.has( "items[?(@.active == true)].name" ) ).isTrue();
+		assertThat( nav.has( "items[?(@.active == null)]" ) ).isFalse();
+	}
+
+	@DisplayName( "has() with a path to a null value still reports the path as present" )
+	@Test
+	void testHasPathToNullValue() {
+		Navigator nav = DataNavigator.of( Map.of( "settings", Struct.of( "nullable", null ) ) );
+		assertThat( nav.has( "settings.nullable" ) ).isTrue();
 	}
 
 	@DisplayName( "getOrThrow() with a dot-path throws when the path is missing" )
@@ -336,6 +379,15 @@ public class DataNavigatorTest {
 		assertThat( result.get( 0 ) ).isEqualTo( "BoxLang Test Module" );
 	}
 
+	@DisplayName( "query() preserves null matches for direct key paths" )
+	@Test
+	void testQueryPlainPathWithNullValue() {
+		Navigator nav = DataNavigator.of( Map.of( "settings", Struct.of( "nullable", null ) ) );
+		Array result = nav.query( "settings.nullable" );
+		assertThat( result ).hasSize( 1 );
+		assertThat( result.get( 0 ) ).isNull();
+	}
+
 	@DisplayName( "query() with recursive descent collects all matches" )
 	@Test
 	void testQueryRecursiveDescent() {
@@ -343,6 +395,19 @@ public class DataNavigatorTest {
 		Array		result	= nav.query( "..hello" );
 		assertThat( result ).hasSize( 1 );
 		assertThat( result.get( 0 ) ).isEqualTo( "luis" );
+
+		result = nav.query( "   ..hello" );
+		assertThat( result ).hasSize( 1 );
+		assertThat( result.get( 0 ) ).isEqualTo( "luis" );
+	}
+
+	@DisplayName( "query() tolerates whitespace around wildcard syntax" )
+	@Test
+	void testQueryWildcardWithWhitespace() {
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
+		Array result = nav.query( " keywords [ * ] " );
+		assertThat( result ).hasSize( 2 );
+		assertThat( result ).containsExactly( "test", "example" ).inOrder();
 	}
 
 	@DisplayName( "query() with a filter returns only matching array elements" )

@@ -72,3 +72,4 @@ test.txt
 # Skills
 .agents/**
 .claude/**
+.opencode

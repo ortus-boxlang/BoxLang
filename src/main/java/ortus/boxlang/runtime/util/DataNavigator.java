@@ -269,14 +269,31 @@ public class DataNavigator {
 		 * is treated as a path expression (e.g. {@code "boxlang.settings.hello"}, {@code "list[1]"},
 		 * {@code "..key"}).
 		 *
+		 * <h2>Examples</h2>
+		 *
+		 * <pre>
+		 * navigator.has( "simpleKey" )                     // checks for "simpleKey" at the current segment
+		 * navigator.has( "nested.key.path" )                // checks for "nested" then "key" then "path"
+		 * navigator.has( "list[1]" )                        // checks for "list" then index 1 (1-based)
+		 * navigator.has( "..recursiveKey" )                // checks for "recursiveKey" anywhere in the tree
+		 * navigator.has( "items[*].name" )                 // checks for "items" then any element then "name"
+		 * navigator.has( "array[1:3]" )                    // checks for "array" then indices 1 through 3 (inclusive)
+		 * navigator.has( "users[?(@.active == true)].email" ) // checks for "users" then active users then "email"
+		 * navigator.has( "key1", "key2", "key3" )          // checks for "key1" then "key2" then "key3"
+		 * navigator.has( "..key1" ) 					  // checks for "key1" anywhere in the tree
+		 * </pre>
+		 *
 		 * @param path The path(s) to verify (nested keys accepted, or a single path expression)
 		 *
 		 * @return True if the key exists, false otherwise
 		 */
 		public boolean has( String... path ) {
 			// Single path expression — delegate to the path-aware navigator
-			if ( path.length == 1 && isPathExpression( path[ 0 ] ) ) {
-				return navigateSegments( parsePath( path[ 0 ] ) ) != null;
+			if ( path.length == 1 ) {
+				String normalizedPath = normalizePathExpression( path[ 0 ] );
+				if ( isPathExpression( normalizedPath ) ) {
+					return !navigateForQuery( parsePath( normalizedPath ) ).isEmpty();
+				}
 			}
 
 			IStruct	navConfig	= this.segment == null ? this.config : this.segment;
@@ -378,8 +395,11 @@ public class DataNavigator {
 		 */
 		public Object get( String... key ) {
 			// Single path expression — delegate to the path-aware navigator
-			if ( key.length == 1 && isPathExpression( key[ 0 ] ) ) {
-				return navigateSegments( parsePath( key[ 0 ] ) );
+			if ( key.length == 1 ) {
+				String normalizedPath = normalizePathExpression( key[ 0 ] );
+				if ( isPathExpression( normalizedPath ) ) {
+					return navigateSegments( parsePath( normalizedPath ) );
+				}
 			}
 
 			IStruct	navConfig	= this.segment == null ? this.config : this.segment;
@@ -619,7 +639,20 @@ public class DataNavigator {
 		 * @return A BoxLang {@link Array} of all matching values; empty if no matches are found
 		 */
 		public Array query( String path ) {
-			return navigateForQuery( parsePath( path ) );
+			return navigateForQuery( parsePath( normalizePathExpression( path ) ) );
+		}
+
+		/**
+		 * Normalizes a path expression by trimming surrounding whitespace.
+		 * Path expressions may contain insignificant whitespace around segment boundaries,
+		 * but quoted filter values remain untouched.
+		 *
+		 * @param path The raw path expression
+		 *
+		 * @return The normalized path expression
+		 */
+		private String normalizePathExpression( String path ) {
+			return path == null ? "" : path.trim();
 		}
 
 		/**
@@ -651,12 +684,18 @@ public class DataNavigator {
 		 * @return Ordered list of segment descriptors (String, Integer, RecursiveKey, Wildcard, SliceSegment, or FilterSegment)
 		 */
 		private List<Object> parsePath( String path ) {
+			path = normalizePathExpression( path );
 			List<Object>	segments	= new ArrayList<>();
 			int				i			= 0;
 			int				len			= path.length();
 
 			while ( i < len ) {
 				char c = path.charAt( i );
+
+				if ( Character.isWhitespace( c ) ) {
+					i++;
+					continue;
+				}
 
 				if ( c == '.' ) {
 					if ( i + 1 < len && path.charAt( i + 1 ) == '.' ) {
@@ -666,7 +705,7 @@ public class DataNavigator {
 						while ( i < len && path.charAt( i ) != '.' && path.charAt( i ) != '[' ) {
 							i++;
 						}
-						String key = path.substring( start, i );
+						String key = path.substring( start, i ).trim();
 						if ( !key.isEmpty() ) {
 							segments.add( new RecursiveKey( key ) );
 						}
@@ -677,7 +716,7 @@ public class DataNavigator {
 						while ( i < len && path.charAt( i ) != '.' && path.charAt( i ) != '[' ) {
 							i++;
 						}
-						String key = path.substring( start, i );
+						String key = path.substring( start, i ).trim();
 						if ( key.equals( "*" ) ) {
 							segments.add( Wildcard.INSTANCE );
 						} else if ( !key.isEmpty() ) {
@@ -690,7 +729,7 @@ public class DataNavigator {
 					if ( end == -1 ) {
 						throw new BoxRuntimeException( "Unclosed '[' in path expression: " + path );
 					}
-					String inner = path.substring( i + 1, end );
+					String inner = path.substring( i + 1, end ).trim();
 					i = end + 1;
 
 					if ( inner.equals( "*" ) ) {
@@ -713,7 +752,7 @@ public class DataNavigator {
 					while ( i < len && path.charAt( i ) != '.' && path.charAt( i ) != '[' ) {
 						i++;
 					}
-					String key = path.substring( start, i );
+					String key = path.substring( start, i ).trim();
 					if ( key.equals( "*" ) ) {
 						segments.add( Wildcard.INSTANCE );
 					} else if ( !key.isEmpty() ) {
@@ -823,6 +862,7 @@ public class DataNavigator {
 				return ArrayCaster.cast( list );
 			if ( current instanceof Object[] arr )
 				return ArrayCaster.cast( arr );
+
 			return current;
 		}
 
@@ -885,8 +925,7 @@ public class DataNavigator {
 					if ( seg instanceof String key ) {
 						if ( current instanceof IStruct struct && struct.containsKey( key ) ) {
 							Object val = struct.get( Key.of( key ) );
-							if ( val != null )
-								nextSet.add( val );
+							nextSet.add( val );
 						}
 					} else if ( seg instanceof Integer idx ) {
 						if ( current instanceof Array arr && idx >= 1 && idx <= arr.size() ) {
