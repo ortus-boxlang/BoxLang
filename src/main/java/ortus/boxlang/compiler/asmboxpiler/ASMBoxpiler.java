@@ -22,6 +22,7 @@ import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
+import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.visitor.QueryEscapeSingleQuoteVisitor;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.scopes.Key;
@@ -88,7 +89,9 @@ public class ASMBoxpiler extends Boxpiler {
 			ParsingResult result = parseOrFail( sourceFile );
 			classes = doWriteClassInfo( result.getRoot(), classInfo );
 		} else if ( classInfo.source() != null ) {
-			ParsingResult result = parseOrFail( classInfo.source(), classInfo.sourceType(), classInfo.isClass() );
+			ParsingResult result = classInfo.isStatement()
+			    ? parseStatementOrFail( classInfo.source(), classInfo.sourceType() )
+			    : parseOrFail( classInfo.source(), classInfo.sourceType(), classInfo.isClass() );
 			classes = doWriteClassInfo( result.getRoot(), classInfo );
 		} else if ( classInfo.interfaceProxyDefinition() != null ) {
 			if ( timer != null )
@@ -256,6 +259,7 @@ public class ASMBoxpiler extends Boxpiler {
 	}
 
 	private void doCompileClassInfo( Transpiler transpiler, ClassInfo classInfo, BoxNode node, BiConsumer<String, ClassNode> consumer ) {
+		node = normalizeRootNode( node, classInfo );
 		ClassNode classNode;
 		if ( node instanceof BoxScript boxScript ) {
 			classNode = transpiler.transpile( boxScript );
@@ -270,11 +274,21 @@ public class ASMBoxpiler extends Boxpiler {
 		consumer.accept( classInfo.fqn().toString(), classNode );
 	}
 
+	private BoxNode normalizeRootNode( BoxNode node, ClassInfo classInfo ) {
+		if ( !classInfo.isStatement() || !( node instanceof BoxStatement statement ) ) {
+			return node;
+		}
+
+		return new BoxScript( List.of( statement ), statement.getPosition(), statement.getSourceText(), classInfo.sourceType() );
+	}
+
 	private ParsingResult parseClassInfo( ClassInfo info ) {
 		if ( info.resolvedFilePath() != null ) {
 			return parseOrFail( info.resolvedFilePath().absolutePath().toFile() );
 		} else if ( info.source() != null ) {
-			return parseOrFail( info.source(), info.sourceType(), info.isClass() );
+			return info.isStatement()
+			    ? parseStatementOrFail( info.source(), info.sourceType() )
+			    : parseOrFail( info.source(), info.sourceType(), info.isClass() );
 		}
 		return null;
 	}

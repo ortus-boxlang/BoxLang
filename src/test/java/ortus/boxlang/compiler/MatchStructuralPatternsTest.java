@@ -49,7 +49,6 @@ import ortus.boxlang.runtime.types.Struct;
 
 public class MatchStructuralPatternsTest {
 
-	private static final Key	RESULT		= Key.of( "result" );
 	private static final Key	GUARD_RUNS	= Key.of( "guardRuns" );
 
 	private static BoxRuntime	instance;
@@ -198,6 +197,53 @@ public class MatchStructuralPatternsTest {
 		);
 
 		assertThat( result ).isEqualTo( 3 );
+	}
+
+	@Test
+	public void testMatchObjectPatternSupportsScopedBindingTargets() {
+		Struct user = new Struct();
+		user.put( Key.of( "name" ), "Ada" );
+
+		Struct data = new Struct();
+		data.put( Key.of( "user" ), user );
+		data.put( Key.of( "role" ), "admin" );
+		this.variables.put( Key.of( "data" ), data );
+
+		Object result = instance.executeStatement(
+		    """
+		    match( data ) {
+		    	{ user: { name: variables.capturedName }, role: variables.capturedRole } => capturedName & ":" & capturedRole;
+		    	_ => "fallback"
+		    }
+		    """,
+		    this.context
+		);
+
+		assertThat( result ).isEqualTo( "Ada:admin" );
+	}
+
+	@Test
+	public void testMatchScopedStructuralBindingsRemainAtomicAcrossOrBranches() {
+		Struct user = new Struct();
+		user.put( Key.of( "name" ), "Ada" );
+
+		Struct data = new Struct();
+		data.put( Key.of( "user" ), user );
+		this.variables.put( Key.of( "data" ), data );
+		this.variables.put( Key.of( "captured" ), "initial" );
+
+		Object result = instance.executeStatement(
+		    """
+		    match( data ) {
+		    	{ user: { name: variables.captured }, role } or _ => captured;
+		    	_ => "fallback"
+		    }
+		    """,
+		    this.context
+		);
+
+		assertThat( result ).isEqualTo( "initial" );
+		assertThat( this.variables.get( Key.of( "captured" ) ) ).isEqualTo( "initial" );
 	}
 
 	@Test

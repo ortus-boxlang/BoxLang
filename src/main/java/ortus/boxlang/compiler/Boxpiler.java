@@ -257,6 +257,18 @@ public abstract class Boxpiler implements IBoxpiler {
 		return validateParse( parse( source, type, classOrInterface ), "ad-hoc source" );
 	}
 
+	protected ParsingResult parseStatementOrFail( String source, BoxSourceType type ) {
+		DynamicObject	trans	= frTransService.startTransaction( "BL Statement Parse", type.name() );
+		Parser			parser	= new Parser();
+		try {
+			return validateParse( parser.parseStatement( source, type ), "ad-hoc source" );
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Error compiling statement source", e );
+		} finally {
+			frTransService.endTransaction( trans );
+		}
+	}
+
 	/**
 	 * Validate a parsing result and throw an exception if the parse failed.
 	 *

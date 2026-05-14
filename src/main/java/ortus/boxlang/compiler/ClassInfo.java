@@ -54,6 +54,10 @@ public record ClassInfo(
 		return false;
 	}
 
+	public boolean isStatement() {
+		return source() != null && fqn().getClassName().startsWith( "Statement_" );
+	}
+
 	/**
 	 * Create a ClassInfo for a BoxLang script from source code.
 	 *

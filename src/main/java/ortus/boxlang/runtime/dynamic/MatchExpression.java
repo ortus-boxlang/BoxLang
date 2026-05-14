@@ -30,13 +30,13 @@ import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.operators.EqualsEquals;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DefaultExpression;
 import ortus.boxlang.runtime.types.IStruct;
@@ -61,14 +61,14 @@ public class MatchExpression {
 	public static Object invoke( IBoxContext context, Object subject, Case[] cases ) {
 		Case[] safeCases = cases == null ? new Case[] {} : cases;
 		for ( Case matchCase : safeCases ) {
-			ContainerBoxContext caseContext = new ContainerBoxContext( context );
-			if ( !matchCase.getPattern().matches( caseContext, subject ) ) {
+			MatcherEngine matcher = MatcherEngine.on( new PatternMatchContext( context ) );
+			if ( !matchCase.getPattern().matches( matcher, subject ) ) {
 				continue;
 			}
-			if ( matchCase.getGuard() != null && !BooleanCaster.cast( matchCase.getGuard().evaluate( caseContext ) ) ) {
+			if ( matchCase.getGuard() != null && !BooleanCaster.cast( matchCase.getGuard().evaluate( matcher.context() ) ) ) {
 				continue;
 			}
-			return matchCase.getBody().evaluate( caseContext );
+			return matchCase.getBody().evaluate( matcher.context() );
 		}
 		return null;
 	}
@@ -179,16 +179,6 @@ public class MatchExpression {
 		return EqualsEquals.invoke( left, right );
 	}
 
-	private static Object applyDefault( IBoxContext context, Object value, boolean isMissing, DefaultExpression defaultValue ) {
-		if ( defaultValue == null ) {
-			return value;
-		}
-		if ( isMissing || value == null ) {
-			return defaultValue.evaluate( context );
-		}
-		return value;
-	}
-
 	private static void assignTarget( IBoxContext context, Target target, Object value ) {
 		if ( target == null || target.getPath().length == 0 ) {
 			return;
@@ -206,18 +196,6 @@ public class MatchExpression {
 			ScopeSearchResult scope = context.scopeFindNearby( target.getPath()[ 0 ], context.getDefaultAssignmentScope(), true );
 			Referencer.setDeep( context, false, null, scope, value );
 		}
-	}
-
-	private static boolean matchNestedPatterns( IBoxContext context, Pattern[] patterns, Object[] values ) {
-		if ( patterns.length != values.length ) {
-			return false;
-		}
-		for ( int i = 0; i < patterns.length; i++ ) {
-			if ( !patterns[ i ].matches( context, values[ i ] ) ) {
-				return false;
-			}
-		}
-		return true;
 	}
 
 	private static List<ConstructorDescriptor> getConstructorDescriptors( Object subject ) {
@@ -389,174 +367,6 @@ public class MatchExpression {
 		return target.getPath()[ 0 ].getName();
 	}
 
-	private static boolean matchProtocolConstructorPattern( IBoxContext context, IClassRunnable classRunnable, String label, Pattern[] patterns ) {
-		if ( !hasMethod( classRunnable, MATCH_PREDICATE_KEY ) ) {
-			return false;
-		}
-
-		IStruct	descriptor		= buildProtocolDescriptor( label, patterns );
-		Object	predicateResult	= classRunnable.dereferenceAndInvoke( context, MATCH_PREDICATE_KEY, new Object[] { descriptor }, false );
-		if ( !BooleanCaster.cast( predicateResult ) ) {
-			return false;
-		}
-
-		if ( !hasMethod( classRunnable, MATCH_BINDINGS_KEY ) ) {
-			throw new BoxRuntimeException( "$matchBindings must be implemented when $matchPredicate returns true." );
-		}
-
-		CastAttempt<IStruct> bindingsAttempt = StructCaster
-		    .attempt( classRunnable.dereferenceAndInvoke( context, MATCH_BINDINGS_KEY, new Object[] { descriptor }, false ) );
-		if ( !bindingsAttempt.wasSuccessful() ) {
-			throw new BoxRuntimeException( "$matchBindings must return a struct of bound values." );
-		}
-
-		IStruct bindings = bindingsAttempt.get();
-		for ( int i = 0; i < patterns.length; i++ ) {
-			Object value = getProtocolBindingValue( bindings, patterns[ i ], i + 1 );
-			if ( value == ProtocolBindingMissing.INSTANCE ) {
-				throw new BoxRuntimeException( "$matchBindings must provide a value for pattern slot [" + ( i + 1 ) + "]." );
-			}
-			if ( !patterns[ i ].matches( context, value ) ) {
-				return false;
-			}
-		}
-
-		return true;
-	}
-
-	private static Object getProtocolBindingValue( IStruct bindings, Pattern pattern, int slot ) {
-		Key slotKey = Key.of( String.valueOf( slot ) );
-		if ( bindings.containsKey( slotKey ) ) {
-			return bindings.get( slotKey );
-		}
-
-		String bindingName = getBindingName( pattern );
-		if ( bindingName != null ) {
-			Key bindingKey = Key.of( bindingName );
-			if ( bindings.containsKey( bindingKey ) ) {
-				return bindings.get( bindingKey );
-			}
-		}
-
-		if ( pattern instanceof WildcardPattern ) {
-			return null;
-		}
-
-		return ProtocolBindingMissing.INSTANCE;
-	}
-
-	private static boolean matchObjectBindings( IBoxContext context, IStruct source, ObjectBinding[] bindings ) {
-		Set<Key>		consumed	= new HashSet<>();
-		ObjectBinding	restBinding	= null;
-
-		for ( ObjectBinding binding : bindings ) {
-			if ( binding.isRest() ) {
-				restBinding = binding;
-				continue;
-			}
-
-			boolean	hasKey	= source.containsKey( binding.getSourceKey() );
-			Object	value	= hasKey ? source.get( binding.getSourceKey() ) : null;
-			if ( !hasKey && binding.getDefaultValue() == null ) {
-				return false;
-			}
-			value = applyDefault( context, value, !hasKey, binding.getDefaultValue() );
-			consumed.add( binding.getSourceKey() );
-
-			if ( binding.hasNested() ) {
-				CastAttempt<IStruct> structAttempt = StructCaster.attempt( value );
-				if ( !structAttempt.wasSuccessful() || !matchObjectBindings( context, structAttempt.get(), binding.getNested() ) ) {
-					return false;
-				}
-			} else {
-				assignTarget( context, binding.getTarget(), value );
-			}
-		}
-
-		if ( restBinding != null ) {
-			Struct rest = new Struct();
-			source.forEach( ( key, value ) -> {
-				if ( !consumed.contains( key ) ) {
-					rest.put( key, value );
-				}
-			} );
-			assignTarget( context, restBinding.getTarget(), rest );
-		}
-
-		return true;
-	}
-
-	private static boolean matchArrayBindings( IBoxContext context, Array source, ArrayBinding[] bindings ) {
-		int restIndex = -1;
-		for ( int i = 0; i < bindings.length; i++ ) {
-			if ( bindings[ i ].isRest() ) {
-				restIndex = i;
-				break;
-			}
-		}
-
-		if ( restIndex == -1 && source.size() != bindings.length ) {
-			return false;
-		}
-		if ( restIndex != -1 && source.size() < bindings.length - 1 ) {
-			return false;
-		}
-
-		if ( restIndex == -1 ) {
-			for ( int i = 0; i < bindings.length; i++ ) {
-				if ( !matchArrayBinding( context, bindings[ i ], true, source.getAt( i + 1 ) ) ) {
-					return false;
-				}
-			}
-			return true;
-		}
-
-		for ( int i = 0; i < restIndex; i++ ) {
-			if ( !matchArrayBinding( context, bindings[ i ], true, source.getAt( i + 1 ) ) ) {
-				return false;
-			}
-		}
-
-		int	leftCount			= restIndex;
-		int	rightCount			= bindings.length - restIndex - 1;
-		int	remainingAfterLeft	= Math.max( source.size() - leftCount, 0 );
-		int	availableRight		= Math.min( remainingAfterLeft, rightCount );
-		int	missingLeadingRight	= rightCount - availableRight;
-		int	rightSourceStart	= source.size() - availableRight + 1;
-
-		for ( int offset = 0; offset < rightCount; offset++ ) {
-			ArrayBinding	binding		= bindings[ restIndex + 1 + offset ];
-			boolean			hasValue	= offset >= missingLeadingRight;
-			Object			value		= hasValue ? source.getAt( rightSourceStart + ( offset - missingLeadingRight ) ) : null;
-			if ( !matchArrayBinding( context, binding, hasValue, value ) ) {
-				return false;
-			}
-		}
-
-		Array	rest		= new Array();
-		int		restStart	= leftCount + 1;
-		int		restLength	= Math.max( source.size() - leftCount - availableRight, 0 );
-		for ( int i = 0; i < restLength; i++ ) {
-			rest.add( source.getAt( restStart + i ) );
-		}
-		assignTarget( context, bindings[ restIndex ].getTarget(), rest );
-		return true;
-	}
-
-	private static boolean matchArrayBinding( IBoxContext context, ArrayBinding binding, boolean hasValue, Object rawValue ) {
-		if ( !hasValue && binding.getDefaultValue() == null ) {
-			return false;
-		}
-		Object value = applyDefault( context, rawValue, !hasValue, binding.getDefaultValue() );
-
-		if ( binding.hasNested() ) {
-			CastAttempt<Array> arrayAttempt = ArrayCaster.attempt( value );
-			return arrayAttempt.wasSuccessful() && matchArrayBindings( context, arrayAttempt.get(), binding.getNested() );
-		}
-
-		assignTarget( context, binding.getTarget(), value );
-		return true;
-	}
 
 	public static final class Case {
 
@@ -585,7 +395,11 @@ public class MatchExpression {
 
 	public abstract static class Pattern {
 
-		abstract boolean matches( IBoxContext context, Object subject );
+		final boolean matches( IBoxContext context, Object subject ) {
+			return matches( MatcherEngine.on( context ), subject );
+		}
+
+		abstract boolean matches( MatcherEngine matcher, Object subject );
 	}
 
 	private static final class LiteralPattern extends Pattern {
@@ -597,8 +411,8 @@ public class MatchExpression {
 		}
 
 		@Override
-		boolean matches( IBoxContext context, Object subject ) {
-			return equalsValue( subject, this.value );
+		boolean matches( MatcherEngine matcher, Object subject ) {
+			return matcher.matchLiteral( this.value, subject );
 		}
 	}
 
@@ -607,8 +421,8 @@ public class MatchExpression {
 		private static final WildcardPattern INSTANCE = new WildcardPattern();
 
 		@Override
-		boolean matches( IBoxContext context, Object subject ) {
-			return true;
+		boolean matches( MatcherEngine matcher, Object subject ) {
+			return matcher.matchWildcard( subject );
 		}
 	}
 
@@ -621,9 +435,8 @@ public class MatchExpression {
 		}
 
 		@Override
-		boolean matches( IBoxContext context, Object subject ) {
-			assignTarget( context, this.target, subject );
-			return true;
+		boolean matches( MatcherEngine matcher, Object subject ) {
+			return matcher.matchBinding( this.target, subject );
 		}
 	}
 
@@ -638,28 +451,8 @@ public class MatchExpression {
 		}
 
 		@Override
-		boolean matches( IBoxContext context, Object subject ) {
-			boolean matchedTagDescriptor = false;
-			for ( ConstructorDescriptor descriptor : getConstructorDescriptors( subject ) ) {
-				if ( !this.label.equalsIgnoreCase( descriptor.label() ) ) {
-					continue;
-				}
-				matchedTagDescriptor = true;
-				if ( descriptor.propertyNames().length != this.patterns.length ) {
-					return false;
-				}
-
-				Object[] values = getConstructorPatternValues( context, subject, descriptor );
-
-				return matchNestedPatterns( context, this.patterns, values );
-			}
-			if ( matchedTagDescriptor ) {
-				return false;
-			}
-			if ( subject instanceof IClassRunnable classRunnable ) {
-				return matchProtocolConstructorPattern( context, classRunnable, this.label, this.patterns );
-			}
-			return false;
+		boolean matches( MatcherEngine matcher, Object subject ) {
+			return matcher.matchConstructor( this.label, this.patterns, subject );
 		}
 	}
 
@@ -672,13 +465,8 @@ public class MatchExpression {
 		}
 
 		@Override
-		boolean matches( IBoxContext context, Object subject ) {
-			for ( Pattern pattern : this.patterns ) {
-				if ( pattern.matches( context, subject ) ) {
-					return true;
-				}
-			}
-			return false;
+		boolean matches( MatcherEngine matcher, Object subject ) {
+			return matcher.matchOr( this.patterns, subject );
 		}
 	}
 
@@ -691,13 +479,8 @@ public class MatchExpression {
 		}
 
 		@Override
-		boolean matches( IBoxContext context, Object subject ) {
-			for ( Pattern pattern : this.patterns ) {
-				if ( !pattern.matches( context, subject ) ) {
-					return false;
-				}
-			}
-			return true;
+		boolean matches( MatcherEngine matcher, Object subject ) {
+			return matcher.matchAnd( this.patterns, subject );
 		}
 	}
 
@@ -713,8 +496,8 @@ public class MatchExpression {
 		}
 
 		@Override
-		boolean matches( IBoxContext context, Object subject ) {
-			return !this.pattern.matches( context, subject );
+		boolean matches( MatcherEngine matcher, Object subject ) {
+			return matcher.matchNot( this.pattern, subject );
 		}
 	}
 
@@ -727,34 +510,22 @@ public class MatchExpression {
 		}
 
 		@Override
-		boolean matches( IBoxContext context, Object subject ) {
-			Object predicateFunction = this.predicate.evaluate( context );
-			return BooleanCaster.cast( context.invokeFunction( predicateFunction, new Object[] { subject } ) );
+		boolean matches( MatcherEngine matcher, Object subject ) {
+			return matcher.matchPredicate( this.predicate, subject );
 		}
 	}
 
 	private static final class RangePattern extends Pattern {
 
-		private final int	from;
-		private final int	to;
+		private final ortus.boxlang.runtime.types.Range range;
 
 		private RangePattern( Object from, Object to ) {
-			this.from	= IntegerCaster.cast( from );
-			this.to		= IntegerCaster.cast( to );
+			this.range = ortus.boxlang.runtime.operators.Range.invoke( from, to );
 		}
 
 		@Override
-		boolean matches( IBoxContext context, Object subject ) {
-			CastAttempt<Integer> attempt = IntegerCaster.attempt( subject );
-			if ( !attempt.wasSuccessful() ) {
-				return false;
-			}
-
-			int value = attempt.get();
-			if ( this.from <= this.to ) {
-				return value >= this.from && value <= this.to;
-			}
-			return value <= this.from && value >= this.to;
+		boolean matches( MatcherEngine matcher, Object subject ) {
+			return matcher.matchRange( this.range, subject );
 		}
 	}
 
@@ -769,17 +540,8 @@ public class MatchExpression {
 		}
 
 		@Override
-		boolean matches( IBoxContext context, Object subject ) {
-			for ( String type : this.types ) {
-				CastAttempt<Object> attempt = GenericCaster.attempt( context, subject, type );
-				if ( !attempt.wasSuccessful() ) {
-					continue;
-				}
-
-				assignTarget( context, this.target, attempt.get() );
-				return true;
-			}
-			return false;
+		boolean matches( MatcherEngine matcher, Object subject ) {
+			return matcher.matchType( this.types, this.target, subject );
 		}
 	}
 
@@ -792,9 +554,8 @@ public class MatchExpression {
 		}
 
 		@Override
-		boolean matches( IBoxContext context, Object subject ) {
-			CastAttempt<IStruct> structAttempt = StructCaster.attempt( subject );
-			return structAttempt.wasSuccessful() && matchObjectBindings( context, structAttempt.get(), this.bindings );
+		boolean matches( MatcherEngine matcher, Object subject ) {
+			return matcher.matchObject( this.bindings, subject );
 		}
 	}
 
@@ -807,9 +568,385 @@ public class MatchExpression {
 		}
 
 		@Override
-		boolean matches( IBoxContext context, Object subject ) {
+		boolean matches( MatcherEngine matcher, Object subject ) {
+			return matcher.matchArray( this.bindings, subject );
+		}
+	}
+
+	@FunctionalInterface
+	private interface AtomicMatcher {
+
+		boolean matches( MatcherEngine matcher );
+	}
+
+	private static final class MatcherEngine {
+
+		private final IBoxContext context;
+
+		private MatcherEngine( IBoxContext context ) {
+			this.context = context;
+		}
+
+		private static MatcherEngine on( IBoxContext context ) {
+			return new MatcherEngine( context );
+		}
+
+		private IBoxContext context() {
+			return this.context;
+		}
+
+		private boolean matchLiteral( Object value, Object subject ) {
+			return equalsValue( subject, value );
+		}
+
+		private boolean matchWildcard( Object subject ) {
+			return true;
+		}
+
+		private boolean matchBinding( Target target, Object subject ) {
+			assignTarget( this.context, target, subject );
+			return true;
+		}
+
+		private boolean matchConstructor( String label, Pattern[] patterns, Object subject ) {
+			boolean matchedTagDescriptor = false;
+			for ( ConstructorDescriptor descriptor : getConstructorDescriptors( subject ) ) {
+				if ( !label.equalsIgnoreCase( descriptor.label() ) ) {
+					continue;
+				}
+				matchedTagDescriptor = true;
+				if ( descriptor.propertyNames().length != patterns.length ) {
+					return false;
+				}
+
+				Object[] values = getConstructorPatternValues( this.context, subject, descriptor );
+				return matchNestedPatterns( patterns, values );
+			}
+			if ( matchedTagDescriptor ) {
+				return false;
+			}
+			if ( subject instanceof IClassRunnable classRunnable ) {
+				return matchAtomically( stagedMatcher -> stagedMatcher.matchProtocolConstructorPattern( classRunnable, label, patterns ) );
+			}
+			return false;
+		}
+
+		private boolean matchOr( Pattern[] patterns, Object subject ) {
+			for ( Pattern pattern : patterns ) {
+				if ( matchAtomically( stagedMatcher -> pattern.matches( stagedMatcher, subject ) ) ) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		private boolean matchAnd( Pattern[] patterns, Object subject ) {
+			return matchAtomically( stagedMatcher -> {
+				for ( Pattern pattern : patterns ) {
+					if ( !pattern.matches( stagedMatcher, subject ) ) {
+						return false;
+					}
+				}
+				return true;
+			} );
+		}
+
+		private boolean matchNot( Pattern pattern, Object subject ) {
+			return !pattern.matches( this, subject );
+		}
+
+		private boolean matchPredicate( DefaultExpression predicate, Object subject ) {
+			Object predicateFunction = predicate.evaluate( this.context );
+			return BooleanCaster.cast( this.context.invokeFunction( predicateFunction, new Object[] { subject } ) );
+		}
+
+		private boolean matchRange( ortus.boxlang.runtime.types.Range range, Object subject ) {
+			return range.contains( subject );
+		}
+
+		private boolean matchType( String[] types, Target target, Object subject ) {
+			for ( String type : types ) {
+				CastAttempt<Object> attempt = GenericCaster.attempt( this.context, subject, type );
+				if ( !attempt.wasSuccessful() ) {
+					continue;
+				}
+
+				assignTarget( this.context, target, attempt.get() );
+				return true;
+			}
+			return false;
+		}
+
+		private boolean matchObject( ObjectBinding[] bindings, Object subject ) {
+			CastAttempt<IStruct> structAttempt = StructCaster.attempt( subject );
+			return structAttempt.wasSuccessful() && matchAtomically( stagedMatcher -> stagedMatcher.matchObjectBindings( structAttempt.get(), bindings ) );
+		}
+
+		private boolean matchArray( ArrayBinding[] bindings, Object subject ) {
 			CastAttempt<Array> arrayAttempt = ArrayCaster.attempt( subject );
-			return arrayAttempt.wasSuccessful() && matchArrayBindings( context, arrayAttempt.get(), this.bindings );
+			return arrayAttempt.wasSuccessful() && matchAtomically( stagedMatcher -> stagedMatcher.matchArrayBindings( arrayAttempt.get(), bindings ) );
+		}
+
+		private boolean matchAtomically( AtomicMatcher matcher ) {
+			PatternMatchContext stagedContext = new PatternMatchContext( this.context );
+			MatcherEngine stagedMatcher = on( stagedContext );
+			if ( !matcher.matches( stagedMatcher ) ) {
+				return false;
+			}
+			stagedContext.promote();
+			return true;
+		}
+
+		private boolean matchNestedPatterns( Pattern[] patterns, Object[] values ) {
+			return matchAtomically( stagedMatcher -> {
+				if ( patterns.length != values.length ) {
+					return false;
+				}
+				for ( int i = 0; i < patterns.length; i++ ) {
+					if ( !patterns[ i ].matches( stagedMatcher, values[ i ] ) ) {
+						return false;
+					}
+				}
+				return true;
+			} );
+		}
+
+		private boolean matchProtocolConstructorPattern( IClassRunnable classRunnable, String label, Pattern[] patterns ) {
+			if ( !hasMethod( classRunnable, MATCH_PREDICATE_KEY ) ) {
+				return false;
+			}
+
+			IStruct descriptor = buildProtocolDescriptor( label, patterns );
+			Object predicateResult = classRunnable.dereferenceAndInvoke( this.context, MATCH_PREDICATE_KEY, new Object[] { descriptor }, false );
+			if ( !BooleanCaster.cast( predicateResult ) ) {
+				return false;
+			}
+
+			if ( !hasMethod( classRunnable, MATCH_BINDINGS_KEY ) ) {
+				throw new BoxRuntimeException( "$matchBindings must be implemented when $matchPredicate returns true." );
+			}
+
+			CastAttempt<IStruct> bindingsAttempt = StructCaster
+			    .attempt( classRunnable.dereferenceAndInvoke( this.context, MATCH_BINDINGS_KEY, new Object[] { descriptor }, false ) );
+			if ( !bindingsAttempt.wasSuccessful() ) {
+				throw new BoxRuntimeException( "$matchBindings must return a struct of bound values." );
+			}
+
+			IStruct bindings = bindingsAttempt.get();
+			for ( int i = 0; i < patterns.length; i++ ) {
+				Object value = getProtocolBindingValue( bindings, patterns[ i ], i + 1 );
+				if ( value == ProtocolBindingMissing.INSTANCE ) {
+					throw new BoxRuntimeException( "$matchBindings must provide a value for pattern slot [" + ( i + 1 ) + "]." );
+				}
+				if ( !patterns[ i ].matches( this, value ) ) {
+					return false;
+				}
+			}
+
+			return true;
+		}
+
+		private Object getProtocolBindingValue( IStruct bindings, Pattern pattern, int slot ) {
+			Key slotKey = Key.of( String.valueOf( slot ) );
+			if ( bindings.containsKey( slotKey ) ) {
+				return bindings.get( slotKey );
+			}
+
+			String bindingName = getBindingName( pattern );
+			if ( bindingName != null ) {
+				Key bindingKey = Key.of( bindingName );
+				if ( bindings.containsKey( bindingKey ) ) {
+					return bindings.get( bindingKey );
+				}
+			}
+
+			if ( pattern instanceof WildcardPattern ) {
+				return null;
+			}
+
+			return ProtocolBindingMissing.INSTANCE;
+		}
+
+		private boolean matchObjectBindings( IStruct source, ObjectBinding[] bindings ) {
+			Set<Key>		consumed	= new HashSet<>();
+			ObjectBinding	restBinding	= null;
+
+			for ( ObjectBinding binding : bindings ) {
+				if ( binding.isRest() ) {
+					restBinding = binding;
+					continue;
+				}
+
+				MatchValue inputValue = MatchValue.fromObject( source, binding.getSourceKey() );
+				if ( inputValue.missing() && binding.getDefaultValue() == null ) {
+					return false;
+				}
+				Object value = inputValue.resolve( this.context, binding.getDefaultValue() );
+				consumed.add( binding.getSourceKey() );
+
+				if ( binding.hasNested() ) {
+					CastAttempt<IStruct> structAttempt = StructCaster.attempt( value );
+					if ( !structAttempt.wasSuccessful() || !matchObjectBindings( structAttempt.get(), binding.getNested() ) ) {
+						return false;
+					}
+				} else {
+					assignTarget( this.context, binding.getTarget(), value );
+				}
+			}
+
+			if ( restBinding != null ) {
+				Struct rest = new Struct();
+				source.forEach( ( key, value ) -> {
+					if ( !consumed.contains( key ) ) {
+						rest.put( key, value );
+					}
+				} );
+				assignTarget( this.context, restBinding.getTarget(), rest );
+			}
+
+			return true;
+		}
+
+		private boolean matchArrayBindings( Array source, ArrayBinding[] bindings ) {
+			int restIndex = -1;
+			for ( int i = 0; i < bindings.length; i++ ) {
+				if ( bindings[ i ].isRest() ) {
+					restIndex = i;
+					break;
+				}
+			}
+
+			if ( restIndex == -1 && source.size() != bindings.length ) {
+				return false;
+			}
+			if ( restIndex != -1 && source.size() < bindings.length - 1 ) {
+				return false;
+			}
+
+			if ( restIndex == -1 ) {
+				for ( int i = 0; i < bindings.length; i++ ) {
+					if ( !matchArrayBinding( bindings[ i ], MatchValue.fromArray( true, source.getAt( i + 1 ) ) ) ) {
+						return false;
+					}
+				}
+				return true;
+			}
+
+			for ( int i = 0; i < restIndex; i++ ) {
+				if ( !matchArrayBinding( bindings[ i ], MatchValue.fromArray( true, source.getAt( i + 1 ) ) ) ) {
+					return false;
+				}
+			}
+
+			int	leftCount			= restIndex;
+			int	rightCount			= bindings.length - restIndex - 1;
+			int	remainingAfterLeft	= Math.max( source.size() - leftCount, 0 );
+			int	availableRight		= Math.min( remainingAfterLeft, rightCount );
+			int	missingLeadingRight	= rightCount - availableRight;
+			int	rightSourceStart	= source.size() - availableRight + 1;
+
+			for ( int offset = 0; offset < rightCount; offset++ ) {
+				ArrayBinding binding = bindings[ restIndex + 1 + offset ];
+				boolean hasValue = offset >= missingLeadingRight;
+				Object value = hasValue ? source.getAt( rightSourceStart + ( offset - missingLeadingRight ) ) : null;
+				if ( !matchArrayBinding( binding, MatchValue.fromArray( hasValue, value ) ) ) {
+					return false;
+				}
+			}
+
+			Array rest = new Array();
+			int restStart = leftCount + 1;
+			int restLength = Math.max( source.size() - leftCount - availableRight, 0 );
+			for ( int i = 0; i < restLength; i++ ) {
+				rest.add( source.getAt( restStart + i ) );
+			}
+			assignTarget( this.context, bindings[ restIndex ].getTarget(), rest );
+			return true;
+		}
+
+		private boolean matchArrayBinding( ArrayBinding binding, MatchValue inputValue ) {
+			if ( inputValue.missing() && binding.getDefaultValue() == null ) {
+				return false;
+			}
+			Object value = inputValue.resolve( this.context, binding.getDefaultValue() );
+
+			if ( binding.hasNested() ) {
+				CastAttempt<Array> arrayAttempt = ArrayCaster.attempt( value );
+				return arrayAttempt.wasSuccessful() && matchArrayBindings( arrayAttempt.get(), binding.getNested() );
+			}
+
+			assignTarget( this.context, binding.getTarget(), value );
+			return true;
+		}
+	}
+
+	/**
+	 * Shared matcher value contract that keeps missing slots distinct from explicit nulls.
+	 */
+	private record MatchValue( Object value, boolean missing ) {
+
+		private static MatchValue fromObject( IStruct source, Key sourceKey ) {
+			boolean hasKey = source.containsKey( sourceKey );
+			return new MatchValue( hasKey ? source.get( sourceKey ) : null, !hasKey );
+		}
+
+		private static MatchValue fromArray( boolean hasValue, Object value ) {
+			return new MatchValue( value, !hasValue );
+		}
+
+		private Object resolve( IBoxContext context, DefaultExpression defaultValue ) {
+			if ( defaultValue == null || !this.missing ) {
+				return this.value;
+			}
+			return defaultValue.evaluate( context );
+		}
+	}
+
+	private static final class PatternMatchContext extends ContainerBoxContext {
+
+		private PatternMatchContext( IBoxContext parent ) {
+			super( parent );
+		}
+
+		@Override
+		public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow, boolean forAssign ) {
+			if ( !isKeyVisibleScope( key ) ) {
+				if ( !forAssign ) {
+					var querySearch = queryFindNearby( key );
+					if ( querySearch != null ) {
+						return querySearch;
+					}
+				}
+
+				Object result = this.variablesScope.getRaw( key );
+				if ( isDefined( result, forAssign ) ) {
+					return new ScopeSearchResult( this.variablesScope, Struct.unWrapNull( result ), key );
+				}
+			}
+
+			if ( shallow ) {
+				return null;
+			}
+
+			return getParent().scopeFindNearby( key, defaultScope, false, forAssign );
+		}
+
+		@Override
+		public IScope getScopeNearby( Key name, boolean shallow ) {
+			if ( name.equals( this.variablesScope.getName() ) ) {
+				return this.variablesScope;
+			}
+
+			if ( shallow ) {
+				return null;
+			}
+
+			return getParent().getScopeNearby( name, false );
+		}
+
+		private void promote() {
+			IScope parentVariables = getParent().getScopeNearby( VariablesScope.name );
+			parentVariables.putAll( this.variablesScope );
 		}
 	}
 

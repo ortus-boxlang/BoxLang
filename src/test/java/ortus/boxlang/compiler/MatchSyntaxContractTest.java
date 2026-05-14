@@ -338,6 +338,21 @@ public class MatchSyntaxContractTest {
 	}
 
 	@Test
+	public void testMatchAcceptsDescendingRangePatterns() {
+		Parser			parser	= new Parser();
+		ParsingResult	result	= parser.parseExpression(
+		    """
+		    match( value ) {
+		    	5..1 => "small";
+		    	_ => "many"
+		    }
+		    """
+		);
+
+		assertTrue( result.isCorrect(), result.getIssues().toString() );
+	}
+
+	@Test
 	public void testMatchRejectsLegacySyntax() {
 		Parser parser = new Parser();
 
@@ -351,5 +366,35 @@ public class MatchSyntaxContractTest {
 		        """
 		    ).isCorrect()
 		);
+	}
+
+	@Test
+	public void testMatchStatementRejectsLegacySyntax() throws Exception {
+		Parser			parser	= new Parser();
+		ParsingResult	result	= parser.parseStatement(
+		    """
+		    match value {
+		    	0 -> "zero"
+		    	_ -> "many"
+		    }
+		    """
+		);
+
+		assertFalse( result.isCorrect(), result.getIssues().toString() );
+	}
+
+	@Test
+	public void testMatchStatementRejectsLegacyDescendingRangeSyntax() throws Exception {
+		Parser			parser	= new Parser();
+		ParsingResult	result	= parser.parseStatement(
+		    """
+		    match value {
+		    	5..1 -> "small"
+		    	_ -> "many"
+		    }
+		    """
+		);
+
+		assertFalse( result.isCorrect(), result.getIssues().toString() );
 	}
 }

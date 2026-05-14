@@ -58,7 +58,7 @@ public class MatchProtocolPatternsTest {
 		);
 
 		Object result = instance.executeStatement(
-		    "match value { Email( addr ) -> addr _ -> \"fallback\" }",
+		    "match( value ) { Email( addr ) => addr; _ => \"fallback\" }",
 		    this.context
 		);
 
@@ -73,7 +73,7 @@ public class MatchProtocolPatternsTest {
 		);
 
 		Object result = instance.executeStatement(
-		    "match value { Phone( number ) -> number _ -> \"fallback\" }",
+		    "match( value ) { Phone( number ) => number; _ => \"fallback\" }",
 		    this.context
 		);
 
@@ -88,7 +88,7 @@ public class MatchProtocolPatternsTest {
 		);
 
 		Object result = instance.executeStatement(
-		    "match value { Email( addr ) if addr == \"ada@example.com\" -> addr _ -> \"fallback\" }",
+		    "match( value ) { Email( addr ) if addr == \"ada@example.com\" => addr; _ => \"fallback\" }",
 		    this.context
 		);
 
@@ -105,7 +105,7 @@ public class MatchProtocolPatternsTest {
 		);
 
 		Object result = instance.executeStatement(
-		    "match value { Email( addr ) -> addr _ -> \"fallback\" }",
+		    "match( value ) { Email( addr ) => addr; _ => \"fallback\" }",
 		    this.context
 		);
 
@@ -121,7 +121,7 @@ public class MatchProtocolPatternsTest {
 
 		BoxRuntimeException exception = assertThrows(
 		    BoxRuntimeException.class,
-		    () -> instance.executeStatement( "match value { Email( addr ) -> addr _ -> \"fallback\" }", this.context )
+		    () -> instance.executeStatement( "match( value ) { Email( addr ) => addr; _ => \"fallback\" }", this.context )
 		);
 
 		assertThat( exception ).hasMessageThat().contains( "$matchBindings must be implemented when $matchPredicate returns true." );
@@ -136,7 +136,7 @@ public class MatchProtocolPatternsTest {
 
 		BoxRuntimeException exception = assertThrows(
 		    BoxRuntimeException.class,
-		    () -> instance.executeStatement( "match value { Email( addr ) -> addr _ -> \"fallback\" }", this.context )
+		    () -> instance.executeStatement( "match( value ) { Email( addr ) => addr; _ => \"fallback\" }", this.context )
 		);
 
 		assertThat( exception ).hasMessageThat().contains( "$matchBindings must return a struct of bound values." );

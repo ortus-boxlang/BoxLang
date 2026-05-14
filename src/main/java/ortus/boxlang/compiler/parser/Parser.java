@@ -227,6 +227,22 @@ public class Parser {
 		return ( ParsingResult ) data.get( "result" );
 	}
 
+	public ParsingResult parseStatement( String code, BoxSourceType sourceType ) throws IOException {
+		ParsingResult result;
+		switch ( sourceType ) {
+			case CFSCRIPT -> result = new CFParser().withTranspilation( true ).parseStatement( code );
+			case BOXSCRIPT -> result = new BoxParser().parseStatement( code );
+			default -> throw new BoxRuntimeException( "Unsupported source type for statement parsing: " + sourceType );
+		}
+
+		IStruct data = Struct.of(
+		    "code", code,
+		    "result", result
+		);
+		runtime.announce( "onParse", data );
+		return ( ParsingResult ) data.get( "result" );
+	}
+
 	/**
 	 * Attempt to detect the type of source code based on the contents
 	 *

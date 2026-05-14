@@ -54,7 +54,7 @@ public class MatchLogicalPatternsTest {
 		this.variables.put( ortus.boxlang.runtime.scopes.Key.of( "value" ), 2 );
 
 		Object result = instance.executeStatement(
-		    "match value { 1 or 2 -> \"small\" _ -> \"many\" }",
+		    "match( value ) { 1 or 2 => \"small\"; _ => \"many\" }",
 		    this.context
 		);
 
@@ -66,7 +66,7 @@ public class MatchLogicalPatternsTest {
 		this.variables.put( ortus.boxlang.runtime.scopes.Key.of( "value" ), 2 );
 
 		Object result = instance.executeStatement(
-		    "match value { x and 2 -> x _ -> \"fallback\" }",
+		    "match( value ) { x and 2 => x; _ => \"fallback\" }",
 		    this.context
 		);
 
@@ -78,7 +78,7 @@ public class MatchLogicalPatternsTest {
 		this.variables.put( ortus.boxlang.runtime.scopes.Key.of( "value" ), 2 );
 
 		Object result = instance.executeStatement(
-		    "match value { not 1 -> \"other\" _ -> \"one\" }",
+		    "match( value ) { not 1 => \"other\"; _ => \"one\" }",
 		    this.context
 		);
 
@@ -91,7 +91,7 @@ public class MatchLogicalPatternsTest {
 
 		BoxRuntimeException exception = assertThrows(
 		    BoxRuntimeException.class,
-		    () -> instance.executeStatement( "match value { not x -> x _ -> \"fallback\" }", this.context )
+		    () -> instance.executeStatement( "match( value ) { not x => x; _ => \"fallback\" }", this.context )
 		);
 
 		assertThat( exception ).hasMessageThat().contains( "not patterns cannot contain binding patterns" );
@@ -102,7 +102,7 @@ public class MatchLogicalPatternsTest {
 		this.variables.put( ortus.boxlang.runtime.scopes.Key.of( "value" ), 2 );
 
 		Object result = instance.executeStatement(
-		    "match value { ?( x -> x > 1 ) -> \"many\" _ -> \"small\" }",
+		    "match( value ) { ?( x -> x > 1 ) => \"many\"; _ => \"small\" }",
 		    this.context
 		);
 
@@ -114,7 +114,7 @@ public class MatchLogicalPatternsTest {
 		this.variables.put( ortus.boxlang.runtime.scopes.Key.of( "value" ), 2 );
 
 		Object result = instance.executeStatement(
-		    "match value { ?( x -> x > 5 ) -> \"many\" _ -> \"small\" }",
+		    "match( value ) { ?( x -> x > 5 ) => \"many\"; _ => \"small\" }",
 		    this.context
 		);
 
@@ -128,9 +128,9 @@ public class MatchLogicalPatternsTest {
 
 		Object result = instance.executeStatement(
 		    """
-		    match value {
-		    	2 or marker -> "two"
-		    	_ -> "fallback"
+		    match( value ) {
+		    	2 or marker => "two";
+		    	_ => "fallback"
 		    }
 		    """,
 		    this.context
@@ -147,9 +147,9 @@ public class MatchLogicalPatternsTest {
 
 		Object result = instance.executeStatement(
 		    """
-		    match value {
-		    	1 and marker -> "one"
-		    	_ -> "fallback"
+		    match( value ) {
+		    	1 and marker => "one";
+		    	_ => "fallback"
 		    }
 		    """,
 		    this.context
@@ -165,9 +165,9 @@ public class MatchLogicalPatternsTest {
 
 		Object result = instance.executeStatement(
 		    """
-		    match value {
-		    	2 or 2 and 3 -> "two"
-		    	_ -> "fallback"
+		    match( value ) {
+		    	2 or 2 and 3 => "two";
+		    	_ => "fallback"
 		    }
 		    """,
 		    this.context
@@ -182,7 +182,7 @@ public class MatchLogicalPatternsTest {
 
 		assertThrows(
 		    BoxRuntimeException.class,
-		    () -> instance.executeStatement( "match value { ?( 1 ) -> \"many\" _ -> \"small\" }", this.context )
+		    () -> instance.executeStatement( "match( value ) { ?( 1 ) => \"many\"; _ => \"small\" }", this.context )
 		);
 	}
 
@@ -191,11 +191,45 @@ public class MatchLogicalPatternsTest {
 		this.variables.put( ortus.boxlang.runtime.scopes.Key.of( "value" ), 3 );
 
 		Object result = instance.executeStatement(
-		    "match value { 1..5 -> \"small\" _ -> \"many\" }",
+		    "match( value ) { 1..5 => \"small\"; _ => \"many\" }",
 		    this.context
 		);
 
 		assertThat( result ).isEqualTo( "small" );
+	}
+
+	@Test
+	public void testMatchRangePatternMatchesDescendingInclusiveIntegerRange() {
+		this.variables.put( ortus.boxlang.runtime.scopes.Key.of( "value" ), 3 );
+
+		Object result = instance.executeStatement(
+		    "match( value ) { 5..1 => \"small\"; _ => \"many\" }",
+		    this.context
+		);
+
+		assertThat( result ).isEqualTo( "small" );
+	}
+
+	@Test
+	public void testMatchRangePatternMatchesCastableIntegerSubjects() {
+		this.variables.put( ortus.boxlang.runtime.scopes.Key.of( "value" ), "3" );
+
+		Object result = instance.executeStatement(
+		    "match( value ) { 1..5 => \"small\"; _ => \"many\" }",
+		    this.context
+		);
+
+		assertThat( result ).isEqualTo( "small" );
+	}
+
+	@Test
+	public void testMatchRuntimeRejectsLegacySyntax() {
+		this.variables.put( ortus.boxlang.runtime.scopes.Key.of( "value" ), 2 );
+
+		assertThrows(
+		    BoxRuntimeException.class,
+		    () -> instance.executeStatement( "match value { 7 or 8 -> \"legacy\" _ -> \"fallback\" }", this.context )
+		);
 	}
 
 	@Test
@@ -204,12 +238,12 @@ public class MatchLogicalPatternsTest {
 
 		Object result = instance.executeStatement(
 		    """
-		    match value {
-		    	0 -> {
+		    match( value ) {
+		    	0 => {
 		    		branchValue = "zero";
 		    		branchValue & "-done"
 		    	}
-		    	_ -> "many"
+		    	_ => "many"
 		    }
 		    """,
 		    this.context
