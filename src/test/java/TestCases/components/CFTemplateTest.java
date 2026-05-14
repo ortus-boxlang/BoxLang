@@ -2091,4 +2091,40 @@ public class CFTemplateTest {
 		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foo#foo#foobar" );
 	}
 
+	@Test
+	public void testClassOutputTrue() {
+		instance.executeSource(
+		    """
+		       <cfsavecontent variable="result">
+		    	<cfset new src.test.java.TestCases.components.TestClassOutputTrue().test()>
+		    </cfsavecontent>
+		            """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "insidepseduoconstructorwoodinsidetestwood" );
+	}
+
+	@Test
+	public void testClassOutputNone() {
+		instance.executeSource(
+		    """
+		       <cfsavecontent variable="result">
+		    	<cfset new src.test.java.TestCases.components.TestClassOutputNone().test()>
+		    </cfsavecontent>
+		            """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "insidepseduoconstructor#brad#insidetest#brad#" );
+	}
+
+	@Test
+	public void testClassOutputFalse() {
+		instance.executeSource(
+		    """
+		       <cfsavecontent variable="result">
+		    	<cfset new src.test.java.TestCases.components.TestClassOutputFalse().test()>
+		    </cfsavecontent>
+		            """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "insidetest#brad#" );
+	}
+
 }

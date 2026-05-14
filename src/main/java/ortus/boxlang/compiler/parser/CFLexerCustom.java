@@ -116,6 +116,16 @@ public class CFLexerCustom extends CFLexer {
 	boolean										inFunctionOpeningTag	= false;
 
 	/**
+	 * Are we inside an opening component tag's attributes?
+	 */
+	boolean										inComponentOpeningTag	= false;
+
+	/**
+	 * Has the component's output attribute been determined to be true?
+	 */
+	boolean										componentOutputIsTrue	= false;
+
+	/**
 	 * Did we just see ATTRIBUTE_NAME "output" and are looking for the equals sign?
 	 */
 	boolean										lookingForOutputEquals	= false;
@@ -656,6 +666,23 @@ public class CFLexerCustom extends CFLexer {
 	 * @param nextTokenType the token type
 	 */
 	private void handleFunctionOutputTracking( Token nextToken, int nextTokenType ) {
+		// Detect opening vs closing component tags
+		if ( nextTokenType == TEMPLATE_COMPONENT ) {
+			if ( lastTokenWas( SLASH_PREFIX ) ) {
+				// Closing component tag - set outputting flag so grammar pops extra modes
+				if ( this.componentOutputIsTrue ) {
+					this.thisComponentIsOutputting = true;
+				}
+			} else {
+				// Opening component tag - start tracking attributes
+				this.inComponentOpeningTag	= true;
+				this.componentOutputIsTrue	= false;
+				this.lookingForOutputEquals	= false;
+				this.capturingOutputValue	= false;
+				this.outputValueCapture.setLength( 0 );
+			}
+		}
+
 		// Detect opening vs closing function tags
 		if ( nextTokenType == TEMPLATE_FUNCTION ) {
 			if ( lastTokenWas( SLASH_PREFIX ) ) {
@@ -674,35 +701,32 @@ public class CFLexerCustom extends CFLexer {
 			}
 		}
 
+		// Handle component opening tag attribute tracking
+		if ( this.inComponentOpeningTag ) {
+			handleOutputAttributeCapture( nextToken, nextTokenType );
+
+			if ( nextTokenType == COMPONENT_CLOSE ) {
+				if ( this.componentOutputIsTrue ) {
+					// Grammar already popped us back to DEFAULT_TEMPLATE_MODE.
+					// Push output mode on top so # expressions are interpolated in the component body.
+					pushMode( TEMPLATE_OUTPUT_MODE );
+					pushMode( DEFAULT_TEMPLATE_MODE );
+				}
+				this.inComponentOpeningTag	= false;
+				this.lookingForOutputEquals	= false;
+				this.capturingOutputValue	= false;
+			} else if ( nextTokenType == COMPONENT_SLASH_CLOSE ) {
+				this.inComponentOpeningTag	= false;
+				this.lookingForOutputEquals	= false;
+				this.capturingOutputValue	= false;
+				this.componentOutputIsTrue	= false;
+			}
+		}
+
+		// Handle function opening tag attribute tracking
 		if ( this.inFunctionOpeningTag ) {
-			// Step 1: Handle value capture
-			if ( this.capturingOutputValue ) {
-				if ( nextTokenType == COMPONENT_CLOSE || nextTokenType == COMPONENT_SLASH_CLOSE
-				    || nextTokenType == ATTRIBUTE_NAME ) {
-					// End of the value - evaluate what we captured
-					evaluateOutputValue();
-				} else if ( nextToken.getChannel() == DEFAULT_TOKEN_CHANNEL
-				    && nextTokenType != COMPONENT_EQUALS
-				    && nextTokenType != OPEN_QUOTE && nextTokenType != CLOSE_QUOTE
-				    && nextTokenType != ICHAR ) {
-					this.outputValueCapture.append( nextToken.getText() );
-				}
-			}
+			handleOutputAttributeCapture( nextToken, nextTokenType );
 
-			// Step 2: Detect output attribute and its equals sign
-			if ( !this.capturingOutputValue ) {
-				if ( this.lookingForOutputEquals && nextTokenType == COMPONENT_EQUALS ) {
-					this.lookingForOutputEquals	= false;
-					this.capturingOutputValue	= true;
-					this.outputValueCapture.setLength( 0 );
-				} else if ( nextTokenType == ATTRIBUTE_NAME && nextToken.getText().equalsIgnoreCase( "output" ) ) {
-					this.lookingForOutputEquals = true;
-				} else if ( nextTokenType == ATTRIBUTE_NAME ) {
-					this.lookingForOutputEquals = false;
-				}
-			}
-
-			// Step 3: Handle component close - push output mode if output=true
 			if ( nextTokenType == COMPONENT_CLOSE ) {
 				if ( this.functionOutputIsTrue ) {
 					// Grammar already popped us back to DEFAULT_TEMPLATE_MODE.
@@ -728,6 +752,39 @@ public class CFLexerCustom extends CFLexer {
 	}
 
 	/**
+	 * Shared logic for capturing the output attribute value from an opening tag.
+	 * Sets functionOutputIsTrue or componentOutputIsTrue depending on which tag we're in.
+	 */
+	private void handleOutputAttributeCapture( Token nextToken, int nextTokenType ) {
+		// Handle value capture
+		if ( this.capturingOutputValue ) {
+			if ( nextTokenType == COMPONENT_CLOSE || nextTokenType == COMPONENT_SLASH_CLOSE
+			    || nextTokenType == ATTRIBUTE_NAME ) {
+				// End of the value - evaluate what we captured
+				evaluateOutputValue();
+			} else if ( nextToken.getChannel() == DEFAULT_TOKEN_CHANNEL
+			    && nextTokenType != COMPONENT_EQUALS
+			    && nextTokenType != OPEN_QUOTE && nextTokenType != CLOSE_QUOTE
+			    && nextTokenType != ICHAR ) {
+				this.outputValueCapture.append( nextToken.getText() );
+			}
+		}
+
+		// Detect output attribute and its equals sign
+		if ( !this.capturingOutputValue ) {
+			if ( this.lookingForOutputEquals && nextTokenType == COMPONENT_EQUALS ) {
+				this.lookingForOutputEquals	= false;
+				this.capturingOutputValue	= true;
+				this.outputValueCapture.setLength( 0 );
+			} else if ( nextTokenType == ATTRIBUTE_NAME && nextToken.getText().equalsIgnoreCase( "output" ) ) {
+				this.lookingForOutputEquals = true;
+			} else if ( nextTokenType == ATTRIBUTE_NAME ) {
+				this.lookingForOutputEquals = false;
+			}
+		}
+	}
+
+	/**
 	 * Evaluate the captured output attribute value and set functionOutputIsTrue if it's truthy.
 	 */
 	private void evaluateOutputValue() {
@@ -736,7 +793,12 @@ public class CFLexerCustom extends CFLexer {
 		if ( !value.isEmpty() ) {
 			var attempt = BooleanCaster.attempt( value );
 			if ( attempt.wasSuccessful() && attempt.get() ) {
-				this.functionOutputIsTrue = true;
+				if ( this.inComponentOpeningTag ) {
+					this.componentOutputIsTrue = true;
+				}
+				if ( this.inFunctionOpeningTag ) {
+					this.functionOutputIsTrue = true;
+				}
 			}
 		}
 	}
@@ -833,10 +895,12 @@ public class CFLexerCustom extends CFLexer {
 		classTokenReached		= false;
 		justClosedPoundVar		= false;
 		inFunctionOpeningTag	= false;
+		inComponentOpeningTag	= false;
 		lookingForOutputEquals	= false;
 		capturingOutputValue	= false;
 		outputValueCapture.setLength( 0 );
-		functionOutputIsTrue = false;
+		functionOutputIsTrue	= false;
+		componentOutputIsTrue	= false;
 		functionOutputStack.clear();
 	}
 
