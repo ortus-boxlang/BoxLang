@@ -287,6 +287,20 @@ public class DataNavigator {
 		 *
 		 * @return True if the key exists, false otherwise
 		 */
+		public boolean has( String path ) {
+			return this.has( new String[] { path } );
+		}
+
+		/**
+		 * Verify if a path exists in the data structure.
+		 * When called with a single argument that contains {@code .} or {@code [}, the argument
+		 * is treated as a path expression (e.g. {@code "boxlang.settings.hello"}, {@code "list[1]"},
+		 * {@code "..key"}).
+		 *
+		 * @param path The path(s) to verify (nested keys accepted, or a single path expression)
+		 *
+		 * @return True if the key exists, false otherwise
+		 */
 		public boolean has( String... path ) {
 			// Single path expression — delegate to the path-aware navigator
 			if ( path.length == 1 ) {
@@ -329,6 +343,18 @@ public class DataNavigator {
 		public boolean hasByKey( String key ) {
 			IStruct navConfig = this.segment == null ? this.config : this.segment;
 			return navConfig.containsKey( Key.of( key ) );
+		}
+
+		/**
+		 * Safely navigate the data structure to a segment without blowing up.
+		 *
+		 * @param path The path to the object in the data structure. When called with a single argument that contains {@code .} or {@code [}, the argument
+		 *
+		 * @return The navigator with the segment set
+		 *         is treated as a path expression (e.g. {@code "boxlang.settings.hello"}, {@code "list[1]"},
+		 */
+		public Navigator from( String path ) {
+			return from( new String[] { path } );
 		}
 
 		/**
@@ -380,6 +406,19 @@ public class DataNavigator {
 
 		/**
 		 * Get a value from data structure using nested keys if passed
+		 *
+		 * @param key The key to get the value for.
+		 *
+		 * @throws BoxRuntimeException If the key does not exist
+		 *
+		 * @return The value of the key(s)
+		 */
+		public Object getOrThrow( String key ) {
+			return this.getOrThrow( new String[] { key } );
+		}
+
+		/**
+		 * Get a value from data structure using nested keys if passed
 		 * If the key does not exist then throw an exception
 		 *
 		 * @param key One or more keys to retrieve the value for
@@ -394,6 +433,20 @@ public class DataNavigator {
 				throw new BoxRuntimeException( "The key [" + key + "] does not exist in the json contents. Top level keys are: " + this.config.keySet() );
 			}
 			return result;
+		}
+
+		/**
+		 * Get a value from data structure using nested keys if passed.
+		 * When called with a single argument that contains {@code .} or {@code [}, the argument
+		 * is treated as a path expression (e.g. {@code "boxlang.settings.hello"}, {@code "list[1]"},
+		 * {@code "..key"}).
+		 *
+		 * @param key One or more keys to navigate the data structure, or a single path expression
+		 *
+		 * @return The value of the key(s) or null if it does not exist
+		 */
+		public Object get( String key ) {
+			return this.get( new String[] { key } );
 		}
 
 		/**
@@ -497,6 +550,16 @@ public class DataNavigator {
 		 *
 		 * @param key The key to get the value for
 		 */
+		public Key getAsKey( String key ) {
+			return this.getAsKey( new String[] { key } );
+		}
+
+		/**
+		 * Get a value from data structure
+		 * The value can be seeded using a ${code from} method call.
+		 *
+		 * @param key The key to get the value for
+		 */
 		public Key getAsKey( String... key ) {
 			return Key.of( StringCaster.cast( this.get( key ) ) );
 		}
@@ -510,6 +573,16 @@ public class DataNavigator {
 		 */
 		public String getAsString( String key, Object defaultValue ) {
 			return StringCaster.cast( this.get( key, defaultValue ) );
+		}
+
+		/**
+		 * Get a value from data structure
+		 * The value can be seeded using a ${code from} method call.
+		 *
+		 * @param key The key to get the value for
+		 */
+		public String getAsString( String key ) {
+			return this.getAsString( new String[] { key } );
 		}
 
 		/**
@@ -539,6 +612,16 @@ public class DataNavigator {
 		 *
 		 * @param key The key to get the value for
 		 */
+		public Boolean getAsBoolean( String key ) {
+			return this.getAsBoolean( new String[] { key } );
+		}
+
+		/**
+		 * Get a value from data structure
+		 * The value can be seeded using a ${code from} method call.
+		 *
+		 * @param key The key to get the value for
+		 */
 		public Boolean getAsBoolean( String... key ) {
 			return BooleanCaster.cast( this.get( key ) );
 		}
@@ -552,6 +635,16 @@ public class DataNavigator {
 		 */
 		public Integer getAsInteger( String key, Object defaultValue ) {
 			return IntegerCaster.cast( this.get( key, defaultValue ) );
+		}
+
+		/**
+		 * Get a value from data structure
+		 * The value can be seeded using a ${code from} method call.
+		 *
+		 * @param key The key to get the value for
+		 */
+		public Integer getAsInteger( String key ) {
+			return this.getAsInteger( new String[] { key } );
 		}
 
 		/**
@@ -583,6 +676,16 @@ public class DataNavigator {
 		 *
 		 * @param key The key to get the value for
 		 */
+		public DateTime getAsDate( String key ) {
+			return this.getAsDate( new String[] { key } );
+		}
+
+		/**
+		 * Get a value from data structure
+		 * The value can be seeded using a ${code from} method call.
+		 *
+		 * @param key The key to get the value for
+		 */
 		public DateTime getAsDate( String... key ) {
 			return DateTimeCaster.cast( this.get( key ) );
 		}
@@ -596,6 +699,16 @@ public class DataNavigator {
 		 */
 		public Long getAsLong( String key, Object defaultValue ) {
 			return LongCaster.cast( this.get( key, defaultValue ) );
+		}
+
+		/**
+		 * Get a value from data structure
+		 * The value can be seeded using a ${code from} method call.
+		 *
+		 * @param key The key to get the value for
+		 */
+		public Long getAsLong( String key ) {
+			return this.getAsLong( new String[] { key } );
 		}
 
 		/**
@@ -625,6 +738,16 @@ public class DataNavigator {
 		 *
 		 * @param key The key to get the value for
 		 */
+		public Double getAsDouble( String key ) {
+			return this.getAsDouble( new String[] { key } );
+		}
+
+		/**
+		 * Get a value from data structure
+		 * The value can be seeded using a ${code from} method call.
+		 *
+		 * @param key The key to get the value for
+		 */
 		public Double getAsDouble( String... key ) {
 			return DoubleCaster.cast( this.get( key ) );
 		}
@@ -646,6 +769,16 @@ public class DataNavigator {
 		 *
 		 * @param key The key to get the value for
 		 */
+		public IStruct getAsStruct( String key ) {
+			return this.getAsStruct( new String[] { key } );
+		}
+
+		/**
+		 * Get a value from data structure
+		 * The value can be seeded using a ${code from} method call.
+		 *
+		 * @param key The key to get the value for
+		 */
 		public IStruct getAsStruct( String... key ) {
 			return StructCaster.cast( this.get( key ) );
 		}
@@ -659,6 +792,16 @@ public class DataNavigator {
 		 */
 		public Array getAsArray( String key, Object defaultValue ) {
 			return ArrayCaster.cast( this.get( key, defaultValue ) );
+		}
+
+		/**
+		 * Get a value from data structure
+		 * The value can be seeded using a ${code from} method call.
+		 *
+		 * @param key The key to get the value for
+		 */
+		public Array getAsArray( String key ) {
+			return this.getAsArray( new String[] { key } );
 		}
 
 		/**

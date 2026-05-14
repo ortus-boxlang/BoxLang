@@ -23,9 +23,17 @@ import static org.junit.Assert.assertThrows;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.scopes.IScope;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -34,6 +42,22 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.DataNavigator.Navigator;
 
 public class DataNavigatorTest {
+
+	static BoxRuntime	instance;
+	IBoxContext			context;
+	IScope				variables;
+	static Key			result	= new Key( "result" );
+
+	@BeforeAll
+	public static void setUp() {
+		instance = BoxRuntime.getInstance( true );
+	}
+
+	@BeforeEach
+	public void setupEach() {
+		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
+		variables	= context.getScopeNearby( VariablesScope.name );
+	}
 
 	@DisplayName( "Test an invalid path" )
 	@Test
@@ -68,6 +92,30 @@ public class DataNavigatorTest {
 		    .getAsString( "hello" );
 
 		assertThat( name ).isEqualTo( "luis" );
+	}
+
+	@DisplayName( "from(String) navigates a single segment" )
+	@Test
+	void testFromSinglePathOverload() {
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
+
+		assertThat( nav.from( "boxlang" ).getAsString( "moduleName" ) ).isEqualTo( "test" );
+	}
+
+	@DisplayName( "Single-string overloads exist for BoxLang dispatch" )
+	@Test
+	void testSingleStringOverloadsExist() throws NoSuchMethodException {
+		assertThat( Navigator.class.getMethod( "has", String.class ) ).isNotNull();
+		assertThat( Navigator.class.getMethod( "get", String.class ) ).isNotNull();
+		assertThat( Navigator.class.getMethod( "getAsKey", String.class ) ).isNotNull();
+		assertThat( Navigator.class.getMethod( "getAsString", String.class ) ).isNotNull();
+		assertThat( Navigator.class.getMethod( "getAsBoolean", String.class ) ).isNotNull();
+		assertThat( Navigator.class.getMethod( "getAsInteger", String.class ) ).isNotNull();
+		assertThat( Navigator.class.getMethod( "getAsDate", String.class ) ).isNotNull();
+		assertThat( Navigator.class.getMethod( "getAsLong", String.class ) ).isNotNull();
+		assertThat( Navigator.class.getMethod( "getAsDouble", String.class ) ).isNotNull();
+		assertThat( Navigator.class.getMethod( "getAsStruct", String.class ) ).isNotNull();
+		assertThat( Navigator.class.getMethod( "getAsArray", String.class ) ).isNotNull();
 	}
 
 	@DisplayName( "Cannot navigate non-existent segments" )
@@ -105,6 +153,31 @@ public class DataNavigatorTest {
 		assertThat( nav.getByKey( "value.sep" ) ).isEqualTo( "root" );
 		assertThat( nav.getByKey( "settings.value.sep" ) ).isNull();
 		assertThat( nav.from( "settings" ).getByKey( "value.sep" ) ).isEqualTo( "nested" );
+	}
+
+	@DisplayName( "Can call has() from boxlang" )
+	@Test
+	void testHasFromBoxLang() throws Throwable {
+		// @formatter:off
+		instance.executeSource("""
+			navigator = dataNavigate( {
+				"name": "BoxLang Test Module",
+				"boxlang": {
+					"settings": {
+						"hello": "luis"
+					}
+				},
+				"keywords": [ "test", "example" ]
+			} )
+			getName = navigator.get( "name" )
+			hasName = navigator.has( "name" )
+			hasBogus = navigator.has( "bogus" )
+			""", context );
+		// @formatter:on
+
+		assertThat( variables.get( "getName" ) ).isEqualTo( "BoxLang Test Module" );
+		assertThat( variables.get( "hasName" ) ).isEqualTo( true );
+		assertThat( variables.get( "hasBogus" ) ).isEqualTo( false );
 	}
 
 	@DisplayName( "Can detect exact keys without path parsing" )
