@@ -47,9 +47,9 @@ public class MatchExpressionTest {
 	@DisplayName( "range patterns align with finite Range membership semantics" )
 	@Test
 	void testRangePatternsReuseFiniteRangeMembershipSemantics() {
-		IBoxContext context = newContext();
-		MatchExpression.Pattern pattern = MatchExpression.range( 5, 1 );
-		Range range = new Range( 5, 1 );
+		IBoxContext				context	= newContext();
+		MatchExpression.Pattern	pattern	= MatchExpression.range( 5, 1 );
+		Range					range	= new Range( 5, 1 );
 
 		assertThat( pattern.matches( context, 5 ) ).isEqualTo( range.contains( 5 ) );
 		assertThat( pattern.matches( context, "3" ) ).isEqualTo( range.contains( ( Object ) "3" ) );
@@ -66,9 +66,9 @@ public class MatchExpressionTest {
 	@DisplayName( "structural object defaults distinguish missing values from explicit nulls" )
 	@Test
 	void testObjectPatternDefaultsDistinguishMissingFromNull() {
-		IBoxContext context = newContext();
-		IScope variables = variablesScope( context );
-		MatchExpression.Pattern pattern = MatchExpression.object(
+		IBoxContext				context		= newContext();
+		IScope					variables	= variablesScope( context );
+		MatchExpression.Pattern	pattern		= MatchExpression.object(
 		    new MatchExpression.ObjectBinding[] {
 		        MatchExpression.objectBinding(
 		            "name",
@@ -82,8 +82,8 @@ public class MatchExpressionTest {
 		assertThat( pattern.matches( context, new Struct() ) ).isTrue();
 		assertThat( variables.get( Key.of( "name" ) ) ).isEqualTo( "guest" );
 
-		context = newContext();
-		variables = variablesScope( context );
+		context		= newContext();
+		variables	= variablesScope( context );
 		Struct explicitNull = new Struct();
 		explicitNull.put( Key.of( "name" ), null );
 
@@ -94,9 +94,9 @@ public class MatchExpressionTest {
 	@DisplayName( "structural array defaults do not replace explicit nulls" )
 	@Test
 	void testArrayPatternDefaultsDoNotReplaceExplicitNulls() {
-		IBoxContext context = newContext();
-		IScope variables = variablesScope( context );
-		MatchExpression.Pattern pattern = MatchExpression.array(
+		IBoxContext				context			= newContext();
+		IScope					variables		= variablesScope( context );
+		MatchExpression.Pattern	pattern			= MatchExpression.array(
 		    new MatchExpression.ArrayBinding[] {
 		        MatchExpression.arrayBinding(
 		            MatchExpression.target( true, VariablesScope.name.getName(), "head" ),
@@ -105,7 +105,7 @@ public class MatchExpressionTest {
 		        )
 		    }
 		);
-		Array explicitNull = new Array();
+		Array					explicitNull	= new Array();
 		explicitNull.add( null );
 
 		assertThat( pattern.matches( context, explicitNull ) ).isTrue();
@@ -115,11 +115,11 @@ public class MatchExpressionTest {
 	@DisplayName( "failed structural alternatives do not leak bindings into later or branches" )
 	@Test
 	void testStructuralOrPatternsRemainAtomic() {
-		ContainerBoxContext context = new ContainerBoxContext( newContext() );
-		IScope variables = variablesScope( context );
+		ContainerBoxContext	context		= new ContainerBoxContext( newContext() );
+		IScope				variables	= variablesScope( context );
 		variables.put( Key.of( "name" ), "outer" );
 
-		MatchExpression.Pattern pattern = MatchExpression.or(
+		MatchExpression.Pattern	pattern	= MatchExpression.or(
 		    new MatchExpression.Pattern[] {
 		        MatchExpression.object(
 		            new MatchExpression.ObjectBinding[] {
@@ -148,7 +148,7 @@ public class MatchExpressionTest {
 		    }
 		);
 
-		Struct user = new Struct();
+		Struct					user	= new Struct();
 		user.put( Key.of( "name" ), "Ada" );
 		Struct subject = new Struct();
 		subject.put( Key.of( "user" ), user );

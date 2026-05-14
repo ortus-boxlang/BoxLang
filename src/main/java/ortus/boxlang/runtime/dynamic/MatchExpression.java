@@ -367,7 +367,6 @@ public class MatchExpression {
 		return target.getPath()[ 0 ].getName();
 	}
 
-
 	public static final class Case {
 
 		private final Pattern			pattern;
@@ -688,8 +687,8 @@ public class MatchExpression {
 		}
 
 		private boolean matchAtomically( AtomicMatcher matcher ) {
-			PatternMatchContext stagedContext = new PatternMatchContext( this.context );
-			MatcherEngine stagedMatcher = on( stagedContext );
+			PatternMatchContext	stagedContext	= new PatternMatchContext( this.context );
+			MatcherEngine		stagedMatcher	= on( stagedContext );
 			if ( !matcher.matches( stagedMatcher ) ) {
 				return false;
 			}
@@ -716,8 +715,8 @@ public class MatchExpression {
 				return false;
 			}
 
-			IStruct descriptor = buildProtocolDescriptor( label, patterns );
-			Object predicateResult = classRunnable.dereferenceAndInvoke( this.context, MATCH_PREDICATE_KEY, new Object[] { descriptor }, false );
+			IStruct	descriptor		= buildProtocolDescriptor( label, patterns );
+			Object	predicateResult	= classRunnable.dereferenceAndInvoke( this.context, MATCH_PREDICATE_KEY, new Object[] { descriptor }, false );
 			if ( !BooleanCaster.cast( predicateResult ) ) {
 				return false;
 			}
@@ -846,17 +845,17 @@ public class MatchExpression {
 			int	rightSourceStart	= source.size() - availableRight + 1;
 
 			for ( int offset = 0; offset < rightCount; offset++ ) {
-				ArrayBinding binding = bindings[ restIndex + 1 + offset ];
-				boolean hasValue = offset >= missingLeadingRight;
-				Object value = hasValue ? source.getAt( rightSourceStart + ( offset - missingLeadingRight ) ) : null;
+				ArrayBinding	binding		= bindings[ restIndex + 1 + offset ];
+				boolean			hasValue	= offset >= missingLeadingRight;
+				Object			value		= hasValue ? source.getAt( rightSourceStart + ( offset - missingLeadingRight ) ) : null;
 				if ( !matchArrayBinding( binding, MatchValue.fromArray( hasValue, value ) ) ) {
 					return false;
 				}
 			}
 
-			Array rest = new Array();
-			int restStart = leftCount + 1;
-			int restLength = Math.max( source.size() - leftCount - availableRight, 0 );
+			Array	rest		= new Array();
+			int		restStart	= leftCount + 1;
+			int		restLength	= Math.max( source.size() - leftCount - availableRight, 0 );
 			for ( int i = 0; i < restLength; i++ ) {
 				rest.add( source.getAt( restStart + i ) );
 			}

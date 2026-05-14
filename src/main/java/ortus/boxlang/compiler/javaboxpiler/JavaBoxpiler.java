@@ -167,7 +167,7 @@ public class JavaBoxpiler extends Boxpiler {
 	}
 
 	private BoxNode normalizeRootNode( BoxNode node, ClassInfo classInfo ) {
-		if ( !classInfo.isStatement() || !( node instanceof BoxStatement statement ) ) {
+		if ( !classInfo.isStatement() || ! ( node instanceof BoxStatement statement ) ) {
 			return node;
 		}
 
