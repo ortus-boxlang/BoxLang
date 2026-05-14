@@ -156,16 +156,24 @@ public class DataNavigator {
 		 */
 
 		/** Depth-first search for the first key match anywhere in the tree: {@code ..key} */
-		private record RecursiveKey( String name ) {}
+		private record RecursiveKey( String name ) {
+		}
 
-		/** 1-based inclusive slice of an array: {@code [start:end]} */
-		private record SliceSegment( int start, int end ) {}
+		/**
+		 * 1-based inclusive slice of an array: {@code [start:end]}.
+		 * Either bound may be {@code null} to mean "from the start" or "to the end" respectively.
+		 */
+		private record SliceSegment( Integer start, Integer end ) {
+		}
 
 		/** Filter applied to array elements: {@code [?(@.key op value)]} */
-		private record FilterSegment( String key, String op, Object value ) {}
+		private record FilterSegment( String key, String op, Object value ) {
+		}
 
 		/** All values of a struct or all elements of an array: {@code .*} or {@code [*]} */
-		private enum Wildcard { INSTANCE }
+		private enum Wildcard {
+			INSTANCE
+		}
 
 		/**
 		 * --------------------------------------------------------------------------
@@ -601,13 +609,14 @@ public class DataNavigator {
 		}
 
 		/**
-		 * Navigate the data structure using a parsed segment list, returning the first matching value.
-		 * Multi-result segment types (Wildcard, SliceSegment, FilterSegment) return {@code null} here;
-		 * use {@link #query(String)} for those.
+		 * Query the data structure using a path expression and return all matching values as a BoxLang {@link Array}.
+		 * Supports dot notation, bracket indexing, recursive descent ({@code ..key}),
+		 * wildcards ({@code .*} or {@code [*]}), array slicing ({@code [1:3]}),
+		 * and filter expressions ({@code [?(@.key op value)]}).
 		 *
-		 * @param segments The parsed path segments
+		 * @param path The path expression to evaluate
 		 *
-		 * @return The value at the path, or {@code null} if any segment is missing
+		 * @return A BoxLang {@link Array} of all matching values; empty if no matches are found
 		 */
 		public Array query( String path ) {
 			return navigateForQuery( parsePath( path ) );
@@ -687,12 +696,16 @@ public class DataNavigator {
 					if ( inner.equals( "*" ) ) {
 						segments.add( Wildcard.INSTANCE );
 					} else if ( inner.contains( ":" ) ) {
-						String[] parts = inner.split( ":", 2 );
-						segments.add( new SliceSegment( Integer.parseInt( parts[ 0 ].trim() ), Integer.parseInt( parts[ 1 ].trim() ) ) );
+						String[]	parts		= inner.split( ":", 2 );
+						String		startStr	= parts[ 0 ].trim();
+						String		endStr		= parts[ 1 ].trim();
+						Integer		sliceStart	= startStr.isEmpty() ? null : IntegerCaster.cast( startStr );
+						Integer		sliceEnd	= endStr.isEmpty() ? null : IntegerCaster.cast( endStr );
+						segments.add( new SliceSegment( sliceStart, sliceEnd ) );
 					} else if ( inner.startsWith( "?" ) ) {
 						segments.add( parseFilter( inner ) );
 					} else {
-						segments.add( Integer.parseInt( inner.trim() ) );
+						segments.add( IntegerCaster.cast( inner.trim() ) );
 					}
 				} else {
 					// Plain key at the start of the expression (no leading dot)
@@ -723,15 +736,15 @@ public class DataNavigator {
 		 */
 		private FilterSegment parseFilter( String inner ) {
 			// Strip "?(" prefix and ")" suffix
-			String	expr	= inner.substring( 2, inner.length() - 1 ).trim();
+			String		expr	= inner.substring( 2, inner.length() - 1 ).trim();
 			// Try each operator longest-first to avoid partial matches (>= before >)
-			String[] ops = { "==", "!=", ">=", "<=", ">", "<" };
+			String[]	ops		= { "==", "!=", ">=", "<=", ">", "<" };
 			for ( String op : ops ) {
 				int idx = expr.indexOf( op );
 				if ( idx > 0 ) {
-					String keyPart		= expr.substring( 0, idx ).trim();
-					String valuePart	= expr.substring( idx + op.length() ).trim();
-					String key			= keyPart.startsWith( "@." ) ? keyPart.substring( 2 ) : keyPart;
+					String	keyPart		= expr.substring( 0, idx ).trim();
+					String	valuePart	= expr.substring( idx + op.length() ).trim();
+					String	key			= keyPart.startsWith( "@." ) ? keyPart.substring( 2 ) : keyPart;
 					return new FilterSegment( key, op, parseFilterValue( valuePart ) );
 				}
 			}
@@ -752,9 +765,12 @@ public class DataNavigator {
 			if ( ( s.startsWith( "\"" ) && s.endsWith( "\"" ) ) || ( s.startsWith( "'" ) && s.endsWith( "'" ) ) ) {
 				return s.substring( 1, s.length() - 1 );
 			}
-			if ( "true".equals( s ) )	return Boolean.TRUE;
-			if ( "false".equals( s ) )	return Boolean.FALSE;
-			if ( "null".equals( s ) )	return null;
+			if ( "true".equals( s ) )
+				return Boolean.TRUE;
+			if ( "false".equals( s ) )
+				return Boolean.FALSE;
+			if ( "null".equals( s ) )
+				return null;
 			try {
 				return Double.parseDouble( s );
 			} catch ( NumberFormatException e ) {
@@ -775,17 +791,22 @@ public class DataNavigator {
 			Object current = this.segment == null ? this.config : this.segment;
 
 			for ( Object seg : segments ) {
-				if ( current == null ) return null;
+				if ( current == null )
+					return null;
 
 				// Auto-cast to BoxLang native types before each step
-				if ( current instanceof Map<?, ?> ) current = StructCaster.cast( current );
-				if ( current instanceof List<?> || current instanceof Object[] ) current = ArrayCaster.cast( current );
+				if ( current instanceof Map<?, ?> )
+					current = StructCaster.cast( current );
+				if ( current instanceof List<?> || current instanceof Object[] )
+					current = ArrayCaster.cast( current );
 
 				if ( seg instanceof String key ) {
-					if ( ! ( current instanceof IStruct struct ) || !struct.containsKey( key ) ) return null;
+					if ( ! ( current instanceof IStruct struct ) || !struct.containsKey( key ) )
+						return null;
 					current = struct.get( Key.of( key ) );
 				} else if ( seg instanceof Integer idx ) {
-					if ( ! ( current instanceof Array arr ) || idx < 1 || idx > arr.size() ) return null;
+					if ( ! ( current instanceof Array arr ) || idx < 1 || idx > arr.size() )
+						return null;
 					current = arr.getAt( idx );
 				} else if ( seg instanceof RecursiveKey rk ) {
 					current = findFirst( current, rk.name() );
@@ -796,9 +817,12 @@ public class DataNavigator {
 			}
 
 			// Final auto-cast of the result
-			if ( current instanceof Map<?, ?> map )		return StructCaster.cast( map );
-			if ( current instanceof List<?> list )		return ArrayCaster.cast( list );
-			if ( current instanceof Object[] arr )		return ArrayCaster.cast( arr );
+			if ( current instanceof Map<?, ?> map )
+				return StructCaster.cast( map );
+			if ( current instanceof List<?> list )
+				return ArrayCaster.cast( list );
+			if ( current instanceof Object[] arr )
+				return ArrayCaster.cast( arr );
 			return current;
 		}
 
@@ -811,19 +835,24 @@ public class DataNavigator {
 		 * @return The first matching value, or {@code null} if not found
 		 */
 		private Object findFirst( Object node, String key ) {
-			if ( node instanceof Map<?, ?> ) node = StructCaster.cast( node );
-			if ( node instanceof List<?> || node instanceof Object[] ) node = ArrayCaster.cast( node );
+			if ( node instanceof Map<?, ?> )
+				node = StructCaster.cast( node );
+			if ( node instanceof List<?> || node instanceof Object[] )
+				node = ArrayCaster.cast( node );
 
 			if ( node instanceof IStruct struct ) {
-				if ( struct.containsKey( key ) ) return struct.get( Key.of( key ) );
+				if ( struct.containsKey( key ) )
+					return struct.get( Key.of( key ) );
 				for ( Object value : struct.values() ) {
 					Object found = findFirst( value, key );
-					if ( found != null ) return found;
+					if ( found != null )
+						return found;
 				}
 			} else if ( node instanceof Array arr ) {
 				for ( int i = 1; i <= arr.size(); i++ ) {
 					Object found = findFirst( arr.getAt( i ), key );
-					if ( found != null ) return found;
+					if ( found != null )
+						return found;
 				}
 			}
 
@@ -846,14 +875,18 @@ public class DataNavigator {
 				List<Object> nextSet = new ArrayList<>();
 
 				for ( Object current : workingSet ) {
-					if ( current == null ) continue;
-					if ( current instanceof Map<?, ?> ) current = StructCaster.cast( current );
-					if ( current instanceof List<?> || current instanceof Object[] ) current = ArrayCaster.cast( current );
+					if ( current == null )
+						continue;
+					if ( current instanceof Map<?, ?> )
+						current = StructCaster.cast( current );
+					if ( current instanceof List<?> || current instanceof Object[] )
+						current = ArrayCaster.cast( current );
 
 					if ( seg instanceof String key ) {
 						if ( current instanceof IStruct struct && struct.containsKey( key ) ) {
 							Object val = struct.get( Key.of( key ) );
-							if ( val != null ) nextSet.add( val );
+							if ( val != null )
+								nextSet.add( val );
 						}
 					} else if ( seg instanceof Integer idx ) {
 						if ( current instanceof Array arr && idx >= 1 && idx <= arr.size() ) {
@@ -871,8 +904,8 @@ public class DataNavigator {
 						}
 					} else if ( seg instanceof SliceSegment ss ) {
 						if ( current instanceof Array arr ) {
-							int start	= Math.max( 1, ss.start() );
-							int end		= Math.min( arr.size(), ss.end() );
+							int	start	= Math.max( 1, ss.start() != null ? ss.start() : 1 );
+							int	end		= Math.min( arr.size(), ss.end() != null ? ss.end() : arr.size() );
 							for ( int i = start; i <= end; i++ ) {
 								nextSet.add( arr.getAt( i ) );
 							}
@@ -881,7 +914,8 @@ public class DataNavigator {
 						if ( current instanceof Array arr ) {
 							for ( int i = 1; i <= arr.size(); i++ ) {
 								Object elem = arr.getAt( i );
-								if ( elem instanceof Map<?, ?> ) elem = StructCaster.cast( elem );
+								if ( elem instanceof Map<?, ?> )
+									elem = StructCaster.cast( elem );
 								if ( elem instanceof IStruct struct && matchesFilter( struct, fs ) ) {
 									nextSet.add( elem );
 								}
@@ -896,8 +930,10 @@ public class DataNavigator {
 			// Build the result array with auto-casting
 			Array result = new Array();
 			for ( Object item : workingSet ) {
-				if ( item instanceof Map<?, ?> ) item = StructCaster.cast( item );
-				if ( item instanceof List<?> || item instanceof Object[] ) item = ArrayCaster.cast( item );
+				if ( item instanceof Map<?, ?> )
+					item = StructCaster.cast( item );
+				if ( item instanceof List<?> || item instanceof Object[] )
+					item = ArrayCaster.cast( item );
 				result.add( item );
 			}
 			return result;
@@ -912,11 +948,14 @@ public class DataNavigator {
 		 * @param results The list to append matching values into
 		 */
 		private void collectAll( Object node, String key, List<Object> results ) {
-			if ( node instanceof Map<?, ?> ) node = StructCaster.cast( node );
-			if ( node instanceof List<?> || node instanceof Object[] ) node = ArrayCaster.cast( node );
+			if ( node instanceof Map<?, ?> )
+				node = StructCaster.cast( node );
+			if ( node instanceof List<?> || node instanceof Object[] )
+				node = ArrayCaster.cast( node );
 
 			if ( node instanceof IStruct struct ) {
-				if ( struct.containsKey( key ) ) results.add( struct.get( Key.of( key ) ) );
+				if ( struct.containsKey( key ) )
+					results.add( struct.get( Key.of( key ) ) );
 				for ( Object value : struct.values() ) {
 					collectAll( value, key, results );
 				}
@@ -938,23 +977,26 @@ public class DataNavigator {
 		 * @return {@code true} if the element satisfies the filter
 		 */
 		private boolean matchesFilter( IStruct struct, FilterSegment fs ) {
-			if ( "exists".equals( fs.op() ) ) return struct.containsKey( fs.key() );
-			if ( !struct.containsKey( fs.key() ) ) return false;
-			Object actual	= struct.get( Key.of( fs.key() ) );
-			Object expected	= fs.value();
+			if ( "exists".equals( fs.op() ) )
+				return struct.containsKey( fs.key() );
+			if ( !struct.containsKey( fs.key() ) )
+				return false;
+			Object	actual		= struct.get( Key.of( fs.key() ) );
+			Object	expected	= fs.value();
 			return switch ( fs.op() ) {
 				case "==" -> Objects.equals( actual, expected ) || compareValues( actual, expected ) == 0;
 				case "!=" -> !Objects.equals( actual, expected );
-				case ">"  -> compareValues( actual, expected ) > 0;
+				case ">" -> compareValues( actual, expected ) > 0;
 				case ">=" -> compareValues( actual, expected ) >= 0;
-				case "<"  -> compareValues( actual, expected ) < 0;
+				case "<" -> compareValues( actual, expected ) < 0;
 				case "<=" -> compareValues( actual, expected ) <= 0;
-				default   -> false;
+				default -> false;
 			};
 		}
 
 		/**
 		 * Compares two values numerically, falling back to lexicographic string comparison.
+		 * {@code null} is treated as less than any non-null value; two {@code null}s are equal.
 		 *
 		 * @param a First value
 		 * @param b Second value
@@ -962,6 +1004,12 @@ public class DataNavigator {
 		 * @return Negative, zero, or positive
 		 */
 		private int compareValues( Object a, Object b ) {
+			if ( a == null && b == null )
+				return 0;
+			if ( a == null )
+				return -1;
+			if ( b == null )
+				return 1;
 			try {
 				return Double.compare( DoubleCaster.cast( a ), DoubleCaster.cast( b ) );
 			} catch ( Exception e ) {

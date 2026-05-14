@@ -348,7 +348,7 @@ public class DataNavigatorTest {
 	@DisplayName( "query() with a filter returns only matching array elements" )
 	@Test
 	void testQueryFilter() {
-		Navigator nav = DataNavigator.of(
+		Navigator	nav		= DataNavigator.of(
 		    Map.of(
 		        "items", List.of(
 		            Map.of( "name", "alpha", "active", true ),
@@ -357,14 +357,14 @@ public class DataNavigatorTest {
 		        )
 		    )
 		);
-		Array result = nav.query( "items[?(@.active == true)]" );
+		Array		result	= nav.query( "items[?(@.active == true)]" );
 		assertThat( result ).hasSize( 2 );
 	}
 
 	@DisplayName( "query() filter with numeric comparison" )
 	@Test
 	void testQueryFilterNumeric() {
-		Navigator nav = DataNavigator.of(
+		Navigator	nav		= DataNavigator.of(
 		    Map.of(
 		        "products", List.of(
 		            Map.of( "name", "cheap", "price", 5 ),
@@ -373,14 +373,14 @@ public class DataNavigatorTest {
 		        )
 		    )
 		);
-		Array result = nav.query( "products[?(@.price < 20)]" );
+		Array		result	= nav.query( "products[?(@.price < 20)]" );
 		assertThat( result ).hasSize( 2 );
 	}
 
 	@DisplayName( "query() filter existence check returns elements that have the key" )
 	@Test
 	void testQueryFilterExistence() {
-		Navigator nav = DataNavigator.of(
+		Navigator	nav		= DataNavigator.of(
 		    Map.of(
 		        "items", List.of(
 		            Map.of( "name", "has-tag", "tag", "x" ),
@@ -388,7 +388,7 @@ public class DataNavigatorTest {
 		        )
 		    )
 		);
-		Array result = nav.query( "items[?(@.tag)]" );
+		Array		result	= nav.query( "items[?(@.tag)]" );
 		assertThat( result ).hasSize( 1 );
 	}
 
