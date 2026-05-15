@@ -168,9 +168,9 @@ public class QuerySetCellTest {
 		    context );
 
 		assertThat( variables.getAsQuery( result ).getData().size() ).isEqualTo( 3 );
-		assertEquals( 1, variables.get( Key.of( "bit1" ) ) );
-		assertEquals( 0, variables.get( Key.of( "bit2" ) ) );
-		assertEquals( 1, variables.get( Key.of( "bit3" ) ) );
+		assertEquals( true, variables.get( Key.of( "bit1" ) ) );
+		assertEquals( false, variables.get( Key.of( "bit2" ) ) );
+		assertEquals( true, variables.get( Key.of( "bit3" ) ) );
 	}
 
 	// BL-640 - Test that time values in queries are handled correctly and allow for comparison
@@ -249,6 +249,102 @@ public class QuerySetCellTest {
 		} finally {
 			Query.queryNullToEmpty = false;
 		}
+	}
+
+	@DisplayName( "It should trim whitespace from column names" )
+	@Test
+	public void testColumnNameTrimming() {
+		instance.executeSource(
+		    """
+		    myQry = querynew( "col1", "varchar", [[""]] );
+		    myQry.setCell( " col1 ", "value" );
+		    result = myQry.getCell( " col1 ", 1 );
+		    """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( "value" );
+	}
+
+	@DisplayName( "It should trim whitespace from column names across query BIFs" )
+	@Test
+	public void testColumnNameTrimmingAcrossBIFs() {
+		instance.executeSource(
+		    """
+		    myQry = querynew( "col1", "varchar", [[""]] );
+
+		    // setCell with padded column name
+		    querySetCell( myQry, " col1 ", "trimmed", 1 );
+
+		    // getCell with padded column name
+		    cellVal = queryGetCell( myQry, " col1 ", 1 );
+
+		    // columnExists with padded column name
+		    exists = queryColumnExists( myQry, " col1 " );
+
+		    // columnData with padded column name
+		    data = myQry.columnData( " col1 " );
+
+		    // addColumn with padded column name
+		    queryAddColumn( myQry, " col2 ", "varchar", ["test"] );
+		    col2Exists = queryColumnExists( myQry, "col2" );
+
+		    // deleteColumn with padded column name
+		    queryDeleteColumn( myQry, " col2 " );
+		    col2Gone = !queryColumnExists( myQry, "col2" );
+		    """,
+		    context );
+
+		assertThat( variables.get( Key.of( "cellVal" ) ) ).isEqualTo( "trimmed" );
+		assertThat( variables.get( Key.of( "exists" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "col2Exists" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "col2Gone" ) ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "It casts string values to integer column type via querySetCell" )
+	@Test
+	public void testCastsStringToInteger() {
+		// @formatter:off
+		instance.executeSource( """
+			result = queryNew( "amount", "integer", [[0]] )
+			querySetCell( result, "amount", "1500", 1 )
+		""", context );
+		// @formatter:on
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.getCell( Key.of( "amount" ), 0 ) ).isInstanceOf( Integer.class );
+		assertThat( qry.getCell( Key.of( "amount" ), 0 ) ).isEqualTo( 1500 );
+	}
+
+	@DisplayName( "It casts string values to double column type via querySetCell" )
+	@Test
+	public void testCastsStringToDouble() {
+		// @formatter:off
+		instance.executeSource( """
+			result = queryNew( "price", "double", [[0]] )
+			querySetCell( result, "price", "19.99", 1 )
+		""", context );
+		// @formatter:on
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.getCell( Key.of( "price" ), 0 ) ).isInstanceOf( Double.class );
+		assertThat( qry.getCell( Key.of( "price" ), 0 ) ).isEqualTo( 19.99 );
+	}
+
+	@DisplayName( "It casts values set via querySetCell so QoQ math works" )
+	@Test
+	public void testCastingEnablesQoQMathViaSetCell() {
+		// @formatter:off
+		instance.executeSource( """
+			myQry = queryNew( "amount", "integer", [[0]] )
+			querySetCell( myQry, "amount", "1500", 1 )
+			result = queryExecute(
+				"SELECT amount/100 as calc FROM myQry",
+				[],
+				{ dbType: "query" }
+			)
+		""", context );
+		// @formatter:on
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.size() ).isEqualTo( 1 );
+		assertThat( ( ( Number ) qry.getCell( Key.of( "calc" ), 0 ) ).intValue() ).isEqualTo( 15 );
 	}
 
 }

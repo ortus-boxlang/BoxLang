@@ -17,11 +17,6 @@
  */
 package ortus.boxlang.runtime.operators;
 
-import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.Referencer;
-import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
-import ortus.boxlang.runtime.dynamic.casters.LongCaster;
-import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**

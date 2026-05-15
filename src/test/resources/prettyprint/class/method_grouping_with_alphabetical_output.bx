@@ -1,0 +1,18 @@
+class {
+
+	public function banana() {
+		return "banana";
+	}
+
+	public function cherry() {
+		return "cherry";
+	}
+
+	private function apple() {
+		return "apple";
+	}
+
+	private function zebra() {
+		return "zebra";
+	}
+}

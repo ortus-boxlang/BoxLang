@@ -21,6 +21,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -48,15 +49,14 @@ public class ArrayGetMetadata extends BIF {
 	 * @argument.array The array to be inserted into
 	 */
 	public IStruct _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		// Array actualArray = arguments.getAsArray( Key.array );
-		IStruct meta = new Struct();
+		Array	actualArray	= arguments.getAsArray( Key.array );
+		IStruct	meta		= new Struct();
 
 		// this value never seems to change
 		meta.put( Key.datatype, "any" );
 
-		// these values are determined by how the array is created when using ArrayNew
-		meta.put( Key.type, "synchronized" );
-		meta.put( Key.dimensions, 1 );
+		meta.put( Key.type, actualArray.isSynchronized() ? "synchronized" : "unsynchronized" );
+		meta.put( Key.dimensions, actualArray.dimensions );
 
 		return meta;
 	}

@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF( description = "Remove leading whitespace from a string" )
+@BoxBIF( description = "Remove leading whitespace from a string, or specific characters if provided" )
 @BoxMember( type = BoxLangType.STRING_STRICT )
 public class LTrim extends BIF {
 
@@ -34,20 +34,25 @@ public class LTrim extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, Argument.STRING, Key.string ),
+		    new Argument( false, Argument.STRING, Key.chars ),
 		};
 	}
 
 	/**
-	 * Trim leading whitespace from a string
+	 * Trim leading whitespace from a string.
+	 * If chars is provided, each character in the string is treated as a character to trim instead of whitespace.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.string The string to trim
+	 *
+	 * @argument.chars An optional string of characters to trim. Each character is treated individually.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String input = arguments.getAsString( Key.string );
-		return apply( input );
+		String	input	= arguments.getAsString( Key.string );
+		String	chars	= arguments.getAsString( Key.chars );
+		return apply( input, chars );
 	}
 
 	/**
@@ -58,6 +63,18 @@ public class LTrim extends BIF {
 	 * @return The trimmed string.
 	 */
 	public static String apply( String input ) {
+		return apply( input, null );
+	}
+
+	/**
+	 * Trims leading whitespace (or specific characters) from the input string.
+	 *
+	 * @param input The string to trim.
+	 * @param chars The characters to trim, or null for whitespace.
+	 *
+	 * @return The trimmed string.
+	 */
+	public static String apply( String input, String chars ) {
 		// If the input is null or empty, return it as is
 		if ( input == null || input.isEmpty() ) {
 			return input;
@@ -65,12 +82,19 @@ public class LTrim extends BIF {
 
 		int startIndex = 0;
 
-		// Find the index of the first non-whitespace character
-		while ( startIndex < input.length() && Character.isWhitespace( input.charAt( startIndex ) ) ) {
-			startIndex++;
+		if ( chars == null ) {
+			// Default path: trim whitespace
+			while ( startIndex < input.length() && Character.isWhitespace( input.charAt( startIndex ) ) ) {
+				startIndex++;
+			}
+		} else {
+			// Custom chars path: trim specified characters
+			while ( startIndex < input.length() && chars.indexOf( input.charAt( startIndex ) ) >= 0 ) {
+				startIndex++;
+			}
 		}
 
-		// Return the substring starting from the first non-whitespace character
+		// Return the substring starting from the first non-trimmed character
 		return startIndex < input.length() ? input.substring( startIndex ) : "";
 	}
 }

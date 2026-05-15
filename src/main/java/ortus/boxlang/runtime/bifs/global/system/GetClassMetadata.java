@@ -18,6 +18,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
@@ -27,7 +28,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 
-@BoxBIF( description = "Get metadata about a Java class" )
+@BoxBIF( description = "Get metadata about a instance or class given an instantiation path, an absolute OS filesystem path, or an instance of the object." )
 public class GetClassMetadata extends BIF {
 
 	private static final ClassLocator CLASS_LOCATOR = BoxRuntime.getInstance().getClassLocator();
@@ -43,12 +44,12 @@ public class GetClassMetadata extends BIF {
 	}
 
 	/**
-	 * Returns the current value of an internal millisecond timer.
+	 * Get metadata about a instance or class given an instantiation path, an absolute OS filesystem path, or an instance of the object.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.path The path to the class or interface or an instance of the object to get the metadata for.
+	 * @argument.path The path to the class or interface.,or an instance of the object to get the metadata for.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object path = arguments.get( Key.path );
@@ -58,10 +59,13 @@ public class GetClassMetadata extends BIF {
 			return castedObject.getBoxMeta().getMeta();
 		}
 
-		// Else we have a path, let's get the data
-		DynamicObject loadedClass = CLASS_LOCATOR.load(
+		String			strPath	= StringCaster.cast( path );
+		DynamicObject	loadedClass;
+
+		// Dot-notation or relative path — use normal mapping-based resolver
+		loadedClass = CLASS_LOCATOR.load(
 		    context,
-		    ( String ) path,
+		    strPath,
 		    ClassLocator.BX_PREFIX,
 		    true,
 		    context.getCurrentImports()

@@ -51,9 +51,6 @@ public class Hash extends BIF {
 	private static final String		DEFAULT_ENCODING	= "utf-8";
 	private static final Integer	DEFAULT_ITERATIONS	= 1;
 
-	// The hash item object - non-local so we can reassign it in streams
-	private static Object			hashItem			= null;
-
 	/**
 	 * Constructor
 	 */
@@ -85,7 +82,7 @@ public class Hash extends BIF {
 	 * @argument.iterations The number of iterations to re-digest the object ( default 1 );
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		hashItem = arguments.get( Key.input );
+		Object	hashItem			= arguments.get( Key.input );
 		byte[]	hashBytes			= null;
 		Integer	iterations			= arguments.getAsInteger( Key.numIterations );
 		String	algorithm			= arguments.getAsString( Key.algorithm );

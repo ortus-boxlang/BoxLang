@@ -1266,6 +1266,8 @@ public class ClassTest {
 								result11 = src.test.java.TestCases.phase3.StaticTest::finalStatic;
 								result12 = src.test.java.TestCases.phase3.StaticTest::finalStatic2;
 								result13 = src.test.java.TestCases.phase3.StaticTest::IAmStatic()
+								result14 = src.test.java.TestCases.phase3.StaticTest::IAmStatic2()
+								result15 = src.test.java.TestCases.phase3.StaticTest::ImWithStaticResult;
 		                                                                                                                      """, context,
 		    BoxSourceType.BOXSCRIPT );
 		assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( 9000 );
@@ -1280,6 +1282,8 @@ public class ClassTest {
 		assertThat( variables.get( Key.of( "result11" ) ) ).isEqualTo( "finalStatic" );
 		assertThat( variables.get( Key.of( "result12" ) ) ).isEqualTo( "finalStatic2" );
 		assertThat( variables.get( Key.of( "result13" ) ) ).isEqualTo( "bradfinalStatic" );
+		assertThat( variables.get( Key.of( "result14" ) ) ).isEqualTo( "bradfinalStatic" );
+		assertThat( variables.get( Key.of( "result15" ) ) ).isEqualTo( "Hello" );
 	}
 
 	@Test
@@ -1734,6 +1738,19 @@ public class ClassTest {
 	}
 
 	@Test
+	public void testNewInterpolated() {
+		instance.executeSource(
+		    """
+		    name = "src.test.java.TestCases.phase3.sub-folder.Funky-Class";
+		         	cfc = new "#name#"();
+		       meta = cfc.$bx.meta;
+		         """, context );
+		assertThat( variables.get( "meta" ) ).isInstanceOf( IStruct.class );
+		assertThat( variables.getAsStruct( Key.of( "meta" ) ).getAsString( Key.fullname ) )
+		    .isEqualTo( "src.test.java.TestCases.phase3.sub-folder.Funky-Class" );
+	}
+
+	@Test
 	public void testColdBoxRenderer() {
 		instance.executeSource(
 		    """
@@ -2176,6 +2193,13 @@ public class ClassTest {
 		instance.executeSource(
 		    """
 		    result = new src.test.java.TestCases.phase3.TagComponentParse();
+		    result = new src.test.java.TestCases.phase3.TagComponentParse2();
+		    result = new src.test.java.TestCases.phase3.TagComponentParse3();
+		    result = new src.test.java.TestCases.phase3.TagComponentParse4();
+		    result = new src.test.java.TestCases.phase3.TagComponentParse5();
+		    result = new src.test.java.TestCases.phase3.TagComponentParse6();
+		    result = new src.test.java.TestCases.phase3.TagComponentParse7();
+		    result = new src.test.java.TestCases.phase3.TagComponentParse8();
 		       """,
 		    context );
 	}
@@ -2327,6 +2351,59 @@ public class ClassTest {
 		       x = createObject( "src.test.java.TestCases.phase3.Beta2" );
 		           """,
 		    context ) );
+	}
+
+	@DisplayName( "It can recover from a failed class load when super class mapping is added later" )
+	@Test
+	public void testRecoverFromMissingSuperClassMapping() {
+		instance.executeSource(
+		    """
+		       // First attempt: try to instantiate the child class — this will fail because the super class mapping doesn't exist yet
+		       try {
+		           new src.test.java.TestCases.phase3.UnmappedSuperChild();
+		           result = "should have thrown";
+		       } catch( any e ) {
+		           result = "failed as expected";
+		       }
+
+		       // Now register the mapping so the super class can be found
+		       getBoxRuntime().getConfiguration().registerMapping(
+		           "/unmappedSuperLib",
+		           expandPath( "/src/test/java/TestCases/phase3/unmapped-super" )
+		       );
+		    getBoxContext().clearConfigCache();
+
+		       // Second attempt: should now succeed since the tainted classloader was shut down and the mapping is registered
+		       child = new src.test.java.TestCases.phase3.UnmappedSuperChild();
+		       childResult = child.childMethod();
+		       superResult = child.superMethod();
+		          """,
+		    context );
+
+		assertThat( variables.getAsString( result ) ).isEqualTo( "failed as expected" );
+		assertThat( variables.getAsString( Key.of( "childResult" ) ) ).isEqualTo( "from child" );
+		assertThat( variables.getAsString( Key.of( "superResult" ) ) ).isEqualTo( "from super" );
+	}
+
+	@Test
+	public void testSemVerCFC() {
+		instance.executeSource(
+		    """
+		       semver = new src.test.java.TestCases.phase3.SemanticVersion();
+		    semver.satisfies( "1.2.3", "^1.0.0" );
+		           """,
+		    context );
+	}
+
+	@Test
+	public void testPropertyDefaultToStaticVar() {
+		instance.executeSource(
+		    """
+		       clazz = new src.test.java.TestCases.phase3.PropertyDefaultToStaticVar();
+		    result = clazz.getMyProp();
+		           """,
+		    context );
+		assertThat( variables.get( "result" ) ).isEqualTo( 5 );
 	}
 
 }

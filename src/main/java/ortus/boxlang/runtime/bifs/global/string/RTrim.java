@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF( description = "Remove trailing whitespace from a string" )
+@BoxBIF( description = "Remove trailing whitespace from a string, or specific characters if provided" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "RTrim" )
 public class RTrim extends BIF {
 
@@ -37,33 +37,39 @@ public class RTrim extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.string ),
+		    new Argument( false, "string", Key.chars ),
 		};
 	}
 
 	/**
-	 * Trim trailing whitespace from a string
+	 * Trim trailing whitespace from a string.
+	 * If chars is provided, each character in the string is treated as a character to trim instead of whitespace.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.string The string to trim
+	 *
+	 * @argument.chars An optional string of characters to trim. Each character is treated individually.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	input		= arguments.getAsString( Key.string );
+		String	input	= arguments.getAsString( Key.string );
+		String	chars	= arguments.getAsString( Key.chars );
 
-		int		endIndex	= input.length() - 1;
+		int		end		= input.length();
 
-		// Find the index of the last non-whitespace character
-		while ( endIndex >= 0 && Character.isWhitespace( input.charAt( endIndex ) ) ) {
-			endIndex--;
+		if ( chars == null ) {
+			// Default path: trim whitespace
+			while ( end > 0 && Character.isWhitespace( input.charAt( end - 1 ) ) ) {
+				end--;
+			}
+		} else {
+			// Custom chars path: trim specified characters
+			while ( end > 0 && chars.indexOf( input.charAt( end - 1 ) ) >= 0 ) {
+				end--;
+			}
 		}
 
-		// If endIndex is less than the length of the string, there are trailing whitespaces
-		if ( endIndex < input.length() - 1 ) {
-			return input.substring( 0, endIndex + 1 );
-		}
-
-		// No trailing whitespaces, return the original string
-		return input;
+		return end < input.length() ? input.substring( 0, end ) : input;
 	}
 }

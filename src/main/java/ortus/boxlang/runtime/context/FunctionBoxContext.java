@@ -184,9 +184,12 @@ public class FunctionBoxContext extends BaseBoxContext {
 		setThisInterface( thisInterface );
 		pushTemplate( function );
 		// If this UDF is in a class, we need to set the template to the class path, but we still need the push above which sets the current imports to the original source file
-		if ( isInClass() ) {
-			popTemplate();
-			pushTemplate( getThisClass().getRunnablePath() );
+		// This check only applies to UDFs defined in a class. UDFs in a template/script always reflect that template/script.
+		if ( IClassRunnable.class.isAssignableFrom( function.getEnclosingClass() ) ) {
+			if ( isInClass() ) {
+				popTemplate();
+				pushTemplate( getThisClass().getRunnablePath() );
+			}
 		}
 		try {
 			ArgumentUtil.createArgumentsScope( this, positionalArguments, function.getArguments(), this.argumentsScope,
@@ -267,19 +270,21 @@ public class FunctionBoxContext extends BaseBoxContext {
 	 */
 	@Override
 	public boolean isKeyVisibleScope( Key key, boolean nearby, boolean shallow ) {
-		if ( nearby && ( key.equals( ArgumentsScope.name ) || key.equals( LocalScope.name ) ) ) {
-			return true;
-		}
-		if ( isInClass() ) {
-			if ( key.equals( VariablesScope.name ) || key.equals( StaticScope.name ) || key.equals( ThisScope.name ) ) {
+		if ( nearby ) {
+			if ( key.equals( ArgumentsScope.name ) || key.equals( LocalScope.name ) ) {
 				return true;
 			}
-			if ( key.equals( Key._super ) && ( getThisClass().getSuper() != null || getThisClass().isJavaExtends() ) ) {
-				return true;
+			if ( isInClass() ) {
+				if ( key.equals( VariablesScope.name ) || key.equals( StaticScope.name ) || key.equals( ThisScope.name ) ) {
+					return true;
+				}
+				if ( key.equals( Key._super ) && ( getThisClass().getSuper() != null || getThisClass().isJavaExtends() ) ) {
+					return true;
+				}
 			}
 		}
 
-		return super.isKeyVisibleScope( key, true && nearby, shallow );
+		return super.isKeyVisibleScope( key, nearby, shallow );
 	}
 
 	/**
@@ -724,7 +729,7 @@ public class FunctionBoxContext extends BaseBoxContext {
 	}
 
 	/**
-	 * Find a function in the corrent context. Will search known scopes for a UDF.
+	 * Find a function in the current context. Will search known scopes for a UDF.
 	 *
 	 * @param name The name of the function to find
 	 *
@@ -751,6 +756,18 @@ public class FunctionBoxContext extends BaseBoxContext {
 				    "Variable '" + name + "' of type  '" + TypeUtil.getObjectName( value ) + "'  is not a function." );
 			}
 		}
+
+		return findFunctionInOwner( name );
+	}
+
+	/**
+	 * Find a function in the current context if we are in an interface, class, or static class.
+	 *
+	 * @param name The name of the function to find
+	 *
+	 * @return The function instance, null if not found
+	 */
+	protected Function findFunctionInOwner( Key name ) {
 
 		// Check for a function if it's in an interface
 		if ( isInInterface() ) {

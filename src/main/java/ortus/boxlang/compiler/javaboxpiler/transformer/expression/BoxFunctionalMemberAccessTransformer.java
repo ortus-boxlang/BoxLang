@@ -32,7 +32,9 @@ import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.type.UnknownType;
 
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionalMemberAccess;
+import ortus.boxlang.compiler.ast.expression.BoxSpreadExpression;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
@@ -72,12 +74,19 @@ public class BoxFunctionalMemberAccessTransformer extends AbstractTransformer {
 			addIndex( javaStmt, node );
 			return javaStmt;
 		} else {
-			boolean			isNamed	= boxFunctionalMemberAccess.getArguments().get( 0 ).getName() != null;
+			boolean			isNamed	= boxFunctionalMemberAccess.isNamedArgs();
 			NullLiteralExpr	_null	= new NullLiteralExpr();
 
 			for ( int i = 0; i < boxFunctionalMemberAccess.getArguments().size(); i++ ) {
-				Expression expr = ( Expression ) transpiler.transform( boxFunctionalMemberAccess.getArguments().get( i ) );
-				values.put( "arg" + i, expr.toString() );
+				BoxArgument arg = boxFunctionalMemberAccess.getArguments().get( i );
+				if ( arg.isSpread() ) {
+					BoxSpreadExpression	spread		= ( BoxSpreadExpression ) arg.getValue();
+					Expression			innerExpr	= ( Expression ) transpiler.transform( spread.getExpression() );
+					values.put( "arg" + i, "ortus.boxlang.runtime.dynamic.LiteralSpreadUtil.spread(" + innerExpr.toString() + ")" );
+				} else {
+					Expression expr = ( Expression ) transpiler.transform( arg );
+					values.put( "arg" + i, expr.toString() );
+				}
 			}
 			String				template			= "new FunctionalMemberAccessArgs( ${name}, ${contextName} )";
 			ObjectCreationExpr	javaExpr			= ( ObjectCreationExpr ) parseExpression( template, values );

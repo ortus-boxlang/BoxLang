@@ -47,11 +47,13 @@ import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxClosure;
 import ortus.boxlang.compiler.ast.expression.BoxComparisonOperation;
 import ortus.boxlang.compiler.ast.expression.BoxComparisonOperator;
+import ortus.boxlang.compiler.ast.expression.BoxDecimalLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
 import ortus.boxlang.compiler.ast.expression.BoxExpressionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxFunctionInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
+import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
@@ -227,6 +229,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	private static Key								forceOutputTrueKey			= Key.of( "forceOutputTrue" );
 	private static Key								mergeDocsIntoAnnotationsKey	= Key.of( "mergeDocsIntoAnnotations" );
 	private static Key								isLuceeKey					= Key.of( "isLucee" );
+	private static Key								isAdobeKey					= Key.of( "isAdobe" );
 	private static Key								compatKey					= Key.of( "compat-cfml" );
 
 	/**
@@ -246,6 +249,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	// If compat module is not installed, we assume this is a Lucee compat visitor
 	// Users can toggle this by installing compat and setting the engine to "adobe"
 	private boolean									isLuceeCompat				= true;
+	private boolean									isAdobeCompat				= false;
 
 	private Set<BoxBinaryOperator>					binaryOpsHigherThanNot		= Set.of(
 	    BoxBinaryOperator.Power,
@@ -312,6 +316,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		 * Only kicks in when named args are used
 		 */
 		BIFArgMap.put( "directorylist", Map.of( "absolute_path", "path" ) );
+		BIFArgMap.put( "getsafehtml", Map.of( "inputstring", "string", "policyfile", "policy" ) );
 
 		/*
 		 * These are BIFs that return something useless like true, but would be much more useful to return the actual data structure.
@@ -367,19 +372,22 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 */
 	public CFTranspilerVisitor( IStruct settings ) {
 		if ( settings.containsKey( transpilerKey ) ) {
-			settings = StructCaster.cast( settings.get( transpilerKey ) );
-			if ( settings.containsKey( upperCaseKeysKey ) ) {
-				upperCaseKeys = BooleanCaster.cast( settings.get( upperCaseKeysKey ) );
+			var transpilerSettings = StructCaster.cast( settings.get( transpilerKey ) );
+			if ( transpilerSettings.containsKey( upperCaseKeysKey ) ) {
+				upperCaseKeys = BooleanCaster.cast( transpilerSettings.get( upperCaseKeysKey ) );
 			}
-			if ( settings.containsKey( forceOutputTrueKey ) ) {
-				forceOutputTrue = BooleanCaster.cast( settings.get( forceOutputTrueKey ) );
+			if ( transpilerSettings.containsKey( forceOutputTrueKey ) ) {
+				forceOutputTrue = BooleanCaster.cast( transpilerSettings.get( forceOutputTrueKey ) );
 			}
-			if ( settings.containsKey( mergeDocsIntoAnnotationsKey ) ) {
-				mergeDocsIntoAnnotations = BooleanCaster.cast( settings.get( mergeDocsIntoAnnotationsKey ) );
+			if ( transpilerSettings.containsKey( mergeDocsIntoAnnotationsKey ) ) {
+				mergeDocsIntoAnnotations = BooleanCaster.cast( transpilerSettings.get( mergeDocsIntoAnnotationsKey ) );
 			}
-			if ( settings.containsKey( isLuceeKey ) ) {
-				isLuceeCompat = BooleanCaster.cast( settings.get( isLuceeKey ) );
-			}
+		}
+		if ( settings.containsKey( isLuceeKey ) ) {
+			isLuceeCompat = BooleanCaster.cast( settings.get( isLuceeKey ) );
+		}
+		if ( settings.containsKey( isAdobeKey ) ) {
+			isAdobeCompat = BooleanCaster.cast( settings.get( isAdobeKey ) );
 		}
 	}
 
@@ -397,6 +405,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 *
 	 * @return The transformed AST node with CFML-compatible structure
 	 */
+
 	@Override
 	public BoxNode visit( BoxClass node ) {
 		var annotations = node.getAnnotations();
@@ -423,7 +432,26 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 			);
 		}
 
-		enableOutput( annotations );
+		// Adobe has some crazy undocumented rule whereby output=false UNLESS a cfoutput tag appears ANYWHERE in the psudoconstructor, then it's true
+		if ( isAdobeCompat ) {
+
+			// Get all output components in the class, but don't recurse into any function declarations.
+			boolean hasCFOutput = node
+			    .getDescendantsOfType(
+			        BoxComponent.class,
+			        c -> c.getName().equalsIgnoreCase( "output" ),
+			        n -> n instanceof BoxFunctionDeclaration )
+			    .size() > 0;
+
+			if ( hasCFOutput ) {
+				enableOutput( annotations );
+			} else {
+				disableOutput( annotations );
+			}
+		} else {
+			// Lucee always defaults output to true for components
+			enableOutput( annotations );
+		}
 		return super.visit( node );
 	}
 
@@ -446,13 +474,13 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	@Override
 	public BoxNode visit( BoxFunctionDeclaration node ) {
 		mergeDocsIntoAnnotations( node.getAnnotations(), node.getDocumentation() );
-		// Don't touch UDFs in a class, otherwise they won't inherit from the class's output annotation.
 		if ( isClass ) {
-			enableOutput( node.getAnnotations() );
 			if ( node.getName().equalsIgnoreCase( "onCFCRequest" ) && className.equalsIgnoreCase( "application" ) ) {
 				node.setName( "onClassRequest" );
 			}
 		}
+		// Default UDFs whether they are in or out of a class. Unlike BoxLang, ColdFusion does NOT inherit the `output` annotation from the class the UDF lives in.
+		enableOutput( node.getAnnotations() );
 		return super.visit( node );
 	}
 
@@ -680,6 +708,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		if ( name.equals( "quotedvaluelist" ) && node.getArguments().size() > 0 && node.getArguments().get( 0 ).getValue() instanceof BoxAccess ) {
 			return transpileQuotedValueList( node );
 		}
+
 		// look for BIFs whose return type has changed
 		if ( BIFReturnTypeFixSet.contains( name ) && returnValueIsUsed( node ) ) {
 			return transpileBIFReturnType( node, name );
@@ -705,6 +734,31 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 				if ( val.equals( "once" ) ) {
 					bsl.setValue( "one" );
 				}
+			}
+		}
+
+		// If second arg (positional) or "mask" arg (named) is a BoxIntegerLiteral or BoxDecimalLiteral, force it to a string literal with the original text
+		// So, 000.000 becomes "000.000" when passed to numberFormat()
+		if ( name.equals( "numberformat" ) ) {
+			BoxArgument arg = null;
+			if ( node.isNamedArgs() ) {
+				arg = node.getArguments().stream()
+				    .filter( a -> a.getName().getAsSimpleValue().toString().equalsIgnoreCase( "mask" ) )
+				    .findFirst()
+				    .orElse( null );
+			} else if ( node.getArguments().size() > 1 ) {
+				arg = node.getArguments().get( 1 );
+			}
+			if ( arg != null && ( arg.getValue() instanceof BoxIntegerLiteral || arg.getValue() instanceof BoxDecimalLiteral ) ) {
+				// Favor original text, as our parser strips leading zeros in the AST
+				String originalText = arg.getValue() instanceof BoxIntegerLiteral ? ( ( BoxIntegerLiteral ) arg.getValue() ).getSourceText()
+				    : ( ( BoxDecimalLiteral ) arg.getValue() ).getSourceText();
+				// If this AST has no source text, fall back on the value
+				if ( originalText == null ) {
+					originalText = arg.getValue() instanceof BoxIntegerLiteral ? ( ( BoxIntegerLiteral ) arg.getValue() ).getValue()
+					    : ( ( BoxDecimalLiteral ) arg.getValue() ).getValue();
+				}
+				arg.setValue( new BoxStringLiteral( originalText, arg.getValue().getPosition(), "\"" + originalText + "\"" ) );
 			}
 		}
 
@@ -1389,8 +1443,9 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 			    } );
 		}
 
-		// If cflock has no name or scope attribute, set a name attribute to a UUID
+		// fixes for cflock tag
 		if ( componentName.equals( "lock" ) ) {
+			// If cflock has no name or scope attribute, set a name attribute to a UUID
 			boolean	hasName		= node.getAttributes().stream().anyMatch( a -> a.getKey().getValue().equalsIgnoreCase( "name" ) );
 			boolean	hasScope	= node.getAttributes().stream().anyMatch( a -> a.getKey().getValue().equalsIgnoreCase( "scope" ) );
 			if ( !hasName && !hasScope ) {
@@ -1402,6 +1457,17 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 				        null )
 				);
 			}
+			// CF allows various "incorrect" type attribute values. If "type" is set, "write" changes to "exclusive", all other values other than "readonly" change to "readonly"
+			node.getAttributes().stream()
+			    .filter( a -> a.getKey().getValue().equalsIgnoreCase( "type" ) && a.getValue() instanceof BoxStringLiteral )
+			    .forEach( a -> {
+				    BoxStringLiteral bsl = ( BoxStringLiteral ) a.getValue();
+				    if ( bsl.getValue().equalsIgnoreCase( "write" ) ) {
+					    bsl.setValue( "exclusive" );
+				    } else if ( !bsl.getValue().equalsIgnoreCase( "readonly" ) ) {
+					    bsl.setValue( "readonly" );
+				    }
+			    } );
 		}
 
 		// Ignore invalid values for cfquery dbtype. If it's a string literal, and not query or hql, then literally delete the attribute entirely
@@ -1668,7 +1734,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 * Behavior:
 	 * - Only operates if forceOutputTrue configuration is enabled
 	 * - Checks if an "output" annotation already exists
-	 * - Adds output=true annotation if none exists
+	 * - Adds output=raw annotation if none exists
 	 * - Preserves existing output annotations (doesn't override)
 	 *
 	 * This maintains CFML's output behavior while allowing explicit override
@@ -1681,11 +1747,32 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 			return;
 
 		if ( annotations.stream().noneMatch( a -> a.getKey().getValue().equalsIgnoreCase( "output" ) ) ) {
-			// @output true
+			// @output raw
 			annotations.add(
 			    new BoxAnnotation(
-			        new BoxFQN( "output", null, null ),
-			        new BoxBooleanLiteral( true, null, null ),
+			        new BoxFQN( "output", null, "output" ),
+			        new BoxStringLiteral( "raw", null, "\"raw\"" ),
+			        null,
+			        null )
+			);
+		}
+	}
+
+	/**
+	 * Helper method to add or ensure the output annotation is set to false if there wasn't already an explicit value.
+	 * 
+	 * @param annotations The annotations list to potentially modify
+	 */
+	private void disableOutput( List<BoxAnnotation> annotations ) {
+		if ( !forceOutputTrue )
+			return;
+
+		if ( annotations.stream().noneMatch( a -> a.getKey().getValue().equalsIgnoreCase( "output" ) ) ) {
+			// @output false
+			annotations.add(
+			    new BoxAnnotation(
+			        new BoxFQN( "output", null, "output" ),
+			        new BoxStringLiteral( "false", null, "\"false\"" ),
 			        null,
 			        null )
 			);
@@ -1733,7 +1820,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 
 	/**
 	 * Determine if a node is inside a script or template
-	 * TODO: Does this deserve to exist on BoxNode?
+	 * TODO: Does this method deserve to just be added directly on BoxNode?
 	 *
 	 * @param node The node to check
 	 *
@@ -1745,4 +1832,5 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		    .map( n -> n instanceof BoxScript || n instanceof BoxScriptIsland )
 		    .orElse( false );
 	}
+
 }

@@ -50,23 +50,37 @@ public class Parser {
 	 *
 	 * @return a ParsingResult containing the AST with a BoxScript as root and the list of errors (if any)
 	 *
-	 * @throws IOException
-	 *
 	 * @see BoxScript
 	 * @see ParsingResult
 	 */
 
 	public ParsingResult parse( File file ) {
+		return parse( file, true );
+	}
+
+	/**
+	 * Parse a script file
+	 *
+	 * @param file          source file to parse
+	 * @param transpileCFML whether to transpile CFML to BoxLang
+	 *
+	 * @return a ParsingResult containing the AST with a BoxScript as root and the list of errors (if any)
+	 *
+	 * @see BoxScript
+	 * @see ParsingResult
+	 */
+
+	public ParsingResult parse( File file, boolean transpileCFML ) {
 		BoxSourceType	fileType	= detectFile( file );
 		AbstractParser	parser;
 		boolean			isScript	= true;
 		switch ( fileType ) {
 			case CFSCRIPT -> {
-				parser		= new CFParser();
+				parser		= new CFParser().withTranspilation( transpileCFML );
 				isScript	= true;
 			}
 			case CFTEMPLATE -> {
-				parser		= new CFParser();
+				parser		= new CFParser().withTranspilation( transpileCFML );
 				isScript	= false;
 			}
 			case BOXSCRIPT -> {
@@ -126,15 +140,31 @@ public class Parser {
 	 * @see BoxExpression
 	 */
 	public ParsingResult parse( String code, BoxSourceType sourceType, Boolean classOrInterface ) throws IOException {
+		return parse( code, sourceType, classOrInterface, true );
+	}
+
+	/**
+	 * Parse a script string expression
+	 *
+	 * @param code source of the expression to parse
+	 *
+	 * @return a ParsingResult containing the AST with a BoxExpr as root and the list of errors (if any)
+	 *
+	 * @throws IOException
+	 *
+	 * @see ParsingResult
+	 * @see BoxExpression
+	 */
+	public ParsingResult parse( String code, BoxSourceType sourceType, Boolean classOrInterface, Boolean transpileCFML ) throws IOException {
 		AbstractParser	parser;
 		boolean			isScript	= true;
 		switch ( sourceType ) {
 			case CFSCRIPT -> {
-				parser		= new CFParser();
+				parser		= new CFParser().withTranspilation( transpileCFML );
 				isScript	= true;
 			}
 			case CFTEMPLATE -> {
-				parser		= new CFParser();
+				parser		= new CFParser().withTranspilation( transpileCFML );
 				isScript	= false;
 			}
 			case BOXSCRIPT -> {
@@ -300,6 +330,22 @@ public class Parser {
 				// Rudimentary attempt to skip comments
 				if ( line.startsWith( "//" ) ) {
 					continue;
+				}
+				if ( line.startsWith( "<!---" ) || line.startsWith( "/*" ) ) {
+					inComment = true;
+				} else if ( !inComment ) {
+					if ( line.startsWith( "component" ) || line.startsWith( "interface" ) ) {
+						return BoxSourceType.CFSCRIPT;
+					}
+					if ( line.startsWith( "abstract" ) && line.contains( "component" ) ) {
+						return BoxSourceType.CFSCRIPT;
+					}
+					if ( line.startsWith( "final" ) && line.contains( "component" ) ) {
+						return BoxSourceType.CFSCRIPT;
+					}
+					if ( line.startsWith( "<cfcomponent" ) || line.startsWith( "<cfinterface" ) || line.startsWith( "<cfscript" ) ) {
+						return BoxSourceType.CFTEMPLATE;
+					}
 				}
 				if ( line.contains( "<!---" ) || line.contains( "/*" ) ) {
 					inComment = true;

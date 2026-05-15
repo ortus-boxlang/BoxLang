@@ -8,6 +8,9 @@ class {
 		final static.finalStatic = "finalStatic";
 		final static finalStatic2 = "finalStatic2";
 		static.myArray = [1, 2, 3, 4, 5];
+		
+		// Closure can find other static methods
+		static.ImWithStaticResult = (()=>sayHello())();
 	}
 
 	static.foo = 42;
@@ -46,6 +49,11 @@ class {
 
 	static function IAmStatic() {
 		return ImWithStatic();
+	}
+
+	static function IAmStatic2() {
+		// Closure can find other static methods
+		return (()=>ImWithStatic())();
 	}
 
 	static function ImWithStatic( notProvided=static.finalStatic ) {

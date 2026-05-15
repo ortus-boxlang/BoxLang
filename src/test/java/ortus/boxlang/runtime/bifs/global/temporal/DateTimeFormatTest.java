@@ -533,7 +533,7 @@ public class DateTimeFormatTest {
 	@DisplayName( "It tests the BIF DateFormat using a German locale with lang only" )
 	@Test
 	public void testLocalizedDateFormatGermany() {
-		DateTime dateRef = new DateTime( ZoneId.of( "UTC" ) );
+		DateTime dateRef = new DateTime( "2026-03-15", ZoneId.of( "UTC" ) );
 		variables.put( Key.date, dateRef );
 		instance.executeSource(
 		    """

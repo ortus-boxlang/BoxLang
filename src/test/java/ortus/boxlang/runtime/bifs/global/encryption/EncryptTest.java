@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.bifs.global.encryption;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static com.google.common.truth.Truth.assertThat;
 
 import java.util.Base64;
 
@@ -235,6 +236,47 @@ public class EncryptTest {
 
 		assertTrue( variables.get( result ) instanceof String );
 		assertTrue( variables.getAsString( result ).length() > 0 );
+	}
+
+	@DisplayName( "Will string cast numerics, booleans, and dates" )
+	@Test
+	public void testStringCasting() {
+		instance.executeSource(
+		    """
+		       key = "c9vej1bOi6UgMTjySjbfa/+11JTKD1XTv0RRVLPvolk=";
+		       val = 8071.4;
+		       result = encrypt( val, key, "AES", "base64" );
+		    decryptResult = decrypt( result, key, "AES", "base64" );
+		       	""", context );
+
+		assertTrue( variables.get( result ) instanceof String );
+		assertEquals( "vviySHgFVwMXVkF1AkZOhw==", variables.getAsString( result ) );
+		assertThat( variables.get( Key.of( "decryptResult" ) ) ).isInstanceOf( String.class );
+
+		instance.executeSource(
+		    """
+		       key = "c9vej1bOi6UgMTjySjbfa/+11JTKD1XTv0RRVLPvolk=";
+		       val = parseDateTime( "2024-01-01T12:00:00Z" );
+		       result = encrypt( val, key, "AES", "base64" );
+		    decryptResult = decrypt( result, key, "AES", "base64" );
+		       	""", context );
+
+		assertTrue( variables.get( result ) instanceof String );
+		assertEquals( "7McNhhpjuNaXuJ2hpZFnTEy1ZTlxdy7hsa6Gp70VYaE=", variables.getAsString( result ) );
+		assertThat( variables.get( Key.of( "decryptResult" ) ) ).isInstanceOf( String.class );
+
+		instance.executeSource(
+		    """
+		       key = "c9vej1bOi6UgMTjySjbfa/+11JTKD1XTv0RRVLPvolk=";
+		       val = true;
+		       result = encrypt( val, key, "AES", "base64" );
+		    decryptResult = decrypt( result, key, "AES", "base64" );
+		       	""", context );
+
+		assertTrue( variables.get( result ) instanceof String );
+		assertEquals( "bv/vjxtYutOqVNCijv7EAQ==", variables.getAsString( result ) );
+		assertThat( variables.get( Key.of( "decryptResult" ) ) ).isInstanceOf( String.class );
+
 	}
 
 }

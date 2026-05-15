@@ -97,59 +97,60 @@ public class BoxClassSerializer implements ValueWriter {
 		// Add the class to the set of seen classes
 		visited.put( bxClass, Boolean.TRUE );
 
-		// If there is a "toJson" method in the class, then call it
-		// The user wants control over the serialization
-		if ( variablesScope.containsKey( Key.toJSON ) ) {
-			context.writeValue(
-			    variablesScope.dereferenceAndInvoke( boxContext, Key.toJSON, new Object[] { context, g, value }, false )
-			);
+		try {
+			// If there is a "toJson" method in the class, then call it
+			// The user wants control over the serialization
+			if ( variablesScope.containsKey( Key.toJSON ) ) {
+				context.writeValue(
+				    variablesScope.dereferenceAndInvoke( boxContext, Key.toJSON, new Object[] { context, g, value }, false )
+				);
+				return;
+			}
+
+			// logger.debug( "BoxClassSerializer.meta: {}", bxClass.getMetaData().toString() );
+			// logger.debug( "BoxClassSerializer.variablesScope: {}", variablesScope.toString() );
+			// logger.debug( "BoxClassSerializer.properties: {}", properties.toString() );
+
+			// Filter the variables scope with the properties
+			IStruct memento = variablesScope.entrySet().stream()
+			    // Filter only the properties for the class
+			    .filter( entry -> properties.containsKey( entry.getKey() ) )
+			    // Filter out any properties that have the jsonExclude annotation
+			    .filter( entry -> {
+				    Property prop = properties.get( entry.getKey() );
+
+				    // logger.debug( "BoxClassSerializer.writeValue: prop: {}", prop.name() );
+				    // logger.debug( "prop has a jsonExclude {}", prop.annotations().containsKey( Key.jsonExclude ) );
+				    // logger.debug( "prop is in the classJsonExcludes {}", classJsonExcludes.findIndex( prop.name(), false ) );
+
+				    // Does the property name exist in the jsonExclude list?
+				    return !prop.annotations().containsKey( Key.jsonExclude ) && classJsonExcludes.findIndex( prop.name(), false ) == 0;
+			    } )
+			    // Filter out any properties that have the serialiable = false annotation
+			    .filter( entry -> {
+				    Property prop = properties.get( entry.getKey() );
+				    return BooleanCaster.cast( prop.annotations().getOrDefault( Key.serializable, true ) );
+			    } )
+			    // If the property is null, then set it to an empty string
+			    .map( entry -> {
+				    if ( entry.getValue() == null ) {
+					    entry.setValue( "" );
+				    }
+				    return entry;
+			    } )
+			    // Collect to a struct object
+			    .collect(
+			        BLCollector.toStruct()
+			    );
+
+			// logger.debug( "BoxClassSerializer.writeValue: {}", memento.asString() );
+
+			// Iterate and output each name using the entry set
+			context.writeValue( memento );
+		} finally {
+			// Cleanup
 			visited.remove( bxClass );
-			return;
 		}
-
-		// logger.debug( "BoxClassSerializer.meta: {}", bxClass.getMetaData().toString() );
-		// logger.debug( "BoxClassSerializer.variablesScope: {}", variablesScope.toString() );
-		// logger.debug( "BoxClassSerializer.properties: {}", properties.toString() );
-
-		// Filter the variables scope with the properties
-		IStruct memento = variablesScope.entrySet().stream()
-		    // Filter only the properties for the class
-		    .filter( entry -> properties.containsKey( entry.getKey() ) )
-		    // Filter out any properties that have the jsonExclude annotation
-		    .filter( entry -> {
-			    Property prop = properties.get( entry.getKey() );
-
-			    // logger.debug( "BoxClassSerializer.writeValue: prop: {}", prop.name() );
-			    // logger.debug( "prop has a jsonExclude {}", prop.annotations().containsKey( Key.jsonExclude ) );
-			    // logger.debug( "prop is in the classJsonExcludes {}", classJsonExcludes.findIndex( prop.name(), false ) );
-
-			    // Does the property name exist in the jsonExclude list?
-			    return !prop.annotations().containsKey( Key.jsonExclude ) && classJsonExcludes.findIndex( prop.name(), false ) == 0;
-		    } )
-		    // Filter out any properties that have the serialiable = false annotation
-		    .filter( entry -> {
-			    Property prop = properties.get( entry.getKey() );
-			    return BooleanCaster.cast( prop.annotations().getOrDefault( Key.serializable, true ) );
-		    } )
-		    // If the property is null, then set it to an empty string
-		    .map( entry -> {
-			    if ( entry.getValue() == null ) {
-				    entry.setValue( "" );
-			    }
-			    return entry;
-		    } )
-		    // Collect to a struct object
-		    .collect(
-		        BLCollector.toStruct()
-		    );
-
-		// logger.debug( "BoxClassSerializer.writeValue: {}", memento.asString() );
-
-		// Iterate and output each name using the entry set
-		context.writeValue( memento );
-
-		// Cleanup
-		visited.remove( bxClass );
 	}
 
 	@Override

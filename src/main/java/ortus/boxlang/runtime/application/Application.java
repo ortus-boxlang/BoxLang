@@ -31,6 +31,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.async.watchers.WatcherInstance;
+import ortus.boxlang.runtime.async.watchers.listeners.ClassListener;
+import ortus.boxlang.runtime.async.watchers.listeners.ClosureListener;
+import ortus.boxlang.runtime.async.watchers.listeners.IWatcherListener;
+import ortus.boxlang.runtime.async.watchers.listeners.StructListener;
 import ortus.boxlang.runtime.bifs.global.scheduler.SchedulerStart;
 import ortus.boxlang.runtime.cache.filters.ICacheKeyFilter;
 import ortus.boxlang.runtime.cache.filters.SessionPrefixFilter;
@@ -41,12 +46,14 @@ import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.ApplicationScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ApplicationService;
@@ -55,6 +62,9 @@ import ortus.boxlang.runtime.services.AsyncService.ExecutorType;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.services.DatasourceService;
 import ortus.boxlang.runtime.services.SchedulerService;
+import ortus.boxlang.runtime.services.WatcherService;
+import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
@@ -124,6 +134,11 @@ public class Application {
 	protected SchedulerService				schedulerService				= BoxRuntime.getInstance().getSchedulerService();
 
 	/**
+	 * Watcher Service
+	 */
+	protected WatcherService				watcherService					= BoxRuntime.getInstance().getWatcherService();
+
+	/**
 	 * The sessions for this application
 	 */
 	private ICacheProvider					sessionsCache;
@@ -157,6 +172,11 @@ public class Application {
 	 * Started schedulers
 	 */
 	private List<Key>						startedSchedulers				= new ArrayList<>();
+
+	/**
+	 * Started watchers
+	 */
+	private List<Key>						startedWatchers					= new ArrayList<>();
 
 	/**
 	 * Default session cache properties
@@ -369,7 +389,10 @@ public class Application {
 
 			// Startup the schedulers so the application can use them
 			startupAppSchedulers( context.getRequestContext() );
+			// Startup the watchers so the application can use them
+			startupAppWatchers( context.getRequestContext() );
 
+			// Calculate the application duration for expiry purposes
 			calculateAppDuration();
 
 			// Start up expiry task
@@ -514,6 +537,109 @@ public class Application {
 				    }
 			    }
 		    } );
+	}
+
+	/**
+	 * Startup the application watchers if any are defined in the settings of the Application.bx
+	 *
+	 * <pre>
+	 * this.watchers = {
+	 *     myWatcher = {
+	 *         paths     = [ "/path/to/watch" ],
+	 *         listener  = myListenerClosure,  // Function, IStruct, class name String, or IClassRunnable instance
+	 *         recursive = true,               // optional, default true
+	 *         debounce  = 0,                  // optional, ms
+	 *         throttle  = 0,                  // optional, ms
+	 *         atomicWrites   = true,          // optional, default true
+	 *         errorThreshold = 10             // optional, default 10
+	 *     }
+	 * }
+	 * </pre>
+	 *
+	 * @param requestContext The request context
+	 */
+	public void startupAppWatchers( RequestBoxContext requestContext ) {
+		StructCaster
+		    .attempt( requestContext.getConfigItems( Key.applicationSettings, Key.watchers ) )
+		    .ifPresent( appWatchers -> {
+			    for ( Map.Entry<Key, Object> entry : appWatchers.entrySet() ) {
+				    Key watcherKey = entry.getKey();
+				    Key watcherName = Key.of( this.name.getName() + ":" + watcherKey.getName() );
+
+				    // Skip if already registered
+				    if ( watcherService.hasWatcher( watcherName ) ) {
+					    continue;
+				    }
+
+				    IStruct def		= StructCaster.cast( entry.getValue() );
+
+				    // Resolve paths: string or array
+				    Object pathsArg	= def.get( Key.paths );
+				    Array pathArray	= new Array();
+				    if ( pathsArg instanceof String singlePath ) {
+					    pathArray.add( singlePath );
+				    } else if ( pathsArg instanceof Array arr ) {
+					    pathArray = arr;
+				    } else {
+					    throw new BoxRuntimeException(
+					        "Application watcher [" + watcherKey.getName() + "]: 'paths' must be a string or an array of strings." );
+				    }
+
+				    // Resolve listener
+				    Object			listenerArg	= def.get( Key.listener );
+				    IWatcherListener listener	= resolveAppWatcherListener( listenerArg, requestContext );
+
+				    // Build the watcher instance
+				    WatcherInstance	watcher		= WatcherInstance.builder( watcherName )
+				        .paths( pathArray )
+				        .recursive( BooleanCaster.cast( def.getOrDefault( Key.recursive, true ) ) )
+				        .debounce( LongCaster.cast( def.getOrDefault( Key.debounce, 0L ) ) )
+				        .throttle( LongCaster.cast( def.getOrDefault( Key.throttle, 0L ) ) )
+				        .atomicWrites( BooleanCaster.cast( def.getOrDefault( Key.atomicWrites, true ) ) )
+				        .errorThreshold( IntegerCaster.cast( def.getOrDefault( Key.errorThreshold, 10 ) ) )
+				        .parentContext( requestContext )
+				        .listener( listener )
+				        .build();
+
+				    watcherService.registerAndStart( watcher, false );
+				    startedWatchers.add( watcherName );
+			    }
+		    } );
+	}
+
+	/**
+	 * Resolves a listener definition from an Application.bx watcher struct entry into an {@link IWatcherListener}.
+	 *
+	 * Supported forms:
+	 * <ul>
+	 * <li>{@link Function} — wrapped as a {@code ClosureListener}</li>
+	 * <li>{@link IStruct} — wrapped as a {@code StructListener}</li>
+	 * <li>{@link IClassRunnable} — wrapped as a {@code ClassListener} using the pre-instantiated class</li>
+	 * <li>{@link String} — treated as a class name; wrapped as a {@code ClassListener}</li>
+	 * </ul>
+	 *
+	 * @param listenerArg    The raw listener value from the watcher definition struct
+	 * @param requestContext The request context used for class resolution
+	 *
+	 * @return An {@link IWatcherListener} instance
+	 *
+	 * @throws BoxRuntimeException if {@code listenerArg} is not a supported type
+	 */
+	private IWatcherListener resolveAppWatcherListener( Object listenerArg, RequestBoxContext requestContext ) {
+		if ( listenerArg instanceof Function fn ) {
+			return new ClosureListener( fn );
+		}
+		if ( listenerArg instanceof IStruct structArg ) {
+			return new StructListener( structArg );
+		}
+		if ( listenerArg instanceof IClassRunnable icr ) {
+			return new ClassListener( icr, requestContext );
+		}
+		if ( listenerArg instanceof String className ) {
+			return new ClassListener( className, requestContext );
+		}
+		throw new BoxRuntimeException(
+		    "Application watcher listener must be a Function, IStruct of functions, a class name String, or an IClassRunnable instance." );
 	}
 
 	/**
@@ -801,8 +927,10 @@ public class Application {
 		// Shutdown all started schedulers if forced
 		if ( force ) {
 			startedSchedulers.forEach( schedulerName -> {
-				// TODO: Allow the user to configure a timeout for graceful shutdown
 				schedulerService.removeScheduler( schedulerName );
+			} );
+			startedWatchers.forEach( watcherName -> {
+				watcherService.removeWatcher( watcherName );
 			} );
 		}
 

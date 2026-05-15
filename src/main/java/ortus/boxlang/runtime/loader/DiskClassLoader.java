@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
@@ -42,6 +43,7 @@ import org.objectweb.asm.tree.MethodNode;
 import ortus.boxlang.compiler.ClassInfo;
 import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.interop.MethodRecord;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.ObjectRef;
@@ -134,7 +136,13 @@ public class DiskClassLoader extends URLClassLoader {
 	 * introduce read locking overhead.
 	 * </p>
 	 */
-	private final java.util.Map<String, java.lang.ref.WeakReference<Class<?>>>	loadedClasses	= new java.util.HashMap<>();
+	private final java.util.Map<String, java.lang.ref.WeakReference<Class<?>>>	loadedClasses		= new java.util.HashMap<>();
+
+	/**
+	 * This caches the method handles for the class so we don't have to look them up every time. This is used by the DynamicInteropService, but stored here
+	 * so when a DCL is GC'd the cache goes with it.
+	 */
+	private final ConcurrentHashMap<String, MethodRecord>						methodHandleCache	= new ConcurrentHashMap<>( 32 );
 
 	/**
 	 * Constructs a new DiskClassLoader with the specified configuration.
@@ -223,6 +231,8 @@ public class DiskClassLoader extends URLClassLoader {
 			}
 			// Ok, we give up. Load it up.
 			var clazz = super.loadClass( name );
+			// Force the class to initialize here, so we can catch initialization errors in our ClassInfo
+			Class.forName( name, true, this );
 			loadedClasses.put( name, new java.lang.ref.WeakReference<>( clazz ) );
 			return clazz;
 		}
@@ -237,6 +247,12 @@ public class DiskClassLoader extends URLClassLoader {
 	public Class<?> defineClass( String name, byte[] bytes ) {
 		// Define it
 		Class<?> clazz = defineClass( name, bytes, 0, bytes.length );
+		// Force the class to initialize here, so we can catch initialization errors in our ClassInfo
+		try {
+			Class.forName( name, true, this );
+		} catch ( ClassNotFoundException e ) {
+			// This class will always exist because we literally just defined it.
+		}
 		// Add it to our cache
 		synchronized ( loadedClasses ) {
 			loadedClasses.put( name, new java.lang.ref.WeakReference<>( clazz ) );
@@ -313,6 +329,12 @@ public class DiskClassLoader extends URLClassLoader {
 		byte[] bytes;
 		try {
 			bytes = Files.readAllBytes( diskPath );
+			// Guard against empty or corrupt class files (e.g. from a concurrent write race)
+			if ( bytes.length < 8 ) {
+				Files.deleteIfExists( diskPath );
+				boxPiler.compileClassInfo( classPoolName, baseName );
+				return loadClass( name );
+			}
 			if ( isBaseClass ) {
 				// Validate bytecode version
 				validateByteCodeVersion( bytes, name, diskPath );
@@ -869,6 +891,14 @@ public class DiskClassLoader extends URLClassLoader {
 		synchronized ( loadedClasses ) {
 			loadedClasses.clear();
 		}
+		methodHandleCache.clear();
+	}
+
+	/**
+	 * Get the method handle cache
+	 */
+	public ConcurrentHashMap<String, MethodRecord> getMethodHandleCache() {
+		return methodHandleCache;
 	}
 
 }

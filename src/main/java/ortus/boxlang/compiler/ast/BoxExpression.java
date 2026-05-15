@@ -19,6 +19,7 @@ import java.util.Iterator;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
+import ortus.boxlang.compiler.ast.expression.BoxSpreadExpression;
 import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
 import ortus.boxlang.compiler.ast.expression.IBoxSimpleLiteral;
 import ortus.boxlang.runtime.scopes.Key;
@@ -118,9 +119,39 @@ public abstract class BoxExpression extends BoxNode {
 			return fqn.getValue();
 		}
 		if ( this instanceof BoxArrayLiteral arr ) {
+			boolean ambiguousSpreadOnly = !arr.getValues().isEmpty()
+			    && arr.getValues().stream().allMatch( value -> value instanceof BoxSpreadExpression );
+			if ( ambiguousSpreadOnly ) {
+				Array	arrayResult		= Array.of();
+				IStruct	structResult	= new Struct( IStruct.TYPES.LINKED );
+				boolean	hasArraySpread	= false;
+				boolean	hasStructSpread	= false;
+				for ( BoxExpression value : arr.getValues() ) {
+					BoxSpreadExpression	spread		= ( BoxSpreadExpression ) value;
+					Object				spreadValue	= spread.getExpression().getAsLiteralValue();
+					if ( spreadValue instanceof IStruct spreadStruct ) {
+						hasStructSpread = true;
+						spreadStruct.forEach( structResult::put );
+					} else {
+						hasArraySpread = true;
+						Array spreadArray = spreadToArrayOrThrow( spreadValue, "ambiguous bracket", spread );
+						arrayResult.addAll( spreadArray );
+					}
+					if ( hasArraySpread && hasStructSpread ) {
+						throw new ExpressionException( "Cannot mix array and struct spread values in an ambiguous bracket literal.", this );
+					}
+				}
+				return hasStructSpread ? structResult : arrayResult;
+			}
+
 			Array array = Array.of();
 			arr.getValues().forEach( value -> {
-				array.add( value.getAsLiteralValue() );
+				if ( value instanceof BoxSpreadExpression spread ) {
+					Array spreadArray = spreadToArrayOrThrow( spread.getExpression().getAsLiteralValue(), "array", spread );
+					array.addAll( spreadArray );
+				} else {
+					array.add( value.getAsLiteralValue() );
+				}
 			} );
 			return array;
 		}
@@ -128,19 +159,46 @@ public abstract class BoxExpression extends BoxNode {
 			IStruct					struct		= Struct.of();
 			Iterator<BoxExpression>	iterator	= str.getValues().iterator();
 			while ( iterator.hasNext() ) {
-				BoxExpression key = iterator.next();
-				if ( iterator.hasNext() ) {
-					BoxExpression value = iterator.next();
-					struct.put( Key.of( key.getAsSimpleValue( null, true ) ), value.getAsLiteralValue() );
+				BoxExpression current = iterator.next();
+				if ( current instanceof BoxSpreadExpression spread ) {
+					Object spreadValue = spread.getExpression().getAsLiteralValue();
+					if ( spreadValue instanceof IStruct spreadStruct ) {
+						spreadStruct.forEach( struct::put );
+					} else {
+						Array spreadArray = spreadToArrayOrThrow( spreadValue, "struct", spread );
+						for ( int i = 1; i <= spreadArray.size(); i++ ) {
+							struct.put( Key.of( i ), spreadArray.getAt( i ) );
+						}
+					}
 				} else {
-					// Handle odd number of values
-					throw new IllegalArgumentException( "Invalid number of values in BoxStructLiteral" );
+					if ( iterator.hasNext() ) {
+						BoxExpression value = iterator.next();
+						struct.put( Key.of( current.getAsSimpleValue( null, true ) ), value.getAsLiteralValue() );
+					} else {
+						// Handle odd number of values
+						throw new IllegalArgumentException( "Invalid number of values in BoxStructLiteral" );
+					}
 				}
 			}
 			return struct;
 		}
 		// return "[Runtime Expression]";
 		throw new ExpressionException( "Non-literal value in BoxExpr type: " + this.getClass().getSimpleName(), this );
+	}
+
+	/**
+	 * spreadToArrayOrThrow.
+	 */
+	private static Array spreadToArrayOrThrow( Object spreadValue, String literalType, BoxNode node ) {
+		String typeDescription = spreadValue == null ? "null" : spreadValue.getClass().getName();
+		try {
+			return Array.copyOf( spreadValue );
+		} catch ( RuntimeException e ) {
+			if ( "ambiguous bracket".equals( literalType ) ) {
+				throw new ExpressionException( "Cannot spread value of type [" + typeDescription + "] into an ambiguous bracket literal.", node );
+			}
+			throw new ExpressionException( "Cannot spread value of type [" + typeDescription + "] into a " + literalType + " literal.", node );
+		}
 	}
 
 }

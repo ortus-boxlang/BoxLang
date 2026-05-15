@@ -302,6 +302,7 @@ public abstract class BaseApplicationListener {
 				createOrUpdateClassLoaderPaths();
 				createOrUpdateCaches();
 				createOrUpdateSchedulers();
+				createOrUpdateWatchers();
 				createOrUpdateSessionManagement();
 			}
 			// Cleanups
@@ -408,6 +409,13 @@ public abstract class BaseApplicationListener {
 	}
 
 	/**
+	 * Update or create the application watchers
+	 */
+	private void createOrUpdateWatchers() {
+		this.application.startupAppWatchers( this.context );
+	}
+
+	/**
 	 * Update or create the session management in an application if enabled.
 	 */
 	private void createOrUpdateSessionManagement() {
@@ -422,8 +430,8 @@ public abstract class BaseApplicationListener {
 
 		// Create session management if enabled
 		if ( existingSessionContext == null ) {
-			// if session management is enabled, add it
 			if ( sessionManagementEnabled ) {
+				// if session management is enabled, add it
 				initializeSession( this.context.getSessionID() );
 			}
 		}
@@ -894,7 +902,7 @@ public abstract class BaseApplicationListener {
 				default :
 					throw new BoxRuntimeException( "Unsupported returnFormat [" + returnFormat + "]. Valid options are 'json', 'wddx', 'xml', and 'plain'" );
 			}
-			context.writeToBuffer( stringResult );
+			context.writeToBuffer( stringResult, true );
 			// If this is a web request, we'll set the default content type in the web-support runtime since this code is core and technically runtime-agnostic, even though
 			// the only place we're actually firing the onClassRequest listener right now is in the web-support runtime
 		}

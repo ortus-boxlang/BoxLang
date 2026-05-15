@@ -339,7 +339,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "getlocaledisplayname", "core" );
 		BIFMap.put( "getlocaleinfo", "core" );
 		BIFMap.put( "getlocalelanguage", "" );
-		BIFMap.put( "getlocalhostip", "" );
+		BIFMap.put( "getlocalhostip", "core" );
 		BIFMap.put( "getluceeid", "" );
 		BIFMap.put( "getmemoryusage", "bx-oshi" );
 		BIFMap.put( "getmetadata", "core" );
@@ -478,9 +478,9 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "isnumeric", "core" );
 		BIFMap.put( "isnumericdate", "core" );
 		BIFMap.put( "isobject", "core" );
-		BIFMap.put( "ispdfarchive", "" );
-		BIFMap.put( "ispdffile", "" );
-		BIFMap.put( "ispdfobject", "" );
+		BIFMap.put( "ispdfarchive", "bx-pdf+" );
+		BIFMap.put( "ispdffile", "bx-pdf+" );
+		BIFMap.put( "ispdfobject", "bx-pdf+" );
 		BIFMap.put( "isquery", "core" );
 		BIFMap.put( "issafehtml", "bx-esapi" );
 		BIFMap.put( "issimplevalue", "core" );
@@ -1141,7 +1141,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 
 	/**
 	 * Determine if the given class name matches a known CFC-based service, and if so, add it to the list of features used.
-	 * 
+	 *
 	 * @param className The name of the class to check
 	 * @param node      The BoxNode where the class name was found, used for reporting the position of the feature usage
 	 */

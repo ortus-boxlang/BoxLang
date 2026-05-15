@@ -20,6 +20,7 @@ package ortus.boxlang.compiler.asmboxpiler.transformer.expression;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
@@ -38,18 +39,26 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxAccess;
+import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringBinding;
+import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentModifier;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentOperator;
 import ortus.boxlang.compiler.ast.expression.BoxDotAccess;
+import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringBinding;
+import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.dynamic.ArrayDestructurer;
+import ortus.boxlang.runtime.dynamic.ObjectDestructurer;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.operators.Concat;
@@ -84,7 +93,13 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			nodes = assignNullValue( ( BoxIdentifier ) assignment.getLeft() );
 		} else if ( assignment.getOp() == BoxAssignmentOperator.Equal ) {
 			List<AbstractInsnNode> jRight = transpiler.transform( assignment.getRight(), TransformerContext.NONE, ReturnValueContext.VALUE );
-			nodes = transformEquals( assignment.getLeft(), jRight, assignment.getOp(), assignment.getModifiers() );
+			if ( assignment.getLeft() instanceof BoxObjectDestructuringPattern pattern ) {
+				nodes = transformDestructuringEquals( pattern, jRight, assignment.getModifiers() );
+			} else if ( assignment.getLeft() instanceof BoxArrayDestructuringPattern pattern ) {
+				nodes = transformArrayDestructuringEquals( pattern, jRight, assignment.getModifiers() );
+			} else {
+				nodes = transformEquals( assignment.getLeft(), jRight, assignment.getOp(), assignment.getModifiers() );
+			}
 		} else {
 			nodes = transformCompoundEquals( assignment );
 		}
@@ -166,6 +181,16 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 				accessKeys.add( 0, transpiler.createKey( currentObjectAccess.getAccess() ) );
 			}
 			furthestLeft = currentObjectAccess.getContext();
+		}
+
+		// CF parses `var["foo"] = "bar"` as a `var` modifier + array literal LHS.
+		// Treat it as assignment to identifier `var` with bracket access key(s).
+		if ( hasVar && furthestLeft instanceof BoxArrayLiteral arrayLiteral ) {
+			hasVar = false;
+			for ( BoxExpression value : arrayLiteral.getValues() ) {
+				accessKeys.add( transpiler.createKey( value ) );
+			}
+			furthestLeft = new BoxIdentifier( "var", null, null );
 		}
 
 		if ( hasStatic && hasVar ) {
@@ -342,6 +367,375 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		}
 
 		return nodes;
+	}
+
+	/**
+	 * transformDestructuringEquals.
+	 */
+	private List<AbstractInsnNode> transformDestructuringEquals( BoxObjectDestructuringPattern pattern, List<AbstractInsnNode> jRight,
+	    List<BoxAssignmentModifier> modifiers ) {
+		boolean							hasVar			= hasVar( modifiers );
+		boolean							hasStatic		= hasStatic( modifiers );
+		boolean							hasFinal		= hasFinal( modifiers );
+		boolean							isDeclaration	= !modifiers.isEmpty();
+		String							mustBeScopeName	= null;
+		Optional<MethodContextTracker>	tracker			= transpiler.getCurrentMethodContextTracker();
+
+		if ( hasStatic && hasVar ) {
+			throw new ExpressionException( "You cannot use the [var] and [static] keywords together", pattern.getPosition(), pattern.getSourceText() );
+		}
+
+		if ( hasVar ) {
+			mustBeScopeName = "local";
+		} else if ( hasStatic ) {
+			mustBeScopeName = "static";
+		}
+
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+		tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
+		nodes.addAll( jRight );
+
+		nodes.add( new LdcInsnNode( hasFinal ? 1 : 0 ) );
+
+		if ( mustBeScopeName != null ) {
+			nodes.addAll( transpiler.createKey( mustBeScopeName ) );
+		} else {
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		}
+
+		nodes.addAll( buildDestructuringBindingsArrayNodes( pattern.getBindings(), isDeclaration ) );
+
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( ObjectDestructurer.class ),
+		    "destructure",
+		    Type.getMethodDescriptor(
+		        Type.getType( Object.class ),
+		        Type.getType( IBoxContext.class ),
+		        Type.getType( Object.class ),
+		        Type.BOOLEAN_TYPE,
+		        Type.getType( Key.class ),
+		        Type.getType( ObjectDestructurer.Binding[].class )
+		    ),
+		    false ) );
+
+		return nodes;
+	}
+
+	/**
+	 * transformArrayDestructuringEquals.
+	 */
+	private List<AbstractInsnNode> transformArrayDestructuringEquals( BoxArrayDestructuringPattern pattern, List<AbstractInsnNode> jRight,
+	    List<BoxAssignmentModifier> modifiers ) {
+		boolean							hasVar			= hasVar( modifiers );
+		boolean							hasStatic		= hasStatic( modifiers );
+		boolean							hasFinal		= hasFinal( modifiers );
+		boolean							isDeclaration	= !modifiers.isEmpty();
+		String							mustBeScopeName	= null;
+		Optional<MethodContextTracker>	tracker			= transpiler.getCurrentMethodContextTracker();
+
+		if ( hasStatic && hasVar ) {
+			throw new ExpressionException( "You cannot use the [var] and [static] keywords together", pattern.getPosition(), pattern.getSourceText() );
+		}
+
+		if ( hasVar ) {
+			mustBeScopeName = "local";
+		} else if ( hasStatic ) {
+			mustBeScopeName = "static";
+		}
+
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+		tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
+		nodes.addAll( jRight );
+
+		nodes.add( new LdcInsnNode( hasFinal ? 1 : 0 ) );
+
+		if ( mustBeScopeName != null ) {
+			nodes.addAll( transpiler.createKey( mustBeScopeName ) );
+		} else {
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		}
+
+		nodes.addAll( buildArrayDestructuringBindingsArrayNodes( pattern.getBindings(), isDeclaration ) );
+
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( ArrayDestructurer.class ),
+		    "destructure",
+		    Type.getMethodDescriptor(
+		        Type.getType( Object.class ),
+		        Type.getType( IBoxContext.class ),
+		        Type.getType( Object.class ),
+		        Type.BOOLEAN_TYPE,
+		        Type.getType( Key.class ),
+		        Type.getType( ArrayDestructurer.Binding[].class )
+		    ),
+		    false ) );
+
+		return nodes;
+	}
+
+	/**
+	 * buildDestructuringBindingsArrayNodes.
+	 */
+	private List<AbstractInsnNode> buildDestructuringBindingsArrayNodes( List<BoxObjectDestructuringBinding> bindings, boolean isDeclaration ) {
+		return AsmHelper.array( Type.getType( ObjectDestructurer.Binding.class ), bindings,
+		    ( binding, i ) -> buildDestructuringBindingNodes( binding, isDeclaration ) );
+	}
+
+	/**
+	 * buildDestructuringBindingNodes.
+	 */
+	private List<AbstractInsnNode> buildDestructuringBindingNodes( BoxObjectDestructuringBinding binding, boolean isDeclaration ) {
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+		if ( binding.isRest() ) {
+			nodes.addAll( buildDestructuringTargetNodes( binding.getTarget(), isDeclaration ) );
+			nodes.add( new MethodInsnNode(
+			    Opcodes.INVOKESTATIC,
+			    Type.getInternalName( ObjectDestructurer.class ),
+			    "rest",
+			    Type.getMethodDescriptor( Type.getType( ObjectDestructurer.Binding.class ), Type.getType( ObjectDestructurer.Target.class ) ),
+			    false ) );
+			return nodes;
+		}
+
+		nodes.add( new LdcInsnNode( extractDestructuringKeyName( binding ) ) );
+
+		if ( binding.getTarget() != null ) {
+			nodes.addAll( buildDestructuringTargetNodes( binding.getTarget(), isDeclaration ) );
+		} else {
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		}
+
+		if ( binding.getPattern() != null ) {
+			nodes.addAll( buildDestructuringBindingsArrayNodes( binding.getPattern().getBindings(), isDeclaration ) );
+		} else {
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		}
+
+		if ( binding.getDefaultValue() != null ) {
+			nodes.addAll( AsmHelper.generateArgumentProducerLambda( transpiler,
+			    () -> transpiler.transform( binding.getDefaultValue(), TransformerContext.NONE, ReturnValueContext.VALUE ) ) );
+		} else {
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		}
+
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( ObjectDestructurer.class ),
+		    "binding",
+		    Type.getMethodDescriptor(
+		        Type.getType( ObjectDestructurer.Binding.class ),
+		        Type.getType( String.class ),
+		        Type.getType( ObjectDestructurer.Target.class ),
+		        Type.getType( ObjectDestructurer.Binding[].class ),
+		        Type.getType( Function.class )
+		    ),
+		    false ) );
+
+		return nodes;
+	}
+
+	/**
+	 * buildArrayDestructuringBindingsArrayNodes.
+	 */
+	private List<AbstractInsnNode> buildArrayDestructuringBindingsArrayNodes( List<BoxArrayDestructuringBinding> bindings, boolean isDeclaration ) {
+		return AsmHelper.array( Type.getType( ArrayDestructurer.Binding.class ), bindings,
+		    ( binding, i ) -> buildArrayDestructuringBindingNodes( binding, isDeclaration ) );
+	}
+
+	/**
+	 * buildArrayDestructuringBindingNodes.
+	 */
+	private List<AbstractInsnNode> buildArrayDestructuringBindingNodes( BoxArrayDestructuringBinding binding, boolean isDeclaration ) {
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+		if ( binding.isRest() ) {
+			nodes.addAll( buildArrayDestructuringTargetNodes( binding.getTarget(), isDeclaration ) );
+			nodes.add( new MethodInsnNode(
+			    Opcodes.INVOKESTATIC,
+			    Type.getInternalName( ArrayDestructurer.class ),
+			    "rest",
+			    Type.getMethodDescriptor( Type.getType( ArrayDestructurer.Binding.class ), Type.getType( ArrayDestructurer.Target.class ) ),
+			    false ) );
+			return nodes;
+		}
+
+		if ( binding.getTarget() != null ) {
+			nodes.addAll( buildArrayDestructuringTargetNodes( binding.getTarget(), isDeclaration ) );
+		} else {
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		}
+
+		if ( binding.getPattern() != null ) {
+			nodes.addAll( buildArrayDestructuringBindingsArrayNodes( binding.getPattern().getBindings(), isDeclaration ) );
+		} else {
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		}
+
+		if ( binding.getDefaultValue() != null ) {
+			nodes.addAll( AsmHelper.generateArgumentProducerLambda( transpiler,
+			    () -> transpiler.transform( binding.getDefaultValue(), TransformerContext.NONE, ReturnValueContext.VALUE ) ) );
+		} else {
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		}
+
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( ArrayDestructurer.class ),
+		    "binding",
+		    Type.getMethodDescriptor(
+		        Type.getType( ArrayDestructurer.Binding.class ),
+		        Type.getType( ArrayDestructurer.Target.class ),
+		        Type.getType( ArrayDestructurer.Binding[].class ),
+		        Type.getType( Function.class )
+		    ),
+		    false ) );
+
+		return nodes;
+	}
+
+	/**
+	 * buildDestructuringTargetNodes.
+	 */
+	private List<AbstractInsnNode> buildDestructuringTargetNodes( BoxExpression target, boolean isDeclaration ) {
+		DestructuringTargetDescriptor	descriptor	= describeDestructuringTarget( target, isDeclaration );
+		List<AbstractInsnNode>			nodes		= new ArrayList<>();
+		nodes.add( new LdcInsnNode( descriptor.scoped ? 1 : 0 ) );
+		nodes.addAll( AsmHelper.array( Type.getType( String.class ), descriptor.path, ( segment, i ) -> List.of( new LdcInsnNode( segment ) ) ) );
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( ObjectDestructurer.class ),
+		    "target",
+		    Type.getMethodDescriptor(
+		        Type.getType( ObjectDestructurer.Target.class ),
+		        Type.BOOLEAN_TYPE,
+		        Type.getType( String[].class )
+		    ),
+		    false ) );
+		return nodes;
+	}
+
+	/**
+	 * buildArrayDestructuringTargetNodes.
+	 */
+	private List<AbstractInsnNode> buildArrayDestructuringTargetNodes( BoxExpression target, boolean isDeclaration ) {
+		DestructuringTargetDescriptor	descriptor	= describeDestructuringTarget( target, isDeclaration );
+		List<AbstractInsnNode>			nodes		= new ArrayList<>();
+		nodes.add( new LdcInsnNode( descriptor.scoped ? 1 : 0 ) );
+		nodes.addAll( AsmHelper.array( Type.getType( String.class ), descriptor.path, ( segment, i ) -> List.of( new LdcInsnNode( segment ) ) ) );
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( ArrayDestructurer.class ),
+		    "target",
+		    Type.getMethodDescriptor(
+		        Type.getType( ArrayDestructurer.Target.class ),
+		        Type.BOOLEAN_TYPE,
+		        Type.getType( String[].class )
+		    ),
+		    false ) );
+		return nodes;
+	}
+
+	/**
+	 * describeDestructuringTarget.
+	 */
+	private DestructuringTargetDescriptor describeDestructuringTarget( BoxExpression target, boolean isDeclaration ) {
+		if ( target instanceof BoxIdentifier id ) {
+			return new DestructuringTargetDescriptor( false, List.of( id.getName() ) );
+		}
+		if ( target instanceof BoxScope scope ) {
+			return new DestructuringTargetDescriptor( false, List.of( scope.getName() ) );
+		}
+		if ( target instanceof BoxDotAccess dotAccess ) {
+			List<String>	segments	= new ArrayList<>();
+			BoxExpression	current		= dotAccess;
+			while ( current instanceof BoxDotAccess dot ) {
+				if ( dot.isSafe() ) {
+					throw new ExpressionException( "Destructuring targets cannot use safe navigation.", dot.getPosition(), dot.getSourceText() );
+				}
+				if ( ! ( dot.getAccess() instanceof BoxIdentifier id ) ) {
+					throw new ExpressionException(
+					    "Destructuring targets only support identifier path segments.",
+					    dot.getAccess().getPosition(),
+					    dot.getAccess().getSourceText() );
+				}
+				segments.add( 0, id.getName() );
+				current = dot.getContext();
+			}
+			String scopeName;
+			if ( current instanceof BoxScope scope ) {
+				scopeName = scope.getName();
+			} else if ( current instanceof BoxIdentifier id && isExplicitDestructuringScope( id.getName() ) ) {
+				scopeName = id.getName();
+			} else {
+				throw new ExpressionException(
+				    "Destructuring dotted targets must start with an explicit scope.",
+				    target.getPosition(),
+				    target.getSourceText() );
+			}
+			segments.add( 0, scopeName );
+			if ( isDeclaration ) {
+				throw new ExpressionException(
+				    "Scoped targets are not allowed in var/final/static destructuring declarations.",
+				    target.getPosition(),
+				    target.getSourceText() );
+			}
+			return new DestructuringTargetDescriptor( true, segments );
+		}
+
+		throw new ExpressionException(
+		    "Unsupported destructuring target [" + target.getClass().getSimpleName() + "]",
+		    target.getPosition(),
+		    target.getSourceText() );
+	}
+
+	/**
+	 * extractDestructuringKeyName.
+	 */
+	private String extractDestructuringKeyName( BoxObjectDestructuringBinding binding ) {
+		BoxExpression key = binding.getKey();
+		if ( key instanceof BoxIdentifier id ) {
+			return id.getName();
+		}
+		if ( key instanceof BoxStringLiteral str ) {
+			return str.getValue();
+		}
+		if ( key instanceof BoxIntegerLiteral integer ) {
+			return integer.getValue();
+		}
+		if ( key instanceof BoxFQN fqn ) {
+			return fqn.getValue();
+		}
+		if ( key instanceof BoxScope scope ) {
+			return scope.getName();
+		}
+
+		throw new ExpressionException(
+		    "Unsupported destructuring key [" + key.getClass().getSimpleName() + "]",
+		    binding.getPosition(),
+		    binding.getSourceText() );
+	}
+
+	private static class DestructuringTargetDescriptor {
+
+		final boolean		scoped;
+		final List<String>	path;
+
+		DestructuringTargetDescriptor( boolean scoped, List<String> path ) {
+			this.scoped	= scoped;
+			this.path	= path;
+		}
+	}
+
+	/**
+	 * isExplicitDestructuringScope.
+	 */
+	private boolean isExplicitDestructuringScope( String scopeName ) {
+		return switch ( scopeName.toLowerCase() ) {
+			case "application", "arguments", "cgi", "client", "cookie", "form", "local", "request", "server", "session", "static", "this", "thread",
+			    "url", "variables" -> true;
+			default -> false;
+		};
 	}
 
 	private List<AbstractInsnNode> transformCompoundEquals( BoxAssignment assigment ) throws IllegalStateException {

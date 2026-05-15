@@ -14,8 +14,10 @@
  */
 package ortus.boxlang.compiler.parser;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +30,7 @@ import org.antlr.v4.runtime.TokenSource;
 import org.antlr.v4.runtime.misc.Pair;
 
 import ortus.boxlang.parser.antlr.BoxLexer;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 
 /**
  * I extend the generated ANTLR lexer to add some custom methods for getting unpopped modes
@@ -93,6 +96,36 @@ public class BoxLexerCustom extends BoxLexer {
 	 * where EQ appears to be encased in pound signs but is not.
 	 */
 	boolean										justClosedPoundVar		= false;
+
+	/**
+	 * Are we inside an opening function tag's attributes?
+	 */
+	boolean										inFunctionOpeningTag	= false;
+
+	/**
+	 * Did we just see ATTRIBUTE_NAME "output" and are looking for the equals sign?
+	 */
+	boolean										lookingForOutputEquals	= false;
+
+	/**
+	 * Are we currently capturing the output attribute value?
+	 */
+	boolean										capturingOutputValue	= false;
+
+	/**
+	 * The captured output attribute value text
+	 */
+	StringBuilder								outputValueCapture		= new StringBuilder();
+
+	/**
+	 * Has the output attribute been determined to be true for this function?
+	 */
+	boolean										functionOutputIsTrue	= false;
+
+	/**
+	 * Stack tracking whether each nested function level has output=true
+	 */
+	Deque<Boolean>								functionOutputStack		= new ArrayDeque<>();
 
 	/**
 	 * Tokens that end an operator. Instead of having "less than" or "less than or equal to" as a single token sequence,
@@ -270,6 +303,14 @@ public class BoxLexerCustom extends BoxLexer {
 		return null;
 	}
 
+	/**
+	 * Get the next token from the input stream, applying custom token transformations.
+	 * Handles splitting of COMPONENT_CLOSE_EQUAL into two tokens, COMPONENT_PREFIX fixups
+	 * for new/import contexts, UNEXPECTED_EXPRESSION_END error reporting, and keyword-to-identifier
+	 * conversion when keywords are used as variable or function names.
+	 *
+	 * @return the next token
+	 */
 	public Token nextToken() {
 		if ( inComponentCloseEqual ) {
 			inComponentCloseEqual = false;
@@ -325,6 +366,9 @@ public class BoxLexerCustom extends BoxLexer {
 				return setLastToken( componentCloseToken );
 
 			default :
+
+				// --- Function output=true tracking ---
+				handleFunctionOutputTracking( nextToken, nextTokenType );
 
 				if ( keywordsThatMayBeIdentifiers.contains( nextTokenType ) ) {
 					// Let's run a series of tests to determine if this keyword is being used as an identifier (variable, function name) and is NOT a keyword
@@ -400,11 +444,22 @@ public class BoxLexerCustom extends BoxLexer {
 					} else if ( nextTokenType == REQUIRED && !lastTokenWas( DOT ) && getParenCount() > 0 && nextNonWhiteSpaceIsAnyChar() ) {
 						// function foo( required string bar )
 						isIdentifier = false;
-					} else if ( nextTokenType == VAR && !lastTokenWas( DOT )
-					    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '\'' ) || nextNonWhiteSpaceCharIs( '"' ) )
+					} else if ( ( nextTokenType == VAR || nextTokenType == FINAL || nextTokenType == STATIC ) && !lastTokenWas( DOT )
+					    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '\'' ) || nextNonWhiteSpaceCharIs( '"'
+					    ) || nextNonWhiteSpaceCharIs( '{' ) )
 					    && !nextNonWhiteSpaceCharsAre( operatorStartingChars )
 					    && ( lastToken != null && !operatorEndingTokens.contains( lastToken.getType() ) ) ) {
 						// var foo = "bar"
+						// final foo = "bar"
+						// static foo = "bar"
+						// var { foo } = data
+						isIdentifier = false;
+					} else if ( ( nextTokenType == VAR || nextTokenType == FINAL || nextTokenType == STATIC ) && !lastTokenWas( DOT )
+					    && nextNonWhiteSpaceCharIs( '[' )
+					    && ( lastToken == null || lastTokenWas( SEMICOLON ) || lastTokenWas( LBRACE ) || lastTokenWas( RBRACE )
+					        || lastTokenWas( RPAREN ) || ( inForParen && lastTokenWas( LPAREN ) ) ) ) {
+						// var [ first, second ] = data
+						// final [ first, ...rest ] = data
 						isIdentifier = false;
 					} else if ( nextTokenType == NEW && !lastTokenWas( DOT )
 					    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '\'' ) || nextNonWhiteSpaceCharIs( '"' )
@@ -504,7 +559,7 @@ public class BoxLexerCustom extends BoxLexer {
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because last token was a period" );
 						isIdentifier = true;
-					} else if ( nextNonWhiteSpaceCharIs( '.' ) && nextTokenType != RETURN ) {
+					} else if ( nextNonWhiteSpaceCharIsDotButNotNumeric() && nextTokenType != RETURN ) {
 						// next char is a period (.)
 						// but allow return .functionMemberWrapper();
 						if ( debug )
@@ -591,7 +646,8 @@ public class BoxLexerCustom extends BoxLexer {
 					}
 				}
 				// Track if we just closed a #var# (IDENTIFIER followed by ICHAR) or just closed a function call #foo()# (RPAREN followed by ICHAR)
-				if ( nextToken.getType() == ICHAR && lastToken != null && ( lastToken.getType() == IDENTIFIER || lastToken.getType() == RPAREN ) ) {
+				if ( nextToken.getType() == ICHAR && lastToken != null
+				    && ( lastToken.getType() == IDENTIFIER || lastToken.getType() == RPAREN || lastToken.getType() == RBRACKET ) ) {
 					justClosedPoundVar = true;
 				} else if ( nextToken.getChannel() != HIDDEN ) {
 					justClosedPoundVar = false;
@@ -600,6 +656,108 @@ public class BoxLexerCustom extends BoxLexer {
 		}
 	}
 
+	/**
+	 * Handle tracking of function output=true attribute in template mode.
+	 * When a bx:function tag has output=true, we manually push TEMPLATE_OUTPUT_MODE
+	 * after the grammar's normal COMPONENT_CLOSE handling.
+	 *
+	 * @param nextToken     the current token
+	 * @param nextTokenType the type of the current token
+	 */
+	private void handleFunctionOutputTracking( Token nextToken, int nextTokenType ) {
+		// Detect opening vs closing function tags
+		if ( nextTokenType == TEMPLATE_FUNCTION ) {
+			if ( lastTokenWas( SLASH_PREFIX ) ) {
+				// Closing function tag - pop stack and set outputting flag if needed
+				if ( !this.functionOutputStack.isEmpty() && this.functionOutputStack.pop() ) {
+					this.thisComponentIsOutputting = true;
+				}
+			} else {
+				// Opening function tag - start tracking attributes
+				this.functionOutputStack.push( false );
+				this.inFunctionOpeningTag	= true;
+				this.functionOutputIsTrue	= false;
+				this.lookingForOutputEquals	= false;
+				this.capturingOutputValue	= false;
+				this.outputValueCapture.setLength( 0 );
+			}
+		}
+
+		if ( this.inFunctionOpeningTag ) {
+			// Step 1: Handle value capture
+			if ( this.capturingOutputValue ) {
+				if ( nextTokenType == COMPONENT_CLOSE || nextTokenType == COMPONENT_SLASH_CLOSE
+				    || nextTokenType == ATTRIBUTE_NAME ) {
+					// End of the value - evaluate what we captured
+					evaluateOutputValue();
+				} else if ( nextToken.getChannel() == DEFAULT_TOKEN_CHANNEL
+				    && nextTokenType != COMPONENT_EQUALS
+				    && nextTokenType != OPEN_QUOTE && nextTokenType != CLOSE_QUOTE
+				    && nextTokenType != ICHAR ) {
+					this.outputValueCapture.append( nextToken.getText() );
+				}
+			}
+
+			// Step 2: Detect output attribute and its equals sign
+			if ( !this.capturingOutputValue ) {
+				if ( this.lookingForOutputEquals && nextTokenType == COMPONENT_EQUALS ) {
+					this.lookingForOutputEquals	= false;
+					this.capturingOutputValue	= true;
+					this.outputValueCapture.setLength( 0 );
+				} else if ( nextTokenType == ATTRIBUTE_NAME && nextToken.getText().equalsIgnoreCase( "output" ) ) {
+					this.lookingForOutputEquals = true;
+				} else if ( nextTokenType == ATTRIBUTE_NAME ) {
+					this.lookingForOutputEquals = false;
+				}
+			}
+
+			// Step 3: Handle component close - push output mode if output=true
+			if ( nextTokenType == COMPONENT_CLOSE ) {
+				if ( this.functionOutputIsTrue ) {
+					// Grammar already popped us back to DEFAULT_TEMPLATE_MODE.
+					// Push output mode on top so # expressions are interpolated in the function body.
+					pushMode( TEMPLATE_OUTPUT_MODE );
+					pushMode( DEFAULT_TEMPLATE_MODE );
+					this.functionOutputStack.pop();
+					this.functionOutputStack.push( true );
+				}
+				this.inFunctionOpeningTag	= false;
+				this.lookingForOutputEquals	= false;
+				this.capturingOutputValue	= false;
+				this.functionOutputIsTrue	= false;
+			} else if ( nextTokenType == COMPONENT_SLASH_CLOSE ) {
+				// Self-closing function tag - no body
+				this.functionOutputStack.pop();
+				this.inFunctionOpeningTag	= false;
+				this.lookingForOutputEquals	= false;
+				this.capturingOutputValue	= false;
+				this.functionOutputIsTrue	= false;
+			}
+		}
+	}
+
+	/**
+	 * Evaluate the captured output attribute value and set functionOutputIsTrue if it's truthy.
+	 */
+	private void evaluateOutputValue() {
+		this.capturingOutputValue = false;
+		String value = this.outputValueCapture.toString().trim();
+		if ( !value.isEmpty() ) {
+			var attempt = BooleanCaster.attempt( value );
+			if ( attempt.wasSuccessful() && attempt.get() ) {
+				this.functionOutputIsTrue = true;
+			}
+		}
+	}
+
+	/**
+	 * Store the last non-hidden token and update lexer state flags for class tracking,
+	 * switch body tracking, and for-loop paren tracking.
+	 *
+	 * @param token the token to set as the last token
+	 *
+	 * @return the token passed in
+	 */
 	private Token setLastToken( Token token ) {
 		if ( token.getChannel() != HIDDEN ) {
 			lastToken = token;
@@ -664,10 +822,19 @@ public class BoxLexerCustom extends BoxLexer {
 		return null;
 	}
 
+	/**
+	 * Reset the lexer state, pushing the default mode and clearing all tracking flags.
+	 */
 	public void reset() {
 		super.reset();
 		pushMode( defaultMode );
-		justClosedPoundVar = false;
+		justClosedPoundVar		= false;
+		inFunctionOpeningTag	= false;
+		lookingForOutputEquals	= false;
+		capturingOutputValue	= false;
+		outputValueCapture.setLength( 0 );
+		functionOutputIsTrue = false;
+		functionOutputStack.clear();
 	}
 
 	/**
@@ -710,11 +877,37 @@ public class BoxLexerCustom extends BoxLexer {
 		return results;
 	}
 
+	/**
+	 * Check if the next non-whitespace character in the input stream matches the given character code.
+	 *
+	 * @param charCode the character code to check against
+	 *
+	 * @return true if the next non-whitespace character matches the given character code
+	 */
 	private boolean nextNonWhiteSpaceCharIs( int charCode ) {
 		int nextChar = getInputStream().LA( skipWhiteSpace( 1 ) );
 		return nextChar == charCode;
 	}
 
+	/**
+	 * Check if the next non-whitespace character is a dot (period) that is NOT followed by a digit.
+	 * This distinguishes property access (e.g. {@code foo.bar}) from numeric literals (e.g. {@code .5}).
+	 *
+	 * @return true if the next non-whitespace character is a dot not followed by a digit
+	 */
+	private boolean nextNonWhiteSpaceCharIsDotButNotNumeric() {
+		int	pos			= skipWhiteSpace( 1 );
+		int	nextChar	= getInputStream().LA( pos );
+		return nextChar == '.' && !Character.isDigit( getInputStream().LA( pos + 1 ) );
+	}
+
+	/**
+	 * Check if the next non-whitespace character in the input stream matches any of the given character codes.
+	 *
+	 * @param charCodes an array of character codes to check against
+	 *
+	 * @return true if the next non-whitespace character matches any of the given character codes
+	 */
 	private boolean nextNonWhiteSpaceCharIsOneOf( int[] charCodes ) {
 		int nextChar = getInputStream().LA( skipWhiteSpace( 1 ) );
 
@@ -726,16 +919,34 @@ public class BoxLexerCustom extends BoxLexer {
 		return false;
 	}
 
+	/**
+	 * Check if the next non-whitespace character in the input stream is any alphabetic character.
+	 *
+	 * @return true if the next non-whitespace character is alphabetic
+	 */
 	private boolean nextNonWhiteSpaceIsAnyChar() {
 		int nextChar = getInputStream().LA( skipWhiteSpace( 1 ) );
 		return Character.isAlphabetic( nextChar );
 	}
 
+	/**
+	 * Check if the next non-whitespace character in the input stream is any digit character.
+	 *
+	 * @return true if the next non-whitespace character is a digit
+	 */
 	private boolean nextNonWhiteSpaceIsAnyDigit() {
 		int nextChar = getInputStream().LA( skipWhiteSpace( 1 ) );
 		return Character.isDigit( nextChar );
 	}
 
+	/**
+	 * Check if the next non-whitespace characters in the input stream match any operator
+	 * sequence defined in the given character map (a trie structure).
+	 *
+	 * @param charMap the operator trie map to match against
+	 *
+	 * @return true if the next non-whitespace characters match an operator in the map
+	 */
 	private boolean nextNonWhiteSpaceCharsAre( Map<Integer, Object> charMap ) {
 		int	pos			= skipWhiteSpace( 1 );
 		int	nextChar	= Character.toUpperCase( getInputStream().LA( pos++ ) );
@@ -744,6 +955,18 @@ public class BoxLexerCustom extends BoxLexer {
 		return matchOperator( getInputStream(), pos, charMap, nextChar, false );
 	}
 
+	/**
+	 * Recursively match characters from the input stream against an operator trie.
+	 * Walks the trie character-by-character until a complete operator is matched or matching fails.
+	 *
+	 * @param input          the character stream to read from
+	 * @param pos            the current position in the input stream
+	 * @param current        the current node in the operator trie
+	 * @param nextChar       the next character to match (already uppercased)
+	 * @param isTextOperator true if the operator being matched consists of alphabetic characters
+	 *
+	 * @return true if a valid operator match is found
+	 */
 	private boolean matchOperator( CharStream input, int pos, Map<Integer, Object> current, int nextChar, boolean isTextOperator ) {
 		if ( current == null || current.containsKey( -99 ) && isValidNextChar( nextChar, isTextOperator ) ) {
 			// We've reached a leaf node, so we need to verify the next character
@@ -764,6 +987,16 @@ public class BoxLexerCustom extends BoxLexer {
 		return matchOperator( input, pos + 1, nextMap, nextChar, nextIsText );
 	}
 
+	/**
+	 * Determine if the character following a matched operator is valid, confirming the operator
+	 * is complete. For text-based operators (e.g. AND, OR), the next character must be whitespace
+	 * or an opening bracket. For symbol-based operators, any character is valid.
+	 *
+	 * @param nextChar       the character immediately after the matched operator
+	 * @param isTextOperator true if the matched operator consists of alphabetic characters
+	 *
+	 * @return true if the next character is valid for ending the operator
+	 */
 	private boolean isValidNextChar( int nextChar, boolean isTextOperator ) {
 		if ( Character.isWhitespace( nextChar ) ) {
 			return true;
@@ -776,14 +1009,35 @@ public class BoxLexerCustom extends BoxLexer {
 		}
 	}
 
+	/**
+	 * Check if the given character is a punctuation character used in operator or expression contexts.
+	 *
+	 * @param c the character code to check
+	 *
+	 * @return true if the character is a recognized punctuation character
+	 */
 	private boolean isPunctuation( int c ) {
 		return "&*()-_=+[]{};:'<>?/".indexOf( c ) != -1;
 	}
 
+	/**
+	 * Check if the last non-hidden token was of the specified type.
+	 *
+	 * @param type the token type to check against
+	 *
+	 * @return true if the last token matches the given type
+	 */
 	private boolean lastTokenWas( int type ) {
 		return lastToken != null && lastToken.getType() == type;
 	}
 
+	/**
+	 * Check if the last non-hidden token was one of the specified types.
+	 *
+	 * @param type an array of token types to check against
+	 *
+	 * @return true if the last token matches any of the given types
+	 */
 	private boolean lastTokenOneOf( int[] type ) {
 		if ( lastToken == null ) {
 			return false;

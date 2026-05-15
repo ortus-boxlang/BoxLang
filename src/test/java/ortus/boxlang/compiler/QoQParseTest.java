@@ -149,6 +149,24 @@ public class QoQParseTest {
 	}
 
 	@Test
+	public void testNestedQueryTable() {
+		instance.executeSource(
+		    """
+		                foo.bar.baz.qryDept = queryNew( "name,code", "varchar,integer", [["IT",404],["Exec",200],["Janitor",200]] )
+		                q = queryExecute( "
+		                select name as col from foo.bar.baz.qryDept
+		          union select name from foo.bar.baz.qryDept
+		    order by col desc
+		                        ",
+		                              	[],
+		                              	{ dbType : "query" }
+		                              );
+		                           println( q )
+		                              """,
+		    context );
+	}
+
+	@Test
 	public void testRunQoQUnionDistinct() {
 		instance.executeSource(
 		    """
@@ -769,6 +787,166 @@ public class QoQParseTest {
 		// TODO: THis matches Lucee but isn't actually correct. Any comparison operatino including null should evaluate false
 		// but we need some refactoring to allow that as my internal methods aren't using boxed booleans so I can't return nulls right now
 		assertEquals( 1, query.size() );
+	}
+
+	@Test
+	public void testDoubleParensInWhereClause() {
+		instance.executeSource(
+		    """
+		    q = queryNew( "col", "integer", [[1]] )
+		    result = queryExecute( "
+		    	SELECT col FROM q WHERE ((col = 1))
+		    ", [], { dbType : "query" } )
+		    """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 1 );
+	}
+
+	@Test
+	public void testParensAroundColumn() {
+		instance.executeSource(
+		    """
+		    q = queryNew( "col", "integer", [[1]] )
+		    result = queryExecute( "
+		    	SELECT ( col ) FROM q
+		    ", [], { dbType : "query" } )
+		    """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.getAsQuery( result ).getColumn( Key.of( "col" ) ) ).isNotNull();
+
+		instance.executeSource(
+		    """
+		    q = queryNew( "col", "integer", [[1]] )
+		    result = queryExecute( "
+		    	SELECT distinct( col ) FROM q
+		    ", [], { dbType : "query" } )
+		    """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.getAsQuery( result ).getColumn( Key.of( "col" ) ) ).isNotNull();
+
+	}
+
+	@Test
+	public void testLargeQuerySort1M() {
+		instance.executeSource(
+		    """
+		    // Create 1M rows: a(1-100) x b(1-100) x c(1-100) = 1,000,000 unique combos
+		    source = queryNew( "a,b,c", "integer,integer,integer" );
+		    for( a = 1; a <= 100; a++ ) {
+		        for( b = 1; b <= 100; b++ ) {
+		            for( c = 1; c <= 100; c++ ) {
+		                queryAddRow( source, { a: a, b: b, c: c } );
+		            }
+		        }
+		    }
+		    // Shuffle by sorting on a random column
+		    source = queryExecute( "SELECT a, b, c FROM source ORDER BY a DESC, c ASC, b DESC", [], { dbType: "query" } );
+
+		    // Now sort properly
+		    result = queryExecute( "SELECT a, b, c FROM source ORDER BY a ASC, b ASC, c ASC", [], { dbType: "query" } );
+		    """,
+		    context );
+
+		Query sorted = variables.getAsQuery( result );
+		assertThat( sorted.size() ).isEqualTo( 1000000 );
+		int idx = 0;
+		for ( int a = 1; a <= 100; a++ ) {
+			for ( int b = 1; b <= 100; b++ ) {
+				for ( int c = 1; c <= 100; c++ ) {
+					Object[] row = sorted.getRow( idx );
+					assertThat( row[ 0 ] ).isEqualTo( a );
+					assertThat( row[ 1 ] ).isEqualTo( b );
+					assertThat( row[ 2 ] ).isEqualTo( c );
+					idx++;
+				}
+			}
+		}
+	}
+
+	@Test
+	public void testThreadedSelect() {
+
+		// @formatter:off
+		instance.executeSource(
+		    """
+					param name="rowCount" default="300" type="numeric";
+					param name="iterations" default="500" type="numeric";
+					param name="workers" default="32" type="numeric";
+					function workerRun( required numeric rowCount, required numeric iterations ) {
+					var failures = [];
+							var q = queryNew( "id,name", "integer,varchar" );
+							for ( var r = 1; r <= rowCount; r++ ) {
+								queryAddRow( q );
+								querySetCell( q, "id",   r );
+								querySetCell( q, "name", "row" & numberFormat(r, "000") );
+							}
+					for ( var i = 1; i <= iterations; i++ ) {
+						try {
+							var sorted = queryExecute(
+								"SELECT * FROM q ORDER BY name ASC",
+								{},
+								{ dbtype: "query" }
+							);
+							if ( sorted.recordCount NEQ rowCount ) {
+								arrayAppend( failures, { i: i, kind: "wrong_count", got: sorted.recordCount } );
+							}
+						} catch ( any e ) {
+							arrayAppend( failures, { i: i, kind: "exception", msg: e.message } );
+							if ( arrayLen( failures ) >= 5 ) break;
+						}
+					}
+					return failures;
+					}
+					start   = getTickCount();
+					futures = [];
+					for ( w = 1; w <= workers; w++ ) {
+						futures.append( runAsync( function() {
+							return workerRun( rowCount, iterations );
+						} ) );
+					}
+					allFailures = [];
+					totalRuns   = 0;
+					for ( f in futures ) {
+						workerFails = f.get();
+						totalRuns += iterations;
+						for ( fail in workerFails ) {
+							arrayAppend( allFailures, fail );
+						}
+					}
+					failureCount  = arrayLen( allFailures );
+					/* writeDump( {
+						rowCount     : rowCount,
+						iterations        : iterations,
+						workers      : workers,
+						totalRuns    : totalRuns,
+						failureCount : arrayLen( allFailures ),
+						elapsedMs    : getTickCount() - start,
+						firstFailures: arrayLen( allFailures ) GT 10
+							? arraySlice( allFailures, 1, 10 )
+							: allFailures
+					} ); */
+		                                                    """,
+		    context, BoxSourceType.BOXSCRIPT );
+		// @formatter:on
+
+		assertThat( variables.get( "failureCount" ) ).isEqualTo( 0 );
+	}
+
+	@Test
+	public void testNumbersInStringsNoType() {
+		instance.executeSource(
+		    """
+		    myQry = queryNew( "amount")
+		    myQry.addRow( ["1500"] )
+		    result = queryExecute(
+		    	"SELECT amount/100 as col from myQry",
+		    	[],
+		    	{ dbType:"query" }
+		    )
+		      """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.getAsQuery( result ).getColumn( Key.of( "col" ) ).getCell( 0 ) ).isEqualTo( 15.0 );
+
 	}
 
 }

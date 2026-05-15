@@ -49,8 +49,9 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  * @param alias          The alias
  * @param moduleName     The module name
  * @param cachedHashCode The pre-computed hash code
+ * @param classRef       The resolved class reference, if available
  */
-public record ImportDefinition( String className, String resolverPrefix, String alias, String moduleName, int cachedHashCode ) {
+public record ImportDefinition( String className, String resolverPrefix, String alias, String moduleName, int cachedHashCode, Class<?> classRef ) {
 
 	/**
 	 * Canonical constructor. Validates className and computes hashCode.
@@ -60,8 +61,9 @@ public record ImportDefinition( String className, String resolverPrefix, String 
 	 * @param alias          The alias
 	 * @param moduleName     The module name
 	 * @param cachedHashCode Ignored; always recomputed
+	 * @param classRef       The resolved class reference, if available
 	 */
-	public ImportDefinition( String className, String resolverPrefix, String alias, String moduleName, int cachedHashCode ) {
+	public ImportDefinition( String className, String resolverPrefix, String alias, String moduleName, int cachedHashCode, Class<?> classRef ) {
 		if ( className == null ) {
 			throw new BoxRuntimeException( "Class name cannot be null." );
 		}
@@ -70,6 +72,7 @@ public record ImportDefinition( String className, String resolverPrefix, String 
 		this.alias			= alias;
 		this.moduleName		= moduleName;
 		this.cachedHashCode	= computeHashCode( className, resolverPrefix, alias, moduleName );
+		this.classRef		= classRef;
 	}
 
 	/**
@@ -81,7 +84,18 @@ public record ImportDefinition( String className, String resolverPrefix, String 
 	 * @param moduleName     The module name
 	 */
 	public ImportDefinition( String className, String resolverPrefix, String alias, String moduleName ) {
-		this( className, resolverPrefix, alias, moduleName, 0 );
+		this( className, resolverPrefix, alias, moduleName, 0, null );
+	}
+
+	/**
+	 * Convenience constructor for alias and existing class reference.
+	 *
+	 * @param resolverPrefix The resolver prefix
+	 * @param alias          The alias
+	 * @param classRef       The resolved class reference
+	 */
+	public ImportDefinition( String resolverPrefix, String alias, Class<?> classRef ) {
+		this( null, resolverPrefix, alias, null, 0, classRef );
 	}
 
 	/**
@@ -192,6 +206,6 @@ public record ImportDefinition( String className, String resolverPrefix, String 
 			className		= className.substring( resolverDelimiterPos + 1 );
 		}
 
-		return new ImportDefinition( className, resolverPrefix, alias, module );
+		return new ImportDefinition( className, resolverPrefix, alias, module, 0, null );
 	}
 }

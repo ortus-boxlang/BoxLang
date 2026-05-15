@@ -17,9 +17,6 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.global.decision.IsArray;
 import ortus.boxlang.runtime.bifs.global.decision.IsObject;
@@ -29,6 +26,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.util.StructUtil;
 import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
@@ -100,62 +98,7 @@ public class StructCasterLoose implements IBoxCaster {
 
 		// If it's a random Java class, then turn it into a struct!!
 		if ( canWeTurnThisClassIntoAGenericStruct( object ) ) {
-			IStruct			thisResult	= new Struct();
-			DynamicObject	dynObject;
-
-			// Get the fields and methods of the class
-			dynObject = DynamicObject.of( object );
-			dynObject.getFieldsAsStream()
-			    .filter( field -> Modifier.isPublic( field.getModifiers() ) )
-			    .forEach( field -> {
-				    try {
-					    thisResult.put( field.getName(), dynObject.getField( field.getName() ).orElse( null ) );
-				    } catch ( Exception e ) {
-					    // We're gonna ignore any invalid fields that error out. Some times public fields cannot be accessed
-				    }
-			    } );
-			// also add fields for all public methods starting with "get" that take no arguments
-
-			dynObject.getMethodNames( true ).forEach( methodName -> {
-				Method m;
-				if ( methodName.startsWith( "get" ) && Modifier.isPublic( ( m = dynObject.getMethod( methodName, true ) ).getModifiers() )
-				    && m.getParameterCount() == 0 && !methodName.equals( "getClass" ) ) {
-					try {
-						thisResult.put( methodName.substring( 3 ), dynObject.invoke( BoxRuntime.getInstance().getRuntimeContext(), methodName ) );
-					} catch ( Exception e ) {
-						// We're gonna ignore any invalid methods that error out.
-					}
-				}
-			} );
-
-			// Force the overloaded method expecting a class.
-			// Get the static methods and fields of the Class that the Class represents
-			if ( object instanceof Class clazz ) {
-				DynamicObject dynObject2 = DynamicObject.of( clazz );
-				dynObject2.getFieldsAsStream()
-				    // get public, static fields
-				    .filter( field -> Modifier.isPublic( field.getModifiers() ) && Modifier.isStatic( field.getModifiers() ) )
-				    .forEach( field -> {
-					    thisResult.put( field.getName(), dynObject2.getField( field.getName() ).orElse( null ) );
-				    } );
-				// also add fields for all public methods starting with "get" that take no arguments
-				dynObject2.getMethodNames( true ).forEach( methodName -> {
-					if ( methodName.startsWith( "get" ) ) {
-						Method	m			= dynObject2.getMethod( methodName, true );
-						int		modifiers	= m.getModifiers();
-						if ( Modifier.isPublic( modifiers ) && Modifier.isStatic( modifiers ) && m.getParameterCount() == 0 ) {
-							try {
-								thisResult.put( methodName.substring( 3 ),
-								    dynObject2.invokeStatic( BoxRuntime.getInstance().getRuntimeContext(), methodName ) );
-							} catch ( Exception e ) {
-								// We're gonna ignore any invalid methods that error out.
-							}
-						}
-					}
-				} );
-			}
-
-			return thisResult;
+			return StructUtil.objectToStruct( object, BoxRuntime.getInstance().getRuntimeContext() );
 		}
 
 		if ( fail ) {

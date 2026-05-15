@@ -27,6 +27,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
@@ -46,7 +47,7 @@ public class StructCasterTest {
 
 	@DisplayName( "It can cast a Java Map to a Struct" )
 	@Test
-	void testItCanCastList() {
+	void testItCanCastMap() {
 		assertThat( StructCaster.cast( new HashMap<Object, Object>() ) instanceof IStruct ).isTrue();
 
 		// Unmodifiable
@@ -63,5 +64,24 @@ public class StructCasterTest {
 		assertThat( StructCaster.cast( unmodifiableMap ) instanceof IStruct ).isTrue();
 
 	}
+
+	@DisplayName( "It can cast a POJO to a Struct" )
+	@Test
+	void testItCanCastPOJO() {
+		Object	obj		= new myObject();
+		IStruct	casted	= StructCasterLoose.cast( obj );
+		assertThat( casted ).containsKey( Key._NAME );
+		assertThat( casted.getAsString( Key._NAME ) ).isEqualTo( "Brad" );
+
+		assertThat( casted ).containsKey( Key.of( "age" ) );
+		assertThat( casted.getAsInteger( Key.of( "age" ) ) ).isEqualTo( 45 );
+
+	}
+
+	public static class myObject {
+
+		public String	name	= "Brad";
+		public Integer	age		= 45;
+	};
 
 }

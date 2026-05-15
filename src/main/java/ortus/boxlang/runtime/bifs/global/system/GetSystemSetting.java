@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.bifs.global.system;
 
+import java.util.Map;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -29,6 +31,11 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF( description = "Get a system setting value" )
 public class GetSystemSetting extends BIF {
+
+	/**
+	 * namespace.key
+	 */
+	public static char NAMESPACE_PREFIX_SEPARATOR = '.';
 
 	/**
 	 * Constructor
@@ -58,14 +65,46 @@ public class GetSystemSetting extends BIF {
 	 * @argument.defaultValue The default value to return if the property or environment variable is not found
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Key		key				= Key.of( arguments.getAsString( Key.key ) );
-		Object	defaultValue	= arguments.get( Key.defaultValue );
+		String																	stringKey				= arguments.getAsString( Key.key );
+		Key																		key						= Key.of( stringKey );
+		Object																	defaultValue			= arguments.get( Key.defaultValue );
 
-		IStruct	properties		= context.computeAttachmentIfAbsent( Key.properties, attachmentKey -> new Struct( System.getProperties() ) );
-		IStruct	env				= context.computeAttachmentIfAbsent( Key.environment, attachmentKey -> new Struct( System.getenv() ) );
+		// Get any registered system setting providers
+		Map<Key, java.util.function.BiFunction<String, IBoxContext, Object>>	systemSettingProviders	= runtime.getConfiguration().systemSettingProviders;
+		// Check for a : indicating a namespace
+		int																		colonIndex				= stringKey.indexOf( NAMESPACE_PREFIX_SEPARATOR );
+		java.util.function.BiFunction<String, IBoxContext, Object>				provider				= null;
+		// If there is a provider for this namespace, give it a chance to resolve the setting
+		if ( colonIndex > 0 && colonIndex < stringKey.length() - 1 ) {
+			Key namespace = Key.of( stringKey.substring( 0, colonIndex ) );
+			if ( ( provider = systemSettingProviders.get( namespace ) ) != null ) {
+				String	namedspacedSettingName	= stringKey.substring( colonIndex + 1 );
+				// I'm not passing the default value because I don't want override providers to return it, short circuting another provider
+				Object	result					= provider.apply( namedspacedSettingName, context );
+				// If we have a hit, return it here.
+				if ( result != null ) {
+					return result;
+				}
+			}
+		}
+		// check for an empty namespace provider, which sees all
+		provider = null;
+		if ( ( provider = systemSettingProviders.get( Key._EMPTY ) ) != null ) {
+			// I'm not passing the default value because I don't want override providers to return it, short circuting another provider
+			Object result = provider.apply( stringKey, context );
+			// If we have a hit, return it here.
+			if ( result != null ) {
+				return result;
+			}
+		}
+
+		// If there were no providers, or they all failed to find a setting, then do it ourselves.
+
+		IStruct	properties	= context.computeAttachmentIfAbsent( Key.properties, attachmentKey -> new Struct( System.getProperties() ) );
+		IStruct	env			= context.computeAttachmentIfAbsent( Key.environment, attachmentKey -> new Struct( System.getenv() ) );
 
 		// Properties take precedence over environment variables
-		String	value			= properties.getAsString( key );
+		String	value		= properties.getAsString( key );
 		if ( value != null ) {
 			return value;
 		}

@@ -224,7 +224,7 @@ COMMENT_START10:
     '<!---' {_modeStack.contains(TEMPLATE_COMPONENT_MODE)}? -> pushMode(TEMPLATE_COMMENT_QUIET), channel(HIDDEN), type(COMMENT_START)
 ;
 
-fragment COMPONENT_WHITESPACE2: [ \t\r\n]*;
+fragment COMPONENT_WHITESPACE2: [\p{White_Space}]*;
 SCRIPT_END_BODY:
     '</' COMPONENT_WHITESPACE2 'cfscript' COMPONENT_WHITESPACE2 '>' {_modeStack.contains(TEMPLATE_XFSCRIPT)}? -> popMode, popMode
 ;
@@ -331,9 +331,11 @@ BACKSLASH  : '\\';
 COMMA      : ',';
 COLON      : ':';
 COLONCOLON : '::';
-DOT        : '.';
+// [a, ...rest] or { ...other }
+ELLIPSIS : '...';
+DOT      : '.';
 // CF allows for null ? : 'default'
-ELVIS       : '?' [ \t\r\n]* ':';
+ELVIS       : '?' [\p{White_Space}]* ':';
 EQUALSIGN   : '=';
 LBRACE      : '{' { incrementBraceCount(); };
 RBRACE      : '}' { decrementBraceCount(); };
@@ -383,9 +385,8 @@ ICHAR_1:
 ;
 ICHAR: '#';
 
-WS              : (' ' | '\t' | '\f')+                              -> channel(HIDDEN);
-NEWLINE         : ('\n' | '\r')+ (' ' | '\t' | '\f' | '\n' | '\r')* -> channel(HIDDEN);
-JAVADOC_COMMENT : '/**' .*? '*/'                                    -> channel(HIDDEN);
+WS              : [\p{White_Space}]+ -> channel(HIDDEN);
+JAVADOC_COMMENT : '/**' .*? '*/'     -> channel(HIDDEN);
 
 COMMENT: '/*' .*? '*/' -> channel(HIDDEN);
 
@@ -477,7 +478,7 @@ COMPONENT_ISLAND_END: '```' {_modeStack.contains(componentIsland)}? -> popMode, 
 
 COMMENT_START: '<!---' -> pushMode(TEMPLATE_COMMENT_MODE);
 
-TEMPLATE_WS: (' ' | '\t' | '\r'? '\n')+;
+TEMPLATE_WS: [\p{White_Space}]+;
 
 SCRIPT_OPEN: '<cfscript' .*? '>' -> pushMode(TEMPLATE_XFSCRIPT), pushMode(DEFAULT_SCRIPT_MODE);
 
@@ -542,19 +543,19 @@ TEMPLATE_ARGUMENT  : 'argument'  -> pushMode( TEMPLATE_COMPONENT_MODE );
 
 // return may or may not have an expression, so eat any leading whitespace now so it doesn't give us an expression part that's just a space
 TEMPLATE_RETURN:
-    'return' [ \t\r\n]* -> pushMode( TEMPLATE_COMPONENT_MODE ), pushMode( TEMPLATE_EXPRESSION_MODE_COMPONENT), pushMode( DEFAULT_SCRIPT_MODE)
+    'return' [\p{White_Space}]* -> pushMode( TEMPLATE_COMPONENT_MODE ), pushMode( TEMPLATE_EXPRESSION_MODE_COMPONENT), pushMode( DEFAULT_SCRIPT_MODE)
 ;
 
 TEMPLATE_IF:
-    'if' [ \t\r\n]* -> pushMode( TEMPLATE_COMPONENT_MODE ), pushMode(TEMPLATE_EXPRESSION_MODE_COMPONENT), pushMode( DEFAULT_SCRIPT_MODE)
+    'if' [\p{White_Space}]* -> pushMode( TEMPLATE_COMPONENT_MODE ), pushMode(TEMPLATE_EXPRESSION_MODE_COMPONENT), pushMode( DEFAULT_SCRIPT_MODE)
 ;
 TEMPLATE_ELSE: 'else' -> pushMode( TEMPLATE_COMPONENT_MODE );
 TEMPLATE_ELSEIF:
-    'elseif' [ \t\r\n]* -> pushMode( TEMPLATE_COMPONENT_MODE ), pushMode(TEMPLATE_EXPRESSION_MODE_COMPONENT), pushMode( DEFAULT_SCRIPT_MODE)
+    'elseif' [\p{White_Space}]* -> pushMode( TEMPLATE_COMPONENT_MODE ), pushMode(TEMPLATE_EXPRESSION_MODE_COMPONENT), pushMode( DEFAULT_SCRIPT_MODE)
 ;
 
 TEMPLATE_SET:
-    'set' [ \t\r\n]+ -> pushMode( TEMPLATE_COMPONENT_MODE ), pushMode( TEMPLATE_EXPRESSION_MODE_COMPONENT), pushMode( DEFAULT_SCRIPT_MODE)
+    'set' [\p{White_Space}]+ -> pushMode( TEMPLATE_COMPONENT_MODE ), pushMode( TEMPLATE_EXPRESSION_MODE_COMPONENT), pushMode( DEFAULT_SCRIPT_MODE)
 ;
 
 TEMPLATE_TRY         : 'try'         -> pushMode( TEMPLATE_COMPONENT_MODE );
@@ -610,7 +611,7 @@ COMPONENT_EQUALS: '=' -> pushMode(TEMPLATE_ATTVALUE);
 
 ATTRIBUTE_NAME: ATTRIBUTE_NameStartChar ATTRIBUTE_NameChar*;
 
-COMPONENT_WHITESPACE: [ \t\r\n] -> skip;
+COMPONENT_WHITESPACE: [\p{White_Space}] -> skip;
 
 fragment ATTRIBUTE_DIGIT: [0-9];
 
@@ -636,7 +637,7 @@ COMPONENT_EQUALS_OUTPUT: '=' -> pushMode(TEMPLATE_ATTVALUE), type(COMPONENT_EQUA
 
 ATTRIBUTE_NAME_OUTPUT: ATTRIBUTE_NameStartChar ATTRIBUTE_NameChar* -> type(ATTRIBUTE_NAME);
 
-COMPONENT_WHITESPACE_OUTPUT: [ \t\r\n] -> skip;
+COMPONENT_WHITESPACE_OUTPUT: [\p{White_Space}] -> skip;
 
 // *********************************************************************************************************************
 mode TEMPLATE_END_COMPONENT;
@@ -665,7 +666,7 @@ TEMPLATE_SWITCH2      : 'switch'      -> type(TEMPLATE_SWITCH);
 TEMPLATE_CASE2        : 'case'        -> type(TEMPLATE_CASE);
 TEMPLATE_DEFAULTCASE2 : 'defaultcase' -> type(TEMPLATE_DEFAULTCASE);
 
-COMPONENT_WHITESPACE_OUTPUT3: [ \t\r\n] -> skip;
+COMPONENT_WHITESPACE_OUTPUT3: [\p{White_Space}] -> skip;
 
 // If this is an ending tag for an outputting component, make note of that
 TEMPLATE_OUTPUTTING_COMPONENT_NAME2:
@@ -684,7 +685,7 @@ COMPONENT_CLOSE23: '>' -> popMode, popMode, type(COMPONENT_CLOSE);
 // *********************************************************************************************************************
 mode TEMPLATE_ATTVALUE;
 
-COMPONENT_WHITESPACE_OUTPUT2: [ \t\r\n] -> skip;
+COMPONENT_WHITESPACE_OUTPUT2: [\p{White_Space}] -> skip;
 
 TEMPLATE_ICHAR20: '#' -> type(ICHAR), pushMode(hashMode), pushMode(DEFAULT_SCRIPT_MODE);
 
@@ -722,7 +723,7 @@ UNQUOTED_VALUE_PART: . -> pushMode(TEMPLATE_UNQUOTED_VALUE_MODE);
 mode TEMPLATE_UNQUOTED_VALUE_MODE;
 
 // first whitespace pops all the way out of ATTVALUE back to component mode
-COMPONENT_WHITESPACE_OUTPUT4: [ \t\r\n] -> popMode, popMode, skip;
+COMPONENT_WHITESPACE_OUTPUT4: [\p{White_Space}] -> popMode, popMode, skip;
 
 // If we're in a cfoutput tag, don't pop as far and stay in output mode
 COMPONENT_CLOSE_OUTPUT3:

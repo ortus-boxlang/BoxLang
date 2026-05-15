@@ -103,4 +103,80 @@ public class GetSystemSettingTest {
 		assertThat( arr.get( 2 ) ).isEqualTo( 3 );
 	}
 
+	@Test
+	public void testBLProviderOverride() {
+		System.getProperties().put( "brad-test", "brad-value" );
+		instance.executeSource(
+		    """
+		    getBoxRuntime().getConfiguration().registerSystemSettingProvider( "", name -> name == "mySpecialKey" ? "my special value" : null );
+		       result = getSystemSetting( "mySpecialKey" )
+		    result2 = getSystemSetting( "brad-test" )
+
+		    	getBoxRuntime().getConfiguration().unregisterSystemSettingProvider( "" );
+
+		    	// Should no longer be found
+		    	result3 = getSystemSetting( "mySpecialKey", "brad-default" )
+		       """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "my special value" );
+		assertThat( variables.getAsString( Key.of( "result2" ) ) ).isEqualTo( "brad-value" );
+		assertThat( variables.getAsString( Key.of( "result3" ) ) ).isEqualTo( "brad-default" );
+	}
+
+	@Test
+	public void testProviderOverrideMockSecretStore() {
+		instance.executeSource(
+		    """
+		       getBoxRuntime().getConfiguration().registerSystemSettingProvider( "secret-provider", name -> {
+		    	switch( name ) {
+		    		case "DB_PASSWORD":
+		    			return "my db pass";
+		    			break;
+		    		case "MAIL_PASSWORD":
+		    			return "my mail pass";
+		    			break;
+		    		case "API_KEY":
+		    			return "my api key";
+		    			break;
+		    		default:
+		    			return null;
+		    	}
+		    } );
+		    result = getSystemSetting( "secret-provider.DB_PASSWORD" )
+		       result2 = getSystemSetting( "secret-provider.MAIL_PASSWORD" )
+		       result3 = getSystemSetting( "secret-provider.API_KEY" )
+
+		       getBoxRuntime().getConfiguration().unregisterSystemSettingProvider( "secret-provider" );
+		          """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "my db pass" );
+		assertThat( variables.getAsString( Key.of( "result2" ) ) ).isEqualTo( "my mail pass" );
+		assertThat( variables.getAsString( Key.of( "result3" ) ) ).isEqualTo( "my api key" );
+	}
+
+	@Test
+	public void testJavaProviderOverride() {
+		System.getProperties().put( "brad-test", "brad-value" );
+		instance.getConfiguration().registerSystemSettingProvider( Key._EMPTY,
+		    ( name, context ) -> name == "mySpecialKey" ? "my special value" : null );
+		instance.executeSource(
+		    """
+		    	result = getSystemSetting( "mySpecialKey" )
+		    	result2 = getSystemSetting( "brad-test" )
+		    """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "my special value" );
+		assertThat( variables.getAsString( Key.of( "result2" ) ) ).isEqualTo( "brad-value" );
+
+		instance.getConfiguration().unregisterSystemSettingProvider( Key._EMPTY );
+		instance.executeSource(
+		    """
+		    	// Should no longer be found
+		    	result3 = getSystemSetting( "mySpecialKey", "brad-default" )
+		    """,
+		    context );
+		assertThat( variables.getAsString( Key.of( "result3" ) ) ).isEqualTo( "brad-default" );
+
+	}
+
 }

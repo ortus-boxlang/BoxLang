@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.util.conversion.serializers;
 
 import java.io.IOException;
+import java.util.IdentityHashMap;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.jr.ob.api.ValueWriter;
@@ -30,15 +31,30 @@ import ortus.boxlang.runtime.types.Function;
  */
 public class BoxFunctionSerializer implements ValueWriter {
 
+	// ThreadLocal to keep track of seen structs in the current thread
+	private static final ThreadLocal<IdentityHashMap<Function, Boolean>> visitedFunctions = ThreadLocal.withInitial( IdentityHashMap::new );
+
 	/**
 	 * Custom BoxLang Function Serializer
 	 */
 	@Override
 	public void writeValue( JSONWriter context, JsonGenerator g, Object value ) throws IOException {
-		Function bxFunction = ( Function ) value;
-		context.writeValue(
-		    bxFunction.getBoxMeta().getMeta()
-		);
+		Function							bxFunction	= ( Function ) value;
+
+		// Get the current thread's set of seen structs
+		IdentityHashMap<Function, Boolean>	visited		= visitedFunctions.get();
+		if ( visited.containsKey( bxFunction ) ) {
+			// If the function has already been seen, write "nested function" instead
+			g.writeString( "recursive-function-skipping" );
+		} else {
+			// Add the struct to the set of seen function
+			visited.put( bxFunction, Boolean.TRUE );
+			context.writeValue(
+			    bxFunction.getBoxMeta().getMeta()
+			);
+			// Remove the function from the set of seen functions
+			visited.remove( bxFunction );
+		}
 	}
 
 	@Override

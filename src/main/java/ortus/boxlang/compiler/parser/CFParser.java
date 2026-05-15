@@ -89,6 +89,7 @@ import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
 import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
+import ortus.boxlang.compiler.ast.statement.BoxSwitchBreakingCase;
 import ortus.boxlang.compiler.ast.statement.BoxSwitchCase;
 import ortus.boxlang.compiler.ast.statement.BoxTry;
 import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
@@ -147,6 +148,7 @@ public class CFParser extends AbstractParser {
 	public ComponentService		componentService	= BoxRuntime.getInstance().getComponentService();
 	private CFExpressionVisitor	expressionVisitor	= new CFExpressionVisitor( this, new CFVisitor( this ) );
 	private boolean				classOrInterface	= false;
+	private boolean				transpile			= true;
 
 	/**
 	 * Constructor
@@ -170,6 +172,11 @@ public class CFParser extends AbstractParser {
 
 	public void setInOutputBlock( boolean inOutputBlock ) {
 		this.inOutputBlock = inOutputBlock;
+	}
+
+	public CFParser withTranspilation( boolean transpile ) {
+		this.transpile = transpile;
+		return this;
 	}
 
 	/**
@@ -440,8 +447,12 @@ public class CFParser extends AbstractParser {
 		// associate all comments in the source with the appropriate AST nodes
 		rootNode.associateComments( this.comments );
 
-		// Transpile CF to BoxLang
-		return rootNode.accept( new CFTranspilerVisitor() );
+		if ( this.transpile ) {
+			// Transpile CF to BoxLang
+			return rootNode.accept( new CFTranspilerVisitor() );
+		} else {
+			return rootNode;
+		}
 	}
 
 	private void validateParse( CFLexerCustom lexer ) {
@@ -542,7 +553,15 @@ public class CFParser extends AbstractParser {
 					extraText.append( token.getText() );
 					token = lexer.nextToken();
 				}
-				errorListener.semanticError( "Extra char(s) [" + extraText + "] at the end of parsing.", position );
+				if ( isLikelyUnparenthesizedObjectDestructuring( position ) ) {
+					errorListener.semanticError(
+					    "Object destructuring assignment must be wrapped in parentheses when not using var/final/static. "
+					        + "Use syntax like ({ a } = source).",
+					    position
+					);
+				} else {
+					errorListener.semanticError( "Extra char(s) [" + extraText + "] at the end of parsing.", position );
+				}
 			}
 		}
 
@@ -574,6 +593,39 @@ public class CFParser extends AbstractParser {
 				    unclosedBracket.getCharPositionInLine() + 1 ) );
 			}
 		}
+	}
+
+	/**
+	 * isLikelyUnparenthesizedObjectDestructuring.
+	 */
+	private boolean isLikelyUnparenthesizedObjectDestructuring( Position position ) {
+		if ( ! ( sourceToParse instanceof SourceCode sourceCode ) ) {
+			return false;
+		}
+
+		String code = sourceCode.getCode();
+		if ( code == null ) {
+			return false;
+		}
+
+		String[]	lines	= code.split( "\\R", -1 );
+		int			line	= position.getStart().getLine() - 1;
+		int			col		= position.getStart().getColumn();
+		boolean		linePatternMatch;
+		if ( line >= 0 && line < lines.length ) {
+			String	currentLine		= lines[ line ];
+			int		safeCol			= Math.min( Math.max( col, 0 ), currentLine.length() );
+			String	beforeEquals	= currentLine.substring( 0, safeCol ).trim();
+			linePatternMatch = beforeEquals.startsWith( "{" ) && beforeEquals.endsWith( "}" );
+		} else {
+			linePatternMatch = false;
+		}
+
+		String	trimmed				= code.trim();
+		int		firstEquals			= trimmed.indexOf( '=' );
+		int		firstCloseBrace		= trimmed.indexOf( '}' );
+		boolean	globalPatternMatch	= trimmed.startsWith( "{" ) && firstCloseBrace > 0 && firstEquals > firstCloseBrace;
+		return linePatternMatch || globalPatternMatch;
 	}
 
 	private void extractComments( CFLexerCustom lexer ) throws IOException {
@@ -695,7 +747,8 @@ public class CFParser extends AbstractParser {
 			body.add( funDec );
 		} );
 
-		return new BoxInterface( imports, body, annotations, postAnnotations, documentation, getPosition( interface_ ), getSourceText( interface_ ) );
+		return new BoxInterface( imports, body, annotations, postAnnotations, documentation, getPosition( interface_ ), getSourceText( interface_ ),
+		    BoxSourceType.CFTEMPLATE );
 	}
 
 	private BoxTemplate toAst( File file, TemplateContext rule ) throws IOException {
@@ -703,7 +756,7 @@ public class CFParser extends AbstractParser {
 		if ( rule.template_statements() != null ) {
 			statements = toAst( file, rule.template_statements() );
 		}
-		return new BoxTemplate( statements, getPosition( rule ), getSourceText( rule ) );
+		return new BoxTemplate( statements, getPosition( rule ), getSourceText( rule ), BoxSourceType.CFTEMPLATE );
 	}
 
 	private BoxNode toAst( File file, Template_componentContext node ) {
@@ -736,7 +789,7 @@ public class CFParser extends AbstractParser {
 			properties.add( toAst( file, annotation ) );
 		}
 
-		return new BoxClass( imports, body, annotations, documentation, properties, getPosition( node ), getSourceText( node ) );
+		return new BoxClass( imports, body, annotations, documentation, properties, getPosition( node ), getSourceText( node ), BoxSourceType.CFTEMPLATE );
 	}
 
 	private BoxProperty toAst( File file, Template_propertyContext node ) {
@@ -975,7 +1028,7 @@ public class CFParser extends AbstractParser {
 					    List.of(),
 					    new BoxReturn( condition, null, null ),
 					    null,
-					    null );
+					    condition.getSourceText() );
 					attr.setValue( newCondition );
 				}
 			}
@@ -1031,7 +1084,7 @@ public class CFParser extends AbstractParser {
 			}
 
 			value		= findExprInAnnotations( annotations, "value", true, null, "case", getPosition( node ) );
-			delimiter	= findExprInAnnotations( annotations, "delimiters", false, new BoxStringLiteral( ",", null, null ), "case", getPosition( node ) );
+			delimiter	= findExprInAnnotations( annotations, "delimiters", false, null, "case", getPosition( node ) );
 		}
 
 		List<BoxStatement> statements = null;
@@ -1040,12 +1093,12 @@ public class CFParser extends AbstractParser {
 			statements.addAll( toAst( file, node.template_statements() ) );
 		}
 
-		if ( statements != null ) {
-			// In component mode, the break is implied
-			statements.add( new BoxBreak( null, null ) );
+		var switchCase = new BoxSwitchBreakingCase( value, delimiter, statements, getPosition( node ), getSourceText( node ) );
+		if ( delimiter == null && value != null ) {
+			switchCase.setDelimiter( new BoxStringLiteral( ",", null, null ) );
+			switchCase.setImplicitDelimiter( true );
 		}
-
-		return new BoxSwitchCase( value, delimiter, statements, getPosition( node ), getSourceText( node ) );
+		return switchCase;
 	}
 
 	private BoxStatement toAst( File file, Template_throwContext node ) {
@@ -1263,7 +1316,7 @@ public class CFParser extends AbstractParser {
 	}
 
 	private BoxTryCatch toAst( File file, Template_catchBlockContext node ) {
-		BoxExpression		exception	= new BoxIdentifier( "bxcatch", null, null );
+		BoxExpression		exception;
 		List<BoxExpression>	catchTypes;
 		List<BoxStatement>	catchBody	= new ArrayList<>();
 
@@ -1281,8 +1334,21 @@ public class CFParser extends AbstractParser {
 			} else {
 				catchTypes = List.of( new BoxFQN( "any", null, null ) );
 			}
+
+			// look for name attribute
+			var nameSearch = annotations.stream()
+			    .filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "name" ) && it.getValue() != null )
+			    .findFirst();
+			if ( nameSearch.isPresent() ) {
+				exception = new BoxIdentifier( getBoxExprAsString( nameSearch.get().getValue(), "name", false ),
+				    nameSearch.get().getPosition(),
+				    nameSearch.get().getSourceText() );
+			} else {
+				exception = new BoxIdentifier( "bxcatch", null, null );
+			}
 		} else {
-			catchTypes = List.of( new BoxFQN( "any", null, null ) );
+			catchTypes	= List.of( new BoxFQN( "any", null, null ) );
+			exception	= new BoxIdentifier( "bxcatch", null, null );
 		}
 		if ( node.template_statements() != null ) {
 			catchBody = toAst( file, node.template_statements() );

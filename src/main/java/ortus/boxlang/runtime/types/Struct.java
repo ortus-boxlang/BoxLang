@@ -20,13 +20,15 @@ package ortus.boxlang.runtime.types;
 import java.io.Serializable;
 import java.lang.ref.SoftReference;
 import java.util.AbstractMap.SimpleEntry;
+import java.util.AbstractSet;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -753,10 +755,14 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 	 * Returns a {@link Set} view of the mappings contained in this map.
 	 */
 	@Override
+	@SuppressWarnings( "unchecked" )
 	public Set<Entry<Key, Object>> entrySet() {
-		return wrapped.entrySet().stream()
-		    .map( entry -> new SimpleEntry<>( entry.getKey(), unWrapNullInternal( entry.getValue() ) ) )
-		    .collect( Collectors.toCollection( LinkedHashSet::new ) );
+		Map.Entry<Key, Object>[]		snapshot	= wrapped.entrySet().toArray( new Map.Entry[ 0 ] );
+		ArrayList<Entry<Key, Object>>	entries		= new ArrayList<>( snapshot.length );
+		for ( Map.Entry<Key, Object> entry : snapshot ) {
+			entries.add( new SimpleEntry<>( entry.getKey(), unWrapNullInternal( entry.getValue() ) ) );
+		}
+		return new ListBackedSet<>( entries );
 	}
 
 	/**
@@ -1202,6 +1208,29 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 	private void initListeners() {
 		if ( listeners == null ) {
 			listeners = new ConcurrentHashMap<Key, IChangeListener<IStruct>>();
+		}
+	}
+
+	/**
+	 * A Set backed by a List that avoids hashCode computation on elements.
+	 * Used for entrySet() to prevent expensive value hashCode calls.
+	 */
+	public static class ListBackedSet<E> extends AbstractSet<E> {
+
+		private final List<E> list;
+
+		public ListBackedSet( List<E> list ) {
+			this.list = list;
+		}
+
+		@Override
+		public Iterator<E> iterator() {
+			return this.list.iterator();
+		}
+
+		@Override
+		public int size() {
+			return this.list.size();
 		}
 	}
 

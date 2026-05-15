@@ -24,10 +24,9 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.BoxFile;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.File;
 import ortus.boxlang.runtime.util.FileSystemUtil;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 
 @BoxBIF( description = "Get information about a file" )
 @BoxBIF( alias = "GetFileInfo" )
@@ -42,7 +41,7 @@ public class FileInfo extends BIF {
 		super();
 		// Uncomment and define declare argument to this BIF
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.file )
+		    new Argument( true, "boxfile", Key.file )
 		};
 	}
 
@@ -55,21 +54,13 @@ public class FileInfo extends BIF {
 	 * @argument.File The filepath or file object to retrieve info upon
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object	file		= arguments.get( Key.file );
-		Path	filePath	= null;
-
-		if ( file instanceof File ) {
-			File fileObj = ( File ) file;
-			filePath = fileObj.getPath();
-		} else {
-			filePath = FileSystemUtil.expandPath( context, StringCaster.cast( file ) ).absolutePath();
-		}
+		BoxFile	file			= arguments.getAsBoxFile( Key.file );
+		Path	filePath		= file.getPath();
 
 		Key		bifMethodKey	= arguments.getAsKey( BIF.__functionName );
 		Boolean	verbose			= bifMethodKey.equals( Key.getFileInfo );
 
 		return FileSystemUtil.info( filePath, verbose );
-
 	}
 
 }

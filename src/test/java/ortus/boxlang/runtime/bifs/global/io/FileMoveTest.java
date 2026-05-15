@@ -171,4 +171,54 @@ public class FileMoveTest {
 		assertThat( FileSystemUtil.exists( javaTempDirectory + "/start.txt" ) ).isTrue();
 	}
 
+	@DisplayName( "It can move a file using Java Path objects" )
+	@Test
+	public void testFileMoveWithJavaPath() {
+		variables.put( Key.of( "source" ), Path.of( source ).toAbsolutePath() );
+		variables.put( Key.of( "destination" ), Path.of( destination ).toAbsolutePath() );
+		assertThat( FileSystemUtil.exists( source ) ).isTrue();
+		instance.executeSource(
+		    """
+		    fileMove( source, destination );
+		    """,
+		    context );
+		assertThat( FileSystemUtil.exists( source ) ).isFalse();
+		assertThat( FileSystemUtil.exists( destination ) ).isTrue();
+	}
+
+	@DisplayName( "It can move a file using Java File objects" )
+	@Test
+	public void testFileMoveWithJavaFile() {
+		variables.put( Key.of( "source" ), Path.of( source ).toAbsolutePath().toFile() );
+		variables.put( Key.of( "destination" ), Path.of( destination ).toAbsolutePath().toFile() );
+		assertThat( FileSystemUtil.exists( source ) ).isTrue();
+		instance.executeSource(
+		    """
+		    fileMove( source, destination );
+		    """,
+		    context );
+		assertThat( FileSystemUtil.exists( source ) ).isFalse();
+		assertThat( FileSystemUtil.exists( destination ) ).isTrue();
+	}
+
+	@DisplayName( "It rejects an explicit BoxFile object" )
+	@Test
+	public void testFileMoveRejectsBoxFile() {
+		variables.put( Key.of( "source" ), Path.of( source ).toAbsolutePath().toString() );
+		variables.put( Key.of( "destination" ), Path.of( destination ).toAbsolutePath().toString() );
+		assertThrows(
+		    BoxRuntimeException.class,
+		    () -> instance.executeSource(
+		        """
+		        fileObj = fileOpen( source, "read" );
+		        try {
+		            fileMove( fileObj, destination );
+		        } finally {
+		            fileClose( fileObj );
+		        }
+		        """,
+		        context )
+		);
+	}
+
 }

@@ -107,7 +107,7 @@ SINGLE_LINE_COMMENT: '--' ~[\r\n]* (('\r'? '\n') | EOF) -> channel(HIDDEN);
 
 MULTILINE_COMMENT: '/*' .*? '*/' -> channel(HIDDEN);
 
-SPACES: [ \u000B\t\r\n] -> channel(HIDDEN);
+SPACES: [\p{White_Space}]+ -> channel(HIDDEN);
 
 UNEXPECTED_CHAR: .;
 

@@ -739,4 +739,23 @@ public class DumpTest {
 
 	}
 
+	@DisplayName( "It can dump a BoxFile object" )
+	@Test
+	public void testCanDumpBoxFile() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				myFile = fileOpen( getTempFile( getTempDirectory(), "dumptest" ), "read" );
+				dump( var = myFile, format = "html" );
+				fileClose( myFile );
+			""",
+			context );
+		// @formatter:on
+		String output = baos.toString();
+		assertThat( output ).contains( "Box File" );
+		assertThat( output ).contains( "path" );
+		assertThat( output ).contains( "mode" );
+		assertThat( output ).contains( "read" );
+	}
+
 }

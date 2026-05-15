@@ -40,8 +40,7 @@ public abstract class BoxMeta<T> implements Serializable {
 	 * Get target object this metadata is for.
 	 * Implementations should return the target object.
 	 */
-	@NonNull
-	public abstract T getTarget();
+	@NonNull public abstract T getTarget();
 
 	/**
 	 * Get the meta data of the target object.

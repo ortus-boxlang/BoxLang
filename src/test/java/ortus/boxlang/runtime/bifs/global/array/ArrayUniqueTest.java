@@ -26,7 +26,6 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableArray;
 
 import static com.google.common.truth.Truth.assertThat;
 

@@ -91,4 +91,19 @@ public class QueryColumnDataTest {
 		);
 	}
 
+	@DisplayName( "It should trim whitespace from column name" )
+	@Test
+	public void testColumnNameTrimming() {
+		instance.executeSource(
+		    """
+		    query = queryNew("col1", "varchar", [["foo"], ["bar"]]);
+		    result = queryColumnData( query, " col1 " );
+		    """,
+		    context );
+
+		ortus.boxlang.runtime.types.Array columnData = variables.getAsArray( result );
+		assertThat( columnData.size() ).isEqualTo( 2 );
+		assertThat( columnData.get( 0 ).toString() ).isEqualTo( "foo" );
+	}
+
 }

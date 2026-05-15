@@ -18,6 +18,8 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 
 @BoxBIF( description = "Create a new array" )
@@ -28,18 +30,27 @@ public class ArrayNew extends BIF {
 	 */
 	public ArrayNew() {
 		super();
+		declaredArguments = new Argument[] {
+		    new Argument( false, "integer", Key.dimensions, 1 ),
+		    new Argument( false, "boolean", Key.isSynchronized, true )
+		};
 	}
 
 	/**
-	 * Return new array
+	 * Create a new array.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
+	 * @argument.dimension The dimension of the array to create (currently only 1 is supported).
+	 *
+	 * @argument.isSynchronized Whether the array should be thread-safe (synchronized). Default is false.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		// TODO: accept dimension and isSynchronized params - need to update ArrayGetMetaData
-		return new Array();
+		return new Array(
+		    arguments.getAsBoolean( Key.isSynchronized ),
+		    arguments.getAsInteger( Key.dimensions )
+		);
 	}
 
 }

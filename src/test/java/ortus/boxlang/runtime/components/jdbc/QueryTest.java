@@ -657,4 +657,22 @@ public class QueryTest extends BaseJDBCTest {
 		assertThat( e.getMessage() ).contains( "Cannot specify both query parameters in the body and as an attribute" );
 		assertNull( getVariables().get( result ) );
 	}
+
+	@DisplayName( "It can execute a query with a struct datasource" )
+	@Test
+	public void testStructDatasource() {
+		getInstance().executeSource(
+		    """
+		    <bx:query name="result" datasource="#{ driver : 'derby', connectionString : 'jdbc:derby:memory:structDSQueryTest;create=true' }#">
+		        CREATE TABLE test_struct_ds ( id INTEGER, name VARCHAR(155) )
+		    </bx:query>
+		    <bx:query name="result" datasource="#{ driver : 'derby', connectionString : 'jdbc:derby:memory:structDSQueryTest;create=true' }#">
+		        SELECT * FROM test_struct_ds
+		    </bx:query>
+		    """,
+		    getContext(), BoxSourceType.BOXTEMPLATE );
+		assertThat( getVariables().get( result ) ).isInstanceOf( ortus.boxlang.runtime.types.Query.class );
+		ortus.boxlang.runtime.types.Query query = getVariables().getAsQuery( result );
+		assertEquals( 0, query.size() );
+	}
 }

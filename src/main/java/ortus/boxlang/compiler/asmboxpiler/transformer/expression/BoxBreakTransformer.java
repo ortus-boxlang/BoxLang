@@ -41,6 +41,7 @@ import ortus.boxlang.compiler.ast.statement.BoxForIn;
 import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
+import ortus.boxlang.compiler.ast.statement.BoxSwitchBreakingCase;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.runtime.components.Component;
@@ -101,14 +102,27 @@ public class BoxBreakTransformer extends AbstractTransformer {
 			return AsmHelper.addLineNumberLabels( nodes, node );
 		}
 
+		// If we're inside a breaking switch case with no enclosing loop, the break is a no-op
+		if ( isInsideBreakingCase( node ) ) {
+			nodes.clear();
+			return AsmHelper.addLineNumberLabels( nodes, node );
+		}
+
 		throw new RuntimeException( "Cannot break from current location" );
 
 	}
 
 	public BoxNode getTargetAncestor( BoxNode node ) {
-		return node.getFirstNodeOfTypes( BoxSwitch.class, BoxFunctionDeclaration.class, BoxClosure.class, BoxLambda.class, BoxComponent.class, BoxDo.class,
+		BoxNode target = node.getFirstNodeOfTypes( BoxSwitch.class, BoxFunctionDeclaration.class, BoxClosure.class, BoxLambda.class, BoxComponent.class,
+		    BoxDo.class,
 		    BoxForIndex.class, BoxForIn.class,
 		    BoxWhile.class );
+		// Skip breaking switches - they are not valid break targets
+		if ( target instanceof BoxSwitch sw
+		    && sw.hasBreakingCases() ) {
+			return getTargetAncestor( target.getParent() );
+		}
+		return target;
 	}
 
 	public int countIntermediateLoops( BoxNode target, BoxBreak breakNode ) {
@@ -125,5 +139,27 @@ public class BoxBreakTransformer extends AbstractTransformer {
 		}
 
 		return count;
+	}
+
+	/**
+	 * Check if the given node is inside a BoxSwitchBreakingCase (tag-based switch case).
+	 * 
+	 * @param node the BoxNode to check
+	 * 
+	 * @return true if the node is inside a BoxSwitchBreakingCase, false otherwise
+	 */
+	private boolean isInsideBreakingCase( BoxNode node ) {
+		BoxNode parent = node.getParent();
+		while ( parent != null ) {
+			if ( parent instanceof BoxSwitchBreakingCase ) {
+				return true;
+			}
+			if ( parent instanceof BoxSwitch || parent instanceof BoxDo || parent instanceof BoxForIndex
+			    || parent instanceof BoxForIn || parent instanceof BoxWhile ) {
+				return false;
+			}
+			parent = parent.getParent();
+		}
+		return false;
 	}
 }

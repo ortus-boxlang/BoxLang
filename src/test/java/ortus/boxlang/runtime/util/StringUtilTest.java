@@ -65,8 +65,40 @@ public class StringUtilTest {
 	@DisplayName( "Can pluralize a string" )
 	@Test
 	void testPluralize() {
-		String plural = StringUtil.pluralize( "test" );
-		assertThat( plural ).isEqualTo( "tests" );
+		// Regular singular → plural
+		assertThat( StringUtil.pluralize( "test" ) ).isEqualTo( "tests" );
+		assertThat( StringUtil.pluralize( "minute" ) ).isEqualTo( "minutes" );
+		assertThat( StringUtil.pluralize( "second" ) ).isEqualTo( "seconds" );
+		assertThat( StringUtil.pluralize( "day" ) ).isEqualTo( "days" );
+		assertThat( StringUtil.pluralize( "hour" ) ).isEqualTo( "hours" );
+
+		// Already plural → unchanged (idempotent)
+		assertThat( StringUtil.pluralize( "tests" ) ).isEqualTo( "tests" );
+		assertThat( StringUtil.pluralize( "minutes" ) ).isEqualTo( "minutes" );
+		assertThat( StringUtil.pluralize( "seconds" ) ).isEqualTo( "seconds" );
+		assertThat( StringUtil.pluralize( "days" ) ).isEqualTo( "days" );
+		assertThat( StringUtil.pluralize( "hours" ) ).isEqualTo( "hours" );
+
+		// Words ending in "ss" → "sses"
+		assertThat( StringUtil.pluralize( "class" ) ).isEqualTo( "classes" );
+		// Already plural "classes" → unchanged (idempotent)
+		assertThat( StringUtil.pluralize( "classes" ) ).isEqualTo( "classes" );
+
+		// Words ending in "us" → "uses"
+		assertThat( StringUtil.pluralize( "cactus" ) ).isEqualTo( "cactuses" );
+
+		// Words ending in "y" → "ies" (consonant + y)
+		assertThat( StringUtil.pluralize( "category" ) ).isEqualTo( "categories" );
+
+		// Words ending in vowel + "y" → "ys"
+		assertThat( StringUtil.pluralize( "day" ) ).isEqualTo( "days" );
+		assertThat( StringUtil.pluralize( "key" ) ).isEqualTo( "keys" );
+
+		// Words ending in "x", "z", "ch", "sh" → "es"
+		assertThat( StringUtil.pluralize( "box" ) ).isEqualTo( "boxes" );
+		assertThat( StringUtil.pluralize( "quiz" ) ).isEqualTo( "quizes" );
+		assertThat( StringUtil.pluralize( "church" ) ).isEqualTo( "churches" );
+		assertThat( StringUtil.pluralize( "dish" ) ).isEqualTo( "dishes" );
 	}
 
 }

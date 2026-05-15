@@ -1,0 +1,23 @@
+<!--- BoxFile template --->
+<bx:output>
+<div class="bx-dump" title="#encodeForHTML( posInCode )#">
+	<table class="bx-table-primary">
+		<caption>
+			<strong>
+				<bx:if label.len() >#encodeForHTML( label )# - </bx:if>
+				Box File (#encodeForHTML( var.charset )#<bx:if var.seekable>, seekable</bx:if>)
+			</strong>
+		</caption>
+		<tbody>
+			<tr>
+				<th scope="row">path</th>
+				<td>#encodeForHTML( var.filepath )#</td>
+			</tr>
+			<tr>
+				<th scope="row">mode</th>
+				<td>#encodeForHTML( var.mode.toString() )#</td>
+			</tr>
+		</tbody>
+	</table>
+</div>
+</bx:output>

@@ -50,21 +50,23 @@ public class BoxStructSerializer implements ValueWriter {
 			// Add the struct to the set of seen structs
 			visited.put( bxStruct, Boolean.TRUE );
 
-			// Write the struct's properties
-			g.writeStartObject();
+			try {
+				// Write the struct's properties
+				g.writeStartObject();
 
-			// iterate over the entry set
-			for ( Object key : bxStruct.keySet() ) {
-				// Write the property name
-				g.writeFieldName( key.toString() );
-				// Write the property value
-				context.writeValue( bxStruct.get( key ) );
+				// iterate over the entry set
+				for ( Object key : bxStruct.keySet() ) {
+					// Write the property name
+					g.writeFieldName( key.toString() );
+					// Write the property value
+					context.writeValue( bxStruct.get( key ) );
+				}
+
+				g.writeEndObject();
+			} finally {
+				// Remove the struct from the set of seen structs
+				visited.remove( bxStruct );
 			}
-
-			g.writeEndObject();
-
-			// Remove the struct from the set of seen structs
-			visited.remove( bxStruct );
 		}
 	}
 

@@ -38,8 +38,8 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.BoxFile;
 import ortus.boxlang.runtime.types.DateTime;
-import ortus.boxlang.runtime.types.File;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class FileSetLastModifiedTest {
@@ -51,7 +51,7 @@ public class FileSetLastModifiedTest {
 	static String		testTextFile	= "src/test/resources/tmp/FileSetLastModifiedTest/time.txt";
 	static String		tmpDirectory	= "src/test/resources/tmp/FileSetLastModifiedTest";
 	static Instant		creationTime	= null;
-	static File			modFile			= null;
+	static BoxFile		modFile			= null;
 
 	@BeforeAll
 	public static void setUp() throws IOException {
@@ -61,7 +61,7 @@ public class FileSetLastModifiedTest {
 			FileSystemUtil.write( testTextFile, "file modified time test!".getBytes( "UTF-8" ), true );
 		}
 
-		modFile = new File( testTextFile );
+		modFile = new BoxFile( testTextFile );
 
 		modFile.setLastModifiedTime( new DateTime().modify( "m", -1l ) );
 
@@ -111,6 +111,18 @@ public class FileSetLastModifiedTest {
 		instance.executeSource(
 		    """
 		    result = fileSetLastModified( variables.testFile, dateAdd( "m", 1, now() ) );
+		    """,
+		    context );
+		assertTrue( Files.getLastModifiedTime( Path.of( testTextFile ) ).toInstant().isAfter( creationTime ) );
+	}
+
+	@DisplayName( "It can accept a numeric timestamp (epoch millis) as the date argument" )
+	@Test
+	public void testFileSetLastModifiedWithNumber() throws IOException {
+		variables.put( Key.of( "testFile" ), Path.of( testTextFile ).toAbsolutePath().toString() );
+		instance.executeSource(
+		    """
+		    fileSetLastModified( variables.testFile, now().getTime() );
 		    """,
 		    context );
 		assertTrue( Files.getLastModifiedTime( Path.of( testTextFile ) ).toInstant().isAfter( creationTime ) );

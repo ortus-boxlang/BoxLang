@@ -1,0 +1,15 @@
+class {
+	property name="foo";
+
+	function init() {
+		var x = 1;
+		import java.util.List;
+		return this;
+	}
+
+	function doSomething() {
+		break;
+		continue;
+		throw new Exception();
+	}
+}

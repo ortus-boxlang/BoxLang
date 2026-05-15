@@ -438,6 +438,10 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 		return ( BoxInterface ) DynamicObject.unWrap( get( key ) );
 	}
 
+	default BoxFile getAsBoxFile( Key key ) {
+		return ( BoxFile ) DynamicObject.unWrap( get( key ) );
+	}
+
 	default Stream<?> getAsStream( Key key ) {
 		return ( Stream<?> ) DynamicObject.unWrap( get( key ) );
 	}

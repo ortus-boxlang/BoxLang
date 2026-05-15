@@ -24,8 +24,10 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxSpreadExpression;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
@@ -40,6 +42,7 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxMethodInvocation	invocation	= ( BoxMethodInvocation ) node;
 		Boolean				safe		= invocation.isSafe() || context == TransformerContext.SAFE;
+		boolean				allSpread	= isAllSpread( invocation.getArguments() );
 
 		Expression			expr		= ( Expression ) transpiler.transform( invocation.getObj(),
 		    context );
@@ -53,8 +56,19 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 										};
 
 		for ( int i = 0; i < invocation.getArguments().size(); i++ ) {
-			Expression expr2 = ( Expression ) transpiler.transform( ( BoxNode ) invocation.getArguments().get( i ), context );
-			values.put( "arg" + i, expr2.toString() );
+			BoxArgument arg = invocation.getArguments().get( i );
+			if ( arg.isSpread() ) {
+				BoxSpreadExpression	spread		= ( BoxSpreadExpression ) arg.getValue();
+				Expression			innerExpr	= ( Expression ) transpiler.transform( spread.getExpression(), context );
+				if ( allSpread ) {
+					values.put( "arg" + i, innerExpr.toString() );
+				} else {
+					values.put( "arg" + i, "ortus.boxlang.runtime.dynamic.LiteralSpreadUtil.spread(" + innerExpr.toString() + ")" );
+				}
+			} else {
+				Expression expr2 = ( Expression ) transpiler.transform( ( BoxNode ) arg, context );
+				values.put( "arg" + i, expr2.toString() );
+			}
 		}
 
 		values.put( "expr", expr.toString() );
@@ -69,14 +83,23 @@ public class BoxMethodInvocationTransformer extends AbstractTransformer {
 			accessKey = createKey( invocation.getName() );
 		}
 		values.put( "methodKey", accessKey.toString() );
-		template = getTemplate( invocation );
+		template = getTemplate( invocation, allSpread );
 		Node javaExpr = parseExpression( template, values );
 		// logger.trace( side + node.getSourceText() + " -> " + javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;
 	}
 
-	private String getTemplate( BoxMethodInvocation function ) {
+	private String getTemplate( BoxMethodInvocation function, boolean allSpread ) {
+		if ( allSpread ) {
+			StringBuilder sb = new StringBuilder(
+			    "ortus.boxlang.runtime.dynamic.LiteralSpreadUtil.invokeSpreadOnlyMethod( ${contextName}, ${expr}, ${methodKey}, ${safe}" );
+			for ( int i = 0; i < function.getArguments().size(); i++ ) {
+				sb.append( ", ${arg" ).append( i ).append( "}" );
+			}
+			sb.append( ")" );
+			return sb.toString();
+		}
 		// TODO: This loses line number mapping. Stop parsing and start building the AST directly
 		StringBuilder sb = new StringBuilder( "Referencer.getAndInvoke(${contextName},${expr},${methodKey}," );
 

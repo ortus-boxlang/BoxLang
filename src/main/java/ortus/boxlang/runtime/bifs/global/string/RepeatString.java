@@ -32,7 +32,7 @@ public class RepeatString extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.string ),
-		    new Argument( true, "integer", Key.count )
+		    new Argument( true, "integerTruncate", Key.count )
 		};
 	}
 

@@ -68,3 +68,8 @@ test.txt
 
 # Secrets
 .env
+
+# Skills
+.agents/**
+.claude/**
+.opencode

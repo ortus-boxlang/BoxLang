@@ -22,9 +22,8 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.BoxFile;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.File;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @BoxBIF( description = "Read a single line from a file" )
 @BoxMember( type = BoxLangType.FILE )
@@ -37,7 +36,7 @@ public class FileReadLine extends BIF {
 	public FileReadLine() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.file )
+		    new Argument( true, "boxfile", Key.file )
 		};
 	}
 
@@ -50,13 +49,14 @@ public class FileReadLine extends BIF {
 	 * @argument.file The currently open file object
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		File file = null;
-		if ( arguments.get( Key.file ) instanceof File ) {
-			file = ( File ) arguments.get( Key.file );
-		} else {
-			throw new BoxRuntimeException( "The file argument [" + arguments.getAsString( Key.file ) + "] is not an open file stream." );
+		BoxFile file = arguments.getAsBoxFile( Key.file ).openAs( BoxFile.Mode.READ );
+		try {
+			return file.readLine();
+		} finally {
+			if ( file.implicitlyCast ) {
+				file.close();
+			}
 		}
-		return file.readLine();
 	}
 
 }

@@ -1,0 +1,5 @@
+class {
+	property name = "prop_a";
+
+
+}

@@ -50,4 +50,29 @@ public enum BoxComparisonOperator {
 				return "";
 		}
 	}
+
+	public String getKeyword() {
+		switch ( this ) {
+			case Equal :
+				return "EQ";
+			case GreaterThan :
+				return "GT";
+			case GreaterThanEquals :
+				return "GTE";
+			case LessThan :
+				return "LT";
+			case LessThanEquals :
+				return "LTE";
+			case NotEqual :
+				return "NEQ";
+			case Contains :
+				return "contains";
+			case TEqual :
+				return "===";
+			case TNotEqual :
+				return "!==";
+			default :
+				return "";
+		}
+	}
 }

@@ -21,6 +21,8 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.BoxFile;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF( description = "Delete a file" )
@@ -33,7 +35,7 @@ public class FileDelete extends BIF {
 	public FileDelete() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "string", Key.file )
+		    new Argument( true, "boxfile", Key.file )
 		};
 	}
 
@@ -46,7 +48,11 @@ public class FileDelete extends BIF {
 	 * @argument.file The file to delete.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		FileSystemUtil.deleteFile( FileSystemUtil.expandPath( context, arguments.getAsString( Key.file ) ).absolutePath().toString() );
+		BoxFile file = arguments.getAsBoxFile( Key.file );
+		if ( !file.implicitlyCast ) {
+			throw new BoxRuntimeException( "fileDelete() does not accept an open file object. Pass a file path instead." );
+		}
+		FileSystemUtil.deleteFile( file.filepath );
 		return null;
 	}
 

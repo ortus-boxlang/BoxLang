@@ -23,8 +23,8 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.cache.filters.WildcardFilter;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.jdbc.PendingQuery;
-import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -76,6 +76,9 @@ public class SystemCacheClear extends BIF {
 	 * <li><code>template</code> - Clear all the templates cached using the bx:cache component</li>
 	 * <li><code>query</code> - Clears the cache storing queries</li>
 	 * <li><code>object</code> - Clear the default cache region</li>
+	 * <li><code>http</code> - Clear all cached HTTP clients</li>
+	 * <li><code>methodhandle</code> - Clear the method handle cache used for dynamic interop calls</li>
+	 * <li><code>applicationdescriptor</code> - Clear the application descriptor cache used for storing parsed application descriptors</li>
 	 * </ul>
 	 *
 	 * @param context   The context in which the BIF is being invoked.
@@ -86,9 +89,19 @@ public class SystemCacheClear extends BIF {
 		String	cacheName	= arguments.getAsString( Key.cacheName ).toLowerCase();
 		boolean	clearAll	= cacheName.equals( DEFAULT_CACHE );
 
+		// Application descriptor cache
+		if ( clearAll || cacheName.equals( "applicationdescriptor" ) ) {
+			context.getRuntime().getApplicationService().clearApplicationDescriptorCache();
+		}
+
+		// method handle cache
+		if ( clearAll || cacheName.equals( "methodhandle" ) ) {
+			DynamicInteropService.clearMethodHandleCache();
+		}
+
 		// Page Pool region
 		if ( clearAll || cacheName.equals( "page" ) ) {
-			RunnableLoader.getInstance().getBoxpiler().clearPagePool();
+			PagePoolClear.clear();
 		}
 
 		// Class resolvers: component, cfc, left for compat

@@ -204,4 +204,18 @@ public class QueryAddColumnTest {
 
 	}
 
+	@DisplayName( "It should trim whitespace from column name" )
+	@Test
+	public void testColumnNameTrimming() {
+		instance.executeSource(
+		    """
+		    query = queryNew("col1", "varchar", [["foo"]]);
+		    queryAddColumn( query, " col2 ", "varchar", ["bar"] );
+		    result = queryColumnExists( query, "col2" );
+		    """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
 }

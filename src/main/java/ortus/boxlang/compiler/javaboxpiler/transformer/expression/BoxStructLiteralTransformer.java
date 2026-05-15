@@ -17,9 +17,6 @@
  */
 package ortus.boxlang.compiler.javaboxpiler.transformer.expression;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
@@ -28,6 +25,7 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxSpreadExpression;
 import ortus.boxlang.compiler.ast.expression.BoxStructLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStructType;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
@@ -56,71 +54,39 @@ public class BoxStructLiteralTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxStructLiteral	structLiteral	= ( BoxStructLiteral ) node;
-		Map<String, String>	values			= new HashMap<>() {
+		String				structType		= structLiteral.getType() == BoxStructType.Ordered ? "LINKED" : "DEFAULT";
 
-												{
-													put( "contextName", transpiler.peekContextName() );
-												}
-											};
-		boolean				empty			= structLiteral.getValues().isEmpty();
+		MethodCallExpr		javaExpr		= ( MethodCallExpr ) parseExpression(
+		    "ortus.boxlang.runtime.dynamic.LiteralSpreadUtil.struct( IStruct.TYPES." + structType + " )",
+		    java.util.Map.of() );
 
-		if ( structLiteral.getType() == BoxStructType.Unordered ) {
-			if ( empty ) {
-				Node javaExpr = parseExpression( "new Struct()", values );
-				// logger.trace( "{} -> {}", node.getSourceText(), javaExpr );
-				addIndex( javaExpr, node );
-				return javaExpr;
-			}
-
-			MethodCallExpr	javaExpr	= ( MethodCallExpr ) parseExpression( "Struct.of()", values );
-			int				i			= 1;
-			for ( BoxExpression expr : structLiteral.getValues() ) {
-				Expression value;
-				if ( expr instanceof BoxIdentifier id && i % 2 != 0 ) {
-					// { foo : "bar" }
-					value = createKey( id.getName() );
-				} else if ( expr instanceof BoxScope s && i % 2 != 0 ) {
-					// { this : "bar" }
-					value = createKey( s.getName() );
-				} else {
-					// { "foo" : "bar" }
-					value = ( Expression ) transpiler.transform( expr, context );
-				}
-				javaExpr.getArguments().add( value );
+		for ( int i = 0; i < structLiteral.getValues().size(); ) {
+			BoxExpression current = structLiteral.getValues().get( i );
+			if ( current instanceof BoxSpreadExpression spread ) {
+				MethodCallExpr spreadExpr = ( MethodCallExpr ) parseExpression( "ortus.boxlang.runtime.dynamic.LiteralSpreadUtil.spread()",
+				    java.util.Map.of() );
+				spreadExpr.getArguments().add( ( Expression ) transpiler.transform( spread.getExpression(), context ) );
+				javaExpr.getArguments().add( spreadExpr );
 				i++;
-			}
-			// logger.trace( "{} -> {}", node.getSourceText(), javaExpr );
-			addIndex( javaExpr, node );
-			return javaExpr;
-		} else {
-			if ( empty ) {
-				Node javaExpr = parseExpression( "new Struct( Struct.TYPES.LINKED )", values );
-				// logger.trace( "{} -> {}", node.getSourceText(), javaExpr );
-				addIndex( javaExpr, node );
-				return javaExpr;
+				continue;
 			}
 
-			MethodCallExpr	javaExpr	= ( MethodCallExpr ) parseExpression( "Struct.linkedOf()", values );
-			int				i			= 1;
-			for ( BoxExpression expr : structLiteral.getValues() ) {
-				Expression value;
-				if ( expr instanceof BoxIdentifier id && i % 2 != 0 ) {
-					// { foo : "bar" }
-					value = createKey( id.getName() );
-				} else if ( expr instanceof BoxScope s && i % 2 != 0 ) {
-					// { this : "bar" }
-					value = createKey( s.getName() );
-				} else {
-					// { "foo" : "bar" }
-					value = ( Expression ) transpiler.transform( expr, context );
-				}
-				javaExpr.getArguments().add( value );
-				i++;
+			if ( i + 1 >= structLiteral.getValues().size() ) {
+				throw new IllegalStateException( "Invalid struct literal data while transforming spread values." );
 			}
-			// logger.trace( "{} -> {}", node.getSourceText(), javaExpr );
-			addIndex( javaExpr, node );
-			return javaExpr;
+
+			if ( current instanceof BoxIdentifier id ) {
+				javaExpr.getArguments().add( createKey( id.getName() ) );
+			} else if ( current instanceof BoxScope scope ) {
+				javaExpr.getArguments().add( createKey( scope.getName() ) );
+			} else {
+				javaExpr.getArguments().add( ( Expression ) transpiler.transform( current, context ) );
+			}
+			javaExpr.getArguments().add( ( Expression ) transpiler.transform( structLiteral.getValues().get( i + 1 ), context ) );
+			i += 2;
 		}
 
+		addIndex( javaExpr, node );
+		return javaExpr;
 	}
 }

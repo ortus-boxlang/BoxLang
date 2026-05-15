@@ -118,7 +118,7 @@ public class JSONSerializeTest {
 
 	@DisplayName( "It can serialize using the BoxLang DateTime methods" )
 	@Test
-	public void testCanSerializeDateTimeUsingMethods() {
+	public void s() {
 		// @formatter:off
 		instance.executeSource(
 		    """
@@ -129,7 +129,6 @@ public class JSONSerializeTest {
 					localDate: LocalDate.now(),
 					sqlDate: Date.valueOf( "2024-01-01" )
 				} )
-				println( result )
 		    """,
 		    context );
 		// @formatter:on
@@ -430,7 +429,6 @@ public class JSONSerializeTest {
 		// @formatter:on
 
 		var json = variables.getAsString( result );
-		System.out.println( json );
 		assertThat( json ).isNotEmpty();
 	}
 
@@ -442,7 +440,6 @@ public class JSONSerializeTest {
 		    """
 		    	test = new src.test.bx.NotSerializable()
 				result = jsonSerialize( test )
-				println( result )
 		    """,
 		context );
 		// @formatter:on
@@ -503,7 +500,6 @@ public class JSONSerializeTest {
 				foo.put( "bar", bar )
 
 				result = jsonSerialize( foo )
-				println( result )
 		    """,
 		context );
 		// @formatter:on
@@ -523,7 +519,6 @@ public class JSONSerializeTest {
 				foo.append( bar )
 
 				result = jsonSerialize( foo )
-				println( result )
 		    """,
 		context );
 		// @formatter:on
@@ -548,7 +543,6 @@ public class JSONSerializeTest {
 				foo.add( bar )
 
 				result = jsonSerialize( foo )
-				println( result )
 		    """,
 		context );
 		// @formatter:on
@@ -573,7 +567,6 @@ public class JSONSerializeTest {
 					"six" : true
 				}, pretty=true )
 
-				println( result )
 			""",
 		    context );
 		// @formatter:on
@@ -601,14 +594,13 @@ public class JSONSerializeTest {
 				}
 		    	result = jsonSerialize( data: matrix )
 
-				println( result )
 			""",
 		    context );
 		// @formatter:on
 
 		var json = variables.getAsString( result );
 		assertThat( json ).isNotEmpty();
-		assertThat( json ).isEqualTo( "{\"test\":[[0.0,0.30420544445599146]]}" );
+		assertThat( json ).isEqualTo( "{\"test\":[[0,0.30420544445599146]]}" );
 	}
 
 	@DisplayName( "It can serialize exception" )
@@ -623,7 +615,6 @@ public class JSONSerializeTest {
 					result = jsonSerialize( data: e )
 				}
 
-				println( result )
 			""",
 		    context );
 		// @formatter:on
@@ -650,9 +641,27 @@ public class JSONSerializeTest {
 
 	}
 
-	@DisplayName( "It will serialize doubles without using scientific notation" )
+	@DisplayName( "It will serialize doubles" )
 	@Test
-	public void testWillSerializeDoublesWithoutScientificNotation() {
+	public void testWillSerializeDoubles() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				result = JSONserialize( {
+					"q": 5 castas Double
+				} );
+			""",
+		    context );
+		// @formatter:on
+
+		var json = variables.getAsString( result );
+		assertThat( json ).isNotEmpty();
+		assertThat( json ).isEqualTo( "{\"q\":5}" );
+	}
+
+	@DisplayName( "It will serialize BigDecimals without using scientific notation" )
+	@Test
+	public void testWillSerializeBigDecimalsWithoutScientificNotation() {
 		// @formatter:off
 		instance.executeSource(
 		    """
@@ -666,7 +675,92 @@ public class JSONSerializeTest {
 		var json = variables.getAsString( result );
 		assertThat( json ).isNotEmpty();
 		assertThat( json ).doesNotContain( "E" );
-		assertThat( json ).isEqualTo( "{\"q\":0.0000000}" );
+		assertThat( json ).isEqualTo( "{\"q\":0}" );
 	}
 
+	@DisplayName( "It will serialize stream" )
+	@Test
+	public void testWillSerializeStream() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+			data = {
+			myStream : [1,2,3].stream()
+			}
+
+			result = JSONSerialize( data );
+			""",
+		    context );
+		// @formatter:on
+
+		assertThat( variables.getAsString( result ) ).contains( "\"myStream\":{" );
+	}
+
+	@DisplayName( "It will serialize random java obects" )
+	@Test
+	public void testWillSerializeRandomJavaObjects() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				uri = createObject( "java", "java.net.URI" ).init( "/foo" );
+				result = JSONSerialize( { "uri" : uri } );
+			""",
+		    context );
+		// @formatter:on
+
+		assertThat( variables.getAsString( result ) ).contains( "\"RawPath\"" );
+		assertThat( variables.getAsString( result ) ).contains( "\"RawAuthority\"" );
+		assertThat( variables.getAsString( result ) ).contains( "\"Scheme\"" );
+		assertThat( variables.getAsString( result ) ).contains( "\"RawFragment\"" );
+		assertThat( variables.getAsString( result ) ).contains( "\"SchemeSpecificPart\"" );
+		assertThat( variables.getAsString( result ) ).contains( "\"/foo\"" );
+	}
+
+	@DisplayName( "It will serialize Java Instant" )
+	@Test
+	public void testWillSerializeJavaInstant() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				instant = createObject( "java", "java.time.Instant" ).EPOCH;
+				result = JSONSerialize( { "instant" : instant } );
+			//	println(result)
+			""",
+		    context );
+		// @formatter:on
+
+		assertThat( variables.getAsString( result ) ).contains( "1970-01-01T00:00:00Z" );
+	}
+
+	@DisplayName( "It will serialize Java Duration" )
+	@Test
+	public void testWillSerializeJavaDuration() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				duration = createObject( "java", "java.time.Duration" ).ofSeconds( 60 );
+				result = JSONSerialize( { "duration" : duration } );
+				duration2 = createObject( "java", "java.time.Duration" ).ofDays( 2 );
+				result2 = JSONSerialize( { "duration2" : duration2 } );
+			""",
+		    context );
+		// @formatter:on
+		assertThat( variables.getAsString( result ) ).contains( "0.0006944444444444444" );
+		assertThat( variables.getAsString( Key.of( "result2" ) ) ).contains( "2" );
+	}
+
+	@DisplayName( "It will serialize Java class" )
+	@Test
+	public void testWillSerializeJavaClass() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				result = JSONSerialize( "x".getClass() );
+				result = JSONSerialize( createObject("java","java.net.InetAddress") );
+				result = JSONSerialize( createObject("java","java.net.InetAddress").getLocalHost() );
+			""",
+		    context );
+		// @formatter:on
+		// Just assert it wasn't a stack overflow
+	}
 }

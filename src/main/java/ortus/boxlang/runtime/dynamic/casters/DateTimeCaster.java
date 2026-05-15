@@ -310,18 +310,31 @@ public class DateTimeCaster implements IBoxCaster {
 			return null;
 		}
 
-		// Now let's check common patterns and then fall back to the full localization parsing
+		if ( targetString.trim().length() == 0 ) {
+			if ( fail ) {
+				throw new BoxCastException( "Can't cast an empty string to a DateTime." );
+			}
+			return null;
+		}
+
+		// If we have a locale, try locale-specific parsing first
+		if ( locale != null ) {
+			try {
+				return new DateTime( targetString, locale, timezone );
+			} catch ( Throwable e ) {
+				// If locale-specific parsing failed, fall back to common patterns
+			}
+		}
+
+		// Try common patterns as fallback
 		DateTime parsed = LocalizationUtil.parseFromCommonPatterns( targetString, timezone );
 
 		if ( parsed != null ) {
 			return parsed;
 		} else {
+			// No locale specified or both locale and common patterns failed, try default locale parsing
 			try {
-				if ( locale != null ) {
-					return new DateTime( targetString, locale, timezone );
-				} else {
-					return new DateTime( targetString, timezone );
-				}
+				return new DateTime( targetString, timezone );
 			} catch ( Throwable e ) {
 				if ( fail ) {
 					throw new BoxCastException( "Can't cast [" + targetString + "] to a DateTime." );
@@ -344,32 +357,25 @@ public class DateTimeCaster implements IBoxCaster {
 	 * @return True if the object is a known date class
 	 */
 	public static boolean isKnownDateClass( Object object ) {
-		return switch ( object ) {
-			case DateTime d -> {
-				yield true;
-			}
-			case java.time.ZonedDateTime d -> {
-				yield true;
-			}
-			case java.util.Calendar d -> {
-				yield true;
-			}
-			case java.time.LocalDateTime d -> {
-				yield true;
-			}
-			case java.time.LocalDate d -> {
-				yield true;
-			}
-			case java.sql.Date d -> {
-				yield true;
-			}
-			case java.util.Date d -> {
-				yield true;
-			}
-			default -> {
-				yield false;
-			}
-		};
+		return object != null && isKnownDateClass( object.getClass() );
+	}
+
+	/**
+	 * Checks if the given class is a known date class that can be successfully cast to a DateTime.
+	 *
+	 * @param clazz The class to check
+	 *
+	 * @return True if the class is a known date class
+	 */
+	public static boolean isKnownDateClass( Class<?> clazz ) {
+		return DateTime.class.isAssignableFrom( clazz )
+		    || java.time.ZonedDateTime.class.isAssignableFrom( clazz )
+		    || java.util.Calendar.class.isAssignableFrom( clazz )
+		    || java.time.LocalDateTime.class.isAssignableFrom( clazz )
+		    || java.time.LocalDate.class.isAssignableFrom( clazz )
+		    || java.sql.Date.class.isAssignableFrom( clazz )
+		    || java.util.Date.class.isAssignableFrom( clazz )
+		    || java.time.Instant.class.isAssignableFrom( clazz );
 	}
 
 }

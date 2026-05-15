@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.types.util;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -43,6 +45,7 @@ import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.operators.StringCompare;
 import ortus.boxlang.runtime.scopes.Key;
@@ -870,7 +873,7 @@ public class StructUtil {
 		return Stream.concat( regularMatches, arrayMatches );
 	}
 
-	/**
+	/***
 	 * Helper method to find values within arrays/lists in a flattened struct
 	 *
 	 * @param flatMap        the flattened map to search within
@@ -1380,6 +1383,117 @@ public class StructUtil {
 				);
 			}
 		};
+	}
+
+	/**
+	 * Converts any object to a struct
+	 * 
+	 * @param object  The object to convert
+	 * @param context The context to use
+	 */
+	public static IStruct objectToStruct( Object object, IBoxContext context ) {
+		return objectToStruct( object, context, false );
+	}
+
+	/**
+	 * Converts any object to a struct
+	 * 
+	 * @param object  The object to convert
+	 * @param context The context to use
+	 * @param limited When true, skip static methods, enums, object methods, and class methods
+	 */
+	public static IStruct objectToStruct( Object object, IBoxContext context, boolean limited ) {
+
+		IStruct thisResult = new Struct();
+
+		if ( object == null ) {
+			return thisResult;
+		}
+
+		DynamicObject dynObject;
+
+		// Get the fields and methods of the class
+		dynObject = DynamicObject.of( object );
+		dynObject.getFieldsAsStream()
+		    .filter( field -> Modifier.isPublic( field.getModifiers() ) && !Modifier.isStatic( field.getModifiers() ) )
+		    .forEach( field -> {
+			    try {
+				    Object value = coerceValue( dynObject.getField( field.getName() ).orElse( null ), limited );
+				    thisResult.put( field.getName(), value );
+			    } catch ( Exception e ) {
+				    // We're gonna ignore any invalid fields that error out. Some times public fields cannot be accessed
+			    }
+		    } );
+		// also add fields for all public methods starting with "get" that take no arguments
+
+		dynObject.getMethodNames( true ).forEach( methodName -> {
+			Method m;
+			// Look for getXXX() methods that are public, non-static, take no parameters.
+			// When limited, skip methods declared on Object, Enum, or Class to avoid crazy recursion.
+			if ( methodName.startsWith( "get" ) && Modifier.isPublic( ( m = dynObject.getMethod( methodName, true ) ).getModifiers() )
+			    && !Modifier.isStatic( m.getModifiers() )
+			    && m.getParameterCount() == 0
+			    && ( !limited || ( m.getDeclaringClass() != Object.class && m.getDeclaringClass() != Enum.class
+			        && m.getDeclaringClass() != Class.class ) ) ) {
+				try {
+					Object value = coerceValue( dynObject.invoke( context, methodName ), limited );
+					thisResult.put( methodName.substring( 3 ), value );
+				} catch ( Exception e ) {
+					// We're gonna ignore any invalid methods that error out.
+				}
+			}
+		} );
+
+		// Force the overloaded method expecting a class.
+		// Get the static methods and fields of the Class that the Class represents
+		if ( !limited && object instanceof Class clazz ) {
+			DynamicObject dynObject2 = DynamicObject.of( clazz );
+			dynObject2.getFieldsAsStream()
+			    // get public, static fields
+			    .filter( field -> Modifier.isPublic( field.getModifiers() ) && Modifier.isStatic( field.getModifiers() ) )
+			    .forEach( field -> {
+				    Object value = coerceValue( dynObject2.getField( field.getName() ).orElse( null ), false );
+				    thisResult.put( field.getName(), value );
+			    } );
+			// also add fields for all public methods starting with "get" that take no arguments
+			dynObject2.getMethodNames( true ).forEach( methodName -> {
+				if ( methodName.startsWith( "get" ) ) {
+					Method	m			= dynObject2.getMethod( methodName, true );
+					int		modifiers	= m.getModifiers();
+					if ( Modifier.isPublic( modifiers ) && Modifier.isStatic( modifiers ) && m.getParameterCount() == 0 ) {
+						try {
+							Object value = coerceValue( dynObject2.invokeStatic( context, methodName ), false );
+							thisResult.put( methodName.substring( 3 ), value );
+						} catch ( Exception e ) {
+							// We're gonna ignore any invalid methods that error out.
+						}
+					}
+				}
+			} );
+		}
+
+		return thisResult;
+	}
+
+	/**
+	 * Coerces a value for struct representation. When limited, converts Enums to their name
+	 * and Classes to a string representation. When not limited, returns the value as-is.
+	 *
+	 * @param value   The value to coerce
+	 * @param limited Whether to return simplified representations.
+	 *
+	 * @return The coerced value
+	 */
+	private static Object coerceValue( Object value, boolean limited ) {
+		if ( !limited ) {
+			return value;
+		}
+		if ( value instanceof Enum<?> e ) {
+			return e.name();
+		} else if ( value instanceof Class<?> c ) {
+			return "class " + c.getName();
+		}
+		return value;
 	}
 
 }

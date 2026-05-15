@@ -341,6 +341,16 @@ public class DateTimeCasterTest {
 	}
 
 	@Test
+	@DisplayName( "Test medium format date and time with AM/PM scrunched" )
+	public void testMedFormatAMPMScrunched() {
+		// Med string example Aug 26, 2024 22:05:00 UTC
+		String		dateString	= "Mar 12 2026 12:00AM";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd hh:mm:ss a" ) ).isEqualTo( "2026-03-12 12:00:00 AM" );
+	}
+
+	@Test
 	@DisplayName( "Test medium format datetime with no comma separator between year and time and narrow no-break space unicode char" )
 	public void testMedFormatWithMeridianAndNoSeparator() {
 		// Do not change the no-break space character here; it's intentional
@@ -576,5 +586,32 @@ public class DateTimeCasterTest {
 		DateTime	result		= DateTimeCaster.cast( dateString );
 		assertThat( result ).isNotNull();
 		assertThat( result.format( "dd-MMM-yyyy HH:mm" ) ).isEqualTo( "05-Nov-2025 14:43" );
+	}
+
+	@Test
+	@DisplayName( "Test European DD/MM/YYYY format with day > 12 to distinguish from US format" )
+	public void testEuropeanDDMMYYYYFormat() {
+		String		dateString	= "15/04/2024";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "dd/MM/yyyy" ) ).isEqualTo( "15/04/2024" );
+	}
+
+	@Test
+	@DisplayName( "Test European DD/MM/YYYY format with time and day > 12" )
+	public void testEuropeanDDMMYYYYWithTime() {
+		String		dateString	= "25/12/2024 14:30:45";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "dd/MM/yyyy HH:mm:ss" ) ).isEqualTo( "25/12/2024 14:30:45" );
+	}
+
+	@Test
+	@DisplayName( "Test European DD.MM.YYYY format with day > 12 to distinguish from US format" )
+	public void testEuropeanDDMMYYYYDotFormat() {
+		String		dateString	= "13.03.2024";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "dd.MM.yyyy" ) ).isEqualTo( "13.03.2024" );
 	}
 }

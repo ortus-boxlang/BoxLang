@@ -107,7 +107,8 @@ public class LoggingService {
 	public BoxLangLogger							MODULES_LOGGER		= null;
 	public BoxLangLogger							RUNTIME_LOGGER		= null;
 	public BoxLangLogger							SCHEDULER_LOGGER	= null;
-
+	public BoxLangLogger							WATCHER_LOGGER		= null;
+	public BoxLangLogger							BLACKHOLE_LOGGER	= null;
 	/**
 	 * The log format for the BoxLang runtime
 	 *
@@ -412,7 +413,9 @@ public class LoggingService {
 		this.MODULES_LOGGER		= getLogger( "modules" );
 		this.RUNTIME_LOGGER		= getLogger( "runtime" );
 		this.SCHEDULER_LOGGER	= getLogger( "scheduler" );
+		this.WATCHER_LOGGER		= getLogger( "watcher" );
 		this.HTTP_LOGGER		= getLogger( "http" );
+		this.BLACKHOLE_LOGGER	= getLogger( "blackhole" );
 
 		return instance;
 	}
@@ -746,23 +749,24 @@ public class LoggingService {
 		return new ArrayList<>( this.appendersMap.keySet() );
 	}
 
+	/*
+	 * Shutdown the logging service
+	 */
+	public LoggingService shutdown() {
+		shutdownAppenders();
+		getLoggerContext().stop();
+		return instance;
+	}
+
 	/**
 	 * Shutdown all the appenders
 	 *
 	 * @return The logging service
 	 */
 	public LoggingService shutdownAppenders() {
-		this.appendersMap.values().forEach( Appender::stop );
-		return instance;
-	}
+		List.copyOf( this.appendersMap.values() )
+		    .forEach( Appender::stop );
 
-	/**
-	 * Shutdown the logging service
-	 */
-	public LoggingService shutdown() {
-		// Shutdown all the appenders
-		shutdownAppenders();
-		getLoggerContext().stop();
 		return instance;
 	}
 
@@ -794,7 +798,38 @@ public class LoggingService {
 		// Seed the properties
 		oLogger.setLevel( configLevel );
 		oLogger.setAdditive( loggerConfig.additive );
-		oLogger.addAppender( getOrBuildAppender( loggerFilePath, targetContext, loggerConfig ) );
+
+		// Only build/attach appenders when the logger is not effectively disabled
+		if ( configLevel != Level.OFF ) {
+			Appender<ILoggingEvent> loggerAppender = getOrBuildAppender( loggerFilePath, targetContext, loggerConfig );
+			oLogger.addAppender( loggerAppender );
+
+			// Wire category loggers: redirect each named Java package/class to this logger's appender
+			if ( !loggerConfig.categories.isEmpty() ) {
+				for ( String category : loggerConfig.categories ) {
+					String trimmedCategory = category.trim();
+					if ( trimmedCategory.isEmpty() ) {
+						continue;
+					}
+					Logger categoryLogger = targetContext.getLogger( trimmedCategory );
+					categoryLogger.setLevel( configLevel );
+					categoryLogger.setAdditive( false );
+					categoryLogger.addAppender( loggerAppender );
+				}
+			}
+		} else {
+			// For OFF-level loggers, avoid creating/starting appenders entirely.
+			// Still configure category loggers to be OFF and non-additive so they don't propagate to parents.
+			for ( String category : loggerConfig.categories ) {
+				String trimmedCategory = category.trim();
+				if ( trimmedCategory.isEmpty() ) {
+					continue;
+				}
+				Logger categoryLogger = targetContext.getLogger( trimmedCategory );
+				categoryLogger.setLevel( configLevel );
+				categoryLogger.setAdditive( false );
+			}
+		}
 
 		return new BoxLangLogger( oLogger );
 	}
