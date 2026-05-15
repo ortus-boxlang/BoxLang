@@ -98,6 +98,33 @@ public class RefutableDestructuringDeclarationTest {
 		assertThat( result.get( Key.of( "roleDefined" ) ) ).isEqualTo( false );
 	}
 
+	@DisplayName( "refutable defaults distinguish missing values from explicit nulls" )
+	@Test
+	public void testRefutableDefaultsDistinguishMissingValuesFromExplicitNulls() {
+		instance.executeSource(
+		    """
+		    function unpack( struct payload ) {
+		    	var { name = \"guest\" } = payload else {
+		    		return { failed: true };
+		    	}
+
+		    	return { failed: false, name: name };
+		    }
+
+		    missingResult = unpack( {} );
+		    nullResult = unpack( { name: null } );
+		    """,
+		    context );
+
+		IStruct missingResult = ( IStruct ) variables.get( Key.of( "missingResult" ) );
+		IStruct nullResult = ( IStruct ) variables.get( Key.of( "nullResult" ) );
+
+		assertThat( missingResult.get( Key.of( "failed" ) ) ).isEqualTo( false );
+		assertThat( missingResult.get( Key.of( "name" ) ) ).isEqualTo( "guest" );
+		assertThat( nullResult.get( Key.of( "failed" ) ) ).isEqualTo( false );
+		assertThat( nullResult.get( Key.of( "name" ) ) ).isNull();
+	}
+
 	@DisplayName( "refutable destructuring declarations require at least one binding target" )
 	@Test
 	public void testRefutableDestructuringDeclarationRequiresBindingTarget() {

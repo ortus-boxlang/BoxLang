@@ -76,6 +76,12 @@ public class MatchExpression {
 		return null;
 	}
 
+	/**
+	 * Attempts a refutable declaration match against the subject.
+	 *
+	 * Bindings are staged in a child context and only promoted into the parent
+	 * scope after the entire pattern succeeds, which keeps destructuring atomic.
+	 */
 	public static boolean declare( IBoxContext context, Object subject, Pattern pattern, boolean localDeclaration, boolean finalDeclaration ) {
 		PatternMatchContext	declarationContext	= new PatternMatchContext( context );
 		MatcherEngine		matcher				= MatcherEngine.on( declarationContext );
@@ -405,6 +411,9 @@ public class MatchExpression {
 		}
 	}
 
+		/**
+		 * Base runtime contract for compiled match and destructuring patterns.
+		 */
 	public abstract static class Pattern {
 
 		final boolean matches( IBoxContext context, Object subject ) {
@@ -914,6 +923,10 @@ public class MatchExpression {
 		}
 	}
 
+	/**
+	 * Staging context that keeps tentative bindings isolated until a pattern has
+	 * matched completely.
+	 */
 	private static final class PatternMatchContext extends ContainerBoxContext {
 
 		private PatternMatchContext( IBoxContext parent ) {

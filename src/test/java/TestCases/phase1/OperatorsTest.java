@@ -35,6 +35,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Range;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 public class OperatorsTest {
@@ -188,6 +189,14 @@ public class OperatorsTest {
 		    """,
 		    context );
 		assertThat( variables.get( resultKey ) ).isEqualTo( new Range( 2, 4 ) );
+	}
+
+	@DisplayName( "range operator rejects oversized ranges" )
+	@Test
+	public void testRangeOperatorRejectsOversizedRanges() {
+		BoxRuntimeException t = assertThrows( BoxRuntimeException.class, () -> ortus.boxlang.runtime.operators.Range.invoke( 0, Integer.MAX_VALUE ) );
+
+		assertThat( t.getMessage() ).contains( "too many results" );
 	}
 
 	@DisplayName( "math plus plus literals" )

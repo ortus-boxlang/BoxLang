@@ -36,6 +36,11 @@ import ortus.boxlang.runtime.types.meta.GenericMeta;
 
 /**
  * Immutable inclusive integer range value.
+ *
+ * Phase 1 ranges are finite integer progressions with an implicit unit step.
+ * The direction determines the step: ascending ranges advance by {@code +1}
+ * and descending ranges advance by {@code -1}. Materialize the values with
+ * {@link #toBoxArray()} when a mutable BoxLang array is required.
  */
 public class Range extends AbstractCollection<Integer> implements IType, IReferenceable, Serializable {
 
@@ -122,6 +127,8 @@ public class Range extends AbstractCollection<Integer> implements IType, IRefere
 			return false;
 		}
 
+		// Phase 1 ranges always use a unit step, so this modulo check remains the
+		// shared membership rule for both ascending and descending ranges.
 		return ( candidate - this.from ) % this.step == 0;
 	}
 

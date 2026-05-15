@@ -232,6 +232,7 @@ statement
     // empty statement block rule that follows after expression.
     | statementBlock
     | component
+    | refutableDestructuringDeclaration
     | simpleStatement
     | expressionStatement // Allows for statements like complicated.thing.foo.bar--
     | emptyStatementBlock
@@ -240,6 +241,9 @@ statement
 
 // op=(VAR | FINAL) etc
 assignmentModifier: op = ( VAR | FINAL | STATIC)
+    ;
+
+refutableDestructuringDeclaration: op = ( VAR | FINAL ) matchPattern EQUALSIGN expression ELSE elseBody = statementOrBlock
     ;
 
 // Simple statements have no body

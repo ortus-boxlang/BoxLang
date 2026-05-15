@@ -406,8 +406,6 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		}
 
 		// Otherwise we have an index with 0 <= n <= 3 expressions
-		List<BoxExpression> expressions = Optional.ofNullable( ctx.expression() ).orElse( Collections.emptyList() ).stream()
-		    .map( expression -> expression.accept( expressionVisitor ) ).toList();
 		return new BoxForIndex(
 		    label,
 		    Optional.ofNullable( ctx.intializer ).map( init -> init.accept( expressionVisitor ) ).orElse( null ),
@@ -1107,10 +1105,6 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		return false;
 	}
 
-	public <T> T getOrNull( List<T> list, int index ) {
-		return ( index >= 0 && index < list.size() ) ? list.get( index ) : null;
-	}
-
 	private BoxFunctionDeclaration buildFunction( List<BoxGrammar.PreAnnotationContext> preAnnotations,
 	    List<BoxGrammar.PostAnnotationContext> postAnnotations, String name, FunctionSignatureContext functionSignature,
 	    BoxGrammar.NormalStatementBlockContext statementBlock, ParserRuleContext ctx ) {
@@ -1182,12 +1176,19 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		    } );
 
 		// Function return type
-		returnType	= Optional.ofNullable( functionSignature.returnType() ).map( returnTypeContext -> {
-						String	targetType	= returnTypeContext.getText();
-						BoxType	boxType		= BoxType.fromString( targetType );
-						String	fqn			= boxType.equals( BoxType.Fqn ) ? targetType : null;
-						return new BoxReturnType( boxType, fqn, tools.getPosition( returnTypeContext ), tools.getSourceText( returnTypeContext ) );
-					} ).orElse( null );
+		if ( functionSignature.returnType() != null ) {
+			String	targetType	= functionSignature.returnType().getText();
+			BoxType	boxType		= BoxType.fromString( targetType );
+			String	fqn			= boxType.equals( BoxType.Fqn ) ? targetType : null;
+			returnType = new BoxReturnType(
+			    boxType,
+			    fqn,
+			    tools.getPosition( functionSignature.returnType() ),
+			    tools.getSourceText( functionSignature.returnType() )
+			);
+		} else {
+			returnType = null;
+		}
 
 		// If body is null, it indicates an abstract function otherwise the presence of
 		// a body indicates a function declaration, even with no statements in it.

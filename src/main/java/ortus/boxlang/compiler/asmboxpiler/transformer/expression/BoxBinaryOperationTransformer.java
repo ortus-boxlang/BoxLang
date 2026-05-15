@@ -85,7 +85,7 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 												    generateNumericBinaryMethodCallNodes( Minus.class, Number.class, operation, left, right );
 
 												case Range -> // "Range.invoke(${left},${right})";
-												    generateBinaryMethodCallNodes( Range.class, Range.class, left, right );
+												    generateBinaryMethodCallNodes( Range.class, ortus.boxlang.runtime.types.Range.class, left, right );
 
 												case Star -> // "Multiply.invoke(${left},${right})";
 												    generateNumericBinaryMethodCallNodes( Multiply.class, Number.class, operation, left, right );
