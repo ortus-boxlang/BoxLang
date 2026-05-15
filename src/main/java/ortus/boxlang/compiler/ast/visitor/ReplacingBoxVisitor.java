@@ -99,6 +99,7 @@ import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
+import ortus.boxlang.compiler.ast.statement.BoxRefutableDestructuringDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
@@ -1054,6 +1055,25 @@ public abstract class ReplacingBoxVisitor {
 			if ( newBody != body ) {
 				node.setElseBody( ( BoxStatement ) newBody );
 			}
+		}
+		return node;
+	}
+
+	public BoxNode visit( BoxRefutableDestructuringDeclaration node ) {
+		BoxMatchPattern	pattern		= node.getPattern();
+		BoxNode			newPattern	= pattern.accept( this );
+		if ( newPattern != pattern ) {
+			node.setPattern( ( BoxMatchPattern ) newPattern );
+		}
+		BoxExpression	subject		= node.getSubject();
+		BoxNode			newSubject	= subject.accept( this );
+		if ( newSubject != subject ) {
+			node.setSubject( ( BoxExpression ) newSubject );
+		}
+		BoxStatement	elseBody	= node.getElseBody();
+		BoxNode			newElseBody	= elseBody.accept( this );
+		if ( newElseBody != elseBody ) {
+			node.setElseBody( ( BoxStatement ) newElseBody );
 		}
 		return node;
 	}

@@ -112,6 +112,7 @@ import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
+import ortus.boxlang.compiler.ast.statement.BoxRefutableDestructuringDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
@@ -447,6 +448,10 @@ public abstract class VoidBoxVisitor {
 	}
 
 	public void visit( BoxIfElse node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxRefutableDestructuringDeclaration node ) {
 		visitChildren( node );
 	}
 

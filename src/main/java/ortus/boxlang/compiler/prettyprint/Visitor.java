@@ -114,6 +114,7 @@ import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
+import ortus.boxlang.compiler.ast.statement.BoxRefutableDestructuringDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
@@ -1590,6 +1591,18 @@ public class Visitor extends VoidBoxVisitor {
 			return;
 		}
 		doBoxIfElse( node, false );
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxRefutableDestructuringDeclaration node ) {
+		printPreComments( node );
+		print( node.isFinalDeclaration() ? "final " : "var " );
+		node.getPattern().accept( this );
+		print( " = " );
+		node.getSubject().accept( this );
+		print( " else " );
+		node.getElseBody().accept( this );
 		printPostComments( node );
 	}
 

@@ -99,6 +99,7 @@ import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
+import ortus.boxlang.compiler.ast.statement.BoxRefutableDestructuringDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
@@ -164,6 +165,7 @@ import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxFunctionDecl
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxIfElseTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxImportTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxParamTransformer;
+import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxRefutableDestructuringDeclarationTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxRethrowTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxReturnTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxScriptTransformer;
@@ -235,6 +237,7 @@ public class JavaTranspiler extends Transpiler {
 		registry.put( BoxMethodInvocation.class, new BoxMethodInvocationTransformer( this ) );
 		registry.put( BoxFunctionInvocation.class, new BoxFunctionInvocationTransformer( this ) );
 		registry.put( BoxIfElse.class, new BoxIfElseTransformer( this ) );
+		registry.put( BoxRefutableDestructuringDeclaration.class, new BoxRefutableDestructuringDeclarationTransformer( this ) );
 		registry.put( BoxWhile.class, new BoxWhileTransformer( this ) );
 		registry.put( BoxDo.class, new BoxDoTransformer( this ) );
 		registry.put( BoxSwitch.class, new BoxSwitchTransformer( this ) );

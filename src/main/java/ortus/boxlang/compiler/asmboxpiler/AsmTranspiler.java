@@ -75,6 +75,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxFunctionDecla
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxIfElseTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxInterfaceTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxParamTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxRefutableDestructuringDeclarationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxRethrowTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxScriptIslandTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxStaticInitializerTransformer;
@@ -138,6 +139,7 @@ import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
+import ortus.boxlang.compiler.ast.statement.BoxRefutableDestructuringDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
 import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
@@ -413,6 +415,7 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxStatementBlock.class, new BoxStatementBlockTransformer( this ) );
 		registry.put( BoxEmptyStatement.class, new BoxEmptyStatementTransformer( this ) );
 		registry.put( BoxIfElse.class, new BoxIfElseTransformer( this ) );
+		registry.put( BoxRefutableDestructuringDeclaration.class, new BoxRefutableDestructuringDeclarationTransformer( this ) );
 		registry.put( BoxComparisonOperation.class, new BoxComparisonOperationTransformer( this ) );
 		registry.put( BoxTernaryOperation.class, new BoxTernaryOperationTransformer( this ) );
 		registry.put( BoxSwitch.class, new BoxSwitchTransformer( this ) );
@@ -645,6 +648,7 @@ public class AsmTranspiler extends Transpiler {
 		    || node instanceof BoxForIn
 		    || node instanceof BoxForIndex
 		    || node instanceof BoxIfElse
+		    || node instanceof BoxRefutableDestructuringDeclaration
 		    || node instanceof BoxDo;
 	}
 

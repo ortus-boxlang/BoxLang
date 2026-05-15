@@ -88,13 +88,17 @@ public class BoxMatchExpressionTransformer extends AbstractTransformer {
 		String	guard	= matchCase.getGuard() == null ? "null" : buildLambdaExpression( matchCase.getGuard() );
 		String	body	= buildLambdaExpression( matchCase.getBody() );
 		return "ortus.boxlang.runtime.dynamic.MatchExpression.matchCase("
-		    + buildPatternExpression( matchCase.getPattern() ) + ", "
+		    + buildPatternExpression( matchCase.getPattern(), false ) + ", "
 		    + guard + ", "
 		    + body
 		    + ")";
 	}
 
-	private String buildPatternExpression( BoxMatchPattern pattern ) {
+	protected final String buildPatternExpression( BoxMatchPattern pattern ) {
+		return buildPatternExpression( pattern, false );
+	}
+
+	protected String buildPatternExpression( BoxMatchPattern pattern, boolean isDeclaration ) {
 		if ( pattern instanceof BoxMatchLiteralPattern literalPattern ) {
 			return "ortus.boxlang.runtime.dynamic.MatchExpression.literal("
 			    + transpiler.transform( literalPattern.getValue(), TransformerContext.RIGHT )
@@ -105,33 +109,33 @@ public class BoxMatchExpressionTransformer extends AbstractTransformer {
 		}
 		if ( pattern instanceof BoxMatchBindingPattern bindingPattern ) {
 			return "ortus.boxlang.runtime.dynamic.MatchExpression.binding("
-			    + buildTargetExpression( bindingPattern.getBinding(), false )
+			    + buildTargetExpression( bindingPattern.getBinding(), isDeclaration )
 			    + ")";
 		}
 		if ( pattern instanceof BoxMatchConstructorPattern constructorPattern ) {
 			return "ortus.boxlang.runtime.dynamic.MatchExpression.constructor("
 			    + quoteJavaString( constructorPattern.getLabel().getName() ) + ", "
-			    + buildNestedPatternsExpression( constructorPattern.getPatterns() )
+			    + buildNestedPatternsExpression( constructorPattern.getPatterns(), isDeclaration )
 			    + ")";
 		}
 		if ( pattern instanceof BoxMatchObjectPattern objectPattern ) {
 			return "ortus.boxlang.runtime.dynamic.MatchExpression.object("
-			    + buildObjectBindingsExpression( objectPattern.getPattern().getBindings() )
+			    + buildObjectBindingsExpression( objectPattern.getPattern().getBindings(), isDeclaration )
 			    + ")";
 		}
 		if ( pattern instanceof BoxMatchOrPattern orPattern ) {
 			return "ortus.boxlang.runtime.dynamic.MatchExpression.or("
-			    + buildNestedPatternsExpression( orPattern.getPatterns() )
+			    + buildNestedPatternsExpression( orPattern.getPatterns(), isDeclaration )
 			    + ")";
 		}
 		if ( pattern instanceof BoxMatchAndPattern andPattern ) {
 			return "ortus.boxlang.runtime.dynamic.MatchExpression.and("
-			    + buildNestedPatternsExpression( andPattern.getPatterns() )
+			    + buildNestedPatternsExpression( andPattern.getPatterns(), isDeclaration )
 			    + ")";
 		}
 		if ( pattern instanceof BoxMatchNotPattern notPattern ) {
 			return "ortus.boxlang.runtime.dynamic.MatchExpression.not("
-			    + buildPatternExpression( notPattern.getPattern() )
+			    + buildPatternExpression( notPattern.getPattern(), isDeclaration )
 			    + ")";
 		}
 		if ( pattern instanceof BoxMatchPredicatePattern predicatePattern ) {
@@ -148,12 +152,12 @@ public class BoxMatchExpressionTransformer extends AbstractTransformer {
 		if ( pattern instanceof BoxMatchTypePattern typePattern ) {
 			return "ortus.boxlang.runtime.dynamic.MatchExpression.type("
 			    + buildTypeNamesExpression( typePattern.getTypes() ) + ", "
-			    + buildTargetExpression( typePattern.getBinding(), false )
+			    + buildTargetExpression( typePattern.getBinding(), isDeclaration )
 			    + ")";
 		}
 		if ( pattern instanceof BoxMatchArrayPattern arrayPattern ) {
 			return "ortus.boxlang.runtime.dynamic.MatchExpression.array("
-			    + buildArrayBindingsExpression( arrayPattern.getPattern().getBindings() )
+			    + buildArrayBindingsExpression( arrayPattern.getPattern().getBindings(), isDeclaration )
 			    + ")";
 		}
 		throw new ExpressionException( "Unsupported match pattern [" + pattern.getClass().getSimpleName() + "]", pattern.getPosition(),
@@ -169,34 +173,34 @@ public class BoxMatchExpressionTransformer extends AbstractTransformer {
 		    + " }";
 	}
 
-	private String buildNestedPatternsExpression( List<BoxMatchPattern> patterns ) {
+	private String buildNestedPatternsExpression( List<BoxMatchPattern> patterns, boolean isDeclaration ) {
 		if ( patterns.isEmpty() ) {
 			return "new ortus.boxlang.runtime.dynamic.MatchExpression.Pattern[] {}";
 		}
 		return "new ortus.boxlang.runtime.dynamic.MatchExpression.Pattern[] { "
-		    + patterns.stream().map( this::buildPatternExpression ).collect( Collectors.joining( ", " ) )
+		    + patterns.stream().map( pattern -> buildPatternExpression( pattern, isDeclaration ) ).collect( Collectors.joining( ", " ) )
 		    + " }";
 	}
 
-	private String buildObjectBindingsExpression( List<BoxObjectDestructuringBinding> bindings ) {
+	private String buildObjectBindingsExpression( List<BoxObjectDestructuringBinding> bindings, boolean isDeclaration ) {
 		if ( bindings.isEmpty() ) {
 			return "new ortus.boxlang.runtime.dynamic.MatchExpression.ObjectBinding[] {}";
 		}
 		return "new ortus.boxlang.runtime.dynamic.MatchExpression.ObjectBinding[] { "
-		    + bindings.stream().map( this::buildObjectBindingExpression ).collect( Collectors.joining( ", " ) )
+		    + bindings.stream().map( binding -> buildObjectBindingExpression( binding, isDeclaration ) ).collect( Collectors.joining( ", " ) )
 		    + " }";
 	}
 
-	private String buildObjectBindingExpression( BoxObjectDestructuringBinding binding ) {
+	private String buildObjectBindingExpression( BoxObjectDestructuringBinding binding, boolean isDeclaration ) {
 		if ( binding.isRest() ) {
 			return "ortus.boxlang.runtime.dynamic.MatchExpression.objectRest("
-			    + buildTargetExpression( binding.getTarget(), false )
+			    + buildTargetExpression( binding.getTarget(), isDeclaration )
 			    + ")";
 		}
 
 		String	sourceKey		= quoteJavaString( extractObjectKeyName( binding ) );
-		String	target			= binding.getTarget() == null ? "null" : buildTargetExpression( binding.getTarget(), false );
-		String	nested			= binding.getPattern() == null ? "null" : buildObjectBindingsExpression( binding.getPattern().getBindings() );
+		String	target			= binding.getTarget() == null ? "null" : buildTargetExpression( binding.getTarget(), isDeclaration );
+		String	nested			= binding.getPattern() == null ? "null" : buildObjectBindingsExpression( binding.getPattern().getBindings(), isDeclaration );
 		String	defaultValue	= binding.getDefaultValue() == null ? "null" : buildLambdaExpression( binding.getDefaultValue() );
 
 		return "ortus.boxlang.runtime.dynamic.MatchExpression.objectBinding("
@@ -207,24 +211,24 @@ public class BoxMatchExpressionTransformer extends AbstractTransformer {
 		    + ")";
 	}
 
-	private String buildArrayBindingsExpression( List<BoxArrayDestructuringBinding> bindings ) {
+	private String buildArrayBindingsExpression( List<BoxArrayDestructuringBinding> bindings, boolean isDeclaration ) {
 		if ( bindings.isEmpty() ) {
 			return "new ortus.boxlang.runtime.dynamic.MatchExpression.ArrayBinding[] {}";
 		}
 		return "new ortus.boxlang.runtime.dynamic.MatchExpression.ArrayBinding[] { "
-		    + bindings.stream().map( this::buildArrayBindingExpression ).collect( Collectors.joining( ", " ) )
+		    + bindings.stream().map( binding -> buildArrayBindingExpression( binding, isDeclaration ) ).collect( Collectors.joining( ", " ) )
 		    + " }";
 	}
 
-	private String buildArrayBindingExpression( BoxArrayDestructuringBinding binding ) {
+	private String buildArrayBindingExpression( BoxArrayDestructuringBinding binding, boolean isDeclaration ) {
 		if ( binding.isRest() ) {
 			return "ortus.boxlang.runtime.dynamic.MatchExpression.arrayRest("
-			    + buildTargetExpression( binding.getTarget(), false )
+			    + buildTargetExpression( binding.getTarget(), isDeclaration )
 			    + ")";
 		}
 
-		String	target			= binding.getTarget() == null ? "null" : buildTargetExpression( binding.getTarget(), false );
-		String	nested			= binding.getPattern() == null ? "null" : buildArrayBindingsExpression( binding.getPattern().getBindings() );
+		String	target			= binding.getTarget() == null ? "null" : buildTargetExpression( binding.getTarget(), isDeclaration );
+		String	nested			= binding.getPattern() == null ? "null" : buildArrayBindingsExpression( binding.getPattern().getBindings(), isDeclaration );
 		String	defaultValue	= binding.getDefaultValue() == null ? "null" : buildLambdaExpression( binding.getDefaultValue() );
 
 		return "ortus.boxlang.runtime.dynamic.MatchExpression.arrayBinding("

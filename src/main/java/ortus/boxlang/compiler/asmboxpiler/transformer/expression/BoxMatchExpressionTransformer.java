@@ -100,7 +100,7 @@ public class BoxMatchExpressionTransformer extends AbstractTransformer {
 
 	private List<AbstractInsnNode> buildCaseNodes( BoxMatchCase matchCase ) {
 		List<AbstractInsnNode> nodes = new ArrayList<>();
-		nodes.addAll( buildPatternNodes( matchCase.getPattern() ) );
+		nodes.addAll( buildPatternNodes( matchCase.getPattern(), false ) );
 		if ( matchCase.getGuard() != null ) {
 			nodes.addAll( AsmHelper.getDefaultExpression( ( ortus.boxlang.compiler.asmboxpiler.AsmTranspiler ) transpiler, matchCase.getGuard() ) );
 		} else {
@@ -117,7 +117,11 @@ public class BoxMatchExpressionTransformer extends AbstractTransformer {
 		return nodes;
 	}
 
-	private List<AbstractInsnNode> buildPatternNodes( BoxMatchPattern pattern ) {
+	protected final List<AbstractInsnNode> buildPatternNodes( BoxMatchPattern pattern ) {
+		return buildPatternNodes( pattern, false );
+	}
+
+	protected List<AbstractInsnNode> buildPatternNodes( BoxMatchPattern pattern, boolean isDeclaration ) {
 		List<AbstractInsnNode> nodes = new ArrayList<>();
 		if ( pattern instanceof BoxMatchLiteralPattern literalPattern ) {
 			nodes.addAll( transpiler.transform( literalPattern.getValue(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
@@ -139,7 +143,7 @@ public class BoxMatchExpressionTransformer extends AbstractTransformer {
 			return nodes;
 		}
 		if ( pattern instanceof BoxMatchBindingPattern bindingPattern ) {
-			nodes.addAll( buildTargetNodes( bindingPattern.getBinding(), false ) );
+			nodes.addAll( buildTargetNodes( bindingPattern.getBinding(), isDeclaration ) );
 			nodes.add( new MethodInsnNode(
 			    Opcodes.INVOKESTATIC,
 			    Type.getInternalName( ortus.boxlang.runtime.dynamic.MatchExpression.class ),
@@ -150,8 +154,8 @@ public class BoxMatchExpressionTransformer extends AbstractTransformer {
 		}
 		if ( pattern instanceof BoxMatchConstructorPattern constructorPattern ) {
 			nodes.add( new LdcInsnNode( constructorPattern.getLabel().getName() ) );
-			nodes
-			    .addAll( AsmHelper.array( Type.getType( Pattern.class ), constructorPattern.getPatterns(), ( nested, index ) -> buildPatternNodes( nested ) ) );
+			nodes.addAll( AsmHelper.array( Type.getType( Pattern.class ), constructorPattern.getPatterns(),
+			    ( nested, index ) -> buildPatternNodes( nested, isDeclaration ) ) );
 			nodes.add( new MethodInsnNode(
 			    Opcodes.INVOKESTATIC,
 			    Type.getInternalName( ortus.boxlang.runtime.dynamic.MatchExpression.class ),
@@ -162,7 +166,7 @@ public class BoxMatchExpressionTransformer extends AbstractTransformer {
 		}
 		if ( pattern instanceof BoxMatchObjectPattern objectPattern ) {
 			nodes.addAll( AsmHelper.array( Type.getType( ObjectBinding.class ), objectPattern.getPattern().getBindings(),
-			    ( binding, index ) -> buildObjectBindingNodes( binding ) ) );
+			    ( binding, index ) -> buildObjectBindingNodes( binding, isDeclaration ) ) );
 			nodes.add( new MethodInsnNode(
 			    Opcodes.INVOKESTATIC,
 			    Type.getInternalName( ortus.boxlang.runtime.dynamic.MatchExpression.class ),
@@ -172,7 +176,8 @@ public class BoxMatchExpressionTransformer extends AbstractTransformer {
 			return nodes;
 		}
 		if ( pattern instanceof BoxMatchOrPattern orPattern ) {
-			nodes.addAll( AsmHelper.array( Type.getType( Pattern.class ), orPattern.getPatterns(), ( nested, index ) -> buildPatternNodes( nested ) ) );
+			nodes.addAll( AsmHelper.array( Type.getType( Pattern.class ), orPattern.getPatterns(),
+			    ( nested, index ) -> buildPatternNodes( nested, isDeclaration ) ) );
 			nodes.add( new MethodInsnNode(
 			    Opcodes.INVOKESTATIC,
 			    Type.getInternalName( ortus.boxlang.runtime.dynamic.MatchExpression.class ),
@@ -182,7 +187,8 @@ public class BoxMatchExpressionTransformer extends AbstractTransformer {
 			return nodes;
 		}
 		if ( pattern instanceof BoxMatchAndPattern andPattern ) {
-			nodes.addAll( AsmHelper.array( Type.getType( Pattern.class ), andPattern.getPatterns(), ( nested, index ) -> buildPatternNodes( nested ) ) );
+			nodes.addAll( AsmHelper.array( Type.getType( Pattern.class ), andPattern.getPatterns(),
+			    ( nested, index ) -> buildPatternNodes( nested, isDeclaration ) ) );
 			nodes.add( new MethodInsnNode(
 			    Opcodes.INVOKESTATIC,
 			    Type.getInternalName( ortus.boxlang.runtime.dynamic.MatchExpression.class ),
@@ -192,7 +198,7 @@ public class BoxMatchExpressionTransformer extends AbstractTransformer {
 			return nodes;
 		}
 		if ( pattern instanceof BoxMatchNotPattern notPattern ) {
-			nodes.addAll( buildPatternNodes( notPattern.getPattern() ) );
+			nodes.addAll( buildPatternNodes( notPattern.getPattern(), isDeclaration ) );
 			nodes.add( new MethodInsnNode(
 			    Opcodes.INVOKESTATIC,
 			    Type.getInternalName( ortus.boxlang.runtime.dynamic.MatchExpression.class ),
@@ -225,7 +231,7 @@ public class BoxMatchExpressionTransformer extends AbstractTransformer {
 		if ( pattern instanceof BoxMatchTypePattern typePattern ) {
 			nodes.addAll( AsmHelper.array( Type.getType( String.class ), typePattern.getTypes(),
 			    ( typeName, index ) -> List.of( new LdcInsnNode( typeName ) ) ) );
-			nodes.addAll( buildTargetNodes( typePattern.getBinding(), false ) );
+			nodes.addAll( buildTargetNodes( typePattern.getBinding(), isDeclaration ) );
 			nodes.add( new MethodInsnNode(
 			    Opcodes.INVOKESTATIC,
 			    Type.getInternalName( ortus.boxlang.runtime.dynamic.MatchExpression.class ),
@@ -236,7 +242,7 @@ public class BoxMatchExpressionTransformer extends AbstractTransformer {
 		}
 		if ( pattern instanceof BoxMatchArrayPattern arrayPattern ) {
 			nodes.addAll( AsmHelper.array( Type.getType( ArrayBinding.class ), arrayPattern.getPattern().getBindings(),
-			    ( binding, index ) -> buildArrayBindingNodes( binding ) ) );
+			    ( binding, index ) -> buildArrayBindingNodes( binding, isDeclaration ) ) );
 			nodes.add( new MethodInsnNode(
 			    Opcodes.INVOKESTATIC,
 			    Type.getInternalName( ortus.boxlang.runtime.dynamic.MatchExpression.class ),
@@ -249,10 +255,10 @@ public class BoxMatchExpressionTransformer extends AbstractTransformer {
 		    pattern.getSourceText() );
 	}
 
-	private List<AbstractInsnNode> buildObjectBindingNodes( BoxObjectDestructuringBinding binding ) {
+	private List<AbstractInsnNode> buildObjectBindingNodes( BoxObjectDestructuringBinding binding, boolean isDeclaration ) {
 		List<AbstractInsnNode> nodes = new ArrayList<>();
 		if ( binding.isRest() ) {
-			nodes.addAll( buildTargetNodes( binding.getTarget(), false ) );
+			nodes.addAll( buildTargetNodes( binding.getTarget(), isDeclaration ) );
 			nodes.add( new MethodInsnNode(
 			    Opcodes.INVOKESTATIC,
 			    Type.getInternalName( ortus.boxlang.runtime.dynamic.MatchExpression.class ),
@@ -264,13 +270,13 @@ public class BoxMatchExpressionTransformer extends AbstractTransformer {
 
 		nodes.add( new LdcInsnNode( extractObjectKeyName( binding ) ) );
 		if ( binding.getTarget() != null ) {
-			nodes.addAll( buildTargetNodes( binding.getTarget(), false ) );
+			nodes.addAll( buildTargetNodes( binding.getTarget(), isDeclaration ) );
 		} else {
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 		}
 		if ( binding.getPattern() != null ) {
 			nodes.addAll( AsmHelper.array( Type.getType( ObjectBinding.class ), binding.getPattern().getBindings(),
-			    ( nested, index ) -> buildObjectBindingNodes( nested ) ) );
+			    ( nested, index ) -> buildObjectBindingNodes( nested, isDeclaration ) ) );
 		} else {
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 		}
@@ -290,10 +296,10 @@ public class BoxMatchExpressionTransformer extends AbstractTransformer {
 		return nodes;
 	}
 
-	private List<AbstractInsnNode> buildArrayBindingNodes( BoxArrayDestructuringBinding binding ) {
+	private List<AbstractInsnNode> buildArrayBindingNodes( BoxArrayDestructuringBinding binding, boolean isDeclaration ) {
 		List<AbstractInsnNode> nodes = new ArrayList<>();
 		if ( binding.isRest() ) {
-			nodes.addAll( buildTargetNodes( binding.getTarget(), false ) );
+			nodes.addAll( buildTargetNodes( binding.getTarget(), isDeclaration ) );
 			nodes.add( new MethodInsnNode(
 			    Opcodes.INVOKESTATIC,
 			    Type.getInternalName( ortus.boxlang.runtime.dynamic.MatchExpression.class ),
@@ -304,13 +310,13 @@ public class BoxMatchExpressionTransformer extends AbstractTransformer {
 		}
 
 		if ( binding.getTarget() != null ) {
-			nodes.addAll( buildTargetNodes( binding.getTarget(), false ) );
+			nodes.addAll( buildTargetNodes( binding.getTarget(), isDeclaration ) );
 		} else {
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 		}
 		if ( binding.getPattern() != null ) {
 			nodes.addAll( AsmHelper.array( Type.getType( ArrayBinding.class ), binding.getPattern().getBindings(),
-			    ( nested, index ) -> buildArrayBindingNodes( nested ) ) );
+			    ( nested, index ) -> buildArrayBindingNodes( nested, isDeclaration ) ) );
 		} else {
 			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 		}

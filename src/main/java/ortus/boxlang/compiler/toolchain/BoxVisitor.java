@@ -136,6 +136,7 @@ import ortus.boxlang.parser.antlr.BoxGrammar.ParamContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.PostAnnotationContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.PreAnnotationContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.PropertyContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.RefutableDestructuringDeclarationContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.RethrowContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ReturnContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ScriptContext;
@@ -327,7 +328,8 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		List<Function<BoxGrammar.StatementContext, ParserRuleContext>> functions = Arrays.asList( StatementContext::importStatement,
 		    BoxGrammar.StatementContext::do_, StatementContext::for_, StatementContext::if_, BoxGrammar.StatementContext::switch_,
 		    StatementContext::try_, StatementContext::while_, BoxGrammar.StatementContext::expressionStatement, StatementContext::include,
-		    StatementContext::component, BoxGrammar.StatementContext::statementBlock, StatementContext::simpleStatement,
+		    StatementContext::component, BoxGrammar.StatementContext::statementBlock, StatementContext::refutableDestructuringDeclaration,
+		    StatementContext::simpleStatement,
 		    BoxGrammar.StatementContext::componentIsland, StatementContext::throw_,
 		    StatementContext::emptyStatementBlock, StatementContext::function );
 
@@ -359,6 +361,21 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		BoxStatement	body		= tools.toStatementOrError( () -> ( BoxStatement ) ctx.statementOrBlock().accept( this ), ctx.statementOrBlock() );
 		String			label		= Optional.ofNullable( ctx.preFix() ).map( preFix -> preFix.identifier().getText() ).orElse( null );
 		return new BoxDo( label, condition, body, pos, src );
+	}
+
+	@Override
+	public BoxNode visitRefutableDestructuringDeclaration( RefutableDestructuringDeclarationContext ctx ) {
+		var				pos			= tools.getPosition( ctx );
+		var				src			= tools.getSourceText( ctx );
+		BoxStatement	elseBody	= tools.toStatementOrError( () -> ( BoxStatement ) ctx.elseBody.accept( this ), ctx.elseBody );
+		return new ortus.boxlang.compiler.ast.statement.BoxRefutableDestructuringDeclaration(
+		    expressionVisitor.buildMatchPattern( ctx.matchPattern() ),
+		    ctx.expression().accept( expressionVisitor ),
+		    elseBody,
+		    ctx.op.getType() == BoxGrammar.FINAL,
+		    pos,
+		    src
+		);
 	}
 
 	@Override

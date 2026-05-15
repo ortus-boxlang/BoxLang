@@ -1432,7 +1432,7 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 		}
 	}
 
-	private BoxMatchPattern buildMatchPattern( MatchPatternContext ctx ) {
+	BoxMatchPattern buildMatchPattern( MatchPatternContext ctx ) {
 		return buildMatchPatternOr( ctx.matchPatternOr() );
 	}
 

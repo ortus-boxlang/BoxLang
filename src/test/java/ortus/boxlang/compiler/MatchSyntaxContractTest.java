@@ -76,6 +76,20 @@ public class MatchSyntaxContractTest {
 	}
 
 	@Test
+	public void testRefutableDestructuringDeclarationParsesAsStandaloneStatement() throws Exception {
+		Parser			parser	= new Parser();
+		ParsingResult	result	= parser.parseStatement(
+		    """
+		    var { name, role = "guest" } = payload else {
+		    	return render404();
+		    }
+		    """
+		);
+
+		assertTrue( result.isCorrect(), result.getIssues().toString() );
+	}
+
+	@Test
 	public void testMatchPrettyPrintsUsingDedicatedAst() {
 		Parser			parser	= new Parser();
 		ParsingResult	result	= parser.parseExpression(

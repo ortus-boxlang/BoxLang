@@ -36,9 +36,11 @@ import ortus.boxlang.runtime.operators.EqualsEquals;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.DefaultExpression;
+import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -57,6 +59,7 @@ public class MatchExpression {
 	private static final Key	SLOT_KEY			= Key.of( "slot" );
 	private static final Key	KIND_KEY			= Key.of( "kind" );
 	private static final Key	BINDING_NAME_KEY	= Key.of( "bindingName" );
+	private static final Key	FINAL_KEY_SET_KEY	= Key.of( "finalKeySet" );
 
 	public static Object invoke( IBoxContext context, Object subject, Case[] cases ) {
 		Case[] safeCases = cases == null ? new Case[] {} : cases;
@@ -71,6 +74,16 @@ public class MatchExpression {
 			return matchCase.getBody().evaluate( matcher.context() );
 		}
 		return null;
+	}
+
+	public static boolean declare( IBoxContext context, Object subject, Pattern pattern, boolean localDeclaration, boolean finalDeclaration ) {
+		PatternMatchContext	declarationContext	= new PatternMatchContext( context );
+		MatcherEngine		matcher				= MatcherEngine.on( declarationContext );
+		if ( !pattern.matches( matcher, subject ) ) {
+			return false;
+		}
+		declarationContext.promoteDeclaration( localDeclaration, finalDeclaration );
+		return true;
 	}
 
 	public static Case matchCase( Pattern pattern, DefaultExpression guard, DefaultExpression body ) {
@@ -946,6 +959,39 @@ public class MatchExpression {
 		private void promote() {
 			IScope parentVariables = getParent().getScopeNearby( VariablesScope.name );
 			parentVariables.putAll( this.variablesScope );
+		}
+
+		private void promoteDeclaration( boolean localDeclaration, boolean finalDeclaration ) {
+			IScope	targetScope		= localDeclaration
+			    ? getParent().getScopeNearby( LocalScope.name )
+			    : getParent().getDefaultAssignmentScope();
+			Key		mustBeScopeName	= localDeclaration ? LocalScope.name : null;
+
+			assertNoFinalCollisions( targetScope );
+
+			for ( Key key : this.variablesScope.keySet() ) {
+				Referencer.setDeep( getParent(), finalDeclaration, mustBeScopeName, targetScope, this.variablesScope.get( key ), key );
+			}
+		}
+
+		private void assertNoFinalCollisions( IScope targetScope ) {
+			Object rawFinalKeys = targetScope.getBoxMeta().getMeta().get( FINAL_KEY_SET_KEY );
+			if ( ! ( rawFinalKeys instanceof Set<?> finalKeys ) ) {
+				return;
+			}
+
+			for ( Key key : this.variablesScope.keySet() ) {
+				if ( !finalKeys.contains( key ) ) {
+					continue;
+				}
+
+				Object existingValue = targetScope.get( key );
+				if ( existingValue instanceof Function ) {
+					throw new BoxRuntimeException(
+					    "Cannot override final function [" + key.getName() + "] in scope [" + targetScope.getName().getName() + "]" );
+				}
+				throw new BoxRuntimeException( "Cannot reassign final key [" + key.getName() + "] in scope [" + targetScope.getName().getName() + "]" );
+			}
 		}
 	}
 
