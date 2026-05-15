@@ -18,6 +18,9 @@
 package ortus.boxlang.runtime.services;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.time.ZoneId;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -28,6 +31,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.tasks.BaseScheduler;
 import ortus.boxlang.runtime.async.tasks.IScheduler;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class SchedulerServiceTest {
 
@@ -86,5 +90,62 @@ public class SchedulerServiceTest {
 
 		assertThat( schedulerService.getScheduler( Key.of( "test" ) ) ).isNull();
 		assertThat( schedulerService.hasScheduler( Key.of( "test" ) ) ).isFalse();
+	}
+
+	@Test
+	@DisplayName( "Given newScheduler, when called, then it should create and register a scheduler" )
+	void testNewScheduler() {
+		IScheduler scheduler = schedulerService.newScheduler( "testNew", null, null, false );
+
+		assertThat( scheduler ).isNotNull();
+		assertThat( scheduler.getSchedulerName() ).isEqualTo( "testNew" );
+		assertThat( schedulerService.hasScheduler( Key.of( "testNew" ) ) ).isTrue();
+	}
+
+	@Test
+	@DisplayName( "Given newScheduler with timezone, when called, then scheduler should use that timezone" )
+	void testNewSchedulerWithTimezone() {
+		IScheduler scheduler = schedulerService.newScheduler( "testTz", "America/New_York", null, false );
+
+		assertThat( scheduler.getTimezone().getId() ).isEqualTo( "America/New_York" );
+	}
+
+	@Test
+	@DisplayName( "Given newScheduler with null timezone, when called, then scheduler should use system default" )
+	void testNewSchedulerWithNullTimezone() {
+		IScheduler scheduler = schedulerService.newScheduler( "testNullTz", null, null, false );
+
+		assertThat( scheduler.getTimezone() ).isEqualTo( ZoneId.systemDefault() );
+	}
+
+	@Test
+	@DisplayName( "Given newScheduler with empty timezone, when called, then scheduler should use system default" )
+	void testNewSchedulerWithEmptyTimezone() {
+		IScheduler scheduler = schedulerService.newScheduler( "testEmptyTz", "", null, false );
+
+		assertThat( scheduler.getTimezone() ).isEqualTo( ZoneId.systemDefault() );
+	}
+
+	@Test
+	@DisplayName( "Given newScheduler with force=true, when called on existing name, then it should replace the scheduler" )
+	void testNewSchedulerForceReplace() {
+		// Register initial scheduler
+		schedulerService.newScheduler( "testForce", null, null, false );
+
+		// Force replace it
+		IScheduler newScheduler = schedulerService.newScheduler( "testForce", "UTC", null, true );
+
+		assertThat( newScheduler.getTimezone().getId() ).isEqualTo( "UTC" );
+		assertThat( schedulerService.hasScheduler( Key.of( "testForce" ) ) ).isTrue();
+	}
+
+	@Test
+	@DisplayName( "Given newScheduler with force=false, when called on existing name, then it should throw" )
+	void testNewSchedulerNoForceDuplicate() {
+		schedulerService.newScheduler( "testDup", null, null, false );
+
+		assertThrows( BoxRuntimeException.class, () -> {
+			schedulerService.newScheduler( "testDup", null, null, false );
+		} );
 	}
 }

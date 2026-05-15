@@ -243,4 +243,19 @@ public class StructConfig {
 			throw new RuntimeException( "Failed to convert to JSON", e );
 		}
 	}
+
+	/**
+	 * Create a deep copy of this configuration.
+	 *
+	 * @return a new StructConfig with the same settings
+	 */
+	public StructConfig clone() {
+		StructConfig clone = new StructConfig();
+		clone.padding		= this.padding;
+		clone.emptyPadding	= this.emptyPadding;
+		clone.quoteKeys		= this.quoteKeys;
+		clone.separator		= this.separator;
+		clone.multiline		= this.multiline.clone();
+		return clone;
+	}
 }

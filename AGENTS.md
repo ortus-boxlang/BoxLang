@@ -77,6 +77,7 @@
   - Javadoc formatting enabled
 
 - **File Headers:** All new Java files MUST include the standard BoxLang header comment found in `workbench/CodeHeader.txt`:
+
   ```java
   /**
    * [BoxLang]
@@ -100,6 +101,90 @@
   - Example: `this.runtime = runtime;` not `runtime = runtime;`
   - Example: `this.config.get(key)` not `config.get(key)`
   - Makes code more readable and prevents ambiguity
+
+## Agent Skills
+
+BoxLang has a collection of domain-specific agent skills located in `.agents/skills/`. These skills contain detailed instructions and best practices for specific development tasks. **Always read the relevant skill file before working in that domain.**
+
+### Core Development Skills
+
+- **`boxlang-core-dev-async-tasks`** — BoxLang asynchronous programming: BoxFuture, AsyncService, executor types, BaseScheduler, ScheduledTask fluent API, scheduling, task lifecycle
+- **`boxlang-core-dev-bif-development`** — Creating custom BIFs: @BoxBIF annotation, invoke() method, argument handling, accessing services, member functions, module registration
+- **`boxlang-core-dev-component-development`** — Creating custom components (tags): file structure, attribute declarations, body/output handling, registering component paths
+- **`boxlang-core-dev-interceptors`** — Creating interceptors: Observer/Intercepting Filter patterns, interceptor pools, BoxLang vs Java interceptors, registration, interception points
+- **`boxlang-core-dev-logging`** — BoxLang logging: LoggingService, BoxLangLogger, pre-configured loggers, named loggers, parameterized messages, context-based logging
+- **`boxlang-core-dev-module-development`** — Creating modules: ModuleConfig.bx structure, lifecycle methods, metadata, registering interceptors and BIFs, Gradle setup, publishing
+- **`boxlang-core-dev-runtime-architecture`** — Understanding internals: BoxRuntime services, IBoxContext hierarchy, scope chain, DynamicObject, type system, parsing pipeline, class loader isolation
+
+### Language & Programming Skills
+
+- **`boxlang-application-descriptor`** — Application.bx behavior: app discovery and nesting, multi-application isolation, lifecycle events, pseudo-constructor settings, session management, mappings/javaSettings resolution
+- **`boxlang-async-programming`** — BoxLang async code: BoxFuture, futureNew, asyncRun, asyncAll, asyncAny, asyncAllApply, executors, schedulers, thread components, parallel pipelines, file watchers, distributed locking
+- **`boxlang-best-practices`** — BoxLang community best practices for naming, structure, scoping, error handling, performance, and maintainability
+- **`boxlang-classes-and-oop`** — BoxLang classes, components, interfaces, inheritance hierarchies, annotations, properties, constructors, OOP design patterns
+- **`boxlang-functional-programming`** — BoxLang lambdas, closures, arrow functions, higher-order functions, functional array/struct pipelines (map, filter, reduce, flatMap, groupBy), destructuring, spread syntax
+- **`boxlang-language-fundamentals`** — BoxLang syntax, file types, variables, scopes, operators, control flow, exception handling, type system, destructuring, spread syntax
+
+### Runtime & Deployment Skills
+
+- **`boxlang-configuration`** — BoxLang runtime settings via boxlang.json, environment variables, datasources, caches, executors, modules, logging, security, schedulers
+- **`boxlang-deployment`** — Deploying BoxLang applications: CommandBox server, Docker containers, AWS Lambda, GitHub Actions CI/CD, BVM, boxlang.json runtime config, Spring Boot integration
+- **`boxlang-runtime-aws-lambda`** — Building/deploying BoxLang on AWS Lambda: Lambda.bx structure, handler conventions, environment variables, SAM CLI testing, performance optimization, multi-function routing
+- **`boxlang-runtime-chromebook`** — Setting up BoxLang on Chromebook: Linux dev environment, Java 21, BoxLang installation, VS Code with BoxLang extension
+- **`boxlang-runtime-cli-scripting`** — BoxLang CLI scripts and classes: command-line arguments, REPL, action commands (compile, cftranspile, featureaudit), runtime context detection, CLI-specific BIFs
+- **`boxlang-runtime-commandbox`** — Deploying BoxLang as enterprise Java servlet with CommandBox: server.json configuration, BoxLang modules, SSL, rewrites, CommandBox PRO features
+- **`boxlang-runtime-compiled-native-binaries`** — Compiling BoxLang scripts to native executables with MatchBox: --target native flag, cross-compiling, binary size optimization, Native Fusion for Rust BIFs
+- **`boxlang-runtime-desktop-electron`** — Building BoxLang desktop apps with Electron and MiniServer: process lifecycle, miniserver.json, runtime/Package.bx packaging, cross-platform constraints
+- **`boxlang-runtime-digitalocean-app`** — Deploying BoxLang applications to DigitalOcean App Platform
+- **`boxlang-runtime-docker`** — Containerizing BoxLang applications with Docker
+- **`boxlang-runtime-esp32`** — Running BoxLang on ESP32 microcontrollers
+- **`boxlang-runtime-github-actions`** — CI/CD workflows for BoxLang with GitHub Actions
+- **`boxlang-runtime-google-cloud-functions`** — Deploying BoxLang to Google Cloud Functions
+- **`boxlang-runtime-jsr-223`** — Using BoxLang as a JSR-223 scripting engine in Java
+- **`boxlang-runtime-matchbox`** — MatchBox runtime for BoxLang applications
+- **`boxlang-runtime-miniserver`** — BoxLang MiniServer for lightweight web serving
+- **`boxlang-runtime-spring-boot`** — Integrating BoxLang with Spring Boot applications
+- **`boxlang-runtime-wasm-container`** — Running BoxLang in WebAssembly containers
+- **`boxlang-runtime-wasm-in-the-browser`** — Running BoxLang in the browser via WebAssembly
+
+### Data & Storage Skills
+
+- **`boxlang-caching`** — BoxLang caching: cache providers, cachePut/cacheGet BIFs, output caching, cache regions, distributed caching with Redis/Couchbase, TTL policies, distributed locking
+- **`boxlang-database-access`** — BoxLang database code: queryExecute, bx:query, datasource configuration, parameterized queries, transactions, stored procedures, query manipulation, SQL injection prevention
+- **`boxlang-file-handling`** — File operations in BoxLang: fileRead, fileWrite, fileCopy, fileMove, directoryList, directoryCreate, fileUpload, streaming large files, CSV/JSON processing
+- **`boxlang-file-watchers`** — BoxLang filesystem watchers: watcherNew/watcherStart/watcherStop lifecycle BIFs, WatcherInstance APIs, event payload handling, recursive directory monitoring, debounce/throttle tuning
+- **`boxlang-zip`** — Working with ZIP archives in BoxLang
+
+### Web & Templating Skills
+
+- **`boxlang-interceptors`** — BoxLang interceptor/event system: creating interceptors, registering announcement points, announce()/announceAsync(), pre/post operation hooks, validation interceptors, security guards
+- **`boxlang-java-integration`** — BoxLang/Java integration: createObject, static method calls, type conversion, importing classes, passing closures as functional interfaces, including JARs, JSR-223 scripting
+- **`boxlang-modules-and-packages`** — BoxLang modules: box install, boxlang.json module settings, BoxLang+ premium modules (bx-pdf, bx-redis, bx-csv, bx-spreadsheet), CFML compatibility, ORM, mail
+- **`boxlang-scheduled-tasks`** — BoxLang scheduled tasks and cron jobs
+- **`boxlang-security`** — BoxLang security best practices and implementation
+- **`boxlang-templating`** — BoxLang templating engine and view rendering
+- **`boxlang-web-development`** — Building web applications with BoxLang
+
+### Migration & Compatibility Skills
+
+- **`boxlang-cfml-migration`** — Migrating from CFML (Adobe ColdFusion/Lucee) to BoxLang: syntax/behavioral differences, bx-compat-cfml module, converting CFML file types, common migration fixes
+
+### Testing & Documentation Skills
+
+- **`boxlang-code-documenter`** — Developer-facing documentation, API references, onboarding guides, consistency audits, DocBox-compatible comments
+- **`boxlang-code-reviewer`** — BoxLang code review: quality, correctness, security vulnerabilities, performance, style violations, structured feedback
+- **`boxlang-docbox`** — Generating API documentation with DocBox: CLI usage, programmatic configuration, HTML/JSON/UML/CommandBox output, HTML themes, custom strategies
+- **`boxlang-testing`** — Testing BoxLang applications: unit tests, integration tests, TestBox BDD framework, mocking, test fixtures
+
+### Expert Skills
+
+- **`code-documenter`** — Producing developer-facing documentation, API references, onboarding guides, consistency audits
+- **`code-reviewer`** — Code review focused on correctness, security, maintainability, performance, and test coverage risk
+- **`java-expert`** — Modern Java services, libraries, backend systems, API design, concurrency, performance profiling, production hardening
+- **`junit-expert`** — JUnit 5 testing: test lifecycle, parameterized tests, test extensions, assertions, parallel execution, test suites
+- **`mockito-expert`** — Mockito mocking, stubbing, spying, verification, argument captors, strict stubbing, JUnit 5 integration
+- **`ortus-java-coding-standards`** — Ortus coding standards: indentation, spacing, brace placement, naming, alignment, comments, structural conventions
+- **`testcontainers-expert`** — Integration tests with real infrastructure: container lifecycle, reusable containers, network configuration, wait strategies
 
 ## Key Developer Workflows
 
@@ -357,6 +442,7 @@ BoxLangLogger logger = loggingService.getLogger( "/var/log/boxlang/custom.log" )
 ```
 
 The `getLogger()` method:
+
 - Automatically appends `.log` extension if not present
 - Creates the logger if it doesn't exist (lazy initialization)
 - Caches loggers for reuse (case-insensitive)
@@ -383,6 +469,7 @@ BoxLangLogger logger = this.getLogger();
 ### Logging Best Practices
 
 1. **Use appropriate log levels:**
+
    ```java
    logger.trace( "Entering method with params: {}", params );      // Very detailed tracing
    logger.debug( "Processing {} items", items.size() );            // Debug information
@@ -392,6 +479,7 @@ BoxLangLogger logger = this.getLogger();
    ```
 
 2. **Use parameterized messages for performance:**
+
    ```java
    // GOOD - message only constructed if logging level is enabled
    logger.debug( "User {} logged in from {}", username, ipAddress );
@@ -401,6 +489,7 @@ BoxLangLogger logger = this.getLogger();
    ```
 
 3. **Include exceptions when logging errors:**
+
    ```java
    try {
        // ... some operation
@@ -441,6 +530,7 @@ Logging is configured via `boxlang.json`:
 ### Common Logging Patterns
 
 **Service initialization:**
+
 ```java
 public class MyService implements IService {
     private BoxLangLogger logger;
@@ -454,6 +544,7 @@ public class MyService implements IService {
 ```
 
 **Component with logging:**
+
 ```java
 @BoxComponent
 public class MyComponent {
@@ -473,6 +564,7 @@ public class MyComponent {
 ```
 
 **Context-aware logging:**
+
 ```java
 public void processRequest( IBoxContext context ) {
     BoxLangLogger logger = context.getLogger();

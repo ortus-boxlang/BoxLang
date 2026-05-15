@@ -316,4 +316,70 @@ public class QueryAddRowTest {
 		// @formatter:on
 	}
 
+	@DisplayName( "It casts string values to integer when adding rows via array" )
+	@Test
+	public void testCastsStringToIntegerArray() {
+		// @formatter:off
+		instance.executeSource( """
+			result = queryNew( "amount", "integer" )
+			queryAddRow( result, [["1500"],["2500"]] )
+		""", context );
+		// @formatter:on
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.size() ).isEqualTo( 2 );
+		assertThat( qry.getCell( Key.of( "amount" ), 0 ) ).isInstanceOf( Integer.class );
+		assertThat( qry.getCell( Key.of( "amount" ), 0 ) ).isEqualTo( 1500 );
+		assertThat( qry.getCell( Key.of( "amount" ), 1 ) ).isEqualTo( 2500 );
+	}
+
+	@DisplayName( "It casts string values to integer when adding rows via struct" )
+	@Test
+	public void testCastsStringToIntegerStruct() {
+		// @formatter:off
+		instance.executeSource( """
+			result = queryNew( "id,amount", "integer,double" )
+			queryAddRow( result, { id: "42", amount: "99.99" } )
+		""", context );
+		// @formatter:on
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.size() ).isEqualTo( 1 );
+		assertThat( qry.getCell( Key.of( "id" ), 0 ) ).isInstanceOf( Integer.class );
+		assertThat( qry.getCell( Key.of( "id" ), 0 ) ).isEqualTo( 42 );
+		assertThat( qry.getCell( Key.of( "amount" ), 0 ) ).isInstanceOf( Double.class );
+		assertThat( qry.getCell( Key.of( "amount" ), 0 ) ).isEqualTo( 99.99 );
+	}
+
+	@DisplayName( "It casts values added via addRow so QoQ math works" )
+	@Test
+	public void testCastingEnablesQoQMathViaAddRow() {
+		// @formatter:off
+		instance.executeSource( """
+			myQry = queryNew( "amount", "integer" )
+			queryAddRow( myQry, [["1500"]] )
+			result = queryExecute(
+				"SELECT amount/100 as calc FROM myQry",
+				[],
+				{ dbType: "query" }
+			)
+		""", context );
+		// @formatter:on
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.size() ).isEqualTo( 1 );
+		assertThat( ( ( Number ) qry.getCell( Key.of( "calc" ), 0 ) ).intValue() ).isEqualTo( 15 );
+	}
+
+	@DisplayName( "It casts values added via member function addRow" )
+	@Test
+	public void testCastingViaMemberFunction() {
+		// @formatter:off
+		instance.executeSource( """
+			result = queryNew( "price", "double" )
+			result.addRow( { price: "45.67" } )
+		""", context );
+		// @formatter:on
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.getCell( Key.of( "price" ), 0 ) ).isInstanceOf( Double.class );
+		assertThat( qry.getCell( Key.of( "price" ), 0 ) ).isEqualTo( 45.67 );
+	}
+
 }

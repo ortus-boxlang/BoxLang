@@ -254,12 +254,11 @@ public class StringUtil {
 	public static String pluralize( String word ) {
 		String result = word;
 
-		if ( result.endsWith( "s" ) ) {
-			if ( result.endsWith( "ss" ) || result.endsWith( "us" ) ) {
-				result += "es";
-			} else {
-				result += "s";
-			}
+		// If already plural (ends in 's' but not 'ss' or 'us'), return as-is
+		if ( result.endsWith( "s" ) && !result.endsWith( "ss" ) && !result.endsWith( "us" ) ) {
+			return result;
+		} else if ( result.endsWith( "ss" ) || result.endsWith( "us" ) ) {
+			result += "es";
 		} else if ( result.endsWith( "y" ) ) {
 			String			lastTwoChars	= result.length() > 1 ? result.substring( result.length() - 2 ).toLowerCase() : "";
 			List<String>	suffixes		= Arrays.asList( "ay", "ey", "iy", "oy", "uy" );

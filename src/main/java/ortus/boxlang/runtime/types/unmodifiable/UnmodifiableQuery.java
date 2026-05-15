@@ -106,8 +106,26 @@ public class UnmodifiableQuery extends Query implements IUnmodifiable {
 	 *
 	 * @return Query object
 	 */
+	/**
+	 * @deprecated Use {@link #fromArray(Array, Array, Object, IBoxContext)} instead.
+	 */
+	@Deprecated
 	public static UnmodifiableQuery fromArray( Array columnNames, Array columnTypes, Object rowData ) {
-		return Query.fromArray( columnNames, columnTypes, rowData ).toUnmodifiable();
+		return Query.fromArray( columnNames, columnTypes, rowData, null ).toUnmodifiable();
+	}
+
+	/**
+	 * Create a new unmodifiable query with columns and data, casting values to the appropriate column types.
+	 *
+	 * @param columnNames List of column names
+	 * @param columnTypes List of column types
+	 * @param rowData     List of row data
+	 * @param context     The context to use for type casting, or null to skip casting
+	 *
+	 * @return UnmodifiableQuery object
+	 */
+	public static UnmodifiableQuery fromArray( Array columnNames, Array columnTypes, Object rowData, IBoxContext context ) {
+		return Query.fromArray( columnNames, columnTypes, rowData, context ).toUnmodifiable();
 	}
 
 	@Override

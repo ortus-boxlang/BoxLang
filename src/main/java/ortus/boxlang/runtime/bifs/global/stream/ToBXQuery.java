@@ -71,7 +71,7 @@ public class ToBXQuery extends BIF {
 		Stream<IStruct> stream = ( Stream<IStruct> ) arguments.getAsStream( Key.stream );
 		Objects.requireNonNull( stream, "Stream cannot be null" );
 		Query template = arguments.getAsQuery( Key.query );
-		return stream.collect( BLCollector.toQuery( template ) );
+		return stream.collect( BLCollector.toQuery( template, context ) );
 	}
 
 }

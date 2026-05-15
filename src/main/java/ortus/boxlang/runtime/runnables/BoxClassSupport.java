@@ -175,6 +175,36 @@ public class BoxClassSupport {
 	}
 
 	/**
+	 * Cast the value of an "output" annotation to a boolean.
+	 * The string "raw" (case-insensitive) is treated as true.
+	 * All other values are passed through the standard BooleanCaster.
+	 *
+	 * @param value The raw annotation value
+	 *
+	 * @return The boolean interpretation of the output annotation
+	 */
+	public static boolean castOutputAnnotation( Object value ) {
+		if ( value instanceof String str && str.equalsIgnoreCase( "raw" ) ) {
+			return true;
+		}
+		return BooleanCaster.cast( value );
+	}
+
+	/**
+	 * If there is an output annotation, use the castOututAnnotation() method to interpret it.
+	 * 
+	 * @param annotations The annotations to check
+	 * 
+	 * @return true if the output annotation is present and evaluates to true, otherwise false
+	 */
+	public static IStruct transformAnnotations( IStruct annotations ) {
+		if ( annotations.containsKey( Key.output ) ) {
+			annotations.put( Key.output, castOutputAnnotation( annotations.get( Key.output ) ) );
+		}
+		return annotations;
+	}
+
+	/**
 	 * A helper to look at the "output" annotation, caching the result
 	 *
 	 * @param thisClass The class to check
@@ -197,7 +227,7 @@ public class BoxClassSupport {
 	 * @return Whether the function can output
 	 */
 	public static Boolean canOutput( IStruct annotations, String className ) {
-		return BooleanCaster.cast( annotations.getOrDefault(
+		return castOutputAnnotation( annotations.getOrDefault(
 		    Key.output,
 		    // output defaults to true for Application.bx, but false for all others
 		    // Strip just the class name from the FQN foo.com.bar.Application
@@ -671,7 +701,7 @@ public class BoxClassSupport {
 	    IStruct documentation,
 	    Map<Key, ortus.boxlang.runtime.types.Property> properties,
 	    StaticScope staticScope ) {
-
+		annotations = BoxClassSupport.transformAnnotations( annotations );
 		BoxRuntime	runtime	= BoxRuntime.getInstance();
 		IStruct		meta	= new Struct( IStruct.TYPES.SORTED );
 		meta.putIfAbsent( "hint", "" );
@@ -946,7 +976,7 @@ public class BoxClassSupport {
 	 * @return Whether the function can output
 	 */
 	public static Boolean canOutput( IBoxContext context, DynamicObject targetClass ) {
-		return BooleanCaster.cast( getAnnotations( context, targetClass )
+		return castOutputAnnotation( getAnnotations( context, targetClass )
 		    .getOrDefault(
 		        Key.output,
 		        false

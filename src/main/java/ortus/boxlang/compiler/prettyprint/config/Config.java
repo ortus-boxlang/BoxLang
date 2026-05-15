@@ -1194,6 +1194,44 @@ public final class Config {
 	}
 
 	/**
+	 * Create a deep copy of this configuration, recursively cloning all nested config objects.
+	 *
+	 * @return a new Config with the same settings
+	 */
+	public Config clone() {
+		Config clone = new Config();
+		clone.indentSize					= this.indentSize;
+		clone.tabIndent						= this.tabIndent;
+		clone.maxLineLength					= this.maxLineLength;
+		clone.newLine						= this.newLine;
+		clone.singleQuote					= this.singleQuote;
+		clone.preserveStringQuotes			= this.preserveStringQuotes;
+		clone.alignConsecutiveAssignments	= this.alignConsecutiveAssignments;
+		clone.alignConsecutiveProperties	= this.alignConsecutiveProperties;
+		clone.bracketPadding				= this.bracketPadding;
+		clone.parensPadding					= this.parensPadding;
+		clone.binaryOperatorsPadding		= this.binaryOperatorsPadding;
+		clone.semicolons					= this.semicolons;
+		clone.cfFormatCompatibility			= this.cfFormatCompatibility;
+		clone.sourceType					= this.sourceType;
+		clone.struct						= this.struct.clone();
+		clone.property						= this.property.clone();
+		clone.array							= this.array.clone();
+		clone.forLoopSemicolons				= this.forLoopSemicolons.clone();
+		clone.function						= this.function.clone();
+		clone.arguments						= this.arguments.clone();
+		clone.braces						= this.braces.clone();
+		clone.operators						= this.operators.clone();
+		clone.chain							= this.chain.clone();
+		clone.template						= this.template.clone();
+		clone.importConfig					= this.importConfig.clone();
+		clone.comments						= this.comments.clone();
+		clone.classConfig					= this.classConfig.clone();
+		clone.sql							= this.sql.clone();
+		return clone;
+	}
+
+	/**
 	 * Apply configuration values from a map to this instance, handling type
 	 * checking and nested config objects.
 	 *

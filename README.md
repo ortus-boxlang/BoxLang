@@ -54,9 +54,11 @@ Holy Ghost which is given unto us. ." Romans 5:5
   - Servlet Containers - CommandBox/Tomcat/Jetty/JBoss
   - JSR223 Scripting Engines
   - AWS Lambda
+  - Web assembly
+  - Google Cloud Functions
+  - Desktop Applications
   - Microsoft Azure Functions (Coming Soon)
   - Android/iOS Devices (Coming Soon)
-  - Web assembly (Coming Soon)
 - Compile down to Java ByteCode
 - Allow backward compatibility with the existing ColdFusion/CFML language.
 - Great IDE, Debugger and Tooling: https://boxlang.ortusbooks.com/getting-started/ide-tooling
@@ -167,7 +169,7 @@ BoxLang combines the best of many programming languages with modern JVM capabili
 - **Dynamic Typing with Optional Type Safety**: Write code quickly with dynamic types or add type hints for better tooling
 - **Closures & Lambda Functions**: First-class function support with modern syntax
 - **Java Interoperability**: Direct access to Java classes, methods, and libraries
-- **Modular Architecture**: Built-in module system for extensible applications  
+- **Modular Architecture**: Built-in module system for extensible applications
 - **Multiple Paradigms**: Object-oriented, functional, and procedural programming styles
 - **Built-in Web Framework**: Full-featured web development capabilities out of the box
 - **Query of Queries**: Powerful in-memory query capabilities
@@ -213,6 +215,7 @@ Please check our [Contributing Guidelines](CONTRIBUTING.md) and feel free to sub
 
 - **JDK 21** (for building BoxLang)
 - **Gradle** (included via wrapper)
+- **Agent Skills** (for AI-assisted development): Run `npx skills experimental_install` to install BoxLang-specific agent skills for Copilot/Claude
 
 ### Building from Source
 

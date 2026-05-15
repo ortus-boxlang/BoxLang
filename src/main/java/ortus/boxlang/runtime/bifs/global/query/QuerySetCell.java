@@ -18,7 +18,6 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -72,6 +71,6 @@ public class QuerySetCell extends BIF {
 		    && castValue.isEmpty() ) {
 			value = null;
 		}
-		return query.setCell( columnName, rowNumber - 1, value != null ? GenericCaster.cast( context, value, columnType.toString() ) : null );
+		return query.setCell( columnName, rowNumber - 1, value != null ? QueryColumnType.toSQLType( columnType, value, context, null ) : null );
 	}
 }

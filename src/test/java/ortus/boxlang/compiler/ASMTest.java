@@ -174,6 +174,13 @@ public class ASMTest {
 		    () -> RunnableLoader.getInstance().getBoxpiler().compileScript( buildLargeNinetyNineCaseSwitchTemplate(), BoxSourceType.CFTEMPLATE ) );
 	}
 
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
+	@DisplayName( "large if body inside loop should compile after outlining large if branches" )
+	@Test
+	public void testLargeIfBodyInsideLoopShouldCompileAfterOutliningLargeIfBranches() {
+		assertDoesNotThrow( () -> RunnableLoader.getInstance().getBoxpiler().compileScript( buildLargeIfBodyInsideLoopTemplate(), BoxSourceType.CFTEMPLATE ) );
+	}
+
 	private String buildVeryLargeSwitchTemplate() {
 		StringBuilder source = new StringBuilder();
 
@@ -191,6 +198,23 @@ public class ASMTest {
 		source.append( "<cfset result = 'default'>\n" );
 		source.append( "</cfdefaultcase>\n" );
 		source.append( "</cfswitch>\n" );
+
+		return source.toString();
+	}
+
+	private String buildLargeIfBodyInsideLoopTemplate() {
+		StringBuilder source = new StringBuilder();
+
+		source.append( "<cfset result = ''>\n" );
+		source.append( "<cfloop from=\"1\" to=\"1\" index=\"taskIdx\">\n" );
+		source.append( "<cfif true>\n" );
+
+		for ( int i = 0; i < 5000; i++ ) {
+			source.append( "<cfset result = 'segment" ).append( i ).append( "'>\n" );
+		}
+
+		source.append( "</cfif>\n" );
+		source.append( "</cfloop>\n" );
 
 		return source.toString();
 	}

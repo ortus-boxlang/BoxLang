@@ -178,13 +178,13 @@ public class DBInfo extends Component {
 			}
 
 			Query result = ( switch ( type ) {
-				case DBNAMES -> getDbNames( databaseMetadata );
+				case DBNAMES -> getDbNames( databaseMetadata, context );
 				case VERSION -> getVersion( databaseMetadata );
-				case COLUMNS -> getColumnsForTable( databaseMetadata, databaseName, schema, tableName );
-				case TABLES -> getTables( databaseMetadata, databaseName, schema, tableName, filter );
-				case FOREIGNKEYS -> getForeignKeys( databaseMetadata, databaseName, schema, tableName );
-				case INDEX -> getIndexes( databaseMetadata, databaseName, schema, tableName );
-				case PROCEDURES -> getProcedures( databaseMetadata, databaseName, schema, tableName );
+				case COLUMNS -> getColumnsForTable( databaseMetadata, databaseName, schema, tableName, context );
+				case TABLES -> getTables( databaseMetadata, databaseName, schema, tableName, filter, context );
+				case FOREIGNKEYS -> getForeignKeys( databaseMetadata, databaseName, schema, tableName, context );
+				case INDEX -> getIndexes( databaseMetadata, databaseName, schema, tableName, context );
+				case PROCEDURES -> getProcedures( databaseMetadata, databaseName, schema, tableName, context );
 			} );
 			ExpressionInterpreter.setVariable( context, attributes.getAsString( Key._NAME ), result );
 		} catch ( SQLException e ) {
@@ -234,18 +234,18 @@ public class DBInfo extends Component {
 	 *
 	 * @return A Query object where each row represents a catalog name or schema name within this datasource.
 	 */
-	private Query getDbNames( DatabaseMetaData databaseMetadata ) throws SQLException {
+	private Query getDbNames( DatabaseMetaData databaseMetadata, IBoxContext context ) throws SQLException {
 		Query result = new Query();
 		result.addColumn( Key.of( "DBNAME" ), QueryColumnType.VARCHAR );
 		result.addColumn( Key.of( "type" ), QueryColumnType.VARCHAR );
 		try ( ResultSet catalogs = databaseMetadata.getCatalogs() ) {
 			while ( catalogs.next() ) {
-				result.addRow( new Object[] { catalogs.getObject( 1 ), "CATALOG" } );
+				result.addRow( new Object[] { catalogs.getObject( 1 ), "CATALOG" }, context );
 			}
 		}
 		try ( ResultSet schemas = databaseMetadata.getSchemas(); ) {
 			while ( schemas.next() ) {
-				result.addRow( new Object[] { schemas.getObject( 1 ), "SCHEMA" } );
+				result.addRow( new Object[] { schemas.getObject( 1 ), "SCHEMA" }, context );
 			}
 		}
 		return result;
@@ -292,7 +292,8 @@ public class DBInfo extends Component {
 	 *
 	 * @return Query object where each row represents a column on the given table.
 	 */
-	private Query getColumnsForTable( DatabaseMetaData databaseMetadata, String databaseName, String schema, String tableName ) throws SQLException {
+	private Query getColumnsForTable( DatabaseMetaData databaseMetadata, String databaseName, String schema, String tableName, IBoxContext context )
+	    throws SQLException {
 
 		// logger.trace( "getColumnsForTable: databaseName: {}, schema: {}, tableName: {}", databaseName, schema, tableName );
 
@@ -350,7 +351,7 @@ public class DBInfo extends Component {
 				row.put( Key.of( "REFERENCED_PRIMARYKEY" ), referencedKeyColumn );
 				row.put( Key.of( "REFERENCED_PRIMARYKEY_TABLE" ), referencedKeyTable );
 
-				result.addRow( row );
+				result.addRow( row, context );
 			}
 
 			if ( result.isEmpty() && ( !databaseMetadata.getTables( null, schema, tableName, null ).next() ) ) {
@@ -377,7 +378,8 @@ public class DBInfo extends Component {
 	    String databaseName,
 	    String schema,
 	    String tableName,
-	    String filter ) throws SQLException {
+	    String filter,
+	    IBoxContext context ) throws SQLException {
 		Query result = new Query();
 
 		try ( ResultSet resultSet = databaseMetadata.getTables( databaseName, schema, tableName, filter == null ? null : new String[] { filter } ) ) {
@@ -386,7 +388,7 @@ public class DBInfo extends Component {
 
 			while ( resultSet.next() ) {
 				IStruct row = buildQueryRow( resultSet, resultSetMetaData );
-				result.addRow( row );
+				result.addRow( row, context );
 			}
 		}
 		return result;
@@ -401,7 +403,8 @@ public class DBInfo extends Component {
 	 *
 	 * @return Query object where each row represents a foreign key on the specified table.
 	 */
-	private Query getForeignKeys( DatabaseMetaData databaseMetadata, String databaseName, String schema, String tableName ) throws SQLException {
+	private Query getForeignKeys( DatabaseMetaData databaseMetadata, String databaseName, String schema, String tableName, IBoxContext context )
+	    throws SQLException {
 		Query result = new Query();
 		try ( ResultSet resultSet = databaseMetadata.getExportedKeys( databaseName, schema, tableName ) ) {
 			ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
@@ -409,7 +412,7 @@ public class DBInfo extends Component {
 
 			while ( resultSet.next() ) {
 				IStruct row = buildQueryRow( resultSet, resultSetMetaData );
-				result.addRow( row );
+				result.addRow( row, context );
 			}
 			if ( result.isEmpty() && ( !databaseMetadata.getTables( null, schema, tableName, null ).next() ) ) {
 				throw new DatabaseException( String.format( "Table not found for pattern [%s] on schema [%s]", tableName, schema ) );
@@ -427,7 +430,8 @@ public class DBInfo extends Component {
 	 *
 	 * @return Query object where each row represents an index on the specified table.
 	 */
-	private Query getIndexes( DatabaseMetaData databaseMetadata, String databaseName, String schema, String tableName ) throws SQLException {
+	private Query getIndexes( DatabaseMetaData databaseMetadata, String databaseName, String schema, String tableName, IBoxContext context )
+	    throws SQLException {
 		Query result = new Query();
 		try ( ResultSet resultSet = databaseMetadata.getIndexInfo( databaseName, schema, tableName, false, true ) ) {
 			ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
@@ -449,7 +453,7 @@ public class DBInfo extends Component {
 				row.put( Key.type, stringIndexType );
 
 				// Lucee compat: Lucee actually converts the "CARDINALITY" value to a Double here. Do we care??
-				result.addRow( row );
+				result.addRow( row, context );
 			}
 			if ( result.isEmpty() && ( !databaseMetadata.getTables( null, schema, tableName, null ).next() ) ) {
 				throw new DatabaseException( String.format( "Table not found for pattern [%s] on schema [%s]", tableName, schema ) );
@@ -468,7 +472,8 @@ public class DBInfo extends Component {
 	 *
 	 * @return Query object where each row represents an index on the specified table.
 	 */
-	private Query getProcedures( DatabaseMetaData databaseMetadata, String databaseName, String schema, String tableName ) throws SQLException {
+	private Query getProcedures( DatabaseMetaData databaseMetadata, String databaseName, String schema, String tableName, IBoxContext context )
+	    throws SQLException {
 		Query result = new Query();
 		try ( ResultSet resultSet = databaseMetadata.getProcedures( databaseName, schema, tableName ) ) {
 			ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
@@ -476,7 +481,7 @@ public class DBInfo extends Component {
 
 			while ( resultSet.next() ) {
 				IStruct row = buildQueryRow( resultSet, resultSetMetaData );
-				result.addRow( row );
+				result.addRow( row, context );
 			}
 		}
 		return result;

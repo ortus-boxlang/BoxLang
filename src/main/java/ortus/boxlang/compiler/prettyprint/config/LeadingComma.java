@@ -138,4 +138,16 @@ public class LeadingComma {
 		map.put( "padding", padding );
 		return map;
 	}
+
+	/**
+	 * Create a deep copy of this configuration.
+	 *
+	 * @return a new LeadingComma with the same settings
+	 */
+	public LeadingComma clone() {
+		LeadingComma clone = new LeadingComma();
+		clone.enabled	= this.enabled;
+		clone.padding	= this.padding;
+		return clone;
+	}
 }

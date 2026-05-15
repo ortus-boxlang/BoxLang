@@ -49,6 +49,7 @@ import ortus.boxlang.runtime.util.conversion.serializers.DynamicObjectSerializer
 import ortus.boxlang.runtime.util.conversion.serializers.ExceptionSerializer;
 import ortus.boxlang.runtime.util.conversion.serializers.JavaArraySerializer;
 import ortus.boxlang.runtime.util.conversion.serializers.KeySerializer;
+import ortus.boxlang.runtime.util.conversion.serializers.NumberSerializer;
 
 /**
  * This class provides a JSON provider for BoxLang using our lib: Jackson JR
@@ -101,8 +102,13 @@ public class BoxJsonProvider extends ReaderWriterProvider {
 			return new KeySerializer();
 		}
 
+		// Use our strict string caster for all numbers to strip trailing zeros and avoid scientific notation
+		if ( Number.class.isAssignableFrom( type ) ) {
+			return new NumberSerializer();
+		}
+
 		// Fall back for all other objects that aren't "simple"
-		if ( !String.class.isAssignableFrom( type ) && !Number.class.isAssignableFrom( type ) && !Boolean.class.isAssignableFrom( type ) ) {
+		if ( !String.class.isAssignableFrom( type ) && !Boolean.class.isAssignableFrom( type ) ) {
 			return new DynamicObjectSerializer();
 		}
 

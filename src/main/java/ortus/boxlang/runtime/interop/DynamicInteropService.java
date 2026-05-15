@@ -390,9 +390,18 @@ public class DynamicInteropService {
 		// Invoke Dynamic tries to do argument coercion, so we need to convert the arguments to the right types
 		MethodHandle	constructorInvoker	= callSite.dynamicInvoker();
 		try {
+			Object[] constructorArgs = expandVarargs( castedArgumentValues, constructor.isVarArgs(), false, constructor );
+			// If varargs and expandVarargs already formed the varargs array, bypass the varargs collector
+			if ( constructor.isVarArgs() && constructorArgs.length == constructor.getParameterCount() ) {
+				Object		lastArg		= constructorArgs[ constructorArgs.length - 1 ];
+				Class<?>	varargsType	= constructor.getParameterTypes()[ constructor.getParameterCount() - 1 ];
+				if ( lastArg != null && varargsType.isInstance( lastArg ) ) {
+					constructorInvoker = constructorInvoker.asFixedArity();
+				}
+			}
 
 			@SuppressWarnings( "unchecked" )
-			T thisInstance = ( T ) constructorInvoker.invokeWithArguments( expandVarargs( castedArgumentValues, constructor.isVarArgs(), false, constructor ) );
+			T thisInstance = ( T ) constructorInvoker.invokeWithArguments( constructorArgs );
 
 			// Announce it to the world
 			BoxRuntime
@@ -610,11 +619,17 @@ public class DynamicInteropService {
 
 			// Execute Static
 			if ( methodRecord.isStatic() ) {
-				return methodRecord
-				    .methodHandle()
-				    .invokeWithArguments(
-				        expandVarargs( castedArgumentValues, methodRecord.method().isVarArgs(), false, methodRecord.method() )
-				    );
+				Object[]		staticArgs		= expandVarargs( castedArgumentValues, methodRecord.method().isVarArgs(), false, methodRecord.method() );
+				MethodHandle	staticHandle	= methodRecord.methodHandle();
+				// If varargs and expandVarargs already formed the varargs array, bypass the varargs collector
+				if ( methodRecord.method().isVarArgs() && staticArgs.length == methodRecord.method().getParameterCount() ) {
+					Object		lastArg		= staticArgs[ staticArgs.length - 1 ];
+					Class<?>	varargsType	= methodRecord.method().getParameterTypes()[ methodRecord.method().getParameterCount() - 1 ];
+					if ( lastArg != null && varargsType.isInstance( lastArg ) ) {
+						staticHandle = staticHandle.asFixedArity();
+					}
+				}
+				return staticHandle.invokeWithArguments( staticArgs );
 			}
 
 			// Use a spread strategy to avoid binding if possible due to performance considerations
@@ -701,6 +716,27 @@ public class DynamicInteropService {
 			arguments							= expandedArgs;
 		}
 
+		// Modern varargs: individual values passed instead of wrapped in an array.
+		// This must be checked BEFORE the isInstance early return so that instance methods,
+		// static methods, and constructors all get properly-formed varargs arrays.
+		if ( executable.isVarArgs() && arguments.length >= paramCount && arguments.length > 0 ) {
+			Object lastArg = arguments[ arguments.length - 1 ];
+			if ( lastArg != null && ! ( lastArg instanceof Array ) && !lastArg.getClass().isArray() ) {
+				// Collect trailing args into a properly-typed varargs array
+				int			varargStart		= paramCount - 1;
+				int			varargCount		= arguments.length - varargStart;
+				Class<?>	componentType	= executable.getParameterTypes()[ paramCount - 1 ].getComponentType();
+				Object		varargArray		= java.lang.reflect.Array.newInstance( componentType, varargCount );
+				for ( int i = 0; i < varargCount; i++ ) {
+					java.lang.reflect.Array.set( varargArray, i, arguments[ varargStart + i ] );
+				}
+				Object[] result = new Object[ paramCount ];
+				System.arraycopy( arguments, 0, result, 0, varargStart );
+				result[ varargStart ] = varargArray;
+				return result;
+			}
+		}
+
 		// If it's not varargs, or it's an instance method, then just return the arguments
 		// I don't understand why instance method don't want the varargs expanded, but this is what makes the tests pass
 		if ( !isVarargs || isInstance ) {
@@ -719,7 +755,8 @@ public class DynamicInteropService {
 			// convert the array to an Object array
 			lastArgumentValues = ArrayCaster.cast( lastArgument ).toArray();
 		} else {
-			throw new BoxRuntimeException( "Varargs method requires an array as the last argument.  You passed [" + lastArgument.getClass().getName() + "]" );
+			// Shouldn't reach here since modern varargs is handled above, but just in case
+			return arguments;
 		}
 
 		Object[] expandedArgs = new Object[ arguments.length - 1 + lastArgumentValues.length ];
@@ -761,9 +798,17 @@ public class DynamicInteropService {
 
 		// Discover and Execute it baby!
 		try {
-			return methodRecord
-			    .methodHandle()
-			    .invokeWithArguments( expandVarargs( castedArgumentValues, methodRecord.method().isVarArgs(), false, methodRecord.method() ) );
+			Object[]		staticArgs		= expandVarargs( castedArgumentValues, methodRecord.method().isVarArgs(), false, methodRecord.method() );
+			MethodHandle	staticHandle	= methodRecord.methodHandle();
+			// If varargs and expandVarargs already formed the varargs array, bypass the varargs collector
+			if ( methodRecord.method().isVarArgs() && staticArgs.length == methodRecord.method().getParameterCount() ) {
+				Object		lastArg		= staticArgs[ staticArgs.length - 1 ];
+				Class<?>	varargsType	= methodRecord.method().getParameterTypes()[ methodRecord.method().getParameterCount() - 1 ];
+				if ( lastArg != null && varargsType.isInstance( lastArg ) ) {
+					staticHandle = staticHandle.asFixedArity();
+				}
+			}
+			return staticHandle.invokeWithArguments( staticArgs );
 		} catch ( RuntimeException e ) {
 			throw e;
 		} catch ( Throwable e ) {
@@ -1772,10 +1817,10 @@ public class DynamicInteropService {
 		// Try to get the executables that match by name and number of arguments first.
 		List<Executable> targetExecutables = availableExecutables
 		    .filter( executable -> methodName == null || executable.getName().equalsIgnoreCase( methodName ) )
-		    // We either need to have the same number of arguments or a varargs method with one less argument
-		    // This allows the array of varargs to be omitted when empty
+		    // We either need to have the same number of arguments, a varargs method with one less argument (omitted varargs),
+		    // or a varargs method with fewer params than args (modern-style individual vararg values)
 		    .filter( executable -> executable.getParameterCount() == argumentsAsClasses.length
-		        || ( executable.isVarArgs() && executable.getParameterCount() == argumentsAsClasses.length + 1 ) )
+		        || ( executable.isVarArgs() && executable.getParameterCount() - 1 <= argumentsAsClasses.length ) )
 		    .toList();
 
 		// If list is empty return false
@@ -2519,6 +2564,16 @@ public class DynamicInteropService {
 		// If this is varargs, then we'll have one extra param which we need to ignore for now
 		if ( methodParams.length > argumentsAsClasses.length ) {
 			methodParams = Arrays.copyOf( methodParams, methodParams.length - 1 );
+		} else if ( method.isVarArgs() && argumentsAsClasses.length > methodParams.length ) {
+			// Modern varargs style: individual values passed instead of array-wrapped
+			// Extend methodParams with the varargs component type for each extra argument
+			Class<?>[]	extended		= new Class<?>[ argumentsAsClasses.length ];
+			Class<?>	componentType	= methodParams[ methodParams.length - 1 ].getComponentType();
+			System.arraycopy( methodParams, 0, extended, 0, methodParams.length - 1 );
+			for ( int i = methodParams.length - 1; i < argumentsAsClasses.length; i++ ) {
+				extended[ i ] = componentType;
+			}
+			methodParams = extended;
 		}
 
 		// unbox types here so we can do a proper comparison
@@ -2614,6 +2669,20 @@ public class DynamicInteropService {
 	    Boolean isVarArgs,
 	    BooleanRef isCachable,
 	    AtomicInteger matchScore ) {
+
+		// Handle modern varargs: individual values passed instead of wrapped in array
+		// This is needed for the cached method handle path where hasMatchingParameterTypes doesn't run
+		if ( isVarArgs && arguments.length > methodParams.length ) {
+			Class<?>	componentType	= methodParams[ methodParams.length - 1 ].getComponentType();
+			Class<?>[]	extended		= new Class<?>[ arguments.length ];
+			System.arraycopy( methodParams, 0, extended, 0, methodParams.length - 1 );
+			for ( int i = methodParams.length - 1; i < arguments.length; i++ ) {
+				extended[ i ] = componentType;
+			}
+			methodParams = extended;
+			unBoxTypes( methodParams );
+		}
+
 		var coerced = false;
 		for ( int i = 0; i < methodParams.length; i++ ) {
 			// bail if i has exceeded the lengh of arguments
@@ -2657,10 +2726,20 @@ public class DynamicInteropService {
 					coerced						= true;
 					castedArgumentValues[ i ]	= castedArray.get();
 					continue;
-				} else {
-					coerced = false;
-					break;
 				}
+				// Fallback: try modern-style single-element varargs (cast to component type instead of array type)
+				Class<?> componentType = methodParams[ i ].getComponentType();
+				if ( componentType != null ) {
+					Optional<?> attempt = coerceAttempt( context, componentType, argumentsAsClasses[ i ], arguments[ i ], isCachable, matchScore );
+					if ( attempt.isPresent() ) {
+						coerced						= true;
+						castedArgumentValues[ i ]	= attempt.get();
+						matchScore.addAndGet( 1 );
+						continue;
+					}
+				}
+				coerced = false;
+				break;
 			}
 
 			// Else we need to coerce the argument

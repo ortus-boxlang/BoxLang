@@ -2395,4 +2395,15 @@ public class ClassTest {
 		    context );
 	}
 
+	@Test
+	public void testPropertyDefaultToStaticVar() {
+		instance.executeSource(
+		    """
+		       clazz = new src.test.java.TestCases.phase3.PropertyDefaultToStaticVar();
+		    result = clazz.getMyProp();
+		           """,
+		    context );
+		assertThat( variables.get( "result" ) ).isEqualTo( 5 );
+	}
+
 }

@@ -240,4 +240,350 @@ public class PrettyPrintMainTest {
 			Files.deleteIfExists( tempFile );
 		}
 	}
+
+	@Test
+	public void testMultipleSourceFilesAreFormatted() throws IOException {
+		Path	firstFile	= Files.createTempFile( "prettyprint-multi-file-1", ".cfc" );
+		Path	secondFile	= Files.createTempFile( "prettyprint-multi-file-2", ".cfc" );
+
+		try {
+			Files.writeString( firstFile, "component{function foo(){return {\"a\":1};}}", StandardCharsets.UTF_8 );
+			Files.writeString( secondFile, "component{function bar(){return [1,2,3];}}", StandardCharsets.UTF_8 );
+
+			String					originalFirst	= Files.readString( firstFile, StandardCharsets.UTF_8 );
+			String					originalSecond	= Files.readString( secondFile, StandardCharsets.UTF_8 );
+
+			ByteArrayOutputStream	stdout			= new ByteArrayOutputStream();
+			ByteArrayOutputStream	stderr			= new ByteArrayOutputStream();
+
+			int						exitCode		= PrettyPrint.run(
+			    new String[] {
+			        "--source", firstFile + "," + secondFile
+			    },
+			    new PrintStream( stdout ),
+			    new PrintStream( stderr )
+			);
+
+			assertTrue( exitCode == 0, "Formatter should exit successfully" );
+			assertTrue( stderr.toString( StandardCharsets.UTF_8 ).isEmpty(), "No stderr output expected" );
+			assertFalse( Files.readString( firstFile, StandardCharsets.UTF_8 ).equals( originalFirst ), "First file should be formatted" );
+			assertFalse( Files.readString( secondFile, StandardCharsets.UTF_8 ).equals( originalSecond ), "Second file should be formatted" );
+		} finally {
+			Files.deleteIfExists( firstFile );
+			Files.deleteIfExists( secondFile );
+		}
+	}
+
+	@Test
+	public void testMultipleSourceDirectoriesAreFormatted() throws IOException {
+		Path	firstDir	= Files.createTempDirectory( "prettyprint-multi-dir-1" );
+		Path	secondDir	= Files.createTempDirectory( "prettyprint-multi-dir-2" );
+		Path	firstFile	= firstDir.resolve( "first.cfc" );
+		Path	secondFile	= secondDir.resolve( "second.cfc" );
+
+		try {
+			Files.writeString( firstFile, "component{function foo(){return {\"a\":1};}}", StandardCharsets.UTF_8 );
+			Files.writeString( secondFile, "component{function bar(){return [1,2,3];}}", StandardCharsets.UTF_8 );
+
+			String					originalFirst	= Files.readString( firstFile, StandardCharsets.UTF_8 );
+			String					originalSecond	= Files.readString( secondFile, StandardCharsets.UTF_8 );
+
+			ByteArrayOutputStream	stdout			= new ByteArrayOutputStream();
+			ByteArrayOutputStream	stderr			= new ByteArrayOutputStream();
+
+			int						exitCode		= PrettyPrint.run(
+			    new String[] {
+			        "--source", firstDir + "," + secondDir
+			    },
+			    new PrintStream( stdout ),
+			    new PrintStream( stderr )
+			);
+
+			assertTrue( exitCode == 0, "Formatter should exit successfully" );
+			assertTrue( stderr.toString( StandardCharsets.UTF_8 ).isEmpty(), "No stderr output expected" );
+			assertFalse( Files.readString( firstFile, StandardCharsets.UTF_8 ).equals( originalFirst ), "File in first directory should be formatted" );
+			assertFalse( Files.readString( secondFile, StandardCharsets.UTF_8 ).equals( originalSecond ), "File in second directory should be formatted" );
+		} finally {
+			Files.deleteIfExists( firstFile );
+			Files.deleteIfExists( secondFile );
+			Files.deleteIfExists( firstDir );
+			Files.deleteIfExists( secondDir );
+		}
+	}
+
+	@Test
+	public void testMultipleSourceFilesCheckModeReportsEachFile() throws IOException {
+		Path	firstFile	= Files.createTempFile( "prettyprint-multi-check-1", ".cfc" );
+		Path	secondFile	= Files.createTempFile( "prettyprint-multi-check-2", ".cfc" );
+
+		try {
+			Files.writeString( firstFile, "component{function foo(){return {\"a\":1};}}", StandardCharsets.UTF_8 );
+			Files.writeString( secondFile, "component{function bar(){return [1,2,3];}}", StandardCharsets.UTF_8 );
+
+			ByteArrayOutputStream	stdout		= new ByteArrayOutputStream();
+			ByteArrayOutputStream	stderr		= new ByteArrayOutputStream();
+
+			int						exitCode	= PrettyPrint.run(
+			    new String[] {
+			        "--check",
+			        "--source", firstFile + "," + secondFile
+			    },
+			    new PrintStream( stdout ),
+			    new PrintStream( stderr )
+			);
+
+			String					stdoutText	= stdout.toString( StandardCharsets.UTF_8 );
+			assertTrue( exitCode == 1, "Formatter should report formatting needed" );
+			assertTrue( stderr.toString( StandardCharsets.UTF_8 ).isEmpty(), "No stderr output expected" );
+			assertTrue( stdoutText.contains( firstFile.toString() ), "Stdout should mention the first file" );
+			assertTrue( stdoutText.contains( secondFile.toString() ), "Stdout should mention the second file" );
+		} finally {
+			Files.deleteIfExists( firstFile );
+			Files.deleteIfExists( secondFile );
+		}
+	}
+
+	@Test
+	public void testMultipleSourceFilesOverwriteFalsePrintsAllFiles() throws IOException {
+		Path	firstFile	= Files.createTempFile( "prettyprint-multi-stdout-1", ".cfc" );
+		Path	secondFile	= Files.createTempFile( "prettyprint-multi-stdout-2", ".cfc" );
+
+		try {
+			Files.writeString( firstFile, "component{function foo(){return {\"a\":1};}}", StandardCharsets.UTF_8 );
+			Files.writeString( secondFile, "component{function bar(){return [1,2,3];}}", StandardCharsets.UTF_8 );
+
+			String					originalFirst	= Files.readString( firstFile, StandardCharsets.UTF_8 );
+			String					originalSecond	= Files.readString( secondFile, StandardCharsets.UTF_8 );
+
+			ByteArrayOutputStream	stdout			= new ByteArrayOutputStream();
+			ByteArrayOutputStream	stderr			= new ByteArrayOutputStream();
+
+			int						exitCode		= PrettyPrint.run(
+			    new String[] {
+			        "--source", firstFile + "," + secondFile,
+			        "--overwrite", "false"
+			    },
+			    new PrintStream( stdout ),
+			    new PrintStream( stderr )
+			);
+
+			String					stdoutText		= stdout.toString( StandardCharsets.UTF_8 );
+			assertTrue( exitCode == 0, "Formatter should exit successfully" );
+			assertTrue( stderr.toString( StandardCharsets.UTF_8 ).isEmpty(), "No stderr output expected" );
+			assertTrue( stdoutText.contains( "=== " + firstFile + " ===" ), "Stdout should include the first file header" );
+			assertTrue( stdoutText.contains( "=== " + secondFile + " ===" ), "Stdout should include the second file header" );
+			assertTrue( Files.readString( firstFile, StandardCharsets.UTF_8 ).equals( originalFirst ), "First input file should not be overwritten" );
+			assertTrue( Files.readString( secondFile, StandardCharsets.UTF_8 ).equals( originalSecond ), "Second input file should not be overwritten" );
+		} finally {
+			Files.deleteIfExists( firstFile );
+			Files.deleteIfExists( secondFile );
+		}
+	}
+
+	@Test
+	public void testMultipleSourceFilesRequireDirectoryTarget() throws IOException {
+		Path	firstFile	= Files.createTempFile( "prettyprint-multi-target-1", ".cfc" );
+		Path	secondFile	= Files.createTempFile( "prettyprint-multi-target-2", ".cfc" );
+		Path	targetFile	= Files.createTempFile( "prettyprint-multi-target-output", ".cfc" );
+
+		try {
+			Files.writeString( firstFile, "component{function foo(){return {\"a\":1};}}", StandardCharsets.UTF_8 );
+			Files.writeString( secondFile, "component{function bar(){return [1,2,3];}}", StandardCharsets.UTF_8 );
+
+			ByteArrayOutputStream	stdout		= new ByteArrayOutputStream();
+			ByteArrayOutputStream	stderr		= new ByteArrayOutputStream();
+
+			int						exitCode	= PrettyPrint.run(
+			    new String[] {
+			        "--source", firstFile + "," + secondFile,
+			        "--target", targetFile.toString()
+			    },
+			    new PrintStream( stdout ),
+			    new PrintStream( stderr )
+			);
+
+			assertTrue( exitCode == 1, "Formatter should reject a file target for multiple source files" );
+			assertTrue(
+			    stderr.toString( StandardCharsets.UTF_8 ).contains( "--target must be a directory when multiple source files are being processed" ),
+			    "Stderr should explain that the target must be a directory"
+			);
+		} finally {
+			Files.deleteIfExists( firstFile );
+			Files.deleteIfExists( secondFile );
+			Files.deleteIfExists( targetFile );
+		}
+	}
+
+	@Test
+	public void testMultipleSourceFilesTrimWhitespaceAndIgnoreBlankTokens() throws IOException {
+		Path	firstFile	= Files.createTempFile( "prettyprint-multi-trim-1", ".cfc" );
+		Path	secondFile	= Files.createTempFile( "prettyprint-multi-trim-2", ".cfc" );
+
+		try {
+			Files.writeString( firstFile, "component{function foo(){return {\"a\":1};}}", StandardCharsets.UTF_8 );
+			Files.writeString( secondFile, "component{function bar(){return [1,2,3];}}", StandardCharsets.UTF_8 );
+
+			String					originalFirst	= Files.readString( firstFile, StandardCharsets.UTF_8 );
+			String					originalSecond	= Files.readString( secondFile, StandardCharsets.UTF_8 );
+
+			ByteArrayOutputStream	stdout			= new ByteArrayOutputStream();
+			ByteArrayOutputStream	stderr			= new ByteArrayOutputStream();
+
+			int						exitCode		= PrettyPrint.run(
+			    new String[] {
+			        "--source", " " + firstFile + " ,, " + secondFile + " "
+			    },
+			    new PrintStream( stdout ),
+			    new PrintStream( stderr )
+			);
+
+			assertTrue( exitCode == 0, "Formatter should accept trimmed multi-source input with blank tokens" );
+			assertTrue( stderr.toString( StandardCharsets.UTF_8 ).isEmpty(), "No stderr output expected" );
+			assertFalse( Files.readString( firstFile, StandardCharsets.UTF_8 ).equals( originalFirst ), "First file should be formatted" );
+			assertFalse( Files.readString( secondFile, StandardCharsets.UTF_8 ).equals( originalSecond ), "Second file should be formatted" );
+		} finally {
+			Files.deleteIfExists( firstFile );
+			Files.deleteIfExists( secondFile );
+		}
+	}
+
+	@Test
+	public void testExcludedFileIsSkipped() throws IOException {
+		Path	firstFile	= Files.createTempFile( "prettyprint-exclude-file-1", ".cfc" );
+		Path	secondFile	= Files.createTempFile( "prettyprint-exclude-file-2", ".cfc" );
+
+		try {
+			Files.writeString( firstFile, "component{function foo(){return {\"a\":1};}}", StandardCharsets.UTF_8 );
+			Files.writeString( secondFile, "component{function bar(){return [1,2,3];}}", StandardCharsets.UTF_8 );
+
+			String					originalFirst	= Files.readString( firstFile, StandardCharsets.UTF_8 );
+			String					originalSecond	= Files.readString( secondFile, StandardCharsets.UTF_8 );
+
+			ByteArrayOutputStream	stdout			= new ByteArrayOutputStream();
+			ByteArrayOutputStream	stderr			= new ByteArrayOutputStream();
+
+			int						exitCode		= PrettyPrint.run(
+			    new String[] {
+			        "--source", firstFile + "," + secondFile,
+			        "--excludes", secondFile.toString()
+			    },
+			    new PrintStream( stdout ),
+			    new PrintStream( stderr )
+			);
+
+			assertTrue( exitCode == 0, "Formatter should exit successfully" );
+			assertTrue( stderr.toString( StandardCharsets.UTF_8 ).isEmpty(), "No stderr output expected" );
+			assertFalse( Files.readString( firstFile, StandardCharsets.UTF_8 ).equals( originalFirst ), "Non-excluded file should be formatted" );
+			assertTrue( Files.readString( secondFile, StandardCharsets.UTF_8 ).equals( originalSecond ), "Excluded file should be skipped" );
+		} finally {
+			Files.deleteIfExists( firstFile );
+			Files.deleteIfExists( secondFile );
+		}
+	}
+
+	@Test
+	public void testExcludedDirectoryIsSkipped() throws IOException {
+		Path	rootDir			= Files.createTempDirectory( "prettyprint-exclude-dir-root" );
+		Path	includedDir		= Files.createDirectory( rootDir.resolve( "included" ) );
+		Path	excludedDir		= Files.createDirectory( rootDir.resolve( "excluded" ) );
+		Path	includedFile	= includedDir.resolve( "included.cfc" );
+		Path	excludedFile	= excludedDir.resolve( "excluded.cfc" );
+
+		try {
+			Files.writeString( includedFile, "component{function foo(){return {\"a\":1};}}", StandardCharsets.UTF_8 );
+			Files.writeString( excludedFile, "component{function bar(){return [1,2,3];}}", StandardCharsets.UTF_8 );
+
+			String					originalIncluded	= Files.readString( includedFile, StandardCharsets.UTF_8 );
+			String					originalExcluded	= Files.readString( excludedFile, StandardCharsets.UTF_8 );
+
+			ByteArrayOutputStream	stdout				= new ByteArrayOutputStream();
+			ByteArrayOutputStream	stderr				= new ByteArrayOutputStream();
+
+			int						exitCode			= PrettyPrint.run(
+			    new String[] {
+			        "--source", rootDir.toString(),
+			        "--excludes", excludedDir.toString()
+			    },
+			    new PrintStream( stdout ),
+			    new PrintStream( stderr )
+			);
+
+			assertTrue( exitCode == 0, "Formatter should exit successfully" );
+			assertTrue( stderr.toString( StandardCharsets.UTF_8 ).isEmpty(), "No stderr output expected" );
+			assertFalse( Files.readString( includedFile, StandardCharsets.UTF_8 ).equals( originalIncluded ), "Included file should be formatted" );
+			assertTrue( Files.readString( excludedFile, StandardCharsets.UTF_8 ).equals( originalExcluded ), "Excluded directory contents should be skipped" );
+		} finally {
+			Files.deleteIfExists( includedFile );
+			Files.deleteIfExists( excludedFile );
+			Files.deleteIfExists( includedDir );
+			Files.deleteIfExists( excludedDir );
+			Files.deleteIfExists( rootDir );
+		}
+	}
+
+	@Test
+	public void testExcludedPathsTrimWhitespaceAndIgnoreBlankTokens() throws IOException {
+		Path	firstFile	= Files.createTempFile( "prettyprint-exclude-trim-1", ".cfc" );
+		Path	secondFile	= Files.createTempFile( "prettyprint-exclude-trim-2", ".cfc" );
+		Path	thirdFile	= Files.createTempFile( "prettyprint-exclude-trim-3", ".cfc" );
+
+		try {
+			Files.writeString( firstFile, "component{function foo(){return {\"a\":1};}}", StandardCharsets.UTF_8 );
+			Files.writeString( secondFile, "component{function bar(){return [1,2,3];}}", StandardCharsets.UTF_8 );
+			Files.writeString( thirdFile, "component{function baz(){return {\"b\":2};}}", StandardCharsets.UTF_8 );
+
+			String					originalFirst	= Files.readString( firstFile, StandardCharsets.UTF_8 );
+			String					originalSecond	= Files.readString( secondFile, StandardCharsets.UTF_8 );
+			String					originalThird	= Files.readString( thirdFile, StandardCharsets.UTF_8 );
+
+			ByteArrayOutputStream	stdout			= new ByteArrayOutputStream();
+			ByteArrayOutputStream	stderr			= new ByteArrayOutputStream();
+
+			int						exitCode		= PrettyPrint.run(
+			    new String[] {
+			        "--source", firstFile + "," + secondFile + "," + thirdFile,
+			        "--excludes", " " + firstFile + " ,, " + thirdFile + " "
+			    },
+			    new PrintStream( stdout ),
+			    new PrintStream( stderr )
+			);
+
+			assertTrue( exitCode == 0, "Formatter should exit successfully" );
+			assertTrue( stderr.toString( StandardCharsets.UTF_8 ).isEmpty(), "No stderr output expected" );
+			assertTrue( Files.readString( firstFile, StandardCharsets.UTF_8 ).equals( originalFirst ), "First excluded file should be skipped" );
+			assertFalse( Files.readString( secondFile, StandardCharsets.UTF_8 ).equals( originalSecond ), "Non-excluded file should be formatted" );
+			assertTrue( Files.readString( thirdFile, StandardCharsets.UTF_8 ).equals( originalThird ), "Third excluded file should be skipped" );
+		} finally {
+			Files.deleteIfExists( firstFile );
+			Files.deleteIfExists( secondFile );
+			Files.deleteIfExists( thirdFile );
+		}
+	}
+
+	@Test
+	public void testExcludesNonExistentPathIsIgnored() throws IOException {
+		Path tempFile = Files.createTempFile( "prettyprint-exclude-nonexistent", ".cfc" );
+		try {
+			Files.writeString( tempFile, "component{function foo(){return {\"a\":1};}}", StandardCharsets.UTF_8 );
+			String					original	= Files.readString( tempFile, StandardCharsets.UTF_8 );
+
+			ByteArrayOutputStream	stdout		= new ByteArrayOutputStream();
+			ByteArrayOutputStream	stderr		= new ByteArrayOutputStream();
+
+			int						exitCode	= PrettyPrint.run(
+			    new String[] {
+			        "--source", tempFile.toString(),
+			        "--excludes", "/no/such/path/does/not/exist.cfc"
+			    },
+			    new PrintStream( stdout ),
+			    new PrintStream( stderr )
+			);
+
+			assertTrue( exitCode == 0, "Formatter should exit successfully when exclude path does not exist" );
+			assertTrue( stderr.toString( StandardCharsets.UTF_8 ).isEmpty(), "No stderr output expected" );
+			assertFalse( Files.readString( tempFile, StandardCharsets.UTF_8 ).equals( original ), "Source file should still be formatted" );
+		} finally {
+			Files.deleteIfExists( tempFile );
+		}
+	}
 }

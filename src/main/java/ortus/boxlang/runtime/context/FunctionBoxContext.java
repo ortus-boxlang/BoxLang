@@ -184,9 +184,12 @@ public class FunctionBoxContext extends BaseBoxContext {
 		setThisInterface( thisInterface );
 		pushTemplate( function );
 		// If this UDF is in a class, we need to set the template to the class path, but we still need the push above which sets the current imports to the original source file
-		if ( isInClass() ) {
-			popTemplate();
-			pushTemplate( getThisClass().getRunnablePath() );
+		// This check only applies to UDFs defined in a class. UDFs in a template/script always reflect that template/script.
+		if ( IClassRunnable.class.isAssignableFrom( function.getEnclosingClass() ) ) {
+			if ( isInClass() ) {
+				popTemplate();
+				pushTemplate( getThisClass().getRunnablePath() );
+			}
 		}
 		try {
 			ArgumentUtil.createArgumentsScope( this, positionalArguments, function.getArguments(), this.argumentsScope,

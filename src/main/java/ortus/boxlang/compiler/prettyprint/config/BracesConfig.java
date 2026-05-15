@@ -153,6 +153,19 @@ public class BracesConfig {
 	}
 
 	/**
+	 * Create a deep copy of this configuration.
+	 *
+	 * @return a new BracesConfig with the same settings
+	 */
+	public BracesConfig clone() {
+		BracesConfig clone = new BracesConfig();
+		clone.style						= this.style;
+		clone.requireForSingleStatement	= this.requireForSingleStatement;
+		clone.elseConfig				= this.elseConfig.clone();
+		return clone;
+	}
+
+	/**
 	 * Configuration for {@code else} clause placement relative to the closing brace.
 	 */
 	public static class ElseConfig {
@@ -207,6 +220,17 @@ public class BracesConfig {
 			Map<String, Object> map = new LinkedHashMap<>();
 			map.put( "style", style );
 			return map;
+		}
+
+		/**
+		 * Create a deep copy of this configuration.
+		 *
+		 * @return a new ElseConfig with the same settings
+		 */
+		public ElseConfig clone() {
+			ElseConfig clone = new ElseConfig();
+			clone.style = this.style;
+			return clone;
 		}
 	}
 }

@@ -174,7 +174,7 @@ public class ClassMeta extends BoxMeta<IClassRunnable> {
 		    Key.simpleName, fullName.substring( fullName.lastIndexOf( '.' ) + 1 ),
 		    Key.output, BoxClassSupport.canOutput( annotations, name.getName() ),
 		    Key.documentation, new Struct( documentation ),
-		    Key.annotations, new Struct( annotations ),
+		    Key.annotations, BoxClassSupport.transformAnnotations( new Struct( annotations ) ),
 		    Key._EXTENDS, superClass != null ? superClass.invokeStatic( BoxRuntime.getInstance().getRuntimeContext(), "getMetaStatic" ) : Struct.EMPTY,
 		    Key.functions, UnmodifiableArray.fromList( mdFunctions ),
 		    // Key._HASHCODE, targetClass.hashCode(),

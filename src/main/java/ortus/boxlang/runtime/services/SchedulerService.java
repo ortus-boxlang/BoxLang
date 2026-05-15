@@ -20,11 +20,13 @@ package ortus.boxlang.runtime.services;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.ZoneId;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.async.tasks.BaseScheduler;
 import ortus.boxlang.runtime.async.tasks.BoxScheduler;
 import ortus.boxlang.runtime.async.tasks.IScheduler;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -516,6 +518,27 @@ public class SchedulerService extends BaseService {
 		registerScheduler( scheduler.setSchedulerName( name.getName() ), true );
 
 		// Return it
+		return scheduler;
+	}
+
+	/**
+	 * Create and register a new scheduler
+	 *
+	 * @param name     The name of the scheduler
+	 * @param timezone The timezone for the scheduler (uses system default if null/empty)
+	 * @param context  The context to seed the scheduler with (uses runtime context if null)
+	 * @param force    Whether to replace an existing scheduler with the same name
+	 *
+	 * @return The newly created scheduler
+	 */
+	public IScheduler newScheduler( String name, String timezone, IBoxContext context, boolean force ) {
+		ZoneId			schedulerTimezone	= ( timezone != null && !timezone.isBlank() )
+		    ? ZoneId.of( timezone )
+		    : ZoneId.systemDefault();
+		IBoxContext		schedulerContext	= context != null ? context : runtime.getRuntimeContext();
+
+		BaseScheduler	scheduler			= new BaseScheduler( name, schedulerTimezone, schedulerContext );
+		registerScheduler( scheduler, force );
 		return scheduler;
 	}
 
