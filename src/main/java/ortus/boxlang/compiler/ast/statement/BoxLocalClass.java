@@ -27,6 +27,7 @@ import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.compiler.parser.BoxSourceType;
 
 /**
  * AST node for a named local class defined inside a script or template.
@@ -79,8 +80,9 @@ public class BoxLocalClass extends BoxClass {
 	    List<BoxDocumentationAnnotation> documentation,
 	    List<BoxProperty> properties,
 	    Position position,
-	    String sourceText ) {
-		super( List.of(), body, annotations, documentation, properties, position, sourceText );
+	    String sourceText,
+	    BoxSourceType boxSourceType ) {
+		super( List.of(), body, annotations, documentation, properties, position, sourceText, boxSourceType );
 		setName( name );
 	}
 

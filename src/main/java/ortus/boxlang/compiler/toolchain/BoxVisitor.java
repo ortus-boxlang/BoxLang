@@ -301,7 +301,7 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 			    tools.getPosition( ctx.FINAL() ), ctx.FINAL().getText() ) );
 		}
 
-		return new BoxLocalClass( name, body, annotations, documentation, property, pos, src );
+		return new BoxLocalClass( name, body, annotations, documentation, property, pos, src, BoxSourceType.BOXSCRIPT );
 	}
 
 	@Override

@@ -175,6 +175,7 @@ import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxWhileTransfo
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.component.BoxComponentTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.component.BoxScriptIslandTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.component.BoxTemplateIslandTransformer;
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.Pair;
@@ -444,7 +445,8 @@ public class JavaTranspiler extends Transpiler {
 				    localClass.getDocumentation(),
 				    localClass.getProperties(),
 				    localClass.getPosition(),
-				    localClass.getSourceText()
+				    localClass.getSourceText(),
+				    BoxSourceType.valueOf( this.getProperty( "sourceType" ).toUpperCase() )
 				);
 
 				TranspiledCode	localClassCode	= child.transpile( asBoxClass );

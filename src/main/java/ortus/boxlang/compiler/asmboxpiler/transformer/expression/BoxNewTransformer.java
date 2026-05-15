@@ -89,7 +89,8 @@ public class BoxNewTransformer extends AbstractTransformer {
 				    false ) );
 				// Push context + args, call invokeConstructor → DynamicObject
 				nodes.addAll( transpiler.getCurrentMethodContextTracker().get().loadCurrentContext() );
-				nodes.addAll( AsmHelper.callDynamicObjectInvokeConstructor( transpiler, boxNew.getArguments(), context ) );
+				nodes.addAll( AsmHelper.callDynamicObjectInvokeConstructor( transpiler, boxNew.getArguments(), context,
+				    boxNew.isNamedArgs(), boxNew.hasSpread() ) );
 				// Unwrap to the BoxLang class instance
 				nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
 				    Type.getInternalName( DynamicObject.class ),

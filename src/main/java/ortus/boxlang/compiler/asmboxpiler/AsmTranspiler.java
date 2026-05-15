@@ -698,7 +698,8 @@ public class AsmTranspiler extends Transpiler {
 				// Compile with the enriched import list (enclosing + all sibling local class imports)
 				BoxClass	asBoxClass		= new BoxClass( allImports, localClass.getBody(),
 				    localClass.getAnnotations(), localClass.getDocumentation(), localClass.getProperties(),
-				    localClass.getPosition(), localClass.getSourceText() );
+				    localClass.getPosition(), localClass.getSourceText(),
+				    BoxSourceType.valueOf( getProperty( "sourceType" ).toUpperCase() ) );
 
 				ClassNode	localClassNode	= BoxClassTransformer.transpile( child, asBoxClass );
 				setAuxiliary( syntheticDotFQN, localClassNode );
