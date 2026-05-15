@@ -411,9 +411,9 @@ public class MatchExpression {
 		}
 	}
 
-		/**
-		 * Base runtime contract for compiled match and destructuring patterns.
-		 */
+	/**
+	 * Base runtime contract for compiled match and destructuring patterns.
+	 */
 	public abstract static class Pattern {
 
 		final boolean matches( IBoxContext context, Object subject ) {

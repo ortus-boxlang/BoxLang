@@ -1192,7 +1192,7 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 
 		// If body is null, it indicates an abstract function otherwise the presence of
 		// a body indicates a function declaration, even with no statements in it.
-		body		= Optional.ofNullable( statementBlock ).map( this::buildStatementBlock ).orElse( null );
+		body = Optional.ofNullable( statementBlock ).map( this::buildStatementBlock ).orElse( null );
 
 		annotations.removeAll( annToRemove );
 		return new BoxFunctionDeclaration( visibility, modifiers, name, returnType, args, annotations, documentation, body, pos, src );

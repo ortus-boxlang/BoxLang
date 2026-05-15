@@ -116,8 +116,8 @@ public class RefutableDestructuringDeclarationTest {
 		    """,
 		    context );
 
-		IStruct missingResult = ( IStruct ) variables.get( Key.of( "missingResult" ) );
-		IStruct nullResult = ( IStruct ) variables.get( Key.of( "nullResult" ) );
+		IStruct	missingResult	= ( IStruct ) variables.get( Key.of( "missingResult" ) );
+		IStruct	nullResult		= ( IStruct ) variables.get( Key.of( "nullResult" ) );
 
 		assertThat( missingResult.get( Key.of( "failed" ) ) ).isEqualTo( false );
 		assertThat( missingResult.get( Key.of( "name" ) ) ).isEqualTo( "guest" );
