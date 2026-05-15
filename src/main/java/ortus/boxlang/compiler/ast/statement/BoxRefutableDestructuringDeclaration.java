@@ -26,6 +26,7 @@ import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.expression.BoxMatchPattern;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 public class BoxRefutableDestructuringDeclaration extends BoxStatement {
 
@@ -89,6 +90,16 @@ public class BoxRefutableDestructuringDeclaration extends BoxStatement {
 
 	public void setFinalDeclaration( boolean finalDeclaration ) {
 		this.finalDeclaration = finalDeclaration;
+	}
+
+	public void validatePatternHasBindingTarget() {
+		if ( this.pattern.hasBindingTarget() ) {
+			return;
+		}
+
+		throw new ExpressionException(
+		    "Refutable destructuring declarations must contain at least one binding target.",
+		    this.pattern );
 	}
 
 	@Override

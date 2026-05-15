@@ -85,6 +85,9 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 												    generateNumericBinaryMethodCallNodes( Minus.class, Number.class, operation, left, right );
 
 												case Range -> // "Range.invoke(${left},${right})";
+												    // The emitted descriptor must use the runtime Range value type, not the
+												    // operator helper class, or compiled scripts/templates will link to the
+												    // wrong static method signature and fail at runtime.
 												    generateBinaryMethodCallNodes( Range.class, ortus.boxlang.runtime.types.Range.class, left, right );
 
 												case Star -> // "Multiply.invoke(${left},${right})";

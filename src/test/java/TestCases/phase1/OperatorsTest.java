@@ -199,6 +199,32 @@ public class OperatorsTest {
 		assertThat( t.getMessage() ).contains( "too many results" );
 	}
 
+	@DisplayName( "compiled script paths return the runtime Range value" )
+	@Test
+	public void testCompiledScriptRangeOperatorPath() {
+		instance.executeSource(
+		    """
+		    result = 1..5;
+		    """,
+		    context,
+		    BoxSourceType.BOXSCRIPT );
+
+		assertThat( variables.get( resultKey ) ).isEqualTo( new Range( 1, 5 ) );
+	}
+
+	@DisplayName( "compiled template paths preserve oversized range failures" )
+	@Test
+	public void testCompiledTemplateRangeOperatorOversizeFailure() {
+		BoxRuntimeException t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    <bx:set result = 0..2147483647>
+		    """,
+		    context,
+		    BoxSourceType.BOXTEMPLATE ) );
+
+		assertThat( t.getMessage() ).contains( "too many results" );
+	}
+
 	@DisplayName( "math plus plus literals" )
 	@Test
 	public void testMathPlusPlusLiterals() {

@@ -38,7 +38,6 @@ import ortus.boxlang.compiler.ast.statement.BoxRefutableDestructuringDeclaration
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.MatchExpression;
 import ortus.boxlang.runtime.dynamic.MatchExpression.Pattern;
-import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 public class BoxRefutableDestructuringDeclarationTransformer extends BoxMatchExpressionTransformer {
 
@@ -52,7 +51,7 @@ public class BoxRefutableDestructuringDeclarationTransformer extends BoxMatchExp
 		Optional<MethodContextTracker>			tracker		= transpiler.getCurrentMethodContextTracker();
 		List<AbstractInsnNode>					nodes		= new ArrayList<>();
 
-		validateDeclarationPattern( declaration );
+		declaration.validatePatternHasBindingTarget();
 
 		tracker.ifPresent( t -> nodes.addAll( t.loadCurrentContext() ) );
 		nodes.addAll( transpiler.transform( declaration.getSubject(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
@@ -79,16 +78,5 @@ public class BoxRefutableDestructuringDeclarationTransformer extends BoxMatchExp
 		nodes.add( endLabel );
 
 		return AsmHelper.addLineNumberLabels( nodes, node );
-	}
-
-	private void validateDeclarationPattern( BoxRefutableDestructuringDeclaration declaration ) {
-		if ( declaration.getPattern().hasBindingTarget() ) {
-			return;
-		}
-
-		throw new ExpressionException(
-		    "Refutable destructuring declarations must contain at least one binding target.",
-		    declaration.getPattern().getPosition(),
-		    declaration.getPattern().getSourceText() );
 	}
 }
