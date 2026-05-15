@@ -261,7 +261,9 @@ public abstract class Boxpiler implements IBoxpiler {
 		DynamicObject	trans	= frTransService.startTransaction( "BL Statement Parse", type.name() );
 		Parser			parser	= new Parser();
 		try {
-			return validateParse( parser.parseStatement( source, type ), "ad-hoc source" );
+			// executeStatement has historically accepted trailing semicolons and small
+			// multi-statement snippets, so compile it through the full script parser.
+			return validateParse( parser.parse( source, type, false ), "ad-hoc source" );
 		} catch ( IOException e ) {
 			throw new BoxRuntimeException( "Error compiling statement source", e );
 		} finally {
