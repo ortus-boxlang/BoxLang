@@ -585,4 +585,212 @@ public class DataNavigatorTest {
 		assertThat( result ).hasSize( 1 );
 	}
 
+	// -------------------------------------------------------------------------
+	// BoxLang modern varargs tests — calling varargs methods with individual args
+	// -------------------------------------------------------------------------
+
+	@DisplayName( "BoxLang: from() with modern varargs navigates nested segments" )
+	@Test
+	void testFromModernVarargsBoxLang() {
+		// @formatter:off
+		instance.executeSource("""
+			nav = dataNavigate( {
+				"boxlang": {
+					"settings": {
+						"hello": "luis"
+					}
+				}
+			} )
+			result = nav.from( "boxlang", "settings" ).get( "hello" )
+			""", context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isEqualTo( "luis" );
+	}
+
+	@DisplayName( "BoxLang: get() with modern varargs retrieves nested value" )
+	@Test
+	void testGetModernVarargsBoxLang() {
+		// @formatter:off
+		instance.executeSource("""
+			nav = dataNavigate( {
+				"boxlang": {
+					"settings": {
+						"hello": "luis"
+					}
+				}
+			} )
+			result = nav.get( "boxlang", "settings", "hello" )
+			""", context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isEqualTo( "luis" );
+	}
+
+	@DisplayName( "BoxLang: get() with modern varargs returns null for missing path" )
+	@Test
+	void testGetModernVarargsMissingBoxLang() {
+		// @formatter:off
+		instance.executeSource("""
+			nav = dataNavigate( {
+				"boxlang": {
+					"settings": {
+						"hello": "luis"
+					}
+				}
+			} )
+			result = nav.get( "boxlang", "settings", "bogus" )
+			""", context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isNull();
+	}
+
+	@DisplayName( "BoxLang: has() with modern varargs returns true for existing path" )
+	@Test
+	void testHasModernVarargsTrueBoxLang() {
+		// @formatter:off
+		instance.executeSource("""
+			nav = dataNavigate( {
+				"boxlang": {
+					"settings": {
+						"hello": "luis"
+					}
+				}
+			} )
+			result = nav.has( "boxlang", "settings", "hello" )
+			""", context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "BoxLang: has() with modern varargs returns false for missing path" )
+	@Test
+	void testHasModernVarargsFalseBoxLang() {
+		// @formatter:off
+		instance.executeSource("""
+			nav = dataNavigate( {
+				"boxlang": {
+					"settings": {
+						"hello": "luis"
+					}
+				}
+			} )
+			result = nav.has( "boxlang", "settings", "nonexistent" )
+			""", context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "BoxLang: getOrThrow() with modern varargs returns value" )
+	@Test
+	void testGetOrThrowModernVarargsBoxLang() {
+		// @formatter:off
+		instance.executeSource("""
+			nav = dataNavigate( {
+				"boxlang": {
+					"settings": {
+						"hello": "luis"
+					}
+				}
+			} )
+			result = nav.getOrThrow( "boxlang", "settings", "hello" )
+			""", context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isEqualTo( "luis" );
+	}
+
+	@DisplayName( "BoxLang: getOrThrow() with modern varargs throws for missing path" )
+	@Test
+	void testGetOrThrowModernVarargsThrowsBoxLang() {
+		assertThrows( BoxRuntimeException.class, () -> {
+			// @formatter:off
+			instance.executeSource("""
+				nav = dataNavigate( {
+					"boxlang": {
+						"settings": {
+							"hello": "luis"
+						}
+					}
+				} )
+				result = nav.getOrThrow( "boxlang", "settings", "bogus" )
+				""", context );
+			// @formatter:on
+		} );
+	}
+
+	@DisplayName( "BoxLang: from() with modern varargs to non-existent path returns empty navigator" )
+	@Test
+	void testFromModernVarargsNonExistentBoxLang() {
+		// @formatter:off
+		instance.executeSource("""
+			nav = dataNavigate( {
+				"boxlang": {
+					"settings": {
+						"hello": "luis"
+					}
+				}
+			} )
+			emptyNav = nav.from( "boxlang", "settings", "nonexistent" )
+			result = emptyNav.isEmpty()
+			""", context );
+		// @formatter:on
+
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "BoxLang: chained from() with modern varargs and get()" )
+	@Test
+	void testChainedFromModernVarargsBoxLang() {
+		// @formatter:off
+		instance.executeSource("""
+			nav = dataNavigate( {
+				"app": {
+					"database": {
+						"connection": {
+							"host": "localhost",
+							"port": 5432
+						}
+					}
+				}
+			} )
+			hostResult = nav.from( "app", "database", "connection" ).get( "host" )
+			portResult = nav.from( "app", "database" ).get( "connection", "port" )
+			""", context );
+		// @formatter:on
+
+		assertThat( variables.get( Key.of( "hostResult" ) ) ).isEqualTo( "localhost" );
+		assertThat( variables.get( Key.of( "portResult" ) ) ).isEqualTo( 5432 );
+	}
+
+	@DisplayName( "BoxLang: modern varargs vs array-style produce same results" )
+	@Test
+	void testModernVarargsVsArrayStyleBoxLang() {
+		// @formatter:off
+		instance.executeSource("""
+			nav = dataNavigate( {
+				"level1": {
+					"level2": {
+						"level3": "deep_value"
+					}
+				}
+			} )
+			// Modern varargs style
+			modernResult = nav.get( "level1", "level2", "level3" )
+			modernHas = nav.has( "level1", "level2", "level3" )
+			// Array style
+			arrayResult = nav.get( ["level1", "level2", "level3"] )
+			arrayHas = nav.has( ["level1", "level2", "level3"] )
+			""", context );
+		// @formatter:on
+
+		assertThat( variables.get( Key.of( "modernResult" ) ) ).isEqualTo( "deep_value" );
+		assertThat( variables.get( Key.of( "arrayResult" ) ) ).isEqualTo( "deep_value" );
+		assertThat( variables.get( Key.of( "modernHas" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "arrayHas" ) ) ).isEqualTo( true );
+	}
+
 }
