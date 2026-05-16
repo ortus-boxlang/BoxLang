@@ -235,6 +235,10 @@ public abstract class Transpiler implements ITranspiler {
 		return imports.stream().anyMatch( i -> token.equalsIgnoreCase( i.alias() ) || token.equalsIgnoreCase( i.className() ) );
 	}
 
+	public boolean matchesClassRefImport( String token ) {
+		return false;
+	}
+
 	public int incrementAndGetLambdaCounter() {
 		return ++lambdaCounter;
 	}

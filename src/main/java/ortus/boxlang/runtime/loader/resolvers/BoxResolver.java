@@ -180,15 +180,14 @@ public class BoxResolver extends BaseResolver {
 		name	= name.endsWith( "." ) ? name.substring( 0, name.length() - 1 ) : name;
 
 		final String fullyQualifiedName = expandFromImport( context, name, imports );
-		// System.out.println( "--=--------> fullyQualifiedName: " + fullyQualifiedName );
 
-		return findFromLocalClass( context, fullyQualifiedName, imports )
+		return findFromClassRef( context, fullyQualifiedName, imports )
 		    .or( () -> findFromModules( context, fullyQualifiedName, imports, loadClass )
 		        .or( () -> findFromLocal( context, fullyQualifiedName, imports, loadClass, properties ) ) );
 	}
 
 	/**
-	 * See if there is an import that has a class ref matching our class name.
+	 * Resolve a class name from an import that has a direct class reference (e.g., inner/local classes).
 	 * 
 	 * @param context            The current context of execution
 	 * @param fullyQualifiedName The fully qualified name of the class to find
@@ -196,13 +195,12 @@ public class BoxResolver extends BaseResolver {
 	 * 
 	 * @return An optional ClassLocation if a matching import with class reference is found, empty otherwise
 	 */
-	@SuppressWarnings( "null" )
-	public Optional<ClassLocation> findFromLocalClass( IBoxContext context, String fullyQualifiedName, List<ImportDefinition> imports ) {
+	public Optional<ClassLocation> findFromClassRef( IBoxContext context, String fullyQualifiedName, List<ImportDefinition> imports ) {
 		return imports
 		    .stream()
 		    .filter( this::importApplies )
 		    .filter( ImportDefinition::hasClassRef )
-		    .filter( imp -> imp.classRef().getName().equalsIgnoreCase( fullyQualifiedName ) )
+		    .filter( imp -> imp.alias().equalsIgnoreCase( fullyQualifiedName ) )
 		    .findFirst()
 		    .map( imp -> new ClassLocation(
 		        fullyQualifiedName,

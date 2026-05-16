@@ -15,6 +15,7 @@
 package TestCases.phase3;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -31,6 +32,7 @@ import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.IStruct;
 
 /**
  * Integration tests for named local class definitions inside BoxLang scripts and templates.
@@ -144,22 +146,22 @@ public class LocalClassTest {
 	public void testMultipleLocalClasses() {
 		instance.executeSource(
 		    """
-		    class Adder {
-		        function add( a, b ) {
-		            return a + b;
-		        }
-		    }
+		      class Adder {
+		          function add( a, b ) {
+		              return a + b;
+		          }
+		      }
 
-		    class Multiplier {
-		        function multiply( a, b ) {
-		            return a * b;
-		        }
-		    }
+		      class Multiplier {
+		          function multiply( a, b ) {
+		              return a * b;
+		          }
+		      }
 
-		    adder      = new Adder();
-		    multiplier = new Multiplier();
-		    result     = multiplier.multiply( adder.add( 2, 3 ), 4 );
-		    """,
+		    myAdder      = new Adder();
+		     myMultiplier = new Multiplier();
+		     result       = myMultiplier.multiply( myAdder.add( 2, 3 ), 4 );
+		      """,
 		    context );
 		assertThat( ( ( Number ) variables.get( result ) ).intValue() ).isEqualTo( 20 );
 	}
@@ -288,6 +290,325 @@ public class LocalClassTest {
 		);
 		// @formatter:on
 		assertThat( variables.get( result ) ).isEqualTo( "luis" );
+	}
+
+	@DisplayName( "Local class with static variables" )
+	@Test
+	public void testLocalClassStaticVariables() {
+		instance.executeSource(
+		    """
+		    class Config {
+		        static {
+		            static.MAX_RETRIES = 5;
+		            static.APP_NAME = "MyApp";
+		        }
+		    }
+
+		    result = Config::MAX_RETRIES;
+		    result2 = Config::APP_NAME;
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 5 );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "MyApp" );
+	}
+
+	@DisplayName( "Local class with static methods" )
+	@Test
+	public void testLocalClassStaticMethods() {
+		instance.executeSource(
+		    """
+		    class MathUtil {
+		        static function add( a, b ) {
+		            return a + b;
+		        }
+		        static function multiply( a, b ) {
+		            return a * b;
+		        }
+		    }
+
+		    result = MathUtil::add( 3, 4 );
+		    result2 = MathUtil::multiply( 5, 6 );
+		    """,
+		    context );
+		assertThat( ( ( Number ) variables.get( result ) ).intValue() ).isEqualTo( 7 );
+		assertThat( ( ( Number ) variables.get( Key.of( "result2" ) ) ).intValue() ).isEqualTo( 30 );
+	}
+
+	@DisplayName( "Final local class cannot be extended" )
+	@Test
+	public void testFinalLocalClass() {
+		instance.executeSource(
+		    """
+		    final class Immutable {
+		        function getValue() {
+		            return "fixed";
+		        }
+		    }
+
+		    result = new Immutable().getValue();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "fixed" );
+	}
+
+	@DisplayName( "Extending a final local class throws an error" )
+	@Test
+	public void testExtendingFinalLocalClassThrows() {
+		assertThrows( Exception.class, () -> {
+			instance.executeSource(
+			    """
+			    final class Base {
+			        function getValue() {
+			            return "base";
+			        }
+			    }
+
+			    class Child extends="Base" {
+			        function getValue() {
+			            return "child";
+			        }
+			    }
+
+			    result = new Child().getValue();
+			    """,
+			    context );
+		} );
+	}
+
+	@DisplayName( "Abstract local class cannot be instantiated directly" )
+	@Test
+	public void testAbstractLocalClassCannotInstantiate() {
+		assertThrows( Exception.class, () -> {
+			instance.executeSource(
+			    """
+			    @abstract class Shape {
+			        abstract function area();
+			    }
+
+			    result = new Shape();
+			    """,
+			    context );
+		} );
+	}
+
+	@DisplayName( "Abstract local class can be extended and instantiated" )
+	@Test
+	public void testAbstractLocalClassExtended() {
+		instance.executeSource(
+		    """
+		    @abstract class Shape {
+		        function describe() {
+		            return "I am a shape";
+		        }
+		    }
+
+		    class Circle extends="Shape" {
+		        function init( radius ) {
+		            variables.radius = radius;
+		            return this;
+		        }
+		        function getRadius() {
+		            return variables.radius;
+		        }
+		    }
+
+		    myCircle = new Circle( 5 );
+		    result = myCircle.describe();
+		    result2 = myCircle.getRadius();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "I am a shape" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( 5 );
+	}
+
+	@DisplayName( "Local class extends another local class with super call" )
+	@Test
+	public void testLocalClassExtendsWithSuper() {
+		instance.executeSource(
+		    """
+		    class Vehicle {
+		        function init( make ) {
+		            variables.make = make;
+		            return this;
+		        }
+		        function getMake() {
+		            return variables.make;
+		        }
+		    }
+
+		    class Car extends="Vehicle" {
+		        function init( make, model ) {
+		            super.init( make );
+		            variables.model = model;
+		            return this;
+		        }
+		        function getInfo() {
+		            return this.getMake() & " " & variables.model;
+		        }
+		    }
+
+		    result = new Car( "Toyota", "Camry" ).getInfo();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "Toyota Camry" );
+	}
+
+	@DisplayName( "Local class extends another local class - multi-level inheritance" )
+	@Test
+	public void testMultiLevelInheritance() {
+		instance.executeSource(
+		    """
+		    class A {
+		        function getValue() {
+		            return "A";
+		        }
+		    }
+
+		    class B extends="A" {
+		        function getValueB() {
+		            return this.getValue() & "B";
+		        }
+		    }
+
+		    class C extends="B" {
+		        function getValueC() {
+		            return this.getValueB() & "C";
+		        }
+		    }
+
+		    result = new C().getValueC();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "ABC" );
+	}
+
+	@DisplayName( "Local class metadata via getMetadata()" )
+	@Test
+	public void testLocalClassGetMetadata() {
+		instance.executeSource(
+		    """
+		    class Person {
+		        property name="firstName" default="John";
+		        property name="lastName" default="Doe";
+
+		        function fullName() {
+		            return this.getFirstName() & " " & this.getLastName();
+		        }
+		    }
+
+		    result = getMetaData( new Person() );
+		    """,
+		    context );
+		Object res = variables.get( result );
+		assertThat( res ).isInstanceOf( IStruct.class );
+		IStruct meta = ( IStruct ) res;
+		assertThat( meta.getAsString( Key.of( "name" ) ) ).contains( "Person" );
+		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Class" );
+		assertThat( meta.get( Key.of( "functions" ) ) ).isNotNull();
+		assertThat( meta.get( Key.of( "properties" ) ) ).isNotNull();
+		assertThat( meta.getAsArray( Key.of( "properties" ) ) ).hasSize( 2 );
+	}
+
+	@DisplayName( "Local class implements a Java interface" )
+	@Test
+	public void testLocalClassImplementsJavaInterface() {
+		instance.executeSource(
+		    """
+		    import java:java.lang.Thread;
+
+		    class MyRunnable implements="java:java.lang.Runnable" {
+		        property name="didRun" default=false;
+
+		        @overrideJava
+		        void function run() {
+		            variables.didRun = true;
+		        }
+		    }
+
+		    r = new MyRunnable();
+		    assert r instanceof "java.lang.Runnable";
+		    jThread = new java:Thread( r );
+		    jThread.start();
+		    jThread.join();
+		    result = r.getDidRun();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "Local class extends a Java class" )
+	@Test
+	public void testLocalClassExtendsJavaClass() {
+		instance.executeSource(
+		    """
+		    class MyTask extends="java:java.util.TimerTask" {
+
+		        @overrideJava
+		        void function run() {
+		            println( "Hello from local TimerTask!" );
+		        }
+		    }
+
+		    task = new MyTask();
+		    assert task instanceof "java.util.TimerTask";
+		    result = true;
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "Local class implements Comparable Java interface" )
+	@Test
+	public void testLocalClassImplementsComparable() {
+		instance.executeSource(
+		    """
+		    class Ranked implements="java:java.lang.Comparable" {
+		        property name="rank" default=0;
+
+		        function init( rank ) {
+		            variables.rank = rank;
+		            return this;
+		        }
+
+		        @overrideJava
+		        int function compareTo( other ) {
+		            return variables.rank - other.getRank();
+		        }
+		    }
+
+		    a = new Ranked( 3 );
+		    b = new Ranked( 7 );
+		    result = a.compareTo( b );
+		    """,
+		    context );
+		assertThat( ( ( Number ) variables.get( result ) ).intValue() ).isLessThan( 0 );
+	}
+
+	@DisplayName( "Local class metadata via $bx.meta" )
+	@Test
+	public void testLocalClassDollarBxMeta() {
+		instance.executeSource(
+		    """
+		    class Animal {
+		        property name="species" default="Unknown";
+
+		        function speak() {
+		            return "...";
+		        }
+		    }
+
+		    inst = new Animal();
+		    result = inst.$bx.meta;
+		    """,
+		    context );
+		Object res = variables.get( result );
+		assertThat( res ).isInstanceOf( IStruct.class );
+		IStruct meta = ( IStruct ) res;
+		assertThat( meta.getAsString( Key.of( "name" ) ) ).contains( "Animal" );
+		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Class" );
+		assertThat( meta.get( Key.of( "functions" ) ) ).isNotNull();
+		assertThat( meta.get( Key.of( "properties" ) ) ).isNotNull();
+		assertThat( meta.getAsArray( Key.of( "properties" ) ) ).hasSize( 1 );
 	}
 
 }

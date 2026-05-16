@@ -35,6 +35,7 @@ import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxDocumentationAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
+import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
@@ -59,6 +60,12 @@ public abstract class Transpiler implements ITranspiler {
 	private int												componentCounter		= 0;
 	private int												functionBodyCounter		= 0;
 	private List<ImportDefinition>							imports					= new ArrayList<>();
+	/**
+	 * Stores local-class imports that carry a resolved {@code Class<?>} reference.
+	 * Each entry is {@code {alias, internalClassName}}. At code-generation time these
+	 * are emitted as {@link ImportDefinition#fromClassRef(String, String, Class)} calls.
+	 */
+	private List<String[]>									localClassRefImports	= new ArrayList<>();
 	private List<MethodContextTracker>						methodContextTrackers	= new ArrayList<MethodContextTracker>();
 	private List<BoxStaticInitializer>						staticInitializers		= new ArrayList<>();
 	private ClassNode										owningClassNode			= null;
@@ -275,6 +282,15 @@ public abstract class Transpiler implements ITranspiler {
 	 */
 	public String getLocalClassName( String alias ) {
 		return this.localClasses.get( alias );
+	}
+
+	/**
+	 * Returns the map of all registered local classes.
+	 *
+	 * @return map of alias to Java internal class name
+	 */
+	public Map<String, String> getLocalClasses() {
+		return this.localClasses;
 	}
 
 	public void setAuxiliary( String name, ClassNode classNode ) {
@@ -508,7 +524,9 @@ public abstract class Transpiler implements ITranspiler {
 
 	public List<List<AbstractInsnNode>> getImports() {
 		return imports.stream().map( anImport -> {
-			String importStr = anImport.className();
+			String importStr = anImport.resolverPrefix() != null
+			    ? anImport.resolverPrefix() + ":" + anImport.className()
+			    : anImport.className();
 			if ( anImport.isModuleImport() ) {
 				importStr += "@" + anImport.moduleName();
 			}
@@ -530,6 +548,43 @@ public abstract class Transpiler implements ITranspiler {
 		 *
 		 * as all the other options require grammar changes or are more complicated to recognize
 		 */
-		return imports.stream().anyMatch( i -> token.equalsIgnoreCase( i.alias() ) || token.equalsIgnoreCase( i.className() ) );
+		return imports.stream().anyMatch( i -> token.equalsIgnoreCase( i.alias() ) || token.equalsIgnoreCase( i.className() ) )
+		    || localClassRefImports.stream().anyMatch( entry -> token.equalsIgnoreCase( entry[ 0 ] ) );
+	}
+
+	/**
+	 * Register a local-class import that should be emitted at runtime with a resolved {@code Class<?>}
+	 * reference via {@link ImportDefinition#fromClassRef(String, String, Class)}.
+	 *
+	 * @param alias             the simple name of the local class (e.g. "Config")
+	 * @param internalClassName the JVM internal name of the compiled class
+	 */
+	public void addLocalClassRefImport( String alias, String internalClassName ) {
+		this.localClassRefImports.add( new String[] { alias, internalClassName } );
+	}
+
+	/**
+	 * Returns bytecode instruction lists that each create an {@link ImportDefinition} via
+	 * {@link ImportDefinition#fromClassRef(String, String, Class)} for every registered local-class import.
+	 * Each inner list leaves one {@code ImportDefinition} on the stack.
+	 *
+	 * @return a list of instruction lists, one per local-class import
+	 */
+	public List<List<AbstractInsnNode>> getLocalClassRefImportNodes() {
+		return this.localClassRefImports.stream().map( entry -> {
+			String	alias				= entry[ 0 ];
+			String	internalClassName	= entry[ 1 ];
+			return List.<AbstractInsnNode>of(
+			    new LdcInsnNode( ClassLocator.BX_PREFIX ),
+			    new LdcInsnNode( alias ),
+			    new LdcInsnNode( Type.getObjectType( internalClassName ) ),
+			    new MethodInsnNode( Opcodes.INVOKESTATIC,
+			        Type.getInternalName( ImportDefinition.class ),
+			        "fromClassRef",
+			        Type.getMethodDescriptor( Type.getType( ImportDefinition.class ),
+			            Type.getType( String.class ), Type.getType( String.class ), Type.getType( Class.class ) ),
+			        false )
+			);
+		} ).toList();
 	}
 }

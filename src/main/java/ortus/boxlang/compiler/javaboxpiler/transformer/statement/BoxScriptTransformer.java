@@ -356,6 +356,11 @@ public class BoxScriptTransformer extends AbstractTransformer {
 
 		}
 
+		// Embed local classes as static inner classes
+		( ( JavaTranspiler ) transpiler ).getInnerClassDeclarations().forEach( innerClass -> {
+			thisClass.addMember( innerClass );
+		} );
+
 		return entryPoint;
 	}
 

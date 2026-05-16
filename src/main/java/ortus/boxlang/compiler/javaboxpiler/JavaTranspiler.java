@@ -33,7 +33,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.ArrayCreationExpr;
 import com.github.javaparser.ast.expr.ArrayInitializerExpr;
@@ -178,6 +180,7 @@ import ortus.boxlang.compiler.javaboxpiler.transformer.statement.component.BoxTe
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.FQN;
 import ortus.boxlang.runtime.util.Pair;
 
 /**
@@ -201,6 +204,7 @@ public class JavaTranspiler extends Transpiler {
 	private List<Statement>									UDFDeclarations			= new ArrayList<>();
 	private List<Statement>									staticUDFDeclarations	= new ArrayList<>();
 	private Map<String, String>								localClasses			= new HashMap<>();
+	private List<ClassOrInterfaceDeclaration>				innerClassDeclarations	= new ArrayList<>();
 
 	public JavaTranspiler() {
 		registry.put( BoxScript.class, new BoxScriptTransformer( this ) );
@@ -376,11 +380,9 @@ public class JavaTranspiler extends Transpiler {
 	public TranspiledCode transpile( BoxNode node ) throws BoxRuntimeException {
 		this.localClasses.clear();
 		if ( node instanceof BoxScript boxScript ) {
-			List<BoxImport> enclosingImports = extractImports( boxScript.getStatements() );
-			preCompileLocalClasses( boxScript.getStatements(), enclosingImports );
+			preCompileLocalClasses( boxScript.getStatements() );
 		} else if ( node instanceof BoxTemplate boxTemplate ) {
-			List<BoxImport> enclosingImports = extractImports( boxTemplate.getStatements() );
-			preCompileLocalClasses( boxTemplate.getStatements(), enclosingImports );
+			preCompileLocalClasses( boxTemplate.getStatements() );
 		}
 
 		CompilationUnit			entryPoint		= ( CompilationUnit ) transform( node );
@@ -410,22 +412,33 @@ public class JavaTranspiler extends Transpiler {
 		return this.localClasses.get( alias );
 	}
 
-	private static List<BoxImport> extractImports( List<BoxStatement> statements ) {
-		return statements.stream()
+	@Override
+	public boolean matchesClassRefImport( String token ) {
+		return this.localClasses.keySet().stream().anyMatch( k -> k.equalsIgnoreCase( token ) );
+	}
+
+	/**
+	 * Get the list of inner class declarations for embedding in the outer class.
+	 *
+	 * @return list of ClassOrInterfaceDeclaration nodes representing local classes compiled as static inner classes
+	 */
+	public List<ClassOrInterfaceDeclaration> getInnerClassDeclarations() {
+		return this.innerClassDeclarations;
+	}
+
+	private void preCompileLocalClasses( List<BoxStatement> statements ) {
+		String			outerClassName		= this.getProperty( "classname" );
+
+		// Collect enclosing imports so local classes can resolve them at runtime
+		List<BoxImport>	enclosingImports	= statements.stream()
 		    .filter( s -> s instanceof BoxImport )
 		    .map( s -> ( BoxImport ) s )
 		    .collect( Collectors.toList() );
-	}
-
-	private void preCompileLocalClasses( List<BoxStatement> statements, List<BoxImport> enclosingImports ) {
-		// Build hoisted imports: every local class in this scope gets a synthetic java: import
-		// so that sibling classes can reference each other by simple name at runtime.
-		List<BoxImport> allImports = buildHoistedImports( statements, enclosingImports );
 
 		for ( BoxStatement statement : statements ) {
 			if ( statement instanceof BoxLocalClass localClass ) {
 				String			localName			= localClass.getName().getName();
-				String			syntheticClassName	= "LocalClass$" + localName;
+				String			syntheticClassName	= new FQN( localName ).getClassName();
 
 				JavaTranspiler	child				= new JavaTranspiler();
 				child.setProperty( "classname", syntheticClassName );
@@ -438,8 +451,13 @@ public class JavaTranspiler extends Transpiler {
 				child.setProperty( "mappingPath", this.getProperty( "mappingPath" ) );
 				child.setProperty( "relativePath", this.getProperty( "relativePath" ) );
 
-				BoxClass		asBoxClass		= new BoxClass(
-				    allImports,
+				// Register previously-compiled sibling local classes on the child so extends can resolve them
+				for ( Map.Entry<String, String> entry : this.localClasses.entrySet() ) {
+					BoxImportTransformer.transformInnerClassImport( entry.getKey(), entry.getValue(), child );
+				}
+
+				BoxClass					asBoxClass		= new BoxClass(
+				    enclosingImports,
 				    localClass.getBody(),
 				    localClass.getAnnotations(),
 				    localClass.getDocumentation(),
@@ -449,45 +467,42 @@ public class JavaTranspiler extends Transpiler {
 				    BoxSourceType.valueOf( this.getProperty( "sourceType" ).toUpperCase() )
 				);
 
-				TranspiledCode	localClassCode	= child.transpile( asBoxClass );
-				this.callables.add( localClassCode.getEntryPoint() );
-				this.callables.addAll( localClassCode.getCallables() );
-				registerLocalClass( localName, syntheticClassName );
-			} else if ( statement instanceof BoxTemplateIsland island ) {
-				preCompileLocalClasses( island.getStatements(), enclosingImports );
-			} else if ( statement instanceof BoxScriptIsland island ) {
-				preCompileLocalClasses( island.getStatements(), enclosingImports );
-			} else if ( statement instanceof BoxComponent component && component.getBody() != null ) {
-				preCompileLocalClasses( component.getBody(), enclosingImports );
-			}
-		}
-	}
+				TranspiledCode				localClassCode	= child.transpile( asBoxClass );
 
-	/**
-	 * Scan {@code statements} for top-level {@link BoxLocalClass} nodes and produce a combined
-	 * import list that includes both the original {@code enclosingImports} and one synthetic
-	 * {@code java:<dotFQN> as <simpleName>} import for every local class found.
-	 * <p>
-	 * Adding these synthetic imports means that at runtime, when a local class's
-	 * {@code extends="Animal"} annotation is resolved via
-	 * {@link ortus.boxlang.runtime.runnables.BoxClassSupport#loadSuperClass}, the Java resolver
-	 * can find the sibling class by simple name without any annotation rewriting.
-	 */
-	private List<BoxImport> buildHoistedImports( List<BoxStatement> statements, List<BoxImport> enclosingImports ) {
-		List<BoxImport>	hoisted		= new ArrayList<>( enclosingImports );
-		String			packageName	= this.getProperty( "packageName" );
-		for ( BoxStatement stmt : statements ) {
-			if ( stmt instanceof BoxLocalClass localClass ) {
-				String	localName		= localClass.getName().getName();
-				String	syntheticFQN	= packageName + ".LocalClass$" + localName;
-				hoisted.add( new BoxImport(
-				    new BoxFQN( "java:" + syntheticFQN, null, null ),
-				    new BoxIdentifier( localName, null, null ),
-				    null, null
-				) );
+				// Extract ClassOrInterfaceDeclaration, make it a static inner class referencing outer class fields
+				CompilationUnit				localCU			= localClassCode.getEntryPoint();
+				ClassOrInterfaceDeclaration	innerClass		= localCU.getClassByName( syntheticClassName ).orElseThrow();
+				innerClass.addModifier( Modifier.Keyword.STATIC );
+
+				// Change field initializers to delegate to the outer class's static fields
+				innerClass.getFieldByName( "imports" ).ifPresent( f -> {
+					f.getVariable( 0 ).setInitializer( new FieldAccessExpr( new NameExpr( outerClassName ), "imports" ) );
+				} );
+				innerClass.getFieldByName( "path" ).ifPresent( f -> {
+					f.getVariable( 0 ).setInitializer( new FieldAccessExpr( new NameExpr( outerClassName ), "path" ) );
+				} );
+				innerClass.getFieldByName( "sourceType" ).ifPresent( f -> {
+					f.getVariable( 0 ).setInitializer( new FieldAccessExpr( new NameExpr( outerClassName ), "sourceType" ) );
+				} );
+
+				// Store for embedding in the outer class
+				this.innerClassDeclarations.add( innerClass );
+
+				// Add any callables from the child (shouldn't normally be any for a class)
+				this.callables.addAll( localClassCode.getCallables() );
+
+				registerLocalClass( localName, syntheticClassName );
+
+				// Register an import so "new LocalName()" resolves naturally via the import system
+				BoxImportTransformer.transformInnerClassImport( localName, syntheticClassName, this );
+			} else if ( statement instanceof BoxTemplateIsland island ) {
+				preCompileLocalClasses( island.getStatements() );
+			} else if ( statement instanceof BoxScriptIsland island ) {
+				preCompileLocalClasses( island.getStatements() );
+			} else if ( statement instanceof BoxComponent component && component.getBody() != null ) {
+				preCompileLocalClasses( component.getBody() );
 			}
 		}
-		return hoisted;
 	}
 
 	/**

@@ -734,19 +734,24 @@ public class BoxClassTransformer {
 		    }
 		);
 
-		List<AbstractInsnNode> importNodes = AsmHelper.array( Type.getType( ImportDefinition.class ), Stream.concat(
+		// Build parse-based imports from transpiler.getImports()
+		Stream<List<AbstractInsnNode>>	parsedImports	= transpiler.getImports().stream().map( raw -> {
+															List<AbstractInsnNode> nodes = new ArrayList<>();
+															nodes.addAll( raw );
+															nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+															    Type.getInternalName( ImportDefinition.class ),
+															    "parse",
+															    Type.getMethodDescriptor( Type.getType( ImportDefinition.class ),
+															        Type.getType( String.class ) ),
+															    false ) );
+															return nodes;
+														} );
+
+		List<AbstractInsnNode>			importNodes		= AsmHelper.array( Type.getType( ImportDefinition.class ), Stream.of(
 		    imports.stream(),
-		    transpiler.getImports().stream().map( raw -> {
-			    List<AbstractInsnNode> nodes = new ArrayList<>();
-			    nodes.addAll( raw );
-			    nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-			        Type.getInternalName( ImportDefinition.class ),
-			        "parse",
-			        Type.getMethodDescriptor( Type.getType( ImportDefinition.class ), Type.getType( String.class ) ),
-			        false ) );
-			    return nodes;
-		    } )
-		).filter( l -> l.size() > 0 ).toList() );
+		    parsedImports,
+		    transpiler.getLocalClassRefImportNodes().stream()
+		).flatMap( s -> s ).filter( l -> l.size() > 0 ).toList() );
 		// end import node setup
 
 		AsmHelper.methodWithContextAndClassLocator( classNode, "staticInitializer", Type.getType( IBoxContext.class ), Type.VOID_TYPE, true, transpiler, false,
@@ -784,18 +789,30 @@ public class BoxClassTransformer {
 		final List<String>	finalBlInterfaceNames	= blInterfaceNames;
 
 		AsmHelper.completeWithSplitting( classNode, type, () -> {
-			List<AbstractInsnNode> clinitNodes = new ArrayList<>();
+			List<AbstractInsnNode>	clinitNodes				= new ArrayList<>();
+			String					outerClassInternal		= transpiler.getProperty( "outerClassInternal" );
+			boolean					isInnerClassDelegate	= outerClassInternal != null;
 
-			clinitNodes.addAll( AsmHelper.resolvedFilePathNodes( mappingName, mappingPath, relativePath, filePath ) );
+			if ( isInnerClassDelegate ) {
+				// Inner class: delegate path, sourceType to outer class's static fields
+				clinitNodes.add( new FieldInsnNode( Opcodes.GETSTATIC, outerClassInternal, "path", Type.getDescriptor( ResolvedFilePath.class ) ) );
+			} else {
+				clinitNodes.addAll( AsmHelper.resolvedFilePathNodes( mappingName, mappingPath, relativePath, filePath ) );
+			}
 			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "path",
 			    Type.getDescriptor( ResolvedFilePath.class ) ) );
 
-			clinitNodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
-			    Type.getInternalName( BoxSourceType.class ),
-			    sourceType,
-			    Type.getDescriptor( BoxSourceType.class ) ) );
+			if ( isInnerClassDelegate ) {
+				clinitNodes
+				    .add( new FieldInsnNode( Opcodes.GETSTATIC, outerClassInternal, "sourceType", Type.getDescriptor( BoxSourceType.class ) ) );
+			} else {
+				clinitNodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
+				    Type.getInternalName( BoxSourceType.class ),
+				    sourceType,
+				    Type.getDescriptor( BoxSourceType.class ) ) );
+			}
 			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "sourceType",
@@ -891,12 +908,17 @@ public class BoxClassTransformer {
 			// Note: serialVersionUID is already initialized in the field declaration with a constant value,
 			// so we don't need to write to it in <clinit>
 
-			clinitNodes.addAll( importNodes );
-			clinitNodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
-			    Type.getInternalName( List.class ),
-			    "of",
-			    Type.getMethodDescriptor( Type.getType( List.class ), Type.getType( Object[].class ) ),
-			    true ) );
+			if ( isInnerClassDelegate ) {
+				// Inner class: delegate imports to outer class's static field
+				clinitNodes.add( new FieldInsnNode( Opcodes.GETSTATIC, outerClassInternal, "imports", Type.getDescriptor( List.class ) ) );
+			} else {
+				clinitNodes.addAll( importNodes );
+				clinitNodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+				    Type.getInternalName( List.class ),
+				    "of",
+				    Type.getMethodDescriptor( Type.getType( List.class ), Type.getType( Object[].class ) ),
+				    true ) );
+			}
 			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC,
 			    type.getInternalName(),
 			    "imports",

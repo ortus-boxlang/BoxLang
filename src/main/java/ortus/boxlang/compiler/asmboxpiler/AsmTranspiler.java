@@ -541,16 +541,22 @@ public class AsmTranspiler extends Transpiler {
 		);
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
-			AsmHelper.array( Type.getType( ImportDefinition.class ), getImports(), ( raw, index ) -> {
-				List<AbstractInsnNode> nodes = new ArrayList<>();
-				nodes.addAll( raw );
+			// Build combined import instruction lists from both parse-based and classRef-based imports
+			List<List<AbstractInsnNode>> allImportNodes = new ArrayList<>();
+			// Parse-based imports: wrap each with ImportDefinition.parse()
+			for ( List<AbstractInsnNode> raw : getImports() ) {
+				List<AbstractInsnNode> nodes = new ArrayList<>( raw );
 				nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 				    Type.getInternalName( ImportDefinition.class ),
 				    "parse",
 				    Type.getMethodDescriptor( Type.getType( ImportDefinition.class ), Type.getType( String.class ) ),
 				    false ) );
-				return nodes;
-			} ).forEach( node -> node.accept( methodVisitor ) );
+				allImportNodes.add( nodes );
+			}
+			// ClassRef-based imports (local classes): already produce ImportDefinition on stack
+			allImportNodes.addAll( getLocalClassRefImportNodes() );
+
+			AsmHelper.array( Type.getType( ImportDefinition.class ), allImportNodes ).forEach( node -> node.accept( methodVisitor ) );
 			methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( List.class ),
 			    "of",
@@ -681,7 +687,7 @@ public class AsmTranspiler extends Transpiler {
 		for ( BoxStatement stmt : statements ) {
 			if ( stmt instanceof BoxLocalClass localClass ) {
 				String		localName			= localClass.getName().getName();
-				String		syntheticClassname	= outerClassname + "$LocalClass$" + localName;
+				String		syntheticClassname	= outerClassname + "$" + localName;
 				String		syntheticDotFQN		= outerPackage + "." + syntheticClassname;
 				String		syntheticInternal	= outerPackageInternal + "/" + syntheticClassname;
 
@@ -694,6 +700,12 @@ public class AsmTranspiler extends Transpiler {
 				child.setProperty( "mappingName", getProperty( "mappingName" ) );
 				child.setProperty( "mappingPath", getProperty( "mappingPath" ) );
 				child.setProperty( "relativePath", getProperty( "relativePath" ) );
+				child.setProperty( "outerClassInternal", outerPackageInternal + "/" + outerClassname );
+
+				// Register previously-compiled sibling local classes on the child so extends can resolve them
+				for ( Map.Entry<String, String> entry : getLocalClasses().entrySet() ) {
+					child.addLocalClassRefImport( entry.getKey(), entry.getValue() );
+				}
 
 				// Compile with the enriched import list (enclosing + all sibling local class imports)
 				BoxClass	asBoxClass		= new BoxClass( allImports, localClass.getBody(),
@@ -709,6 +721,11 @@ public class AsmTranspiler extends Transpiler {
 
 				// Register so BoxNewTransformer can emit a direct class reference for "new Animal()"
 				registerLocalClass( localName, syntheticInternal );
+
+				// Also register a classRef import on the parent transpiler so that
+				// static access (e.g. Config::MAX_RETRIES) and other name-based resolution works
+				// at both compile time (matchesImport) and runtime (findFromLocalClass).
+				addLocalClassRefImport( localName, syntheticInternal );
 			} else if ( stmt instanceof BoxTemplateIsland island ) {
 				preCompileLocalClasses( island.getStatements(), enclosingImports, outerClassname, outerPackage, outerPackageInternal );
 			} else if ( stmt instanceof BoxScriptIsland island ) {
@@ -735,7 +752,7 @@ public class AsmTranspiler extends Transpiler {
 		for ( BoxStatement stmt : statements ) {
 			if ( stmt instanceof BoxLocalClass localClass ) {
 				String	localName		= localClass.getName().getName();
-				String	syntheticFQN	= outerPackage + "." + outerClassname + "$LocalClass$" + localName;
+				String	syntheticFQN	= outerPackage + "." + outerClassname + "$" + localName;
 				hoisted.add( new BoxImport(
 				    new BoxFQN( "java:" + syntheticFQN, null, null ),
 				    new BoxIdentifier( localName, null, null ),
