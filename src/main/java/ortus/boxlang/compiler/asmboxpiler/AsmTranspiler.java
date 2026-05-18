@@ -741,6 +741,9 @@ public class AsmTranspiler extends Transpiler {
 				child.getAuxiliary().forEach( this::setAuxiliary );
 
 				// Register so BoxNewTransformer can emit a direct class reference for "new Animal()"
+				if ( getLocalClasses().containsKey( localName ) ) {
+					throw new BoxRuntimeException( "Duplicate local class name [" + localName + "]. A local class with this name is already defined." );
+				}
 				registerLocalClass( localName, syntheticInternal );
 
 				// Also register a classRef import on the parent transpiler so that

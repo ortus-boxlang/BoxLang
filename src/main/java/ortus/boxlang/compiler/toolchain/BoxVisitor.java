@@ -3,8 +3,10 @@ package ortus.boxlang.compiler.toolchain;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -172,6 +174,9 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 	private final BoxExpressionVisitor	expressionVisitor;
 	public ComponentService				componentService	= BoxRuntime.getInstance().getComponentService();
 
+	/** Tracks local class names seen in this file to detect duplicates during parsing. */
+	private final Set<String>			seenLocalClassNames	= new HashSet<>();
+
 	public BoxVisitor( BoxParser tools ) {
 		this.tools				= tools;
 		this.expressionVisitor	= new BoxExpressionVisitor( tools, this );
@@ -291,7 +296,13 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 			ancestor = ancestor.getParent();
 		}
 
-		BoxIdentifier						name			= ( BoxIdentifier ) ctx.identifier().accept( expressionVisitor );
+		BoxIdentifier name = ( BoxIdentifier ) ctx.identifier().accept( expressionVisitor );
+
+		// Semantic check: duplicate local class names in the same file
+		if ( !seenLocalClassNames.add( name.getName().toLowerCase() ) ) {
+			tools.reportError( "Duplicate local class name [" + name.getName() + "]. A local class with this name is already defined in this file.", pos );
+		}
+
 		List<BoxStatement>					body			= buildClassBody( ctx.classBody() );
 		List<BoxAnnotation>					annotations		= new ArrayList<>();
 		List<BoxDocumentationAnnotation>	documentation	= new ArrayList<>();

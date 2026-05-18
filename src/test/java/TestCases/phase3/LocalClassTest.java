@@ -790,4 +790,52 @@ public class LocalClassTest {
 		} );
 	}
 
+	@DisplayName( "Duplicate local class names should error" )
+	@Test
+	public void testDuplicateLocalClassNameErrors() {
+		assertThrows( Exception.class, () -> {
+			instance.executeSource(
+			    """
+			    class Person {
+			        function getName() {
+			            return "first";
+			        }
+			    }
+
+			    class Person {
+			        function getName() {
+			            return "second";
+			        }
+			    }
+
+			    result = new Person().getName();
+			    """,
+			    context );
+		} );
+	}
+
+	@DisplayName( "Duplicate local class names are case-insensitive" )
+	@Test
+	public void testDuplicateLocalClassNameCaseInsensitive() {
+		assertThrows( Exception.class, () -> {
+			instance.executeSource(
+			    """
+			    class Widget {
+			        function getName() {
+			            return "lower";
+			        }
+			    }
+
+			    class WIDGET {
+			        function getName() {
+			            return "upper";
+			        }
+			    }
+
+			    result = new Widget().getName();
+			    """,
+			    context );
+		} );
+	}
+
 }

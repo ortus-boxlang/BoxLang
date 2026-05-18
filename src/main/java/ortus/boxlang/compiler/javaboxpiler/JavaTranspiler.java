@@ -508,6 +508,9 @@ public class JavaTranspiler extends Transpiler {
 				// Add any callables from the child (shouldn't normally be any for a class)
 				this.callables.addAll( localClassCode.getCallables() );
 
+				if ( this.localClasses.containsKey( localName ) ) {
+					throw new BoxRuntimeException( "Duplicate local class name [" + localName + "]. A local class with this name is already defined." );
+				}
 				registerLocalClass( localName, syntheticClassName );
 
 				// Register an import so "new LocalName()" resolves naturally via the import system
