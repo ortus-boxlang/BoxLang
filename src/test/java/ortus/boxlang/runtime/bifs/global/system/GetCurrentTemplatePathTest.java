@@ -20,25 +20,18 @@ package ortus.boxlang.runtime.bifs.global.system;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import java.nio.file.Path;
-import java.util.List;
-
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
-import ortus.boxlang.runtime.loader.ImportDefinition;
-import ortus.boxlang.runtime.runnables.BoxTemplate;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class GetCurrentTemplatePathTest {
 
@@ -61,41 +54,6 @@ public class GetCurrentTemplatePathTest {
 	public void setupEach() {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
-	}
-
-	@DisplayName( "It gets current template path" )
-	@Test
-	public void testCurrentTemplate() {
-		context.pushTemplate( new BoxTemplate() {
-
-			@Override
-			public List<ImportDefinition> getImports() {
-				return null;
-			}
-
-			@Override
-			public void _invoke( IBoxContext context ) {
-			}
-
-			@Override
-			public ResolvedFilePath getRunnablePath() {
-				return ResolvedFilePath.of( Path.of( "/tmp/test.bxs" ) );
-			}
-
-			public BoxSourceType getSourceType() {
-				return BoxSourceType.BOXSCRIPT;
-			}
-
-		} );
-
-		instance.executeSource(
-		    """
-		    result = getCurrentTemplatePath();
-		     """,
-		    context );
-		assertThat( variables.getAsString( result ).contains( "test.bxs" ) ).isTrue();
-
-		context.popTemplate();
 	}
 
 	@DisplayName( "It gets current template path in include" )

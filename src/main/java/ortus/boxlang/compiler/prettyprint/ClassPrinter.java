@@ -31,6 +31,7 @@ import ortus.boxlang.compiler.ast.statement.BoxAccessModifier;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
+import ortus.boxlang.compiler.ast.statement.BoxLocalClass;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 
@@ -60,6 +61,10 @@ public class ClassPrinter {
 			default -> {
 			}
 		}
+	}
+
+	public void print( BoxLocalClass node, BoxSourceType sourceType ) {
+		printBoxLocalClass( node );
 	}
 
 	private void printBoxClass( BoxClass classNode ) {
@@ -103,6 +108,47 @@ public class ClassPrinter {
 		    .append( "}" );
 
 		visitor.printPostComments( classNode );
+	}
+
+	private void printBoxLocalClass( BoxLocalClass localClass ) {
+		var		currentDoc		= visitor.getCurrentDoc();
+		var		methodOrder		= visitor.config.getClassConfig().getMethodOrder();
+		boolean	methodGrouping	= visitor.config.getClassConfig().getMethodGrouping();
+
+		visitor.printPreComments( localClass );
+
+		// split annotations into pre and post
+		var	preAnnotations	= new ArrayList<BoxAnnotation>();
+		var	postAnnotations	= new ArrayList<BoxAnnotation>();
+		for ( var anno : localClass.getAnnotations() ) {
+			if ( anno.getSourceText() == null || anno.getSourceText().startsWith( "@" ) ) {
+				preAnnotations.add( anno );
+			} else {
+				postAnnotations.add( anno );
+			}
+		}
+
+		printBoxAnnotations( preAnnotations );
+
+		currentDoc.append( "class " + localClass.getName().getName() );
+		visitor.helperPrinter.printKeyValueAnnotations( postAnnotations, false );
+		currentDoc.append( " {" );
+
+		visitor.pushDoc( DocType.INDENT ).append( Line.HARD );
+		printProperties( localClass.getProperties() );
+		List<BoxStatement> sortedBody = sortClassBody( localClass.getBody(), methodOrder, methodGrouping );
+		if ( !localClass.getProperties().isEmpty() && sortedBody.isEmpty() ) {
+			visitor.newLine();
+		}
+		visitor.helperPrinter.printStatements( sortedBody );
+		visitor.printInsideComments( localClass, false );
+
+		currentDoc
+		    .append( visitor.popDoc() )
+		    .append( Line.HARD )
+		    .append( "}" );
+
+		visitor.printPostComments( localClass );
 	}
 
 	private void printBoxInterface( BoxInterface interfaceNode ) {

@@ -68,6 +68,12 @@ boxClass
     : importStatement* preAnnotation* ABSTRACT? FINAL? CLASS postAnnotation* LBRACE property* classBody RBRACE
     ;
 
+// class Foo {}  -- named local class inside a script/template (not a top-level class file)
+// They do not have imports it uses the context imports.
+localClass
+    : preAnnotation* ABSTRACT? FINAL? CLASS identifier postAnnotation* LBRACE property* classBody RBRACE
+    ;
+
 classBody: (classBodyStatement | SEMICOLON)*
     ;
 
@@ -236,6 +242,7 @@ statement
     | expressionStatement // Allows for statements like complicated.thing.foo.bar--
     | emptyStatementBlock
     | componentIsland
+    | localClass
     ;
 
 // op=(VAR | FINAL) etc

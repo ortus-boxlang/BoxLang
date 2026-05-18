@@ -219,7 +219,7 @@ public class BaseResolver implements IClassResolver {
 		    // Discover import by matching the resolver prefix and the class name or alias or multi-import
 		    // This runs from concrete resolvers: bx, java, etc.
 		    // So if the resolver prefix matches, we continue, else we skip it.
-		    .filter( thisImport -> importApplies( thisImport ) && importHas( context, thisImport, className ) )
+		    .filter( thisImport -> !thisImport.hasClassRef() && importApplies( thisImport ) && importHas( context, thisImport, className ) )
 		    // Return the first one, the first one wins
 		    .findFirst()
 		    // Convert the import to a fully qualified class name

@@ -101,6 +101,7 @@ import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
+import ortus.boxlang.compiler.ast.statement.BoxLocalClass;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
@@ -389,6 +390,33 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			newLineIfNeeded();
 		}
 		newLine();
+		for ( var statement : node.getBody() ) {
+			statement.accept( this );
+			newLineIfNeeded();
+		}
+		printInsideComments( node );
+		decreaseIndent();
+		print( "}" );
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxLocalClass node ) {
+		printPreOnlyComments( node );
+		for ( var anno : node.getAnnotations() ) {
+			anno.accept( this );
+			newLineIfNeeded();
+		}
+		increaseIndent();
+		print( "class " + node.getName().getName() + " {" );
+		newLine();
+		for ( var property : node.getProperties() ) {
+			property.accept( this );
+			newLineIfNeeded();
+		}
+		if ( !node.getProperties().isEmpty() ) {
+			newLine();
+		}
 		for ( var statement : node.getBody() ) {
 			statement.accept( this );
 			newLineIfNeeded();

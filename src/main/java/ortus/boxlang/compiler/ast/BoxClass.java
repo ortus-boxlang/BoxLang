@@ -34,7 +34,7 @@ import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 /**
  * Root node for a Class
  */
-public class BoxClass extends BoxNode implements IBoxDocumentableNode {
+public class BoxClass extends BoxStatement implements IBoxDocumentableNode {
 
 	private List<BoxStatement>					body;
 	private List<BoxImport>						imports;

@@ -232,7 +232,10 @@ public class DiskClassLoader extends URLClassLoader {
 			// Ok, we give up. Load it up.
 			var clazz = super.loadClass( name );
 			// Force the class to initialize here, so we can catch initialization errors in our ClassInfo
-			Class.forName( name, true, this );
+			// Skip initialization for inner classes (contain $) to avoid circular initialization
+			if ( !name.contains( "$" ) ) {
+				Class.forName( name, true, this );
+			}
 			loadedClasses.put( name, new java.lang.ref.WeakReference<>( clazz ) );
 			return clazz;
 		}
@@ -248,12 +251,39 @@ public class DiskClassLoader extends URLClassLoader {
 		// Define it
 		Class<?> clazz = defineClass( name, bytes, 0, bytes.length );
 		// Force the class to initialize here, so we can catch initialization errors in our ClassInfo
-		try {
-			Class.forName( name, true, this );
-		} catch ( ClassNotFoundException e ) {
-			// This class will always exist because we literally just defined it.
+		// Skip initialization for inner classes (contain $) to avoid circular initialization when
+		// the outer class references the inner class during its own <clinit>
+		if ( !name.contains( "$" ) ) {
+			try {
+				Class.forName( name, true, this );
+			} catch ( ClassNotFoundException e ) {
+				// This class will always exist because we literally just defined it.
+			}
 		}
 		// Add it to our cache
+		synchronized ( loadedClasses ) {
+			loadedClasses.put( name, new java.lang.ref.WeakReference<>( clazz ) );
+		}
+		return clazz;
+	}
+
+	/**
+	 * Side-load a class from its bytecode WITHOUT triggering initialization.
+	 * The class is defined in this classloader and added to the loaded-classes cache
+	 * so that {@code loadClass()} can find it, but its static initializer ({@code <clinit>})
+	 * is NOT executed.
+	 * <p>
+	 * Use this when multiple classes reference each other in their static initializers
+	 * (e.g., local classes with sibling imports). Define all classes first, then initialize
+	 * them with {@link #defineClassWithoutInit(String, byte[])}.
+	 *
+	 * @param name  The fully qualified name of the class
+	 * @param bytes The bytecode of the class
+	 *
+	 * @return The defined (but not initialized) class
+	 */
+	public Class<?> defineClassWithoutInit( String name, byte[] bytes ) {
+		Class<?> clazz = defineClass( name, bytes, 0, bytes.length );
 		synchronized ( loadedClasses ) {
 			loadedClasses.put( name, new java.lang.ref.WeakReference<>( clazz ) );
 		}

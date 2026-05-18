@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.tools.DiagnosticCollector;
@@ -33,7 +34,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.ArrayCreationExpr;
 import com.github.javaparser.ast.expr.ArrayInitializerExpr;
@@ -49,6 +52,7 @@ import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
+import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.BoxStaticInitializer;
 import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
@@ -97,6 +101,7 @@ import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
+import ortus.boxlang.compiler.ast.statement.BoxLocalClass;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
@@ -173,8 +178,10 @@ import ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxWhileTransfo
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.component.BoxComponentTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.component.BoxScriptIslandTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.statement.component.BoxTemplateIslandTransformer;
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.FQN;
 import ortus.boxlang.runtime.util.Pair;
 
 /**
@@ -197,6 +204,8 @@ public class JavaTranspiler extends Transpiler {
 	private List<CompilationUnit>							callables				= new ArrayList<>();
 	private List<Statement>									UDFDeclarations			= new ArrayList<>();
 	private List<Statement>									staticUDFDeclarations	= new ArrayList<>();
+	private Map<String, String>								localClasses			= new HashMap<>();
+	private List<ClassOrInterfaceDeclaration>				innerClassDeclarations	= new ArrayList<>();
 
 	public JavaTranspiler() {
 		registry.put( BoxScript.class, new BoxScriptTransformer( this ) );
@@ -261,6 +270,7 @@ public class JavaTranspiler extends Transpiler {
 		registry.put( BoxStaticInitializer.class, new BoxStaticInitializerTransformer( this ) );
 		registry.put( BoxFunctionalMemberAccess.class, new BoxFunctionalMemberAccessTransformer( this ) );
 		registry.put( BoxFunctionalBIFAccess.class, new BoxFunctionalBIFAccessTransformer( this ) );
+		registry.put( BoxLocalClass.class, new ortus.boxlang.compiler.javaboxpiler.transformer.statement.BoxLocalClassTransformer( this ) );
 
 		// Templating Components
 		registry.put( BoxTemplate.class, new BoxTemplateTransformer( this ) );
@@ -369,10 +379,180 @@ public class JavaTranspiler extends Transpiler {
 	 */
 	@Override
 	public TranspiledCode transpile( BoxNode node ) throws BoxRuntimeException {
+		this.localClasses.clear();
+		if ( node instanceof BoxScript boxScript ) {
+			preCompileLocalClasses( boxScript.getStatements() );
+		} else if ( node instanceof BoxTemplate boxTemplate ) {
+			preCompileLocalClasses( boxTemplate.getStatements() );
+		}
+
 		CompilationUnit			entryPoint		= ( CompilationUnit ) transform( node );
 		List<CompilationUnit>	allCallables	= getCallables();
 		allCallables.addAll( getUDFcallables().values() );
 		return new TranspiledCode( entryPoint, allCallables );
+	}
+
+	/**
+	 * Register a named local class alias to a generated Java inner class name.
+	 *
+	 * @param alias         local class identifier used in source code
+	 * @param javaClassName generated Java class name used as nested type
+	 */
+	public void registerLocalClass( String alias, String javaClassName ) {
+		this.localClasses.put( alias, javaClassName );
+	}
+
+	/**
+	 * Resolve a local class alias to its generated Java class name.
+	 *
+	 * @param alias local class identifier used in source code
+	 *
+	 * @return generated Java class name, or null when alias is not a local class
+	 */
+	public String getLocalClassName( String alias ) {
+		return this.localClasses.get( alias );
+	}
+
+	@Override
+	public boolean matchesClassRefImport( String token ) {
+		return this.localClasses.keySet().stream().anyMatch( k -> k.equalsIgnoreCase( token ) );
+	}
+
+	/**
+	 * Get the list of inner class declarations for embedding in the outer class.
+	 *
+	 * @return list of ClassOrInterfaceDeclaration nodes representing local classes compiled as static inner classes
+	 */
+	public List<ClassOrInterfaceDeclaration> getInnerClassDeclarations() {
+		return this.innerClassDeclarations;
+	}
+
+	private void preCompileLocalClasses( List<BoxStatement> statements ) {
+		String			outerClassName		= this.getProperty( "classname" );
+
+		// Collect enclosing imports so local classes can resolve them at runtime
+		List<BoxImport>	enclosingImports	= statements.stream()
+		    .filter( s -> s instanceof BoxImport )
+		    .map( s -> ( BoxImport ) s )
+		    .collect( Collectors.toList() );
+
+		for ( BoxStatement statement : statements ) {
+			if ( statement instanceof BoxLocalClass localClass ) {
+				String localName = localClass.getName().getName();
+
+				// Check if the local class name conflicts with an existing import
+				for ( BoxImport imp : enclosingImports ) {
+					String importName = imp.getAlias() != null ? imp.getAlias().getName() : null;
+					if ( importName == null && imp.getExpression() instanceof BoxFQN fqn ) {
+						String	value		= fqn.getValue();
+						int		colonIdx	= value.indexOf( ':' );
+						if ( colonIdx >= 0 ) {
+							value = value.substring( colonIdx + 1 );
+						}
+						int lastDot = value.lastIndexOf( '.' );
+						importName = lastDot >= 0 ? value.substring( lastDot + 1 ) : value;
+					}
+					if ( importName != null && importName.equalsIgnoreCase( localName ) ) {
+						throw new BoxRuntimeException( "Local class [" + localName + "] conflicts with an import of the same name." );
+					}
+				}
+
+				String			syntheticClassName	= new FQN( localName ).getClassName();
+
+				JavaTranspiler	child				= new JavaTranspiler();
+				child.setProperty( "classname", syntheticClassName );
+				child.setProperty( "packageName", this.getProperty( "packageName" ) );
+				child.setProperty( "boxFQN", localName );
+				child.setProperty( "baseclass", "BoxClass" );
+				child.setProperty( "returnType", "void" );
+				child.setProperty( "sourceType", this.getProperty( "sourceType" ) );
+				child.setProperty( "mappingName", this.getProperty( "mappingName" ) );
+				child.setProperty( "mappingPath", this.getProperty( "mappingPath" ) );
+				child.setProperty( "relativePath", this.getProperty( "relativePath" ) );
+
+				// Register previously-compiled sibling local classes on the child so extends can resolve them
+				for ( Map.Entry<String, String> entry : this.localClasses.entrySet() ) {
+					BoxImportTransformer.transformInnerClassImport( entry.getKey(), entry.getValue(), child );
+				}
+
+				BoxClass					asBoxClass		= new BoxClass(
+				    enclosingImports,
+				    localClass.getBody(),
+				    localClass.getAnnotations(),
+				    localClass.getDocumentation(),
+				    localClass.getProperties(),
+				    localClass.getPosition(),
+				    localClass.getSourceText(),
+				    BoxSourceType.valueOf( this.getProperty( "sourceType" ).toUpperCase() )
+				);
+
+				TranspiledCode				localClassCode	= child.transpile( asBoxClass );
+
+				// Extract ClassOrInterfaceDeclaration, make it a static inner class referencing outer class fields
+				CompilationUnit				localCU			= localClassCode.getEntryPoint();
+				ClassOrInterfaceDeclaration	innerClass		= localCU.getClassByName( syntheticClassName ).orElseThrow();
+				innerClass.addModifier( Modifier.Keyword.STATIC );
+
+				// Remove imports/path/sourceType field declarations — inner classes delegate to the outer class
+				Set<String> delegatedFields = Set.of( "imports", "path", "sourceType" );
+				for ( String fieldName : delegatedFields ) {
+					innerClass.getFieldByName( fieldName ).ifPresent( f -> f.remove() );
+				}
+
+				// Redirect all references to these fields to the outer class
+				redirectOuterClassFields( innerClass, syntheticClassName, outerClassName, delegatedFields );
+
+				// Store for embedding in the outer class
+				this.innerClassDeclarations.add( innerClass );
+
+				// Add any callables from the child (shouldn't normally be any for a class)
+				this.callables.addAll( localClassCode.getCallables() );
+
+				if ( this.localClasses.containsKey( localName ) ) {
+					throw new BoxRuntimeException( "Duplicate local class name [" + localName + "]. A local class with this name is already defined." );
+				}
+				registerLocalClass( localName, syntheticClassName );
+
+				// Register an import so "new LocalName()" resolves naturally via the import system
+				BoxImportTransformer.transformInnerClassImport( localName, syntheticClassName, this );
+			} else if ( statement instanceof BoxTemplateIsland island ) {
+				preCompileLocalClasses( island.getStatements() );
+			} else if ( statement instanceof BoxScriptIsland island ) {
+				preCompileLocalClasses( island.getStatements() );
+			} else if ( statement instanceof BoxComponent component && component.getBody() != null ) {
+				preCompileLocalClasses( component.getBody() );
+			}
+		}
+	}
+
+	/**
+	 * Redirect all references to delegated fields (imports, path, sourceType) in an inner class
+	 * to read from the outer class instead.
+	 * <p>
+	 * Handles both unqualified references ({@code imports}) and qualified references
+	 * ({@code InnerClass.imports}) by replacing them with {@code OuterClass.fieldName}.
+	 *
+	 * @param innerClass     The inner class AST node to process
+	 * @param innerClassName The simple name of the inner class
+	 * @param outerClassName The simple name of the outer class
+	 * @param fieldNames     The set of field names to redirect
+	 */
+	private void redirectOuterClassFields( ClassOrInterfaceDeclaration innerClass, String innerClassName, String outerClassName, Set<String> fieldNames ) {
+		// Replace qualified access: InnerClass.fieldName → OuterClass.fieldName
+		innerClass.walk( FieldAccessExpr.class, fae -> {
+			if ( fieldNames.contains( fae.getNameAsString() )
+			    && fae.getScope() instanceof NameExpr scope
+			    && scope.getNameAsString().equals( innerClassName ) ) {
+				scope.setName( outerClassName );
+			}
+		} );
+		// Replace unqualified access: fieldName → OuterClass.fieldName
+		innerClass.walk( NameExpr.class, ne -> {
+			if ( fieldNames.contains( ne.getNameAsString() )
+			    && ! ( ne.getParentNode().isPresent() && ne.getParentNode().get() instanceof FieldAccessExpr ) ) {
+				ne.replace( new FieldAccessExpr( new NameExpr( outerClassName ), ne.getNameAsString() ) );
+			}
+		} );
 	}
 
 	/**
@@ -395,7 +575,7 @@ public class JavaTranspiler extends Transpiler {
 
 	/**
 	 * Get the map of UDF invokers, which maps a UDF key to the corresponding Java method that invokes the UDF
-	 * 
+	 *
 	 * @return the map of UDF invokers
 	 */
 	public Map<Key, Pair<MethodDeclaration, Expression>> getUDFInvokers() {
@@ -405,7 +585,7 @@ public class JavaTranspiler extends Transpiler {
 	/**
 	 * Get the list of Lambda invokers, which contains pairs of (invoker method, instantiation expression)
 	 * for each lambda in the script.
-	 * 
+	 *
 	 * @return the list of lambda invokers
 	 */
 	public List<Pair<MethodDeclaration, Expression>> getLambdaInvokers() {
@@ -415,7 +595,7 @@ public class JavaTranspiler extends Transpiler {
 	/**
 	 * Get the list of Closure invokers, which contains pairs of (invoker method, instantiation expression)
 	 * for each closure in the script.
-	 * 
+	 *
 	 * @return the list of closure invokers
 	 */
 	public List<Pair<MethodDeclaration, Expression>> getClosureInvokers() {
