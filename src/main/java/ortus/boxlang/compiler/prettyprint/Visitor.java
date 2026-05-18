@@ -94,6 +94,7 @@ import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
+import ortus.boxlang.compiler.ast.statement.BoxLocalClass;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
@@ -421,6 +422,11 @@ public class Visitor extends VoidBoxVisitor {
 
 	@Override
 	public void visit( BoxClass node ) {
+		classPrinter.print( node, currentSourceType.peek() );
+	}
+
+	@Override
+	public void visit( BoxLocalClass node ) {
 		classPrinter.print( node, currentSourceType.peek() );
 	}
 

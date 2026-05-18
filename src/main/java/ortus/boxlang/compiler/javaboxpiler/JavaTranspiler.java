@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.tools.DiagnosticCollector;
@@ -437,7 +438,16 @@ public class JavaTranspiler extends Transpiler {
 
 		for ( BoxStatement statement : statements ) {
 			if ( statement instanceof BoxLocalClass localClass ) {
-				String			localName			= localClass.getName().getName();
+				String localName = localClass.getName().getName();
+
+				// Check if the local class name conflicts with an existing import
+				for ( BoxImport imp : enclosingImports ) {
+					String importName = getEffectiveImportName( imp );
+					if ( importName != null && importName.equalsIgnoreCase( localName ) ) {
+						throw new BoxRuntimeException( "Local class [" + localName + "] conflicts with an import of the same name." );
+					}
+				}
+
 				String			syntheticClassName	= new FQN( localName ).getClassName();
 
 				JavaTranspiler	child				= new JavaTranspiler();
@@ -474,16 +484,14 @@ public class JavaTranspiler extends Transpiler {
 				ClassOrInterfaceDeclaration	innerClass		= localCU.getClassByName( syntheticClassName ).orElseThrow();
 				innerClass.addModifier( Modifier.Keyword.STATIC );
 
-				// Change field initializers to delegate to the outer class's static fields
-				innerClass.getFieldByName( "imports" ).ifPresent( f -> {
-					f.getVariable( 0 ).setInitializer( new FieldAccessExpr( new NameExpr( outerClassName ), "imports" ) );
-				} );
-				innerClass.getFieldByName( "path" ).ifPresent( f -> {
-					f.getVariable( 0 ).setInitializer( new FieldAccessExpr( new NameExpr( outerClassName ), "path" ) );
-				} );
-				innerClass.getFieldByName( "sourceType" ).ifPresent( f -> {
-					f.getVariable( 0 ).setInitializer( new FieldAccessExpr( new NameExpr( outerClassName ), "sourceType" ) );
-				} );
+				// Remove imports/path/sourceType field declarations — inner classes delegate to the outer class
+				Set<String> delegatedFields = Set.of( "imports", "path", "sourceType" );
+				for ( String fieldName : delegatedFields ) {
+					innerClass.getFieldByName( fieldName ).ifPresent( f -> f.remove() );
+				}
+
+				// Redirect all references to these fields to the outer class
+				redirectOuterClassFields( innerClass, syntheticClassName, outerClassName, delegatedFields );
 
 				// Store for embedding in the outer class
 				this.innerClassDeclarations.add( innerClass );
@@ -503,6 +511,55 @@ public class JavaTranspiler extends Transpiler {
 				preCompileLocalClasses( component.getBody() );
 			}
 		}
+	}
+
+	/**
+	 * Get the effective name that an import introduces into scope (either the explicit alias or the last segment of the FQN).
+	 */
+	private String getEffectiveImportName( BoxImport imp ) {
+		if ( imp.getAlias() != null ) {
+			return imp.getAlias().getName();
+		}
+		if ( imp.getExpression() instanceof BoxFQN fqn ) {
+			String	value		= fqn.getValue();
+			int		colonIdx	= value.indexOf( ':' );
+			if ( colonIdx >= 0 ) {
+				value = value.substring( colonIdx + 1 );
+			}
+			int lastDot = value.lastIndexOf( '.' );
+			return lastDot >= 0 ? value.substring( lastDot + 1 ) : value;
+		}
+		return null;
+	}
+
+	/**
+	 * Redirect all references to delegated fields (imports, path, sourceType) in an inner class
+	 * to read from the outer class instead.
+	 * <p>
+	 * Handles both unqualified references ({@code imports}) and qualified references
+	 * ({@code InnerClass.imports}) by replacing them with {@code OuterClass.fieldName}.
+	 *
+	 * @param innerClass     The inner class AST node to process
+	 * @param innerClassName The simple name of the inner class
+	 * @param outerClassName The simple name of the outer class
+	 * @param fieldNames     The set of field names to redirect
+	 */
+	private void redirectOuterClassFields( ClassOrInterfaceDeclaration innerClass, String innerClassName, String outerClassName, Set<String> fieldNames ) {
+		// Replace qualified access: InnerClass.fieldName → OuterClass.fieldName
+		innerClass.walk( FieldAccessExpr.class, fae -> {
+			if ( fieldNames.contains( fae.getNameAsString() )
+			    && fae.getScope() instanceof NameExpr scope
+			    && scope.getNameAsString().equals( innerClassName ) ) {
+				scope.setName( outerClassName );
+			}
+		} );
+		// Replace unqualified access: fieldName → OuterClass.fieldName
+		innerClass.walk( NameExpr.class, ne -> {
+			if ( fieldNames.contains( ne.getNameAsString() )
+			    && ! ( ne.getParentNode().isPresent() && ne.getParentNode().get() instanceof FieldAccessExpr ) ) {
+				ne.replace( new FieldAccessExpr( new NameExpr( outerClassName ), ne.getNameAsString() ) );
+			}
+		} );
 	}
 
 	/**

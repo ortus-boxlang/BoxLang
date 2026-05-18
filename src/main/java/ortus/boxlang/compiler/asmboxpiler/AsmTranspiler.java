@@ -686,7 +686,16 @@ public class AsmTranspiler extends Transpiler {
 
 		for ( BoxStatement stmt : statements ) {
 			if ( stmt instanceof BoxLocalClass localClass ) {
-				String		localName			= localClass.getName().getName();
+				String localName = localClass.getName().getName();
+
+				// Check if the local class name conflicts with an existing import
+				for ( BoxImport imp : enclosingImports ) {
+					String importName = getEffectiveImportName( imp );
+					if ( importName != null && importName.equalsIgnoreCase( localName ) ) {
+						throw new BoxRuntimeException( "Local class [" + localName + "] conflicts with an import of the same name." );
+					}
+				}
+
 				String		syntheticClassname	= outerClassname + "$" + localName;
 				String		syntheticDotFQN		= outerPackage + "." + syntheticClassname;
 				String		syntheticInternal	= outerPackageInternal + "/" + syntheticClassname;
@@ -708,12 +717,18 @@ public class AsmTranspiler extends Transpiler {
 				}
 
 				// Compile with the enriched import list (enclosing + all sibling local class imports)
-				BoxClass	asBoxClass		= new BoxClass( allImports, localClass.getBody(),
+				BoxClass	asBoxClass			= new BoxClass( allImports, localClass.getBody(),
 				    localClass.getAnnotations(), localClass.getDocumentation(), localClass.getProperties(),
 				    localClass.getPosition(), localClass.getSourceText(),
 				    BoxSourceType.valueOf( getProperty( "sourceType" ).toUpperCase() ) );
 
-				ClassNode	localClassNode	= BoxClassTransformer.transpile( child, asBoxClass );
+				ClassNode	localClassNode		= BoxClassTransformer.transpile( child, asBoxClass );
+
+				// Post-process: remove imports/path/sourceType fields from inner class and redirect all
+				// references to the outer class's fields. Inner classes should not declare their own copies.
+				String		outerClassInternal	= outerPackageInternal + "/" + outerClassname;
+				redirectOuterClassFields( localClassNode, syntheticInternal, outerClassInternal );
+
 				setAuxiliary( syntheticDotFQN, localClassNode );
 
 				// Pull in any nested auxiliaries produced by the local class (lambda, closure, UDF bodies)
@@ -761,6 +776,76 @@ public class AsmTranspiler extends Transpiler {
 			}
 		}
 		return hoisted;
+	}
+
+	/**
+	 * Get the effective name that an import introduces into scope (either the explicit alias or the last segment of the FQN).
+	 */
+	private String getEffectiveImportName( BoxImport imp ) {
+		if ( imp.getAlias() != null ) {
+			return imp.getAlias().getName();
+		}
+		if ( imp.getExpression() instanceof BoxFQN fqn ) {
+			String	value		= fqn.getValue();
+			int		colonIdx	= value.indexOf( ':' );
+			if ( colonIdx >= 0 ) {
+				value = value.substring( colonIdx + 1 );
+			}
+			int lastDot = value.lastIndexOf( '.' );
+			return lastDot >= 0 ? value.substring( lastDot + 1 ) : value;
+		}
+		return null;
+	}
+
+	/**
+	 * Post-process an inner class ClassNode to eliminate redundant static fields
+	 * ({@code imports}, {@code path}, {@code sourceType}) that duplicate the outer class's fields.
+	 * <p>
+	 * This method:
+	 * <ul>
+	 * <li>Removes the field declarations for these three fields</li>
+	 * <li>Redirects all GETSTATIC instructions that read these fields from the inner class
+	 * to instead read from the outer class</li>
+	 * <li>Removes PUTSTATIC instructions that write to these fields on the inner class
+	 * (along with the preceding GETSTATIC that loaded the value)</li>
+	 * </ul>
+	 *
+	 * @param classNode          The inner class node to post-process
+	 * @param innerClassInternal The JVM internal name of the inner class (e.g. "pkg/Outer$Inner")
+	 * @param outerClassInternal The JVM internal name of the outer class (e.g. "pkg/Outer")
+	 */
+	private void redirectOuterClassFields( ClassNode classNode, String innerClassInternal, String outerClassInternal ) {
+		Set<String> delegatedFields = Set.of( "imports", "path", "sourceType" );
+
+		// 1. Remove the field declarations
+		classNode.fields.removeIf( f -> delegatedFields.contains( f.name ) );
+
+		// 2. Walk all methods and fix field instructions
+		for ( var method : classNode.methods ) {
+			if ( method.instructions == null ) {
+				continue;
+			}
+			AbstractInsnNode insn = method.instructions.getFirst();
+			while ( insn != null ) {
+				AbstractInsnNode next = insn.getNext();
+				if ( insn instanceof FieldInsnNode fieldInsn
+				    && fieldInsn.owner.equals( innerClassInternal )
+				    && delegatedFields.contains( fieldInsn.name ) ) {
+					if ( fieldInsn.getOpcode() == Opcodes.GETSTATIC ) {
+						// Redirect to read from outer class
+						fieldInsn.owner = outerClassInternal;
+					} else if ( fieldInsn.getOpcode() == Opcodes.PUTSTATIC ) {
+						// Remove the PUTSTATIC and the preceding instruction that loaded the value
+						AbstractInsnNode prev = fieldInsn.getPrevious();
+						if ( prev != null ) {
+							method.instructions.remove( prev );
+						}
+						method.instructions.remove( fieldInsn );
+					}
+				}
+				insn = next;
+			}
+		}
 	}
 
 	@Override

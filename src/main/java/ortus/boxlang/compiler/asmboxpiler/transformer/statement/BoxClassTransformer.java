@@ -794,29 +794,32 @@ public class BoxClassTransformer {
 			boolean					isInnerClassDelegate	= outerClassInternal != null;
 
 			if ( isInnerClassDelegate ) {
-				// Inner class: delegate path, sourceType to outer class's static fields
-				clinitNodes.add( new FieldInsnNode( Opcodes.GETSTATIC, outerClassInternal, "path", Type.getDescriptor( ResolvedFilePath.class ) ) );
+				// Inner class: path, sourceType, imports fields are not declared on this class.
+				// All references to them are redirected to the outer class's fields in post-processing.
 			} else {
 				clinitNodes.addAll( AsmHelper.resolvedFilePathNodes( mappingName, mappingPath, relativePath, filePath ) );
 			}
-			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "path",
-			    Type.getDescriptor( ResolvedFilePath.class ) ) );
+			if ( !isInnerClassDelegate ) {
+				clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC,
+				    type.getInternalName(),
+				    "path",
+				    Type.getDescriptor( ResolvedFilePath.class ) ) );
+			}
 
 			if ( isInnerClassDelegate ) {
-				clinitNodes
-				    .add( new FieldInsnNode( Opcodes.GETSTATIC, outerClassInternal, "sourceType", Type.getDescriptor( BoxSourceType.class ) ) );
+				// Inner class: sourceType is not declared on this class.
 			} else {
 				clinitNodes.add( new FieldInsnNode( Opcodes.GETSTATIC,
 				    Type.getInternalName( BoxSourceType.class ),
 				    sourceType,
 				    Type.getDescriptor( BoxSourceType.class ) ) );
 			}
-			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "sourceType",
-			    Type.getDescriptor( BoxSourceType.class ) ) );
+			if ( !isInnerClassDelegate ) {
+				clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC,
+				    type.getInternalName(),
+				    "sourceType",
+				    Type.getDescriptor( BoxSourceType.class ) ) );
+			}
 
 			clinitNodes.addAll( transpiler.createKeyAdHoc( boxClassName ) );
 			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC,
@@ -909,8 +912,8 @@ public class BoxClassTransformer {
 			// so we don't need to write to it in <clinit>
 
 			if ( isInnerClassDelegate ) {
-				// Inner class: delegate imports to outer class's static field
-				clinitNodes.add( new FieldInsnNode( Opcodes.GETSTATIC, outerClassInternal, "imports", Type.getDescriptor( List.class ) ) );
+				// Inner class: imports field is not declared on this class.
+				// All references are redirected to the outer class's field in post-processing.
 			} else {
 				clinitNodes.addAll( importNodes );
 				clinitNodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
@@ -918,11 +921,11 @@ public class BoxClassTransformer {
 				    "of",
 				    Type.getMethodDescriptor( Type.getType( List.class ), Type.getType( Object[].class ) ),
 				    true ) );
+				clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC,
+				    type.getInternalName(),
+				    "imports",
+				    Type.getDescriptor( List.class ) ) );
 			}
-			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC,
-			    type.getInternalName(),
-			    "imports",
-			    Type.getDescriptor( List.class ) ) );
 
 			clinitNodes.addAll( annotations );
 			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC,

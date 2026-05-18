@@ -201,6 +201,7 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		List<BoxStatement>	statements	= ctx.functionOrStatement().stream()
 		    .map( stmt -> tools.toStatementOrError( () -> ( BoxStatement ) stmt.accept( this ), stmt ) )
 		    .collect( Collectors.toList() );
+
 		return new BoxScript( statements, pos, src, BoxSourceType.BOXSCRIPT );
 	}
 
@@ -277,8 +278,18 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 	 */
 	@Override
 	public BoxNode visitLocalClass( LocalClassContext ctx ) {
-		var									pos				= tools.getPositionStartingAt( ctx, ctx.CLASS().getSymbol() );
-		var									src				= tools.getSourceText( ctx );
+		var					pos			= tools.getPositionStartingAt( ctx, ctx.CLASS().getSymbol() );
+		var					src			= tools.getSourceText( ctx );
+
+		// Semantic check: local classes cannot be nested inside other classes
+		ParserRuleContext	ancestor	= ctx.getParent();
+		while ( ancestor != null ) {
+			if ( ancestor instanceof ClassBodyContext ) {
+				tools.reportError( "Local classes cannot be defined inside another class. Nested classes are not yet supported.", pos );
+				break;
+			}
+			ancestor = ancestor.getParent();
+		}
 
 		BoxIdentifier						name			= ( BoxIdentifier ) ctx.identifier().accept( expressionVisitor );
 		List<BoxStatement>					body			= buildClassBody( ctx.classBody() );

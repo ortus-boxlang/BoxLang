@@ -611,4 +611,183 @@ public class LocalClassTest {
 		assertThat( meta.getAsArray( Key.of( "properties" ) ) ).hasSize( 1 );
 	}
 
+	@DisplayName( "getClassMetadata() with local class name" )
+	@Test
+	public void testGetClassMetadataByName() {
+		instance.executeSource(
+		    """
+		    class Widget {
+		        property name="label" default="default";
+
+		        function getLabel() {
+		            return variables.label;
+		        }
+		    }
+
+		    result = getClassMetadata( "Widget" );
+		    """,
+		    context );
+		Object res = variables.get( result );
+		assertThat( res ).isInstanceOf( IStruct.class );
+		IStruct meta = ( IStruct ) res;
+		assertThat( meta.getAsString( Key.of( "name" ) ) ).contains( "Widget" );
+		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Class" );
+		assertThat( meta.getAsArray( Key.of( "properties" ) ) ).hasSize( 1 );
+		assertThat( meta.get( Key.of( "functions" ) ) ).isNotNull();
+	}
+
+	@DisplayName( "getClassMetadata() with multiple local classes by name" )
+	@Test
+	public void testGetClassMetadataMultipleLocalClasses() {
+		instance.executeSource(
+		    """
+		    class Alpha {
+		        property name="x" default=1;
+		        function getX() { return variables.x; }
+		    }
+
+		    class Beta {
+		        property name="y" default=2;
+		        property name="z" default=3;
+		        function getY() { return variables.y; }
+		    }
+
+		    result1 = getClassMetadata( "Alpha" );
+		    result2 = getClassMetadata( "Beta" );
+		    """,
+		    context );
+		IStruct meta1 = ( IStruct ) variables.get( Key.of( "result1" ) );
+		assertThat( meta1.getAsString( Key.of( "name" ) ) ).contains( "Alpha" );
+		assertThat( meta1.getAsArray( Key.of( "properties" ) ) ).hasSize( 1 );
+
+		IStruct meta2 = ( IStruct ) variables.get( Key.of( "result2" ) );
+		assertThat( meta2.getAsString( Key.of( "name" ) ) ).contains( "Beta" );
+		assertThat( meta2.getAsArray( Key.of( "properties" ) ) ).hasSize( 2 );
+	}
+
+	@DisplayName( "Nested local class inside another local class is not allowed" )
+	@Test
+	public void testNestedLocalClassErrors() {
+		assertThrows( Exception.class, () -> {
+			instance.executeSource(
+			    """
+			    class Outer {
+			        class Inner {
+			            function getValue() {
+			                return "inner";
+			            }
+			        }
+			    }
+			    result = new Outer();
+			    """,
+			    context );
+		} );
+	}
+
+	@DisplayName( "Local class inside a .bx class body is not allowed" )
+	@Test
+	public void testLocalClassInsideBxClassFileErrors() {
+		assertThrows( Exception.class, () -> {
+			instance.executeSource(
+			    """
+			    class Outer {
+			        class Nested {
+			            function doStuff() {
+			                return "stuff";
+			            }
+			        }
+
+			        function getFoo() {
+			            return "foo";
+			        }
+			    }
+			    result = new Outer().getFoo();
+			    """,
+			    context );
+		} );
+	}
+
+	@DisplayName( "Local class inside a function inside another local class is not allowed" )
+	@Test
+	public void testLocalClassInsideFunctionInsideClassErrors() {
+		assertThrows( Exception.class, () -> {
+			instance.executeSource(
+			    """
+			    class Wrapper {
+			        function factory() {
+			            class Product {
+			                function getName() {
+			                    return "widget";
+			                }
+			            }
+			            return new Product();
+			        }
+			    }
+			    result = new Wrapper().factory();
+			    """,
+			    context );
+		} );
+	}
+
+	@DisplayName( "Local class inside template script island with nested class errors" )
+	@Test
+	public void testNestedLocalClassInTemplateErrors() {
+		assertThrows( Exception.class, () -> {
+			instance.executeSource(
+			    """
+			    <bx:script>
+			        class Parent {
+			            class Child {
+			                function greet() {
+			                    return "hi";
+			                }
+			            }
+			        }
+			        result = new Parent();
+			    </bx:script>
+			    """,
+			    context, BoxSourceType.BOXTEMPLATE );
+		} );
+	}
+
+	@DisplayName( "Import with same name as local class should error" )
+	@Test
+	public void testImportConflictsWithLocalClass() {
+		assertThrows( Exception.class, () -> {
+			instance.executeSource(
+			    """
+			    import java:java.util.HashMap as Widget;
+
+			    class Widget {
+			        function getName() {
+			            return "widget";
+			        }
+			    }
+
+			    result = new Widget().getName();
+			    """,
+			    context );
+		} );
+	}
+
+	@DisplayName( "Local class with same name as import should error" )
+	@Test
+	public void testLocalClassConflictsWithImport() {
+		assertThrows( Exception.class, () -> {
+			instance.executeSource(
+			    """
+			    class HashMap {
+			        function getName() {
+			            return "my hashmap";
+			        }
+			    }
+
+			    import java:java.util.HashMap;
+
+			    result = new HashMap().getName();
+			    """,
+			    context );
+		} );
+	}
+
 }
