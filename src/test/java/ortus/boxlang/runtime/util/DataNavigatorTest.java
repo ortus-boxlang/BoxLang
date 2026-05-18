@@ -107,6 +107,7 @@ public class DataNavigatorTest {
 	void testSingleStringOverloadsExist() throws NoSuchMethodException {
 		assertThat( Navigator.class.getMethod( "has", String.class ) ).isNotNull();
 		assertThat( Navigator.class.getMethod( "get", String.class ) ).isNotNull();
+		assertThat( Navigator.class.getMethod( "getOrDefault", String.class, Object.class ) ).isNotNull();
 		assertThat( Navigator.class.getMethod( "getAsKey", String.class ) ).isNotNull();
 		assertThat( Navigator.class.getMethod( "getAsString", String.class ) ).isNotNull();
 		assertThat( Navigator.class.getMethod( "getAsBoolean", String.class ) ).isNotNull();
@@ -270,6 +271,15 @@ public class DataNavigatorTest {
 		assertThrows( BoxRuntimeException.class, () -> {
 			nav.getOrThrow( "bogus" );
 		} );
+	}
+
+	@DisplayName( "Can getOrDefault() from path and return fallback when missing" )
+	@Test
+	void testGetOrDefault() {
+		Navigator nav = DataNavigator.of( "src/modules/test/box.json" );
+
+		assertThat( nav.getOrDefault( "boxlang.settings.hello", "default" ) ).isEqualTo( "luis" );
+		assertThat( nav.getOrDefault( "boxlang.settings.bogus", "default" ) ).isEqualTo( "default" );
 	}
 
 	@DisplayName( "If present execute the consume" )
@@ -701,6 +711,27 @@ public class DataNavigatorTest {
 		// @formatter:on
 
 		assertThat( variables.get( result ) ).isEqualTo( "luis" );
+	}
+
+	@DisplayName( "BoxLang: getOrDefault() returns existing value or fallback" )
+	@Test
+	void testGetOrDefaultBoxLang() {
+		// @formatter:off
+		instance.executeSource("""
+			nav = dataNavigate( {
+				"boxlang": {
+					"settings": {
+						"hello": "luis"
+					}
+				}
+			} )
+			hit = nav.getOrDefault( "boxlang.settings.hello", "fallback" )
+			miss = nav.getOrDefault( "boxlang.settings.bogus", "fallback" )
+			""", context );
+		// @formatter:on
+
+		assertThat( variables.get( Key.of( "hit" ) ) ).isEqualTo( "luis" );
+		assertThat( variables.get( Key.of( "miss" ) ) ).isEqualTo( "fallback" );
 	}
 
 	@DisplayName( "BoxLang: getOrThrow() with modern varargs throws for missing path" )

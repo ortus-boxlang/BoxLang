@@ -405,6 +405,19 @@ public class DataNavigator {
 		}
 
 		/**
+		 * Get a value from data structure using nested keys if passed.
+		 * If the value is null or does not exist, return the provided default.
+		 *
+		 * @param key          The key to get the value for
+		 * @param defaultValue The default value to return if the value is null or does not exist
+		 *
+		 * @return The value for the key, or the default value
+		 */
+		public Object getOrDefault( String key, Object defaultValue ) {
+			return this.get( key, defaultValue );
+		}
+
+		/**
 		 * Get a value from data structure using nested keys if passed
 		 *
 		 * @param key The key to get the value for.
