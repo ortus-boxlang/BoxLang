@@ -442,7 +442,16 @@ public class JavaTranspiler extends Transpiler {
 
 				// Check if the local class name conflicts with an existing import
 				for ( BoxImport imp : enclosingImports ) {
-					String importName = getEffectiveImportName( imp );
+					String importName = imp.getAlias() != null ? imp.getAlias().getName() : null;
+					if ( importName == null && imp.getExpression() instanceof BoxFQN fqn ) {
+						String	value		= fqn.getValue();
+						int		colonIdx	= value.indexOf( ':' );
+						if ( colonIdx >= 0 ) {
+							value = value.substring( colonIdx + 1 );
+						}
+						int lastDot = value.lastIndexOf( '.' );
+						importName = lastDot >= 0 ? value.substring( lastDot + 1 ) : value;
+					}
 					if ( importName != null && importName.equalsIgnoreCase( localName ) ) {
 						throw new BoxRuntimeException( "Local class [" + localName + "] conflicts with an import of the same name." );
 					}
@@ -453,7 +462,7 @@ public class JavaTranspiler extends Transpiler {
 				JavaTranspiler	child				= new JavaTranspiler();
 				child.setProperty( "classname", syntheticClassName );
 				child.setProperty( "packageName", this.getProperty( "packageName" ) );
-				child.setProperty( "boxFQN", this.getProperty( "packageName" ) + "." + syntheticClassName );
+				child.setProperty( "boxFQN", localName );
 				child.setProperty( "baseclass", "BoxClass" );
 				child.setProperty( "returnType", "void" );
 				child.setProperty( "sourceType", this.getProperty( "sourceType" ) );
@@ -511,25 +520,6 @@ public class JavaTranspiler extends Transpiler {
 				preCompileLocalClasses( component.getBody() );
 			}
 		}
-	}
-
-	/**
-	 * Get the effective name that an import introduces into scope (either the explicit alias or the last segment of the FQN).
-	 */
-	private String getEffectiveImportName( BoxImport imp ) {
-		if ( imp.getAlias() != null ) {
-			return imp.getAlias().getName();
-		}
-		if ( imp.getExpression() instanceof BoxFQN fqn ) {
-			String	value		= fqn.getValue();
-			int		colonIdx	= value.indexOf( ':' );
-			if ( colonIdx >= 0 ) {
-				value = value.substring( colonIdx + 1 );
-			}
-			int lastDot = value.lastIndexOf( '.' );
-			return lastDot >= 0 ? value.substring( lastDot + 1 ) : value;
-		}
-		return null;
 	}
 
 	/**

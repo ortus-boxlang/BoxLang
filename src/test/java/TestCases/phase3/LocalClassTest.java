@@ -502,7 +502,7 @@ public class LocalClassTest {
 		Object res = variables.get( result );
 		assertThat( res ).isInstanceOf( IStruct.class );
 		IStruct meta = ( IStruct ) res;
-		assertThat( meta.getAsString( Key.of( "name" ) ) ).contains( "Person" );
+		assertThat( meta.getAsString( Key.of( "name" ) ) ).isEqualTo( "Person" );
 		assertThat( meta.get( Key.of( "type" ) ) ).isEqualTo( "Class" );
 		assertThat( meta.get( Key.of( "functions" ) ) ).isNotNull();
 		assertThat( meta.get( Key.of( "properties" ) ) ).isNotNull();
@@ -657,11 +657,11 @@ public class LocalClassTest {
 		    """,
 		    context );
 		IStruct meta1 = ( IStruct ) variables.get( Key.of( "result1" ) );
-		assertThat( meta1.getAsString( Key.of( "name" ) ) ).contains( "Alpha" );
+		assertThat( meta1.getAsString( Key.of( "name" ) ) ).isEqualTo( "Alpha" );
 		assertThat( meta1.getAsArray( Key.of( "properties" ) ) ).hasSize( 1 );
 
 		IStruct meta2 = ( IStruct ) variables.get( Key.of( "result2" ) );
-		assertThat( meta2.getAsString( Key.of( "name" ) ) ).contains( "Beta" );
+		assertThat( meta2.getAsString( Key.of( "name" ) ) ).isEqualTo( "Beta" );
 		assertThat( meta2.getAsArray( Key.of( "properties" ) ) ).hasSize( 2 );
 	}
 

@@ -209,11 +209,9 @@ public abstract class ReplacingBoxVisitor {
 	}
 
 	public BoxNode visit( BoxLocalClass node ) {
-		if ( node.getName() != null ) {
-			BoxNode newName = node.getName().accept( this );
-			if ( newName != node.getName() ) {
-				node.setName( ( BoxIdentifier ) newName );
-			}
+		BoxNode newName = node.getName().accept( this );
+		if ( newName != node.getName() ) {
+			node.setName( ( BoxIdentifier ) newName );
 		}
 		return visit( ( BoxClass ) node );
 	}

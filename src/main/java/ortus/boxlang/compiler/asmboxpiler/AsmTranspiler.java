@@ -680,9 +680,6 @@ public class AsmTranspiler extends Transpiler {
 	 */
 	private void preCompileLocalClasses( List<BoxStatement> statements, List<BoxImport> enclosingImports, String outerClassname, String outerPackage,
 	    String outerPackageInternal ) {
-		// Build hoisted imports: every local class in this scope gets a synthetic java: import
-		// so that sibling classes can reference each other by simple name at runtime.
-		List<BoxImport> allImports = buildHoistedImports( statements, enclosingImports, outerClassname, outerPackage, outerPackageInternal );
 
 		for ( BoxStatement stmt : statements ) {
 			if ( stmt instanceof BoxLocalClass localClass ) {
@@ -690,7 +687,16 @@ public class AsmTranspiler extends Transpiler {
 
 				// Check if the local class name conflicts with an existing import
 				for ( BoxImport imp : enclosingImports ) {
-					String importName = getEffectiveImportName( imp );
+					String importName = imp.getAlias() != null ? imp.getAlias().getName() : null;
+					if ( importName == null && imp.getExpression() instanceof BoxFQN fqn ) {
+						String	value		= fqn.getValue();
+						int		colonIdx	= value.indexOf( ':' );
+						if ( colonIdx >= 0 ) {
+							value = value.substring( colonIdx + 1 );
+						}
+						int lastDot = value.lastIndexOf( '.' );
+						importName = lastDot >= 0 ? value.substring( lastDot + 1 ) : value;
+					}
 					if ( importName != null && importName.equalsIgnoreCase( localName ) ) {
 						throw new BoxRuntimeException( "Local class [" + localName + "] conflicts with an import of the same name." );
 					}
@@ -703,7 +709,7 @@ public class AsmTranspiler extends Transpiler {
 				Transpiler	child				= Transpiler.getTranspiler();
 				child.setProperty( "classname", syntheticClassname );
 				child.setProperty( "packageName", outerPackage );
-				child.setProperty( "boxFQN", syntheticDotFQN );
+				child.setProperty( "boxFQN", localName );
 				child.setProperty( "baseclass", "BoxClass" );
 				child.setProperty( "sourceType", getProperty( "sourceType" ) );
 				child.setProperty( "mappingName", getProperty( "mappingName" ) );
@@ -716,8 +722,8 @@ public class AsmTranspiler extends Transpiler {
 					child.addLocalClassRefImport( entry.getKey(), entry.getValue() );
 				}
 
-				// Compile with the enriched import list (enclosing + all sibling local class imports)
-				BoxClass	asBoxClass			= new BoxClass( allImports, localClass.getBody(),
+				// Compile with enclosing imports only - sibling visibility is handled by classRef imports
+				BoxClass	asBoxClass			= new BoxClass( enclosingImports, localClass.getBody(),
 				    localClass.getAnnotations(), localClass.getDocumentation(), localClass.getProperties(),
 				    localClass.getPosition(), localClass.getSourceText(),
 				    BoxSourceType.valueOf( getProperty( "sourceType" ).toUpperCase() ) );
@@ -749,52 +755,6 @@ public class AsmTranspiler extends Transpiler {
 				preCompileLocalClasses( component.getBody(), enclosingImports, outerClassname, outerPackage, outerPackageInternal );
 			}
 		}
-	}
-
-	/**
-	 * Scan {@code statements} for top-level {@link BoxLocalClass} nodes and produce a combined
-	 * import list that includes both the original {@code enclosingImports} and one synthetic
-	 * {@code java:<dotFQN> as <simpleName>} import for every local class found.
-	 * <p>
-	 * Adding these synthetic imports means that at runtime, when a local class's
-	 * {@code extends="Animal"} annotation is resolved through
-	 * {@link ortus.boxlang.runtime.runnables.BoxClassSupport#loadSuperClass}, the Java resolver
-	 * can find the sibling local class by its simple name without any annotation rewriting.
-	 */
-	private List<BoxImport> buildHoistedImports( List<BoxStatement> statements, List<BoxImport> enclosingImports, String outerClassname, String outerPackage,
-	    String outerPackageInternal ) {
-		List<BoxImport> hoisted = new java.util.ArrayList<>( enclosingImports );
-		for ( BoxStatement stmt : statements ) {
-			if ( stmt instanceof BoxLocalClass localClass ) {
-				String	localName		= localClass.getName().getName();
-				String	syntheticFQN	= outerPackage + "." + outerClassname + "$" + localName;
-				hoisted.add( new BoxImport(
-				    new BoxFQN( "java:" + syntheticFQN, null, null ),
-				    new BoxIdentifier( localName, null, null ),
-				    null, null
-				) );
-			}
-		}
-		return hoisted;
-	}
-
-	/**
-	 * Get the effective name that an import introduces into scope (either the explicit alias or the last segment of the FQN).
-	 */
-	private String getEffectiveImportName( BoxImport imp ) {
-		if ( imp.getAlias() != null ) {
-			return imp.getAlias().getName();
-		}
-		if ( imp.getExpression() instanceof BoxFQN fqn ) {
-			String	value		= fqn.getValue();
-			int		colonIdx	= value.indexOf( ':' );
-			if ( colonIdx >= 0 ) {
-				value = value.substring( colonIdx + 1 );
-			}
-			int lastDot = value.lastIndexOf( '.' );
-			return lastDot >= 0 ? value.substring( lastDot + 1 ) : value;
-		}
-		return null;
 	}
 
 	/**
