@@ -519,7 +519,6 @@ public class LocalClassTest {
 		    class MyRunnable implements="java:java.lang.Runnable" {
 		        property name="didRun" default=false;
 
-		        @overrideJava
 		        void function run() {
 		            variables.didRun = true;
 		        }
@@ -570,7 +569,6 @@ public class LocalClassTest {
 		            return this;
 		        }
 
-		        @overrideJava
 		        int function compareTo( other ) {
 		            return variables.rank - other.getRank();
 		        }

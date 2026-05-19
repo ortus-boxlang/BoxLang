@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
@@ -45,6 +46,7 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.UnknownType;
 
 import ortus.boxlang.compiler.IBoxpiler;
+import ortus.boxlang.compiler.JavaMethodResolver;
 import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -52,6 +54,7 @@ import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
@@ -67,6 +70,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyService;
+import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -502,8 +506,9 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 	/**
 	 * The marker used to indicate that a method should be overridden in the Java class
+	 * Make these lowercase so we can match below on lowercase without worrying about case sensitivity
 	 */
-	private static final String	EXTENDS_ANNOTATION_MARKER	= "overrideJava";
+	private static final Set<String>	EXTENDS_ANNOTATION_MARKERS	= Set.of( "overridejava", "override" );
 
 	/**
 	 * Constructor
@@ -539,10 +544,27 @@ public class BoxClassTransformer extends AbstractTransformer {
 
 		/**
 		 * --------------------------------------------------------------------------
+		 * Build compile-time import definitions from the BoxLang source
+		 * --------------------------------------------------------------------------
+		 * These are used to resolve import aliases (e.g. "import foo.Bar as MyBar")
+		 * when processing extends and implements annotations.
+		 */
+		List<ImportDefinition>	compileTimeImports	= boxClass.getImports().stream()
+		    .filter( imp -> imp.getExpression() != null )
+		    .map( imp -> {
+														    String expression = imp.getExpression() instanceof BoxFQN fqn ? fqn.getValue()
+														        : imp.getExpression().toString();
+														    String alias	= imp.getAlias() != null ? " as " + imp.getAlias().getName() : "";
+														    return ImportDefinition.parse( expression + alias );
+													    } )
+		    .collect( java.util.stream.Collectors.toList() );
+
+		/**
+		 * --------------------------------------------------------------------------
 		 * Process Interface Annotations
 		 * --------------------------------------------------------------------------
 		 */
-		BoxExpression implementsValue = boxClass.getAnnotations().stream()
+		BoxExpression			implementsValue		= boxClass.getAnnotations().stream()
 		    .filter( it -> it.getKey().getValue().equalsIgnoreCase( "implements" ) )
 		    .findFirst()
 		    .map( it -> it.getValue() )
@@ -565,7 +587,8 @@ public class BoxClassTransformer extends AbstractTransformer {
 			    .collect( java.util.stream.Collectors.joining( ", ", "new String[] {", "}" ) );
 
 			// var interfaceProxyDefinition = InterfaceProxyService.generateDefinition( new ScriptingRequestBoxContext(), implementsArray );
-			var interfaceProxyDefinition = InterfaceProxyService.generateDefinition( BoxRuntime.getInstance().getRuntimeContext(), implementsArray );
+			var interfaceProxyDefinition = InterfaceProxyService.generateDefinition( BoxRuntime.getInstance().getRuntimeContext(), implementsArray,
+			    compileTimeImports );
 
 			// TODO: Remove methods that already have a @overrideJava UDF definition to avoid duplicates
 			interfaces.addAll( interfaceProxyDefinition.interfaces() );
@@ -586,14 +609,42 @@ public class BoxClassTransformer extends AbstractTransformer {
 			String extendsStringValue = str.getValue().trim();
 			if ( extendsStringValue.toLowerCase().startsWith( "java:" ) ) {
 				extendsStringValue	= extendsStringValue.substring( 5 );
-				extendsTemplate		= "extends " + extendsStringValue;
 				isJavaExtends		= "true";
-				// search for UDFs that need a proxy created
-				extendsMethods		= boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
-				    .stream()
-				    .filter( it -> it.getAnnotations().stream().anyMatch( anno -> anno.getKey().getValue().equalsIgnoreCase( EXTENDS_ANNOTATION_MARKER ) ) )
-				    .map( this::createJavaMethodStub )
-				    .collect( java.util.stream.Collectors.joining( "\n" ) );
+				// First try to load the Java class directly and match any local UDFs to methods on the class
+				Class<?> javaClass = JavaMethodResolver.resolveClass( extendsStringValue, compileTimeImports );
+				if ( javaClass != null ) {
+					// Use the resolved class name (expands aliases) for the extends template
+					extendsTemplate = "extends " + javaClass.getName();
+					// Collect UDF names from the BoxLang class AST
+					Set<String>												udfNames		= boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
+					    .stream()
+					    .map( f -> f.getName().toLowerCase() )
+					    .collect( java.util.stream.Collectors.toSet() );
+
+					// Resolve matching Java methods from the class hierarchy
+					Map<String, List<JavaMethodResolver.ResolvedMethod>>	matchedMethods	= JavaMethodResolver.resolveMatchingMethods( javaClass, udfNames );
+
+					// Generate a stub for each overload of each matched method
+					StringBuilder											sb				= new StringBuilder();
+					for ( Map.Entry<String, List<JavaMethodResolver.ResolvedMethod>> entry : matchedMethods.entrySet() ) {
+						for ( JavaMethodResolver.ResolvedMethod method : entry.getValue() ) {
+							sb.append( createJavaMethodStubFromResolved( method ) );
+							sb.append( "\n" );
+						}
+					}
+					extendsMethods = sb.toString();
+				} else {
+					// If the class can't be loaded, use the raw extends value for the template
+					extendsTemplate = "extends " + extendsStringValue;
+					// Fall back to looking for the @javaOverride annotation.
+					extendsMethods = boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
+					    .stream()
+					    .filter(
+					        it -> it.getAnnotations().stream()
+					            .anyMatch( anno -> EXTENDS_ANNOTATION_MARKERS.contains( anno.getKey().getValue().toLowerCase() ) ) )
+					    .map( this::createJavaMethodStub )
+					    .collect( java.util.stream.Collectors.joining( "\n" ) );
+				}
 			} else {
 				superClassName = '"' + extendsStringValue + '"';
 			}
@@ -975,7 +1026,13 @@ public class BoxClassTransformer extends AbstractTransformer {
 				fqn = boxReturnType.getFqn();
 			}
 		}
-		String returnValue = returnType.equals( BoxType.Fqn ) ? fqn : returnType.getSymbol();
+		// Use sourceText to preserve original case (e.g., "boolean" not "Boolean") when available
+		String returnValue;
+		if ( boxReturnType != null && boxReturnType.getSourceText() != null && !boxReturnType.getSourceText().isEmpty() ) {
+			returnValue = boxReturnType.getSourceText().trim();
+		} else {
+			returnValue = returnType.equals( BoxType.Fqn ) ? fqn : returnType.getSymbol();
+		}
 		sb.append( returnValue );
 		sb.append( " " );
 		sb.append( func.getName() );
@@ -1012,6 +1069,60 @@ public class BoxClassTransformer extends AbstractTransformer {
 		if ( !returnValue.equals( "void" ) ) {
 			sb.append( "    return (" );
 			sb.append( returnValue );
+			sb.append( ") result;\n" );
+		}
+		sb.append( "}\n" );
+		return sb.toString();
+	}
+
+	/**
+	 * Create a Java method stub from a resolved Java method signature.
+	 * Uses the exact types from the Java class hierarchy rather than guessing from the BoxLang UDF declaration.
+	 *
+	 * @param method the resolved Java method to create a stub for
+	 *
+	 * @return the Java method stub as a string
+	 */
+	private String createJavaMethodStubFromResolved( JavaMethodResolver.ResolvedMethod method ) {
+		StringBuilder	sb				= new StringBuilder();
+		String			returnTypeName	= JavaMethodResolver.toJavaSourceType( method.returnType() );
+		Class<?>[]		paramTypes		= method.parameterTypes();
+
+		sb.append( "public " );
+		sb.append( returnTypeName );
+		sb.append( " " );
+		sb.append( method.name() );
+		sb.append( "(" );
+
+		for ( int i = 0; i < paramTypes.length; i++ ) {
+			if ( i > 0 ) {
+				sb.append( ", " );
+			}
+			sb.append( JavaMethodResolver.toJavaSourceType( paramTypes[ i ] ) );
+			sb.append( " arg" );
+			sb.append( i );
+		}
+		sb.append( ") {\n" );
+
+		// Collect method args into an array of Objects
+		sb.append( "    Object[] ___args = new Object[] {" );
+		for ( int i = 0; i < paramTypes.length; i++ ) {
+			if ( i > 0 ) {
+				sb.append( ", " );
+			}
+			sb.append( "arg" );
+			sb.append( i );
+		}
+		sb.append( "};\n" );
+
+		sb.append( "    Object result = BoxClassSupport.javaMethodStub( this, Key.of( \"" );
+		sb.append( method.name() );
+		sb.append( "\" ), ___args );\n" );
+
+		// Return only if the method is not void
+		if ( !method.returnType().equals( void.class ) ) {
+			sb.append( "    return (" );
+			sb.append( returnTypeName );
 			sb.append( ") result;\n" );
 		}
 		sb.append( "}\n" );

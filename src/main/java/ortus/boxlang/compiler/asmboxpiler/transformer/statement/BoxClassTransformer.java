@@ -47,6 +47,7 @@ import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 import org.objectweb.asm.tree.VarInsnNode;
 
+import ortus.boxlang.compiler.JavaMethodResolver;
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
@@ -55,6 +56,7 @@ import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.SourceFile;
+import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
@@ -114,7 +116,18 @@ public class BoxClassTransformer {
 		transpiler.setProperty( "classType", type.getDescriptor() );
 		transpiler.setProperty( "classTypeInternal", type.getInternalName() );
 
-		List<Type> interfaces = new ArrayList<>();
+		// Build compile-time import definitions from the BoxLang source for alias resolution
+		List<ImportDefinition>	compileTimeImports	= boxClass.getImports().stream()
+		    .filter( imp -> imp.getExpression() != null )
+		    .map( imp -> {
+														    String expression = imp.getExpression() instanceof BoxFQN fqn ? fqn.getValue()
+														        : imp.getExpression().toString();
+														    String alias	= imp.getAlias() != null ? " as " + imp.getAlias().getName() : "";
+														    return ImportDefinition.parse( expression + alias );
+													    } )
+		    .collect( Collectors.toList() );
+
+		List<Type>				interfaces			= new ArrayList<>();
 		interfaces.add( Type.getType( IClassRunnable.class ) );
 		interfaces.add( Type.getType( IReferenceable.class ) );
 		interfaces.add( Type.getType( IType.class ) );
@@ -144,8 +157,8 @@ public class BoxClassTransformer {
 			    .filter( it -> !it.toLowerCase().startsWith( "java:" ) )
 			    .forEach( blInterfaceNames::add );
 
-			// var interfaceProxyDefinition = InterfaceProxyService.generateDefinition( new ScriptingRequestBoxContext(), implementsArray );
-			var interfaceProxyDefinition = InterfaceProxyService.generateDefinition( BoxRuntime.getInstance().getRuntimeContext(), implementsArray );
+			var interfaceProxyDefinition = InterfaceProxyService.generateDefinition( BoxRuntime.getInstance().getRuntimeContext(), implementsArray,
+			    compileTimeImports );
 
 			// TODO: Remove methods that already have a @overrideJava UDF definition to avoid duplicates
 			interfaces.addAll( interfaceProxyDefinition.interfaces().stream().map( iface -> Type.getType( "L" + iface.replace( '.', '/' ) + ";" ) ).toList() );
@@ -155,7 +168,7 @@ public class BoxClassTransformer {
 		}
 
 		Type				superclass		= Type.getType( Object.class );
-		boolean				isJavaExtends;
+		boolean				isJavaExtends	= false;
 		String				superClassName	= null;
 		List<MethodNode>	extendsMethods	= List.of();
 		BoxExpression		extendsValue	= boxClass.getAnnotations().stream()
@@ -166,54 +179,86 @@ public class BoxClassTransformer {
 		if ( extendsValue instanceof BoxStringLiteral str ) {
 			String extendsStringValue = str.getValue().trim();
 			if ( extendsStringValue.toLowerCase().startsWith( "java:" ) ) {
-				superclass		= Type.getType( "L" + extendsStringValue.substring( 5 ).replace( '.', '/' ) + ";" );
-				isJavaExtends	= true;
-				// search for UDFs that need a proxy created
-				extendsMethods	= boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
-				    .stream()
-				    .filter( it -> it.getAnnotations().stream().anyMatch( anno -> anno.getKey().getValue().equalsIgnoreCase( EXTENDS_ANNOTATION_MARKER ) ) )
-				    .map( func -> {
-									    BoxReturnType boxReturnType	= func.getType();
-									    BoxType		boxType			= BoxType.Any;
-									    String		fqn				= null;
-									    if ( boxReturnType != null ) {
-										    boxType = boxReturnType.getType();
-										    if ( boxType.equals( BoxType.Fqn ) ) {
-											    fqn = boxReturnType.getFqn();
-										    }
-									    }
-									    String returnTypeString = ( boxType.equals( BoxType.Fqn ) ? fqn : boxType.getSymbol() );
-									    if ( returnTypeString.equalsIgnoreCase( "Object" ) || returnTypeString.equalsIgnoreCase( "any" ) ) {
-										    returnTypeString = "java.lang.Object";
-									    }
-									    // Type returnType = Type
-									    // .getType( "L" + ( boxType.equals( BoxType.Fqn ) ? fqn : boxType.getSymbol() ).replace( '.', '/' ) + ";" );
-									    // TODO this needs to be improved substantially
-									    Type						returnType		= switch ( returnTypeString ) {
-																														    case "void" -> Type.VOID_TYPE;
-																														    case "int" -> Type.INT_TYPE;
-																														    case "float" -> Type.FLOAT_TYPE;
-																														    case "double" -> Type.DOUBLE_TYPE;
-																														    case "long" -> Type
-																														        .getType( Long.class );
-																														    default -> Type.getType( "L"
-																														        + returnTypeString.replace( '.',
-																														            '/' )
-																														        + ";" );
-																													    };
-									    List<BoxArgumentDeclaration> parameters		= func.getArgs();
-									    Type[]						parameterTypes	= new Type[ parameters.size() ];
-									    for ( int i = 0; i < parameters.size(); i++ ) {
-										    BoxArgumentDeclaration parameter = parameters.get( i );
-										    parameterTypes[ i ] = findJavaType( parameter.getType() );
+				extendsStringValue	= extendsStringValue.substring( 5 );
+				isJavaExtends		= true;
 
-									    }
-									    return AsmHelper.generateJavaMethodStub( func.getName(), Type.getMethodType( returnType, parameterTypes ), type );
-								    } )
-				    .toList();
+				// First try to load the Java class directly and match any local UDFs to methods on the class
+				Class<?> javaClass = JavaMethodResolver.resolveClass( extendsStringValue, compileTimeImports );
+				if ( javaClass != null ) {
+					// Use the resolved class name (expands aliases) for the superclass type
+					superclass = Type.getType( "L" + javaClass.getName().replace( '.', '/' ) + ";" );
+
+					// Collect UDF names from the BoxLang class AST
+					Set<String>												udfNames		= boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
+					    .stream()
+					    .map( f -> f.getName().toLowerCase() )
+					    .collect( Collectors.toSet() );
+
+					// Resolve matching Java methods from the class hierarchy
+					Map<String, List<JavaMethodResolver.ResolvedMethod>>	matchedMethods	= JavaMethodResolver.resolveMatchingMethods( javaClass, udfNames );
+
+					// Generate a stub for each overload of each matched method
+					List<MethodNode>										resolvedStubs	= new ArrayList<>();
+					for ( Map.Entry<String, List<JavaMethodResolver.ResolvedMethod>> entry : matchedMethods.entrySet() ) {
+						for ( JavaMethodResolver.ResolvedMethod method : entry.getValue() ) {
+							Type[] paramTypes = new Type[ method.parameterTypes().length ];
+							for ( int i = 0; i < method.parameterTypes().length; i++ ) {
+								paramTypes[ i ] = Type.getType( method.parameterTypes()[ i ] );
+							}
+							Type methodType = Type.getMethodType( Type.getType( method.returnType() ), paramTypes );
+							resolvedStubs.add( AsmHelper.generateJavaMethodStub( method.name(), methodType, type ) );
+						}
+					}
+					extendsMethods = resolvedStubs;
+				} else {
+					// If the class can't be loaded, use the raw extends value for the superclass type
+					superclass = Type.getType( "L" + extendsStringValue.replace( '.', '/' ) + ";" );
+
+					// Fall back to looking for the @overrideJava annotation
+					extendsMethods = boxClass.getDescendantsOfType( BoxFunctionDeclaration.class )
+					    .stream()
+					    .filter( it -> it.getAnnotations().stream().anyMatch( anno -> anno.getKey().getValue().equalsIgnoreCase( EXTENDS_ANNOTATION_MARKER ) ) )
+					    .map( func -> {
+						    BoxReturnType boxReturnType	= func.getType();
+						    BoxType		boxType			= BoxType.Any;
+						    String		fqn				= null;
+						    if ( boxReturnType != null ) {
+							    boxType = boxReturnType.getType();
+							    if ( boxType.equals( BoxType.Fqn ) ) {
+								    fqn = boxReturnType.getFqn();
+							    }
+						    }
+						    // Use sourceText to preserve original case (e.g., "boolean" not "Boolean") when available
+						    String returnTypeString;
+						    if ( boxReturnType != null && boxReturnType.getSourceText() != null && !boxReturnType.getSourceText().isEmpty() ) {
+							    returnTypeString = boxReturnType.getSourceText().trim();
+						    } else {
+							    returnTypeString = ( boxType.equals( BoxType.Fqn ) ? fqn : boxType.getSymbol() );
+						    }
+						    if ( returnTypeString.equalsIgnoreCase( "Object" ) || returnTypeString.equalsIgnoreCase( "any" ) ) {
+							    returnTypeString = "java.lang.Object";
+						    }
+						    Type						returnType		= switch ( returnTypeString ) {
+																			    case "void" -> Type.VOID_TYPE;
+																			    case "boolean" -> Type.BOOLEAN_TYPE;
+																			    case "int" -> Type.INT_TYPE;
+																			    case "float" -> Type.FLOAT_TYPE;
+																			    case "double" -> Type.DOUBLE_TYPE;
+																			    case "long" -> Type.getType( Long.class );
+																			    default -> Type.getType( "L" + returnTypeString.replace( '.', '/' ) + ";" );
+																		    };
+						    List<BoxArgumentDeclaration> parameters		= func.getArgs();
+						    Type[]						parameterTypes	= new Type[ parameters.size() ];
+						    for ( int i = 0; i < parameters.size(); i++ ) {
+							    BoxArgumentDeclaration parameter = parameters.get( i );
+							    parameterTypes[ i ] = findJavaType( parameter.getType() );
+						    }
+						    return AsmHelper.generateJavaMethodStub( func.getName(), Type.getMethodType( returnType, parameterTypes ), type );
+					    } )
+					    .toList();
+				}
 			} else {
-				isJavaExtends	= false;
-				superClassName	= extendsStringValue;
+				superClassName = extendsStringValue;
 			}
 		} else {
 			isJavaExtends = false;
@@ -787,6 +832,7 @@ public class BoxClassTransformer {
 
 		final String		finalSuperClassName		= superClassName;
 		final List<String>	finalBlInterfaceNames	= blInterfaceNames;
+		final boolean		finalIsJavaExtends		= isJavaExtends;
 
 		AsmHelper.completeWithSplitting( classNode, type, () -> {
 			List<AbstractInsnNode>	clinitNodes				= new ArrayList<>();
@@ -889,7 +935,7 @@ public class BoxClassTransformer {
 			    "staticScope",
 			    Type.getDescriptor( StaticScope.class ) ) );
 
-			clinitNodes.add( new LdcInsnNode( isJavaExtends ? 1 : 0 ) );
+			clinitNodes.add( new LdcInsnNode( finalIsJavaExtends ? 1 : 0 ) );
 			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "isJavaExtends", Type.getDescriptor( boolean.class ) ) );
 
 			// Initialize initMethod field

@@ -1,0 +1,13 @@
+import TestCases.phase3.JavaTestInterface as MyInterface;
+
+class implements="java:MyInterface" {
+
+	function greet( String name ) {
+		return "hello " & name;
+	}
+
+	function add( int a, int b ) {
+		return a + b;
+	}
+
+}
