@@ -69,6 +69,7 @@ public class BooleanFormatTest {
 		assertEquals( ( String ) instance.executeStatement( "booleanFormat( 'No' )" ), "false" );
 		assertEquals( ( String ) instance.executeStatement( "booleanFormat( 'true' )" ), "true" );
 		assertEquals( ( String ) instance.executeStatement( "booleanFormat( 'false' )" ), "false" );
+		assertEquals( ( String ) instance.executeStatement( "booleanFormat( '' )" ), "false" );
 		assertThrows( BoxRuntimeException.class, () -> instance.executeStatement( "booleanFormat( 'blah' )" ) );
 	}
 
