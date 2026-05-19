@@ -28,6 +28,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class TemplateConfig {
 
 	/**
+	 * Enable template (BXM/CFM) formatting. When false, template sources are
+	 * returned unchanged.
+	 */
+	@JsonProperty( "enabled" )
+	private boolean	enabled					= false;
+
+	/**
 	 * The prefix used for template component tags. Common values are {@code "bx"}
 	 * for BoxLang and {@code "cf"} for ColdFusion.
 	 *
@@ -95,6 +102,27 @@ public class TemplateConfig {
 
 	/** Default constructor. */
 	public TemplateConfig() {
+	}
+
+	/**
+	 * Get whether template formatting is enabled.
+	 *
+	 * @return true when template formatting is enabled
+	 */
+	public boolean getEnabled() {
+		return enabled;
+	}
+
+	/**
+	 * Set whether template formatting is enabled.
+	 *
+	 * @param enabled true to enable template formatting
+	 *
+	 * @return this config for chaining
+	 */
+	public TemplateConfig setEnabled( boolean enabled ) {
+		this.enabled = enabled;
+		return this;
 	}
 
 	/**
@@ -188,6 +216,7 @@ public class TemplateConfig {
 	 */
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = new LinkedHashMap<>();
+		map.put( "enabled", enabled );
 		map.put( "component_prefix", componentPrefix );
 		map.put( "indent_content", indentContent );
 		map.put( "single_attribute_per_line", singleAttributePerLine );
@@ -202,6 +231,7 @@ public class TemplateConfig {
 	 */
 	public TemplateConfig clone() {
 		TemplateConfig clone = new TemplateConfig();
+		clone.enabled					= this.enabled;
 		clone.componentPrefix			= this.componentPrefix;
 		clone.indentContent				= this.indentContent;
 		clone.singleAttributePerLine	= this.singleAttributePerLine;

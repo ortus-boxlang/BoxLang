@@ -1,5 +1,6 @@
 {
 	"template": {
+		"enabled": true,
 		"single_attribute_per_line": true
 	}
 }

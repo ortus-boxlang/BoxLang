@@ -129,6 +129,7 @@ public final class PrettyPrint {
 	                                             		"break_length" : 60
 	                                             		},
 	                                             		"template" : {
+	                                             		"enabled" : false,
 	                                             		"component_prefix" : "bx",
 	                                             		"indent_content" : true,
 	                                             		"single_attribute_per_line" : false,
@@ -449,6 +450,14 @@ public final class PrettyPrint {
 	 * @return the formatted source
 	 */
 	public static String prettyPrint( BoxNode node, Config config ) {
+		BoxSourceType sourceType = config.getSourceType() != null ? config.getSourceType() : resolveSourceType( node );
+		if ( ( sourceType == BoxSourceType.BOXTEMPLATE || sourceType == BoxSourceType.CFTEMPLATE ) && !config.getTemplate().getEnabled() ) {
+			String sourceText = node.getSourceText();
+			if ( sourceText != null ) {
+				return sourceText;
+			}
+		}
+
 		var		doc		= generateDoc( node, config );
 		String	output	= printDoc( doc, config );
 		output = output.replaceAll( "(?m)(^\\s*param\\s+[^=\\r\\n]*?)\\s+=\\s+", "$1 = " );

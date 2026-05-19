@@ -1,5 +1,6 @@
 {
 	"template": {
+		"enabled": true,
 		"self_closing": true
 	}
 }
