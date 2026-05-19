@@ -737,7 +737,9 @@ public abstract class BoxNode implements BoxVisitable {
 	}
 
 	public String toString() {
-		return PrettyPrint.prettyPrint( this );
+		Config config = new Config();
+		config.getTemplate().setEnabled( true );
+		return PrettyPrint.prettyPrint( this, config );
 	}
 
 	public String toString( Config config ) {
