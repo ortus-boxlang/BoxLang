@@ -148,7 +148,8 @@ public final class PrettyPrint {
 	                                             		"member_spacing" : 1,
 	                                             		"property_order" : "preserve",
 	                                             		"method_order" : "preserve",
-	                                             		"method_grouping" : false
+	                                             		"method_grouping" : false,
+	                                             		"property_spacing" : 1
 	                                             		},
 	                                             		"sql" : {
 	                                             		"uppercase_keywords" : true,

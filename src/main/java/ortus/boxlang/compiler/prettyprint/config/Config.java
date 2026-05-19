@@ -1638,6 +1638,9 @@ public final class Config {
 		if ( config.containsKey( "method_grouping" ) && config.get( "method_grouping" ) instanceof Boolean methodGrouping ) {
 			this.classConfig.setMethodGrouping( methodGrouping );
 		}
+		if ( config.containsKey( "property_spacing" ) && config.get( "property_spacing" ) instanceof Number propSpacing ) {
+			this.classConfig.setPropertySpacing( propSpacing.intValue() );
+		}
 	}
 
 	/**

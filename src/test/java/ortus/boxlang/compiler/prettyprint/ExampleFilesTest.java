@@ -43,12 +43,14 @@ public class ExampleFilesTest extends PrettyPrintTest {
 	@Test
 	public void testTemplateA() throws IOException {
 		Config config = Config.loadConfigAutoDetect( CONFIG_PATH );
+		config.getTemplate().setEnabled( true );
 		singlePrintTest( FOLDER + "templateA.cfm", FOLDER + "templateA_expected.cfm", config );
 	}
 
 	@Test
 	public void testTemplateB() throws IOException {
 		Config config = Config.loadConfigAutoDetect( CONFIG_PATH );
+		config.getTemplate().setEnabled( true );
 		singlePrintTest( FOLDER + "templateB.cfm", FOLDER + "templateB_expected.cfm", config );
 	}
 
