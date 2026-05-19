@@ -99,6 +99,7 @@ import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.statement.BoxForIn;
 import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.statement.BoxLocalClass;
@@ -1352,7 +1353,6 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	public void visit( BoxFunctionDeclaration node ) {
 		newLine();
 		printPreComments( node );
-		Boolean defaultInterfaceMethod = node.getFirstNodeOfType( BoxInterface.class ) != null;
 		if ( isTemplate() ) {
 			print( "<bx:function" );
 			for ( var annotation : node.getAnnotations() ) {
@@ -1377,7 +1377,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			decreaseIndent();
 			print( "</bx:function>" );
 		} else {
-			if ( defaultInterfaceMethod ) {
+			if ( node.getModifiers() != null && node.getModifiers().contains( BoxMethodDeclarationModifier.DEFAULT ) ) {
 				print( "default " );
 			}
 			if ( node.getAccessModifier() != null ) {
