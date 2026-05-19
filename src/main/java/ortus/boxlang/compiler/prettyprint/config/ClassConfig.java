@@ -83,14 +83,15 @@ public class ClassConfig {
 	 * Number of blank lines printed between property declarations within a class.
 	 *
 	 * <pre>
+	 * 
 	 * // propertySpacing: 1 (default)
-	 * property name="foo";
+	 * property name = "foo";
 	 *
-	 * property name="bar";
+	 * property name = "bar";
 	 *
 	 * // propertySpacing: 0
-	 * property name="foo";
-	 * property name="bar";
+	 * property name = "foo";
+	 * property name = "bar";
 	 * </pre>
 	 */
 	@JsonProperty( "property_spacing" )
