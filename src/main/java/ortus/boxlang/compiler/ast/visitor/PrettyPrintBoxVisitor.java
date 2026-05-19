@@ -99,10 +99,10 @@ import ortus.boxlang.compiler.ast.statement.BoxExpressionStatement;
 import ortus.boxlang.compiler.ast.statement.BoxForIn;
 import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
-import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.statement.BoxLocalClass;
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
@@ -124,7 +124,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * Pretty print BoxLang AST nodes
- * 
+ *
  * TODO Items:
  * - Add configuration for indent size
  * - Add any other config settings such as white space inside paren, etc
@@ -222,7 +222,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	/**
 	 * Print multi-line output, respecting indentation
 	 * This will trim existing whitespace off each line.
-	 * 
+	 *
 	 * @param text The text to print
 	 */
 	public void printMultiLine( String text ) {
@@ -264,7 +264,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 
 	/**
 	 * Prints pre and inside comments
-	 * 
+	 *
 	 * @param node
 	 */
 	private void printPreComments( BoxNode node ) {
@@ -1022,7 +1022,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 
 	/**
 	 * I process string interpolation, but without assuming it was a quoted string
-	 * 
+	 *
 	 * @param node The BoxStringInterpolation node
 	 */
 	public void processStringInterp( BoxStringInterpolation node, boolean isQuoted ) {

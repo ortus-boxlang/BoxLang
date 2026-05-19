@@ -45,7 +45,7 @@ public class FunctionDeclarationPrinter {
 	}
 
 	public void printScriptFunctionDeclaration( BoxFunctionDeclaration node ) {
-		var	currentDoc				= visitor.getCurrentDoc();
+		var	currentDoc		= visitor.getCurrentDoc();
 
 		// split annotations into pre and post based on whether the source of the annotation starts with `@`
 		var	preAnnotations	= new ArrayList<BoxAnnotation>();
@@ -99,7 +99,7 @@ public class FunctionDeclarationPrinter {
 	}
 
 	public void printCFScriptFunctionDeclaration( BoxFunctionDeclaration node ) {
-		var	currentDoc				= visitor.getCurrentDoc();
+		var currentDoc = visitor.getCurrentDoc();
 
 		if ( node.getModifiers() != null && node.getModifiers().contains( BoxMethodDeclarationModifier.DEFAULT ) ) {
 			currentDoc.append( "default " );
