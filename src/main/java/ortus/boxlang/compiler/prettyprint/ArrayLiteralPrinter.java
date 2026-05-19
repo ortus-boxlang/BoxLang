@@ -61,10 +61,25 @@ public class ArrayLiteralPrinter {
 
 			arrayDoc.append( visitor.popDoc() );
 		} else {
-			visitor.printInsideComments( arrayNode, false );
-		}
+			// Check if there are inside comments — if so, force multiline to avoid collapsing
+			boolean	hasInsideComments	= false;
+			for ( var comment : arrayNode.getComments() ) {
+				if ( comment.isInside( arrayNode ) ) {
+					hasInsideComments = true;
+					break;
+				}
+			}
 
-		arrayDoc.append( visitor.config.getArray().getEmptyPadding() ? Line.LINE : Line.SOFT );
+			if ( hasInsideComments ) {
+				var contentsDoc = visitor.pushDoc( DocType.INDENT );
+				contentsDoc.append( Line.HARD );
+				visitor.printInsideComments( arrayNode, false );
+				arrayDoc.append( visitor.popDoc() ).append( Line.HARD );
+			} else {
+				visitor.printInsideComments( arrayNode, false );
+				arrayDoc.append( visitor.config.getArray().getEmptyPadding() ? Line.LINE : Line.SOFT );
+			}
+		}
 
 		arrayDoc.append( "]" );
 		currentDoc.append( visitor.popDoc() );
