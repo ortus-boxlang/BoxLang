@@ -118,7 +118,7 @@ public class StructLiteralPrinter {
 			structDoc.append( visitor.popDoc() ).append( visitor.config.getStruct().getPadding() ? Line.LINE : Line.SOFT );
 		} else {
 			// Check if there are inside comments — if so, force multiline to avoid collapsing
-			boolean	hasInsideComments	= false;
+			boolean hasInsideComments = false;
 			for ( var comment : structNode.getComments() ) {
 				if ( comment.isInside( structNode ) ) {
 					hasInsideComments = true;

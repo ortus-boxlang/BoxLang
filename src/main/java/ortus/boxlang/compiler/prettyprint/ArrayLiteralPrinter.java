@@ -62,7 +62,7 @@ public class ArrayLiteralPrinter {
 			arrayDoc.append( visitor.popDoc() );
 		} else {
 			// Check if there are inside comments — if so, force multiline to avoid collapsing
-			boolean	hasInsideComments	= false;
+			boolean hasInsideComments = false;
 			for ( var comment : arrayNode.getComments() ) {
 				if ( comment.isInside( arrayNode ) ) {
 					hasInsideComments = true;

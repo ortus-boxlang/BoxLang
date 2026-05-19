@@ -168,7 +168,7 @@ public class ArgumentsPrinter {
 			}
 		} else {
 			// Check if there are inside comments — if so, force multiline to avoid collapsing
-			boolean	hasInsideComments	= false;
+			boolean hasInsideComments = false;
 			for ( var comment : parentNode.getComments() ) {
 				if ( comment.isInside( parentNode ) ) {
 					hasInsideComments = true;
