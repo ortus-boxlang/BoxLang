@@ -354,6 +354,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		endDate								= Key.of( "endDate" );
 	public static final Key		endTime								= Key.of( "endTime" );
 	public static final Key		endRow								= Key.of( "endRow" );
+	public static final Key		endsWithNoCase						= Key.of( "endsWithNoCase" );
 	public static final Key		enforceExplicitOutput				= Key.of( "enforceExplicitOutput" );
 	public static final Key		enforceUDFTypeChecks				= Key.of( "enforceUDFTypeChecks" );
 	public static final Key		entryPath							= Key.of( "entryPath" );
@@ -865,6 +866,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		startRow							= Key.of( "startRow" );
 	public static final Key		startTicks							= Key.of( "startTicks" );
 	public static final Key		startTime							= Key.of( "startTime" );
+	public static final Key		startsWithNoCase					= Key.of( "startsWithNoCase" );
 	public static final Key		state								= Key.of( "state" );
 	public static final Key		states								= Key.of( "states" );
 	public static final Key		status								= Key.of( "status" );
@@ -884,6 +886,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		string_strict						= Key.of( "string_strict" );
 	public static final Key		string1								= Key.of( "string1" );
 	public static final Key		string2								= Key.of( "string2" );
+	public static final Key		stringEndsWithNoCase				= Key.of( "stringEndsWithNoCase" );
+	public static final Key		stringStartsWithNoCase				= Key.of( "stringStartsWithNoCase" );
 	public static final Key		strip								= Key.of( "strip" );
 	public static final Key		stripWhitespace						= Key.of( "stripWhitespace" );
 	public static final Key		struct								= Key.of( "struct" );

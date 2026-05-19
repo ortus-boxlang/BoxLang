@@ -116,4 +116,22 @@ public enum BoxLangType {
 		return this.key.getName();
 	}
 
+	/**
+	 * Returns the base type name, stripping any modifiers (strict, loose, modifiable, assignable, numeric suffixes).
+	 * For example, STRING_STRICT returns "string", MODIFIABLE_ARRAY returns "array", STRUCT_LOOSE returns "struct".
+	 * Used for deriving default member method names from BIF class names.
+	 *
+	 * @return The base type name as a Key
+	 */
+	public Key getBaseTypeName() {
+		return switch ( this ) {
+			case STRING_STRICT -> Key._STRING;
+			case STRUCT_LOOSE -> Key._STRUCT;
+			case MODIFIABLE_ARRAY, ASSIGNABLE_ARRAY -> Key._ARRAY;
+			case MODIFIABLE_STRUCT -> Key._STRUCT;
+			case MODIFIABLE_QUERY -> Key._QUERY;
+			default -> this.key;
+		};
+	}
+
 }
