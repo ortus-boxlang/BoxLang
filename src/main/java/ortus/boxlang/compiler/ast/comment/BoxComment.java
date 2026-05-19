@@ -49,27 +49,27 @@ public abstract class BoxComment extends BoxNode {
 	}
 
 	/**
-	 * Check if the comment text equals the given text (exact match after trimming both sides)
+	 * Check if the comment text equals the given text (case-insensitive, after trimming both sides)
 	 *
 	 * @param text the text to compare against
 	 *
-	 * @return true if the trimmed comment text equals the given text
+	 * @return true if the trimmed comment text equals the given text (ignoring case)
 	 */
 	public boolean textEquals( String text ) {
-		return this.commentText.trim().equals( text );
+		return this.commentText.trim().equalsIgnoreCase( text );
 	}
 
 	/**
-	 * Check if the comment text equals any of the given texts (exact match after trimming)
+	 * Check if the comment text equals any of the given texts (case-insensitive, after trimming)
 	 *
 	 * @param texts the texts to compare against
 	 *
-	 * @return true if the trimmed comment text equals any of the given texts
+	 * @return true if the trimmed comment text equals any of the given texts (ignoring case)
 	 */
 	public boolean textEqualsAny( String... texts ) {
 		String trimmed = this.commentText.trim();
 		for ( String text : texts ) {
-			if ( trimmed.equals( text ) ) {
+			if ( trimmed.equalsIgnoreCase( text ) ) {
 				return true;
 			}
 		}
@@ -77,36 +77,36 @@ public abstract class BoxComment extends BoxNode {
 	}
 
 	/**
-	 * Check if the comment text contains the given text (case-sensitive)
+	 * Check if the comment text contains the given text (case-insensitive)
 	 *
 	 * @param text the text to search for
 	 *
-	 * @return true if the comment text contains the given text
+	 * @return true if the comment text contains the given text (ignoring case)
 	 */
 	public boolean textContains( String text ) {
-		return this.commentText.contains( text );
+		return this.commentText.toLowerCase().contains( text.toLowerCase() );
 	}
 
 	/**
-	 * Check if the comment text starts with the given text (after trimming the comment text)
+	 * Check if the comment text starts with the given text (case-insensitive, after trimming)
 	 *
 	 * @param text the prefix to check
 	 *
-	 * @return true if the trimmed comment text starts with the given text
+	 * @return true if the trimmed comment text starts with the given text (ignoring case)
 	 */
 	public boolean textStartsWith( String text ) {
-		return this.commentText.trim().startsWith( text );
+		return this.commentText.trim().toLowerCase().startsWith( text.toLowerCase() );
 	}
 
 	/**
-	 * Check if the comment text matches the given regex pattern
+	 * Check if the comment text matches the given regex pattern (case-insensitive)
 	 *
 	 * @param regex the regex pattern to test
 	 *
-	 * @return true if the trimmed comment text matches the regex
+	 * @return true if the trimmed comment text matches the regex (case-insensitive)
 	 */
 	public boolean textMatches( String regex ) {
-		return this.commentText.trim().matches( regex );
+		return this.commentText.trim().matches( "(?i)" + regex );
 	}
 
 	@Override
