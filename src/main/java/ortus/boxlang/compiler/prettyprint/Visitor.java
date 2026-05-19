@@ -212,7 +212,7 @@ public class Visitor extends VoidBoxVisitor {
 		}
 	}
 
-	private String extractRawSourceFromPosition( BoxNode node ) {
+	String extractRawSourceFromPosition( BoxNode node ) {
 		if ( node == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
 			return null;
 		}

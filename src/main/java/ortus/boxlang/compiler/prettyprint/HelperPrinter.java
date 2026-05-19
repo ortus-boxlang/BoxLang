@@ -24,6 +24,8 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.comment.BoxComment;
+import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
@@ -45,11 +47,44 @@ public class HelperPrinter {
 
 		BoxStatement	lastStatement		= statements.get( statements.size() - 1 );
 		BoxStatement	previousStatement	= null;
+		boolean			ignoreMode			= false;
 
 		// Get member spacing for class members (default is 1 blank line between functions)
 		int				memberSpacing		= visitor.config.getClassConfig().getMemberSpacing();
 
 		for ( var statement : statements ) {
+
+			// --- Ignore-mode exit: statement has an ignore-end pre-comment ---
+			if ( ignoreMode ) {
+				boolean hasEndMarker = hasFormatterIgnoreEnd( statement );
+				if ( hasEndMarker ) {
+					// Exit ignore mode — format this statement normally.
+					// printPreComments will emit the end-marker as a regular comment.
+					ignoreMode = false;
+				} else {
+					// Still in ignore mode — emit raw
+					emitRawStatement( statement );
+					if ( statement != lastStatement ) {
+						visitor.newLine();
+					}
+					previousStatement = statement;
+					continue;
+				}
+			}
+
+			// --- Ignore-mode entry: statement has an ignore-start pre-comment ---
+			if ( !ignoreMode && hasFormatterIgnoreStart( statement ) ) {
+				ignoreMode = true;
+				emitRawStatement( statement );
+				if ( statement != lastStatement ) {
+					visitor.newLine();
+				}
+				previousStatement = statement;
+				continue;
+			}
+
+			// --- Normal formatting ---
+
 			// Check if this is a class member (function in a class or interface)
 			boolean isClassMember = statement instanceof BoxFunctionDeclaration &&
 			    ( statement.getParent() instanceof BoxClass || statement.getParent() instanceof BoxInterface );
@@ -81,6 +116,73 @@ public class HelperPrinter {
 			}
 
 			previousStatement = statement;
+		}
+	}
+
+	/**
+	 * Checks if a statement has a formatter-ignore-start comment in its pre-comments.
+	 */
+	private boolean hasFormatterIgnoreStart( BoxStatement statement ) {
+		for ( BoxComment comment : statement.getComments() ) {
+			if ( comment.isBefore( statement ) && comment instanceof BoxSingleLineComment slc && slc.isFormatterIgnoreStart() ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Checks if a statement has a formatter-ignore-end comment in its pre-comments.
+	 */
+	private boolean hasFormatterIgnoreEnd( BoxStatement statement ) {
+		for ( BoxComment comment : statement.getComments() ) {
+			if ( comment.isBefore( statement ) && comment instanceof BoxSingleLineComment slc && slc.isFormatterIgnoreEnd() ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Emits a statement and its associated comments as raw (unformatted) text.
+	 * Used when inside a formatter-ignore region to preserve original source formatting.
+	 * Falls back to normal formatting if the node has no raw source text (e.g., transpiler-injected nodes).
+	 */
+	private void emitRawStatement( BoxStatement statement ) {
+		Doc		currentDoc			= visitor.getCurrentDoc();
+
+		// Emit pre-comments raw
+		boolean	emittedPreComment	= false;
+		for ( BoxComment comment : statement.getComments() ) {
+			if ( comment.isBefore( statement ) ) {
+				if ( emittedPreComment ) {
+					currentDoc.append( Line.HARD );
+				}
+				currentDoc.append( comment.getSourceText() );
+				emittedPreComment = true;
+			}
+		}
+
+		// Emit statement source text raw, or fall back to formatted output
+		String raw = visitor.extractRawSourceFromPosition( statement );
+		if ( raw != null ) {
+			if ( emittedPreComment ) {
+				currentDoc.append( Line.HARD );
+			}
+			currentDoc.append( raw );
+		} else {
+			// No raw source available (e.g., transpiler-injected AST nodes) — format normally
+			if ( emittedPreComment ) {
+				currentDoc.append( Line.HARD );
+			}
+			statement.accept( visitor );
+		}
+
+		// Emit post-comments raw (same-line comments)
+		for ( BoxComment comment : statement.getComments() ) {
+			if ( comment.isAfter( statement ) ) {
+				currentDoc.append( " " ).append( comment.getSourceText() );
+			}
 		}
 	}
 

@@ -22,7 +22,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -450,20 +449,9 @@ public final class PrettyPrint {
 	 * @return the formatted source
 	 */
 	public static String prettyPrint( BoxNode node, Config config ) {
-		// Capture original source before formatting so ignore regions can be spliced back
-		String originalSource = null;
-		if ( node.getPosition() != null && node.getPosition().getSource() != null ) {
-			originalSource = node.getPosition().getSource().getCode();
-		}
-
 		var		doc		= generateDoc( node, config );
 		String	output	= printDoc( doc, config );
 		output = output.replaceAll( "(?m)(^\\s*param\\s+[^=\\r\\n]*?)\\s+=\\s+", "$1 = " );
-
-		// Splice original source lines back for any formatter-ignore regions
-		if ( originalSource != null ) {
-			output = applyIgnoreRegions( originalSource, output, config.lineSeparator() );
-		}
 
 		// cfformat always produces a trailing newline; match this behaviour in CF compat mode
 		if ( config.getCFFormatCompatibility() && !output.endsWith( "\n" ) ) {
@@ -516,120 +504,6 @@ public final class PrettyPrint {
 	public static String printDoc( Doc doc, Config config ) {
 		var printer = new Printer( config );
 		return printer.print( doc );
-	}
-
-	/**
-	 * Returns {@code true} if the given trimmed source line is a formatter ignore-start marker.
-	 * <p>
-	 * Recognised markers (all case-sensitive, exact match after trimming whitespace):
-	 * <ul>
-	 * <li>{@code // cfformat-ignore-start} – legacy CFFormat style</li>
-	 * <li>{@code // @formatter:off} – Eclipse / IntelliJ / Java style</li>
-	 * <li>{@code // bxformat-ignore-start} – BoxLang native style</li>
-	 * </ul>
-	 *
-	 * @param trimmedLine a source line with leading/trailing whitespace already removed
-	 *
-	 * @return {@code true} when the line is a recognised start marker
-	 */
-	private static boolean isIgnoreStart( String trimmedLine ) {
-		return trimmedLine.equals( "// cfformat-ignore-start" )
-		    || trimmedLine.equals( "// @formatter:off" )
-		    || trimmedLine.equals( "// bxformat-ignore-start" );
-	}
-
-	/**
-	 * Returns {@code true} if the given trimmed source line is a formatter ignore-end marker.
-	 * <p>
-	 * Recognised markers (all case-sensitive, exact match after trimming whitespace):
-	 * <ul>
-	 * <li>{@code // cfformat-ignore-end} – legacy CFFormat style</li>
-	 * <li>{@code // @formatter:on} – Eclipse / IntelliJ / Java style</li>
-	 * <li>{@code // bxformat-ignore-end} – BoxLang native style</li>
-	 * </ul>
-	 *
-	 * @param trimmedLine a source line with leading/trailing whitespace already removed
-	 *
-	 * @return {@code true} when the line is a recognised end marker
-	 */
-	private static boolean isIgnoreEnd( String trimmedLine ) {
-		return trimmedLine.equals( "// cfformat-ignore-end" )
-		    || trimmedLine.equals( "// @formatter:on" )
-		    || trimmedLine.equals( "// bxformat-ignore-end" );
-	}
-
-	/**
-	 * Splices back the original (unformatted) source lines for every formatter-ignore
-	 * region found in the formatted output.
-	 * <p>
-	 * Regions are matched by order: the N-th start marker in the formatted output is
-	 * paired with the N-th start marker in the original source. Any start marker without
-	 * a corresponding end marker is treated as "ignore to end of file". Any start/end
-	 * marker style may be combined (e.g. {@code // @formatter:off} … {@code // cfformat-ignore-end}).
-	 *
-	 * @param originalSource  the raw, unformatted source text
-	 * @param formattedOutput the formatter-produced text to patch
-	 * @param lineSep         the line separator used when rejoining lines
-	 *
-	 * @return the patched output with ignore regions replaced by their original source lines
-	 */
-	private static String applyIgnoreRegions( String originalSource, String formattedOutput, String lineSep ) {
-		String[]		originalLines	= originalSource.split( "\\r?\\n", -1 );
-		String[]		formattedLines	= formattedOutput.split( "\\r?\\n", -1 );
-
-		// Collect ignore regions from the original source as arrays of their original lines
-		List<String[]>	originalRegions	= new ArrayList<>();
-		int				i				= 0;
-		while ( i < originalLines.length ) {
-			if ( isIgnoreStart( originalLines[ i ].trim() ) ) {
-				int regionStart = i;
-				i++;
-				while ( i < originalLines.length && !isIgnoreEnd( originalLines[ i ].trim() ) ) {
-					i++;
-				}
-				int regionEnd = i < originalLines.length ? i : originalLines.length - 1;
-				originalRegions.add( Arrays.copyOfRange( originalLines, regionStart, regionEnd + 1 ) );
-			}
-			i++;
-		}
-
-		if ( originalRegions.isEmpty() ) {
-			return formattedOutput;
-		}
-
-		// Replace each corresponding region in the formatted output with the original lines
-		List<String>	result		= new ArrayList<>( Arrays.asList( formattedLines ) );
-		int				regionIdx	= 0;
-		int				offset		= 0;	// cumulative size delta from previous replacements
-
-		for ( i = 0; i < formattedLines.length && regionIdx < originalRegions.size(); i++ ) {
-			if ( isIgnoreStart( formattedLines[ i ].trim() ) ) {
-				int	fmtStart	= i;
-				int	j			= i + 1;
-				while ( j < formattedLines.length && !isIgnoreEnd( formattedLines[ j ].trim() ) ) {
-					j++;
-				}
-				int	fmtEnd			= j < formattedLines.length ? j : formattedLines.length - 1;
-
-				String[]	origRegion		= originalRegions.get( regionIdx );
-				int			adjustedStart	= fmtStart + offset;
-				int			adjustedEnd		= fmtEnd + offset;
-				int			removeCount		= adjustedEnd - adjustedStart + 1;
-
-				for ( int k = 0; k < removeCount; k++ ) {
-					result.remove( adjustedStart );
-				}
-				for ( int k = origRegion.length - 1; k >= 0; k-- ) {
-					result.add( adjustedStart, origRegion[ k ] );
-				}
-
-				offset	+= origRegion.length - removeCount;
-				i		= fmtEnd;
-				regionIdx++;
-			}
-		}
-
-		return String.join( lineSep, result );
 	}
 
 	/**
