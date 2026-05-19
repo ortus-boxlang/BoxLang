@@ -80,7 +80,13 @@ public class ComponentPrinter {
 	}
 
 	private void printScript( BoxComponent node ) {
-		if ( "bx:".equals( visitor.componentPrefix ) ) {
+		// Use the component prefix only when the original source used it.
+		// "include" can appear both as a bare keyword (`include template="..."`) and as
+		// a prefixed component (`bx:include template="..."`), so we check the source
+		// text rather than always applying the visitor prefix.
+		String	sourceText	= node.getSourceText();
+		boolean	hadPrefix	= sourceText != null && sourceText.toLowerCase().startsWith( visitor.componentPrefix.toLowerCase() );
+		if ( hadPrefix ) {
 			visitor.print( visitor.componentPrefix );
 		}
 		visitor.print( node.getName() );

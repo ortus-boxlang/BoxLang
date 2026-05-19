@@ -18,6 +18,7 @@
 package ortus.boxlang.compiler.prettyprint;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
+import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
@@ -75,6 +76,10 @@ public class StringPrinter {
 			processStringInterp( interp, quote );
 		} else if ( node instanceof BoxFQN fqn ) {
 			visitor.print( fqn.getValue() );
+		} else if ( node instanceof BoxAssignment assignment ) {
+			// Handles `include template="#expr#"` where the parser produces a BoxAssignment
+			// for the whole `template = expr` expression. We only want the right-hand side value.
+			printQuotedExpression( assignment.getRight(), quote );
 		} else {
 			visitor.print( "#" );
 			node.accept( visitor );
