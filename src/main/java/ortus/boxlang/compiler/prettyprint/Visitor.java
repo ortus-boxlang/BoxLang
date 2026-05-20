@@ -143,7 +143,7 @@ public class Visitor extends VoidBoxVisitor {
 
 	/**
 	 * Constructor
-	 * 
+	 *
 	 * @param sourceType The source type of the node being visited
 	 * @param config     The configuration for printing
 	 */
