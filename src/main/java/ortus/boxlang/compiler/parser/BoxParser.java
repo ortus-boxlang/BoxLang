@@ -333,7 +333,7 @@ public class BoxParser extends AbstractParser {
 		this.classOrInterface = classOrInterface;
 		BoxLexerCustom	lexer	= new BoxLexerCustom( CharStreams.fromStream( stream, StandardCharsets.UTF_8 ),
 		    isScript ? BoxLexerCustom.DEFAULT_SCRIPT_MODE : BoxLexerCustom.DEFAULT_TEMPLATE_MODE, errorListener, this )
-		    .setClassIsExpected( classOrInterface );
+		        .setClassIsExpected( classOrInterface );
 		BoxGrammar		parser	= new BoxGrammar( new CommonTokenStream( lexer ) );
 
 		// DEBUG: Will print a trace of all parser rules visited:
@@ -1563,6 +1563,8 @@ public class BoxParser extends AbstractParser {
 			}
 			case BoxFQN ignored -> {
 			}
+			case BoxExpressionInvocation ignored -> {
+			}
 			default -> errorListener.semanticError( left.getDescription() + " is not a valid construct for " + ( isStatic ? "static" : "dot" ) + " access",
 			    left.getPosition() );
 		}
@@ -1613,6 +1615,8 @@ public class BoxParser extends AbstractParser {
 			case BoxStaticAccess ignored -> {
 			}
 			case BoxStaticMethodInvocation ignored -> {
+			}
+			case BoxExpressionInvocation ignored -> {
 			}
 			default -> errorListener.semanticError( object.getDescription() + " is not a valid construct for array access ", getPosition( ctx ) );
 		}

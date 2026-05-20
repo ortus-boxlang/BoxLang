@@ -251,6 +251,34 @@ public class InnerClassTest {
 		assertThat( variables.get( Key.of( "resultColon" ) ) ).isEqualTo( "OuterClass" );
 	}
 
+	@DisplayName( "Outer class instance can reference inner classes statically" )
+	@Test
+	public void testOuterClassInstanceReferenceInnerStatics() {
+		instance.executeSource(
+		    """
+		       import src.test.java.TestCases.phase3.InnerClassOuter;
+		       getClass = ()-> InnerClassOuter;
+		       myClass = getClass();
+		       result = myClass.OUTER_NAME;
+		       result2 = myClass::OUTER_NAME;
+		       result3 = myClass.Inner;
+		       result4 = myClass::Inner;
+		    result5 = InnerClassOuter.Inner;
+		    result6 = InnerClassOuter::Inner;
+		             """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "OuterClass" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "OuterClass" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isInstanceOf( Class.class );
+		assertThat( ( ( Class<?> ) variables.get( Key.of( "result3" ) ) ).getSimpleName() ).contains( "Inner" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isInstanceOf( Class.class );
+		assertThat( ( ( Class<?> ) variables.get( Key.of( "result4" ) ) ).getSimpleName() ).contains( "Inner" );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isInstanceOf( Class.class );
+		assertThat( ( ( Class<?> ) variables.get( Key.of( "result5" ) ) ).getSimpleName() ).contains( "Inner" );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isInstanceOf( Class.class );
+		assertThat( ( ( Class<?> ) variables.get( Key.of( "result6" ) ) ).getSimpleName() ).contains( "Inner" );
+	}
+
 	@DisplayName( "Inner class accesses outer class statics inline via dot and double colon" )
 	@Test
 	public void testInnerClassAccessOuterStaticsInline() {

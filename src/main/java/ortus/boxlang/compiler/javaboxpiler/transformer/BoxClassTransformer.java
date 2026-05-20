@@ -281,6 +281,10 @@ public class BoxClassTransformer extends AbstractTransformer {
 				return ${innerClassNamesExpr};
 			}
 
+			public static IStruct getInnerClassNamesStatic() {
+				return ${innerClassNamesExpr};
+			}
+
 			public IStruct getAnnotations() {
 				return annotations;
 			}
@@ -914,26 +918,29 @@ public class BoxClassTransformer extends AbstractTransformer {
 			thisClass.addMember( innerClass );
 		} );
 
-		// Generate static innerBoxClasses field and getInnerBoxClasses() override if there are inner classes
-		Map<String, String> localClasses = ( ( JavaTranspiler ) transpiler ).getLocalClasses();
-		if ( !localClasses.isEmpty() ) {
-			// Build: Map.of( Key.of("Name1"), Name1.class, Key.of("Name2"), Name2.class, ... )
-			MethodCallExpr mapOfCall = new MethodCallExpr( new NameExpr( "Map" ), "of" );
-			for ( Map.Entry<String, String> entry : localClasses.entrySet() ) {
-				mapOfCall.addArgument( new MethodCallExpr( new NameExpr( "Key" ), "of", new NodeList<>(
-				    new com.github.javaparser.ast.expr.StringLiteralExpr( entry.getKey() ) ) ) );
-				mapOfCall.addArgument( new com.github.javaparser.ast.expr.ClassExpr( new ClassOrInterfaceType( null, entry.getValue() ) ) );
-			}
-			// Add: public static Map<Key, Class<?>> innerBoxClasses = Map.of(...);
-			FieldDeclaration field = thisClass.addField( "Map<Key, Class<?>>", "innerBoxClasses",
-			    com.github.javaparser.ast.Modifier.Keyword.PUBLIC, com.github.javaparser.ast.Modifier.Keyword.STATIC );
-			field.getVariable( 0 ).setInitializer( mapOfCall );
-			// Add: public Map<Key, Class<?>> getInnerBoxClasses() { return innerBoxClasses; }
-			MethodDeclaration getInnerBoxClassesMethod = thisClass.addMethod( "getInnerBoxClasses",
-			    com.github.javaparser.ast.Modifier.Keyword.PUBLIC );
-			getInnerBoxClassesMethod.setType( "Map<Key, Class<?>>" );
-			getInnerBoxClassesMethod.getBody().get().addStatement( new ReturnStmt( new NameExpr( "innerBoxClasses" ) ) );
+		// Generate static innerBoxClasses field and getInnerBoxClassesStatic() method for all classes
+		Map<String, String>	localClasses	= ( ( JavaTranspiler ) transpiler ).getLocalClasses();
+		// Build: Map.of( Key.of("Name1"), Name1.class, Key.of("Name2"), Name2.class, ... )
+		MethodCallExpr		mapOfCall		= new MethodCallExpr( new NameExpr( "Map" ), "of" );
+		for ( Map.Entry<String, String> entry : localClasses.entrySet() ) {
+			mapOfCall.addArgument( new MethodCallExpr( new NameExpr( "Key" ), "of", new NodeList<>(
+			    new com.github.javaparser.ast.expr.StringLiteralExpr( entry.getKey() ) ) ) );
+			mapOfCall.addArgument( new com.github.javaparser.ast.expr.ClassExpr( new ClassOrInterfaceType( null, entry.getValue() ) ) );
 		}
+		// Add: public static Map<Key, Class<?>> innerBoxClasses = Map.of(...);
+		FieldDeclaration field = thisClass.addField( "Map<Key, Class<?>>", "innerBoxClasses",
+		    com.github.javaparser.ast.Modifier.Keyword.PUBLIC, com.github.javaparser.ast.Modifier.Keyword.STATIC );
+		field.getVariable( 0 ).setInitializer( mapOfCall );
+		// Add: public Map<Key, Class<?>> getInnerBoxClasses() { return innerBoxClasses; }
+		MethodDeclaration getInnerBoxClassesMethod = thisClass.addMethod( "getInnerBoxClasses",
+		    com.github.javaparser.ast.Modifier.Keyword.PUBLIC );
+		getInnerBoxClassesMethod.setType( "Map<Key, Class<?>>" );
+		getInnerBoxClassesMethod.getBody().get().addStatement( new ReturnStmt( new NameExpr( "innerBoxClasses" ) ) );
+		// Add: public static Map<Key, Class<?>> getInnerBoxClassesStatic() { return innerBoxClasses; }
+		MethodDeclaration getInnerBoxClassesStaticMethod = thisClass.addMethod( "getInnerBoxClassesStatic",
+		    com.github.javaparser.ast.Modifier.Keyword.PUBLIC, com.github.javaparser.ast.Modifier.Keyword.STATIC );
+		getInnerBoxClassesStaticMethod.setType( "Map<Key, Class<?>>" );
+		getInnerBoxClassesStaticMethod.getBody().get().addStatement( new ReturnStmt( new NameExpr( "innerBoxClasses" ) ) );
 
 		return entryPoint;
 	}

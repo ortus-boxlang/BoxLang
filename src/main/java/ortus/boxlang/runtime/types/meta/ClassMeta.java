@@ -274,4 +274,24 @@ public class ClassMeta extends BoxMeta<IClassRunnable> {
 		return target.getStaticScope();
 	}
 
+	/**
+	 * Get the enclosing (outer) BoxLang class for this inner class.
+	 * Returns null if this class is not an inner class.
+	 *
+	 * @return The enclosing class, or null if not an inner class
+	 */
+	public Class<?> getEnclosingBoxClass() {
+		return this.target.getEnclosingBoxClass();
+	}
+
+	/**
+	 * Get the inner BoxLang classes defined within this class.
+	 * The key is the BoxLang name (case-insensitive Key), the value is the compiled Class.
+	 *
+	 * @return Map of inner class name to class reference, or empty map
+	 */
+	public Map<Key, Class<?>> getInnerBoxClasses() {
+		return this.target.getInnerBoxClasses();
+	}
+
 }

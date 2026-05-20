@@ -458,9 +458,9 @@ public class BoxClassTransformer {
 			mv.visitEnd();
 		}
 
-		// Generate innerBoxClasses static field and getInnerBoxClasses() override if there are inner classes
+		// Generate innerBoxClasses static field and getInnerBoxClassesStatic() method for all classes
 		Map<String, String> localClasses = transpiler.getLocalClasses();
-		if ( !localClasses.isEmpty() ) {
+		{
 			// Declare public static field: innerBoxClasses
 			classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
 			    "innerBoxClasses",
@@ -478,6 +478,17 @@ public class BoxClassTransformer {
 			mv.visitInsn( Opcodes.ARETURN );
 			mv.visitMaxs( 0, 0 );
 			mv.visitEnd();
+			// Generate getInnerBoxClassesStatic() that returns the static field
+			MethodVisitor mvStatic = classNode.visitMethod( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+			    "getInnerBoxClassesStatic",
+			    "()Ljava/util/Map;",
+			    null,
+			    null );
+			mvStatic.visitCode();
+			mvStatic.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "innerBoxClasses", Type.getDescriptor( Map.class ) );
+			mvStatic.visitInsn( Opcodes.ARETURN );
+			mvStatic.visitMaxs( 0, 0 );
+			mvStatic.visitEnd();
 		}
 
 		// Generate getEnclosingClassName() that returns the enclosing class's boxFQN as a string
@@ -495,7 +506,7 @@ public class BoxClassTransformer {
 			mv.visitEnd();
 		}
 
-		// Generate innerClassNames static field and getInnerClassNames() override
+		// Generate innerClassNames static field and getInnerClassNames()/getInnerClassNamesStatic() override
 		if ( !localClasses.isEmpty() ) {
 			// Declare public static field: innerClassNames (IStruct)
 			classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
@@ -503,9 +514,20 @@ public class BoxClassTransformer {
 			    Type.getDescriptor( IStruct.class ),
 			    null,
 			    null ).visitEnd();
-			// Generate getInnerClassNames() that returns the static field
+			// Generate getInnerClassNames() instance method that returns the static field
 			MethodVisitor mv = classNode.visitMethod( Opcodes.ACC_PUBLIC,
 			    "getInnerClassNames",
+			    Type.getMethodDescriptor( Type.getType( IStruct.class ) ),
+			    null,
+			    null );
+			mv.visitCode();
+			mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "innerClassNames", Type.getDescriptor( IStruct.class ) );
+			mv.visitInsn( Opcodes.ARETURN );
+			mv.visitMaxs( 0, 0 );
+			mv.visitEnd();
+			// Generate getInnerClassNamesStatic() static method that returns the static field
+			mv = classNode.visitMethod( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+			    "getInnerClassNamesStatic",
 			    Type.getMethodDescriptor( Type.getType( IStruct.class ) ),
 			    null,
 			    null );
@@ -1193,6 +1215,10 @@ public class BoxClassTransformer {
 				    false ) );
 				clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "innerClassNames",
 				    Type.getDescriptor( IStruct.class ) ) );
+			} else {
+				// No inner classes - initialize to empty Map
+				clinitNodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC, "java/util/Map", "of", "()Ljava/util/Map;", true ) );
+				clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "innerBoxClasses", Type.getDescriptor( Map.class ) ) );
 			}
 
 			// Initialize superClassName field
