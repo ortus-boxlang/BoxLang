@@ -503,6 +503,20 @@ public class Visitor extends VoidBoxVisitor {
 					value	= value.replaceFirst( "^(?:\\r\\n|\\r|\\n)[\\t ]*", "" );
 					value	= value.replaceFirst( "[\\t ]*(?:\\r\\n|\\r|\\n)[\\t ]*$", "" );
 					value	= dedentBuffer( value );
+					// Emit each line as a separate doc element separated by Line.HARD so that
+					// the INDENT doc can apply proper indentation to every inner line.
+					if ( value.contains( "\n" ) ) {
+						String[] lines = value.split( "\\r?\\n", -1 );
+						for ( int i = 0; i < lines.length; i++ ) {
+							if ( i > 0 ) {
+								getCurrentDoc().append( Line.HARD );
+							}
+							print( lines[ i ] );
+						}
+						printPostComments( node.getExpression() );
+						printPostComments( node );
+						return;
+					}
 				}
 				print( value );
 			} else if ( node.getExpression() instanceof BoxStringInterpolation sInt ) {

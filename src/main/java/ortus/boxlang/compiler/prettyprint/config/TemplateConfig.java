@@ -54,19 +54,19 @@ public class TemplateConfig {
 	 * like {@code <bx:if>} is indented one level and whitespace is cleaned up.
 	 *
 	 * <pre>
-	 * // indentContent: true (default)
-	 * &lt;bx:if condition="true"&gt;
-	 *     &lt;p&gt;Hello&lt;/p&gt;
-	 * &lt;/bx:if&gt;
-	 *
-	 * // indentContent: false
+	 * // indentContent: false (default)
 	 * &lt;bx:if condition="true"&gt;
 	 * &lt;p&gt;Hello&lt;/p&gt;
+	 * &lt;/bx:if&gt;
+	 *
+	 * // indentContent: true
+	 * &lt;bx:if condition="true"&gt;
+	 *     &lt;p&gt;Hello&lt;/p&gt;
 	 * &lt;/bx:if&gt;
 	 * </pre>
 	 */
 	@JsonProperty( "indent_content" )
-	private boolean	indentContent			= true;
+	private boolean	indentContent			= false;
 
 	/**
 	 * Force each attribute in a template tag onto its own line.

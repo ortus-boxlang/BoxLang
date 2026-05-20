@@ -131,7 +131,7 @@ public final class PrettyPrint {
 		"template" : {
 			"enabled" : true,
 			"component_prefix" : "bx",
-			"indent_content" : true,
+			"indent_content" : false,
 			"single_attribute_per_line" : false,
 			"self_closing" : true
 		},

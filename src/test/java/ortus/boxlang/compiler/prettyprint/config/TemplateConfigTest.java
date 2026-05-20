@@ -38,7 +38,7 @@ public class TemplateConfigTest {
 
 		assertTrue( config.getEnabled() );
 		assertEquals( "bx", config.getComponentPrefix() );
-		assertTrue( config.getIndentContent() );
+		assertFalse( config.getIndentContent() );
 		assertFalse( config.getSingleAttributePerLine() );
 		assertTrue( config.getSelfClosing() );
 	}

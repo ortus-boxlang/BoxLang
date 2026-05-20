@@ -1,6 +1,7 @@
 {
 	"template": {
 		"enabled": true,
+		"indent_content": true,
 		"single_attribute_per_line": false
 	}
 }
