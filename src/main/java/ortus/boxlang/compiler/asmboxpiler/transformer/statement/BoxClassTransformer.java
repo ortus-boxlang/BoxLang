@@ -49,6 +49,7 @@ import org.objectweb.asm.tree.VarInsnNode;
 
 import ortus.boxlang.compiler.JavaMethodResolver;
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
+import ortus.boxlang.compiler.asmboxpiler.AsmTranspiler;
 import ortus.boxlang.compiler.asmboxpiler.Transpiler;
 import ortus.boxlang.compiler.asmboxpiler.transformer.ReturnValueContext;
 import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
@@ -83,6 +84,7 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.ClassMeta;
@@ -117,17 +119,24 @@ public class BoxClassTransformer {
 		transpiler.setProperty( "classTypeInternal", type.getInternalName() );
 
 		// Build compile-time import definitions from the BoxLang source for alias resolution
-		List<ImportDefinition>	compileTimeImports	= boxClass.getImports().stream()
+		List<ImportDefinition>	compileTimeImports		= boxClass.getImports().stream()
 		    .filter( imp -> imp.getExpression() != null )
 		    .map( imp -> {
-														    String expression = imp.getExpression() instanceof BoxFQN fqn ? fqn.getValue()
-														        : imp.getExpression().toString();
-														    String alias	= imp.getAlias() != null ? " as " + imp.getAlias().getName() : "";
-														    return ImportDefinition.parse( expression + alias );
-													    } )
+															    String expression = imp.getExpression() instanceof BoxFQN fqn ? fqn.getValue()
+															        : imp.getExpression().toString();
+															    String alias	= imp.getAlias() != null ? " as " + imp.getAlias().getName() : "";
+															    return ImportDefinition.parse( expression + alias );
+														    } )
 		    .collect( Collectors.toList() );
 
-		List<Type>				interfaces			= new ArrayList<>();
+		// Pre-compile any inner classes defined in this class body
+		String					outerClassname			= transpiler.getProperty( "classname" );
+		String					outerPackage			= transpiler.getProperty( "packageName" );
+		String					outerPackageInternal	= outerPackage.replace( '.', '/' );
+		( ( AsmTranspiler ) transpiler ).preCompileLocalClasses( boxClass.getBody(), boxClass.getImports(), outerClassname, outerPackage,
+		    outerPackageInternal );
+
+		List<Type> interfaces = new ArrayList<>();
 		interfaces.add( Type.getType( IClassRunnable.class ) );
 		interfaces.add( Type.getType( IReferenceable.class ) );
 		interfaces.add( Type.getType( IType.class ) );
@@ -434,6 +443,79 @@ public class BoxClassTransformer {
 		    null,
 		    false );
 
+		// Generate getEnclosingBoxClass() override for inner classes
+		String enclosingClassInternal = transpiler.getProperty( "outerClassInternal" );
+		if ( enclosingClassInternal != null ) {
+			MethodVisitor mv = classNode.visitMethod( Opcodes.ACC_PUBLIC,
+			    "getEnclosingBoxClass",
+			    Type.getMethodDescriptor( Type.getType( Class.class ) ),
+			    null,
+			    null );
+			mv.visitCode();
+			mv.visitLdcInsn( Type.getObjectType( enclosingClassInternal ) );
+			mv.visitInsn( Opcodes.ARETURN );
+			mv.visitMaxs( 0, 0 );
+			mv.visitEnd();
+		}
+
+		// Generate innerBoxClasses static field and getInnerBoxClasses() override if there are inner classes
+		Map<String, String> localClasses = transpiler.getLocalClasses();
+		if ( !localClasses.isEmpty() ) {
+			// Declare public static field: innerBoxClasses
+			classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+			    "innerBoxClasses",
+			    Type.getDescriptor( Map.class ),
+			    null,
+			    null ).visitEnd();
+			// Generate getInnerBoxClasses() that returns the static field
+			MethodVisitor mv = classNode.visitMethod( Opcodes.ACC_PUBLIC,
+			    "getInnerBoxClasses",
+			    "()Ljava/util/Map;",
+			    null,
+			    null );
+			mv.visitCode();
+			mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "innerBoxClasses", Type.getDescriptor( Map.class ) );
+			mv.visitInsn( Opcodes.ARETURN );
+			mv.visitMaxs( 0, 0 );
+			mv.visitEnd();
+		}
+
+		// Generate getEnclosingClassName() that returns the enclosing class's boxFQN as a string
+		String enclosingBoxFQN = transpiler.getProperty( "enclosingBoxFQN" );
+		{
+			MethodVisitor mv = classNode.visitMethod( Opcodes.ACC_PUBLIC,
+			    "getEnclosingClassName",
+			    Type.getMethodDescriptor( Type.getType( String.class ) ),
+			    null,
+			    null );
+			mv.visitCode();
+			mv.visitLdcInsn( enclosingBoxFQN != null ? enclosingBoxFQN : "" );
+			mv.visitInsn( Opcodes.ARETURN );
+			mv.visitMaxs( 0, 0 );
+			mv.visitEnd();
+		}
+
+		// Generate innerClassNames static field and getInnerClassNames() override
+		if ( !localClasses.isEmpty() ) {
+			// Declare public static field: innerClassNames (IStruct)
+			classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
+			    "innerClassNames",
+			    Type.getDescriptor( IStruct.class ),
+			    null,
+			    null ).visitEnd();
+			// Generate getInnerClassNames() that returns the static field
+			MethodVisitor mv = classNode.visitMethod( Opcodes.ACC_PUBLIC,
+			    "getInnerClassNames",
+			    Type.getMethodDescriptor( Type.getType( IStruct.class ) ),
+			    null,
+			    null );
+			mv.visitCode();
+			mv.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "innerClassNames", Type.getDescriptor( IStruct.class ) );
+			mv.visitInsn( Opcodes.ARETURN );
+			mv.visitMaxs( 0, 0 );
+			mv.visitEnd();
+		}
+
 		// Use non-final for keys to allow <clinit> splitting
 		classNode.visitField( Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC,
 		    "keys",
@@ -498,7 +580,7 @@ public class BoxClassTransformer {
 		    Type.getType( IStruct.class ),
 		    methodVisitor -> {
 			    // Call BoxClassSupport.getMetaData(class, name, sourceType, path, superClass, interfaces, abstractMethods, compileTimeMethods, annotations,
-			    // documentation, properties, staticScope)
+			    // documentation, properties, staticScope, enclosingClassName, innerClassNames)
 			    methodVisitor.visitLdcInsn( type ); // class
 			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "name", Type.getDescriptor( Key.class ) ); // name
 			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "sourceType", Type.getDescriptor( BoxSourceType.class ) ); // sourceType
@@ -528,6 +610,14 @@ public class BoxClassTransformer {
 			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "documentation", Type.getDescriptor( IStruct.class ) ); // documentation
 			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "properties", Type.getDescriptor( Map.class ) ); // properties
 			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "staticScope", Type.getDescriptor( StaticScope.class ) ); // staticScope
+			    // enclosingClassName (String)
+			    methodVisitor.visitLdcInsn( enclosingBoxFQN != null ? enclosingBoxFQN : "" );
+			    // innerClassNames (IStruct)
+			    if ( !localClasses.isEmpty() ) {
+				    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "innerClassNames", Type.getDescriptor( IStruct.class ) );
+			    } else {
+				    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, Type.getInternalName( Struct.class ), "EMPTY", Type.getDescriptor( IStruct.class ) );
+			    }
 
 			    methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
 			        Type.getInternalName( BoxClassSupport.class ),
@@ -545,7 +635,9 @@ public class BoxClassTransformer {
 			            Type.getType( IStruct.class ),
 			            Type.getType( IStruct.class ),
 			            Type.getType( Map.class ),
-			            Type.getType( StaticScope.class ) ),
+			            Type.getType( StaticScope.class ),
+			            Type.getType( String.class ),
+			            Type.getType( IStruct.class ) ),
 			        false );
 		    } );
 
@@ -558,7 +650,7 @@ public class BoxClassTransformer {
 		    Type.getType( IStruct.class ),
 		    methodVisitor -> {
 			    // Call ClassMeta.generateMeta(class, name, sourceType, path, superClass, interfaces, abstractMethods, compileTimeMethods, annotations,
-			    // documentation, properties, staticScope)
+			    // documentation, properties, staticScope, enclosingClassName, innerClassNames)
 			    methodVisitor.visitLdcInsn( type ); // class
 			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "name", Type.getDescriptor( Key.class ) ); // name
 			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "sourceType", Type.getDescriptor( BoxSourceType.class ) ); // sourceType
@@ -588,6 +680,14 @@ public class BoxClassTransformer {
 			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "documentation", Type.getDescriptor( IStruct.class ) ); // documentation
 			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "properties", Type.getDescriptor( Map.class ) ); // properties
 			    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "staticScope", Type.getDescriptor( StaticScope.class ) ); // staticScope
+			    // enclosingClassName (String)
+			    methodVisitor.visitLdcInsn( enclosingBoxFQN != null ? enclosingBoxFQN : "" );
+			    // innerClassNames (IStruct)
+			    if ( !localClasses.isEmpty() ) {
+				    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, type.getInternalName(), "innerClassNames", Type.getDescriptor( IStruct.class ) );
+			    } else {
+				    methodVisitor.visitFieldInsn( Opcodes.GETSTATIC, Type.getInternalName( Struct.class ), "EMPTY", Type.getDescriptor( IStruct.class ) );
+			    }
 
 			    methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
 			        Type.getInternalName( ClassMeta.class ),
@@ -605,7 +705,9 @@ public class BoxClassTransformer {
 			            Type.getType( IStruct.class ),
 			            Type.getType( IStruct.class ),
 			            Type.getType( Map.class ),
-			            Type.getType( StaticScope.class ) ),
+			            Type.getType( StaticScope.class ),
+			            Type.getType( String.class ),
+			            Type.getType( IStruct.class ) ),
 			        false );
 		    } );
 
@@ -957,8 +1059,9 @@ public class BoxClassTransformer {
 			// Note: serialVersionUID is already initialized in the field declaration with a constant value,
 			// so we don't need to write to it in <clinit>
 
-			if ( isInnerClassDelegate ) {
-				// Inner class: imports field is not declared on this class.
+			boolean hasOwnLocalClasses = !transpiler.getLocalClasses().isEmpty();
+			if ( isInnerClassDelegate && !hasOwnLocalClasses ) {
+				// Inner class without its own inner classes: imports field is not declared on this class.
 				// All references are redirected to the outer class's field in post-processing.
 			} else {
 				clinitNodes.addAll( importNodes );
@@ -1048,6 +1151,49 @@ public class BoxClassTransformer {
 
 			clinitNodes.addAll( AsmHelper.generateMapOfAbstractMethodNames( transpiler, boxClass ) );
 			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "abstractMethods", Type.getDescriptor( Map.class ) ) );
+
+			// Initialize innerBoxClasses static field with Map.of(...)
+			if ( !localClasses.isEmpty() ) {
+				for ( Map.Entry<String, String> entry : localClasses.entrySet() ) {
+					// Push Key.of("alias")
+					clinitNodes.add( new LdcInsnNode( entry.getKey() ) );
+					clinitNodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC, "ortus/boxlang/runtime/scopes/Key", "of",
+					    "(Ljava/lang/Object;)Lortus/boxlang/runtime/scopes/Key;", false ) );
+					// Push InnerClass.class
+					clinitNodes.add( new LdcInsnNode( Type.getObjectType( entry.getValue() ) ) );
+				}
+				// Call Map.of() with the appropriate arity
+				int				numEntries		= localClasses.size();
+				StringBuilder	mapOfDescriptor	= new StringBuilder( "(" );
+				for ( int i = 0; i < numEntries; i++ ) {
+					mapOfDescriptor.append( "Ljava/lang/Object;Ljava/lang/Object;" );
+				}
+				mapOfDescriptor.append( ")Ljava/util/Map;" );
+				clinitNodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC, "java/util/Map", "of", mapOfDescriptor.toString(), true ) );
+				clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "innerBoxClasses", Type.getDescriptor( Map.class ) ) );
+
+				// Initialize innerClassNames field with Struct.of("ShortName", "parent$ShortName", ...)
+				int numPairs = localClasses.size() * 2;
+				clinitNodes.add( new LdcInsnNode( numPairs ) );
+				clinitNodes.add( new TypeInsnNode( Opcodes.ANEWARRAY, "java/lang/Object" ) );
+				int idx = 0;
+				for ( Map.Entry<String, String> entry : localClasses.entrySet() ) {
+					clinitNodes.add( new InsnNode( Opcodes.DUP ) );
+					clinitNodes.add( new LdcInsnNode( idx++ ) );
+					clinitNodes.add( new LdcInsnNode( entry.getKey() ) );
+					clinitNodes.add( new InsnNode( Opcodes.AASTORE ) );
+					clinitNodes.add( new InsnNode( Opcodes.DUP ) );
+					clinitNodes.add( new LdcInsnNode( idx++ ) );
+					clinitNodes.add( new LdcInsnNode( boxClassName + "$" + entry.getKey() ) );
+					clinitNodes.add( new InsnNode( Opcodes.AASTORE ) );
+				}
+				clinitNodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+				    Type.getInternalName( Struct.class ), "of",
+				    Type.getMethodDescriptor( Type.getType( IStruct.class ), Type.getType( Object[].class ) ),
+				    false ) );
+				clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "innerClassNames",
+				    Type.getDescriptor( IStruct.class ) ) );
+			}
 
 			// Initialize superClassName field
 			if ( finalSuperClassName != null ) {

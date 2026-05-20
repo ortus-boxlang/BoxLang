@@ -2170,10 +2170,13 @@ public class ClassTest {
 	public void testStaticInitCallStaticMethod() {
 		instance.executeSource(
 		    """
-		    result = new src.test.java.TestCases.phase3.StaticInitCallStaticMethod().someStruct.foo;
+		    obj = new src.test.java.TestCases.phase3.StaticInitCallStaticMethod();
+		    result = obj.someStruct.foo;
+		    result2 = obj.getFromPseudo();
 		    """,
 		    context );
 		assertThat( variables.get( "result" ) ).isEqualTo( "bar" );
+		assertThat( variables.get( "result2" ) ).isEqualTo( "baz" );
 	}
 
 	@Test

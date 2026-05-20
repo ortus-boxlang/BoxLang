@@ -269,6 +269,18 @@ public class BoxClassTransformer extends AbstractTransformer {
 				return ${className}.staticScope;
 			}
 
+			public Class<?> getEnclosingBoxClass() {
+				return ${enclosingBoxClass};
+			}
+
+			public String getEnclosingClassName() {
+				return ${enclosingClassName};
+			}
+
+			public IStruct getInnerClassNames() {
+				return ${innerClassNamesExpr};
+			}
+
 			public IStruct getAnnotations() {
 				return annotations;
 			}
@@ -420,7 +432,9 @@ public class BoxClassTransformer extends AbstractTransformer {
 								${className}.annotations,
 								${className}.documentation,
 								${className}.properties,
-								${className}.staticScope				
+								${className}.staticScope,
+								${enclosingClassName},
+								${innerClassNamesExpr}
 							);
 						}
 					}
@@ -445,7 +459,9 @@ public class BoxClassTransformer extends AbstractTransformer {
 								${className}.annotations,
 								${className}.documentation,
 								${className}.properties,
-								${className}.staticScope				
+								${className}.staticScope,
+								${enclosingClassName},
+								${innerClassNamesExpr}
 							);
 						}
 					}
@@ -663,10 +679,34 @@ public class BoxClassTransformer extends AbstractTransformer {
 				// If the file no longer exists or can't be accessed, then ignore.
 			}
 		}
-		String							sourceType	= transpiler.getProperty( "sourceType" );
+		String				sourceType				= transpiler.getProperty( "sourceType" );
+
+		// Pre-compute enclosing class name expression
+		String				enclosingBoxFQN			= transpiler.getProperty( "enclosingBoxFQN" );
+		String				enclosingClassNameExpr	= enclosingBoxFQN != null && !enclosingBoxFQN.isEmpty()
+		    ? "\"" + enclosingBoxFQN + "\""
+		    : "\"\"";
+
+		// Pre-compute inner class names expression
+		Map<String, String>	localClassMap			= ( ( JavaTranspiler ) transpiler ).getLocalClasses();
+		String				innerClassNamesExpr;
+		if ( !localClassMap.isEmpty() ) {
+			StringBuilder	sb		= new StringBuilder( "Struct.of(" );
+			boolean			first	= true;
+			for ( String shortName : localClassMap.keySet() ) {
+				if ( !first )
+					sb.append( ", " );
+				sb.append( "\"" ).append( shortName ).append( "\", \"" ).append( boxFQN ).append( "$" ).append( shortName ).append( "\"" );
+				first = false;
+			}
+			sb.append( ")" );
+			innerClassNamesExpr = sb.toString();
+		} else {
+			innerClassNamesExpr = "Struct.EMPTY";
+		}
 
 		// This map replaces the string template
-		Map<String, String>				values		= Map.ofEntries(
+		Map<String, String>				values	= Map.ofEntries(
 		    Map.entry( "packagename", packageName ),
 		    Map.entry( "className", className ),
 		    Map.entry( "interfaceMethods", interfaceMethods ),
@@ -699,9 +739,17 @@ public class BoxClassTransformer extends AbstractTransformer {
 				        throw new BoxRuntimeException( "The value of the [initMethod] annotation must be a string literal." );
 			        }
 		        } )
-		        .orElse( "Key.init" ) )
+		        .orElse( "Key.init" ) ),
+		    Map.entry( "enclosingBoxClass", transpiler.getProperty( "enclosingBoxClass" ) != null
+		        ? transpiler.getProperty( "enclosingBoxClass" ) + ".class"
+		        : "null" ),
+		    Map.entry( "enclosingClassName", enclosingClassNameExpr ),
+		    Map.entry( "innerClassNamesExpr", innerClassNamesExpr ),
+		    Map.entry( "innerBoxClassesRef", !localClassMap.isEmpty()
+		        ? className + ".innerBoxClasses"
+		        : "null" )
 		);
-		String							code		= PlaceholderHelper.resolve( CLASS_TEMPLATE, values );
+		String							code	= PlaceholderHelper.resolve( CLASS_TEMPLATE, values );
 		ParseResult<CompilationUnit>	result;
 
 		try {
@@ -860,6 +908,32 @@ public class BoxClassTransformer extends AbstractTransformer {
 		}
 
 		transpiler.popContextName();
+
+		// Embed inner classes as static nested classes
+		( ( JavaTranspiler ) transpiler ).getInnerClassDeclarations().forEach( innerClass -> {
+			thisClass.addMember( innerClass );
+		} );
+
+		// Generate static innerBoxClasses field and getInnerBoxClasses() override if there are inner classes
+		Map<String, String> localClasses = ( ( JavaTranspiler ) transpiler ).getLocalClasses();
+		if ( !localClasses.isEmpty() ) {
+			// Build: Map.of( Key.of("Name1"), Name1.class, Key.of("Name2"), Name2.class, ... )
+			MethodCallExpr mapOfCall = new MethodCallExpr( new NameExpr( "Map" ), "of" );
+			for ( Map.Entry<String, String> entry : localClasses.entrySet() ) {
+				mapOfCall.addArgument( new MethodCallExpr( new NameExpr( "Key" ), "of", new NodeList<>(
+				    new com.github.javaparser.ast.expr.StringLiteralExpr( entry.getKey() ) ) ) );
+				mapOfCall.addArgument( new com.github.javaparser.ast.expr.ClassExpr( new ClassOrInterfaceType( null, entry.getValue() ) ) );
+			}
+			// Add: public static Map<Key, Class<?>> innerBoxClasses = Map.of(...);
+			FieldDeclaration field = thisClass.addField( "Map<Key, Class<?>>", "innerBoxClasses",
+			    com.github.javaparser.ast.Modifier.Keyword.PUBLIC, com.github.javaparser.ast.Modifier.Keyword.STATIC );
+			field.getVariable( 0 ).setInitializer( mapOfCall );
+			// Add: public Map<Key, Class<?>> getInnerBoxClasses() { return innerBoxClasses; }
+			MethodDeclaration getInnerBoxClassesMethod = thisClass.addMethod( "getInnerBoxClasses",
+			    com.github.javaparser.ast.Modifier.Keyword.PUBLIC );
+			getInnerBoxClassesMethod.setType( "Map<Key, Class<?>>" );
+			getInnerBoxClassesMethod.getBody().get().addStatement( new ReturnStmt( new NameExpr( "innerBoxClasses" ) ) );
+		}
 
 		return entryPoint;
 	}

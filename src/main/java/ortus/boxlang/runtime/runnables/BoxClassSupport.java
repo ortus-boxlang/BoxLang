@@ -663,7 +663,9 @@ public class BoxClassSupport {
 		    thisClass.getAnnotations(),
 		    thisClass.getDocumentation(),
 		    thisClass.getProperties(),
-		    thisClass.getStaticScope()
+		    thisClass.getStaticScope(),
+		    thisClass.getEnclosingClassName(),
+		    thisClass.getInnerClassNames()
 		);
 	}
 
@@ -700,7 +702,9 @@ public class BoxClassSupport {
 	    IStruct annotations,
 	    IStruct documentation,
 	    Map<Key, ortus.boxlang.runtime.types.Property> properties,
-	    StaticScope staticScope ) {
+	    StaticScope staticScope,
+	    String enclosingClassName,
+	    IStruct innerClassNames ) {
 		annotations = BoxClassSupport.transformAnnotations( annotations );
 		BoxRuntime	runtime	= BoxRuntime.getInstance();
 		IStruct		meta	= new Struct( IStruct.TYPES.SORTED );
@@ -735,7 +739,9 @@ public class BoxClassSupport {
 		meta.put( Key.type, CLASS_TYPE );
 		meta.put( Key._NAME, fullName );
 		meta.put( Key.fullname, fullName );
-		meta.put( Key.simpleName, fullName.substring( fullName.lastIndexOf( '.' ) + 1 ) );
+		// simpleName strips both package (.) and enclosing class ($) prefixes
+		int lastSep = Math.max( fullName.lastIndexOf( '.' ), fullName.lastIndexOf( '$' ) );
+		meta.put( Key.simpleName, fullName.substring( lastSep + 1 ) );
 
 		meta.put( Key.accessors, hasAccessors( annotations ) );
 		meta.put( Key.path, runnablePath.absolutePath().toString() );
@@ -810,6 +816,11 @@ public class BoxClassSupport {
 			        )
 			);
 		}
+
+		// Add enclosingClass and innerClasses
+		meta.put( Key.enclosingClass, enclosingClassName != null ? enclosingClassName : "" );
+		meta.put( Key.innerClasses, innerClassNames != null ? innerClassNames : Struct.EMPTY );
+
 		return meta;
 	}
 

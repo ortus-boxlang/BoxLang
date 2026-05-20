@@ -363,6 +363,28 @@ public class ClassBoxContext extends BaseBoxContext {
 	}
 
 	/**
+	 * Find a function by name. Checks nearby scopes first, then falls back to the static scope.
+	 * This allows the pseudo-constructor to call static methods without the static. prefix.
+	 *
+	 * @param name The name of the function to find
+	 *
+	 * @return The function instance, null if not found
+	 */
+	@Override
+	protected Function findFunction( Key name ) {
+		Function result = super.findFunction( name );
+		if ( result != null ) {
+			return result;
+		}
+		// Check the static scope for static functions
+		Object staticResult = thisClass.getStaticScope().get( name );
+		if ( staticResult != null && staticResult instanceof Function fun ) {
+			return fun;
+		}
+		return null;
+	}
+
+	/**
 	 * Invoke a function call such as foo() using positional args. Will check for a
 	 * registered BIF first, then search known scopes for a UDF.
 	 *

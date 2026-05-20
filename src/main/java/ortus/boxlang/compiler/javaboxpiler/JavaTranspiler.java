@@ -384,6 +384,8 @@ public class JavaTranspiler extends Transpiler {
 			preCompileLocalClasses( boxScript.getStatements() );
 		} else if ( node instanceof BoxTemplate boxTemplate ) {
 			preCompileLocalClasses( boxTemplate.getStatements() );
+		} else if ( node instanceof BoxClass boxClass ) {
+			preCompileLocalClasses( boxClass.getBody() );
 		}
 
 		CompilationUnit			entryPoint		= ( CompilationUnit ) transform( node );
@@ -413,6 +415,15 @@ public class JavaTranspiler extends Transpiler {
 		return this.localClasses.get( alias );
 	}
 
+	/**
+	 * Get all registered local class mappings (alias → Java class name).
+	 *
+	 * @return unmodifiable view of the local class map
+	 */
+	public Map<String, String> getLocalClasses() {
+		return this.localClasses;
+	}
+
 	@Override
 	public boolean matchesClassRefImport( String token ) {
 		return this.localClasses.keySet().stream().anyMatch( k -> k.equalsIgnoreCase( token ) );
@@ -436,25 +447,41 @@ public class JavaTranspiler extends Transpiler {
 		    .map( s -> ( BoxImport ) s )
 		    .collect( Collectors.toList() );
 
+		// Register source-level imports on the transpiler so matchesImport() sees them
+		for ( BoxImport imp : enclosingImports ) {
+			String importName = imp.getAlias() != null ? imp.getAlias().getName() : null;
+			if ( importName == null && imp.getExpression() instanceof BoxFQN fqn ) {
+				String	value		= fqn.getValue();
+				int		colonIdx	= value.indexOf( ':' );
+				if ( colonIdx >= 0 ) {
+					value = value.substring( colonIdx + 1 );
+				}
+				int lastDot = value.lastIndexOf( '.' );
+				importName = lastDot >= 0 ? value.substring( lastDot + 1 ) : value;
+			}
+			if ( importName != null ) {
+				this.addImport( importName );
+			}
+		}
+
+		// If this class has inner classes, add a self-import so the outer class is referenceable by its simple name
+		String	outerSimpleName	= null;
+		boolean	hasInnerClasses	= statements.stream().anyMatch( s -> s instanceof BoxLocalClass );
+		if ( hasInnerClasses ) {
+			String boxFQN = this.getProperty( "boxFQN" );
+			outerSimpleName = boxFQN.contains( "." ) ? boxFQN.substring( boxFQN.lastIndexOf( '.' ) + 1 ) : boxFQN;
+			BoxImportTransformer.transformInnerClassImport( outerSimpleName, outerClassName, this );
+		}
+
 		for ( BoxStatement statement : statements ) {
 			if ( statement instanceof BoxLocalClass localClass ) {
 				String localName = localClass.getName().getName();
 
-				// Check if the local class name conflicts with an existing import
-				for ( BoxImport imp : enclosingImports ) {
-					String importName = imp.getAlias() != null ? imp.getAlias().getName() : null;
-					if ( importName == null && imp.getExpression() instanceof BoxFQN fqn ) {
-						String	value		= fqn.getValue();
-						int		colonIdx	= value.indexOf( ':' );
-						if ( colonIdx >= 0 ) {
-							value = value.substring( colonIdx + 1 );
-						}
-						int lastDot = value.lastIndexOf( '.' );
-						importName = lastDot >= 0 ? value.substring( lastDot + 1 ) : value;
-					}
-					if ( importName != null && importName.equalsIgnoreCase( localName ) ) {
-						throw new BoxRuntimeException( "Local class [" + localName + "] conflicts with an import of the same name." );
-					}
+				// Check if the local class name conflicts with any already-registered import
+				// (includes source-level imports, outer class self-import, and previously-compiled sibling classes)
+				if ( this.matchesImport( localName ) ) {
+					throw new BoxRuntimeException(
+					    "Local class [" + localName + "] conflicts with an existing class or import of the same name." );
 				}
 
 				String			syntheticClassName	= new FQN( localName ).getClassName();
@@ -462,17 +489,26 @@ public class JavaTranspiler extends Transpiler {
 				JavaTranspiler	child				= new JavaTranspiler();
 				child.setProperty( "classname", syntheticClassName );
 				child.setProperty( "packageName", this.getProperty( "packageName" ) );
-				child.setProperty( "boxFQN", localName );
+				String	parentFQN		= this.getProperty( "boxFQN" );
+				String	parentBaseclass	= this.getProperty( "baseclass" );
+				boolean	parentIsClass	= !"BoxScript".equals( parentBaseclass ) && !"BoxTemplate".equals( parentBaseclass );
+				child.setProperty( "boxFQN", parentIsClass && parentFQN != null && !parentFQN.isEmpty() ? parentFQN + "$" + localName : localName );
+				child.setProperty( "enclosingBoxFQN", parentIsClass ? ( parentFQN != null ? parentFQN : "" ) : "" );
 				child.setProperty( "baseclass", "BoxClass" );
 				child.setProperty( "returnType", "void" );
 				child.setProperty( "sourceType", this.getProperty( "sourceType" ) );
 				child.setProperty( "mappingName", this.getProperty( "mappingName" ) );
 				child.setProperty( "mappingPath", this.getProperty( "mappingPath" ) );
 				child.setProperty( "relativePath", this.getProperty( "relativePath" ) );
+				child.setProperty( "enclosingBoxClass", outerClassName );
 
 				// Register previously-compiled sibling local classes on the child so extends can resolve them
 				for ( Map.Entry<String, String> entry : this.localClasses.entrySet() ) {
 					BoxImportTransformer.transformInnerClassImport( entry.getKey(), entry.getValue(), child );
+				}
+				// Also register the outer class itself so inner classes can reference it by name
+				if ( outerSimpleName != null ) {
+					BoxImportTransformer.transformInnerClassImport( outerSimpleName, outerClassName, child );
 				}
 
 				BoxClass					asBoxClass		= new BoxClass(
@@ -493,8 +529,12 @@ public class JavaTranspiler extends Transpiler {
 				ClassOrInterfaceDeclaration	innerClass		= localCU.getClassByName( syntheticClassName ).orElseThrow();
 				innerClass.addModifier( Modifier.Keyword.STATIC );
 
-				// Remove imports/path/sourceType field declarations — inner classes delegate to the outer class
-				Set<String> delegatedFields = Set.of( "imports", "path", "sourceType" );
+				// Remove path/sourceType field declarations — inner classes delegate to the outer class.
+				// Only redirect imports if the inner class does NOT have its own local classes,
+				// since its imports field needs to contain the local class ref imports.
+				Set<String> delegatedFields = child.localClasses.isEmpty()
+				    ? Set.of( "imports", "path", "sourceType" )
+				    : Set.of( "path", "sourceType" );
 				for ( String fieldName : delegatedFields ) {
 					innerClass.getFieldByName( fieldName ).ifPresent( f -> f.remove() );
 				}
