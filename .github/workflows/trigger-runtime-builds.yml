@@ -24,7 +24,7 @@ jobs:
       - name: Trigger Build Workflow for ${{ matrix.repo }}
         run: |
           curl -L \
-            --fail \
+            --fail-with-body \
             -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: Bearer ${{ secrets.GHA_WORKFLOW_DISPATCHER_PAT_BOXLANG }}" \
