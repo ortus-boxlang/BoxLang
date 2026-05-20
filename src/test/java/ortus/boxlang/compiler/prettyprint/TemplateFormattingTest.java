@@ -71,8 +71,8 @@ public class TemplateFormattingTest extends PrettyPrintTest {
 		ParsingResult	result		= parser.parse( inputFile, false );
 		Config			config		= new Config();
 		config.getTemplate().setEnabled( false );
-		String			actual		= PrettyPrint.prettyPrint( result.getRoot(), config );
-		String			expected	= readFile( TEST_RESOURCES_PATH + "template/self_closing_true_input.bxm" );
+		String	actual		= PrettyPrint.prettyPrint( result.getRoot(), config );
+		String	expected	= readFile( TEST_RESOURCES_PATH + "template/self_closing_true_input.bxm" );
 		assertEqualsIgnoringLineEndings( expected, actual );
 	}
 
