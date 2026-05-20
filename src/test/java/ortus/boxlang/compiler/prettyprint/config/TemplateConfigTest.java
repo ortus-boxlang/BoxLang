@@ -36,7 +36,7 @@ public class TemplateConfigTest {
 	public void testDefaults() {
 		TemplateConfig config = new TemplateConfig();
 
-		assertFalse( config.getEnabled() );
+		assertTrue( config.getEnabled() );
 		assertEquals( "bx", config.getComponentPrefix() );
 		assertTrue( config.getIndentContent() );
 		assertFalse( config.getSingleAttributePerLine() );

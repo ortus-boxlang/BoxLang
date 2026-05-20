@@ -28,11 +28,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class TemplateConfig {
 
 	/**
-	 * Enable template (BXM/CFM) formatting. When false, template sources are
-	 * returned unchanged.
+	 * Enable template (BXM/CFM) formatting. When true (the default), template sources
+	 * are formatted. When false, template sources are returned unchanged.
 	 */
 	@JsonProperty( "enabled" )
-	private boolean	enabled					= false;
+	private boolean	enabled					= true;
 
 	/**
 	 * The prefix used for template component tags. Common values are {@code "bx"}

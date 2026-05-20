@@ -65,11 +65,13 @@ public class TemplateFormattingTest extends PrettyPrintTest {
 	}
 
 	@Test
-	@DisplayName( "Template formatting is disabled by default" )
-	public void testTemplateFormattingDisabledByDefault() throws IOException {
+	@DisplayName( "Template formatting can be explicitly disabled" )
+	public void testTemplateFormattingCanBeDisabled() throws IOException {
 		File			inputFile	= new File( TEST_RESOURCES_PATH + "template/self_closing_true_input.bxm" );
 		ParsingResult	result		= parser.parse( inputFile, false );
-		String			actual		= PrettyPrint.prettyPrint( result.getRoot(), new Config() );
+		Config			config		= new Config();
+		config.getTemplate().setEnabled( false );
+		String			actual		= PrettyPrint.prettyPrint( result.getRoot(), config );
 		String			expected	= readFile( TEST_RESOURCES_PATH + "template/self_closing_true_input.bxm" );
 		assertEqualsIgnoringLineEndings( expected, actual );
 	}
@@ -134,5 +136,11 @@ public class TemplateFormattingTest extends PrettyPrintTest {
 		assertTrue( !actual.contains( "function()" ), "Condition should not contain closure syntax. Actual:\n" + actual );
 		assertTrue( actual.contains( "condition=\"i lt 10\"" ) || actual.contains( "condition=\"i < 10\"" ),
 		    "Condition should be a plain expression. Actual:\n" + actual );
+	}
+
+	@Test
+	@DisplayName( "Newline between consecutive buffer outputs in component body is preserved" )
+	public void testBufferNewlineSeparation() throws IOException {
+		printTestWithConfigFile( "template", "buffer_newline_separation" );
 	}
 }

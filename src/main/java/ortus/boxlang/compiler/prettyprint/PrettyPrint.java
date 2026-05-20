@@ -37,127 +37,127 @@ import ortus.boxlang.runtime.BoxRuntime;
 
 public final class PrettyPrint {
 
-	// @formatter:on
-	private static final String DEFAULT_CONFIG = """
-	                                             	{
-	                                             		"indentSize" : 4,
-	                                             		"tabIndent" : true,
-	                                             		"maxLineLength" : 120,
-	                                             		"newLine" : "os",
-	                                             		"singleQuote" : false,
-	                                             		"bracketPadding" : true,
-	                                             		"parensPadding" : true,
-	                                             		"binaryOperatorsPadding" : true,
-	                                             		"semicolons" : true,
-	                                             		"struct" : {
-	                                             		"padding" : true,
-	                                             		"empty_padding" : false,
-	                                             		"quote_keys" : false,
-	                                             		"separator" : ": ",
-	                                             		"multiline" : {
-	                                             			"element_count" : 2,
-	                                             			"comma_dangle" : false,
-	                                             			"leading_comma" : {
-	                                             			"enabled" : false,
-	                                             			"padding" : true
-	                                             			},
-	                                             			"min_length" : 40
-	                                             		}
-	                                             		},
-	                                             		"property" : {
-	                                             		"multiline" : {
-	                                             			"element_count" : 4,
-	                                             			"comma_dangle" : false,
-	                                             			"leading_comma" : {
-	                                             			"enabled" : false,
-	                                             			"padding" : true
-	                                             			},
-	                                             			"min_length" : 40
-	                                             		},
-	                                             		"key_value" : {
-	                                             			"padding" : false
-	                                             		}
-	                                             		},
-	                                             		"array" : {
-	                                             		"padding" : true,
-	                                             		"empty_padding" : false,
-	                                             		"multiline" : {
-	                                             			"element_count" : 2,
-	                                             			"comma_dangle" : false,
-	                                             			"leading_comma" : {
-	                                             			"enabled" : false,
-	                                             			"padding" : true
-	                                             			},
-	                                             			"min_length" : 40
-	                                             		}
-	                                             		},
-	                                             		"for_loop_semicolons" : {
-	                                             		"padding" : true
-	                                             		},
-	                                             		"function" : {
-	                                             		"style" : "preserve",
-	                                             		"parameters" : {
-	                                             			"comma_dangle" : false,
-	                                             			"multiline_count" : 3,
-	                                             			"multiline_length" : 40
-	                                             		},
-	                                             		"arrow" : {
-	                                             			"parens" : "always"
-	                                             		}
-	                                             		},
-	                                             		"arguments" : {
-	                                             		"comma_dangle" : false,
-	                                             		"multiline_count" : 3,
-	                                             		"multiline_length" : 40
-	                                             		},
-	                                             		"braces" : {
-	                                             		"style" : "same-line",
-	                                             		"require_for_single_statement" : true,
-	                                             		"else" : {
-	                                             			"style" : "same-line"
-	                                             		}
-	                                             		},
-	                                             		"operators" : {
-	                                             		"position" : "end",
-	                                             		"ternary" : {
-	                                             			"style" : "flat",
-	                                             			"question_position" : "start"
-	                                             		}
-	                                             		},
-	                                             		"chain" : {
-	                                             		"break_count" : 3,
-	                                             		"break_length" : 60
-	                                             		},
-	                                             		"template" : {
-	                                             		"enabled" : false,
-	                                             		"component_prefix" : "bx",
-	                                             		"indent_content" : true,
-	                                             		"single_attribute_per_line" : false,
-	                                             		"self_closing" : true
-	                                             		},
-	                                             		"import" : {
-	                                             		"sort" : false,
-	                                             		"group" : false
-	                                             		},
-	                                             		"comments" : {
-	                                             		"preserve_blank_lines" : true,
-	                                             		"wrap" : false
-	                                             		},
-	                                             		"class" : {
-	                                             		"member_order" : "preserve",
-	                                             		"member_spacing" : 1,
-	                                             		"property_order" : "preserve",
-	                                             		"method_order" : "preserve",
-	                                             		"method_grouping" : false,
-	                                             		"property_spacing" : 1
-	                                             		},
-	                                             		"sql" : {
-	                                             		"uppercase_keywords" : true,
-	                                             		"indent_clauses" : true
-	                                             		}
-	                                             	}
-	                                             """;
 	// @formatter:off
+	private static final String DEFAULT_CONFIG = """
+	{
+		"indentSize" : 4,
+		"tabIndent" : true,
+		"maxLineLength" : 120,
+		"newLine" : "os",
+		"singleQuote" : false,
+		"bracketPadding" : true,
+		"parensPadding" : true,
+		"binaryOperatorsPadding" : true,
+		"semicolons" : true,
+		"struct" : {
+			"padding" : true,
+			"empty_padding" : false,
+			"quote_keys" : false,
+			"separator" : ": ",
+			"multiline" : {
+				"element_count" : 2,
+				"comma_dangle" : false,
+				"leading_comma" : {
+				"enabled" : false,
+				"padding" : true
+				},
+				"min_length" : 40
+			}
+		},
+		"property" : {
+			"multiline" : {
+				"element_count" : 4,
+				"comma_dangle" : false,
+				"leading_comma" : {
+				"enabled" : false,
+				"padding" : true
+				},
+				"min_length" : 40
+			},
+			"key_value" : {
+				"padding" : false
+			}
+		},
+		"array" : {
+			"padding" : true,
+			"empty_padding" : false,
+			"multiline" : {
+				"element_count" : 2,
+				"comma_dangle" : false,
+				"leading_comma" : {
+				"enabled" : false,
+				"padding" : true
+				},
+				"min_length" : 40
+			}
+		},
+		"for_loop_semicolons" : {
+			"padding" : true
+		},
+		"function" : {
+			"style" : "preserve",
+			"parameters" : {
+				"comma_dangle" : false,
+				"multiline_count" : 3,
+				"multiline_length" : 40
+			},
+			"arrow" : {
+				"parens" : "always"
+			}
+		},
+		"arguments" : {
+			"comma_dangle" : false,
+			"multiline_count" : 3,
+			"multiline_length" : 40
+		},
+		"braces" : {
+			"style" : "same-line",
+			"require_for_single_statement" : true,
+			"else" : {
+				"style" : "same-line"
+			}
+		},
+		"operators" : {
+			"position" : "end",
+			"ternary" : {
+				"style" : "flat",
+				"question_position" : "start"
+			}
+		},
+		"chain" : {
+			"break_count" : 3,
+			"break_length" : 60
+		},
+		"template" : {
+			"enabled" : true,
+			"component_prefix" : "bx",
+			"indent_content" : true,
+			"single_attribute_per_line" : false,
+			"self_closing" : true
+		},
+		"import" : {
+			"sort" : false,
+			"group" : false
+		},
+		"comments" : {
+			"preserve_blank_lines" : true,
+			"wrap" : false
+		},
+		"class" : {
+			"member_order" : "preserve",
+			"member_spacing" : 1,
+			"property_order" : "preserve",
+			"method_order" : "preserve",
+			"method_grouping" : false,
+			"property_spacing" : 1
+		},
+		"sql" : {
+			"uppercase_keywords" : true,
+			"indent_clauses" : true
+		}
+	}
+	""";
+	// @formatter:on
 
 	/**
 	 * Prevents instantiation of this utility class.
@@ -179,8 +179,8 @@ public final class PrettyPrint {
 	 * Runs the formatter CLI against the provided arguments and streams.
 	 *
 	 * @param args command-line arguments; {@code --source} and {@code --excludes} both accept comma-delimited values
-	 * @param out standard output stream for user-facing messages
-	 * @param err standard error stream for error messages
+	 * @param out  standard output stream for user-facing messages
+	 * @param err  standard error stream for error messages
 	 *
 	 * @return {@code 0} on success, otherwise a non-zero exit code
 	 */
@@ -197,13 +197,13 @@ public final class PrettyPrint {
 		// --overwrite <true|false> (optional, default true. when false, print to stdout)
 		// --convertConfig (convert .cfformat.json to .bxformat.json)
 		try {
-			boolean	checkMode		= false;
-			String	configPath		= null; // null means use fallback logic
+			boolean			checkMode		= false;
+			String			configPath		= null; // null means use fallback logic
 			List<String>	sourcePaths		= new ArrayList<>( List.of( System.getProperty( "user.dir" ) ) );
 			List<String>	excludePaths	= new ArrayList<>();
-			String	targetPath		= null;
-			boolean	convertConfig	= false;
-			boolean	overwrite		= true;
+			String			targetPath		= null;
+			boolean			convertConfig	= false;
+			boolean			overwrite		= true;
 
 			for ( int i = 0; i < args.length; i++ ) {
 				if ( args[ i ].equalsIgnoreCase( "--help" ) || args[ i ].equalsIgnoreCase( "-h" ) ) {
@@ -388,8 +388,8 @@ public final class PrettyPrint {
 	 * Convert a .cfformat.json file to .bxformat.json
 	 *
 	 * @param directory The directory containing the .cfformat.json file (or path to the file itself)
-	 * @param out standard output stream for status messages
-	 * @param err standard error stream for error messages
+	 * @param out       standard output stream for status messages
+	 * @param err       standard error stream for error messages
 	 *
 	 * @return {@code 0} when conversion succeeds, otherwise a non-zero exit code
 	 */
@@ -445,7 +445,7 @@ public final class PrettyPrint {
 	/**
 	 * Pretty-prints an AST node using the provided formatter configuration.
 	 *
-	 * @param node the AST node to format
+	 * @param node   the AST node to format
 	 * @param config the formatter configuration to apply
 	 *
 	 * @return the formatted source
@@ -473,14 +473,14 @@ public final class PrettyPrint {
 	/**
 	 * Builds the intermediate document model used by the printer for a given AST node.
 	 *
-	 * @param node the AST node to convert
+	 * @param node   the AST node to convert
 	 * @param config the formatter configuration to apply
 	 *
 	 * @return the generated document tree
 	 */
 	public static Doc generateDoc( BoxNode node, Config config ) {
-		BoxSourceType sourceType = config.getSourceType() != null ? config.getSourceType() : resolveSourceType( node );
-		Visitor      visitor     = new Visitor( sourceType, config );
+		BoxSourceType	sourceType	= config.getSourceType() != null ? config.getSourceType() : resolveSourceType( node );
+		Visitor			visitor		= new Visitor( sourceType, config );
 		node.accept( visitor );
 		var doc = visitor.getRoot();
 		doc.condense();
@@ -495,9 +495,12 @@ public final class PrettyPrint {
 	private static BoxSourceType resolveSourceType( BoxNode node ) {
 		BoxNode current = node;
 		while ( current != null ) {
-			if ( current instanceof BoxScript s ) return s.getBoxSourceType();
-			if ( current instanceof BoxClass c ) return c.getBoxSourceType();
-			if ( current instanceof BoxInterface i ) return i.getBoxSourceType();
+			if ( current instanceof BoxScript s )
+				return s.getBoxSourceType();
+			if ( current instanceof BoxClass c )
+				return c.getBoxSourceType();
+			if ( current instanceof BoxInterface i )
+				return i.getBoxSourceType();
 			current = current.getParent();
 		}
 		return BoxSourceType.BOXSCRIPT;
@@ -506,7 +509,7 @@ public final class PrettyPrint {
 	/**
 	 * Renders a generated document tree into formatted source text.
 	 *
-	 * @param doc the document tree to print
+	 * @param doc    the document tree to print
 	 * @param config the formatter configuration to apply
 	 *
 	 * @return the formatted source text

@@ -204,27 +204,40 @@ public class HelperPrinter {
 			return;
 		}
 
-		var meaningful = statements.stream()
-		    .filter( s -> s != null && !isWhitespaceOnlyBuffer( s ) )
-		    .toList();
+		boolean hasAnyMeaningful = statements.stream()
+		    .anyMatch( s -> s != null && !isWhitespaceOnlyBuffer( s ) );
 
-		if ( meaningful.isEmpty() ) {
+		if ( !hasAnyMeaningful ) {
 			return;
 		}
 
-		var		indentDoc		= visitor.pushDoc( DocType.INDENT );
-		boolean	lastWasBuffer	= false;
+		var		indentDoc				= visitor.pushDoc( DocType.INDENT );
+		boolean	lastWasBuffer			= false;
+		// Tracks whether a whitespace-only newline buffer was filtered between
+		// two consecutive BufferOutput nodes, indicating a meaningful line break
+		// (e.g., #html.doctype()# followed by a newline then <html lang="en">).
+		boolean	hadNewlineSinceBuffer	= false;
 		visitor.stripBufferLeadingWhitespace = true;
-		for ( var statement : meaningful ) {
+		for ( var statement : statements ) {
 			if ( statement == null )
 				continue;
+
+			// Skip whitespace-only buffers but remember that a newline separator was present
+			if ( isWhitespaceOnlyBuffer( statement ) ) {
+				hadNewlineSinceBuffer = true;
+				continue;
+			}
+
 			boolean isBuffer = statement instanceof BoxBufferOutput;
-			// Only break before the first BufferOutput in a consecutive run, so that
-			// inline HTML like <p>text #expr#</p> (multiple adjacent BufferOutputs) stays on one line
-			if ( !isBuffer || !lastWasBuffer ) {
+			// Break before non-buffer statements, before the first BufferOutput in a
+			// consecutive run, when a whitespace-newline buffer was filtered between two
+			// consecutive BufferOutputs, or when the next buffer's string content starts
+			// with a newline (the stripped newline represents a meaningful line break).
+			if ( !isBuffer || !lastWasBuffer || hadNewlineSinceBuffer || bufferStartsWithNewline( statement ) ) {
 				indentDoc.append( Line.HARD );
 			}
-			lastWasBuffer = isBuffer;
+			lastWasBuffer			= isBuffer;
+			hadNewlineSinceBuffer	= false;
 			statement.accept( visitor );
 		}
 		visitor.stripBufferLeadingWhitespace = false;
@@ -246,6 +259,25 @@ public class HelperPrinter {
 		// Pure horizontal spaces (e.g., between #expr1# #expr2#) are meaningful inline content.
 		String value = str.getValue();
 		return value.isBlank() && ( value.contains( "\n" ) || value.contains( "\r" ) );
+	}
+
+	/**
+	 * Returns true if a BoxBufferOutput's string literal value starts with a newline character.
+	 * Used to detect cases where a consecutive buffer output represents content on a new source
+	 * line (e.g., "\n&lt;html lang=\"en\"&gt;"), so that a Line.HARD is emitted even though the
+	 * "inline run" optimization would otherwise suppress it. The stripped leading newline is then
+	 * compensated by the emitted Line.HARD.
+	 */
+	private boolean bufferStartsWithNewline( BoxStatement statement ) {
+		if ( ! ( statement instanceof BoxBufferOutput bufOutput ) ) {
+			return false;
+		}
+		var expr = bufOutput.getExpression();
+		if ( expr instanceof BoxStringLiteral str ) {
+			String v = str.getValue();
+			return v.startsWith( "\n" ) || v.startsWith( "\r" );
+		}
+		return false;
 	}
 
 	public void printBlock( BoxNode node, List<BoxStatement> statements ) {
