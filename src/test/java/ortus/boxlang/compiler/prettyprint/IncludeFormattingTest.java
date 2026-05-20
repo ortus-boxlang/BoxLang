@@ -37,4 +37,16 @@ public class IncludeFormattingTest extends PrettyPrintTest {
 		printTestWithDefaultConfig( "include", "script_bx_prefix_interp" );
 	}
 
+	@Test
+	@DisplayName( "include \"path\" shorthand form is preserved without template= attribute name" )
+	public void testScriptShorthand() throws IOException {
+		printTestWithDefaultConfig( "include", "script_shorthand" );
+	}
+
+	@Test
+	@DisplayName( "include template=\"path\" explicit form is preserved unchanged" )
+	public void testScriptExplicit() throws IOException {
+		printTestWithDefaultConfig( "include", "script_explicit" );
+	}
+
 }
