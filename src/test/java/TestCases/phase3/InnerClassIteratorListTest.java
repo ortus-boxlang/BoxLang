@@ -129,10 +129,10 @@ public class InnerClassIteratorListTest {
 		    context );
 		Object res = variables.get( result );
 		assertThat( res ).isInstanceOf( Iterable.class );
-		Iterable<?> iterable = ( Iterable<?> ) res;
+		Iterable<?>		iterable	= ( Iterable<?> ) res;
 		// Use Java's iterator directly from the Iterable
-		Iterator<?> it = iterable.iterator();
-		List<Object> collected = new ArrayList<>();
+		Iterator<?>		it			= iterable.iterator();
+		List<Object>	collected	= new ArrayList<>();
 		while ( it.hasNext() ) {
 			collected.add( it.next() );
 		}
