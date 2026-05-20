@@ -256,16 +256,16 @@ public class InnerClassTest {
 	public void testOuterClassInstanceReferenceInnerStatics() {
 		instance.executeSource(
 		    """
-		       import src.test.java.TestCases.phase3.InnerClassOuter;
-		       getClass = ()-> InnerClassOuter;
-		       myClass = getClass();
-		       result = myClass.OUTER_NAME;
-		       result2 = myClass::OUTER_NAME;
-		       result3 = myClass.Inner;
-		       result4 = myClass::Inner;
+		    import src.test.java.TestCases.phase3.InnerClassOuter;
+		    getClass = ()-> InnerClassOuter;
+		    myClass = getClass();
+		    result = myClass.OUTER_NAME;
+		    result2 = myClass::OUTER_NAME;
+		    result3 = myClass.Inner;
+		    result4 = myClass::Inner;
 		    result5 = InnerClassOuter.Inner;
 		    result6 = InnerClassOuter::Inner;
-		             """,
+		                """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "OuterClass" );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "OuterClass" );
