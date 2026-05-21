@@ -1,0 +1,6 @@
+@patternMatch( "Success", "payload" )
+class accessors=true {
+
+	property payload;
+
+}

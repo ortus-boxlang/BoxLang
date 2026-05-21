@@ -11,6 +11,7 @@ import ortus.boxlang.runtime.dynamic.javaproxy.InterfaceProxyDefinition;
 import ortus.boxlang.runtime.loader.DiskClassLoader;
 import ortus.boxlang.runtime.runnables.IBoxRunnable;
 import ortus.boxlang.runtime.runnables.IProxyRunnable;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.BoxFQN;
 import ortus.boxlang.runtime.util.FQN;
@@ -54,6 +55,10 @@ public record ClassInfo(
 		return false;
 	}
 
+	public boolean isStatement() {
+		return source() != null && fqn().getClassName().startsWith( "Statement_" );
+	}
+
 	/**
 	 * Create a ClassInfo for a BoxLang script from source code.
 	 *
@@ -64,7 +69,7 @@ public record ClassInfo(
 	 * @return A new ClassInfo instance for the script
 	 */
 	public static ClassInfo forScript( String source, BoxSourceType sourceType, IBoxpiler boxpiler ) {
-		FQN fqn = FQN.of( "boxgenerated.scripts", "Script_" + IBoxpiler.MD5( sourceType.toString() + source ) );
+		FQN fqn = FQN.of( "boxgenerated.scripts", "Script_" + buildAdHocSourceCacheKey( source, sourceType, boxpiler ) );
 		return new ClassInfo(
 		    fqn,
 		    BoxFQN.of( "" ),
@@ -92,7 +97,7 @@ public record ClassInfo(
 	 * @return A new ClassInfo instance for the statement
 	 */
 	public static ClassInfo forStatement( String source, BoxSourceType sourceType, IBoxpiler boxpiler ) {
-		FQN fqn = FQN.of( "boxgenerated.scripts", "Statement_" + IBoxpiler.MD5( sourceType.toString() + source ) );
+		FQN fqn = FQN.of( "boxgenerated.scripts", "Statement_" + buildAdHocSourceCacheKey( source, sourceType, boxpiler ) );
 		return new ClassInfo(
 		    fqn,
 		    BoxFQN.of( "" ),
@@ -192,7 +197,7 @@ public record ClassInfo(
 	 * @return A new ClassInfo instance for the class
 	 */
 	public static ClassInfo forClass( String source, BoxSourceType sourceType, IBoxpiler boxpiler ) {
-		FQN fqn = FQN.of( "boxgenerated.boxclass", "Class_" + IBoxpiler.MD5( source ) );
+		FQN fqn = FQN.of( "boxgenerated.boxclass", "Class_" + buildAdHocSourceCacheKey( source, sourceType, boxpiler ) );
 		return new ClassInfo(
 		    fqn,
 		    BoxFQN.of( "" ),
@@ -440,6 +445,14 @@ public record ClassInfo(
 	 */
 	public static boolean isTrustedCache() {
 		return BoxRuntime.getInstance().getConfiguration().trustedCache;
+	}
+
+	private static String buildAdHocSourceCacheKey( String source, BoxSourceType sourceType, IBoxpiler boxpiler ) {
+		String runtimeCacheSalt = BoxRuntime.getInstance().getVersionInfo().getAsString( Key.of( "boxlangId" ) );
+
+		// Ad-hoc sources have no backing file timestamp, so include the runtime/build identity
+		// and active boxpiler name to avoid reusing stale disk classes after compiler changes.
+		return IBoxpiler.MD5( runtimeCacheSalt + ":" + boxpiler.getName().getName() + ":" + sourceType + ":" + source );
 	}
 
 	/**

@@ -50,6 +50,21 @@ import ortus.boxlang.compiler.ast.expression.BoxFunctionalMemberAccess;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
+import ortus.boxlang.compiler.ast.expression.BoxMatchAndPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchArrayPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchBindingPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchCase;
+import ortus.boxlang.compiler.ast.expression.BoxMatchConstructorPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchExpression;
+import ortus.boxlang.compiler.ast.expression.BoxMatchLiteralPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchNotPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchObjectPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchOrPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchPredicatePattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchRangePattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchTypePattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchWildcardPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNegateOperation;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
@@ -85,6 +100,7 @@ import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.statement.BoxLocalClass;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
+import ortus.boxlang.compiler.ast.statement.BoxRefutableDestructuringDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
@@ -97,6 +113,7 @@ import ortus.boxlang.compiler.ast.statement.BoxThrow;
 import ortus.boxlang.compiler.ast.statement.BoxTry;
 import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
+import ortus.boxlang.compiler.ast.statement.BoxYield;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 
@@ -528,6 +545,130 @@ public abstract class ReplacingBoxVisitor {
 	}
 
 	/** {@inheritDoc} */
+	public BoxNode visit( BoxMatchExpression node ) {
+		BoxExpression	subject		= node.getSubject();
+		BoxNode			newSubject	= subject.accept( this );
+		if ( newSubject != subject ) {
+			node.setSubject( ( BoxExpression ) newSubject );
+		}
+		for ( int i = 0; i < node.getCases().size(); i++ ) {
+			BoxMatchCase	matchCase	= node.getCases().get( i );
+			BoxNode			newCase		= matchCase.accept( this );
+			if ( newCase != matchCase ) {
+				node.replaceChildren( matchCase, newCase );
+				node.getCases().set( i, ( BoxMatchCase ) newCase );
+			}
+		}
+		return node;
+	}
+
+	public BoxNode visit( BoxMatchCase node ) {
+		BoxMatchPattern	pattern		= node.getPattern();
+		BoxNode			newPattern	= pattern.accept( this );
+		if ( newPattern != pattern ) {
+			node.setPattern( ( BoxMatchPattern ) newPattern );
+		}
+		BoxExpression guard = node.getGuard();
+		if ( guard != null ) {
+			BoxNode newGuard = guard.accept( this );
+			if ( newGuard != guard ) {
+				node.setGuard( ( BoxExpression ) newGuard );
+			}
+		}
+		BoxNode	body	= node.getBody();
+		BoxNode	newBody	= body.accept( this );
+		if ( newBody != body ) {
+			node.setBody( ( ortus.boxlang.compiler.ast.BoxStatement ) newBody );
+		}
+		return node;
+	}
+
+	public BoxNode visit( BoxMatchLiteralPattern node ) {
+		BoxExpression	value		= node.getValue();
+		BoxNode			newValue	= value.accept( this );
+		if ( newValue != value ) {
+			node.setValue( ( BoxExpression ) newValue );
+		}
+		return node;
+	}
+
+	public BoxNode visit( BoxMatchWildcardPattern node ) {
+		return node;
+	}
+
+	public BoxNode visit( BoxMatchBindingPattern node ) {
+		BoxIdentifier	binding		= node.getBinding();
+		BoxNode			newBinding	= binding.accept( this );
+		if ( newBinding != binding ) {
+			node.setBinding( ( BoxIdentifier ) newBinding );
+		}
+		return node;
+	}
+
+	public BoxNode visit( BoxMatchConstructorPattern node ) {
+		BoxIdentifier	label		= node.getLabel();
+		BoxNode			newLabel	= label.accept( this );
+		if ( newLabel != label ) {
+			node.setLabel( ( BoxIdentifier ) newLabel );
+		}
+		node.setPatterns( node.getPatterns().stream().map( pattern -> ( BoxMatchPattern ) pattern.accept( this ) ).toList() );
+		return node;
+	}
+
+	public BoxNode visit( BoxMatchArrayPattern node ) {
+		BoxArrayDestructuringPattern	pattern		= node.getPattern();
+		BoxNode							newPattern	= pattern.accept( this );
+		if ( newPattern != pattern ) {
+			node.setPattern( ( BoxArrayDestructuringPattern ) newPattern );
+		}
+		return node;
+	}
+
+	public BoxNode visit( BoxMatchObjectPattern node ) {
+		BoxObjectDestructuringPattern	pattern		= node.getPattern();
+		BoxNode							newPattern	= pattern.accept( this );
+		if ( newPattern != pattern ) {
+			node.setPattern( ( BoxObjectDestructuringPattern ) newPattern );
+		}
+		return node;
+	}
+
+	public BoxNode visit( BoxMatchAndPattern node ) {
+		node.setPatterns( node.getPatterns().stream().map( pattern -> ( BoxMatchPattern ) pattern.accept( this ) ).toList() );
+		return node;
+	}
+
+	public BoxNode visit( BoxMatchOrPattern node ) {
+		node.setPatterns( node.getPatterns().stream().map( pattern -> ( BoxMatchPattern ) pattern.accept( this ) ).toList() );
+		return node;
+	}
+
+	public BoxNode visit( BoxMatchNotPattern node ) {
+		node.setPattern( ( BoxMatchPattern ) node.getPattern().accept( this ) );
+		return node;
+	}
+
+	public BoxNode visit( BoxMatchPredicatePattern node ) {
+		node.setPredicate( ( BoxExpression ) node.getPredicate().accept( this ) );
+		return node;
+	}
+
+	public BoxNode visit( BoxMatchRangePattern node ) {
+		node.setFrom( ( BoxExpression ) node.getFrom().accept( this ) );
+		node.setTo( ( BoxExpression ) node.getTo().accept( this ) );
+		return node;
+	}
+
+	public BoxNode visit( BoxMatchTypePattern node ) {
+		BoxIdentifier	binding		= node.getBinding();
+		BoxNode			newBinding	= binding.accept( this );
+		if ( newBinding != binding ) {
+			node.setBinding( ( BoxIdentifier ) newBinding );
+		}
+		return node;
+	}
+
+	/** {@inheritDoc} */
 	public BoxNode visit( BoxNull node ) {
 		return node;
 	}
@@ -927,6 +1068,25 @@ public abstract class ReplacingBoxVisitor {
 		return node;
 	}
 
+	public BoxNode visit( BoxRefutableDestructuringDeclaration node ) {
+		BoxMatchPattern	pattern		= node.getPattern();
+		BoxNode			newPattern	= pattern.accept( this );
+		if ( newPattern != pattern ) {
+			node.setPattern( ( BoxMatchPattern ) newPattern );
+		}
+		BoxExpression	subject		= node.getSubject();
+		BoxNode			newSubject	= subject.accept( this );
+		if ( newSubject != subject ) {
+			node.setSubject( ( BoxExpression ) newSubject );
+		}
+		BoxStatement	elseBody	= node.getElseBody();
+		BoxNode			newElseBody	= elseBody.accept( this );
+		if ( newElseBody != elseBody ) {
+			node.setElseBody( ( BoxStatement ) newElseBody );
+		}
+		return node;
+	}
+
 	public BoxNode visit( BoxImport node ) {
 		BoxExpression expression = node.getExpression();
 		if ( expression != null ) {
@@ -1001,6 +1161,17 @@ public abstract class ReplacingBoxVisitor {
 	}
 
 	public BoxNode visit( BoxReturn node ) {
+		BoxExpression expression = node.getExpression();
+		if ( expression != null ) {
+			BoxNode newExpr = expression.accept( this );
+			if ( newExpr != expression ) {
+				node.setExpression( ( BoxExpression ) newExpr );
+			}
+		}
+		return node;
+	}
+
+	public BoxNode visit( BoxYield node ) {
 		BoxExpression expression = node.getExpression();
 		if ( expression != null ) {
 			BoxNode newExpr = expression.accept( this );

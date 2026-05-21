@@ -418,7 +418,7 @@ public class AsmHelper {
 		nodes.add( new InsnNode( Opcodes.POP ) );
 	}
 
-	public static List<AbstractInsnNode> getDefaultExpression( AsmTranspiler transpiler, BoxExpression body ) {
+	public static List<AbstractInsnNode> getDefaultExpression( AsmTranspiler transpiler, BoxStatement body ) {
 		String		methodName		= "defaultExpr_" + transpiler.incrementAndGetLambdaCounter();
 
 		Type		declaringType	= Type.getType( "L" + transpiler.getProperty( "packageName" ).replace( '.', '/' )
@@ -468,6 +468,11 @@ public class AsmHelper {
 		) );
 
 		return nodes;
+	}
+
+	public static List<AbstractInsnNode> getDefaultExpression( AsmTranspiler transpiler, BoxExpression body ) {
+		return getDefaultExpression( transpiler,
+		    new BoxExpressionStatement( body, body.getPosition(), body.getSourceText() ) );
 	}
 
 	/**

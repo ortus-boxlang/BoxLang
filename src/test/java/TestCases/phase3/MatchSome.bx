@@ -1,0 +1,6 @@
+@patternMatch( "Some", "value" )
+class accessors=true {
+
+	property value;
+
+}

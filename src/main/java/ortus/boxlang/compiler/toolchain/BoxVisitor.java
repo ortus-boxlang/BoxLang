@@ -62,6 +62,7 @@ import ortus.boxlang.compiler.ast.statement.BoxTry;
 import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
 import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
+import ortus.boxlang.compiler.ast.statement.BoxYield;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 import ortus.boxlang.compiler.parser.BoxParser;
@@ -114,6 +115,7 @@ import ortus.boxlang.parser.antlr.BoxGrammar.ExprPrefixContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprRelationalContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprStatAnonymousFunctionContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprStatInvocableContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ExprStatMatchContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprTernaryContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprUnaryContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ExprXorContext;
@@ -138,6 +140,7 @@ import ortus.boxlang.parser.antlr.BoxGrammar.ParamContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.PostAnnotationContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.PreAnnotationContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.PropertyContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.RefutableDestructuringDeclarationContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.RethrowContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ReturnContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ScriptContext;
@@ -152,9 +155,11 @@ import ortus.boxlang.parser.antlr.BoxGrammar.SwitchContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ThrowContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.TryContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.WhileContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.YieldStatementContext;
 import ortus.boxlang.parser.antlr.BoxGrammarBaseVisitor;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.services.ComponentService;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 /**
  * This class is responsible for creating the AST from the ANTLR generated
@@ -373,7 +378,8 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		List<Function<BoxGrammar.StatementContext, ParserRuleContext>> functions = Arrays.asList( StatementContext::importStatement,
 		    BoxGrammar.StatementContext::do_, StatementContext::for_, StatementContext::if_, BoxGrammar.StatementContext::switch_,
 		    StatementContext::try_, StatementContext::while_, BoxGrammar.StatementContext::expressionStatement, StatementContext::include,
-		    StatementContext::component, BoxGrammar.StatementContext::statementBlock, StatementContext::simpleStatement,
+		    StatementContext::component, BoxGrammar.StatementContext::statementBlock, StatementContext::refutableDestructuringDeclaration,
+		    StatementContext::simpleStatement,
 		    BoxGrammar.StatementContext::componentIsland, StatementContext::throw_,
 		    StatementContext::emptyStatementBlock, StatementContext::function, StatementContext::localClass );
 
@@ -408,6 +414,21 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 	}
 
 	@Override
+	public BoxNode visitRefutableDestructuringDeclaration( RefutableDestructuringDeclarationContext ctx ) {
+		var				pos			= tools.getPosition( ctx );
+		var				src			= tools.getSourceText( ctx );
+		BoxStatement	elseBody	= tools.toStatementOrError( () -> ( BoxStatement ) ctx.elseBody.accept( this ), ctx.elseBody );
+		return new ortus.boxlang.compiler.ast.statement.BoxRefutableDestructuringDeclaration(
+		    expressionVisitor.buildMatchPattern( ctx.matchPattern() ),
+		    ctx.expression().accept( expressionVisitor ),
+		    elseBody,
+		    ctx.op.getType() == BoxGrammar.FINAL,
+		    pos,
+		    src
+		);
+	}
+
+	@Override
 	public BoxNode visitFor( ForContext ctx ) {
 		var				pos		= tools.getPosition( ctx );
 		var				src		= tools.getSourceText( ctx );
@@ -435,8 +456,6 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		}
 
 		// Otherwise we have an index with 0 <= n <= 3 expressions
-		List<BoxExpression> expressions = Optional.ofNullable( ctx.expression() ).orElse( Collections.emptyList() ).stream()
-		    .map( expression -> expression.accept( expressionVisitor ) ).toList();
 		return new BoxForIndex(
 		    label,
 		    Optional.ofNullable( ctx.intializer ).map( init -> init.accept( expressionVisitor ) ).orElse( null ),
@@ -619,7 +638,8 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 
 		List<Function<BoxGrammar.SimpleStatementContext, ParserRuleContext>> functions = Arrays.asList( SimpleStatementContext::break_,
 		    BoxGrammar.SimpleStatementContext::continue_, SimpleStatementContext::rethrow, BoxGrammar.SimpleStatementContext::assert_,
-		    SimpleStatementContext::param, SimpleStatementContext::return_, BoxGrammar.SimpleStatementContext::not );
+		    SimpleStatementContext::param, SimpleStatementContext::return_, SimpleStatementContext::yieldStatement,
+		    BoxGrammar.SimpleStatementContext::not );
 
 		// Iterate over the functions
 		for ( Function<BoxGrammar.SimpleStatementContext, ParserRuleContext> function : functions ) {
@@ -710,6 +730,18 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 
 		BoxExpression	value	= Optional.ofNullable( ctx.expression() ).map( expression -> expression.accept( expressionVisitor ) ).orElse( null );
 		return new BoxReturn( value, pos, src );
+	}
+
+	@Override
+	public BoxNode visitYieldStatement( YieldStatementContext ctx ) {
+		if ( !isInsideMatchCaseBody( ctx ) ) {
+			throw new ExpressionException( "Yield statements are only allowed inside match arm blocks.", tools.getPosition( ctx ), tools.getSourceText( ctx ) );
+		}
+
+		var				pos		= tools.getPosition( ctx );
+		var				src		= tools.getSourceText( ctx );
+		BoxExpression	value	= ctx.expression().accept( expressionVisitor );
+		return new BoxYield( value, pos, src );
 	}
 
 	@Override
@@ -895,6 +927,11 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 
 	@Override
 	public BoxNode visitExprStatAnonymousFunction( ExprStatAnonymousFunctionContext ctx ) {
+		return buildExprStat( ctx );
+	}
+
+	@Override
+	public BoxNode visitExprStatMatch( ExprStatMatchContext ctx ) {
 		return buildExprStat( ctx );
 	}
 
@@ -1107,8 +1144,15 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		Optional.ofNullable( list ).ifPresent( l -> l.forEach( consumer ) );
 	}
 
-	public <T> T getOrNull( List<T> list, int index ) {
-		return ( index >= 0 && index < list.size() ) ? list.get( index ) : null;
+	private boolean isInsideMatchCaseBody( ParserRuleContext ctx ) {
+		ParserRuleContext current = ctx;
+		while ( current != null ) {
+			if ( current instanceof BoxGrammar.MatchCaseBlockContext || current instanceof BoxGrammar.MatchCaseInlineBodyContext ) {
+				return true;
+			}
+			current = current.getParent();
+		}
+		return false;
 	}
 
 	private BoxFunctionDeclaration buildFunction( List<BoxGrammar.PreAnnotationContext> preAnnotations,
@@ -1182,16 +1226,23 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 		    } );
 
 		// Function return type
-		returnType	= Optional.ofNullable( functionSignature.returnType() ).map( returnTypeContext -> {
-						String	targetType	= returnTypeContext.getText();
-						BoxType	boxType		= BoxType.fromString( targetType );
-						String	fqn			= boxType.equals( BoxType.Fqn ) ? targetType : null;
-						return new BoxReturnType( boxType, fqn, tools.getPosition( returnTypeContext ), tools.getSourceText( returnTypeContext ) );
-					} ).orElse( null );
+		if ( functionSignature.returnType() != null ) {
+			String	targetType	= functionSignature.returnType().getText();
+			BoxType	boxType		= BoxType.fromString( targetType );
+			String	fqn			= boxType.equals( BoxType.Fqn ) ? targetType : null;
+			returnType = new BoxReturnType(
+			    boxType,
+			    fqn,
+			    tools.getPosition( functionSignature.returnType() ),
+			    tools.getSourceText( functionSignature.returnType() )
+			);
+		} else {
+			returnType = null;
+		}
 
 		// If body is null, it indicates an abstract function otherwise the presence of
 		// a body indicates a function declaration, even with no statements in it.
-		body		= Optional.ofNullable( statementBlock ).map( this::buildStatementBlock ).orElse( null );
+		body = Optional.ofNullable( statementBlock ).map( this::buildStatementBlock ).orElse( null );
 
 		annotations.removeAll( annToRemove );
 		return new BoxFunctionDeclaration( visibility, modifiers, name, returnType, args, annotations, documentation, body, pos, src );

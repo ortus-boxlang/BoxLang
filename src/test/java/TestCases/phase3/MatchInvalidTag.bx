@@ -1,0 +1,6 @@
+@patternMatch( "Broken", "missingValue" )
+class accessors=true {
+
+	property value;
+
+}

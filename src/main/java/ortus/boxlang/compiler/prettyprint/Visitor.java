@@ -32,6 +32,8 @@ import ortus.boxlang.compiler.ast.comment.BoxDocComment;
 import ortus.boxlang.compiler.ast.comment.BoxMultiLineComment;
 import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
+import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringBinding;
+import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentModifier;
@@ -49,10 +51,26 @@ import ortus.boxlang.compiler.ast.expression.BoxFunctionalMemberAccess;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
+import ortus.boxlang.compiler.ast.expression.BoxMatchAndPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchArrayPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchBindingPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchCase;
+import ortus.boxlang.compiler.ast.expression.BoxMatchConstructorPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchExpression;
+import ortus.boxlang.compiler.ast.expression.BoxMatchLiteralPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchNotPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchObjectPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchOrPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchPredicatePattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchRangePattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchTypePattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchWildcardPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNegateOperation;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
+import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringBinding;
+import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
@@ -97,6 +115,7 @@ import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.statement.BoxLocalClass;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
+import ortus.boxlang.compiler.ast.statement.BoxRefutableDestructuringDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
@@ -110,6 +129,7 @@ import ortus.boxlang.compiler.ast.statement.BoxTry;
 import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
 import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
+import ortus.boxlang.compiler.ast.statement.BoxYield;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
@@ -339,6 +359,12 @@ public class Visitor extends VoidBoxVisitor {
 		} catch ( Exception e ) {
 			return false;
 		}
+	}
+
+	private boolean isDestructuringShorthand( BoxObjectDestructuringBinding node ) {
+		return node.getKey() instanceof BoxIdentifier key
+		    && node.getTarget() instanceof BoxIdentifier target
+		    && key.getName().equals( target.getName() );
 	}
 
 	private boolean printSourceForCFCompat( BoxNode node ) {
@@ -1554,6 +1580,19 @@ public class Visitor extends VoidBoxVisitor {
 	}
 
 	@Override
+	public void visit( BoxYield node ) {
+		printPreComments( node );
+		if ( printSourceForCFCompat( node ) ) {
+			printPostComments( node );
+			return;
+		}
+		print( "yield " );
+		node.getExpression().accept( this );
+		printSemicolon();
+		printPostComments( node );
+	}
+
+	@Override
 	public void visit( BoxReturnType node ) {
 		printPreComments( node );
 		if ( node.getType().equals( BoxType.Fqn ) ) {
@@ -1572,6 +1611,18 @@ public class Visitor extends VoidBoxVisitor {
 			return;
 		}
 		doBoxIfElse( node, false );
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxRefutableDestructuringDeclaration node ) {
+		printPreComments( node );
+		print( node.isFinalDeclaration() ? "final " : "var " );
+		node.getPattern().accept( this );
+		print( " = " );
+		node.getSubject().accept( this );
+		print( " else " );
+		node.getElseBody().accept( this );
 		printPostComments( node );
 	}
 
@@ -1753,6 +1804,237 @@ public class Visitor extends VoidBoxVisitor {
 	@Override
 	public void visit( BoxSwitchBreakingCase node ) {
 		visit( ( BoxSwitchCase ) node );
+	}
+
+	@Override
+	public void visit( BoxMatchExpression node ) {
+		printPreComments( node );
+		var currentDoc = getCurrentDoc();
+
+		currentDoc.append( "match( " );
+		node.getSubject().accept( this );
+		currentDoc.append( " ) {" );
+
+		var blockDoc = pushDoc( DocType.INDENT );
+		blockDoc.append( Line.HARD );
+		for ( int i = 0; i < node.getCases().size(); i++ ) {
+			var matchCase = node.getCases().get( i );
+			matchCase.accept( this );
+			if ( i < node.getCases().size() - 1 && ! ( matchCase.getBody() instanceof BoxStatementBlock ) ) {
+				blockDoc.append( ";" );
+			}
+			if ( i < node.getCases().size() - 1 ) {
+				blockDoc.append( Line.HARD );
+			}
+		}
+
+		currentDoc
+		    .append( popDoc() )
+		    .append( Line.HARD )
+		    .append( "}" );
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxMatchCase node ) {
+		printPreComments( node );
+		node.getPattern().accept( this );
+		if ( node.getGuard() != null ) {
+			print( " if " );
+			node.getGuard().accept( this );
+		}
+		print( " => " );
+		if ( node.getBody() instanceof BoxExpressionStatement expressionStatement ) {
+			expressionStatement.getExpression().accept( this );
+		} else {
+			node.getBody().accept( this );
+		}
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxMatchLiteralPattern node ) {
+		printPreComments( node );
+		node.getValue().accept( this );
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxMatchWildcardPattern node ) {
+		printPreComments( node );
+		print( "_" );
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxMatchBindingPattern node ) {
+		printPreComments( node );
+		node.getBinding().accept( this );
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxMatchConstructorPattern node ) {
+		printPreComments( node );
+		node.getLabel().accept( this );
+		print( "( " );
+		for ( int i = 0; i < node.getPatterns().size(); i++ ) {
+			node.getPatterns().get( i ).accept( this );
+			if ( i < node.getPatterns().size() - 1 ) {
+				print( ", " );
+			}
+		}
+		print( " )" );
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxMatchArrayPattern node ) {
+		printPreComments( node );
+		node.getPattern().accept( this );
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxMatchObjectPattern node ) {
+		printPreComments( node );
+		node.getPattern().accept( this );
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxMatchAndPattern node ) {
+		printPreComments( node );
+		for ( int i = 0; i < node.getPatterns().size(); i++ ) {
+			node.getPatterns().get( i ).accept( this );
+			if ( i < node.getPatterns().size() - 1 ) {
+				print( " and " );
+			}
+		}
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxMatchOrPattern node ) {
+		printPreComments( node );
+		for ( int i = 0; i < node.getPatterns().size(); i++ ) {
+			node.getPatterns().get( i ).accept( this );
+			if ( i < node.getPatterns().size() - 1 ) {
+				print( " or " );
+			}
+		}
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxMatchNotPattern node ) {
+		printPreComments( node );
+		print( "not " );
+		node.getPattern().accept( this );
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxMatchPredicatePattern node ) {
+		printPreComments( node );
+		print( "?(" );
+		node.getPredicate().accept( this );
+		print( ")" );
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxMatchRangePattern node ) {
+		printPreComments( node );
+		node.getFrom().accept( this );
+		print( ".." );
+		node.getTo().accept( this );
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxMatchTypePattern node ) {
+		printPreComments( node );
+		print( "is " + String.join( ", ", node.getTypes() ) + " as " );
+		node.getBinding().accept( this );
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxArrayDestructuringPattern node ) {
+		printPreComments( node );
+		print( "[ " );
+		int size = node.getBindings().size();
+		for ( int i = 0; i < size; i++ ) {
+			node.getBindings().get( i ).accept( this );
+			if ( i < size - 1 ) {
+				print( ", " );
+			}
+		}
+		print( " ]" );
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxArrayDestructuringBinding node ) {
+		printPreComments( node );
+		if ( node.isRest() ) {
+			print( "..." );
+			node.getTarget().accept( this );
+			printPostComments( node );
+			return;
+		}
+
+		if ( node.getPattern() != null ) {
+			node.getPattern().accept( this );
+		} else if ( node.getTarget() != null ) {
+			node.getTarget().accept( this );
+		}
+		if ( node.getDefaultValue() != null ) {
+			print( " = " );
+			node.getDefaultValue().accept( this );
+		}
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxObjectDestructuringPattern node ) {
+		printPreComments( node );
+		print( "{ " );
+		int size = node.getBindings().size();
+		for ( int i = 0; i < size; i++ ) {
+			node.getBindings().get( i ).accept( this );
+			if ( i < size - 1 ) {
+				print( ", " );
+			}
+		}
+		print( " }" );
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxObjectDestructuringBinding node ) {
+		printPreComments( node );
+		if ( node.isRest() ) {
+			print( "..." );
+			node.getTarget().accept( this );
+			printPostComments( node );
+			return;
+		}
+
+		node.getKey().accept( this );
+		if ( node.getPattern() != null ) {
+			print( ": " );
+			node.getPattern().accept( this );
+		} else if ( node.getTarget() != null && !isDestructuringShorthand( node ) ) {
+			print( ": " );
+			node.getTarget().accept( this );
+		}
+		if ( node.getDefaultValue() != null ) {
+			print( " = " );
+			node.getDefaultValue().accept( this );
+		}
+		printPostComments( node );
 	}
 
 	@Override

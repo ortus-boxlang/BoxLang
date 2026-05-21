@@ -61,7 +61,17 @@ public class Attempt<T> {
 	/**
 	 * The target value to evaluate
 	 */
-	protected final T					value;
+	protected final Object			value;
+
+	/**
+	 * Explicit failure payload carried by this attempt
+	 */
+	protected final Object			failure;
+
+	/**
+	 * Tracks whether this attempt represents an explicit failure payload
+	 */
+	protected final boolean			failed;
 
 	/**
 	 * Validation Record
@@ -78,7 +88,10 @@ public class Attempt<T> {
 	 * Constructor for an empty attempt
 	 */
 	protected Attempt() {
-		this( null );
+		this.value				= null;
+		this.failure			= null;
+		this.failed				= false;
+		this.validationRecord	= null;
 	}
 
 	/**
@@ -86,6 +99,18 @@ public class Attempt<T> {
 	 */
 	protected Attempt( T value ) {
 		this.value				= value;
+		this.failure			= null;
+		this.failed				= false;
+		this.validationRecord	= null;
+	}
+
+	/**
+	 * Constructor for an explicit failure attempt.
+	 */
+	protected Attempt( Object failure, boolean failed ) {
+		this.value				= null;
+		this.failure			= failure;
+		this.failed				= failed;
 		this.validationRecord	= null;
 	}
 
@@ -104,6 +129,30 @@ public class Attempt<T> {
 	 */
 	public static <T> Attempt<T> of( T value ) {
 		return new Attempt<>( value );
+	}
+
+	/**
+	 * Create a failed attempt carrying a failure payload.
+	 * This behaves as "not present" for Optional-style APIs while still exposing
+	 * the failure payload for Result-style workflows.
+	 *
+	 * @param failure The failure payload to carry
+	 *
+	 * @return a new failed attempt
+	 */
+	public static <T> Attempt<T> fail( Object failure ) {
+		return new Attempt<>( failure, true );
+	}
+
+	/**
+	 * Alias to {@link #fail(Object)} for Rust-style result semantics.
+	 *
+	 * @param failure The failure payload to carry
+	 *
+	 * @return a new failed attempt
+	 */
+	public static <T> Attempt<T> err( Object failure ) {
+		return fail( failure );
 	}
 
 	/**
@@ -141,6 +190,7 @@ public class Attempt<T> {
 		/**
 		 * Empty validation record
 		 */
+		@SuppressWarnings( "unused" )
 		public ValidationRecord() {
 			this( null, null, null, null, null, null );
 		}
@@ -338,7 +388,7 @@ public class Attempt<T> {
 	public Attempt<T> ifValid( Consumer<? super T> action ) {
 		Objects.requireNonNull( action );
 		if ( isValid() ) {
-			action.accept( this.value );
+			action.accept( rawValue() );
 		}
 		return this;
 	}
@@ -355,7 +405,7 @@ public class Attempt<T> {
 	public Attempt<T> ifInvalid( Consumer<? super T> action ) {
 		Objects.requireNonNull( action );
 		if ( !isValid() ) {
-			action.accept( this.value );
+			action.accept( rawValue() );
 		}
 		return this;
 	}
@@ -375,9 +425,32 @@ public class Attempt<T> {
 	 */
 	public T get() {
 		if ( isPresent() ) {
-			return this.value;
+			return rawValue();
 		}
-		throw new NoElementException( "Attempt is empty" );
+		throw new NoElementException( getAbsentMessage() );
+	}
+
+	/**
+	 * Get the explicit failure payload carried by this attempt.
+	 *
+	 * @throws NoElementException If the attempt does not carry an explicit failure payload
+	 *
+	 * @return The failure payload
+	 */
+	public Object getFailure() {
+		if ( this.failed ) {
+			return this.failure;
+		}
+		throw new NoElementException( "Attempt has no failure payload" );
+	}
+
+	/**
+	 * Alias to {@link #getFailure()}.
+	 *
+	 * @return The failure payload
+	 */
+	public Object getError() {
+		return getFailure();
 	}
 
 	/**
@@ -401,6 +474,15 @@ public class Attempt<T> {
 	}
 
 	/**
+	 * Return true when this attempt carries an explicit failure payload.
+	 *
+	 * @return true if this attempt is an explicit failure
+	 */
+	public boolean hasFailurePayload() {
+		return this.failed;
+	}
+
+	/**
 	 * Verifies if the value is null or not
 	 *
 	 * @return True if the attempt is null
@@ -415,7 +497,7 @@ public class Attempt<T> {
 	 * @return True if the attempt is empty
 	 */
 	public boolean hasFailed() {
-		return isEmpty();
+		return this.failed || isEmpty();
 	}
 
 	/**
@@ -435,7 +517,7 @@ public class Attempt<T> {
 	 */
 	public boolean isPresent() {
 		// If null, we have our answer already
-		if ( this.value == null ) {
+		if ( this.failed || this.value == null ) {
 			return false;
 		}
 		return true;
@@ -450,7 +532,7 @@ public class Attempt<T> {
 	public Attempt<T> ifPresent( Consumer<? super T> action ) {
 		Objects.requireNonNull( action );
 		if ( this.isPresent() ) {
-			action.accept( this.value );
+			action.accept( rawValue() );
 		}
 		return this;
 	}
@@ -473,7 +555,7 @@ public class Attempt<T> {
 		Objects.requireNonNull( action );
 		Objects.requireNonNull( emptyAction );
 		if ( this.isPresent() ) {
-			action.accept( this.value );
+			action.accept( rawValue() );
 		} else {
 			emptyAction.run();
 		}
@@ -528,7 +610,7 @@ public class Attempt<T> {
 		if ( this.isEmpty() ) {
 			return other;
 		}
-		return this.value;
+		return rawValue();
 	}
 
 	/**
@@ -555,7 +637,7 @@ public class Attempt<T> {
 		if ( isEmpty() ) {
 			return supplier.get();
 		}
-		return this.value;
+		return rawValue();
 	}
 
 	/**
@@ -579,10 +661,10 @@ public class Attempt<T> {
 	public <U> Attempt<U> map( java.util.function.Function<? super T, ? extends U> mapper ) {
 		Objects.requireNonNull( mapper );
 		if ( isEmpty() ) {
-			return empty();
+			return propagateFailure();
 		}
 
-		return of( mapper.apply( this.value ) );
+		return of( mapper.apply( rawValue() ) );
 	}
 
 	/**
@@ -608,9 +690,9 @@ public class Attempt<T> {
 	public <U> Attempt<U> flatMap( java.util.function.Function<? super T, ? extends Attempt<? extends U>> mapper ) {
 		Objects.requireNonNull( mapper );
 		if ( isEmpty() ) {
-			return empty();
+			return propagateFailure();
 		}
-		Attempt<U> r = ( Attempt<U> ) mapper.apply( this.value );
+		Attempt<U> r = ( Attempt<U> ) mapper.apply( rawValue() );
 		return Objects.requireNonNull( r );
 	}
 
@@ -646,7 +728,7 @@ public class Attempt<T> {
 			    null
 			) );
 		}
-		return this.value;
+		return rawValue();
 	}
 
 	/**
@@ -664,7 +746,7 @@ public class Attempt<T> {
 		if ( isEmpty() ) {
 			throw new NoElementException( message );
 		}
-		return this.value;
+		return rawValue();
 	}
 
 	/**
@@ -680,7 +762,7 @@ public class Attempt<T> {
 		if ( isEmpty() ) {
 			ExceptionUtil.throwException( throwable );
 		}
-		return this.value;
+		return rawValue();
 	}
 
 	/**
@@ -688,7 +770,7 @@ public class Attempt<T> {
 	 * value, otherwise returns an empty Stream.
 	 */
 	public Stream<T> stream() {
-		return isEmpty() ? Stream.empty() : Stream.of( this.value );
+		return isEmpty() ? Stream.empty() : Stream.of( rawValue() );
 	}
 
 	/**
@@ -697,7 +779,10 @@ public class Attempt<T> {
 	 * @return The string representation of the value if any, else empty string
 	 */
 	public String toString() {
-		return isEmpty() ? "Attempt.empty" : String.format( "Attempt[%s]", this.value.toString() );
+		if ( this.failed ) {
+			return String.format( "Attempt.failed[%s]", String.valueOf( this.failure ) );
+		}
+		return isEmpty() ? "Attempt.empty" : String.format( "Attempt[%s]", String.valueOf( this.value ) );
 	}
 
 	/**
@@ -705,6 +790,9 @@ public class Attempt<T> {
 	 */
 	@Override
 	public int hashCode() {
+		if ( this.failed ) {
+			return 31 + Objects.hashCode( this.failure );
+		}
 		return isEmpty() ? 0 : Objects.hashCode( this.value );
 	}
 
@@ -718,6 +806,10 @@ public class Attempt<T> {
 		}
 
 		if ( obj instanceof Attempt<?> castedAttempt ) {
+			if ( this.failed || castedAttempt.failed ) {
+				return this.failed == castedAttempt.failed && Objects.equals( this.failure, castedAttempt.failure );
+			}
+
 			// If both are empty, they are equal
 			if ( isEmpty() && castedAttempt.isEmpty() ) {
 				return true;
@@ -729,7 +821,11 @@ public class Attempt<T> {
 			}
 
 			// If both are not empty, compare the values
-			return get().equals( castedAttempt.get() );
+			return Objects.equals( get(), castedAttempt.get() );
+		}
+
+		if ( this.failed ) {
+			return Objects.equals( this.failure, obj );
 		}
 
 		// If we are empty and the incoming object is null, they are equal
@@ -743,7 +839,7 @@ public class Attempt<T> {
 		}
 
 		// Else evaluate this.value to incoming object
-		return get().equals( obj );
+		return Objects.equals( get(), obj );
 	}
 
 	/**
@@ -756,10 +852,10 @@ public class Attempt<T> {
 	 */
 	public Attempt<T> filter( Predicate<? super T> predicate ) {
 		if ( isEmpty() ) {
-			return empty();
+			return this.failed ? this : empty();
 		}
 
-		if ( predicate.test( this.value ) ) {
+		if ( predicate.test( rawValue() ) ) {
 			return this;
 		}
 
@@ -770,7 +866,23 @@ public class Attempt<T> {
 	 * Convert this attempt to a standard Java Optional
 	 */
 	public Optional<T> toOptional() {
-		return Optional.ofNullable( this.value );
+		return isPresent() ? Optional.ofNullable( rawValue() ) : Optional.empty();
+	}
+
+	@SuppressWarnings( "unchecked" )
+	protected T rawValue() {
+		return ( T ) this.value;
+	}
+
+	private String getAbsentMessage() {
+		if ( this.failed ) {
+			return "Attempt failed: " + String.valueOf( this.failure );
+		}
+		return "Attempt is empty";
+	}
+
+	private <U> Attempt<U> propagateFailure() {
+		return this.failed ? Attempt.fail( this.failure ) : empty();
 	}
 
 }

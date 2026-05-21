@@ -1,0 +1,7 @@
+class accessors=true {
+
+	boolean function $matchPredicate( required struct patternDescriptor ) {
+		return patternDescriptor.label == "Email";
+	}
+
+}

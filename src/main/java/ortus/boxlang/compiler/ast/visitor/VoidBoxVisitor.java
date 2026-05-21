@@ -45,6 +45,20 @@ import ortus.boxlang.compiler.ast.expression.BoxFunctionalMemberAccess;
 import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
+import ortus.boxlang.compiler.ast.expression.BoxMatchAndPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchArrayPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchBindingPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchCase;
+import ortus.boxlang.compiler.ast.expression.BoxMatchConstructorPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchExpression;
+import ortus.boxlang.compiler.ast.expression.BoxMatchLiteralPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchNotPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchObjectPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchOrPattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchPredicatePattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchRangePattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchTypePattern;
+import ortus.boxlang.compiler.ast.expression.BoxMatchWildcardPattern;
 import ortus.boxlang.compiler.ast.expression.BoxMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxNegateOperation;
 import ortus.boxlang.compiler.ast.expression.BoxNew;
@@ -99,6 +113,7 @@ import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.statement.BoxLocalClass;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
+import ortus.boxlang.compiler.ast.statement.BoxRefutableDestructuringDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
@@ -111,6 +126,7 @@ import ortus.boxlang.compiler.ast.statement.BoxThrow;
 import ortus.boxlang.compiler.ast.statement.BoxTry;
 import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
+import ortus.boxlang.compiler.ast.statement.BoxYield;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
 
@@ -271,6 +287,62 @@ public abstract class VoidBoxVisitor {
 		visitChildren( node );
 	}
 
+	public void visit( BoxMatchExpression node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxMatchCase node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxMatchLiteralPattern node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxMatchWildcardPattern node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxMatchBindingPattern node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxMatchConstructorPattern node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxMatchArrayPattern node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxMatchObjectPattern node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxMatchAndPattern node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxMatchOrPattern node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxMatchNotPattern node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxMatchPredicatePattern node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxMatchRangePattern node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxMatchTypePattern node ) {
+		visitChildren( node );
+	}
+
 	/** {@inheritDoc} */
 	public void visit( BoxNull node ) {
 		visitChildren( node );
@@ -384,6 +456,10 @@ public abstract class VoidBoxVisitor {
 		visitChildren( node );
 	}
 
+	public void visit( BoxRefutableDestructuringDeclaration node ) {
+		visitChildren( node );
+	}
+
 	public void visit( BoxImport node ) {
 		visitChildren( node );
 	}
@@ -405,6 +481,10 @@ public abstract class VoidBoxVisitor {
 	}
 
 	public void visit( BoxReturnType node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxYield node ) {
 		visitChildren( node );
 	}
 

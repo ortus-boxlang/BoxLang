@@ -1,0 +1,7 @@
+@patternMatch( [ [ "Some", "value" ], [ "Just", "value" ], [ "Success", "payload" ] ] )
+class accessors=true {
+
+	property value;
+	property payload;
+
+}

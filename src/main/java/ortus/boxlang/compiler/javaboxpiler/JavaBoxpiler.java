@@ -56,6 +56,8 @@ import ortus.boxlang.compiler.Boxpiler;
 import ortus.boxlang.compiler.ClassInfo;
 import ortus.boxlang.compiler.JavaSourceString;
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.BoxScript;
+import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.visitor.QueryEscapeSingleQuoteVisitor;
 import ortus.boxlang.compiler.javaboxpiler.transformer.ProxyTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.indexer.BoxNodeKey;
@@ -118,6 +120,7 @@ public class JavaBoxpiler extends Boxpiler {
 	 */
 	@SuppressWarnings( "unused" )
 	public String generateJavaSource( BoxNode node, ClassInfo classInfo ) {
+		node = normalizeRootNode( node, classInfo );
 		node.accept( new QueryEscapeSingleQuoteVisitor( classInfo.sourceType() ) );
 		Transpiler transpiler = Transpiler.getTranspiler();
 		transpiler.setProperty( "classname", classInfo.className() );
@@ -163,6 +166,14 @@ public class JavaBoxpiler extends Boxpiler {
 		return javaSource;
 	}
 
+	private BoxNode normalizeRootNode( BoxNode node, ClassInfo classInfo ) {
+		if ( !classInfo.isStatement() || ! ( node instanceof BoxStatement statement ) ) {
+			return node;
+		}
+
+		return new BoxScript( List.of( statement ), statement.getPosition(), statement.getSourceText(), classInfo.sourceType() );
+	}
+
 	@Override
 	public List<byte[]> compileClassInfo( String classPoolName, String FQN ) {
 		Timer timer = null;
@@ -184,7 +195,9 @@ public class JavaBoxpiler extends Boxpiler {
 			ParsingResult result = parseOrFail( sourceFile );
 			compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.fqn().toString(), classPoolName, classInfo.lastModified() );
 		} else if ( classInfo.source() != null ) {
-			ParsingResult result = parseOrFail( classInfo.source(), classInfo.sourceType(), classInfo.isClass() );
+			ParsingResult result = classInfo.isStatement()
+			    ? parseStatementOrFail( classInfo.source(), classInfo.sourceType() )
+			    : parseOrFail( classInfo.source(), classInfo.sourceType(), classInfo.isClass() );
 			compileSource( generateJavaSource( result.getRoot(), classInfo ), classInfo.fqn().toString(), classPoolName, classInfo.lastModified() );
 		} else if ( classInfo.interfaceProxyDefinition() != null ) {
 			compileSource( generateProxyJavaSource( classInfo ), classInfo.fqn().toString(), classPoolName, classInfo.lastModified() );

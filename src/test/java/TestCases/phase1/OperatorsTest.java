@@ -33,8 +33,9 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Range;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 
 public class OperatorsTest {
@@ -175,10 +176,10 @@ public class OperatorsTest {
 	@Test
 	public void testRangeOperator() {
 		Object result = instance.executeStatement( "1..5", context );
-		assertThat( result ).isEqualTo( Array.of( 1, 2, 3, 4, 5 ) );
+		assertThat( result ).isEqualTo( new Range( 1, 5 ) );
 
 		result = instance.executeStatement( "(5..1)", context );
-		assertThat( result ).isEqualTo( Array.of( 5, 4, 3, 2, 1 ) );
+		assertThat( result ).isEqualTo( new Range( 5, 1 ) );
 
 		instance.executeSource(
 		    """
@@ -187,7 +188,41 @@ public class OperatorsTest {
 		    result = a..b;
 		    """,
 		    context );
-		assertThat( variables.get( resultKey ) ).isEqualTo( Array.of( 2, 3, 4 ) );
+		assertThat( variables.get( resultKey ) ).isEqualTo( new Range( 2, 4 ) );
+	}
+
+	@DisplayName( "range operator rejects oversized ranges" )
+	@Test
+	public void testRangeOperatorRejectsOversizedRanges() {
+		BoxRuntimeException t = assertThrows( BoxRuntimeException.class, () -> ortus.boxlang.runtime.operators.Range.invoke( 0, Integer.MAX_VALUE ) );
+
+		assertThat( t.getMessage() ).contains( "too many results" );
+	}
+
+	@DisplayName( "compiled script paths return the runtime Range value" )
+	@Test
+	public void testCompiledScriptRangeOperatorPath() {
+		instance.executeSource(
+		    """
+		    result = 1..5;
+		    """,
+		    context,
+		    BoxSourceType.BOXSCRIPT );
+
+		assertThat( variables.get( resultKey ) ).isEqualTo( new Range( 1, 5 ) );
+	}
+
+	@DisplayName( "compiled template paths preserve oversized range failures" )
+	@Test
+	public void testCompiledTemplateRangeOperatorOversizeFailure() {
+		BoxRuntimeException t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    <bx:set result = 0..2147483647>
+		    """,
+		    context,
+		    BoxSourceType.BOXTEMPLATE ) );
+
+		assertThat( t.getMessage() ).contains( "too many results" );
 	}
 
 	@DisplayName( "math plus plus literals" )

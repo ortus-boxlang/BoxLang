@@ -1,0 +1,14 @@
+class accessors=true {
+
+	property address;
+
+	boolean function $matchPredicate( required struct patternDescriptor ) {
+		return patternDescriptor.label == "Email";
+	}
+
+	struct function $matchBindings( required struct patternDescriptor ) {
+		1 / 0;
+		return {};
+	}
+
+}

@@ -187,7 +187,7 @@ public class BoxLexerCustom extends BoxLexer {
 	 */
 	private static final Set<Integer>	keywordsThatMayBeIdentifiers	= Set.of( ABSTRACT, AS, ASSERT, BREAK, CASE, CASTAS, CATCH, CLASS,
 	    CONTAIN, CONTAINS, CONTINUE, DEFAULT, DO, DOES, ELSE, FINAL, FINALLY, FOR, FUNCTION, IF, IMPORT, IN, INCLUDE, INSTANCEOF, INTERFACE, JAVA,
-	    NEW, NULL, PACKAGE, PARAM, PRIVATE, PROPERTY, PUBLIC, REMOTE, REQUIRED, RETHROW, RETURN, STATIC,
+	    MATCH, NEW, NULL, PACKAGE, PARAM, PRIVATE, PROPERTY, PUBLIC, REMOTE, REQUIRED, RETHROW, RETURN, STATIC,
 	    THROW, TO, TRY, VAR, WHEN, WHILE, TRANSACTION, LOCK, THREAD, ABORT, EXIT, TRUE, FALSE, SWITCH,
 	    // operator words
 	    AND, EQ, EQUAL, EQV, GE, GREATER, GT, GTE, IMP, IS, LE, LESS, LT, LTE, MOD, NEQ, NOT, OR, THAN, XOR );
@@ -201,7 +201,7 @@ public class BoxLexerCustom extends BoxLexer {
 	 * Keywords that legtimatley have trailing (
 	 */
 	private static final Set<Integer>	keywordsThatComeBeforeLParen	= Set.of( CATCH, FOR, FUNCTION, IF, WHILE, SWITCH, NOT, AND, EQ, EQUAL, EQV, GE, GT,
-	    GTE, IMP, IS, LE, LT, LTE, MOD, NEQ, OR, THAN, XOR, IN ); // , ASSERT -without assert here, you can't use an expression wrapped in parens
+	    GTE, IMP, IS, LE, LT, LTE, MATCH, MOD, NEQ, OR, THAN, XOR, IN ); // , ASSERT -without assert here, you can't use an expression wrapped in parens
 
 	/**
 	 * A flag to track if we are fixing a component prefix

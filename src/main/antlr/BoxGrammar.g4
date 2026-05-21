@@ -238,6 +238,7 @@ statement
     // empty statement block rule that follows after expression.
     | statementBlock
     | component
+    | refutableDestructuringDeclaration
     | simpleStatement
     | expressionStatement // Allows for statements like complicated.thing.foo.bar--
     | emptyStatementBlock
@@ -249,8 +250,11 @@ statement
 assignmentModifier: op = ( VAR | FINAL | STATIC)
     ;
 
+refutableDestructuringDeclaration: op = ( VAR | FINAL ) matchPattern EQUALSIGN expression ELSE elseBody = statementOrBlock
+    ;
+
 // Simple statements have no body
-simpleStatement: break | continue | rethrow | assert | param | return | not
+simpleStatement: break | continue | rethrow | assert | param | return | yieldStatement | not
     ;
 
 // NOT ( expression ) is a special case when a statement as everything else should
@@ -364,6 +368,9 @@ continue: CONTINUE identifier?
  return foo;
  */
 return: RETURN expression?
+    ;
+
+yieldStatement: YIELD expression
     ;
 
 // rethrow;
@@ -513,7 +520,63 @@ orderedStructMemberOrSpread
 structMember: structKey (COLON | EQUALSIGN) expression
     ;
 
-structKey: identifier | stringLiteral | INTEGER_LITERAL | ILLEGAL_IDENTIFIER | SWITCH
+structKey: identifier | stringLiteral | INTEGER_LITERAL | ILLEGAL_IDENTIFIER | SWITCH | MATCH
+    ;
+
+matchExpression: MATCH LPAREN expression RPAREN LBRACE matchCaseSeries RBRACE
+    ;
+
+matchCaseSeries
+    : matchCaseBlock matchCaseSeries?
+    | matchCaseInline (SEMICOLON+ matchCaseSeries)?
+    ;
+
+matchCaseBlock: matchPattern (IF expression)? ARROW_RIGHT statementBlock
+    ;
+
+matchCaseInline: matchPattern (IF expression)? ARROW_RIGHT matchCaseInlineBody
+    ;
+
+matchCaseInlineBody
+    : matchExpression
+    | el2
+    ;
+
+matchPattern
+    : matchPatternOr
+    ;
+
+matchPatternOr
+    : matchPatternAnd (OR matchPatternAnd)*
+    ;
+
+matchPatternAnd
+    : matchPatternNot (AND matchPatternNot)*
+    ;
+
+matchPatternNot
+    : NOT matchPatternNot
+    | matchPatternPrimary
+    ;
+
+matchPatternPrimary
+    : stringLiteral              # matchStringLiteralPattern
+    | atoms RANGE atoms          # matchRangePattern
+    | atoms                      # matchAtomsPattern
+    | QM LPAREN expression RPAREN # matchPredicatePattern
+    | objectDestructuringPattern # matchObjectPattern
+    | arrayDestructuringPattern  # matchArrayPattern
+    | IS type (COMMA type)* AS identifier      # matchTypePattern
+    | constructorPattern         # matchConstructorPattern
+    | identifier                 # matchIdentifierPattern
+    ;
+
+constructorPattern
+    : identifier LPAREN matchPatternList? RPAREN
+    ;
+
+matchPatternList
+    : matchPatternOr (COMMA matchPatternOr)*
     ;
 
 /*
@@ -623,6 +686,7 @@ fqn: (identifier DOT)* identifier
 
 expressionStatement
     : anonymousFunction # exprStatAnonymousFunction // function() {} or () => {} or () -> {}
+    | matchExpression   # exprStatMatch
     | el2               # exprStatInvocable
     ;
 
@@ -632,6 +696,7 @@ expressionStatement
 // which will allow .bar = baz to be a separate statement and think param foo is a component
 expression
     : anonymousFunction                             # exprAnonymousFunction // function() {} or () => {} or () -> {}
+    | matchExpression                               # exprMatch
     | el2                                           # invocable
     | DOT identifier (LPAREN argumentList? RPAREN)? # exprHeadless
     ;

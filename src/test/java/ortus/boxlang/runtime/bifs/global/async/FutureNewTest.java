@@ -16,6 +16,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.BoxFuture;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.Attempt;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -268,6 +269,18 @@ public class FutureNewTest {
 			println( result.get() )
 		""", context);
 		// @formatter:on
+	}
+
+	@DisplayName( "Future get as a failed attempt" )
+	@Test
+	public void testGetAsAttemptFailure() {
+		BoxFuture<?> future = BoxFuture.ofCompletableFuture( CompletableFuture.failedFuture( new BoxRuntimeException( "boom" ) ) );
+
+		Attempt<?> result = future.getAsAttempt();
+
+		assertThat( result.wasSuccessful() ).isFalse();
+		assertThat( result.hasFailurePayload() ).isTrue();
+		assertThat( result.getFailure() ).isInstanceOf( ExecutionException.class );
 	}
 
 }

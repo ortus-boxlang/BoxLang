@@ -231,7 +231,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 			return Attempt.of( get( timeout, DateTimeHelper.toTimeUnit( unit ) ) );
 		} catch ( InterruptedException | ExecutionException | TimeoutException e ) {
 			this.logger.error( "Error executing get() on a future", e );
-			return Attempt.of( e );
+			return Attempt.fail( e );
 		}
 	}
 

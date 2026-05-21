@@ -114,7 +114,7 @@ public final class CastAttempt<T> extends Attempt<T> {
 	@Override
 	public T get() {
 		if ( isPresent() ) {
-			return this.value;
+			return rawValue();
 		}
 		throw new BoxCastException( "The cast was not successful.  You cannot get the value." );
 	}
@@ -143,7 +143,7 @@ public final class CastAttempt<T> extends Attempt<T> {
 			return empty();
 		}
 
-		return of( mapper.apply( this.value ) );
+		return of( mapper.apply( rawValue() ) );
 	}
 
 	/**
@@ -172,7 +172,7 @@ public final class CastAttempt<T> extends Attempt<T> {
 		if ( isEmpty() ) {
 			return empty();
 		}
-		CastAttempt<U> r = ( CastAttempt<U> ) mapper.apply( this.value );
+		CastAttempt<U> r = ( CastAttempt<U> ) mapper.apply( rawValue() );
 		return Objects.requireNonNull( r );
 	}
 
