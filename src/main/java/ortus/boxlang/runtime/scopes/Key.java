@@ -445,6 +445,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		header								= Key.of( "header" );
 	public static final Key		headers								= Key.of( "headers" );
 	public static final Key		hint								= Key.of( "hint" );
+	public static final Key		hikariConfig						= Key.of( "hikariConfig" );
 	public static final Key		hits								= Key.of( "hits" );
 	public static final Key		hostname							= Key.of( "hostname" );
 	public static final Key		hour								= Key.of( "hour" );
