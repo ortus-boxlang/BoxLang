@@ -246,8 +246,59 @@ public class LabeledLoopTest {
 		        <cfoutput>#i#->#i#</cfoutput>
 		        <br>
 		    </cfloop>
+		    <cfset result = getBoxContext().getBuffer().toString()>
 		    			 """,
 		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) )
+		    .isEqualTo( "1<br>1->1<br>2<br>2->2<br>3<br>3->3<br>4<br>4->4<br>5<br>6<br>7<br>8<br>9<br>10<br>" );
+	}
+
+	@Test
+	public void testTagLoopLabeledBreak() {
+		Key afterLoop = Key.of( "afterLoop" );
+
+		instance.executeSource(
+		    """
+		    <cfset result = 0>
+		    <cfloop from="1" to="5" index="outer" label="outerLoop">
+		        <cfset result++>
+		        <cfloop from="1" to="2" index="inner">
+		            <cfbreak outerLoop>
+		        </cfloop>
+		        <cfset result = -999>
+		    </cfloop>
+		    <cfset afterLoop = "reached">
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
+		assertThat( variables.get( afterLoop ) ).isEqualTo( "reached" );
+	}
+
+	@Test
+	public void testTagLoopNestedLabeledContinue() {
+		Key afterLoop = Key.of( "afterLoop" );
+
+		instance.executeSource(
+		    """
+		    <cfset result = "">
+		    <cfloop from="1" to="4" index="outer" label="outerLoop">
+		        <cfloop from="1" to="2" index="inner">
+		            <cfif inner EQ 1>
+		                <cfset result = result & outer>
+		                <cfcontinue outerLoop>
+		            </cfif>
+		            <cfset result = result & 'x'>
+		        </cfloop>
+		        <cfset result = result & 'y'>
+		    </cfloop>
+		    <cfset afterLoop = "reached">
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.get( result ) ).isEqualTo( "1234" );
+		assertThat( variables.get( afterLoop ) ).isEqualTo( "reached" );
 	}
 
 }

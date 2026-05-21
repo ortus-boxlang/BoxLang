@@ -263,13 +263,11 @@ public class BoxForInTransformer extends AbstractTransformer {
 			nodes.addAll( iteratorVar.nodes() );
 		}
 
+		var varStore = tracker.storeNewVariable( Opcodes.ASTORE );
 		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		nodes.addAll( varStore.nodes() );
 
 		nodes.add( loopStart );
-
-		var varStore = tracker.storeNewVariable( Opcodes.ASTORE );
-		// every iteration we will swap the values and pop in order to remove the older value
-		nodes.addAll( varStore.nodes() );
 
 		nodes.add( new VarInsnNode( Opcodes.ALOAD, iteratorVar.index() ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE,
@@ -296,6 +294,7 @@ public class BoxForInTransformer extends AbstractTransformer {
 		nodes.addAll( expressionPos.end() );
 
 		nodes.addAll( transpiler.transform( forIn.getBody(), context, ReturnValueContext.VALUE_OR_NULL ) );
+		nodes.addAll( varStore.nodes() );
 
 		nodes.add( continueTarget );
 
@@ -336,8 +335,7 @@ public class BoxForInTransformer extends AbstractTransformer {
 		nodes.add( new JumpInsnNode( Opcodes.GOTO, loopStart ) );
 
 		nodes.add( breakTarget );
-
-		nodes.addAll( varStore.nodes() );
+		nodes.add( new JumpInsnNode( Opcodes.GOTO, loopEnd ) );
 
 		nodes.add( loopEnd );
 
