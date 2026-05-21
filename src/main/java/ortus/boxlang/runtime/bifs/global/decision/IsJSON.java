@@ -51,10 +51,8 @@ public class IsJSON extends BIF {
 		if ( !stringAttempt.wasSuccessful() ) {
 			return false;
 		}
-		// TODO: Make a JSON caster for this.
-		// I don't like catching the exception, but our JSON lib doesn't give us another option
 		try {
-			JSONUtil.getJSONBuilder( false ).anyFrom( stringAttempt.get() );
+			JSONUtil.fromJSON( stringAttempt.get() );
 			return true;
 		} catch ( Exception e ) {
 			return false;
