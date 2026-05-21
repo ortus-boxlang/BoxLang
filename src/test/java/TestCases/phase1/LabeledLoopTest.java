@@ -23,6 +23,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -254,6 +255,7 @@ public class LabeledLoopTest {
 		    .isEqualTo( "1<br>1->1<br>2<br>2->2<br>3<br>3->3<br>4<br>4->4<br>5<br>6<br>7<br>8<br>9<br>10<br>" );
 	}
 
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
 	@Test
 	public void testTagLoopLabeledBreak() {
 		Key afterLoop = Key.of( "afterLoop" );
@@ -276,6 +278,7 @@ public class LabeledLoopTest {
 		assertThat( variables.get( afterLoop ) ).isEqualTo( "reached" );
 	}
 
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
 	@Test
 	public void testTagLoopNestedLabeledContinue() {
 		Key afterLoop = Key.of( "afterLoop" );

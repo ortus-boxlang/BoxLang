@@ -28,6 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.Parser;
@@ -956,6 +957,7 @@ public class CFTemplateTest {
 		assertThat( variables.get( result ) ).isEqualTo( "1245" );
 	}
 
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
 	@Test
 	public void testSwitchLabeledBreakInCaseExitsTargetedOuterLoop() {
 		Key afterLoop = Key.of( "afterLoop" );
@@ -982,6 +984,7 @@ public class CFTemplateTest {
 		assertThat( variables.get( afterLoop ) ).isEqualTo( "reached" );
 	}
 
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
 	@Test
 	public void testSwitchLabeledContinueInCaseSkipsTargetedOuterLoopIteration() {
 		Key afterLoop = Key.of( "afterLoop" );
