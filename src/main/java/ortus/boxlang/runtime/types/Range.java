@@ -496,6 +496,14 @@ public class Range<T> implements IType, IReferenceable, Iterable<T>, Serializabl
 		T current = this.fromExclusive ? this.stepper.apply( this.from, this.ascending ? 1 : -1 ) : this.from;
 
 		while ( current != null ) {
+			// If we have an upper bound and we've exceeded it, stop
+			if ( this.to != null ) {
+				int toCmp = this.comparator.compare( current, this.to );
+				if ( this.ascending ? ( this.toExclusive ? toCmp >= 0 : toCmp > 0 ) : ( this.toExclusive ? toCmp <= 0 : toCmp < 0 ) ) {
+					return false;
+				}
+			}
+
 			int cmp = this.comparator.compare( current, target );
 
 			// Exact match — value is reachable
@@ -509,14 +517,6 @@ public class Range<T> implements IType, IReferenceable, Iterable<T>, Serializabl
 			}
 			if ( !this.ascending && cmp < 0 ) {
 				return false;
-			}
-
-			// If we have an upper bound and we've exceeded it, stop
-			if ( this.to != null ) {
-				int toCmp = this.comparator.compare( current, this.to );
-				if ( this.ascending ? ( this.toExclusive ? toCmp >= 0 : toCmp > 0 ) : ( this.toExclusive ? toCmp <= 0 : toCmp < 0 ) ) {
-					return false;
-				}
 			}
 
 			// Advance
@@ -533,7 +533,7 @@ public class Range<T> implements IType, IReferenceable, Iterable<T>, Serializabl
 	 * @return true if this range uses custom stepping
 	 */
 	private boolean isSteppedRange() {
-		return this.unit != null || Math.abs( this.step.doubleValue() ) > 1;
+		return this.unit != null || Math.abs( this.step.doubleValue() ) > 1 || this.elementCategory == ElementCategory.IRANGEABLE;
 	}
 
 	/**

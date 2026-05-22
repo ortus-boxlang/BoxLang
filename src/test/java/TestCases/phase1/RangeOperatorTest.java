@@ -2228,7 +2228,7 @@ public class RangeOperatorTest {
 		    .isEqualTo( Array.of( "C4", "C#4", "D4", "D#4", "E4", "F4", "F#4", "G4", "G#4", "A4", "A#4", "B4", "C5" ) );
 	}
 
-	@DisplayName( "Musical Note: step-reachability alternatives for bounded and half-bounded ranges" )
+	@DisplayName( "Musical Note: step-reachability via contains() for bounded and half-bounded ranges" )
 	@Test
 	public void testMusicalNoteStepReachability() {
 		instance.executeSource(
@@ -2305,74 +2305,102 @@ public class RangeOperatorTest {
 		        }
 		    }
 
-		    // =========================================================
-		    // BOUNDED range: Is E4 reachable by major thirds from C4 to C6?
+		    // Bounded: Is E4 reachable by major thirds from C4 to C6?
 		    // Thirds from C4: C4, E4, G#4, C5, E5, G#5, C6
-		    // =========================================================
+		    e4OnThirds = (new Note("C4")..new Note("C6")).step( 1, "third" ).contains( "E4" );
+		    d4OnThirds = (new Note("C4")..new Note("C6")).step( 1, "third" ).contains( "D4" );
 
-		    // Option 1: stream + anyMatch on bounded range
-		    e4OnThirds = (new Note("C4")..new Note("C6")).step( 1, "third" )
-		        .stream()
-		        .anyMatch( n => n.toString() == "E4" );
+		    // Bounded: C major scale notes
+		    e4InMajor = (new Note("C4")..new Note("C5")).step( 1, "major" ).contains( "E4" );
+		    eb4InMajor = (new Note("C4")..new Note("C5")).step( 1, "major" ).contains( "D##4" );
 
-		    // D4 is NOT reachable by thirds
-		    d4OnThirds = (new Note("C4")..new Note("C6")).step( 1, "third" )
-		        .stream()
-		        .anyMatch( n => n.toString() == "D4" );
+		    // Half-bounded: Is C6 reachable by octaves from C4?
+		    g7OnOctaves = (new Note("C4")..).step( 1, "octave" ).contains( "G7" );
+		    c6OnOctaves = (new Note("C4")..).step( 1, "octave" ).contains( "C6" );
 
-		    // Option 2: collect to set, then check membership
-		    majorNotes = (new Note("C4")..new Note("C5")).step( 1, "major" )
-		        .stream()
-		        .map( n => n.toString() )
-		        .toList();
-		    e4InMajor = majorNotes.contains( "E4" );
-		    eb4InMajor = majorNotes.contains( "D##4" );  // Eb not in C major
-
-		    // =========================================================
-		    // HALF-BOUNDED range: Is G7 reachable by octaves from C4?
-		    // Octaves from C4: C4, C5, C6, C7, C8...
-		    // =========================================================
-
-		    // Option 3: stream + takeWhile + anyMatch (safe for half-bounded)
-		    g7OnOctaves = (new Note("C4")..).step( 1, "octave" )
-		        .stream()
-		        .takeWhile( n => n.getMidi() <= new Note("G7").getMidi() )
-		        .anyMatch( n => n.toString() == "G7" );
-
-		    c6OnOctaves = (new Note("C4")..).step( 1, "octave" )
-		        .stream()
-		        .takeWhile( n => n.getMidi() <= new Note("C6").getMidi() )
-		        .anyMatch( n => n.toString() == "C6" );
-
-		    // Option 4: half-bounded major scale, is F#5 reachable?
-		    // C major visits: C4, D4, E4, F4, G4, A4, B4, C5, D5, E5, F5...
-		    fs5InMajor = (new Note("C4")..).step( 1, "major" )
-		        .stream()
-		        .takeWhile( n => n.getMidi() <= new Note("F##5").getMidi() )
-		        .anyMatch( n => n.toString() == "F##5" );
-
-		    f5InMajor = (new Note("C4")..).step( 1, "major" )
-		        .stream()
-		        .takeWhile( n => n.getMidi() <= new Note("F5").getMidi() )
-		        .anyMatch( n => n.toString() == "F5" );
+		    // Half-bounded: major scale reachability
+		    fs5InMajor = (new Note("C4")..).step( 1, "major" ).contains( "F##5" );
+		    f5InMajor = (new Note("C4")..).step( 1, "major" ).contains( "F5" );
 		    """,
 		    context );
 
-		// Bounded: stream + anyMatch
+		// Bounded: thirds
 		assertThat( variables.get( Key.of( "e4OnThirds" ) ) ).isEqualTo( true );
 		assertThat( variables.get( Key.of( "d4OnThirds" ) ) ).isEqualTo( false );
 
-		// Bounded: collect to list, then contains
-		assertThat( variables.get( Key.of( "majorNotes" ) ) ).isEqualTo( Array.of( "C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5" ) );
+		// Bounded: major scale
 		assertThat( variables.get( Key.of( "e4InMajor" ) ) ).isEqualTo( true );
 		assertThat( variables.get( Key.of( "eb4InMajor" ) ) ).isEqualTo( false );
 
-		// Half-bounded: takeWhile + anyMatch (octaves)
+		// Half-bounded: octaves
 		assertThat( variables.get( Key.of( "g7OnOctaves" ) ) ).isEqualTo( false );  // G7 not on C octave ladder
 		assertThat( variables.get( Key.of( "c6OnOctaves" ) ) ).isEqualTo( true );   // C6 IS on C octave ladder
 
-		// Half-bounded: takeWhile + anyMatch (major scale)
+		// Half-bounded: major scale
 		assertThat( variables.get( Key.of( "fs5InMajor" ) ) ).isEqualTo( false );   // F#5 not in C major
 		assertThat( variables.get( Key.of( "f5InMajor" ) ) ).isEqualTo( true );     // F5 IS in C major
+	}
+
+	// ======================== Custom IRangeable: Fibonacci Sequence ========================
+
+	@DisplayName( "Fibonacci IRangeable: lazy infinite sequence with contains" )
+	@Test
+	public void testFibonacciIRangeable() {
+		instance.executeSource(
+		    """
+		    class Fib implements="java:ortus.boxlang.runtime.types.IRangeable" {
+		        property name="prev" type="integer" default=0;
+		        property name="current" type="integer" default=1;
+
+		        function rangeAdvance( step ) {
+		            var result = this;
+		            for( var i = 1; i <= step; i++ ) {
+		                result = new Fib( prev: result.getCurrent(), current: result.getPrev() + result.getCurrent() );
+		            }
+		            return result;
+		        }
+
+		        function rangeCompare( other ) { return variables.current - other.getCurrent(); }
+
+		        function rangeCoerce( val ) {
+		            if( isInstanceOf( val, "Fib" ) ) return val;
+		            if( isNumeric( val ) ) return new Fib( current: int(val) );
+		            return null;
+		        }
+		    }
+
+		    // First 10 Fibonacci numbers
+		    first10 = (new Fib()..).stream().limit(10).map( .getCurrent() ).toList();
+
+		    // Contains: is 13 a Fibonacci number?
+		    has13 = (new Fib()..).contains( 13 );
+
+		    // 14 is NOT a Fibonacci number
+		    has14 = (new Fib()..).contains( 14 );
+
+		    // Step by 2: every other Fibonacci number
+		    everyOther = (new Fib()..).step(2).stream().limit(5).map( .getCurrent() ).toList();
+
+		    // For-in with break: collect until > 100
+		    under100 = [];
+		    for( f in new Fib().. ) {
+		        if( f.getCurrent() > 100 ) break;
+		        under100.append( f.getCurrent() );
+		    }
+		    """,
+		    context );
+
+		// First 10: 1, 1, 2, 3, 5, 8, 13, 21, 34, 55
+		assertThat( variables.get( Key.of( "first10" ) ) ).isEqualTo( Array.of( 1, 1, 2, 3, 5, 8, 13, 21, 34, 55 ) );
+
+		// Contains checks
+		assertThat( variables.get( Key.of( "has13" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "has14" ) ) ).isEqualTo( false );
+
+		// Every other: 1, 2, 5, 13, 34
+		assertThat( variables.get( Key.of( "everyOther" ) ) ).isEqualTo( Array.of( 1, 2, 5, 13, 34 ) );
+
+		// Under 100: 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89
+		assertThat( variables.get( Key.of( "under100" ) ) ).isEqualTo( Array.of( 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89 ) );
 	}
 }
