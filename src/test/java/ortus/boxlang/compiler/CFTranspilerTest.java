@@ -677,4 +677,39 @@ public class CFTranspilerTest {
 		assertThat( variables.getAsString( result ).trim() ).isEqualTo( "hello world" );
 	}
 
+	@DisplayName( "It transpiles parameterExists( foo ) to isDefined( 'foo' )" )
+	@Test
+	public void testParameterExistsSimple() {
+		instance.executeSource(
+		    """
+		    foo = "bar";
+		    result = parameterExists( foo );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "It transpiles parameterExists( variables.foo ) to isDefined( 'variables.foo' )" )
+	@Test
+	public void testParameterExistsScoped() {
+		instance.executeSource(
+		    """
+		    variables.foo = "bar";
+		    result = parameterExists( variables.foo );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "It transpiles parameterExists() returns false for missing var" )
+	@Test
+	public void testParameterExistsFalse() {
+		instance.executeSource(
+		    """
+		    result = parameterExists( doesNotExist );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( false );
+	}
+
 }

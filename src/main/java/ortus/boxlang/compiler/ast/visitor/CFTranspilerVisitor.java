@@ -762,6 +762,24 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 			}
 		}
 
+		// Rewrite parameterExists( foo ) to isDefined( "foo" ) and parameterExists( variables.foo ) to isDefined( "variables.foo" )
+		if ( name.equals( "parameterexists" ) && node.getArguments().size() == 1 && !node.isNamedArgs() ) {
+			BoxExpression			arg		= node.getArguments().get( 0 ).getValue();
+			BoxFunctionInvocation	newNode	= new BoxFunctionInvocation(
+			    "isDefined",
+			    List.of(
+			        new BoxArgument(
+			            new BoxStringLiteral( arg.toString(), null, null ),
+			            null,
+			            null
+			        )
+			    ),
+			    node.getPosition(),
+			    node.getSourceText()
+			);
+			return super.visit( newNode );
+		}
+
 		return super.visit( node );
 	}
 
