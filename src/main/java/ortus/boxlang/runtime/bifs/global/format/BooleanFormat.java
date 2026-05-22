@@ -28,9 +28,11 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
 @BoxBIF( description = "Format a boolean value using a specified format" )
+// Deprecated alias: remove TrueFalseFormat in the 2.0 release.
 @BoxBIF( alias = "TrueFalseFormat" )
 @BoxMember( type = BoxLangType.NUMERIC )
 @BoxMember( type = BoxLangType.STRING_STRICT )
+// Deprecated member alias: remove TrueFalseFormat in the 2.0 release.
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "TrueFalseFormat" )
 
 public class BooleanFormat extends BIF {
