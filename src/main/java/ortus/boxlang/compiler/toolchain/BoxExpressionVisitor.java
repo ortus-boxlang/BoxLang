@@ -573,11 +573,51 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 	 */
 	@Override
 	public BoxExpression visitExprRange( ExprRangeContext ctx ) {
-		var	pos		= tools.getPosition( ctx );
-		var	src		= tools.getSourceText( ctx );
-		var	left	= ctx.el2( 0 ).accept( this );
-		var	right	= ctx.el2( 1 ).accept( this );
-		return new BoxBinaryOperation( left, BoxBinaryOperator.Range, right, pos, src );
+		var				pos		= tools.getPosition( ctx );
+		var				src		= tools.getSourceText( ctx );
+		var				el2List	= ctx.el2();
+		BoxExpression	left	= null;
+		BoxExpression	right	= null;
+
+		if ( el2List.isEmpty() ) {
+			// Just ".." — fully open range
+		} else if ( ctx.op != null && el2List.size() == 1
+		    && ( ctx.op.getType() == ortus.boxlang.parser.antlr.BoxLexer.RANGE
+		        || ctx.op.getType() == ortus.boxlang.parser.antlr.BoxLexer.RANGE_RIGHT_EXCLUSIVE )
+		    && ctx.getStart() == ctx.op ) {
+			// "..5" or "..<5" — prefix form, only right side
+			right = el2List.get( 0 ).accept( this );
+		} else if ( el2List.size() == 1 ) {
+			// "1.." or "1>.." etc — postfix form, only left side
+			left = el2List.get( 0 ).accept( this );
+		} else {
+			// "1..5" or "1>..5" etc — both sides
+			left	= el2List.get( 0 ).accept( this );
+			right	= el2List.get( 1 ).accept( this );
+		}
+
+		// Determine the operator based on the token type
+		BoxBinaryOperator op;
+		if ( ctx.op != null ) {
+			op = switch ( ctx.op.getType() ) {
+				case ortus.boxlang.parser.antlr.BoxLexer.RANGE_LEFT_EXCLUSIVE -> BoxBinaryOperator.RangeLeftExclusive;
+				case ortus.boxlang.parser.antlr.BoxLexer.RANGE_RIGHT_EXCLUSIVE -> BoxBinaryOperator.RangeRightExclusive;
+				case ortus.boxlang.parser.antlr.BoxLexer.RANGE_LEFT_EXCLUSIVE_RIGHT_EXCLUSIVE -> BoxBinaryOperator.RangeFullExclusive;
+				default -> BoxBinaryOperator.Range;
+			};
+		} else {
+			op = BoxBinaryOperator.Range;
+		}
+
+		// Validate: exclusive bound requires a value on that side
+		if ( ( op == BoxBinaryOperator.RangeLeftExclusive || op == BoxBinaryOperator.RangeFullExclusive ) && left == null ) {
+			throw new ExpressionException( "Left-exclusive range operator requires a left operand", pos, src );
+		}
+		if ( ( op == BoxBinaryOperator.RangeRightExclusive || op == BoxBinaryOperator.RangeFullExclusive ) && right == null ) {
+			throw new ExpressionException( "Right-exclusive range operator requires a right operand", pos, src );
+		}
+
+		return new BoxBinaryOperation( left, op, right, pos, src );
 	}
 
 	@Override

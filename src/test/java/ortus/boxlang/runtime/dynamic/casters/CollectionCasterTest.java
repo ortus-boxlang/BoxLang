@@ -18,6 +18,8 @@
 package ortus.boxlang.runtime.dynamic.casters;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -30,6 +32,8 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Range;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class CollectionCasterTest {
 
@@ -73,6 +77,35 @@ public class CollectionCasterTest {
 		result.iterator();
 		assertThat( result.contains( "Brad" ) ).isTrue();
 		assertThat( result.contains( "Luis" ) ).isTrue();
+	}
+
+	@DisplayName( "It can cast a Range to a Collection" )
+	@Test
+	void testItCanCastRange() {
+		Collection<Object> result = CollectionCaster.cast( Range.of( 1, 5 ) );
+		assertThat( result ).containsExactly( 1, 2, 3, 4, 5 ).inOrder();
+	}
+
+	@DisplayName( "It can cast a descending Range to a Collection" )
+	@Test
+	void testItCanCastDescendingRange() {
+		Collection<Object> result = CollectionCaster.cast( Range.of( 5, 1 ) );
+		assertThat( result ).containsExactly( 5, 4, 3, 2, 1 ).inOrder();
+	}
+
+	@DisplayName( "Casting unbounded Range returns null when not failing" )
+	@Test
+	void testUnboundedRangeReturnsNull() {
+		Range<?>			unbounded	= new Range<>( 1, null, Integer::compare, ( current, step ) -> current + step.intValue() );
+		Collection<Object>	result		= CollectionCaster.cast( unbounded, false );
+		assertNull( result );
+	}
+
+	@DisplayName( "Casting unbounded Range throws when failing" )
+	@Test
+	void testUnboundedRangeThrows() {
+		Range<?> unbounded = new Range<>( 1, null, Integer::compare, ( current, step ) -> current + step.intValue() );
+		assertThrows( BoxRuntimeException.class, () -> CollectionCaster.cast( unbounded, true ) );
 	}
 
 }

@@ -64,13 +64,17 @@ public class BoxBinaryOperation extends BoxExpression {
 	public void setLeft( BoxExpression left ) {
 		replaceChildren( this.left, left );
 		this.left = left;
-		this.left.setParent( this );
+		if ( this.left != null ) {
+			this.left.setParent( this );
+		}
 	}
 
 	public void setRight( BoxExpression right ) {
 		replaceChildren( this.right, right );
 		this.right = right;
-		this.right.setParent( this );
+		if ( this.right != null ) {
+			this.right.setParent( this );
+		}
 	}
 
 	public void setOperator( BoxBinaryOperator operator ) {
@@ -81,9 +85,9 @@ public class BoxBinaryOperation extends BoxExpression {
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
 
-		map.put( "left", left.toMap() );
+		map.put( "left", left != null ? left.toMap() : null );
 		map.put( "operator", enumToMap( operator ) );
-		map.put( "right", right.toMap() );
+		map.put( "right", right != null ? right.toMap() : null );
 		return map;
 	}
 

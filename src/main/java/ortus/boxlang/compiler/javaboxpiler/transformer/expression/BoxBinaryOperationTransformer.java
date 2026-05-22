@@ -65,8 +65,10 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxBinaryOperation	operation	= ( BoxBinaryOperation ) node;
 		TransformerContext	safe		= operation.getOperator() == BoxBinaryOperator.Elvis ? TransformerContext.SAFE : context;
-		Expression			left		= ( Expression ) transpiler.transform( operation.getLeft(), safe );
-		Expression			right		= ( Expression ) transpiler.transform( operation.getRight(), context );
+		Expression			left		= operation.getLeft() != null ? ( Expression ) transpiler.transform( operation.getLeft(), safe )
+		    : new com.github.javaparser.ast.expr.NullLiteralExpr();
+		Expression			right		= operation.getRight() != null ? ( Expression ) transpiler.transform( operation.getRight(), context )
+		    : new com.github.javaparser.ast.expr.NullLiteralExpr();
 
 		Node				javaExpr	= switch ( operation.getOperator() ) {
 											case Plus -> // "Plus.invoke(${left},${right})";
@@ -77,6 +79,15 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 
 											case Range -> // "Range.invoke(${left},${right})";
 											    generateBinaryMethodCallExpr( "Range", left, right );
+
+											case RangeLeftExclusive -> // "Range.invoke(${left},${right},true,false)";
+											    generateRangeExclusiveExpr( left, right, true, false );
+
+											case RangeRightExclusive -> // "Range.invoke(${left},${right},false,true)";
+											    generateRangeExclusiveExpr( left, right, false, true );
+
+											case RangeFullExclusive -> // "Range.invoke(${left},${right},true,true)";
+											    generateRangeExclusiveExpr( left, right, true, true );
 
 											case Star -> // "Multiply.invoke(${left},${right})";
 											    generateNumericBinaryMethodCallExpr( "Multiply", operation, left, right );
@@ -262,6 +273,26 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 			    new CastExpr( new ClassOrInterfaceType( null, "Number" ), right ) );
 		}
 		return generateBinaryMethodCallExpr( methodName, left, right );
+	}
+
+	/**
+	 * Generate a Range.invoke call with boolean exclusivity arguments.
+	 *
+	 * @param left          the left operand expression
+	 * @param right         the right operand expression
+	 * @param fromExclusive whether the start bound is exclusive
+	 * @param toExclusive   whether the end bound is exclusive
+	 *
+	 * @return the method call expression
+	 */
+	@NonNull private static MethodCallExpr generateRangeExclusiveExpr( Expression left, Expression right, boolean fromExclusive, boolean toExclusive ) {
+		NameExpr		nameExpr		= new NameExpr( "Range" );
+		MethodCallExpr	methodCallExpr	= new MethodCallExpr( nameExpr, "invoke" );
+		methodCallExpr.addArgument( left );
+		methodCallExpr.addArgument( right );
+		methodCallExpr.addArgument( new com.github.javaparser.ast.expr.BooleanLiteralExpr( fromExclusive ) );
+		methodCallExpr.addArgument( new com.github.javaparser.ast.expr.BooleanLiteralExpr( toExclusive ) );
+		return methodCallExpr;
 	}
 
 }

@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.Range;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class ArrayCasterTest {
@@ -78,6 +79,35 @@ public class ArrayCasterTest {
 	void testNull() {
 		Array result = ArrayCaster.cast( Integer.parseInt( "123" ), false );
 		assertNull( result );
+	}
+
+	@DisplayName( "It can cast a Range to an array" )
+	@Test
+	void testItCanCastRange() {
+		Array result = ArrayCaster.cast( Range.of( 1, 5 ) );
+		assertThat( result ).isEqualTo( Array.of( 1, 2, 3, 4, 5 ) );
+	}
+
+	@DisplayName( "It can cast a descending Range to an array" )
+	@Test
+	void testItCanCastDescendingRange() {
+		Array result = ArrayCaster.cast( Range.of( 5, 1 ) );
+		assertThat( result ).isEqualTo( Array.of( 5, 4, 3, 2, 1 ) );
+	}
+
+	@DisplayName( "Casting unbounded Range returns null when not failing" )
+	@Test
+	void testUnboundedRangeReturnsNull() {
+		Range<?>	unbounded	= new Range<>( 1, null, Integer::compare, ( current, step ) -> current + step.intValue() );
+		Array		result		= ArrayCaster.cast( unbounded, false );
+		assertNull( result );
+	}
+
+	@DisplayName( "Casting unbounded Range throws when failing" )
+	@Test
+	void testUnboundedRangeThrows() {
+		Range<?> unbounded = new Range<>( 1, null, Integer::compare, ( current, step ) -> current + step.intValue() );
+		assertThrows( BoxRuntimeException.class, () -> ArrayCaster.cast( unbounded, true ) );
 	}
 
 }

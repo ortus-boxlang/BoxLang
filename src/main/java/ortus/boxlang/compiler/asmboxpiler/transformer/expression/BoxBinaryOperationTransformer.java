@@ -62,7 +62,6 @@ import ortus.boxlang.runtime.operators.Plus;
 import ortus.boxlang.runtime.operators.Power;
 import ortus.boxlang.runtime.operators.Range;
 import ortus.boxlang.runtime.operators.XOR;
-import ortus.boxlang.runtime.types.Array;
 
 public class BoxBinaryOperationTransformer extends AbstractTransformer {
 
@@ -74,8 +73,12 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
 		BoxBinaryOperation		operation	= ( BoxBinaryOperation ) node;
 		TransformerContext		safe		= operation.getOperator() == BoxBinaryOperator.Elvis ? TransformerContext.SAFE : context;
-		List<AbstractInsnNode>	left		= transpiler.transform( operation.getLeft(), safe, ReturnValueContext.VALUE );
-		List<AbstractInsnNode>	right		= transpiler.transform( operation.getRight(), context, ReturnValueContext.VALUE );
+		List<AbstractInsnNode>	left		= operation.getLeft() != null
+		    ? transpiler.transform( operation.getLeft(), safe, ReturnValueContext.VALUE )
+		    : List.of( new org.objectweb.asm.tree.InsnNode( org.objectweb.asm.Opcodes.ACONST_NULL ) );
+		List<AbstractInsnNode>	right		= operation.getRight() != null
+		    ? transpiler.transform( operation.getRight(), context, ReturnValueContext.VALUE )
+		    : List.of( new org.objectweb.asm.tree.InsnNode( org.objectweb.asm.Opcodes.ACONST_NULL ) );
 		MethodContextTracker	tracker		= transpiler.getCurrentMethodContextTracker().get();
 
 		List<AbstractInsnNode>	nodes		= switch ( operation.getOperator() ) {
@@ -86,8 +89,16 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 												    generateNumericBinaryMethodCallNodes( Minus.class, Number.class, operation, left, right );
 
 												case Range -> // "Range.invoke(${left},${right})";
-												    generateBinaryMethodCallNodes( Range.class, Array.class, left, right );
+												    generateBinaryMethodCallNodes( Range.class, ortus.boxlang.runtime.types.Range.class, left, right );
 
+												case RangeLeftExclusive -> // "Range.invoke(${left},${right},true,false)";
+												    generateRangeExclusiveNodes( left, right, true, false );
+
+												case RangeRightExclusive -> // "Range.invoke(${left},${right},false,true)";
+												    generateRangeExclusiveNodes( left, right, false, true );
+
+												case RangeFullExclusive -> // "Range.invoke(${left},${right},true,true)";
+												    generateRangeExclusiveNodes( left, right, true, true );
 												case Star -> // "Multiply.invoke(${left},${right})";
 												    generateNumericBinaryMethodCallNodes( Multiply.class, Number.class, operation, left, right );
 
@@ -315,6 +326,26 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 		    Type.getInternalName( dispatcher ),
 		    "invoke",
 		    Type.getMethodDescriptor( Type.getType( returned ), Type.getType( IBoxContext.class ), Type.getType( Object.class ), Type.getType( Object.class ) ),
+		    false ) );
+		return nodes;
+	}
+
+	/**
+	 * Generate bytecode for Range.invoke(left, right, fromExclusive, toExclusive).
+	 */
+	@NonNull private static List<AbstractInsnNode> generateRangeExclusiveNodes( List<AbstractInsnNode> left, List<AbstractInsnNode> right,
+	    boolean fromExclusive, boolean toExclusive ) {
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+		nodes.addAll( left );
+		nodes.addAll( right );
+		nodes.add( new InsnNode( fromExclusive ? Opcodes.ICONST_1 : Opcodes.ICONST_0 ) );
+		nodes.add( new InsnNode( toExclusive ? Opcodes.ICONST_1 : Opcodes.ICONST_0 ) );
+		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+		    Type.getInternalName( Range.class ),
+		    "invoke",
+		    Type.getMethodDescriptor( Type.getType( ortus.boxlang.runtime.types.Range.class ),
+		        Type.getType( Object.class ), Type.getType( Object.class ),
+		        Type.getType( boolean.class ), Type.getType( boolean.class ) ),
 		    false ) );
 		return nodes;
 	}

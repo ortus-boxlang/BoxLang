@@ -758,4 +758,61 @@ public class DumpTest {
 		assertThat( output ).contains( "read" );
 	}
 
+	@DisplayName( "It can dump a Range data type" )
+	@Test
+	public void testCanDumpRange() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				val = 1..10;
+				dump( var = val, format = "html" );
+			""",
+			context );
+		// @formatter:on
+		String output = baos.toString();
+		assertThat( output ).contains( "Range:" );
+		assertThat( output ).contains( "1..10" );
+		assertThat( output ).contains( "From" );
+		assertThat( output ).contains( "To" );
+		assertThat( output ).contains( "Step" );
+		assertThat( output ).contains( "Element Type" );
+		assertThat( output ).contains( "Integer" );
+		assertThat( output ).contains( "Ascending" );
+		assertThat( output ).contains( "true" );
+		assertThat( output ).contains( "Iterable" );
+		assertThat( output ).contains( "Bounded" );
+	}
+
+	@DisplayName( "It can dump a half-bounded Range" )
+	@Test
+	public void testCanDumpHalfBoundedRange() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				val = 1..;
+				dump( var = val, format = "html" );
+			""",
+			context );
+		// @formatter:on
+		String output = baos.toString();
+		assertThat( output ).contains( "Range:" );
+		assertThat( output ).contains( "1.." );
+		assertThat( output ).contains( "[open]" );
+	}
+
+	@DisplayName( "It can dump an exclusive Range" )
+	@Test
+	public void testCanDumpExclusiveRange() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				val = 1..<10;
+				dump( var = val, format = "html" );
+			""",
+			context );
+		// @formatter:on
+		String output = baos.toString();
+		assertThat( output ).contains( "Range:" );
+		assertThat( output ).contains( "1..&lt;10" );
+	}
 }
