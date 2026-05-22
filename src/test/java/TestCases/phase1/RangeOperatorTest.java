@@ -1662,6 +1662,35 @@ public class RangeOperatorTest {
 		assertThat( variables.get( Key.of( "b" ) ) ).isEqualTo( true );
 	}
 
+	@DisplayName( "Java Duration comparable range" )
+	@Test
+	public void testJavaDurationRange() {
+		instance.executeSource(
+		    """
+		    import java:java.time.Duration;
+
+		    min = Duration.ofMinutes( 5 );
+		    max = Duration.ofHours( 2 );
+		    r = min..max;
+
+		    // Contains checks
+		    has30m = r.contains( Duration.ofMinutes( 30 ) );
+		    has3h  = r.contains( Duration.ofHours( 3 ) );
+		    has5m  = r.contains( Duration.ofMinutes( 5 ) );
+		    has2h  = r.contains( Duration.ofHours( 2 ) );
+
+		    // Not iterable
+		    iterable = r.isIterable();
+		    """,
+		    context );
+
+		assertThat( variables.get( Key.of( "has30m" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "has3h" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "has5m" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "has2h" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "iterable" ) ) ).isEqualTo( false );
+	}
+
 	// ======================== Invalid Inputs That Should Error ========================
 
 	@DisplayName( "range from array to array throws" )
