@@ -427,6 +427,23 @@ public class Range<T> implements IType, IReferenceable, Iterable<T>, Serializabl
 			return false;
 		}
 
+		// If this is a stepped range (step > 1 or has a unit) and is iterable,
+		// check step-reachability by iterating until we match or pass the target.
+		if ( isSteppedRange() && isIterable() ) {
+			return containsStepped( coerced );
+		}
+
+		return containsBounds( coerced );
+	}
+
+	/**
+	 * Check if a value is within this range's bounds (no step consideration).
+	 *
+	 * @param coerced the already-coerced value to check
+	 *
+	 * @return true if within bounds
+	 */
+	private boolean containsBounds( T coerced ) {
 		// Determine which exclusivity applies to the low and high bounds.
 		// low/high are sorted, so if from <= to then low=from, high=to;
 		// if from > to then low=to, high=from (flipped).
@@ -463,6 +480,60 @@ public class Range<T> implements IType, IReferenceable, Iterable<T>, Serializabl
 		}
 
 		return true;
+	}
+
+	/**
+	 * Check if a value is reachable by stepping through this range.
+	 * Iterates from the start, advancing by the step, until we either
+	 * match the target or pass it (according to ascending/descending direction).
+	 * Safe for half-bounded ranges because iteration stops once the target is exceeded.
+	 *
+	 * @param target the coerced value to check for step-reachability
+	 *
+	 * @return true if the target is exactly reached by the stepper
+	 */
+	private boolean containsStepped( T target ) {
+		T current = this.fromExclusive ? this.stepper.apply( this.from, this.ascending ? 1 : -1 ) : this.from;
+
+		while ( current != null ) {
+			int cmp = this.comparator.compare( current, target );
+
+			// Exact match — value is reachable
+			if ( cmp == 0 ) {
+				return true;
+			}
+
+			// Passed the target without hitting it — not reachable
+			if ( this.ascending && cmp > 0 ) {
+				return false;
+			}
+			if ( !this.ascending && cmp < 0 ) {
+				return false;
+			}
+
+			// If we have an upper bound and we've exceeded it, stop
+			if ( this.to != null ) {
+				int toCmp = this.comparator.compare( current, this.to );
+				if ( this.ascending ? ( this.toExclusive ? toCmp >= 0 : toCmp > 0 ) : ( this.toExclusive ? toCmp <= 0 : toCmp < 0 ) ) {
+					return false;
+				}
+			}
+
+			// Advance
+			current = this.stepper.apply( current, this.step );
+		}
+
+		return false;
+	}
+
+	/**
+	 * Determine if this range has a non-trivial step that requires iteration for contains checks.
+	 * A range is "stepped" if it has a unit or if the absolute step value is greater than 1.
+	 *
+	 * @return true if this range uses custom stepping
+	 */
+	private boolean isSteppedRange() {
+		return this.unit != null || Math.abs( this.step.doubleValue() ) > 1;
 	}
 
 	/**

@@ -1881,4 +1881,498 @@ public class RangeOperatorTest {
 		    context );
 		assertThat( variables.getAsString( resultKey ) ).isEqualTo( "2,3,4,5,6" );
 	}
+
+	// ======================== Custom IRangeable: Roman Numeral ========================
+
+	@DisplayName( "Roman numeral IRangeable: iteration, step, contains" )
+	@Test
+	public void testRomanNumeralIRangeable() {
+		instance.executeSource(
+		    """
+		    class Roman implements="java:ortus.boxlang.runtime.types.IRangeable" {
+		        property name="value" type="integer" default=0;
+
+		        static {
+		            VALUES = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1];
+		            SYMBOLS = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"];
+		        }
+
+		        function init( input ) {
+		            variables.value = isNumeric( input ) ? int( input ) : static.fromRoman( input );
+		            return this;
+		        }
+
+		        static function fromRoman( s ) {
+		            s = uCase( s );
+		            return static.VALUES.reduce( ( acc, val, idx ) => {
+		                var sym = static.SYMBOLS[ idx ];
+		                while( mid( s, acc.pos, sym.len() ) == sym ) {
+		                    acc.result += val;
+		                    acc.pos += sym.len();
+		                }
+		                return acc;
+		            }, { result: 0, pos: 1 } ).result;
+		        }
+
+		        static function toRoman( num ) {
+		            return static.VALUES.reduce( ( result, val, idx ) => {
+		                var count = int( num / val );
+		                num -= count * val;
+		                return result & repeatString( static.SYMBOLS[ idx ], count );
+		            }, "" );
+		        }
+
+		        function toString() { return static.toRoman( variables.value ); }
+
+		        function rangeAdvance( step ) { return new Roman( variables.value + step ); }
+		        function rangeCompare( other ) { return variables.value - other.getValue(); }
+
+		        function rangeCoerce( val ) {
+		            if( isInstanceOf( val, "Roman" ) ) return val;
+		            if( isNumeric( val ) ) return new Roman( val );
+		            if( isSimpleValue( val ) ) return new Roman( val );
+		            return null;
+		        }
+		    }
+
+		    // --- Iteration I..X ---
+		    iterResult = [];
+		    for( r in new Roman("I")..new Roman("X") ) {
+		        iterResult.append( r.toString() );
+		    }
+
+		    // --- Step by 2 ---
+		    stepResult = [];
+		    for( r in (new Roman("I")..new Roman("X")).step(2) ) {
+		        stepResult.append( r.toString() );
+		    }
+
+		    // --- Contains with Roman instances ---
+		    range = new Roman("I")..new Roman("C");
+		    c5 = range.contains( new Roman("V") );
+		    c50 = range.contains( new Roman("L") );
+		    cOut = range.contains( new Roman("D") );
+
+		    // --- Contains with raw numbers (rangeCoerce) ---
+		    cNum5 = range.contains( 5 );
+		    cNum50 = range.contains( 50 );
+		    cNum500 = range.contains( 500 );
+
+		    // --- Contains with string (rangeCoerce) ---
+		    cStrV = range.contains( "V" );
+		    cStrL = range.contains( "L" );
+		    cStrD = range.contains( "D" );
+		    """,
+		    context );
+
+		// Iteration assertions
+		assertThat( variables.get( Key.of( "iterResult" ) ) ).isEqualTo( Array.of( "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X" ) );
+
+		// Step assertions
+		assertThat( variables.get( Key.of( "stepResult" ) ) ).isEqualTo( Array.of( "I", "III", "V", "VII", "IX" ) );
+
+		// Contains with Roman instances
+		assertThat( variables.get( Key.of( "c5" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "c50" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "cOut" ) ) ).isEqualTo( false );
+
+		// Contains with raw numbers
+		assertThat( variables.get( Key.of( "cNum5" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "cNum50" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "cNum500" ) ) ).isEqualTo( false );
+
+		// Contains with strings
+		assertThat( variables.get( Key.of( "cStrV" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "cStrL" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "cStrD" ) ) ).isEqualTo( false );
+	}
+
+	// ======================== Custom IRangeable: Musical Note with Unit Stepping ========================
+
+	@DisplayName( "Musical Note IRangeable: chromatic, whole, third, octave, major, minor" )
+	@Test
+	public void testMusicalNoteIRangeable() {
+		instance.executeSource(
+		    """
+		    class Note implements="java:ortus.boxlang.runtime.types.IRangeable" {
+		        property name="midi" type="integer" default=60;
+
+		        static {
+		            NOTES = ["C", "C##", "D", "D##", "E", "F", "F##", "G", "G##", "A", "A##", "B"];
+		            MAJOR = [2, 2, 1, 2, 2, 2, 1];
+		            MINOR = [2, 1, 2, 2, 1, 2, 2];
+		            SHARP = "##";
+		        }
+
+		        function init( input ) {
+		            variables.midi = isNumeric( input ) ? int( input ) : static.parseName( input );
+		            return this;
+		        }
+
+		        static function parseName( name ) {
+		            name = uCase( name );
+		            var hasSharp = name.len() > 2 && mid( name, 2, 1 ) == static.SHARP;
+		            var notePart = hasSharp ? left( name, 2 ) : left( name, 1 );
+		            var octave = int( right( name, name.len() - notePart.len() ) );
+		            var idx = arrayFind( static.NOTES, notePart );
+		            return ( octave + 1 ) * 12 + idx - 1;
+		        }
+
+		        function toString() {
+		            return static.NOTES[ variables.midi mod 12 + 1 ] & ( int( variables.midi / 12 ) - 1 );
+		        }
+
+		        function rangeAdvance( step ) { return new Note( variables.midi + step ); }
+		        function rangeCompare( other ) { return variables.midi - other.getMidi(); }
+
+		        function rangeCoerce( val ) {
+		            if( isInstanceOf( val, "Note" ) ) return val;
+		            if( isNumeric( val ) ) return new Note( val );
+		            if( isSimpleValue( val ) ) return new Note( val );
+		            return null;
+		        }
+
+		        function rangeStepFromUnit( amount, unit ) {
+		            switch( unit ) {
+		                case "chromatic": return amount;
+		                case "whole": return amount * 2;
+		                case "third": return amount * 4;
+		                case "octave": return amount * 12;
+		            }
+		            throw( message: "Unsupported unit: " & unit );
+		        }
+
+		        function rangeUnitStepper( unit ) {
+		            if( unit != "major" && unit != "minor" ) return null;
+		            var root = variables.midi;
+		            var intervals = ( unit == "major" ) ? static.MAJOR : static.MINOR;
+		            var cumulative = [0];
+		            for( var i = 1; i <= 7; i++ ) {
+		                cumulative.append( cumulative[ i ] + intervals[ i ] );
+		            }
+		            return ( current, amount ) => {
+		                var offset = current.getMidi() - root;
+		                var octaves = int( offset / 12 );
+		                var remainder = offset mod 12;
+		                var degree = 0;
+		                for( var i = 2; i <= cumulative.len(); i++ ) {
+		                    if( cumulative[ i ] <= remainder ) degree = i - 1;
+		                }
+		                var newDegree = octaves * 7 + degree + amount;
+		                var newOctaves = int( newDegree / 7 );
+		                var newDegreeInOctave = newDegree mod 7;
+		                return new Note( root + ( newOctaves * 12 ) + cumulative[ newDegreeInOctave + 1 ] );
+		            };
+		        }
+		    }
+
+		    // --- Chromatic: C4 to D4 ---
+		    chromResult = [];
+		    for( n in (new Note("C4")..new Note("D4")).step( 1, "chromatic" ) ) {
+		        chromResult.append( n.toString() );
+		    }
+
+		    // --- Whole steps: C4 to C5 ---
+		    wholeResult = [];
+		    for( n in (new Note("C4")..new Note("C5")).step( 1, "whole" ) ) {
+		        wholeResult.append( n.toString() );
+		    }
+
+		    // --- Major thirds: C4 to C6 ---
+		    thirdResult = [];
+		    for( n in (new Note("C4")..new Note("C6")).step( 1, "third" ) ) {
+		        thirdResult.append( n.toString() );
+		    }
+
+		    // --- Octaves: C4 to C7 ---
+		    octaveResult = [];
+		    for( n in (new Note("C4")..new Note("C7")).step( 1, "octave" ) ) {
+		        octaveResult.append( n.toString() );
+		    }
+
+		    // --- C Major scale: C4 to C5 ---
+		    majorResult = [];
+		    for( n in (new Note("C4")..new Note("C5")).step( 1, "major" ) ) {
+		        majorResult.append( n.toString() );
+		    }
+
+		    // --- A Natural Minor scale: A3 to A4 ---
+		    minorResult = [];
+		    for( n in (new Note("A3")..new Note("A4")).step( 1, "minor" ) ) {
+		        minorResult.append( n.toString() );
+		    }
+
+		    // --- Contains tests with all coercible input types ---
+		    noteRange = new Note("C4")..new Note("C5");
+
+		    // Contains with Note instances
+		    cNoteE4   = noteRange.contains( new Note("E4") );
+		    cNoteG4   = noteRange.contains( new Note("G4") );
+		    cNoteC5   = noteRange.contains( new Note("C5") );
+		    cNoteD5   = noteRange.contains( new Note("D5") );
+		    cNoteB3   = noteRange.contains( new Note("B3") );
+
+		    // Contains with MIDI numbers (integer coercion)
+		    cMidi60   = noteRange.contains( 60 );  // C4
+		    cMidi64   = noteRange.contains( 64 );  // E4
+		    cMidi67   = noteRange.contains( 67 );  // G4
+		    cMidi72   = noteRange.contains( 72 );  // C5
+		    cMidi73   = noteRange.contains( 73 );  // C#5 (out)
+		    cMidi59   = noteRange.contains( 59 );  // B3  (out)
+
+		    // Contains with string note names (string coercion)
+		    cStrE4    = noteRange.contains( "E4" );
+		    cStrFs4   = noteRange.contains( "F##4" );  // F#4
+		    cStrC4    = noteRange.contains( "C4" );
+		    cStrC5    = noteRange.contains( "C5" );
+		    cStrD5    = noteRange.contains( "D5" );
+		    cStrB3    = noteRange.contains( "B3" );
+
+		    // Contains with numeric strings (coerced as note name attempt)
+		    cNumStr60 = noteRange.contains( "60" );
+
+		    // --- Contains on a STEPPED range: bounds vs reachability ---
+		    // Range C4..C5 stepped by thirds visits: C4, E4, G#4, C5
+		    thirdRange = (new Note("C4")..new Note("C5")).step( 1, "third" );
+
+		    // Values ON the step sequence
+		    cStepC4   = thirdRange.contains( "C4" );   // start - on step
+		    cStepE4   = thirdRange.contains( "E4" );   // 2nd step value
+		    cStepGs4  = thirdRange.contains( "G##4" ); // 3rd step value
+		    cStepC5   = thirdRange.contains( "C5" );   // end - on step
+
+		    // Values WITHIN bounds but NOT on the step sequence
+		    cStepD4   = thirdRange.contains( "D4" );   // between C4 and E4
+		    cStepF4   = thirdRange.contains( "F4" );   // between E4 and G#4
+		    cStepA4   = thirdRange.contains( "A4" );   // between G#4 and C5
+		    cStepMidi62 = thirdRange.contains( 62 );   // D4 as MIDI
+
+		    // Values OUTSIDE bounds
+		    cStepB3   = thirdRange.contains( "B3" );   // below start
+		    cStepD5   = thirdRange.contains( "D5" );   // above end
+
+		    // --- Full chromatic scale from C4 using stream + limit ---
+		    chromaticScale = (new Note("C4")..).step( 1, "chromatic" )
+		        .stream()
+		        .limit( 13 )
+		        .map( n => n.toString() )
+		        .toList();
+		    """,
+		    context );
+
+		// Chromatic: C4, C#4, D4
+		assertThat( variables.get( Key.of( "chromResult" ) ) ).isEqualTo( Array.of( "C4", "C#4", "D4" ) );
+
+		// Whole steps: C4, D4, E4, F#4, G#4, A#4, C5
+		assertThat( variables.get( Key.of( "wholeResult" ) ) ).isEqualTo( Array.of( "C4", "D4", "E4", "F#4", "G#4", "A#4", "C5" ) );
+
+		// Major thirds: C4, E4, G#4, C5, E5, G#5, C6
+		assertThat( variables.get( Key.of( "thirdResult" ) ) ).isEqualTo( Array.of( "C4", "E4", "G#4", "C5", "E5", "G#5", "C6" ) );
+
+		// Octaves: C4, C5, C6, C7
+		assertThat( variables.get( Key.of( "octaveResult" ) ) ).isEqualTo( Array.of( "C4", "C5", "C6", "C7" ) );
+
+		// C Major: C4, D4, E4, F4, G4, A4, B4, C5
+		assertThat( variables.get( Key.of( "majorResult" ) ) ).isEqualTo( Array.of( "C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5" ) );
+
+		// A Natural Minor: A3, B3, C4, D4, E4, F4, G4, A4
+		assertThat( variables.get( Key.of( "minorResult" ) ) ).isEqualTo( Array.of( "A3", "B3", "C4", "D4", "E4", "F4", "G4", "A4" ) );
+
+		// Contains with Note instances
+		assertThat( variables.get( Key.of( "cNoteE4" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "cNoteG4" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "cNoteC5" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "cNoteD5" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "cNoteB3" ) ) ).isEqualTo( false );
+
+		// Contains with MIDI numbers
+		assertThat( variables.get( Key.of( "cMidi60" ) ) ).isEqualTo( true );   // C4
+		assertThat( variables.get( Key.of( "cMidi64" ) ) ).isEqualTo( true );   // E4
+		assertThat( variables.get( Key.of( "cMidi67" ) ) ).isEqualTo( true );   // G4
+		assertThat( variables.get( Key.of( "cMidi72" ) ) ).isEqualTo( true );   // C5
+		assertThat( variables.get( Key.of( "cMidi73" ) ) ).isEqualTo( false );  // C#5 out
+		assertThat( variables.get( Key.of( "cMidi59" ) ) ).isEqualTo( false );  // B3 out
+
+		// Contains with string note names
+		assertThat( variables.get( Key.of( "cStrE4" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "cStrFs4" ) ) ).isEqualTo( true );   // F#4
+		assertThat( variables.get( Key.of( "cStrC4" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "cStrC5" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "cStrD5" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "cStrB3" ) ) ).isEqualTo( false );
+
+		// Contains with numeric string
+		assertThat( variables.get( Key.of( "cNumStr60" ) ) ).isEqualTo( true ); // "60" coerced as MIDI number
+
+		// Contains on STEPPED range: contains checks STEP REACHABILITY
+		// thirdRange visits C4, E4, G#4, C5
+
+		// Values on the step sequence — reachable, so true
+		assertThat( variables.get( Key.of( "cStepC4" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "cStepE4" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "cStepGs4" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "cStepC5" ) ) ).isEqualTo( true );
+
+		// Values within bounds but NOT on the step sequence — false (not reachable)
+		assertThat( variables.get( Key.of( "cStepD4" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "cStepF4" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "cStepA4" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "cStepMidi62" ) ) ).isEqualTo( false );
+
+		// Values outside bounds — false
+		assertThat( variables.get( Key.of( "cStepB3" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "cStepD5" ) ) ).isEqualTo( false );
+
+		// Full chromatic scale from C4 (12 notes)
+		assertThat( variables.get( Key.of( "chromaticScale" ) ) )
+		    .isEqualTo( Array.of( "C4", "C#4", "D4", "D#4", "E4", "F4", "F#4", "G4", "G#4", "A4", "A#4", "B4", "C5" ) );
+	}
+
+	@DisplayName( "Musical Note: step-reachability alternatives for bounded and half-bounded ranges" )
+	@Test
+	public void testMusicalNoteStepReachability() {
+		instance.executeSource(
+		    """
+		    class Note implements="java:ortus.boxlang.runtime.types.IRangeable" {
+		        property name="midi" type="integer" default=60;
+
+		        static {
+		            NOTES = ["C", "C##", "D", "D##", "E", "F", "F##", "G", "G##", "A", "A##", "B"];
+		            MAJOR = [2, 2, 1, 2, 2, 2, 1];
+		            MINOR = [2, 1, 2, 2, 1, 2, 2];
+		            SHARP = "##";
+		        }
+
+		        function init( input ) {
+		            variables.midi = isNumeric( input ) ? int( input ) : static.parseName( input );
+		            return this;
+		        }
+
+		        static function parseName( name ) {
+		            name = uCase( name );
+		            var hasSharp = name.len() > 2 && mid( name, 2, 1 ) == static.SHARP;
+		            var notePart = hasSharp ? left( name, 2 ) : left( name, 1 );
+		            var octave = int( right( name, name.len() - notePart.len() ) );
+		            var idx = arrayFind( static.NOTES, notePart );
+		            return ( octave + 1 ) * 12 + idx - 1;
+		        }
+
+		        function toString() {
+		            return static.NOTES[ variables.midi mod 12 + 1 ] & ( int( variables.midi / 12 ) - 1 );
+		        }
+
+		        function rangeAdvance( step ) { return new Note( variables.midi + step ); }
+		        function rangeCompare( other ) { return variables.midi - other.getMidi(); }
+
+		        function rangeCoerce( val ) {
+		            if( isInstanceOf( val, "Note" ) ) return val;
+		            if( isNumeric( val ) ) return new Note( val );
+		            if( isSimpleValue( val ) ) return new Note( val );
+		            return null;
+		        }
+
+		        function rangeStepFromUnit( amount, unit ) {
+		            switch( unit ) {
+		                case "chromatic": return amount;
+		                case "whole": return amount * 2;
+		                case "third": return amount * 4;
+		                case "octave": return amount * 12;
+		            }
+		            throw( message: "Unsupported unit: " & unit );
+		        }
+
+		        function rangeUnitStepper( unit ) {
+		            if( unit != "major" && unit != "minor" ) return null;
+		            var root = variables.midi;
+		            var intervals = ( unit == "major" ) ? static.MAJOR : static.MINOR;
+		            var cumulative = [0];
+		            for( var i = 1; i <= 7; i++ ) {
+		                cumulative.append( cumulative[ i ] + intervals[ i ] );
+		            }
+		            return ( current, amount ) => {
+		                var offset = current.getMidi() - root;
+		                var octaves = int( offset / 12 );
+		                var remainder = offset mod 12;
+		                var degree = 0;
+		                for( var i = 2; i <= cumulative.len(); i++ ) {
+		                    if( cumulative[ i ] <= remainder ) degree = i - 1;
+		                }
+		                var newDegree = octaves * 7 + degree + amount;
+		                var newOctaves = int( newDegree / 7 );
+		                var newDegreeInOctave = newDegree mod 7;
+		                return new Note( root + ( newOctaves * 12 ) + cumulative[ newDegreeInOctave + 1 ] );
+		            };
+		        }
+		    }
+
+		    // =========================================================
+		    // BOUNDED range: Is E4 reachable by major thirds from C4 to C6?
+		    // Thirds from C4: C4, E4, G#4, C5, E5, G#5, C6
+		    // =========================================================
+
+		    // Option 1: stream + anyMatch on bounded range
+		    e4OnThirds = (new Note("C4")..new Note("C6")).step( 1, "third" )
+		        .stream()
+		        .anyMatch( n => n.toString() == "E4" );
+
+		    // D4 is NOT reachable by thirds
+		    d4OnThirds = (new Note("C4")..new Note("C6")).step( 1, "third" )
+		        .stream()
+		        .anyMatch( n => n.toString() == "D4" );
+
+		    // Option 2: collect to set, then check membership
+		    majorNotes = (new Note("C4")..new Note("C5")).step( 1, "major" )
+		        .stream()
+		        .map( n => n.toString() )
+		        .toList();
+		    e4InMajor = majorNotes.contains( "E4" );
+		    eb4InMajor = majorNotes.contains( "D##4" );  // Eb not in C major
+
+		    // =========================================================
+		    // HALF-BOUNDED range: Is G7 reachable by octaves from C4?
+		    // Octaves from C4: C4, C5, C6, C7, C8...
+		    // =========================================================
+
+		    // Option 3: stream + takeWhile + anyMatch (safe for half-bounded)
+		    g7OnOctaves = (new Note("C4")..).step( 1, "octave" )
+		        .stream()
+		        .takeWhile( n => n.getMidi() <= new Note("G7").getMidi() )
+		        .anyMatch( n => n.toString() == "G7" );
+
+		    c6OnOctaves = (new Note("C4")..).step( 1, "octave" )
+		        .stream()
+		        .takeWhile( n => n.getMidi() <= new Note("C6").getMidi() )
+		        .anyMatch( n => n.toString() == "C6" );
+
+		    // Option 4: half-bounded major scale, is F#5 reachable?
+		    // C major visits: C4, D4, E4, F4, G4, A4, B4, C5, D5, E5, F5...
+		    fs5InMajor = (new Note("C4")..).step( 1, "major" )
+		        .stream()
+		        .takeWhile( n => n.getMidi() <= new Note("F##5").getMidi() )
+		        .anyMatch( n => n.toString() == "F##5" );
+
+		    f5InMajor = (new Note("C4")..).step( 1, "major" )
+		        .stream()
+		        .takeWhile( n => n.getMidi() <= new Note("F5").getMidi() )
+		        .anyMatch( n => n.toString() == "F5" );
+		    """,
+		    context );
+
+		// Bounded: stream + anyMatch
+		assertThat( variables.get( Key.of( "e4OnThirds" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "d4OnThirds" ) ) ).isEqualTo( false );
+
+		// Bounded: collect to list, then contains
+		assertThat( variables.get( Key.of( "majorNotes" ) ) ).isEqualTo( Array.of( "C4", "D4", "E4", "F4", "G4", "A4", "B4", "C5" ) );
+		assertThat( variables.get( Key.of( "e4InMajor" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "eb4InMajor" ) ) ).isEqualTo( false );
+
+		// Half-bounded: takeWhile + anyMatch (octaves)
+		assertThat( variables.get( Key.of( "g7OnOctaves" ) ) ).isEqualTo( false );  // G7 not on C octave ladder
+		assertThat( variables.get( Key.of( "c6OnOctaves" ) ) ).isEqualTo( true );   // C6 IS on C octave ladder
+
+		// Half-bounded: takeWhile + anyMatch (major scale)
+		assertThat( variables.get( Key.of( "fs5InMajor" ) ) ).isEqualTo( false );   // F#5 not in C major
+		assertThat( variables.get( Key.of( "f5InMajor" ) ) ).isEqualTo( true );     // F5 IS in C major
+	}
 }
