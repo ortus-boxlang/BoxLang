@@ -115,12 +115,9 @@ public class ConnectionManager {
 			    .registerInterceptionPoint( TRANSACTION_INTERCEPTION_POINTS );
 		}
 
-		Boolean enableNestedTransactionsConfigValue = BoxRuntime.getInstance().getConfiguration().enableNestedTransactions;
-		if ( enableNestedTransactionsConfigValue == null ) {
-			// Default to true if not explicitly configured.
+		this.enableNestedTransactions = BoxRuntime.getInstance().getConfiguration().enableNestedTransactions;
+		if ( this.enableNestedTransactions == null ) {
 			this.enableNestedTransactions = true;
-		} else {
-			this.enableNestedTransactions = enableNestedTransactionsConfigValue;
 		}
 	}
 
