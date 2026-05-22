@@ -82,7 +82,7 @@ public class ConnectionManager {
 	/**
 	 * Enable or disable support for nested transactions.
 	 */
-	private boolean						enableNestedTransactions		= BoxRuntime.getInstance().getConfiguration().enableNestedTransactions;
+	private Boolean						enableNestedTransactions		= null;
 
 	private static final Key[]			TRANSACTION_INTERCEPTION_POINTS	= List.of(
 	    Key.onTransactionBegin,
@@ -113,6 +113,14 @@ public class ConnectionManager {
 			requestContext.getApplicationListener()
 			    .getInterceptorPool()
 			    .registerInterceptionPoint( TRANSACTION_INTERCEPTION_POINTS );
+		}
+
+		Boolean enableNestedTransactionsConfigValue = BoxRuntime.getInstance().getConfiguration().enableNestedTransactions;
+		if ( enableNestedTransactionsConfigValue == null ) {
+			// Default to true if not explicitly configured.
+			this.enableNestedTransactions = true;
+		} else {
+			this.enableNestedTransactions = enableNestedTransactionsConfigValue;
 		}
 	}
 
