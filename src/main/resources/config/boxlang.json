@@ -450,7 +450,8 @@
 	},
 	// If enabled, this will treat nested transactional operations as savepoints on the parent transaction.
 	// If disabled, nested transactions will be ignored and all commits and rollbacks will apply to the entire transaction.
-	"enableNestedTransactions": true,
+	// Defaults to true, handled in the Transaction component.
+	// "enableNestedTransactions": true,
 	// The default return format for class invocations via web runtimes
 	"defaultRemoteMethodReturnFormat": "json",
 	/**

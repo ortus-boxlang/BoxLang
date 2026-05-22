@@ -78,6 +78,7 @@ public class ConnectionManager {
 	 * The DatasourceService instance
 	 */
 	private DatasourceService			datasourceService				= BoxRuntime.getInstance().getDataSourceService();
+
 	/**
 	 * Enable or disable support for nested transactions.
 	 */
