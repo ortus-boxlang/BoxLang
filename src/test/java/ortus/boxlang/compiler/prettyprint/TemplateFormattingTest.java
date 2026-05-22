@@ -59,7 +59,21 @@ public class TemplateFormattingTest extends PrettyPrintTest {
 	@Test
 	@DisplayName( "Space between adjacent template expressions is preserved" )
 	public void testAdjacentExpressions() throws IOException {
-		printTestWithDefaultConfig( "template", "adjacent_expressions" );
+		Config config = new Config();
+		config.getTemplate().setEnabled( true );
+		_printTestWithConfig( "template", "adjacent_expressions", config );
+	}
+
+	@Test
+	@DisplayName( "Template formatting can be explicitly disabled" )
+	public void testTemplateFormattingCanBeDisabled() throws IOException {
+		File			inputFile	= new File( TEST_RESOURCES_PATH + "template/self_closing_true_input.bxm" );
+		ParsingResult	result		= parser.parse( inputFile, false );
+		Config			config		= new Config();
+		config.getTemplate().setEnabled( false );
+		String	actual		= PrettyPrint.prettyPrint( result.getRoot(), config );
+		String	expected	= readFile( TEST_RESOURCES_PATH + "template/self_closing_true_input.bxm" );
+		assertEqualsIgnoringLineEndings( expected, actual );
 	}
 
 	@Test
@@ -68,8 +82,9 @@ public class TemplateFormattingTest extends PrettyPrintTest {
 		File			inputFile	= new File( TEST_RESOURCES_PATH + "template/adjacent_expressions_input.cfm" );
 		ParsingResult	result		= parser.parse( inputFile, false );
 		Config			config		= new Config().setSourceType( BoxSourceType.BOXTEMPLATE );
-		String			actual		= PrettyPrint.prettyPrint( result.getRoot(), config );
-		String			expected	= readFile( TEST_RESOURCES_PATH + "template/adjacent_expressions_output.bxm" );
+		config.getTemplate().setEnabled( true );
+		String	actual		= PrettyPrint.prettyPrint( result.getRoot(), config );
+		String	expected	= readFile( TEST_RESOURCES_PATH + "template/adjacent_expressions_output.bxm" );
 		assertEqualsIgnoringLineEndings( expected, actual );
 	}
 
@@ -79,7 +94,8 @@ public class TemplateFormattingTest extends PrettyPrintTest {
 		File			inputFile	= new File( TEST_RESOURCES_PATH + "template/adjacent_expressions_nested_input.cfm" );
 		ParsingResult	result		= parser.parse( inputFile );
 		Config			config		= new Config().setSourceType( BoxSourceType.BOXTEMPLATE );
-		String			actual		= PrettyPrint.prettyPrint( result.getRoot(), config );
+		config.getTemplate().setEnabled( true );
+		String actual = PrettyPrint.prettyPrint( result.getRoot(), config );
 		assertTrue( actual.contains( ")# #" ), "Space between adjacent expressions should be preserved. Actual:\n" + actual );
 	}
 
@@ -89,8 +105,9 @@ public class TemplateFormattingTest extends PrettyPrintTest {
 		File			inputFile	= new File( TEST_RESOURCES_PATH + "template/script_island_indent_input.cfm" );
 		ParsingResult	result		= parser.parse( inputFile );
 		Config			config		= new Config().setSourceType( BoxSourceType.BOXTEMPLATE );
-		String			actual		= PrettyPrint.prettyPrint( result.getRoot(), config );
-		String			expected	= readFile( TEST_RESOURCES_PATH + "template/script_island_indent_output.bxm" );
+		config.getTemplate().setEnabled( true );
+		String	actual		= PrettyPrint.prettyPrint( result.getRoot(), config );
+		String	expected	= readFile( TEST_RESOURCES_PATH + "template/script_island_indent_output.bxm" );
 		assertEqualsIgnoringLineEndings( expected, actual );
 	}
 
@@ -100,7 +117,8 @@ public class TemplateFormattingTest extends PrettyPrintTest {
 		File			inputFile	= new File( TEST_RESOURCES_PATH + "template/closure_in_attribute_input.cfm" );
 		ParsingResult	result		= parser.parse( inputFile );
 		Config			config		= new Config().setSourceType( BoxSourceType.BOXTEMPLATE );
-		String			actual		= PrettyPrint.prettyPrint( result.getRoot(), config );
+		config.getTemplate().setEnabled( true );
+		String actual = PrettyPrint.prettyPrint( result.getRoot(), config );
 		// The closure body should use script-mode return, not <bx:return>
 		assertTrue( !actual.contains( "<bx:return" ), "Closure body should use script mode, not template tags. Actual:\n" + actual );
 		assertTrue( actual.contains( "return true" ), "Closure body should contain 'return true'. Actual:\n" + actual );
@@ -112,10 +130,17 @@ public class TemplateFormattingTest extends PrettyPrintTest {
 		File			inputFile	= new File( TEST_RESOURCES_PATH + "template/cfloop_condition_input.cfm" );
 		ParsingResult	result		= parser.parse( inputFile );
 		Config			config		= new Config().setSourceType( BoxSourceType.BOXTEMPLATE );
-		String			actual		= PrettyPrint.prettyPrint( result.getRoot(), config );
+		config.getTemplate().setEnabled( true );
+		String actual = PrettyPrint.prettyPrint( result.getRoot(), config );
 		// The condition should be a plain expression, not a closure
 		assertTrue( !actual.contains( "function()" ), "Condition should not contain closure syntax. Actual:\n" + actual );
 		assertTrue( actual.contains( "condition=\"i lt 10\"" ) || actual.contains( "condition=\"i < 10\"" ),
 		    "Condition should be a plain expression. Actual:\n" + actual );
+	}
+
+	@Test
+	@DisplayName( "Newline between consecutive buffer outputs in component body is preserved" )
+	public void testBufferNewlineSeparation() throws IOException {
+		printTestWithConfigFile( "template", "buffer_newline_separation" );
 	}
 }

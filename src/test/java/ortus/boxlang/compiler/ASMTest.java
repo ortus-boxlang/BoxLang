@@ -15,11 +15,26 @@
 package ortus.boxlang.compiler;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.FrameNode;
+import org.objectweb.asm.tree.InsnNode;
+import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.LdcInsnNode;
+import org.objectweb.asm.tree.LineNumberNode;
+import org.objectweb.asm.tree.MethodInsnNode;
+import org.objectweb.asm.tree.MethodNode;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,8 +42,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
 
+import ortus.boxlang.compiler.asmboxpiler.ASMBoxpiler;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
@@ -181,6 +198,52 @@ public class ASMTest {
 		assertDoesNotThrow( () -> RunnableLoader.getInstance().getBoxpiler().compileScript( buildLargeIfBodyInsideLoopTemplate(), BoxSourceType.CFTEMPLATE ) );
 	}
 
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
+	@Test
+	public void testLabeledBreakInsideBreakingSwitchEmitsLabeledBodyResult() {
+		BodyResultInvocation invocation = findBodyResultInvocation(
+		    "ofBreak",
+		    """
+		    <cfloop from="1" to="5" index="outer" label="outerLoop">
+		    	<cfloop from="1" to="5" index="inner">
+		    		<cfswitch expression="go">
+		    			<cfcase value="go">
+		    				<cfbreak outerLoop>
+		    			</cfcase>
+		    		</cfswitch>
+		    	</cfloop>
+		    </cfloop>
+		    """
+		);
+
+		assertNotNull( invocation );
+		assertEquals( "outerLoop", invocation.argument() );
+	}
+
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
+	@Test
+	public void testLabeledContinueInsideBreakingSwitchEmitsLabeledBodyResult() {
+		BodyResultInvocation invocation = findBodyResultInvocation(
+		    "ofContinue",
+		    """
+		    <cfloop from="1" to="4" index="outer" label="outerLoop">
+		    	<cfloop from="1" to="2" index="inner">
+		    		<cfswitch expression="go">
+		    			<cfcase value="go">
+		    				<cfif inner EQ 1>
+		    					<cfcontinue outerLoop>
+		    				</cfif>
+		    			</cfcase>
+		    		</cfswitch>
+		    	</cfloop>
+		    </cfloop>
+		    """
+		);
+
+		assertNotNull( invocation );
+		assertEquals( "outerLoop", invocation.argument() );
+	}
+
 	private String buildVeryLargeSwitchTemplate() {
 		StringBuilder source = new StringBuilder();
 
@@ -278,6 +341,80 @@ public class ASMTest {
 		source.append( "</cfswitch>\n" );
 
 		return source.toString();
+	}
+
+	private BodyResultInvocation findBodyResultInvocation( String methodName, String source ) {
+		ASMBoxpiler boxpiler = ( ASMBoxpiler ) RunnableLoader.getInstance().getBoxpiler();
+		boxpiler.clearPagePool();
+
+		ClassInfo classInfo = ClassInfo.forScript( source, BoxSourceType.CFTEMPLATE, boxpiler );
+		boxpiler.getClassPool( classInfo.classPoolName() ).put( classInfo.fqn().toString(), classInfo );
+
+		List<byte[]> compiledClasses = boxpiler.compileClassInfo( classInfo.classPoolName(), classInfo.fqn().toString() );
+
+		for ( byte[] compiledClass : compiledClasses ) {
+			if ( !isClassFile( compiledClass ) ) {
+				continue;
+			}
+
+			ClassNode classNode = new ClassNode();
+			new ClassReader( compiledClass ).accept( classNode, 0 );
+
+			BodyResultInvocation invocation = findBodyResultInvocation( classNode, methodName );
+			if ( invocation != null ) {
+				return invocation;
+			}
+		}
+
+		return null;
+	}
+
+	private BodyResultInvocation findBodyResultInvocation( ClassNode classNode, String methodName ) {
+		String owner = Type.getInternalName( Component.BodyResult.class );
+
+		for ( MethodNode method : classNode.methods ) {
+			for ( AbstractInsnNode instruction = method.instructions.getFirst(); instruction != null; instruction = instruction.getNext() ) {
+				if ( ! ( instruction instanceof MethodInsnNode methodInstruction ) ) {
+					continue;
+				}
+
+				if ( !owner.equals( methodInstruction.owner ) || !methodName.equals( methodInstruction.name ) ) {
+					continue;
+				}
+
+				AbstractInsnNode argumentInstruction = getPreviousMeaningfulInstruction( methodInstruction );
+				if ( argumentInstruction instanceof LdcInsnNode ldcInstruction ) {
+					return new BodyResultInvocation( ( String ) ldcInstruction.cst );
+				}
+
+				if ( argumentInstruction instanceof InsnNode insnNode && insnNode.getOpcode() == Opcodes.ACONST_NULL ) {
+					return new BodyResultInvocation( null );
+				}
+			}
+		}
+
+		return null;
+	}
+
+	private AbstractInsnNode getPreviousMeaningfulInstruction( AbstractInsnNode instruction ) {
+		AbstractInsnNode previous = instruction.getPrevious();
+
+		while ( previous instanceof LabelNode || previous instanceof LineNumberNode || previous instanceof FrameNode ) {
+			previous = previous.getPrevious();
+		}
+
+		return previous;
+	}
+
+	private boolean isClassFile( byte[] bytes ) {
+		return bytes.length >= 4
+		    && bytes[ 0 ] == ( byte ) 0xCA
+		    && bytes[ 1 ] == ( byte ) 0xFE
+		    && bytes[ 2 ] == ( byte ) 0xBA
+		    && bytes[ 3 ] == ( byte ) 0xBE;
+	}
+
+	private record BodyResultInvocation( String argument ) {
 	}
 
 }

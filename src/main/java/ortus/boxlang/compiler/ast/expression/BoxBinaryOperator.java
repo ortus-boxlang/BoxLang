@@ -23,6 +23,9 @@ public enum BoxBinaryOperator {
 	Plus,
 	Minus,
 	Range,
+	RangeLeftExclusive,
+	RangeRightExclusive,
+	RangeFullExclusive,
 	Star,
 	Slash,
 	Power,
@@ -57,6 +60,12 @@ public enum BoxBinaryOperator {
 				return "-";
 			case Range :
 				return "..";
+			case RangeLeftExclusive :
+				return ">..";
+			case RangeRightExclusive :
+				return "..<";
+			case RangeFullExclusive :
+				return ">..<";
 			case Star :
 				return "*";
 			case Slash :

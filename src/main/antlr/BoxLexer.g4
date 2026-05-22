@@ -335,6 +335,12 @@ COLON      : ':';
 COLONCOLON : '::';
 // [a, ...rest] or { ...other }
 ELLIPSIS: '...';
+// 1>..<5 (both exclusive)
+RANGE_LEFT_EXCLUSIVE_RIGHT_EXCLUSIVE: '>..<';
+// 1>..5 (left exclusive)
+RANGE_LEFT_EXCLUSIVE: '>..';
+// 1..<5 (right exclusive)
+RANGE_RIGHT_EXCLUSIVE: '..<';
 // 1..5
 RANGE       : '..';
 DOT         : '.';

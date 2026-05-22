@@ -146,9 +146,7 @@ arrayLiteralMembers: arrayLiteralMember (COMMA arrayLiteralMember)* COMMA?
  foo
  ...rest
  */
-arrayLiteralMember
-    : expression
-    | ELLIPSIS expression
+arrayLiteralMember: expression | ELLIPSIS expression
     ;
 
 // foo=bar baz="bum"
@@ -445,25 +443,22 @@ structExpression
  baz
  ...extra
  */
-structMembersWithShorthand: structMemberWithShorthandOrSpread (COMMA structMemberWithShorthandOrSpread)* COMMA?
+structMembersWithShorthand
+    : structMemberWithShorthandOrSpread (COMMA structMemberWithShorthandOrSpread)* COMMA?
     ;
 
 /*
  foo
  ...extra
  */
-structMemberWithShorthandOrSpread
-    : structMemberWithShorthand
-    | structSpread
+structMemberWithShorthandOrSpread: structMemberWithShorthand | structSpread
     ;
 
 /*
  foo
  foo : bar
  */
-structMemberWithShorthand
-    : structMember
-    | identifier
+structMemberWithShorthand: structMember | identifier
     ;
 
 /*
@@ -478,9 +473,7 @@ structSpread: ELLIPSIS expression
  [foo: bar, ...extra]
  [...first, foo: bar, ...last]
  */
-orderedStructMembers
-    : orderedStructMembersWithLeadingKey
-    | orderedStructMembersWithLeadingSpread
+orderedStructMembers: orderedStructMembersWithLeadingKey | orderedStructMembersWithLeadingSpread
     ;
 
 /*
@@ -500,9 +493,7 @@ orderedStructMembersWithLeadingSpread
  foo: bar
  ...extra
  */
-orderedStructMemberOrSpread
-    : structMember
-    | structSpread
+orderedStructMemberOrSpread: structMember | structSpread
     ;
 
 /*
@@ -530,7 +521,11 @@ objectDestructuringPattern: LBRACE objectDestructuringMembers? RBRACE
  { a, ...others }
  */
 objectDestructuringMembers
-    : (objectDestructuringBinding (COMMA objectDestructuringBinding)* (COMMA objectDestructuringRest)? COMMA?)
+    : (
+        objectDestructuringBinding (COMMA objectDestructuringBinding)* (
+            COMMA objectDestructuringRest
+        )? COMMA?
+    )
     | (objectDestructuringRest COMMA?)
     ;
 
@@ -540,8 +535,7 @@ objectDestructuringMembers
  a = 'foo'
  a : request.a = 'foo'
  */
-objectDestructuringBinding
-    : structKey (COLON objectDestructuringValue)? (EQUALSIGN expression)?
+objectDestructuringBinding: structKey (COLON objectDestructuringValue)? (EQUALSIGN expression)?
     ;
 
 /*
@@ -572,8 +566,7 @@ arrayDestructuringPattern: LBRACKET arrayDestructuringMembers? RBRACKET
  [ [ x, y ], ...rest ]
  [ first, ...middle, last ]
  */
-arrayDestructuringMembers
-    : arrayDestructuringMember (COMMA arrayDestructuringMember)* COMMA?
+arrayDestructuringMembers: arrayDestructuringMember (COMMA arrayDestructuringMember)* COMMA?
     ;
 
 /*
@@ -581,9 +574,7 @@ arrayDestructuringMembers
  a = 1
  ...rest
  */
-arrayDestructuringMember
-    : arrayDestructuringBinding
-    | arrayDestructuringRest
+arrayDestructuringMember: arrayDestructuringBinding | arrayDestructuringRest
     ;
 
 /*
@@ -593,8 +584,7 @@ arrayDestructuringMember
  a = 'foo'
  [ nested ] = []
  */
-arrayDestructuringBinding
-    : arrayDestructuringValue (EQUALSIGN expression)?
+arrayDestructuringBinding: arrayDestructuringValue (EQUALSIGN expression)?
     ;
 
 /*
@@ -661,8 +651,15 @@ el2
     | el2 POWER el2                                                         # exprPower             // foo ^ bar
     | el2 op = (STAR | SLASH | PERCENT | MOD | BACKSLASH) el2               # exprMult              // foo * bar
     | el2 op = (PLUS | MINUS) el2                                           # exprAdd               // foo + bar
-    // 1..5
-    | el2 RANGE el2                                                         # exprRange             // 1..5
+    // 1..5, 1.., ..5, .., 1>..5, 1..<5, 1>..<5
+    | el2 op = (
+        RANGE
+        | RANGE_LEFT_EXCLUSIVE
+        | RANGE_RIGHT_EXCLUSIVE
+        | RANGE_LEFT_EXCLUSIVE_RIGHT_EXCLUSIVE
+    ) el2?                                     # exprRange
+    | op = (RANGE | RANGE_RIGHT_EXCLUSIVE) el2 # exprRange
+    | RANGE                                    # exprRange
     | el2 op = (
         BITWISE_SIGNED_LEFT_SHIFT
         | BITWISE_SIGNED_RIGHT_SHIFT
@@ -703,7 +700,7 @@ el2
     // ({ a } = foo)
     | objectDestructuringPattern EQUALSIGN expression # exprDestructuringAssign // ({ a } = foo)
     // [ a ] = foo
-    | arrayDestructuringPattern EQUALSIGN expression  # exprArrayDestructuringAssign // [ a ] = foo
+    | arrayDestructuringPattern EQUALSIGN expression # exprArrayDestructuringAssign // [ a ] = foo
 
     // Ternary operations are right associative, which means that if they are nested,
     // the rightmost operation is evaluated first.

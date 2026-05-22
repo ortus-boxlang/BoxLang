@@ -450,7 +450,7 @@ public abstract class BoxNode implements BoxVisitable {
 	 * Check if there are empty lines between this node and another node, considering their associated comments.
 	 *
 	 * @param node the node to compare to
-	 * 
+	 *
 	 * @return true if there are empty lines between this node and the other node, accounting for their closest comments
 	 */
 	public boolean hasLinesBetweenWithComments( BoxNode node ) {
@@ -737,7 +737,9 @@ public abstract class BoxNode implements BoxVisitable {
 	}
 
 	public String toString() {
-		return PrettyPrint.prettyPrint( this );
+		Config config = new Config();
+		config.getTemplate().setEnabled( true );
+		return PrettyPrint.prettyPrint( this, config );
 	}
 
 	public String toString( Config config ) {

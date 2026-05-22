@@ -663,89 +663,98 @@ public class LocalClassTest {
 		assertThat( meta2.getAsArray( Key.of( "properties" ) ) ).hasSize( 2 );
 	}
 
-	@DisplayName( "Nested local class inside another local class is not allowed" )
+	@DisplayName( "Nested local class inside another local class" )
 	@Test
-	public void testNestedLocalClassErrors() {
-		assertThrows( Exception.class, () -> {
-			instance.executeSource(
-			    """
-			    class Outer {
-			        class Inner {
-			            function getValue() {
-			                return "inner";
-			            }
-			        }
-			    }
-			    result = new Outer();
-			    """,
-			    context );
-		} );
+	public void testNestedLocalClass() {
+		instance.executeSource(
+		    """
+		    class Outer {
+		        class Inner {
+		            function getValue() {
+		                return "inner";
+		            }
+		        }
+
+		        function getInner() {
+		            return new Inner();
+		        }
+		    }
+		    result = new Outer().getInner().getValue();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "inner" );
 	}
 
-	@DisplayName( "Local class inside a .bx class body is not allowed" )
+	@DisplayName( "Local class inside a .bx class body" )
 	@Test
-	public void testLocalClassInsideBxClassFileErrors() {
-		assertThrows( Exception.class, () -> {
-			instance.executeSource(
-			    """
-			    class Outer {
-			        class Nested {
-			            function doStuff() {
-			                return "stuff";
-			            }
-			        }
+	public void testLocalClassInsideBxClassBody() {
+		instance.executeSource(
+		    """
+		    class Outer {
+		        class Nested {
+		            function doStuff() {
+		                return "stuff";
+		            }
+		        }
 
-			        function getFoo() {
-			            return "foo";
-			        }
-			    }
-			    result = new Outer().getFoo();
-			    """,
-			    context );
-		} );
+		        function getFoo() {
+		            return "foo";
+		        }
+
+		        function getNested() {
+		            return new Nested();
+		        }
+		    }
+		    result = new Outer().getFoo();
+		    result2 = new Outer().getNested().doStuff();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "foo" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "stuff" );
 	}
 
-	@DisplayName( "Local class inside a function inside another local class is not allowed" )
+	@DisplayName( "Local class inside a function inside another local class errors" )
 	@Test
 	public void testLocalClassInsideFunctionInsideClassErrors() {
-		assertThrows( Exception.class, () -> {
-			instance.executeSource(
-			    """
-			    class Wrapper {
-			        function factory() {
-			            class Product {
-			                function getName() {
-			                    return "widget";
-			                }
-			            }
-			            return new Product();
-			        }
-			    }
-			    result = new Wrapper().factory();
-			    """,
-			    context );
-		} );
+		assertThrows( Exception.class, () -> instance.executeSource(
+		    """
+		    class Wrapper {
+		        function factory() {
+		            class Product {
+		                function getName() {
+		                    return "widget";
+		                }
+		            }
+		            return new Product();
+		        }
+		    }
+		    result = new Wrapper().factory().getName();
+		    """,
+		    context ) );
 	}
 
-	@DisplayName( "Local class inside template script island with nested class errors" )
+	@DisplayName( "Local class inside template script island with nested class" )
 	@Test
-	public void testNestedLocalClassInTemplateErrors() {
-		assertThrows( Exception.class, () -> {
-			instance.executeSource(
-			    """
-			    <bx:script>
-			        class Parent {
-			            class Child {
-			                function greet() {
-			                    return "hi";
-			                }
-			            }
-			        }
-			        result = new Parent();
-			    </bx:script>
-			    """,
-			    context, BoxSourceType.BOXTEMPLATE );
-		} );
+	public void testNestedLocalClassInTemplate() {
+		instance.executeSource(
+		    """
+		    <bx:script>
+		        class Parent {
+		            class Child {
+		                function greet() {
+		                    return "hi";
+		                }
+		            }
+
+		            function getChild() {
+		                return new Child();
+		            }
+		        }
+		        result = new Parent().getChild().greet();
+		    </bx:script>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.get( result ) ).isEqualTo( "hi" );
 	}
 
 	@DisplayName( "Import with same name as local class should error" )

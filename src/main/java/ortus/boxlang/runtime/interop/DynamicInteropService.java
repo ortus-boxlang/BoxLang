@@ -2317,6 +2317,11 @@ public class DynamicInteropService {
 	    Object[] positionalArguments,
 	    Boolean safe ) {
 
+		// If calling init() on a Class<?> reference, create an instance of that class
+		if ( name.equals( Key.init ) && targetInstance instanceof Class<?> clazz ) {
+			return invokeConstructor( context, clazz, positionalArguments );
+		}
+
 		// If the object is referencable, allow it to handle the dereference itself
 		if ( IReferenceable.class.isAssignableFrom( targetClass ) && targetInstance != null && targetInstance instanceof IReferenceable ref ) {
 			return ref.dereferenceAndInvoke( context, name, positionalArguments, safe );
@@ -2409,6 +2414,11 @@ public class DynamicInteropService {
 	    Key name,
 	    Map<Key, Object> namedArguments,
 	    Boolean safe ) {
+
+		// If calling init() on a Class<?> reference, create an instance of that class
+		if ( name.equals( Key.init ) && targetInstance instanceof Class<?> clazz ) {
+			return invokeConstructor( context, clazz, namedArguments );
+		}
 
 		if ( IReferenceable.class.isAssignableFrom( targetClass ) && targetInstance != null && targetInstance instanceof IReferenceable ref ) {
 			return ref.dereferenceAndInvoke( context, name, namedArguments, safe );

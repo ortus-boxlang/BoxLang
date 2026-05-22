@@ -349,6 +349,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		encodingBase64Url					= Key.of( "Base64Url" );
 	public static final Key		encodingHex							= Key.of( "Hex" );
 	public static final Key		encodingUU							= Key.of( "UU" );
+	public static final Key		enclosingClass						= Key.of( "enclosingClass" );
 	public static final Key		encryptionAlgorithm					= Key.of( "encryptionAlgorithm" );
 	public static final Key		end									= Key.of( "end" );
 	public static final Key		endDate								= Key.of( "endDate" );
@@ -444,6 +445,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		header								= Key.of( "header" );
 	public static final Key		headers								= Key.of( "headers" );
 	public static final Key		hint								= Key.of( "hint" );
+	public static final Key		hikariConfig						= Key.of( "hikariConfig" );
 	public static final Key		hits								= Key.of( "hits" );
 	public static final Key		hostname							= Key.of( "hostname" );
 	public static final Key		hour								= Key.of( "hour" );
@@ -484,6 +486,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		initialValue						= Key.of( "initialValue" );
 	public static final Key		initMethod							= Key.of( "initMethod" );
 	public static final Key		input								= Key.of( "input" );
+	public static final Key		innerClasses						= Key.of( "innerClasses" );
 	public static final Key		inserts								= Key.of( "inserts" );
 	public static final Key		instance							= Key.of( "instance" );
 	public static final Key		instant								= Key.of( "instant" );

@@ -1,0 +1,53 @@
+class {
+
+	static {
+		static.OUTER_VALUE = "from-outer";
+	}
+
+	class Widget {
+
+		property name="name" default="default-widget";
+
+		static {
+			static.WIDGET_TYPE = "gadget";
+		}
+
+		class Button {
+
+			property name="label" default="click me";
+
+			function init( label ) {
+				variables.label = label;
+				return this;
+			}
+
+			function getLabel() {
+				return variables.label;
+			}
+
+		}
+
+		function init( name ) {
+			variables.name = name;
+			return this;
+		}
+
+		function getName() {
+			return variables.name;
+		}
+
+	}
+
+	class Util {
+
+		function greet( who ) {
+			return "Hello, " & who;
+		}
+
+	}
+
+	function getOuterValue() {
+		return InnerClassExternal::OUTER_VALUE;
+	}
+
+}

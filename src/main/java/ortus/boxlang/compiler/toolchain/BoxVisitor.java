@@ -283,20 +283,10 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 	 */
 	@Override
 	public BoxNode visitLocalClass( LocalClassContext ctx ) {
-		var					pos			= tools.getPositionStartingAt( ctx, ctx.CLASS().getSymbol() );
-		var					src			= tools.getSourceText( ctx );
+		var				pos		= tools.getPositionStartingAt( ctx, ctx.CLASS().getSymbol() );
+		var				src		= tools.getSourceText( ctx );
 
-		// Semantic check: local classes cannot be nested inside other classes
-		ParserRuleContext	ancestor	= ctx.getParent();
-		while ( ancestor != null ) {
-			if ( ancestor instanceof ClassBodyContext ) {
-				tools.reportError( "Local classes cannot be defined inside another class. Nested classes are not yet supported.", pos );
-				break;
-			}
-			ancestor = ancestor.getParent();
-		}
-
-		BoxIdentifier name = ( BoxIdentifier ) ctx.identifier().accept( expressionVisitor );
+		BoxIdentifier	name	= ( BoxIdentifier ) ctx.identifier().accept( expressionVisitor );
 
 		// Semantic check: duplicate local class names in the same file
 		if ( !seenLocalClassNames.add( name.getName().toLowerCase() ) ) {

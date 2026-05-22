@@ -209,15 +209,15 @@ public class InstanceOf implements IOperator {
 			}
 			// Qualifies for suffix check "String" == "java.lang.String"
 		} else if ( actual.length() > expected.length() ) {
-			// if expected contains a dot, then abort. Loop over char array to find out
+			// if expected contains a dot or $, then abort. Loop over char array to find out
 			for ( char ch : expected.toCharArray() ) {
-				if ( ch == '.' ) {
+				if ( ch == '.' || ch == '$' ) {
 					return false;
 				}
 			}
 
 			// Otherwise, default to a slower case-insensitive suffix check
-			if ( StringUtil.endsWithIgnoreCase( actual, "." + expected ) ) {
+			if ( StringUtil.endsWithIgnoreCase( actual, "." + expected ) || StringUtil.endsWithIgnoreCase( actual, "$" + expected ) ) {
 				return true;
 			}
 		}

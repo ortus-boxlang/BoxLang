@@ -13,7 +13,9 @@ component
 
 	// Properties
 	property name="hyperBuilder" inject="HyperBuilder@hyper";
+
 	property name="logger"       inject="logbox:logger:{this}";
+
 	property name="settings";
 
 

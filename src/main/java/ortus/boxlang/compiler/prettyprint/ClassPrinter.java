@@ -392,6 +392,7 @@ public class ClassPrinter {
 	private void printProperties( List<BoxProperty> properties ) {
 		var					currentDoc			= visitor.getCurrentDoc();
 		var					propertyOrder		= visitor.config.getClassConfig().getPropertyOrder();
+		int					propSpacing			= visitor.config.getClassConfig().getPropertySpacing();
 
 		// Sort properties based on configuration
 		List<BoxProperty>	sortedProperties	= sortProperties( properties, propertyOrder );
@@ -399,6 +400,12 @@ public class ClassPrinter {
 		for ( int i = 0; i < sortedProperties.size(); i++ ) {
 			sortedProperties.get( i ).accept( visitor );
 			currentDoc.append( Line.HARD );
+			// Add extra blank lines between consecutive properties (not after the last one)
+			if ( i < sortedProperties.size() - 1 ) {
+				for ( int s = 0; s < propSpacing; s++ ) {
+					currentDoc.append( Line.HARD );
+				}
+			}
 		}
 		// Note: member_spacing between properties and methods is handled by printStatements
 	}

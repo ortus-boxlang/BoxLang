@@ -28,6 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.Parser;
@@ -36,6 +37,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -66,6 +68,7 @@ public class CFTemplateTest {
 
 	@BeforeEach
 	public void setupEach() {
+		RunnableLoader.getInstance().getBoxpiler().clearPagePool();
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
@@ -952,6 +955,62 @@ public class CFTemplateTest {
 
 		// Continue inside tag switch case exits the loop iteration
 		assertThat( variables.get( result ) ).isEqualTo( "1245" );
+	}
+
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
+	@Test
+	public void testSwitchLabeledBreakInCaseExitsTargetedOuterLoop() {
+		Key afterLoop = Key.of( "afterLoop" );
+
+		instance.executeSource(
+		    """
+		    <cfset result = 0>
+		    <cfloop from="1" to="5" index="outer" label="outerLoop">
+		    	<cfloop from="1" to="5" index="inner">
+		    		<cfswitch expression="go">
+		    			<cfcase value="go">
+		    				<cfset result = result + 1>
+		    				<cfbreak outerLoop>
+		    			</cfcase>
+		    		</cfswitch>
+		    		<cfset result = -998>
+		    	</cfloop>
+		    	<cfset result = -997>
+		    </cfloop>
+		    <cfset afterLoop = 'reached'>
+		    """, context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
+		assertThat( variables.get( afterLoop ) ).isEqualTo( "reached" );
+	}
+
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
+	@Test
+	public void testSwitchLabeledContinueInCaseSkipsTargetedOuterLoopIteration() {
+		Key afterLoop = Key.of( "afterLoop" );
+
+		instance.executeSource(
+		    """
+		    <cfset result = "">
+		    <cfloop from="1" to="4" index="outer" label="outerLoop">
+		    	<cfloop from="1" to="2" index="inner">
+		    		<cfswitch expression="go">
+		    			<cfcase value="go">
+		    				<cfif inner EQ 1>
+		    					<cfset result = result & outer>
+		    					<cfcontinue outerLoop>
+		    				</cfif>
+		    			</cfcase>
+		    		</cfswitch>
+		    		<cfset result = result & 'x'>
+		    	</cfloop>
+		    	<cfset result = result & 'y'>
+		    </cfloop>
+		    <cfset afterLoop = 'reached'>
+		    """, context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.get( result ) ).isEqualTo( "1234" );
+		assertThat( variables.get( afterLoop ) ).isEqualTo( "reached" );
 	}
 
 	@Test

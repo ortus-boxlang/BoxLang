@@ -1291,7 +1291,7 @@ public class DynamicInteropServiceTest {
 
 				myTypedArray = new TestTypedArray();
 				types = [];
-				[ "foo", "bar" ].each( ( key ) => arrayAppend( types, new TestTypedArraySubtype( Key.of( key ) ) ) );
+				[ "foo", "bar" ].each( ( item ) => arrayAppend( types, new TestTypedArraySubtype( Key.of( item ) ) ) );
 				myTypedArray.test( "foo",["blah"], types );
 
 			""", context);

@@ -2,6 +2,7 @@ package ortus.boxlang.compiler.asmboxpiler;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -678,28 +679,48 @@ public class AsmTranspiler extends Transpiler {
 	 * @param outerPackage         dot-separated package name of the enclosing class
 	 * @param outerPackageInternal slash-separated package path of the enclosing class
 	 */
-	private void preCompileLocalClasses( List<BoxStatement> statements, List<BoxImport> enclosingImports, String outerClassname, String outerPackage,
+	public void preCompileLocalClasses( List<BoxStatement> statements, List<BoxImport> enclosingImports, String outerClassname, String outerPackage,
 	    String outerPackageInternal ) {
+
+		// Extract source-level import names for conflict checking (don't add to transpiler's imports
+		// list since those get added during transform() — adding here would cause duplicate bytecode)
+		Set<String> sourceImportNames = new HashSet<>();
+		for ( BoxImport imp : enclosingImports ) {
+			String importName = imp.getAlias() != null ? imp.getAlias().getName() : null;
+			if ( importName == null && imp.getExpression() instanceof BoxFQN fqn ) {
+				String	value		= fqn.getValue();
+				int		colonIdx	= value.indexOf( ':' );
+				if ( colonIdx >= 0 ) {
+					value = value.substring( colonIdx + 1 );
+				}
+				int lastDot = value.lastIndexOf( '.' );
+				importName = lastDot >= 0 ? value.substring( lastDot + 1 ) : value;
+			}
+			if ( importName != null ) {
+				sourceImportNames.add( importName.toLowerCase() );
+			}
+		}
+
+		// If this class has inner classes, add a self-import so the outer class is referenceable by its simple name
+		// from both the outer class itself and from inner classes (e.g., MyClass.STUFF)
+		String	outerSimpleName	= null;
+		String	outerInternal	= outerPackageInternal + "/" + outerClassname;
+		boolean	hasInnerClasses	= statements.stream().anyMatch( s -> s instanceof BoxLocalClass );
+		if ( hasInnerClasses ) {
+			String boxFQN = getProperty( "boxFQN" );
+			outerSimpleName = boxFQN.contains( "." ) ? boxFQN.substring( boxFQN.lastIndexOf( '.' ) + 1 ) : boxFQN;
+			addLocalClassRefImport( outerSimpleName, outerInternal );
+		}
 
 		for ( BoxStatement stmt : statements ) {
 			if ( stmt instanceof BoxLocalClass localClass ) {
 				String localName = localClass.getName().getName();
 
-				// Check if the local class name conflicts with an existing import
-				for ( BoxImport imp : enclosingImports ) {
-					String importName = imp.getAlias() != null ? imp.getAlias().getName() : null;
-					if ( importName == null && imp.getExpression() instanceof BoxFQN fqn ) {
-						String	value		= fqn.getValue();
-						int		colonIdx	= value.indexOf( ':' );
-						if ( colonIdx >= 0 ) {
-							value = value.substring( colonIdx + 1 );
-						}
-						int lastDot = value.lastIndexOf( '.' );
-						importName = lastDot >= 0 ? value.substring( lastDot + 1 ) : value;
-					}
-					if ( importName != null && importName.equalsIgnoreCase( localName ) ) {
-						throw new BoxRuntimeException( "Local class [" + localName + "] conflicts with an import of the same name." );
-					}
+				// Check if the local class name conflicts with any already-registered import
+				// (includes source-level imports, outer class self-import, and previously-compiled sibling classes)
+				if ( this.matchesImport( localName ) || sourceImportNames.contains( localName.toLowerCase() ) ) {
+					throw new BoxRuntimeException(
+					    "Local class [" + localName + "] conflicts with an existing class or import of the same name." );
 				}
 
 				String		syntheticClassname	= outerClassname + "$" + localName;
@@ -709,17 +730,30 @@ public class AsmTranspiler extends Transpiler {
 				Transpiler	child				= Transpiler.getTranspiler();
 				child.setProperty( "classname", syntheticClassname );
 				child.setProperty( "packageName", outerPackage );
-				child.setProperty( "boxFQN", localName );
+				String	parentFQN		= getProperty( "boxFQN" );
+				String	parentBaseclass	= getProperty( "baseclass" );
+				boolean	parentIsClass	= !"BoxScript".equals( parentBaseclass ) && !"BoxTemplate".equals( parentBaseclass );
+				child.setProperty( "boxFQN", parentIsClass && parentFQN != null && !parentFQN.isEmpty() ? parentFQN + "$" + localName : localName );
+				child.setProperty( "enclosingBoxFQN", parentIsClass ? ( parentFQN != null ? parentFQN : "" ) : "" );
 				child.setProperty( "baseclass", "BoxClass" );
 				child.setProperty( "sourceType", getProperty( "sourceType" ) );
 				child.setProperty( "mappingName", getProperty( "mappingName" ) );
 				child.setProperty( "mappingPath", getProperty( "mappingPath" ) );
 				child.setProperty( "relativePath", getProperty( "relativePath" ) );
-				child.setProperty( "outerClassInternal", outerPackageInternal + "/" + outerClassname );
+				// Propagate the ultimate outer class (the one that actually owns path/sourceType fields).
+				// If this transpiler is itself inner, pass along its outerClassInternal so all levels redirect
+				// to the same top-level class. Otherwise, use the current class as the outer.
+				child.setProperty( "outerClassInternal", getProperty( "outerClassInternal" ) != null
+				    ? getProperty( "outerClassInternal" )
+				    : outerPackageInternal + "/" + outerClassname );
 
 				// Register previously-compiled sibling local classes on the child so extends can resolve them
 				for ( Map.Entry<String, String> entry : getLocalClasses().entrySet() ) {
 					child.addLocalClassRefImport( entry.getKey(), entry.getValue() );
+				}
+				// Also register the outer class itself so inner classes can reference it by name
+				if ( outerSimpleName != null ) {
+					child.addLocalClassRefImport( outerSimpleName, outerInternal );
 				}
 
 				// Compile with enclosing imports only - sibling visibility is handled by classRef imports
@@ -730,10 +764,19 @@ public class AsmTranspiler extends Transpiler {
 
 				ClassNode	localClassNode		= BoxClassTransformer.transpile( child, asBoxClass );
 
-				// Post-process: remove imports/path/sourceType fields from inner class and redirect all
+				// Post-process: remove path/sourceType fields from inner class and redirect all
 				// references to the outer class's fields. Inner classes should not declare their own copies.
-				String		outerClassInternal	= outerPackageInternal + "/" + outerClassname;
-				redirectOuterClassFields( localClassNode, syntheticInternal, outerClassInternal );
+				// Only redirect imports if the inner class does NOT have its own local classes
+				// (since its imports field needs to contain the local class ref imports).
+				// For path/sourceType, redirect to the ultimate outer that actually has those fields.
+				// If this transpiler itself is an inner class, its outerClassInternal points to the real owner.
+				String		fieldRedirectTarget	= getProperty( "outerClassInternal" ) != null
+				    ? getProperty( "outerClassInternal" )
+				    : outerPackageInternal + "/" + outerClassname;
+				Set<String>	fieldsToRedirect	= child.getLocalClasses().isEmpty()
+				    ? Set.of( "imports", "path", "sourceType" )
+				    : Set.of( "path", "sourceType" );
+				redirectOuterClassFields( localClassNode, syntheticInternal, fieldRedirectTarget, fieldsToRedirect );
 
 				setAuxiliary( syntheticDotFQN, localClassNode );
 
@@ -776,9 +819,9 @@ public class AsmTranspiler extends Transpiler {
 	 * @param classNode          The inner class node to post-process
 	 * @param innerClassInternal The JVM internal name of the inner class (e.g. "pkg/Outer$Inner")
 	 * @param outerClassInternal The JVM internal name of the outer class (e.g. "pkg/Outer")
+	 * @param delegatedFields    The set of field names to redirect to the outer class
 	 */
-	private void redirectOuterClassFields( ClassNode classNode, String innerClassInternal, String outerClassInternal ) {
-		Set<String> delegatedFields = Set.of( "imports", "path", "sourceType" );
+	private void redirectOuterClassFields( ClassNode classNode, String innerClassInternal, String outerClassInternal, Set<String> delegatedFields ) {
 
 		// 1. Remove the field declarations
 		classNode.fields.removeIf( f -> delegatedFields.contains( f.name ) );

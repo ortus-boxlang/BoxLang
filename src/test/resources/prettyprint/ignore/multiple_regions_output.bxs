@@ -1,0 +1,9 @@
+x = 1 + 2;
+// cfformat-ignore-start
+y=3+4;
+// cfformat-ignore-end
+a = 7 + 8;
+// @formatter:off
+b=9+10;
+// @formatter:on
+c = 11 + 12;

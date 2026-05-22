@@ -1572,6 +1572,9 @@ public final class Config {
 	 * @param config a map of template configuration key-value pairs
 	 */
 	private void applyTemplateConfig( Map<String, Object> config ) {
+		if ( config.containsKey( "enabled" ) && config.get( "enabled" ) instanceof Boolean enabled ) {
+			this.template.setEnabled( enabled );
+		}
 		if ( config.containsKey( "component_prefix" ) && config.get( "component_prefix" ) instanceof String componentPrefix ) {
 			this.template.setComponentPrefix( componentPrefix );
 		}
@@ -1634,6 +1637,9 @@ public final class Config {
 		}
 		if ( config.containsKey( "method_grouping" ) && config.get( "method_grouping" ) instanceof Boolean methodGrouping ) {
 			this.classConfig.setMethodGrouping( methodGrouping );
+		}
+		if ( config.containsKey( "property_spacing" ) && config.get( "property_spacing" ) instanceof Number propSpacing ) {
+			this.classConfig.setPropertySpacing( propSpacing.intValue() );
 		}
 	}
 

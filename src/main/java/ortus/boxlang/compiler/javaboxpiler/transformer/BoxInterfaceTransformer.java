@@ -73,6 +73,7 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 		import ortus.boxlang.runtime.loader.ClassLocator;
 		import ortus.boxlang.runtime.loader.ImportDefinition;
 		import ortus.boxlang.runtime.operators.*;
+		import ortus.boxlang.runtime.operators.Range;
 		import ortus.boxlang.runtime.runnables.BoxScript;
 		import ortus.boxlang.runtime.runnables.BoxTemplate;
 		import ortus.boxlang.runtime.runnables.IClassRunnable;

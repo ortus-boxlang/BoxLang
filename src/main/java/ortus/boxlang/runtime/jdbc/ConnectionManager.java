@@ -78,6 +78,10 @@ public class ConnectionManager {
 	 * The DatasourceService instance
 	 */
 	private DatasourceService			datasourceService				= BoxRuntime.getInstance().getDataSourceService();
+	/**
+	 * Enable or disable support for nested transactions.
+	 */
+	private boolean						enableNestedTransactions		= BoxRuntime.getInstance().getConfiguration().enableNestedTransactions;
 
 	private static final Key[]			TRANSACTION_INTERCEPTION_POINTS	= List.of(
 	    Key.onTransactionBegin,
@@ -184,7 +188,7 @@ public class ConnectionManager {
 	 * @return The current executing transaction.
 	 */
 	public ITransaction beginTransaction( DataSource datasource ) {
-		if ( isInTransaction() ) {
+		if ( isInTransaction() && enableNestedTransactions ) {
 			/**
 			 * Opens a nested (child) transaction within the current transaction context, and overwrites our transaction reference to point to the new nested transaction.
 			 *
@@ -194,10 +198,14 @@ public class ConnectionManager {
 			 */
 			this.transaction = new ChildTransaction( this.transaction );
 			logger.debug( "Opened CHILD transaction {}", this.transaction );
-		} else {
+		} else if ( !isInTransaction() ) {
+			/**
+			 * Whether or not nested transactions are enabled, if there is no existing transaction we'll initialize one now.'
+			 */
 			this.transaction = new Transaction( context, datasource );
 			logger.debug( "Opened transaction {}", this.transaction );
 		}
+		// If we newly created a transaction OR we're already in a transaction but nested transactions are disabled, we simply return the existing transaction.
 		return this.transaction;
 	}
 
@@ -215,6 +223,7 @@ public class ConnectionManager {
 		} finally {
 			// Very important that we close down the transactional state regardless of exceptions in the transaction.end() method.
 			if ( this.transaction instanceof ChildTransaction childTransaction ) {
+				// Note: With `enableNestedTransactions` disabled, we SHOULD never hit this code path.
 				// inner transaction closes and we update our reference to the parent transaction.
 				logger.debug( "Ending CHILD transaction {} and repointing the context transaction to the parent transaction {}", this.transaction,
 				    childTransaction.getParent() );

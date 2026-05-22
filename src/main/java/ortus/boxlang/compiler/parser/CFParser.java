@@ -1713,6 +1713,8 @@ public class CFParser extends AbstractParser {
 			}
 			case BoxFQN ignored -> {
 			}
+			case BoxExpressionInvocation ignored -> {
+			}
 			default -> errorListener.semanticError( left.getDescription() + " is not a valid construct for " + ( isStatic ? "static" : "dot" ) + " access",
 			    left.getPosition() );
 		}
@@ -1763,6 +1765,8 @@ public class CFParser extends AbstractParser {
 			case BoxStaticAccess ignored -> {
 			}
 			case BoxStaticMethodInvocation ignored -> {
+			}
+			case BoxExpressionInvocation ignored -> {
 			}
 			default -> errorListener.semanticError( object.getDescription() + " is not a valid construct for array access ", getPosition( ctx ) );
 		}

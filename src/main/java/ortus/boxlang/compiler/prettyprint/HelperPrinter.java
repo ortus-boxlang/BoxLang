@@ -24,6 +24,8 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxStatement;
+import ortus.boxlang.compiler.ast.comment.BoxComment;
+import ortus.boxlang.compiler.ast.comment.BoxSingleLineComment;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
@@ -45,11 +47,44 @@ public class HelperPrinter {
 
 		BoxStatement	lastStatement		= statements.get( statements.size() - 1 );
 		BoxStatement	previousStatement	= null;
+		boolean			ignoreMode			= false;
 
 		// Get member spacing for class members (default is 1 blank line between functions)
 		int				memberSpacing		= visitor.config.getClassConfig().getMemberSpacing();
 
 		for ( var statement : statements ) {
+
+			// --- Ignore-mode exit: statement has an ignore-end pre-comment ---
+			if ( ignoreMode ) {
+				boolean hasEndMarker = hasFormatterIgnoreEnd( statement );
+				if ( hasEndMarker ) {
+					// Exit ignore mode — format this statement normally.
+					// printPreComments will emit the end-marker as a regular comment.
+					ignoreMode = false;
+				} else {
+					// Still in ignore mode — emit raw
+					emitRawStatement( statement );
+					if ( statement != lastStatement ) {
+						visitor.newLine();
+					}
+					previousStatement = statement;
+					continue;
+				}
+			}
+
+			// --- Ignore-mode entry: statement has an ignore-start pre-comment ---
+			if ( !ignoreMode && hasFormatterIgnoreStart( statement ) ) {
+				ignoreMode = true;
+				emitRawStatement( statement );
+				if ( statement != lastStatement ) {
+					visitor.newLine();
+				}
+				previousStatement = statement;
+				continue;
+			}
+
+			// --- Normal formatting ---
+
 			// Check if this is a class member (function in a class or interface)
 			boolean isClassMember = statement instanceof BoxFunctionDeclaration &&
 			    ( statement.getParent() instanceof BoxClass || statement.getParent() instanceof BoxInterface );
@@ -85,6 +120,73 @@ public class HelperPrinter {
 	}
 
 	/**
+	 * Checks if a statement has a formatter-ignore-start comment in its pre-comments.
+	 */
+	private boolean hasFormatterIgnoreStart( BoxStatement statement ) {
+		for ( BoxComment comment : statement.getComments() ) {
+			if ( comment.isBefore( statement ) && comment instanceof BoxSingleLineComment slc && slc.isFormatterIgnoreStart() ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Checks if a statement has a formatter-ignore-end comment in its pre-comments.
+	 */
+	private boolean hasFormatterIgnoreEnd( BoxStatement statement ) {
+		for ( BoxComment comment : statement.getComments() ) {
+			if ( comment.isBefore( statement ) && comment instanceof BoxSingleLineComment slc && slc.isFormatterIgnoreEnd() ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Emits a statement and its associated comments as raw (unformatted) text.
+	 * Used when inside a formatter-ignore region to preserve original source formatting.
+	 * Falls back to normal formatting if the node has no raw source text (e.g., transpiler-injected nodes).
+	 */
+	private void emitRawStatement( BoxStatement statement ) {
+		Doc		currentDoc			= visitor.getCurrentDoc();
+
+		// Emit pre-comments raw
+		boolean	emittedPreComment	= false;
+		for ( BoxComment comment : statement.getComments() ) {
+			if ( comment.isBefore( statement ) ) {
+				if ( emittedPreComment ) {
+					currentDoc.append( Line.HARD );
+				}
+				currentDoc.append( comment.getSourceText() );
+				emittedPreComment = true;
+			}
+		}
+
+		// Emit statement source text raw, or fall back to formatted output
+		String raw = visitor.extractRawSourceFromPosition( statement );
+		if ( raw != null ) {
+			if ( emittedPreComment ) {
+				currentDoc.append( Line.HARD );
+			}
+			currentDoc.append( raw );
+		} else {
+			// No raw source available (e.g., transpiler-injected AST nodes) — format normally
+			if ( emittedPreComment ) {
+				currentDoc.append( Line.HARD );
+			}
+			statement.accept( visitor );
+		}
+
+		// Emit post-comments raw (same-line comments)
+		for ( BoxComment comment : statement.getComments() ) {
+			if ( comment.isAfter( statement ) ) {
+				currentDoc.append( " " ).append( comment.getSourceText() );
+			}
+		}
+	}
+
+	/**
 	 * Prints template body statements with indent_content support.
 	 * When indent_content is true, whitespace-only buffer outputs are filtered
 	 * and replaced with structured Line.HARD separators, indenting body content
@@ -102,27 +204,40 @@ public class HelperPrinter {
 			return;
 		}
 
-		var meaningful = statements.stream()
-		    .filter( s -> s != null && !isWhitespaceOnlyBuffer( s ) )
-		    .toList();
+		boolean hasAnyMeaningful = statements.stream()
+		    .anyMatch( s -> s != null && !isWhitespaceOnlyBuffer( s ) );
 
-		if ( meaningful.isEmpty() ) {
+		if ( !hasAnyMeaningful ) {
 			return;
 		}
 
-		var		indentDoc		= visitor.pushDoc( DocType.INDENT );
-		boolean	lastWasBuffer	= false;
+		var		indentDoc				= visitor.pushDoc( DocType.INDENT );
+		boolean	lastWasBuffer			= false;
+		// Tracks whether a whitespace-only newline buffer was filtered between
+		// two consecutive BufferOutput nodes, indicating a meaningful line break
+		// (e.g., #html.doctype()# followed by a newline then <html lang="en">).
+		boolean	hadNewlineSinceBuffer	= false;
 		visitor.stripBufferLeadingWhitespace = true;
-		for ( var statement : meaningful ) {
+		for ( var statement : statements ) {
 			if ( statement == null )
 				continue;
+
+			// Skip whitespace-only buffers but remember that a newline separator was present
+			if ( isWhitespaceOnlyBuffer( statement ) ) {
+				hadNewlineSinceBuffer = true;
+				continue;
+			}
+
 			boolean isBuffer = statement instanceof BoxBufferOutput;
-			// Only break before the first BufferOutput in a consecutive run, so that
-			// inline HTML like <p>text #expr#</p> (multiple adjacent BufferOutputs) stays on one line
-			if ( !isBuffer || !lastWasBuffer ) {
+			// Break before non-buffer statements, before the first BufferOutput in a
+			// consecutive run, when a whitespace-newline buffer was filtered between two
+			// consecutive BufferOutputs, or when the next buffer's string content starts
+			// with a newline (the stripped newline represents a meaningful line break).
+			if ( !isBuffer || !lastWasBuffer || hadNewlineSinceBuffer || bufferStartsWithNewline( statement ) ) {
 				indentDoc.append( Line.HARD );
 			}
-			lastWasBuffer = isBuffer;
+			lastWasBuffer			= isBuffer;
+			hadNewlineSinceBuffer	= false;
 			statement.accept( visitor );
 		}
 		visitor.stripBufferLeadingWhitespace = false;
@@ -144,6 +259,25 @@ public class HelperPrinter {
 		// Pure horizontal spaces (e.g., between #expr1# #expr2#) are meaningful inline content.
 		String value = str.getValue();
 		return value.isBlank() && ( value.contains( "\n" ) || value.contains( "\r" ) );
+	}
+
+	/**
+	 * Returns true if a BoxBufferOutput's string literal value starts with a newline character.
+	 * Used to detect cases where a consecutive buffer output represents content on a new source
+	 * line (e.g., "\n&lt;html lang=\"en\"&gt;"), so that a Line.HARD is emitted even though the
+	 * "inline run" optimization would otherwise suppress it. The stripped leading newline is then
+	 * compensated by the emitted Line.HARD.
+	 */
+	private boolean bufferStartsWithNewline( BoxStatement statement ) {
+		if ( ! ( statement instanceof BoxBufferOutput bufOutput ) ) {
+			return false;
+		}
+		var expr = bufOutput.getExpression();
+		if ( expr instanceof BoxStringLiteral str ) {
+			String v = str.getValue();
+			return v.startsWith( "\n" ) || v.startsWith( "\r" );
+		}
+		return false;
 	}
 
 	public void printBlock( BoxNode node, List<BoxStatement> statements ) {

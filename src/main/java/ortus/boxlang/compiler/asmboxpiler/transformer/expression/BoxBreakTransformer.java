@@ -65,24 +65,16 @@ public class BoxBreakTransformer extends AbstractTransformer {
 			labelTarget = getTargetAncestor( breakNode );
 		}
 
-		if ( returnContext.nullable
-		    || exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
-			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
-		}
-
 		LabelNode currentBreak = tracker.getBreak( labelTarget != null ? labelTarget : getTargetAncestor( breakNode ) );
 
 		if ( currentBreak != null ) {
-			if ( returnContext.nullable && nodes.size() == 0 ) {
-				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
-			}
 			nodes.add( new JumpInsnNode( Opcodes.GOTO, currentBreak ) );
 			return AsmHelper.addLineNumberLabels( nodes, node );
 		}
 
 		if ( exitsAllowed.equals( ExitsAllowed.COMPONENT ) ) {
 			if ( breakNode.getLabel() != null ) {
-				nodes.add( new LdcInsnNode( breakNode.getLabel().toLowerCase() ) );
+				nodes.add( new LdcInsnNode( breakNode.getLabel() ) );
 			} else {
 				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 			}
@@ -95,9 +87,13 @@ public class BoxBreakTransformer extends AbstractTransformer {
 			nodes.add( new InsnNode( Opcodes.ARETURN ) );
 			return AsmHelper.addLineNumberLabels( nodes, node );
 		} else if ( exitsAllowed.equals( ExitsAllowed.LOOP ) ) {
+			if ( transpiler.canReturn() ) {
+				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+			}
 			nodes.add( new InsnNode( transpiler.canReturn() ? Opcodes.ARETURN : Opcodes.RETURN ) );
 			return AsmHelper.addLineNumberLabels( nodes, node );
 		} else if ( exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 			nodes.add( new InsnNode( Opcodes.ARETURN ) );
 			return AsmHelper.addLineNumberLabels( nodes, node );
 		}

@@ -36,8 +36,9 @@ public class TemplateConfigTest {
 	public void testDefaults() {
 		TemplateConfig config = new TemplateConfig();
 
+		assertTrue( config.getEnabled() );
 		assertEquals( "bx", config.getComponentPrefix() );
-		assertTrue( config.getIndentContent() );
+		assertFalse( config.getIndentContent() );
 		assertFalse( config.getSingleAttributePerLine() );
 		assertTrue( config.getSelfClosing() );
 	}
@@ -46,6 +47,9 @@ public class TemplateConfigTest {
 	@DisplayName( "TemplateConfig setters work correctly" )
 	public void testSetters() {
 		TemplateConfig config = new TemplateConfig();
+
+		config.setEnabled( true );
+		assertTrue( config.getEnabled() );
 
 		config.setComponentPrefix( "cf" );
 		assertEquals( "cf", config.getComponentPrefix() );
@@ -64,6 +68,7 @@ public class TemplateConfigTest {
 	@DisplayName( "TemplateConfig toMap produces correct structure" )
 	public void testToMap() {
 		TemplateConfig config = new TemplateConfig();
+		config.setEnabled( true );
 		config.setComponentPrefix( "cf" );
 		config.setIndentContent( false );
 		config.setSingleAttributePerLine( true );
@@ -71,6 +76,7 @@ public class TemplateConfigTest {
 
 		Map<String, Object> map = config.toMap();
 
+		assertEquals( true, map.get( "enabled" ) );
 		assertEquals( "cf", map.get( "component_prefix" ) );
 		assertEquals( false, map.get( "indent_content" ) );
 		assertEquals( true, map.get( "single_attribute_per_line" ) );
@@ -81,6 +87,7 @@ public class TemplateConfigTest {
 	@DisplayName( "Config loads TemplateConfig from map" )
 	public void testConfigLoadFromMap() {
 		Map<String, Object> templateMap = new HashMap<>();
+		templateMap.put( "enabled", true );
 		templateMap.put( "component_prefix", "cf" );
 		templateMap.put( "indent_content", false );
 		templateMap.put( "single_attribute_per_line", true );
@@ -91,6 +98,7 @@ public class TemplateConfigTest {
 
 		Config config = new Config().loadFromConfig( configMap );
 
+		assertTrue( config.getTemplate().getEnabled() );
 		assertEquals( "cf", config.getTemplate().getComponentPrefix() );
 		assertFalse( config.getTemplate().getIndentContent() );
 		assertTrue( config.getTemplate().getSingleAttributePerLine() );

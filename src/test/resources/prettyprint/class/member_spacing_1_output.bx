@@ -1,5 +1,6 @@
 class {
 	property name="foo";
+
 	property name="bar";
 
 	function init() {

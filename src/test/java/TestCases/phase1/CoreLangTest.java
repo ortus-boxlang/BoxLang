@@ -4801,6 +4801,28 @@ public class CoreLangTest {
 		context ) );
 	// @formatter:on
 		assertThat( t.getMessage() ).contains( "You cannot use a function parameter with the same name as an import" );
+
+	// @formatter:off
+	t = assertThrows( BoxRuntimeException.class, () ->
+	instance.executeSource(
+		"""
+			import ortus.boxlang.runtime.context.BaseBoxContext;
+			myLambda = ( BaseBoxContext ) -> BaseBoxContext;
+		""",
+		context ) );
+	// @formatter:on
+		assertThat( t.getMessage() ).contains( "You cannot use a function parameter with the same name as an import" );
+
+	// @formatter:off
+	t = assertThrows( BoxRuntimeException.class, () ->
+	instance.executeSource(
+		"""
+			import ortus.boxlang.runtime.context.BaseBoxContext;
+			myClosure = ( BaseBoxContext ) => BaseBoxContext;
+		""",
+		context ) );
+	// @formatter:on
+		assertThat( t.getMessage() ).contains( "You cannot use a function parameter with the same name as an import" );
 	}
 
 	@Test
@@ -6599,6 +6621,45 @@ public class CoreLangTest {
 		    result = shared.len();
 		    """,
 		    context );
+	}
+
+	// ==================== Expression invocation with dot/array access ====================
+
+	@DisplayName( "Expression invocation result can be dot accessed" )
+	@Test
+	public void testExpressionInvocationDotAccess() {
+		instance.executeSource(
+		    """
+		    foo = () -> "hello";
+		    result = (foo)().len();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 5 );
+	}
+
+	@DisplayName( "Expression invocation result can be array accessed" )
+	@Test
+	public void testExpressionInvocationArrayAccess() {
+		instance.executeSource(
+		    """
+		    foo = () -> [ "a", "b", "c" ];
+		    result = (foo)()[2];
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "b" );
+	}
+
+	@DisplayName( "Expression invocation result can chain method calls" )
+	@Test
+	public void testExpressionInvocationMethodChain() {
+		instance.executeSource(
+		    """
+		    import java:java.lang.StringBuilder;
+		    factory = () -> StringBuilder;
+		    result = (factory)()( "test" ).toString();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "test" );
 	}
 
 }

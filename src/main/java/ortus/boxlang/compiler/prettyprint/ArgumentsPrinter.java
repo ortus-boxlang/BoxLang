@@ -167,9 +167,25 @@ public class ArgumentsPrinter {
 				argumentsDoc.append( Line.SOFT );
 			}
 		} else {
-			visitor.printInsideComments( parentNode, false );
-			if ( visitor.config.getArguments().getEmptyPadding() ) {
-				argumentsDoc.append( " " );
+			// Check if there are inside comments — if so, force multiline to avoid collapsing
+			boolean hasInsideComments = false;
+			for ( var comment : parentNode.getComments() ) {
+				if ( comment.isInside( parentNode ) ) {
+					hasInsideComments = true;
+					break;
+				}
+			}
+
+			if ( hasInsideComments ) {
+				var contentsDoc = visitor.pushDoc( DocType.INDENT );
+				contentsDoc.append( Line.HARD );
+				visitor.printInsideComments( parentNode, false );
+				argumentsDoc.append( visitor.popDoc() ).append( Line.HARD );
+			} else {
+				visitor.printInsideComments( parentNode, false );
+				if ( visitor.config.getArguments().getEmptyPadding() ) {
+					argumentsDoc.append( " " );
+				}
 			}
 		}
 

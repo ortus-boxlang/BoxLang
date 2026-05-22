@@ -22,6 +22,7 @@ import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.InsnNode;
 import org.objectweb.asm.tree.JumpInsnNode;
+import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.LabelNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
@@ -58,28 +59,21 @@ public class BoxContinueTransformer extends AbstractTransformer {
 		List<AbstractInsnNode>	nodes			= new ArrayList<AbstractInsnNode>();
 		AsmHelper.addDebugLabel( nodes, "BoxContinue" );
 
-		if ( returnContext.nullable || exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
-			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
-		}
-
-		// if ( returnContext == ReturnValueContext.VALUE || returnContext == ReturnValueContext.VALUE_OR_NULL || exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
-		// nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
-		// }
-
 		MethodContextTracker	tracker			= transpiler.getCurrentMethodContextTracker().get();
 		BoxNode					labelTarget		= tracker.getStringLabel( continueNode.getLabel() );
 		LabelNode				currentBreak	= tracker.getContinue( labelTarget != null ? labelTarget : getTargetAncestor( continueNode ) );
 
 		if ( currentBreak != null ) {
-			if ( returnContext.nullable && nodes.size() == 0 ) {
-				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
-			}
 			nodes.add( new JumpInsnNode( Opcodes.GOTO, currentBreak ) );
 			return AsmHelper.addLineNumberLabels( nodes, node );
 		}
 
 		if ( exitsAllowed.equals( ExitsAllowed.COMPONENT ) ) {
-			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+			if ( continueNode.getLabel() != null ) {
+				nodes.add( new LdcInsnNode( continueNode.getLabel() ) );
+			} else {
+				nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+			}
 			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( Component.BodyResult.class ),
 			    "ofContinue",
@@ -93,6 +87,7 @@ public class BoxContinueTransformer extends AbstractTransformer {
 			return AsmHelper.addLineNumberLabels( nodes, node );
 			// template = "if(true) break " + breakLabel + ";";
 		} else if ( exitsAllowed.equals( ExitsAllowed.FUNCTION ) ) {
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
 			nodes.add( new InsnNode( Opcodes.ARETURN ) );
 			return AsmHelper.addLineNumberLabels( nodes, node );
 		}

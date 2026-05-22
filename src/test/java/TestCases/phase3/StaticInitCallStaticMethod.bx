@@ -5,6 +5,13 @@ class {
 		}
 	}
 
+	// Call static method from pseudo-constructor (without static. prefix)
+	variables.fromPseudo = someStaticFunction( 'baz' );
+
+	function getFromPseudo() {
+		return variables.fromPseudo;
+	}
+
 	private static string function someStaticFunction( required string baz ) {
 		return arguments.baz;
 	}
