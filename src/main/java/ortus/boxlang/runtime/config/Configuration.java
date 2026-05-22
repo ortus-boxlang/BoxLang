@@ -760,7 +760,7 @@ public class Configuration implements IConfigSegment {
 		}
 
 		// Process JDBC configuration
-		if ( config.containsKey( Key.enableNestedTransactions ) ) {
+		if ( config.containsKey( Key.enableNestedTransactions ) && config.get( Key.enableNestedTransactions ) != null ) {
 			this.enableNestedTransactions = BooleanCaster.cast( config.get( Key.enableNestedTransactions ) );
 		}
 		// Process modules
