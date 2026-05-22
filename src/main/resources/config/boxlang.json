@@ -414,7 +414,6 @@
 			//     // BoxLang class path that implements onEvent( eventStruct )
 			//     "listener": "app.listeners.HotReloadListener"
 			// },
-
 			// ----- Example 2: multiple paths with all options shown -----
 			// "asset-pipeline": {
 			//     "paths": [
@@ -448,9 +447,10 @@
 		// 	  "database": "test"
 		// }
 	},
-	// If enabled, this will treat nested transactional operations as savepoints on the parent transaction.
-	// If disabled, nested transactions will be ignored and all commits and rollbacks will apply to the entire transaction.
-	"enableNestedTransactions": true,
+	// If true, this will treat nested transactional operations as savepoints on the parent transaction.
+	// If false, nested transactions will be ignored and all commits and rollbacks will apply to the entire transaction.
+	// Defaulted to true in the Transaction component, or false with bx-compat installed.
+	"enableNestedTransactions": null,
 	// The default return format for class invocations via web runtimes
 	"defaultRemoteMethodReturnFormat": "json",
 	/**
