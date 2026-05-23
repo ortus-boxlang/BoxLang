@@ -96,4 +96,34 @@ public class LoggingServiceTest {
 		}
 	}
 
+	@DisplayName( "User-defined loggers with categories in config are wired up during reconfigure, not just on first getLogger() call" )
+	@Test
+	public void testUserDefinedLoggerCategoriesWiredOnReconfigure() {
+		// Simulate a user adding a custom logger (e.g. "hikari") with categories to logging.loggers
+		// BEFORE reconfigure is called — the runtime startup must wire it automatically.
+		var				loggingConfig	= runtime.getConfiguration().logging;
+		Key				loggerKey		= Key.of( "reconfigtestlogger" );
+		LoggerConfig	loggerConfig	= new LoggerConfig( loggerKey, loggingConfig );
+		loggerConfig.categories.add( "com.example.noisy.Library" );
+		loggerConfig.additive = false;
+		LoggerConfig previousConfig = ( LoggerConfig ) loggingConfig.loggers.get( loggerKey );
+		loggingConfig.loggers.put( loggerKey, loggerConfig );
+
+		try {
+			// reconfigure() must initialize user-defined loggers and wire their categories
+			loggingService.reconfigure();
+
+			// The category logger must now be wired — even though we never called getLogger("reconfigtestlogger") directly
+			ch.qos.logback.classic.Logger categoryLogger = loggingService.getLoggerContext().getLogger( "com.example.noisy.Library" );
+			assertThat( categoryLogger ).isNotNull();
+			assertThat( categoryLogger.isAdditive() ).isFalse();
+		} finally {
+			if ( previousConfig != null ) {
+				loggingConfig.loggers.put( loggerKey, previousConfig );
+			} else {
+				loggingConfig.loggers.remove( loggerKey );
+			}
+		}
+	}
+
 }
