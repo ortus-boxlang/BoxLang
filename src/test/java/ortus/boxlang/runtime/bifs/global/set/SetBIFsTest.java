@@ -280,6 +280,18 @@ public class SetBIFsTest {
 		assertThat( arr.get( 2 ) ).isEqualTo( "b" );
 	}
 
+	@DisplayName( "JSON serialization renders a Set as a JSON array" )
+	@Test
+	public void testJsonSerialization() {
+		instance.executeSource(
+		    """
+		    s = setNew( type="linked", values=["a","b","c"] );
+		    result = jsonSerialize( s );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "[\"a\",\"b\",\"c\"]" );
+	}
+
 	@DisplayName( "Sorted variant orders elements" )
 	@Test
 	public void testSortedOrder() {
