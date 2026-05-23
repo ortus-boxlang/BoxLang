@@ -124,6 +124,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 public class Visitor extends VoidBoxVisitor {
 
 	private Stack<BoxSourceType>	currentSourceType				= new Stack<>();
+	private BoxSourceType			rootSourceType;
 	private Stack<Doc>				docStack						= new Stack<>();
 
 	Config							config;
@@ -148,7 +149,8 @@ public class Visitor extends VoidBoxVisitor {
 	 * @param config     The configuration for printing
 	 */
 	public Visitor( BoxSourceType sourceType, Config config ) {
-		this.config = config;
+		this.rootSourceType	= sourceType;
+		this.config			= config;
 		currentSourceType.push( sourceType );
 		pushDoc( DocType.ARRAY );
 
@@ -178,6 +180,10 @@ public class Visitor extends VoidBoxVisitor {
 			case BOXTEMPLATE, CFTEMPLATE -> true;
 			default -> false;
 		};
+	}
+
+	boolean isCF() {
+		return rootSourceType.isCFType();
 	}
 
 	Doc getCurrentDoc() {
@@ -1242,7 +1248,11 @@ public class Visitor extends VoidBoxVisitor {
 				print( " " );
 				print( node.getLabel() );
 			}
-			printSemicolon();
+			if ( isCF() ) {
+				print( ";" );
+			} else {
+				printSemicolon();
+			}
 		}
 		printPostComments( node );
 	}
@@ -1268,7 +1278,11 @@ public class Visitor extends VoidBoxVisitor {
 				print( " " );
 				print( node.getLabel() );
 			}
-			printSemicolon();
+			if ( isCF() ) {
+				print( ";" );
+			} else {
+				printSemicolon();
+			}
 		}
 		printPostComments( node );
 	}
@@ -1500,9 +1514,7 @@ public class Visitor extends VoidBoxVisitor {
 					anno.getValue().accept( this );
 				}
 			}
-			if ( config.getSemicolons() ) {
-				propDoc.append( ";" );
-			}
+			propDoc.append( ";" );
 
 			if ( multiline ) {
 				popDoc();
