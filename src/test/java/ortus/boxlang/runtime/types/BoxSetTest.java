@@ -165,18 +165,31 @@ public class BoxSetTest {
 		assertThat( a.get( 2 ) ).isEqualTo( "z" );
 	}
 
-	@DisplayName( "SetCaster accepts arrays, lists, sets and dedupes" )
+	@DisplayName( "SetCaster strict accepts only Sets; loose accepts arrays/lists/Arrays" )
 	@Test
 	void testSetCaster() {
-		BoxSet fromArray = SetCaster.cast( new Object[] { 1, 2, 2, 3 } );
+		// Loose: arrays, lists, BoxLang Arrays all dedupe into a Set
+		BoxSet fromArray = SetCaster.castLoose( new Object[] { 1, 2, 2, 3 } );
 		assertThat( fromArray.size() ).isEqualTo( 3 );
 
-		BoxSet fromList = SetCaster.cast( List.of( "a", "b", "a" ) );
+		BoxSet fromList = SetCaster.castLoose( List.of( "a", "b", "a" ) );
 		assertThat( fromList.size() ).isEqualTo( 2 );
 
 		Array	a			= new Array( new Object[] { 1, 1, 2, 3 } );
-		BoxSet	fromBoxArr	= SetCaster.cast( a );
+		BoxSet	fromBoxArr	= SetCaster.castLoose( a );
 		assertThat( fromBoxArr.size() ).isEqualTo( 3 );
+
+		// Strict: arrays and lists are NOT sets — attempt fails.
+		assertThat( SetCaster.attempt( new Object[] { 1, 2 } ).wasSuccessful() ).isFalse();
+		assertThat( SetCaster.attempt( List.of( "a" ) ).wasSuccessful() ).isFalse();
+		// Strict accepts actual Sets and wraps (no copy) so mutations propagate
+		java.util.HashSet<Object> javaSet = new java.util.HashSet<>();
+		javaSet.add( "x" );
+		javaSet.add( "y" );
+		BoxSet wrapped = SetCaster.cast( javaSet );
+		assertThat( wrapped.size() ).isEqualTo( 2 );
+		wrapped.add( "z" );
+		assertThat( javaSet ).hasSize( 3 );
 
 		// Round-trip via attempt() on null
 		assertThat( SetCaster.attempt( null ).wasSuccessful() ).isFalse();

@@ -34,7 +34,7 @@ public class Increment implements IOperator {
 	 * @return The result
 	 */
 	public static Number invoke( Object object ) {
-		return Plus.invoke( object, 1 );
+		return ( Number ) Plus.invoke( object, 1 );
 	}
 
 	/**

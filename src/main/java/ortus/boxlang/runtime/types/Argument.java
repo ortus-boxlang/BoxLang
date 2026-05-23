@@ -67,8 +67,10 @@ public record Argument(
 	public static final String MODIFIABLE_ARRAY = "modifiableArray";
 	public static final String MODIFIABLE_STRUCT = "modifiableStruct";
 	public static final String MODIFIABLE_QUERY = "modifiableQuery";
+	public static final String MODIFIABLE_SET = "modifiableSet";
 	public static final String NUMERIC = "numeric";
 	public static final String QUERY = "query";
+	public static final String SET = "set";
 	public static final String STRING = "string";
 	public static final String STRUCT = "struct";
 	public static final String STRUCT_LOOSE = "structloose";

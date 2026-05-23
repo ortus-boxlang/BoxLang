@@ -149,7 +149,7 @@ public class BoxSet implements Set<Object>, IType, IReferenceable, IListenable<B
 	}
 
 	/**
-	 * Construct a set from an existing {@link Set} — the contents are copied,
+	 * Construct a set from an existing {@link Collection} — the contents are copied,
 	 * the original is not wrapped.
 	 *
 	 * @param type   The backing variant for the new set
@@ -160,6 +160,35 @@ public class BoxSet implements Set<Object>, IType, IReferenceable, IListenable<B
 		if ( source != null ) {
 			this.wrapped.addAll( source );
 		}
+	}
+
+	/**
+	 * Wrap an existing {@link java.util.Set} so that mutations propagate to the underlying
+	 * Java set. Used by {@link SetCaster} when handed a {@code java.util.Set} that is not
+	 * already a {@link BoxSet} — preserves the contract that {@code mySet.add(x)} on a
+	 * Java HashSet actually mutates the original set, just like {@code myList.add(x)}
+	 * on a Java ArrayList does for {@link Array}.
+	 *
+	 * @param wrapped The Java Set to wrap (NOT copied)
+	 *
+	 * @return A BoxSet whose wrapped storage IS {@code wrapped}
+	 */
+	public static BoxSet wrap( java.util.Set<Object> wrapped ) {
+		Type t = wrapped instanceof java.util.SortedSet ? Type.SORTED
+		    : wrapped instanceof java.util.LinkedHashSet ? Type.LINKED
+		        : Type.DEFAULT;
+		return new BoxSet( t, wrapped, true );
+	}
+
+	/**
+	 * Internal — direct-wrap constructor for use by {@link #wrap(java.util.Set)}.
+	 * No defensive copy; mutations on this BoxSet propagate to {@code wrapped}.
+	 */
+	@SuppressWarnings( "unchecked" )
+	BoxSet( Type type, java.util.Set<?> wrappedSet, boolean unused ) {
+		this.type			= type == null ? Type.DEFAULT : type;
+		this.isSynchronized	= false;
+		this.wrapped		= ( Set<Object> ) wrappedSet;
 	}
 
 	/**

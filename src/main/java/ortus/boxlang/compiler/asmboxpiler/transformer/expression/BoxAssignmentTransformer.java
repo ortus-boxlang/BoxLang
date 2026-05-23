@@ -811,7 +811,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 		    Type.getInternalName( getMethodCallTemplate( assigment ) ),
 		    "invoke",
-		    Type.getMethodDescriptor( Type.getType( assigment.getOp() == BoxAssignmentOperator.ConcatEqual ? String.class : Number.class ),
+		    Type.getMethodDescriptor( Type.getType( compoundAssignReturnType( assigment.getOp() ) ),
 		        Type.getType( IBoxContext.class ),
 		        Type.getType( Object.class ),
 		        Type.getType( Key.class ),
@@ -819,6 +819,15 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		    false ) );
 
 		return nodes;
+	}
+
+	private static Class<?> compoundAssignReturnType( BoxAssignmentOperator op ) {
+		return switch ( op ) {
+			case ConcatEqual -> String.class;
+			// Set-aware ops widened to Object (set algebra falls through Plus/Minus/etc.)
+			case PlusEqual, MinusEqual -> Object.class;
+			default -> Number.class;
+		};
 	}
 
 	private boolean hasVar( List<BoxAssignmentModifier> modifiers ) {

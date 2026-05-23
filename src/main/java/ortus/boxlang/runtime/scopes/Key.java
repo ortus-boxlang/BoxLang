@@ -997,6 +997,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		validExtensions						= Key.of( "validExtensions" );
 	public static final Key		validTemplateExtensions				= Key.of( "validTemplateExtensions" );
 	public static final Key		value								= Key.of( "value" );
+	public static final Key		values								= Key.of( "values" );
 	public static final Key		var									= Key.of( "var" );
 	public static final Key		variable							= Key.of( "variable" );
 	public static final Key		variableName						= Key.of( "variableName" );

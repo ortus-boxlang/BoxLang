@@ -83,10 +83,10 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 
 		List<AbstractInsnNode>	nodes		= switch ( operation.getOperator() ) {
 												case Plus -> // "Plus.invoke(${left},${right})";
-												    generateNumericBinaryMethodCallNodes( Plus.class, Number.class, operation, left, right );
+												    generateNumericBinaryMethodCallNodes( Plus.class, Number.class, Object.class, operation, left, right );
 
 												case Minus -> // "Minus.invoke(${left},${right})";
-												    generateNumericBinaryMethodCallNodes( Minus.class, Number.class, operation, left, right );
+												    generateNumericBinaryMethodCallNodes( Minus.class, Number.class, Object.class, operation, left, right );
 
 												case Range -> // "Range.invoke(${left},${right})";
 												    generateBinaryMethodCallNodes( Range.class, ortus.boxlang.runtime.types.Range.class, left, right );
@@ -245,13 +245,13 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 												    generateBinaryMethodCallNodesWithContext( transpiler, CastAs.class, Object.class, left, right );
 
 												case BitwiseAnd -> // "BitwiseAnd.invoke(${left},${right})";
-												    generateBinaryMethodCallNodes( BitwiseAnd.class, Number.class, left, right );
+												    generateBinaryMethodCallNodes( BitwiseAnd.class, Object.class, left, right );
 
 												case BitwiseOr -> // "BitwiseOr.invoke(${left},${right})";
 												    generateBinaryMethodCallNodes( BitwiseOr.class, Number.class, left, right );
 
 												case BitwiseXor -> // "BitwiseXor.invoke(${left},${right})";
-												    generateBinaryMethodCallNodes( BitwiseXor.class, Number.class, left, right );
+												    generateBinaryMethodCallNodes( BitwiseXor.class, Object.class, left, right );
 
 												case BitwiseSignedLeftShift -> // "BitwiseSignedLeftShift.invoke(${left},${right})";
 												    generateBinaryMethodCallNodes( BitwiseSignedLeftShift.class, Number.class, left, right );
@@ -299,6 +299,17 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 	 */
 	@NonNull private static List<AbstractInsnNode> generateNumericBinaryMethodCallNodes( Class<?> dispatcher, Class<?> returned,
 	    BoxBinaryOperation operation, List<AbstractInsnNode> left, List<AbstractInsnNode> right ) {
+		return generateNumericBinaryMethodCallNodes( dispatcher, returned, returned, operation, left, right );
+	}
+
+	/**
+	 * Like {@link #generateNumericBinaryMethodCallNodes(Class, Class, BoxBinaryOperation, List, List)} but
+	 * lets the slow-path Object/Object overload declare a wider return type than the fast-path
+	 * Number/Number overload — used by Plus/Minus/BitwiseAnd/BitwiseXor which now return
+	 * {@code Object} when either operand is a {@link ortus.boxlang.runtime.types.BoxSet}.
+	 */
+	@NonNull private static List<AbstractInsnNode> generateNumericBinaryMethodCallNodes( Class<?> dispatcher, Class<?> fastPathReturned,
+	    Class<?> slowPathReturned, BoxBinaryOperation operation, List<AbstractInsnNode> left, List<AbstractInsnNode> right ) {
 		if ( operation.getLeft().returnsNumber() && operation.getRight().returnsNumber() ) {
 			List<AbstractInsnNode> nodes = new ArrayList<>();
 			nodes.addAll( left );
@@ -308,11 +319,11 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( dispatcher ),
 			    "invoke",
-			    Type.getMethodDescriptor( Type.getType( returned ), Type.getType( Number.class ), Type.getType( Number.class ) ),
+			    Type.getMethodDescriptor( Type.getType( fastPathReturned ), Type.getType( Number.class ), Type.getType( Number.class ) ),
 			    false ) );
 			return nodes;
 		}
-		return generateBinaryMethodCallNodes( dispatcher, returned, left, right );
+		return generateBinaryMethodCallNodes( dispatcher, slowPathReturned, left, right );
 	}
 
 	@NonNull private static List<AbstractInsnNode> generateBinaryMethodCallNodesWithContext( Transpiler transpiler, Class<?> dispatcher, Class<?> returned,
