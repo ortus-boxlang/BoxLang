@@ -64,6 +64,38 @@ public class LiteralSpreadUtil {
 	}
 
 	/**
+	 * Build a {@link ortus.boxlang.runtime.types.BoxSet} from a literal of the form
+	 * {@code set{...}} / {@code set<variant>{...}}. The {@code variant} string is
+	 * resolved via {@link ortus.boxlang.runtime.types.BoxSet#parseType(String)} —
+	 * accepts {@code null}/{@code "default"}/{@code "hash"} for HashSet,
+	 * {@code "linked"}/{@code "ordered"} for LinkedHashSet, and
+	 * {@code "sorted"}/{@code "tree"} for TreeSet.
+	 *
+	 * <p>
+	 * Spread expressions inside the literal are expanded element-by-element via
+	 * {@link ortus.boxlang.runtime.dynamic.casters.ArrayCaster}, matching the array
+	 * literal spread semantics.
+	 */
+	public static ortus.boxlang.runtime.types.BoxSet set( String variant, Object... values ) {
+		values = normalizeVarargs( values );
+		ortus.boxlang.runtime.types.BoxSet result = new ortus.boxlang.runtime.types.BoxSet(
+		    ortus.boxlang.runtime.types.BoxSet.parseType( variant ) );
+		for ( Object value : values ) {
+			if ( value instanceof SpreadValue spreadValue ) {
+				CastAttempt<Array> casted = ArrayCaster.attempt( spreadValue.getValue() );
+				if ( !casted.wasSuccessful() ) {
+					throw new BoxRuntimeException(
+					    "Cannot spread value of type [" + describeType( spreadValue.getValue() ) + "] into a set literal." );
+				}
+				result.addAll( casted.get() );
+			} else {
+				result.add( value );
+			}
+		}
+		return result;
+	}
+
+	/**
 	 * Resolve ambiguous spread-only bracket literals such as <code>[ ...value ]</code>.
 	 * <p>
 	 * If all spread sources are structs, this returns an ordered struct.

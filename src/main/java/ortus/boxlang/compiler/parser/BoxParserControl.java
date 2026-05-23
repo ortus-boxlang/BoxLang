@@ -188,6 +188,43 @@ public abstract class BoxParserControl extends Parser {
 	}
 
 	/**
+	 * Soft-keyword gate for the {@code set{...}} and {@code set<variant>{...}} literal.
+	 *
+	 * <p>
+	 * Returns true when the next tokens are an IDENTIFIER whose text is "set"
+	 * (case-insensitive) followed by either {@code {} or {@code <ident>}, which means we
+	 * should parse a Set literal here rather than treating "set" as a plain identifier.
+	 *
+	 * <p>
+	 * Keeping "set" a soft keyword (not a reserved word) preserves backward
+	 * compatibility — variables and functions named {@code set} continue to work.
+	 */
+	protected boolean isSetLiteral( TokenStream input ) {
+		var first = input.LT( 1 );
+		if ( first.getType() != IDENTIFIER ) {
+			return false;
+		}
+		if ( !"set".equalsIgnoreCase( first.getText() ) ) {
+			return false;
+		}
+		int next = input.LT( 2 ).getType();
+		if ( next == LBRACE ) {
+			return true;
+		}
+		// set<variant>{ ... } — peek for "< IDENT > {"
+		if ( next == ortus.boxlang.parser.antlr.BoxGrammar.LTSIGN ) {
+			int t3 = input.LT( 3 ).getType();
+			if ( t3 == IDENTIFIER ) {
+				int t4 = input.LT( 4 ).getType();
+				if ( t4 == ortus.boxlang.parser.antlr.BoxGrammar.GTSIGN ) {
+					return input.LT( 5 ).getType() == LBRACE;
+				}
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * Provides a gate for the [throw expr] rule if the token after throw is `(` don't match since we'll assume it's the throw() BIF.
 	 * This DOES rule out code like `throw (new Exception())` but that's a rare case.
 	 *

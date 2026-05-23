@@ -30,6 +30,7 @@ import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringBinding;
 import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxSetLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
@@ -196,6 +197,10 @@ public abstract class VoidBoxVisitor {
 	}
 
 	public void visit( BoxArrayLiteral node ) {
+		visitChildren( node );
+	}
+
+	public void visit( BoxSetLiteral node ) {
 		visitChildren( node );
 	}
 

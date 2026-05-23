@@ -280,6 +280,67 @@ public class SetBIFsTest {
 		assertThat( arr.get( 2 ) ).isEqualTo( "b" );
 	}
 
+	@DisplayName( "Set literal: set{1,2,3} builds a default (hash) Set" )
+	@Test
+	public void testSetLiteralDefault() {
+		instance.executeSource( "result = set{ 1, 2, 2, 3 };", context );
+		BoxSet s = ( BoxSet ) variables.get( result );
+		assertThat( s.size() ).isEqualTo( 3 );
+		assertThat( s.getType() ).isEqualTo( BoxSet.Type.DEFAULT );
+	}
+
+	@DisplayName( "Set literal: set<linked>{...} preserves insertion order" )
+	@Test
+	public void testSetLiteralLinked() {
+		instance.executeSource(
+		    """
+		    s = set<linked>{ "c", "a", "b", "a" };
+		    result = s.toArray();
+		    """,
+		    context );
+		Array arr = ( Array ) variables.get( result );
+		assertThat( arr.size() ).isEqualTo( 3 );
+		assertThat( arr.get( 0 ) ).isEqualTo( "c" );
+		assertThat( arr.get( 1 ) ).isEqualTo( "a" );
+		assertThat( arr.get( 2 ) ).isEqualTo( "b" );
+	}
+
+	@DisplayName( "Set literal: set<sorted>{...} orders elements" )
+	@Test
+	public void testSetLiteralSorted() {
+		instance.executeSource(
+		    """
+		    s = set<sorted>{ 9, 1, 5, 3 };
+		    result = s.toArray();
+		    """,
+		    context );
+		Array arr = ( Array ) variables.get( result );
+		assertThat( arr.get( 0 ) ).isEqualTo( 1 );
+		assertThat( arr.get( 1 ) ).isEqualTo( 3 );
+		assertThat( arr.get( 2 ) ).isEqualTo( 5 );
+		assertThat( arr.get( 3 ) ).isEqualTo( 9 );
+	}
+
+	@DisplayName( "Empty set literal: set{}" )
+	@Test
+	public void testEmptySetLiteral() {
+		instance.executeSource( "result = set{};", context );
+		BoxSet s = ( BoxSet ) variables.get( result );
+		assertThat( s.size() ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "Variable named 'set' still works as identifier" )
+	@Test
+	public void testSetAsIdentifier() {
+		instance.executeSource(
+		    """
+		    set = "hello";
+		    result = set;
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "hello" );
+	}
+
 	@DisplayName( "JSON serialization renders a Set as a JSON array" )
 	@Test
 	public void testJsonSerialization() {

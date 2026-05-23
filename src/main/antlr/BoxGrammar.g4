@@ -149,6 +149,14 @@ arrayLiteralMembers: arrayLiteralMember (COMMA arrayLiteralMember)* COMMA?
 arrayLiteralMember: expression | ELLIPSIS expression
     ;
 
+// set{1, 2, 3} — default (hash) Set literal
+// set<linked>{1, 2, 3} — LinkedHashSet (preserves insertion order)
+// set<sorted>{1, 2, 3} — TreeSet (natural ordering)
+// The "set" token is matched as an IDENTIFIER and the rule is gated by the
+// isSetLiteral() predicate so it does not collide with variables named "set".
+setLiteral: setName=IDENTIFIER (LTSIGN setVariant=IDENTIFIER GTSIGN)? LBRACE arrayLiteralMembers? RBRACE
+    ;
+
 // foo=bar baz="bum"
 postAnnotation: postAnnotationName ((EQUALSIGN | COLON) attributeSimple)?
     ;
@@ -683,6 +691,7 @@ el2
 
     // el2 elements that have no operators so will be selected in order other than LL(*) solving
     | ICHAR el2 ICHAR       # exprOutString    // #el2# not within a string literal
+    | { isSetLiteral(_input) }? setLiteral # exprSetLiteral // set{1,2,3} or set<linked>{1,2,3}
     | literals              # exprLiterals     // "bar", [1,2,3], {foo:bar}
     | arrayLiteral          # exprArrayLiteral // [1,2,3]
     | COLONCOLON identifier # exprBIF          // Static BIF functional reference ::uCase
