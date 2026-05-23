@@ -24,35 +24,47 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.BoxSet;
+import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF( description = "Convert a collection (Array, list-delimited string, Set) into a Set, deduplicating." )
 @BoxMember( type = BoxLangType.ARRAY, name = "toSet" )
 @BoxMember( type = BoxLangType.MODIFIABLE_ARRAY, name = "toSet" )
 @BoxMember( type = BoxLangType.QUERY, name = "toSet" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "toSet" )
 public class ToSet extends BIF {
 
 	public ToSet() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, Argument.ANY, Key.value ),
-		    new Argument( false, Argument.STRING, Key.type, "default" )
+		    new Argument( false, Argument.STRING, Key.type, "default" ),
+		    new Argument( false, Argument.STRING, Key.delimiter, "," )
 		};
 	}
 
 	/**
 	 * @argument.value The value to convert to a Set. Accepts {@code Array}, {@code List},
-	 *                 {@code Set}, native arrays, {@code QueryColumn}, {@code XML}, or a bounded {@code Range}.
+	 *                 {@code Set}, list-delimited {@code String}, native arrays,
+	 *                 {@code QueryColumn}, {@code XML}, or a bounded {@code Range}.
 	 *
 	 * @argument.type The backing variant — "default" (hash), "linked" (ordered), or "sorted".
+	 *
+	 * @argument.delimiter When {@code value} is a String, the list delimiter to split on. Defaults to ",".
 	 *
 	 * @return A new {@link BoxSet}.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object		value	= arguments.get( Key.value );
-		BoxSet.Type	type	= BoxSet.parseType( arguments.getAsString( Key.type ) );
-		// Convert the source to a set of DEFAULT variant, then move into the requested variant
-		// if different (keeps dedup semantics consistent).
-		BoxSet		seed	= SetCaster.castLoose( value );
+		Object		value		= arguments.get( Key.value );
+		BoxSet.Type	type		= BoxSet.parseType( arguments.getAsString( Key.type ) );
+		String		delimiter	= arguments.getAsString( Key.delimiter );
+
+		BoxSet		seed;
+		if ( value instanceof String s ) {
+			// Honor the user-supplied delimiter for String -> Set (SetCaster defaults to ",").
+			seed = BoxSet.fromCollection( ListUtil.asList( s, delimiter ) );
+		} else {
+			seed = SetCaster.castLoose( value );
+		}
 		if ( seed.getType() == type ) {
 			return seed;
 		}

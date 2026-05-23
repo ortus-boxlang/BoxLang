@@ -341,6 +341,46 @@ public class SetBIFsTest {
 		assertThat( variables.get( result ) ).isEqualTo( "hello" );
 	}
 
+	@DisplayName( "String.toSet() splits a list-delimited string" )
+	@Test
+	public void testStringToSetDefault() {
+		instance.executeSource( "result = \"a,b,c,a\".toSet();", context );
+		assertThat( ( ( BoxSet ) variables.get( result ) ).size() ).isEqualTo( 3 );
+	}
+
+	@DisplayName( "String.toSet(delimiter) accepts a custom delimiter" )
+	@Test
+	public void testStringToSetCustomDelimiter() {
+		instance.executeSource( "result = \"a|b|c|b\".toSet( delimiter=\"|\", type=\"linked\" );", context );
+		BoxSet s = ( BoxSet ) variables.get( result );
+		assertThat( s.size() ).isEqualTo( 3 );
+		assertThat( s.getType() ).isEqualTo( BoxSet.Type.LINKED );
+	}
+
+	@DisplayName( "Struct.keyToSet() builds a Set of the keys" )
+	@Test
+	public void testStructKeyToSet() {
+		instance.executeSource(
+		    """
+		    s = { name: "Luis", age: 42, email: "x@y.z" }.keyToSet();
+		    result = s.size();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 3 );
+	}
+
+	@DisplayName( "Struct.valueToSet() dedupes values" )
+	@Test
+	public void testStructValueToSet() {
+		instance.executeSource(
+		    """
+		    s = { a: 1, b: 1, c: 2 }.valueToSet();
+		    result = s.size();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 2 );
+	}
+
 	@DisplayName( "JSON serialization renders a Set as a JSON array" )
 	@Test
 	public void testJsonSerialization() {

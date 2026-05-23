@@ -27,6 +27,7 @@ import ortus.boxlang.runtime.types.QueryColumn;
 import ortus.boxlang.runtime.types.Range;
 import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
+import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
@@ -156,6 +157,11 @@ public class SetCaster implements IBoxCaster {
 			}
 			case Collection<?> coll -> {
 				return BoxSet.fromCollection( ( Collection<Object> ) coll );
+			}
+			case String str -> {
+				// Comma-delimited list — matches CF's list semantics. Use ToSet (member of
+				// STRING_STRICT) or setNew(values="x|y", delimiter="|") for a custom delimiter.
+				return BoxSet.fromCollection( ListUtil.asList( str, "," ) );
 			}
 			case QueryColumn col -> {
 				return BoxSet.fromCollection( col.getColumnDataAsArray() );
