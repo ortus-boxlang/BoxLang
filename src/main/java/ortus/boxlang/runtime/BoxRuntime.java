@@ -1826,13 +1826,24 @@ public class BoxRuntime implements java.io.Closeable {
 	}
 
 	/**
-	 * Parse source string and print AST as JSON
+	 * Parse source string and print AST as JSON, defaulting to BoxScript source type.
 	 *
 	 * @param source A string of source to parse and print AST for
 	 *
 	 */
 	public void printSourceAST( String source ) {
-		ParsingResult result = RunnableLoader.getInstance().getBoxpiler().parseOrFail( source, BoxSourceType.BOXSCRIPT, false );
+		printSourceAST( source, BoxSourceType.BOXSCRIPT );
+	}
+
+	/**
+	 * Parse source string and print AST as JSON using the given source type.
+	 *
+	 * @param source     A string of source to parse and print AST for
+	 * @param sourceType The BoxSourceType of the source (BOXSCRIPT, BOXTEMPLATE, CFSCRIPT, CFTEMPLATE, etc.)
+	 *
+	 */
+	public void printSourceAST( String source, BoxSourceType sourceType ) {
+		ParsingResult result = RunnableLoader.getInstance().getBoxpiler().parseOrFail( source, sourceType, false );
 		System.out.println( result.getRoot().toJSON() );
 	}
 
