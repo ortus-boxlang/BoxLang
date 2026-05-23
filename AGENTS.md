@@ -194,7 +194,8 @@ BoxLang has a collection of domain-specific agent skills located in `.agents/ski
 - **Build:** Use Gradle (`./gradlew build`) to compile, test, and package. The project targets JDK 21.
 - **Test:** JUnit 5 is used for tests in `src/test/java/`. Run with `./gradlew test`.
 - **Assertions:** Uses Google Truth for assertions in tests.
-- **Format:** ALWAYS run `./gradlew spotlessApply` before every commit to auto-format all Java code. Commits that skip this step will fail CI.
+- **Testing Requirement:** All new features and bug fixes MUST include corresponding tests (JUnit 5 for Java, TestBox for BoxLang).
+- **Format:** ALWAYS run `./gradlew spotlessApply` before every commit to auto-format all Java code. Commits that skip this step will fail CI. This is required whenever ANY Java file is changed.
 - **Run:** Use the CLI binary (`boxlang`) or run `BoxRunner` directly for scripts/classes.
 - **Debug:** The BoxLang VSCode extension provides debugging, code navigation, and language tooling.
 
