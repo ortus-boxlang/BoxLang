@@ -286,6 +286,14 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	}
 
 	/**
+	 * Convenience method for getting cast as BoxSet
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 */
+	default BoxSet getAsSet( Key key ) {
+		return ( BoxSet ) DynamicObject.unWrap( get( key ) );
+	}
+
+	/**
 	 * Convenience method for getting cast as Struct
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
 	 */

@@ -22,6 +22,7 @@ import java.util.List;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.BoxSet;
 import ortus.boxlang.runtime.types.QueryColumn;
 import ortus.boxlang.runtime.types.Range;
 import ortus.boxlang.runtime.types.XML;
@@ -98,6 +99,9 @@ public class ArrayCaster implements IBoxCaster {
 		}
 
 		switch ( object ) {
+			case BoxSet boxSet -> {
+				return boxSet.toArrayValue();
+			}
 			case List<?> list -> {
 				return Array.fromList( ( List<Object> ) object );
 			}

@@ -48,8 +48,10 @@ public enum BoxLangType {
 	ASSIGNABLE_ARRAY( Key.assignableArray ),
 	MODIFIABLE_STRUCT( Key.modifiableStruct ),
 	MODIFIABLE_QUERY( Key.modifiableQuery ),
+	MODIFIABLE_SET( Key.modifiableSet ),
 	NUMERIC( Key._NUMERIC ),
 	QUERY( Key._QUERY ),
+	SET( Key._SET ),
 	STRING( Key._STRING ),
 	STRING_STRICT( Key.string_strict ),
 	STRUCT( Key._STRUCT ),
@@ -130,6 +132,7 @@ public enum BoxLangType {
 			case MODIFIABLE_ARRAY, ASSIGNABLE_ARRAY -> Key._ARRAY;
 			case MODIFIABLE_STRUCT -> Key._STRUCT;
 			case MODIFIABLE_QUERY -> Key._QUERY;
+			case MODIFIABLE_SET -> Key._SET;
 			default -> this.key;
 		};
 	}
