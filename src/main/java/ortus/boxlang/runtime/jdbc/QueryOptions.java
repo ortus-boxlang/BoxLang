@@ -290,8 +290,8 @@ public class QueryOptions {
 		IStruct result = new Struct( this.options );
 		// Overwrite any options that were set in the constructor, as we want to return the actual values used
 		result.put( "fetchSize", this.fetchSize );
-		result.put( "setQueryTimeout", this.queryTimeout );
-		result.put( "setMaxRows", this.maxRows );
+		result.put( "queryTimeout", this.queryTimeout );
+		result.put( "maxRows", this.maxRows );
 		result.put( "dbtype", this.dbtype );
 		return result;
 	}
