@@ -22,6 +22,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
@@ -178,7 +179,7 @@ public class QueryOptions {
 		this.resultVariableName		= options.getAsString( Key.result );
 		this.username				= options.getAsString( Key.username );
 		this.password				= options.getAsString( Key.password );
-		this.queryTimeout			= options.getAsInteger( Key.timeout );
+		this.queryTimeout			= IntegerCaster.cast( options.get( Key.timeout ), false );
 		this.datasource				= options.get( Key.datasource );
 		this.fetchSize				= ( Integer ) options.getOrDefault( Key.fetchSize, 0 );
 
@@ -189,9 +190,8 @@ public class QueryOptions {
 		this.cacheLastAccessTimeout	= ( Duration ) options.getOrDefault( Key.cacheLastAccessTimeout, null );
 		this.cacheProvider			= ( String ) options.getOrDefault( Key.cacheProvider, cacheService.getDefaultCache().getName().toString() );
 
-		Integer intMaxRows = options.getAsInteger( Key.maxRows );
-		this.maxRows	= Long.valueOf( intMaxRows != null ? intMaxRows : -1 );
-		this.dbtype		= options.getAsString( Key.dbtype );
+		this.maxRows				= Long.valueOf( IntegerCaster.attempt( options.get( Key.maxRows ), false ).orElse( -1 ) );
+		this.dbtype					= options.getAsString( Key.dbtype );
 
 		determineReturnType();
 
