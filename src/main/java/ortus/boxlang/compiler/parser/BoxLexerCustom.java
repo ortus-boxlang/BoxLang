@@ -441,7 +441,8 @@ public class BoxLexerCustom extends BoxLexer {
 						// foo = function() {}
 						// foo( value, function(){} )
 						isIdentifier = false;
-					} else if ( nextTokenType == REQUIRED && !lastTokenWas( DOT ) && getParenCount() > 0 && nextNonWhiteSpaceIsAnyChar() ) {
+					} else if ( nextTokenType == REQUIRED && !lastTokenWas( DOT ) && getParenCount() > 0
+					    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '_' ) || nextNonWhiteSpaceCharIs( '$' ) ) ) {
 						// function foo( required string bar )
 						isIdentifier = false;
 					} else if ( ( nextTokenType == VAR || nextTokenType == FINAL || nextTokenType == STATIC ) && !lastTokenWas( DOT )
