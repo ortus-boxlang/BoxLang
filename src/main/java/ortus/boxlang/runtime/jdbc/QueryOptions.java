@@ -181,7 +181,7 @@ public class QueryOptions {
 		this.password				= options.getAsString( Key.password );
 		this.queryTimeout			= IntegerCaster.cast( options.get( Key.timeout ), false );
 		this.datasource				= options.get( Key.datasource );
-		this.fetchSize				= ( Integer ) options.getOrDefault( Key.fetchSize, 0 );
+		this.fetchSize				= IntegerCaster.attempt( options.get( Key.fetchSize ), false ).orElse( 0 );
 
 		// Caching options
 		this.cache					= BooleanCaster.attempt( options.get( Key.cache ) ).getOrDefault( false );
