@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
+import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
@@ -80,6 +81,8 @@ public class Range<T> implements IType, IReferenceable, Iterable<T>, Serializabl
 	private final boolean					toExclusive;
 	private final Class<?>					elementType;
 	private final ElementCategory			elementCategory;
+	private final String					elementTypeName;
+	private final boolean					strictTypeCheck;
 	private final Comparator<T>				comparator;
 	private final BiFunction<T, Number, T>	stepper;
 	private final int						hashCode;
@@ -127,6 +130,28 @@ public class Range<T> implements IType, IReferenceable, Iterable<T>, Serializabl
 	 */
 	public Range( T from, T to, Number step, String unit, boolean fromExclusive, boolean toExclusive, Comparator<T> comparator,
 	    BiFunction<T, Number, T> stepper ) {
+		this( from, to, step, unit, fromExclusive, toExclusive, comparator, stepper, null, null, null, false );
+	}
+
+	/**
+	 * Private full constructor with type override fields.
+	 * Used internally by copy-on-write methods like {@link #type(String)} and {@link #type(Class)}.
+	 *
+	 * @param from            the start of the range (nullable)
+	 * @param to              the end of the range (nullable)
+	 * @param step            the step amount (defaults to 1 if null)
+	 * @param unit            the unit name (nullable)
+	 * @param fromExclusive   whether the start bound is exclusive
+	 * @param toExclusive     whether the end bound is exclusive
+	 * @param comparator      the comparator for ordering/contains checks (required)
+	 * @param stepper         the function to advance values (nullable)
+	 * @param elementType     explicit element type override (nullable — inferred from bounds if null)
+	 * @param elementCategory explicit category override (nullable — computed from elementType if null)
+	 * @param elementTypeName string type name for GenericCaster checks (nullable)
+	 * @param strictTypeCheck true when type(Class) is used — only allows exact instanceof matches
+	 */
+	private Range( T from, T to, Number step, String unit, boolean fromExclusive, boolean toExclusive, Comparator<T> comparator,
+	    BiFunction<T, Number, T> stepper, Class<?> elementType, ElementCategory elementCategory, String elementTypeName, boolean strictTypeCheck ) {
 		Objects.requireNonNull( comparator, "Range comparator cannot be null" );
 
 		this.from				= from;
@@ -137,10 +162,20 @@ public class Range<T> implements IType, IReferenceable, Iterable<T>, Serializabl
 		this.step				= step != null ? step : ( from != null && to != null && comparator.compare( from, to ) > 0 ? -1 : 1 );
 		this.unit				= unit;
 		this.ascending			= this.step.doubleValue() > 0;
-		this.elementType		= from != null ? from.getClass() : ( to != null ? to.getClass() : Object.class );
-		this.elementCategory	= categorize( this.elementType );
-		this.stepper			= stepper;
-		this.hashCode			= computeHashCode();
+		this.elementTypeName	= elementTypeName;
+		this.strictTypeCheck	= strictTypeCheck;
+
+		// Use explicit type if provided, otherwise infer from bounds
+		if ( elementType != null ) {
+			this.elementType		= elementType;
+			this.elementCategory	= elementCategory != null ? elementCategory : categorize( elementType );
+		} else {
+			this.elementType		= from != null ? from.getClass() : ( to != null ? to.getClass() : Object.class );
+			this.elementCategory	= categorize( this.elementType );
+		}
+
+		this.stepper	= stepper;
+		this.hashCode	= computeHashCode();
 
 		// Pre-compute sorted bounds for fast contains checks
 		if ( from != null && to != null ) {
@@ -395,6 +430,50 @@ public class Range<T> implements IType, IReferenceable, Iterable<T>, Serializabl
 		return step( computedStep );
 	}
 
+	/**
+	 * Return a new range with a type constraint for contains() checks.
+	 * Only valid on fully unbounded ranges ({@code ..}) since bounded ranges
+	 * already have a type inferred from their bounds.
+	 * <p>
+	 * The type name is used with BoxLang's {@link GenericCaster} which handles all
+	 * known BL types (string, numeric, integer, boolean, date, etc.) with their
+	 * standard coercion rules, and falls back to the {@code instanceof} operator
+	 * for custom Java or BoxLang class names.
+	 *
+	 * @param typeName the type name to constrain this range to
+	 *
+	 * @return a new Range with the type constraint applied
+	 */
+	public Range<T> type( String typeName ) {
+		Objects.requireNonNull( typeName, "Type name cannot be null" );
+		if ( !isUnbounded() ) {
+			throw new BoxRuntimeException( "Cannot set type on a bounded range. The type is already inferred from the range bounds." );
+		}
+		return new Range<>( this.from, this.to, this.step, this.unit, this.fromExclusive, this.toExclusive,
+		    this.comparator, this.stepper, null, null, typeName, false );
+	}
+
+	/**
+	 * Return a new range with a type constraint using a Java Class reference directly.
+	 * Only valid on fully unbounded ranges ({@code ..}) since bounded ranges
+	 * already have a type inferred from their bounds.
+	 * <p>
+	 * When a specific Java class is provided, only exact {@code isInstance()} checks are
+	 * performed — no loose coercion is applied. This is the strictest form of type checking.
+	 *
+	 * @param typeClass the Java Class to constrain this range to
+	 *
+	 * @return a new Range with the type constraint applied
+	 */
+	public Range<T> type( Class<?> typeClass ) {
+		Objects.requireNonNull( typeClass, "Type class cannot be null" );
+		if ( !isUnbounded() ) {
+			throw new BoxRuntimeException( "Cannot set type on a bounded range. The type is already inferred from the range bounds." );
+		}
+		return new Range<>( this.from, this.to, this.step, this.unit, this.fromExclusive, this.toExclusive,
+		    this.comparator, this.stepper, typeClass, categorize( typeClass ), null, true );
+	}
+
 	// ======================== Contains ========================
 
 	/**
@@ -416,15 +495,31 @@ public class Range<T> implements IType, IReferenceable, Iterable<T>, Serializabl
 			return containsRange( inner );
 		}
 
-		// Unbounded range contains everything non-null
-		if ( isUnbounded() ) {
+		// Unbounded range with no type constraint contains everything non-null
+		if ( isUnbounded() && this.elementType == Object.class && this.elementTypeName == null ) {
 			return true;
+		}
+
+		// String type name — use GenericCaster which handles all BL type coercion
+		// and falls back to instanceof for custom class names
+		if ( this.elementTypeName != null ) {
+			return GenericCaster.attempt( null, value, this.elementTypeName, false ).isPresent();
+		}
+
+		// Strict type check (type(Class<?>)) — only exact instanceof, no coercion
+		if ( this.strictTypeCheck ) {
+			return this.elementType.isInstance( value );
 		}
 
 		// Attempt to coerce the value to the range's type
 		T coerced = coerceValue( value );
 		if ( coerced == null ) {
 			return false;
+		}
+
+		// Unbounded typed range — coercion succeeded so the value matches the type
+		if ( isUnbounded() ) {
+			return true;
 		}
 
 		// If this is a stepped range (step > 1 or has a unit) and is iterable,
@@ -636,6 +731,124 @@ public class Range<T> implements IType, IReferenceable, Iterable<T>, Serializabl
 		} else {
 			return ( this.high != null ) ? this.toExclusive : false;
 		}
+	}
+
+	// ======================== Clamp ========================
+
+	/**
+	 * Clamp a value to this range's bounds.
+	 * If the value is below the low bound, return the low bound.
+	 * If the value is above the high bound, return the high bound.
+	 * If the value is within bounds, return it unchanged.
+	 * <p>
+	 * For fully unbounded ranges, the value is type-checked/coerced and returned as-is
+	 * since there are no bounds to snap to.
+	 *
+	 * @param value the value to clamp
+	 *
+	 * @return the clamped value snapped to the nearest boundary if out of bounds
+	 */
+	@SuppressWarnings( "unchecked" )
+	public T clamp( Object value ) {
+		if ( value == null ) {
+			throw new BoxRuntimeException( "Cannot clamp a null value." );
+		}
+
+		// String type name — validate via GenericCaster (same as contains())
+		if ( this.elementTypeName != null ) {
+			CastAttempt<Object> attempt = GenericCaster.attempt( null, value, this.elementTypeName, false );
+			if ( !attempt.isPresent() ) {
+				throw new BoxRuntimeException(
+				    String.format( "Cannot clamp value [%s] — incompatible with range type [%s].",
+				        value, this.elementTypeName )
+				);
+			}
+			// Unbounded typed range — return the cast value
+			return ( T ) attempt.get();
+		}
+
+		// Strict type check (type(Class<?>)) — only exact instanceof
+		if ( this.strictTypeCheck && !this.elementType.isInstance( value ) ) {
+			throw new BoxRuntimeException(
+			    String.format( "Cannot clamp value [%s] — incompatible with range type [%s].",
+			        value, this.elementType.getSimpleName() )
+			);
+		}
+
+		T coerced = coerceValue( value );
+		if ( coerced == null ) {
+			throw new BoxRuntimeException(
+			    String.format( "Cannot clamp value [%s] — incompatible with range type [%s].",
+			        value, this.elementType.getSimpleName() )
+			);
+		}
+
+		// Fully unbounded — no bounds to snap to, just return the coerced value
+		if ( isUnbounded() ) {
+			return coerced;
+		}
+
+		// Snap to low bound if below
+		if ( this.low != null ) {
+			int cmp = this.comparator.compare( coerced, this.low );
+			if ( cmp < 0 ) {
+				return this.low;
+			}
+		}
+
+		// Snap to high bound if above
+		if ( this.high != null ) {
+			int cmp = this.comparator.compare( coerced, this.high );
+			if ( cmp > 0 ) {
+				return this.high;
+			}
+		}
+
+		return coerced;
+	}
+
+	// ======================== Position Checks ========================
+
+	/**
+	 * Check if a value falls before (below) this range's low bound.
+	 * Returns false for unbounded ranges with no low bound.
+	 *
+	 * @param value the value to check
+	 *
+	 * @return true if the value is before the range
+	 */
+	@SuppressWarnings( "unchecked" )
+	public boolean isValueBefore( Object value ) {
+		if ( value == null || this.low == null ) {
+			return false;
+		}
+		T coerced = coerceValue( value );
+		if ( coerced == null ) {
+			return false;
+		}
+		int cmp = this.comparator.compare( coerced, this.low );
+		return getLowExclusive() ? cmp <= 0 : cmp < 0;
+	}
+
+	/**
+	 * Check if a value falls after (above) this range's high bound.
+	 * Returns false for unbounded ranges with no high bound.
+	 *
+	 * @param value the value to check
+	 *
+	 * @return true if the value is after the range
+	 */
+	@SuppressWarnings( "unchecked" )
+	public boolean isValueAfter( Object value ) {
+		if ( value == null || this.high == null ) {
+			return false;
+		}
+		T coerced = coerceValue( value );
+		if ( coerced == null ) {
+			return false;
+		}
+		int cmp = this.comparator.compare( coerced, this.high );
+		return getHighExclusive() ? cmp >= 0 : cmp > 0;
 	}
 
 	/**
