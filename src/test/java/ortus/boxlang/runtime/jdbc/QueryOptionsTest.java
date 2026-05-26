@@ -65,4 +65,24 @@ public class QueryOptionsTest {
 		assertThat( options4.cache ).isFalse();
 	}
 
+	@DisplayName( "Test string property casters" )
+	@Test
+	public void testStringCasting() {
+		Struct optionsStruct = new Struct();
+		optionsStruct.put( Key.password, 12345 );
+		optionsStruct.put( Key.dbtype, 50.5 );
+		optionsStruct.put( Key.username, true );
+		optionsStruct.put( Key.result, 999 );
+		optionsStruct.put( Key.cacheKey, 1000 );
+		optionsStruct.put( Key.returnType, "array" );
+
+		QueryOptions options = new QueryOptions( optionsStruct );
+
+		assertThat( options.password ).isEqualTo( "12345" );
+		assertThat( options.dbtype ).isEqualTo( "50.5" );
+		assertThat( options.username ).isEqualTo( "true" );
+		assertThat( options.resultVariableName ).isEqualTo( "999" );
+		assertThat( options.cacheKey ).isEqualTo( "1000" );
+	}
+
 }
