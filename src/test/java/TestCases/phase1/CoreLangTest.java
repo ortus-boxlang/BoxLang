@@ -1687,6 +1687,38 @@ public class CoreLangTest {
 	}
 
 	@Test
+	public void testRequiredUntypedUnderscoreFunctionParameter() {
+
+		instance.executeSource(
+		    """
+		    function foo( required boolean a, required _b ) {
+		    	return _b;
+		    }
+		    result = foo( a=true, _b=42 );
+		    	  """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( 42 );
+
+	}
+
+	@Test
+	public void testRequiredUntypedUnderscoreFunctionParameterCF() {
+
+		instance.executeSource(
+		    """
+		    function foo( required boolean a, required _b ) {
+		    	return _b;
+		    }
+		    result = foo( a=true, _b=42 );
+		    	  """,
+		    context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.get( result ) ).isEqualTo( 42 );
+
+	}
+
+	@Test
 	public void testKeywordAfterColonInCase() {
 		instance.executeSource(
 		    """
