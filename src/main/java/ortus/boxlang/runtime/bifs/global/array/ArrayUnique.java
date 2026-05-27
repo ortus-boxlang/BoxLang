@@ -51,8 +51,6 @@ public class ArrayUnique extends BIF {
 	 *
 	 * @argument.array The array to remove duplicate entries from
 	 *
-	 * @param context   The context in which the BIF is being invoked.
-	 * @param arguments Argument scope for the BIF.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

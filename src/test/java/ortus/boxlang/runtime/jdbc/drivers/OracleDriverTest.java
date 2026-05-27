@@ -768,4 +768,23 @@ public class OracleDriverTest extends AbstractDriverTest {
 
 	}
 
+	@DisplayName( "It can call stored proc with IN param and OUT refcursor using cfprocparam with dbvarname" )
+	@Test
+	public void testCallStoredProcInWithOutCursorDbVarName() {
+		instance.executeSource(
+		    """
+		    <cfstoredproc procedure="testProcedureCursorAtEnd" datasource="OracleDatasource" debug="true">
+		        <cfprocparam type="In" cfsqltype="CF_SQL_CHAR" dbvarname=":in1" value="1">
+		        <cfprocparam type="Out" cfsqltype="CF_SQL_CHAR" dbvarname=":cursor1" value="1">
+		        <cfprocresult name="resultSet1">
+		    </cfstoredproc>
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.get( "resultSet1" ) ).isInstanceOf( Query.class );
+		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
+		assertThat( rs1.size() ).isEqualTo( 1 );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsNumber( Key.of( "numVal" ) ).doubleValue() ).isEqualTo( 1D );
+	}
+
 }

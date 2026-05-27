@@ -17,11 +17,17 @@
  */
 package ortus.boxlang.runtime;
 
+import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import ortus.boxlang.compiler.parser.BoxSourceType;
 
 class BoxRunnerTest {
 
@@ -57,6 +63,58 @@ class BoxRunnerTest {
 		String[]	args			= { testTemplate, "hola", "luis" };
 
 		BoxRunner.main( args );
+	}
+
+	@DisplayName( "printSourceAST defaults to BoxScript for inline code" )
+	@Test
+	public void testPrintASTDefaultsToBoxScript() {
+		BoxRuntime				runtime		= BoxRuntime.getInstance( true );
+		PrintStream				original	= System.out;
+		ByteArrayOutputStream	capture		= new ByteArrayOutputStream();
+		System.setOut( new PrintStream( capture ) );
+		try {
+			assertDoesNotThrow( () -> runtime.printSourceAST( "x = 1 + 2" ) );
+		} finally {
+			System.setOut( original );
+		}
+		String output = capture.toString();
+		assertThat( output ).contains( "BoxScript" );
+	}
+
+	@DisplayName( "printSourceAST parses a .bxm template correctly" )
+	@Test
+	public void testPrintASTForBxmTemplate() {
+		BoxRuntime				runtime		= BoxRuntime.getInstance( true );
+		String					source		= "<bx:output>Hello World</bx:output>";
+		PrintStream				original	= System.out;
+		ByteArrayOutputStream	capture		= new ByteArrayOutputStream();
+		System.setOut( new PrintStream( capture ) );
+		try {
+			assertDoesNotThrow( () -> runtime.printSourceAST( source, BoxSourceType.BOXTEMPLATE ) );
+		} finally {
+			System.setOut( original );
+		}
+		String output = capture.toString();
+		assertThat( output ).isNotEmpty();
+		assertThat( output ).contains( "BoxTemplate" );
+	}
+
+	@DisplayName( "printSourceAST parses a .cfm template correctly" )
+	@Test
+	public void testPrintASTForCfmTemplate() {
+		BoxRuntime				runtime		= BoxRuntime.getInstance( true );
+		String					source		= "<cfoutput>Hello World</cfoutput>";
+		PrintStream				original	= System.out;
+		ByteArrayOutputStream	capture		= new ByteArrayOutputStream();
+		System.setOut( new PrintStream( capture ) );
+		try {
+			assertDoesNotThrow( () -> runtime.printSourceAST( source, BoxSourceType.CFTEMPLATE ) );
+		} finally {
+			System.setOut( original );
+		}
+		String output = capture.toString();
+		assertThat( output ).isNotEmpty();
+		assertThat( output ).contains( "BoxTemplate" );
 	}
 
 }

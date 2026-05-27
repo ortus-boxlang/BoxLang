@@ -18,6 +18,7 @@
 package TestCases.phase1;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -32,6 +33,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class RangeOperatorTest {
 
@@ -1926,11 +1928,13 @@ public class RangeOperatorTest {
 		            SYMBOLS = ["M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"];
 		        }
 
+		        // Construct from integer or Roman numeral string
 		        function init( input ) {
 		            variables.value = isNumeric( input ) ? int( input ) : static.fromRoman( input );
 		            return this;
 		        }
 
+		        // Parse a Roman numeral string into its integer value
 		        static function fromRoman( s ) {
 		            s = uCase( s );
 		            return static.VALUES.reduce( ( acc, val, idx ) => {
@@ -1943,6 +1947,7 @@ public class RangeOperatorTest {
 		            }, { result: 0, pos: 1 } ).result;
 		        }
 
+		        // Convert an integer to its Roman numeral string representation
 		        static function toRoman( num ) {
 		            return static.VALUES.reduce( ( result, val, idx ) => {
 		                var count = int( num / val );
@@ -1951,13 +1956,17 @@ public class RangeOperatorTest {
 		            }, "" );
 		        }
 
+		        // Display as Roman numeral string
 		        function toString() { return static.toRoman( variables.value ); }
 
+		        // Return a new Roman advanced by step positions
 		        function rangeAdvance( step ) { return new Roman( variables.value + step ); }
+		        // Compare by underlying integer value
 		        function rangeCompare( other ) { return variables.value - other.getValue(); }
 
+		        // Convert integers or Roman numeral strings to Roman instances
 		        function rangeCoerce( val ) {
-		            if( isInstanceOf( val, "Roman" ) ) return val;
+		            if( val instanceof "Roman" ) return val;
 		            if( isNumeric( val ) ) return new Roman( val );
 		            if( isSimpleValue( val ) ) return new Roman( val );
 		            return null;
@@ -2033,11 +2042,13 @@ public class RangeOperatorTest {
 		            SHARP = "##";
 		        }
 
+		        // Construct from MIDI number or note name string (e.g. "C4")
 		        function init( input ) {
 		            variables.midi = isNumeric( input ) ? int( input ) : static.parseName( input );
 		            return this;
 		        }
 
+		        // Parse a note name like "C#4" into its MIDI number
 		        static function parseName( name ) {
 		            name = uCase( name );
 		            var hasSharp = name.len() > 2 && mid( name, 2, 1 ) == static.SHARP;
@@ -2047,20 +2058,25 @@ public class RangeOperatorTest {
 		            return ( octave + 1 ) * 12 + idx - 1;
 		        }
 
+		        // Display as note name with octave (e.g. "C4")
 		        function toString() {
 		            return static.NOTES[ variables.midi mod 12 + 1 ] & ( int( variables.midi / 12 ) - 1 );
 		        }
 
+		        // Return a new Note advanced by step semitones
 		        function rangeAdvance( step ) { return new Note( variables.midi + step ); }
+		        // Compare by MIDI number
 		        function rangeCompare( other ) { return variables.midi - other.getMidi(); }
 
+		        // Convert MIDI numbers or note name strings to Note instances
 		        function rangeCoerce( val ) {
-		            if( isInstanceOf( val, "Note" ) ) return val;
+		            if( val instanceof "Note" ) return val;
 		            if( isNumeric( val ) ) return new Note( val );
 		            if( isSimpleValue( val ) ) return new Note( val );
 		            return null;
 		        }
 
+		        // Convert named units to a fixed semitone count
 		        function rangeStepFromUnit( amount, unit ) {
 		            switch( unit ) {
 		                case "chromatic": return amount;
@@ -2071,6 +2087,7 @@ public class RangeOperatorTest {
 		            throw( message: "Unsupported unit: " & unit );
 		        }
 
+		        // Return a closure for non-uniform scale stepping (major/minor)
 		        function rangeUnitStepper( unit ) {
 		            if( unit != "major" && unit != "minor" ) return null;
 		            var root = variables.midi;
@@ -2272,11 +2289,13 @@ public class RangeOperatorTest {
 		            SHARP = "##";
 		        }
 
+		        // Construct from MIDI number or note name string (e.g. "C4")
 		        function init( input ) {
 		            variables.midi = isNumeric( input ) ? int( input ) : static.parseName( input );
 		            return this;
 		        }
 
+		        // Parse a note name like "C#4" into its MIDI number
 		        static function parseName( name ) {
 		            name = uCase( name );
 		            var hasSharp = name.len() > 2 && mid( name, 2, 1 ) == static.SHARP;
@@ -2286,20 +2305,25 @@ public class RangeOperatorTest {
 		            return ( octave + 1 ) * 12 + idx - 1;
 		        }
 
+		        // Display as note name with octave (e.g. "C4")
 		        function toString() {
 		            return static.NOTES[ variables.midi mod 12 + 1 ] & ( int( variables.midi / 12 ) - 1 );
 		        }
 
+		        // Return a new Note advanced by step semitones
 		        function rangeAdvance( step ) { return new Note( variables.midi + step ); }
+		        // Compare by MIDI number
 		        function rangeCompare( other ) { return variables.midi - other.getMidi(); }
 
+		        // Convert MIDI numbers or note name strings to Note instances
 		        function rangeCoerce( val ) {
-		            if( isInstanceOf( val, "Note" ) ) return val;
+		            if( val instanceof "Note" ) return val;
 		            if( isNumeric( val ) ) return new Note( val );
 		            if( isSimpleValue( val ) ) return new Note( val );
 		            return null;
 		        }
 
+		        // Convert named units to a fixed semitone count
 		        function rangeStepFromUnit( amount, unit ) {
 		            switch( unit ) {
 		                case "chromatic": return amount;
@@ -2310,6 +2334,7 @@ public class RangeOperatorTest {
 		            throw( message: "Unsupported unit: " & unit );
 		        }
 
+		        // Return a closure for non-uniform scale stepping (major/minor)
 		        function rangeUnitStepper( unit ) {
 		            if( unit != "major" && unit != "minor" ) return null;
 		            var root = variables.midi;
@@ -2381,6 +2406,7 @@ public class RangeOperatorTest {
 		        property name="prev" type="integer" default=0;
 		        property name="current" type="integer" default=1;
 
+		        // Advance by N steps in the Fibonacci sequence
 		        function rangeAdvance( step ) {
 		            var result = this;
 		            for( var i = 1; i <= step; i++ ) {
@@ -2389,10 +2415,12 @@ public class RangeOperatorTest {
 		            return result;
 		        }
 
+		        // Compare by current value (defines ordering)
 		        function rangeCompare( other ) { return variables.current - other.getCurrent(); }
 
+		        // Convert integers to Fib instances for contains() checks
 		        function rangeCoerce( val ) {
-		            if( isInstanceOf( val, "Fib" ) ) return val;
+		            if( val instanceof "Fib" ) return val;
 		            if( isNumeric( val ) ) return new Fib( current: int(val) );
 		            return null;
 		        }
@@ -2431,5 +2459,311 @@ public class RangeOperatorTest {
 
 		// Under 100: 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89
 		assertThat( variables.get( Key.of( "under100" ) ) ).isEqualTo( Array.of( 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89 ) );
+	}
+
+	// ======================== Typed Unbounded Ranges (.type()) ========================
+
+	@DisplayName( "Typed unbounded range: .type() constrains contains() by type with coercion" )
+	@Test
+	public void testTypedUnboundedRange() {
+		instance.executeSource(
+		    """
+		    // String type — numeric 5 can be cast to string
+		    stringRange = (..).type( "string" );
+		    stringContains5 = stringRange.contains( 5 );         // true — 5 casts to "5"
+		    stringContainsFoo = stringRange.contains( "foo" );   // true — already a string
+
+		    // Numeric type — string "5" can be cast to number
+		    numericRange = (..).type( "numeric" );
+		    numericContains5str = numericRange.contains( "5" );  // true — "5" casts to 5
+		    numericContainsFoo = numericRange.contains( "foo" ); // false — "foo" can't be a number
+		    numericContains42 = numericRange.contains( 42 );     // true — already numeric
+
+		    // Number alias works the same
+		    numberRange = (..).type( "number" );
+		    numberContains5str = numberRange.contains( "5" );    // true
+		    numberContainsFoo = numberRange.contains( "foo" );   // false
+
+		    // Integer alias
+		    intRange = (..).type( "integer" );
+		    intContains5str = intRange.contains( "5" );          // true
+		    intContainsFoo = intRange.contains( "foo" );         // false
+		    intContains5point5 = intRange.contains( 5.5 );       // false — not a whole integer
+
+		    // Untyped unbounded range still accepts everything
+		    untypedRange = (..);
+		    untypedContainsFoo = untypedRange.contains( "foo" ); // true
+		    untypedContains5 = untypedRange.contains( 5 );       // true
+		    """,
+		    context );
+
+		// String type
+		assertThat( variables.get( Key.of( "stringContains5" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "stringContainsFoo" ) ) ).isEqualTo( true );
+
+		// Numeric type
+		assertThat( variables.get( Key.of( "numericContains5str" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "numericContainsFoo" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "numericContains42" ) ) ).isEqualTo( true );
+
+		// Number alias
+		assertThat( variables.get( Key.of( "numberContains5str" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "numberContainsFoo" ) ) ).isEqualTo( false );
+
+		// Integer alias
+		assertThat( variables.get( Key.of( "intContains5str" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "intContainsFoo" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "intContains5point5" ) ) ).isEqualTo( false );
+
+		// Untyped unbounded
+		assertThat( variables.get( Key.of( "untypedContainsFoo" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "untypedContains5" ) ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "Typed unbounded range: custom class names use instanceof operator" )
+	@Test
+	public void testTypedUnboundedRangeCustomClass() {
+		instance.executeSource(
+		    """
+		    class Widget {
+		        property name="id" type="integer";
+		        function init( id ) {
+		            variables.id = id;
+		            return this;
+		        }
+		    }
+
+		    widgetRange = (..).type( "Widget" );
+		    w = new Widget( 1 );
+		    containsWidget = widgetRange.contains( w );       // true — is a Widget
+		    containsString = widgetRange.contains( "hello" ); // false — not a Widget
+		    containsNum = widgetRange.contains( 42 );         // false — not a Widget
+		    """,
+		    context );
+
+		assertThat( variables.get( Key.of( "containsWidget" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "containsString" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "containsNum" ) ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "Typed unbounded range: .type() on bounded range throws error" )
+	@Test
+	public void testTypedRangeBoundedThrows() {
+		assertThrows( BoxRuntimeException.class, () -> {
+			instance.executeSource(
+			    """
+			    (1..5).type( "string" );
+			    """,
+			    context );
+		} );
+	}
+
+	@DisplayName( "Typed unbounded range: .type() with Class reference — strict instanceof only" )
+	@Test
+	public void testTypedUnboundedRangeClassRef() {
+		instance.executeSource(
+		    """
+		    import java:java.lang.Number;
+		    classRange = (..).type( Number );
+		    containsInt = classRange.contains( 42 );          // true — Integer is a Number
+		    containsDouble = classRange.contains( 3.14 );     // true — Double is a Number
+		    containsStr = classRange.contains( "hello" );     // false — String is not a Number
+		    contains5str = classRange.contains( "5" );        // false — "5" is a String, not a Number (no coercion)
+		    """,
+		    context );
+
+		assertThat( variables.get( Key.of( "containsInt" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "containsDouble" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "containsStr" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "contains5str" ) ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "clamp() snaps out-of-bounds values to the closest boundary" )
+	@Test
+	public void testClamp() {
+		instance.executeSource(
+		    """
+		    r = (1..10);
+
+		    // Within bounds — returned unchanged
+		    clamp5 = r.clamp( 5 );          // 5
+
+		    // Below low bound — snaps to low
+		    clampNeg = r.clamp( -3 );       // 1
+
+		    // Above high bound — snaps to high
+		    clamp99 = r.clamp( 99 );        // 10
+
+		    // At exact boundaries — returned unchanged
+		    clampLow = r.clamp( 1 );        // 1
+		    clampHigh = r.clamp( 10 );      // 10
+
+		    // String coercion works
+		    clampStr = r.clamp( "7" );      // 7
+
+		    // Character range clamp
+		    cr = ('a'..'z');
+		    clampBang = cr.clamp( '!' );    // 'a' — below 'a'
+		    clampTilde = cr.clamp( '~' );   // 'z' — above 'z'
+		    clampM = cr.clamp( 'm' );       // 'm' — within bounds
+		    """,
+		    context );
+
+		assertThat( variables.get( Key.of( "clamp5" ) ) ).isEqualTo( 5 );
+		assertThat( variables.get( Key.of( "clampNeg" ) ) ).isEqualTo( 1 );
+		assertThat( variables.get( Key.of( "clamp99" ) ) ).isEqualTo( 10 );
+		assertThat( variables.get( Key.of( "clampLow" ) ) ).isEqualTo( 1 );
+		assertThat( variables.get( Key.of( "clampHigh" ) ) ).isEqualTo( 10 );
+		assertThat( variables.get( Key.of( "clampStr" ) ) ).isEqualTo( 7 );
+		assertThat( variables.get( Key.of( "clampBang" ) ) ).isEqualTo( 'a' );
+		assertThat( variables.get( Key.of( "clampTilde" ) ) ).isEqualTo( 'z' );
+		assertThat( variables.get( Key.of( "clampM" ) ) ).isEqualTo( 'm' );
+	}
+
+	@DisplayName( "clamp() on half-bounded and fully unbounded ranges" )
+	@Test
+	public void testClampUnbounded() {
+		instance.executeSource(
+		    """
+		    // Half-bounded: no upper bound (5..) — only snaps to low
+		    noUpper = (5..);
+		    clampBelow = noUpper.clamp( 2 );    // 5 — snapped up to low
+		    clampAbove = noUpper.clamp( 999 );  // 999 — no upper bound to snap to
+		    clampIn = noUpper.clamp( 7 );       // 7 — already in range
+
+		    // Half-bounded: no lower bound (..10) — only snaps to high
+		    noLower = (..10);
+		    clampAboveHigh = noLower.clamp( 50 );   // 10 — snapped down to high
+		    clampBelowHigh = noLower.clamp( -100 ); // -100 — no lower bound to snap to
+		    clampInLower = noLower.clamp( 3 );      // 3 — already in range
+
+		    // Fully unbounded (..) — just returns the coerced value
+		    unbounded = (..);
+		    clampAny = unbounded.clamp( 42 );       // 42
+		    clampStr = unbounded.clamp( "hello" );  // "hello"
+		    """,
+		    context );
+
+		// Half-bounded no upper
+		assertThat( variables.get( Key.of( "clampBelow" ) ) ).isEqualTo( 5 );
+		assertThat( variables.get( Key.of( "clampAbove" ) ) ).isEqualTo( 999 );
+		assertThat( variables.get( Key.of( "clampIn" ) ) ).isEqualTo( 7 );
+
+		// Half-bounded no lower
+		assertThat( variables.get( Key.of( "clampAboveHigh" ) ) ).isEqualTo( 10 );
+		assertThat( variables.get( Key.of( "clampBelowHigh" ) ) ).isEqualTo( -100 );
+		assertThat( variables.get( Key.of( "clampInLower" ) ) ).isEqualTo( 3 );
+
+		// Fully unbounded
+		assertThat( variables.get( Key.of( "clampAny" ) ) ).isEqualTo( 42 );
+		assertThat( variables.get( Key.of( "clampStr" ) ) ).isEqualTo( "hello" );
+	}
+
+	@DisplayName( "clamp() on typed unbounded range validates type" )
+	@Test
+	public void testClampTypedUnbounded() {
+		// Coercible value passes
+		instance.executeSource(
+		    """
+		    numRange = (..).type( "numeric" );
+		    result = numRange.clamp( "5" );  // "5" coerces to numeric — returns 5
+		    """,
+		    context );
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( 5 );
+
+		// Incompatible value throws
+		assertThrows( BoxRuntimeException.class, () -> {
+			instance.executeSource(
+			    """
+			    numRange = (..).type( "numeric" );
+			    numRange.clamp( "foo" );  // "foo" can't be cast to numeric
+			    """,
+			    context );
+		} );
+	}
+
+	@DisplayName( "isValueBefore() and isValueAfter() check position relative to range" )
+	@Test
+	public void testIsValueBeforeAfter() {
+		instance.executeSource(
+		    """
+		    r = (5..10);
+
+		    // Before the range
+		    before3 = r.isValueBefore( 3 );       // true
+		    before5 = r.isValueBefore( 5 );       // false — at boundary
+		    before7 = r.isValueBefore( 7 );       // false — inside
+
+		    // After the range
+		    after12 = r.isValueAfter( 12 );       // true
+		    after10 = r.isValueAfter( 10 );       // false — at boundary
+		    after7 = r.isValueAfter( 7 );         // false — inside
+
+		    // Coercion works
+		    beforeStr = r.isValueBefore( "2" );   // true
+		    afterStr = r.isValueAfter( "20" );    // true
+
+		    // Exclusive bounds
+		    ex = (5>..10);
+		    exBefore5 = ex.isValueBefore( 5 );    // true — 5 is excluded, so it's "before"
+
+		    ex2 = (5..<10);
+		    ex2After10 = ex2.isValueAfter( 10 );  // true — 10 is excluded, so it's "after"
+
+		    // Half-bounded ranges
+		    noLow = (..10);
+		    noLowBefore = noLow.isValueBefore( -999 ); // false — no low bound
+		    noLowAfter = noLow.isValueAfter( 50 );     // true
+
+		    noHigh = (5..);
+		    noHighAfter = noHigh.isValueAfter( 999 );  // false — no high bound
+		    noHighBefore = noHigh.isValueBefore( 1 );  // true
+		    """,
+		    context );
+
+		// Before checks
+		assertThat( variables.get( Key.of( "before3" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "before5" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "before7" ) ) ).isEqualTo( false );
+
+		// After checks
+		assertThat( variables.get( Key.of( "after12" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "after10" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "after7" ) ) ).isEqualTo( false );
+
+		// Coercion
+		assertThat( variables.get( Key.of( "beforeStr" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "afterStr" ) ) ).isEqualTo( true );
+
+		// Exclusive bounds
+		assertThat( variables.get( Key.of( "exBefore5" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "ex2After10" ) ) ).isEqualTo( true );
+
+		// Half-bounded
+		assertThat( variables.get( Key.of( "noLowBefore" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "noLowAfter" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "noHighAfter" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "noHighBefore" ) ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "isValueBefore()/isValueAfter() return false for incompatible types" )
+	@Test
+	public void testIsValueBeforeAfterInvalidTypes() {
+		instance.executeSource(
+		    """
+		    r = (1..10);
+		    beforeStr = r.isValueBefore( "foo" );   // false — can't coerce "foo" to number
+		    afterStr = r.isValueAfter( "foo" );     // false — can't coerce "foo" to number
+
+		    cr = ('a'..'z');
+		    beforeNum = cr.isValueBefore( 42 );     // false — number isn't a character
+		    afterNum = cr.isValueAfter( 42 );       // false — number isn't a character
+		    """,
+		    context );
+
+		assertThat( variables.get( Key.of( "beforeStr" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "afterStr" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "beforeNum" ) ) ).isEqualTo( false );
+		assertThat( variables.get( Key.of( "afterNum" ) ) ).isEqualTo( false );
 	}
 }
