@@ -712,4 +712,16 @@ public class CFTranspilerTest {
 		assertThat( variables.get( result ) ).isEqualTo( false );
 	}
 
+	@DisplayName( "It transpiles hash(string='test' ) to hash(input='test')" )
+	@Test
+	public void testHashStringArg() {
+		instance.executeSource(
+		    """
+		    result = hash( string="test", algorithm="MD5" );
+
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "098f6bcd4621d373cade4e832627b4f6" );
+	}
+
 }

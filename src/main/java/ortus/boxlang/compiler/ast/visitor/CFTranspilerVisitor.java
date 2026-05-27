@@ -316,6 +316,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		 * Only kicks in when named args are used
 		 */
 		BIFArgMap.put( "directorylist", Map.of( "absolute_path", "path" ) );
+		BIFArgMap.put( "hash", Map.of( "string", "input" ) );
 		BIFArgMap.put( "getsafehtml", Map.of( "inputstring", "string", "policyfile", "policy" ) );
 
 		/*
