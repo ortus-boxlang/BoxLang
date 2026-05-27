@@ -55,47 +55,47 @@ public class ConnectionManager {
 	/**
 	 * Logger
 	 */
-	private static final BoxLangLogger logger = BoxRuntime.getInstance().getLoggingService().DATASOURCE_LOGGER;
+	private static final BoxLangLogger	logger							= BoxRuntime.getInstance().getLoggingService().DATASOURCE_LOGGER;
 
 	/**
 	 * The active transaction (if any) for this request/thread/BoxLang context.
 	 */
-	private ITransaction transaction;
+	private ITransaction				transaction;
 
 	/**
 	 * The context this ConnectionManager is associated with.
 	 */
-	private IBoxContext context;
+	private IBoxContext					context;
 
 	/**
 	 * A default datasource, that can be set manully mostly for testing purpose
 	 * mostly
 	 */
-	private DataSource defaultDatasource = null;
+	private DataSource					defaultDatasource				= null;
 
 	/**
 	 * A concurrent map of datasources registered with the manager.
 	 */
-	private Map<Key, DataSource> datasources = new ConcurrentHashMap<>();
+	private Map<Key, DataSource>		datasources						= new ConcurrentHashMap<>();
 
 	/**
 	 * The DatasourceService instance
 	 */
-	private DatasourceService datasourceService = BoxRuntime.getInstance().getDataSourceService();
+	private DatasourceService			datasourceService				= BoxRuntime.getInstance().getDataSourceService();
 
 	/**
 	 * Enable or disable support for nested transactions.
 	 */
-	private Boolean enableNestedTransactions = null;
+	private Boolean						enableNestedTransactions		= null;
 
-	private static final Key[] TRANSACTION_INTERCEPTION_POINTS = List.of(
-			Key.onTransactionBegin,
-			Key.onTransactionEnd,
-			Key.onTransactionAcquire,
-			Key.onTransactionRelease,
-			Key.onTransactionCommit,
-			Key.onTransactionRollback,
-			Key.onTransactionSetSavepoint).toArray(new Key[0]);
+	private static final Key[]			TRANSACTION_INTERCEPTION_POINTS	= List.of(
+	    Key.onTransactionBegin,
+	    Key.onTransactionEnd,
+	    Key.onTransactionAcquire,
+	    Key.onTransactionRelease,
+	    Key.onTransactionCommit,
+	    Key.onTransactionRollback,
+	    Key.onTransactionSetSavepoint ).toArray( new Key[ 0 ] );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -108,18 +108,18 @@ public class ConnectionManager {
 	 *
 	 * @param context The BoxLang context this ConnectionManager is associated with.
 	 */
-	public ConnectionManager(IBoxContext context) {
+	public ConnectionManager( IBoxContext context ) {
 		this.context = context;
 
 		RequestBoxContext requestContext = this.context.getRequestContext();
-		if (requestContext != null) {
+		if ( requestContext != null ) {
 			requestContext.getApplicationListener()
-					.getInterceptorPool()
-					.registerInterceptionPoint(TRANSACTION_INTERCEPTION_POINTS);
+			    .getInterceptorPool()
+			    .registerInterceptionPoint( TRANSACTION_INTERCEPTION_POINTS );
 		}
 
 		this.enableNestedTransactions = BoxRuntime.getInstance().getConfiguration().enableNestedTransactions;
-		if (this.enableNestedTransactions == null) {
+		if ( this.enableNestedTransactions == null ) {
 			this.enableNestedTransactions = false;
 		}
 	}
@@ -162,9 +162,9 @@ public class ConnectionManager {
 	 *         Connection.
 	 */
 	public ITransaction getTransactionOrThrow() {
-		if (!isInTransaction()) {
+		if ( !isInTransaction() ) {
 			throw new DatabaseException(
-					"Transaction is not started; Please place this method call inside a transaction{} block");
+			    "Transaction is not started; Please place this method call inside a transaction{} block" );
 		}
 		return getTransaction();
 	}
@@ -172,7 +172,7 @@ public class ConnectionManager {
 	/**
 	 * Set the active transaction for this request/thread/BoxLang context.
 	 */
-	public ConnectionManager setTransaction(Transaction transaction) {
+	public ConnectionManager setTransaction( Transaction transaction ) {
 		this.transaction = transaction;
 		return this;
 	}
@@ -187,11 +187,11 @@ public class ConnectionManager {
 	 *
 	 * @return The current executing transaction.
 	 */
-	public ITransaction getOrSetTransaction(DataSource datasource) {
-		if (isInTransaction()) {
+	public ITransaction getOrSetTransaction( DataSource datasource ) {
+		if ( isInTransaction() ) {
 			return getTransaction();
 		}
-		return this.beginTransaction(datasource);
+		return this.beginTransaction( datasource );
 	}
 
 	/**
@@ -205,8 +205,8 @@ public class ConnectionManager {
 	 *
 	 * @return The current executing transaction.
 	 */
-	public ITransaction beginTransaction(DataSource datasource) {
-		if (isInTransaction() && enableNestedTransactions) {
+	public ITransaction beginTransaction( DataSource datasource ) {
+		if ( isInTransaction() && enableNestedTransactions ) {
 			/**
 			 * Opens a nested (child) transaction within the current transaction context,
 			 * and overwrites our transaction reference to point to the new nested
@@ -219,15 +219,15 @@ public class ConnectionManager {
 			 * as the active transaction, and all transactional methods will operate upon
 			 * the original (parent) transaction.
 			 */
-			this.transaction = new ChildTransaction(this.transaction);
-			logger.debug("Opened CHILD transaction {}", this.transaction);
-		} else if (!isInTransaction()) {
+			this.transaction = new ChildTransaction( this.transaction );
+			logger.debug( "Opened CHILD transaction {}", this.transaction );
+		} else if ( !isInTransaction() ) {
 			/**
 			 * Whether or not nested transactions are enabled, if there is no existing
 			 * transaction we'll initialize one now.'
 			 */
-			this.transaction = new Transaction(context, datasource);
-			logger.debug("Opened transaction {}", this.transaction);
+			this.transaction = new Transaction( context, datasource );
+			logger.debug( "Opened transaction {}", this.transaction );
 		}
 		// If we newly created a transaction OR we're already in a transaction but
 		// nested transactions are disabled, we simply return the existing transaction.
@@ -242,7 +242,7 @@ public class ConnectionManager {
 	 * (only) transaction and nullify the reference.
 	 */
 	public ConnectionManager endTransaction() {
-		if (this.transaction == null) {
+		if ( this.transaction == null ) {
 			return this;
 		}
 		try {
@@ -250,19 +250,19 @@ public class ConnectionManager {
 		} finally {
 			// Very important that we close down the transactional state regardless of
 			// exceptions in the transaction.end() method.
-			if (this.transaction instanceof ChildTransaction childTransaction) {
+			if ( this.transaction instanceof ChildTransaction childTransaction ) {
 				// Note: With `enableNestedTransactions` disabled, we SHOULD never hit this code
 				// path.
 				// inner transaction closes and we update our reference to the parent
 				// transaction.
 				logger.debug(
-						"Ending CHILD transaction {} and repointing the context transaction to the parent transaction {}",
-						this.transaction,
-						childTransaction.getParent());
+				    "Ending CHILD transaction {} and repointing the context transaction to the parent transaction {}",
+				    this.transaction,
+				    childTransaction.getParent() );
 				this.transaction = childTransaction.getParent();
 			} else {
 				// parent/solo transaction closes and we nullify our reference.
-				logger.debug("Ending transaction {}", this.transaction);
+				logger.debug( "Ending transaction {}", this.transaction );
 				this.transaction = null;
 			}
 		}
@@ -304,35 +304,35 @@ public class ConnectionManager {
 	 * @return A JDBC Connection object, possibly from a transactional context.
 	 */
 	@Deprecated
-	public BoxConnection getBoxConnection(DataSource datasource, String username, String password) {
-		if (isInTransaction()) {
+	public BoxConnection getBoxConnection( DataSource datasource, String username, String password ) {
+		if ( isInTransaction() ) {
 			logger.debug(
-					"Am inside transaction context; will check datasource and authentication to determine if we should return the transactional connection");
+			    "Am inside transaction context; will check datasource and authentication to determine if we should return the transactional connection" );
 
 			DataSource transactionalDatasource = getTransaction().getDataSource();
-			if (transactionalDatasource == null) {
-				logger.debug("Transaction datasource is null; setting it to the provided datasource");
+			if ( transactionalDatasource == null ) {
+				logger.debug( "Transaction datasource is null; setting it to the provided datasource" );
 				return getTransaction()
-						.setDataSource(datasource)
-						.getBoxConnection();
+				    .setDataSource( datasource )
+				    .getBoxConnection();
 			}
-			boolean isSameDatasource = transactionalDatasource.equals(datasource);
-			if (isSameDatasource
-					&& (username == null || transactionalDatasource.isAuthenticationMatch(username, password))) {
+			boolean isSameDatasource = transactionalDatasource.equals( datasource );
+			if ( isSameDatasource
+			    && ( username == null || transactionalDatasource.isAuthenticationMatch( username, password ) ) ) {
 				logger.debug(
-						"Both the query datasource argument and authentication matches; proceeding with established transactional connection");
+				    "Both the query datasource argument and authentication matches; proceeding with established transactional connection" );
 				return getTransaction().getBoxConnection();
 			} else {
 				// A different datasource was specified OR the authentication check failed; thus
 				// this is NOT a transactional query and we should use a new
 				// connection.
 				logger.debug(
-						"Datasource OR authentication does not match transaction; Will ignore transaction context and return a new JDBC connection");
-				return datasource.getBoxConnection(username, password);
+				    "Datasource OR authentication does not match transaction; Will ignore transaction context and return a new JDBC connection" );
+				return datasource.getBoxConnection( username, password );
 			}
 		}
-		logger.debug("Not within transaction; obtaining new connection from pool");
-		return datasource.getBoxConnection(username, password);
+		logger.debug( "Not within transaction; obtaining new connection from pool" );
+		return datasource.getBoxConnection( username, password );
 	}
 
 	/**
@@ -373,8 +373,8 @@ public class ConnectionManager {
 	 * @return A JDBC Connection object, possibly from a transactional context.
 	 */
 	@Deprecated
-	public Connection getConnection(DataSource datasource, String username, String password) {
-		return getBoxConnection(datasource, username, password);
+	public Connection getConnection( DataSource datasource, String username, String password ) {
+		return getBoxConnection( datasource, username, password );
 	}
 
 	/**
@@ -387,20 +387,20 @@ public class ConnectionManager {
 	 *
 	 * @return True if the connection was successfully released, otherwise false.
 	 */
-	public boolean releaseConnection(BoxConnection connection) {
-		if (isInTransaction()) {
-			logger.debug("Am inside transaction context; skipping connection release.");
+	public boolean releaseConnection( BoxConnection connection ) {
+		if ( isInTransaction() ) {
+			logger.debug( "Am inside transaction context; skipping connection release." );
 			return false;
 		}
 		try {
-			if (connection == null || connection.isClosed()) {
-				logger.debug("Connection is null or already closed; skipping connection release.");
+			if ( connection == null || connection.isClosed() ) {
+				logger.debug( "Connection is null or already closed; skipping connection release." );
 				return false;
 			}
-			logger.debug("Releasing connection {}", connection);
+			logger.debug( "Releasing connection {}", connection );
 			connection.close();
-		} catch (SQLException e) {
-			throw new DatabaseException("Error releasing connection: " + e.getMessage(), e);
+		} catch ( SQLException e ) {
+			throw new DatabaseException( "Error releasing connection: " + e.getMessage(), e );
 		}
 		return true;
 	}
@@ -419,8 +419,8 @@ public class ConnectionManager {
 	 * @return True if the connection was successfully released, otherwise false.
 	 */
 	@Deprecated
-	public boolean releaseConnection(Connection connection) {
-		return releaseConnection(BoxConnection.of(connection, null));
+	public boolean releaseConnection( Connection connection ) {
+		return releaseConnection( BoxConnection.of( connection, null ) );
 	}
 
 	/**
@@ -440,34 +440,34 @@ public class ConnectionManager {
 	 *
 	 * @return A JDBC Connection object, possibly from a transactional context.
 	 */
-	public BoxConnection getBoxConnection(DataSource datasource) {
-		if (isInTransaction()) {
+	public BoxConnection getBoxConnection( DataSource datasource ) {
+		if ( isInTransaction() ) {
 			logger.debug(
-					"Am inside transaction context; will check datasource to determine if we should return the transactional connection");
+			    "Am inside transaction context; will check datasource to determine if we should return the transactional connection" );
 
 			DataSource transactionalDatasource = getTransaction().getDataSource();
-			if (transactionalDatasource == null) {
-				logger.debug("Transaction datasource is null; setting it to the provided datasource");
+			if ( transactionalDatasource == null ) {
+				logger.debug( "Transaction datasource is null; setting it to the provided datasource" );
 				return getTransaction()
-						.setDataSource(datasource)
-						.getBoxConnection();
+				    .setDataSource( datasource )
+				    .getBoxConnection();
 			}
-			boolean isSameDatasource = transactionalDatasource.equals(datasource);
-			if (isSameDatasource) {
+			boolean isSameDatasource = transactionalDatasource.equals( datasource );
+			if ( isSameDatasource ) {
 				logger.debug(
-						"The query datasource matches the transaction datasource; proceeding with established transactional connection");
+				    "The query datasource matches the transaction datasource; proceeding with established transactional connection" );
 				return getTransaction().getBoxConnection();
 			} else {
 				// A different datasource was specified OR the authentication check failed; thus
 				// this is NOT a transactional query and we should use a new
 				// connection.
 				logger.debug(
-						"Datasource does not match transaction; Will ignore transaction context and return a new JDBC connection");
+				    "Datasource does not match transaction; Will ignore transaction context and return a new JDBC connection" );
 				return datasource.getBoxConnection();
 			}
 		}
 
-		logger.debug("Not within transaction; obtaining new connection from the datasource object");
+		logger.debug( "Not within transaction; obtaining new connection from the datasource object" );
 		return datasource.getBoxConnection();
 	}
 
@@ -494,8 +494,8 @@ public class ConnectionManager {
 	 * @return A JDBC Connection object, possibly from a transactional context.
 	 */
 	@Deprecated
-	public Connection getConnection(DataSource datasource) {
-		return getBoxConnection(datasource);
+	public Connection getConnection( DataSource datasource ) {
+		return getBoxConnection( datasource );
 	}
 
 	/**
@@ -503,8 +503,8 @@ public class ConnectionManager {
 	 *
 	 * @return A connection to the configured datasource.
 	 */
-	public BoxConnection getBoxConnection(QueryOptions options) {
-		return getBoxConnection(getDataSource(options));
+	public BoxConnection getBoxConnection( QueryOptions options ) {
+		return getBoxConnection( getDataSource( options ) );
 	}
 
 	/**
@@ -516,41 +516,41 @@ public class ConnectionManager {
 	 * @return A connection to the configured datasource.
 	 */
 	@Deprecated
-	public Connection getConnection(QueryOptions options) {
-		return getBoxConnection(options);
+	public Connection getConnection( QueryOptions options ) {
+		return getBoxConnection( options );
 	}
 
 	/**
 	 * Determines the datasource to use according to the options and/or BoxLang
 	 * Defaults
 	 */
-	public DataSource getDataSource(QueryOptions options) {
-		if (options.datasource != null) {
-			var datasourceObject = options.datasource;
-			CastAttempt<IStruct> datasourceAsStruct = StructCaster.attempt(datasourceObject);
+	public DataSource getDataSource( QueryOptions options ) {
+		if ( options.datasource != null ) {
+			var						datasourceObject	= options.datasource;
+			CastAttempt<IStruct>	datasourceAsStruct	= StructCaster.attempt( datasourceObject );
 
 			// ON THE FLY DATASOURCE
-			if (datasourceAsStruct.wasSuccessful()) {
-				return getOnTheFlyDataSource(datasourceAsStruct.get());
+			if ( datasourceAsStruct.wasSuccessful() ) {
+				return getOnTheFlyDataSource( datasourceAsStruct.get() );
 			}
 			// NAMED DATASOURCE
-			else if (datasourceObject instanceof String datasourceName) {
+			else if ( datasourceObject instanceof String datasourceName ) {
 
 				// If there is a username/password specified alongside a datasource name,
 				// we treat this as an ad-hoc datasource with overrides
-				if (options.wantsUsernameAndPassword()) {
-					IStruct adHocUserPassOptions = getDatasourceOrThrow(Key.of(datasourceName))
-							.getConfiguration()
-							.toConfigStruct();
-					adHocUserPassOptions.put(Key.username, options.username);
-					adHocUserPassOptions.put(Key.password, options.password);
-					return getOnTheFlyDataSource(adHocUserPassOptions);
+				if ( options.wantsUsernameAndPassword() ) {
+					IStruct adHocUserPassOptions = getDatasourceOrThrow( Key.of( datasourceName ) )
+					    .getConfiguration()
+					    .toConfigStruct();
+					adHocUserPassOptions.put( Key.username, options.username );
+					adHocUserPassOptions.put( Key.password, options.password );
+					return getOnTheFlyDataSource( adHocUserPassOptions );
 				}
 
-				return getDatasourceOrThrow(Key.of(datasourceName));
+				return getDatasourceOrThrow( Key.of( datasourceName ) );
 			}
 			// INVALID DATASOURCE
-			throw new BoxRuntimeException("Invalid datasource type: " + TypeUtil.getObjectName(datasourceObject));
+			throw new BoxRuntimeException( "Invalid datasource type: " + TypeUtil.getObjectName( datasourceObject ) );
 		}
 		return getDefaultDatasourceOrThrow();
 	}
@@ -573,19 +573,19 @@ public class ConnectionManager {
 	 * @return The default datasource object, if found, or null if not found.
 	 */
 	public DataSource getDefaultDatasource() {
-		if (this.defaultDatasource != null) {
+		if ( this.defaultDatasource != null ) {
 			return this.defaultDatasource;
 		}
 
 		// Discover the datasource name from the settings
-		String defaultDSN = (String) this.context.getConfigItems(Key.defaultDatasource);
+		String defaultDSN = ( String ) this.context.getConfigItems( Key.defaultDatasource );
 
-		if (defaultDSN.isEmpty()) {
+		if ( defaultDSN.isEmpty() ) {
 			return null;
 		}
 
 		// Look it up following the normal rules
-		this.defaultDatasource = getDatasource(Key.of(defaultDSN));
+		this.defaultDatasource = getDatasource( Key.of( defaultDSN ) );
 
 		return this.defaultDatasource;
 	}
@@ -598,8 +598,8 @@ public class ConnectionManager {
 	 */
 	public DataSource getDefaultDatasourceOrThrow() {
 		DataSource datasource = getDefaultDatasource();
-		if (datasource == null) {
-			throwNoDefaultDatasourceDefined(null);
+		if ( datasource == null ) {
+			throwNoDefaultDatasourceDefined( null );
 		}
 		return datasource;
 	}
@@ -610,17 +610,17 @@ public class ConnectionManager {
 	 * 
 	 * @param defaultName The name of the default datasource, if any
 	 */
-	public void throwNoDefaultDatasourceDefined(String defaultName) {
+	public void throwNoDefaultDatasourceDefined( String defaultName ) {
 		String message = String.format(
-				"No default datasource defined in the application or globally or in the query options. Registered datasources are: %s",
-				Arrays.toString(getAppDatasourceNames()));
-		if (defaultName != null && !defaultName.isEmpty()) {
+		    "No default datasource defined in the application or globally or in the query options. Registered datasources are: %s",
+		    Arrays.toString( getAppDatasourceNames() ) );
+		if ( defaultName != null && !defaultName.isEmpty() ) {
 			message = String.format(
-					"Default datasource [%s] not found in the application or globally. Registered datasources are: %s",
-					defaultName,
-					Arrays.toString(getAppDatasourceNames()));
+			    "Default datasource [%s] not found in the application or globally. Registered datasources are: %s",
+			    defaultName,
+			    Arrays.toString( getAppDatasourceNames() ) );
 		}
-		throw new DatabaseException(message);
+		throw new DatabaseException( message );
 	}
 
 	/**
@@ -632,42 +632,42 @@ public class ConnectionManager {
 	 *
 	 * @return The datasource object, or null if not found.
 	 */
-	public DataSource getDatasource(Key datasourceName) {
-		return this.datasources.computeIfAbsent(datasourceName, (thisName) -> {
+	public DataSource getDatasource( Key datasourceName ) {
+		return this.datasources.computeIfAbsent( datasourceName, ( thisName ) -> {
 			// Try to discover now: These come from the context, so overrides are already
 			// applied
-			IStruct configDatasources = this.context.getConfig().getAsStruct(Key.datasources);
+			IStruct configDatasources = this.context.getConfig().getAsStruct( Key.datasources );
 
 			// If the name doesn't exist in the datasources map, we return null
-			if (!configDatasources.containsKey(thisName)) {
+			if ( !configDatasources.containsKey( thisName ) ) {
 				return null;
 			}
-			IStruct properties = configDatasources.getAsStruct(thisName);
-			String applicationName = properties.getOrDefault(Key.applicationName, "").toString();
+			IStruct	properties		= configDatasources.getAsStruct( thisName );
+			String	applicationName	= properties.getOrDefault( Key.applicationName, "" ).toString();
 
 			// What is the "unique" name of this datasource definition
-			Key uniqueName = DatasourceConfig.getUniqueName(applicationName, false, thisName.getName(), properties);
+			Key		uniqueName		= DatasourceConfig.getUniqueName( applicationName, false, thisName.getName(), properties );
 
 			// See if the datasource service already has this definition
-			if (this.datasourceService.has(uniqueName)) {
+			if ( this.datasourceService.has( uniqueName ) ) {
 				// We begin pooling just in case the datasource is registered, but never used
 				// until now.
 				// beginPooling() is idempotent, so it's safe to call multiple times.
-				return this.datasourceService.get(uniqueName).beginPooling();
+				return this.datasourceService.get( uniqueName ).beginPooling();
 			}
 
 			// if this is truly the first time, then build out the config and register it
-			DatasourceConfig dsnConfig = new DatasourceConfig(thisName)
-					.process(properties);
+			DatasourceConfig dsnConfig = new DatasourceConfig( thisName )
+			    .process( properties );
 
 			// Only add application name if this datasource definition came from an
 			// application config
-			if (applicationName != null && !applicationName.isEmpty()) {
-				dsnConfig.withAppName(Key.of(applicationName));
+			if ( applicationName != null && !applicationName.isEmpty() ) {
+				dsnConfig.withAppName( Key.of( applicationName ) );
 			}
 
-			return this.datasourceService.register(dsnConfig).beginPooling();
-		});
+			return this.datasourceService.register( dsnConfig ).beginPooling();
+		} );
 	}
 
 	/**
@@ -677,8 +677,8 @@ public class ConnectionManager {
 	 *
 	 * @return The datasource object
 	 */
-	public DataSource register(DataSource target) {
-		this.datasources.put(target.getConfiguration().name, target);
+	public DataSource register( DataSource target ) {
+		this.datasources.put( target.getConfiguration().name, target );
 		return target;
 	}
 
@@ -690,10 +690,10 @@ public class ConnectionManager {
 	 *
 	 * @return The datasource object
 	 */
-	public DataSource register(Key datasourceName, IStruct properties) {
-		DataSource target = this.datasourceService.register(new DatasourceConfig(datasourceName, properties))
-				.beginPooling();
-		this.datasources.put(datasourceName, target);
+	public DataSource register( Key datasourceName, IStruct properties ) {
+		DataSource target = this.datasourceService.register( new DatasourceConfig( datasourceName, properties ) )
+		    .beginPooling();
+		this.datasources.put( datasourceName, target );
 		return target;
 	}
 
@@ -704,14 +704,14 @@ public class ConnectionManager {
 	 *
 	 * @return The datasource object
 	 */
-	public DataSource getDatasourceOrThrow(Key datasourceName) {
-		DataSource datasource = getDatasource(datasourceName);
-		if (datasource == null) {
+	public DataSource getDatasourceOrThrow( Key datasourceName ) {
+		DataSource datasource = getDatasource( datasourceName );
+		if ( datasource == null ) {
 			throw new DatabaseException(
-					String.format(
-							"Datasource with name [%s] not found in the application or globally. Registered datasources are: %s",
-							datasourceName.getName(),
-							Arrays.toString(getAppDatasourceNames())));
+			    String.format(
+			        "Datasource with name [%s] not found in the application or globally. Registered datasources are: %s",
+			        datasourceName.getName(),
+			        Arrays.toString( getAppDatasourceNames() ) ) );
 		}
 		return datasource;
 	}
@@ -724,30 +724,30 @@ public class ConnectionManager {
 	 *
 	 * @return A new or already registered datasource
 	 */
-	public DataSource getOnTheFlyDataSource(IStruct properties) {
-		Key datasourceName = Key.of("onthefly_" + properties.hashCode());
-		return this.datasources.computeIfAbsent(datasourceName, (theName) -> {
+	public DataSource getOnTheFlyDataSource( IStruct properties ) {
+		Key datasourceName = Key.of( "onthefly_" + properties.hashCode() );
+		return this.datasources.computeIfAbsent( datasourceName, ( theName ) -> {
 
 			// What is the "unique" name of this datasource definition
-			Key uniqueName = DatasourceConfig.getUniqueName("", true, theName.getName(), properties);
+			Key uniqueName = DatasourceConfig.getUniqueName( "", true, theName.getName(), properties );
 
 			// See if the datasource service already has this definition
-			if (this.datasourceService.has(uniqueName)) {
+			if ( this.datasourceService.has( uniqueName ) ) {
 				// We begin pooling just in case the datasource is registered, but never used
 				// until now.
 				// beginPooling() is idempotent, so it's safe to call multiple times.
-				return this.datasourceService.get(uniqueName).beginPooling();
+				return this.datasourceService.get( uniqueName ).beginPooling();
 			}
 
 			// if this is truly the first time, then build out the config and register it
 			DatasourceConfig config = new DatasourceConfig(
-					Key.of(datasourceName.getName()),
-					properties)
-					.setOnTheFly();
+			    Key.of( datasourceName.getName() ),
+			    properties )
+			    .setOnTheFly();
 
 			// Register it
-			return this.datasourceService.register(config).beginPooling();
-		});
+			return this.datasourceService.register( config ).beginPooling();
+		} );
 	}
 
 	/**
@@ -758,7 +758,7 @@ public class ConnectionManager {
 	 *
 	 * @return ConnectionManager
 	 */
-	public ConnectionManager setDefaultDatasource(DataSource datasource) {
+	public ConnectionManager setDefaultDatasource( DataSource datasource ) {
 		this.defaultDatasource = datasource;
 		return this;
 	}
@@ -793,10 +793,10 @@ public class ConnectionManager {
 	 */
 	public String[] getCachedDatasourcesNames() {
 		return this.datasources.keySet()
-				.stream()
-				.map(Key::getName)
-				.sorted()
-				.toArray(String[]::new);
+		    .stream()
+		    .map( Key::getName )
+		    .sorted()
+		    .toArray( String[]::new );
 	}
 
 	/**
@@ -807,11 +807,11 @@ public class ConnectionManager {
 	 *
 	 */
 	public String[] getAppDatasourceNames() {
-		IStruct configDatasources = (IStruct) this.context.getConfigItems(Key.datasources);
+		IStruct configDatasources = ( IStruct ) this.context.getConfigItems( Key.datasources );
 		return configDatasources.getKeys().stream()
-				.map(Key::getName)
-				.sorted()
-				.toArray(String[]::new);
+		    .map( Key::getName )
+		    .sorted()
+		    .toArray( String[]::new );
 	}
 
 	/**
@@ -821,8 +821,8 @@ public class ConnectionManager {
 	 *
 	 * @return true if the datasource is cached, false otherwise
 	 */
-	public boolean hasCachedDatasource(Key datasourceName) {
-		return this.datasources.containsKey(datasourceName);
+	public boolean hasCachedDatasource( Key datasourceName ) {
+		return this.datasources.containsKey( datasourceName );
 	}
 
 	/**
@@ -846,7 +846,7 @@ public class ConnectionManager {
 		this.defaultDatasource = null;
 
 		// End any active transaction or child transactions
-		while (this.transaction != null) {
+		while ( this.transaction != null ) {
 			endTransaction();
 		}
 	}
