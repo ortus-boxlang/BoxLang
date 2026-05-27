@@ -22,6 +22,8 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
@@ -175,23 +177,22 @@ public class QueryOptions {
 		CacheService cacheService = BoxRuntime.getInstance().getCacheService();
 
 		this.options				= options;
-		this.resultVariableName		= options.getAsString( Key.result );
-		this.username				= options.getAsString( Key.username );
-		this.password				= options.getAsString( Key.password );
-		this.queryTimeout			= options.getAsInteger( Key.timeout );
+		this.resultVariableName		= StringCaster.attempt( options.get( Key.result ) ).orElse( null );
+		this.username				= StringCaster.attempt( options.get( Key.username ) ).orElse( null );
+		this.password				= StringCaster.attempt( options.get( Key.password ) ).orElse( null );
+		this.queryTimeout			= IntegerCaster.cast( options.get( Key.timeout ), false );
 		this.datasource				= options.get( Key.datasource );
-		this.fetchSize				= ( Integer ) options.getOrDefault( Key.fetchSize, 0 );
+		this.fetchSize				= IntegerCaster.attempt( options.get( Key.fetchSize ), false ).orElse( 0 );
 
 		// Caching options
 		this.cache					= BooleanCaster.attempt( options.get( Key.cache ) ).getOrDefault( false );
-		this.cacheKey				= options.getAsString( Key.cacheKey );
+		this.cacheKey				= StringCaster.attempt( options.get( Key.cacheKey ) ).orElse( null );
 		this.cacheTimeout			= ( Duration ) options.getOrDefault( Key.cacheTimeout, null );
 		this.cacheLastAccessTimeout	= ( Duration ) options.getOrDefault( Key.cacheLastAccessTimeout, null );
-		this.cacheProvider			= ( String ) options.getOrDefault( Key.cacheProvider, cacheService.getDefaultCache().getName().toString() );
+		this.cacheProvider			= StringCaster.attempt( options.get( Key.cacheProvider ) ).orElse( cacheService.getDefaultCache().getName().toString() );
 
-		Integer intMaxRows = options.getAsInteger( Key.maxRows );
-		this.maxRows	= Long.valueOf( intMaxRows != null ? intMaxRows : -1 );
-		this.dbtype		= options.getAsString( Key.dbtype );
+		this.maxRows				= LongCaster.attempt( options.get( Key.maxRows ), false ).orElse( -1L );
+		this.dbtype					= StringCaster.attempt( options.get( Key.dbtype ) ).orElse( null );
 
 		determineReturnType();
 
