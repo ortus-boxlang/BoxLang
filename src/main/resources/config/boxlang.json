@@ -447,10 +447,6 @@
 		// 	  "database": "test"
 		// }
 	},
-	// If true, this will treat nested transactional operations as savepoints on the parent transaction.
-	// If false, nested transactions will be ignored and all commits and rollbacks will apply to the entire transaction.
-	// Defaulted to true in the Transaction component, or false with bx-compat installed.
-	"enableNestedTransactions": null,
 	// The default return format for class invocations via web runtimes
 	"defaultRemoteMethodReturnFormat": "json",
 	/**

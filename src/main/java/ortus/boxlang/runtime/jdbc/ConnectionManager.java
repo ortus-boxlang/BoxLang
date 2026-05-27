@@ -36,10 +36,13 @@ import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
- * Manages the active JDBC Connection for the current request/thread/BoxLang context.
+ * Manages the active JDBC Connection for the current request/thread/BoxLang
+ * context.
  *
- * Primrarily offers transactional context management by tracking whether the current context has an ongoing transaction and returning the appropriate
- * Connection object... However, this class also provides methods for retrieving a JDBC connection matching the datasource Key name or config Struct.
+ * Primrarily offers transactional context management by tracking whether the
+ * current context has an ongoing transaction and returning the appropriate
+ * Connection object... However, this class also provides methods for retrieving
+ * a JDBC connection matching the datasource Key name or config Struct.
  */
 public class ConnectionManager {
 
@@ -65,7 +68,8 @@ public class ConnectionManager {
 	private IBoxContext					context;
 
 	/**
-	 * A default datasource, that can be set manully mostly for testing purpose mostly
+	 * A default datasource, that can be set manully mostly for testing purpose
+	 * mostly
 	 */
 	private DataSource					defaultDatasource				= null;
 
@@ -91,8 +95,7 @@ public class ConnectionManager {
 	    Key.onTransactionRelease,
 	    Key.onTransactionCommit,
 	    Key.onTransactionRollback,
-	    Key.onTransactionSetSavepoint
-	).toArray( new Key[ 0 ] );
+	    Key.onTransactionSetSavepoint ).toArray( new Key[ 0 ] );
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -117,7 +120,7 @@ public class ConnectionManager {
 
 		this.enableNestedTransactions = BoxRuntime.getInstance().getConfiguration().enableNestedTransactions;
 		if ( this.enableNestedTransactions == null ) {
-			this.enableNestedTransactions = true;
+			this.enableNestedTransactions = false;
 		}
 	}
 
@@ -130,7 +133,8 @@ public class ConnectionManager {
 	/**
 	 * Check if we are executing inside a transaction.
 	 *
-	 * @return true if this ConnectionManager object has a registered transaction, which only exists while a Transaction component is executing.
+	 * @return true if this ConnectionManager object has a registered transaction,
+	 *         which only exists while a Transaction component is executing.
 	 */
 	public boolean isInTransaction() {
 		return this.transaction != null;
@@ -141,22 +145,26 @@ public class ConnectionManager {
 	 *
 	 * @throws DatabaseException if no transaction is found for this context.
 	 *
-	 * @return The BoxLang Transaction object, which manages an underlying JDBC Connection.
+	 * @return The BoxLang Transaction object, which manages an underlying JDBC
+	 *         Connection.
 	 */
 	public ITransaction getTransaction() {
 		return this.transaction;
 	}
 
 	/**
-	 * Get the active transaction for this request/thread/BoxLang context, throwing a DatabaseException if no transaction is found.
+	 * Get the active transaction for this request/thread/BoxLang context, throwing
+	 * a DatabaseException if no transaction is found.
 	 *
 	 * @throws DatabaseException if no transaction is found for this context.
 	 *
-	 * @return The BoxLang Transaction object, which manages an underlying JDBC Connection.
+	 * @return The BoxLang Transaction object, which manages an underlying JDBC
+	 *         Connection.
 	 */
 	public ITransaction getTransactionOrThrow() {
 		if ( !isInTransaction() ) {
-			throw new DatabaseException( "Transaction is not started; Please place this method call inside a transaction{} block" );
+			throw new DatabaseException(
+			    "Transaction is not started; Please place this method call inside a transaction{} block" );
 		}
 		return getTransaction();
 	}
@@ -170,10 +178,12 @@ public class ConnectionManager {
 	}
 
 	/**
-	 * Get the active transaction (if any) for this request/thread/BoxLang context. If none is found, the provided datasource is used to create a new
+	 * Get the active transaction (if any) for this request/thread/BoxLang context.
+	 * If none is found, the provided datasource is used to create a new
 	 * transaction which is then returned.
 	 *
-	 * @param datasource DataSource to use if creating a new transaction. Not currently used if a transaction already exists.
+	 * @param datasource DataSource to use if creating a new transaction. Not
+	 *                   currently used if a transaction already exists.
 	 *
 	 * @return The current executing transaction.
 	 */
@@ -185,9 +195,11 @@ public class ConnectionManager {
 	}
 
 	/**
-	 * Create a new transaction and set it as the active transaction for this request/thread/BoxLang context.
+	 * Create a new transaction and set it as the active transaction for this
+	 * request/thread/BoxLang context.
 	 * <p>
-	 * if a transaction already exists for this context, a nested transaction will be opened - see {@link ChildTransaction}.
+	 * if a transaction already exists for this context, a nested transaction will
+	 * be opened - see {@link ChildTransaction}.
 	 *
 	 * @param datasource DataSource to use if creating a new transaction.
 	 *
@@ -196,29 +208,38 @@ public class ConnectionManager {
 	public ITransaction beginTransaction( DataSource datasource ) {
 		if ( isInTransaction() && enableNestedTransactions ) {
 			/**
-			 * Opens a nested (child) transaction within the current transaction context, and overwrites our transaction reference to point to the new nested transaction.
+			 * Opens a nested (child) transaction within the current transaction context,
+			 * and overwrites our transaction reference to point to the new nested
+			 * transaction.
 			 *
-			 * This means that until the child transaction is closed, ALL transactional methods will operate upon the child transaction, not the parent.
+			 * This means that until the child transaction is closed, ALL transactional
+			 * methods will operate upon the child transaction, not the parent.
 			 *
-			 * Once the child transaction is closed, the parent transaction will be restored as the active transaction, and all transactional methods will operate upon the original (parent) transaction.
+			 * Once the child transaction is closed, the parent transaction will be restored
+			 * as the active transaction, and all transactional methods will operate upon
+			 * the original (parent) transaction.
 			 */
 			this.transaction = new ChildTransaction( this.transaction );
 			logger.debug( "Opened CHILD transaction {}", this.transaction );
 		} else if ( !isInTransaction() ) {
 			/**
-			 * Whether or not nested transactions are enabled, if there is no existing transaction we'll initialize one now.'
+			 * Whether or not nested transactions are enabled, if there is no existing
+			 * transaction we'll initialize one now.'
 			 */
 			this.transaction = new Transaction( context, datasource );
 			logger.debug( "Opened transaction {}", this.transaction );
 		}
-		// If we newly created a transaction OR we're already in a transaction but nested transactions are disabled, we simply return the existing transaction.
+		// If we newly created a transaction OR we're already in a transaction but
+		// nested transactions are disabled, we simply return the existing transaction.
 		return this.transaction;
 	}
 
 	/**
 	 * Close the active transaction for this request/thread/BoxLang context.
 	 *
-	 * In case of nested transactions, will close the inner transaction and update the reference to the parent transaction. Otherwise will close the outer (only) transaction and nullify the reference.
+	 * In case of nested transactions, will close the inner transaction and update
+	 * the reference to the parent transaction. Otherwise will close the outer
+	 * (only) transaction and nullify the reference.
 	 */
 	public ConnectionManager endTransaction() {
 		if ( this.transaction == null ) {
@@ -227,11 +248,16 @@ public class ConnectionManager {
 		try {
 			this.transaction.end();
 		} finally {
-			// Very important that we close down the transactional state regardless of exceptions in the transaction.end() method.
+			// Very important that we close down the transactional state regardless of
+			// exceptions in the transaction.end() method.
 			if ( this.transaction instanceof ChildTransaction childTransaction ) {
-				// Note: With `enableNestedTransactions` disabled, we SHOULD never hit this code path.
-				// inner transaction closes and we update our reference to the parent transaction.
-				logger.debug( "Ending CHILD transaction {} and repointing the context transaction to the parent transaction {}", this.transaction,
+				// Note: With `enableNestedTransactions` disabled, we SHOULD never hit this code
+				// path.
+				// inner transaction closes and we update our reference to the parent
+				// transaction.
+				logger.debug(
+				    "Ending CHILD transaction {} and repointing the context transaction to the parent transaction {}",
+				    this.transaction,
 				    childTransaction.getParent() );
 				this.transaction = childTransaction.getParent();
 			} else {
@@ -252,21 +278,28 @@ public class ConnectionManager {
 	/**
 	 * Get a JDBC Connection to the specified datasource.
 	 * 
-	 * This is deprecated For username/password overrides, use {@link #getBoxConnection(QueryOptions)} instead.
+	 * This is deprecated For username/password overrides, use
+	 * {@link #getBoxConnection(QueryOptions)} instead.
 	 * 
 	 * <p>
-	 * This method uses the following logic to pull the correct connection for the given query/context:
+	 * This method uses the following logic to pull the correct connection for the
+	 * given query/context:
 	 * <ol>
 	 * <li>check for a transactional context.</li>
-	 * <li>If an active transaction is found, this method compares the provided datasource against the transaction's datasource.</li>
-	 * <li>If the datasources match, this method then checks the username/password authentication (if not null)</li>
+	 * <li>If an active transaction is found, this method compares the provided
+	 * datasource against the transaction's datasource.</li>
+	 * <li>If the datasources match, this method then checks the username/password
+	 * authentication (if not null)</li>
 	 * <li>if all those checks succeed, the transactional connection is returned.
-	 * <li>if any of those checks fail, a new connection is returned from the provided datasource.</li>
+	 * <li>if any of those checks fail, a new connection is returned from the
+	 * provided datasource.</li>
 	 * </ol>
 	 *
 	 * @param datasource The datasource to get a connection for.
-	 * @param username   The username to use for authentication - will not check authentication if null.
-	 * @param password   The password to use for authentication - will not check authentication if null.
+	 * @param username   The username to use for authentication - will not check
+	 *                   authentication if null.
+	 * @param password   The password to use for authentication - will not check
+	 *                   authentication if null.
 	 *
 	 * @return A JDBC Connection object, possibly from a transactional context.
 	 */
@@ -290,9 +323,11 @@ public class ConnectionManager {
 				    "Both the query datasource argument and authentication matches; proceeding with established transactional connection" );
 				return getTransaction().getBoxConnection();
 			} else {
-				// A different datasource was specified OR the authentication check failed; thus this is NOT a transactional query and we should use a new
+				// A different datasource was specified OR the authentication check failed; thus
+				// this is NOT a transactional query and we should use a new
 				// connection.
-				logger.debug( "Datasource OR authentication does not match transaction; Will ignore transaction context and return a new JDBC connection" );
+				logger.debug(
+				    "Datasource OR authentication does not match transaction; Will ignore transaction context and return a new JDBC connection" );
 				return datasource.getBoxConnection( username, password );
 			}
 		}
@@ -309,23 +344,31 @@ public class ConnectionManager {
 	/**
 	 * Get a JDBC Connection to the specified datasource.
 	 * 
-	 * This is deprecated For username/password overrides, use {@link #getBoxConnection(QueryOptions)} instead.
+	 * This is deprecated For username/password overrides, use
+	 * {@link #getBoxConnection(QueryOptions)} instead.
 	 * 
 	 * <p>
-	 * This method uses the following logic to pull the correct connection for the given query/context:
+	 * This method uses the following logic to pull the correct connection for the
+	 * given query/context:
 	 * <ol>
 	 * <li>check for a transactional context.</li>
-	 * <li>If an active transaction is found, this method compares the provided datasource against the transaction's datasource.</li>
-	 * <li>If the datasources match, this method then checks the username/password authentication (if not null)</li>
+	 * <li>If an active transaction is found, this method compares the provided
+	 * datasource against the transaction's datasource.</li>
+	 * <li>If the datasources match, this method then checks the username/password
+	 * authentication (if not null)</li>
 	 * <li>if all those checks succeed, the transactional connection is returned.
-	 * <li>if any of those checks fail, a new connection is returned from the provided datasource.</li>
+	 * <li>if any of those checks fail, a new connection is returned from the
+	 * provided datasource.</li>
 	 * </ol>
 	 *
 	 * @param datasource The datasource to get a connection for.
-	 * @param username   The username to use for authentication - will not check authentication if null.
-	 * @param password   The password to use for authentication - will not check authentication if null.
+	 * @param username   The username to use for authentication - will not check
+	 *                   authentication if null.
+	 * @param password   The password to use for authentication - will not check
+	 *                   authentication if null.
 	 *
-	 * @deprecated Use {@link #getBoxConnection(DataSource, String, String)} instead.
+	 * @deprecated Use {@link #getBoxConnection(DataSource, String, String)}
+	 *             instead.
 	 *
 	 * @return A JDBC Connection object, possibly from a transactional context.
 	 */
@@ -335,9 +378,12 @@ public class ConnectionManager {
 	}
 
 	/**
-	 * Release a JDBC Connection back to the pool. Will not release transactional connections.
+	 * Release a JDBC Connection back to the pool. Will not release transactional
+	 * connections.
 	 *
-	 * @param connection The JDBC connection to release, acquired from ${@link #getConnection(DataSource)}. Can be null or already closed, in which case this method will do nothing.
+	 * @param connection The JDBC connection to release, acquired from
+	 *                   ${@link #getConnection(DataSource)}. Can be null or already
+	 *                   closed, in which case this method will do nothing.
 	 *
 	 * @return True if the connection was successfully released, otherwise false.
 	 */
@@ -360,11 +406,15 @@ public class ConnectionManager {
 	}
 
 	/**
-	 * Release a JDBC Connection back to the pool. Will not release transactional connections.
+	 * Release a JDBC Connection back to the pool. Will not release transactional
+	 * connections.
 	 * 
-	 * This method is deprecated. Use {@link #releaseConnection(BoxConnection)} instead.
+	 * This method is deprecated. Use {@link #releaseConnection(BoxConnection)}
+	 * instead.
 	 *
-	 * @param connection The JDBC connection to release, acquired from ${@link #getConnection(DataSource)}. Can be null or already closed, in which case this method will do nothing.
+	 * @param connection The JDBC connection to release, acquired from
+	 *                   ${@link #getConnection(DataSource)}. Can be null or already
+	 *                   closed, in which case this method will do nothing.
 	 *
 	 * @return True if the connection was successfully released, otherwise false.
 	 */
@@ -376,10 +426,12 @@ public class ConnectionManager {
 	/**
 	 * Get a JDBC Connection to a specified datasource.
 	 * <p>
-	 * This method uses the following logic to pull the correct connection for the given query/context:
+	 * This method uses the following logic to pull the correct connection for the
+	 * given query/context:
 	 * <ol>
 	 * <li>check for a transactional context.</li>
-	 * <li>If an active transaction is found, this method compares the provided datasource against the transaction's datasource.</li>
+	 * <li>If an active transaction is found, this method compares the provided
+	 * datasource against the transaction's datasource.</li>
 	 * <li>If the datasources match, the transactional connection is returned.
 	 * <li>if not, a new connection is returned from the provided datasource.</li>
 	 * </ol>
@@ -390,7 +442,8 @@ public class ConnectionManager {
 	 */
 	public BoxConnection getBoxConnection( DataSource datasource ) {
 		if ( isInTransaction() ) {
-			logger.debug( "Am inside transaction context; will check datasource to determine if we should return the transactional connection" );
+			logger.debug(
+			    "Am inside transaction context; will check datasource to determine if we should return the transactional connection" );
 
 			DataSource transactionalDatasource = getTransaction().getDataSource();
 			if ( transactionalDatasource == null ) {
@@ -405,9 +458,11 @@ public class ConnectionManager {
 				    "The query datasource matches the transaction datasource; proceeding with established transactional connection" );
 				return getTransaction().getBoxConnection();
 			} else {
-				// A different datasource was specified OR the authentication check failed; thus this is NOT a transactional query and we should use a new
+				// A different datasource was specified OR the authentication check failed; thus
+				// this is NOT a transactional query and we should use a new
 				// connection.
-				logger.debug( "Datasource does not match transaction; Will ignore transaction context and return a new JDBC connection" );
+				logger.debug(
+				    "Datasource does not match transaction; Will ignore transaction context and return a new JDBC connection" );
 				return datasource.getBoxConnection();
 			}
 		}
@@ -422,10 +477,12 @@ public class ConnectionManager {
 	 * This method is deprecated. Use getBoxConnection() instead.
 	 * 
 	 * <p>
-	 * This method uses the following logic to pull the correct connection for the given query/context:
+	 * This method uses the following logic to pull the correct connection for the
+	 * given query/context:
 	 * <ol>
 	 * <li>check for a transactional context.</li>
-	 * <li>If an active transaction is found, this method compares the provided datasource against the transaction's datasource.</li>
+	 * <li>If an active transaction is found, this method compares the provided
+	 * datasource against the transaction's datasource.</li>
 	 * <li>If the datasources match, the transactional connection is returned.
 	 * <li>if not, a new connection is returned from the provided datasource.</li>
 	 * </ol>
@@ -453,7 +510,8 @@ public class ConnectionManager {
 	/**
 	 * Get a connection for the provided QueryOptions.
 	 * 
-	 * This method is deprecated. Use {@link #getBoxConnection(QueryOptions)} instead.
+	 * This method is deprecated. Use {@link #getBoxConnection(QueryOptions)}
+	 * instead.
 	 *
 	 * @return A connection to the configured datasource.
 	 */
@@ -463,7 +521,8 @@ public class ConnectionManager {
 	}
 
 	/**
-	 * Determines the datasource to use according to the options and/or BoxLang Defaults
+	 * Determines the datasource to use according to the options and/or BoxLang
+	 * Defaults
 	 */
 	public DataSource getDataSource( QueryOptions options ) {
 		if ( options.datasource != null ) {
@@ -505,8 +564,10 @@ public class ConnectionManager {
 	/**
 	 * Get the default datasource for the application.
 	 *
-	 * We check the application settings for a default datasource, and if it exists, we return it.
-	 * Else, we check the runtime settings for a default datasource, and if it exists, we return it.
+	 * We check the application settings for a default datasource, and if it exists,
+	 * we return it.
+	 * Else, we check the runtime settings for a default datasource, and if it
+	 * exists, we return it.
 	 * Else, we return an empty string
 	 *
 	 * @return The default datasource object, if found, or null if not found.
@@ -530,7 +591,8 @@ public class ConnectionManager {
 	}
 
 	/**
-	 * Get the default datasource for the application or throw an exception if not found.
+	 * Get the default datasource for the application or throw an exception if not
+	 * found.
 	 *
 	 * @return The default datasource object
 	 */
@@ -543,15 +605,18 @@ public class ConnectionManager {
 	}
 
 	/**
-	 * Helper method for throwing a DatabaseException when no default datasource is defined.
+	 * Helper method for throwing a DatabaseException when no default datasource is
+	 * defined.
 	 * 
 	 * @param defaultName The name of the default datasource, if any
 	 */
 	public void throwNoDefaultDatasourceDefined( String defaultName ) {
-		String message = String.format( "No default datasource defined in the application or globally or in the query options. Registered datasources are: %s",
+		String message = String.format(
+		    "No default datasource defined in the application or globally or in the query options. Registered datasources are: %s",
 		    Arrays.toString( getAppDatasourceNames() ) );
 		if ( defaultName != null && !defaultName.isEmpty() ) {
-			message = String.format( "Default datasource [%s] not found in the application or globally. Registered datasources are: %s",
+			message = String.format(
+			    "Default datasource [%s] not found in the application or globally. Registered datasources are: %s",
 			    defaultName,
 			    Arrays.toString( getAppDatasourceNames() ) );
 		}
@@ -560,7 +625,8 @@ public class ConnectionManager {
 
 	/**
 	 * Get a datasource by name. This method will
-	 * first check the application datasources, and if not found, will check the global datasources.
+	 * first check the application datasources, and if not found, will check the
+	 * global datasources.
 	 *
 	 * @param datasourceName The name of the datasource to retrieve
 	 *
@@ -568,7 +634,8 @@ public class ConnectionManager {
 	 */
 	public DataSource getDatasource( Key datasourceName ) {
 		return this.datasources.computeIfAbsent( datasourceName, ( thisName ) -> {
-			// Try to discover now: These come from the context, so overrides are already applied
+			// Try to discover now: These come from the context, so overrides are already
+			// applied
 			IStruct configDatasources = this.context.getConfig().getAsStruct( Key.datasources );
 
 			// If the name doesn't exist in the datasources map, we return null
@@ -583,7 +650,8 @@ public class ConnectionManager {
 
 			// See if the datasource service already has this definition
 			if ( this.datasourceService.has( uniqueName ) ) {
-				// We begin pooling just in case the datasource is registered, but never used until now.
+				// We begin pooling just in case the datasource is registered, but never used
+				// until now.
 				// beginPooling() is idempotent, so it's safe to call multiple times.
 				return this.datasourceService.get( uniqueName ).beginPooling();
 			}
@@ -592,7 +660,8 @@ public class ConnectionManager {
 			DatasourceConfig dsnConfig = new DatasourceConfig( thisName )
 			    .process( properties );
 
-			// Only add application name if this datasource definition came from an application config
+			// Only add application name if this datasource definition came from an
+			// application config
 			if ( applicationName != null && !applicationName.isEmpty() ) {
 				dsnConfig.withAppName( Key.of( applicationName ) );
 			}
@@ -622,7 +691,8 @@ public class ConnectionManager {
 	 * @return The datasource object
 	 */
 	public DataSource register( Key datasourceName, IStruct properties ) {
-		DataSource target = this.datasourceService.register( new DatasourceConfig( datasourceName, properties ) ).beginPooling();
+		DataSource target = this.datasourceService.register( new DatasourceConfig( datasourceName, properties ) )
+		    .beginPooling();
 		this.datasources.put( datasourceName, target );
 		return target;
 	}
@@ -641,9 +711,7 @@ public class ConnectionManager {
 			    String.format(
 			        "Datasource with name [%s] not found in the application or globally. Registered datasources are: %s",
 			        datasourceName.getName(),
-			        Arrays.toString( getAppDatasourceNames() )
-			    )
-			);
+			        Arrays.toString( getAppDatasourceNames() ) ) );
 		}
 		return datasource;
 	}
@@ -651,7 +719,8 @@ public class ConnectionManager {
 	/**
 	 * Get an on-the-fly datasource from a struct configuration.
 	 *
-	 * @param properties The datasource properties to declared for the on the fly datasource
+	 * @param properties The datasource properties to declared for the on the fly
+	 *                   datasource
 	 *
 	 * @return A new or already registered datasource
 	 */
@@ -664,7 +733,8 @@ public class ConnectionManager {
 
 			// See if the datasource service already has this definition
 			if ( this.datasourceService.has( uniqueName ) ) {
-				// We begin pooling just in case the datasource is registered, but never used until now.
+				// We begin pooling just in case the datasource is registered, but never used
+				// until now.
 				// beginPooling() is idempotent, so it's safe to call multiple times.
 				return this.datasourceService.get( uniqueName ).beginPooling();
 			}
@@ -672,8 +742,7 @@ public class ConnectionManager {
 			// if this is truly the first time, then build out the config and register it
 			DatasourceConfig config = new DatasourceConfig(
 			    Key.of( datasourceName.getName() ),
-			    properties
-			)
+			    properties )
 			    .setOnTheFly();
 
 			// Register it
@@ -719,7 +788,8 @@ public class ConnectionManager {
 	/**
 	 * Get an array of all cached datasources names.
 	 * 
-	 * These are datasources which have been accessed during the current request/thread/BoxLang context, and pulled from the application config.
+	 * These are datasources which have been accessed during the current
+	 * request/thread/BoxLang context, and pulled from the application config.
 	 */
 	public String[] getCachedDatasourcesNames() {
 		return this.datasources.keySet()
@@ -732,7 +802,8 @@ public class ConnectionManager {
 	/**
 	 * Get an array of all application datasource names.
 	 * 
-	 * These are datasources which are defined in the application config, regardless of whether they've bene accessed or validated yet.
+	 * These are datasources which are defined in the application config, regardless
+	 * of whether they've bene accessed or validated yet.
 	 *
 	 */
 	public String[] getAppDatasourceNames() {
