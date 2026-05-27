@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -577,6 +578,7 @@ public class TransactionTest extends BaseJDBCTest {
 		assertThat( activePostTransaction ).isEqualTo( activePreTransaction );
 	}
 
+	@Disabled( "Can't change enableNestedTransactions in ConnectionManager after the request is already initialized." )
 	@DisplayName( "Nested transactions: A rollback on the child will not roll back the parent" )
 	@Test
 	public void testChildRollback() {
