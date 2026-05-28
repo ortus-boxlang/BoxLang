@@ -89,7 +89,7 @@ public class SetCaster implements IBoxCaster {
 		if ( object instanceof Set<?> existing ) {
 			// Wrap (no copy) so that mutations on the BoxSet propagate to the original
 			// Java Set — same contract as Array wrapping an ArrayList.
-			return BoxSet.wrap( ( Set<Object> ) existing );
+			return BoxSet.wrapJavaSet( ( Set<Object> ) existing );
 		}
 
 		if ( fail ) {

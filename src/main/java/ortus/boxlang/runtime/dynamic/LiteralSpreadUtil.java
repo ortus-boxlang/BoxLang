@@ -65,21 +65,16 @@ public class LiteralSpreadUtil {
 
 	/**
 	 * Build a {@link ortus.boxlang.runtime.types.BoxSet} from a literal of the form
-	 * {@code set{...}} / {@code set<variant>{...}}. The {@code variant} string is
-	 * resolved via {@link ortus.boxlang.runtime.types.BoxSet#parseType(String)} —
-	 * accepts {@code null}/{@code "default"}/{@code "hash"} for HashSet,
-	 * {@code "linked"}/{@code "ordered"} for LinkedHashSet, and
-	 * {@code "sorted"}/{@code "tree"} for TreeSet.
+	 * {@code set{...}}. Always creates a default (hash-backed) set.
 	 *
 	 * <p>
 	 * Spread expressions inside the literal are expanded element-by-element via
 	 * {@link ortus.boxlang.runtime.dynamic.casters.ArrayCaster}, matching the array
 	 * literal spread semantics.
 	 */
-	public static ortus.boxlang.runtime.types.BoxSet set( String variant, Object... values ) {
+	public static ortus.boxlang.runtime.types.BoxSet set( Object... values ) {
 		values = normalizeVarargs( values );
-		ortus.boxlang.runtime.types.BoxSet result = new ortus.boxlang.runtime.types.BoxSet(
-		    ortus.boxlang.runtime.types.BoxSet.parseType( variant ) );
+		ortus.boxlang.runtime.types.BoxSet result = new ortus.boxlang.runtime.types.BoxSet();
 		for ( Object value : values ) {
 			if ( value instanceof SpreadValue spreadValue ) {
 				CastAttempt<Array> casted = ArrayCaster.attempt( spreadValue.getValue() );

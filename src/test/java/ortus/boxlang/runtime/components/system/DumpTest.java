@@ -815,4 +815,42 @@ public class DumpTest {
 		assertThat( output ).contains( "Range:" );
 		assertThat( output ).contains( "1..&lt;10" );
 	}
+
+	@DisplayName( "It can dump a Set data type" )
+	@Test
+	public void testCanDumpSet() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				val = setNew( type="linked", values=[ "apple", "banana", "cherry" ] );
+				dump( var = val, format = "html" );
+			""",
+			context );
+		// @formatter:on
+		String output = baos.toString();
+		assertThat( output ).contains( "Set" );
+		assertThat( output ).contains( "LINKED" );
+		assertThat( output ).contains( "caseSensitive" );
+		assertThat( output ).contains( "synchronized" );
+		assertThat( output ).contains( "apple" );
+		assertThat( output ).contains( "banana" );
+		assertThat( output ).contains( "cherry" );
+	}
+
+	@DisplayName( "It can dump an empty Set" )
+	@Test
+	public void testCanDumpEmptySet() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				val = setNew();
+				dump( var = val, format = "html" );
+			""",
+			context );
+		// @formatter:on
+		String output = baos.toString();
+		assertThat( output ).contains( "Set" );
+		assertThat( output ).contains( "DEFAULT" );
+		assertThat( output ).contains( "0" );
+	}
 }

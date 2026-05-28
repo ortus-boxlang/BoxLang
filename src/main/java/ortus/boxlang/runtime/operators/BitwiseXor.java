@@ -19,13 +19,11 @@ package ortus.boxlang.runtime.operators;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
-import ortus.boxlang.runtime.dynamic.casters.SetCaster;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.BoxSet;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
- * Performs BitwiseXor, with overload for set symmetric difference when both operands are {@link BoxSet}.
+ * Performs BitwiseXor.
  * {@code z = x b^ y}
  */
 public class BitwiseXor implements IOperator {
@@ -34,15 +32,9 @@ public class BitwiseXor implements IOperator {
 	 * @param left  The left operand
 	 * @param right The right operand
 	 *
-	 * @return Symmetric set difference when both operands are sets; otherwise a Number from bitwise-xor.
+	 * @return A Number from bitwise-xor.
 	 */
 	public static Object invoke( Object left, Object right ) {
-		if ( left instanceof BoxSet bsl ) {
-			var rs = SetCaster.attemptLoose( right );
-			if ( rs.wasSuccessful() ) {
-				return bsl.symmetricDifference( rs.get() );
-			}
-		}
 		if ( left instanceof Short l ) {
 			if ( right instanceof Short r ) {
 				return l ^ r;
@@ -120,7 +112,6 @@ public class BitwiseXor implements IOperator {
 
 	/**
 	 * Apply this operator to an object/key and set the new value back in the same object/key.
-	 * Returns Object since set-on-set xor produces a {@link BoxSet} (symmetric difference).
 	 *
 	 * @return The result
 	 */

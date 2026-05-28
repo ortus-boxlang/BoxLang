@@ -13,12 +13,6 @@ println( "Array .toSet() size:    " & c.size() );
 d = set{ "x", "y", "z" };
 println( "set{x,y,z} size:        " & d.size() );
 
-e = set<linked>{ "c", "a", "b", "a" };
-println( "Linked order:           " & e.toList( "," ) );
-
-f = set<sorted>{ 9, 1, 5, 3 };
-println( "Sorted order:           " & f.toList( "," ) );
-
 // Member functions
 m = setNew();
 m.add( 1 ).add( 2 );        // SetAdd returns the set for chaining
@@ -49,15 +43,14 @@ println( "Difference member:      " & A.difference( B ).toArray().toList() );
 println( "SymDiff member:         " & A.symmetricDifference( B ).toArray().toList() );
 
 // Set algebra (operators)
-// + and - work directly. For intersection/symdiff use BoxLang's bitwise tokens
-// b& and b^ (since "&" is string concat in BoxLang).
+// + for union, - for difference, * for intersection, ^ for symmetric difference
 println( "A + B (union):          " & ( A + B ).toArray().toList() );
 println( "A - B (diff):           " & ( A - B ).toArray().toList() );
-println( "A b& B (intersect):     " & ( A b& B ).toArray().toList() );
-println( "A b^ B (symdiff):       " & ( A b^ B ).toArray().toList() );
+println( "A * B (intersect):      " & ( A * B ).toArray().toList() );
+println( "A ^ B (symdiff):        " & ( A ^ B ).toArray().toList() );
 
 // JSON
-ordered = set<linked>{ "a", "b", "c" };
+ordered = setNew( type="linked", values=["a", "b", "c"] );
 println( "JSON:                   " & jsonSerialize( ordered ) );
 
 // Predicates

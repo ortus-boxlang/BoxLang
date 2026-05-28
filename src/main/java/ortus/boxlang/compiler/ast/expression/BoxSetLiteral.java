@@ -31,36 +31,23 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
  * AST Node representing a Set literal.
  *
  * <p>
- * Syntax forms:
+ * Syntax form:
  * 
  * <pre>
  * set{ 1, 2, 3 }              // default (hash) variant
- * set&lt;linked&gt;{ "a", "b" }     // LinkedHashSet — preserves insertion order
- * set&lt;sorted&gt;{ 9, 1, 5 }      // TreeSet — natural ordering
  * </pre>
  */
 public class BoxSetLiteral extends BoxExpression implements IBoxLiteral {
 
-	private List<BoxExpression>	values;
+	private List<BoxExpression> values;
 
-	/**
-	 * Optional backing-storage variant: null for default, otherwise one of
-	 * {@code "linked"} / {@code "ordered"} / {@code "sorted"} / {@code "tree"} / {@code "hash"}.
-	 */
-	private final String		variant;
-
-	public BoxSetLiteral( String variant, List<BoxExpression> values, Position position, String sourceText ) {
+	public BoxSetLiteral( List<BoxExpression> values, Position position, String sourceText ) {
 		super( position, sourceText );
-		this.variant = variant;
 		setValues( values );
 	}
 
 	public List<BoxExpression> getValues() {
 		return values;
-	}
-
-	public String getVariant() {
-		return variant;
 	}
 
 	public void setValues( List<BoxExpression> values ) {
@@ -77,7 +64,6 @@ public class BoxSetLiteral extends BoxExpression implements IBoxLiteral {
 	@Override
 	public Map<String, Object> toMap() {
 		Map<String, Object> map = super.toMap();
-		map.put( "variant", variant );
 		map.put( "values", values.stream().map( BoxExpression::toMap ).collect( Collectors.toList() ) );
 		return map;
 	}

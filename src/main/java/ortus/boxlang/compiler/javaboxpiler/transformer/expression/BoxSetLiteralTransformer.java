@@ -20,8 +20,6 @@ package ortus.boxlang.compiler.javaboxpiler.transformer.expression;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.MethodCallExpr;
-import com.github.javaparser.ast.expr.NullLiteralExpr;
-import com.github.javaparser.ast.expr.StringLiteralExpr;
 
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
@@ -32,8 +30,8 @@ import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
 
 /**
- * Transpiles {@code set{...}} / {@code set<variant>{...}} literals into a
- * {@code LiteralSpreadUtil.set(variant, value1, value2, ...)} call which builds a
+ * Transpiles {@code set{...}} literals into a
+ * {@code LiteralSpreadUtil.set(value1, value2, ...)} call which builds a
  * {@link ortus.boxlang.runtime.types.BoxSet} at runtime.
  */
 public class BoxSetLiteralTransformer extends AbstractTransformer {
@@ -47,9 +45,6 @@ public class BoxSetLiteralTransformer extends AbstractTransformer {
 		BoxSetLiteral	setLiteral	= ( BoxSetLiteral ) node;
 		MethodCallExpr	javaExpr	= ( MethodCallExpr ) parseExpression(
 		    "ortus.boxlang.runtime.dynamic.LiteralSpreadUtil.set()", java.util.Map.of() );
-
-		String			variant		= setLiteral.getVariant();
-		javaExpr.getArguments().add( variant == null ? new NullLiteralExpr() : new StringLiteralExpr( variant ) );
 
 		for ( BoxExpression expr : setLiteral.getValues() ) {
 			if ( expr instanceof BoxSpreadExpression spread ) {

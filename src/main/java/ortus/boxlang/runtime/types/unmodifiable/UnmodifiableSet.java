@@ -50,7 +50,9 @@ public class UnmodifiableSet extends BoxSet implements IUnmodifiable {
 		super( type, false );
 		// Bypass the mutator block below — populate the underlying wrapped set directly.
 		if ( source != null ) {
-			this.wrapped.addAll( source );
+			for ( Object e : source ) {
+				this.wrapped.add( wrap( e ) );
+			}
 		}
 	}
 

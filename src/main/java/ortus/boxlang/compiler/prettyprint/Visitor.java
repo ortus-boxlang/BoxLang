@@ -55,6 +55,7 @@ import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxSetLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
 import ortus.boxlang.compiler.ast.expression.BoxStaticMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
@@ -141,6 +142,7 @@ public class Visitor extends VoidBoxVisitor {
 	FunctionDeclarationPrinter		functionDeclaration;
 	StructLiteralPrinter			structLiteralPrinter;
 	ArrayLiteralPrinter				arrayLiteralPrinter;
+	SetLiteralPrinter				setLiteralPrinter;
 
 	/**
 	 * Constructor
@@ -166,6 +168,7 @@ public class Visitor extends VoidBoxVisitor {
 		this.helperPrinter			= new HelperPrinter( this );
 		this.structLiteralPrinter	= new StructLiteralPrinter( this );
 		this.arrayLiteralPrinter	= new ArrayLiteralPrinter( this );
+		this.setLiteralPrinter		= new SetLiteralPrinter( this );
 		this.functionDeclaration	= new FunctionDeclarationPrinter( this );
 		this.parametersPrinter		= new ParametersPrinter( this );
 		this.argumentsPrinter		= new ArgumentsPrinter( this );
@@ -1016,6 +1019,11 @@ public class Visitor extends VoidBoxVisitor {
 	@Override
 	public void visit( BoxArrayLiteral node ) {
 		arrayLiteralPrinter.print( node );
+	}
+
+	@Override
+	public void visit( BoxSetLiteral node ) {
+		setLiteralPrinter.print( node );
 	}
 
 	@Override

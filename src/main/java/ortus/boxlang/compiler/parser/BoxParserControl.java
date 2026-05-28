@@ -38,10 +38,10 @@ import static ortus.boxlang.parser.antlr.BoxGrammar.INSTANCEOF;
 import static ortus.boxlang.parser.antlr.BoxGrammar.INTERFACE;
 import static ortus.boxlang.parser.antlr.BoxGrammar.IS;
 import static ortus.boxlang.parser.antlr.BoxGrammar.JAVA;
-import static ortus.boxlang.parser.antlr.BoxGrammar.LE;
-import static ortus.boxlang.parser.antlr.BoxGrammar.LESS;
 import static ortus.boxlang.parser.antlr.BoxGrammar.LBRACE;
 import static ortus.boxlang.parser.antlr.BoxGrammar.LBRACKET;
+import static ortus.boxlang.parser.antlr.BoxGrammar.LE;
+import static ortus.boxlang.parser.antlr.BoxGrammar.LESS;
 import static ortus.boxlang.parser.antlr.BoxGrammar.LPAREN;
 import static ortus.boxlang.parser.antlr.BoxGrammar.LT;
 import static ortus.boxlang.parser.antlr.BoxGrammar.LTE;
@@ -188,13 +188,14 @@ public abstract class BoxParserControl extends Parser {
 	}
 
 	/**
-	 * Soft-keyword gate for the {@code set{...}} and {@code set<variant>{...}} literal.
+	 * Soft-keyword gate for the {@code set{...}} literal.
 	 *
 	 * <p>
 	 * Returns true when the next tokens are an IDENTIFIER whose text is "set"
-	 * (case-insensitive) followed by either {@code {} or {@code <ident>}, which means we
-	 * should parse a Set literal here rather than treating "set" as a plain identifier.
+	 * (case-insensitive) followed by {@code {}, which means we should parse a
+	 * Set literal here rather than treating "set" as a plain identifier.
 	 *
+	 * 
 	 * <p>
 	 * Keeping "set" a soft keyword (not a reserved word) preserves backward
 	 * compatibility — variables and functions named {@code set} continue to work.
@@ -207,21 +208,7 @@ public abstract class BoxParserControl extends Parser {
 		if ( !"set".equalsIgnoreCase( first.getText() ) ) {
 			return false;
 		}
-		int next = input.LT( 2 ).getType();
-		if ( next == LBRACE ) {
-			return true;
-		}
-		// set<variant>{ ... } — peek for "< IDENT > {"
-		if ( next == ortus.boxlang.parser.antlr.BoxGrammar.LTSIGN ) {
-			int t3 = input.LT( 3 ).getType();
-			if ( t3 == IDENTIFIER ) {
-				int t4 = input.LT( 4 ).getType();
-				if ( t4 == ortus.boxlang.parser.antlr.BoxGrammar.GTSIGN ) {
-					return input.LT( 5 ).getType() == LBRACE;
-				}
-			}
-		}
-		return false;
+		return input.LT( 2 ).getType() == LBRACE;
 	}
 
 	/**

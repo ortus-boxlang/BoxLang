@@ -126,8 +126,7 @@ public enum BoxBinaryOperator {
 	 */
 	public boolean isNumeric() {
 		return switch ( this ) {
-			case Plus, Minus, Star, Slash, Power, Backslash, Mod, BitwiseAnd, BitwiseOr, BitwiseXor, BitwiseSignedLeftShift, BitwiseSignedRightShift,
-			    BitwiseUnsignedRightShift -> true;
+			case Slash, Backslash, Mod, BitwiseAnd, BitwiseOr, BitwiseXor, BitwiseSignedLeftShift, BitwiseSignedRightShift, BitwiseUnsignedRightShift -> true;
 			default -> false;
 		};
 	}

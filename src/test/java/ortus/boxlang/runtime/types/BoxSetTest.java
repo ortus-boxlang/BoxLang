@@ -20,8 +20,12 @@ package ortus.boxlang.runtime.types;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -217,6 +221,250 @@ public class BoxSetTest {
 		assertThat( new BoxSet().getBoxTypeName() ).isEqualTo( "Set" );
 		assertThat( new BoxSet( BoxSet.Type.LINKED ).getBoxTypeName() ).isEqualTo( "Set:Linked" );
 		assertThat( new BoxSet( BoxSet.Type.SORTED ).getBoxTypeName() ).isEqualTo( "Set:Sorted" );
+	}
+
+	// ==========================================
+	// NormalizedValue / Type-aware equality tests
+	// ==========================================
+
+	@DisplayName( "Strings are case-insensitive: 'Hello' and 'hello' are the same element" )
+	@Test
+	void testStringCaseInsensitive() {
+		BoxSet s = new BoxSet();
+		s.add( "Hello" );
+		assertThat( s.add( "hello" ) ).isFalse();
+		assertThat( s.add( "HELLO" ) ).isFalse();
+		assertThat( s.size() ).isEqualTo( 1 );
+		assertThat( s.contains( "hElLo" ) ).isTrue();
+	}
+
+	@DisplayName( "Character and char[] are treated as strings, case-insensitive" )
+	@Test
+	void testCharacterAndCharArray() {
+		BoxSet s = new BoxSet();
+		s.add( "a" );
+		assertThat( s.add( 'A' ) ).isFalse();
+		assertThat( s.add( new char[] { 'a' } ) ).isFalse();
+		assertThat( s.size() ).isEqualTo( 1 );
+		assertThat( s.contains( 'a' ) ).isTrue();
+		assertThat( s.contains( new char[] { 'A' } ) ).isTrue();
+	}
+
+	@DisplayName( "Numerics: int, long, short, double, float all compare by value" )
+	@Test
+	void testNumericEquality() {
+		BoxSet s = new BoxSet();
+		s.add( 42 );
+		// All these represent the same numeric value
+		assertThat( s.add( 42L ) ).isFalse();
+		assertThat( s.add( ( short ) 42 ) ).isFalse();
+		assertThat( s.add( 42.0 ) ).isFalse();
+		assertThat( s.add( 42.0f ) ).isFalse();
+		assertThat( s.add( BigDecimal.valueOf( 42 ) ) ).isFalse();
+		assertThat( s.add( BigInteger.valueOf( 42 ) ) ).isFalse();
+		assertThat( s.size() ).isEqualTo( 1 );
+		// Contains works with any numeric type
+		assertThat( s.contains( 42L ) ).isTrue();
+		assertThat( s.contains( 42.0 ) ).isTrue();
+		assertThat( s.contains( new BigDecimal( "42.00" ) ) ).isTrue();
+	}
+
+	@DisplayName( "Numerics: AtomicInteger and AtomicLong compare by value" )
+	@Test
+	void testAtomicNumericEquality() {
+		BoxSet s = new BoxSet();
+		s.add( 100 );
+		assertThat( s.add( new AtomicInteger( 100 ) ) ).isFalse();
+		assertThat( s.add( new AtomicLong( 100 ) ) ).isFalse();
+		assertThat( s.size() ).isEqualTo( 1 );
+		assertThat( s.contains( new AtomicInteger( 100 ) ) ).isTrue();
+	}
+
+	@DisplayName( "Numerics: different values are distinct" )
+	@Test
+	void testNumericDistinct() {
+		BoxSet s = new BoxSet();
+		s.add( 1 );
+		s.add( 2 );
+		s.add( 3.14 );
+		assertThat( s.size() ).isEqualTo( 3 );
+		assertThat( s.contains( 1L ) ).isTrue();
+		assertThat( s.contains( 2.0f ) ).isTrue();
+		assertThat( s.contains( new BigDecimal( "3.14" ) ) ).isTrue();
+		assertThat( s.contains( 99 ) ).isFalse();
+	}
+
+	@DisplayName( "DateTime: different date types representing the same instant are equal" )
+	@Test
+	void testDateTimeEquality() {
+		DateTime			blDate	= new DateTime( java.time.ZonedDateTime.of( 2024, 6, 15, 12, 0, 0, 0, java.time.ZoneId.of( "UTC" ) ) );
+		java.time.Instant	instant	= blDate.getWrapped().toInstant();
+
+		BoxSet				s		= new BoxSet();
+		s.add( blDate );
+		assertThat( s.add( instant ) ).isFalse();
+		assertThat( s.size() ).isEqualTo( 1 );
+		assertThat( s.contains( instant ) ).isTrue();
+	}
+
+	@DisplayName( "Different normalized types are never equal" )
+	@Test
+	void testCrossTypeNotEqual() {
+		BoxSet s = new BoxSet();
+		s.add( "42" );
+		s.add( 42 );
+		// String "42" and numeric 42 are different BoxLangTypes, so both exist
+		assertThat( s.size() ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "Remove works with case-insensitive strings" )
+	@Test
+	void testRemoveCaseInsensitive() {
+		BoxSet s = new BoxSet();
+		s.add( "Foo" );
+		assertThat( s.remove( "FOO" ) ).isTrue();
+		assertThat( s.isEmpty() ).isTrue();
+	}
+
+	@DisplayName( "Remove works with cross-numeric types" )
+	@Test
+	void testRemoveCrossNumeric() {
+		BoxSet s = new BoxSet();
+		s.add( 7 );
+		assertThat( s.remove( 7L ) ).isTrue();
+		assertThat( s.isEmpty() ).isTrue();
+	}
+
+	@DisplayName( "Intersection respects normalized equality" )
+	@Test
+	void testIntersectionNormalized() {
+		BoxSet	a		= BoxSet.of( "Hello", "World", "Foo" );
+		BoxSet	b		= BoxSet.of( "hello", "foo", "bar" );
+		BoxSet	result	= a.intersection( b );
+		assertThat( result.size() ).isEqualTo( 2 );
+		assertThat( result.contains( "HELLO" ) ).isTrue();
+		assertThat( result.contains( "FOO" ) ).isTrue();
+	}
+
+	@DisplayName( "Union deduplicates across numeric types" )
+	@Test
+	void testUnionNormalized() {
+		BoxSet	a		= BoxSet.of( 1, 2, 3 );
+		BoxSet	b		= BoxSet.of( 2L, 3.0, 4 );
+		BoxSet	result	= a.union( b );
+		assertThat( result.size() ).isEqualTo( 4 );
+	}
+
+	@DisplayName( "Difference respects normalized equality" )
+	@Test
+	void testDifferenceNormalized() {
+		BoxSet	a		= BoxSet.of( "A", "B", "C" );
+		BoxSet	b		= BoxSet.of( "a", "c" );
+		BoxSet	result	= a.difference( b );
+		assertThat( result.size() ).isEqualTo( 1 );
+		assertThat( result.contains( "b" ) ).isTrue();
+	}
+
+	@DisplayName( "Sorted set works with mixed numeric types" )
+	@Test
+	void testSortedMixedNumerics() {
+		BoxSet				s	= BoxSet.of( BoxSet.Type.SORTED, 9, 1L, ( short ) 5, 3.0, BigDecimal.valueOf( 7 ) );
+		Iterator<Object>	it	= s.iterator();
+		assertThat( ( ( Number ) it.next() ).intValue() ).isEqualTo( 1 );
+		assertThat( ( ( Number ) it.next() ).intValue() ).isEqualTo( 3 );
+		assertThat( ( ( Number ) it.next() ).intValue() ).isEqualTo( 5 );
+		assertThat( ( ( Number ) it.next() ).intValue() ).isEqualTo( 7 );
+		assertThat( ( ( Number ) it.next() ).intValue() ).isEqualTo( 9 );
+	}
+
+	@DisplayName( "ContainsAll works with normalized types" )
+	@Test
+	void testContainsAllNormalized() {
+		BoxSet s = BoxSet.of( "Hello", "World", 42 );
+		assertThat( s.containsAll( List.of( "hello", "world" ) ) ).isTrue();
+		assertThat( s.containsAll( List.of( 42L, "HELLO" ) ) ).isTrue();
+		assertThat( s.containsAll( List.of( "missing" ) ) ).isFalse();
+	}
+
+	@DisplayName( "isSubsetOf / isSupersetOf with normalized types" )
+	@Test
+	void testSubsetSupersetNormalized() {
+		BoxSet	a	= BoxSet.of( 1, 2 );
+		BoxSet	b	= BoxSet.of( 1L, 2.0, 3 );
+		assertThat( a.isSubsetOf( b ) ).isTrue();
+		assertThat( b.isSupersetOf( a ) ).isTrue();
+	}
+
+	@DisplayName( "isDisjointFrom with normalized types" )
+	@Test
+	void testDisjointNormalized() {
+		BoxSet	a	= BoxSet.of( "Hello" );
+		BoxSet	b	= BoxSet.of( "hello" );
+		// Same value case-insensitively, so NOT disjoint
+		assertThat( a.isDisjointFrom( b ) ).isFalse();
+	}
+
+	@DisplayName( "Case-sensitive set treats different cases as distinct" )
+	@Test
+	void testCaseSensitiveDistinct() {
+		BoxSet s = new BoxSet( BoxSet.Type.DEFAULT, true, true );
+		s.add( "Hello" );
+		s.add( "hello" );
+		s.add( "HELLO" );
+		assertThat( s.size() ).isEqualTo( 3 );
+	}
+
+	@DisplayName( "Case-insensitive set (default) deduplicates different cases" )
+	@Test
+	void testCaseInsensitiveDefault() {
+		BoxSet s = new BoxSet( BoxSet.Type.DEFAULT, true, false );
+		s.add( "Hello" );
+		s.add( "hello" );
+		s.add( "HELLO" );
+		assertThat( s.size() ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "Case-sensitive set contains is case-aware" )
+	@Test
+	void testCaseSensitiveContains() {
+		BoxSet s = new BoxSet( BoxSet.Type.DEFAULT, true, true );
+		s.add( "Hello" );
+		assertThat( s.contains( "Hello" ) ).isTrue();
+		assertThat( s.contains( "hello" ) ).isFalse();
+		assertThat( s.contains( "HELLO" ) ).isFalse();
+	}
+
+	@DisplayName( "Case-sensitive set remove is case-aware" )
+	@Test
+	void testCaseSensitiveRemove() {
+		BoxSet s = new BoxSet( BoxSet.Type.DEFAULT, true, true );
+		s.add( "Hello" );
+		s.add( "hello" );
+		assertThat( s.size() ).isEqualTo( 2 );
+		s.remove( "Hello" );
+		assertThat( s.size() ).isEqualTo( 1 );
+		assertThat( s.contains( "hello" ) ).isTrue();
+		assertThat( s.contains( "Hello" ) ).isFalse();
+	}
+
+	@DisplayName( "Case-sensitive collection constructor deduplicates correctly" )
+	@Test
+	void testCaseSensitiveCollectionConstructor() {
+		BoxSet s = new BoxSet( BoxSet.Type.DEFAULT, List.of( "a", "A", "b", "B" ), true );
+		assertThat( s.size() ).isEqualTo( 4 );
+
+		BoxSet ci = new BoxSet( BoxSet.Type.DEFAULT, List.of( "a", "A", "b", "B" ), false );
+		assertThat( ci.size() ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "Case-sensitive does not affect numeric normalization" )
+	@Test
+	void testCaseSensitiveNumericUnchanged() {
+		BoxSet s = new BoxSet( BoxSet.Type.DEFAULT, true, true );
+		s.add( 1 );
+		s.add( 1L );
+		s.add( 1.0 );
+		assertThat( s.size() ).isEqualTo( 1 );
 	}
 
 }

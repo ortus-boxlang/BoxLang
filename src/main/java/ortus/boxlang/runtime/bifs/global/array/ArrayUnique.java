@@ -22,6 +22,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.NormalizedValue;
 import ortus.boxlang.runtime.types.util.BLCollector;
 
 @BoxBIF( description = "Returns a new array with duplicate values removed" )
@@ -34,7 +35,8 @@ public class ArrayUnique extends BIF {
 	public ArrayUnique() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, Argument.ARRAY, Key.array )
+		    new Argument( true, Argument.ARRAY, Key.array ),
+		    new Argument( false, Argument.BOOLEAN, Key.caseSensitive, false )
 		};
 	}
 
@@ -54,6 +56,11 @@ public class ArrayUnique extends BIF {
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		return arguments.getAsArray( Key.array ).stream().distinct().collect( BLCollector.toArray() );
+		boolean caseSensitive = arguments.getAsBoolean( Key.caseSensitive );
+		return arguments.getAsArray( Key.array ).stream()
+		    .map( v -> NormalizedValue.of( v, caseSensitive ) )
+		    .distinct()
+		    .map( NormalizedValue::getOriginalValue )
+		    .collect( BLCollector.toArray() );
 	}
 }

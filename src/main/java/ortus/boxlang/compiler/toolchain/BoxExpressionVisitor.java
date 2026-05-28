@@ -960,7 +960,6 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 	public BoxExpression visitSetLiteral( ortus.boxlang.parser.antlr.BoxGrammar.SetLiteralContext ctx ) {
 		var	pos		= tools.getPosition( ctx );
 		var	src		= tools.getSourceText( ctx );
-		var	variant	= ctx.setVariant != null ? ctx.setVariant.getText() : null;
 		var	values	= Optional.ofNullable( ctx.arrayLiteralMembers() )
 		    .map( members -> members.arrayLiteralMember().stream().map( member -> {
 						    if ( member.ELLIPSIS() != null ) {
@@ -971,7 +970,7 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 					    } )
 		        .collect( Collectors.toList() ) )
 		    .orElse( Collections.emptyList() );
-		return new ortus.boxlang.compiler.ast.expression.BoxSetLiteral( variant, values, pos, src );
+		return new ortus.boxlang.compiler.ast.expression.BoxSetLiteral( values, pos, src );
 	}
 
 	@Override

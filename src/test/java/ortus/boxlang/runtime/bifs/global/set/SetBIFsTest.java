@@ -289,38 +289,6 @@ public class SetBIFsTest {
 		assertThat( s.getType() ).isEqualTo( BoxSet.Type.DEFAULT );
 	}
 
-	@DisplayName( "Set literal: set<linked>{...} preserves insertion order" )
-	@Test
-	public void testSetLiteralLinked() {
-		instance.executeSource(
-		    """
-		    s = set<linked>{ "c", "a", "b", "a" };
-		    result = s.toArray();
-		    """,
-		    context );
-		Array arr = ( Array ) variables.get( result );
-		assertThat( arr.size() ).isEqualTo( 3 );
-		assertThat( arr.get( 0 ) ).isEqualTo( "c" );
-		assertThat( arr.get( 1 ) ).isEqualTo( "a" );
-		assertThat( arr.get( 2 ) ).isEqualTo( "b" );
-	}
-
-	@DisplayName( "Set literal: set<sorted>{...} orders elements" )
-	@Test
-	public void testSetLiteralSorted() {
-		instance.executeSource(
-		    """
-		    s = set<sorted>{ 9, 1, 5, 3 };
-		    result = s.toArray();
-		    """,
-		    context );
-		Array arr = ( Array ) variables.get( result );
-		assertThat( arr.get( 0 ) ).isEqualTo( 1 );
-		assertThat( arr.get( 1 ) ).isEqualTo( 3 );
-		assertThat( arr.get( 2 ) ).isEqualTo( 5 );
-		assertThat( arr.get( 3 ) ).isEqualTo( 9 );
-	}
-
 	@DisplayName( "Empty set literal: set{}" )
 	@Test
 	public void testEmptySetLiteral() {
@@ -407,6 +375,156 @@ public class SetBIFsTest {
 		assertThat( arr.get( 1 ) ).isEqualTo( 3 );
 		assertThat( arr.get( 2 ) ).isEqualTo( 5 );
 		assertThat( arr.get( 3 ) ).isEqualTo( 9 );
+	}
+
+	@DisplayName( "setNew() with caseSensitive=true keeps different cases as distinct" )
+	@Test
+	public void testSetNewCaseSensitiveTrue() {
+		instance.executeSource(
+		    """
+		    s = setNew( values=["Hello", "hello", "HELLO"], caseSensitive=true );
+		    result = s.size();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 3 );
+	}
+
+	@DisplayName( "setNew() with caseSensitive=false (default) deduplicates cases" )
+	@Test
+	public void testSetNewCaseSensitiveFalseDefault() {
+		instance.executeSource(
+		    """
+		    s = setNew( values=["Hello", "hello", "HELLO"] );
+		    result = s.size();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "setNew() caseSensitive=true still normalizes numerics" )
+	@Test
+	public void testSetNewCaseSensitiveNumericsStillNormalized() {
+		instance.executeSource(
+		    """
+		    s = setNew( values=[1, 1.0], caseSensitive=true );
+		    result = s.size();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "setNew() caseSensitive=true contains is case-aware" )
+	@Test
+	public void testSetNewCaseSensitiveContains() {
+		instance.executeSource(
+		    """
+		    s = setNew( values=["Foo", "Bar"], caseSensitive=true );
+		    result = s.contains( "foo" );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "setNew() caseSensitive=false contains is case-insensitive" )
+	@Test
+	public void testSetNewCaseInsensitiveContains() {
+		instance.executeSource(
+		    """
+		    s = setNew( values=["Foo", "Bar"], caseSensitive=false );
+		    result = s.contains( "foo" );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "Operator + performs set union" )
+	@Test
+	public void testPlusOperatorUnion() {
+		instance.executeSource(
+		    """
+		    a = set{ 1, 2, 3 };
+		    b = set{ 3, 4, 5 };
+		    result = a + b;
+		    """,
+		    context );
+		BoxSet s = ( BoxSet ) variables.get( result );
+		assertThat( s.size() ).isEqualTo( 5 );
+	}
+
+	@DisplayName( "Operator - performs set difference" )
+	@Test
+	public void testMinusOperatorDifference() {
+		instance.executeSource(
+		    """
+		    a = set{ 1, 2, 3 };
+		    b = set{ 2, 3, 4 };
+		    result = a - b;
+		    """,
+		    context );
+		BoxSet s = ( BoxSet ) variables.get( result );
+		assertThat( s.size() ).isEqualTo( 1 );
+		assertThat( s.contains( 1 ) ).isTrue();
+	}
+
+	@DisplayName( "Operator * performs set intersection" )
+	@Test
+	public void testStarOperatorIntersection() {
+		instance.executeSource(
+		    """
+		    a = set{ 1, 2, 3 };
+		    b = set{ 2, 3, 4 };
+		    result = a * b;
+		    """,
+		    context );
+		BoxSet s = ( BoxSet ) variables.get( result );
+		assertThat( s.size() ).isEqualTo( 2 );
+		assertThat( s.contains( 2 ) ).isTrue();
+		assertThat( s.contains( 3 ) ).isTrue();
+	}
+
+	@DisplayName( "Operator ^ performs set symmetric difference" )
+	@Test
+	public void testCaretOperatorSymmetricDifference() {
+		instance.executeSource(
+		    """
+		    a = set{ 1, 2, 3 };
+		    b = set{ 2, 3, 4 };
+		    result = a ^ b;
+		    """,
+		    context );
+		BoxSet s = ( BoxSet ) variables.get( result );
+		assertThat( s.size() ).isEqualTo( 2 );
+		assertThat( s.contains( 1 ) ).isTrue();
+		assertThat( s.contains( 4 ) ).isTrue();
+	}
+
+	@DisplayName( "Set operators still work as math when not using sets" )
+	@Test
+	public void testOperatorsFallThroughToMath() {
+		instance.executeSource(
+		    """
+		    plus = 2 + 3;
+		    minus = 5 - 2;
+		    star = 4 * 3;
+		    caret = 2 ^ 3;
+		    result = plus & "," & minus & "," & star & "," & caret;
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "5,3,12,8" );
+	}
+
+	@DisplayName( "Compound *= on a set performs intersection" )
+	@Test
+	public void testStarEqualCompoundIntersection() {
+		instance.executeSource(
+		    """
+		    a = set{ 1, 2, 3 };
+		    a *= set{ 2, 3, 4 };
+		    result = a;
+		    """,
+		    context );
+		BoxSet s = ( BoxSet ) variables.get( result );
+		assertThat( s.size() ).isEqualTo( 2 );
 	}
 
 }

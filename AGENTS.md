@@ -601,9 +601,7 @@ s = setNew( type="linked", values=[1,2,3] );   // ordered, deduped
 s = setOf( 1, 2, 2, 3 );                       // varargs, deduped
 
 // Literal syntax (soft-keyword "set", parser-gated)
-s = set{ 1, 2, 3 };                            // default
-s = set<linked>{ "a", "b", "c" };              // LinkedHashSet
-s = set<sorted>{ 9, 1, 5 };                    // TreeSet
+s = set{ 1, 2, 3 };                            // default (hash)
 s = set{};                                     // empty
 
 // From an Array
@@ -631,19 +629,17 @@ Rich superset of Java + CF + array-style:
 
 ### Operators
 
-Set algebra is also exposed via overloaded operators. Note that `&` in BoxLang is
-**string concatenation** (not bitwise AND) so intersection / symmetric difference use
-BoxLang's bitwise tokens `b&` and `b^`:
+Set algebra is also exposed via overloaded operators:
 
 ```
 union     = a + b      // setUnion
 diff      = a - b      // setDifference
-intersect = a b& b     // setIntersection
-symdiff   = a b^ b     // setSymmetricDifference
+intersect = a * b      // setIntersection
+symdiff   = a ^ b      // setSymmetricDifference
 ```
 
 The right-hand operand is accepted "loose" (Array, list-delimited string, Range, etc.)
-when the left operand is a Set.
+when either operand is a Set.
 
 ### Java interop
 

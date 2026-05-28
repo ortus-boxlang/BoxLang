@@ -35,7 +35,8 @@ public class SetNew extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( false, Argument.STRING, Key.type, "default" ),
-		    new Argument( false, Argument.ANY, Key.values )
+		    new Argument( false, Argument.ANY, Key.values ),
+		    new Argument( false, Argument.BOOLEAN, Key.caseSensitive, false )
 		};
 	}
 
@@ -51,21 +52,22 @@ public class SetNew extends BIF {
 	 * @return A new {@link BoxSet}.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		BoxSet.Type	type	= BoxSet.parseType( arguments.getAsString( Key.type ) );
-		Object		seed	= arguments.get( Key.values );
+		BoxSet.Type	type			= BoxSet.parseType( arguments.getAsString( Key.type ) );
+		Object		seed			= arguments.get( Key.values );
+		boolean		caseSensitive	= arguments.getAsBoolean( Key.caseSensitive );
 		if ( seed == null ) {
-			return new BoxSet( type );
+			return new BoxSet( type, true, caseSensitive );
 		}
 		// Preserve iteration order for ordered seeds (Array/List) by adding directly,
 		// rather than routing through a hash-backed SetCaster which would lose order.
 		if ( seed instanceof Collection<?> coll ) {
-			return new BoxSet( type, coll );
+			return new BoxSet( type, coll, caseSensitive );
 		}
 		var attempt = SetCaster.attemptLoose( seed );
 		if ( attempt.wasSuccessful() ) {
-			return new BoxSet( type, attempt.get() );
+			return new BoxSet( type, attempt.get(), caseSensitive );
 		}
-		BoxSet result = new BoxSet( type );
+		BoxSet result = new BoxSet( type, true, caseSensitive );
 		result.add( seed );
 		return result;
 	}

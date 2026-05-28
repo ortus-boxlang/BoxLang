@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.bifs.BoxMemberExpose;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
+import ortus.boxlang.runtime.dynamic.casters.SetCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.scopes.Key;
@@ -100,7 +101,8 @@ public class BoxSet implements Set<Object>, IType, IReferenceable, IListenable<B
 	private final Type									type;
 
 	private final boolean								isSynchronized;
-
+	private final boolean								useNormalization;
+	private final boolean								caseSensitive;
 	public transient BoxMeta<?>							$bx;
 
 	private transient Map<Key, IChangeListener<BoxSet>>	listeners;
@@ -138,11 +140,24 @@ public class BoxSet implements Set<Object>, IType, IReferenceable, IListenable<B
 	 * @param isSynchronized Whether the backing set should be thread-safe
 	 */
 	public BoxSet( Type type, boolean isSynchronized ) {
-		this.type			= type == null ? Type.DEFAULT : type;
-		this.isSynchronized	= isSynchronized;
+		this( type, isSynchronized, false );
+	}
+
+	/**
+	 * Construct a set with explicit variant, synchronization, and case-sensitivity.
+	 *
+	 * @param type           The backing variant
+	 * @param isSynchronized Whether the backing set should be thread-safe
+	 * @param caseSensitive  Whether string comparisons are case-sensitive (default: false)
+	 */
+	public BoxSet( Type type, boolean isSynchronized, boolean caseSensitive ) {
+		this.type				= type == null ? Type.DEFAULT : type;
+		this.isSynchronized		= isSynchronized;
+		this.useNormalization	= true;
+		this.caseSensitive		= caseSensitive;
 		Set<Object> raw = switch ( this.type ) {
 			case LINKED -> new LinkedHashSet<>();
-			case SORTED -> new TreeSet<>( Compare::invoke );
+			case SORTED -> new TreeSet<>( ( a, b ) -> Compare.invoke( unwrap( a ), unwrap( b ) ) );
 			default -> new HashSet<>();
 		};
 		this.wrapped = isSynchronized ? Collections.synchronizedSet( raw ) : raw;
@@ -156,9 +171,22 @@ public class BoxSet implements Set<Object>, IType, IReferenceable, IListenable<B
 	 * @param source The collection whose elements should populate the new set
 	 */
 	public BoxSet( Type type, Collection<?> source ) {
-		this( type, true );
+		this( type, source, false );
+	}
+
+	/**
+	 * Construct a set from an existing {@link Collection} with explicit case-sensitivity.
+	 *
+	 * @param type          The backing variant for the new set
+	 * @param source        The collection whose elements should populate the new set
+	 * @param caseSensitive Whether string comparisons are case-sensitive (default: false)
+	 */
+	public BoxSet( Type type, Collection<?> source, boolean caseSensitive ) {
+		this( type, true, caseSensitive );
 		if ( source != null ) {
-			this.wrapped.addAll( source );
+			for ( Object e : source ) {
+				this.wrapped.add( wrap( e ) );
+			}
 		}
 	}
 
@@ -169,26 +197,27 @@ public class BoxSet implements Set<Object>, IType, IReferenceable, IListenable<B
 	 * Java HashSet actually mutates the original set, just like {@code myList.add(x)}
 	 * on a Java ArrayList does for {@link Array}.
 	 *
-	 * @param wrapped The Java Set to wrap (NOT copied)
+	 * @param javaSet The Java Set to wrap (NOT copied — mutations propagate)
 	 *
-	 * @return A BoxSet whose wrapped storage IS {@code wrapped}
+	 * @return A BoxSet backed directly by the given Java set without normalization
 	 */
-	public static BoxSet wrap( java.util.Set<Object> wrapped ) {
-		Type t = wrapped instanceof java.util.SortedSet ? Type.SORTED
-		    : wrapped instanceof java.util.LinkedHashSet ? Type.LINKED
+	@SuppressWarnings( "unchecked" )
+	public static BoxSet wrapJavaSet( java.util.Set<Object> javaSet ) {
+		Type t = javaSet instanceof java.util.SortedSet ? Type.SORTED
+		    : javaSet instanceof java.util.LinkedHashSet ? Type.LINKED
 		        : Type.DEFAULT;
-		return new BoxSet( t, wrapped, true );
+		return new BoxSet( t, javaSet, false );
 	}
 
 	/**
-	 * Internal — direct-wrap constructor for use by {@link #wrap(java.util.Set)}.
-	 * No defensive copy; mutations on this BoxSet propagate to {@code wrapped}.
+	 * Internal constructor for wrapping a raw Java set without normalization.
 	 */
-	@SuppressWarnings( "unchecked" )
-	BoxSet( Type type, java.util.Set<?> wrappedSet, boolean unused ) {
-		this.type			= type == null ? Type.DEFAULT : type;
-		this.isSynchronized	= false;
-		this.wrapped		= ( Set<Object> ) wrappedSet;
+	BoxSet( Type type, Set<Object> rawSet, boolean useNormalization ) {
+		this.type				= type == null ? Type.DEFAULT : type;
+		this.isSynchronized		= false;
+		this.useNormalization	= useNormalization;
+		this.caseSensitive		= false;
+		this.wrapped			= rawSet;
 	}
 
 	/**
@@ -292,36 +321,62 @@ public class BoxSet implements Set<Object>, IType, IReferenceable, IListenable<B
 
 	@Override
 	public boolean contains( Object o ) {
-		return wrapped.contains( o );
+		return wrapped.contains( wrap( o ) );
 	}
 
 	@Override
 	public Iterator<Object> iterator() {
-		return wrapped.iterator();
+		Iterator<Object> inner = wrapped.iterator();
+		return new Iterator<Object>() {
+
+			@Override
+			public boolean hasNext() {
+				return inner.hasNext();
+			}
+
+			@Override
+			public Object next() {
+				return unwrap( inner.next() );
+			}
+
+			@Override
+			public void remove() {
+				inner.remove();
+			}
+		};
 	}
 
 	@Override
 	public Object[] toArray() {
-		return wrapped.toArray();
+		return wrapped.stream().map( BoxSet::unwrap ).toArray();
 	}
 
 	@Override
+	@SuppressWarnings( "unchecked" )
 	public <T> T[] toArray( T[] a ) {
-		return wrapped.toArray( a );
+		Object[] unwrapped = toArray();
+		if ( a.length < unwrapped.length ) {
+			return ( T[] ) java.util.Arrays.copyOf( unwrapped, unwrapped.length, a.getClass() );
+		}
+		System.arraycopy( unwrapped, 0, a, 0, unwrapped.length );
+		if ( a.length > unwrapped.length ) {
+			a[ unwrapped.length ] = null;
+		}
+		return a;
 	}
 
 	@Override
 	public boolean add( Object e ) {
 		synchronized ( wrapped ) {
-			boolean changed = wrapped.add( notifyListeners( e, true ) );
-			return changed;
+			Object notified = notifyListeners( e, true );
+			return wrapped.add( wrap( notified ) );
 		}
 	}
 
 	@Override
 	public boolean remove( Object o ) {
 		synchronized ( wrapped ) {
-			boolean changed = wrapped.remove( o );
+			boolean changed = wrapped.remove( wrap( o ) );
 			if ( changed ) {
 				notifyListeners( o, false );
 			}
@@ -331,7 +386,12 @@ public class BoxSet implements Set<Object>, IType, IReferenceable, IListenable<B
 
 	@Override
 	public boolean containsAll( Collection<?> c ) {
-		return wrapped.containsAll( c );
+		for ( Object e : c ) {
+			if ( !contains( e ) ) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	@Override
@@ -350,14 +410,21 @@ public class BoxSet implements Set<Object>, IType, IReferenceable, IListenable<B
 	@Override
 	public boolean removeAll( Collection<?> c ) {
 		synchronized ( wrapped ) {
-			return wrapped.removeAll( c );
+			boolean changed = false;
+			for ( Object e : c ) {
+				if ( remove( e ) ) {
+					changed = true;
+				}
+			}
+			return changed;
 		}
 	}
 
 	@Override
 	public boolean retainAll( Collection<?> c ) {
 		synchronized ( wrapped ) {
-			return wrapped.retainAll( c );
+			BoxSet toKeep = new BoxSet( this.type, c );
+			return wrapped.removeIf( nv -> !toKeep.wrapped.contains( nv ) );
 		}
 	}
 
@@ -371,13 +438,13 @@ public class BoxSet implements Set<Object>, IType, IReferenceable, IListenable<B
 	@Override
 	@BoxMemberExpose
 	public Stream<Object> stream() {
-		return wrapped.stream();
+		return wrapped.stream().map( BoxSet::unwrap );
 	}
 
 	@Override
 	@BoxMemberExpose
 	public Stream<Object> parallelStream() {
-		return wrapped.parallelStream();
+		return wrapped.parallelStream().map( BoxSet::unwrap );
 	}
 
 	/**
@@ -401,6 +468,13 @@ public class BoxSet implements Set<Object>, IType, IReferenceable, IListenable<B
 	}
 
 	/**
+	 * @return true if string comparisons in this set are case-sensitive
+	 */
+	public boolean isCaseSensitive() {
+		return this.caseSensitive;
+	}
+
+	/**
 	 * Convert this set to an {@link Array}, preserving iteration order of the
 	 * underlying variant (insertion order for LINKED, natural order for SORTED).
 	 *
@@ -408,7 +482,9 @@ public class BoxSet implements Set<Object>, IType, IReferenceable, IListenable<B
 	 */
 	public Array toArrayValue() {
 		Array a = new Array();
-		a.addAll( wrapped );
+		for ( Object val : wrapped ) {
+			a.add( unwrap( val ) );
+		}
 		return a;
 	}
 
@@ -421,7 +497,7 @@ public class BoxSet implements Set<Object>, IType, IReferenceable, IListenable<B
 	 * @return A new set containing all elements of both
 	 */
 	public BoxSet union( Collection<?> other ) {
-		BoxSet result = new BoxSet( this.type, this.wrapped );
+		BoxSet result = new BoxSet( this.type, this );
 		if ( other != null ) {
 			result.addAll( other );
 		}
@@ -440,9 +516,11 @@ public class BoxSet implements Set<Object>, IType, IReferenceable, IListenable<B
 		if ( other == null ) {
 			return result;
 		}
-		for ( Object e : this.wrapped ) {
-			if ( other.contains( e ) ) {
-				result.wrapped.add( e );
+		// Wrap the other collection for efficient lookup
+		BoxSet otherSet = ( other instanceof BoxSet bs ) ? bs : new BoxSet( Type.DEFAULT, other );
+		for ( Object val : this.wrapped ) {
+			if ( otherSet.wrapped.contains( val ) ) {
+				result.wrapped.add( val );
 			}
 		}
 		return result;
@@ -456,7 +534,7 @@ public class BoxSet implements Set<Object>, IType, IReferenceable, IListenable<B
 	 * @return A new set containing only elements of this set that are not in {@code other}
 	 */
 	public BoxSet difference( Collection<?> other ) {
-		BoxSet result = new BoxSet( this.type, this.wrapped );
+		BoxSet result = new BoxSet( this.type, this );
 		if ( other != null ) {
 			result.removeAll( other );
 		}
@@ -472,13 +550,14 @@ public class BoxSet implements Set<Object>, IType, IReferenceable, IListenable<B
 	 * @return A new set containing the symmetric difference
 	 */
 	public BoxSet symmetricDifference( Collection<?> other ) {
-		BoxSet result = new BoxSet( this.type, this.wrapped );
+		BoxSet result = new BoxSet( this.type, this );
 		if ( other == null ) {
 			return result;
 		}
 		for ( Object e : other ) {
-			if ( !result.wrapped.add( e ) ) {
-				result.wrapped.remove( e );
+			Object nv = wrap( e );
+			if ( !result.wrapped.add( nv ) ) {
+				result.wrapped.remove( nv );
 			}
 		}
 		return result;
@@ -493,7 +572,8 @@ public class BoxSet implements Set<Object>, IType, IReferenceable, IListenable<B
 		if ( other == null ) {
 			return this.wrapped.isEmpty();
 		}
-		return other.containsAll( this.wrapped );
+		BoxSet otherSet = ( other instanceof BoxSet bs ) ? bs : new BoxSet( Type.DEFAULT, other );
+		return otherSet.wrapped.containsAll( this.wrapped );
 	}
 
 	/**
@@ -505,7 +585,8 @@ public class BoxSet implements Set<Object>, IType, IReferenceable, IListenable<B
 		if ( other == null ) {
 			return true;
 		}
-		return this.wrapped.containsAll( other );
+		BoxSet otherSet = ( other instanceof BoxSet bs ) ? bs : new BoxSet( Type.DEFAULT, other );
+		return this.wrapped.containsAll( otherSet.wrapped );
 	}
 
 	/**
@@ -518,7 +599,7 @@ public class BoxSet implements Set<Object>, IType, IReferenceable, IListenable<B
 			return true;
 		}
 		for ( Object e : other ) {
-			if ( this.wrapped.contains( e ) ) {
+			if ( this.wrapped.contains( wrap( e ) ) ) {
 				return false;
 			}
 		}
@@ -546,8 +627,19 @@ public class BoxSet implements Set<Object>, IType, IReferenceable, IListenable<B
 		if ( obj == this ) {
 			return true;
 		}
+		if ( obj instanceof BoxSet other ) {
+			return wrapped.equals( other.wrapped );
+		}
 		if ( obj instanceof Set<?> other ) {
-			return wrapped.equals( other );
+			if ( wrapped.size() != other.size() ) {
+				return false;
+			}
+			for ( Object e : other ) {
+				if ( !contains( e ) ) {
+					return false;
+				}
+			}
+			return true;
 		}
 		return false;
 	}
@@ -564,19 +656,25 @@ public class BoxSet implements Set<Object>, IType, IReferenceable, IListenable<B
 		}
 		visited.add( this );
 		int result = 1;
-		for ( Object value : wrapped.toArray() ) {
-			if ( value instanceof IType ) {
-				result = result + ( ( IType ) value ).computeHashCode( visited );
-			} else {
-				result = result + ( value == null ? 0 : value.hashCode() );
-			}
+		for ( Object val : wrapped ) {
+			result = result + val.hashCode();
 		}
 		return result;
 	}
 
 	@Override
 	public String toString() {
-		return wrapped.toString();
+		StringBuilder	sb		= new StringBuilder( "set{" );
+		boolean			first	= true;
+		for ( Object val : wrapped ) {
+			if ( !first ) {
+				sb.append( ", " );
+			}
+			sb.append( unwrap( val ) );
+			first = false;
+		}
+		sb.append( "}" );
+		return sb.toString();
 	}
 
 	/**
@@ -591,6 +689,7 @@ public class BoxSet implements Set<Object>, IType, IReferenceable, IListenable<B
 		sb.append( "{\n  " );
 		sb.append(
 		    wrapped.stream()
+		        .map( BoxSet::unwrap )
 		        .map( value -> {
 			        if ( value == null )
 				        return "[null]";
@@ -746,6 +845,46 @@ public class BoxSet implements Set<Object>, IType, IReferenceable, IListenable<B
 	 */
 	static String describe( Object o ) {
 		return TypeUtil.getObjectName( o );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * NormalizedValue wrapping helpers
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Wrap a raw value into a {@link NormalizedValue} for internal storage.
+	 * Short-circuits if normalization is disabled (raw Java set wrapping).
+	 *
+	 * @param value The raw value to wrap
+	 *
+	 * @return A NormalizedValue wrapping the given object, or the object cast directly if not normalizing
+	 */
+	@SuppressWarnings( "unchecked" )
+	protected Object wrap( Object value ) {
+		if ( !this.useNormalization ) {
+			return value;
+		}
+		if ( value instanceof NormalizedValue nv ) {
+			return nv;
+		}
+		return new NormalizedValue( value, this.caseSensitive );
+	}
+
+	/**
+	 * Unwrap a value — if it's a {@link NormalizedValue}, return the original;
+	 * otherwise return it as-is.
+	 *
+	 * @param value The value to unwrap
+	 *
+	 * @return The original value
+	 */
+	protected static Object unwrap( Object value ) {
+		if ( value instanceof NormalizedValue nv ) {
+			return nv.getOriginalValue();
+		}
+		return value;
 	}
 
 }

@@ -23,8 +23,6 @@ import java.util.List;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
-import org.objectweb.asm.tree.InsnNode;
-import org.objectweb.asm.tree.LdcInsnNode;
 import org.objectweb.asm.tree.MethodInsnNode;
 
 import ortus.boxlang.compiler.asmboxpiler.AsmHelper;
@@ -40,12 +38,12 @@ import ortus.boxlang.runtime.dynamic.LiteralSpreadUtil;
 import ortus.boxlang.runtime.types.BoxSet;
 
 /**
- * Emits bytecode for {@code set{...}} / {@code set<variant>{...}} literals.
+ * Emits bytecode for {@code set{...}} literals.
  *
  * <p>
- * The generated sequence pushes (variant-String, Object[] values) and invokes
- * {@code LiteralSpreadUtil.set(String, Object...)} which constructs a
- * {@link BoxSet} of the requested variant.
+ * The generated sequence pushes an Object[] of values and invokes
+ * {@code LiteralSpreadUtil.set(Object...)} which constructs a default
+ * {@link BoxSet}.
  */
 public class BoxSetLiteralTransformer extends AbstractTransformer {
 
@@ -58,13 +56,6 @@ public class BoxSetLiteralTransformer extends AbstractTransformer {
 		BoxSetLiteral			setLiteral	= ( BoxSetLiteral ) node;
 		List<AbstractInsnNode>	nodes		= new ArrayList<>();
 
-		// Push the variant string (or null)
-		if ( setLiteral.getVariant() == null ) {
-			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
-		} else {
-			nodes.add( new LdcInsnNode( setLiteral.getVariant() ) );
-		}
-
 		// Push an Object[] of the values (with spread expansion applied via LiteralSpreadUtil.spread())
 		nodes.addAll( AsmHelper.array( Type.getType( Object.class ), setLiteral.getValues(),
 		    ( value, i ) -> transformSetMember( value, context ) ) );
@@ -72,7 +63,7 @@ public class BoxSetLiteralTransformer extends AbstractTransformer {
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 		    Type.getInternalName( LiteralSpreadUtil.class ),
 		    "set",
-		    Type.getMethodDescriptor( Type.getType( BoxSet.class ), Type.getType( String.class ), Type.getType( Object[].class ) ),
+		    Type.getMethodDescriptor( Type.getType( BoxSet.class ), Type.getType( Object[].class ) ),
 		    false ) );
 		return nodes;
 	}
