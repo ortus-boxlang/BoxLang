@@ -39,9 +39,9 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxAccess;
-import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringBinding;
 import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringPattern;
+import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentModifier;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentOperator;
@@ -55,9 +55,9 @@ import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.ArrayDestructurer;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
-import ortus.boxlang.runtime.dynamic.ArrayDestructurer;
 import ortus.boxlang.runtime.dynamic.ObjectDestructurer;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
@@ -732,8 +732,8 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 	 */
 	private boolean isExplicitDestructuringScope( String scopeName ) {
 		return switch ( scopeName.toLowerCase() ) {
-			case "application", "arguments", "cgi", "client", "cookie", "form", "local", "request", "server", "session", "static", "this", "thread",
-			    "url", "variables" -> true;
+			case "application", "arguments", "cgi", "client", "cookie", "form", "local", "request", "server", "session", "static", "this", "thread", "url",
+			    "variables" -> true;
 			default -> false;
 		};
 	}
@@ -811,7 +811,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 		    Type.getInternalName( getMethodCallTemplate( assigment ) ),
 		    "invoke",
-		    Type.getMethodDescriptor( Type.getType( assigment.getOp() == BoxAssignmentOperator.ConcatEqual ? String.class : Number.class ),
+		    Type.getMethodDescriptor( Type.getType( compoundAssignReturnType( assigment.getOp() ) ),
 		        Type.getType( IBoxContext.class ),
 		        Type.getType( Object.class ),
 		        Type.getType( Key.class ),
@@ -819,6 +819,15 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 		    false ) );
 
 		return nodes;
+	}
+
+	private static Class<?> compoundAssignReturnType( BoxAssignmentOperator op ) {
+		return switch ( op ) {
+			case ConcatEqual -> String.class;
+			// Set-aware ops widened to Object (set algebra falls through Plus/Minus/Multiply)
+			case PlusEqual, MinusEqual, StarEqual -> Object.class;
+			default -> Number.class;
+		};
 	}
 
 	private boolean hasVar( List<BoxAssignmentModifier> modifiers ) {

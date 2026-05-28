@@ -106,7 +106,16 @@ public class BoxBinaryOperation extends BoxExpression {
 
 	@Override
 	public boolean returnsNumber() {
-		return this.operator.isNumeric();
+		// Operators that ALWAYS return a number (division, modulus, bitwise, etc.)
+		if ( this.operator.isNumeric() ) {
+			return true;
+		}
+		// Set-aware operators (Plus, Minus, Star, Power) return Number only when
+		// both operands are known to be numeric — otherwise the result may be a BoxSet.
+		return switch ( this.operator ) {
+			case Plus, Minus, Star, Power -> this.left.returnsNumber() && this.right.returnsNumber();
+			default -> false;
+		};
 	}
 
 }

@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.operators;
 
+import ortus.boxlang.runtime.types.NormalizedValue;
+
 /**
  * Performs {@code EQ or ===} comparison
  * Compares numbers as numbers, compares strings case insensitive but with type checking
@@ -29,21 +31,11 @@ public class EqualsEqualsEquals implements IOperator {
 	 *
 	 * @return True if operands are the equal
 	 */
-	@SuppressWarnings( "unchecked" )
 	public static Boolean invoke( Object left, Object right ) {
-		if ( left.getClass().isAssignableFrom( right.getClass() ) || right.getClass().isAssignableFrom( left.getClass() ) ) {
-			// We need string comparisons to still be case insensitive
-			if ( left instanceof String lefString && right instanceof String rightString ) {
-				return StringCompare.invoke( lefString, rightString ) == 0;
-			} else if ( left instanceof Comparable leftComparable && right instanceof Comparable rightComparable ) {
-				return leftComparable.compareTo( rightComparable ) == 0;
-			} else {
-				// For everything else, NO CASTING! Just check equality between the objects.
-				// note, this means an integer and a long will not be equal even if they represent the same value
-				return left.equals( right );
-			}
-		}
-		return false;
+		// Delegate to NormalizedValue for type-aware equality checking
+		// The "types" here only correspond with high-level BoxLang types.
+		// So an int and long can be equal and both "numeric", but a string will never === a number, even if they represent the same value.
+		return NormalizedValue.of( left ).equals( NormalizedValue.of( right ) );
 	}
 
 }

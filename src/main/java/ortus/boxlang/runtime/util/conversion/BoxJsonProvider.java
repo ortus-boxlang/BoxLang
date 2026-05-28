@@ -21,6 +21,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.fasterxml.jackson.jr.ob.api.ReaderWriterProvider;
 import com.fasterxml.jackson.jr.ob.api.ValueReader;
@@ -43,6 +44,7 @@ import ortus.boxlang.runtime.util.conversion.serializers.BoxArraySerializer;
 import ortus.boxlang.runtime.util.conversion.serializers.BoxClassSerializer;
 import ortus.boxlang.runtime.util.conversion.serializers.BoxFunctionSerializer;
 import ortus.boxlang.runtime.util.conversion.serializers.BoxQuerySerializer;
+import ortus.boxlang.runtime.util.conversion.serializers.BoxSetSerializer;
 import ortus.boxlang.runtime.util.conversion.serializers.BoxStructSerializer;
 import ortus.boxlang.runtime.util.conversion.serializers.DurationSerializer;
 import ortus.boxlang.runtime.util.conversion.serializers.DynamicObjectSerializer;
@@ -80,6 +82,12 @@ public class BoxJsonProvider extends ReaderWriterProvider {
 
 		if ( List.class.isAssignableFrom( type ) ) {
 			return new BoxArraySerializer();
+		}
+
+		// Place Set BEFORE Map so a BoxSet (which is a Set) doesn't get routed
+		// through the Map/Struct serializer.
+		if ( Set.class.isAssignableFrom( type ) ) {
+			return new BoxSetSerializer();
 		}
 
 		if ( Function.class.isAssignableFrom( type ) ) {

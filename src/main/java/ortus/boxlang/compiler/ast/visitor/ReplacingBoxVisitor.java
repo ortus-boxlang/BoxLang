@@ -35,6 +35,7 @@ import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringBinding;
 import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxSetLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
@@ -299,6 +300,18 @@ public abstract class ReplacingBoxVisitor {
 	}
 
 	public BoxNode visit( BoxArrayLiteral node ) {
+		for ( int i = 0; i < node.getValues().size(); i++ ) {
+			BoxExpression	value		= node.getValues().get( i );
+			BoxNode			newValue	= value.accept( this );
+			if ( newValue != value ) {
+				node.replaceChildren( value, newValue );
+				node.getValues().set( i, ( BoxExpression ) newValue );
+			}
+		}
+		return node;
+	}
+
+	public BoxNode visit( BoxSetLiteral node ) {
 		for ( int i = 0; i < node.getValues().size(); i++ ) {
 			BoxExpression	value		= node.getValues().get( i );
 			BoxNode			newValue	= value.accept( this );

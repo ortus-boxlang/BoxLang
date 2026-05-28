@@ -328,14 +328,14 @@ public class ArraySortTest {
 		         threadList = createObject("java", "java.lang.Thread")
 		         	.getAllStackTraces().keySet().toArray();
 
-		    result = threadList.map( .getName() ).toList();
+		    result = threadList.toList();
 
 		         // Sort the list
 		         arraySort( threadList, (a, b)  => {
-		         	return a.getName().compareTo(b.getName());
+		         	return a.compareTo(b);
 		         });
 
-		      result2 = threadList.map( .getName() ).toList();
+		      result2 = threadList.toList();
 
 		      """,
 		    context );

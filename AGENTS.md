@@ -583,6 +583,96 @@ public void processRequest( IBoxContext context ) {
 - ❌ Don't log sensitive data (passwords, tokens, PII) unless in trace mode
 - ❌ Don't over-log in hot code paths (use appropriate levels)
 
+## Set Type
+
+BoxLang ships a first-class `Set` type (Java class: `ortus.boxlang.runtime.types.BoxSet`)
+that wraps `java.util.Set` and supports three backing variants:
+
+- `DEFAULT` — `HashSet`, fastest, no ordering
+- `LINKED` — `LinkedHashSet`, preserves insertion order
+- `SORTED` — `TreeSet` ordered via `Compare.invoke`
+
+### Creating a Set
+
+```
+// BIF construction
+s = setNew();                                  // empty default (hash)
+s = setNew( type="linked", values=[1,2,3] );   // ordered, deduped
+s = setOf( 1, 2, 2, 3 );                       // varargs, deduped
+
+// Literal syntax (soft-keyword "set", parser-gated)
+s = set{ 1, 2, 3 };                            // default (hash)
+s = set{};                                     // empty
+
+// From an Array
+s = [1, 2, 3].toSet();
+s = [1, 2, 3].toSet( "linked" );
+
+// castAs is strict (must already be a Set); use .toSet() for arrays.
+s = anotherSet castAs "Set";
+```
+
+### Member functions
+
+Rich superset of Java + CF + array-style:
+
+- Mutation: `.add(x)` (alias `.append(x)`), `.addAll(coll)`, `.remove(x)` (alias `.delete(x)`),
+  `.removeAll(coll)`, `.retainAll(coll)`, `.clear()`
+- Query: `.contains(x)` (alias `.has(x)`), `.containsAll(coll)`, `.size()` (aliases `.len()`,
+  `.length()`), `.isEmpty()`, `.equals(other)`, `.isSubsetOf(other)`, `.isSupersetOf(other)`,
+  `.isDisjointFrom(other)`
+- Algebra: `.union(other)`, `.intersection(other)`, `.difference(other)`,
+  `.symmetricDifference(other)`
+- Functional: `.each(cb)`, `.map(cb)`, `.filter(cb)`, `.reject(cb)`, `.reduce(cb,init)`,
+  `.every(cb)`, `.some(cb)` (alias `.any`), `.none(cb)`, `.find(cb)`
+- Conversion: `.toArray()`, `.toList(delim)`
+
+### Operators
+
+Set algebra is also exposed via overloaded operators:
+
+```
+union     = a + b      // setUnion
+diff      = a - b      // setDifference
+intersect = a * b      // setIntersection
+symdiff   = a ^ b      // setSymmetricDifference
+```
+
+The right-hand operand is accepted "loose" (Array, list-delimited string, Range, etc.)
+when either operand is a Set.
+
+### Java interop
+
+A `java.util.Set` passed to a Set-typed BIF argument is **wrapped** (not copied) so that
+mutations propagate back to the underlying Java object — same contract as `Array`
+wrapping a Java `List`.
+
+### Pattern for new Set BIFs
+
+```java
+@BoxBIF
+@BoxMember( type = BoxLangType.SET )
+public class SetSomething extends BIF {
+    public SetSomething() {
+        declaredArguments = new Argument[] {
+            new Argument( true, Argument.MODIFIABLE_SET, Key.set ),   // for mutators
+            new Argument( true, Argument.ANY, Key.value )
+        };
+    }
+    public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+        BoxSet set = arguments.getAsSet( Key.set );
+        // ... operate on set ...
+        return set;
+    }
+}
+```
+
+The member function name is auto-derived from the class name by stripping the `Set`
+prefix (`SetAdd` → `add`). Add explicit `name=` aliases for CF-compat names
+(`has`, `delete`) and for class names that contain the type prefix twice
+(e.g. `SetIsSubsetOf` needs `name="isSubsetOf"` because the auto-strip would mangle
+both occurrences of "set" / "subset").
+
 ## Examples
 
 - To add a new component: create a class in `runtime/components/`, annotate with `@BoxComponent`, and implement logic.

@@ -75,6 +75,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		_NUMERIC							= Key.of( "numeric" );
 	public static final Key		_PACKAGE							= Key.of( "package" );
 	public static final Key		_QUERY								= Key.of( "query" );
+	public static final Key		_SET								= Key.of( "set" );
 	public static final Key		_short								= Key.of( "short" );
 	public static final Key		_STATIC								= Key.of( "static" );
 	public static final Key		_STRING								= Key.of( "string" );
@@ -333,6 +334,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		duration							= Key.of( "duration" );
 	public static final Key		elapsedTime							= Key.of( "elapsedTime" );
 	public static final Key		elem								= Key.of( "elem" );
+	public static final Key		element								= Key.of( "element" );
 	public static final Key		elementCountForRemoval				= Key.of( "elementCountForRemoval" );
 	public static final Key		elements							= Key.of( "elements" );
 	public static final Key		email								= Key.of( "email" );
@@ -440,7 +442,9 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		groupCaseSensitive					= Key.of( "groupCaseSensitive" );
 	public static final Key		groupData							= Key.of( "groupData" );
 	public static final Key		guid								= Key.of( "guid" );
+	public static final Key		has									= Key.of( "has" );
 	public static final Key		hasEndTag							= Key.of( "hasEndTag" );
+	public static final Key		hash								= Key.of( "hash" );
 	public static final Key		hash40								= Key.of( "hash40" );
 	public static final Key		header								= Key.of( "header" );
 	public static final Key		headers								= Key.of( "headers" );
@@ -623,6 +627,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		mode								= Key.of( "mode" );
 	public static final Key		modifiableArray						= Key.of( "modifiableArray" );
 	public static final Key		modifiableQuery						= Key.of( "modifiableQuery" );
+	public static final Key		modifiableSet						= Key.of( "modifiableSet" );
 	public static final Key		modifiableStruct					= Key.of( "modifiableStruct" );
 	public static final Key		module								= Key.of( "module" );
 	public static final Key		moduleMapping						= Key.of( "moduleMapping" );
@@ -698,6 +703,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		originalConfig						= Key.of( "originalConfig" );
 	public static final Key		originalLine						= Key.of( "originalLine" );
 	public static final Key		os									= Key.of( "os" );
+	public static final Key		otherSet							= Key.of( "otherSet" );
 	public static final Key		output								= Key.of( "output" );
 	public static final Key		outputDirectory						= Key.of( "outputDirectory" );
 	public static final Key		outputFile							= Key.of( "outputFile" );
@@ -991,6 +997,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		validExtensions						= Key.of( "validExtensions" );
 	public static final Key		validTemplateExtensions				= Key.of( "validTemplateExtensions" );
 	public static final Key		value								= Key.of( "value" );
+	public static final Key		values								= Key.of( "values" );
 	public static final Key		var									= Key.of( "var" );
 	public static final Key		variable							= Key.of( "variable" );
 	public static final Key		variableName						= Key.of( "variableName" );
