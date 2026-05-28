@@ -183,7 +183,8 @@ public class PendingQuery {
 		    Key.sql, sql.trim(),
 		    Key.bindings, bindings,
 		    Key.pendingQuery, this,
-		    Key.options, queryOptions
+		    Key.options, queryOptions,
+		    Key.context, context
 		);
 
 		interceptorService.announce( BoxEvent.ON_QUERY_BUILD, eventArgs );
@@ -740,7 +741,8 @@ public class PendingQuery {
 				    () -> Struct.ofNonConcurrent(
 				        Key.sql, finalSQLStatement,
 				        Key.bindings, getParameterValues(),
-				        Key.pendingQuery, this
+				        Key.pendingQuery, this,
+				        Key.context, context
 				    )
 				);
 
@@ -764,7 +766,8 @@ public class PendingQuery {
 				    statement,
 				    endTick - startTick,
 				    hasResults,
-				    initialSqlException
+				    initialSqlException,
+				    context
 				);
 			}
 		} catch ( SQLException e ) {
