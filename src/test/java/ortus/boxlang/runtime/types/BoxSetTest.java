@@ -467,4 +467,26 @@ public class BoxSetTest {
 		assertThat( s.size() ).isEqualTo( 1 );
 	}
 
+	@DisplayName( "stream() returns unwrapped original values" )
+	@Test
+	void testStreamReturnsUnwrappedValues() {
+		BoxSet s = new BoxSet( BoxSet.Type.LINKED );
+		s.add( "a" );
+		s.add( "b" );
+		s.add( "c" );
+		List<Object> collected = s.stream().toList();
+		assertThat( collected ).containsExactly( "a", "b", "c" ).inOrder();
+	}
+
+	@DisplayName( "parallelStream() returns unwrapped original values" )
+	@Test
+	void testParallelStreamReturnsUnwrappedValues() {
+		BoxSet s = new BoxSet( BoxSet.Type.LINKED );
+		for ( int i = 1; i <= 100; i++ ) {
+			s.add( i );
+		}
+		long count = s.parallelStream().filter( v -> ( ( Number ) v ).intValue() % 2 == 0 ).count();
+		assertThat( count ).isEqualTo( 50 );
+	}
+
 }
