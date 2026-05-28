@@ -222,6 +222,15 @@ public class PendingQuery {
 	 */
 
 	/**
+	 * Get the linked context that initiated this query.
+	 *
+	 * @return The context that initiated this query.
+	 */
+	public IBoxContext getContext() {
+		return this.context;
+	}
+
+	/**
 	 * Get the datasource used to execute this query.
 	 *
 	 * @return The datasource used to execute this query.
