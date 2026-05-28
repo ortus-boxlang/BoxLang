@@ -29,11 +29,19 @@ import ortus.boxlang.runtime.scopes.Key;
 public class Decrement implements IOperator {
 
 	/**
+	 * Decrement a numeric value by 1. Throws if the object is a {@link ortus.boxlang.runtime.types.BoxSet}
+	 * since sets use the - operator for difference, not arithmetic.
+	 *
 	 * @param object The object to decrement
 	 *
-	 * @return The the sum
+	 * @return The decremented Number
+	 *
+	 * @throws ortus.boxlang.runtime.types.exceptions.BoxRuntimeException if the object is a BoxSet
 	 */
 	public static Number invoke( Object object ) {
+		if ( object instanceof ortus.boxlang.runtime.types.BoxSet ) {
+			throw new ortus.boxlang.runtime.types.exceptions.BoxRuntimeException( "Cannot decrement a Set." );
+		}
 		return ( Number ) Plus.invoke( object, -1 );
 	}
 

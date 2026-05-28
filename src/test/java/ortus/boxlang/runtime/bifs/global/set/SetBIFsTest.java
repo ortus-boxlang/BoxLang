@@ -309,17 +309,17 @@ public class SetBIFsTest {
 		assertThat( variables.get( result ) ).isEqualTo( "hello" );
 	}
 
-	@DisplayName( "String.toSet() splits a list-delimited string" )
+	@DisplayName( "String.listToSet() splits a list-delimited string" )
 	@Test
-	public void testStringToSetDefault() {
-		instance.executeSource( "result = \"a,b,c,a\".toSet();", context );
+	public void testStringListToSetDefault() {
+		instance.executeSource( "result = \"a,b,c,a\".listToSet();", context );
 		assertThat( ( ( BoxSet ) variables.get( result ) ).size() ).isEqualTo( 3 );
 	}
 
-	@DisplayName( "String.toSet(delimiter) accepts a custom delimiter" )
+	@DisplayName( "String.listToSet(delimiter) accepts a custom delimiter" )
 	@Test
-	public void testStringToSetCustomDelimiter() {
-		instance.executeSource( "result = \"a|b|c|b\".toSet( delimiter=\"|\", type=\"linked\" );", context );
+	public void testStringListToSetCustomDelimiter() {
+		instance.executeSource( "result = \"a|b|c|b\".listToSet( delimiter=\"|\", type=\"linked\" );", context );
 		BoxSet s = ( BoxSet ) variables.get( result );
 		assertThat( s.size() ).isEqualTo( 3 );
 		assertThat( s.getType() ).isEqualTo( BoxSet.Type.LINKED );
@@ -368,12 +368,12 @@ public class SetBIFsTest {
 		assertThat( variables.get( Key.of( "hasname" ) ) ).isEqualTo( true );
 	}
 
-	@DisplayName( "Struct.valueToSet() dedupes values" )
+	@DisplayName( "Struct.valueSet() dedupes values" )
 	@Test
-	public void testStructValueToSet() {
+	public void testStructValueSet() {
 		instance.executeSource(
 		    """
-		    s = { a: 1, b: 1, c: 2 }.valueToSet();
+		    s = { a: 1, b: 1, c: 2 }.valueSet();
 		    result = s.size();
 		    """,
 		    context );
@@ -556,6 +556,112 @@ public class SetBIFsTest {
 		    context );
 		BoxSet s = ( BoxSet ) variables.get( result );
 		assertThat( s.size() ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "set{ ...array } spreads an array into the set literal" )
+	@Test
+	public void testSetLiteralSpreadArray() {
+		instance.executeSource(
+		    """
+		    arr = [3, 4, 5];
+		    result = set{ 1, 2, ...arr };
+		    """,
+		    context );
+		BoxSet s = ( BoxSet ) variables.get( result );
+		assertThat( s.size() ).isEqualTo( 5 );
+		assertThat( s.contains( 1 ) ).isTrue();
+		assertThat( s.contains( 5 ) ).isTrue();
+	}
+
+	@DisplayName( "set{ ...set } spreads another set into the set literal" )
+	@Test
+	public void testSetLiteralSpreadSet() {
+		instance.executeSource(
+		    """
+		    other = set{ 2, 3 };
+		    result = set{ 1, ...other, 4 };
+		    """,
+		    context );
+		BoxSet s = ( BoxSet ) variables.get( result );
+		assertThat( s.size() ).isEqualTo( 4 );
+	}
+
+	@DisplayName( "set{ ...array } deduplicates spread elements" )
+	@Test
+	public void testSetLiteralSpreadDeduplicates() {
+		instance.executeSource(
+		    """
+		    arr = [1, 2, 3];
+		    result = set{ 1, 2, ...arr };
+		    """,
+		    context );
+		BoxSet s = ( BoxSet ) variables.get( result );
+		assertThat( s.size() ).isEqualTo( 3 );
+	}
+
+	@DisplayName( "set{ ...range } spreads a range into the set literal" )
+	@Test
+	public void testSetLiteralSpreadRange() {
+		instance.executeSource(
+		    """
+		    result = set{ ...(1..5) };
+		    """,
+		    context );
+		BoxSet s = ( BoxSet ) variables.get( result );
+		assertThat( s.size() ).isEqualTo( 5 );
+		assertThat( s.contains( 1 ) ).isTrue();
+		assertThat( s.contains( 5 ) ).isTrue();
+	}
+
+	@DisplayName( "set{ ...range } with existing elements deduplicates" )
+	@Test
+	public void testSetLiteralSpreadRangeDeduplicates() {
+		instance.executeSource(
+		    """
+		    result = set{ 3, 4, ...(1..5) };
+		    """,
+		    context );
+		BoxSet s = ( BoxSet ) variables.get( result );
+		assertThat( s.size() ).isEqualTo( 5 );
+	}
+
+	@DisplayName( "setNew(values=range) expands a range into the set" )
+	@Test
+	public void testSetNewFromRange() {
+		instance.executeSource(
+		    """
+		    result = setNew( values=1..5 );
+		    """,
+		    context );
+		BoxSet s = ( BoxSet ) variables.get( result );
+		assertThat( s.size() ).isEqualTo( 5 );
+		assertThat( s.contains( 1 ) ).isTrue();
+		assertThat( s.contains( 5 ) ).isTrue();
+	}
+
+	@DisplayName( "setNew(type, range) expands a range positionally" )
+	@Test
+	public void testSetNewFromRangePositional() {
+		instance.executeSource(
+		    """
+		    result = setNew( "linked", 1..5 );
+		    """,
+		    context );
+		BoxSet s = ( BoxSet ) variables.get( result );
+		assertThat( s.size() ).isEqualTo( 5 );
+		assertThat( s.getType() ).isEqualTo( BoxSet.Type.LINKED );
+	}
+
+	@DisplayName( "setOf() with a range argument adds the range as a single element" )
+	@Test
+	public void testSetOfWithRange() {
+		instance.executeSource(
+		    """
+		    result = setOf( ...(1..3) );
+		    """,
+		    context );
+		BoxSet s = ( BoxSet ) variables.get( result );
+		assertThat( s.size() ).isEqualTo( 3 );
 	}
 
 }

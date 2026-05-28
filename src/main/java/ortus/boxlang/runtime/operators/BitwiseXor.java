@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
- * Performs BitwiseXor.
+ * Performs BitwiseXor
  * {@code z = x b^ y}
  */
 public class BitwiseXor implements IOperator {
@@ -32,9 +32,9 @@ public class BitwiseXor implements IOperator {
 	 * @param left  The left operand
 	 * @param right The right operand
 	 *
-	 * @return A Number from bitwise-xor.
+	 * @return The result
 	 */
-	public static Object invoke( Object left, Object right ) {
+	public static Number invoke( Object left, Object right ) {
 		if ( left instanceof Short l ) {
 			if ( right instanceof Short r ) {
 				return l ^ r;
@@ -111,12 +111,12 @@ public class BitwiseXor implements IOperator {
 	}
 
 	/**
-	 * Apply this operator to an object/key and set the new value back in the same object/key.
+	 * Apply this operator to an object/key and set the new value back in the same object/key
 	 *
 	 * @return The result
 	 */
-	public static Object invoke( IBoxContext context, Object target, Key name, Object right ) {
-		Object result = invoke( Referencer.get( context, target, name, false ), right );
+	public static Number invoke( IBoxContext context, Object target, Key name, Object right ) {
+		Number result = invoke( Referencer.get( context, target, name, false ), right );
 		Referencer.set( context, target, name, result );
 		return result;
 	}

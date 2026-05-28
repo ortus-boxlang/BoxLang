@@ -27,7 +27,6 @@ import ortus.boxlang.runtime.types.IStruct;
 
 @BoxBIF( description = "Build a Set containing the keys of a Struct (as Strings)." )
 @BoxMember( type = BoxLangType.STRUCT, name = "keySet" )
-@BoxMember( type = BoxLangType.MODIFIABLE_STRUCT, name = "keySet" )
 public class StructKeySet extends BIF {
 
 	public StructKeySet() {

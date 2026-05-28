@@ -26,10 +26,10 @@ import ortus.boxlang.runtime.types.BoxSet;
 import ortus.boxlang.runtime.types.IStruct;
 
 @BoxBIF( description = "Build a Set containing the values of a Struct, deduplicating." )
-@BoxMember( type = BoxLangType.STRUCT, name = "valueToSet" )
-public class StructValueToSet extends BIF {
+@BoxMember( type = BoxLangType.STRUCT, name = "valueSet" )
+public class StructValueSet extends BIF {
 
-	public StructValueToSet() {
+	public StructValueSet() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, Argument.STRUCT, Key.struct ),

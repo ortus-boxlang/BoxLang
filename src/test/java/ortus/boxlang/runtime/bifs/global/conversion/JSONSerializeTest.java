@@ -763,4 +763,29 @@ public class JSONSerializeTest {
 		// @formatter:on
 		// Just assert it wasn't a stack overflow
 	}
+
+	@DisplayName( "It can serialize a Set as a JSON array" )
+	@Test
+	public void testCanSerializeSet() {
+		instance.executeSource(
+		    """
+		    s = setNew( type="linked", values=["a","b","c"] );
+		    result = JSONSerialize( s );
+		    """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "[\"a\",\"b\",\"c\"]" );
+	}
+
+	@DisplayName( "It can serialize a Set nested in a struct" )
+	@Test
+	public void testCanSerializeSetNestedInStruct() {
+		instance.executeSource(
+		    """
+		    result = JSONSerialize( { "tags": setNew( type="linked", values=["java","boxlang"] ) } );
+		    """,
+		    context );
+		var json = variables.getAsString( result );
+		assertThat( json ).contains( "\"tags\":[\"java\",\"boxlang\"]" );
+	}
+
 }

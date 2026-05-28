@@ -28,9 +28,8 @@ import ortus.boxlang.runtime.types.util.ListUtil;
 
 @BoxBIF( description = "Convert a collection (Array, list-delimited string, Set) into a Set, deduplicating." )
 @BoxMember( type = BoxLangType.ARRAY, name = "toSet" )
-@BoxMember( type = BoxLangType.MODIFIABLE_ARRAY, name = "toSet" )
 @BoxMember( type = BoxLangType.QUERY, name = "toSet" )
-@BoxMember( type = BoxLangType.STRING_STRICT, name = "toSet" )
+@BoxMember( type = BoxLangType.STRING_STRICT, name = "listToSet" )
 public class ToSet extends BIF {
 
 	public ToSet() {

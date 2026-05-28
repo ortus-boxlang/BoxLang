@@ -245,13 +245,13 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 												    generateBinaryMethodCallNodesWithContext( transpiler, CastAs.class, Object.class, left, right );
 
 												case BitwiseAnd -> // "BitwiseAnd.invoke(${left},${right})";
-												    generateBinaryMethodCallNodes( BitwiseAnd.class, Object.class, left, right );
+												    generateBinaryMethodCallNodes( BitwiseAnd.class, Number.class, left, right );
 
 												case BitwiseOr -> // "BitwiseOr.invoke(${left},${right})";
 												    generateBinaryMethodCallNodes( BitwiseOr.class, Number.class, left, right );
 
 												case BitwiseXor -> // "BitwiseXor.invoke(${left},${right})";
-												    generateBinaryMethodCallNodes( BitwiseXor.class, Object.class, left, right );
+												    generateBinaryMethodCallNodes( BitwiseXor.class, Number.class, left, right );
 
 												case BitwiseSignedLeftShift -> // "BitwiseSignedLeftShift.invoke(${left},${right})";
 												    generateBinaryMethodCallNodes( BitwiseSignedLeftShift.class, Number.class, left, right );
@@ -272,7 +272,8 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 		return AsmHelper.addLineNumberLabels( nodes, node );
 	}
 
-	@NonNull private static List<AbstractInsnNode> generateBinaryMethodCallNodes( Class<?> dispatcher, Class<?> returned, List<AbstractInsnNode> left,
+	@NonNull
+	private static List<AbstractInsnNode> generateBinaryMethodCallNodes( Class<?> dispatcher, Class<?> returned, List<AbstractInsnNode> left,
 	    List<AbstractInsnNode> right ) {
 		List<AbstractInsnNode> nodes = new ArrayList<>();
 		nodes.addAll( left );
@@ -297,7 +298,8 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 	 *
 	 * @return the instruction list
 	 */
-	@NonNull private static List<AbstractInsnNode> generateNumericBinaryMethodCallNodes( Class<?> dispatcher, Class<?> returned,
+	@NonNull
+	private static List<AbstractInsnNode> generateNumericBinaryMethodCallNodes( Class<?> dispatcher, Class<?> returned,
 	    BoxBinaryOperation operation, List<AbstractInsnNode> left, List<AbstractInsnNode> right ) {
 		return generateNumericBinaryMethodCallNodes( dispatcher, returned, returned, operation, left, right );
 	}
@@ -308,7 +310,8 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 	 * Number/Number overload — used by Plus/Minus/BitwiseAnd/BitwiseXor which now return
 	 * {@code Object} when either operand is a {@link ortus.boxlang.runtime.types.BoxSet}.
 	 */
-	@NonNull private static List<AbstractInsnNode> generateNumericBinaryMethodCallNodes( Class<?> dispatcher, Class<?> fastPathReturned,
+	@NonNull
+	private static List<AbstractInsnNode> generateNumericBinaryMethodCallNodes( Class<?> dispatcher, Class<?> fastPathReturned,
 	    Class<?> slowPathReturned, BoxBinaryOperation operation, List<AbstractInsnNode> left, List<AbstractInsnNode> right ) {
 		if ( operation.getLeft().returnsNumber() && operation.getRight().returnsNumber() ) {
 			List<AbstractInsnNode> nodes = new ArrayList<>();
@@ -326,7 +329,8 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 		return generateBinaryMethodCallNodes( dispatcher, slowPathReturned, left, right );
 	}
 
-	@NonNull private static List<AbstractInsnNode> generateBinaryMethodCallNodesWithContext( Transpiler transpiler, Class<?> dispatcher, Class<?> returned,
+	@NonNull
+	private static List<AbstractInsnNode> generateBinaryMethodCallNodesWithContext( Transpiler transpiler, Class<?> dispatcher, Class<?> returned,
 	    List<AbstractInsnNode> left,
 	    List<AbstractInsnNode> right ) {
 		List<AbstractInsnNode> nodes = new ArrayList<>();
@@ -344,7 +348,8 @@ public class BoxBinaryOperationTransformer extends AbstractTransformer {
 	/**
 	 * Generate bytecode for Range.invoke(left, right, fromExclusive, toExclusive).
 	 */
-	@NonNull private static List<AbstractInsnNode> generateRangeExclusiveNodes( List<AbstractInsnNode> left, List<AbstractInsnNode> right,
+	@NonNull
+	private static List<AbstractInsnNode> generateRangeExclusiveNodes( List<AbstractInsnNode> left, List<AbstractInsnNode> right,
 	    boolean fromExclusive, boolean toExclusive ) {
 		List<AbstractInsnNode> nodes = new ArrayList<>();
 		nodes.addAll( left );
