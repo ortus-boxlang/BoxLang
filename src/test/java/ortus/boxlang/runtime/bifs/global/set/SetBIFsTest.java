@@ -325,16 +325,47 @@ public class SetBIFsTest {
 		assertThat( s.getType() ).isEqualTo( BoxSet.Type.LINKED );
 	}
 
-	@DisplayName( "Struct.keyToSet() builds a Set of the keys" )
+	@DisplayName( "Struct.keySet() builds a Set of the keys" )
 	@Test
-	public void testStructKeyToSet() {
+	public void testStructKeySet() {
 		instance.executeSource(
 		    """
-		    s = { name: "Luis", age: 42, email: "x@y.z" }.keyToSet();
+		    s = { name: "Luis", age: 42, email: "x@y.z" }.keySet();
 		    result = s.size();
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 3 );
+	}
+
+	@DisplayName( "Struct.keySet() inherits case-insensitivity from default struct" )
+	@Test
+	public void testStructKeySetCaseInsensitive() {
+		instance.executeSource(
+		    """
+		    s = { name: "Luis", age: 42 }.keySet();
+		    result = s.isCaseSensitive();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "Struct.keySet() inherits case-sensitivity from case-sensitive struct" )
+	@Test
+	public void testStructKeySetCaseSensitive() {
+		instance.executeSource(
+		    """
+		    s = structNew( "casesensitive" );
+		    s[ "Name" ] = "Luis";
+		    s[ "name" ] = "Brad";
+		    keys = s.keySet();
+		    result = keys.isCaseSensitive();
+		    hasName = keys.contains( "Name" );
+		    hasname = keys.contains( "name" );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "hasName" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "hasname" ) ) ).isEqualTo( true );
 	}
 
 	@DisplayName( "Struct.valueToSet() dedupes values" )

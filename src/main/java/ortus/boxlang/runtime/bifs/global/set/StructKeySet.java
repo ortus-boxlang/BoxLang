@@ -26,8 +26,8 @@ import ortus.boxlang.runtime.types.BoxSet;
 import ortus.boxlang.runtime.types.IStruct;
 
 @BoxBIF( description = "Build a Set containing the keys of a Struct (as Strings)." )
-@BoxMember( type = BoxLangType.STRUCT, name = "keyToSet" )
-@BoxMember( type = BoxLangType.MODIFIABLE_STRUCT, name = "keyToSet" )
+@BoxMember( type = BoxLangType.STRUCT, name = "keySet" )
+@BoxMember( type = BoxLangType.MODIFIABLE_STRUCT, name = "keySet" )
 public class StructKeySet extends BIF {
 
 	public StructKeySet() {
@@ -49,7 +49,7 @@ public class StructKeySet extends BIF {
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct		struct	= arguments.getAsStruct( Key.struct );
 		BoxSet.Type	type	= BoxSet.parseType( arguments.getAsString( Key.type ) );
-		BoxSet		out		= new BoxSet( type );
+		BoxSet		out		= new BoxSet( type, true, struct.isCaseSensitive() );
 		struct.keySet().forEach( k -> out.add( k.getName() ) );
 		return out;
 	}
