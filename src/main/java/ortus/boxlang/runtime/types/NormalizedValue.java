@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.types;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
@@ -44,7 +45,9 @@ import ortus.boxlang.runtime.operators.StringCompare;
  * <p>
  * HashCodes are cached for immutable categories (STRING, NUMERIC, DATETIME).
  */
-public class NormalizedValue {
+public class NormalizedValue implements Serializable {
+
+	private static final long	serialVersionUID	= 1L;
 
 	/**
 	 * --------------------------------------------------------------------------

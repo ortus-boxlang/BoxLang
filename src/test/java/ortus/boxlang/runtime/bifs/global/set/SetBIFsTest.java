@@ -664,4 +664,20 @@ public class SetBIFsTest {
 		assertThat( s.size() ).isEqualTo( 3 );
 	}
 
+	@DisplayName( "duplicate() deep copies a Set" )
+	@Test
+	public void testDuplicateSet() {
+		instance.executeSource(
+		    """
+		    original = setNew( type="linked", values=[1, 2, 3] );
+		    copy = duplicate( original );
+		    copy.add( 4 );
+		    result = original.size();
+		    copySize = copy.size();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 3 );
+		assertThat( variables.get( Key.of( "copySize" ) ) ).isEqualTo( 4 );
+	}
+
 }
