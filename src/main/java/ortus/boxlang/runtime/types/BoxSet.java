@@ -31,19 +31,15 @@ import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BoxMemberExpose;
-import ortus.boxlang.runtime.bifs.MemberDescriptor;
-import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.SetCaster;
-import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
-import ortus.boxlang.runtime.types.meta.GenericMeta;
 import ortus.boxlang.runtime.types.meta.IChangeListener;
 import ortus.boxlang.runtime.types.meta.IListenable;
+import ortus.boxlang.runtime.types.meta.SetMeta;
 import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableSet;
 import ortus.boxlang.runtime.types.util.TypeUtil;
 import ortus.boxlang.runtime.util.RegexBuilder;
@@ -65,7 +61,7 @@ import ortus.boxlang.runtime.util.RegexBuilder;
  * This class is named {@code BoxSet} (rather than {@code Set}) to avoid collision with
  * {@link java.util.Set} throughout the BoxLang codebase.
  */
-public class BoxSet implements Set<Object>, IType, IReferenceable, IListenable<BoxSet>, Serializable {
+public class BoxSet implements Set<Object>, IType, IListenable<BoxSet>, Serializable {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -719,57 +715,9 @@ public class BoxSet implements Set<Object>, IType, IReferenceable, IListenable<B
 	@Override
 	public BoxMeta<?> getBoxMeta() {
 		if ( this.$bx == null ) {
-			this.$bx = new GenericMeta( this );
+			this.$bx = new SetMeta( this );
 		}
 		return this.$bx;
-	}
-
-	/**
-	 * --------------------------------------------------------------------------
-	 * IReferenceable interface
-	 * --------------------------------------------------------------------------
-	 */
-
-	@Override
-	public Object assign( IBoxContext context, Key key, Object value ) {
-		// A set has no positional addressing; assignment is treated as adding the value.
-		add( value );
-		return value;
-	}
-
-	@Override
-	public Object dereference( IBoxContext context, Key key, Boolean safe ) {
-		// Special check for $bx
-		if ( key.equals( BoxMeta.key ) ) {
-			return getBoxMeta();
-		}
-		// Sets do not support keyed access. The only meaningful read is membership,
-		// which is exposed via the contains() / has() member methods. A bare
-		// dereference returns null in safe mode and throws otherwise.
-		if ( safe ) {
-			return null;
-		}
-		throw new BoxRuntimeException(
-		    "Cannot dereference a Set by key [" + key.getName() + "]. Use contains() or has() to test membership."
-		);
-	}
-
-	@Override
-	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
-		MemberDescriptor memberDescriptor = functionService.getMemberMethod( name, BoxLangType.SET );
-		if ( memberDescriptor != null ) {
-			return memberDescriptor.invoke( context, this, positionalArguments );
-		}
-		return DynamicInteropService.invoke( context, this, name.getName(), safe, positionalArguments );
-	}
-
-	@Override
-	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
-		MemberDescriptor memberDescriptor = functionService.getMemberMethod( name, BoxLangType.SET );
-		if ( memberDescriptor != null ) {
-			return memberDescriptor.invoke( context, this, namedArguments );
-		}
-		return DynamicInteropService.invoke( context, this, name.getName(), safe, namedArguments );
 	}
 
 	/**

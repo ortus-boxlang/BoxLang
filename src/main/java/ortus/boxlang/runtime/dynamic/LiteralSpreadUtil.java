@@ -77,12 +77,17 @@ public class LiteralSpreadUtil {
 		ortus.boxlang.runtime.types.BoxSet result = new ortus.boxlang.runtime.types.BoxSet();
 		for ( Object value : values ) {
 			if ( value instanceof SpreadValue spreadValue ) {
-				CastAttempt<Array> casted = ArrayCaster.attempt( spreadValue.getValue() );
-				if ( !casted.wasSuccessful() ) {
-					throw new BoxRuntimeException(
-					    "Cannot spread value of type [" + describeType( spreadValue.getValue() ) + "] into a set literal." );
+				Object spreadSource = spreadValue.getValue();
+				if ( spreadSource instanceof java.util.Collection<?> col ) {
+					result.addAll( col );
+				} else {
+					CastAttempt<Array> casted = ArrayCaster.attempt( spreadSource );
+					if ( !casted.wasSuccessful() ) {
+						throw new BoxRuntimeException(
+						    "Cannot spread value of type [" + describeType( spreadSource ) + "] into a set literal." );
+					}
+					result.addAll( casted.get() );
 				}
-				result.addAll( casted.get() );
 			} else {
 				result.add( value );
 			}
@@ -156,6 +161,10 @@ public class LiteralSpreadUtil {
 	 * appendArraySpread.
 	 */
 	private static void appendArraySpread( Array target, Object spreadValue ) {
+		if ( spreadValue instanceof java.util.Collection<?> col ) {
+			target.addAll( col );
+			return;
+		}
 		CastAttempt<Array> casted = ArrayCaster.attempt( spreadValue );
 		if ( !casted.wasSuccessful() ) {
 			throw new BoxRuntimeException(
@@ -191,6 +200,10 @@ public class LiteralSpreadUtil {
 	private static AmbiguousSpreadType detectAmbiguousSpreadType( Object spreadValue ) {
 		if ( spreadValue instanceof IStruct ) {
 			return AmbiguousSpreadType.STRUCT;
+		}
+
+		if ( spreadValue instanceof java.util.Collection<?> ) {
+			return AmbiguousSpreadType.ARRAY;
 		}
 
 		CastAttempt<Array> casted = ArrayCaster.attempt( spreadValue );

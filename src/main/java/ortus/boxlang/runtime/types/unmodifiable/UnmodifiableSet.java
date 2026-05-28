@@ -19,8 +19,6 @@ package ortus.boxlang.runtime.types.unmodifiable;
 
 import java.util.Collection;
 
-import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.BoxSet;
 import ortus.boxlang.runtime.types.exceptions.UnmodifiableException;
 
@@ -103,11 +101,6 @@ public class UnmodifiableSet extends BoxSet implements IUnmodifiable {
 
 	@Override
 	public void clear() {
-		throw new UnmodifiableException( "Cannot modify Unmodifiable Set" );
-	}
-
-	@Override
-	public Object assign( IBoxContext context, Key key, Object value ) {
 		throw new UnmodifiableException( "Cannot modify Unmodifiable Set" );
 	}
 
