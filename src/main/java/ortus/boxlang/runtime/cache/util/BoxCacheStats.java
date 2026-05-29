@@ -230,6 +230,7 @@ public class BoxCacheStats implements ICacheStats {
 		    "garbageCollections", this.garbageCollections.get(),
 		    "evictionCount", this.evictionCount.get(),
 		    "hits", this.hits.get(),
+		    "hitRate", hitRate(),
 		    "misses", this.misses.get(),
 		    "lastReapDatetime", this.lastReapDatetime,
 		    "reapCount", this.reapCount.get(),
