@@ -51,8 +51,19 @@ public class IsJSON extends BIF {
 		if ( !stringAttempt.wasSuccessful() ) {
 			return false;
 		}
+		return isJSON( stringAttempt.get() );
+	}
+
+	/**
+	 * Check if a string is valid JSON.
+	 *
+	 * @param value The string to test
+	 *
+	 * @return true if the string is valid JSON, false otherwise
+	 */
+	public static boolean isJSON( String value ) {
 		try {
-			JSONUtil.fromJSON( stringAttempt.get() );
+			JSONUtil.fromJSON( value );
 			return true;
 		} catch ( Exception e ) {
 			return false;

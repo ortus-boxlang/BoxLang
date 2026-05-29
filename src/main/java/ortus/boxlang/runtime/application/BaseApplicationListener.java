@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.bifs.global.decision.IsJSON;
 import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -862,7 +863,12 @@ public abstract class BaseApplicationListener {
 			// switch on returnFormat
 			switch ( returnFormat.toLowerCase() ) {
 				case "json" :
-					stringResult = ( String ) context.invokeFunction( Key.JSONSerialize, new Object[] { result, "struct" } );
+					// don't serialize JSON if the value is already a string which is valid JSON
+					if ( result instanceof String str && IsJSON.isJSON( str ) ) {
+						stringResult = str;
+					} else {
+						stringResult = ( String ) context.invokeFunction( Key.JSONSerialize, new Object[] { result, "struct" } );
+					}
 					break;
 				case "wddx" :
 				case "xml" :
