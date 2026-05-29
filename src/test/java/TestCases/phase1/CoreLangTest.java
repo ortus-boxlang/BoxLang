@@ -6694,4 +6694,28 @@ public class CoreLangTest {
 		assertThat( variables.get( result ) ).isEqualTo( "test" );
 	}
 
+	@DisplayName( "Try/catch in static init block of local class" )
+	@Test
+	public void testTryCatchInStaticInitBlock() {
+		instance.executeSource(
+		    """
+		    class Config {
+		        static {
+		            try {
+		                static.value = 42;
+		                throw( message="oops", type="TestError" );
+		            } catch( any e ) {
+		                static.caught = e.message;
+		            }
+		        }
+		    }
+
+		    result = Config::value;
+		    result2 = Config::caught;
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 42 );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "oops" );
+	}
+
 }
