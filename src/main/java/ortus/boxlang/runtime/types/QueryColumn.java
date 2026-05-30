@@ -235,7 +235,7 @@ public class QueryColumn implements IReferenceable, Serializable {
 	 * Set whether the column is nullable
 	 *
 	 * @param nullable Whether the column is nullable
-	 * 
+	 *
 	 * @return This column, for chaining
 	 */
 	public QueryColumn setNullable( Boolean nullable ) {
@@ -256,7 +256,7 @@ public class QueryColumn implements IReferenceable, Serializable {
 	 * Set whether the column is read-only
 	 *
 	 * @param readOnly Whether the column is read-only
-	 * 
+	 *
 	 * @return This column, for chaining
 	 */
 	public QueryColumn setReadOnly( Boolean readOnly ) {
@@ -277,7 +277,7 @@ public class QueryColumn implements IReferenceable, Serializable {
 	 * Set the number of decimal digits for numeric types
 	 *
 	 * @param decimals The number of decimal digits
-	 * 
+	 *
 	 * @return This column, for chaining
 	 */
 	public QueryColumn setDecimals( Integer decimals ) {
@@ -298,7 +298,7 @@ public class QueryColumn implements IReferenceable, Serializable {
 	 * Set the maximum length of the column
 	 *
 	 * @param maxLength The maximum length of the column
-	 * 
+	 *
 	 * @return This column, for chaining
 	 */
 	public QueryColumn setMaxLength( Integer maxLength ) {
