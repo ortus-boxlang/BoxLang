@@ -104,6 +104,20 @@
 	"javaLibraryPaths": [
 		"${boxlang-home}/lib"
 	],
+	// Query Default Options
+	"queries": {
+		// The default timeout for queries in seconds. 0 means no timeout. This can be overridden per query.
+		"timeout": 0,
+		// The default return type for queries. Valid values are "query", "array", "struct". This can be overridden per query.
+		"returnType": "query",
+		// The default Number of rows to fetch from database at once, defaults to all rows (0)
+		"fetchSize": 0,
+		// Maximum number of rows to return, defaults to all rows (0)
+		"maxrows": 0,
+		// The default named cache to use for query caching.
+		// This cache must be defined in the "caches" section of this config file.
+		"cacheProvider": "default"
+	},
 	// Logging Settings for the runtime
 	"logging": {
 		// The location of the log files the runtime will produce

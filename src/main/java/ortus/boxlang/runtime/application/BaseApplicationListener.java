@@ -173,6 +173,8 @@ public abstract class BaseApplicationListener {
 	    Key.locale, runtime.getConfiguration().locale.toString(),
 	    // Mappings
 	    Key.mappings, Struct.ofNonConcurrent(),
+	    // Query global options
+	    Key.queryOptions, runtime.getConfiguration().queries.asStruct(),
 	    // Dynamic Schedulers
 	    Key.schedulers, new Array(),
 	    // Default Session Management settings

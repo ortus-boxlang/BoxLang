@@ -207,6 +207,14 @@ class ConfigLoaderTest {
 		assertThat( regexCacheConfig.provider ).isEqualTo( Key.of( "BOXCACHEPROVIDER" ) );
 		assertThat( regexCacheConfig.properties ).isNotNull();
 		assertThat( regexCacheConfig.properties.get( "maxObjects" ) ).isEqualTo( 200 );
+
+		// Queries Config Checks (from test-boxlang.json)
+		assertThat( config.queries ).isNotNull();
+		assertThat( config.queries.timeout ).isEqualTo( 30 );
+		assertThat( config.queries.returnType ).isEqualTo( "array" );
+		assertThat( config.queries.fetchSize ).isEqualTo( 100 );
+		assertThat( config.queries.maxrows ).isEqualTo( 1000 );
+		assertThat( config.queries.cacheProvider ).isEqualTo( "default" );
 	}
 
 	@DisplayName( "It can merge environmental properties in to the config" )

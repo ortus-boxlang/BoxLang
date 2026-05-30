@@ -125,7 +125,7 @@ public class Query extends Component {
 	@Override
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		// Prepare the attributes
-		QueryOptions options = new QueryOptions( attributes );
+		QueryOptions options = new QueryOptions( attributes, context );
 		executionState.put( Key.queryParams, new Array() );
 		StringBuffer	buffer		= new StringBuffer();
 

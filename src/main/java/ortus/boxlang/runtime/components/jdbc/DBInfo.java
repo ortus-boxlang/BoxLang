@@ -114,9 +114,9 @@ public class DBInfo extends Component {
 	 * @attribute.table Table name for which to retrieve metadata. Required for `columns`, `foreignkeys`, and `index` types.
 	 *
 	 * @attribute.datasource Name of the datasource to check metadata on, or a struct of datasource settings for on-the-fly connections. If not provided, the default datasource will be used.
-	 * 
+	 *
 	 * @attribute.pattern Table name pattern to filter by. Can use wildcards or any `LIKE`-compatible pattern such as `tbl_%`. Can use `schemaName.tableName` syntax to additionally filter by schema.
-	 * 
+	 *
 	 * @attribute.dbname Name of the database to check for tables. If not provided, the database name from the connection will be used.
 	 *
 	 * @attribute.filter This is a string value that must match a table type in your database implementation. Each database is different.
@@ -139,7 +139,7 @@ public class DBInfo extends Component {
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		IJDBCCapableContext	jdbcContext			= context.getParentOfType( IJDBCCapableContext.class );
 		ConnectionManager	connectionManager	= jdbcContext.getConnectionManager();
-		QueryOptions		options				= new QueryOptions( attributes );
+		QueryOptions		options				= new QueryOptions( attributes, context );
 		DataSource			datasource			= connectionManager.getDataSource( options );
 		String				tableNameLookup		= attributes.getAsString( Key.table );
 		if ( tableNameLookup == null ) {

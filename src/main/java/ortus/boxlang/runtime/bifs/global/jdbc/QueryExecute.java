@@ -135,7 +135,7 @@ public class QueryExecute extends BIF {
 	 * @return The executed query results, based on the return type specified in the options
 	 */
 	public static Object execute( IBoxContext context, String sql, Object bindings, IStruct optionsStruct ) {
-		QueryOptions	options			= new QueryOptions( optionsStruct != null ? optionsStruct : new Struct() );
+		QueryOptions	options			= new QueryOptions( optionsStruct != null ? optionsStruct : new Struct(), context );
 		PendingQuery	pendingQuery	= new PendingQuery( context, sql, bindings, options );
 		ExecutedQuery	executedQuery;
 
