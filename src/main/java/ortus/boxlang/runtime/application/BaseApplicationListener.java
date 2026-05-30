@@ -144,6 +144,9 @@ public abstract class BaseApplicationListener {
 	 * You can find the majority of defaults in the {@link Configuration} class.
 	 */
 	protected IStruct						settings					= Struct.ofNonConcurrent(
+	    // These are auto-calculated at runtime
+	    Key._CLASS, "",
+	    Key._NAME, "",
 	    // Security settings
 	    Key.allowedFileOperationExtensions, runtime.getConfiguration().security.allowedFileOperationExtensions,
 	    // Application settings
@@ -173,6 +176,8 @@ public abstract class BaseApplicationListener {
 	    Key.locale, runtime.getConfiguration().locale.toString(),
 	    // Mappings
 	    Key.mappings, Struct.ofNonConcurrent(),
+	    // Query Transformers
+	    Key.queryTransformers, Struct.ofNonConcurrent(),
 	    // Dynamic Schedulers
 	    Key.schedulers, new Array(),
 	    // Default Session Management settings
@@ -183,15 +188,13 @@ public abstract class BaseApplicationListener {
 	    // Cookie Management
 	    Key.setClientCookies, runtime.getConfiguration().setClientCookies,
 	    Key.setDomainCookies, runtime.getConfiguration().setDomainCookies,
-	    // These are auto-calculated at runtime
-	    Key._CLASS, "",
-	    Key._NAME, "",
+	    // The source is done at runtime.
 	    Key.source, "",
-	    // end auto-calculated
-	    Key.timezone, runtime.getConfiguration().timezone.getId(),
 	    // Stil Considering if they will be core or a module
 	    Key.secureJson, false,
-	    Key.secureJsonPrefix, ""
+	    Key.secureJsonPrefix, "",
+	    // Default Timezone
+	    Key.timezone, runtime.getConfiguration().timezone.getId()
 	);
 
 	/**

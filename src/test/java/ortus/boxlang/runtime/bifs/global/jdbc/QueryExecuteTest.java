@@ -1104,7 +1104,42 @@ public class QueryExecuteTest extends BaseJDBCTest {
 		    """,
 		    context ) );
 
-		assertThat( e.getMessage() ).contains( "Cannot use named transformer" );
+		assertThat( e.getMessage() ).contains( "Query transformer 'nonexistent' not found" );
+	}
+
+	@DisplayName( "It can execute with a named transformer" )
+	@Test
+	public void testTransformerNamed() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    // Register a transformer in the application context
+			bx:application
+		    	name="namedTransformerApp"
+				queryTransformers={
+					"myTransformer": ( query, metadata ) => {
+						return {
+							rowCount: query.recordCount,
+							sql: metadata.sql
+						};
+					}
+				};
+
+		    result = queryExecute(
+		        "SELECT id FROM developers",
+		        [],
+		        { transformer: "myTransformer" }
+		    );
+		    """,
+		    context );
+		// @formatter:on
+
+		Object resultObj = variables.get( result );
+		assertInstanceOf( IStruct.class, resultObj );
+		IStruct transformed = ( IStruct ) resultObj;
+
+		assertEquals( 4, transformed.get( "rowCount" ) );
+		assertEquals( "SELECT id FROM developers", transformed.get( "sql" ) );
 	}
 
 	@DisplayName( "Transformer takes precedence over returnType" )

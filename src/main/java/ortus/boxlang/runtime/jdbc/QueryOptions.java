@@ -305,7 +305,7 @@ public class QueryOptions {
 				);
 			}
 			IStruct	queryTransformers		= StructCaster
-			    .attempt( requestContext.getConfigItem( Key.applicationSettings, Key.queryTransformers ) )
+			    .attempt( requestContext.getConfigItems( Key.applicationSettings, Key.queryTransformers ) )
 			    .orElse( new Struct() );
 			Object	registeredTransformer	= queryTransformers.get( Key.of( transformerName ) );
 			if ( registeredTransformer == null ) {
