@@ -248,6 +248,18 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 					columnMapList.add( i );
 					// Store the SQL type for this column (columnMapList.size() - 1 is the current column index)
 					columnSQLTypes[ i - 1 ] = resultSetMetaData.getColumnType( i );
+
+					// Capture rich JDBC metadata on the column
+					QueryColumn col = query.getColumn( colName );
+					try {
+						col.setNullable( resultSetMetaData.isNullable( i ) != ResultSetMetaData.columnNoNulls );
+						col.setReadOnly( resultSetMetaData.isReadOnly( i ) || resultSetMetaData.isAutoIncrement( i ) );
+						int scale = resultSetMetaData.getScale( i );
+						col.setDecimals( scale > 0 ? scale : null );
+						col.setMaxLength( resultSetMetaData.getColumnDisplaySize( i ) );
+					} catch ( SQLException e ) {
+						// Some JDBC drivers don't support all metadata methods — leave as null
+					}
 				}
 			}
 

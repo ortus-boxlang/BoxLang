@@ -54,6 +54,7 @@ public class Query extends Component {
 		        Validator.valueOneOf( "query", "array", "struct" )
 		    ) ),
 		    new Attribute( Key.columnKey, "string" ),
+		    new Attribute( Key.transformer, "any" ),
 		    new Attribute( Key.dbtype, "string" ),
 		    new Attribute( Key.username, "string" ),
 		    new Attribute( Key.password, "string" ),
@@ -166,7 +167,7 @@ public class Query extends Component {
 		}
 
 		String variableName = StringCaster.cast( attributes.getOrDefault( Key._NAME, "bxquery" ) );
-		ExpressionInterpreter.setVariable( context, variableName, options.castAsReturnType( executedQuery ) );
+		ExpressionInterpreter.setVariable( context, variableName, options.castAsReturnType( executedQuery, context ) );
 
 		return DEFAULT_RETURN;
 	}
