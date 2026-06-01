@@ -112,6 +112,65 @@ public class StringUtilTest {
 		assertThat( StringUtil.snakeCase( "___" ) ).isEqualTo( "" );
 	}
 
+	@DisplayName( "Can PascalCase a string" )
+	@Test
+	void testPascalCase() {
+		// camelCase → PascalCase
+		assertThat( StringUtil.pascalCase( "myVariable" ) ).isEqualTo( "MyVariable" );
+		assertThat( StringUtil.pascalCase( "thisIsATest" ) ).isEqualTo( "ThisIsATest" );
+		assertThat( StringUtil.pascalCase( "parseXML" ) ).isEqualTo( "ParseXml" );
+
+		// snake_case → PascalCase
+		assertThat( StringUtil.pascalCase( "my_variable" ) ).isEqualTo( "MyVariable" );
+		assertThat( StringUtil.pascalCase( "hello_world" ) ).isEqualTo( "HelloWorld" );
+		assertThat( StringUtil.pascalCase( "xml_parser" ) ).isEqualTo( "XmlParser" );
+
+		// kebab-case → PascalCase
+		assertThat( StringUtil.pascalCase( "my-variable" ) ).isEqualTo( "MyVariable" );
+		assertThat( StringUtil.pascalCase( "hello-world-test" ) ).isEqualTo( "HelloWorldTest" );
+
+		// Spaces → PascalCase
+		assertThat( StringUtil.pascalCase( "my variable" ) ).isEqualTo( "MyVariable" );
+		assertThat( StringUtil.pascalCase( "hello world" ) ).isEqualTo( "HelloWorld" );
+		assertThat( StringUtil.pascalCase( "this is a   test" ) ).isEqualTo( "ThisIsATest" );
+
+		// Already PascalCase (idempotent)
+		assertThat( StringUtil.pascalCase( "MyClass" ) ).isEqualTo( "MyClass" );
+		assertThat( StringUtil.pascalCase( "HelloWorld" ) ).isEqualTo( "HelloWorld" );
+		assertThat( StringUtil.pascalCase( "MyVariable" ) ).isEqualTo( "MyVariable" );
+
+		// ALLCAPS → title-cased single word
+		assertThat( StringUtil.pascalCase( "ALLCAPS" ) ).isEqualTo( "Allcaps" );
+		assertThat( StringUtil.pascalCase( "XML" ) ).isEqualTo( "Xml" );
+
+		// Complex acronym boundaries
+		assertThat( StringUtil.pascalCase( "parseXMLHTTPRequest" ) ).isEqualTo( "ParseXmlhttpRequest" );
+		assertThat( StringUtil.pascalCase( "XMLHTTPRequest" ) ).isEqualTo( "XmlhttpRequest" );
+		assertThat( StringUtil.pascalCase( "XMLParser" ) ).isEqualTo( "XmlParser" );
+
+		// Numbers
+		assertThat( StringUtil.pascalCase( "myVar2" ) ).isEqualTo( "MyVar2" );
+		assertThat( StringUtil.pascalCase( "test2Var" ) ).isEqualTo( "Test2Var" );
+		assertThat( StringUtil.pascalCase( "JSON2XML" ) ).isEqualTo( "Json2Xml" );
+
+		// Mixed separators
+		assertThat( StringUtil.pascalCase( "my-variable_name" ) ).isEqualTo( "MyVariableName" );
+		assertThat( StringUtil.pascalCase( "hello-world test" ) ).isEqualTo( "HelloWorldTest" );
+
+		// Special characters → word separators
+		assertThat( StringUtil.pascalCase( "hello@world!" ) ).isEqualTo( "HelloWorld" );
+		assertThat( StringUtil.pascalCase( "price$amount" ) ).isEqualTo( "PriceAmount" );
+
+		// Leading/trailing whitespace and special chars
+		assertThat( StringUtil.pascalCase( " hello " ) ).isEqualTo( "Hello" );
+		assertThat( StringUtil.pascalCase( "  hello  world  " ) ).isEqualTo( "HelloWorld" );
+
+		// Empty and edge cases
+		assertThat( StringUtil.pascalCase( "" ) ).isEqualTo( "" );
+		assertThat( StringUtil.pascalCase( "_" ) ).isEqualTo( "" );
+		assertThat( StringUtil.pascalCase( "___" ) ).isEqualTo( "" );
+	}
+
 	@DisplayName( "Can singularize a string" )
 	@Test
 	void testSingularize() {

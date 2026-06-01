@@ -278,14 +278,37 @@ public class StringUtil {
 	}
 
 	/**
-	 * Create pascal case from a string
+	 * Create PascalCase from a string. Handles camelCase, snake_case, kebab-case,
+	 * space-separated, and already PascalCase inputs. Non-alphanumeric characters
+	 * are treated as word separators.
 	 *
-	 * @param target The target string to convert to pascal case
+	 * <p>
+	 * Examples:
+	 * </p>
+	 * <ul>
+	 * <li>{@code "myVariable"} → {@code "MyVariable"} (camelCase)</li>
+	 * <li>{@code "my_variable"} → {@code "MyVariable"} (snake_case)</li>
+	 * <li>{@code "my-variable"} → {@code "MyVariable"} (kebab-case)</li>
+	 * <li>{@code "my variable"} → {@code "MyVariable"} (spaces)</li>
+	 * <li>{@code "MyClass"} → {@code "MyClass"} (already PascalCase, idempotent)</li>
+	 * <li>{@code "XMLParser"} → {@code "XmlParser"} (acronym boundary)</li>
+	 * <li>{@code "parseXMLHTTPRequest"} → {@code "ParseXmlhttpRequest"} (complex camelCase)</li>
+	 * </ul>
 	 *
-	 * @return The string in pascal case
+	 * @param target The target string to convert to PascalCase
+	 *
+	 * @return The string in PascalCase
 	 */
 	public static String pascalCase( String target ) {
-		return ucFirst( camelCase( target ) );
+		// Normalize to snake_case first to handle all input formats uniformly
+		String snake = snakeCase( target );
+		if ( snake.isEmpty() ) {
+			return "";
+		}
+		// Split on underscores, capitalize each word, and join
+		return Arrays.stream( snake.split( "_" ) )
+		    .map( StringUtil::ucFirst )
+		    .collect( Collectors.joining() );
 	}
 
 	/**
