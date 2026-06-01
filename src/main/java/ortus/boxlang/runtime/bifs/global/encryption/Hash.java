@@ -43,6 +43,7 @@ import ortus.boxlang.runtime.util.conversion.ObjectMarshaller;
 @BoxMember( type = BoxLangType.STRUCT, name = "hash" )
 @BoxMember( type = BoxLangType.ARRAY, name = "hash" )
 @BoxMember( type = BoxLangType.DATETIME, name = "hash" )
+@BoxMember( type = BoxLangType.SET, name = "hash" )
 
 public class Hash extends BIF {
 
