@@ -589,7 +589,7 @@ public class JSONSerializeTest {
 		    """
 				array1 = [javacast("double",0.0) ,javacast("double",0.30420544445599146)];
 
-				matrix = {   "test": 
+				matrix = {   "test":
 					[javacast("double[]", array1)]
 				}
 		    	result = jsonSerialize( data: matrix )
@@ -771,6 +771,18 @@ public class JSONSerializeTest {
 		    """
 		    s = setNew( type="linked", values=["a","b","c"] );
 		    result = JSONSerialize( s );
+		    """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "[\"a\",\"b\",\"c\"]" );
+	}
+
+	@DisplayName( "It can serialize a Set as a JSON array using a member method" )
+	@Test
+	public void testCanSerializeSetWithMemberMethod() {
+		instance.executeSource(
+		    """
+		    result = setNew( type="linked", values=["a","b","c"] ).toJSON()
+
 		    """,
 		    context );
 		assertThat( variables.getAsString( result ) ).isEqualTo( "[\"a\",\"b\",\"c\"]" );
