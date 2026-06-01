@@ -70,7 +70,7 @@ public class Hash extends BIF {
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
-	 * 
+	 *
 	 * @throws IOException
 	 * @throws JSONObjectException
 	 *
