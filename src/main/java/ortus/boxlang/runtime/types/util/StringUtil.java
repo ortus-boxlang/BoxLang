@@ -212,14 +212,35 @@ public class StringUtil {
 	}
 
 	/**
-	 * Create kebab-case from a string
+	 * Create kebab-case from a string. Handles camelCase, PascalCase, snake_case,
+	 * space-separated, and already kebab-case inputs. Non-alphanumeric characters
+	 * are replaced with hyphens, and consecutive hyphens are collapsed.
+	 *
+	 * <p>
+	 * Examples:
+	 * </p>
+	 * <ul>
+	 * <li>{@code "myVariable"} → {@code "my-variable"} (camelCase)</li>
+	 * <li>{@code "MyClass"} → {@code "my-class"} (PascalCase)</li>
+	 * <li>{@code "my_variable"} → {@code "my-variable"} (snake_case)</li>
+	 * <li>{@code "my variable"} → {@code "my-variable"} (spaces)</li>
+	 * <li>{@code "my-variable"} → {@code "my-variable"} (already kebab-case, idempotent)</li>
+	 * <li>{@code "XMLParser"} → {@code "xml-parser"} (acronym boundary)</li>
+	 * <li>{@code "parseXMLHTTPRequest"} → {@code "parse-xmlhttp-request"} (complex camelCase)</li>
+	 * </ul>
 	 *
 	 * @param target The target string to convert to kebab-case
 	 *
 	 * @return The string in kebab-case
 	 */
 	public static String kebabCase( String target ) {
-		return RegexBuilder.of( target.toLowerCase(), RegexBuilder.MULTIPLE_SPACES ).replaceAllAndGet( "-" );
+		// Normalize to snake_case first to handle all input formats uniformly
+		String snake = snakeCase( target );
+		if ( snake.isEmpty() ) {
+			return "";
+		}
+		// Replace underscores with hyphens
+		return snake.replace( "_", "-" );
 	}
 
 	/**

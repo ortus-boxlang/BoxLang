@@ -171,6 +171,63 @@ public class StringUtilTest {
 		assertThat( StringUtil.pascalCase( "___" ) ).isEqualTo( "" );
 	}
 
+	@DisplayName( "Can kebab-case a string" )
+	@Test
+	void testKebabCase() {
+		// camelCase → kebab-case
+		assertThat( StringUtil.kebabCase( "myVariable" ) ).isEqualTo( "my-variable" );
+		assertThat( StringUtil.kebabCase( "thisIsATest" ) ).isEqualTo( "this-is-a-test" );
+		assertThat( StringUtil.kebabCase( "parseXML" ) ).isEqualTo( "parse-xml" );
+
+		// PascalCase → kebab-case
+		assertThat( StringUtil.kebabCase( "MyClass" ) ).isEqualTo( "my-class" );
+		assertThat( StringUtil.kebabCase( "HelloWorld" ) ).isEqualTo( "hello-world" );
+		assertThat( StringUtil.kebabCase( "XMLParser" ) ).isEqualTo( "xml-parser" );
+
+		// snake_case → kebab-case
+		assertThat( StringUtil.kebabCase( "my_variable" ) ).isEqualTo( "my-variable" );
+		assertThat( StringUtil.kebabCase( "hello_world_test" ) ).isEqualTo( "hello-world-test" );
+
+		// Spaces → kebab-case
+		assertThat( StringUtil.kebabCase( "my variable" ) ).isEqualTo( "my-variable" );
+		assertThat( StringUtil.kebabCase( "hello world" ) ).isEqualTo( "hello-world" );
+		assertThat( StringUtil.kebabCase( "this is a   test" ) ).isEqualTo( "this-is-a-test" );
+
+		// Already kebab-case (idempotent)
+		assertThat( StringUtil.kebabCase( "my-variable" ) ).isEqualTo( "my-variable" );
+		assertThat( StringUtil.kebabCase( "already-kebab-case" ) ).isEqualTo( "already-kebab-case" );
+
+		// ALLCAPS → single word lowercased
+		assertThat( StringUtil.kebabCase( "ALLCAPS" ) ).isEqualTo( "allcaps" );
+		assertThat( StringUtil.kebabCase( "XML" ) ).isEqualTo( "xml" );
+
+		// Complex acronym boundaries
+		assertThat( StringUtil.kebabCase( "parseXMLHTTPRequest" ) ).isEqualTo( "parse-xmlhttp-request" );
+		assertThat( StringUtil.kebabCase( "XMLHTTPRequest" ) ).isEqualTo( "xmlhttp-request" );
+
+		// Numbers
+		assertThat( StringUtil.kebabCase( "myVar2" ) ).isEqualTo( "my-var2" );
+		assertThat( StringUtil.kebabCase( "test2Var" ) ).isEqualTo( "test2-var" );
+		assertThat( StringUtil.kebabCase( "JSON2XML" ) ).isEqualTo( "json2-xml" );
+
+		// Mixed separators
+		assertThat( StringUtil.kebabCase( "my-variable_name" ) ).isEqualTo( "my-variable-name" );
+		assertThat( StringUtil.kebabCase( "hello-world test" ) ).isEqualTo( "hello-world-test" );
+
+		// Special characters → hyphens
+		assertThat( StringUtil.kebabCase( "hello@world!" ) ).isEqualTo( "hello-world" );
+		assertThat( StringUtil.kebabCase( "price$amount" ) ).isEqualTo( "price-amount" );
+
+		// Leading/trailing whitespace and special chars
+		assertThat( StringUtil.kebabCase( " hello " ) ).isEqualTo( "hello" );
+		assertThat( StringUtil.kebabCase( "  hello  world  " ) ).isEqualTo( "hello-world" );
+
+		// Empty and edge cases
+		assertThat( StringUtil.kebabCase( "" ) ).isEqualTo( "" );
+		assertThat( StringUtil.kebabCase( "-" ) ).isEqualTo( "" );
+		assertThat( StringUtil.kebabCase( "---" ) ).isEqualTo( "" );
+	}
+
 	@DisplayName( "Can singularize a string" )
 	@Test
 	void testSingularize() {
