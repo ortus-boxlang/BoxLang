@@ -81,7 +81,7 @@ public class JSONSerialize extends BIF {
 	 * </ul>
 	 *
 	 * <h2>Usage</h2>
-	 * 
+	 *
 	 * <pre>
 	 * // Convert a query to JSON
 	 * myQuery = ...;
