@@ -637,4 +637,91 @@ public class CFTranspilerTest {
 		assertThat( variables.get( result ) ).isEqualTo( "readwritesdfsdf" );
 	}
 
+	@DisplayName( "It formats numbers with a string pattern" )
+	@Test
+	public void testNumberFormatSecondArgAsString() {
+		instance.executeSource(
+		    """
+		    result = numberFormat( 1, 000.000 );
+		             """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "001.000" );
+	}
+
+	@DisplayName( "It doesn't escape single quotes in SQL output from UDF" )
+	@Test
+	public void testItDoesntEscapeSingleQuotesInSqlOutputFromUDF() {
+		instance.executeSource(
+		    """
+		    	<cfset myQry = queryNew( "name", "varchar", [["Brad"], ["Luis"]] ) >
+		    	<cffunction name="getSQL">
+		    		<cfreturn mySQL = "SELECT * FROM myQry WHERE name = 'Brad'" >
+		    	</cffunction>
+		    	<cfquery name="result" dbtype="query">
+		    		#getSQL()#
+		    	</cfquery>
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "CF output save content" )
+	@Test
+	public void testCFOutputSaveContent() {
+
+		instance.executeSource(
+		    """
+		    result = new src.test.java.ortus.boxlang.runtime.components.system.testCFOutputSaveContent().run();
+		                """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( result ).trim() ).isEqualTo( "hello world" );
+	}
+
+	@DisplayName( "It transpiles parameterExists( foo ) to isDefined( 'foo' )" )
+	@Test
+	public void testParameterExistsSimple() {
+		instance.executeSource(
+		    """
+		    foo = "bar";
+		    result = parameterExists( foo );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "It transpiles parameterExists( variables.foo ) to isDefined( 'variables.foo' )" )
+	@Test
+	public void testParameterExistsScoped() {
+		instance.executeSource(
+		    """
+		    variables.foo = "bar";
+		    result = parameterExists( variables.foo );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "It transpiles parameterExists() returns false for missing var" )
+	@Test
+	public void testParameterExistsFalse() {
+		instance.executeSource(
+		    """
+		    result = parameterExists( doesNotExist );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "It transpiles hash(string='test' ) to hash(input='test')" )
+	@Test
+	public void testHashStringArg() {
+		instance.executeSource(
+		    """
+		    result = hash( string="test", algorithm="MD5" );
+
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "098f6bcd4621d373cade4e832627b4f6" );
+	}
+
 }

@@ -315,6 +315,14 @@ public class GenericCaster implements IBoxCaster {
 		if ( type.equals( Key._ARRAY ) ) {
 			return ArrayCaster.cast( object, fail );
 		}
+		if ( type.equals( Key._SET ) ) {
+			// Strict: only accept actual Sets. Use the explicit `toSet()` member or
+			// `setNew(...)` BIF to convert arrays / lists / etc.
+			return SetCaster.cast( object, fail );
+		}
+		if ( type.equals( Key.modifiableSet ) ) {
+			return ModifiableSetCaster.cast( object, fail );
+		}
 		// BL-640 - if we have a DateTime object provided, we use that reference rather than strip the date by using the timecaster
 		if ( object instanceof DateTime || type.equals( Key._DATETIME ) || type.equals( Key._DATE ) || type.equals( Key.timestamp ) ) {
 			return DateTimeCaster.cast( object, fail, context );
@@ -393,16 +401,8 @@ public class GenericCaster implements IBoxCaster {
 			}
 		}
 
-		if ( type.equals( Key._FILE ) ) {
-			// No real "casting" to do, just return it if it is one
-			if ( object instanceof ortus.boxlang.runtime.types.File ) {
-				return object;
-			}
-			if ( fail ) {
-				throwCastException( type, object );
-			} else {
-				return null;
-			}
+		if ( type.equals( Key._FILE ) || type.equals( Key.boxfile ) ) {
+			return BoxFileCaster.cast( context, object, fail );
 		}
 
 		if ( type.equals( Key.stream ) && ! ( object instanceof IClassRunnable ) ) {

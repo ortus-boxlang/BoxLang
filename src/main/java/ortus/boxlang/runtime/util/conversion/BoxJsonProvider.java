@@ -17,9 +17,11 @@
  */
 package ortus.boxlang.runtime.util.conversion;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.fasterxml.jackson.jr.ob.api.ReaderWriterProvider;
 import com.fasterxml.jackson.jr.ob.api.ValueReader;
@@ -42,11 +44,14 @@ import ortus.boxlang.runtime.util.conversion.serializers.BoxArraySerializer;
 import ortus.boxlang.runtime.util.conversion.serializers.BoxClassSerializer;
 import ortus.boxlang.runtime.util.conversion.serializers.BoxFunctionSerializer;
 import ortus.boxlang.runtime.util.conversion.serializers.BoxQuerySerializer;
+import ortus.boxlang.runtime.util.conversion.serializers.BoxSetSerializer;
 import ortus.boxlang.runtime.util.conversion.serializers.BoxStructSerializer;
+import ortus.boxlang.runtime.util.conversion.serializers.DurationSerializer;
 import ortus.boxlang.runtime.util.conversion.serializers.DynamicObjectSerializer;
 import ortus.boxlang.runtime.util.conversion.serializers.ExceptionSerializer;
 import ortus.boxlang.runtime.util.conversion.serializers.JavaArraySerializer;
 import ortus.boxlang.runtime.util.conversion.serializers.KeySerializer;
+import ortus.boxlang.runtime.util.conversion.serializers.NumberSerializer;
 
 /**
  * This class provides a JSON provider for BoxLang using our lib: Jackson JR
@@ -58,6 +63,10 @@ public class BoxJsonProvider extends ReaderWriterProvider {
 	 */
 	@Override
 	public ValueWriter findValueWriter( JSONWriter writeContext, Class<?> type ) {
+
+		if ( Duration.class.isAssignableFrom( type ) ) {
+			return new DurationSerializer();
+		}
 
 		if ( DateTimeCaster.isKnownDateClass( type ) ) {
 			return new DateTime();
@@ -73,6 +82,12 @@ public class BoxJsonProvider extends ReaderWriterProvider {
 
 		if ( List.class.isAssignableFrom( type ) ) {
 			return new BoxArraySerializer();
+		}
+
+		// Place Set BEFORE Map so a BoxSet (which is a Set) doesn't get routed
+		// through the Map/Struct serializer.
+		if ( Set.class.isAssignableFrom( type ) ) {
+			return new BoxSetSerializer();
 		}
 
 		if ( Function.class.isAssignableFrom( type ) ) {
@@ -95,8 +110,13 @@ public class BoxJsonProvider extends ReaderWriterProvider {
 			return new KeySerializer();
 		}
 
+		// Use our strict string caster for all numbers to strip trailing zeros and avoid scientific notation
+		if ( Number.class.isAssignableFrom( type ) ) {
+			return new NumberSerializer();
+		}
+
 		// Fall back for all other objects that aren't "simple"
-		if ( !String.class.isAssignableFrom( type ) && !Number.class.isAssignableFrom( type ) && !Boolean.class.isAssignableFrom( type ) ) {
+		if ( !String.class.isAssignableFrom( type ) && !Boolean.class.isAssignableFrom( type ) ) {
 			return new DynamicObjectSerializer();
 		}
 

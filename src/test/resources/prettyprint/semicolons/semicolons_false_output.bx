@@ -1,0 +1,16 @@
+class {
+	property name="foo";
+
+	function init() {
+		var x = 1
+		import java.util.List
+		bx:include template="header.bx";
+		return this
+	}
+
+	function doSomething() {
+		break
+		continue
+		throw new Exception()
+	}
+}

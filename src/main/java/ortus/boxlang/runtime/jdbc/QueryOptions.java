@@ -20,8 +20,11 @@ import java.time.Duration;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.CacheService;
@@ -141,6 +144,10 @@ public class QueryOptions {
 	 * Max time the query will be cached for.
 	 * <p>
 	 * This must be populated with a timespan value using `createTimespan()`.
+	 * <ul>
+	 * <li>A duration of zero (aka `createTimespan( 0, 0, 0, 0 )`) means the cache will never expire.</li>
+	 * <li>Negative timeout (aka `createTimespan( 0, -1, 0, 0 )`) means the item will not be cached.</li>
+	 * </ul>
 	 */
 	public final Duration			cacheTimeout;
 
@@ -171,23 +178,24 @@ public class QueryOptions {
 		CacheService cacheService = BoxRuntime.getInstance().getCacheService();
 
 		this.options				= options;
-		this.resultVariableName		= options.getAsString( Key.result );
-		this.username				= options.getAsString( Key.username );
-		this.password				= options.getAsString( Key.password );
-		this.queryTimeout			= options.getAsInteger( Key.timeout );
+		this.resultVariableName		= StringCaster.attempt( options.get( Key.result ) ).orElse( null );
+		this.username				= StringCaster.attempt( options.get( Key.username ) ).orElse( null );
+		this.password				= StringCaster.attempt( options.get( Key.password ) ).orElse( null );
+		this.queryTimeout			= IntegerCaster.cast( options.get( Key.timeout ), false );
 		this.datasource				= options.get( Key.datasource );
-		this.fetchSize				= ( Integer ) options.getOrDefault( Key.fetchSize, 0 );
+		this.fetchSize				= IntegerCaster.attempt( options.get( Key.fetchSize ), false ).orElse( 0 );
 
 		// Caching options
 		this.cache					= BooleanCaster.attempt( options.get( Key.cache ) ).getOrDefault( false );
-		this.cacheKey				= options.getAsString( Key.cacheKey );
+		this.cacheKey				= StringCaster.attempt( options.get( Key.cacheKey ) ).orElse( null );
 		this.cacheTimeout			= ( Duration ) options.getOrDefault( Key.cacheTimeout, null );
 		this.cacheLastAccessTimeout	= ( Duration ) options.getOrDefault( Key.cacheLastAccessTimeout, null );
-		this.cacheProvider			= ( String ) options.getOrDefault( Key.cacheProvider, cacheService.getDefaultCache().getName().toString() );
+		this.cacheProvider			= StringCaster.attempt( options.get( Key.cacheProvider ) ).orElse( cacheService.getDefaultCache().getName().toString() );
 
-		Integer intMaxRows = options.getAsInteger( Key.maxRows );
-		this.maxRows	= Long.valueOf( intMaxRows != null ? intMaxRows : -1 );
-		this.dbtype		= options.getAsString( Key.dbtype );
+		this.maxRows				= normalizeMaxRows(
+		    LongCaster.attempt( options.get( Key.maxRows ), false ).orElse( -1L )
+		);
+		this.dbtype					= StringCaster.attempt( options.get( Key.dbtype ) ).orElse( null );
 
 		determineReturnType();
 
@@ -197,6 +205,19 @@ public class QueryOptions {
 			dStruct.put( Key.password, this.password );
 		}
 
+	}
+
+	/**
+	 * Read in the provided query options with default fallbacks from the runtime configuration.
+	 * <p>
+	 * Defaults are resolved from {@code applicationSettings.queryOptions} in the BoxLang config, which is seeded
+	 * from the {@code queries} section of {@code boxlang.json}. User-supplied options override these defaults.
+	 *
+	 * @param options Struct of query options. Backwards-compatible with the old-style {@code <query>} from BL.
+	 * @param context The BoxLang context, used to resolve configuration defaults.
+	 */
+	public QueryOptions( IStruct options, IBoxContext context ) {
+		this( mergeWithDefaults( options, context ) );
 	}
 
 	/**
@@ -257,6 +278,29 @@ public class QueryOptions {
 	 */
 
 	/**
+	 * Merge user-supplied query options with configuration defaults from the context.
+	 * <p>
+	 * Configuration defaults are resolved from {@code applicationSettings.queryOptions} and applied first;
+	 * user options override any matching keys.
+	 */
+	private static IStruct mergeWithDefaults( IStruct options, IBoxContext context ) {
+		Object configDefaults = context.getConfigItems( Key.applicationSettings, Key.queryOptions );
+		if ( configDefaults instanceof IStruct defaults ) {
+			IStruct merged = new Struct( defaults );
+			merged.putAll( options );
+			return merged;
+		}
+		return options;
+	}
+
+	/**
+	 * Normalize the maxRows value so that {@code 0} (meaning "all rows") is treated the same as {@code -1} (the internal sentinel).
+	 */
+	private static Long normalizeMaxRows( Long rawMaxRows ) {
+		return rawMaxRows == 0L ? -1L : rawMaxRows;
+	}
+
+	/**
 	 * Parse the `returnType` query option and set the `returnType` and `columnKey` fields.
 	 *
 	 * Performs validation upon the configured `returnType` option.
@@ -286,8 +330,8 @@ public class QueryOptions {
 		IStruct result = new Struct( this.options );
 		// Overwrite any options that were set in the constructor, as we want to return the actual values used
 		result.put( "fetchSize", this.fetchSize );
-		result.put( "setQueryTimeout", this.queryTimeout );
-		result.put( "setMaxRows", this.maxRows );
+		result.put( "queryTimeout", this.queryTimeout );
+		result.put( "maxRows", this.maxRows );
 		result.put( "dbtype", this.dbtype );
 		return result;
 	}

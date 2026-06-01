@@ -44,8 +44,10 @@ import ortus.boxlang.runtime.config.segments.ExecutorConfig;
 import ortus.boxlang.runtime.config.segments.IConfigSegment;
 import ortus.boxlang.runtime.config.segments.LoggingConfig;
 import ortus.boxlang.runtime.config.segments.ModuleConfig;
+import ortus.boxlang.runtime.config.segments.QueriesConfig;
 import ortus.boxlang.runtime.config.segments.SchedulerConfig;
 import ortus.boxlang.runtime.config.segments.SecurityConfig;
+import ortus.boxlang.runtime.config.segments.WatcherConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
@@ -305,8 +307,10 @@ public class Configuration implements IConfigSegment {
 	/**
 	 * True: Treat nested transactional operations as savepoints on the parent transaction.
 	 * False: ignore nested transactions and apply commits/rollbacks/transactional events to the entire transaction.
+	 *
+	 * @since 1.12.0
 	 */
-	public boolean																enableNestedTransactions		= true;
+	public Boolean																enableNestedTransactions		= null;
 
 	/**
 	 * Default remote class method return format when executing a method from web
@@ -359,6 +363,11 @@ public class Configuration implements IConfigSegment {
 	public SchedulerConfig														scheduler						= new SchedulerConfig();
 
 	/**
+	 * The watcher configuration
+	 */
+	public WatcherConfig														watcher							= new WatcherConfig();
+
+	/**
 	 * The security configuration
 	 */
 	public SecurityConfig														security						= new SecurityConfig();
@@ -367,6 +376,11 @@ public class Configuration implements IConfigSegment {
 	 * The logging configuration
 	 */
 	public LoggingConfig														logging							= new LoggingConfig();
+
+	/**
+	 * The queries configuration — default query execution settings
+	 */
+	public QueriesConfig														queries							= new QueriesConfig();
 
 	/**
 	 * The container of runtimes configurations. Each runtime can collaborate settings by their name in this struct
@@ -752,7 +766,7 @@ public class Configuration implements IConfigSegment {
 		}
 
 		// Process JDBC configuration
-		if ( config.containsKey( Key.enableNestedTransactions ) ) {
+		if ( config.containsKey( Key.enableNestedTransactions ) && config.get( Key.enableNestedTransactions ) != null ) {
 			this.enableNestedTransactions = BooleanCaster.cast( config.get( Key.enableNestedTransactions ) );
 		}
 		// Process modules
@@ -792,9 +806,19 @@ public class Configuration implements IConfigSegment {
 			scheduler.process( StructCaster.cast( config.get( Key.scheduler ) ) );
 		}
 
+		// Process our watcher configuration
+		if ( config.containsKey( Key.watcher ) ) {
+			watcher.process( StructCaster.cast( config.get( Key.watcher ) ) );
+		}
+
 		// Process our logging configuration
 		if ( config.containsKey( Key.logging ) ) {
 			logging.process( StructCaster.cast( config.get( Key.logging ) ) );
+		}
+
+		// Process our queries configuration
+		if ( config.containsKey( Key.queries ) ) {
+			queries.process( StructCaster.cast( config.get( Key.queries ) ) );
 		}
 
 		return this;
@@ -965,10 +989,10 @@ public class Configuration implements IConfigSegment {
 
 	/**
 	 * Register a new systemSettingProvider. Use this from Java code.
-	 * 
+	 *
 	 * @param name     The name to use. Globally unique. Used to unregister later.
 	 * @param provider The function to use.
-	 * 
+	 *
 	 * @return
 	 */
 	public Configuration registerSystemSettingProvider( Key name, java.util.function.BiFunction<String, IBoxContext, Object> provider ) {
@@ -979,10 +1003,10 @@ public class Configuration implements IConfigSegment {
 	/**
 	 * Register a new systemSettingProvider. Use this from BoxLang code.
 	 * overwrites existing provider of the same name.
-	 * 
+	 *
 	 * @param name     The name to use. Globally unique. Used to unregister later.
 	 * @param provider The BoxLang function to use.
-	 * 
+	 *
 	 * @return
 	 */
 	public Configuration registerSystemSettingProvider( String name, Function provider ) {
@@ -993,9 +1017,9 @@ public class Configuration implements IConfigSegment {
 	/**
 	 * Unregister a new systemSettingProvider. No-op if no provider of this name exists.
 	 * This method can be used from either BoxLang or Java.
-	 * 
+	 *
 	 * @param name The name to unregister.
-	 * 
+	 *
 	 * @return
 	 */
 	public Configuration unregisterSystemSettingProvider( Key name ) {
@@ -1174,6 +1198,8 @@ public class Configuration implements IConfigSegment {
 		    Key.setDomainCookies, this.setDomainCookies,
 		    Key.security, this.security.asStruct(),
 		    Key.scheduler, this.scheduler.asStruct(),
+		    Key.watcher, this.watcher.asStruct(),
+		    Key.queries, this.queries.asStruct(),
 		    Key.timezone, this.timezone,
 		    Key.trustedCache, this.trustedCache,
 		    Key.enableNestedTransactions, this.enableNestedTransactions,

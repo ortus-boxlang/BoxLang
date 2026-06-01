@@ -29,9 +29,9 @@ import com.github.javaparser.ast.expr.Expression;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxAccess;
-import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringBinding;
 import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringPattern;
+import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentModifier;
 import ortus.boxlang.compiler.ast.expression.BoxAssignmentOperator;
@@ -234,7 +234,8 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 			boolean isBoxSyntax = transpiler.getProperty( "sourceType" ).toLowerCase().startsWith( "box" );
 			// imported.foo = 5 is ok, but imported = 5 is not
 			if ( left instanceof BoxIdentifier idl && transpiler.matchesImport( idl.getName() ) && isBoxSyntax ) {
-				throw new ExpressionException( "You cannot assign a variable with the same name as an import: [" + idl.getName() + "]",
+				String importType = transpiler.matchesClassRefImport( idl.getName() ) ? "a local class" : "an import";
+				throw new ExpressionException( "You cannot assign a variable with the same name as " + importType + ": [" + idl.getName() + "]",
 				    idl.getPosition(), idl.getSourceText() );
 			}
 
@@ -566,8 +567,8 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 	 */
 	private boolean isExplicitDestructuringScope( String scopeName ) {
 		return switch ( scopeName.toLowerCase() ) {
-			case "application", "arguments", "cgi", "client", "cookie", "form", "local", "request", "server", "session", "static", "this", "thread",
-			    "url", "variables" -> true;
+			case "application", "arguments", "cgi", "client", "cookie", "form", "local", "request", "server", "session", "static", "this", "thread", "url",
+			    "variables" -> true;
 			default -> false;
 		};
 	}

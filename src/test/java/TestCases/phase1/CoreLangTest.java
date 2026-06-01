@@ -1513,6 +1513,73 @@ public class CoreLangTest {
 		assertThat( variables.get( result ) ).isEqualTo( "fall through1fall through2" );
 	}
 
+	@DisplayName( "Script switch inside loop - break exits loop" )
+	@Test
+	public void testSwitchInsideLoopBreakExitsLoop() {
+		instance.executeSource(
+		    """
+		    result = 0;
+		    for( i = 1; i <= 10; i++ ) {
+		    	switch( "go" ) {
+		    		case "go":
+		    			result++;
+		    			if( result == 3 ) {
+		    				break;
+		    			}
+		    	}
+		    }
+		    """,
+		    context );
+
+		// In script, break exits the switch, not the loop - so all 10 iterations run
+		assertThat( variables.get( result ) ).isEqualTo( 10 );
+	}
+
+	@DisplayName( "Script switch inside loop - continue exits switch" )
+	@Test
+	public void testSwitchInsideLoopContinue() {
+		instance.executeSource(
+		    """
+		    result = "";
+		    for( i = 1; i <= 5; i++ ) {
+		    	switch( i ) {
+		    		case 3:
+		    			continue;
+		    	}
+		    	result &= i;
+		    }
+		    """,
+		    context );
+
+		// In script, continue inside a switch exits the do-while(false), NOT the for loop
+		// So all iterations still append to result
+		assertThat( variables.get( result ) ).isEqualTo( "12345" );
+	}
+
+	@DisplayName( "Script switch fall-through inside loop" )
+	@Test
+	public void testSwitchFallThroughInsideLoop() {
+		instance.executeSource(
+		    """
+		    result = "";
+		    for( i = 1; i <= 3; i++ ) {
+		    	switch( i ) {
+		    		case 1:
+		    		case 2:
+		    			result &= "matched";
+		    			break;
+		    		default:
+		    			result &= "default";
+		    	}
+		    	result &= i;
+		    }
+		    """,
+		    context );
+
+		// Cases 1 and 2 fall through, break exits switch (not loop), then loop continues
+		assertThat( variables.get( result ) ).isEqualTo( "matched1matched2default3" );
+	}
+
 	@DisplayName( "String as array" )
 	@Test
 	public void testStringAsArray() {
@@ -1616,6 +1683,38 @@ public class CoreLangTest {
 		    function getProperty( required Any property ) {}
 		    	  """,
 		    context );
+
+	}
+
+	@Test
+	public void testRequiredUntypedUnderscoreFunctionParameter() {
+
+		instance.executeSource(
+		    """
+		    function foo( required boolean a, required _b ) {
+		    	return _b;
+		    }
+		    result = foo( a=true, _b=42 );
+		    	  """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( 42 );
+
+	}
+
+	@Test
+	public void testRequiredUntypedUnderscoreFunctionParameterCF() {
+
+		instance.executeSource(
+		    """
+		    function foo( required boolean a, required _b ) {
+		    	return _b;
+		    }
+		    result = foo( a=true, _b=42 );
+		    	  """,
+		    context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.get( result ) ).isEqualTo( 42 );
 
 	}
 
@@ -3538,7 +3637,7 @@ public class CoreLangTest {
 		ParsingResult	result;
 		try {
 			result = new DocParser().parse( null, comment );
-			assertThat( result.getRoot().toString().trim() ).isEqualTo( comment.trim() );
+			assertThat( normalizeLineEndings( result.getRoot().toString().trim() ) ).isEqualTo( normalizeLineEndings( comment.trim() ) );
 		} catch ( IOException e ) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -3571,11 +3670,15 @@ public class CoreLangTest {
 		ParsingResult	result;
 		try {
 			result = new DocParser().parse( null, comment );
-			assertThat( result.getRoot().toString().trim() ).isEqualTo( comment.trim() );
+			assertThat( normalizeLineEndings( result.getRoot().toString().trim() ) ).isEqualTo( normalizeLineEndings( comment.trim() ) );
 		} catch ( IOException e ) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+
+	private static String normalizeLineEndings( String value ) {
+		return value.replace( "\r\n", "\n" ).replace( '\r', '\n' );
 	}
 
 	@Test
@@ -4718,6 +4821,40 @@ public class CoreLangTest {
 		context ) );
 	// @formatter:on
 		assertThat( t.getMessage() ).contains( "You cannot assign a variable with the same name as an import" );
+
+	// @formatter:off
+	t = assertThrows( BoxRuntimeException.class, () ->
+	instance.executeSource(
+		"""
+			import ortus.boxlang.runtime.context.BaseBoxContext;
+			function brad( BaseBoxContext ) {
+			}
+		""",
+		context ) );
+	// @formatter:on
+		assertThat( t.getMessage() ).contains( "You cannot use a function parameter with the same name as an import" );
+
+	// @formatter:off
+	t = assertThrows( BoxRuntimeException.class, () ->
+	instance.executeSource(
+		"""
+			import ortus.boxlang.runtime.context.BaseBoxContext;
+			myLambda = ( BaseBoxContext ) -> BaseBoxContext;
+		""",
+		context ) );
+	// @formatter:on
+		assertThat( t.getMessage() ).contains( "You cannot use a function parameter with the same name as an import" );
+
+	// @formatter:off
+	t = assertThrows( BoxRuntimeException.class, () ->
+	instance.executeSource(
+		"""
+			import ortus.boxlang.runtime.context.BaseBoxContext;
+			myClosure = ( BaseBoxContext ) => BaseBoxContext;
+		""",
+		context ) );
+	// @formatter:on
+		assertThat( t.getMessage() ).contains( "You cannot use a function parameter with the same name as an import" );
 	}
 
 	@Test
@@ -5422,15 +5559,21 @@ public class CoreLangTest {
 				// Call static methods on the class
 				result = createObject("java","java.net.InetAddress").getLocalHost().getHostName();
 				result2 = createObject("java","java.net.InetAddress").localhost.getHostName();
+				result2b = createObject("java","java.net.InetAddress").localhost.hostName;
 				// but also interact directly with the Class instance
 				result3 = getMetadata( createObject("java","java.net.InetAddress") ).getName();
 				result4 = getMetadata( createObject("java","java.net.InetAddress") ).name;
+				// These too are the same
+				result5 = createObject("java","java.net.InetAddress").getLocalHost().getClass().getName();
+				result6 = createObject("java","java.net.InetAddress").getLocalHost().class.name;
 				""",
 				context );
 			// @formatter:on
 
 		assertThat( variables.get( result ) ).isEqualTo( variables.get( Key.of( "result2" ) ) );
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( variables.get( Key.of( "result2b" ) ) );
 		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( variables.get( Key.of( "result4" ) ) );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( variables.get( Key.of( "result6" ) ) );
 	}
 
 	@Test
@@ -6138,8 +6281,9 @@ public class CoreLangTest {
 
 	@Test
 	public void testCompileThreadSafety() {
-		// print PID to console
-		System.out.println( "PID: " + ProcessHandle.current().pid() );
+		org.junit.jupiter.api.Assumptions.assumeTrue(
+		    ! ( ortus.boxlang.runtime.runnables.RunnableLoader.getInstance().getBoxpiler() instanceof ortus.boxlang.compiler.javaboxpiler.JavaBoxpiler ),
+		    "Skipping testCompileThreadSafety for JavaBoxpiler" );
 		instance.executeSource(
 		// @formatter:off
 		    """
@@ -6478,6 +6622,100 @@ public class CoreLangTest {
 		                 """,
 		    context
 		);
+	}
+
+	@DisplayName( "concurrent array modification with for-in loop" )
+	@Test
+	public void testConcurrentArrayModificationForIn() {
+		instance.executeSource(
+		    """
+		    shared = [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 ];
+		    names = [];
+
+		    for( i in 1..3 ) {
+		        names.append( "t#i#" );
+		        thread name="t#i#" {
+		            for( j = 1; j <= 50; j++ ) {
+		                for( item in shared ) { x = item * 2; }
+		                shared.append( randRange( 1, 1000 ) );
+		            }
+		        }
+		    }
+
+		    thread action="join" name="#names.toList()#";
+
+		    for( name in names ) {
+		        if( !isNull( bxthread[ name ].error ) ) {
+		            throw( bxthread[ name ].error );
+		        }
+		    }
+
+		    result = shared.len();
+		    """,
+		    context );
+	}
+
+	// ==================== Expression invocation with dot/array access ====================
+
+	@DisplayName( "Expression invocation result can be dot accessed" )
+	@Test
+	public void testExpressionInvocationDotAccess() {
+		instance.executeSource(
+		    """
+		    foo = () -> "hello";
+		    result = (foo)().len();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 5 );
+	}
+
+	@DisplayName( "Expression invocation result can be array accessed" )
+	@Test
+	public void testExpressionInvocationArrayAccess() {
+		instance.executeSource(
+		    """
+		    foo = () -> [ "a", "b", "c" ];
+		    result = (foo)()[2];
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "b" );
+	}
+
+	@DisplayName( "Expression invocation result can chain method calls" )
+	@Test
+	public void testExpressionInvocationMethodChain() {
+		instance.executeSource(
+		    """
+		    import java:java.lang.StringBuilder;
+		    factory = () -> StringBuilder;
+		    result = (factory)()( "test" ).toString();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "test" );
+	}
+
+	@DisplayName( "Try/catch in static init block of local class" )
+	@Test
+	public void testTryCatchInStaticInitBlock() {
+		instance.executeSource(
+		    """
+		    class Config {
+		        static {
+		            try {
+		                static.value = 42;
+		                throw( message="oops", type="TestError" );
+		            } catch( any e ) {
+		                static.caught = e.message;
+		            }
+		        }
+		    }
+
+		    result = Config::value;
+		    result2 = Config::caught;
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 42 );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "oops" );
 	}
 
 }

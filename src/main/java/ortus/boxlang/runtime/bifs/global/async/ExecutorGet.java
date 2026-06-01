@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.runtime.bifs.global.async;
 
+import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -54,7 +55,7 @@ public class ExecutorGet extends BIF {
 	 * @throws KeyNotFoundException If the executor is not found.
 	 */
 	@Override
-	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+	public BoxExecutor _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String name = arguments.getAsString( Key._NAME );
 		return asyncService.getExecutor( name );
 	}

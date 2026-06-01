@@ -23,6 +23,7 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.QueryColumn;
+import ortus.boxlang.runtime.types.Range;
 import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.util.TypeUtil;
@@ -108,6 +109,17 @@ public class ArrayCaster implements IBoxCaster {
 			}
 			case XML xml -> {
 				return xml.getSiblingsOfSameName();
+			}
+			case Range<?> range -> {
+				if ( range.isIterable() && range.isBounded() ) {
+					return range.toArray();
+				}
+				if ( fail ) {
+					throw new BoxCastException(
+					    String.format( "Can't cast Range [%s] to a Array.", range.asString() )
+					);
+				}
+				return null;
 			}
 			default -> {
 			}

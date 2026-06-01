@@ -25,6 +25,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.BoxFile;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.util.FileSystemUtil;
@@ -38,8 +39,8 @@ public class FileCopy extends BIF {
 	public FileCopy() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, Argument.STRING, Key.source ),
-		    new Argument( true, Argument.STRING, Key.destination ),
+		    new Argument( true, "boxfile", Key.source ),
+		    new Argument( true, "boxfile", Key.destination ),
 		    new Argument( false, Argument.BOOLEAN, Key.createPath, true ),
 		    new Argument( false, Argument.BOOLEAN, Key.overwrite, true ),
 		    new Argument( false, Argument.STRING, Key.accept )
@@ -65,9 +66,17 @@ public class FileCopy extends BIF {
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
+		BoxFile	sourceFile	= arguments.getAsBoxFile( Key.source );
+		BoxFile	destFile	= arguments.getAsBoxFile( Key.destination );
+		if ( !sourceFile.implicitlyCast ) {
+			throw new BoxRuntimeException( "fileCopy() does not accept an open file object. Pass a file path instead." );
+		}
+		if ( !destFile.implicitlyCast ) {
+			throw new BoxRuntimeException( "fileCopy() does not accept an open file object. Pass a file path instead." );
+		}
 		// Set and expand
-		String	sourceString		= FileSystemUtil.expandPath( context, arguments.getAsString( Key.source ) ).absolutePath().toString();
-		String	destinationString	= FileSystemUtil.expandPath( context, arguments.getAsString( Key.destination ) ).absolutePath().toString();
+		String	sourceString		= sourceFile.filepath;
+		String	destinationString	= destFile.filepath;
 		Path	sourcePath			= Path.of( sourceString );
 		Path	destinationPath		= Path.of( destinationString );
 

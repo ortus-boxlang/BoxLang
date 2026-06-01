@@ -770,4 +770,28 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		return runInContext( null, runnable );
 	}
 
+	/**
+	 * Register a dependent thread on the request context for the given context, if one exists.
+	 *
+	 * @param context The context to look up the request context from
+	 */
+	public static void registerDependentThread( IBoxContext context ) {
+		RequestBoxContext requestContext = context.getRequestContext();
+		if ( requestContext != null ) {
+			requestContext.registerDependentThread();
+		}
+	}
+
+	/**
+	 * Unregister a dependent thread on the request context for the given context, if one exists.
+	 *
+	 * @param context The context to look up the request context from
+	 */
+	public static void unregisterDependentThread( IBoxContext context ) {
+		RequestBoxContext requestContext = context.getRequestContext();
+		if ( requestContext != null ) {
+			requestContext.unregisterDependentThread();
+		}
+	}
+
 }

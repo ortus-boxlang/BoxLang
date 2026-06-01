@@ -34,6 +34,10 @@ import ortus.boxlang.compiler.ast.statement.BoxArgumentDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
+import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.services.FunctionService;
 
 /**
  * I handle escaping single quotes in interpolated expressions inside a query component.
@@ -66,9 +70,34 @@ import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 public class QueryEscapeSingleQuoteVisitor extends VoidBoxVisitor {
 
 	/**
-	 * Constructor
+	 * The source type of the code being visited.
 	 */
+	BoxSourceType					sourceType;
+
+	/**
+	 * The function service
+	 */
+	private static FunctionService	functionService;
+
+	/**
+	 * Constructor
+	 * 
+	 * @deprecated Use the constructor that accepts a BoxSourceType instead.
+	 * 
+	 */
+	@Deprecated
 	public QueryEscapeSingleQuoteVisitor() {
+		this( BoxSourceType.CFSCRIPT );
+	}
+
+	/**
+	 * Constructor
+	 * 
+	 * @param sourceType the source type of the code being visited.
+	 */
+	public QueryEscapeSingleQuoteVisitor( BoxSourceType sourceType ) {
+		this.sourceType	= sourceType;
+		functionService	= BoxRuntime.getInstance().getFunctionService();
 	}
 
 	/**
@@ -177,7 +206,7 @@ public class QueryEscapeSingleQuoteVisitor extends VoidBoxVisitor {
 		        // Skip string literals and preserveSingleQuotes() function invocations
 		        // Note, this can be tricked if the preserveSingleQuotes() function is wrapped in another function call or expression
 		        .map( e -> {
-			        if ( !isStringLiteral( e ) && !isPreserveSingleQuotes( e ) ) {
+			        if ( !isStringLiteral( e ) && !isPreserveSingleQuotes( e ) && !isUDFCallInCFSource( e ) ) {
 				        return escapeExpression( e );
 			        } else {
 				        return e;
@@ -293,6 +322,25 @@ public class QueryEscapeSingleQuoteVisitor extends VoidBoxVisitor {
 	 */
 	private boolean isPreserveSingleQuotes( BoxNode node ) {
 		return node instanceof BoxFunctionInvocation bfi && bfi.getName().equalsIgnoreCase( "preserveSingleQuotes" );
+	}
+
+	/**
+	 * Is the node a user-defined function call in a CF source?
+	 * 
+	 * @param node the node to check
+	 * 
+	 * @return true if the node is a user-defined function call in a CF source
+	 */
+	private boolean isUDFCallInCFSource( BoxNode node ) {
+		if ( !sourceType.isCFType() ) {
+			return false;
+		}
+		if ( node instanceof BoxFunctionInvocation bfi ) {
+			if ( !functionService.hasGlobalFunction( Key.of( bfi.getName() ) ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 }

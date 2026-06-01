@@ -28,6 +28,7 @@ import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.jdbc.BoxConnection;
+import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
 /**
  * Represents a column type in a Query object.
@@ -73,7 +74,8 @@ public enum QueryColumnType {
 	 * Create a new QueryColumnType from a string value.
 	 */
 	public static QueryColumnType fromString( String type ) {
-		type = type.toLowerCase();
+		// Legacy CF code can prefix types with "cf_sql_", so we'll strip that if it's present.
+		type = type.toLowerCase().replace( "cf_sql_", "" );
 
 		switch ( type ) {
 			case "array" :
@@ -340,7 +342,7 @@ public enum QueryColumnType {
 				case QueryColumnType.REFCURSOR -> value;
 			};
 		} catch ( Exception e ) {
-			throw new IllegalArgumentException( "Cannot convert value to SQL type " + type + ": " + e.getMessage(), e );
+			throw new BoxCastException( "Cannot convert value to SQL type " + type + ": " + e.getMessage(), e );
 		}
 	}
 

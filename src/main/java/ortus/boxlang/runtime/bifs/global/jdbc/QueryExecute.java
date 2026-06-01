@@ -89,7 +89,7 @@ public class QueryExecute extends BIF {
 	 * <ul>
 	 * <li><strong>cache:boolean</strong> - Whether to cache the query results, defaults to false</li>
 	 * <li><strong>cacheKey:string</strong> - Your own cache key, if not specified, the SQL will be used as the cache key</li>
-	 * <li><strong>cacheTimeout:timespan|seconds</strong> - The timeout for the cache, defaults to 0 (no timeout)</li>
+	 * <li><strong>cacheTimeout:timespan|seconds</strong> - The timeout for the cache, defaults to 0 (no timeout). Negative values will prevent caching.</li>
 	 * <li><strong>cacheLastAccessTimeout:timespan|seconds</strong> - The timeout for the last access to the cache, defaults to 0 (no timeout)</li>
 	 * <li><strong>cacheProvider:string</strong> - The cache provider to use, defaults to the default cache provider</li>
 	 * <li><strong>columnKey:string</strong> - The column to use as the key when returntype is "struct"</li>
@@ -135,7 +135,7 @@ public class QueryExecute extends BIF {
 	 * @return The executed query results, based on the return type specified in the options
 	 */
 	public static Object execute( IBoxContext context, String sql, Object bindings, IStruct optionsStruct ) {
-		QueryOptions	options			= new QueryOptions( optionsStruct != null ? optionsStruct : new Struct() );
+		QueryOptions	options			= new QueryOptions( optionsStruct != null ? optionsStruct : new Struct(), context );
 		PendingQuery	pendingQuery	= new PendingQuery( context, sql, bindings, options );
 		ExecutedQuery	executedQuery;
 

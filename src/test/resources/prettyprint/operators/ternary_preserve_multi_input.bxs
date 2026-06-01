@@ -1,0 +1,3 @@
+result = condition
+	? valueIfTrue
+	: valueIfFalse;

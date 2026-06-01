@@ -29,9 +29,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -81,6 +81,20 @@ public class QueryNewTest {
 		    context );
 		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
 		assertThat( variables.get( "columnList" ) ).isEqualTo( "col1,col2" );
+	}
+
+	@DisplayName( "It ignores cf_sql_ prefix" )
+	@Test
+	public void testIgnoresCfSqlPrefix() {
+
+		instance.executeSource(
+		    """
+		    result = querynew( "col", "cf_sql_varchar", [] );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.getColumns().get( Key.of( "col" ) ).getType() ).isEqualTo( QueryColumnType.VARCHAR );
 	}
 
 	@DisplayName( "It can create new with no type" )
@@ -297,6 +311,75 @@ public class QueryNewTest {
 			println( q )
 		""", context ) );
 		// @formatter:on
+	}
+
+	@DisplayName( "It casts string values to integer column type" )
+	@Test
+	public void testCastsStringToInteger() {
+		// @formatter:off
+		instance.executeSource( """
+			result = queryNew( "amount", "integer", [["1500"]])
+		""", context );
+		// @formatter:on
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.size() ).isEqualTo( 1 );
+		assertThat( qry.getCell( Key.of( "amount" ), 0 ) ).isInstanceOf( Integer.class );
+		assertThat( qry.getCell( Key.of( "amount" ), 0 ) ).isEqualTo( 1500 );
+	}
+
+	@DisplayName( "It casts string values to double column type" )
+	@Test
+	public void testCastsStringToDouble() {
+		// @formatter:off
+		instance.executeSource( """
+			result = queryNew( "price", "double", [["19.99"]])
+		""", context );
+		// @formatter:on
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.getCell( Key.of( "price" ), 0 ) ).isInstanceOf( Double.class );
+		assertThat( qry.getCell( Key.of( "price" ), 0 ) ).isEqualTo( 19.99 );
+	}
+
+	@DisplayName( "It casts values so QoQ math works on typed columns" )
+	@Test
+	public void testCastingEnablesQoQMath() {
+		// @formatter:off
+		instance.executeSource( """
+			myQry = queryNew( "amount", "integer", [["1500"]])
+			result = queryExecute(
+				"SELECT amount/100 as calc FROM myQry",
+				[],
+				{ dbType: "query" }
+			)
+		""", context );
+		// @formatter:on
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.size() ).isEqualTo( 1 );
+		// 1500/100 = 15
+		assertThat( ( ( Number ) qry.getCell( Key.of( "calc" ), 0 ) ).intValue() ).isEqualTo( 15 );
+	}
+
+	@DisplayName( "It casts multiple rows with struct data" )
+	@Test
+	public void testCastsMultipleRowsStructData() {
+		// @formatter:off
+		instance.executeSource( """
+			result = queryNew( "id,name,score", "integer,varchar,double", [
+				{ id: "1", name: 123, score: "95.5" },
+				{ id: "2", name: 456, score: "87.3" }
+			])
+		""", context );
+		// @formatter:on
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.size() ).isEqualTo( 2 );
+		assertThat( qry.getCell( Key.of( "id" ), 0 ) ).isInstanceOf( Integer.class );
+		assertThat( qry.getCell( Key.of( "id" ), 0 ) ).isEqualTo( 1 );
+		assertThat( qry.getCell( Key.of( "name" ), 0 ) ).isInstanceOf( String.class );
+		assertThat( qry.getCell( Key.of( "name" ), 0 ) ).isEqualTo( "123" );
+		assertThat( qry.getCell( Key.of( "score" ), 0 ) ).isInstanceOf( Double.class );
+		assertThat( qry.getCell( Key.of( "score" ), 0 ) ).isEqualTo( 95.5 );
+		assertThat( qry.getCell( Key.of( "id" ), 1 ) ).isEqualTo( 2 );
+		assertThat( qry.getCell( Key.of( "score" ), 1 ) ).isEqualTo( 87.3 );
 	}
 
 }

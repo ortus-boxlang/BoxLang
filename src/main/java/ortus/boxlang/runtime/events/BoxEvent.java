@@ -155,6 +155,7 @@ public enum BoxEvent {
 	ON_DATASOURCE_SERVICE_STARTUP( "onDatasourceServiceStartup" ),
 	ON_DATASOURCE_SERVICE_SHUTDOWN( "onDatasourceServiceShutdown" ),
 	ON_DATASOURCE_STARTUP( "onDatasourceStartup" ),
+	ON_DATASOURCE_INITIALIZED( "onDatasourceInitialized" ),
 
 	/**
 	 * Scheduler Events
@@ -175,6 +176,18 @@ public enum BoxEvent {
 	ON_ALL_SCHEDULERS_STARTED( "onAllSchedulersStarted" ),
 	ON_SCHEDULER_REMOVAL( "onSchedulerRemoval" ),
 	ON_SCHEDULER_REGISTRATION( "onSchedulerRegistration" ),
+
+	/**
+	 * Watcher Service Events
+	 */
+	ON_WATCHER_SERVICE_STARTUP( "onWatcherServiceStartup" ),
+	ON_WATCHER_SERVICE_SHUTDOWN( "onWatcherServiceShutdown" ),
+	ON_WATCHER_REGISTRATION( "onWatcherRegistration" ),
+	ON_WATCHER_REMOVAL( "onWatcherRemoval" ),
+	ON_WATCHER_STARTUP( "onWatcherStartup" ),
+	ON_WATCHER_SHUTDOWN( "onWatcherShutdown" ),
+	ON_WATCHER_RESTART( "onWatcherRestart" ),
+	ON_WATCHER_ERROR( "onWatcherError" ),
 
 	/**
 	 * Object Marshaller Events

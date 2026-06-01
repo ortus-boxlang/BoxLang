@@ -64,7 +64,7 @@ public class ClassBoxContext extends BaseBoxContext {
 	protected IClassRunnable	thisClass;
 
 	/**
-	 * Override the outpout behavior. This is needed for implicit onRequest methods when the Application class has output=false
+	 * Override the output behavior. This is needed for implicit onRequest methods when the Application class has output=false
 	 * null means not set. non-null is the overriden value
 	 */
 	protected Boolean			outputOverride	= null;
@@ -360,6 +360,28 @@ public class ClassBoxContext extends BaseBoxContext {
 	public ClassBoxContext setOutputOverride( Boolean outputOverride ) {
 		this.outputOverride = outputOverride;
 		return this;
+	}
+
+	/**
+	 * Find a function by name. Checks nearby scopes first, then falls back to the static scope.
+	 * This allows the pseudo-constructor to call static methods without the static. prefix.
+	 *
+	 * @param name The name of the function to find
+	 *
+	 * @return The function instance, null if not found
+	 */
+	@Override
+	protected Function findFunction( Key name ) {
+		Function result = super.findFunction( name );
+		if ( result != null ) {
+			return result;
+		}
+		// Check the static scope for static functions
+		Object staticResult = thisClass.getStaticScope().get( name );
+		if ( staticResult != null && staticResult instanceof Function fun ) {
+			return fun;
+		}
+		return null;
 	}
 
 	/**

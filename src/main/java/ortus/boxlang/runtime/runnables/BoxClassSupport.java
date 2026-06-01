@@ -15,6 +15,7 @@
 package ortus.boxlang.runtime.runnables;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -33,7 +34,6 @@ import ortus.boxlang.runtime.context.StaticClassBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ImportDefinition;
@@ -55,10 +55,9 @@ import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.ClassMeta;
-import ortus.boxlang.runtime.types.util.ListUtil;
+import ortus.boxlang.runtime.types.util.StringUtil;
 import ortus.boxlang.runtime.types.util.TypeUtil;
 import ortus.boxlang.runtime.util.ArgumentUtil;
-import ortus.boxlang.runtime.util.BoxFQN;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 /**
@@ -176,6 +175,36 @@ public class BoxClassSupport {
 	}
 
 	/**
+	 * Cast the value of an "output" annotation to a boolean.
+	 * The string "raw" (case-insensitive) is treated as true.
+	 * All other values are passed through the standard BooleanCaster.
+	 *
+	 * @param value The raw annotation value
+	 *
+	 * @return The boolean interpretation of the output annotation
+	 */
+	public static boolean castOutputAnnotation( Object value ) {
+		if ( value instanceof String str && str.equalsIgnoreCase( "raw" ) ) {
+			return true;
+		}
+		return BooleanCaster.cast( value );
+	}
+
+	/**
+	 * If there is an output annotation, use the castOututAnnotation() method to interpret it.
+	 * 
+	 * @param annotations The annotations to check
+	 * 
+	 * @return true if the output annotation is present and evaluates to true, otherwise false
+	 */
+	public static IStruct transformAnnotations( IStruct annotations ) {
+		if ( annotations.containsKey( Key.output ) ) {
+			annotations.put( Key.output, castOutputAnnotation( annotations.get( Key.output ) ) );
+		}
+		return annotations;
+	}
+
+	/**
 	 * A helper to look at the "output" annotation, caching the result
 	 *
 	 * @param thisClass The class to check
@@ -198,11 +227,11 @@ public class BoxClassSupport {
 	 * @return Whether the function can output
 	 */
 	public static Boolean canOutput( IStruct annotations, String className ) {
-		return BooleanCaster.cast( annotations.getOrDefault(
+		return castOutputAnnotation( annotations.getOrDefault(
 		    Key.output,
 		    // output defaults to true for Application.bx, but false for all others
 		    // Strip just the class name from the FQN foo.com.bar.Application
-		    new BoxFQN( className ).getClassName().equalsIgnoreCase( "application" )
+		    ( className.length() == 11 && className.equalsIgnoreCase( "application" ) ) || StringUtil.endsWithIgnoreCase( className, ".application" )
 		) );
 	}
 
@@ -435,19 +464,7 @@ public class BoxClassSupport {
 		// Look for function in this scope
 		Object value = scope.get( name );
 		if ( value instanceof Function function ) {
-			FunctionBoxContext functionContext = Function.generateFunctionContext(
-			    function,
-			    // Function contexts' parent is the caller. The function will "know" about the class it's executing in
-			    // because we've pushed the class onto the template stack in the function context.
-			    context,
-			    name,
-			    positionalArguments,
-			    thisClass,
-			    null,
-			    null
-			);
-
-			return function.invoke( functionContext );
+			return dereferenceAndInvoke( function, thisClass, context, name, positionalArguments, safe );
 		}
 
 		// Look for function in the parent class if any
@@ -498,6 +515,36 @@ public class BoxClassSupport {
 	}
 
 	/**
+	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method) using positional arguments
+	 * Call this if you already have a function whcih you know to exist on the class.
+	 *
+	 * @param function            The function to invoke
+	 * @param thisClass           The class to dereference
+	 * @param context             The context to use
+	 * @param name                The key to dereference
+	 * @param positionalArguments The positional arguments to pass to the invokable
+	 * @param safe                Whether to throw an exception if the key is not found
+	 *
+	 * @return The requested object
+	 */
+	public static Object dereferenceAndInvoke( Function function, IClassRunnable thisClass, IBoxContext context, Key name, Object[] positionalArguments,
+	    Boolean safe ) {
+		FunctionBoxContext functionContext = Function.generateFunctionContext(
+		    function,
+		    // Function contexts' parent is the caller. The function will "know" about the class it's executing in
+		    // because we've pushed the class onto the template stack in the function context.
+		    context,
+		    name,
+		    positionalArguments,
+		    thisClass,
+		    null,
+		    null
+		);
+
+		return function.invoke( functionContext );
+	}
+
+	/**
 	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
 	 *
 	 * @param thisClass      The class to dereference
@@ -522,19 +569,7 @@ public class BoxClassSupport {
 		// Look for function in this scope
 		Object value = scope.get( name );
 		if ( value instanceof Function function ) {
-			FunctionBoxContext functionContext = Function.generateFunctionContext(
-			    function,
-			    // Function contexts' parent is the caller. The function will "know" about the class it's executing in
-			    // because we've pushed the class onto the template stack in the function context.
-			    context,
-			    name,
-			    namedArguments,
-			    thisClass,
-			    null,
-			    null
-			);
-
-			return function.invoke( functionContext );
+			return dereferenceAndInvoke( function, thisClass, context, name, namedArguments, safe );
 		}
 
 		// Look for function in the parent class if any
@@ -577,6 +612,36 @@ public class BoxClassSupport {
 	}
 
 	/**
+	 * Dereference this object by a key and invoke the result as an invokable (UDF, java method)
+	 * Call this if you already have a function which you know to exist on the class.
+	 *
+	 * @param function       The function to invoke
+	 * @param thisClass      The class to dereference
+	 * @param context        The context to use
+	 * @param name           The name of the key to dereference, which becomes the method name
+	 * @param namedArguments The arguments to pass to the invokable
+	 * @param safe           If true, return null if the method is not found, otherwise throw an exception
+	 *
+	 * @return The requested return value or null
+	 */
+	public static Object dereferenceAndInvoke( Function function, IClassRunnable thisClass, IBoxContext context, Key name, Map<Key, Object> namedArguments,
+	    Boolean safe ) {
+		FunctionBoxContext functionContext = Function.generateFunctionContext(
+		    function,
+		    // Function contexts' parent is the caller. The function will "know" about the class it's executing in
+		    // because we've pushed the class onto the template stack in the function context.
+		    context,
+		    name,
+		    namedArguments,
+		    thisClass,
+		    null,
+		    null
+		);
+
+		return function.invoke( functionContext );
+	}
+
+	/**
 	 * Get the combined metadata for this function and all it's parameters
 	 * This follows the format of Lucee and Adobe's "combined" metadata
 	 * This is to keep compatibility for CFML engines
@@ -598,7 +663,9 @@ public class BoxClassSupport {
 		    thisClass.getAnnotations(),
 		    thisClass.getDocumentation(),
 		    thisClass.getProperties(),
-		    thisClass.getStaticScope()
+		    thisClass.getStaticScope(),
+		    thisClass.getEnclosingClassName(),
+		    thisClass.getInnerClassNames()
 		);
 	}
 
@@ -635,8 +702,10 @@ public class BoxClassSupport {
 	    IStruct annotations,
 	    IStruct documentation,
 	    Map<Key, ortus.boxlang.runtime.types.Property> properties,
-	    StaticScope staticScope ) {
-
+	    StaticScope staticScope,
+	    String enclosingClassName,
+	    IStruct innerClassNames ) {
+		annotations = BoxClassSupport.transformAnnotations( annotations );
 		BoxRuntime	runtime	= BoxRuntime.getInstance();
 		IStruct		meta	= new Struct( IStruct.TYPES.SORTED );
 		meta.putIfAbsent( "hint", "" );
@@ -670,7 +739,9 @@ public class BoxClassSupport {
 		meta.put( Key.type, CLASS_TYPE );
 		meta.put( Key._NAME, fullName );
 		meta.put( Key.fullname, fullName );
-		meta.put( Key.simpleName, fullName.substring( fullName.lastIndexOf( '.' ) + 1 ) );
+		// simpleName strips both package (.) and enclosing class ($) prefixes
+		int lastSep = Math.max( fullName.lastIndexOf( '.' ), fullName.lastIndexOf( '$' ) );
+		meta.put( Key.simpleName, fullName.substring( lastSep + 1 ) );
 
 		meta.put( Key.accessors, hasAccessors( annotations ) );
 		meta.put( Key.path, runnablePath.absolutePath().toString() );
@@ -745,6 +816,11 @@ public class BoxClassSupport {
 			        )
 			);
 		}
+
+		// Add enclosingClass and innerClasses
+		meta.put( Key.enclosingClass, enclosingClassName != null ? enclosingClassName : "" );
+		meta.put( Key.innerClasses, innerClassNames != null ? innerClassNames : Struct.EMPTY );
+
 		return meta;
 	}
 
@@ -781,11 +857,20 @@ public class BoxClassSupport {
 	}
 
 	public static Object assignStatic( DynamicObject targetClass, IBoxContext context, Key name, Object value ) {
+		if ( getInnerBoxClasses( context, targetClass ).containsKey( name ) ) {
+			throw new BoxRuntimeException( "Cannot assign static key [" + name.getName() + "] because it is the name of an inner class." );
+		}
 		StaticScope staticScope = getStaticScope( context, targetClass );
 		return assignStatic( staticScope, context, name, value );
 	}
 
 	public static Object dereferenceStatic( DynamicObject targetClass, IBoxContext context, Key name, Boolean safe ) {
+		// If key is an inner class, return the actual Class<?>
+		Class<?> innerClass = getInnerBoxClasses( context, targetClass ).get( name );
+		if ( innerClass != null ) {
+			return innerClass;
+		}
+		// Otherwise, look in the static scope
 		StaticScope staticScope = getStaticScope( context, targetClass );
 		return dereferenceStatic( staticScope, context, name, safe );
 	}
@@ -890,6 +975,31 @@ public class BoxClassSupport {
 	}
 
 	/**
+	 * Get the inner class names from a static context
+	 * 
+	 * @param context     The context to use
+	 * @param targetClass The class to get the inner class names from
+	 * 
+	 * @return The inner class names struct (short name -> FQN)
+	 */
+	public static IStruct getInnerClassNames( IBoxContext context, DynamicObject targetClass ) {
+		return ( IStruct ) targetClass.invokeStatic( context, "getInnerClassNamesStatic" );
+	}
+
+	/**
+	 * Get the actual inner box classes (Class references) from a static context
+	 * 
+	 * @param context     The context to use
+	 * @param targetClass The class to get the inner box classes from
+	 * 
+	 * @return Map of short name Key -> actual Class<?> reference
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static Map<Key, Class<?>> getInnerBoxClasses( IBoxContext context, DynamicObject targetClass ) {
+		return ( Map<Key, Class<?>> ) targetClass.invokeStatic( context, "getInnerBoxClassesStatic" );
+	}
+
+	/**
 	 * Get the annotations from a static context
 	 *
 	 * @param context     The context to use
@@ -911,7 +1021,7 @@ public class BoxClassSupport {
 	 * @return Whether the function can output
 	 */
 	public static Boolean canOutput( IBoxContext context, DynamicObject targetClass ) {
-		return BooleanCaster.cast( getAnnotations( context, targetClass )
+		return castOutputAnnotation( getAnnotations( context, targetClass )
 		    .getOrDefault(
 		        Key.output,
 		        false
@@ -996,6 +1106,11 @@ public class BoxClassSupport {
 			return;
 		}
 
+		// If there are no abstract methods, then nothing to enforce
+		if ( abstractMethods.isEmpty() ) {
+			return;
+		}
+
 		// Having an onMissingMethod() UDF is the golden ticket to implementing any interface
 		if ( thisClass.getThisScope().get( Key.onMissingMethod ) instanceof Function ) {
 			return;
@@ -1074,19 +1189,13 @@ public class BoxClassSupport {
 	 * @param staticScope The static scope of the class
 	 * @param path        The path of the class file
 	 */
-	public static DynamicObject runStaticInitializer(
+	public static void runStaticInitializer(
 	    Consumer<IBoxContext> consumer,
 	    Class<?> clazz,
 	    StaticScope staticScope,
-	    ResolvedFilePath path,
-	    List<ImportDefinition> imports,
-	    List<BoxInterface> interfaces,
-	    IStruct annotations ) {
+	    ResolvedFilePath path ) {
 
-		IBoxContext context = RequestBoxContext.getCurrent();
-		if ( context == null ) {
-			context = BoxRuntime.getInstance().getRuntimeContext();
-		}
+		IBoxContext				context			= ensureContext( null );
 		DynamicObject			boxClass		= DynamicObject.of( clazz );
 		StaticClassBoxContext	staticContext	= new StaticClassBoxContext( context, boxClass, staticScope );
 
@@ -1094,76 +1203,86 @@ public class BoxClassSupport {
 		// Run the static initializer code
 		consumer.accept( staticContext );
 
-		// Load super class if any (doesn't instantiate)
-		DynamicObject superClass = loadSuperClass( annotations, imports, staticContext );
-
-		// Load interfaces if any (doesn't validate)
-		loadInterfaces( annotations, imports, staticContext, interfaces );
-
 		staticContext.popTemplate();
-		return superClass;
 	}
 
 	/**
 	 * Load the super class from the annotations if it exists
 	 *
-	 * @param annotations   The annotations to check
-	 * @param imports       The imports to use
-	 * @param staticContext The static context to use
+	 * @param superClassName The name of the super class to load, if any
+	 * @param imports        The imports to use
+	 * @param context        The context to use
+	 * @param sourcePath     The source path of the class being loaded, for error reporting and template stack purposes
 	 * 
 	 * @return The loaded super class or null if none exists
 	 */
-	public static DynamicObject loadSuperClass( IStruct annotations, List<ImportDefinition> imports, StaticClassBoxContext staticContext ) {
-		// First, we load the super class if it exists
-		Object superClassObject = annotations.get( Key._EXTENDS );
-		if ( superClassObject != null ) {
-			String superClassName = StringCaster.cast( superClassObject );
-			if ( superClassName != null && superClassName.length() > 0 && !superClassName.toLowerCase().startsWith( "java:" ) ) {
-				// Recursively load the super class
-				return getClassLocator().load(
-				    staticContext,
-				    superClassName,
-				    ClassLocator.BX_PREFIX,
-				    true,
-				    imports
-				);
-			}
+	public static DynamicObject loadSuperClass( String superClassName, List<ImportDefinition> imports, IBoxContext context, ResolvedFilePath sourcePath ) {
+		if ( superClassName == null ) {
+			return null;
 		}
-		return null;
+		context = ensureContext( context );
+		context.pushTemplate( sourcePath );
+		try {
+			return getClassLocator().load(
+			    context,
+			    superClassName,
+			    ClassLocator.BX_PREFIX,
+			    true,
+			    imports
+			);
+		} finally {
+			context.popTemplate();
+		}
 	}
 
 	/**
 	 * Load the interfaces defined
 	 *
-	 * @param annotations   The annotations to check
-	 * @param imports       The imports to use
-	 * @param staticContext The static context to use
-	 * @param interfaces    The list to populate with loaded interfaces
+	 * @param interfaceNames The names of the interfaces to load
+	 * @param imports        The imports to use
+	 * @param context        The context to use
+	 * @param sourcePath     The source path of the class being loaded, for error reporting and template stack purposes
 	 * 
 	 * @return The loaded interfaces
 	 */
-	public static void loadInterfaces(
-	    IStruct annotations,
+	public static List<BoxInterface> loadInterfaces(
+	    String[] interfaceNames,
 	    List<ImportDefinition> imports,
-	    StaticClassBoxContext staticContext,
-	    List<BoxInterface> interfaces ) {
-
-		Object oInterfaces = annotations.get( Key._IMPLEMENTS );
-		if ( oInterfaces != null ) {
-			List<String> interfaceNames = ListUtil.asList( StringCaster.cast( oInterfaces ), "," )
-			    .stream()
-			    .map( String::valueOf )
-			    .map( String::trim )
-			    // ignore anything starting with java: (case insensitive)
-			    .filter( name -> !name.toLowerCase().startsWith( "java:" ) )
-			    .toList();
-
+	    IBoxContext context,
+	    ResolvedFilePath sourcePath ) {
+		if ( interfaceNames.length == 0 ) {
+			return Collections.emptyList();
+		}
+		context = ensureContext( context );
+		context.pushTemplate( sourcePath );
+		try {
+			List<BoxInterface> interfaces = new ArrayList<>( interfaceNames.length );
 			for ( String interfaceName : interfaceNames ) {
-				BoxInterface thisInterface = ( BoxInterface ) getClassLocator().load( staticContext, interfaceName, imports )
+				BoxInterface thisInterface = ( BoxInterface ) getClassLocator().load( context, interfaceName, imports )
 				    .unWrapBoxLangClass();
 				interfaces.add( thisInterface );
 			}
+			return interfaces;
+		} finally {
+			context.popTemplate();
 		}
+	}
+
+	/**
+	 * Ensure a context
+	 * 
+	 * @param context Possibly null context
+	 * 
+	 * @return A guaranteed non-null context, either the provided context, the current request context, or the runtime context
+	 */
+	private static IBoxContext ensureContext( IBoxContext context ) {
+		if ( context == null ) {
+			context = RequestBoxContext.getCurrent();
+		}
+		if ( context == null ) {
+			context = BoxRuntime.getInstance().getRuntimeContext();
+		}
+		return context;
 	}
 
 	/**
@@ -1191,9 +1310,13 @@ public class BoxClassSupport {
 	 */
 	public static Map<Key, AbstractFunction> getAllAbstractMethods( IClassRunnable thisClass ) {
 		// get from parent and override
-		Map<Key, AbstractFunction> allAbstractMethods = new LinkedHashMap<>();
+		Map<Key, AbstractFunction> allAbstractMethods;
 		if ( thisClass.getSuper() != null ) {
+			allAbstractMethods = new LinkedHashMap<>();
 			allAbstractMethods.putAll( getAllAbstractMethods( thisClass.getSuper() ) );
+		} else {
+			// short circuit if we have no parent
+			return thisClass.getAbstractMethods();
 		}
 		allAbstractMethods.putAll( thisClass.getAbstractMethods() );
 		return allAbstractMethods;

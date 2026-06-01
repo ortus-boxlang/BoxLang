@@ -17,51 +17,37 @@
  */
 package ortus.boxlang.runtime.operators;
 
-import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
-import ortus.boxlang.runtime.types.Array;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-
 /**
- * Performs range creation for BoxLang
+ * Performs range creation for BoxLang compiled source code.
  * {@code a = 1..5}
+ *
+ * Delegates to {@link ortus.boxlang.runtime.types.Range#of(Object, Object)} for all logic.
  */
 public class Range implements IOperator {
 
 	/**
-	 * @param left  The left operand
-	 * @param right The right operand
+	 * Create an inclusive range from two operands.
 	 *
-	 * @return The inclusive range as an Array
+	 * @param left  The start of the range
+	 * @param right The end of the range
+	 *
+	 * @return A typed Range instance
 	 */
-	public static Array invoke( Object left, Object right ) {
-		return invoke( IntegerCaster.cast( left ), IntegerCaster.cast( right ) );
+	public static ortus.boxlang.runtime.types.Range<?> invoke( Object left, Object right ) {
+		return ortus.boxlang.runtime.types.Range.of( left, right );
 	}
 
 	/**
-	 * @param from The start of the range
-	 * @param to   The end of the range
+	 * Create a range from two operands with exclusivity flags.
 	 *
-	 * @return The inclusive range as an Array
+	 * @param left          The start of the range
+	 * @param right         The end of the range
+	 * @param fromExclusive Whether the start bound is exclusive
+	 * @param toExclusive   Whether the end bound is exclusive
+	 *
+	 * @return A typed Range instance
 	 */
-	public static Array invoke( Integer from, Integer to ) {
-		long	start	= from.longValue();
-		long	end		= to.longValue();
-		long	size	= Math.abs( end - start ) + 1L;
-
-		if ( size > Integer.MAX_VALUE ) {
-			throw new BoxRuntimeException( "Range operator produced too many results: " + size );
-		}
-
-		Array	result	= new Array( ( int ) size );
-		long	step	= start <= end ? 1L : -1L;
-
-		for ( long current = start;; current += step ) {
-			result.add( ( int ) current );
-			if ( current == end ) {
-				break;
-			}
-		}
-
-		return result;
+	public static ortus.boxlang.runtime.types.Range<?> invoke( Object left, Object right, boolean fromExclusive, boolean toExclusive ) {
+		return ortus.boxlang.runtime.types.Range.of( left, right, fromExclusive, toExclusive );
 	}
 }

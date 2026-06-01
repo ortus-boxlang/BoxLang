@@ -1,0 +1,12 @@
+class extends="unmappedSuperLib.UnmappedSuper" {
+
+	function init() {
+		super.init();
+		return this;
+	}
+
+	function childMethod() {
+		return "from child";
+	}
+
+}

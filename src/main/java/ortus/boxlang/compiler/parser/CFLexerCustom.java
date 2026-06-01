@@ -14,8 +14,10 @@
  */
 package ortus.boxlang.compiler.parser;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +31,7 @@ import org.antlr.v4.runtime.misc.Pair;
 
 import ortus.boxlang.parser.antlr.CFLexer;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.services.ComponentService;
 
 /**
@@ -106,6 +109,46 @@ public class CFLexerCustom extends CFLexer {
 	 * where EQ appears to be encased in pound signs but is not.
 	 */
 	boolean										justClosedPoundVar		= false;
+
+	/**
+	 * Are we inside an opening function tag's attributes?
+	 */
+	boolean										inFunctionOpeningTag	= false;
+
+	/**
+	 * Are we inside an opening component tag's attributes?
+	 */
+	boolean										inComponentOpeningTag	= false;
+
+	/**
+	 * Has the component's output attribute been determined to be true?
+	 */
+	boolean										componentOutputIsTrue	= false;
+
+	/**
+	 * Did we just see ATTRIBUTE_NAME "output" and are looking for the equals sign?
+	 */
+	boolean										lookingForOutputEquals	= false;
+
+	/**
+	 * Are we currently capturing the output attribute value?
+	 */
+	boolean										capturingOutputValue	= false;
+
+	/**
+	 * The captured output attribute value text
+	 */
+	StringBuilder								outputValueCapture		= new StringBuilder();
+
+	/**
+	 * Has the output attribute been determined to be true for this function?
+	 */
+	boolean										functionOutputIsTrue	= false;
+
+	/**
+	 * Stack tracking whether each nested function level has output=true
+	 */
+	Deque<Boolean>								functionOutputStack		= new ArrayDeque<>();
 
 	/**
 	 * Tokens that end an operator. Instead of having "less than" or "less than or equal to" as a single token sequence,
@@ -343,6 +386,9 @@ public class CFLexerCustom extends CFLexer {
 
 			default :
 
+				// --- Function output=true tracking ---
+				handleFunctionOutputTracking( nextToken, nextTokenType );
+
 				if ( keywordsThatMayBeIdentifiers.contains( nextTokenType ) ) {
 					// Let's run a series of tests to determine if this keyword is being used as an identifier (variable, function name) and is NOT a keyword
 					boolean isIdentifier = false;
@@ -403,7 +449,8 @@ public class CFLexerCustom extends CFLexer {
 						// foo = function() {}
 						// foo( value, function(){} )
 						isIdentifier = false;
-					} else if ( nextTokenType == REQUIRED && !lastTokenWas( DOT ) && getParenCount() > 0 && nextNonWhiteSpaceIsAnyChar() ) {
+					} else if ( nextTokenType == REQUIRED && !lastTokenWas( DOT ) && getParenCount() > 0
+					    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '_' ) || nextNonWhiteSpaceCharIs( '$' ) ) ) {
 						// function foo( required string bar )
 						isIdentifier = false;
 					} else if ( ( nextTokenType == VAR || nextTokenType == FINAL || nextTokenType == STATIC ) && !lastTokenWas( DOT )
@@ -612,6 +659,152 @@ public class CFLexerCustom extends CFLexer {
 	}
 
 	/**
+	 * Handle tracking of function output=true attribute to push TEMPLATE_OUTPUT_MODE
+	 * when the function's opening tag closes, and set thisComponentIsOutputting=true
+	 * for the closing tag so extra modes are popped.
+	 *
+	 * @param nextToken     the current token
+	 * @param nextTokenType the token type
+	 */
+	private void handleFunctionOutputTracking( Token nextToken, int nextTokenType ) {
+		// Detect opening vs closing component tags
+		if ( nextTokenType == TEMPLATE_COMPONENT ) {
+			if ( lastTokenWas( SLASH_PREFIX ) ) {
+				// Closing component tag - set outputting flag so grammar pops extra modes
+				if ( this.componentOutputIsTrue ) {
+					this.thisComponentIsOutputting = true;
+				}
+			} else {
+				// Opening component tag - start tracking attributes
+				this.inComponentOpeningTag	= true;
+				this.componentOutputIsTrue	= false;
+				this.lookingForOutputEquals	= false;
+				this.capturingOutputValue	= false;
+				this.outputValueCapture.setLength( 0 );
+			}
+		}
+
+		// Detect opening vs closing function tags
+		if ( nextTokenType == TEMPLATE_FUNCTION ) {
+			if ( lastTokenWas( SLASH_PREFIX ) ) {
+				// Closing function tag - pop stack and set outputting flag if needed
+				if ( !this.functionOutputStack.isEmpty() && this.functionOutputStack.pop() ) {
+					this.thisComponentIsOutputting = true;
+				}
+			} else {
+				// Opening function tag - start tracking attributes
+				this.functionOutputStack.push( false );
+				this.inFunctionOpeningTag	= true;
+				this.functionOutputIsTrue	= false;
+				this.lookingForOutputEquals	= false;
+				this.capturingOutputValue	= false;
+				this.outputValueCapture.setLength( 0 );
+			}
+		}
+
+		// Handle component opening tag attribute tracking
+		if ( this.inComponentOpeningTag ) {
+			handleOutputAttributeCapture( nextToken, nextTokenType );
+
+			if ( nextTokenType == COMPONENT_CLOSE ) {
+				if ( this.componentOutputIsTrue ) {
+					// Grammar already popped us back to DEFAULT_TEMPLATE_MODE.
+					// Push output mode on top so # expressions are interpolated in the component body.
+					pushMode( TEMPLATE_OUTPUT_MODE );
+					pushMode( DEFAULT_TEMPLATE_MODE );
+				}
+				this.inComponentOpeningTag	= false;
+				this.lookingForOutputEquals	= false;
+				this.capturingOutputValue	= false;
+			} else if ( nextTokenType == COMPONENT_SLASH_CLOSE ) {
+				this.inComponentOpeningTag	= false;
+				this.lookingForOutputEquals	= false;
+				this.capturingOutputValue	= false;
+				this.componentOutputIsTrue	= false;
+			}
+		}
+
+		// Handle function opening tag attribute tracking
+		if ( this.inFunctionOpeningTag ) {
+			handleOutputAttributeCapture( nextToken, nextTokenType );
+
+			if ( nextTokenType == COMPONENT_CLOSE ) {
+				if ( this.functionOutputIsTrue ) {
+					// Grammar already popped us back to DEFAULT_TEMPLATE_MODE.
+					// Push output mode on top so # expressions are interpolated in the function body.
+					pushMode( TEMPLATE_OUTPUT_MODE );
+					pushMode( DEFAULT_TEMPLATE_MODE );
+					this.functionOutputStack.pop();
+					this.functionOutputStack.push( true );
+				}
+				this.inFunctionOpeningTag	= false;
+				this.lookingForOutputEquals	= false;
+				this.capturingOutputValue	= false;
+				this.functionOutputIsTrue	= false;
+			} else if ( nextTokenType == COMPONENT_SLASH_CLOSE ) {
+				// Self-closing function tag - no body
+				this.functionOutputStack.pop();
+				this.inFunctionOpeningTag	= false;
+				this.lookingForOutputEquals	= false;
+				this.capturingOutputValue	= false;
+				this.functionOutputIsTrue	= false;
+			}
+		}
+	}
+
+	/**
+	 * Shared logic for capturing the output attribute value from an opening tag.
+	 * Sets functionOutputIsTrue or componentOutputIsTrue depending on which tag we're in.
+	 */
+	private void handleOutputAttributeCapture( Token nextToken, int nextTokenType ) {
+		// Handle value capture
+		if ( this.capturingOutputValue ) {
+			if ( nextTokenType == COMPONENT_CLOSE || nextTokenType == COMPONENT_SLASH_CLOSE
+			    || nextTokenType == ATTRIBUTE_NAME ) {
+				// End of the value - evaluate what we captured
+				evaluateOutputValue();
+			} else if ( nextToken.getChannel() == DEFAULT_TOKEN_CHANNEL
+			    && nextTokenType != COMPONENT_EQUALS
+			    && nextTokenType != OPEN_QUOTE && nextTokenType != CLOSE_QUOTE
+			    && nextTokenType != ICHAR ) {
+				this.outputValueCapture.append( nextToken.getText() );
+			}
+		}
+
+		// Detect output attribute and its equals sign
+		if ( !this.capturingOutputValue ) {
+			if ( this.lookingForOutputEquals && nextTokenType == COMPONENT_EQUALS ) {
+				this.lookingForOutputEquals	= false;
+				this.capturingOutputValue	= true;
+				this.outputValueCapture.setLength( 0 );
+			} else if ( nextTokenType == ATTRIBUTE_NAME && nextToken.getText().equalsIgnoreCase( "output" ) ) {
+				this.lookingForOutputEquals = true;
+			} else if ( nextTokenType == ATTRIBUTE_NAME ) {
+				this.lookingForOutputEquals = false;
+			}
+		}
+	}
+
+	/**
+	 * Evaluate the captured output attribute value and set functionOutputIsTrue if it's truthy.
+	 */
+	private void evaluateOutputValue() {
+		this.capturingOutputValue = false;
+		String value = this.outputValueCapture.toString().trim();
+		if ( !value.isEmpty() ) {
+			var attempt = BooleanCaster.attempt( value );
+			if ( attempt.wasSuccessful() && attempt.get() ) {
+				if ( this.inComponentOpeningTag ) {
+					this.componentOutputIsTrue = true;
+				}
+				if ( this.inFunctionOpeningTag ) {
+					this.functionOutputIsTrue = true;
+				}
+			}
+		}
+	}
+
+	/**
 	 * Store the last non-hidden token and update lexer state flags for class tracking,
 	 * switch body tracking, and for-loop paren tracking.
 	 *
@@ -702,6 +895,14 @@ public class CFLexerCustom extends CFLexer {
 		classBodyStarted		= false;
 		classTokenReached		= false;
 		justClosedPoundVar		= false;
+		inFunctionOpeningTag	= false;
+		inComponentOpeningTag	= false;
+		lookingForOutputEquals	= false;
+		capturingOutputValue	= false;
+		outputValueCapture.setLength( 0 );
+		functionOutputIsTrue	= false;
+		componentOutputIsTrue	= false;
+		functionOutputStack.clear();
 	}
 
 	/**

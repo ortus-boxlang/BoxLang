@@ -123,9 +123,23 @@ public class JSONUtil {
 	 */
 	public static Object fromJSON( Object json, boolean toBLTypes ) {
 		try {
-			Object parsed = getJSONBuilder( false ).anyFrom( json );
-			// Now parse the JSON
+			JSON	builder	= getJSONBuilder( false );
+			Object	parsed;
+			// For String inputs, use a single parser pass to both read the value AND check for trailing content.
+			// Jackson-jr's anyFrom(String) silently ignores trailing content (e.g. "1234 Main St." parses as 1234).
+			if ( json instanceof String jsonStr ) {
+				try ( JsonParser parser = builder.createParser( jsonStr ) ) {
+					parsed = builder.anyFrom( parser );
+					if ( parser.nextToken() != null ) {
+						throw new BoxRuntimeException( "Invalid JSON: unexpected content found after the parsed value in [" + jsonStr + "]" );
+					}
+				}
+			} else {
+				parsed = builder.anyFrom( json );
+			}
 			return toBLTypes ? mapToBLTypes( parsed, true ) : parsed;
+		} catch ( BoxRuntimeException e ) {
+			throw e;
 		} catch ( Exception e ) {
 			throw new BoxRuntimeException( "Failed to parse JSON " + json.toString(), e );
 		}

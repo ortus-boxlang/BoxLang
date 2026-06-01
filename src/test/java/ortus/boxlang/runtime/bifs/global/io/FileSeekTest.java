@@ -40,7 +40,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.File;
+import ortus.boxlang.runtime.types.BoxFile;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
 public class FileSeekTest {
@@ -53,7 +53,7 @@ public class FileSeekTest {
 	private static String	tmpDirectory	= "src/test/resources/tmp/fileSeekTest";
 	private static String	testFile		= "src/test/resources/tmp/fileSeekTest/file-seek-test.txt";
 	static String			testBinaryFile	= "src/test/resources/tmp/fileSeekTest/test.jpg";
-	private static File		writeFile		= null;
+	private static BoxFile	writeFile		= null;
 
 	@BeforeAll
 	public static void setUp() throws IOException {

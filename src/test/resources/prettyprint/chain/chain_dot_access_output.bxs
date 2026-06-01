@@ -1,0 +1,15 @@
+// Short property chain - should stay on one line
+result = obj.a.b;
+
+// 3 property accesses - should break with default break_count=3
+result = obj
+	.a
+	.b
+	.c;
+
+// 4 property accesses - should definitely break
+result = obj
+	.a
+	.b
+	.c
+	.d;

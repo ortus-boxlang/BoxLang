@@ -75,9 +75,9 @@ public class File extends Component {
 		        Validator.valueRequires( "upload", Key.destination ),
 		        Validator.valueRequires( "uploadAll", Key.destination )
 		    ) ),
-		    new Attribute( Key.file, "string" ),
+		    new Attribute( Key.file, "any" ),
 		    new Attribute( Key.mode, "string" ),
-		    new Attribute( Key.output, "string" ),
+		    new Attribute( Key.output, "any" ),
 		    new Attribute( Key.addnewline, "boolean" ),
 		    new Attribute( Key.attributes, "string" ),
 		    new Attribute( Key.charset, "string", "utf-8" ),
@@ -138,7 +138,7 @@ public class File extends Component {
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		Key		action		= Key.of( attributes.getAsString( Key.action ) );
-		String	output		= attributes.getAsString( Key.output );
+		Object	output		= attributes.get( Key.output );
 		String	variable	= attributes.getAsString( Key.variable );
 
 		if ( variable == null && attributes.containsKey( Key.result ) ) {

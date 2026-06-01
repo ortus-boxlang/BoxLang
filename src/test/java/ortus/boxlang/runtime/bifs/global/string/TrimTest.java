@@ -80,4 +80,38 @@ public class TrimTest {
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "Michael" );
 	}
 
+	@DisplayName( "It trims specific characters when chars argument is provided" )
+	@Test
+	public void testItTrimsSpecificChars() {
+		instance.executeSource(
+		    """
+		    result = trim( '**Urgent**', '*' );
+		    result2 = trim( '---Hello---', '-' );
+		    result3 = trim( '*-*Mixed*-*', '*-' );
+		    result4 = trim( '  spaces  ', ' ' );
+		    result5 = trim( 'abcHelloabc', 'abc' );
+		    result6 = trim( 'Hello', '*' );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "Urgent" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "Hello" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "Mixed" );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( "spaces" );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( "Hello" );
+		assertThat( variables.get( Key.of( "result6" ) ) ).isEqualTo( "Hello" );
+	}
+
+	@DisplayName( "It trims specific characters as member function" )
+	@Test
+	public void testItTrimsSpecificCharsMember() {
+		instance.executeSource(
+		    """
+		    result = '**Urgent**'.trim( '*' );
+		    result2 = '##Title##'.trim( '##' );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "Urgent" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "Title" );
+	}
+
 }

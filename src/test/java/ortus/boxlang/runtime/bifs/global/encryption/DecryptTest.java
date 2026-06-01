@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.IStruct;
 
 public class DecryptTest {
 
@@ -152,6 +153,19 @@ public class DecryptTest {
 
 		assertTrue( variables.get( result ) instanceof String );
 		assertEquals( "foo", variables.getAsString( result ) );
+	}
+
+	@DisplayName( "It tests decryption of an object" )
+	@Test
+	public void testObjectDecryption() {
+		instance.executeSource( """
+		                        	key = generateSecretKey();
+		                        	encrypted = Encrypt( { foo: "bar" }, key );
+		                        	result = Decrypt( encrypted, key );
+		                        """, context );
+
+		assertTrue( variables.get( result ) instanceof IStruct );
+		assertEquals( "bar", variables.getAsStruct( result ).getAsString( Key.of( "foo" ) ) );
 	}
 
 }

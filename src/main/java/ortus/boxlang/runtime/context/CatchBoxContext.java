@@ -22,7 +22,6 @@ import java.util.Map;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ScopeWrapper;
-import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -36,9 +35,14 @@ import ortus.boxlang.runtime.types.exceptions.ScopeNotFoundException;
 public class CatchBoxContext extends ParentPassthroughBoxContext {
 
 	/**
-	 * The variables scope
+	 * The scope we are wrapping (e.g., variables scope, static scope, etc.)
 	 */
-	private IScope		variablesScope;
+	private IScope		wrappedScope;
+
+	/**
+	 * The name of the scope we are wrapping, used for scope lookups
+	 */
+	private Key			wrappedScopeName;
 	private Throwable	exception;
 
 	/**
@@ -59,9 +63,11 @@ public class CatchBoxContext extends ParentPassthroughBoxContext {
 		if ( parent == null ) {
 			throw new BoxRuntimeException( "Parent context cannot be null for CatchBoxContext" );
 		}
-		this.exception		= exception;
-		this.variablesScope	= new ScopeWrapper(
-		    parent.getScopeNearby( VariablesScope.name ),
+		this.exception = exception;
+		IScope defaultScope = parent.getDefaultAssignmentScope();
+		this.wrappedScopeName	= defaultScope.getName();
+		this.wrappedScope		= new ScopeWrapper(
+		    defaultScope,
 		    Map.of( exceptionKey, exception )
 		);
 	}
@@ -78,7 +84,7 @@ public class CatchBoxContext extends ParentPassthroughBoxContext {
 			getParent().getVisibleScopes( scopes, false, false );
 		}
 		if ( nearby ) {
-			scopes.getAsStruct( Key.contextual ).put( VariablesScope.name, variablesScope );
+			scopes.getAsStruct( Key.contextual ).put( wrappedScopeName, wrappedScope );
 		}
 		return scopes;
 	}
@@ -97,7 +103,7 @@ public class CatchBoxContext extends ParentPassthroughBoxContext {
 	 */
 	@Override
 	public boolean isKeyVisibleScope( Key key, boolean nearby, boolean shallow ) {
-		if ( key.equals( VariablesScope.name ) ) {
+		if ( key.equals( wrappedScopeName ) ) {
 			return true;
 		}
 		return super.isKeyVisibleScope( key, false, false );
@@ -126,12 +132,12 @@ public class CatchBoxContext extends ParentPassthroughBoxContext {
 				}
 			}
 
-			// In Variables scope? (thread-safe lookup and get)
-			Object result = variablesScope.getRaw( key );
+			// In wrapped scope? (thread-safe lookup and get)
+			Object result = wrappedScope.getRaw( key );
 			// Null means not found
 			if ( isDefined( result, forAssign ) ) {
 				// Unwrap the value now in case it was really actually null for real
-				return new ScopeSearchResult( variablesScope, Struct.unWrapNull( result ), key );
+				return new ScopeSearchResult( wrappedScope, Struct.unWrapNull( result ), key );
 			}
 		}
 
@@ -204,8 +210,8 @@ public class CatchBoxContext extends ParentPassthroughBoxContext {
 	 */
 	public IScope getScopeNearby( Key name, boolean shallow ) {
 		// Check the scopes I know about
-		if ( name.equals( VariablesScope.name ) ) {
-			return variablesScope;
+		if ( name.equals( wrappedScopeName ) ) {
+			return wrappedScope;
 		}
 
 		if ( shallow ) {

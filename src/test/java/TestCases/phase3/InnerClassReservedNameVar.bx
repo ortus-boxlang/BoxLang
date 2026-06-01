@@ -1,0 +1,16 @@
+class {
+
+	class Inner {
+
+		function getValue() {
+			return "inner";
+		}
+
+	}
+
+	function doStuff() {
+		var InnerClassReservedNameVar = "test";
+		return InnerClassReservedNameVar;
+	}
+
+}

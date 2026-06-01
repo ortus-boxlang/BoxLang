@@ -13,11 +13,11 @@ plugins {
 	id "application"
 	id 'antlr'
 	// For source code formatting
-	id "com.diffplug.spotless" version "8.3.0"
+	id "com.diffplug.spotless" version "8.4.0"
 	// Shadow
 	id "com.gradleup.shadow" version "9.2.2"
 	// For dependency updates
-	id 'com.github.ben-manes.versions' version '0.53.0'
+	id 'com.github.ben-manes.versions' version '0.54.0'
 	// For building service loader files
     id "com.github.harbby.gradle.serviceloader" version "1.1.9"
 	// Maven Publisher
@@ -25,7 +25,7 @@ plugins {
 	id 'signing'
 	id 'com.gradleup.nmcp.aggregation' version "1.4.4"
     // Download task
-    id "de.undercouch.download" version "5.6.0"
+    id "de.undercouch.download" version "5.7.0"
 }
 
 /**
@@ -108,8 +108,8 @@ dependencies {
 	testImplementation "commons-cli:commons-cli:1.11.0"
 	testImplementation "org.wiremock:wiremock:3.13.2"
 	testImplementation 'org.apache.derby:derby:10.17.1.0'
-	testImplementation 'io.undertow:undertow-core:2.3.23.Final'
-	testImplementation 'org.bouncycastle:bcpkix-jdk18on:1.83'
+	testImplementation 'io.undertow:undertow-core:2.4.0.Final'
+	testImplementation 'org.bouncycastle:bcpkix-jdk18on:1.84'
 	// Explicitly declare the JUnit platform launcher (to avoid deprecation)
     testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 
@@ -124,7 +124,7 @@ dependencies {
 
 	// Implementation Dependencies
 	// https://mvnrepository.com/artifact/commons-io/commons-io
-	implementation "commons-io:commons-io:2.20.0"
+	implementation "commons-io:commons-io:2.22.0"
 	// https://mvnrepository.com/artifact/com.github.javaparser/javaparser-symbol-solver-core
 	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.27.1'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-lang3
@@ -135,13 +135,13 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-cli
 	implementation "commons-cli:commons-cli:1.11.0"
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-objects
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.21.1'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-objects:2.21.3'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-extension-javatime
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-extension-javatime:2.21.1'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-extension-javatime:2.21.3'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-stree
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-stree:2.21.1'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-stree:2.21.3'
 	// https://mvnrepository.com/artifact/com.fasterxml.jackson.jr/jackson-jr-annotation-support
-	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.21.1'
+	implementation 'com.fasterxml.jackson.jr:jackson-jr-annotation-support:2.21.3'
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-api
 	implementation 'org.slf4j:slf4j-api:2.0.17'
 	// https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
@@ -351,10 +351,29 @@ set -- \$FILTERED_ARGS
 ######################################
 # AppCDS: auto-generate and cache a class-data archive for faster startup
 ######################################
-BL_JAR=$(ls "$APP_HOME/lib"/boxlang-*.jar 2>/dev/null | head -1)
+BL_JAR=$(ls "$APP_HOME/lib"/boxlang-[0-9]*.jar 2>/dev/null | head -1)
 if [ -n "$BL_JAR" ]; then
     BL_VER=$(basename "$BL_JAR" .jar | sed 's/^boxlang-//')
-    BL_JSA_DIR="$HOME/.boxlang/cache"
+    # Resolve BoxLang home: BOXLANG_HOME env > --bx-home arg > user home
+    if [ -n "$BOXLANG_HOME" ]; then
+        BL_HOME_DIR="$BOXLANG_HOME"
+    else
+        BL_HOME_DIR=""
+        _BL_PREV_HOME=0
+        for _bl_arg in "$@"; do
+            if [ "$_BL_PREV_HOME" = "1" ]; then
+                BL_HOME_DIR="$_bl_arg"
+                break
+            fi
+            if [ "$_bl_arg" = "--bx-home" ]; then
+                _BL_PREV_HOME=1
+            fi
+        done
+        if [ -z "$BL_HOME_DIR" ]; then
+            BL_HOME_DIR="$HOME/.boxlang"
+        fi
+    fi
+    BL_JSA_DIR="$BL_HOME_DIR/cache"
     BL_JSA="$BL_JSA_DIR/boxlang-$BL_VER.jsa"
     BL_JAVA="${JAVA_HOME:+$JAVA_HOME/bin/java}"
     BL_JAVA="${BL_JAVA:-java}"
@@ -366,7 +385,7 @@ if [ -n "$BL_JAR" ]; then
         rm -f "$BL_CLASSLIST" "$BL_JSA.tmp"
     fi
     if [ -f "$BL_JSA" ]; then
-        JAVA_OPTS="$JAVA_OPTS -XX:TieredStopAtLevel=1 -Xshare:auto -XX:SharedArchiveFile=$BL_JSA"
+        JAVA_OPTS="$JAVA_OPTS -XX:TieredStopAtLevel=1 -Xshare:auto \"-XX:SharedArchiveFile=$BL_JSA\""
     fi
 fi
 ######################################
@@ -404,8 +423,23 @@ ext.customizeWindowsScript = { File scriptFile ->
 	def appCdsSnippet = '@rem ######################################\r\n' +
 		'@rem AppCDS: auto-generate and cache a class-data archive for faster startup\r\n' +
 		'@rem ######################################\r\n' +
-		'set "BL_JSA_DIR=%USERPROFILE%\\.boxlang\\cache"\r\n' +
-		'for %%F in ("%APP_HOME%\\lib\\boxlang-*.jar") do set "BL_JAR=%%~fF" & set "BL_JARNAME=%%~nF"\r\n' +
+		'if defined BOXLANG_HOME (\r\n' +
+		'  set "BL_HOME_DIR=%BOXLANG_HOME%"\r\n' +
+		') else (\r\n' +
+		'  set "BL_HOME_DIR="\r\n' +
+		'  set "_BL_PREV_HOME=0"\r\n' +
+		'  for %%A in (%*) do (\r\n' +
+		'    if "!_BL_PREV_HOME!"=="1" (\r\n' +
+		'      set "BL_HOME_DIR=%%~A"\r\n' +
+		'      set "_BL_PREV_HOME=0"\r\n' +
+		'    ) else if "%%~A"=="--bx-home" (\r\n' +
+		'      set "_BL_PREV_HOME=1"\r\n' +
+		'    )\r\n' +
+		'  )\r\n' +
+		'  if not defined BL_HOME_DIR set "BL_HOME_DIR=%USERPROFILE%\\.boxlang"\r\n' +
+		')\r\n' +
+		'set "BL_JSA_DIR=!BL_HOME_DIR!\\cache"\r\n' +
+		'for %%F in ("%APP_HOME%\\lib\\boxlang-[0-9]*.jar") do set "BL_JAR=%%~fF" & set "BL_JARNAME=%%~nF"\r\n' +
 		'if defined BL_JAR (\r\n' +
 		'  set "BL_VER=!BL_JARNAME:boxlang-=!"\r\n' +
 		'  set "BL_JSA=!BL_JSA_DIR!\\boxlang-!BL_VER!.jsa"\r\n' +
@@ -418,7 +452,7 @@ ext.customizeWindowsScript = { File scriptFile ->
 		'    del "!BL_CLASSLIST!" >nul 2>&1\r\n' +
 		'  )\r\n' +
 		'  if exist "!BL_JSA!" (\r\n' +
-		'    set "JAVA_OPTS=%JAVA_OPTS% -XX:TieredStopAtLevel=1 -Xshare:auto -XX:SharedArchiveFile=!BL_JSA!"\r\n' +
+		'    set JAVA_OPTS=!JAVA_OPTS! -XX:TieredStopAtLevel=1 -Xshare:auto "-XX:SharedArchiveFile=!BL_JSA!"\r\n' +
 		'  )\r\n' +
 		')\r\n' +
 		'@rem ######################################\r\n' +
@@ -1444,7 +1478,9 @@ spotless {
     java {
 		target fileTree( "." ) {
             include "**/*.java"
-            exclude "**/build/**", "bin/**", "examples/**", "src/main/java/ortus/boxlang/runtime/testing/**", "src/main/gen/**", "src/main/antlr/gen", "modules/**", testResourceDirectory + "/**"
+        	exclude "**/build/**", "bin/**", "examples/**", "src/main/java/ortus/boxlang/runtime/testing/**", "src/main/gen/**", "src/main/antlr/gen", "modules/**", testResourceDirectory + "/**",
+                    // Contains Java 21 when-guard switch patterns that Google Java Format cannot parse
+                    "**/config/util/ConfigUtil.java"
         }
         eclipse().configFile( "workbench/ortus-java-style.xml" )
 		toggleOffOn()

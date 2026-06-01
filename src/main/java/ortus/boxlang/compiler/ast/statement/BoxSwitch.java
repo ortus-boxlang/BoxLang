@@ -78,6 +78,13 @@ public class BoxSwitch extends BoxStatement {
 		return map;
 	}
 
+	/**
+	 * Returns true if this switch uses breaking cases (tag-based switch).
+	 */
+	public boolean hasBreakingCases() {
+		return !this.cases.isEmpty() && this.cases.get( 0 ) instanceof BoxSwitchBreakingCase;
+	}
+
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
 	}

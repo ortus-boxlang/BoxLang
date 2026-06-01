@@ -23,7 +23,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 
-@BoxBIF( description = "Remove leading and trailing whitespace from a string" )
+@BoxBIF( description = "Remove leading and trailing whitespace from a string, or specific characters if provided" )
 @BoxMember( type = BoxLangType.STRING_STRICT )
 public class Trim extends BIF {
 
@@ -34,16 +34,20 @@ public class Trim extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, "string", Key.string ),
+		    new Argument( false, "string", Key.chars ),
 		};
 	}
 
 	/**
-	 * Trim whitespace from the beginning and end of a string
+	 * Trim whitespace from the beginning and end of a string.
+	 * If chars is provided, each character in the string is treated as a character to trim instead of whitespace.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.string The string to trim
+	 *
+	 * @argument.chars An optional string of characters to trim. Each character is treated individually.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String input = arguments.getAsString( Key.string );
@@ -52,6 +56,24 @@ public class Trim extends BIF {
 			return "";
 		}
 
-		return input.trim();
+		String chars = arguments.getAsString( Key.chars );
+
+		// Default path: use Java's built-in trim for whitespace
+		if ( chars == null ) {
+			return input.trim();
+		}
+
+		// Custom chars path: strip specified characters from both ends
+		int	start	= 0;
+		int	end		= input.length();
+
+		while ( start < end && chars.indexOf( input.charAt( start ) ) >= 0 ) {
+			start++;
+		}
+		while ( end > start && chars.indexOf( input.charAt( end - 1 ) ) >= 0 ) {
+			end--;
+		}
+
+		return input.substring( start, end );
 	}
 }

@@ -167,6 +167,22 @@ public class OracleDriverTest extends AbstractDriverTest {
 		    """,
 		    context
 		);
+
+		// Stored procedure with IN OUT (not just OUT) refcursor at the end
+		dataSource.execute(
+		    """
+		    CREATE OR REPLACE PROCEDURE testProcedureInOutCursor (
+		    	in1 IN NUMBER,
+		    	in2 IN NVARCHAR2,
+		    	cursor1 IN OUT SYS_REFCURSOR
+		    )
+		    IS
+		    BEGIN
+		    	OPEN cursor1 FOR SELECT in1 as numVal, in2 as strVal FROM dual;
+		    END testProcedureInOutCursor;
+		    """,
+		    context
+		);
 	}
 
 	@DisplayName( "It sets generatedKey in query meta" )
@@ -252,6 +268,23 @@ public class OracleDriverTest extends AbstractDriverTest {
 
 	}
 
+	@DisplayName( "It doesn't error with multiple trailing semicolons" )
+	@Test
+	public void testMultipleTrailingSemicolons() {
+		instance.executeStatement(
+		    String.format(
+		        """
+		        result = queryExecute( "SELECT * FROM developers ;; ;",
+		        {},
+		        { "datasource" : "%s" }
+		        );
+
+		                                                   """,
+		        getDatasourceName() ),
+		    context );
+
+	}
+
 	@DisplayName( "It can select from char 15 field" )
 	@Test
 	public void testSelectFromCharFields() {
@@ -292,7 +325,7 @@ public class OracleDriverTest extends AbstractDriverTest {
 	public void testCallStoredProc() {
 		instance.executeSource(
 		    """
-		    <bx:storedproc procedure="testProcedure" datasource="OracleDatasource" result="variables.result" debug=true>
+		    <bx:storedproc procedure="testProcedure" datasource="OracleDatasource" result="variables.result" debug=false>
 		        <bx:procparam dbvarname="in1" value="123" type="in" sqltype="integer" />
 		        <bx:procparam dbvarname="in2" value="hello" type="in" sqltype="nvarchar" />
 		        <bx:procparam dbvarname="inout1" value="10" type="inout" sqltype="integer" variable="inout1" />
@@ -412,7 +445,7 @@ public class OracleDriverTest extends AbstractDriverTest {
 
 		instance.executeSource(
 		    """
-		    <bx:storedproc procedure="getRowIdProc" datasource="OracleDatasource" result="variables.result" debug=true>
+		    <bx:storedproc procedure="getRowIdProc" datasource="OracleDatasource" result="variables.result" debug=false>
 		        <bx:procparam dbvarname="outRowId" type="out" sqltype="string" variable="returnedRowId" />
 		    </bx:storedproc>
 		      """,
@@ -445,7 +478,7 @@ public class OracleDriverTest extends AbstractDriverTest {
 
 		instance.executeSource(
 		    """
-		    <bx:storedproc procedure="getRowIdProc" datasource="OracleDatasource" result="variables.result" debug=true>
+		    <bx:storedproc procedure="getRowIdProc" datasource="OracleDatasource" result="variables.result" debug=false>
 		        <bx:procparam dbvarname="outRowId" type="out" sqltype="string" variable="returnedRowId" />
 		    </bx:storedproc>
 		    """,
@@ -463,7 +496,7 @@ public class OracleDriverTest extends AbstractDriverTest {
 	public void testCallStoredProcCursorOnlyNamed() {
 		instance.executeSource(
 		    """
-		    <bx:storedproc procedure="testProcedureCursorOnly" datasource="OracleDatasource" result="variables.result" debug=true>
+		    <bx:storedproc procedure="testProcedureCursorOnly" datasource="OracleDatasource" result="variables.result" debug=false>
 		        <bx:procresult name="resultSet1" resultSet=1 />
 		    </bx:storedproc>
 		    """,
@@ -480,7 +513,7 @@ public class OracleDriverTest extends AbstractDriverTest {
 	public void testCallStoredProcCursorWithInAfterNamed() {
 		instance.executeSource(
 		    """
-		    <bx:storedproc procedure="testProcedureCursorWithInAfter" datasource="OracleDatasource" result="variables.result" debug=true>
+		    <bx:storedproc procedure="testProcedureCursorWithInAfter" datasource="OracleDatasource" result="variables.result" debug=false>
 		      <bx:procparam dbvarname="out1" type="out" sqltype="nvarchar" variable="out1" />
 		      <bx:procparam dbvarname="in1" value="42" type="in" sqltype="integer" />
 		      <bx:procresult name="resultSet1" resultSet=1 />
@@ -504,7 +537,7 @@ public class OracleDriverTest extends AbstractDriverTest {
 	public void testCallStoredProcCursorInMiddleNamed() {
 		instance.executeSource(
 		    """
-		    <bx:storedproc procedure="testProcedureCursorInMiddle" datasource="OracleDatasource" result="variables.result" debug=true>
+		    <bx:storedproc procedure="testProcedureCursorInMiddle" datasource="OracleDatasource" result="variables.result" debug=false>
 		      <bx:procparam dbvarname="in2" value="world" type="in" sqltype="nvarchar" />
 		      <bx:procparam dbvarname="out1" type="out" sqltype="nvarchar" variable="out1" />
 		      <bx:procparam dbvarname="in1" value="10" type="in" sqltype="integer" />
@@ -530,7 +563,7 @@ public class OracleDriverTest extends AbstractDriverTest {
 	public void testCallStoredProcCursorAtEndNamed() {
 		instance.executeSource(
 		    """
-		    <bx:storedproc procedure="testProcedureCursorAtEnd" datasource="OracleDatasource" result="variables.result" debug=true>
+		    <bx:storedproc procedure="testProcedureCursorAtEnd" datasource="OracleDatasource" result="variables.result" debug=false>
 		        <bx:procparam value="10" type="in" sqltype="integer" dbvarname="in1" />
 		        <bx:procresult name="resultSet1" resultSet=1 />
 		    </bx:storedproc>
@@ -548,7 +581,7 @@ public class OracleDriverTest extends AbstractDriverTest {
 	public void testCallStoredProcCursorOnlyPositional() {
 		instance.executeSource(
 		    """
-		    <bx:storedproc procedure="testProcedureCursorOnly" datasource="OracleDatasource" result="variables.result" debug=true>
+		    <bx:storedproc procedure="testProcedureCursorOnly" datasource="OracleDatasource" result="variables.result" debug=false>
 		        <bx:procresult name="resultSet1" resultSet=1 />
 		    </bx:storedproc>
 		    """,
@@ -566,7 +599,7 @@ public class OracleDriverTest extends AbstractDriverTest {
 		// Proc signature: cursor1 OUT, in1 IN, inout1 INOUT, out1 OUT
 		instance.executeSource(
 		    """
-		    <bx:storedproc procedure="testProcedureCursorWithInAfter" datasource="OracleDatasource" result="variables.result" debug=true>
+		    <bx:storedproc procedure="testProcedureCursorWithInAfter" datasource="OracleDatasource" result="variables.result" debug=false>
 		        <bx:procresult name="resultSet1" resultSet=1 />
 		        <bx:procparam value="42" type="in" sqltype="integer" />
 		        <bx:procparam value="8" type="inout" sqltype="integer" variable="inout1" />
@@ -591,7 +624,7 @@ public class OracleDriverTest extends AbstractDriverTest {
 		// Proc signature: in1 IN, inout1 INOUT, cursor1 OUT, in2 IN, out1 OUT
 		instance.executeSource(
 		    """
-		    <bx:storedproc procedure="testProcedureCursorInMiddle" datasource="OracleDatasource" result="variables.result" debug=true>
+		    <bx:storedproc procedure="testProcedureCursorInMiddle" datasource="OracleDatasource" result="variables.result" debug=false>
 		        <bx:procparam value="10" type="in" sqltype="integer" />
 		        <bx:procparam value="5" type="inout" sqltype="integer" variable="inout1" />
 		        <bx:procresult name="resultSet1" resultSet=1 />
@@ -617,7 +650,7 @@ public class OracleDriverTest extends AbstractDriverTest {
 	public void testCallStoredProcCursorAtEndPositional() {
 		instance.executeSource(
 		    """
-		    <bx:storedproc procedure="testProcedureCursorAtEnd" datasource="OracleDatasource" result="variables.result" debug=true>
+		    <bx:storedproc procedure="testProcedureCursorAtEnd" datasource="OracleDatasource" result="variables.result" debug=false>
 		        <bx:procparam value="10" type="in" sqltype="integer" />
 		        <bx:procresult name="resultSet1" resultSet=1 />
 		    </bx:storedproc>
@@ -628,6 +661,47 @@ public class OracleDriverTest extends AbstractDriverTest {
 		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
 		assertThat( rs1.size() ).isEqualTo( 1 );
 		assertThat( rs1.getRowAsStruct( 0 ).getAsNumber( Key.of( "numVal" ) ).doubleValue() ).isEqualTo( 10D );
+	}
+
+	@DisplayName( "It can call stored proc with INOUT refcursor (named)" )
+	@Test
+	public void testCallStoredProcInOutCursorNamed() {
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedureInOutCursor" datasource="OracleDatasource" result="variables.result" debug=false>
+		        <bx:procparam dbvarname="in1" value="99" type="in" sqltype="integer" />
+		        <bx:procparam dbvarname="in2" value="testing" type="in" sqltype="nvarchar" />
+		        <bx:procresult name="resultSet1" resultSet=1 />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		assertThat( variables.get( "resultSet1" ) ).isInstanceOf( Query.class );
+		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
+		assertThat( rs1.size() ).isEqualTo( 1 );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsNumber( Key.of( "numVal" ) ).doubleValue() ).isEqualTo( 99D );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsString( Key.of( "strVal" ) ) ).isEqualTo( "testing" );
+	}
+
+	@DisplayName( "It can call stored proc with INOUT refcursor (positional)" )
+	@Test
+	public void testCallStoredProcInOutCursorPositional() {
+		// Proc signature: in1 IN, in2 IN, cursor1 IN OUT
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedureInOutCursor" datasource="OracleDatasource" result="variables.result" debug=false>
+		        <bx:procparam value="99" type="in" sqltype="integer" />
+		        <bx:procparam value="testing" type="in" sqltype="nvarchar" />
+		        <bx:procresult name="resultSet1" resultSet=1 />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		assertThat( variables.get( "resultSet1" ) ).isInstanceOf( Query.class );
+		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
+		assertThat( rs1.size() ).isEqualTo( 1 );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsNumber( Key.of( "numVal" ) ).doubleValue() ).isEqualTo( 99D );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsString( Key.of( "strVal" ) ) ).isEqualTo( "testing" );
 	}
 
 	@DisplayName( "It can handle float query param with leading space" )
@@ -651,13 +725,37 @@ public class OracleDriverTest extends AbstractDriverTest {
 		assertThat( query.getRowAsStruct( 0 ).getAsNumber( Key.of( "floatValue" ) ).doubleValue() ).isEqualTo( 220692.03D );
 	}
 
+	@DisplayName( "It can use cfquery with cfqueryparam attributeCollection provided by a UDF" )
+	@Test
+	public void testCfqueryWithCfqueryparamAttributeCollectionFromUDF() {
+		instance.executeSource(
+		    """
+		    <cffunction name="buildParamAttrs" returntype="struct">
+		        <cfargument name="value" type="string" required="true" />
+		        <cfargument name="sqltype" type="string" required="true" />
+		        <cfreturn { value: arguments.value, sqltype: arguments.sqltype } />
+		    </cffunction>
+
+		    <cfquery name="result" datasource="OracleDatasource">
+		        SELECT * FROM developers WHERE role = <cfqueryparam attributeCollection="#buildParamAttrs( 'Developer', 'varchar' )#" />
+		    </cfquery>
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.get( result ) ).isInstanceOf( Query.class );
+		Query query = variables.getAsQuery( result );
+		assertThat( query.size() ).isEqualTo( 2 );
+		assertThat( query.getRowAsStruct( 0 ).getAsString( Key.of( "role" ) ) ).isEqualTo( "Developer" );
+		assertThat( query.getRowAsStruct( 1 ).getAsString( Key.of( "role" ) ) ).isEqualTo( "Developer" );
+	}
+
 	@DisplayName( "It can run a proc inside a transaction" )
 	@Test
 	public void testRunProcInsideTransaction() {
 		instance.executeStatement(
 		    """
 		       transaction {
-		    	bx:storedproc procedure="testProcedureCursorInMiddle" datasource="OracleDatasource" result="variables.result" debug=true {
+		    	bx:storedproc procedure="testProcedureCursorInMiddle" datasource="OracleDatasource" result="variables.result" debug=false {
 		    		bx:procparam value="10" type="in" sqltype="integer";
 		    		bx:procparam value="5" type="inout" sqltype="integer" variable="inout1";
 		    		bx:procresult name="resultSet1" resultSet=1;
@@ -668,6 +766,25 @@ public class OracleDriverTest extends AbstractDriverTest {
 		       """,
 		    context );
 
+	}
+
+	@DisplayName( "It can call stored proc with IN param and OUT refcursor using cfprocparam with dbvarname" )
+	@Test
+	public void testCallStoredProcInWithOutCursorDbVarName() {
+		instance.executeSource(
+		    """
+		    <cfstoredproc procedure="testProcedureCursorAtEnd" datasource="OracleDatasource" debug="true">
+		        <cfprocparam type="In" cfsqltype="CF_SQL_CHAR" dbvarname=":in1" value="1">
+		        <cfprocparam type="Out" cfsqltype="CF_SQL_CHAR" dbvarname=":cursor1" value="1">
+		        <cfprocresult name="resultSet1">
+		    </cfstoredproc>
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.get( "resultSet1" ) ).isInstanceOf( Query.class );
+		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
+		assertThat( rs1.size() ).isEqualTo( 1 );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsNumber( Key.of( "numVal" ) ).doubleValue() ).isEqualTo( 1D );
 	}
 
 }

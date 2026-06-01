@@ -26,12 +26,14 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableArray;
+import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableSet;
 import ortus.boxlang.runtime.types.unmodifiable.UnmodifiableStruct;
 
 @BoxBIF( description = "Convert data to a modifiable form" )
 @BoxMember( type = BoxLangType.ARRAY )
 @BoxMember( type = BoxLangType.STRUCT )
 @BoxMember( type = BoxLangType.QUERY )
+@BoxMember( type = BoxLangType.SET )
 public class ToModifiable extends BIF {
 
 	/**
@@ -45,9 +47,9 @@ public class ToModifiable extends BIF {
 	}
 
 	/**
-	 * Convert an array, struct or query to its Modifiable counterpart.
+	 * Convert an array, struct, query or set to its Modifiable counterpart.
 	 *
-	 * @argument.value The array, struct or query to convert.
+	 * @argument.value The array, struct, query or set to convert.
 	 *
 	 * @param context   The context in which the BIF is being executed.
 	 * @param arguments The arguments passed to the BIF.
@@ -64,6 +66,10 @@ public class ToModifiable extends BIF {
 		// Structs
 		else if ( inputValue instanceof UnmodifiableStruct castedStruct ) {
 			return castedStruct.toModifiable();
+		}
+		// Sets
+		else if ( inputValue instanceof UnmodifiableSet castedSet ) {
+			return castedSet.toModifiable();
 		}
 		// Others
 		else {

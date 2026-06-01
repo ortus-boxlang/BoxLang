@@ -153,10 +153,18 @@ public class DirectoryList extends BIF {
 
 		listing.forEachOrdered( item -> {
 			try {
+				long size;
+				try {
+					size = Files.isDirectory( item ) ? 0L : Files.size( item );
+				} catch ( IOException e ) {
+					// If we have an IOException trying to get the size, it is likely a permissions issue, so return 0 for the size
+					size = 0L;
+				}
+
 				listingQuery.addRow(
 				    new Object[] {
 				        item.getFileName().toString(),
-				        Files.isDirectory( item ) ? 0L : Files.size( item ),
+				        size,
 				        Files.isDirectory( item ) ? "Dir" : "File",
 				        new DateTime( Files.getLastModifiedTime( item ).toInstant() ),
 				        getAttributes( item ),

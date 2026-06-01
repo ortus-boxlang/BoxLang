@@ -438,8 +438,9 @@ public class FunctionService extends BaseService {
 			Key memberKey;
 			if ( member.name().equals( "" ) ) {
 				// Default member name for class ArrayFoo with BoxType of Array is just foo()
+				// Use getBaseTypeName() to handle modifier types (e.g. STRING_STRICT -> "string")
 				memberKey = Key.of(
-				    Strings.CS.replace( className.toLowerCase(), member.type().name().toLowerCase(), "" )
+				    Strings.CS.replace( className.toLowerCase(), member.type().getBaseTypeName().getName().toLowerCase(), "" )
 				);
 			} else {
 				memberKey = Key.of( member.name() );

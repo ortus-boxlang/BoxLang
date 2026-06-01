@@ -24,7 +24,9 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.expr.Expression;
 
 import ortus.boxlang.compiler.ast.BoxNode;
+import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxExpressionInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxSpreadExpression;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
@@ -38,6 +40,7 @@ public class BoxExpressionInvocationTransformer extends AbstractTransformer {
 	@Override
 	public Node transform( BoxNode node, TransformerContext context ) throws IllegalStateException {
 		BoxExpressionInvocation	invocation	= ( BoxExpressionInvocation ) node;
+		boolean					allSpread	= isAllSpread( invocation.getArguments() );
 
 		Expression				expr		= ( Expression ) transpiler.transform( invocation.getExpr(), context );
 
@@ -50,15 +53,37 @@ public class BoxExpressionInvocationTransformer extends AbstractTransformer {
 											};
 
 		for ( int i = 0; i < invocation.getArguments().size(); i++ ) {
-			Expression argExpr = ( Expression ) transpiler.transform( invocation.getArguments().get( i ), context );
-			values.put( "arg" + i, argExpr.toString() );
+			BoxArgument arg = invocation.getArguments().get( i );
+			if ( arg.isSpread() ) {
+				BoxSpreadExpression	spread		= ( BoxSpreadExpression ) arg.getValue();
+				Expression			innerExpr	= ( Expression ) transpiler.transform( spread.getExpression(), context );
+				if ( allSpread ) {
+					values.put( "arg" + i, innerExpr.toString() );
+				} else {
+					values.put( "arg" + i, "ortus.boxlang.runtime.dynamic.LiteralSpreadUtil.spread(" + innerExpr.toString() + ")" );
+				}
+			} else {
+				Expression argExpr = ( Expression ) transpiler.transform( arg, context );
+				values.put( "arg" + i, argExpr.toString() );
+			}
 		}
 
-		String	template	= "${contextName}.invokeFunction( ${expr}, "
-		    + generateArguments( invocation.getArguments() )
-		    + " )";
+		String template;
+		if ( allSpread ) {
+			StringBuilder sb = new StringBuilder(
+			    "ortus.boxlang.runtime.dynamic.LiteralSpreadUtil.invokeSpreadOnlyFunction( ${contextName}, ${expr}" );
+			for ( int i = 0; i < invocation.getArguments().size(); i++ ) {
+				sb.append( ", ${arg" ).append( i ).append( "}" );
+			}
+			sb.append( ")" );
+			template = sb.toString();
+		} else {
+			template = "${contextName}.invokeFunction( ${expr}, "
+			    + generateArguments( invocation.getArguments() )
+			    + " )";
+		}
 
-		Node	javaExpr	= parseExpression( template, values );
+		Node javaExpr = parseExpression( template, values );
 		// logger.trace( node.getSourceText() + " -> " + javaExpr );
 		addIndex( javaExpr, node );
 		return javaExpr;

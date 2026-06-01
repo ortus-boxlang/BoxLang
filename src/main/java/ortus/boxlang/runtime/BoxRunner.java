@@ -35,10 +35,15 @@ import org.apache.commons.lang3.Strings;
 
 import com.fasterxml.jackson.jr.ob.JSONObjectException;
 
+import java.io.File;
+
 import ortus.boxlang.compiler.BXCompiler;
 import ortus.boxlang.compiler.CFTranspiler;
 import ortus.boxlang.compiler.DiskClassUtil;
 import ortus.boxlang.compiler.FeatureAudit;
+import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.compiler.parser.Parser;
+import ortus.boxlang.compiler.prettyprint.PrettyPrint;
 import ortus.boxlang.runtime.application.BaseApplicationListener;
 import ortus.boxlang.runtime.async.tasks.BoxScheduler;
 import ortus.boxlang.runtime.async.tasks.IScheduler;
@@ -104,6 +109,7 @@ public class BoxRunner {
 	    "compile",
 	    "cftranspile",
 	    "featureaudit",
+	    "format",
 	    "schedule" );
 
 	/**
@@ -174,15 +180,16 @@ public class BoxRunner {
 			}
 			// Print AST
 			else if ( options.printAST() ) {
-				String source;
 				// If --bx-code is present, use inline code
 				if ( options.code() != null ) {
-					source = options.code();
+					boxRuntime.printSourceAST( options.code() );
 				}
-				// If a file path argument is present, read the file
+				// If a file path argument is present, detect the source type from the extension
 				else if ( options.templatePath() != null ) {
+					File			templateFile	= new File( options.templatePath() );
+					BoxSourceType	sourceType		= Parser.detectFile( templateFile );
 					try {
-						source = Files.readString( Paths.get( options.templatePath() ) );
+						boxRuntime.printSourceAST( Files.readString( templateFile.toPath() ), sourceType );
 					} catch ( IOException e ) {
 						throw new BoxRuntimeException( "Failed to read file: " + options.templatePath(), e );
 					}
@@ -190,12 +197,11 @@ public class BoxRunner {
 				// Otherwise, read from STDIN
 				else {
 					try {
-						source = new String( System.in.readAllBytes() );
+						boxRuntime.printSourceAST( new String( System.in.readAllBytes() ) );
 					} catch ( IOException e ) {
 						throw new BoxRuntimeException( "Failed to read from STDIN", e );
 					}
 				}
-				boxRuntime.printSourceAST( source );
 			}
 			// Transpile to Java
 			else if ( options.transpile() ) {
@@ -301,6 +307,9 @@ public class BoxRunner {
 				break;
 			case "featureaudit" :
 				FeatureAudit.main( options.cliArgs().toArray( new String[ 0 ] ) );
+				break;
+			case "format" :
+				PrettyPrint.main( options.cliArgs().toArray( new String[ 0 ] ) );
 				break;
 			case "schedule" :
 				// Check for help first
@@ -812,6 +821,9 @@ public class BoxRunner {
 		System.out.println();
 		System.out.println( "  # 🔍 Audit code features" );
 		System.out.println( "  boxlang featureaudit --source ./myapp --output report.json" );
+		System.out.println();
+		System.out.println( "  # 🔍 Format Code" );
+		System.out.println( "  boxlang format ./" );
 		System.out.println();
 		System.out.println( "  # ⏰ Run a scheduler" );
 		System.out.println( "  boxlang schedule ./schedulers/MyScheduler.bx" );

@@ -41,6 +41,7 @@ import ortus.boxlang.runtime.validation.Validator;
 @BoxMember( type = BoxLangType.CLASS, name = "toJSON" )
 @BoxMember( type = BoxLangType.QUERY, name = "toJSON" )
 @BoxMember( type = BoxLangType.STRUCT, name = "toJSON" )
+@BoxMember( type = BoxLangType.SET, name = "toJSON" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "listToJSON" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "toJSON" )
 public class JSONSerialize extends BIF {
@@ -80,7 +81,7 @@ public class JSONSerialize extends BIF {
 	 * </ul>
 	 *
 	 * <h2>Usage</h2>
-	 * 
+	 *
 	 * <pre>
 	 * // Convert a query to JSON
 	 * myQuery = ...;

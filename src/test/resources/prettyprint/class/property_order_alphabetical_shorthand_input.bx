@@ -1,0 +1,8 @@
+class {
+    property String zebra;
+    property String apple;
+    property Numeric count;
+    function init() {
+        return this;
+    }
+}

@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -30,10 +31,12 @@ import org.apache.commons.lang3.Strings;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocation;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.modules.ModuleRecord;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ModuleService;
 import ortus.boxlang.runtime.types.IStruct;
@@ -180,10 +183,108 @@ public class BoxResolver extends BaseResolver {
 		name	= name.endsWith( "." ) ? name.substring( 0, name.length() - 1 ) : name;
 
 		final String fullyQualifiedName = expandFromImport( context, name, imports );
-		// System.out.println( "--=--------> fullyQualifiedName: " + fullyQualifiedName );
 
-		return findFromModules( context, fullyQualifiedName, imports, loadClass )
-		    .or( () -> findFromLocal( context, fullyQualifiedName, imports, loadClass, properties ) );
+		return findFromClassRef( context, fullyQualifiedName, imports )
+		    .or( () -> findInnerClassByDollarSign( context, fullyQualifiedName, imports, loadClass, properties ) )
+		    .or( () -> findFromModules( context, fullyQualifiedName, imports, loadClass )
+		        .or( () -> findFromLocal( context, fullyQualifiedName, imports, loadClass, properties ) ) );
+	}
+
+	/**
+	 * Resolve a class name from an import that has a direct class reference (e.g., inner/local classes).
+	 * 
+	 * @param context            The current context of execution
+	 * @param fullyQualifiedName The fully qualified name of the class to find
+	 * @param imports            The list of imports to use
+	 * 
+	 * @return An optional ClassLocation if a matching import with class reference is found, empty otherwise
+	 */
+	public Optional<ClassLocation> findFromClassRef( IBoxContext context, String fullyQualifiedName, List<ImportDefinition> imports ) {
+		return imports
+		    .stream()
+		    .filter( this::importApplies )
+		    .filter( ImportDefinition::hasClassRef )
+		    .filter( imp -> imp.alias().equalsIgnoreCase( fullyQualifiedName ) )
+		    .findFirst()
+		    .map( imp -> new ClassLocation(
+		        fullyQualifiedName,
+		        null,
+		        "",
+		        ClassLocator.TYPE_BX,
+		        imp.classRef(),
+		        null,
+		        true,
+		        context.getApplicationName(),
+		        null
+		    ) );
+	}
+
+	/**
+	 * Resolve an inner class via the {@code $} separator syntax.
+	 * For example, {@code path.to.Outer$Inner} resolves the outer class {@code path.to.Outer}
+	 * and then looks up the inner class named {@code Inner} from the outer class's inner class map.
+	 *
+	 * @param context            The current context of execution
+	 * @param fullyQualifiedName The fully qualified name containing a $ separator
+	 * @param imports            The list of imports to use
+	 * @param loadClass          Whether to load the class
+	 * @param properties         Additional properties
+	 *
+	 * @return An optional ClassLocation if the inner class is found, empty otherwise
+	 */
+	@SuppressWarnings( "null" )
+	private Optional<ClassLocation> findInnerClassByDollarSign(
+	    IBoxContext context,
+	    String fullyQualifiedName,
+	    List<ImportDefinition> imports,
+	    boolean loadClass,
+	    IStruct properties ) {
+
+		// Only applies if the name contains a $ separator
+		int dollarIndex = fullyQualifiedName.lastIndexOf( '$' );
+		if ( dollarIndex < 0 ) {
+			return Optional.empty();
+		}
+
+		String					outerName		= fullyQualifiedName.substring( 0, dollarIndex );
+		String					innerName		= fullyQualifiedName.substring( dollarIndex + 1 );
+
+		// Recursively resolve the outer name — this handles nested inner classes like Class$Inner$InnerAgain
+		Optional<ClassLocation>	outerLocation	= resolve( context, outerName, imports, true, properties );
+
+		if ( outerLocation.isEmpty() ) {
+			return Optional.empty();
+		}
+
+		// Load the outer class to trigger compilation of inner classes
+		Class<?> outerClass = outerLocation.get().clazz( context );
+		if ( outerClass == null || !IClassRunnable.class.isAssignableFrom( outerClass ) ) {
+			return Optional.empty();
+		}
+
+		// Look up the inner class directly from the outer class's static innerBoxClasses field
+		@SuppressWarnings( "unchecked" )
+		Map<Key, Class<?>> innerClassMap = ( Map<Key, Class<?>> ) DynamicObject.of( outerClass ).getField( "innerBoxClasses" ).orElse( null );
+		if ( innerClassMap == null ) {
+			return Optional.empty();
+		}
+		Class<?> innerClass = innerClassMap.get( Key.of( innerName ) );
+
+		if ( innerClass != null ) {
+			return Optional.of( new ClassLocation(
+			    fullyQualifiedName,
+			    null,
+			    "",
+			    ClassLocator.TYPE_BX,
+			    innerClass,
+			    outerLocation.get().module(),
+			    true,
+			    context.getApplicationName(),
+			    outerLocation.get().resolvedFilePath()
+			) );
+		}
+
+		return Optional.empty();
 	}
 
 	/**

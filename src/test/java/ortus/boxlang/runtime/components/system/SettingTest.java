@@ -114,4 +114,57 @@ public class SettingTest {
 		assertThat( variables.getAsQuery( result ) ).hasSize( 2 );
 	}
 
+	@Test
+	public void testEnableOutputWithFunctions() {
+
+		instance.executeSource(
+		    """
+
+		    <cffunction name="test4">
+		    <cfargument name="testNo">
+		    test 4
+		    </cffunction>
+
+		    <cffunction name="test5">
+		    <cfargument name="testNo">
+		    test 5
+		    </cffunction>
+
+		    <cffunction name="testWithOutput">
+		    <cfargument name="testNo">
+		    <cfoutput>
+		    test 6
+		    </cfoutput>
+		    </cffunction>
+
+		       <cfsavecontent variable="result">
+
+		       	<!--- control (shows) --->
+		       	test 1
+
+		       	<cfsetting enableCFOutputOnly="true">
+
+		       	<!--- HIdden because not in an output --->
+		       	test 2
+
+		       	<!--- Shows because of cfoutput --->
+		       	<cfoutput>
+		       		test 3
+		       	</cfoutput>
+
+		       	<!--- Hidden because not in an output --->
+		       	<cfset test4()>
+
+		       	<!--- Shows because of cfoutput around function call --->
+		       	<cfoutput>
+		       		<cfset test5()>
+		       	</cfoutput>
+
+		       	<!--- Shows because of cfoutpt inside function call --->
+		       	<cfset testWithOutput()>
+		       </cfsavecontent>
+		            """, context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "test1test3test5test6" );
+	}
+
 }

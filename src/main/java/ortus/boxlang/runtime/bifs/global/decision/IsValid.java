@@ -15,6 +15,7 @@
 package ortus.boxlang.runtime.bifs.global.decision;
 
 import java.util.Arrays;
+import java.util.Locale;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
@@ -26,6 +27,7 @@ import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.util.ValidationUtil;
 
 @BoxBIF( description = "Validate data against specified criteria" )
@@ -174,13 +176,47 @@ public class IsValid extends BIF {
 			case UUID -> ValidationUtil.isValidUUID( castAsStringOrNull( value ) )
 			    || ValidationUtil.isValidGUID( castAsStringOrNull( value ) );
 			case VARIABLENAME -> ValidationUtil.isValidVariableName( castAsStringOrNull( value ) );
-			case USDATE -> context.invokeFunction( Key.of( "IsDate" ),
-			    java.util.Map.of( Key.date, value, Key.locale, "en_US" ) );
+			case USDATE -> isValidUSDate( value );
 			case ZIPCODE -> ValidationUtil.isValidZipCode( castAsStringOrNull( value ) );
 
 			default -> throw new IllegalArgumentException(
 			    "Invalid type: " + type + ". Valid types are: " + Arrays.toString( IsValidType.toArray() ) );
 		};
+	}
+
+	/**
+	 * Helper method to validate if a value is a valid US date.
+	 * Uses DateTime constructor with US locale directly to avoid common pattern precedence issues.
+	 *
+	 * @param value The value to test for US date validity
+	 *
+	 * @return True if the value is a valid US date, false otherwise
+	 */
+	private boolean isValidUSDate( Object value ) {
+		if ( value == null || ( value instanceof String stringValue && stringValue.isBlank() ) ) {
+			return false;
+		}
+
+		// If it's already a DateTime, it's valid
+		if ( value instanceof DateTime ) {
+			return true;
+		}
+
+		// Don't treat pure numbers as dates
+		if ( NumberCaster.attempt( value, false ).wasSuccessful() ) {
+			return false;
+		}
+
+		// Try parsing with US locale using DateTime constructor directly
+		// This bypasses the common pattern matching in DateTimeCaster
+		try {
+			String stringValue = StringCaster.cast( value, true );
+			// Use the system default timezone since we're just validating date parsing
+			new DateTime( stringValue, Locale.US, java.time.ZoneId.systemDefault() );
+			return true;
+		} catch ( Throwable e ) {
+			return false;
+		}
 	}
 
 	/**

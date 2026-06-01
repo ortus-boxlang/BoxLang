@@ -183,7 +183,8 @@ public class PendingQuery {
 		    Key.sql, sql.trim(),
 		    Key.bindings, bindings,
 		    Key.pendingQuery, this,
-		    Key.options, queryOptions
+		    Key.options, queryOptions,
+		    Key.context, context
 		);
 
 		interceptorService.announce( BoxEvent.ON_QUERY_BUILD, eventArgs );
@@ -219,6 +220,15 @@ public class PendingQuery {
 	 * Methods
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Get the linked context that initiated this query.
+	 *
+	 * @return The context that initiated this query.
+	 */
+	public IBoxContext getContext() {
+		return this.context;
+	}
 
 	/**
 	 * Get the datasource used to execute this query.
@@ -580,10 +590,14 @@ public class PendingQuery {
 	 * @see ExecutedQuery
 	 */
 	public @NonNull ExecutedQuery execute( ConnectionManager connectionManager, IBoxContext context ) {
-		// We do an early cache check here to avoid the overhead of creating a
-		// connection if we already have a matching cached query.
-		if ( isCacheable() ) {
-
+		if ( shouldEvictFromCache() ) {
+			if ( logger.isDebugEnabled() ) {
+				logger.debug( "Evicting cache for query: {} due to negative cache timeout", this.cacheKey );
+			}
+			this.cacheProvider.clear( this.cacheKey );
+		} else if ( isCacheable() ) {
+			// We do an early cache check here to avoid the overhead of creating a
+			// connection if we already have a matching cached query.
 			if ( logger.isDebugEnabled() ) {
 				logger.debug( "Checking cache for query: {}", this.cacheKey );
 			}
@@ -625,7 +639,12 @@ public class PendingQuery {
 	 */
 	public @NonNull ExecutedQuery execute( BoxConnection connection, IBoxContext context ) {
 		this.datasource = connection.getDataSource();
-		if ( isCacheable() ) {
+		if ( shouldEvictFromCache() ) {
+			if ( logger.isDebugEnabled() ) {
+				logger.debug( "Evicting cache for query: {} due to negative cache timeout", this.cacheKey );
+			}
+			this.cacheProvider.clear( this.cacheKey );
+		} else if ( isCacheable() ) {
 			// we use separate get() and set() calls over a .getOrSet() so we can run
 			// `.setIsCached()` on discovered/cached results.
 			Attempt<Object> cachedQuery = this.cacheProvider.get( this.cacheKey );
@@ -708,7 +727,11 @@ public class PendingQuery {
 					var lowered = trimmed.toLowerCase();
 					// Exclude if "begin" and "end" appear anywhere in the SQL
 					if ( ! ( lowered.contains( "begin" ) && lowered.contains( "end" ) ) ) {
-						sqlStatement = trimmed.substring( 0, trimmed.length() - 1 );
+						int end = trimmed.length();
+						while ( end > 0 && ( trimmed.charAt( end - 1 ) == ';' || Character.isWhitespace( trimmed.charAt( end - 1 ) ) ) ) {
+							end--;
+						}
+						sqlStatement = trimmed.substring( 0, end );
 					}
 				}
 			}
@@ -727,7 +750,8 @@ public class PendingQuery {
 				    () -> Struct.ofNonConcurrent(
 				        Key.sql, finalSQLStatement,
 				        Key.bindings, getParameterValues(),
-				        Key.pendingQuery, this
+				        Key.pendingQuery, this,
+				        Key.context, context
 				    )
 				);
 
@@ -751,7 +775,8 @@ public class PendingQuery {
 				    statement,
 				    endTick - startTick,
 				    hasResults,
-				    initialSqlException
+				    initialSqlException,
+				    context
 				);
 			}
 		} catch ( SQLException e ) {
@@ -794,6 +819,7 @@ public class PendingQuery {
 		// We set the metadata on the results to indicate this was a cached query
 		Query	results		= cachedQuery
 		    .getResults()
+		    .duplicate( context )
 		    .setMetadata( cacheMeta );
 
 		// Return a new ExecutedQuery instance with the cached results and generated key
@@ -932,26 +958,27 @@ public class PendingQuery {
 	 * @throws SQLException If an error occurs while applying the options.
 	 */
 	private void applyStatementOptions( Statement statement ) throws SQLException {
+		// Apply query timeout directly from the normalized field
+		if ( this.queryOptions.queryTimeout != null && this.queryOptions.queryTimeout > 0 ) {
+			statement.setQueryTimeout( this.queryOptions.queryTimeout );
+		}
+
+		// Apply max rows directly from the normalized field
+		if ( this.queryOptions.maxRows != null && this.queryOptions.maxRows > 0 ) {
+			statement.setLargeMaxRows( this.queryOptions.maxRows );
+		}
+
+		// Apply fetch size directly from the normalized field
+		if ( this.queryOptions.fetchSize != null && this.queryOptions.fetchSize > 0 ) {
+			statement.setFetchSize( this.queryOptions.fetchSize );
+		}
+
+		// This is an alias for fetchSize. (CF compat) Not handling via transpiler since apps like MASA specify as attributeCollection.
 		IStruct options = this.queryOptions.toStruct();
-
-		if ( options.containsKey( Key.queryTimeout ) ) {
-			Integer queryTimeout = ( Integer ) options.getOrDefault( Key.queryTimeout, 0 );
-			if ( queryTimeout > 0 ) {
-				statement.setQueryTimeout( queryTimeout );
-			}
-		}
-
-		if ( options.containsKey( Key.maxRows ) ) {
-			Integer maxRows = ( Integer ) options.getOrDefault( Key.maxRows, 0 );
-			if ( maxRows > 0 ) {
-				statement.setLargeMaxRows( maxRows );
-			}
-		}
-
-		if ( options.containsKey( Key.fetchSize ) ) {
-			Integer fetchSize = ( Integer ) options.getOrDefault( Key.fetchSize, 0 );
-			if ( fetchSize > 0 ) {
-				statement.setFetchSize( fetchSize );
+		if ( options.containsKey( Key.blockfactor ) ) {
+			Integer blockFactor = ( Integer ) options.getOrDefault( Key.blockfactor, 0 );
+			if ( blockFactor > 0 ) {
+				statement.setFetchSize( blockFactor );
 			}
 		}
 		/**
@@ -965,8 +992,18 @@ public class PendingQuery {
 
 	/**
 	 * Check the cacheable option to determine if the query should be cached.
+	 * ( i.e. `cache` = true and `cacheTimeout` is not negative. )
 	 */
-	private boolean isCacheable() {
-		return Boolean.TRUE.equals( this.queryOptions.cache );
+	private Boolean isCacheable() {
+		return Boolean.TRUE.equals( this.queryOptions.cache )
+		    && ( this.queryOptions.cacheTimeout == null || !this.queryOptions.cacheTimeout.isNegative() );
+	}
+
+	/**
+	 * Check if the query should be evicted from cache, which is the case when
+	 * `cacheTimeout` is negative.
+	 */
+	private boolean shouldEvictFromCache() {
+		return this.queryOptions.cacheTimeout != null && this.queryOptions.cacheTimeout.isNegative();
 	}
 }

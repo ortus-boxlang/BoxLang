@@ -229,9 +229,11 @@ public class TimeUnits extends BIF {
 		if ( arguments.get( Key.date ) == null ) {
 			dateRef = new DateTime( LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context ) );
 		} else {
+			// Get the locale before parsing the date
+			Locale locale = LocalizationUtil.parseLocaleFromContext( context, arguments );
 
 			dateRef = DateTimeCaster.cast( arguments.get( Key.date ), true,
-			    LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context ), context );
+			    LocalizationUtil.parseZoneId( arguments.getAsString( Key.timezone ), context ), false, context, locale );
 
 			if ( arguments.get( Key.timezone ) != null ) {
 				dateRef = dateRef.clone( ZoneId.of( arguments.getAsString( Key.timezone ) ) );

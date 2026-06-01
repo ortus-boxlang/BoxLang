@@ -50,7 +50,8 @@ public class BoxExpressionInvocationTransformer extends AbstractTransformer {
 
 		Type invokeType = getInvocationType( invocation.getExpr() );
 
-		nodes.addAll( AsmHelper.callinvokeFunction( transpiler, invokeType, invocation.getArguments(), nameNodes, context, false ) );
+		nodes.addAll( AsmHelper.callinvokeFunction( transpiler, invokeType, invocation.getArguments(), nameNodes, context, false,
+		    invocation.isNamedArgs(), invocation.hasSpread() ) );
 
 		if ( returnContext.empty ) {
 			nodes.add( new InsnNode( Opcodes.POP ) );

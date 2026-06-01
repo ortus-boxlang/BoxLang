@@ -30,7 +30,8 @@ import ortus.boxlang.compiler.ast.comment.BoxDocComment;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.ast.visitor.BoxVisitable;
-import ortus.boxlang.compiler.ast.visitor.PrettyPrintBoxVisitor;
+import ortus.boxlang.compiler.prettyprint.PrettyPrint;
+import ortus.boxlang.compiler.prettyprint.config.Config;
 import ortus.boxlang.runtime.util.RegexBuilder;
 
 /**
@@ -256,13 +257,14 @@ public abstract class BoxNode implements BoxVisitable {
 				BoxNode child = children.get( i );
 				// Don't let annotations grab commennts (Need to differentiate between pre and post annotations)
 				// Also, imports are processed separately
-				if ( child instanceof BoxAnnotation || child instanceof BoxImport ) {
+				// comments cannot have other comments associated with them
+				if ( child instanceof BoxAnnotation || child instanceof BoxImport || child instanceof BoxComment ) {
 					continue;
 				}
 				// If we are the last child, or the next child starts on a different line, then we are the last node on this line
-				lastNodeOnThisLine = i == children.size() - 1 || !children.get( i + 1 )
+				boolean childLastNodeOnThisLine = i == children.size() - 1 || !children.get( i + 1 )
 				    .startsOnEndLineOf( child );
-				child._associateComments( incomingComments, lastNodeOnThisLine );
+				child._associateComments( incomingComments, childLastNodeOnThisLine );
 			}
 
 			if ( incomingComments.isEmpty() ) {
@@ -413,6 +415,79 @@ public abstract class BoxNode implements BoxVisitable {
 	}
 
 	/**
+	 * Check if this node has lines between it and another node
+	 *
+	 * @param node the node to compare to
+	 *
+	 * @return true if this node has lines between it and the other node
+	 */
+	public boolean hasLinesBetween( BoxNode node ) {
+		if ( this.getPosition() == null || node.getPosition() == null ) {
+			return false;
+		}
+		int	thisStartLine	= this.getPosition()
+		    .getStart()
+		    .getLine();
+		int	nodeEndLine		= node.getPosition()
+		    .getEnd()
+		    .getLine();
+
+		if ( thisStartLine > nodeEndLine ) {
+			return thisStartLine - nodeEndLine > 1;
+		}
+
+		int	thisEndLine		= this.getPosition()
+		    .getEnd()
+		    .getLine();
+		int	nodeStartLine	= node.getPosition()
+		    .getStart()
+		    .getLine();
+
+		return nodeStartLine - thisEndLine > 1;
+	}
+
+	/**
+	 * Check if there are empty lines between this node and another node, considering their associated comments.
+	 *
+	 * @param node the node to compare to
+	 *
+	 * @return true if there are empty lines between this node and the other node, accounting for their closest comments
+	 */
+	public boolean hasLinesBetweenWithComments( BoxNode node ) {
+		if ( this.getPosition() == null || node.getPosition() == null ) {
+			return false;
+		}
+		// Determine node order once
+		boolean				isThisBefore	= this.isBefore( node );
+		BoxNode				firstNode		= isThisBefore ? this : node;
+		BoxNode				secondNode		= isThisBefore ? node : this;
+
+		// Get the end line of the first node, considering its last comment
+		int					firstEndLine	= firstNode.getPosition().getEnd().getLine();
+		List<BoxComment>	firstComments	= firstNode.getComments();
+		if ( !firstComments.isEmpty() ) {
+			// Last comment in order of appearance has the latest end line in the document
+			int lastCommentEndLine = firstComments.get( firstComments.size() - 1 ).getPosition().getEnd().getLine();
+			// Use the latest end line (node or last comment)
+			firstEndLine = Math.max( firstEndLine, lastCommentEndLine );
+		}
+
+		// Get the start line of the second node, considering its first comment
+		int					secondStartLine	= secondNode.getPosition().getStart().getLine();
+		List<BoxComment>	secondComments	= secondNode.getComments();
+		if ( !secondComments.isEmpty() ) {
+			// First comment in order of appearance has the earliest start line in the document
+			int firstCommentStartLine = secondComments.get( 0 ).getPosition().getStart().getLine();
+			// Use the earliest start line (node or first comment)
+			secondStartLine = Math.min( secondStartLine, firstCommentStartLine );
+		}
+
+		// Check if there is at least one empty line between the first node's end (or its last comment)
+		// and the second node's start (or its first comment)
+		return secondStartLine - firstEndLine > 1;
+	}
+
+	/**
 	 * Set the comments of the node
 	 *
 	 * @param comments the list of children
@@ -492,12 +567,29 @@ public abstract class BoxNode implements BoxVisitable {
 	 */
 	@SuppressWarnings( "unchecked" )
 	public <T> List<T> getDescendantsOfType( Class<T> type, Predicate<T> predicate ) {
+		return getDescendantsOfType( type, predicate, ( BoxNode ) -> false );
+	}
+
+	/**
+	 * Find all decedant nodes of a given type that match the supplied predicate
+	 *
+	 * @param type                   The class of node to look for
+	 * @param predicate              A predicate to test the node
+	 * @param stopTraversalPredicate A predicate to test whether to stop traversing down a branch of the tree
+	 *
+	 * @return a list of nodes traversed
+	 */
+	@SuppressWarnings( "unchecked" )
+	public <T> List<T> getDescendantsOfType( Class<T> type, Predicate<T> predicate, Predicate<BoxNode> stopTraversalPredicate ) {
 		List<T> result = new ArrayList<>();
 		if ( type.isAssignableFrom( this.getClass() ) && predicate.test( ( T ) this ) ) {
 			result.add( ( T ) this );
 		}
 		for ( BoxNode node : this.children ) {
-			result.addAll( node.getDescendantsOfType( type, predicate ) );
+			if ( stopTraversalPredicate.test( node ) ) {
+				continue;
+			}
+			result.addAll( node.getDescendantsOfType( type, predicate, stopTraversalPredicate ) );
 		}
 		return result;
 	}
@@ -645,9 +737,13 @@ public abstract class BoxNode implements BoxVisitable {
 	}
 
 	public String toString() {
-		PrettyPrintBoxVisitor visitor = new PrettyPrintBoxVisitor();
-		accept( visitor );
-		return visitor.getOutput();
+		Config config = new Config();
+		config.getTemplate().setEnabled( true );
+		return PrettyPrint.prettyPrint( this, config );
+	}
+
+	public String toString( Config config ) {
+		return PrettyPrint.prettyPrint( this, config );
 	}
 
 	/**

@@ -1089,6 +1089,25 @@ public class ScheduledTask implements Runnable {
 	}
 
 	/**
+	 * Alias with string time unit for BoxLang
+	 *
+	 * @param delay      The delay that will be used before executing the task
+	 * @param timeUnit   The time unit to use, available units are: days, hours,
+	 *                   microseconds, milliseconds, minutes, nanoseconds, and
+	 *                   seconds. The default is milliseconds
+	 * @param overwrites Boolean to overwrite delay and delayTimeUnit even if value is already set, this is helpful if the delay is set later in the chain when creating the task - defaults to false
+	 *
+	 * @return The ScheduledTask instance
+	 */
+	public ScheduledTask delay(
+	    long delay,
+	    String timeUnit,
+	    Boolean overwrites ) {
+		timeUnit = StringUtil.pluralize( timeUnit ).toUpperCase();
+		return delay( delay, TimeUnit.valueOf( timeUnit ), overwrites );
+	}
+
+	/**
 	 * Set an initial delay in the running of the task that will be registered with
 	 * this schedule in milliseconds
 	 *
@@ -1101,6 +1120,21 @@ public class ScheduledTask implements Runnable {
 	 */
 	public ScheduledTask delay( long delay, TimeUnit timeunit ) {
 		return delay( delay, timeunit, false );
+	}
+
+	/**
+	 * BoxLang proxy
+	 *
+	 * @param delay    The delay that will be used before executing the task
+	 * @param timeunit The time unit to use, available units are: days, hours,
+	 *                 microseconds, milliseconds, minutes, nanoseconds, and
+	 *                 seconds. The default
+	 *
+	 * @return The ScheduledTask instance
+	 */
+	public ScheduledTask delay( long delay, String timeunit ) {
+		timeunit = StringUtil.pluralize( timeunit ).toUpperCase();
+		return delay( delay, TimeUnit.valueOf( timeunit ), false );
 	}
 
 	/**
@@ -1560,6 +1594,33 @@ public class ScheduledTask implements Runnable {
 		setInitialDelayPeriodAndTimeUnit( now, nextRun, TimeUnit.DAYS, 365 );
 		// Set constraints
 		this.annually = true;
+
+		return this;
+	}
+
+	/**
+	 * Schedule this task using a cron expression.
+	 * Supports both 5-field Unix (min hour dom mon dow) and 6-field Quartz (sec min hour dom mon dow) formats.
+	 *
+	 * @param expression The cron expression string
+	 *
+	 * @return The ScheduledTask instance
+	 */
+	public ScheduledTask cron( String expression ) {
+		debugLog( "cron", () -> Struct.ofNonConcurrent( "expression", expression ) );
+
+		ortus.boxlang.runtime.async.CronExpression	cronExpr		= ortus.boxlang.runtime.async.CronExpression.parse( expression );
+
+		// Poll every 1 s for second-level crons, every 60 s (1 min) for minute-level crons.
+		// Both use SECONDS so the when-predicate is evaluated at the correct granularity.
+		long										pollPeriod		= cronExpr.isSecondsField() ? 1L : 60L;
+		TimeUnit									pollUnit		= TimeUnit.SECONDS;
+		long										initialDelayMs	= cronExpr.nextFireDelayMillis( this.getTimezone() );
+
+		this.setMetaKey( "cronExpression", expression );
+		this.delay( initialDelayMs, TimeUnit.MILLISECONDS )
+		    .every( pollPeriod, pollUnit )
+		    .when( task -> cronExpr.matches( task.getNow() ) );
 
 		return this;
 	}

@@ -44,10 +44,12 @@ public class BoxEmptyStatement extends BoxStatement {
 		return map;
 	}
 
+	@Override
 	public void accept( VoidBoxVisitor v ) {
 		v.visit( this );
 	}
 
+	@Override
 	public BoxNode accept( ReplacingBoxVisitor v ) {
 		return v.visit( this );
 	}

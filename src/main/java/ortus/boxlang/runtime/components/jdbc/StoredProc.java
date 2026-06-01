@@ -92,7 +92,7 @@ public class StoredProc extends Component {
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		IJDBCCapableContext	jdbcContext			= context.getParentOfType( IJDBCCapableContext.class );
 		ConnectionManager	connectionManager	= jdbcContext.getConnectionManager();
-		QueryOptions		options				= new QueryOptions( attributes );
+		QueryOptions		options				= new QueryOptions( attributes, context );
 
 		Array				params				= new Array();
 		Array				procResults			= new Array();

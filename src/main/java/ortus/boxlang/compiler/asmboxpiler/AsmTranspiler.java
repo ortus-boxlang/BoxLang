@@ -2,6 +2,7 @@ package ortus.boxlang.compiler.asmboxpiler;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -27,6 +28,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxAccessTransf
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxArgumentDeclarationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxArgumentTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxArrayLiteralTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxSetLiteralTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxAssignmentTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxBinaryOperationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxBooleanLiteralTransformer;
@@ -72,6 +74,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxForIndexTrans
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxFunctionDeclarationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxIfElseTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxInterfaceTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxLocalClassTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxParamTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxRethrowTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.statement.BoxScriptIslandTransformer;
@@ -85,12 +88,14 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
+import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.compiler.ast.BoxStaticInitializer;
 import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxSetLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
@@ -133,6 +138,7 @@ import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
+import ortus.boxlang.compiler.ast.statement.BoxLocalClass;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
@@ -384,6 +390,7 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxExpressionStatement.class, new BoxExpressionStatementTransformer( this ) );
 		registry.put( BoxAssignment.class, new BoxAssignmentTransformer( this ) );
 		registry.put( BoxArrayLiteral.class, new BoxArrayLiteralTransformer( this ) );
+		registry.put( BoxSetLiteral.class, new BoxSetLiteralTransformer( this ) );
 		registry.put( BoxFunctionDeclaration.class, new BoxFunctionDeclarationTransformer( this ) );
 		registry.put( BoxFunctionInvocation.class, new BoxFunctionInvocationTransformer( this ) );
 		registry.put( BoxArgument.class, new BoxArgumentTransformer( this ) );
@@ -435,6 +442,8 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxParam.class, new BoxParamTransformer( this ) );
 		registry.put( BoxFunctionalBIFAccess.class, new BoxFunctionalBIFAccessTransformer( this ) );
 		registry.put( BoxFunctionalMemberAccess.class, new BoxFunctionalMemberAccessTransformer( this ) );
+		// Local class definitions inside scripts/templates — pre-compiled; transformer is a no-op
+		registry.put( BoxLocalClass.class, new BoxLocalClassTransformer( this ) );
 	}
 
 	@Override
@@ -504,6 +513,19 @@ public class AsmTranspiler extends Transpiler {
 		AsmHelper.addNullStaticField( classNode, "lambdas", Type.getType( List.class ), false );
 		AsmHelper.addNullStaticField( classNode, "closures", Type.getType( List.class ), false );
 
+		// Pre-compile any named local classes (class Foo {}) defined in this script/template.
+		// Each local class is compiled to a sibling JVM class (an "auxiliary") and registered
+		// in the local class registry so that BoxNewTransformer can emit direct bytecode for
+		// "new Foo()" expressions without going through ClassLocator at runtime.
+		String			outerClassname			= getProperty( "classname" );
+		String			outerPackage			= getProperty( "packageName" );
+		String			outerPackageInternal	= outerPackage.replace( '.', '/' );
+		List<BoxImport>	enclosingImports		= boxScript.getStatements().stream()
+		    .filter( s -> s instanceof BoxImport )
+		    .map( s -> ( BoxImport ) s )
+		    .collect( Collectors.toList() );
+		preCompileLocalClasses( boxScript.getStatements(), enclosingImports, outerClassname, outerPackage, outerPackageInternal );
+
 		AsmHelper.methodWithContextAndClassLocator(
 		    classNode,
 		    "_invoke",
@@ -523,16 +545,22 @@ public class AsmTranspiler extends Transpiler {
 		);
 
 		AsmHelper.complete( classNode, type, methodVisitor -> {
-			AsmHelper.array( Type.getType( ImportDefinition.class ), getImports(), ( raw, index ) -> {
-				List<AbstractInsnNode> nodes = new ArrayList<>();
-				nodes.addAll( raw );
+			// Build combined import instruction lists from both parse-based and classRef-based imports
+			List<List<AbstractInsnNode>> allImportNodes = new ArrayList<>();
+			// Parse-based imports: wrap each with ImportDefinition.parse()
+			for ( List<AbstractInsnNode> raw : getImports() ) {
+				List<AbstractInsnNode> nodes = new ArrayList<>( raw );
 				nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 				    Type.getInternalName( ImportDefinition.class ),
 				    "parse",
 				    Type.getMethodDescriptor( Type.getType( ImportDefinition.class ), Type.getType( String.class ) ),
 				    false ) );
-				return nodes;
-			} ).forEach( node -> node.accept( methodVisitor ) );
+				allImportNodes.add( nodes );
+			}
+			// ClassRef-based imports (local classes): already produce ImportDefinition on stack
+			allImportNodes.addAll( getLocalClassRefImportNodes() );
+
+			AsmHelper.array( Type.getType( ImportDefinition.class ), allImportNodes ).forEach( node -> node.accept( methodVisitor ) );
 			methodVisitor.visitMethodInsn( Opcodes.INVOKESTATIC,
 			    Type.getInternalName( List.class ),
 			    "of",
@@ -622,6 +650,211 @@ public class AsmTranspiler extends Transpiler {
 		} );
 
 		return classNode;
+	}
+
+	/**
+	 * Recursively scan a list of statements for {@link BoxLocalClass} declarations, compiling each
+	 * one into an auxiliary JVM class and registering it in the local class registry.
+	 * <p>
+	 * This also descends into {@link BoxTemplateIsland}, {@link BoxScriptIsland}, and {@link BoxComponent} nodes
+	 * so that local classes defined inside {@code <bx:script>} islands in templates are handled correctly.
+	 *
+	 * @param statements           the statement list to scan
+	 * @param outerClassname       simple JVM class name of the enclosing script/template class
+	 * @param outerPackage         dot-separated package name of the enclosing class
+	 * @param outerPackageInternal slash-separated package path of the enclosing class
+	 */
+	/**
+	 * Recursively scan a list of statements for {@link BoxLocalClass} declarations, compiling each
+	 * one into an auxiliary JVM class and registering it in the local class registry.
+	 * <p>
+	 * Before any local class is compiled, every local class defined in the same statement list is
+	 * hoisted as a synthetic {@code java:}-prefixed import. This ensures that sibling local classes
+	 * can reference each other by simple name (e.g., {@code extends="Animal"}) via the normal import
+	 * resolution mechanism — no annotation-patching needed at compile time.
+	 * <p>
+	 * This also descends into {@link BoxTemplateIsland}, {@link BoxScriptIsland}, and {@link BoxComponent}
+	 * nodes so that local classes defined inside {@code <bx:script>} islands in templates are handled.
+	 *
+	 * @param statements           the statement list to scan
+	 * @param enclosingImports     imports already visible in the enclosing script/template
+	 * @param outerClassname       simple JVM class name of the enclosing script/template class
+	 * @param outerPackage         dot-separated package name of the enclosing class
+	 * @param outerPackageInternal slash-separated package path of the enclosing class
+	 */
+	public void preCompileLocalClasses( List<BoxStatement> statements, List<BoxImport> enclosingImports, String outerClassname, String outerPackage,
+	    String outerPackageInternal ) {
+
+		// Extract source-level import names for conflict checking (don't add to transpiler's imports
+		// list since those get added during transform() — adding here would cause duplicate bytecode)
+		Set<String> sourceImportNames = new HashSet<>();
+		for ( BoxImport imp : enclosingImports ) {
+			String importName = imp.getAlias() != null ? imp.getAlias().getName() : null;
+			if ( importName == null && imp.getExpression() instanceof BoxFQN fqn ) {
+				String	value		= fqn.getValue();
+				int		colonIdx	= value.indexOf( ':' );
+				if ( colonIdx >= 0 ) {
+					value = value.substring( colonIdx + 1 );
+				}
+				int lastDot = value.lastIndexOf( '.' );
+				importName = lastDot >= 0 ? value.substring( lastDot + 1 ) : value;
+			}
+			if ( importName != null ) {
+				sourceImportNames.add( importName.toLowerCase() );
+			}
+		}
+
+		// If this class has inner classes, add a self-import so the outer class is referenceable by its simple name
+		// from both the outer class itself and from inner classes (e.g., MyClass.STUFF)
+		String	outerSimpleName	= null;
+		String	outerInternal	= outerPackageInternal + "/" + outerClassname;
+		boolean	hasInnerClasses	= statements.stream().anyMatch( s -> s instanceof BoxLocalClass );
+		if ( hasInnerClasses ) {
+			String boxFQN = getProperty( "boxFQN" );
+			outerSimpleName = boxFQN.contains( "." ) ? boxFQN.substring( boxFQN.lastIndexOf( '.' ) + 1 ) : boxFQN;
+			addLocalClassRefImport( outerSimpleName, outerInternal );
+		}
+
+		for ( BoxStatement stmt : statements ) {
+			if ( stmt instanceof BoxLocalClass localClass ) {
+				String localName = localClass.getName().getName();
+
+				// Check if the local class name conflicts with any already-registered import
+				// (includes source-level imports, outer class self-import, and previously-compiled sibling classes)
+				if ( this.matchesImport( localName ) || sourceImportNames.contains( localName.toLowerCase() ) ) {
+					throw new BoxRuntimeException(
+					    "Local class [" + localName + "] conflicts with an existing class or import of the same name." );
+				}
+
+				String		syntheticClassname	= outerClassname + "$" + localName;
+				String		syntheticDotFQN		= outerPackage + "." + syntheticClassname;
+				String		syntheticInternal	= outerPackageInternal + "/" + syntheticClassname;
+
+				Transpiler	child				= Transpiler.getTranspiler();
+				child.setProperty( "classname", syntheticClassname );
+				child.setProperty( "packageName", outerPackage );
+				String	parentFQN		= getProperty( "boxFQN" );
+				String	parentBaseclass	= getProperty( "baseclass" );
+				boolean	parentIsClass	= !"BoxScript".equals( parentBaseclass ) && !"BoxTemplate".equals( parentBaseclass );
+				child.setProperty( "boxFQN", parentIsClass && parentFQN != null && !parentFQN.isEmpty() ? parentFQN + "$" + localName : localName );
+				child.setProperty( "enclosingBoxFQN", parentIsClass ? ( parentFQN != null ? parentFQN : "" ) : "" );
+				child.setProperty( "baseclass", "BoxClass" );
+				child.setProperty( "sourceType", getProperty( "sourceType" ) );
+				child.setProperty( "mappingName", getProperty( "mappingName" ) );
+				child.setProperty( "mappingPath", getProperty( "mappingPath" ) );
+				child.setProperty( "relativePath", getProperty( "relativePath" ) );
+				// Propagate the ultimate outer class (the one that actually owns path/sourceType fields).
+				// If this transpiler is itself inner, pass along its outerClassInternal so all levels redirect
+				// to the same top-level class. Otherwise, use the current class as the outer.
+				child.setProperty( "outerClassInternal", getProperty( "outerClassInternal" ) != null
+				    ? getProperty( "outerClassInternal" )
+				    : outerPackageInternal + "/" + outerClassname );
+
+				// Register previously-compiled sibling local classes on the child so extends can resolve them
+				for ( Map.Entry<String, String> entry : getLocalClasses().entrySet() ) {
+					child.addLocalClassRefImport( entry.getKey(), entry.getValue() );
+				}
+				// Also register the outer class itself so inner classes can reference it by name
+				if ( outerSimpleName != null ) {
+					child.addLocalClassRefImport( outerSimpleName, outerInternal );
+				}
+
+				// Compile with enclosing imports only - sibling visibility is handled by classRef imports
+				BoxClass	asBoxClass			= new BoxClass( enclosingImports, localClass.getBody(),
+				    localClass.getAnnotations(), localClass.getDocumentation(), localClass.getProperties(),
+				    localClass.getPosition(), localClass.getSourceText(),
+				    BoxSourceType.valueOf( getProperty( "sourceType" ).toUpperCase() ) );
+
+				ClassNode	localClassNode		= BoxClassTransformer.transpile( child, asBoxClass );
+
+				// Post-process: remove path/sourceType fields from inner class and redirect all
+				// references to the outer class's fields. Inner classes should not declare their own copies.
+				// Only redirect imports if the inner class does NOT have its own local classes
+				// (since its imports field needs to contain the local class ref imports).
+				// For path/sourceType, redirect to the ultimate outer that actually has those fields.
+				// If this transpiler itself is an inner class, its outerClassInternal points to the real owner.
+				String		fieldRedirectTarget	= getProperty( "outerClassInternal" ) != null
+				    ? getProperty( "outerClassInternal" )
+				    : outerPackageInternal + "/" + outerClassname;
+				Set<String>	fieldsToRedirect	= child.getLocalClasses().isEmpty()
+				    ? Set.of( "imports", "path", "sourceType" )
+				    : Set.of( "path", "sourceType" );
+				redirectOuterClassFields( localClassNode, syntheticInternal, fieldRedirectTarget, fieldsToRedirect );
+
+				setAuxiliary( syntheticDotFQN, localClassNode );
+
+				// Pull in any nested auxiliaries produced by the local class (lambda, closure, UDF bodies)
+				child.getAuxiliary().forEach( this::setAuxiliary );
+
+				// Register so BoxNewTransformer can emit a direct class reference for "new Animal()"
+				if ( getLocalClasses().containsKey( localName ) ) {
+					throw new BoxRuntimeException( "Duplicate local class name [" + localName + "]. A local class with this name is already defined." );
+				}
+				registerLocalClass( localName, syntheticInternal );
+
+				// Also register a classRef import on the parent transpiler so that
+				// static access (e.g. Config::MAX_RETRIES) and other name-based resolution works
+				// at both compile time (matchesImport) and runtime (findFromLocalClass).
+				addLocalClassRefImport( localName, syntheticInternal );
+			} else if ( stmt instanceof BoxTemplateIsland island ) {
+				preCompileLocalClasses( island.getStatements(), enclosingImports, outerClassname, outerPackage, outerPackageInternal );
+			} else if ( stmt instanceof BoxScriptIsland island ) {
+				preCompileLocalClasses( island.getStatements(), enclosingImports, outerClassname, outerPackage, outerPackageInternal );
+			} else if ( stmt instanceof BoxComponent component && component.getBody() != null ) {
+				preCompileLocalClasses( component.getBody(), enclosingImports, outerClassname, outerPackage, outerPackageInternal );
+			}
+		}
+	}
+
+	/**
+	 * Post-process an inner class ClassNode to eliminate redundant static fields
+	 * ({@code imports}, {@code path}, {@code sourceType}) that duplicate the outer class's fields.
+	 * <p>
+	 * This method:
+	 * <ul>
+	 * <li>Removes the field declarations for these three fields</li>
+	 * <li>Redirects all GETSTATIC instructions that read these fields from the inner class
+	 * to instead read from the outer class</li>
+	 * <li>Removes PUTSTATIC instructions that write to these fields on the inner class
+	 * (along with the preceding GETSTATIC that loaded the value)</li>
+	 * </ul>
+	 *
+	 * @param classNode          The inner class node to post-process
+	 * @param innerClassInternal The JVM internal name of the inner class (e.g. "pkg/Outer$Inner")
+	 * @param outerClassInternal The JVM internal name of the outer class (e.g. "pkg/Outer")
+	 * @param delegatedFields    The set of field names to redirect to the outer class
+	 */
+	private void redirectOuterClassFields( ClassNode classNode, String innerClassInternal, String outerClassInternal, Set<String> delegatedFields ) {
+
+		// 1. Remove the field declarations
+		classNode.fields.removeIf( f -> delegatedFields.contains( f.name ) );
+
+		// 2. Walk all methods and fix field instructions
+		for ( var method : classNode.methods ) {
+			if ( method.instructions == null ) {
+				continue;
+			}
+			AbstractInsnNode insn = method.instructions.getFirst();
+			while ( insn != null ) {
+				AbstractInsnNode next = insn.getNext();
+				if ( insn instanceof FieldInsnNode fieldInsn
+				    && fieldInsn.owner.equals( innerClassInternal )
+				    && delegatedFields.contains( fieldInsn.name ) ) {
+					if ( fieldInsn.getOpcode() == Opcodes.GETSTATIC ) {
+						// Redirect to read from outer class
+						fieldInsn.owner = outerClassInternal;
+					} else if ( fieldInsn.getOpcode() == Opcodes.PUTSTATIC ) {
+						// Remove the PUTSTATIC and the preceding instruction that loaded the value
+						AbstractInsnNode prev = fieldInsn.getPrevious();
+						if ( prev != null ) {
+							method.instructions.remove( prev );
+						}
+						method.instructions.remove( fieldInsn );
+					}
+				}
+				insn = next;
+			}
+		}
 	}
 
 	@Override

@@ -86,6 +86,7 @@ import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
 import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
+import ortus.boxlang.compiler.ast.statement.BoxSwitchBreakingCase;
 import ortus.boxlang.compiler.ast.statement.BoxSwitchCase;
 import ortus.boxlang.compiler.ast.statement.BoxTry;
 import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
@@ -660,7 +661,7 @@ public class BoxParser extends AbstractParser {
 		if ( rule.template_statements() != null ) {
 			statements = toAst( file, rule.template_statements() );
 		}
-		return new BoxTemplate( statements, getPosition( rule ), getSourceText( rule ) );
+		return new BoxTemplate( statements, getPosition( rule ), getSourceText( rule ), BoxSourceType.BOXTEMPLATE );
 	}
 
 	private BoxImport toAst( File file, Template_boxImportContext node ) {
@@ -877,7 +878,7 @@ public class BoxParser extends AbstractParser {
 					    List.of(),
 					    new BoxReturn( condition, null, null ),
 					    null,
-					    null );
+					    condition.getSourceText() );
 					attr.setValue( newCondition );
 				}
 			}
@@ -933,7 +934,7 @@ public class BoxParser extends AbstractParser {
 			}
 
 			value		= findExprInAnnotations( annotations, "value", true, null, "case", getPosition( node ) );
-			delimiter	= findExprInAnnotations( annotations, "delimiters", false, new BoxStringLiteral( ",", null, null ), "case", getPosition( node ) );
+			delimiter	= findExprInAnnotations( annotations, "delimiters", false, null, "case", getPosition( node ) );
 		}
 
 		List<BoxStatement> statements = null;
@@ -942,12 +943,12 @@ public class BoxParser extends AbstractParser {
 			statements.addAll( toAst( file, node.template_statements() ) );
 		}
 
-		if ( statements != null ) {
-			// In component mode, the break is implied
-			statements.add( new BoxBreak( null, null ) );
+		var switchCase = new BoxSwitchBreakingCase( value, delimiter, statements, getPosition( node ), getSourceText( node ) );
+		if ( delimiter == null && value != null ) {
+			switchCase.setDelimiter( new BoxStringLiteral( ",", null, null ) );
+			switchCase.setImplicitDelimiter( true );
 		}
-
-		return new BoxSwitchCase( value, delimiter, statements, getPosition( node ), getSourceText( node ) );
+		return switchCase;
 	}
 
 	private BoxStatement toAst( File file, Template_throwContext node ) {
@@ -1165,7 +1166,7 @@ public class BoxParser extends AbstractParser {
 	}
 
 	private BoxTryCatch toAst( File file, Template_catchBlockContext node ) {
-		BoxExpression		exception	= new BoxIdentifier( "bxcatch", null, null );
+		BoxExpression		exception;
 		List<BoxExpression>	catchTypes;
 		List<BoxStatement>	catchBody	= new ArrayList<>();
 
@@ -1183,8 +1184,21 @@ public class BoxParser extends AbstractParser {
 			} else {
 				catchTypes = List.of( new BoxFQN( "any", null, null ) );
 			}
+
+			// look for name attribute
+			var nameSearch = annotations.stream()
+			    .filter( ( it ) -> it.getKey().getValue().equalsIgnoreCase( "name" ) && it.getValue() != null )
+			    .findFirst();
+			if ( nameSearch.isPresent() ) {
+				exception = new BoxIdentifier( getBoxExprAsString( nameSearch.get().getValue(), "name", false ),
+				    nameSearch.get().getPosition(),
+				    nameSearch.get().getSourceText() );
+			} else {
+				exception = new BoxIdentifier( "bxcatch", null, null );
+			}
 		} else {
-			catchTypes = List.of( new BoxFQN( "any", null, null ) );
+			catchTypes	= List.of( new BoxFQN( "any", null, null ) );
+			exception	= new BoxIdentifier( "bxcatch", null, null );
 		}
 		if ( node.template_statements() != null ) {
 			catchBody = toAst( file, node.template_statements() );
@@ -1531,6 +1545,8 @@ public class BoxParser extends AbstractParser {
 			}
 			case BoxArrayLiteral ignored -> {
 			}
+			case ortus.boxlang.compiler.ast.expression.BoxSetLiteral ignored -> {
+			}
 			case BoxScope ignored -> {
 			}
 			case BoxMethodInvocation ignored -> {
@@ -1548,6 +1564,8 @@ public class BoxParser extends AbstractParser {
 			case BoxStaticAccess ignored -> {
 			}
 			case BoxFQN ignored -> {
+			}
+			case BoxExpressionInvocation ignored -> {
 			}
 			default -> errorListener.semanticError( left.getDescription() + " is not a valid construct for " + ( isStatic ? "static" : "dot" ) + " access",
 			    left.getPosition() );
@@ -1599,6 +1617,8 @@ public class BoxParser extends AbstractParser {
 			case BoxStaticAccess ignored -> {
 			}
 			case BoxStaticMethodInvocation ignored -> {
+			}
+			case BoxExpressionInvocation ignored -> {
 			}
 			default -> errorListener.semanticError( object.getDescription() + " is not a valid construct for array access ", getPosition( ctx ) );
 		}

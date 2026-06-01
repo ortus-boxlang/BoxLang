@@ -1,0 +1,54 @@
+class {
+
+	static {
+		static.OUTER_NAME = "OuterClass";
+	}
+
+	class Inner {
+
+		function getValue() {
+			return "inner";
+		}
+
+		function getOuterNameDot() {
+			return InnerClassOuter.OUTER_NAME;
+		}
+
+		function getOuterNameColon() {
+			return InnerClassOuter::OUTER_NAME;
+		}
+
+	}
+
+	class Helper {
+
+		property name="label" default="helper";
+
+		function init( label ) {
+			variables.label = label;
+			return this;
+		}
+
+		function getLabel() {
+			return variables.label;
+		}
+
+	}
+
+	function getInner() {
+		return new Inner();
+	}
+
+	function getHelper( label ) {
+		return new Helper( label );
+	}
+
+	function getOwnNameDot() {
+		return InnerClassOuter.OUTER_NAME;
+	}
+
+	function getOwnNameColon() {
+		return InnerClassOuter::OUTER_NAME;
+	}
+
+}

@@ -313,7 +313,13 @@ public class BaseBoxContext implements IBoxContext {
 	 * @return True if there is at least one output component, else false
 	 */
 	public boolean isInOutputComponent() {
-		return _getOutputComponentCount().get() > 0;
+		if ( _getOutputComponentCount().get() > 0 ) {
+			return true;
+		} else if ( hasParent() ) {
+			return getParent().isInOutputComponent();
+		} else {
+			return false;
+		}
 	}
 
 	/**

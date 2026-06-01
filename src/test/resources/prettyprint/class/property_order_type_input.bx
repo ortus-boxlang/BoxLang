@@ -1,0 +1,8 @@
+class {
+    property String name;
+    property Boolean active;
+    property Numeric age;
+    function init() {
+        return this;
+    }
+}

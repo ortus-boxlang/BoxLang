@@ -38,6 +38,7 @@ import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ExpressionException;
 import ortus.boxlang.runtime.util.Pair;
 
 /**
@@ -105,9 +106,18 @@ public class BoxLambdaTransformer extends AbstractTransformer {
 		int											mySlot				= lambdaInvokers.size();
 		lambdaInvokers.add( null ); // Placeholder
 
-		// Transform arguments
-		ArrayInitializerExpr argInitializer = new ArrayInitializerExpr();
+		// Validate function parameter names against imports and transform arguments
+		String					sourceType		= transpiler.getProperty( "sourceType" );
+		boolean					isBoxSyntax		= sourceType != null && sourceType.toLowerCase().startsWith( "box" );
+		ArrayInitializerExpr	argInitializer	= new ArrayInitializerExpr();
 		boxLambda.getArgs().forEach( arg -> {
+			if ( isBoxSyntax && transpiler.matchesImport( arg.getName() ) ) {
+				throw new ExpressionException(
+				    "You cannot use a function parameter with the same name as an import: [" + arg.getName() + "]",
+				    arg.getPosition(),
+				    arg.getSourceText()
+				);
+			}
 			Expression argument = ( Expression ) transpiler.transform( arg );
 			argInitializer.getValues().add( argument );
 		} );

@@ -68,6 +68,12 @@ boxClass
     : importStatement* preAnnotation* ABSTRACT? FINAL? CLASS postAnnotation* LBRACE property* classBody RBRACE
     ;
 
+// class Foo {}  -- named local class inside a script/template (not a top-level class file)
+// They do not have imports it uses the context imports.
+localClass
+    : preAnnotation* ABSTRACT? FINAL? CLASS identifier postAnnotation* LBRACE property* classBody RBRACE
+    ;
+
 classBody: (classBodyStatement | SEMICOLON)*
     ;
 
@@ -140,9 +146,13 @@ arrayLiteralMembers: arrayLiteralMember (COMMA arrayLiteralMember)* COMMA?
  foo
  ...rest
  */
-arrayLiteralMember
-    : expression
-    | ELLIPSIS expression
+arrayLiteralMember: expression | ELLIPSIS expression
+    ;
+
+// set{1, 2, 3} — default (hash) Set literal
+// The "set" token is matched as an IDENTIFIER and the rule is gated by the
+// isSetLiteral() predicate so it does not collide with variables named "set".
+setLiteral: setName = IDENTIFIER LBRACE arrayLiteralMembers? RBRACE
     ;
 
 // foo=bar baz="bum"
@@ -236,6 +246,7 @@ statement
     | expressionStatement // Allows for statements like complicated.thing.foo.bar--
     | emptyStatementBlock
     | componentIsland
+    | localClass
     ;
 
 // op=(VAR | FINAL) etc
@@ -438,25 +449,22 @@ structExpression
  baz
  ...extra
  */
-structMembersWithShorthand: structMemberWithShorthandOrSpread (COMMA structMemberWithShorthandOrSpread)* COMMA?
+structMembersWithShorthand
+    : structMemberWithShorthandOrSpread (COMMA structMemberWithShorthandOrSpread)* COMMA?
     ;
 
 /*
  foo
  ...extra
  */
-structMemberWithShorthandOrSpread
-    : structMemberWithShorthand
-    | structSpread
+structMemberWithShorthandOrSpread: structMemberWithShorthand | structSpread
     ;
 
 /*
  foo
  foo : bar
  */
-structMemberWithShorthand
-    : structMember
-    | identifier
+structMemberWithShorthand: structMember | identifier
     ;
 
 /*
@@ -471,9 +479,7 @@ structSpread: ELLIPSIS expression
  [foo: bar, ...extra]
  [...first, foo: bar, ...last]
  */
-orderedStructMembers
-    : orderedStructMembersWithLeadingKey
-    | orderedStructMembersWithLeadingSpread
+orderedStructMembers: orderedStructMembersWithLeadingKey | orderedStructMembersWithLeadingSpread
     ;
 
 /*
@@ -493,9 +499,7 @@ orderedStructMembersWithLeadingSpread
  foo: bar
  ...extra
  */
-orderedStructMemberOrSpread
-    : structMember
-    | structSpread
+orderedStructMemberOrSpread: structMember | structSpread
     ;
 
 /*
@@ -523,7 +527,11 @@ objectDestructuringPattern: LBRACE objectDestructuringMembers? RBRACE
  { a, ...others }
  */
 objectDestructuringMembers
-    : (objectDestructuringBinding (COMMA objectDestructuringBinding)* (COMMA objectDestructuringRest)? COMMA?)
+    : (
+        objectDestructuringBinding (COMMA objectDestructuringBinding)* (
+            COMMA objectDestructuringRest
+        )? COMMA?
+    )
     | (objectDestructuringRest COMMA?)
     ;
 
@@ -533,8 +541,7 @@ objectDestructuringMembers
  a = 'foo'
  a : request.a = 'foo'
  */
-objectDestructuringBinding
-    : structKey (COLON objectDestructuringValue)? (EQUALSIGN expression)?
+objectDestructuringBinding: structKey (COLON objectDestructuringValue)? (EQUALSIGN expression)?
     ;
 
 /*
@@ -565,8 +572,7 @@ arrayDestructuringPattern: LBRACKET arrayDestructuringMembers? RBRACKET
  [ [ x, y ], ...rest ]
  [ first, ...middle, last ]
  */
-arrayDestructuringMembers
-    : arrayDestructuringMember (COMMA arrayDestructuringMember)* COMMA?
+arrayDestructuringMembers: arrayDestructuringMember (COMMA arrayDestructuringMember)* COMMA?
     ;
 
 /*
@@ -574,9 +580,7 @@ arrayDestructuringMembers
  a = 1
  ...rest
  */
-arrayDestructuringMember
-    : arrayDestructuringBinding
-    | arrayDestructuringRest
+arrayDestructuringMember: arrayDestructuringBinding | arrayDestructuringRest
     ;
 
 /*
@@ -586,8 +590,7 @@ arrayDestructuringMember
  a = 'foo'
  [ nested ] = []
  */
-arrayDestructuringBinding
-    : arrayDestructuringValue (EQUALSIGN expression)?
+arrayDestructuringBinding: arrayDestructuringValue (EQUALSIGN expression)?
     ;
 
 /*
@@ -654,8 +657,15 @@ el2
     | el2 POWER el2                                                         # exprPower             // foo ^ bar
     | el2 op = (STAR | SLASH | PERCENT | MOD | BACKSLASH) el2               # exprMult              // foo * bar
     | el2 op = (PLUS | MINUS) el2                                           # exprAdd               // foo + bar
-    // 1..5
-    | el2 RANGE el2                                                         # exprRange             // 1..5
+    // 1..5, 1.., ..5, .., 1>..5, 1..<5, 1>..<5
+    | el2 op = (
+        RANGE
+        | RANGE_LEFT_EXCLUSIVE
+        | RANGE_RIGHT_EXCLUSIVE
+        | RANGE_LEFT_EXCLUSIVE_RIGHT_EXCLUSIVE
+    ) el2?                                     # exprRange
+    | op = (RANGE | RANGE_RIGHT_EXCLUSIVE) el2 # exprRange
+    | RANGE                                    # exprRange
     | el2 op = (
         BITWISE_SIGNED_LEFT_SHIFT
         | BITWISE_SIGNED_RIGHT_SHIFT
@@ -678,10 +688,11 @@ el2
     | el2 (OR | PIPEPIPE) el2          # exprOr          // foo OR bar
 
     // el2 elements that have no operators so will be selected in order other than LL(*) solving
-    | ICHAR el2 ICHAR       # exprOutString    // #el2# not within a string literal
-    | literals              # exprLiterals     // "bar", [1,2,3], {foo:bar}
-    | arrayLiteral          # exprArrayLiteral // [1,2,3]
-    | COLONCOLON identifier # exprBIF          // Static BIF functional reference ::uCase
+    | ICHAR el2 ICHAR                      # exprOutString    // #el2# not within a string literal
+    | { isSetLiteral(_input) }? setLiteral # exprSetLiteral   // set{1,2,3}
+    | literals                             # exprLiterals     // "bar", [1,2,3], {foo:bar}
+    | arrayLiteral                         # exprArrayLiteral // [1,2,3]
+    | COLONCOLON identifier                # exprBIF          // Static BIF functional reference ::uCase
 
     // Evaluate assign here so that we can assign the result of an el2 to a variable
     | el2 op = (
@@ -696,7 +707,7 @@ el2
     // ({ a } = foo)
     | objectDestructuringPattern EQUALSIGN expression # exprDestructuringAssign // ({ a } = foo)
     // [ a ] = foo
-    | arrayDestructuringPattern EQUALSIGN expression  # exprArrayDestructuringAssign // [ a ] = foo
+    | arrayDestructuringPattern EQUALSIGN expression # exprArrayDestructuringAssign // [ a ] = foo
 
     // Ternary operations are right associative, which means that if they are nested,
     // the rightmost operation is evaluated first.

@@ -38,10 +38,10 @@ import static ortus.boxlang.parser.antlr.BoxGrammar.INSTANCEOF;
 import static ortus.boxlang.parser.antlr.BoxGrammar.INTERFACE;
 import static ortus.boxlang.parser.antlr.BoxGrammar.IS;
 import static ortus.boxlang.parser.antlr.BoxGrammar.JAVA;
-import static ortus.boxlang.parser.antlr.BoxGrammar.LE;
-import static ortus.boxlang.parser.antlr.BoxGrammar.LESS;
 import static ortus.boxlang.parser.antlr.BoxGrammar.LBRACE;
 import static ortus.boxlang.parser.antlr.BoxGrammar.LBRACKET;
+import static ortus.boxlang.parser.antlr.BoxGrammar.LE;
+import static ortus.boxlang.parser.antlr.BoxGrammar.LESS;
 import static ortus.boxlang.parser.antlr.BoxGrammar.LPAREN;
 import static ortus.boxlang.parser.antlr.BoxGrammar.LT;
 import static ortus.boxlang.parser.antlr.BoxGrammar.LTE;
@@ -185,6 +185,30 @@ public abstract class BoxParserControl extends Parser {
 		// .println( "( thisType == VAR || thisType == FINAL || thisType == STATIC ): " + ( thisType == VAR || thisType == FINAL || thisType == STATIC ) );
 		return ( thisType == VAR || thisType == FINAL || thisType == STATIC )
 		    && ( identifiers.contains( input.LT( 2 ).getType() ) || input.LT( 2 ).getType() == LBRACE || input.LT( 2 ).getType() == LBRACKET );
+	}
+
+	/**
+	 * Soft-keyword gate for the {@code set{...}} literal.
+	 *
+	 * <p>
+	 * Returns true when the next tokens are an IDENTIFIER whose text is "set"
+	 * (case-insensitive) followed by {@code {}, which means we should parse a
+	 * Set literal here rather than treating "set" as a plain identifier.
+	 *
+	 * 
+	 * <p>
+	 * Keeping "set" a soft keyword (not a reserved word) preserves backward
+	 * compatibility — variables and functions named {@code set} continue to work.
+	 */
+	protected boolean isSetLiteral( TokenStream input ) {
+		var first = input.LT( 1 );
+		if ( first.getType() != IDENTIFIER ) {
+			return false;
+		}
+		if ( !"set".equalsIgnoreCase( first.getText() ) ) {
+			return false;
+		}
+		return input.LT( 2 ).getType() == LBRACE;
 	}
 
 	/**

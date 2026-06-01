@@ -31,6 +31,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * Runtime helper for object destructuring assignment.
@@ -55,21 +56,37 @@ public class ObjectDestructurer {
 	}
 
 	/**
-	 * binding.
+	 * Create a destructuring binding descriptor that maps a source struct key to an assignment target.
+	 *
+	 * @param sourceKey            The key name to read from the source struct
+	 * @param target               The assignment target for this binding
+	 * @param nested               Nested bindings for recursive destructuring, or null for a simple binding
+	 * @param defaultValueSupplier Supplier for the default value when the key is missing, or null for no default
+	 *
+	 * @return A new Binding descriptor
 	 */
 	public static Binding binding( String sourceKey, Target target, Binding[] nested, Function<Object, Object> defaultValueSupplier ) {
 		return new Binding( Key.of( sourceKey ), target, nested == null ? new Binding[] {} : nested, defaultValueSupplier, false );
 	}
 
 	/**
-	 * rest.
+	 * Create a rest/spread binding descriptor that captures all unconsumed keys into a struct.
+	 *
+	 * @param target The assignment target that will receive the rest struct
+	 *
+	 * @return A new rest Binding descriptor
 	 */
 	public static Binding rest( Target target ) {
 		return new Binding( null, target, new Binding[] {}, null, true );
 	}
 
 	/**
-	 * target.
+	 * Create an assignment target descriptor from a dot-path of identifiers.
+	 *
+	 * @param scoped Whether this target references an explicit scope (e.g., {@code variables.foo})
+	 * @param path   One or more path segments identifying the assignment target
+	 *
+	 * @return A new Target descriptor
 	 */
 	public static Target target( boolean scoped, String... path ) {
 		Key[] keys = Arrays.stream( path ).map( Key::of ).toArray( Key[]::new );
@@ -77,7 +94,14 @@ public class ObjectDestructurer {
 	}
 
 	/**
-	 * applyBindings.
+	 * Apply an array of binding descriptors against a source struct, tracking consumed keys for rest collection.
+	 *
+	 * @param context         The execution context
+	 * @param source          The source struct to destructure from
+	 * @param isFinal         Whether assignments should be final
+	 * @param mustBeScopeName Required scope for assignment (var/static) or null
+	 * @param bindings        The binding descriptors to apply
+	 * @param pathPrefix      Dot-path prefix for error messages
 	 */
 	private static void applyBindings( IBoxContext context, IStruct source, boolean isFinal, Key mustBeScopeName, Binding[] bindings, String pathPrefix ) {
 		Set<Key>	consumed	= new HashSet<>();
@@ -132,7 +156,14 @@ public class ObjectDestructurer {
 	}
 
 	/**
-	 * applyMissingBinding.
+	 * Apply a binding when the source key is entirely missing from the parent struct.
+	 * Uses the default value supplier if available, otherwise assigns null.
+	 *
+	 * @param context         The execution context
+	 * @param binding         The binding descriptor to apply
+	 * @param isFinal         Whether assignments should be final
+	 * @param mustBeScopeName Required scope for assignment (var/static) or null
+	 * @param pathPrefix      Dot-path prefix for error messages
 	 */
 	private static void applyMissingBinding( IBoxContext context, Binding binding, boolean isFinal, Key mustBeScopeName, String pathPrefix ) {
 		if ( binding.isRest() ) {
@@ -160,7 +191,13 @@ public class ObjectDestructurer {
 	}
 
 	/**
-	 * assignTarget.
+	 * Assign a value to a destructuring target, resolving scope and path.
+	 *
+	 * @param context         The execution context
+	 * @param target          The assignment target descriptor
+	 * @param value           The value to assign
+	 * @param isFinal         Whether the assignment should be final
+	 * @param mustBeScopeName Required scope for assignment (var/static) or null
 	 */
 	private static void assignTarget( IBoxContext context, Target target, Object value, boolean isFinal, Key mustBeScopeName ) {
 		if ( target == null || target.getPath().length == 0 ) {
@@ -197,26 +234,31 @@ public class ObjectDestructurer {
 	}
 
 	/**
-	 * toStructOrThrow.
+	 * Cast a value to an IStruct or throw a descriptive error if the cast fails.
+	 *
+	 * @param value The value to cast
+	 * @param path  Dot-path used in the error message for context
+	 *
+	 * @return The value cast as an IStruct
+	 *
+	 * @throws BoxRuntimeException if the value cannot be cast to a struct
 	 */
 	private static IStruct toStructOrThrow( Object value, String path ) {
 		CastAttempt<IStruct> casted = StructCaster.attempt( value );
 		if ( !casted.wasSuccessful() ) {
 			throw new BoxRuntimeException(
-			    "Cannot destructure path [" + path + "] from non-struct value of type [" + describeType( value ) + "]." );
+			    "Cannot destructure path [" + path + "] from non-struct value of type [" + TypeUtil.getObjectName( value ) + "]." );
 		}
 		return casted.get();
 	}
 
 	/**
-	 * describeType.
-	 */
-	private static String describeType( Object value ) {
-		return value == null ? "null" : value.getClass().getName();
-	}
-
-	/**
-	 * joinPath.
+	 * Join two path segments with a dot separator for error message context.
+	 *
+	 * @param prefix The existing path prefix, or null/empty for the root
+	 * @param key    The new segment to append
+	 *
+	 * @return The joined path string
 	 */
 	private static String joinPath( String prefix, String key ) {
 		if ( prefix == null || prefix.isEmpty() ) {

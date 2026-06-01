@@ -26,7 +26,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.sql.Time;
@@ -142,7 +141,7 @@ public class DynamicInteropService {
 	/**
 	 * Helper for all class utility methods from apache commons lang 3
 	 */
-	public static final Class<ClassUtils>							CLASS_UTILS			= ClassUtils.class;
+	public static final Class<ClassUtils>							CLASS_UTILS				= ClassUtils.class;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -153,7 +152,7 @@ public class DynamicInteropService {
 	/**
 	 * These keys are always available on all throwables. If the key is not found, then we return an empty string
 	 */
-	private static final Set<Key>									exceptionKeys		= new HashSet<>( Arrays.asList(
+	private static final Set<Key>									exceptionKeys			= new HashSet<>( Arrays.asList(
 	    Key.message,
 	    Key.detail,
 	    Key.type,
@@ -186,38 +185,44 @@ public class DynamicInteropService {
 	/**
 	 * This caches the method handles for the class so we don't have to look them up every time.
 	 */
-	private static final ConcurrentHashMap<String, MethodRecord>	methodHandleCache	= new ConcurrentHashMap<>( 32 );
+	private static final ConcurrentHashMap<String, MethodRecord>	methodHandleCache		= new ConcurrentHashMap<>( 32 );
+
+	/**
+	 * This caches no-arg constructor MethodHandles to avoid repeated access checks on every invocation.
+	 * Access verification is done once at MethodHandle creation time, not on each invoke.
+	 */
+	private static final ConcurrentHashMap<Class<?>, MethodHandle>	noArgConstructorCache	= new ConcurrentHashMap<>( 32 );
 
 	/**
 	 * Name of key to get length of native arrays
 	 */
-	private static Key												lengthKey			= Key.of( "length" );
+	private static Key												lengthKey				= Key.of( "length" );
 
 	/**
 	 * Empty arguments array
 	 */
-	public static final Object[]									EMPTY_ARGS			= new Object[] {};
+	public static final Object[]									EMPTY_ARGS				= new Object[] {};
 
 	/**
 	 * This enables or disables the method handles cache
 	 */
-	private static Boolean											handlesCacheEnabled	= true;
+	private static Boolean											handlesCacheEnabled		= true;
 
 	/**
 	 * This is the class locator
 	 */
-	private static ClassLocator										classLocator		= null;
+	private static ClassLocator										classLocator			= null;
 
 	/**
 	 * This is the function service for invoking functions
 	 */
-	private static FunctionService									functionService		= null;
+	private static FunctionService									functionService			= null;
 
 	/**
 	 * Coercion maps
 	 */
-	private static List<String>										numberTargets		= List.of( "boolean", "byte", "character", "string" );
-	private static List<String>										booleanTargets		= List.of( "string", "character" );
+	private static List<String>										numberTargets			= List.of( "boolean", "byte", "character", "string" );
+	private static List<String>										booleanTargets			= List.of( "string", "character" );
 
 	/**
 	 * Static Initializer
@@ -339,10 +344,11 @@ public class DynamicInteropService {
 
 			IClassRunnable boxClass;
 			try {
-				boxClass = ( IClassRunnable ) targetClass.getConstructor().newInstance();
+				boxClass = ( IClassRunnable ) getNoArgConstructorHandle( targetClass ).invoke();
 				return bootstrapBLClass( context, boxClass, BLArgs, null, noInit, isSuper );
-			} catch ( InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException
-			    | SecurityException e ) {
+			} catch ( RuntimeException e ) {
+				throw e;
+			} catch ( Throwable e ) {
 				throw new BoxRuntimeException( "Error creating instance of class " + targetClass.getName(), e );
 			}
 
@@ -384,9 +390,18 @@ public class DynamicInteropService {
 		// Invoke Dynamic tries to do argument coercion, so we need to convert the arguments to the right types
 		MethodHandle	constructorInvoker	= callSite.dynamicInvoker();
 		try {
+			Object[] constructorArgs = expandVarargs( castedArgumentValues, constructor.isVarArgs(), false, constructor );
+			// If varargs and expandVarargs already formed the varargs array, bypass the varargs collector
+			if ( constructor.isVarArgs() && constructorArgs.length == constructor.getParameterCount() ) {
+				Object		lastArg		= constructorArgs[ constructorArgs.length - 1 ];
+				Class<?>	varargsType	= constructor.getParameterTypes()[ constructor.getParameterCount() - 1 ];
+				if ( lastArg != null && varargsType.isInstance( lastArg ) ) {
+					constructorInvoker = constructorInvoker.asFixedArity();
+				}
+			}
 
 			@SuppressWarnings( "unchecked" )
-			T thisInstance = ( T ) constructorInvoker.invokeWithArguments( expandVarargs( castedArgumentValues, constructor.isVarArgs(), false, constructor ) );
+			T thisInstance = ( T ) constructorInvoker.invokeWithArguments( constructorArgs );
 
 			// Announce it to the world
 			BoxRuntime
@@ -426,10 +441,11 @@ public class DynamicInteropService {
 		if ( IClassRunnable.class.isAssignableFrom( targetClass ) ) {
 			IClassRunnable boxClass;
 			try {
-				boxClass = ( IClassRunnable ) targetClass.getConstructor().newInstance();
+				boxClass = ( IClassRunnable ) getNoArgConstructorHandle( targetClass ).invoke();
 				return bootstrapBLClass( context, boxClass, null, args, false, true );
-			} catch ( InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException
-			    | SecurityException e ) {
+			} catch ( RuntimeException e ) {
+				throw e;
+			} catch ( Throwable e ) {
 				throw new BoxRuntimeException( "Error creating instance of class " + targetClass.getName(), e );
 			}
 		} else {
@@ -446,6 +462,25 @@ public class DynamicInteropService {
 	 */
 	public static <T> T invokeConstructor( IBoxContext context, Class<T> targetClass ) {
 		return invokeConstructor( context, targetClass, EMPTY_ARGS );
+	}
+
+	/**
+	 * Gets or creates a cached MethodHandle for the no-arg constructor of the given class.
+	 * Access checks are performed once at MethodHandle creation time, avoiding repeated
+	 * verification on every invocation that occurs with Constructor.newInstance().
+	 *
+	 * @param targetClass The class to get the no-arg constructor handle for
+	 *
+	 * @return A cached MethodHandle for the no-arg constructor
+	 */
+	private static MethodHandle getNoArgConstructorHandle( Class<?> targetClass ) {
+		return noArgConstructorCache.computeIfAbsent( targetClass, clazz -> {
+			try {
+				return METHOD_LOOKUP.unreflectConstructor( clazz.getConstructor() );
+			} catch ( NoSuchMethodException | IllegalAccessException e ) {
+				throw new BoxRuntimeException( "Error getting no-arg constructor for class " + clazz.getName(), e );
+			}
+		} );
 	}
 
 	/**
@@ -584,11 +619,17 @@ public class DynamicInteropService {
 
 			// Execute Static
 			if ( methodRecord.isStatic() ) {
-				return methodRecord
-				    .methodHandle()
-				    .invokeWithArguments(
-				        expandVarargs( castedArgumentValues, methodRecord.method().isVarArgs(), false, methodRecord.method() )
-				    );
+				Object[]		staticArgs		= expandVarargs( castedArgumentValues, methodRecord.method().isVarArgs(), false, methodRecord.method() );
+				MethodHandle	staticHandle	= methodRecord.methodHandle();
+				// If varargs and expandVarargs already formed the varargs array, bypass the varargs collector
+				if ( methodRecord.method().isVarArgs() && staticArgs.length == methodRecord.method().getParameterCount() ) {
+					Object		lastArg		= staticArgs[ staticArgs.length - 1 ];
+					Class<?>	varargsType	= methodRecord.method().getParameterTypes()[ methodRecord.method().getParameterCount() - 1 ];
+					if ( lastArg != null && varargsType.isInstance( lastArg ) ) {
+						staticHandle = staticHandle.asFixedArity();
+					}
+				}
+				return staticHandle.invokeWithArguments( staticArgs );
 			}
 
 			// Use a spread strategy to avoid binding if possible due to performance considerations
@@ -675,6 +716,27 @@ public class DynamicInteropService {
 			arguments							= expandedArgs;
 		}
 
+		// Modern varargs: individual values passed instead of wrapped in an array.
+		// This must be checked BEFORE the isInstance early return so that instance methods,
+		// static methods, and constructors all get properly-formed varargs arrays.
+		if ( executable.isVarArgs() && arguments.length >= paramCount && arguments.length > 0 ) {
+			Object lastArg = arguments[ arguments.length - 1 ];
+			if ( lastArg != null && ! ( lastArg instanceof Array ) && !lastArg.getClass().isArray() ) {
+				// Collect trailing args into a properly-typed varargs array
+				int			varargStart		= paramCount - 1;
+				int			varargCount		= arguments.length - varargStart;
+				Class<?>	componentType	= executable.getParameterTypes()[ paramCount - 1 ].getComponentType();
+				Object		varargArray		= java.lang.reflect.Array.newInstance( componentType, varargCount );
+				for ( int i = 0; i < varargCount; i++ ) {
+					java.lang.reflect.Array.set( varargArray, i, arguments[ varargStart + i ] );
+				}
+				Object[] result = new Object[ paramCount ];
+				System.arraycopy( arguments, 0, result, 0, varargStart );
+				result[ varargStart ] = varargArray;
+				return result;
+			}
+		}
+
 		// If it's not varargs, or it's an instance method, then just return the arguments
 		// I don't understand why instance method don't want the varargs expanded, but this is what makes the tests pass
 		if ( !isVarargs || isInstance ) {
@@ -693,7 +755,8 @@ public class DynamicInteropService {
 			// convert the array to an Object array
 			lastArgumentValues = ArrayCaster.cast( lastArgument ).toArray();
 		} else {
-			throw new BoxRuntimeException( "Varargs method requires an array as the last argument.  You passed [" + lastArgument.getClass().getName() + "]" );
+			// Shouldn't reach here since modern varargs is handled above, but just in case
+			return arguments;
 		}
 
 		Object[] expandedArgs = new Object[ arguments.length - 1 + lastArgumentValues.length ];
@@ -735,9 +798,17 @@ public class DynamicInteropService {
 
 		// Discover and Execute it baby!
 		try {
-			return methodRecord
-			    .methodHandle()
-			    .invokeWithArguments( expandVarargs( castedArgumentValues, methodRecord.method().isVarArgs(), false, methodRecord.method() ) );
+			Object[]		staticArgs		= expandVarargs( castedArgumentValues, methodRecord.method().isVarArgs(), false, methodRecord.method() );
+			MethodHandle	staticHandle	= methodRecord.methodHandle();
+			// If varargs and expandVarargs already formed the varargs array, bypass the varargs collector
+			if ( methodRecord.method().isVarArgs() && staticArgs.length == methodRecord.method().getParameterCount() ) {
+				Object		lastArg		= staticArgs[ staticArgs.length - 1 ];
+				Class<?>	varargsType	= methodRecord.method().getParameterTypes()[ methodRecord.method().getParameterCount() - 1 ];
+				if ( lastArg != null && varargsType.isInstance( lastArg ) ) {
+					staticHandle = staticHandle.asFixedArity();
+				}
+			}
+			return staticHandle.invokeWithArguments( staticArgs );
 		} catch ( RuntimeException e ) {
 			throw e;
 		} catch ( Throwable e ) {
@@ -1285,9 +1356,9 @@ public class DynamicInteropService {
 
 	/**
 	 * Get the correct method handle cache based on the class.
-	 * 
+	 *
 	 * @param targetClass The class we're going to call a method on
-	 * 
+	 *
 	 * @return The method handle cache to use for this class
 	 */
 	private static ConcurrentHashMap<String, MethodRecord> findMethodHandleCache( Class<?> targetClass ) {
@@ -1746,10 +1817,10 @@ public class DynamicInteropService {
 		// Try to get the executables that match by name and number of arguments first.
 		List<Executable> targetExecutables = availableExecutables
 		    .filter( executable -> methodName == null || executable.getName().equalsIgnoreCase( methodName ) )
-		    // We either need to have the same number of arguments or a varargs method with one less argument
-		    // This allows the array of varargs to be omitted when empty
+		    // We either need to have the same number of arguments, a varargs method with one less argument (omitted varargs),
+		    // or a varargs method with fewer params than args (modern-style individual vararg values)
 		    .filter( executable -> executable.getParameterCount() == argumentsAsClasses.length
-		        || ( executable.isVarArgs() && executable.getParameterCount() == argumentsAsClasses.length + 1 ) )
+		        || ( executable.isVarArgs() && executable.getParameterCount() - 1 <= argumentsAsClasses.length ) )
 		    .toList();
 
 		// If list is empty return false
@@ -2246,6 +2317,11 @@ public class DynamicInteropService {
 	    Object[] positionalArguments,
 	    Boolean safe ) {
 
+		// If calling init() on a Class<?> reference, create an instance of that class
+		if ( name.equals( Key.init ) && targetInstance instanceof Class<?> clazz ) {
+			return invokeConstructor( context, clazz, positionalArguments );
+		}
+
 		// If the object is referencable, allow it to handle the dereference itself
 		if ( IReferenceable.class.isAssignableFrom( targetClass ) && targetInstance != null && targetInstance instanceof IReferenceable ref ) {
 			return ref.dereferenceAndInvoke( context, name, positionalArguments, safe );
@@ -2338,6 +2414,11 @@ public class DynamicInteropService {
 	    Key name,
 	    Map<Key, Object> namedArguments,
 	    Boolean safe ) {
+
+		// If calling init() on a Class<?> reference, create an instance of that class
+		if ( name.equals( Key.init ) && targetInstance instanceof Class<?> clazz ) {
+			return invokeConstructor( context, clazz, namedArguments );
+		}
 
 		if ( IReferenceable.class.isAssignableFrom( targetClass ) && targetInstance != null && targetInstance instanceof IReferenceable ref ) {
 			return ref.dereferenceAndInvoke( context, name, namedArguments, safe );
@@ -2493,6 +2574,16 @@ public class DynamicInteropService {
 		// If this is varargs, then we'll have one extra param which we need to ignore for now
 		if ( methodParams.length > argumentsAsClasses.length ) {
 			methodParams = Arrays.copyOf( methodParams, methodParams.length - 1 );
+		} else if ( method.isVarArgs() && argumentsAsClasses.length > methodParams.length ) {
+			// Modern varargs style: individual values passed instead of array-wrapped
+			// Extend methodParams with the varargs component type for each extra argument
+			Class<?>[]	extended		= new Class<?>[ argumentsAsClasses.length ];
+			Class<?>	componentType	= methodParams[ methodParams.length - 1 ].getComponentType();
+			System.arraycopy( methodParams, 0, extended, 0, methodParams.length - 1 );
+			for ( int i = methodParams.length - 1; i < argumentsAsClasses.length; i++ ) {
+				extended[ i ] = componentType;
+			}
+			methodParams = extended;
 		}
 
 		// unbox types here so we can do a proper comparison
@@ -2588,6 +2679,20 @@ public class DynamicInteropService {
 	    Boolean isVarArgs,
 	    BooleanRef isCachable,
 	    AtomicInteger matchScore ) {
+
+		// Handle modern varargs: individual values passed instead of wrapped in array
+		// This is needed for the cached method handle path where hasMatchingParameterTypes doesn't run
+		if ( isVarArgs && arguments.length > methodParams.length ) {
+			Class<?>	componentType	= methodParams[ methodParams.length - 1 ].getComponentType();
+			Class<?>[]	extended		= new Class<?>[ arguments.length ];
+			System.arraycopy( methodParams, 0, extended, 0, methodParams.length - 1 );
+			for ( int i = methodParams.length - 1; i < arguments.length; i++ ) {
+				extended[ i ] = componentType;
+			}
+			methodParams = extended;
+			unBoxTypes( methodParams );
+		}
+
 		var coerced = false;
 		for ( int i = 0; i < methodParams.length; i++ ) {
 			// bail if i has exceeded the lengh of arguments
@@ -2631,10 +2736,20 @@ public class DynamicInteropService {
 					coerced						= true;
 					castedArgumentValues[ i ]	= castedArray.get();
 					continue;
-				} else {
-					coerced = false;
-					break;
 				}
+				// Fallback: try modern-style single-element varargs (cast to component type instead of array type)
+				Class<?> componentType = methodParams[ i ].getComponentType();
+				if ( componentType != null ) {
+					Optional<?> attempt = coerceAttempt( context, componentType, argumentsAsClasses[ i ], arguments[ i ], isCachable, matchScore );
+					if ( attempt.isPresent() ) {
+						coerced						= true;
+						castedArgumentValues[ i ]	= attempt.get();
+						matchScore.addAndGet( 1 );
+						continue;
+					}
+				}
+				coerced = false;
+				break;
 			}
 
 			// Else we need to coerce the argument
@@ -2850,8 +2965,9 @@ public class DynamicInteropService {
 		// To the functional interface
 		if ( functionalInterface != null && ( value instanceof IClassRunnable || value instanceof Function ) ) {
 
-			// Type casting from Class or Function to functional interface is a loose-ish match, increment 2
-			matchScore.addAndGet( 2 );
+			// Type casting from Class or Function to functional interface is a loose-ish match.
+			// Prefer value-returning SAMs over void SAMs to avoid ambiguous overloads such as Callable vs Runnable.
+			matchScore.addAndGet( 2 + getFunctionalInterfaceCoercionPenalty( functionalInterface ) );
 
 			// logger.debug( "Coerce attempt: Castable to Functional Interface " + actualClass );
 			return Optional.of(
@@ -2864,6 +2980,24 @@ public class DynamicInteropService {
 		// logger.debug( "Coerce attempt FAILED for [" + expected + "] from [" + actual + "] with value [" + value.toString() + "]" );
 
 		return Optional.empty();
+	}
+
+	/**
+	 * Returns a coercion penalty for functional interfaces.
+	 *
+	 * Value-returning SAM interfaces are preferred over void SAM interfaces when coercing a BoxLang Function,
+	 * which helps deterministic overload selection in ambiguous Java APIs.
+	 *
+	 * @param functionalInterface The functional interface being targeted
+	 *
+	 * @return 1 for void-returning SAM interfaces, 0 otherwise
+	 */
+	private static int getFunctionalInterfaceCoercionPenalty( Class<?> functionalInterface ) {
+		return Arrays.stream( functionalInterface.getMethods() )
+		    .filter( method -> Modifier.isAbstract( method.getModifiers() ) )
+		    .findFirst()
+		    .map( method -> method.getReturnType() == Void.TYPE ? 1 : 0 )
+		    .orElse( 0 );
 	}
 
 	/**
@@ -2946,12 +3080,13 @@ public class DynamicInteropService {
 		classContext.pushTemplate( boxClass );
 
 		try {
-			if ( boxClass.getBoxSuperClass() != null ) {
+			if ( boxClass.getBoxSuperClassName() != null ) {
 				// Recursively load the super class
-				IClassRunnable _super = ( IClassRunnable ) ( DynamicObject.of( boxClass.getBoxSuperClass().getTargetClass() )
+				IClassRunnable _super = ( IClassRunnable ) BoxClassSupport
+				    .loadSuperClass( boxClass.getBoxSuperClassName(), classContext.getCurrentImports(), classContext, boxClass.getRunnablePath() )
 				    // Constructor args are NOT passed. Only the outermost class gets to use those
 				    .invokeConstructor( classContext, new Object[] { Key.isSuper } )
-				    .unWrapBoxLangClass() );
+				    .unWrapBoxLangClass();
 
 				// Check for final annotation and throw if we're trying to extend a final class
 				if ( _super.isFinalClass() ) {
@@ -2965,6 +3100,11 @@ public class DynamicInteropService {
 			boxClass.pseudoConstructor( classContext );
 
 			// Now that UDFs are defined, let's enforce any interfaces (abstract classes will skip the enforcement and only apply the default methods)
+			boxClass.getInterfaces().addAll( BoxClassSupport.loadInterfaces(
+			    boxClass.getBoxInterfaceNames(),
+			    classContext.getCurrentImports(),
+			    classContext,
+			    boxClass.getRunnablePath() ) );
 			for ( BoxInterface _interface : boxClass.getInterfaces() ) {
 				boxClass.registerInterface( _interface );
 			}
@@ -3005,19 +3145,13 @@ public class DynamicInteropService {
 
 				// Call constructor
 				// look for initMethod annotation
-				Object	initMethod	= boxClass.getAnnotations().get( Key.initMethod );
-				Key		initKey;
-				if ( initMethod != null ) {
-					initKey = Key.of( StringCaster.cast( initMethod ) );
-				} else {
-					initKey = Key.init;
-				}
-				if ( boxClass.getThisScope().get( initKey ) instanceof Function ) {
+				Key initKey = boxClass.getInitMethod();
+				if ( boxClass.getThisScope().get( initKey ) instanceof Function initFunction ) {
 					Object result;
 					if ( positionalArgs != null ) {
-						result = boxClass.dereferenceAndInvoke( classContext, initKey, positionalArgs, false );
+						result = BoxClassSupport.dereferenceAndInvoke( initFunction, boxClass, classContext, initKey, positionalArgs, false );
 					} else {
-						result = boxClass.dereferenceAndInvoke( classContext, initKey, namedArgs, false );
+						result = BoxClassSupport.dereferenceAndInvoke( initFunction, boxClass, classContext, initKey, namedArgs, false );
 					}
 					// CF returns the actual result of the constructor, but I'm not sure it makes sense or if people actually ever
 					// return anything other than "this".
@@ -3065,9 +3199,7 @@ public class DynamicInteropService {
 					}
 				}
 			}
-		} finally
-
-		{
+		} finally {
 			// This is for any output written in the pseudoconstructor that needs to be flushed
 			classContext.flushBuffer( false );
 			classContext.popTemplate();

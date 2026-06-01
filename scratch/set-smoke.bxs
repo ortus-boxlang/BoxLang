@@ -1,0 +1,62 @@
+// End-to-end smoke test of BoxLang Set support.
+
+// Construction
+a = setNew();
+println( "Empty:                  " & a.size() );
+
+b = setOf( 1, 2, 2, 3 );
+println( "setOf(1,2,2,3) size:    " & b.size() );
+
+c = [10, 20, 30].toSet();
+println( "Array .toSet() size:    " & c.size() );
+
+d = set{ "x", "y", "z" };
+println( "set{x,y,z} size:        " & d.size() );
+
+// Member functions
+m = setNew();
+m.add( 1 ).add( 2 );        // SetAdd returns the set for chaining
+m.append( 3 );               // CF/array alias
+println( "Has 2:                  " & m.has( 2 ) );
+println( "Contains 99:            " & m.contains( 99 ) );
+m.delete( 1 );
+m.remove( 2 );
+println( "After delete/remove:    " & m.size() );
+
+// Functional methods
+nums = [1, 2, 3, 4, 5].toSet();
+doubled = nums.map( v -> v * 2 );
+evens = nums.filter( v -> v % 2 == 0 );
+total = nums.reduce( ( acc, v ) -> acc + v, 0 );
+println( "Doubled size:           " & doubled.size() );
+println( "Evens count:            " & evens.size() );
+println( "Sum reduce:             " & total );
+println( "Every > 0:              " & nums.every( v -> v > 0 ) );
+println( "Some > 4:               " & nums.some( v -> v > 4 ) );
+
+// Set algebra (member methods)
+A = set{ 1, 2, 3 };
+B = set{ 3, 4, 5 };
+println( "Union member:           " & A.union( B ).toArray().toList() );
+println( "Intersect member:       " & A.intersection( B ).toArray().toList() );
+println( "Difference member:      " & A.difference( B ).toArray().toList() );
+println( "SymDiff member:         " & A.symmetricDifference( B ).toArray().toList() );
+
+// Set algebra (operators)
+// + for union, - for difference, * for intersection, ^ for symmetric difference
+println( "A + B (union):          " & ( A + B ).toArray().toList() );
+println( "A - B (diff):           " & ( A - B ).toArray().toList() );
+println( "A * B (intersect):      " & ( A * B ).toArray().toList() );
+println( "A ^ B (symdiff):        " & ( A ^ B ).toArray().toList() );
+
+// JSON
+ordered = setNew( type="linked", values=["a", "b", "c"] );
+println( "JSON:                   " & jsonSerialize( ordered ) );
+
+// Predicates
+println( "{1,2} subsetOf {1,2,3}: " & set{1,2}.isSubsetOf( set{1,2,3} ) );
+println( "{1,2,3} supersetOf {1}: " & set{1,2,3}.isSupersetOf( set{1} ) );
+println( "{1,2} disjoint {9,10}:  " & set{1,2}.isDisjointFrom( set{9,10} ) );
+
+println( "" );
+println( "All Set smoke checks complete." );

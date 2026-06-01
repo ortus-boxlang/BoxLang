@@ -67,6 +67,7 @@ import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.operators.Compare;
+import ortus.boxlang.runtime.operators.Multiply;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.FunctionService;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -80,7 +81,7 @@ import ortus.boxlang.runtime.util.LocalizationUtil;
  * All temporal methods in BoxLang operate on this class and all castable date/time representations are cast to this class
  * 
  */
-public class DateTime implements IType, IReferenceable, Serializable, ValueWriter, ChronoZonedDateTime<LocalDate> {
+public class DateTime implements IType, IReferenceable, IRangeable<DateTime>, Serializable, ValueWriter, ChronoZonedDateTime<LocalDate> {
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -91,12 +92,49 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	/**
 	 * Serial version UID
 	 */
-	private static final long				serialVersionUID						= 1L;
+	private static final long						serialVersionUID						= 1L;
+
+	// Maps full unit names and aliases to DateAdd datepart codes
+	// Shorthand codes match DateAdd BIF: l=ms, s=sec, n=min, h=hour, d/y=day, w=weekday, ww=week, m=month, q=quarter, yyyy=year
+	private static final java.util.Map<Key, String>	UNIT_TO_DATEPART						= java.util.Map
+	    .ofEntries(
+	        java.util.Map.entry( Key.of( "millisecond" ), "l" ),
+	        java.util.Map.entry( Key.of( "milliseconds" ), "l" ),
+	        java.util.Map.entry( Key.of( "l" ), "l" ),
+	        java.util.Map.entry( Key.of( "second" ), "s" ),
+	        java.util.Map.entry( Key.of( "seconds" ), "s" ),
+	        java.util.Map.entry( Key.of( "s" ), "s" ),
+	        java.util.Map.entry( Key.of( "minute" ), "n" ),
+	        java.util.Map.entry( Key.of( "minutes" ), "n" ),
+	        java.util.Map.entry( Key.of( "n" ), "n" ),
+	        java.util.Map.entry( Key.of( "hour" ), "h" ),
+	        java.util.Map.entry( Key.of( "hours" ), "h" ),
+	        java.util.Map.entry( Key.of( "h" ), "h" ),
+	        java.util.Map.entry( Key.of( "day" ), "d" ),
+	        java.util.Map.entry( Key.of( "days" ), "d" ),
+	        java.util.Map.entry( Key.of( "d" ), "d" ),
+	        java.util.Map.entry( Key.of( "y" ), "d" ),
+	        java.util.Map.entry( Key.of( "weekday" ), "w" ),
+	        java.util.Map.entry( Key.of( "weekdays" ), "w" ),
+	        java.util.Map.entry( Key.of( "w" ), "w" ),
+	        java.util.Map.entry( Key.of( "week" ), "ww" ),
+	        java.util.Map.entry( Key.of( "weeks" ), "ww" ),
+	        java.util.Map.entry( Key.of( "ww" ), "ww" ),
+	        java.util.Map.entry( Key.of( "month" ), "m" ),
+	        java.util.Map.entry( Key.of( "months" ), "m" ),
+	        java.util.Map.entry( Key.of( "m" ), "m" ),
+	        java.util.Map.entry( Key.of( "quarter" ), "q" ),
+	        java.util.Map.entry( Key.of( "quarters" ), "q" ),
+	        java.util.Map.entry( Key.of( "q" ), "q" ),
+	        java.util.Map.entry( Key.of( "year" ), "yyyy" ),
+	        java.util.Map.entry( Key.of( "years" ), "yyyy" ),
+	        java.util.Map.entry( Key.of( "yyyy" ), "yyyy" )
+	    );
 
 	/**
 	 * Represents the wrapped ZonedDateTime object we enhance
 	 */
-	protected ZonedDateTime					wrapped;
+	protected ZonedDateTime							wrapped;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -108,31 +146,39 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	 * Formatters
 	 */
 	// This mask matches the Lucee default - @TODO ISO would be a better default - can we change this
-	public static final DateTimeFormatter	TS_FORMATTER							= DateTimeFormatter.ofPattern( "'{ts '''yyyy-MM-dd HH:mm:ss'''}'" );
-	public static final DateTimeFormatter	DEFAULT_DATE_FORMATTER					= DateTimeFormatter.ofPattern( "dd-MMM-yy" );
-	public static final DateTimeFormatter	DEFAULT_TIME_FORMATTER					= DateTimeFormatter.ofPattern( "hh:mm a" );
-	public static final DateTimeFormatter	DEFAULT_DATETIME_FORMATTER				= DateTimeFormatter.ofPattern( "dd-MMM-yyyy HH:mm:ss" );
-	public static final DateTimeFormatter	ISO_DATE_TIME_VARIATION_FORMATTER		= DateTimeFormatter.ofPattern( "yyyy-MM-dd HH:mm:ss" );
-	public static final DateTimeFormatter	ISO_DATE_TIME_MILIS_FORMATTER			= DateTimeFormatter.ofPattern( "yyyy-MM-dd'T'HH:mm:ss.SSS" );
-	public static final DateTimeFormatter	ISO_OFFSET_DATE_TIME_NOMILLIS_FORMATTER	= DateTimeFormatter.ofPattern( "yyyy-MM-dd'T'HH:mm:ssXXX" );
-	public static final DateTimeFormatter	ISO_DATE_TIME_MILIS_NO_T_FORMATTER		= DateTimeFormatter.ofPattern( "yyyy-MM-dd HH:mm:ss.SSS" );
+	public static final DateTimeFormatter			TS_FORMATTER							= DateTimeFormatter
+	    .ofPattern( "'{ts '''yyyy-MM-dd HH:mm:ss'''}'" );
+	public static final DateTimeFormatter			DEFAULT_DATE_FORMATTER					= DateTimeFormatter
+	    .ofPattern( "dd-MMM-yy" );
+	public static final DateTimeFormatter			DEFAULT_TIME_FORMATTER					= DateTimeFormatter
+	    .ofPattern( "hh:mm a" );
+	public static final DateTimeFormatter			DEFAULT_DATETIME_FORMATTER				= DateTimeFormatter
+	    .ofPattern( "dd-MMM-yyyy HH:mm:ss" );
+	public static final DateTimeFormatter			ISO_DATE_TIME_VARIATION_FORMATTER		= DateTimeFormatter
+	    .ofPattern( "yyyy-MM-dd HH:mm:ss" );
+	public static final DateTimeFormatter			ISO_DATE_TIME_MILIS_FORMATTER			= DateTimeFormatter
+	    .ofPattern( "yyyy-MM-dd'T'HH:mm:ss.SSS" );
+	public static final DateTimeFormatter			ISO_OFFSET_DATE_TIME_NOMILLIS_FORMATTER	= DateTimeFormatter
+	    .ofPattern( "yyyy-MM-dd'T'HH:mm:ssXXX" );
+	public static final DateTimeFormatter			ISO_DATE_TIME_MILIS_NO_T_FORMATTER		= DateTimeFormatter
+	    .ofPattern( "yyyy-MM-dd HH:mm:ss.SSS" );
 	// <a href="https://learn.microsoft.com/en-us/sql/odbc/reference/develop-app/date-time-and-timestamp-literals">The ODBC default format masks</a>
 	// ODBC Formatters with optional single quotes around the date string
-	public static final DateTimeFormatter	ODBC_DATE_TIME_FORMATTER				= new DateTimeFormatterBuilder()
+	public static final DateTimeFormatter			ODBC_DATE_TIME_FORMATTER				= new DateTimeFormatterBuilder()
 	    .appendLiteral( "{ts " )
 	    .optionalStart().appendLiteral( '\'' ).optionalEnd()
 	    .appendPattern( "yyyy-MM-dd HH:mm:ss" )
 	    .optionalStart().appendLiteral( '\'' ).optionalEnd()
 	    .appendLiteral( '}' )
 	    .toFormatter();
-	public static final DateTimeFormatter	ODBC_DATE_FORMATTER						= new DateTimeFormatterBuilder()
+	public static final DateTimeFormatter			ODBC_DATE_FORMATTER						= new DateTimeFormatterBuilder()
 	    .appendLiteral( "{d " )
 	    .optionalStart().appendLiteral( '\'' ).optionalEnd()
 	    .appendPattern( "yyyy-MM-dd" )
 	    .optionalStart().appendLiteral( '\'' ).optionalEnd()
 	    .appendLiteral( '}' )
 	    .toFormatter();
-	public static final DateTimeFormatter	ODBC_TIME_FORMATTER						= new DateTimeFormatterBuilder()
+	public static final DateTimeFormatter			ODBC_TIME_FORMATTER						= new DateTimeFormatterBuilder()
 	    .appendLiteral( "{t " )
 	    .optionalStart().appendLiteral( '\'' ).optionalEnd()
 	    .appendPattern( "HH:mm:ss" )
@@ -140,38 +186,38 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	    .appendLiteral( '}' )
 	    .toFormatter();
 	// The format used by most browsers when calling toString on a Javascript date object - note that this is implementation dependent and may not be reliable
-	public static final DateTimeFormatter	JS_COMMON_TO_STRING_FORMATTER			= DateTimeFormatter
+	public static final DateTimeFormatter			JS_COMMON_TO_STRING_FORMATTER			= DateTimeFormatter
 	    .ofPattern( "EEE MMM dd yyyy HH:mm:ss 'GMT'Z (zzzz)" );
 	// The format used by most browsers when calling toString on a Javascript date object - note that this is implementation dependent and may not be reliable
-	public static final DateTimeFormatter	JS_COMMON_ALT_STRING_FORMATTER			= DateTimeFormatter
+	public static final DateTimeFormatter			JS_COMMON_ALT_STRING_FORMATTER			= DateTimeFormatter
 	    .ofPattern( "EEE MMM dd yyyy HH:mm:ss 'GMT'Z (zzz)" );
 	// The format output by ZonedDateTime toString method - optional offest, optional millis
-	public static final DateTimeFormatter	ZONED_DATE_TIME_TO_STRING_FORMATTER		= DateTimeFormatter
+	public static final DateTimeFormatter			ZONED_DATE_TIME_TO_STRING_FORMATTER		= DateTimeFormatter
 	    .ofPattern( "yyyy-MM-dd'T'HH:mm:ss[.SSS][XXX]'['VV']'" );
 
 	/**
 	 * Common Modes
 	 */
-	public static final String				MODE_DATE								= "Date";
-	public static final String				MODE_TIME								= "Time";
-	public static final String				MODE_DATETIME							= "DateTime";
+	public static final String						MODE_DATE								= "Date";
+	public static final String						MODE_TIME								= "Time";
+	public static final String						MODE_DATETIME							= "DateTime";
 
 	/**
 	 * The format mask currently applied to this DateTime instance.
 	 * This field is used to preserve the format mask during serialization and deserialization.
 	 * By default, it is initialized to {@link #TS_FORMAT_MASK}.
 	 */
-	private String							appliedFormatMask						= null;
+	private String									appliedFormatMask						= null;
 
 	/**
 	 * If the value of this is true, the timezone is fixed in all formatting and output operations
 	 */
-	public boolean							fixedTimezone							= false;
+	public boolean									fixedTimezone							= false;
 
 	/**
 	 * Common Formatters Map so we can easily access them by name
 	 */
-	public static final IStruct				COMMON_FORMATTERS						= Struct.of(
+	public static final IStruct						COMMON_FORMATTERS						= Struct.of(
 	    "fullDateTime", DateTimeFormatter.ofLocalizedDateTime( FormatStyle.FULL, FormatStyle.FULL ),
 	    "longDateTime", DateTimeFormatter.ofLocalizedDateTime( FormatStyle.LONG, FormatStyle.LONG ),
 	    "mediumDateTime", DateTimeFormatter.ofLocalizedDateTime( FormatStyle.MEDIUM, FormatStyle.MEDIUM ),
@@ -198,23 +244,24 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 	    "ODBCTime", ODBC_TIME_FORMATTER
 	);
 
-	private static final DateTimeFormatter	defaultFormatter						= TS_FORMATTER;
+	private static final DateTimeFormatter			defaultFormatter						= TS_FORMATTER;
 
 	/**
 	 * The format we use to represent the date time
 	 * which defaults to the ODBC format: {ts '''yyyy-MM-dd HH:mm:ss'''}
 	 */
-	private transient DateTimeFormatter		formatter								= defaultFormatter;
+	private transient DateTimeFormatter				formatter								= defaultFormatter;
 
 	/**
 	 * Function service
 	 */
-	private static final FunctionService	functionService							= BoxRuntime.getInstance().getFunctionService();
+	private static final FunctionService			functionService							= BoxRuntime
+	    .getInstance().getFunctionService();
 
 	/**
 	 * Metadata object
 	 */
-	public transient BoxMeta<?>				$bx;
+	public transient BoxMeta<?>						$bx;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -1169,6 +1216,71 @@ public class DateTime implements IType, IReferenceable, Serializable, ValueWrite
 		}
 
 		return localRef.compareTo( otherRef );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * IRangeable Implementation
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Advance this DateTime by the given step (in days, supports fractional).
+	 * For example, a step of 0.5 advances 12 hours; 1.5 advances 36 hours.
+	 *
+	 * @param step the number of days to advance (positive or negative, fractional supported)
+	 *
+	 * @return a new DateTime advanced by the step
+	 */
+	@Override
+	public DateTime rangeAdvance( Number step ) {
+		long totalSeconds = Multiply.invoke( step, 86400 ).longValue();
+		return new DateTime( this.wrapped.plusSeconds( totalSeconds ) );
+	}
+
+	/**
+	 * Return a stepper that delegates to the DateAdd BIF for the given unit.
+	 * Supports all units: millisecond(s)/l, second(s)/s, minute(s)/n, hour(s)/h,
+	 * day(s)/d/y, weekday(s)/w, week(s)/ww, month(s)/m, quarter(s)/q, year(s)/yyyy.
+	 *
+	 * @param unit the unit name (full word, plural, or datepart shorthand)
+	 *
+	 * @return a stepper BiFunction, or null if the unit is not recognized
+	 */
+	@Override
+	public java.util.function.BiFunction<DateTime, Number, DateTime> rangeUnitStepper( String unit ) {
+		String datepart = UNIT_TO_DATEPART.get( Key.of( unit.trim() ) );
+		if ( datepart == null ) {
+			return null;
+		}
+		return ( current, n ) -> ortus.boxlang.runtime.bifs.global.temporal.DateAdd.invoke( current, datepart, n.longValue() );
+	}
+
+	/**
+	 * Compare to another DateTime for range ordering.
+	 *
+	 * @param other the other DateTime
+	 *
+	 * @return negative if this is before other, zero if equal, positive if after
+	 */
+	@Override
+	public int rangeCompare( DateTime other ) {
+		return compareTo( ( Object ) other, Compare.lenientDateComparison );
+	}
+
+	/**
+	 * Coerce an arbitrary value to a DateTime for range containment checks.
+	 *
+	 * @param value the value to coerce
+	 *
+	 * @return the coerced DateTime, or null if incompatible
+	 */
+	@Override
+	public DateTime rangeCoerce( Object value ) {
+		if ( value instanceof DateTime dt ) {
+			return dt;
+		}
+		return DateTimeCaster.attempt( value ).orElse( null );
 	}
 
 	/**

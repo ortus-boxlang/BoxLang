@@ -1,0 +1,20 @@
+// Test else-if chains without braces
+if (x == 1)
+	println("one");
+else if (x == 2)
+	println("two");
+else if (x == 3)
+	println("three");
+else
+	println("other");
+
+// Test with braces style new-line
+if (y > 0)
+	println("positive");
+
+// Complex nested case
+if (condition1)
+	if (condition2)
+		doSomething();
+	else
+		doSomethingElse();

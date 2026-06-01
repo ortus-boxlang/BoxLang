@@ -112,6 +112,16 @@ public class DoubleCasterTest {
 
 	}
 
+	@DisplayName( "It can cast strings with leading zeros to a Double" )
+	@Test
+	void testItCanCastLeadingZeroStrings() {
+		assertThat( DoubleCaster.cast( "0123" ) ).isEqualTo( 123 );
+		assertThat( DoubleCaster.cast( "05887" ) ).isEqualTo( 5887 );
+		assertThat( DoubleCaster.cast( "007" ) ).isEqualTo( 7 );
+		assertThat( DoubleCaster.cast( "00" ) ).isEqualTo( 0 );
+		assertThat( DoubleCaster.cast( "0" ) ).isEqualTo( 0 );
+	}
+
 	@Disabled( "Ensures the performance benchmark for the attempt is met" )
 	@Test
 	void canMeetBenchmark() {
