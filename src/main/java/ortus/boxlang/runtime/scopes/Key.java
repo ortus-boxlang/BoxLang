@@ -296,6 +296,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		defaultRemoteMethodReturnFormat		= Key.of( "defaultRemoteMethodReturnFormat" );
 	public static final Key		defaultTimeout						= Key.of( "defaultTimeout" );
 	public static final Key		defaultValue						= Key.of( "defaultValue" );
+	public static final Key		decimals							= Key.of( "decimals" );
 	public static final Key		delay								= Key.of( "delay" );
 	public static final Key		delete								= Key.of( "delete" );
 	public static final Key		deleteFile							= Key.of( "deleteFile" );
@@ -657,6 +658,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		notifyAll							= Key.of( "notifyAll" );
 	public static final Key		nulls								= Key.of( "null" );
 	public static final Key		nulls2								= Key.of( "nulls" );
+	public static final Key		nullable							= Key.of( "nullable" );
 	public static final Key		number								= Key.of( "number" );
 	public static final Key		number1								= Key.of( "number1" );
 	public static final Key		number2								= Key.of( "number2" );
@@ -758,11 +760,13 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		queryError							= Key.of( "queryError" );
 	public static final Key		queryFormat							= Key.of( "queryFormat" );
 	public static final Key		queryParams							= Key.of( "queryParams" );
+	public static final Key		queryTransformers					= Key.of( "queryTransformers" );
 	public static final Key		queries								= Key.of( "queries" );
 	public static final Key		queryTimeout						= Key.of( "queryTimeout" );
 	public static final Key		radix								= Key.of( "radix" );
 	public static final Key		Raw_Trace							= Key.of( "Raw_Trace" );
 	public static final Key		read								= Key.of( "read" );
+	public static final Key		readOnly							= Key.of( "readOnly" );
 	public static final Key		readBinary							= Key.of( "readBinary" );
 	public static final Key		reapFrequency						= Key.of( "reapFrequency" );
 	public static final Key		recordCount							= Key.of( "recordCount" );
@@ -918,6 +922,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		systemExecute						= Key.of( "systemExecute" );
 	public static final Key		tagContext							= Key.of( "tagContext" );
 	public static final Key		tagName								= Key.of( "tagName" );
+	public static final Key		transformer							= Key.of( "transformer" );
+	public static final Key		transform							= Key.of( "transform" );
 	public static final Key		target								= Key.of( "target" );
 	public static final Key		targetThread						= Key.of( "targetThread" );
 	public static final Key		targetURI							= Key.of( "targetURI" );
