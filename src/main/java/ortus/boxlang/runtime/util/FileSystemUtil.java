@@ -1657,8 +1657,10 @@ public final class FileSystemUtil {
 					// special characters automatically.
 					return new URI( "file", "", input, null );
 				} else {
-					// Already has a scheme (e.g., file:///path/to/file)
-					// Replace backslashes and encode spaces in-place
+					// Already has a URI scheme (e.g., file:///path/to/file).
+					// We deliberately use simple space-encoding here rather than the
+					// multi-argument URI constructor to avoid double-encoding a string
+					// that may already be partially percent-encoded.
 					return new URI( input.replace( "\\", "/" ).replace( " ", "%20" ) );
 				}
 			} else {

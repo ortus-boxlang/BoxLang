@@ -65,6 +65,7 @@ public class FileSystemUtilTest {
 	void testCreateFileUriRelativeBackslashes() {
 		URI uri = FileSystemUtil.createFileUri( "ortus\\test.bxs" );
 		assertThat( uri.toString() ).doesNotContain( "\\" );
+		assertThat( uri.toString() ).contains( "/" );
 		assertThat( uri.isAbsolute() ).isFalse();
 	}
 
