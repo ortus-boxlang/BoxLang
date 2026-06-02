@@ -999,6 +999,20 @@ public class BoxRuntime implements java.io.Closeable {
 	}
 
 	/**
+	 * Check if the runtime has web support loaded (boxlang-web-support on classpath)
+	 *
+	 * @return true if web support is available, false otherwise
+	 */
+	public boolean inWebMode() {
+		try {
+			Class.forName( "ortus.boxlang.web.WebRequestExecutor", false, instance.runtimeLoader );
+			return true;
+		} catch ( ClassNotFoundException e ) {
+			return false;
+		}
+	}
+
+	/**
 	 * Announce an event with the provided {@link IStruct} of data short-hand for
 	 * {@link #getInterceptorService()}.announce()
 	 *

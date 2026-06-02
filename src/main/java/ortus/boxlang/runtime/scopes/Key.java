@@ -1016,6 +1016,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		wait								= Key.of( "wait" );
 	public static final Key		warning								= Key.of( "warning" );
 	public static final Key		wddx								= Key.of( "wddx" );
+	public static final Key		webMode								= Key.of( "webMode" );
 	public static final Key		web_server_api						= Key.of( "web_server_api" );
 	public static final Key		webservice							= Key.of( "webservice" );
 	public static final Key		webURL								= Key.of( "webURL" );
