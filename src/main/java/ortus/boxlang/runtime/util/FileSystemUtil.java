@@ -1645,19 +1645,26 @@ public final class FileSystemUtil {
 	public static URI createFileUri( String input ) {
 		try {
 			if ( input.startsWith( "/" ) || input.contains( ":" ) ) {
-				// Absolute path: ensure "file://" scheme starts with "file:///"
-				// Convert backslashes to forward slashes and prepend "file:///"
 				if ( input.matches( "^[A-Za-z]:.*" ) ) {
 					// Windows absolute path (e.g., C:\path\to\file)
-					input = "file:///" + input.replace( "\\", "/" );
-				} else {
+					// Normalise backslashes and prepend "/" so the path component is "/C:/..."
+					// Use the multi-argument URI constructor which encodes spaces and other
+					// special characters automatically.
+					return new URI( "file", "", "/" + input.replace( "\\", "/" ), null );
+				} else if ( input.startsWith( "/" ) ) {
 					// Unix-style absolute path (e.g., /path/to/file)
-					input = "file://" + input.replace( "\\", "/" );
+					// Use the multi-argument URI constructor which encodes spaces and other
+					// special characters automatically.
+					return new URI( "file", "", input, null );
+				} else {
+					// Already has a scheme (e.g., file:///path/to/file)
+					// Replace backslashes and encode spaces in-place
+					return new URI( input.replace( "\\", "/" ).replace( " ", "%20" ) );
 				}
-				return new URI( input );
 			} else {
-				// Relative path: just replace backslashes with forward slashes
-				return new URI( input.replace( "\\", "/" ) );
+				// Relative path: use multi-argument constructor to correctly encode
+				// spaces and other special characters
+				return new URI( null, null, input.replace( "\\", "/" ), null );
 			}
 		} catch ( URISyntaxException e ) {
 			throw new RuntimeException( "The provided file path [" + input + "] is not a valid URI.", e );
