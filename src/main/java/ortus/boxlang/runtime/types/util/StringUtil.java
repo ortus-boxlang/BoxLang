@@ -212,36 +212,124 @@ public class StringUtil {
 	}
 
 	/**
-	 * Create kebab-case from a string
+	 * Create kebab-case from a string. Handles camelCase, PascalCase, snake_case,
+	 * space-separated, and already kebab-case inputs. Non-alphanumeric characters
+	 * are replaced with hyphens, and consecutive hyphens are collapsed.
+	 *
+	 * <p>
+	 * Examples:
+	 * </p>
+	 * <ul>
+	 * <li>{@code "myVariable"} → {@code "my-variable"} (camelCase)</li>
+	 * <li>{@code "MyClass"} → {@code "my-class"} (PascalCase)</li>
+	 * <li>{@code "my_variable"} → {@code "my-variable"} (snake_case)</li>
+	 * <li>{@code "my variable"} → {@code "my-variable"} (spaces)</li>
+	 * <li>{@code "my-variable"} → {@code "my-variable"} (already kebab-case, idempotent)</li>
+	 * <li>{@code "XMLParser"} → {@code "xml-parser"} (acronym boundary)</li>
+	 * <li>{@code "parseXMLHTTPRequest"} → {@code "parse-xmlhttp-request"} (complex camelCase)</li>
+	 * </ul>
 	 *
 	 * @param target The target string to convert to kebab-case
 	 *
 	 * @return The string in kebab-case
 	 */
 	public static String kebabCase( String target ) {
-		return RegexBuilder.of( target.toLowerCase(), RegexBuilder.MULTIPLE_SPACES ).replaceAllAndGet( "-" );
+		// Normalize to snake_case first to handle all input formats uniformly
+		String snake = snakeCase( target );
+		if ( snake.isEmpty() ) {
+			return "";
+		}
+		// Replace underscores with hyphens
+		return snake.replace( "_", "-" );
 	}
 
 	/**
-	 * Create snake_case from a string
+	 * Create snake_case from a string. Handles camelCase, PascalCase, kebab-case,
+	 * space-separated, and already snake_case inputs. Non-alphanumeric characters
+	 * are replaced with underscores, and consecutive underscores are collapsed.
+	 *
+	 * <p>
+	 * Examples:
+	 * </p>
+	 * <ul>
+	 * <li>{@code "myVariable"} → {@code "my_variable"} (camelCase)</li>
+	 * <li>{@code "MyClass"} → {@code "my_class"} (PascalCase)</li>
+	 * <li>{@code "my-variable"} → {@code "my_variable"} (kebab-case)</li>
+	 * <li>{@code "my variable"} → {@code "my_variable"} (spaces)</li>
+	 * <li>{@code "my_variable"} → {@code "my_variable"} (already snake_case, idempotent)</li>
+	 * <li>{@code "XMLParser"} → {@code "xml_parser"} (acronym boundary)</li>
+	 * <li>{@code "parseXMLHTTPRequest"} → {@code "parse_xmlhttp_request"} (complex camelCase)</li>
+	 * </ul>
 	 *
 	 * @param target The target string to convert to snake_case
 	 *
 	 * @return The string in snake_case
 	 */
 	public static String snakeCase( String target ) {
-		return RegexBuilder.of( target.toLowerCase(), RegexBuilder.MULTIPLE_SPACES ).replaceAllAndGet( "_" );
+		if ( target == null || target.isEmpty() ) {
+			return "";
+		}
+
+		String result = target;
+
+		// Step 1: Replace hyphens with underscores (handle kebab-case)
+		result	= result.replace( "-", "_" );
+
+		// Step 2: Insert underscore between lowercase/digit and uppercase (camelCase/PascalCase word boundaries)
+		// e.g., "myVar" → "my_Var", "test2X" → "test2_X"
+		result	= result.replaceAll( "([a-z\\d])([A-Z])", "$1_$2" );
+
+		// Step 3: Insert underscore between consecutive uppercase block and a following uppercase+lowercase pair (acronym boundary)
+		// e.g., "XMLParser" → "XML_Parser", "parseXMLHTTPRequest" → "parse_XMLHTTP_Request"
+		result	= result.replaceAll( "([A-Z]+)([A-Z][a-z])", "$1_$2" );
+
+		// Step 4: Lowercase everything
+		result	= result.toLowerCase();
+
+		// Step 5: Replace any non-alphanumeric character (except underscore) with underscore
+		result	= result.replaceAll( "[^a-z0-9_]", "_" );
+
+		// Step 6: Collapse consecutive underscores into a single underscore
+		result	= result.replaceAll( "_+", "_" );
+
+		// Step 7: Strip leading and trailing underscores
+		result	= result.replaceAll( "^_|_$", "" );
+
+		return result;
 	}
 
 	/**
-	 * Create pascal case from a string
+	 * Create PascalCase from a string. Handles camelCase, snake_case, kebab-case,
+	 * space-separated, and already PascalCase inputs. Non-alphanumeric characters
+	 * are treated as word separators.
 	 *
-	 * @param target The target string to convert to pascal case
+	 * <p>
+	 * Examples:
+	 * </p>
+	 * <ul>
+	 * <li>{@code "myVariable"} → {@code "MyVariable"} (camelCase)</li>
+	 * <li>{@code "my_variable"} → {@code "MyVariable"} (snake_case)</li>
+	 * <li>{@code "my-variable"} → {@code "MyVariable"} (kebab-case)</li>
+	 * <li>{@code "my variable"} → {@code "MyVariable"} (spaces)</li>
+	 * <li>{@code "MyClass"} → {@code "MyClass"} (already PascalCase, idempotent)</li>
+	 * <li>{@code "XMLParser"} → {@code "XmlParser"} (acronym boundary)</li>
+	 * <li>{@code "parseXMLHTTPRequest"} → {@code "ParseXmlhttpRequest"} (complex camelCase)</li>
+	 * </ul>
 	 *
-	 * @return The string in pascal case
+	 * @param target The target string to convert to PascalCase
+	 *
+	 * @return The string in PascalCase
 	 */
 	public static String pascalCase( String target ) {
-		return ucFirst( camelCase( target ) );
+		// Normalize to snake_case first to handle all input formats uniformly
+		String snake = snakeCase( target );
+		if ( snake.isEmpty() ) {
+			return "";
+		}
+		// Split on underscores, capitalize each word, and join
+		return Arrays.stream( snake.split( "_" ) )
+		    .map( StringUtil::ucFirst )
+		    .collect( Collectors.joining() );
 	}
 
 	/**

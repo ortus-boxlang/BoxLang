@@ -42,15 +42,20 @@ public class ToSet extends BIF {
 	}
 
 	/**
-	 * @argument.value The value to convert to a Set. Accepts {@code Array}, {@code List},
-	 *                 {@code Set}, list-delimited {@code String}, native arrays,
-	 *                 {@code QueryColumn}, {@code XML}, or a bounded {@code Range}.
+	 * Convert a collection into a Set, deduplicating automatically. Accepts an Array, a list-delimited String,
+	 * an existing Set, a QueryColumn, an XML node, a bounded Range, or any value castable to a Set. When the
+	 * value is already of the requested variant it is returned as-is; otherwise a new Set of the specified
+	 * variant is created and populated.
 	 *
-	 * @argument.type The backing variant — "default" (hash), "linked" (ordered), or "sorted".
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.delimiter When {@code value} is a String, the list delimiter to split on. Defaults to ",".
+	 * @argument.value The value to convert. Accepts Array, Set, list-delimited String, QueryColumn, XML, Range, etc.
 	 *
-	 * @return A new {@link BoxSet}.
+	 * @argument.type The backing variant: "default" / "hash" (HashSet), "linked" / "ordered" (LinkedHashSet),
+	 *                or "sorted" / "tree" (TreeSet). Defaults to "default".
+	 *
+	 * @argument.delimiter When {@code value} is a String, the list delimiter to split on. Defaults to {@code ","}.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object		value		= arguments.get( Key.value );

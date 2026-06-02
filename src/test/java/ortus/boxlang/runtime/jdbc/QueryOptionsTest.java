@@ -1,11 +1,15 @@
 package ortus.boxlang.runtime.jdbc;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 public class QueryOptionsTest {
@@ -83,6 +87,112 @@ public class QueryOptionsTest {
 		assertThat( options.username ).isEqualTo( "true" );
 		assertThat( options.resultVariableName ).isEqualTo( "999" );
 		assertThat( options.cacheKey ).isEqualTo( "1000" );
+	}
+
+	@DisplayName( "Test context-aware constructor applies config defaults" )
+	@Test
+	public void testContextAwareDefaults() {
+		// Mock a context that returns a config struct with query defaults
+		IBoxContext	mockContext	= mock( IBoxContext.class );
+		IStruct		config		= Struct.of(
+		    Key.timeout, 30,
+		    Key.returnType, "array",
+		    Key.fetchSize, 500,
+		    Key.cacheProvider, "redis"
+		);
+		when( mockContext.getConfigItems( Key.applicationSettings, Key.queryOptions ) ).thenReturn( config );
+
+		QueryOptions options = new QueryOptions( new Struct(), mockContext );
+
+		assertThat( options.queryTimeout ).isEqualTo( 30 );
+		assertThat( options.getReturnType() ).isEqualTo( "array" );
+		assertThat( options.fetchSize ).isEqualTo( 500 );
+		assertThat( options.cacheProvider ).isEqualTo( "redis" );
+	}
+
+	@DisplayName( "Test context-aware constructor: user options override config defaults" )
+	@Test
+	public void testContextAwareUserOverridesDefaults() {
+		IBoxContext	mockContext	= mock( IBoxContext.class );
+		IStruct		config		= Struct.of(
+		    Key.timeout, 30,
+		    Key.returnType, "array"
+		);
+		when( mockContext.getConfigItems( Key.applicationSettings, Key.queryOptions ) ).thenReturn( config );
+
+		// User specifies their own options that override the defaults
+		IStruct			userOptions	= Struct.of(
+		    Key.timeout, 10,
+		    Key.fetchSize, 200
+		);
+		QueryOptions	options		= new QueryOptions( userOptions, mockContext );
+
+		// User value wins
+		assertThat( options.queryTimeout ).isEqualTo( 10 );
+		// Config default used since user didn't specify
+		assertThat( options.getReturnType() ).isEqualTo( "array" );
+		// User value
+		assertThat( options.fetchSize ).isEqualTo( 200 );
+	}
+
+	@DisplayName( "Test context-aware constructor: maxRows=0 from config is normalized to -1" )
+	@Test
+	public void testContextAwareMaxRowsZeroNormalized() {
+		IBoxContext	mockContext	= mock( IBoxContext.class );
+		IStruct		config		= Struct.of(
+		    Key.maxRows, 0
+		);
+		when( mockContext.getConfigItems( Key.applicationSettings, Key.queryOptions ) ).thenReturn( config );
+
+		QueryOptions options = new QueryOptions( new Struct(), mockContext );
+
+		// 0 from config should be normalized to -1 (meaning "all rows")
+		assertThat( options.maxRows ).isEqualTo( -1L );
+	}
+
+	@DisplayName( "Test context-aware constructor: maxRows from user overrides normalized config default" )
+	@Test
+	public void testContextAwareMaxRowsUserOverride() {
+		IBoxContext	mockContext	= mock( IBoxContext.class );
+		IStruct		config		= Struct.of(
+		    Key.maxRows, 0
+		);
+		when( mockContext.getConfigItems( Key.applicationSettings, Key.queryOptions ) ).thenReturn( config );
+
+		IStruct			userOptions	= Struct.of(
+		    Key.maxRows, 50
+		);
+		QueryOptions	options		= new QueryOptions( userOptions, mockContext );
+
+		// User-specified value wins and is not normalized to -1
+		assertThat( options.maxRows ).isEqualTo( 50L );
+	}
+
+	@DisplayName( "Test context-aware constructor: falls back when no config defaults available" )
+	@Test
+	public void testContextAwareNoConfigDefaults() {
+		IBoxContext mockContext = mock( IBoxContext.class );
+		when( mockContext.getConfigItems( Key.applicationSettings, Key.queryOptions ) ).thenReturn( null );
+
+		QueryOptions options = new QueryOptions( new Struct(), mockContext );
+
+		// Should behave like the old constructor — all defaults
+		assertThat( options.queryTimeout ).isNull();
+		assertThat( options.getReturnType() ).isEqualTo( "query" );
+		assertThat( options.fetchSize ).isEqualTo( 0 );
+		assertThat( options.maxRows ).isEqualTo( -1L );
+	}
+
+	@DisplayName( "Test context-aware constructor: explicit maxRows=0 in user options stays 0 (no normalization for user value)" )
+	@Test
+	public void testMaxRowsZeroExplicit() {
+		// maxRows=0 explicitly passed by user (no config) should still be normalized to -1
+		IStruct			userOptions	= Struct.of(
+		    Key.maxRows, 0
+		);
+		QueryOptions	options		= new QueryOptions( userOptions );
+
+		assertThat( options.maxRows ).isEqualTo( -1L );
 	}
 
 }

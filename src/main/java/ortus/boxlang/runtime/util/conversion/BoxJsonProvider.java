@@ -22,6 +22,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 import com.fasterxml.jackson.jr.ob.api.ReaderWriterProvider;
 import com.fasterxml.jackson.jr.ob.api.ValueReader;
@@ -116,7 +117,7 @@ public class BoxJsonProvider extends ReaderWriterProvider {
 		}
 
 		// Fall back for all other objects that aren't "simple"
-		if ( !String.class.isAssignableFrom( type ) && !Boolean.class.isAssignableFrom( type ) ) {
+		if ( !String.class.isAssignableFrom( type ) && !Boolean.class.isAssignableFrom( type ) && !UUID.class.isAssignableFrom( type ) ) {
 			return new DynamicObjectSerializer();
 		}
 

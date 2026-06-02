@@ -32,7 +32,7 @@ import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.TypeUtil;
 
-@BoxBIF( description = "Get the length of a string, array, or struct" ) // Len()
+@BoxBIF( description = "Get the length of a string, array, struct, query, or set" ) // Len()
 @BoxBIF( alias = "StructCount" )
 @BoxBIF( alias = "ArrayLen" )
 @BoxBIF( alias = "StringLen" )
@@ -44,6 +44,9 @@ import ortus.boxlang.runtime.types.util.TypeUtil;
 @BoxMember( type = BoxLangType.QUERY )
 @BoxMember( type = BoxLangType.DATETIME, name = "len" )
 @BoxMember( type = BoxLangType.DATE, name = "len" )
+@BoxMember( type = BoxLangType.SET, name = "size" )
+@BoxMember( type = BoxLangType.SET, name = "len" )
+@BoxMember( type = BoxLangType.SET, name = "length" )
 @BoxMember( type = BoxLangType.CUSTOM, customType = java.util.Set.class, name = "len" )
 public class Len extends BIF {
 

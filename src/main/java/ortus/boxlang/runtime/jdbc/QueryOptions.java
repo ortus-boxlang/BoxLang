@@ -203,7 +203,9 @@ public class QueryOptions {
 		this.cacheLastAccessTimeout	= ( Duration ) options.getOrDefault( Key.cacheLastAccessTimeout, null );
 		this.cacheProvider			= StringCaster.attempt( options.get( Key.cacheProvider ) ).orElse( cacheService.getDefaultCache().getName().toString() );
 
-		this.maxRows				= LongCaster.attempt( options.get( Key.maxRows ), false ).orElse( -1L );
+		this.maxRows				= normalizeMaxRows(
+		    LongCaster.attempt( options.get( Key.maxRows ), false ).orElse( -1L )
+		);
 		this.dbtype					= StringCaster.attempt( options.get( Key.dbtype ) ).orElse( null );
 
 		determineReturnType();
@@ -217,6 +219,19 @@ public class QueryOptions {
 			dStruct.put( Key.password, this.password );
 		}
 
+	}
+
+	/**
+	 * Read in the provided query options with default fallbacks from the runtime configuration.
+	 * <p>
+	 * Defaults are resolved from {@code applicationSettings.queryOptions} in the BoxLang config, which is seeded
+	 * from the {@code queries} section of {@code boxlang.json}. User-supplied options override these defaults.
+	 *
+	 * @param options Struct of query options. Backwards-compatible with the old-style {@code <query>} from BL.
+	 * @param context The BoxLang context, used to resolve configuration defaults.
+	 */
+	public QueryOptions( IStruct options, IBoxContext context ) {
+		this( mergeWithDefaults( options, context ) );
 	}
 
 	/**
@@ -342,6 +357,29 @@ public class QueryOptions {
 	 * Private Helpers
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Merge user-supplied query options with configuration defaults from the context.
+	 * <p>
+	 * Configuration defaults are resolved from {@code applicationSettings.queryOptions} and applied first;
+	 * user options override any matching keys.
+	 */
+	private static IStruct mergeWithDefaults( IStruct options, IBoxContext context ) {
+		Object configDefaults = context.getConfigItems( Key.applicationSettings, Key.queryOptions );
+		if ( configDefaults instanceof IStruct defaults ) {
+			IStruct merged = new Struct( defaults );
+			merged.putAll( options );
+			return merged;
+		}
+		return options;
+	}
+
+	/**
+	 * Normalize the maxRows value so that {@code 0} (meaning "all rows") is treated the same as {@code -1} (the internal sentinel).
+	 */
+	private static Long normalizeMaxRows( Long rawMaxRows ) {
+		return rawMaxRows == 0L ? -1L : rawMaxRows;
+	}
 
 	/**
 	 * Parse the `returnType` query option and set the `returnType` and `columnKey` fields.

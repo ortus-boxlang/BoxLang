@@ -589,7 +589,7 @@ public class JSONSerializeTest {
 		    """
 				array1 = [javacast("double",0.0) ,javacast("double",0.30420544445599146)];
 
-				matrix = {   "test": 
+				matrix = {   "test":
 					[javacast("double[]", array1)]
 				}
 		    	result = jsonSerialize( data: matrix )
@@ -776,6 +776,18 @@ public class JSONSerializeTest {
 		assertThat( variables.getAsString( result ) ).isEqualTo( "[\"a\",\"b\",\"c\"]" );
 	}
 
+	@DisplayName( "It can serialize a Set as a JSON array using a member method" )
+	@Test
+	public void testCanSerializeSetWithMemberMethod() {
+		instance.executeSource(
+		    """
+		    result = setNew( type="linked", values=["a","b","c"] ).toJSON()
+
+		    """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "[\"a\",\"b\",\"c\"]" );
+	}
+
 	@DisplayName( "It can serialize a Set nested in a struct" )
 	@Test
 	public void testCanSerializeSetNestedInStruct() {
@@ -786,6 +798,21 @@ public class JSONSerializeTest {
 		    context );
 		var json = variables.getAsString( result );
 		assertThat( json ).contains( "\"tags\":[\"java\",\"boxlang\"]" );
+	}
+
+	@DisplayName( "It serializes a java.util.UUID as a quoted JSON string" )
+	@Test
+	public void testSerializeUUID() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				uuid = createObject( "java", "java.util.UUID" ).randomUUID();
+				result = jsonSerialize( uuid );
+			""",
+		    context );
+		// @formatter:on
+		String json = variables.getAsString( result );
+		assertThat( json ).matches( "\"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\"" );
 	}
 
 }

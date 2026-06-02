@@ -55,6 +55,179 @@ public class StringUtilTest {
 		assertThat( camelCase ).isEqualTo( "thisIsATest" );
 	}
 
+	@DisplayName( "Can snake_case a string" )
+	@Test
+	void testSnakeCase() {
+		// camelCase → snake_case
+		assertThat( StringUtil.snakeCase( "myVariable" ) ).isEqualTo( "my_variable" );
+		assertThat( StringUtil.snakeCase( "thisIsATest" ) ).isEqualTo( "this_is_a_test" );
+		assertThat( StringUtil.snakeCase( "parseXML" ) ).isEqualTo( "parse_xml" );
+
+		// PascalCase → snake_case
+		assertThat( StringUtil.snakeCase( "MyClass" ) ).isEqualTo( "my_class" );
+		assertThat( StringUtil.snakeCase( "HelloWorld" ) ).isEqualTo( "hello_world" );
+		assertThat( StringUtil.snakeCase( "XMLParser" ) ).isEqualTo( "xml_parser" );
+
+		// kebab-case → snake_case
+		assertThat( StringUtil.snakeCase( "my-variable" ) ).isEqualTo( "my_variable" );
+		assertThat( StringUtil.snakeCase( "hello-world-test" ) ).isEqualTo( "hello_world_test" );
+
+		// Spaces → snake_case
+		assertThat( StringUtil.snakeCase( "my variable" ) ).isEqualTo( "my_variable" );
+		assertThat( StringUtil.snakeCase( "hello world" ) ).isEqualTo( "hello_world" );
+		assertThat( StringUtil.snakeCase( "this is a   test" ) ).isEqualTo( "this_is_a_test" );
+
+		// Already snake_case (idempotent)
+		assertThat( StringUtil.snakeCase( "my_variable" ) ).isEqualTo( "my_variable" );
+		assertThat( StringUtil.snakeCase( "already_snake_case" ) ).isEqualTo( "already_snake_case" );
+
+		// ALLCAPS → single word lowercased
+		assertThat( StringUtil.snakeCase( "ALLCAPS" ) ).isEqualTo( "allcaps" );
+		assertThat( StringUtil.snakeCase( "XML" ) ).isEqualTo( "xml" );
+
+		// Complex acronym boundaries
+		assertThat( StringUtil.snakeCase( "parseXMLHTTPRequest" ) ).isEqualTo( "parse_xmlhttp_request" );
+		assertThat( StringUtil.snakeCase( "XMLHTTPRequest" ) ).isEqualTo( "xmlhttp_request" );
+
+		// Numbers
+		assertThat( StringUtil.snakeCase( "myVar2" ) ).isEqualTo( "my_var2" );
+		assertThat( StringUtil.snakeCase( "test2Var" ) ).isEqualTo( "test2_var" );
+		assertThat( StringUtil.snakeCase( "JSON2XML" ) ).isEqualTo( "json2_xml" );
+
+		// Mixed separators
+		assertThat( StringUtil.snakeCase( "my-variable_name" ) ).isEqualTo( "my_variable_name" );
+		assertThat( StringUtil.snakeCase( "hello-world test" ) ).isEqualTo( "hello_world_test" );
+
+		// Special characters → underscores
+		assertThat( StringUtil.snakeCase( "hello@world!" ) ).isEqualTo( "hello_world" );
+		assertThat( StringUtil.snakeCase( "price$amount" ) ).isEqualTo( "price_amount" );
+
+		// Leading/trailing whitespace and special chars
+		assertThat( StringUtil.snakeCase( " hello " ) ).isEqualTo( "hello" );
+		assertThat( StringUtil.snakeCase( "  hello  world  " ) ).isEqualTo( "hello_world" );
+
+		// Empty and edge cases
+		assertThat( StringUtil.snakeCase( "" ) ).isEqualTo( "" );
+		assertThat( StringUtil.snakeCase( "_" ) ).isEqualTo( "" );
+		assertThat( StringUtil.snakeCase( "___" ) ).isEqualTo( "" );
+	}
+
+	@DisplayName( "Can PascalCase a string" )
+	@Test
+	void testPascalCase() {
+		// camelCase → PascalCase
+		assertThat( StringUtil.pascalCase( "myVariable" ) ).isEqualTo( "MyVariable" );
+		assertThat( StringUtil.pascalCase( "thisIsATest" ) ).isEqualTo( "ThisIsATest" );
+		assertThat( StringUtil.pascalCase( "parseXML" ) ).isEqualTo( "ParseXml" );
+
+		// snake_case → PascalCase
+		assertThat( StringUtil.pascalCase( "my_variable" ) ).isEqualTo( "MyVariable" );
+		assertThat( StringUtil.pascalCase( "hello_world" ) ).isEqualTo( "HelloWorld" );
+		assertThat( StringUtil.pascalCase( "xml_parser" ) ).isEqualTo( "XmlParser" );
+
+		// kebab-case → PascalCase
+		assertThat( StringUtil.pascalCase( "my-variable" ) ).isEqualTo( "MyVariable" );
+		assertThat( StringUtil.pascalCase( "hello-world-test" ) ).isEqualTo( "HelloWorldTest" );
+
+		// Spaces → PascalCase
+		assertThat( StringUtil.pascalCase( "my variable" ) ).isEqualTo( "MyVariable" );
+		assertThat( StringUtil.pascalCase( "hello world" ) ).isEqualTo( "HelloWorld" );
+		assertThat( StringUtil.pascalCase( "this is a   test" ) ).isEqualTo( "ThisIsATest" );
+
+		// Already PascalCase (idempotent)
+		assertThat( StringUtil.pascalCase( "MyClass" ) ).isEqualTo( "MyClass" );
+		assertThat( StringUtil.pascalCase( "HelloWorld" ) ).isEqualTo( "HelloWorld" );
+		assertThat( StringUtil.pascalCase( "MyVariable" ) ).isEqualTo( "MyVariable" );
+
+		// ALLCAPS → title-cased single word
+		assertThat( StringUtil.pascalCase( "ALLCAPS" ) ).isEqualTo( "Allcaps" );
+		assertThat( StringUtil.pascalCase( "XML" ) ).isEqualTo( "Xml" );
+
+		// Complex acronym boundaries
+		assertThat( StringUtil.pascalCase( "parseXMLHTTPRequest" ) ).isEqualTo( "ParseXmlhttpRequest" );
+		assertThat( StringUtil.pascalCase( "XMLHTTPRequest" ) ).isEqualTo( "XmlhttpRequest" );
+		assertThat( StringUtil.pascalCase( "XMLParser" ) ).isEqualTo( "XmlParser" );
+
+		// Numbers
+		assertThat( StringUtil.pascalCase( "myVar2" ) ).isEqualTo( "MyVar2" );
+		assertThat( StringUtil.pascalCase( "test2Var" ) ).isEqualTo( "Test2Var" );
+		assertThat( StringUtil.pascalCase( "JSON2XML" ) ).isEqualTo( "Json2Xml" );
+
+		// Mixed separators
+		assertThat( StringUtil.pascalCase( "my-variable_name" ) ).isEqualTo( "MyVariableName" );
+		assertThat( StringUtil.pascalCase( "hello-world test" ) ).isEqualTo( "HelloWorldTest" );
+
+		// Special characters → word separators
+		assertThat( StringUtil.pascalCase( "hello@world!" ) ).isEqualTo( "HelloWorld" );
+		assertThat( StringUtil.pascalCase( "price$amount" ) ).isEqualTo( "PriceAmount" );
+
+		// Leading/trailing whitespace and special chars
+		assertThat( StringUtil.pascalCase( " hello " ) ).isEqualTo( "Hello" );
+		assertThat( StringUtil.pascalCase( "  hello  world  " ) ).isEqualTo( "HelloWorld" );
+
+		// Empty and edge cases
+		assertThat( StringUtil.pascalCase( "" ) ).isEqualTo( "" );
+		assertThat( StringUtil.pascalCase( "_" ) ).isEqualTo( "" );
+		assertThat( StringUtil.pascalCase( "___" ) ).isEqualTo( "" );
+	}
+
+	@DisplayName( "Can kebab-case a string" )
+	@Test
+	void testKebabCase() {
+		// camelCase → kebab-case
+		assertThat( StringUtil.kebabCase( "myVariable" ) ).isEqualTo( "my-variable" );
+		assertThat( StringUtil.kebabCase( "thisIsATest" ) ).isEqualTo( "this-is-a-test" );
+		assertThat( StringUtil.kebabCase( "parseXML" ) ).isEqualTo( "parse-xml" );
+
+		// PascalCase → kebab-case
+		assertThat( StringUtil.kebabCase( "MyClass" ) ).isEqualTo( "my-class" );
+		assertThat( StringUtil.kebabCase( "HelloWorld" ) ).isEqualTo( "hello-world" );
+		assertThat( StringUtil.kebabCase( "XMLParser" ) ).isEqualTo( "xml-parser" );
+
+		// snake_case → kebab-case
+		assertThat( StringUtil.kebabCase( "my_variable" ) ).isEqualTo( "my-variable" );
+		assertThat( StringUtil.kebabCase( "hello_world_test" ) ).isEqualTo( "hello-world-test" );
+
+		// Spaces → kebab-case
+		assertThat( StringUtil.kebabCase( "my variable" ) ).isEqualTo( "my-variable" );
+		assertThat( StringUtil.kebabCase( "hello world" ) ).isEqualTo( "hello-world" );
+		assertThat( StringUtil.kebabCase( "this is a   test" ) ).isEqualTo( "this-is-a-test" );
+
+		// Already kebab-case (idempotent)
+		assertThat( StringUtil.kebabCase( "my-variable" ) ).isEqualTo( "my-variable" );
+		assertThat( StringUtil.kebabCase( "already-kebab-case" ) ).isEqualTo( "already-kebab-case" );
+
+		// ALLCAPS → single word lowercased
+		assertThat( StringUtil.kebabCase( "ALLCAPS" ) ).isEqualTo( "allcaps" );
+		assertThat( StringUtil.kebabCase( "XML" ) ).isEqualTo( "xml" );
+
+		// Complex acronym boundaries
+		assertThat( StringUtil.kebabCase( "parseXMLHTTPRequest" ) ).isEqualTo( "parse-xmlhttp-request" );
+		assertThat( StringUtil.kebabCase( "XMLHTTPRequest" ) ).isEqualTo( "xmlhttp-request" );
+
+		// Numbers
+		assertThat( StringUtil.kebabCase( "myVar2" ) ).isEqualTo( "my-var2" );
+		assertThat( StringUtil.kebabCase( "test2Var" ) ).isEqualTo( "test2-var" );
+		assertThat( StringUtil.kebabCase( "JSON2XML" ) ).isEqualTo( "json2-xml" );
+
+		// Mixed separators
+		assertThat( StringUtil.kebabCase( "my-variable_name" ) ).isEqualTo( "my-variable-name" );
+		assertThat( StringUtil.kebabCase( "hello-world test" ) ).isEqualTo( "hello-world-test" );
+
+		// Special characters → hyphens
+		assertThat( StringUtil.kebabCase( "hello@world!" ) ).isEqualTo( "hello-world" );
+		assertThat( StringUtil.kebabCase( "price$amount" ) ).isEqualTo( "price-amount" );
+
+		// Leading/trailing whitespace and special chars
+		assertThat( StringUtil.kebabCase( " hello " ) ).isEqualTo( "hello" );
+		assertThat( StringUtil.kebabCase( "  hello  world  " ) ).isEqualTo( "hello-world" );
+
+		// Empty and edge cases
+		assertThat( StringUtil.kebabCase( "" ) ).isEqualTo( "" );
+		assertThat( StringUtil.kebabCase( "-" ) ).isEqualTo( "" );
+		assertThat( StringUtil.kebabCase( "---" ) ).isEqualTo( "" );
+	}
+
 	@DisplayName( "Can singularize a string" )
 	@Test
 	void testSingularize() {

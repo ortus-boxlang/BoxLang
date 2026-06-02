@@ -25,8 +25,9 @@ import ortus.boxlang.runtime.types.BoxSet;
 public class SetOf extends BIF {
 
 	/**
-	 * Construct a Set from positional arguments. {@code setOf( 1, 2, 3 )} returns a hash-backed
-	 * set containing {@code {1, 2, 3}}. Duplicates are silently dropped.
+	 * Build a default (hash-backed) Set from positional arguments, silently deduplicating as it goes.
+	 * Internal runtime slots (arguments prefixed with {@code __} or the argumentCollection key) are automatically
+	 * skipped. Equivalent to calling setNew() followed by setAdd() for each value.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope — every positional argument becomes an element of the new set.

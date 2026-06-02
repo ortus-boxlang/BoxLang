@@ -178,6 +178,8 @@ public abstract class BaseApplicationListener {
 	    Key.mappings, Struct.ofNonConcurrent(),
 	    // Query Transformers
 	    Key.queryTransformers, Struct.ofNonConcurrent(),
+	    // Query global options
+	    Key.queryOptions, runtime.getConfiguration().queries.asStruct(),
 	    // Dynamic Schedulers
 	    Key.schedulers, new Array(),
 	    // Default Session Management settings

@@ -753,6 +753,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		qualifier							= Key.of( "qualifier" );
 	public static final Key		quarter								= Key.of( "quarter" );
 	public static final Key		query								= Key.of( "query" );
+	public static final Key		queryOptions						= Key.of( "queryOptions" );
 	public static final Key		query_string						= Key.of( "query_string" );
 	public static final Key		query1								= Key.of( "query1" );
 	public static final Key		query2								= Key.of( "query2" );
@@ -760,6 +761,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		queryFormat							= Key.of( "queryFormat" );
 	public static final Key		queryParams							= Key.of( "queryParams" );
 	public static final Key		queryTransformers					= Key.of( "queryTransformers" );
+	public static final Key		queries								= Key.of( "queries" );
 	public static final Key		queryTimeout						= Key.of( "queryTimeout" );
 	public static final Key		radix								= Key.of( "radix" );
 	public static final Key		Raw_Trace							= Key.of( "Raw_Trace" );
