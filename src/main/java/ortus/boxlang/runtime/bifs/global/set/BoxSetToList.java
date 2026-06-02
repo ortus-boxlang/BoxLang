@@ -14,47 +14,49 @@
  */
 package ortus.boxlang.runtime.bifs.global.set;
 
+import java.util.stream.Collectors;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.BoxSet;
-import ortus.boxlang.runtime.types.IStruct;
 
-@BoxBIF( description = "Build a Set containing the values of a Struct, deduplicating." )
-@BoxMember( type = BoxLangType.STRUCT, name = "valueSet" )
-public class StructValueSet extends BIF {
+@BoxBIF( description = "Join the elements of a Set into a delimited string." )
+@BoxMember( type = BoxLangType.SET, name = "toList" )
+public class BoxSetToList extends BIF {
 
-	public StructValueSet() {
+	public BoxSetToList() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, Argument.STRUCT, Key.struct ),
-		    new Argument( false, Argument.STRING, Key.type, "default" )
+		    new Argument( true, Argument.SET, Key.set ),
+		    new Argument( false, Argument.STRING, Key.delimiter, "," )
 		};
 	}
 
 	/**
-	 * Build a Set containing the values of a Struct, deduplicating automatically. The backing variant can be
-	 * configured; use "linked" to preserve the Struct's value iteration order.
+	 * Join the elements of a Set into a delimited string. Each element is cast to a String before joining.
+	 * For LINKED Sets the insertion order is preserved; for SORTED Sets the natural ordering applies; for
+	 * default hash Sets the order is undefined.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.struct The struct whose values should populate the set.
+	 * @argument.set The set whose elements should be joined.
 	 *
-	 * @argument.type The backing variant: "default" / "hash" (HashSet), "linked" / "ordered" (LinkedHashSet,
-	 *                preserves Struct iteration order), or "sorted" / "tree" (TreeSet).
+	 * @argument.delimiter The delimiter to place between elements. Defaults to {@code ","}.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		IStruct		struct	= arguments.getAsStruct( Key.struct );
-		BoxSet.Type	type	= BoxSet.parseType( arguments.getAsString( Key.type ) );
-		BoxSet		out		= new BoxSet( type );
-		out.addAll( struct.values() );
-		return out;
+		BoxSet	set			= arguments.getAsSet( Key.set );
+		String	delimiter	= arguments.getAsString( Key.delimiter );
+		return set.stream()
+		    .map( StringCaster::cast )
+		    .collect( Collectors.joining( delimiter ) );
 	}
 
 }

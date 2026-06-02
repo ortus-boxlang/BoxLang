@@ -22,39 +22,42 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.BoxSet;
-import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.util.SetUtil;
 
-@BoxBIF( description = "Build a Set containing the values of a Struct, deduplicating." )
-@BoxMember( type = BoxLangType.STRUCT, name = "valueSet" )
-public class StructValueSet extends BIF {
+@BoxBIF( description = "Left-fold a Set with an accumulator function and an initial value." )
+@BoxMember( type = BoxLangType.SET, name = "reduce" )
+public class BoxSetReduce extends BIF {
 
-	public StructValueSet() {
+	public BoxSetReduce() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, Argument.STRUCT, Key.struct ),
-		    new Argument( false, Argument.STRING, Key.type, "default" )
+		    new Argument( true, Argument.SET, Key.set ),
+		    new Argument( true, "function:BiFunction", Key.callback ),
+		    new Argument( false, Argument.ANY, Key.initialValue )
 		};
 	}
 
 	/**
-	 * Build a Set containing the values of a Struct, deduplicating automatically. The backing variant can be
-	 * configured; use "linked" to preserve the Struct's value iteration order.
+	 * Left-fold a Set with an accumulator function, reducing it to a single value. The callback receives the
+	 * current accumulator, the element value, its 1-based ordinal position, and the Set itself, and returns the
+	 * new accumulator. Iteration follows the natural order of the underlying variant.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.struct The struct whose values should populate the set.
+	 * @argument.set The set to reduce.
 	 *
-	 * @argument.type The backing variant: "default" / "hash" (HashSet), "linked" / "ordered" (LinkedHashSet,
-	 *                preserves Struct iteration order), or "sorted" / "tree" (TreeSet).
+	 * @argument.callback Receives {@code (accumulator, value, ordinal, set)} and returns the new accumulator.
+	 *
+	 * @argument.initialValue The starting accumulator value. If omitted, the first element is used as the initial value.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		IStruct		struct	= arguments.getAsStruct( Key.struct );
-		BoxSet.Type	type	= BoxSet.parseType( arguments.getAsString( Key.type ) );
-		BoxSet		out		= new BoxSet( type );
-		out.addAll( struct.values() );
-		return out;
+		return SetUtil.reduce(
+		    arguments.getAsSet( Key.set ),
+		    arguments.getAsFunction( Key.callback ),
+		    arguments.get( Key.initialValue ),
+		    context
+		);
 	}
 
 }

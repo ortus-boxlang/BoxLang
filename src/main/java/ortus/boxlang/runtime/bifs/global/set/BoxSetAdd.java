@@ -16,33 +16,42 @@ package ortus.boxlang.runtime.bifs.global.set;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
+import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.BoxSet;
 
-@BoxBIF( description = "Build a default (hash) Set from positional arguments, deduplicating as it goes." )
-public class SetOf extends BIF {
+@BoxBIF( description = "Add an element to a Set. Duplicates are ignored. Returns the Set for chaining." )
+@BoxMember( type = BoxLangType.SET, name = "add" )
+@BoxMember( type = BoxLangType.SET, name = "append" )
+public class BoxSetAdd extends BIF {
+
+	public BoxSetAdd() {
+		super();
+		declaredArguments = new Argument[] {
+		    new Argument( true, Argument.MODIFIABLE_SET, Key.set ),
+		    new Argument( true, Argument.ANY, Key.value )
+		};
+	}
 
 	/**
-	 * Build a default (hash-backed) Set from positional arguments, silently deduplicating as it goes.
-	 * Internal runtime slots (arguments prefixed with {@code __} or the argumentCollection key) are automatically
-	 * skipped. Equivalent to calling setNew() followed by setAdd() for each value.
+	 * Add an element to a Set, deduplicating automatically. If the value is already present, the call is a
+	 * no-op. The Set is modified in place and returned to support method chaining.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
-	 * @param arguments Argument scope — every positional argument becomes an element of the new set.
+	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @argument.set The set to add the element to.
+	 *
+	 * @argument.value The value to add. Duplicates are silently ignored.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		BoxSet s = new BoxSet();
-		arguments.forEach( ( key, value ) -> {
-			String name = key.getName();
-			// Skip internal slots the runtime injects ("__functionName", "__isMemberExecution", etc.)
-			if ( name.startsWith( "__" ) || key.equals( Key.argumentCollection ) ) {
-				return;
-			}
-			s.add( value );
-		} );
-		return s;
+		BoxSet set = arguments.getAsSet( Key.set );
+		set.add( arguments.get( Key.value ) );
+		return set;
 	}
 
 }

@@ -16,33 +16,41 @@ package ortus.boxlang.runtime.bifs.global.set;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
+import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.BoxSet;
 
-@BoxBIF( description = "Build a default (hash) Set from positional arguments, deduplicating as it goes." )
-public class SetOf extends BIF {
+@BoxBIF( description = "Test whether a Set contains a given value." )
+@BoxMember( type = BoxLangType.SET, name = "contains" )
+@BoxMember( type = BoxLangType.SET, name = "has" )
+public class BoxSetContains extends BIF {
+
+	public BoxSetContains() {
+		super();
+		declaredArguments = new Argument[] {
+		    new Argument( true, Argument.SET, Key.set ),
+		    new Argument( true, Argument.ANY, Key.value )
+		};
+	}
 
 	/**
-	 * Build a default (hash-backed) Set from positional arguments, silently deduplicating as it goes.
-	 * Internal runtime slots (arguments prefixed with {@code __} or the argumentCollection key) are automatically
-	 * skipped. Equivalent to calling setNew() followed by setAdd() for each value.
+	 * Test whether a Set contains a given value using BoxLang value equality. Returns true if the value is
+	 * present, false otherwise.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
-	 * @param arguments Argument scope — every positional argument becomes an element of the new set.
+	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @argument.set The set to test.
+	 *
+	 * @argument.value The value to look for.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		BoxSet s = new BoxSet();
-		arguments.forEach( ( key, value ) -> {
-			String name = key.getName();
-			// Skip internal slots the runtime injects ("__functionName", "__isMemberExecution", etc.)
-			if ( name.startsWith( "__" ) || key.equals( Key.argumentCollection ) ) {
-				return;
-			}
-			s.add( value );
-		} );
-		return s;
+		BoxSet set = arguments.getAsSet( Key.set );
+		return set.contains( arguments.get( Key.value ) );
 	}
 
 }

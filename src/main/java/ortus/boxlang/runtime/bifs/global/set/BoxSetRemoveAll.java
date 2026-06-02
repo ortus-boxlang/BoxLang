@@ -18,43 +18,42 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.SetCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.BoxSet;
-import ortus.boxlang.runtime.types.IStruct;
 
-@BoxBIF( description = "Build a Set containing the values of a Struct, deduplicating." )
-@BoxMember( type = BoxLangType.STRUCT, name = "valueSet" )
-public class StructValueSet extends BIF {
+@BoxBIF( description = "Remove every element of a collection from a Set." )
+@BoxMember( type = BoxLangType.SET, name = "removeAll" )
+public class BoxSetRemoveAll extends BIF {
 
-	public StructValueSet() {
+	public BoxSetRemoveAll() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, Argument.STRUCT, Key.struct ),
-		    new Argument( false, Argument.STRING, Key.type, "default" )
+		    new Argument( true, Argument.MODIFIABLE_SET, Key.set ),
+		    new Argument( true, Argument.ANY, Key.values )
 		};
 	}
 
 	/**
-	 * Build a Set containing the values of a Struct, deduplicating automatically. The backing variant can be
-	 * configured; use "linked" to preserve the Struct's value iteration order.
+	 * Remove every element of a collection from a Set, leaving only the elements that are not in the collection.
+	 * The Set is modified in place and returned to support method chaining. Elements not present in the Set are
+	 * silently skipped.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.struct The struct whose values should populate the set.
+	 * @argument.set The set to remove from.
 	 *
-	 * @argument.type The backing variant: "default" / "hash" (HashSet), "linked" / "ordered" (LinkedHashSet,
-	 *                preserves Struct iteration order), or "sorted" / "tree" (TreeSet).
+	 * @argument.values The collection of values to remove. Accepts an Array, Set, list-delimited String, or any castable collection.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		IStruct		struct	= arguments.getAsStruct( Key.struct );
-		BoxSet.Type	type	= BoxSet.parseType( arguments.getAsString( Key.type ) );
-		BoxSet		out		= new BoxSet( type );
-		out.addAll( struct.values() );
-		return out;
+		BoxSet	set	= arguments.getAsSet( Key.set );
+		BoxSet	src	= SetCaster.castLoose( arguments.get( Key.values ) );
+		set.removeAll( src );
+		return set;
 	}
 
 }

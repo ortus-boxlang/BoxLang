@@ -22,39 +22,35 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.BoxSet;
-import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.util.SetUtil;
 
-@BoxBIF( description = "Build a Set containing the values of a Struct, deduplicating." )
-@BoxMember( type = BoxLangType.STRUCT, name = "valueSet" )
-public class StructValueSet extends BIF {
+@BoxBIF( description = "Return true if no element of a Set matches the predicate." )
+@BoxMember( type = BoxLangType.SET, name = "none" )
+public class BoxSetNone extends BIF {
 
-	public StructValueSet() {
+	public BoxSetNone() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, Argument.STRUCT, Key.struct ),
-		    new Argument( false, Argument.STRING, Key.type, "default" )
+		    new Argument( true, Argument.SET, Key.set ),
+		    new Argument( true, "function:Predicate", Key.callback )
 		};
 	}
 
 	/**
-	 * Build a Set containing the values of a Struct, deduplicating automatically. The backing variant can be
-	 * configured; use "linked" to preserve the Struct's value iteration order.
+	 * Test whether no element of a Set satisfies a predicate. Iteration short-circuits on the first element for
+	 * which the predicate returns true. Returns true for an empty Set. The predicate receives the element value,
+	 * its 1-based ordinal position, and the Set itself.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.struct The struct whose values should populate the set.
+	 * @argument.set The set to test.
 	 *
-	 * @argument.type The backing variant: "default" / "hash" (HashSet), "linked" / "ordered" (LinkedHashSet,
-	 *                preserves Struct iteration order), or "sorted" / "tree" (TreeSet).
+	 * @argument.callback Predicate invoked for each element. Receives {@code (value, ordinal, set)}.
+	 *                    Short-circuits on the first {@code true} result.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		IStruct		struct	= arguments.getAsStruct( Key.struct );
-		BoxSet.Type	type	= BoxSet.parseType( arguments.getAsString( Key.type ) );
-		BoxSet		out		= new BoxSet( type );
-		out.addAll( struct.values() );
-		return out;
+		return !SetUtil.some( arguments.getAsSet( Key.set ), arguments.getAsFunction( Key.callback ), context );
 	}
 
 }

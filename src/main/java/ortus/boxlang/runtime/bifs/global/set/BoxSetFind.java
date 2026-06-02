@@ -22,39 +22,35 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.BoxSet;
-import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.util.SetUtil;
 
-@BoxBIF( description = "Build a Set containing the values of a Struct, deduplicating." )
-@BoxMember( type = BoxLangType.STRUCT, name = "valueSet" )
-public class StructValueSet extends BIF {
+@BoxBIF( description = "Return the first element of a Set that matches the predicate, or null if none match." )
+@BoxMember( type = BoxLangType.SET, name = "find" )
+public class BoxSetFind extends BIF {
 
-	public StructValueSet() {
+	public BoxSetFind() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, Argument.STRUCT, Key.struct ),
-		    new Argument( false, Argument.STRING, Key.type, "default" )
+		    new Argument( true, Argument.SET, Key.set ),
+		    new Argument( true, "function:Predicate", Key.callback )
 		};
 	}
 
 	/**
-	 * Build a Set containing the values of a Struct, deduplicating automatically. The backing variant can be
-	 * configured; use "linked" to preserve the Struct's value iteration order.
+	 * Return the first element of a Set for which the predicate returns true, or null if no element matches.
+	 * Iteration follows the natural order of the underlying variant and stops at the first match. The predicate
+	 * receives the element value, its 1-based ordinal position, and the Set itself.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.struct The struct whose values should populate the set.
+	 * @argument.set The set to search.
 	 *
-	 * @argument.type The backing variant: "default" / "hash" (HashSet), "linked" / "ordered" (LinkedHashSet,
-	 *                preserves Struct iteration order), or "sorted" / "tree" (TreeSet).
+	 * @argument.callback Predicate invoked for each element. Receives {@code (value, ordinal, set)}.
+	 *                    Iteration stops at the first element for which this returns {@code true}.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		IStruct		struct	= arguments.getAsStruct( Key.struct );
-		BoxSet.Type	type	= BoxSet.parseType( arguments.getAsString( Key.type ) );
-		BoxSet		out		= new BoxSet( type );
-		out.addAll( struct.values() );
-		return out;
+		return SetUtil.find( arguments.getAsSet( Key.set ), arguments.getAsFunction( Key.callback ), context );
 	}
 
 }

@@ -30,9 +30,9 @@ import ortus.boxlang.runtime.types.util.ListUtil;
 @BoxMember( type = BoxLangType.ARRAY, name = "toSet" )
 @BoxMember( type = BoxLangType.QUERY, name = "toSet" )
 @BoxMember( type = BoxLangType.STRING_STRICT, name = "listToSet" )
-public class ToSet extends BIF {
+public class ObjectToSet extends BIF {
 
-	public ToSet() {
+	public ObjectToSet() {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, Argument.ANY, Key.value ),

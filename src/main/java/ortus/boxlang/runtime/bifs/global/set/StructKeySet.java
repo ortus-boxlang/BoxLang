@@ -38,12 +38,17 @@ public class StructKeySet extends BIF {
 	}
 
 	/**
+	 * Build a Set containing the keys of a Struct. Key names are extracted as plain Strings via Key.getName(),
+	 * so the resulting Set always holds String values. The backing variant can be configured; use "linked" to
+	 * preserve the Struct's iteration order.
+	 *
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
+	 *
 	 * @argument.struct The struct whose keys should populate the set.
 	 *
-	 * @argument.type The backing variant — "default" (hash), "linked" (preserves struct
-	 *                iteration order), or "sorted" (alphabetical).
-	 *
-	 * @return A new {@link BoxSet} of the struct's keys (rendered via {@code Key.getName()}).
+	 * @argument.type The backing variant: "default" / "hash" (HashSet), "linked" / "ordered" (LinkedHashSet,
+	 *                preserves Struct iteration order), or "sorted" / "tree" (TreeSet, alphabetical order).
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		IStruct		struct	= arguments.getAsStruct( Key.struct );

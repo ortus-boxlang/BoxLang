@@ -41,15 +41,20 @@ public class SetNew extends BIF {
 	}
 
 	/**
-	 * Create a new Set.
+	 * Create a new empty Set, optionally pre-seeded from an existing collection. The backing variant (hash,
+	 * linked, or sorted) and case-sensitivity can be configured. When no seed is provided, an empty Set of the
+	 * requested variant is returned.
 	 *
-	 * @argument.type The backing variant — one of "default" (HashSet), "linked" (LinkedHashSet, preserves insertion order),
-	 *                or "sorted" (TreeSet, natural ordering). Aliases: "hash" for default, "ordered" for linked, "tree" for sorted.
+	 * @param context   The context in which the BIF is being invoked.
+	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.values An optional seed collection (Array, Set, or anything castable to a Set). When provided, its elements
-	 *                  are deduplicated into the new set. Pass a single value to seed a one-element set.
+	 * @argument.type The backing variant: "default" / "hash" (HashSet), "linked" / "ordered" (LinkedHashSet,
+	 *                preserves insertion order), or "sorted" / "tree" (TreeSet, natural ordering).
 	 *
-	 * @return A new {@link BoxSet}.
+	 * @argument.values An optional seed collection (Array, Set, or anything castable to a Set). Its elements are
+	 *                  deduplicated into the new set. A single non-collection value seeds a one-element set.
+	 *
+	 * @argument.caseSensitive Whether string element comparisons are case-sensitive. Defaults to false.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxSet.Type	type			= BoxSet.parseType( arguments.getAsString( Key.type ) );

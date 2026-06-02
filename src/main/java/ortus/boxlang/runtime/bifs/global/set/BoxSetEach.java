@@ -22,39 +22,36 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
-import ortus.boxlang.runtime.types.BoxSet;
-import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.util.SetUtil;
 
-@BoxBIF( description = "Build a Set containing the values of a Struct, deduplicating." )
-@BoxMember( type = BoxLangType.STRUCT, name = "valueSet" )
-public class StructValueSet extends BIF {
+@BoxBIF( description = "Invoke a callback for each element of a Set." )
+@BoxMember( type = BoxLangType.SET, name = "each" )
+public class BoxSetEach extends BIF {
 
-	public StructValueSet() {
+	public BoxSetEach() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, Argument.STRUCT, Key.struct ),
-		    new Argument( false, Argument.STRING, Key.type, "default" )
+		    new Argument( true, Argument.SET, Key.set ),
+		    new Argument( true, "function:Consumer", Key.callback )
 		};
 	}
 
 	/**
-	 * Build a Set containing the values of a Struct, deduplicating automatically. The backing variant can be
-	 * configured; use "linked" to preserve the Struct's value iteration order.
+	 * Invoke a callback for every element of a Set. The callback receives the element value, its 1-based ordinal
+	 * position, and the Set itself; single-argument callbacks receive only the value. Iteration follows the natural
+	 * order of the underlying variant. Use setMap() if you need a transformed result.
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.struct The struct whose values should populate the set.
+	 * @argument.set The set to iterate.
 	 *
-	 * @argument.type The backing variant: "default" / "hash" (HashSet), "linked" / "ordered" (LinkedHashSet,
-	 *                preserves Struct iteration order), or "sorted" / "tree" (TreeSet).
+	 * @argument.callback Invoked for each element. Receives {@code (value, ordinal, set)}; single-argument callbacks
+	 *                    receive only the value.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		IStruct		struct	= arguments.getAsStruct( Key.struct );
-		BoxSet.Type	type	= BoxSet.parseType( arguments.getAsString( Key.type ) );
-		BoxSet		out		= new BoxSet( type );
-		out.addAll( struct.values() );
-		return out;
+		SetUtil.each( arguments.getAsSet( Key.set ), arguments.getAsFunction( Key.callback ), context );
+		return null;
 	}
 
 }

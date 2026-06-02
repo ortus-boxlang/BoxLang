@@ -105,7 +105,7 @@ public class SetBIFsTest {
 		    s = setNew();
 		    s.add( 1 );
 		    s.append( 2 );
-		    setAdd( s, 3 );
+		    boxSetAdd( s, 3 );
 		    result = s.size();
 		    """,
 		    context );
@@ -175,7 +175,7 @@ public class SetBIFsTest {
 		    """
 		    a = [1, 2, 3].toSet();
 		    b = [3, 4, 5].toSet();
-		    u = setUnion( a, b );
+		    u = boxSetUnion( a, b );
 		    i = a.intersection( b );
 		    d = a.difference( b );
 		    x = a.symmetricDifference( b );
@@ -662,6 +662,35 @@ public class SetBIFsTest {
 		    context );
 		BoxSet s = ( BoxSet ) variables.get( result );
 		assertThat( s.size() ).isEqualTo( 3 );
+	}
+
+	@DisplayName( "Query.toSet() produces a Set of row structs" )
+	@Test
+	public void testQueryToSet() {
+		instance.executeSource(
+		    """
+		    q = queryNew( "name,age", "varchar,integer", [ [ "Alice", 30 ], [ "Bob", 25 ] ] );
+		    result = q.toSet();
+		    """,
+		    context );
+		BoxSet s = ( BoxSet ) variables.get( result );
+		assertThat( s.size() ).isEqualTo( 2 );
+		assertThat( s.iterator().next() ).isInstanceOf( ortus.boxlang.runtime.types.IStruct.class );
+	}
+
+	@DisplayName( "Query column values as a Set via query.columnData().toSet()" )
+	@Test
+	public void testQueryColumnToSet() {
+		instance.executeSource(
+		    """
+		    q = queryNew( "name", "varchar", [ [ "Alice" ], [ "Bob" ], [ "Alice" ] ] );
+		    result = q.columnData( "name" ).toSet();
+		    """,
+		    context );
+		BoxSet s = ( BoxSet ) variables.get( result );
+		assertThat( s.size() ).isEqualTo( 2 );
+		assertThat( s.contains( "Alice" ) ).isTrue();
+		assertThat( s.contains( "Bob" ) ).isTrue();
 	}
 
 	@DisplayName( "duplicate() deep copies a Set" )
