@@ -800,4 +800,19 @@ public class JSONSerializeTest {
 		assertThat( json ).contains( "\"tags\":[\"java\",\"boxlang\"]" );
 	}
 
+	@DisplayName( "It serializes a java.util.UUID as a quoted JSON string" )
+	@Test
+	public void testSerializeUUID() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				uuid = createObject( "java", "java.util.UUID" ).randomUUID();
+				result = jsonSerialize( uuid );
+			""",
+		    context );
+		// @formatter:on
+		String json = variables.getAsString( result );
+		assertThat( json ).matches( "\"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\"" );
+	}
+
 }
