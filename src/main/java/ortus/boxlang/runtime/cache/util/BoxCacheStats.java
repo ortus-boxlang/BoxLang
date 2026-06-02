@@ -107,12 +107,13 @@ public class BoxCacheStats implements ICacheStats {
 	public int hitRate() {
 		long	_hits	= this.hits.get();
 		long	_misses	= this.misses.get();
+		long	total	= _hits + _misses;
 
-		if ( _hits == 0 && _misses == 0 ) {
+		if ( total == 0 ) {
 			return 0;
 		}
 
-		return ( int ) ( ( _hits / ( _hits + _misses ) ) * 100 );
+		return ( int ) ( ( ( double ) _hits / total ) * 100 );
 	}
 
 	/**
