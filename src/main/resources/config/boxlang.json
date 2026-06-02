@@ -316,6 +316,15 @@
 				"additive": false,
 				// Add class/package names here to silence them
 				"categories": []
+			},
+			"hikari": {
+				"level": "WARN",
+				"appender": "file",
+				"encoder": "text",
+				"additive": false,
+				"categories": [
+					"com.zaxxer.hikari"
+				]
 			}
 		}
 	},
