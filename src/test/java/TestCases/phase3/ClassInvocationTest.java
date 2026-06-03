@@ -529,4 +529,79 @@ public class ClassInvocationTest {
 		assertThat( variables.getAsArray( Key.of( "result3" ) ).toArray() ).isEqualTo( new Object[] { "Engineer", "Designer", "Manager" } );
 	}
 
+	// ==================== Inline class name invocation: Person() ====================
+
+	@DisplayName( "Inline class name invocation with no args" )
+	@Test
+	public void testInlineClassNameInvocation() {
+		instance.executeSource(
+		    """
+		    class Person {}
+		    result = Person();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( IClassRunnable.class );
+	}
+
+	@DisplayName( "Local class defined in script can be invoked from inside a function" )
+	@Test
+	public void testInlineClassNameInvocationFromFunction() {
+		instance.executeSource(
+		    """
+		    class Person {}
+		    function test() {
+		        return Person();
+		    }
+		    result = test();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( IClassRunnable.class );
+	}
+
+	// ==================== Java class inline invocation: HashSet() ====================
+
+	@DisplayName( "Java class inline invocation via import" )
+	@Test
+	public void testJavaClassInlineInvocation() {
+		instance.executeSource(
+		    """
+		    import java.util.HashSet;
+		    hs = HashSet();
+		    result = hs.getClass().getSimpleName();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "HashSet" );
+	}
+
+	// ==================== Inside a function: HashSet() via import ====================
+
+	@DisplayName( "Java class inline invocation via import inside a function" )
+	@Test
+	public void testJavaClassInlineInvocationInFunction() {
+		instance.executeSource(
+		    """
+		    import java.util.HashSet;
+		    function test() {
+		        hs = HashSet();
+		        return hs.getClass().getSimpleName();
+		    }
+		    result = test();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "HashSet" );
+	}
+
+	// ==================== Inner class inside a BoxClass body (outside any function) ====================
+
+	@DisplayName( "Local class defined in a BoxClass body can be invoked from a method" )
+	@Test
+	public void testLocalClassInsideBoxClass() {
+		instance.executeSource(
+		    """
+		    result = new src.test.bx.LocalClassInBoxClass().run();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( IClassRunnable.class );
+	}
+
 }
