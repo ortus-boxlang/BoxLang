@@ -79,6 +79,24 @@ public class ClassConfig {
 	@JsonProperty( "method_grouping" )
 	private boolean	methodGrouping	= false;
 
+	/**
+	 * Number of blank lines printed between property declarations within a class.
+	 *
+	 * <pre>
+	 * 
+	 * // propertySpacing: 1 (default)
+	 * property name = "foo";
+	 *
+	 * property name = "bar";
+	 *
+	 * // propertySpacing: 0
+	 * property name = "foo";
+	 * property name = "bar";
+	 * </pre>
+	 */
+	@JsonProperty( "property_spacing" )
+	private int		propertySpacing	= 1;
+
 	/** Default constructor. */
 	public ClassConfig() {
 	}
@@ -189,6 +207,27 @@ public class ClassConfig {
 	}
 
 	/**
+	 * Get the number of blank lines between property declarations.
+	 *
+	 * @return the property spacing
+	 */
+	public int getPropertySpacing() {
+		return propertySpacing;
+	}
+
+	/**
+	 * Set the number of blank lines between property declarations.
+	 *
+	 * @param propertySpacing the property spacing
+	 *
+	 * @return this config for chaining
+	 */
+	public ClassConfig setPropertySpacing( int propertySpacing ) {
+		this.propertySpacing = propertySpacing;
+		return this;
+	}
+
+	/**
 	 * Convert this configuration to a map for JSON serialization.
 	 *
 	 * @return a map representation of this configuration
@@ -200,6 +239,23 @@ public class ClassConfig {
 		map.put( "property_order", propertyOrder );
 		map.put( "method_order", methodOrder );
 		map.put( "method_grouping", methodGrouping );
+		map.put( "property_spacing", propertySpacing );
 		return map;
+	}
+
+	/**
+	 * Create a deep copy of this configuration.
+	 *
+	 * @return a new ClassConfig with the same settings
+	 */
+	public ClassConfig clone() {
+		ClassConfig clone = new ClassConfig();
+		clone.memberOrder		= this.memberOrder;
+		clone.memberSpacing		= this.memberSpacing;
+		clone.propertyOrder		= this.propertyOrder;
+		clone.methodOrder		= this.methodOrder;
+		clone.methodGrouping	= this.methodGrouping;
+		clone.propertySpacing	= this.propertySpacing;
+		return clone;
 	}
 }

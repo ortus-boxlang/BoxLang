@@ -98,4 +98,15 @@ public class ArrayMinTest {
 		assertThat( variables.get( result ) ).isEqualTo( 0 );
 	}
 
+	@DisplayName( "It can get min date" )
+	@Test
+	public void testCanSearchDate() {
+
+		instance.executeSource(
+		    """
+		    result = [ now() ].min()
+		    """,
+		    context );
+	}
+
 }

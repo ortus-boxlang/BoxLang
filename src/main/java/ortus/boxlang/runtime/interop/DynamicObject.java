@@ -646,6 +646,10 @@ public class DynamicObject implements IReferenceable, Serializable {
 	 * @return The requested return value or null
 	 */
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
+		if ( name.equals( Key.init ) ) {
+			this.targetInstance = DynamicInteropService.invokeConstructor( context, this.targetClass, namedArguments );
+			return this.targetInstance;
+		}
 
 		// If this dynamic object represnts a Box Class (not an instance), then invoke static
 		if ( IClassRunnable.class.isAssignableFrom( targetClass ) && targetInstance == null ) {

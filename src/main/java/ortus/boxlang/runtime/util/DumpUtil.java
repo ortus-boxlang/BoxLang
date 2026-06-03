@@ -466,9 +466,11 @@ public class DumpUtil {
 			return "Instant.bxm";
 		} else if ( target instanceof IClassRunnable ) {
 			return "BoxClass.bxm";
+		} else if ( target instanceof ResolvedFilePath ) {
+			return "ResolvedFilePath.bxm";
 		} else if ( target instanceof ITemplateRunnable castedTarget ) {
 			target = castedTarget.getRunnablePath();
-			return "ITemplateRunnable.bxm";
+			return "ResolvedFilePath.bxm";
 		} else if ( target instanceof IStruct ) {
 			return "Struct.bxm";
 		} else if ( target instanceof IType ) {

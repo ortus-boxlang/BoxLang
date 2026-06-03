@@ -31,6 +31,7 @@ import ortus.boxlang.compiler.ast.statement.BoxAccessModifier;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
+import ortus.boxlang.compiler.ast.statement.BoxLocalClass;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 
@@ -60,6 +61,10 @@ public class ClassPrinter {
 			default -> {
 			}
 		}
+	}
+
+	public void print( BoxLocalClass node, BoxSourceType sourceType ) {
+		printBoxLocalClass( node );
 	}
 
 	private void printBoxClass( BoxClass classNode ) {
@@ -103,6 +108,47 @@ public class ClassPrinter {
 		    .append( "}" );
 
 		visitor.printPostComments( classNode );
+	}
+
+	private void printBoxLocalClass( BoxLocalClass localClass ) {
+		var		currentDoc		= visitor.getCurrentDoc();
+		var		methodOrder		= visitor.config.getClassConfig().getMethodOrder();
+		boolean	methodGrouping	= visitor.config.getClassConfig().getMethodGrouping();
+
+		visitor.printPreComments( localClass );
+
+		// split annotations into pre and post
+		var	preAnnotations	= new ArrayList<BoxAnnotation>();
+		var	postAnnotations	= new ArrayList<BoxAnnotation>();
+		for ( var anno : localClass.getAnnotations() ) {
+			if ( anno.getSourceText() == null || anno.getSourceText().startsWith( "@" ) ) {
+				preAnnotations.add( anno );
+			} else {
+				postAnnotations.add( anno );
+			}
+		}
+
+		printBoxAnnotations( preAnnotations );
+
+		currentDoc.append( "class " + localClass.getName().getName() );
+		visitor.helperPrinter.printKeyValueAnnotations( postAnnotations, false );
+		currentDoc.append( " {" );
+
+		visitor.pushDoc( DocType.INDENT ).append( Line.HARD );
+		printProperties( localClass.getProperties() );
+		List<BoxStatement> sortedBody = sortClassBody( localClass.getBody(), methodOrder, methodGrouping );
+		if ( !localClass.getProperties().isEmpty() && sortedBody.isEmpty() ) {
+			visitor.newLine();
+		}
+		visitor.helperPrinter.printStatements( sortedBody );
+		visitor.printInsideComments( localClass, false );
+
+		currentDoc
+		    .append( visitor.popDoc() )
+		    .append( Line.HARD )
+		    .append( "}" );
+
+		visitor.printPostComments( localClass );
 	}
 
 	private void printBoxInterface( BoxInterface interfaceNode ) {
@@ -346,6 +392,7 @@ public class ClassPrinter {
 	private void printProperties( List<BoxProperty> properties ) {
 		var					currentDoc			= visitor.getCurrentDoc();
 		var					propertyOrder		= visitor.config.getClassConfig().getPropertyOrder();
+		int					propSpacing			= visitor.config.getClassConfig().getPropertySpacing();
 
 		// Sort properties based on configuration
 		List<BoxProperty>	sortedProperties	= sortProperties( properties, propertyOrder );
@@ -353,6 +400,12 @@ public class ClassPrinter {
 		for ( int i = 0; i < sortedProperties.size(); i++ ) {
 			sortedProperties.get( i ).accept( visitor );
 			currentDoc.append( Line.HARD );
+			// Add extra blank lines between consecutive properties (not after the last one)
+			if ( i < sortedProperties.size() - 1 ) {
+				for ( int s = 0; s < propSpacing; s++ ) {
+					currentDoc.append( Line.HARD );
+				}
+			}
 		}
 		// Note: member_spacing between properties and methods is handled by printStatements
 	}

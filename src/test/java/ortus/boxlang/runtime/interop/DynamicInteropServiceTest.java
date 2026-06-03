@@ -997,6 +997,213 @@ public class DynamicInteropServiceTest {
 		assertThat( ( ( VarArgsExample ) r ).getValues() ).isEqualTo( new String[] { "one", "two", "three" } );
 	}
 
+	// ==========================================================================
+	// Modern varargs tests: passing individual values instead of array-wrapped
+	// ==========================================================================
+
+	@DisplayName( "It can execute static varargs method modern" )
+	@Test
+	void testItCanExecuteVaragsMethodModern() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import java.util.stream.IntStream
+
+				result = IntStream.of( 1, 2, 3, 4 )
+			""", context);
+		// @formatter:on
+
+		var result = variables.get( Key.result );
+		assertThat( result ).isNotNull();
+		assertThat( result ).isInstanceOf( IntStream.class );
+		assertThat( ( ( IntStream ) result ).toArray() ).isEqualTo( new int[] { 1, 2, 3, 4 } );
+	}
+
+	@DisplayName( "It can execute static method with varargs and normal args modern" )
+	@Test
+	void testItCanExecuteStaticMethodWithVarargsAndNormalArgsModern() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import java.lang.String;
+				result = String.format("Hello %s, you have %d new messages.", "Alice", 5)
+			""", context);
+		// @formatter:on
+
+		var result = variables.get( Key.result );
+		assertThat( result ).isNotNull();
+		assertThat( result ).isInstanceOf( String.class );
+		assertThat( result ).isEqualTo( "Hello Alice, you have 5 new messages." );
+	}
+
+	@DisplayName( "It can execute varargs instance method with normal args modern" )
+	@Test
+	void testItCanExecuteVarargsInstanceMethodWithNormalArgsModern() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import java.util.Locale
+
+				formatter = new java.util.Formatter()
+				result = formatter.format( "Hello %s, you are %d years old!", "John", 30 ).toString()
+			""", context);
+		// @formatter:on
+
+		var result = variables.get( Key.result );
+		assertThat( result ).isNotNull();
+		assertThat( result ).isInstanceOf( String.class );
+		assertThat( result ).isEqualTo( "Hello John, you are 30 years old!" );
+	}
+
+	@DisplayName( "It can execute varargs instance method modern" )
+	@Test
+	void testItCanExecuteVarargsInstanceMethodModern() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import ortus.boxlang.runtime.interop.VarArgsExample
+
+				result = new VarArgsExample()
+				result.setValues( "one", "two", "three" );
+			""", context);
+		// @formatter:on
+
+		var example = variables.get( Key.result );
+		assertThat( example ).isNotNull();
+		Object r = DynamicObject.unWrap( variables.get( Key.result ) );
+		assertThat( r ).isInstanceOf( VarArgsExample.class );
+		assertThat( ( ( VarArgsExample ) r ).getValues() ).isEqualTo( new String[] { "one", "two", "three" } );
+	}
+
+	@DisplayName( "It can execute varargs constructor modern" )
+	@Test
+	void testItCanExecuteVarargsConstructorModern() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import ortus.boxlang.runtime.interop.VarArgsExample
+
+				result = new VarArgsExample( "one", "two", "three" )
+			""", context);
+		// @formatter:on
+
+		var example = variables.get( Key.result );
+		assertThat( example ).isNotNull();
+		Object r = DynamicObject.unWrap( variables.get( Key.result ) );
+		assertThat( r ).isInstanceOf( VarArgsExample.class );
+		assertThat( ( ( VarArgsExample ) r ).getValues() ).isEqualTo( new String[] { "one", "two", "three" } );
+	}
+
+	@DisplayName( "It can execute varargs constructor with normal args modern" )
+	@Test
+	void testItCanExecuteVarargsConstructorWithNormalArgsModern() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import ortus.boxlang.runtime.interop.VarArgsExample
+
+				result = new VarArgsExample( {}, "one", "two", "three" )
+			""", context);
+		// @formatter:on
+
+		var example = variables.get( Key.result );
+		assertThat( example ).isNotNull();
+		Object r = DynamicObject.unWrap( variables.get( Key.result ) );
+		assertThat( r ).isInstanceOf( VarArgsExample.class );
+		assertThat( ( ( VarArgsExample ) r ).getValues() ).isEqualTo( new String[] { "one", "two", "three" } );
+	}
+
+	@DisplayName( "It can execute modern varargs with a single element" )
+	@Test
+	void testItCanExecuteModernVarargsSingleElement() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import ortus.boxlang.runtime.interop.VarArgsExample
+
+				result = new VarArgsExample( "only" )
+				result2 = new VarArgsExample()
+				result2.setValues( "single" )
+			""", context);
+		// @formatter:on
+
+		Object r = DynamicObject.unWrap( variables.get( Key.result ) );
+		assertThat( r ).isInstanceOf( VarArgsExample.class );
+		assertThat( ( ( VarArgsExample ) r ).getValues() ).isEqualTo( new String[] { "only" } );
+
+		Object r2 = DynamicObject.unWrap( variables.get( Key.of( "result2" ) ) );
+		assertThat( r2 ).isInstanceOf( VarArgsExample.class );
+		assertThat( ( ( VarArgsExample ) r2 ).getValues() ).isEqualTo( new String[] { "single" } );
+	}
+
+	@DisplayName( "It can execute modern varargs with ambiguous overloads" )
+	@Test
+	void testItCanExecuteModernVarargsAmbiguous() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import ortus.boxlang.runtime.interop.TestAmbiguousVarargs;
+
+				result = TestAmbiguousVarargs.foo( 5, "brad" );
+				result2 = TestAmbiguousVarargs.foo( 5, "brad", "extra1", "extra2" );
+			""", context);
+		// @formatter:on
+
+		assertThat( variables.get( Key.result ) ).isEqualTo( "Non-varargs method" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "Varargs method" );
+	}
+
+	@DisplayName( "It can mix old and modern varargs in same script" )
+	@Test
+	void testItCanMixOldAndModernVarargs() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import java.lang.String as str;
+
+				result = str.format("Hello %s and %s!", ["Alice", "Bob"]);
+				result2 = str.format("Hello %s and %s!", "Alice", "Bob");
+			""", context);
+		// @formatter:on
+
+		assertThat( variables.get( Key.result ) ).isEqualTo( "Hello Alice and Bob!" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "Hello Alice and Bob!" );
+	}
+
+	@DisplayName( "It can execute static modern varargs with single int" )
+	@Test
+	void testItCanExecuteStaticModernVarargsSingleInt() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import java.util.stream.IntStream
+
+				result = IntStream.of( 42 ).toArray()
+			""", context);
+		// @formatter:on
+
+		assertThat( variables.get( Key.result ) ).isNotNull();
+		assertThat( variables.get( Key.result ) ).isInstanceOf( int[].class );
+		assertThat( ( int[] ) variables.get( Key.result ) ).isEqualTo( new int[] { 42 } );
+	}
+
+	@DisplayName( "It can execute modern varargs constructor with normal args and single vararg" )
+	@Test
+	void testItCanExecuteModernVarargsConstructorWithNormalArgsAndSingleVararg() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import ortus.boxlang.runtime.interop.VarArgsExample
+
+				result = new VarArgsExample( {}, "only" )
+			""", context);
+		// @formatter:on
+
+		Object r = DynamicObject.unWrap( variables.get( Key.result ) );
+		assertThat( r ).isInstanceOf( VarArgsExample.class );
+		assertThat( ( ( VarArgsExample ) r ).getValues() ).isEqualTo( new String[] { "only" } );
+	}
+
 	@DisplayName( "It can pass BL array to T[] argument" )
 	@Test
 	void testItCanPassBLArrayToTArray() {
@@ -1084,7 +1291,7 @@ public class DynamicInteropServiceTest {
 
 				myTypedArray = new TestTypedArray();
 				types = [];
-				[ "foo", "bar" ].each( ( key ) => arrayAppend( types, new TestTypedArraySubtype( Key.of( key ) ) ) );
+				[ "foo", "bar" ].each( ( item ) => arrayAppend( types, new TestTypedArraySubtype( Key.of( item ) ) ) );
 				myTypedArray.test( "foo",["blah"], types );
 
 			""", context);

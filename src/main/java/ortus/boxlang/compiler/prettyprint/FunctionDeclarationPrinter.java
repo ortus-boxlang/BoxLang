@@ -20,9 +20,9 @@ package ortus.boxlang.compiler.prettyprint;
 import java.util.ArrayList;
 import java.util.List;
 
-import ortus.boxlang.compiler.ast.BoxInterface;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 
 public class FunctionDeclarationPrinter {
@@ -45,13 +45,11 @@ public class FunctionDeclarationPrinter {
 	}
 
 	public void printScriptFunctionDeclaration( BoxFunctionDeclaration node ) {
-		var	currentDoc				= visitor.getCurrentDoc();
-
-		var	defaultInterfaceMethod	= node.getFirstNodeOfType( BoxInterface.class ) != null;
+		var	currentDoc		= visitor.getCurrentDoc();
 
 		// split annotations into pre and post based on whether the source of the annotation starts with `@`
-		var	preAnnotations			= new ArrayList<BoxAnnotation>();
-		var	postAnnotations			= new ArrayList<BoxAnnotation>();
+		var	preAnnotations	= new ArrayList<BoxAnnotation>();
+		var	postAnnotations	= new ArrayList<BoxAnnotation>();
 		for ( var anno : node.getAnnotations() ) {
 			// .getSourceText() _could_ be null, assume pre in that case
 			if ( anno.getSourceText() == null || anno.getSourceText().startsWith( "@" ) ) {
@@ -63,7 +61,7 @@ public class FunctionDeclarationPrinter {
 
 		printBoxAnnotations( preAnnotations );
 
-		if ( defaultInterfaceMethod ) {
+		if ( node.getModifiers() != null && node.getModifiers().contains( BoxMethodDeclarationModifier.DEFAULT ) ) {
 			currentDoc.append( "default " );
 		}
 
@@ -101,11 +99,9 @@ public class FunctionDeclarationPrinter {
 	}
 
 	public void printCFScriptFunctionDeclaration( BoxFunctionDeclaration node ) {
-		var	currentDoc				= visitor.getCurrentDoc();
+		var currentDoc = visitor.getCurrentDoc();
 
-		var	defaultInterfaceMethod	= node.getFirstNodeOfType( BoxInterface.class ) != null;
-
-		if ( defaultInterfaceMethod ) {
+		if ( node.getModifiers() != null && node.getModifiers().contains( BoxMethodDeclarationModifier.DEFAULT ) ) {
 			currentDoc.append( "default " );
 		}
 

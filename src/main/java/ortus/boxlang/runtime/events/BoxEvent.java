@@ -155,6 +155,7 @@ public enum BoxEvent {
 	ON_DATASOURCE_SERVICE_STARTUP( "onDatasourceServiceStartup" ),
 	ON_DATASOURCE_SERVICE_SHUTDOWN( "onDatasourceServiceShutdown" ),
 	ON_DATASOURCE_STARTUP( "onDatasourceStartup" ),
+	ON_DATASOURCE_INITIALIZED( "onDatasourceInitialized" ),
 
 	/**
 	 * Scheduler Events

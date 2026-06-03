@@ -351,6 +351,10 @@ public abstract class AbstractTransformer implements Transformer {
 			return ExitsAllowed.FUNCTION;
 		} else if ( ancestor instanceof BoxComponent ) {
 			return ExitsAllowed.COMPONENT;
+		} else if ( ancestor instanceof BoxSwitch sw
+		    && sw.hasBreakingCases() ) {
+			// Breaking switches are not valid break targets - keep looking
+			return getExitsAllowed( ancestor.getParent() );
 		} else if ( ancestor != null ) {
 			return ExitsAllowed.LOOP;
 		} else {

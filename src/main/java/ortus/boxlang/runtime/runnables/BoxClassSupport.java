@@ -175,6 +175,36 @@ public class BoxClassSupport {
 	}
 
 	/**
+	 * Cast the value of an "output" annotation to a boolean.
+	 * The string "raw" (case-insensitive) is treated as true.
+	 * All other values are passed through the standard BooleanCaster.
+	 *
+	 * @param value The raw annotation value
+	 *
+	 * @return The boolean interpretation of the output annotation
+	 */
+	public static boolean castOutputAnnotation( Object value ) {
+		if ( value instanceof String str && str.equalsIgnoreCase( "raw" ) ) {
+			return true;
+		}
+		return BooleanCaster.cast( value );
+	}
+
+	/**
+	 * If there is an output annotation, use the castOututAnnotation() method to interpret it.
+	 * 
+	 * @param annotations The annotations to check
+	 * 
+	 * @return true if the output annotation is present and evaluates to true, otherwise false
+	 */
+	public static IStruct transformAnnotations( IStruct annotations ) {
+		if ( annotations.containsKey( Key.output ) ) {
+			annotations.put( Key.output, castOutputAnnotation( annotations.get( Key.output ) ) );
+		}
+		return annotations;
+	}
+
+	/**
 	 * A helper to look at the "output" annotation, caching the result
 	 *
 	 * @param thisClass The class to check
@@ -197,7 +227,7 @@ public class BoxClassSupport {
 	 * @return Whether the function can output
 	 */
 	public static Boolean canOutput( IStruct annotations, String className ) {
-		return BooleanCaster.cast( annotations.getOrDefault(
+		return castOutputAnnotation( annotations.getOrDefault(
 		    Key.output,
 		    // output defaults to true for Application.bx, but false for all others
 		    // Strip just the class name from the FQN foo.com.bar.Application
@@ -633,7 +663,9 @@ public class BoxClassSupport {
 		    thisClass.getAnnotations(),
 		    thisClass.getDocumentation(),
 		    thisClass.getProperties(),
-		    thisClass.getStaticScope()
+		    thisClass.getStaticScope(),
+		    thisClass.getEnclosingClassName(),
+		    thisClass.getInnerClassNames()
 		);
 	}
 
@@ -670,8 +702,10 @@ public class BoxClassSupport {
 	    IStruct annotations,
 	    IStruct documentation,
 	    Map<Key, ortus.boxlang.runtime.types.Property> properties,
-	    StaticScope staticScope ) {
-
+	    StaticScope staticScope,
+	    String enclosingClassName,
+	    IStruct innerClassNames ) {
+		annotations = BoxClassSupport.transformAnnotations( annotations );
 		BoxRuntime	runtime	= BoxRuntime.getInstance();
 		IStruct		meta	= new Struct( IStruct.TYPES.SORTED );
 		meta.putIfAbsent( "hint", "" );
@@ -705,7 +739,9 @@ public class BoxClassSupport {
 		meta.put( Key.type, CLASS_TYPE );
 		meta.put( Key._NAME, fullName );
 		meta.put( Key.fullname, fullName );
-		meta.put( Key.simpleName, fullName.substring( fullName.lastIndexOf( '.' ) + 1 ) );
+		// simpleName strips both package (.) and enclosing class ($) prefixes
+		int lastSep = Math.max( fullName.lastIndexOf( '.' ), fullName.lastIndexOf( '$' ) );
+		meta.put( Key.simpleName, fullName.substring( lastSep + 1 ) );
 
 		meta.put( Key.accessors, hasAccessors( annotations ) );
 		meta.put( Key.path, runnablePath.absolutePath().toString() );
@@ -780,6 +816,11 @@ public class BoxClassSupport {
 			        )
 			);
 		}
+
+		// Add enclosingClass and innerClasses
+		meta.put( Key.enclosingClass, enclosingClassName != null ? enclosingClassName : "" );
+		meta.put( Key.innerClasses, innerClassNames != null ? innerClassNames : Struct.EMPTY );
+
 		return meta;
 	}
 
@@ -816,11 +857,20 @@ public class BoxClassSupport {
 	}
 
 	public static Object assignStatic( DynamicObject targetClass, IBoxContext context, Key name, Object value ) {
+		if ( getInnerBoxClasses( context, targetClass ).containsKey( name ) ) {
+			throw new BoxRuntimeException( "Cannot assign static key [" + name.getName() + "] because it is the name of an inner class." );
+		}
 		StaticScope staticScope = getStaticScope( context, targetClass );
 		return assignStatic( staticScope, context, name, value );
 	}
 
 	public static Object dereferenceStatic( DynamicObject targetClass, IBoxContext context, Key name, Boolean safe ) {
+		// If key is an inner class, return the actual Class<?>
+		Class<?> innerClass = getInnerBoxClasses( context, targetClass ).get( name );
+		if ( innerClass != null ) {
+			return innerClass;
+		}
+		// Otherwise, look in the static scope
 		StaticScope staticScope = getStaticScope( context, targetClass );
 		return dereferenceStatic( staticScope, context, name, safe );
 	}
@@ -925,6 +975,31 @@ public class BoxClassSupport {
 	}
 
 	/**
+	 * Get the inner class names from a static context
+	 * 
+	 * @param context     The context to use
+	 * @param targetClass The class to get the inner class names from
+	 * 
+	 * @return The inner class names struct (short name -> FQN)
+	 */
+	public static IStruct getInnerClassNames( IBoxContext context, DynamicObject targetClass ) {
+		return ( IStruct ) targetClass.invokeStatic( context, "getInnerClassNamesStatic" );
+	}
+
+	/**
+	 * Get the actual inner box classes (Class references) from a static context
+	 * 
+	 * @param context     The context to use
+	 * @param targetClass The class to get the inner box classes from
+	 * 
+	 * @return Map of short name Key -> actual Class<?> reference
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static Map<Key, Class<?>> getInnerBoxClasses( IBoxContext context, DynamicObject targetClass ) {
+		return ( Map<Key, Class<?>> ) targetClass.invokeStatic( context, "getInnerBoxClassesStatic" );
+	}
+
+	/**
 	 * Get the annotations from a static context
 	 *
 	 * @param context     The context to use
@@ -946,7 +1021,7 @@ public class BoxClassSupport {
 	 * @return Whether the function can output
 	 */
 	public static Boolean canOutput( IBoxContext context, DynamicObject targetClass ) {
-		return BooleanCaster.cast( getAnnotations( context, targetClass )
+		return castOutputAnnotation( getAnnotations( context, targetClass )
 		    .getOrDefault(
 		        Key.output,
 		        false

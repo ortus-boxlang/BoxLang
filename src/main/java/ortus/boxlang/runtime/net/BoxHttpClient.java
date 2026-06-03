@@ -1569,9 +1569,12 @@ public class BoxHttpClient {
 				bodyPublisher = processFormFields( requestBuilder, bodyPublisher, formFields );
 			}
 
-			// Set body publisher to noBody if still null
+			// Set body publisher to empty string if still null
+			// We also explicitly set the Content-Length: 0 header because even ofString("")
+			// may not reliably include it, especially over HTTP/2 which uses frame-based length.
 			if ( bodyPublisher == null ) {
-				bodyPublisher = HttpRequest.BodyPublishers.noBody();
+				bodyPublisher = HttpRequest.BodyPublishers.ofString( "" );
+				requestBuilder.header( "Content-Length", "0" );
 			}
 
 			// Finalize Request Building with different settings

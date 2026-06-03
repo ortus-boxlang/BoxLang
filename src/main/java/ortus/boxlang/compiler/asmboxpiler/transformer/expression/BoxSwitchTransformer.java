@@ -41,6 +41,7 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
 import ortus.boxlang.compiler.ast.statement.BoxSwitchCase;
+import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.loader.ClassLocator;
@@ -64,10 +65,23 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 	@Override
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
 		BoxSwitch				boxSwitch	= ( BoxSwitch ) node;
+		boolean					isBreaking	= boxSwitch.hasBreakingCases();
 		List<AbstractInsnNode>	condition	= transpiler.transform( boxSwitch.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE );
 		MethodContextTracker	tracker		= transpiler.getCurrentMethodContextTracker().get();
 
-		List<AbstractInsnNode>	inlineNodes	= transformInlineSwitch( boxSwitch, condition, tracker, returnContext );
+		if ( isBreaking ) {
+			List<AbstractInsnNode> breakingNodes = transformBreakingSwitch( boxSwitch, condition, tracker, returnContext );
+			if ( MethodSplitter.estimateBytecodeSize( breakingNodes ) >= MethodSplitter.BYTECODE_SIZE_LIMIT ) {
+				List<BoxSwitchCase>			regularCases	= boxSwitch.getCases().stream().filter( c -> c.getCondition() != null ).toList();
+				List<List<BoxSwitchCase>>	fallbackChunks	= createFallbackCaseChunks( regularCases );
+				if ( fallbackChunks.size() > 1 ) {
+					return transformChunkedBreakingSwitch( boxSwitch, condition, tracker, returnContext, fallbackChunks );
+				}
+			}
+			return breakingNodes;
+		}
+
+		List<AbstractInsnNode> inlineNodes = transformInlineSwitch( boxSwitch, condition, tracker, returnContext );
 		if ( MethodSplitter.estimateBytecodeSize( inlineNodes ) >= MethodSplitter.BYTECODE_SIZE_LIMIT ) {
 			List<BoxSwitchCase>			regularCases	= boxSwitch.getCases().stream().filter( c -> c.getCondition() != null ).toList();
 			List<List<BoxSwitchCase>>	fallbackChunks	= createFallbackCaseChunks( regularCases );
@@ -214,7 +228,6 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 		// pop the initial 0 constant in case we didn't match any cases
 		AsmHelper.addDebugLabel( nodes, "BoxSwitch - breakTarget" );
 		nodes.add( breakTarget );
-		nodes.add( new InsnNode( Opcodes.POP ) );
 
 		AsmHelper.addDebugLabel( nodes, "BoxSwitch - endLabel" );
 		nodes.add( endLabel );
@@ -231,6 +244,288 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 		return AsmHelper.addLineNumberLabels( nodes, boxSwitch );
 	}
 
+	/**
+	 * Transform a tag-based switch with breaking cases.
+	 * No fall-through: each case jumps to end after execution.
+	 * No break target registered: break statements propagate to enclosing loops.
+	 */
+	private List<AbstractInsnNode> transformBreakingSwitch(
+	    BoxSwitch boxSwitch,
+	    List<AbstractInsnNode> condition,
+	    MethodContextTracker tracker,
+	    ReturnValueContext returnContext ) {
+
+		List<AbstractInsnNode> nodes = new ArrayList<>();
+		AsmHelper.addDebugLabel( nodes, "BoxSwitch (breaking)" );
+		nodes.addAll( condition );
+		var switchConditionVarStore = tracker.storeNewVariable( Opcodes.ASTORE );
+		nodes.addAll( switchConditionVarStore.nodes() );
+
+		LabelNode endLabel = new LabelNode();
+
+		// No break/continue targets registered for this switch - breaks propagate up
+
+		for ( var c : boxSwitch.getCases() ) {
+			if ( c.getCondition() == null ) {
+				continue;
+			}
+
+			AsmHelper.addDebugLabel( nodes, "BoxSwitch (breaking) - case start" );
+			LabelNode endOfCase = new LabelNode();
+
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, switchConditionVarStore.index() ) );
+
+			if ( c.getDelimiter() == null ) {
+				nodes.addAll( transpiler.transform( c.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
+				nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+				    Type.getInternalName( EqualsEquals.class ),
+				    "invoke",
+				    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ), Type.getType( Object.class ) ),
+				    false ) );
+			} else {
+				LabelNode	nullSkipLabel	= new LabelNode();
+				LabelNode	afterNullCheck	= new LabelNode();
+				nodes.add( new InsnNode( Opcodes.DUP ) );
+				nodes.add( new JumpInsnNode( Opcodes.IFNULL, nullSkipLabel ) );
+
+				nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+				    Type.getInternalName( StringCaster.class ),
+				    "cast",
+				    Type.getMethodDescriptor( Type.getType( String.class ), Type.getType( Object.class ) ),
+				    false ) );
+
+				nodes.addAll( transpiler.transform( c.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
+
+				nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+				    Type.getInternalName( StringCaster.class ),
+				    "cast",
+				    Type.getMethodDescriptor( Type.getType( String.class ), Type.getType( Object.class ) ),
+				    false ) );
+
+				nodes.add( new InsnNode( Opcodes.SWAP ) );
+				nodes.addAll( transpiler.transform( c.getDelimiter(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
+
+				nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+				    Type.getInternalName( ListUtil.class ),
+				    "containsNoCase",
+				    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( String.class ), Type.getType( String.class ),
+				        Type.getType( String.class ) ),
+				    false ) );
+				nodes.add( new JumpInsnNode( Opcodes.GOTO, afterNullCheck ) );
+
+				nodes.add( nullSkipLabel );
+				nodes.add( new InsnNode( Opcodes.POP ) );
+				nodes.add( new InsnNode( Opcodes.ICONST_0 ) );
+				nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+				    Type.getInternalName( Boolean.class ),
+				    "valueOf",
+				    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.BOOLEAN_TYPE ),
+				    false ) );
+				nodes.add( afterNullCheck );
+			}
+
+			nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
+			    Type.getInternalName( Boolean.class ),
+			    "booleanValue",
+			    Type.getMethodDescriptor( Type.BOOLEAN_TYPE ),
+			    false ) );
+			nodes.add( new JumpInsnNode( Opcodes.IFEQ, endOfCase ) );
+
+			// Case matched - execute body and jump to end (no fall-through)
+			if ( c.getBody() != null ) {
+				c.getBody().forEach( stmt -> nodes.addAll( transpiler.transform( stmt, TransformerContext.NONE, ReturnValueContext.EMPTY ) ) );
+			}
+			nodes.add( new JumpInsnNode( Opcodes.GOTO, endLabel ) );
+
+			AsmHelper.addDebugLabel( nodes, "BoxSwitch (breaking) - case end" );
+			nodes.add( endOfCase );
+		}
+
+		// Default case
+		boolean hasDefault = false;
+		for ( var c : boxSwitch.getCases() ) {
+			if ( c.getCondition() == null ) {
+				if ( hasDefault ) {
+					throw new ExpressionException( "Multiple default cases not supported", c.getPosition(), c.getSourceText() );
+				}
+				hasDefault = true;
+				AsmHelper.addDebugLabel( nodes, "BoxSwitch (breaking) - default case" );
+				if ( c.getBody() != null ) {
+					c.getBody()
+					    .forEach( stmt -> nodes.addAll( transpiler.transform( stmt, TransformerContext.NONE, ReturnValueContext.EMPTY ) ) );
+				}
+			}
+		}
+
+		AsmHelper.addDebugLabel( nodes, "BoxSwitch (breaking) - endLabel" );
+		nodes.add( endLabel );
+
+		if ( !returnContext.empty ) {
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		}
+
+		AsmHelper.addDebugLabel( nodes, "BoxSwitch (breaking) - done" );
+
+		return AsmHelper.addLineNumberLabels( nodes, boxSwitch );
+	}
+
+	/**
+	 * Chunked version of breaking switch for large template switches that exceed bytecode limits.
+	 * Uses helper methods for case evaluation, does not register break/continue targets on the switch.
+	 */
+	private List<AbstractInsnNode> transformChunkedBreakingSwitch(
+	    BoxSwitch boxSwitch,
+	    List<AbstractInsnNode> condition,
+	    MethodContextTracker tracker,
+	    ReturnValueContext returnContext,
+	    List<List<BoxSwitchCase>> caseChunks ) {
+
+		List<AbstractInsnNode>	nodes			= new ArrayList<>();
+		boolean					isStatic		= isStaticMethod( tracker );
+		boolean					returnsValue	= transpiler.canReturn();
+		boolean					useBodyResult	= transpiler.isInsideComponent() && !tracker.canReturn();
+
+		AsmHelper.addDebugLabel( nodes, "BoxSwitch (breaking chunked)" );
+		nodes.addAll( condition );
+		VarStore switchConditionVarStore = tracker.storeNewVariable( Opcodes.ASTORE );
+		nodes.addAll( switchConditionVarStore.nodes() );
+		nodes.add( new LdcInsnNode( 0 ) );
+		VarStore switchVarStore = tracker.storeNewVariable( Opcodes.ISTORE );
+		nodes.addAll( switchVarStore.nodes() );
+		VarStore	chunkResultStore	= tracker.storeNewVariable( Opcodes.ASTORE );
+
+		LabelNode	endLabel			= new LabelNode();
+
+		// No break/continue targets registered - breaks propagate to enclosing loops
+
+		for ( int chunkIndex = 0; chunkIndex < caseChunks.size(); chunkIndex++ ) {
+			List<BoxSwitchCase>	chunkCases			= caseChunks.get( chunkIndex );
+			String				helperMethodName	= generateChunkMethodName( boxSwitch, chunkIndex );
+
+			createSwitchChunkMethod( helperMethodName, boxSwitch, chunkCases, isStatic, true );
+
+			if ( !isStatic ) {
+				nodes.add( new VarInsnNode( Opcodes.ALOAD, 0 ) );
+			}
+			nodes.addAll( tracker.loadCurrentContext() );
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, switchConditionVarStore.index() ) );
+			nodes.add( new VarInsnNode( Opcodes.ILOAD, switchVarStore.index() ) );
+			nodes.add( new MethodInsnNode(
+			    isStatic ? Opcodes.INVOKESTATIC : Opcodes.INVOKEVIRTUAL,
+			    Type.getObjectType( transpiler.getOwningClass().name ).getInternalName(),
+			    helperMethodName,
+			    Type.getMethodDescriptor( FLOW_CONTROL_RESULT_TYPE, CONTEXT_TYPE, OBJECT_TYPE, Type.BOOLEAN_TYPE ),
+			    false
+			) );
+			nodes.addAll( chunkResultStore.nodes() );
+
+			LabelNode	normalResult	= new LabelNode();
+			LabelNode	returnResult	= new LabelNode();
+
+			// Check if normal (case matched or not)
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, chunkResultStore.index() ) );
+			nodes.add( new MethodInsnNode(
+			    Opcodes.INVOKEVIRTUAL,
+			    Type.getInternalName( FlowControlResult.class ),
+			    "isNormal",
+			    Type.getMethodDescriptor( Type.BOOLEAN_TYPE ),
+			    false
+			) );
+			nodes.add( new JumpInsnNode( Opcodes.IFNE, normalResult ) );
+
+			// Check if return
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, chunkResultStore.index() ) );
+			nodes.add( new MethodInsnNode(
+			    Opcodes.INVOKEVIRTUAL,
+			    Type.getInternalName( FlowControlResult.class ),
+			    "isReturn",
+			    Type.getMethodDescriptor( Type.BOOLEAN_TYPE ),
+			    false
+			) );
+			nodes.add( new JumpInsnNode( Opcodes.IFNE, returnResult ) );
+
+			// Break/continue signal - for breaking switches this is a no-op (jump to end)
+			nodes.add( new JumpInsnNode( Opcodes.GOTO, endLabel ) );
+
+			// Return path - propagate the return
+			nodes.add( returnResult );
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, chunkResultStore.index() ) );
+			nodes.add( new MethodInsnNode(
+			    Opcodes.INVOKEVIRTUAL,
+			    Type.getInternalName( FlowControlResult.class ),
+			    "getValue",
+			    Type.getMethodDescriptor( OBJECT_TYPE ),
+			    false
+			) );
+			nodes.add( new MethodInsnNode(
+			    Opcodes.INVOKESTATIC,
+			    Type.getInternalName( FlowControlResult.class ),
+			    "unwrapValue",
+			    Type.getMethodDescriptor( OBJECT_TYPE, OBJECT_TYPE ),
+			    false
+			) );
+			if ( useBodyResult ) {
+				nodes.add( new TypeInsnNode( Opcodes.CHECKCAST, Type.getInternalName( Component.BodyResult.class ) ) );
+				nodes.add( new InsnNode( Opcodes.ARETURN ) );
+			} else if ( returnsValue ) {
+				nodes.add( new InsnNode( Opcodes.ARETURN ) );
+			} else {
+				nodes.add( new InsnNode( Opcodes.POP ) );
+				nodes.add( new InsnNode( Opcodes.RETURN ) );
+			}
+
+			// Normal path - check if a case was matched
+			nodes.add( normalResult );
+			nodes.add( new VarInsnNode( Opcodes.ALOAD, chunkResultStore.index() ) );
+			nodes.add( new MethodInsnNode(
+			    Opcodes.INVOKEVIRTUAL,
+			    Type.getInternalName( FlowControlResult.class ),
+			    "getValue",
+			    Type.getMethodDescriptor( OBJECT_TYPE ),
+			    false
+			) );
+			nodes.add( new MethodInsnNode(
+			    Opcodes.INVOKESTATIC,
+			    Type.getInternalName( FlowControlResult.class ),
+			    "unwrapValue",
+			    Type.getMethodDescriptor( OBJECT_TYPE, OBJECT_TYPE ),
+			    false
+			) );
+			nodes.add( new TypeInsnNode( Opcodes.CHECKCAST, Type.getInternalName( Boolean.class ) ) );
+			nodes.add( new MethodInsnNode(
+			    Opcodes.INVOKEVIRTUAL,
+			    Type.getInternalName( Boolean.class ),
+			    "booleanValue",
+			    Type.getMethodDescriptor( Type.BOOLEAN_TYPE ),
+			    false
+			) );
+			// If matched, jump to end (no fall-through in breaking switches)
+			nodes.add( new JumpInsnNode( Opcodes.IFNE, endLabel ) );
+		}
+
+		// Default case - only executes if no case matched
+		for ( BoxSwitchCase c : boxSwitch.getCases() ) {
+			if ( c.getCondition() != null ) {
+				continue;
+			}
+			if ( c.getBody() != null ) {
+				c.getBody().forEach( stmt -> nodes.addAll( transpiler.transform( stmt, TransformerContext.NONE, ReturnValueContext.EMPTY ) ) );
+			}
+			break;
+		}
+
+		AsmHelper.addDebugLabel( nodes, "BoxSwitch (breaking chunked) - endLabel" );
+		nodes.add( endLabel );
+
+		if ( !returnContext.empty ) {
+			nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		}
+
+		AsmHelper.addDebugLabel( nodes, "BoxSwitch (breaking chunked) - done" );
+
+		return AsmHelper.addLineNumberLabels( nodes, boxSwitch );
+	}
+
 	private List<AbstractInsnNode> transformChunkedSwitch(
 	    BoxSwitch boxSwitch,
 	    List<AbstractInsnNode> condition,
@@ -238,9 +533,10 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 	    ReturnValueContext returnContext,
 	    List<List<BoxSwitchCase>> caseChunks ) {
 
-		List<AbstractInsnNode>	nodes		= new ArrayList<>();
-		boolean					isStatic	= isStaticMethod( tracker );
-		boolean					canReturn	= transpiler.canReturn();
+		List<AbstractInsnNode>	nodes			= new ArrayList<>();
+		boolean					isStatic		= isStaticMethod( tracker );
+		boolean					returnsValue	= transpiler.canReturn();
+		boolean					useBodyResult	= transpiler.isInsideComponent() && !tracker.canReturn();
 
 		AsmHelper.addDebugLabel( nodes, "BoxSwitch" );
 		nodes.addAll( condition );
@@ -261,7 +557,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 			List<BoxSwitchCase>	chunkCases			= caseChunks.get( chunkIndex );
 			String				helperMethodName	= generateChunkMethodName( boxSwitch, chunkIndex );
 
-			createSwitchChunkMethod( helperMethodName, boxSwitch, chunkCases, isStatic );
+			createSwitchChunkMethod( helperMethodName, boxSwitch, chunkCases, isStatic, false );
 
 			if ( !isStatic ) {
 				nodes.add( new VarInsnNode( Opcodes.ALOAD, 0 ) );
@@ -319,7 +615,10 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 			    Type.getMethodDescriptor( OBJECT_TYPE, OBJECT_TYPE ),
 			    false
 			) );
-			if ( canReturn ) {
+			if ( useBodyResult ) {
+				nodes.add( new TypeInsnNode( Opcodes.CHECKCAST, Type.getInternalName( Component.BodyResult.class ) ) );
+				nodes.add( new InsnNode( Opcodes.ARETURN ) );
+			} else if ( returnsValue ) {
 				nodes.add( new InsnNode( Opcodes.ARETURN ) );
 			} else {
 				nodes.add( new InsnNode( Opcodes.POP ) );
@@ -447,13 +746,15 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 		return weight;
 	}
 
-	private void createSwitchChunkMethod( String methodName, BoxSwitch boxSwitch, List<BoxSwitchCase> chunkCases, boolean isStatic ) {
+	private void createSwitchChunkMethod( String methodName, BoxSwitch boxSwitch, List<BoxSwitchCase> chunkCases, boolean isStatic, boolean breakingSwitch ) {
 		ClassNode				classNode			= transpiler.getOwningClass();
+		MethodContextTracker	parentTracker		= transpiler.getCurrentMethodContextTracker().orElse( null );
 		MethodContextTracker	helperTracker		= new MethodContextTracker( isStatic );
 		int						contextParamSlot	= isStatic ? 0 : 1;
 		int						switchValueSlot		= isStatic ? 1 : 2;
 		int						matchedParamSlot	= isStatic ? 2 : 3;
 
+		helperTracker.inheritLoopControlState( parentTracker );
 		reserveHelperParameterSlots( helperTracker );
 		transpiler.addMethodContextTracker( helperTracker );
 
@@ -479,12 +780,82 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 		helperTracker.setClassLocatorSlot( classLocatorStore.index() );
 		classLocatorStore.nodes().forEach( node -> node.accept( methodVisitor ) );
 
-		List<AbstractInsnNode> helperNodes = buildChunkMethodNodes( boxSwitch, chunkCases, helperTracker, switchValueSlot, matchedParamSlot );
+		List<AbstractInsnNode> helperNodes = breakingSwitch
+		    ? buildBreakingChunkMethodNodes( boxSwitch, chunkCases, helperTracker, switchValueSlot, matchedParamSlot )
+		    : buildChunkMethodNodes( boxSwitch, chunkCases, helperTracker, switchValueSlot, matchedParamSlot );
 		helperNodes.forEach( node -> node.accept( methodVisitor ) );
 		methodVisitor.visitMaxs( 0, 0 );
 		methodVisitor.visitEnd();
 
 		transpiler.popMethodContextTracker();
+	}
+
+	private List<AbstractInsnNode> buildBreakingChunkMethodNodes(
+	    BoxSwitch boxSwitch,
+	    List<BoxSwitchCase> chunkCases,
+	    MethodContextTracker tracker,
+	    int switchValueSlot,
+	    int matchedParamSlot ) {
+
+		List<AbstractInsnNode>	nodes			= new ArrayList<>();
+		VarStore				matchedStore	= tracker.storeNewVariable( Opcodes.ISTORE );
+		LabelNode				matchedExit		= new LabelNode();
+		LabelNode				breakLabel		= new LabelNode();
+		LabelNode				continueLabel	= new LabelNode();
+
+		nodes.add( new VarInsnNode( Opcodes.ILOAD, matchedParamSlot ) );
+		nodes.addAll( matchedStore.nodes() );
+
+		tracker.setBreak( boxSwitch, breakLabel );
+		tracker.setContinue( boxSwitch, continueLabel );
+
+		for ( BoxSwitchCase c : chunkCases ) {
+			appendBreakingCaseNodes( nodes, c, switchValueSlot, matchedStore.index(), matchedExit );
+		}
+
+		transformReturnInstructions( nodes );
+
+		nodes.add( matchedExit );
+		nodes.add( new VarInsnNode( Opcodes.ILOAD, matchedStore.index() ) );
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( Boolean.class ),
+		    "valueOf",
+		    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.BOOLEAN_TYPE ),
+		    false
+		) );
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( FlowControlResult.class ),
+		    "ofNormal",
+		    Type.getMethodDescriptor( FLOW_CONTROL_RESULT_TYPE, OBJECT_TYPE ),
+		    false
+		) );
+		nodes.add( new InsnNode( Opcodes.ARETURN ) );
+
+		nodes.add( continueLabel );
+		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( FlowControlResult.class ),
+		    "ofContinue",
+		    Type.getMethodDescriptor( FLOW_CONTROL_RESULT_TYPE, Type.getType( String.class ) ),
+		    false
+		) );
+		nodes.add( new InsnNode( Opcodes.ARETURN ) );
+
+		nodes.add( breakLabel );
+		nodes.add( new InsnNode( Opcodes.ACONST_NULL ) );
+		nodes.add( new MethodInsnNode(
+		    Opcodes.INVOKESTATIC,
+		    Type.getInternalName( FlowControlResult.class ),
+		    "ofBreak",
+		    Type.getMethodDescriptor( FLOW_CONTROL_RESULT_TYPE, Type.getType( String.class ) ),
+		    false
+		) );
+		nodes.add( new InsnNode( Opcodes.ARETURN ) );
+
+		return nodes;
 	}
 
 	private List<AbstractInsnNode> buildChunkMethodNodes(
@@ -620,7 +991,7 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 		nodes.add( new JumpInsnNode( Opcodes.IFEQ, endOfCase ) );
 		nodes.add( startOfCase );
 
-		c.getBody().forEach( stmt -> nodes.addAll( transpiler.transform( stmt, TransformerContext.NONE, ReturnValueContext.EMPTY_UNLESS_JUMPING ) ) );
+		c.getBody().forEach( stmt -> nodes.addAll( transpiler.transform( stmt, TransformerContext.NONE, ReturnValueContext.EMPTY ) ) );
 
 		nodes.add( new LdcInsnNode( 1 ) );
 		nodes.add( new VarInsnNode( Opcodes.ISTORE, matchedSlot ) );
@@ -633,6 +1004,80 @@ public class BoxSwitchTransformer extends AbstractTransformer {
 		AsmHelper.addDebugLabel( nodes, "BoxSwitch - endOfAll" );
 		nodes.add( endOfAll );
 		AsmHelper.addDebugLabel( nodes, "BoxSwitch - case end" );
+	}
+
+	private void appendBreakingCaseNodes( List<AbstractInsnNode> nodes, BoxSwitchCase c, int switchValueSlot, int matchedSlot, LabelNode matchedExit ) {
+		AsmHelper.addDebugLabel( nodes, "BoxSwitch (breaking) - case start" );
+		LabelNode endOfCase = new LabelNode();
+
+		nodes.add( new VarInsnNode( Opcodes.ALOAD, switchValueSlot ) );
+
+		if ( c.getDelimiter() == null ) {
+			nodes.addAll( transpiler.transform( c.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( EqualsEquals.class ),
+			    "invoke",
+			    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( Object.class ), Type.getType( Object.class ) ),
+			    false ) );
+		} else {
+			LabelNode	nullSkipLabel	= new LabelNode();
+			LabelNode	afterNullCheck	= new LabelNode();
+			nodes.add( new InsnNode( Opcodes.DUP ) );
+			nodes.add( new JumpInsnNode( Opcodes.IFNULL, nullSkipLabel ) );
+
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( StringCaster.class ),
+			    "cast",
+			    Type.getMethodDescriptor( Type.getType( String.class ), Type.getType( Object.class ) ),
+			    false ) );
+
+			nodes.addAll( transpiler.transform( c.getCondition(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
+
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( StringCaster.class ),
+			    "cast",
+			    Type.getMethodDescriptor( Type.getType( String.class ), Type.getType( Object.class ) ),
+			    false ) );
+
+			nodes.add( new InsnNode( Opcodes.SWAP ) );
+			nodes.addAll( transpiler.transform( c.getDelimiter(), TransformerContext.NONE, ReturnValueContext.VALUE ) );
+
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( ListUtil.class ),
+			    "containsNoCase",
+			    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.getType( String.class ), Type.getType( String.class ),
+			        Type.getType( String.class ) ),
+			    false ) );
+			nodes.add( new JumpInsnNode( Opcodes.GOTO, afterNullCheck ) );
+
+			nodes.add( nullSkipLabel );
+			nodes.add( new InsnNode( Opcodes.POP ) );
+			nodes.add( new InsnNode( Opcodes.ICONST_0 ) );
+			nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( Boolean.class ),
+			    "valueOf",
+			    Type.getMethodDescriptor( Type.getType( Boolean.class ), Type.BOOLEAN_TYPE ),
+			    false ) );
+			nodes.add( afterNullCheck );
+		}
+
+		nodes.add( new MethodInsnNode( Opcodes.INVOKEVIRTUAL,
+		    Type.getInternalName( Boolean.class ),
+		    "booleanValue",
+		    Type.getMethodDescriptor( Type.BOOLEAN_TYPE ),
+		    false ) );
+		nodes.add( new JumpInsnNode( Opcodes.IFEQ, endOfCase ) );
+
+		if ( c.getBody() != null ) {
+			c.getBody().forEach( stmt -> nodes.addAll( transpiler.transform( stmt, TransformerContext.NONE, ReturnValueContext.EMPTY_UNLESS_JUMPING ) ) );
+		}
+
+		nodes.add( new LdcInsnNode( 1 ) );
+		nodes.add( new VarInsnNode( Opcodes.ISTORE, matchedSlot ) );
+		nodes.add( new JumpInsnNode( Opcodes.GOTO, matchedExit ) );
+
+		AsmHelper.addDebugLabel( nodes, "BoxSwitch (breaking) - case end" );
+		nodes.add( endOfCase );
 	}
 
 	private boolean isStaticMethod( MethodContextTracker tracker ) {

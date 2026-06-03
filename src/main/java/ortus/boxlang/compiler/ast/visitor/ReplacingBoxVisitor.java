@@ -35,6 +35,7 @@ import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringBinding;
 import ortus.boxlang.compiler.ast.expression.BoxArrayDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
+import ortus.boxlang.compiler.ast.expression.BoxSetLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
@@ -82,6 +83,7 @@ import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
+import ortus.boxlang.compiler.ast.statement.BoxLocalClass;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
@@ -90,6 +92,7 @@ import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
 import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
+import ortus.boxlang.compiler.ast.statement.BoxSwitchBreakingCase;
 import ortus.boxlang.compiler.ast.statement.BoxSwitchCase;
 import ortus.boxlang.compiler.ast.statement.BoxThrow;
 import ortus.boxlang.compiler.ast.statement.BoxTry;
@@ -206,6 +209,14 @@ public abstract class ReplacingBoxVisitor {
 		return node;
 	}
 
+	public BoxNode visit( BoxLocalClass node ) {
+		BoxNode newName = node.getName().accept( this );
+		if ( newName != node.getName() ) {
+			node.setName( ( BoxIdentifier ) newName );
+		}
+		return visit( ( BoxClass ) node );
+	}
+
 	public BoxNode visit( BoxStaticInitializer node ) {
 		handleStatements( node.getBody(), node );
 		return node;
@@ -289,6 +300,18 @@ public abstract class ReplacingBoxVisitor {
 	}
 
 	public BoxNode visit( BoxArrayLiteral node ) {
+		for ( int i = 0; i < node.getValues().size(); i++ ) {
+			BoxExpression	value		= node.getValues().get( i );
+			BoxNode			newValue	= value.accept( this );
+			if ( newValue != value ) {
+				node.replaceChildren( value, newValue );
+				node.getValues().set( i, ( BoxExpression ) newValue );
+			}
+		}
+		return node;
+	}
+
+	public BoxNode visit( BoxSetLiteral node ) {
 		for ( int i = 0; i < node.getValues().size(); i++ ) {
 			BoxExpression	value		= node.getValues().get( i );
 			BoxNode			newValue	= value.accept( this );
@@ -1057,6 +1080,10 @@ public abstract class ReplacingBoxVisitor {
 		}
 		handleStatements( node.getBody(), node );
 		return node;
+	}
+
+	public BoxNode visit( BoxSwitchBreakingCase node ) {
+		return visit( ( BoxSwitchCase ) node );
 	}
 
 	public BoxNode visit( BoxThrow node ) {

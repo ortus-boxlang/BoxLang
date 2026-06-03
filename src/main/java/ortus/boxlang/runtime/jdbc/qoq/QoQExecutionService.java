@@ -15,8 +15,6 @@
  */
 package ortus.boxlang.runtime.jdbc.qoq;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +42,7 @@ import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.ChunkedArrayList;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
@@ -255,7 +254,7 @@ public class QoQExecutionService {
 				}
 				finalTarget.addRow( values );
 			} );
-			( ( ArrayList<?> ) target.getData() ).trimToSize();
+			target.truncateInternal();
 		}
 
 		// Apply distinct to the final result set
@@ -310,7 +309,7 @@ public class QoQExecutionService {
 				values[ resultColumn.getOrdinalPosition() - 1 ] = value;
 			}
 			target.addRow( values );
-			( ( ArrayList<?> ) target.getData() ).trimToSize();
+			target.truncateInternal();
 			return target;
 		}
 
@@ -334,7 +333,7 @@ public class QoQExecutionService {
 			}
 			target.addRow( values );
 		} );
-		( ( ArrayList<?> ) target.getData() ).trimToSize();
+		target.truncateInternal();
 
 		return target;
 	}
@@ -384,7 +383,7 @@ public class QoQExecutionService {
 
 		Object[][] finalData = new Object[ newSize.get() ][];
 		System.arraycopy( newData, 0, finalData, 0, newSize.get() );
-		target.setData( new ArrayList<>( Arrays.asList( finalData ) ) );
+		target.setData( new ChunkedArrayList<>( finalData ) );
 	}
 
 	private static void sort( Query target, List<NameAndDirection> orderBys ) {

@@ -1,6 +1,8 @@
 class {
 	property name="x";
+
 	property name="mediumLength";
+
 	property name="veryLongPropertyName";
 
 	function init() {

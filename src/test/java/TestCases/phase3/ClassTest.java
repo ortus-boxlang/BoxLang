@@ -30,6 +30,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.JavaMethodResolver;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -1179,6 +1180,102 @@ public class ClassTest {
 	}
 
 	@Test
+	public void testJavaExtendsOverloadedMethods() {
+		instance.executeSource(
+		    """
+		    obj = new src.test.java.TestCases.phase3.JavaExtendsOverloaded();
+		    assert obj instanceof "TestCases.phase3.JavaOverloadTarget";
+
+		    // All overloads of doSomething() should route to the single BoxLang UDF
+		    result1 = obj.doSomething( "hello" );
+		    result2 = obj.doSomething( 99 );
+		    result3 = obj.doSomething( "test", 5 );
+		    """, context );
+		assertThat( variables.getAsString( Key.of( "result1" ) ) ).isEqualTo( "bx:one:hello" );
+		assertThat( variables.getAsString( Key.of( "result2" ) ) ).isEqualTo( "bx:one:99" );
+		assertThat( variables.getAsString( Key.of( "result3" ) ) ).isEqualTo( "bx:two:test:5" );
+	}
+
+	@Test
+	public void testJavaExtendsMethodOverrideWithoutAnnotation() {
+		instance.executeSource(
+		    """
+		    obj = new src.test.java.TestCases.phase3.JavaExtendsOverloaded();
+
+		    // getName() is overridden by the BoxLang UDF without @overrideJava
+		    result = obj.getName();
+		    """, context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "boxlang-override" );
+	}
+
+	@Test
+	public void testJavaExtendsUnmatchedMethodUsesSuper() {
+		instance.executeSource(
+		    """
+		    obj = new src.test.java.TestCases.phase3.JavaExtendsOverloaded();
+
+		    // untouched() has no matching UDF, so the Java super implementation runs
+		    result = obj.untouched();
+		    """, context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "original" );
+	}
+
+	@Test
+	public void testJavaExtendsFallbackWhenClassNotLoadable() {
+		// Override the resolver to pretend the class can't be loaded at compile time
+		JavaMethodResolver.classResolverOverride = ( className ) -> null;
+		try {
+			instance.executeSource(
+			    """
+			    obj = new src.test.java.TestCases.phase3.JavaExtendsFallback();
+			    assert obj instanceof "TestCases.phase3.JavaOverloadTarget";
+
+			    // The @overrideJava annotation-based fallback generates stubs for the declared signature
+			    result = obj.getName();
+			    result2 = obj.doSomething( "hi" );
+			    result3 = obj.isActive();
+			    """, context );
+			assertThat( variables.getAsString( result ) ).isEqualTo( "boxlang-fallback" );
+			assertThat( variables.getAsString( Key.of( "result2" ) ) ).isEqualTo( "bx:one:hi" );
+			assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( true );
+		} finally {
+			JavaMethodResolver.classResolverOverride = null;
+		}
+	}
+
+	@Test
+	public void testJavaExtendsWithImportAlias() {
+		instance.executeSource(
+		    """
+		    obj = new src.test.java.TestCases.phase3.JavaExtendsImportAlias();
+		    assert obj instanceof "TestCases.phase3.JavaOverloadTarget";
+
+		    result = obj.getName();
+		    result2 = obj.doSomething( "world" );
+		    result3 = obj.doSomething( 7 );
+		    result4 = obj.doSomething( "x", 3 );
+		    """, context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "alias-override" );
+		assertThat( variables.getAsString( Key.of( "result2" ) ) ).isEqualTo( "alias:one:world" );
+		assertThat( variables.getAsString( Key.of( "result3" ) ) ).isEqualTo( "alias:one:7" );
+		assertThat( variables.getAsString( Key.of( "result4" ) ) ).isEqualTo( "alias:two:x:3" );
+	}
+
+	@Test
+	public void testJavaImplementsWithImportAlias() {
+		instance.executeSource(
+		    """
+		    obj = new src.test.java.TestCases.phase3.JavaImplementsImportAlias();
+		    assert obj instanceof "TestCases.phase3.JavaTestInterface";
+
+		    result = obj.greet( "brad" );
+		    result2 = obj.add( 3, 4 );
+		    """, context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "hello brad" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( 7 );
+	}
+
+	@Test
 	public void testGeneratedAccessors() {
 		// @formatter:off
 		instance.executeSource(
@@ -2073,10 +2170,13 @@ public class ClassTest {
 	public void testStaticInitCallStaticMethod() {
 		instance.executeSource(
 		    """
-		    result = new src.test.java.TestCases.phase3.StaticInitCallStaticMethod().someStruct.foo;
+		    obj = new src.test.java.TestCases.phase3.StaticInitCallStaticMethod();
+		    result = obj.someStruct.foo;
+		    result2 = obj.getFromPseudo();
 		    """,
 		    context );
 		assertThat( variables.get( "result" ) ).isEqualTo( "bar" );
+		assertThat( variables.get( "result2" ) ).isEqualTo( "baz" );
 	}
 
 	@Test
@@ -2393,6 +2493,17 @@ public class ClassTest {
 		    semver.satisfies( "1.2.3", "^1.0.0" );
 		           """,
 		    context );
+	}
+
+	@Test
+	public void testPropertyDefaultToStaticVar() {
+		instance.executeSource(
+		    """
+		       clazz = new src.test.java.TestCases.phase3.PropertyDefaultToStaticVar();
+		    result = clazz.getMyProp();
+		           """,
+		    context );
+		assertThat( variables.get( "result" ) ).isEqualTo( 5 );
 	}
 
 }

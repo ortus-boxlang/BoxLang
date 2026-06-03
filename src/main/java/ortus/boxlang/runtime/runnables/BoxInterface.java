@@ -26,7 +26,6 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.StaticScope;
@@ -180,7 +179,7 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 	public boolean canOutput() {
 		// Initialize if neccessary
 		if ( this.canOutput == null ) {
-			this.canOutput = BooleanCaster.cast(
+			this.canOutput = BoxClassSupport.castOutputAnnotation(
 			    getAnnotations()
 			        .getOrDefault(
 			            Key.output,

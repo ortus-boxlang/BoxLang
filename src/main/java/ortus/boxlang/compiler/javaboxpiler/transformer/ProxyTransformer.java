@@ -46,9 +46,11 @@ public class ProxyTransformer {
 		import ortus.boxlang.runtime.dynamic.Referencer;
 		import ortus.boxlang.runtime.interop.DynamicObject;
 		import ortus.boxlang.runtime.interop.DynamicObject;
+		import ortus.boxlang.runtime.interop.DynamicInteropService;
 		import ortus.boxlang.runtime.loader.ClassLocator;
 		import ortus.boxlang.runtime.loader.ImportDefinition;
 		import ortus.boxlang.runtime.operators.*;
+		import ortus.boxlang.runtime.operators.Range;
 		import ortus.boxlang.runtime.runnables.BoxScript;
 		import ortus.boxlang.runtime.runnables.BoxTemplate;
 		import ortus.boxlang.runtime.runnables.IClassRunnable;
@@ -176,7 +178,9 @@ public class ProxyTransformer {
 			if ( !method.getReturnType().equals( void.class ) ) {
 				sb.append( "    return (" );
 				sb.append( method.getReturnType().getCanonicalName() );
-				sb.append( ") result;\n" );
+				sb.append( ") DynamicInteropService.coerceValue( context, result, " );
+				sb.append( method.getReturnType().getCanonicalName() );
+				sb.append( ".class );\n" );
 			}
 			sb.append( "}\n" );
 		}

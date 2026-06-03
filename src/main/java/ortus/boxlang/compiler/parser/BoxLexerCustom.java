@@ -14,8 +14,10 @@
  */
 package ortus.boxlang.compiler.parser;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +30,7 @@ import org.antlr.v4.runtime.TokenSource;
 import org.antlr.v4.runtime.misc.Pair;
 
 import ortus.boxlang.parser.antlr.BoxLexer;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 
 /**
  * I extend the generated ANTLR lexer to add some custom methods for getting unpopped modes
@@ -93,6 +96,36 @@ public class BoxLexerCustom extends BoxLexer {
 	 * where EQ appears to be encased in pound signs but is not.
 	 */
 	boolean										justClosedPoundVar		= false;
+
+	/**
+	 * Are we inside an opening function tag's attributes?
+	 */
+	boolean										inFunctionOpeningTag	= false;
+
+	/**
+	 * Did we just see ATTRIBUTE_NAME "output" and are looking for the equals sign?
+	 */
+	boolean										lookingForOutputEquals	= false;
+
+	/**
+	 * Are we currently capturing the output attribute value?
+	 */
+	boolean										capturingOutputValue	= false;
+
+	/**
+	 * The captured output attribute value text
+	 */
+	StringBuilder								outputValueCapture		= new StringBuilder();
+
+	/**
+	 * Has the output attribute been determined to be true for this function?
+	 */
+	boolean										functionOutputIsTrue	= false;
+
+	/**
+	 * Stack tracking whether each nested function level has output=true
+	 */
+	Deque<Boolean>								functionOutputStack		= new ArrayDeque<>();
 
 	/**
 	 * Tokens that end an operator. Instead of having "less than" or "less than or equal to" as a single token sequence,
@@ -334,9 +367,25 @@ public class BoxLexerCustom extends BoxLexer {
 
 			default :
 
+				// --- Function output=true tracking ---
+				handleFunctionOutputTracking( nextToken, nextTokenType );
+
 				if ( keywordsThatMayBeIdentifiers.contains( nextTokenType ) ) {
 					// Let's run a series of tests to determine if this keyword is being used as an identifier (variable, function name) and is NOT a keyword
 					boolean isIdentifier = false;
+
+					// Short-circuit: `class Name {}` inside a script/template is a named local class declaration.
+					// We keep CLASS as a keyword whenever it is (a) not in a class file and (b) the very next
+					// non-whitespace character starts an identifier (letter, underscore, or dollar sign).
+					// We must do this check BEFORE the long else-if chain below, because several of those
+					// conditions (e.g. operator-right-side, comma-preceded) can fire independently of the
+					// class keyword and would incorrectly reclassify CLASS as IDENTIFIER first.
+					if ( nextTokenType == CLASS && !classIsExpected && !lastTokenWas( DOT )
+					    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '_' ) || nextNonWhiteSpaceCharIs( '$' ) ) ) {
+						if ( debug )
+							System.out.println( "Short-circuit: keeping [class] as keyword because next char starts an identifier (local class declaration)" );
+						return setLastToken( nextToken );
+					}
 
 					if ( nextTokenType == NULL && !nextNonWhiteSpaceCharIs( '(' )
 					    && !nextNonWhiteSpaceCharIs( '.' )
@@ -392,7 +441,8 @@ public class BoxLexerCustom extends BoxLexer {
 						// foo = function() {}
 						// foo( value, function(){} )
 						isIdentifier = false;
-					} else if ( nextTokenType == REQUIRED && !lastTokenWas( DOT ) && getParenCount() > 0 && nextNonWhiteSpaceIsAnyChar() ) {
+					} else if ( nextTokenType == REQUIRED && !lastTokenWas( DOT ) && getParenCount() > 0
+					    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '_' ) || nextNonWhiteSpaceCharIs( '$' ) ) ) {
 						// function foo( required string bar )
 						isIdentifier = false;
 					} else if ( ( nextTokenType == VAR || nextTokenType == FINAL || nextTokenType == STATIC ) && !lastTokenWas( DOT )
@@ -563,9 +613,23 @@ public class BoxLexerCustom extends BoxLexer {
 						isIdentifier = true;
 					} else if ( nextTokenType == ABSTRACT || nextTokenType == CLASS || nextTokenType == INTERFACE ) {
 						if ( !classIsExpected ) {
-							if ( debug )
-								System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because the file is not a class" );
-							isIdentifier = true;
+							// In a script or template, `class Name {}` is a named local class declaration
+							// and CLASS must remain a keyword (not become an identifier). We detect this by
+							// checking whether the next non-whitespace character begins an identifier (letter,
+							// underscore, or dollar). If it does, this looks like `class Name ...` and we
+							// keep CLASS as the keyword. Otherwise `class` is being used as a scope name
+							// (e.g. `class.foo` has `.` next) and we allow the reclassification to IDENTIFIER.
+							if ( nextTokenType == CLASS
+							    && ( nextNonWhiteSpaceIsAnyChar() || nextNonWhiteSpaceCharIs( '_' ) || nextNonWhiteSpaceCharIs( '$' ) ) ) {
+								if ( debug )
+									System.out
+									    .println( "Not switching [class] to identifier because next char starts an identifier (local class declaration)" );
+								// keep isIdentifier = false
+							} else {
+								if ( debug )
+									System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because the file is not a class" );
+								isIdentifier = true;
+							}
 						} else if ( classTokenReached && !classBodyStarted ) {
 							if ( debug )
 								System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because we are in the class annotations" );
@@ -590,6 +654,100 @@ public class BoxLexerCustom extends BoxLexer {
 					justClosedPoundVar = false;
 				}
 				return setLastToken( nextToken );
+		}
+	}
+
+	/**
+	 * Handle tracking of function output=true attribute in template mode.
+	 * When a bx:function tag has output=true, we manually push TEMPLATE_OUTPUT_MODE
+	 * after the grammar's normal COMPONENT_CLOSE handling.
+	 *
+	 * @param nextToken     the current token
+	 * @param nextTokenType the type of the current token
+	 */
+	private void handleFunctionOutputTracking( Token nextToken, int nextTokenType ) {
+		// Detect opening vs closing function tags
+		if ( nextTokenType == TEMPLATE_FUNCTION ) {
+			if ( lastTokenWas( SLASH_PREFIX ) ) {
+				// Closing function tag - pop stack and set outputting flag if needed
+				if ( !this.functionOutputStack.isEmpty() && this.functionOutputStack.pop() ) {
+					this.thisComponentIsOutputting = true;
+				}
+			} else {
+				// Opening function tag - start tracking attributes
+				this.functionOutputStack.push( false );
+				this.inFunctionOpeningTag	= true;
+				this.functionOutputIsTrue	= false;
+				this.lookingForOutputEquals	= false;
+				this.capturingOutputValue	= false;
+				this.outputValueCapture.setLength( 0 );
+			}
+		}
+
+		if ( this.inFunctionOpeningTag ) {
+			// Step 1: Handle value capture
+			if ( this.capturingOutputValue ) {
+				if ( nextTokenType == COMPONENT_CLOSE || nextTokenType == COMPONENT_SLASH_CLOSE
+				    || nextTokenType == ATTRIBUTE_NAME ) {
+					// End of the value - evaluate what we captured
+					evaluateOutputValue();
+				} else if ( nextToken.getChannel() == DEFAULT_TOKEN_CHANNEL
+				    && nextTokenType != COMPONENT_EQUALS
+				    && nextTokenType != OPEN_QUOTE && nextTokenType != CLOSE_QUOTE
+				    && nextTokenType != ICHAR ) {
+					this.outputValueCapture.append( nextToken.getText() );
+				}
+			}
+
+			// Step 2: Detect output attribute and its equals sign
+			if ( !this.capturingOutputValue ) {
+				if ( this.lookingForOutputEquals && nextTokenType == COMPONENT_EQUALS ) {
+					this.lookingForOutputEquals	= false;
+					this.capturingOutputValue	= true;
+					this.outputValueCapture.setLength( 0 );
+				} else if ( nextTokenType == ATTRIBUTE_NAME && nextToken.getText().equalsIgnoreCase( "output" ) ) {
+					this.lookingForOutputEquals = true;
+				} else if ( nextTokenType == ATTRIBUTE_NAME ) {
+					this.lookingForOutputEquals = false;
+				}
+			}
+
+			// Step 3: Handle component close - push output mode if output=true
+			if ( nextTokenType == COMPONENT_CLOSE ) {
+				if ( this.functionOutputIsTrue ) {
+					// Grammar already popped us back to DEFAULT_TEMPLATE_MODE.
+					// Push output mode on top so # expressions are interpolated in the function body.
+					pushMode( TEMPLATE_OUTPUT_MODE );
+					pushMode( DEFAULT_TEMPLATE_MODE );
+					this.functionOutputStack.pop();
+					this.functionOutputStack.push( true );
+				}
+				this.inFunctionOpeningTag	= false;
+				this.lookingForOutputEquals	= false;
+				this.capturingOutputValue	= false;
+				this.functionOutputIsTrue	= false;
+			} else if ( nextTokenType == COMPONENT_SLASH_CLOSE ) {
+				// Self-closing function tag - no body
+				this.functionOutputStack.pop();
+				this.inFunctionOpeningTag	= false;
+				this.lookingForOutputEquals	= false;
+				this.capturingOutputValue	= false;
+				this.functionOutputIsTrue	= false;
+			}
+		}
+	}
+
+	/**
+	 * Evaluate the captured output attribute value and set functionOutputIsTrue if it's truthy.
+	 */
+	private void evaluateOutputValue() {
+		this.capturingOutputValue = false;
+		String value = this.outputValueCapture.toString().trim();
+		if ( !value.isEmpty() ) {
+			var attempt = BooleanCaster.attempt( value );
+			if ( attempt.wasSuccessful() && attempt.get() ) {
+				this.functionOutputIsTrue = true;
+			}
 		}
 	}
 
@@ -671,7 +829,13 @@ public class BoxLexerCustom extends BoxLexer {
 	public void reset() {
 		super.reset();
 		pushMode( defaultMode );
-		justClosedPoundVar = false;
+		justClosedPoundVar		= false;
+		inFunctionOpeningTag	= false;
+		lookingForOutputEquals	= false;
+		capturingOutputValue	= false;
+		outputValueCapture.setLength( 0 );
+		functionOutputIsTrue = false;
+		functionOutputStack.clear();
 	}
 
 	/**
@@ -691,10 +855,10 @@ public class BoxLexerCustom extends BoxLexer {
 	/**
 	 * Get the last token of a specific type and the next x siblings
 	 * Returns empty list if not found
-	 * 
+	 *
 	 * @param type  type of token to find
 	 * @param count number of siblings to find
-	 * 
+	 *
 	 * @return the list of tokens starting from the specified type
 	 */
 	public List<Token> findPreviousTokenAndXSiblings( int type, int count ) {
@@ -890,9 +1054,9 @@ public class BoxLexerCustom extends BoxLexer {
 	/**
 	 * Check if the next characters are the start of a function declaration
 	 * That means the function token is followed by a valid function name and then a left parenthesis
-	 * 
+	 *
 	 * @param nextToken the function token
-	 * 
+	 *
 	 * @return true if the next characters are a function declaration
 	 */
 	private boolean isFunctionDeclaration( Token nextToken ) {
@@ -914,9 +1078,9 @@ public class BoxLexerCustom extends BoxLexer {
 
 	/**
 	 * Check if the next sequence of characters matches a specific word
-	 * 
+	 *
 	 * @param word the word to match. Pass as upper case
-	 * 
+	 *
 	 * @return true if the next sequence of characters matches the word
 	 */
 	private boolean nextCharsAreWord( String word ) {
@@ -935,9 +1099,9 @@ public class BoxLexerCustom extends BoxLexer {
 	/**
 	 * Given a position in the input stream, skip over any whitespace characters
 	 * and return the position of the next non-whitespace character.
-	 * 
+	 *
 	 * @param pos the position in the input stream
-	 * 
+	 *
 	 * @return the position of the next non-whitespace character
 	 */
 	private int skipWhiteSpace( int pos ) {
@@ -952,9 +1116,9 @@ public class BoxLexerCustom extends BoxLexer {
 
 	/**
 	 * Set the classIsExpected flag
-	 * 
+	 *
 	 * @param classIsExpected true if a class is expected
-	 * 
+	 *
 	 * @return this
 	 */
 	public BoxLexerCustom setClassIsExpected( boolean classIsExpected ) {
@@ -964,9 +1128,9 @@ public class BoxLexerCustom extends BoxLexer {
 
 	/**
 	 * Decide if a token is wrapped in #pound# signs.
-	 * 
+	 *
 	 * @param token the token to check
-	 * 
+	 *
 	 * @return true if the token is wrapped in #pound# signs
 	 */
 	private boolean wrappedInPounds( Token token ) {

@@ -96,7 +96,7 @@ public class Application {
 	/**
 	 * The duration of the application before it times out
 	 */
-	Duration								appDuration						= Duration.ZERO;
+	private Duration						appDuration						= Duration.ZERO;
 
 	/**
 	 * The timestamp when the application was last accessed
@@ -821,6 +821,33 @@ public class Application {
 	 */
 	public Instant getLastAccessTime() {
 		return this.lastAccessTime;
+	}
+
+	/**
+	 * Get the application duration before it times out.
+	 *
+	 * @return the application duration
+	 */
+	public Duration getAppDuration() {
+		return this.appDuration;
+	}
+
+	/**
+	 * Get the list of scheduler names that were started by this application.
+	 *
+	 * @return the list of started scheduler keys
+	 */
+	public List<Key> getStartedSchedulers() {
+		return this.startedSchedulers;
+	}
+
+	/**
+	 * Get the list of watcher names that were started by this application.
+	 *
+	 * @return the list of started watcher keys
+	 */
+	public List<Key> getStartedWatchers() {
+		return this.startedWatchers;
 	}
 
 	/**

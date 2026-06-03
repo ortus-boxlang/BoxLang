@@ -25,6 +25,8 @@ import java.util.Objects;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -82,6 +84,11 @@ public class Encrypt extends BIF {
 		Object content = arguments.get( Key.object );
 		// Make sure content is not null or throw an error
 		Objects.requireNonNull( content, "Content to encrypt cannot be null" );
+
+		CastAttempt<String> stringContentAttempt = StringCaster.attempt( content );
+		if ( stringContentAttempt.wasSuccessful() ) {
+			content = stringContentAttempt.get();
+		}
 
 		String algorithm = arguments.getAsString( Key.algorithm );
 		if ( algorithm == null ) {

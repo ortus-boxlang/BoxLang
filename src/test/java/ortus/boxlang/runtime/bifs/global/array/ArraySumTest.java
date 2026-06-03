@@ -80,4 +80,15 @@ public class ArraySumTest {
 		assertThat( variables.get( result ) ).isEqualTo( 6 );
 	}
 
+	@DisplayName( "It can get sum of dates" )
+	@Test
+	public void testCanSearchDate() {
+
+		instance.executeSource(
+		    """
+		    result = [ now(), now() ].sum()
+		    """,
+		    context );
+	}
+
 }

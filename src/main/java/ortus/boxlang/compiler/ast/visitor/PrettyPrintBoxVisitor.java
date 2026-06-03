@@ -101,6 +101,8 @@ import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
+import ortus.boxlang.compiler.ast.statement.BoxLocalClass;
+import ortus.boxlang.compiler.ast.statement.BoxMethodDeclarationModifier;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
@@ -122,7 +124,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 /**
  * Pretty print BoxLang AST nodes
- * 
+ *
  * TODO Items:
  * - Add configuration for indent size
  * - Add any other config settings such as white space inside paren, etc
@@ -220,7 +222,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	/**
 	 * Print multi-line output, respecting indentation
 	 * This will trim existing whitespace off each line.
-	 * 
+	 *
 	 * @param text The text to print
 	 */
 	public void printMultiLine( String text ) {
@@ -262,7 +264,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 
 	/**
 	 * Prints pre and inside comments
-	 * 
+	 *
 	 * @param node
 	 */
 	private void printPreComments( BoxNode node ) {
@@ -389,6 +391,33 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			newLineIfNeeded();
 		}
 		newLine();
+		for ( var statement : node.getBody() ) {
+			statement.accept( this );
+			newLineIfNeeded();
+		}
+		printInsideComments( node );
+		decreaseIndent();
+		print( "}" );
+		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxLocalClass node ) {
+		printPreOnlyComments( node );
+		for ( var anno : node.getAnnotations() ) {
+			anno.accept( this );
+			newLineIfNeeded();
+		}
+		increaseIndent();
+		print( "class " + node.getName().getName() + " {" );
+		newLine();
+		for ( var property : node.getProperties() ) {
+			property.accept( this );
+			newLineIfNeeded();
+		}
+		if ( !node.getProperties().isEmpty() ) {
+			newLine();
+		}
 		for ( var statement : node.getBody() ) {
 			statement.accept( this );
 			newLineIfNeeded();
@@ -993,7 +1022,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 
 	/**
 	 * I process string interpolation, but without assuming it was a quoted string
-	 * 
+	 *
 	 * @param node The BoxStringInterpolation node
 	 */
 	public void processStringInterp( BoxStringInterpolation node, boolean isQuoted ) {
@@ -1324,7 +1353,6 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 	public void visit( BoxFunctionDeclaration node ) {
 		newLine();
 		printPreComments( node );
-		Boolean defaultInterfaceMethod = node.getFirstNodeOfType( BoxInterface.class ) != null;
 		if ( isTemplate() ) {
 			print( "<bx:function" );
 			for ( var annotation : node.getAnnotations() ) {
@@ -1349,7 +1377,7 @@ public class PrettyPrintBoxVisitor extends VoidBoxVisitor {
 			decreaseIndent();
 			print( "</bx:function>" );
 		} else {
-			if ( defaultInterfaceMethod ) {
+			if ( node.getModifiers() != null && node.getModifiers().contains( BoxMethodDeclarationModifier.DEFAULT ) ) {
 				print( "default " );
 			}
 			if ( node.getAccessModifier() != null ) {

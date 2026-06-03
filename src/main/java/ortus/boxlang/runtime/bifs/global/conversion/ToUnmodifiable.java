@@ -23,6 +23,7 @@ import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.QueryCaster;
+import ortus.boxlang.runtime.dynamic.casters.SetCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -35,6 +36,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 @BoxMember( type = BoxLangType.ARRAY )
 @BoxMember( type = BoxLangType.STRUCT )
 @BoxMember( type = BoxLangType.QUERY )
+@BoxMember( type = BoxLangType.SET )
 public class ToUnmodifiable extends BIF {
 
 	/**
@@ -48,9 +50,9 @@ public class ToUnmodifiable extends BIF {
 	}
 
 	/**
-	 * Convert an array, struct or query to its Unmodifiable counterpart.
+	 * Convert an array, struct, query or set to its Unmodifiable counterpart.
 	 *
-	 * @argument.value The array, struct or query to convert.
+	 * @argument.value The array, struct, query or set to convert.
 	 *
 	 * @param context   The context in which the BIF is being executed.
 	 * @param arguments The arguments passed to the BIF.
@@ -78,8 +80,14 @@ public class ToUnmodifiable extends BIF {
 			return ( ( Struct ) castedStruct.get() ).toUnmodifiable();
 		}
 
+		// Sets
+		var castedSet = SetCaster.attempt( inputValue );
+		if ( castedSet.wasSuccessful() ) {
+			return castedSet.get().toUnmodifiable();
+		}
+
 		// Exceptions
-		throw new BoxRuntimeException( "Cannot convert value to Unmodifiable type as it is not a struct, array or query" );
+		throw new BoxRuntimeException( "Cannot convert value to Unmodifiable type as it is not a struct, array, query or set" );
 
 	}
 

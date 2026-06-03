@@ -417,6 +417,11 @@ public class LoggingService {
 		this.HTTP_LOGGER		= getLogger( "http" );
 		this.BLACKHOLE_LOGGER	= getLogger( "blackhole" );
 
+		// Initialize all user-defined loggers so their category wiring happens at startup,
+		// not lazily on first use. getLogger() is idempotent — already-initialized loggers are returned from cache.
+		this.runtime.getConfiguration().logging.loggers.keySet()
+		    .forEach( key -> getLogger( key.getName() ) );
+
 		return instance;
 	}
 

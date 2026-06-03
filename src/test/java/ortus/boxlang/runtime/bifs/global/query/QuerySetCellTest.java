@@ -168,9 +168,9 @@ public class QuerySetCellTest {
 		    context );
 
 		assertThat( variables.getAsQuery( result ).getData().size() ).isEqualTo( 3 );
-		assertEquals( 1, variables.get( Key.of( "bit1" ) ) );
-		assertEquals( 0, variables.get( Key.of( "bit2" ) ) );
-		assertEquals( 1, variables.get( Key.of( "bit3" ) ) );
+		assertEquals( true, variables.get( Key.of( "bit1" ) ) );
+		assertEquals( false, variables.get( Key.of( "bit2" ) ) );
+		assertEquals( true, variables.get( Key.of( "bit3" ) ) );
 	}
 
 	// BL-640 - Test that time values in queries are handled correctly and allow for comparison
@@ -298,6 +298,53 @@ public class QuerySetCellTest {
 		assertThat( variables.get( Key.of( "exists" ) ) ).isEqualTo( true );
 		assertThat( variables.get( Key.of( "col2Exists" ) ) ).isEqualTo( true );
 		assertThat( variables.get( Key.of( "col2Gone" ) ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "It casts string values to integer column type via querySetCell" )
+	@Test
+	public void testCastsStringToInteger() {
+		// @formatter:off
+		instance.executeSource( """
+			result = queryNew( "amount", "integer", [[0]] )
+			querySetCell( result, "amount", "1500", 1 )
+		""", context );
+		// @formatter:on
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.getCell( Key.of( "amount" ), 0 ) ).isInstanceOf( Integer.class );
+		assertThat( qry.getCell( Key.of( "amount" ), 0 ) ).isEqualTo( 1500 );
+	}
+
+	@DisplayName( "It casts string values to double column type via querySetCell" )
+	@Test
+	public void testCastsStringToDouble() {
+		// @formatter:off
+		instance.executeSource( """
+			result = queryNew( "price", "double", [[0]] )
+			querySetCell( result, "price", "19.99", 1 )
+		""", context );
+		// @formatter:on
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.getCell( Key.of( "price" ), 0 ) ).isInstanceOf( Double.class );
+		assertThat( qry.getCell( Key.of( "price" ), 0 ) ).isEqualTo( 19.99 );
+	}
+
+	@DisplayName( "It casts values set via querySetCell so QoQ math works" )
+	@Test
+	public void testCastingEnablesQoQMathViaSetCell() {
+		// @formatter:off
+		instance.executeSource( """
+			myQry = queryNew( "amount", "integer", [[0]] )
+			querySetCell( myQry, "amount", "1500", 1 )
+			result = queryExecute(
+				"SELECT amount/100 as calc FROM myQry",
+				[],
+				{ dbType: "query" }
+			)
+		""", context );
+		// @formatter:on
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.size() ).isEqualTo( 1 );
+		assertThat( ( ( Number ) qry.getCell( Key.of( "calc" ), 0 ) ).intValue() ).isEqualTo( 15 );
 	}
 
 }

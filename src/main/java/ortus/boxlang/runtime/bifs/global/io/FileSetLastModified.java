@@ -15,15 +15,20 @@
 
 package ortus.boxlang.runtime.bifs.global.io;
 
+import java.time.Instant;
+import java.time.ZoneId;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.bifs.BoxMember;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxFile;
 import ortus.boxlang.runtime.types.BoxLangType;
+import ortus.boxlang.runtime.types.DateTime;
 
 @BoxBIF( description = "Set the last modified timestamp of a file" )
 @BoxMember( type = BoxLangType.FILE )
@@ -52,8 +57,15 @@ public class FileSetLastModified extends BIF {
 	 * @argument.date A date time object or string
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		BoxFile file = arguments.getAsBoxFile( Key.file );
-		file.setLastModifiedTime( arguments.getAsDateTime( Key.date ) );
+		BoxFile		file	= arguments.getAsBoxFile( Key.file );
+		Object		oDate	= arguments.get( Key.date );
+		DateTime	date;
+		if ( oDate instanceof Number nDate ) {
+			date = new DateTime( Instant.ofEpochMilli( nDate.longValue() ).atZone( ZoneId.systemDefault() ) );
+		} else {
+			date = DateTimeCaster.cast( oDate, true, ZoneId.systemDefault(), false, context, null );
+		}
+		file.setLastModifiedTime( date );
 		if ( file.implicitlyCast ) {
 			return null;
 		} else {

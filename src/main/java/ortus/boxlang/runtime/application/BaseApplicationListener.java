@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.bifs.global.decision.IsJSON;
 import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -143,6 +144,9 @@ public abstract class BaseApplicationListener {
 	 * You can find the majority of defaults in the {@link Configuration} class.
 	 */
 	protected IStruct						settings					= Struct.ofNonConcurrent(
+	    // These are auto-calculated at runtime
+	    Key._CLASS, "",
+	    Key._NAME, "",
 	    // Security settings
 	    Key.allowedFileOperationExtensions, runtime.getConfiguration().security.allowedFileOperationExtensions,
 	    // Application settings
@@ -172,6 +176,10 @@ public abstract class BaseApplicationListener {
 	    Key.locale, runtime.getConfiguration().locale.toString(),
 	    // Mappings
 	    Key.mappings, Struct.ofNonConcurrent(),
+	    // Query Transformers
+	    Key.queryTransformers, Struct.ofNonConcurrent(),
+	    // Query global options
+	    Key.queryOptions, runtime.getConfiguration().queries.asStruct(),
 	    // Dynamic Schedulers
 	    Key.schedulers, new Array(),
 	    // Default Session Management settings
@@ -182,15 +190,13 @@ public abstract class BaseApplicationListener {
 	    // Cookie Management
 	    Key.setClientCookies, runtime.getConfiguration().setClientCookies,
 	    Key.setDomainCookies, runtime.getConfiguration().setDomainCookies,
-	    // These are auto-calculated at runtime
-	    Key._CLASS, "",
-	    Key._NAME, "",
+	    // The source is done at runtime.
 	    Key.source, "",
-	    // end auto-calculated
-	    Key.timezone, runtime.getConfiguration().timezone.getId(),
 	    // Stil Considering if they will be core or a module
 	    Key.secureJson, false,
-	    Key.secureJsonPrefix, ""
+	    Key.secureJsonPrefix, "",
+	    // Default Timezone
+	    Key.timezone, runtime.getConfiguration().timezone.getId()
 	);
 
 	/**
@@ -862,7 +868,12 @@ public abstract class BaseApplicationListener {
 			// switch on returnFormat
 			switch ( returnFormat.toLowerCase() ) {
 				case "json" :
-					stringResult = ( String ) context.invokeFunction( Key.JSONSerialize, new Object[] { result, "struct" } );
+					// don't serialize JSON if the value is already a string which is valid JSON
+					if ( result instanceof String str && IsJSON.isJSON( str ) ) {
+						stringResult = str;
+					} else {
+						stringResult = ( String ) context.invokeFunction( Key.JSONSerialize, new Object[] { result, "struct" } );
+					}
 					break;
 				case "wddx" :
 				case "xml" :

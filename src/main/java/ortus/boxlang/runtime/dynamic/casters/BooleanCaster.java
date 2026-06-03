@@ -27,6 +27,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.Range;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 import ortus.boxlang.runtime.types.util.TypeUtil;
@@ -199,6 +200,7 @@ public class BooleanCaster implements IBoxCaster {
 		if ( loose ) {
 			// performance improvement https://openjdk.org/jeps/441
 			return switch ( object ) {
+				case Range<?> castedRange -> !castedRange.isEmpty();
 				case Array castedArray -> !castedArray.isEmpty();
 				case List<?> castedList -> !castedList.isEmpty();
 				case Struct castedStruct -> !castedStruct.isEmpty();

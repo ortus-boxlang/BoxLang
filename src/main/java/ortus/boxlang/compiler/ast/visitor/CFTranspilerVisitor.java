@@ -83,7 +83,6 @@ import ortus.boxlang.compiler.ast.statement.BoxTryCatch;
 import ortus.boxlang.compiler.ast.statement.BoxWhile;
 import ortus.boxlang.compiler.ast.statement.component.BoxComponent;
 import ortus.boxlang.compiler.ast.statement.component.BoxTemplateIsland;
-import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
@@ -230,6 +229,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	private static Key								forceOutputTrueKey			= Key.of( "forceOutputTrue" );
 	private static Key								mergeDocsIntoAnnotationsKey	= Key.of( "mergeDocsIntoAnnotations" );
 	private static Key								isLuceeKey					= Key.of( "isLucee" );
+	private static Key								isAdobeKey					= Key.of( "isAdobe" );
 	private static Key								compatKey					= Key.of( "compat-cfml" );
 
 	/**
@@ -249,6 +249,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	// If compat module is not installed, we assume this is a Lucee compat visitor
 	// Users can toggle this by installing compat and setting the engine to "adobe"
 	private boolean									isLuceeCompat				= true;
+	private boolean									isAdobeCompat				= false;
 
 	private Set<BoxBinaryOperator>					binaryOpsHigherThanNot		= Set.of(
 	    BoxBinaryOperator.Power,
@@ -315,6 +316,8 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		 * Only kicks in when named args are used
 		 */
 		BIFArgMap.put( "directorylist", Map.of( "absolute_path", "path" ) );
+		BIFArgMap.put( "hash", Map.of( "string", "input" ) );
+		BIFArgMap.put( "getsafehtml", Map.of( "inputstring", "string", "policyfile", "policy" ) );
 
 		/*
 		 * These are BIFs that return something useless like true, but would be much more useful to return the actual data structure.
@@ -370,19 +373,22 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 */
 	public CFTranspilerVisitor( IStruct settings ) {
 		if ( settings.containsKey( transpilerKey ) ) {
-			settings = StructCaster.cast( settings.get( transpilerKey ) );
-			if ( settings.containsKey( upperCaseKeysKey ) ) {
-				upperCaseKeys = BooleanCaster.cast( settings.get( upperCaseKeysKey ) );
+			var transpilerSettings = StructCaster.cast( settings.get( transpilerKey ) );
+			if ( transpilerSettings.containsKey( upperCaseKeysKey ) ) {
+				upperCaseKeys = BooleanCaster.cast( transpilerSettings.get( upperCaseKeysKey ) );
 			}
-			if ( settings.containsKey( forceOutputTrueKey ) ) {
-				forceOutputTrue = BooleanCaster.cast( settings.get( forceOutputTrueKey ) );
+			if ( transpilerSettings.containsKey( forceOutputTrueKey ) ) {
+				forceOutputTrue = BooleanCaster.cast( transpilerSettings.get( forceOutputTrueKey ) );
 			}
-			if ( settings.containsKey( mergeDocsIntoAnnotationsKey ) ) {
-				mergeDocsIntoAnnotations = BooleanCaster.cast( settings.get( mergeDocsIntoAnnotationsKey ) );
+			if ( transpilerSettings.containsKey( mergeDocsIntoAnnotationsKey ) ) {
+				mergeDocsIntoAnnotations = BooleanCaster.cast( transpilerSettings.get( mergeDocsIntoAnnotationsKey ) );
 			}
-			if ( settings.containsKey( isLuceeKey ) ) {
-				isLuceeCompat = BooleanCaster.cast( settings.get( isLuceeKey ) );
-			}
+		}
+		if ( settings.containsKey( isLuceeKey ) ) {
+			isLuceeCompat = BooleanCaster.cast( settings.get( isLuceeKey ) );
+		}
+		if ( settings.containsKey( isAdobeKey ) ) {
+			isAdobeCompat = BooleanCaster.cast( settings.get( isAdobeKey ) );
 		}
 	}
 
@@ -400,37 +406,6 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 *
 	 * @return The transformed AST node with CFML-compatible structure
 	 */
-	/**
-	 * Transforms BoxScript nodes (CFSCRIPT source type) by updating the source type
-	 * to BOXSCRIPT so the pretty printer renders BoxLang syntax (bx: prefix, etc.)
-	 *
-	 * @param node The BoxScript node to transform
-	 *
-	 * @return The transformed BoxScript node
-	 */
-	@Override
-	public BoxNode visit( BoxScript node ) {
-		if ( node.getBoxSourceType() == BoxSourceType.CFSCRIPT ) {
-			node.setBoxSourceType( BoxSourceType.BOXSCRIPT );
-		}
-		return super.visit( node );
-	}
-
-	/**
-	 * Transforms BoxTemplate nodes (CFTEMPLATE source type) by updating the source type
-	 * to BOXTEMPLATE so the pretty printer renders BoxLang syntax (bx: prefix, etc.)
-	 *
-	 * @param node The BoxTemplate node to transform
-	 *
-	 * @return The transformed BoxTemplate node
-	 */
-	@Override
-	public BoxNode visit( BoxTemplate node ) {
-		if ( node.getBoxSourceType() == BoxSourceType.CFTEMPLATE ) {
-			node.setBoxSourceType( BoxSourceType.BOXTEMPLATE );
-		}
-		return super.visit( node );
-	}
 
 	@Override
 	public BoxNode visit( BoxClass node ) {
@@ -458,7 +433,26 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 			);
 		}
 
-		enableOutput( annotations );
+		// Adobe has some crazy undocumented rule whereby output=false UNLESS a cfoutput tag appears ANYWHERE in the psudoconstructor, then it's true
+		if ( isAdobeCompat ) {
+
+			// Get all output components in the class, but don't recurse into any function declarations.
+			boolean hasCFOutput = node
+			    .getDescendantsOfType(
+			        BoxComponent.class,
+			        c -> c.getName().equalsIgnoreCase( "output" ),
+			        n -> n instanceof BoxFunctionDeclaration )
+			    .size() > 0;
+
+			if ( hasCFOutput ) {
+				enableOutput( annotations );
+			} else {
+				disableOutput( annotations );
+			}
+		} else {
+			// Lucee always defaults output to true for components
+			enableOutput( annotations );
+		}
 		return super.visit( node );
 	}
 
@@ -767,6 +761,24 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 				}
 				arg.setValue( new BoxStringLiteral( originalText, arg.getValue().getPosition(), "\"" + originalText + "\"" ) );
 			}
+		}
+
+		// Rewrite parameterExists( foo ) to isDefined( "foo" ) and parameterExists( variables.foo ) to isDefined( "variables.foo" )
+		if ( name.equals( "parameterexists" ) && node.getArguments().size() == 1 && !node.isNamedArgs() ) {
+			BoxExpression			arg		= node.getArguments().get( 0 ).getValue();
+			BoxFunctionInvocation	newNode	= new BoxFunctionInvocation(
+			    "isDefined",
+			    List.of(
+			        new BoxArgument(
+			            new BoxStringLiteral( arg.toString(), null, null ),
+			            null,
+			            null
+			        )
+			    ),
+			    node.getPosition(),
+			    node.getSourceText()
+			);
+			return super.visit( newNode );
 		}
 
 		return super.visit( node );
@@ -1741,7 +1753,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	 * Behavior:
 	 * - Only operates if forceOutputTrue configuration is enabled
 	 * - Checks if an "output" annotation already exists
-	 * - Adds output=true annotation if none exists
+	 * - Adds output=raw annotation if none exists
 	 * - Preserves existing output annotations (doesn't override)
 	 *
 	 * This maintains CFML's output behavior while allowing explicit override
@@ -1754,11 +1766,32 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 			return;
 
 		if ( annotations.stream().noneMatch( a -> a.getKey().getValue().equalsIgnoreCase( "output" ) ) ) {
-			// @output true
+			// @output raw
 			annotations.add(
 			    new BoxAnnotation(
-			        new BoxFQN( "output", null, null ),
-			        new BoxBooleanLiteral( true, null, null ),
+			        new BoxFQN( "output", null, "output" ),
+			        new BoxStringLiteral( "raw", null, "\"raw\"" ),
+			        null,
+			        null )
+			);
+		}
+	}
+
+	/**
+	 * Helper method to add or ensure the output annotation is set to false if there wasn't already an explicit value.
+	 * 
+	 * @param annotations The annotations list to potentially modify
+	 */
+	private void disableOutput( List<BoxAnnotation> annotations ) {
+		if ( !forceOutputTrue )
+			return;
+
+		if ( annotations.stream().noneMatch( a -> a.getKey().getValue().equalsIgnoreCase( "output" ) ) ) {
+			// @output false
+			annotations.add(
+			    new BoxAnnotation(
+			        new BoxFQN( "output", null, "output" ),
+			        new BoxStringLiteral( "false", null, "\"false\"" ),
 			        null,
 			        null )
 			);

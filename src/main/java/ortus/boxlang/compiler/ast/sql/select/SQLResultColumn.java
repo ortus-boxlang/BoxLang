@@ -22,6 +22,7 @@ import ortus.boxlang.compiler.ast.sql.SQLNode;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLColumn;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLExpression;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLFunction;
+import ortus.boxlang.compiler.ast.sql.select.expression.SQLParenthesis;
 import ortus.boxlang.compiler.ast.sql.select.expression.SQLStarExpression;
 import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
@@ -104,6 +105,9 @@ public class SQLResultColumn extends SQLNode {
 			return alias;
 		} else if ( expression instanceof SQLColumn c ) {
 			return c.getName();
+			// SELET (foo) is the same as SELECT foo
+		} else if ( expression instanceof SQLParenthesis p && p.getExpression() instanceof SQLColumn c2 ) {
+			return c2.getName();
 		} else {
 			return Key.of( "column_" + ( ordinalPosition - 1 ) );
 		}

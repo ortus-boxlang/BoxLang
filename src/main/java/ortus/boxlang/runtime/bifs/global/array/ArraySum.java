@@ -59,7 +59,7 @@ public class ArraySum extends BIF {
 	public static Number _invoke( Array array ) {
 		Number accumulator = 0;
 		for ( int i = 0; i < array.size(); i++ ) {
-			accumulator = Plus.invoke( accumulator, NumberCaster.cast( array.get( i ) ) );
+			accumulator = Plus.invoke( accumulator, NumberCaster.cast( array.get( i ), true, true ) );
 		}
 		return accumulator;
 	}

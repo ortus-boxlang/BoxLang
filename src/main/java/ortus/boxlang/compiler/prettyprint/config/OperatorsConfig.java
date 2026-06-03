@@ -148,6 +148,19 @@ public class OperatorsConfig {
 	}
 
 	/**
+	 * Create a deep copy of this configuration.
+	 *
+	 * @return a new OperatorsConfig with the same settings
+	 */
+	public OperatorsConfig clone() {
+		OperatorsConfig clone = new OperatorsConfig();
+		clone.position			= this.position;
+		clone.comparisonStyle	= this.comparisonStyle;
+		clone.ternary			= this.ternary.clone();
+		return clone;
+	}
+
+	/**
 	 * Configuration for ternary ({@code ? :}) operator formatting.
 	 */
 	public static class TernaryConfig {
@@ -233,6 +246,18 @@ public class OperatorsConfig {
 			map.put( "style", style );
 			map.put( "question_position", questionPosition );
 			return map;
+		}
+
+		/**
+		 * Create a deep copy of this configuration.
+		 *
+		 * @return a new TernaryConfig with the same settings
+		 */
+		public TernaryConfig clone() {
+			TernaryConfig clone = new TernaryConfig();
+			clone.style				= this.style;
+			clone.questionPosition	= this.questionPosition;
+			return clone;
 		}
 	}
 }

@@ -28,6 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.Parser;
@@ -36,6 +37,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
+import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -66,6 +68,7 @@ public class CFTemplateTest {
 
 	@BeforeEach
 	public void setupEach() {
+		RunnableLoader.getInstance().getBoxpiler().clearPagePool();
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
 	}
@@ -846,6 +849,189 @@ public class CFTemplateTest {
 
 		assertThat( variables.get( result ) ).isEqualTo( "Carrots are orange." );
 
+	}
+
+	@Test
+	public void testSwitchNoFallThrough() {
+		instance.executeSource(
+		    """
+		    <cfset result = "">
+		    <cfset vegetable = "carrot" />
+		    <cfswitch expression="#vegetable#">
+		    	<cfcase value="carrot">
+		    		<cfset result = result & "carrot">
+		    	</cfcase>
+		    	<cfcase value="potato">
+		    		<cfset result = result & "potato">
+		    	</cfcase>
+		    	<cfdefaultcase>
+		    		<cfset result = result & "default">
+		    	</cfdefaultcase>
+		    </cfswitch>
+		    """, context, BoxSourceType.CFTEMPLATE );
+
+		// Tag switches do NOT fall through - only the matched case should execute
+		assertThat( variables.get( result ) ).isEqualTo( "carrot" );
+	}
+
+	@Test
+	public void testSwitchBreakIgnoredInTagSwitch() {
+		instance.executeSource(
+		    """
+		    <cfset result = "">
+		    <cfset vegetable = "carrot" />
+		    <cfswitch expression="#vegetable#">
+		    	<cfcase value="carrot">
+		    		<cfset result = result & "carrot">
+		    		<cfbreak>
+		    		<cfset result = result & "after-break">
+		    	</cfcase>
+		    	<cfcase value="potato">
+		    		<cfset result = result & "potato" >
+		    	</cfcase>
+		    </cfswitch>
+		    """, context, BoxSourceType.CFTEMPLATE );
+
+		// Break in a tag switch with no enclosing loop is a no-op - code continues
+		assertThat( variables.get( result ) ).isEqualTo( "carrotafter-break" );
+	}
+
+	@Test
+	public void testSwitchBreakInsideLoopBreaksLoop() {
+		instance.executeSource(
+		    """
+		    <cfset result = 0>
+		    <cfloop from="1" to="10" index="i">
+		    	<cfswitch expression="#i#">
+		    		<cfcase value="1,2,3">
+		    			<cfset result = result + 1>
+		    		</cfcase>
+		    	</cfswitch>
+		    	<cfif i EQ 5>
+		    		<cfbreak>
+		    	</cfif>
+		    </cfloop>
+		    """, context, BoxSourceType.CFTEMPLATE );
+
+		// Loop should break at i=5, but switch cases 1,2,3 should have matched
+		assertThat( variables.get( result ) ).isEqualTo( 3 );
+	}
+
+	@Test
+	public void testSwitchBreakInCaseExitsLoop() {
+		instance.executeSource(
+		    """
+		    <cfset result = 0>
+		    <cfloop from="1" to="10" index="i">
+		    	<cfswitch expression="go">
+		    		<cfcase value="go">
+		    			<cfset result = result + 1>
+		    			<cfif result EQ 3>
+		    				<cfbreak>
+		    			</cfif>
+		    		</cfcase>
+		    	</cfswitch>
+		    </cfloop>
+		    """, context, BoxSourceType.CFTEMPLATE );
+
+		// Break inside the case should exit the for loop since tag switches don't consume breaks
+		assertThat( variables.get( result ) ).isEqualTo( 3 );
+	}
+
+	@Test
+	public void testSwitchInsideLoopContinueSkipsIteration() {
+		instance.executeSource(
+		    """
+		    <cfset result = "">
+		    <cfloop from="1" to="5" index="i">
+		    	<cfswitch expression="#i#">
+		    		<cfcase value="3">
+		    			<cfcontinue>
+		    		</cfcase>
+		    	</cfswitch>
+		    	<cfset result = result & i>
+		    </cfloop>
+		    """, context, BoxSourceType.CFTEMPLATE );
+
+		// Continue inside tag switch case exits the loop iteration
+		assertThat( variables.get( result ) ).isEqualTo( "1245" );
+	}
+
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
+	@Test
+	public void testSwitchLabeledBreakInCaseExitsTargetedOuterLoop() {
+		Key afterLoop = Key.of( "afterLoop" );
+
+		instance.executeSource(
+		    """
+		    <cfset result = 0>
+		    <cfloop from="1" to="5" index="outer" label="outerLoop">
+		    	<cfloop from="1" to="5" index="inner">
+		    		<cfswitch expression="go">
+		    			<cfcase value="go">
+		    				<cfset result = result + 1>
+		    				<cfbreak outerLoop>
+		    			</cfcase>
+		    		</cfswitch>
+		    		<cfset result = -998>
+		    	</cfloop>
+		    	<cfset result = -997>
+		    </cfloop>
+		    <cfset afterLoop = 'reached'>
+		    """, context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.get( result ) ).isEqualTo( 1 );
+		assertThat( variables.get( afterLoop ) ).isEqualTo( "reached" );
+	}
+
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
+	@Test
+	public void testSwitchLabeledContinueInCaseSkipsTargetedOuterLoopIteration() {
+		Key afterLoop = Key.of( "afterLoop" );
+
+		instance.executeSource(
+		    """
+		    <cfset result = "">
+		    <cfloop from="1" to="4" index="outer" label="outerLoop">
+		    	<cfloop from="1" to="2" index="inner">
+		    		<cfswitch expression="go">
+		    			<cfcase value="go">
+		    				<cfif inner EQ 1>
+		    					<cfset result = result & outer>
+		    					<cfcontinue outerLoop>
+		    				</cfif>
+		    			</cfcase>
+		    		</cfswitch>
+		    		<cfset result = result & 'x'>
+		    	</cfloop>
+		    	<cfset result = result & 'y'>
+		    </cfloop>
+		    <cfset afterLoop = 'reached'>
+		    """, context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.get( result ) ).isEqualTo( "1234" );
+		assertThat( variables.get( afterLoop ) ).isEqualTo( "reached" );
+	}
+
+	@Test
+	public void testSwitchInsideWhileLoopBreak() {
+		instance.executeSource(
+		    """
+		    <cfset result = 0>
+		    <cfset i = 0>
+		    <cfloop condition="i LT 10">
+		    	<cfset i = i + 1>
+		    	<cfswitch expression="#i#">
+		    		<cfcase value="5">
+		    			<cfbreak>
+		    		</cfcase>
+		    	</cfswitch>
+		    	<cfset result = result + 1>
+		    </cfloop>
+		    """, context, BoxSourceType.CFTEMPLATE );
+
+		// Break inside case should exit the while loop at i=5
+		assertThat( variables.get( result ) ).isEqualTo( 4 );
 	}
 
 	@Test
@@ -1786,6 +1972,218 @@ public class CFTemplateTest {
 		    </cfswitch>
 		         """,
 		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testTemplateFunctionImplicitOutput() {
+		instance.executeSource(
+		    """
+		      <cfset foo = "bar">
+		      <cffunction name="testa">
+		    #foo#
+		      </cffunction>
+		    <cfset testa()>
+		      <cffunction name="testb" output=true>
+		    #foo#
+		      </cffunction>
+		    <cfset testb()>
+		      <cffunction name="testc" output=false>
+		    #foo#
+		      </cffunction>
+		    <cfset testc()>
+		           """,
+		    context, BoxSourceType.CFTEMPLATE );
+	}
+
+	@Test
+	public void testUDFOutputTrueAddsOutputs() {
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <cfset foo = "bar">
+		       <cffunction name="test2" output=true>
+		       	foo #foo#
+		       	<cfoutput>
+		       		foo #foo#
+		       	</cfoutput>
+		       </cffunction>
+
+		    <cfsavecontent variable="result">
+		       	<cfset test2()>
+		    </cfsavecontent>
+		         """,
+		    context, BoxSourceType.CFTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foobarfoobar" );
+
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <cfset foo = "bar">
+		       <cffunction name="test2" output="true">
+		       	foo #foo#
+		       	<cfoutput>
+		       		foo #foo#
+		       	</cfoutput>
+		       </cffunction>
+
+		    <cfsavecontent variable="result">
+		       	<cfset test2()>
+		    </cfsavecontent>
+		         """,
+		    context, BoxSourceType.CFTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foobarfoobar" );
+
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <cfset foo = "bar">
+		       <cffunction name="test2" output = true >
+		       	foo #foo#
+		       	<cfoutput>
+		       		foo #foo#
+		       	</cfoutput>
+		       </cffunction>
+
+		    <cfsavecontent variable="result">
+		       	<cfset test2()>
+		    </cfsavecontent>
+		         """,
+		    context, BoxSourceType.CFTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foobarfoobar" );
+
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <cfset foo = "bar">
+		       <cffunction name="test2" output  = "true">
+		       	foo #foo#
+		       	<cfoutput>
+		       		foo #foo#
+		       	</cfoutput>
+		       </cffunction>
+
+		    <cfsavecontent variable="result">
+		       	<cfset test2()>
+		    </cfsavecontent>
+		         """,
+		    context, BoxSourceType.CFTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foobarfoobar" );
+
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <cfset foo = "bar">
+		       <cffunction name="test2" output  = 'true'>
+		       	foo #foo#
+		       	<cfoutput>
+		       		foo #foo#
+		       	</cfoutput>
+		       </cffunction>
+
+		    <cfsavecontent variable="result">
+		       	<cfset test2()>
+		    </cfsavecontent>
+		         """,
+		    context, BoxSourceType.CFTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foobarfoobar" );
+
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <cfset foo = "bar">
+		       <cffunction name="test2" output  = #true#>
+		       	foo #foo#
+		       	<cfoutput>
+		       		foo #foo#
+		       	</cfoutput>
+		       </cffunction>
+
+		    <cfsavecontent variable="result">
+		       	<cfset test2()>
+		    </cfsavecontent>
+		         """,
+		    context, BoxSourceType.CFTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foobarfoobar" );
+
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <cfset foo = "bar">
+		       <cffunction name="test2" output  = "#true#">
+		       	foo #foo#
+		       	<cfoutput>
+		       		foo #foo#
+		       	</cfoutput>
+		       </cffunction>
+
+		    <cfsavecontent variable="result">
+		       	<cfset test2()>
+		    </cfsavecontent>
+		         """,
+		    context, BoxSourceType.CFTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foobarfoobar" );
+
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <cfset foo = "bar">
+		       <cffunction name="test2">
+		       	foo #foo#
+		       	<cfoutput>
+		       		foo #foo#
+		       	</cfoutput>
+		       </cffunction>
+
+		    <cfsavecontent variable="result">
+		       	<cfset test2()>
+		    </cfsavecontent>
+		         """,
+		    context, BoxSourceType.CFTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foo#foo#foobar" );
+	}
+
+	@Test
+	public void testClassOutputTrue() {
+		instance.executeSource(
+		    """
+		       <cfsavecontent variable="result">
+		    	<cfset new src.test.java.TestCases.components.TestClassOutputTrue().test()>
+		    </cfsavecontent>
+		            """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "insidepseduoconstructorwoodinsidetestwood" );
+	}
+
+	@Test
+	public void testClassOutputNone() {
+		instance.executeSource(
+		    """
+		       <cfsavecontent variable="result">
+		    	<cfset new src.test.java.TestCases.components.TestClassOutputNone().test()>
+		    </cfsavecontent>
+		            """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "insidepseduoconstructor#brad#insidetest#brad#" );
+	}
+
+	@Test
+	public void testClassOutputFalse() {
+		instance.executeSource(
+		    """
+		       <cfsavecontent variable="result">
+		    	<cfset new src.test.java.TestCases.components.TestClassOutputFalse().test()>
+		    </cfsavecontent>
+		            """,
+		    context, BoxSourceType.CFTEMPLATE );
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "insidetest#brad#" );
 	}
 
 }

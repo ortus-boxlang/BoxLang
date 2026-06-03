@@ -810,6 +810,133 @@ public class BoxTemplateTest {
 	}
 
 	@Test
+	public void testSwitchNoFallThrough() {
+		instance.executeSource(
+		    """
+		    <bx:set result = "">
+		    <bx:set vegetable = "carrot" />
+		    <bx:switch expression="#vegetable#">
+		    	<bx:case value="carrot">
+		    		<bx:set result = result & "carrot">
+		    	</bx:case>
+		    	<bx:case value="potato">
+		    		<bx:set result = result & "potato">
+		    	</bx:case>
+		    	<bx:defaultcase>
+		    		<bx:set result = result & "default">
+		    	</bx:defaultcase>
+		    </bx:switch>
+		    """, context, BoxSourceType.BOXTEMPLATE );
+
+		// Tag switches do NOT fall through - only the matched case should execute
+		assertThat( variables.get( result ) ).isEqualTo( "carrot" );
+	}
+
+	@Test
+	public void testSwitchBreakIgnoredInTagSwitch() {
+		instance.executeSource(
+		    """
+		    <bx:set result = "">
+		    <bx:set vegetable = "carrot" />
+		    <bx:switch expression="#vegetable#">
+		    	<bx:case value="carrot">
+		    		<bx:set result = result & "carrot">
+		    		<bx:break>
+		    		<bx:set result = result & "after-break">
+		    	</bx:case>
+		    	<bx:case value="potato">
+		    		<bx:set result = result & "potato">
+		    	</bx:case>
+		    </bx:switch>
+		    """, context, BoxSourceType.BOXTEMPLATE );
+
+		// Break in a tag switch with no enclosing loop is a no-op - code continues
+		assertThat( variables.get( result ) ).isEqualTo( "carrotafter-break" );
+	}
+
+	@Test
+	public void testSwitchBreakInsideLoopBreaksLoop() {
+		instance.executeSource(
+		    """
+		    <bx:set result = 0>
+		    <bx:loop from="1" to="10" index="i">
+		    	<bx:switch expression="#i#">
+		    		<bx:case value="1,2,3">
+		    			<bx:set result = result + 1>
+		    		</bx:case>
+		    	</bx:switch>
+		    	<bx:if i EQ 5>
+		    		<bx:break>
+		    	</bx:if>
+		    </bx:loop>
+		    """, context, BoxSourceType.BOXTEMPLATE );
+
+		// Loop should break at i=5, but switch cases 1,2,3 should have matched
+		assertThat( variables.get( result ) ).isEqualTo( 3 );
+	}
+
+	@Test
+	public void testSwitchBreakInCaseExitsLoop() {
+		instance.executeSource(
+		    """
+		    <bx:set result = 0>
+		    <bx:loop from="1" to="10" index="i">
+		    	<bx:switch expression="go">
+		    		<bx:case value="go">
+		    			<bx:set result = result + 1>
+		    			<bx:if result EQ 3>
+		    				<bx:break>
+		    			</bx:if>
+		    		</bx:case>
+		    	</bx:switch>
+		    </bx:loop>
+		    """, context, BoxSourceType.BOXTEMPLATE );
+
+		// Break inside the case should exit the for loop since tag switches don't consume breaks
+		assertThat( variables.get( result ) ).isEqualTo( 3 );
+	}
+
+	@Test
+	public void testSwitchInsideLoopContinueSkipsIteration() {
+		instance.executeSource(
+		    """
+		    <bx:set result = "">
+		    <bx:loop from="1" to="5" index="i">
+		    	<bx:switch expression="#i#">
+		    		<bx:case value="3">
+		    			<bx:continue>
+		    		</bx:case>
+		    	</bx:switch>
+		    	<bx:set result = result & i>
+		    </bx:loop>
+		    """, context, BoxSourceType.BOXTEMPLATE );
+
+		// Continue inside tag switch case exits the loop iteration
+		assertThat( variables.get( result ) ).isEqualTo( "1245" );
+	}
+
+	@Test
+	public void testSwitchInsideWhileLoopBreak() {
+		instance.executeSource(
+		    """
+		    <bx:set result = 0>
+		    <bx:set i = 0>
+		    <bx:loop condition="i LT 10">
+		    	<bx:set i = i + 1>
+		    	<bx:switch expression="#i#">
+		    		<bx:case value="5">
+		    			<bx:break>
+		    		</bx:case>
+		    	</bx:switch>
+		    	<bx:set result = result + 1>
+		    </bx:loop>
+		    """, context, BoxSourceType.BOXTEMPLATE );
+
+		// Break inside case should exit the while loop at i=5
+		assertThat( variables.get( result ) ).isEqualTo( 4 );
+	}
+
+	@Test
 	public void testClass() {
 		instance.executeSource(
 		    """
@@ -1519,4 +1646,158 @@ public class BoxTemplateTest {
 		    context, BoxSourceType.BOXTEMPLATE );
 	}
 
+	@Test
+	public void testUDFOutputTrueAddsOutputs() {
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <bx:set foo = "bar">
+		       <bx:function name="test2" output=true>
+		       	foo #foo#
+		       	<bx:output>
+		       		foo #foo#
+		       	</bx:output>
+		       </bx:function>
+
+		    <bx:savecontent variable="result">
+		       	<bx:set test2()>
+		    </bx:savecontent>
+		         """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foobarfoobar" );
+
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <bx:set foo = "bar">
+		       <bx:function name="test2" output="true">
+		       	foo #foo#
+		       	<bx:output>
+		       		foo #foo#
+		       	</bx:output>
+		       </bx:function>
+
+		    <bx:savecontent variable="result">
+		       	<bx:set test2()>
+		    </bx:savecontent>
+		         """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foobarfoobar" );
+
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <bx:set foo = "bar">
+		       <bx:function name="test2" output = true >
+		       	foo #foo#
+		       	<bx:output>
+		       		foo #foo#
+		       	</bx:output>
+		       </bx:function>
+
+		    <bx:savecontent variable="result">
+		       	<bx:set test2()>
+		    </bx:savecontent>
+		         """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foobarfoobar" );
+
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <bx:set foo = "bar">
+		       <bx:function name="test2" output  = "true">
+		       	foo #foo#
+		       	<bx:output>
+		       		foo #foo#
+		       	</bx:output>
+		       </bx:function>
+
+		    <bx:savecontent variable="result">
+		       	<bx:set test2()>
+		    </bx:savecontent>
+		         """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foobarfoobar" );
+
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <bx:set foo = "bar">
+		       <bx:function name="test2" output  = 'true'>
+		       	foo #foo#
+		       	<bx:output>
+		       		foo #foo#
+		       	</bx:output>
+		       </bx:function>
+
+		    <bx:savecontent variable="result">
+		       	<bx:set test2()>
+		    </bx:savecontent>
+		         """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foobarfoobar" );
+
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <bx:set foo = "bar">
+		       <bx:function name="test2" output  = #true#>
+		       	foo #foo#
+		       	<bx:output>
+		       		foo #foo#
+		       	</bx:output>
+		       </bx:function>
+
+		    <bx:savecontent variable="result">
+		       	<bx:set test2()>
+		    </bx:savecontent>
+		         """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foobarfoobar" );
+
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <bx:set foo = "bar">
+		       <bx:function name="test2" output  = "#true#">
+		       	foo #foo#
+		       	<bx:output>
+		       		foo #foo#
+		       	</bx:output>
+		       </bx:function>
+
+		    <bx:savecontent variable="result">
+		       	<bx:set test2()>
+		    </bx:savecontent>
+		         """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		// @Formatter:on
+		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foobarfoobar" );
+
+		// @Formatter:off
+		instance.executeSource(
+		    """
+		       <bx:set foo = "bar">
+		       <bx:function name="test2">
+		       	foo #foo#
+		       	<bx:output>
+		       		foo #foo#
+		       	</bx:output>
+		       </bx:function>
+
+		    <bx:savecontent variable="result">
+		       	<bx:set test2()>
+		    </bx:savecontent>
+		         """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		// @Formatter:on
+		// assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( "foo#foo#foobar" );
+	}
 }

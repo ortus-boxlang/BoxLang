@@ -113,4 +113,16 @@ public class ImportConfig {
 		map.put( "group", group );
 		return map;
 	}
+
+	/**
+	 * Create a deep copy of this configuration.
+	 *
+	 * @return a new ImportConfig with the same settings
+	 */
+	public ImportConfig clone() {
+		ImportConfig clone = new ImportConfig();
+		clone.sort	= this.sort;
+		clone.group	= this.group;
+		return clone;
+	}
 }

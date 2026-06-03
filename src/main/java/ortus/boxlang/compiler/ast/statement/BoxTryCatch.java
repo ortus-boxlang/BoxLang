@@ -60,7 +60,7 @@ public class BoxTryCatch extends BoxStatement {
 			this.exception = exp;
 			this.exception.setParent( this );
 		} else {
-			throw new IllegalStateException( "Exception must be a BoxIdentifier" );
+			throw new IllegalStateException( "Exception must be a BoxIdentifier, but you passed: " + exception.getClass().getSimpleName() );
 		}
 	}
 

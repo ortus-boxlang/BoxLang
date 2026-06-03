@@ -116,4 +116,16 @@ public class FileSetLastModifiedTest {
 		assertTrue( Files.getLastModifiedTime( Path.of( testTextFile ) ).toInstant().isAfter( creationTime ) );
 	}
 
+	@DisplayName( "It can accept a numeric timestamp (epoch millis) as the date argument" )
+	@Test
+	public void testFileSetLastModifiedWithNumber() throws IOException {
+		variables.put( Key.of( "testFile" ), Path.of( testTextFile ).toAbsolutePath().toString() );
+		instance.executeSource(
+		    """
+		    fileSetLastModified( variables.testFile, now().getTime() );
+		    """,
+		    context );
+		assertTrue( Files.getLastModifiedTime( Path.of( testTextFile ) ).toInstant().isAfter( creationTime ) );
+	}
+
 }

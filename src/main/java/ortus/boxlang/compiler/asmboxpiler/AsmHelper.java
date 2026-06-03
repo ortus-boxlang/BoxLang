@@ -53,11 +53,13 @@ import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxType;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.LiteralSpreadUtil;
 import ortus.boxlang.runtime.dynamic.Referencer;
+import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.runnables.BoxClassSupport;
@@ -74,12 +76,6 @@ import ortus.boxlang.runtime.types.util.MapHelper;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class AsmHelper {
-
-	/**
-	 * Legacy instruction count limit (kept for backwards compatibility).
-	 * Prefer using MethodSplitter.BYTECODE_SIZE_LIMIT for byte-accurate estimation.
-	 */
-	private static final int METHOD_SIZE_LIMIT = 25000;
 
 	public record LineNumberIns( List<AbstractInsnNode> start, List<AbstractInsnNode> end ) {
 
@@ -1904,6 +1900,12 @@ public class AsmHelper {
 
 		node.visitCode();
 
+		// Calculate the local variable slot for storing the context
+		int contextLocal = 1;
+		for ( Type argType : descriptor.getArgumentTypes() ) {
+			contextLocal += argType.getSize();
+		}
+
 		node.visitVarInsn( Opcodes.ALOAD, 0 );
 
 		node.visitTypeInsn( Opcodes.NEW, Type.getInternalName( ScriptingRequestBoxContext.class ) );
@@ -1923,6 +1925,10 @@ public class AsmHelper {
 		    "<init>",
 		    Type.getMethodDescriptor( Type.VOID_TYPE, Type.getType( IBoxContext.class ) ),
 		    false );
+
+		// Store a copy of the context for potential coercion later
+		node.visitInsn( Opcodes.DUP );
+		node.visitVarInsn( Opcodes.ASTORE, contextLocal );
 
 		node.visitLdcInsn( name );
 		node.visitMethodInsn( Opcodes.INVOKESTATIC,
@@ -1955,6 +1961,18 @@ public class AsmHelper {
 
 		if ( descriptor.getReturnType().getSort() == Type.VOID ) {
 			node.visitInsn( Opcodes.POP );
+		} else if ( descriptor.getReturnType().getSort() == Type.OBJECT || descriptor.getReturnType().getSort() == Type.ARRAY ) {
+			// For reference types, coerce the return value (e.g. Closure -> functional interface)
+			node.visitVarInsn( Opcodes.ALOAD, contextLocal );
+			node.visitInsn( Opcodes.SWAP );
+			node.visitLdcInsn( descriptor.getReturnType() );
+			node.visitMethodInsn( Opcodes.INVOKESTATIC,
+			    Type.getInternalName( DynamicInteropService.class ),
+			    "coerceValue",
+			    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( IBoxContext.class ), Type.getType( Object.class ),
+			        Type.getType( Class.class ) ),
+			    false );
+			node.visitTypeInsn( Opcodes.CHECKCAST, descriptor.getReturnType().getInternalName() );
 		} else {
 			// Unbox primitives from their wrapper types
 			unboxPrimitive( node, Type.getType( Object.class ), descriptor.getReturnType() );
@@ -2196,14 +2214,16 @@ public class AsmHelper {
 
 		// Use the new MethodSplitter for splitting, passing try-catch blocks for sub-method inheritance
 		MethodSplitter			splitter		= new MethodSplitter( transpiler, classNode, mainType, tryCatchBlocks, isStatic );
-		Type					resultType		= Type.getType( FlowControlResult.class );
+		Type					splitResultType	= returnType.equals( Type.getType( Component.BodyResult.class ) )
+		    ? returnType
+		    : Type.getType( FlowControlResult.class );
 
-		// Split the method - sub-methods return FlowControlResult
-		List<AbstractInsnNode>	splitNodes		= splitter.processMethod( nodes, name, parameterType, resultType );
+		// Split the method using the correct helper return contract for the enclosing method.
+		List<AbstractInsnNode>	splitNodes		= splitter.processMethod( nodes, name, parameterType, splitResultType );
 
 		// If the return type is Object (typical for BoxLang methods), we need to
 		// unwrap the final FlowControlResult to get the actual value
-		if ( returnType.equals( Type.getType( Object.class ) ) && !splitNodes.isEmpty() ) {
+		if ( returnType.equals( Type.getType( Object.class ) ) && splitResultType.equals( Type.getType( FlowControlResult.class ) ) && !splitNodes.isEmpty() ) {
 			// The last instruction sequence should have a FlowControlResult on the stack
 			// We need to call getValue() to unwrap it
 			List<AbstractInsnNode> unwrapNodes = new ArrayList<>( splitNodes );

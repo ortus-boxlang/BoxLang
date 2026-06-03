@@ -23,11 +23,13 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.dynamic.casters.BigDecimalCaster;
 import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
+import ortus.boxlang.runtime.dynamic.casters.SetCaster;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.BoxSet;
 import ortus.boxlang.runtime.types.util.MathUtil;
 
 /**
- * Performs Math Plus
+ * Performs Math Plus, with overloads for set union when both operands are {@link BoxSet}.
  * {@code a = b + c}
  */
 public class Plus implements IOperator {
@@ -37,12 +39,26 @@ public class Plus implements IOperator {
 	private static final long	MIN_SAFE_LONG	= -4_611_686_018_427_387_903L;
 
 	/**
+	 * Generic dispatch: returns a {@link BoxSet} (union) when either operand is a {@link BoxSet}
+	 * and the other coerces to one; otherwise delegates to numeric addition.
+	 *
 	 * @param left  The left operand
 	 * @param right The right operand
 	 *
-	 * @return The the sum
+	 * @return The sum (Number) for numeric operands, or a new {@link BoxSet} for set operands.
 	 */
-	public static Number invoke( Object left, Object right ) {
+	public static Object invoke( Object left, Object right ) {
+		if ( left instanceof BoxSet bsl ) {
+			var rs = SetCaster.attemptLoose( right );
+			if ( rs.wasSuccessful() ) {
+				return bsl.union( rs.get() );
+			}
+		} else if ( right instanceof BoxSet bsr ) {
+			var ls = SetCaster.attemptLoose( left );
+			if ( ls.wasSuccessful() ) {
+				return ls.get().union( bsr );
+			}
+		}
 		return invoke( NumberCaster.cast( true, left ), NumberCaster.cast( true, right ) );
 	}
 
@@ -86,12 +102,13 @@ public class Plus implements IOperator {
 	}
 
 	/**
-	 * Apply this operator to an object/key and set the new value back in the same object/key
+	 * Apply this operator to an object/key and set the new value back in the same object/key.
+	 * Returns Object since set-on-set addition produces a {@link BoxSet} rather than a Number.
 	 *
 	 * @return The result
 	 */
-	public static Number invoke( IBoxContext context, Object target, Key name, Object right ) {
-		Number result = invoke( Referencer.get( context, target, name, false ), right );
+	public static Object invoke( IBoxContext context, Object target, Key name, Object right ) {
+		Object result = invoke( Referencer.get( context, target, name, false ), right );
 		Referencer.set( context, target, name, result );
 		return result;
 	}

@@ -95,7 +95,7 @@ public class Transaction extends Component {
 		Boolean				enableNestedTransactions	= BoxRuntime.getInstance().getConfiguration().enableNestedTransactions;
 		if ( enableNestedTransactions == null ) {
 			// Default to true if not explicitly configured.
-			enableNestedTransactions = true;
+			enableNestedTransactions = false;
 		}
 		ITransaction	transaction;
 		BodyResult		bodyResult	= null;

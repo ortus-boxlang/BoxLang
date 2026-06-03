@@ -64,6 +64,38 @@ public class LiteralSpreadUtil {
 	}
 
 	/**
+	 * Build a {@link ortus.boxlang.runtime.types.BoxSet} from a literal of the form
+	 * {@code set{...}}. Always creates a default (hash-backed) set.
+	 *
+	 * <p>
+	 * Spread expressions inside the literal are expanded element-by-element via
+	 * {@link ortus.boxlang.runtime.dynamic.casters.ArrayCaster}, matching the array
+	 * literal spread semantics.
+	 */
+	public static ortus.boxlang.runtime.types.BoxSet set( Object... values ) {
+		values = normalizeVarargs( values );
+		ortus.boxlang.runtime.types.BoxSet result = new ortus.boxlang.runtime.types.BoxSet();
+		for ( Object value : values ) {
+			if ( value instanceof SpreadValue spreadValue ) {
+				Object spreadSource = spreadValue.getValue();
+				if ( spreadSource instanceof java.util.Collection<?> col ) {
+					result.addAll( col );
+				} else {
+					CastAttempt<Array> casted = ArrayCaster.attempt( spreadSource );
+					if ( !casted.wasSuccessful() ) {
+						throw new BoxRuntimeException(
+						    "Cannot spread value of type [" + describeType( spreadSource ) + "] into a set literal." );
+					}
+					result.addAll( casted.get() );
+				}
+			} else {
+				result.add( value );
+			}
+		}
+		return result;
+	}
+
+	/**
 	 * Resolve ambiguous spread-only bracket literals such as <code>[ ...value ]</code>.
 	 * <p>
 	 * If all spread sources are structs, this returns an ordered struct.
@@ -129,6 +161,10 @@ public class LiteralSpreadUtil {
 	 * appendArraySpread.
 	 */
 	private static void appendArraySpread( Array target, Object spreadValue ) {
+		if ( spreadValue instanceof java.util.Collection<?> col ) {
+			target.addAll( col );
+			return;
+		}
 		CastAttempt<Array> casted = ArrayCaster.attempt( spreadValue );
 		if ( !casted.wasSuccessful() ) {
 			throw new BoxRuntimeException(
@@ -164,6 +200,10 @@ public class LiteralSpreadUtil {
 	private static AmbiguousSpreadType detectAmbiguousSpreadType( Object spreadValue ) {
 		if ( spreadValue instanceof IStruct ) {
 			return AmbiguousSpreadType.STRUCT;
+		}
+
+		if ( spreadValue instanceof java.util.Collection<?> ) {
+			return AmbiguousSpreadType.ARRAY;
 		}
 
 		CastAttempt<Array> casted = ArrayCaster.attempt( spreadValue );

@@ -62,16 +62,16 @@ public class QueryTest {
 		qry.addColumn( Key.of( "foo" ), QueryColumnType.VARCHAR );
 		assertThat( qry.hasColumns() ).isEqualTo( true );
 
-		qry.addRow( new Object[] { "bar" } );
+		qry.addRow( new Object[] { "bar" }, null );
 		assertThat( qry.size() ).isEqualTo( 1 );
 
-		qry.addRow( Struct.of( Key.of( "foo" ), "brad" ) );
+		qry.addRow( Struct.of( Key.of( "foo" ), "brad" ), null );
 		assertThat( qry.size() ).isEqualTo( 2 );
 
 		qry.addColumn( Key.of( "col2" ), QueryColumnType.INTEGER );
 		assertThat( qry.getColumns().size() ).isEqualTo( 2 );
 
-		qry.addRow( Struct.of( Key.of( "foo" ), "luis", "col2", 42 ) );
+		qry.addRow( Struct.of( Key.of( "foo" ), "luis", "col2", 42 ), null );
 		assertThat( qry.size() ).isEqualTo( 3 );
 
 		qry.setCell( Key.of( "col2" ), 0, 100 );
@@ -120,12 +120,12 @@ public class QueryTest {
 		qry.addColumn( Key.of( "name" ), QueryColumnType.VARCHAR );
 		assertThat( qry.hasColumns() ).isEqualTo( true );
 
-		qry.addRow( new Object[] { "sana" } );
+		qry.addRow( new Object[] { "sana" }, null );
 		assertThat( qry.size() ).isEqualTo( 1 );
 
 		assertThat( qry.iterator().hasNext() ).isEqualTo( true );
 
-		qry.addRow( new Object[] { "harris" } );
+		qry.addRow( new Object[] { "harris" }, null );
 		assertThat( qry.size() ).isEqualTo( 2 );
 
 		assertInstanceOf( Iterator.class, qry.iterator() );
@@ -142,8 +142,8 @@ public class QueryTest {
 		Query qry = new Query();
 		qry.addColumn( Key.of( "name" ), QueryColumnType.VARCHAR );
 		qry.addColumn( Key.of( "age" ), QueryColumnType.INTEGER );
-		qry.addRow( Struct.of( Key.of( "name" ), "sana", Key.of( "age" ), 30 ) );
-		qry.addRow( Struct.of( Key.of( "name" ), "harris", Key.of( "age" ), 25 ) );
+		qry.addRow( Struct.of( Key.of( "name" ), "sana", Key.of( "age" ), 30 ), null );
+		qry.addRow( Struct.of( Key.of( "name" ), "harris", Key.of( "age" ), 25 ), null );
 		assertThat( qry.size() ).isEqualTo( 2 );
 		IStruct metadata = qry.getMetaData();
 		assertThat( metadata ).isNotNull();
@@ -168,7 +168,7 @@ public class QueryTest {
 		    Array.of( "sana", 30 ),
 		    Array.of( "harris", 25 )
 		);
-		Query	qry			= Query.fromArray( columnNames, columnTypes, rowData );
+		Query	qry			= Query.fromArray( columnNames, columnTypes, rowData, null );
 		assertThat( qry.size() ).isEqualTo( 2 );
 		assertThat( qry.getColumnList() ).isEqualTo( "name,age" );
 		assertThat( qry.getRowAsStruct( 0 ).getAsString( Key.of( "name" ) ) ).isEqualTo( "sana" );
@@ -206,7 +206,7 @@ public class QueryTest {
 		qry.addColumn( Key.of( "name" ), QueryColumnType.VARCHAR );
 
 		for ( int i = 1; i <= 100; i++ ) {
-			qry.addRow( Struct.of( Key.of( "id" ), i, Key.of( "name" ), "Name " + i ) );
+			qry.addRow( Struct.of( Key.of( "id" ), i, Key.of( "name" ), "Name " + i ), null );
 		}
 
 		assertThat( qry.size() ).isEqualTo( 100 );
@@ -227,7 +227,7 @@ public class QueryTest {
 			rows.add( Struct.of( Key.of( "id" ), i, Key.of( "name" ), "Name " + i ) );
 		}
 		// Add rows to the query in parallel
-		rows.parallelStream().forEach( row -> qry.addRow( ( IStruct ) row ) );
+		rows.parallelStream().forEach( row -> qry.addRow( ( IStruct ) row, null ) );
 
 		assertThat( qry.size() ).isEqualTo( 100 );
 		assertThat( qry.getColumnList() ).isEqualTo( "id,name" );
@@ -249,7 +249,7 @@ public class QueryTest {
 
 		// Now do concurrent modifications, add rows, update rows, and remove rows
 		rows.parallelStream().forEach( row -> {
-			qry.addRow( ( IStruct ) row );
+			qry.addRow( ( IStruct ) row, null );
 			synchronized ( qry ) {
 				if ( qry.size() % 100 == 0 ) {
 					qry.setCell( Key.of( "name" ), qry.size() - 1, "Updated Name " + qry.size() );
@@ -293,6 +293,46 @@ public class QueryTest {
 		assertThat( variables.getAsString( Key.of( "colList2" ) ) ).isEqualTo( "first,second,city" );
 		assertThat( variables.getAsString( Key.of( "colList3" ) ) ).isEqualTo( "x,y,z" );
 		assertThat( variables.get( Key.of( "valX" ) ) ).isEqualTo( "a" );
+	}
+
+	@DisplayName( "It casts values assigned via myQry.columnName so QoQ math works" )
+	@Test
+	void testCastingViaColumnAssignQoQ() {
+		// @formatter:off
+		instance.executeSource( """
+			myQry = queryNew( "amount", "integer", [[0]] )
+			myQry.amount = "1500"
+			result = queryExecute(
+				"SELECT amount/100 as calc FROM myQry",
+				[],
+				{ dbType: "query" }
+			)
+		""", context );
+		// @formatter:on
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.size() ).isEqualTo( 1 );
+		assertThat( ( ( Number ) qry.getCell( Key.of( "calc" ), 0 ) ).intValue() ).isEqualTo( 15 );
+	}
+
+	@DisplayName( "It casts values assigned via myQry.columnName[row] so QoQ math works" )
+	@Test
+	void testCastingViaColumnIndexAssignQoQ() {
+		// @formatter:off
+		instance.executeSource( """
+			myQry = queryNew( "amount", "integer", [[0],[0]] )
+			myQry.amount[1] = "1500"
+			myQry.amount[2] = "3000"
+			result = queryExecute(
+				"SELECT amount/100 as calc FROM myQry",
+				[],
+				{ dbType: "query" }
+			)
+		""", context );
+		// @formatter:on
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.size() ).isEqualTo( 2 );
+		assertThat( ( ( Number ) qry.getCell( Key.of( "calc" ), 0 ) ).intValue() ).isEqualTo( 15 );
+		assertThat( ( ( Number ) qry.getCell( Key.of( "calc" ), 1 ) ).intValue() ).isEqualTo( 30 );
 	}
 
 }

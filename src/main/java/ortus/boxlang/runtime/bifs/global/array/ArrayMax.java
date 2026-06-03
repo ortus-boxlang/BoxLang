@@ -52,7 +52,7 @@ public class ArrayMax extends BIF {
 		Array	actualArray	= arguments.getAsArray( Key.array );
 		Number	max			= 0;
 		for ( int i = 0; i < actualArray.size(); i++ ) {
-			max = Max._invoke( max, NumberCaster.cast( actualArray.get( i ) ) );
+			max = Max._invoke( max, NumberCaster.cast( actualArray.get( i ), true, true ) );
 		}
 		return max;
 	}

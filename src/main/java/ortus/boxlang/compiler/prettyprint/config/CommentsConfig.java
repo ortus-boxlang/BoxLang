@@ -97,4 +97,16 @@ public class CommentsConfig {
 		map.put( "wrap", wrap );
 		return map;
 	}
+
+	/**
+	 * Create a deep copy of this configuration.
+	 *
+	 * @return a new CommentsConfig with the same settings
+	 */
+	public CommentsConfig clone() {
+		CommentsConfig clone = new CommentsConfig();
+		clone.preserveBlankLines	= this.preserveBlankLines;
+		clone.wrap					= this.wrap;
+		return clone;
+	}
 }

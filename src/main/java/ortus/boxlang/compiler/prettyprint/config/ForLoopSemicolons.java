@@ -75,4 +75,15 @@ public class ForLoopSemicolons {
 		map.put( "padding", padding );
 		return map;
 	}
+
+	/**
+	 * Create a deep copy of this configuration.
+	 *
+	 * @return a new ForLoopSemicolons with the same settings
+	 */
+	public ForLoopSemicolons clone() {
+		ForLoopSemicolons clone = new ForLoopSemicolons();
+		clone.padding = this.padding;
+		return clone;
+	}
 }

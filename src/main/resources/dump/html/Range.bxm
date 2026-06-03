@@ -1,0 +1,53 @@
+<!--- Range template --->
+<bx:script>
+	rangeMeta = var.getBoxMeta().getMeta();
+</bx:script>
+<bx:output>
+<div class="bx-dump" title="#encodeForHTML( posInCode )#">
+	<table class="bx-table-primary">
+		<caption
+			role="button"
+			tabindex="0"
+			<bx:if expand>open aria-expanded="true"<bx:else>aria-expanded="false"</bx:if>
+			data-bx-toggle="siblings"
+		>
+			<strong>
+				<bx:if label.len() >#encodeForHTML( label )# - </bx:if>
+				Range: #encodeForHTML( var.toString() )#
+			</strong>
+		</caption>
+		<tbody
+			<bx:if !expand>class="d-none"</bx:if>
+		>
+			<tr>
+				<th scope="row" valign="top">From</th>
+				<td>#encodeForHTML( isNull( rangeMeta.from ) ? "[open]" : rangeMeta.from.toString() )#</td>
+			</tr>
+			<tr>
+				<th scope="row" valign="top">To</th>
+				<td>#encodeForHTML( isNull( rangeMeta.to ) ? "[open]" : rangeMeta.to.toString() )#</td>
+			</tr>
+			<tr>
+				<th scope="row" valign="top">Step</th>
+				<td>#encodeForHTML( isNull( rangeMeta.step ) ? "N/A" : rangeMeta.step.toString() )#</td>
+			</tr>
+			<tr>
+				<th scope="row" valign="top">Element Type</th>
+				<td>#encodeForHTML( rangeMeta.elementType )#</td>
+			</tr>
+			<tr>
+				<th scope="row" valign="top">Ascending</th>
+				<td>#rangeMeta.ascending#</td>
+			</tr>
+			<tr>
+				<th scope="row" valign="top">Iterable</th>
+				<td>#rangeMeta.iterable#</td>
+			</tr>
+			<tr>
+				<th scope="row" valign="top">Bounded</th>
+				<td>#rangeMeta.bounded#</td>
+			</tr>
+		</tbody>
+	</table>
+</div>
+</bx:output>

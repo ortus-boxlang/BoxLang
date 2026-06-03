@@ -1,0 +1,68 @@
+<bx:script>
+	expandRoot = expand ?: true;
+</bx:script>
+<bx:output>
+	<div class="bx-dump">
+		<table class="bx-table-secondary" title="#encodeForHTML( posInCode )#">
+			<bx:if var.size() >
+				<caption
+					role="button"
+					tabindex="0"
+					<bx:if expandRoot>open aria-expanded="true"<bx:else>aria-expanded="false"</bx:if>
+					data-bx-toggle="siblings"
+				>
+					<strong>
+						<bx:if label.len() >#label# - </bx:if>
+						Set (#var.getType().name()#):
+						<bx:if !isNull( top ) && top lt var.size()>#top#/</bx:if>#var.size()#
+					</strong>
+					<span class="bx-meta">
+						[caseSensitive=#var.isCaseSensitive()#, synchronized=#var.isSynchronized()#]
+					</span>
+				</caption>
+			<bx:else>
+				<caption class="bx-dhAy">
+					<strong>
+						<bx:if label.len() >#label# - </bx:if>
+						Set (#var.getType().name()#): #var.size()#
+					</strong>
+					<span class="bx-meta">
+						[caseSensitive=#var.isCaseSensitive()#, synchronized=#var.isSynchronized()#]
+					</span>
+				</caption>
+			</bx:if>
+			<tbody
+				<bx:if !expandRoot>class="d-none"</bx:if>
+			>
+				<bx:set i = 0>
+				<bx:loop array="#var.toArray()#" item="value">
+						<bx:set i++>
+						<!--- Top limit only if > 0 --->
+						<bx:if !isNull( top ) and i GT top >
+							<bx:break>
+						</bx:if>
+						<tr>
+							<th
+								aria-expanded="true"
+								data-bx-toggle="onoff"
+								scope="row"
+								valign="top"
+								tabindex="0"
+							>
+								#i#
+							</th>
+							<td>
+								<div class="bx-onoff">
+									<bx:set dump(
+										var : value ?: null,
+										top : isNull( top ) ? null : top - 1,
+										expand : expand ?: null
+									)>
+								</div>
+							</td>
+						</tr>
+					</bx:loop>
+			</tbody>
+		</table>
+	</div>
+</bx:output>

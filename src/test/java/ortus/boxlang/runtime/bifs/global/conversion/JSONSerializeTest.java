@@ -589,7 +589,7 @@ public class JSONSerializeTest {
 		    """
 				array1 = [javacast("double",0.0) ,javacast("double",0.30420544445599146)];
 
-				matrix = {   "test": 
+				matrix = {   "test":
 					[javacast("double[]", array1)]
 				}
 		    	result = jsonSerialize( data: matrix )
@@ -600,7 +600,7 @@ public class JSONSerializeTest {
 
 		var json = variables.getAsString( result );
 		assertThat( json ).isNotEmpty();
-		assertThat( json ).isEqualTo( "{\"test\":[[0.0,0.30420544445599146]]}" );
+		assertThat( json ).isEqualTo( "{\"test\":[[0,0.30420544445599146]]}" );
 	}
 
 	@DisplayName( "It can serialize exception" )
@@ -641,9 +641,27 @@ public class JSONSerializeTest {
 
 	}
 
-	@DisplayName( "It will serialize doubles without using scientific notation" )
+	@DisplayName( "It will serialize doubles" )
 	@Test
-	public void testWillSerializeDoublesWithoutScientificNotation() {
+	public void testWillSerializeDoubles() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				result = JSONserialize( {
+					"q": 5 castas Double
+				} );
+			""",
+		    context );
+		// @formatter:on
+
+		var json = variables.getAsString( result );
+		assertThat( json ).isNotEmpty();
+		assertThat( json ).isEqualTo( "{\"q\":5}" );
+	}
+
+	@DisplayName( "It will serialize BigDecimals without using scientific notation" )
+	@Test
+	public void testWillSerializeBigDecimalsWithoutScientificNotation() {
 		// @formatter:off
 		instance.executeSource(
 		    """
@@ -657,7 +675,7 @@ public class JSONSerializeTest {
 		var json = variables.getAsString( result );
 		assertThat( json ).isNotEmpty();
 		assertThat( json ).doesNotContain( "E" );
-		assertThat( json ).isEqualTo( "{\"q\":0.0000000}" );
+		assertThat( json ).isEqualTo( "{\"q\":0}" );
 	}
 
 	@DisplayName( "It will serialize stream" )
@@ -706,12 +724,95 @@ public class JSONSerializeTest {
 		    """
 				instant = createObject( "java", "java.time.Instant" ).EPOCH;
 				result = JSONSerialize( { "instant" : instant } );
-				println(result)
+			//	println(result)
 			""",
 		    context );
 		// @formatter:on
 
 		assertThat( variables.getAsString( result ) ).contains( "1970-01-01T00:00:00Z" );
+	}
+
+	@DisplayName( "It will serialize Java Duration" )
+	@Test
+	public void testWillSerializeJavaDuration() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				duration = createObject( "java", "java.time.Duration" ).ofSeconds( 60 );
+				result = JSONSerialize( { "duration" : duration } );
+				duration2 = createObject( "java", "java.time.Duration" ).ofDays( 2 );
+				result2 = JSONSerialize( { "duration2" : duration2 } );
+			""",
+		    context );
+		// @formatter:on
+		assertThat( variables.getAsString( result ) ).contains( "0.0006944444444444444" );
+		assertThat( variables.getAsString( Key.of( "result2" ) ) ).contains( "2" );
+	}
+
+	@DisplayName( "It will serialize Java class" )
+	@Test
+	public void testWillSerializeJavaClass() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				result = JSONSerialize( "x".getClass() );
+				result = JSONSerialize( createObject("java","java.net.InetAddress") );
+				result = JSONSerialize( createObject("java","java.net.InetAddress").getLocalHost() );
+			""",
+		    context );
+		// @formatter:on
+		// Just assert it wasn't a stack overflow
+	}
+
+	@DisplayName( "It can serialize a Set as a JSON array" )
+	@Test
+	public void testCanSerializeSet() {
+		instance.executeSource(
+		    """
+		    s = setNew( type="linked", values=["a","b","c"] );
+		    result = JSONSerialize( s );
+		    """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "[\"a\",\"b\",\"c\"]" );
+	}
+
+	@DisplayName( "It can serialize a Set as a JSON array using a member method" )
+	@Test
+	public void testCanSerializeSetWithMemberMethod() {
+		instance.executeSource(
+		    """
+		    result = setNew( type="linked", values=["a","b","c"] ).toJSON()
+
+		    """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "[\"a\",\"b\",\"c\"]" );
+	}
+
+	@DisplayName( "It can serialize a Set nested in a struct" )
+	@Test
+	public void testCanSerializeSetNestedInStruct() {
+		instance.executeSource(
+		    """
+		    result = JSONSerialize( { "tags": setNew( type="linked", values=["java","boxlang"] ) } );
+		    """,
+		    context );
+		var json = variables.getAsString( result );
+		assertThat( json ).contains( "\"tags\":[\"java\",\"boxlang\"]" );
+	}
+
+	@DisplayName( "It serializes a java.util.UUID as a quoted JSON string" )
+	@Test
+	public void testSerializeUUID() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+				uuid = createObject( "java", "java.util.UUID" ).randomUUID();
+				result = jsonSerialize( uuid );
+			""",
+		    context );
+		// @formatter:on
+		String json = variables.getAsString( result );
+		assertThat( json ).matches( "\"[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\"" );
 	}
 
 }

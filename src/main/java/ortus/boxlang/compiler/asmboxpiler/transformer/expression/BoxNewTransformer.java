@@ -55,6 +55,8 @@ public class BoxNewTransformer extends AbstractTransformer {
 		BoxNew					boxNew	= ( BoxNew ) node;
 
 		List<AbstractInsnNode>	nodes	= new ArrayList<>();
+
+		// Default path: resolve class at runtime using ClassLocator (imports + Java / BoxLang class loading)
 		// nodes.add( new VarInsnNode( Opcodes.ALOAD, 2 ) );
 		nodes.add( new MethodInsnNode( Opcodes.INVOKESTATIC,
 		    Type.getInternalName( ClassLocator.class ),

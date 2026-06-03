@@ -55,6 +55,7 @@ import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxSetLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
 import ortus.boxlang.compiler.ast.expression.BoxStaticMethodInvocation;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
@@ -94,6 +95,7 @@ import ortus.boxlang.compiler.ast.statement.BoxForIndex;
 import ortus.boxlang.compiler.ast.statement.BoxFunctionDeclaration;
 import ortus.boxlang.compiler.ast.statement.BoxIfElse;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
+import ortus.boxlang.compiler.ast.statement.BoxLocalClass;
 import ortus.boxlang.compiler.ast.statement.BoxParam;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.ast.statement.BoxRethrow;
@@ -102,6 +104,7 @@ import ortus.boxlang.compiler.ast.statement.BoxReturnType;
 import ortus.boxlang.compiler.ast.statement.BoxScriptIsland;
 import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 import ortus.boxlang.compiler.ast.statement.BoxSwitch;
+import ortus.boxlang.compiler.ast.statement.BoxSwitchBreakingCase;
 import ortus.boxlang.compiler.ast.statement.BoxSwitchCase;
 import ortus.boxlang.compiler.ast.statement.BoxThrow;
 import ortus.boxlang.compiler.ast.statement.BoxTry;
@@ -122,6 +125,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 public class Visitor extends VoidBoxVisitor {
 
 	private Stack<BoxSourceType>	currentSourceType				= new Stack<>();
+	private BoxSourceType			rootSourceType;
 	private Stack<Doc>				docStack						= new Stack<>();
 
 	Config							config;
@@ -138,15 +142,17 @@ public class Visitor extends VoidBoxVisitor {
 	FunctionDeclarationPrinter		functionDeclaration;
 	StructLiteralPrinter			structLiteralPrinter;
 	ArrayLiteralPrinter				arrayLiteralPrinter;
+	SetLiteralPrinter				setLiteralPrinter;
 
 	/**
 	 * Constructor
-	 * 
+	 *
 	 * @param sourceType The source type of the node being visited
 	 * @param config     The configuration for printing
 	 */
 	public Visitor( BoxSourceType sourceType, Config config ) {
-		this.config = config;
+		this.rootSourceType	= sourceType;
+		this.config			= config;
 		currentSourceType.push( sourceType );
 		pushDoc( DocType.ARRAY );
 
@@ -162,6 +168,7 @@ public class Visitor extends VoidBoxVisitor {
 		this.helperPrinter			= new HelperPrinter( this );
 		this.structLiteralPrinter	= new StructLiteralPrinter( this );
 		this.arrayLiteralPrinter	= new ArrayLiteralPrinter( this );
+		this.setLiteralPrinter		= new SetLiteralPrinter( this );
 		this.functionDeclaration	= new FunctionDeclarationPrinter( this );
 		this.parametersPrinter		= new ParametersPrinter( this );
 		this.argumentsPrinter		= new ArgumentsPrinter( this );
@@ -176,6 +183,10 @@ public class Visitor extends VoidBoxVisitor {
 			case BOXTEMPLATE, CFTEMPLATE -> true;
 			default -> false;
 		};
+	}
+
+	boolean isCF() {
+		return rootSourceType.isCFType();
 	}
 
 	Doc getCurrentDoc() {
@@ -210,7 +221,7 @@ public class Visitor extends VoidBoxVisitor {
 		}
 	}
 
-	private String extractRawSourceFromPosition( BoxNode node ) {
+	String extractRawSourceFromPosition( BoxNode node ) {
 		if ( node == null || node.getPosition() == null || node.getPosition().getSource() == null ) {
 			return null;
 		}
@@ -424,6 +435,11 @@ public class Visitor extends VoidBoxVisitor {
 	}
 
 	@Override
+	public void visit( BoxLocalClass node ) {
+		classPrinter.print( node, currentSourceType.peek() );
+	}
+
+	@Override
 	public void visit( BoxInterface node ) {
 		classPrinter.print( node, currentSourceType.peek() );
 	}
@@ -496,6 +512,20 @@ public class Visitor extends VoidBoxVisitor {
 					value	= value.replaceFirst( "^(?:\\r\\n|\\r|\\n)[\\t ]*", "" );
 					value	= value.replaceFirst( "[\\t ]*(?:\\r\\n|\\r|\\n)[\\t ]*$", "" );
 					value	= dedentBuffer( value );
+					// Emit each line as a separate doc element separated by Line.HARD so that
+					// the INDENT doc can apply proper indentation to every inner line.
+					if ( value.contains( "\n" ) ) {
+						String[] lines = value.split( "\\r?\\n", -1 );
+						for ( int i = 0; i < lines.length; i++ ) {
+							if ( i > 0 ) {
+								getCurrentDoc().append( Line.HARD );
+							}
+							print( lines[ i ] );
+						}
+						printPostComments( node.getExpression() );
+						printPostComments( node );
+						return;
+					}
 				}
 				print( value );
 			} else if ( node.getExpression() instanceof BoxStringInterpolation sInt ) {
@@ -992,6 +1022,11 @@ public class Visitor extends VoidBoxVisitor {
 	}
 
 	@Override
+	public void visit( BoxSetLiteral node ) {
+		setLiteralPrinter.print( node );
+	}
+
+	@Override
 	public void visit( BoxStructLiteral node ) {
 		structLiteralPrinter.print( node );
 	}
@@ -1202,9 +1237,6 @@ public class Visitor extends VoidBoxVisitor {
 
 	@Override
 	public void visit( BoxBreak node ) {
-		if ( isTemplate() && node.isImplicit() ) {
-			return;
-		}
 		printPreComments( node );
 		if ( printSourceForCFCompat( node ) ) {
 			printPostComments( node );
@@ -1224,7 +1256,11 @@ public class Visitor extends VoidBoxVisitor {
 				print( " " );
 				print( node.getLabel() );
 			}
-			printSemicolon();
+			if ( isCF() ) {
+				print( ";" );
+			} else {
+				printSemicolon();
+			}
 		}
 		printPostComments( node );
 	}
@@ -1250,7 +1286,11 @@ public class Visitor extends VoidBoxVisitor {
 				print( " " );
 				print( node.getLabel() );
 			}
-			printSemicolon();
+			if ( isCF() ) {
+				print( ";" );
+			} else {
+				printSemicolon();
+			}
 		}
 		printPostComments( node );
 	}
@@ -1482,9 +1522,7 @@ public class Visitor extends VoidBoxVisitor {
 					anno.getValue().accept( this );
 				}
 			}
-			if ( config.getSemicolons() ) {
-				propDoc.append( ";" );
-			}
+			propDoc.append( ";" );
 
 			if ( multiline ) {
 				popDoc();
@@ -1730,6 +1768,11 @@ public class Visitor extends VoidBoxVisitor {
 		}
 
 		printPostComments( node );
+	}
+
+	@Override
+	public void visit( BoxSwitchBreakingCase node ) {
+		visit( ( BoxSwitchCase ) node );
 	}
 
 	@Override

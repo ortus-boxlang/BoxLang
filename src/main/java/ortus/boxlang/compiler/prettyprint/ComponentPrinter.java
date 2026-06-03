@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.compiler.prettyprint;
 
+import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxClosure;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxReturn;
@@ -80,20 +81,74 @@ public class ComponentPrinter {
 	}
 
 	private void printScript( BoxComponent node ) {
-		if ( "bx:".equals( visitor.componentPrefix ) ) {
+		// Use the component prefix only when the original source used it.
+		// "include" can appear both as a bare keyword (`include template="..."`) and as
+		// a prefixed component (`bx:include template="..."`), so we check the source
+		// text rather than always applying the visitor prefix.
+		String	sourceText	= node.getSourceText();
+		boolean	hadPrefix	= sourceText != null && sourceText.toLowerCase().startsWith( visitor.componentPrefix.toLowerCase() );
+		if ( hadPrefix ) {
 			visitor.print( visitor.componentPrefix );
 		}
 		visitor.print( node.getName() );
 
 		var hasBody = node.getBody() != null && !node.getBody().isEmpty();
 
-		visitor.helperPrinter.printKeyValueAnnotations( node.getAttributes(), hasBody );
+		// The shorthand `include "path"` form is parsed with a synthesized `template` attribute
+		// whose key source text is the path expression source (not "template"). Detect this case
+		// and print the value directly (e.g. `include "path"`) to preserve the original form.
+		if ( isIncludeShorthand( node ) ) {
+			visitor.print( " " );
+			node.getAttributes().get( 0 ).getValue().accept( visitor );
+		} else {
+			visitor.helperPrinter.printKeyValueAnnotations( node.getAttributes(), hasBody );
+		}
 
 		if ( hasBody ) {
 			visitor.helperPrinter.printBlock( node, node.getBody() );
 		} else {
-			visitor.printSemicolon();
+			visitor.print( ";" );
 		}
+	}
+
+	/**
+	 * Returns true if the component is the shorthand {@code include "path"} form.
+	 * <p>
+	 * Three forms of {@code include} exist in script mode:
+	 * <ol>
+	 * <li>{@code include "path"} — shorthand; value is a plain string/interpolation,
+	 * key source text is the path expression (not {@code "template"})</li>
+	 * <li>{@code include template="path"} — explicit via {@code visitInclude}; the entire
+	 * {@code template="path"} is parsed as a {@code BoxAssignment} expression</li>
+	 * <li>{@code bx:include template="path"} — component form via {@code visitComponent};
+	 * key source text is {@code "template"}, value is a plain string/interpolation</li>
+	 * </ol>
+	 * Only form 1 should be printed without the {@code template=} key name.
+	 *
+	 * @param node the BoxComponent node to test
+	 *
+	 * @return true if this was written as {@code include "path"} without the key name
+	 */
+	private boolean isIncludeShorthand( BoxComponent node ) {
+		if ( !node.getName().equalsIgnoreCase( "include" ) ) {
+			return false;
+		}
+		if ( node.getAttributes() == null || node.getAttributes().size() != 1 ) {
+			return false;
+		}
+		var attr = node.getAttributes().get( 0 );
+		// Form 2: explicit `include template="path"` — value is a BoxAssignment expression.
+		if ( attr.getValue() instanceof BoxAssignment ) {
+			return false;
+		}
+		// Form 3: `bx:include template="path"` — key source text is literally "template".
+		String keySrc = attr.getKey() != null ? attr.getKey().getSourceText() : null;
+		if ( keySrc != null && keySrc.equalsIgnoreCase( "template" ) ) {
+			return false;
+		}
+		// Form 1: shorthand `include "path"` — value is plain string/interpolation,
+		// key source text is the path expression source (not "template").
+		return true;
 	}
 
 	/**

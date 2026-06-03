@@ -38,6 +38,7 @@ import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Property;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
@@ -572,6 +573,48 @@ public interface IClassRunnable extends ITemplateRunnable, IStruct {
 	 */
 	default IClassRunnable getAsClassRunnable( Key key ) {
 		return getThisScope().getAsClassRunnable( key );
+	}
+
+	/**
+	 * Get the enclosing (outer) class for this inner class.
+	 * Returns null if this class is not an inner class.
+	 *
+	 * @return The enclosing class, or null if not an inner class
+	 */
+	default Class<?> getEnclosingBoxClass() {
+		return null;
+	}
+
+	/**
+	 * Get the FQN of the enclosing (outer) class for this inner class.
+	 * Returns empty string if this class is not an inner class.
+	 *
+	 * @return The enclosing class FQN, or empty string if not an inner class
+	 */
+	default String getEnclosingClassName() {
+		return "";
+	}
+
+	/**
+	 * Get the inner BoxLang classes defined within this class.
+	 * Returns an empty map if this class has no inner classes.
+	 * The key is the BoxLang name (case-insensitive Key), the value is the compiled Class.
+	 *
+	 * @return Map of inner class name to class reference
+	 */
+	default Map<Key, Class<?>> getInnerBoxClasses() {
+		return Map.of();
+	}
+
+	/**
+	 * Get the inner BoxLang class names defined within this class as a struct.
+	 * Returns an empty struct if this class has no inner classes.
+	 * The key is the short name, the value is the FQN string.
+	 *
+	 * @return Struct of inner class short name to FQN
+	 */
+	default IStruct getInnerClassNames() {
+		return Struct.EMPTY;
 	}
 
 }

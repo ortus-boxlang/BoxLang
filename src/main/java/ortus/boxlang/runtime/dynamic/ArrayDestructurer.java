@@ -28,6 +28,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.TypeUtil;
 
 /**
  * Runtime helper for array destructuring assignment.
@@ -52,21 +53,36 @@ public class ArrayDestructurer {
 	}
 
 	/**
-	 * binding.
+	 * Create a destructuring binding descriptor that maps a source array element to an assignment target.
+	 *
+	 * @param target               The assignment target for this binding
+	 * @param nested               Nested bindings for recursive destructuring, or null for a simple binding
+	 * @param defaultValueSupplier Supplier for the default value when the source element is missing or null, or null for no default
+	 *
+	 * @return A new Binding descriptor
 	 */
 	public static Binding binding( Target target, Binding[] nested, Function<Object, Object> defaultValueSupplier ) {
 		return new Binding( target, nested == null ? new Binding[] {} : nested, defaultValueSupplier, false );
 	}
 
 	/**
-	 * rest.
+	 * Create a rest/spread binding descriptor that captures all remaining elements into an array.
+	 *
+	 * @param target The assignment target that will receive the rest array
+	 *
+	 * @return A new rest Binding descriptor
 	 */
 	public static Binding rest( Target target ) {
 		return new Binding( target, new Binding[] {}, null, true );
 	}
 
 	/**
-	 * target.
+	 * Create an assignment target descriptor from a dot-path of identifiers.
+	 *
+	 * @param scoped Whether this target references an explicit scope (e.g., {@code variables.foo})
+	 * @param path   One or more path segments identifying the assignment target
+	 *
+	 * @return A new Target descriptor
 	 */
 	public static Target target( boolean scoped, String... path ) {
 		Key[] keys = Arrays.stream( path ).map( Key::of ).toArray( Key[]::new );
@@ -74,7 +90,14 @@ public class ArrayDestructurer {
 	}
 
 	/**
-	 * applyBindings.
+	 * Apply an array of binding descriptors against a source array, handling rest bindings and positional alignment.
+	 *
+	 * @param context         The execution context
+	 * @param source          The source array to destructure from
+	 * @param isFinal         Whether assignments should be final
+	 * @param mustBeScopeName Required scope for assignment (var/static) or null
+	 * @param bindings        The binding descriptors to apply
+	 * @param pathPrefix      Dot-path prefix for error messages
 	 */
 	private static void applyBindings( IBoxContext context, Array source, boolean isFinal, Key mustBeScopeName, Binding[] bindings, String pathPrefix ) {
 		Binding[]	safeBindings	= bindings == null ? new Binding[] {} : bindings;
@@ -155,7 +178,16 @@ public class ArrayDestructurer {
 	}
 
 	/**
-	 * applyBinding.
+	 * Apply a single binding descriptor, extracting the value at the given source index and assigning it to the target.
+	 * Handles nested destructuring and default value resolution.
+	 *
+	 * @param context         The execution context
+	 * @param source          The source array to destructure from
+	 * @param isFinal         Whether assignments should be final
+	 * @param mustBeScopeName Required scope for assignment (var/static) or null
+	 * @param binding         The binding descriptor to apply
+	 * @param sourceIndex     The 1-based index into the source array, or null if no value is available
+	 * @param keyPath         Dot-path for error messages
 	 */
 	private static void applyBinding( IBoxContext context, Array source, boolean isFinal, Key mustBeScopeName, Binding binding, Integer sourceIndex,
 	    String keyPath ) {
@@ -187,7 +219,14 @@ public class ArrayDestructurer {
 	}
 
 	/**
-	 * applyMissingBinding.
+	 * Apply a binding when the source value is entirely missing (not just null at an index).
+	 * Uses the default value supplier if available, otherwise assigns null.
+	 *
+	 * @param context         The execution context
+	 * @param binding         The binding descriptor to apply
+	 * @param isFinal         Whether assignments should be final
+	 * @param mustBeScopeName Required scope for assignment (var/static) or null
+	 * @param pathPrefix      Dot-path prefix for error messages
 	 */
 	private static void applyMissingBinding( IBoxContext context, Binding binding, boolean isFinal, Key mustBeScopeName, String pathPrefix ) {
 		if ( binding.isRest() ) {
@@ -214,7 +253,13 @@ public class ArrayDestructurer {
 	}
 
 	/**
-	 * assignTarget.
+	 * Assign a value to a destructuring target, resolving scope and path.
+	 *
+	 * @param context         The execution context
+	 * @param target          The assignment target descriptor
+	 * @param value           The value to assign
+	 * @param isFinal         Whether the assignment should be final
+	 * @param mustBeScopeName Required scope for assignment (var/static) or null
 	 */
 	private static void assignTarget( IBoxContext context, Target target, Object value, boolean isFinal, Key mustBeScopeName ) {
 		if ( target == null || target.getPath().length == 0 ) {
@@ -251,26 +296,31 @@ public class ArrayDestructurer {
 	}
 
 	/**
-	 * toArrayOrThrow.
+	 * Cast a value to an Array or throw a descriptive error if the cast fails.
+	 *
+	 * @param value The value to cast
+	 * @param path  Dot-path used in the error message for context
+	 *
+	 * @return The value cast as an Array
+	 *
+	 * @throws BoxRuntimeException if the value cannot be cast to an Array
 	 */
 	private static Array toArrayOrThrow( Object value, String path ) {
 		CastAttempt<Array> casted = ArrayCaster.attempt( value );
 		if ( !casted.wasSuccessful() ) {
 			throw new BoxRuntimeException(
-			    "Cannot destructure path [" + path + "] from non-array value of type [" + describeType( value ) + "]." );
+			    "Cannot destructure path [" + path + "] from non-array value of type [" + TypeUtil.getObjectName( value ) + "]." );
 		}
 		return casted.get();
 	}
 
 	/**
-	 * describeType.
-	 */
-	private static String describeType( Object value ) {
-		return value == null ? "null" : value.getClass().getName();
-	}
-
-	/**
-	 * joinPath.
+	 * Join two path segments with a dot separator for error message context.
+	 *
+	 * @param prefix The existing path prefix, or null/empty for the root
+	 * @param key    The new segment to append
+	 *
+	 * @return The joined path string
 	 */
 	private static String joinPath( String prefix, String key ) {
 		if ( prefix == null || prefix.isEmpty() ) {

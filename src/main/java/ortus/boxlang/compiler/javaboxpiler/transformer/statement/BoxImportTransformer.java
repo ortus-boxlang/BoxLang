@@ -21,14 +21,22 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.NodeList;
+import com.github.javaparser.ast.expr.ClassExpr;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.StringLiteralExpr;
 import com.github.javaparser.ast.stmt.EmptyStmt;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.statement.BoxImport;
 import ortus.boxlang.compiler.javaboxpiler.JavaTranspiler;
+import ortus.boxlang.compiler.javaboxpiler.Transpiler;
 import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
+import ortus.boxlang.runtime.loader.ClassLocator;
 
 public class BoxImportTransformer extends AbstractTransformer {
 
@@ -62,7 +70,6 @@ public class BoxImportTransformer extends AbstractTransformer {
 
 											{
 												put( "namespace", namespace.toString() + alias );
-												put( "contextName", transpiler.peekContextName() );
 
 											}
 										};
@@ -75,5 +82,30 @@ public class BoxImportTransformer extends AbstractTransformer {
 		transpiler.addJImport( javaStmt );
 		// We have to return something based on how these transformers are setup, so we just return an empty statement.
 		return new EmptyStmt();
+	}
+
+	/**
+	 * Helper method to transform an inner class import.
+	 * 
+	 * @param name       the name of the import as it appears in the source code
+	 * @param className  the java class name
+	 * @param transpiler the transpiler instance to add the import to
+	 */
+	@SuppressWarnings( "null" )
+	public static void transformInnerClassImport( String name, String className, Transpiler transpiler ) {
+		// This registers it with the transpiler so we can map identifiers directly referencing our inner class such as MyInnerClass.staticMember
+		transpiler.addImport( name );
+
+		Expression javaStmt = new MethodCallExpr(
+		    new NameExpr( "ImportDefinition" ),
+		    "fromClassRef",
+		    new NodeList<>(
+		        new StringLiteralExpr( ClassLocator.BX_PREFIX ),
+		        new StringLiteralExpr( name ),
+		        new ClassExpr( new ClassOrInterfaceType( null, className ) )
+		    )
+		);
+		// This is the bytecode to create the import definition with the class reference.
+		transpiler.addJImport( javaStmt );
 	}
 }

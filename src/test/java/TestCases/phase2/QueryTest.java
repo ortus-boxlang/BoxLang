@@ -277,8 +277,8 @@ public class QueryTest {
 		instance.executeSource(
 		    """
 		      	myQry = queryNew( "col,col2", "numeric,varchar", [ [ 1, "brad,luis" ], [ 2, "" ], [ 3, "" ] ] );
-		    colAvg = arrayAvg( myQry.col );
-		    valList = listToArray( myQry.col2 );
+		    colAvg = arrayAvg( myQry["col"] );
+		    valList = listToArray( myQry["col2"] );
 
 		      """,
 		    context );
@@ -287,6 +287,23 @@ public class QueryTest {
 		assertThat( variables.getAsArray( Key.of( "valList" ) ).size() ).isEqualTo( 2 );
 		assertThat( variables.getAsArray( Key.of( "valList" ) ).get( 0 ) ).isEqualTo( "brad" );
 		assertThat( variables.getAsArray( Key.of( "valList" ) ).get( 1 ) ).isEqualTo( "luis" );
+	}
+
+	@Test
+	public void testQueryColumnToArrayBIFCFCompat() {
+
+		instance.executeSource(
+		    """
+		        	myQry = queryNew( "col", "object", [ ["brad".getBytes()]] );
+
+		    // CF ONLY treats bracket notation columns as an array of rows.
+		    result = arrayLen( myQry['col'] ); // 1 because there is 1 row in the query
+		    result2 = arrayLen( myQry.col); // 4 because there are 4 bytes in the byte array living in row 1
+
+		        """,
+		    context );
+		assertThat( variables.getAsNumber( Key.of( "result" ) ).intValue() ).isEqualTo( 1 );
+		assertThat( variables.getAsNumber( Key.of( "result2" ) ).intValue() ).isEqualTo( 4 );
 	}
 
 	@Test

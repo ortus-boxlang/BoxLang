@@ -183,7 +183,8 @@ public class PendingQuery {
 		    Key.sql, sql.trim(),
 		    Key.bindings, bindings,
 		    Key.pendingQuery, this,
-		    Key.options, queryOptions
+		    Key.options, queryOptions,
+		    Key.context, context
 		);
 
 		interceptorService.announce( BoxEvent.ON_QUERY_BUILD, eventArgs );
@@ -219,6 +220,15 @@ public class PendingQuery {
 	 * Methods
 	 * --------------------------------------------------------------------------
 	 */
+
+	/**
+	 * Get the linked context that initiated this query.
+	 *
+	 * @return The context that initiated this query.
+	 */
+	public IBoxContext getContext() {
+		return this.context;
+	}
 
 	/**
 	 * Get the datasource used to execute this query.
@@ -717,7 +727,11 @@ public class PendingQuery {
 					var lowered = trimmed.toLowerCase();
 					// Exclude if "begin" and "end" appear anywhere in the SQL
 					if ( ! ( lowered.contains( "begin" ) && lowered.contains( "end" ) ) ) {
-						sqlStatement = trimmed.substring( 0, trimmed.length() - 1 );
+						int end = trimmed.length();
+						while ( end > 0 && ( trimmed.charAt( end - 1 ) == ';' || Character.isWhitespace( trimmed.charAt( end - 1 ) ) ) ) {
+							end--;
+						}
+						sqlStatement = trimmed.substring( 0, end );
 					}
 				}
 			}
@@ -736,7 +750,8 @@ public class PendingQuery {
 				    () -> Struct.ofNonConcurrent(
 				        Key.sql, finalSQLStatement,
 				        Key.bindings, getParameterValues(),
-				        Key.pendingQuery, this
+				        Key.pendingQuery, this,
+				        Key.context, context
 				    )
 				);
 
@@ -760,7 +775,8 @@ public class PendingQuery {
 				    statement,
 				    endTick - startTick,
 				    hasResults,
-				    initialSqlException
+				    initialSqlException,
+				    context
 				);
 			}
 		} catch ( SQLException e ) {
@@ -942,29 +958,23 @@ public class PendingQuery {
 	 * @throws SQLException If an error occurs while applying the options.
 	 */
 	private void applyStatementOptions( Statement statement ) throws SQLException {
-		IStruct options = this.queryOptions.toStruct();
-
-		if ( options.containsKey( Key.queryTimeout ) ) {
-			Integer queryTimeout = ( Integer ) options.getOrDefault( Key.queryTimeout, 0 );
-			if ( queryTimeout > 0 ) {
-				statement.setQueryTimeout( queryTimeout );
-			}
+		// Apply query timeout directly from the normalized field
+		if ( this.queryOptions.queryTimeout != null && this.queryOptions.queryTimeout > 0 ) {
+			statement.setQueryTimeout( this.queryOptions.queryTimeout );
 		}
 
-		if ( options.containsKey( Key.maxRows ) ) {
-			Integer maxRows = ( Integer ) options.getOrDefault( Key.maxRows, 0 );
-			if ( maxRows > 0 ) {
-				statement.setLargeMaxRows( maxRows );
-			}
+		// Apply max rows directly from the normalized field
+		if ( this.queryOptions.maxRows != null && this.queryOptions.maxRows > 0 ) {
+			statement.setLargeMaxRows( this.queryOptions.maxRows );
 		}
 
-		if ( options.containsKey( Key.fetchSize ) ) {
-			Integer fetchSize = ( Integer ) options.getOrDefault( Key.fetchSize, 0 );
-			if ( fetchSize > 0 ) {
-				statement.setFetchSize( fetchSize );
-			}
+		// Apply fetch size directly from the normalized field
+		if ( this.queryOptions.fetchSize != null && this.queryOptions.fetchSize > 0 ) {
+			statement.setFetchSize( this.queryOptions.fetchSize );
 		}
+
 		// This is an alias for fetchSize. (CF compat) Not handling via transpiler since apps like MASA specify as attributeCollection.
+		IStruct options = this.queryOptions.toStruct();
 		if ( options.containsKey( Key.blockfactor ) ) {
 			Integer blockFactor = ( Integer ) options.getOrDefault( Key.blockfactor, 0 );
 			if ( blockFactor > 0 ) {

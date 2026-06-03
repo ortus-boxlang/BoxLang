@@ -30,11 +30,11 @@ import ortus.boxlang.runtime.context.FunctionBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.LambdaBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.GenericCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.runnables.BoxClassSupport;
 import ortus.boxlang.runtime.runnables.BoxInterface;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.IFunctionRunnable;
@@ -291,14 +291,16 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 		context.pushTemplate( this );
 
 		// If this UDF is in a class, we need to set the template to the class path, but we still need the push above which sets the current imports to the original source file
-		if ( context.isInClass() ) {
-			context.popTemplate();
-			context.pushTemplate( context.getThisClass().getRunnablePath() );
-		} else if ( context.isInStaticClass() ) {
-			// Ignoring this for now. It would only apply to injected/mixed in static methods.
-			// I don't want to add the invokeStatic overhead to every static method execution
-			// context.pushTemplate( context.getThisStaticClass().getField( "path" ) );
-			// extraPop = true;
+		// This check only applies to UDFs defined in a class. UDFs in a template/script always reflect that template/script.
+		if ( IClassRunnable.class.isAssignableFrom( getEnclosingClass() ) ) {
+			if ( context.isInClass() ) {
+				context.popTemplate();
+				context.pushTemplate( context.getThisClass().getRunnablePath() );
+			} else if ( context.isInStaticClass() ) {
+				// Ignoring this for now. It would only apply to injected/mixed in static methods.
+				// I don't want to add the invokeStatic overhead to every static method execution
+				// context.pushTemplate( context.getThisStaticClass().getField( "path" ) );
+			}
 		}
 		try {
 			result = ensureReturnType( context, _invoke( context ) );
@@ -558,6 +560,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	    boolean defaultOutput,
 	    List<BoxMethodDeclarationModifier> modifiers ) {
 
+		annotations = BoxClassSupport.transformAnnotations( annotations );
 		IStruct meta = new Struct( IStruct.TYPES.LINKED );
 		if ( documentation != null ) {
 			documentation.forEach( ( k, v ) -> {
@@ -672,7 +675,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 		if ( this.canOutput == null ) {
 			Object anno = canOutput( getAnnotations() );
 			if ( anno != null ) {
-				this.canOutput = BooleanCaster.cast( anno );
+				this.canOutput = BoxClassSupport.castOutputAnnotation( anno );
 			}
 		}
 
@@ -729,7 +732,7 @@ public abstract class Function implements IType, IFunctionRunnable, Serializable
 	public static boolean canOutput( IStruct annotations, BoxSourceType sourceType, boolean defaultOutput ) {
 		Object anno = canOutput( annotations );
 		if ( anno != null ) {
-			return BooleanCaster.cast( anno );
+			return BoxClassSupport.castOutputAnnotation( anno );
 		} else {
 			return defaultCanOutput( sourceType, defaultOutput );
 		}

@@ -27,8 +27,7 @@ import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
  */
 public class BoxBreak extends BoxStatement {
 
-	private String	label;
-	private boolean	implicit	= false;
+	private String label;
 
 	/**
 	 * Creates the AST node
@@ -67,14 +66,6 @@ public class BoxBreak extends BoxStatement {
 	 */
 	public void setLabel( String label ) {
 		this.label = label;
-	}
-
-	public boolean isImplicit() {
-		return implicit;
-	}
-
-	public void setImplicit( boolean implicit ) {
-		this.implicit = implicit;
 	}
 
 	public void accept( VoidBoxVisitor v ) {

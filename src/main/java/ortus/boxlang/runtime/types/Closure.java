@@ -238,7 +238,7 @@ public class Closure extends CompiledFunction {
 	 * Lazy loads it
 	 */
 	public Class<?> getEnclosingClass() {
-		return this.closureDefinition.getEnclosingClass();
+		return this.closureDefinition != null ? this.closureDefinition.getEnclosingClass() : this.getClass();
 	}
 
 }

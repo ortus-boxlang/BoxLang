@@ -113,7 +113,7 @@ public class WsdlParser {
 
 			return parseDocument( wsdlUrl, document );
 		} catch ( Exception e ) {
-			throw new BoxRuntimeException( "Failed to parse WSDL from: " + wsdlUrl, e );
+			throw new BoxRuntimeException( "Failed to parse WSDL from: " + wsdlUrl + ". Error: " + e.getMessage(), e );
 		}
 	}
 

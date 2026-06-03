@@ -117,12 +117,28 @@ public class StructLiteralPrinter {
 
 			structDoc.append( visitor.popDoc() ).append( visitor.config.getStruct().getPadding() ? Line.LINE : Line.SOFT );
 		} else {
-			if ( isOrdered ) {
-				structDoc.append( visitor.config.getStruct().getEmptyPadding() ? " : " : ":" );
-
+			// Check if there are inside comments — if so, force multiline to avoid collapsing
+			boolean hasInsideComments = false;
+			for ( var comment : structNode.getComments() ) {
+				if ( comment.isInside( structNode ) ) {
+					hasInsideComments = true;
+					break;
+				}
 			}
-			visitor.printInsideComments( structNode, false );
-			structDoc.append( visitor.config.getStruct().getEmptyPadding() ? Line.LINE : Line.SOFT );
+
+			if ( hasInsideComments ) {
+				// Force multiline: open brace, newline, indented comment, newline, close brace
+				var contentsDoc = visitor.pushDoc( DocType.INDENT );
+				contentsDoc.append( Line.HARD );
+				visitor.printInsideComments( structNode, false );
+				structDoc.append( visitor.popDoc() ).append( Line.HARD );
+			} else {
+				if ( isOrdered ) {
+					structDoc.append( visitor.config.getStruct().getEmptyPadding() ? " : " : ":" );
+				}
+				visitor.printInsideComments( structNode, false );
+				structDoc.append( visitor.config.getStruct().getEmptyPadding() ? Line.LINE : Line.SOFT );
+			}
 		}
 
 		structDoc.append( closeBrace );
