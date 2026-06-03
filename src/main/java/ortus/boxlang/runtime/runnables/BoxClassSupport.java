@@ -34,6 +34,8 @@ import ortus.boxlang.runtime.context.StaticClassBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.IReferenceable;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.loader.ImportDefinition;
@@ -47,6 +49,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Property;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
 import ortus.boxlang.runtime.types.exceptions.AbstractClassException;
@@ -167,7 +170,21 @@ public class BoxClassSupport {
 	 * @return The string representation
 	 */
 	public static String asString( IClassRunnable thisClass ) {
-		return "Class: " + thisClass.bxGetName().getName();
+		StringBuilder	sb				= new StringBuilder( "Class: " ).append( thisClass.bxGetName().getName() );
+		VariablesScope	variablesScope	= thisClass.getVariablesScope();
+		for ( Map.Entry<Key, Property> entry : thisClass.getProperties().entrySet() ) {
+			Key		key		= entry.getKey();
+			Object	value	= variablesScope.getRaw( key );
+			String	valueStr;
+			if ( value == null ) {
+				valueStr = "[null]";
+			} else {
+				CastAttempt<String> attempt = StringCaster.attempt( value );
+				valueStr = attempt.wasSuccessful() ? attempt.get() : "[" + TypeUtil.getObjectName( value ) + "]";
+			}
+			sb.append( "\n    " ).append( key.getName() ).append( " = " ).append( valueStr );
+		}
+		return sb.toString();
 	}
 
 	public static Object javaMethodStub( IReferenceable obj, Key functionName, Object[] args ) {
