@@ -1,5 +1,7 @@
 <bx:script>
 	expandRoot = expand ?: true;
+	isBoxSet   = isInstanceOf( var, "ortus.boxlang.runtime.types.BoxSet" );
+	setType    = isBoxSet ? var.getType().name() : var.getClass().getName();
 </bx:script>
 <bx:output>
 	<div class="bx-dump">
@@ -13,22 +15,26 @@
 				>
 					<strong>
 						<bx:if label.len() >#label# - </bx:if>
-						Set (#var.getType().name()#):
+						Set (#setType#):
 						<bx:if !isNull( top ) && top lt var.size()>#top#/</bx:if>#var.size()#
 					</strong>
+					<bx:if isBoxSet>
 					<span class="bx-meta">
 						[caseSensitive=#var.isCaseSensitive()#, synchronized=#var.isSynchronized()#]
 					</span>
+					</bx:if>
 				</caption>
 			<bx:else>
 				<caption class="bx-dhAy">
 					<strong>
 						<bx:if label.len() >#label# - </bx:if>
-						Set (#var.getType().name()#): #var.size()#
+						Set (#setType#): #var.size()#
 					</strong>
+					<bx:if isBoxSet>
 					<span class="bx-meta">
 						[caseSensitive=#var.isCaseSensitive()#, synchronized=#var.isSynchronized()#]
 					</span>
+					</bx:if>
 				</caption>
 			</bx:if>
 			<tbody

@@ -853,4 +853,23 @@ public class DumpTest {
 		assertThat( output ).contains( "DEFAULT" );
 		assertThat( output ).contains( "0" );
 	}
+
+	@DisplayName( "It can dump a native Java Set" )
+	@Test
+	public void testCanDumpNativeJavaSet() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import java.util.HashSet;
+				val = new HashSet( ["brad", "BRAD", "wood"] );
+				dump( var = val, format = "html" );
+			""",
+			context );
+		// @formatter:on
+		String output = baos.toString();
+		assertThat( output ).contains( "java.util.HashSet" );
+		assertThat( output ).contains( "brad" );
+		assertThat( output ).doesNotContain( "caseSensitive" );
+		assertThat( output ).doesNotContain( "synchronized" );
+	}
 }

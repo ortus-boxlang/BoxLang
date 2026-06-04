@@ -468,6 +468,44 @@ public class SetBIFsTest {
 		assertThat( variables.get( result ) ).isEqualTo( true );
 	}
 
+	@DisplayName( "setNew() isSynchronized=true (default) produces a synchronized set" )
+	@Test
+	public void testSetNewIsSynchronizedDefault() {
+		instance.executeSource(
+		    """
+		    s = setNew();
+		    result = s.isSynchronized();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "setNew() isSynchronized=false produces a non-synchronized set" )
+	@Test
+	public void testSetNewIsSynchronizedFalse() {
+		instance.executeSource(
+		    """
+		    s = setNew( isSynchronized=false );
+		    result = s.isSynchronized();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "setNew() isSynchronized=false with seed values still works" )
+	@Test
+	public void testSetNewIsSynchronizedFalseWithValues() {
+		instance.executeSource(
+		    """
+		    s = setNew( values=[1,2,3], isSynchronized=false );
+		    result = s.isSynchronized();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( false );
+		BoxSet s = ( BoxSet ) variables.get( Key.of( "s" ) );
+		assertThat( s.size() ).isEqualTo( 3 );
+	}
+
 	@DisplayName( "Operator + performs set union" )
 	@Test
 	public void testPlusOperatorUnion() {

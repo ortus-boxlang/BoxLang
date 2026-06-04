@@ -488,6 +488,8 @@ public class DumpUtil {
 			return "Array.bxm";
 		} else if ( target instanceof StringBuffer || target instanceof StringBuilder ) {
 			return "StringBuffer.bxm";
+		} else if ( target instanceof Set ) {
+			return "BoxSet.bxm";
 		} else if ( target instanceof Map ) {
 			return "Map.bxm";
 		} else if ( target instanceof List ) {
