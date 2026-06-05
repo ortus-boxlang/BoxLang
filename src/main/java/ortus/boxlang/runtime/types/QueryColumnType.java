@@ -304,6 +304,17 @@ public enum QueryColumnType {
 		if ( value == null ) {
 			return null;
 		}
+		// Treat empty arrays and empty strings as null for all SQL types.
+		// This handles cases where JDBC drivers return empty arrays for nullable
+		// metadata columns (e.g. DatabaseMetaData.getColumns()), which would
+		// otherwise fail to cast to numeric SQL types during query reconstruction
+		// (e.g. Query.filter() -> BLCollector.toQuery() -> addRow).
+		if ( value instanceof Array arr && arr.isEmpty() ) {
+			return null;
+		}
+		if ( value instanceof String str && str.isEmpty() ) {
+			return null;
+		}
 		try {
 			return switch ( type ) {
 				case QueryColumnType.INTEGER -> IntegerCaster.cast( true, value );
