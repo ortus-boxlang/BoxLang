@@ -578,10 +578,13 @@ public class Visitor extends VoidBoxVisitor {
 		}
 
 		node.getLeft().accept( this );
-		currentDoc.append( " " );
-		currentDoc.append( node.getOp().getSymbol() );
-		currentDoc.append( " " );
-		node.getRight().accept( this );
+		// for var Myvar; with no initializer.
+		if ( node.getOp() != null ) {
+			currentDoc.append( " " );
+			currentDoc.append( node.getOp().getSymbol() );
+			currentDoc.append( " " );
+			node.getRight().accept( this );
+		}
 	}
 
 	@Override
