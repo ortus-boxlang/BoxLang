@@ -359,7 +359,7 @@ public enum QueryColumnType {
 
 	/**
 	 * Convert a value to the appropriate SQL type.
-	 * 
+	 *
 	 * Deprecated: Use the overload that includes BoxConnection.
 	 * <p>
 	 *

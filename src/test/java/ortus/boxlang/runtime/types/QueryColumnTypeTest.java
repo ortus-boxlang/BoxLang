@@ -71,7 +71,7 @@ public class QueryColumnTypeTest {
 	@Test
 	void testToSQLTypeEmptyArray() {
 		Array emptyArray = new Array();
-		
+
 		// Empty arrays should return null for all SQL types
 		assertNull( QueryColumnType.toSQLType( QueryColumnType.INTEGER, emptyArray, null, null ) );
 		assertNull( QueryColumnType.toSQLType( QueryColumnType.BIGINT, emptyArray, null, null ) );
@@ -89,7 +89,7 @@ public class QueryColumnTypeTest {
 	@Test
 	void testToSQLTypeEmptyString() {
 		String emptyString = "";
-		
+
 		// Empty strings should return null for all SQL types
 		assertNull( QueryColumnType.toSQLType( QueryColumnType.INTEGER, emptyString, null, null ) );
 		assertNull( QueryColumnType.toSQLType( QueryColumnType.BIGINT, emptyString, null, null ) );
