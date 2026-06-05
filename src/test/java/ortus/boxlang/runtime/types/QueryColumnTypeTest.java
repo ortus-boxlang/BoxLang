@@ -85,24 +85,6 @@ public class QueryColumnTypeTest {
 		assertNull( QueryColumnType.toSQLType( QueryColumnType.TIMESTAMP, emptyArray, null, null ) );
 	}
 
-	@DisplayName( "toSQLType() returns null for empty strings" )
-	@Test
-	void testToSQLTypeEmptyString() {
-		String emptyString = "";
-
-		// Empty strings should return null for all SQL types
-		assertNull( QueryColumnType.toSQLType( QueryColumnType.INTEGER, emptyString, null, null ) );
-		assertNull( QueryColumnType.toSQLType( QueryColumnType.BIGINT, emptyString, null, null ) );
-		assertNull( QueryColumnType.toSQLType( QueryColumnType.DOUBLE, emptyString, null, null ) );
-		assertNull( QueryColumnType.toSQLType( QueryColumnType.DECIMAL, emptyString, null, null ) );
-		assertNull( QueryColumnType.toSQLType( QueryColumnType.CHAR, emptyString, null, null ) );
-		assertNull( QueryColumnType.toSQLType( QueryColumnType.VARCHAR, emptyString, null, null ) );
-		assertNull( QueryColumnType.toSQLType( QueryColumnType.BOOLEAN, emptyString, null, null ) );
-		assertNull( QueryColumnType.toSQLType( QueryColumnType.DATE, emptyString, null, null ) );
-		assertNull( QueryColumnType.toSQLType( QueryColumnType.TIME, emptyString, null, null ) );
-		assertNull( QueryColumnType.toSQLType( QueryColumnType.TIMESTAMP, emptyString, null, null ) );
-	}
-
 	@DisplayName( "toSQLType() returns null for null values" )
 	@Test
 	void testToSQLTypeNull() {

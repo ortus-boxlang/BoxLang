@@ -312,9 +312,7 @@ public enum QueryColumnType {
 		if ( value instanceof Array arr && arr.isEmpty() ) {
 			return null;
 		}
-		if ( value instanceof String str && str.isEmpty() ) {
-			return null;
-		}
+
 		try {
 			return switch ( type ) {
 				case QueryColumnType.INTEGER -> IntegerCaster.cast( true, value );
