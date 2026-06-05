@@ -165,6 +165,14 @@ public class NumberCaster implements IBoxCaster {
 			return result;
 		}
 
+		// Last ditch effort-- if it's a string and castDates is true, see if it's a string that can be cast to a date that can be cast to a number
+		if ( castDates && object instanceof String s ) {
+			var dateAttempt = DateTimeCaster.attempt( s );
+			if ( dateAttempt.wasSuccessful() ) {
+				return DateTimeHelper.toFractionalDays( dateAttempt.get().toEpochMillis() );
+			}
+		}
+
 		// Verify if we can throw an exception
 		if ( fail ) {
 			throw new BoxCastException( String.format( "Can't cast [%s] to a Number.", object.toString() ) );
