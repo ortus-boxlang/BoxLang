@@ -450,8 +450,8 @@ public class BoxClassSupport {
 			return null;
 		} else {
 			throw new KeyNotFoundException(
-			    // TODO: Limit the number of keys. There could be thousands!
-			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", key.getName(), thisClass.getThisScope().getKeysAsStrings() )
+			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", key.getName(),
+			        Struct.formatKeysForError( thisClass.getThisScope().getKeysAsStrings() ) )
 			);
 		}
 	}
@@ -914,8 +914,8 @@ public class BoxClassSupport {
 			throw new BoxRuntimeException( "Key [" + name.getName() + "] in the static scope is not a method." );
 		} else {
 			throw new KeyNotFoundException(
-			    // TODO: Limit the number of keys. There could be thousands!
-			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", name.getName(), staticScope.getKeysAsStrings() )
+			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", name.getName(),
+			        Struct.formatKeysForError( staticScope.getKeysAsStrings() ) )
 			);
 		}
 	}
@@ -942,8 +942,8 @@ public class BoxClassSupport {
 			throw new BoxRuntimeException( "Key [" + name.getName() + "] in the static scope is not a method." );
 		} else {
 			throw new KeyNotFoundException(
-			    // TODO: Limit the number of keys. There could be thousands!
-			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", name.getName(), staticScope.getKeysAsStrings() )
+			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", name.getName(),
+			        Struct.formatKeysForError( staticScope.getKeysAsStrings() ) )
 			);
 		}
 	}

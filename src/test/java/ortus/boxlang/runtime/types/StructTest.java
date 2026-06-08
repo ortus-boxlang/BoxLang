@@ -41,6 +41,7 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 class StructTest {
 
@@ -113,6 +114,22 @@ class StructTest {
 		struct.put( key, null );
 
 		assertThat( struct.get( key ) ).isEqualTo( null );
+	}
+
+	@DisplayName( "Key-not-found message truncates long valid key lists" )
+	@Test
+	void testKeyNotFoundMessageTruncatesKeyList() {
+		Struct struct = new Struct( Struct.TYPES.LINKED, false );
+		for ( int i = 1; i <= 25; i++ ) {
+			struct.put( Key.of( "k" + i ), i );
+		}
+
+		KeyNotFoundException exception = assertThrows( KeyNotFoundException.class,
+		    () -> struct.dereference( context, Key.of( "missing" ), false ) );
+
+		assertThat( exception.getMessage() ).contains( "The key [missing] was not found in the struct." );
+		assertThat( exception.getMessage() ).contains( "... +5 more" );
+		assertThat( exception.getMessage() ).doesNotContain( "k25" );
 	}
 
 	@DisplayName( "Can create a struct from name-value pairs" )
