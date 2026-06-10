@@ -59,7 +59,7 @@ public class FileWrite extends BIF {
 	 *
 	 * @argument.charset The charset encoding (ignored for binary data). Only applies to path-based writes.
 	 *
-	 * @argument.createPath [false] (BoxLang only) When true, ensures all directories to the file destination are created. Only applies to path-based writes.
+	 * @argument.createPath When true, ensures all directories to the file destination are created. Only applies to path-based writes.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		BoxFile	file		= arguments.getAsBoxFile( Key.file );

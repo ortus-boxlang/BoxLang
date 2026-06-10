@@ -1172,7 +1172,7 @@ public class Key implements Comparable<Key>, Serializable {
 	protected String			name;
 
 	/**
-	 * The key name in upper case
+	 * The key name in lower case
 	 */
 	protected String			nameNoCase;
 
@@ -1235,7 +1235,7 @@ public class Key implements Comparable<Key>, Serializable {
 	 */
 
 	/**
-	 * @return The key name in upper case.
+	 * @return The key name in lower case.
 	 */
 	public String getNameNoCase() {
 		return this.nameNoCase;

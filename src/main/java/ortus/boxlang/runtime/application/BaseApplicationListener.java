@@ -467,9 +467,9 @@ public abstract class BaseApplicationListener {
 	private void createOrUpdateApplication() {
 		ApplicationBoxContext appContext = this.context.getParentOfType( ApplicationBoxContext.class );
 
-		// Don't check the application exiry here. If there is already an application context, then that means we're simply updating an
-		// existing application mid-request and no good will become of nuking it mid-request. We'll enforce timeoutes only when first getting the application
-		// for the frist time
+		// Don't check the application expiry here. If there is already an application context, then that means we're simply updating an
+		// existing application mid-request and no good will become of nuking it mid-request. We'll enforce timeouts only when first getting the application
+		// for the first time
 
 		// If there's none, then this creates a new application
 		if ( appContext == null ) {
