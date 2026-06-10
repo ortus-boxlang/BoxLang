@@ -70,6 +70,8 @@ public class ListValueCount extends BIF {
 	 * @argument.delimiter The list delimiter(s)
 	 *
 	 * @argument.includeEmptyFields Whether to include empty fields in the search
+	 *
+	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Key					bifMethodKey	= arguments.getAsKey( BIF.__functionName );

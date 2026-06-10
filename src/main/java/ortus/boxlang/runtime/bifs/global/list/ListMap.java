@@ -73,6 +73,8 @@ public class ListMap extends ArrayMap {
 	 *
 	 * @argument.includeEmptyFields boolean whether to include empty fields in the returned result
 	 *
+	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
+	 *
 	 * @argument.parallel Whether to run the filter in parallel. Defaults to false. If true, the filter will be run in parallel using a ForkJoinPool.
 	 *
 	 * @argument.maxThreads The maximum number of threads to use when running the filter in parallel. If not passed it will use the default number of threads for the ForkJoinPool.

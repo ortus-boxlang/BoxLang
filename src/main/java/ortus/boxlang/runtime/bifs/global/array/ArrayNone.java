@@ -66,6 +66,8 @@ public class ArrayNone extends ArraySome {
 	 *
 	 * @argument.maxThreads The maximum number of threads to use when running the filter in parallel. If not passed it will use the default number of threads for the ForkJoinPool.
 	 *                      If parallel is false, this argument is ignored.
+	 *
+	 * @argument.virtual (BoxLang only) If true, the function will be invoked using virtual threads. Defaults to false. Ignored if parallel is false.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return !( Boolean ) super._invoke( context, arguments );

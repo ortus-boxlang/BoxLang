@@ -57,6 +57,8 @@ public class ListRemoveDuplicates extends BIF {
 	 * @argument.delimiter The delimiter of the list
 	 *
 	 * @argument.ignoreCase Whether case should be ignored or not during deduplication - defaults to false
+	 *
+	 * @argument.multiCharacterDelimiter boolean whether the delimiter is multi-character
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		return ListUtil.asDelimitedList(
