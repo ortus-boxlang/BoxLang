@@ -40,7 +40,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.HexFormat;
 import java.util.Random;
 import java.util.regex.Pattern;
@@ -79,66 +79,66 @@ public final class EncryptionUtil {
 	/**
 	 * The default secure random number instance
 	 */
-	private final static SecureRandom	secureRandom					= new SecureRandom();
+	private final static SecureRandom				secureRandom					= new SecureRandom();
 
 	/**
 	 * The default algorithm to use
 	 */
-	public static final String			DEFAULT_HASH_ALGORITHM			= "MD5";
+	public static final String						DEFAULT_HASH_ALGORITHM			= "MD5";
 
 	/**
 	 * Default encryption algorithm
 	 */
-	public static final String			DEFAULT_ENCRYPTION_ALGORITHM	= "AES";
+	public static final String						DEFAULT_ENCRYPTION_ALGORITHM	= "AES";
 
 	/**
 	 * Default encryption algorithm
 	 */
-	public static final String			DEFAULT_ENCRYPTION_ENCODING		= "UU";
+	public static final String						DEFAULT_ENCRYPTION_ENCODING		= "UU";
 
 	/**
 	 * Default key size
 	 */
-	public static final int				DEFAULT_ENCRYPTION_KEY_SIZE		= 256;
+	public static final int							DEFAULT_ENCRYPTION_KEY_SIZE		= 256;
 
 	/**
 	 * The default encoding to use
 	 */
-	public static final String			DEFAULT_CHARSET					= StandardCharsets.UTF_8.name();
+	public static final String						DEFAULT_CHARSET					= StandardCharsets.UTF_8.name();
 
 	/**
 	 * Default iterations to perform during encryption - the minimum recomended by NIST
 	 */
-	public final static int				DEFAULT_ENCRYPTION_ITERATIONS	= 1000;
+	public final static int							DEFAULT_ENCRYPTION_ITERATIONS	= 1000;
 
 	/**
 	 * The IV size required by FBMA algorithms
 	 */
-	public static final int				FBMA_IV_SIZE					= 16;
+	public static final int							FBMA_IV_SIZE					= 16;
 
 	/**
 	 * Base64 validation methods
 	 */
-	private static final String			BASE_64_REGEX_PATTERN			= "^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$";
-	private static final Pattern		BASE_64_PATTERN					= Pattern.compile( BASE_64_REGEX_PATTERN );
+	private static final String						BASE_64_REGEX_PATTERN			= "^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$";
+	private static final Pattern					BASE_64_PATTERN					= Pattern.compile( BASE_64_REGEX_PATTERN );
 
 	/**
 	 * Threadsafe instances of Random and Secure random instances which are used by the getRandom method
 	 */
-	private static HashMap<Key, Random>	randomStore						= new HashMap<Key, Random>();
+	private static ConcurrentHashMap<Key, Random>	randomStore						= new ConcurrentHashMap<Key, Random>();
 
 	/**
 	 * Quick 64 bit hash properties
 	 */
-	private static final long[]			byteTable						= generateHashLookupTable();
-	private static final long			HSTART							= 0xBB40E64DA205B064L;
-	private static final long			HMULT							= 7664345821815920749L;
+	private static final long[]						byteTable						= generateHashLookupTable();
+	private static final long						HSTART							= 0xBB40E64DA205B064L;
+	private static final long						HMULT							= 7664345821815920749L;
 
 	/**
 	 * Supported key algorithms
 	 * <a href="https://docs.oracle.com/en/java/javase/17/docs/specs/security/standard-names.html#keyfactory-algorithms">key factory algorithms</a>
 	 */
-	public static final IStruct			KEY_ALGORITHMS					= Struct.of(
+	public static final IStruct						KEY_ALGORITHMS					= Struct.of(
 	    Key.of( "AES" ), "AES",
 	    Key.of( "ARCFOUR" ), "ARCFOUR",
 	    Key.of( "Blowfish" ), "Blowfish",
@@ -160,8 +160,8 @@ public final class EncryptionUtil {
 	/**
 	 * URL Encoding properties
 	 */
-	public static final String			URL_SPACE						= "%20";
-	public static final String			URL_PLUS_REGEX					= "\\+";
+	public static final String						URL_SPACE						= "%20";
+	public static final String						URL_PLUS_REGEX					= "\\+";
 
 	/**
 	 * Performs a hash of an object using the default algorithm
