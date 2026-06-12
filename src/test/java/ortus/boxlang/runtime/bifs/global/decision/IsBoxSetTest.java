@@ -33,7 +33,7 @@ public class IsBoxSetTest {
 	@DisplayName( "isBoxSet returns true for BoxSet instances" )
 	@Test
 	public void testIsBoxSetWithBoxSet() {
-		BoxSet		set		= new BoxSet();
+		BoxSet		set			= new BoxSet();
 		IsBoxSet	isBifSet	= new IsBoxSet();
 
 		assertThat( isBifSet.isBoxSet( set ) ).isTrue();
@@ -42,7 +42,7 @@ public class IsBoxSetTest {
 	@DisplayName( "isBoxSet returns true for empty BoxSet" )
 	@Test
 	public void testIsBoxSetWithEmptyBoxSet() {
-		BoxSet		set		= BoxSet.emptySet();
+		BoxSet		set			= BoxSet.emptySet();
 		IsBoxSet	isBifSet	= new IsBoxSet();
 
 		assertThat( isBifSet.isBoxSet( set ) ).isTrue();
@@ -51,11 +51,11 @@ public class IsBoxSetTest {
 	@DisplayName( "isBoxSet returns true for BoxSet with values" )
 	@Test
 	public void testIsBoxSetWithPopulatedBoxSet() {
-		BoxSet		set		= new BoxSet();
+		BoxSet set = new BoxSet();
 		set.add( "value1" );
 		set.add( "value2" );
 		set.add( 42 );
-		IsBoxSet	isBifSet	= new IsBoxSet();
+		IsBoxSet isBifSet = new IsBoxSet();
 
 		assertThat( isBifSet.isBoxSet( set ) ).isTrue();
 	}
