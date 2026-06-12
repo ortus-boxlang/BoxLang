@@ -36,7 +36,7 @@ Using BL Tags with the queryAddRow querySetCell functions to populate the query.
 
 ### Creating and Populating a query using an array rowData in queryNew
 
-CF10+ Passes an array of structs to create a new query.
+Passes an array of structs to create a new query.
 
 <a href="https://try.boxlang.io/?code=eJxdjjELwjAUhOfkVxyZKmTRUXHrWic3cXjYpwbbtL4khiL%2Bd1OddLs7vg%2FOcw7Y4p5Yph3nCsa1NrrYsbEl%2B8gXFvsgOV1JynSAVk%2BtVMEM1ljaOX%2F5Uk3NmSe0fGaKAXtJPXmj1cv%2BWKs%2FqyGPTN0tYPBohuGj6CMWG53FRa5TP1bw89UyvQEwGzJ5" target="_blank">Run Example</a>
 
@@ -58,7 +58,7 @@ writeDump( news );
 
 ### Creating and Populating a single row query using rowData in queryNew
 
-CF10+ If you only need one row you can pass a single struct instead of an array into the rowData argument.
+If you only need one row you can pass a single struct instead of an array into the rowData argument.
 
 <a href="https://try.boxlang.io/?code=eJwljbEKwkAQRGvvK4atIlxjq9iltvIHDjPRA3PoZi9HEP%2FdDXZvHg%2BmsM04412p64Wtg%2BQhWrYnJToX450al6S3R1JXH4SdJ4IjDtHxn%2FqSno0rBo5MNuOqdUpFwhf7U2iajX2dXh3K9ufqB%2BGSJOY%3D" target="_blank">Run Example</a>
 
@@ -74,7 +74,7 @@ writeDump( news );
 
 ### Creating and populating a query with an array of structs
 
-CF2018u5+ Directly assigns columns and values with an array of structs.
+Directly assigns columns and values with an array of structs.
 
 <a href="https://try.boxlang.io/?code=eJzLSy0vVrBVKCxNLar0Sy3XUIhW4OKs5uLkVMpMUVKwUjDUAbFLMktyUkFcJZfU8tRKhZTUtNTEkmKFkKLS3MQ8JS7OWh0UXUZounwT8xTKE3OyixXy8xR88%2FPBWrhiFTStucqLMktSXUpzCzQU8kBuAQoBAJfXKD0%3D" target="_blank">Run Example</a>
 
