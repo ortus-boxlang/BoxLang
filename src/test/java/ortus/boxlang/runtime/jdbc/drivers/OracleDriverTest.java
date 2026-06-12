@@ -17,6 +17,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.jdbc.DataSource;
+import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -180,6 +181,20 @@ public class OracleDriverTest extends AbstractDriverTest {
 		    BEGIN
 		    	OPEN cursor1 FOR SELECT in1 as numVal, in2 as strVal FROM dual;
 		    END testProcedureInOutCursor;
+		    """,
+		    context
+		);
+
+		// Stored procedure with OUT param selected as NULL
+		dataSource.execute(
+		    """
+		    CREATE OR REPLACE PROCEDURE testProcedureOutNull (
+		    	out1 OUT NVARCHAR2
+		    )
+		    IS
+		    BEGIN
+		    	SELECT CAST( NULL AS NVARCHAR2(100) ) INTO out1 FROM dual;
+		    END testProcedureOutNull;
 		    """,
 		    context
 		);
@@ -702,6 +717,40 @@ public class OracleDriverTest extends AbstractDriverTest {
 		assertThat( rs1.size() ).isEqualTo( 1 );
 		assertThat( rs1.getRowAsStruct( 0 ).getAsNumber( Key.of( "numVal" ) ).doubleValue() ).isEqualTo( 99D );
 		assertThat( rs1.getRowAsStruct( 0 ).getAsString( Key.of( "strVal" ) ) ).isEqualTo( "testing" );
+	}
+
+	@DisplayName( "It can call stored proc with OUT param selected as NULL" )
+	@Test
+	public void testCallStoredProcOutNull() {
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedureOutNull" datasource="OracleDatasource" result="variables.result" debug=false>
+		        <bx:procparam dbvarname="out1" type="out" sqltype="nvarchar" variable="out1" />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		assertThat( variables.get( "out1" ) ).isNull();
+	}
+
+	@DisplayName( "It can call stored proc with OUT null mapped to empty string when nullEqualsEmptyString is enabled" )
+	@Test
+	public void testCallStoredProcOutNullAsEmptyStringWhenEnabled() {
+		boolean original = Compare.nullEqualsEmptyString;
+		Compare.nullEqualsEmptyString = true;
+		try {
+			instance.executeSource(
+			    """
+			    <bx:storedproc procedure="testProcedureOutNull" datasource="OracleDatasource" result="variables.result" debug=false>
+			        <bx:procparam dbvarname="out1" type="out" sqltype="nvarchar" variable="out1" />
+			    </bx:storedproc>
+			    """,
+			    context, BoxSourceType.BOXTEMPLATE );
+
+			assertThat( variables.get( "out1" ) ).isEqualTo( "" );
+		} finally {
+			Compare.nullEqualsEmptyString = original;
+		}
 	}
 
 	@DisplayName( "It can handle float query param with leading space" )

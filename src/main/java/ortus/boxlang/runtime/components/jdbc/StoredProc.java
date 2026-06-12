@@ -37,6 +37,7 @@ import ortus.boxlang.runtime.jdbc.ConnectionManager;
 import ortus.boxlang.runtime.jdbc.QueryOptions;
 import ortus.boxlang.runtime.jdbc.drivers.IJDBCDriver;
 import ortus.boxlang.runtime.jdbc.drivers.JDBCDriverFeature;
+import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -401,14 +402,17 @@ public class StoredProc extends Component {
 			    && attr.getAsString( Key.variable ) != null && !attr.getAsString( Key.variable ).isEmpty() ) {
 
 				// Get the out sql type, default to OBJECT if not specified
-				QueryColumnType BLType = QueryColumnType.fromString( ( String ) attr.getOrDefault( Key.sqltype, "OBJECT" ) );
+				QueryColumnType	BLType	= QueryColumnType.fromString( ( String ) attr.getOrDefault( Key.sqltype, "OBJECT" ) );
 
 				// Get the value from the procedure, transform it if needed
-				Object value = driver.transformValue(
+				Object			value	= driver.transformValue(
 				    BLType.sqlType,
 				    procedure.getObject( i + 1 + paramOffset ),
 				    procedure
 				);
+				if ( value == null && Compare.nullEqualsEmptyString ) {
+					value = "";
+				}
 
 				// Set the variable in the context
 				ExpressionInterpreter.setVariable( context, attr.getAsString( Key.variable ), value );
