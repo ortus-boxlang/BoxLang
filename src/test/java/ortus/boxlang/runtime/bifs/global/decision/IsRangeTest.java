@@ -16,7 +16,6 @@ package ortus.boxlang.runtime.bifs.global.decision;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -44,11 +43,6 @@ public class IsRangeTest {
 		instance = BoxRuntime.getInstance( true );
 	}
 
-	@AfterAll
-	public static void teardown() {
-
-	}
-
 	@BeforeEach
 	public void setupEach() {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
@@ -58,60 +52,49 @@ public class IsRangeTest {
 	@DisplayName( "isRange returns true for Range instances" )
 	@Test
 	public void testIsRangeWithRange() {
-		Range<?>	range		= Range.of( 1, 5 );
-		IsRange		isBifRange	= new IsRange();
+		Range<?> range = Range.of( 1, 5 );
 
-		assertThat( isBifRange.isRange( range ) ).isTrue();
+		assertThat( IsRange.isRange( range ) ).isTrue();
 	}
 
 	@DisplayName( "isRange returns false for null" )
 	@Test
 	public void testIsRangeWithNull() {
-		IsRange isBifRange = new IsRange();
-
-		assertThat( isBifRange.isRange( null ) ).isFalse();
+		assertThat( IsRange.isRange( null ) ).isFalse();
 	}
 
 	@DisplayName( "isRange returns false for string" )
 	@Test
 	public void testIsRangeWithString() {
-		IsRange isBifRange = new IsRange();
-
-		assertThat( isBifRange.isRange( "not a range" ) ).isFalse();
+		assertThat( IsRange.isRange( "not a range" ) ).isFalse();
 	}
 
 	@DisplayName( "isRange returns false for array" )
 	@Test
 	public void testIsRangeWithArray() {
-		Array	array		= new Array();
-		IsRange	isBifRange	= new IsRange();
+		Array array = new Array();
 
-		assertThat( isBifRange.isRange( array ) ).isFalse();
+		assertThat( IsRange.isRange( array ) ).isFalse();
 	}
 
 	@DisplayName( "isRange returns false for struct" )
 	@Test
 	public void testIsRangeWithStruct() {
-		IStruct	struct		= new Struct();
-		IsRange	isBifRange	= new IsRange();
+		IStruct struct = new Struct();
 
-		assertThat( isBifRange.isRange( struct ) ).isFalse();
+		assertThat( IsRange.isRange( struct ) ).isFalse();
 	}
 
 	@DisplayName( "isRange returns false for number" )
 	@Test
 	public void testIsRangeWithNumber() {
-		IsRange isBifRange = new IsRange();
-
-		assertThat( isBifRange.isRange( 42 ) ).isFalse();
+		assertThat( IsRange.isRange( 42 ) ).isFalse();
 	}
 
 	@DisplayName( "isRange returns false for boolean" )
 	@Test
 	public void testIsRangeWithBoolean() {
-		IsRange isBifRange = new IsRange();
-
-		assertThat( isBifRange.isRange( true ) ).isFalse();
+		assertThat( IsRange.isRange( true ) ).isFalse();
 	}
 
 	@DisplayName( "isRange BIF evaluates true for range literals" )
