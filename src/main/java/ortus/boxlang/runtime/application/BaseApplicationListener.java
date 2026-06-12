@@ -47,6 +47,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.SessionScope;
 import ortus.boxlang.runtime.services.ApplicationService;
 import ortus.boxlang.runtime.services.InterceptorService;
+import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
@@ -820,13 +821,23 @@ public abstract class BaseApplicationListener {
 	    Object[] positionalParams,
 	    boolean mustBeRemote ) {
 
-		Object result = null;
+		Object		result			= null;
+		Function	targetFunction	= null;
+		Object		targetMethod	= classInstance.getThisScope().get( Key.of( methodName ) );
+		if ( targetMethod instanceof Function function ) {
+			targetFunction = function;
+		}
 
 		// Check method is marked as remote
 		if ( mustBeRemote
-		    && ! ( classInstance.getThisScope().get( Key.of( methodName ) ) instanceof Function func && func.getAccess().equals( Function.Access.REMOTE ) ) ) {
+		    && ! ( targetFunction != null && targetFunction.getAccess().equals( Function.Access.REMOTE ) ) ) {
 			throw new BoxRuntimeException( "[" + methodName + "] is not marked as remote method on the class." );
 		}
+
+		if ( targetFunction != null ) {
+			coerceJSONArguments( context, targetFunction, namedParams, positionalParams );
+		}
+
 		// The method itself will push the template, but for expandPath to work correctly, we need the BASE template to be the CFC we're executing,
 		// which may be different than the class the method is in, if it's in the super class
 		context.pushTemplate( classInstance );
@@ -917,6 +928,72 @@ public abstract class BaseApplicationListener {
 			// If this is a web request, we'll set the default content type in the web-support runtime since this code is core and technically runtime-agnostic, even though
 			// the only place we're actually firing the onClassRequest listener right now is in the web-support runtime
 		}
+	}
+
+	/**
+	 * Coerces argument values in place before class request invocation.
+	 * <p>
+	 * For each declared function argument typed as {@code struct}, {@code structLoose}, {@code modifiableStruct},
+	 * {@code array}, {@code modifiableArray}, or {@code assignableArray},
+	 * if the incoming value is a JSON string, the value is deserialized and replaced in the original argument payload.
+	 * This supports remote-style callers that submit complex values as serialized JSON.
+	 * </p>
+	 * <p>
+	 * Named arguments are matched by argument name, while positional arguments are matched by argument index up to the
+	 * minimum length of the declared arguments and the provided positional array.
+	 * </p>
+	 *
+	 * @param context          Request context used to invoke {@code JSONDeserialize}
+	 * @param targetFunction   Function metadata that defines declared argument types
+	 * @param namedParams      Named argument map to mutate in place, or {@code null}
+	 * @param positionalParams Positional argument array to mutate in place, or {@code null}
+	 */
+	private void coerceJSONArguments( IBoxContext context, Function targetFunction, Struct namedParams, Object[] positionalParams ) {
+		Argument[] arguments = targetFunction.getArguments();
+
+		if ( namedParams != null ) {
+			for ( Argument argument : arguments ) {
+				if ( !isJSONCoercionTypedArgument( argument ) ) {
+					continue;
+				}
+
+				Object value = namedParams.get( argument.name() );
+				if ( value instanceof String stringValue && IsJSON.isJSON( stringValue ) ) {
+					namedParams.put( argument.name(), context.invokeFunction( Key.of( "JSONDeserialize" ), new Object[] { stringValue } ) );
+				}
+			}
+		}
+
+		if ( positionalParams != null ) {
+			int max = Math.min( positionalParams.length, arguments.length );
+			for ( int i = 0; i < max; i++ ) {
+				if ( !isJSONCoercionTypedArgument( arguments[ i ] ) ) {
+					continue;
+				}
+
+				Object value = positionalParams[ i ];
+				if ( value instanceof String stringValue && IsJSON.isJSON( stringValue ) ) {
+					positionalParams[ i ] = context.invokeFunction( Key.of( "JSONDeserialize" ), new Object[] { stringValue } );
+				}
+			}
+		}
+	}
+
+	/**
+	 * Indicates whether a declared argument type should be treated as a JSON-deserializable target.
+	 *
+	 * @param argument Declared function argument metadata
+	 *
+	 * @return {@code true} when the argument type is {@code struct}, {@code structLoose}, {@code modifiableStruct},
+	 *         {@code array}, {@code modifiableArray}, or {@code assignableArray}
+	 */
+	private boolean isJSONCoercionTypedArgument( Argument argument ) {
+		return argument.typeKey().equals( Key._STRUCT )
+		    || argument.typeKey().equals( Key.modifiableStruct )
+		    || argument.typeKey().equals( Key.structLoose )
+		    || argument.typeKey().equals( Key._ARRAY )
+		    || argument.typeKey().equals( Key.modifiableArray )
+		    || argument.typeKey().equals( Key.assignableArray );
 	}
 
 	/**
