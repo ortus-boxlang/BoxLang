@@ -26,7 +26,8 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.BoxSet;
-import ortus.boxlang.runtime.types.BoxStruct;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 
 public class IsBoxSetTest {
 
@@ -42,7 +43,7 @@ public class IsBoxSetTest {
 	@DisplayName( "isBoxSet returns true for empty BoxSet" )
 	@Test
 	public void testIsBoxSetWithEmptyBoxSet() {
-		BoxSet		set			= BoxSet.emptySet();
+		BoxSet		set			= BoxSet.EMPTY;
 		IsBoxSet	isBifSet	= new IsBoxSet();
 
 		assertThat( isBifSet.isBoxSet( set ) ).isTrue();
@@ -115,7 +116,7 @@ public class IsBoxSetTest {
 	@DisplayName( "isBoxSet returns false for struct" )
 	@Test
 	public void testIsBoxSetWithStruct() {
-		BoxStruct	struct		= new BoxStruct();
+		IStruct		struct		= new Struct();
 		IsBoxSet	isBifSet	= new IsBoxSet();
 
 		assertThat( isBifSet.isBoxSet( struct ) ).isFalse();
