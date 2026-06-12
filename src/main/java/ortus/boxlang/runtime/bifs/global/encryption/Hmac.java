@@ -60,6 +60,8 @@ public class Hmac extends BIF {
 	 *
 	 * @argument.input The item to be hashed
 	 *
+	 * @argument.key The secret key used to generate the HMAC. Can be a string or a binary value.
+	 *
 	 * @argument.algorithm The supported {@link java.security.MessageDigest } algorithm (case-insensitive)
 	 *
 	 * @argument.encoding Applicable to strings ( default "utf-8" )
