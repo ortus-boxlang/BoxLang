@@ -73,6 +73,8 @@ public class DateCompare extends BIF {
 	 * @argument.date1 The reference date object
 	 *
 	 * @argument.date2 The date which to compare against date1
+	 *
+	 * @argument.datepart The precision to compare down to. Accepts y, yyyy, m, d, h, n, s (default).
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		String		datePart	= arguments.getAsString( Key.datepart );
