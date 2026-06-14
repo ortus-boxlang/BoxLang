@@ -54,6 +54,7 @@ public class ArrayUnique extends BIF {
 	 *
 	 * @argument.array The array to remove duplicate entries from
 	 *
+	 * @argument.caseSensitive Whether string element comparisons are case-sensitive. Defaults to false.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
