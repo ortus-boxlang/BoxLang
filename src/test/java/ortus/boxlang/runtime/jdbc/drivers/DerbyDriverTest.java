@@ -7,12 +7,14 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIf;
 
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import tools.JDBCTestUtils;
 
+@EnabledIf( "tools.JDBCTestUtils#hasDerbyModule" )
 public class DerbyDriverTest extends AbstractDriverTest {
 
 	/**
