@@ -42,7 +42,7 @@ public class ThreadCurrent extends BIF {
 	 *         {@link Thread#isVirtual()}.
 	 *
 	 * @example
-	 * 
+	 *
 	 *          <pre>{@code
 	 * // Get the current thread and print its name
 	 * t = threadCurrent();
