@@ -649,4 +649,65 @@ public class ScheduleTest {
 		assertThat( paused ).isNotNull();
 		assertThat( paused.toString() ).isEqualTo( "false" );
 	}
+
+	// --------------------------------------------------------------------------
+	// Reload action tests
+	// --------------------------------------------------------------------------
+
+	@DisplayName( "reload shuts down the scheduler and reloads tasks from disk" )
+	@Test
+	public void testReloadReloadsTasksFromDisk() {
+		// Create two tasks — they are persisted to tasks.json
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    <bx:schedule action="update" task="reloadTask1" url="http://localhost/test" interval="120">
+		    <bx:schedule action="update" task="reloadTask2" url="http://localhost/test" interval="120">
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE
+		);
+		// @formatter:on
+
+		// Remove the in-memory scheduler to simulate a fresh state
+		svc.removeScheduler( SCHEDULER_KEY, true, 5 );
+		assertThat( svc.hasScheduler( SCHEDULER_KEY ) ).isFalse();
+
+		// reload should restore the scheduler from tasks.json
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    <bx:schedule action="reload">
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE
+		);
+		// @formatter:on
+
+		assertThat( svc.hasScheduler( SCHEDULER_KEY ) ).isTrue();
+		BaseScheduler scheduler = ( BaseScheduler ) svc.getScheduler( SCHEDULER_KEY );
+		assertThat( scheduler.hasTask( "reloadTask1" ) ).isTrue();
+		assertThat( scheduler.hasTask( "reloadTask2" ) ).isTrue();
+	}
+
+	@DisplayName( "reload with no tasks.json starts an empty scheduler without error" )
+	@Test
+	public void testReloadWithNoTasksOnDisk() {
+		// Ensure no tasks.json exists
+		Path tasksFile = instance.getRuntimeHome().resolve( "config/tasks.json" );
+		try {
+			java.nio.file.Files.deleteIfExists( tasksFile );
+		} catch ( Exception e ) {
+			// ignore
+		}
+
+		// reload must not throw even when tasks.json is absent
+		instance.executeSource(
+		    """
+		    <bx:schedule action="reload">
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE
+		);
+
+		// No scheduler is created when there is nothing to load
+		assertThat( svc.hasScheduler( SCHEDULER_KEY ) ).isFalse();
+	}
 }

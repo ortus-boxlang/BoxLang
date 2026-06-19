@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.tasks.BaseScheduler;
 import ortus.boxlang.runtime.async.tasks.BoxScheduler;
 import ortus.boxlang.runtime.async.tasks.IScheduler;
+import ortus.boxlang.runtime.async.tasks.ScheduledTask;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
@@ -629,6 +630,100 @@ public class SchedulerService extends BaseService {
 	 */
 	public SchedulerService restartScheduler( Key name ) {
 		return restartScheduler( name, false, 0 );
+	}
+
+	/**
+	 * Reload a scheduler from disk: shuts it down, removes it, re-reads
+	 * tasks.json for tasks belonging to this scheduler, then starts the
+	 * fresh scheduler. Useful when tasks.json has been modified externally
+	 * or when the bx:schedule action="reload" is invoked.
+	 *
+	 * @param schedulerName The key of the scheduler to reload
+	 * @param force         If true, force-kills running tasks during shutdown
+	 * @param timeout       Graceful shutdown timeout in seconds
+	 *
+	 * @return This service for chaining
+	 */
+	public SchedulerService reloadSchedulerFromDisk( Key schedulerName, boolean force, long timeout ) {
+		String name = schedulerName.getName();
+		this.logger.info( "+ Reloading scheduler [{}] from disk...", name );
+
+		// Shutdown and remove the existing scheduler
+		if ( hasScheduler( schedulerName ) ) {
+			removeScheduler( schedulerName, force, timeout );
+		}
+
+		// Re-load tasks from tasks.json for this scheduler only
+		Path		tasksFilePath	= getTasksFilePath();
+		IBoxContext	runtimeContext	= runtime.getRuntimeContext();
+
+		if ( java.nio.file.Files.exists( tasksFilePath ) ) {
+			Array tasks;
+			try {
+				tasks = loadTasksFromDisk();
+			} catch ( Exception e ) {
+				this.logger.error( "Failed to reload tasks for scheduler [{}] — scheduler will start empty: {}", name, e.getMessage() );
+				tasks = new Array();
+			}
+
+			for ( Object entry : tasks ) {
+				if ( ! ( entry instanceof IStruct ) ) {
+					continue;
+				}
+				IStruct	taskDef			= ( IStruct ) entry;
+
+				// Only process tasks belonging to this scheduler
+				Object	schedulerField	= taskDef.get( Key.scheduler );
+				String	taskScheduler	= schedulerField != null ? schedulerField.toString() : DEFAULT_SCHEDULER_NAME;
+				if ( !name.equalsIgnoreCase( taskScheduler ) ) {
+					continue;
+				}
+
+				String taskName = taskDef.getAsString( Key.task );
+				if ( taskName == null || taskName.isBlank() ) {
+					this.logger.warn( "Skipping persisted task with no name during reload of scheduler [{}]", name );
+					continue;
+				}
+
+				boolean paused = BooleanCaster.cast( taskDef.getOrDefault( Key.paused, false ) );
+
+				// Get or create the (now-empty) scheduler
+				if ( !hasScheduler( schedulerName ) ) {
+					BaseScheduler s = new BaseScheduler( name, runtimeContext );
+					registerScheduler( s, false );
+				}
+				BaseScheduler scheduler = ( BaseScheduler ) getScheduler( schedulerName );
+
+				decryptTaskCredentials( taskDef );
+
+				Runnable		callable		= ortus.boxlang.runtime.components.async.Schedule.buildTaskCallable( runtimeContext, taskDef );
+				String			group			= taskDef.getAsString( Key.group );
+				ScheduledTask	scheduledTask	= scheduler.task( taskName, group != null ? group : "" ).call( callable );
+
+				ortus.boxlang.runtime.components.async.Schedule.applyTaskConfiguration( scheduledTask, callable, taskDef, runtimeContext );
+
+				if ( paused ) {
+					scheduledTask.disable();
+				}
+
+				this.logger.info( "  + Reloaded task [{}] in scheduler [{}]", taskName, name );
+			}
+		} else {
+			this.logger.info( "+ No tasks.json found — scheduler [{}] will start empty after reload", name );
+		}
+
+		// Start the scheduler if tasks were found and a scheduler was created
+		IScheduler scheduler = getScheduler( schedulerName );
+		if ( scheduler != null ) {
+			startupScheduler( scheduler );
+			announce(
+			    BoxEvent.ON_SCHEDULER_RESTART,
+			    Struct.of( "scheduler", scheduler, "force", force, "timeout", timeout )
+			);
+			this.logger.info( "+ Scheduler [{}] reloaded from disk", name );
+		}
+
+		return this;
 	}
 
 	/**
