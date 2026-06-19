@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.config.segments;
 
 import ortus.boxlang.runtime.config.util.PropertyHelper;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -34,26 +35,34 @@ public class SchedulerConfig implements IConfigSegment {
 	 * Ex: "executor": "scheduled-tasks"
 	 * PLEASE REMEMBER TO REGISTER THE EXECUTOR IN THE RUNTIME CONFIGURATION
 	 */
-	public String	executor	= "scheduled-tasks";
+	public String	executor		= "scheduled-tasks";
 
 	/**
 	 * The name of the cache to use for server fixation and clustering.
 	 * Ex: "cache": "default"
 	 * PLEASE REMEMBER TO REGISTER THE CACHE IN THE RUNTIME CONFIGURATION
 	 */
-	public String	cacheName	= "default";
+	public String	cacheName		= "default";
 
 	/**
 	 * The array of schedulers to startup once the runtime starts up
 	 */
-	public Array	schedulers	= new Array();
+	public Array	schedulers		= new Array();
 
 	/**
 	 * The path to the JSON file where bx:schedule tasks are persisted.
 	 * Supports ${boxlang-home} and other placeholder variables.
 	 * Defaults to ${boxlang-home}/config/tasks.json.
 	 */
-	public String	tasksFile	= "${boxlang-home}/config/tasks.json";
+	public String	tasksFile		= "${boxlang-home}/config/tasks.json";
+
+	/**
+	 * When true, the scheduler service watches tasks.json for external changes and automatically
+	 * reloads all affected schedulers whenever the file is modified outside of BoxLang.
+	 * Self-writes (from bx:schedule actions) are suppressed via a grace window.
+	 * Defaults to false.
+	 */
+	public Boolean	reloadOnChange	= false;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -80,6 +89,9 @@ public class SchedulerConfig implements IConfigSegment {
 		PropertyHelper.processString( config, Key.cacheName, this.cacheName );
 		PropertyHelper.processStringOrArrayToArray( config, Key.schedulers, this.schedulers );
 		this.tasksFile = PropertyHelper.processString( config, Key.tasksFile, this.tasksFile );
+		if ( config.containsKey( Key.reloadOnChange ) ) {
+			this.reloadOnChange = BooleanCaster.cast( config.get( Key.reloadOnChange ) );
+		}
 
 		return this;
 	}
@@ -93,7 +105,8 @@ public class SchedulerConfig implements IConfigSegment {
 		    Key.executor, this.executor,
 		    Key.cacheName, this.cacheName,
 		    Key.schedulers, Array.fromList( this.schedulers ),
-		    Key.tasksFile, this.tasksFile
+		    Key.tasksFile, this.tasksFile,
+		    Key.reloadOnChange, this.reloadOnChange
 		);
 	}
 
