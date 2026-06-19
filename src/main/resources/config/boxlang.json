@@ -376,7 +376,10 @@
 		"schedulers": [],
 		// The path to the JSON file where bx:schedule tasks are persisted across restarts.
 		// Supports ${boxlang-home} and other placeholder variables.
-		"tasksFile": "${boxlang-home}/config/tasks.json"
+		"tasksFile": "${boxlang-home}/config/tasks.json",
+		// When true, the scheduler service watches tasks.json for external changes and automatically
+		// reloads all affected schedulers. Self-writes from bx:schedule actions are suppressed.
+		"reloadOnChange": false
 	},
 	// BoxLang Watcher Service
 	// Manages filesystem watchers that fire BoxLang listeners whenever files change.
