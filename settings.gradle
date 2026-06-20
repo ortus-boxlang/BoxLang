@@ -12,3 +12,20 @@ rootProject.name = "boxlang"
 // Gradle uses ':' instead of '/' to separate the path segments
 include ":src:modules:test"
 project( ":src:modules:test" ).projectDir = new File( "src/modules/test" )
+
+// BoxLang Android — portable MVC core (pure JVM, no Android SDK required).
+// Always included so it compiles/tests as part of the normal build.
+include ":runtimes:android-mvc"
+project( ":runtimes:android-mvc" ).projectDir = new File( "runtimes/android-mvc" )
+
+// BoxLang Android — AGP library + sample apps. These require the Android SDK and the
+// Android Gradle Plugin, so they are ONLY included when ANDROID_HOME / ANDROID_SDK_ROOT
+// is present. This keeps core `./gradlew build` and CI free of the Android toolchain.
+if ( System.getenv( "ANDROID_HOME" ) != null || System.getenv( "ANDROID_SDK_ROOT" ) != null ) {
+	include ":runtimes:android"
+	project( ":runtimes:android" ).projectDir = new File( "runtimes/android" )
+	include ":runtimes:android-sample-compose"
+	project( ":runtimes:android-sample-compose" ).projectDir = new File( "runtimes/android-sample-compose" )
+	include ":runtimes:android-sample-web"
+	project( ":runtimes:android-sample-web" ).projectDir = new File( "runtimes/android-sample-web" )
+}

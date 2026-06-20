@@ -1,0 +1,26 @@
+/**
+ * Test fixture handler for the BoxLang Android MVC dispatcher tests.
+ * Demonstrates the handler-first flow: actions populate rc and choose the view/layout,
+ * or relocate with a flash message.
+ */
+class {
+
+	// GET /items -> list all items
+	function list( event, rc ) {
+		event.setValue( "items", [ "Apple", "Banana", "Cherry" ] );
+		event.setView( "items/list" );
+	}
+
+	// GET /items/:id -> show one item (id arrives as a named arg AND in rc)
+	function show( event, rc, id ) {
+		event.setValue( "selectedId", id );
+		event.setView( "items/detail" );
+	}
+
+	// POST /items/add -> mutate then relocate with a flash message
+	function add( event, rc, title ) {
+		event.getFlash().put( "message", "Added: " & title );
+		event.relocate( "/items" );
+	}
+
+}

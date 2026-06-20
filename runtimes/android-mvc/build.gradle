@@ -1,0 +1,55 @@
+/**
+ * BoxLang Android MVC Core
+ *
+ * A pure-JVM, Android-independent module that contains the portable front-controller
+ * MVC framework used by the BoxLang Android runtime: the Router/RoutingService, the
+ * request event + collection (rc), the view/layout rendering engine, flash scope, and
+ * the dispatcher.
+ *
+ * Because this module has ZERO Android dependencies, it compiles and is fully unit-tested
+ * on a plain JVM (no Android SDK required). The Android library module (:runtimes:android)
+ * depends on this module and adds only the Android-specific glue (Activity, WebView,
+ * Compose). This same framework is therefore reusable across Android, web, and Lambda.
+ */
+plugins {
+	id 'java-library'
+}
+
+version = '1.0.0'
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	// The BoxLang core runtime (root project)
+	compileOnly project( ':' )
+	implementation 'org.slf4j:slf4j-api:2.0.18'
+
+	// Testing Dependencies
+	testImplementation project( ':' )
+	testImplementation "org.junit.jupiter:junit-jupiter:6.+"
+	testImplementation "org.mockito:mockito-core:5.+"
+	testImplementation "com.google.truth:truth:1.+"
+	testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+	testRuntimeOnly 'ch.qos.logback:logback-classic:1.5.32'
+}
+
+java {
+	sourceCompatibility = JavaVersion.toVersion( jdkVersion )
+	targetCompatibility = JavaVersion.toVersion( jdkVersion )
+}
+
+compileJava {
+	options.incremental = true
+	options.encoding = 'UTF-8'
+	options.debug = true
+}
+
+test {
+	useJUnitPlatform()
+	testLogging {
+		events "passed", "skipped", "failed"
+		exceptionFormat "full"
+	}
+}

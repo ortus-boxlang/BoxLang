@@ -1,0 +1,1 @@
+<bx:output><div class="items"><bx:loop array="#rc.items#" index="item">[#item#]</bx:loop></div><p class="flash">#flash.get( "message", "" )#</p></bx:output>
