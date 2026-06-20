@@ -1,0 +1,13 @@
+{
+	"// NOTE": "Android runtime config. Paths are relative to the app home (filesDir/boxlang), seeded from this bx/ payload.",
+	"modulesDirectory": [ "./modules" ],
+	"javaLibraryPaths": [ "./lib" ],
+	"mappings": {
+		"/": "./",
+		"/handlers": "./handlers",
+		"/views": "./views",
+		"/layouts": "./layouts",
+		"/models": "./models"
+	},
+	"modules": {}
+}

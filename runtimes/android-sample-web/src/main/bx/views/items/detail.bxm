@@ -1,0 +1,7 @@
+<bx:output>
+<div class="card">
+	<h2>#rc.item#</h2>
+	<p>Item ###rc.id# of the collection.</p>
+</div>
+<p><a href="/items">← Back to list</a></p>
+</bx:output>

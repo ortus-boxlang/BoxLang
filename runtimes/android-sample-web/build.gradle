@@ -1,0 +1,81 @@
+/**
+ * BoxLang Android — WebView sample app (Track 2, front-controller MVC).
+ *
+ * This is BOTH a runnable sample and the copy-to-start template. The entire app is
+ * BoxLang under src/main/bx (zero Kotlin/Java); the manifest points at the library's
+ * generic BoxAndroidApplication / BoxActivity.
+ *
+ * Requires the Android SDK (settings.gradle only includes it when ANDROID_HOME is set).
+ */
+plugins {
+	id 'com.android.application'
+}
+
+android {
+	namespace 'com.example.boxweb'
+	compileSdk 34
+
+	defaultConfig {
+		applicationId 'com.example.boxweb'
+		minSdk 26
+		targetSdk 34
+		versionCode 1
+		versionName '1.0'
+	}
+
+	compileOptions {
+		sourceCompatibility JavaVersion.VERSION_17
+		targetCompatibility JavaVersion.VERSION_17
+		coreLibraryDesugaringEnabled true
+	}
+
+	// Ship the BoxLang app payload (src/main/bx) inside the APK so the runtime can read
+	// .bx/.bxm/boxlang.json on device. It is mirrored under assets/bx at build time.
+	sourceSets {
+		main {
+			assets.srcDirs += [ "${buildDir}/boxapp-assets" ]
+		}
+	}
+
+	buildTypes {
+		release {
+			minifyEnabled true
+			proguardFiles getDefaultProguardFile( 'proguard-android-optimize.txt' ), 'proguard-rules.pro'
+		}
+	}
+}
+
+dependencies {
+	implementation project( ':runtimes:android' )
+	coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
+}
+
+/**
+ * Mirror the BoxLang app payload into an assets dir packaged into the APK.
+ */
+tasks.register( 'stageBoxApp', Copy ) {
+	from 'src/main/bx'
+	into "${buildDir}/boxapp-assets/bx"
+}
+
+/**
+ * Ahead-Of-Time compile the BoxLang sources to JVM .class files.
+ *
+ * IMPORTANT (Android execution model): ART cannot defineClass() raw bytecode at runtime,
+ * so the compiled classes must be DEXED into the APK and resolved by the normal class
+ * loader (no runtime defineClass). This task emits the bytecode; converting/merging it
+ * into the app's dex and a "preloaded" boxpiler that resolves classes via Class.forName
+ * is the runtime work tracked in workbench/proposals/boxlang-android.md.
+ */
+tasks.register( 'compileBoxLangAot', JavaExec ) {
+	group		= 'boxlang'
+	description	= 'Pre-compiles src/main/bx (.bx/.bxm) to JVM bytecode for AOT packaging.'
+	classpath	= project( ':' ).sourceSets.main.runtimeClasspath
+	mainClass	= 'ortus.boxlang.compiler.BXCompiler'
+	args		= [ '--source', "${projectDir}/src/main/bx", '--target', "${buildDir}/boxapp-classes", '--stopOnError' ]
+}
+
+// Stage the app payload before assembling; AOT runs as part of the BoxLang build chain.
+tasks.matching { it.name.startsWith( 'merge' ) && it.name.endsWith( 'Assets' ) }.configureEach {
+	dependsOn 'stageBoxApp'
+}

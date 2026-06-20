@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	WebView sample. Note there are NO app-defined Java/Kotlin classes: the manifest points
+	directly at the library's generic BoxAndroidApplication and BoxActivity. All app code
+	lives in src/main/bx (Application.bx, handlers, views, layouts).
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+	<application
+		android:name="ortus.boxlang.runtime.android.BoxAndroidApplication"
+		android:label="BoxLang Web Sample"
+		android:usesCleartextTraffic="false"
+		android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
+
+		<activity
+			android:name="ortus.boxlang.runtime.android.BoxActivity"
+			android:exported="true">
+			<intent-filter>
+				<action android:name="android.intent.action.MAIN" />
+				<category android:name="android.intent.category.LAUNCHER" />
+			</intent-filter>
+		</activity>
+
+	</application>
+
+</manifest>

@@ -1,0 +1,12 @@
+/**
+ * The default handler. The root route (/) resolves to Main.index by convention.
+ */
+class {
+
+	// GET / -> the app's first screen
+	function index( event, rc ) {
+		event.setValue( "title", "BoxLang on Android" );
+		event.setView( "main/index" );
+	}
+
+}

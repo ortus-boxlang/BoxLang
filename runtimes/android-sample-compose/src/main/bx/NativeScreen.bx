@@ -1,0 +1,44 @@
+/**
+ * Builds the native (Compose) UI as a BoxLang node tree.
+ *
+ * Demonstrates the Track 1 model: pure BoxLang authors an immutable UI tree via the UI
+ * DSL; closures wire events back to BoxLang state; the Kotlin renderer turns the tree into
+ * real Compose widgets and recomposes when state changes.
+ */
+class {
+
+	// The UI DSL factory (Java interop). Node types map 1:1 to Compose widgets.
+	variables.UI = createObject( "java", "ortus.boxlang.runtime.android.ui.UI" );
+	variables.bridge = createObject( "java", "ortus.boxlang.runtime.android.ComposeBridge$RenderState" );
+
+	/**
+	 * Build the screen's UI tree.
+	 */
+	function build() {
+		var ui = variables.UI;
+
+		return ui.column()
+			.child( ui.text( "BoxLang ❤️ Compose" ).prop( "size", 24 ) )
+			.child( ui.spacer( 16 ) )
+			.child( ui.text( "Count: " & application.count ) )
+			.child( ui.spacer( 8 ) )
+			.child(
+				ui.row()
+					.child( ui.button( "Increment" ).on( "onClick", () => increment() ) )
+					.child( ui.spacer( 8 ) )
+					.child( ui.button( "Reset" ).on( "onClick", () => reset() ) )
+			);
+	}
+
+	private function increment() {
+		application.count++;
+		// Ask the renderer to rebuild the tree (Fast-Refresh-style recomposition).
+		variables.bridge.requestRender();
+	}
+
+	private function reset() {
+		application.count = 0;
+		variables.bridge.requestRender();
+	}
+
+}

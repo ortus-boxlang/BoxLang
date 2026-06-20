@@ -1,0 +1,33 @@
+/**
+ * The Items handler — demonstrates the handler-first flow: each action runs first,
+ * populates rc, and chooses the view/layout (or relocates with a flash message).
+ */
+class {
+
+	// GET /items
+	function list( event, rc ) {
+		event.setValue( "items", application.items );
+		event.setView( "items/list" );
+	}
+
+	// GET /items/:id  (id arrives as a named arg AND in rc)
+	function show( event, rc, id ) {
+		var items = application.items;
+		event.setValue( "item", id >= 1 && id <= items.len() ? items[ id ] : "Unknown" );
+		event.setValue( "id", id );
+		event.setView( "items/detail" );
+	}
+
+	// POST /items/add  (title arrives from the submitted form)
+	function add( event, rc, title ) {
+		if ( len( trim( title ?: "" ) ) ) {
+			application.items.append( title );
+			event.getFlash().put( "message", "Added: " & title );
+		} else {
+			event.getFlash().put( "message", "Title was empty — nothing added." );
+		}
+		// Post-redirect-get: relocate back to the list.
+		event.relocate( "/items" );
+	}
+
+}

@@ -1,0 +1,20 @@
+/**
+ * The Compose-sample Application listener. Standard lifecycle plus one Android hook.
+ */
+class {
+
+	this.name = "BoxLangComposeSample";
+	this.sessionManagement = false;
+
+	function onApplicationStart() {
+		// Shared, mutable counter state for the demo screen.
+		application.count = 0;
+		return true;
+	}
+
+	// Android-specific hook (fires only because it is defined).
+	function onConfigurationChanged( newConfig ) {
+		// e.g. react to rotation / theme changes.
+	}
+
+}

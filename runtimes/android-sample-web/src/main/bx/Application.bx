@@ -1,0 +1,46 @@
+/**
+ * The BoxLang Application listener — the single place this app is wired up.
+ *
+ * Holds the standard BoxLang lifecycle methods PLUS optional Android-specific hooks, and
+ * configures the front-controller route table. There is no Java/Kotlin in this app.
+ */
+class {
+
+	// Pseudo-constructor: app settings
+	this.name = "BoxLangWebSample";
+	this.sessionManagement = false;
+
+	// ---- Routing (front controller) ----
+	function configureRouter( router ) {
+		// Root maps to the default event by convention.
+		router.setDefaultEvent( "Main.index" );
+
+		// Items resource
+		router.get( "/items" ).withName( "items" ).to( "Items.list" );
+		router.get( "/items/:id" ).to( "Items.show" );
+		router.post( "/items/add" ).to( "Items.add" );
+	}
+
+	// ---- Standard BoxLang lifecycle ----
+	function onApplicationStart() {
+		// Seed some in-memory app state for the demo.
+		application.items = [ "Apple", "Banana", "Cherry" ];
+		return true;
+	}
+
+	function onRequestStart( required string targetPage ) {
+		return true;
+	}
+
+	// ---- Android-specific lifecycle hooks (optional; fire only because defined) ----
+	function onActivityResume( event ) {
+		// e.g. refresh data when the activity returns to the foreground.
+	}
+
+	function onBackPressed( event ) {
+		// Returning false would consume the back press; returning true (default) lets
+		// Android handle it normally.
+		return true;
+	}
+
+}

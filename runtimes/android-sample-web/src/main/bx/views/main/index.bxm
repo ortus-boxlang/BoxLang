@@ -1,0 +1,6 @@
+<bx:output>
+<div class="card">
+	<p>Welcome to <strong>#rc.title#</strong> — a 100% BoxLang app running on Android.</p>
+	<p><a href="/items">View the items list →</a></p>
+</div>
+</bx:output>

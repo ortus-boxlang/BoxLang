@@ -1,0 +1,12 @@
+<bx:output>
+<bx:loop from="1" to="#rc.items.len()#" index="idx">
+	<div class="card"><a href="/items/#idx#">#rc.items[ idx ]#</a></div>
+</bx:loop>
+
+<form method="post" action="/items/add" class="card">
+	<input type="text" name="title" placeholder="New item title" />
+	<button type="submit">Add Item</button>
+</form>
+
+<p><a href="/">← Home</a></p>
+</bx:output>
