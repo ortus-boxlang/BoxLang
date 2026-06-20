@@ -1,0 +1,92 @@
+/**
+ * BoxLang Android Runtime — AGP library module (publishes an .aar).
+ *
+ * This module contains the Android-SPECIFIC glue for running BoxLang on Android:
+ * the runtime bootstrap, the generic manifest-declared Application/Activity, the WebView
+ * renderer + JS bridge, the Android lifecycle -> Application.bx hook dispatcher, and the
+ * Compose tree renderer (Kotlin). The portable, Android-free MVC framework lives in
+ * :runtimes:android-mvc and is consumed here.
+ *
+ * Requires the Android SDK + Android Gradle Plugin. settings.gradle only includes this
+ * module when ANDROID_HOME / ANDROID_SDK_ROOT is present, so the core BoxLang build and
+ * CI never need the Android toolchain.
+ *
+ * NOTE: on-device, BoxLang runs in AHEAD-OF-TIME mode (NoOp compiler) because ART cannot
+ * defineClass() raw JVM bytecode at runtime. .bx/.bxm sources are compiled to .class by
+ * BXCompiler at build time (see the consuming app's compileBoxLangAot task) and dexed
+ * into the APK by D8/R8.
+ */
+plugins {
+	id 'com.android.library'
+	id 'org.jetbrains.kotlin.android'
+}
+
+android {
+	namespace 'ortus.boxlang.runtime.android'
+	compileSdk 34
+
+	defaultConfig {
+		minSdk 26					// InMemoryDexClassLoader (hot reload) requires API 26+
+		consumerProguardFiles 'consumer-rules.pro'
+	}
+
+	compileOptions {
+		sourceCompatibility JavaVersion.VERSION_17
+		targetCompatibility JavaVersion.VERSION_17
+		// Library desugaring lets D8/R8 dex the Java 17/21 APIs BoxLang core uses.
+		coreLibraryDesugaringEnabled true
+	}
+
+	kotlinOptions {
+		jvmTarget = '17'
+	}
+
+	buildFeatures {
+		compose true
+	}
+
+	composeOptions {
+		kotlinCompilerExtensionVersion '1.5.14'
+	}
+
+	buildTypes {
+		release {
+			minifyEnabled true
+			proguardFiles getDefaultProguardFile( 'proguard-android-optimize.txt' ), 'proguard-rules.pro'
+		}
+	}
+
+	testOptions {
+		unitTests {
+			includeAndroidResources = true
+			returnDefaultValues = true
+		}
+	}
+}
+
+dependencies {
+	// Portable MVC framework (pure JVM, no Android deps)
+	api project( ':runtimes:android-mvc' )
+
+	// BoxLang runtime — on a real build this is the slim NoOp distribution.
+	// Within this repo we depend on the core project; a standalone repo would use
+	// e.g. implementation "io.boxlang:boxlang:${boxlangVersion}".
+	api project( ':' )
+
+	// Java 8+ API desugaring for ART
+	coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
+
+	// AndroidX + Compose
+	implementation 'androidx.core:core-ktx:1.13.1'
+	implementation 'androidx.appcompat:appcompat:1.7.0'
+	implementation platform( 'androidx.compose:compose-bom:2024.06.00' )
+	implementation 'androidx.compose.ui:ui'
+	implementation 'androidx.compose.material3:material3'
+	implementation 'androidx.activity:activity-compose:1.9.1'
+
+	// Unit tests (Robolectric runs Android framework classes on the JVM)
+	testImplementation 'junit:junit:4.13.2'
+	testImplementation 'org.robolectric:robolectric:4.13'
+	testImplementation 'androidx.test:core:1.6.1'
+	testImplementation 'com.google.truth:truth:1.4.4'
+}

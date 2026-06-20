@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	BoxLang Android Runtime library manifest.
+	Declares no components itself; consuming apps reference the generic
+	BoxAndroidApplication / BoxActivity in THEIR manifest. Internet permission is
+	declared here because BoxLang's batteries-included HTTP is a core selling point.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+	<uses-permission android:name="android.permission.INTERNET" />
+
+</manifest>
