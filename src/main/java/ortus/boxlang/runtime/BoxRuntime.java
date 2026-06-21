@@ -906,7 +906,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 * @param factory the factory to use
 	 */
 	public static void setClassLoaderFactory( IClassLoaderFactory factory ) {
-		classLoaderFactory = factory;
+		classLoaderFactory = java.util.Objects.requireNonNull( factory, "ClassLoaderFactory cannot be null" );
 	}
 
 	/**
