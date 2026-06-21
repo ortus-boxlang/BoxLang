@@ -64,6 +64,22 @@ var toast = createObject( "java", "android.widget.Toast" );
 // ... or inject the Activity/Context through a handler argument and call SDK APIs directly.
 ```
 
+## BoxLang modules
+
+Drop modules under `src/main/bx/modules/<name>` (auto-registered via `modulesDirectory`).
+On Android each module keeps its **own isolated class loader** — the desktop model preserved
+via per-module DEX:
+
+- **Build:** each module's `.bx` is AOT-compiled + extracted, then packaged with its
+  `libs/*.jar` and resources (`META-INF/services`, descriptor, templates) and `d8`-converted to
+  `assets/modules/<name>.jar` (a `classes.dex` + resources archive).
+- **Runtime:** an `AndroidModuleClassLoader` (a `DexClassLoader`) loads each module archive,
+  parented to the runtime loader — giving isolation, hierarchy, and working `ServiceLoader`
+  discovery of the module's BIFs/components/interceptors.
+
+Pure-`.bx` modules just work; modules carrying Java libs are dexed in at build time. See the
+proposal's "BoxLang modules" section for the full design and the remaining device-wiring hook.
+
 ## Hot reload (dev)
 
 Run the dev server, then edit `.bxm`/`.bx` and watch the app update without a reinstall

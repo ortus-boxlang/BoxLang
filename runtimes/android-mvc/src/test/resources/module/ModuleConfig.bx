@@ -1,0 +1,20 @@
+/**
+ * Fixture BoxLang module descriptor for the Android per-module class-loading tests.
+ */
+class {
+
+	this.title		= "Test Module";
+	this.author		= "Ortus";
+	this.version	= "1.0.0";
+
+	function configure() {
+		// Module settings would go here.
+	}
+
+	function onLoad() {
+	}
+
+	function onUnload() {
+	}
+
+}

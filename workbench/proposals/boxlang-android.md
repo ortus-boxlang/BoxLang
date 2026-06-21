@@ -78,7 +78,8 @@ The build-side AOT is wired in both samples: `compileBoxLangAot` (→ containers
   wrap in a layout), and the `MVCDispatcher` front controller (handler-first → render). Plus
   the Compose `UINode`/`UI` UI-tree model.
 - **AOT class pipeline** (`:runtimes:android-mvc`, package `…android.aot`, JVM-tested):
-  `BoxClassExtractor`, `PreloadedClassLoader`, `PreloadedBoxpiler` (see §3).
+  `BoxClassExtractor`, `PreloadedClassLoader`, `PreloadedBoxpiler` (see §3), plus
+  `ModuleArchiver` + `AndroidModuleClassLoader` for per-module DEX isolation (see §5b).
 - **Android runtime glue** (`:runtimes:android`, AGP library, SDK-gated): `AndroidBoxRuntime`
   (boot + asset seeding + config), generic manifest-declared `BoxAndroidApplication` /
   `BoxActivity`, `AndroidLifecycleDispatcher` (optional `Application.bx` Android hooks),
@@ -102,6 +103,44 @@ ColdBox flow: route → **handler action runs first** → populates `rc` and cho
 into a `WebView`. Forms and links are captured **in-process** (JS bridge for POST, URL
 interception for GET/links) and dispatched as synthetic BoxLang requests — **no web server,
 no socket**.
+
+## 5b. BoxLang modules — per-module DEX isolation
+
+BoxLang modules use a class-loader hierarchy for isolation: `ModuleService` gives each module
+its own `DynamicClassLoader` (a `URLClassLoader`) parented to the runtime loader, over the
+module directory + its `libs/*.jar`. On Android that breaks twice (no `URLClassLoader`; no
+runtime `defineClass`). The Android strategy **preserves the same isolation model** using the
+one runtime class-loading mechanism ART *does* allow: **DEX loading** via `DexClassLoader`
+(API 26+).
+
+**Build (per module):**
+1. AOT-compile the module's `.bx` (`ModuleConfig.bx`, `bifs/`, `components/`, `models/`) →
+   `.class` (`BXCompiler` + `BoxClassExtractor`).
+2. Package those classes + the module's resources — `META-INF/services`, descriptor,
+   templates, `public/` — and its `libs/*.jar` contents into one archive (`ModuleArchiver`).
+3. Run `d8` over that archive → `assets/modules/<name>.jar` containing `classes.dex` **plus**
+   the retained resources.
+
+**Runtime (per module):** `AndroidModuleClassLoader extends DexClassLoader`, over
+`modules/<name>.jar`, parented to the runtime loader. This reproduces the desktop model
+exactly:
+- **Isolation** — each module has its own loader; module A's lib version can't clash with B's.
+- **Hierarchy** — parent = runtime, so modules see core but not each other.
+- **ServiceLoader** — the archive carries `META-INF/services`, so
+  `ServiceLoader.load( BIF.class, moduleLoader )` still discovers the module's providers. (This
+  is why each module ships a *jar-with-dex*, not a bare `.dex` — a bare dex can't carry the
+  service resources `ServiceLoader` needs.)
+
+**Built + JVM-tested now** (`…android.aot`): `ModuleArchiver` (packages a module into one
+archive) and `ModuleAOTTest` — compiles a fixture `ModuleConfig.bx`, packages it with its
+`META-INF/services`, and proves via an isolated loader (the JVM stand-in for `DexClassLoader`)
+that the module class loads in its own loader and its service resources are discoverable.
+`AndroidModuleClassLoader` (the `DexClassLoader` wrapper) ships in `:runtimes:android`.
+
+**The remaining core hook** (parallel to §3): make `ModuleRecord` build an
+`AndroidModuleClassLoader` instead of hard-coding `new DynamicClassLoader(...)` under the
+Android runtime — a small, contained change best verified on an emulator. The build-side
+`d8`-per-module Gradle step is documented for the samples.
 
 ## 6. Application.bx lifecycle
 
@@ -142,6 +181,8 @@ React-Native-style Fast Refresh. Gated behind `boxlang.dev=true`; never in relea
 - **`ClassInfo` loader hook** (the one remaining core change, §3) so `PreloadedBoxpiler`
   is wired on device; verify on an emulator. (`BoxClassExtractor` + `PreloadedClassLoader`
   + `PreloadedBoxpiler` and the build-side AOT are done.)
+- **`ModuleRecord` loader hook** (§5b) so modules build an `AndroidModuleClassLoader`; plus
+  the `d8`-per-module Gradle step. (`ModuleArchiver` + `AndroidModuleClassLoader` are done.)
 - `AndroidRuntimeConfig` service-disable defaults; method-count/R8 tuning.
 - WireBox-lite DI, constraint validation, REST/JSON rendering, security guards, i18n
   (the framework roadmap deferred from the MVC core).
