@@ -72,10 +72,20 @@ tasks.register( 'stageBoxApp', Copy ) {
 /** See the WebView sample for notes on the on-device AOT execution model. */
 tasks.register( 'compileBoxLangAot', JavaExec ) {
 	group		= 'boxlang'
-	description	= 'Pre-compiles src/main/bx (.bx) to JVM bytecode for AOT packaging.'
+	description	= 'Pre-compiles src/main/bx (.bx) to the BoxLang class container.'
 	classpath	= project( ':' ).sourceSets.main.runtimeClasspath
 	mainClass	= 'ortus.boxlang.compiler.BXCompiler'
-	args		= [ '--source', "${projectDir}/src/main/bx", '--target', "${buildDir}/boxapp-classes", '--stopOnError' ]
+	args		= [ '--source', "${projectDir}/src/main/bx", '--target', "${buildDir}/boxapp-containers", '--stopOnError' ]
+}
+
+/** Extract AOT containers into standard .class files for D8/R8. */
+tasks.register( 'extractBoxLangClasses', JavaExec ) {
+	group		= 'boxlang'
+	description	= 'Extracts AOT containers into standard .class files for D8/R8.'
+	dependsOn 'compileBoxLangAot'
+	classpath	= project( ':runtimes:android-mvc' ).sourceSets.main.runtimeClasspath + files( project( ':runtimes:android-mvc' ).sourceSets.main.output )
+	mainClass	= 'ortus.boxlang.runtime.android.aot.BoxClassExtractor'
+	args		= [ "${buildDir}/boxapp-containers", "${buildDir}/boxapp-dexable" ]
 }
 
 tasks.matching { it.name.startsWith( 'merge' ) && it.name.endsWith( 'Assets' ) }.configureEach {

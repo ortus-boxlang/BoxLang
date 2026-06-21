@@ -59,20 +59,31 @@ tasks.register( 'stageBoxApp', Copy ) {
 }
 
 /**
- * Ahead-Of-Time compile the BoxLang sources to JVM .class files.
+ * Step 1 of AOT: compile the BoxLang sources to the BoxLang class container format.
  *
- * IMPORTANT (Android execution model): ART cannot defineClass() raw bytecode at runtime,
- * so the compiled classes must be DEXED into the APK and resolved by the normal class
- * loader (no runtime defineClass). This task emits the bytecode; converting/merging it
- * into the app's dex and a "preloaded" boxpiler that resolves classes via Class.forName
- * is the runtime work tracked in workbench/proposals/boxlang-android.md.
+ * Android execution model: ART cannot defineClass() raw bytecode at runtime, so the
+ * compiled classes must be DEXED into the APK and resolved by the app class loader
+ * (PreloadedBoxpiler / PreloadedClassLoader — no runtime defineClass).
  */
 tasks.register( 'compileBoxLangAot', JavaExec ) {
 	group		= 'boxlang'
-	description	= 'Pre-compiles src/main/bx (.bx/.bxm) to JVM bytecode for AOT packaging.'
+	description	= 'Pre-compiles src/main/bx (.bx/.bxm) to the BoxLang class container.'
 	classpath	= project( ':' ).sourceSets.main.runtimeClasspath
 	mainClass	= 'ortus.boxlang.compiler.BXCompiler'
-	args		= [ '--source', "${projectDir}/src/main/bx", '--target', "${buildDir}/boxapp-classes", '--stopOnError' ]
+	args		= [ '--source', "${projectDir}/src/main/bx", '--target', "${buildDir}/boxapp-containers", '--stopOnError' ]
+}
+
+/**
+ * Step 2 of AOT: extract the containers into individual .class files so AGP's D8/R8 dexes
+ * them into the APK. The output dir is added to the app's compiled classes.
+ */
+tasks.register( 'extractBoxLangClasses', JavaExec ) {
+	group		= 'boxlang'
+	description	= 'Extracts AOT containers into standard .class files for D8/R8.'
+	dependsOn 'compileBoxLangAot'
+	classpath	= project( ':runtimes:android-mvc' ).sourceSets.main.runtimeClasspath + files( project( ':runtimes:android-mvc' ).sourceSets.main.output )
+	mainClass	= 'ortus.boxlang.runtime.android.aot.BoxClassExtractor'
+	args		= [ "${buildDir}/boxapp-containers", "${buildDir}/boxapp-dexable" ]
 }
 
 // Stage the app payload before assembling; AOT runs as part of the BoxLang build chain.

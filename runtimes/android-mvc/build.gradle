@@ -25,6 +25,8 @@ dependencies {
 	// The BoxLang core runtime (root project)
 	compileOnly project( ':' )
 	implementation 'org.slf4j:slf4j-api:2.0.18'
+	// ASM: used by BoxClassExtractor to read class internal names from AOT output.
+	implementation 'org.ow2.asm:asm:9.9.1'
 
 	// Testing Dependencies
 	testImplementation project( ':' )
