@@ -46,7 +46,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
-public class DynamicClassLoader extends URLClassLoader {
+public class DynamicClassLoader extends URLClassLoader implements IModuleClassLoader {
 
 	/**
 	 * The name of the class loader as a {@link Key}
@@ -162,6 +162,16 @@ public class DynamicClassLoader extends URLClassLoader {
 	 */
 	public Key getNameAsKey() {
 		return this.nameAsKey;
+	}
+
+	/**
+	 * {@inheritDoc}
+	 *
+	 * @return This loader as a {@link ClassLoader}
+	 */
+	@Override
+	public ClassLoader toClassLoader() {
+		return this;
 	}
 
 	/**

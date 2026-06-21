@@ -32,7 +32,6 @@ import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
-import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ThreadScope;
@@ -79,7 +78,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	/**
 	 * The request class loader
 	 */
-	private DynamicClassLoader									requestClassLoader		= null;
+	private ClassLoader											requestClassLoader		= null;
 
 	/**
 	 * Flag to enforce explicit output
@@ -281,7 +280,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 *
 	 * @return The class loader
 	 */
-	public DynamicClassLoader getRequestClassLoader() {
+	public ClassLoader getRequestClassLoader() {
 		if ( this.requestClassLoader != null ) {
 			return this.requestClassLoader;
 		}
