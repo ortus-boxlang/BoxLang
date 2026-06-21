@@ -98,41 +98,15 @@ public class BoxWebViewRenderer {
 	}
 
 	/**
-	 * Parse a query string into an {@link IStruct} for GET routing.
-	 *
-	 * @param uri The URI possibly containing a query string
-	 *
-	 * @return The parsed params (never {@code null})
-	 */
-	static IStruct parseQuery( String uri ) {
-		IStruct	params	= new Struct();
-		int		q		= uri.indexOf( '?' );
-		if ( q < 0 || q == uri.length() - 1 ) {
-			return params;
-		}
-		for ( String pair : uri.substring( q + 1 ).split( "&" ) ) {
-			int eq = pair.indexOf( '=' );
-			if ( eq > 0 ) {
-				params.put( Key.of( pair.substring( 0, eq ) ), pair.substring( eq + 1 ) );
-			}
-		}
-		return params;
-	}
-
-	static String pathOf( String uri ) {
-		int q = uri.indexOf( '?' );
-		return q < 0 ? uri : uri.substring( 0, q );
-	}
-
-	/**
-	 * Intercepts link navigation / GET forms and routes them in-process.
+	 * Intercepts link navigation / GET forms and routes them in-process. The full URL
+	 * (including any query string) is handed to the dispatcher, which parses it into rc.
 	 */
 	private final class RouterClient extends WebViewClient {
 
 		@Override
 		public boolean shouldOverrideUrlLoading( WebView view, WebResourceRequest request ) {
 			String url = request.getUrl().toString().replaceFirst( "^https?://boxlang\\.local", "" );
-			navigate( pathOf( url ), "GET", parseQuery( url ) );
+			navigate( url, "GET", null );
 			return true;		// handled in-process
 		}
 
@@ -151,7 +125,7 @@ public class BoxWebViewRenderer {
 		public void submit( String route, String json ) {
 			IStruct params = JSONToStruct( json );
 			// WebView callbacks run on a JS thread; marshal back to the UI thread.
-			webView.post( () -> navigate( pathOf( route ), "POST", params ) );
+			webView.post( () -> navigate( route, "POST", params ) );
 		}
 
 		private IStruct JSONToStruct( String json ) {

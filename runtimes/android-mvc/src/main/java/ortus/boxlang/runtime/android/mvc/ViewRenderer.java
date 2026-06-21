@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.scopes.Key;
  * string of HTML for the WebView track.
  * <p>
  * The flow mirrors ColdBox: the chosen view (under {@code viewsRoot}) is executed against
- * the request context with {@code event}, {@code rc}, and {@code flash} injected into the
+ * the request context with {@code event} and {@code rc} injected into the
  * variables scope and the produced markup captured to a string; that string is then exposed
  * as the {@code renderedView} variable and the chosen layout (under {@code layoutsRoot}) is
  * executed to wrap it. A layout simply outputs {@code #renderedView#} where the view content
@@ -44,7 +44,6 @@ public class ViewRenderer {
 
 	private static final Key	EVENT			= Key.of( "event" );
 	private static final Key	RC				= Key.of( "rc" );
-	private static final Key	FLASH			= Key.of( "flash" );
 
 	/**
 	 * The runtime used to execute templates.
@@ -171,7 +170,6 @@ public class ViewRenderer {
 		IScope variables = variables( context );
 		variables.put( EVENT, event );
 		variables.put( RC, event.getCollection() );
-		variables.put( FLASH, event.getFlash() );
 	}
 
 	private IScope variables( IBoxContext context ) {

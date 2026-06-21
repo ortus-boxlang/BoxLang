@@ -37,8 +37,8 @@ class {
     }
     function add( event, rc, title ) {
         application.items.append( title );
-        event.getFlash().put( "message", "Added: " & title );
-        event.relocate( "/items" );          // post-redirect-get
+        // No flash/session needed — carry the notice on the query string.
+        event.relocate( "/items?notice=" & urlEncodedFormat( "Added: " & title ) );
     }
 }
 ```
@@ -48,7 +48,7 @@ class {
 ```html
 <!-- layouts/main.bxm -->
 <bx:output><html><body>
-  <bx:if flash.exists( "message" )><p class="flash">#flash.get( "message" )#</p></bx:if>
+  <bx:if rc.keyExists( "notice" )><p class="flash">#encodeForHTML( rc.notice )#</p></bx:if>
   <main>#renderedView#</main>
 </body></html></bx:output>
 
@@ -72,9 +72,9 @@ class {
 ./gradlew :app:installDebug
 ```
 
-Tap an item → `Items.show` renders the detail. Submit the form → `Items.add` runs, stages a
-flash message, and relocates to `/items`, where the list re-renders with the new item and the
-flash banner. All in-process — no server.
+Tap an item → `Items.show` renders the detail. Submit the form → `Items.add` runs, appends
+the item, and relocates to `/items?notice=...`; the dispatcher parses the query into `rc`,
+so the list re-renders with the new item and the notice banner. All in-process — no server.
 
 > **How it works:** the JS bridge captures the POST form and calls into the runtime; link taps
 > are intercepted and routed. Both go through the same `Application.bx` request lifecycle.

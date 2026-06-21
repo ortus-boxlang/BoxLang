@@ -41,8 +41,8 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  * chosen layout (with {@code rc} in scope) and return the HTML.</li>
  * </ol>
  * The action receives the {@link MVCEvent} as {@code event}, the collection as {@code rc},
- * the {@link FlashScope} as {@code flash}, and every {@code rc} entry as a matching named
- * argument (so {@code function show( required numeric id )} just works for {@code /items/42}).
+ * and every {@code rc} entry as a matching named argument (so
+ * {@code function show( required numeric id )} just works for {@code /items/42}).
  * <p>
  * Android-free: depends only on the BoxLang core runtime, so it is unit-testable on a plain JVM.
  */
@@ -54,7 +54,7 @@ public class MVCDispatcher {
 	private final BoxRuntime		runtime;
 
 	/**
-	 * The routing service (router + flash).
+	 * The routing service (owns the router).
 	 */
 	private final RoutingService	routingService;
 
@@ -105,21 +105,19 @@ public class MVCDispatcher {
 	 * @return The {@link DispatchResult} (rendered HTML or relocate target)
 	 */
 	public DispatchResult dispatch( IBoxContext context, String path, String method, IStruct params ) {
-		// Rotate flash so this request can read what the previous request staged.
-		FlashScope flash = this.routingService.getFlash();
-		flash.persist();
+		// 1. Split any query string off the path and resolve the route.
+		String		cleanPath	= pathOf( path );
+		RouteMatch	match		= this.routingService.resolve( cleanPath, method );
 
-		// 1. Resolve route
-		RouteMatch	match	= this.routingService.resolve( path, method );
-
-		// 2. Build the request collection (rc): incoming params first, then path placeholders.
-		IStruct		rc		= new Struct();
+		// 2. Build the request collection (rc): query string, incoming params, then path placeholders.
+		IStruct		rc			= new Struct();
+		parseQueryInto( path, rc );
 		if ( params != null ) {
 			rc.putAll( params );
 		}
 		match.getParams().forEach( ( key, value ) -> rc.put( Key.of( key ), value ) );
 
-		MVCEvent event = new MVCEvent( rc, method, flash );
+		MVCEvent event = new MVCEvent( rc, method );
 		event.setCurrentEvent( match.getEvent() );
 
 		// 3. Run the handler action FIRST.
@@ -158,8 +156,8 @@ public class MVCDispatcher {
 	}
 
 	/**
-	 * Build the named-argument map delivered to the action: {@code event}, {@code rc},
-	 * {@code flash}, plus every {@code rc} entry as its own named argument.
+	 * Build the named-argument map delivered to the action: {@code event}, {@code rc}, plus
+	 * every {@code rc} entry as its own named argument.
 	 *
 	 * @param event The MVC event
 	 *
@@ -169,10 +167,45 @@ public class MVCDispatcher {
 		Map<Key, Object> args = new LinkedHashMap<>();
 		args.put( Key.of( "event" ), event );
 		args.put( Key.of( "rc" ), event.getCollection() );
-		args.put( Key.of( "flash" ), event.getFlash() );
 		// Spread rc entries so actions can declare them as explicit params.
 		event.getCollection().forEach( args::put );
 		return args;
+	}
+
+	/**
+	 * @param uri A path possibly containing a query string
+	 *
+	 * @return The path portion (everything before {@code ?})
+	 */
+	static String pathOf( String uri ) {
+		int q = uri.indexOf( '?' );
+		return q < 0 ? uri : uri.substring( 0, q );
+	}
+
+	/**
+	 * Parse a URL query string into the given collection (URL-decoded).
+	 *
+	 * @param uri    A path possibly containing a query string
+	 * @param target The collection to populate
+	 */
+	static void parseQueryInto( String uri, IStruct target ) {
+		int q = uri.indexOf( '?' );
+		if ( q < 0 || q == uri.length() - 1 ) {
+			return;
+		}
+		for ( String pair : uri.substring( q + 1 ).split( "&" ) ) {
+			int eq = pair.indexOf( '=' );
+			if ( eq > 0 ) {
+				target.put(
+				    Key.of( urlDecode( pair.substring( 0, eq ) ) ),
+				    urlDecode( pair.substring( eq + 1 ) )
+				);
+			}
+		}
+	}
+
+	private static String urlDecode( String value ) {
+		return java.net.URLDecoder.decode( value, java.nio.charset.StandardCharsets.UTF_8 );
 	}
 
 	/**

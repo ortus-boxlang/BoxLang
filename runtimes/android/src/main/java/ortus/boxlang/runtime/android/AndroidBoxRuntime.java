@@ -135,7 +135,7 @@ public final class AndroidBoxRuntime {
 	}
 
 	/**
-	 * @return The routing service (router + flash)
+	 * @return The routing service (owns the router)
 	 */
 	public RoutingService getRoutingService() {
 		return this.routingService;

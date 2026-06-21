@@ -29,27 +29,27 @@ Fluent route table + resolution.
   `/users` → `Users.index`.
 
 ### `RoutingService` (IService)
-Owns the `Router` + per-runtime `FlashScope`. Registered like any BoxLang service.
+Owns the `Router`. Registered like any BoxLang service.
 
 ### `MVCEvent` — the `event` object
 - Collection: `getCollection()` / `getRC()`, `getValue(k[,default])`, `setValue(k,v)`,
   `valueExists(k)`.
 - Rendering: `setView(name)`, `getView()`, `setLayout(name)`, `getLayout()`, `noLayout()`.
 - Redirect: `relocate(target)`, `isRelocating()`, `getRelocateTarget()`.
-- `getFlash()`, `getHTTPMethod()`, `getCurrentEvent()`.
+- `getHTTPMethod()`, `getCurrentEvent()`.
 
-### `FlashScope`
-One-hop persistence: `put(k,v)` (stages for next request), `get(k[,default])`, `exists(k)`,
-`keep()`, `clear()`. The dispatcher calls `persist()` at the start of each request.
+> There is no flash/session scope — this is a single in-process app. To carry data across a
+> `relocate()`, append it to the query string (e.g. `relocate("/items?notice=...")`); the
+> dispatcher parses query strings into `rc` automatically.
 
 ### `MVCDispatcher`
-`dispatch(context, path, method, params)` → `DispatchResult`. Flow: resolve route → build
-`rc` → **run handler action first** → relocate or render view-in-layout. The action receives
-`event`, `rc`, `flash`, and every `rc` entry as a named argument.
+`dispatch(context, path, method, params)` → `DispatchResult`. Flow: parse query string →
+resolve route → build `rc` → **run handler action first** → relocate or render
+view-in-layout. The action receives `event`, `rc`, and every `rc` entry as a named argument.
 
 ### `ViewRenderer`
 `render(context, event)` renders the view (under `viewsRoot`) and wraps it in the layout
-(under `layoutsRoot`), exposing `event`, `rc`, `flash` to templates and the view markup as
+(under `layoutsRoot`), exposing `event` and `rc` to templates and the view markup as
 `renderedView` to the layout. `renderView(...)`, `renderTemplate(context, absPath)`.
 
 ## Compose UI tree (`ortus.boxlang.runtime.android.ui`)

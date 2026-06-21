@@ -17,8 +17,8 @@
 </head>
 <body>
 	<header>📦 BoxLang Items</header>
-	<bx:if flash.exists( "message" )>
-		<div class="flash">#flash.get( "message" )#</div>
+	<bx:if rc.keyExists( "notice" )>
+		<div class="flash">#encodeForHTML( rc.notice )#</div>
 	</bx:if>
 	<main>#renderedView#</main>
 </body>

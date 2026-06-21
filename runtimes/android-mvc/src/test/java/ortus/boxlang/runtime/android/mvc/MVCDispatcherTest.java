@@ -87,7 +87,7 @@ class MVCDispatcherTest {
 		IStruct rc = new Struct();
 		rc.put( Key.of( "items" ), new Object[] { "Apple", "Banana" } );
 
-		MVCEvent event = new MVCEvent( rc, "GET", new FlashScope() );
+		MVCEvent event = new MVCEvent( rc, "GET" );
 		event.setView( "items/list" );
 
 		String html = this.viewRenderer.render( this.context, event );
@@ -106,7 +106,7 @@ class MVCDispatcherTest {
 		IStruct rc = new Struct();
 		rc.put( Key.of( "items" ), new Object[] { "Solo" } );
 
-		MVCEvent event = new MVCEvent( rc, "GET", new FlashScope() );
+		MVCEvent event = new MVCEvent( rc, "GET" );
 		event.setView( "items/list" ).noLayout();
 
 		String html = this.viewRenderer.render( this.context, event );
@@ -143,22 +143,29 @@ class MVCDispatcherTest {
 		DispatchResult result = this.dispatcher.dispatch( this.context, "/items/add", "POST", params );
 
 		assertThat( result.isRelocate() ).isTrue();
-		assertThat( result.getRelocateTarget() ).isEqualTo( "/items" );
+		assertThat( result.getRelocateTarget() ).startsWith( "/items?notice=" );
 		assertThat( result.getHtml() ).isNull();
 	}
 
-	@DisplayName( "A flash message set before relocate is readable on the next request" )
+	@DisplayName( "A relocate can carry data via the query string (no flash/session needed)" )
 	@Test
-	void testFlashAcrossRelocate() {
+	void testNoticeAcrossRelocate() {
 		IStruct params = new Struct();
 		params.put( Key.of( "title" ), "Widget" );
 
-		// Request 1: POST that stages a flash message and relocates.
+		// Request 1: POST that relocates with a notice in the query string.
 		DispatchResult post = this.dispatcher.dispatch( this.context, "/items/add", "POST", params );
 		assertThat( post.isRelocate() ).isTrue();
 
-		// Request 2: the relocated GET should see the flash message in the rendered view.
+		// Request 2: the relocated GET parses the query string into rc and renders it.
 		DispatchResult get = this.dispatcher.dispatch( this.context, post.getRelocateTarget(), "GET", null );
 		assertThat( get.getHtml() ).contains( "Added: Widget" );
+	}
+
+	@DisplayName( "Query-string parameters are parsed into rc" )
+	@Test
+	void testQueryStringIntoRC() {
+		DispatchResult result = this.dispatcher.dispatch( this.context, "/items?notice=Hello%20World", "GET", null );
+		assertThat( result.getHtml() ).contains( "Hello World" );
 	}
 }

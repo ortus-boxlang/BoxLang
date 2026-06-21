@@ -41,7 +41,7 @@ class MVCEventTest {
 	@DisplayName( "It defaults to the 'main' layout and no view" )
 	@Test
 	void testDefaults() {
-		MVCEvent event = new MVCEvent( "GET", null );
+		MVCEvent event = new MVCEvent( "GET" );
 		assertThat( event.getLayout() ).isEqualTo( MVCEvent.DEFAULT_LAYOUT );
 		assertThat( event.getView() ).isNull();
 		assertThat( event.isNoLayout() ).isFalse();
@@ -52,7 +52,7 @@ class MVCEventTest {
 	@DisplayName( "setView and setLayout drive what gets rendered" )
 	@Test
 	void testSetViewAndLayout() {
-		MVCEvent event = new MVCEvent( "GET", null );
+		MVCEvent event = new MVCEvent( "GET" );
 		event.setView( "items/show" ).setLayout( "admin" );
 
 		assertThat( event.getView() ).isEqualTo( "items/show" );
@@ -62,7 +62,7 @@ class MVCEventTest {
 	@DisplayName( "noLayout() suppresses the layout" )
 	@Test
 	void testNoLayout() {
-		MVCEvent event = new MVCEvent( "GET", null );
+		MVCEvent event = new MVCEvent( "GET" );
 		event.setView( "fragment" ).noLayout();
 		assertThat( event.isNoLayout() ).isTrue();
 	}
@@ -73,7 +73,7 @@ class MVCEventTest {
 		Struct seed = new Struct();
 		seed.put( Key.of( "id" ), "42" );
 
-		MVCEvent event = new MVCEvent( seed, "GET", null );
+		MVCEvent event = new MVCEvent( seed, "GET" );
 		assertThat( event.getValue( "id" ) ).isEqualTo( "42" );
 		assertThat( event.valueExists( "id" ) ).isTrue();
 
@@ -86,24 +86,16 @@ class MVCEventTest {
 	@DisplayName( "getValue returns the default when the key is absent" )
 	@Test
 	void testGetValueDefault() {
-		MVCEvent event = new MVCEvent( "GET", null );
+		MVCEvent event = new MVCEvent( "GET" );
 		assertThat( event.getValue( "missing", "fallback" ) ).isEqualTo( "fallback" );
 	}
 
 	@DisplayName( "relocate() flags the event for redirect" )
 	@Test
 	void testRelocate() {
-		MVCEvent event = new MVCEvent( "POST", null );
+		MVCEvent event = new MVCEvent( "POST" );
 		event.relocate( "/items" );
 		assertThat( event.isRelocating() ).isTrue();
 		assertThat( event.getRelocateTarget() ).isEqualTo( "/items" );
-	}
-
-	@DisplayName( "The flash scope is accessible from the event" )
-	@Test
-	void testFlashAccess() {
-		FlashScope	flash	= new FlashScope();
-		MVCEvent	event	= new MVCEvent( "POST", flash );
-		assertThat( event.getFlash() ).isSameInstanceAs( flash );
 	}
 }

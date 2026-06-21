@@ -1,6 +1,6 @@
 /**
  * The Items handler — demonstrates the handler-first flow: each action runs first,
- * populates rc, and chooses the view/layout (or relocates with a flash message).
+ * populates rc, and chooses the view/layout (or relocates with a query-string notice).
  */
 class {
 
@@ -20,14 +20,16 @@ class {
 
 	// POST /items/add  (title arrives from the submitted form)
 	function add( event, rc, title ) {
+		var notice = "";
 		if ( len( trim( title ?: "" ) ) ) {
 			application.items.append( title );
-			event.getFlash().put( "message", "Added: " & title );
+			notice = "Added: " & title;
 		} else {
-			event.getFlash().put( "message", "Title was empty — nothing added." );
+			notice = "Title was empty — nothing added.";
 		}
-		// Post-redirect-get: relocate back to the list.
-		event.relocate( "/items" );
+		// Relocate back to the list, carrying the notice via the query string
+		// (no flash/session needed — this is a single in-process app).
+		event.relocate( "/items?notice=" & urlEncodedFormat( notice ) );
 	}
 
 }

@@ -11,7 +11,7 @@ Android — with batteries-included runtime (HTTP, JSON, async, caching) and 100
   choosing a UI track, HTTP/JSON/async, SDK interop, hot reload, build & deploy.
 - **[reference.md](reference.md)** — API reference: `AndroidBoxRuntime`, `BoxActivity`, the
   `Application.bx` lifecycle (standard + Android hooks), the MVC front controller
-  (router, `event`/`rc`, `setView`/`setLayout`, flash), the Compose UI-tree DSL, the
+  (router, `event`/`rc`, `setView`/`setLayout`, relocate), the Compose UI-tree DSL, the
   starter-template layout, the AOT task, config keys, and R8 keep rules.
 - **[tutorial.md](tutorial.md)** — Build a real list+detail app, shown **twice** (WebView and
   Compose tracks), plus a limitations & gotchas section.

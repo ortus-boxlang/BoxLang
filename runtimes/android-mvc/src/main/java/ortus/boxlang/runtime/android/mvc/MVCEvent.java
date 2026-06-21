@@ -76,18 +76,12 @@ public class MVCEvent {
 	private final String		httpMethod;
 
 	/**
-	 * The flash scope (survives one request hop).
-	 */
-	private final FlashScope	flash;
-
-	/**
 	 * Construct an event with a fresh, empty request collection.
 	 *
 	 * @param httpMethod The HTTP method of the request (may be {@code null})
-	 * @param flash      The flash scope (may be {@code null})
 	 */
-	public MVCEvent( String httpMethod, FlashScope flash ) {
-		this( new Struct(), httpMethod, flash );
+	public MVCEvent( String httpMethod ) {
+		this( new Struct(), httpMethod );
 	}
 
 	/**
@@ -95,12 +89,10 @@ public class MVCEvent {
 	 *
 	 * @param rc         The request collection (must not be {@code null})
 	 * @param httpMethod The HTTP method of the request (may be {@code null})
-	 * @param flash      The flash scope (may be {@code null})
 	 */
-	public MVCEvent( IStruct rc, String httpMethod, FlashScope flash ) {
+	public MVCEvent( IStruct rc, String httpMethod ) {
 		this.rc			= rc == null ? new Struct() : rc;
 		this.httpMethod	= httpMethod == null ? null : httpMethod.toUpperCase();
-		this.flash		= flash == null ? new FlashScope() : flash;
 	}
 
 	/**
@@ -271,12 +263,5 @@ public class MVCEvent {
 	 */
 	public String getCurrentEvent() {
 		return this.currentEvent;
-	}
-
-	/**
-	 * @return The flash scope
-	 */
-	public FlashScope getFlash() {
-		return this.flash;
 	}
 }
