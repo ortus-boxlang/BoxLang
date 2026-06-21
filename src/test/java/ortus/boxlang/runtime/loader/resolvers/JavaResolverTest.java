@@ -235,14 +235,16 @@ public class JavaResolverTest extends AbstractResolverTest {
 	@DisplayName( "It can load libs from the 'home/libs' convention" )
 	@Test
 	void testItCanLoadLibsFromHomeLibs() throws IOException {
-		IBoxContext	ctx			= new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
-		Path		homeLibs	= Path.of( "src/test/resources/libs" ).toAbsolutePath();
+		IBoxContext			ctx				= new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
+		Path				homeLibs		= Path.of( "src/test/resources/libs" ).toAbsolutePath();
 
-		runtime.getRuntimeLoader().addURLs(
+		// On the JVM the runtime loader is a DynamicClassLoader; cast to seed it with jars.
+		DynamicClassLoader	runtimeLoader	= ( DynamicClassLoader ) runtime.getRuntimeLoader();
+		runtimeLoader.addURLs(
 		    DynamicClassLoader.getJarURLs( homeLibs )
 		);
 
-		System.out.println( Arrays.toString( runtime.getRuntimeLoader().getURLs() ) );
+		System.out.println( Arrays.toString( runtimeLoader.getURLs() ) );
 
 		String					targetClass	= "com.github.benmanes.caffeine.cache.Caffeine";
 		Optional<ClassLocation>	location	= javaResolver.resolve( ctx, targetClass );

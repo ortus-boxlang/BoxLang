@@ -30,7 +30,6 @@ import ortus.boxlang.runtime.config.Configuration;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocation;
 import ortus.boxlang.runtime.loader.ClassLocator;
-import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.loader.util.ClassDiscovery;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
@@ -306,7 +305,7 @@ public class BaseResolver implements IClassResolver {
 	 *
 	 * @return The BL system class loader
 	 */
-	protected static DynamicClassLoader getSystemClassLoader() {
+	protected static ClassLoader getSystemClassLoader() {
 		return BoxRuntime.getInstance().getRuntimeLoader();
 	}
 

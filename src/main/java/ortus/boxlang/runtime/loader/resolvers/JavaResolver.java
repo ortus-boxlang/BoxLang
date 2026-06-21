@@ -31,7 +31,6 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.loader.ClassLocation;
 import ortus.boxlang.runtime.loader.ClassLocator;
-import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ModuleService;
@@ -247,7 +246,7 @@ public class JavaResolver extends BaseResolver {
 	public Optional<ClassLocation> findFromSystem( String fullyQualifiedName, List<ImportDefinition> imports, IBoxContext context ) {
 		// Let's see if we get the request box context, so we can get the current request class loader
 		RequestBoxContext	requestContext	= context.getRequestContext();
-		DynamicClassLoader	classLoader		= ( requestContext == null ? getSystemClassLoader() : requestContext.getRequestClassLoader() );
+		ClassLoader			classLoader		= ( requestContext == null ? getSystemClassLoader() : requestContext.getRequestClassLoader() );
 
 		Class<?>			clazz;
 		try {
