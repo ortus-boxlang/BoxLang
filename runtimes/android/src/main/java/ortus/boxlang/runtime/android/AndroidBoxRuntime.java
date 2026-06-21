@@ -85,7 +85,12 @@ public final class AndroidBoxRuntime {
 		// 2. Point cache/temp at app-private storage; ART can't write to a global home.
 		System.setProperty( "boxlang.home", appHome.getAbsolutePath() );
 
-		// 3. Boot the core runtime with the bundled boxlang.json. The NoOp boxpiler is
+		// 3. Install the Android class loader factory BEFORE booting. This makes the runtime
+		// loader the app class loader and modules DexClassLoader-backed — no URLClassLoader,
+		// no runtime defineClass. Must be set before getInstance() builds the runtime loader.
+		BoxRuntime.setClassLoaderFactory( new AndroidClassLoaderFactory( context, appHome ) );
+
+		// 4. Boot the core runtime with the bundled boxlang.json. The NoOp boxpiler is
 		// chosen automatically via ServiceLoader because it is the only one on the
 		// classpath in the Android distribution.
 		File			configFile		= new File( appHome, "boxlang.json" );
@@ -95,7 +100,7 @@ public final class AndroidBoxRuntime {
 		    appHome.getAbsolutePath()
 		);
 
-		// 4. Register the routing service and build the MVC front controller.
+		// 5. Register the routing service and build the MVC front controller.
 		RoutingService	routingService	= new RoutingService();
 		runtime.getConfiguration();		// ensure config is materialized
 

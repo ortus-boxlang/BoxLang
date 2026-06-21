@@ -23,6 +23,9 @@ import android.content.Context;
 
 import dalvik.system.DexClassLoader;
 
+import ortus.boxlang.runtime.loader.IModuleClassLoader;
+import ortus.boxlang.runtime.scopes.Key;
+
 /**
  * The Android per-module class loader — the ART-legal analog of the desktop
  * {@code DynamicClassLoader}, giving each BoxLang module its own isolated loader.
@@ -42,13 +45,16 @@ import dalvik.system.DexClassLoader;
  * <li><b>ServiceLoader</b> — the archive carries {@code META-INF/services}, so
  * {@code ServiceLoader.load( BIF.class, moduleLoader )} still discovers the module's providers.</li>
  * </ul>
+ * Implements the core {@link IModuleClassLoader} contract so {@code ModuleRecord} treats it
+ * exactly like the JVM loader (the runtime selects it via the Android
+ * {@link ortus.boxlang.runtime.loader.IClassLoaderFactory}).
  */
-public class AndroidModuleClassLoader extends DexClassLoader {
+public class AndroidModuleClassLoader extends DexClassLoader implements IModuleClassLoader {
 
 	/**
 	 * The module name this loader serves.
 	 */
-	private final String moduleName;
+	private final Key moduleName;
 
 	/**
 	 * Create a per-module loader over the module's pre-built archive.
@@ -58,20 +64,55 @@ public class AndroidModuleClassLoader extends DexClassLoader {
 	 * @param context       The Android context (used for the optimized/code-cache directory)
 	 * @param parent        The parent loader (typically the runtime loader)
 	 */
-	public AndroidModuleClassLoader( String moduleName, File moduleArchive, Context context, ClassLoader parent ) {
+	public AndroidModuleClassLoader( Key moduleName, File moduleArchive, Context context, ClassLoader parent ) {
 		super(
 		    moduleArchive.getAbsolutePath(),
-		    codeCacheDir( context, moduleName ).getAbsolutePath(),
+		    codeCacheDir( context, moduleName.getName() ).getAbsolutePath(),
 		    null,
 		    parent
 		);
 		this.moduleName = moduleName;
 	}
 
+	@Override
+	public Key getNameAsKey() {
+		return this.moduleName;
+	}
+
+	@Override
+	public ClassLoader toClassLoader() {
+		return this;
+	}
+
+	/**
+	 * Resolve a class from this module's dex, optionally delegating to the parent and failing
+	 * safe. There is no runtime {@code defineClass}: classes come from the pre-built dex.
+	 *
+	 * @param className   The fully-qualified class name
+	 * @param safe        When {@code true}, return {@code null} instead of throwing if not found
+	 * @param checkParent When {@code true}, allow parent delegation (the standard loadClass path)
+	 *
+	 * @return The class, or {@code null} when {@code safe} and not found
+	 *
+	 * @throws ClassNotFoundException If not found and not {@code safe}
+	 */
+	@Override
+	public Class<?> findClass( String className, Boolean safe, boolean checkParent ) throws ClassNotFoundException {
+		try {
+			// loadClass delegates to the parent first, then this loader's dex.
+			return checkParent ? loadClass( className ) : findClass( className );
+		} catch ( ClassNotFoundException e ) {
+			if ( Boolean.TRUE.equals( safe ) ) {
+				return null;
+			}
+			throw e;
+		}
+	}
+
 	/**
 	 * @return The module name this loader serves
 	 */
-	public String getModuleName() {
+	public Key getModuleName() {
 		return this.moduleName;
 	}
 

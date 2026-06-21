@@ -1,9 +1,12 @@
 # BoxLang on Android — Architecture, Strategy & Limitations
 
-> Status: **Foundation + AOT mechanism landed** (portable MVC core, runtime glue, samples,
-> docs, and the AOT class pipeline — `BoxClassExtractor` + `PreloadedClassLoader` +
-> `PreloadedBoxpiler` — all JVM-tested). One small **core hook** remains to wire the preloaded
-> loader into `ClassInfo`; see [The hard constraint](#the-hard-constraint).
+> Status: **Foundation + AOT mechanism + class-loader factory landed.** Portable MVC core,
+> runtime glue, samples, docs, and the AOT class pipeline (`BoxClassExtractor` +
+> `PreloadedClassLoader` + `PreloadedBoxpiler`) are JVM-tested. The **pluggable class-loader
+> factory** (runtime loader + per-module loaders) is **merged into core** (PR #575); the
+> Android side wires it via `AndroidClassLoaderFactory` + `AndroidModuleClassLoader`. The one
+> remaining **core hook** is wiring the preloaded loader into `ClassInfo` for AOT class
+> resolution; see [The hard constraint](#the-hard-constraint).
 
 ## 1. Why
 
@@ -137,10 +140,13 @@ archive) and `ModuleAOTTest` — compiles a fixture `ModuleConfig.bx`, packages 
 that the module class loads in its own loader and its service resources are discoverable.
 `AndroidModuleClassLoader` (the `DexClassLoader` wrapper) ships in `:runtimes:android`.
 
-**The remaining core hook** (parallel to §3): make `ModuleRecord` build an
-`AndroidModuleClassLoader` instead of hard-coding `new DynamicClassLoader(...)` under the
-Android runtime — a small, contained change best verified on an emulator. The build-side
-`d8`-per-module Gradle step is documented for the samples.
+**The core seam is merged** (PR #575): a single `IClassLoaderFactory` governs both the
+runtime loader and each module loader, installed before boot via
+`BoxRuntime.setClassLoaderFactory(...)`. The Android side supplies it as
+`AndroidClassLoaderFactory` — the runtime loader is the app class loader and each module a
+`DexClassLoader` over its archive — so `ModuleService`/`ModuleRecord` are reused unchanged.
+What remains is build-side only: the `d8`-per-module Gradle step that produces each
+`modules/<name>.jar`.
 
 ## 6. Application.bx lifecycle
 
@@ -181,8 +187,9 @@ React-Native-style Fast Refresh. Gated behind `boxlang.dev=true`; never in relea
 - **`ClassInfo` loader hook** (the one remaining core change, §3) so `PreloadedBoxpiler`
   is wired on device; verify on an emulator. (`BoxClassExtractor` + `PreloadedClassLoader`
   + `PreloadedBoxpiler` and the build-side AOT are done.)
-- **`ModuleRecord` loader hook** (§5b) so modules build an `AndroidModuleClassLoader`; plus
-  the `d8`-per-module Gradle step. (`ModuleArchiver` + `AndroidModuleClassLoader` are done.)
+- **Class-loader factory: DONE** — merged into core (PR #575) and wired on Android via
+  `AndroidClassLoaderFactory` + `AndroidModuleClassLoader`. Remaining: the `d8`-per-module
+  Gradle step that builds each `modules/<name>.jar`.
 - `AndroidRuntimeConfig` service-disable defaults; method-count/R8 tuning.
 - WireBox-lite DI, constraint validation, REST/JSON rendering, security guards, i18n
   (the framework roadmap deferred from the MVC core).
