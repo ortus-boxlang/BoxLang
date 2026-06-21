@@ -192,7 +192,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 * ({@code getInstance(...)}); alternative targets (e.g. Android) swap it to avoid the
 	 * JVM-only {@code URLClassLoader}.
 	 */
-	private static volatile IClassLoaderFactory			classLoaderFactory		= new DynamicClassLoaderFactory();
+	private static volatile IClassLoaderFactory	classLoaderFactory		= new DynamicClassLoaderFactory();
 
 	/**
 	 * The CLI Options that where used to start the runtime, if any.
