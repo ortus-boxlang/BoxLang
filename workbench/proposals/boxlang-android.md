@@ -1,8 +1,9 @@
 # BoxLang on Android — Architecture, Strategy & Limitations
 
-> Status: **Foundation landed** (portable MVC core + runtime glue + samples + docs, JVM-tested).
-> On-device APK execution depends on one remaining runtime item — the **preloaded boxpiler**
-> — described under [The hard constraint](#the-hard-constraint).
+> Status: **Foundation + AOT mechanism landed** (portable MVC core, runtime glue, samples,
+> docs, and the AOT class pipeline — `BoxClassExtractor` + `PreloadedClassLoader` +
+> `PreloadedBoxpiler` — all JVM-tested). One small **core hook** remains to wire the preloaded
+> loader into `ClassInfo`; see [The hard constraint](#the-hard-constraint).
 
 ## 1. Why
 
@@ -35,24 +36,38 @@ Android. BoxLang's default model — compile to bytecode in memory and `defineCl
 therefore unavailable on device.
 
 The existing `NoOpBoxpiler` is "load-only" but still calls
-`classInfo.getClassLoader().defineClasses(...)` from a precompiled byte container — which ART
-rejects. So **`NoOpBoxpiler` as-is does not run on Android.**
+`classInfo.getClassLoader().defineClasses(...)`, and `getClassLoader()` returns a
+`DiskClassLoader` which (a) `extends URLClassLoader` — **absent on Android** — and (b)
+ultimately calls `defineClass(byte[])` on JVM bytecode — **rejected by ART**. So
+**`NoOpBoxpiler` as-is does not run on Android.**
 
-**The fix (critical-path runtime item):** a new **`PreloadedBoxpiler`** (a.k.a.
-`DexBoxpiler`) that, given a BoxLang FQN, returns the class via `Class.forName(fqn)` /
-the app `ClassLoader` — because the class is *already dexed into the APK and loaded by the
-system class loader*. No `defineClass`, no runtime codegen. This requires:
+The insight: `ClassInfo.getDiskClass()` does `getClassLoader().loadClass(fqn)`, and a normal
+class loader delegates to its **parent first**. If the `boxgenerated.*` classes are already
+dexed into the APK (loaded by the app class loader), they resolve by delegation with **no
+`defineClass` at all**.
 
-1. BXCompiler to emit **standard `.class` files** (it already produces standard class bytes;
-   they just need to be written individually rather than concatenated into the BoxLang
-   container) so D8 can consume them.
-2. A stable, deterministic FQN scheme shared between BXCompiler output and the device
-   resolver (BoxLang already generates deterministic `boxgenerated.*` names).
-3. The `PreloadedBoxpiler` registered via ServiceLoader as the only boxpiler in the Android
-   distribution.
+**What is now built and JVM-tested** (`:runtimes:android-mvc`, package `…android.aot`):
 
-Everything else in this proposal is implemented and JVM-tested; this is the piece that turns
-a buildable module set into a running APK.
+1. **`BoxClassExtractor`** — unpacks the `BXCompiler` container (magic + name + length-prefixed
+   entries) into individual standard `.class` files. *Test:* compile a real `.bx` → extract →
+   load every class with a vanilla `URLClassLoader`. This is exactly what D8/R8 dexes.
+2. **`PreloadedClassLoader`** — Android-safe (`extends ClassLoader`, **not** `URLClassLoader`);
+   resolves classes by parent-first delegation and **never** defines from bytecode (its
+   `findClass` fails loudly). *Test:* it resolves an extracted class via the parent and the
+   resolved class's loader is the parent (proving no local define).
+3. **`PreloadedBoxpiler`** — an `IBoxpiler` (extends `Boxpiler`) whose `compileClassInfo` never
+   compiles/defines; ServiceLoader-registered **only** in the Android distribution.
+
+**The one remaining core hook:** make `ClassInfo.getClassLoader()` return the
+`PreloadedClassLoader` (app loader) under the Android boxpiler instead of hard-coding
+`DiskClassLoader`. This is a small, contained change in core (`ClassInfo` /
+`Boxpiler`), best done with the ability to run on a device/emulator. It also assumes the
+**compile-time and runtime FQNs are identical** — BoxLang already generates deterministic
+`boxgenerated.*` names, but `DiskClassLoader.defineClasses` currently *renames* classes at
+load time, so the Android path must skip renaming and rely on stable names.
+
+The build-side AOT is wired in both samples: `compileBoxLangAot` (→ containers) →
+`extractBoxLangClasses` (→ dexable `.class`).
 
 ## 4. What shipped in this pass
 
@@ -62,6 +77,8 @@ a buildable module set into a running APK.
   `relocate`), `FlashScope` (one-hop persistence), `ViewRenderer` (render `.bxm` → HTML and
   wrap in a layout), and the `MVCDispatcher` front controller (handler-first → render). Plus
   the Compose `UINode`/`UI` UI-tree model.
+- **AOT class pipeline** (`:runtimes:android-mvc`, package `…android.aot`, JVM-tested):
+  `BoxClassExtractor`, `PreloadedClassLoader`, `PreloadedBoxpiler` (see §3).
 - **Android runtime glue** (`:runtimes:android`, AGP library, SDK-gated): `AndroidBoxRuntime`
   (boot + asset seeding + config), generic manifest-declared `BoxAndroidApplication` /
   `BoxActivity`, `AndroidLifecycleDispatcher` (optional `Application.bx` Android hooks),
@@ -122,7 +139,9 @@ React-Native-style Fast Refresh. Gated behind `boxlang.dev=true`; never in relea
 
 ## 9. Roadmap
 
-- **`PreloadedBoxpiler`** (critical path, §3) + the BXCompiler `.class`-emit/dex packaging.
+- **`ClassInfo` loader hook** (the one remaining core change, §3) so `PreloadedBoxpiler`
+  is wired on device; verify on an emulator. (`BoxClassExtractor` + `PreloadedClassLoader`
+  + `PreloadedBoxpiler` and the build-side AOT are done.)
 - `AndroidRuntimeConfig` service-disable defaults; method-count/R8 tuning.
 - WireBox-lite DI, constraint validation, REST/JSON rendering, security guards, i18n
   (the framework roadmap deferred from the MVC core).
