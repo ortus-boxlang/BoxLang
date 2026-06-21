@@ -130,4 +130,6 @@ class ClassLoaderFactoryTest {
 				moduleRecord.unload( context );
 			}
 		}
+	}
+
 }
