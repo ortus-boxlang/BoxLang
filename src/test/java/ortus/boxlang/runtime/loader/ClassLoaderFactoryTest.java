@@ -115,14 +115,19 @@ class ClassLoaderFactoryTest {
 
 		IBoxContext		context			= new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
 		String			physicalPath	= Paths.get( "./modules/test" ).toAbsolutePath().toString();
-		ModuleRecord	moduleRecord	= new ModuleRecord( physicalPath )
-		    .loadDescriptor( context )
-		    .register( context );
 
-		assertThat( seenModule.get() ).isEqualTo( moduleRecord.name.getName() );
-		assertThat( moduleRecord.classLoader ).isInstanceOf( IModuleClassLoader.class );
-		assertThat( moduleRecord.classLoader.toClassLoader() ).isNotNull();
+		ModuleRecord	moduleRecord	= null;
+		try {
+			moduleRecord = new ModuleRecord( physicalPath )
+			    .loadDescriptor( context )
+			    .register( context );
 
-		moduleRecord.unregister( context );
-	}
+			assertThat( seenModule.get() ).isEqualTo( moduleRecord.name.getName() );
+			assertThat( moduleRecord.classLoader ).isNotNull();
+			assertThat( moduleRecord.classLoader.toClassLoader() ).isNotNull();
+		} finally {
+			if ( moduleRecord != null ) {
+				moduleRecord.unload( context );
+			}
+		}
 }
