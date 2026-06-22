@@ -42,7 +42,7 @@ public class ArrayNew extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.dimension The dimension of the array to create (currently only 1 is supported).
+	 * @argument.dimensions The dimension of the array to create (currently only 1 is supported).
 	 *
 	 * @argument.isSynchronized Whether the array should be thread-safe (synchronized). Default is false.
 	 */

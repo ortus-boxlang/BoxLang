@@ -46,6 +46,12 @@ public class RandRange extends BIF {
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 *
+	 * @argument.number1 The lower bound of the range.
+	 *
+	 * @argument.number2 The upper bound of the range.
+	 *
+	 * @argument.algorithm The algorithm to use to generate the random number.
 	 */
 	public Number _invoke( IBoxContext context, ArgumentsScope arguments ) {
 
