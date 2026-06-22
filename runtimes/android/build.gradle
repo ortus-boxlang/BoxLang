@@ -21,6 +21,11 @@ plugins {
 	id 'org.jetbrains.kotlin.android'
 }
 
+repositories {
+	google()
+	mavenCentral()
+}
+
 android {
 	namespace 'ortus.boxlang.runtime.android'
 	compileSdk 34

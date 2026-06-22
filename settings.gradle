@@ -7,6 +7,25 @@
  * in the user manual at https://docs.gradle.org/8.0.2/userguide/multi_project_builds.html
  */
 
+// Plugin resolution for the optional Android modules. The Android Gradle Plugin lives in
+// Google's Maven repo and must be version-pinned here so the AGP modules' `plugins { id
+// 'com.android.*' }` (declared without a version) resolve. These mappings are inert for the
+// core build — they only take effect when an android-* module is actually included (i.e. when
+// ANDROID_HOME / ANDROID_SDK_ROOT is set; see the include guard below). The AGP/Kotlin
+// versions may need aligning with the locally installed Android SDK.
+pluginManagement {
+	repositories {
+		gradlePluginPortal()
+		mavenCentral()
+		google()
+	}
+	plugins {
+		id 'com.android.application' version '8.5.2'
+		id 'com.android.library' version '8.5.2'
+		id 'org.jetbrains.kotlin.android' version '1.9.24'
+	}
+}
+
 rootProject.name = "boxlang"
 
 // Gradle uses ':' instead of '/' to separate the path segments
