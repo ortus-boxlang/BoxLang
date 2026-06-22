@@ -123,8 +123,8 @@ class ClassLoaderFactoryTest {
 			    .register( context );
 
 			assertThat( seenModule.get() ).isEqualTo( moduleRecord.name.getName() );
-			assertThat( moduleRecord.classLoader ).isNotNull();
-			assertThat( moduleRecord.classLoader.toClassLoader() ).isNotNull();
+			assertThat( moduleRecord.getModuleClassLoader() ).isNotNull();
+			assertThat( moduleRecord.getModuleClassLoader().toClassLoader() ).isNotNull();
 		} finally {
 			if ( moduleRecord != null ) {
 				moduleRecord.unload( context );

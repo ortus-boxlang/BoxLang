@@ -55,6 +55,7 @@ import ortus.boxlang.runtime.events.IInterceptor;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.jdbc.drivers.DriverShim;
 import ortus.boxlang.runtime.jdbc.drivers.IJDBCDriver;
+import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.loader.IModuleClassLoader;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
@@ -221,8 +222,38 @@ public class ModuleRecord {
 	 * The class loader for the module (isolated, parented to the runtime loader). The concrete
 	 * implementation is chosen by the runtime's
 	 * {@link ortus.boxlang.runtime.loader.IClassLoaderFactory}.
+	 * <p>
+	 * Declared as the concrete {@link DynamicClassLoader} type purely for binary compatibility
+	 * with modules compiled against pre-{@code IModuleClassLoader} BoxLang releases; the JVM
+	 * resolves fields by (name, declared type), so downstream bytecode that does
+	 * {@code getField("classLoader")} against the old {@code DynamicClassLoader classLoader}
+	 * signature would otherwise fail with {@link NoSuchFieldError}.
+	 * <p>
+	 * New code — both inside the runtime and in downstream modules — should use
+	 * {@link #moduleClassLoader} instead, which is typed against the runtime-neutral
+	 * {@link IModuleClassLoader} contract and works on every supported deployment target
+	 * (standard JVM, Android, etc.).
+	 *
+	 * @deprecated Use {@link #moduleClassLoader} instead. This field is retained only for
+	 *             binary compatibility and will be removed in a future major release.
 	 */
-	public IModuleClassLoader		classLoader					= null;
+	@Deprecated( since = "1.15.0", forRemoval = true )
+	public DynamicClassLoader		classLoader					= null;
+
+	/**
+	 * The class loader for the module (isolated, parented to the runtime loader). The concrete
+	 * implementation is chosen by the runtime's
+	 * {@link ortus.boxlang.runtime.loader.IClassLoaderFactory}.
+	 * <p>
+	 * This is the preferred accessor for module class loaders. Unlike {@link #classLoader},
+	 * it is typed against the runtime-neutral {@link IModuleClassLoader} contract, so it works
+	 * on every supported deployment target (standard JVM, Android, etc.). The field itself
+	 * is private — access it via {@link #getModuleClassLoader()}.
+	 * <p>
+	 * Use {@link IModuleClassLoader#toClassLoader()} when a {@link ClassLoader} is required
+	 * (e.g. for {@link ServiceLoader}).
+	 */
+	private IModuleClassLoader		moduleClassLoader			= null;
 
 	/**
 	 * The descriptor for the module
@@ -431,8 +462,15 @@ public class ModuleRecord {
 		// The default JVM factory builds a DynamicClassLoader over the module directory
 		// (loading *.class under the `modules.{module_name}` prefix) seeded with libs/*.jar;
 		// other targets (e.g. Android) supply a different loader without forking this class.
-		this.classLoader = this.runtime.getClassLoaderFactory()
+		this.moduleClassLoader	= this.runtime.getClassLoaderFactory()
 		    .createModuleClassLoader( this, this.runtime.getRuntimeLoader() );
+		// Mirror onto the legacy, concrete-typed field for binary compatibility with modules
+		// compiled against the pre-IModuleClassLoader API. On the standard JVM the factory's
+		// return value is always a DynamicClassLoader; on other targets this assignment is a
+		// no-op for old bytecode but `moduleClassLoader` still works.
+		this.classLoader		= ( this.moduleClassLoader instanceof DynamicClassLoader dcl )
+		    ? dcl
+		    : null;
 
 		// Call the configure() method if it exists in the descriptor
 		if ( thisScope.containsKey( Key.configure ) ) {
@@ -482,13 +520,13 @@ public class ModuleRecord {
 		}
 
 		// Register any global services
-		ServiceLoader.load( IService.class, this.classLoader.toClassLoader() )
+		ServiceLoader.load( IService.class, this.getModuleClassLoader().toClassLoader() )
 		    .stream()
 		    .map( ServiceLoader.Provider::get )
 		    .forEach( service -> this.runtime.putGlobalService( service.getName(), service ) );
 
 		// Load any JDBC drivers into the JVM
-		ServiceLoader.load( Driver.class, this.classLoader.toClassLoader() )
+		ServiceLoader.load( Driver.class, this.getModuleClassLoader().toClassLoader() )
 		    .stream()
 		    .map( ServiceLoader.Provider::get )
 		    .forEach( driver -> {
@@ -502,39 +540,39 @@ public class ModuleRecord {
 		    } );
 
 		// Load any BoxLang IJDBC Driver classes
-		ServiceLoader.load( IJDBCDriver.class, this.classLoader.toClassLoader() )
+		ServiceLoader.load( IJDBCDriver.class, this.getModuleClassLoader().toClassLoader() )
 		    .stream()
 		    .map( ServiceLoader.Provider::get )
 		    .forEach( driver -> this.runtime.getDataSourceService().registerDriver( driver ) );
 
 		// Do we have any Java BIFs to load?
-		ServiceLoader.load( BIF.class, this.classLoader.toClassLoader() )
+		ServiceLoader.load( BIF.class, this.getModuleClassLoader().toClassLoader() )
 		    .stream()
 		    .map( ServiceLoader.Provider::type )
 		    .forEach( clazz -> functionService.processBIFRegistration( clazz, null, this.name.getName() ) );
 
 		// Do we have any Java Component Tags to load?
-		ServiceLoader.load( Component.class, this.classLoader.toClassLoader() )
+		ServiceLoader.load( Component.class, this.getModuleClassLoader().toClassLoader() )
 		    .stream()
 		    .map( ServiceLoader.Provider::type )
 		    .forEach( targetClass -> componentService.registerComponent( targetClass, null, this.name.getName() ) );
 
 		// Do we have any Java Schedulers to register in the SchedulerService
-		ServiceLoader.load( IScheduler.class, this.classLoader.toClassLoader() )
+		ServiceLoader.load( IScheduler.class, this.getModuleClassLoader().toClassLoader() )
 		    .stream()
 		    .map( ServiceLoader.Provider::get )
 		    .forEach( scheduler -> this.runtime.getSchedulerService()
 		        .loadScheduler( Key.of( scheduler.getSchedulerName() + "@" + this.name ), scheduler ) );
 
 		// Do we have any Java ICacheProviders to register in the CacheService
-		ServiceLoader.load( ICacheProvider.class, this.classLoader.toClassLoader() )
+		ServiceLoader.load( ICacheProvider.class, this.getModuleClassLoader().toClassLoader() )
 		    .stream()
 		    .map( ServiceLoader.Provider::type )
 		    .forEach( provider -> this.runtime.getCacheService().registerProvider( Key.of( provider.getSimpleName() ),
 		        provider ) );
 
 		// Do we have any Java IInterceptor to register in the InterceptorService
-		ServiceLoader.load( IInterceptor.class, this.classLoader.toClassLoader() )
+		ServiceLoader.load( IInterceptor.class, this.getModuleClassLoader().toClassLoader() )
 		    .stream()
 		    // Only load interceptors that are set to auto-load by default or by
 		    // configuration
@@ -579,11 +617,12 @@ public class ModuleRecord {
 
 		// Destroy the ClassLoader
 		try {
-			this.classLoader.close();
+			this.moduleClassLoader.close();
 		} catch ( IOException e ) {
 			this.logger.error( "Error while closing the DynamicClassLoader for module [{}]", this.name, e );
 		} finally {
-			this.classLoader = null;
+			this.moduleClassLoader	= null;
+			this.classLoader		= null;
 		}
 
 		return this;
@@ -603,13 +642,13 @@ public class ModuleRecord {
 		InterceptorService interceptorService = this.runtime.getInterceptorService();
 
 		// Unregister any global services
-		ServiceLoader.load( IService.class, this.classLoader.toClassLoader() )
+		ServiceLoader.load( IService.class, this.getModuleClassLoader().toClassLoader() )
 		    .stream()
 		    .map( ServiceLoader.Provider::get )
 		    .forEach( service -> this.runtime.removeGlobalService( service.getName() ) );
 
 		// Unload JDBC drivers from the JVM
-		ServiceLoader.load( Driver.class, this.classLoader.toClassLoader() )
+		ServiceLoader.load( Driver.class, this.getModuleClassLoader().toClassLoader() )
 		    .stream()
 		    .map( ServiceLoader.Provider::get )
 		    .forEach( driver -> {
@@ -623,7 +662,7 @@ public class ModuleRecord {
 		    } );
 
 		// Unregister JDBC drivers from the datasource service
-		ServiceLoader.load( IJDBCDriver.class, this.classLoader.toClassLoader() )
+		ServiceLoader.load( IJDBCDriver.class, this.getModuleClassLoader().toClassLoader() )
 		    .stream()
 		    .map( ServiceLoader.Provider::get )
 		    .forEach( driver -> this.runtime.getDataSourceService().removeDriver( driver.getName() ) );
@@ -634,20 +673,20 @@ public class ModuleRecord {
 		// @TODO: Unregister components; we're lacking an unregisterComponent method in the ComponentService
 
 		// unregister schedulers
-		ServiceLoader.load( IScheduler.class, this.classLoader.toClassLoader() )
+		ServiceLoader.load( IScheduler.class, this.getModuleClassLoader().toClassLoader() )
 		    .stream()
 		    .map( ServiceLoader.Provider::get )
 		    .forEach( scheduler -> this.runtime.getSchedulerService()
 		        .removeScheduler( Key.of( scheduler.getSchedulerName() + "@" + this.name ), true, 500 ) );
 
 		// Unregister cache providers
-		ServiceLoader.load( ICacheProvider.class, this.classLoader.toClassLoader() )
+		ServiceLoader.load( ICacheProvider.class, this.getModuleClassLoader().toClassLoader() )
 		    .stream()
 		    .map( ServiceLoader.Provider::type )
 		    .forEach( provider -> this.runtime.getCacheService().removeProvider( Key.of( provider.getSimpleName() ) ) );
 
 		// Unregister java interceptors
-		ServiceLoader.load( IInterceptor.class, this.classLoader.toClassLoader() )
+		ServiceLoader.load( IInterceptor.class, this.getModuleClassLoader().toClassLoader() )
 		    .stream()
 		    // Only load interceptors that are set to auto-load by default or by
 		    // configuration
@@ -689,10 +728,10 @@ public class ModuleRecord {
 	 * @throws ClassNotFoundException If the class is not found
 	 */
 	public Class<?> findModuleClass( String className, Boolean safe, IBoxContext context ) throws ClassNotFoundException {
-		if ( this.classLoader == null ) {
+		if ( this.moduleClassLoader == null ) {
 			return null;
 		}
-		return this.classLoader.findClass( className, safe, false );
+		return this.moduleClassLoader.findClass( className, safe, false );
 	}
 
 	/**
@@ -844,6 +883,18 @@ public class ModuleRecord {
 	}
 
 	/**
+	 * The module's class loader, typed against the runtime-neutral
+	 * {@link IModuleClassLoader} contract. Prefer this over the deprecated
+	 * {@link #classLoader} field in new code; it works on every supported deployment target.
+	 *
+	 * @return The module class loader, or {@code null} if the module has not been registered
+	 *         yet (or has been unloaded).
+	 */
+	public IModuleClassLoader getModuleClassLoader() {
+		return this.moduleClassLoader;
+	}
+
+	/**
 	 * Get a string representation of the module record
 	 */
 	public String toString() {
@@ -862,7 +913,7 @@ public class ModuleRecord {
 		    "activated", this.activated,
 		    "author", this.author,
 		    "bifs", Array.copyOf( this.bifs ),
-		    "classLoader", this.classLoader,
+		    "classLoader", this.moduleClassLoader,
 		    "components", Array.copyOf( this.components ),
 		    "customInterceptionPoints", Array.copyOf( this.customInterceptionPoints ),
 		    "description", this.description,
