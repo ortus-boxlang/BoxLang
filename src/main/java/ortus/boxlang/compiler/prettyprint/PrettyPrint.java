@@ -108,7 +108,8 @@ public final class PrettyPrint {
 		"arguments" : {
 			"comma_dangle" : false,
 			"multiline_count" : 3,
-			"multiline_length" : 40
+			"multiline_length" : 40,
+			"separator" : " = "
 		},
 		"braces" : {
 			"style" : "same-line",

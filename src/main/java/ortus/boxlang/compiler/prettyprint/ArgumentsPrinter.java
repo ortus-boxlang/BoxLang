@@ -36,7 +36,8 @@ public class ArgumentsPrinter {
 	 * Used to determine if the arguments should be printed multiline based on length threshold.
 	 */
 	private int calculateArgumentListLength( List<BoxArgument> arguments ) {
-		int length = 2; // for "(" and ")"
+		int		length		= 2; // for "(" and ")"
+		String	separator	= visitor.config.getArguments().getSeparator().getSymbol();
 
 		for ( int i = 0; i < arguments.size(); i++ ) {
 			var arg = arguments.get( i );
@@ -51,7 +52,7 @@ public class ArgumentsPrinter {
 						length += nameSource.length();
 					}
 				}
-				length += 3; // " = "
+				length += separator.length();
 			}
 
 			// Argument value
@@ -73,7 +74,7 @@ public class ArgumentsPrinter {
 		var		argumentsDoc		= visitor.pushDoc( DocType.GROUP );
 
 		var		size				= arguments.size();
-		var		assignmentOperator	= " = "; // TODO: use config
+		var		assignmentOperator	= visitor.config.getArguments().getSeparator().getSymbol();
 		var		padding				= visitor.config.getArguments().getPadding() || visitor.config.getParensPadding();
 		boolean	multilineByCount;
 		boolean	multilineByLength;
