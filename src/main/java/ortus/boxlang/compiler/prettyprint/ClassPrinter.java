@@ -35,38 +35,79 @@ import ortus.boxlang.compiler.ast.statement.BoxLocalClass;
 import ortus.boxlang.compiler.ast.statement.BoxProperty;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 
+/**
+ * PrettyPrint formatter for class-like AST nodes across BoxLang, CFScript, and CFTemplate source forms.
+ * <p>
+ * This printer is responsible for declaration headers, imports, class/interface annotations, properties, and class body
+ * ordering. Body statements are delegated to {@link HelperPrinter}, while member ordering and property ordering are
+ * applied here because they depend on class-level configuration.
+ */
 public class ClassPrinter {
 
 	private Visitor visitor;
 
+	/**
+	 * Creates a class printer bound to the active PrettyPrint visitor.
+	 *
+	 * @param visitor active visitor and document stack owner
+	 */
 	public ClassPrinter( Visitor visitor ) {
 		this.visitor = visitor;
 	}
 
+	/**
+	 * Prints a class node using the syntax associated with its source type.
+	 *
+	 * @param node       class node to print
+	 * @param sourceType source syntax that controls whether the node is emitted as BoxLang, CFScript, or CFTemplate
+	 */
 	public void print( BoxClass node, BoxSourceType sourceType ) {
 		switch ( sourceType ) {
 			case BOXSCRIPT -> printBoxClass( node );
 			case CFSCRIPT -> printCFScriptComponent( node );
 			case CFTEMPLATE -> printCFTemplateComponent( node );
 			default -> {
+				// No class printer is registered for this source type.
 			}
 		}
 	}
 
+	/**
+	 * Prints an interface node using the syntax associated with its source type.
+	 *
+	 * @param node       interface node to print
+	 * @param sourceType source syntax that controls whether the node is emitted as BoxLang, CFScript, or CFTemplate
+	 */
 	public void print( BoxInterface node, BoxSourceType sourceType ) {
 		switch ( sourceType ) {
 			case BOXSCRIPT -> printBoxInterface( node );
 			case CFSCRIPT -> printCFScriptInterface( node );
 			case CFTEMPLATE -> printCFTemplateInterface( node );
 			default -> {
+				// No interface printer is registered for this source type.
 			}
 		}
 	}
 
+	/**
+	 * Prints a local class declaration.
+	 * <p>
+	 * Local classes currently only use BoxLang class syntax, so the source type is accepted for dispatch consistency but
+	 * is not used to select an alternate representation.
+	 *
+	 * @param node       local class node to print
+	 * @param sourceType original source type, currently ignored for local classes
+	 */
 	public void print( BoxLocalClass node, BoxSourceType sourceType ) {
 		printBoxLocalClass( node );
 	}
 
+	/**
+	 * Prints a BoxLang class declaration, including imports, pre-annotations, inline post-annotations, properties,
+	 * configured method ordering/grouping, inside comments, and trailing comments.
+	 *
+	 * @param classNode class node to print
+	 */
 	private void printBoxClass( BoxClass classNode ) {
 		var		currentDoc		= visitor.getCurrentDoc();
 		var		methodOrder		= visitor.config.getClassConfig().getMethodOrder();
@@ -90,7 +131,7 @@ public class ClassPrinter {
 		printBoxAnnotations( preAnnotations );
 
 		currentDoc.append( "class" );
-		visitor.helperPrinter.printKeyValueAnnotations( postAnnotations, false );
+		visitor.helperPrinter.printKeyValueAnnotations( postAnnotations, false, false, false );
 		currentDoc.append( " {" );
 
 		visitor.pushDoc( DocType.INDENT ).append( Line.HARD );
@@ -110,6 +151,12 @@ public class ClassPrinter {
 		visitor.printPostComments( classNode );
 	}
 
+	/**
+	 * Prints a BoxLang local class declaration. Local classes share normal class body formatting, but include the local
+	 * class name directly after the {@code class} keyword.
+	 *
+	 * @param localClass local class node to print
+	 */
 	private void printBoxLocalClass( BoxLocalClass localClass ) {
 		var		currentDoc		= visitor.getCurrentDoc();
 		var		methodOrder		= visitor.config.getClassConfig().getMethodOrder();
@@ -131,7 +178,7 @@ public class ClassPrinter {
 		printBoxAnnotations( preAnnotations );
 
 		currentDoc.append( "class " + localClass.getName().getName() );
-		visitor.helperPrinter.printKeyValueAnnotations( postAnnotations, false );
+		visitor.helperPrinter.printKeyValueAnnotations( postAnnotations, false, false, false );
 		currentDoc.append( " {" );
 
 		visitor.pushDoc( DocType.INDENT ).append( Line.HARD );
@@ -151,6 +198,12 @@ public class ClassPrinter {
 		visitor.printPostComments( localClass );
 	}
 
+	/**
+	 * Prints a BoxLang interface declaration, including imports, annotations, inline post-annotations, sorted body
+	 * statements, inside comments, and trailing comments.
+	 *
+	 * @param interfaceNode interface node to print
+	 */
 	private void printBoxInterface( BoxInterface interfaceNode ) {
 		var		currentDoc		= visitor.getCurrentDoc();
 		var		methodOrder		= visitor.config.getClassConfig().getMethodOrder();
@@ -162,7 +215,7 @@ public class ClassPrinter {
 		printBoxAnnotations( interfaceNode.getAnnotations() );
 
 		currentDoc.append( "interface" );
-		visitor.helperPrinter.printKeyValueAnnotations( interfaceNode.getPostAnnotations(), true );
+		visitor.helperPrinter.printKeyValueAnnotations( interfaceNode.getPostAnnotations(), true, false, false );
 		currentDoc.append( "{" );
 
 		visitor.pushDoc( DocType.INDENT ).append( Line.HARD );
@@ -177,6 +230,14 @@ public class ClassPrinter {
 		visitor.printPostComments( interfaceNode );
 	}
 
+	/**
+	 * Prints a CFScript component declaration from a class node.
+	 * <p>
+	 * Component attributes are rendered as inline annotation key/value pairs without assignment alignment so class header
+	 * attributes such as {@code extends="..."} are not padded to match longer sibling attributes.
+	 *
+	 * @param classNode component class node to print
+	 */
 	public void printCFScriptComponent( BoxClass classNode ) {
 		var		currentDoc		= visitor.getCurrentDoc();
 		var		methodOrder		= visitor.config.getClassConfig().getMethodOrder();
@@ -185,7 +246,7 @@ public class ClassPrinter {
 		printImports( classNode.getImports() );
 		visitor.printPreComments( classNode );
 		currentDoc.append( "component" );
-		visitor.helperPrinter.printKeyValueAnnotations( classNode.getAnnotations(), true, visitor.config.getCFFormatCompatibility() );
+		visitor.helperPrinter.printKeyValueAnnotations( classNode.getAnnotations(), true, visitor.config.getCFFormatCompatibility(), false );
 		currentDoc.append( "{" );
 
 		visitor.pushDoc( DocType.INDENT ).append( Line.HARD );
@@ -211,6 +272,11 @@ public class ClassPrinter {
 		visitor.printPostComments( classNode );
 	}
 
+	/**
+	 * Prints a CFScript interface declaration from an interface node.
+	 *
+	 * @param interfaceNode interface node to print
+	 */
 	public void printCFScriptInterface( BoxInterface interfaceNode ) {
 		var		currentDoc		= visitor.getCurrentDoc();
 		var		methodOrder		= visitor.config.getClassConfig().getMethodOrder();
@@ -219,7 +285,7 @@ public class ClassPrinter {
 		printImports( interfaceNode.getImports() );
 		visitor.printPreComments( interfaceNode );
 		currentDoc.append( "interface" );
-		visitor.helperPrinter.printKeyValueAnnotations( interfaceNode.getAllAnnotations(), true );
+		visitor.helperPrinter.printKeyValueAnnotations( interfaceNode.getAllAnnotations(), true, false, false );
 		currentDoc.append( "{" );
 
 		visitor.pushDoc( DocType.INDENT ).append( Line.HARD );
@@ -234,6 +300,13 @@ public class ClassPrinter {
 		visitor.printPostComments( interfaceNode );
 	}
 
+	/**
+	 * Prints a CFTemplate component declaration using {@code <cfcomponent>} and {@code </cfcomponent>} tags.
+	 * <p>
+	 * Properties and body statements are sorted according to class configuration before being emitted inside the tag body.
+	 *
+	 * @param classNode component class node to print
+	 */
 	public void printCFTemplateComponent( BoxClass classNode ) {
 		var		currentDoc		= visitor.getCurrentDoc();
 		var		propertyOrder	= visitor.config.getClassConfig().getPropertyOrder();
@@ -263,6 +336,11 @@ public class ClassPrinter {
 		visitor.printPostComments( classNode );
 	}
 
+	/**
+	 * Prints a CFTemplate interface declaration using {@code <cfinterface>} and {@code </cfinterface>} tags.
+	 *
+	 * @param interfaceNode interface node to print
+	 */
 	public void printCFTemplateInterface( BoxInterface interfaceNode ) {
 		var		currentDoc		= visitor.getCurrentDoc();
 		var		methodOrder		= visitor.config.getClassConfig().getMethodOrder();
@@ -286,6 +364,11 @@ public class ClassPrinter {
 		visitor.printPostComments( interfaceNode );
 	}
 
+	/**
+	 * Prints imports before a class or interface declaration, applying configured import sorting and grouping.
+	 *
+	 * @param imports import nodes to print
+	 */
 	private void printImports( List<BoxImport> imports ) {
 		if ( imports.isEmpty() ) {
 			return;
@@ -321,7 +404,7 @@ public class ClassPrinter {
 	}
 
 	/**
-	 * Sort imports alphabetically based on configuration.
+	 * Sorts imports alphabetically when import sorting is enabled.
 	 *
 	 * @param imports the list of imports to sort
 	 *
@@ -338,7 +421,7 @@ public class ClassPrinter {
 	}
 
 	/**
-	 * Extract the import path from a BoxImport node for sorting.
+	 * Extracts the import path from a {@link BoxImport} node for sorting and grouping.
 	 *
 	 * @param importNode the import to get the path from
 	 *
@@ -357,7 +440,7 @@ public class ClassPrinter {
 	}
 
 	/**
-	 * Extract the top-level package prefix from a BoxImport node for grouping.
+	 * Extracts the top-level package prefix from a {@link BoxImport} node for grouping.
 	 * For example, "java.util.Map" returns "java", "ortus.boxlang.runtime.types.Array" returns "ortus".
 	 *
 	 * @param importNode the import to get the prefix from
@@ -373,6 +456,11 @@ public class ClassPrinter {
 		return dotIndex > 0 ? path.substring( 0, dotIndex ) : path;
 	}
 
+	/**
+	 * Prints BoxLang-style {@code @annotation} metadata above a class, interface, or local class declaration.
+	 *
+	 * @param annotations annotations to print, each emitted on its own hard line
+	 */
 	private void printBoxAnnotations( List<BoxAnnotation> annotations ) {
 		var currentDoc = visitor.getCurrentDoc();
 		for ( var anno : annotations ) {
@@ -389,6 +477,11 @@ public class ClassPrinter {
 		}
 	}
 
+	/**
+	 * Prints class properties in the configured order and with configured spacing between consecutive properties.
+	 *
+	 * @param properties property nodes to print
+	 */
 	private void printProperties( List<BoxProperty> properties ) {
 		var					currentDoc			= visitor.getCurrentDoc();
 		var					propertyOrder		= visitor.config.getClassConfig().getPropertyOrder();
@@ -411,7 +504,7 @@ public class ClassPrinter {
 	}
 
 	/**
-	 * Sort properties based on the configured order.
+	 * Sorts properties based on the configured class property order.
 	 *
 	 * @param properties    the list of properties to sort
 	 * @param propertyOrder the ordering strategy: "alphabetical", "length", "type", or "preserve"
@@ -441,7 +534,9 @@ public class ClassPrinter {
 	}
 
 	/**
-	 * Extract the property name from a BoxProperty node.
+	 * Extracts the effective property name from a {@link BoxProperty} node.
+	 * <p>
+	 * Both explicit {@code name="..."} annotations and shorthand property declarations are supported.
 	 *
 	 * @param property the property to get the name from
 	 *
@@ -473,7 +568,7 @@ public class ClassPrinter {
 
 			if ( nonValuedKeys.size() >= 2 && !hasExplicitType ) {
 				return nonValuedKeys.get( 1 ).getKey().getValue();
-			} else if ( nonValuedKeys.size() >= 1 ) {
+			} else if ( !nonValuedKeys.isEmpty() ) {
 				return nonValuedKeys.get( nonValuedKeys.size() - 1 ).getKey().getValue();
 			}
 		}
@@ -482,7 +577,10 @@ public class ClassPrinter {
 	}
 
 	/**
-	 * Extract the property type from a BoxProperty node.
+	 * Extracts the effective property type from a {@link BoxProperty} node.
+	 * <p>
+	 * Both explicit {@code type="..."} annotations and shorthand property declarations are supported. Untyped properties
+	 * default to {@code any} for ordering purposes.
 	 *
 	 * @param property the property to get the type from
 	 *
@@ -518,6 +616,17 @@ public class ClassPrinter {
 		return "any";
 	}
 
+	/**
+	 * Applies targeted CFFormat compatibility source tweaks for legacy formatting cases that cannot be expressed cleanly
+	 * through the AST document model.
+	 * <p>
+	 * This method is retained as a compatibility hook for CFFormat-specific output adjustments.
+	 *
+	 * @param sourceText rendered source text to adjust
+	 *
+	 * @return adjusted source text, or null when the input is null
+	 */
+	@SuppressWarnings( { "unused", "java:S1144", "java:S5852", "java:S5843", "java:S6126" } )
 	private String applyCFFormatCompatibilitySourceTweaks( String sourceText ) {
 		if ( sourceText == null ) {
 			return null;
@@ -541,7 +650,7 @@ public class ClassPrinter {
 	}
 
 	/**
-	 * Extract a string value from a BoxExpression.
+	 * Extracts a string value from a {@link BoxExpression}.
 	 *
 	 * @param expr the expression to extract the string from
 	 *
@@ -556,8 +665,10 @@ public class ClassPrinter {
 	}
 
 	/**
-	 * Sort class body statements based on method ordering and grouping configuration.
-	 * Only BoxFunctionDeclaration nodes are sorted; other statements maintain their relative order.
+	 * Sorts class body statements based on method ordering and grouping configuration.
+	 * <p>
+	 * Only {@link BoxFunctionDeclaration} nodes are sorted. Non-method statements keep their positions, and sorted methods
+	 * are placed back into the original method slots so mixed class body content remains structurally stable.
 	 *
 	 * @param statements     the list of statements in the class body
 	 * @param methodOrder    the ordering strategy: "alphabetical" or "preserve"
@@ -624,7 +735,9 @@ public class ClassPrinter {
 	}
 
 	/**
-	 * Check if a method has public access modifier.
+	 * Checks whether a method has public access.
+	 * <p>
+	 * Methods with no explicit access modifier are treated as public, matching BoxLang semantics.
 	 *
 	 * @param method the method to check
 	 *
@@ -637,7 +750,7 @@ public class ClassPrinter {
 	}
 
 	/**
-	 * Extract the method name from a BoxFunctionDeclaration node.
+	 * Extracts the method name from a {@link BoxFunctionDeclaration} node.
 	 *
 	 * @param method the method to get the name from
 	 *
