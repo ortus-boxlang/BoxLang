@@ -84,14 +84,39 @@ Run the dev server, then edit `.bxm`/`.bx` and watch the app update without a re
 (`.bxm` edits: sub-second re-render; `.bx` class edits: dex push + reload). Gated behind `boxlang.dev=true`;
 never present in release builds. See the proposal's hot-reload section.
 
+## Toolchain (verified)
+
+The Android modules build with:
+
+- **Android Gradle Plugin 9.2.1** on **Gradle 9.5.1**, **JDK 21**
+- **compileSdk/targetSdk 35**, **minSdk 26**, build-tools 34
+- `android.useAndroidX=true` (root `gradle.properties`)
+
+One-time SDK install (Linux, no Android Studio needed):
+
+```bash
+SDK=$HOME/android-sdk
+curl -o cmdtools.zip https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip
+mkdir -p "$SDK/cmdline-tools" && unzip -q cmdtools.zip -d "$SDK/cmdline-tools" \
+  && mv "$SDK/cmdline-tools/cmdline-tools" "$SDK/cmdline-tools/latest"
+export ANDROID_HOME=$SDK ANDROID_SDK_ROOT=$SDK
+yes | "$SDK/cmdline-tools/latest/bin/sdkmanager" --licenses
+"$SDK/cmdline-tools/latest/bin/sdkmanager" "platform-tools" "platforms;android-35" "build-tools;34.0.0"
+```
+
+The Android modules are only included in the Gradle build when `ANDROID_HOME`/`ANDROID_SDK_ROOT`
+is set (see `settings.gradle`).
+
 ## Build & deploy
 
 ```bash
-./gradlew :app:compileBoxLangAot      # AOT-compile bx sources
-./gradlew :app:assembleDebug          # build the APK (AOT output dexed in)
-./gradlew :app:installDebug           # install on emulator/device
-./gradlew :app:connectedAndroidTest   # instrumented tests (needs an emulator)
+./gradlew :runtimes:android:assembleDebug              # build the .aar library  (verified)
+./gradlew :runtimes:android-sample-web:assembleDebug   # build the app APK        (verified)
+./gradlew :runtimes:android-sample-web:installDebug    # install on emulator/device
+./gradlew :runtimes:android-sample-web:connectedAndroidTest  # instrumented tests (needs an emulator)
 ```
 
-> On-device execution depends on the **preloaded boxpiler** runtime item — see the proposal's
-> "hard constraint" section for status.
+> The `.aar` and the sample APK build cleanly today (the APK bundles the full runtime via
+> multidex plus the `assets/bx` app payload). **On-device execution** additionally depends on
+> the **preloaded boxpiler** runtime item (AOT class resolution) — see the proposal's
+> "hard constraint" section. Emulator/instrumented tests require a host with KVM.

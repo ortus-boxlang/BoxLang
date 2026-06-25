@@ -29,7 +29,7 @@ repositories {
 
 android {
 	namespace 'ortus.boxlang.runtime.android'
-	compileSdk 34
+	compileSdk 35
 
 	defaultConfig {
 		minSdk 26					// InMemoryDexClassLoader (hot reload) requires API 26+

@@ -79,6 +79,16 @@ public class AndroidModuleClassLoader extends DexClassLoader implements IModuleC
 		return this.moduleName;
 	}
 
+	/**
+	 * {@link DexClassLoader} holds no closeable resources (it reads from the on-disk dex path),
+	 * so closing is a no-op. Present to satisfy the {@link java.io.Closeable} contract that
+	 * {@link IModuleClassLoader} extends.
+	 */
+	@Override
+	public void close() {
+		// no-op
+	}
+
 	@Override
 	public ClassLoader toClassLoader() {
 		return this;

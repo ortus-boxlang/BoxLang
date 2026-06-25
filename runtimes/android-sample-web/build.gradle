@@ -18,12 +18,12 @@ repositories {
 
 android {
 	namespace 'com.example.boxweb'
-	compileSdk 34
+	compileSdk 35
 
 	defaultConfig {
 		applicationId 'com.example.boxweb'
 		minSdk 26
-		targetSdk 34
+		targetSdk 35
 		versionCode 1
 		versionName '1.0'
 	}
@@ -46,6 +46,25 @@ android {
 		release {
 			minifyEnabled true
 			proguardFiles getDefaultProguardFile( 'proguard-android-optimize.txt' ), 'proguard-rules.pro'
+		}
+	}
+
+	// The full BoxLang core (and its deps like logback) carry duplicate META-INF entries;
+	// drop the ones that collide when merged into a single APK.
+	packaging {
+		resources {
+			excludes += [
+				'META-INF/INDEX.LIST',
+				'META-INF/DEPENDENCIES',
+				'META-INF/LICENSE*',
+				'META-INF/NOTICE*',
+				'META-INF/*.SF',
+				'META-INF/*.DSA',
+				'META-INF/*.RSA',
+				'META-INF/versions/**',
+				'**/module-info.class'
+			]
+			pickFirsts += [ 'META-INF/services/**' ]
 		}
 	}
 }

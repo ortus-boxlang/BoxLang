@@ -20,8 +20,8 @@ pluginManagement {
 		google()
 	}
 	plugins {
-		id 'com.android.application' version '8.5.2'
-		id 'com.android.library' version '8.5.2'
+		id 'com.android.application' version '9.2.1'
+		id 'com.android.library' version '9.2.1'
 	}
 }
 
