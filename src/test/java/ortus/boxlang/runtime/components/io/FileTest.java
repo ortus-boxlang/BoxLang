@@ -184,6 +184,21 @@ public class FileTest {
 	}
 
 	@Test
+	public void testTextFileReadWithCachedWithinArrayValue() throws IOException {
+		assertFalse( FileSystemUtil.exists( testTextFile ) );
+		FileSystemUtil.write( testTextFile, "file read test!".getBytes( "UTF-8" ), true );
+
+		variables.put( Key.of( "testFile" ), Path.of( testTextFile ).toAbsolutePath().toString() );
+		instance.executeSource(
+		    """
+		    bx:file action="read" file="#testFile#" variable="readVariable" cachedwithin=[];
+		    """,
+		    context, BoxSourceType.BOXSCRIPT );
+
+		assertThat( variables.get( Key.of( "readVariable" ) ) ).isEqualTo( "file read test!" );
+	}
+
+	@Test
 	public void testFileReadBinary() throws IOException {
 		assertFalse( FileSystemUtil.exists( testBinaryFile ) );
 

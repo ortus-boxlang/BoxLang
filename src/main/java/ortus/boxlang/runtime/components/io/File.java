@@ -89,7 +89,7 @@ public class File extends Component {
 		    new Attribute( Key.accept, "string" ),
 		    new Attribute( Key.result, "string" ),
 		    new Attribute( Key.fixnewline, "boolean", false ),
-		    new Attribute( Key.cachedwithin, "numeric" ),
+		    new Attribute( Key.cachedwithin, "any" ),
 		    // ACF compatibility attribute
 		    new Attribute( Key.result, "string" )
 		};
