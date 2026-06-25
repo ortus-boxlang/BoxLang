@@ -35,13 +35,10 @@ import ortus.boxlang.runtime.types.IStruct;
  * manifest (no per-app subclass needed) — all behavior is customized in {@code Application.bx}
  * via its lifecycle hooks and handlers.
  * <p>
- * Supports both UI tracks:
- * <ul>
- * <li><b>WebView track</b> (default): hosts a {@link WebView}, builds the MVC front
- * controller, and navigates to the entry route ({@code /} → {@code Main.index}).</li>
- * <li><b>Compose track</b>: a subclass/host can call {@link #setBoxContent(Object)} with a
- * BoxLang UI-tree closure rendered natively by the Compose renderer.</li>
- * </ul>
+ * Hosts the <b>WebView track</b>: it creates a {@link WebView}, builds the MVC front controller,
+ * and navigates to the entry route ({@code /} → {@code Main.index}). Views are authored as
+ * BoxLang {@code .bxm} templates — no Kotlin, no Compose; the app is 100% BoxLang.
+ * <p>
  * Every Android lifecycle callback forwards to the matching optional {@code Application.bx}
  * hook through {@link AndroidLifecycleDispatcher}.
  */
@@ -70,22 +67,12 @@ public class BoxActivity extends AppCompatActivity {
 		fireRequestStart();
 		this.lifecycle.invokeHook( "onActivityCreate", savedInstanceState );
 
-		// Default render mode: WebView track.
+		// Host the WebView track and navigate to the entry route.
 		WebView webView = new WebView( this );
 		setContentView( webView );
 		MVCDispatcher dispatcher = android.getDispatcher();
 		this.webRenderer = new BoxWebViewRenderer( webView, dispatcher, this.context );
 		this.webRenderer.navigate( this.entryRoute, "GET", null );
-	}
-
-	/**
-	 * Render the Compose track from a BoxLang UI-tree value (closure or node tree).
-	 * Delegates to the Kotlin {@code ComposeTreeRenderer}.
-	 *
-	 * @param uiTree The BoxLang UI tree (or a closure returning one)
-	 */
-	public void setBoxContent( Object uiTree ) {
-		ComposeBridge.render( this, this.context, uiTree );
 	}
 
 	/**

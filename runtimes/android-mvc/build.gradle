@@ -8,8 +8,8 @@
  *
  * Because this module has ZERO Android dependencies, it compiles and is fully unit-tested
  * on a plain JVM (no Android SDK required). The Android library module (:runtimes:android)
- * depends on this module and adds only the Android-specific glue (Activity, WebView,
- * Compose). This same framework is therefore reusable across Android, web, and Lambda.
+ * depends on this module and adds only the Android-specific glue (Activity + WebView, all
+ * Java). This same framework is therefore reusable across Android, web, and Lambda.
  */
 plugins {
 	id 'java-library'

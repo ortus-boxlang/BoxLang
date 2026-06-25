@@ -22,7 +22,6 @@ pluginManagement {
 	plugins {
 		id 'com.android.application' version '8.5.2'
 		id 'com.android.library' version '8.5.2'
-		id 'org.jetbrains.kotlin.android' version '1.9.24'
 	}
 }
 
@@ -43,8 +42,6 @@ project( ":runtimes:android-mvc" ).projectDir = new File( "runtimes/android-mvc"
 if ( System.getenv( "ANDROID_HOME" ) != null || System.getenv( "ANDROID_SDK_ROOT" ) != null ) {
 	include ":runtimes:android"
 	project( ":runtimes:android" ).projectDir = new File( "runtimes/android" )
-	include ":runtimes:android-sample-compose"
-	project( ":runtimes:android-sample-compose" ).projectDir = new File( "runtimes/android-sample-compose" )
 	include ":runtimes:android-sample-web"
 	project( ":runtimes:android-sample-web" ).projectDir = new File( "runtimes/android-sample-web" )
 }

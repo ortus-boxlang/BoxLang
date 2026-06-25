@@ -12,10 +12,9 @@ Generic `android.app.Application`. Declared in the app manifest's `android:name`
 runtime on `onCreate`. No subclass required.
 
 ### `BoxActivity`
-Generic, config-driven `Activity`. Declared directly in the manifest. Hosts the WebView track
-and forwards every Android lifecycle callback to the matching `Application.bx` hook.
-- `navigate( path, method, params )` — dispatch a route in the WebView track.
-- `setBoxContent( uiTree )` — render the Compose track from a BoxLang UI tree/closure.
+Generic, config-driven `Activity` (100% Java). Declared directly in the manifest. Hosts the
+WebView and forwards every Android lifecycle callback to the matching `Application.bx` hook.
+- `navigate( path, method, params )` — dispatch a route into the in-process runtime.
 
 ## MVC front controller (`ortus.boxlang.runtime.android.mvc`)
 
@@ -51,17 +50,6 @@ view-in-layout. The action receives `event`, `rc`, and every `rc` entry as a nam
 `render(context, event)` renders the view (under `viewsRoot`) and wraps it in the layout
 (under `layoutsRoot`), exposing `event` and `rc` to templates and the view markup as
 `renderedView` to the layout. `renderView(...)`, `renderTemplate(context, absPath)`.
-
-## Compose UI tree (`ortus.boxlang.runtime.android.ui`)
-
-### `UI` (factory DSL)
-`column()`, `row()`, `box()`, `text(value)`, `button(label)`, `textField(value)`, `spacer(size)`.
-
-### `UINode`
-`prop(name, value)`/`getProp(name)`, `on(event, closure)`/`getHandler(event)`,
-`child(node)`/`children(...)`, `getType()`, `getChildren()`. Node types map 1:1 to Compose
-widgets in `ComposeTreeRenderer`. Events fire BoxLang closures; call
-`ComposeBridge$RenderState.requestRender()` to recompose.
 
 ## Starter-template layout
 

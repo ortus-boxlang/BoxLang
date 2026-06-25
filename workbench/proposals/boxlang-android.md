@@ -78,29 +78,20 @@ The build-side AOT is wired in both samples: `compileBoxLangAot` (→ containers
   `Router`/`Route` (path params, verb constraints, named routes, convention + default event),
   `RoutingService` (IService), `MVCEvent` (the `rc` request collection, `setView`/`setLayout`,
   `relocate`), `FlashScope` (one-hop persistence), `ViewRenderer` (render `.bxm` → HTML and
-  wrap in a layout), and the `MVCDispatcher` front controller (handler-first → render). Plus
-  the Compose `UINode`/`UI` UI-tree model.
+  wrap in a layout), and the `MVCDispatcher` front controller (handler-first → render).
 - **AOT class pipeline** (`:runtimes:android-mvc`, package `…android.aot`, JVM-tested):
   `BoxClassExtractor`, `PreloadedClassLoader`, `PreloadedBoxpiler` (see §3), plus
   `ModuleArchiver` + `AndroidModuleClassLoader` for per-module DEX isolation (see §5b).
-- **Android runtime glue** (`:runtimes:android`, AGP library, SDK-gated): `AndroidBoxRuntime`
-  (boot + asset seeding + config), generic manifest-declared `BoxAndroidApplication` /
-  `BoxActivity`, `AndroidLifecycleDispatcher` (optional `Application.bx` Android hooks),
-  `BoxWebViewRenderer` (in-process routing + JS bridge), `ComposeTreeRenderer` /
-  `ComposeBridge` (Kotlin).
-- **Two samples / starter templates**: WebView (zero Kotlin) and Compose.
+- **Android runtime glue** (`:runtimes:android`, AGP library, SDK-gated, **100% Java**):
+  `AndroidBoxRuntime` (boot + asset seeding + config), generic manifest-declared
+  `BoxAndroidApplication` / `BoxActivity`, `AndroidLifecycleDispatcher` (optional
+  `Application.bx` Android hooks), `BoxWebViewRenderer` (in-process routing + JS bridge).
+- **One sample / starter template**: the WebView app (zero Kotlin/Java app code).
 - **Docs** (`runtimes/android/docs/`) and an **agent skill**.
 
-## 5. Two UI tracks
+## 5. UI — WebView + BoxLang templating (front-controller MVC)
 
-### Track 1 — Compose-interop DSL
-BoxLang authors an immutable UI **tree** (`UINode` via the `UI` DSL); a generic Kotlin/Compose
-renderer walks it and emits real Compose widgets, wiring node closures back to the runtime and
-binding state for recomposition. Compose needs its compiler plugin, so this track carries a
-small amount of Kotlin (the renderer + a thin host); app logic stays in `.bx`.
-
-### Track 2 — WebView + BoxLang templating (front-controller MVC)
-Plays to BoxLang's templating strength and needs no Kotlin/Compose toolchain. A classic
+The app is **100% BoxLang with zero Kotlin**. A classic
 ColdBox flow: route → **handler action runs first** → populates `rc` and chooses
 `view`+`layout` (or `relocate`) → framework renders the view inside the layout → HTML loads
 into a `WebView`. Forms and links are captured **in-process** (JS bridge for POST, URL
@@ -177,10 +168,11 @@ Bootstraps through the same application-listener contract as web/lambda
 
 ART forbids defining raw bytecode but **permits loading DEX** from app-private storage via
 `InMemoryDexClassLoader` (API 26+). Dev mode: a `BoxDevServer` on the dev machine watches
-`src/main/bx`; on change it (WebView) re-renders the `.bxm` to fresh HTML and reloads the
-WebView sub-second, or (Compose) recompiles the changed `.bx` → `.class` → `d8` → `.dex`,
-`adb push`es it, and the dev runtime reloads via `InMemoryDexClassLoader` and re-renders —
-React-Native-style Fast Refresh. Gated behind `boxlang.dev=true`; never in release builds.
+`src/main/bx`; on change it re-renders the changed `.bxm` to fresh HTML and reloads the
+WebView sub-second (no native rebuild). For changed `.bx` classes it recompiles
+`.bx` → `.class` → `d8` → `.dex`, `adb push`es it, and the dev runtime reloads via
+`InMemoryDexClassLoader` — React-Native-style Fast Refresh. Gated behind `boxlang.dev=true`;
+never in release builds.
 
 ## 9. Roadmap
 
@@ -193,6 +185,7 @@ React-Native-style Fast Refresh. Gated behind `boxlang.dev=true`; never in relea
 - `AndroidRuntimeConfig` service-disable defaults; method-count/R8 tuning.
 - WireBox-lite DI, constraint validation, REST/JSON rendering, security guards, i18n
   (the framework roadmap deferred from the MVC core).
-- Full Material widget catalog for Track 1; native "BoxUI" renderer.
+- Optional **native-widget renderer in pure Java** (a `UINode`→`android.widget` tree) if a
+  non-WebView UI is wanted later — explicitly **no Kotlin/Compose**.
 - Standalone `ortus-boxlang/boxlang-android` repo + Maven-Central `.aar` publishing.
-- Instrumented Espresso/Compose + UIAutomator tests on CI emulators.
+- Instrumented Espresso + UIAutomator tests on CI emulators.

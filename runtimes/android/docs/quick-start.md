@@ -89,21 +89,4 @@ adb shell am start -n com.example.boxweb/ortus.boxlang.runtime.android.BoxActivi
 You should see the `Main.index` screen. Tap a link → it routes in-process to the matching
 handler; submit a form → the action runs and re-renders. **No web server is involved.**
 
-## Compose track (native widgets)
-
-Author a UI tree in BoxLang instead of `.bxm`:
-
-```java
-// handlers/Main.bx
-class {
-    function index() {
-        var ui = createObject( "java", "ortus.boxlang.runtime.android.ui.UI" );
-        return ui.column()
-            .child( ui.text( "Count: " & application.count ) )
-            .child( ui.button( "Increment" ).on( "onClick", () => application.count++ ) );
-    }
-}
-```
-
-See the `android-sample-compose` module for the thin Kotlin host and
-[tutorial.md](tutorial.md) for the full walkthrough.
+See [tutorial.md](tutorial.md) for the full list + detail + add walkthrough.

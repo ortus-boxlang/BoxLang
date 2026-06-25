@@ -3,9 +3,11 @@
  *
  * This module contains the Android-SPECIFIC glue for running BoxLang on Android:
  * the runtime bootstrap, the generic manifest-declared Application/Activity, the WebView
- * renderer + JS bridge, the Android lifecycle -> Application.bx hook dispatcher, and the
- * Compose tree renderer (Kotlin). The portable, Android-free MVC framework lives in
- * :runtimes:android-mvc and is consumed here.
+ * renderer + JS bridge, and the Android lifecycle -> Application.bx hook dispatcher. The
+ * portable, Android-free MVC framework lives in :runtimes:android-mvc and is consumed here.
+ *
+ * 100% Java — no Kotlin. The UI is the WebView track: BoxLang .bxm templates rendered to
+ * HTML and loaded into a WebView.
  *
  * Requires the Android SDK + Android Gradle Plugin. settings.gradle only includes this
  * module when ANDROID_HOME / ANDROID_SDK_ROOT is present, so the core BoxLang build and
@@ -18,7 +20,6 @@
  */
 plugins {
 	id 'com.android.library'
-	id 'org.jetbrains.kotlin.android'
 }
 
 repositories {
@@ -40,18 +41,6 @@ android {
 		targetCompatibility JavaVersion.VERSION_17
 		// Library desugaring lets D8/R8 dex the Java 17/21 APIs BoxLang core uses.
 		coreLibraryDesugaringEnabled true
-	}
-
-	kotlinOptions {
-		jvmTarget = '17'
-	}
-
-	buildFeatures {
-		compose true
-	}
-
-	composeOptions {
-		kotlinCompilerExtensionVersion '1.5.14'
 	}
 
 	buildTypes {
@@ -81,13 +70,8 @@ dependencies {
 	// Java 8+ API desugaring for ART
 	coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
 
-	// AndroidX + Compose
-	implementation 'androidx.core:core-ktx:1.13.1'
+	// AndroidX (Java-only; no Kotlin/Compose)
 	implementation 'androidx.appcompat:appcompat:1.7.0'
-	implementation platform( 'androidx.compose:compose-bom:2024.06.00' )
-	implementation 'androidx.compose.ui:ui'
-	implementation 'androidx.compose.material3:material3'
-	implementation 'androidx.activity:activity-compose:1.9.1'
 
 	// Unit tests (Robolectric runs Android framework classes on the JVM)
 	testImplementation 'junit:junit:4.13.2'

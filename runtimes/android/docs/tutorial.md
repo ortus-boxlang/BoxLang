@@ -1,9 +1,7 @@
-# Tutorial — Build an Items app (twice)
+# Tutorial — Build an Items app
 
-We'll build the same small **list + detail + add** app two ways: the WebView/MVC track and
-the Compose track. Both share the same `Application.bx` mental model and handlers-first flow.
-
-## Part A — WebView / MVC track
+We'll build a small **list + detail + add** app on the WebView/MVC track — 100% BoxLang,
+no Kotlin.
 
 ### 1. Routes (`Application.bx`)
 
@@ -78,44 +76,6 @@ so the list re-renders with the new item and the notice banner. All in-process �
 
 > **How it works:** the JS bridge captures the POST form and calls into the runtime; link taps
 > are intercepted and routed. Both go through the same `Application.bx` request lifecycle.
-
-## Part B — Compose track
-
-Same data, native widgets. Author the UI as a BoxLang tree.
-
-### 1. `handlers/Main.bx`
-
-```java
-class {
-    function index() { return new ItemsScreen().build(); }
-}
-```
-
-### 2. `ItemsScreen.bx`
-
-```java
-class {
-    variables.UI = createObject( "java", "ortus.boxlang.runtime.android.ui.UI" );
-    variables.render = createObject( "java", "ortus.boxlang.runtime.android.ComposeBridge$RenderState" );
-
-    function build() {
-        var col = variables.UI.column().child( variables.UI.text( "Items" ).prop( "size", 24 ) );
-        for ( var name in application.items ) {
-            col.child( variables.UI.text( "• " & name ) );
-        }
-        col.child(
-            variables.UI.button( "Add Durian" ).on( "onClick", () => {
-                application.items.append( "Durian" );
-                variables.render.requestRender();
-            } )
-        );
-        return col;
-    }
-}
-```
-
-The thin Kotlin host (`MainActivity`) invokes `Main.index()` and hands the tree to the Compose
-renderer; tapping the button mutates BoxLang state and requests recomposition.
 
 ## Limitations & gotchas
 

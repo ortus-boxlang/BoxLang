@@ -33,14 +33,12 @@ function onLowMemory() {}
 function onConfigurationChanged( newConfig ) {}
 ```
 
-## Choosing a UI track
+## The UI — WebView + templating
 
-- **WebView/MVC** — author `.bxm` views + layouts; handlers run first and set the view/layout.
-  Zero Kotlin. Best for fast delivery and web-skill reuse.
-- **Compose** — author a `UINode` tree in BoxLang; a thin Kotlin host renders native widgets.
-  Best for native look & feel.
-
-You can mix per screen.
+Author `.bxm` views + layouts; handlers run first and set the view/layout, the framework
+renders the view inside the layout and loads the HTML into a `WebView`. **Zero Kotlin — the
+app is 100% BoxLang.** (A pure-Java native-widget renderer is a roadmap option; there is no
+Compose/Kotlin track.)
 
 ## HTTP / JSON / async
 
@@ -83,7 +81,7 @@ proposal's "BoxLang modules" section for the full design and the remaining devic
 ## Hot reload (dev)
 
 Run the dev server, then edit `.bxm`/`.bx` and watch the app update without a reinstall
-(WebView: sub-second re-render; Compose: dex push + recompose). Gated behind `boxlang.dev=true`;
+(`.bxm` edits: sub-second re-render; `.bx` class edits: dex push + reload). Gated behind `boxlang.dev=true`;
 never present in release builds. See the proposal's hot-reload section.
 
 ## Build & deploy
