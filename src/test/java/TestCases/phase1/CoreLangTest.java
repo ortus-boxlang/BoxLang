@@ -1335,8 +1335,7 @@ public class CoreLangTest {
 
 	@DisplayName( "String parsing unclosed pound inside cfoutput" )
 	@Test
-	public void testStringParsingUnclosedPoundInsideCfoutput() throws Throwable {
-
+	public void testStringParsingUnclosedPoundInsideCfoutput() {
 		Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
 		    """
 		    <cfoutput>
@@ -1346,8 +1345,22 @@ public class CoreLangTest {
 		    </cfoutput>
 		       	""",
 		    context, BoxSourceType.CFTEMPLATE ) );
+		assertThat( t.getMessage() ).contains( "Unexpected end of expression" );
+	}
 
-		assertThat( t.getMessage() ).contains( "Unterminated hash" );
+	@DisplayName( "String parsing unclosed pound inside bxoutput" )
+	@Test
+	public void testStringParsingUnclosedPoundInsideBxoutput() {
+		Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    <bx:output>
+		       some output
+		       #myVar
+		    	<more tags>
+		    </bx:output>
+		       	""",
+		    context, BoxSourceType.BOXTEMPLATE ) );
+		assertThat( t.getMessage() ).contains( "Unexpected end of expression" );
 	}
 
 	@DisplayName( "String parsing 6" )
