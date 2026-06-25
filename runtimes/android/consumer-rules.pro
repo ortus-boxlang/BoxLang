@@ -30,6 +30,15 @@
 -dontwarn org.slf4j.**
 -dontwarn ch.qos.logback.**
 
+# --- Parser toolchain stripped from the APK (AOT/NoOp never parses on device) ---
+# The runtime jar still carries the generated ANTLR parsers and the JavaBoxpiler, which
+# reference the now-absent ANTLR runtime, JavaParser, Guava, and Javassist. These code
+# paths are never reached on device, so silence R8's missing-class warnings for them.
+-dontwarn org.antlr.**
+-dontwarn com.github.javaparser.**
+-dontwarn com.google.**
+-dontwarn javassist.**
+
 # --- The JS bridge entry point used by the WebView track ---
 -keepclassmembers class ortus.boxlang.runtime.android.BoxWebViewRenderer$Bridge {
     @android.webkit.JavascriptInterface <methods>;

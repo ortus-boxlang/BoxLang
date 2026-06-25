@@ -65,7 +65,17 @@ dependencies {
 	// BoxLang runtime — on a real build this is the slim NoOp distribution.
 	// Within this repo we depend on the core project; a standalone repo would use
 	// e.g. implementation "io.boxlang:boxlang:${boxlangVersion}".
-	api project( ':' )
+	//
+	// On device BoxLang runs AHEAD-OF-TIME (NoOp): it loads pre-compiled classes and never
+	// parses .bx/.bxm source, so the entire parser toolchain is dead weight in the APK. Drop
+	// ANTLR (runtime + grammars), JavaParser, and JavaParser's transitive Guava/Javassist —
+	// the same families the NoOp distribution jar excludes — to slim what D8 has to dex.
+	api ( project( ':' ) ) {
+		exclude group: 'org.antlr'
+		exclude group: 'com.github.javaparser'
+		exclude group: 'com.google.guava'
+		exclude group: 'org.javassist'
+	}
 
 	// Java 8+ API desugaring for ART
 	coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'

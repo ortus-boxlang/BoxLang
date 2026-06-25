@@ -8,5 +8,11 @@
 -dontwarn ortus.boxlang.**
 -dontwarn org.slf4j.**
 -dontwarn ch.qos.logback.**
+# Parser toolchain is excluded from the APK (AOT/NoOp never parses on device); silence the
+# missing-class warnings from the generated ANTLR parsers + JavaBoxpiler that reference them.
+-dontwarn org.antlr.**
+-dontwarn com.github.javaparser.**
+-dontwarn com.google.**
+-dontwarn javassist.**
 
 -keepattributes *Annotation*,Signature,InnerClasses,EnclosingMethod,RuntimeVisibleAnnotations

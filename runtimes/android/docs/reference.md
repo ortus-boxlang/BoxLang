@@ -66,9 +66,22 @@ src/main/bx/
 
 ## AOT Gradle task
 
-`compileBoxLangAot` runs `ortus.boxlang.compiler.BXCompiler --source src/main/bx --target
-<out>`; the bytecode is dexed into the APK by D8/R8. `stageBoxApp` mirrors `src/main/bx` into
-the APK assets for on-device reads.
+Three chained tasks turn `src/main/bx` into dexed bytecode, wired ahead of AGP's dexing so
+they run automatically on `assembleDebug`/`assembleRelease`:
+
+1. `compileBoxLangAot` — `ortus.boxlang.compiler.BXCompiler --source src/main/bx --target
+   <out>` compiles `.bx`/`.bxm` to the BoxLang AOT class container.
+2. `extractBoxLangClasses` — unpacks the containers into standard `.class` files.
+3. `jarBoxLangAot` — packages those `.class` files into `boxlang-aot.jar`, declared on the
+   app's `implementation` classpath so AGP's own **D8** dexes the `boxgenerated.*` classes
+   into the APK (no manual `d8`/dex-merge).
+
+`stageBoxApp` mirrors `src/main/bx` into the APK assets for on-device reads.
+
+> **Slim APK:** on device BoxLang runs AOT/NoOp and never parses source, so the `:runtimes:android`
+> module excludes the parser toolchain (ANTLR runtime + grammars, JavaParser, its Guava/Javassist)
+> from the dexed runtime. The matching standalone artifact is `boxlang-noop-*.jar`, which excludes
+> the same families.
 
 ## R8 / ProGuard
 

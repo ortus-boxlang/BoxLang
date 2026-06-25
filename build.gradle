@@ -553,6 +553,13 @@ task shadowJarNoop( type: com.github.jengelman.gradle.plugins.shadow.tasks.Shado
 	exclude 'org/checkerframework/**'
 	// Note: We keep ASM in runtime as it's used for bytecode manipulation beyond compilation
 
+	// Exclude the ANTLR parsers + runtime. A NoOp/AOT deployment runs ONLY pre-compiled
+	// classes and never parses .bx/.bxm source, so the generated grammars (BoxLang, CFML,
+	// SQL, DocBlock) and the antlr4 runtime are dead weight. This is safe ONLY for the NoOp
+	// jar — the main boxlang.jar keeps ANTLR because ASMBoxpiler parses source at runtime.
+	exclude 'ortus/boxlang/parser/antlr/**'
+	exclude 'org/antlr/**'
+
 	manifest {
 		attributes 'Main-Class': 'ortus.boxlang.runtime.BoxRunner'
 		attributes 'Description': 'BoxLang NoOp Runtime (Pre-compiled Classes Only)'
