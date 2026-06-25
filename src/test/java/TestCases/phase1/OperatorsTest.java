@@ -1084,4 +1084,46 @@ public class OperatorsTest {
 
 	}
 
+	@DisplayName( "null operand in arithmetic operators throws" )
+	@Test
+	public void testNullOperandInArithmeticThrows() {
+		assertThrows(
+		    Exception.class,
+		    () -> instance.executeStatement( "null + 5", context )
+		);
+		assertThrows(
+		    Exception.class,
+		    () -> instance.executeStatement( "5 + null", context )
+		);
+		assertThrows(
+		    Exception.class,
+		    () -> instance.executeStatement( "null - 5", context )
+		);
+		assertThrows(
+		    Exception.class,
+		    () -> instance.executeStatement( "null * 5", context )
+		);
+		assertThrows(
+		    Exception.class,
+		    () -> instance.executeStatement( "null / 5", context )
+		);
+	}
+
+	@DisplayName( "empty string operand in arithmetic operators throws" )
+	@Test
+	public void testEmptyStringOperandInArithmeticThrows() {
+		assertThrows(
+		    Exception.class,
+		    () -> instance.executeStatement( "\"\" + 5", context )
+		);
+		assertThrows(
+		    Exception.class,
+		    () -> instance.executeStatement( "5 + \"\"", context )
+		);
+		assertThrows(
+		    Exception.class,
+		    () -> instance.executeStatement( "\"\" * 5", context )
+		);
+	}
+
 }

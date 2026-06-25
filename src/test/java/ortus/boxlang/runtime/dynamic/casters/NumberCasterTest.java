@@ -40,12 +40,17 @@ public class NumberCasterTest {
 		assertThat( result.doubleValue() ).isEqualTo( 5 );
 	}
 
-	@DisplayName( "It can cast a null to a Number" )
+	@DisplayName( "It throws when casting null to a Number with fail=true" )
 	@Test
 	void testItCanCastANull() {
-		Number result = NumberCaster.cast( null );
-		assertThat( result ).isInstanceOf( Integer.class );
-		assertThat( result.doubleValue() ).isEqualTo( 0 );
+		assertThrows( BoxCastException.class, () -> NumberCaster.cast( null ) );
+	}
+
+	@DisplayName( "It returns null when attempting to cast null to a Number" )
+	@Test
+	void testAttemptNullReturnsFailedAttempt() {
+		CastAttempt<Number> attempt = NumberCaster.attempt( null );
+		assertThat( attempt.wasSuccessful() ).isFalse();
 	}
 
 	@DisplayName( "It can cast a string to a Number" )

@@ -57,8 +57,11 @@ public class DecimalFormat extends BIF {
 	 * @argument.length The number of decimal places to include in the formatted string.
 	 */
 	public String _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Locale			locale			= ( Locale ) context.getConfig().get( Key.locale );
-		Object			number			= arguments.get( Key.number );
+		Locale	locale	= ( Locale ) context.getConfig().get( Key.locale );
+		Object	number	= arguments.get( Key.number );
+		if ( number == null ) {
+			number = 0;
+		}
 		Number			value			= ( number instanceof String str && str.isEmpty() ) ? 0 : NumberCaster.cast( number );
 		int				decimalPlaces	= arguments.getAsInteger( Key.length );
 		NumberFormat	formatter		= java.text.DecimalFormat.getInstance( locale );

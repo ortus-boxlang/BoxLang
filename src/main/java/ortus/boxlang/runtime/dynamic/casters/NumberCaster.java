@@ -111,7 +111,10 @@ public class NumberCaster implements IBoxCaster {
 	 */
 	public static Number cast( Object object, Boolean fail, boolean castDates ) {
 		if ( object == null ) {
-			return 0;
+			if ( fail ) {
+				throw new BoxCastException( "Can't cast null to a Number." );
+			}
+			return null;
 		}
 
 		object = DynamicObject.unWrap( object );
