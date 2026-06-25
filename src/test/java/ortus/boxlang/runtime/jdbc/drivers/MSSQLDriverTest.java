@@ -158,6 +158,60 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		myDataSource.shutdown();
 	}
 
+	@DisplayName( "BL-2532: It can switch default datasource via bx:application update" )
+	@Test
+	public void testApplicationDatasourceSwitchesDefaultConnection() {
+		instance.executeSource(
+		    """
+		    bx:application
+		    	name="mssqlDatasourceSwitchApp"
+		    	datasource : "mssqlMaster"
+		    	datasources = {
+		    		"mssqlMaster" = {
+		    			driver="mssql",
+		    			host="localhost",
+		    			port="1433",
+		    			database="master",
+		    			username="sa",
+		    			password="123456Password"
+		    		},
+		    		"mssqlTempDb" = {
+		    			driver="mssql",
+		    			host="localhost",
+		    			port="1433",
+		    			database="tempdb",
+		    			username="sa",
+		    			password="123456Password"
+		    		}
+		    	};
+
+		    firstResult = queryExecute( "SELECT DB_NAME() AS dbName" );
+		    firstDb = firstResult.dbName[1];
+		    """,
+		    context
+		);
+
+		instance.executeSource(
+		    """
+		    bx:application
+		    	action="update"
+		    	name="mssqlDatasourceSwitchApp"
+		    	datasource : "mssqlTempDb";
+
+		    secondResult = queryExecute( "SELECT DB_NAME() AS dbName" );
+		    secondDb = secondResult.dbName[1];
+		    """,
+		    context
+		);
+
+		String	firstDb		= variables.getAsString( Key.of( "firstDb" ) );
+		String	secondDb	= variables.getAsString( Key.of( "secondDb" ) );
+
+		assertThat( firstDb.toLowerCase() ).isEqualTo( "master" );
+		assertThat( secondDb.toLowerCase() ).isEqualTo( "tempdb" );
+		assertThat( secondDb.toLowerCase() ).isNotEqualTo( firstDb.toLowerCase() );
+	}
+
 	@DisplayName( "It can return a rowcount in the second SQL statement" )
 	@Test
 	public void testRowCount() {

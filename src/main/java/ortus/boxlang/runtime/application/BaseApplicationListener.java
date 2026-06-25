@@ -283,6 +283,7 @@ public abstract class BaseApplicationListener {
 		// If the settings have changed, see if the app and session contexts need updated or initialized as well
 		defineApplication();
 		context.clearConfigCache();
+		context.getConnectionManager().resetDatasourceCaches();
 	}
 
 	/**

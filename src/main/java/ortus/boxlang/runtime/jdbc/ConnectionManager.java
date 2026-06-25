@@ -764,6 +764,22 @@ public class ConnectionManager {
 	}
 
 	/**
+	 * Clear cached datasource lookups for this request so subsequent queries
+	 * re-resolve datasource definitions from the current request/application config.
+	 *
+	 * This is used when application settings are updated at runtime (for example via
+	 * bx:application action="update") and datasource definitions/default selection
+	 * need to reflect the new settings immediately.
+	 *
+	 * @return ConnectionManager
+	 */
+	public ConnectionManager resetDatasourceCaches() {
+		this.datasources.clear();
+		this.defaultDatasource = null;
+		return this;
+	}
+
+	/**
 	 * Verifies if we have a default datasource or not
 	 *
 	 * @return true if we have a default datasource, false otherwise
