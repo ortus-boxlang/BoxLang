@@ -42,7 +42,7 @@ public class NumberCasterTest {
 
 	@DisplayName( "It throws when casting null to a Number with fail=true" )
 	@Test
-	void testItCanCastANull() {
+	void testCastNullWithFailThrowsException() {
 		assertThrows( BoxCastException.class, () -> NumberCaster.cast( null ) );
 	}
 
