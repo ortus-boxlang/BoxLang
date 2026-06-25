@@ -800,6 +800,9 @@ public class BaseBoxContext implements IBoxContext {
 			BoxTemplate template = RunnableLoader.getInstance().loadTemplateRelative( this, templatePath, externalOnly );
 
 			template.invoke( this );
+		} else if ( BoxRuntime.getInstance().getConfiguration().getValidExtensions().contains( ext ) ) {
+			// Don't EVER allow a known script extension to be served
+			throw new BoxRuntimeException( "Template path [" + templatePath + "] has a known script extension [" + ext + "] and cannot be included" );
 		} else {
 			// If this extension is not one we compile, then just read the contents and flush it to the buffer
 			writeToBuffer(
