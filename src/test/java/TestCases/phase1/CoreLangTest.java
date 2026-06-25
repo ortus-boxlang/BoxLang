@@ -1331,7 +1331,23 @@ public class CoreLangTest {
 		    	""",
 		    context ) );
 		assertThat( t.getMessage() ).contains( "Unterminated hash" );
+	}
 
+	@DisplayName( "String parsing unclosed pound inside cfoutput" )
+	@Test
+	public void testStringParsingUnclosedPoundInsideCfoutput() throws Throwable {
+
+		Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    <cfoutput>
+		       some output
+		       #myVar
+		    	<more tags>
+		    </cfoutput>
+		       	""",
+		    context, BoxSourceType.CFTEMPLATE ) );
+
+		assertThat( t.getMessage() ).contains( "Unterminated hash" );
 	}
 
 	@DisplayName( "String parsing 6" )
