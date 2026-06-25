@@ -1341,7 +1341,7 @@ public class CoreLangTest {
 		    <cfoutput>
 		       some output
 		       #myVar
-		    	<more tags>
+		    <more tags>
 		    </cfoutput>
 		       	""",
 		    context, BoxSourceType.CFTEMPLATE ) );
