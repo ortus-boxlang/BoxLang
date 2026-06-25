@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.loader;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.nio.file.Paths;
 import java.util.concurrent.atomic.AtomicReference;
@@ -28,10 +29,17 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.ClassInfo;
+import ortus.boxlang.compiler.IBoxpiler;
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.modules.ModuleRecord;
+import ortus.boxlang.runtime.runnables.RunnableLoader;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.BoxFQN;
+import ortus.boxlang.runtime.util.FQN;
 
 /**
  * Verifies the single, consolidated {@link IClassLoaderFactory} seam that governs BOTH the
@@ -130,6 +138,84 @@ class ClassLoaderFactoryTest {
 				moduleRecord.unload( context );
 			}
 		}
+	}
+
+	@DisplayName( "The default factory builds a DiskClassLoader for generated classes" )
+	@Test
+	void testDefaultGeneratedClassLoader() {
+		IBoxpiler	boxpiler	= RunnableLoader.getInstance().getBoxpiler();
+		ClassLoader	created		= new DynamicClassLoaderFactory().createGeneratedClassLoader( runtime, boxpiler, "__ad_hoc_source__" );
+		assertThat( created ).isInstanceOf( DiskClassLoader.class );
+	}
+
+	@DisplayName( "ClassInfo.getClassLoader() is built through the factory (the AOT seam)" )
+	@Test
+	void testClassInfoUsesFactoryForGeneratedLoader() {
+		ClassLoader				sentinel	= new ClassLoader( getClass().getClassLoader() ) {
+											};
+		AtomicReference<String>	seenPool	= new AtomicReference<>();
+
+		// A target like Android returns a resolve-only loader instead of a DiskClassLoader.
+		BoxRuntime.setClassLoaderFactory( new DynamicClassLoaderFactory() {
+
+			@Override
+			public ClassLoader createGeneratedClassLoader( BoxRuntime rt, IBoxpiler boxpiler, String classPoolName ) {
+				assertThat( boxpiler ).isNotNull();
+				seenPool.set( classPoolName );
+				return sentinel;
+			}
+		} );
+
+		ClassInfo classInfo = ClassInfo.forScript( "x = 1", BoxSourceType.BOXSCRIPT, RunnableLoader.getInstance().getBoxpiler() );
+		assertThat( classInfo.getClassLoader() ).isSameInstanceAs( sentinel );
+		assertThat( seenPool.get() ).isEqualTo( "__ad_hoc_source__" );
+	}
+
+	@DisplayName( "getDiskClass() resolves a generated class by parent delegation — no defineClass" )
+	@Test
+	void testGeneratedClassResolvesByDelegation() {
+		ClassLoader appLoader = getClass().getClassLoader();
+		// Resolve-only loader: never defines, only delegates to a parent that already has the class.
+		BoxRuntime.setClassLoaderFactory( new DynamicClassLoaderFactory() {
+
+			@Override
+			public ClassLoader createGeneratedClassLoader( BoxRuntime rt, IBoxpiler boxpiler, String classPoolName ) {
+				return new ClassLoader( appLoader ) {
+				};
+			}
+		} );
+
+		// A ClassInfo whose FQN points at a class already present on the parent loader, simulating
+		// an AOT-dexed class. getDiskClass() must resolve it via delegation, loaded by the parent.
+		ClassInfo	classInfo	= classInfoFor( "ortus.boxlang.runtime.types.Array" );
+		Class<?>	resolved	= classInfo.getDiskClass();
+		assertThat( resolved.getName() ).isEqualTo( "ortus.boxlang.runtime.types.Array" );
+		assertThat( resolved.getClassLoader() ).isSameInstanceAs( appLoader );
+
+		// A name no loader can resolve fails loudly (never an illegal define).
+		assertThrows( BoxRuntimeException.class, () -> classInfoFor( "boxgenerated.scripts.DoesNotExist_zzz" ).getDiskClass() );
+	}
+
+	/**
+	 * Build a minimal ad-hoc {@link ClassInfo} with an explicit FQN (no file on disk), so the test
+	 * controls exactly which class name {@code getDiskClass()} will ask the loader to resolve.
+	 */
+	private ClassInfo classInfoFor( String fqn ) {
+		return new ClassInfo(
+		    FQN.of( fqn ),
+		    BoxFQN.of( "" ),
+		    "BoxScript",
+		    "Object",
+		    BoxSourceType.BOXSCRIPT,
+		    "x = 1",
+		    0L,
+		    new ClassLoader[ 1 ],
+		    null,
+		    RunnableLoader.getInstance().getBoxpiler(),
+		    null,
+		    fqn.hashCode(),
+		    new boolean[] { false }
+		);
 	}
 
 }

@@ -19,9 +19,12 @@ package ortus.boxlang.runtime.loader;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
+import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.modules.ModuleRecord;
 import ortus.boxlang.runtime.scopes.Key;
@@ -74,5 +77,22 @@ public class DynamicClassLoaderFactory implements IClassLoaderFactory {
 		}
 
 		return classLoader;
+	}
+
+	/**
+	 * Builds a {@link DiskClassLoader} for the generated class — the standard JVM behavior that
+	 * previously lived inline in {@code ClassInfo.getClassLoader()}: a {@code URLClassLoader} that
+	 * {@code defineClass()}es bytecode and JIT-compiles on a cache miss, parented to the boxpiler's
+	 * own class loader and reading from the configured class generation directory.
+	 */
+	@Override
+	public ClassLoader createGeneratedClassLoader( BoxRuntime runtime, IBoxpiler boxpiler, String classPoolName ) {
+		return new DiskClassLoader(
+		    new URL[] {},
+		    boxpiler.getClass().getClassLoader(),
+		    Paths.get( runtime.getConfiguration().classGenerationDirectory ),
+		    boxpiler,
+		    classPoolName
+		);
 	}
 }

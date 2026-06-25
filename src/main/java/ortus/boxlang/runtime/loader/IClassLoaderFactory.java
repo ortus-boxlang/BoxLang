@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.loader;
 
+import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.modules.ModuleRecord;
 
@@ -58,4 +59,22 @@ public interface IClassLoaderFactory {
 	 * @return The module's class loader
 	 */
 	IModuleClassLoader createModuleClassLoader( ModuleRecord record, ClassLoader parent );
+
+	/**
+	 * Create the class loader used to resolve a generated (compiled) BoxLang class for a given
+	 * class pool. This is the loader behind {@code ClassInfo.getClassLoader()}.
+	 * <p>
+	 * The default {@link DynamicClassLoaderFactory} returns a {@link DiskClassLoader} (a
+	 * {@code URLClassLoader}) that {@code defineClass()}es bytecode and JIT-compiles on miss.
+	 * Targets that cannot {@code defineClass} raw bytecode at runtime (e.g. Android AOT, where
+	 * ART forbids it) return a resolve-only loader that delegates to a parent already holding the
+	 * pre-compiled (dexed) classes, so resolution happens purely by parent-first delegation.
+	 *
+	 * @param runtime       The running runtime (provides configuration such as the class generation directory)
+	 * @param boxpiler      The boxpiler that owns the class pool (its loader becomes the parent in the default case)
+	 * @param classPoolName The name of the class pool the generated class belongs to
+	 *
+	 * @return The class loader for generated classes, consumed purely as a {@link ClassLoader}
+	 */
+	ClassLoader createGeneratedClassLoader( BoxRuntime runtime, IBoxpiler boxpiler, String classPoolName );
 }
