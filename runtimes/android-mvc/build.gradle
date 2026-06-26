@@ -54,4 +54,17 @@ test {
 		events "passed", "skipped", "failed"
 		exceptionFormat "full"
 	}
+
+	// CI runs the whole suite under a compiler matrix (asm | java). For the `java` matrix it sets
+	// BOXLANG_COMPILER=java and passes -PaddJavaCompiler=true, and the root :test task then puts the
+	// JavaBoxpiler on its classpath. This module's test JVM inherits the env but not that classpath,
+	// so without mirroring the wiring every test that boots the runtime fails with
+	// "Configured Boxpiler 'java' is not available. Available Boxpilers are: [noop, asm]".
+	// Add the java compiler jar (which registers the `java` boxpiler) and select it, exactly as root does.
+	if ( project.hasProperty( 'addJavaCompiler' ) && project.property( 'addJavaCompiler' ) == 'true' ) {
+		def jarJavaCompiler = project( ':' ).tasks.named( 'jarJavaCompiler' )
+		dependsOn jarJavaCompiler
+		classpath += files( jarJavaCompiler.flatMap { it.archiveFile } )
+		systemProperty 'boxlang.compiler', 'java'
+	}
 }
