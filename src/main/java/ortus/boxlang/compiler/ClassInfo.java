@@ -288,9 +288,13 @@ public record ClassInfo(
 	 *
 	 * @return The disk class loader for this class
 	 */
-	public DiskClassLoader getDiskClassLoader() {
-		return ( DiskClassLoader ) getClassLoader();
+public DiskClassLoader getDiskClassLoader() {
+	ClassLoader loader = getClassLoader();
+	if ( loader instanceof DiskClassLoader diskLoader ) {
+		return diskLoader;
 	}
+	throw new BoxRuntimeException( "Generated class loader is not a DiskClassLoader; bytecode definition is not supported on this target." );
+}
 
 	/**
 	 * Close and discard this class's loader, if one was created. The next {@link #getClassLoader()}
