@@ -73,6 +73,25 @@ class BXCompilerFQNTest {
 		assertThat( baked ).doesNotContain( source.getFileName().toString() );
 	}
 
+	@DisplayName( "Legacy compileFile overload preserves full source-path-derived FQN behavior" )
+	@Test
+	void testLegacyCompileFileOverloadPreservesFullPathBehavior( @TempDir Path source, @TempDir Path target ) throws IOException {
+		Path srcFile = source.resolve( "views/main/index.bxm" );
+		Files.createDirectories( srcFile.getParent() );
+		Files.writeString( srcFile, "<bx:output>hi</bx:output>" );
+		Path	targetFile	= target.resolve( "views/main/index.bxm" );
+
+		boolean	ok			= BXCompiler.compileFile( srcFile, targetFile, true, runtime, new ArrayList<>() );
+		assertThat( ok ).isTrue();
+
+		String	baked				= readBakedClassName( targetFile );
+		String	expectedFullPath	= ResolvedFilePath.of( "", "", srcFile.toString(), srcFile ).getFQN( "boxgenerated.templates" ).toString();
+		String	fileNameOnly		= ResolvedFilePath.of( "", "", srcFile.getFileName().toString(), srcFile ).getFQN( "boxgenerated.templates" ).toString();
+
+		assertThat( baked ).isEqualTo( expectedFullPath );
+		assertThat( baked ).isNotEqualTo( fileNameOnly );
+	}
+
 	/**
 	 * Read the original class name baked into the head of a BXCompiler container:
 	 * {@code int magic, int nameLength, byte[] name (UTF-8), ...class entries}.
