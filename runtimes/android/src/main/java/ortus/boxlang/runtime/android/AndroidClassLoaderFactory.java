@@ -21,7 +21,9 @@ import java.io.File;
 
 import android.content.Context;
 
+import ortus.boxlang.compiler.IBoxpiler;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.android.aot.PreloadedClassLoader;
 import ortus.boxlang.runtime.loader.IClassLoaderFactory;
 import ortus.boxlang.runtime.loader.IModuleClassLoader;
 import ortus.boxlang.runtime.modules.ModuleRecord;
@@ -76,5 +78,17 @@ public class AndroidClassLoaderFactory implements IClassLoaderFactory {
 	public IModuleClassLoader createModuleClassLoader( ModuleRecord record, ClassLoader parent ) {
 		File moduleArchive = new File( new File( this.appHome, "modules" ), record.name.getName() + ".jar" );
 		return new AndroidModuleClassLoader( record.name, moduleArchive, this.context, parent );
+	}
+
+	/**
+	 * Resolve-only loader for AOT-compiled {@code boxgenerated.*} classes. On Android these are
+	 * dexed into the APK and already loadable by the application class loader; ART forbids
+	 * {@code defineClass(byte[])} of raw JVM bytecode, so instead of a {@link ortus.boxlang.runtime.loader.DiskClassLoader}
+	 * we return a {@link PreloadedClassLoader} that resolves purely by parent-first delegation to the
+	 * loader that holds those classes (the same loader that loaded the boxpiler).
+	 */
+	@Override
+	public ClassLoader createGeneratedClassLoader( BoxRuntime runtime, IBoxpiler boxpiler, String classPoolName ) {
+		return new PreloadedClassLoader( boxpiler.getClass().getClassLoader() );
 	}
 }

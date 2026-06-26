@@ -102,6 +102,8 @@ tasks.register( 'compileBoxLangAot', JavaExec ) {
 	classpath	= project( ':' ).sourceSets.main.runtimeClasspath
 	mainClass	= 'ortus.boxlang.compiler.BXCompiler'
 	args		= [ '--source', "${projectDir}/src/main/bx", '--target', "${buildDir}/boxapp-containers", '--stopOnError' ]
+	// Start clean so renamed/removed sources don't leave stale containers behind.
+	doFirst { delete "${buildDir}/boxapp-containers" }
 }
 
 /**
@@ -115,6 +117,8 @@ tasks.register( 'extractBoxLangClasses', JavaExec ) {
 	classpath	= project( ':runtimes:android-mvc' ).sourceSets.main.runtimeClasspath + files( project( ':runtimes:android-mvc' ).sourceSets.main.output )
 	mainClass	= 'ortus.boxlang.runtime.android.aot.BoxClassExtractor'
 	args		= [ "${buildDir}/boxapp-containers", "${buildDir}/boxapp-dexable" ]
+	// Start clean so stale .class files from renamed/removed sources never get dexed into the APK.
+	doFirst { delete "${buildDir}/boxapp-dexable" }
 }
 
 /**

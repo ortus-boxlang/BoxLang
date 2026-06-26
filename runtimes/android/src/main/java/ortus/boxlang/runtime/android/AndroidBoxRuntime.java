@@ -90,9 +90,10 @@ public final class AndroidBoxRuntime {
 		// no runtime defineClass. Must be set before getInstance() builds the runtime loader.
 		BoxRuntime.setClassLoaderFactory( new AndroidClassLoaderFactory( context, appHome ) );
 
-		// 4. Boot the core runtime with the bundled boxlang.json. The NoOp boxpiler is
-		// chosen automatically via ServiceLoader because it is the only one on the
-		// classpath in the Android distribution.
+		// 4. Boot the core runtime with the bundled boxlang.json. The PreloadedBoxpiler is
+		// chosen automatically via ServiceLoader because it is the only one on the classpath
+		// in the Android distribution; it resolves AOT-dexed classes through the
+		// PreloadedClassLoader supplied by AndroidClassLoaderFactory (no runtime defineClass).
 		File			configFile		= new File( appHome, "boxlang.json" );
 		BoxRuntime		runtime			= BoxRuntime.getInstance(
 		    /* debugMode */ false,
@@ -104,11 +105,12 @@ public final class AndroidBoxRuntime {
 		RoutingService	routingService	= new RoutingService();
 		runtime.getConfiguration();		// ensure config is materialized
 
-		ViewRenderer	viewRenderer	= new ViewRenderer(
-		    runtime,
-		    new File( appHome, "views" ).getAbsolutePath(),
-		    new File( appHome, "layouts" ).getAbsolutePath()
-		);
+		// Resolve views/layouts via their LOGICAL mapping paths (e.g. "/views/main/index"), not
+		// absolute filesystem paths. An absolute path bypasses the mappings and yields an
+		// absolute-path-derived FQN; a logical path matches the prefabricated "/views"/"/layouts"
+		// directory mappings (boxlang.json) so the runtime FQN (boxgenerated.templates.views.main.*)
+		// equals the AOT build FQN, which is required for parent-first delegation to the dexed class.
+		ViewRenderer	viewRenderer	= new ViewRenderer( runtime, "/views", "/layouts" );
 		MVCDispatcher	dispatcher		= new MVCDispatcher( runtime, routingService, viewRenderer, "handlers" );
 
 		instance = new AndroidBoxRuntime( runtime, appHome, routingService, dispatcher );

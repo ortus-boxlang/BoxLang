@@ -51,12 +51,17 @@ public class ViewRenderer {
 	private final BoxRuntime	runtime;
 
 	/**
-	 * Absolute base directory for views (e.g. {@code <appHome>/views}).
+	 * Base path for views — either an absolute directory or, preferably, a logical mapping path
+	 * (e.g. {@code /views}). A logical path lets the runtime derive a stable, root-relative FQN
+	 * for the compiled template (required for AOT/dexed resolution); an absolute path is resolved
+	 * directly but yields an absolute-path FQN.
 	 */
 	private final String		viewsRoot;
 
 	/**
-	 * Absolute base directory for layouts (e.g. {@code <appHome>/layouts}).
+	 * Base path for layouts — an absolute directory or a logical mapping path (e.g. {@code /layouts}).
+	 *
+	 * @see #viewsRoot
 	 */
 	private final String		layoutsRoot;
 
@@ -69,8 +74,8 @@ public class ViewRenderer {
 	 * Construct a renderer with the default {@code .bxm} extension.
 	 *
 	 * @param runtime     The BoxLang runtime
-	 * @param viewsRoot   Absolute base directory for views
-	 * @param layoutsRoot Absolute base directory for layouts
+	 * @param viewsRoot   Base path for views — absolute dir or logical mapping path (e.g. {@code /views})
+	 * @param layoutsRoot Base path for layouts — absolute dir or logical mapping path (e.g. {@code /layouts})
 	 */
 	public ViewRenderer( BoxRuntime runtime, String viewsRoot, String layoutsRoot ) {
 		this( runtime, viewsRoot, layoutsRoot, ".bxm" );
@@ -80,8 +85,8 @@ public class ViewRenderer {
 	 * Construct a renderer.
 	 *
 	 * @param runtime     The BoxLang runtime
-	 * @param viewsRoot   Absolute base directory for views
-	 * @param layoutsRoot Absolute base directory for layouts
+	 * @param viewsRoot   Base path for views — absolute dir or logical mapping path (e.g. {@code /views})
+	 * @param layoutsRoot Base path for layouts — absolute dir or logical mapping path (e.g. {@code /layouts})
 	 * @param extension   The template file extension (including the dot)
 	 */
 	public ViewRenderer( BoxRuntime runtime, String viewsRoot, String layoutsRoot, String extension ) {
