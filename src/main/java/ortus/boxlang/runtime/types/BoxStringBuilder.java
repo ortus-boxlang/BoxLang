@@ -400,14 +400,15 @@ public class BoxStringBuilder implements IType, Comparable<BoxStringBuilder>, Se
 	 *
 	 * @throws ortus.boxlang.runtime.types.exceptions.BoxRuntimeException if position is out of range
 	 */
-public BoxStringBuilder insert( int position, Object value ) {
-	int len = this.buffer.length();
-	if ( position < 1 || position > len + 1 ) {
-		throw new ortus.boxlang.runtime.types.exceptions.BoxRuntimeException( String.format( "Position [%d] is out of range. Valid range is 1..%d.", position, len + 1 ) );
+	public BoxStringBuilder insert( int position, Object value ) {
+		int len = this.buffer.length();
+		if ( position < 1 || position > len + 1 ) {
+			throw new ortus.boxlang.runtime.types.exceptions.BoxRuntimeException(
+			    String.format( "Position [%d] is out of range. Valid range is 1..%d.", position, len + 1 ) );
+		}
+		this.buffer.insert( position - 1, value == null ? "" : StringCaster.cast( value ) );
+		return this;
 	}
-	this.buffer.insert( position - 1, value == null ? "" : StringCaster.cast( value ) );
-	return this;
-}
 
 	/**
 	 * Deletes characters from {@code start} to {@code end}, both 1-based and <em>inclusive</em>.
@@ -417,16 +418,16 @@ public BoxStringBuilder insert( int position, Object value ) {
 	 *
 	 * @return {@code this} for chaining
 	 */
-public BoxStringBuilder delete( int start, int end ) {
-	int len = this.buffer.length();
-	if ( start < 1 || end < start || end > len ) {
-		throw new ortus.boxlang.runtime.types.exceptions.BoxRuntimeException(
-		    String.format( "Invalid delete range [%d,%d]. Valid range is 1..%d with end >= start.", start, end, len )
-		);
+	public BoxStringBuilder delete( int start, int end ) {
+		int len = this.buffer.length();
+		if ( start < 1 || end < start || end > len ) {
+			throw new ortus.boxlang.runtime.types.exceptions.BoxRuntimeException(
+			    String.format( "Invalid delete range [%d,%d]. Valid range is 1..%d with end >= start.", start, end, len )
+			);
+		}
+		this.buffer.delete( start - 1, end );
+		return this;
 	}
-	this.buffer.delete( start - 1, end );
-	return this;
-}
 
 	/**
 	 * Replaces characters from {@code start} to {@code end} (1-based, inclusive) with {@code value}.
@@ -437,16 +438,16 @@ public BoxStringBuilder delete( int start, int end ) {
 	 *
 	 * @return {@code this} for chaining
 	 */
-public BoxStringBuilder replace( int start, int end, Object value ) {
-	int len = this.buffer.length();
-	if ( start < 1 || end < start || end > len ) {
-		throw new ortus.boxlang.runtime.types.exceptions.BoxRuntimeException(
-		    String.format( "Invalid replace range [%d,%d]. Valid range is 1..%d with end >= start.", start, end, len )
-		);
+	public BoxStringBuilder replace( int start, int end, Object value ) {
+		int len = this.buffer.length();
+		if ( start < 1 || end < start || end > len ) {
+			throw new ortus.boxlang.runtime.types.exceptions.BoxRuntimeException(
+			    String.format( "Invalid replace range [%d,%d]. Valid range is 1..%d with end >= start.", start, end, len )
+			);
+		}
+		this.buffer.replace( start - 1, end, value == null ? "" : StringCaster.cast( value ) );
+		return this;
 	}
-	this.buffer.replace( start - 1, end, value == null ? "" : StringCaster.cast( value ) );
-	return this;
-}
 
 	/**
 	 * Reverses the contents of the buffer in place.
