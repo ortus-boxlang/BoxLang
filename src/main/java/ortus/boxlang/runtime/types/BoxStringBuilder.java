@@ -417,10 +417,16 @@ public BoxStringBuilder insert( int position, Object value ) {
 	 *
 	 * @return {@code this} for chaining
 	 */
-	public BoxStringBuilder delete( int start, int end ) {
-		this.buffer.delete( start - 1, end );
-		return this;
+public BoxStringBuilder delete( int start, int end ) {
+	int len = this.buffer.length();
+	if ( start < 1 || end < start || end > len ) {
+		throw new ortus.boxlang.runtime.types.exceptions.BoxRuntimeException(
+		    String.format( "Invalid delete range [%d,%d]. Valid range is 1..%d with end >= start.", start, end, len )
+		);
 	}
+	this.buffer.delete( start - 1, end );
+	return this;
+}
 
 	/**
 	 * Replaces characters from {@code start} to {@code end} (1-based, inclusive) with {@code value}.
