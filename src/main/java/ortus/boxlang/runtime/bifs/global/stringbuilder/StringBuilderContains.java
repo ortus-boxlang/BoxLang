@@ -28,7 +28,6 @@ import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.BoxStringBuilder;
 
 @BoxBIF
-@BoxBIF
 @BoxMember( type = BoxLangType.STRING_BUILDER_STRICT, name = "contains" )
 @BoxMember( type = BoxLangType.STRING_BUILDER_STRICT, name = "containsNoCase" )
 public class StringBuilderContains extends BIF {
