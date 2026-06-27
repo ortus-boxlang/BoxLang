@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.compiler;
 
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -333,11 +334,16 @@ public abstract class Boxpiler implements IBoxpiler {
 				lastModified	= classPool.get( classInfo.fqn().toString() ).lastModified();
 				lastModified2	= classInfo.lastModified();
 				if ( ( lastModified > 0 ) && ( lastModified2 > 0 ) && !trustedCache && ( lastModified != lastModified2 ) ) {
-					try {
-						// Don't know if this does anything, but calling it for good measure
-						classPool.get( classInfo.fqn().toString() ).getClassLoader().close();
-					} catch ( IOException e ) {
-						e.printStackTrace();
+					// Close the stale loader before recompiling. Match the prior behavior exactly: close
+					// without nulling the discarded ClassInfo's reference (it is replaced in the pool
+					// below). Guard for resolve-only loaders (e.g. Android's) which are not Closeable.
+					ClassLoader staleLoader = classPool.get( classInfo.fqn().toString() ).getClassLoader();
+					if ( staleLoader instanceof Closeable closeable ) {
+						try {
+							closeable.close();
+						} catch ( IOException e ) {
+							e.printStackTrace();
+						}
 					}
 					try {
 						// Mark the class info instance as not ready to use yet
