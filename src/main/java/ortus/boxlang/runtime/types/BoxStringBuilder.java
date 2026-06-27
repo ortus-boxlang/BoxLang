@@ -400,11 +400,14 @@ public class BoxStringBuilder implements IType, Comparable<BoxStringBuilder>, Se
 	 *
 	 * @throws ortus.boxlang.runtime.types.exceptions.BoxRuntimeException if position is out of range
 	 */
-	public BoxStringBuilder insert( int position, Object value ) {
-		int idx = position - 1;
-		this.buffer.insert( idx, value == null ? "" : StringCaster.cast( value ) );
-		return this;
+public BoxStringBuilder insert( int position, Object value ) {
+	int len = this.buffer.length();
+	if ( position < 1 || position > len + 1 ) {
+		throw new ortus.boxlang.runtime.types.exceptions.BoxRuntimeException( String.format( "Position [%d] is out of range. Valid range is 1..%d.", position, len + 1 ) );
 	}
+	this.buffer.insert( position - 1, value == null ? "" : StringCaster.cast( value ) );
+	return this;
+}
 
 	/**
 	 * Deletes characters from {@code start} to {@code end}, both 1-based and <em>inclusive</em>.
