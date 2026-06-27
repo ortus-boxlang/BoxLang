@@ -69,6 +69,10 @@ public class Concat implements IOperator {
 			sb.append( right );
 			return sb;
 		}
+		if ( current instanceof java.lang.StringBuilder javaSB ) {
+			javaSB.append( StringCaster.cast( right ) );
+			return javaSB;
+		}
 		String result = invoke( current, right );
 		Referencer.set( context, target, name, result );
 		return result;
