@@ -21,6 +21,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.Referencer;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.BoxStringBuilder;
 
 /**
  * Performs String Concat
@@ -56,12 +57,19 @@ public class Concat implements IOperator {
 	}
 
 	/**
-	 * Apply this operator to an object/key and set the new value back in the same object/key
+	 * Apply this operator to an object/key and set the new value back in the same object/key.
+	 * When the current value is a {@link BoxStringBuilder}, mutates it in-place and returns the
+	 * same instance without re-assigning, preserving the reference identity.
 	 *
-	 * @return The result
+	 * @return The result — either a {@code String} or the mutated {@link BoxStringBuilder}
 	 */
-	public static String invoke( IBoxContext context, Object target, Key name, Object right ) {
-		String result = invoke( Referencer.get( context, target, name, false ), right );
+	public static Object invoke( IBoxContext context, Object target, Key name, Object right ) {
+		Object current = Referencer.get( context, target, name, false );
+		if ( current instanceof BoxStringBuilder sb ) {
+			sb.append( right );
+			return sb;
+		}
+		String result = invoke( current, right );
 		Referencer.set( context, target, name, result );
 		return result;
 	}

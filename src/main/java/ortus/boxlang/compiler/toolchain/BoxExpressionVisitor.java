@@ -957,6 +957,19 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 	}
 
 	@Override
+	public BoxExpression visitExprSBStringLiteral( ortus.boxlang.parser.antlr.BoxGrammar.ExprSBStringLiteralContext ctx ) {
+		return ctx.sbStringLiteral().accept( this );
+	}
+
+	@Override
+	public BoxExpression visitSbStringLiteral( ortus.boxlang.parser.antlr.BoxGrammar.SbStringLiteralContext ctx ) {
+		var				pos				= tools.getPosition( ctx );
+		var				src				= tools.getSourceText( ctx );
+		BoxExpression	initialValue	= ctx.stringLiteral().accept( this );
+		return new ortus.boxlang.compiler.ast.expression.BoxStringBuilderLiteral( initialValue, pos, src );
+	}
+
+	@Override
 	public BoxExpression visitSetLiteral( ortus.boxlang.parser.antlr.BoxGrammar.SetLiteralContext ctx ) {
 		var	pos		= tools.getPosition( ctx );
 		var	src		= tools.getSourceText( ctx );

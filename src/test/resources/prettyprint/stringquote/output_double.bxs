@@ -1,1 +1,5 @@
 a = "te'st";
+sb1 = sb"he's";
+sb2 = sb"he""s";
+sb3 = sb"he""s";
+sb4 = sb"he's";

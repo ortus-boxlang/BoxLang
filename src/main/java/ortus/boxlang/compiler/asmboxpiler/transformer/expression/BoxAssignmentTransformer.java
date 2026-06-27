@@ -823,7 +823,8 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 	private static Class<?> compoundAssignReturnType( BoxAssignmentOperator op ) {
 		return switch ( op ) {
-			case ConcatEqual -> String.class;
+			// Widened to Object: when LHS is a BoxStringBuilder, &= returns the mutated instance
+			case ConcatEqual -> Object.class;
 			// Set-aware ops widened to Object (set algebra falls through Plus/Minus/Multiply)
 			case PlusEqual, MinusEqual, StarEqual -> Object.class;
 			default -> Number.class;

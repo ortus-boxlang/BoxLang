@@ -1547,6 +1547,8 @@ public class BoxParser extends AbstractParser {
 			}
 			case ortus.boxlang.compiler.ast.expression.BoxSetLiteral ignored -> {
 			}
+			case ortus.boxlang.compiler.ast.expression.BoxStringBuilderLiteral ignored -> {
+			}
 			case BoxScope ignored -> {
 			}
 			case BoxMethodInvocation ignored -> {

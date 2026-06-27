@@ -50,6 +50,7 @@ import static ortus.boxlang.parser.antlr.BoxGrammar.NEQ;
 import static ortus.boxlang.parser.antlr.BoxGrammar.NEW;
 import static ortus.boxlang.parser.antlr.BoxGrammar.NOT;
 import static ortus.boxlang.parser.antlr.BoxGrammar.NULL;
+import static ortus.boxlang.parser.antlr.BoxGrammar.OPEN_QUOTE;
 import static ortus.boxlang.parser.antlr.BoxGrammar.OR;
 import static ortus.boxlang.parser.antlr.BoxGrammar.PACKAGE;
 import static ortus.boxlang.parser.antlr.BoxGrammar.PARAM;
@@ -185,6 +186,28 @@ public abstract class BoxParserControl extends Parser {
 		// .println( "( thisType == VAR || thisType == FINAL || thisType == STATIC ): " + ( thisType == VAR || thisType == FINAL || thisType == STATIC ) );
 		return ( thisType == VAR || thisType == FINAL || thisType == STATIC )
 		    && ( identifiers.contains( input.LT( 2 ).getType() ) || input.LT( 2 ).getType() == LBRACE || input.LT( 2 ).getType() == LBRACKET );
+	}
+
+	/**
+	 * Soft-keyword gate for the {@code sb"..."} literal.
+	 *
+	 * <p>
+	 * Returns true when the next tokens are an IDENTIFIER whose text is "sb"
+	 * (case-insensitive) followed by a string-opening quote, which means we should
+	 * parse a StringBuilder literal here rather than treating "sb" as a plain identifier.
+	 *
+	 * <p>
+	 * Only used in the Box parser grammar — the CF grammar does not support this syntax.
+	 */
+	protected boolean isSBStringLiteral( TokenStream input ) {
+		var first = input.LT( 1 );
+		if ( first.getType() != IDENTIFIER ) {
+			return false;
+		}
+		if ( !"sb".equalsIgnoreCase( first.getText() ) ) {
+			return false;
+		}
+		return input.LT( 2 ).getType() == OPEN_QUOTE;
 	}
 
 	/**

@@ -132,6 +132,28 @@ public class LenTest {
 		assertThat( variables.get( result2 ) ).isEqualTo( 7 );
 	}
 
+	@DisplayName( "It returns the length of the StringBuilder" )
+	@Test
+	public void testItReturnsStringBuilderLength() {
+		instance.executeSource(
+		    """
+		    sb = sb"BoxLang";
+		    result = len( sb );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 7 );
+
+		instance.executeSource(
+		    """
+		    sb = sb"BoxLang";
+		    result = sb.len();
+		    result2 = sb"BoxLang".len();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 7 );
+		assertThat( variables.get( result2 ) ).isEqualTo( 7 );
+	}
+
 	@DisplayName( "It returns the length of the number" )
 	@Test
 	public void testItReturnsNumberLength() {

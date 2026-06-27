@@ -106,4 +106,28 @@ public class RightTest {
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( "cdef" );
 	}
+
+	@DisplayName( "It works on a BoxStringBuilder via auto-cast (global function)" )
+	@Test
+	public void testItWorksOnBoxStringBuilder() {
+		instance.executeSource(
+		    """
+		    sb = sb"abcdef";
+		    result = right(sb, 3);
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "def" );
+	}
+
+	@DisplayName( "It works on a BoxStringBuilder member method" )
+	@Test
+	public void testItWorksOnBoxStringBuilderMember() {
+		instance.executeSource(
+		    """
+		    sb = sb"abcdef";
+		    result = sb.right(3);
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "def" );
+	}
 }
