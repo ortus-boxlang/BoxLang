@@ -1181,16 +1181,22 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * We eagerly allocate additional rows when adding data to optimize for performance, so this method is used to trim those extra rows when needed.
 	 */
 	public void truncateInternal() {
+		int targetSize = size.get();
+
+		// Fast path for chunked storage: truncate logical size and trim backing chunks in one operation
+		if ( data instanceof ChunkedArrayList<?> cal ) {
+			cal.truncateToSize( targetSize );
+			actualSize = cal.size();
+			return;
+		}
+
 		// loop and remove all rows over the count
-		while ( data.size() > size.get() ) {
+		while ( data.size() > targetSize ) {
 			data.remove( data.size() - 1 );
 		}
 		actualSize = data.size();
 
-		// These backing lists have a way to truncate internal allocations as well
-		if ( data instanceof ChunkedArrayList<?> cal ) {
-			cal.trimToSize();
-		} else if ( data instanceof ArrayList<?> al ) {
+		if ( data instanceof ArrayList<?> al ) {
 			al.trimToSize();
 		}
 	}

@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 @Disabled
@@ -69,6 +70,41 @@ public class BoxRegisterInterceptorTest {
 		    """,
 		    context );
 		assertThat( ( Boolean ) variables.get( result ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "It can register a class that works" )
+	@Test
+	void testItCanRegisterAClassThatWorks() {
+		instance.executeSource(
+		    """
+		    class InlineInterceptor {
+		    	function configure(){
+		    	}
+		    	function preFunctionInvoke( data ){
+		    		request.calls.append( data.name );
+		    	}
+		    }
+
+		      request.calls = [];
+		       	result = boxRegisterInterceptor( new InlineInterceptor() )
+
+		      function testFunction(){
+		    	return "Hello from testFunction";
+		      }
+		      function brad(){
+		    	return "brad";
+		      }
+
+		      testFunction();
+		      brad();
+		      brad();
+		      testFunction();
+
+		      result = request.calls;
+		       """,
+		    context );
+		assertThat( variables.get( result ) )
+		    .isEqualTo( Array.of( "testFunction", "brad", "brad", "testFunction" ) );
 	}
 
 	@DisplayName( "It can register a dynamic object" )
