@@ -437,10 +437,16 @@ public BoxStringBuilder delete( int start, int end ) {
 	 *
 	 * @return {@code this} for chaining
 	 */
-	public BoxStringBuilder replace( int start, int end, Object value ) {
-		this.buffer.replace( start - 1, end, value == null ? "" : StringCaster.cast( value ) );
-		return this;
+public BoxStringBuilder replace( int start, int end, Object value ) {
+	int len = this.buffer.length();
+	if ( start < 1 || end < start || end > len ) {
+		throw new ortus.boxlang.runtime.types.exceptions.BoxRuntimeException(
+		    String.format( "Invalid replace range [%d,%d]. Valid range is 1..%d with end >= start.", start, end, len )
+		);
 	}
+	this.buffer.replace( start - 1, end, value == null ? "" : StringCaster.cast( value ) );
+	return this;
+}
 
 	/**
 	 * Reverses the contents of the buffer in place.
