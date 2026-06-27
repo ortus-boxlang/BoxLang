@@ -70,4 +70,28 @@ public class StringBuilderNewTest {
 		assertThat( ( ( BoxStringBuilder ) variables.get( result ) ).toString() ).isEqualTo( "hello" );
 	}
 
+	@DisplayName( "stringBuilderNew( capacity = N ) creates an empty BoxStringBuilder with capacity" )
+	@Test
+	public void testStringBuilderNewWithCapacityOnly() {
+		instance.executeSource( """
+		                        result = stringBuilderNew( capacity = 64 );
+		                        """, context );
+		assertThat( variables.get( result ) ).isInstanceOf( BoxStringBuilder.class );
+		BoxStringBuilder sb = ( BoxStringBuilder ) variables.get( result );
+		assertThat( sb.toString() ).isEqualTo( "" );
+		assertThat( sb.getBuffer().capacity() ).isAtLeast( 64 );
+	}
+
+	@DisplayName( "stringBuilderNew( value, capacity ) creates a seeded BoxStringBuilder with capacity" )
+	@Test
+	public void testStringBuilderNewWithValueAndCapacity() {
+		instance.executeSource( """
+		                        result = stringBuilderNew( 'hello', 64 );
+		                        """, context );
+		assertThat( variables.get( result ) ).isInstanceOf( BoxStringBuilder.class );
+		BoxStringBuilder sb = ( BoxStringBuilder ) variables.get( result );
+		assertThat( sb.toString() ).isEqualTo( "hello" );
+		assertThat( sb.getBuffer().capacity() ).isAtLeast( 64 );
+	}
+
 }

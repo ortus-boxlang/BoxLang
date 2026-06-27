@@ -32,7 +32,8 @@ public class StringBuilderNew extends BIF {
 	public StringBuilderNew() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( false, Argument.ANY, Key.value )
+		    new Argument( false, Argument.ANY, Key.value ),
+		    new Argument( false, Argument.INTEGER, Key.capacity, 0 )
 		};
 	}
 
@@ -43,15 +44,24 @@ public class StringBuilderNew extends BIF {
 	 * @param arguments Argument scope for the BIF.
 	 *
 	 * @argument.value Optional initial value (String) or existing Java StringBuilder to wrap. Empty if not provided.
+	 *
+	 * @argument.capacity Optional initial capacity for newly created BoxStringBuilder instances.
 	 */
 	@Override
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object value = arguments.get( Key.value );
+		int		capacity	= arguments.getAsInteger( Key.capacity );
+		Object	value		= arguments.get( Key.value );
 		if ( value != null ) {
 			if ( value instanceof java.lang.StringBuilder sb ) {
 				return new BoxStringBuilder( sb );
 			}
+			if ( capacity > 0 ) {
+				return new BoxStringBuilder( StringCaster.cast( value ), capacity );
+			}
 			return new BoxStringBuilder( StringCaster.cast( value ) );
+		}
+		if ( capacity > 0 ) {
+			return new BoxStringBuilder( capacity );
 		}
 		return new BoxStringBuilder();
 	}
