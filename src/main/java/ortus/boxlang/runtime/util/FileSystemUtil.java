@@ -230,7 +230,7 @@ public final class FileSystemUtil {
 					}
 				} catch ( MalformedURLException e ) {
 					throw new BoxRuntimeException(
-					    "The url [" + filePath + "] could not be parsed.  The reason was:" + e.getMessage() + "("
+					    "The url [" + filePath + "] could not be parsed.  The reason was: " + e.getMessage() + "("
 					        + e.getCause() + ")" );
 				}
 

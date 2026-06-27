@@ -195,6 +195,19 @@ public class ConnectionManager {
 	}
 
 	/**
+	 * Enable or disable support for nested transactions for this connection manager
+	 * instance.
+	 *
+	 * @param enableNestedTransactions true to enable nested transactions, false to disable.
+	 *
+	 * @return This ConnectionManager instance.
+	 */
+	public ConnectionManager setEnableNestedTransactions( boolean enableNestedTransactions ) {
+		this.enableNestedTransactions = enableNestedTransactions;
+		return this;
+	}
+
+	/**
 	 * Create a new transaction and set it as the active transaction for this
 	 * request/thread/BoxLang context.
 	 * <p>
