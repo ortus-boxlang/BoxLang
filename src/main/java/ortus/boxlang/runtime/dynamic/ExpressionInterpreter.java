@@ -78,9 +78,15 @@ public class ExpressionInterpreter {
 			return false;
 		}
 
-		Object[]	parts	= splitParts( context, expression, safe );
-		Object		ref		= null;
-		Key			refName	= Key.of( parts[ 0 ] );
+		Object[] parts = splitParts( context, expression, safe );
+		if ( parts == null ) {
+			if ( safe ) {
+				return null;
+			}
+			throw new ExpressionException( "Invalid expression", null, expression );
+		}
+		Object	ref		= null;
+		Key		refName	= Key.of( parts[ 0 ] );
 
 		// Expression starts with a scope name like request.foo
 		if ( scopes.contains( refName ) ) {
@@ -179,6 +185,9 @@ public class ExpressionInterpreter {
 	 */
 	private static Object[] splitParts( IBoxContext context, String expression, boolean safe ) {
 		if ( expression.isEmpty() || expression.startsWith( "." ) || expression.endsWith( "." ) || expression.startsWith( "[" ) ) {
+			if ( safe ) {
+				return null;
+			}
 			throw new ExpressionException( "Invalid expression", null, expression );
 		}
 
@@ -209,6 +218,9 @@ public class ExpressionInterpreter {
 			}
 			if ( expression.charAt( i ) == '"' || expression.charAt( i ) == '\'' ) {
 				if ( part.length() > 0 || !ready ) {
+					if ( safe ) {
+						return null;
+					}
 					throw new ExpressionException( "Invalid expression, [" + expression.charAt( i ) + "] not allowed at position " + ( i + 1 ), null,
 					    expression );
 				}
@@ -226,6 +238,9 @@ public class ExpressionInterpreter {
 			}
 			if ( expression.charAt( i ) == '[' ) {
 				if ( bracket ) {
+					if ( safe ) {
+						return null;
+					}
 					throw new ExpressionException( "Invalid expression, ([) not allowed at position " + ( i + 1 ), null, expression );
 				}
 				if ( part.length() > 0 ) {
@@ -238,6 +253,9 @@ public class ExpressionInterpreter {
 			}
 			if ( expression.charAt( i ) == ']' ) {
 				if ( !bracket ) {
+					if ( safe ) {
+						return null;
+					}
 					throw new ExpressionException( "Invalid expression, (]) not allowed at position " + ( i + 1 ), null, expression );
 				}
 				if ( part.length() > 0 ) {
@@ -252,6 +270,9 @@ public class ExpressionInterpreter {
 				continue;
 			}
 			if ( !ready ) {
+				if ( safe ) {
+					return null;
+				}
 				throw new ExpressionException( "Invalid expression, [" + expression.charAt( i ) + "] not allowed at position " + ( i + 1 ), null, expression );
 			}
 			// check if char is letter or number, or underscore or dollar sign
@@ -261,6 +282,9 @@ public class ExpressionInterpreter {
 					// find ending bracket and grab all the stuff in between including the current char
 					int end = expression.indexOf( ']', i );
 					if ( end == -1 ) {
+						if ( safe ) {
+							return null;
+						}
 						throw new ExpressionException( "Invalid expression, unclosed bracket", null, expression );
 					}
 					parts.add( getVariable( context, expression.substring( i, end ), safe ) );
@@ -271,15 +295,27 @@ public class ExpressionInterpreter {
 				continue;
 			}
 			if ( expression.charAt( i ) == '(' && part.length() > 0 ) {
+				if ( safe ) {
+					return null;
+				}
 				throw new ExpressionException( "Function calls not allowed in expression interpreter", null, expression );
 			}
 
+			if ( safe ) {
+				return null;
+			}
 			throw new ExpressionException( "Invalid character in expression: " + expression.charAt( i ) + " at position " + ( i + 1 ), null, expression );
 		}
 		if ( quote ) {
+			if ( safe ) {
+				return null;
+			}
 			throw new ExpressionException( "Invalid expression, unclosed quote", null, expression );
 		}
 		if ( bracket ) {
+			if ( safe ) {
+				return null;
+			}
 			throw new ExpressionException( "Invalid expression, unclosed bracket", null, expression );
 		}
 
