@@ -21,6 +21,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -177,6 +178,90 @@ public class StringBuilderIntegrationTest {
 		                        result = sb;
 		                        """, context );
 		assertThat( variables.get( result ) ).isEqualTo( "not a stringbuilder" );
+	}
+
+	@DisplayName( "benchmark append performance for String vs StringBuilder over 1000 iterations" )
+	@Test
+	@Disabled
+	public void testStringVsStringBuilderAppendTiming1000Iterations() {
+		// @formatter:off
+		instance.executeSource( """
+			iterations = 250_000;
+
+			str = "";
+			stringStart = getTickCount();
+			for ( i = 1; i <= iterations; i++ ) {
+				str &= "x";
+			}
+			stringElapsedMs = getTickCount() - stringStart;
+
+			strExplicitAssign = "";
+			stringExplicitAssignStart = getTickCount();
+			for ( i = 1; i <= iterations; i++ ) {
+				strExplicitAssign = strExplicitAssign & "x";
+			}
+			stringExplicitAssignElapsedMs = getTickCount() - stringExplicitAssignStart;
+
+			sbAppend = sb"";
+			sbAppendStart = getTickCount();
+			for ( i = 1; i <= iterations; i++ ) {
+		     	sbAppend.append( "x" );
+			}
+			sbAppendElapsedMs = getTickCount() - sbAppendStart;
+
+			sbConcatAssign = sb"";
+			sbConcatAssignStart = getTickCount();
+			for ( i = 1; i <= iterations; i++ ) {
+			  	sbConcatAssign &= "x";
+			}
+			sbConcatAssignElapsedMs = getTickCount() - sbConcatAssignStart;
+
+			sbExplicitAssign = sb"";
+			sbExplicitAssignStart = getTickCount();
+			for ( i = 1; i <= iterations; i++ ) {
+		    	variables.sbExplicitAssign = variables.sbExplicitAssign & "x";
+			}
+			sbExplicitAssignElapsedMs = getTickCount() - sbExplicitAssignStart;
+
+		""", context );
+		// @formatter:on
+
+		long	stringElapsedMs					= Long.parseLong( variables.get( Key.of( "stringElapsedMs" ) ).toString() );
+		long	stringExplicitAssignElapsedMs	= Long.parseLong( variables.get( Key.of( "stringExplicitAssignElapsedMs" ) ).toString() );
+		long	sbAppendElapsedMs				= Long.parseLong( variables.get( Key.of( "sbAppendElapsedMs" ) ).toString() );
+		long	sbConcatAssignElapsedMs			= Long.parseLong( variables.get( Key.of( "sbConcatAssignElapsedMs" ) ).toString() );
+		long	sbExplicitAssignElapsedMs		= Long.parseLong( variables.get( Key.of( "sbExplicitAssignElapsedMs" ) ).toString() );
+
+		System.out.println( String.format( "String &= elapsed: %,d ms", stringElapsedMs ) );
+		System.out.println( String.format( "String foo = foo & \"x\" elapsed: %,d ms", stringExplicitAssignElapsedMs ) );
+		System.out.println( String.format( "StringBuilder .append() elapsed: %,d ms", sbAppendElapsedMs ) );
+		System.out.println( String.format( "StringBuilder &= elapsed: %,d ms", sbConcatAssignElapsedMs ) );
+		System.out.println( String.format( "StringBuilder foo = foo & \"x\" elapsed: %,d ms", sbExplicitAssignElapsedMs ) );
+	}
+
+	@DisplayName( "benchmark append performance for String vs StringBuilder over 1000 iterations" )
+	@Test
+	@Disabled
+	public void FindBreakingPointOfStringConcatPerformance() {
+
+		// @formatter:off
+		instance.executeSource( """
+			iterations = 100_000;
+
+			str = "";
+			x = "x";
+			stringStart = getTickCount();
+			for ( i = 1; i <= iterations; i++ ) {
+				str = str & "x" & "x" & "x" & "x" & "x" & "x" & "x";
+			}
+			stringElapsedMs = getTickCount() - stringStart;
+
+		""", context );
+		// @formatter:on
+
+		long stringElapsedMs = Long.parseLong( variables.get( Key.of( "stringElapsedMs" ) ).toString() );
+
+		System.out.println( String.format( "String &= elapsed: %,d ms", stringElapsedMs ) );
 	}
 
 }
