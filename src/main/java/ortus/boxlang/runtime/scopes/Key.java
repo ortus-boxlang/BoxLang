@@ -294,6 +294,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		defaultFunctions					= Key.of( "defaultFunctions" );
 	public static final Key		defaultLastAccessTimeout			= Key.of( "defaultLastAccessTimeout" );
 	public static final Key		defaultRemoteMethodReturnFormat		= Key.of( "defaultRemoteMethodReturnFormat" );
+	public static final Key		defaultJSONQuerySerializationFormat	= Key.of( "defaultJSONQuerySerializationFormat" );
 	public static final Key		defaultTimeout						= Key.of( "defaultTimeout" );
 	public static final Key		defaultValue						= Key.of( "defaultValue" );
 	public static final Key		decimals							= Key.of( "decimals" );
@@ -835,6 +836,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		seekable							= Key.of( "seekable" );
 	public static final Key		separator							= Key.of( "separator" );
 	public static final Key		serializable						= Key.of( "serializable" );
+	public static final Key		serialization						= Key.of( "serialization" );
+	public static final Key		serializeQueryAs					= Key.of( "serializeQueryAs" );
 	public static final Key		serializeQueryByColumns				= Key.of( "serializeQueryByColumns" );
 	public static final Key		server								= Key.of( "server" );
 	public static final Key		server_name							= Key.of( "server_name" );

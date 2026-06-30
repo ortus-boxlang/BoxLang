@@ -395,6 +395,18 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 
 		/**
 		 * --------------------------------------------------------------------------
+		 * JSON Serialization Format Override from Application settings
+		 * --------------------------------------------------------------------------
+		 */
+		if ( appSettings.get( Key.serialization ) instanceof IStruct serialization ) {
+			Object queryFormatValue = serialization.get( Key.serializeQueryAs );
+			if ( queryFormatValue != null ) {
+				config.put( Key.defaultJSONQuerySerializationFormat, queryFormatValue );
+			}
+		}
+
+		/**
+		 * --------------------------------------------------------------------------
 		 * Datasource Overrides
 		 * --------------------------------------------------------------------------
 		 * - A string pointing to a datasource in the datasources struct

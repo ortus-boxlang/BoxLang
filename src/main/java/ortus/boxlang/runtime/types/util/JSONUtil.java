@@ -31,8 +31,10 @@ import com.fasterxml.jackson.jr.ob.JSON;
 import com.fasterxml.jackson.jr.ob.JacksonJrExtension;
 import com.fasterxml.jackson.jr.ob.api.ExtensionContext;
 
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
@@ -388,6 +390,23 @@ public class JSONUtil {
 			PRETTY_JSON_BUILDER	= null;
 			JSON_BUILDER		= null;
 		}
+	}
+
+	/**
+	 * Get the default JSON query serialization format from the context configuration.
+	 * If the configured format is null or empty, defaults to "struct".
+	 *
+	 * @param context The BoxLang context to get the configuration from
+	 *
+	 * @return The format to use: "struct", "array", "columns", or "struct" as default
+	 */
+	public static String getDefaultQuerySerializationFormat( IBoxContext context ) {
+		Object value = context.getConfigItem( Key.defaultJSONQuerySerializationFormat, null );
+		if ( value == null ) {
+			return "struct";
+		}
+		String configFormat = StringCaster.cast( value );
+		return configFormat.isEmpty() ? "struct" : configFormat;
 	}
 
 }

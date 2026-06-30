@@ -630,7 +630,7 @@ public class JSONSerializeTest {
 		instance.executeSource(
 		    """
 				myQry = queryNew( "col", "varchar", [["brad"]] )
-				result = jsonSerialize( [ myQry ] );
+				result = jsonSerialize( [ myQry ], "row" );
 			""",
 		    context );
 		// @formatter:on
