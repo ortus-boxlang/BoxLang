@@ -92,7 +92,7 @@ public class DateCompare extends BIF {
 			ChronoUnit unit = datePartMap.get( partKey );
 
 			switch ( unit ) {
-				case NANOS, MICROS, MILLIS, SECONDS, MINUTES, DAYS -> {
+				case NANOS, MICROS, MILLIS, SECONDS, MINUTES, HOURS, DAYS -> {
 					// For the smaller units, we can directly compare a truncated version
 					int comparison = date1.getWrapped().truncatedTo( unit ).compareTo( date2.getWrapped().truncatedTo( unit ) );
 					return comparison == 0 ? 0 : ( comparison < 0 ? -1 : 1 );
