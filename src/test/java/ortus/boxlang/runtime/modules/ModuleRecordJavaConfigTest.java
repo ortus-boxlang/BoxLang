@@ -34,7 +34,8 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ModuleService;
 
 /**
- * Tests for pure-Java module config support via IModuleConfig + ServiceLoader.
+ * Tests for pure-Java module config support via IModuleConfig + ServiceLoader,
+ * and for the BxModuleConfig proxy that unifies BX and Java dispatch.
  */
 class ModuleRecordJavaConfigTest {
 
@@ -84,15 +85,15 @@ class ModuleRecordJavaConfigTest {
 	// -------------------------------------------------------------------------
 
 	@Test
-	@DisplayName( "Java IModuleConfig is detected via ServiceLoader; moduleConfig (BX) is null" )
+	@DisplayName( "Java IModuleConfig is detected via ServiceLoader; moduleConfig is the Java impl (not BxModuleConfig)" )
 	void testJavaModuleConfigDetectedViaServiceLoader() {
 		ModuleRecord record = new ModuleRecord( JAVA_MODULE_PATH );
 
 		record.loadDescriptor( context );
 		record.register( context );
 
-		assertThat( record.javaModuleConfig ).isNotNull();
-		assertThat( record.moduleConfig ).isNull();
+		assertThat( record.moduleConfig ).isNotNull();
+		assertThat( record.moduleConfig ).isNotInstanceOf( BxModuleConfig.class );
 
 		cleanup( record );
 	}
@@ -153,7 +154,7 @@ class ModuleRecordJavaConfigTest {
 	void testJavaModuleRegisteredAsInterceptorWithoutError() {
 		ModuleRecord record = new ModuleRecord( JAVA_MODULE_PATH );
 
-		// activate() internally calls interceptorService.register(javaModuleConfig, settings).
+		// activate() internally calls moduleConfig.registerInterceptor(service, settings).
 		// If it throws, the Java config was not accepted as a valid IInterceptor.
 		org.junit.jupiter.api.Assertions.assertDoesNotThrow( () -> {
 			record.loadDescriptor( context ).register( context ).activate( context );
@@ -185,9 +186,8 @@ class ModuleRecordJavaConfigTest {
 	@Test
 	@DisplayName( "Java IModuleConfig wins when both Java config and ModuleConfig.bx exist" )
 	void testJavaConfigWinsOverBxDescriptor() {
-		// The regular BX test module has ModuleConfig.bx; javaTestModule has no BX file.
-		// We indirectly verify "Java wins" by confirming the javaTestModule ends up
-		// with javaModuleConfig set and moduleConfig null even after loadDescriptor().
+		// The javaTestModule has no ModuleConfig.bx, so loadDescriptor() leaves moduleConfig null.
+		// After register(), ServiceLoader finds the Java impl and sets moduleConfig to the Java class.
 		ModuleRecord record = new ModuleRecord( JAVA_MODULE_PATH );
 
 		record.loadDescriptor( context );
@@ -197,8 +197,9 @@ class ModuleRecordJavaConfigTest {
 
 		record.register( context );
 
-		// register() must have set the Java config
-		assertThat( record.javaModuleConfig ).isNotNull();
+		// register() must have set the Java config (not a BxModuleConfig proxy)
+		assertThat( record.moduleConfig ).isNotNull();
+		assertThat( record.moduleConfig ).isNotInstanceOf( BxModuleConfig.class );
 
 		cleanup( record );
 	}
@@ -215,9 +216,9 @@ class ModuleRecordJavaConfigTest {
 
 		record.loadDescriptor( context );
 
-		// BX descriptor must be loaded; Java config must be null (no IModuleConfig in the test module JAR)
+		// BX descriptor must be wrapped in a BxModuleConfig proxy; no Java config
 		assertThat( record.moduleConfig ).isNotNull();
-		assertThat( record.javaModuleConfig ).isNull();
+		assertThat( record.moduleConfig ).isInstanceOf( BxModuleConfig.class );
 
 		record.register( context );
 
@@ -237,7 +238,7 @@ class ModuleRecordJavaConfigTest {
 	 */
 	private static boolean getStaticBooleanFlag( ModuleRecord record, String fieldName ) {
 		try {
-			Field field = record.javaModuleConfig.getClass().getField( fieldName );
+			Field field = record.moduleConfig.getClass().getField( fieldName );
 			return ( boolean ) field.get( null );
 		} catch ( Exception e ) {
 			throw new RuntimeException( "Could not read static flag [" + fieldName + "]: " + e.getMessage(), e );

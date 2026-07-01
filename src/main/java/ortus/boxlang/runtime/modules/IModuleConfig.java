@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.modules;
 
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.events.IInterceptor;
+import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 
@@ -37,7 +38,7 @@ import ortus.boxlang.runtime.types.IStruct;
  * </p>
  *
  * <pre>{@code
- * 
+ *
  * public String version = "1.0.0";
  * public String author = "";
  * public String description = "";
@@ -61,9 +62,11 @@ import ortus.boxlang.runtime.types.IStruct;
  * </ul>
  *
  * <p>
- * The runtime automatically registers the implementation as an {@link IInterceptor}. Annotate
- * listener methods with {@link ortus.boxlang.runtime.events.InterceptionPoint} to subscribe to
- * BoxLang events.
+ * <strong>Interceptor support</strong> — to subscribe to BoxLang events, also implement
+ * {@link IInterceptor} on your class and annotate listener methods with
+ * {@link ortus.boxlang.runtime.events.InterceptionPoint}. The runtime will automatically
+ * register your implementation as an interceptor during module activation when it detects
+ * that the class also implements {@link IInterceptor}.
  * </p>
  *
  * <p>
@@ -71,7 +74,7 @@ import ortus.boxlang.runtime.types.IStruct;
  * directory, the Java implementation takes priority and the BX file is ignored.
  * </p>
  */
-public interface IModuleConfig extends IInterceptor {
+public interface IModuleConfig {
 
 	/**
 	 * Called during module registration. Use this method to configure the module:
@@ -111,14 +114,35 @@ public interface IModuleConfig extends IInterceptor {
 	}
 
 	/**
-	 * Satisfies the {@link IInterceptor} contract. The runtime passes the module's settings
-	 * struct when registering the Java config as an interceptor; override if you need to
-	 * react to those properties.
+	 * Registers this config as an interceptor. If the implementation also implements
+	 * {@link IInterceptor}, the default delegates to
+	 * {@link InterceptorService#register(IInterceptor, IStruct)}, which discovers
+	 * {@link ortus.boxlang.runtime.events.InterceptionPoint}-annotated Java methods via
+	 * reflection. BX-based implementations (see {@link BxModuleConfig}) override this to use
+	 * the {@link ortus.boxlang.runtime.runnables.IClassRunnable} registration path instead,
+	 * which reads BoxLang metadata.
 	 *
-	 * @param properties The module settings struct
+	 * @param interceptorService The runtime interceptor service
+	 * @param settings           The module settings struct passed to the interceptor
 	 */
-	@Override
-	default void configure( IStruct properties ) {
+	default void registerInterceptor( InterceptorService interceptorService, IStruct settings ) {
+		if ( this instanceof IInterceptor interceptor ) {
+			interceptorService.register( interceptor, settings );
+		}
+	}
+
+	/**
+	 * Unregisters this config from the interceptor service. If the implementation also
+	 * implements {@link IInterceptor}, the default delegates to
+	 * {@link InterceptorService#unregister(IInterceptor)}; BX-based implementations
+	 * override to use the {@link ortus.boxlang.runtime.interop.DynamicObject} path instead.
+	 *
+	 * @param interceptorService The runtime interceptor service
+	 */
+	default void unregisterInterceptor( InterceptorService interceptorService ) {
+		if ( this instanceof IInterceptor interceptor ) {
+			interceptorService.unregister( interceptor );
+		}
 	}
 
 	/**
