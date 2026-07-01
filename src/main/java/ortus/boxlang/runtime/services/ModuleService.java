@@ -727,8 +727,10 @@ public class ModuleService extends BaseService {
 			    .filter( filePath -> !this.modulePaths.contains( filePath ) )
 			    // Only module folders
 			    .filter( Files::isDirectory )
-			    // Only where a ModuleConfig.bx exists in the root
-			    .filter( filePath -> Files.exists( filePath.resolve( MODULE_DESCRIPTOR ) ) )
+			    // Only where a ModuleConfig.bx OR a box.json exists in the root
+			    // (pure-Java modules may have only box.json; Java config detection happens later via ServiceLoader)
+			    .filter( filePath -> Files.exists( filePath.resolve( MODULE_DESCRIPTOR ) )
+			        || Files.exists( filePath.resolve( ModuleRecord.MODULE_CONFIG_FILE ) ) )
 			    // Filter out already registered modules
 			    .filter( filePath -> {
 				    Key	moduleName		= Key.of( filePath.getFileName().toString() );

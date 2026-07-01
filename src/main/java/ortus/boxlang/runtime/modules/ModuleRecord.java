@@ -256,9 +256,16 @@ public class ModuleRecord {
 	private IModuleClassLoader		moduleClassLoader			= null;
 
 	/**
-	 * The descriptor for the module
+	 * The descriptor for the module (BX-based)
 	 */
 	public IClassRunnable			moduleConfig;
+
+	/**
+	 * The Java-based module config; non-null when the module descriptor is a Java class
+	 * implementing {@link IModuleConfig} discovered via ServiceLoader.
+	 * When set, {@link #moduleConfig} is {@code null} (Java always wins over BX).
+	 */
+	public IModuleConfig			javaModuleConfig			= null;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -366,6 +373,16 @@ public class ModuleRecord {
 	 * @return The ModuleRecord
 	 */
 	public ModuleRecord loadDescriptor( IBoxContext context ) {
+		// Java-only modules (no ModuleConfig.bx) skip BX loading entirely.
+		// Java config detection happens in register() once the classloader is ready.
+		if ( !Files.exists( this.physicalPath.resolve( ModuleService.MODULE_DESCRIPTOR ) ) ) {
+			if ( this.runtime.getConfiguration().modules.containsKey( this.name ) ) {
+				ModuleConfig runtimeConfig = ( ModuleConfig ) this.runtime.getConfiguration().modules.get( this.name );
+				this.enabled = runtimeConfig.enabled;
+			}
+			return this;
+		}
+
 		Path	descriptorPath	= physicalPath.resolve( ModuleService.MODULE_DESCRIPTOR );
 		String	packageName		= MODULE_PACKAGE_NAME
 		    + this.name.getNameNoCase()
@@ -447,8 +464,6 @@ public class ModuleRecord {
 	 */
 	public ModuleRecord register( IBoxContext context ) {
 		// Convenience References
-		ThisScope			thisScope			= this.moduleConfig.getThisScope();
-		VariablesScope		variablesScope		= this.moduleConfig.getVariablesScope();
 		InterceptorService	interceptorService	= this.runtime.getInterceptorService();
 		FunctionService		functionService		= this.runtime.getFunctionService();
 		ComponentService	componentService	= this.runtime.getComponentService();
@@ -472,27 +487,61 @@ public class ModuleRecord {
 		    ? dcl
 		    : null;
 
-		// Call the configure() method if it exists in the descriptor
-		if ( thisScope.containsKey( Key.configure ) ) {
-			RequestBoxContext.runInContext( context, ctx -> this.moduleConfig.dereferenceAndInvoke(
-			    ctx,
-			    Key.configure,
-			    DynamicObject.EMPTY_ARGS,
-			    false ) );
+		// Detect a Java-based IModuleConfig via ServiceLoader (diskless-safe: uses the module classloader abstraction).
+		// Java always wins: if found, the BX moduleConfig is discarded.
+		ServiceLoader.load( IModuleConfig.class, this.moduleClassLoader.toClassLoader() )
+		    .findFirst()
+		    .ifPresent( javaConfig -> {
+			    this.javaModuleConfig = javaConfig;
+			    this.moduleConfig	= null;
+			    extractJavaMetadata();
+		    } );
+
+		if ( this.javaModuleConfig != null ) {
+			// -----------------------------------------------------------------------
+			// Java path: call configure(IBoxContext, ModuleRecord)
+			// -----------------------------------------------------------------------
+			this.javaModuleConfig.configure( context, this );
+
+			// Merge any runtime-config settings on top of what configure() set
+			if ( this.runtime.getConfiguration().modules.containsKey( this.name ) ) {
+				ModuleConfig config = ( ModuleConfig ) this.runtime.getConfiguration().modules.get( this.name );
+				StructUtil.deepMerge( this.settings, config.settings, true );
+			}
+		} else if ( this.moduleConfig != null ) {
+			// -----------------------------------------------------------------------
+			// BX path: existing configure() call
+			// -----------------------------------------------------------------------
+			ThisScope		thisScope		= this.moduleConfig.getThisScope();
+			VariablesScope	variablesScope	= this.moduleConfig.getVariablesScope();
+
+			if ( thisScope.containsKey( Key.configure ) ) {
+				RequestBoxContext.runInContext( context, ctx -> this.moduleConfig.dereferenceAndInvoke(
+				    ctx,
+				    Key.configure,
+				    DynamicObject.EMPTY_ARGS,
+				    false ) );
+			}
+
+			// Register descriptor configurations into the record
+			this.settings = ( Struct ) variablesScope.getAsStruct( Key.settings );
+
+			// Append any module settings found in the runtime configuration
+			if ( this.runtime.getConfiguration().modules.containsKey( this.name ) ) {
+				ModuleConfig config = ( ModuleConfig ) this.runtime.getConfiguration().modules.get( this.name );
+				StructUtil.deepMerge( this.settings, config.settings, true );
+			}
+
+			// Get the interceptors and custom interception points
+			this.interceptors				= variablesScope.getAsArray( Key.interceptors );
+			this.customInterceptionPoints	= variablesScope.getAsArray( Key.customInterceptionPoints );
+		} else {
+			// Neither a Java nor a BX config was found — not a valid module; disable it.
+			this.logger.warn( "+ Module Service: Module [{}] has no valid descriptor (no IModuleConfig via ServiceLoader and no ModuleConfig.bx). Disabling.",
+			    this.name );
+			this.enabled = false;
+			return this;
 		}
-
-		// Register descriptor configurations into the record
-		this.settings = ( Struct ) variablesScope.getAsStruct( Key.settings );
-
-		// Append any module settings found in the runtime configuration
-		if ( this.runtime.getConfiguration().modules.containsKey( this.name ) ) {
-			ModuleConfig config = ( ModuleConfig ) this.runtime.getConfiguration().modules.get( this.name );
-			StructUtil.deepMerge( this.settings, config.settings, true );
-		}
-
-		// Get the interceptors and custom interception points
-		this.interceptors				= variablesScope.getAsArray( Key.interceptors );
-		this.customInterceptionPoints	= variablesScope.getAsArray( Key.customInterceptionPoints );
 
 		// Register Interception points with the InterceptorService
 		if ( !this.customInterceptionPoints.isEmpty() ) {
@@ -595,21 +644,27 @@ public class ModuleRecord {
 	 * @return The ModuleRecord
 	 */
 	public ModuleRecord unload( IBoxContext context ) {
-		// Convenience References
-		ThisScope thisScope = this.moduleConfig.getThisScope();
-
-		// Call the onLoad() method if it exists in the descriptor
-		if ( thisScope.containsKey( Key.onUnload ) ) {
+		if ( this.javaModuleConfig != null ) {
 			try {
-				RequestBoxContext.runInContext( context, ctx -> this.moduleConfig.dereferenceAndInvoke(
-				    ctx,
-				    Key.onUnload,
-				    DynamicObject.EMPTY_ARGS,
-				    false ) );
-			} catch ( AbortException ae ) {
-				throw ae;
+				this.javaModuleConfig.onUnload( context, this );
 			} catch ( Exception e ) {
-				this.logger.error( "Error while unloading module [{}]", this.name, e );
+				this.logger.error( "Error while unloading Java module [{}]", this.name, e );
+			}
+		} else if ( this.moduleConfig != null ) {
+			ThisScope thisScope = this.moduleConfig.getThisScope();
+
+			if ( thisScope.containsKey( Key.onUnload ) ) {
+				try {
+					RequestBoxContext.runInContext( context, ctx -> this.moduleConfig.dereferenceAndInvoke(
+					    ctx,
+					    Key.onUnload,
+					    DynamicObject.EMPTY_ARGS,
+					    false ) );
+				} catch ( AbortException ae ) {
+					throw ae;
+				} catch ( Exception e ) {
+					this.logger.error( "Error while unloading module [{}]", this.name, e );
+				}
 			}
 		}
 
@@ -699,7 +754,7 @@ public class ModuleRecord {
 		this.runtime.getConfiguration().unregisterMapping( this.mapping );
 		this.runtime.getConfiguration().unregisterMapping( this.publicMapping );
 
-		// Unregister all interceptors from all states
+		// Unregister all BX interceptors from all states
 		if ( !this.interceptors.isEmpty() ) {
 			for ( Object interceptor : this.interceptors ) {
 				IStruct			interceptorRecord	= ( IStruct ) interceptor;
@@ -710,8 +765,12 @@ public class ModuleRecord {
 			}
 		}
 
-		// Unregister the ModuleConfig
-		interceptorService.unregister( DynamicObject.of( this.moduleConfig ) );
+		// Unregister the module descriptor (Java or BX) from the interceptor service
+		if ( this.javaModuleConfig != null ) {
+			interceptorService.unregister( this.javaModuleConfig );
+		} else if ( this.moduleConfig != null ) {
+			interceptorService.unregister( DynamicObject.of( this.moduleConfig ) );
+		}
 
 		return this;
 	}
@@ -749,57 +808,59 @@ public class ModuleRecord {
 	 */
 	public ModuleRecord activate( IBoxContext context ) {
 		// Convenience References
-		ThisScope			thisScope			= this.moduleConfig.getThisScope();
-		InterceptorService	interceptorService	= this.runtime.getInterceptorService();
+		InterceptorService interceptorService = this.runtime.getInterceptorService();
 
-		/*
-		 * --------------------------------------------------------------------------
-		 * Register the ModuleConfig as an Interceptor
-		 * --------------------------------------------------------------------------
-		 */
-		interceptorService.register( this.moduleConfig );
+		if ( this.javaModuleConfig != null ) {
+			/*
+			 * --------------------------------------------------------------------------
+			 * Java path: register the Java config as an interceptor and call onLoad()
+			 * --------------------------------------------------------------------------
+			 */
+			interceptorService.register( this.javaModuleConfig, this.settings );
+			this.javaModuleConfig.onLoad( context, this );
+		} else {
+			/*
+			 * --------------------------------------------------------------------------
+			 * BX path: register the BX config as an interceptor, register BX interceptors,
+			 * and call onLoad()
+			 * --------------------------------------------------------------------------
+			 */
+			ThisScope thisScope = this.moduleConfig.getThisScope();
 
-		/*
-		 * --------------------------------------------------------------------------
-		 * Register module BoxLang Interceptors
-		 * --------------------------------------------------------------------------
-		 */
-		if ( !this.interceptors.isEmpty() ) {
-			for ( Object interceptor : this.interceptors ) {
-				IStruct interceptorRecord = ( IStruct ) interceptor;
-				// Verify the class else throw an exception
-				if ( !interceptorRecord.containsKey( Key._CLASS ) ) {
-					throw new BoxRuntimeException( "Interceptor record is missing the [class] key which is mandatory" );
+			interceptorService.register( this.moduleConfig );
+
+			if ( !this.interceptors.isEmpty() ) {
+				for ( Object interceptor : this.interceptors ) {
+					IStruct interceptorRecord = ( IStruct ) interceptor;
+					// Verify the class else throw an exception
+					if ( !interceptorRecord.containsKey( Key._CLASS ) ) {
+						throw new BoxRuntimeException( "Interceptor record is missing the [class] key which is mandatory" );
+					}
+
+					String interceptorClass = ensureModuleInvocationAsset( interceptorRecord.getAsString( Key._CLASS ) );
+					// Default Properties struct
+					interceptorRecord.computeIfAbsent( Key.properties, k -> new Struct() );
+					// The default name is the class name + @ + the module name
+					interceptorRecord.computeIfAbsent( Key._NAME, k -> interceptorClass + "@" + this.name );
+					// Create and Register
+					interceptorRecord.put(
+					    Key.interceptor,
+					    interceptorService.newAndRegister(
+					        interceptorClass,
+					        interceptorRecord.getAsStruct( Key.properties ),
+					        interceptorRecord.getAsString( Key._NAME ),
+					        this ) );
 				}
-
-				String interceptorClass = ensureModuleInvocationAsset( interceptorRecord.getAsString( Key._CLASS ) );
-				// Default Properties struct
-				interceptorRecord.computeIfAbsent( Key.properties, k -> new Struct() );
-				// The default name is the class name + @ + the module name
-				interceptorRecord.computeIfAbsent( Key._NAME, k -> interceptorClass + "@" + this.name );
-				// Create and Register
-				interceptorRecord.put(
-				    Key.interceptor,
-				    interceptorService.newAndRegister(
-				        interceptorClass,
-				        interceptorRecord.getAsStruct( Key.properties ),
-				        interceptorRecord.getAsString( Key._NAME ),
-				        this ) );
 			}
-		}
 
-		/*
-		 * --------------------------------------------------------------------------
-		 * onLoad()
-		 * --------------------------------------------------------------------------
-		 */
-		// Call the onLoad() method if it exists in the descriptor
-		if ( thisScope.containsKey( Key.onLoad ) ) {
-			RequestBoxContext.runInContext( context, ctx -> this.moduleConfig.dereferenceAndInvoke(
-			    ctx,
-			    Key.onLoad,
-			    DynamicObject.EMPTY_ARGS,
-			    false ) );
+			// Call the onLoad() method if it exists in the descriptor
+			if ( thisScope.containsKey( Key.onLoad ) ) {
+				RequestBoxContext.runInContext( context, ctx -> this.moduleConfig.dereferenceAndInvoke(
+				    ctx,
+				    Key.onLoad,
+				    DynamicObject.EMPTY_ARGS,
+				    false ) );
+			}
 		}
 
 		// Finalize
@@ -818,6 +879,83 @@ public class ModuleRecord {
 	 * @return The class name to use, either absolute or with the module invocation
 	 *         path
 	 */
+	/**
+	 * Reads public instance fields from a Java {@link IModuleConfig} implementation
+	 * and populates the corresponding {@link ModuleRecord} fields.
+	 * All fields are optional; missing or inaccessible fields keep their defaults.
+	 */
+	private void extractJavaMetadata() {
+		if ( this.javaModuleConfig == null ) {
+			return;
+		}
+
+		Class<?> clazz = this.javaModuleConfig.getClass();
+
+		try {
+			java.lang.reflect.Field	f	= clazz.getField( "version" );
+			Object					v	= f.get( this.javaModuleConfig );
+			if ( v instanceof String s )
+				this.version = s;
+		} catch ( NoSuchFieldException | IllegalAccessException ignore ) {
+		}
+
+		try {
+			java.lang.reflect.Field	f	= clazz.getField( "author" );
+			Object					v	= f.get( this.javaModuleConfig );
+			if ( v instanceof String s )
+				this.author = s;
+		} catch ( NoSuchFieldException | IllegalAccessException ignore ) {
+		}
+
+		try {
+			java.lang.reflect.Field	f	= clazz.getField( "description" );
+			Object					v	= f.get( this.javaModuleConfig );
+			if ( v instanceof String s )
+				this.description = s;
+		} catch ( NoSuchFieldException | IllegalAccessException ignore ) {
+		}
+
+		try {
+			java.lang.reflect.Field	f	= clazz.getField( "webURL" );
+			Object					v	= f.get( this.javaModuleConfig );
+			if ( v instanceof String s )
+				this.webURL = s;
+		} catch ( NoSuchFieldException | IllegalAccessException ignore ) {
+		}
+
+		try {
+			java.lang.reflect.Field	f	= clazz.getField( "enabled" );
+			Object					v	= f.get( this.javaModuleConfig );
+			if ( v instanceof Boolean b )
+				this.enabled = b;
+		} catch ( NoSuchFieldException | IllegalAccessException ignore ) {
+		}
+
+		try {
+			java.lang.reflect.Field	f	= clazz.getField( "dependencies" );
+			Object					v	= f.get( this.javaModuleConfig );
+			if ( v instanceof Array a )
+				this.dependencies = a;
+		} catch ( NoSuchFieldException | IllegalAccessException ignore ) {
+		}
+
+		try {
+			java.lang.reflect.Field	f	= clazz.getField( "mapping" );
+			Object					v	= f.get( this.javaModuleConfig );
+			if ( v != null )
+				this.mapping = resolveMapping( v );
+		} catch ( NoSuchFieldException | IllegalAccessException ignore ) {
+		}
+
+		try {
+			java.lang.reflect.Field	f	= clazz.getField( "publicMapping" );
+			Object					v	= f.get( this.javaModuleConfig );
+			if ( v != null )
+				this.publicMapping = resolvePublicMapping( v );
+		} catch ( NoSuchFieldException | IllegalAccessException ignore ) {
+		}
+	}
+
 	private String ensureModuleInvocationAsset( String targetClass ) {
 		if ( targetClass.startsWith( this.invocationPath ) ) {
 			return targetClass;
@@ -836,6 +974,15 @@ public class ModuleRecord {
 	 *                             doesn't have a main method
 	 */
 	public void execute( IBoxContext context, String[] args ) {
+		if ( this.javaModuleConfig != null ) {
+			this.javaModuleConfig.main( context, args );
+			return;
+		}
+
+		if ( this.moduleConfig == null ) {
+			throw new BoxRuntimeException( "Module " + this.id + " is not executable. It has no valid descriptor." );
+		}
+
 		ThisScope thisScope = this.moduleConfig.getThisScope();
 
 		if ( !thisScope.containsKey( Key.main ) ) {

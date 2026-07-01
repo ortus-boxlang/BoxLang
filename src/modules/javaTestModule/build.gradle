@@ -1,0 +1,73 @@
+plugins {
+    id 'java'
+    id "com.github.harbby.gradle.serviceloader" version "1.1.9"
+    id "com.gradleup.shadow" version "9.2.2"
+}
+
+version = '1.0.0'
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compileOnly project( ':' )
+}
+
+java {
+    sourceCompatibility = JavaVersion.toVersion( jdkVersion )
+    targetCompatibility = JavaVersion.toVersion( jdkVersion )
+}
+
+compileJava {
+    options.incremental = true
+    options.encoding = 'UTF-8'
+    options.debug = true
+}
+
+/**
+ * Generates META-INF/services/ortus.boxlang.runtime.modules.IModuleConfig
+ * automatically via the gradle-serviceloader plugin.
+ */
+serviceLoader {
+    serviceInterface 'ortus.boxlang.runtime.modules.IModuleConfig'
+}
+
+jar {
+    archiveVersion = "${version}"
+    manifest {
+        attributes 'Description': 'Java Test Module for BoxLang'
+    }
+}
+
+shadowJar {
+    mergeServiceFiles()
+    destinationDirectory = file( "build/libs" )
+}
+
+/**
+ * Copies the built JAR (with service file merged in) plus the box.json
+ * into the canonical module location used by the test suite.
+ */
+task createModuleStructure( type: Copy ) {
+    dependsOn( shadowJar )
+    from( 'build/libs' ) {
+        include "${project.name}-${version}-all.jar"
+        into 'libs'
+    }
+    from( '.' ) {
+        include 'box.json'
+    }
+    destinationDir = file( 'build/module' )
+}
+
+task copyTestModuleToCore( type: Copy ) {
+    dependsOn createModuleStructure
+    from( 'build/module' )
+    into '../../../modules/javaTestModule'
+}
+
+shadowJar.finalizedBy( createModuleStructure, copyTestModuleToCore )
+
+clean {
+    delete '../../../modules/javaTestModule'
+}
