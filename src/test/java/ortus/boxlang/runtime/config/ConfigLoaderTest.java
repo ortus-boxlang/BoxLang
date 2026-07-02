@@ -37,6 +37,8 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
+import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
+
 class ConfigLoaderTest {
 
 	static BoxRuntime runtime;
@@ -164,7 +166,14 @@ class ConfigLoaderTest {
 	@DisplayName( "It can load a custom config file using a URL" )
 	@Test
 	void testItCanLoadACustomConfigUsingAURL() {
-		URL				url		= ConfigLoaderTest.class.getClassLoader().getResource( "test-boxlang.json" );
+		URL				url;
+		try{
+			url = Path.of( "src/test/resources/test-boxlang.json" ).toUri().toURL();
+		} catch ( Exception e ) {
+			throw new MissingIncludeException( "Invalid template path to execute.", "", getClass().getResource( "/test-templates/BoxRuntime.bxs" ).toString(),
+			    e );
+		}
+		
 		Configuration	config	= ConfigLoader.getInstance().loadFromFile( url );
 		assertConfigTest( config );
 	}

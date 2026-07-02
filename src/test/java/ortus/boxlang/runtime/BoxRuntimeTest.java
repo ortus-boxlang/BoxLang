@@ -20,8 +20,7 @@ package ortus.boxlang.runtime;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
-import java.io.File;
-import java.net.URISyntaxException;
+import java.nio.file.Path;
 import java.net.URL;
 
 import org.junit.jupiter.api.Disabled;
@@ -59,8 +58,8 @@ public class BoxRuntimeTest {
 	public void testItCanExecuteATemplate() {
 		String testTemplate;
 		try {
-			testTemplate = ( new File( getClass().getResource( "/test-templates/BoxRuntime.cfm" ).toURI() ) ).getPath();
-		} catch ( URISyntaxException e ) {
+			testTemplate = Path.of( "src/test/resources/test-templates/BoxRuntime.cfm" ).toFile().getPath();
+		} catch ( Exception e ) {
 			throw new MissingIncludeException( "Invalid template path to execute.", "", getClass().getResource( "/test-templates/BoxRuntime.bxs" ).toString(),
 			    e );
 		}
@@ -74,7 +73,13 @@ public class BoxRuntimeTest {
 	@DisplayName( "It can execute a template URL" )
 	@Test
 	public void testItCanExecuteATemplateURL() {
-		URL testTemplate = getClass().getResource( "/test-templates/BoxRuntime.cfm" );
+		URL testTemplate;
+		try {
+			testTemplate = Path.of( "src/test/resources/test-templates/BoxRuntime.cfm" ).toUri().toURL();
+		} catch ( Exception e ) {
+			throw new MissingIncludeException( "Invalid template path to execute.", "", getClass().getResource( "/test-templates/BoxRuntime.bxs" ).toString(),
+			    e );
+		}
 
 		assertDoesNotThrow( () -> {
 			BoxRuntime instance = BoxRuntime.getInstance( true );
