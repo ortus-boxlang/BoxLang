@@ -166,15 +166,15 @@ class ConfigLoaderTest {
 	@DisplayName( "It can load a custom config file using a URL" )
 	@Test
 	void testItCanLoadACustomConfigUsingAURL() {
-		URL				url;
-		try{
+		URL url;
+		try {
 			url = Path.of( "src/test/resources/test-boxlang.json" ).toUri().toURL();
 		} catch ( Exception e ) {
 			throw new MissingIncludeException( "Invalid template path to execute.", "", getClass().getResource( "/test-templates/BoxRuntime.bxs" ).toString(),
 			    e );
 		}
-		
-		Configuration	config	= ConfigLoader.getInstance().loadFromFile( url );
+
+		Configuration config = ConfigLoader.getInstance().loadFromFile( url );
 		assertConfigTest( config );
 	}
 
