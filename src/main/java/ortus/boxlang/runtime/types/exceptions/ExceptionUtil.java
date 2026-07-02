@@ -204,12 +204,13 @@ public class ExceptionUtil {
 				    // _pseudoConstructor means we're in a class pseudoconstructor, ._invoke means we're executing the template or function.
 				    // invokeFunction_Xxx, invokeLambda_N, invokeClosure_N are the static method patterns for functions/lambdas/closures.
 				    // componentBody_N is the static method pattern for component bodies.
+				    // componentIfBranch_N and _split_N are ASM helper methods generated from source nodes.
 				    // lambda$_invoke$ means we're in a lambda inside of that same template (Java boxpiler).
 				    // argumentDefaultValue is true when this is next stack AFTER a call to Argument.getDefaultValue()
 				    && ( fileName.contains( "._pseudoConstructor(" ) || fileName.contains( "._invoke(" )
 				        || methodName.startsWith( IBoxpiler.INVOKE_FUNCTION_PREFIX ) || methodName.startsWith( "invokeLambda_" )
 				        || methodName.startsWith( "invokeClosure_" )
-				        || ( isInComponent = isComponentBody( methodName ) ) || argumentDefaultValue ) ) {
+				        || ( isInComponent = isComponentBody( methodName ) ) || isGeneratedSourceHelper( methodName ) || argumentDefaultValue ) ) {
 
 					// If we're just inside the nested lambda for a component, skip subssequent lines of the stack trace
 					if ( !skipNext.isEmpty() ) {
@@ -336,6 +337,10 @@ public class ExceptionUtil {
 	 */
 	private static boolean isComponentBody( String methodName ) {
 		return methodName.startsWith( "componentBody_" ) || methodName.startsWith( "lambda$_invoke$" );
+	}
+
+	private static boolean isGeneratedSourceHelper( String methodName ) {
+		return methodName.startsWith( "componentIfBranch_" ) || methodName.startsWith( "_split_" );
 	}
 
 	/**
