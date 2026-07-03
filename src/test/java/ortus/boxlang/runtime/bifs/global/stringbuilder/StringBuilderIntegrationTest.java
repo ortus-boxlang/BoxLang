@@ -59,7 +59,7 @@ public class StringBuilderIntegrationTest {
 	@Test
 	public void testConcatAssignMutatesInPlace() {
 		instance.executeSource( """
-		                        sb = sb'Hello';
+		                        sb = sb{'Hello'};
 		                        ref = sb;
 		                        sb &= ' World';
 		                        result = sb.toString();
@@ -71,66 +71,66 @@ public class StringBuilderIntegrationTest {
 	}
 
 	// -------------------------------------------------------------------------
-	// sb"" and sb'' literal syntax
+	// sb{""} and sb{''} literal syntax
 	// -------------------------------------------------------------------------
 
-	@DisplayName( "sb\"\" literal creates a BoxStringBuilder" )
+	@DisplayName( "sb{\"\"} literal creates a BoxStringBuilder" )
 	@Test
 	public void testSBLiteralDoubleQuoteEmpty() {
 		instance.executeSource( """
-		                        result = sb\"\";
+		                        result = sb{\"\"};
 		                        """, context );
 		assertThat( variables.get( result ) ).isInstanceOf( BoxStringBuilder.class );
 		assertThat( ( ( BoxStringBuilder ) variables.get( result ) ).toString() ).isEqualTo( "" );
 	}
 
-	@DisplayName( "sb'' literal creates a BoxStringBuilder" )
+	@DisplayName( "sb{''} literal creates a BoxStringBuilder" )
 	@Test
 	public void testSBLiteralSingleQuoteEmpty() {
 		instance.executeSource( """
-		                        result = sb'';
+		                        result = sb{''};
 		                        """, context );
 		assertThat( variables.get( result ) ).isInstanceOf( BoxStringBuilder.class );
 		assertThat( ( ( BoxStringBuilder ) variables.get( result ) ).toString() ).isEqualTo( "" );
 	}
 
-	@DisplayName( "sb\"hello\" literal creates a BoxStringBuilder with the initial value" )
+	@DisplayName( "sb{\"hello\"} literal creates a BoxStringBuilder with the initial value" )
 	@Test
 	public void testSBLiteralDoubleQuoteSeeded() {
 		instance.executeSource( """
-		                        result = sb\"Hello\";
+		                        result = sb{\"Hello\"};
 		                        """, context );
 		assertThat( variables.get( result ) ).isInstanceOf( BoxStringBuilder.class );
 		assertThat( ( ( BoxStringBuilder ) variables.get( result ) ).toString() ).isEqualTo( "Hello" );
 	}
 
-	@DisplayName( "sb'hello' literal creates a BoxStringBuilder with the initial value" )
+	@DisplayName( "sb{'hello'} literal creates a BoxStringBuilder with the initial value" )
 	@Test
 	public void testSBLiteralSingleQuoteSeeded() {
 		instance.executeSource( """
-		                        result = sb'Hello';
+		                        result = sb{'Hello'};
 		                        """, context );
 		assertThat( variables.get( result ) ).isInstanceOf( BoxStringBuilder.class );
 		assertThat( ( ( BoxStringBuilder ) variables.get( result ) ).toString() ).isEqualTo( "Hello" );
 	}
 
-	@DisplayName( "sb\"...\" literal supports #...# interpolation" )
+	@DisplayName( "sb{\"...\"} literal supports #...# interpolation" )
 	@Test
 	public void testSBLiteralDoubleQuoteInterpolation() {
 		instance.executeSource( """
 		                        name = 'World';
-		                        result = sb"Hello #name#";
+		                        result = sb{"Hello #name#"};
 		                        """, context );
 		assertThat( variables.get( result ) ).isInstanceOf( BoxStringBuilder.class );
 		assertThat( ( ( BoxStringBuilder ) variables.get( result ) ).toString() ).isEqualTo( "Hello World" );
 	}
 
-	@DisplayName( "sb'' literal DOES support #...# interpolation (same as double quotes)" )
+	@DisplayName( "sb{''} literal DOES support #...# interpolation (same as double quotes)" )
 	@Test
 	public void testSBLiteralSingleQuoteInterpolation() {
 		instance.executeSource( """
 		                        name = 'World';
-		                        result = sb'Hello #name#';
+		                        result = sb{'Hello #name#'};
 		                        """, context );
 		assertThat( variables.get( result ) ).isInstanceOf( BoxStringBuilder.class );
 		assertThat( ( ( BoxStringBuilder ) variables.get( result ) ).toString() ).isEqualTo( "Hello World" );
@@ -140,9 +140,46 @@ public class StringBuilderIntegrationTest {
 	@Test
 	public void testSBLiteralChaining() {
 		instance.executeSource( """
-		                        result = sb"Hello".append( ' World' ).toString();
+		                        result = sb{"Hello"}.append( ' World' ).toString();
 		                        """, context );
 		assertThat( variables.get( result ) ).isEqualTo( "Hello World" );
+	}
+
+	@DisplayName( "stringbuilder{\"...\"} literal creates a BoxStringBuilder" )
+	@Test
+	public void testStringBuilderLiteralAlias() {
+		instance.executeSource( """
+		                        result = stringbuilder{"Hello"};
+		                        """, context );
+		assertThat( variables.get( result ) ).isInstanceOf( BoxStringBuilder.class );
+		assertThat( ( ( BoxStringBuilder ) variables.get( result ) ).toString() ).isEqualTo( "Hello" );
+	}
+
+	@DisplayName( "StringBuilder literal accepts non-string expressions" )
+	@Test
+	public void testSBLiteralExpressionForms() {
+		instance.executeSource( """
+		                        myVar = "Alpha";
+		                        function getString() { return "Beta"; }
+		                        foo = {
+		                            bar: () => "Gamma"
+		                        };
+
+		                        fromVar = sb{ myVar };
+		                        fromUDF = sb{ getString() };
+		                        fromMethod = sb{ foo.bar() };
+		                        fromLambdaCall = sb{(()->"foo")()};
+		                        """, context );
+
+		assertThat( variables.get( Key.of( "fromVar" ) ) ).isInstanceOf( BoxStringBuilder.class );
+		assertThat( variables.get( Key.of( "fromUDF" ) ) ).isInstanceOf( BoxStringBuilder.class );
+		assertThat( variables.get( Key.of( "fromMethod" ) ) ).isInstanceOf( BoxStringBuilder.class );
+		assertThat( variables.get( Key.of( "fromLambdaCall" ) ) ).isInstanceOf( BoxStringBuilder.class );
+
+		assertThat( variables.get( Key.of( "fromVar" ) ).toString() ).isEqualTo( "Alpha" );
+		assertThat( variables.get( Key.of( "fromUDF" ) ).toString() ).isEqualTo( "Beta" );
+		assertThat( variables.get( Key.of( "fromMethod" ) ).toString() ).isEqualTo( "Gamma" );
+		assertThat( variables.get( Key.of( "fromLambdaCall" ) ).toString() ).isEqualTo( "foo" );
 	}
 
 	@DisplayName( "A Java StringBuilder can be wrapped and then used with BIFs" )
@@ -202,21 +239,21 @@ public class StringBuilderIntegrationTest {
 			}
 			stringExplicitAssignElapsedMs = getTickCount() - stringExplicitAssignStart;
 
-			sbAppend = sb"";
+			sbAppend = sb{""};
 			sbAppendStart = getTickCount();
 			for ( i = 1; i <= iterations; i++ ) {
 		     	sbAppend.append( "x" );
 			}
 			sbAppendElapsedMs = getTickCount() - sbAppendStart;
 
-			sbConcatAssign = sb"";
+			sbConcatAssign = sb{""};
 			sbConcatAssignStart = getTickCount();
 			for ( i = 1; i <= iterations; i++ ) {
 			  	sbConcatAssign &= "x";
 			}
 			sbConcatAssignElapsedMs = getTickCount() - sbConcatAssignStart;
 
-			sbExplicitAssign = sb"";
+			sbExplicitAssign = sb{""};
 			sbExplicitAssignStart = getTickCount();
 			for ( i = 1; i <= iterations; i++ ) {
 		    	variables.sbExplicitAssign = variables.sbExplicitAssign & "x";

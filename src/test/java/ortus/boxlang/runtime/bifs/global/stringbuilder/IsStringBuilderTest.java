@@ -53,7 +53,7 @@ public class IsStringBuilderTest {
 	@Test
 	public void testIsStringBuilderTrue() {
 		instance.executeSource( """
-		                        result = isStringBuilder( sb\"hello\" );
+		                        result = isStringBuilder( sb{\"hello\"} );
 		                        """, context );
 		assertThat( variables.get( result ) ).isEqualTo( true );
 	}

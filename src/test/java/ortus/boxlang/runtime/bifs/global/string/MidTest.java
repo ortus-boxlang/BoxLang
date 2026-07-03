@@ -143,7 +143,7 @@ public class MidTest {
 	public void testItWorksOnBoxStringBuilder() {
 		instance.executeSource(
 		    """
-		    sb = sb"abcdef";
+		    sb = sb{"abcdef"};
 		    result = mid(sb, 2, 3);
 		    """,
 		    context );
@@ -155,7 +155,7 @@ public class MidTest {
 	public void testItWorksOnBoxStringBuilderMember() {
 		instance.executeSource(
 		    """
-		    sb = sb"abcdef";
+		    sb = sb{"abcdef"};
 		    result = sb.mid(2, 3);
 		    """,
 		    context );

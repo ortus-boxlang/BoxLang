@@ -41,7 +41,7 @@ import ortus.boxlang.runtime.types.meta.BoxStringBuilderMeta;
  * <p>
  * Create instances via:
  * <ul>
- * <li>Literal: {@code sb"initial value"} (Box parser only)</li>
+ * <li>Literal: {@code sb{"initial value"}} or {@code stringbuilder{"initial value"}} (Box parser only)</li>
  * <li>BIF: {@code stringBuilderNew()} or {@code stringBuilderNew("initial", 128)}</li>
  * </ul>
  */
@@ -110,7 +110,7 @@ public class BoxStringBuilder implements IType, Comparable<BoxStringBuilder>, Se
 
 	/**
 	 * Static factory — casts any BoxLang value to string and wraps it.
-	 * Used by the {@code sb"..."} literal code-generator.
+	 * Used by the StringBuilder literal code-generator.
 	 *
 	 * @param value any BoxLang value; cast to string via {@link StringCaster}
 	 *

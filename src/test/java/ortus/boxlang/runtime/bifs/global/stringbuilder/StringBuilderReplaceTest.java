@@ -53,7 +53,7 @@ public class StringBuilderReplaceTest {
 	@Test
 	public void testReplaceHeadless() {
 		instance.executeSource( """
-		                        sb = sb'Hello World';
+		                        sb = sb{'Hello World'};
 		                        stringBuilderReplace( sb, 7, 11, 'BoxLang' );
 		                        result = sb.toString();
 		                        """, context );
@@ -64,7 +64,7 @@ public class StringBuilderReplaceTest {
 	@Test
 	public void testReplaceMember() {
 		instance.executeSource( """
-		                        sb = sb'Hello World';
+		                        sb = sb{'Hello World'};
 		                        sb.replace( 7, 11, 'BoxLang' );
 		                        result = sb.toString();
 		                        """, context );

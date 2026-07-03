@@ -27,15 +27,15 @@ import ortus.boxlang.compiler.ast.visitor.ReplacingBoxVisitor;
 import ortus.boxlang.compiler.ast.visitor.VoidBoxVisitor;
 
 /**
- * AST Node representing a {@code sb"..."} or {@code sb'...'} literal.
+ * AST Node representing a {@code sb{"..."}} / {@code sb{'...'}} literal.
  *
  * <p>
  * Syntax form:
  *
  * <pre>
- * sb""                        // empty StringBuilder
- * sb"Hello World"             // seeded StringBuilder
- * sb"Hello #name#"            // interpolation supported
+ * sb{""}                      // empty StringBuilder
+ * sb{"Hello World"}           // seeded StringBuilder
+ * sb{"Hello #name#"}          // interpolation supported
  * </pre>
  *
  * <p>

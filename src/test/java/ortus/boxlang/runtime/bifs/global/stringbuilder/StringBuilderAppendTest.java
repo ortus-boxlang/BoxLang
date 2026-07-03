@@ -53,7 +53,7 @@ public class StringBuilderAppendTest {
 	@Test
 	public void testAppendHeadless() {
 		instance.executeSource( """
-		                        sb = sb'Hello';
+		                        sb = sb{'Hello'};
 		                        stringBuilderAppend( sb, ' World' );
 		                        result = sb.toString();
 		                        """, context );
@@ -64,7 +64,7 @@ public class StringBuilderAppendTest {
 	@Test
 	public void testAppendMember() {
 		instance.executeSource( """
-		                        sb = sb'Hello';
+		                        sb = sb{'Hello'};
 		                        sb.append( ' World' );
 		                        result = sb.toString();
 		                        """, context );
@@ -75,7 +75,7 @@ public class StringBuilderAppendTest {
 	@Test
 	public void testAppendChaining() {
 		instance.executeSource( """
-		                        result = sb"foo"
+		                        result = sb{"foo"}
 		                            .append( 'bar' )
 		                            .append( 'baz' )
 		                            .toString();

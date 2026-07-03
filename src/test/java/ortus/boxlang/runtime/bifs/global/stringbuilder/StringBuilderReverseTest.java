@@ -53,7 +53,7 @@ public class StringBuilderReverseTest {
 	@Test
 	public void testReverseHeadless() {
 		instance.executeSource( """
-		                        sb = sb'abc';
+		                        sb = sb{'abc'};
 		                        stringBuilderReverse( sb );
 		                        result = sb.toString();
 		                        """, context );
@@ -64,7 +64,7 @@ public class StringBuilderReverseTest {
 	@Test
 	public void testReverseMember() {
 		instance.executeSource( """
-		                        sb = sb'abc';
+		                        sb = sb{'abc'};
 		                        sb.reverse();
 		                        result = sb.toString();
 		                        """, context );

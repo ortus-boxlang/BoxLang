@@ -28,7 +28,7 @@ import ortus.boxlang.compiler.javaboxpiler.transformer.AbstractTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
 
 /**
- * Transpiles {@code sb"..."} literals into a
+ * Transpiles {@code sb{"..."}} literals into a
  * {@code ortus.boxlang.runtime.types.BoxStringBuilder.of(innerStringExpr)} call.
  */
 public class BoxStringBuilderLiteralTransformer extends AbstractTransformer {

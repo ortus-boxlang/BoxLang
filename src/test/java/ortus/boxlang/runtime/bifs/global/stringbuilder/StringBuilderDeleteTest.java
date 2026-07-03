@@ -53,7 +53,7 @@ public class StringBuilderDeleteTest {
 	@Test
 	public void testDeleteHeadless() {
 		instance.executeSource( """
-		                        sb = sb'Hello World';
+		                        sb = sb{'Hello World'};
 		                        stringBuilderDelete( sb, 6, 11 );
 		                        result = sb.toString();
 		                        """, context );
@@ -64,7 +64,7 @@ public class StringBuilderDeleteTest {
 	@Test
 	public void testDeleteMember() {
 		instance.executeSource( """
-		                        sb = sb'Hello World';
+		                        sb = sb{'Hello World'};
 		                        sb.delete( 6, 11 );
 		                        result = sb.toString();
 		                        """, context );

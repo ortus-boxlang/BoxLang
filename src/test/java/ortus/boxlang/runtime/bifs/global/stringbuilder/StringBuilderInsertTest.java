@@ -53,7 +53,7 @@ public class StringBuilderInsertTest {
 	@Test
 	public void testInsertMember() {
 		instance.executeSource( """
-		                        sb = sb'HelloWorld';
+		                        sb = sb{'HelloWorld'};
 		                        sb.insert( 6, ' ' );
 		                        result = sb.toString();
 		                        """, context );
@@ -64,7 +64,7 @@ public class StringBuilderInsertTest {
 	@Test
 	public void testInsertHeadless() {
 		instance.executeSource( """
-		                        sb = sb'Hello World';
+		                        sb = sb{'Hello World'};
 		                        stringBuilderInsert( sb, 7, 'Beautiful ' );
 		                        result = sb.toString();
 		                        """, context );

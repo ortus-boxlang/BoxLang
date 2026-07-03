@@ -112,7 +112,7 @@ public class RightTest {
 	public void testItWorksOnBoxStringBuilder() {
 		instance.executeSource(
 		    """
-		    sb = sb"abcdef";
+		    sb = sb{"abcdef"};
 		    result = right(sb, 3);
 		    """,
 		    context );
@@ -124,7 +124,7 @@ public class RightTest {
 	public void testItWorksOnBoxStringBuilderMember() {
 		instance.executeSource(
 		    """
-		    sb = sb"abcdef";
+		    sb = sb{"abcdef"};
 		    result = sb.right(3);
 		    """,
 		    context );

@@ -973,7 +973,7 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 	public BoxExpression visitSbStringLiteral( ortus.boxlang.parser.antlr.BoxGrammar.SbStringLiteralContext ctx ) {
 		var				pos				= tools.getPosition( ctx );
 		var				src				= tools.getSourceText( ctx );
-		BoxExpression	initialValue	= ctx.stringLiteral().accept( this );
+		BoxExpression	initialValue	= ctx.expression().accept( this );
 		return new ortus.boxlang.compiler.ast.expression.BoxStringBuilderLiteral( initialValue, pos, src );
 	}
 
@@ -1723,8 +1723,7 @@ public class BoxExpressionVisitor extends BoxGrammarBaseVisitor<BoxExpression> {
 	 */
 	private boolean isExplicitDestructuringScope( String scopeName ) {
 		return switch ( scopeName.toLowerCase() ) {
-			case "application", "arguments", "cgi", "client", "cookie", "form", "local", "request", "server", "session", "static", "this", "thread", "url",
-			    "variables" -> true;
+			case "application", "arguments", "cgi", "client", "cookie", "form", "local", "request", "server", "session", "static", "this", "thread", "url", "variables" -> true;
 			default -> false;
 		};
 	}

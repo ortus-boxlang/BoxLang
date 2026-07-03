@@ -53,7 +53,7 @@ public class StringBuilderClearTest {
 	@Test
 	public void testClearHeadless() {
 		instance.executeSource( """
-		                        sb = sb'Hello';
+		                        sb = sb{'Hello'};
 		                        stringBuilderClear( sb );
 		                        result = sb.toString();
 		                        """, context );
@@ -64,7 +64,7 @@ public class StringBuilderClearTest {
 	@Test
 	public void testClearMember() {
 		instance.executeSource( """
-		                        sb = sb'Hello';
+		                        sb = sb{'Hello'};
 		                        sb.clear();
 		                        result = sb.toString();
 		                        """, context );

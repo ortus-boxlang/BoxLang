@@ -155,10 +155,10 @@ arrayLiteralMember: expression | ELLIPSIS expression
 setLiteral: setName = IDENTIFIER LBRACE arrayLiteralMembers? RBRACE
     ;
 
-// sb"..." — StringBuilder literal (Box parser only, not CF)
-// The "sb" token is matched as an IDENTIFIER and the rule is gated by the
-// isSBStringLiteral() predicate so it does not collide with variables named "sb".
-sbStringLiteral: sbPrefix = IDENTIFIER stringLiteral
+// sb{...} or stringbuilder{...} — StringBuilder literal (Box parser only, not CF)
+// The prefix token is matched as an IDENTIFIER and the rule is gated by the
+// isSBStringLiteral() predicate so it does not collide with variables named "sb" or "stringbuilder".
+sbStringLiteral: sbPrefix = IDENTIFIER LBRACE expression RBRACE
     ;
 
 // foo=bar baz="bum"
@@ -696,7 +696,7 @@ el2
     // el2 elements that have no operators so will be selected in order other than LL(*) solving
     | ICHAR el2 ICHAR                                # exprOutString       // #el2# not within a string literal
     | { isSetLiteral(_input) }? setLiteral           # exprSetLiteral      // set{1,2,3}
-    | { isSBStringLiteral(_input) }? sbStringLiteral # exprSBStringLiteral // sb"hello"
+    | { isSBStringLiteral(_input) }? sbStringLiteral # exprSBStringLiteral // sb{"hello"}
     | literals                                       # exprLiterals        // "bar", [1,2,3], {foo:bar}
     | arrayLiteral                                   # exprArrayLiteral    // [1,2,3]
     | COLONCOLON identifier                          # exprBIF             // Static BIF functional reference ::uCase

@@ -53,7 +53,7 @@ public class StringBuilderPrependTest {
 	@Test
 	public void testPrependHeadless() {
 		instance.executeSource( """
-		                        sb = sb'World';
+		                        sb = sb{'World'};
 		                        stringBuilderPrepend( sb, 'Hello ' );
 		                        result = sb.toString();
 		                        """, context );
@@ -64,7 +64,7 @@ public class StringBuilderPrependTest {
 	@Test
 	public void testPrependMember() {
 		instance.executeSource( """
-		                        sb = sb'World';
+		                        sb = sb{'World'};
 		                        sb.prepend( 'Hello ' );
 		                        result = sb.toString();
 		                        """, context );

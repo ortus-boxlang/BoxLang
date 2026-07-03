@@ -137,7 +137,7 @@ public class LenTest {
 	public void testItReturnsStringBuilderLength() {
 		instance.executeSource(
 		    """
-		    sb = sb"BoxLang";
+		    sb = sb{"BoxLang"};
 		    result = len( sb );
 		    """,
 		    context );
@@ -145,9 +145,9 @@ public class LenTest {
 
 		instance.executeSource(
 		    """
-		    sb = sb"BoxLang";
+		    sb = sb{"BoxLang"};
 		    result = sb.len();
-		    result2 = sb"BoxLang".len();
+		    result2 = sb{"BoxLang"}.len();
 		    """,
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 7 );

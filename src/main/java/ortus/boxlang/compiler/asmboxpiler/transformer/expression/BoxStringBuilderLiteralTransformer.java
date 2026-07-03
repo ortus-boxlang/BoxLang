@@ -34,7 +34,7 @@ import ortus.boxlang.compiler.ast.expression.BoxStringBuilderLiteral;
 import ortus.boxlang.runtime.types.BoxStringBuilder;
 
 /**
- * Emits bytecode for {@code sb"..."} literals.
+ * Emits bytecode for {@code sb{"..."}} literals.
  *
  * <p>
  * The generated sequence pushes the inner string expression onto the stack and

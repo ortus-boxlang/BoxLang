@@ -117,8 +117,9 @@ public class StringPrinter {
 
 	public void printStringBuilderLiteral( ortus.boxlang.compiler.ast.expression.BoxStringBuilderLiteral node ) {
 		visitor.printPreComments( node );
-		visitor.print( "sb" );
+		visitor.print( "sb{" );
 		node.getInitialValue().accept( visitor );
+		visitor.print( "}" );
 		visitor.printPostComments( node );
 	}
 

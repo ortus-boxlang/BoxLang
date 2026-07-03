@@ -53,7 +53,7 @@ public class StringBuilderTrimTest {
 	@Test
 	public void testTrimHeadless() {
 		instance.executeSource( """
-		                        sb = sb'  hello  ';
+		                        sb = sb{'  hello  '};
 		                        stringBuilderTrim( sb );
 		                        result = sb.toString();
 		                        """, context );
@@ -64,7 +64,7 @@ public class StringBuilderTrimTest {
 	@Test
 	public void testTrimMember() {
 		instance.executeSource( """
-		                        sb = sb'  hello  ';
+		                        sb = sb{'  hello  '};
 		                        sb.trim();
 		                        result = sb.toString();
 		                        """, context );

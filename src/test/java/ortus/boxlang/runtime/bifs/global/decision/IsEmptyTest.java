@@ -122,8 +122,8 @@ public class IsEmptyTest {
 	public void stringBuilderMemberFunction() {
 		instance.executeSource(
 		    """
-		    myStringBuilder = sb"brad";
-		    myEmptyStringBuilder = sb"";
+		    myStringBuilder = sb{"brad"};
+		    myEmptyStringBuilder = sb{""};
 
 		       onPopulated = myStringBuilder.isEmpty();
 		       onEmpty     = myEmptyStringBuilder.isEmpty();
@@ -162,7 +162,7 @@ public class IsEmptyTest {
 		    stringArray           = isEmpty( [ "abc" ] );
 		    structWithValues      = isEmpty( { a : "b" } );
 		    nestedStructValues    = isEmpty( { a : { "name" : "brad" }} );
-		    stringBuilderValue    = isEmpty( sb"abc" );
+		    stringBuilderValue    = isEmpty( sb{"abc"} );
 		      """,
 		    context );
 		assertThat( ( Boolean ) variables.get( Key.of( "boolValue" ) ) ).isFalse();

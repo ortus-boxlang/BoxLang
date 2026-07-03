@@ -169,7 +169,7 @@ public class FindTest {
 	public void testItWorksOnBoxStringBuilder() {
 		instance.executeSource(
 		    """
-		    sb = sb"BoxLang is great";
+		    sb = sb{"BoxLang is great"};
 		    result = find("Lang", sb);
 		    """,
 		    context );
@@ -181,7 +181,7 @@ public class FindTest {
 	public void testItWorksOnBoxStringBuilderMember() {
 		instance.executeSource(
 		    """
-		    sb = sb"BoxLang is great";
+		    sb = sb{"BoxLang is great"};
 		    result = sb.find("Lang");
 		    """,
 		    context );
