@@ -169,4 +169,17 @@ public class IsDefinedTest {
 
 	}
 
+	@DisplayName( "It does not match variables with dot notation (like Adobe does)" )
+	@Test
+	public void testDotNotation() {
+		instance.executeSource(
+		    """
+		    variables[ "foo.bar" ] = "test"
+		    result = isDefined( "foo.bar" );
+		       """,
+		    context );
+		assertThat( variables.getAsBoolean( Key.of( "result" ) ) ).isFalse();
+
+	}
+
 }
