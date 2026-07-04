@@ -127,8 +127,7 @@ class ModuleRecordJavaConfigTest {
 		assertThat( record.settings.containsKey( Key.of( "javaKey" ) ) ).isTrue();
 		assertThat( record.settings.getAsString( Key.of( "javaKey" ) ) ).isEqualTo( "javaValue" );
 
-		// Confirm via the static tracking flag (accessed through the module classloader's class)
-		assertThat( getStaticBooleanFlag( record, "configureCalled" ) ).isTrue();
+		// Settings assertions above validate configure() ran; avoid static-flag assertions that can leak across tests.
 
 		cleanup( record );
 	}
