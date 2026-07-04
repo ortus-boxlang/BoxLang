@@ -486,10 +486,27 @@ public class ModuleRecord {
 		    : null;
 
 		// Detect a Java IModuleConfig via ServiceLoader (diskless-safe — uses the module classloader abstraction).
-		// Java always wins: if found, replace the BxModuleConfig set by loadDescriptor().
+		// Java always wins: if found, replace any BX config and discard BX-derived metadata/state.
 		ServiceLoader.load( IModuleConfig.class, this.moduleClassLoader.toClassLoader() )
 		    .findFirst()
 		    .ifPresent( javaConfig -> {
+			    // Reset to conventional defaults so ModuleConfig.bx is truly ignored when Java config is present
+			    this.version					= "1.0.0";
+			    this.author					= "";
+			    this.description				= "";
+			    this.webURL					= "";
+			    this.enabled					= true;
+			    this.dependencies				= new Array();
+			    this.settings					= new Struct();
+			    this.interceptors				= new Array();
+			    this.customInterceptionPoints	= new Array();
+			    this.mapping					= Mapping.of( ModuleService.MODULE_MAPPING_PREFIX + name.getName(), this.path, false );
+			    this.publicMapping				= Mapping.of( ModuleService.MODULE_MAPPING_PREFIX + name.getName() + "/" + ModuleService.MODULE_PUBLIC_FOLDER,
+			        this.physicalPath.resolve( "public" ).toString(), true );
+			    if ( this.runtime.getConfiguration().modules.containsKey( this.name ) ) {
+				    ModuleConfig runtimeConfig = ( ModuleConfig ) this.runtime.getConfiguration().modules.get( this.name );
+				    this.enabled = runtimeConfig.enabled;
+			    }
 			    this.moduleConfig = javaConfig;
 			    extractJavaMetadata();
 		    } );
