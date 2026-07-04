@@ -142,7 +142,9 @@ class ModuleRecordJavaConfigTest {
 	void testJavaOnLoadCalledOnActivate() {
 		ModuleRecord record = new ModuleRecord( JAVA_MODULE_PATH );
 
-		record.loadDescriptor( context ).register( context ).activate( context );
+		record.loadDescriptor( context ).register( context );
+		org.junit.jupiter.api.Assertions.assertDoesNotThrow( () -> record.moduleConfig.getClass().getMethod( "reset" ).invoke( null ) );
+		record.activate( context );
 
 		assertThat( getStaticBooleanFlag( record, "onLoadCalled" ) ).isTrue();
 
