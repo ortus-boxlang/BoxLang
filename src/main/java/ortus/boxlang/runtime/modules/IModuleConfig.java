@@ -146,8 +146,9 @@ public interface IModuleConfig {
 	}
 
 	/**
-	 * Convenience constant for an empty dependencies array, used as the default field value.
+	 * @return a new empty dependencies array (avoids sharing a mutable Array instance across modules)
 	 */
-	Array EMPTY_DEPENDENCIES = new Array();
-
+	static Array emptyDependencies() {
+		return new Array();
+	}
 }
