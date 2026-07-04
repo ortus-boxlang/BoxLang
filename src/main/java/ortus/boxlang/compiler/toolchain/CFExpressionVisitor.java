@@ -600,16 +600,24 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 		var					left	= ctx.el2( 0 ).accept( this );
 		var					right	= ctx.el2( 1 ).accept( this );
 
-		// If the left is a concat, we can just add the right to it to chain the concatenation. The
-		// code generator should check the parts and if both left and right are literal strings, then
-		// it should concatenate them into a single string before code generation.
-		if ( left instanceof BoxStringConcat concat ) {
-			concat.getValues().add( right );
-			concat.setValues( concat.getValues() );  // Cause parents to be reset
-			return concat;
+		// Flatten concatenations on both sides to create a single flat BoxStringConcat
+		if ( left instanceof BoxStringConcat leftConcat ) {
+			if ( right instanceof BoxStringConcat rightConcat ) {
+				leftConcat.getValues().addAll( rightConcat.getValues() );
+			} else {
+				leftConcat.getValues().add( right );
+			}
+			leftConcat.setValues( leftConcat.getValues() );  // Cause parents to be reset
+			return leftConcat;
 		}
 
-		// If the left is not a concat, we need to create a new one
+		if ( right instanceof BoxStringConcat rightConcat ) {
+			rightConcat.getValues().add( 0, left );
+			rightConcat.setValues( rightConcat.getValues() );  // Cause parents to be reset
+			return rightConcat;
+		}
+
+		// Neither is a concat, create a new one
 		parts = new ArrayList<>();
 		parts.add( left );
 		parts.add( right );

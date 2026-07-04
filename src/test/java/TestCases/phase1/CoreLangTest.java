@@ -6813,6 +6813,19 @@ public class CoreLangTest {
 	}
 
 	@Test
+	public void testOptimizeStringLiteralCompat() {
+		instance.executeSource(
+		    """
+		    result = "foo" & "bar" & "baz" & "qux";
+		    test = "brad"
+		    result2 = "foo" & "bar" & test & "baz" & "qux";
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "foobarbazqux" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "foobarbradbazqux" );
+	}
+
+	@Test
 	@Disabled( "Performance test, not for regular test runs" )
 	public void testInlineBIFCalls() throws Throwable {
 		Key				revKey			= Key.of( "reverse" );

@@ -54,6 +54,7 @@ import ortus.boxlang.compiler.ast.expression.BoxObjectDestructuringPattern;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
+import ortus.boxlang.compiler.transformer.util.AssignmentRewriteOptimizer;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ArrayDestructurer;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
@@ -82,6 +83,7 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 	public List<AbstractInsnNode> transform( BoxNode node, TransformerContext context, ReturnValueContext returnContext ) throws IllegalStateException {
 		BoxAssignment			assignment	= ( BoxAssignment ) node;
 		List<AbstractInsnNode>	nodes		= null;
+		AssignmentRewriteOptimizer.optimizeCompoundAssignmentPatterns( assignment );
 
 		if ( assignment.getOp() == null ) {
 			if ( ! ( assignment.getLeft() instanceof BoxIdentifier ) ) {
@@ -823,7 +825,8 @@ public class BoxAssignmentTransformer extends AbstractTransformer {
 
 	private static Class<?> compoundAssignReturnType( BoxAssignmentOperator op ) {
 		return switch ( op ) {
-			case ConcatEqual -> String.class;
+			// Widened to Object: when LHS is a BoxStringBuilder, &= returns the mutated instance
+			case ConcatEqual -> Object.class;
 			// Set-aware ops widened to Object (set algebra falls through Plus/Minus/Multiply)
 			case PlusEqual, MinusEqual, StarEqual -> Object.class;
 			default -> Number.class;

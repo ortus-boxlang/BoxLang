@@ -163,4 +163,28 @@ public class FindTest {
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 4 ); // "Lang" starts at position 4
 	}
+
+	@DisplayName( "It works on a BoxStringBuilder via auto-cast (global function)" )
+	@Test
+	public void testItWorksOnBoxStringBuilder() {
+		instance.executeSource(
+		    """
+		    sb = sb{"BoxLang is great"};
+		    result = find("Lang", sb);
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 4 ); // "Lang" starts at position 4
+	}
+
+	@DisplayName( "It works on a BoxStringBuilder member method" )
+	@Test
+	public void testItWorksOnBoxStringBuilderMember() {
+		instance.executeSource(
+		    """
+		    sb = sb{"BoxLang is great"};
+		    result = sb.find("Lang");
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( 4 ); // "Lang" starts at position 4
+	}
 }

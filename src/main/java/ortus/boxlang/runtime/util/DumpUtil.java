@@ -54,6 +54,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.DateTime;
+import ortus.boxlang.runtime.types.BoxStringBuilder;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
@@ -73,7 +74,8 @@ import ortus.boxlang.runtime.types.util.JSONUtil;
 public class DumpUtil {
 
 	/**
-	 * This is used to track objects that have been dumped to prevent infinite recursion.
+	 * This is used to track objects that have been dumped to prevent infinite
+	 * recursion.
 	 */
 	private static final ThreadLocal<Set<Integer>>				dumpedObjects			= ThreadLocal.withInitial( HashSet::new );
 
@@ -89,7 +91,8 @@ public class DumpUtil {
 	private static final String									TEMPLATES_BASE_PATH		= "/dump/html/";
 
 	/**
-	 * This is the default template name to use when the target object does not have a template.
+	 * This is the default template name to use when the target object does not have
+	 * a template.
 	 */
 	private static final String									DEFAULT_DUMP_TEMPLATE	= "Class.bxm";
 
@@ -137,9 +140,11 @@ public class DumpUtil {
 			try {
 				// test if output is an absolute valid path on disk
 				dumpFilePath = Paths.get( output );
-				// If not absolute, make relative to the temp dir. FileSystemUtil.getTempDirectory()
+				// If not absolute, make relative to the temp dir.
+				// FileSystemUtil.getTempDirectory()
 				if ( !dumpFilePath.isAbsolute() ) {
-					dumpFilePath = Paths.get( FileSystemUtil.getTempDirectory() ).resolve( output ).toAbsolutePath().normalize();
+					dumpFilePath = Paths.get( FileSystemUtil.getTempDirectory() ).resolve( output ).toAbsolutePath()
+					    .normalize();
 				}
 				// Set this last so any errors above don't change the output type
 				output = "___file___";
@@ -153,7 +158,8 @@ public class DumpUtil {
 		output = output.toLowerCase();
 		// Determine the output format if not passed from the output parameter.
 		if ( format == null ) {
-			// If the output is console or the parent context is a scripting context, then use text.
+			// If the output is console or the parent context is a scripting context, then
+			// use text.
 			if ( output.equals( "console" ) || isScriptContext ) {
 				format = "text";
 			} else {
@@ -182,8 +188,7 @@ public class DumpUtil {
 		            Key.output, outputFinal,
 		            Key.format, formatFinal,
 		            Key.dumpFilePath, dumpFilePathFinal,
-		            Key.showUDFs, showUDFs
-		        ) );
+		            Key.showUDFs, showUDFs ) );
 
 		String dumpOutput;
 		if ( format.equals( "html" ) ) {
@@ -257,9 +262,7 @@ public class DumpUtil {
 					            Key.format, formatFinal,
 					            Key.dumpFilePath, dumpFilePathFinal,
 					            Key.dumpOutput, dumpOutputFinal,
-					            Key.showUDFs, showUDFs
-					        )
-					    );
+					            Key.showUDFs, showUDFs ) );
 					break;
 			}
 
@@ -267,7 +270,8 @@ public class DumpUtil {
 	}
 
 	/**
-	 * Appends the given content to the specified file, creating all parent directories and the file if they do not exist.
+	 * Appends the given content to the specified file, creating all parent
+	 * directories and the file if they do not exist.
 	 *
 	 * @param filePath The path to the file
 	 * @param content  The content to append
@@ -356,7 +360,8 @@ public class DumpUtil {
 		boolean			outerDump		= dumped.isEmpty();
 		Integer			thisHashCode	= System.identityHashCode( target );
 
-		// The target object has already been dumped in this thread, so return to prevent recursion
+		// The target object has already been dumped in this thread, so return to
+		// prevent recursion
 		if ( !dumped.add( thisHashCode ) ) {
 			context.writeToBuffer( "<div><em>Recursive Reference (Skipping dump)</em></div>", true );
 			return null;
@@ -389,9 +394,11 @@ public class DumpUtil {
 				buffer = new StringBuffer();
 				context.pushBuffer( buffer );
 				posInCode = ExceptionUtil.getCurrentPositionInCode();
-				// This assumes HTML output. Needs to be dynamic as XML or plain text output wouldn't have CSS
+				// This assumes HTML output. Needs to be dynamic as XML or plain text output
+				// wouldn't have CSS
 				dumpContext.writeToBuffer( "<style>" + getDumpTemplate( context, "Dump.css" ).source() + "</style>", true );
-				dumpContext.writeToBuffer( "<script>" + getDumpTemplate( context, "Dump.js" ).source() + "</script>", true );
+				dumpContext.writeToBuffer( "<script>" + getDumpTemplate( context, "Dump.js" ).source() + "</script>",
+				    true );
 			}
 
 			// Place the variables in the scope
@@ -404,8 +411,7 @@ public class DumpUtil {
 			        Key.expand, expand,
 			        Key.abort, abort,
 			        Key.showUDFs, showUDFs,
-			        Key.format, format
-			    ) );
+			        Key.format, format ) );
 
 			// Execute the dump template
 			context.getRuntime().executeSource( dumpTemplate.source(), dumpContext, BoxSourceType.BOXTEMPLATE );
@@ -455,7 +461,8 @@ public class DumpUtil {
 		} else if ( target instanceof DateTime ) {
 			return "DateTime.bxm";
 		} else if ( target instanceof LocalDate || target instanceof LocalDateTime || target instanceof ZonedDateTime ||
-		    target instanceof java.sql.Date || target instanceof java.sql.Timestamp || target instanceof java.util.Date ) {
+		    target instanceof java.sql.Date || target instanceof java.sql.Timestamp
+		    || target instanceof java.util.Date ) {
 			target = DateTimeCaster.cast( target, context );
 			return "DateTime.bxm";
 		} else if ( target instanceof Duration ) {
@@ -473,6 +480,8 @@ public class DumpUtil {
 			return "ResolvedFilePath.bxm";
 		} else if ( target instanceof IStruct ) {
 			return "Struct.bxm";
+		} else if ( target instanceof BoxStringBuilder ) {
+			return "StringBuffer.bxm";
 		} else if ( target instanceof IType ) {
 			return target.getClass().getSimpleName().replace( "Unmodifiable", "" ) + ".bxm";
 		} else if ( target instanceof String ) {
@@ -512,15 +521,15 @@ public class DumpUtil {
 
 		// Bypass caching in debug mode for easier testing
 		if ( context.getRuntime().inDebugMode() ) {
-			// logger.debug( "Dump template [{}] cache bypassed in debug mode", dumpTemplatePath );
+			// logger.debug( "Dump template [{}] cache bypassed in debug mode",
+			// dumpTemplatePath );
 			return computeDumpTemplate( dumpTemplatePath, context );
 		}
 
 		// Normal flow caches dump template on first request.
 		return dumpTemplateCache.computeIfAbsent(
 		    dumpTemplatePath,
-		    key -> computeDumpTemplate( dumpTemplatePath, context )
-		);
+		    key -> computeDumpTemplate( dumpTemplatePath, context ) );
 	}
 
 	/**
@@ -538,7 +547,8 @@ public class DumpUtil {
 		InputStream dumpTemplate = null;
 		dumpTemplate = DumpUtil.class.getResourceAsStream( dumpTemplatePath );
 
-		// If we are NOT in jar mode and in debug mode, then re-read the file from the file system
+		// If we are NOT in jar mode and in debug mode, then re-read the file from the
+		// file system
 		if ( !context.getRuntime().inJarMode() && context.getRuntime().inDebugMode() ) {
 			Path filePath = Paths.get( "src", "main", "resources", dumpTemplatePath ).toAbsolutePath();
 			if ( Files.exists( filePath ) ) {
@@ -551,10 +561,12 @@ public class DumpUtil {
 		}
 
 		if ( dumpTemplate == null ) {
-			throw new BoxRuntimeException( "Could not load dump template from class path or filesystem: " + dumpTemplatePath );
+			throw new BoxRuntimeException(
+			    "Could not load dump template from class path or filesystem: " + dumpTemplatePath );
 		}
 
-		// \\A is the beginning of the input boundary so it reads the entire file in one go.
+		// \\A is the beginning of the input boundary so it reads the entire file in one
+		// go.
 		try ( Scanner s = new Scanner( dumpTemplate ).useDelimiter( "\\A" ) ) {
 			return new DumpTemplate( dumpTemplatePath, s.hasNext() ? s.next() : "" );
 		}

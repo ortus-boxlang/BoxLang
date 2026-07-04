@@ -454,6 +454,10 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 		return ( Stream<?> ) DynamicObject.unWrap( get( key ) );
 	}
 
+	default BoxStringBuilder getAsBoxStringBuilder( Key key ) {
+		return ( BoxStringBuilder ) DynamicObject.unWrap( get( key ) );
+	}
+
 	/**
 	 * Convenience method for getting a key using the first param as the casting class
 	 *

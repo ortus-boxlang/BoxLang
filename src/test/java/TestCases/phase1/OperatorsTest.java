@@ -533,6 +533,35 @@ public class OperatorsTest {
 		assertThat( variables.getAsNumber( resultKey ).doubleValue() ).isEqualTo( 1 );
 	}
 
+	@DisplayName( "explicit self-assignment numeric operations match compound operators" )
+	@Test
+	public void explicitSelfAssignmentNumericOperations() {
+		instance.executeSource(
+		    """
+		    plusResult = 5;
+		    plusResult = plusResult + 5;
+
+		    minusResult = 5;
+		    minusResult = minusResult - 4;
+
+		    multiplyResult = 5;
+		    multiplyResult = multiplyResult * 5;
+
+		    divideResult = 20;
+		    variables.divideResult = variables.divideResult / 5;
+
+		    modResult = 5;
+		    modResult = modResult % 4;
+		    """,
+		    context );
+
+		assertThat( variables.getAsNumber( Key.of( "plusResult" ) ).doubleValue() ).isEqualTo( 10 );
+		assertThat( variables.getAsNumber( Key.of( "minusResult" ) ).doubleValue() ).isEqualTo( 1 );
+		assertThat( variables.getAsNumber( Key.of( "multiplyResult" ) ).doubleValue() ).isEqualTo( 25 );
+		assertThat( variables.getAsNumber( Key.of( "divideResult" ) ).doubleValue() ).isEqualTo( 4 );
+		assertThat( variables.getAsNumber( Key.of( "modResult" ) ).doubleValue() ).isEqualTo( 1 );
+	}
+
 	@DisplayName( "modulus precedence" )
 	@Test
 	public void modulusPrecedence() {

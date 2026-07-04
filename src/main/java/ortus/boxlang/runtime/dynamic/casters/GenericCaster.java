@@ -206,6 +206,10 @@ public class GenericCaster implements IBoxCaster {
 				return FloatCaster.cast( object, fail );
 			case "array" :
 				return ArrayCaster.cast( object, fail );
+			case "stringbuilder" :
+				return StringBuilderCaster.cast( object, fail );
+			case "stringbuilderstrict" :
+				return StringBuilderCasterStrict.cast( object, fail );
 			case "set" :
 				// Strict: only accept actual Sets. Use the explicit `toSet()` member or
 				// `setNew(...)` BIF to convert arrays / lists / etc.

@@ -40,6 +40,7 @@ import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxClosure;
 import ortus.boxlang.compiler.ast.expression.BoxIntegerLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxLambda;
+import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
 import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxDo;
@@ -217,6 +218,12 @@ public abstract class AbstractTransformer implements Transformer {
 				} else if ( onlyLiteralValues ) {
 					// Runtime expressions we just put this place holder text in for
 					value = BoxStringLiteralTransformer.transform( "<Runtime Expression>" );
+				} else if ( thisValue instanceof BoxStringInterpolation bsi && bsi.getValues().size() == 1 ) {
+					// A quoted attribute value with a single interpolation element isn't forced to a string.
+					// Ex: <bx:myComponent foo="#complexValue#">
+					// It's represented as a BoxStringInterpolation, but we DON'T want to use the actual string transformer
+					// as it will force the output to be a string!!
+					value = ( Expression ) transpiler.transform( bsi.getValues().get( 0 ) );
 				} else {
 					value = ( Expression ) transpiler.transform( thisValue );
 				}

@@ -227,8 +227,10 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		component							= Key.of( "component" );
 	public static final Key		componentPaths						= Key.of( "componentPaths" );
 	public static final Key		componentService					= Key.of( "componentService" );
+	public static final Key		capacity							= Key.of( "capacity" );
 	public static final Key		compression							= Key.of( "compression" );
 	public static final Key		compressionLevel					= Key.of( "compressionLevel" );
+	public static final Key		containsNoCase						= Key.of( "containsNoCase" );
 	public static final Key		condition							= Key.of( "condition" );
 	public static final Key		config								= Key.of( "config" );
 	public static final Key		configuration						= Key.of( "configuration" );
@@ -905,6 +907,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		string1								= Key.of( "string1" );
 	public static final Key		string2								= Key.of( "string2" );
 	public static final Key		stringEndsWithNoCase				= Key.of( "stringEndsWithNoCase" );
+	public static final Key		stringBuilder						= Key.of( "stringBuilder" );
+	public static final Key		stringBuilderStrict					= Key.of( "stringBuilderStrict" );
 	public static final Key		stringStartsWithNoCase				= Key.of( "stringStartsWithNoCase" );
 	public static final Key		strip								= Key.of( "strip" );
 	public static final Key		stripWhitespace						= Key.of( "stripWhitespace" );

@@ -596,6 +596,22 @@ public class SetBIFsTest {
 		assertThat( s.size() ).isEqualTo( 2 );
 	}
 
+	@DisplayName( "Explicit a = a * b on a set performs intersection" )
+	@Test
+	public void testExplicitStarAssignmentIntersection() {
+		instance.executeSource(
+		    """
+		    a = set{ 1, 2, 3 };
+		    a = a * set{ 2, 3, 4 };
+		    result = a;
+		    """,
+		    context );
+		BoxSet s = ( BoxSet ) variables.get( result );
+		assertThat( s.size() ).isEqualTo( 2 );
+		assertThat( s.contains( 2 ) ).isTrue();
+		assertThat( s.contains( 3 ) ).isTrue();
+	}
+
 	@DisplayName( "set{ ...array } spreads an array into the set literal" )
 	@Test
 	public void testSetLiteralSpreadArray() {
