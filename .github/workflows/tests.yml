@@ -37,7 +37,7 @@ jobs:
             compiler: java
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set Docker API version
         run: echo "DOCKER_API_VERSION=1.44" >> $GITHUB_ENV
@@ -110,7 +110,7 @@ jobs:
           ./gradlew test --stacktrace --console=plain -PaddJavaCompiler=true
 
       - name: Publish Test Reports
-        uses: mikepenz/action-junit-report@v6.4.0
+        uses: mikepenz/action-junit-report@v6.4.2
         if: always()
         with:
           report_paths: |

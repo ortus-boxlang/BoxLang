@@ -56,6 +56,7 @@ import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.BLCollector;
+import ortus.boxlang.runtime.types.util.JSONUtil;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
@@ -886,7 +887,8 @@ public abstract class BaseApplicationListener {
 					if ( result instanceof String str && IsJSON.isJSON( str ) ) {
 						stringResult = str;
 					} else {
-						stringResult = ( String ) context.invokeFunction( Key.JSONSerialize, new Object[] { result, "struct" } );
+						String queryFormat = JSONUtil.getDefaultQuerySerializationFormat( context );
+						stringResult = ( String ) context.invokeFunction( Key.JSONSerialize, new Object[] { result, queryFormat } );
 					}
 					break;
 				case "wddx" :

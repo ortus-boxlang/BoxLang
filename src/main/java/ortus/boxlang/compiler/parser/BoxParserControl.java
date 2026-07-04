@@ -188,6 +188,30 @@ public abstract class BoxParserControl extends Parser {
 	}
 
 	/**
+	 * Soft-keyword gate for StringBuilder literal forms such as {@code sb{expr}}
+	 * and {@code stringbuilder{expr}}.
+	 *
+	 * <p>
+	 * Returns true when the next tokens are an IDENTIFIER whose text is "sb" or
+	 * "stringbuilder" (case-insensitive), followed by {@code \{}.
+	 *
+	 * 
+	<p>
+	 * Only used in the Box parser grammar — the CF grammar does not support this syntax.
+	 */
+	protected boolean isSBStringLiteral( TokenStream input ) {
+		var first = input.LT( 1 );
+		if ( first.getType() != IDENTIFIER ) {
+			return false;
+		}
+		String prefix = first.getText();
+		if ( ! ( "sb".equalsIgnoreCase( prefix ) || "stringbuilder".equalsIgnoreCase( prefix ) ) ) {
+			return false;
+		}
+		return input.LT( 2 ).getType() == LBRACE;
+	}
+
+	/**
 	 * Soft-keyword gate for the {@code set{...}} literal.
 	 *
 	 * <p>

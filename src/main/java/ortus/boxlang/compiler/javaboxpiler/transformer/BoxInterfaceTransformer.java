@@ -17,9 +17,9 @@ package ortus.boxlang.compiler.javaboxpiler.transformer;
 import java.util.Map;
 
 import com.github.javaparser.ParseResult;
-import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;

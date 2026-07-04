@@ -475,6 +475,10 @@
 	},
 	// The default return format for class invocations via web runtimes
 	"defaultRemoteMethodReturnFormat": "json",
+	// The default JSON serialization format for query objects converted to JSON
+	// Possible values: null (defaults to "struct"), "struct", "array", "columns"
+	// When null, the runtime will use "struct" as the default format.
+	"defaultJSONQuerySerializationFormat": null,
 	/**
 	* Register any named caches here.
 	* The key is the name of the cache and the value is the cache configuration.

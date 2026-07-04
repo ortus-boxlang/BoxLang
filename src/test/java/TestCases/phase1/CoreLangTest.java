@@ -27,6 +27,7 @@ import java.lang.invoke.MethodType;
 import java.lang.ref.SoftReference;
 import java.math.BigInteger;
 import java.net.http.HttpRequest.BodyPublisher;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -6750,6 +6751,78 @@ public class CoreLangTest {
 		    context );
 		assertThat( variables.get( result ) ).isEqualTo( 42 );
 		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "oops" );
+	}
+
+	@DisplayName( "incompatible stack heights" )
+	@Test
+	public void testIncompatibleStackHeights() {
+		instance.executeSource(
+		    """
+		    x = ""
+		    if (true) {
+		     x & "Y";
+		    }
+
+		    x;
+		      """,
+		    context );
+	}
+
+	@DisplayName( "potential incompatible stack heights operations" )
+	@Test
+	public void testPotentialIncompatibleStackHeightOperations() {
+		List<String>	operations	= List.of(
+		    "x & \"Y\"",
+		    "true",
+		    "1.25",
+		    "null",
+		    "[ 1, 2, 3 ]",
+		    "{ foo : \"bar\" }",
+		    "set{ 1, 2, 3 }",
+		    "variables",
+		    "::echo",
+		    "() => \"ok\"",
+		    "( v ) -> v"
+		);
+		List<String>	failures	= new ArrayList<>();
+
+		for ( String operation : operations ) {
+			try {
+				instance.executeSource(
+				    """
+				    x = ""
+				    if ( true ) {
+				     %s;
+				    }
+
+				    1;
+				    """.formatted( operation ),
+				    context,
+				    BoxSourceType.BOXSCRIPT
+				);
+			} catch ( Throwable t ) {
+				String message = t.getMessage() == null ? "" : t.getMessage().replace( '\n', ' ' ).replace( '\r', ' ' );
+				if ( message.length() > 180 ) {
+					message = message.substring( 0, 180 ) + "...";
+				}
+				failures.add( operation + " -> " + t.getClass().getSimpleName() + ": " + message );
+			}
+		}
+
+		assertThat( failures ).isEmpty();
+	}
+
+	@Test
+	public void testOptimizeStringLiteralCompat() {
+		instance.executeSource(
+		    """
+		    result = "foo" & "bar" & "baz" & "qux";
+		    test = "brad"
+		    result2 = "foo" & "bar" & test & "baz" & "qux";
+		         """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "foobarbazqux" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "foobarbradbazqux" );
 	}
 
 	@Test

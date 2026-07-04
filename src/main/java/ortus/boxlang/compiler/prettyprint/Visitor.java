@@ -58,6 +58,7 @@ import ortus.boxlang.compiler.ast.expression.BoxScope;
 import ortus.boxlang.compiler.ast.expression.BoxSetLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
 import ortus.boxlang.compiler.ast.expression.BoxStaticMethodInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxStringBuilderLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
@@ -1007,6 +1008,11 @@ public class Visitor extends VoidBoxVisitor {
 	@Override
 	public void visit( BoxStringLiteral node ) {
 		stringPrinter.printStringLiteral( node );
+	}
+
+	@Override
+	public void visit( BoxStringBuilderLiteral node ) {
+		stringPrinter.printStringBuilderLiteral( node );
 	}
 
 	@Override

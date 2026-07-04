@@ -227,8 +227,10 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		component							= Key.of( "component" );
 	public static final Key		componentPaths						= Key.of( "componentPaths" );
 	public static final Key		componentService					= Key.of( "componentService" );
+	public static final Key		capacity							= Key.of( "capacity" );
 	public static final Key		compression							= Key.of( "compression" );
 	public static final Key		compressionLevel					= Key.of( "compressionLevel" );
+	public static final Key		containsNoCase						= Key.of( "containsNoCase" );
 	public static final Key		condition							= Key.of( "condition" );
 	public static final Key		config								= Key.of( "config" );
 	public static final Key		configuration						= Key.of( "configuration" );
@@ -294,6 +296,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		defaultFunctions					= Key.of( "defaultFunctions" );
 	public static final Key		defaultLastAccessTimeout			= Key.of( "defaultLastAccessTimeout" );
 	public static final Key		defaultRemoteMethodReturnFormat		= Key.of( "defaultRemoteMethodReturnFormat" );
+	public static final Key		defaultJSONQuerySerializationFormat	= Key.of( "defaultJSONQuerySerializationFormat" );
 	public static final Key		defaultTimeout						= Key.of( "defaultTimeout" );
 	public static final Key		defaultValue						= Key.of( "defaultValue" );
 	public static final Key		decimals							= Key.of( "decimals" );
@@ -835,6 +838,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		seekable							= Key.of( "seekable" );
 	public static final Key		separator							= Key.of( "separator" );
 	public static final Key		serializable						= Key.of( "serializable" );
+	public static final Key		serialization						= Key.of( "serialization" );
+	public static final Key		serializeQueryAs					= Key.of( "serializeQueryAs" );
 	public static final Key		serializeQueryByColumns				= Key.of( "serializeQueryByColumns" );
 	public static final Key		server								= Key.of( "server" );
 	public static final Key		server_name							= Key.of( "server_name" );
@@ -902,6 +907,8 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		string1								= Key.of( "string1" );
 	public static final Key		string2								= Key.of( "string2" );
 	public static final Key		stringEndsWithNoCase				= Key.of( "stringEndsWithNoCase" );
+	public static final Key		stringBuilder						= Key.of( "stringBuilder" );
+	public static final Key		stringBuilderStrict					= Key.of( "stringBuilderStrict" );
 	public static final Key		stringStartsWithNoCase				= Key.of( "stringStartsWithNoCase" );
 	public static final Key		strip								= Key.of( "strip" );
 	public static final Key		stripWhitespace						= Key.of( "stripWhitespace" );

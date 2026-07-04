@@ -17,6 +17,7 @@ package ortus.boxlang.compiler;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -52,6 +53,8 @@ import ortus.boxlang.runtime.runnables.RunnableLoader;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
 public class ASMTest {
@@ -199,6 +202,27 @@ public class ASMTest {
 	}
 
 	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
+	@DisplayName( "outlined component if branch should preserve variables for later branches" )
+	@Test
+	public void testOutlinedComponentIfBranchShouldPreserveVariablesForLaterBranches() {
+		instance.executeSource( buildOutlinedComponentBranchScopeTemplate(), context, BoxSourceType.CFTEMPLATE );
+
+		assertEquals( "from outlined branch", variables.get( Key.of( "result" ) ) );
+	}
+
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
+	@DisplayName( "outlined component if branch should report source line numbers" )
+	@Test
+	public void testOutlinedComponentIfBranchShouldReportSourceLineNumbers() {
+		KeyNotFoundException exception = assertThrows(
+		    KeyNotFoundException.class,
+		    () -> instance.executeSource( buildOutlinedComponentBranchMissingVariableTemplate(), context, BoxSourceType.CFTEMPLATE )
+		);
+
+		assertThatFirstTagContextLineEquals( exception, 6006 );
+	}
+
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
 	@Test
 	public void testLabeledBreakInsideBreakingSwitchEmitsLabeledBodyResult() {
 		BodyResultInvocation invocation = findBodyResultInvocation(
@@ -280,6 +304,44 @@ public class ASMTest {
 		source.append( "</cfloop>\n" );
 
 		return source.toString();
+	}
+
+	private String buildOutlinedComponentBranchScopeTemplate() {
+		StringBuilder source = new StringBuilder();
+
+		source.append( "<cfoutput>\n" );
+		source.append( "<cfif true>\n" );
+		for ( int i = 0; i < 6000; i++ ) {
+			source.append( "<cfset splitFiller = " ).append( i ).append( ">\n" );
+		}
+		source.append( "<cfset branchValue = 'from outlined branch'>\n" );
+		source.append( "</cfif>\n" );
+		source.append( "<cfif true>\n" );
+		source.append( "<cfset result = branchValue>\n" );
+		source.append( "</cfif>\n" );
+		source.append( "</cfoutput>\n" );
+
+		return source.toString();
+	}
+
+	private String buildOutlinedComponentBranchMissingVariableTemplate() {
+		StringBuilder source = new StringBuilder();
+
+		source.append( "<cfoutput>\n" );
+		source.append( "<cfif true>\n" );
+		for ( int i = 0; i < 6003; i++ ) {
+			source.append( "<cfset filler = " ).append( i ).append( ">\n" );
+		}
+		source.append( "<cfset result = missingOutlinedBranchVariable>\n" );
+		source.append( "</cfif>\n" );
+		source.append( "</cfoutput>\n" );
+
+		return source.toString();
+	}
+
+	private void assertThatFirstTagContextLineEquals( KeyNotFoundException exception, int line ) {
+		assertNotNull( exception.getTagContext() );
+		assertEquals( line, ( ( IStruct ) exception.getTagContext().get( 0 ) ).getAsInteger( Key.line ) );
 	}
 
 	private String buildLargeComponentBodyTemplate() {

@@ -51,9 +51,13 @@ public class StringStartsWith extends BIF {
 	 * @return True if the string starts with the specified prefix, false otherwise.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	input	= arguments.getAsString( Key.string );
-		String	prefix	= arguments.getAsString( Key.substring );
+		return startsWith( arguments.getAsString( Key.string ), arguments.getAsString( Key.substring ) );
+	}
 
+	public static boolean startsWith( String input, String prefix ) {
+		if ( input == null ) {
+			return false;
+		}
 		return input.startsWith( prefix );
 	}
 }
