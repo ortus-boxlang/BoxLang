@@ -69,5 +69,6 @@ task copyTestModuleToCore( type: Copy ) {
 shadowJar.finalizedBy( createModuleStructure, copyTestModuleToCore )
 
 clean {
-    delete '../../../modules/javaTestModule'
+    // Only delete generated artifacts under the repo-root test fixture, not the fixture itself
+    delete '../../../modules/javaTestModule/libs'
 }
