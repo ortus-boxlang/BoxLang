@@ -27,7 +27,7 @@ import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.BoxLangType;
 import ortus.boxlang.runtime.types.BoxStringBuilder;
 
-@BoxBIF( alias = "endsWith" )
+@BoxBIF
 @BoxMember( type = BoxLangType.STRING_BUILDER_STRICT, name = "endsWith" )
 public class StringBuilderEndsWith extends BIF {
 
