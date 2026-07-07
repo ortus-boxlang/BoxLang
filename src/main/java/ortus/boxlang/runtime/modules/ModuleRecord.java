@@ -815,6 +815,11 @@ public class ModuleRecord {
 	 * If the annotation is absent, all convention defaults from the constructor are kept.
 	 */
 	private void extractJavaMetadata() {
+		// moduleConfig may be null before loadDescriptor/register
+		if ( this.moduleConfig == null ) {
+			return;
+		}
+
 		BoxModule meta = this.moduleConfig.getClass().getAnnotation( BoxModule.class );
 
 		// If the annotation is absent, keep convention defaults
