@@ -256,7 +256,7 @@ public class ModuleRecord {
 	private IModuleClassLoader		moduleClassLoader			= null;
 
 	/**
-	 * The module config; either a {@link BxModuleConfig} wrapping the compiled {@code ModuleConfig.bx}
+	 * The module config; either a {@link BoxModuleConfig} wrapping the compiled {@code ModuleConfig.bx}
 	 * class, or a Java {@link IModuleConfig} implementation discovered via {@link java.util.ServiceLoader}.
 	 * Null until {@link #register} completes successfully.
 	 */
@@ -320,8 +320,11 @@ public class ModuleRecord {
 			    .from( "boxlang" )
 			    .ifPresent( "moduleName", value -> this.name = Key.of( value ) )
 			    .ifPresent( "minimumVersion",
-			        value -> this.runtime.getModuleService().verifyModuleAndBoxLangVersion( ( String ) value,
-			            directoryPath ) );
+			        value -> this.runtime.getModuleService().verifyModuleAndBoxLangVersion(
+			            ( String ) value,
+			            directoryPath
+			        )
+			    );
 		}
 
 		// Default to the directory name if the box.json file does not exist
@@ -371,10 +374,6 @@ public class ModuleRecord {
 		// Java-only modules (no ModuleConfig.bx) skip BX loading entirely.
 		// Java config detection happens in register() once the classloader is ready.
 		if ( !Files.exists( this.physicalPath.resolve( ModuleService.MODULE_DESCRIPTOR ) ) ) {
-			if ( this.runtime.getConfiguration().modules.containsKey( this.name ) ) {
-				ModuleConfig runtimeConfig = ( ModuleConfig ) this.runtime.getConfiguration().modules.get( this.name );
-				this.enabled = runtimeConfig.enabled;
-			}
 			return this;
 		}
 
@@ -397,7 +396,7 @@ public class ModuleRecord {
 		    .getTargetInstance() );
 
 		// Wrap in the BxModuleConfig proxy so ModuleRecord only ever sees IModuleConfig
-		this.moduleConfig = new BxModuleConfig( bxClass );
+		this.moduleConfig = new BoxModuleConfig( bxClass );
 
 		// Nice References
 		ThisScope		thisScope		= bxClass.getThisScope();
@@ -410,12 +409,6 @@ public class ModuleRecord {
 		this.webURL			= ( String ) thisScope.getOrDefault( Key.webURL, "" );
 		this.enabled		= BooleanCaster.cast( thisScope.getOrDefault( Key.enabled, true ) );
 		this.dependencies	= ArrayCaster.cast( thisScope.getOrDefault( Key.dependencies, Array.of() ) );
-
-		// Verify if we disabled the loading of the module in the runtime config
-		if ( this.runtime.getConfiguration().modules.containsKey( this.name ) ) {
-			ModuleConfig config = ( ModuleConfig ) this.runtime.getConfiguration().modules.get( this.name );
-			this.enabled = config.enabled;
-		}
 
 		// Do we have a custom mapping to override?
 		if ( thisScope.containsKey( Key.mapping ) ) {
@@ -466,21 +459,16 @@ public class ModuleRecord {
 		FunctionService		functionService		= this.runtime.getFunctionService();
 		ComponentService	componentService	= this.runtime.getComponentService();
 
-		// Register the module mapping in the this.runtime
-		// Called first in case this is used in the `configure` method
-		this.runtime.getConfiguration().registerMapping( this.mapping );
-		this.runtime.getConfiguration().registerMapping( this.publicMapping );
-
 		// Create the module's (isolated) class loader via the runtime's configured factory.
 		// The default JVM factory builds a DynamicClassLoader over the module directory
 		// (loading *.class under the `modules.{module_name}` prefix) seeded with libs/*.jar;
 		// other targets (e.g. Android) supply a different loader without forking this class.
-		this.moduleClassLoader	= this.runtime.getClassLoaderFactory()
-		    .createModuleClassLoader( this, this.runtime.getRuntimeLoader() );
+		this.moduleClassLoader	= this.runtime.getClassLoaderFactory().createModuleClassLoader( this, this.runtime.getRuntimeLoader() );
 		// Mirror onto the legacy, concrete-typed field for binary compatibility with modules
 		// compiled against the pre-IModuleClassLoader API. On the standard JVM the factory's
 		// return value is always a DynamicClassLoader; on other targets this assignment is a
 		// no-op for old bytecode but `moduleClassLoader` still works.
+		// TODO: Drop by 2.x
 		this.classLoader		= ( this.moduleClassLoader instanceof DynamicClassLoader dcl )
 		    ? dcl
 		    : null;
@@ -491,33 +479,36 @@ public class ModuleRecord {
 		    .findFirst()
 		    .ifPresent( javaConfig -> {
 			    // Reset to conventional defaults so ModuleConfig.bx is truly ignored when Java config is present
-			    this.version					= "1.0.0";
+			    this.version				= "1.0.0";
 			    this.author					= "";
-			    this.description				= "";
+			    this.description			= "";
 			    this.webURL					= "";
-			    this.enabled					= true;
-			    this.dependencies				= new Array();
-			    this.settings					= new Struct();
-			    this.interceptors				= new Array();
-			    this.customInterceptionPoints	= new Array();
-			    this.mapping					= Mapping.of( ModuleService.MODULE_MAPPING_PREFIX + name.getName(), this.path, false );
-			    this.publicMapping				= Mapping.of( ModuleService.MODULE_MAPPING_PREFIX + name.getName() + "/" + ModuleService.MODULE_PUBLIC_FOLDER,
+			    this.enabled				= true;
+			    this.dependencies			= new Array();
+			    this.settings				= new Struct();
+			    this.interceptors			= new Array();
+			    this.customInterceptionPoints = new Array();
+			    this.mapping				= Mapping.of( ModuleService.MODULE_MAPPING_PREFIX + name.getName(), this.path, false );
+			    this.publicMapping			= Mapping.of( ModuleService.MODULE_MAPPING_PREFIX + name.getName() + "/" + ModuleService.MODULE_PUBLIC_FOLDER,
 			        this.physicalPath.resolve( "public" ).toString(), true );
-			    if ( this.runtime.getConfiguration().modules.containsKey( this.name ) ) {
-				    ModuleConfig runtimeConfig = ( ModuleConfig ) this.runtime.getConfiguration().modules.get( this.name );
-				    this.enabled = runtimeConfig.enabled;
-			    }
-			    this.moduleConfig = javaConfig;
+			    this.moduleConfig			= javaConfig;
 			    extractJavaMetadata();
 		    } );
 
 		if ( this.moduleConfig == null ) {
 			// Neither ServiceLoader nor loadDescriptor() produced a valid config.
-			this.logger.warn( "+ Module Service: Module [{}] has no valid descriptor (no IModuleConfig via ServiceLoader and no ModuleConfig.bx). Disabling.",
-			    this.name );
+			this.logger.warn(
+			    "+ Module Service: Module [{}] has no valid descriptor (no IModuleConfig via ServiceLoader and no ModuleConfig.bx). Disabling.",
+			    this.name
+			);
 			this.enabled = false;
 			return this;
 		}
+
+		// Register the module mapping in the this.runtime
+		// Called first in case this is used in the `configure` method
+		this.runtime.getConfiguration().registerMapping( this.mapping );
+		this.runtime.getConfiguration().registerMapping( this.publicMapping );
 
 		// Unified configure() call — BxModuleConfig reads variablesScope; Java impls mutate settings directly
 		this.moduleConfig.configure( context, this );
@@ -819,6 +810,63 @@ public class ModuleRecord {
 	}
 
 	/**
+	 * Reads {@link BoxModule @BoxModule} annotation metadata from a Java {@link IModuleConfig} implementation
+	 * and populates the corresponding {@link ModuleRecord} fields.
+	 * If the annotation is absent, all convention defaults from the constructor are kept.
+	 */
+	private void extractJavaMetadata() {
+		BoxModule meta = this.moduleConfig.getClass().getAnnotation( BoxModule.class );
+
+		// If the annotation is absent, keep convention defaults
+		if ( meta == null ) {
+			return;
+		}
+
+		// Simple fields
+		this.version		= meta.version();
+		this.author			= meta.author();
+		this.description	= meta.description();
+		this.webURL			= meta.webURL();
+		this.enabled		= meta.enabled();
+
+		// Dependencies: convert String[] → BoxLang Array
+		String[] deps = meta.dependencies();
+		if ( deps.length > 0 ) {
+			this.dependencies = Array.of( ( Object[] ) deps );
+		}
+
+		// Module mapping
+		BoxMapping mappingAnn = meta.mapping();
+		if ( !mappingAnn.value().isBlank() ) {
+			this.mapping = resolveMapping( mappingAnn.value() );
+		} else if ( !mappingAnn.name().isBlank() ) {
+			IStruct struct = new Struct();
+			struct.put( Key._name, mappingAnn.name() );
+			struct.put( Key.usePrefix, mappingAnn.usePrefix() );
+			struct.put( Key.external, mappingAnn.external() );
+			if ( !mappingAnn.path().isBlank() ) {
+				struct.put( Key.path, mappingAnn.path() );
+			}
+			this.mapping = resolveMapping( struct );
+		}
+
+		// Public mapping
+		BoxMapping pubMappingAnn = meta.publicMapping();
+		if ( !pubMappingAnn.value().isBlank() ) {
+			this.publicMapping = resolvePublicMapping( pubMappingAnn.value() );
+		} else if ( !pubMappingAnn.name().isBlank() ) {
+			IStruct struct = new Struct();
+			struct.put( Key._name, pubMappingAnn.name() );
+			struct.put( Key.usePrefix, pubMappingAnn.usePrefix() );
+			struct.put( Key.external, pubMappingAnn.external() );
+			if ( !pubMappingAnn.path().isBlank() ) {
+				struct.put( Key.path, pubMappingAnn.path() );
+			}
+			this.publicMapping = resolvePublicMapping( struct );
+		}
+	}
+
+	/**
 	 * This verifies if the class is absolute and returns it as is. Else,
 	 * it prepend the module invocation path to it.
 	 *
@@ -827,83 +875,6 @@ public class ModuleRecord {
 	 * @return The class name to use, either absolute or with the module invocation
 	 *         path
 	 */
-	/**
-	 * Reads public instance fields from a Java {@link IModuleConfig} implementation
-	 * and populates the corresponding {@link ModuleRecord} fields.
-	 * All fields are optional; missing or inaccessible fields keep their defaults.
-	 */
-	private void extractJavaMetadata() {
-		if ( this.moduleConfig == null ) {
-			return;
-		}
-
-		Class<?> clazz = this.moduleConfig.getClass();
-
-		try {
-			java.lang.reflect.Field	f	= clazz.getField( "version" );
-			Object					v	= f.get( this.moduleConfig );
-			if ( v instanceof String s )
-				this.version = s;
-		} catch ( NoSuchFieldException | IllegalAccessException ignore ) {
-		}
-
-		try {
-			java.lang.reflect.Field	f	= clazz.getField( "author" );
-			Object					v	= f.get( this.moduleConfig );
-			if ( v instanceof String s )
-				this.author = s;
-		} catch ( NoSuchFieldException | IllegalAccessException ignore ) {
-		}
-
-		try {
-			java.lang.reflect.Field	f	= clazz.getField( "description" );
-			Object					v	= f.get( this.moduleConfig );
-			if ( v instanceof String s )
-				this.description = s;
-		} catch ( NoSuchFieldException | IllegalAccessException ignore ) {
-		}
-
-		try {
-			java.lang.reflect.Field	f	= clazz.getField( "webURL" );
-			Object					v	= f.get( this.moduleConfig );
-			if ( v instanceof String s )
-				this.webURL = s;
-		} catch ( NoSuchFieldException | IllegalAccessException ignore ) {
-		}
-
-		try {
-			java.lang.reflect.Field	f	= clazz.getField( "enabled" );
-			Object					v	= f.get( this.moduleConfig );
-			if ( v instanceof Boolean b )
-				this.enabled = b;
-		} catch ( NoSuchFieldException | IllegalAccessException ignore ) {
-		}
-
-		try {
-			java.lang.reflect.Field	f	= clazz.getField( "dependencies" );
-			Object					v	= f.get( this.moduleConfig );
-			if ( v instanceof Array a )
-				this.dependencies = a;
-		} catch ( NoSuchFieldException | IllegalAccessException ignore ) {
-		}
-
-		try {
-			java.lang.reflect.Field	f	= clazz.getField( "mapping" );
-			Object					v	= f.get( this.moduleConfig );
-			if ( v != null )
-				this.mapping = resolveMapping( v );
-		} catch ( NoSuchFieldException | IllegalAccessException ignore ) {
-		}
-
-		try {
-			java.lang.reflect.Field	f	= clazz.getField( "publicMapping" );
-			Object					v	= f.get( this.moduleConfig );
-			if ( v != null )
-				this.publicMapping = resolvePublicMapping( v );
-		} catch ( NoSuchFieldException | IllegalAccessException ignore ) {
-		}
-	}
-
 	private String ensureModuleInvocationAsset( String targetClass ) {
 		if ( targetClass.startsWith( this.invocationPath ) ) {
 			return targetClass;
@@ -949,7 +920,7 @@ public class ModuleRecord {
 	 *         otherwise
 	 */
 	public boolean isEnabled() {
-		return enabled;
+		return this.enabled;
 	}
 
 	/**
@@ -958,7 +929,7 @@ public class ModuleRecord {
 	 * @return {@code true} if the module is activated, {@code false} otherwise
 	 */
 	public boolean isActivated() {
-		return activated;
+		return this.activated;
 	}
 
 	/**

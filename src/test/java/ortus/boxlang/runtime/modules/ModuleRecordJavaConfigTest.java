@@ -93,14 +93,14 @@ class ModuleRecordJavaConfigTest {
 		record.register( context );
 
 		assertThat( record.moduleConfig ).isNotNull();
-		assertThat( record.moduleConfig ).isNotInstanceOf( BxModuleConfig.class );
+		assertThat( record.moduleConfig ).isNotInstanceOf( BoxModuleConfig.class );
 
 		cleanup( record );
 	}
 
 	@Test
-	@DisplayName( "Public field metadata is extracted from the Java IModuleConfig implementation" )
-	void testMetadataExtractedFromPublicFields() {
+	@DisplayName( "Annotation metadata is extracted from the @BoxModule annotation on the Java IModuleConfig implementation" )
+	void testMetadataExtractedFromAnnotation() {
 		ModuleRecord record = new ModuleRecord( JAVA_MODULE_PATH );
 
 		record.loadDescriptor( context );
@@ -201,7 +201,7 @@ class ModuleRecordJavaConfigTest {
 
 		// register() must have set the Java config (not a BxModuleConfig proxy)
 		assertThat( record.moduleConfig ).isNotNull();
-		assertThat( record.moduleConfig ).isNotInstanceOf( BxModuleConfig.class );
+		assertThat( record.moduleConfig ).isNotInstanceOf( BoxModuleConfig.class );
 
 		cleanup( record );
 	}
@@ -220,7 +220,7 @@ class ModuleRecordJavaConfigTest {
 
 		// BX descriptor must be wrapped in a BxModuleConfig proxy; no Java config
 		assertThat( record.moduleConfig ).isNotNull();
-		assertThat( record.moduleConfig ).isInstanceOf( BxModuleConfig.class );
+		assertThat( record.moduleConfig ).isInstanceOf( BoxModuleConfig.class );
 
 		record.register( context );
 
@@ -228,6 +228,81 @@ class ModuleRecordJavaConfigTest {
 		assertThat( record.author ).isEqualTo( "Luis Majano" );
 
 		cleanup( record );
+	}
+
+	// -------------------------------------------------------------------------
+	// Annotation-based metadata tests
+	// -------------------------------------------------------------------------
+
+	@Test
+	@DisplayName( "The @BoxModule annotation is present on the Java test module class" )
+	void testBoxModuleAnnotationPresent() {
+		ModuleRecord record = new ModuleRecord( JAVA_MODULE_PATH );
+		record.loadDescriptor( context );
+		record.register( context );
+
+		BoxModule meta = record.moduleConfig.getClass().getAnnotation( BoxModule.class );
+		assertThat( meta ).isNotNull();
+		assertThat( meta.version() ).isEqualTo( "2.0.0" );
+		assertThat( meta.author() ).isEqualTo( "Ortus Solutions" );
+
+		cleanup( record );
+	}
+
+	@Test
+	@DisplayName( "IModuleConfig without @BoxModule annotation keeps all convention defaults" )
+	void testMissingAnnotationKeepsDefaults() {
+		// Create an IModuleConfig without @BoxModule
+		IModuleConfig	noAnnotationConfig	= new IModuleConfig() {
+
+												@Override
+												public void configure( IBoxContext context, ModuleRecord moduleRecord ) {
+													moduleRecord.settings.put( "test", "value" );
+												}
+											};
+
+		// Build and register using the standard path
+		ModuleRecord	record				= new ModuleRecord( JAVA_MODULE_PATH );
+		record.loadDescriptor( context );
+
+		// Override the moduleConfig to use our no-annotation config
+		record.moduleConfig = noAnnotationConfig;
+
+		// Simulate what extractJavaMetadata() does with no @BoxModule
+		java.lang.reflect.Method extractMethod;
+		try {
+			extractMethod = ModuleRecord.class.getDeclaredMethod( "extractJavaMetadata" );
+			extractMethod.setAccessible( true );
+			extractMethod.invoke( record );
+
+			// All fields should keep their constructor defaults
+			assertThat( record.version ).isEqualTo( "1.0.0" );
+			assertThat( record.author ).isEmpty();
+			assertThat( record.description ).isEmpty();
+			assertThat( record.webURL ).isEmpty();
+			assertThat( record.enabled ).isTrue();
+			assertThat( record.dependencies ).isEmpty();
+		} catch ( Exception e ) {
+			throw new RuntimeException( e );
+		}
+
+		cleanup( record );
+	}
+
+	@Test
+	@DisplayName( "extractJavaMetadata is null-safe when moduleConfig is null" )
+	void testExtractJavaMetadataNullSafe() throws Exception {
+		ModuleRecord				record			= new ModuleRecord( JAVA_MODULE_PATH );
+		// moduleConfig is null before loadDescriptor/register
+
+		java.lang.reflect.Method	extractMethod	= ModuleRecord.class.getDeclaredMethod( "extractJavaMetadata" );
+		extractMethod.setAccessible( true );
+
+		// Should not throw
+		extractMethod.invoke( record );
+
+		// Defaults still intact
+		assertThat( record.version ).isEqualTo( "1.0.0" );
 	}
 
 	// -------------------------------------------------------------------------

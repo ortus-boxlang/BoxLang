@@ -45,7 +45,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  * so that BoxLang-metadata-based {@code @interceptionPoint} discovery is preserved.
  * </p>
  */
-public class BxModuleConfig implements IModuleConfig {
+public class BoxModuleConfig implements IModuleConfig {
 
 	/**
 	 * The underlying compiled BoxLang module descriptor class.
@@ -55,7 +55,7 @@ public class BxModuleConfig implements IModuleConfig {
 	/**
 	 * @param bxClass The compiled and instantiated {@code ModuleConfig.bx} class
 	 */
-	public BxModuleConfig( IClassRunnable bxClass ) {
+	public BoxModuleConfig( IClassRunnable bxClass ) {
 		this.bxClass = bxClass;
 	}
 
@@ -104,8 +104,10 @@ public class BxModuleConfig implements IModuleConfig {
 	@Override
 	public void onUnload( IBoxContext context, ModuleRecord record ) {
 		if ( this.bxClass.getThisScope().containsKey( Key.onUnload ) ) {
-			RequestBoxContext.runInContext( context,
-			    ctx -> this.bxClass.dereferenceAndInvoke( ctx, Key.onUnload, DynamicObject.EMPTY_ARGS, false ) );
+			RequestBoxContext.runInContext(
+			    context,
+			    ctx -> this.bxClass.dereferenceAndInvoke( ctx, Key.onUnload, DynamicObject.EMPTY_ARGS, false )
+			);
 		}
 	}
 
@@ -118,8 +120,10 @@ public class BxModuleConfig implements IModuleConfig {
 		if ( !this.bxClass.getThisScope().containsKey( Key.main ) ) {
 			throw new BoxRuntimeException( "Module is not executable. It must have a 'main' method in its ModuleConfig.bx descriptor." );
 		}
-		RequestBoxContext.runInContext( context,
-		    ctx -> this.bxClass.dereferenceAndInvoke( ctx, Key.main, new Object[] { Array.fromArray( args ) }, false ) );
+		RequestBoxContext.runInContext(
+		    context,
+		    ctx -> this.bxClass.dereferenceAndInvoke( ctx, Key.main, new Object[] { Array.fromArray( args ) }, false )
+		);
 	}
 
 	/**

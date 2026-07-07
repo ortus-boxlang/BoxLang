@@ -18,25 +18,16 @@
 package ortus.boxlang.modules.javatest;
 
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.modules.BoxModule;
 import ortus.boxlang.runtime.modules.IModuleConfig;
 import ortus.boxlang.runtime.modules.ModuleRecord;
-import ortus.boxlang.runtime.types.Array;
 
 /**
  * Test implementation of IModuleConfig for use in unit tests.
- * Tracks lifecycle calls and demonstrates the public-field metadata convention.
+ * Tracks lifecycle calls and demonstrates the {@code @BoxModule} annotation metadata convention.
  */
+@BoxModule( version = "2.0.0", author = "Ortus Solutions", description = "A pure-Java test module", webURL = "https://www.ortussolutions.com" )
 public class JavaTestModuleConfig implements IModuleConfig {
-
-	// --------------------------------------------------------------------------
-	// Module metadata (read via reflection by ModuleRecord)
-	// --------------------------------------------------------------------------
-	public String			version				= "2.0.0";
-	public String			author				= "Ortus Solutions";
-	public String			description			= "A pure-Java test module";
-	public String			webURL				= "https://www.ortussolutions.com";
-	public boolean			enabled				= true;
-	public Array			dependencies		= new Array();
 
 	// --------------------------------------------------------------------------
 	// Lifecycle tracking flags (inspected by tests)

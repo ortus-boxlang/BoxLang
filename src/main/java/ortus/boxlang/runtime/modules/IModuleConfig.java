@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.modules;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.events.IInterceptor;
 import ortus.boxlang.runtime.services.InterceptorService;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 
 /**
@@ -33,21 +32,23 @@ import ortus.boxlang.runtime.types.IStruct;
  * </p>
  *
  * <p>
- * <strong>Metadata fields</strong> — declare public instance fields on your implementation class
- * to override module metadata. All are optional; defaults mirror the BX convention:
+ * <strong>Metadata annotation</strong> — annotate your implementation class with
+ * {@link BoxModule @BoxModule} to declare module metadata. All members are optional;
+ * defaults mirror the BX convention:
  * </p>
  *
  * <pre>{@code
- *
- * public String version = "1.0.0";
- * public String author = "";
- * public String description = "";
- * public String webURL = "";
- * public boolean enabled = true;
- * public Array dependencies = new Array();
- * public Object mapping = null;         // String or IStruct
- * public Object publicMapping = null;         // String or IStruct
+ * &#64;BoxModule( version = "2.5.0", author = "Ortus Solutions", description = "PDF generation module", dependencies = {
+ *     "bx-derby" }, mapping = @BoxMapping( "myMapping" ), publicMapping = @BoxMapping( "www" ) )
+ * public class MyModule implements IModuleConfig {
+ * }
  * }</pre>
+ *
+ * <p>
+ * Mappings accept either a string shorthand ({@code @BoxMapping("name")}) or a full
+ * configuration ({@code @BoxMapping(name = "custom", external = true, path = "src")}).
+ * When the annotation is absent, all convention defaults apply.
+ * </p>
  *
  * <p>
  * <strong>Lifecycle methods</strong> — all have default no-op implementations; override only
@@ -118,7 +119,7 @@ public interface IModuleConfig {
 	 * {@link IInterceptor}, the default delegates to
 	 * {@link InterceptorService#register(IInterceptor, IStruct)}, which discovers
 	 * {@link ortus.boxlang.runtime.events.InterceptionPoint}-annotated Java methods via
-	 * reflection. BX-based implementations (see {@link BxModuleConfig}) override this to use
+	 * reflection. BX-based implementations (see {@link BoxModuleConfig}) override this to use
 	 * the {@link ortus.boxlang.runtime.runnables.IClassRunnable} registration path instead,
 	 * which reads BoxLang metadata.
 	 *
@@ -143,12 +144,5 @@ public interface IModuleConfig {
 		if ( this instanceof IInterceptor interceptor ) {
 			interceptorService.unregister( interceptor );
 		}
-	}
-
-	/**
-	 * @return a new empty dependencies array (avoids sharing a mutable Array instance across modules)
-	 */
-	static Array emptyDependencies() {
-		return new Array();
 	}
 }
