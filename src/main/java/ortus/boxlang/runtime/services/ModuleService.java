@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.semver4j.Semver;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.config.segments.ModuleConfig;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.modules.ModuleRecord;
@@ -289,8 +290,15 @@ public class ModuleService extends BaseService {
 		    Struct.of( "moduleRecord", moduleRecord, "moduleName", name )
 		);
 
-		// Load the ModuleConfig.bx file
+		// Load the ModuleConfig.bx file, if it exists, and process the configuration
 		moduleRecord.loadDescriptor( runtimeContext );
+
+		// Verify if we disabled the loading of the module in the runtime config
+		// myModule : { enabled = false }
+		if ( this.runtime.getConfiguration().modules.containsKey( name ) ) {
+			ModuleConfig config = ( ModuleConfig ) this.runtime.getConfiguration().modules.get( name );
+			moduleRecord.enabled = config.enabled;
+		}
 
 		// Check if the module is disabled, if so, skip it
 		if ( !moduleRecord.isEnabled() ) {
@@ -727,8 +735,10 @@ public class ModuleService extends BaseService {
 			    .filter( filePath -> !this.modulePaths.contains( filePath ) )
 			    // Only module folders
 			    .filter( Files::isDirectory )
-			    // Only where a ModuleConfig.bx exists in the root
-			    .filter( filePath -> Files.exists( filePath.resolve( MODULE_DESCRIPTOR ) ) )
+			    // Only where a ModuleConfig.bx OR a box.json exists in the root
+			    // (pure-Java modules may have only box.json; Java config detection happens later via ServiceLoader)
+			    .filter( filePath -> Files.exists( filePath.resolve( MODULE_DESCRIPTOR ) )
+			        || Files.exists( filePath.resolve( ModuleRecord.MODULE_CONFIG_FILE ) ) )
 			    // Filter out already registered modules
 			    .filter( filePath -> {
 				    Key	moduleName		= Key.of( filePath.getFileName().toString() );
