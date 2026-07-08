@@ -135,7 +135,7 @@ public class BXCompiler {
 						    Path resolvedTargetPath	= finalTargetPath.resolve( finalSourcePath.relativize( path ).toString() );
 
 						    if ( SUPPORTED_EXTENSIONS.contains( sourceExtension ) ) {
-							    boolean success = compileFile( path, resolvedTargetPath, finalStopOnError, runtime, errors );
+							    boolean success = compileFile( path, resolvedTargetPath, finalSourcePath, finalStopOnError, runtime, errors );
 							    if ( success ) {
 								    successCount.incrementAndGet();
 							    } else {
@@ -219,13 +219,38 @@ public class BXCompiler {
 	 * @return true if compilation was successful, false otherwise
 	 */
 	public static boolean compileFile( Path sourcePath, Path targetPath, Boolean stopOnError, BoxRuntime runtime, List<String> errors ) {
+		return compileFile( sourcePath, targetPath, null, stopOnError, runtime, errors );
+	}
+
+	/**
+	 * Compiles a single file to the target path, deriving the generated class name from the file's
+	 * path <b>relative to {@code sourceRoot}</b> (the {@code --source} directory) so the baked
+	 * {@code boxgenerated.*} FQN is deterministic and portable instead of embedding the absolute
+	 * build path. When {@code sourceRoot} is {@code null}, legacy behavior is preserved and the
+	 * full source path string is used. A stable name is required for ahead-of-time targets (e.g.
+	 * Android) that resolve the dexed class by name via parent-first delegation rather than
+	 * renaming it on load.
+	 *
+	 * @param sourcePath  The path to the source file to compile.
+	 * @param targetPath  The path where the compiled file should be written.
+	 * @param sourceRoot  The root the relative class name is computed against; {@code null} preserves legacy full-path behavior.
+	 * @param stopOnError If true, throws an exception on compilation errors; otherwise logs the error and continues.
+	 * @param runtime     The BoxRuntime instance used for compilation.
+	 * @param errors      List to collect file paths for failed compilations.
+	 *
+	 * @return true if compilation was successful, false otherwise
+	 */
+	public static boolean compileFile( Path sourcePath, Path targetPath, Path sourceRoot, Boolean stopOnError, BoxRuntime runtime, List<String> errors ) {
 		ensureParentDirectoriesExist( targetPath );
 		System.out.println( "⚡ Writing -> " + targetPath.toString() );
-		List<byte[]> bytesList = null;
+		String			relativePath	= sourceRoot != null
+		    ? sourceRoot.relativize( sourcePath ).toString()
+		    : sourcePath.toString();
+		List<byte[]>	bytesList		= null;
 		try {
 			bytesList = RunnableLoader.getInstance()
 			    .getBoxpiler()
-			    .compileTemplateBytes( ResolvedFilePath.of( "", "", sourcePath.toString(), sourcePath ) );
+			    .compileTemplateBytes( ResolvedFilePath.of( "", "", relativePath, sourcePath ) );
 		} catch ( Exception e ) {
 			synchronized ( errors ) {
 				errors.add( sourcePath.toString() );

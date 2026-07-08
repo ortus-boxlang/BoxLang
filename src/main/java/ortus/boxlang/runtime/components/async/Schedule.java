@@ -138,7 +138,7 @@ public class Schedule extends Component {
 		super();
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.action, "string", Set.of( Validator.REQUIRED,
-		        Validator.valueOneOf( "create", "update", "modify", "delete", "run", "pause", "resume", "list", "pauseall", "resumeall" )
+		        Validator.valueOneOf( "create", "update", "modify", "delete", "run", "pause", "resume", "list", "pauseall", "resumeall", "reload" )
 		    ) ),
 		    new Attribute( Key.task, "string" ),
 		    new Attribute( Key.scheduler, "string", DEFAULT_SCHEDULER_NAME ),
@@ -192,8 +192,8 @@ public class Schedule extends Component {
 			action = "update";
 		}
 
-		// All actions except list/pauseall/resumeall require a task name
-		if ( !action.equals( "list" ) && !action.equals( "pauseall" ) && !action.equals( "resumeall" ) ) {
+		// All actions except list/pauseall/resumeall/reload require a task name
+		if ( !action.equals( "list" ) && !action.equals( "pauseall" ) && !action.equals( "resumeall" ) && !action.equals( "reload" ) ) {
 			requireTaskName( attributes );
 		}
 
@@ -225,6 +225,9 @@ public class Schedule extends Component {
 			case "resumeall" :
 				doResumeAll( context, attributes );
 				break;
+			case "reload" :
+				doReload( context, attributes );
+				break;
 			default :
 				throw new BoxRuntimeException( "Invalid schedule action [" + action + "]" );
 		}
@@ -234,7 +237,8 @@ public class Schedule extends Component {
 		// executor is created with all tasks already in place.
 		// - Already-running schedulers: startupScheduler() is a no-op (guards against double-start).
 		// - Read-only "list" action is excluded to avoid unintended side effects.
-		if ( !action.equals( "list" ) ) {
+		// - "reload" is excluded because reloadSchedulerFromDisk() already calls startupScheduler().
+		if ( !action.equals( "list" ) && !action.equals( "reload" ) ) {
 			String				schedulerName	= attributes.getAsString( Key.scheduler );
 			SchedulerService	svc				= runtime.getSchedulerService();
 			var					scheduler		= svc.getScheduler( Key.of( schedulerName ) );
@@ -485,6 +489,15 @@ public class Schedule extends Component {
 			}
 		}
 		svc.updateAllTasksPausedState( schedulerName, group, false );
+	}
+
+	/**
+	 * Reload a scheduler by shutting it down and re-registering all of its tasks
+	 * from the persisted tasks.json file, then restarting the scheduler.
+	 */
+	private void doReload( IBoxContext context, IStruct attributes ) {
+		String schedulerName = attributes.getAsString( Key.scheduler );
+		runtime.getSchedulerService().reloadSchedulerFromDisk( Key.of( schedulerName ), false, SchedulerService.DEFAULT_SHUTDOWN_TIMEOUT );
 	}
 
 	// --------------------------------------------------------------------------

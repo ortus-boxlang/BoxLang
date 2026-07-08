@@ -1477,6 +1477,14 @@ public final class Config {
 		if ( config.containsKey( "padding" ) && config.get( "padding" ) instanceof Boolean padding ) {
 			this.arguments.setPadding( padding );
 		}
+		if ( config.containsKey( "separator" ) && config.get( "separator" ) != null ) {
+			Object separatorValue = config.get( "separator" );
+			if ( separatorValue instanceof Separator separator ) {
+				this.arguments.setSeparator( separator );
+			} else {
+				this.arguments.setSeparator( parseArgumentsSeparator( separatorValue.toString() ) );
+			}
+		}
 		if ( config.containsKey( "empty_padding" ) && config.get( "empty_padding" ) instanceof Boolean emptyPadding ) {
 			this.arguments.setEmptyPadding( emptyPadding );
 		}
@@ -1489,6 +1497,38 @@ public final class Config {
 		if ( config.containsKey( "multiline_length" ) && config.get( "multiline_length" ) instanceof Number multilineLength ) {
 			this.arguments.setMultilineLength( multilineLength.intValue() );
 		}
+	}
+
+	/**
+	 * Parse an arguments separator string into the corresponding enum value.
+	 *
+	 * @param separator the separator string
+	 *
+	 * @return the matching separator enum, or the default if unrecognized
+	 */
+	private static Separator parseArgumentsSeparator( String separator ) {
+		if ( " : ".equals( separator ) ) {
+			return Separator.COLON_BOTH_SPACE;
+		}
+		if ( ": ".equals( separator ) ) {
+			return Separator.COLON_SPACE;
+		}
+		if ( ":".equals( separator ) ) {
+			return Separator.COLON;
+		}
+		if ( " = ".equals( separator ) ) {
+			return Separator.EQUALS_BOTH_SPACE;
+		}
+		if ( " =".equals( separator ) ) {
+			return Separator.EQUALS_SPACE;
+		}
+		if ( "= ".equals( separator ) ) {
+			return Separator.EQUALS_SPACE;
+		}
+		if ( "=".equals( separator ) ) {
+			return Separator.EQUALS;
+		}
+		return Separator.EQUALS_BOTH_SPACE;
 	}
 
 	/**

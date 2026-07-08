@@ -7,6 +7,7 @@ bin/
 runtime/build/
 runtime/bin/
 modules/test/
+modules/javaTestModule/**
 src/main/resources/maven/effective-pom.xml
 
 # Dynamically Generated docs

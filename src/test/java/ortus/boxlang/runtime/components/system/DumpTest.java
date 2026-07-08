@@ -554,6 +554,21 @@ public class DumpTest {
 		assertThat( baos.toString() ).contains( "Buffer Content" );
 	}
 
+	@DisplayName( "It can dump a Box StringBuilder data type" )
+	@Test
+	public void testCanDumpBoxStringBuilder() {
+		// @formatter:off
+			instance.executeSource(
+				"""
+					val = stringBuilderNew("Buffer Content");
+					dump( var = val, format = "html" );
+				""",
+				context );
+			// @formatter:on
+		assertThat( baos.toString() ).contains( "String Buffer/Builder" );
+		assertThat( baos.toString() ).contains( "Buffer Content" );
+	}
+
 	@DisplayName( "It can dump a Struct data type" )
 	@Test
 	public void testCanDumpStruct() {
@@ -612,7 +627,8 @@ public class DumpTest {
 
 		Path filePath = Paths.get( variables.getAsString( Key.of( "filePath" ) ) );
 		assertWithMessage( "File [" + filePath + "] should exist" ).that( filePath.toFile().exists() ).isTrue();
-		String fileContents = ( String ) FileSystemUtil.read( filePath.toString(), FileSystemUtil.DEFAULT_CHARSET.name(), null, true );
+		String fileContents = ( String ) FileSystemUtil.read( filePath.toString(), FileSystemUtil.DEFAULT_CHARSET.name(),
+		    null, true );
 		assertThat( fileContents ).contains( "Hello, BoxLang" );
 		// Cleanup
 		filePath.toFile().delete();
@@ -634,7 +650,8 @@ public class DumpTest {
 
 		Path filePath = Paths.get( variables.getAsString( Key.of( "filePath" ) ) );
 		assertWithMessage( "File [" + filePath + "] should exist" ).that( filePath.toFile().exists() ).isTrue();
-		String fileContents = ( String ) FileSystemUtil.read( filePath.toString(), FileSystemUtil.DEFAULT_CHARSET.name(), null, true );
+		String fileContents = ( String ) FileSystemUtil.read( filePath.toString(), FileSystemUtil.DEFAULT_CHARSET.name(),
+		    null, true );
 		assertThat( fileContents ).contains( "Hello, BoxLang" );
 		assertThat( fileContents ).contains( "<style>" );
 		// Cleanup
@@ -658,7 +675,8 @@ public class DumpTest {
 
 		Path filePath = Paths.get( variables.getAsString( Key.of( "filePath" ) ) );
 		assertWithMessage( "File [" + filePath + "] should exist" ).that( filePath.toFile().exists() ).isTrue();
-		String fileContents = ( String ) FileSystemUtil.read( filePath.toString(), FileSystemUtil.DEFAULT_CHARSET.name(), null, true );
+		String fileContents = ( String ) FileSystemUtil.read( filePath.toString(), FileSystemUtil.DEFAULT_CHARSET.name(),
+		    null, true );
 		assertThat( fileContents ).contains( "Hello, BoxLang" );
 		// Cleanup
 		filePath.toFile().delete();
@@ -682,7 +700,8 @@ public class DumpTest {
 
 		Path filePath = Paths.get( variables.getAsString( Key.of( "filePath" ) ) );
 		assertWithMessage( "File [" + filePath + "] should exist" ).that( filePath.toFile().exists() ).isTrue();
-		String fileContents = ( String ) FileSystemUtil.read( filePath.toString(), FileSystemUtil.DEFAULT_CHARSET.name(), null, true );
+		String fileContents = ( String ) FileSystemUtil.read( filePath.toString(), FileSystemUtil.DEFAULT_CHARSET.name(),
+		    null, true );
 		assertThat( fileContents ).contains( "dump one" );
 		assertThat( fileContents ).contains( "dump two" );
 		assertThat( fileContents ).contains( "dump three" );
@@ -852,5 +871,24 @@ public class DumpTest {
 		assertThat( output ).contains( "Set" );
 		assertThat( output ).contains( "DEFAULT" );
 		assertThat( output ).contains( "0" );
+	}
+
+	@DisplayName( "It can dump a native Java Set" )
+	@Test
+	public void testCanDumpNativeJavaSet() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				import java.util.HashSet;
+				val = new HashSet( ["brad", "BRAD", "wood"] );
+				dump( var = val, format = "html" );
+			""",
+			context );
+		// @formatter:on
+		String output = baos.toString();
+		assertThat( output ).contains( "java.util.HashSet" );
+		assertThat( output ).contains( "brad" );
+		assertThat( output ).doesNotContain( "caseSensitive" );
+		assertThat( output ).doesNotContain( "synchronized" );
 	}
 }

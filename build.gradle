@@ -15,7 +15,7 @@ plugins {
 	// For source code formatting
 	id "com.diffplug.spotless" version "8.6.0"
 	// Shadow
-	id "com.gradleup.shadow" version "9.2.2"
+	id "com.gradleup.shadow" version "9.4.3"
 	// For dependency updates
 	id 'com.github.ben-manes.versions' version '0.54.0'
 	// For building service loader files
@@ -101,7 +101,7 @@ repositories {
  */
 dependencies {
     // Testing Dependencies
-    testImplementation "org.junit.jupiter:junit-jupiter:6.0.3"
+    testImplementation "org.junit.jupiter:junit-jupiter:6.1.1"
 	testImplementation "org.mockito:mockito-core:5.+"
 	testImplementation "com.google.truth:truth:1.+"
 	testImplementation "commons-cli:commons-cli:1.11.0"
@@ -148,11 +148,11 @@ dependencies {
 	// https://mvnrepository.com/artifact/com.zaxxer/HikariCP
 	implementation 'com.zaxxer:HikariCP:6.3.0'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-tree
-	implementation 'org.ow2.asm:asm-tree:9.9.1'
+	implementation 'org.ow2.asm:asm-tree:9.10.1'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-util
-	implementation 'org.ow2.asm:asm-util:9.9.1'
+	implementation 'org.ow2.asm:asm-util:9.10.1'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-commons
-	implementation 'org.ow2.asm:asm-commons:9.9.1'
+	implementation 'org.ow2.asm:asm-commons:9.10.1'
 	// https://mvnrepository.com/artifact/org.semver4j/semver4j
 	implementation 'org.semver4j:semver4j:6.0.0'
 
@@ -1427,7 +1427,7 @@ compileJava {
  */
 compileTestJava {
 	source sourceSets.test.java
-	dependsOn compileJava, generateTestGrammarSource, serviceLoaderBuild, ":src:modules:test:build"
+	dependsOn compileJava, generateTestGrammarSource, serviceLoaderBuild, ":src:modules:test:build", ":src:modules:javaTestModule:build"
 	options.encoding = 'UTF-8'
 }
 

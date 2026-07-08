@@ -111,11 +111,20 @@ options {
 	}
 
 	public boolean isTagStart() {
-		boolean result = lastModeWas( hashMode, 1 ) 
-			&& _modeStack.contains(DEFAULT_TEMPLATE_MODE) 
-			&& ( _input.LA( 1 ) == 98 || _input.LA( 1 ) == 66 ) // b or B 
-			&& ( _input.LA( 2 ) == 120 || _input.LA( 2 ) == 88 )// x or X
-			&&  _input.LA( 2 ) == 58; // colon char (:) 
+		boolean modeChecksPass = lastModeWas( hashMode, 1 ) && _modeStack.contains(DEFAULT_TEMPLATE_MODE);
+		if ( !modeChecksPass ) {
+			return false;
+		}
+
+		boolean startsWithBX = ( _input.LA( 1 ) == 98 || _input.LA( 1 ) == 66 ) // b or B
+			&& ( _input.LA( 2 ) == 120 || _input.LA( 2 ) == 88 ) // x or X
+			&& _input.LA( 3 ) == 58; // colon char (:)
+		boolean startsWithSlashBX = _input.LA( 1 ) == 47 // /
+			&& ( _input.LA( 2 ) == 98 || _input.LA( 2 ) == 66 ) // b or B
+			&& ( _input.LA( 3 ) == 120 || _input.LA( 3 ) == 88 ) // x or X
+			&& _input.LA( 4 ) == 58; // colon char (:)
+
+		boolean result = startsWithBX || startsWithSlashBX;
 
 		if( result ) {
 			// pop mode until we're back to the default template mode

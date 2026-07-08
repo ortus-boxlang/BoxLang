@@ -19,7 +19,6 @@ package ortus.boxlang.runtime.modules;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -57,6 +56,7 @@ import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.jdbc.drivers.DriverShim;
 import ortus.boxlang.runtime.jdbc.drivers.IJDBCDriver;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
+import ortus.boxlang.runtime.loader.IModuleClassLoader;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.RunnableLoader;
@@ -219,14 +219,48 @@ public class ModuleRecord {
 	public long						activationTime				= 0;
 
 	/**
-	 * The Dynamic class loader for the module
+	 * The class loader for the module (isolated, parented to the runtime loader). The concrete
+	 * implementation is chosen by the runtime's
+	 * {@link ortus.boxlang.runtime.loader.IClassLoaderFactory}.
+	 * <p>
+	 * Declared as the concrete {@link DynamicClassLoader} type purely for binary compatibility
+	 * with modules compiled against pre-{@code IModuleClassLoader} BoxLang releases; the JVM
+	 * resolves fields by (name, declared type), so downstream bytecode that does
+	 * {@code getField("classLoader")} against the old {@code DynamicClassLoader classLoader}
+	 * signature would otherwise fail with {@link NoSuchFieldError}.
+	 * <p>
+	 * New code — both inside the runtime and in downstream modules — should use
+	 * {@link #moduleClassLoader} instead, which is typed against the runtime-neutral
+	 * {@link IModuleClassLoader} contract and works on every supported deployment target
+	 * (standard JVM, Android, etc.).
+	 *
+	 * @deprecated Use {@link #moduleClassLoader} instead. This field is retained only for
+	 *             binary compatibility and will be removed in a future major release.
 	 */
+	@Deprecated( since = "1.15.0", forRemoval = true )
 	public DynamicClassLoader		classLoader					= null;
 
 	/**
-	 * The descriptor for the module
+	 * The class loader for the module (isolated, parented to the runtime loader). The concrete
+	 * implementation is chosen by the runtime's
+	 * {@link ortus.boxlang.runtime.loader.IClassLoaderFactory}.
+	 * <p>
+	 * This is the preferred accessor for module class loaders. Unlike {@link #classLoader},
+	 * it is typed against the runtime-neutral {@link IModuleClassLoader} contract, so it works
+	 * on every supported deployment target (standard JVM, Android, etc.). The field itself
+	 * is private — access it via {@link #getModuleClassLoader()}.
+	 * <p>
+	 * Use {@link IModuleClassLoader#toClassLoader()} when a {@link ClassLoader} is required
+	 * (e.g. for {@link ServiceLoader}).
 	 */
-	public IClassRunnable			moduleConfig;
+	private IModuleClassLoader		moduleClassLoader			= null;
+
+	/**
+	 * The module config; either a {@link BoxModuleConfig} wrapping the compiled {@code ModuleConfig.bx}
+	 * class, or a Java {@link IModuleConfig} implementation discovered via {@link java.util.ServiceLoader}.
+	 * Null until {@link #register} completes successfully.
+	 */
+	public IModuleConfig			moduleConfig;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -286,8 +320,11 @@ public class ModuleRecord {
 			    .from( "boxlang" )
 			    .ifPresent( "moduleName", value -> this.name = Key.of( value ) )
 			    .ifPresent( "minimumVersion",
-			        value -> this.runtime.getModuleService().verifyModuleAndBoxLangVersion( ( String ) value,
-			            directoryPath ) );
+			        value -> this.runtime.getModuleService().verifyModuleAndBoxLangVersion(
+			            ( String ) value,
+			            directoryPath
+			        )
+			    );
 		}
 
 		// Default to the directory name if the box.json file does not exist
@@ -334,13 +371,19 @@ public class ModuleRecord {
 	 * @return The ModuleRecord
 	 */
 	public ModuleRecord loadDescriptor( IBoxContext context ) {
-		Path	descriptorPath	= physicalPath.resolve( ModuleService.MODULE_DESCRIPTOR );
-		String	packageName		= MODULE_PACKAGE_NAME
+		// Java-only modules (no ModuleConfig.bx) skip BX loading entirely.
+		// Java config detection happens in register() once the classloader is ready.
+		if ( !Files.exists( this.physicalPath.resolve( ModuleService.MODULE_DESCRIPTOR ) ) ) {
+			return this;
+		}
+
+		Path			descriptorPath	= physicalPath.resolve( ModuleService.MODULE_DESCRIPTOR );
+		String			packageName		= MODULE_PACKAGE_NAME
 		    + this.name.getNameNoCase()
 		    + EncryptionUtil.hash( physicalPath.toString() );
 
 		// Load the ModuleConfig.bx, Construct it and store it
-		this.moduleConfig = ( IClassRunnable ) RequestBoxContext.runInContext( context, ctx -> DynamicObject.of(
+		IClassRunnable	bxClass			= ( IClassRunnable ) RequestBoxContext.runInContext( context, ctx -> DynamicObject.of(
 		    RunnableLoader.getInstance().loadClass(
 		        ResolvedFilePath.of(
 		            "/bxModules/" + name.getName() + "/",
@@ -352,9 +395,12 @@ public class ModuleRecord {
 		    .invokeConstructor( ctx )
 		    .getTargetInstance() );
 
+		// Wrap in the BxModuleConfig proxy so ModuleRecord only ever sees IModuleConfig
+		this.moduleConfig = new BoxModuleConfig( bxClass );
+
 		// Nice References
-		ThisScope		thisScope		= this.moduleConfig.getThisScope();
-		VariablesScope	variablesScope	= this.moduleConfig.getVariablesScope();
+		ThisScope		thisScope		= bxClass.getThisScope();
+		VariablesScope	variablesScope	= bxClass.getVariablesScope();
 
 		// Store the descriptor information into the record
 		this.version		= ( String ) thisScope.getOrDefault( Key.version, "1.0.0" );
@@ -363,12 +409,6 @@ public class ModuleRecord {
 		this.webURL			= ( String ) thisScope.getOrDefault( Key.webURL, "" );
 		this.enabled		= BooleanCaster.cast( thisScope.getOrDefault( Key.enabled, true ) );
 		this.dependencies	= ArrayCaster.cast( thisScope.getOrDefault( Key.dependencies, Array.of() ) );
-
-		// Verify if we disabled the loading of the module in the runtime config
-		if ( this.runtime.getConfiguration().modules.containsKey( this.name ) ) {
-			ModuleConfig config = ( ModuleConfig ) this.runtime.getConfiguration().modules.get( this.name );
-			this.enabled = config.enabled;
-		}
 
 		// Do we have a custom mapping to override?
 		if ( thisScope.containsKey( Key.mapping ) ) {
@@ -415,69 +455,69 @@ public class ModuleRecord {
 	 */
 	public ModuleRecord register( IBoxContext context ) {
 		// Convenience References
-		ThisScope			thisScope			= this.moduleConfig.getThisScope();
-		VariablesScope		variablesScope		= this.moduleConfig.getVariablesScope();
 		InterceptorService	interceptorService	= this.runtime.getInterceptorService();
 		FunctionService		functionService		= this.runtime.getFunctionService();
 		ComponentService	componentService	= this.runtime.getComponentService();
+
+		// Create the module's (isolated) class loader via the runtime's configured factory.
+		// The default JVM factory builds a DynamicClassLoader over the module directory
+		// (loading *.class under the `modules.{module_name}` prefix) seeded with libs/*.jar;
+		// other targets (e.g. Android) supply a different loader without forking this class.
+		this.moduleClassLoader	= this.runtime.getClassLoaderFactory().createModuleClassLoader( this, this.runtime.getRuntimeLoader() );
+		// Mirror onto the legacy, concrete-typed field for binary compatibility with modules
+		// compiled against the pre-IModuleClassLoader API. On the standard JVM the factory's
+		// return value is always a DynamicClassLoader; on other targets this assignment is a
+		// no-op for old bytecode but `moduleClassLoader` still works.
+		// TODO: Drop by 2.x
+		this.classLoader		= ( this.moduleClassLoader instanceof DynamicClassLoader dcl )
+		    ? dcl
+		    : null;
+
+		// Detect a Java IModuleConfig via ServiceLoader (diskless-safe — uses the module classloader abstraction).
+		// Java always wins: if found, replace any BX config and discard BX-derived metadata/state.
+		ServiceLoader.load( IModuleConfig.class, this.moduleClassLoader.toClassLoader() )
+		    .findFirst()
+		    .ifPresent( javaConfig -> {
+			    // Reset to conventional defaults so ModuleConfig.bx is truly ignored when Java config is present
+			    this.version				= "1.0.0";
+			    this.author					= "";
+			    this.description			= "";
+			    this.webURL					= "";
+			    this.enabled				= true;
+			    this.dependencies			= new Array();
+			    this.settings				= new Struct();
+			    this.interceptors			= new Array();
+			    this.customInterceptionPoints = new Array();
+			    this.mapping				= Mapping.of( ModuleService.MODULE_MAPPING_PREFIX + name.getName(), this.path, false );
+			    this.publicMapping			= Mapping.of( ModuleService.MODULE_MAPPING_PREFIX + name.getName() + "/" + ModuleService.MODULE_PUBLIC_FOLDER,
+			        this.physicalPath.resolve( "public" ).toString(), true );
+			    this.moduleConfig			= javaConfig;
+			    extractJavaMetadata();
+		    } );
+
+		if ( this.moduleConfig == null ) {
+			// Neither ServiceLoader nor loadDescriptor() produced a valid config.
+			this.logger.warn(
+			    "+ Module Service: Module [{}] has no valid descriptor (no IModuleConfig via ServiceLoader and no ModuleConfig.bx). Disabling.",
+			    this.name
+			);
+			this.enabled = false;
+			return this;
+		}
 
 		// Register the module mapping in the this.runtime
 		// Called first in case this is used in the `configure` method
 		this.runtime.getConfiguration().registerMapping( this.mapping );
 		this.runtime.getConfiguration().registerMapping( this.publicMapping );
 
-		// Create the module class loader and seed it with the physical path to the
-		// module
-		// This traverses the module and looks for *.class files to load (NOT JARs)
-		// Using the `modules.{module_name}` package prefix
-		// This is important for module developers to include this as their package
-		// prefix.
-		try {
-			this.classLoader = new DynamicClassLoader(
-			    this.name,
-			    this.physicalPath.toUri().toURL(),
-			    this.runtime.getRuntimeLoader(),
-			    false );
-		} catch ( MalformedURLException e ) {
-			this.logger.error( "Error creating module [{}] class loader.", this.name, e );
-			throw new BoxRuntimeException( "Error creating module [" + this.name + "] class loader", e );
-		}
+		// Unified configure() call — BxModuleConfig reads variablesScope; Java impls mutate settings directly
+		this.moduleConfig.configure( context, this );
 
-		// Do we have libs to add to the class loader? These are jars ONLY
-		// All dependencies on Java libs must be on this folder as JARs
-		Path libsPath = this.physicalPath.resolve( ModuleService.MODULE_LIBS );
-		if ( Files.exists( libsPath ) && Files.isDirectory( libsPath ) ) {
-			try {
-				this.classLoader.addURLs( DynamicClassLoader.getJarURLs( libsPath ) );
-			} catch ( IOException e ) {
-				this.logger.error( "Error while seeding the module [{}] class loader with the libs folder.", this.name,
-				    e );
-				throw new BoxRuntimeException(
-				    "Error while seeding the module [" + this.name + "] class loader with the libs folder", e );
-			}
-		}
-
-		// Call the configure() method if it exists in the descriptor
-		if ( thisScope.containsKey( Key.configure ) ) {
-			RequestBoxContext.runInContext( context, ctx -> this.moduleConfig.dereferenceAndInvoke(
-			    ctx,
-			    Key.configure,
-			    DynamicObject.EMPTY_ARGS,
-			    false ) );
-		}
-
-		// Register descriptor configurations into the record
-		this.settings = ( Struct ) variablesScope.getAsStruct( Key.settings );
-
-		// Append any module settings found in the runtime configuration
+		// Merge any runtime-config settings on top of what configure() set
 		if ( this.runtime.getConfiguration().modules.containsKey( this.name ) ) {
 			ModuleConfig config = ( ModuleConfig ) this.runtime.getConfiguration().modules.get( this.name );
 			StructUtil.deepMerge( this.settings, config.settings, true );
 		}
-
-		// Get the interceptors and custom interception points
-		this.interceptors				= variablesScope.getAsArray( Key.interceptors );
-		this.customInterceptionPoints	= variablesScope.getAsArray( Key.customInterceptionPoints );
 
 		// Register Interception points with the InterceptorService
 		if ( !this.customInterceptionPoints.isEmpty() ) {
@@ -505,13 +545,13 @@ public class ModuleRecord {
 		}
 
 		// Register any global services
-		ServiceLoader.load( IService.class, this.classLoader )
+		ServiceLoader.load( IService.class, this.getModuleClassLoader().toClassLoader() )
 		    .stream()
 		    .map( ServiceLoader.Provider::get )
 		    .forEach( service -> this.runtime.putGlobalService( service.getName(), service ) );
 
 		// Load any JDBC drivers into the JVM
-		ServiceLoader.load( Driver.class, this.classLoader )
+		ServiceLoader.load( Driver.class, this.getModuleClassLoader().toClassLoader() )
 		    .stream()
 		    .map( ServiceLoader.Provider::get )
 		    .forEach( driver -> {
@@ -525,39 +565,39 @@ public class ModuleRecord {
 		    } );
 
 		// Load any BoxLang IJDBC Driver classes
-		ServiceLoader.load( IJDBCDriver.class, this.classLoader )
+		ServiceLoader.load( IJDBCDriver.class, this.getModuleClassLoader().toClassLoader() )
 		    .stream()
 		    .map( ServiceLoader.Provider::get )
 		    .forEach( driver -> this.runtime.getDataSourceService().registerDriver( driver ) );
 
 		// Do we have any Java BIFs to load?
-		ServiceLoader.load( BIF.class, this.classLoader )
+		ServiceLoader.load( BIF.class, this.getModuleClassLoader().toClassLoader() )
 		    .stream()
 		    .map( ServiceLoader.Provider::type )
 		    .forEach( clazz -> functionService.processBIFRegistration( clazz, null, this.name.getName() ) );
 
 		// Do we have any Java Component Tags to load?
-		ServiceLoader.load( Component.class, this.classLoader )
+		ServiceLoader.load( Component.class, this.getModuleClassLoader().toClassLoader() )
 		    .stream()
 		    .map( ServiceLoader.Provider::type )
 		    .forEach( targetClass -> componentService.registerComponent( targetClass, null, this.name.getName() ) );
 
 		// Do we have any Java Schedulers to register in the SchedulerService
-		ServiceLoader.load( IScheduler.class, this.classLoader )
+		ServiceLoader.load( IScheduler.class, this.getModuleClassLoader().toClassLoader() )
 		    .stream()
 		    .map( ServiceLoader.Provider::get )
 		    .forEach( scheduler -> this.runtime.getSchedulerService()
 		        .loadScheduler( Key.of( scheduler.getSchedulerName() + "@" + this.name ), scheduler ) );
 
 		// Do we have any Java ICacheProviders to register in the CacheService
-		ServiceLoader.load( ICacheProvider.class, this.classLoader )
+		ServiceLoader.load( ICacheProvider.class, this.getModuleClassLoader().toClassLoader() )
 		    .stream()
 		    .map( ServiceLoader.Provider::type )
 		    .forEach( provider -> this.runtime.getCacheService().registerProvider( Key.of( provider.getSimpleName() ),
 		        provider ) );
 
 		// Do we have any Java IInterceptor to register in the InterceptorService
-		ServiceLoader.load( IInterceptor.class, this.classLoader )
+		ServiceLoader.load( IInterceptor.class, this.getModuleClassLoader().toClassLoader() )
 		    .stream()
 		    // Only load interceptors that are set to auto-load by default or by
 		    // configuration
@@ -580,17 +620,9 @@ public class ModuleRecord {
 	 * @return The ModuleRecord
 	 */
 	public ModuleRecord unload( IBoxContext context ) {
-		// Convenience References
-		ThisScope thisScope = this.moduleConfig.getThisScope();
-
-		// Call the onLoad() method if it exists in the descriptor
-		if ( thisScope.containsKey( Key.onUnload ) ) {
+		if ( this.moduleConfig != null ) {
 			try {
-				RequestBoxContext.runInContext( context, ctx -> this.moduleConfig.dereferenceAndInvoke(
-				    ctx,
-				    Key.onUnload,
-				    DynamicObject.EMPTY_ARGS,
-				    false ) );
+				this.moduleConfig.onUnload( context, this );
 			} catch ( AbortException ae ) {
 				throw ae;
 			} catch ( Exception e ) {
@@ -602,11 +634,12 @@ public class ModuleRecord {
 
 		// Destroy the ClassLoader
 		try {
-			this.classLoader.close();
+			this.moduleClassLoader.close();
 		} catch ( IOException e ) {
 			this.logger.error( "Error while closing the DynamicClassLoader for module [{}]", this.name, e );
 		} finally {
-			this.classLoader = null;
+			this.moduleClassLoader	= null;
+			this.classLoader		= null;
 		}
 
 		return this;
@@ -626,13 +659,13 @@ public class ModuleRecord {
 		InterceptorService interceptorService = this.runtime.getInterceptorService();
 
 		// Unregister any global services
-		ServiceLoader.load( IService.class, this.classLoader )
+		ServiceLoader.load( IService.class, this.getModuleClassLoader().toClassLoader() )
 		    .stream()
 		    .map( ServiceLoader.Provider::get )
 		    .forEach( service -> this.runtime.removeGlobalService( service.getName() ) );
 
 		// Unload JDBC drivers from the JVM
-		ServiceLoader.load( Driver.class, this.classLoader )
+		ServiceLoader.load( Driver.class, this.getModuleClassLoader().toClassLoader() )
 		    .stream()
 		    .map( ServiceLoader.Provider::get )
 		    .forEach( driver -> {
@@ -646,7 +679,7 @@ public class ModuleRecord {
 		    } );
 
 		// Unregister JDBC drivers from the datasource service
-		ServiceLoader.load( IJDBCDriver.class, this.classLoader )
+		ServiceLoader.load( IJDBCDriver.class, this.getModuleClassLoader().toClassLoader() )
 		    .stream()
 		    .map( ServiceLoader.Provider::get )
 		    .forEach( driver -> this.runtime.getDataSourceService().removeDriver( driver.getName() ) );
@@ -657,20 +690,20 @@ public class ModuleRecord {
 		// @TODO: Unregister components; we're lacking an unregisterComponent method in the ComponentService
 
 		// unregister schedulers
-		ServiceLoader.load( IScheduler.class, this.classLoader )
+		ServiceLoader.load( IScheduler.class, this.getModuleClassLoader().toClassLoader() )
 		    .stream()
 		    .map( ServiceLoader.Provider::get )
 		    .forEach( scheduler -> this.runtime.getSchedulerService()
 		        .removeScheduler( Key.of( scheduler.getSchedulerName() + "@" + this.name ), true, 500 ) );
 
 		// Unregister cache providers
-		ServiceLoader.load( ICacheProvider.class, this.classLoader )
+		ServiceLoader.load( ICacheProvider.class, this.getModuleClassLoader().toClassLoader() )
 		    .stream()
 		    .map( ServiceLoader.Provider::type )
 		    .forEach( provider -> this.runtime.getCacheService().removeProvider( Key.of( provider.getSimpleName() ) ) );
 
 		// Unregister java interceptors
-		ServiceLoader.load( IInterceptor.class, this.classLoader )
+		ServiceLoader.load( IInterceptor.class, this.getModuleClassLoader().toClassLoader() )
 		    .stream()
 		    // Only load interceptors that are set to auto-load by default or by
 		    // configuration
@@ -683,7 +716,7 @@ public class ModuleRecord {
 		this.runtime.getConfiguration().unregisterMapping( this.mapping );
 		this.runtime.getConfiguration().unregisterMapping( this.publicMapping );
 
-		// Unregister all interceptors from all states
+		// Unregister all BX interceptors from all states
 		if ( !this.interceptors.isEmpty() ) {
 			for ( Object interceptor : this.interceptors ) {
 				IStruct			interceptorRecord	= ( IStruct ) interceptor;
@@ -694,8 +727,10 @@ public class ModuleRecord {
 			}
 		}
 
-		// Unregister the ModuleConfig
-		interceptorService.unregister( DynamicObject.of( this.moduleConfig ) );
+		// Unregister the module config from the interceptor service (BxModuleConfig wraps DynamicObject; Java uses IInterceptor path)
+		if ( this.moduleConfig != null ) {
+			this.moduleConfig.unregisterInterceptor( interceptorService );
+		}
 
 		return this;
 	}
@@ -712,10 +747,10 @@ public class ModuleRecord {
 	 * @throws ClassNotFoundException If the class is not found
 	 */
 	public Class<?> findModuleClass( String className, Boolean safe, IBoxContext context ) throws ClassNotFoundException {
-		if ( this.classLoader == null ) {
+		if ( this.moduleClassLoader == null ) {
 			return null;
 		}
-		return this.classLoader.findClass( className, safe, false );
+		return this.moduleClassLoader.findClass( className, safe, false );
 	}
 
 	/**
@@ -733,21 +768,13 @@ public class ModuleRecord {
 	 */
 	public ModuleRecord activate( IBoxContext context ) {
 		// Convenience References
-		ThisScope			thisScope			= this.moduleConfig.getThisScope();
-		InterceptorService	interceptorService	= this.runtime.getInterceptorService();
+		InterceptorService interceptorService = this.runtime.getInterceptorService();
 
-		/*
-		 * --------------------------------------------------------------------------
-		 * Register the ModuleConfig as an Interceptor
-		 * --------------------------------------------------------------------------
-		 */
-		interceptorService.register( this.moduleConfig );
+		// Register the module config as an interceptor (BxModuleConfig uses IClassRunnable path; Java uses IInterceptor path)
+		this.moduleConfig.registerInterceptor( interceptorService, this.settings );
 
-		/*
-		 * --------------------------------------------------------------------------
-		 * Register module BoxLang Interceptors
-		 * --------------------------------------------------------------------------
-		 */
+		// Register additional BX interceptors declared in variables.interceptors.
+		// For Java modules this array is empty by default, so the loop is a no-op.
 		if ( !this.interceptors.isEmpty() ) {
 			for ( Object interceptor : this.interceptors ) {
 				IStruct interceptorRecord = ( IStruct ) interceptor;
@@ -772,25 +799,76 @@ public class ModuleRecord {
 			}
 		}
 
-		/*
-		 * --------------------------------------------------------------------------
-		 * onLoad()
-		 * --------------------------------------------------------------------------
-		 */
-		// Call the onLoad() method if it exists in the descriptor
-		if ( thisScope.containsKey( Key.onLoad ) ) {
-			RequestBoxContext.runInContext( context, ctx -> this.moduleConfig.dereferenceAndInvoke(
-			    ctx,
-			    Key.onLoad,
-			    DynamicObject.EMPTY_ARGS,
-			    false ) );
-		}
+		// Unified onLoad() call
+		this.moduleConfig.onLoad( context, this );
 
 		// Finalize
 		this.activated		= true;
 		this.activatedOn	= Instant.now();
 
 		return this;
+	}
+
+	/**
+	 * Reads {@link BoxModule @BoxModule} annotation metadata from a Java {@link IModuleConfig} implementation
+	 * and populates the corresponding {@link ModuleRecord} fields.
+	 * If the annotation is absent, all convention defaults from the constructor are kept.
+	 */
+	private void extractJavaMetadata() {
+		// moduleConfig may be null before loadDescriptor/register
+		if ( this.moduleConfig == null ) {
+			return;
+		}
+
+		BoxModule meta = this.moduleConfig.getClass().getAnnotation( BoxModule.class );
+
+		// If the annotation is absent, keep convention defaults
+		if ( meta == null ) {
+			return;
+		}
+
+		// Simple fields
+		this.version		= meta.version();
+		this.author			= meta.author();
+		this.description	= meta.description();
+		this.webURL			= meta.webURL();
+		this.enabled		= meta.enabled();
+
+		// Dependencies: convert String[] → BoxLang Array
+		String[] deps = meta.dependencies();
+		if ( deps.length > 0 ) {
+			this.dependencies = Array.of( ( Object[] ) deps );
+		}
+
+		// Module mapping
+		BoxMapping mappingAnn = meta.mapping();
+		if ( !mappingAnn.value().isBlank() ) {
+			this.mapping = resolveMapping( mappingAnn.value() );
+		} else if ( !mappingAnn.name().isBlank() ) {
+			IStruct struct = new Struct();
+			struct.put( Key._name, mappingAnn.name() );
+			struct.put( Key.usePrefix, mappingAnn.usePrefix() );
+			struct.put( Key.external, mappingAnn.external() );
+			if ( !mappingAnn.path().isBlank() ) {
+				struct.put( Key.path, mappingAnn.path() );
+			}
+			this.mapping = resolveMapping( struct );
+		}
+
+		// Public mapping
+		BoxMapping pubMappingAnn = meta.publicMapping();
+		if ( !pubMappingAnn.value().isBlank() ) {
+			this.publicMapping = resolvePublicMapping( pubMappingAnn.value() );
+		} else if ( !pubMappingAnn.name().isBlank() ) {
+			IStruct struct = new Struct();
+			struct.put( Key._name, pubMappingAnn.name() );
+			struct.put( Key.usePrefix, pubMappingAnn.usePrefix() );
+			struct.put( Key.external, pubMappingAnn.external() );
+			if ( !pubMappingAnn.path().isBlank() ) {
+				struct.put( Key.path, pubMappingAnn.path() );
+			}
+			this.publicMapping = resolvePublicMapping( struct );
+		}
 	}
 
 	/**
@@ -820,25 +898,18 @@ public class ModuleRecord {
 	 *                             doesn't have a main method
 	 */
 	public void execute( IBoxContext context, String[] args ) {
-		ThisScope thisScope = this.moduleConfig.getThisScope();
-
-		if ( !thisScope.containsKey( Key.main ) ) {
-			throw new BoxRuntimeException( "Module " + this.id + " is not executable. It must have a 'main' method" );
+		if ( this.moduleConfig == null ) {
+			throw new BoxRuntimeException( "Module " + this.id + " is not executable. It has no valid descriptor." );
 		}
 
 		try {
-			RequestBoxContext.runInContext( context, ctx -> this.moduleConfig.dereferenceAndInvoke(
-			    ctx,
-			    Key.main,
-			    new Object[] { Array.fromArray( args ) },
-			    false ) );
+			this.moduleConfig.main( context, args );
 		} catch ( AbortException ae ) {
 			throw ae;
 		} catch ( Exception e ) {
 			runtime.getLoggingService().getExceptionLogger().error( e.getMessage(), e );
 			throw new BoxRuntimeException( e.getMessage(), e );
 		}
-
 	}
 
 	/**
@@ -854,7 +925,7 @@ public class ModuleRecord {
 	 *         otherwise
 	 */
 	public boolean isEnabled() {
-		return enabled;
+		return this.enabled;
 	}
 
 	/**
@@ -863,7 +934,19 @@ public class ModuleRecord {
 	 * @return {@code true} if the module is activated, {@code false} otherwise
 	 */
 	public boolean isActivated() {
-		return activated;
+		return this.activated;
+	}
+
+	/**
+	 * The module's class loader, typed against the runtime-neutral
+	 * {@link IModuleClassLoader} contract. Prefer this over the deprecated
+	 * {@link #classLoader} field in new code; it works on every supported deployment target.
+	 *
+	 * @return The module class loader, or {@code null} if the module has not been registered
+	 *         yet (or has been unloaded).
+	 */
+	public IModuleClassLoader getModuleClassLoader() {
+		return this.moduleClassLoader;
 	}
 
 	/**
@@ -885,7 +968,7 @@ public class ModuleRecord {
 		    "activated", this.activated,
 		    "author", this.author,
 		    "bifs", Array.copyOf( this.bifs ),
-		    "classLoader", this.classLoader,
+		    "classLoader", this.moduleClassLoader,
 		    "components", Array.copyOf( this.components ),
 		    "customInterceptionPoints", Array.copyOf( this.customInterceptionPoints ),
 		    "description", this.description,

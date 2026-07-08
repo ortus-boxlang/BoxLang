@@ -252,7 +252,7 @@ public class ClassLocator extends ClassLoader {
 			    String.format(
 			        "The resolver [%s] was not found in the registered resolvers. Valid resolvers are [%s]",
 			        prefix,
-			        getResolvedPrefixes()
+			        Struct.formatKeysForError( getResolvedPrefixes() )
 			    ) );
 		}
 		return target;

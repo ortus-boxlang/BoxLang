@@ -50,6 +50,18 @@ public class FunctionArgumentsTest extends PrettyPrintTest {
 	}
 
 	@Test
+	@DisplayName( "Default named argument separator is spaced equals" )
+	public void testDefaultSeparator() throws IOException {
+		printTestWithDefaultConfig( "function_arguments", "separator_default" );
+	}
+
+	@Test
+	@DisplayName( "Named argument separator can be customized" )
+	public void testSeparatorEquals() throws IOException {
+		printTestWithConfigFile( "function_arguments", "separator_equals" );
+	}
+
+	@Test
 	@DisplayName( "No trailing comma when comma_dangle is false" )
 	public void testCommaDangleFalse() throws IOException {
 		printTestWithConfigFile( "function_arguments", "comma_dangle_false" );

@@ -52,41 +52,32 @@ public class Mid extends BIF {
 	 * @argument.count The number of characters to retrieve.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String input = arguments.getAsString( Key.string );
+		return mid( arguments.getAsString( Key.string ), arguments.getAsInteger( Key.start ), arguments.getAsInteger( Key.count ) );
+	}
 
+	public static String mid( String input, int start, Integer count ) {
 		if ( input == null ) {
 			return "";
 		}
 
-		int		start	= arguments.getAsInteger( Key.start );
-		Integer	count	= arguments.getAsInteger( Key.count );
 		if ( count == null ) {
-			count = input.length(); // If count is not provided, extract to the end of the string
+			count = input.length();
 		}
 
-		// Check if start and count are within valid bounds
 		if ( start < 1 ) {
-			start = 1; // Adjust start to 1 if it's less than 1
+			start = 1;
 		}
-
 		if ( count < 1 ) {
-			count = 0; // Set count to 0 if it's less than 1
+			count = 0;
 		}
 
-		// Calculate end position
 		int end = start + count - 1;
-
-		// Check if start is within the valid range
-		if ( start <= input.length() ) {
-			// Ensure end doesn't exceed the length of the input string
-			if ( end > input.length() ) {
-				end = input.length();
-			}
-
-			// Extract the substring
-			return input.substring( start - 1, end );
-		} else {
-			return ""; // Return an empty string if start is out of bounds
+		if ( start > input.length() ) {
+			return "";
 		}
+		if ( end > input.length() ) {
+			end = input.length();
+		}
+		return input.substring( start - 1, end );
 	}
 }

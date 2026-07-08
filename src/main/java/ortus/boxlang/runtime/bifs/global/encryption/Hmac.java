@@ -60,11 +60,13 @@ public class Hmac extends BIF {
 	 *
 	 * @argument.input The item to be hashed
 	 *
+	 * @argument.key The secret key used to generate the HMAC. Can be a string or a binary value.
+	 *
 	 * @argument.algorithm The supported {@link java.security.MessageDigest } algorithm (case-insensitive)
 	 *
 	 * @argument.encoding Applicable to strings ( default "utf-8" )
 	 *
-	 * @argument.iterations The number of iterations to re-digest the object ( default 1 );
+	 * @argument.numIterations The number of iterations to re-digest the object ( default 1 );
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object	hashItem	= arguments.get( Key.input );

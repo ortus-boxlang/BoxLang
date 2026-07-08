@@ -114,7 +114,7 @@ public class Configuration implements IConfigSegment {
 	 * The directory where the generated classes will be placed
 	 * The default is the system temp directory + {@code /boxlang}
 	 */
-	public String																classGenerationDirectory		= System.getProperty( "java.io.tmpdir" )
+	public String																classGenerationDirectory			= System.getProperty( "java.io.tmpdir" )
 	    + "boxlang";
 
 	/**
@@ -122,78 +122,78 @@ public class Configuration implements IConfigSegment {
 	 * {@code classGenerationDirectory} on startup
 	 * {@code false} by default
 	 */
-	public Boolean																clearClassFilesOnStartup		= false;
+	public Boolean																clearClassFilesOnStartup			= false;
 
 	/**
 	 * The compiler class or short name to use for compiling Box classes and templates
 	 * ASMCompiler is the default {@see ASMBoxpiler} using the ASM library
 	 * Available options: asm, java, noop
 	 */
-	public String																compiler						= "asm";
+	public String																compiler							= "asm";
 
 	/**
 	 * The debug mode flag which turns on all kinds of debugging information
 	 * {@code false} by default
 	 */
-	public Boolean																debugMode						= false;
+	public Boolean																debugMode							= false;
 
 	/**
 	 * Path to render a custom global error template for unhandled errors
 	 * An empty string indicates use of boxlang's default error
 	 */
-	public String																globalErrorTemplate				= "";
+	public String																globalErrorTemplate					= "";
 
 	/**
 	 * Turn on/off the resolver cache for Class Locators of Java/Box classes
 	 * {@code true} by default
 	 */
-	public Boolean																classResolverCache				= true;
+	public Boolean																classResolverCache					= true;
 
 	/**
 	 * Trusted cache setting - if enabled, once compiled a template will never be inspected for changes
 	 */
-	public Boolean																trustedCache					= false;
+	public Boolean																trustedCache						= false;
 
 	/**
 	 * Enforce UDF type checks. If enabled, the runtime will enforce that the types of the arguments passed to a UDF match the types declared in the UDF definition.
 	 */
-	public Boolean																enforceUDFTypeChecks			= true;
+	public Boolean																enforceUDFTypeChecks				= true;
 
 	/**
 	 * Store the compiled class files on disk for reuse between restarts
 	 */
-	public Boolean																storeClassFilesOnDisk			= true;
+	public Boolean																storeClassFilesOnDisk				= true;
 
 	/**
 	 * The Timezone to use for the runtime;
 	 * Uses the Java Timezone format: {@code America/New_York}
 	 * Uses the default system timezone if not set
 	 */
-	public ZoneId																timezone						= TimeZone.getDefault().toZoneId();
+	public ZoneId																timezone							= TimeZone.getDefault().toZoneId();
 
 	/**
 	 * The default locale to use for the runtime
 	 * Uses the default system locale if not set
 	 */
-	public Locale																locale							= Locale.getDefault();
+	public Locale																locale								= Locale.getDefault();
 
 	/**
 	 * Enable whitespace compression in output. Only in use by the web runtimes currently.
 	 */
-	public boolean																whitespaceCompressionEnabled	= true;
+	public boolean																whitespaceCompressionEnabled		= true;
 
 	/**
 	 * Invoke implicit getters and setters when using the implicit accessor
 	 * {@code true} by default (defaulted in the BoxClassSupport class where it's used)
 	 */
-	public Boolean																invokeImplicitAccessor			= null;
+	public Boolean																invokeImplicitAccessor				= null;
 
 	/**
 	 * Use high precision math for all math operations, else it relies on Double
 	 * precision
 	 * {@code true} by default
 	 */
-	public Boolean																useHighPrecisionMath			= true;
+	public Boolean																useHighPrecisionMath				= true;
 
 	/**
 	 * The maximum number of completed threads to track for a single request. Old threads will be flushed out to prevent memory from filling.
@@ -201,32 +201,32 @@ public class Configuration implements IConfigSegment {
 	 * ONLY threads which have been completed will be eligible to be flushed.
 	 * Note: when the limit is reached, the thread component and related BIFs will no longer throw exceptions on invalid thread names, they will silently ignore attempts to interrupt or join those threads
 	 */
-	public Integer																maxTrackedCompletedThreads		= 1000;
+	public Integer																maxTrackedCompletedThreads			= 1000;
 
 	/**
 	 * The application timeout
 	 * {@code 0} means no timeout and is the default
 	 */
-	public Duration																applicationTimeout				= Duration.ofDays( 0 );
+	public Duration																applicationTimeout					= Duration.ofDays( 0 );
 
 	/**
 	 * The request timeout
 	 * {@code 0} means no timeout and is the default
 	 */
-	public Duration																requestTimeout					= Duration.ofSeconds( 0 );;
+	public Duration																requestTimeout						= Duration.ofSeconds( 0 );;
 
 	/**
 	 * The session timeout
 	 * {@code 30} minutes by default
 	 */
-	public Duration																sessionTimeout					= Duration.ofMinutes( 30 );
+	public Duration																sessionTimeout						= Duration.ofMinutes( 30 );
 
 	/**
 	 * This flag enables/disables session management in the runtime for all
 	 * applications by default.
 	 * {@code false} by default
 	 */
-	public Boolean																sessionManagement				= false;
+	public Boolean																sessionManagement					= false;
 
 	/**
 	 * The default session storage cache. This has to be the name of a registered
@@ -234,31 +234,31 @@ public class Configuration implements IConfigSegment {
 	 * or the keyword "memory" which indicates our internal cache.
 	 * {@code memory} is the default
 	 */
-	public String																sessionStorage					= "memory";
+	public String																sessionStorage						= "memory";
 
 	/**
 	 * The session type - By default we use the native session but this hook allows for compatibility with other session mechanisms
 	 * {@code native} by default
 	 */
-	public String																sessionType						= "native";
+	public String																sessionType							= "native";
 
 	/**
 	 * This determines whether to send jSessionID cookies to the client browser.
 	 * {@code true} by default
 	 */
-	public Boolean																setClientCookies				= true;
+	public Boolean																setClientCookies					= true;
 
 	/**
 	 * Sets jSessionID cookies for a domain (not a host) Required, for applications
 	 * running on clusters
 	 * {@code true} by default
 	 */
-	public Boolean																setDomainCookies				= true;
+	public Boolean																setDomainCookies					= true;
 
 	/**
 	 * A sorted struct of mappings
 	 */
-	public IStruct																mappings						= new Struct(
+	public IStruct																mappings							= new Struct(
 	    Struct.KEY_LENGTH_LONGEST_FIRST_COMPARATOR )
 	    .setCacheableHashCode( true )
 	    // ensure all keys to this struct have a trailing slash
@@ -268,41 +268,41 @@ public class Configuration implements IConfigSegment {
 	 * An array of directories where modules are located and loaded from.
 	 * {@code [ /{boxlang-home}/modules ]}
 	 */
-	public List<String>															modulesDirectory				= new ArrayList<>(
+	public List<String>															modulesDirectory					= new ArrayList<>(
 	    Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/modules" ) );
 
 	/**
 	 * An array of directories where custom tags are located and loaded from.
 	 * {@code [ /{boxlang-home}/global/components ]}
 	 */
-	public List<String>															customComponentsDirectory		= new ArrayList<>(
+	public List<String>															customComponentsDirectory			= new ArrayList<>(
 	    Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/global/components" ) );
 
 	/**
 	 * An array of directories where box classes are located and loaded from.
 	 */
-	public List<String>															classPaths						= new ArrayList<>();
+	public List<String>															classPaths							= new ArrayList<>();
 
 	/**
 	 * An array of directories where jar files will be loaded from at runtime.
 	 */
-	public List<String>															javaLibraryPaths				= new ArrayList<>(
+	public List<String>															javaLibraryPaths					= new ArrayList<>(
 	    Arrays.asList( BoxRuntime.getInstance().getRuntimeHome().toString() + "/lib" ) );
 
 	/**
 	 * Cache registrations
 	 */
-	public IStruct																caches							= new Struct();
+	public IStruct																caches								= new Struct();
 
 	/**
 	 * Default datasource registration
 	 */
-	public String																defaultDatasource				= "";
+	public String																defaultDatasource					= "";
 
 	/**
 	 * Global datasource registrations
 	 */
-	public IStruct																datasources						= new Struct();
+	public IStruct																datasources							= new Struct();
 
 	/**
 	 * True: Treat nested transactional operations as savepoints on the parent transaction.
@@ -310,39 +310,46 @@ public class Configuration implements IConfigSegment {
 	 *
 	 * @since 1.12.0
 	 */
-	public Boolean																enableNestedTransactions		= null;
+	public Boolean																enableNestedTransactions			= null;
 
 	/**
 	 * Default remote class method return format when executing a method from web
 	 * runtimes.
 	 * The default is JSON
 	 */
-	public String																defaultRemoteMethodReturnFormat	= "json";
+	public String																defaultRemoteMethodReturnFormat		= "json";
+
+	/**
+	 * Default JSON query serialization format for query objects converted to JSON.
+	 * Possible values: null (defaults to "struct"), "struct", "array", "columns"
+	 * When null, the runtime will use "struct" as the default format.
+	 */
+	public String																defaultJSONQuerySerializationFormat	= null;
 
 	/**
 	 * The modules configuration
 	 */
-	public IStruct																modules							= new Struct();
+	public IStruct																modules								= new Struct();
 
 	/**
 	 * The last config struct loaded
 	 */
-	public IStruct																originalConfig					= new Struct();
+	public IStruct																originalConfig						= new Struct();
 
 	/**
 	 * A collection of all the registered global executors
 	 */
-	public IStruct																executors						= new Struct();
+	public IStruct																executors							= new Struct();
 
 	/**
 	 * Valid BoxLang class extensions
 	 */
-	public Set<String>															validClassExtensions			= new HashSet<>();
+	public Set<String>															validClassExtensions				= new HashSet<>();
 
 	/**
 	 * Valid core BoxLang template extensions.
 	 */
-	public Set<String>															coreTemplateExtensions			= new HashSet<>(
+	public Set<String>															coreTemplateExtensions				= new HashSet<>(
 	    Arrays.asList( "bxs", "bxm", "bxml", "cfm", "cfml", "cfs" )
 	);
 
@@ -350,47 +357,47 @@ public class Configuration implements IConfigSegment {
 	 * Valid BoxLang template extensions.
 	 * Private because I want to force people to use getValidTemplateExtensions(), which includes the core ones
 	 */
-	private Set<String>															validTemplateExtensions			= new HashSet<>();
+	private Set<String>															validTemplateExtensions				= new HashSet<>();
 
 	/**
 	 * Experimental Features
 	 */
-	public IStruct																experimental					= new Struct();
+	public IStruct																experimental						= new Struct();
 
 	/**
 	 * The scheduler configuration
 	 */
-	public SchedulerConfig														scheduler						= new SchedulerConfig();
+	public SchedulerConfig														scheduler							= new SchedulerConfig();
 
 	/**
 	 * The watcher configuration
 	 */
-	public WatcherConfig														watcher							= new WatcherConfig();
+	public WatcherConfig														watcher								= new WatcherConfig();
 
 	/**
 	 * The security configuration
 	 */
-	public SecurityConfig														security						= new SecurityConfig();
+	public SecurityConfig														security							= new SecurityConfig();
 
 	/**
 	 * The logging configuration
 	 */
-	public LoggingConfig														logging							= new LoggingConfig();
+	public LoggingConfig														logging								= new LoggingConfig();
 
 	/**
 	 * The queries configuration — default query execution settings
 	 */
-	public QueriesConfig														queries							= new QueriesConfig();
+	public QueriesConfig														queries								= new QueriesConfig();
 
 	/**
 	 * The container of runtimes configurations. Each runtime can collaborate settings by their name in this struct
 	 */
-	public IStruct																runtimes						= new Struct();
+	public IStruct																runtimes							= new Struct();
 
 	/**
 	 * The System Setting provider override. Since this is a function, it is not populated from JSON and must be set in the runtime.
 	 */
-	public Map<Key, java.util.function.BiFunction<String, IBoxContext, Object>>	systemSettingProviders			= new HashMap<Key, java.util.function.BiFunction<String, IBoxContext, Object>>();
+	public Map<Key, java.util.function.BiFunction<String, IBoxContext, Object>>	systemSettingProviders				= new HashMap<Key, java.util.function.BiFunction<String, IBoxContext, Object>>();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -401,7 +408,7 @@ public class Configuration implements IConfigSegment {
 	/**
 	 * Logger
 	 */
-	private static final Logger													logger							= LoggerFactory
+	private static final Logger													logger								= LoggerFactory
 	    .getLogger( Configuration.class );
 
 	/**
@@ -649,6 +656,15 @@ public class Configuration implements IConfigSegment {
 		// Process the default method return format
 		if ( config.containsKey( Key.defaultRemoteMethodReturnFormat ) ) {
 			this.defaultRemoteMethodReturnFormat = config.getAsString( Key.defaultRemoteMethodReturnFormat ).toLowerCase();
+		}
+
+		// Process the default JSON query serialization format
+		if ( config.containsKey( Key.defaultJSONQuerySerializationFormat ) ) {
+			Object value = config.get( Key.defaultJSONQuerySerializationFormat );
+			if ( value != null ) {
+				String stringValue = StringCaster.cast( value ).toLowerCase();
+				this.defaultJSONQuerySerializationFormat = stringValue.isEmpty() ? null : stringValue;
+			}
 		}
 
 		// Setup a 'default' cache, using the default cache configuration as it always needs to be present
@@ -1178,6 +1194,7 @@ public class Configuration implements IConfigSegment {
 		    Key.classResolverCache, this.classResolverCache,
 		    Key.defaultDatasource, this.defaultDatasource,
 		    Key.defaultRemoteMethodReturnFormat, this.defaultRemoteMethodReturnFormat,
+		    Key.defaultJSONQuerySerializationFormat, this.defaultJSONQuerySerializationFormat,
 		    Key.executors, executorsCopy,
 		    Key.experimental, Struct.fromMap( this.experimental ),
 		    Key.invokeImplicitAccessor, this.invokeImplicitAccessor,

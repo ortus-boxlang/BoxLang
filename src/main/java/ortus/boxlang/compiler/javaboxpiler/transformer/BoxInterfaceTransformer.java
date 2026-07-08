@@ -19,15 +19,18 @@ import java.util.Map;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.ArrayCreationExpr;
+import com.github.javaparser.ast.expr.ArrayInitializerExpr;
 import com.github.javaparser.ast.expr.CastExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.expr.IntegerLiteralExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
 import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 
 import ortus.boxlang.compiler.IBoxpiler;
@@ -99,6 +102,7 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 		import java.nio.file.Paths;
 		import java.time.LocalDateTime;
 		import java.util.ArrayList;
+		import java.util.Arrays;
 		import java.util.Collections;
 		import java.util.HashMap;
 		import java.util.Iterator;
@@ -121,6 +125,8 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 			private final static IStruct	documentation;
 			private static Map<Key, AbstractFunction>	abstractMethods	= new LinkedHashMap<>();
 			private static Map<Key, Function>	defaultMethods	= StructUtil.<Function>linkedMapOf();
+			private static List<Lambda>				lambdas			= new ArrayList<>( Arrays.asList( new Lambda[] {} ) );
+			private static List<ClosureDefinition>	closures		= new ArrayList<>( Arrays.asList( new ClosureDefinition[] {} ) );
 			private static ${classname} instance;
 			private static Key name = ${boxFQN};
 			private static List<BoxInterface> _supers = new ArrayList();
@@ -356,6 +362,32 @@ public class BoxInterfaceTransformer extends AbstractTransformer {
 			defaultMethodsInit.addArgument( value.getSecond() );
 			thisClass.addMember( value.getFirst() );
 		} );
+
+		// Process lambda invokers - add static methods and build the lambdas list initializer
+		FieldDeclaration		lambdasField	= thisClass.getFieldByName( "lambdas" ).orElseThrow();
+		ArrayCreationExpr		lambdasArray	= new ArrayCreationExpr( new ClassOrInterfaceType( null, "Lambda" ) );
+		ArrayInitializerExpr	lambdasInit		= new ArrayInitializerExpr();
+		lambdasArray.setInitializer( lambdasInit );
+		( ( JavaTranspiler ) transpiler ).getLambdaInvokers().forEach( value -> {
+			lambdasInit.getValues().add( value.getSecond() );
+			thisClass.addMember( value.getFirst() );
+		} );
+		ObjectCreationExpr lambdasListExpr = new ObjectCreationExpr( null, new ClassOrInterfaceType( null, "ArrayList<>" ), new NodeList<>() );
+		lambdasListExpr.addArgument( new MethodCallExpr( new NameExpr( "Arrays" ), "asList", new NodeList<>( lambdasArray ) ) );
+		lambdasField.getVariable( 0 ).setInitializer( lambdasListExpr );
+
+		// Process closure invokers - add static methods and build the closures list initializer
+		FieldDeclaration		closuresField	= thisClass.getFieldByName( "closures" ).orElseThrow();
+		ArrayCreationExpr		closuresArray	= new ArrayCreationExpr( new ClassOrInterfaceType( null, "ClosureDefinition" ) );
+		ArrayInitializerExpr	closuresInit	= new ArrayInitializerExpr();
+		closuresArray.setInitializer( closuresInit );
+		( ( JavaTranspiler ) transpiler ).getClosureInvokers().forEach( value -> {
+			closuresInit.getValues().add( value.getSecond() );
+			thisClass.addMember( value.getFirst() );
+		} );
+		ObjectCreationExpr closuresListExpr = new ObjectCreationExpr( null, new ClassOrInterfaceType( null, "ArrayList<>" ), new NodeList<>() );
+		closuresListExpr.addArgument( new MethodCallExpr( new NameExpr( "Arrays" ), "asList", new NodeList<>( closuresArray ) ) );
+		closuresField.getVariable( 0 ).setInitializer( closuresListExpr );
 
 		// loop over UDF registrations and add them to the pseudo-constructor,
 		// rewriting udfs -> defaultMethods with a cast since interfaces store functions as default methods

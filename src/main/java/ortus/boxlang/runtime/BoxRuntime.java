@@ -63,7 +63,8 @@ import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
-import ortus.boxlang.runtime.loader.DynamicClassLoader;
+import ortus.boxlang.runtime.loader.DynamicClassLoaderFactory;
+import ortus.boxlang.runtime.loader.IClassLoaderFactory;
 import ortus.boxlang.runtime.logging.LoggingService;
 import ortus.boxlang.runtime.runnables.BoxScript;
 import ortus.boxlang.runtime.runnables.BoxTemplate;
@@ -180,9 +181,18 @@ public class BoxRuntime implements java.io.Closeable {
 	private Set<String>							runtimeFileExtensions	= new HashSet<>( Arrays.asList( ".bx", ".bxm", ".bxs" ) );
 
 	/**
-	 * The runtime class loader
+	 * The runtime class loader. Typed as {@link ClassLoader} so deployment targets can supply
+	 * a non-{@code URLClassLoader} implementation via {@link #setClassLoaderFactory}.
 	 */
-	private DynamicClassLoader					runtimeLoader;
+	private ClassLoader							runtimeLoader;
+
+	/**
+	 * The factory used to build the runtime + module class loaders. Defaults to the standard
+	 * JVM {@link DynamicClassLoaderFactory}. Must be set BEFORE the runtime is booted
+	 * ({@code getInstance(...)}); alternative targets (e.g. Android) swap it to avoid the
+	 * JVM-only {@code URLClassLoader}.
+	 */
+	private static volatile IClassLoaderFactory	classLoaderFactory		= new DynamicClassLoaderFactory();
 
 	/**
 	 * The CLI Options that where used to start the runtime, if any.
@@ -513,12 +523,9 @@ public class BoxRuntime implements java.io.Closeable {
 		// Ensure home assets
 		ensureHomeAssets();
 
-		// Load the Dynamic Class Loader for the runtime
-		this.runtimeLoader = new DynamicClassLoader(
-		    Key.runtime,
-		    getConfiguration().getJavaLibraryPaths(),
-		    this.getClass().getClassLoader(),
-		    true );
+		// Build the runtime class loader via the configured factory (default = DynamicClassLoader).
+		// Targets that cannot use URLClassLoader (e.g. Android) install a factory before boot.
+		this.runtimeLoader = classLoaderFactory.createRuntimeClassLoader( this, this.getClass().getClassLoader() );
 
 		// Announce it to the services
 		this.interceptorService.onConfigurationLoad();
@@ -874,10 +881,32 @@ public class BoxRuntime implements java.io.Closeable {
 	/**
 	 * Get runtime class loader
 	 *
-	 * @return {@link DynamicClassLoader} or null if the runtime has not started
+	 * @return The runtime {@link ClassLoader} or null if the runtime has not started
 	 */
-	public DynamicClassLoader getRuntimeLoader() {
+	public ClassLoader getRuntimeLoader() {
 		return instance.runtimeLoader;
+	}
+
+	/**
+	 * Get the factory used to build the runtime + module class loaders.
+	 *
+	 * @return the class loader factory
+	 */
+	public IClassLoaderFactory getClassLoaderFactory() {
+		return classLoaderFactory;
+	}
+
+	/**
+	 * Set the factory used to build the runtime + module class loaders. MUST be called BEFORE
+	 * the runtime is booted ({@code getInstance(...)}) for the runtime loader to honor it; it
+	 * has no effect on an already-built runtime loader. Alternative deployment targets (e.g.
+	 * Android) install their own factory here at boot to avoid the JVM-only
+	 * {@code URLClassLoader}.
+	 *
+	 * @param factory the factory to use
+	 */
+	public static void setClassLoaderFactory( IClassLoaderFactory factory ) {
+		classLoaderFactory = java.util.Objects.requireNonNull( factory, "ClassLoaderFactory cannot be null" );
 	}
 
 	/**

@@ -76,6 +76,7 @@ import ortus.boxlang.parser.antlr.BoxGrammar.CatchesContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ClassBodyContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ClassBodyStatementContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ClassOrInterfaceContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.ClosureFuncContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ComponentAttributeContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ComponentContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ComponentIslandContext;
@@ -130,6 +131,7 @@ import ortus.boxlang.parser.antlr.BoxGrammar.ImportStatementContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.IncludeContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.InterfaceContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.InvocableContext;
+import ortus.boxlang.parser.antlr.BoxGrammar.LambdaFuncContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.LocalClassContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.ModifierContext;
 import ortus.boxlang.parser.antlr.BoxGrammar.NormalStatementBlockContext;
@@ -283,10 +285,21 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 	 */
 	@Override
 	public BoxNode visitLocalClass( LocalClassContext ctx ) {
-		var				pos		= tools.getPositionStartingAt( ctx, ctx.CLASS().getSymbol() );
-		var				src		= tools.getSourceText( ctx );
+		var										pos			= tools.getPositionStartingAt( ctx, ctx.CLASS().getSymbol() );
+		var										src			= tools.getSourceText( ctx );
 
-		BoxIdentifier	name	= ( BoxIdentifier ) ctx.identifier().accept( expressionVisitor );
+		BoxIdentifier							name		= ( BoxIdentifier ) ctx.identifier().accept( expressionVisitor );
+
+		// Semantic check: class defined inside a function/closure/lambda body
+		org.antlr.v4.runtime.ParserRuleContext	ancestor	= ctx.getParent();
+		while ( ancestor != null ) {
+			if ( ancestor instanceof FunctionContext || ancestor instanceof ClosureFuncContext || ancestor instanceof LambdaFuncContext ) {
+				tools.reportError(
+				    "Class definitions are not allowed inside function bodies. Move class [" + name.getName() + "] outside of any function body.", pos );
+				break;
+			}
+			ancestor = ancestor.getParent();
+		}
 
 		// Semantic check: duplicate local class names in the same file
 		if ( !seenLocalClassNames.add( name.getName().toLowerCase() ) ) {

@@ -21,14 +21,21 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.ZoneId;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+
+import ortus.boxlang.runtime.async.watchers.WatcherEvent;
+import ortus.boxlang.runtime.async.watchers.WatcherInstance;
+import ortus.boxlang.runtime.async.watchers.listeners.IWatcherListener;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.tasks.BaseScheduler;
 import ortus.boxlang.runtime.async.tasks.BoxScheduler;
 import ortus.boxlang.runtime.async.tasks.IScheduler;
+import ortus.boxlang.runtime.async.tasks.ScheduledTask;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
@@ -97,6 +104,25 @@ public class SchedulerService extends BaseService {
 	private volatile String			tasksEncryptionKey			= null;
 
 	/**
+	 * WatcherInstance that monitors tasks.json for external changes.
+	 * Non-null only when reloadOnChange=true and the watcher started successfully.
+	 */
+	private WatcherInstance			tasksFileWatcher			= null;
+
+	/**
+	 * Epoch-millisecond timestamp of the most recent self-write to tasks.json.
+	 * Used to suppress watcher events triggered by the service's own writes.
+	 */
+	volatile long					lastSelfWriteMs				= 0;
+
+	/**
+	 * Watcher events arriving within this many milliseconds after a self-write are
+	 * suppressed to avoid a reload loop caused by the service's own persistence calls.
+	 * Set to 5 seconds to give schedulers time to finish in-flight changes.
+	 */
+	private static final long		SELF_WRITE_GRACE_MS			= 5_000;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Constructors
 	 * --------------------------------------------------------------------------
@@ -142,6 +168,11 @@ public class SchedulerService extends BaseService {
 
 		// Startup all the schedulers
 		startupRegisteredSchedulers();
+
+		// Start tasks.json file watcher if reloadOnChange is enabled
+		if ( Boolean.TRUE.equals( runtime.getConfiguration().scheduler.reloadOnChange ) ) {
+			startTasksFileWatcher();
+		}
 
 		// Announce it
 		announce(
@@ -268,6 +299,9 @@ public class SchedulerService extends BaseService {
 		    BoxEvent.ON_SCHEDULER_SERVICE_SHUTDOWN,
 		    Struct.of( "schedulerService", this )
 		);
+		// Stop the tasks.json file watcher if running
+		stopTasksFileWatcher();
+
 		// Call shutdown on each scheduler in parallel
 		schedulers.values()
 		    .parallelStream()
@@ -632,6 +666,100 @@ public class SchedulerService extends BaseService {
 	}
 
 	/**
+	 * Reload a scheduler from disk: shuts it down, removes it, re-reads
+	 * tasks.json for tasks belonging to this scheduler, then starts the
+	 * fresh scheduler. Useful when tasks.json has been modified externally
+	 * or when the bx:schedule action="reload" is invoked.
+	 *
+	 * @param schedulerName The key of the scheduler to reload
+	 * @param force         If true, force-kills running tasks during shutdown
+	 * @param timeout       Graceful shutdown timeout in seconds
+	 *
+	 * @return This service for chaining
+	 */
+	public SchedulerService reloadSchedulerFromDisk( Key schedulerName, boolean force, long timeout ) {
+		String name = schedulerName.getName();
+		this.logger.info( "+ Reloading scheduler [{}] from disk...", name );
+
+		// Shutdown and remove the existing scheduler
+		if ( hasScheduler( schedulerName ) ) {
+			removeScheduler( schedulerName, force, timeout );
+		}
+
+		// Re-load tasks from tasks.json for this scheduler only
+		Path		tasksFilePath	= getTasksFilePath();
+		IBoxContext	runtimeContext	= runtime.getRuntimeContext();
+
+		if ( java.nio.file.Files.exists( tasksFilePath ) ) {
+			Array tasks;
+			try {
+				tasks = loadTasksFromDisk();
+			} catch ( Exception e ) {
+				this.logger.error( "Failed to reload tasks for scheduler [{}] — scheduler will start empty: {}", name, e.getMessage() );
+				tasks = new Array();
+			}
+
+			for ( Object entry : tasks ) {
+				if ( ! ( entry instanceof IStruct ) ) {
+					continue;
+				}
+				IStruct	taskDef			= ( IStruct ) entry;
+
+				// Only process tasks belonging to this scheduler
+				Object	schedulerField	= taskDef.get( Key.scheduler );
+				String	taskScheduler	= schedulerField != null ? schedulerField.toString() : DEFAULT_SCHEDULER_NAME;
+				if ( !name.equalsIgnoreCase( taskScheduler ) ) {
+					continue;
+				}
+
+				String taskName = taskDef.getAsString( Key.task );
+				if ( taskName == null || taskName.isBlank() ) {
+					this.logger.warn( "Skipping persisted task with no name during reload of scheduler [{}]", name );
+					continue;
+				}
+
+				boolean paused = BooleanCaster.cast( taskDef.getOrDefault( Key.paused, false ) );
+
+				// Get or create the (now-empty) scheduler
+				if ( !hasScheduler( schedulerName ) ) {
+					BaseScheduler s = new BaseScheduler( name, runtimeContext );
+					registerScheduler( s, false );
+				}
+				BaseScheduler scheduler = ( BaseScheduler ) getScheduler( schedulerName );
+
+				decryptTaskCredentials( taskDef );
+
+				Runnable		callable		= ortus.boxlang.runtime.components.async.Schedule.buildTaskCallable( runtimeContext, taskDef );
+				String			group			= taskDef.getAsString( Key.group );
+				ScheduledTask	scheduledTask	= scheduler.task( taskName, group != null ? group : "" ).call( callable );
+
+				ortus.boxlang.runtime.components.async.Schedule.applyTaskConfiguration( scheduledTask, callable, taskDef, runtimeContext );
+
+				if ( paused ) {
+					scheduledTask.disable();
+				}
+
+				this.logger.info( "  + Reloaded task [{}] in scheduler [{}]", taskName, name );
+			}
+		} else {
+			this.logger.info( "+ No tasks.json found — scheduler [{}] will start empty after reload", name );
+		}
+
+		// Start the scheduler if tasks were found and a scheduler was created
+		IScheduler scheduler = getScheduler( schedulerName );
+		if ( scheduler != null ) {
+			startupScheduler( scheduler );
+			announce(
+			    BoxEvent.ON_SCHEDULER_RESTART,
+			    Struct.of( "scheduler", scheduler, "force", force, "timeout", timeout )
+			);
+			this.logger.info( "+ Scheduler [{}] reloaded from disk", name );
+		}
+
+		return this;
+	}
+
+	/**
 	 * Shutdown the scheduler
 	 *
 	 * @param scheduler The scheduler to shutdown
@@ -716,6 +844,8 @@ public class SchedulerService extends BaseService {
 	 * @param tasks The array of task definition structs to persist.
 	 */
 	public void saveTasksToDisk( Array tasks ) {
+		// Stamp before writing so the watcher grace window starts before the OS event fires.
+		this.lastSelfWriteMs = System.currentTimeMillis();
 		Path tasksFile = getTasksFilePath();
 		try {
 			String json = JSONUtil.getJSONBuilder( true ).asString( tasks );
@@ -855,6 +985,105 @@ public class SchedulerService extends BaseService {
 				}
 			}
 			saveTasksToDisk( tasks );
+		}
+	}
+
+	// --------------------------------------------------------------------------
+	// Tasks-file watcher methods (reloadOnChange support)
+	// --------------------------------------------------------------------------
+
+	/**
+	 * Starts a {@link WatcherInstance} that monitors the tasks.json parent directory for
+	 * external modifications. When a relevant change arrives outside the self-write grace
+	 * window, {@link #onTasksFileChanged()} is called to reload affected schedulers.
+	 */
+	private void startTasksFileWatcher() {
+		Path	tasksFilePath	= getTasksFilePath().toAbsolutePath().normalize();
+		Path	watchDir		= tasksFilePath.getParent();
+		String	fileName		= tasksFilePath.getFileName().toString();
+
+		try {
+			Files.createDirectories( watchDir );
+		} catch ( Exception e ) {
+			this.logger.error( "Cannot create tasks directory for reload-on-change: {}", e.getMessage() );
+			return;
+		}
+
+		IWatcherListener watcherListener = ( event, ctx ) -> {
+			if ( ( event.getKind() == WatcherEvent.Kind.MODIFIED || event.getKind() == WatcherEvent.Kind.CREATED )
+			    && event.getPath() != null
+			    && fileName.equals( event.getPath().getFileName().toString() ) ) {
+				onTasksFileChanged();
+			}
+		};
+
+		this.tasksFileWatcher = WatcherInstance.builder( Key.of( "bxschedule-tasks-watcher" ) )
+		    .addPath( watchDir.toString() )
+		    .recursive( false )
+		    .debounce( 500 )
+		    .atomicWrites( true )
+		    .errorThreshold( 5 )
+		    .parentContext( runtime.getRuntimeContext() )
+		    .listener( watcherListener )
+		    .build()
+		    .start();
+
+		this.logger.info( "+ Scheduler Service tasks.json reload-on-change watcher started for [{}]", tasksFilePath );
+	}
+
+	/**
+	 * Called when tasks.json changes on disk.
+	 * Suppresses events caused by the service's own writes (within the grace window),
+	 * then reloads all affected schedulers.
+	 */
+	void onTasksFileChanged() {
+		if ( System.currentTimeMillis() - this.lastSelfWriteMs < SELF_WRITE_GRACE_MS ) {
+			this.logger.debug( "+ tasks.json changed (self-write within grace window) — suppressing reload-on-change" );
+			return;
+		}
+
+		this.logger.info( "+ tasks.json changed externally — reloading affected schedulers..." );
+
+		// Collect scheduler names: union of currently registered BaseSchedulers and names in the new file
+		Set<String> schedulerNames = new HashSet<>();
+
+		for ( Map.Entry<Key, IScheduler> entry : this.schedulers.entrySet() ) {
+			if ( entry.getValue() instanceof BaseScheduler ) {
+				schedulerNames.add( entry.getKey().getName() );
+			}
+		}
+
+		try {
+			Array tasks = loadTasksFromDisk();
+			for ( Object entry : tasks ) {
+				if ( entry instanceof IStruct ) {
+					IStruct	taskDef			= ( IStruct ) entry;
+					Object	schedulerField	= taskDef.get( Key.scheduler );
+					String	schedulerName	= schedulerField != null ? schedulerField.toString() : DEFAULT_SCHEDULER_NAME;
+					schedulerNames.add( schedulerName );
+				}
+			}
+		} catch ( Exception e ) {
+			this.logger.error( "Failed to read tasks.json during reload-on-change: {}", e.getMessage() );
+			return;
+		}
+
+		for ( String name : schedulerNames ) {
+			try {
+				reloadSchedulerFromDisk( Key.of( name ), false, DEFAULT_SHUTDOWN_TIMEOUT );
+			} catch ( Exception e ) {
+				this.logger.error( "Failed to reload scheduler [{}] on tasks.json change: {}", name, e.getMessage() );
+			}
+		}
+	}
+
+	/**
+	 * Stop and clean up the tasks.json WatcherInstance.
+	 */
+	private void stopTasksFileWatcher() {
+		if ( this.tasksFileWatcher != null && this.tasksFileWatcher.isRunning() ) {
+			this.tasksFileWatcher.stop( true );
+			this.tasksFileWatcher = null;
 		}
 	}
 

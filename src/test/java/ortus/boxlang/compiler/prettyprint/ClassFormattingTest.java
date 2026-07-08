@@ -102,4 +102,10 @@ public class ClassFormattingTest extends PrettyPrintTest {
 	public void testMethodGroupingWithAlphabetical() throws IOException {
 		printTestWithConfigFile( "class", "method_grouping_with_alphabetical" );
 	}
+
+	@Test
+	@DisplayName( "Component extends attribute is not alignment padded" )
+	public void testComponentExtendsAttributeIsNotAlignmentPadded() throws IOException {
+		printTestWithDefaultConfig( "class", "component_extends_attribute" );
+	}
 }

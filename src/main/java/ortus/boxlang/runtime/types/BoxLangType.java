@@ -58,7 +58,9 @@ public enum BoxLangType {
 	STRUCT_LOOSE( Key.structLoose ),
 	UDF( Key._UDF ),
 	XML( Key.XML ),
-	STREAM( Key.stream );
+	STREAM( Key.stream ),
+	STRING_BUILDER( Key.stringBuilder ),
+	STRING_BUILDER_STRICT( Key.stringBuilderStrict );
 
 	/**
 	 * This class is used to store the key of the enum.

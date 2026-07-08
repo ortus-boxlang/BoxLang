@@ -37,7 +37,7 @@ jobs:
             compiler: java
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Set Docker API version
         run: echo "DOCKER_API_VERSION=1.44" >> $GITHUB_ENV
@@ -61,7 +61,7 @@ jobs:
 
       - name: Install JDBC modules
         if: ${{ matrix.os != 'windows-latest' }}
-        run: box install id=bx-mssql@be,bx-mysql,bx-oracle@be directory=~/.boxlang/modules --verbose --nosave
+        run: box install id=bx-mssql@be,bx-mysql,bx-oracle@be directory=${{ github.workspace }}/build/test-home/.boxlang/modules --verbose --nosave
 
       - name: Setup MySQL Service
         if: ${{ matrix.os != 'windows-latest' }}
@@ -110,7 +110,7 @@ jobs:
           ./gradlew test --stacktrace --console=plain -PaddJavaCompiler=true
 
       - name: Publish Test Reports
-        uses: mikepenz/action-junit-report@v6.4.0
+        uses: mikepenz/action-junit-report@v6.4.2
         if: always()
         with:
           report_paths: |

@@ -28,7 +28,6 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxAccessTransf
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxArgumentDeclarationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxArgumentTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxArrayLiteralTransformer;
-import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxSetLiteralTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxAssignmentTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxBinaryOperationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxBooleanLiteralTransformer;
@@ -54,9 +53,11 @@ import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxNullTransfor
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxParenthesisTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxReturnTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxScopeTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxSetLiteralTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxStatementBlockTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxStaticAccessTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxStaticMethodInvocationTransformer;
+import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxStringBuilderLiteralTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxStringConcatTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxStringInterpolationTransformer;
 import ortus.boxlang.compiler.asmboxpiler.transformer.expression.BoxStringLiteralTransformer;
@@ -95,7 +96,6 @@ import ortus.boxlang.compiler.ast.SourceFile;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
-import ortus.boxlang.compiler.ast.expression.BoxSetLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
@@ -116,8 +116,10 @@ import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxSetLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
 import ortus.boxlang.compiler.ast.expression.BoxStaticMethodInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxStringBuilderLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
@@ -391,6 +393,7 @@ public class AsmTranspiler extends Transpiler {
 		registry.put( BoxAssignment.class, new BoxAssignmentTransformer( this ) );
 		registry.put( BoxArrayLiteral.class, new BoxArrayLiteralTransformer( this ) );
 		registry.put( BoxSetLiteral.class, new BoxSetLiteralTransformer( this ) );
+		registry.put( BoxStringBuilderLiteral.class, new BoxStringBuilderLiteralTransformer( this ) );
 		registry.put( BoxFunctionDeclaration.class, new BoxFunctionDeclarationTransformer( this ) );
 		registry.put( BoxFunctionInvocation.class, new BoxFunctionInvocationTransformer( this ) );
 		registry.put( BoxArgument.class, new BoxArgumentTransformer( this ) );
@@ -705,11 +708,15 @@ public class AsmTranspiler extends Transpiler {
 		}
 
 		// If this class has inner classes, add a self-import so the outer class is referenceable by its simple name
-		// from both the outer class itself and from inner classes (e.g., MyClass.STUFF)
+		// from both the outer class itself and from inner classes (e.g., MyClass.STUFF).
+		// Only add this for class files (BoxClass), not for scripts (BoxScript) or templates (BoxTemplate),
+		// since a script's generated class name is not a meaningful user-visible name.
 		String	outerSimpleName	= null;
 		String	outerInternal	= outerPackageInternal + "/" + outerClassname;
 		boolean	hasInnerClasses	= statements.stream().anyMatch( s -> s instanceof BoxLocalClass );
-		if ( hasInnerClasses ) {
+		String	baseclass		= getProperty( "baseclass" );
+		boolean	isClassFile		= !"BoxScript".equals( baseclass ) && !"BoxTemplate".equals( baseclass );
+		if ( hasInnerClasses && isClassFile ) {
 			String boxFQN = getProperty( "boxFQN" );
 			outerSimpleName = boxFQN.contains( "." ) ? boxFQN.substring( boxFQN.lastIndexOf( '.' ) + 1 ) : boxFQN;
 			addLocalClassRefImport( outerSimpleName, outerInternal );

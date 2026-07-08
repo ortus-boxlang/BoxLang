@@ -252,8 +252,8 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 			throw new BoxRuntimeException( "Key [" + name.getName() + "] in the static scope is not a method." );
 		} else {
 			throw new KeyNotFoundException(
-			    // TODO: Limit the number of keys. There could be thousands!
-			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", name.getName(), getStaticScope().getKeysAsStrings() )
+			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", name.getName(),
+			        Struct.formatKeysForError( getStaticScope().getKeysAsStrings() ) )
 			);
 		}
 	}
@@ -286,8 +286,8 @@ public abstract class BoxInterface implements ITemplateRunnable, IReferenceable,
 			throw new BoxRuntimeException( "Key [" + name.getName() + "] in the static scope is not a method." );
 		} else {
 			throw new KeyNotFoundException(
-			    // TODO: Limit the number of keys. There could be thousands!
-			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", name.getName(), getStaticScope().getKeysAsStrings() )
+			    String.format( "The key [%s] was not found in the struct. Valid keys are (%s)", name.getName(),
+			        Struct.formatKeysForError( getStaticScope().getKeysAsStrings() ) )
 			);
 		}
 	}

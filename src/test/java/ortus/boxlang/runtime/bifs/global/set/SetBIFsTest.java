@@ -468,6 +468,44 @@ public class SetBIFsTest {
 		assertThat( variables.get( result ) ).isEqualTo( true );
 	}
 
+	@DisplayName( "setNew() isSynchronized=true (default) produces a synchronized set" )
+	@Test
+	public void testSetNewIsSynchronizedDefault() {
+		instance.executeSource(
+		    """
+		    s = setNew();
+		    result = s.isSynchronized();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
+	@DisplayName( "setNew() isSynchronized=false produces a non-synchronized set" )
+	@Test
+	public void testSetNewIsSynchronizedFalse() {
+		instance.executeSource(
+		    """
+		    s = setNew( isSynchronized=false );
+		    result = s.isSynchronized();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "setNew() isSynchronized=false with seed values still works" )
+	@Test
+	public void testSetNewIsSynchronizedFalseWithValues() {
+		instance.executeSource(
+		    """
+		    s = setNew( values=[1,2,3], isSynchronized=false );
+		    result = s.isSynchronized();
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( false );
+		BoxSet s = ( BoxSet ) variables.get( Key.of( "s" ) );
+		assertThat( s.size() ).isEqualTo( 3 );
+	}
+
 	@DisplayName( "Operator + performs set union" )
 	@Test
 	public void testPlusOperatorUnion() {
@@ -556,6 +594,22 @@ public class SetBIFsTest {
 		    context );
 		BoxSet s = ( BoxSet ) variables.get( result );
 		assertThat( s.size() ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "Explicit a = a * b on a set performs intersection" )
+	@Test
+	public void testExplicitStarAssignmentIntersection() {
+		instance.executeSource(
+		    """
+		    a = set{ 1, 2, 3 };
+		    a = a * set{ 2, 3, 4 };
+		    result = a;
+		    """,
+		    context );
+		BoxSet s = ( BoxSet ) variables.get( result );
+		assertThat( s.size() ).isEqualTo( 2 );
+		assertThat( s.contains( 2 ) ).isTrue();
+		assertThat( s.contains( 3 ) ).isTrue();
 	}
 
 	@DisplayName( "set{ ...array } spreads an array into the set literal" )

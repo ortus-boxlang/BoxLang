@@ -32,7 +32,6 @@ import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.jdbc.ConnectionManager;
-import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.ThreadScope;
@@ -79,7 +78,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	/**
 	 * The request class loader
 	 */
-	private DynamicClassLoader									requestClassLoader		= null;
+	private ClassLoader											requestClassLoader		= null;
 
 	/**
 	 * Flag to enforce explicit output
@@ -281,7 +280,7 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 *
 	 * @return The class loader
 	 */
-	public DynamicClassLoader getRequestClassLoader() {
+	public ClassLoader getRequestClassLoader() {
 		if ( this.requestClassLoader != null ) {
 			return this.requestClassLoader;
 		}
@@ -393,6 +392,18 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		// This doesn't mean we won't strategically place specific settings like mappings into specific parts
 		// of the config struct, but this at least ensure everything is available for whomever wants to use it
 		config.put( Key.applicationSettings, appSettings );
+
+		/**
+		 * --------------------------------------------------------------------------
+		 * JSON Serialization Format Override from Application settings
+		 * --------------------------------------------------------------------------
+		 */
+		if ( appSettings.get( Key.serialization ) instanceof IStruct serialization ) {
+			Object queryFormatValue = serialization.get( Key.serializeQueryAs );
+			if ( queryFormatValue != null ) {
+				config.put( Key.defaultJSONQuerySerializationFormat, queryFormatValue );
+			}
+		}
 
 		/**
 		 * --------------------------------------------------------------------------

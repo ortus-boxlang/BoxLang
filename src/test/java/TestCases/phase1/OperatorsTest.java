@@ -30,6 +30,7 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -106,6 +107,10 @@ public class OperatorsTest {
 
 		result = ( Number ) instance.executeStatement( "'5'+'2'", context );
 		assertThat( result.doubleValue() ).isEqualTo( 7 );
+
+		Number	leftDate	= NumberCaster.cast( true, "1/2/2026" );
+		Number	dateResult	= ( Number ) instance.executeStatement( "'1/2/2026'+5", context );
+		assertThat( dateResult.doubleValue() ).isWithin( 0.0000001D ).of( leftDate.doubleValue() + 5D );
 	}
 
 	@DisplayName( "math subtraction" )
@@ -113,6 +118,12 @@ public class OperatorsTest {
 	public void testMathSubtraction() {
 		Object result = instance.executeStatement( "6-5", context );
 		assertThat( result ).isEqualTo( 1 );
+
+		Number dateResult = ( Number ) instance.executeStatement( "'1/2/2026'-'1/1/2026'", context );
+		assertThat( dateResult.doubleValue() ).isEqualTo( 1D );
+
+		Number secondDateResult = ( Number ) instance.executeStatement( "'1/3/2026'-'1/1/2026'", context );
+		assertThat( secondDateResult.doubleValue() ).isEqualTo( 2D );
 	}
 
 	@DisplayName( "math negation" )
@@ -147,6 +158,11 @@ public class OperatorsTest {
 	public void testMathDivision() {
 		Number result = ( Number ) instance.executeStatement( "10/5", context );
 		assertThat( result.doubleValue() ).isEqualTo( 2 );
+
+		Number	leftDate	= NumberCaster.cast( true, "1/2/2026" );
+		Number	rightDate	= NumberCaster.cast( true, "1/1/2026" );
+		Number	dateResult	= ( Number ) instance.executeStatement( "'1/2/2026'/'1/1/2026'", context );
+		assertThat( dateResult.doubleValue() ).isWithin( 0.0000001D ).of( leftDate.doubleValue() / rightDate.doubleValue() );
 	}
 
 	@DisplayName( "math int dividsion" )
@@ -161,6 +177,11 @@ public class OperatorsTest {
 	public void testMathMultiplication() {
 		Number result = ( Number ) instance.executeStatement( "10*5", context );
 		assertThat( result.doubleValue() ).isEqualTo( 50 );
+
+		Number	leftDate	= NumberCaster.cast( true, "1/2/2026" );
+		Number	rightDate	= NumberCaster.cast( true, "1/1/2026" );
+		Number	dateResult	= ( Number ) instance.executeStatement( "'1/2/2026'*'1/1/2026'", context );
+		assertThat( dateResult.doubleValue() ).isWithin( 0.0000001D ).of( leftDate.doubleValue() * rightDate.doubleValue() );
 	}
 
 	@DisplayName( "math power" )
@@ -510,6 +531,35 @@ public class OperatorsTest {
 		    """,
 		    context );
 		assertThat( variables.getAsNumber( resultKey ).doubleValue() ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "explicit self-assignment numeric operations match compound operators" )
+	@Test
+	public void explicitSelfAssignmentNumericOperations() {
+		instance.executeSource(
+		    """
+		    plusResult = 5;
+		    plusResult = plusResult + 5;
+
+		    minusResult = 5;
+		    minusResult = minusResult - 4;
+
+		    multiplyResult = 5;
+		    multiplyResult = multiplyResult * 5;
+
+		    divideResult = 20;
+		    variables.divideResult = variables.divideResult / 5;
+
+		    modResult = 5;
+		    modResult = modResult % 4;
+		    """,
+		    context );
+
+		assertThat( variables.getAsNumber( Key.of( "plusResult" ) ).doubleValue() ).isEqualTo( 10 );
+		assertThat( variables.getAsNumber( Key.of( "minusResult" ) ).doubleValue() ).isEqualTo( 1 );
+		assertThat( variables.getAsNumber( Key.of( "multiplyResult" ) ).doubleValue() ).isEqualTo( 25 );
+		assertThat( variables.getAsNumber( Key.of( "divideResult" ) ).doubleValue() ).isEqualTo( 4 );
+		assertThat( variables.getAsNumber( Key.of( "modResult" ) ).doubleValue() ).isEqualTo( 1 );
 	}
 
 	@DisplayName( "modulus precedence" )

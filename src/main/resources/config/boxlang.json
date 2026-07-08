@@ -316,6 +316,15 @@
 				"additive": false,
 				// Add class/package names here to silence them
 				"categories": []
+			},
+			"hikari": {
+				"level": "WARN",
+				"appender": "file",
+				"encoder": "text",
+				"additive": false,
+				"categories": [
+					"com.zaxxer.hikari"
+				]
 			}
 		}
 	},
@@ -367,7 +376,10 @@
 		"schedulers": [],
 		// The path to the JSON file where bx:schedule tasks are persisted across restarts.
 		// Supports ${boxlang-home} and other placeholder variables.
-		"tasksFile": "${boxlang-home}/config/tasks.json"
+		"tasksFile": "${boxlang-home}/config/tasks.json",
+		// When true, the scheduler service watches tasks.json for external changes and automatically
+		// reloads all affected schedulers. Self-writes from bx:schedule actions are suppressed.
+		"reloadOnChange": false
 	},
 	// BoxLang Watcher Service
 	// Manages filesystem watchers that fire BoxLang listeners whenever files change.
@@ -463,6 +475,10 @@
 	},
 	// The default return format for class invocations via web runtimes
 	"defaultRemoteMethodReturnFormat": "json",
+	// The default JSON serialization format for query objects converted to JSON
+	// Possible values: null (defaults to "struct"), "struct", "array", "columns"
+	// When null, the runtime will use "struct" as the default format.
+	"defaultJSONQuerySerializationFormat": null,
 	/**
 	* Register any named caches here.
 	* The key is the name of the cache and the value is the cache configuration.

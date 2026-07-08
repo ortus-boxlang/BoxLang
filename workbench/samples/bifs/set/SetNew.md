@@ -55,3 +55,15 @@ writeOutput( s.size() );
 ```
 
 Result: 1
+
+### Create an unsynchronized (non-thread-safe) Set
+
+Pass `isSynchronized=false` for a faster single-threaded set that skips locking overhead.
+
+```java
+s = setNew( isSynchronized=false, values=[ 1, 2, 3 ] );
+writeOutput( s.size() );
+
+```
+
+Result: 3

@@ -14,6 +14,7 @@
  */
 package ortus.boxlang.compiler.ast.sql.select.expression;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -138,7 +139,11 @@ public class SQLFunction extends SQLExpression {
 		if ( function.isAggregate() ) {
 			throw new RuntimeException( "QoQ Function " + name + "() is an aggregate function and cannot be used in a non-aggregate context" );
 		} else {
-			return function.invoke( arguments.stream().map( a -> a.evaluate( QoQExec, intersection ) ).toList(), arguments );
+			List<Object> evaluated = new ArrayList<>();
+			for ( SQLExpression a : arguments ) {
+				evaluated.add( a.evaluate( QoQExec, intersection ) );
+			}
+			return function.invoke( evaluated, arguments );
 		}
 	}
 
@@ -151,9 +156,19 @@ public class SQLFunction extends SQLExpression {
 		}
 		QoQFunction function = QoQFunctionService.getFunction( name );
 		if ( function.isAggregate() ) {
-			List<Object[]> values = arguments.stream().map( a -> buildAggregateValues( QoQExec, intersections, a ) ).toList();
+			List<Object[]> values = new ArrayList<>();
+			for ( SQLExpression a : arguments ) {
+				values.add( buildAggregateValues( QoQExec, intersections, a ) );
+			}
 			// if all arrays in the list are empty, return null
-			if ( values.stream().allMatch( v -> v.length == 0 ) ) {
+			boolean allEmpty = true;
+			for ( Object[] v : values ) {
+				if ( v.length != 0 ) {
+					allEmpty = false;
+					break;
+				}
+			}
+			if ( allEmpty ) {
 				return null;
 			}
 			return function.invokeAggregate(
@@ -161,12 +176,23 @@ public class SQLFunction extends SQLExpression {
 			    arguments
 			);
 		} else {
-			return function.invoke( arguments.stream().map( a -> a.evaluateAggregate( QoQExec, intersections ) ).toList(), arguments );
+			List<Object> evaluated = new ArrayList<>();
+			for ( SQLExpression a : arguments ) {
+				evaluated.add( a.evaluateAggregate( QoQExec, intersections ) );
+			}
+			return function.invoke( evaluated, arguments );
 		}
 	}
 
 	protected Object[] buildAggregateValues( QoQSelectExecution QoQExec, List<int[]> intersections, SQLExpression argument ) {
-		return intersections.stream().map( i -> argument.evaluate( QoQExec, i ) ).filter( v -> v != null ).toArray();
+		List<Object> values = new ArrayList<>();
+		for ( int[] i : intersections ) {
+			Object v = argument.evaluate( QoQExec, i );
+			if ( v != null ) {
+				values.add( v );
+			}
+		}
+		return values.toArray();
 	}
 
 	@Override

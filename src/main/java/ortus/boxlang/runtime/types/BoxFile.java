@@ -266,9 +266,9 @@ public class BoxFile implements IType, IReferenceable, IBoxBinaryRepresentable {
 				URL fileURL = URI.create( file ).toURL();
 				this.path = Path.of( fileURL.toURI() );
 			} catch ( URISyntaxException e ) {
-				throw new BoxRuntimeException( "The url [" + file + "] could not be parsed.  The reason was:" + e.getMessage() + "(" + e.getCause() + ")" );
+				throw new BoxRuntimeException( "The url [" + file + "] could not be parsed.  The reason was: " + e.getMessage() + "(" + e.getCause() + ")" );
 			} catch ( MalformedURLException e ) {
-				throw new BoxRuntimeException( "The url [" + file + "] could not be parsed.  The reason was:" + e.getMessage() + "(" + e.getCause() + ")" );
+				throw new BoxRuntimeException( "The url [" + file + "] could not be parsed.  The reason was: " + e.getMessage() + "(" + e.getCause() + ")" );
 			}
 		} else {
 			this.path = Path.of( file );

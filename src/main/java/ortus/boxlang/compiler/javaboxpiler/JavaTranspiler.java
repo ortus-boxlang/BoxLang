@@ -58,7 +58,6 @@ import ortus.boxlang.compiler.ast.BoxTemplate;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
 import ortus.boxlang.compiler.ast.expression.BoxArrayAccess;
 import ortus.boxlang.compiler.ast.expression.BoxArrayLiteral;
-import ortus.boxlang.compiler.ast.expression.BoxSetLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxBooleanLiteral;
@@ -80,8 +79,10 @@ import ortus.boxlang.compiler.ast.expression.BoxNew;
 import ortus.boxlang.compiler.ast.expression.BoxNull;
 import ortus.boxlang.compiler.ast.expression.BoxParenthesis;
 import ortus.boxlang.compiler.ast.expression.BoxScope;
+import ortus.boxlang.compiler.ast.expression.BoxSetLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStaticAccess;
 import ortus.boxlang.compiler.ast.expression.BoxStaticMethodInvocation;
+import ortus.boxlang.compiler.ast.expression.BoxStringBuilderLiteral;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
@@ -125,7 +126,6 @@ import ortus.boxlang.compiler.javaboxpiler.transformer.TransformerContext;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxAccessTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxArgumentTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxArrayLiteralTransformer;
-import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxSetLiteralTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxAssignmentTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxBinaryOperationTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxBooleanLiteralTransformer;
@@ -146,8 +146,10 @@ import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxNewTransfor
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxNullTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxParenthesisTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxScopeTransformer;
+import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxSetLiteralTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxStaticAccessTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxStaticMethodInvocationTransformer;
+import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxStringBuilderLiteralTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxStringConcatTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxStringInterpolationTransformer;
 import ortus.boxlang.compiler.javaboxpiler.transformer.expression.BoxStringLiteralTransformer;
@@ -260,6 +262,7 @@ public class JavaTranspiler extends Transpiler {
 		registry.put( BoxImport.class, new BoxImportTransformer( this ) );
 		registry.put( BoxArrayLiteral.class, new BoxArrayLiteralTransformer( this ) );
 		registry.put( BoxSetLiteral.class, new BoxSetLiteralTransformer( this ) );
+		registry.put( BoxStringBuilderLiteral.class, new BoxStringBuilderLiteralTransformer( this ) );
 		registry.put( BoxStructLiteral.class, new BoxStructLiteralTransformer( this ) );
 		registry.put( BoxAssignment.class, new BoxAssignmentTransformer( this ) );
 		registry.put( BoxNull.class, new BoxNullTransformer( this ) );
@@ -467,10 +470,14 @@ public class JavaTranspiler extends Transpiler {
 			}
 		}
 
-		// If this class has inner classes, add a self-import so the outer class is referenceable by its simple name
+		// If this class has inner classes, add a self-import so the outer class is referenceable by its simple name.
+		// Only add this for class files (BoxClass), not for scripts (BoxScript) or templates (BoxTemplate),
+		// since a script's generated class name is not a meaningful user-visible name.
 		String	outerSimpleName	= null;
 		boolean	hasInnerClasses	= statements.stream().anyMatch( s -> s instanceof BoxLocalClass );
-		if ( hasInnerClasses ) {
+		String	baseclass		= this.getProperty( "baseclass" );
+		boolean	isClassFile		= !"BoxScript".equals( baseclass ) && !"BoxTemplate".equals( baseclass );
+		if ( hasInnerClasses && isClassFile ) {
 			String boxFQN = this.getProperty( "boxFQN" );
 			outerSimpleName = boxFQN.contains( "." ) ? boxFQN.substring( boxFQN.lastIndexOf( '.' ) + 1 ) : boxFQN;
 			BoxImportTransformer.transformInnerClassImport( outerSimpleName, outerClassName, this );

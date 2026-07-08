@@ -110,6 +110,21 @@ public class InnerClassTest {
 		assertThat( variables.get( result ) ).isEqualTo( "Woof!" );
 	}
 
+	@DisplayName( "Inner class extends syntax works with isInstanceOf" )
+	@Test
+	public void testInnerClassExtendsIsInstanceOf() {
+		instance.executeSource(
+		    """
+		    outer = new src.test.java.TestCases.phase3.InnerClassExtends();
+		    dog = outer.getDog();
+		    result = isInstanceOf( dog, "Dog" );
+		    result2 = isInstanceOf( dog, "Animal" );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( true );
+	}
+
 	@DisplayName( "Three levels deep: class inside class inside class" )
 	@Test
 	public void testThreeLevelsDeep() {

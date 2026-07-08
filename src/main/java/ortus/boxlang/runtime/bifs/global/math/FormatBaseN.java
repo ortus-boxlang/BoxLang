@@ -35,6 +35,10 @@ public class FormatBaseN extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 * 
+	 * @argument.number The number to convert to the specified base.
+	 *
+	 * @argument.radix The base to convert the number to, in the range 2-36.
+	 *
 	 * @return A string representation of the number in the specified base.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {

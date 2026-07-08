@@ -325,6 +325,29 @@ public class ChunkedArrayList<E> extends AbstractList<E> implements Serializable
 		}
 	}
 
+	/**
+	 * Truncate the logical size of this list and release all backing storage beyond
+	 * the new size.
+	 *
+	 * NOT thread-safe — requires external synchronization or a happens-before
+	 * guarantee that no concurrent adds are in progress.
+	 *
+	 * @param newSize the new logical size (must be >= 0)
+	 */
+	public void truncateToSize( int newSize ) {
+		if ( newSize < 0 ) {
+			throw new IndexOutOfBoundsException( "Size: " + newSize );
+		}
+
+		int currentSize = this.size.get();
+		if ( newSize >= currentSize ) {
+			return;
+		}
+
+		this.size.set( newSize );
+		trimToSize();
+	}
+
 	@Override
 	public Object[] toArray() {
 		int			s			= this.size.get();

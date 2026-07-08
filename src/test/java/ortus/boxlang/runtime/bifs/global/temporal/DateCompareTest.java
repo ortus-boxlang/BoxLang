@@ -287,14 +287,18 @@ public class DateCompareTest {
 	public void testCompareSimilar() {
 		instance.executeSource(
 		    """
-		    assert dateCompare('2025-01-01', '2025-02-01', 'd' ) == -1;
-		    assert dateCompare('2024-02-01', '2025-02-01', 'm' ) == -1;
-		    assert dateCompare( '2025-02-01', '2024-02-01', 'm' ) == 1;
-		    assert dateCompare('2025-01-01T00:00:01Z', '2025-01-01T00:10:00Z', 'd' ) == 0;
-		    assert dateCompare('2025-01-02T00:00:01Z', '2025-01-15T00:10:00Z', 'm' ) == 0;
-		    assert dateCompare('2025-01-01T00:00:00Z', '2025-01-15T00:00:00Z', 'y' ) == 0;
-		    assert dateCompare('2025-01-01T00:00:00Z', '2025-01-15T00:00:00Z', 'yyyy' ) == 0;
-		    """,
+		       assert dateCompare('2025-01-01', '2025-02-01', 'd' ) == -1;
+		       assert dateCompare('2024-02-01', '2025-02-01', 'm' ) == -1;
+		       assert dateCompare( '2025-02-01', '2024-02-01', 'm' ) == 1;
+		       assert dateCompare('2025-01-01T00:00:01Z', '2025-01-01T00:10:00Z', 'd' ) == 0;
+		       assert dateCompare('2025-01-02T00:00:01Z', '2025-01-15T00:10:00Z', 'm' ) == 0;
+		       assert dateCompare('2025-01-01T00:00:00Z', '2025-01-15T00:00:00Z', 'y' ) == 0;
+		       assert dateCompare('2025-01-01T00:00:00Z', '2025-01-15T00:00:00Z', 'yyyy' ) == 0;
+
+		    assert dateCompare('2025-01-01T03:00:00Z', '2025-01-01T04:00:00Z', 'h' ) == -1;
+		    assert dateCompare('2025-01-01T04:00:00Z', '2025-01-01T04:00:00Z', 'h' ) == 0;
+		    assert dateCompare('2025-01-01T05:00:00Z', '2025-01-01T04:00:00Z', 'h' ) == 1;
+		       """,
 		    context );
 	}
 

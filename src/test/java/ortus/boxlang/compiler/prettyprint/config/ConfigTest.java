@@ -198,6 +198,7 @@ public class ConfigTest {
 		original.setSemicolons( false );
 		original.setCFFormatCompatibility( true );
 		original.setSourceType( BoxSourceType.BOXSCRIPT );
+		original.getArguments().setSeparator( Separator.EQUALS );
 
 		Config clone = original.clone();
 
@@ -215,6 +216,7 @@ public class ConfigTest {
 		assertEquals( original.getSemicolons(), clone.getSemicolons() );
 		assertEquals( original.getCFFormatCompatibility(), clone.getCFFormatCompatibility() );
 		assertEquals( original.getSourceType(), clone.getSourceType() );
+		assertEquals( original.getArguments().getSeparator(), clone.getArguments().getSeparator() );
 	}
 
 	@Test
@@ -281,6 +283,32 @@ public class ConfigTest {
 
 		assertEquals( "arrow", original.getFunction().getStyle() );
 		assertEquals( 5, original.getFunction().getParameters().getMultilineCount() );
+	}
+
+	@Test
+	@DisplayName( "clone produces independent arguments config" )
+	public void testCloneArgumentsConfigIsIndependent() {
+		Config original = new Config();
+		original.getArguments().setPadding( false );
+		original.getArguments().setEmptyPadding( true );
+		original.getArguments().setCommaDangle( true );
+		original.getArguments().setMultilineCount( 7 );
+		original.getArguments().setMultilineLength( 90 );
+		original.getArguments().setSeparator( Separator.EQUALS );
+
+		Config clone = original.clone();
+
+		assertFalse( clone.getArguments().getPadding() );
+		assertTrue( clone.getArguments().getEmptyPadding() );
+		assertTrue( clone.getArguments().getCommaDangle() );
+		assertEquals( 7, clone.getArguments().getMultilineCount() );
+		assertEquals( 90, clone.getArguments().getMultilineLength() );
+		assertEquals( Separator.EQUALS, clone.getArguments().getSeparator() );
+
+		assertNotSame( original.getArguments(), clone.getArguments() );
+
+		clone.getArguments().setSeparator( Separator.COLON );
+		assertEquals( Separator.EQUALS, original.getArguments().getSeparator() );
 	}
 
 	@Test

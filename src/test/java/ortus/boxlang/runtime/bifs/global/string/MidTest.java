@@ -138,4 +138,28 @@ public class MidTest {
 		assertThat( variables.get( result ) ).isEqualTo( "234" );
 	}
 
+	@DisplayName( "It works on a BoxStringBuilder via auto-cast (global function)" )
+	@Test
+	public void testItWorksOnBoxStringBuilder() {
+		instance.executeSource(
+		    """
+		    sb = sb{"abcdef"};
+		    result = mid(sb, 2, 3);
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "bcd" );
+	}
+
+	@DisplayName( "It works on a BoxStringBuilder member method" )
+	@Test
+	public void testItWorksOnBoxStringBuilderMember() {
+		instance.executeSource(
+		    """
+		    sb = sb{"abcdef"};
+		    result = sb.mid(2, 3);
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "bcd" );
+	}
+
 }

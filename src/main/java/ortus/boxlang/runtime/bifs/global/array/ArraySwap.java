@@ -46,6 +46,8 @@ public class ArraySwap extends BIF {
 	 * @param context
 	 * @param arguments Argument scope defining the array.
 	 *
+	 * @argument.array The array containing the elements to swap.
+	 *
 	 * @arguments.position1 The first position to swap
 	 *
 	 * @arguments.position2 The second position to swap

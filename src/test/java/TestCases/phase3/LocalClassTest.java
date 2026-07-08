@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.exceptions.ParseException;
 
 /**
  * Integration tests for named local class definitions inside BoxLang scripts and templates.
@@ -843,6 +844,22 @@ public class LocalClassTest {
 			    """,
 			    context );
 		} );
+	}
+
+	@DisplayName( "Local class defined inside a function in a script throws a compile error" )
+	@Test
+	public void testLocalClassInsideFunctionInScriptErrors() {
+		ParseException e = assertThrows( ParseException.class, () -> instance.executeSource(
+		    """
+		    function test() {
+		        class Person {}
+		        return Person();
+		    }
+		    result = test();
+		    """,
+		    context ) );
+		assertThat( e.getMessage() ).contains( "Person" );
+		assertThat( e.getMessage() ).contains( "function" );
 	}
 
 }

@@ -27,6 +27,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.BoxStringBuilder;
 
 public class ConcatTest {
 
@@ -87,6 +88,34 @@ public class ConcatTest {
 		scope.put( Key.of( "i" ), "a" );
 		assertThat( Concat.invoke( context, scope, Key.of( "i" ), "b", "c", "d", "e", "f", "g", "h", "i" ) ).isEqualTo( "abcdefghi" );
 		assertThat( scope.get( Key.of( "i" ) ) ).isEqualTo( "abcdefghi" );
+	}
+
+	@DisplayName( "It can compound concatenate in-place on BoxStringBuilder" )
+	@Test
+	void testItCanCompountConcatenateBoxStringBuilderInPlace() {
+		IScope				scope	= new VariablesScope();
+		BoxStringBuilder	sb		= new BoxStringBuilder( "brad" );
+		scope.put( Key.of( "i" ), sb );
+
+		Object result = Concat.invoke( context, scope, Key.of( "i" ), "wood" );
+
+		assertThat( result ).isSameInstanceAs( sb );
+		assertThat( scope.get( Key.of( "i" ) ) ).isSameInstanceAs( sb );
+		assertThat( sb.toString() ).isEqualTo( "bradwood" );
+	}
+
+	@DisplayName( "It can compound concatenate in-place on Java StringBuilder" )
+	@Test
+	void testItCanCompountConcatenateJavaStringBuilderInPlace() {
+		IScope			scope	= new VariablesScope();
+		StringBuilder	javaSB	= new StringBuilder( "brad" );
+		scope.put( Key.of( "i" ), javaSB );
+
+		Object result = Concat.invoke( context, scope, Key.of( "i" ), "wood" );
+
+		assertThat( result ).isSameInstanceAs( javaSB );
+		assertThat( scope.get( Key.of( "i" ) ) ).isSameInstanceAs( javaSB );
+		assertThat( javaSB.toString() ).isEqualTo( "bradwood" );
 	}
 
 }

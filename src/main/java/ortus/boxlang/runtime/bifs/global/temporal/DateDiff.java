@@ -76,6 +76,8 @@ public class DateDiff extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
+	 * @argument.datepart The datepart code in which to express the difference (yyyy, q, m, d, y, w, ww, wd, h, n, s, l).
+	 *
 	 * @argument.date1 The reference date object
 	 *
 	 * @argument.date2 The date which to compare against date1

@@ -128,6 +128,23 @@ public class ExpressionInterpreterTest {
 		assertThrows( KeyNotFoundException.class, () -> ExpressionInterpreter.getVariable( context, "does.not.exist", false ) );
 	}
 
+	@DisplayName( "It returns null instead of throwing on invalid expressions when safe=true" )
+	@Test
+	void testItReturnsNullOnInvalidExpressionWhenSafe() {
+		assertThat( ExpressionInterpreter.getVariable( context, "", true ) ).isNull();
+		assertThat( ExpressionInterpreter.getVariable( context, ".", true ) ).isNull();
+		assertThat( ExpressionInterpreter.getVariable( context, ".foo", true ) ).isNull();
+		assertThat( ExpressionInterpreter.getVariable( context, "foo.", true ) ).isNull();
+		assertThat( ExpressionInterpreter.getVariable( context, "[foo]", true ) ).isNull();
+		assertThat( ExpressionInterpreter.getVariable( context, "foo[[bar]", true ) ).isNull();
+		assertThat( ExpressionInterpreter.getVariable( context, "foo]", true ) ).isNull();
+		assertThat( ExpressionInterpreter.getVariable( context, "foo[bar", true ) ).isNull();
+		assertThat( ExpressionInterpreter.getVariable( context, "foo[\"bar", true ) ).isNull();
+		assertThat( ExpressionInterpreter.getVariable( context, "foo()", true ) ).isNull();
+		assertThat( ExpressionInterpreter.getVariable( context, "foo+bar", true ) ).isNull();
+		assertThat( ExpressionInterpreter.getVariable( context, "does.not.exist", true ) ).isNull();
+	}
+
 	@DisplayName( "It can set a scoped variable" )
 	@Test
 	void testItCanSetAScopedVar() {

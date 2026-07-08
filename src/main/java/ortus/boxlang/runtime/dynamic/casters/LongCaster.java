@@ -17,6 +17,9 @@
  */
 package ortus.boxlang.runtime.dynamic.casters;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.types.exceptions.BoxCastException;
 
@@ -112,6 +115,26 @@ public class LongCaster implements IBoxCaster {
 	}
 
 	private static Long handleNumber( Number num, boolean allowTruncate, boolean fail ) {
+		// Check if the number is within the valid range for a long
+		boolean outOfRange = false;
+		if ( num instanceof Double || num instanceof Float ) {
+			double doubleVal = num.doubleValue();
+			outOfRange = doubleVal < Long.MIN_VALUE || doubleVal > Long.MAX_VALUE;
+		} else if ( num instanceof BigDecimal bd ) {
+			outOfRange = bd.compareTo( new BigDecimal( Long.MIN_VALUE ) ) < 0 || bd.compareTo( new BigDecimal( Long.MAX_VALUE ) ) > 0;
+		} else if ( num instanceof BigInteger bi ) {
+			outOfRange = bi.compareTo( BigInteger.valueOf( Long.MIN_VALUE ) ) < 0 || bi.compareTo( BigInteger.valueOf( Long.MAX_VALUE ) ) > 0;
+		}
+		// Integer, Short, Byte, Long fall through - guaranteed to fit
+
+		if ( outOfRange ) {
+			if ( fail ) {
+				throw new BoxCastException( String.format( "Can't cast [%s] to a long. Value is outside the range of valid longs.", num ) );
+			} else {
+				return null;
+			}
+		}
+
 		if ( allowTruncate ) {
 			return Long.valueOf( num.longValue() );
 		} else {
