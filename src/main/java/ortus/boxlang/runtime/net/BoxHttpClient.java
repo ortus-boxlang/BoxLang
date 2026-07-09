@@ -60,6 +60,7 @@ import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.JSONUtil;
@@ -1662,7 +1663,7 @@ public class BoxHttpClient {
 		 *     .method( "POST" )
 		 *     .header( "Content-Type", "application/json" )
 		 *     .onComplete( result -> {
-		 * 	} )
+		 * 							} )
 		 *     .send();
 		 *
 		 * IStruct result = request.getHttpResult();
@@ -1905,6 +1906,9 @@ public class BoxHttpClient {
 					    Duration.between( this.startTime.toInstant(), Instant.now() ).toMillis() );
 				}
 
+				// Always provide a stable result shape, even for low-level failures.
+				ensureDefaultResponseKeys();
+
 				// Update statistics based on request outcome
 				if ( this.error ) {
 					BoxHttpClient.this.failedRequests.incrementAndGet();
@@ -1987,6 +1991,67 @@ public class BoxHttpClient {
 
 			// Return the result struct
 			return this.httpResult;
+		}
+
+		/**
+		 * Ensure all expected response keys exist, regardless of success or failure mode.
+		 */
+		private void ensureDefaultResponseKeys() {
+			if ( !this.httpResult.containsKey( Key.responseHeader ) ) {
+				this.httpResult.put( Key.responseHeader, new Struct( false ) );
+			}
+			if ( !this.httpResult.containsKey( Key.header ) ) {
+				this.httpResult.put( Key.header, "" );
+			}
+
+			if ( !this.httpResult.containsKey( Key.statusCode ) ) {
+				this.httpResult.put( Key.statusCode, STATUS_INTERNAL_ERROR );
+			}
+			if ( !this.httpResult.containsKey( Key.status_code ) ) {
+				this.httpResult.put( Key.status_code, this.httpResult.get( Key.statusCode ) );
+			}
+			if ( !this.httpResult.containsKey( Key.statusText ) ) {
+				this.httpResult.put( Key.statusText, "Internal Server Error" );
+			}
+			if ( !this.httpResult.containsKey( Key.status_text ) ) {
+				this.httpResult.put( Key.status_text, this.httpResult.get( Key.statusText ) );
+			}
+
+			if ( !this.httpResult.containsKey( Key.fileContent ) ) {
+				this.httpResult.put( Key.fileContent, "" );
+			}
+			if ( !this.httpResult.containsKey( Key.errorDetail ) ) {
+				this.httpResult.put( Key.errorDetail, "" );
+			}
+
+			if ( !this.httpResult.containsKey( Key.HTTP_Version ) ) {
+				this.httpResult.put( Key.HTTP_Version, "" );
+			}
+			if ( !this.httpResult.containsKey( Key.mimetype ) ) {
+				this.httpResult.put( Key.mimetype, "" );
+			}
+			if ( !this.httpResult.containsKey( Key.charset ) ) {
+				this.httpResult.put( Key.charset, this.charset != null ? this.charset : DEFAULT_CHARSET );
+			}
+			if ( !this.httpResult.containsKey( Key.text ) ) {
+				this.httpResult.put( Key.text, true );
+			}
+			if ( !this.httpResult.containsKey( Key.cookies ) ) {
+				this.httpResult.put( Key.cookies, new Query() );
+			}
+
+			if ( !this.httpResult.containsKey( Key.request ) ) {
+				this.httpResult.put( Key.request, new Struct( false ) );
+			}
+			if ( !this.httpResult.containsKey( Key.stream ) ) {
+				this.httpResult.put( Key.stream, false );
+			}
+			if ( !this.httpResult.containsKey( Key.sse ) ) {
+				this.httpResult.put( Key.sse, false );
+			}
+			if ( !this.httpResult.containsKey( Key.executionTime ) ) {
+				this.httpResult.put( Key.executionTime, 0L );
+			}
 		}
 
 		/**

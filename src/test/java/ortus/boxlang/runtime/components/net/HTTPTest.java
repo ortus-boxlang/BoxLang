@@ -834,6 +834,40 @@ public class HTTPTest {
 		    .isEqualTo( "Unknown host: does-not-exist.also-does-not-exist: Name or service not known." );
 	}
 
+	@DisplayName( "It can handle malformed URLs with a complete result struct" )
+	@Test
+	public void testMalformedURLHasCompleteResult() {
+		// @formatter:off
+		instance.executeSource( """
+			bx:http method="GET" url="http://exa mple.com";
+			result = bxhttp;
+		""", context );
+		// @formatter:on
+
+		IStruct httpResult = variables.getAsStruct( result );
+
+		Assertions.assertTrue( httpResult.containsKey( Key.statusCode ) );
+		Assertions.assertTrue( httpResult.containsKey( Key.status_code ) );
+		Assertions.assertTrue( httpResult.containsKey( Key.statusText ) );
+		Assertions.assertTrue( httpResult.containsKey( Key.status_text ) );
+		Assertions.assertTrue( httpResult.containsKey( Key.fileContent ) );
+		Assertions.assertTrue( httpResult.containsKey( Key.errorDetail ) );
+		Assertions.assertTrue( httpResult.containsKey( Key.header ) );
+		Assertions.assertTrue( httpResult.containsKey( Key.responseHeader ) );
+		Assertions.assertTrue( httpResult.containsKey( Key.charset ) );
+		Assertions.assertTrue( httpResult.containsKey( Key.mimetype ) );
+		Assertions.assertTrue( httpResult.containsKey( Key.text ) );
+		Assertions.assertTrue( httpResult.containsKey( Key.cookies ) );
+		Assertions.assertTrue( httpResult.containsKey( Key.executionTime ) );
+		Assertions.assertTrue( httpResult.containsKey( Key.request ) );
+
+		assertThat( httpResult.getAsInteger( Key.statusCode ) ).isEqualTo( 500 );
+		assertThat( httpResult.getAsString( Key.fileContent ) ).isEqualTo( "" );
+		assertThat( httpResult.getAsString( Key.header ) ).isEqualTo( "" );
+		assertThat( httpResult.getAsString( Key.mimetype ) ).isEqualTo( "" );
+		assertThat( httpResult.getAsString( Key.errorDetail ) ).contains( "URISyntaxException" );
+	}
+
 	@DisplayName( "It can handle timeouts" )
 	@Test
 	public void testTimeout( WireMockRuntimeInfo wmRuntimeInfo ) {
