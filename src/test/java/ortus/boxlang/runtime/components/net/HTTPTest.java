@@ -840,6 +840,7 @@ public class HTTPTest {
 		// @formatter:off
 		instance.executeSource( """
 			bx:http method="GET" url="http://exa mple.com";
+			
 			result = bxhttp;
 		""", context );
 		// @formatter:on
