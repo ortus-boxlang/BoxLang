@@ -492,8 +492,7 @@ public class Loop extends Component {
 			}
 		}
 
-		throw new BoxRuntimeException( "CFLoop attributes not implemented yet! " + attributes.asString() );
-		// return DEFAULT_RETURN;
+		throw new BoxRuntimeException( "Invalid Loop attributes." + attributes.asString() );
 	}
 
 	/**

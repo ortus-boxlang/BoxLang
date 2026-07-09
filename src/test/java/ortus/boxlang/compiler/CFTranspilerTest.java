@@ -724,4 +724,19 @@ public class CFTranspilerTest {
 		assertThat( variables.get( result ) ).isEqualTo( "098f6bcd4621d373cade4e832627b4f6" );
 	}
 
+	@Test
+	public void testLoopWithStructInsteadOfCollection() {
+		instance.executeSource(
+		    """
+		    <cfset brad = "wood">
+		    <cfset result = "">
+		    <cfloop struct="#variables#" item="key">
+		    	<cfset result &= key />
+		    </cfloop>
+		             """, context, BoxSourceType.CFTEMPLATE );
+
+		assertThat( variables.getAsString( result ) ).contains( "brad" );
+		assertThat( variables.getAsString( result ) ).contains( "result" );
+	}
+
 }

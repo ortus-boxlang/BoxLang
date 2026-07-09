@@ -309,6 +309,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		componentAttrMap.put( "procparam", Map.of( "cfsqltype", "sqltype" ) );
 		componentAttrMap.put( "queryparam", Map.of( "cfsqltype", "sqltype" ) );
 		componentAttrMap.put( "object", Map.of( "component", "className" ) );
+		componentAttrMap.put( "loop", Map.of( "struct", "collection" ) );
 
 		/*
 		 * Outer string is name of BIF (lowercase)
