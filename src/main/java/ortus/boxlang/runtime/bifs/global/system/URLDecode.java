@@ -22,7 +22,6 @@ import java.io.UnsupportedEncodingException;
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
@@ -37,7 +36,7 @@ public class URLDecode extends BIF {
 	public URLDecode() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "any", Key.string ),
+		    new Argument( true, "string", Key.string ),
 		    new Argument( false, "string", Key.charset, "UTF-8" )
 		};
 	}
@@ -54,7 +53,7 @@ public class URLDecode extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		// TODO: Just stubbing this out to make TestBox work. We're going to look into transpiling this to use ESAPI's encodeForURL().
-		String	str		= StringCaster.cast( arguments.get( Key.string ) );
+		String	str		= arguments.getAsString( Key.string );
 		String	charset	= arguments.getAsString( Key.charset );
 		try {
 			return java.net.URLDecoder.decode( str, charset );
