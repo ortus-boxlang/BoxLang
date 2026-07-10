@@ -21,11 +21,10 @@ package ortus.boxlang.runtime.components.system;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.LockSupport;
 
-import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +37,7 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.logging.LoggingService;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -54,33 +54,26 @@ public class LogTest {
 	static Key						result		= new Key( "result" );
 	static String					logFilePath;
 	static String					logFileName;
-	static ByteArrayOutputStream	outContent;
-	static PrintStream				originalOut	= System.out;
 
 	@BeforeAll
 	public static void setUp() {
 		instance		= BoxRuntime.getInstance( true );
 		logsDirectory	= instance.getConfiguration().logging.logsDirectory;
-		outContent		= new ByteArrayOutputStream();
-		System.setOut( new PrintStream( outContent ) );
 		logFileName	= "bxlog.log";
 		logFilePath	= Paths.get( logsDirectory, "/" + logFileName ).normalize().toString();
+		deleteLogFile();
 	}
 
 	@AfterAll
 	public static void tearDown() {
-		System.setOut( originalOut );
 		LoggingService.getInstance().shutdownAppenders();
-		if ( FileSystemUtil.exists( logFilePath ) ) {
-			FileSystemUtil.deleteFile( logFilePath );
-		}
+		deleteLogFile();
 	}
 
 	@BeforeEach
 	public void setupEach() {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
-		outContent.reset();
 	}
 
 	@DisplayName( "It tests the BIF Log with Script parsing" )
@@ -91,7 +84,7 @@ public class LogTest {
 		    bx:log text="Hello Logger!" file="bxlog";
 		    """,
 		    context, BoxSourceType.BOXSCRIPT );
-		assertThat( outContent.toString( StandardCharsets.UTF_8 ) ).contains( "Hello Logger!" );
+		assertThat( getLogFileContent( "Hello Logger!" ) ).contains( "Hello Logger!" );
 	}
 
 	@DisplayName( "It tests the BIF Log with CFML parsing" )
@@ -102,7 +95,7 @@ public class LogTest {
 		    <cflog text="Hello CF!" file="bxlog.log" />
 		    """,
 		    context, BoxSourceType.CFTEMPLATE );
-		assertThat( outContent.toString( StandardCharsets.UTF_8 ) ).contains( "Hello CF!" );
+		assertThat( getLogFileContent( "Hello CF!" ) ).contains( "Hello CF!" );
 	}
 
 	@DisplayName( "It tests the BIF Log with BoxLang parsing" )
@@ -113,7 +106,30 @@ public class LogTest {
 		    <bx:log text="Hello BX!" file="bxlog.log" />
 		    """,
 		    context, BoxSourceType.BOXTEMPLATE );
-		assertThat( outContent.toString( StandardCharsets.UTF_8 ) ).contains( "Hello BX!" );
+		assertThat( getLogFileContent( "Hello BX!" ) ).contains( "Hello BX!" );
+	}
+
+	private static String getLogFileContent( String expectedText ) {
+		long	deadline	= System.nanoTime() + TimeUnit.SECONDS.toNanos( 2 );
+		String	content		= "";
+
+		while ( System.nanoTime() < deadline ) {
+			if ( FileSystemUtil.exists( logFilePath ) ) {
+				content = StringCaster.cast( FileSystemUtil.read( logFilePath ) );
+				if ( content.contains( expectedText ) ) {
+					return content;
+				}
+			}
+			LockSupport.parkNanos( TimeUnit.MILLISECONDS.toNanos( 25 ) );
+		}
+
+		return content;
+	}
+
+	private static void deleteLogFile() {
+		if ( FileSystemUtil.exists( logFilePath ) ) {
+			FileSystemUtil.deleteFile( logFilePath );
+		}
 	}
 
 }
