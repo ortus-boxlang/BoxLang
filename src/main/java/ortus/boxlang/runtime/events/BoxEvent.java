@@ -222,6 +222,7 @@ public enum BoxEvent {
 	ON_HTTP_REQUEST( "onHTTPRequest" ),
 	ON_HTTP_RAW_RESPONSE( "onHTTPRawResponse" ),
 	ON_HTTP_RESPONSE( "onHTTPResponse" ),
+	ON_HTTP_ERROR( "onHTTPError" ),
 
 	/**
 	 * Custom Event for Route Modification when in a Web Context
