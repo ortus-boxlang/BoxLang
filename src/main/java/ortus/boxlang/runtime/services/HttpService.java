@@ -461,7 +461,7 @@ public class HttpService extends BaseService {
 	 * <li>{@code redirect} — {@code redir} or {@code noredir}</li>
 	 * <li>{@code timeout} — {@code t<N>} or {@code tnull}</li>
 	 * <li>{@code proxyPart} — {@code noproxy} | {@code <host>:<port>} |
-	 * {@code <host>:<port>:<user>:<passHash8>} | {@code <host>:<port>:<user>:nopass}</li>
+	 * {@code <host>:<port>:<user>:<passHash16>} | {@code <host>:<port>:<user>:nopass}</li>
 	 * <li>{@code certPart} — {@code nocert} | {@code cert:<pathHash16>:nopass} |
 	 * {@code cert:<pathHash16>:hascertpass}</li>
 	 * </ul>
@@ -516,8 +516,9 @@ public class HttpService extends BaseService {
 			if ( proxyPassword == null || proxyPassword.isEmpty() ) {
 				passSegment = "nopass";
 			} else {
-				// First 8 chars of SHA-256 hash — differentiates passwords without exposing them
-				passSegment = EncryptionUtil.hash( proxyPassword, "SHA-256" ).substring( 0, 8 );
+				// First 16 chars of SHA-256 hash — differentiates passwords without exposing them.
+				// 64 bits of entropy keeps collision probability negligible while keeping keys readable.
+				passSegment = EncryptionUtil.hash( proxyPassword, "SHA-256" ).substring( 0, 16 );
 			}
 			proxyPart = proxyServer + ":" + proxyPort + ":" + proxyUser + ":" + passSegment;
 		}
