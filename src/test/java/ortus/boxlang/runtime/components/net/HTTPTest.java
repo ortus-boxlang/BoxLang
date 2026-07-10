@@ -869,6 +869,30 @@ public class HTTPTest {
 		assertThat( httpResult.getAsString( Key.errorDetail ) ).contains( "URISyntaxException" );
 	}
 
+	@DisplayName( "It ignores Java restricted request headers" )
+	@Test
+	public void testIgnoresRestrictedHeaders( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor( post( "/restricted-headers" )
+		    .willReturn( ok().withBody( "ok" ) ) );
+
+		instance.executeSource( String.format( """
+		                                       	bx:http method="POST" url="%s" {
+		                                       		bx:httpparam type="header" name="Connection" value="keep-alive";
+		                                       		bx:httpparam type="header" name="Host" value="example.com";
+		                                       		bx:httpparam type="header" name="Content-Length" value="123";
+		                                       		bx:httpparam type="header" name="Expect" value="100-continue";
+		                                       		bx:httpparam type="header" name="Upgrade" value="h2c";
+		                                       		bx:httpparam type="formfield" name="foo" value="bar";
+		                                       	}
+		                                       	result = bxhttp;
+		                                       """, wmRuntimeInfo.getHttpBaseUrl() + "/restricted-headers" ), context );
+
+		IStruct httpResult = variables.getAsStruct( result );
+		assertThat( httpResult.getAsInteger( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( httpResult.getAsString( Key.errorDetail ) ).isEqualTo( "" );
+		assertThat( httpResult.getAsString( Key.fileContent ) ).isEqualTo( "ok" );
+	}
+
 	@DisplayName( "It can handle timeouts" )
 	@Test
 	public void testTimeout( WireMockRuntimeInfo wmRuntimeInfo ) {

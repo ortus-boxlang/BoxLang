@@ -38,6 +38,7 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -92,6 +93,13 @@ public class BoxHttpClient {
 	public static final int												DEFAULT_READ_TIMEOUT		= 15;
 	public static final int												DEFAULT_REQUEST_TIMEOUT		= 0;
 	public static final boolean											DEFAULT_THROW_ON_ERROR		= false;
+	private static final Set<String>									JAVA_RESTRICTED_HEADERS		= Set.of(
+	    "connection",
+	    "content-length",
+	    "expect",
+	    "host",
+	    "upgrade"
+	);
 
 	// HTTP Status Codes
 	public static final int												STATUS_REQUEST_TIMEOUT		= 408;
@@ -1427,6 +1435,10 @@ public class BoxHttpClient {
 					// We need to use `setHeader` to overwrite any previously set headers
 					case "header" -> {
 						String headerName = StringCaster.cast( param.get( Key._NAME ) );
+						if ( headerName != null && JAVA_RESTRICTED_HEADERS.contains( headerName.toLowerCase() ) ) {
+							logger.trace( "Ignoring restricted header [{}] for Java HttpClient compatibility", headerName );
+							continue;
+						}
 						// We need to downgrade our HTTP version if a TE header is present and is not
 						// `trailers`
 						// because HTTP/2 does not support the TE header with any other values
