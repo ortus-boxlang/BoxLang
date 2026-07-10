@@ -275,6 +275,53 @@ public class HttpServiceTest {
 		assertThat( service.getClientCount() ).isEqualTo( 2 );
 	}
 
+	@DisplayName( "Test getOrBuildClient differentiates proxy passwords" )
+	@Test
+	void testDifferentProxyPasswordsCreateDifferentClients() {
+		BoxHttpClient	client1	= service.getOrBuildClient(
+		    "HTTP/2",
+		    true,
+		    30,
+		    "proxy.example.com",
+		    8080,
+		    "proxyUser",
+		    "password1",
+		    null,
+		    null
+		);
+
+		BoxHttpClient	client2	= service.getOrBuildClient(
+		    "HTTP/2",
+		    true,
+		    30,
+		    "proxy.example.com",
+		    8080,
+		    "proxyUser",
+		    "password2",
+		    null,
+		    null
+		);
+
+		// Different passwords must never share the same underlying client
+		assertThat( client1 ).isNotSameInstanceAs( client2 );
+		assertThat( service.getClientCount() ).isEqualTo( 2 );
+
+		// Sanity: same password yields the same (cached) client
+		BoxHttpClient client1Again = service.getOrBuildClient(
+		    "HTTP/2",
+		    true,
+		    30,
+		    "proxy.example.com",
+		    8080,
+		    "proxyUser",
+		    "password1",
+		    null,
+		    null
+		);
+		assertThat( client1 ).isSameInstanceAs( client1Again );
+		assertThat( service.getClientCount() ).isEqualTo( 2 );
+	}
+
 	@DisplayName( "Test hasClient returns true for existing client" )
 	@Test
 	void testHasClientReturnsTrue() {
