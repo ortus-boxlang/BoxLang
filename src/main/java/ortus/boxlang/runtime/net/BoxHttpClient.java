@@ -1959,6 +1959,30 @@ public class BoxHttpClient {
 						BoxHttpClient.this.bytesReceived.addAndGet( ( ( byte[] ) fileContent ).length );
 					}
 				}
+
+				/**
+				 * ------------------------------------------------------------------------------
+				 * ON HTTP RESPONSE EVENT (ERROR PATH)
+				 * ------------------------------------------------------------------------------
+				 * When a network-level failure occurs (timeout, DNS, connection error, etc.)
+				 * the success-path announcements inside invokeBuffered/invokeStreaming are
+				 * never reached. We announce ON_HTTP_RESPONSE here so that interceptors
+				 * subscribed to that event can observe ALL requests, not only successful ones.
+				 *
+				 * Interceptors must null-check the {@code response} key — it will be
+				 * {@code null} on error paths where no raw HttpResponse was received.
+				 * The {@code result} struct is fully populated by {@link #ensureDefaultResponseKeys()}
+				 * before this point, so its shape is stable regardless of failure type.
+				 */
+				if ( this.error ) {
+					interceptorService.announce(
+					    BoxEvent.ON_HTTP_RESPONSE,
+					    ( java.util.function.Supplier<IStruct> ) () -> Struct.ofNonConcurrent(
+					        Key.result, this.httpResult,
+					        Key.response, null,
+					        Key.httpClient, BoxHttpClient.this,
+					        Key.chunkCount, 0 ) );
+				}
 			}
 
 			return this;

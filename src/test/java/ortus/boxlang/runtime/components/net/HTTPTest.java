@@ -70,10 +70,14 @@ import org.junit.jupiter.api.Test;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -2124,6 +2128,71 @@ public class HTTPTest {
 		assertThat( resultStruct.containsKey( Key.statusCode ) ).isTrue();
 		assertThat( resultStruct.containsKey( Key.fileContent ) ).isTrue();
 		assertThat( resultStruct.getAsInteger( Key.statusCode ) ).isEqualTo( 200 );
+	}
+
+	@DisplayName( "onHTTPResponse interceptor fires on network-level errors with null response" )
+	@Test
+	public void testOnHTTPResponseInterceptorFiredOnNetworkError( WireMockRuntimeInfo wmRuntimeInfo ) {
+		// Stub a slow endpoint that will trigger a timeout
+		stubFor( get( urlEqualTo( "/interceptor-timeout" ) )
+		    .willReturn( ok( "slow" ).withFixedDelay( 5000 ) ) );
+
+		String			baseURL					= wmRuntimeInfo.getHttpBaseUrl();
+
+		// Counters / captured values set by the interceptor
+		AtomicBoolean	interceptorCalled		= new AtomicBoolean( false );
+		AtomicBoolean	responseWasNull			= new AtomicBoolean( false );
+		AtomicInteger	capturedStatusCode		= new AtomicInteger( 0 );
+		AtomicBoolean	resultHadErrorDetail	= new AtomicBoolean( false );
+
+		// Register an interceptor for ON_HTTP_RESPONSE
+		instance.getInterceptorService().register(
+		    data -> {
+			    interceptorCalled.set( true );
+			    // On the error path the raw response object is null
+			    responseWasNull.set( data.get( Key.of( "response" ) ) == null );
+			    IStruct res = ( IStruct ) data.get( Key.of( "result" ) );
+			    if ( res != null ) {
+				    Object sc = res.get( Key.statusCode );
+				    if ( sc instanceof Number n ) {
+					    capturedStatusCode.set( n.intValue() );
+				    }
+				    Object ed = res.get( Key.errorDetail );
+				    resultHadErrorDetail.set( ed != null && !ed.toString().isEmpty() );
+			    }
+			    return false;
+		    },
+		    BoxEvent.ON_HTTP_RESPONSE.key() );
+
+		try {
+			// Trigger a timeout – this will hit the ExecutionException/HttpTimeoutException
+			// catch branch inside BoxHttpRequest.invoke()
+			instance.executeSource(
+			    String.format(
+			        """
+			        	bx:http result="result" url="%s" timeout="1";
+			        """,
+			        baseURL + "/interceptor-timeout"
+			    ),
+			    context
+			);
+		} finally {
+			// Always clean up the interceptor state to avoid polluting other tests
+			instance.getInterceptorService().clearInterceptionStates();
+		}
+
+		// The interceptor must have been called even though the request failed
+		assertThat( interceptorCalled.get() ).isTrue();
+
+		// response must be null on the error path (no raw HttpResponse was received)
+		assertThat( responseWasNull.get() ).isTrue();
+
+		// The result struct should carry a non-200 status code indicating an error
+		assertThat( capturedStatusCode.get() ).isGreaterThan( 0 );
+		assertThat( capturedStatusCode.get() ).isAtLeast( 400 );
+
+		// The result struct should carry an errorDetail message
+		assertThat( resultHadErrorDetail.get() ).isTrue();
 	}
 
 	private X509Certificate generateSelfSignedCertificate( KeyPair keyPair ) throws Exception {
