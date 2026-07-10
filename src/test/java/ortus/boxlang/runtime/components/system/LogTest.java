@@ -47,20 +47,20 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 @Execution( ExecutionMode.SAME_THREAD )
 public class LogTest {
 
-	static BoxRuntime				instance;
-	static String					logsDirectory;
-	IBoxContext						context;
-	IScope							variables;
-	static Key						result		= new Key( "result" );
-	static String					logFilePath;
-	static String					logFileName;
+	static BoxRuntime	instance;
+	static String		logsDirectory;
+	IBoxContext			context;
+	IScope				variables;
+	static Key			result	= new Key( "result" );
+	static String		logFilePath;
+	static String		logFileName;
 
 	@BeforeAll
 	public static void setUp() {
 		instance		= BoxRuntime.getInstance( true );
 		logsDirectory	= instance.getConfiguration().logging.logsDirectory;
-		logFileName	= "bxlog.log";
-		logFilePath	= Paths.get( logsDirectory, "/" + logFileName ).normalize().toString();
+		logFileName		= "bxlog.log";
+		logFilePath		= Paths.get( logsDirectory, "/" + logFileName ).normalize().toString();
 		deleteLogFile();
 	}
 
