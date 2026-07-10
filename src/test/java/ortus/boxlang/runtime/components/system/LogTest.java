@@ -23,23 +23,24 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Paths;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
-import ortus.boxlang.runtime.logging.LoggingService;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
+@Execution( ExecutionMode.SAME_THREAD )
 public class LogTest {
 
 	static BoxRuntime	instance;
@@ -57,14 +58,6 @@ public class LogTest {
 		logFileName		= "bxlog.log";
 		// NOTE: No leading "/" on the second argument — otherwise Java treats it as an absolute path
 		logFilePath		= Paths.get( logsDirectory, logFileName ).normalize().toString();
-	}
-
-	@AfterAll
-	public static void tearDown() {
-		LoggingService.getInstance().shutdownAppenders();
-		if ( FileSystemUtil.exists( logFilePath ) ) {
-			FileSystemUtil.deleteFile( logFilePath );
-		}
 	}
 
 	@BeforeEach
@@ -94,14 +87,14 @@ public class LogTest {
 	public void testComponentCF() {
 		instance.executeSource(
 		    """
-		    <cflog text="Hello Logger!" file="bxlog.log" />
+		    <cflog text="Hello CF!" file="bxlog.log" />
 		    """,
 		    context, BoxSourceType.CFTEMPLATE );
 
 		String logContent = readLogFile();
 		assertTrue(
-		    logContent.contains( "Hello Logger!" ),
-		    "Log file should contain 'Hello Logger!' but was: [" + logContent + "]"
+		    logContent.contains( "Hello CF!" ),
+		    "Log file should contain 'Hello CF!' but was: [" + logContent + "]"
 		);
 	}
 
@@ -110,14 +103,14 @@ public class LogTest {
 	public void testComponentBX() {
 		instance.executeSource(
 		    """
-		    <bx:log text="Hello Logger!" file="bxlog.log" />
+		    <bx:log text="Hello BX!" file="bxlog.log" />
 		    """,
 		    context, BoxSourceType.BOXTEMPLATE );
 
 		String logContent = readLogFile();
 		assertTrue(
-		    logContent.contains( "Hello Logger!" ),
-		    "Log file should contain 'Hello Logger!' but was: [" + logContent + "]"
+		    logContent.contains( "Hello BX!" ),
+		    "Log file should contain 'Hello BX!' but was: [" + logContent + "]"
 		);
 	}
 
