@@ -19,10 +19,14 @@
 
 package ortus.boxlang.runtime.components.system;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static com.google.common.truth.Truth.assertThat;
 
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 
+import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -34,7 +38,7 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.logging.LoggingService;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -43,27 +47,40 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 @Execution( ExecutionMode.SAME_THREAD )
 public class LogTest {
 
-	static BoxRuntime	instance;
-	static String		logsDirectory;
-	IBoxContext			context;
-	IScope				variables;
-	static Key			result	= new Key( "result" );
-	static String		logFilePath;
-	static String		logFileName;
+	static BoxRuntime				instance;
+	static String					logsDirectory;
+	IBoxContext						context;
+	IScope							variables;
+	static Key						result		= new Key( "result" );
+	static String					logFilePath;
+	static String					logFileName;
+	static ByteArrayOutputStream	outContent;
+	static PrintStream				originalOut	= System.out;
 
 	@BeforeAll
 	public static void setUp() {
 		instance		= BoxRuntime.getInstance( true );
 		logsDirectory	= instance.getConfiguration().logging.logsDirectory;
-		logFileName		= "bxlog.log";
-		// NOTE: No leading "/" on the second argument — otherwise Java treats it as an absolute path
-		logFilePath		= Paths.get( logsDirectory, logFileName ).normalize().toString();
+		outContent		= new ByteArrayOutputStream();
+		System.setOut( new PrintStream( outContent ) );
+		logFileName	= "bxlog.log";
+		logFilePath	= Paths.get( logsDirectory, "/" + logFileName ).normalize().toString();
+	}
+
+	@AfterAll
+	public static void tearDown() {
+		System.setOut( originalOut );
+		LoggingService.getInstance().shutdownAppenders();
+		if ( FileSystemUtil.exists( logFilePath ) ) {
+			FileSystemUtil.deleteFile( logFilePath );
+		}
 	}
 
 	@BeforeEach
 	public void setupEach() {
 		context		= new ScriptingRequestBoxContext( instance.getRuntimeContext() );
 		variables	= context.getScopeNearby( VariablesScope.name );
+		outContent.reset();
 	}
 
 	@DisplayName( "It tests the BIF Log with Script parsing" )
@@ -74,12 +91,7 @@ public class LogTest {
 		    bx:log text="Hello Logger!" file="bxlog";
 		    """,
 		    context, BoxSourceType.BOXSCRIPT );
-
-		String logContent = readLogFile();
-		assertTrue(
-		    logContent.contains( "Hello Logger!" ),
-		    "Log file should contain 'Hello Logger!' but was: [" + logContent + "]"
-		);
+		assertThat( outContent.toString( StandardCharsets.UTF_8 ) ).contains( "Hello Logger!" );
 	}
 
 	@DisplayName( "It tests the BIF Log with CFML parsing" )
@@ -90,12 +102,7 @@ public class LogTest {
 		    <cflog text="Hello CF!" file="bxlog.log" />
 		    """,
 		    context, BoxSourceType.CFTEMPLATE );
-
-		String logContent = readLogFile();
-		assertTrue(
-		    logContent.contains( "Hello CF!" ),
-		    "Log file should contain 'Hello CF!' but was: [" + logContent + "]"
-		);
+		assertThat( outContent.toString( StandardCharsets.UTF_8 ) ).contains( "Hello CF!" );
 	}
 
 	@DisplayName( "It tests the BIF Log with BoxLang parsing" )
@@ -106,25 +113,7 @@ public class LogTest {
 		    <bx:log text="Hello BX!" file="bxlog.log" />
 		    """,
 		    context, BoxSourceType.BOXTEMPLATE );
-
-		String logContent = readLogFile();
-		assertTrue(
-		    logContent.contains( "Hello BX!" ),
-		    "Log file should contain 'Hello BX!' but was: [" + logContent + "]"
-		);
-	}
-
-	/**
-	 * Reads the log file content for assertion. If the file does not exist,
-	 * returns a diagnostic string including the expected path.
-	 *
-	 * @return The log file content or a diagnostic message if not found.
-	 */
-	private String readLogFile() {
-		if ( !FileSystemUtil.exists( logFilePath ) ) {
-			return "(log file not found at: " + logFilePath + ")";
-		}
-		return StringCaster.cast( FileSystemUtil.read( logFilePath ) );
+		assertThat( outContent.toString( StandardCharsets.UTF_8 ) ).contains( "Hello BX!" );
 	}
 
 }
