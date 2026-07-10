@@ -2133,9 +2133,9 @@ public class HTTPTest {
 	@DisplayName( "onHTTPResponse interceptor fires on network-level errors with null response" )
 	@Test
 	public void testOnHTTPResponseInterceptorFiredOnNetworkError( WireMockRuntimeInfo wmRuntimeInfo ) {
-		// Stub a slow endpoint that will trigger a timeout
+		// Stub a slow endpoint that will trigger a timeout (delay just over the 1s request timeout)
 		stubFor( get( urlEqualTo( "/interceptor-timeout" ) )
-		    .willReturn( ok( "slow" ).withFixedDelay( 5000 ) ) );
+		    .willReturn( ok( "slow" ).withFixedDelay( 1500 ) ) );
 
 		String			baseURL					= wmRuntimeInfo.getHttpBaseUrl();
 
@@ -2187,8 +2187,7 @@ public class HTTPTest {
 		// response must be null on the error path (no raw HttpResponse was received)
 		assertThat( responseWasNull.get() ).isTrue();
 
-		// The result struct should carry a non-200 status code indicating an error
-		assertThat( capturedStatusCode.get() ).isGreaterThan( 0 );
+		// The result struct should carry an error status code (408 for timeout)
 		assertThat( capturedStatusCode.get() ).isAtLeast( 400 );
 
 		// The result struct should carry an errorDetail message
