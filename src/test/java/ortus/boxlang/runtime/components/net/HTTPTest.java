@@ -2130,9 +2130,9 @@ public class HTTPTest {
 		assertThat( resultStruct.getAsInteger( Key.statusCode ) ).isEqualTo( 200 );
 	}
 
-	@DisplayName( "onHTTPResponse interceptor fires on network-level errors with null response" )
+	@DisplayName( "onHTTPError interceptor fires on network-level errors" )
 	@Test
-	public void testOnHTTPResponseInterceptorFiredOnNetworkError( WireMockRuntimeInfo wmRuntimeInfo ) {
+	public void testOnHTTPErrorInterceptorFiredOnNetworkError( WireMockRuntimeInfo wmRuntimeInfo ) {
 		// Stub a slow endpoint that will trigger a timeout (delay just over the 1s request timeout)
 		stubFor( get( urlEqualTo( "/interceptor-timeout" ) )
 		    .willReturn( ok( "slow" ).withFixedDelay( 1500 ) ) );
@@ -2141,16 +2141,13 @@ public class HTTPTest {
 
 		// Counters / captured values set by the interceptor
 		AtomicBoolean	interceptorCalled		= new AtomicBoolean( false );
-		AtomicBoolean	responseWasNull			= new AtomicBoolean( false );
 		AtomicInteger	capturedStatusCode		= new AtomicInteger( 0 );
 		AtomicBoolean	resultHadErrorDetail	= new AtomicBoolean( false );
 
-		// Register an interceptor for ON_HTTP_RESPONSE
+		// Register an interceptor for ON_HTTP_ERROR
 		instance.getInterceptorService().register(
 		    data -> {
 			    interceptorCalled.set( true );
-			    // On the error path the raw response object is null
-			    responseWasNull.set( data.get( Key.of( "response" ) ) == null );
 			    IStruct res = ( IStruct ) data.get( Key.of( "result" ) );
 			    if ( res != null ) {
 				    Object sc = res.get( Key.statusCode );
@@ -2162,7 +2159,7 @@ public class HTTPTest {
 			    }
 			    return false;
 		    },
-		    BoxEvent.ON_HTTP_RESPONSE.key() );
+		    BoxEvent.ON_HTTP_ERROR.key() );
 
 		try {
 			// Trigger a timeout – this will hit the ExecutionException/HttpTimeoutException
@@ -2183,9 +2180,6 @@ public class HTTPTest {
 
 		// The interceptor must have been called even though the request failed
 		assertThat( interceptorCalled.get() ).isTrue();
-
-		// response must be null on the error path (no raw HttpResponse was received)
-		assertThat( responseWasNull.get() ).isTrue();
 
 		// The result struct should carry an error status code (408 for timeout)
 		assertThat( capturedStatusCode.get() ).isAtLeast( 400 );
