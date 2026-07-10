@@ -290,15 +290,15 @@ public class HttpServiceTest {
 		    null
 		);
 
-		Key clientKey = service.buildClientKey( "HTTP/2", true, 30, null, null, null, null, null, null );
-		assertThat( service.hasClient( clientKey ) ).isTrue();
+		String clientKey = service.buildClientKey( "HTTP/2", true, 30, null, null, null, null, null, null );
+		assertThat( service.hasClient( Key.of( clientKey ) ) ).isTrue();
 	}
 
 	@DisplayName( "Test hasClient returns false for non-existing client" )
 	@Test
 	void testHasClientReturnsFalse() {
-		Key clientKey = service.buildClientKey( "HTTP/1.1", false, 60, null, null, null, null, null, null );
-		assertThat( service.hasClient( clientKey ) ).isFalse();
+		String clientKey = service.buildClientKey( "HTTP/1.1", false, 60, null, null, null, null, null, null );
+		assertThat( service.hasClient( Key.of( clientKey ) ) ).isFalse();
 	}
 
 	@DisplayName( "Test getClient returns null for non-existing client" )
@@ -325,11 +325,11 @@ public class HttpServiceTest {
 
 		assertThat( service.getClientCount() ).isEqualTo( 1 );
 
-		Key clientKey = service.buildClientKey( "HTTP/2", true, 30, null, null, null, null, null, null );
-		service.removeClient( clientKey );
+		String clientKey = service.buildClientKey( "HTTP/2", true, 30, null, null, null, null, null, null );
+		service.removeClient( Key.of( clientKey ) );
 
 		assertThat( service.getClientCount() ).isEqualTo( 0 );
-		assertThat( service.hasClient( clientKey ) ).isFalse();
+		assertThat( service.hasClient( Key.of( clientKey ) ) ).isFalse();
 	}
 
 	@DisplayName( "Test removeClient returns service for method chaining" )
@@ -347,8 +347,8 @@ public class HttpServiceTest {
 		    null
 		);
 
-		Key			clientKey		= service.buildClientKey( "HTTP/2", true, 30, null, null, null, null, null, null );
-		HttpService	returnedService	= service.removeClient( clientKey );
+		String		clientKey		= service.buildClientKey( "HTTP/2", true, 30, null, null, null, null, null, null );
+		HttpService	returnedService	= service.removeClient( Key.of( clientKey ) );
 
 		assertThat( returnedService ).isSameInstanceAs( service );
 	}
