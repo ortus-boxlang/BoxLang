@@ -46,7 +46,7 @@ public class LogTest {
 	static String		logsDirectory;
 	IBoxContext			context;
 	IScope				variables;
-	static Key			result		= new Key( "result" );
+	static Key			result	= new Key( "result" );
 	static String		logFilePath;
 	static String		logFileName;
 
