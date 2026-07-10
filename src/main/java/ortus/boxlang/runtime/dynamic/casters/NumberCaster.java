@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.dynamic.casters;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Duration;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.math.NumberUtils;
 
@@ -39,7 +40,12 @@ public class NumberCaster implements IBoxCaster {
 	 * If true, booleans will be treated as numbers, with true=1 and false=0
 	 * This is here for compat to toggle
 	 */
-	public static boolean booleansAreNumbers = false;
+	public static boolean			booleansAreNumbers		= false;
+
+	/**
+	 * Pre-compiled regex to quickly test if a string contains at least one numeric digit.
+	 */
+	private static final Pattern	CONTAINS_DIGIT_PATTERN	= Pattern.compile( ".*\\d.*" );
 
 	/**
 	 * Tests to see if the value can be cast to a Number.
@@ -166,7 +172,7 @@ public class NumberCaster implements IBoxCaster {
 		}
 
 		// Last ditch effort-- if it's a string and castDates is true, see if it's a string that can be cast to a date that can be cast to a number
-		if ( castDates && object instanceof String s ) {
+		if ( castDates && object instanceof String s && CONTAINS_DIGIT_PATTERN.matcher( s ).matches() ) {
 			var dateAttempt = DateTimeCaster.attempt( s );
 			if ( dateAttempt.wasSuccessful() ) {
 				return DateTimeHelper.toFractionalDays( dateAttempt.get().toEpochMillis() );
