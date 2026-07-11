@@ -21,6 +21,7 @@ package ortus.boxlang.runtime.components.system;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.io.File;
 import java.nio.file.Paths;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
@@ -126,6 +127,14 @@ public class LogTest {
 			LockSupport.parkNanos( TimeUnit.MILLISECONDS.toNanos( 25 ) );
 		}
 		System.out.println( "Failed to find expected text in log file within the deadline." );
+		// list out all the files found in the dictory we've been looking for the log file in
+		File logsDir = new File( logsDirectory );
+		if ( logsDir.exists() && logsDir.isDirectory() ) {
+			System.out.println( "Files in logs directory:" );
+			for ( File file : logsDir.listFiles() ) {
+				System.out.println( " - " + file.getName() );
+			}
+		}
 
 		return content;
 	}
