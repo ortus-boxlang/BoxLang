@@ -20,7 +20,6 @@ package ortus.boxlang.runtime.dynamic.casters;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.Duration;
-import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.math.NumberUtils;
 
@@ -40,24 +39,35 @@ public class NumberCaster implements IBoxCaster {
 	 * If true, booleans will be treated as numbers, with true=1 and false=0
 	 * This is here for compat to toggle
 	 */
-	public static boolean			booleansAreNumbers		= false;
-
-	/**
-	 * Pre-compiled regex to quickly test if a string contains at least one numeric digit.
-	 */
-	private static final Pattern	CONTAINS_DIGIT_PATTERN	= Pattern.compile( ".*\\d.*" );
+	public static boolean booleansAreNumbers = false;
 
 	/**
 	 * Tests to see if the value can be cast to a Number.
 	 * Returns a {@code CastAttempt<T>} which will contain the result if casting was
 	 * was successfull, or can be interogated to proceed otherwise.
 	 *
-	 * @param object The value to cast to a Number
+	 * @param object    The value to cast to a Number
+	 * @param castDates If true, attempt to cast date-like objects to numbers
 	 *
 	 * @return The Number value
 	 */
 	public static CastAttempt<Number> attempt( Object object, boolean castDates ) {
 		return CastAttempt.ofNullable( cast( object, false, castDates ) );
+	}
+
+	/**
+	 * Tests to see if the value can be cast to a Number.
+	 * Returns a {@code CastAttempt<T>} which will contain the result if casting was
+	 * was successfull, or can be interogated to proceed otherwise.
+	 *
+	 * @param object          The value to cast to a Number
+	 * @param castDates       If true, attempt to cast date-like objects to numbers
+	 * @param castStringDates If true, attempt to cast string representations of dates to numbers
+	 *
+	 * @return The Number value
+	 */
+	public static CastAttempt<Number> attempt( Object object, boolean castDates, boolean castStringDates ) {
+		return CastAttempt.ofNullable( cast( object, false, castDates, castStringDates ) );
 	}
 
 	/**
@@ -96,6 +106,17 @@ public class NumberCaster implements IBoxCaster {
 	}
 
 	/**
+	 * Used to cast anything to a Number, throwing exception if we fail
+	 *
+	 * @param object The value to cast to a Number
+	 *
+	 * @return The Number value
+	 */
+	public static Number cast( boolean castDates, boolean castStringDates, Object object ) {
+		return cast( object, true, castDates, castStringDates );
+	}
+
+	/**
 	 * Used to cast anything to a Number
 	 *
 	 * @param object The value to cast to a Number
@@ -110,12 +131,27 @@ public class NumberCaster implements IBoxCaster {
 	/**
 	 * Used to cast anything to a Number
 	 *
-	 * @param object The value to cast to a Number
-	 * @param fail   If true, throw exception if we fail
+	 * @param object    The value to cast to a Number
+	 * @param fail      If true, throw exception if we fail
+	 * @param castDates If true, attempt to cast date-like objects to numbers
 	 *
 	 * @return The Number value
 	 */
 	public static Number cast( Object object, Boolean fail, boolean castDates ) {
+		return cast( object, fail, castDates, false );
+	}
+
+	/**
+	 * Used to cast anything to a Number
+	 *
+	 * @param object          The value to cast to a Number
+	 * @param fail            If true, throw exception if we fail
+	 * @param castDates       If true, attempt to cast date-like objects to numbers
+	 * @param castStringDates If true, attempt to cast string representations of dates to numbers
+	 *
+	 * @return The Number value
+	 */
+	public static Number cast( Object object, Boolean fail, boolean castDates, boolean castStringDates ) {
 		if ( object == null ) {
 			return 0;
 		}
@@ -172,7 +208,7 @@ public class NumberCaster implements IBoxCaster {
 		}
 
 		// Last ditch effort-- if it's a string and castDates is true, see if it's a string that can be cast to a date that can be cast to a number
-		if ( castDates && object instanceof String s && CONTAINS_DIGIT_PATTERN.matcher( s ).matches() ) {
+		if ( castDates && object instanceof String s ) {
 			var dateAttempt = DateTimeCaster.attempt( s );
 			if ( dateAttempt.wasSuccessful() ) {
 				return DateTimeHelper.toFractionalDays( dateAttempt.get().toEpochMillis() );
