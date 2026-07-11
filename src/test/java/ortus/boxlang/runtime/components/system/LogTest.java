@@ -112,16 +112,20 @@ public class LogTest {
 	private static String getLogFileContent( String expectedText ) {
 		long	deadline	= System.nanoTime() + TimeUnit.SECONDS.toNanos( 2 );
 		String	content		= "";
-
+		System.out.println( "logFilePath: " + logFilePath );
 		while ( System.nanoTime() < deadline ) {
+			System.out.println( "Checking log file content..." );
 			if ( FileSystemUtil.exists( logFilePath ) ) {
+				System.out.println( "Log file exists." );
 				content = StringCaster.cast( FileSystemUtil.read( logFilePath ) );
+				System.out.println( "Log file content: " + content );
 				if ( content.contains( expectedText ) ) {
 					return content;
 				}
 			}
 			LockSupport.parkNanos( TimeUnit.MILLISECONDS.toNanos( 25 ) );
 		}
+		System.out.println( "Failed to find expected text in log file within the deadline." );
 
 		return content;
 	}
