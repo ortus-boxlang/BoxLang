@@ -370,6 +370,62 @@ public class OracleDriverTest extends AbstractDriverTest {
 		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
 	}
 
+	@DisplayName( "It can call stored proc and map only the second result set (named)" )
+	@Test
+	public void testCallStoredProcSecondResultSetOnly() {
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedure" datasource="OracleDatasource" result="variables.result" debug=false>
+		        <bx:procparam dbvarname="in1" value="123" type="in" sqltype="integer" />
+		        <bx:procparam dbvarname="in2" value="hello" type="in" sqltype="nvarchar" />
+		        <bx:procparam dbvarname="inout1" value="10" type="inout" sqltype="integer" variable="inout1" />
+		        <bx:procparam dbvarname="out1" type="out" sqltype="nvarchar" variable="out1" />
+		        <bx:procresult name="secondOnlyResult" resultSet=2 />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		assertThat( variables.get( "inout1" ) ).isEqualTo( 223 );
+		assertThat( variables.get( "out1" ) ).isEqualTo( "foo-123-hello" );
+
+		assertThat( variables.get( "secondOnlyResult" ) ).isInstanceOf( Query.class );
+		Query rs2 = variables.getAsQuery( Key.of( "secondOnlyResult" ) );
+		assertThat( rs2.size() ).isEqualTo( 1 );
+		assertThat( rs2.getRowAsStruct( 0 ).getAsString( Key.of( "myColumn" ) ) ).isEqualTo( "second" );
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct resultStruct = variables.getAsStruct( result );
+		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
+	}
+
+	@DisplayName( "It can call stored proc and map only the second result set (positional)" )
+	@Test
+	public void testCallStoredProcSecondResultSetOnlyPositional() {
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedure" datasource="OracleDatasource" result="variables.result" debug=false>
+		        <bx:procparam value="123" type="in" sqltype="integer" />
+		        <bx:procparam value="hello" type="in" sqltype="nvarchar" />
+		        <bx:procparam value="10" type="inout" sqltype="integer" variable="inout1Positional" />
+		        <bx:procparam type="out" sqltype="nvarchar" variable="out1Positional" />
+		        <bx:procresult name="secondOnlyResultPositional" resultSet=2 />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		assertThat( variables.get( "inout1Positional" ) ).isEqualTo( 223 );
+		assertThat( variables.get( "out1Positional" ) ).isEqualTo( "foo-123-hello" );
+
+		assertThat( variables.get( "secondOnlyResultPositional" ) ).isInstanceOf( Query.class );
+		Query rs2 = variables.getAsQuery( Key.of( "secondOnlyResultPositional" ) );
+		assertThat( rs2.size() ).isEqualTo( 1 );
+		assertThat( rs2.getRowAsStruct( 0 ).getAsString( Key.of( "myColumn" ) ) ).isEqualTo( "second" );
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct resultStruct = variables.getAsStruct( result );
+		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
+	}
+
 	@DisplayName( "It can handle large blob and clob columns" )
 	@Test
 	public void testLargeBlobAndClobColumns() {
