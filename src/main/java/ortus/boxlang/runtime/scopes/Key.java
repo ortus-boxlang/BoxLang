@@ -93,6 +93,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		additive							= Key.of( "additive" );
 	public static final Key		addnewline							= Key.of( "addnewline" );
 	public static final Key		addToken							= Key.of( "addToken" );
+	public static final Key		after								= Key.of( "after" );
 	public static final Key		afterAnyTask						= Key.of( "afterAnyTask" );
 	public static final Key		algorithm							= Key.of( "algorithm" );
 	public static final Key		all									= Key.of( "all" );
@@ -137,6 +138,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		autoCreate							= Key.of( "autoCreate" );
 	public static final Key		base64_or_object					= Key.of( "base64_or_object" );
 	public static final Key		baseTag								= Key.of( "baseTag" );
+	public static final Key		before								= Key.of( "before" );
 	public static final Key		beforeAnyTask						= Key.of( "beforeAnyTask" );
 	public static final Key		bif									= Key.of( "bif" );
 	public static final Key		bigdecimal							= Key.of( "bigdecimal" );
@@ -701,6 +703,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		onSessionStart						= Key.of( "onSessionStart" );
 	public static final Key		onShutdown							= Key.of( "onShutdown" );
 	public static final Key		onStartup							= Key.of( "onStartup" );
+	public static final Key		onSuccess							= Key.of( "onSuccess" );
 	public static final Key		onUnload							= Key.of( "onUnload" );
 	public static final Key		operation							= Key.of( "operation" );
 	public static final Key		options								= Key.of( "options" );

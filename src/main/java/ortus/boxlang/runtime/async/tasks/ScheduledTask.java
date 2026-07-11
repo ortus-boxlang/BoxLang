@@ -475,8 +475,15 @@ public class ScheduledTask implements Runnable {
 			// Execution by type
 			switch ( task ) {
 				case DynamicObject castedTask -> {
-					this.stats.put( "lastResult", Optional
-					    .ofNullable( castedTask.invoke( this.taskContext, method ) ) );
+					Object	targetInstance	= castedTask.getTargetInstance();
+					Object	result;
+					// BoxLang classes/objects dispatch UDFs dynamically (this scope), not via JVM reflection
+					if ( targetInstance instanceof IReferenceable referenceable ) {
+						result = referenceable.dereferenceAndInvoke( this.taskContext, Key.of( method ), DynamicObject.EMPTY_ARGS, false );
+					} else {
+						result = castedTask.invoke( this.taskContext, method );
+					}
+					this.stats.put( "lastResult", Optional.ofNullable( result ) );
 				}
 				case Callable<?> castedTask -> {
 					this.stats.put( "lastResult", Optional.ofNullable( castedTask.call() ) );
@@ -764,7 +771,10 @@ public class ScheduledTask implements Runnable {
 	 * @return The ScheduledTask instance
 	 */
 	public ScheduledTask call( DynamicObject task, String method ) {
-		return call( task, method );
+		debugLog( "call" );
+		setTask( task );
+		setMethod( method == null ? "run" : method );
+		return this;
 	}
 
 	/**
