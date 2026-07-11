@@ -791,6 +791,7 @@ public class LoggingService {
 	 * @return The logger requested
 	 */
 	private BoxLangLogger createLogger( Key loggerKey, String loggerFilePath ) {
+		System.out.println( "Creating logger for key: " + loggerKey.getName() + " with file path: " + loggerFilePath );
 		LoggerContext	targetContext	= getLoggerContext();
 		Logger			oLogger			= targetContext.getLogger( loggerKey.getName().toUpperCase() );
 
@@ -803,7 +804,7 @@ public class LoggingService {
 		// Seed the properties
 		oLogger.setLevel( configLevel );
 		oLogger.setAdditive( loggerConfig.additive );
-
+		System.out.println( "Logger [" + loggerKey.getName() + "] level set to: " + configLevel );
 		// Only build/attach appenders when the logger is not effectively disabled
 		if ( configLevel != Level.OFF ) {
 			Appender<ILoggingEvent> loggerAppender = getOrBuildAppender( loggerFilePath, targetContext, loggerConfig );
