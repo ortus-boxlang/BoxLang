@@ -506,6 +506,10 @@ public class LoggingService {
 		}
 
 		// Compute and get the logger
+		if ( message != null && message.contains( "Hello BX!" ) ) {
+			System.out.println( "Logging Hello BX! message to logger: " + logger );
+
+		}
 		BoxLangLogger oLogger = getLogger( logger );
 
 		// Log according to the level
