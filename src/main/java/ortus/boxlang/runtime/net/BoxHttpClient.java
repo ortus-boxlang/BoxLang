@@ -39,7 +39,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
@@ -84,16 +86,17 @@ public class BoxHttpClient {
 	 * ------------------------------------------------------------------------------
 	 */
 
-	public static final String											HTTP_1						= "HTTP/1.1";
-	public static final String											HTTP_2						= "HTTP/2";
-	public static final String											DEFAULT_USER_AGENT			= "BoxLang-HttpClient/1.0";
-	public static final String											DEFAULT_CHARSET				= StandardCharsets.UTF_8.name();
-	public static final String											DEFAULT_METHOD				= "GET";
-	public static final int												DEFAULT_CONNECTION_TIMEOUT	= 15;
-	public static final int												DEFAULT_READ_TIMEOUT		= 15;
-	public static final int												DEFAULT_REQUEST_TIMEOUT		= 0;
-	public static final boolean											DEFAULT_THROW_ON_ERROR		= false;
-	private static final Set<String>									JAVA_RESTRICTED_HEADERS		= Set.of(
+	public static final String											HTTP_1							= "HTTP/1.1";
+	public static final int												MAX_OBSERVED_HOSTS				= 100;
+	public static final String											HTTP_2							= "HTTP/2";
+	public static final String											DEFAULT_USER_AGENT				= "BoxLang-HttpClient/1.0";
+	public static final String											DEFAULT_CHARSET					= StandardCharsets.UTF_8.name();
+	public static final String											DEFAULT_METHOD					= "GET";
+	public static final int												DEFAULT_CONNECTION_TIMEOUT		= 15;
+	public static final int												DEFAULT_READ_TIMEOUT			= 15;
+	public static final int												DEFAULT_REQUEST_TIMEOUT			= 0;
+	public static final boolean											DEFAULT_THROW_ON_ERROR			= false;
+	private static final Set<String>									JAVA_RESTRICTED_HEADERS			= Set.of(
 	    "connection",
 	    "content-length",
 	    "expect",
@@ -102,9 +105,9 @@ public class BoxHttpClient {
 	);
 
 	// HTTP Status Codes
-	public static final int												STATUS_REQUEST_TIMEOUT		= 408;
-	public static final int												STATUS_INTERNAL_ERROR		= 500;
-	public static final int												STATUS_BAD_GATEWAY			= 502;
+	public static final int												STATUS_REQUEST_TIMEOUT			= 408;
+	public static final int												STATUS_INTERNAL_ERROR			= 500;
+	public static final int												STATUS_BAD_GATEWAY				= 502;
 
 	/**
 	 * ------------------------------------------------------------------------------
@@ -112,8 +115,8 @@ public class BoxHttpClient {
 	 * ------------------------------------------------------------------------------
 	 */
 
-	private static final BoxRuntime										runtime						= BoxRuntime.getInstance();
-	private static final InterceptorService								interceptorService			= runtime.getInterceptorService();
+	private static final BoxRuntime										runtime							= BoxRuntime.getInstance();
+	private static final InterceptorService								interceptorService				= runtime.getInterceptorService();
 
 	/**
 	 * ------------------------------------------------------------------------------
@@ -136,37 +139,45 @@ public class BoxHttpClient {
 	 */
 	private final BoxLangLogger											logger;
 
+	private final String												clientKey;
+	private final String												httpVersion;
+	private final boolean												followRedirects;
+	private final Integer												connectTimeoutSeconds;
+	private final Set<String>											observedHosts					= ConcurrentHashMap.newKeySet();
+	private final Object												observationLock					= new Object();
+	private volatile boolean											observedHostsTruncated;
+
 	/**
 	 * Tracks the last date + time the client was used.
 	 * Uses AtomicReference for thread-safe updates without synchronization.
 	 */
-	private final java.util.concurrent.atomic.AtomicReference<Instant>	lastUsedTimestamp			= new java.util.concurrent.atomic.AtomicReference<>(
+	private final java.util.concurrent.atomic.AtomicReference<Instant>	lastUsedTimestamp				= new java.util.concurrent.atomic.AtomicReference<>(
 	    null );
 
 	/**
 	 * Statistics tracking for this client.
 	 * Uses AtomicLong for thread-safe updates without synchronization.
 	 */
-	private final java.util.concurrent.atomic.AtomicLong				totalRequests				= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong				successfulRequests			= new java.util.concurrent.atomic.AtomicLong(
+	private final java.util.concurrent.atomic.AtomicLong				totalRequests					= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong				successfulRequests				= new java.util.concurrent.atomic.AtomicLong(
 	    0 );
-	private final java.util.concurrent.atomic.AtomicLong				failedRequests				= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong				timeoutFailures				= new java.util.concurrent.atomic.AtomicLong(
+	private final java.util.concurrent.atomic.AtomicLong				failedRequests					= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong				timeoutFailures					= new java.util.concurrent.atomic.AtomicLong(
 	    0 );
-	private final java.util.concurrent.atomic.AtomicLong				connectionFailures			= new java.util.concurrent.atomic.AtomicLong(
+	private final java.util.concurrent.atomic.AtomicLong				connectionFailures				= new java.util.concurrent.atomic.AtomicLong(
 	    0 );
-	private final java.util.concurrent.atomic.AtomicLong				tlsFailures					= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong				httpProtocolFailures		= new java.util.concurrent.atomic.AtomicLong(
+	private final java.util.concurrent.atomic.AtomicLong				tlsFailures						= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong				httpProtocolFailures			= new java.util.concurrent.atomic.AtomicLong(
 	    0 );
-	private final java.util.concurrent.atomic.AtomicLong				bytesReceived				= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong				bytesSent					= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong				totalExecutionTimeMs		= new java.util.concurrent.atomic.AtomicLong(
+	private final java.util.concurrent.atomic.AtomicLong				bytesReceived					= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong				bytesSent						= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong				totalExecutionTimeMs			= new java.util.concurrent.atomic.AtomicLong(
 	    0 );
-	private final java.util.concurrent.atomic.AtomicLong				minExecutionTimeMs			= new java.util.concurrent.atomic.AtomicLong(
+	private final java.util.concurrent.atomic.AtomicLong				minExecutionTimeMs				= new java.util.concurrent.atomic.AtomicLong(
 	    Long.MAX_VALUE );
-	private final java.util.concurrent.atomic.AtomicLong				maxExecutionTimeMs			= new java.util.concurrent.atomic.AtomicLong(
+	private final java.util.concurrent.atomic.AtomicLong				maxExecutionTimeMs				= new java.util.concurrent.atomic.AtomicLong(
 	    0 );
-	private final Instant												createdAt					= Instant.now();
+	private final Instant												createdAt						= Instant.now();
 
 	/**
 	 * ------------------------------------------------------------------------------
@@ -181,9 +192,33 @@ public class BoxHttpClient {
 	 * @param httpService The HttpService managing this client.
 	 */
 	public BoxHttpClient( HttpClient httpClient, HttpService httpService ) {
-		this.httpClient		= httpClient;
-		this.httpService	= httpService;
-		this.logger			= this.httpService.getLogger();
+		this( httpClient, httpService, null, null, false, null );
+	}
+
+	/**
+	 * Constructor to create a BoxHttpClient with configuration metadata.
+	 *
+	 * @param httpClient            The underlying HttpClient to be used for HTTP operations.
+	 * @param httpService           The HttpService managing this client.
+	 * @param clientKey             The cache key for this client.
+	 * @param httpVersion           The configured HTTP version.
+	 * @param followRedirects       Whether redirects are followed.
+	 * @param connectTimeoutSeconds The configured connection timeout in seconds, or null when unbounded.
+	 */
+	public BoxHttpClient(
+	    HttpClient httpClient,
+	    HttpService httpService,
+	    String clientKey,
+	    String httpVersion,
+	    boolean followRedirects,
+	    Integer connectTimeoutSeconds ) {
+		this.httpClient				= httpClient;
+		this.httpService			= httpService;
+		this.logger					= this.httpService.getLogger();
+		this.clientKey				= clientKey;
+		this.httpVersion			= httpVersion;
+		this.followRedirects		= followRedirects;
+		this.connectTimeoutSeconds	= connectTimeoutSeconds;
 	}
 
 	/**
@@ -267,6 +302,25 @@ public class BoxHttpClient {
 	}
 
 	/**
+	 * Record the requested host and request timeout before network execution starts.
+	 *
+	 * @param request The prepared request to observe.
+	 * @param requestTimeout The configured request timeout in seconds, or null if unbounded.
+	 */
+	private void observeRequest( HttpRequest request, Integer requestTimeout ) {
+		String host = request.uri().getHost();
+		synchronized ( this.observationLock ) {
+			if ( host != null && !this.observedHosts.contains( host ) ) {
+				if ( this.observedHosts.size() < MAX_OBSERVED_HOSTS ) {
+					this.observedHosts.add( host );
+				} else {
+					this.observedHostsTruncated = true;
+				}
+			}
+		}
+	}
+
+	/**
 	 * Get statistics for this HTTP client.
 	 *
 	 * @return A Struct containing usage statistics
@@ -274,6 +328,13 @@ public class BoxHttpClient {
 	public IStruct getStatistics() {
 		long minTime = this.minExecutionTimeMs.get();
 		return Struct.ofNonConcurrent(
+		    "clientKey", this.clientKey,
+		    "httpVersion", this.httpVersion,
+		    "followRedirects", this.followRedirects,
+		    "connectTimeoutSeconds", this.connectTimeoutSeconds != null ? this.connectTimeoutSeconds : 0,
+		    "connectTimeoutConfigured", this.connectTimeoutSeconds != null,
+		    "observedHosts", new ArrayList<>( this.observedHosts ),
+		    "observedHostsTruncated", this.observedHostsTruncated,
 		    Key.averageExecutionTimeMs, this.getAverageExecutionTimeMs(),
 		    Key.bytesReceived, this.bytesReceived.get(),
 		    Key.bytesSent, this.bytesSent.get(),
@@ -490,7 +551,6 @@ public class BoxHttpClient {
 		// Basic Authentication
 		private String											username;
 		private String											password;
-		// Only basic for now, maybe in the future NTLM, but that's legacy, kept here
 		// just in case, but never used
 		private String											authType			= "BASIC";
 
@@ -700,9 +760,9 @@ public class BoxHttpClient {
 		/**
 		 * Multipart mode
 		 *
-		 * @param multipart Whether the request is multipart
+		 * @param multipart Whether the request is multipart.
 		 *
-		 * @return
+		 * @return This builder for chaining.
 		 */
 		public BoxHttpRequest multipart( boolean multipart ) {
 			this.multipart = multipart;
@@ -1721,6 +1781,7 @@ public class BoxHttpClient {
 				 * This is used by streaming and buffered modes
 				 */
 				prepareRequest();
+				BoxHttpClient.this.observeRequest( this.targetHttpRequest, this.timeout );
 
 				/**
 				 * ------------------------------------------------------------------------------

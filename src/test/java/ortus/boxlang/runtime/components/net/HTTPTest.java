@@ -35,9 +35,12 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.net.URI;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.math.BigInteger;
+import java.util.List;
 import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -843,7 +846,7 @@ public class HTTPTest {
 		// @formatter:off
 		instance.executeSource( """
 			bx:http method="GET" url="http://exa mple.com";
-			
+
 			result = bxhttp;
 		""", context );
 		// @formatter:on
@@ -1723,6 +1726,10 @@ public class HTTPTest {
 
 		// HTTP error (500) is a successful request, just error status
 		assertThat( stats.getAsLong( Key.of( "successfulRequests" ) ) ).isGreaterThan( 0L );
+		assertThat( ( List<?> ) stats.get( Key.of( "observedHosts" ) ) ).contains( URI.create( baseURL ).getHost() );
+		assertThat( ( List<?> ) stats.get( Key.of( "observedHosts" ) ) ).contains( "invalid-host-that-does-not-exist-12345.com" );
+		assertThat( ( List<?> ) stats.get( Key.of( "observedRequestTimeoutSeconds" ) ) ).contains( 0 );
+		assertThat( ( List<?> ) stats.get( Key.of( "observedRequestTimeoutSeconds" ) ) ).contains( 1 );
 	}
 
 	@DisplayName( "Can track min and max execution times across multiple requests" )

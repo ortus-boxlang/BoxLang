@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.net.BoxHttpClient;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class HttpServiceTest {
@@ -408,6 +409,53 @@ public class HttpServiceTest {
 
 		assertThat( client ).isNotNull();
 		assertThat( service.getClientCount() ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "Test client statistics expose configuration metadata" )
+	@Test
+	void testClientStatisticsExposeConfigurationMetadata() {
+		BoxHttpClient	client	= service.getOrBuildClient(
+		    "HTTP/1.1",
+		    false,
+		    45,
+		    null,
+		    null,
+		    null,
+		    null,
+		    null,
+		    null
+		);
+
+		IStruct			stats	= client.getStatistics();
+
+		assertThat( stats.get( "clientKey" ) ).isEqualTo( service.buildClientKey( "HTTP/1.1", false, 45, null, null, null, null, null, null ) );
+		assertThat( stats.get( "httpVersion" ) ).isEqualTo( "HTTP/1.1" );
+		assertThat( stats.get( "followRedirects" ) ).isEqualTo( false );
+		assertThat( stats.get( "connectTimeoutSeconds" ) ).isEqualTo( 45 );
+		assertThat( stats.get( "connectTimeoutConfigured" ) ).isEqualTo( true );
+		assertThat( stats.get( "observedHosts" ) ).isNotNull();
+		assertThat( stats.get( "observedHostsTruncated" ) ).isEqualTo( false );
+	}
+
+	@DisplayName( "Test client statistics preserve an unconfigured connect timeout" )
+	@Test
+	void testClientStatisticsPreserveUnconfiguredConnectTimeout() {
+		BoxHttpClient	client	= service.getOrBuildClient(
+		    "HTTP/2",
+		    true,
+		    null,
+		    null,
+		    null,
+		    null,
+		    null,
+		    null,
+		    null
+		);
+
+		IStruct			stats	= client.getStatistics();
+
+		assertThat( stats.get( "connectTimeoutSeconds" ) ).isEqualTo( 0 );
+		assertThat( stats.get( "connectTimeoutConfigured" ) ).isEqualTo( false );
 	}
 
 	@DisplayName( "Test multiple clients can coexist" )

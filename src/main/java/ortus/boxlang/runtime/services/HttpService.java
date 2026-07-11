@@ -449,7 +449,14 @@ public class HttpService extends BaseService {
 			}
 
 			// Create our BoxHttpClient wrapper and cache it
-			BoxHttpClient newClient = new BoxHttpClient( builder.build(), this );
+			BoxHttpClient newClient = new BoxHttpClient(
+			    builder.build(),
+			    this,
+			    clientKey,
+			    httpVersion,
+			    followRedirects,
+			    connectTimeout
+			);
 			this.logger.trace( "HTTP client created and cached with key: {}", clientKey );
 			return putClient( Key.of( clientKey ), newClient );
 		}
