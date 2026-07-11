@@ -75,11 +75,6 @@ public class Log extends Component {
 			attributes.put( Key.applicationName, appContext.getApplication().getName() );
 		}
 		// Announce the log message
-
-		String text = ( String ) attributes.getOrDefault( Key.text, "" );
-		if ( text.contains( "Hello BX!" ) ) {
-			System.out.println( "log component received Hello BX! message.  Broadcasting interceptor with data: " + attributes.asString() );
-		}
 		interceptorService.announce( BoxEvent.LOG_MESSAGE, attributes );
 		return DEFAULT_RETURN;
 	}

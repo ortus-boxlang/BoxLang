@@ -81,10 +81,6 @@ public class Logging extends BaseInterceptor {
 		String	file			= ( String ) data.getOrDefault( Key.file, "" );
 		Object	applicationName	= data.get( Key.applicationName );
 
-		if ( text.contains( "Hello BX!" ) ) {
-			System.out.println( "Logging interceptor received Hello BX! message to logger: " + data.asString() );
-		}
-
 		// If the text is empty, then don't log anything
 		if ( text.isEmpty() ) {
 			return;

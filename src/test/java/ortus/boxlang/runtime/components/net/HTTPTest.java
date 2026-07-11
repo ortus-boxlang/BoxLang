@@ -50,6 +50,8 @@ import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.security.auth.x500.X500Principal;
 
@@ -69,9 +71,6 @@ import org.junit.jupiter.api.Test;
 
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
-
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -2174,8 +2173,8 @@ public class HTTPTest {
 			    context
 			);
 		} finally {
-			// Always clean up the interceptor state to avoid polluting other tests
-			instance.getInterceptorService().clearInterceptionStates();
+			// Only remove the state we registered on
+			instance.getInterceptorService().removeState( BoxEvent.ON_HTTP_ERROR.key() );
 		}
 
 		// The interceptor must have been called even though the request failed
