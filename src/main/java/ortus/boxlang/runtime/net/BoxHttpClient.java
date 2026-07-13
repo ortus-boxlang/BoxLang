@@ -18,7 +18,9 @@
 package ortus.boxlang.runtime.net;
 
 import java.io.File;
+import java.io.FilterInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.ConnectException;
 import java.net.SocketException;
 import java.net.URISyntaxException;
@@ -86,7 +88,6 @@ public class BoxHttpClient {
 	 */
 
 	public static final String											HTTP_1						= "HTTP/1.1";
-	public static final int												MAX_OBSERVED_HOSTS			= 100;
 	public static final String											HTTP_2						= "HTTP/2";
 	public static final String											DEFAULT_USER_AGENT			= "BoxLang-HttpClient/1.0";
 	public static final String											DEFAULT_CHARSET				= StandardCharsets.UTF_8.name();
@@ -143,8 +144,6 @@ public class BoxHttpClient {
 	private final boolean												followRedirects;
 	private final Integer												connectTimeoutSeconds;
 	private final Set<String>											observedHosts				= ConcurrentHashMap.newKeySet();
-	private final Object												observationLock				= new Object();
-	private volatile boolean											observedHostsTruncated;
 
 	/**
 	 * Tracks the last date + time the client was used.
@@ -157,19 +156,24 @@ public class BoxHttpClient {
 	 * Statistics tracking for this client.
 	 * Uses AtomicLong for thread-safe updates without synchronization.
 	 */
-	private final java.util.concurrent.atomic.AtomicLong				totalRequests				= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong				totalRequests				= new java.util.concurrent.atomic.AtomicLong(
+	    0 );
 	private final java.util.concurrent.atomic.AtomicLong				successfulRequests			= new java.util.concurrent.atomic.AtomicLong(
 	    0 );
-	private final java.util.concurrent.atomic.AtomicLong				failedRequests				= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong				failedRequests				= new java.util.concurrent.atomic.AtomicLong(
+	    0 );
 	private final java.util.concurrent.atomic.AtomicLong				timeoutFailures				= new java.util.concurrent.atomic.AtomicLong(
 	    0 );
 	private final java.util.concurrent.atomic.AtomicLong				connectionFailures			= new java.util.concurrent.atomic.AtomicLong(
 	    0 );
-	private final java.util.concurrent.atomic.AtomicLong				tlsFailures					= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong				tlsFailures					= new java.util.concurrent.atomic.AtomicLong(
+	    0 );
 	private final java.util.concurrent.atomic.AtomicLong				httpProtocolFailures		= new java.util.concurrent.atomic.AtomicLong(
 	    0 );
-	private final java.util.concurrent.atomic.AtomicLong				bytesReceived				= new java.util.concurrent.atomic.AtomicLong( 0 );
-	private final java.util.concurrent.atomic.AtomicLong				bytesSent					= new java.util.concurrent.atomic.AtomicLong( 0 );
+	private final java.util.concurrent.atomic.AtomicLong				bytesReceived				= new java.util.concurrent.atomic.AtomicLong(
+	    0 );
+	private final java.util.concurrent.atomic.AtomicLong				bytesSent					= new java.util.concurrent.atomic.AtomicLong(
+	    0 );
 	private final java.util.concurrent.atomic.AtomicLong				totalExecutionTimeMs		= new java.util.concurrent.atomic.AtomicLong(
 	    0 );
 	private final java.util.concurrent.atomic.AtomicLong				minExecutionTimeMs			= new java.util.concurrent.atomic.AtomicLong(
@@ -301,21 +305,14 @@ public class BoxHttpClient {
 	}
 
 	/**
-	 * Record the requested host and request timeout before network execution starts.
+	 * Record the requested host before network execution starts.
 	 *
-	 * @param request        The prepared request to observe.
-	 * @param requestTimeout The configured request timeout in seconds, or null if unbounded.
+	 * @param request The prepared request to observe.
 	 */
-	private void observeRequest( HttpRequest request, Integer requestTimeout ) {
+	private void observeRequest( HttpRequest request ) {
 		String host = request.uri().getHost();
-		synchronized ( this.observationLock ) {
-			if ( host != null && !this.observedHosts.contains( host ) ) {
-				if ( this.observedHosts.size() < MAX_OBSERVED_HOSTS ) {
-					this.observedHosts.add( host );
-				} else {
-					this.observedHostsTruncated = true;
-				}
-			}
+		if ( host != null ) {
+			this.observedHosts.add( host );
 		}
 	}
 
@@ -333,7 +330,6 @@ public class BoxHttpClient {
 		    "connectTimeoutSeconds", this.connectTimeoutSeconds != null ? this.connectTimeoutSeconds : 0,
 		    "connectTimeoutConfigured", this.connectTimeoutSeconds != null,
 		    "observedHosts", new ArrayList<>( this.observedHosts ),
-		    "observedHostsTruncated", this.observedHostsTruncated,
 		    Key.averageExecutionTimeMs, this.getAverageExecutionTimeMs(),
 		    Key.bytesReceived, this.bytesReceived.get(),
 		    Key.bytesSent, this.bytesSent.get(),
@@ -533,6 +529,8 @@ public class BoxHttpClient {
 		private String											method				= DEFAULT_METHOD;
 		// Request timeout in seconds
 		private Integer											timeout				= DEFAULT_REQUEST_TIMEOUT;
+		// Maximum characters retained in fileContent for streaming : 1 MB by default
+		private int												streamContentLimit	= 1_048_576;
 		// The User-Agent header
 		private String											userAgent			= DEFAULT_USER_AGENT;
 		// The Charset to use
@@ -578,6 +576,8 @@ public class BoxHttpClient {
 		private boolean											error				= false;
 		private String											errorMessage		= null;
 		private Throwable										requestException	= null;
+		private long											receivedBytes		= 0;
+		private boolean											streamTruncated		= false;
 
 		/**
 		 * ------------------------------------------------------------------------------
@@ -879,6 +879,22 @@ public class BoxHttpClient {
 		 */
 		public BoxHttpRequest timeout( Integer timeout ) {
 			this.timeout = timeout;
+			return this;
+		}
+
+		/**
+		 * Set the maximum number of characters retained in fileContent for a streaming response.
+		 * Chunk callbacks continue receiving the complete response after this limit is reached.
+		 *
+		 * @param maxLength Maximum retained characters; must be greater than zero
+		 *
+		 * @return This builder for chaining
+		 */
+		public BoxHttpRequest maxStreamingContentLength( int maxLength ) {
+			if ( maxLength <= 0 ) {
+				throw new IllegalArgumentException( "Maximum streaming content length must be greater than zero" );
+			}
+			this.streamContentLimit = maxLength;
 			return this;
 		}
 
@@ -1577,7 +1593,7 @@ public class BoxHttpClient {
 		private void setupBasicAuth( HttpRequest.Builder requestBuilder ) {
 			String	auth		= ( this.username != null ? this.username : "" ) + ":"
 			    + ( this.password != null ? this.password : "" );
-			String	encodedAuth	= Base64.getEncoder().encodeToString( auth.getBytes() );
+			String	encodedAuth	= Base64.getEncoder().encodeToString( auth.getBytes( StandardCharsets.UTF_8 ) );
 			requestBuilder.header( "Authorization", "Basic " + encodedAuth );
 		}
 
@@ -1734,7 +1750,7 @@ public class BoxHttpClient {
 		 *     .method( "POST" )
 		 *     .header( "Content-Type", "application/json" )
 		 *     .onComplete( result -> {
-		 * 	} )
+		 * 							} )
 		 *     .send();
 		 *
 		 * IStruct result = request.getHttpResult();
@@ -1780,7 +1796,7 @@ public class BoxHttpClient {
 				 * This is used by streaming and buffered modes
 				 */
 				prepareRequest();
-				BoxHttpClient.this.observeRequest( this.targetHttpRequest, this.timeout );
+				BoxHttpClient.this.observeRequest( this.targetHttpRequest );
 
 				/**
 				 * ------------------------------------------------------------------------------
@@ -2010,14 +2026,9 @@ public class BoxHttpClient {
 					} while ( !BoxHttpClient.this.maxExecutionTimeMs.compareAndSet( currentMax, executionTime ) );
 				}
 
-				// Track bytes received (from fileContent if available)
-				if ( this.httpResult.containsKey( Key.fileContent ) ) {
-					Object fileContent = this.httpResult.get( Key.fileContent );
-					if ( fileContent instanceof String ) {
-						BoxHttpClient.this.bytesReceived.addAndGet( ( ( String ) fileContent ).getBytes().length );
-					} else if ( fileContent instanceof byte[] ) {
-						BoxHttpClient.this.bytesReceived.addAndGet( ( ( byte[] ) fileContent ).length );
-					}
+				// Track bytes consumed directly from the HTTP response body.
+				if ( this.receivedBytes > 0 ) {
+					BoxHttpClient.this.bytesReceived.addAndGet( this.receivedBytes );
 				}
 
 				/**
@@ -2321,8 +2332,9 @@ public class BoxHttpClient {
 			    response.statusCode() );
 
 			// Determine binary response handling
-			byte[]	responseBytes	= response.body();
-			Object	responseBody	= null;
+			byte[] responseBytes = response.body();
+			this.receivedBytes = responseBytes == null ? 0 : responseBytes.length;
+			Object responseBody = null;
 
 			// Process body if not null
 			if ( responseBytes != null && responseBytes.length > 0 ) {
@@ -2441,65 +2453,70 @@ public class BoxHttpClient {
 			 * control)
 			 * Because it could be SSE or regular streaming, we need to handle both cases
 			 */
-			HttpResponse<java.io.InputStream>	response			= httpClient
+			HttpResponse<InputStream>	response		= httpClient
 			    .sendAsync(
 			        this.targetHttpRequest,
 			        HttpResponse.BodyHandlers.ofInputStream() )
 			    .get();
+			CountingInputStream			responseBody	= new CountingInputStream( response.body() );
+			try ( responseBody ) {
 
-			/**
-			 * ------------------------------------------------------------------------------
-			 * PROCESS RESPONSE HEADERS AND METADATA
-			 * ------------------------------------------------------------------------------
-			 */
+				/**
+				 * ------------------------------------------------------------------------------
+				 * PROCESS RESPONSE HEADERS AND METADATA
+				 * ------------------------------------------------------------------------------
+				 */
 
-			// Process response headers and metadata
-			HttpHeaders							httpHeaders			= Optional
-			    .ofNullable( response.headers() )
-			    .orElse( HttpHeaders.of( Map.of(), ( a, b ) -> true ) );
-			IStruct								headers				= HttpResponseHelper.transformToResponseHeaderStruct( httpHeaders.map() );
+				// Process response headers and metadata
+				HttpHeaders	httpHeaders			= Optional
+				    .ofNullable( response.headers() )
+				    .orElse( HttpHeaders.of( Map.of(), ( a, b ) -> true ) );
+				IStruct		headers				= HttpResponseHelper.transformToResponseHeaderStruct( httpHeaders.map() );
 
-			// Prepare HTTP response metadata
-			String								httpVersionString	= HttpResponseHelper.getHttpVersionString( response.version() );
+				// Prepare HTTP response metadata
+				String		httpVersionString	= HttpResponseHelper.getHttpVersionString( response.version() );
 
-			// Populate standard response metadata
-			HttpResponseHelper.populateResponseMetadata( this.httpResult, headers, httpVersionString,
-			    response.statusCode() );
+				// Populate standard response metadata
+				HttpResponseHelper.populateResponseMetadata( this.httpResult, headers, httpVersionString,
+				    response.statusCode() );
 
-			// Process Content-Type header and extract charset for streaming
-			String	contentType		= HttpResponseHelper.extractFirstHeaderByName( headers, Key.contentType );
-			String	charset			= HttpResponseHelper.processContentType( this.httpResult, headers, contentType, this.charset );
-			String	contentEncoding	= HttpResponseHelper.extractFirstHeaderByName( headers, Key.contentEncoding );
+				// Process Content-Type header and extract charset for streaming
+				String	contentType		= HttpResponseHelper.extractFirstHeaderByName( headers, Key.contentType );
+				String	charset			= HttpResponseHelper.processContentType( this.httpResult, headers, contentType, this.charset );
+				String	contentEncoding	= HttpResponseHelper.extractFirstHeaderByName( headers, Key.contentEncoding );
 
-			// Determine if SSE mode (auto-detect or forced)
-			boolean	isSSE			= this.forceSSE || ( contentType != null && contentType.contains( "text/event-stream" ) );
+				// Determine if SSE mode (auto-detect or forced)
+				boolean	isSSE			= this.forceSSE || ( contentType != null && contentType.contains( "text/event-stream" ) );
 
-			// Execution Markers
-			this.httpResult.put( Key.stream, true );
-			this.httpResult.put( Key.sse, isSSE );
+				// Execution Markers
+				this.httpResult.put( Key.stream, true );
+				this.httpResult.put( Key.sse, isSSE );
 
-			/**
-			 * ------------------------------------------------------------------------------
-			 * ON HTTP RAW RESPONSE EVENT
-			 * ------------------------------------------------------------------------------
-			 */
-			interceptorService.announce(
-			    BoxEvent.ON_HTTP_RAW_RESPONSE,
-			    ( java.util.function.Supplier<IStruct> ) () -> Struct.ofNonConcurrent(
-			        Key.result, this.httpResult,
-			        Key.response, response,
-			        Key.httpClient, BoxHttpClient.this,
-			        Key.httpRequest, this.targetHttpRequest ) );
+				/**
+				 * ------------------------------------------------------------------------------
+				 * ON HTTP RAW RESPONSE EVENT
+				 * ------------------------------------------------------------------------------
+				 */
+				interceptorService.announce(
+				    BoxEvent.ON_HTTP_RAW_RESPONSE,
+				    ( java.util.function.Supplier<IStruct> ) () -> Struct.ofNonConcurrent(
+				        Key.result, this.httpResult,
+				        Key.response, response,
+				        Key.httpClient, BoxHttpClient.this,
+				        Key.httpRequest, this.targetHttpRequest ) );
 
-			/**
-			 * ------------------------------------------------------------------------------
-			 * PROCESS STREAMING RESPONSE BY MODE
-			 * ------------------------------------------------------------------------------
-			 */
-			if ( isSSE ) {
-				processSSEStream( response, headers, charset, contentEncoding );
-			} else {
-				processRegularStream( response, headers, charset, contentEncoding );
+				/**
+				 * ------------------------------------------------------------------------------
+				 * PROCESS STREAMING RESPONSE BY MODE
+				 * ------------------------------------------------------------------------------
+				 */
+				if ( isSSE ) {
+					processSSEStream( response, responseBody, headers, charset, contentEncoding );
+				} else {
+					processRegularStream( response, responseBody, headers, charset, contentEncoding );
+				}
+			} finally {
+				this.receivedBytes = responseBody.getCount();
 			}
 		}
 
@@ -2507,6 +2524,7 @@ public class BoxHttpClient {
 		 * Process an SSE (Server-Sent Events) stream
 		 *
 		 * @param response        The HTTP response with InputStream body
+		 * @param responseBody    The protected response body stream
 		 * @param headers         The response headers struct
 		 * @param charset         The charset to use for reading
 		 * @param contentEncoding The content encoding (ignored for SSE, always text)
@@ -2514,7 +2532,8 @@ public class BoxHttpClient {
 		 * @throws IOException If an I/O error occurs
 		 */
 		private void processSSEStream(
-		    HttpResponse<java.io.InputStream> response,
+		    HttpResponse<InputStream> response,
+		    CountingInputStream responseBody,
 		    IStruct headers,
 		    String charset,
 		    String contentEncoding ) throws IOException {
@@ -2532,8 +2551,7 @@ public class BoxHttpClient {
 			// Read SSE stream (always UTF-8 text, no decoding)
 			// Try with Resources to ensure streams are closed properly
 			try (
-			    java.io.InputStream rawInputStream = response.body();
-			    java.io.InputStreamReader reader = new java.io.InputStreamReader( rawInputStream,
+			    java.io.InputStreamReader reader = new java.io.InputStreamReader( responseBody,
 			        Charset.forName( charset ) );
 			    java.io.BufferedReader bufferedReader = new java.io.BufferedReader( reader ) ) {
 
@@ -2559,14 +2577,18 @@ public class BoxHttpClient {
 									this.lastEventId = sseEvent.id();
 								}
 
-								// Accumulate data for final result
-								accumulatedData.append( sseEvent.data() ).append( System.lineSeparator() );
+								// Retain a bounded prefix while callbacks continue receiving all events.
+								this.streamTruncated |= appendTruncated(
+								    accumulatedData,
+								    sseEvent.data() + System.lineSeparator(),
+								    this.streamContentLimit
+								);
 
 								// Log the SSE event details
-								streamLogger.trace( "SSE Event #{}: type={}, id={}",
-								    eventCount.get(),
-								    sseEvent.event() != null ? sseEvent.event() : "message",
-								    sseEvent.id() != null ? sseEvent.id() : "none" );
+								// streamLogger.trace( "SSE Event #{}: type={}, id={}",
+								// eventCount.get(),
+								// sseEvent.event() != null ? sseEvent.event() : "message",
+								// sseEvent.id() != null ? sseEvent.id() : "none" );
 
 								// Invoke onChunk callback with SSE event
 								context.invokeFunction(
@@ -2611,6 +2633,7 @@ public class BoxHttpClient {
 			// Finalize httpResult
 			String finalContent = accumulatedData.toString();
 			this.httpResult.put( Key.fileContent, finalContent );
+			this.httpResult.put( "streamContentTruncated", this.streamTruncated );
 			this.httpResult.put( Key.errorDetail, "" );
 			this.httpResult.put( Key.executionTime, Duration.between( startTime.toInstant(), Instant.now() ).toMillis() );
 			this.httpResult.put( Key.totalEvents, eventCount.get() );
@@ -2651,6 +2674,7 @@ public class BoxHttpClient {
 		 * Process a regular (non-SSE) streaming response
 		 *
 		 * @param response        The HTTP response with InputStream body
+		 * @param responseBody    The protected response body stream
 		 * @param headers         The response headers struct
 		 * @param charset         The charset to use for reading
 		 * @param contentEncoding The content encoding (gzip, deflate, etc.)
@@ -2658,7 +2682,8 @@ public class BoxHttpClient {
 		 * @throws IOException If an I/O error occurs
 		 */
 		private void processRegularStream(
-		    HttpResponse<java.io.InputStream> response,
+		    HttpResponse<InputStream> response,
+		    CountingInputStream responseBody,
 		    IStruct headers,
 		    String charset,
 		    String contentEncoding ) throws IOException {
@@ -2671,12 +2696,12 @@ public class BoxHttpClient {
 			StringBuilder	accumulatedContent	= new StringBuilder();
 			AtomicLong		chunkCount			= new AtomicLong( 0 );
 			AtomicBoolean	streamingError		= new AtomicBoolean( false );
+			AtomicLong		totalContentLength	= new AtomicLong( 0 );
 
 			// Read the response body line by line with proper charset and decoding
 			// Try with Resources to ensure streams are closed properly
 			try (
-			    java.io.InputStream rawInputStream = response.body();
-			    java.io.InputStream decodedInputStream = HttpResponseHelper.decodeInputStream( rawInputStream,
+			    java.io.InputStream decodedInputStream = HttpResponseHelper.decodeInputStream( responseBody,
 			        contentEncoding );
 			    java.io.InputStreamReader reader = new java.io.InputStreamReader( decodedInputStream,
 			        Charset.forName( charset ) );
@@ -2692,11 +2717,16 @@ public class BoxHttpClient {
 					}
 
 					try {
-						long currentChunk = chunkCount.incrementAndGet();
-						streamLogger.trace( "Processing chunk #{}", currentChunk );
+						long	currentChunk	= chunkCount.incrementAndGet();
+						long	totalLength		= totalContentLength.addAndGet( line.length() + System.lineSeparator().length() );
+						// streamLogger.trace( "Processing chunk #{}", currentChunk );
 
-						// Accumulate content for final result
-						accumulatedContent.append( line ).append( System.lineSeparator() );
+						// Retain a bounded prefix while callbacks continue receiving all chunks.
+						this.streamTruncated |= appendTruncated(
+						    accumulatedContent,
+						    line + System.lineSeparator(),
+						    this.streamContentLimit
+						);
 
 						// Invoke onChunk callback with regular chunk data
 						context.invokeFunction(
@@ -2704,7 +2734,7 @@ public class BoxHttpClient {
 						    new Object[] {
 						        currentChunk, // chunkNumber
 						        line, // content
-						        accumulatedContent.length(), // totalBytes
+						        totalLength, // totalBytes (cumulative decoded characters for compatibility)
 						        this.httpResult, // httpResult
 						        BoxHttpClient.this, // httpClient
 						        response // rawResponse
@@ -2733,6 +2763,7 @@ public class BoxHttpClient {
 
 			String finalContent = accumulatedContent.toString();
 			this.httpResult.put( Key.fileContent, finalContent );
+			this.httpResult.put( "streamContentTruncated", this.streamTruncated );
 			this.httpResult.put( Key.errorDetail, "" );
 			this.httpResult.put( Key.executionTime, Duration.between( startTime.toInstant(), Instant.now() ).toMillis() );
 
@@ -2771,6 +2802,56 @@ public class BoxHttpClient {
 				        BoxHttpClient.this, // httpClient
 				        chunkCount.get()
 				    } );
+			}
+		}
+
+		/**
+		 * Append up to the configured limit and report whether content was truncated.
+		 */
+		private boolean appendTruncated( StringBuilder target, String content, int maxLength ) {
+			int remaining = maxLength - target.length();
+			if ( remaining <= 0 ) {
+				return !content.isEmpty();
+			}
+			if ( content.length() <= remaining ) {
+				target.append( content );
+				return false;
+			}
+			target.append( content, 0, remaining );
+			return true;
+		}
+
+		/**
+		 * Counts raw response bytes while preserving normal stream close behavior.
+		 */
+		private final class CountingInputStream extends FilterInputStream {
+
+			private long count;
+
+			private CountingInputStream( InputStream inputStream ) {
+				super( inputStream );
+			}
+
+			@Override
+			public int read() throws IOException {
+				int value = super.read();
+				if ( value >= 0 ) {
+					this.count++;
+				}
+				return value;
+			}
+
+			@Override
+			public int read( byte[] buffer, int offset, int length ) throws IOException {
+				int bytesRead = super.read( buffer, offset, length );
+				if ( bytesRead > 0 ) {
+					this.count += bytesRead;
+				}
+				return bytesRead;
+			}
+
+			private long getCount() {
+				return this.count;
 			}
 		}
 	} // End of BoxHttpRequest class

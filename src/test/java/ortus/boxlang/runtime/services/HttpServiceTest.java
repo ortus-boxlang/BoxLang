@@ -434,7 +434,6 @@ public class HttpServiceTest {
 		assertThat( stats.get( "connectTimeoutSeconds" ) ).isEqualTo( 45 );
 		assertThat( stats.get( "connectTimeoutConfigured" ) ).isEqualTo( true );
 		assertThat( stats.get( "observedHosts" ) ).isNotNull();
-		assertThat( stats.get( "observedHostsTruncated" ) ).isEqualTo( false );
 	}
 
 	@DisplayName( "Test client statistics preserve an unconfigured connect timeout" )
