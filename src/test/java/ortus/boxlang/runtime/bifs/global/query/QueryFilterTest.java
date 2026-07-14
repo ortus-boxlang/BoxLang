@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.Struct;
 
 public class QueryFilterTest {
 
@@ -265,6 +266,21 @@ public class QueryFilterTest {
 		assertThat( nameValues.get( 2 ) ).isEqualTo( "Charlie" );
 		assertThat( nameValues.get( 3 ) ).isEqualTo( "Delta" );
 
+	}
+
+	@Test
+	public void testTrustsTypeData() {
+		instance.executeStatement( "myQry = QueryNew( 'col', 'integer' )", context );
+		// Passing null context will bypass type validation
+		variables.getAsQuery( Key.of( "myQry" ) ).addRow( Struct.of( "col", "" ), null );
+		instance.executeSource(
+		    """
+		    // Doesn't error
+		       filtered = myQry.filter((d) => true);
+		          	   """,
+		    context );
+		assertThat( variables.getAsQuery( Key.of( "myQry" ) ).size() ).isEqualTo( 1 );
+		assertThat( variables.getAsQuery( Key.of( "myQry" ) ).getRow( 0 )[ 0 ] ).isEqualTo( "" );
 	}
 
 }

@@ -134,11 +134,12 @@ public class QueryUtil {
 
 			BoxExecutor executor = AsyncService.chooseParallelExecutor( "QueryFilter_", maxThreads, virtual );
 
-			return QueryCaster.cast( executor.submitAndGet( () -> queryStream.parallel().collect( BLCollector.toQuery( query, callbackContext ) ) ) );
+			return QueryCaster
+			    .cast( executor.submitAndGet( () -> queryStream.parallel().collect( BLCollector.toQueryTrustedTypes( query, callbackContext ) ) ) );
 		}
 
 		// If parallel is false, just use the regular stream
-		return queryStream.collect( BLCollector.toQuery( query, callbackContext ) );
+		return queryStream.collect( BLCollector.toQueryTrustedTypes( query, callbackContext ) );
 	}
 
 	/**
