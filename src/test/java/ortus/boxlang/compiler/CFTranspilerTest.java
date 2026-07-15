@@ -568,6 +568,24 @@ public class CFTranspilerTest {
 		assertThat( variables.getAsString( result ) ).isEqualTo( "1,2,3,4,5,6" );
 	}
 
+	@DisplayName( "Can append a number in a string list with a custom delimiter" )
+	@Test
+	public void testAppendNumberWithCustomDelimiter() {
+		instance.executeSource(
+		    """
+		        result = "///Users//luis//".listAppend( "//foo///bar////baz///", "/"  )
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "///Users//luis/////foo///bar////baz///" );
+
+		instance.executeSource(
+		    """
+		        result = listAppend( "///Users//luis//", "//foo///bar////baz///", "/"  )
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "///Users//luis/////foo///bar////baz///" );
+	}
+
 	@DisplayName( "Can replace once with one in replaceNoCase" )
 	@Test
 	public void testReplaceNoCaseOnce() {

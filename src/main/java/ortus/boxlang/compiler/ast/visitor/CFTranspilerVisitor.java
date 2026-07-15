@@ -785,10 +785,63 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		return super.visit( node );
 	}
 
+	/**
+	 * Transforms BoxMethodInvocation nodes for CFML compatibility.
+	 *
+	 * Currently handles:
+	 * - listAppend() member function: defaults includeEmptyFields to true (CF-compat)
+	 *
+	 * @param node The BoxMethodInvocation node to transform
+	 *
+	 * @return The transformed BoxMethodInvocation node
+	 */
+	@Override
+	public BoxNode visit( BoxMethodInvocation node ) {
+		// Only handle simple dot-access method calls like foo.listAppend(...)
+		if ( node.getName() instanceof BoxIdentifier id ) {
+			String name = id.getName().toLowerCase();
+			if ( name.equals( "listappend" ) ) {
+				return transpileListAppend( node );
+			}
+		}
+		return super.visit( node );
+	}
+
 	private BoxNode transpileListAppend( BoxFunctionInvocation node ) {
 		var args = node.getArguments();
 		if ( args.isEmpty() ) {
 			return super.visit( node );
+		}
+		// For a function invocation, the "list" is the 1st positional arg, so we expect up to 4 positional args total.
+		// The delimiter (positional) goes into slot 3, and includeEmptyFields goes into slot 4.
+		fixupListAppendArgs( args, /* delimiterInsertAtSize */ 2, /* maxPositional */ 4 );
+		node.setArguments( args );
+		return super.visit( node );
+	}
+
+	private BoxNode transpileListAppend( BoxMethodInvocation node ) {
+		var args = node.getArguments();
+		// For a method invocation like myList.listAppend( value, delim, includeEmptyFields ),
+		// the receiver IS the list, so the args list only contains value/delim/includeEmptyFields (up to 3).
+		// The delimiter (positional) goes into slot 2, and includeEmptyFields goes into slot 3.
+		fixupListAppendArgs( args, /* delimiterInsertAtSize */ 1, /* maxPositional */ 3 );
+		node.setArguments( args );
+		return super.visit( node );
+	}
+
+	/**
+	 * Shared logic for transpiling listAppend() calls to default the includeEmptyFields
+	 * argument to true (CF-compat behavior).
+	 *
+	 * @param args                  The mutable list of arguments to fix up
+	 * @param delimiterInsertAtSize The current size at which a missing delimiter needs to be inserted
+	 *                              (2 for BIF form, 1 for member form)
+	 * @param maxPositional         The maximum number of positional args after fixup
+	 *                              (4 for BIF form, 3 for member form)
+	 */
+	private void fixupListAppendArgs( List<BoxArgument> args, int delimiterInsertAtSize, int maxPositional ) {
+		if ( args.isEmpty() ) {
+			return;
 		}
 		// Check if named args
 		if ( args.get( 0 ).getName() != null ) {
@@ -803,13 +856,12 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 				        null
 				    )
 				);
-				node.setArguments( args );
 			}
 		} else {
 			// positional args
-			if ( args.size() < 4 ) {
-				if ( args.size() == 2 ) {
-					// add delimiter as 3rd positional arg
+			if ( args.size() < maxPositional ) {
+				if ( args.size() == delimiterInsertAtSize ) {
+					// add delimiter positional arg
 					args.add(
 					    new BoxArgument(
 					        null,
@@ -819,7 +871,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 					    )
 					);
 				}
-				// add includeEmptyFields as 4th positional arg
+				// add includeEmptyFields as final positional arg
 				args.add(
 				    new BoxArgument(
 				        null,
@@ -828,11 +880,8 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 				        null
 				    )
 				);
-				// Always re-set args and don't just modify the list so the AST model can be updated
-				node.setArguments( args );
 			}
 		}
-		return super.visit( node );
 	}
 
 	/**
