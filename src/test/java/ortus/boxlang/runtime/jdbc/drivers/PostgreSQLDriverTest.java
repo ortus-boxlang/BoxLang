@@ -24,6 +24,7 @@ import java.sql.SQLException;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIf;
@@ -31,8 +32,11 @@ import org.junit.jupiter.api.condition.EnabledIf;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
@@ -46,11 +50,11 @@ public class PostgreSQLDriverTest extends AbstractDriverTest {
 
 	protected static IStruct	datasourceConfig	= Struct.of(
 	    "username", "postgres",
-	    "password", "postgres",
+	    "password", "123456Password",
 	    "host", "localhost",
 	    "port", "5432",
 	    "driver", "postgresql",
-	    "database", "boxlang"
+	    "database", "myDB"
 	);
 
 	@BeforeAll
@@ -156,13 +160,14 @@ public class PostgreSQLDriverTest extends AbstractDriverTest {
 		    context );
 
 		instance.executeStatement(
-		    String.format( """
-		                                queryExecute(
-		                                	"INSERT INTO users_returning_multi_test (email, name) VALUES ('test@example.com', 'Test User') RETURNING id, email",
-		                                	{},
-		                                	{ "result": "variables.result", "datasource": "%s" }
-		                                );
-		                   """, getDatasourceName() ),
+		    String.format(
+		        """
+		        q = queryExecute(
+		        "INSERT INTO users_returning_multi_test (email, name) VALUES ('test@example.com', 'Test User') RETURNING id, email",
+		        {},
+		        { "result": "variables.result", "datasource": "%s" }
+		        );
+		                          """, getDatasourceName() ),
 		    context );
 
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
@@ -183,6 +188,57 @@ public class PostgreSQLDriverTest extends AbstractDriverTest {
 		                                );
 		                   """, getDatasourceName() ),
 		    context );
+	}
+
+	@DisplayName( "It sets generatedKey in query meta" )
+	@Test
+	@Disabled
+	public void testGeneratedKey() {
+		instance.executeStatement(
+		    String
+		        .format( """
+		                 println("########################################################################")
+		                                                         q = queryExecute( "
+		                                                          	INSERT INTO generatedKeyTest (name) VALUES ( 'Michael' ), ( 'Michael2') returning *;
+		                                                          	INSERT INTO generatedKeyTest (name) VALUES ( 'Brad' ), ( 'Brad2' ) returning *;
+		                                                          	INSERT INTO generatedKeyTest (name) VALUES ( 'Luis' ) returning *;
+		                                                          	INSERT INTO generatedKeyTest (name) VALUES ( 'Jon' ), ( 'Jon2' ), ( 'Jon3' ) returning *;
+		                                   ",
+		                                                          	{},
+		                                                          	{ "result": "variables.result", "datasource" : "%s" }
+		                                                          );
+		                 println("########################################################################")
+		                            println("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+		                            println(q)
+		                            println("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+		                            println(result)
+		                            println("%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%")
+		                                                                         """, getDatasourceName() ),
+		    context );
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct meta = variables.getAsStruct( result );
+
+		assertThat( DoubleCaster.cast( meta.get( Key.generatedKey ), false ) ).isEqualTo( 1.0d );
+
+		Array generatedKeys = meta.getAsArray( Key.generatedKeys );
+
+		assertThat( generatedKeys ).hasSize( 4 );
+		// These keys are coming back as BigDecimal, so let's massage them into an array of ints for easier comparision
+		Integer[] firstKeys = ( ( Array ) generatedKeys.get( 0 ) ).stream().map( IntegerCaster::cast ).toArray( Integer[]::new );
+		assertThat( firstKeys ).isEqualTo( new Integer[] { 1, 2 } );
+
+		Integer[] secondKeys = ( ( Array ) generatedKeys.get( 1 ) ).stream().map( IntegerCaster::cast ).toArray( Integer[]::new );
+		assertThat( secondKeys ).isEqualTo( new Integer[] { 3, 4 } );
+
+		Integer[] thirdKeys = ( ( Array ) generatedKeys.get( 2 ) ).stream().map( IntegerCaster::cast ).toArray( Integer[]::new );
+		assertThat( thirdKeys ).isEqualTo( new Integer[] { 5 } );
+
+		Integer[] fourthKeys = ( ( Array ) generatedKeys.get( 3 ) ).stream().map( IntegerCaster::cast ).toArray( Integer[]::new );
+		assertThat( fourthKeys ).isEqualTo( new Integer[] { 6, 7, 8 } );
+
+		assertThat( meta.get( "updateCount" ) ).isEqualTo( 8 );
+		Array updateCounts = meta.getAsArray( Key.of( "updateCounts" ) );
+		assertThat( updateCounts.toArray() ).isEqualTo( new Integer[] { 2, 2, 1, 3 } );
 	}
 
 }

@@ -61,7 +61,7 @@ jobs:
 
       - name: Install JDBC modules
         if: ${{ matrix.os != 'windows-latest' }}
-        run: box install id=bx-mssql@be,bx-mysql,bx-oracle@be directory=~/.boxlang/modules --verbose --nosave
+        run: box install id=bx-mssql@be,bx-mysql,bx-oracle@be,bx-postgresql@be directory=~/.boxlang/modules --verbose --nosave
 
       - name: Setup MySQL Service
         if: ${{ matrix.os != 'windows-latest' }}
@@ -88,6 +88,15 @@ jobs:
           app-user-password: "123456Password"
           oracle-password: "123456Password"
           oracle-database: "XEPDB1"
+
+      - name: Setup PostgreSQL
+        if: ${{ matrix.os != 'windows-latest' }}
+        uses: harmon758/postgresql-action@v1
+        with:
+          postgresql version: '11.3'
+          postgresql db: 'myDB'
+          postgresql user: 'postgres'
+          postgresql password: '123456Password'
 
       - name: Build Java Compiler JAR
         if: ${{ matrix.compiler == 'java' }}

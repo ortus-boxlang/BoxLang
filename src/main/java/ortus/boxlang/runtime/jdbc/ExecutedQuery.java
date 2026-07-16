@@ -114,7 +114,7 @@ public final class ExecutedQuery implements Serializable {
 				for ( int i = 1; i <= columnCount; i++ ) {
 					String	name	= meta.getColumnLabel( i );
 					Object	value	= rs.getObject( i );
-					System.out.print( name + "=" + value + "\t" );
+					System.out.print( "\t" + name + "=" + value );
 				}
 				System.out.println();
 			}
@@ -200,14 +200,6 @@ public final class ExecutedQuery implements Serializable {
 			try {
 				generatedKeysComeAsResultSet = statement.getBoxConnection().getDataSource().getConfiguration().getDriver()
 				    .hasFeature( JDBCDriverFeature.GENERATED_KEYS_COME_AS_RESULT_SET );
-
-				// TODO: Remove this backwards compat check after the next bx-mssql release
-				// This is so people updating to the 1.8.0-snapshot won't have MSSQL generated keys break if they aren't also on the bx-mssql snapshot
-				if ( !generatedKeysComeAsResultSet ) {
-					generatedKeysComeAsResultSet = statement.getConnection().getMetaData().getDriverName().toLowerCase()
-					    .contains( "microsoft" );
-				}
-				// TODO: Remove this backwards compat check after the next bx-mssql release
 			} catch ( SQLException e ) {
 				logger.error( "Error getting JDBC driver features", e );
 			}
@@ -229,6 +221,9 @@ public final class ExecutedQuery implements Serializable {
 								recordCount	= results.size();
 								if ( debug )
 									System.out.println( "acquired query result. recordCount: " + recordCount );
+							} else if ( debug ) {
+								System.out.println( "skipping subsequent result sets because we already have one" );
+								dumpResultSet( rs );
 							}
 						}
 					} catch ( SQLException e ) {
