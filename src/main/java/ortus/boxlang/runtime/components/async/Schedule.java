@@ -719,9 +719,12 @@ public class Schedule extends Component {
 				// HTTP/Runnable-based tasks: wrap the callable itself
 				final Runnable original = callable;
 				task.call( () -> {
-					original.run();
-					if ( runCount.incrementAndGet() >= maxRuns ) {
-						finalTask.disable();
+					try {
+						original.run();
+					} finally {
+						if ( runCount.incrementAndGet() >= maxRuns ) {
+							finalTask.disable();
+						}
 					}
 				} );
 			} else {
