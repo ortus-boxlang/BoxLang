@@ -773,7 +773,7 @@ public class ScheduledTask implements Runnable {
 	public ScheduledTask call( DynamicObject task, String method ) {
 		debugLog( "call" );
 		setTask( task );
-		setMethod( method == null ? "run" : method );
+		setMethod( method == null || method.isBlank() ? "run" : method );
 		return this;
 	}
 
