@@ -608,9 +608,13 @@ public class Schedule extends Component {
 		    .unWrapBoxLangClass();
 
 		// DI, mirroring BoxScheduler.prepTarget()
-		instance.getVariablesScope().put( Key.scheduler, scheduler );
-		instance.getVariablesScope().put( Key.boxRuntime, rt );
-		instance.getVariablesScope().put( Key.logger, scheduler.getLogger() );
+		var variablesScope = instance.getVariablesScope();
+		variablesScope.put( Key.scheduler, scheduler );
+		variablesScope.put( Key.boxRuntime, rt );
+		variablesScope.put( Key.asyncService, rt.getAsyncService() );
+		variablesScope.put( Key.interceptorService, rt.getInterceptorService() );
+		variablesScope.put( Key.cacheService, rt.getCacheService() );
+		variablesScope.put( Key.logger, scheduler.getLogger() );
 
 		ScheduledTask task = scheduler.task( taskName, group ).call( DynamicObject.of( instance ), methodName );
 
