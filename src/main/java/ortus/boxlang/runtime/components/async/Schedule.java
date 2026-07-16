@@ -22,10 +22,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.tasks.BaseScheduler;
 import ortus.boxlang.runtime.async.tasks.ScheduledTask;
 import ortus.boxlang.runtime.async.tasks.TaskRecord;
@@ -35,7 +38,10 @@ import ortus.boxlang.runtime.components.Component;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.ExpressionInterpreter;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
+import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.loader.ClassLocator;
 import ortus.boxlang.runtime.net.BoxHttpClient;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.HttpService;
 import ortus.boxlang.runtime.services.SchedulerService;
@@ -61,7 +67,13 @@ import ortus.boxlang.runtime.validation.Validator;
  *
  * @attribute.group Task group name for organizational purposes.
  *
- * @attribute.url The URL to request when the task fires (required for create/update/modify).
+ * @attribute.url The URL to request when the task fires. Mutually exclusive with {@code class}; exactly one of the two is required for create/update/modify.
+ *
+ * @attribute.class The dotted path/name of a BoxLang class to instantiate and invoke when the task fires, instead of making an HTTP request. Mutually exclusive with {@code url}; exactly one of the two is required for create/update/modify. The class
+ *                  is instantiated once and reused for the life of the task. Only the {@code method} target is mandatory; the class may optionally define {@code before()}, {@code after(result)}, {@code onSuccess(result)}, and
+	 *                  {@code onError(exception)} life-cycle methods, dispatched the same way a BoxLang scheduler class's life-cycle methods are — each is only invoked if defined.
+ *
+ * @attribute.method The method to invoke on the {@code class} instance when the task fires. Defaults to "run". Ignored when {@code url} is used.
  *
  * @attribute.interval Scheduling interval: "once", "daily", "weekly", "monthly", or seconds (>=60).
  *
@@ -144,6 +156,8 @@ public class Schedule extends Component {
 		    new Attribute( Key.scheduler, "string", DEFAULT_SCHEDULER_NAME ),
 		    new Attribute( Key.group, "string", "" ),
 		    new Attribute( Key.URL, "string" ),
+		    new Attribute( Key._CLASS, "string" ),
+		    new Attribute( Key.method, "string", "run" ),
 		    new Attribute( Key.interval, "string" ),
 		    new Attribute( Key.isDaily, "boolean", false ),
 		    new Attribute( Key.cronTime, "string" ),
@@ -280,13 +294,17 @@ public class Schedule extends Component {
 		String	schedulerName	= attributes.getAsString( Key.scheduler );
 		String	group			= attributes.getAsString( Key.group );
 		String	url				= attributes.getAsString( Key.URL );
+		String	className		= attributes.getAsString( Key._CLASS );
 		String	interval		= attributes.getAsString( Key.interval );
 		String	cronTime		= attributes.getAsString( Key.cronTime );
 		boolean	isDaily			= BooleanCaster.cast( attributes.getOrDefault( Key.isDaily, false ) );
+		boolean	hasUrl			= url != null && !url.isBlank();
+		boolean	hasClass		= className != null && !className.isBlank();
 
-		// Validate required attributes
-		if ( url == null || url.isBlank() ) {
-			throw new BoxRuntimeException( "The [url] attribute is required for schedule action [update]" );
+		// Validate required attributes: exactly one of [url] or [class] is required
+		if ( hasUrl == hasClass ) {
+			throw new BoxRuntimeException(
+			    "Exactly one of [url] or [class] is required for schedule action [update] - they are mutually exclusive" );
 		}
 
 		if ( cronTime == null && interval == null && !isDaily ) {
@@ -301,11 +319,15 @@ public class Schedule extends Component {
 			scheduler.removeTask( taskName );
 		}
 
-		// Build the HTTP callable
-		Runnable		callable	= buildTaskCallable( context, attributes );
-
-		// Register task and apply full configuration
-		ScheduledTask	task		= scheduler.task( taskName, group ).call( callable );
+		// Register task, either as a class-based task or an HTTP callable task
+		ScheduledTask	task;
+		Runnable		callable	= null;
+		if ( hasClass ) {
+			task = registerClassTask( scheduler, taskName, group, context, attributes );
+		} else {
+			callable	= buildTaskCallable( context, attributes );
+			task		= scheduler.task( taskName, group ).call( callable );
+		}
 		applyTaskConfiguration( task, callable, attributes, runtime.getRuntimeContext() );
 
 		// Start the task if the scheduler is already running
@@ -555,9 +577,79 @@ public class Schedule extends Component {
 	}
 
 	/**
-	 * Build a {@link Runnable} that performs an HTTP GET request to the configured URL.
-	 * Captures the runtime context (not the request context) for long-lived use.
+	 * Build and register a class-based scheduled task. The target class is instantiated once and
+	 * reused for the life of the task — the same "resolve once, dispatch life-cycle methods to it"
+	 * convention used by {@code BoxScheduler} (for BoxLang scheduler classes) and {@code ClassListener}
+	 * (for file watcher classes).
+	 *
+	 * @param scheduler The scheduler to register the task on.
+	 * @param taskName  The name of the task.
+	 * @param group     The task group.
+	 * @param context   The context used to resolve imports for class-name resolution.
+	 * @param taskDef   Struct of task fields — accepts both live attribute structs and persisted JSON structs.
+	 *
+	 * @return The configured, registered {@link ScheduledTask}.
 	 */
+	public static ScheduledTask registerClassTask( BaseScheduler scheduler, String taskName, String group, IBoxContext context, IStruct taskDef ) {
+		String	className	= taskDef.getAsString( Key._CLASS );
+		String	methodName	= taskDef.getAsString( Key.method );
+		if ( methodName == null || methodName.isBlank() ) {
+			methodName = "run";
+		}
+
+		BoxRuntime		rt				= BoxRuntime.getInstance();
+		IBoxContext		runtimeContext	= rt.getRuntimeContext();
+		ClassLocator	classLocator	= rt.getClassLocator();
+		var				imports			= context.getCurrentImports();
+
+		IClassRunnable	instance		= ( IClassRunnable ) classLocator
+		    .load( runtimeContext, "bx:" + className, imports )
+		    .invokeConstructor( runtimeContext )
+		    .unWrapBoxLangClass();
+
+		// DI, mirroring BoxScheduler.prepTarget()
+		var variablesScope = instance.getVariablesScope();
+		variablesScope.put( Key.scheduler, scheduler );
+		variablesScope.put( Key.boxRuntime, rt );
+		variablesScope.put( Key.asyncService, rt.getAsyncService() );
+		variablesScope.put( Key.interceptorService, rt.getInterceptorService() );
+		variablesScope.put( Key.cacheService, rt.getCacheService() );
+		variablesScope.put( Key.logger, scheduler.getLogger() );
+
+		ScheduledTask task = scheduler.task( taskName, group ).call( DynamicObject.of( instance ), methodName );
+
+		wireClassLifecycle( task, instance, runtimeContext );
+
+		return task;
+	}
+
+	/**
+	 * Wire optional life-cycle methods defined on a task class: {@code before()}, {@code after(result)},
+	 * {@code onSuccess(result)}, and {@code onError(exception)}. Each is only invoked if the class defines
+	 * it, following the same {@code containsKey}-guarded-dispatch convention as {@code BoxScheduler} and
+	 * {@code ClassListener}.
+	 *
+	 * @param task           The task to wire life-cycle hooks onto.
+	 * @param instance       The already-instantiated task class.
+	 * @param runtimeContext The runtime context used for invocation.
+	 */
+	private static void wireClassLifecycle( ScheduledTask task, IClassRunnable instance, IBoxContext runtimeContext ) {
+		var thisScope = instance.getThisScope();
+
+		if ( thisScope.containsKey( Key.before ) ) {
+			task.before( t -> instance.dereferenceAndInvoke( runtimeContext, Key.before, DynamicObject.EMPTY_ARGS, false ) );
+		}
+		if ( thisScope.containsKey( Key.after ) ) {
+			task.after( ( t, result ) -> instance.dereferenceAndInvoke( runtimeContext, Key.after, new Object[] { result.orElse( null ) }, false ) );
+		}
+		if ( thisScope.containsKey( Key.onSuccess ) ) {
+			task.onSuccess( ( t, result ) -> instance.dereferenceAndInvoke( runtimeContext, Key.onSuccess, new Object[] { result.orElse( null ) }, false ) );
+		}
+		if ( thisScope.containsKey( Key.onError ) ) {
+			task.onFailure( ( t, ex ) -> instance.dereferenceAndInvoke( runtimeContext, Key.onError, new Object[] { ex }, false ) );
+		}
+	}
+
 	/**
 	 * Apply the full task configuration (scheduling, callbacks, metadata) to an already-registered
 	 * {@link ScheduledTask}. Used by both {@code doUpdate} and {@code registerPersistedScheduleTasks}
@@ -584,6 +676,8 @@ public class Schedule extends Component {
 		Integer	retryCount		= taskDef.getAsInteger( Key.retryCount );
 		boolean	cluster			= BooleanCaster.cast( taskDef.getOrDefault( Key.cluster, false ) );
 		String	url				= taskDef.getAsString( Key.URL );
+		String	className		= taskDef.getAsString( Key._CLASS );
+		String	method			= taskDef.getAsString( Key.method );
 
 		// Apply scheduling
 		if ( cronTime != null && !cronTime.isBlank() ) {
@@ -621,13 +715,27 @@ public class Schedule extends Component {
 			final int			maxRuns		= repeat;
 			AtomicInteger		runCount	= new AtomicInteger( 0 );
 			final ScheduledTask	finalTask	= task;
-			final Runnable		original	= callable;
-			task.call( () -> {
-				original.run();
-				if ( runCount.incrementAndGet() >= maxRuns ) {
-					finalTask.disable();
-				}
-			} );
+			if ( callable != null ) {
+				// HTTP/Runnable-based tasks: wrap the callable itself
+				final Runnable original = callable;
+				task.call( () -> {
+					try {
+						original.run();
+					} finally {
+						if ( runCount.incrementAndGet() >= maxRuns ) {
+							finalTask.disable();
+						}
+					}
+				} );
+			} else {
+				// Class-based tasks have no Runnable to wrap: compose onto the after() hook instead,
+				// layering on top of any class-defined after() life-cycle method
+				task.after( composeAfter( task.getAfterTask(), ( t, result ) -> {
+					if ( runCount.incrementAndGet() >= maxRuns ) {
+						t.disable();
+					}
+				} ) );
+			}
 		}
 
 		// Apply exclude dates predicate
@@ -636,18 +744,18 @@ public class Schedule extends Component {
 			task.when( t -> !isExcludedDate( t.getNow(), excludeList ) );
 		}
 
-		// Wire onFailure callback based on onException
+		// Wire onFailure callback based on onException, composing with any class-defined onError() method
 		if ( "pause".equalsIgnoreCase( onException ) ) {
-			task.onFailure( ( t, e ) -> t.disable() );
+			task.onFailure( composeFailure( task.getOnTaskFailure(), ( t, e ) -> t.disable() ) );
 		} else if ( "invokeHandler".equalsIgnoreCase( onException ) && eventHandler != null && !eventHandler.isBlank() ) {
 			final String handler = eventHandler;
-			task.onFailure( ( t, ex ) -> httpGet( handler, null, runtimeContext ) );
+			task.onFailure( composeFailure( task.getOnTaskFailure(), ( t, ex ) -> httpGet( handler, null, runtimeContext ) ) );
 		}
 
-		// Wire after callback for oncomplete
+		// Wire after callback for oncomplete, composing with any class-defined after() method
 		if ( onComplete != null && !onComplete.isBlank() ) {
 			final String completeUrl = onComplete;
-			task.after( ( t, result ) -> httpGet( completeUrl, null, runtimeContext ) );
+			task.after( composeAfter( task.getAfterTask(), ( t, result ) -> httpGet( completeUrl, null, runtimeContext ) ) );
 		}
 
 		// Store metadata
@@ -657,6 +765,41 @@ public class Schedule extends Component {
 		task.setMetaKey( "eventhandler", eventHandler );
 		task.setMetaKey( "oncomplete", onComplete );
 		task.setMetaKey( "url", url );
+		task.setMetaKey( "class", className );
+		task.setMetaKey( "method", method );
+	}
+
+	/**
+	 * Compose two failure handlers so both run, in order, instead of the second silently
+	 * replacing the first. Used so a class's own {@code onError()} life-cycle method and the
+	 * {@code onException} attribute's HTTP-based handler can coexist.
+	 */
+	private static BiConsumer<ScheduledTask, Exception> composeFailure( BiConsumer<ScheduledTask, Exception> first,
+	    BiConsumer<ScheduledTask, Exception> second ) {
+		if ( first == null ) {
+			return second;
+		}
+		return ( t, e ) -> {
+			first.accept( t, e );
+			second.accept( t, e );
+		};
+	}
+
+	/**
+	 * Compose two "after" handlers so both run, in order, instead of the second silently
+	 * replacing the first. Used so a class's own {@code after()} life-cycle method, the
+	 * repeat-limit counter, and the {@code oncomplete} attribute's HTTP-based handler can
+	 * all coexist.
+	 */
+	private static BiConsumer<ScheduledTask, Optional<?>> composeAfter( BiConsumer<ScheduledTask, Optional<?>> first,
+	    BiConsumer<ScheduledTask, Optional<?>> second ) {
+		if ( first == null ) {
+			return second;
+		}
+		return ( t, r ) -> {
+			first.accept( t, r );
+			second.accept( t, r );
+		};
 	}
 
 	/**
@@ -834,6 +977,8 @@ public class Schedule extends Component {
 		    "group", record.group,
 		    "disabled", record.disabled,
 		    "url", meta.getOrDefault( Key.url, "" ),
+		    "class", meta.getOrDefault( Key._CLASS, "" ),
+		    "method", meta.getOrDefault( Key.method, "" ),
 		    "cronTime", meta.getOrDefault( Key.cronExpression, "" ),
 		    "retryCount", meta.getOrDefault( Key.retryCount, 3 ),
 		    "scheduledAt", record.scheduledAt,
