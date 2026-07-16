@@ -14,16 +14,15 @@
  */
 package ortus.boxlang.runtime.util;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.InputStream;
-import java.io.ByteArrayOutputStream;
-import java.nio.charset.StandardCharsets;
+import java.io.OutputStream;
 import java.nio.charset.Charset;
-import java.io.ByteArrayInputStream;
-import java.util.zip.InflaterInputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -34,6 +33,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.zip.Deflater;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+import java.util.zip.InflaterInputStream;
 import java.util.zip.ZipEntry;
 
 import org.apache.commons.lang3.StringUtils;
@@ -156,7 +156,7 @@ public class ZipUtil {
 	    IBoxContext context ) {
 
 		// Prepare destination paths
-		final Path destinationFile = toPathWithExtension( destination, ".zip" );
+		final Path destinationFile = toPathWithExtension( destination, ".zip" ).toAbsolutePath().normalize();
 
 		// Verify destination does not exist
 		if ( destinationFile.toFile().exists() && !overwrite ) {
@@ -217,6 +217,11 @@ public class ZipUtil {
 
 							@Override
 							public FileVisitResult visitFile( Path file, BasicFileAttributes attrs ) throws IOException {
+								// Skip the destination zip file if it's in the source directory
+								if ( file.toAbsolutePath().normalize().equals( destinationFile ) ) {
+									return FileVisitResult.CONTINUE;
+								}
+
 								Path	targetFile		= basePath.relativize( file.normalize() );  // Normalize the file path
 								String	zipEntryName	= finalPathPrefix + targetFile.toString().replace( "\\", "/" );
 

@@ -154,4 +154,50 @@ public class ZipTest {
 		assertThat( list.size() ).isEqualTo( 1 );
 		assertThat( list.get( 0 ) ).isEqualTo( "binary_chuck.jpg" );
 	}
+
+	@DisplayName( "It prevents zip file from including itself when zipping its parent directory" )
+	@Test
+	public void testZipInPlaceDoesNotIncludeItself() {
+		String	fixtureDir		= "src/test/resources/tmp/zip_tests/zip-in-place-fixture";
+		String	sampleTextPath	= fixtureDir + "/sample-one.txt";
+		String	sampleCsvPath	= fixtureDir + "/sample-two.csv";
+		String	archivePath		= fixtureDir + "/in_place_test.zip";
+
+		variables.put( Key.of( "fixtureDir" ), fixtureDir );
+		variables.put( Key.of( "sampleTextPath" ), sampleTextPath );
+		variables.put( Key.of( "sampleCsvPath" ), sampleCsvPath );
+		variables.put( Key.of( "archivePath" ), archivePath );
+
+		// @formatter:off
+		instance.executeSource(
+			"""
+				// Clean up fixture directory if it exists
+				if ( directoryExists( fixtureDir ) ) {
+					directoryDelete( fixtureDir, true );
+				}
+				directoryCreate( fixtureDir, true );
+
+				// Create sample files
+				fileWrite( sampleTextPath, "Sample text file for zip test" );
+				fileWrite( sampleCsvPath, "id,name\\n1,alpha\\n2,beta" );
+
+				// Zip the fixture directory, placing the zip inside that same directory
+				bx:zip source="#fixtureDir#" file="#archivePath#" recurse="false" overwrite="true" {}
+			""",
+		    context
+		);
+		// @formatter:on
+
+		// List the contents of the zip file using ZipUtil
+		Array zipContents = ZipUtil.listEntriesFlat( archivePath, "", true, null );
+		System.out.println( "Contents of zip file: " + zipContents.toList() );
+
+		// Verify that the zip file itself is NOT included in the archive
+		// This is the red test - it should fail until we fix the zip component
+		assertThat( zipContents.toList() ).doesNotContain( "in_place_test.zip" );
+
+		// Verify that the sample files ARE included
+		assertThat( zipContents.toList() ).contains( "sample-one.txt" );
+		assertThat( zipContents.toList() ).contains( "sample-two.csv" );
+	}
 }

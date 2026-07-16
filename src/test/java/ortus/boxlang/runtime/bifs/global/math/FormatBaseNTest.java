@@ -126,4 +126,19 @@ public class FormatBaseNTest {
 		        context )
 		);
 	}
+
+	@DisplayName( "It supports unsigned 32-bit long values" )
+	@Test
+	public void testItSupportsUnsigned32BitLongValues() {
+
+		variables.put( Key.of( "largeLongValue" ), LongCaster.cast( 3367874497L ) );
+
+		instance.executeSource(
+		    """
+		    result = largeLongValue.formatBaseN(16);
+		    """,
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( "c8bdafc1" );
+	}
 }

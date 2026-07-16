@@ -783,7 +783,8 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
-	 * Add a row to the query
+	 * Add a row to the query. I do NOT cast incoming values to the column types; they are added as-is.
+	 * Only call this if you have trusted data.
 	 *
 	 * @param row row data as array of objects
 	 *

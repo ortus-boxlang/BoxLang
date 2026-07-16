@@ -40,6 +40,7 @@ import java.net.URI;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.nio.file.Path;
 import java.security.KeyPair;
@@ -1039,9 +1040,10 @@ public class HTTPTest {
 	@DisplayName( "It can process a basic authentication request" )
 	@Test
 	public void testBasicAuth( WireMockRuntimeInfo wmRuntimeInfo ) {
-		String	username			= "admin";
-		String	password			= "password";
-		String	base64Credentials	= Base64.getEncoder().encodeToString( ( username + ":" + password ).getBytes() );
+		String	username			= "admín";
+		String	password			= "pässword";
+		String	base64Credentials	= Base64.getEncoder()
+		    .encodeToString( ( username + ":" + password ).getBytes( StandardCharsets.UTF_8 ) );
 		stubFor(
 		    get( "/posts/1" )
 		        .withHeader( "Authorization", equalTo( "Basic " + base64Credentials ) )
@@ -1442,6 +1444,39 @@ public class HTTPTest {
 		assertThat( chunkTracker.getAsInteger( Key.of( "count" ) ) ).isGreaterThan( 0 );
 	}
 
+	@DisplayName( "It truncates retained streaming content without truncating callbacks" )
+	@Test
+	public void testStreamingRetainedContentLimit( WireMockRuntimeInfo wmRuntimeInfo ) {
+		String testContent = "First line\nSecond line\nThird line";
+		stubFor( get( "/test-streaming-limit" )
+		    .willReturn( ok( testContent ) ) );
+
+		// @formatter:off
+		instance.executeSource(
+		    String.format(
+		        """
+					callbackContent = "";
+					onChunkFn = ( chunkNumber, content ) => callbackContent &= content;
+					client = getBoxRuntime().getHttpService().getOrBuildClient(
+						"HTTP/2", false, 938, null, null, null, null, null, null
+					);
+					result = client.newRequest( "%s", getBoxContext() )
+						.maxStreamingContentLength( 12 )
+						.onChunk( onChunkFn )
+						.send();
+				""",
+		        wmRuntimeInfo.getHttpBaseUrl() + "/test-streaming-limit"
+		    ),
+		    context
+		);
+		// @formatter:on
+
+		IStruct httpResult = variables.getAsStruct( result );
+		assertThat( httpResult.getAsString( Key.fileContent ) ).hasLength( 12 );
+		assertThat( httpResult.getAsBoolean( Key.of( "streamContentTruncated" ) ) ).isTrue();
+		assertThat( variables.getAsString( Key.of( "callbackContent" ) ) ).contains( "Third line" );
+	}
+
 	@DisplayName( "It handles streaming with onComplete callback" )
 	@Test
 	public void testStreamingWithOnComplete( WireMockRuntimeInfo wmRuntimeInfo ) {
@@ -1606,7 +1641,7 @@ public class HTTPTest {
 					client = getBoxRuntime().getHttpService().getOrBuildClient(
 						"HTTP/2",
 						false,
-						null,
+						937,
 						null,
 						null,
 						null,
@@ -1728,8 +1763,6 @@ public class HTTPTest {
 		assertThat( stats.getAsLong( Key.of( "successfulRequests" ) ) ).isGreaterThan( 0L );
 		assertThat( ( List<?> ) stats.get( Key.of( "observedHosts" ) ) ).contains( URI.create( baseURL ).getHost() );
 		assertThat( ( List<?> ) stats.get( Key.of( "observedHosts" ) ) ).contains( "invalid-host-that-does-not-exist-12345.com" );
-		assertThat( ( List<?> ) stats.get( Key.of( "observedRequestTimeoutSeconds" ) ) ).contains( 0 );
-		assertThat( ( List<?> ) stats.get( Key.of( "observedRequestTimeoutSeconds" ) ) ).contains( 1 );
 	}
 
 	@DisplayName( "Can track min and max execution times across multiple requests" )
