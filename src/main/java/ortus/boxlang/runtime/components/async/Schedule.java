@@ -71,7 +71,7 @@ import ortus.boxlang.runtime.validation.Validator;
  *
  * @attribute.class The dotted path/name of a BoxLang class to instantiate and invoke when the task fires, instead of making an HTTP request. Mutually exclusive with {@code url}; exactly one of the two is required for create/update/modify. The class
  *                  is instantiated once and reused for the life of the task. Only the {@code method} target is mandatory; the class may optionally define {@code before()}, {@code after(result)}, {@code onSuccess(result)}, and
- *                  {@code onError(exception)} life-cycle methods, dispatched the same way a BoxLang scheduler class's life-cycle methods are (see the {@code boxlang-core-dev-async-tasks} skill) — each is only invoked if defined.
+	 *                  {@code onError(exception)} life-cycle methods, dispatched the same way a BoxLang scheduler class's life-cycle methods are — each is only invoked if defined.
  *
  * @attribute.method The method to invoke on the {@code class} instance when the task fires. Defaults to "run". Ignored when {@code url} is used.
  *
