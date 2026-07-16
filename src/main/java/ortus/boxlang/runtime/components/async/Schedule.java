@@ -604,7 +604,7 @@ public class Schedule extends Component {
 
 		IClassRunnable	instance		= ( IClassRunnable ) classLocator
 		    .load( runtimeContext, "bx:" + className, imports )
-		    .invokeConstructor( runtimeContext, Key.noInit )
+		    .invokeConstructor( runtimeContext )
 		    .unWrapBoxLangClass();
 
 		// DI, mirroring BoxScheduler.prepTarget()
