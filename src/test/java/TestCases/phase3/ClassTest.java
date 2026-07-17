@@ -33,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.compiler.JavaMethodResolver;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.ConfigOverrideBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.DoubleCaster;
@@ -54,6 +55,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.types.meta.ClassMeta;
 import ortus.boxlang.runtime.util.FileSystemUtil;
+import ortus.boxlang.runtime.util.Mapping;
 
 public class ClassTest {
 
@@ -2504,6 +2506,29 @@ public class ClassTest {
 		           """,
 		    context );
 		assertThat( variables.get( "result" ) ).isEqualTo( 5 );
+	}
+
+	@Test
+	public void testClassLookupRelativeToBaseTemplateFallback() {
+		context		= getContext( "src/test/java/TestCases/phase3/", "baseTemplateFallback/index.cfm" );
+		variables	= context.getScopeNearby( VariablesScope.name );
+		instance.executeSource(
+		    """
+		       include "/baseTemplateFallback/index.cfm";
+		    println(variables)
+		          """,
+		    context );
+		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "baseTemplateFallback/includes/cfc/MyClass.cfc" );
+		assertThat( variables.getAsString( Key.of( "result2" ) ) ).isEqualTo( "baseTemplateFallback/cfc/MyClass2.cfc" );
+
+	}
+
+	// Used for tests that need to spoof a base template path
+	private IBoxContext getContext( String rootPath, String template ) {
+		return new ScriptingRequestBoxContext( new ConfigOverrideBoxContext( instance.getRuntimeContext(), config -> {
+			config.getAsStruct( Key.mappings ).put( "/", Mapping.ofExternal( "/", new java.io.File( rootPath ).getAbsolutePath() ) );
+			return config;
+		} ), false ).loadApplicationDescriptor( FileSystemUtil.createFileUri( template ) );
 	}
 
 }
