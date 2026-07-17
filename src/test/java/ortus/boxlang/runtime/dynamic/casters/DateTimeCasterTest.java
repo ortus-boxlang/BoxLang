@@ -614,4 +614,22 @@ public class DateTimeCasterTest {
 		assertThat( result ).isNotNull();
 		assertThat( result.format( "dd.MM.yyyy" ) ).isEqualTo( "13.03.2024" );
 	}
+
+	@Test
+	@DisplayName( "Test US format with single-digit month, 24-hour time and milliseconds" )
+	public void testUSSingleDigitMonthWithMillis() {
+		String		dateString	= "7/17/2025 00:00:00.000";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd HH:mm:ss" ) ).isEqualTo( "2025-07-17 00:00:00" );
+	}
+
+	@Test
+	@DisplayName( "Test US format with single-digit month, 24-hour time without milliseconds" )
+	public void testUSSingleDigitMonthNoMillis() {
+		String		dateString	= "7/17/2025 00:00:00";
+		DateTime	result		= DateTimeCaster.cast( dateString );
+		assertThat( result ).isNotNull();
+		assertThat( result.format( "yyyy-MM-dd HH:mm:ss" ) ).isEqualTo( "2025-07-17 00:00:00" );
+	}
 }

@@ -1026,20 +1026,20 @@ public final class LocalizationUtil {
 				"description", "US date MM/dd/yyyy or MM-dd-yyyy with time and AM/PM no seconds"
 			) );
 
-			// US Short DateTime 24-hour with seconds (e.g., 02/04/2024 21:01:00, 01-31-2026 23:59:59)
+			// US Short DateTime 24-hour with seconds (e.g., 02/04/2024 21:01:00, 01-31-2026 23:59:59, 7/17/2025 00:00:00.000)
 			add( Map.of(
 				"regexPattern",
-				"^\\d{2}[-/]\\d{1,2}[-/]\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}$",
-				"datePattern", "MM<-/>dd<-/>yyyy HH:mm:ss",
-				"description", "US date MM/dd/yyyy or MM-dd-yyyy with 24-hour time with seconds"
+				"^\\d{1,2}[-/]\\d{1,2}[-/]\\d{4}\\s+\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{1,9})?$",
+				"datePattern", "M<-/>d<-/>yyyy HH:mm:ss[.SSS]",
+				"description", "US date M/d/yyyy or MM-dd-yyyy with 24-hour time with seconds and optional milliseconds"
 			) );
 
-			// US Short DateTime 24-hour no seconds (e.g., 02/04/2024 21:01)
+			// US Short DateTime 24-hour no seconds (e.g., 02/04/2024 21:01, 7/17/2025 00:00)
 			add( Map.of(
 				"regexPattern",
-				"^\\d{2}[-/]\\d{1,2}[-/]\\d{4}\\s+\\d{2}:\\d{2}$",
-				"datePattern", "MM<-/>dd<-/>yyyy HH:mm",
-				"description", "US date MM/dd/yyyy or MM-dd-yyyy with 24-hour time no seconds"
+				"^\\d{1,2}[-/]\\d{1,2}[-/]\\d{4}\\s+\\d{2}:\\d{2}$",
+				"datePattern", "M<-/>d<-/>yyyy HH:mm",
+				"description", "US date M/d/yyyy or MM-dd-yyyy with 24-hour time no seconds"
 			) );
 
 
