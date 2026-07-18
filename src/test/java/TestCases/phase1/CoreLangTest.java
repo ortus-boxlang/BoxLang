@@ -6889,4 +6889,50 @@ public class CoreLangTest {
 		    TimeUnit.NANOSECONDS.toMillis( bridgeElapsed ) );
 	}
 
+	@Test
+	public void testAssertInSwitch() {
+		instance.executeSource(
+		    """
+		      switch ( "sdf" ) {
+		    case "sdf" :
+		    	assert true;
+		        }
+		             """,
+		    context );
+	}
+
+	@Test
+	public void testRethrowInSwitch() {
+		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    try {
+		    	1/0;
+		    } catch( e ) {
+		         switch ( "sdf" ) {
+		         	default:
+		         	rethrow;
+		           }
+		    }
+		                """,
+		    context ) );
+		assertThat( e.getMessage() ).contains( "zero" );
+	}
+
+	@Test
+	public void testRethrowInSwitchCF() {
+		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    try {
+		    	1/0;
+		    } catch( e ) {
+		         switch ( "sdf" ) {
+		         	default:
+		         	rethrow;
+		        }
+		    }
+		                """,
+		    context, BoxSourceType.CFSCRIPT ) );
+		assertThat( e.getMessage() ).contains( "zero" );
+	}
+
 }

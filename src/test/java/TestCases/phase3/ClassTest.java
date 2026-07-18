@@ -2514,9 +2514,8 @@ public class ClassTest {
 		variables	= context.getScopeNearby( VariablesScope.name );
 		instance.executeSource(
 		    """
-		       include "/baseTemplateFallback/index.cfm";
-		    println(variables)
-		          """,
+		    include "/baseTemplateFallback/index.cfm";
+		       """,
 		    context );
 		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "baseTemplateFallback/includes/cfc/MyClass.cfc" );
 		assertThat( variables.getAsString( Key.of( "result2" ) ) ).isEqualTo( "baseTemplateFallback/cfc/MyClass2.cfc" );

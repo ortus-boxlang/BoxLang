@@ -538,7 +538,7 @@ public class CFLexerCustom extends CFLexer {
 					        && ( ( ( nextTokenType == IF || nextTokenType == PREFIXEDIDENTIFIER || nextTokenType == SWITCH ) && nextNonWhiteSpaceCharIs( '(' ) )
 					            || ( nextTokenType == TRY && nextNonWhiteSpaceCharIs( '{' ) )
 					            || ( nextTokenType == INCLUDE || nextTokenType == THROW || nextTokenType == VAR || nextTokenType == DEFAULT
-					                || nextTokenType == CONTINUE ) ) ) ) {
+					                || nextTokenType == CONTINUE || nextTokenType == RETHROW ) ) ) ) {
 						// preceeded by a :
 						// but myLabel : for() is fine
 						// and myLabel : while()
@@ -547,6 +547,7 @@ public class CFLexerCustom extends CFLexer {
 						// but not case: try {} catch(){}
 						// and not case: include "foo"
 						// and not case: continue
+						// and not case: rethrow
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because last token was a colon" );
 						isIdentifier = true;

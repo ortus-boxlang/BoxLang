@@ -529,7 +529,7 @@ public class BoxLexerCustom extends BoxLexer {
 					        && ( ( ( nextTokenType == IF || nextTokenType == SWITCH ) && nextNonWhiteSpaceCharIs( '(' ) )
 					            || ( nextTokenType == TRY && nextNonWhiteSpaceCharIs( '{' ) )
 					            || ( nextTokenType == INCLUDE || nextTokenType == THROW || nextTokenType == VAR || nextTokenType == DEFAULT
-					                || nextTokenType == CONTINUE ) ) ) ) {
+					                || nextTokenType == CONTINUE || nextTokenType == RETHROW || nextTokenType == ASSERT ) ) ) ) {
 						// preceeded by a :
 						// but myLabel : for() is fine
 						// and myLabel : while()
@@ -538,6 +538,8 @@ public class BoxLexerCustom extends BoxLexer {
 						// but not case: try {} catch(){}
 						// and not case: include "foo"
 						// and not case: continue
+						// and not case: rethrow
+						// and not case: assert
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because last token was a colon" );
 						isIdentifier = true;
