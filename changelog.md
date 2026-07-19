@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- New `obfuscate` CLI action command (`boxlang obfuscate --source <path> --target <dir>`) that produces a
+  deployable, non-revealing form of BoxLang/CFML source by stripping comments, renaming `var`-declared local
+  variables, and (opt-in) renaming private functions and arguments. The obfuscated output remains valid,
+  behavior-preserving source.
+
 ## [1.15.0] - 2026-07-08
 
 ## [1.14.0] - 2026-06-03

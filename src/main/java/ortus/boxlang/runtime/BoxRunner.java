@@ -38,6 +38,7 @@ import com.fasterxml.jackson.jr.ob.JSONObjectException;
 import java.io.File;
 
 import ortus.boxlang.compiler.BXCompiler;
+import ortus.boxlang.compiler.BXObfuscator;
 import ortus.boxlang.compiler.CFTranspiler;
 import ortus.boxlang.compiler.DiskClassUtil;
 import ortus.boxlang.compiler.FeatureAudit;
@@ -103,14 +104,15 @@ public class BoxRunner {
 
 	/**
 	 * A list of action commands that can be executed by the BoxRunner:
-	 * compile, cftranspile, featureAudit, schedule
+	 * compile, cftranspile, featureAudit, format, schedule, obfuscate
 	 */
 	private static final List<String>	ACTION_COMMANDS				= List.of(
 	    "compile",
 	    "cftranspile",
 	    "featureaudit",
 	    "format",
-	    "schedule" );
+	    "schedule",
+	    "obfuscate" );
 
 	/**
 	 * The allowed template extensions that can be executed by the BoxRunner
@@ -310,6 +312,9 @@ public class BoxRunner {
 				break;
 			case "format" :
 				PrettyPrint.main( options.cliArgs().toArray( new String[ 0 ] ) );
+				break;
+			case "obfuscate" :
+				BXObfuscator.main( options.cliArgs().toArray( new String[ 0 ] ) );
 				break;
 			case "schedule" :
 				// Check for help first
@@ -792,6 +797,8 @@ public class BoxRunner {
 		System.out.println( "                                     Use: boxlang featureaudit --help" );
 		System.out.println( "  schedule <SCHEDULER_FILE>       ⏰ Run a BoxLang scheduler from file" );
 		System.out.println( "                                     Use: boxlang schedule --help" );
+		System.out.println( "  obfuscate                       🔒 Obfuscate source for non-revealing deployment" );
+		System.out.println( "                                     Use: boxlang obfuscate --help" );
 		System.out.println();
 		System.out.println( "📂 FILE EXECUTION:" );
 		System.out.println( "  • Execute BoxLang templates directly by providing a file path" );
