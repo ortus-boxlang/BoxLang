@@ -490,6 +490,8 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 	/**
 	 * Static method that takes in a path and returns an array
 	 * of URLs of all the JARs in the path
+	 * 
+	 * Accepts a folder or a specific jar or class file path
 	 *
 	 * @param targetPath The path to search for JARs
 	 *
@@ -498,9 +500,14 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 	public static URL[] getJarURLs( Path targetPath ) throws IOException {
 		// Ensure the path is a directory and that it exists
 		if ( Files.exists( targetPath ) && !Files.isDirectory( targetPath ) ) {
-			throw new BoxRuntimeException(
-			    String.format( "The requested path [%s] to discover jar's and classes must be a valid directory", targetPath )
-			);
+			// If path is already a jar or class file, then return it directly
+			if ( targetPath.toString().endsWith( ".jar" ) || targetPath.toString().endsWith( ".class" ) ) {
+				return new URL[] { targetPath.toUri().toURL() };
+			} else {
+				throw new BoxRuntimeException(
+				    String.format( "The requested path [%s] to discover jar's and classes must be a valid directory", targetPath )
+				);
+			}
 		}
 
 		// Stream all files recursively, filtering for .jar and .class files
