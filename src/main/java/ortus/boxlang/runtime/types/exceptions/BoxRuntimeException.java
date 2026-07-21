@@ -30,7 +30,7 @@ public class BoxRuntimeException extends BoxLangException {
 	/**
 	 * Custom error message; information that the default exception handler does not display.
 	 */
-	protected Object extendedInfo = "";
+	public Object extendedInfo = "";
 
 	/**
 	 * Constructor

@@ -6935,4 +6935,18 @@ public class CoreLangTest {
 		assertThat( e.getMessage() ).contains( "zero" );
 	}
 
+	@Test
+	public void testCanSetExtendedInfo() {
+		instance.executeSource(
+		    """
+		    try {
+		    	1/0
+		    } catch(e){
+		    	e.extendedInfo = "brad"
+		    	result = e.extendedInfo
+		    }
+		                  """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "brad" );
+	}
 }
