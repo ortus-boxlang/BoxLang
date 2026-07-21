@@ -544,7 +544,7 @@ public class DynamicObject implements IReferenceable, Serializable {
 	}
 
 	/**
-	 * Unwrap an object if it's inside a ClassInvoker instance
+	 * Unwrap an object if it's inside a DynamicObject instance
 	 *
 	 * @param param The object to unwrap
 	 *

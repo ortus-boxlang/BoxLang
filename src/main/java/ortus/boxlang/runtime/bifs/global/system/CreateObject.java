@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.util.TypeUtil;
 
 @BoxBIF( description = "Create an instance of a Java class or component" )
@@ -109,11 +110,20 @@ public class CreateObject extends BIF {
 	 * @return The created object.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		String	type			= arguments.getAsString( Key.type );
-		String	className		= arguments.getAsString( Key.className );
-		Object	properties		= arguments.get( Key.properties );
-		Boolean	externalOnly	= arguments.getAsBoolean( Key.externalOnly );
-		Object	classLoader		= arguments.get( Key.classLoader );
+		String		type			= arguments.getAsString( Key.type );
+		String		className		= arguments.getAsString( Key.className );
+		Object		properties		= arguments.get( Key.properties );
+		Boolean		externalOnly	= arguments.getAsBoolean( Key.externalOnly );
+		Object		objclassLoader	= DynamicObject.unWrap( arguments.get( Key.classLoader ) );
+		ClassLoader	classLoader		= null;
+
+		// validate non-null class loader as proper type, error if not
+		if ( objclassLoader != null && objclassLoader instanceof ClassLoader cl ) {
+			classLoader = cl;
+		} else if ( objclassLoader != null ) {
+			throw new BoxValidationException(
+			    "Invalid class loader provided.  You passed an object of type [" + TypeUtil.getObjectName( objclassLoader ) + "]" );
+		}
 
 		return createObject(
 		    context,
@@ -122,7 +132,7 @@ public class CreateObject extends BIF {
 		    properties,
 		    arguments,
 		    externalOnly,
-		    classLoader == null ? null : ( ClassLoader ) classLoader
+		    classLoader
 		);
 	}
 
