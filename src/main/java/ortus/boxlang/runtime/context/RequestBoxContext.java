@@ -78,7 +78,6 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	/**
 	 * The request class loader
 	 */
-	private ClassLoader											requestClassLoader		= null;
 
 	/**
 	 * Flag to enforce explicit output
@@ -281,15 +280,11 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 	 * @return The class loader
 	 */
 	public ClassLoader getRequestClassLoader() {
-		if ( this.requestClassLoader != null ) {
-			return this.requestClassLoader;
-		}
 		// Not using getApplicationListener() here so we don't cache a default class loader value
 		if ( this.applicationListener == null ) {
 			return getRuntime().getRuntimeLoader();
 		} else {
-			this.requestClassLoader = this.applicationListener.getRequestClassLoader( this );
-			return this.requestClassLoader;
+			return this.applicationListener.getRequestClassLoader( this );
 		}
 	}
 

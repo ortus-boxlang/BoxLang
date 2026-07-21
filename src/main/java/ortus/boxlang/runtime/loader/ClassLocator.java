@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.loader;
 
 import java.net.URL;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -41,7 +40,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ClassNotFoundBoxLangException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.util.BLCollector;
-import ortus.boxlang.runtime.util.EncryptionUtil;
+import ortus.boxlang.runtime.util.ClassLoaderUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
@@ -662,7 +661,7 @@ public class ClassLocator extends ClassLoader {
 		        .map( item -> FileSystemUtil.expandPath( context, ( String ) item ).absolutePath().toString() )
 		        .collect( BLCollector.toArray() )
 		);
-		String				loaderCacheKey	= EncryptionUtil.hash( Arrays.toString( loadPathsUrls ) );
+		String				loaderCacheKey	= ClassLoaderUtil.hashSorted( loadPathsUrls );
 		DynamicClassLoader	classLoader		= this.classLoaders.computeIfAbsent(
 		    loaderCacheKey,
 		    key -> {

@@ -45,6 +45,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.ClassLoaderUtil;
 
 public class DynamicClassLoader extends URLClassLoader implements IModuleClassLoader {
 
@@ -103,6 +104,8 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 	    "org.slf4j"
 	);
 
+	private String											URLHash;
+
 	/**
 	 * Construct the class loader
 	 *
@@ -137,6 +140,7 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 		Objects.requireNonNull( parent, "Parent class loader cannot be null" );
 		this.parent		= parent;
 		this.nameAsKey	= name;
+		this.URLHash	= ClassLoaderUtil.hashSorted( urls );
 	}
 
 	/**
@@ -598,6 +602,14 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 	 */
 	public ConcurrentHashMap<String, MethodRecord> getMethodHandleCache() {
 		return methodHandleCache;
+	}
+
+	/**
+	 * Get URLHash which reprents the unique set of jar/class files loaded in this ClassLoader
+	 * This is to be able to tell if another DynamicClassLoader has the same set of jar/class files loaded, even if they were a different version of the jar.
+	 */
+	public String getURLHash() {
+		return URLHash;
 	}
 
 }
