@@ -1158,8 +1158,7 @@ public final class EncryptionUtil {
 	 * <p>
 	 * UUencode encodes binary data using a printable ASCII character set with values
 	 * offset by 32 (space = 0, underscore = 63). Data is processed in 45-byte chunks.
-	 * Each chunk is prefixed with a length character (ASCII 32 + byte count),
-	 * and the encoded stream is terminated with a backtick (ASCII 96).
+	 * Each chunk is prefixed with a length character (ASCII 32 + byte count).
 	 *
 	 * @param src The byte array to encode
 	 *
@@ -1167,7 +1166,7 @@ public final class EncryptionUtil {
 	 */
 	public static String uuEncode( byte[] src ) {
 		if ( src == null || src.length == 0 ) {
-			return "`";
+			return "";
 		}
 
 		StringBuilder	sb	= new StringBuilder();
@@ -1176,8 +1175,7 @@ public final class EncryptionUtil {
 		while ( i < src.length ) {
 			int chunkLen = Math.min( 45, src.length - i );
 			// Write length character: (chunkLen + 32) as a printable char
-			// Zero-length chunks use backtick (96)
-			sb.append( ( char ) ( chunkLen == 0 ? 96 : chunkLen + 32 ) );
+			sb.append( ( char ) ( chunkLen + 32 ) );
 
 			// Process 3-byte groups
 			int j = i;

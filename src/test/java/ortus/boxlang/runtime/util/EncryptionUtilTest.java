@@ -107,7 +107,7 @@ public class EncryptionUtilTest {
 		// Empty array
 		byte[]	empty	= new byte[ 0 ];
 		String	encoded	= EncryptionUtil.uuEncode( empty );
-		assertEquals( "`", encoded );
+		assertEquals( "", encoded );
 		assertArrayEquals( empty, EncryptionUtil.uuDecode( encoded ) );
 
 		// Single byte
@@ -152,7 +152,7 @@ public class EncryptionUtilTest {
 		assertArrayEquals( allBytes, EncryptionUtil.uuDecode( encoded ) );
 
 		// Null input
-		assertEquals( "`", EncryptionUtil.uuEncode( null ) );
+		assertEquals( "", EncryptionUtil.uuEncode( null ) );
 		assertArrayEquals( new byte[ 0 ], EncryptionUtil.uuDecode( null ) );
 
 		// Empty string decode
