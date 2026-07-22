@@ -17,8 +17,11 @@
  */
 package ortus.boxlang.runtime.util;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.nio.charset.StandardCharsets;
 
 import javax.crypto.SecretKey;
 
@@ -96,6 +99,79 @@ public class EncryptionUtilTest {
 
 		encrypted = EncryptionUtil.encrypt( "Hello, World!", "AES/CBC/PKCS5Padding", key, "Base64", null, null );
 		assertEquals( "Hello, World!", EncryptionUtil.decrypt( encrypted, "AES/CBC/PKCS5Padding", key, "Base64", null, null ) );
+	}
+
+	@DisplayName( "Can UUencode and UUdecode byte arrays" )
+	@Test
+	void testUUEncodeDecode() {
+		// Empty array
+		byte[]	empty	= new byte[ 0 ];
+		String	encoded	= EncryptionUtil.uuEncode( empty );
+		assertEquals( "`", encoded );
+		assertArrayEquals( empty, EncryptionUtil.uuDecode( encoded ) );
+
+		// Single byte
+		byte[] single = new byte[] { 65 }; // 'A'
+		encoded = EncryptionUtil.uuEncode( single );
+		assertArrayEquals( single, EncryptionUtil.uuDecode( encoded ) );
+
+		// Two bytes
+		byte[] twoBytes = new byte[] { 65, 66 }; // 'A', 'B'
+		encoded = EncryptionUtil.uuEncode( twoBytes );
+		assertArrayEquals( twoBytes, EncryptionUtil.uuDecode( encoded ) );
+
+		// Three bytes
+		byte[] threeBytes = new byte[] { 65, 66, 67 }; // 'A', 'B', 'C'
+		encoded = EncryptionUtil.uuEncode( threeBytes );
+		assertArrayEquals( threeBytes, EncryptionUtil.uuDecode( encoded ) );
+
+		// Full line (45 bytes)
+		byte[] fullLine = "123456789012345678901234567890123456789012345".getBytes( StandardCharsets.UTF_8 );
+		assertEquals( 45, fullLine.length );
+		encoded = EncryptionUtil.uuEncode( fullLine );
+		assertArrayEquals( fullLine, EncryptionUtil.uuDecode( encoded ) );
+
+		// 46 bytes (should produce two lines)
+		byte[] twoLines = "1234567890123456789012345678901234567890123456".getBytes( StandardCharsets.UTF_8 );
+		assertEquals( 46, twoLines.length );
+		encoded = EncryptionUtil.uuEncode( twoLines );
+		assertArrayEquals( twoLines, EncryptionUtil.uuDecode( encoded ) );
+
+		// Longer message
+		String	message		= "BoxLang is Great!";
+		byte[]	msgBytes	= message.getBytes( StandardCharsets.UTF_8 );
+		encoded = EncryptionUtil.uuEncode( msgBytes );
+		assertArrayEquals( msgBytes, EncryptionUtil.uuDecode( encoded ) );
+
+		// Binary data with all byte values
+		byte[] allBytes = new byte[ 256 ];
+		for ( int i = 0; i < 256; i++ ) {
+			allBytes[ i ] = ( byte ) i;
+		}
+		encoded = EncryptionUtil.uuEncode( allBytes );
+		assertArrayEquals( allBytes, EncryptionUtil.uuDecode( encoded ) );
+
+		// Null input
+		assertEquals( "`", EncryptionUtil.uuEncode( null ) );
+		assertArrayEquals( new byte[ 0 ], EncryptionUtil.uuDecode( null ) );
+
+		// Empty string decode
+		assertArrayEquals( new byte[ 0 ], EncryptionUtil.uuDecode( "" ) );
+	}
+
+	@DisplayName( "Can encrypt with UU encoding and produce expected output" )
+	@Test
+	void testEncryptWithUUEncoding() {
+		String encrypted = EncryptionUtil.encrypt( "password", "AES", "GA+KUbtz0NmF8goZ2Z4MFQ==", "UU", null, null );
+		assertEquals( "0:]LFXG.'VS9^=_V&L\\R41P", encrypted );
+	}
+
+	@DisplayName( "Can encrypt and decrypt with UU encoding round-trip" )
+	@Test
+	void testEncryptDecryptUU() {
+		String	key			= EncryptionUtil.encodeKey( EncryptionUtil.generateKey( "AES" ) );
+		String	encrypted	= EncryptionUtil.encrypt( "Hello, World!", "AES", key, "UU", null, null );
+		assertEquals( "Hello, World!", EncryptionUtil.decrypt( encrypted, "AES", key, "UU", null, null ) );
 	}
 
 }

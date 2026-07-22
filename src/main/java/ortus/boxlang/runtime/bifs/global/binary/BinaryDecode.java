@@ -29,6 +29,7 @@ import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.EncryptionUtil;
 
 @BoxBIF( description = "Decode binary data from a string" )
 public class BinaryDecode extends BIF {
@@ -64,7 +65,7 @@ public class BinaryDecode extends BIF {
 		}
 		// UU encoding
 		else if ( encodingKey.equals( Key.encodingUU ) ) {
-			return Base64.getMimeDecoder().decode( ref );
+			return EncryptionUtil.uuDecode( ref );
 		}
 		// Base64 encoding
 		else if ( encodingKey.equals( Key.encodingBase64 ) ) {
