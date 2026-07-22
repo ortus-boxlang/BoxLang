@@ -1524,7 +1524,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @return A copy of the current query.
 	 */
-	@Deprecated
+	@Deprecated( forRemoval = true )
 	public Query duplicate() {
 		return duplicate( RequestBoxContext.getCurrent() );
 	}
@@ -1549,7 +1549,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 *
 	 * @return A copy of the current query.
 	 */
-	@Deprecated
+	@Deprecated( forRemoval = true )
 	public Query duplicate( boolean deep ) {
 		return duplicate( deep, RequestBoxContext.getCurrent() );
 	}
