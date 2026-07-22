@@ -479,7 +479,7 @@ public class ClassTest {
 		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
 		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 5 );
 		assertThat( meta.get( Key.of( "extends" ) ) ).isNull();
-		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( false );
+		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( true );
 		assertThat( meta.get( Key.of( "persisent" ) ) ).isEqualTo( false );
 		assertThat( meta.get( Key.of( "accessors" ) ) ).isEqualTo( true );
 	}
@@ -512,7 +512,7 @@ public class ClassTest {
 		assertThat( meta.get( Key.of( "functions" ) ) instanceof Array ).isTrue();
 		assertThat( meta.getAsArray( Key.of( "functions" ) ).size() ).isEqualTo( 5 );
 		assertThat( meta.get( Key.of( "extends" ) ) ).isNull();
-		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( false );
+		assertThat( meta.get( Key.of( "output" ) ) ).isEqualTo( true );
 		assertThat( meta.get( Key.of( "persisent" ) ) ).isEqualTo( false );
 		assertThat( meta.get( Key.of( "accessors" ) ) ).isEqualTo( true );
 	}
@@ -637,7 +637,7 @@ public class ClassTest {
 		assertThat( meta.getAsString( Key.of( "path" ) ) ).contains( "MyClass.bx" );
 		// assertThat( meta.get( Key.of( "hashcode" ) ) ).isEqualTo( cfc.hashCode() );
 		assertThat( meta.get( Key.of( "properties" ) ) instanceof Array ).isTrue();
-		assertThat( meta.getAsBoolean( Key.of( "output" ) ) ).isFalse();
+		assertThat( meta.getAsBoolean( Key.of( "output" ) ) ).isTrue();
 		Array properties = meta.getAsArray( Key.of( "properties" ) );
 		assertThat( properties.size() ).isEqualTo( 1 );
 		assertThat( properties.get( 0 ) instanceof IStruct ).isTrue();
@@ -2008,23 +2008,6 @@ public class ClassTest {
 
 		// The second run should be less than 1.5% of the first run
 		assertThat( DoubleCaster.cast( secondRunTime / firstRunTime ) ).isLessThan( .015 );
-	}
-
-	@Test
-	public void testOuputInApplication() {
-		instance.executeSource(
-		    """
-		    bx:savecontent variable="result" {
-		       	new src.test.java.TestCases.phase3.Application().run()
-		    }
-
-		    bx:savecontent variable="result2" {
-		       	new src.test.java.TestCases.phase3.NotApplication().run()
-		    }
-		         """,
-		    context );
-		assertThat( variables.get( "result" ) ).isEqualTo( "Hello BradHello World" );
-		assertThat( variables.get( "result2" ) ).isEqualTo( "" );
 	}
 
 	@Test

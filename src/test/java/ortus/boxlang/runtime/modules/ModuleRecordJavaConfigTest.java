@@ -330,7 +330,8 @@ class ModuleRecordJavaConfigTest {
 		}
 		if ( record.getModuleClassLoader() != null ) {
 			try {
-				record.getModuleClassLoader().close();
+				// This is causing concurrency issues elsewhere in the test suite
+				// record.getModuleClassLoader().close();
 			} catch ( Exception ignored ) {
 			}
 		}
