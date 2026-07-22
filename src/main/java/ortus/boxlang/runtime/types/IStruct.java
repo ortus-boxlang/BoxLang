@@ -289,21 +289,27 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	 *
 	 * @return A stream of key/value entries
 	 */
-	public Stream<Entry<Key, Object>> stream();
+	public default Stream<Entry<Key, Object>> stream() {
+		return entrySet().stream();
+	}
 
 	/**
 	 * Returns a stream of struct keys.
 	 *
 	 * @return A stream of keys
 	 */
-	public Stream<Key> keyStream();
+	public default Stream<Key> keyStream() {
+		return keySet().stream();
+	}
 
 	/**
 	 * Returns a stream of struct values.
 	 *
 	 * @return A stream of values
 	 */
-	public Stream<Object> valueStream();
+	public default Stream<Object> valueStream() {
+		return values().stream();
+	}
 
 	/**
 	 * Convenience method for getting cast as {@link Key}.
