@@ -502,7 +502,7 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	 * @param <T>   The type parameter for the Attempt
 	 * @param key   The key to get
 	 * @param clazz The class to cast the Attempt value to
-	 * 
+	 *
 	 * @return The Attempt containing the value cast to the specified type
 	 */
 	default <T> Attempt<T> getAsAttempt( Key key, Class<T> clazz ) {
