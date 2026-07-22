@@ -84,6 +84,11 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 			}
 		}
 
+		/**
+		 * Returns a human-readable label for this struct type.
+		 *
+		 * @return The display name for this enum constant
+		 */
 		public String getHumanReadableName() {
 			// return the opposite of the case statement above
 			switch ( this ) {
@@ -209,14 +214,18 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	/**
 	 * Remove a value from the struct by a Key object
 	 *
-	 * @param key The String key to remove
+	 * @param key The string key to remove
+	 *
+	 * @return The previous value associated with the key, or null if not present
 	 */
 	public Object remove( String key );
 
 	/**
 	 * Remove a value from the struct by a Key object
 	 *
-	 * @param key The String key to remove
+	 * @param key The key to remove
+	 *
+	 * @return The previous value associated with the key, or null if not present
 	 */
 	public Object remove( Key key );
 
@@ -224,7 +233,7 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	 * Copies all of the mappings from the specified map to this map (optional operation).
 	 * This method will automatically convert the keys to Key objects
 	 *
-	 * @param map
+	 * @param map The source map whose entries will be added
 	 */
 	public void addAll( Map<? extends Object, ? extends Object> map );
 
@@ -244,23 +253,29 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 
 	/**
 	 * Get the wrapped map used in the implementation
+	 *
+	 * @return The underlying map backing this struct
 	 */
 	public Map<? extends Object, Object> getWrapped();
 
 	/**
 	 * Get the type of struct
 	 *
-	 * @return The type of struct according to the {@Link Type} enum
+	 * @return The type of struct according to the {@link TYPES} enum
 	 */
 	public TYPES getType();
 
 	/**
 	 * Returns a boolean as to whether the struct instance is case sensitive
+	 *
+	 * @return True if key lookups are case-sensitive, false otherwise
 	 */
 	public Boolean isCaseSensitive();
 
 	/**
 	 * Returns a boolean as to whether the struct assignments are soft referenced
+	 *
+	 * @return True if stored values are wrapped as soft references, false otherwise
 	 */
 	public Boolean isSoftReferenced();
 
@@ -270,8 +285,12 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	public Set<Entry<Key, Object>> entrySet();
 
 	/**
-	 * Convenience method for getting cast as {@Link Key}
+	 * Convenience method for getting cast as {@link Key}.
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 *
+	 * @param key The key to retrieve
+	 *
+	 * @return The value cast to {@link Key}
 	 */
 	default Key getAsKey( Key key ) {
 		return ( Key ) DynamicObject.unWrap( get( key ) );
@@ -280,6 +299,10 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	/**
 	 * Convenience method for getting cast as Array
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 *
+	 * @param key The key to retrieve
+	 *
+	 * @return The value cast to {@link Array}
 	 */
 	default Array getAsArray( Key key ) {
 		return ( Array ) DynamicObject.unWrap( get( key ) );
@@ -288,6 +311,10 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	/**
 	 * Convenience method for getting cast as BoxSet
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 *
+	 * @param key The key to retrieve
+	 *
+	 * @return The value cast to {@link BoxSet}
 	 */
 	default BoxSet getAsSet( Key key ) {
 		return ( BoxSet ) DynamicObject.unWrap( get( key ) );
@@ -296,6 +323,10 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	/**
 	 * Convenience method for getting cast as Struct
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 *
+	 * @param key The key to retrieve
+	 *
+	 * @return The value cast to {@link IStruct}
 	 */
 	default IStruct getAsStruct( Key key ) {
 		return ( IStruct ) DynamicObject.unWrap( get( key ) );
@@ -304,6 +335,10 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	/**
 	 * Convenience method for getting cast as DateTime
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 *
+	 * @param key The key to retrieve
+	 *
+	 * @return The value cast to {@link DateTime}
 	 */
 	default DateTime getAsDateTime( Key key ) {
 		return ( DateTime ) DynamicObject.unWrap( get( key ) );
@@ -312,6 +347,10 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	/**
 	 * Convenience method for getting cast as String
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 *
+	 * @param key The key to retrieve
+	 *
+	 * @return The value cast to {@link String}
 	 */
 	default String getAsString( Key key ) {
 		return ( String ) DynamicObject.unWrap( get( key ) );
@@ -320,6 +359,10 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	/**
 	 * Convenience method for getting cast as Char
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 *
+	 * @param key The key to retrieve
+	 *
+	 * @return The value cast to {@link Character}
 	 */
 	default Character getAsChar( Key key ) {
 		return ( Character ) DynamicObject.unWrap( get( key ) );
@@ -328,6 +371,10 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	/**
 	 * Convenience method for getting cast as Double
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 *
+	 * @param key The key to retrieve
+	 *
+	 * @return The value cast to {@link Double}
 	 */
 	default Double getAsDouble( Key key ) {
 		return ( Double ) DynamicObject.unWrap( get( key ) );
@@ -336,6 +383,10 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	/**
 	 * Convenience method for getting cast as Number
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 *
+	 * @param key The key to retrieve
+	 *
+	 * @return The value cast to {@link Number}
 	 */
 	default Number getAsNumber( Key key ) {
 		return ( Number ) DynamicObject.unWrap( get( key ) );
@@ -344,6 +395,10 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	/**
 	 * Convenience method for getting cast as Long
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 *
+	 * @param key The key to retrieve
+	 *
+	 * @return The value cast to {@link Long}
 	 */
 	default Long getAsLong( Key key ) {
 		return ( Long ) DynamicObject.unWrap( get( key ) );
@@ -352,6 +407,10 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	/**
 	 * Convenience method for getting cast as Integer
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 *
+	 * @param key The key to retrieve
+	 *
+	 * @return The value cast to {@link Integer}
 	 */
 	default Integer getAsInteger( Key key ) {
 		return ( Integer ) DynamicObject.unWrap( get( key ) );
@@ -360,6 +419,10 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	/**
 	 * Convenience method for getting cast as Boolean
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 *
+	 * @param key The key to retrieve
+	 *
+	 * @return The value cast to {@link Boolean}
 	 */
 	default Boolean getAsBoolean( Key key ) {
 		return ( Boolean ) DynamicObject.unWrap( get( key ) );
@@ -368,6 +431,10 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	/**
 	 * Convenience method for getting cast as Function
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 *
+	 * @param key The key to retrieve
+	 *
+	 * @return The value cast to {@link Function}
 	 */
 	default Function getAsFunction( Key key ) {
 		return ( Function ) DynamicObject.unWrap( get( key ) );
@@ -376,6 +443,10 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	/**
 	 * Convenience method for getting cast as Query
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 *
+	 * @param key The key to retrieve
+	 *
+	 * @return The value cast to {@link Query}
 	 */
 	default Query getAsQuery( Key key ) {
 		return ( Query ) DynamicObject.unWrap( get( key ) );
@@ -384,6 +455,10 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	/**
 	 * Convenience method for getting cast as XML
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 *
+	 * @param key The key to retrieve
+	 *
+	 * @return The value cast to {@link XML}
 	 */
 	default XML getAsXML( Key key ) {
 		return ( XML ) DynamicObject.unWrap( get( key ) );
@@ -392,6 +467,10 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	/**
 	 * Convenience method for getting cast as Optional
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 *
+	 * @param key The key to retrieve
+	 *
+	 * @return The value cast to {@link Optional}
 	 */
 	@SuppressWarnings( "unchecked" )
 	default Optional<Object> getAsOptional( Key key ) {
@@ -401,6 +480,10 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	/**
 	 * Convenience method for getting cast as BoxLang Attempt
 	 * If the value is not already an attempt, it will be wrapped in an Attempt
+	 *
+	 * @param key The key to retrieve
+	 *
+	 * @return The resolved value as an {@link Attempt}
 	 */
 	@SuppressWarnings( "unchecked" )
 	default Attempt<Object> getAsAttempt( Key key ) {
@@ -433,6 +516,10 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	/**
 	 * Convenience method for getting cast as BoxRunnable
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 *
+	 * @param key The key to retrieve
+	 *
+	 * @return The value cast to {@link IClassRunnable}
 	 */
 	default IClassRunnable getAsClassRunnable( Key key ) {
 		return ( IClassRunnable ) DynamicObject.unWrap( get( key ) );
@@ -441,19 +528,47 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	/**
 	 * Convenience method for getting cast as BoxInterface
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
+	 *
+	 * @param key The key to retrieve
+	 *
+	 * @return The value cast to {@link BoxInterface}
 	 */
 	default BoxInterface getAsBoxInterface( Key key ) {
 		return ( BoxInterface ) DynamicObject.unWrap( get( key ) );
 	}
 
+	/**
+	 * Convenience method for getting cast as {@link BoxFile}.
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable.
+	 *
+	 * @param key The key to retrieve
+	 *
+	 * @return The value cast to {@link BoxFile}
+	 */
 	default BoxFile getAsBoxFile( Key key ) {
 		return ( BoxFile ) DynamicObject.unWrap( get( key ) );
 	}
 
+	/**
+	 * Convenience method for getting cast as {@link Stream}.
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable.
+	 *
+	 * @param key The key to retrieve
+	 *
+	 * @return The value cast to {@link Stream}
+	 */
 	default Stream<?> getAsStream( Key key ) {
 		return ( Stream<?> ) DynamicObject.unWrap( get( key ) );
 	}
 
+	/**
+	 * Convenience method for getting cast as {@link BoxStringBuilder}.
+	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable.
+	 *
+	 * @param key The key to retrieve
+	 *
+	 * @return The value cast to {@link BoxStringBuilder}
+	 */
 	default BoxStringBuilder getAsBoxStringBuilder( Key key ) {
 		return ( BoxStringBuilder ) DynamicObject.unWrap( get( key ) );
 	}
