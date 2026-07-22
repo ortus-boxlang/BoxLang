@@ -37,8 +37,10 @@ import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.bifs.BoxMemberExpose;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.context.ClassBoxContext;
 import ortus.boxlang.runtime.context.FunctionBoxContext;
@@ -747,13 +749,43 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 	}
 
 	/**
+	 * Returns a stream of struct keys.
+	 *
+	 * @return The stream of keys
+	 */
+	@BoxMemberExpose
+	public Stream<Key> keyStream() {
+		return keySet().stream();
+	}
+
+	/**
 	 * Returns a {@link Collection} view of the values contained in this map.
 	 */
 	@Override
 	public Collection<Object> values() {
 		return wrapped.values().stream()
-		    .map( entry -> unWrapNullInternal( entry ) )
+		    .map( this::unWrapNullInternal )
 		    .collect( Collectors.toList() );
+	}
+
+	/**
+	 * Returns a stream of struct values.
+	 *
+	 * @return The stream of values
+	 */
+	@BoxMemberExpose
+	public Stream<Object> valueStream() {
+		return values().stream();
+	}
+
+	/**
+	 * Returns a stream of struct entries.
+	 *
+	 * @return The stream of key/value entries
+	 */
+	@BoxMemberExpose
+	public Stream<Entry<Key, Object>> stream() {
+		return entrySet().stream();
 	}
 
 	/**

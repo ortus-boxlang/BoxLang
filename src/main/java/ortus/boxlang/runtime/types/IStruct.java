@@ -285,6 +285,27 @@ public interface IStruct extends Map<Key, Object>, IType, IReferenceable {
 	public Set<Entry<Key, Object>> entrySet();
 
 	/**
+	 * Returns a stream of the struct entries.
+	 *
+	 * @return A stream of key/value entries
+	 */
+	public Stream<Entry<Key, Object>> stream();
+
+	/**
+	 * Returns a stream of struct keys.
+	 *
+	 * @return A stream of keys
+	 */
+	public Stream<Key> keyStream();
+
+	/**
+	 * Returns a stream of struct values.
+	 *
+	 * @return A stream of values
+	 */
+	public Stream<Object> valueStream();
+
+	/**
 	 * Convenience method for getting cast as {@link Key}.
 	 * Does NOT perform BoxLang casting, only Java cast so the object needs to actually be castable
 	 *
