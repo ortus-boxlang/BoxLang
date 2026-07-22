@@ -200,7 +200,7 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 
 	/**
 	 * Create a default struct
-	 * 
+	 *
 	 * @param concurrent Whether to use a concurrent map implementation
 	 */
 	public Struct( boolean concurrent ) {
@@ -596,7 +596,7 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 
 	/**
 	 * Set a value in the struct by a Key object.
-	 * 
+	 *
 	 * I exist since I can be used internally to bypass overridden put() methods in subclasses
 	 * such as ArgumentScope, which have undesirable behaviors in scenarios such as putAll().
 	 *
@@ -916,7 +916,7 @@ public class Struct implements IStruct, IListenable<IStruct>, Serializable {
 
 	/**
 	 * Get the BoxLang type name for this type
-	 * 
+	 *
 	 * @return The BoxLang type name
 	 */
 	@Override
