@@ -33,6 +33,7 @@ import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
+import ortus.boxlang.runtime.types.BoxFile;
 import ortus.boxlang.runtime.types.Closure;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
@@ -95,7 +96,7 @@ public class Loop extends Component {
 		    new Attribute( Key.step, "number", 1 ),
 
 		    // File loop attributes
-		    new Attribute( Key.file, "string", Set.of( Validator.requires( Key.index ) ) ),
+		    new Attribute( Key.file, "string", Set.of( Validator.requires( Key.item ) ) ),
 
 		    // List loop attributes
 		    new Attribute( Key.list, "string" ),
@@ -118,12 +119,10 @@ public class Loop extends Component {
 		    new Attribute( Key.label, "string", Set.of( Validator.NON_EMPTY ) ),
 
 		    // Times loop attributes
-		    new Attribute( Key.times, "integer", Set.of( Validator.min( 0 ) ) )
+		    new Attribute( Key.times, "integer", Set.of( Validator.min( 0 ) ) ),
 
-			/**
-			 * Future attributes to be implemented:
-			 * - characters: Number of characters to read per iteration for file loops
-			 */
+		    // Number of characters to read per iteration for file loops
+		    new Attribute( Key.characters, "integer", Set.of( Validator.min( 1 ) ) )
 		};
 	}
 
@@ -414,6 +413,10 @@ public class Loop extends Component {
 	 *                  or <code>index</code> to access the current iteration number.
 	 *                  <br>
 	 *                  <strong>Example:</strong> <code>&lt;bx:loop times="5" index="i"&gt;</code>
+	 * 
+	 * @attribute.characters Number of characters to read per iteration for file loops.
+	 *                       <br>
+	 *                       <strong>Example:</strong> <code>&lt;bx:loop file="example.txt" characters="100"&gt;</code>
 	 */
 	public BodyResult _invoke( IBoxContext context, IStruct attributes, ComponentBody body, IStruct executionState ) {
 		Array				array				= attributes.getAsArray( Key.array );
@@ -434,6 +437,7 @@ public class Loop extends Component {
 		String				label				= attributes.getAsString( Key.label );
 		Integer				times				= attributes.getAsInteger( Key.times );
 		Number				step				= attributes.getAsNumber( Key.step );
+		Integer				characters			= attributes.getAsInteger( Key.characters );
 
 		if ( times != null ) {
 			return _invokeTimes( context, times, item, index, body, executionState, label );
@@ -445,7 +449,7 @@ public class Loop extends Component {
 			return _invokeRange( context, from, to, step, index, body, executionState, label );
 		}
 		if ( file != null ) {
-			return _invokeFile( context, file, index, body, executionState, label );
+			return _invokeFile( context, file, index, body, executionState, label, item, characters );
 		}
 		if ( list != null ) {
 			if ( delimiters == null ) {
@@ -652,30 +656,45 @@ public class Loop extends Component {
 	 *
 	 * @throws RuntimeException if the file cannot be read or does not exist
 	 */
-	private BodyResult _invokeFile( IBoxContext context, String file, String index, ComponentBody body, IStruct executionState, String label ) {
-		String		fileContents	= StringCaster.cast( FileSystemUtil.read( file ) );
-		// loop over lines
-		String[]	lines			= fileContents.split( "\r?\n" );
-
-		// Loop over array, executing body every time
-		for ( int i = 0; i < lines.length; i++ ) {
-			String thisLine = lines[ i ];
-			// Set the index and item variables
-			ExpressionInterpreter.setVariable( context, index, thisLine );
-			// Run the code inside of the output loop
-			BodyResult bodyResult = processBody( context, body );
-			// IF there was a return statement inside our body, we early exit now
-			if ( bodyResult.isEarlyExit() ) {
-				if ( bodyResult.isContinue( label ) ) {
-					continue;
-				} else if ( bodyResult.isBreak( label ) ) {
-					break;
+	private BodyResult _invokeFile( IBoxContext context, String file, String index, ComponentBody body, IStruct executionState, String label, String item,
+	    Integer characters ) {
+		BoxFile boxFile = new BoxFile( FileSystemUtil.expandPath( context, file ).absolutePath().toString(), BoxFile.Mode.READ, null, false );
+		try {
+			int row = 1;
+			while ( !boxFile.isEOF() ) {
+				String content;
+				if ( characters != null ) {
+					content = StringCaster.cast( boxFile.read( characters ) );
+					if ( content.isEmpty() ) {
+						break;
+					}
 				} else {
-					return bodyResult;
+					content = boxFile.readLine();
+					if ( content == null ) {
+						break;
+					}
+				}
+
+				ExpressionInterpreter.setVariable( context, item, content );
+				if ( index != null ) {
+					ExpressionInterpreter.setVariable( context, index, row++ );
+				}
+
+				BodyResult bodyResult = processBody( context, body );
+				if ( bodyResult.isEarlyExit() ) {
+					if ( bodyResult.isContinue( label ) ) {
+						continue;
+					} else if ( bodyResult.isBreak( label ) ) {
+						break;
+					} else {
+						return bodyResult;
+					}
 				}
 			}
+			return DEFAULT_RETURN;
+		} finally {
+			boxFile.close();
 		}
-		return DEFAULT_RETURN;
 	}
 
 	/**

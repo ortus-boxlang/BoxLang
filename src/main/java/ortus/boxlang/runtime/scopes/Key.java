@@ -191,6 +191,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		cftoken								= Key.of( "cftoken" );
 	public static final Key		cfvar								= Key.of( "cfvar" );
 	public static final Key		chars								= Key.of( "chars" );
+	public static final Key		characters							= Key.of( "characters" );
 	public static final Key		charset								= Key.of( "charset" );
 	public static final Key		charsetOrBufferSize					= Key.of( "charsetOrBufferSize" );
 	public static final Key		childname							= Key.of( "childname" );
