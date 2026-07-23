@@ -64,6 +64,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxLicenseException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
+import ortus.boxlang.runtime.util.CodeEncryption;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 import ortus.boxlang.runtime.util.Timer;
 
@@ -739,11 +740,21 @@ public class BoxRunner {
 			return false;
 		}
 
+		// Encrypted source is binary at rest and can never carry a plaintext shebang line
+		try {
+			if ( CodeEncryption.isEncrypted( Files.readAllBytes( templatePath ) ) ) {
+				return false;
+			}
+		} catch ( IOException e ) {
+			return false;
+		}
+
 		try ( Stream<String> lines = Files.lines( templatePath ) ) {
 			String firstLine = lines.findFirst().orElse( "" );
 			return firstLine.startsWith( "#!" );
-		} catch ( IOException e ) {
-			throw new BoxIOException( e );
+		} catch ( IOException | java.io.UncheckedIOException e ) {
+			// Not decodable as UTF-8 text (e.g. binary or other charset) -> not a shebang script
+			return false;
 		}
 	}
 

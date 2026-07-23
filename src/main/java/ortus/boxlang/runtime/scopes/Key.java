@@ -210,6 +210,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		clientCertPassword					= Key.of( "clientCertPassword" );
 	public static final Key		cluster								= Key.of( "cluster" );
 	public static final Key		closure								= Key.of( "closure" );
+	public static final Key		codeKeys							= Key.of( "codeKeys" );
 	public static final Key		codePrintHTML						= Key.of( "codePrintHTML" );
 	public static final Key		codePrintPlain						= Key.of( "codePrintPlain" );
 	public static final Key		coldfusion							= Key.of( "coldfusion" );

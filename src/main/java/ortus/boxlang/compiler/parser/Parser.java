@@ -18,8 +18,10 @@
 package ortus.boxlang.compiler.parser;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -36,6 +38,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ParseException;
+import ortus.boxlang.runtime.util.CodeEncryption;
 
 public class Parser {
 
@@ -315,9 +318,11 @@ public class Parser {
 	 */
 	private static BoxSourceType guessClassType( File file, Charset charset ) throws IOException {
 
-		// This will only read the lines up until it finds a match to avoid loading the entire file
-		boolean inComment = false;
-		try ( BufferedReader reader = Files.newBufferedReader( file.toPath(), charset ) ) {
+		// This will only read the lines up until it finds a match to avoid loading the entire file.
+		// Decrypt first if the file is a BoxLang-encrypted payload, so detection sees the real source.
+		byte[]	fileBytes	= CodeEncryption.maybeDecrypt( Files.readAllBytes( file.toPath() ) );
+		boolean	inComment	= false;
+		try ( BufferedReader reader = new BufferedReader( new InputStreamReader( new ByteArrayInputStream( fileBytes ), charset ) ) ) {
 			String line;
 			while ( ( line = reader.readLine() ) != null ) {
 				// Remove any BOMs from the start of the file (There can be more than one BOM in some cases)

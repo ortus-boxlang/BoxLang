@@ -66,6 +66,16 @@ public class SecurityConfig implements IConfigSegment {
 	public List<String>			disallowedFileOperationExtensions	= new ArrayList<>();
 
 	/**
+	 * A map of code decryption keys, keyed by a keyId label. When a source file is distributed encrypted
+	 * (see {@code ortus.boxlang.runtime.util.CodeEncryption}), the runtime reads the keyId embedded in the
+	 * file and resolves the matching secret from this map (an environment variable
+	 * {@code BOXLANG_CODE_KEY_<KEYID>} takes precedence). This lets a vendor lock each module/artifact with
+	 * its own key and hand each customer only the keys they purchased.
+	 * Ex: "codeKeys": { "moduleA": "the-secret", "moduleB": "another-secret" }
+	 */
+	public IStruct				codeKeys							= new Struct();
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
 	 * --------------------------------------------------------------------------
@@ -181,7 +191,8 @@ public class SecurityConfig implements IConfigSegment {
 		PropertyHelper.processListToSetKey( config, Key.disallowedComponents, this.disallowedComponents );
 		PropertyHelper.processStringOrArrayToList( config, Key.allowedFileOperationExtensions, this.allowedFileOperationExtensions );
 		PropertyHelper.processStringOrArrayToList( config, Key.disallowedFileOperationExtensions, this.disallowedFileOperationExtensions );
-		this.populateServerSystemScope = PropertyHelper.processBoolean( config, Key.populateServerSystemScope, this.populateServerSystemScope );
+		this.populateServerSystemScope	= PropertyHelper.processBoolean( config, Key.populateServerSystemScope, this.populateServerSystemScope );
+		this.codeKeys					= PropertyHelper.processToStruct( config, Key.codeKeys );
 		return this;
 	}
 
@@ -196,7 +207,8 @@ public class SecurityConfig implements IConfigSegment {
 		    Key.disallowedBIFs, this.disallowedBIFs,
 		    Key.disallowedComponents, this.disallowedComponents,
 		    Key.disallowedFileOperationExtensions, Array.fromList( this.disallowedFileOperationExtensions ),
-		    Key.populateServerSystemScope, this.populateServerSystemScope
+		    Key.populateServerSystemScope, this.populateServerSystemScope,
+		    Key.codeKeys, this.codeKeys
 		);
 	}
 

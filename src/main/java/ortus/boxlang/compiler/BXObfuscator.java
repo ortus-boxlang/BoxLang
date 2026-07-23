@@ -33,6 +33,7 @@ import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.compiler.prettyprint.PrettyPrint;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.util.CodeEncryption;
 
 /**
  * I am a CLI tool for obfuscating BoxLang / ColdFusion source code so that it can be
@@ -43,6 +44,13 @@ import ortus.boxlang.runtime.BoxRuntime;
  * The output is still valid BoxLang source that runs identically to the original — only its
  * readability is reduced. If bytecode-only distribution is desired, the obfuscated output can
  * be piped through {@code boxlang compile}.
+ *
+ * With {@code --encrypt}, the obfuscated source is additionally encrypted at rest (AES-256-GCM) and
+ * stamped with a key-id label. The runtime transparently decrypts it in memory just before parsing
+ * (see {@code ortus.boxlang.runtime.util.CodeEncryption}), so the distributed files are unreadable
+ * yet still run on any BoxLang version (no bytecode, no version binding). The decryption key is
+ * resolved on the host by key-id from the {@code BOXLANG_CODE_KEY_<KEYID>} env var or the
+ * {@code security.codeKeys} map in {@code boxlang.json}.
  */
 public final class BXObfuscator {
 
@@ -61,6 +69,9 @@ public final class BXObfuscator {
 	 * @param renameFunctions rename private / script-level function names and their call sites
 	 * @param renameArgs      rename function argument names
 	 * @param stopOnError     stop processing on the first error
+	 * @param encrypt         encrypt the obfuscated output at rest (decrypted in memory at parse time)
+	 * @param key             the secret used to derive the encryption key (required when encrypt is true)
+	 * @param keyId           a label identifying which key decrypts the output (baked into each file header)
 	 */
 	record ObfuscatorOptions(
 	    List<String> sourcePaths,
@@ -69,7 +80,10 @@ public final class BXObfuscator {
 	    boolean renameVars,
 	    boolean renameFunctions,
 	    boolean renameArgs,
-	    boolean stopOnError ) {
+	    boolean stopOnError,
+	    boolean encrypt,
+	    String key,
+	    String keyId ) {
 	}
 
 	/**
@@ -211,12 +225,19 @@ public final class BXObfuscator {
 		root.accept( visitor );
 
 		String	obfuscated	= PrettyPrint.prettyPrint( root );
+		byte[]	outputBytes	= obfuscated.getBytes( StandardCharsets.UTF_8 );
 
-		Path	parent		= targetPath.getParent();
+		// Optionally encrypt the obfuscated source at rest. The runtime decrypts it in memory,
+		// just before parsing, so the distributed file is unreadable but still runs on any version.
+		if ( options.encrypt() ) {
+			outputBytes = CodeEncryption.encrypt( outputBytes, options.keyId(), options.key() );
+		}
+
+		Path parent = targetPath.getParent();
 		if ( parent != null ) {
 			Files.createDirectories( parent );
 		}
-		Files.write( targetPath, obfuscated.getBytes( StandardCharsets.UTF_8 ) );
+		Files.write( targetPath, outputBytes );
 	}
 
 	/**
@@ -269,6 +290,9 @@ public final class BXObfuscator {
 		boolean			renameFunctions	= false;
 		boolean			renameArgs		= false;
 		boolean			stopOnError		= false;
+		boolean			encrypt			= false;
+		String			key				= null;
+		String			keyId			= null;
 
 		for ( int i = 0; i < args.length; i++ ) {
 			String arg = args[ i ];
@@ -296,6 +320,12 @@ public final class BXObfuscator {
 				renameArgs = true;
 			} else if ( arg.equalsIgnoreCase( "--stopOnError" ) ) {
 				stopOnError = true;
+			} else if ( arg.equalsIgnoreCase( "--encrypt" ) ) {
+				encrypt = true;
+			} else if ( arg.equalsIgnoreCase( "--key" ) && i + 1 < args.length ) {
+				key = args[ ++i ];
+			} else if ( arg.equalsIgnoreCase( "--key-id" ) && i + 1 < args.length ) {
+				keyId = args[ ++i ];
 			}
 		}
 
@@ -307,7 +337,18 @@ public final class BXObfuscator {
 			throw new IllegalArgumentException( "--target is required" );
 		}
 
-		return new ObfuscatorOptions( sourcePaths, targetPath, excludePaths, renameVars, renameFunctions, renameArgs, stopOnError );
+		if ( encrypt ) {
+			if ( key == null || key.isEmpty() ) {
+				throw new IllegalArgumentException( "--key is required when --encrypt is used" );
+			}
+			// Default the key-id label when omitted so a single-artifact encrypt still works
+			if ( keyId == null || keyId.isEmpty() ) {
+				keyId = "default";
+			}
+		}
+
+		return new ObfuscatorOptions( sourcePaths, targetPath, excludePaths, renameVars, renameFunctions, renameArgs, stopOnError, encrypt, key,
+		    keyId );
 	}
 
 	/**
@@ -331,11 +372,18 @@ public final class BXObfuscator {
 		out.println( "      --rename-functions      🔧 Rename private/script functions and call sites (default: off)" );
 		out.println( "      --rename-args           📥 Rename function argument names (default: off)" );
 		out.println( "      --stopOnError           🛑 Stop processing on the first error (default: off)" );
+		out.println( "      --encrypt               🔐 Encrypt output at rest (decrypted in memory at parse time)" );
+		out.println( "      --key <SECRET>          🔑 Secret used to derive the encryption key (required with --encrypt)" );
+		out.println( "      --key-id <LABEL>        🏷️  Key label baked into each file; the runtime resolves the key by" );
+		out.println( "                                 this label (default: \"default\"). Give each module its own key-id." );
 		out.println();
 		out.println( "🔒 WHAT IT DOES:" );
 		out.println( "  • Strips all comments and documentation" );
 		out.println( "  • Renames var-declared local variables to short opaque names" );
 		out.println( "  • Emits compact source that runs identically to the original" );
+		out.println( "  • With --encrypt: writes unreadable ciphertext; the runtime decrypts in memory before" );
+		out.println( "    parsing, using a key resolved from env BOXLANG_CODE_KEY_<KEYID> or boxlang.json" );
+		out.println( "    security.codeKeys.<keyId>. Not bytecode, so no BoxLang-version binding." );
 		out.println();
 		out.println( "🔧 SUPPORTED SOURCE FILES:" );
 		out.println( "  .bx .bxs .bxm  - BoxLang class/script/template files" );
@@ -347,6 +395,11 @@ public final class BXObfuscator {
 		out.println();
 		out.println( "  # Aggressively obfuscate a single file (rename private functions too)" );
 		out.println( "  boxlang obfuscate --source app.bx --target out/ --rename-functions" );
+		out.println();
+		out.println( "  # Obfuscate AND encrypt two modules, each with its own key-id" );
+		out.println( "  boxlang obfuscate --source ./modA --target ./distA --encrypt --key secretA --key-id moduleA" );
+		out.println( "  boxlang obfuscate --source ./modB --target ./distB --encrypt --key secretB --key-id moduleB" );
+		out.println( "  # Clients run them by configuring security.codeKeys.moduleA / .moduleB (or env vars)" );
 		out.println();
 		out.println( "📖 More Information:" );
 		out.println( "  📖 Documentation: https://boxlang.ortusbooks.com/" );
