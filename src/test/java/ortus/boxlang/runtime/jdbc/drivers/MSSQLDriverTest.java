@@ -25,7 +25,6 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.Struct;
-import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
 
 @EnabledIf( "tools.JDBCTestUtils#hasMSSQLModule" )
@@ -370,6 +369,60 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
 	}
 
+	@DisplayName( "It can call stored proc with some missing proc result resultSet attributes" )
+	@Test
+	public void testCallStoredProcWithMissingProcResultAttributes() {
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedure" datasource="MSSQLdatasource" result="variables.result" returncode="true">
+		        <bx:procparam name="in1" value="123" type="in" sqltype="integer" />
+		        <bx:procparam name="in2" value="hello" type="in" sqltype="nvarchar" />
+		        <bx:procparam name="inout1" value="10" type="inout" sqltype="integer" variable="inout1" />
+		        <bx:procparam name="out1" type="out" sqltype="nvarchar" variable="out1" />
+		        <bx:procresult name="resultSet1" />
+		        <bx:procresult name="resultSet2" resultSet=2 />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.get( "resultSet1" ) ).isInstanceOf( Query.class );
+		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
+		assertThat( rs1.size() ).isEqualTo( 2 );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "foo" );
+		assertThat( rs1.getRowAsStruct( 1 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "bar" );
+
+		assertThat( variables.get( "resultSet2" ) ).isInstanceOf( Query.class );
+		Query rs2 = variables.getAsQuery( Key.of( "resultSet2" ) );
+		assertThat( rs2.size() ).isEqualTo( 1 );
+		assertThat( rs2.getRowAsStruct( 0 ).getAsString( Key.of( "myColumn" ) ) ).isEqualTo( "second" );
+	}
+
+	@DisplayName( "It can call stored proc with some missing proc result resultSet attributes 2" )
+	@Test
+	public void testCallStoredProcWithMissingProcResultAttributes2() {
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedure" datasource="MSSQLdatasource" result="variables.result" returncode="true">
+		        <bx:procparam name="in1" value="123" type="in" sqltype="integer" />
+		        <bx:procparam name="in2" value="hello" type="in" sqltype="nvarchar" />
+		        <bx:procparam name="inout1" value="10" type="inout" sqltype="integer" variable="inout1" />
+		        <bx:procparam name="out1" type="out" sqltype="nvarchar" variable="out1" />
+		        <bx:procresult name="resultSet1" resultSet=1 />
+		        <bx:procresult name="resultSet2" />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+		assertThat( variables.get( "resultSet1" ) ).isInstanceOf( Query.class );
+		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
+		assertThat( rs1.size() ).isEqualTo( 2 );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "foo" );
+		assertThat( rs1.getRowAsStruct( 1 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "bar" );
+
+		assertThat( variables.get( "resultSet2" ) ).isInstanceOf( Query.class );
+		Query rs2 = variables.getAsQuery( Key.of( "resultSet2" ) );
+		assertThat( rs2.size() ).isEqualTo( 1 );
+		assertThat( rs2.getRowAsStruct( 0 ).getAsString( Key.of( "myColumn" ) ) ).isEqualTo( "second" );
+	}
+
 	@DisplayName( "It can call stored proc with cf_sql_ prefix" )
 	@Test
 	public void testCallStoredProcWithCfSqlPrefix() {
@@ -701,24 +754,6 @@ public class MSSQLDriverTest extends AbstractDriverTest {
 
 		assertThat( resultStruct.get( "statusCode" ) ).isEqualTo( 42 );
 		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
-	}
-
-	@DisplayName( "It can't call stored proc mixing positional and indexed proc results" )
-	@Test
-	public void testCallStoredProcErrorOnMixedResults() {
-		Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
-		    """
-		    <bx:storedproc procedure="testProcedure" datasource="MSSQLdatasource">
-		        <bx:procparam name="in1" value="123" type="in" sqltype="integer" />
-		        <bx:procparam name="in2" value="hello" type="in" sqltype="nvarchar" />
-		        <bx:procparam name="inout1" value="10" type="inout" sqltype="integer" variable="inout1" />
-		        <bx:procparam name="out1" type="out" sqltype="nvarchar" variable="out1" />
-		        <bx:procresult name="resultSet1" resultSet=1 />
-		        <bx:procresult name="resultSet2" />
-		    </bx:storedproc>
-		    """,
-		    context, BoxSourceType.BOXTEMPLATE ) );
-		assertThat( t.getMessage() ).contains( "Cannot mix" );
 	}
 
 	@DisplayName( "It can call stored proc with selects after insert" )

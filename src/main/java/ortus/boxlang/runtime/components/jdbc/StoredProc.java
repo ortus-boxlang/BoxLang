@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.components.jdbc;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -350,35 +351,38 @@ public class StoredProc extends Component {
 	}
 
 	/**
-	 * Validate that all ProcResult components either have a resultSet attribute, or don't. Positional vs indexed.
-	 * Throw an exception if there is a mix of both.
-	 *
-	 * Return a map of resultSet index to ProcResult attribute struct. If they were positional, then assign them indexes starting at 1.
-	 * If they were indexed, then use the provided index. There may be gaps in the indexes. If more than one procresult used the same index, the last one wins (overwrite)
+	 * Return a map of resultSet index to ProcResult attribute struct. Explicit resultSet indexes are preserved, while missing
+	 * resultSet attributes are assigned the next available unused result-set index.
+	 * If more than one procresult uses the same explicit index, the last one wins (overwrite).
 	 *
 	 * @param procResults The array of proc result definitions
 	 *
 	 * @return Map of resultSet index to ProcResult attribute struct.
 	 */
 	private Map<Integer, IStruct> processProcResults( Array procResults ) {
-		boolean					hasPositional	= false;
-		boolean					hasIndexed		= false;
-		Map<Integer, IStruct>	resultMap		= new HashMap<>();
+		Map<Integer, IStruct>	resultMap				= new HashMap<>();
+		Set<Integer>			usedResultSetIndexes	= new HashSet<>();
+
+		// Reserve explicit indexes first so positional results never overwrite an explicitly indexed result.
 		for ( int i = 0; i < procResults.size(); i++ ) {
-			IStruct	attr		= ( IStruct ) procResults.get( i );
-			boolean	thisIndexed	= attr.containsKey( Key.resultSet );
-			if ( thisIndexed ) {
-				hasIndexed = true;
-				resultMap.put( IntegerCaster.cast( attr.get( Key.resultSet ) ), attr );
-			} else {
-				hasPositional = true;
-				resultMap.put( i + 1, attr );
+			IStruct attr = ( IStruct ) procResults.get( i );
+			if ( attr.containsKey( Key.resultSet ) ) {
+				int resultSetIndex = IntegerCaster.cast( attr.get( Key.resultSet ) );
+				resultMap.put( resultSetIndex, attr );
+				usedResultSetIndexes.add( resultSetIndex );
 			}
-			if ( hasPositional && hasIndexed ) {
-				// World's best error message. So descriptive!
-				throw new BoxRuntimeException( "Cannot mix positional and indexed ProcResult components in a StoredProc. "
-				    + " ProcParm [" + attr.getAsString( Key._name ) + "] is " + ( thisIndexed ? "indexed" : "positional" ) + ","
-				    + " but the " + ( resultMap.size() - 1 ) + " ProcResult component(s) above it are " + ( thisIndexed ? "positional" : "indexed" ) + "." );
+		}
+
+		int nextAvailableResultSetIndex = 1;
+		for ( int i = 0; i < procResults.size(); i++ ) {
+			IStruct attr = ( IStruct ) procResults.get( i );
+			if ( !attr.containsKey( Key.resultSet ) ) {
+				while ( usedResultSetIndexes.contains( nextAvailableResultSetIndex ) ) {
+					nextAvailableResultSetIndex++;
+				}
+				resultMap.put( nextAvailableResultSetIndex, attr );
+				usedResultSetIndexes.add( nextAvailableResultSetIndex );
+				nextAvailableResultSetIndex++;
 			}
 		}
 		return resultMap;

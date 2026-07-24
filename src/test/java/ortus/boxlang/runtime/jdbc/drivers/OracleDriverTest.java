@@ -370,6 +370,62 @@ public class OracleDriverTest extends AbstractDriverTest {
 		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
 	}
 
+	@DisplayName( "It can call stored proc with some missing proc result resultSet attributes" )
+	@Test
+	public void testCallStoredProcWithMissingProcResultAttributes() {
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedure" datasource="OracleDatasource" result="variables.result" debug=false>
+		        <bx:procparam dbvarname="in1" value="123" type="in" sqltype="integer" />
+		        <bx:procparam dbvarname="in2" value="hello" type="in" sqltype="nvarchar" />
+		        <bx:procparam dbvarname="inout1" value="10" type="inout" sqltype="integer" variable="inout1" />
+		        <bx:procparam dbvarname="out1" type="out" sqltype="nvarchar" variable="out1" />
+		          <bx:procresult name="resultSet1" />
+		          <bx:procresult name="resultSet2" resultSet=2 />
+		      </bx:storedproc>
+		      """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		assertThat( variables.get( "resultSet1" ) ).isInstanceOf( Query.class );
+		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
+		assertThat( rs1.size() ).isEqualTo( 2 );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "foo" );
+		assertThat( rs1.getRowAsStruct( 1 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "bar" );
+
+		assertThat( variables.get( "resultSet2" ) ).isInstanceOf( Query.class );
+		Query rs2 = variables.getAsQuery( Key.of( "resultSet2" ) );
+		assertThat( rs2.size() ).isEqualTo( 1 );
+		assertThat( rs2.getRowAsStruct( 0 ).getAsString( Key.of( "myColumn" ) ) ).isEqualTo( "second" );
+	}
+
+	@DisplayName( "It can call stored proc with some missing proc result resultSet attributes 2" )
+	@Test
+	public void testCallStoredProcWithMissingProcResultAttributes2() {
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedure" datasource="OracleDatasource" result="variables.result" debug=false>
+		        <bx:procparam dbvarname="in1" value="123" type="in" sqltype="integer" />
+		        <bx:procparam dbvarname="in2" value="hello" type="in" sqltype="nvarchar" />
+		        <bx:procparam dbvarname="inout1" value="10" type="inout" sqltype="integer" variable="inout1" />
+		        <bx:procparam dbvarname="out1" type="out" sqltype="nvarchar" variable="out1" />
+		          <bx:procresult name="resultSet1" resultSet=1 />
+		          <bx:procresult name="resultSet2" />
+		      </bx:storedproc>
+		      """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		assertThat( variables.get( "resultSet1" ) ).isInstanceOf( Query.class );
+		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
+		assertThat( rs1.size() ).isEqualTo( 2 );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "foo" );
+		assertThat( rs1.getRowAsStruct( 1 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "bar" );
+
+		assertThat( variables.get( "resultSet2" ) ).isInstanceOf( Query.class );
+		Query rs2 = variables.getAsQuery( Key.of( "resultSet2" ) );
+		assertThat( rs2.size() ).isEqualTo( 1 );
+		assertThat( rs2.getRowAsStruct( 0 ).getAsString( Key.of( "myColumn" ) ) ).isEqualTo( "second" );
+	}
+
 	@DisplayName( "It can call stored proc and map only the second result set (named)" )
 	@Test
 	public void testCallStoredProcSecondResultSetOnly() {
