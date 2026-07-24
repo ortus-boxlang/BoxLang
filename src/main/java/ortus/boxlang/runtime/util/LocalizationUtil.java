@@ -43,6 +43,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -91,22 +92,39 @@ public final class LocalizationUtil {
 	private static final String															LOCALE_PATTERN_FORMATTER_PREFIX		= "locale_pattern_formatter_";
 
 	/**
+	 * Pre-built DateTimeFormatter for ISO dates with 24-hour hours and an AM/PM marker
+	 * (e.g. "2024-04-02 21:01:00 PM"). Parses HOUR_OF_DAY (0-23) and AMPM_OF_DAY as
+	 * independent fields - Java's standard "HH a" pattern is rejected because HH and
+	 * 'a' are mutually exclusive in DateTimeFormatter. The corresponding
+	 * {@link CommonFormatter} (see {@link #getCommonFormatters()}) supplies a validator
+	 * that enforces consistency rules (e.g. hour > 12 with AM is rejected).
+	 */
+	private static final DateTimeFormatter												ISO_24_HOUR_MERIDIAN_FORMATTER		= new DateTimeFormatterBuilder()
+	    .parseCaseInsensitive()
+	    .appendPattern( "yyyy-MM-dd " )
+	    .appendValue( ChronoField.HOUR_OF_DAY, 2 )
+	    .appendPattern( ":mm:ss " )
+	    .appendPattern( "a" )
+	    .toFormatter( Locale.US );
+
+	/**
 	 * A wrapper class that combines a regex pattern with its corresponding DateTimeFormatter
 	 * for efficient pattern matching before attempting to parse.
 	 */
 	public static class CommonFormatter {
 
-		private final Pattern				pattern;
-		private final DateTimeFormatter		formatter;
-		private final String				description;
-		private final String				regexPattern;
-		private final String				datePattern;
-		private final TemporalQuery<?>[]	optimizedQueries;
+		private final Pattern										pattern;
+		private final DateTimeFormatter								formatter;
+		private final String										description;
+		private final String										regexPattern;
+		private final String										datePattern;
+		private final TemporalQuery<?>[]							optimizedQueries;
+		private final Function<TemporalAccessor, TemporalAccessor>	validator;
 
-		private static final Pattern		dateMatchPattern		= Pattern.compile( ".*[yMLdDjgEFwWu].*" );
-		private static final Pattern		timeMatchPattern		= Pattern.compile( ".*[HhKkmsSnA].*" );
-		private static final Pattern		timezoneMatchPattern	= Pattern.compile( ".*[zZVvXxOo].*" );
-		private static final Pattern		offsetMatchPattern		= Pattern.compile( ".*[XxZO].*" );
+		private static final Pattern								dateMatchPattern		= Pattern.compile( ".*[yMLdDjgEFwWu].*" );
+		private static final Pattern								timeMatchPattern		= Pattern.compile( ".*[HhKkmsSnA].*" );
+		private static final Pattern								timezoneMatchPattern	= Pattern.compile( ".*[zZVvXxOo].*" );
+		private static final Pattern								offsetMatchPattern		= Pattern.compile( ".*[XxZO].*" );
 
 		public CommonFormatter( String regexPattern, String datePattern, String description ) {
 			this.regexPattern		= regexPattern;
@@ -115,6 +133,7 @@ public final class LocalizationUtil {
 			this.formatter			= LocalizationUtil.getPatternFormatter( datePattern, Locale.US );
 			this.description		= description;
 			this.optimizedQueries	= determineOptimalTemporalQueries( datePattern );
+			this.validator			= null;
 		}
 
 		/**
@@ -127,12 +146,31 @@ public final class LocalizationUtil {
 		 * @param description  a human-readable description of this formatter
 		 */
 		public CommonFormatter( String regexPattern, String datePattern, DateTimeFormatter formatter, String description ) {
+			this( regexPattern, datePattern, formatter, description, null );
+		}
+
+		/**
+		 * Constructor for cases where a pre-built DateTimeFormatter is required
+		 * AND a post-parse validator is needed to enforce domain-specific rules
+		 * (e.g. consistent AM/PM with a 24-hour hour value).
+		 *
+		 * @param regexPattern the regex used to identify matching input strings
+		 * @param datePattern  the date pattern string (used only for query determination)
+		 * @param formatter    the pre-built DateTimeFormatter to use for parsing
+		 * @param description  a human-readable description of this formatter
+		 * @param validator    optional post-parse validator; returns a (possibly adjusted)
+		 *                     TemporalAccessor to use, or {@code null} to signal that this
+		 *                     formatter should be skipped (caller will try the next one).
+		 */
+		public CommonFormatter( String regexPattern, String datePattern, DateTimeFormatter formatter, String description,
+		    Function<TemporalAccessor, TemporalAccessor> validator ) {
 			this.regexPattern		= regexPattern;
 			this.datePattern		= datePattern;
 			this.pattern			= Pattern.compile( regexPattern );
 			this.formatter			= formatter;
 			this.description		= description;
 			this.optimizedQueries	= determineOptimalTemporalQueries( datePattern );
+			this.validator			= validator;
 		}
 
 		public boolean matches( String input ) {
@@ -157,6 +195,23 @@ public final class LocalizationUtil {
 
 		public TemporalQuery<?>[] getOptimizedQueries() {
 			return this.optimizedQueries;
+		}
+
+		/**
+		 * Runs the optional post-parse validator on a parsed {@link TemporalAccessor}.
+		 * <p>
+		 * The default implementation is a no-op (returns the input unchanged). Formatters
+		 * that need to enforce domain-specific rules on the parsed result (e.g. ensuring
+		 * that an AM/PM marker is consistent with a 24-hour hour value) supply a custom
+		 * {@code validator} via the constructor.
+		 *
+		 * @param parsed the TemporalAccessor returned by {@link DateTimeFormatter#parseBest}
+		 *
+		 * @return the (possibly adjusted) TemporalAccessor to use, or {@code null} to signal
+		 *         that this formatter should be skipped (the caller will try the next one).
+		 */
+		public TemporalAccessor validateAndAdjust( TemporalAccessor parsed ) {
+			return this.validator == null ? parsed : this.validator.apply( parsed );
 		}
 
 		/**
@@ -1523,7 +1578,69 @@ public final class LocalizationUtil {
 		    "Month/year format with first-of-month assumption (12/2025 or 12-2025)"
 		) );
 
+		// ISO date with 24-hour hours and AM/PM marker (e.g. "2024-04-02 21:01:00 PM").
+		// Uses the pre-built ISO_24_HOUR_MERIDIAN_FORMATTER, which parses HOUR_OF_DAY (0-23)
+		// and AMPM_OF_DAY as independent fields. Hours 13-23 are matched by the regex; hours
+		// 1-12 are already handled by the 12-hour "yyyy-MM-dd h:mm:ss a" pattern earlier in
+		// the list. A validator enforces consistency: hours > 12 with AM are rejected, and
+		// hours 12 with AM are normalized to midnight (hour 0).
+		formatters.add( new CommonFormatter(
+		    "^\\d{4}-\\d{2}-\\d{2}\\s+(2[0-3]|1[3-9]):\\d{2}:\\d{2}\\s+[APap][Mm]$",
+		    "yyyy-MM-dd HH:mm:ss a",
+		    ISO_24_HOUR_MERIDIAN_FORMATTER,
+		    "ISO date with 24-hour hours (13-23) and AM/PM marker (validated)",
+		    LocalizationUtil::validateIsoWith24HourAndMeridian
+		) );
+
 		return formatters;
+	}
+
+	/**
+	 * Validator for ISO date strings with 24-hour hours and an AM/PM marker.
+	 * <p>
+	 * The parser produces a {@link TemporalAccessor} with both {@link ChronoField#HOUR_OF_DAY}
+	 * (0-23) and {@link ChronoField#AMPM_OF_DAY} (0=AM, 1=PM) populated. Rules enforced:
+	 * <ul>
+	 * <li>Hour 13-23 with AM: <b>reject</b> (return {@code null} to fall through to other formatters).</li>
+	 * <li>Hour 13-23 with PM: accept; rebuild as a {@link LocalDateTime} preserving the hour value.</li>
+	 * <li>Hour 12 with AM: accept and normalize to hour 0 (midnight).</li>
+	 * <li>Hour 12 with PM: accept; hour stays at 12 (noon).</li>
+	 * <li>Hour 0-11 with AM/PM: accept; hour value is preserved as-is (the value already matches the period).</li>
+	 * </ul>
+	 *
+	 * @param parsed the TemporalAccessor produced by the custom ISO 24-hour + meridian formatter
+	 *
+	 * @return a rebuilt {@link LocalDateTime} on success, or {@code null} if the input is rejected
+	 */
+	private static TemporalAccessor validateIsoWith24HourAndMeridian( TemporalAccessor parsed ) {
+		if ( !parsed.isSupported( ChronoField.HOUR_OF_DAY ) || !parsed.isSupported( ChronoField.AMPM_OF_DAY ) ) {
+			return null;
+		}
+		int	hourOfDay	= parsed.get( ChronoField.HOUR_OF_DAY );
+		int	amPm		= parsed.get( ChronoField.AMPM_OF_DAY );
+
+		// Reject hour > 12 with AM (inconsistent) - caller will try the next formatter.
+		if ( hourOfDay > 12 && amPm == 0 ) {
+			return null;
+		}
+
+		// Normalize hour 12 + AM to midnight (hour 0). Hour 12 + PM stays as 12 (noon).
+		// Hours 0-23 with PM are kept as-is; hours 0-12 with AM are kept as-is.
+		int finalHour;
+		if ( hourOfDay == 12 && amPm == 0 ) {
+			finalHour = 0;
+		} else {
+			finalHour = hourOfDay;
+		}
+
+		int	year	= parsed.get( ChronoField.YEAR );
+		int	month	= parsed.get( ChronoField.MONTH_OF_YEAR );
+		int	day		= parsed.get( ChronoField.DAY_OF_MONTH );
+		int	minute	= parsed.get( ChronoField.MINUTE_OF_HOUR );
+		int	second	= parsed.get( ChronoField.SECOND_OF_MINUTE );
+		int	nano	= parsed.isSupported( ChronoField.NANO_OF_SECOND ) ? parsed.get( ChronoField.NANO_OF_SECOND ) : 0;
+
+		return LocalDateTime.of( year, month, day, finalHour, minute, second, nano );
 	}
 
 	/**
@@ -1570,6 +1687,15 @@ public final class LocalizationUtil {
 					    dateTime,
 					    formatter.getOptimizedQueries()
 					);
+
+					// Run the optional post-parse validator. A formatter may return null
+					// (reject) or a different TemporalAccessor (e.g. a normalized LocalDateTime).
+					date = formatter.validateAndAdjust( date );
+					if ( date == null ) {
+						loggingService.getRuntimeLogger().trace(
+						    "Validation rejected date time for pattern [" + formatter.getDescription() + "]: " + dateTime );
+						continue;
+					}
 
 					// Parse timezone if not provided and date does not already contain timezone info
 					if ( timezone == null && ( ! ( date instanceof ZonedDateTime ) && ! ( date instanceof OffsetDateTime ) ) ) {
