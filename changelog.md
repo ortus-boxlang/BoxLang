@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the matching key by that label from the `BOXLANG_CODE_KEY_<KEYID>` environment variable or the new
   `security.codeKeys` map in `boxlang.json` — letting a vendor lock each module/artifact with its own key and
   hand each customer only the keys they purchased. See `ortus.boxlang.runtime.util.CodeEncryption`.
+- New `security.enforceEncryptedSource` runtime setting (default `false`). When enabled, the runtime refuses
+  to parse/execute any file-based source that is not encrypted — a lockdown/hardening mode that prevents a
+  dropped plaintext webshell (e.g. an uploaded `.cfm`/`.bxs`) from executing. When on, all executed
+  file-based source (application code and modules) must be encrypted.
 
 ## [1.15.0] - 2026-07-08
 

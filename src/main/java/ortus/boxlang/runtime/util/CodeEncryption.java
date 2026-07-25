@@ -57,6 +57,11 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  * replaced with {@code _}), then {@code boxlang.json → security.codeKeys.<keyId>}. This lets a vendor
  * lock each module/artifact with its own key and hand each customer only the keys they bought.
  *
+ * <h2>Enforcement (anti-webshell)</h2>
+ * When {@code security.enforceEncryptedSource} is enabled, the runtime refuses to parse/execute any
+ * file-based source that is not encrypted. In that lockdown posture a plaintext webshell dropped on the
+ * server cannot run — only encrypted source is allowed. See {@link #isEnforceEncryptedSource()}.
+ *
  * <h2>Security note</h2>
  * Because the runtime must hold the key to decrypt, the key lives on the host. This reliably stops
  * casual reading/copying and locks out anyone without the key, but a determined party who holds the key
@@ -251,14 +256,25 @@ public final class CodeEncryption {
 	 * by the embedded keyId from the host (env var or {@code security.codeKeys}). Otherwise returns the
 	 * bytes unchanged, so plain (non-encrypted) source flows through untouched.
 	 *
+	 * <p>
+	 * When {@code security.enforceEncryptedSource} is enabled, non-encrypted bytes are rejected instead of
+	 * passed through — a lockdown mode that stops plaintext webshells from running (only encrypted source
+	 * is allowed to execute).
+	 *
 	 * @param bytes the file bytes
 	 *
 	 * @return decrypted plaintext bytes, or the original bytes if not encrypted
 	 *
-	 * @throws BoxRuntimeException if encrypted but no key is available for the referenced keyId
+	 * @throws BoxRuntimeException if encrypted but no key is available for the referenced keyId, or if
+	 *                             enforcement is on and the bytes are not encrypted
 	 */
 	public static byte[] maybeDecrypt( byte[] bytes ) {
 		if ( !isEncrypted( bytes ) ) {
+			if ( isEnforceEncryptedSource() ) {
+				throw new BoxRuntimeException(
+				    "Execution blocked: this runtime is configured to only run encrypted source "
+				        + "(security.enforceEncryptedSource=true), but the source is not encrypted." );
+			}
 			return bytes;
 		}
 		String	keyId	= readKeyId( bytes );
@@ -304,6 +320,21 @@ public final class CodeEncryption {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Returns true when the runtime is configured to only run encrypted source
+	 * ({@code security.enforceEncryptedSource}). Fails safe to {@code false} when the runtime or its
+	 * configuration is not available (so tooling that has no runtime is never accidentally blocked).
+	 *
+	 * @return true when non-encrypted source should be blocked
+	 */
+	public static boolean isEnforceEncryptedSource() {
+		try {
+			return BoxRuntime.getInstance().getConfiguration().security.enforceEncryptedSource;
+		} catch ( Exception e ) {
+			return false;
+		}
 	}
 
 	/**

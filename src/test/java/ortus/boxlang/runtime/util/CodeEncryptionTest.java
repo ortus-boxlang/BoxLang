@@ -136,4 +136,41 @@ public class CodeEncryptionTest {
 		BoxRuntimeException	ex			= assertThrows( BoxRuntimeException.class, () -> CodeEncryption.maybeDecrypt( encrypted ) );
 		assertThat( ex.getMessage() ).contains( "unconfiguredModule" );
 	}
+
+	// ---------- enforceEncryptedSource (anti-webshell) ----------
+
+	@Test
+	@DisplayName( "enforceEncryptedSource blocks plaintext but still runs encrypted" )
+	void testEnforceEncryptedSource() {
+		boolean previous = instance.getConfiguration().security.enforceEncryptedSource;
+		try {
+			instance.getConfiguration().security.enforceEncryptedSource = true;
+			instance.getConfiguration().security.codeKeys.put( Key.of( "enforceMod" ), "enf-secret" );
+
+			// Plaintext is blocked
+			byte[]				plain	= "x = 1;".getBytes( StandardCharsets.UTF_8 );
+			BoxRuntimeException	ex		= assertThrows( BoxRuntimeException.class, () -> CodeEncryption.maybeDecrypt( plain ) );
+			assertThat( ex.getMessage() ).contains( "enforceEncryptedSource" );
+
+			// Encrypted source still decrypts normally
+			byte[] encrypted = CodeEncryption.encrypt( "y = 2;".getBytes( StandardCharsets.UTF_8 ), "enforceMod", "enf-secret" );
+			assertThat( new String( CodeEncryption.maybeDecrypt( encrypted ), StandardCharsets.UTF_8 ) ).isEqualTo( "y = 2;" );
+		} finally {
+			instance.getConfiguration().security.enforceEncryptedSource = previous;
+		}
+	}
+
+	@Test
+	@DisplayName( "isEnforceEncryptedSource reflects the security config" )
+	void testIsEnforceEncryptedSource() {
+		boolean previous = instance.getConfiguration().security.enforceEncryptedSource;
+		try {
+			instance.getConfiguration().security.enforceEncryptedSource = true;
+			assertThat( CodeEncryption.isEnforceEncryptedSource() ).isTrue();
+			instance.getConfiguration().security.enforceEncryptedSource = false;
+			assertThat( CodeEncryption.isEnforceEncryptedSource() ).isFalse();
+		} finally {
+			instance.getConfiguration().security.enforceEncryptedSource = previous;
+		}
+	}
 }

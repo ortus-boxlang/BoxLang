@@ -129,4 +129,29 @@ public class EncryptedSourceTest {
 		Exception	ex			= assertThrows( Exception.class, () -> new Parser().parse( file.toFile() ) );
 		assertThat( ex.getMessage() ).contains( "neverConfigured" );
 	}
+
+	// ---------- enforceEncryptedSource: block plaintext at parse time (anti-webshell) ----------
+
+	@Test
+	@DisplayName( "enforceEncryptedSource blocks a plaintext file but allows an encrypted one" )
+	void testEnforceBlocksPlaintextAtParse() throws IOException {
+		boolean previous = instance.getConfiguration().security.enforceEncryptedSource;
+		try {
+			instance.getConfiguration().security.enforceEncryptedSource = true;
+			configureKey( "enforceParse", "ep-secret" );
+
+			// A plaintext "shell" file must be blocked before it can run
+			Path		shell	= writeFile( "shell.bxs", "x = 1;".getBytes( StandardCharsets.UTF_8 ) );
+			Exception	ex		= assertThrows( Exception.class, () -> new Parser().parse( shell.toFile() ) );
+			assertThat( ex.getMessage() ).contains( "enforceEncryptedSource" );
+
+			// A properly encrypted file still parses
+			byte[]	encrypted	= CodeEncryption.encrypt( "class { function f() { return 1; } }".getBytes( StandardCharsets.UTF_8 ),
+			    "enforceParse", "ep-secret" );
+			Path	ok			= writeFile( "Ok.bx", encrypted );
+			assertThat( new Parser().parse( ok.toFile() ).isCorrect() ).isTrue();
+		} finally {
+			instance.getConfiguration().security.enforceEncryptedSource = previous;
+		}
+	}
 }

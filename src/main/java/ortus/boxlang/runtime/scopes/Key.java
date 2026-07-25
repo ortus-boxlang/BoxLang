@@ -363,6 +363,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		end									= Key.of( "end" );
 	public static final Key		endDate								= Key.of( "endDate" );
 	public static final Key		endTime								= Key.of( "endTime" );
+	public static final Key		enforceEncryptedSource				= Key.of( "enforceEncryptedSource" );
 	public static final Key		endRow								= Key.of( "endRow" );
 	public static final Key		endsWithNoCase						= Key.of( "endsWithNoCase" );
 	public static final Key		enforceExplicitOutput				= Key.of( "enforceExplicitOutput" );

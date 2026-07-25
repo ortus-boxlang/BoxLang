@@ -322,6 +322,11 @@ public final class BXEncryptor {
 		out.println( "    export BOXLANG_CODE_KEY_MODULEA=\"the-secret\"        # env var (keyId uppercased, non-alnum -> _)" );
 		out.println( "    // boxlang.json: { \"security\": { \"codeKeys\": { \"moduleA\": \"the-secret\" } } }" );
 		out.println();
+		out.println( "🛡️  LOCKDOWN (anti-webshell):" );
+		out.println( "  Set security.enforceEncryptedSource=true in boxlang.json to make the runtime refuse to run" );
+		out.println( "  ANY non-encrypted file-based source. A dropped plaintext .cfm/.bxs shell then cannot execute." );
+		out.println( "  (When on, all executed source — your app and modules — must be encrypted.)" );
+		out.println();
 		out.println( "🔧 SUPPORTED SOURCE FILES:" );
 		out.println( "  .bx .bxs .bxm  - BoxLang class/script/template files" );
 		out.println( "  .cfm .cfc .cfs - ColdFusion markup/component/script files" );

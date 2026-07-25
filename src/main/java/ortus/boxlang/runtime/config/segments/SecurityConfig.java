@@ -76,6 +76,16 @@ public class SecurityConfig implements IConfigSegment {
 	public IStruct				codeKeys							= new Struct();
 
 	/**
+	 * When true, the runtime will refuse to parse/execute any file-based source that is NOT encrypted
+	 * (see {@code ortus.boxlang.runtime.util.CodeEncryption}). This is a lockdown/hardening mode: an
+	 * attacker who drops a plaintext webshell (e.g. a {@code .cfm}/{@code .bxs} file) cannot execute it,
+	 * because only encrypted source is allowed to run. NOTE: when enabled, ALL executed file-based source
+	 * (your application code and any modules) must be encrypted, otherwise it will be blocked. Defaults to
+	 * false so nothing changes unless explicitly opted in.
+	 */
+	public boolean				enforceEncryptedSource				= false;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
 	 * --------------------------------------------------------------------------
@@ -193,6 +203,7 @@ public class SecurityConfig implements IConfigSegment {
 		PropertyHelper.processStringOrArrayToList( config, Key.disallowedFileOperationExtensions, this.disallowedFileOperationExtensions );
 		this.populateServerSystemScope	= PropertyHelper.processBoolean( config, Key.populateServerSystemScope, this.populateServerSystemScope );
 		this.codeKeys					= PropertyHelper.processToStruct( config, Key.codeKeys );
+		this.enforceEncryptedSource		= PropertyHelper.processBoolean( config, Key.enforceEncryptedSource, this.enforceEncryptedSource );
 		return this;
 	}
 
@@ -208,7 +219,8 @@ public class SecurityConfig implements IConfigSegment {
 		    Key.disallowedComponents, this.disallowedComponents,
 		    Key.disallowedFileOperationExtensions, Array.fromList( this.disallowedFileOperationExtensions ),
 		    Key.populateServerSystemScope, this.populateServerSystemScope,
-		    Key.codeKeys, this.codeKeys
+		    Key.codeKeys, this.codeKeys,
+		    Key.enforceEncryptedSource, this.enforceEncryptedSource
 		);
 	}
 
