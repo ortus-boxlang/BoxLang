@@ -20,9 +20,7 @@ package ortus.boxlang.compiler;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,10 +35,7 @@ import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.util.CodeEncryption;
 
 @DisplayName( "Encrypted Source (decrypt-before-parse) Tests" )
@@ -69,47 +64,6 @@ public class EncryptedSourceTest {
 		Files.createDirectories( file.getParent() );
 		Files.write( file, bytes );
 		return file;
-	}
-
-	private int runObfuscator( String[] args ) {
-		ByteArrayOutputStream	outBuf	= new ByteArrayOutputStream();
-		ByteArrayOutputStream	errBuf	= new ByteArrayOutputStream();
-		return BXObfuscator.run( args, new PrintStream( outBuf ), new PrintStream( errBuf ) );
-	}
-
-	// ---------- Full CLI chain: obfuscate + encrypt, then execute ----------
-
-	@Test
-	@DisplayName( "obfuscate --encrypt writes ciphertext that the runtime decrypts and executes (.bxm)" )
-	void testObfuscateEncryptAndExecuteTemplate() throws IOException {
-		// A .bxm template that computes a value into the variables scope
-		Path	source	= writeFile( "app.bxm", "<bx:set result = 6 * 7>".getBytes( StandardCharsets.UTF_8 ) );
-		Path	target	= this.tempDir.resolve( "dist" );
-		Files.createDirectories( target );
-
-		int exitCode = runObfuscator( new String[] {
-		    "--source", source.toString(),
-		    "--target", target.toString(),
-		    "--encrypt", "--key", "secretA", "--key-id", "moduleA"
-		} );
-		assertThat( exitCode ).isEqualTo( 0 );
-
-		Path output = target.resolve( "app.bxm" );
-		assertThat( Files.exists( output ) ).isTrue();
-
-		// On disk it is ciphertext: encrypted magic present, plaintext gone
-		byte[] outBytes = Files.readAllBytes( output );
-		assertThat( CodeEncryption.isEncrypted( outBytes ) ).isTrue();
-		assertThat( CodeEncryption.readKeyId( outBytes ) ).isEqualTo( "moduleA" );
-		assertThat( new String( outBytes, StandardCharsets.UTF_8 ) ).doesNotContain( "result" );
-
-		// Configure the key on the host, then execute the encrypted template
-		configureKey( "moduleA", "secretA" );
-		IBoxContext context = new ScriptingRequestBoxContext( instance.getRuntimeContext() );
-		instance.executeTemplate( output.toString(), context );
-
-		Object result = context.getScopeNearby( VariablesScope.name ).get( Key.of( "result" ) );
-		assertThat( result.toString() ).isEqualTo( "42" );
 	}
 
 	// ---------- Decrypt-before-parse for each requested extension ----------

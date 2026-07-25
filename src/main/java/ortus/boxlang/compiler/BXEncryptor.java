@@ -18,7 +18,6 @@
 package ortus.boxlang.compiler;
 
 import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -27,59 +26,57 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import ortus.boxlang.compiler.ast.BoxNode;
-import ortus.boxlang.compiler.ast.visitor.ObfuscationVisitor;
-import ortus.boxlang.compiler.parser.Parser;
-import ortus.boxlang.compiler.parser.ParsingResult;
-import ortus.boxlang.compiler.prettyprint.PrettyPrint;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.util.CodeEncryption;
 
 /**
- * I am a CLI tool for obfuscating BoxLang / ColdFusion source code so that it can be
- * deployed in a non-revealing form. I parse each source file into an AST, strip comments and
- * documentation, rename {@code var}-declared local variables, then re-emit compact source using
- * the pretty-printer. Function names and argument names are intentionally left unchanged: in a
- * dynamically-invoked language they are addressable by callers (named arguments,
- * {@code this.method()}, dynamic string invocation), so renaming them could break callers.
+ * I am a CLI tool for encrypting BoxLang / ColdFusion source at rest so it can be distributed in a
+ * non-readable form. Each source file is encrypted with AES-256-GCM and stamped with a key-id label.
  *
- * The output is still valid BoxLang source that runs identically to the original — only its
- * readability is reduced. If bytecode-only distribution is desired, the obfuscated output can
- * be piped through {@code boxlang compile}. To hide the code entirely, encrypt the output with
- * {@code boxlang encrypt} (see {@code BXEncryptor}).
+ * The distributed files are unreadable on disk, yet the runtime transparently decrypts them in memory
+ * just before parsing (see {@code ortus.boxlang.runtime.util.CodeEncryption}). Because decryption yields
+ * source (not bytecode), the files run on any BoxLang version — there is no bytecode/version binding.
+ *
+ * At load time the runtime resolves the decryption key by the file's key-id from the
+ * {@code BOXLANG_CODE_KEY_<KEYID>} environment variable or the {@code security.codeKeys} map in
+ * {@code boxlang.json}. Give each module/artifact its own key-id, and hand each customer only the keys
+ * they purchased.
  */
-public final class BXObfuscator {
+public final class BXEncryptor {
 
 	/**
-	 * Source file extensions this tool will obfuscate.
+	 * Source file extensions this tool will encrypt (the ones the runtime knows how to parse).
 	 */
 	private static final Set<String> SUPPORTED_EXTENSIONS = Set.of( "bx", "bxs", "bxm", "cfm", "cfc", "cfs" );
 
 	/**
-	 * Parsed command-line options for the obfuscator.
+	 * Parsed command-line options for the encryptor.
 	 *
-	 * @param sourcePaths  one or more source files/directories to obfuscate
-	 * @param targetPath   target directory to write obfuscated files into
+	 * @param sourcePaths  one or more source files/directories to encrypt
+	 * @param targetPath   target directory to write encrypted files into
 	 * @param excludePaths files/directories to skip
-	 * @param renameVars   rename {@code var}-declared local variables
+	 * @param key          the secret used to derive the AES key (required)
+	 * @param keyId        the key-id label baked into each file header so the runtime resolves the right key
 	 * @param stopOnError  stop processing on the first error
 	 */
-	record ObfuscatorOptions(
+	record EncryptorOptions(
 	    List<String> sourcePaths,
 	    String targetPath,
 	    List<String> excludePaths,
-	    boolean renameVars,
+	    String key,
+	    String keyId,
 	    boolean stopOnError ) {
 	}
 
 	/**
 	 * Prevents instantiation of this utility class.
 	 */
-	private BXObfuscator() {
+	private BXEncryptor() {
 		// Prevent instantiation
 	}
 
 	/**
-	 * Main entry point for the obfuscator CLI tool. Exits the JVM with the resulting status code.
+	 * Main entry point for the encryptor CLI tool. Exits the JVM with the resulting status code.
 	 *
 	 * @param args command-line arguments
 	 */
@@ -88,8 +85,8 @@ public final class BXObfuscator {
 	}
 
 	/**
-	 * Runs the obfuscator against the provided arguments and streams. Testable entry point that
-	 * returns an exit code instead of terminating the JVM.
+	 * Runs the encryptor against the provided arguments and streams. Testable entry point that returns an
+	 * exit code instead of terminating the JVM.
 	 *
 	 * @param args command-line arguments
 	 * @param out  standard output stream for user-facing messages
@@ -106,10 +103,10 @@ public final class BXObfuscator {
 			}
 		}
 
-		// Ensure the runtime (and therefore the parser) is initialized
+		// The runtime is not strictly required for encryption, but initialize it for consistency
 		BoxRuntime.getInstance();
 
-		ObfuscatorOptions options;
+		EncryptorOptions options;
 		try {
 			options = parseArguments( args );
 		} catch ( IllegalArgumentException e ) {
@@ -119,7 +116,6 @@ public final class BXObfuscator {
 
 		Path		targetRoot	= Paths.get( options.targetPath() ).toAbsolutePath().normalize();
 
-		// Resolve exclude paths once, normalized to absolute
 		List<Path>	excludes	= new ArrayList<>();
 		for ( String exclude : options.excludePaths() ) {
 			excludes.add( Paths.get( exclude ).toAbsolutePath().normalize() );
@@ -127,6 +123,7 @@ public final class BXObfuscator {
 
 		int	successCount	= 0;
 		int	failureCount	= 0;
+		int	skippedCount	= 0;
 
 		for ( String sourceArg : options.sourcePaths() ) {
 			Path sourcePath = Paths.get( sourceArg ).toAbsolutePath().normalize();
@@ -136,15 +133,13 @@ public final class BXObfuscator {
 				return 1;
 			}
 
-			// Build the list of files to process and, for each, the source root used to
-			// compute its relative output location.
 			List<Path>	filesToProcess	= new ArrayList<>();
 			Path		sourceRoot;
 			if ( Files.isDirectory( sourcePath ) ) {
 				sourceRoot = sourcePath;
 				try ( Stream<Path> walk = Files.walk( sourcePath ) ) {
 					walk.filter( Files::isRegularFile )
-					    .filter( BXObfuscator::isSupported )
+					    .filter( BXEncryptor::isSupported )
 					    .forEach( filesToProcess::add );
 				} catch ( Exception e ) {
 					err.println( "Error walking source path " + sourcePath + ": " + e.getMessage() );
@@ -167,12 +162,24 @@ public final class BXObfuscator {
 				Path	relative	= sourceRoot.relativize( file );
 				Path	outputPath	= targetRoot.resolve( relative.toString() );
 				try {
-					obfuscateFile( file, outputPath, options );
-					out.println( "🔒 Obfuscated -> " + outputPath );
+					byte[] bytes = Files.readAllBytes( file );
+					// Do not double-encrypt an already-encrypted file
+					if ( CodeEncryption.isEncrypted( bytes ) ) {
+						out.println( "↔️  Already encrypted, skipping -> " + file );
+						skippedCount++;
+						continue;
+					}
+					byte[]	encrypted	= CodeEncryption.encrypt( bytes, options.keyId(), options.key() );
+					Path	parent		= outputPath.getParent();
+					if ( parent != null ) {
+						Files.createDirectories( parent );
+					}
+					Files.write( outputPath, encrypted );
+					out.println( "🔐 Encrypted -> " + outputPath );
 					successCount++;
 				} catch ( Exception e ) {
 					failureCount++;
-					err.println( "❌ Error obfuscating " + file + ": " + e.getMessage() );
+					err.println( "❌ Error encrypting " + file + ": " + e.getMessage() );
 					if ( options.stopOnError() ) {
 						return 1;
 					}
@@ -181,44 +188,8 @@ public final class BXObfuscator {
 		}
 
 		out.println();
-		out.println( "📊 Obfuscation complete: " + successCount + " succeeded, " + failureCount + " failed." );
+		out.println( "📊 Encryption complete: " + successCount + " encrypted, " + skippedCount + " skipped, " + failureCount + " failed." );
 		return failureCount > 0 ? 1 : 0;
-	}
-
-	/**
-	 * Obfuscates a single source file and writes the result to the target path.
-	 *
-	 * @param sourcePath the source file to obfuscate
-	 * @param targetPath the destination file for the obfuscated output
-	 * @param options    the obfuscation options
-	 *
-	 * @throws Exception if parsing fails or the output cannot be written
-	 */
-	private static void obfuscateFile( Path sourcePath, Path targetPath, ObfuscatorOptions options ) throws Exception {
-		ParsingResult result = new Parser().parse( sourcePath.toFile(), false );
-		if ( !result.isCorrect() || result.getRoot() == null ) {
-			throw new IllegalStateException( "parse error: " + result.getIssues() );
-		}
-
-		BoxNode root = result.getRoot();
-
-		// Comments are stripped up-front so the pretty-printer emits none of them
-		ObfuscationVisitor.stripComments( root );
-
-		// Only comment stripping and local-variable renaming are applied: in a dynamically-invoked
-		// language, function names and argument names are addressable by callers (named arguments,
-		// this.method(), dynamic string invocation), so renaming them could break callers. Use
-		// `boxlang encrypt` to actually hide the code.
-		ObfuscationVisitor visitor = new ObfuscationVisitor( options.renameVars(), false, false );
-		root.accept( visitor );
-
-		String	obfuscated	= PrettyPrint.prettyPrint( root );
-
-		Path	parent		= targetPath.getParent();
-		if ( parent != null ) {
-			Files.createDirectories( parent );
-		}
-		Files.write( targetPath, obfuscated.getBytes( StandardCharsets.UTF_8 ) );
 	}
 
 	/**
@@ -255,7 +226,7 @@ public final class BXObfuscator {
 	}
 
 	/**
-	 * Parses command-line arguments into an {@link ObfuscatorOptions} record.
+	 * Parses command-line arguments into an {@link EncryptorOptions} record.
 	 *
 	 * @param args the command-line arguments
 	 *
@@ -263,11 +234,12 @@ public final class BXObfuscator {
 	 *
 	 * @throws IllegalArgumentException if required arguments are missing or invalid
 	 */
-	private static ObfuscatorOptions parseArguments( String[] args ) {
+	private static EncryptorOptions parseArguments( String[] args ) {
 		List<String>	sourcePaths		= new ArrayList<>();
 		String			targetPath		= null;
 		List<String>	excludePaths	= new ArrayList<>();
-		boolean			renameVars		= true;
+		String			key				= null;
+		String			keyId			= null;
 		boolean			stopOnError		= false;
 
 		for ( int i = 0; i < args.length; i++ ) {
@@ -288,8 +260,10 @@ public final class BXObfuscator {
 						excludePaths.add( trimmed );
 					}
 				}
-			} else if ( arg.equalsIgnoreCase( "--no-rename-vars" ) ) {
-				renameVars = false;
+			} else if ( arg.equalsIgnoreCase( "--key" ) && i + 1 < args.length ) {
+				key = args[ ++i ];
+			} else if ( arg.equalsIgnoreCase( "--key-id" ) && i + 1 < args.length ) {
+				keyId = args[ ++i ];
 			} else if ( arg.equalsIgnoreCase( "--stopOnError" ) ) {
 				stopOnError = true;
 			}
@@ -303,46 +277,62 @@ public final class BXObfuscator {
 			throw new IllegalArgumentException( "--target is required" );
 		}
 
-		return new ObfuscatorOptions( sourcePaths, targetPath, excludePaths, renameVars, stopOnError );
+		if ( key == null || key.isEmpty() ) {
+			throw new IllegalArgumentException( "--key is required" );
+		}
+
+		// Default the key-id label when omitted so a single-artifact encrypt still works
+		if ( keyId == null || keyId.isEmpty() ) {
+			keyId = "default";
+		}
+
+		return new EncryptorOptions( sourcePaths, targetPath, excludePaths, key, keyId, stopOnError );
 	}
 
 	/**
-	 * Prints the help message for the obfuscator tool.
+	 * Prints the help message for the encryptor tool.
 	 *
 	 * @param out the stream to print help to
 	 */
 	private static void printHelp( PrintStream out ) {
-		out.println( "🔒 BoxLang Obfuscator - Obfuscate BoxLang/ColdFusion source for non-revealing deployment" );
+		out.println( "🔐 BoxLang Encryptor - Encrypt BoxLang/ColdFusion source for non-revealing deployment" );
 		out.println();
 		out.println( "📋 USAGE:" );
-		out.println( "  boxlang obfuscate --source <PATH[,PATH,...]> --target <DIR> [OPTIONS]" );
-		out.println( "  java -jar boxlang.jar ortus.boxlang.compiler.BXObfuscator [OPTIONS]" );
+		out.println( "  boxlang encrypt --source <PATH[,PATH,...]> --target <DIR> --key <SECRET> [OPTIONS]" );
+		out.println( "  java -jar boxlang.jar ortus.boxlang.compiler.BXEncryptor [OPTIONS]" );
 		out.println();
 		out.println( "⚙️  OPTIONS:" );
 		out.println( "  -h, --help                  ❓ Show this help message and exit" );
 		out.println( "      --source <PATH[,...]>   📂 Source file(s) or directory (default: current directory)" );
-		out.println( "      --target <DIR>          🎯 Target directory for obfuscated output (required)" );
+		out.println( "      --target <DIR>          🎯 Target directory for encrypted output (required)" );
+		out.println( "      --key <SECRET>          🔑 Secret used to derive the encryption key (required)" );
+		out.println( "      --key-id <LABEL>        🏷️  Key label baked into each file; the runtime resolves the key by" );
+		out.println( "                                 this label (default: \"default\"). Give each module its own key-id." );
 		out.println( "      --excludes <PATH[,...]> 🚫 Files/directories to skip" );
-		out.println( "      --no-rename-vars        🔤 Disable local variable renaming (default: enabled)" );
 		out.println( "      --stopOnError           🛑 Stop processing on the first error (default: off)" );
 		out.println();
-		out.println( "🔒 WHAT IT DOES:" );
-		out.println( "  • Strips all comments and documentation" );
-		out.println( "  • Renames var-declared local variables to short opaque names" );
-		out.println( "  • Emits compact source that runs identically to the original" );
-		out.println( "  • Leaves function and argument names unchanged so callers keep working" );
-		out.println( "  • To actually hide the code, encrypt the output with: boxlang encrypt --help" );
+		out.println( "🔐 HOW IT WORKS:" );
+		out.println( "  • Each file is encrypted with AES-256-GCM and stamped with the key-id" );
+		out.println( "  • On disk the files are unreadable ciphertext" );
+		out.println( "  • The runtime decrypts them in memory just before parsing — no bytecode, no version binding" );
+		out.println( "  • Already-encrypted files are skipped (no double-encryption)" );
+		out.println();
+		out.println( "🔓 RUNNING ENCRYPTED CODE (on the consumer side):" );
+		out.println( "  Provide the key by key-id, via environment variable or boxlang.json:" );
+		out.println( "    export BOXLANG_CODE_KEY_MODULEA=\"the-secret\"        # env var (keyId uppercased, non-alnum -> _)" );
+		out.println( "    // boxlang.json: { \"security\": { \"codeKeys\": { \"moduleA\": \"the-secret\" } } }" );
 		out.println();
 		out.println( "🔧 SUPPORTED SOURCE FILES:" );
 		out.println( "  .bx .bxs .bxm  - BoxLang class/script/template files" );
 		out.println( "  .cfm .cfc .cfs - ColdFusion markup/component/script files" );
 		out.println();
 		out.println( "💡 EXAMPLES:" );
-		out.println( "  # Obfuscate a directory tree into ./dist" );
-		out.println( "  boxlang obfuscate --source ./src --target ./dist" );
+		out.println( "  # Encrypt a project into ./dist with one key" );
+		out.println( "  boxlang encrypt --source ./src --target ./dist --key \"my-secret\" --key-id myApp" );
 		out.println();
-		out.println( "  # Obfuscate a single file" );
-		out.println( "  boxlang obfuscate --source app.bx --target out/" );
+		out.println( "  # Encrypt two modules, each with its own key-id and key" );
+		out.println( "  boxlang encrypt --source ./modA --target ./distA --key SECRET-A --key-id moduleA" );
+		out.println( "  boxlang encrypt --source ./modB --target ./distB --key SECRET-B --key-id moduleB" );
 		out.println();
 		out.println( "📖 More Information:" );
 		out.println( "  📖 Documentation: https://boxlang.ortusbooks.com/" );

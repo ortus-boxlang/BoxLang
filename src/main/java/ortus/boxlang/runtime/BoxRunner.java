@@ -38,6 +38,7 @@ import com.fasterxml.jackson.jr.ob.JSONObjectException;
 import java.io.File;
 
 import ortus.boxlang.compiler.BXCompiler;
+import ortus.boxlang.compiler.BXEncryptor;
 import ortus.boxlang.compiler.BXObfuscator;
 import ortus.boxlang.compiler.CFTranspiler;
 import ortus.boxlang.compiler.DiskClassUtil;
@@ -105,7 +106,7 @@ public class BoxRunner {
 
 	/**
 	 * A list of action commands that can be executed by the BoxRunner:
-	 * compile, cftranspile, featureAudit, format, schedule, obfuscate
+	 * compile, cftranspile, featureAudit, format, schedule, obfuscate, encrypt
 	 */
 	private static final List<String>	ACTION_COMMANDS				= List.of(
 	    "compile",
@@ -113,7 +114,8 @@ public class BoxRunner {
 	    "featureaudit",
 	    "format",
 	    "schedule",
-	    "obfuscate" );
+	    "obfuscate",
+	    "encrypt" );
 
 	/**
 	 * The allowed template extensions that can be executed by the BoxRunner
@@ -316,6 +318,9 @@ public class BoxRunner {
 				break;
 			case "obfuscate" :
 				BXObfuscator.main( options.cliArgs().toArray( new String[ 0 ] ) );
+				break;
+			case "encrypt" :
+				BXEncryptor.main( options.cliArgs().toArray( new String[ 0 ] ) );
 				break;
 			case "schedule" :
 				// Check for help first
@@ -810,6 +815,8 @@ public class BoxRunner {
 		System.out.println( "                                     Use: boxlang schedule --help" );
 		System.out.println( "  obfuscate                       🔒 Obfuscate source for non-revealing deployment" );
 		System.out.println( "                                     Use: boxlang obfuscate --help" );
+		System.out.println( "  encrypt                         🔐 Encrypt source at rest (decrypted in memory at runtime)" );
+		System.out.println( "                                     Use: boxlang encrypt --help" );
 		System.out.println();
 		System.out.println( "📂 FILE EXECUTION:" );
 		System.out.println( "  • Execute BoxLang templates directly by providing a file path" );

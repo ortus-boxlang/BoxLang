@@ -229,19 +229,19 @@ public class BXObfuscatorTest {
 		assertThat( result ).doesNotContain( "data" );
 	}
 
-	// ---------- Function renaming ----------
+	// ---------- Callable surface is preserved (functions + arguments not renamed) ----------
 
 	@Test
-	@DisplayName( "Private functions are always renamed (with call sites)" )
-	void testRenamePrivateFunction() throws IOException {
+	@DisplayName( "Function names are preserved so callers keep working" )
+	void testFunctionNamesPreserved() throws IOException {
 		String result = obfuscate( "PrivComp.bx", """
 		                                          class {
 		                                            private function secretHelper() { return 1; }
-		                                            public function callIt() { return secretHelper(); }
+		                                            public function callIt() { return this.secretHelper(); }
 		                                          }
 		                                          """ );
-		assertThat( result ).doesNotContain( "secretHelper" );
-		// The public API method must remain callable
+		// Both names survive: renaming would break this.secretHelper() and other call styles
+		assertThat( result ).contains( "secretHelper" );
 		assertThat( result ).contains( "callIt" );
 	}
 
@@ -257,15 +257,15 @@ public class BXObfuscatorTest {
 	}
 
 	@Test
-	@DisplayName( "Function arguments are always renamed" )
-	void testArgsAlwaysRenamed() throws IOException {
-		String result = obfuscate( "ArgRename.bxs", """
-		                                            function compute( secretParam ) {
-		                                              return secretParam * 2;
-		                                            }
-		                                            """ );
-		// The argument name must be gone from both the declaration and its body use
-		assertThat( result ).doesNotContain( "secretParam" );
+	@DisplayName( "Argument names are preserved so named-argument calls keep working" )
+	void testArgumentNamesPreserved() throws IOException {
+		String result = obfuscate( "ArgKeep.bxs", """
+		                                          function compute( customerName ) {
+		                                            return customerName & "!";
+		                                          }
+		                                          """ );
+		// The parameter name is the API contract for named-argument calls; it must survive
+		assertThat( result ).contains( "customerName" );
 	}
 
 	// ---------- Directory processing ----------
