@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   to parse/execute any file-based source that is not encrypted — a lockdown/hardening mode that prevents a
   dropped plaintext webshell (e.g. an uploaded `.cfm`/`.bxs`) from executing. When on, all executed
   file-based source (application code and modules) must be encrypted.
+- Encrypted sources are no longer written to the on-disk compiled-class cache. Their compiled bytecode
+  (which is decrypted logic) stays in memory only and is recompiled from the encrypted source on each JVM
+  start, so no decrypted artifact is ever persisted. Non-encrypted code continues to be cached as before.
 
 ## [1.15.0] - 2026-07-08
 

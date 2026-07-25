@@ -27,6 +27,7 @@ import ortus.boxlang.compiler.parser.ParsingResult;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.AsyncService.ExecutorType;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.CodeEncryption;
 import ortus.boxlang.runtime.util.Timer;
 
 public class ASMBoxpiler extends Boxpiler {
@@ -115,10 +116,15 @@ public class ASMBoxpiler extends Boxpiler {
 		// First, collect all ClassNodes (main + auxiliaries) from the transpiler
 		doCompileClassInfo( transpiler( classInfo ), classInfo, node, collector );
 
+		// Never persist compiled bytecode to disk for encrypted sources: the .class cache would be
+		// decrypted plaintext bytecode at rest, defeating the point of encryption. Such classes stay
+		// in-memory only (recompiled from the encrypted source on each JVM start, which needs the key).
+		final boolean	storeOnDisk		= runtime.getConfiguration().storeClassFilesOnDisk && !isEncryptedSource( classInfo );
+
 		// Process auxiliary classes first (define without init), then the main class.
 		// Auxiliaries are defined so the JVM can resolve class references (e.g., Person.class in imports)
 		// but initialization is deferred until first use (e.g., new Person()).
-		String mainClassFqn = classInfo.fqn().toString();
+		String			mainClassFqn	= classInfo.fqn().toString();
 		for ( Map.Entry<String, ClassNode> entry : allClasses.entrySet() ) {
 			String		fqn			= entry.getKey();
 			ClassNode	classNode	= entry.getValue();
@@ -133,8 +139,8 @@ public class ASMBoxpiler extends Boxpiler {
 			classes.addFirst( bytes );
 			classInfo.getDiskClassLoader().defineClassWithoutInit( fqn, bytes );
 
-			// Store on disk if configured
-			if ( runtime.getConfiguration().storeClassFilesOnDisk ) {
+			// Store on disk if configured (and the source is not encrypted)
+			if ( storeOnDisk ) {
 				runtime.getAsyncService().newExecutor( "ASM-disk-class-writer", ExecutorType.VIRTUAL, 0 ).submit( () -> {
 					diskClassUtil.writeBytes( classInfo.classPoolName(), fqn, "class", bytes, classInfo.lastModified() );
 				} );
@@ -148,8 +154,8 @@ public class ASMBoxpiler extends Boxpiler {
 			classes.addFirst( bytes );
 			classInfo.getDiskClassLoader().defineClass( mainClassFqn, bytes );
 
-			// Store on disk if configured
-			if ( runtime.getConfiguration().storeClassFilesOnDisk ) {
+			// Store on disk if configured (and the source is not encrypted)
+			if ( storeOnDisk ) {
 				runtime.getAsyncService().newExecutor( "ASM-disk-class-writer", ExecutorType.VIRTUAL, 0 ).submit( () -> {
 					diskClassUtil.writeBytes( classInfo.classPoolName(), mainClassFqn, "class", bytes, classInfo.lastModified() );
 				} );
@@ -159,6 +165,21 @@ public class ASMBoxpiler extends Boxpiler {
 		// Add the FQN as the first element
 		classes.addFirst( classInfo.fqn().toString().getBytes() );
 		return classes;
+	}
+
+	/**
+	 * Returns true when the class's source is a BoxLang-encrypted file on disk. String-sourced classes
+	 * (no backing file) are never considered encrypted here.
+	 *
+	 * @param classInfo the class info to inspect
+	 *
+	 * @return true when the backing source file is encrypted
+	 */
+	private boolean isEncryptedSource( ClassInfo classInfo ) {
+		if ( classInfo.resolvedFilePath() == null || classInfo.resolvedFilePath().absolutePath() == null ) {
+			return false;
+		}
+		return CodeEncryption.isEncryptedFile( classInfo.resolvedFilePath().absolutePath().toFile() );
 	}
 
 	/**

@@ -62,6 +62,11 @@ import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
  * file-based source that is not encrypted. In that lockdown posture a plaintext webshell dropped on the
  * server cannot run — only encrypted source is allowed. See {@link #isEnforceEncryptedSource()}.
  *
+ * <h2>Compiled-class cache</h2>
+ * Compiled bytecode for encrypted sources is never written to the on-disk class cache (it stays in memory
+ * only and is recompiled from the encrypted source on each JVM start), so no decrypted artifact is
+ * persisted. See the disk-write gate in {@code ASMBoxpiler}.
+ *
  * <h2>Security note</h2>
  * Because the runtime must hold the key to decrypt, the key lives on the host. This reliably stops
  * casual reading/copying and locks out anyone without the key, but a determined party who holds the key
@@ -148,6 +153,29 @@ public final class CodeEncryption {
 		    | ( ( bytes[ 2 ] & 0xFF ) << 8 )
 		    | ( bytes[ 3 ] & 0xFF );
 		return magic == MAGIC;
+	}
+
+	/**
+	 * Returns true if the given file begins with the BoxLang-encrypted magic header. Reads only the
+	 * first few bytes, so it is cheap to call on the compile/cache hot path.
+	 *
+	 * @param file the file to inspect (may be null or non-existent)
+	 *
+	 * @return true when the file is a BoxLang-encrypted payload
+	 */
+	public static boolean isEncryptedFile( java.io.File file ) {
+		if ( file == null || !file.isFile() || !file.canRead() ) {
+			return false;
+		}
+		try ( java.io.FileInputStream fis = new java.io.FileInputStream( file );
+		    java.io.DataInputStream dis = new java.io.DataInputStream( fis ) ) {
+			if ( dis.available() < 4 ) {
+				return false;
+			}
+			return dis.readInt() == MAGIC;
+		} catch ( java.io.IOException e ) {
+			return false;
+		}
 	}
 
 	/**

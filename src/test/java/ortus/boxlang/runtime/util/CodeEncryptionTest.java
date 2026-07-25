@@ -161,6 +161,21 @@ public class CodeEncryptionTest {
 	}
 
 	@Test
+	@DisplayName( "isEncryptedFile detects an encrypted file cheaply" )
+	void testIsEncryptedFile() throws java.io.IOException {
+		java.nio.file.Path	dir			= java.nio.file.Files.createTempDirectory( "codeenc" );
+		java.nio.file.Path	encFile		= dir.resolve( "enc.bxs" );
+		java.nio.file.Path	plainFile	= dir.resolve( "plain.bxs" );
+		java.nio.file.Files.write( encFile, CodeEncryption.encrypt( "x = 1;".getBytes( StandardCharsets.UTF_8 ), "k", "s" ) );
+		java.nio.file.Files.write( plainFile, "x = 1;".getBytes( StandardCharsets.UTF_8 ) );
+
+		assertThat( CodeEncryption.isEncryptedFile( encFile.toFile() ) ).isTrue();
+		assertThat( CodeEncryption.isEncryptedFile( plainFile.toFile() ) ).isFalse();
+		assertThat( CodeEncryption.isEncryptedFile( dir.resolve( "missing.bxs" ).toFile() ) ).isFalse();
+		assertThat( CodeEncryption.isEncryptedFile( null ) ).isFalse();
+	}
+
+	@Test
 	@DisplayName( "isEnforceEncryptedSource reflects the security config" )
 	void testIsEnforceEncryptedSource() {
 		boolean previous = instance.getConfiguration().security.enforceEncryptedSource;
