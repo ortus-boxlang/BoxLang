@@ -232,28 +232,40 @@ public class BXObfuscatorTest {
 	// ---------- Function renaming ----------
 
 	@Test
-	@DisplayName( "Private functions renamed with --rename-functions" )
+	@DisplayName( "Private functions are always renamed (with call sites)" )
 	void testRenamePrivateFunction() throws IOException {
 		String result = obfuscate( "PrivComp.bx", """
 		                                          class {
 		                                            private function secretHelper() { return 1; }
 		                                            public function callIt() { return secretHelper(); }
 		                                          }
-		                                          """, "--rename-functions" );
+		                                          """ );
 		assertThat( result ).doesNotContain( "secretHelper" );
 		// The public API method must remain callable
 		assertThat( result ).contains( "callIt" );
 	}
 
 	@Test
-	@DisplayName( "Public methods are NOT renamed even with --rename-functions" )
+	@DisplayName( "Public methods are never renamed" )
 	void testPublicMethodNotRenamed() throws IOException {
 		String result = obfuscate( "PubComp.bx", """
 		                                         class {
 		                                           public function publicApi() { return 1; }
 		                                         }
-		                                         """, "--rename-functions" );
+		                                         """ );
 		assertThat( result ).contains( "publicApi" );
+	}
+
+	@Test
+	@DisplayName( "Function arguments are always renamed" )
+	void testArgsAlwaysRenamed() throws IOException {
+		String result = obfuscate( "ArgRename.bxs", """
+		                                            function compute( secretParam ) {
+		                                              return secretParam * 2;
+		                                            }
+		                                            """ );
+		// The argument name must be gone from both the declaration and its body use
+		assertThat( result ).doesNotContain( "secretParam" );
 	}
 
 	// ---------- Directory processing ----------

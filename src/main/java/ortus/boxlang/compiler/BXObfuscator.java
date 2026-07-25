@@ -38,8 +38,8 @@ import ortus.boxlang.runtime.util.CodeEncryption;
 /**
  * I am a CLI tool for obfuscating BoxLang / ColdFusion source code so that it can be
  * deployed in a non-revealing form. I parse each source file into an AST, strip comments,
- * rename local variables (and, optionally, private functions and arguments), then re-emit
- * compact source using the pretty-printer.
+ * rename local variables, private/script-level functions (with their call sites) and function
+ * arguments, then re-emit compact source using the pretty-printer.
  *
  * The output is still valid BoxLang source that runs identically to the original — only its
  * readability is reduced. If bytecode-only distribution is desired, the obfuscated output can
@@ -62,24 +62,20 @@ public final class BXObfuscator {
 	/**
 	 * Parsed command-line options for the obfuscator.
 	 *
-	 * @param sourcePaths     one or more source files/directories to obfuscate
-	 * @param targetPath      target directory to write obfuscated files into
-	 * @param excludePaths    files/directories to skip
-	 * @param renameVars      rename {@code var}-declared local variables
-	 * @param renameFunctions rename private / script-level function names and their call sites
-	 * @param renameArgs      rename function argument names
-	 * @param stopOnError     stop processing on the first error
-	 * @param encrypt         encrypt the obfuscated output at rest (decrypted in memory at parse time)
-	 * @param key             the secret used to derive the encryption key (required when encrypt is true)
-	 * @param keyId           a label identifying which key decrypts the output (baked into each file header)
+	 * @param sourcePaths  one or more source files/directories to obfuscate
+	 * @param targetPath   target directory to write obfuscated files into
+	 * @param excludePaths files/directories to skip
+	 * @param renameVars   rename {@code var}-declared local variables
+	 * @param stopOnError  stop processing on the first error
+	 * @param encrypt      encrypt the obfuscated output at rest (decrypted in memory at parse time)
+	 * @param key          the secret used to derive the encryption key (required when encrypt is true)
+	 * @param keyId        a label identifying which key decrypts the output (baked into each file header)
 	 */
 	record ObfuscatorOptions(
 	    List<String> sourcePaths,
 	    String targetPath,
 	    List<String> excludePaths,
 	    boolean renameVars,
-	    boolean renameFunctions,
-	    boolean renameArgs,
 	    boolean stopOnError,
 	    boolean encrypt,
 	    String key,
@@ -220,7 +216,9 @@ public final class BXObfuscator {
 		// Comments are stripped up-front so the pretty-printer emits none of them
 		ObfuscationVisitor.stripComments( root );
 
-		ObfuscationVisitor visitor = new ObfuscationVisitor( options.renameVars(), options.renameFunctions(), options.renameArgs() );
+		// Private/script function renaming and argument renaming are always applied for stronger
+		// obfuscation; only local-variable renaming is toggleable (via --no-rename-vars).
+		ObfuscationVisitor visitor = new ObfuscationVisitor( options.renameVars(), true, true );
 		visitor.collectFunctionNames( root );
 		root.accept( visitor );
 
@@ -287,8 +285,6 @@ public final class BXObfuscator {
 		String			targetPath		= null;
 		List<String>	excludePaths	= new ArrayList<>();
 		boolean			renameVars		= true;
-		boolean			renameFunctions	= false;
-		boolean			renameArgs		= false;
 		boolean			stopOnError		= false;
 		boolean			encrypt			= false;
 		String			key				= null;
@@ -314,10 +310,6 @@ public final class BXObfuscator {
 				}
 			} else if ( arg.equalsIgnoreCase( "--no-rename-vars" ) ) {
 				renameVars = false;
-			} else if ( arg.equalsIgnoreCase( "--rename-functions" ) ) {
-				renameFunctions = true;
-			} else if ( arg.equalsIgnoreCase( "--rename-args" ) ) {
-				renameArgs = true;
 			} else if ( arg.equalsIgnoreCase( "--stopOnError" ) ) {
 				stopOnError = true;
 			} else if ( arg.equalsIgnoreCase( "--encrypt" ) ) {
@@ -347,8 +339,7 @@ public final class BXObfuscator {
 			}
 		}
 
-		return new ObfuscatorOptions( sourcePaths, targetPath, excludePaths, renameVars, renameFunctions, renameArgs, stopOnError, encrypt, key,
-		    keyId );
+		return new ObfuscatorOptions( sourcePaths, targetPath, excludePaths, renameVars, stopOnError, encrypt, key, keyId );
 	}
 
 	/**
@@ -369,8 +360,6 @@ public final class BXObfuscator {
 		out.println( "      --target <DIR>          🎯 Target directory for obfuscated output (required)" );
 		out.println( "      --excludes <PATH[,...]> 🚫 Files/directories to skip" );
 		out.println( "      --no-rename-vars        🔤 Disable local variable renaming (default: enabled)" );
-		out.println( "      --rename-functions      🔧 Rename private/script functions and call sites (default: off)" );
-		out.println( "      --rename-args           📥 Rename function argument names (default: off)" );
 		out.println( "      --stopOnError           🛑 Stop processing on the first error (default: off)" );
 		out.println( "      --encrypt               🔐 Encrypt output at rest (decrypted in memory at parse time)" );
 		out.println( "      --key <SECRET>          🔑 Secret used to derive the encryption key (required with --encrypt)" );
@@ -380,6 +369,7 @@ public final class BXObfuscator {
 		out.println( "🔒 WHAT IT DOES:" );
 		out.println( "  • Strips all comments and documentation" );
 		out.println( "  • Renames var-declared local variables to short opaque names" );
+		out.println( "  • Always renames private/script functions (with call sites) and function arguments" );
 		out.println( "  • Emits compact source that runs identically to the original" );
 		out.println( "  • With --encrypt: writes unreadable ciphertext; the runtime decrypts in memory before" );
 		out.println( "    parsing, using a key resolved from env BOXLANG_CODE_KEY_<KEYID> or boxlang.json" );
@@ -393,8 +383,8 @@ public final class BXObfuscator {
 		out.println( "  # Obfuscate a directory tree into ./dist" );
 		out.println( "  boxlang obfuscate --source ./src --target ./dist" );
 		out.println();
-		out.println( "  # Aggressively obfuscate a single file (rename private functions too)" );
-		out.println( "  boxlang obfuscate --source app.bx --target out/ --rename-functions" );
+		out.println( "  # Obfuscate a single file" );
+		out.println( "  boxlang obfuscate --source app.bx --target out/" );
 		out.println();
 		out.println( "  # Obfuscate AND encrypt two modules, each with its own key-id" );
 		out.println( "  boxlang obfuscate --source ./modA --target ./distA --encrypt --key secretA --key-id moduleA" );
