@@ -39,7 +39,6 @@ import java.io.File;
 
 import ortus.boxlang.compiler.BXCompiler;
 import ortus.boxlang.compiler.BXEncryptor;
-import ortus.boxlang.compiler.BXObfuscator;
 import ortus.boxlang.compiler.CFTranspiler;
 import ortus.boxlang.compiler.DiskClassUtil;
 import ortus.boxlang.compiler.FeatureAudit;
@@ -106,7 +105,7 @@ public class BoxRunner {
 
 	/**
 	 * A list of action commands that can be executed by the BoxRunner:
-	 * compile, cftranspile, featureAudit, format, schedule, obfuscate, encrypt
+	 * compile, cftranspile, featureAudit, format, schedule, encrypt
 	 */
 	private static final List<String>	ACTION_COMMANDS				= List.of(
 	    "compile",
@@ -114,7 +113,6 @@ public class BoxRunner {
 	    "featureaudit",
 	    "format",
 	    "schedule",
-	    "obfuscate",
 	    "encrypt" );
 
 	/**
@@ -315,9 +313,6 @@ public class BoxRunner {
 				break;
 			case "format" :
 				PrettyPrint.main( options.cliArgs().toArray( new String[ 0 ] ) );
-				break;
-			case "obfuscate" :
-				BXObfuscator.main( options.cliArgs().toArray( new String[ 0 ] ) );
 				break;
 			case "encrypt" :
 				BXEncryptor.main( options.cliArgs().toArray( new String[ 0 ] ) );
@@ -813,8 +808,6 @@ public class BoxRunner {
 		System.out.println( "                                     Use: boxlang featureaudit --help" );
 		System.out.println( "  schedule <SCHEDULER_FILE>       ⏰ Run a BoxLang scheduler from file" );
 		System.out.println( "                                     Use: boxlang schedule --help" );
-		System.out.println( "  obfuscate                       🔒 Obfuscate source for non-revealing deployment" );
-		System.out.println( "                                     Use: boxlang obfuscate --help" );
 		System.out.println( "  encrypt                         🔐 Encrypt source at rest (decrypted in memory at runtime)" );
 		System.out.println( "                                     Use: boxlang encrypt --help" );
 		System.out.println();

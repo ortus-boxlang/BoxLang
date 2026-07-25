@@ -11,11 +11,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- New `obfuscate` CLI action command (`boxlang obfuscate --source <path> --target <dir>`) that produces a
-  deployable, non-revealing form of BoxLang/CFML source by stripping comments/documentation and renaming
-  `var`-declared local variables to short opaque names. Function and argument names are intentionally left
-  unchanged so callers keep working (named arguments, `this.method()`, and dynamic invocation all resolve by
-  name). The obfuscated output remains valid, behavior-preserving source.
 - New `encrypt` CLI action command (`boxlang encrypt --source <path> --target <dir> --key <secret> --key-id <label>`)
   for source-level encryption at rest. Encrypted files (AES-256-GCM) are unreadable on disk and transparently
   decrypted in memory just before parsing, so distributed code stays hidden yet runs on any runtime version
