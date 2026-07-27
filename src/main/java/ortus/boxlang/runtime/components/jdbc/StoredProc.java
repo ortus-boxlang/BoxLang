@@ -414,6 +414,10 @@ public class StoredProc extends Component {
 				    procedure.getObject( i + 1 + paramOffset ),
 				    procedure
 				);
+				// Oracle uses refcursor type out params for proc results. In that case, null needs to stay undefined
+				if ( value == null && BLType == QueryColumnType.REFCURSOR ) {
+					continue;
+				}
 				if ( value == null && Compare.nullEqualsEmptyString ) {
 					value = "";
 				}

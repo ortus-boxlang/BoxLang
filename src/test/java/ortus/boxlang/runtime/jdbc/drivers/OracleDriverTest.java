@@ -198,6 +198,20 @@ public class OracleDriverTest extends AbstractDriverTest {
 		    """,
 		    context
 		);
+
+		// Stored procedure with OUT refcursor that returns NULL (never opened)
+		dataSource.execute(
+		    """
+		    CREATE OR REPLACE PROCEDURE testProcedureNullCursor (
+		    	cursor1 OUT SYS_REFCURSOR
+		    )
+		    IS
+		    BEGIN
+		    	NULL;
+		    END testProcedureNullCursor;
+		    """,
+		    context
+		);
 	}
 
 	@DisplayName( "It sets generatedKey in query meta" )
@@ -946,6 +960,28 @@ public class OracleDriverTest extends AbstractDriverTest {
 		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
 		assertThat( rs1.size() ).isEqualTo( 1 );
 		assertThat( rs1.getRowAsStruct( 0 ).getAsNumber( Key.of( "numVal" ) ).doubleValue() ).isEqualTo( 1D );
+	}
+
+	@DisplayName( "It does not define the variable when a proc has an OUT refcursor that returns null" )
+	@Test
+	public void testCallStoredProcRequestMoreResultsThanExist() {
+		boolean previousNullEqualsEmptyString = Compare.nullEqualsEmptyString;
+		Compare.nullEqualsEmptyString = true;
+		try {
+			// testProcedureNullCursor declares an OUT refcursor but never opens it (returns null).
+			instance.executeSource(
+			    """
+			    <bx:storedproc procedure="testProcedureNullCursor" datasource="OracleDatasource" result="variables.result" debug=false>
+			        <bx:procresult name="extraResult" resultSet=1 />
+			    </bx:storedproc>
+			    """,
+			    context, BoxSourceType.BOXTEMPLATE );
+		} finally {
+			Compare.nullEqualsEmptyString = previousNullEqualsEmptyString;
+		}
+
+		// The result set does not exist (null refcursor) — variable must be NOT DEFINED, not an empty string.
+		assertThat( variables.containsKey( Key.of( "extraResult" ) ) ).isFalse();
 	}
 
 }

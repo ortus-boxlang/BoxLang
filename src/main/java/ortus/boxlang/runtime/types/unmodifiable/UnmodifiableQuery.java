@@ -366,7 +366,19 @@ public class UnmodifiableQuery extends Query implements IUnmodifiable {
 	@Override
 	@Deprecated
 	public UnmodifiableQuery duplicate() {
-		return duplicate( RequestBoxContext.getCurrent() );
+		return duplicate( false, RequestBoxContext.getCurrent() );
+	}
+
+	/**
+	 * Duplicate the current query.
+	 *
+	 * @param deep    If true, nested objects will be duplicated as well.
+	 * @param context The box context.
+	 *
+	 * @return A copy of the current query.
+	 */
+	public UnmodifiableQuery duplicate( boolean deep, IBoxContext context ) {
+		return super.duplicate( deep, context ).toUnmodifiable();
 	}
 
 	/**
