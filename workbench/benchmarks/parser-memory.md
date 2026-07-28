@@ -75,16 +75,33 @@ source bytes. Baseline and optimized per-file manifests contain the same node
 count and type histogram for every file, establishing structural equivalence
 across all 268,499 unique AST nodes.
 
-| Metric | Baseline | Optimized | Change |
-|---|---:|---:|---:|
-| AST nodes | 268,499 | 268,499 | 0 |
-| Graph objects | 2,615,793 | 1,541,414 | -1,074,379 |
-| Graph bytes | 92,513,632 | 67,665,008 | -24,848,624 (-26.86%) |
-| Bytes per node | 344.56 | 252.01 | -92.55 |
+| Metric | Baseline | Shared ranges, compact positions, and empty collections | Parser allocation and collection capacity pass | Total change |
+|---|---:|---:|---:|---:|
+| AST nodes | 268,499 | 268,499 | 268,499 | 0 |
+| Graph objects | 2,615,793 | 1,541,414 | 1,541,414 | -1,074,379 |
+| Graph bytes | 92,513,632 | 67,665,008 | 63,144,240 | -29,369,392 (-31.75%) |
+| Bytes per node | 344.56 | 252.01 | 235.17 | -109.39 |
 
 In the worst-case lazy-source scenario, retaining every node's resolved source
-string increases the optimized graph to 1,721,436 objects and 79,627,296 bytes,
-or 296.56 bytes per node. This remains 12,886,336 bytes below the baseline.
+string increases the final graph to 1,721,436 objects and 75,106,528 bytes, or
+279.73 bytes per node. This is 4,520,768 bytes less than the first optimization
+pass and remains 17,407,104 bytes below the original non-materialized baseline.
 
-A representative optimized JFR recording is written to
+The final pass constructs positions from primitive coordinates in parser hot
+paths, counts newlines without temporary strings, and gives promoted AST child
+and comment lists smaller initial capacities. The retained object count is
+unchanged, but the right-sized backing arrays save 4,520,768 bytes (6.68%) over
+the first optimization pass.
+
+Three full-corpus runs in isolated JVMs produced these parse-time samples:
+
+| Variant | Runs (ms) | Median (ms) |
+|---|---:|---:|
+| First optimization pass | 7,450.14, 7,337.46, 6,286.99 | 7,337.46 |
+| Final pass | 6,264.72, 7,426.08, 6,463.34 | 6,463.34 |
+
+The final median is 11.91% lower. These timings are a directional regression
+signal from the retained-heap harness, not a formal parser throughput benchmark.
+
+A representative final-pass JFR recording is written to
 `build/parser-memory/parser-memory.jfr` when the benchmark runs with `--jfr`.

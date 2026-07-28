@@ -87,6 +87,27 @@ class ParserMemoryRepresentationTest {
 	}
 
 	@Test
+	void primitiveCoordinatesCreateEquivalentPosition() {
+		Position position = new Position( 1, 2, 3, 4 );
+
+		assertThat( position.getStart().getLine() ).isEqualTo( 1 );
+		assertThat( position.getStart().getColumn() ).isEqualTo( 2 );
+		assertThat( position.getEnd().getLine() ).isEqualTo( 3 );
+		assertThat( position.getEnd().getColumn() ).isEqualTo( 4 );
+	}
+
+	@Test
+	void primitiveCoordinatesRetainSourceRangeAcrossLines() {
+		SourceCode	source		= new SourceCode( "first\nvalue" );
+		Position	position	= new Position( 1, 0, 2, 5, source, 6, 11 );
+
+		assertThat( position.getSource() ).isSameInstanceAs( source );
+		assertThat( position.getStart().getLine() ).isEqualTo( 1 );
+		assertThat( position.getEnd().getLine() ).isEqualTo( 2 );
+		assertThat( position.getSourceText() ).isEqualTo( "value" );
+	}
+
+	@Test
 	void positionMutationDoesNotDiscardLazySourceText() throws IOException {
 		var node = new BoxParser().parseExpression( "value + 1" ).getRoot();
 

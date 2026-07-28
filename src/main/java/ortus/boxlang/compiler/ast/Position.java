@@ -41,7 +41,19 @@ public class Position implements Serializable {
 	 * @param end   the end position in the source code
 	 */
 	public Position( Point start, Point end ) {
-		this( start, end, null );
+		this( start.getLine(), start.getColumn(), end.getLine(), end.getColumn() );
+	}
+
+	/**
+	 * Creates a position from primitive coordinates.
+	 *
+	 * @param startLine   the start line
+	 * @param startColumn the start column
+	 * @param endLine     the end line
+	 * @param endColumn   the end column
+	 */
+	public Position( int startLine, int startColumn, int endLine, int endColumn ) {
+		this( startLine, startColumn, endLine, endColumn, null );
 	}
 
 	/**
@@ -52,7 +64,20 @@ public class Position implements Serializable {
 	 * @param source the source file reference
 	 */
 	public Position( Point start, Point end, Source source ) {
-		this( start, end, source, -1, -1 );
+		this( start.getLine(), start.getColumn(), end.getLine(), end.getColumn(), source );
+	}
+
+	/**
+	 * Creates a position from primitive coordinates including source information.
+	 *
+	 * @param startLine   the start line
+	 * @param startColumn the start column
+	 * @param endLine     the end line
+	 * @param endColumn   the end column
+	 * @param source      the source reference
+	 */
+	public Position( int startLine, int startColumn, int endLine, int endColumn, Source source ) {
+		this( startLine, startColumn, endLine, endColumn, source, -1, -1 );
 	}
 
 	/**
@@ -65,8 +90,23 @@ public class Position implements Serializable {
 	 * @param endIndex   the exclusive source character index
 	 */
 	public Position( Point start, Point end, Source source, int startIndex, int endIndex ) {
-		this.start		= pack( start.getLine(), start.getColumn() );
-		this.end		= pack( end.getLine(), end.getColumn() );
+		this( start.getLine(), start.getColumn(), end.getLine(), end.getColumn(), source, startIndex, endIndex );
+	}
+
+	/**
+	 * Creates a position from primitive coordinates with an exclusive character range in its source.
+	 *
+	 * @param startLine   the start line
+	 * @param startColumn the start column
+	 * @param endLine     the end line
+	 * @param endColumn   the end column
+	 * @param source      the source reference
+	 * @param startIndex  the inclusive source character index
+	 * @param endIndex    the exclusive source character index
+	 */
+	public Position( int startLine, int startColumn, int endLine, int endColumn, Source source, int startIndex, int endIndex ) {
+		this.start		= pack( startLine, startColumn );
+		this.end		= pack( endLine, endColumn );
 		this.source		= source;
 		this.startIndex	= startIndex;
 		this.endIndex	= endIndex;

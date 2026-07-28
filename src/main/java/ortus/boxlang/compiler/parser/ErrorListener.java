@@ -9,7 +9,6 @@ import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.Token;
 
 import ortus.boxlang.compiler.ast.Issue;
-import ortus.boxlang.compiler.ast.Point;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.runtime.util.RegexBuilder;
@@ -190,8 +189,8 @@ public class ErrorListener extends BaseErrorListener {
 	 */
 	private Issue genIssue( int line, int charPositionInLine, String msg, int tokenLength ) {
 		String		errorMessage	= msg != null ? msg : "almost, but not quite, entirely unlike tea.";
-		Position	position		= new Position( new Point( line + startLine, charPositionInLine + startColumn ),
-		    new Point( line + startLine, charPositionInLine + startColumn ), sourceToParse );
+		Position	position		= new Position( line + startLine, charPositionInLine + startColumn, line + startLine,
+		    charPositionInLine + startColumn, sourceToParse );
 
 		String[]	theSourceLines	= getSourceLines();
 		// We have the message as built by our ErrorStrategy, so now we create a window on the source code

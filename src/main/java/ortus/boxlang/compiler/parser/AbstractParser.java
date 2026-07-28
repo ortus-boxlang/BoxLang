@@ -39,7 +39,6 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.Issue;
-import ortus.boxlang.compiler.ast.Point;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.comment.BoxComment;
@@ -200,8 +199,8 @@ public abstract class AbstractParser {
 			stopLine	= endNode.stop.getLine() + startLine;
 			stopCol		= endNode.stop.getCharPositionInLine() + endNode.stop.getText().length() + startColumn;
 		}
-		return new Position( new Point( startNode.start.getLine() + this.startLine, startNode.start.getCharPositionInLine() + startColumn ),
-		    new Point( stopLine, stopCol ), sourceToParse, this.subParser ? -1 : startNode.start.getStartIndex(),
+		return new Position( startNode.start.getLine() + this.startLine, startNode.start.getCharPositionInLine() + startColumn, stopLine, stopCol,
+		    sourceToParse, this.subParser ? -1 : startNode.start.getStartIndex(),
 		    this.subParser || endNode.stop == null ? -1 : endNode.stop.getStopIndex() + 1 );
 	}
 
@@ -221,9 +220,9 @@ public abstract class AbstractParser {
 			stopLine	= node.stop.getLine() + startLine;
 			stopCol		= node.stop.getCharPositionInLine() + node.stop.getText().length() + ( node.stop.getLine() > 1 ? 0 : startColumn );
 		}
-		return new Position(
-		    new Point( startToken.getLine() + this.startLine, startToken.getCharPositionInLine() + ( startToken.getLine() > 1 ? 0 : startColumn ) ),
-		    new Point( stopLine, stopCol ), sourceToParse, this.subParser ? -1 : startToken.getStartIndex(),
+		return new Position( startToken.getLine() + this.startLine,
+		    startToken.getCharPositionInLine() + ( startToken.getLine() > 1 ? 0 : startColumn ), stopLine, stopCol, sourceToParse,
+		    this.subParser ? -1 : startToken.getStartIndex(),
 		    this.subParser || node.stop == null ? -1 : node.stop.getStopIndex() + 1 );
 	}
 
@@ -277,31 +276,38 @@ public abstract class AbstractParser {
 		// Get the text of the token
 		String	text			= endToken.getText();
 		// Count the number of line breaks in the token's text
-		int		newLineCount	= text.length() - text.replace( "\n", "" ).length();
+		int		newLineCount	= 0;
+		int		lastNewLine		= -1;
+		for ( int i = 0; i < text.length(); i++ ) {
+			if ( text.charAt( i ) == '\n' ) {
+				newLineCount++;
+				lastNewLine = i;
+			}
+		}
 		// Calculate the end row by adding the number of line breaks to the start row
-		int		endRow			= endToken.getLine() + this.startLine + newLineCount;
+		int	endRow	= endToken.getLine() + this.startLine + newLineCount;
 
-		int		endCol;
+		int	endCol;
 		if ( newLineCount > 0 ) {
 			// If there are line breaks, set the end column to the length of the text after the last line break
-			endCol = text.length() - text.lastIndexOf( '\n' ) - 1;
+			endCol = text.length() - lastNewLine - 1;
 		} else {
 			// If there are no line breaks, set the end column to the start column plus the length of the text
 			endCol = endToken.getCharPositionInLine() + text.length() + ( endRow > 1 ? 0 : startColumn );
 		}
 
 		// Return a new Position object that represents the region of the source code that the token covers
-		return new Position( new Point( startRow, startCol ), new Point( endRow, endCol ), sourceToParse, this.subParser ? -1 : startToken.getStartIndex(),
+		return new Position( startRow, startCol, endRow, endCol, sourceToParse, this.subParser ? -1 : startToken.getStartIndex(),
 		    this.subParser ? -1 : endToken.getStopIndex() + 1 );
 	}
 
 	public Position createPosition( int startLine, int startColumn, int stopLine, int stopColumn ) {
-		return new Position( new Point( startLine, startColumn ), new Point( stopLine, stopColumn ), sourceToParse );
+		return new Position( startLine, startColumn, stopLine, stopColumn, sourceToParse );
 	}
 
 	public Position createOffsetPosition( int startLine, int startColumn, int stopLine, int stopColumn ) {
-		return new Position( new Point( this.startLine + startLine, ( startLine == 1 ? this.startColumn : 0 ) + startColumn ),
-		    new Point( this.startLine + stopLine, ( stopLine == 1 ? this.startColumn : 0 ) + stopColumn ), sourceToParse );
+		return new Position( this.startLine + startLine, ( startLine == 1 ? this.startColumn : 0 ) + startColumn, this.startLine + stopLine,
+		    ( stopLine == 1 ? this.startColumn : 0 ) + stopColumn, sourceToParse );
 	}
 
 	/**

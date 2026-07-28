@@ -527,7 +527,7 @@ public class CFParser extends AbstractParser {
 			} else {
 				// Catch-all. If this error is encountered, look at what modes were still on the stack, find what token was never ended, and
 				// add logic like the above to handle it. Eventually, this catch-all should never be used.
-				position = new Position( new Point( 0, 0 ), new Point( 0, 0 ), sourceToParse );
+				position = new Position( 0, 0, 0, 0, sourceToParse );
 				errorListener.semanticError(
 				    "Internal error(42): Un-popped Lexer modes. [" + String.join( ", ", modes.reversed() ) + "] Please report this to the developers.",
 				    position );
