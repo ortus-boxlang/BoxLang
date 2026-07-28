@@ -1117,6 +1117,25 @@ public class LoopTest {
 	}
 
 	@Test
+	public void testLoopFileCharactersWithoutItem() throws Exception {
+		Path file = Files.createTempFile( "boxlang-loop", ".txt" );
+		try {
+			Files.writeString( file, "abcdef" );
+			instance.executeSource(
+			    """
+			    result = [];
+			    bx:loop file="%s" index="chunk" characters="2" {
+			    	result.append( chunk );
+			    }
+			    """.formatted( file ),
+			    context );
+			assertThat( variables.getAsArray( Key.of( "result" ) ) ).containsExactly( "ab", "cd", "ef" ).inOrder();
+		} finally {
+			Files.deleteIfExists( file );
+		}
+	}
+
+	@Test
 	public void testUnscopeOutputAfterGroup() {
 		instance.executeSource(
 		    """

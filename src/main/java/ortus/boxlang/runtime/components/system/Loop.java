@@ -96,7 +96,7 @@ public class Loop extends Component {
 		    new Attribute( Key.step, "number", 1 ),
 
 		    // File loop attributes
-		    new Attribute( Key.file, "string", Set.of( Validator.requires( Key.item ) ) ),
+		    new Attribute( Key.file, "string", Set.of( Validator.requiresOneOf( Key.file, Key.item ) ) ),
 
 		    // List loop attributes
 		    new Attribute( Key.list, "string" ),
@@ -310,6 +310,7 @@ public class Loop extends Component {
 	 *                 <li><strong>Array loops:</strong> Contains the current array element</li>
 	 *                 <li><strong>List loops:</strong> Contains the current list item</li>
 	 *                 <li><strong>Collection loops:</strong> Contains the current collection key</li>
+	 *                 <li><strong>File loops:</strong> Contains the current line of content</li>
 	 *                 <li><strong>Times loops:</strong> If no index specified, contains the current iteration number</li>
 	 *                 </ul>
 	 *                 <br>
@@ -319,7 +320,7 @@ public class Loop extends Component {
 	 *                  <ul>
 	 *                  <li><strong>Array loops:</strong> Contains the 1-based array index</li>
 	 *                  <li><strong>Numeric range loops:</strong> Contains the current numeric value (required)</li>
-	 *                  <li><strong>File loops:</strong> Contains the current line content (required)</li>
+	 *                  <li><strong>File loops:</strong> Contains the current line of content unless "item" is specified. In that case, it contains the line number</li>
 	 *                  <li><strong>Times loops:</strong> Contains the current iteration number</li>
 	 *                  </ul>
 	 *                  <br>
@@ -343,10 +344,11 @@ public class Loop extends Component {
 	 *                 <strong>Example:</strong> <code>&lt;bx:loop from="0" to="20" step="2" index="even"&gt;</code>
 	 *
 	 * @attribute.file Absolute path to a text file to read line by line. Each iteration provides
-	 *                 one line of the file content in the <code>index</code> variable. The file
-	 *                 is automatically closed when the loop completes. Requires <code>index</code> attribute.
+	 *                 the line number in the <code>index</code> variable and the actual contents of the line in the <code>item</code> variable.
+	 *                 If <code>item</code> is not specified, the line content will be available in the <code>index</code> variable.
+	 *                 The file is automatically closed when the loop completes. Requires <code>index</code> attribute.
 	 *                 <br>
-	 *                 <strong>Example:</strong> <code>&lt;bx:loop file="/path/to/data.txt" index="line"&gt;</code>
+	 *                 <strong>Example:</strong> <code>&lt;bx:loop file="/path/to/data.txt" index="LineNo" item="lineContent" &gt;</code>
 	 *
 	 * @attribute.list A delimited string to process item by item. Each item becomes available
 	 *                 through the <code>item</code> or <code>index</code> variable. Use with
@@ -675,9 +677,18 @@ public class Loop extends Component {
 					}
 				}
 
-				ExpressionInterpreter.setVariable( context, item, content );
+				// item, if present, is a always the content.
+				if ( item != null ) {
+					ExpressionInterpreter.setVariable( context, item, content );
+				}
+				// index, if present, is either the index or the content depending on whether item is specified.
 				if ( index != null ) {
-					ExpressionInterpreter.setVariable( context, index, row++ );
+					if ( item != null ) {
+						ExpressionInterpreter.setVariable( context, index, row++ );
+					} else {
+						ExpressionInterpreter.setVariable( context, index, content );
+						row++;
+					}
 				}
 
 				BodyResult bodyResult = processBody( context, body );
