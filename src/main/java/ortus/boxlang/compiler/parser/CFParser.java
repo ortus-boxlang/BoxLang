@@ -199,7 +199,7 @@ public class CFParser extends AbstractParser {
 		Boolean				classOrInterface	= ext.isPresent() && ext.get().equalsIgnoreCase( "cfc" );
 		BoxNode				ast					= parserFirstStage( inputStream, classOrInterface, isScript );
 
-		return new ParsingResult( ast, issues, comments );
+		return createParsingResult( ast );
 	}
 
 	/**
@@ -242,7 +242,7 @@ public class CFParser extends AbstractParser {
 		InputStream	inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
 		BoxNode		ast			= parserFirstStage( inputStream, classOrInterface, isScript );
-		return new ParsingResult( ast, issues, comments );
+		return createParsingResult( ast );
 	}
 
 	/**
@@ -278,13 +278,13 @@ public class CFParser extends AbstractParser {
 
 		try {
 			var ast = parseTree.accept( expressionVisitor );
-			return new ParsingResult( ast, issues, comments );
+			return createParsingResult( ast );
 		} catch ( Exception e ) {
 			// Ignore issues creating AST if the parsing already had failures
 			if ( issues.isEmpty() ) {
 				throw e;
 			}
-			return new ParsingResult( null, issues, comments );
+			return createParsingResult( null );
 		}
 
 	}
@@ -323,13 +323,13 @@ public class CFParser extends AbstractParser {
 		try {
 			var ast = parseTree.accept( visitor );
 
-			return new ParsingResult( ast, issues, comments );
+			return createParsingResult( ast );
 		} catch ( Exception e ) {
 			// Ignore issues creating AST if the parsing already had failures
 			if ( issues.isEmpty() ) {
 				throw e;
 			}
-			return new ParsingResult( null, issues, comments );
+			return createParsingResult( null );
 		}
 	}
 

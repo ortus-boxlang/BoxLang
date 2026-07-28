@@ -1559,6 +1559,9 @@ task parserMemoryBenchmark( type: JavaExec ) {
 	if ( project.hasProperty( 'materializeSourceText' ) ) {
 		args '--materialize-source-text'
 	}
+	if ( project.hasProperty( 'censusStrings' ) ) {
+		args '--census-strings'
+	}
 	if ( project.hasProperty( 'limit' ) ) {
 		args '--limit', project.property( 'limit' ).toString()
 	}

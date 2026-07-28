@@ -28,6 +28,7 @@ import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.SourceCode;
 import ortus.boxlang.compiler.ast.expression.BoxBinaryOperation;
 import ortus.boxlang.compiler.ast.expression.BoxComparisonOperation;
+import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.parser.BoxParser;
 import ortus.boxlang.compiler.parser.CFParser;
 
@@ -58,6 +59,15 @@ class ParserMemoryRepresentationTest {
 		var node = new BoxParser().parseExpression( "value + 1" ).getRoot();
 
 		assertThat( node.toMap().get( "sourceText" ) ).isEqualTo( "value + 1" );
+	}
+
+	@Test
+	void parserCanonicalizesEqualSemanticStringsWithinOneAst() throws IOException {
+		var identifiers = new BoxParser().parseExpression( "alpha + alpha + Alpha" ).getRoot().getDescendantsOfType( BoxIdentifier.class );
+
+		assertThat( identifiers ).hasSize( 3 );
+		assertThat( identifiers.get( 0 ).getName() ).isSameInstanceAs( identifiers.get( 1 ).getName() );
+		assertThat( identifiers.get( 0 ).getName() ).isNotSameInstanceAs( identifiers.get( 2 ).getName() );
 	}
 
 	@Test

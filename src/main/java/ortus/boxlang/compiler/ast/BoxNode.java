@@ -107,7 +107,7 @@ public abstract class BoxNode implements BoxVisitable {
 		this.parent = parent;
 		if ( parent != null && !parent.children.contains( this ) ) {
 			if ( parent.children == EMPTY_CHILDREN ) {
-				parent.children = new ArrayList<>( 2 );
+				parent.children = new SmallChildrenList();
 			}
 			parent.children.add( this );
 		}
@@ -538,7 +538,7 @@ public abstract class BoxNode implements BoxVisitable {
 		}
 		if ( newChild != null ) {
 			if ( this.children == EMPTY_CHILDREN ) {
-				this.children = new ArrayList<>( 2 );
+				this.children = new SmallChildrenList();
 			}
 			children.add( newChild );
 		}
@@ -556,7 +556,7 @@ public abstract class BoxNode implements BoxVisitable {
 		}
 		if ( newChildren != null && !newChildren.isEmpty() ) {
 			if ( this.children == EMPTY_CHILDREN ) {
-				this.children = new ArrayList<>( newChildren.size() );
+				this.children = new SmallChildrenList();
 			}
 			children.addAll( newChildren );
 		}

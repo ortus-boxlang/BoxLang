@@ -42,6 +42,7 @@ import ortus.boxlang.compiler.ast.Issue;
 import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.comment.BoxComment;
+import ortus.boxlang.compiler.ast.visitor.SemanticStringCanonicalizer;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 
 /**
@@ -84,6 +85,13 @@ public abstract class AbstractParser {
 		this.startColumn	= startColumn;
 		errorListener.setStartLine( this.startLine );
 		errorListener.setStartColumn( this.startColumn );
+	}
+
+	protected ParsingResult createParsingResult( BoxNode root ) {
+		if ( !this.subParser ) {
+			SemanticStringCanonicalizer.canonicalize( root );
+		}
+		return new ParsingResult( root, this.issues, this.comments );
 	}
 
 	/**

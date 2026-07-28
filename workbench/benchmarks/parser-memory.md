@@ -21,7 +21,9 @@ requested and the returned strings are retained before measurement:
 Use `--limit N` for faster development comparisons. Use `--corpus PATH` to
 measure another local corpus. Add `--jfr` to write
 `build/parser-memory/parser-memory.jfr` for allocation, GC, and process-level
-analysis in JDK Mission Control.
+analysis in JDK Mission Control. Add `--census-strings` to report equal semantic
+string values retained as distinct objects, excluding source text and comment
+text.
 
 The primary metrics are `ast.graph.bytes` and `ast.bytes.per.node`. Parse time
 is included as a regression signal, not as a statistically rigorous throughput
@@ -105,3 +107,41 @@ signal from the retained-heap harness, not a formal parser throughput benchmark.
 
 A representative final-pass JFR recording is written to
 `build/parser-memory/parser-memory.jfr` when the benchmark runs with `--jfr`.
+
+## Semantic Strings And Compact Children
+
+A follow-up pass measured 141,305 semantic string references containing 129,479
+distinct objects but only 16,298 distinct values. Of the 113,181 duplicate
+objects across the corpus, 87,079 occur within individual ASTs. Canonicalizing
+exact-case semantic values per AST removes those within-AST duplicates without
+using the JVM string pool or retaining values after their AST becomes
+unreachable. Source text and comment text are excluded; structured documentation
+annotation values remain part of the semantic census.
+
+Generic child-list sizes on the same corpus are heavily weighted toward small
+lists:
+
+| Child count | Nodes |
+|---|---:|
+| 0 | 129,102 |
+| 1 | 58,322 |
+| 2 | 61,351 |
+| 3 or more | 19,724 |
+
+`SmallChildrenList` stores the first two children inline and spills into an
+`ArrayList` for larger nodes while retaining mutable `List` behavior.
+
+| Variant | Graph objects | Graph bytes | Bytes/node | Change from previous |
+|---|---:|---:|---:|---:|
+| Parser allocation and capacity pass | 1,541,414 | 63,144,240 | 235.17 | - |
+| Per-AST semantic string canonicalization | 1,385,528 | 59,053,992 | 219.94 | -4,090,248 (-6.48%) |
+| Inline child storage | 1,285,506 | 57,780,944 | 215.20 | -1,273,048 (-2.16%) |
+
+Together these follow-up changes save 5,363,296 bytes (8.49%) over the preceding
+checkpoint. The final graph is 34,732,688 bytes (37.54%) smaller than the
+92,513,632-byte original baseline. Per-file node counts and type histograms
+remain identical across all 656 files.
+
+When every node's source text is materialized and retained, the follow-up graph
+contains 1,465,528 objects and 69,743,232 bytes, or 259.75 bytes per node. This
+is also 5,363,296 bytes below the preceding materialized-source checkpoint.

@@ -19,6 +19,7 @@ USE_DEFAULT_CORPUS=true
 while [[ $# -gt 0 ]]; do
 	case "$1" in
 		--materialize-source-text) GRADLE_ARGS+=("-PmaterializeSourceText"); shift ;;
+		--census-strings) GRADLE_ARGS+=("-PcensusStrings"); shift ;;
 		--jfr) GRADLE_ARGS+=("-Pjfr"); shift ;;
 		--limit) GRADLE_ARGS+=("-Plimit=$2"); shift 2 ;;
 		--corpus) CORPUS_DIR="$2"; USE_DEFAULT_CORPUS=false; shift 2 ;;

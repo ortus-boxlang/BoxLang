@@ -185,7 +185,7 @@ public class BoxParser extends AbstractParser {
 		Boolean				classOrInterface	= ext.isPresent() && ext.get().equalsIgnoreCase( "bx" );
 		BoxNode				ast					= parserFirstStage( inputStream, classOrInterface, isScript );
 
-		return new ParsingResult( ast, issues, comments );
+		return createParsingResult( ast );
 	}
 
 	/**
@@ -228,7 +228,7 @@ public class BoxParser extends AbstractParser {
 		InputStream	inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
 		BoxNode		ast			= parserFirstStage( inputStream, classOrInterface, isScript );
-		return new ParsingResult( ast, issues, comments );
+		return createParsingResult( ast );
 	}
 
 	/**
@@ -264,13 +264,13 @@ public class BoxParser extends AbstractParser {
 
 		try {
 			var ast = parseTree.accept( expressionVisitor );
-			return new ParsingResult( ast, issues, comments );
+			return createParsingResult( ast );
 		} catch ( Exception e ) {
 			// Ignore issues creating AST if the parsing already had failures
 			if ( issues.isEmpty() ) {
 				throw e;
 			}
-			return new ParsingResult( null, issues, comments );
+			return createParsingResult( null );
 		}
 
 	}
@@ -309,13 +309,13 @@ public class BoxParser extends AbstractParser {
 		try {
 			var ast = parseTree.accept( visitor );
 
-			return new ParsingResult( ast, issues, comments );
+			return createParsingResult( ast );
 		} catch ( Exception e ) {
 			// Ignore issues creating AST if the parsing already had failures
 			if ( issues.isEmpty() ) {
 				throw e;
 			}
-			return new ParsingResult( null, issues, comments );
+			return createParsingResult( null );
 		}
 	}
 
