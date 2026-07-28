@@ -39,11 +39,15 @@ import ortus.boxlang.runtime.util.RegexBuilder;
  */
 public abstract class BoxNode implements BoxVisitable {
 
-	protected Position			position;
-	private String				sourceText;
-	protected BoxNode			parent	= null;
-	private List<BoxNode>		children;
-	private List<BoxComment>	comments;
+	private static final String				POSITION_SOURCE_TEXT	= new String();
+	private static final List<BoxNode>		EMPTY_CHILDREN			= List.of();
+	private static final List<BoxComment>	EMPTY_COMMENTS			= List.of();
+
+	protected Position						position;
+	private String							sourceText;
+	protected BoxNode						parent					= null;
+	private List<BoxNode>					children;
+	private List<BoxComment>				comments;
 
 	/**
 	 * Constructor
@@ -53,9 +57,9 @@ public abstract class BoxNode implements BoxVisitable {
 	 */
 	protected BoxNode( Position position, String sourceText ) {
 		this.position	= position;
-		this.sourceText	= sourceText;
-		this.children	= new ArrayList<>();
-		this.comments	= new ArrayList<>();
+		this.sourceText	= position != null && position.sourceTextEquals( sourceText ) ? POSITION_SOURCE_TEXT : sourceText;
+		this.children	= EMPTY_CHILDREN;
+		this.comments	= EMPTY_COMMENTS;
 	}
 
 	/**
@@ -75,6 +79,9 @@ public abstract class BoxNode implements BoxVisitable {
 	 * @param position the position within the source code that originated the node
 	 */
 	public void setPosition( Position position ) {
+		if ( this.sourceText == POSITION_SOURCE_TEXT ) {
+			this.sourceText = getSourceText();
+		}
 		this.position = position;
 	}
 
@@ -84,7 +91,7 @@ public abstract class BoxNode implements BoxVisitable {
 	 * @return the snipped of the source code
 	 */
 	public String getSourceText() {
-		return sourceText;
+		return this.sourceText == POSITION_SOURCE_TEXT ? this.position.getSourceText() : this.sourceText;
 	}
 
 	public void setSourceText( String sourceText ) {
@@ -98,10 +105,11 @@ public abstract class BoxNode implements BoxVisitable {
 	 */
 	public void setParent( BoxNode parent ) {
 		this.parent = parent;
-		if ( parent != null ) {
-			if ( !parent.children.contains( this ) )
-				parent.getChildren()
-				    .add( this );
+		if ( parent != null && !parent.children.contains( this ) ) {
+			if ( parent.children == EMPTY_CHILDREN ) {
+				parent.children = new ArrayList<>();
+			}
+			parent.children.add( this );
 		}
 	}
 
@@ -226,31 +234,33 @@ public abstract class BoxNode implements BoxVisitable {
 			}
 
 			// sort by position start line number followed by column start char
-			children.sort( ( a, b ) -> {
-				if ( a.getPosition() == null ) {
-					return 0;
-					// throw new BoxRuntimeException( a.getClass().getName() + " position is null " + a.getSourceText() );
-				}
-				if ( b.getPosition() == null ) {
-					return 0;
-					// throw new BoxRuntimeException( a.getClass().getName() + " position is null " + a.getSourceText() );
-				}
-				int lineDiff = a.getPosition()
-				    .getStart()
-				    .getLine()
-				    - b.getPosition()
-				        .getStart()
-				        .getLine();
-				if ( lineDiff == 0 ) {
-					return a.getPosition()
+			if ( children.size() > 1 ) {
+				children.sort( ( a, b ) -> {
+					if ( a.getPosition() == null ) {
+						return 0;
+						// throw new BoxRuntimeException( a.getClass().getName() + " position is null " + a.getSourceText() );
+					}
+					if ( b.getPosition() == null ) {
+						return 0;
+						// throw new BoxRuntimeException( a.getClass().getName() + " position is null " + a.getSourceText() );
+					}
+					int lineDiff = a.getPosition()
 					    .getStart()
-					    .getColumn()
+					    .getLine()
 					    - b.getPosition()
 					        .getStart()
-					        .getColumn();
-				}
-				return lineDiff;
-			} );
+					        .getLine();
+					if ( lineDiff == 0 ) {
+						return a.getPosition()
+						    .getStart()
+						    .getColumn()
+						    - b.getPosition()
+						        .getStart()
+						        .getColumn();
+					}
+					return lineDiff;
+				} );
+			}
 
 			// let my children whittle away at what's left.
 			for ( int i = 0; i < children.size(); i++ ) {
@@ -495,7 +505,7 @@ public abstract class BoxNode implements BoxVisitable {
 	 * @return the node with the children set
 	 */
 	public BoxNode setComments( List<BoxComment> comments ) {
-		this.comments = comments;
+		this.comments = comments.isEmpty() ? EMPTY_COMMENTS : comments;
 		comments.forEach( comment -> comment.setParent( this ) );
 		return this;
 	}
@@ -508,6 +518,9 @@ public abstract class BoxNode implements BoxVisitable {
 	 * @return the node with the comment added
 	 */
 	public BoxNode addComment( BoxComment comment ) {
+		if ( this.comments == EMPTY_COMMENTS ) {
+			this.comments = new ArrayList<>();
+		}
 		this.comments.add( comment );
 		comment.setParent( this );
 		return this;
@@ -520,10 +533,13 @@ public abstract class BoxNode implements BoxVisitable {
 	 * @param newChild The child to add
 	 */
 	public void replaceChildren( BoxNode oldChild, BoxNode newChild ) {
-		if ( oldChild != null ) {
+		if ( oldChild != null && !this.children.isEmpty() ) {
 			children.remove( oldChild );
 		}
 		if ( newChild != null ) {
+			if ( this.children == EMPTY_CHILDREN ) {
+				this.children = new ArrayList<>();
+			}
 			children.add( newChild );
 		}
 	}
@@ -535,10 +551,13 @@ public abstract class BoxNode implements BoxVisitable {
 	 * @param newChildren The children to add
 	 */
 	public void replaceChildren( List<? extends BoxNode> oldChildren, List<? extends BoxNode> newChildren ) {
-		if ( oldChildren != null ) {
+		if ( oldChildren != null && !this.children.isEmpty() ) {
 			children.removeAll( oldChildren );
 		}
-		if ( newChildren != null ) {
+		if ( newChildren != null && !newChildren.isEmpty() ) {
+			if ( this.children == EMPTY_CHILDREN ) {
+				this.children = new ArrayList<>();
+			}
 			children.addAll( newChildren );
 		}
 	}
@@ -703,7 +722,7 @@ public abstract class BoxNode implements BoxVisitable {
 
 		map.put( "ASTType", getClass().getSimpleName() );
 		map.put( "ASTPackage", getClass().getPackageName() );
-		map.put( "sourceText", sourceText );
+		map.put( "sourceText", getSourceText() );
 		if ( position != null ) {
 			map.put( "position", position.toMap() );
 		}

@@ -201,7 +201,8 @@ public abstract class AbstractParser {
 			stopCol		= endNode.stop.getCharPositionInLine() + endNode.stop.getText().length() + startColumn;
 		}
 		return new Position( new Point( startNode.start.getLine() + this.startLine, startNode.start.getCharPositionInLine() + startColumn ),
-		    new Point( stopLine, stopCol ), sourceToParse );
+		    new Point( stopLine, stopCol ), sourceToParse, this.subParser ? -1 : startNode.start.getStartIndex(),
+		    this.subParser || endNode.stop == null ? -1 : endNode.stop.getStopIndex() + 1 );
 	}
 
 	/**
@@ -222,7 +223,8 @@ public abstract class AbstractParser {
 		}
 		return new Position(
 		    new Point( startToken.getLine() + this.startLine, startToken.getCharPositionInLine() + ( startToken.getLine() > 1 ? 0 : startColumn ) ),
-		    new Point( stopLine, stopCol ), sourceToParse );
+		    new Point( stopLine, stopCol ), sourceToParse, this.subParser ? -1 : startToken.getStartIndex(),
+		    this.subParser || node.stop == null ? -1 : node.stop.getStopIndex() + 1 );
 	}
 
 	/**
@@ -289,7 +291,8 @@ public abstract class AbstractParser {
 		}
 
 		// Return a new Position object that represents the region of the source code that the token covers
-		return new Position( new Point( startRow, startCol ), new Point( endRow, endCol ), sourceToParse );
+		return new Position( new Point( startRow, startCol ), new Point( endRow, endCol ), sourceToParse, this.subParser ? -1 : startToken.getStartIndex(),
+		    this.subParser ? -1 : endToken.getStopIndex() + 1 );
 	}
 
 	public Position createPosition( int startLine, int startColumn, int stopLine, int stopColumn ) {

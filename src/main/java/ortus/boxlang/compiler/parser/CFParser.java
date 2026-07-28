@@ -869,7 +869,7 @@ public class CFParser extends AbstractParser {
 									// slice all statements from this position to the end and set them as the body of the start component
 									boxComponent.setBody( new ArrayList<>( statements.subList( i + 1, size ) ) );
 									bodyStatements = boxComponent.getBody();
-									boxComponent.getPosition().setEnd( getPosition( statement.template_genericCloseComponent() ).getEnd() );
+									boxComponent.getPosition().setEnd( getPosition( statement.template_genericCloseComponent() ) );
 									boxComponent
 									    .setSourceText( getSourceText( boxComponent.getSourceStartIndex(), statement.template_genericCloseComponent() ) );
 									removeAfter = i;

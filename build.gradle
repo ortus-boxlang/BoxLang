@@ -109,6 +109,7 @@ dependencies {
 	testImplementation 'org.apache.derby:derby:10.17.1.0'
 	testImplementation 'io.undertow:undertow-core:2.4.1.Final'
 	testImplementation 'org.bouncycastle:bcpkix-jdk18on:1.84'
+	testImplementation 'org.openjdk.jol:jol-core:0.17'
 	// Explicitly declare the JUnit platform launcher (to avoid deprecation)
     testRuntimeOnly "org.junit.platform:junit-platform-launcher"
 
@@ -1542,6 +1543,35 @@ task createHeapDump {
             println "PID not provided. Cannot create heap dump."
         }
     }
+}
+
+/**
+ * Measure the retained object graph of parsed AST roots. Use a fresh JVM so
+ * comparisons between commits do not share JIT, GC, or parser cache state.
+ */
+task parserMemoryBenchmark( type: JavaExec ) {
+	dependsOn testClasses
+	group = 'verification'
+	description = 'Measure retained AST memory for a source corpus'
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = 'ortus.boxlang.compiler.benchmark.ParserMemoryBenchmark'
+	args(( project.findProperty( 'corpus' ) ?: 'build/parser-memory/coldbox-platform' ).toString())
+	if ( project.hasProperty( 'materializeSourceText' ) ) {
+		args '--materialize-source-text'
+	}
+	if ( project.hasProperty( 'limit' ) ) {
+		args '--limit', project.property( 'limit' ).toString()
+	}
+	if ( project.hasProperty( 'manifest' ) ) {
+		args '--manifest', project.property( 'manifest' ).toString()
+	}
+	jvmArgs '-Xms1g', '-Xmx1g', '-XX:+UseG1GC'
+	if ( project.hasProperty( 'jfr' ) ) {
+		doFirst {
+			file( 'build/parser-memory' ).mkdirs()
+		}
+		jvmArgs '-XX:StartFlightRecording=filename=build/parser-memory/parser-memory.jfr,settings=profile,dumponexit=true'
+	}
 }
 
 test {
