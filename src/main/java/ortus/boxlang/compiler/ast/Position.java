@@ -33,6 +33,7 @@ public class Position implements Serializable {
 	private Source				source;
 	private int					startIndex;
 	private int					endIndex;
+	private final boolean		compactable;
 
 	/**
 	 * Creates a position
@@ -105,11 +106,73 @@ public class Position implements Serializable {
 	 * @param endIndex    the exclusive source character index
 	 */
 	public Position( int startLine, int startColumn, int endLine, int endColumn, Source source, int startIndex, int endIndex ) {
-		this.start		= pack( startLine, startColumn );
-		this.end		= pack( endLine, endColumn );
-		this.source		= source;
-		this.startIndex	= startIndex;
-		this.endIndex	= endIndex;
+		this( startLine, startColumn, endLine, endColumn, source, startIndex, endIndex, false );
+	}
+
+	private Position( int startLine, int startColumn, int endLine, int endColumn, Source source, int startIndex, int endIndex, boolean compactable ) {
+		this.start			= pack( startLine, startColumn );
+		this.end			= pack( endLine, endColumn );
+		this.source			= source;
+		this.startIndex		= startIndex;
+		this.endIndex		= endIndex;
+		this.compactable	= compactable;
+	}
+
+	/**
+	 * Creates a position intended for compact storage by an AST node.
+	 *
+	 * @param startLine   the start line
+	 * @param startColumn the start column
+	 * @param endLine     the end line
+	 * @param endColumn   the end column
+	 * @param source      the source reference
+	 * @param startIndex  the inclusive source character index
+	 * @param endIndex    the exclusive source character index
+	 *
+	 * @return a compactable position
+	 */
+	public static Position compact( int startLine, int startColumn, int endLine, int endColumn, Source source, int startIndex, int endIndex ) {
+		return new Position( startLine, startColumn, endLine, endColumn, source, startIndex, endIndex, true );
+	}
+
+	/**
+	 * Creates a position intended for compact storage by an AST node.
+	 *
+	 * @param startLine   the start line
+	 * @param startColumn the start column
+	 * @param endLine     the end line
+	 * @param endColumn   the end column
+	 * @param source      the source reference
+	 *
+	 * @return a compactable position
+	 */
+	public static Position compact( int startLine, int startColumn, int endLine, int endColumn, Source source ) {
+		return compact( startLine, startColumn, endLine, endColumn, source, -1, -1 );
+	}
+
+	/**
+	 * Creates a position intended for compact storage by an AST node.
+	 *
+	 * @param start the start position in the source code
+	 * @param end   the end position in the source code
+	 *
+	 * @return a compactable position
+	 */
+	public static Position compact( Point start, Point end ) {
+		return compact( start.getLine(), start.getColumn(), end.getLine(), end.getColumn(), null );
+	}
+
+	/**
+	 * Creates a position intended for compact storage by an AST node.
+	 *
+	 * @param start  the start position in the source code
+	 * @param end    the end position in the source code
+	 * @param source the source reference
+	 *
+	 * @return a compactable position
+	 */
+	public static Position compact( Point start, Point end, Source source ) {
+		return compact( start.getLine(), start.getColumn(), end.getLine(), end.getColumn(), source );
 	}
 
 	/**
@@ -136,7 +199,7 @@ public class Position implements Serializable {
 	 * @param end the end point of the region
 	 */
 	public void setEnd( Point end ) {
-		this.end = pack( end.getLine(), end.getColumn() );
+		setPackedEnd( pack( end.getLine(), end.getColumn() ) );
 	}
 
 	/**
@@ -146,12 +209,12 @@ public class Position implements Serializable {
 	 * @param endPosition position supplying the new end
 	 */
 	public void setEnd( Position endPosition ) {
-		this.end = endPosition.end;
-		if ( this.source == endPosition.source && this.startIndex >= 0 ) {
-			this.endIndex = endPosition.endIndex;
+		setPackedEnd( endPosition.getPackedEnd() );
+		if ( getPositionSource() == endPosition.getPositionSource() && getStartIndex() >= 0 ) {
+			setEndIndex( endPosition.getEndIndex() );
 		} else {
-			this.startIndex	= -1;
-			this.endIndex	= -1;
+			setStartIndex( -1 );
+			setEndIndex( -1 );
 		}
 	}
 
@@ -161,7 +224,7 @@ public class Position implements Serializable {
 	 * @param start the end point of the region
 	 */
 	public void setStart( Point start ) {
-		this.start = pack( start.getLine(), start.getColumn() );
+		setPackedStart( pack( start.getLine(), start.getColumn() ) );
 	}
 
 	/**
@@ -172,7 +235,7 @@ public class Position implements Serializable {
 	 * @see Source
 	 */
 	public Source getSource() {
-		return source;
+		return getPositionSource();
 	}
 
 	/**
@@ -183,11 +246,11 @@ public class Position implements Serializable {
 	 * @see Source
 	 */
 	public void setSource( Source source ) {
-		if ( this.source != source ) {
-			this.startIndex	= -1;
-			this.endIndex	= -1;
+		if ( getPositionSource() != source ) {
+			setStartIndex( -1 );
+			setEndIndex( -1 );
 		}
-		this.source = source;
+		setPositionSource( source );
 	}
 
 	/**
@@ -196,7 +259,7 @@ public class Position implements Serializable {
 	 * @return true when a valid source range is available
 	 */
 	public boolean hasSourceText() {
-		return this.source != null && this.startIndex >= 0 && this.endIndex >= this.startIndex;
+		return getPositionSource() != null && getStartIndex() >= 0 && getEndIndex() >= getStartIndex();
 	}
 
 	/**
@@ -210,9 +273,10 @@ public class Position implements Serializable {
 		if ( text == null || !hasSourceText() ) {
 			return false;
 		}
-		String	code		= this.source.getCode();
-		int		charStart	= this.source.toCharIndex( this.startIndex );
-		int		charEnd		= this.source.toCharIndex( this.endIndex );
+		Source	source		= getPositionSource();
+		String	code		= source.getCode();
+		int		charStart	= source.toCharIndex( getStartIndex() );
+		int		charEnd		= source.toCharIndex( getEndIndex() );
 		return text.length() == charEnd - charStart && charEnd <= code.length() && code.regionMatches( charStart, text, 0, text.length() );
 	}
 
@@ -225,9 +289,10 @@ public class Position implements Serializable {
 		if ( !hasSourceText() ) {
 			return null;
 		}
-		String	code		= this.source.getCode();
-		int		charStart	= this.source.toCharIndex( this.startIndex );
-		int		charEnd		= this.source.toCharIndex( this.endIndex );
+		Source	source		= getPositionSource();
+		String	code		= source.getCode();
+		int		charStart	= source.toCharIndex( getStartIndex() );
+		int		charEnd		= source.toCharIndex( getEndIndex() );
 		if ( charEnd > code.length() ) {
 			return null;
 		}
@@ -241,28 +306,85 @@ public class Position implements Serializable {
 	 */
 	@Override
 	public String toString() {
-		StringBuilder sb = new StringBuilder();
-		if ( this.source != null ) {
+		long			start	= getPackedStart();
+		long			end		= getPackedEnd();
+		StringBuilder	sb		= new StringBuilder();
+		if ( getPositionSource() != null ) {
 			sb.append( this.getSource() );
 			sb.append( ": " );
 		}
-		sb.append( unpackLine( this.start ) )
+		sb.append( unpackLine( start ) )
 		    .append( "," )
-		    .append( unpackColumn( this.start ) );
+		    .append( unpackColumn( start ) );
 		sb.append( " - " );
-		sb.append( unpackLine( this.end ) )
+		sb.append( unpackLine( end ) )
 		    .append( "," )
-		    .append( unpackColumn( this.end ) );
+		    .append( unpackColumn( end ) );
 
 		return sb.toString();
 	}
 
 	public Map<String, Object> toMap() {
-		Map<String, Object> map = new HashMap<String, Object>();
+		long				start	= getPackedStart();
+		long				end		= getPackedEnd();
+		Map<String, Object>	map		= new HashMap<String, Object>();
 
-		map.put( "start", Map.of( "line", unpackLine( this.start ), "column", unpackColumn( this.start ) ) );
-		map.put( "end", Map.of( "line", unpackLine( this.end ), "column", unpackColumn( this.end ) ) );
+		map.put( "start", Map.of( "line", unpackLine( start ), "column", unpackColumn( start ) ) );
+		map.put( "end", Map.of( "line", unpackLine( end ), "column", unpackColumn( end ) ) );
 		return map;
+	}
+
+	/**
+	 * Returns a position that can be retained independently of its owner.
+	 *
+	 * @return this position when already independent, or a detached copy otherwise
+	 */
+	public Position snapshot() {
+		return this;
+	}
+
+	protected long getPackedStart() {
+		return this.start;
+	}
+
+	protected void setPackedStart( long start ) {
+		this.start = start;
+	}
+
+	protected long getPackedEnd() {
+		return this.end;
+	}
+
+	protected void setPackedEnd( long end ) {
+		this.end = end;
+	}
+
+	protected Source getPositionSource() {
+		return this.source;
+	}
+
+	protected void setPositionSource( Source source ) {
+		this.source = source;
+	}
+
+	protected int getStartIndex() {
+		return this.startIndex;
+	}
+
+	protected void setStartIndex( int startIndex ) {
+		this.startIndex = startIndex;
+	}
+
+	protected int getEndIndex() {
+		return this.endIndex;
+	}
+
+	protected void setEndIndex( int endIndex ) {
+		this.endIndex = endIndex;
+	}
+
+	protected boolean isCompactable() {
+		return this.compactable;
 	}
 
 	private static long pack( int line, int column ) {
@@ -285,27 +407,28 @@ public class Position implements Serializable {
 		private final boolean		start;
 
 		private PositionPoint( Position position, boolean start ) {
-			super( unpackLine( start ? position.start : position.end ), unpackColumn( start ? position.start : position.end ) );
+			super( unpackLine( start ? position.getPackedStart() : position.getPackedEnd() ),
+			    unpackColumn( start ? position.getPackedStart() : position.getPackedEnd() ) );
 			this.position	= position;
 			this.start		= start;
 		}
 
 		@Override
 		public int getLine() {
-			return unpackLine( this.start ? this.position.start : this.position.end );
+			return unpackLine( this.start ? this.position.getPackedStart() : this.position.getPackedEnd() );
 		}
 
 		@Override
 		public int getColumn() {
-			return unpackColumn( this.start ? this.position.start : this.position.end );
+			return unpackColumn( this.start ? this.position.getPackedStart() : this.position.getPackedEnd() );
 		}
 
 		@Override
 		public Point setColumn( int column ) {
 			if ( this.start ) {
-				this.position.start = pack( getLine(), column );
+				this.position.setPackedStart( pack( getLine(), column ) );
 			} else {
-				this.position.end = pack( getLine(), column );
+				this.position.setPackedEnd( pack( getLine(), column ) );
 			}
 			return this;
 		}
@@ -313,9 +436,9 @@ public class Position implements Serializable {
 		@Override
 		public Point setLine( int line ) {
 			if ( this.start ) {
-				this.position.start = pack( line, getColumn() );
+				this.position.setPackedStart( pack( line, getColumn() ) );
 			} else {
-				this.position.end = pack( line, getColumn() );
+				this.position.setPackedEnd( pack( line, getColumn() ) );
 			}
 			return this;
 		}

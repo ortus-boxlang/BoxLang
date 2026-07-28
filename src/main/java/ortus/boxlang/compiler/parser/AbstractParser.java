@@ -207,7 +207,7 @@ public abstract class AbstractParser {
 			stopLine	= endNode.stop.getLine() + startLine;
 			stopCol		= endNode.stop.getCharPositionInLine() + endNode.stop.getText().length() + startColumn;
 		}
-		return new Position( startNode.start.getLine() + this.startLine, startNode.start.getCharPositionInLine() + startColumn, stopLine, stopCol,
+		return Position.compact( startNode.start.getLine() + this.startLine, startNode.start.getCharPositionInLine() + startColumn, stopLine, stopCol,
 		    sourceToParse, this.subParser ? -1 : startNode.start.getStartIndex(),
 		    this.subParser || endNode.stop == null ? -1 : endNode.stop.getStopIndex() + 1 );
 	}
@@ -228,7 +228,7 @@ public abstract class AbstractParser {
 			stopLine	= node.stop.getLine() + startLine;
 			stopCol		= node.stop.getCharPositionInLine() + node.stop.getText().length() + ( node.stop.getLine() > 1 ? 0 : startColumn );
 		}
-		return new Position( startToken.getLine() + this.startLine,
+		return Position.compact( startToken.getLine() + this.startLine,
 		    startToken.getCharPositionInLine() + ( startToken.getLine() > 1 ? 0 : startColumn ), stopLine, stopCol, sourceToParse,
 		    this.subParser ? -1 : startToken.getStartIndex(),
 		    this.subParser || node.stop == null ? -1 : node.stop.getStopIndex() + 1 );
@@ -305,16 +305,16 @@ public abstract class AbstractParser {
 		}
 
 		// Return a new Position object that represents the region of the source code that the token covers
-		return new Position( startRow, startCol, endRow, endCol, sourceToParse, this.subParser ? -1 : startToken.getStartIndex(),
+		return Position.compact( startRow, startCol, endRow, endCol, sourceToParse, this.subParser ? -1 : startToken.getStartIndex(),
 		    this.subParser ? -1 : endToken.getStopIndex() + 1 );
 	}
 
 	public Position createPosition( int startLine, int startColumn, int stopLine, int stopColumn ) {
-		return new Position( startLine, startColumn, stopLine, stopColumn, sourceToParse );
+		return Position.compact( startLine, startColumn, stopLine, stopColumn, sourceToParse );
 	}
 
 	public Position createOffsetPosition( int startLine, int startColumn, int stopLine, int stopColumn ) {
-		return new Position( this.startLine + startLine, ( startLine == 1 ? this.startColumn : 0 ) + startColumn, this.startLine + stopLine,
+		return Position.compact( this.startLine + startLine, ( startLine == 1 ? this.startColumn : 0 ) + startColumn, this.startLine + stopLine,
 		    ( stopLine == 1 ? this.startColumn : 0 ) + stopColumn, sourceToParse );
 	}
 

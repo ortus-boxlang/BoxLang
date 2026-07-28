@@ -145,3 +145,32 @@ remain identical across all 656 files.
 When every node's source text is materialized and retained, the follow-up graph
 contains 1,465,528 objects and 69,743,232 bytes, or 259.75 bytes per node. This
 is also 5,363,296 bytes below the preceding materialized-source checkpoint.
+
+## Inline parser positions
+
+Parser-created positions now store their four normal-range coordinates in one
+`long` and their source indexes in a second `long` directly on `BoxNode`.
+Coordinates outside the unsigned 16-bit compact range retain a regular
+`Position` as a fallback. Caller-supplied positions remain stored by identity,
+so public AST construction keeps its existing shared-mutation behavior.
+
+`getPosition()` exposes a live, weak node-backed view for compact positions. The
+view carries a fallback snapshot, does not retain the AST, serializes as a
+standalone `Position`, and promotes safely when a coordinate leaves the compact
+range. Internal comment association compares packed coordinates directly to
+avoid allocating views in its hot path.
+
+| Variant | Graph objects | Graph bytes | Bytes/node | Change from previous |
+|---|---:|---:|---:|---:|
+| Inline child storage | 1,285,506 | 57,780,944 | 215.20 | - |
+| Inline parser positions | 1,028,644 | 52,438,344 | 195.30 | -5,342,600 (-9.25%) |
+
+This removes all 256,863 retained `Position` objects from the corpus graph. The
+single compact no-source sentinel means the net object reduction is 256,862.
+The graph is now 40,075,288 bytes (43.32%) below the original 92,513,632-byte
+baseline. The 656-file structural manifest remains byte-for-byte identical to
+the preceding checkpoint.
+
+With every node's source text materialized and retained, the graph contains
+1,208,666 objects and 64,400,632 bytes, or 239.85 bytes per node. This is the
+same 5,342,600-byte reduction from the preceding materialized-source graph.

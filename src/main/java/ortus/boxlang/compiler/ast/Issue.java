@@ -38,7 +38,7 @@ public class Issue implements Serializable {
 	 */
 	public Issue( String message, Position position ) {
 		this.message	= message;
-		this.position	= position;
+		this.position	= position == null ? null : position.snapshot();
 	}
 
 	public String getMessage() {

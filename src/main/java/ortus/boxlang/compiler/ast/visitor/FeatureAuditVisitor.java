@@ -1344,6 +1344,10 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 	 */
 	public record FeatureUsed( String name, FeatureType type, String module, boolean missing, Position position ) {
 
+		public FeatureUsed {
+			position = position == null ? null : position.snapshot();
+		}
+
 		public String toString() {
 			return String.format( "%s%s (%s) - %s Source line: %s", ( missing ? "[MISSING] " : "" ), name, type, module,
 			    getLine() );

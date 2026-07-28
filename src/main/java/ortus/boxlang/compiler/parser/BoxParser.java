@@ -498,7 +498,7 @@ public class BoxParser extends AbstractParser {
 			} else {
 				// Catch-all. If this error is encountered, look at what modes were still on the stack, find what token was never ended, and
 				// add logic like the above to handle it. Eventually, this catch-all should never be used.
-				position = new Position( 0, 0, 0, 0, sourceToParse );
+				position = Position.compact( 0, 0, 0, 0, sourceToParse );
 				errorListener.semanticError(
 				    "Internal error(42): Un-popped Lexer modes. [" + String.join( ", ", modes.reversed() ) + "] Please report this to the developers.",
 				    position );
@@ -1235,7 +1235,7 @@ public class BoxParser extends AbstractParser {
 				stopIndex	= node.elseThenBody.get( i ).template_statement( node.elseThenBody.get( i ).template_statement().size() - 1 ).getStop()
 				    .getStopIndex();
 			}
-			Position		pos				= new Position(
+			Position		pos				= Position.compact(
 			    new Point( node.TEMPLATE_ELSEIF( i ).getSymbol().getLine(), node.TEMPLATE_ELSEIF( i ).getSymbol().getCharPositionInLine() - 3 ),
 			    end, sourceToParse );
 			BoxExpression	thisCondition	= expressionVisitor.visit( node.elseIfCondition.get( i ) );
