@@ -544,7 +544,11 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		int			index		= getColumn( name ).getIndex();
 		Object[]	columnData	= new Object[ size.get() ];
 		for ( int i = 0; i < size.get(); i++ ) {
-			columnData[ i ] = data.get( i )[ index ];
+			Object value = data.get( i )[ index ];
+			if ( queryNullToEmpty && value == null ) {
+				value = "";
+			}
+			columnData[ i ] = value;
 		}
 		return columnData;
 	}
@@ -977,13 +981,16 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		Object[]	rowData	= new Object[ columns.size() ];
 		int			i		= 0;
 		for ( QueryColumn column : columns.values() ) {
-			// Missing keys in the struct go in the query as an empty string (CF compat)
-			Object value = row.containsKey( column.getName() ) ? row.get( column.getName() ) : "";
+			// Missing values are null
+			Object value = row.containsKey( column.getName() ) ? row.get( column.getName() ) : null;
+			// This allows nulls which were turned into empty strings in the struct to be turned back into nulls
+			if ( queryNullToEmpty && !QueryColumnType.isStringType( column.getType() ) && value instanceof String castValue && castValue.isEmpty() ) {
+				value = null;
+			}
 			rowData[ i ] = context != null ? QueryColumnType.toSQLType( column.getType(), value, context, null ) : value;
 			i++;
 		}
-		// We're ignoring extra keys in the struct that aren't query columns. Lucee
-		// compat, but not CF compat.
+		// We're ignoring extra keys in the struct that aren't query columns.
 		return addRow( rowData );
 	}
 
@@ -1031,7 +1038,36 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		Object[]	row		= data.get( index );
 		int			i		= 0;
 		for ( QueryColumn column : columns.values() ) {
-			struct.put( column.getName(), row[ i ] );
+			Object value = row[ i ];
+			if ( queryNullToEmpty && value == null ) {
+				value = "";
+			}
+			struct.put( column.getName(), value );
+			i++;
+		}
+		return struct;
+	}
+
+	/**
+	 * Get data for a row as a Struct. 0-based index!
+	 * Data is copied, so re-assignments into the struct will not be reflected in
+	 * the query.
+	 * Mutating a complex object in the array will be reflected in the query.
+	 * This method does not convert null values to empty strings.
+	 *
+	 * @param index row index, starting at 0
+	 *
+	 * @return array of row data
+	 */
+	public IStruct getRowAsStructRaw( int index ) {
+		validateRow( index );
+		IStruct		struct	= new Struct( IStruct.TYPES.LINKED );
+		Object[]	row		= data.get( index );
+		int			i		= 0;
+		for ( QueryColumn column : columns.values() ) {
+			Object value = row[ i ];
+			// Do not convert null to empty string for raw access
+			struct.put( column.getName(), value );
 			i++;
 		}
 		return struct;
@@ -1047,8 +1083,12 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 */
 	public Object getCell( Key columnName, int rowIndex ) {
 		validateRow( rowIndex );
-		int columnIndex = getColumn( columnName ).getIndex();
-		return data.get( rowIndex )[ columnIndex ];
+		int		columnIndex	= getColumn( columnName ).getIndex();
+		Object	value		= data.get( rowIndex )[ columnIndex ];
+		if ( queryNullToEmpty && value == null ) {
+			return "";
+		}
+		return value;
 	}
 
 	/**

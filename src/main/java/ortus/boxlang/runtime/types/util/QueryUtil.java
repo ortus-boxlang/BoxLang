@@ -123,7 +123,8 @@ public class QueryUtil {
 		Stream<IStruct> queryStream = query
 		    .intStream()
 		    .filter( test )
-		    .mapToObj( query::getRowAsStruct );
+		    // Filtering a query must not convert internal nulls to empty strings incompat mode, so get raw struct
+		    .mapToObj( query::getRowAsStructRaw );
 
 		// Let's do it!
 		if ( parallel ) {

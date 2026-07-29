@@ -371,7 +371,12 @@ public class QueryColumn implements IReferenceable, Serializable {
 		if ( query.isEmpty() ) {
 			return "";
 		}
-		return this.query.getData().get( row )[ index ];
+		Object value = this.query.getData().get( row )[ index ];
+
+		if ( Query.queryNullToEmpty && value == null ) {
+			return "";
+		}
+		return value;
 	}
 
 	/**

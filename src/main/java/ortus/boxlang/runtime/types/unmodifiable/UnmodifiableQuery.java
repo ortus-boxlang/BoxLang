@@ -365,6 +365,7 @@ public class UnmodifiableQuery extends Query implements IUnmodifiable {
 	 */
 	@Override
 	@Deprecated
+	@SuppressWarnings( "removal" )
 	public UnmodifiableQuery duplicate() {
 		return duplicate( false, RequestBoxContext.getCurrent() );
 	}
