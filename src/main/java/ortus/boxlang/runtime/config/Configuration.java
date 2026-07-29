@@ -342,19 +342,19 @@ public class Configuration implements IConfigSegment {
 	public IStruct																executors							= new Struct();
 
 	/**
-	 * Valid BoxLang class extensions
+	 * Valid BoxLang class extensions, lowercased
 	 */
 	public Set<String>															validClassExtensions				= new HashSet<>();
 
 	/**
-	 * Valid core BoxLang template extensions.
+	 * Valid core BoxLang template extensions, lowercased.
 	 */
 	public Set<String>															coreTemplateExtensions				= new HashSet<>(
 	    Arrays.asList( "bxs", "bxm", "bxml", "cfm", "cfml", "cfs" )
 	);
 
 	/**
-	 * Valid BoxLang template extensions.
+	 * Valid BoxLang template extensions, lowercased.
 	 * Private because I want to force people to use getValidTemplateExtensions(), which includes the core ones
 	 */
 	private Set<String>															validTemplateExtensions				= new HashSet<>();
@@ -1102,7 +1102,7 @@ public class Configuration implements IConfigSegment {
 	}
 
 	/**
-	 * This returns all valid BoxLang extensions for classes and templates.
+	 * This returns all valid BoxLang extensions for classes and templates, lowercased.
 	 *
 	 * @return A set of all valid class extensions
 	 */
@@ -1114,8 +1114,8 @@ public class Configuration implements IConfigSegment {
 	}
 
 	/**
-	 * This returns all valid BoxLang class extensions as a Set.
-	 * THis includes core extensions and custom extensions
+	 * This returns all valid BoxLang class extensions as a Set, lowercased.
+	 * TThis includes core extensions and custom extensions, lowercased.
 	 *
 	 * @return A list of all valid class extensions
 	 */
@@ -1127,7 +1127,7 @@ public class Configuration implements IConfigSegment {
 	}
 
 	/**
-	 * This returns all valid BoxLang class extensions as a List.
+	 * This returns all valid BoxLang class extensions as a List, lowercased.
 	 *
 	 * @return A list of all valid class extensions
 	 */
@@ -1136,7 +1136,7 @@ public class Configuration implements IConfigSegment {
 	}
 
 	/**
-	 * This returns all valid BoxLang class extensions.
+	 * This returns all valid BoxLang class extensions, lowercased.
 	 *
 	 * @return A list of all valid class extensions
 	 */

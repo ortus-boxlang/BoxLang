@@ -33,6 +33,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.compiler.JavaMethodResolver;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.BaseBoxContext;
 import ortus.boxlang.runtime.context.ConfigOverrideBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -2502,6 +2503,40 @@ public class ClassTest {
 		    context );
 		assertThat( variables.getAsString( Key.of( "result" ) ) ).isEqualTo( "baseTemplateFallback/includes/cfc/MyClass.cfc" );
 		assertThat( variables.getAsString( Key.of( "result2" ) ) ).isEqualTo( "baseTemplateFallback/cfc/MyClass2.cfc" );
+
+	}
+
+	@Test
+	public void testIncludeAClass() {
+		boolean originalAllowIncludeClassFiles = BaseBoxContext.allowIncludeClassFiles;
+		BaseBoxContext.allowIncludeClassFiles = true;
+		try {
+			instance.executeSource(
+			    """
+			       include "/src/test/java/TestCases/phase3/IncludeMe.bx";
+			    fooResult = foo();
+			    barResult = bar();
+			          """,
+			    context );
+		} finally {
+			BaseBoxContext.allowIncludeClassFiles = originalAllowIncludeClassFiles;
+		}
+		assertThat( variables.get( Key.of( "pseudoRan" ) ) ).isEqualTo( true );
+		assertThat( variables.get( Key.of( "out" ) ) ).isEqualTo( System.out );
+		assertThat( variables.getAsString( Key.of( "fooResult" ) ) ).isEqualTo( "foo" );
+		assertThat( variables.getAsString( Key.of( "barResult" ) ) ).isEqualTo( "bar" );
+
+		BaseBoxContext.allowIncludeClassFiles = false;
+		try {
+			Throwable t = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+			    """
+			    include "/src/test/java/TestCases/phase3/IncludeMe.bx";
+			       """,
+			    context ) );
+			assertThat( t.getMessage() ).contains( "cannot be included" );
+		} finally {
+			BaseBoxContext.allowIncludeClassFiles = originalAllowIncludeClassFiles;
+		}
 
 	}
 
