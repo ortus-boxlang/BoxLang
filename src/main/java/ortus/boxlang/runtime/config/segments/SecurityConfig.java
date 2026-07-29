@@ -66,6 +66,26 @@ public class SecurityConfig implements IConfigSegment {
 	public List<String>			disallowedFileOperationExtensions	= new ArrayList<>();
 
 	/**
+	 * A map of code decryption keys, keyed by a keyId label. When a source file is distributed encrypted
+	 * (see {@code ortus.boxlang.runtime.util.CodeEncryption}), the runtime reads the keyId embedded in the
+	 * file and resolves the matching secret from this map (an environment variable
+	 * {@code BOXLANG_CODE_KEY_<KEYID>} takes precedence). This lets a vendor lock each module/artifact with
+	 * its own key and hand each customer only the keys they purchased.
+	 * Ex: "codeKeys": { "moduleA": "the-secret", "moduleB": "another-secret" }
+	 */
+	public IStruct				codeKeys							= new Struct();
+
+	/**
+	 * When true, the runtime will refuse to parse/execute any file-based source that is NOT encrypted
+	 * (see {@code ortus.boxlang.runtime.util.CodeEncryption}). This is a lockdown/hardening mode: an
+	 * attacker who drops a plaintext webshell (e.g. a {@code .cfm}/{@code .bxs} file) cannot execute it,
+	 * because only encrypted source is allowed to run. NOTE: when enabled, ALL executed file-based source
+	 * (your application code and any modules) must be encrypted, otherwise it will be blocked. Defaults to
+	 * false so nothing changes unless explicitly opted in.
+	 */
+	public boolean				enforceEncryptedSource				= false;
+
+	/**
 	 * --------------------------------------------------------------------------
 	 * Private Properties
 	 * --------------------------------------------------------------------------
@@ -181,7 +201,9 @@ public class SecurityConfig implements IConfigSegment {
 		PropertyHelper.processListToSetKey( config, Key.disallowedComponents, this.disallowedComponents );
 		PropertyHelper.processStringOrArrayToList( config, Key.allowedFileOperationExtensions, this.allowedFileOperationExtensions );
 		PropertyHelper.processStringOrArrayToList( config, Key.disallowedFileOperationExtensions, this.disallowedFileOperationExtensions );
-		this.populateServerSystemScope = PropertyHelper.processBoolean( config, Key.populateServerSystemScope, this.populateServerSystemScope );
+		this.populateServerSystemScope	= PropertyHelper.processBoolean( config, Key.populateServerSystemScope, this.populateServerSystemScope );
+		this.codeKeys					= PropertyHelper.processToStruct( config, Key.codeKeys );
+		this.enforceEncryptedSource		= PropertyHelper.processBoolean( config, Key.enforceEncryptedSource, this.enforceEncryptedSource );
 		return this;
 	}
 
@@ -196,7 +218,9 @@ public class SecurityConfig implements IConfigSegment {
 		    Key.disallowedBIFs, this.disallowedBIFs,
 		    Key.disallowedComponents, this.disallowedComponents,
 		    Key.disallowedFileOperationExtensions, Array.fromList( this.disallowedFileOperationExtensions ),
-		    Key.populateServerSystemScope, this.populateServerSystemScope
+		    Key.populateServerSystemScope, this.populateServerSystemScope,
+		    Key.codeKeys, this.codeKeys,
+		    Key.enforceEncryptedSource, this.enforceEncryptedSource
 		);
 	}
 

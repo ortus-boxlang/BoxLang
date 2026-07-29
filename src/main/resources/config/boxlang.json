@@ -595,7 +595,14 @@
 		// An explicit whitelist of file extensions that are allowed to be uploaded - overrides any values in the disallowedWriteExtensions
 		"allowedFileOperationExtensions": [],
 		// The list of file extensions that are not allowed to be uploaded. Also enforced by file relocation operations ( e.g. copy/move )
-		"disallowedFileOperationExtensions": []
+		"disallowedFileOperationExtensions": [],
+		// Decryption keys for source encrypted with `boxlang encrypt`, keyed by the key-id label baked into each file.
+		// An environment variable BOXLANG_CODE_KEY_<KEYID> (keyId uppercased, non-alphanumerics -> _) takes precedence.
+		// Ex: "codeKeys": { "moduleA": "the-secret", "moduleB": "another-secret" }
+		"codeKeys": {},
+		// When true, the runtime refuses to parse/execute any file-based source that is NOT encrypted (anti-webshell lockdown).
+		// A dropped plaintext .cfm/.bxs shell then cannot execute. When on, ALL executed source (app + modules) must be encrypted.
+		"enforceEncryptedSource": false
 	},
 	/**
 	 * The BoxLang module settings

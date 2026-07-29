@@ -38,6 +38,7 @@ import com.fasterxml.jackson.jr.ob.JSONObjectException;
 import java.io.File;
 
 import ortus.boxlang.compiler.BXCompiler;
+import ortus.boxlang.compiler.BXEncryptor;
 import ortus.boxlang.compiler.CFTranspiler;
 import ortus.boxlang.compiler.DiskClassUtil;
 import ortus.boxlang.compiler.FeatureAudit;
@@ -63,6 +64,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxLicenseException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
+import ortus.boxlang.runtime.util.CodeEncryption;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 import ortus.boxlang.runtime.util.Timer;
 
@@ -103,14 +105,15 @@ public class BoxRunner {
 
 	/**
 	 * A list of action commands that can be executed by the BoxRunner:
-	 * compile, cftranspile, featureAudit, schedule
+	 * compile, cftranspile, featureAudit, format, schedule, encrypt
 	 */
 	private static final List<String>	ACTION_COMMANDS				= List.of(
 	    "compile",
 	    "cftranspile",
 	    "featureaudit",
 	    "format",
-	    "schedule" );
+	    "schedule",
+	    "encrypt" );
 
 	/**
 	 * The allowed template extensions that can be executed by the BoxRunner
@@ -310,6 +313,9 @@ public class BoxRunner {
 				break;
 			case "format" :
 				PrettyPrint.main( options.cliArgs().toArray( new String[ 0 ] ) );
+				break;
+			case "encrypt" :
+				BXEncryptor.main( options.cliArgs().toArray( new String[ 0 ] ) );
 				break;
 			case "schedule" :
 				// Check for help first
@@ -734,11 +740,21 @@ public class BoxRunner {
 			return false;
 		}
 
+		// Encrypted source is binary at rest and can never carry a plaintext shebang line
+		try {
+			if ( CodeEncryption.isEncrypted( Files.readAllBytes( templatePath ) ) ) {
+				return false;
+			}
+		} catch ( IOException e ) {
+			return false;
+		}
+
 		try ( Stream<String> lines = Files.lines( templatePath ) ) {
 			String firstLine = lines.findFirst().orElse( "" );
 			return firstLine.startsWith( "#!" );
-		} catch ( IOException e ) {
-			throw new BoxIOException( e );
+		} catch ( IOException | java.io.UncheckedIOException e ) {
+			// Not decodable as UTF-8 text (e.g. binary or other charset) -> not a shebang script
+			return false;
 		}
 	}
 
@@ -792,6 +808,8 @@ public class BoxRunner {
 		System.out.println( "                                     Use: boxlang featureaudit --help" );
 		System.out.println( "  schedule <SCHEDULER_FILE>       ⏰ Run a BoxLang scheduler from file" );
 		System.out.println( "                                     Use: boxlang schedule --help" );
+		System.out.println( "  encrypt                         🔐 Encrypt source at rest (decrypted in memory at runtime)" );
+		System.out.println( "                                     Use: boxlang encrypt --help" );
 		System.out.println();
 		System.out.println( "📂 FILE EXECUTION:" );
 		System.out.println( "  • Execute BoxLang templates directly by providing a file path" );

@@ -15,6 +15,7 @@
 package ortus.boxlang.compiler.parser;
 
 import java.io.File;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -44,6 +45,7 @@ import ortus.boxlang.compiler.ast.Position;
 import ortus.boxlang.compiler.ast.Source;
 import ortus.boxlang.compiler.ast.comment.BoxComment;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
+import ortus.boxlang.runtime.util.CodeEncryption;
 
 /**
  * Parser abstract class
@@ -98,7 +100,15 @@ public abstract class AbstractParser {
 	 */
 	protected BOMInputStream getInputStream( File file ) {
 		try {
-			return BOMInputStream.builder().setFile( file ).setByteOrderMarks( ByteOrderMark.UTF_8 ).setInclude( false ).get();
+			byte[] bytes = java.nio.file.Files.readAllBytes( file.toPath() );
+			// Transparently decrypt BoxLang-encrypted source before it reaches the lexer. Plain
+			// (non-encrypted) source is returned unchanged, so this is a no-op for normal files.
+			bytes = CodeEncryption.maybeDecrypt( bytes );
+			return BOMInputStream.builder()
+			    .setInputStream( new ByteArrayInputStream( bytes ) )
+			    .setByteOrderMarks( ByteOrderMark.UTF_8 )
+			    .setInclude( false )
+			    .get();
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
 		}

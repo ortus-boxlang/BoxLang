@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- New `encrypt` CLI action command (`boxlang encrypt --source <path> --target <dir> --key <secret> --key-id <label>`)
+  for source-level encryption at rest. Encrypted files (AES-256-GCM) are unreadable on disk and transparently
+  decrypted in memory just before parsing, so distributed code stays hidden yet runs on any runtime version
+  (not bytecode, no version binding). Each file's header carries a key-id label; at load the runtime resolves
+  the matching key by that label from the `BOXLANG_CODE_KEY_<KEYID>` environment variable or the new
+  `security.codeKeys` map in `boxlang.json` — letting a vendor lock each module/artifact with its own key and
+  hand each customer only the keys they purchased. See `ortus.boxlang.runtime.util.CodeEncryption`.
+- New `security.enforceEncryptedSource` runtime setting (default `false`). When enabled, the runtime refuses
+  to parse/execute any file-based source that is not encrypted — a lockdown/hardening mode that prevents a
+  dropped plaintext webshell (e.g. an uploaded `.cfm`/`.bxs`) from executing. When on, all executed
+  file-based source (application code and modules) must be encrypted.
+- Encrypted sources are no longer written to the on-disk compiled-class cache. Their compiled bytecode
+  (which is decrypted logic) stays in memory only and is recompiled from the encrypted source on each JVM
+  start, so no decrypted artifact is ever persisted. Non-encrypted code continues to be cached as before.
+
 ## [1.15.0] - 2026-07-08
 
 ## [1.14.0] - 2026-06-03
