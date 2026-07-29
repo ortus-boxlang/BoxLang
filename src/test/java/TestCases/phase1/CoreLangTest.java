@@ -6949,4 +6949,27 @@ public class CoreLangTest {
 		    context, BoxSourceType.CFSCRIPT );
 		assertThat( variables.get( result ) ).isEqualTo( "brad" );
 	}
+
+	@Test
+	public void testNullLiterals() {
+		instance.executeSource(
+		    """
+		    assert null == null : "Expected true"
+		    assert null EQ null : "Expected true"
+		    assert null === null : "Expected true"
+		    assert null IS null : "Expected true"
+
+		    foo = null;
+		    assert foo == null;
+		    assert foo EQ null;
+		    assert foo === null;
+		    assert foo IS null;
+		    foo = "brafd";
+		    assert foo != null;
+		    assert foo NEQ null;
+		    assert foo !== null;
+		                         """,
+		    context );
+	}
+
 }

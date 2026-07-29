@@ -1026,7 +1026,7 @@ public class CFLexerCustom extends CFLexer {
 
 	/**
 	 * Recursively match characters from the input stream against an operator trie.
-	 * Walks the trie character-by-character until a complete operator is matched or matching fails.
+	 * Walks the tree character-by-character until a complete operator is matched or matching fails.
 	 *
 	 * @param input          the character stream to read from
 	 * @param pos            the current position in the input stream
