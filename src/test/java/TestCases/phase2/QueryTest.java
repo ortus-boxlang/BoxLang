@@ -380,4 +380,24 @@ public class QueryTest {
 		assertThat( singleColMeta.getAsString( Key.type ) ).isEqualTo( "string" );
 	}
 
+	@Test
+	public void testCompatFindColumn() {
+
+		instance.executeSource(
+		    """
+		    myQuery = queryNew("id,name,role", "double,VarChar,VarChar");
+		    idPos = myQuery.findColumn( "id" )
+		    namePos =  myQuery.findColumn( "name" )
+		    rolePos = myQuery.findColumn( "role" )
+		    invalidPos = myQuery.findColumn( "invalid" )
+
+		                         """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.get( Key.of( "idPos" ) ) ).isEqualTo( 1 );
+		assertThat( variables.get( Key.of( "namePos" ) ) ).isEqualTo( 2 );
+		assertThat( variables.get( Key.of( "rolePos" ) ) ).isEqualTo( 3 );
+		assertThat( variables.get( Key.of( "invalidPos" ) ) ).isEqualTo( 0 );
+
+	}
+
 }

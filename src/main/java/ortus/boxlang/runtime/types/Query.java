@@ -337,6 +337,25 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	}
 
 	/**
+	 * Here for CF compat. Returns the 1-based index of the given column name
+	 * 
+	 * @param name column name
+	 * 
+	 * @return 1-based index of the column, or 0 if not found
+	 */
+	public int findColumn( String name ) {
+		Key	keyName	= Key.of( name );
+		int	index	= 1; // 1-based index
+		for ( Key key : columns.keySet() ) {
+			if ( key.equals( keyName ) ) {
+				return index;
+			}
+			index++;
+		}
+		return 0;
+	}
+
+	/**
 	 * Clone the columns of this query and return a new QueryColumn map.
 	 * Note, the columns will STILL point to the original query object and will have the original indexes.
 	 */
