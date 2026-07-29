@@ -6972,4 +6972,29 @@ public class CoreLangTest {
 		    context );
 	}
 
+	@Test
+	public void testOverrideDefaultMethodInProxy() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			request.onOpenInvoked = false;
+
+			class MyListener {
+				public void function onOpen( WebSocket webSocket ) {
+					request.onOpenInvoked = true;
+				}
+			}
+			listener = createDynamicProxy(
+				new MyListener(),
+				[ "java.net.http.WebSocket$Listener" ]
+			);
+
+			listener.onOpen( javaCast( "null", "" ) );
+			variables.result = request.onOpenInvoked;
+		                               """,
+		    context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
 }

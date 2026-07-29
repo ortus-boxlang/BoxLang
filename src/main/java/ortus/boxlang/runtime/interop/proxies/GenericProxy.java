@@ -48,7 +48,9 @@ public class GenericProxy extends BaseProxy implements InvocationHandler {
 				args = new Object[] {};
 			}
 
-			if ( method != null && method.isDefault() ) {
+			// If this is a default method and NOT overriden in our class, then invoke the default implementation
+			if ( method != null && method.isDefault()
+			    && ! ( isClassRunnableTarget() && getDynamicTarget().getThisScope().containsKey( Key.of( method.getName() ) ) ) ) {
 				return InvocationHandler.invokeDefault( proxy, method, args );
 			}
 
