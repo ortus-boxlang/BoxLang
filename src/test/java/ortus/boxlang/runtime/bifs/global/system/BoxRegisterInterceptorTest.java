@@ -52,7 +52,9 @@ public class BoxRegisterInterceptorTest {
 
 	@AfterAll
 	public static void teardown() {
-		instance.getInterceptorService().clearInterceptionStates();
+		// Only remove the states that tests in this class registered on
+		instance.getInterceptorService().removeState( Key.of( "preFunctionInvoke" ) );
+		instance.getInterceptorService().removeState( Key.of( "afterCacheElementRemoved" ) );
 	}
 
 	@BeforeEach

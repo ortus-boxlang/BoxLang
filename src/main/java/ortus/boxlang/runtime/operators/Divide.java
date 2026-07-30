@@ -40,7 +40,7 @@ public class Divide implements IOperator {
 	 * @return The the result
 	 */
 	public static Number invoke( Object left, Object right ) {
-		return invoke( NumberCaster.cast( true, left ), NumberCaster.cast( true, right ) );
+		return invoke( NumberCaster.cast( true, true, left ), NumberCaster.cast( true, true, right ) );
 	}
 
 	/**

@@ -35,6 +35,7 @@ import ortus.boxlang.runtime.components.ComponentDescriptor;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.FunctionCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
+import ortus.boxlang.runtime.interop.DynamicInteropService;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ImportDefinition;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
@@ -76,6 +77,11 @@ public class BaseBoxContext implements IBoxContext {
 	 * A flag to control whether null is considered undefined or not. Used by the compat module
 	 */
 	public static boolean									nullIsUndefined			= false;
+
+	/**
+	 * Allow class files to be included.
+	 */
+	public static boolean									allowIncludeClassFiles	= false;
 
 	/**
 	 * Used to prevent having to catch exceptions when looking up the scope lookup chain for a variable which may not exist
@@ -800,9 +806,21 @@ public class BaseBoxContext implements IBoxContext {
 			BoxTemplate template = RunnableLoader.getInstance().loadTemplateRelative( this, templatePath, externalOnly );
 
 			template.invoke( this );
+		} else if ( allowIncludeClassFiles && BoxRuntime.getInstance().getConfiguration().getValidClassExtensionsList().contains( ext ) ) {
+			// Load the class
+			Class<IBoxRunnable> clazz = RunnableLoader.getInstance().loadClass( FileSystemUtil.expandPath( this, templatePath ), this );
+			try {
+				// Instatiate it (JUST the Java constructor, nothing else)
+				IClassRunnable oClazz = ( IClassRunnable ) DynamicInteropService.getNoArgConstructorHandle( clazz ).invoke();
+				// Run the pseudoconstructor in our current context
+				oClazz.pseudoConstructor( this );
+			} catch ( Throwable e ) {
+				throw new BoxRuntimeException( "Error creating instance of class [" + templatePath + "]", e );
+			}
+
 		} else if ( BoxRuntime.getInstance().getConfiguration().getValidExtensions().contains( ext ) ) {
 			// Don't EVER allow a known script extension to be served
-			throw new BoxRuntimeException( "Template path [" + templatePath + "] has a known script extension [" + ext + "] and cannot be included" );
+			throw new BoxRuntimeException( "Template path [" + templatePath + "] with extension [" + ext + "] and cannot be included" );
 		} else {
 			// If this extension is not one we compile, then just read the contents and flush it to the buffer
 			writeToBuffer(

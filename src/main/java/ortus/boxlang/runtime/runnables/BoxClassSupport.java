@@ -58,7 +58,6 @@ import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 import ortus.boxlang.runtime.types.meta.BoxMeta;
 import ortus.boxlang.runtime.types.meta.ClassMeta;
-import ortus.boxlang.runtime.types.util.StringUtil;
 import ortus.boxlang.runtime.types.util.TypeUtil;
 import ortus.boxlang.runtime.util.ArgumentUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
@@ -246,9 +245,7 @@ public class BoxClassSupport {
 	public static Boolean canOutput( IStruct annotations, String className ) {
 		return castOutputAnnotation( annotations.getOrDefault(
 		    Key.output,
-		    // output defaults to true for Application.bx, but false for all others
-		    // Strip just the class name from the FQN foo.com.bar.Application
-		    ( className.length() == 11 && className.equalsIgnoreCase( "application" ) ) || StringUtil.endsWithIgnoreCase( className, ".application" )
+		    "raw"
 		) );
 	}
 

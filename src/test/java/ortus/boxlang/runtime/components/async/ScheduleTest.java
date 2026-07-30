@@ -33,15 +33,19 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.tasks.BaseScheduler;
+import ortus.boxlang.runtime.async.tasks.ScheduledTask;
 import ortus.boxlang.runtime.async.tasks.TaskRecord;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.interop.DynamicObject;
+import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.services.SchedulerService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class ScheduleTest {
@@ -709,5 +713,174 @@ public class ScheduleTest {
 
 		// No scheduler is created when there is nothing to load
 		assertThat( svc.hasScheduler( SCHEDULER_KEY ) ).isFalse();
+	}
+
+	// --------------------------------------------------------------------------
+	// Class-based task tests
+	// --------------------------------------------------------------------------
+
+	private static final String	CLASS_FIXTURE			= "src.test.java.ortus.boxlang.runtime.components.async.ScheduleClassFixture";
+	private static final String	MINIMAL_CLASS_FIXTURE	= "src.test.java.ortus.boxlang.runtime.components.async.ScheduleMinimalClassFixture";
+	private static final String	CUSTOM_METHOD_FIXTURE	= "src.test.java.ortus.boxlang.runtime.components.async.ScheduleCustomMethodFixture";
+
+	private IClassRunnable getClassInstance( String taskName ) {
+		BaseScheduler	scheduler	= ( BaseScheduler ) svc.getScheduler( SCHEDULER_KEY );
+		TaskRecord		record		= scheduler.getTaskRecord( taskName );
+		DynamicObject	dyno		= ( DynamicObject ) record.task.getTask();
+		return ( IClassRunnable ) dyno.getTargetInstance();
+	}
+
+	/**
+	 * Register a class-based task directly via {@link Schedule#registerClassTask} without ever
+	 * calling {@code ScheduledTask.start()} — this keeps run-order assertions deterministic by
+	 * avoiding any race with the real scheduled executor's own immediate first fire (which
+	 * would otherwise run concurrently with a manual {@code run(true)} call in these tests).
+	 */
+	private ScheduledTask registerClassTaskDirect( String taskName, String className, String method ) {
+		BaseScheduler	scheduler	= Schedule.getOrCreateScheduler( context, Schedule.DEFAULT_SCHEDULER_NAME );
+		IStruct			taskDef		= Struct.of( Key._CLASS, className, Key.method, method );
+		return Schedule.registerClassTask( scheduler, taskName, "", context, taskDef );
+	}
+
+	@DisplayName( "It can create a task with a class instead of a url" )
+	@Test
+	public void testCreateWithClass() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    <bx:schedule action="update" task="classTask" class="%s" interval="120">
+		    """.formatted( CLASS_FIXTURE ),
+		    context, BoxSourceType.BOXTEMPLATE
+		);
+		// @formatter:on
+
+		BaseScheduler scheduler = ( BaseScheduler ) svc.getScheduler( SCHEDULER_KEY );
+		assertThat( scheduler.hasTask( "classTask" ) ).isTrue();
+	}
+
+	@DisplayName( "update throws when both url and class are provided" )
+	@Test
+	public void testCreateThrowsWhenBothUrlAndClass() {
+		assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    <bx:schedule action="update" task="myTask" url="http://localhost/test" class="%s" interval="120">
+		    """.formatted( CLASS_FIXTURE ),
+		    context, BoxSourceType.BOXTEMPLATE
+		) );
+	}
+
+	@DisplayName( "update throws when neither url nor class are provided" )
+	@Test
+	public void testCreateThrowsWhenNeitherUrlNorClass() {
+		assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    <bx:schedule action="update" task="myTask" interval="120">
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE
+		) );
+	}
+
+	@DisplayName( "running a class task fires before/run/after/onSuccess in order" )
+	@Test
+	public void testClassTaskLifecycleOrderOnSuccess() {
+		ScheduledTask task = registerClassTaskDirect( "classTask", CLASS_FIXTURE, "run" );
+		task.run( true );
+
+		IClassRunnable	fixtureInstance	= getClassInstance( "classTask" );
+		Array			callOrder		= ( Array ) fixtureInstance.getThisScope().get( Key.of( "callOrder" ) );
+
+		// ScheduledTask.run() fires afterTask before onTaskSuccess on the success path
+		assertThat( callOrder.toArray() ).asList().containsExactly( "before", "run", "after", "onSuccess" ).inOrder();
+		assertThat( fixtureInstance.getThisScope().getAsString( Key.of( "lastResult" ) ) ).isEqualTo( "ran-ok" );
+	}
+
+	@DisplayName( "running a class task that throws fires before/run/onError/after and records the failure" )
+	@Test
+	public void testClassTaskLifecycleOrderOnError() {
+		ScheduledTask	task			= registerClassTaskDirect( "classTask", CLASS_FIXTURE, "run" );
+		IClassRunnable	fixtureInstance	= getClassInstance( "classTask" );
+		fixtureInstance.getThisScope().put( Key.of( "shouldThrow" ), true );
+
+		task.run( true );
+
+		Array callOrder = ( Array ) fixtureInstance.getThisScope().get( Key.of( "callOrder" ) );
+		assertThat( callOrder.toArray() ).asList().containsExactly( "before", "run", "onError", "after" ).inOrder();
+		assertThat( fixtureInstance.getThisScope().getAsString( Key.of( "lastErrorMessage" ) ) ).isEqualTo( "boom" );
+		assertThat( ( ( java.util.concurrent.atomic.AtomicInteger ) task.getStats().get( "totalFailures" ) ).get() ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "a class task with no lifecycle methods runs fine — they are optional" )
+	@Test
+	public void testClassTaskWithoutLifecycleMethods() {
+		ScheduledTask task = registerClassTaskDirect( "minimalTask", MINIMAL_CLASS_FIXTURE, "run" );
+		task.run( true );
+
+		IClassRunnable fixtureInstance = getClassInstance( "minimalTask" );
+		assertThat( fixtureInstance.getThisScope().getAsInteger( Key.of( "runCount" ) ) ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "a class task honors a custom method attribute instead of run()" )
+	@Test
+	public void testClassTaskCustomMethod() {
+		ScheduledTask task = registerClassTaskDirect( "customMethodTask", CUSTOM_METHOD_FIXTURE, "purge" );
+		task.run( true );
+
+		IClassRunnable fixtureInstance = getClassInstance( "customMethodTask" );
+		assertThat( fixtureInstance.getThisScope().getAsBoolean( Key.of( "executed" ) ) ).isTrue();
+	}
+
+	@DisplayName( "a class task's onError() composes with onException=\"pause\" instead of being overwritten" )
+	@Test
+	public void testClassTaskOnErrorComposesWithOnExceptionPause() {
+		BaseScheduler	scheduler	= Schedule.getOrCreateScheduler( context, Schedule.DEFAULT_SCHEDULER_NAME );
+		IStruct			taskDef		= Struct.of( Key._CLASS, CLASS_FIXTURE, Key.method, "run", Key.onException, "pause" );
+		ScheduledTask	task		= Schedule.registerClassTask( scheduler, "classTask", "", context, taskDef );
+		Schedule.applyTaskConfiguration( task, null, taskDef, instance.getRuntimeContext() );
+
+		IClassRunnable fixtureInstance = getClassInstance( "classTask" );
+		fixtureInstance.getThisScope().put( Key.of( "shouldThrow" ), true );
+
+		task.run( true );
+
+		// The class's own onError() still fired ...
+		Array callOrder = ( Array ) fixtureInstance.getThisScope().get( Key.of( "callOrder" ) );
+		assertThat( callOrder.toArray() ).asList().contains( "onError" );
+		// ... and the onException="pause" behavior also fired, disabling the task
+		assertThat( task.isDisabled() ).isTrue();
+	}
+
+	@DisplayName( "a class-based task survives a persistence reload" )
+	@Test
+	public void testClassTaskSurvivesReload() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    <bx:schedule action="update" task="classReloadTask" class="%s" interval="120">
+		    """.formatted( CLASS_FIXTURE ),
+		    context, BoxSourceType.BOXTEMPLATE
+		);
+		// @formatter:on
+
+		// Remove the in-memory scheduler to simulate a fresh state
+		svc.removeScheduler( SCHEDULER_KEY, true, 5 );
+		assertThat( svc.hasScheduler( SCHEDULER_KEY ) ).isFalse();
+
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    <bx:schedule action="reload">
+		    <bx:schedule action="pause" task="classReloadTask">
+		    <bx:schedule action="run" task="classReloadTask">
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE
+		);
+		// @formatter:on
+
+		BaseScheduler scheduler = ( BaseScheduler ) svc.getScheduler( SCHEDULER_KEY );
+		assertThat( scheduler.hasTask( "classReloadTask" ) ).isTrue();
+
+		IClassRunnable	fixtureInstance	= getClassInstance( "classReloadTask" );
+		Array			callOrder		= ( Array ) fixtureInstance.getThisScope().get( Key.of( "callOrder" ) );
+		assertThat( callOrder.toArray() ).asList().contains( "run" );
 	}
 }

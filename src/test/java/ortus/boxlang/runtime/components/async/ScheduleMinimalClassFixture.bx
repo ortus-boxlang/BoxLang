@@ -1,0 +1,9 @@
+class {
+
+	this.runCount = 0;
+
+	function run() {
+		this.runCount++;
+	}
+
+}

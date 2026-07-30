@@ -33,8 +33,8 @@ public class BitXor extends BIF {
 	public BitXor() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "integer", Key.number1 ),
-		    new Argument( true, "integer", Key.number2 )
+		    new Argument( true, "long", Key.number1 ),
+		    new Argument( true, "long", Key.number2 )
 		};
 	}
 
@@ -49,8 +49,8 @@ public class BitXor extends BIF {
 	 * @argument.number2 Numeric value for bitwise XOR.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		int	number1	= arguments.getAsInteger( Key.number1 );
-		int	number2	= arguments.getAsInteger( Key.number2 );
+		long	number1	= arguments.getAsLong( Key.number1 );
+		long	number2	= arguments.getAsLong( Key.number2 );
 
 		return number1 ^ number2;
 	}

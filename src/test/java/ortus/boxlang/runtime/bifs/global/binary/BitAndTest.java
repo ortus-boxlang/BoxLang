@@ -59,27 +59,34 @@ public class BitAndTest {
 	@Test
 	public void testBitwiseAndWithPositiveIntegers() {
 		instance.executeSource( "result = bitAnd(5, 3);", context );
-		assertThat( variables.get( result ) ).isEqualTo( 1 );
+		assertThat( variables.get( result ) ).isEqualTo( 1L );
 	}
 
 	@DisplayName( "Bitwise AND operation with negative integers" )
 	@Test
 	public void testBitwiseAndWithNegativeIntegers() {
 		instance.executeSource( "result = bitAnd(-5, -3);", context );
-		assertThat( variables.get( result ) ).isEqualTo( -7 );
+		assertThat( variables.get( result ) ).isEqualTo( -7L );
 	}
 
 	@DisplayName( "Bitwise AND operation with zero" )
 	@Test
 	public void testBitwiseAndWithZero() {
 		instance.executeSource( "result = bitAnd(0, 10);", context );
-		assertThat( variables.get( result ) ).isEqualTo( 0 );
+		assertThat( variables.get( result ) ).isEqualTo( 0L );
 	}
 
 	@DisplayName( "Bitwise AND operation with large integers" )
 	@Test
 	public void testBitwiseAndWithLargeIntegers() {
 		instance.executeSource( "result = bitAnd(123456789, 987654321);", context );
-		assertThat( variables.get( result ) ).isEqualTo( 39471121 );
+		assertThat( variables.get( result ) ).isEqualTo( 39471121L );
+	}
+
+	@DisplayName( "Bitwise AND operation with long-range values" )
+	@Test
+	public void testBitwiseAndWithLongRangeValues() {
+		instance.executeSource( "result = bitAnd(2190225219, 3);", context );
+		assertThat( variables.get( result ) ).isEqualTo( 3L );
 	}
 }

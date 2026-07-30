@@ -1,0 +1,9 @@
+class {
+
+	this.executed = false;
+
+	function purge() {
+		this.executed = true;
+	}
+
+}

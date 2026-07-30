@@ -108,7 +108,7 @@ public class OperatorsTest {
 		result = ( Number ) instance.executeStatement( "'5'+'2'", context );
 		assertThat( result.doubleValue() ).isEqualTo( 7 );
 
-		Number	leftDate	= NumberCaster.cast( true, "1/2/2026" );
+		Number	leftDate	= NumberCaster.cast( true, true, "1/2/2026" );
 		Number	dateResult	= ( Number ) instance.executeStatement( "'1/2/2026'+5", context );
 		assertThat( dateResult.doubleValue() ).isWithin( 0.0000001D ).of( leftDate.doubleValue() + 5D );
 	}
@@ -159,8 +159,8 @@ public class OperatorsTest {
 		Number result = ( Number ) instance.executeStatement( "10/5", context );
 		assertThat( result.doubleValue() ).isEqualTo( 2 );
 
-		Number	leftDate	= NumberCaster.cast( true, "1/2/2026" );
-		Number	rightDate	= NumberCaster.cast( true, "1/1/2026" );
+		Number	leftDate	= NumberCaster.cast( true, true, "1/2/2026" );
+		Number	rightDate	= NumberCaster.cast( true, true, "1/1/2026" );
 		Number	dateResult	= ( Number ) instance.executeStatement( "'1/2/2026'/'1/1/2026'", context );
 		assertThat( dateResult.doubleValue() ).isWithin( 0.0000001D ).of( leftDate.doubleValue() / rightDate.doubleValue() );
 	}
@@ -178,8 +178,8 @@ public class OperatorsTest {
 		Number result = ( Number ) instance.executeStatement( "10*5", context );
 		assertThat( result.doubleValue() ).isEqualTo( 50 );
 
-		Number	leftDate	= NumberCaster.cast( true, "1/2/2026" );
-		Number	rightDate	= NumberCaster.cast( true, "1/1/2026" );
+		Number	leftDate	= NumberCaster.cast( true, true, "1/2/2026" );
+		Number	rightDate	= NumberCaster.cast( true, true, "1/1/2026" );
 		Number	dateResult	= ( Number ) instance.executeStatement( "'1/2/2026'*'1/1/2026'", context );
 		assertThat( dateResult.doubleValue() ).isWithin( 0.0000001D ).of( leftDate.doubleValue() * rightDate.doubleValue() );
 	}

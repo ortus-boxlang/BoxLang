@@ -59,13 +59,28 @@ public class BitXorTest {
 	@Test
 	public void testBitwiseXorWithPositiveIntegers() {
 		instance.executeSource( "result = bitXor(5, 3);", context );
-		assertThat( variables.get( result ) ).isEqualTo( 6 );
+		assertThat( variables.get( result ) ).isEqualTo( 6L );
 	}
 
 	@DisplayName( "Bitwise XOR operation with negative integers" )
 	@Test
 	public void testBitwiseXorWithNegativeIntegers() {
 		instance.executeSource( "result = bitXor(-5, -4);", context );
-		assertThat( variables.get( result ) ).isEqualTo( 7 );
+		assertThat( variables.get( result ) ).isEqualTo( 7L );
 	}
+
+	@DisplayName( "Bitwise XOR operation with large numbers" )
+	@Test
+	public void testBitwiseXorWithLargeNumbers() {
+		instance.executeSource( "result = bitXor(1, 2190225219);", context );
+		assertThat( variables.get( result ) ).isEqualTo( 2190225218L );
+	}
+
+	@DisplayName( "Bitwise XOR operation with long-range values" )
+	@Test
+	public void testBitwiseXorWithLongRangeValues() {
+		instance.executeSource( "result = bitXor(1, 4294967296);", context );
+		assertThat( variables.get( result ) ).isEqualTo( 4294967297L );
+	}
+
 }

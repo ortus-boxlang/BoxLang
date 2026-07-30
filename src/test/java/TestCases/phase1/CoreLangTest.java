@@ -6889,4 +6889,112 @@ public class CoreLangTest {
 		    TimeUnit.NANOSECONDS.toMillis( bridgeElapsed ) );
 	}
 
+	@Test
+	public void testAssertInSwitch() {
+		instance.executeSource(
+		    """
+		      switch ( "sdf" ) {
+		    case "sdf" :
+		    	assert true;
+		        }
+		             """,
+		    context );
+	}
+
+	@Test
+	public void testRethrowInSwitch() {
+		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    try {
+		    	1/0;
+		    } catch( e ) {
+		         switch ( "sdf" ) {
+		         	default:
+		         	rethrow;
+		           }
+		    }
+		                """,
+		    context ) );
+		assertThat( e.getMessage() ).contains( "zero" );
+	}
+
+	@Test
+	public void testRethrowInSwitchCF() {
+		BoxRuntimeException e = assertThrows( BoxRuntimeException.class, () -> instance.executeSource(
+		    """
+		    try {
+		    	1/0;
+		    } catch( e ) {
+		         switch ( "sdf" ) {
+		         	default:
+		         	rethrow;
+		        }
+		    }
+		                """,
+		    context, BoxSourceType.CFSCRIPT ) );
+		assertThat( e.getMessage() ).contains( "zero" );
+	}
+
+	@Test
+	public void testCanSetExtendedInfo() {
+		instance.executeSource(
+		    """
+		    try {
+		    	1/0
+		    } catch(e){
+		    	e.extendedInfo = "brad"
+		    	result = e.extendedInfo
+		    }
+		                  """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.get( result ) ).isEqualTo( "brad" );
+	}
+
+	@Test
+	public void testNullLiterals() {
+		instance.executeSource(
+		    """
+		    assert null == null : "Expected true"
+		    assert null EQ null : "Expected true"
+		    assert null === null : "Expected true"
+		    assert null IS null : "Expected true"
+
+		    foo = null;
+		    assert foo == null;
+		    assert foo EQ null;
+		    assert foo === null;
+		    assert foo IS null;
+		    foo = "brafd";
+		    assert foo != null;
+		    assert foo NEQ null;
+		    assert foo !== null;
+		                         """,
+		    context );
+	}
+
+	@Test
+	public void testOverrideDefaultMethodInProxy() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			request.onOpenInvoked = false;
+
+			class MyListener {
+				public void function onOpen( WebSocket webSocket ) {
+					request.onOpenInvoked = true;
+				}
+			}
+			listener = createDynamicProxy(
+				new MyListener(),
+				[ "java.net.http.WebSocket$Listener" ]
+			);
+
+			listener.onOpen( javaCast( "null", "" ) );
+			variables.result = request.onOpenInvoked;
+		                               """,
+		    context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( true );
+	}
+
 }

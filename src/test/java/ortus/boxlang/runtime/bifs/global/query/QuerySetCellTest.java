@@ -243,9 +243,13 @@ public class QuerySetCellTest {
 			);
 			// @formatter:on
 
-			Query query = variables.getAsQuery( result );
-			assertThat( query.getCell( Key.of( "name" ), 0 ) ).isEqualTo( "" );
-			assertThat( query.getCell( Key.of( "createdDate" ), 0 ) ).isEqualTo( null );
+			Query		query	= variables.getAsQuery( result );
+			// We need to avoid query.getCell() for the sake of the test since it will convert nulls back to empty strings
+			Object[]	row		= query.getData().get( 0 );
+			// name
+			assertThat( row[ 0 ] ).isEqualTo( "" );
+			// createdDate
+			assertThat( row[ 1 ] ).isEqualTo( null );
 		} finally {
 			Query.queryNullToEmpty = false;
 		}

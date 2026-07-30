@@ -105,7 +105,7 @@ public class UnmodifiableStruct extends Struct implements IUnmodifiable {
 	}
 
 	/**
-	 * To Modifiable
+	 * To Modifiable. Returns a new struct instance, does not mutate the current instance. The new struct will be of the same type as the current instance.
 	 *
 	 * @return The Modifiable type
 	 */

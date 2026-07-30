@@ -198,6 +198,20 @@ public class OracleDriverTest extends AbstractDriverTest {
 		    """,
 		    context
 		);
+
+		// Stored procedure with OUT refcursor that returns NULL (never opened)
+		dataSource.execute(
+		    """
+		    CREATE OR REPLACE PROCEDURE testProcedureNullCursor (
+		    	cursor1 OUT SYS_REFCURSOR
+		    )
+		    IS
+		    BEGIN
+		    	NULL;
+		    END testProcedureNullCursor;
+		    """,
+		    context
+		);
 	}
 
 	@DisplayName( "It sets generatedKey in query meta" )
@@ -367,6 +381,118 @@ public class OracleDriverTest extends AbstractDriverTest {
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 		IStruct resultStruct = variables.getAsStruct( result );
 
+		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
+	}
+
+	@DisplayName( "It can call stored proc with some missing proc result resultSet attributes" )
+	@Test
+	public void testCallStoredProcWithMissingProcResultAttributes() {
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedure" datasource="OracleDatasource" result="variables.result" debug=false>
+		        <bx:procparam dbvarname="in1" value="123" type="in" sqltype="integer" />
+		        <bx:procparam dbvarname="in2" value="hello" type="in" sqltype="nvarchar" />
+		        <bx:procparam dbvarname="inout1" value="10" type="inout" sqltype="integer" variable="inout1" />
+		        <bx:procparam dbvarname="out1" type="out" sqltype="nvarchar" variable="out1" />
+		          <bx:procresult name="resultSet1" />
+		          <bx:procresult name="resultSet2" resultSet=2 />
+		      </bx:storedproc>
+		      """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		assertThat( variables.get( "resultSet1" ) ).isInstanceOf( Query.class );
+		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
+		assertThat( rs1.size() ).isEqualTo( 2 );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "foo" );
+		assertThat( rs1.getRowAsStruct( 1 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "bar" );
+
+		assertThat( variables.get( "resultSet2" ) ).isInstanceOf( Query.class );
+		Query rs2 = variables.getAsQuery( Key.of( "resultSet2" ) );
+		assertThat( rs2.size() ).isEqualTo( 1 );
+		assertThat( rs2.getRowAsStruct( 0 ).getAsString( Key.of( "myColumn" ) ) ).isEqualTo( "second" );
+	}
+
+	@DisplayName( "It can call stored proc with some missing proc result resultSet attributes 2" )
+	@Test
+	public void testCallStoredProcWithMissingProcResultAttributes2() {
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedure" datasource="OracleDatasource" result="variables.result" debug=false>
+		        <bx:procparam dbvarname="in1" value="123" type="in" sqltype="integer" />
+		        <bx:procparam dbvarname="in2" value="hello" type="in" sqltype="nvarchar" />
+		        <bx:procparam dbvarname="inout1" value="10" type="inout" sqltype="integer" variable="inout1" />
+		        <bx:procparam dbvarname="out1" type="out" sqltype="nvarchar" variable="out1" />
+		          <bx:procresult name="resultSet1" resultSet=1 />
+		          <bx:procresult name="resultSet2" />
+		      </bx:storedproc>
+		      """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		assertThat( variables.get( "resultSet1" ) ).isInstanceOf( Query.class );
+		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
+		assertThat( rs1.size() ).isEqualTo( 2 );
+		assertThat( rs1.getRowAsStruct( 0 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "foo" );
+		assertThat( rs1.getRowAsStruct( 1 ).getAsString( Key.of( "col" ) ) ).isEqualTo( "bar" );
+
+		assertThat( variables.get( "resultSet2" ) ).isInstanceOf( Query.class );
+		Query rs2 = variables.getAsQuery( Key.of( "resultSet2" ) );
+		assertThat( rs2.size() ).isEqualTo( 1 );
+		assertThat( rs2.getRowAsStruct( 0 ).getAsString( Key.of( "myColumn" ) ) ).isEqualTo( "second" );
+	}
+
+	@DisplayName( "It can call stored proc and map only the second result set (named)" )
+	@Test
+	public void testCallStoredProcSecondResultSetOnly() {
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedure" datasource="OracleDatasource" result="variables.result" debug=false>
+		        <bx:procparam dbvarname="in1" value="123" type="in" sqltype="integer" />
+		        <bx:procparam dbvarname="in2" value="hello" type="in" sqltype="nvarchar" />
+		        <bx:procparam dbvarname="inout1" value="10" type="inout" sqltype="integer" variable="inout1" />
+		        <bx:procparam dbvarname="out1" type="out" sqltype="nvarchar" variable="out1" />
+		        <bx:procresult name="secondOnlyResult" resultSet=2 />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		assertThat( variables.get( "inout1" ) ).isEqualTo( 223 );
+		assertThat( variables.get( "out1" ) ).isEqualTo( "foo-123-hello" );
+
+		assertThat( variables.get( "secondOnlyResult" ) ).isInstanceOf( Query.class );
+		Query rs2 = variables.getAsQuery( Key.of( "secondOnlyResult" ) );
+		assertThat( rs2.size() ).isEqualTo( 1 );
+		assertThat( rs2.getRowAsStruct( 0 ).getAsString( Key.of( "myColumn" ) ) ).isEqualTo( "second" );
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct resultStruct = variables.getAsStruct( result );
+		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
+	}
+
+	@DisplayName( "It can call stored proc and map only the second result set (positional)" )
+	@Test
+	public void testCallStoredProcSecondResultSetOnlyPositional() {
+		instance.executeSource(
+		    """
+		    <bx:storedproc procedure="testProcedure" datasource="OracleDatasource" result="variables.result" debug=false>
+		        <bx:procparam value="123" type="in" sqltype="integer" />
+		        <bx:procparam value="hello" type="in" sqltype="nvarchar" />
+		        <bx:procparam value="10" type="inout" sqltype="integer" variable="inout1Positional" />
+		        <bx:procparam type="out" sqltype="nvarchar" variable="out1Positional" />
+		        <bx:procresult name="secondOnlyResultPositional" resultSet=2 />
+		    </bx:storedproc>
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE );
+
+		assertThat( variables.get( "inout1Positional" ) ).isEqualTo( 223 );
+		assertThat( variables.get( "out1Positional" ) ).isEqualTo( "foo-123-hello" );
+
+		assertThat( variables.get( "secondOnlyResultPositional" ) ).isInstanceOf( Query.class );
+		Query rs2 = variables.getAsQuery( Key.of( "secondOnlyResultPositional" ) );
+		assertThat( rs2.size() ).isEqualTo( 1 );
+		assertThat( rs2.getRowAsStruct( 0 ).getAsString( Key.of( "myColumn" ) ) ).isEqualTo( "second" );
+
+		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
+		IStruct resultStruct = variables.getAsStruct( result );
 		assertThat( resultStruct.getAsNumber( Key.of( "executionTime" ) ).doubleValue() ).isGreaterThan( 0.0 );
 	}
 
@@ -834,6 +960,28 @@ public class OracleDriverTest extends AbstractDriverTest {
 		Query rs1 = variables.getAsQuery( Key.of( "resultSet1" ) );
 		assertThat( rs1.size() ).isEqualTo( 1 );
 		assertThat( rs1.getRowAsStruct( 0 ).getAsNumber( Key.of( "numVal" ) ).doubleValue() ).isEqualTo( 1D );
+	}
+
+	@DisplayName( "It does not define the variable when a proc has an OUT refcursor that returns null" )
+	@Test
+	public void testCallStoredProcRequestMoreResultsThanExist() {
+		boolean previousNullEqualsEmptyString = Compare.nullEqualsEmptyString;
+		Compare.nullEqualsEmptyString = true;
+		try {
+			// testProcedureNullCursor declares an OUT refcursor but never opens it (returns null).
+			instance.executeSource(
+			    """
+			    <bx:storedproc procedure="testProcedureNullCursor" datasource="OracleDatasource" result="variables.result" debug=false>
+			        <bx:procresult name="extraResult" resultSet=1 />
+			    </bx:storedproc>
+			    """,
+			    context, BoxSourceType.BOXTEMPLATE );
+		} finally {
+			Compare.nullEqualsEmptyString = previousNullEqualsEmptyString;
+		}
+
+		// The result set does not exist (null refcursor) — variable must be NOT DEFINED, not an empty string.
+		assertThat( variables.containsKey( Key.of( "extraResult" ) ) ).isFalse();
 	}
 
 }

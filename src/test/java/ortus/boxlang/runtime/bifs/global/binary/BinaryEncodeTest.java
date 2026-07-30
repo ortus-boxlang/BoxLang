@@ -37,6 +37,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.util.EncryptionUtil;
 
 public class BinaryEncodeTest {
 
@@ -97,17 +98,16 @@ public class BinaryEncodeTest {
 
 		assertThat( variables.getAsString( result ) ).isEqualTo( base64String );
 
-		byte[]	mimeBytes	= Base64.getMimeEncoder().encode( myString.getBytes() );
-		String	mimeString	= Base64.getMimeEncoder().encodeToString( mimeBytes );
-
-		variables.put( Key.of( "binaryData" ), mimeBytes );
+		// Test UU encoding with raw bytes
+		String uuExpected = EncryptionUtil.uuEncode( myString.getBytes() );
+		variables.put( Key.of( "binaryData" ), myString.getBytes() );
 		instance.executeSource(
 		    """
 		    result = BinaryEncode( binaryData, "uu" );
 		    """,
 		    context );
 
-		assertThat( variables.getAsString( result ) ).isEqualTo( mimeString );
+		assertThat( variables.getAsString( result ) ).isEqualTo( uuExpected );
 
 	}
 

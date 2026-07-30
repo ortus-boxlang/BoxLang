@@ -38,6 +38,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxValidationException;
 import ortus.boxlang.runtime.types.exceptions.ClassNotFoundBoxLangException;
 
 public class CreateObjectTest {
@@ -303,6 +304,29 @@ public class CreateObjectTest {
 			instance.executeSource(
 			    """
 			    result = createObject( "webservice", "/nonexistent/file.wsdl" )
+			    """,
+			    context );
+		} );
+	}
+
+	@DisplayName( "Test custom CL" )
+	@Test
+	void testCustomClassLoader() {
+		instance.executeSource(
+		    """
+		       import ortus.boxlang.runtime.interop.DynamicObject;
+		       // Simulate a custom class loader created in BL
+		          parentLoader = DynamicObject.of( GetBoxContext().getRequestContext().getRequestClassLoader() );
+
+		    result = createObject( type="java", className="java.lang.String", classLoader=parentLoader ).init("brad")
+		               """,
+		    context );
+		assertThat( variables.get( Key.of( "result" ) ) ).isEqualTo( "brad" );
+
+		assertThrows( BoxValidationException.class, () -> {
+			instance.executeSource(
+			    """
+			    result = createObject( type="java", className="java.lang.String", classLoader="notaclassloader" ).init("brad")
 			    """,
 			    context );
 		} );

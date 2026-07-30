@@ -136,9 +136,9 @@ public class ClassBoxContext extends BaseBoxContext {
 	public ScopeSearchResult scopeFindNearby( Key key, IScope defaultScope, boolean shallow, boolean forAssign ) {
 
 		// Direct Scope
-		ScopeSearchResult thisSerach = scopeFindThis( key );
-		if ( thisSerach != null ) {
-			return thisSerach;
+		ScopeSearchResult thisSearch = scopeFindThis( key );
+		if ( thisSearch != null ) {
+			return thisSearch;
 		}
 
 		// Static Scope

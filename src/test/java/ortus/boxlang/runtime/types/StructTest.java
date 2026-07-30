@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.lang.ref.SoftReference;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -383,6 +384,84 @@ class StructTest {
 
 		// If entrySet() called hashCode(), this would take 10+ seconds
 		assertThat( elapsed ).isLessThan( 5000 );
+	}
+
+	@DisplayName( "stream() returns unwrapped entries in struct order" )
+	@Test
+	void testStreamReturnsUnwrappedEntries() {
+		IStruct							linked	= Struct.linkedOf( "first", "one", "second", null, "third", "three" );
+
+		List<Map.Entry<Key, Object>>	entries	= linked.stream().toList();
+		assertThat( entries ).hasSize( 3 );
+		assertThat( entries.get( 0 ).getKey() ).isEqualTo( Key.of( "first" ) );
+		assertThat( entries.get( 0 ).getValue() ).isEqualTo( "one" );
+		assertThat( entries.get( 1 ).getKey() ).isEqualTo( Key.of( "second" ) );
+		assertThat( entries.get( 1 ).getValue() ).isNull();
+		assertThat( entries.get( 2 ).getKey() ).isEqualTo( Key.of( "third" ) );
+		assertThat( entries.get( 2 ).getValue() ).isEqualTo( "three" );
+	}
+
+	@DisplayName( "stream() can be called as a BoxLang struct member" )
+	@Test
+	void testStreamCallableFromBoxLangStructMember() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+			myStruct = { foo : "bar", baz : "bum" };
+			result = myStruct.stream().count();
+			""",
+		    context );
+		// @formatter:on
+
+		assertThat( variables.getAsNumber( result ).intValue() ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "keyStream() returns keys in struct order" )
+	@Test
+	void testKeyStreamReturnsKeysInOrder() {
+		IStruct		linked	= Struct.linkedOf( "first", "one", "second", "two", "third", "three" );
+
+		List<Key>	keys	= linked.keyStream().toList();
+		assertThat( keys ).containsExactly( Key.of( "first" ), Key.of( "second" ), Key.of( "third" ) ).inOrder();
+	}
+
+	@DisplayName( "keyStream() can be called as a BoxLang struct member" )
+	@Test
+	void testKeyStreamCallableFromBoxLangStructMember() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+			myStruct = { foo : "bar", baz : "bum" };
+			result = myStruct.keyStream().count();
+			""",
+		    context );
+		// @formatter:on
+
+		assertThat( variables.getAsNumber( result ).intValue() ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "valueStream() returns values in struct order" )
+	@Test
+	void testValueStreamReturnsValuesInOrder() {
+		IStruct			linked	= Struct.linkedOf( "first", "one", "second", null, "third", "three" );
+
+		List<Object>	values	= linked.valueStream().toList();
+		assertThat( values ).containsExactly( "one", null, "three" ).inOrder();
+	}
+
+	@DisplayName( "valueStream() can be called as a BoxLang struct member" )
+	@Test
+	void testValueStreamCallableFromBoxLangStructMember() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+			myStruct = { foo : "bar", baz : "bum" };
+			result = myStruct.valueStream().count();
+			""",
+		    context );
+		// @formatter:on
+
+		assertThat( variables.getAsNumber( result ).intValue() ).isEqualTo( 2 );
 	}
 
 }

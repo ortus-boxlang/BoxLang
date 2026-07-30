@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.application;
 
+import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.net.URL;
@@ -70,7 +71,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.DateTimeHelper;
-import ortus.boxlang.runtime.util.EncryptionUtil;
+import ortus.boxlang.runtime.util.ClassLoaderUtil;
 
 /**
  * I represent an Application in BoxLang
@@ -278,7 +279,7 @@ public class Application {
 	 *
 	 * @param requestContext The request context
 	 */
-	public void startupClassLoaderPaths( RequestBoxContext requestContext ) {
+	public ClassLoader startupClassLoaderPaths( RequestBoxContext requestContext ) {
 		URL[] loadPathsUrls = this.startingListener.getJavaSettingsLoadPaths( requestContext );
 
 		// if we don't have any return out
@@ -286,23 +287,53 @@ public class Application {
 			logger.trace( "===> Setting the context classLoader to the [runtime] loader during startupClassLoaderPaths via [{}]",
 			    Thread.currentThread().getName() );
 			// If there are no javasettings, ensure we just use the runtime CL
-			Thread.currentThread().setContextClassLoader( BoxRuntime.getInstance().getRuntimeLoader() );
-			return;
+			ClassLoader runtimeClassLoader = BoxRuntime.getInstance().getRuntimeLoader();
+			Thread.currentThread().setContextClassLoader( runtimeClassLoader );
+			return runtimeClassLoader;
 		}
 
 		// Get or compute a class loader according to the incoming URIs for classes to load
 		// Remember that Application.bx is instantiated per request, so each request could be different
-		String loaderCacheKey = EncryptionUtil.hash( Arrays.toString( loadPathsUrls ) );
-		this.classLoaders.computeIfAbsent( loaderCacheKey,
-		    key -> {
-			    logger.debug( "Application ClassLoader [{}] registered with these paths: [{}]", this.name, Arrays.toString( loadPathsUrls ) );
-			    return new DynamicClassLoader( this.name, loadPathsUrls, BoxRuntime.getInstance().getRuntimeLoader(), false );
-		    } );
+
+		// if javaSettings.reloadOnChange is true, incorporate time stamps for each jar
+
+		Object[]	pathsForHashing	= Arrays.copyOf( loadPathsUrls, loadPathsUrls.length, Object[].class );
+		IStruct		javaSettings	= this.startingListener.getSettings().getAsStruct( Key.javaSettings );
+		boolean		reloadOnChange	= BooleanCaster.cast( javaSettings.get( Key.reloadOnChange ) );
+		// If we want to reload when the jars change on disk, add the timestamps into the array to hash.
+		if ( reloadOnChange ) {
+			for ( int i = 0; i < loadPathsUrls.length; i++ ) {
+				File file = new File( loadPathsUrls[ i ].getPath() );
+				if ( file.exists() ) {
+					pathsForHashing[ i ] = loadPathsUrls[ i ].toString() + file.lastModified();
+				}
+			}
+			// Now the URL of paths has been modified to include the last modified timestamps if reloadOnChange is true
+			// This will force a new CL if one of the jars has changed on disk
+		}
+		String				loaderCacheKey	= ClassLoaderUtil.hashSorted( pathsForHashing );
+		DynamicClassLoader	theCL			= this.classLoaders.computeIfAbsent( loaderCacheKey, key -> {
+												logger.debug( "Application ClassLoader [{}] registered with these paths: [{}]", this.name,
+												    Arrays.toString( loadPathsUrls ) );
+												return new DynamicClassLoader( this.name, loadPathsUrls,
+												    BoxRuntime.getInstance().getRuntimeLoader(), false );
+											} );
+
+		// clear old class loaders for the same file set
+		if ( reloadOnChange ) {
+			// remove any CLs from the map whose URLHash is the same as theCL.getURLHash() but don't remove ourselves!
+			// This is to prevent memory leaks when using reloadOnChange and changing the jars many times in a row
+			// Note, we are NOT closing these CLs. It's not safe to since they may be in by another request and I don't want this action
+			// to activley trash any other threads still using the old CL.
+			this.classLoaders.entrySet().removeIf( entry -> entry.getValue() != theCL && entry.getValue().getURLHash().equals( theCL.getURLHash() ) );
+		}
+
 		// Make sure our thread is using the right class loader
 		logger.trace( "===> Setting the context classLoader to the [javasettings] loader during startupClassLoaderPaths via [{}]",
 		    Thread.currentThread().getName() );
 
-		Thread.currentThread().setContextClassLoader( this.classLoaders.get( loaderCacheKey ) );
+		Thread.currentThread().setContextClassLoader( theCL );
+		return theCL;
 	}
 
 	/**
@@ -356,8 +387,8 @@ public class Application {
 			// TODO: the context when the application started isn't even nececarily the same as the context whe the session started, so even that isn't quite right.
 			// Both app end and session end generally run outside of an HTTP request, so it's ambiguous what should really be available to them.
 			this.startingListener.getRequestContext().registerDependentThread();
-			// Startup the class loader
-			startupClassLoaderPaths( context.getRequestContext() );
+			// Startup the class loader and retain it on the request-scoped listener
+			this.startingListener.setRequestClassLoader( startupClassLoaderPaths( context.getRequestContext() ) );
 			// Startup the caches
 			startupAppCaches( context.getRequestContext() );
 			// Startup session storages

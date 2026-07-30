@@ -439,8 +439,12 @@ public class BoxFile implements IType, IReferenceable, IBoxBinaryRepresentable {
 	public Object read( Integer len ) {
 		try {
 			if ( this.reader != null ) {
-				CharBuffer buffer = CharBuffer.allocate( len );
-				this.reader.read( buffer );
+				CharBuffer	buffer	= CharBuffer.allocate( len );
+				int			read	= this.reader.read( buffer );
+				if ( read == -1 ) {
+					return "";
+				}
+				buffer.flip();
 				return buffer.toString();
 			} else if ( this.byteChannel != null ) {
 				ByteBuffer buffer = ByteBuffer.allocate( len );

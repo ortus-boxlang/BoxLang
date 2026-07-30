@@ -337,6 +337,20 @@ public class SetBIFsTest {
 		assertThat( variables.get( result ) ).isEqualTo( 3 );
 	}
 
+	@DisplayName( "Struct.keySet() works on non-string keys" )
+	@Test
+	public void testStructKeySetNonStringKeys() {
+		instance.executeSource(
+		    """
+		       threadClass = createObject( "java", "java.lang.Thread" );
+		    for( mthread in threadClass.getAllStackTraces().keySet() ) {
+		    	mthread.isAlive();
+		    }
+		       """,
+		    context );
+		// Does not error
+	}
+
 	@DisplayName( "Struct.keySet() inherits case-insensitivity from default struct" )
 	@Test
 	public void testStructKeySetCaseInsensitive() {

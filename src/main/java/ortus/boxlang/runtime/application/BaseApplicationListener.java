@@ -18,7 +18,6 @@
 package ortus.boxlang.runtime.application;
 
 import java.net.URL;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -57,7 +56,6 @@ import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.JSONUtil;
-import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
@@ -120,6 +118,11 @@ public abstract class BaseApplicationListener {
 	 * The application linked to this listener
 	 */
 	protected Application					application;
+
+	/**
+	 * The class loader selected while creating or updating the application.
+	 */
+	private ClassLoader						requestClassLoader;
 
 	/**
 	 * The request context bound to this listener
@@ -358,15 +361,17 @@ public abstract class BaseApplicationListener {
 			return BoxRuntime.getInstance().getRuntimeLoader();
 		}
 
-		// We are in app mode
-		URL[]		loadPathsUrls	= getJavaSettingsLoadPaths( context );
-		String		loaderCacheKey	= EncryptionUtil.hash( Arrays.toString( loadPathsUrls ) );
-		ClassLoader	target			= this.application.getClassLoader( loaderCacheKey );
-		if ( target == null ) {
-			target = BoxRuntime.getInstance().getRuntimeLoader();
-		}
+		// We are in app mode. The loader was selected during application path startup.
+		return this.requestClassLoader == null ? BoxRuntime.getInstance().getRuntimeLoader() : this.requestClassLoader;
+	}
 
-		return target;
+	/**
+	 * Set the class loader selected for this request.
+	 *
+	 * @param requestClassLoader The request class loader
+	 */
+	void setRequestClassLoader( ClassLoader requestClassLoader ) {
+		this.requestClassLoader = requestClassLoader;
 	}
 
 	/**
@@ -402,7 +407,7 @@ public abstract class BaseApplicationListener {
 	 * Update or create the application class loader paths
 	 */
 	private void createOrUpdateClassLoaderPaths() {
-		this.application.startupClassLoaderPaths( this.context );
+		setRequestClassLoader( this.application.startupClassLoaderPaths( this.context ) );
 	}
 
 	/**

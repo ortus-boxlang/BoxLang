@@ -142,4 +142,24 @@ public class ListPrependTest {
 		assertThat( variables.getAsString( result ) ).isEqualTo( "0-and-1-and-2-and-3-and-4-and-5" );
 	}
 
+	@DisplayName( "Matches Lucee: empties filtered from both list and value when includeEmptyFields=false" )
+	@Test
+	public void testPrependLuceeCompatEmptyHandling() {
+		// includeEmptyFields=false: empties filtered from BOTH the list and the value
+		instance.executeSource(
+		    """
+		    result = listPrepend( "a,,b,", ",x,,y,", ",", false )
+		    """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "x,y,a,b" );
+
+		// includeEmptyFields=true: all empties preserved in both list and value
+		instance.executeSource(
+		    """
+		    result = listPrepend( "a,,b,", ",x,,y,", ",", true )
+		    """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( ",x,,y,,a,,b," );
+	}
+
 }

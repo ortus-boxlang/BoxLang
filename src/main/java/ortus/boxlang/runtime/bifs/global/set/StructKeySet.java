@@ -54,7 +54,7 @@ public class StructKeySet extends BIF {
 		IStruct		struct	= arguments.getAsStruct( Key.struct );
 		BoxSet.Type	type	= BoxSet.parseType( arguments.getAsString( Key.type ) );
 		BoxSet		out		= new BoxSet( type, true, struct.isCaseSensitive() );
-		struct.keySet().forEach( k -> out.add( k.getName() ) );
+		struct.keySet().forEach( k -> out.add( k.getOriginalValue() ) );
 		return out;
 	}
 

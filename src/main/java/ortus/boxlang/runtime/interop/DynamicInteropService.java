@@ -473,7 +473,7 @@ public class DynamicInteropService {
 	 *
 	 * @return A cached MethodHandle for the no-arg constructor
 	 */
-	private static MethodHandle getNoArgConstructorHandle( Class<?> targetClass ) {
+	public static MethodHandle getNoArgConstructorHandle( Class<?> targetClass ) {
 		return noArgConstructorCache.computeIfAbsent( targetClass, clazz -> {
 			try {
 				return METHOD_LOOKUP.unreflectConstructor( clazz.getConstructor() );

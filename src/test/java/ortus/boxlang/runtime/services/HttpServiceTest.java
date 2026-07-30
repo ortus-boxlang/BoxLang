@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.net.BoxHttpClient;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
 public class HttpServiceTest {
@@ -290,15 +291,15 @@ public class HttpServiceTest {
 		    null
 		);
 
-		Key clientKey = service.buildClientKey( "HTTP/2", true, 30, null, null, null, null, null, null );
-		assertThat( service.hasClient( clientKey ) ).isTrue();
+		String clientKey = service.buildClientKey( "HTTP/2", true, 30, null, null, null, null, null, null );
+		assertThat( service.hasClient( Key.of( clientKey ) ) ).isTrue();
 	}
 
 	@DisplayName( "Test hasClient returns false for non-existing client" )
 	@Test
 	void testHasClientReturnsFalse() {
-		Key clientKey = service.buildClientKey( "HTTP/1.1", false, 60, null, null, null, null, null, null );
-		assertThat( service.hasClient( clientKey ) ).isFalse();
+		String clientKey = service.buildClientKey( "HTTP/1.1", false, 60, null, null, null, null, null, null );
+		assertThat( service.hasClient( Key.of( clientKey ) ) ).isFalse();
 	}
 
 	@DisplayName( "Test getClient returns null for non-existing client" )
@@ -325,11 +326,11 @@ public class HttpServiceTest {
 
 		assertThat( service.getClientCount() ).isEqualTo( 1 );
 
-		Key clientKey = service.buildClientKey( "HTTP/2", true, 30, null, null, null, null, null, null );
-		service.removeClient( clientKey );
+		String clientKey = service.buildClientKey( "HTTP/2", true, 30, null, null, null, null, null, null );
+		service.removeClient( Key.of( clientKey ) );
 
 		assertThat( service.getClientCount() ).isEqualTo( 0 );
-		assertThat( service.hasClient( clientKey ) ).isFalse();
+		assertThat( service.hasClient( Key.of( clientKey ) ) ).isFalse();
 	}
 
 	@DisplayName( "Test removeClient returns service for method chaining" )
@@ -347,8 +348,8 @@ public class HttpServiceTest {
 		    null
 		);
 
-		Key			clientKey		= service.buildClientKey( "HTTP/2", true, 30, null, null, null, null, null, null );
-		HttpService	returnedService	= service.removeClient( clientKey );
+		String		clientKey		= service.buildClientKey( "HTTP/2", true, 30, null, null, null, null, null, null );
+		HttpService	returnedService	= service.removeClient( Key.of( clientKey ) );
 
 		assertThat( returnedService ).isSameInstanceAs( service );
 	}
@@ -408,6 +409,52 @@ public class HttpServiceTest {
 
 		assertThat( client ).isNotNull();
 		assertThat( service.getClientCount() ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "Test client statistics expose configuration metadata" )
+	@Test
+	void testClientStatisticsExposeConfigurationMetadata() {
+		BoxHttpClient	client	= service.getOrBuildClient(
+		    "HTTP/1.1",
+		    false,
+		    45,
+		    null,
+		    null,
+		    null,
+		    null,
+		    null,
+		    null
+		);
+
+		IStruct			stats	= client.getStatistics();
+
+		assertThat( stats.get( "clientKey" ) ).isEqualTo( service.buildClientKey( "HTTP/1.1", false, 45, null, null, null, null, null, null ) );
+		assertThat( stats.get( "httpVersion" ) ).isEqualTo( "HTTP/1.1" );
+		assertThat( stats.get( "followRedirects" ) ).isEqualTo( false );
+		assertThat( stats.get( "connectTimeoutSeconds" ) ).isEqualTo( 45 );
+		assertThat( stats.get( "connectTimeoutConfigured" ) ).isEqualTo( true );
+		assertThat( stats.get( "observedHosts" ) ).isNotNull();
+	}
+
+	@DisplayName( "Test client statistics preserve an unconfigured connect timeout" )
+	@Test
+	void testClientStatisticsPreserveUnconfiguredConnectTimeout() {
+		BoxHttpClient	client	= service.getOrBuildClient(
+		    "HTTP/2",
+		    true,
+		    null,
+		    null,
+		    null,
+		    null,
+		    null,
+		    null,
+		    null
+		);
+
+		IStruct			stats	= client.getStatistics();
+
+		assertThat( stats.get( "connectTimeoutSeconds" ) ).isEqualTo( 0 );
+		assertThat( stats.get( "connectTimeoutConfigured" ) ).isEqualTo( false );
 	}
 
 	@DisplayName( "Test multiple clients can coexist" )

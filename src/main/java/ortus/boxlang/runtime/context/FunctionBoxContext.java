@@ -321,9 +321,9 @@ public class FunctionBoxContext extends BaseBoxContext {
 			return new ScopeSearchResult( argumentsScope, argumentsScope, key, true );
 		}
 
-		ScopeSearchResult thisSerach = scopeFindThis( key );
-		if ( thisSerach != null ) {
-			return thisSerach;
+		ScopeSearchResult thisSearch = scopeFindThis( key );
+		if ( thisSearch != null ) {
+			return thisSearch;
 		}
 
 		ScopeSearchResult superSearch = scopeFindSuper( key );
@@ -396,12 +396,19 @@ public class FunctionBoxContext extends BaseBoxContext {
 		} else {
 
 			if ( shallow ) {
-				return parent.scopeFindNearby( key, defaultScope, true );
+				// This is this shallow, we no longer want to see any scopes inside of calling functions, but we do need to climb to the next closest
+				// non-function context such as a request context so we can see the variable scope there
+				IBoxContext thisParent = getParent();
+				while ( thisParent instanceof FunctionBoxContext ) {
+					thisParent = thisParent.getParent();
+				}
+				// now we've climbed all the way to what is most likely the request. This allows us to still see things like the top variable scope or other UDFs on the page
+				return thisParent.scopeFindNearby( key, defaultScope, true, forAssign );
 			}
 
 			// A UDF is "transparent" and can see everything in the parent scope as a
 			// "local" observer
-			return parent.scopeFindNearby( key, defaultScope, forAssign );
+			return parent.scopeFindNearby( key, defaultScope, false, forAssign );
 		}
 
 	}

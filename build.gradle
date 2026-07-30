@@ -124,6 +124,8 @@ dependencies {
 	// Implementation Dependencies
 	// https://mvnrepository.com/artifact/commons-io/commons-io
 	implementation "commons-io:commons-io:2.22.0"
+	// https://mvnrepository.com/artifact/org.itadaki/bzip2
+	implementation "org.itadaki:bzip2:0.9.1"
 	// https://mvnrepository.com/artifact/com.github.javaparser/javaparser-symbol-solver-core
 	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.27.1'
 	// https://mvnrepository.com/artifact/org.apache.commons/commons-lang3

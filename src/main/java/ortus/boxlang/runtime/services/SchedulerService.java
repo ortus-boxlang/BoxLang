@@ -268,12 +268,20 @@ public class SchedulerService extends BaseService {
 			// Decrypt credentials before passing to the callable builder
 			decryptTaskCredentials( taskDef );
 
-			// Build callable and register the task
-			Runnable										callable		= ortus.boxlang.runtime.components.async.Schedule.buildTaskCallable( runtimeContext,
-			    taskDef );
+			String											group		= taskDef.getAsString( Key.group );
+			String											className	= taskDef.getAsString( Key._CLASS );
+			ortus.boxlang.runtime.async.tasks.ScheduledTask	scheduledTask;
+			Runnable										callable	= null;
 
-			String											group			= taskDef.getAsString( Key.group );
-			ortus.boxlang.runtime.async.tasks.ScheduledTask	scheduledTask	= scheduler.task( taskName, group != null ? group : "" ).call( callable );
+			if ( className != null && !className.isBlank() ) {
+				// Class-based task: instantiate once and wire life-cycle methods (identical to doUpdate)
+				scheduledTask = ortus.boxlang.runtime.components.async.Schedule.registerClassTask(
+				    scheduler, taskName, group != null ? group : "", runtimeContext, taskDef );
+			} else {
+				// Build callable and register the task
+				callable		= ortus.boxlang.runtime.components.async.Schedule.buildTaskCallable( runtimeContext, taskDef );
+				scheduledTask	= scheduler.task( taskName, group != null ? group : "" ).call( callable );
+			}
 
 			// Apply full configuration (identical to doUpdate — repeat, exclude, callbacks, metadata, scheduling)
 			ortus.boxlang.runtime.components.async.Schedule.applyTaskConfiguration( scheduledTask, callable, taskDef, runtimeContext );
@@ -729,9 +737,18 @@ public class SchedulerService extends BaseService {
 
 				decryptTaskCredentials( taskDef );
 
-				Runnable		callable		= ortus.boxlang.runtime.components.async.Schedule.buildTaskCallable( runtimeContext, taskDef );
-				String			group			= taskDef.getAsString( Key.group );
-				ScheduledTask	scheduledTask	= scheduler.task( taskName, group != null ? group : "" ).call( callable );
+				String			group		= taskDef.getAsString( Key.group );
+				String			className	= taskDef.getAsString( Key._CLASS );
+				ScheduledTask	scheduledTask;
+				Runnable		callable	= null;
+
+				if ( className != null && !className.isBlank() ) {
+					scheduledTask = ortus.boxlang.runtime.components.async.Schedule.registerClassTask(
+					    scheduler, taskName, group != null ? group : "", runtimeContext, taskDef );
+				} else {
+					callable		= ortus.boxlang.runtime.components.async.Schedule.buildTaskCallable( runtimeContext, taskDef );
+					scheduledTask	= scheduler.task( taskName, group != null ? group : "" ).call( callable );
+				}
 
 				ortus.boxlang.runtime.components.async.Schedule.applyTaskConfiguration( scheduledTask, callable, taskDef, runtimeContext );
 
@@ -872,6 +889,8 @@ public class SchedulerService extends BaseService {
 			    "scheduler", scheduler,
 			    "group", attributes.getAsString( Key.group ),
 			    "url", attributes.getAsString( Key.URL ),
+			    "class", attributes.getAsString( Key._CLASS ),
+			    "method", attributes.getAsString( Key.method ),
 			    "interval", attributes.getAsString( Key.interval ),
 			    "cronTime", attributes.getAsString( Key.cronTime ),
 			    "startDate", attributes.getAsString( Key.startDate ),

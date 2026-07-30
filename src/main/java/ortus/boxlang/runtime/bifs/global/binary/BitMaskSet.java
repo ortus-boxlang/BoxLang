@@ -34,8 +34,8 @@ public class BitMaskSet extends BIF {
 	public BitMaskSet() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "integer", Key.number ),
-		    new Argument( true, "integer", Key.mask ),
+		    new Argument( true, "long", Key.number ),
+		    new Argument( true, "long", Key.mask ),
 		    new Argument( true, "integer", Key.start ),
 		    new Argument( true, "integer", Key.length )
 		};
@@ -47,9 +47,9 @@ public class BitMaskSet extends BIF {
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
 	 *
-	 * @argument.number Numeric value for the bitwise mask set.
+	 * @argument.number 64-bit signed integer value for the bitwise mask set.
 	 * 
-	 * @argument.mask Numeric value for the mask.
+	 * @argument.mask 64-bit signed integer value for the mask.
 	 * 
 	 * @argument.start Start bit for the set mask (Integer in the range 0-31, inclusive).
 	 * 
@@ -58,10 +58,10 @@ public class BitMaskSet extends BIF {
 	 * @throws BoxRuntimeException If length or start is not in the range 0-31, inclusive.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		int	number	= arguments.getAsInteger( Key.number );
-		int	mask	= arguments.getAsInteger( Key.mask );
-		int	start	= arguments.getAsInteger( Key.start );
-		int	length	= arguments.getAsInteger( Key.length );
+		long	number	= arguments.getAsLong( Key.number );
+		long	mask	= arguments.getAsLong( Key.mask );
+		int		start	= arguments.getAsInteger( Key.start );
+		int		length	= arguments.getAsInteger( Key.length );
 
 		if ( start < 0 || start > 31 ) {
 			throw new BoxRuntimeException( "Start must be in the range 0-31, inclusive." );
@@ -72,10 +72,10 @@ public class BitMaskSet extends BIF {
 		}
 
 		// Create a bitmask with 'length' consecutive 1 bits starting from position 0
-		int bitmask = ( ( 1 << length ) - 1 ) << start;
+		long bitmask = ( ( 1L << length ) - 1 ) << start;
 
 		// Ensure 'mask' only contains 'length' bits by performing a bitwise AND with a bitmask
-		mask &= ( 1 << length ) - 1;
+		mask &= ( 1L << length ) - 1;
 
 		// Perform a bitwise mask set operation on 'number' using the created bitmask and adjusted 'mask'
 		return ( number & ~bitmask ) | ( mask << start );

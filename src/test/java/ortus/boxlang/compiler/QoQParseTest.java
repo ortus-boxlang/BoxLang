@@ -678,6 +678,23 @@ public class QoQParseTest {
 	}
 
 	@Test
+	public void testParameterizedNullValue() {
+		instance.executeSource(
+		    """
+		        q = queryNew( "id", "integer", [[1]] );
+		        q = QueryExecute("
+		        				select id from q where id IN (?)
+		       ",
+		    [{value:[], list=true}],
+		    { dbType : "query" } );
+
+		    result = q.recordcount
+		                      			                          """,
+		    context, BoxSourceType.CFSCRIPT );
+		assertThat( variables.getAsInteger( result ) ).isEqualTo( 0 );
+	}
+
+	@Test
 	@Disabled
 	public void testsdf() {
 		instance.executeSource(

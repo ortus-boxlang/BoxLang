@@ -392,7 +392,11 @@ public class BoxLexerCustom extends BoxLexer {
 					    && !nextNonWhiteSpaceCharIs( '=' )
 					    && !lastTokenWas( DOT )
 					    && ( !nextNonWhiteSpaceCharIs( ':' ) || lastTokenOneOf( new int[] { CASE, QM } ) ) ) {
-						// any null but foo.null, null.foo, and null() and null = foo and null : (unless it's in a case statement or ternary operator)
+						// null()
+						// null.foo
+						// null = foo
+						// foo.null
+						// null : (unless it's in a case statement or ternary operator such as `case null:` or `condition ? null : ...`)
 						isIdentifier = false;
 					} else if ( ( nextTokenType == FALSE || nextTokenType == TRUE ) && !nextNonWhiteSpaceCharIs( '(' )
 					    && !lastTokenWas( DOT )
@@ -477,10 +481,12 @@ public class BoxLexerCustom extends BoxLexer {
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because it is not a function declaration" );
 						isIdentifier = true;
-					} else if ( nextNonWhiteSpaceCharIs( ':' ) && ! ( nextTokenType == DEFAULT && inSwitchBody ) && ! ( lastTokenWas( EQUALSIGN ) ) ) {
+					} else if ( nextNonWhiteSpaceCharIs( ':' ) && ! ( nextTokenType == DEFAULT && inSwitchBody ) && ! ( lastTokenWas( EQUALSIGN ) )
+					    && !operatorEndingTokens.contains( lastToken.getType() ) ) {
 						// left side of a : which is usually { foo : bar }
 						// however, ignore default: in a switch body.
 						// also ignore condition ? foo = true : bar = false
+						// ignore assert null == null : "Expected true"
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because next char is a colon" );
 						isIdentifier = true;
@@ -529,7 +535,7 @@ public class BoxLexerCustom extends BoxLexer {
 					        && ( ( ( nextTokenType == IF || nextTokenType == SWITCH ) && nextNonWhiteSpaceCharIs( '(' ) )
 					            || ( nextTokenType == TRY && nextNonWhiteSpaceCharIs( '{' ) )
 					            || ( nextTokenType == INCLUDE || nextTokenType == THROW || nextTokenType == VAR || nextTokenType == DEFAULT
-					                || nextTokenType == CONTINUE ) ) ) ) {
+					                || nextTokenType == CONTINUE || nextTokenType == RETHROW || nextTokenType == ASSERT ) ) ) ) {
 						// preceeded by a :
 						// but myLabel : for() is fine
 						// and myLabel : while()
@@ -538,6 +544,8 @@ public class BoxLexerCustom extends BoxLexer {
 						// but not case: try {} catch(){}
 						// and not case: include "foo"
 						// and not case: continue
+						// and not case: rethrow
+						// and not case: assert
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because last token was a colon" );
 						isIdentifier = true;
@@ -571,11 +579,13 @@ public class BoxLexerCustom extends BoxLexer {
 					    && nextNonWhiteSpaceCharsAre( operatorStartingChars )
 					    && !isFunctionDeclaration( nextToken )
 					    && ! ( operatorEndingTokens.contains( nextTokenType ) && nextNonWhiteSpaceCharIsOneOf( new int[] { '-', '+' } ) )
-					    && ! ( nextTokenType == NOT && nextCharsAreWord( "EQUAL" ) ) ) {
+					    && ! ( nextTokenType == NOT && nextCharsAreWord( "EQUAL" ) )
+					    && ! ( nextTokenType == NULL ) ) {
 						// The next chars are the start of an operator
 						// ignore THAN if it's GREATER THAN or LESS THAN
 						// ignore OR if it's GREATER|LESS THAN OR ...
 						// Ignore operators that are followed by a - or + (e.g. 5 EQ -3)
+						// ignore null ==, null !=, null NEQ, null EQ, null IS, null ===, null !==
 						if ( debug )
 							System.out.println( "Switching [" + nextToken.getText() + "] token to identifer because next chars are the start of an operator" );
 						isIdentifier = true;
@@ -958,7 +968,7 @@ public class BoxLexerCustom extends BoxLexer {
 
 	/**
 	 * Recursively match characters from the input stream against an operator trie.
-	 * Walks the trie character-by-character until a complete operator is matched or matching fails.
+	 * Walks the tree character-by-character until a complete operator is matched or matching fails.
 	 *
 	 * @param input          the character stream to read from
 	 * @param pos            the current position in the input stream
@@ -1094,6 +1104,22 @@ public class BoxLexerCustom extends BoxLexer {
 		// now that we've matched the word, the next char must be a non-character or the EOF
 		int nextChar = getInputStream().LA( pos );
 		return !Character.isAlphabetic( nextChar ) && !Character.isDigit( nextChar );
+	}
+
+	/**
+	 * Check if the next sequence of characters matches any of the specified words
+	 *
+	 * @param words an array of words to match. Pass as upper case
+	 *
+	 * @return true if the next sequence of characters matches any of the specified words
+	 */
+	private boolean nextCharsAreWordOneOf( String[] words ) {
+		for ( String word : words ) {
+			if ( nextCharsAreWord( word ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**

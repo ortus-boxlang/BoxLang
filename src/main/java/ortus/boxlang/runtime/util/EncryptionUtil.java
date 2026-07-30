@@ -807,7 +807,7 @@ public final class EncryptionUtil {
 		}
 		// UU encoding
 		else if ( encodingKey.equals( Key.encodingUU ) ) {
-			return Base64.getMimeEncoder().encodeToString( obj );
+			return uuEncode( obj );
 		}
 		// Base64 encoding
 		else if ( encodingKey.equals( Key.encodingBase64 ) ) {
@@ -842,7 +842,7 @@ public final class EncryptionUtil {
 		}
 		// UU encoding
 		else if ( encodingKey.equals( Key.encodingUU ) ) {
-			return Base64.getMimeDecoder().decode( encoded );
+			return uuDecode( encoded );
 		}
 		// Base64 encoding
 		else if ( encodingKey.equals( Key.encodingBase64 ) ) {
@@ -1151,6 +1151,138 @@ public final class EncryptionUtil {
 			// Return null on error - caller can decide how to handle
 			return null;
 		}
+	}
+
+	/**
+	 * Encodes a byte array into Unix UUencode format.
+	 * <p>
+	 * UUencode encodes binary data using a printable ASCII character set with values
+	 * offset by 32 (space = 0, underscore = 63). Data is processed in 45-byte chunks.
+	 * Each chunk is prefixed with a length character (ASCII 32 + byte count).
+	 *
+	 * @param src The byte array to encode
+	 *
+	 * @return The UUencoded string
+	 */
+	public static String uuEncode( byte[] src ) {
+		if ( src == null || src.length == 0 ) {
+			return "";
+		}
+
+		StringBuilder	sb	= new StringBuilder();
+		int				i	= 0;
+
+		while ( i < src.length ) {
+			int chunkLen = Math.min( 45, src.length - i );
+			// Write length character: (chunkLen + 32) as a printable char
+			sb.append( ( char ) ( chunkLen + 32 ) );
+
+			// Process 3-byte groups
+			int j = i;
+			while ( j + 3 <= i + chunkLen ) {
+				int	a	= src[ j ] & 0xFF;
+				int	b	= src[ j + 1 ] & 0xFF;
+				int	c	= src[ j + 2 ] & 0xFF;
+
+				sb.append( ( char ) ( ( ( a >>> 2 ) & 0x3F ) + 32 ) );
+				sb.append( ( char ) ( ( ( ( a << 4 ) | ( b >>> 4 ) ) & 0x3F ) + 32 ) );
+				sb.append( ( char ) ( ( ( ( b << 2 ) | ( c >>> 6 ) ) & 0x3F ) + 32 ) );
+				sb.append( ( char ) ( ( c & 0x3F ) + 32 ) );
+
+				j += 3;
+			}
+
+			// Handle remaining 1 or 2 bytes
+			int remaining = i + chunkLen - j;
+			if ( remaining == 1 ) {
+				int a = src[ j ] & 0xFF;
+				sb.append( ( char ) ( ( ( a >>> 2 ) & 0x3F ) + 32 ) );
+				sb.append( ( char ) ( ( ( a << 4 ) & 0x3F ) + 32 ) );
+			} else if ( remaining == 2 ) {
+				int	a	= src[ j ] & 0xFF;
+				int	b	= src[ j + 1 ] & 0xFF;
+				sb.append( ( char ) ( ( ( a >>> 2 ) & 0x3F ) + 32 ) );
+				sb.append( ( char ) ( ( ( ( a << 4 ) | ( b >>> 4 ) ) & 0x3F ) + 32 ) );
+				sb.append( ( char ) ( ( ( b << 2 ) & 0x3F ) + 32 ) );
+			}
+
+			i += chunkLen;
+		}
+
+		return sb.toString();
+	}
+
+	/**
+	 * Decodes a Unix UUencoded string back into a byte array.
+	 * <p>
+	 * This reverses the encoding performed by {@link #uuEncode(byte[])}.
+	 * The input must be properly formatted UUencode data with length characters
+	 * and terminated by a backtick character.
+	 *
+	 * @param encoded The UUencoded string
+	 *
+	 * @return The decoded byte array
+	 */
+	public static byte[] uuDecode( String encoded ) {
+		if ( encoded == null || encoded.isEmpty() || encoded.equals( "`" ) ) {
+			return new byte[ 0 ];
+		}
+
+		ByteArrayOutputStream	out	= new ByteArrayOutputStream();
+		int						pos	= 0;
+
+		while ( pos < encoded.length() ) {
+			char	lengthChar	= encoded.charAt( pos++ );
+			int		chunkLen	= lengthChar - 32;
+
+			// Space (32) means zero length / end-of-data
+			if ( chunkLen == 0 ) {
+				break;
+			}
+
+			if ( chunkLen < 0 || chunkLen > 45 ) {
+				throw new BoxRuntimeException( "Invalid UUencode length character: " + ( int ) lengthChar );
+			}
+
+			// Number of encoded characters for this chunk: ceil(bytes * 4 / 3)
+			int	encodedLen	= ( chunkLen * 4 + 2 ) / 3;
+			int	chunkEnd	= pos + encodedLen;
+			int	decoded		= 0;
+
+			while ( decoded < chunkLen ) {
+				// Read 4 encoded chars, each offset by 32
+				int	c1	= encoded.charAt( pos++ ) - 32;
+				int	c2	= encoded.charAt( pos++ ) - 32;
+				int	c3	= ( pos < chunkEnd ) ? encoded.charAt( pos++ ) - 32 : 0;
+				int	c4	= ( pos < chunkEnd ) ? encoded.charAt( pos++ ) - 32 : 0;
+
+				// Validate characters are in range
+				if ( c1 < 0 || c1 > 63 || c2 < 0 || c2 > 63 ) {
+					throw new BoxRuntimeException( "Invalid UUencoded character" );
+				}
+
+				out.write( ( ( c1 << 2 ) | ( c2 >>> 4 ) ) & 0xFF );
+				decoded++;
+
+				if ( decoded < chunkLen ) {
+					if ( c3 < 0 || c3 > 63 ) {
+						throw new BoxRuntimeException( "Invalid UUencoded character" );
+					}
+					out.write( ( ( c2 << 4 ) | ( c3 >>> 2 ) ) & 0xFF );
+					decoded++;
+				}
+
+				if ( decoded < chunkLen ) {
+					if ( c4 < 0 || c4 > 63 ) {
+						throw new BoxRuntimeException( "Invalid UUencoded character" );
+					}
+					out.write( ( ( c3 << 6 ) | c4 ) & 0xFF );
+					decoded++;
+				}
+			}
+		}
+
+		return out.toByteArray();
 	}
 
 }

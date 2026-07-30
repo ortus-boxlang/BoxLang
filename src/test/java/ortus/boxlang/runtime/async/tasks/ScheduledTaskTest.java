@@ -476,4 +476,30 @@ class ScheduledTaskTest {
 		assertThat( variables.get( result ) ).isEqualTo( "what" );
 
 	}
+
+	@DisplayName( "call( DynamicObject, String ) registers without infinite recursion and executes the named method" )
+	@Test
+	public void testCallDynamicObjectWithMethodName() {
+		DynamicObject	dyno		= DynamicObject.of( new CallableTestTarget() );
+
+		ScheduledTask	registered	= task.call( dyno, "run" );
+		assertThat( registered ).isSameInstanceAs( task );
+
+		task.run( true );
+
+		@SuppressWarnings( "unchecked" )
+		java.util.Optional<Object> lastResult = ( java.util.Optional<Object> ) task.getStats().get( "lastResult" );
+		assertThat( lastResult.get() ).isEqualTo( "ran" );
+	}
+
+	/**
+	 * A named, public class so JVM reflection can resolve its public methods —
+	 * anonymous test-local classes are not public and fail reflective lookup.
+	 */
+	public static class CallableTestTarget {
+
+		public String run() {
+			return "ran";
+		}
+	}
 }

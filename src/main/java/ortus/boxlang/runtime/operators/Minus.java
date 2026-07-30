@@ -54,7 +54,7 @@ public class Minus implements IOperator {
 				return bsl.difference( rs.get() );
 			}
 		}
-		return invoke( NumberCaster.cast( true, left ), NumberCaster.cast( true, right ) );
+		return invoke( NumberCaster.cast( true, true, left ), NumberCaster.cast( true, true, right ) );
 	}
 
 	/**

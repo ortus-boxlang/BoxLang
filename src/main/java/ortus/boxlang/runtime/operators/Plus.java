@@ -59,7 +59,7 @@ public class Plus implements IOperator {
 				return ls.get().union( bsr );
 			}
 		}
-		return invoke( NumberCaster.cast( true, left ), NumberCaster.cast( true, right ) );
+		return invoke( NumberCaster.cast( true, true, left ), NumberCaster.cast( true, true, right ) );
 	}
 
 	/**

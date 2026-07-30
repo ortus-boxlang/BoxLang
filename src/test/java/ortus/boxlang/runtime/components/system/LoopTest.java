@@ -20,6 +20,9 @@ package ortus.boxlang.runtime.components.system;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -1073,6 +1076,63 @@ public class LoopTest {
 		    context );
 		assertThat( variables.getAsArray( Key.of( "result" ) ) ).contains( "foo" );
 		assertThat( variables.getAsArray( Key.of( "result" ) ) ).contains( "baz" );
+	}
+
+	@Test
+	public void testLoopFileLines() throws Exception {
+		Path file = Files.createTempFile( "boxlang-loop", ".txt" );
+		try {
+			Files.writeString( file, "one\ntwo\nthree" );
+			instance.executeSource(
+			    """
+			    result = [];
+			    bx:loop file="%s" item="line" index="row" {
+			    	result.append( row & ":" & line );
+			    }
+			    """.formatted( file ),
+			    context );
+			assertThat( variables.getAsArray( Key.of( "result" ) ) ).containsExactly( "1:one", "2:two", "3:three" ).inOrder();
+		} finally {
+			Files.deleteIfExists( file );
+		}
+	}
+
+	@Test
+	public void testLoopFileCharactersWithoutIndex() throws Exception {
+		Path file = Files.createTempFile( "boxlang-loop", ".txt" );
+		try {
+			Files.writeString( file, "abcdef" );
+			instance.executeSource(
+			    """
+			    result = [];
+			    bx:loop file="%s" item="chunk" characters="2" {
+			    	result.append( chunk );
+			    }
+			    """.formatted( file ),
+			    context );
+			assertThat( variables.getAsArray( Key.of( "result" ) ) ).containsExactly( "ab", "cd", "ef" ).inOrder();
+		} finally {
+			Files.deleteIfExists( file );
+		}
+	}
+
+	@Test
+	public void testLoopFileCharactersWithoutItem() throws Exception {
+		Path file = Files.createTempFile( "boxlang-loop", ".txt" );
+		try {
+			Files.writeString( file, "abcdef" );
+			instance.executeSource(
+			    """
+			    result = [];
+			    bx:loop file="%s" index="chunk" characters="2" {
+			    	result.append( chunk );
+			    }
+			    """.formatted( file ),
+			    context );
+			assertThat( variables.getAsArray( Key.of( "result" ) ) ).containsExactly( "ab", "cd", "ef" ).inOrder();
+		} finally {
+			Files.deleteIfExists( file );
+		}
 	}
 
 	@Test

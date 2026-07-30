@@ -68,7 +68,7 @@ public class Encrypt extends BIF {
 	 *
 	 * @argument.algorithm The algorithm to use for encryption. Default is AES
 	 *
-	 * @argument.encoding The encoding type to use for encoding the encrypted data. Default is Base64
+	 * @argument.encoding The encoding type to use for encoding the encrypted data. Default is UUEncode
 	 *
 	 * @argument.IVorSalt The initialization vector or salt to use for encryption.
 	 *

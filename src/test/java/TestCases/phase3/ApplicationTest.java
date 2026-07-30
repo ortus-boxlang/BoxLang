@@ -19,8 +19,11 @@ package TestCases.phase3;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.ZoneId;
 
 import org.junit.jupiter.api.AfterEach;
@@ -268,6 +271,133 @@ public class ApplicationTest {
 
 		ApplicationBoxContext	appContext	= context.getParentOfType( ApplicationBoxContext.class );
 		Application				app			= appContext.getApplication();
+		assertThat( app.getClassLoaderCount() ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "Reload java settings jar when reloadOnChange is enabled" )
+	@Test
+	public void testJavaSettingsReloadOnChange() throws Exception {
+		Path	sourceJar		= Path.of( "src/test/resources/libs/helloworld.jar" ).toAbsolutePath();
+		Path	tempDirectory	= Files.createTempDirectory( "boxlang-java-settings-" );
+		Path	targetJar		= tempDirectory.resolve( "helloworld.jar" );
+		Files.copy( sourceJar, targetJar, StandardCopyOption.REPLACE_EXISTING );
+
+		try {
+			String jarPath = targetJar.toString().replace( "\\", "/" );
+			instance.executeSource(
+			    "bx:application name=\"reloadOnChangeApp\" javaSettings={ loadPaths=[\"" + jarPath + "\"], reloadOnChange=true };",
+			    context );
+
+			RequestBoxContext	requestContext		= context.getRequestContext();
+			ClassLoader			firstClassLoader	= requestContext.getApplicationListener().getRequestClassLoader( requestContext );
+			Application			app					= context.getParentOfType( ApplicationBoxContext.class ).getApplication();
+
+			Files.copy( sourceJar, targetJar, StandardCopyOption.REPLACE_EXISTING );
+			Files.setLastModifiedTime( targetJar, java.nio.file.attribute.FileTime.from( Instant.now().plusSeconds( 2 ) ) );
+
+			instance.executeSource(
+			    "bx:application name=\"reloadOnChangeApp\" javaSettings={ loadPaths=[\"" + jarPath + "\"], reloadOnChange=true };",
+			    context );
+
+			ClassLoader secondClassLoader = requestContext.getApplicationListener().getRequestClassLoader( requestContext );
+			assertThat( secondClassLoader ).isNotSameInstanceAs( firstClassLoader );
+			assertThat( app.getClassLoaderCount() ).isEqualTo( 1 );
+			assertThat( app.getClassLoaders().containsValue( firstClassLoader ) ).isFalse();
+		} finally {
+			Files.deleteIfExists( targetJar );
+			Files.deleteIfExists( tempDirectory );
+		}
+	}
+
+	@DisplayName( "Do not reload java settings jar when reloadOnChange is disabled" )
+	@Test
+	public void testJavaSettingsNoReloadOnChange() throws Exception {
+		Path	sourceJar		= Path.of( "src/test/resources/libs/helloworld.jar" ).toAbsolutePath();
+		Path	tempDirectory	= Files.createTempDirectory( "boxlang-java-settings-" );
+		Path	targetJar		= tempDirectory.resolve( "helloworld.jar" );
+		Files.copy( sourceJar, targetJar, StandardCopyOption.REPLACE_EXISTING );
+
+		try {
+			String jarPath = targetJar.toString().replace( "\\", "/" );
+			instance.executeSource(
+			    "bx:application name=\"noReloadOnChangeApp\" javaSettings={ loadPaths=[\"" + jarPath + "\"], reloadOnChange=false };",
+			    context );
+
+			RequestBoxContext	requestContext		= context.getRequestContext();
+			ClassLoader			firstClassLoader	= requestContext.getApplicationListener().getRequestClassLoader( requestContext );
+			Application			app					= context.getParentOfType( ApplicationBoxContext.class ).getApplication();
+
+			Files.copy( sourceJar, targetJar, StandardCopyOption.REPLACE_EXISTING );
+			Files.setLastModifiedTime( targetJar, java.nio.file.attribute.FileTime.from( Instant.now().plusSeconds( 2 ) ) );
+
+			instance.executeSource(
+			    "bx:application name=\"noReloadOnChangeApp\" javaSettings={ loadPaths=[\"" + jarPath + "\"], reloadOnChange=false };",
+			    context );
+
+			ClassLoader secondClassLoader = requestContext.getApplicationListener().getRequestClassLoader( requestContext );
+			assertThat( secondClassLoader ).isSameInstanceAs( firstClassLoader );
+			assertThat( app.getClassLoaderCount() ).isEqualTo( 1 );
+		} finally {
+			Files.deleteIfExists( targetJar );
+			Files.deleteIfExists( tempDirectory );
+		}
+	}
+
+	@DisplayName( "Add a java settings jar during an application update" )
+	@Test
+	public void testJavaSettingsAddJar() throws Exception {
+		Path	helloWorldJar	= Path.of( "src/test/resources/libs/helloworld.jar" ).toAbsolutePath();
+		Path	caffeineJar		= Path.of( "src/test/resources/libs/caffeine-3.1.8.jar" ).toAbsolutePath();
+		String	helloWorldPath	= helloWorldJar.toString().replace( "\\", "/" );
+		String	caffeinePath	= caffeineJar.toString().replace( "\\", "/" );
+
+		instance.executeSource(
+		    "bx:application name=\"addJarApp\" javaSettings={ loadPaths=[\"" + helloWorldPath + "\"], reloadOnChange=false };",
+		    context );
+
+		RequestBoxContext	requestContext		= context.getRequestContext();
+		ClassLoader			firstClassLoader	= requestContext.getApplicationListener().getRequestClassLoader( requestContext );
+		Application			app					= context.getParentOfType( ApplicationBoxContext.class ).getApplication();
+
+		instance.executeSource(
+		    """
+		    bx:application name="addJarApp" javaSettings={
+		    	loadPaths=["%s", "%s"],
+		    	reloadOnChange=false
+		    };
+		    import com.github.benmanes.caffeine.cache.Caffeine;
+		    result = Caffeine.newBuilder();
+		    """.formatted( helloWorldPath, caffeinePath ),
+		    context );
+
+		ClassLoader secondClassLoader = requestContext.getApplicationListener().getRequestClassLoader( requestContext );
+		assertThat( secondClassLoader ).isNotSameInstanceAs( firstClassLoader );
+		assertThat( variables.get( result ) ).isNotNull();
+		assertThat( app.getClassLoaderCount() ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "Reuse the classloader when java settings paths are reordered" )
+	@Test
+	public void testJavaSettingsPathOrderDoesNotCreateDuplicateClassLoader() {
+		String	helloWorldPath	= Path.of( "src/test/resources/libs/helloworld.jar" ).toAbsolutePath().toString().replace( "\\", "/" );
+		String	caffeinePath	= Path.of( "src/test/resources/libs/caffeine-3.1.8.jar" ).toAbsolutePath().toString().replace( "\\", "/" );
+
+		instance.executeSource(
+		    "bx:application name=\"orderedJavaSettingsApp\" javaSettings={ loadPaths=[\"" + helloWorldPath + "\", \"" + caffeinePath
+		        + "\"], reloadOnChange=false };",
+		    context );
+
+		RequestBoxContext	requestContext		= context.getRequestContext();
+		ClassLoader			firstClassLoader	= requestContext.getApplicationListener().getRequestClassLoader( requestContext );
+		Application			app					= context.getParentOfType( ApplicationBoxContext.class ).getApplication();
+
+		instance.executeSource(
+		    "bx:application name=\"orderedJavaSettingsApp\" javaSettings={ loadPaths=[\"" + caffeinePath + "\", \"" + helloWorldPath
+		        + "\"], reloadOnChange=false };",
+		    context );
+
+		ClassLoader secondClassLoader = requestContext.getApplicationListener().getRequestClassLoader( requestContext );
+		assertThat( secondClassLoader ).isSameInstanceAs( firstClassLoader );
 		assertThat( app.getClassLoaderCount() ).isEqualTo( 1 );
 	}
 

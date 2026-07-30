@@ -155,9 +155,41 @@ public class ListAppendTest {
 		    result = "brad,jon".listAppend( null )
 		      """,
 		    context );
-		// even with ignore empty elements defaulting to true, we still get the trailing slash because that flag is only enforced
-		// when parsing the incoming list, not when generating the final list. Not sure what is correct, but this behavior does match CFML
-		assertThat( variables.getAsString( result ) ).isEqualTo( "brad,jon," );
+		// With includeEmptyFields defaulting to false, empty tokens are filtered from BOTH the
+		// incoming list AND the value being appended. Appending null (which coerces to "") yields
+		// no tokens to add, so the result is unchanged.
+		assertThat( variables.getAsString( result ) ).isEqualTo( "brad,jon" );
+	}
+
+	@DisplayName( "Can append a number in a string list" )
+	@Test
+	public void testAppendIgnoringEmptyEverywhere() {
+		instance.executeSource(
+		    """
+		        result = listAppend( "///Users//luis//", "//foo///bar////baz///", "/", false  )
+		    """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "Users/luis/foo/bar/baz" );
+	}
+
+	@DisplayName( "Matches Lucee: empties filtered from both list and value when includeEmptyFields=false" )
+	@Test
+	public void testAppendLuceeCompatEmptyHandling() {
+		// includeEmptyFields=false: empties filtered from BOTH the list and the value
+		instance.executeSource(
+		    """
+		    result = listAppend( "a,,b,", ",x,,y,", ",", false )
+		    """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "a,b,x,y" );
+
+		// includeEmptyFields=true: all empties preserved in both list and value
+		instance.executeSource(
+		    """
+		    result = listAppend( "a,,b,", ",x,,y,", ",", true )
+		    """,
+		    context );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "a,,b,,,x,,y," );
 	}
 
 }

@@ -35,9 +35,13 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.net.URI;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -50,6 +54,8 @@ import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.security.auth.x500.X500Principal;
 
@@ -74,6 +80,7 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -834,6 +841,65 @@ public class HTTPTest {
 		    .isEqualTo( "Unknown host: does-not-exist.also-does-not-exist: Name or service not known." );
 	}
 
+	@DisplayName( "It can handle malformed URLs with a complete result struct" )
+	@Test
+	public void testMalformedURLHasCompleteResult() {
+		// @formatter:off
+		instance.executeSource( """
+			bx:http method="GET" url="http://exa mple.com";
+
+			result = bxhttp;
+		""", context );
+		// @formatter:on
+
+		IStruct httpResult = variables.getAsStruct( result );
+
+		Assertions.assertTrue( httpResult.containsKey( Key.statusCode ) );
+		Assertions.assertTrue( httpResult.containsKey( Key.status_code ) );
+		Assertions.assertTrue( httpResult.containsKey( Key.statusText ) );
+		Assertions.assertTrue( httpResult.containsKey( Key.status_text ) );
+		Assertions.assertTrue( httpResult.containsKey( Key.fileContent ) );
+		Assertions.assertTrue( httpResult.containsKey( Key.errorDetail ) );
+		Assertions.assertTrue( httpResult.containsKey( Key.header ) );
+		Assertions.assertTrue( httpResult.containsKey( Key.responseHeader ) );
+		Assertions.assertTrue( httpResult.containsKey( Key.charset ) );
+		Assertions.assertTrue( httpResult.containsKey( Key.mimetype ) );
+		Assertions.assertTrue( httpResult.containsKey( Key.text ) );
+		Assertions.assertTrue( httpResult.containsKey( Key.cookies ) );
+		Assertions.assertTrue( httpResult.containsKey( Key.executionTime ) );
+		Assertions.assertTrue( httpResult.containsKey( Key.request ) );
+
+		assertThat( httpResult.getAsInteger( Key.statusCode ) ).isEqualTo( 500 );
+		assertThat( httpResult.getAsString( Key.fileContent ) ).isEqualTo( "" );
+		assertThat( httpResult.getAsString( Key.header ) ).isEqualTo( "" );
+		assertThat( httpResult.getAsString( Key.mimetype ) ).isEqualTo( "" );
+		assertThat( httpResult.getAsString( Key.errorDetail ) ).contains( "URISyntaxException" );
+	}
+
+	@DisplayName( "It ignores Java restricted request headers" )
+	@Test
+	public void testIgnoresRestrictedHeaders( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor( post( "/restricted-headers" )
+		    .willReturn( ok().withBody( "ok" ) ) );
+
+		instance.executeSource( String.format( """
+		                                       	bx:http method="POST" url="%s" {
+		                                       		bx:httpparam type="header" name="Connection" value="keep-alive";
+		                                       		bx:httpparam type="header" name="Host" value="example.com";
+		                                       		bx:httpparam type="header" name="Content-Length" value="123";
+		                                       		bx:httpparam type="header" name="Expect" value="100-continue";
+		                                       		bx:httpparam type="header" name="Upgrade" value="h2c";
+		                                       		bx:httpparam type="formfield" name="foo" value="bar";
+		                                       	}
+		                                       	result = bxhttp;
+		                                       """, wmRuntimeInfo.getHttpBaseUrl() + "/restricted-headers" ), context );
+
+		IStruct httpResult = variables.getAsStruct( result );
+		assertThat( httpResult.getAsInteger( Key.statusCode ) ).isEqualTo( 200 );
+		assertThat( httpResult.getAsString( Key.errorDetail ) ).isEqualTo( "" );
+		assertThat( httpResult.getAsString( Key.fileContent ) ).isEqualTo( "ok" );
+	}
+
 	@DisplayName( "It can handle timeouts" )
 	@Test
 	public void testTimeout( WireMockRuntimeInfo wmRuntimeInfo ) {
@@ -974,9 +1040,10 @@ public class HTTPTest {
 	@DisplayName( "It can process a basic authentication request" )
 	@Test
 	public void testBasicAuth( WireMockRuntimeInfo wmRuntimeInfo ) {
-		String	username			= "admin";
-		String	password			= "password";
-		String	base64Credentials	= Base64.getEncoder().encodeToString( ( username + ":" + password ).getBytes() );
+		String	username			= "admín";
+		String	password			= "pässword";
+		String	base64Credentials	= Base64.getEncoder()
+		    .encodeToString( ( username + ":" + password ).getBytes( StandardCharsets.UTF_8 ) );
 		stubFor(
 		    get( "/posts/1" )
 		        .withHeader( "Authorization", equalTo( "Basic " + base64Credentials ) )
@@ -1377,6 +1444,39 @@ public class HTTPTest {
 		assertThat( chunkTracker.getAsInteger( Key.of( "count" ) ) ).isGreaterThan( 0 );
 	}
 
+	@DisplayName( "It truncates retained streaming content without truncating callbacks" )
+	@Test
+	public void testStreamingRetainedContentLimit( WireMockRuntimeInfo wmRuntimeInfo ) {
+		String testContent = "First line\nSecond line\nThird line";
+		stubFor( get( "/test-streaming-limit" )
+		    .willReturn( ok( testContent ) ) );
+
+		// @formatter:off
+		instance.executeSource(
+		    String.format(
+		        """
+					callbackContent = "";
+					onChunkFn = ( chunkNumber, content ) => callbackContent &= content;
+					client = getBoxRuntime().getHttpService().getOrBuildClient(
+						"HTTP/2", false, 938, null, null, null, null, null, null
+					);
+					result = client.newRequest( "%s", getBoxContext() )
+						.maxStreamingContentLength( 12 )
+						.onChunk( onChunkFn )
+						.send();
+				""",
+		        wmRuntimeInfo.getHttpBaseUrl() + "/test-streaming-limit"
+		    ),
+		    context
+		);
+		// @formatter:on
+
+		IStruct httpResult = variables.getAsStruct( result );
+		assertThat( httpResult.getAsString( Key.fileContent ) ).hasLength( 12 );
+		assertThat( httpResult.getAsBoolean( Key.of( "streamContentTruncated" ) ) ).isTrue();
+		assertThat( variables.getAsString( Key.of( "callbackContent" ) ) ).contains( "Third line" );
+	}
+
 	@DisplayName( "It handles streaming with onComplete callback" )
 	@Test
 	public void testStreamingWithOnComplete( WireMockRuntimeInfo wmRuntimeInfo ) {
@@ -1541,7 +1641,7 @@ public class HTTPTest {
 					client = getBoxRuntime().getHttpService().getOrBuildClient(
 						"HTTP/2",
 						false,
-						null,
+						937,
 						null,
 						null,
 						null,
@@ -1661,6 +1761,8 @@ public class HTTPTest {
 
 		// HTTP error (500) is a successful request, just error status
 		assertThat( stats.getAsLong( Key.of( "successfulRequests" ) ) ).isGreaterThan( 0L );
+		assertThat( ( List<?> ) stats.get( Key.of( "observedHosts" ) ) ).contains( URI.create( baseURL ).getHost() );
+		assertThat( ( List<?> ) stats.get( Key.of( "observedHosts" ) ) ).contains( "invalid-host-that-does-not-exist-12345.com" );
 	}
 
 	@DisplayName( "Can track min and max execution times across multiple requests" )
@@ -2065,6 +2167,64 @@ public class HTTPTest {
 		assertThat( resultStruct.containsKey( Key.statusCode ) ).isTrue();
 		assertThat( resultStruct.containsKey( Key.fileContent ) ).isTrue();
 		assertThat( resultStruct.getAsInteger( Key.statusCode ) ).isEqualTo( 200 );
+	}
+
+	@DisplayName( "onHTTPError interceptor fires on network-level errors" )
+	@Test
+	public void testOnHTTPErrorInterceptorFiredOnNetworkError( WireMockRuntimeInfo wmRuntimeInfo ) {
+		// Stub a slow endpoint that will trigger a timeout (delay just over the 1s request timeout)
+		stubFor( get( urlEqualTo( "/interceptor-timeout" ) )
+		    .willReturn( ok( "slow" ).withFixedDelay( 1500 ) ) );
+
+		String			baseURL					= wmRuntimeInfo.getHttpBaseUrl();
+
+		// Counters / captured values set by the interceptor
+		AtomicBoolean	interceptorCalled		= new AtomicBoolean( false );
+		AtomicInteger	capturedStatusCode		= new AtomicInteger( 0 );
+		AtomicBoolean	resultHadErrorDetail	= new AtomicBoolean( false );
+
+		// Register an interceptor for ON_HTTP_ERROR
+		instance.getInterceptorService().register(
+		    data -> {
+			    interceptorCalled.set( true );
+			    IStruct res = ( IStruct ) data.get( Key.of( "result" ) );
+			    if ( res != null ) {
+				    Object sc = res.get( Key.statusCode );
+				    if ( sc instanceof Number n ) {
+					    capturedStatusCode.set( n.intValue() );
+				    }
+				    Object ed = res.get( Key.errorDetail );
+				    resultHadErrorDetail.set( ed != null && !ed.toString().isEmpty() );
+			    }
+			    return false;
+		    },
+		    BoxEvent.ON_HTTP_ERROR.key() );
+
+		try {
+			// Trigger a timeout – this will hit the ExecutionException/HttpTimeoutException
+			// catch branch inside BoxHttpRequest.invoke()
+			instance.executeSource(
+			    String.format(
+			        """
+			        	bx:http result="result" url="%s" timeout="1";
+			        """,
+			        baseURL + "/interceptor-timeout"
+			    ),
+			    context
+			);
+		} finally {
+			// Only remove the state we registered on
+			instance.getInterceptorService().removeState( BoxEvent.ON_HTTP_ERROR.key() );
+		}
+
+		// The interceptor must have been called even though the request failed
+		assertThat( interceptorCalled.get() ).isTrue();
+
+		// The result struct should carry an error status code (408 for timeout)
+		assertThat( capturedStatusCode.get() ).isAtLeast( 400 );
+
+		// The result struct should carry an errorDetail message
+		assertThat( resultHadErrorDetail.get() ).isTrue();
 	}
 
 	private X509Certificate generateSelfSignedCertificate( KeyPair keyPair ) throws Exception {

@@ -22,8 +22,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import java.io.PrintStream;
-import java.nio.file.Paths;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.commons.lang3.Strings;
@@ -37,7 +37,6 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
-import ortus.boxlang.runtime.logging.LoggingService;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -68,7 +67,7 @@ public class WriteLogTest {
 	@AfterAll
 	public static void teardown() {
 		System.setOut( originalOut );
-		LoggingService.getInstance().shutdownAppenders();
+		// LoggingService.getInstance().shutdownAppenders();
 		if ( FileSystemUtil.exists( logFilePath ) ) {
 			try {
 				FileSystemUtil.deleteFile( logFilePath );

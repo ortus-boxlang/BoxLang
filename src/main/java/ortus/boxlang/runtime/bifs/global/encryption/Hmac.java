@@ -35,9 +35,6 @@ public class Hmac extends BIF {
 	private static final String		DEFAULT_ENCODING	= "utf-8";
 	private static final Integer	DEFAULT_ITERATIONS	= 1;
 
-	// The hash item object - non-local so we can reassign it in streams
-	private static Object			hashItem			= null;
-
 	/**
 	 * Constructor
 	 */
