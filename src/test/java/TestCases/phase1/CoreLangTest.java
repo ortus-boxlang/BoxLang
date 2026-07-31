@@ -6997,4 +6997,33 @@ public class CoreLangTest {
 		assertThat( variables.get( result ) ).isEqualTo( true );
 	}
 
+	@Test
+	public void testCompoundAssignQueryColumns() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				myQuery = queryNew("name,age", "VarChar,Integer", [["Brad", 40]]);
+				myQuery.name &= " Wood"
+				myQuery.age += 1;
+				result = myQuery.name;
+				result2 = myQuery.age;
+
+				myQuery.age -= 5;
+				result3 = myQuery.age;
+
+				myQuery.age *= 2;
+				result4 = myQuery.age;
+
+				myQuery.age /= 4;
+				result5 = myQuery.age;
+			""",
+		    context );
+		// @formatter:on
+		assertThat( variables.get( result ) ).isEqualTo( "Brad Wood" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( 41 );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( 36 );
+		assertThat( variables.get( Key.of( "result4" ) ) ).isEqualTo( 72 );
+		assertThat( variables.get( Key.of( "result5" ) ) ).isEqualTo( 18 );
+	}
+
 }

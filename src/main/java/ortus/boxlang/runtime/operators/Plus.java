@@ -108,7 +108,7 @@ public class Plus implements IOperator {
 	 * @return The result
 	 */
 	public static Object invoke( IBoxContext context, Object target, Key name, Object right ) {
-		Object result = invoke( Referencer.get( context, target, name, false ), right );
+		Object result = invoke( context.unwrapQueryColumn( Referencer.get( context, target, name, false ) ), right );
 		Referencer.set( context, target, name, result );
 		return result;
 	}
