@@ -121,7 +121,7 @@ public abstract class BoxNode implements BoxVisitable {
 		this.parent = parent;
 		if ( parent != null && !parent.children.contains( this ) ) {
 			if ( parent.children == EMPTY_CHILDREN ) {
-				parent.children = new SmallChildrenList();
+				parent.children = new ArrayList<>( 2 );
 			}
 			parent.children.add( this );
 		}
@@ -506,7 +506,7 @@ public abstract class BoxNode implements BoxVisitable {
 		}
 		if ( newChild != null ) {
 			if ( this.children == EMPTY_CHILDREN ) {
-				this.children = new SmallChildrenList();
+				this.children = new ArrayList<>( 2 );
 			}
 			children.add( newChild );
 		}
@@ -524,9 +524,21 @@ public abstract class BoxNode implements BoxVisitable {
 		}
 		if ( newChildren != null && !newChildren.isEmpty() ) {
 			if ( this.children == EMPTY_CHILDREN ) {
-				this.children = new SmallChildrenList();
+				this.children = new ArrayList<>( newChildren.size() );
 			}
 			children.addAll( newChildren );
+		}
+	}
+
+	/**
+	 * Trim mutable child-list capacity throughout this node's graph.
+	 */
+	public void trimChildLists() {
+		for ( BoxNode child : this.children ) {
+			child.trimChildLists();
+		}
+		if ( this.children instanceof ArrayList<?> childList ) {
+			childList.trimToSize();
 		}
 	}
 

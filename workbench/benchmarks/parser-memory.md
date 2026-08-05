@@ -128,8 +128,9 @@ lists:
 | 2 | 61,351 |
 | 3 or more | 19,724 |
 
-`SmallChildrenList` stores the first two children inline and spills into an
-`ArrayList` for larger nodes while retaining mutable `List` behavior.
+An experimental `SmallChildrenList` stored the first two children inline and
+spilled into an `ArrayList` for larger nodes while retaining mutable `List`
+behavior.
 
 | Variant | Graph objects | Graph bytes | Bytes/node | Change from previous |
 |---|---:|---:|---:|---:|
@@ -171,6 +172,27 @@ The graph is now 40,075,288 bytes (43.32%) below the original 92,513,632-byte
 baseline. The 656-file structural manifest remains byte-for-byte identical to
 the preceding checkpoint.
 
-With every node's source text materialized and retained, the graph contains
+With every node's source text materialized and retained, this graph contains
 1,208,666 objects and 64,400,632 bytes, or 239.85 bytes per node. This is the
 same 5,342,600-byte reduction from the preceding materialized-source graph.
+
+## Trimmed standard child lists
+
+The final implementation removes `SmallChildrenList` in favor of standard
+`ArrayList` instances. Empty child lists remain the shared immutable `List.of()`
+instance. Every completed `ParsingResult` recursively calls `trimToSize()` on
+its mutable child lists, avoiding retained excess capacity without a custom
+collection implementation.
+
+| Variant | Graph objects | Graph bytes | Bytes/node | Change from previous |
+|---|---:|---:|---:|---:|
+| Inline positions with inline child storage | 1,028,644 | 52,438,344 | 195.30 | - |
+| Inline positions with trimmed `ArrayList` children | 1,128,666 | 53,680,224 | 199.93 | +1,241,880 (+2.37%) |
+
+The simpler representation costs 1.24 MB on the full corpus but remains
+38,833,408 bytes (41.98%) below the original 92,513,632-byte baseline. It avoids
+tuning the collection representation around one observed child-count
+distribution while retaining the majority of the measured parser-memory gain.
+
+With every node's source text materialized and retained, the final graph
+contains 1,308,688 objects and 65,642,512 bytes, or 244.48 bytes per node.

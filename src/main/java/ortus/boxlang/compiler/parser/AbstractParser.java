@@ -91,6 +91,9 @@ public abstract class AbstractParser {
 		if ( !this.subParser ) {
 			SemanticStringCanonicalizer.canonicalize( root );
 		}
+		if ( root != null ) {
+			root.trimChildLists();
+		}
 		return new ParsingResult( root, this.issues, this.comments );
 	}
 

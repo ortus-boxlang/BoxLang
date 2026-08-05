@@ -18,6 +18,7 @@
 package ortus.boxlang.compiler;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -25,6 +26,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.junit.jupiter.api.Test;
@@ -253,11 +255,14 @@ class ParserMemoryRepresentationTest {
 	}
 
 	@Test
-	void parentRegistrationPromotesSharedEmptyChildrenList() throws IOException {
-		BoxBinaryOperation operation = ( BoxBinaryOperation ) new BoxParser().parseExpression( "left + right" ).getRoot();
+	void parsingUsesArrayListsForChildrenAndImmutableSharedEmptyLists() throws IOException {
+		BoxBinaryOperation	operation	= ( BoxBinaryOperation ) new BoxParser().parseExpression( "left + right" ).getRoot();
+		BoxNode				leaf		= operation.getChildren().getFirst();
 
 		assertThat( operation.getChildren() ).hasSize( 2 );
-		assertThat( operation.getChildren().getFirst().getChildren() ).isEmpty();
+		assertThat( operation.getChildren() ).isInstanceOf( ArrayList.class );
+		assertThat( leaf.getChildren() ).isEmpty();
+		assertThrows( UnsupportedOperationException.class, () -> leaf.getChildren().add( operation ) );
 	}
 
 }
