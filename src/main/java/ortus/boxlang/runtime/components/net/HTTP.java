@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.components.Attribute;
@@ -52,6 +53,7 @@ public class HTTP extends Component {
 	private static final String			AUTHMODE_BASIC			= "BASIC";
 	private static final String			AUTHMODE_NTLM			= "NTLM";
 	private static final HttpService	httpService				= BoxRuntime.getInstance().getHttpService();
+	private static final AtomicLong		HTTP_REQUEST_COUNTER	= new AtomicLong();
 
 	/**
 	 * Binary request values
@@ -406,7 +408,7 @@ public class HTTP extends Component {
 			attributes.put( Key.proxyPort, IntegerCaster.cast( attributes.get( Key.proxyPort ) ) );
 		}
 		// Get a new or existing BoxHttpClient
-		BoxHttpClient	boxHttpClient	= httpService.getOrBuildClient(
+		BoxHttpClient	boxHttpClient		= httpService.getOrBuildClient(
 		    attributes.getAsString( Key.httpVersion ),
 		    attributes.getAsBoolean( Key.redirect ),
 		    IntegerCaster.cast( attributes.get( Key.connectionTimeout ) ),
@@ -418,8 +420,17 @@ public class HTTP extends Component {
 		    attributes.getAsString( Key.clientCertPassword )
 		);
 
+		long			requestStartedAt	= System.nanoTime();
+		String			requestId			= Long.toHexString( HTTP_REQUEST_COUNTER.incrementAndGet() );
+		httpService.getLogger().debug(
+		    "Starting HTTP REQUEST {} {URL='{}', method='{}'}",
+		    requestId,
+		    attributes.getAsString( Key.URL ),
+		    attributes.getAsString( Key.method )
+		);
+
 		// Make the HTTP request
-		IStruct			result			= ( IStruct ) boxHttpClient
+		IStruct result = ( IStruct ) boxHttpClient
 		    // Target URL and invocation context
 		    .newRequest( attributes.getAsString( Key.URL ), context )
 		    // HTTP Method (GET, POST, PUT, DELETE, etc.)
@@ -471,6 +482,13 @@ public class HTTP extends Component {
 		    .sse( attributes.getAsBoolean( Key.sse ) )
 		    // Invoke the request
 		    .send();
+
+		httpService.getLogger().debug(
+		    "HTTP REQUEST {} completed  {Status Code={} ,Time taken={}ms}",
+		    requestId,
+		    result.getAsInteger( Key.statusCode ),
+		    ( System.nanoTime() - requestStartedAt ) / 1_000_000
+		);
 
 		// Set the result variable before returning
 		ExpressionInterpreter.setVariable(
