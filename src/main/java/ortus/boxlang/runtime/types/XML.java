@@ -66,6 +66,7 @@ import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.bifs.global.string.UCFirst;
 import ortus.boxlang.runtime.config.segments.XMLConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.context.RequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
 import ortus.boxlang.runtime.dynamic.casters.NumberCaster;
@@ -253,7 +254,12 @@ public class XML implements Serializable, IStruct {
 	 * @return A struct with the default XML security and validation settings
 	 */
 	private static IStruct getDefaultXMLSettings() {
-		return BoxRuntime.getInstance().getConfiguration().xml.asStruct();
+		IBoxContext context = RequestBoxContext.getCurrent();
+		if ( context != null ) {
+			return context.getRequestContext().getApplicationListener().getSettings().getAsStruct( Key.XMLSettings );
+		} else {
+			return BoxRuntime.getInstance().getConfiguration().xml.asStruct();
+		}
 	}
 
 	/**
