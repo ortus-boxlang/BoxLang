@@ -50,7 +50,7 @@ public class XMLConfig implements IConfigSegment {
 	 * Allow external general entities in the XML document.
 	 * When false, external entities are disabled for security.
 	 * Defaults to {@code false}.
-	 * was {@code false} to mean "do not allow", which matches this default)
+	 * Old key: {@code externalGeneralEntities}
 	 */
 	public boolean	allowExternalEntities		= false;
 

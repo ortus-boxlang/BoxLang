@@ -55,7 +55,7 @@ public class XMLParse extends BIF {
 	 * 
 	 * @argument.caseSensitive Whether the XML parsing should be case-sensitive.
 	 * 
-	 * @argument.validator An optional validator to apply to the parsed XML. This can be a a string containing a DTD or Schema, the URL of a DTD or Schema file, or a struct of xmlFeatures directives
+	 * @argument.validator An optional validator to apply to the parsed XML. This can be a string containing a path or URL to an XSD schema file, or a struct of XML security settings
 	 * 
 	 * @argument.lenient Whether the XML parsing should be lenient.
 	 *
@@ -75,13 +75,13 @@ public class XMLParse extends BIF {
 			xml = StringCaster.cast( FileSystemUtil.read( xml ) );
 		}
 
-		Boolean	caseSensitive	= arguments.getAsBoolean( Key.caseSensitive );
-		Object	validator		= arguments.get( Key.validator );
-		Boolean	lenient			= arguments.getAsBoolean( Key.lenient );
-		IStruct validatorSettings = context.getRequestContext().getApplicationListener().getSettings().getAsStruct( Key.XMLSettings );
+		Boolean	caseSensitive		= arguments.getAsBoolean( Key.caseSensitive );
+		Object	validator			= arguments.get( Key.validator );
+		Boolean	lenient				= arguments.getAsBoolean( Key.lenient );
+		IStruct	validatorSettings	= context.getRequestContext().getApplicationListener().getSettings().getAsStruct( Key.XMLSettings );
 		if ( validator == null ) {
 			validator = validatorSettings;
-		} else if( validator instanceof IStruct validatorStruct ){
+		} else if ( validator instanceof IStruct validatorStruct ) {
 			// Normalize any setting names for backward compat
 			final IStruct normalized = XMLConfig.normalize( validatorStruct );
 			// make sure our application context defaults are applied to the validator struct, but do not override any explicitly passed values
@@ -96,12 +96,13 @@ public class XMLParse extends BIF {
 			}
 		}
 
-		// If lenient is explicitly passed, inject it as an override into the validator struct
-		if ( lenient ) {
+		// If lenient is explicitly passed, inject it as an override into the validator struct.
+		// The caller's value (true or false) is authoritative — it overrides any config-level default.
+		if ( lenient != null ) {
 			if ( validator instanceof IStruct validatorStruct ) {
-				validatorStruct.put( Key.lenientProcessing, true );
+				validatorStruct.put( Key.lenientProcessing, Boolean.TRUE.equals( lenient ) );
 			} else if ( validator == null ) {
-				validator = Struct.of( Key.lenientProcessing, true );
+				validator = Struct.of( Key.lenientProcessing, Boolean.TRUE.equals( lenient ) );
 			}
 		}
 

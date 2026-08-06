@@ -233,9 +233,11 @@ public class XML implements Serializable, IStruct {
 			    && xmlSettings.getAsBoolean( Key.lenientProcessing );
 
 			// When lenient is true, relax validation and well-formed XML requirements
-			// by skipping external DTD loading (which may be inaccessible) and disabling validation
 			factory.setFeature( "http://xml.org/sax/features/validation", !isLenient );
-			factory.setFeature( "http://apache.org/xml/features/nonvalidating/load-external-dtd", !isLenient );
+
+			// Always disable external DTD loading for security — even in lenient mode.
+			// External DTD fetching is an SSRF/XXE vector when disallowDoctypeDeclaration is false.
+			factory.setFeature( "http://apache.org/xml/features/nonvalidating/load-external-dtd", false );
 
 			builder = factory.newDocumentBuilder();
 		} catch ( ParserConfigurationException e ) {
