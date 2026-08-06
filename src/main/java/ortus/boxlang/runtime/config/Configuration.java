@@ -48,6 +48,7 @@ import ortus.boxlang.runtime.config.segments.QueriesConfig;
 import ortus.boxlang.runtime.config.segments.SchedulerConfig;
 import ortus.boxlang.runtime.config.segments.SecurityConfig;
 import ortus.boxlang.runtime.config.segments.WatcherConfig;
+import ortus.boxlang.runtime.config.segments.XMLConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
@@ -388,6 +389,11 @@ public class Configuration implements IConfigSegment {
 	 * The queries configuration — default query execution settings
 	 */
 	public QueriesConfig														queries								= new QueriesConfig();
+
+	/**
+	 * The XML parsing configuration — security and validation settings
+	 */
+	public XMLConfig															xml									= new XMLConfig();
 
 	/**
 	 * The container of runtimes configurations. Each runtime can collaborate settings by their name in this struct
@@ -837,6 +843,11 @@ public class Configuration implements IConfigSegment {
 			queries.process( StructCaster.cast( config.get( Key.queries ) ) );
 		}
 
+		// Process our xml configuration
+		if ( config.containsKey( Key.xml ) ) {
+			xml.process( StructCaster.cast( config.get( Key.xml ) ) );
+		}
+
 		return this;
 	}
 
@@ -1216,6 +1227,7 @@ public class Configuration implements IConfigSegment {
 		    Key.security, this.security.asStruct(),
 		    Key.scheduler, this.scheduler.asStruct(),
 		    Key.watcher, this.watcher.asStruct(),
+		    Key.xml, this.xml.asStruct(),
 		    Key.queries, this.queries.asStruct(),
 		    Key.timezone, this.timezone,
 		    Key.trustedCache, this.trustedCache,

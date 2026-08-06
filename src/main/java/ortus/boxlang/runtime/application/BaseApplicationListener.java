@@ -25,6 +25,7 @@ import java.util.function.Supplier;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.global.decision.IsJSON;
 import ortus.boxlang.runtime.config.Configuration;
+import ortus.boxlang.runtime.config.segments.XMLConfig;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext.ScopeSearchResult;
@@ -202,7 +203,7 @@ public abstract class BaseApplicationListener {
 	    Key.secureJsonPrefix, "",
 	    // Default Timezone
 	    Key.timezone, runtime.getConfiguration().timezone.getId(),
-	    Key.XMLSettings, XML.DEFAULT_XML_SETTINGS
+	    Key.XMLSettings, runtime.getConfiguration().xml.asStruct()
 	);
 
 	/**
@@ -284,6 +285,10 @@ public abstract class BaseApplicationListener {
 	 * @param settings The settings to update
 	 */
 	public void updateSettings( IStruct settings ) {
+		// Normalize XML settings using the config segment for backward compatibility
+		if ( settings.containsKey( Key.XMLSettings ) ) {
+			settings.put( Key.XMLSettings, XMLConfig.normalize( settings.getAsStruct( Key.XMLSettings ) ) );
+		}
 		this.settings.addAll( settings );
 		// If the settings have changed, see if the app and session contexts need updated or initialized as well
 		defineApplication();

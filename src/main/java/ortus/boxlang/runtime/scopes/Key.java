@@ -324,6 +324,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		directoryMove						= Key.of( "directoryMove" );
 	public static final Key		disabled							= Key.of( "disabled" );
 	public static final Key		disallowDoctypeDecl					= Key.of( "disallowDoctypeDecl" );
+	public static final Key		disallowDoctypeDeclaration			= Key.of( "disallowDoctypeDeclaration" );
 	public static final Key		disallowedBIFs						= Key.of( "disallowedBIFs" );
 	public static final Key		disallowedComponents				= Key.of( "disallowedComponents" );
 	public static final Key		disallowedFileOperationExtensions	= Key.of( "disallowedFileOperationExtensions" );
@@ -405,6 +406,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		expression2							= Key.of( "expression2" );
 	public static final Key		expressions							= Key.of( "expressions" );
 	public static final Key		extendedinfo						= Key.of( "extendedinfo" );
+	public static final Key		allowExternalEntities				= Key.of( "allowExternalEntities" );
 	public static final Key		external							= Key.of( "external" );
 	public static final Key		externalGeneralEntities				= Key.of( "externalGeneralEntities" );
 	public static final Key		externalOnly						= Key.of( "externalOnly" );
@@ -572,6 +574,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		len									= Key.of( "len" );
 	public static final Key		length								= Key.of( "length" );
 	public static final Key		lenient								= Key.of( "lenient" );
+	public static final Key		lenientProcessing					= Key.of( "lenientProcessing" );
 	public static final Key		level								= Key.of( "level" );
 	public static final Key		lexical								= Key.of( "lexical" );
 	public static final Key		limit								= Key.of( "limit" );
@@ -840,6 +843,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		second								= Key.of( "second" );
 	public static final Key		seconds								= Key.of( "seconds" );
 	public static final Key		secure								= Key.of( "secure" );
+	public static final Key		secureProcessing					= Key.of( "secureProcessing" );
 	public static final Key		security							= Key.of( "security" );
 	public static final Key		seed								= Key.of( "seed" );
 	public static final Key		seekable							= Key.of( "seekable" );
@@ -1054,6 +1058,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		XMLSettings							= Key.of( "XMLSettings" );
 	public static final Key		XMLString							= Key.of( "XMLString" );
 	public static final Key		XMLText								= Key.of( "XMLText" );
+	public static final Key		xml									= Key.of( "xml" );
 	public static final Key		XMLType								= Key.of( "XMLType" );
 	public static final Key		XMLValue							= Key.of( "XMLValue" );
 	public static final Key		xpath								= Key.of( "xpath" );

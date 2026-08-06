@@ -16,11 +16,14 @@ package ortus.boxlang.runtime.bifs.global.xml;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
+import ortus.boxlang.runtime.config.segments.XMLConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.XML;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
@@ -74,9 +77,18 @@ public class XMLParse extends BIF {
 
 		Boolean	caseSensitive	= arguments.getAsBoolean( Key.caseSensitive );
 		Object	validator		= arguments.get( Key.validator );
-		Boolean	lenient			= arguments.getAsBoolean( Key.of( "lenient" ) );
+		Boolean	lenient			= arguments.getAsBoolean( Key.lenient );
+		IStruct validatorSettings = context.getRequestContext().getApplicationListener().getSettings().getAsStruct( Key.XMLSettings );
 		if ( validator == null ) {
-			validator = context.getRequestContext().getApplicationListener().getSettings().get( Key.XMLSettings );
+			validator = validatorSettings;
+		} else if( validator instanceof IStruct validatorStruct ){
+			// Normalize any setting names for backward compat
+			final IStruct normalized = XMLConfig.normalize( validatorStruct );
+			// make sure our application context defaults are applied to the validator struct, but do not override any explicitly passed values
+			validatorSettings.keySet().stream().forEach( key -> {
+				normalized.putIfAbsent( key, validatorSettings.get( key ) );
+			} );
+			validator = normalized;
 		} else if ( validator instanceof String validatorString && !validatorString.trim().isEmpty() ) {
 			// If the validator is a local file path (not an HTTP/HTTPS URL), expand it
 			if ( !validatorString.toLowerCase().startsWith( "http" ) ) {
@@ -84,7 +96,16 @@ public class XMLParse extends BIF {
 			}
 		}
 
-		return new XML( xml, caseSensitive, validator, lenient );
+		// If lenient is explicitly passed, inject it as an override into the validator struct
+		if ( lenient ) {
+			if ( validator instanceof IStruct validatorStruct ) {
+				validatorStruct.put( Key.lenientProcessing, true );
+			} else if ( validator == null ) {
+				validator = Struct.of( Key.lenientProcessing, true );
+			}
+		}
+
+		return new XML( xml, caseSensitive, validator );
 	}
 
 }

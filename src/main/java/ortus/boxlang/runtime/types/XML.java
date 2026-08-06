@@ -64,6 +64,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.bifs.BoxMemberExpose;
 import ortus.boxlang.runtime.bifs.MemberDescriptor;
 import ortus.boxlang.runtime.bifs.global.string.UCFirst;
+import ortus.boxlang.runtime.config.segments.XMLConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
 import ortus.boxlang.runtime.dynamic.casters.KeyCaster;
@@ -104,60 +105,50 @@ public class XML implements Serializable, IStruct {
 	/**
 	 * Function service
 	 */
-	private static FunctionService	functionService			= BoxRuntime.getInstance().getFunctionService();
+	private static FunctionService	functionService		= BoxRuntime.getInstance().getFunctionService();
 
 	/**
 	 * Keys that are only valid for document nodes
 	 */
-	private static final Set<Key>	documentOnlyKeys		= Set.of( Key.XMLRoot, Key.XMLDocType );
+	private static final Set<Key>	documentOnlyKeys	= Set.of( Key.XMLRoot, Key.XMLDocType );
 
 	/**
 	 * Keys that are only valid for element nodes
 	 */
-	private static final Set<Key>	elementOnlyKeys			= Set.of( Key.XMLText, Key.XMLCdata, Key.XMLAttributes, Key.XMLChildren, Key.XMLParent,
+	private static final Set<Key>	elementOnlyKeys		= Set.of( Key.XMLText, Key.XMLCdata, Key.XMLAttributes, Key.XMLChildren, Key.XMLParent,
 	    Key.XMLNodes, Key.XMLNsPrefix, Key.XMLNsURI );
 
 	/**
 	 * Serial version UID
 	 */
-	private static final long		serialVersionUID		= 1L;
-
-	/**
-	 * Default XML security settings for parsing and validation
-	 */
-	public static final IStruct		DEFAULT_XML_SETTINGS	= Struct.of(
-	    Key.secure, true,
-	    Key.disallowDoctypeDecl, true,
-	    Key.externalGeneralEntities, false
-	);
+	private static final long		serialVersionUID	= 1L;
 
 	/**
 	 * CDATA contstants
 	 */
-	public static final String		cdataStart				= "<![CDATA[";
-	public static final String		cdataEnd				= "]]>";
+	public static final String		cdataStart			= "<![CDATA[";
+	public static final String		cdataEnd			= "]]>";
 
-	public static final String		xmlnsSeparator			= ":";
+	public static final String		xmlnsSeparator		= ":";
 
 	/**
 	 * Create a new XML Document from the given string
 	 */
 	public XML( String xmlData ) {
-		this( xmlData, false, DEFAULT_XML_SETTINGS, false );
+		this( xmlData, false, getDefaultXMLSettings() );
 	}
 
 	/**
-	 * Create a new XML Document from the given string with options for case sensitivity, validation, and leniency
+	 * Create a new XML Document from the given string with options for case sensitivity and validation
 	 * 
 	 * @param xmlData       The XML string to parse
 	 * @param caseSensitive Whether the XML parsing should be case-sensitive
-	 * @param validator     An optional struct of XML security settings to override the defaults
-	 * @param lenient       Whether the XML parsing should be lenient
+	 * @param validator     An optional struct of XML security settings to override the defaults, or a string path/URL to an XSD schema
 	 */
-	public XML( String xmlData, boolean caseSensitive, Object validator, boolean lenient ) {
+	public XML( String xmlData, boolean caseSensitive, Object validator ) {
 
 		this.type = caseSensitive ? TYPES.CASE_SENSITIVE : TYPES.DEFAULT;
-		DocumentBuilder	builder		= newDocumentBuilder( validator, lenient );
+		DocumentBuilder	builder		= newDocumentBuilder( validator );
 		InputSource		inputSource	= new InputSource( new StringReader( xmlData ) );
 		try {
 			node = builder.parse( inputSource );
@@ -186,19 +177,23 @@ public class XML implements Serializable, IStruct {
 	/**
 	 * Creates a new document builder for either parsing or document creation
 	 */
-	private static DocumentBuilder newDocumentBuilder( Object validator, boolean lenient ) {
+	private static DocumentBuilder newDocumentBuilder( Object validator ) {
 		DocumentBuilderFactory	factory	= DocumentBuilderFactory.newNSInstance();
 
 		final IStruct			xmlSettings;
 
 		if ( validator instanceof IStruct structValidator ) {
-			IStruct merged = StructCaster.cast( structValidator );
-			DEFAULT_XML_SETTINGS.keySet().forEach( key -> {
-				merged.putIfAbsent( key, DEFAULT_XML_SETTINGS.get( key ) );
+			IStruct	merged		= StructCaster.cast( structValidator );
+			// Normalize first to map any legacy keys to canonical keys
+			IStruct	normalized	= XMLConfig.normalize( merged );
+			// Then fill in defaults for any canonical keys not already set
+			IStruct	defaults	= getDefaultXMLSettings();
+			defaults.keySet().forEach( key -> {
+				normalized.putIfAbsent( key, defaults.get( key ) );
 			} );
-			xmlSettings = merged;
+			xmlSettings = normalized;
 		} else {
-			xmlSettings = DEFAULT_XML_SETTINGS;
+			xmlSettings = getDefaultXMLSettings();
 		}
 
 		if ( validator instanceof String validatorString && !validatorString.trim().isEmpty() ) {
@@ -221,28 +216,42 @@ public class XML implements Serializable, IStruct {
 		DocumentBuilder builder;
 		try {
 			// Security settings are always enforced regardless of leniency
-			if ( xmlSettings.containsKey( Key.secure ) ) {
-				factory.setFeature( XMLConstants.FEATURE_SECURE_PROCESSING, xmlSettings.getAsBoolean( Key.secure ) );
+			if ( xmlSettings.containsKey( Key.secureProcessing ) ) {
+				factory.setFeature( XMLConstants.FEATURE_SECURE_PROCESSING, xmlSettings.getAsBoolean( Key.secureProcessing ) );
 			}
-			if ( xmlSettings.containsKey( Key.disallowDoctypeDecl ) ) {
+			if ( xmlSettings.containsKey( Key.disallowDoctypeDeclaration ) ) {
 				factory.setFeature( "http://apache.org/xml/features/disallow-doctype-decl",
-				    xmlSettings.getAsBoolean( Key.disallowDoctypeDecl ) );
+				    xmlSettings.getAsBoolean( Key.disallowDoctypeDeclaration ) );
 			}
-			if ( xmlSettings.containsKey( Key.externalGeneralEntities ) ) {
+			if ( xmlSettings.containsKey( Key.allowExternalEntities ) ) {
 				factory.setFeature( "http://xml.org/sax/features/external-general-entities",
-				    xmlSettings.getAsBoolean( Key.externalGeneralEntities ) );
+				    xmlSettings.getAsBoolean( Key.allowExternalEntities ) );
 			}
+
+			// Determine lenient mode from the struct
+			boolean isLenient = xmlSettings.containsKey( Key.lenientProcessing )
+			    && xmlSettings.getAsBoolean( Key.lenientProcessing );
 
 			// When lenient is true, relax validation and well-formed XML requirements
 			// by skipping external DTD loading (which may be inaccessible) and disabling validation
-			factory.setFeature( "http://xml.org/sax/features/validation", !lenient );
-			factory.setFeature( "http://apache.org/xml/features/nonvalidating/load-external-dtd", !lenient );
+			factory.setFeature( "http://xml.org/sax/features/validation", !isLenient );
+			factory.setFeature( "http://apache.org/xml/features/nonvalidating/load-external-dtd", !isLenient );
 
 			builder = factory.newDocumentBuilder();
 		} catch ( ParserConfigurationException e ) {
 			throw new BoxRuntimeException( "Error creating XML document builder", e );
 		}
 		return builder;
+	}
+
+	/**
+	 * Get the default XML settings from the XMLConfig segment.
+	 * This is the canonical source of XML parsing defaults for the runtime.
+	 *
+	 * @return A struct with the default XML security and validation settings
+	 */
+	private static IStruct getDefaultXMLSettings() {
+		return BoxRuntime.getInstance().getConfiguration().xml.asStruct();
 	}
 
 	/**
@@ -542,7 +551,7 @@ public class XML implements Serializable, IStruct {
 
 		// If we were initialized with an empty XML object and an attempt is made to access a property, then we need to create the document now.
 		if ( node == null ) {
-			node = newDocumentBuilder( DEFAULT_XML_SETTINGS, false ).newDocument();
+			node = newDocumentBuilder( getDefaultXMLSettings() ).newDocument();
 			if ( name.equals( Key.XMLRoot ) ) {
 				return this;
 			} else if ( name.equals( Key.XMLAttributes ) ) {
