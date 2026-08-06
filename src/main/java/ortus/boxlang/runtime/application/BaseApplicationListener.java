@@ -201,7 +201,8 @@ public abstract class BaseApplicationListener {
 	    Key.secureJson, false,
 	    Key.secureJsonPrefix, "",
 	    // Default Timezone
-	    Key.timezone, runtime.getConfiguration().timezone.getId()
+	    Key.timezone, runtime.getConfiguration().timezone.getId(),
+	    Key.XMLSettings, XML.DEFAULT_XML_SETTINGS
 	);
 
 	/**

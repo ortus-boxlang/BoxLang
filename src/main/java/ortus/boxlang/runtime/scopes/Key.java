@@ -323,6 +323,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		directoryList						= Key.of( "directoryList" );
 	public static final Key		directoryMove						= Key.of( "directoryMove" );
 	public static final Key		disabled							= Key.of( "disabled" );
+	public static final Key		disallowDoctypeDecl					= Key.of( "disallowDoctypeDecl" );
 	public static final Key		disallowedBIFs						= Key.of( "disallowedBIFs" );
 	public static final Key		disallowedComponents				= Key.of( "disallowedComponents" );
 	public static final Key		disallowedFileOperationExtensions	= Key.of( "disallowedFileOperationExtensions" );
@@ -405,6 +406,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		expressions							= Key.of( "expressions" );
 	public static final Key		extendedinfo						= Key.of( "extendedinfo" );
 	public static final Key		external							= Key.of( "external" );
+	public static final Key		externalGeneralEntities				= Key.of( "externalGeneralEntities" );
 	public static final Key		externalOnly						= Key.of( "externalOnly" );
 	public static final Key		exclude								= Key.of( "exclude" );
 	public static final Key		extrainfo							= Key.of( "extrainfo" );
@@ -569,6 +571,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		leaveIndex							= Key.of( "leaveIndex" );
 	public static final Key		len									= Key.of( "len" );
 	public static final Key		length								= Key.of( "length" );
+	public static final Key		lenient								= Key.of( "lenient" );
 	public static final Key		level								= Key.of( "level" );
 	public static final Key		lexical								= Key.of( "lexical" );
 	public static final Key		limit								= Key.of( "limit" );
@@ -1048,6 +1051,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		XMLNsURI							= Key.of( "XMLNsURI" );
 	public static final Key		XMLParent							= Key.of( "XMLParent" );
 	public static final Key		XMLRoot								= Key.of( "XMLRoot" );
+	public static final Key		XMLSettings							= Key.of( "XMLSettings" );
 	public static final Key		XMLString							= Key.of( "XMLString" );
 	public static final Key		XMLText								= Key.of( "XMLText" );
 	public static final Key		XMLType								= Key.of( "XMLType" );

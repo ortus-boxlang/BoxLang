@@ -35,7 +35,10 @@ public class XMLParse extends BIF {
 	public XMLParse() {
 		super();
 		this.declaredArguments = new Argument[] {
-		    new Argument( false, "string", Key.XML )
+		    new Argument( false, "string", Key.XML ),
+		    new Argument( false, "boolean", Key.caseSensitive, true ),
+		    new Argument( false, "any", Key.validator ),
+		    new Argument( false, "boolean", Key.lenient, true )
 		};
 	}
 
@@ -44,6 +47,14 @@ public class XMLParse extends BIF {
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 * 
+	 * @argument.XML The XML string to parse.
+	 * 
+	 * @argument.caseSensitive Whether the XML parsing should be case-sensitive.
+	 * 
+	 * @argument.validator An optional validator to apply to the parsed XML. This can be a a string containing a DTD or Schema, the URL of a DTD or Schema file, or a struct of xmlFeatures directives
+	 * 
+	 * @argument.lenient Whether the XML parsing should be lenient.
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
@@ -60,7 +71,20 @@ public class XMLParse extends BIF {
 		if ( !xml.trim().startsWith( "<" ) ) {
 			xml = StringCaster.cast( FileSystemUtil.read( xml ) );
 		}
-		return new XML( xml );
+
+		Boolean	caseSensitive	= arguments.getAsBoolean( Key.caseSensitive );
+		Object	validator		= arguments.get( Key.validator );
+		Boolean	lenient			= arguments.getAsBoolean( Key.of( "lenient" ) );
+		if ( validator == null ) {
+			validator = context.getRequestContext().getApplicationListener().getSettings().get( Key.XMLSettings );
+		} else if ( validator instanceof String validatorString && !validatorString.trim().isEmpty() ) {
+			// If the validator is a local file path (not an HTTP/HTTPS URL), expand it
+			if ( !validatorString.toLowerCase().startsWith( "http" ) ) {
+				validator = FileSystemUtil.expandPath( context, validatorString ).absolutePath().toString();
+			}
+		}
+
+		return new XML( xml, caseSensitive, validator, lenient );
 	}
 
 }

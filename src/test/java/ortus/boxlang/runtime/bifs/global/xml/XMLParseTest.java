@@ -87,8 +87,13 @@ public class XMLParseTest {
 	public void testCanParseWithInaccessibleDTD() {
 		instance.executeSource(
 		    """
-		    result = XMLParse( '<!DOCTYPE root SYSTEM "http://www.mach-ii.com/dtds/mach-ii_1_9_0.dtd"><root><brad name="wood" /></root>' );
-		    """,
+		       result = XMLParse(
+		    	xml='<!DOCTYPE root SYSTEM "http://www.mach-ii.com/dtds/mach-ii_1_9_0.dtd"><root><brad name="wood" /></root>',
+		    	caseSensitive=false,
+		    	validator={ "disallowDoctypeDecl": false },
+		    	lenient=true
+		    );
+		       """,
 		    context
 		);
 		assertThat( variables.get( result ) ).isInstanceOf( XML.class );
