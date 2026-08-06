@@ -51,6 +51,7 @@ import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.services.CacheService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.util.ConfigSecretUtil;
 
 public class ApplicationTest {
 
@@ -136,6 +137,33 @@ public class ApplicationTest {
 		assertThat( variables.get( result ) ).isInstanceOf( IStruct.class );
 		assertThat( variables.getAsStruct( result ).get( "name" ) ).isEqualTo( "" );
 		assertThat( variables.getAsStruct( result ).get( "sessionmanagement" ).toString() ).isEqualTo( "false" );
+	}
+
+	/**
+	 * Verifies application settings decrypt prefixed values before datasource and cache configuration is consumed.
+	 */
+	@DisplayName( "Application settings decrypt prefixed values" )
+	@Test
+	public void testEncryptedApplicationSettings() {
+		variables.put( Key.of( "encryptedDatasourcePassword" ), ConfigSecretUtil.encryptWithPrefix( "datasource-password" ) );
+		variables.put( Key.of( "encryptedCachePassword" ), ConfigSecretUtil.encryptWithPrefix( "cache-password" ) );
+
+		instance.executeSource(
+		    """
+		    bx:application
+		        name="encryptedApplicationSettings"
+		        datasource={ driver="derby", password=encryptedDatasourcePassword }
+		        caches={ encrypted={ provider="BoxCacheProvider", properties={ password=encryptedCachePassword } } };
+		    """,
+		    context
+		);
+
+		IStruct settings = context.getRequestContext().getApplicationListener().getSettings();
+		assertThat( settings.getAsStruct( Key.datasource ).getAsString( Key.password ) ).isEqualTo( "datasource-password" );
+		assertThat( settings.getAsStruct( Key.caches ).getAsStruct( Key.of( "encrypted" ) ).getAsStruct( Key.properties ).getAsString( Key.password ) )
+		    .isEqualTo( "cache-password" );
+		assertThat( context.getConfig().getAsStruct( Key.datasources ).getAsStruct( Key.bxDefaultDatasource ).getAsString( Key.password ) )
+		    .isEqualTo( "datasource-password" );
 	}
 
 	@DisplayName( "java settings setup" )

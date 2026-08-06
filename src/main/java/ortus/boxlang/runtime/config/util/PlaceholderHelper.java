@@ -17,6 +17,7 @@
  */
 package ortus.boxlang.runtime.config.util;
 
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -24,7 +25,6 @@ import java.util.regex.Pattern;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.Key;
-import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -165,7 +165,7 @@ public class PlaceholderHelper {
 	}
 
 	/**
-	 * Recursively replace all placeholders throughout a tree made up of BoxLang Arrays and Structs
+	 * Recursively replace all placeholders throughout a tree made up of Maps and Lists.
 	 * Uses the default placeholder map
 	 *
 	 * @param object Object to populate into tree placeholders.
@@ -178,7 +178,7 @@ public class PlaceholderHelper {
 	}
 
 	/**
-	 * Recursively replace all placeholders throughout a tree made up of BoxLang Arrays and Structs
+	 * Recursively replace all placeholders throughout a tree made up of Maps and Lists.
 	 * You can provide a custom placeholder map
 	 *
 	 * @param object Object to populate into tree placeholders.
@@ -189,22 +189,19 @@ public class PlaceholderHelper {
 	 */
 	@SuppressWarnings( "unchecked" )
 	public static <T> T resolveAll( T object, IStruct map ) {
-		if ( object instanceof Struct struct ) {
-			for ( Key key : struct.keySet() ) {
-				// Allow object keys to be placeholders as well
-				String	newKey	= PlaceholderHelper.resolve( key.getName(), map );
-				Object	value	= struct.get( key );
-				if ( !newKey.equals( key.getName() ) ) {
-					// Remove the old key
-					struct.remove( key );
-					key = Key.of( newKey );
-				}
-				struct.put( key, PlaceholderHelper.resolveAll( value, map ) );
+		if ( object instanceof Map<?, ?> rawMap ) {
+			Map<Object, Object> configMap = ( Map<Object, Object> ) rawMap;
+			for ( Object key : List.copyOf( configMap.keySet() ) ) {
+				Object	value		= configMap.remove( key );
+				String	newKey		= resolve( key.toString(), map );
+				Object	resolvedKey	= key instanceof Key ? Key.of( newKey ) : newKey;
+				configMap.put( resolvedKey, PlaceholderHelper.resolveAll( value, map ) );
 			}
 			return object;
-		} else if ( object instanceof Array array ) {
-			for ( int i = 0; i < array.size(); i++ ) {
-				array.set( i, PlaceholderHelper.resolveAll( array.get( i ), map ) );
+		} else if ( object instanceof List<?> rawList ) {
+			List<Object> configList = ( List<Object> ) rawList;
+			for ( int i = 0; i < configList.size(); i++ ) {
+				configList.set( i, PlaceholderHelper.resolveAll( configList.get( i ), map ) );
 			}
 			return object;
 		} else if ( object instanceof String strObj ) {

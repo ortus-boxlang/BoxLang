@@ -56,6 +56,10 @@ import ortus.boxlang.runtime.types.util.StructUtil;
 		"password": "${env.MYSQL_PASSWORD}"
 	}
  * </pre>
+ *
+ * <p>
+ * Any string value can be stored as plaintext or encrypted. To encrypt a value, prefix the Base64-encoded encrypted value with
+ * {@code bxsecret:}. Values are decrypted while the configuration file is loaded, before datasource processing begins.
  */
 public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSegment {
 

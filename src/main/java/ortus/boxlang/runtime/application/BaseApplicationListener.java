@@ -56,6 +56,7 @@ import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.JSONUtil;
+import ortus.boxlang.runtime.util.ConfigSecretUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
@@ -278,11 +279,12 @@ public abstract class BaseApplicationListener {
 	}
 
 	/**
-	 * Update the settings for this application
+	 * Decrypt and update the settings for this application.
 	 *
 	 * @param settings The settings to update
 	 */
 	public void updateSettings( IStruct settings ) {
+		ConfigSecretUtil.decryptValues( settings );
 		this.settings.addAll( settings );
 		// If the settings have changed, see if the app and session contexts need updated or initialized as well
 		defineApplication();

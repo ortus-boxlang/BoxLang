@@ -578,6 +578,8 @@
 	},
 	// These are the security settings for the runtime
 	"security": {
+		// The encryption algorithm used for bxsecret: configuration values
+		"secretAlgorithm": "AES",
 		// All regex patterns are case-insensitive
 		// A list of regex patterns that will match class paths, and if matched, execution will be disallowed
 		// This applies to import statements, createObject, new, and class creation

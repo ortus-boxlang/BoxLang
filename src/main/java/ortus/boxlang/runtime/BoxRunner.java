@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
@@ -34,8 +35,6 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.Strings;
 
 import com.fasterxml.jackson.jr.ob.JSONObjectException;
-
-import java.io.File;
 
 import ortus.boxlang.compiler.BXCompiler;
 import ortus.boxlang.compiler.CFTranspiler;
@@ -63,6 +62,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxLicenseException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
+import ortus.boxlang.runtime.util.ConfigSecretUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 import ortus.boxlang.runtime.util.Timer;
 
@@ -103,13 +103,14 @@ public class BoxRunner {
 
 	/**
 	 * A list of action commands that can be executed by the BoxRunner:
-	 * compile, cftranspile, featureAudit, schedule
+	 * compile, cftranspile, featureAudit, format, generateSecret, schedule
 	 */
 	private static final List<String>	ACTION_COMMANDS				= List.of(
 	    "compile",
 	    "cftranspile",
 	    "featureaudit",
 	    "format",
+	    "generatesecret",
 	    "schedule" );
 
 	/**
@@ -297,7 +298,7 @@ public class BoxRunner {
 	 * @param options The CLIOptions object with the parsed options
 	 * @param runtime The BoxRuntime object
 	 */
-	private static void runActionCommand( CLIOptions options, BoxRuntime runtime ) {
+	static void runActionCommand( CLIOptions options, BoxRuntime runtime ) {
 		switch ( options.actionCommand().toLowerCase() ) {
 			case "compile" :
 				BXCompiler.main( options.cliArgs().toArray( new String[ 0 ] ) );
@@ -310,6 +311,9 @@ public class BoxRunner {
 				break;
 			case "format" :
 				PrettyPrint.main( options.cliArgs().toArray( new String[ 0 ] ) );
+				break;
+			case "generatesecret" :
+				generateSecret( options.cliArgs() );
 				break;
 			case "schedule" :
 				// Check for help first
@@ -328,6 +332,19 @@ public class BoxRunner {
 			default :
 				throw new BoxRuntimeException( "Unknown action command: " + options.actionCommand() );
 		}
+	}
+
+	/**
+	 * Encrypts plaintext with the active runtime's configured secret and prints the resulting {@code bxsecret:} value.
+	 *
+	 * @param plaintextParts The command-line arguments that form the plaintext value.
+	 */
+	private static void generateSecret( List<String> plaintextParts ) {
+		if ( plaintextParts.isEmpty() ) {
+			throw new BoxRuntimeException( "generatesecret command requires plaintext. Use: boxlang generatesecret <PLAINTEXT>" );
+		}
+
+		System.out.print( ConfigSecretUtil.encryptWithPrefix( String.join( " ", plaintextParts ) ) );
 	}
 
 	/**
@@ -790,6 +807,7 @@ public class BoxRunner {
 		System.out.println( "                                     Use: boxlang cftranspile --help" );
 		System.out.println( "  featureaudit                    🔍 Audit code for BoxLang feature compatibility" );
 		System.out.println( "                                     Use: boxlang featureaudit --help" );
+		System.out.println( "  generatesecret <PLAINTEXT>      🔐 Generate a bxsecret value using the active runtime configuration" );
 		System.out.println( "  schedule <SCHEDULER_FILE>       ⏰ Run a BoxLang scheduler from file" );
 		System.out.println( "                                     Use: boxlang schedule --help" );
 		System.out.println();
@@ -821,6 +839,9 @@ public class BoxRunner {
 		System.out.println();
 		System.out.println( "  # 🔍 Audit code features" );
 		System.out.println( "  boxlang featureaudit --source ./myapp --output report.json" );
+		System.out.println();
+		System.out.println( "  # 🔐 Generate an encrypted configuration value" );
+		System.out.println( "  boxlang generatesecret \"my-sensitive-value\"" );
 		System.out.println();
 		System.out.println( "  # 🔍 Format Code" );
 		System.out.println( "  boxlang format ./" );
