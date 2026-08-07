@@ -256,7 +256,7 @@ public class XML implements Serializable, IStruct {
 	private static IStruct getDefaultXMLSettings() {
 		IBoxContext context = RequestBoxContext.getCurrent();
 		if ( context != null ) {
-			return context.getRequestContext().getApplicationListener().getSettings().getAsStruct( Key.XMLSettings );
+			return context.getConfig().getAsStruct( Key.applicationSettings ).getAsStruct( Key.XMLSettings );
 		} else {
 			return BoxRuntime.getInstance().getConfiguration().xml.asStruct();
 		}

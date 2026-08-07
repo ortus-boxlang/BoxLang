@@ -78,7 +78,7 @@ public class XMLParse extends BIF {
 		Boolean	caseSensitive		= arguments.getAsBoolean( Key.caseSensitive );
 		Object	validator			= arguments.get( Key.validator );
 		Boolean	lenient				= arguments.getAsBoolean( Key.lenient );
-		IStruct	validatorSettings	= context.getRequestContext().getApplicationListener().getSettings().getAsStruct( Key.XMLSettings );
+		IStruct	validatorSettings	= context.getConfig().getAsStruct( Key.applicationSettings ).getAsStruct( Key.XMLSettings );
 		if ( validator == null ) {
 			validator = validatorSettings;
 		} else if ( validator instanceof IStruct validatorStruct ) {
