@@ -77,7 +77,8 @@ public class XMLTransform extends BIF {
 		if ( xmlAny instanceof XML xmlCast ) {
 			xml = xmlCast;
 		} else {
-			xml = new XML( StringCaster.cast( xmlAny ) );
+			IStruct xmlSettings = context.getConfig().getAsStruct( Key.applicationSettings ).getAsStruct( Key.XMLSettings );
+			xml = new XML( StringCaster.cast( xmlAny ), false, xmlSettings );
 		}
 		String xsl = arguments.getAsString( Key.XSL );
 		// Is not XML. Must be file or URL
