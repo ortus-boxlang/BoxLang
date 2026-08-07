@@ -384,6 +384,9 @@ public class BoxRuntime implements java.io.Closeable {
 
 		this.configuration.process( loader.mergeEnvironmentOverrides( overrideConfig ) );
 
+		// Materialize the seed after all overrides are applied so legacy integrations can read the runtime-home seed file during startup.
+		this.configuration.security.getSecretSeed();
+
 		// Announce so any runtime additions - after all configuration settings have been applied
 		this.interceptorService.announce(
 		    BoxEvent.ON_CONFIGURATION_LOAD,
