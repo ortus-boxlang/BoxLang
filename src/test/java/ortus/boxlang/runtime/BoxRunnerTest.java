@@ -22,18 +22,44 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.List;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.runtime.config.CLIOptions;
+import ortus.boxlang.runtime.util.ConfigSecretUtil;
 
 class BoxRunnerTest {
 
 	@Test
 	void appCanGreat() {
 		new BoxRunner();
+	}
+
+	/**
+	 * Verifies the generateSecret action produces a prefixed value that the active runtime can decrypt.
+	 */
+	@DisplayName( "generateSecret encrypts plaintext with the active runtime configuration" )
+	@Test
+	void testGenerateSecretAction() {
+		BoxRuntime				runtime		= BoxRuntime.getInstance( true );
+		CLIOptions				options		= new CLIOptions( null, null, null, null, false, false, null, false, List.of( "my-sensitive-value" ),
+		    new String[ 0 ], null, "generatesecret" );
+		PrintStream				original	= System.out;
+		ByteArrayOutputStream	capture		= new ByteArrayOutputStream();
+		System.setOut( new PrintStream( capture ) );
+		try {
+			BoxRunner.runActionCommand( options, runtime );
+		} finally {
+			System.setOut( original );
+		}
+
+		String secret = capture.toString().trim();
+		assertThat( ConfigSecretUtil.isEncrypted( secret ) ).isTrue();
+		assertThat( ConfigSecretUtil.decryptIfEncrypted( secret ) ).isEqualTo( "my-sensitive-value" );
 	}
 
 	@DisplayName( "It can execute a task template" )

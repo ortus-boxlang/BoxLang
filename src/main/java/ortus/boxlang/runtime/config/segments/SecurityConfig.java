@@ -17,6 +17,10 @@
  */
 package ortus.boxlang.runtime.config.segments;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -24,11 +28,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.util.PropertyHelper;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.EncryptionUtil;
 
 /**
  * The SecurityConfig class is a configuration segment that is used to define the security settings for the BoxLang runtime.
@@ -39,6 +46,16 @@ public class SecurityConfig implements IConfigSegment {
 	 * A flag indicating whether the server system scope should be populated.
 	 */
 	public boolean				populateServerSystemScope			= true;
+
+	/**
+	 * The algorithm used to encrypt configuration secrets with the runtime seed.
+	 */
+	public String				secretAlgorithm						= EncryptionUtil.DEFAULT_ENCRYPTION_ALGORITHM;
+
+	/**
+	 * The runtime seed used to encrypt configuration secrets.
+	 */
+	private String				secretSeed;
 
 	/**
 	 * A list of disallowed imports for the runtime
@@ -87,6 +104,53 @@ public class SecurityConfig implements IConfigSegment {
 	 */
 	public SecurityConfig() {
 		// Default all things
+	}
+
+	/**
+	 * Gets the base key algorithm from the configured cipher transformation.
+	 * Cipher transformations may include a mode and padding, such as {@code AES/GCM/NoPadding}, but the key generator accepts only the base algorithm ({@code AES}).
+	 *
+	 * @return The base algorithm used to generate the runtime seed.
+	 */
+	private String getSecretKeyAlgorithm() {
+		// KeyGenerator accepts AES, not a complete transformation such as AES/GCM/NoPadding.
+		return this.secretAlgorithm.split( "/", 2 )[ 0 ];
+	}
+
+	/**
+	 * Gets the runtime seed used to encrypt configuration secrets.
+	 *
+	 * @return The Base64-encoded runtime seed.
+	 */
+	public String getSecretSeed() {
+		if ( this.secretSeed == null ) {
+			synchronized ( this ) {
+				if ( this.secretSeed == null ) {
+					this.secretSeed = readOrCreateSecretSeed();
+				}
+			}
+		}
+		return this.secretSeed;
+	}
+
+	/**
+	 * Reads the runtime seed from disk, creating it with the configured algorithm when missing.
+	 *
+	 * @return The Base64-encoded runtime seed.
+	 */
+	private String readOrCreateSecretSeed() {
+		Path	seedDirectory	= BoxRuntime.getInstance().getRuntimeHome().resolve( "config" );
+		Path	seedPath		= seedDirectory.resolve( ".seed" );
+		try {
+			Files.createDirectories( seedDirectory );
+			if ( Files.notExists( seedPath ) ) {
+				Files.writeString( seedPath, EncryptionUtil.convertSecretKeyToString( EncryptionUtil.generateKey( getSecretKeyAlgorithm() ) ),
+				    StandardCharsets.UTF_8 );
+			}
+			return Files.readString( seedPath ).trim();
+		} catch ( IOException e ) {
+			throw new BoxRuntimeException( "Could not read runtime home seed file", e );
+		}
 	}
 
 	/**
@@ -181,7 +245,9 @@ public class SecurityConfig implements IConfigSegment {
 		PropertyHelper.processListToSetKey( config, Key.disallowedComponents, this.disallowedComponents );
 		PropertyHelper.processStringOrArrayToList( config, Key.allowedFileOperationExtensions, this.allowedFileOperationExtensions );
 		PropertyHelper.processStringOrArrayToList( config, Key.disallowedFileOperationExtensions, this.disallowedFileOperationExtensions );
-		this.populateServerSystemScope = PropertyHelper.processBoolean( config, Key.populateServerSystemScope, this.populateServerSystemScope );
+		this.populateServerSystemScope	= PropertyHelper.processBoolean( config, Key.populateServerSystemScope, this.populateServerSystemScope );
+		this.secretAlgorithm			= PropertyHelper.processString( config, Key.secretAlgorithm, this.secretAlgorithm );
+		this.secretSeed					= PropertyHelper.processString( config, Key.secretSeed, this.secretSeed );
 		return this;
 	}
 
@@ -196,6 +262,7 @@ public class SecurityConfig implements IConfigSegment {
 		    Key.disallowedBIFs, this.disallowedBIFs,
 		    Key.disallowedComponents, this.disallowedComponents,
 		    Key.disallowedFileOperationExtensions, Array.fromList( this.disallowedFileOperationExtensions ),
+		    Key.secretAlgorithm, this.secretAlgorithm,
 		    Key.populateServerSystemScope, this.populateServerSystemScope
 		);
 	}

@@ -31,6 +31,7 @@ import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.util.BLCollector;
+import ortus.boxlang.runtime.util.ConfigSecretUtil;
 import ortus.boxlang.runtime.util.EncryptionUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
@@ -61,6 +62,7 @@ public class ApplicationClassListener extends BaseApplicationListener {
 		    .putAll( listener.getThisScope().entrySet().stream().filter( e -> ! ( e.getValue() instanceof Function ) ).collect( BLCollector.toStruct() ) );
 		this.settings.put( Key.source, listener.getRunnablePath().absolutePath().toString() );
 		this.settings.put( Key._CLASS, listener.getRunnablePath().absolutePath().toString() );
+		ConfigSecretUtil.decryptValues( this.settings );
 
 		// Expand classPaths in Application.bx. They will be relative to the Application.bx file if not starting with /
 		Array classPaths = this.settings.getAsArray( Key.classPaths );

@@ -50,6 +50,21 @@ class DatasourceConfigTest {
 		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:postgresql://localhost:5432/foo" );
 	}
 
+	@DisplayName( "It supports plaintext datasource passwords" )
+	@Test
+	void testPlaintextDatasourcePassword() {
+		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
+		    "connectionString", "jdbc:postgresql://localhost:5432/foo",
+		    "username", "boxlang",
+		    "password", "plaintext-password"
+		) );
+
+		HikariConfig		hikariConfig	= datasource.toHikariConfig();
+
+		assertThat( hikariConfig.getUsername() ).isEqualTo( "boxlang" );
+		assertThat( hikariConfig.getPassword() ).isEqualTo( "plaintext-password" );
+	}
+
 	@DisplayName( "It can load config" )
 	@Test
 	void testItCanConstructConnectionString() {

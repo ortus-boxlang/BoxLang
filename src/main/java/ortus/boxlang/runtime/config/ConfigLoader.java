@@ -26,6 +26,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.config.segments.SecurityConfig;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
@@ -39,6 +40,7 @@ import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.JSONUtil;
 import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.types.util.StructUtil;
+import ortus.boxlang.runtime.util.ConfigSecretUtil;
 
 /**
  * This class is responsible for loading the core configuration file from the `resources` folder
@@ -136,8 +138,8 @@ public class ConfigLoader {
 		    true
 		);
 
-		// Replace all placeholders in the raw config
-		rawConfig = PlaceholderHelper.resolveAll( rawConfig );
+		// Decrypt prefixed values before resolving placeholders in the raw config.
+		rawConfig = resolveConfigValues( rawConfig );
 
 		// Verify it loaded the configuration map
 		if ( rawConfig instanceof Map ) {
@@ -224,8 +226,8 @@ public class ConfigLoader {
 		// Parse it natively to Java objects
 		Object rawConfig = JSONUtil.fromJSON( source, true );
 
-		// Replace all placeholders in the raw config
-		rawConfig = PlaceholderHelper.resolveAll( rawConfig );
+		// Decrypt prefixed values before resolving placeholders in the raw config.
+		rawConfig = resolveConfigValues( rawConfig );
 
 		// Verify it loaded the configuration map
 		if ( rawConfig instanceof Map ) {
@@ -286,9 +288,12 @@ public class ConfigLoader {
 		    Key.properties, UnmodifiableStruct.fromMap( System.getProperties() )
 		);
 
-		IStruct				propertyOverrides		= filterEnv( collectedEnvironment.getAsStruct( Key.properties ) );
+		SecurityConfig		secretConfig			= getSecretConfig( config );
+		IStruct				propertyOverrides		= decryptEnvironmentOverrides(
+		    filterEnv( collectedEnvironment.getAsStruct( Key.properties ) ), secretConfig );
 
-		IStruct				envOverrides			= filterEnv( collectedEnvironment.getAsStruct( Key.environment ) )
+		IStruct				envOverrides			= decryptEnvironmentOverrides( filterEnv( collectedEnvironment.getAsStruct( Key.environment ) ),
+		    secretConfig )
 		    .entrySet()
 		    .stream()
 		    .filter( entry -> !propertyOverrides.containsKey( entry.getKey() ) )
@@ -308,6 +313,61 @@ public class ConfigLoader {
 		}
 
 		return StructUtil.unFlattenKeys( flatConfig, true, false );
+	}
+
+	@SuppressWarnings( "unchecked" )
+	private Object resolveConfigValues( Object rawConfig ) {
+		SecurityConfig secretConfig = getSecretConfig(
+		    rawConfig instanceof Map<?, ?> configMap ? new Struct( ( Map<Object, Object> ) configMap ) : new Struct() );
+		return resolveConfigValues( rawConfig, secretConfig );
+	}
+
+	private Object resolveConfigValues( Object rawConfig, SecurityConfig secretConfig ) {
+		decryptConfigValues( rawConfig, secretConfig );
+		return PlaceholderHelper.resolveAll( rawConfig );
+	}
+
+	@SuppressWarnings( "unchecked" )
+	private Object decryptConfigValues( Object rawConfig, SecurityConfig secretConfig ) {
+		if ( rawConfig instanceof IStruct struct ) {
+			for ( Key key : struct.keySet() ) {
+				struct.put( key, decryptConfigValues( struct.get( key ), secretConfig ) );
+			}
+		} else if ( rawConfig instanceof Array array ) {
+			for ( int i = 0; i < array.size(); i++ ) {
+				array.set( i, decryptConfigValues( array.get( i ), secretConfig ) );
+			}
+		} else if ( rawConfig instanceof Map<?, ?> rawMap ) {
+			Map<Object, Object> configMap = ( Map<Object, Object> ) rawMap;
+			for ( Object key : List.copyOf( configMap.keySet() ) ) {
+				configMap.put( key, decryptConfigValues( configMap.get( key ), secretConfig ) );
+			}
+		} else if ( rawConfig instanceof List<?> rawList ) {
+			List<Object> configList = ( List<Object> ) rawList;
+			for ( int i = 0; i < configList.size(); i++ ) {
+				configList.set( i, decryptConfigValues( configList.get( i ), secretConfig ) );
+			}
+		} else if ( rawConfig instanceof String value ) {
+			return ConfigSecretUtil.decryptIfEncrypted( value, secretConfig.getSecretSeed(), secretConfig.secretAlgorithm );
+		}
+
+		return rawConfig;
+	}
+
+	private SecurityConfig getSecretConfig( IStruct config ) {
+		SecurityConfig secretConfig = new SecurityConfig();
+		if ( config.get( Key.security ) instanceof Map<?, ?> securityConfig ) {
+			IStruct securitySettings = new Struct( securityConfig );
+			if ( ConfigSecretUtil.isEncrypted( securitySettings.getAsString( Key.secretAlgorithm ) ) ) {
+				throw new ConfigurationException( "The [security.secretAlgorithm] setting cannot be encrypted." );
+			}
+			secretConfig.process( securitySettings );
+		}
+		return secretConfig;
+	}
+
+	private IStruct decryptEnvironmentOverrides( IStruct overrides, SecurityConfig secretConfig ) {
+		return ( IStruct ) resolveConfigValues( overrides, secretConfig );
 	}
 
 	/**

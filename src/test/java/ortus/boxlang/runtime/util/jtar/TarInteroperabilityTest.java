@@ -46,7 +46,7 @@ public class TarInteroperabilityTest {
 					boolean		found	= false;
 					TarEntry	entry;
 					while ( ( entry = input.getNextEntry() ) != null ) {
-						if ( entry.getName().replace( "\\", "/" ).endsWith( fileName ) ) {
+						if ( entry.getName().replace( "\\", "/" ).equals( fileName ) ) {
 							found = true;
 							assertThat( readCurrentEntry( input ) ).isEqualTo( "system tar content" );
 						}

@@ -20,6 +20,8 @@ package ortus.boxlang.runtime.config.util;
 import static com.google.common.truth.Truth.assertThat;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.junit.jupiter.api.DisplayName;
@@ -133,6 +135,21 @@ public class PlaceholderHelperTest {
 		assertThat( bumArray.get( 1 ) ).isEqualTo( "wood" );
 		assertThat( ( ( IStruct ) resolved.get( "nested wood" ) ).get( "majano" ) ).isEqualTo( "Cool" );
 
+	}
+
+	@DisplayName( "Placeholder recursion supports standard Maps and Lists" )
+	@Test
+	public void testResolveRecursiveJavaCollections() {
+		Map<String, Object> nested = new LinkedHashMap<>();
+		nested.put( "${name}", "${value}" );
+		Map<String, Object> input = new LinkedHashMap<>();
+		input.put( "nested", nested );
+		input.put( "values", new ArrayList<>( java.util.List.of( "${value}" ) ) );
+
+		PlaceholderHelper.resolveAll( input, Struct.of( "name", "secret", "value", "resolved" ) );
+
+		assertThat( ( ( Map<?, ?> ) input.get( "nested" ) ).get( "secret" ) ).isEqualTo( "resolved" );
+		assertThat( ( ( java.util.List<?> ) input.get( "values" ) ).get( 0 ) ).isEqualTo( "resolved" );
 	}
 
 }

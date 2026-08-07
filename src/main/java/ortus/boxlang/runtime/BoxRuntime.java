@@ -439,16 +439,6 @@ public class BoxRuntime implements java.io.Closeable {
 		List<String> globalDirectories = Arrays.asList( "classes", "components", "schedulers" );
 		globalDirectories.forEach( dir -> FileSystemUtil.createDirectoryIfMissing( this.runtimeHome.resolve( "global" ).resolve( dir ) ) );
 
-		// Generate a seed file if missing
-		Path seedPath = this.runtimeHome.resolve( "config" ).resolve( ".seed" );
-		if ( Files.notExists( seedPath ) ) {
-			try {
-				Files.write( seedPath, EncryptionUtil.generateKeyAsString().getBytes() );
-			} catch ( IOException e ) {
-				throw new BoxRuntimeException( "Could not create runtime home seed file at [" + seedPath + "]", e );
-			}
-		}
-
 		// Copy config/boxlang.json if missing
 		FileSystemUtil.copyResourceToPath(
 		    "/config/boxlang.json",
