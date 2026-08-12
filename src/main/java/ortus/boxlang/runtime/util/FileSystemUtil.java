@@ -17,10 +17,12 @@
  */
 package ortus.boxlang.runtime.util;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -210,10 +212,66 @@ public final class FileSystemUtil {
 	 */
 	@Deprecated
 	public static Object read( String filePath, String charset, Integer bufferSize, boolean resultsAsString ) {
-		if ( resultsAsString ) {
-			return readString( filePath, charset );
+		Path	path	= null;
+		boolean	isURL	= false;
+		if ( filePath.substring( 0, 4 ).equalsIgnoreCase( "http" ) ) {
+			isURL = true;
 		} else {
-			return readBinary( filePath );
+			path = Path.of( filePath );
+		}
+
+		boolean allowBinary = !resultsAsString;
+
+		try {
+			if ( isURL ) {
+				try {
+					URL fileURL = URI.create( filePath ).toURL();
+					if ( allowBinary && isBinaryFile( filePath ) ) {
+						return IOUtils.toByteArray( fileURL.openStream() );
+					} else {
+						return StringCaster.cast( fileURL.openStream(), charset, true );
+					}
+				} catch ( MalformedURLException e ) {
+					throw new BoxRuntimeException(
+					    "The url [" + filePath + "] could not be parsed.  The reason was: " + e.getMessage() + "("
+					        + e.getCause() + ")" );
+				}
+
+			} else {
+				if ( allowBinary && isBinaryFile( filePath ) ) {
+					return Files.readAllBytes( path );
+				} else {
+					// @formatter:off
+					try (
+					    BOMInputStream inputStream = BOMInputStream.builder()
+					        .setPath( path )
+					        .setByteOrderMarks( ByteOrderMark.UTF_8, ByteOrderMark.UTF_16BE, ByteOrderMark.UTF_16LE, ByteOrderMark.UTF_32BE,
+					            ByteOrderMark.UTF_32LE )
+					        .setInclude( false )
+					        .get()
+						) {
+							InputStreamReader inputReader = null;
+							if ( charset != null ) {
+								inputReader = new InputStreamReader( inputStream, charset );
+							} else {
+								inputReader = new InputStreamReader( inputStream );
+							}
+							if( bufferSize == null ) {
+								try ( BufferedReader reader = new BufferedReader( inputReader ) ) {
+									return reader.lines().collect( Collectors.joining( FileSystemUtil.LINE_SEPARATOR ) );
+								}
+							} else {
+								try ( BufferedReader reader = new BufferedReader( inputReader, bufferSize ) ) {
+									return reader.lines().collect( Collectors.joining( FileSystemUtil.LINE_SEPARATOR ) );
+								}
+							}
+						}
+					// @formatter:on
+				}
+			}
+
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
 		}
 	}
 
@@ -304,7 +362,7 @@ public final class FileSystemUtil {
 	 */
 	@Deprecated
 	public static Object read( String filePath, String charset, Integer bufferSize ) {
-		return readBinary( filePath );
+		return read( filePath, charset, bufferSize, false );
 	}
 
 	/**
@@ -321,7 +379,7 @@ public final class FileSystemUtil {
 	 */
 	@Deprecated
 	public static Object read( String filePath ) {
-		return readBinary( filePath );
+		return read( filePath, null, null );
 	}
 
 	/**
