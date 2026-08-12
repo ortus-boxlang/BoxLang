@@ -208,7 +208,8 @@ public class BoxFile implements IType, IReferenceable, IBoxBinaryRepresentable {
 		this.seekable	= false;
 		this.filename	= this.path.getFileName().toString();
 		this.filepath	= this.path.toAbsolutePath().toString();
-		this.directory	= this.path.getParent().toAbsolutePath().toString();
+		Path absolutePath = this.path.toAbsolutePath();
+		this.directory	= absolutePath.getParent() == null ? absolutePath.getRoot().toString() : absolutePath.getParent().toString();
 		this.size		= null;
 		this.status		= null;
 	}
@@ -278,7 +279,9 @@ public class BoxFile implements IType, IReferenceable, IBoxBinaryRepresentable {
 		this.seekable	= false;
 		this.filename	= this.path.getFileName().toString();
 		this.filepath	= this.path.toAbsolutePath().toString();
-		this.directory	= this.path.getParent().toAbsolutePath().toString();
+		Path absolutePath = this.path.toAbsolutePath();
+		// Files in the drive root return null for getParent(), so handle them specially
+		this.directory	= absolutePath.getParent() == null ? absolutePath.getRoot().toString() : absolutePath.getParent().toString();
 		this.size		= null;
 		this.status		= null;
 		openAs( mode, charset, seekable );
