@@ -53,17 +53,23 @@ public class JSONUtil {
 	 * If true, the JSON parser will use lenient parsing to allow some common non-standard JSON features.
 	 * This is disabled by default for strict compliance with the JSON specification. It can be toggled on by the compat module
 	 */
-	public static boolean	useLenientParsing	= false;
+	public static boolean	useLenientParsing				= false;
+
+	/**
+	 * If true, the JSON parser will use lenient parsing to allow some common non-standard JSON features.
+	 * This is disabled by default for strict compliance with the JSON specification. It can be toggled on by the compat module
+	 */
+	public static boolean	useLenientParsingLeadingZeros	= false;
 
 	/**
 	 * The JSON builder with pretty print enabled - lazy loaded
 	 */
-	private static JSON		PRETTY_JSON_BUILDER	= null;
+	private static JSON		PRETTY_JSON_BUILDER				= null;
 
 	/**
 	 * The JSON builder without pretty print - lazy loaded
 	 */
-	private static JSON		JSON_BUILDER		= null;
+	private static JSON		JSON_BUILDER					= null;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -349,8 +355,11 @@ public class JSONUtil {
 			factory
 			    .enable( JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES )
 			    .enable( JsonParser.Feature.ALLOW_SINGLE_QUOTES )
-			    .enable( JsonParser.Feature.ALLOW_NUMERIC_LEADING_ZEROS )
 			    .enable( JsonParser.Feature.ALLOW_TRAILING_COMMA );
+		}
+		// Had to break this out for compat as Adobe allows JUST THIS, but not anything above
+		if ( useLenientParsingLeadingZeros ) {
+			factory.enable( JsonParser.Feature.ALLOW_NUMERIC_LEADING_ZEROS );
 		}
 
 		JSON.Builder builder = JSON.builder( factory )
