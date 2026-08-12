@@ -17,12 +17,10 @@
  */
 package ortus.boxlang.runtime.util;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -195,107 +193,135 @@ public final class FileSystemUtil {
 	 */
 
 	/**
-	 * Returns the contents of a file
+	 * Reads a file or HTTP(S) URL as either text or binary data.
 	 *
-	 * @param filePath        the path to the file. This can be root-relative or absolute.
-	 * @param charset         the charset to use for reading the file. If null, the default charset
-	 * @param bufferSize      the buffer size to use for reading the file. If null, a default buffer size is used.
-	 * @param resultsAsString whether to return the results as a string or a byte array. If true, the file is read as text.
+	 * @deprecated Use {@link #readString(String, String)} for text or {@link #readBinary(String)} for binary data.
+	 *             The explicit methods avoid the legacy type-selection behavior.
 	 *
-	 * @return Object - Strings without a buffersize arg return the contents, with a
-	 *         buffersize arg a Buffered reader is returned, binary files return the
-	 *         byte array unless `resultsAsString` is true, in which case a string will always be returned
+	 * @param filePath        the file path or HTTP(S) URL to read
+	 * @param charset         the charset to use when {@code resultsAsString} is true; the default charset is used when null
+	 * @param bufferSize      ignored; retained for backward compatibility
+	 * @param resultsAsString whether to return decoded text instead of binary data
 	 *
-	 * @throws IOException if an I/O error occurs reading from the file or a malformed URL is encountered
+	 * @return a String when {@code resultsAsString} is true; otherwise a byte array
+	 *
+	 * @throws BoxIOException      if the file or URL cannot be read
+	 * @throws BoxRuntimeException if the URL cannot be parsed
 	 */
+	@Deprecated
 	public static Object read( String filePath, String charset, Integer bufferSize, boolean resultsAsString ) {
-		Path	path	= null;
-		boolean	isURL	= false;
-		if ( filePath.substring( 0, 4 ).equalsIgnoreCase( "http" ) ) {
-			isURL = true;
+		if ( resultsAsString ) {
+			return readString( filePath, charset );
 		} else {
-			path = Path.of( filePath );
+			return readBinary( filePath );
 		}
+	}
 
-		boolean allowBinary = !resultsAsString;
+	/**
+	 * Reads a file or HTTP(S) URL as raw bytes.
+	 *
+	 * @param filePath the file path or HTTP(S) URL to read
+	 *
+	 * @return the file or URL contents as a byte array
+	 *
+	 * @throws BoxIOException      if the file or URL cannot be read
+	 * @throws BoxRuntimeException if the URL cannot be parsed
+	 */
+	public static byte[] readBinary( String filePath ) {
+		try ( InputStream inputStream = openReadStream( filePath ) ) {
+			return IOUtils.toByteArray( inputStream );
+		} catch ( IOException e ) {
+			throw new BoxIOException( e );
+		}
+	}
 
-		try {
-			if ( isURL ) {
-				try {
-					URL fileURL = URI.create( filePath ).toURL();
-					if ( allowBinary && isBinaryFile( filePath ) ) {
-						return IOUtils.toByteArray( fileURL.openStream() );
-					} else {
-						return StringCaster.cast( fileURL.openStream(), charset, true );
-					}
-				} catch ( MalformedURLException e ) {
-					throw new BoxRuntimeException(
-					    "The url [" + filePath + "] could not be parsed.  The reason was: " + e.getMessage() + "("
-					        + e.getCause() + ")" );
-				}
-
-			} else {
-				if ( allowBinary && isBinaryFile( filePath ) ) {
-					return Files.readAllBytes( path );
-				} else {
-					// @formatter:off
-					try (
-					    BOMInputStream inputStream = BOMInputStream.builder()
-					        .setPath( path )
-					        .setByteOrderMarks( ByteOrderMark.UTF_8, ByteOrderMark.UTF_16BE, ByteOrderMark.UTF_16LE, ByteOrderMark.UTF_32BE,
-					            ByteOrderMark.UTF_32LE )
-					        .setInclude( false )
-					        .get()
-						) {
-							InputStreamReader inputReader = null;
-							if ( charset != null ) {
-								inputReader = new InputStreamReader( inputStream, charset );
-							} else {
-								inputReader = new InputStreamReader( inputStream );
-							}
-							if( bufferSize == null ) {
-								try ( BufferedReader reader = new BufferedReader( inputReader ) ) {
-									return reader.lines().collect( Collectors.joining( FileSystemUtil.LINE_SEPARATOR ) );
-								}
-							} else {
-								try ( BufferedReader reader = new BufferedReader( inputReader, bufferSize ) ) {
-									return reader.lines().collect( Collectors.joining( FileSystemUtil.LINE_SEPARATOR ) );
-								}
-							}
-						}
-					// @formatter:on
-				}
+	private static InputStream openReadStream( String filePath ) throws IOException {
+		if ( filePath.substring( 0, 4 ).equalsIgnoreCase( "http" ) ) {
+			try {
+				URL fileURL = URI.create( filePath ).toURL();
+				return fileURL.openStream();
+			} catch ( MalformedURLException e ) {
+				throw new BoxRuntimeException(
+				    "The url [" + filePath + "] could not be parsed.  The reason was: " + e.getMessage() + "(" + e.getCause() + ")" );
 			}
+		}
+		return Files.newInputStream( Path.of( filePath ) );
+	}
 
+	/**
+	 * Reads a file or HTTP(S) URL as text using the default charset.
+	 *
+	 * @param filePath the file path or HTTP(S) URL to read
+	 *
+	 * @return the file or URL contents as a String
+	 *
+	 * @throws BoxIOException      if the file or URL cannot be read
+	 * @throws BoxRuntimeException if the URL cannot be parsed
+	 */
+	public static String readString( String filePath ) {
+		return readString( filePath, null );
+	}
+
+	/**
+	 * Reads a file or HTTP(S) URL as text.
+	 *
+	 * @param filePath the file path or HTTP(S) URL to read
+	 * @param charset  the charset to use; the default charset is used when null
+	 *
+	 * @return the file or URL contents as a String
+	 *
+	 * @throws BoxIOException      if the file or URL cannot be read
+	 * @throws BoxRuntimeException if the URL cannot be parsed
+	 */
+	public static String readString( String filePath, String charset ) {
+		try (
+		    BOMInputStream inputStream = BOMInputStream.builder()
+		        .setInputStream( openReadStream( filePath ) )
+		        .setByteOrderMarks( ByteOrderMark.UTF_8, ByteOrderMark.UTF_16BE, ByteOrderMark.UTF_16LE, ByteOrderMark.UTF_32BE,
+		            ByteOrderMark.UTF_32LE )
+		        .setInclude( false )
+		        .get() ) {
+			String detectedCharset = inputStream.getBOMCharsetName();
+			return StringCaster.cast( inputStream.readAllBytes(), charset != null ? charset : detectedCharset );
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
 		}
 	}
 
 	/**
-	 * Returns the contents of a file
+	 * Reads a file or HTTP(S) URL as binary data.
 	 *
-	 * @param filePath   the path to the file. This can be root-relative or absolute.
-	 * @param charset    the charset to use for reading the file. If null, the default charset
-	 * @param bufferSize the buffer size to use for reading the file. If null, a default buffer size is used.
+	 * @deprecated Use {@link #readBinary(String)}. The buffer size is ignored by this legacy overload.
 	 *
-	 * @return Object - Strings without a buffersize arg return the contents, with a
-	 *         buffersize arg a Buffered reader is returned, binary files return the
-	 *         byte array
+	 * @param filePath   the file path or HTTP(S) URL to read
+	 * @param charset    ignored; retained for backward compatibility
+	 * @param bufferSize ignored; retained for backward compatibility
 	 *
-	 * @throws IOException if an I/O error occurs reading from the file or a malformed URL is encountered
+	 * @return the file or URL contents as a byte array
+	 *
+	 * @throws BoxIOException      if the file or URL cannot be read
+	 * @throws BoxRuntimeException if the URL cannot be parsed
 	 */
+	@Deprecated
 	public static Object read( String filePath, String charset, Integer bufferSize ) {
-		return read( filePath, charset, bufferSize, false );
+		return readBinary( filePath );
 	}
 
 	/**
-	 * Returns the contents of a file with the defaults
+	 * Reads a file or HTTP(S) URL as binary data.
 	 *
-	 * @param filePath the path to the file. This can be root-relative or absolute.
+	 * @deprecated Use {@link #readBinary(String)}.
+	 *
+	 * @param filePath the file path or HTTP(S) URL to read
+	 *
+	 * @return the file or URL contents as a byte array
+	 *
+	 * @throws BoxIOException      if the file or URL cannot be read
+	 * @throws BoxRuntimeException if the URL cannot be parsed
 	 */
+	@Deprecated
 	public static Object read( String filePath ) {
-		return read( filePath, null, null );
+		return readBinary( filePath );
 	}
 
 	/**

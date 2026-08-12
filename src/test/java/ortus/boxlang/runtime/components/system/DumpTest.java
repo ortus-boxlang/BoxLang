@@ -627,8 +627,7 @@ public class DumpTest {
 
 		Path filePath = Paths.get( variables.getAsString( Key.of( "filePath" ) ) );
 		assertWithMessage( "File [" + filePath + "] should exist" ).that( filePath.toFile().exists() ).isTrue();
-		String fileContents = ( String ) FileSystemUtil.read( filePath.toString(), FileSystemUtil.DEFAULT_CHARSET.name(),
-		    null, true );
+		String fileContents = FileSystemUtil.readString( filePath.toString(), FileSystemUtil.DEFAULT_CHARSET.name() );
 		assertThat( fileContents ).contains( "Hello, BoxLang" );
 		// Cleanup
 		filePath.toFile().delete();
@@ -650,8 +649,7 @@ public class DumpTest {
 
 		Path filePath = Paths.get( variables.getAsString( Key.of( "filePath" ) ) );
 		assertWithMessage( "File [" + filePath + "] should exist" ).that( filePath.toFile().exists() ).isTrue();
-		String fileContents = ( String ) FileSystemUtil.read( filePath.toString(), FileSystemUtil.DEFAULT_CHARSET.name(),
-		    null, true );
+		String fileContents = FileSystemUtil.readString( filePath.toString(), FileSystemUtil.DEFAULT_CHARSET.name() );
 		assertThat( fileContents ).contains( "Hello, BoxLang" );
 		assertThat( fileContents ).contains( "<style>" );
 		// Cleanup
@@ -675,8 +673,7 @@ public class DumpTest {
 
 		Path filePath = Paths.get( variables.getAsString( Key.of( "filePath" ) ) );
 		assertWithMessage( "File [" + filePath + "] should exist" ).that( filePath.toFile().exists() ).isTrue();
-		String fileContents = ( String ) FileSystemUtil.read( filePath.toString(), FileSystemUtil.DEFAULT_CHARSET.name(),
-		    null, true );
+		String fileContents = FileSystemUtil.readString( filePath.toString(), FileSystemUtil.DEFAULT_CHARSET.name() );
 		assertThat( fileContents ).contains( "Hello, BoxLang" );
 		// Cleanup
 		filePath.toFile().delete();
@@ -700,8 +697,7 @@ public class DumpTest {
 
 		Path filePath = Paths.get( variables.getAsString( Key.of( "filePath" ) ) );
 		assertWithMessage( "File [" + filePath + "] should exist" ).that( filePath.toFile().exists() ).isTrue();
-		String fileContents = ( String ) FileSystemUtil.read( filePath.toString(), FileSystemUtil.DEFAULT_CHARSET.name(),
-		    null, true );
+		String fileContents = FileSystemUtil.readString( filePath.toString(), FileSystemUtil.DEFAULT_CHARSET.name() );
 		assertThat( fileContents ).contains( "dump one" );
 		assertThat( fileContents ).contains( "dump two" );
 		assertThat( fileContents ).contains( "dump three" );

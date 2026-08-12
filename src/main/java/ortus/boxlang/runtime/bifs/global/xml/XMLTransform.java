@@ -83,7 +83,7 @@ public class XMLTransform extends BIF {
 		String xsl = arguments.getAsString( Key.XSL );
 		// Is not XML. Must be file or URL
 		if ( !xsl.trim().startsWith( "<" ) ) {
-			xsl = StringCaster.cast( FileSystemUtil.read( xsl ) );
+			xsl = FileSystemUtil.readString( xsl );
 		}
 		IStruct parameters = arguments.getAsStruct( Key.parameters );
 		try {

@@ -113,7 +113,7 @@ public class FileWriteTest {
 		    context );
 
 		assertTrue( FileSystemUtil.exists( testTextFile ) );
-		assertThat( FileSystemUtil.read( testTextFile, ( String ) null, ( Integer ) null ) ).isEqualTo( "I am writing!" );
+		assertThat( FileSystemUtil.readString( testTextFile ) ).isEqualTo( "I am writing!" );
 	}
 
 	@DisplayName( "It tests the ability to write a text file with non string data" )
@@ -127,7 +127,7 @@ public class FileWriteTest {
 		    context );
 
 		assertTrue( FileSystemUtil.exists( testTextNumberFile ) );
-		assertThat( FileSystemUtil.read( testTextNumberFile, ( String ) null, ( Integer ) null ) ).isEqualTo( "0" );
+		assertThat( FileSystemUtil.readString( testTextNumberFile ) ).isEqualTo( "0" );
 	}
 
 	@DisplayName( "It tests the ability to write a text file with the a specified charset" )
@@ -141,7 +141,7 @@ public class FileWriteTest {
 		    context );
 
 		assertTrue( FileSystemUtil.exists( testTextFile2 ) );
-		assertThat( FileSystemUtil.read( testTextFile2, "utf-16", ( Integer ) null ) ).isEqualTo( "I am writing 2!" );
+		assertThat( FileSystemUtil.readString( testTextFile2, "utf-16" ) ).isEqualTo( "I am writing 2!" );
 	}
 
 	@DisplayName( "It tests the ability to create the nested directories to a file" )
@@ -155,7 +155,7 @@ public class FileWriteTest {
 		    context );
 
 		assertTrue( FileSystemUtil.exists( testNestedFile ) );
-		assertThat( FileSystemUtil.read( testNestedFile, ( String ) null, ( Integer ) null ) ).isEqualTo( "I am nested!" );
+		assertThat( FileSystemUtil.readString( testNestedFile ) ).isEqualTo( "I am nested!" );
 	}
 
 	@DisplayName( "It tests the ability to write a text file using a file object" )
@@ -171,7 +171,7 @@ public class FileWriteTest {
 		    context );
 
 		assertTrue( FileSystemUtil.exists( testTextFile ) );
-		assertThat( FileSystemUtil.read( testTextFile, ( String ) null, ( Integer ) null ) ).isEqualTo( "Written via file object!" );
+		assertThat( FileSystemUtil.readString( testTextFile ) ).isEqualTo( "Written via file object!" );
 	}
 
 	@DisplayName( "It tests the ability to write a binary file" )
@@ -188,7 +188,7 @@ public class FileWriteTest {
 		    """,
 		    context );
 		assertTrue( FileSystemUtil.exists( testBinaryFile ) );
-		assertThat( FileSystemUtil.read( testBinaryFile, ( String ) null, ( Integer ) null ) ).isEqualTo( binaryContent );
+		assertThat( FileSystemUtil.readBinary( testBinaryFile ) ).isEqualTo( binaryContent );
 	}
 
 	@DisplayName( "It can write a string through an open file object in write mode" )
@@ -207,7 +207,7 @@ public class FileWriteTest {
 		    """,
 		    context );
 
-		assertThat( FileSystemUtil.read( testTextFile, ( String ) null, ( Integer ) null ) ).isEqualTo( "Hello World!" );
+		assertThat( FileSystemUtil.readString( testTextFile ) ).isEqualTo( "Hello World!" );
 	}
 
 	@DisplayName( "It can write binary chunks through an open file object in append mode" )
@@ -230,7 +230,7 @@ public class FileWriteTest {
 		    """,
 		    context );
 
-		assertThat( FileSystemUtil.read( testTextFile, ( String ) null, ( Integer ) null ) ).isEqualTo( "chunk1-chunk2-chunk3" );
+		assertThat( FileSystemUtil.readString( testTextFile ) ).isEqualTo( "chunk1-chunk2-chunk3" );
 	}
 
 	@DisplayName( "It can append a string through an open file object in append mode" )
@@ -247,7 +247,7 @@ public class FileWriteTest {
 		    """,
 		    context );
 
-		assertThat( FileSystemUtil.read( testTextFile, ( String ) null, ( Integer ) null ) ).isEqualTo( "original-appended" );
+		assertThat( FileSystemUtil.readString( testTextFile ) ).isEqualTo( "original-appended" );
 	}
 
 }

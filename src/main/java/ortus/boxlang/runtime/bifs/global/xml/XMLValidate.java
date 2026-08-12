@@ -94,7 +94,7 @@ public class XMLValidate extends BIF {
 		if ( xmlObject instanceof XML ) {
 			xmlString = xmlObject.toString();
 		} else if ( Strings.CS.equals( StringCaster.cast( xmlObject ).substring( 0, 3 ), "http" ) ) {
-			xmlString = StringCaster.cast( FileSystemUtil.read( StringCaster.cast( xmlObject ) ) );
+			xmlString = FileSystemUtil.readString( StringCaster.cast( xmlObject ) );
 		} else {
 			xmlString = StringCaster.cast( xmlObject );
 		}

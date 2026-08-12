@@ -32,7 +32,7 @@ import ortus.boxlang.runtime.util.FileSystemUtil;
 @BoxBIF( alias = "FileReadBinary" )
 public class FileRead extends BIF {
 
-	public static final Key stringOnlyBif = Key.of( "FileRead" );
+	public static final Key fileReadKey = Key.of( "FileRead" );
 
 	/**
 	 * Constructor
@@ -42,8 +42,7 @@ public class FileRead extends BIF {
 		declaredArguments = new Argument[] {
 		    new Argument( true, Argument.ANY, Key.filepath ),
 		    new Argument( false, "string", Key.charsetOrBufferSize ),
-		    new Argument( false, "string", Key.charset ),
-		    new Argument( false, "string", Key.buffersize )
+		    new Argument( false, "integer", Key.buffersize )
 		};
 	}
 
@@ -61,43 +60,56 @@ public class FileRead extends BIF {
 	 *
 	 * @argument.filepath A file path (string, Path, File, or HTTP URL) to read entirely, or an open BoxFile object to read remaining content from.
 	 *
-	 * @argument.charsetOrBufferSize Either the charset to use when reading the file, or the buffer size. Only applies to path-based reads.
+	 * @argument.charsetOrBufferSize Either the charset to use when reading string files, or the buffer size.
 	 *
-	 * @argument.charset The explicit charset to use when reading the file. Only applies to path-based reads.
-	 *
-	 * @argument.buffersize The explicit buffer size to use when reading the file. Only applies to path-based reads.
+	 * @argument.buffersize Number of bytes or chars to read. Only applies to a BoxFile object.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		Object	rawFilePath		= arguments.get( Key.filepath );
-		Key		bifMethodKey	= arguments.getAsKey( BIF.__functionName );
-
-		// Explicit file object — read remaining content from open stream
-		if ( rawFilePath instanceof BoxFile boxFile && !boxFile.implicitlyCast ) {
-			return boxFile.readAll();
-		}
+		Object	rawFilePath			= arguments.get( Key.filepath );
+		Key		bifMethodKey		= arguments.getAsKey( BIF.__functionName );
 
 		// Path-based read — determine the file path string
 		String	charsetOrBufferSize	= arguments.getAsString( Key.charsetOrBufferSize );
-		String	charset				= arguments.getAsString( Key.charset );
+		String	charset				= null;
 		Integer	bufferSize			= arguments.getAsInteger( Key.buffersize );
+		BoxFile	boxFile				= null;
+		String	filePath			= null;
 
-		String	filePath;
-		if ( rawFilePath instanceof String str && StringUtil.startsWithIgnoreCase( str, "http" ) ) {
-			filePath = str;
+		if ( rawFilePath instanceof BoxFile boxFileArg ) {
+			boxFile = boxFileArg;
 		} else {
-			filePath = BoxFileCaster.cast( context, rawFilePath ).filepath;
+			if ( rawFilePath instanceof String str && StringUtil.startsWithIgnoreCase( str, "http" ) ) {
+				filePath = str;
+			} else {
+				filePath = BoxFileCaster.cast( context, rawFilePath ).filepath;
+			}
 		}
 
 		if ( charsetOrBufferSize != null ) {
-			CastAttempt<Integer> castAttempt = IntegerCaster.attempt( charsetOrBufferSize );
-			if ( castAttempt.wasSuccessful() ) {
-				bufferSize = castAttempt.get();
+			if ( bufferSize == null ) {
+				CastAttempt<Integer> castAttempt = IntegerCaster.attempt( charsetOrBufferSize );
+				if ( castAttempt.wasSuccessful() ) {
+					bufferSize = castAttempt.get();
+				} else {
+					charset = charsetOrBufferSize;
+				}
 			} else {
 				charset = charsetOrBufferSize;
 			}
 		}
 
-		return FileSystemUtil.read( filePath, charset, bufferSize, bifMethodKey.equals( stringOnlyBif ) );
+		if ( boxFile != null ) {
+			if ( bufferSize != null ) {
+				return boxFile.read( bufferSize );
+			}
+			return boxFile.readAll();
+		}
+
+		if ( bifMethodKey.equals( fileReadKey ) ) {
+			return FileSystemUtil.readString( filePath, charset );
+		} else {
+			return FileSystemUtil.readBinary( filePath );
+		}
 
 	}
 

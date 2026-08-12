@@ -388,7 +388,7 @@ public class HTTPTest {
 		            // simulate duplicate headers
 		            ok().withHeader( "Content-Type", "image/jpeg; charset=utf-8" )
 		                .withBody(
-		                    ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
+		                    FileSystemUtil.readBinary( "src/test/resources/chuck_norris.jpg" ) ) ) );
 
 		// @formatter:off
 		instance.executeSource( String.format(
@@ -466,7 +466,7 @@ public class HTTPTest {
 		                .withHeader( "Content-Disposition",
 		                    "attachment; filename=\"chuck_norris_dl.jpg\"" )
 		                .withBody(
-		                    ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
+		                    FileSystemUtil.readBinary( "src/test/resources/chuck_norris.jpg" ) ) ) );
 
 		// @formatter:off
 		instance.executeSource( String.format(
@@ -511,7 +511,7 @@ public class HTTPTest {
 		                .withHeader( "Content-Disposition",
 		                    "attachment; filename=\"chuck_norris_dl.jpg\"" )
 		                .withBody(
-		                    ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
+		                    FileSystemUtil.readBinary( "src/test/resources/chuck_norris.jpg" ) ) ) );
 
 		// @formatter:off
 		instance.executeSource( String.format(
@@ -535,7 +535,7 @@ public class HTTPTest {
 		                .withHeader( "Content-Disposition",
 		                    "attachment; filename=\"chuck_norris_dl.jpg\"" )
 		                .withBody(
-		                    ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
+		                    FileSystemUtil.readBinary( "src/test/resources/chuck_norris.jpg" ) ) ) );
 
 		// @formatter:off
 		instance.executeSource( String.format(
@@ -558,7 +558,7 @@ public class HTTPTest {
 		            ok() ) );
 
 		// @formatter:off
-		variables.put(  Key.of( "fileContent" ), FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) );
+		variables.put(  Key.of( "fileContent" ), FileSystemUtil.readBinary( "src/test/resources/chuck_norris.jpg" ) );
 		instance.executeSource( String.format(
 			"""
 			bx:http method="POST" url="%s" {
@@ -584,7 +584,7 @@ public class HTTPTest {
 		            ok()
 		                .withHeader( "Content-Type", "image/jpeg; charset=utf-8" )
 		                .withBody(
-		                    ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" )
+		                    FileSystemUtil.readBinary( "src/test/resources/chuck_norris.jpg" )
 		                )
 		        )
 		);

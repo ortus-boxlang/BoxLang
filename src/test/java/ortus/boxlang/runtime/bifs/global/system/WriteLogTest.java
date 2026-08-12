@@ -36,7 +36,6 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -127,7 +126,7 @@ public class WriteLogTest {
 		    """,
 		    context );
 		assertTrue( FileSystemUtil.exists( logFilePath ) );
-		String fileContent = StringCaster.cast( FileSystemUtil.read( logFilePath ) );
+		String fileContent = FileSystemUtil.readString( logFilePath );
 		assertTrue( Strings.CS.contains( fileContent, "Custom Logger!" ) );
 	}
 
@@ -140,7 +139,7 @@ public class WriteLogTest {
 		    """,
 		    context );
 
-		String fileContent = StringCaster.cast( FileSystemUtil.read( logFilePath ) );
+		String fileContent = FileSystemUtil.readString( logFilePath );
 		assertThat( fileContent ).contains( "ERROR" );
 		assertThat( fileContent ).contains( "Hello Error Logger!" );
 

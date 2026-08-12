@@ -18,16 +18,14 @@ import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.config.segments.XMLConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.XML;
-import ortus.boxlang.runtime.util.FileSystemUtil;
-
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF( description = "Parse XML from a string" )
 public class XMLParse extends BIF {
@@ -72,7 +70,7 @@ public class XMLParse extends BIF {
 
 		// Is not XML. Must be file or URL
 		if ( !xml.trim().startsWith( "<" ) ) {
-			xml = StringCaster.cast( FileSystemUtil.read( xml ) );
+			xml = FileSystemUtil.readString( xml );
 		}
 
 		Boolean	caseSensitive		= arguments.getAsBoolean( Key.caseSensitive );
