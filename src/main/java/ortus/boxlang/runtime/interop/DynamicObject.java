@@ -676,7 +676,12 @@ public class DynamicObject implements IReferenceable, Serializable {
 	}
 
 	/**
-	 * Equals override. Tests if the target class or instance is equal to the other object
+	 * Equals override.
+	 * Check for instance equality (by both reference and logical equality)
+	 * Then for class equality (by reference equality against Class<?> obj)
+	 * 
+	 * If there is an instance, do not consider class equality, because two DynamicObjects of different
+	 * instances should not be considered equal if they only share a Class
 	 */
 	@Override
 	public boolean equals( Object obj ) {
@@ -684,27 +689,32 @@ public class DynamicObject implements IReferenceable, Serializable {
 			return false;
 		}
 
-		if ( obj instanceof DynamicObject ) {
-			DynamicObject other = ( DynamicObject ) obj;
+		if ( this == obj ) {
+			return true;
+		}
 
-			if ( this.targetClass != null && other.targetClass != null ) {
-				return this.targetClass.equals( other.targetClass );
-			}
-
+		if ( obj instanceof DynamicObject other ) {
 			if ( this.targetInstance != null && other.targetInstance != null ) {
-				return this.targetInstance.equals( other.targetInstance );
+				// Both sides wrap an instance, check instance equality
+				return this.targetInstance == other.targetInstance || this.targetInstance.equals( other.targetInstance );
 			}
+
+			if ( this.targetInstance == null && this.targetClass != null && other.targetInstance == null && other.targetClass != null ) {
+				// Neither side wraps an instance, check class equality
+				return this.targetClass == other.targetClass;
+			}
+
+			return false;
 		}
 
-		// If the object is a Class, then compare the class
-		if ( obj instanceof Class && this.targetClass != null ) {
-			return this.targetClass.equals( obj );
-		}
-
-		// Else we tests if the object is equal to the instance,
-		// if ther is no instance, then we return false
 		if ( this.targetInstance != null ) {
-			return this.targetInstance.equals( obj );
+			// We wrap an instance, check if it is equal to target
+			return this.targetInstance == obj || this.targetInstance.equals( obj );
+		}
+
+		if ( this.targetInstance == null && this.targetClass != null && obj instanceof Class<?> ) {
+			// We do not wrap an instance, check if we're wrapping a class that is equal to the target
+			return this.targetClass == obj;
 		}
 
 		return false;

@@ -626,4 +626,16 @@ public class DynamicObjectTest {
 		assertThat( stringClass.equals( stringClass2 ) ).isTrue();
 	}
 
+	@DisplayName( "A DynamicObject(foo) is not equal to DynamicObject(Foo.class)" )
+	@Test
+	void dynamicObjectOfInstanceNotEqualToDynamicObjectOfClass() {
+		record Foo() {
+		}
+		var foo = new Foo();
+
+		assertThat( DynamicObject.of( foo ) ).isNotEqualTo( DynamicObject.of( Foo.class ) );
+		assertThat( DynamicObject.of( Foo.class ) ).isNotEqualTo( DynamicObject.of( foo ) );
+		assertThat( DynamicObject.of( foo ) ).isEqualTo( DynamicObject.of( foo ) );
+	}
+
 }
