@@ -21,6 +21,7 @@ package ortus.boxlang.compiler.prettyprint;
 import java.util.ArrayList;
 import java.util.List;
 
+import ortus.boxlang.compiler.ast.BoxClass;
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.comment.BoxComment;
 import ortus.boxlang.compiler.ast.comment.BoxDocComment;
@@ -147,11 +148,22 @@ public class CommentsPrinter {
 
 			// check to see if there is a gap of multiple lines in the source
 			// only preserve blank lines if the config option is enabled
-			if ( preserveBlankLines && node.hasLinesBetween( lastNodeToPrint ) ) {
+			if ( preserveBlankLines && node.hasLinesBetween( lastNodeToPrint ) && !hasPreAnnotations( node ) ) {
 				// if so, print an extra new line (eliminating line gaps greater than 1)
 				currentDoc.append( Line.HARD );
 			}
 		}
+	}
+
+	/**
+	 * Determines whether a node has class-level annotations that occupy the source lines before the node declaration.
+	 *
+	 * @param node node being checked
+	 *
+	 * @return {@code true} when the node is a class with pre-annotations
+	 */
+	private boolean hasPreAnnotations( BoxNode node ) {
+		return node instanceof BoxClass classNode && !classNode.getAnnotations().isEmpty();
 	}
 
 	/**

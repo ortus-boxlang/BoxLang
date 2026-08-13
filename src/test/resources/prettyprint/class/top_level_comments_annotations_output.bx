@@ -1,0 +1,8 @@
+/**
+ * A pseudo static class to build rule books and rules.
+ */
+@singleton
+@threadsafe
+class {
+
+}
