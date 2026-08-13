@@ -42,7 +42,7 @@ public class CommentsPrinter {
 
 	/**
 	 * Prints pre comments
-	 * 
+	 *
 	 * @param node
 	 */
 	boolean printPreComments( BoxNode node ) {
@@ -169,7 +169,7 @@ public class CommentsPrinter {
 	/**
 	 * Print multi-line output, respecting indentation
 	 * This will trim existing whitespace off each line.
-	 * 
+	 *
 	 * @param text The text to print
 	 */
 	public void printMultiLine( String text ) {
