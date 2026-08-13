@@ -37,4 +37,9 @@ public class PropertyTest extends PrettyPrintTest {
 	public void testKeyValuePadding() throws IOException {
 		printTestWithConfigFile( "property", "key_value_padding_true" );
 	}
+
+	@Test
+	public void testNativePropertyAnnotations() throws IOException {
+		printTestWithConfigFile( "property", "native_annotations" );
+	}
 }

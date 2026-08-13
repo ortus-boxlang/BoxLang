@@ -85,6 +85,7 @@ import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLInOperation
 import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLInSubQueryOperation;
 import ortus.boxlang.compiler.ast.sql.select.expression.operation.SQLUnaryOperation;
 import ortus.boxlang.compiler.ast.statement.BoxAssert;
+import ortus.boxlang.compiler.ast.statement.BoxAnnotation;
 import ortus.boxlang.compiler.ast.statement.BoxBreak;
 import ortus.boxlang.compiler.ast.statement.BoxBufferOutput;
 import ortus.boxlang.compiler.ast.statement.BoxContinue;
@@ -1478,6 +1479,29 @@ public class Visitor extends VoidBoxVisitor {
 	}
 
 	@Override
+	public void visit( BoxAnnotation node ) {
+		printPreComments( node );
+		if ( isTemplate() ) {
+			print( " " );
+			node.getKey().accept( this );
+			if ( node.getValue() != null ) {
+				print( "=\"" );
+				stringPrinter.printQuotedExpression( node.getValue() );
+				print( "\"" );
+			}
+		} else {
+			print( "@" );
+			node.getKey().accept( this );
+			if ( node.getValue() != null ) {
+				print( "( " );
+				node.getValue().accept( this );
+				print( " )" );
+			}
+		}
+		printPostComments( node );
+	}
+
+	@Override
 	public void visit( BoxProperty node ) {
 		printPreComments( node );
 		if ( isTemplate() ) {
@@ -1485,7 +1509,7 @@ public class Visitor extends VoidBoxVisitor {
 			helperPrinter.printKeyValueAnnotations( node.getAllAnnotations(), false );
 			print( ">" );
 		} else {
-			if ( config.getAlignConsecutiveProperties() && node.getSourceText() != null ) {
+			if ( ( config.getAlignConsecutiveProperties() || !node.getAnnotations().isEmpty() ) && node.getSourceText() != null ) {
 				print( node.getSourceText().trim() );
 				printPostComments( node );
 				return;
