@@ -39,7 +39,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.ApplicationService;
 
-public class ApplicationBecomesGarbageCollectable {
+public class ApplicationBecomesGarbageCollectableTest {
 
 	static BoxRuntime			runtime;
 	static ApplicationService	applicationService;
