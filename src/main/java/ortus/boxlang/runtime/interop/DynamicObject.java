@@ -726,12 +726,12 @@ public class DynamicObject implements IReferenceable, Serializable {
 	 */
 	@Override
 	public int hashCode() {
-		if ( this.targetClass != null ) {
-			return this.targetClass.hashCode();
-		}
-
 		if ( this.targetInstance != null ) {
 			return this.targetInstance.hashCode();
+		}
+
+		if ( this.targetClass != null ) {
+			return this.targetClass.hashCode();
 		}
 
 		return 0;
