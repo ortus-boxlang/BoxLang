@@ -148,7 +148,7 @@ public class Application {
 	/**
 	 * session cleanup interceptor for: BEFORE_CACHE_ELEMENT_REMOVED
 	 */
-	private IInterceptorLambda				sessionInterceptor_BEFORE_CACHE_ELEMENT_REMOVED;
+	private IInterceptorLambda				sessionCacheInterceptorBeforeCacheElementRemoved;
 
 	/**
 	 * The listener that started this application (used for stopping it)
@@ -755,7 +755,7 @@ public class Application {
 
 		this.sessionsCache
 		    .getInterceptorPool()
-		    .register( this.sessionInterceptor_BEFORE_CACHE_ELEMENT_REMOVED = data -> {
+		    .register( this.sessionCacheInterceptorBeforeCacheElementRemoved = data -> {
 			    ICacheProvider targetCache = ( ICacheProvider ) data.get( "cache" );
 			    String		key			= ( String ) data.get( "key" );
 
@@ -1029,11 +1029,11 @@ public class Application {
 			    .forEach( session -> session.shutdown( this.getStartingListener() ) );
 		}
 
-		if ( this.sessionInterceptor_BEFORE_CACHE_ELEMENT_REMOVED != null ) {
+		if ( this.sessionCacheInterceptorBeforeCacheElementRemoved != null ) {
 			this.sessionsCache.getInterceptorPool().unregister(
-			    this.sessionInterceptor_BEFORE_CACHE_ELEMENT_REMOVED
+			    this.sessionCacheInterceptorBeforeCacheElementRemoved
 			);
-			this.sessionInterceptor_BEFORE_CACHE_ELEMENT_REMOVED = null;
+			this.sessionCacheInterceptorBeforeCacheElementRemoved = null;
 		}
 
 		// Announce it to the listener
