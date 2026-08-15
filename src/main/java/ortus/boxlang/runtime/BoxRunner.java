@@ -169,8 +169,13 @@ public class BoxRunner {
 		int exitCode = 0;
 
 		try {
+			// Execute a Module — modules trump ALL other execution modes
+			if ( options.targetModule() != null ) {
+				System.setProperty( "boxlang.cliModule", options.targetModule() );
+				boxRuntime.executeModule( options.targetModule(), options.cliArgs().toArray( new String[ 0 ] ) );
+			}
 			// Show version
-			if ( Boolean.TRUE.equals( options.showVersion() ) ) {
+			else if ( Boolean.TRUE.equals( options.showVersion() ) ) {
 				var versionInfo = boxRuntime.getVersionInfo();
 				System.out.println( "Ortus BoxLang™ v" + versionInfo.get( "version" ) );
 				System.out.println( "BoxLang™ ID: " + versionInfo.get( "boxlangId" ) );
@@ -212,11 +217,6 @@ public class BoxRunner {
 			else if ( options.templatePath() != null ) {
 				System.setProperty( "boxlang.cliTemplate", options.templatePath() );
 				boxRuntime.executeTemplate( options.templatePath(), options.cliArgs().toArray( new String[ 0 ] ) );
-			}
-			// Execute a Module
-			else if ( options.targetModule() != null ) {
-				System.setProperty( "boxlang.cliModule", options.targetModule() );
-				boxRuntime.executeModule( options.targetModule(), options.cliArgs().toArray( new String[ 0 ] ) );
 			}
 			// Execute incoming code
 			else if ( options.code() != null ) {
@@ -544,33 +544,9 @@ public class BoxRunner {
 		while ( !argsList.isEmpty() ) {
 			currentArgument = argsList.remove( 0 );
 
-			// Help Flag, we find and break off
-			if ( currentArgument.equalsIgnoreCase( "--help" ) || currentArgument.equalsIgnoreCase( "-h" ) ) {
-				printHelp();
-				System.exit( 0 );
-			}
-
-			// ShowVersion mode Flag, we find and break off
-			if ( currentArgument.equalsIgnoreCase( "--version" ) ) {
-				showVersion = true;
-				break;
-			}
-
 			// Debug mode Flag, we find and continue to the next argument
 			if ( currentArgument.equalsIgnoreCase( "--bx-debug" ) ) {
 				debug = true;
-				continue;
-			}
-
-			// Print AST Flag, we find and continue to the next argument
-			if ( currentArgument.equalsIgnoreCase( "--bx-printAST" ) ) {
-				printAST = true;
-				continue;
-			}
-
-			// Transpile Flag, we find and continue to the next argument
-			if ( currentArgument.equalsIgnoreCase( "--bx-transpile" ) ) {
-				transpile = true;
 				continue;
 			}
 
@@ -591,6 +567,39 @@ public class BoxRunner {
 					    "Missing runtime home path with --home flag, it must be the next argument. [--home /path/to/boxlang-home]" );
 				}
 				runtimeHome = argsList.remove( 0 );
+				continue;
+			}
+
+			// Is this a module execution? Checked AFTER the setup flags, but BEFORE all
+			// other flag/file/script/code processing so a module trumps all of those
+			if ( currentArgument.startsWith( "module:" ) ) {
+				// Remove the prefix
+				targetModule = currentArgument.substring( 7 );
+				cliArgs.addAll( argsList );
+				break;
+			}
+
+			// Help Flag, we find and break off
+			if ( currentArgument.equalsIgnoreCase( "--help" ) || currentArgument.equalsIgnoreCase( "-h" ) ) {
+				printHelp();
+				System.exit( 0 );
+			}
+
+			// ShowVersion mode Flag, we find and break off
+			if ( currentArgument.equalsIgnoreCase( "--version" ) ) {
+				showVersion = true;
+				break;
+			}
+
+			// Print AST Flag, we find and continue to the next argument
+			if ( currentArgument.equalsIgnoreCase( "--bx-printAST" ) ) {
+				printAST = true;
+				continue;
+			}
+
+			// Transpile Flag, we find and continue to the next argument
+			if ( currentArgument.equalsIgnoreCase( "--bx-transpile" ) ) {
+				transpile = true;
 				continue;
 			}
 
@@ -622,14 +631,6 @@ public class BoxRunner {
 			String targetPath = getExecutableTemplate( currentArgument );
 			if ( targetPath != null ) {
 				file = targetPath;
-				cliArgs.addAll( argsList );
-				break;
-			}
-
-			// Is this a module execution
-			if ( currentArgument.startsWith( "module:" ) ) {
-				// Remove the prefix
-				targetModule = currentArgument.substring( 7 );
 				cliArgs.addAll( argsList );
 				break;
 			}
@@ -744,6 +745,10 @@ public class BoxRunner {
 		}
 		// return false if the file doesn't exist
 		if ( !Files.exists( templatePath ) ) {
+			return false;
+		}
+
+		if ( Files.isDirectory( templatePath ) ) {
 			return false;
 		}
 
