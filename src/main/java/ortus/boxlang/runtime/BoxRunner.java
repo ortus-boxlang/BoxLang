@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -123,7 +124,8 @@ public class BoxRunner {
 	public static int					exitCode					= 0;
 
 	/**
-	 * Execute the BoxLang runtime with the passed arguments.
+	 * Execute the BoxLang runtime with the passed arguments and exit the JVM with
+	 * the resulting exit code.
 	 *
 	 * @param args The command-line arguments
 	 *
@@ -131,10 +133,38 @@ public class BoxRunner {
 	 * @throws JSONObjectException
 	 */
 	public static void main( String[] args ) {
+		System.exit( _main( args ) );
+	}
+
+	/**
+	 * Execute the BoxLang runtime with the passed arguments without exiting the
+	 * JVM.
+	 * <p>
+	 * This is the testable entry point. {@link #main} delegates to this method and
+	 * exits the JVM with the returned exit code. It is package-private so tests in
+	 * this package can invoke it directly, and so it can be called reflectively
+	 * from an isolated class loader.
+	 *
+	 * @param args The command-line arguments
+	 *
+	 * @return The exit code to use for the process (0 on success, non-zero on
+	 *         failure)
+	 *
+	 * @throws IOException
+	 * @throws JSONObjectException
+	 */
+	static int _main( String[] args ) {
 		Timer		timer	= new Timer();
 
 		// Parse CLI options with Env Overrides
 		CLIOptions	options	= parseEnvironmentVariables( parseCommandLineOptions( args ) );
+
+		// Show help? Handle this BEFORE starting the runtime so we never spin one up
+		// just to print usage.
+		if ( Boolean.TRUE.equals( options.showHelp() ) ) {
+			printHelp();
+			return 0;
+		}
 
 		// Debug mode?
 		if ( options.isDebugMode() ) {
@@ -154,16 +184,14 @@ public class BoxRunner {
 		} catch ( BoxLicenseException le ) {
 			System.out.println( String.format( licenseExceptionMessage, le.getMessage() ) );
 			ExceptionUtil.printBoxLangStackTrace( le, System.err );
-			System.exit( 1 );
-			return;
+			return 1;
 		} catch ( Throwable e ) {
 			String message = "An exception ocurred while initializing the BoxLang runtime: " + e.getMessage();
 			if ( message.contains( ExceptionUtil.LICENSE_MODULE_NAME ) || message.contains( ExceptionUtil.LICENSE_SUBSCRIPTION_NAME ) ) {
 				message = String.format( licenseExceptionMessage, e.getMessage() );
 			}
 			ExceptionUtil.printBoxLangStackTrace( e, System.err );
-			System.exit( 1 );
-			return;
+			return 1;
 		}
 		int exitCode = 0;
 
@@ -172,7 +200,8 @@ public class BoxRunner {
 			// its execution target: registered module > template > shebang script >
 			// module failsafe. The module registry is only available after startup, so
 			// this can't happen during arg parsing.
-			options = resolveExecutionTarget( options, boxRuntime );
+			final BoxRuntime resolvedRuntime = boxRuntime;
+			options = resolveExecutionTarget( options, name -> resolvedRuntime.getModuleService().hasModule( Key.of( name ) ) );
 
 			// Execute a Module — modules trump ALL other execution modes
 			if ( options.targetModule() != null ) {
@@ -230,7 +259,7 @@ public class BoxRunner {
 			}
 			// Action Command
 			else if ( options.actionCommand() != null ) {
-				runActionCommand( options, boxRuntime );
+				exitCode = runActionCommand( options, boxRuntime );
 			}
 			// REPL Mode: Execute code as read from the standard input of the process
 			else {
@@ -251,7 +280,7 @@ public class BoxRunner {
 		}
 
 		BoxRunner.exitCode = exitCode;
-		System.exit( exitCode );
+		return exitCode;
 	}
 
 	/**
@@ -302,8 +331,10 @@ public class BoxRunner {
 	 *
 	 * @param options The CLIOptions object with the parsed options
 	 * @param runtime The BoxRuntime object
+	 *
+	 * @return The exit code for the action command (0 on success)
 	 */
-	static void runActionCommand( CLIOptions options, BoxRuntime runtime ) {
+	static int runActionCommand( CLIOptions options, BoxRuntime runtime ) {
 		switch ( options.actionCommand().toLowerCase() ) {
 			case "compile" :
 				BXCompiler.main( options.cliArgs().toArray( new String[ 0 ] ) );
@@ -326,7 +357,7 @@ public class BoxRunner {
 				    ( options.cliArgs().getFirst().equalsIgnoreCase( "--help" ) ||
 				        options.cliArgs().getFirst().equalsIgnoreCase( "-h" ) ) ) {
 					printScheduleHelp();
-					System.exit( 0 );
+					return 0;
 				}
 				if ( options.cliArgs().isEmpty() ) {
 					throw new BoxRuntimeException(
@@ -337,6 +368,7 @@ public class BoxRunner {
 			default :
 				throw new BoxRuntimeException( "Unknown action command: " + options.actionCommand() );
 		}
+		return 0;
 	}
 
 	/**
@@ -516,6 +548,7 @@ public class BoxRunner {
 		    transpile,
 		    runtimeHome,
 		    options.showVersion(),
+		    options.showHelp(),
 		    options.cliArgs(),
 		    options.cliArgsRaw(),
 		    options.targetModule(),
@@ -529,12 +562,14 @@ public class BoxRunner {
 	 * a pre-pass from ANYWHERE in the argument list so they are always honored for
 	 * runtime startup and are never passed through to a module or template,
 	 * regardless of their position relative to other arguments.
+	 * <p>
+	 * Package-private so it can be unit tested directly.
 	 *
 	 * @param args The cli arguments used
 	 *
 	 * @return The CLIOptions object with the parsed options
 	 */
-	private static CLIOptions parseCommandLineOptions( String[] args ) {
+	static CLIOptions parseCommandLineOptions( String[] args ) {
 		// Initialize options with defaults
 		Boolean			debug			= null;
 		Boolean			printAST		= false;
@@ -546,6 +581,7 @@ public class BoxRunner {
 		String			code			= null;
 		Boolean			transpile		= false;
 		Boolean			showVersion		= false;
+		Boolean			showHelp		= false;
 		List<String>	cliArgs			= new ArrayList<>();
 		String			actionCommand	= null;
 
@@ -610,10 +646,11 @@ public class BoxRunner {
 				break;
 			}
 
-			// Help Flag, we find and break off
+			// Help Flag, we find and break off. Set the flag and let _main() handle
+			// printing help so we never call System.exit() outside of main().
 			if ( currentArgument.equalsIgnoreCase( "--help" ) || currentArgument.equalsIgnoreCase( "-h" ) ) {
-				printHelp();
-				System.exit( 0 );
+				showHelp = true;
+				break;
 			}
 
 			// ShowVersion mode Flag, we find and break off
@@ -668,6 +705,7 @@ public class BoxRunner {
 		    transpile,
 		    runtimeHome,
 		    showVersion,
+		    showHelp,
 		    cliArgs,
 		    args,
 		    targetModule,
@@ -686,7 +724,7 @@ public class BoxRunner {
 	 * <p>
 	 * Priority:
 	 * <ol>
-	 * <li><strong>Registered module</strong> — the module service reports this name
+	 * <li><strong>Registered module</strong> — the predicate reports this name
 	 * exists, so it's a module execution. This prevents the shebang and template
 	 * checks from hijacking a module execution.</li>
 	 * <li><strong>Executable template</strong> — a valid template file on disk.</li>
@@ -695,14 +733,20 @@ public class BoxRunner {
 	 * <li><strong>Module failsafe</strong> — nothing matched, so assume it's a
 	 * module name anyway. Preserves the historical end-of-parse behavior.</li>
 	 * </ol>
+	 * Package-private so it can be unit tested directly.
+	 * <p>
+	 * The module existence check is injected as a {@link Predicate} so this method
+	 * can be tested in a vacuum, without starting a BoxLang runtime. The real
+	 * caller passes a predicate backed by the runtime's module service.
 	 *
-	 * @param options The parsed CLI options
-	 * @param runtime The started BoxLang runtime
+	 * @param options      The parsed CLI options
+	 * @param isModuleName Predicate that returns true if the given name is a
+	 *                     registered module
 	 *
 	 * @return A new CLIOptions with the first positional argument resolved to its
 	 *         target
 	 */
-	private static CLIOptions resolveExecutionTarget( CLIOptions options, BoxRuntime runtime ) {
+	static CLIOptions resolveExecutionTarget( CLIOptions options, Predicate<String> isModuleName ) {
 		// If a target was already resolved during parsing (module:, template, code or
 		// action command) or there are no positional arguments, there's nothing to do
 		if ( options.targetModule() != null
@@ -717,7 +761,7 @@ public class BoxRunner {
 		List<String>	rest		= new ArrayList<>( options.cliArgs().subList( 1, options.cliArgs().size() ) );
 
 		// 1. Is the first arg a registered module name?
-		if ( runtime.getModuleService().hasModule( Key.of( firstArg ) ) ) {
+		if ( isModuleName.test( firstArg ) ) {
 			return withTargetModule( options, firstArg, rest );
 		}
 
@@ -755,6 +799,7 @@ public class BoxRunner {
 		    options.transpile(),
 		    options.runtimeHome(),
 		    options.showVersion(),
+		    options.showHelp(),
 		    cliArgs,
 		    options.cliArgsRaw(),
 		    null,
@@ -780,6 +825,7 @@ public class BoxRunner {
 		    options.transpile(),
 		    options.runtimeHome(),
 		    options.showVersion(),
+		    options.showHelp(),
 		    cliArgs,
 		    options.cliArgsRaw(),
 		    module,

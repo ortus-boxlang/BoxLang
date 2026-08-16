@@ -46,7 +46,7 @@ class BoxRunnerTest {
 	@Test
 	void testGenerateSecretAction() {
 		BoxRuntime				runtime		= BoxRuntime.getInstance( true );
-		CLIOptions				options		= new CLIOptions( null, null, null, null, false, false, null, false, List.of( "my-sensitive-value" ),
+		CLIOptions				options		= new CLIOptions( null, null, null, null, false, false, null, false, false, List.of( "my-sensitive-value" ),
 		    new String[ 0 ], null, "generatesecret" );
 		PrintStream				original	= System.out;
 		ByteArrayOutputStream	capture		= new ByteArrayOutputStream();
