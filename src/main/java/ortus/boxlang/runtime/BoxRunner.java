@@ -25,7 +25,6 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -169,6 +168,12 @@ public class BoxRunner {
 		int exitCode = 0;
 
 		try {
+			// Now that the runtime is loaded, resolve the first positional argument to
+			// its execution target: registered module > template > shebang script >
+			// module failsafe. The module registry is only available after startup, so
+			// this can't happen during arg parsing.
+			options = resolveExecutionTarget( options, boxRuntime );
+
 			// Execute a Module — modules trump ALL other execution modes
 			if ( options.targetModule() != null ) {
 				System.setProperty( "boxlang.cliModule", options.targetModule() );
@@ -519,6 +524,11 @@ public class BoxRunner {
 
 	/**
 	 * Helper method to parse command-line arguments and set options accordingly.
+	 * <p>
+	 * Runtime startup flags (--bx-debug, --bx-config, --bx-home) are extracted in
+	 * a pre-pass from ANYWHERE in the argument list so they are always honored for
+	 * runtime startup and are never passed through to a module or template,
+	 * regardless of their position relative to other arguments.
 	 *
 	 * @param args The cli arguments used
 	 *
@@ -528,7 +538,6 @@ public class BoxRunner {
 		// Initialize options with defaults
 		Boolean			debug			= null;
 		Boolean			printAST		= false;
-		List<String>	argsList		= new ArrayList<>( Arrays.asList( args ) );
 		String			currentArgument	= null;
 		String			file			= null;
 		String			targetModule	= null;
@@ -540,37 +549,59 @@ public class BoxRunner {
 		List<String>	cliArgs			= new ArrayList<>();
 		String			actionCommand	= null;
 
-		// Consume args in order via the `current` variable
-		while ( !argsList.isEmpty() ) {
-			currentArgument = argsList.remove( 0 );
+		// Pre-parse pass: extract the runtime startup flags (--bx-debug, --bx-config,
+		// --bx-home) from ANYWHERE in the argument list, including after a module: or
+		// template argument. These flags must ALWAYS be honored for runtime startup
+		// and must NEVER be passed through to a module or template as arguments.
+		// Once extracted, they are removed from the list so the main parse loop below
+		// never sees them. Both the space-separated (--bx-config /path) and equals
+		// (--bx-config=/path) forms are supported.
+		List<String>	argsList		= new ArrayList<>();
+		for ( int i = 0; i < args.length; i++ ) {
+			String arg = args[ i ];
 
-			// Debug mode Flag, we find and continue to the next argument
-			if ( currentArgument.equalsIgnoreCase( "--bx-debug" ) ) {
+			// Debug mode Flag
+			if ( arg.equalsIgnoreCase( "--bx-debug" ) ) {
 				debug = true;
 				continue;
 			}
 
-			// Config File Flag, we find and continue to the next argument for the path
-			if ( currentArgument.equalsIgnoreCase( "--bx-config" ) ) {
-				if ( argsList.isEmpty() ) {
-					throw new BoxRuntimeException(
-					    "Missing config file path with --config flag, it must be the next argument. [--config /path/boxlang.json]" );
+			// Config File Flag
+			if ( arg.equalsIgnoreCase( "--bx-config" ) || arg.toLowerCase().startsWith( "--bx-config=" ) ) {
+				if ( arg.indexOf( '=' ) > -1 ) {
+					configFile = arg.substring( arg.indexOf( '=' ) + 1 );
+				} else {
+					if ( i + 1 >= args.length ) {
+						throw new BoxRuntimeException(
+						    "Missing config file path with --config flag, it must be the next argument. [--config /path/boxlang.json]" );
+					}
+					configFile = args[ ++i ];
 				}
-				configFile = argsList.remove( 0 );
 				continue;
 			}
 
-			// Runtime Home Flag, we find and continue to the next argument for the path
-			if ( currentArgument.equalsIgnoreCase( "--bx-home" ) ) {
-				if ( argsList.isEmpty() ) {
-					throw new BoxRuntimeException(
-					    "Missing runtime home path with --home flag, it must be the next argument. [--home /path/to/boxlang-home]" );
+			// Runtime Home Flag
+			if ( arg.equalsIgnoreCase( "--bx-home" ) || arg.toLowerCase().startsWith( "--bx-home=" ) ) {
+				if ( arg.indexOf( '=' ) > -1 ) {
+					runtimeHome = arg.substring( arg.indexOf( '=' ) + 1 );
+				} else {
+					if ( i + 1 >= args.length ) {
+						throw new BoxRuntimeException(
+						    "Missing runtime home path with --home flag, it must be the next argument. [--home /path/to/boxlang-home]" );
+					}
+					runtimeHome = args[ ++i ];
 				}
-				runtimeHome = argsList.remove( 0 );
 				continue;
 			}
 
-			// Is this a module execution? Checked AFTER the setup flags, but BEFORE all
+			argsList.add( arg );
+		}
+
+		// Consume args in order via the `current` variable
+		while ( !argsList.isEmpty() ) {
+			currentArgument = argsList.remove( 0 );
+
+			// Is this a module execution? Checked BEFORE all
 			// other flag/file/script/code processing so a module trumps all of those
 			if ( currentArgument.startsWith( "module:" ) ) {
 				// Remove the prefix
@@ -620,29 +651,12 @@ public class BoxRunner {
 				break;
 			}
 
-			// Is it a shebang script to execute
-			if ( isShebangScript( currentArgument ) ) {
-				file = getSheBangScript( currentArgument );
-				cliArgs.addAll( argsList );
-				break;
-			}
-
-			// Template to execute?
-			String targetPath = getExecutableTemplate( currentArgument );
-			if ( targetPath != null ) {
-				file = targetPath;
-				cliArgs.addAll( argsList );
-				break;
-			}
-
-			// add it to the list of arguments
+			// Positional argument: classification is deferred until the runtime is
+			// loaded (see resolveExecutionTarget in main()). We can't know if this is
+			// a registered module name until the runtime and its module registry are
+			// up, and the runtime can't be started until all args are parsed (config
+			// file, runtime home, etc.), so deferring is the only correct option.
 			cliArgs.add( currentArgument );
-		}
-
-		// If no file, code, module, or action command was specified, but we have cliArgs,
-		// treat the first arg as a potential module name (shortcut for module:name syntax)
-		if ( file == null && code == null && targetModule == null && actionCommand == null && !cliArgs.isEmpty() ) {
-			targetModule = cliArgs.remove( 0 );
 		}
 
 		return new CLIOptions(
@@ -658,6 +672,118 @@ public class BoxRunner {
 		    args,
 		    targetModule,
 		    actionCommand );
+	}
+
+	/**
+	 * Resolve the first positional CLI argument to its execution target now that
+	 * the runtime (and therefore its module registry) is loaded.
+	 * <p>
+	 * During {@link #parseCommandLineOptions} we cannot know if the first
+	 * positional argument is a registered module name: the module registry only
+	 * exists once the runtime has started, and the runtime cannot be started until
+	 * all arguments (config file, runtime home, debug, etc.) have been parsed.
+	 * This catch-22 is why the classification is deferred to here, after startup.
+	 * <p>
+	 * Priority:
+	 * <ol>
+	 * <li><strong>Registered module</strong> — the module service reports this name
+	 * exists, so it's a module execution. This prevents the shebang and template
+	 * checks from hijacking a module execution.</li>
+	 * <li><strong>Executable template</strong> — a valid template file on disk.</li>
+	 * <li><strong>Shebang script</strong> — a file whose first line starts with
+	 * {@code #!}.</li>
+	 * <li><strong>Module failsafe</strong> — nothing matched, so assume it's a
+	 * module name anyway. Preserves the historical end-of-parse behavior.</li>
+	 * </ol>
+	 *
+	 * @param options The parsed CLI options
+	 * @param runtime The started BoxLang runtime
+	 *
+	 * @return A new CLIOptions with the first positional argument resolved to its
+	 *         target
+	 */
+	private static CLIOptions resolveExecutionTarget( CLIOptions options, BoxRuntime runtime ) {
+		// If a target was already resolved during parsing (module:, template, code or
+		// action command) or there are no positional arguments, there's nothing to do
+		if ( options.targetModule() != null
+		    || options.templatePath() != null
+		    || options.code() != null
+		    || options.actionCommand() != null
+		    || options.cliArgs().isEmpty() ) {
+			return options;
+		}
+
+		String			firstArg	= options.cliArgs().getFirst();
+		List<String>	rest		= new ArrayList<>( options.cliArgs().subList( 1, options.cliArgs().size() ) );
+
+		// 1. Is the first arg a registered module name?
+		if ( runtime.getModuleService().hasModule( Key.of( firstArg ) ) ) {
+			return withTargetModule( options, firstArg, rest );
+		}
+
+		// 2. Is it an executable template?
+		String targetPath = getExecutableTemplate( firstArg );
+		if ( targetPath != null ) {
+			return withTarget( options, targetPath, rest );
+		}
+
+		// 3. Is it a shebang script?
+		if ( isShebangScript( firstArg ) ) {
+			return withTarget( options, getSheBangScript( firstArg ), rest );
+		}
+
+		// 4. Failsafe: treat the first arg as a module name
+		return withTargetModule( options, firstArg, rest );
+	}
+
+	/**
+	 * Build a new CLIOptions with a template path set and the module cleared.
+	 *
+	 * @param options The options to base the new options on
+	 * @param file    The template path to execute
+	 * @param cliArgs The arguments to pass to the template
+	 *
+	 * @return A new CLIOptions instance
+	 */
+	private static CLIOptions withTarget( CLIOptions options, String file, List<String> cliArgs ) {
+		return new CLIOptions(
+		    file,
+		    options.debug(),
+		    options.code(),
+		    options.configFile(),
+		    options.printAST(),
+		    options.transpile(),
+		    options.runtimeHome(),
+		    options.showVersion(),
+		    cliArgs,
+		    options.cliArgsRaw(),
+		    null,
+		    options.actionCommand() );
+	}
+
+	/**
+	 * Build a new CLIOptions with a target module set and the template path cleared.
+	 *
+	 * @param options The options to base the new options on
+	 * @param module  The module to execute
+	 * @param cliArgs The arguments to pass to the module
+	 *
+	 * @return A new CLIOptions instance
+	 */
+	private static CLIOptions withTargetModule( CLIOptions options, String module, List<String> cliArgs ) {
+		return new CLIOptions(
+		    null,
+		    options.debug(),
+		    options.code(),
+		    options.configFile(),
+		    options.printAST(),
+		    options.transpile(),
+		    options.runtimeHome(),
+		    options.showVersion(),
+		    cliArgs,
+		    options.cliArgsRaw(),
+		    module,
+		    options.actionCommand() );
 	}
 
 	/**
