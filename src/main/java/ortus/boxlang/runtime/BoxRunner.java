@@ -40,6 +40,7 @@ import ortus.boxlang.compiler.BXCompiler;
 import ortus.boxlang.compiler.CFTranspiler;
 import ortus.boxlang.compiler.DiskClassUtil;
 import ortus.boxlang.compiler.FeatureAudit;
+import ortus.boxlang.compiler.SyntaxCheck;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.prettyprint.PrettyPrint;
@@ -106,6 +107,7 @@ public class BoxRunner {
 	 * compile, cftranspile, featureAudit, format, generateSecret, schedule
 	 */
 	private static final List<String>	ACTION_COMMANDS				= List.of(
+	    "check",
 	    "compile",
 	    "cftranspile",
 	    "featureaudit",
@@ -336,6 +338,9 @@ public class BoxRunner {
 	 */
 	static int runActionCommand( CLIOptions options, BoxRuntime runtime ) {
 		switch ( options.actionCommand().toLowerCase() ) {
+			case "check" :
+				SyntaxCheck.main( options.cliArgs().toArray( new String[ 0 ] ) );
+				break;
 			case "compile" :
 				BXCompiler.main( options.cliArgs().toArray( new String[ 0 ] ) );
 				break;
@@ -978,6 +983,8 @@ public class BoxRunner {
 		System.out.println( "      --bx-transpile             🔄 Transpile BoxLang code to Java" );
 		System.out.println();
 		System.out.println( "🚀 ACTION COMMANDS:" );
+		System.out.println( "  check                            ✅ Check source files for syntax errors without executing them" );
+		System.out.println( "                                     Use: boxlang check --help" );
 		System.out.println( "  compile                         📦 Pre-compile BoxLang templates to class files" );
 		System.out.println( "                                     Use: boxlang compile --help" );
 		System.out.println( "  cftranspile                     🔄 Transpile ColdFusion code to BoxLang" );
@@ -1007,6 +1014,10 @@ public class BoxRunner {
 		System.out.println();
 		System.out.println( "  # 🐛 Execute with debug mode and custom config" );
 		System.out.println( "  boxlang --bx-debug --bx-config ./custom.json myapp.bx" );
+		System.out.println();
+		System.out.println( "  # ✅ Check files for syntax errors" );
+		System.out.println( "  boxlang check myapp.bx" );
+		System.out.println( "  boxlang check --source ./src" );
 		System.out.println();
 		System.out.println( "  # 📦 Pre-compile templates" );
 		System.out.println( "  boxlang compile --source ./src --target ./compiled" );
