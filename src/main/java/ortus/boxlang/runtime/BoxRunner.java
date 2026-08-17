@@ -104,7 +104,7 @@ public class BoxRunner {
 
 	/**
 	 * A list of action commands that can be executed by the BoxRunner:
-	 * compile, cftranspile, featureAudit, format, generateSecret, schedule
+	 * check, compile, cftranspile, featureaudit, format, generatesecret, schedule
 	 */
 	private static final List<String>	ACTION_COMMANDS				= List.of(
 	    "check",

@@ -68,6 +68,14 @@ public final class SyntaxCheck {
 	 * @param args command-line arguments
 	 */
 	public static void main( String[] args ) {
+		// Check for help first before initializing BoxRuntime
+		for ( String arg : args ) {
+			if ( arg.equalsIgnoreCase( "--help" ) || arg.equalsIgnoreCase( "-h" ) ) {
+				printHelp( System.out );
+				System.exit( 0 );
+			}
+		}
+
 		BoxRuntime runtime = BoxRuntime.getInstance();
 		try {
 			System.exit( run( args, System.out, System.err ) );
@@ -133,9 +141,8 @@ public final class SyntaxCheck {
 				return 1;
 			}
 			if ( Files.isDirectory( sourcePath ) ) {
-				try {
-					Files.walk( sourcePath, FileVisitOption.FOLLOW_LINKS )
-					    .filter( Files::isRegularFile )
+				try ( var walk = Files.walk( sourcePath, FileVisitOption.FOLLOW_LINKS ) ) {
+					walk.filter( Files::isRegularFile )
 					    .filter( path -> SUPPORTED_EXTENSIONS.contains( extensionOf( path ) ) )
 					    .filter( path -> !DiskClassUtil.isJavaByteCode( path.toFile() ) )
 					    .forEach( targets::add );
@@ -204,8 +211,8 @@ public final class SyntaxCheck {
 			}
 			ParsingResult result = new Parser().parse( path.toFile() );
 			return new FileResult( path, result.isCorrect(), result.getIssues() );
-		} catch ( Throwable t ) {
-			String message = t.getMessage() != null ? t.getMessage() : t.toString();
+		} catch ( Exception e ) {
+			String message = e.getMessage() != null ? e.getMessage() : e.toString();
 			return new FileResult( path, false, List.of( new Issue( message, null ) ) );
 		}
 	}
