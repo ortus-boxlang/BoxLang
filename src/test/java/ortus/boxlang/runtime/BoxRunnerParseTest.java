@@ -316,7 +316,7 @@ public class BoxRunnerParseTest {
 	@DisplayName( "It recognizes all action commands" )
 	@Test
 	void testAllActionCommands() {
-		for ( String command : List.of( "compile", "cftranspile", "featureaudit", "format", "generatesecret", "schedule" ) ) {
+		for ( String command : List.of( "check", "compile", "cftranspile", "featureaudit", "format", "generatesecret", "schedule" ) ) {
 			CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { command, "arg1" } );
 			assertThat( options.actionCommand() ).isEqualTo( command );
 			assertThat( options.cliArgs() ).containsExactly( "arg1" ).inOrder();
