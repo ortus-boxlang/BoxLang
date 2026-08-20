@@ -216,12 +216,12 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 		this.nameAsKey		= name;
 		this.tempFiles		= new ArrayList<>();
 		this.classLoaderId	= UUID.randomUUID().toString().replace( "-", "" ).substring( 0, 8 );
+		this.URLHash		= ClassLoaderUtil.hashSorted( urls );
 		this.cleanable		= cleaner.register( this, new CloseAction( this.tempFiles ) );
 		// Process original URLs through temp-copying addURL after super()
 		for ( URL url : urls ) {
 			addURL( url );
 		}
-		this.URLHash = ClassLoaderUtil.hashSorted( getURLs() );
 	}
 
 	/**
