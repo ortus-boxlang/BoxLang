@@ -17,20 +17,27 @@
  */
 package ortus.boxlang.runtime.loader;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
+import java.lang.ref.Cleaner;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
@@ -107,6 +114,75 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 	private String											URLHash;
 
 	/**
+	 * Global Cleaner instance for all DynamicClassLoaders.
+	 * Used to reliably close unreferenced class loaders that were not explicitly closed.
+	 */
+	private static final Cleaner							cleaner				= Cleaner.create();
+
+	/**
+	 * List of temporary files created by this class loader for JAR copying.
+	 * These files will be deleted when the class loader is closed.
+	 */
+	private final List<File>								tempFiles;
+
+	/**
+	 * Unique identifier for this class loader instance, used in temp file naming.
+	 */
+	private final String									classLoaderId;
+
+	/**
+	 * Cleanable registration for this class loader.
+	 * When the CL becomes phantom-reachable (eligible for GC without explicit close),
+	 * the registered cleanup action will close it. The action captures only the state
+	 * it needs (temp files list) via a static inner class, NOT a reference to this CL,
+	 * so the CL can still be GC'd.
+	 */
+	private final Cleaner.Cleanable							cleanable;
+
+	/**
+	 * A cleaning action that closes a DynamicClassLoader without holding a strong reference to it.
+	 * Used by {@link Cleaner} so the CL can still become phantom-reachable.
+	 * <p>
+	 * This static inner class is th ekey to making the Cleaner pattern work: it captures
+	 * the CL's identity (for temp file naming) and its temp files list, but does NOT
+	 * hold a reference to the DynamicClassLoader itself. Otherwise the CL would never
+	 * become phantom-reachable and the Cleaner would never fire.
+	 */
+	private static class CloseAction implements Runnable {
+
+		private final List<File> tempFiles;
+
+		CloseAction( List<File> tempFiles ) {
+			this.tempFiles = tempFiles;
+		}
+
+		@Override
+		public void run() {
+			deleteTempFiles( this.tempFiles );
+		}
+
+		/**
+		 * Best-effort deletion of temporary JAR files. This may fail on Windows
+		 * if the JARs are still locked; if so, {@code deleteOnExit()} in the
+		 * constructor is the JVM-shutdown fallback.
+		 */
+		private static void deleteTempFiles( List<File> tempFiles ) {
+			if ( tempFiles.isEmpty() ) {
+				return;
+			}
+			for ( File tempFile : tempFiles ) {
+				try {
+					if ( tempFile.exists() ) {
+						tempFile.delete();
+					}
+				} catch ( Exception e ) {
+					// best-effort
+				}
+			}
+		}
+	}
+
+	/**
 	 * Construct the class loader
 	 *
 	 * @param name            The unique name of the class loader
@@ -134,13 +210,18 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 	 * @param loadParentFirst Whether to load the parent class loader or not, default is to create a boundary.
 	 */
 	public DynamicClassLoader( Key name, URL[] urls, ClassLoader parent, Boolean loadParentFirst ) {
-		// We do not seed the parent class loader because we want to control the class loading
-		// And when to null out the parent to create separate class loading environments
-		super( name.getName(), urls, loadParentFirst ? parent : null );
+		super( name.getName(), new URL[ 0 ], loadParentFirst ? parent : null );
 		Objects.requireNonNull( parent, "Parent class loader cannot be null" );
-		this.parent		= parent;
-		this.nameAsKey	= name;
-		this.URLHash	= ClassLoaderUtil.hashSorted( urls );
+		this.parent			= parent;
+		this.nameAsKey		= name;
+		this.tempFiles		= new ArrayList<>();
+		this.classLoaderId	= UUID.randomUUID().toString().replace( "-", "" ).substring( 0, 8 );
+		this.cleanable		= cleaner.register( this, new CloseAction( this.tempFiles ) );
+		// Process original URLs through temp-copying addURL after super()
+		for ( URL url : urls ) {
+			addURL( url );
+		}
+		this.URLHash = ClassLoaderUtil.hashSorted( getURLs() );
 	}
 
 	/**
@@ -151,6 +232,107 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 	 */
 	public DynamicClassLoader( Key name, ClassLoader parent ) {
 		this( name, new URL[ 0 ], parent, false );
+	}
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Temp File Management
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Copies JAR files from the provided URLs to temporary files to prevent file locking on Windows.
+	 * Non-JAR files and non-file URLs are returned as-is.
+	 * <p>
+	 * Temp file naming strategy:
+	 * {@code {original-filename}-{hash-of-path-timestamp}-{runtimeId}-{classLoaderId}.jar}
+	 * <p>
+	 * This ensures:
+	 * - Original filename is preserved for debugging
+	 * - Hash includes full path + lastModified timestamp for uniqueness when file changes
+	 * - Runtime ID prevents conflicts across multiple BoxLang processes sharing the same temp dir
+	 * - ClassLoader ID prevents conflicts when multiple CLs load the same JAR simultaneously
+	 *
+	 * @param urls          The original URLs to process
+	 * @param tempFiles     List to populate with created temp files
+	 * @param runtimeId     Unique ID of the runtime process
+	 * @param classLoaderId Unique ID of this class loader instance
+	 *
+	 * @return Array of URLs pointing to temp files (or original URLs if not file-based)
+	 */
+	private static URL[] copyJarsToTemp( URL[] urls, List<File> tempFiles, String runtimeId, String classLoaderId ) {
+		if ( urls == null || urls.length == 0 ) {
+			return urls;
+		}
+
+		List<URL> resultUrls = new ArrayList<>();
+
+		for ( URL url : urls ) {
+			if ( !"file".equals( url.getProtocol() ) ) {
+				resultUrls.add( url );
+				continue;
+			}
+
+			String	path		= url.getPath();
+			File	sourceFile	= new File( path );
+
+			if ( !path.toLowerCase().endsWith( ".jar" ) || !sourceFile.exists() ) {
+				resultUrls.add( url );
+				continue;
+			}
+
+			try {
+				String	fileName		= sourceFile.getName();
+				String	nameWithoutExt	= fileName.endsWith( ".jar" ) ? fileName.substring( 0, fileName.length() - 4 ) : fileName;
+				String	pathHash		= ClassLoaderUtil.hashSorted( new Object[] { sourceFile.getAbsolutePath(), sourceFile.lastModified() } );
+				String	tempFileName	= String.format( "%s-%s-%s-%s.jar", nameWithoutExt, pathHash.substring( 0, 16 ),
+				    runtimeId, classLoaderId );
+
+				Path	tempDir			= Paths.get( System.getProperty( "java.io.tmpdir" ), "boxlang-jars" );
+				Files.createDirectories( tempDir );
+				Path	tempFilePath	= tempDir.resolve( tempFileName );
+				File	tempFile		= tempFilePath.toFile();
+
+				if ( !tempFile.exists() ) {
+					copyFile( sourceFile, tempFile );
+				}
+				tempFile.deleteOnExit();
+
+				tempFiles.add( tempFile );
+				resultUrls.add( tempFile.toURI().toURL() );
+
+				if ( logger != null ) {
+					logger.debug( "Copied JAR [{}] to temp location [{}]", sourceFile.getAbsolutePath(), tempFile.getAbsolutePath() );
+				}
+			} catch ( Exception e ) {
+				resultUrls.add( url );
+				if ( logger != null ) {
+					logger.warn( "Failed to copy JAR [{}] to temp location, using original path: {}", sourceFile.getAbsolutePath(),
+					    e.getMessage() );
+				}
+			}
+		}
+
+		return resultUrls.toArray( new URL[ 0 ] );
+	}
+
+	/**
+	 * Copy a file from source to destination
+	 *
+	 * @param source The source file
+	 * @param dest   The destination file
+	 *
+	 * @throws IOException If an I/O error occurs during copying
+	 */
+	private static void copyFile( File source, File dest ) throws IOException {
+		try ( InputStream is = new java.io.FileInputStream( source );
+		    FileOutputStream os = new FileOutputStream( dest ) ) {
+			byte[]	buffer	= new byte[ 8192 ];
+			int		bytesRead;
+			while ( ( bytesRead = is.read( buffer ) ) != -1 ) {
+				os.write( buffer, 0, bytesRead );
+			}
+		}
 	}
 
 	/**
@@ -166,6 +348,16 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 	 */
 	public Key getNameAsKey() {
 		return this.nameAsKey;
+	}
+
+	/**
+	 * Get the unique identifier for this class loader instance.
+	 * Used in temp file naming to distinguish files from different class loaders.
+	 *
+	 * @return The unique class loader identifier
+	 */
+	public String getClassLoaderId() {
+		return this.classLoaderId;
 	}
 
 	/**
@@ -302,7 +494,8 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 	}
 
 	/**
-	 * Add a URL to the class loader
+	 * Add a URL to the class loader, automatically copying JARs to temp files
+	 * to prevent file locking on Windows.
 	 *
 	 * @param url The URL to add
 	 *
@@ -310,7 +503,12 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 	 */
 	@Override
 	public void addURL( URL url ) {
-		super.addURL( url );
+		List<File>	newTempFiles	= new ArrayList<>();
+		URL[]		processed		= copyJarsToTemp( new URL[] { url }, newTempFiles, runtime.getRuntimeId(), this.classLoaderId );
+		for ( URL u : processed ) {
+			super.addURL( u );
+		}
+		this.tempFiles.addAll( newTempFiles );
 	}
 
 	/**
@@ -459,11 +657,20 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 	 */
 	@Override
 	public void close() throws IOException {
+		// Guard against double-close and Cleaner racing with explicit close
+		if ( closed ) {
+			return;
+		}
 		closed = true;
 		StringWriter	sw	= new StringWriter();
 		PrintWriter		pw	= new PrintWriter( sw );
 		new Exception().printStackTrace( pw );
 		closedStack = sw.toString();
+
+		// Cancel the Cleaner registration so it doesn't try to close us again
+		if ( this.cleanable != null ) {
+			this.cleanable.clean();
+		}
 
 		// Clear the cache
 		clearCache();
@@ -471,6 +678,48 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 		this.parent = null;
 		// Close the class loader
 		super.close();
+		// Delete temporary JAR files
+		deleteTempFiles();
+	}
+
+	/**
+	 * Delete all temporary files created by this class loader.
+	 * This method is called when the class loader is closed to clean up temp JAR files.
+	 */
+	private void deleteTempFiles() {
+		if ( tempFiles.isEmpty() ) {
+			return;
+		}
+
+		int	deletedCount	= 0;
+		int	failedCount		= 0;
+
+		for ( File tempFile : tempFiles ) {
+			try {
+				if ( tempFile.exists() && tempFile.delete() ) {
+					deletedCount++;
+					if ( logger != null ) {
+						logger.debug( "Deleted temp JAR file [{}]", tempFile.getAbsolutePath() );
+					}
+				} else {
+					failedCount++;
+					if ( logger != null ) {
+						logger.warn( "Failed to delete temp JAR file [{}] - may still be locked by another process",
+						    tempFile.getAbsolutePath() );
+					}
+				}
+			} catch ( Exception e ) {
+				failedCount++;
+				if ( logger != null ) {
+					logger.warn( "Error deleting temp JAR file [{}]: {}", tempFile.getAbsolutePath(), e.getMessage() );
+				}
+			}
+		}
+
+		if ( logger != null && ( deletedCount > 0 || failedCount > 0 ) ) {
+			logger.debug( "Temp file cleanup complete: {} deleted, {} failed for ClassLoader [{}]",
+			    deletedCount, failedCount, nameAsKey.getName() );
+		}
 	}
 
 	/**

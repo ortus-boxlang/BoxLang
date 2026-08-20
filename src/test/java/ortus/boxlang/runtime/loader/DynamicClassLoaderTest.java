@@ -20,6 +20,7 @@ package ortus.boxlang.runtime.loader;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
@@ -247,6 +248,112 @@ public class DynamicClassLoaderTest {
 		assertThat( dynamicClassLoader.getURLs().length ).isEqualTo( initialUrlCount );
 
 		dynamicClassLoader.close();
+	}
+
+	// ---- Temp File Tests ----
+
+	@Test
+	@DisplayName( "Constructor creates temp copies of JAR files" )
+	void testConstructorCreatesTempJars() throws Exception {
+		Path				libPath				= Paths.get( "src/test/resources/libs/" ).toAbsolutePath().normalize();
+		URL[]				urls				= DynamicClassLoader.getJarURLs( libPath );
+		ClassLoader			parentClassLoader	= getClass().getClassLoader();
+		DynamicClassLoader	dynamicClassLoader	= new DynamicClassLoader( Key.of( "TempJarTest" ), urls, parentClassLoader, false );
+
+		try {
+			URL[]	clURLs		= dynamicClassLoader.getURLs();
+			String	runtimeId	= runtime.getRuntimeId();
+
+			// All JAR URLs should point to temp files in boxlang-jars directory
+			for ( URL url : clURLs ) {
+				String urlStr = url.toString();
+				if ( urlStr.endsWith( ".jar" ) ) {
+					assertThat( urlStr ).contains( "boxlang-jars" );
+					// Temp naming: originalName-hash-runtimeId-classLoaderId.jar
+					assertThat( urlStr ).contains( runtimeId );
+					assertThat( urlStr ).contains( dynamicClassLoader.getClassLoaderId() );
+				}
+			}
+			// Non-jar files (like config.properties) should remain at their original path
+		} finally {
+			dynamicClassLoader.close();
+		}
+	}
+
+	@Test
+	@DisplayName( "Temp files exist on disk and are deletable after close" )
+	void testTempFilesExistAndAreDeletedOnClose() throws Exception {
+		Path				libPath				= Paths.get( "src/test/resources/libs/" ).toAbsolutePath().normalize();
+		URL[]				urls				= DynamicClassLoader.getJarURLs( libPath );
+		ClassLoader			parentClassLoader	= getClass().getClassLoader();
+		DynamicClassLoader	dynamicClassLoader	= new DynamicClassLoader( Key.of( "TempFileCleanup" ), urls, parentClassLoader, false );
+
+		// Collect temp file paths before close
+		File[]				tempFilesBefore		= listTempJarsForCL( dynamicClassLoader.getClassLoaderId() );
+
+		// There should be at least some temp files for this CL
+		assertThat( tempFilesBefore ).isNotEmpty();
+
+		// Close — should delete them
+		dynamicClassLoader.close();
+
+		// After close, those temp files should be gone
+		for ( File f : tempFilesBefore ) {
+			assertThat( f.exists() ).isFalse();
+		}
+	}
+
+	@Test
+	@DisplayName( "addURL creates temp copies of JARs" )
+	void testAddURLCreatesTempJar() throws Exception {
+		String				jarPath				= Paths.get( "src/test/resources/libs/helloworld.jar" ).toAbsolutePath().toString();
+		ClassLoader			parentClassLoader	= getClass().getClassLoader();
+		DynamicClassLoader	dynamicClassLoader	= new DynamicClassLoader( Key.of( "AddURLTempTest" ), new URL[] {}, parentClassLoader, false );
+
+		try {
+			dynamicClassLoader.addURL( Paths.get( jarPath ).toUri().toURL() );
+
+			URL[] clURLs = dynamicClassLoader.getURLs();
+			assertThat( clURLs ).hasLength( 1 );
+
+			String urlStr = clURLs[ 0 ].toString();
+			// Should point to a temp location, not the original
+			assertThat( urlStr ).contains( "boxlang-jars" );
+			assertThat( urlStr ).contains( dynamicClassLoader.getClassLoaderId() );
+			assertThat( urlStr ).contains( runtime.getRuntimeId() );
+		} finally {
+			dynamicClassLoader.close();
+		}
+	}
+
+	@Test
+	@DisplayName( "Config properties are NOT copied to temp (not a .jar file)" )
+	void testNonJarFilesNotCopiedToTemp() throws Exception {
+		URL[]				urls				= DynamicClassLoader.getJarURLs(
+		    Paths.get( "src/test/resources/libs/" ).toAbsolutePath().normalize()
+		);
+		ClassLoader			parentClassLoader	= getClass().getClassLoader();
+		DynamicClassLoader	dynamicClassLoader	= new DynamicClassLoader( Key.of( "NonJarTest" ), urls, parentClassLoader, false );
+
+		try {
+			for ( URL url : dynamicClassLoader.getURLs() ) {
+				String urlStr = url.toString();
+				// Only .jar files should be temp-copied
+				if ( urlStr.endsWith( ".properties" ) || urlStr.endsWith( ".class" ) ) {
+					assertThat( urlStr ).doesNotContain( "boxlang-jars" );
+				}
+			}
+		} finally {
+			dynamicClassLoader.close();
+		}
+	}
+
+	/**
+	 * Helper to list temp files that belong to a specific CL ID
+	 */
+	private static File[] listTempJarsForCL( String classLoaderId ) {
+		File tempDir = new File( System.getProperty( "java.io.tmpdir" ), "boxlang-jars" );
+		return tempDir.listFiles( f -> f.getName().contains( classLoaderId ) );
 	}
 
 }
