@@ -931,4 +931,21 @@ public class ClassLocator extends ClassLoader {
 		this.classLoaders.clear();
 	}
 
+	/**
+	 * Remove all cached {@code ClassLocation} entries from the resolver cache whose
+	 * underlying {@code Class<?>} was loaded by the given {@code ClassLoader}.
+	 *
+	 * This is used when a {@link DynamicClassLoader} is closed or removed, to ensure
+	 * stale class references are purged from the global resolver cache and will be
+	 * re-resolved on the next request.
+	 *
+	 * @param classLoader The class loader whose cached classes should be removed
+	 */
+	public void clearForClassLoader( ClassLoader classLoader ) {
+		this.resolverCache.values().removeIf( location -> {
+			Class<?> clazz = location.clazz();
+			return clazz != null && clazz.getClassLoader() == classLoader;
+		} );
+	}
+
 }

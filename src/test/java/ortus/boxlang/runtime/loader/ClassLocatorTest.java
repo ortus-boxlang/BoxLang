@@ -20,6 +20,9 @@ package ortus.boxlang.runtime.loader;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,9 +31,11 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.resolvers.BoxResolver;
+import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.exceptions.BoxLangException;
 
 public class ClassLocatorTest {
@@ -163,6 +168,45 @@ public class ClassLocatorTest {
 		assertThat( locator.isEmpty() ).isFalse();
 		assertThat( locator.classSet() ).contains( targetClass );
 		assertThat( locator.clear( targetClass ) ).isTrue();
+	}
+
+	@DisplayName( "It can clear cached classes for a specific DynamicClassLoader" )
+	@Test
+	public void testClearForClassLoader() throws Exception {
+		// Load a class from a DynamicClassLoader-hosted JAR so we have a class
+		// whose getClassLoader() points to that DCL
+		Path				libPath	= Paths.get( "src/test/resources/libs/" ).toAbsolutePath().normalize();
+		URL[]				urls	= DynamicClassLoader.getJarURLs( libPath );
+		DynamicClassLoader	dcl		= new DynamicClassLoader( Key.of( "clearForCLTest" ), urls, getClass().getClassLoader(), false );
+		try {
+			Class<?> helloWorld = dcl.loadClass( "HelloWorld" );
+			assertThat( helloWorld ).isNotNull();
+			assertThat( helloWorld.getClassLoader() ).isEqualTo( dcl );
+
+			locator.clear();
+			assertThat( locator.size() ).isEqualTo( 0 );
+
+			// Put a ClassLocation that references the DCL-loaded class into the resolver cache
+			ClassLocation location = new ClassLocation(
+			    "HelloWorld",
+			    "HelloWorld.class",
+			    "com.example",
+			    ClassLocator.TYPE_JAVA,
+			    helloWorld,
+			    null,
+			    true,
+			    "testApp",
+			    null
+			);
+			locator.getResolverCache().put( "test:HelloWorld", location );
+			assertThat( locator.size() ).isEqualTo( 1 );
+
+			// Now clear for this DCL and verify
+			locator.clearForClassLoader( dcl );
+			assertThat( locator.size() ).isEqualTo( 0 );
+		} finally {
+			dcl.close();
+		}
 	}
 
 }

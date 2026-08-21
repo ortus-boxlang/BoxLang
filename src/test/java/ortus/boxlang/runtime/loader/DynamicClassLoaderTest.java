@@ -356,4 +356,42 @@ public class DynamicClassLoaderTest {
 		return tempDir.listFiles( f -> f.getName().contains( classLoaderId ) );
 	}
 
+	@Test
+	@DisplayName( "Close purges cached classes from global ClassLocator resolver cache" )
+	void testClosePurgesGlobalResolverCache() throws Exception {
+		Path				libPath	= Paths.get( "src/test/resources/libs/" ).toAbsolutePath().normalize();
+		URL[]				urls	= DynamicClassLoader.getJarURLs( libPath );
+		DynamicClassLoader	dcl		= new DynamicClassLoader( Key.of( "closePurgeTest" ), urls, getClass().getClassLoader(), false );
+		ClassLocator		locator	= runtime.getClassLocator();
+
+		try {
+			// Load a class through the DCL
+			Class<?> helloWorld = dcl.loadClass( "HelloWorld" );
+			assertThat( helloWorld.getClassLoader() ).isEqualTo( dcl );
+
+			// Put a ClassLocation referencing that DCL-loaded class into the resolver cache
+			ClassLocation location = new ClassLocation(
+			    "HelloWorld",
+			    "HelloWorld.class",
+			    "com.example",
+			    ClassLocator.TYPE_JAVA,
+			    helloWorld,
+			    null,
+			    true,
+			    "testApp",
+			    null
+			);
+			locator.getResolverCache().put( "purge:HelloWorld", location );
+			assertThat( locator.getResolverCache() ).containsKey( "purge:HelloWorld" );
+
+			// Close the DCL — this should call clearForClassLoader() and remove the entry
+			dcl.close();
+
+			assertThat( locator.getResolverCache() ).doesNotContainKey( "purge:HelloWorld" );
+		} finally {
+			// Ensure it's closed (double-close is guarded in close())
+			dcl.close();
+		}
+	}
+
 }

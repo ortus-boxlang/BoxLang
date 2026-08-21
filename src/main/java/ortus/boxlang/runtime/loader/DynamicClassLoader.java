@@ -672,6 +672,9 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 			this.cleanable.clean();
 		}
 
+		// Clear stale entries from the global ClassLocator resolver cache
+		BoxRuntime.getInstance().getClassLocator().clearForClassLoader( this );
+
 		// Clear the cache
 		clearCache();
 		// Null out the parent

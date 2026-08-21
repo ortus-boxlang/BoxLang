@@ -325,7 +325,13 @@ public class Application {
 			// This is to prevent memory leaks when using reloadOnChange and changing the jars many times in a row
 			// Note, we are NOT closing these CLs. It's not safe to since they may be in by another request and I don't want this action
 			// to activley trash any other threads still using the old CL.
-			this.classLoaders.entrySet().removeIf( entry -> entry.getValue() != theCL && entry.getValue().getURLHash().equals( theCL.getURLHash() ) );
+			this.classLoaders.entrySet().removeIf( entry -> {
+				if ( entry.getValue() != theCL && entry.getValue().getURLHash().equals( theCL.getURLHash() ) ) {
+					BoxRuntime.getInstance().getClassLocator().clearForClassLoader( entry.getValue() );
+					return true;
+				}
+				return false;
+			} );
 		}
 
 		// Make sure our thread is using the right class loader
