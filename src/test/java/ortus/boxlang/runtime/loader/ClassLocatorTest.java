@@ -185,7 +185,7 @@ public class ClassLocatorTest {
 			locator.clear();
 			assertThat( locator.size() ).isEqualTo( 0 );
 
-			// Put a ClassLocation that references the DCL-loaded class into the resolver cache
+			// Put a ClassLocation that references the DCL-loaded class into the resolver cache.
 			ClassLocation location = new ClassLocation(
 			    "HelloWorld",
 			    "HelloWorld.class",
