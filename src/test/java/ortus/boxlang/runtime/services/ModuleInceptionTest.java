@@ -66,11 +66,14 @@ class ModuleInceptionTest {
 	static final Key		GRANDCHILD					= Key.of( "inceptionGrandchild" );
 	static final Key		DISABLING_PARENT			= Key.of( "disablingParent" );
 	static final Key		DISABLED_CHILD				= Key.of( "disabledChild" );
+	/** The jar module's discovery name: the jar file's base name. */
 	static final Key		JAR_MODULE					= Key.of( "javaJarModule" );
+	/** The name the jar module renames itself to via {@code @BoxModule( name )} during registration. */
+	static final Key		JAR_RENAMED					= Key.of( "renamedJarModule" );
 	static final Key		JAR_HOST					= Key.of( "jarHostModule" );
 
 	static final List<Key>	ALL_FIXTURES				= List.of(
-	    PARENT, CHILD, GRANDCHILD, DISABLING_PARENT, DISABLED_CHILD, JAR_MODULE, JAR_HOST
+	    PARENT, CHILD, GRANDCHILD, DISABLING_PARENT, DISABLED_CHILD, JAR_MODULE, JAR_RENAMED, JAR_HOST
 	);
 
 	@BeforeEach
@@ -316,14 +319,24 @@ class ModuleInceptionTest {
 	void testJarModuleResolvesItsJavaConfig() {
 		service.buildRegistryFromPath( JAR_MODULES );
 		service.register( JAR_MODULE );
-		service.activate( JAR_MODULE );
 
-		ModuleRecord record = service.getModuleRecord( JAR_MODULE );
+		// The jar renamed itself via @BoxModule( name ) during registration, and the
+		// registry was re-keyed to match — the discovery name is gone
+		assertThat( service.hasModule( JAR_RENAMED ) ).isTrue();
+		assertThat( service.hasModule( JAR_MODULE ) ).isFalse();
+
+		service.activate( JAR_RENAMED );
+
+		ModuleRecord record = service.getModuleRecord( JAR_RENAMED );
 
 		// The IModuleConfig comes from the jar itself, not from any surrounding folder
 		assertThat( record.moduleConfig ).isNotNull();
 		assertThat( record.moduleConfig ).isNotInstanceOf( BoxModuleConfig.class );
 		assertThat( record.isActivated() ).isTrue();
+
+		// The rename re-derived everything keyed off the name
+		assertThat( record.name ).isEqualTo( JAR_RENAMED );
+		assertThat( record.invocationPath ).isEqualTo( ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + JAR_RENAMED.getName() );
 
 		// @BoxModule annotation metadata is applied
 		assertThat( record.version ).isEqualTo( "2.0.0" );
@@ -331,6 +344,39 @@ class ModuleInceptionTest {
 
 		// configure() ran against this record
 		assertThat( record.settings.getAsString( Key.of( "javaKey" ) ) ).isEqualTo( "javaValue" );
+	}
+
+	@DisplayName( "loadModule on a self-renaming jar registers and activates it under its new name" )
+	@Test
+	void testLoadModuleActivatesARenamedJarModule() {
+		service.loadModule( JAR_MODULES.resolve( "javaJarModule.jar" ) );
+
+		ModuleRecord record = service.getModuleRecord( JAR_RENAMED );
+
+		assertThat( record ).isNotNull();
+		assertThat( record.isActivated() ).isTrue();
+		assertThat( service.hasModule( JAR_MODULE ) ).isFalse();
+	}
+
+	@DisplayName( "A folder module never renames itself via @BoxModule( name ); the folder name wins" )
+	@Test
+	void testFolderModuleIgnoresAnnotationName() {
+		// The javaTestModule FOLDER fixture carries the very same IModuleConfig class as the jar,
+		// annotated @BoxModule( name = "renamedJarModule" ) — but folder modules keep their name.
+		Path			folderFixture	= Paths.get( "./modules/javaTestModule" ).toAbsolutePath();
+
+		ModuleRecord	record			= new ModuleRecord( folderFixture.toString() );
+		try {
+			record.resolveModuleConfig( runtime.getRuntimeContext() );
+
+			assertThat( record.moduleConfig ).isNotNull();
+			assertThat( record.isJarModule() ).isFalse();
+			assertThat( record.name ).isEqualTo( Key.of( "javaTestModule" ) );
+			// ...while the rest of the annotation metadata still applies
+			assertThat( record.version ).isEqualTo( "2.0.0" );
+		} finally {
+			record.releaseClassLoader();
+		}
 	}
 
 	@DisplayName( "A jar module nested inside another module loads before it, chained to its loader" )
@@ -364,10 +410,12 @@ class ModuleInceptionTest {
 			service.loadModule( hostModule );
 
 			ModuleRecord	host	= service.getModuleRecord( JAR_HOST );
-			ModuleRecord	jar		= service.getModuleRecord( JAR_MODULE );
+			ModuleRecord	jar		= service.getModuleRecord( JAR_RENAMED );
 
-			// The jar is a full child module of the host
-			assertThat( host.hasNestedModule( JAR_MODULE ) ).isTrue();
+			// The jar is a full child module of the host, tracked under the name it renamed
+			// itself to — the parent's child list follows the rename
+			assertThat( host.hasNestedModule( JAR_RENAMED ) ).isTrue();
+			assertThat( host.hasNestedModule( JAR_MODULE ) ).isFalse();
 			assertThat( jar.parentModule ).isEqualTo( JAR_HOST );
 			assertThat( jar.isActivated() ).isTrue();
 			assertThat( jar.activatedOn ).isAtMost( host.activatedOn );
@@ -379,6 +427,133 @@ class ModuleInceptionTest {
 		} finally {
 			cleanupModule( JAR_HOST );
 		}
+	}
+
+	// -------------------------------------------------------------------------
+	// Registration order independence
+	// -------------------------------------------------------------------------
+
+	@DisplayName( "A child registered before its parent still receives the parent's overrides" )
+	@Test
+	void testChildRegisteredFirstStillGetsParentOverrides() {
+		service.buildRegistryFromPath( INCEPTION_MODULES );
+
+		// Register the CHILD directly, before anyone has touched the parent: its ancestors'
+		// configs must be resolved on demand so their overrides are readable
+		service.register( CHILD );
+
+		ModuleRecord child = service.getModuleRecord( CHILD );
+
+		assertThat( child.registeredOn ).isNotNull();
+		assertThat( child.settings.getAsString( Key.of( "overriddenByParent" ) ) ).isEqualTo( "fromParent" );
+		assertThat( child.settings.getAsString( Key.of( "parentOnlySetting" ) ) ).isEqualTo( "addedByParent" );
+
+		// The parent itself has not registered — only its config was resolved
+		assertThat( service.getModuleRecord( PARENT ).registeredOn ).isNull();
+
+		// A later full pass still registers the parent without re-registering the child
+		service.register( PARENT );
+		assertThat( service.getModuleRecord( PARENT ).registeredOn ).isNotNull();
+	}
+
+	@DisplayName( "A child its parent disabled is skipped even when registered directly, before the parent" )
+	@Test
+	void testChildOfDisabledParentIsSkippedWhenRegisteredDirectly() {
+		service.buildRegistryFromPath( INCEPTION_MODULES_DISABLED );
+
+		// Register the CHILD directly — the parent's disable directive must still be honored
+		service.register( DISABLED_CHILD );
+
+		assertThat( service.getModuleRecord( DISABLED_CHILD ).registeredOn ).isNull();
+	}
+
+	@DisplayName( "registerAll and activateAll survive disabled subtrees regardless of iteration order" )
+	@Test
+	void testRegisterAllAndActivateAllWithDisabledSubtrees() {
+		service.buildRegistryFromPath( INCEPTION_MODULES );
+		service.buildRegistryFromPath( INCEPTION_MODULES_DISABLED );
+
+		// Must not throw: children of disabled parents stay discovered-but-unregistered,
+		// and activation must skip them instead of tripping on their null config
+		service.registerAll();
+		service.activateAll();
+
+		assertThat( service.getModuleRecord( PARENT ).isActivated() ).isTrue();
+		assertThat( service.getModuleRecord( CHILD ).isActivated() ).isTrue();
+		assertThat( service.getModuleRecord( CHILD ).settings.getAsString( Key.of( "overriddenByParent" ) ) ).isEqualTo( "fromParent" );
+		assertThat( service.getModuleRecord( DISABLING_PARENT ).isActivated() ).isTrue();
+		assertThat( service.getModuleRecord( DISABLED_CHILD ).registeredOn ).isNull();
+		assertThat( service.getModuleRecord( DISABLED_CHILD ).isActivated() ).isFalse();
+	}
+
+	// -------------------------------------------------------------------------
+	// Enablement precedence
+	// -------------------------------------------------------------------------
+
+	@DisplayName( "The global app config can re-enable a child its parent disabled" )
+	@Test
+	void testGlobalConfigCanReenableAChildItsParentDisabled() {
+		ModuleConfig globalConfig = new ModuleConfig( DISABLED_CHILD.getName() );
+		globalConfig.enabled = true;
+		runtime.getConfiguration().modules.put( DISABLED_CHILD, globalConfig );
+
+		try {
+			service.buildRegistryFromPath( INCEPTION_MODULES_DISABLED );
+			service.register( DISABLING_PARENT );
+			service.activate( DISABLING_PARENT );
+
+			ModuleRecord child = service.getModuleRecord( DISABLED_CHILD );
+
+			// The global app config always wins — even over the parent's disable directive
+			assertThat( child.isEnabled() ).isTrue();
+			assertThat( child.registeredOn ).isNotNull();
+			assertThat( child.isActivated() ).isTrue();
+		} finally {
+			runtime.getConfiguration().modules.remove( DISABLED_CHILD );
+		}
+	}
+
+	@DisplayName( "A module disabled by its parent registers nothing at all" )
+	@Test
+	void testDisabledChildRegistersNoCapabilities() {
+		service.buildRegistryFromPath( INCEPTION_MODULES_DISABLED );
+		service.register( DISABLING_PARENT );
+
+		ModuleRecord child = service.getModuleRecord( DISABLED_CHILD );
+
+		// Not just "not activated": no registration side effects happened at all
+		assertThat( child.registeredOn ).isNull();
+		assertThat( child.isEnabled() ).isFalse();
+		// ...including its class loader, which a disabled module must not hold open
+		assertThat( child.getModuleClassLoader() ).isNull();
+		// ...and its mapping, which must not resolve in the runtime
+		assertThat( runtime.getConfiguration().hasMapping( child.mapping.name() ) ).isFalse();
+	}
+
+	// -------------------------------------------------------------------------
+	// Reload
+	// -------------------------------------------------------------------------
+
+	@DisplayName( "Reloading a module with nested modules tears the tree down and rebuilds it" )
+	@Test
+	void testReloadRebuildsAModuleTree() {
+		service.loadModule( INCEPTION_MODULES.resolve( "inceptionParent" ) );
+
+		ModuleRecord parentBefore = service.getModuleRecord( PARENT );
+		assertThat( parentBefore.isActivated() ).isTrue();
+
+		service.reload( PARENT );
+
+		ModuleRecord	parent	= service.getModuleRecord( PARENT );
+		ModuleRecord	child	= service.getModuleRecord( CHILD );
+
+		// The whole tree is registered and active again, on fresh class loaders
+		assertThat( parent.isActivated() ).isTrue();
+		assertThat( child.isActivated() ).isTrue();
+		assertThat( parent.registeredOn ).isNotNull();
+		assertThat( parent.getModuleClassLoader() ).isNotNull();
+		// The parent's overrides survived the round trip
+		assertThat( child.settings.getAsString( Key.of( "overriddenByParent" ) ) ).isEqualTo( "fromParent" );
 	}
 
 	// -------------------------------------------------------------------------

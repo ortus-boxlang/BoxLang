@@ -384,7 +384,7 @@ public class ModuleRecord {
 		// Register the automatic mapping by convention: /bxModules/{name}
 		// Not visible externally
 		this.mapping		= Mapping.of(
-		    ModuleService.MODULE_MAPPING_PREFIX + name.getName(),
+		    ModuleService.MODULE_MAPPING_PREFIX + this.name.getName(),
 		    this.path,
 		    false
 		);
@@ -421,11 +421,11 @@ public class ModuleRecord {
 		if ( this.descriptorLoaded ) {
 			return this;
 		}
-		this.descriptorLoaded = true;
 
 		// Java-only modules (no ModuleConfig.bx) skip BX loading entirely.
 		// Java config detection happens in resolveModuleConfig() once the classloader is ready.
 		if ( !Files.exists( this.physicalPath.resolve( ModuleService.MODULE_DESCRIPTOR ) ) ) {
+			this.descriptorLoaded = true;
 			return this;
 		}
 
@@ -492,6 +492,10 @@ public class ModuleRecord {
 		variablesScope.put( Key.boxRuntime, this.runtime );
 		variablesScope.put( Key.interceptorService, this.runtime.getInterceptorService() );
 		variablesScope.put( Key.log, this.logger );
+
+		// Marked only on success, so a failed load (e.g. a parse error) can be retried
+		// instead of silently poisoning the record as "loaded".
+		this.descriptorLoaded = true;
 
 		return this;
 	}
@@ -565,7 +569,6 @@ public class ModuleRecord {
 		if ( this.configResolved ) {
 			return this;
 		}
-		this.configResolved = true;
 
 		getOrCreateModuleClassLoader();
 
@@ -584,14 +587,37 @@ public class ModuleRecord {
 			    this.settings				= new Struct();
 			    this.interceptors			= new Array();
 			    this.customInterceptionPoints = new Array();
-			    this.mapping				= Mapping.of( ModuleService.MODULE_MAPPING_PREFIX + name.getName(), this.path, false );
-			    this.publicMapping			= Mapping.of( ModuleService.MODULE_MAPPING_PREFIX + name.getName() + "/" + ModuleService.MODULE_PUBLIC_FOLDER,
-			        this.physicalPath.resolve( "public" ).toString(), true );
-			    this.moduleConfig			= javaConfig;
+			    applyName( this.name );
+			    this.moduleConfig = javaConfig;
 			    extractJavaMetadata();
 		    } );
 
+		// Marked only on success, so a failure (e.g. class loader creation) can be retried
+		// instead of silently poisoning the record as "resolved".
+		this.configResolved = true;
+
 		return this;
+	}
+
+	/**
+	 * Applies a module name to this record, re-deriving everything keyed off it: the internal
+	 * mapping, the public mapping, and the invocation path.
+	 *
+	 * @param newName The name to apply
+	 */
+	public void applyName( Key newName ) {
+		this.name			= newName;
+		this.mapping		= Mapping.of(
+		    ModuleService.MODULE_MAPPING_PREFIX + this.name.getName(),
+		    this.path,
+		    false
+		);
+		this.publicMapping	= Mapping.of(
+		    ModuleService.MODULE_MAPPING_PREFIX + this.name.getName() + "/" + ModuleService.MODULE_PUBLIC_FOLDER,
+		    this.physicalPath.resolve( ModuleService.MODULE_PUBLIC_FOLDER ).toString(),
+		    true
+		);
+		this.invocationPath	= ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + this.name.getName();
 	}
 
 	/**
@@ -638,8 +664,8 @@ public class ModuleRecord {
 		 * Later wins: own configure() defaults < parent module overrides < global app config.
 		 */
 
-		// A parent module may override its nested children's settings and enablement
-		applyParentOverrides();
+		// A parent module may override its nested children's settings
+		applyParentSettingOverrides();
 
 		// Merge any runtime-config settings on top; the global app config always wins
 		if ( this.runtime.getConfiguration().modules.containsKey( this.name ) ) {
@@ -761,15 +787,51 @@ public class ModuleRecord {
 		this.unregister( context );
 
 		// Destroy the ClassLoader
-		try {
-			this.moduleClassLoader.close();
-		} catch ( IOException e ) {
-			this.logger.error( "Error while closing the DynamicClassLoader for module [{}]", this.name, e );
-		} finally {
-			this.moduleClassLoader	= null;
-			this.classLoader		= null;
-		}
+		releaseClassLoader();
 
+		/**
+		 * Reset the lifecycle state so a subsequent register()/activate() — e.g. via
+		 * ModuleService.reload() — rebuilds everything from scratch: the class loader,
+		 * the descriptor, the resolved config, and the capability caches. Without this,
+		 * the idempotency guards would skip resolution and leave the record pointing at
+		 * a closed (nulled) class loader.
+		 */
+		this.descriptorLoaded			= false;
+		this.moduleConfig				= null;
+		this.registeredOn				= null;
+		this.activated					= false;
+		this.activatedOn				= null;
+		this.settings					= new Struct();
+		this.interceptors				= new Array();
+		this.customInterceptionPoints	= new Array();
+		this.bifs						= new Array();
+		this.components					= new Array();
+		this.memberMethods				= new Array();
+
+		return this;
+	}
+
+	/**
+	 * Closes this module's class loader, if one was built, and resets the config resolution
+	 * guard so a later {@link #resolveModuleConfig(IBoxContext)} builds a fresh one.
+	 * <p>
+	 * Used on unload, and by the {@code ModuleService} when a module turns out to be disabled
+	 * only after its config had to be resolved (a disabled module must not hold an open loader).
+	 *
+	 * @return The ModuleRecord
+	 */
+	public ModuleRecord releaseClassLoader() {
+		if ( this.moduleClassLoader != null ) {
+			try {
+				this.moduleClassLoader.close();
+			} catch ( IOException e ) {
+				this.logger.error( "Error while closing the class loader for module [{}]", this.name, e );
+			} finally {
+				this.moduleClassLoader	= null;
+				this.classLoader		= null;
+			}
+		}
+		this.configResolved = false;
 		return this;
 	}
 
@@ -959,12 +1021,15 @@ public class ModuleRecord {
 	}
 
 	/**
-	 * Applies the parent module's overrides for this module, if this is a nested module.
+	 * Applies the parent module's <em>setting</em> overrides for this module, if this is a
+	 * nested module.
 	 * <p>
 	 * Called during registration after {@code configure()} but before the global app config is
 	 * merged, so the precedence is: own defaults, then parent overrides, then global config.
+	 * The {@code enabled} flag follows the same precedence but is decided by the
+	 * {@code ModuleService} <em>before</em> registration side effects begin, not here.
 	 */
-	private void applyParentOverrides() {
+	private void applyParentSettingOverrides() {
 		if ( this.parentModule == null ) {
 			return;
 		}
@@ -977,10 +1042,6 @@ public class ModuleRecord {
 		IStruct overrides = parentRecord.getChildOverrides( this.name );
 		if ( overrides.isEmpty() ) {
 			return;
-		}
-
-		if ( overrides.containsKey( Key.enabled ) ) {
-			this.enabled = BooleanCaster.cast( overrides.get( Key.enabled ) );
 		}
 
 		if ( overrides.get( Key.settings ) instanceof IStruct parentSettings ) {
@@ -1048,21 +1109,19 @@ public class ModuleRecord {
 			return;
 		}
 
-		// An explicit name overrides the convention default, which for a jar module is only
-		// the jar's base name. Re-derive everything keyed off the name to keep them in sync.
+		// An explicit name overrides the convention default for JAR MODULES ONLY, whose default
+		// is just the jar's base name. Folder modules always keep their folder/box.json name, so
+		// the same annotated class can serve both layouts without the folder module renaming itself.
 		if ( !meta.name().isBlank() ) {
-			this.name			= Key.of( meta.name() );
-			this.mapping		= Mapping.of(
-			    ModuleService.MODULE_MAPPING_PREFIX + this.name.getName(),
-			    this.path,
-			    false
-			);
-			this.publicMapping	= Mapping.of(
-			    ModuleService.MODULE_MAPPING_PREFIX + this.name.getName() + "/" + ModuleService.MODULE_PUBLIC_FOLDER,
-			    this.physicalPath.resolve( ModuleService.MODULE_PUBLIC_FOLDER ).toString(),
-			    true
-			);
-			this.invocationPath	= ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + this.name.getName();
+			if ( this.jarModule ) {
+				applyName( Key.of( meta.name() ) );
+			} else if ( !this.name.equals( Key.of( meta.name() ) ) ) {
+				this.logger.debug(
+				    "+ Module [{}] declares @BoxModule( name = \"{}\" ) but is a folder module; the folder/box.json name wins, ignoring",
+				    this.name,
+				    meta.name()
+				);
+			}
 		}
 
 		// Simple fields

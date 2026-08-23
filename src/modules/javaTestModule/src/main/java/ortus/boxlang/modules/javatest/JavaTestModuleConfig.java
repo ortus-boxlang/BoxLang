@@ -26,7 +26,7 @@ import ortus.boxlang.runtime.modules.ModuleRecord;
  * Test implementation of IModuleConfig for use in unit tests.
  * Tracks lifecycle calls and demonstrates the {@code @BoxModule} annotation metadata convention.
  */
-@BoxModule( version = "2.0.0", author = "Ortus Solutions", description = "A pure-Java test module", webURL = "https://www.ortussolutions.com" )
+@BoxModule( name = "renamedJarModule", version = "2.0.0", author = "Ortus Solutions", description = "A pure-Java test module", webURL = "https://www.ortussolutions.com" )
 public class JavaTestModuleConfig implements IModuleConfig {
 
 	// --------------------------------------------------------------------------

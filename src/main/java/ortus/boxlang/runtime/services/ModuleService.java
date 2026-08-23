@@ -21,17 +21,24 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Stream;
 
 import org.apache.commons.io.FilenameUtils;
 import org.semver4j.Semver;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.ModuleConfig;
+import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.modules.ModuleRecord;
@@ -249,14 +256,32 @@ public class ModuleService extends BaseService {
 		// Scan for modules and build the registration records
 		buildRegistry();
 
-		// Register each module now
-		// If we detect more than 10 modules, do it async
+		/**
+		 * Top-level modules register first: each one's registration cascades into the modules
+		 * nested inside it (module inception), so parents always resolve their config before
+		 * their children need to read its per-child overrides. Without this ordering, registry
+		 * iteration order (a ConcurrentHashMap) would decide whether a child sees them.
+		 * Names are snapshotted first because registration can re-key the registry (jar renames).
+		 */
 		this.registry
-		    .entrySet()
+		    .values()
 		    .stream()
-		    // Filter out modules which are already registered
-		    .filter( m -> m.getValue().registeredOn == null )
-		    .forEach( entry -> this.register( entry.getKey() ) );
+		    .filter( record -> record.parentModule == null && record.registeredOn == null )
+		    .map( record -> record.name )
+		    .toList()
+		    .forEach( this::register );
+
+		// Sweep any stragglers: nested modules whose parent is not in the registry (orphans).
+		// Children of disabled parents stay unregistered by design — register() skips them.
+		this.registry
+		    .values()
+		    .stream()
+		    .filter( record -> record.registeredOn == null )
+		    .map( record -> record.name )
+		    .toList()
+		    .stream()
+		    .filter( this.registry::containsKey )
+		    .forEach( this::register );
 
 		// Log it
 		this.logger.debug(
@@ -310,16 +335,11 @@ public class ModuleService extends BaseService {
 		// Load the ModuleConfig.bx file, if it exists, and process the configuration
 		moduleRecord.loadDescriptor( runtimeContext );
 
-		// Verify if we disabled the loading of the module in the runtime config
-		// myModule : { enabled = false }
-		if ( this.runtime.getConfiguration().modules.containsKey( name ) ) {
-			ModuleConfig config = ( ModuleConfig ) this.runtime.getConfiguration().modules.get( name );
-			moduleRecord.enabled = config.enabled;
-		}
-
-		// Check if the module is disabled, if so, skip it. Any modules nested inside it are
-		// skipped with it: their class loaders chain to this one, so they cannot stand alone.
-		if ( !moduleRecord.isEnabled() ) {
+		// Fast path: an explicit global-config disable is final (the global app config always
+		// wins), so honor it before building any class loader at all.
+		if ( this.runtime.getConfiguration().modules.containsKey( name )
+		    && ! ( ( ModuleConfig ) this.runtime.getConfiguration().modules.get( name ) ).enabled ) {
+			moduleRecord.enabled = false;
 			this.logger.warn(
 			    "+ Module Service: Module [{}] is disabled, skipping registration",
 			    moduleRecord.name
@@ -327,17 +347,53 @@ public class ModuleService extends BaseService {
 			return;
 		}
 
+		// A nested module's ancestors must have their configs resolved (and be enabled) before it
+		// registers, whatever order registration was requested in. A disabled ancestor takes the
+		// whole subtree down with it: nested class loaders chain upward, so they cannot stand alone.
+		if ( !resolveAncestorChain( moduleRecord, runtimeContext ) ) {
+			this.logger.warn(
+			    "+ Module Service: Module [{}] is nested inside a disabled module, skipping registration",
+			    moduleRecord.name
+			);
+			return;
+		}
+
+		// Resolve this module's config: builds its class loader and detects a Java IModuleConfig
+		// (Java wins over BX). A jar module may rename itself here via @BoxModule( name ), so
+		// re-key it before any registration side effects happen under the old name.
+		moduleRecord.resolveModuleConfig( runtimeContext );
+		rekeyModule( name, moduleRecord );
+
+		/**
+		 * |--------------------------------------------------------------------------
+		 * | Enablement Precedence
+		 * |--------------------------------------------------------------------------
+		 * Later wins: own descriptor/annotation < parent module override < global app config.
+		 * Decided here, before any registration side effects, so a disabled module registers
+		 * nothing at all — no mappings, BIFs, services, or interceptors.
+		 */
+		applyEnablementOverrides( moduleRecord );
+		if ( !moduleRecord.isEnabled() ) {
+			this.logger.warn(
+			    "+ Module Service: Module [{}] is disabled, skipping registration",
+			    moduleRecord.name
+			);
+			// A disabled module must not hold an open class loader
+			moduleRecord.releaseClassLoader();
+			return;
+		}
+
 		/**
 		 * |--------------------------------------------------------------------------
 		 * | Module Inception
 		 * |--------------------------------------------------------------------------
-		 * Modules nested inside this one register before it does. This module's own config is
-		 * resolved first, so its per-child setting overrides are readable by those children,
-		 * while its full registration still happens after them.
+		 * Modules nested inside this one register before it does. This module's config is already
+		 * resolved above, so its per-child setting overrides are readable by those children,
+		 * while its full registration still happens after them. Iterated over a copy: a nested
+		 * jar module renaming itself mutates this very list mid-cascade.
 		 */
 		if ( !moduleRecord.nestedModules.isEmpty() ) {
-			moduleRecord.resolveModuleConfig( runtimeContext );
-			moduleRecord.nestedModules
+			Array.copyOf( moduleRecord.nestedModules )
 			    .stream()
 			    .map( childName -> Key.of( ( String ) childName ) )
 			    .filter( childKey -> this.registry.containsKey( childKey ) && this.registry.get( childKey ).registeredOn == null )
@@ -347,17 +403,19 @@ public class ModuleService extends BaseService {
 		// Configure the module
 		moduleRecord.register( runtimeContext );
 
-		// A jar module may rename itself via `@BoxModule( name = "..." )` once its config is
-		// resolved off its class loader, so re-key it under the name it actually registered as.
-		rekeyModule( name, moduleRecord );
+		// A module found invalid during registration (no descriptor at all) disables itself;
+		// nothing was registered for it, so it must not keep an open class loader either
+		if ( !moduleRecord.isEnabled() ) {
+			moduleRecord.releaseClassLoader();
+		}
 
 		// Log registration time
 		moduleRecord.registrationTime = BoxRuntime.timerUtil.stopAndGetMillis( timerLabel );
 
-		// Announce it
+		// Announce it, under the name the module actually registered as (a jar may have renamed itself)
 		announce(
 		    BoxEvent.POST_MODULE_REGISTRATION,
-		    Struct.of( "moduleRecord", moduleRecord, "moduleName", name )
+		    Struct.of( "moduleRecord", moduleRecord, "moduleName", moduleRecord.name )
 		);
 
 		// Log it
@@ -385,6 +443,19 @@ public class ModuleService extends BaseService {
 			return;
 		}
 
+		// Duplicate modules are not allowed, first one wins: refuse a rename that would clobber
+		// an existing module, and put the record's derived identity back to its discovered name.
+		if ( this.registry.containsKey( moduleRecord.name ) && this.registry.get( moduleRecord.name ) != moduleRecord ) {
+			this.logger.warn(
+			    "+ Module Service: Module discovered as [{}] renamed itself to [{}], but that name is already registered; keeping [{}]",
+			    registeredUnder.getName(),
+			    moduleRecord.name.getName(),
+			    registeredUnder.getName()
+			);
+			moduleRecord.applyName( registeredUnder );
+			return;
+		}
+
 		this.registry.remove( registeredUnder );
 		this.registry.put( moduleRecord.name, moduleRecord );
 
@@ -397,11 +468,86 @@ public class ModuleService extends BaseService {
 			}
 		}
 
+		// Keep any children's upward pointers on the new name (defensive: today only jar modules
+		// rename and a jar cannot carry nested modules, but cheap insurance against drift)
+		this.registry
+		    .values()
+		    .stream()
+		    .filter( record -> registeredUnder.equals( record.parentModule ) )
+		    .forEach( record -> record.parentModule = moduleRecord.name );
+
 		this.logger.debug(
 		    "+ Module Service: Module discovered as [{}] renamed itself to [{}] via its @BoxModule annotation",
 		    registeredUnder.getName(),
 		    moduleRecord.name.getName()
 		);
+	}
+
+	/**
+	 * Resolves the configs of a nested module's ancestors, topmost first, and reports whether the
+	 * whole chain is enabled.
+	 * <p>
+	 * A nested module can be asked to register before its parent (a direct {@code register()} call,
+	 * or plain registry iteration order), yet its parent's per-child overrides must already be
+	 * readable and a disabled ancestor must take the whole subtree down with it. Resolution is
+	 * idempotent, so ancestors that already resolved are no-ops.
+	 *
+	 * @param moduleRecord The module whose ancestors to resolve
+	 * @param context      The current context of execution
+	 *
+	 * @return {@code true} when every ancestor is enabled (or the module is top-level),
+	 *         {@code false} when any ancestor is disabled
+	 */
+	private boolean resolveAncestorChain( ModuleRecord moduleRecord, IBoxContext context ) {
+		Deque<ModuleRecord>	ancestors	= new ArrayDeque<>();
+		Set<Key>			visited		= new HashSet<>();
+		Key					parentKey	= moduleRecord.parentModule;
+
+		// Collect the chain bottom-up; iterate it top-down (push reverses the order)
+		while ( parentKey != null && visited.add( parentKey ) ) {
+			ModuleRecord parentRecord = this.registry.get( parentKey );
+			if ( parentRecord == null ) {
+				break;
+			}
+			ancestors.push( parentRecord );
+			parentKey = parentRecord.parentModule;
+		}
+
+		for ( ModuleRecord ancestor : ancestors ) {
+			ancestor.loadDescriptor( context );
+			ancestor.resolveModuleConfig( context );
+			applyEnablementOverrides( ancestor );
+			if ( !ancestor.isEnabled() ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Applies the {@code enabled} precedence to a module record: its own descriptor/annotation
+	 * value, overridden by its parent module's per-child declaration (if any), overridden by the
+	 * global app config (which always wins).
+	 *
+	 * @param moduleRecord The module record to apply enablement to
+	 */
+	private void applyEnablementOverrides( ModuleRecord moduleRecord ) {
+		// Parent module override beats the module's own descriptor/annotation value
+		if ( moduleRecord.parentModule != null ) {
+			ModuleRecord parentRecord = this.registry.get( moduleRecord.parentModule );
+			if ( parentRecord != null ) {
+				IStruct overrides = parentRecord.getChildOverrides( moduleRecord.name );
+				if ( overrides.containsKey( Key.enabled ) ) {
+					moduleRecord.enabled = BooleanCaster.cast( overrides.get( Key.enabled ) );
+				}
+			}
+		}
+
+		// The global app config always wins
+		if ( this.runtime.getConfiguration().modules.containsKey( moduleRecord.name ) ) {
+			moduleRecord.enabled = ( ( ModuleConfig ) this.runtime.getConfiguration().modules.get( moduleRecord.name ) ).enabled;
+		}
 	}
 
 	/**
@@ -474,6 +620,16 @@ public class ModuleService extends BaseService {
 		if ( !this.registry.get( name ).isEnabled() ) {
 			this.logger.warn(
 			    "+ Module Service: Module [{}] is disabled, skipping activation",
+			    name
+			);
+			return;
+		}
+
+		// A module that never completed registration has nothing to activate. This is the normal
+		// state of modules nested inside a disabled module: they stay discovered but unregistered.
+		if ( this.registry.get( name ).registeredOn == null ) {
+			this.logger.warn(
+			    "+ Module Service: Module [{}] is not registered, skipping activation",
 			    name
 			);
 			return;
@@ -845,8 +1001,10 @@ public class ModuleService extends BaseService {
 	 *                         top-level configured modules directory
 	 */
 	private void discoverModulesInPath( Path modulesDirectory, ModuleRecord parent ) {
-		try {
-			Files.walk( modulesDirectory, 1 )
+		// try-with-resources: Files.walk() must be closed or it leaks file handles,
+		// especially now that discovery recurses into nested modules folders
+		try ( Stream<Path> candidates = Files.walk( modulesDirectory, 1 ) ) {
+			candidates
 			    // Exclude the modules folder itself, and any root path in the `modulePaths` list
 			    .filter( filePath -> !filePath.equals( modulesDirectory ) )
 			    .filter( filePath -> !this.modulePaths.contains( filePath ) )
@@ -976,9 +1134,11 @@ public class ModuleService extends BaseService {
 			return this;
 		}
 		// Build the record and discover any modules nested inside it
-		createDiscoveredModule( moduleDirectory, null );
+		ModuleRecord moduleRecord = createDiscoveredModule( moduleDirectory, null );
 		register( moduleName );
-		activate( moduleName );
+		// Activate by the record's current name: a jar module may have renamed itself
+		// via @BoxModule( name ) during registration
+		activate( moduleRecord.name );
 		return this;
 	}
 
