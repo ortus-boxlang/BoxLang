@@ -8,6 +8,8 @@ runtime/build/
 runtime/bin/
 modules/test/
 modules/javaTestModule/**
+# Jar module test fixture, built by the javaTestModule subproject
+src/test/jar-modules/
 src/main/resources/maven/effective-pom.xml
 
 # Dynamically Generated docs

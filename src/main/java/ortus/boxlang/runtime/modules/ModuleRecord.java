@@ -154,6 +154,23 @@ public class ModuleRecord {
 	public Array					dependencies				= new Array();
 
 	/**
+	 * The names of the modules nested inside this module's own {@code modules} folder
+	 * (module inception). Populated by the {@link ModuleService} during discovery.
+	 * <p>
+	 * Nested modules are registered and activated <strong>before</strong> this module, and
+	 * unloaded <strong>after</strong> it, since their class loaders are parented to this one.
+	 */
+	public Array					nestedModules				= new Array();
+
+	/**
+	 * The name of the module this one is nested inside, or {@code null} for a top-level module.
+	 * <p>
+	 * When set, this module's class loader is parented to the parent module's class loader, and
+	 * the parent may override this module's settings via {@link IModuleConfig#modules()}.
+	 */
+	public Key						parentModule				= null;
+
+	/**
 	 * The interceptors of the module
 	 */
 	public Array					interceptors				= new Array();
@@ -279,6 +296,25 @@ public class ModuleRecord {
 	public static final String		MODULE_CONFIG_FILE			= "box.json";
 
 	/**
+	 * Whether this module is packaged as a single jar file placed directly in a modules folder,
+	 * as opposed to the conventional module directory layout.
+	 */
+	private final boolean			jarModule;
+
+	/**
+	 * Guards {@link #loadDescriptor(IBoxContext)} so it is idempotent. A module with nested
+	 * children has its descriptor loaded early (so its per-child overrides are readable) and
+	 * would otherwise be re-compiled during its own registration.
+	 */
+	private boolean					descriptorLoaded			= false;
+
+	/**
+	 * Guards {@link #resolveModuleConfig(IBoxContext)} so it is idempotent, for the same reason
+	 * as {@link #descriptorLoaded}.
+	 */
+	private boolean					configResolved				= false;
+
+	/**
 	 * Logger
 	 */
 	private BoxLangLogger			logger;
@@ -313,6 +349,10 @@ public class ModuleRecord {
 		Path	directoryPath	= Path.of( physicalPath );
 		Path	boxjsonPath		= directoryPath.resolve( MODULE_CONFIG_FILE );
 
+		// A module packaged as a single jar file has no folder conventions to read from;
+		// everything comes from its IModuleConfig, discovered later via ServiceLoader.
+		this.jarModule = ModuleService.isModuleJar( directoryPath );
+
 		// Load the module name from the box.json file if it exists
 		if ( Files.exists( boxjsonPath ) ) {
 			DataNavigator
@@ -327,9 +367,14 @@ public class ModuleRecord {
 			    );
 		}
 
-		// Default to the directory name if the box.json file does not exist
+		// Default to the directory name if the box.json file does not exist.
+		// Jar modules default to the jar's base name, so `my-module.jar` becomes `my-module`.
 		if ( this.name == null ) {
-			this.name = Key.of( directoryPath.getFileName().toString() );
+			this.name = Key.of(
+			    this.jarModule
+			        ? FilenameUtils.getBaseName( directoryPath.getFileName().toString() )
+			        : directoryPath.getFileName().toString()
+			);
 		}
 
 		// Path to the module in string and Path formats
@@ -371,8 +416,15 @@ public class ModuleRecord {
 	 * @return The ModuleRecord
 	 */
 	public ModuleRecord loadDescriptor( IBoxContext context ) {
+		// Idempotent: a module with nested children loads its descriptor early so its
+		// per-child overrides are readable before those children register.
+		if ( this.descriptorLoaded ) {
+			return this;
+		}
+		this.descriptorLoaded = true;
+
 		// Java-only modules (no ModuleConfig.bx) skip BX loading entirely.
-		// Java config detection happens in register() once the classloader is ready.
+		// Java config detection happens in resolveModuleConfig() once the classloader is ready.
 		if ( !Files.exists( this.physicalPath.resolve( ModuleService.MODULE_DESCRIPTOR ) ) ) {
 			return this;
 		}
@@ -445,25 +497,44 @@ public class ModuleRecord {
 	}
 
 	/**
-	 * This method registers the module with all the runtime services.
-	 * This is called by the ModuleService if the module is allowed to be registered
-	 * or not
+	 * Builds this module's isolated class loader, on demand and only once.
+	 * <p>
+	 * The class loader hierarchy mirrors the module hierarchy: a nested module's loader is
+	 * parented to its parent module's loader, chaining up until a top-level module, whose loader
+	 * is parented to the runtime loader. A child can therefore see the classes and {@code libs}
+	 * its parent bundles, while remaining isolated from its siblings.
+	 * <p>
+	 * Creation is lazy because nested modules register <em>before</em> their parent, yet need the
+	 * parent's loader to exist first. Each level creates its own loader on demand, so a grandchild
+	 * transparently forces the whole chain up to the runtime loader.
 	 *
-	 * @param context The current context of execution
-	 *
-	 * @return The ModuleRecord
+	 * @return The module class loader
 	 */
-	public ModuleRecord register( IBoxContext context ) {
-		// Convenience References
-		InterceptorService	interceptorService	= this.runtime.getInterceptorService();
-		FunctionService		functionService		= this.runtime.getFunctionService();
-		ComponentService	componentService	= this.runtime.getComponentService();
+	public IModuleClassLoader getOrCreateModuleClassLoader() {
+		if ( this.moduleClassLoader != null ) {
+			return this.moduleClassLoader;
+		}
+
+		// Nested modules chain to their parent's loader; top-level modules to the runtime loader
+		ClassLoader parentLoader = this.runtime.getRuntimeLoader();
+		if ( this.parentModule != null ) {
+			ModuleRecord parentRecord = this.runtime.getModuleService().getModuleRecord( this.parentModule );
+			if ( parentRecord != null ) {
+				parentLoader = parentRecord.getOrCreateModuleClassLoader().toClassLoader();
+			} else {
+				this.logger.warn(
+				    "+ Module [{}] declares parent module [{}] which is not in the registry; parenting to the runtime loader instead",
+				    this.name,
+				    this.parentModule
+				);
+			}
+		}
 
 		// Create the module's (isolated) class loader via the runtime's configured factory.
 		// The default JVM factory builds a DynamicClassLoader over the module directory
 		// (loading *.class under the `modules.{module_name}` prefix) seeded with libs/*.jar;
 		// other targets (e.g. Android) supply a different loader without forking this class.
-		this.moduleClassLoader	= this.runtime.getClassLoaderFactory().createModuleClassLoader( this, this.runtime.getRuntimeLoader() );
+		this.moduleClassLoader	= this.runtime.getClassLoaderFactory().createModuleClassLoader( this, parentLoader );
 		// Mirror onto the legacy, concrete-typed field for binary compatibility with modules
 		// compiled against the pre-IModuleClassLoader API. On the standard JVM the factory's
 		// return value is always a DynamicClassLoader; on other targets this assignment is a
@@ -472,6 +543,31 @@ public class ModuleRecord {
 		this.classLoader		= ( this.moduleClassLoader instanceof DynamicClassLoader dcl )
 		    ? dcl
 		    : null;
+
+		return this.moduleClassLoader;
+	}
+
+	/**
+	 * Resolves this module's {@link IModuleConfig} and its metadata, without registering anything
+	 * with the runtime services. Java configs discovered via {@link ServiceLoader} always win over
+	 * a {@code ModuleConfig.bx} descriptor.
+	 * <p>
+	 * This is split out of {@link #register(IBoxContext)} because a module carrying nested children
+	 * must have its config resolved <em>before</em> those children register, so that its per-child
+	 * overrides ({@link IModuleConfig#modules()}) are readable — while its own full registration
+	 * still happens after them. Idempotent.
+	 *
+	 * @param context The current context of execution
+	 *
+	 * @return The ModuleRecord
+	 */
+	public ModuleRecord resolveModuleConfig( IBoxContext context ) {
+		if ( this.configResolved ) {
+			return this;
+		}
+		this.configResolved = true;
+
+		getOrCreateModuleClassLoader();
 
 		// Detect a Java IModuleConfig via ServiceLoader (diskless-safe — uses the module classloader abstraction).
 		// Java always wins: if found, replace any BX config and discard BX-derived metadata/state.
@@ -495,6 +591,28 @@ public class ModuleRecord {
 			    extractJavaMetadata();
 		    } );
 
+		return this;
+	}
+
+	/**
+	 * This method registers the module with all the runtime services.
+	 * This is called by the ModuleService if the module is allowed to be registered
+	 * or not
+	 *
+	 * @param context The current context of execution
+	 *
+	 * @return The ModuleRecord
+	 */
+	public ModuleRecord register( IBoxContext context ) {
+		// Convenience References
+		InterceptorService	interceptorService	= this.runtime.getInterceptorService();
+		FunctionService		functionService		= this.runtime.getFunctionService();
+		ComponentService	componentService	= this.runtime.getComponentService();
+
+		// Build the class loader and resolve the descriptor (Java wins over BX).
+		// No-op when a parent module already resolved us early to read its child overrides.
+		resolveModuleConfig( context );
+
 		if ( this.moduleConfig == null ) {
 			// Neither ServiceLoader nor loadDescriptor() produced a valid config.
 			this.logger.warn(
@@ -513,7 +631,17 @@ public class ModuleRecord {
 		// Unified configure() call — BxModuleConfig reads variablesScope; Java impls mutate settings directly
 		this.moduleConfig.configure( context, this );
 
-		// Merge any runtime-config settings on top of what configure() set
+		/**
+		 * --------------------------------------------------------------------------
+		 * Settings Precedence
+		 * --------------------------------------------------------------------------
+		 * Later wins: own configure() defaults < parent module overrides < global app config.
+		 */
+
+		// A parent module may override its nested children's settings and enablement
+		applyParentOverrides();
+
+		// Merge any runtime-config settings on top; the global app config always wins
 		if ( this.runtime.getConfiguration().modules.containsKey( this.name ) ) {
 			ModuleConfig config = ( ModuleConfig ) this.runtime.getConfiguration().modules.get( this.name );
 			StructUtil.deepMerge( this.settings, config.settings, true );
@@ -810,6 +938,99 @@ public class ModuleRecord {
 	}
 
 	/**
+	 * Reads the per-child overrides this module declares for one of its nested modules.
+	 * <p>
+	 * BX descriptors declare these as {@code this.modules}; Java descriptors override
+	 * {@link IModuleConfig#modules()}. The returned struct follows the {@code boxlang.json}
+	 * module shape: <code>{ enabled : boolean, settings : { ... } }</code>.
+	 *
+	 * @param childName The nested module to read overrides for
+	 *
+	 * @return The overrides for that child, or an empty struct when none are declared
+	 */
+	public IStruct getChildOverrides( Key childName ) {
+		if ( this.moduleConfig == null ) {
+			return new Struct();
+		}
+
+		Object childOverrides = this.moduleConfig.modules().get( childName );
+
+		return childOverrides instanceof IStruct castedOverrides ? castedOverrides : new Struct();
+	}
+
+	/**
+	 * Applies the parent module's overrides for this module, if this is a nested module.
+	 * <p>
+	 * Called during registration after {@code configure()} but before the global app config is
+	 * merged, so the precedence is: own defaults, then parent overrides, then global config.
+	 */
+	private void applyParentOverrides() {
+		if ( this.parentModule == null ) {
+			return;
+		}
+
+		ModuleRecord parentRecord = this.runtime.getModuleService().getModuleRecord( this.parentModule );
+		if ( parentRecord == null ) {
+			return;
+		}
+
+		IStruct overrides = parentRecord.getChildOverrides( this.name );
+		if ( overrides.isEmpty() ) {
+			return;
+		}
+
+		if ( overrides.containsKey( Key.enabled ) ) {
+			this.enabled = BooleanCaster.cast( overrides.get( Key.enabled ) );
+		}
+
+		if ( overrides.get( Key.settings ) instanceof IStruct parentSettings ) {
+			StructUtil.deepMerge( this.settings, parentSettings, true );
+		}
+
+		this.logger.debug(
+		    "+ Module [{}] applied setting overrides from its parent module [{}]",
+		    this.name,
+		    this.parentModule
+		);
+	}
+
+	/**
+	 * Get the record of a module nested inside this one (module inception).
+	 *
+	 * @param name The name of the nested module
+	 *
+	 * @return The nested module's record, or {@code null} when this module has no such child
+	 */
+	public ModuleRecord getNestedModule( Key name ) {
+		if ( !hasNestedModule( name ) ) {
+			return null;
+		}
+		return this.runtime.getModuleService().getModuleRecord( name );
+	}
+
+	/**
+	 * Verify if a module is nested inside this one (module inception).
+	 *
+	 * @param name The name of the nested module
+	 *
+	 * @return {@code true} if the module is a direct child of this one, {@code false} otherwise
+	 */
+	public boolean hasNestedModule( Key name ) {
+		return this.nestedModules.stream()
+		    .anyMatch( nestedName -> Key.of( ( String ) nestedName ).equals( name ) );
+	}
+
+	/**
+	 * If this module is packaged as a single jar file placed directly in a modules folder,
+	 * as opposed to the conventional module directory layout.
+	 *
+	 * @return {@code true} if this is a jar module, {@code false} otherwise
+	 */
+	public boolean isJarModule() {
+		return this.jarModule;
+	}
+
+	/**
 	 * Reads {@link BoxModule @BoxModule} annotation metadata from a Java {@link IModuleConfig} implementation
 	 * and populates the corresponding {@link ModuleRecord} fields.
 	 * If the annotation is absent, all convention defaults from the constructor are kept.
@@ -825,6 +1046,23 @@ public class ModuleRecord {
 		// If the annotation is absent, keep convention defaults
 		if ( meta == null ) {
 			return;
+		}
+
+		// An explicit name overrides the convention default, which for a jar module is only
+		// the jar's base name. Re-derive everything keyed off the name to keep them in sync.
+		if ( !meta.name().isBlank() ) {
+			this.name			= Key.of( meta.name() );
+			this.mapping		= Mapping.of(
+			    ModuleService.MODULE_MAPPING_PREFIX + this.name.getName(),
+			    this.path,
+			    false
+			);
+			this.publicMapping	= Mapping.of(
+			    ModuleService.MODULE_MAPPING_PREFIX + this.name.getName() + "/" + ModuleService.MODULE_PUBLIC_FOLDER,
+			    this.physicalPath.resolve( ModuleService.MODULE_PUBLIC_FOLDER ).toString(),
+			    true
+			);
+			this.invocationPath	= ModuleService.MODULE_MAPPING_INVOCATION_PREFIX + this.name.getName();
 		}
 
 		// Simple fields
@@ -978,9 +1216,12 @@ public class ModuleRecord {
 		    "interceptors", Array.copyOf( this.interceptors ),
 		    "invocationPath", this.invocationPath,
 		    "jdbcDrivers", Array.of( this.jdbcDrivers.keySet().stream().map( Key::getName ).toArray() ),
+		    "jarModule", this.jarModule,
 		    "mapping", this.mapping.toStruct(),
 		    "memberMethods", Array.copyOf( this.memberMethods ),
 		    "name", this.name,
+		    "nestedModules", Array.copyOf( this.nestedModules ),
+		    "parentModule", this.parentModule,
 		    "physicalPath", this.physicalPath.toString(),
 		    "publicMapping", this.publicMapping.toStruct(),
 		    "registeredOn", this.registeredOn,

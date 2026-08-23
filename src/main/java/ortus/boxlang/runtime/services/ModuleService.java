@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.io.FilenameUtils;
 import org.semver4j.Semver;
 
 import ortus.boxlang.runtime.BoxRuntime;
@@ -35,6 +36,7 @@ import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.modules.ModuleRecord;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
@@ -65,7 +67,20 @@ public class ModuleService extends BaseService {
 	public static final String		MODULE_BIFS							= "bifs";
 	public static final String		MODULE_COMPONENTS					= "components";
 	public static final String		MODULE_LIBS							= "libs";
+
+	/**
+	 * The conventional folder name for modules nested inside another module (module inception).
+	 * A module carrying a folder by this name has those modules discovered, registered and
+	 * activated before the module itself.
+	 */
 	public static final String		MODULE_PACKAGE_PREFIX				= "modules";
+
+	/**
+	 * The file extension marking a module packaged as a single jar, placed directly inside a
+	 * modules folder instead of following the module directory layout.
+	 */
+	public static final String		MODULE_JAR_EXTENSION				= ".jar";
+
 	public static final String		MODULE_PUBLIC_FOLDER				= "public";
 
 	/**
@@ -171,6 +186,8 @@ public class ModuleService extends BaseService {
 			        "enabled", entrySet.getValue().isEnabled(),
 			        "invocationPath", entrySet.getValue().invocationPath,
 			        "mapping", entrySet.getValue().mapping.toStruct(),
+			        "nestedModules", Array.copyOf( entrySet.getValue().nestedModules ),
+			        "parentModule", entrySet.getValue().parentModule,
 			        "physicalPath", entrySet.getValue().physicalPath.toString(),
 			        "publicMapping", entrySet.getValue().publicMapping.toStruct(),
 			        "registeredOn", entrySet.getValue().registeredOn,
@@ -300,7 +317,8 @@ public class ModuleService extends BaseService {
 			moduleRecord.enabled = config.enabled;
 		}
 
-		// Check if the module is disabled, if so, skip it
+		// Check if the module is disabled, if so, skip it. Any modules nested inside it are
+		// skipped with it: their class loaders chain to this one, so they cannot stand alone.
 		if ( !moduleRecord.isEnabled() ) {
 			this.logger.warn(
 			    "+ Module Service: Module [{}] is disabled, skipping registration",
@@ -309,8 +327,29 @@ public class ModuleService extends BaseService {
 			return;
 		}
 
+		/**
+		 * |--------------------------------------------------------------------------
+		 * | Module Inception
+		 * |--------------------------------------------------------------------------
+		 * Modules nested inside this one register before it does. This module's own config is
+		 * resolved first, so its per-child setting overrides are readable by those children,
+		 * while its full registration still happens after them.
+		 */
+		if ( !moduleRecord.nestedModules.isEmpty() ) {
+			moduleRecord.resolveModuleConfig( runtimeContext );
+			moduleRecord.nestedModules
+			    .stream()
+			    .map( childName -> Key.of( ( String ) childName ) )
+			    .filter( childKey -> this.registry.containsKey( childKey ) && this.registry.get( childKey ).registeredOn == null )
+			    .forEach( this::register );
+		}
+
 		// Configure the module
 		moduleRecord.register( runtimeContext );
+
+		// A jar module may rename itself via `@BoxModule( name = "..." )` once its config is
+		// resolved off its class loader, so re-key it under the name it actually registered as.
+		rekeyModule( name, moduleRecord );
 
 		// Log registration time
 		moduleRecord.registrationTime = BoxRuntime.timerUtil.stopAndGetMillis( timerLabel );
@@ -328,6 +367,40 @@ public class ModuleService extends BaseService {
 		    moduleRecord.version,
 		    moduleRecord.registrationTime,
 		    moduleRecord.physicalPath
+		);
+	}
+
+	/**
+	 * Move a module to a new registry key when it renamed itself during registration.
+	 * <p>
+	 * A jar module's discovered name is only its jar base name; its {@code @BoxModule( name )}
+	 * annotation, read once the class loader is up, may name it something else. The parent's
+	 * nested module list is updated to match so the parent can still target it.
+	 *
+	 * @param registeredUnder The key the module was registered under
+	 * @param moduleRecord    The module record to re-key
+	 */
+	private void rekeyModule( Key registeredUnder, ModuleRecord moduleRecord ) {
+		if ( moduleRecord.name.equals( registeredUnder ) ) {
+			return;
+		}
+
+		this.registry.remove( registeredUnder );
+		this.registry.put( moduleRecord.name, moduleRecord );
+
+		// Keep the parent's child list pointing at the new name
+		if ( moduleRecord.parentModule != null ) {
+			ModuleRecord parentRecord = this.registry.get( moduleRecord.parentModule );
+			if ( parentRecord != null ) {
+				parentRecord.nestedModules.remove( registeredUnder.getName() );
+				parentRecord.nestedModules.push( moduleRecord.name.getName() );
+			}
+		}
+
+		this.logger.debug(
+		    "+ Module Service: Module discovered as [{}] renamed itself to [{}] via its @BoxModule annotation",
+		    registeredUnder.getName(),
+		    moduleRecord.name.getName()
 		);
 	}
 
@@ -419,6 +492,18 @@ public class ModuleService extends BaseService {
 
 		/**
 		 * |--------------------------------------------------------------------------
+		 * | Module Inception Activation
+		 * |--------------------------------------------------------------------------
+		 * Modules nested inside this one activate before it does, mirroring their
+		 * registration order and their class loader parentage.
+		 */
+		moduleRecord.nestedModules
+		    .stream()
+		    .map( childName -> Key.of( ( String ) childName ) )
+		    .forEach( this::activate );
+
+		/**
+		 * |--------------------------------------------------------------------------
 		 * | Module Dependencies Activation
 		 * |--------------------------------------------------------------------------
 		 * This makes sure that all dependencies are activated before the module itself
@@ -480,6 +565,20 @@ public class ModuleService extends BaseService {
 		// Which is separate from anything else
 		var	moduleRecord	= this.registry.get( name );
 		var	runtimeContext	= runtime.getRuntimeContext();
+
+		/**
+		 * |--------------------------------------------------------------------------
+		 * | Module Inception Unloading
+		 * |--------------------------------------------------------------------------
+		 * Nested modules unload before their parent, the reverse of activation: their class
+		 * loaders are parented to this module's loader, which unloading is about to close.
+		 * Copied first, since unloading a child mutates this module's nested list when the
+		 * child is removed from the registry.
+		 */
+		Array.copyOf( moduleRecord.nestedModules )
+		    .stream()
+		    .map( childName -> Key.of( ( String ) childName ) )
+		    .forEach( childKey -> unload( childKey, removeFromRegistry ) );
 
 		// Announce it
 		announce(
@@ -729,32 +828,34 @@ public class ModuleService extends BaseService {
 	 * @param modulesDirectory The path to scan for modules
 	 */
 	public void buildRegistryFromPath( Path modulesDirectory ) {
+		discoverModulesInPath( modulesDirectory, null );
+	}
+
+	/**
+	 * Scans a single modules folder and adds every module it finds to the registry, recursing into
+	 * each discovered module's own {@code modules} folder (module inception).
+	 * <p>
+	 * A modules folder may hold two kinds of module: conventional module <strong>directories</strong>
+	 * (carrying a {@code ModuleConfig.bx} and/or {@code box.json}), and module <strong>jars</strong>
+	 * placed directly inside it, whose descriptor is found later via {@link java.util.ServiceLoader}
+	 * on the module's own class loader.
+	 *
+	 * @param modulesDirectory The modules folder to scan
+	 * @param parent           The module this folder belongs to, or {@code null} when scanning a
+	 *                         top-level configured modules directory
+	 */
+	private void discoverModulesInPath( Path modulesDirectory, ModuleRecord parent ) {
 		try {
 			Files.walk( modulesDirectory, 1 )
-			    // Exclude the path if it is a root path in the `modulePaths` list
+			    // Exclude the modules folder itself, and any root path in the `modulePaths` list
+			    .filter( filePath -> !filePath.equals( modulesDirectory ) )
 			    .filter( filePath -> !this.modulePaths.contains( filePath ) )
-			    // Only module folders
-			    .filter( Files::isDirectory )
-			    // Only where a ModuleConfig.bx OR a box.json exists in the root
-			    // (pure-Java modules may have only box.json; Java config detection happens later via ServiceLoader)
-			    .filter( filePath -> Files.exists( filePath.resolve( MODULE_DESCRIPTOR ) )
-			        || Files.exists( filePath.resolve( ModuleRecord.MODULE_CONFIG_FILE ) ) )
+			    // Either a conventional module folder or a module jar
+			    .filter( filePath -> isModuleFolder( filePath ) || isModuleJar( filePath ) )
 			    // Filter out already registered modules
-			    .filter( filePath -> {
-				    Key	moduleName		= Key.of( filePath.getFileName().toString() );
-				    Path moduleBoxJSON	= filePath.resolve( ModuleRecord.MODULE_CONFIG_FILE );
-				    if ( Files.exists( moduleBoxJSON ) ) {
-					    moduleName = DataNavigator
-					        .of( moduleBoxJSON )
-					        .from( "boxlang" )
-					        .getAsKey( "moduleName", moduleName );
-				    }
-
-				    return !this.registry.containsKey( moduleName );
-			    } )
-			    // Convert each filePath to a discovered ModuleRecord
-			    .map( filePath -> new ModuleRecord( filePath.toString() ) )
-			    .forEach( moduleRecord -> this.registry.put( moduleRecord.name, moduleRecord ) );
+			    .filter( filePath -> !this.registry.containsKey( discoverModuleName( filePath ) ) )
+			    // Convert each filePath to a discovered ModuleRecord, recursing into its own modules
+			    .forEach( filePath -> createDiscoveredModule( filePath, parent ) );
 		} catch ( IOException e ) {
 			String message = "Error walking and registering module path: " + modulesDirectory.toString();
 			this.logger.error( message, e );
@@ -763,20 +864,119 @@ public class ModuleService extends BaseService {
 	}
 
 	/**
-	 * Register and activate a single module. Pass the directory that contains the ModuleConfig.bx. The name of the directory will be the module name.
+	 * Builds a {@link ModuleRecord} for a discovered module, links it to its parent (if any), adds
+	 * it to the registry, and recurses into its own {@code modules} folder (module inception).
 	 *
-	 * @param moduleDirectory The path to the module
+	 * @param modulePath The module's directory or jar file
+	 * @param parent     The module this one is nested inside, or {@code null} for a top-level module
+	 *
+	 * @return The created module record
+	 */
+	private ModuleRecord createDiscoveredModule( Path modulePath, ModuleRecord parent ) {
+		ModuleRecord moduleRecord = new ModuleRecord( modulePath.toString() );
+
+		// Link the parent/child relationship both ways so each can target the other
+		if ( parent != null ) {
+			moduleRecord.parentModule = parent.name;
+			parent.nestedModules.push( moduleRecord.name.getName() );
+			this.logger.debug(
+			    "+ Module Service: Discovered module [{}] nested inside module [{}]",
+			    moduleRecord.name.getName(),
+			    parent.name.getName()
+			);
+		}
+
+		this.registry.put( moduleRecord.name, moduleRecord );
+
+		// Module Inception: does this module carry modules of its own?
+		Path nestedModulesPath = modulePath.resolve( MODULE_PACKAGE_PREFIX );
+		if ( Files.isDirectory( nestedModulesPath ) ) {
+			discoverModulesInPath( nestedModulesPath, moduleRecord );
+		}
+
+		return moduleRecord;
+	}
+
+	/**
+	 * Resolve the name a module at this path would register under, without building a record.
+	 * Used to skip candidates already present in the registry.
+	 *
+	 * @param modulePath The module's directory or jar file
+	 *
+	 * @return The module's name
+	 */
+	private Key discoverModuleName( Path modulePath ) {
+		// A jar module's conventional name is the jar's base name; an explicit @BoxModule( name )
+		// may rename it later, once its config is resolved off its class loader.
+		if ( isModuleJar( modulePath ) ) {
+			return Key.of( FilenameUtils.getBaseName( modulePath.getFileName().toString() ) );
+		}
+
+		Key		moduleName		= Key.of( modulePath.getFileName().toString() );
+		Path	moduleBoxJSON	= modulePath.resolve( ModuleRecord.MODULE_CONFIG_FILE );
+		if ( Files.exists( moduleBoxJSON ) ) {
+			moduleName = DataNavigator
+			    .of( moduleBoxJSON )
+			    .from( "boxlang" )
+			    .getAsKey( "moduleName", moduleName );
+		}
+
+		return moduleName;
+	}
+
+	/**
+	 * Verify if a path is a conventional module folder: a directory carrying a
+	 * {@code ModuleConfig.bx} or a {@code box.json} in its root.
+	 * <p>
+	 * Pure-Java modules may have only a {@code box.json}; their Java config is detected later
+	 * via {@link java.util.ServiceLoader}.
+	 *
+	 * @param modulePath The path to check
+	 *
+	 * @return {@code true} if the path is a module folder, {@code false} otherwise
+	 */
+	public static boolean isModuleFolder( Path modulePath ) {
+		return Files.isDirectory( modulePath )
+		    && ( Files.exists( modulePath.resolve( MODULE_DESCRIPTOR ) )
+		        || Files.exists( modulePath.resolve( ModuleRecord.MODULE_CONFIG_FILE ) ) );
+	}
+
+	/**
+	 * Verify if a path is a module packaged as a single jar file. Such a jar, placed directly in a
+	 * modules folder, is a module in its own right: it gets its own record and its own isolated
+	 * class loader, and its {@link ortus.boxlang.runtime.modules.IModuleConfig} is discovered via
+	 * {@link java.util.ServiceLoader} on that loader.
+	 *
+	 * @param modulePath The path to check
+	 *
+	 * @return {@code true} if the path is a module jar, {@code false} otherwise
+	 */
+	public static boolean isModuleJar( Path modulePath ) {
+		return Files.isRegularFile( modulePath )
+		    && modulePath.getFileName().toString().toLowerCase().endsWith( MODULE_JAR_EXTENSION );
+	}
+
+	/**
+	 * Register and activate a single module. Pass either the directory that contains the
+	 * ModuleConfig.bx (the directory name becomes the module name), or a module jar file (the jar's
+	 * base name becomes the module name).
+	 * <p>
+	 * Any modules nested inside the module's own {@code modules} folder are registered and
+	 * activated first (module inception).
+	 *
+	 * @param moduleDirectory The path to the module directory or jar
 	 */
 	public ModuleService loadModule( Path moduleDirectory ) {
-		if ( !Files.isDirectory( moduleDirectory ) ) {
-			throw new BoxRuntimeException( "The provided module path is not a directory: " + moduleDirectory.toString() );
+		if ( !Files.isDirectory( moduleDirectory ) && !isModuleJar( moduleDirectory ) ) {
+			throw new BoxRuntimeException( "The provided module path is not a directory or a module jar: " + moduleDirectory.toString() );
 		}
-		Key moduleName = Key.of( moduleDirectory.getFileName().toString() );
+		Key moduleName = discoverModuleName( moduleDirectory );
 		// exit if module already registered
 		if ( this.registry.containsKey( moduleName ) ) {
 			return this;
 		}
-		this.registry.put( moduleName, new ModuleRecord( moduleDirectory.toString() ) );
+		// Build the record and discover any modules nested inside it
+		createDiscoveredModule( moduleDirectory, null );
 		register( moduleName );
 		activate( moduleName );
 		return this;
