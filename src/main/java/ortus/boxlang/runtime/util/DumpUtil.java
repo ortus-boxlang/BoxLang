@@ -99,16 +99,24 @@ public class DumpUtil {
 	private static final String									DEFAULT_DUMP_TEMPLATE	= "Class.bxm";
 
 	/**
+	 * Dump the given target object to the configured output location, in either HTML or plain-text
+	 * format. This is the main entry point used by the {@code dump()}/{@code writeDump()} BIF and the
+	 * {@code <bx:dump>} component.
 	 *
-	 * @param target
-	 * @param label
-	 * @param depth
-	 * @param maxRows
-	 * @param expand
-	 * @param abort
-	 * @param output
-	 * @param format
-	 * @param showUDFs
+	 * @param context  The context in which the dump is being executed
+	 * @param target   The object to dump; can be any BoxLang or Java type, including {@code null}
+	 * @param label    An optional custom label to display above the dump (HTML output only)
+	 * @param depth    The recursion depth to display when dumping nested collections. 1-based:
+	 *                 {@code null} or {@code -1} is unlimited, {@code 0} shows nothing, {@code 1}
+	 *                 shows the top level with no recursion, {@code 2} recurses once, etc. Only
+	 *                 container/complex values are gated by this; scalar values always render fully
+	 * @param maxRows  The maximum number of keys/rows/items to display per level of a collection.
+	 *                 Same 1-based/{@code -1}/{@code 0} semantics as {@code depth}, but independent of it
+	 * @param expand   Whether to expand the dump by default (HTML output only)
+	 * @param abort    Whether to hard-abort the request after dumping
+	 * @param output   The output location: {@code "buffer"}, {@code "console"}, or an absolute file path
+	 * @param format   The output format: {@code "html"} or {@code "text"}; defaults based on the output location
+	 * @param showUDFs Whether to show UDFs/methods when dumping classes (HTML output only)
 	 */
 	public static void dump(
 	    IBoxContext context,
