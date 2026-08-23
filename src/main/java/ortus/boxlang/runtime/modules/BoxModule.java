@@ -44,6 +44,13 @@ import java.lang.annotation.Target;
 @Target( ElementType.TYPE )
 public @interface BoxModule {
 
+	/**
+	 * The module name. Consulted for jar-based Java modules, where the convention default is the
+	 * jar file's base name. For folder-based modules the folder name (or {@code box.json}'s
+	 * {@code boxlang.moduleName}) always wins.
+	 */
+	String name() default "";
+
 	/** The version of the module. */
 	String version() default "1.0.0";
 

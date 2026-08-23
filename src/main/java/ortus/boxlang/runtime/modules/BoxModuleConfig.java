@@ -127,6 +127,21 @@ public class BoxModuleConfig implements IModuleConfig {
 	}
 
 	/**
+	 * Reads the {@code this.modules} / {@code variables.modules} struct declared by the BX
+	 * descriptor, which carries per-child overrides for nested modules (module inception).
+	 */
+	@Override
+	public IStruct modules() {
+		ThisScope		thisScope		= this.bxClass.getThisScope();
+		VariablesScope	variablesScope	= this.bxClass.getVariablesScope();
+		Object			declared		= thisScope.containsKey( Key.modules )
+		    ? thisScope.get( Key.modules )
+		    : variablesScope.get( Key.modules );
+
+		return declared instanceof IStruct castedModules ? castedModules : new Struct();
+	}
+
+	/**
 	 * Registers the underlying BX class via the {@link IClassRunnable} overload so
 	 * that {@code @interceptionPoint} annotations are discovered from BX metadata
 	 * rather than Java reflection.
