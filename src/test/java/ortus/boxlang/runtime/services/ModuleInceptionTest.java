@@ -37,6 +37,7 @@ import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.modules.BoxModuleConfig;
 import ortus.boxlang.runtime.modules.ModuleRecord;
 import ortus.boxlang.runtime.scopes.Key;
+import ortus.boxlang.runtime.types.IStruct;
 
 /**
  * Tests for module inception: modules nested inside another module's own {@code modules} folder.
@@ -568,6 +569,57 @@ class ModuleInceptionTest {
 		assertThat( service.getModuleRecord( PARENT ).isActivated() ).isTrue();
 		assertThat( service.getModuleRecord( CHILD ).isActivated() ).isTrue();
 		assertThat( service.getModuleRecord( GRANDCHILD ).isActivated() ).isTrue();
+	}
+
+	// -------------------------------------------------------------------------
+	// Module tree
+	// -------------------------------------------------------------------------
+
+	@DisplayName( "getModuleTree() nests children under their parent, and omits them from the top level" )
+	@Test
+	void testGetModuleTreeNestsChildren() {
+		service.buildRegistryFromPath( INCEPTION_MODULES );
+
+		IStruct tree = service.getModuleTree();
+
+		// Only the top-level module appears at the root...
+		assertThat( tree.containsKey( PARENT ) ).isTrue();
+		assertThat( tree.containsKey( CHILD ) ).isFalse();
+		assertThat( tree.containsKey( GRANDCHILD ) ).isFalse();
+
+		// ...its children are nested underneath it instead, to arbitrary depth
+		IStruct	parentNode		= ( IStruct ) tree.get( PARENT );
+		IStruct	parentChildren	= ( IStruct ) parentNode.get( Key.of( "children" ) );
+		assertThat( parentChildren.containsKey( CHILD ) ).isTrue();
+
+		IStruct	childNode		= ( IStruct ) parentChildren.get( CHILD );
+		IStruct	childChildren	= ( IStruct ) childNode.get( Key.of( "children" ) );
+		assertThat( childChildren.containsKey( GRANDCHILD ) ).isTrue();
+
+		// A leaf's children struct is empty, not absent
+		IStruct grandchildNode = ( IStruct ) childChildren.get( GRANDCHILD );
+		assertThat( ( IStruct ) grandchildNode.get( Key.of( "children" ) ) ).isEmpty();
+
+		// Each node still carries the module's own record data
+		assertThat( parentNode.get( Key._NAME ) ).isEqualTo( PARENT );
+	}
+
+	@DisplayName( "getModuleTree( name ) returns the subtree rooted at that module" )
+	@Test
+	void testGetModuleTreeRootedAtAModule() {
+		service.buildRegistryFromPath( INCEPTION_MODULES );
+
+		IStruct childSubtree = service.getModuleTree( CHILD );
+
+		assertThat( childSubtree.get( Key._NAME ) ).isEqualTo( CHILD );
+		IStruct children = ( IStruct ) childSubtree.get( Key.of( "children" ) );
+		assertThat( children.containsKey( GRANDCHILD ) ).isTrue();
+	}
+
+	@DisplayName( "getModuleTree( name ) returns an empty struct for an unregistered module" )
+	@Test
+	void testGetModuleTreeForUnregisteredModuleIsEmpty() {
+		assertThat( service.getModuleTree( Key.of( "doesNotExist" ) ) ).isEmpty();
 	}
 
 	// -------------------------------------------------------------------------

@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -868,6 +869,61 @@ public class ModuleService extends BaseService {
 	 */
 	public boolean hasModule( Key name ) {
 		return this.registry.containsKey( name );
+	}
+
+	/**
+	 * Get the full module tree: every top-level module, each carrying a {@code children} struct
+	 * of the modules nested inside it (module inception), recursively down to any depth.
+	 * <p>
+	 * Modules nested inside another module are omitted from the top level of the returned struct;
+	 * find them under their parent's {@code children} entry instead.
+	 *
+	 * @return A struct of top-level module name to module tree node
+	 */
+	public IStruct getModuleTree() {
+		IStruct tree = new Struct();
+		this.registry
+		    .values()
+		    .stream()
+		    .filter( record -> record.parentModule == null )
+		    .forEach( record -> tree.put( record.name, buildModuleTreeNode( record ) ) );
+		return tree;
+	}
+
+	/**
+	 * Get the module tree rooted at a specific module: its own record data plus a {@code children}
+	 * struct of the modules nested inside it (module inception), recursively.
+	 *
+	 * @param name The module to root the tree at
+	 *
+	 * @return The module's tree node, or an empty struct if the module is not registered
+	 */
+	public IStruct getModuleTree( Key name ) {
+		ModuleRecord record = this.registry.get( name );
+		return record == null ? new Struct() : buildModuleTreeNode( record );
+	}
+
+	/**
+	 * Builds one module tree node: the module's own {@link ModuleRecord#asStruct()} data, plus a
+	 * {@code children} struct of its direct nested modules, each built the same way.
+	 *
+	 * @param record The module record to build a tree node for
+	 *
+	 * @return The module's tree node
+	 */
+	private IStruct buildModuleTreeNode( ModuleRecord record ) {
+		IStruct	node		= record.asStruct();
+
+		IStruct	children	= new Struct();
+		record.nestedModules
+		    .stream()
+		    .map( childName -> Key.of( ( String ) childName ) )
+		    .map( this.registry::get )
+		    .filter( Objects::nonNull )
+		    .forEach( child -> children.put( child.name, buildModuleTreeNode( child ) ) );
+		node.put( Key.of( "children" ), children );
+
+		return node;
 	}
 
 	/**
