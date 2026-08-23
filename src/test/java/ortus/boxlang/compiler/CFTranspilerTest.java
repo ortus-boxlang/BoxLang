@@ -16,6 +16,9 @@ package ortus.boxlang.compiler;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -755,6 +758,81 @@ public class CFTranspilerTest {
 
 		assertThat( variables.getAsString( result ) ).contains( "brad" );
 		assertThat( variables.getAsString( result ) ).contains( "result" );
+	}
+
+	private static final String NESTED_STRUCT_SOURCE = """
+	                                                   data = { "alpha": "a",
+	                                                   		"beta" : {
+	                                                   			"charlie": "c",
+	                                                   			"delta": "d"
+	                                                   		},
+	                                                   		"echo" : {
+	                                                   			"foxtrot" : {
+	                                                   				"golf" : "g",
+	                                                   				"hotel" : "h"
+	                                                   			}
+	                                                   		}
+	                                                   	};
+	                                                   """;
+
+	@DisplayName( "It transpiles writeDump( top=value ) to writeDump( depth=value-1 )" )
+	@Test
+	public void testWriteDumpTopTranspilesToDepthMinusOne() {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		context.getRequestContext().setOut( new PrintStream( baos, true ) );
+		// @formatter:off
+		instance.executeSource(
+		    NESTED_STRUCT_SOURCE + """
+		    writeDump( var = data, top = 3, format = "html" );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		// @formatter:on
+		String output = baos.toString();
+		// top=3 -> depth=2: recurse one level in
+		assertThat( output ).contains( "alpha" );
+		assertThat( output ).contains( "charlie" );
+		assertThat( output ).contains( "foxtrot" );
+		assertThat( output ).doesNotContain( "golf" );
+	}
+
+	@DisplayName( "It transpiles writeDump( top=1 ) to writeDump( depth=0 ), showing nothing" )
+	@Test
+	public void testWriteDumpTopOneTranspilesToDepthZero() {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		context.getRequestContext().setOut( new PrintStream( baos, true ) );
+		// @formatter:off
+		instance.executeSource(
+		    NESTED_STRUCT_SOURCE + """
+		    writeDump( var = data, top = 1, format = "html" );
+		    """,
+		    context, BoxSourceType.CFSCRIPT );
+		// @formatter:on
+		String output = baos.toString();
+		assertThat( output ).contains( "Depth Limit reached" );
+		assertThat( output ).doesNotContain( "alpha" );
+	}
+
+	@DisplayName( "It transpiles <cfdump top=value> to <bx:dump depth=value-1>" )
+	@Test
+	public void testCfDumpTopTranspilesToDepthMinusOne() {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		context.getRequestContext().setOut( new PrintStream( baos, true ) );
+		// @formatter:off
+		instance.executeSource(
+		    """
+		    <cfscript>
+		    """ + NESTED_STRUCT_SOURCE + """
+		    </cfscript>
+		    <cfdump var="#data#" top="3" format="html">
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+		// @formatter:on
+		String output = baos.toString();
+		// top=3 -> depth=2: recurse one level in
+		assertThat( output ).contains( "alpha" );
+		assertThat( output ).contains( "charlie" );
+		assertThat( output ).contains( "foxtrot" );
+		assertThat( output ).doesNotContain( "golf" );
 	}
 
 }

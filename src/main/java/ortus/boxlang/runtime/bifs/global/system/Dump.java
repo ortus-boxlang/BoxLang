@@ -63,8 +63,12 @@ public class Dump extends BIF {
 		    new Argument( false, "any", Key.var ),
 		    // A custom label to display above the dump (Only in HTML output)
 		    new Argument( false, Argument.STRING, Key.label, "" ),
-		    // The number of levels to display when dumping collections. Great to avoid dumping the entire world!
-		    new Argument( false, Argument.NUMERIC, Key.top ),
+		    // The recursion depth to display when dumping nested collections. Great to avoid dumping the entire world!
+		    // 1-based: -1 (default) is unlimited, 0 shows nothing, 1 shows the top level with no recursion, 2 recurses once, etc.
+		    new Argument( false, Argument.NUMERIC, Key.depth, Set.of( Validator.min( -1 ) ) ),
+		    // The maximum number of keys/rows/items to display per level of a collection.
+		    // 1-based: -1 (default) is unlimited, 0 shows nothing, 1 shows a single row, etc.
+		    new Argument( false, Argument.NUMERIC, Key.maxRows, Set.of( Validator.min( -1 ) ) ),
 		    // Whether to expand the dump. By default, the dump is expanded on the first level only
 		    new Argument( false, Argument.BOOLEAN, Key.expand, true ),
 		    // Whether to do a hard abort the request after dumping
@@ -99,7 +103,11 @@ public class Dump extends BIF {
 	 *
 	 * @argument.label A custom label to display above the dump (Only in HTML output)
 	 *
-	 * @argument.top The number of levels to display when dumping collections. Great to avoid dumping the entire world! Default is inifinity. (Only in HTML output)
+	 * @argument.depth The recursion depth to display when dumping nested collections. 1-based: -1 (default) is unlimited, 0 shows nothing,
+	 *                 1 shows the top level with no recursion, 2 recurses once, etc. (Only in HTML output)
+	 *
+	 * @argument.maxRows The maximum number of keys/rows/items to display per level of a collection, array, or query. 1-based: -1 (default)
+	 *                   is unlimited, 0 shows nothing, 1 shows a single row, etc. (Only in HTML output)
 	 *
 	 * @argument.expand Whether to expand the dump. Be default, we try to expand as much as possible. (Only in HTML output)
 	 *
@@ -118,14 +126,16 @@ public class Dump extends BIF {
 			arguments.put( Key.abort, true );
 		}
 
-		Object top = arguments.get( Key.top );
+		Object	depth	= arguments.get( Key.depth );
+		Object	maxRows	= arguments.get( Key.maxRows );
 
 		// Dump the object
 		DumpUtil.dump(
 		    context,
 		    DynamicObject.unWrap( arguments.get( Key.var ) ),
 		    arguments.getAsString( Key.label ),
-		    top == null ? null : IntegerCaster.cast( top ),
+		    depth == null ? null : IntegerCaster.cast( depth ),
+		    maxRows == null ? null : IntegerCaster.cast( maxRows ),
 		    arguments.getAsBoolean( Key.expand ),
 		    BooleanCaster.cast( arguments.get( Key.abort ) ),
 		    arguments.getAsString( Key.output ),

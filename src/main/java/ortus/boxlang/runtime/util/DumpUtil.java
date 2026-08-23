@@ -100,7 +100,8 @@ public class DumpUtil {
 	 *
 	 * @param target
 	 * @param label
-	 * @param top
+	 * @param depth
+	 * @param maxRows
 	 * @param expand
 	 * @param abort
 	 * @param output
@@ -111,14 +112,19 @@ public class DumpUtil {
 	    IBoxContext context,
 	    Object target,
 	    String label,
-	    @Nullable Integer top,
+	    @Nullable Integer depth,
+	    @Nullable Integer maxRows,
 	    Boolean expand,
 	    Boolean abort,
 	    String output,
 	    String format,
 	    Boolean showUDFs ) {
 
-		boolean isScriptContext = context.getRequestContext() instanceof ScriptingRequestBoxContext;
+		// Normalize the -1 sentinel (and any other negative value) to "unlimited"
+		final Integer	depthFinal		= normalizeLimit( depth );
+		final Integer	maxRowsFinal	= normalizeLimit( maxRows );
+
+		boolean			isScriptContext	= context.getRequestContext() instanceof ScriptingRequestBoxContext;
 
 		// Default output param
 		if ( output == null ) {
@@ -182,7 +188,8 @@ public class DumpUtil {
 		            Key.context, context,
 		            Key.target, target,
 		            Key.label, label,
-		            Key.top, top,
+		            Key.depth, depthFinal,
+		            Key.maxRows, maxRowsFinal,
 		            Key.expand, expand,
 		            Key.abort, abort,
 		            Key.output, outputFinal,
@@ -192,7 +199,7 @@ public class DumpUtil {
 
 		String dumpOutput;
 		if ( format.equals( "html" ) ) {
-			dumpOutput = generateDumpHTML( context, target, label, top, expand, abort, output, format, showUDFs );
+			dumpOutput = generateDumpHTML( context, target, label, depthFinal, maxRowsFinal, expand, abort, output, format, showUDFs );
 		} else {
 			dumpOutput = generateDumpText( context, target, label );
 		}
@@ -255,7 +262,8 @@ public class DumpUtil {
 					            Key.context, context,
 					            Key.target, target,
 					            Key.label, label,
-					            Key.top, top,
+					            Key.depth, depthFinal,
+					            Key.maxRows, maxRowsFinal,
 					            Key.expand, expand,
 					            Key.abort, abort,
 					            Key.output, outputFinal,
@@ -267,6 +275,21 @@ public class DumpUtil {
 			}
 
 		}
+	}
+
+	/**
+	 * Normalizes a "depth" or "maxRows" limit value.
+	 * <p>
+	 * {@code null} and {@code -1} (and anything more negative) mean "unlimited", which we
+	 * represent internally as {@code null} so the rest of the dump logic only has one case
+	 * to worry about.
+	 *
+	 * @param value The limit value passed by the caller
+	 *
+	 * @return The normalized limit, or {@code null} if unlimited
+	 */
+	private static Integer normalizeLimit( @Nullable Integer value ) {
+		return ( value == null || value <= -1 ) ? null : value;
 	}
 
 	/**
@@ -338,7 +361,8 @@ public class DumpUtil {
 	 * @param context  The context
 	 * @param target   The target object
 	 * @param label    The label for the object
-	 * @param top      The number of levels to dump
+	 * @param depth    The recursion depth to dump
+	 * @param maxRows  The maximum number of rows/items to dump per level
 	 * @param expand   Whether to expand the object
 	 * @param abort    Whether to abort on error
 	 * @param output   The output location
@@ -349,7 +373,8 @@ public class DumpUtil {
 	    IBoxContext context,
 	    Object target,
 	    String label,
-	    @Nullable Integer top,
+	    @Nullable Integer depth,
+	    @Nullable Integer maxRows,
 	    Boolean expand,
 	    Boolean abort,
 	    String output,
@@ -364,12 +389,19 @@ public class DumpUtil {
 		// prevent recursion
 		if ( !dumped.add( thisHashCode ) ) {
 			context.writeToBuffer( "<div><em>Recursive Reference (Skipping dump)</em></div>", true );
+			// Not our entry to clean up: dumped.add() failed, so we never added thisHashCode.
 			return null;
 		}
 
-		// Reached the top limit, so return to prevent dumping the entire world
-		if ( top != null && top <= 0 ) {
-			context.writeToBuffer( "<div><em>Top Limit reached (Skipping dump)</em></div>", true );
+		// Reached the depth limit, so return to prevent dumping the entire world
+		if ( depth != null && depth <= 0 ) {
+			context.writeToBuffer( "<div><em>Depth Limit reached (Skipping dump)</em></div>", true );
+			// We added thisHashCode above but are bailing out before the try/finally that would
+			// normally clean it up, so do it here to avoid leaking thread-local state across calls.
+			dumped.remove( thisHashCode );
+			if ( outerDump ) {
+				dumpedObjects.remove();
+			}
 			return null;
 		}
 
@@ -407,7 +439,8 @@ public class DumpUtil {
 			        Key.posInCode, posInCode,
 			        Key.var, target,
 			        Key.label, label,
-			        Key.top, top,
+			        Key.depth, depth,
+			        Key.maxRows, maxRows,
 			        Key.expand, expand,
 			        Key.abort, abort,
 			        Key.showUDFs, showUDFs,

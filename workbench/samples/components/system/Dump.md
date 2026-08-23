@@ -14,12 +14,24 @@ Outputs structured debug information for any variable type.
 
 ```
 
-### Limit dump depth
+### Limit recursion depth
 
-Prevents dumping deeply nested structures by limiting the number of levels.
+Prevents dumping deeply nested structures by limiting how many levels are recursed into.
+`depth` is 1-based: `-1` (the default) is unlimited, `0` shows nothing, `1` shows the top
+level with no recursion, `2` recurses once, etc.
 
 ```java
-<bx:dump var="#complexObject#" top="3">
+<bx:dump var="#complexObject#" depth="3">
+
+```
+
+### Limit the number of rows/items shown
+
+Limits how many keys, array elements, or query rows are shown per level, independently of
+recursion depth. Same 1-based semantics as `depth`.
+
+```java
+<bx:dump var="#bigArray#" maxRows="10">
 
 ```
 

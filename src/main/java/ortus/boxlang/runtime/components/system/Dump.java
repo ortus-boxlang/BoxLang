@@ -45,7 +45,8 @@ public class Dump extends Component {
 		declaredAttributes = new Attribute[] {
 		    new Attribute( Key.var, "any" ),
 		    new Attribute( Key.label, "string", "" ),
-		    new Attribute( Key.top, "numeric" ),
+		    new Attribute( Key.depth, "numeric", Set.of( Validator.min( -1 ) ) ),
+		    new Attribute( Key.maxRows, "numeric", Set.of( Validator.min( -1 ) ) ),
 		    new Attribute( Key.expand, "boolean" ),
 		    new Attribute( Key.abort, "any", false ),
 		    new Attribute( Key.output, "string", Set.of( Validator.NON_EMPTY ) ),
@@ -69,7 +70,11 @@ public class Dump extends Component {
 	 *
 	 * @attributes.label A custom label to display above the dump (Only in HTML output)
 	 *
-	 * @attributes.top The number of levels to display when dumping collections. Great to avoid dumping the entire world! Default is inifinity. (Only in HTML output)
+	 * @attributes.depth The recursion depth to display when dumping nested collections. 1-based: -1 (default) is unlimited, 0 shows nothing,
+	 *                   1 shows the top level with no recursion, 2 recurses once, etc. (Only in HTML output)
+	 *
+	 * @attributes.maxRows The maximum number of keys/rows/items to display per level of a collection, array, or query. 1-based: -1 (default)
+	 *                     is unlimited, 0 shows nothing, 1 shows a single row, etc. (Only in HTML output)
 	 *
 	 * @attributes.expand Whether to expand the dump. Be default, we try to expand as much as possible. (Only in HTML output)
 	 *
@@ -94,13 +99,15 @@ public class Dump extends Component {
 			attributes.put( Key.abort, true );
 		}
 
-		Object top = attributes.get( Key.top );
+		Object	depth	= attributes.get( Key.depth );
+		Object	maxRows	= attributes.get( Key.maxRows );
 
 		DumpUtil.dump(
 		    context,
 		    DynamicObject.unWrap( attributes.get( Key.var ) ),
 		    attributes.getAsString( Key.label ),
-		    top == null ? null : IntegerCaster.cast( top ),
+		    depth == null ? null : IntegerCaster.cast( depth ),
+		    maxRows == null ? null : IntegerCaster.cast( maxRows ),
 		    attributes.getAsBoolean( Key.expand ),
 		    BooleanCaster.cast( attributes.get( Key.abort ) ),
 		    attributes.getAsString( Key.output ),
