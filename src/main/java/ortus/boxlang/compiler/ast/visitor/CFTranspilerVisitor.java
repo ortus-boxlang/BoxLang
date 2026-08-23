@@ -657,9 +657,9 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 			}
 		}
 
-		// CF's writeDump()/cfdump "top" attribute limits the number of rows/items shown per level. BoxLang's dump()
-		// separates that concept from recursion depth, so a CF "top" value maps onto BoxLang's "depth" argument
-		// (recursion levels), decremented by one to account for the differing 1-based semantics.
+		// CF's writeDump()/cfdump "top" attribute limits how many levels of recursion are shown. BoxLang's dump()
+		// separates that concept from row/item limiting (its "maxRows" argument), so a CF "top" value maps onto
+		// BoxLang's "depth" argument (recursion levels), decremented by one to account for the differing 1-based semantics.
 		// writeDump( var=data, top=value ) -> writeDump( var=data, depth=value-1 )
 		if ( name.equals( "writedump" ) && node.isNamedArgs() ) {
 			node.getArguments().stream()
@@ -1567,9 +1567,9 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 			    } );
 		}
 
-		// cfdump's "top" attribute limits the number of rows/items shown per level. BoxLang's dump component separates
-		// that concept from recursion depth, so a CF "top" value maps onto BoxLang's "depth" attribute (recursion
-		// levels), decremented by one to account for the differing 1-based semantics.
+		// cfdump's "top" attribute limits how many levels of recursion are shown. BoxLang's dump component separates
+		// that concept from row/item limiting (its "maxRows" attribute), so a CF "top" value maps onto BoxLang's
+		// "depth" attribute (recursion levels), decremented by one to account for the differing 1-based semantics.
 		// <cfdump var="data" top="#value#"> -> <bx:dump var="data" depth="#value-1#">
 		if ( componentName.equals( "dump" ) ) {
 			node.getAttributes().stream()
