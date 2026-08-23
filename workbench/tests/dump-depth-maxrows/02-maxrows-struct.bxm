@@ -1,0 +1,27 @@
+<bx:script>
+	flat = { "alpha": "a", "bravo": "b", "charlie": "c", "delta": "d", "echo": "e" };
+</bx:script>
+<!DOCTYPE html>
+<html>
+<head><title>02 - maxRows on a flat Struct</title>
+<style>body{font-family:system-ui,sans-serif;max-width:1000px;margin:30px auto;padding:0 20px;} h2{border-bottom:2px solid #333;padding-bottom:4px;margin-top:40px;} .expect{background:#fffbe6;border-left:4px solid #e0a800;padding:8px 12px;margin:8px 0;}</style>
+</head>
+<body>
+<p><a href="index.bxm">&larr; back</a></p>
+<h1>02 - Row limiting (maxRows) on a flat Struct</h1>
+<p>Fixture: 5 keys, alpha..echo</p>
+
+<h2>maxRows = -1 (default / unlimited)</h2>
+<div class="expect">Expect: caption shows plain "5", all 5 keys shown</div>
+<bx:dump var="#flat#" maxRows="-1">
+
+<h2>maxRows = 0 (shows nothing)</h2>
+<div class="expect">Expect: caption shows "0/5", no rows in the body</div>
+<bx:dump var="#flat#" maxRows="0">
+
+<h2>maxRows = 2</h2>
+<div class="expect">Expect: caption shows "2/5", only alpha + bravo shown</div>
+<bx:dump var="#flat#" maxRows="2">
+
+</body>
+</html>

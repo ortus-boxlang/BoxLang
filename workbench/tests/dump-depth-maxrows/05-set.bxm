@@ -1,0 +1,31 @@
+<bx:script>
+	linkedSet = setNew( type = "linked", values = [ "alpha", "bravo", "charlie", "delta" ] );
+	nestedSet = setOf( { "inner": "value" } );
+</bx:script>
+<!DOCTYPE html>
+<html>
+<head><title>05 - depth / maxRows on a Set</title>
+<style>body{font-family:system-ui,sans-serif;max-width:1000px;margin:30px auto;padding:0 20px;} h2{border-bottom:2px solid #333;padding-bottom:4px;margin-top:40px;} .expect{background:#fffbe6;border-left:4px solid #e0a800;padding:8px 12px;margin:8px 0;}</style>
+</head>
+<body>
+<p><a href="index.bxm">&larr; back</a></p>
+<h1>05 - depth / maxRows on a Set</h1>
+<p>Fixture: linked Set of 4 strings, and a Set containing one nested Struct</p>
+
+<h2>maxRows = 2 on a 4-item linked Set</h2>
+<div class="expect">Expect: caption "2/4", only alpha + bravo shown</div>
+<bx:dump var="#linkedSet#" maxRows="2">
+
+<h2>maxRows = -1 (default / unlimited)</h2>
+<bx:dump var="#linkedSet#" maxRows="-1">
+
+<h2>depth = 1 on a Set containing a nested Struct</h2>
+<div class="expect">Expect: the Set itself renders, but the nested struct's own content collapses to "Depth Limit reached"</div>
+<bx:dump var="#nestedSet#" depth="1">
+
+<h2>depth = -1 (default / unlimited) on the same nested Set</h2>
+<div class="expect">Expect: "inner" / "value" fully visible</div>
+<bx:dump var="#nestedSet#" depth="-1">
+
+</body>
+</html>
