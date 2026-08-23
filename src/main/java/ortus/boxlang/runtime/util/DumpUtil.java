@@ -40,6 +40,7 @@ import java.util.concurrent.ConcurrentMap;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.runtime.bifs.global.decision.IsSimpleValue;
 import ortus.boxlang.runtime.components.jdbc.Query;
 import ortus.boxlang.runtime.context.ContainerBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -393,8 +394,11 @@ public class DumpUtil {
 			return null;
 		}
 
-		// Reached the depth limit, so return to prevent dumping the entire world
-		if ( depth != null && depth <= 0 ) {
+		// Reached the depth limit, so return to prevent dumping the entire world.
+		// Simple/scalar values (strings, numbers, booleans, dates, etc.) never recurse further, so
+		// there's nothing for "depth" to limit about them - only gate actual container/complex values.
+		boolean isContainerValue = target != null && ! ( target instanceof NullValue ) && !IsSimpleValue.isSimpleValue( target );
+		if ( isContainerValue && depth != null && depth <= 0 ) {
 			context.writeToBuffer( "<div><em>Depth Limit reached (Skipping dump)</em></div>", true );
 			// We added thisHashCode above but are bailing out before the try/finally that would
 			// normally clean it up, so do it here to avoid leaking thread-local state across calls.

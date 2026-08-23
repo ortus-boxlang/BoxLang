@@ -973,10 +973,33 @@ public class DumpTest {
 		// @formatter:on
 		String output = baos.toString();
 		assertThat( output ).contains( "alpha" );
+		// alpha's value is a plain scalar string with nothing further to recurse into, so it must
+		// still render fully even though depth=1 blocks recursion into the *container* values (beta/echo)
+		assertThat( output ).contains( ">a<" );
 		assertThat( output ).contains( "beta" );
 		assertThat( output ).contains( "echo" );
 		assertThat( output ).doesNotContain( "charlie" );
 		assertThat( output ).doesNotContain( "golf" );
+	}
+
+	@DisplayName( "It does not hide scalar leaf values behind the depth limit, only containers" )
+	@Test
+	public void testDepthDoesNotHideScalarLeafValues() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			val = { "name": "Brad", "age": 42, "active": true };
+			dump( var = val, format = "html", depth = 1 );
+			""",
+			context );
+		// @formatter:on
+		String output = baos.toString();
+		// depth=1 means "top level, no recursion into containers" - but these are all scalars with
+		// nothing to recurse into, so their actual values must be shown rather than "Depth Limit reached"
+		assertThat( output ).doesNotContain( "Depth Limit reached" );
+		assertThat( output ).contains( "Brad" );
+		assertThat( output ).contains( "42" );
+		assertThat( output ).contains( "true" );
 	}
 
 	@DisplayName( "It recurses one level in when depth is 2" )
