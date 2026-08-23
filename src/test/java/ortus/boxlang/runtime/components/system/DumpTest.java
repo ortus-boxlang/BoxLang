@@ -1214,4 +1214,60 @@ public class DumpTest {
 		assertThat( output ).contains( "bravo" );
 		assertThat( output ).doesNotContain( "charlie" );
 	}
+
+	@DisplayName( "It still accepts the deprecated top argument on the BIF, folding it into maxRows" )
+	@Test
+	public void testDeprecatedTopFoldsIntoMaxRowsOnBIF() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			val = { "alpha": "a", "bravo": "b", "charlie": "c" };
+			dump( var = val, format = "html", top = 2 );
+			""",
+			context );
+		// @formatter:on
+		String output = baos.toString();
+		assertThat( output ).contains( "2/3" );
+		assertThat( output ).contains( "alpha" );
+		assertThat( output ).contains( "bravo" );
+		assertThat( output ).doesNotContain( "charlie" );
+	}
+
+	@DisplayName( "It still accepts the deprecated top attribute on the dump component/tag, folding it into maxRows" )
+	@Test
+	public void testDeprecatedTopFoldsIntoMaxRowsOnComponent() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+				<bx:script>
+					val = { "alpha": "a", "bravo": "b", "charlie": "c" };
+				</bx:script>
+				<bx:dump var="#val#" format="html" top="2">
+			""",
+			context, BoxSourceType.BOXTEMPLATE );
+		// @formatter:on
+		String output = baos.toString();
+		assertThat( output ).contains( "2/3" );
+		assertThat( output ).contains( "alpha" );
+		assertThat( output ).contains( "bravo" );
+		assertThat( output ).doesNotContain( "charlie" );
+	}
+
+	@DisplayName( "It prefers an explicit maxRows over the deprecated top when both are passed" )
+	@Test
+	public void testMaxRowsTakesPrecedenceOverDeprecatedTop() {
+		// @formatter:off
+		instance.executeSource(
+			"""
+			val = { "alpha": "a", "bravo": "b", "charlie": "c" };
+			dump( var = val, format = "html", top = 1, maxRows = 2 );
+			""",
+			context );
+		// @formatter:on
+		String output = baos.toString();
+		assertThat( output ).contains( "2/3" );
+		assertThat( output ).contains( "alpha" );
+		assertThat( output ).contains( "bravo" );
+		assertThat( output ).doesNotContain( "charlie" );
+	}
 }

@@ -69,6 +69,8 @@ public class Dump extends BIF {
 		    // The maximum number of keys/rows/items to display per level of a collection.
 		    // 1-based: -1 (default) is unlimited, 0 shows nothing, 1 shows a single row, etc.
 		    new Argument( false, Argument.NUMERIC, Key.maxRows, Set.of( Validator.min( -1 ) ) ),
+		    // Deprecated: use maxRows instead. Kept for backwards compatibility with existing BoxLang code.
+		    new Argument( false, Argument.NUMERIC, Key.top, Set.of( Validator.min( -1 ) ) ),
 		    // Whether to expand the dump. By default, the dump is expanded on the first level only
 		    new Argument( false, Argument.BOOLEAN, Key.expand, true ),
 		    // Whether to do a hard abort the request after dumping
@@ -109,6 +111,9 @@ public class Dump extends BIF {
 	 * @argument.maxRows The maximum number of keys/rows/items to display per level of a collection, array, or query. 1-based: -1 (default)
 	 *                   is unlimited, 0 shows nothing, 1 shows a single row, etc. (Only in HTML output)
 	 *
+	 * @argument.top Deprecated: use maxRows instead. When maxRows is not also passed, top's value is used as maxRows.
+	 *               Kept for backwards compatibility with existing BoxLang code. (Only in HTML output)
+	 *
 	 * @argument.expand Whether to expand the dump. Be default, we try to expand as much as possible. (Only in HTML output)
 	 *
 	 * @argument.abort Whether to do a hard abort the request after dumping. Default is false
@@ -127,7 +132,7 @@ public class Dump extends BIF {
 		}
 
 		Object	depth	= arguments.get( Key.depth );
-		Object	maxRows	= arguments.get( Key.maxRows );
+		Object	maxRows	= DumpUtil.resolveDeprecatedTop( arguments.get( Key.maxRows ), arguments.get( Key.top ) );
 
 		// Dump the object
 		DumpUtil.dump(

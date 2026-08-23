@@ -49,6 +49,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.logging.LoggingService;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.ITemplateRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
@@ -291,6 +292,30 @@ public class DumpUtil {
 	 */
 	private static Integer normalizeLimit( @Nullable Integer value ) {
 		return ( value == null || value <= -1 ) ? null : value;
+	}
+
+	/**
+	 * Resolves the {@code maxRows} argument for the {@code dump()}/{@code writeDump()}/{@code <bx:dump>}
+	 * calls, folding in the deprecated {@code top} argument when {@code maxRows} wasn't explicitly
+	 * provided. {@code top} used to control both row limiting and recursion depth at once; now that
+	 * those are split into {@code maxRows} and {@code depth}, {@code top} is kept working - mapped onto
+	 * {@code maxRows} - purely for backwards compatibility with existing BoxLang code, and logs a
+	 * deprecation warning when used.
+	 *
+	 * @param maxRows The {@code maxRows} argument value, or {@code null} if not provided
+	 * @param top     The deprecated {@code top} argument value, or {@code null} if not provided
+	 *
+	 * @return The value to use for {@code maxRows}, or {@code null} if neither was provided
+	 */
+	public static Object resolveDeprecatedTop( @Nullable Object maxRows, @Nullable Object top ) {
+		if ( top != null ) {
+			LoggingService.getInstance().RUNTIME_LOGGER.warn(
+			    "The [top] argument to dump()/writeDump()/<bx:dump> is deprecated and will be removed in a future release. Use [maxRows] instead." );
+			if ( maxRows == null ) {
+				return top;
+			}
+		}
+		return maxRows;
 	}
 
 	/**

@@ -35,6 +35,17 @@ recursion depth. Same 1-based semantics as `depth`.
 
 ```
 
+### Deprecated: top
+
+`top` is deprecated in favor of `maxRows` and `depth` above. For backwards compatibility it is
+still accepted and, when `maxRows` is not also passed, its value is used as `maxRows`. A
+deprecation warning is logged when it's used.
+
+```java
+<bx:dump var="#bigArray#" top="10">
+
+```
+
 ### Dump to console
 
 ```java
