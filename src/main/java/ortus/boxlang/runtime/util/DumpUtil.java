@@ -53,8 +53,8 @@ import ortus.boxlang.runtime.runnables.ITemplateRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.BoxStringBuilder;
+import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
@@ -484,7 +484,7 @@ public class DumpUtil {
 			return "StringBuffer.bxm";
 		} else if ( target instanceof IType ) {
 			return target.getClass().getSimpleName().replace( "Unmodifiable", "" ) + ".bxm";
-		} else if ( target instanceof String ) {
+		} else if ( target instanceof String || target instanceof Character ) {
 			return "String.bxm";
 		} else if ( target instanceof Number ) {
 			return "Number.bxm";

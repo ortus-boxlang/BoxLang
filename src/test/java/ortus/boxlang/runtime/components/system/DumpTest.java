@@ -869,6 +869,23 @@ public class DumpTest {
 		assertThat( output ).contains( "0" );
 	}
 
+	@DisplayName( "It can dump a char array as a string representation" )
+	@Test
+	public void testCanDumpCharArray() {
+		// @formatter:off
+		instance.executeSource(
+		    """
+		       	<cfdump var="#'brad'.toCharArray()#" format="html">
+		    """,
+		    context, BoxSourceType.CFTEMPLATE );
+		// @formatter:on
+		String output = baos.toString();
+		assertThat( output ).contains( "b" );
+		assertThat( output ).contains( "r" );
+		assertThat( output ).contains( "a" );
+		assertThat( output ).contains( "d" );
+	}
+
 	@DisplayName( "It can dump a native Java Set" )
 	@Test
 	public void testCanDumpNativeJavaSet() {
