@@ -1490,6 +1490,10 @@ spotless {
     }
 }
 
+tasks.named( "spotlessJava" ) {
+	mustRunAfter( ":src:modules:javaTestModule:copyJarModuleFixture" )
+}
+
 task downloadDocGenerator( type: Download ) {
 	// Create the destination directory
 	doFirst {
