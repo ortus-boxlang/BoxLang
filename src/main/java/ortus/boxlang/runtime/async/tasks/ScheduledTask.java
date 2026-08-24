@@ -642,6 +642,13 @@ public class ScheduledTask implements Runnable {
 			}
 		}
 
+		// If this is an interval-based (every()) task with an explicit daily start time and no
+		// initial delay was set some other way, align the first execution to the next period
+		// boundary counted from that start time instead of firing immediately on registration.
+		if ( this.period > 0 && this.initialDelay == 0 && this.startTime.length() > 0 ) {
+			calculateStartTimeAlignedDelay();
+		}
+
 		// Log it
 		debugLog(
 		    "start",
@@ -2122,6 +2129,36 @@ public class ScheduledTask implements Runnable {
 	 */
 	private void setInitialDelayPeriodAndTimeUnit( LocalDateTime now, LocalDateTime nextRun ) {
 		setInitialDelayPeriodAndTimeUnit( now, nextRun, TimeUnit.DAYS, 1 );
+	}
+
+	/**
+	 * When an interval-based task ( every() ) has an explicit daily start time
+	 * ( startOnTime() / between() ) but no initial delay was set some other way, this
+	 * calculates an initial delay that aligns the first execution to the next period
+	 * boundary counted from that start time, instead of firing immediately on registration.
+	 */
+	private void calculateStartTimeAlignedDelay() {
+		LocalDateTime	now				= getNow();
+		LocalDateTime	anchor			= now
+		    .withHour( Integer.parseInt( this.startTime.split( ":" )[ 0 ] ) )
+		    .withMinute( Integer.parseInt( this.startTime.split( ":" )[ 1 ] ) )
+		    .withSecond( 0 )
+		    .withNano( 0 );
+		long			periodSeconds	= this.timeUnit.toSeconds( this.period );
+
+		if ( periodSeconds <= 0 ) {
+			return;
+		}
+
+		long elapsedSeconds = Duration.between( anchor, now ).getSeconds();
+		if ( elapsedSeconds > 0 ) {
+			long periodsElapsed = ( elapsedSeconds / periodSeconds ) + 1;
+			anchor = anchor.plusSeconds( periodsElapsed * periodSeconds );
+		}
+
+		this.initialDelay			= this.timeUnit.convert( Duration.between( now, anchor ) );
+		this.initialDelayTimeUnit	= this.timeUnit;
+		this.stats.put( "nextRun", anchor );
 	}
 
 	/**
