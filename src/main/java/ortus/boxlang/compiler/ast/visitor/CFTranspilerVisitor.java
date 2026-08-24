@@ -1058,7 +1058,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		    )
 		);
 
-		var closure = new BoxClosure(
+		var						closure		= new BoxClosure(
 		    // arg1, arg2, etc for as many args to the original BIF, or the actual arg names if using named args
 		    generateIIFEArgs( args ),
 		    // annotations
@@ -1074,12 +1074,22 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		);
 
 		// wrap up the closure as an IIFE
-		return new BoxExpressionInvocation(
+		// Note: addComment() returns BoxNode, not BoxExpressionInvocation, so we build the invocation first and add the comment on a separate line.
+		BoxExpressionInvocation	invocation	= new BoxExpressionInvocation(
 		    new BoxParenthesis( closure, null, null ),
 		    args,
 		    null,
 		    null
-		).addComment( new BoxSingleLineComment( "Transpiler workaround for BIF return type", null, null ) );
+		);
+		invocation.addComment( new BoxSingleLineComment( "Transpiler workaround for BIF return type", null, null ) );
+
+		// IMPORTANT: The args (and all other children) of the new IIFE are the ORIGINAL arguments from the
+		// BoxFunctionInvocation we are replacing. Since we are returning a whole new node instead of calling
+		// super.visit( node ) on the original, those children have NOT been visited yet. We MUST route the new
+		// node back through the visitor ( visit( BoxExpressionInvocation ) ) so every argument is recursively
+		// transpiled (e.g. `Chr(10)` -> `char(10)`, identifier renames, etc.). Failure to do so leaves CF-only
+		// syntax inside the arguments untranspiled, causing runtime errors like `Function 'Chr' not found`.
+		return super.visit( invocation );
 	}
 
 	private List<BoxArgument> generateBIFArgs( List<BoxArgument> args ) {

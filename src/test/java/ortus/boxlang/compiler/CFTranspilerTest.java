@@ -757,4 +757,39 @@ public class CFTranspilerTest {
 		assertThat( variables.getAsString( result ) ).contains( "result" );
 	}
 
+	@Test
+	public void testArrayAppendArgs() {
+		instance.executeSource(
+		    """
+		    	arr = []
+		    	ignore = arrayAppend(arr, "asdf" & Chr(10))
+		    """, context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.getAsArray( Key.of( "arr" ) ) ).contains( "asdf" + "\n" );
+	}
+
+	@DisplayName( "It transpiles nested CF BIFs inside args of a return-type-fixed BIF (named args)" )
+	@Test
+	public void testArrayAppendArgsNamed() {
+		instance.executeSource(
+		    """
+		    	arr = []
+		    	ignore = arrayAppend( array=arr, value="asdf" & Chr(10) )
+		    """, context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.getAsArray( Key.of( "arr" ) ) ).contains( "asdf" + "\n" );
+	}
+
+	@DisplayName( "It transpiles nested CF BIFs inside args of a return-type-fixed BIF used in an expression" )
+	@Test
+	public void testArrayAppendArgsInExpression() {
+		instance.executeSource(
+		    """
+		    	arr = []
+		    	ignore = arrayAppend( arr, Chr(10) & "asdf" ) & "x"
+		    """, context, BoxSourceType.CFSCRIPT );
+
+		assertThat( variables.getAsArray( Key.of( "arr" ) ) ).contains( "\n" + "asdf" );
+	}
+
 }
