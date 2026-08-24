@@ -15,6 +15,7 @@
  */
 package ortus.boxlang.runtime.jdbc.qoq;
 
+import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.operators.Compare;
 import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.exceptions.DatabaseException;
@@ -49,7 +50,23 @@ public class QoQCompare {
 			} else if ( right == null ) {
 				result = 1;
 			} else if ( type == QueryColumnType.VARCHAR || type == QueryColumnType.CHAR ) {
-				result = left.toString().compareToIgnoreCase( right.toString() );
+				String	leftString;
+				String	rightString;
+				// bypass casting if already a string for peak performance
+				// Using StringCaster instead of obj.toString() to avoid decimals creeping into Number values like 18 becoming 18.0
+				if ( left instanceof String ls ) {
+					leftString = ls;
+				} else {
+					leftString = StringCaster.cast( left );
+				}
+				if ( right instanceof String rs ) {
+					rightString = rs;
+				} else {
+					rightString = StringCaster.cast( right );
+				}
+
+				System.out.println( "QoQCompare.java: invoke: comparing strings: left: " + leftString + ", right: " + rightString );
+				result = leftString.compareToIgnoreCase( rightString );
 			} else if ( type == QueryColumnType.BIGINT || type == QueryColumnType.DECIMAL || type == QueryColumnType.DOUBLE
 			    || type == QueryColumnType.INTEGER ) {
 				if ( left instanceof Double ld && right instanceof Double rd ) {
