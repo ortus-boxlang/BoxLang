@@ -222,6 +222,14 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	private static Map<String, Map<String, String>>	BIFArgMap					= new HashMap<>();
 
 	/**
+	 * Names used when transpiling the CF writeDump()/cfdump "top" attribute/argument to BoxLang's "depth" argument
+	 */
+	private static final String						WRITEDUMP_FUNCTION_NAME		= "writedump";
+	private static final String						DUMP_COMPONENT_NAME			= "dump";
+	private static final String						DUMP_TOP_ATTRIBUTE_NAME		= "top";
+	private static final String						DUMP_DEPTH_ATTRIBUTE_NAME	= "depth";
+
+	/**
 	 * Configuration keys for transpiler settings
 	 */
 	private static Key								transpilerKey				= Key.of( "transpiler" );
@@ -661,12 +669,12 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		// separates that concept from row/item limiting (its "maxRows" argument), so a CF "top" value maps onto
 		// BoxLang's "depth" argument (recursion levels), decremented by one to account for the differing 1-based semantics.
 		// writeDump( var=data, top=value ) -> writeDump( var=data, depth=value-1 )
-		if ( name.equals( "writedump" ) && node.isNamedArgs() ) {
+		if ( name.equals( WRITEDUMP_FUNCTION_NAME ) && node.isNamedArgs() ) {
 			node.getArguments().stream()
-			    .filter( arg -> arg.getName().getAsSimpleValue().toString().equalsIgnoreCase( "top" ) )
+			    .filter( arg -> arg.getName().getAsSimpleValue().toString().equalsIgnoreCase( DUMP_TOP_ATTRIBUTE_NAME ) )
 			    .forEach( arg -> {
 				    if ( arg.getName() instanceof BoxStringLiteral bsl ) {
-					    bsl.setValue( "depth" );
+					    bsl.setValue( DUMP_DEPTH_ATTRIBUTE_NAME );
 				    }
 				    arg.setValue( transpileDumpTopToDepth( arg.getValue() ) );
 			    } );
@@ -1571,11 +1579,11 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		// that concept from row/item limiting (its "maxRows" attribute), so a CF "top" value maps onto BoxLang's
 		// "depth" attribute (recursion levels), decremented by one to account for the differing 1-based semantics.
 		// <cfdump var="data" top="#value#"> -> <bx:dump var="data" depth="#value-1#">
-		if ( componentName.equals( "dump" ) ) {
+		if ( componentName.equals( DUMP_COMPONENT_NAME ) ) {
 			node.getAttributes().stream()
-			    .filter( a -> a.getKey().getValue().equalsIgnoreCase( "top" ) )
+			    .filter( a -> a.getKey().getValue().equalsIgnoreCase( DUMP_TOP_ATTRIBUTE_NAME ) )
 			    .forEach( a -> {
-				    a.getKey().setValue( "depth" );
+				    a.getKey().setValue( DUMP_DEPTH_ATTRIBUTE_NAME );
 				    a.setValue( transpileDumpTopToDepth( a.getValue() ) );
 			    } );
 		}
