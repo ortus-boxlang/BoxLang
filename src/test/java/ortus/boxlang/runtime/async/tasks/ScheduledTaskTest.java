@@ -254,6 +254,37 @@ class ScheduledTaskTest {
 			assertThat( t.getTimeUnit().toString().toLowerCase() ).isEqualTo( "seconds" );
 		}
 
+		@DisplayName( "can align every() + startOnTime() to the next period boundary instead of firing immediately" )
+		@Test
+		void testEveryWithStartOnTimeAlignsToBoundary() throws InvalidAttributeValueException {
+			var t = task.every( 1800, TimeUnit.SECONDS );
+			t.startOnTime( "00:00" );
+			t.start();
+
+			assertThat( t.getInitialDelay() ).isGreaterThan( 0L );
+			assertThat( t.getInitialDelay() ).isAtMost( 1800L );
+		}
+
+		@DisplayName( "every() without startOnTime() still fires immediately (unchanged behavior)" )
+		@Test
+		void testEveryWithoutStartOnTimeStillFiresImmediately() {
+			var t = task.every( 1800, TimeUnit.SECONDS );
+			t.start();
+
+			assertThat( t.getInitialDelay() ).isEqualTo( 0L );
+		}
+
+		@DisplayName( "explicit delay() takes precedence over startOnTime() alignment" )
+		@Test
+		void testExplicitDelayOverridesStartTimeAlignment() throws InvalidAttributeValueException {
+			var t = task.every( 1800, TimeUnit.SECONDS );
+			t.startOnTime( "00:00" );
+			t.delay( 5, TimeUnit.SECONDS, true );
+			t.start();
+
+			assertThat( t.getInitialDelay() ).isEqualTo( 5L );
+		}
+
 	}
 
 	@Nested

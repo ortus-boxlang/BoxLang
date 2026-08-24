@@ -1133,15 +1133,15 @@ public class BoxClassTransformer {
 			clinitNodes.add( new InsnNode( Opcodes.DUP ) );
 			clinitNodes.add( new MethodInsnNode( Opcodes.INVOKESPECIAL, Type.getInternalName( java.util.LinkedHashMap.class ), "<init>",
 			    Type.getMethodDescriptor( Type.VOID_TYPE ), false ) );
+			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "udfs", Type.getDescriptor( Map.class ) ) );
 			for ( var entry : transpiler.getUDFInstantiations().entrySet() ) {
-				clinitNodes.add( new InsnNode( Opcodes.DUP ) );
+				clinitNodes.add( new FieldInsnNode( Opcodes.GETSTATIC, type.getInternalName(), "udfs", Type.getDescriptor( Map.class ) ) );
 				clinitNodes.addAll( transpiler.createKey( entry.getKey().getName() ) );
 				clinitNodes.addAll( entry.getValue() );
 				clinitNodes.add( new MethodInsnNode( Opcodes.INVOKEINTERFACE, Type.getInternalName( Map.class ), "put",
 				    Type.getMethodDescriptor( Type.getType( Object.class ), Type.getType( Object.class ), Type.getType( Object.class ) ), true ) );
 				clinitNodes.add( new InsnNode( Opcodes.POP ) );
 			}
-			clinitNodes.add( new FieldInsnNode( Opcodes.PUTSTATIC, type.getInternalName(), "udfs", Type.getDescriptor( Map.class ) ) );
 
 			// Initialize lambdas = new ArrayList<>() and populate with Lambda instances
 			clinitNodes.add( new TypeInsnNode( Opcodes.NEW, Type.getInternalName( ArrayList.class ) ) );
