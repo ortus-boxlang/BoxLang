@@ -179,7 +179,7 @@ public class ASMTest {
 		assertDoesNotThrow( () -> RunnableLoader.getInstance().getBoxpiler().compileTemplate( resolvedPath ) );
 	}
 
-	// @EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
 	@DisplayName( "qb-test.cfc should compile without ASM errors" )
 	@Test
 	public void testQBTestComponentShouldCompileWithoutASMErrors() {
