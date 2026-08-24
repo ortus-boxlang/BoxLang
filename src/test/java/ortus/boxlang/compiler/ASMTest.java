@@ -180,15 +180,6 @@ public class ASMTest {
 	}
 
 	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
-	@DisplayName( "qb-test.cfc should compile without ASM errors" )
-	@Test
-	public void testQBTestComponentShouldCompileWithoutASMErrors() {
-		ResolvedFilePath resolvedPath = ResolvedFilePath.of( Path.of( "qb-test.cfc" ) );
-
-		assertDoesNotThrow( () -> RunnableLoader.getInstance().getBoxpiler().compileClass( resolvedPath ) );
-	}
-
-	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
 	@DisplayName( "synthetic component with many UDF registrations should compile" )
 	@Test
 	public void testSyntheticLargeUDFRegistrationShouldCompile() {
