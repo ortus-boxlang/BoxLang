@@ -222,6 +222,14 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	private static Map<String, Map<String, String>>	BIFArgMap					= new HashMap<>();
 
 	/**
+	 * Names used when transpiling the CF writeDump()/cfdump "top" attribute/argument to BoxLang's "depth" argument
+	 */
+	private static final String						WRITEDUMP_FUNCTION_NAME		= "writedump";
+	private static final String						DUMP_COMPONENT_NAME			= "dump";
+	private static final String						DUMP_TOP_ATTRIBUTE_NAME		= "top";
+	private static final String						DUMP_DEPTH_ATTRIBUTE_NAME	= "depth";
+
+	/**
 	 * Configuration keys for transpiler settings
 	 */
 	private static Key								transpilerKey				= Key.of( "transpiler" );
@@ -658,6 +666,21 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 			}
 		}
 
+		// CF's writeDump()/cfdump "top" attribute limits how many levels of recursion are shown. BoxLang's dump()
+		// separates that concept from row/item limiting (its "maxRows" argument), so a CF "top" value maps onto
+		// BoxLang's "depth" argument (recursion levels), decremented by one to account for the differing 1-based semantics.
+		// writeDump( var=data, top=value ) -> writeDump( var=data, depth=value-1 )
+		if ( name.equals( WRITEDUMP_FUNCTION_NAME ) && node.isNamedArgs() ) {
+			node.getArguments().stream()
+			    .filter( arg -> arg.getName().getAsSimpleValue().toString().equalsIgnoreCase( DUMP_TOP_ATTRIBUTE_NAME ) )
+			    .forEach( arg -> {
+				    if ( arg.getName() instanceof BoxStringLiteral bsl ) {
+					    bsl.setValue( DUMP_DEPTH_ATTRIBUTE_NAME );
+				    }
+				    arg.setValue( transpileDumpTopToDepth( arg.getValue() ) );
+			    } );
+		}
+
 		// look for "params" named arg, or 2nd positional arg, and if it's a struct literal, any of the values which are also a struct literal,
 		// rename any keys from cfsqltype to sqltype and remove "cf_sql_" from the values of any sqltype
 		if ( name.equals( "queryexecute" ) && node.getArguments().size() >= 2 ) {
@@ -807,6 +830,18 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 			}
 		}
 		return super.visit( node );
+	}
+
+	/**
+	 * Wraps a CF cfdump/writeDump "top" attribute/argument value expression as {@code value - 1}, for use as the
+	 * BoxLang dump "depth" argument.
+	 *
+	 * @param value The original "top" value expression
+	 *
+	 * @return A new expression representing {@code value - 1}
+	 */
+	private BoxExpression transpileDumpTopToDepth( BoxExpression value ) {
+		return new BoxBinaryOperation( value, BoxBinaryOperator.Minus, new BoxIntegerLiteral( "1", null, "1" ), null, null );
 	}
 
 	private BoxNode transpileListAppend( BoxFunctionInvocation node ) {
@@ -1548,6 +1583,19 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 				    } else if ( !bsl.getValue().equalsIgnoreCase( "readonly" ) ) {
 					    bsl.setValue( "readonly" );
 				    }
+			    } );
+		}
+
+		// cfdump's "top" attribute limits how many levels of recursion are shown. BoxLang's dump component separates
+		// that concept from row/item limiting (its "maxRows" attribute), so a CF "top" value maps onto BoxLang's
+		// "depth" attribute (recursion levels), decremented by one to account for the differing 1-based semantics.
+		// <cfdump var="data" top="#value#"> -> <bx:dump var="data" depth="#value-1#">
+		if ( componentName.equals( DUMP_COMPONENT_NAME ) ) {
+			node.getAttributes().stream()
+			    .filter( a -> a.getKey().getValue().equalsIgnoreCase( DUMP_TOP_ATTRIBUTE_NAME ) )
+			    .forEach( a -> {
+				    a.getKey().setValue( DUMP_DEPTH_ATTRIBUTE_NAME );
+				    a.setValue( transpileDumpTopToDepth( a.getValue() ) );
 			    } );
 		}
 

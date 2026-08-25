@@ -14,7 +14,7 @@
 					<strong>
 						<bx:if label.len() >#label# - </bx:if>
 						#var.getClass().getName()#:
-						<bx:if !isNull( top ) && top lt var.size()>#top#/</bx:if>#var.size()# item(s)
+						<bx:if !isNull( maxRows ) && maxRows lt var.size()>#maxRows#/</bx:if>#var.size()# item(s)
 					</strong>
 				</caption>
 			<bx:else>
@@ -22,18 +22,17 @@
 					<strong>
 						<bx:if label.len() >#label# - </bx:if>
 						#var.getClass().getName()#:
-						<bx:if !isNull( top ) && top lt var.size()>#top#/</bx:if>#var.size()# item(s)
+						<bx:if !isNull( maxRows ) && maxRows lt var.size()>#maxRows#/</bx:if>#var.size()# item(s)
 					</strong>
 				</caption>
 			</bx:if>
 			<tbody
 				<bx:if !expandRoot>class="d-none"</bx:if>
 			>
-				<bx:set index = 1>
-				<bx:loop collection="#var#" item="key">
-					<bx:if  !isNull( top ) and index++ GT top >
-						<bx:break>
-					</bx:if>
+				<bx:set keys = var.keySet().toArray()>
+				<bx:set maxItems = isNull( maxRows ) ? keys.len() : min( maxRows, keys.len() )>
+				<bx:loop from="1" to="#maxItems#" index="idx">
+					<bx:set key = keys[idx]>
 						<bx:if NOT isCustomFunction( var[ key ] ) >
 							<tr>
 								<th
@@ -47,7 +46,7 @@
 								</th>
 								<td>
 									<div class="bx-onoff">
-										<bx:set dump( var : var[ key ], top : isNull( top ) ? null : top - 1, expand : expand ?: null, output : "buffer", format : format ) >
+										<bx:set dump( var : var[ key ], depth : isNull( depth ) ? null : depth - 1, maxRows : maxRows, expand : expand ?: null, output : "buffer", format : format ) >
 									</div>
 								</td>
 							</tr>

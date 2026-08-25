@@ -1,0 +1,26 @@
+<bx:script>
+	arr = [ "alpha", "bravo", "charlie", "delta", "echo" ];
+</bx:script>
+<!DOCTYPE html>
+<html>
+<head><title>03 - maxRows on an Array</title>
+<style>body{font-family:system-ui,sans-serif;max-width:1000px;margin:30px auto;padding:0 20px;} h2{border-bottom:2px solid #333;padding-bottom:4px;margin-top:40px;} .expect{background:#fffbe6;border-left:4px solid #e0a800;padding:8px 12px;margin:8px 0;}</style>
+</head>
+<body>
+<p><a href="index.bxm">&larr; back</a></p>
+<h1>03 - Row limiting (maxRows) on an Array</h1>
+<p>Fixture: [alpha, bravo, charlie, delta, echo]</p>
+
+<h2>maxRows = -1 (default / unlimited)</h2>
+<bx:dump var="#arr#" maxRows="-1">
+
+<h2>maxRows = 3</h2>
+<div class="expect">Expect: caption "3/5", items 1-3 shown (alpha, bravo, charlie)</div>
+<bx:dump var="#arr#" maxRows="3">
+
+<h2>maxRows = 0</h2>
+<div class="expect">Expect: caption "0/5", no rows</div>
+<bx:dump var="#arr#" maxRows="0">
+
+</body>
+</html>
