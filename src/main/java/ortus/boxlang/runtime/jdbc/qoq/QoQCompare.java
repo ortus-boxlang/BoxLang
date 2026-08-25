@@ -65,7 +65,6 @@ public class QoQCompare {
 					rightString = StringCaster.cast( right );
 				}
 
-				System.out.println( "QoQCompare.java: invoke: comparing strings: left: " + leftString + ", right: " + rightString );
 				result = leftString.compareToIgnoreCase( rightString );
 			} else if ( type == QueryColumnType.BIGINT || type == QueryColumnType.DECIMAL || type == QueryColumnType.DOUBLE
 			    || type == QueryColumnType.INTEGER ) {
