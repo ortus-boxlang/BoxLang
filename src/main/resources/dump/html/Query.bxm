@@ -39,7 +39,13 @@
 									<bx:if isSimpleValue( var[ column ] )>
 										#encodeForHTML( var[ column ] )#
 									<bx:else>
-										#writeDump( var : var[ column ], depth : isNull( depth ) ? null : depth - 1, maxRows : maxRows, output : "buffer", format : format )#
+										#writeDump(
+											var : var[ column ],
+											depth : isNull( depth ) ? null : depth - 1,
+											maxRows : maxRows ?: null,
+											output : "buffer",
+											format : format ?: null
+										)#
 									</bx:if>
 								</td>
 							</bx:loop>
