@@ -40,6 +40,10 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 
+/**
+ * ANY NEW DUMP TYPES ADDED TO THIS FILE, ALSO ADD TO THE DUMPTEST IN THE COMPAT MODULE
+ * WHICH CATCHES ISSUES WITH NULL SUPPORT IN COMPAT MODE.
+ */
 public class DumpTest {
 
 	static BoxRuntime			instance;
@@ -416,7 +420,7 @@ public class DumpTest {
 					function add(a, b) { 
 						return a + b; 
 					}
-					dump( var = add(2+4), format = "html" );
+					dump( var = add, format = "html" );
 				""",
 				context );
 			// @formatter:on

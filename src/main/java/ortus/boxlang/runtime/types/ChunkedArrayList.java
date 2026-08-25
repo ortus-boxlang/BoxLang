@@ -243,7 +243,10 @@ public class ChunkedArrayList<E> extends AbstractList<E> implements Serializable
 	public void add( int index, E element ) {
 		int s = this.size.get();
 		if ( index < 0 || index > s ) {
-			throw new IndexOutOfBoundsException( "Index: " + index + ", Size: " + s );
+			throw new IndexOutOfBoundsException(
+			    "Index " + index + " is out of bounds for a ChunkedArrayList of size " + s
+			        + " (valid insert range: 0 to " + s + ")"
+			);
 		}
 		this.size.incrementAndGet();
 		ensureAndGetChunk( s );
@@ -336,7 +339,7 @@ public class ChunkedArrayList<E> extends AbstractList<E> implements Serializable
 	 */
 	public void truncateToSize( int newSize ) {
 		if ( newSize < 0 ) {
-			throw new IndexOutOfBoundsException( "Size: " + newSize );
+			throw new IndexOutOfBoundsException( "Cannot truncate a ChunkedArrayList to a negative size: " + newSize );
 		}
 
 		int currentSize = this.size.get();
@@ -493,7 +496,10 @@ public class ChunkedArrayList<E> extends AbstractList<E> implements Serializable
 	 */
 	private void rangeCheck( int index ) {
 		if ( index < 0 || index >= this.size.get() ) {
-			throw new IndexOutOfBoundsException( "Index: " + index + ", Size: " + this.size.get() );
+			throw new IndexOutOfBoundsException(
+			    "Index " + index + " is out of bounds for a ChunkedArrayList of size " + this.size.get()
+			        + " (valid range: 0 to " + ( this.size.get() - 1 ) + ")"
+			);
 		}
 	}
 }

@@ -367,9 +367,13 @@ public class QueryColumn implements IReferenceable, Serializable {
 	 * @return The value of the cell
 	 */
 	public Object getCell( int row ) {
-		// Does full null support change this?
-		if ( query.isEmpty() ) {
-			return "";
+		// If row is invalid...
+		if ( row < 0 || row >= this.query.size() ) {
+			// Compat mode: return empty string
+			if ( Query.allowAccessToNonExistentRows ) {
+				return "";
+			}
+			query.validateRow( row );
 		}
 		Object value = this.query.getData().get( row )[ index ];
 
