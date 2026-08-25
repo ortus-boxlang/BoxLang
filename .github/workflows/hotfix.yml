@@ -1,20 +1,13 @@
-name: Pull Requests
+name: Hotfix Branches
 
 on:
   push:
-    branches-ignore:
-      - "main"
-      - "development"
-      - "releases/**"
-      - "hotfix/**"
-  pull_request:
     branches:
-      - development
-      - "releases/**"
+      - "hotfix/**"
 
 #Cancel running builds if another push to branch is made while this build is running
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
