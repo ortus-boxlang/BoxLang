@@ -141,7 +141,7 @@ public class DynamicInteropService {
 	/**
 	 * Helper for all class utility methods from apache commons lang 3
 	 */
-	public static final Class<ClassUtils>							CLASS_UTILS				= ClassUtils.class;
+	public static final Class<ClassUtils>							CLASS_UTILS			= ClassUtils.class;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -152,7 +152,7 @@ public class DynamicInteropService {
 	/**
 	 * These keys are always available on all throwables. If the key is not found, then we return an empty string
 	 */
-	private static final Set<Key>									exceptionKeys			= new HashSet<>( Arrays.asList(
+	private static final Set<Key>									exceptionKeys		= new HashSet<>( Arrays.asList(
 	    Key.message,
 	    Key.detail,
 	    Key.type,
@@ -185,44 +185,38 @@ public class DynamicInteropService {
 	/**
 	 * This caches the method handles for the class so we don't have to look them up every time.
 	 */
-	private static final ConcurrentHashMap<String, MethodRecord>	methodHandleCache		= new ConcurrentHashMap<>( 32 );
-
-	/**
-	 * This caches no-arg constructor MethodHandles to avoid repeated access checks on every invocation.
-	 * Access verification is done once at MethodHandle creation time, not on each invoke.
-	 */
-	private static final ConcurrentHashMap<Class<?>, MethodHandle>	noArgConstructorCache	= new ConcurrentHashMap<>( 32 );
+	private static final ConcurrentHashMap<String, MethodRecord>	methodHandleCache	= new ConcurrentHashMap<>( 32 );
 
 	/**
 	 * Name of key to get length of native arrays
 	 */
-	private static Key												lengthKey				= Key.of( "length" );
+	private static Key												lengthKey			= Key.of( "length" );
 
 	/**
 	 * Empty arguments array
 	 */
-	public static final Object[]									EMPTY_ARGS				= new Object[] {};
+	public static final Object[]									EMPTY_ARGS			= new Object[] {};
 
 	/**
 	 * This enables or disables the method handles cache
 	 */
-	private static Boolean											handlesCacheEnabled		= true;
+	private static Boolean											handlesCacheEnabled	= true;
 
 	/**
 	 * This is the class locator
 	 */
-	private static ClassLocator										classLocator			= null;
+	private static ClassLocator										classLocator		= null;
 
 	/**
 	 * This is the function service for invoking functions
 	 */
-	private static FunctionService									functionService			= null;
+	private static FunctionService									functionService		= null;
 
 	/**
 	 * Coercion maps
 	 */
-	private static List<String>										numberTargets			= List.of( "boolean", "byte", "character", "string" );
-	private static List<String>										booleanTargets			= List.of( "string", "character" );
+	private static List<String>										numberTargets		= List.of( "boolean", "byte", "character", "string" );
+	private static List<String>										booleanTargets		= List.of( "string", "character" );
 
 	/**
 	 * Static Initializer
@@ -465,22 +459,35 @@ public class DynamicInteropService {
 	}
 
 	/**
-	 * Gets or creates a cached MethodHandle for the no-arg constructor of the given class.
-	 * Access checks are performed once at MethodHandle creation time, avoiding repeated
-	 * verification on every invocation that occurs with Constructor.newInstance().
+	 * The magic placeholder method name used as the cache key for constructor lookups, so
+	 * constructor entries in the shared {@link #methodHandleCache} never collide with real
+	 * method entries.
+	 */
+	private static final String CONSTRUCTOR_KEY = "→constructor";
+
+	/**
+	 * Gets or creates a cached {@link MethodHandle} for the no-arg constructor of the given class.
+	 * Access checks are performed once at handle creation, avoiding repeated verification on
+	 * every invocation that occurs with Constructor.newInstance(). Constructor handles are cached
+	 * in the same CL-aware {@link #methodHandleCache} as regular method handles, keyed with the
+	 * {@link #CONSTRUCTOR_KEY} placeholder so they never overlap a real method, and die with the
+	 * class loader.
 	 *
 	 * @param targetClass The class to get the no-arg constructor handle for
 	 *
 	 * @return A cached MethodHandle for the no-arg constructor
 	 */
 	public static MethodHandle getNoArgConstructorHandle( Class<?> targetClass ) {
-		return noArgConstructorCache.computeIfAbsent( targetClass, clazz -> {
-			try {
-				return METHOD_LOOKUP.unreflectConstructor( clazz.getConstructor() );
-			} catch ( NoSuchMethodException | IllegalAccessException e ) {
-				throw new BoxRuntimeException( "Error getting no-arg constructor for class " + clazz.getName(), e );
-			}
-		} );
+		return getMethodHandle(
+		    null,
+		    null,
+		    targetClass,
+		    null,
+		    CONSTRUCTOR_KEY,
+		    new Class<?>[ 0 ],
+		    new Object[ 0 ],
+		    EMPTY_ARGS
+		).methodHandle();
 	}
 
 	/**
@@ -1405,6 +1412,42 @@ public class DynamicInteropService {
 	    Object[] castedArgumentValues,
 	    Object... arguments ) {
 
+		// Constructor lookups arrive with the reserved placeholder name. They resolve against the
+		// class's CONSTRUCTORS (not methods) and unreflect with unreflectConstructor, so they short
+		// circuit here before the method-specific discovery/Access/private-lookup machinery (which
+		// expects a Method and would fail on a Constructor).
+		if ( CONSTRUCTOR_KEY.equals( methodName ) ) {
+			Constructor<?> constructor = findMatchingConstructor(
+			    context,
+			    targetClass,
+			    argumentsAsClasses,
+			    isCachable,
+			    castedArgumentValues,
+			    arguments
+			);
+			if ( constructor == null ) {
+				throw new NoConstructorException(
+				    String.format(
+				        "No such constructor found in the class [%s] using [%d] arguments of types [%s]",
+				        targetClass.getName(),
+				        argumentsAsClasses.length,
+				        Arrays.toString( argumentsAsClasses )
+				    )
+				);
+			}
+			try {
+				return new MethodRecord(
+				    null,
+				    constructor,
+				    METHOD_LOOKUP.unreflectConstructor( constructor ),
+				    false,
+				    argumentsAsClasses.length
+				);
+			} catch ( IllegalAccessException e ) {
+				throw new BoxRuntimeException( "Error building MethodRecord for constructor of class " + targetClass.getName(), e );
+			}
+		}
+
 		// Our target we must find using our dynamic rules:
 		// - case insensitivity
 		// - argument count
@@ -1433,7 +1476,6 @@ public class DynamicInteropService {
 				    + " and there is not an no-arg constructor to call." );
 			}
 		}
-
 		// Verify we can access the method, if we can't then we need to go up the inheritance chain to find it or die
 		// This happens when objects implement default method interfaces usually
 		try {
