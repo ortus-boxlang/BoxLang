@@ -228,6 +228,10 @@ public class BoxCacheProvider extends AbstractCacheProvider {
 	 * Shutdown the cache provider
 	 */
 	public void shutdown() {
+		if ( this.reapingFuture != null ) {
+			this.reapingFuture.cancel( true );
+		}
+		this.enabled.set( false );
 		this.objectStore.shutdown();
 		logger.debug( "BoxCache [{}] has been shutdown", getName().getName() );
 	}
