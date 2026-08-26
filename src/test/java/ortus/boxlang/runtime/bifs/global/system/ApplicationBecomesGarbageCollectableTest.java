@@ -15,6 +15,7 @@
 package ortus.boxlang.runtime.bifs.global.system;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.common.truth.Truth.assertWithMessage;
 
 import java.lang.management.ManagementFactory;
 import java.lang.ref.WeakReference;
@@ -33,6 +34,7 @@ import org.junit.jupiter.api.Timeout;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.application.Application;
+import ortus.boxlang.runtime.cache.providers.BoxCacheProvider;
 import ortus.boxlang.runtime.context.ApplicationBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -59,6 +61,87 @@ public class ApplicationBecomesGarbageCollectableTest {
 		WeakReference<Application>	appRef	= startAndStopApplication( appName, appKey );
 
 		assertThatWeakReferentIsNoLongerStronglyReachable( appRef );
+	}
+
+	@DisplayName( "Stopping an application with a cache does not leave boxcache-reaper tasks holding the Application" )
+	@Test
+	@Timeout( 60 )
+	void testBoxCacheReaperDoesNotRetainApplicationAfterStop() {
+		String		appName		= "unit-test-app-reaper-" + UUID.randomUUID();
+		Key			appKey		= Key.of( appName );
+		Key			cacheKey	= Key.of( appName + ":reaperProbe" );
+		ReaperProbe	probe		= startAppWithCacheAndStop( appName, appKey, cacheKey );
+
+		try {
+			assertThat( applicationService.hasApplication( appKey ) ).isFalse();
+			assertThat( runtime.getCacheService().hasCache( cacheKey ) ).isFalse();
+
+			BoxCacheProvider leftoverCache = probe.cacheRef().get();
+			if ( leftoverCache != null && leftoverCache.getReapingFuture() != null ) {
+				assertWithMessage(
+				    "boxcache-reaper should be cancelled on applicationStop so it cannot pin the Application"
+				).that( leftoverCache.getReapingFuture().isCancelled() ).isTrue();
+			}
+			leftoverCache = null;
+
+			assertThatWeakReferentIsNoLongerStronglyReachable( probe.appRef() );
+			assertThatWeakReferentIsNoLongerStronglyReachable( probe.cacheRef() );
+		} finally {
+			BoxCacheProvider leftoverCache = probe.cacheRef().get();
+			if ( leftoverCache != null && leftoverCache.getReapingFuture() != null ) {
+				leftoverCache.getReapingFuture().cancel( true );
+			}
+		}
+	}
+
+	private record ReaperProbe( WeakReference<Application> appRef, WeakReference<BoxCacheProvider> cacheRef ) {
+	}
+
+	/**
+	 * Start an application with a dedicated cache (which starts a boxcache-reaper),
+	 * then applicationStop(). Done in a callee so the request context is not a
+	 * Java-frame local on the asserting thread.
+	 */
+	private static ReaperProbe startAppWithCacheAndStop( String appName, Key appKey, Key cacheKey ) {
+		IBoxContext context = new ScriptingRequestBoxContext( runtime.getRuntimeContext() );
+		try {
+			runtime.executeSource(
+			    """
+			    bx:application name="%s" caches={
+			    	reaperProbe : {
+			    		provider : "BoxCache",
+			    		properties : {
+			    			maxObjects : 10,
+			    			reapFrequency : 120
+			    		}
+			    	}
+			    };
+			    """.formatted( appName ),
+			    context );
+
+			Application						targetApp	= context.getParentOfType( ApplicationBoxContext.class ).getApplication();
+			BoxCacheProvider				cache		= ( BoxCacheProvider ) runtime.getCacheService().getCache( cacheKey );
+			WeakReference<Application>		appRef		= new WeakReference<>( targetApp );
+			WeakReference<BoxCacheProvider>	cacheRef	= new WeakReference<>( cache );
+
+			assertThat( targetApp.hasStarted() ).isTrue();
+			assertThat( applicationService.hasApplication( appKey ) ).isTrue();
+			assertThat( cache.getReapingFuture().isCancelled() ).isFalse();
+
+			runtime.executeSource(
+			    """
+			    applicationStop();
+			    """,
+			    context );
+
+			assertThat( targetApp.hasStarted() ).isFalse();
+			assertThat( applicationService.hasApplication( appKey ) ).isFalse();
+			assertThat( runtime.getCacheService().hasCache( cacheKey ) ).isFalse();
+
+			return new ReaperProbe( appRef, cacheRef );
+		} finally {
+			context.shutdown();
+		}
 	}
 
 	/**
