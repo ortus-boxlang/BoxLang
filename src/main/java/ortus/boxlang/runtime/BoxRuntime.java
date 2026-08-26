@@ -64,6 +64,7 @@ import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.loader.DynamicClassLoaderFactory;
 import ortus.boxlang.runtime.loader.IClassLoaderFactory;
 import ortus.boxlang.runtime.logging.LoggingService;
@@ -596,6 +597,14 @@ public class BoxRuntime implements java.io.Closeable {
 		// Announce it baby! Runtime is up
 		this.interceptorService.announce(
 		    BoxEvent.ON_RUNTIME_START );
+
+		// One-shot, fire-and-forget cleanup of stale temp JAR files in the shared
+		// temp directory. Deferred to a virtual thread so it never blocks startup, and
+		// only runs now - after the runtime, its services, modules, and global services
+		// have fully started - so it cannot race against any JARs they load.
+		Thread.ofVirtual()
+		    .name( "dynamic-classloader-cleanup" )
+		    .start( () -> DynamicClassLoader.cleanupStaleJarTempFiles() );
 
 		// Setting this to a non-null value is the flag that lets everyone know the instance is fully started
 		this.startTime = Instant.now();

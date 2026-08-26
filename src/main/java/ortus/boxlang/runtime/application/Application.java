@@ -325,13 +325,20 @@ public class Application {
 			// This is to prevent memory leaks when using reloadOnChange and changing the jars many times in a row
 			// Note, we are NOT closing these CLs. It's not safe to since they may be in by another request and I don't want this action
 			// to activley trash any other threads still using the old CL.
-			this.classLoaders.entrySet().removeIf( entry -> {
+			boolean removedAny = this.classLoaders.entrySet().removeIf( entry -> {
 				if ( entry.getValue() != theCL && entry.getValue().getURLHash().equals( theCL.getURLHash() ) ) {
 					BoxRuntime.getInstance().getClassLocator().clearForClassLoader( entry.getValue() );
 					return true;
 				}
 				return false;
 			} );
+			// If any class loaders were removed, fire a single GC hint so the Cleaner can run on the
+			// now-abandoned class loaders and delete their stale temp JAR files.
+			// This line allows temp jar files to be removed in Windows from the previous CL, assuming they are no longer having
+			// any hard reference to themselves.
+			if ( removedAny ) {
+				System.gc();
+			}
 		}
 
 		// Make sure our thread is using the right class loader

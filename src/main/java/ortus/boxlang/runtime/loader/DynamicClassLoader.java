@@ -27,6 +27,7 @@ import java.io.UncheckedIOException;
 import java.lang.ref.Cleaner;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -121,12 +122,17 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 
 	/**
 	 * List of temporary files created by this class loader for JAR copying.
-	 * These files will be deleted when the class loader is closed.
+	 * Each entry tracks the temp file plus the original source file it was copied from,
+	 * so the class loader can later determine whether the temp file is still valid
+	 * (its source still exists with the same lastModified) or is an orphan eligible for deletion.
+	 * Orphans are cleaned up when the class loader is closed.
 	 */
-	private final List<File>								tempFiles;
+	private final List<TempFileEntry>						tempFiles;
 
 	/**
-	 * Unique identifier for this class loader instance, used in temp file naming.
+	 * Unique identifier for this class loader instance. Kept for logging/debugging only;
+	 * it is no longer used in temp file naming since temp files are shared across processes
+	 * based on a deterministic hash.
 	 */
 	private final String									classLoaderId;
 
@@ -143,42 +149,22 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 	 * A cleaning action that closes a DynamicClassLoader without holding a strong reference to it.
 	 * Used by {@link Cleaner} so the CL can still become phantom-reachable.
 	 * <p>
-	 * This static inner class is th ekey to making the Cleaner pattern work: it captures
-	 * the CL's identity (for temp file naming) and its temp files list, but does NOT
-	 * hold a reference to the DynamicClassLoader itself. Otherwise the CL would never
-	 * become phantom-reachable and the Cleaner would never fire.
+	 * {@code Cleaner} can only run when the CL is phantom-reachable, so this action captures
+	 * only the temp file entries (NOT a reference to the DynamicClassLoader itself) - otherwise
+	 * the CL would never become phantom-reachable and the Cleaner would never fire. It performs
+	 * the same orphan-reaping that {@link #close()} does, but via static entry data.
 	 */
 	private static class CloseAction implements Runnable {
 
-		private final List<File> tempFiles;
+		private final List<TempFileEntry> tempFiles;
 
-		CloseAction( List<File> tempFiles ) {
+		CloseAction( List<TempFileEntry> tempFiles ) {
 			this.tempFiles = tempFiles;
 		}
 
 		@Override
 		public void run() {
-			deleteTempFiles( this.tempFiles );
-		}
-
-		/**
-		 * Best-effort deletion of temporary JAR files. This may fail on Windows
-		 * if the JARs are still locked; if so, {@code deleteOnExit()} in the
-		 * constructor is the JVM-shutdown fallback.
-		 */
-		private static void deleteTempFiles( List<File> tempFiles ) {
-			if ( tempFiles.isEmpty() ) {
-				return;
-			}
-			for ( File tempFile : tempFiles ) {
-				try {
-					if ( tempFile.exists() ) {
-						tempFile.delete();
-					}
-				} catch ( Exception e ) {
-					// best-effort
-				}
-			}
+			deleteOrphanTempFiles( this.tempFiles );
 		}
 	}
 
@@ -241,26 +227,44 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 	 */
 
 	/**
+	 * Holds a temp JAR file and the original source file it was copied from,
+	 * so cleanup can tell whether the temp is still valid (source exists with
+	 * the same lastModified) or is an orphan eligible for deletion.
+	 *
+	 * @param tempFile     The temp JAR file in the shared temp directory
+	 * @param source       The original source JAR file it was copied from
+	 * @param lastModified The source JAR's lastModified at copy time
+	 */
+	private record TempFileEntry( File tempFile, File source, long lastModified ) {
+	}
+
+	/**
 	 * Copies JAR files from the provided URLs to temporary files to prevent file locking on Windows.
 	 * Non-JAR files and non-file URLs are returned as-is.
 	 * <p>
 	 * Temp file naming strategy:
-	 * {@code {original-filename}-{hash-of-path-timestamp}-{runtimeId}-{classLoaderId}.jar}
+	 * {@code {original-filename}-{pathHash}-{lastModified}.jar}
 	 * <p>
-	 * This ensures:
-	 * - Original filename is preserved for debugging
-	 * - Hash includes full path + lastModified timestamp for uniqueness when file changes
-	 * - Runtime ID prevents conflicts across multiple BoxLang processes sharing the same temp dir
-	 * - ClassLoader ID prevents conflicts when multiple CLs load the same JAR simultaneously
+	 * The {@code pathHash} is derived from the source absolute path ONLY, so it is a stable
+	 * identity for the physical jar file. Distinct temp files that share the same
+	 * {@code pathHash} are copies of the same physical jar at different versions (different
+	 * source lastModified). The {@code lastModified} segment is kept separate so temp files
+	 * can be grouped on disk by original path.
+	 * <p>
+	 * The full path + lastModified was previously hashed together; now only the path is
+	 * hashed and the lastModified is embedded plainly.
+	 * <p>
+	 * When we do copy, the source's lastModified timestamp is stamped onto the temp file, and
+	 * the original source path is recorded in a sibling {@code .origin} sidecar (see
+	 * {@link #writeSidecar(File, File)}), so the startup cleanup can later verify whether the
+	 * temp still matches its source (see {@link #cleanupStaleJarTempFiles()}).
 	 *
-	 * @param urls          The original URLs to process
-	 * @param tempFiles     List to populate with created temp files
-	 * @param runtimeId     Unique ID of the runtime process
-	 * @param classLoaderId Unique ID of this class loader instance
+	 * @param urls      The original URLs to process
+	 * @param tempFiles List to populate with created {@link TempFileEntry}s
 	 *
 	 * @return Array of URLs pointing to temp files (or original URLs if not file-based)
 	 */
-	private static URL[] copyJarsToTemp( URL[] urls, List<File> tempFiles, String runtimeId, String classLoaderId ) {
+	private static URL[] copyJarsToTemp( URL[] urls, List<TempFileEntry> tempFiles ) {
 		if ( urls == null || urls.length == 0 ) {
 			return urls;
 		}
@@ -284,9 +288,9 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 			try {
 				String	fileName		= sourceFile.getName();
 				String	nameWithoutExt	= fileName.endsWith( ".jar" ) ? fileName.substring( 0, fileName.length() - 4 ) : fileName;
-				String	pathHash		= ClassLoaderUtil.hashSorted( new Object[] { sourceFile.getAbsolutePath(), sourceFile.lastModified() } );
-				String	tempFileName	= String.format( "%s-%s-%s-%s.jar", nameWithoutExt, pathHash.substring( 0, 16 ),
-				    runtimeId, classLoaderId );
+				String	pathHash		= ClassLoaderUtil.hashSorted( new Object[] { sourceFile.getAbsolutePath() } );
+				long	lastModified	= sourceFile.lastModified();
+				String	tempFileName	= String.format( "%s-%s-%d.jar", nameWithoutExt, pathHash.substring( 0, 16 ), lastModified );
 
 				Path	tempDir			= Paths.get( System.getProperty( "java.io.tmpdir" ), "boxlang-jars" );
 				Files.createDirectories( tempDir );
@@ -295,14 +299,24 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 
 				if ( !tempFile.exists() ) {
 					copyFile( sourceFile, tempFile );
+					// Stamp the source's lastModified so cleanup can later verify this temp
+					// still matches its source. Best-effort; may fail on coarse filesystems.
+					tempFile.setLastModified( lastModified );
+				} else {
+					if ( logger != null ) {
+						logger.debug( "Reusing existing temp JAR file [{}]", tempFile.getAbsolutePath() );
+					}
 				}
-				tempFile.deleteOnExit();
 
-				tempFiles.add( tempFile );
+				// Record the origin (source path) in a sidecar so cleanup can later verify the
+				// temp still matches its source. Idempotent - safe to (re)write when reusing.
+				writeSidecar( tempFile, sourceFile );
+
+				tempFiles.add( new TempFileEntry( tempFile, sourceFile, lastModified ) );
 				resultUrls.add( tempFile.toURI().toURL() );
 
 				if ( logger != null ) {
-					logger.debug( "Copied JAR [{}] to temp location [{}]", sourceFile.getAbsolutePath(), tempFile.getAbsolutePath() );
+					logger.debug( "Temp JAR file ready at [{}] for source [{}]", tempFile.getAbsolutePath(), sourceFile.getAbsolutePath() );
 				}
 			} catch ( Exception e ) {
 				resultUrls.add( url );
@@ -332,6 +346,61 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 			while ( ( bytesRead = is.read( buffer ) ) != -1 ) {
 				os.write( buffer, 0, bytesRead );
 			}
+		}
+	}
+
+	/**
+	 * Get the sidecar file that records the original source path for a temp JAR file.
+	 * The sidecar lives next to the temp jar in the same temp directory and has the same
+	 * base name with a {@code .origin} extension.
+	 *
+	 * @param tempFile The temp JAR file
+	 *
+	 * @return The sidecar file (may not exist yet)
+	 */
+	private static File getSidecarFile( File tempFile ) {
+		String	fileName	= tempFile.getName();
+		String	baseName	= fileName.endsWith( ".jar" ) ? fileName.substring( 0, fileName.length() - 4 ) : fileName;
+		return new File( tempFile.getParentFile(), baseName + ".origin" );
+	}
+
+	/**
+	 * Write the original source path into a sidecar file next to the temp JAR, so cleanup
+	 * can later verify the temp still matches its source. Best-effort and idempotent - safe
+	 * to call both when copying a new temp and when reusing an existing one.
+	 *
+	 * @param tempFile   The temp JAR file
+	 * @param sourceFile The original source JAR file it was copied from
+	 */
+	private static void writeSidecar( File tempFile, File sourceFile ) {
+		try {
+			Files.write( getSidecarFile( tempFile ).toPath(), sourceFile.getAbsolutePath().getBytes( StandardCharsets.UTF_8 ) );
+		} catch ( Exception e ) {
+			if ( logger != null ) {
+				logger.debug( "Failed to write sidecar for temp JAR file [{}]: {}", tempFile.getAbsolutePath(), e.getMessage() );
+			}
+		}
+	}
+
+	/**
+	 * Read the original source path recorded in a temp JAR's sidecar file.
+	 *
+	 * @param tempFile The temp JAR file
+	 *
+	 * @return The source path, or {@code null} if there is no readable sidecar
+	 */
+	private static String readSidecar( File tempFile ) {
+		File sidecar = getSidecarFile( tempFile );
+		if ( !sidecar.isFile() ) {
+			return null;
+		}
+		try {
+			return new String( Files.readAllBytes( sidecar.toPath() ), StandardCharsets.UTF_8 ).trim();
+		} catch ( Exception e ) {
+			if ( logger != null ) {
+				logger.debug( "Failed to read sidecar for temp JAR file [{}]: {}", tempFile.getAbsolutePath(), e.getMessage() );
+			}
+			return null;
 		}
 	}
 
@@ -503,8 +572,8 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 	 */
 	@Override
 	public void addURL( URL url ) {
-		List<File>	newTempFiles	= new ArrayList<>();
-		URL[]		processed		= copyJarsToTemp( new URL[] { url }, newTempFiles, runtime.getRuntimeId(), this.classLoaderId );
+		List<TempFileEntry>	newTempFiles	= new ArrayList<>();
+		URL[]				processed		= copyJarsToTemp( new URL[] { url }, newTempFiles );
 		for ( URL u : processed ) {
 			super.addURL( u );
 		}
@@ -681,48 +750,202 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 		this.parent = null;
 		// Close the class loader
 		super.close();
-		// Delete temporary JAR files
+		// Clean up orphaned temporary JAR files
 		deleteTempFiles();
 	}
 
 	/**
-	 * Delete all temporary files created by this class loader.
-	 * This method is called when the class loader is closed to clean up temp JAR files.
+	 * Delete temporary JAR files that are no longer valid on class loader close.
+	 * A temp file is an orphan (and eligible for deletion) when its original source file
+	 * no longer exists, or when the source's lastModified no longer matches the temp's
+	 * stamped lastModified. Valid temp files are left in place so the next process or
+	 * class loader can reuse them via the deterministic hash-based file name.
+	 * <p>
+	 * All deletions route through the shared {@link #deleteJarTempFile(File)} method.
 	 */
 	private void deleteTempFiles() {
-		if ( tempFiles.isEmpty() ) {
-			return;
-		}
+		deleteOrphanTempFiles( this.tempFiles );
+	}
 
-		int	deletedCount	= 0;
-		int	failedCount		= 0;
-
-		for ( File tempFile : tempFiles ) {
-			try {
-				if ( tempFile.exists() && tempFile.delete() ) {
-					deletedCount++;
+	/**
+	 * Shared best-effort deletion of a single temp JAR file. This is the single funnel for
+	 * ALL temp JAR deletions (close, cleaner, and periodic cleanup) and is safe to call when
+	 * the file may be in use by another process.
+	 * <p>
+	 * On Linux/macOS this unlinks the directory entry but any process with an open file
+	 * descriptor keeps working because the inode data remains alive, so deleting a file that
+	 * is in use is safe. On Windows the delete will fail when the file is locked by another
+	 * process, and we simply leave the existing file in place.
+	 * <p>
+	 * When the JAR delete succeeds, its sibling {@code .origin} sidecar (see
+	 * {@link #writeSidecar(File, File)}) is also deleted - keeping the pair consistent and
+	 * preventing orphaned sidecars. The sidecar is only removed when the JAR delete actually
+	 * succeeded.
+	 *
+	 * @param tempFile The temp file to delete
+	 *
+	 * @return {@code true} if the file was deleted (or did not exist), {@code false} otherwise
+	 */
+	private static boolean deleteJarTempFile( File tempFile ) {
+		try {
+			boolean deleted = !tempFile.exists() || tempFile.delete();
+			if ( deleted ) {
+				// Remove the sidecar only when the jar actually got deleted, so the
+				// pair stays consistent.
+				File sidecar = getSidecarFile( tempFile );
+				try {
+					sidecar.delete();
+				} catch ( Exception e ) {
 					if ( logger != null ) {
-						logger.debug( "Deleted temp JAR file [{}]", tempFile.getAbsolutePath() );
-					}
-				} else {
-					failedCount++;
-					if ( logger != null ) {
-						logger.warn( "Failed to delete temp JAR file [{}] - may still be locked by another process",
-						    tempFile.getAbsolutePath() );
+						logger.debug( "Failed to delete sidecar [{}] for temp JAR file [{}]: {}", sidecar.getAbsolutePath(),
+						    tempFile.getAbsolutePath(), e.getMessage() );
 					}
 				}
-			} catch ( Exception e ) {
-				failedCount++;
+			}
+			return deleted;
+		} catch ( Exception e ) {
+			if ( logger != null ) {
+				logger.debug( "Error deleting temp JAR file [{}]: {}", tempFile.getAbsolutePath(), e.getMessage() );
+			}
+			return false;
+		}
+	}
+
+	/**
+	 * Delete temp JAR files that are orphans. A temp file is an orphan when its original
+	 * source file no longer exists, or when the source's lastModified no longer matches
+	 * the temp file's stamped lastModified. Valid temp files are left untouched so they
+	 * can be reused via the deterministic hash-based file name.
+	 * <p>
+	 * This is safe to run from the {@link Cleaner} {@link CloseAction} because it only
+	 * depends on the entry data, never on the class loader instance itself.
+	 *
+	 * @param tempFiles The tracked temp file entries to evaluate
+	 *
+	 * @return The number of orphaned temp files deleted
+	 */
+	private static int deleteOrphanTempFiles( List<TempFileEntry> tempFiles ) {
+		if ( tempFiles == null || tempFiles.isEmpty() ) {
+			return 0;
+		}
+
+		int deleted = 0;
+		for ( TempFileEntry entry : tempFiles ) {
+			File	tempFile	= entry.tempFile();
+			File	sourceFile	= entry.source();
+
+			boolean	keep		= sourceFile.exists() && sourceFile.lastModified() == entry.lastModified();
+			if ( keep ) {
 				if ( logger != null ) {
-					logger.warn( "Error deleting temp JAR file [{}]: {}", tempFile.getAbsolutePath(), e.getMessage() );
+					logger.debug( "Keeping valid temp JAR file [{}] for source [{}]", tempFile.getAbsolutePath(),
+					    sourceFile.getAbsolutePath() );
+				}
+				continue;
+			}
+
+			if ( deleteJarTempFile( tempFile ) ) {
+				deleted++;
+				if ( logger != null ) {
+					logger.debug( "Deleted orphaned temp JAR file [{}] for source [{}]", tempFile.getAbsolutePath(),
+					    sourceFile.getAbsolutePath() );
 				}
 			}
 		}
 
-		if ( logger != null && ( deletedCount > 0 || failedCount > 0 ) ) {
-			logger.debug( "Temp file cleanup complete: {} deleted, {} failed for ClassLoader [{}]",
-			    deletedCount, failedCount, nameAsKey.getName() );
+		return deleted;
+	}
+
+	/**
+	 * Clean up stale temp JAR files in the shared temp directory. Each temp JAR has a
+	 * sidecar (a sibling {@code .origin} file) recording the original source path it was
+	 * copied from (see {@link #writeSidecar(File, File)}). Temp file names embed the source's
+	 * {@code lastModified} ({@code {jarBaseName}-{pathHash}-{lastModified}.jar}).
+	 * <p>
+	 * For every temp JAR with a sidecar, the original source path is read back and the temp
+	 * is kept only when the source still exists at that path with the same {@code lastModified}.
+	 * This catches both stale-version cleanups:
+	 * <ul>
+	 * <li>A jar updated in place - source path still exists but its mtime no longer matches
+	 * 
+	 * the embedded {@code lastModified}.</li>
+	 * <li>A jar renamed/replaced (e.g. {@code myjar-1.0.0.jar} -&gt; {@code myjar-1.2.0.jar}) -
+	 * the recorded source path no longer exists at all.</li>
+	 * </ul>
+	 * Temp files with no sidecar are ignored (left in place).
+	 * <p>
+	 * Each deletion routes through the shared {@link #deleteJarTempFile(File)} funnel, so it
+	 * can never harm a file still in use (Linux unlinks safely; Windows delete fails if locked),
+	 * and the sidecar is removed by the funnel ONLY when the JAR delete succeeded, keeping the
+	 * pair consistent (no orphaned sidecars pointing at a live jar, and no sidecar-less jars
+	 * that would later be skipped).
+	 * <p>
+	 * This is intended to be called once, asynchronously, after the runtime and its modules
+	 * have started (see {@link BoxRuntime#startup()}), to remove stale temp JAR files left
+	 * behind by jars that have since been updated or removed.
+	 *
+	 * @return The number of stale temp JAR files deleted
+	 */
+	public static int cleanupStaleJarTempFiles() {
+		Path tempDir = Paths.get( System.getProperty( "java.io.tmpdir" ), "boxlang-jars" );
+		if ( !Files.isDirectory( tempDir ) ) {
+			return 0;
 		}
+
+		int deleted = 0;
+
+		try ( Stream<Path> stream = Files.list( tempDir ) ) {
+			for ( Path path : stream.toList() ) {
+				File	tempFile	= path.toFile();
+				String	fileName	= tempFile.getName();
+				// Only consider JAR files; never touch directories or other files
+				if ( !tempFile.isFile() || !fileName.endsWith( ".jar" ) ) {
+					continue;
+				}
+				// Requires a sidecar; files without one are deliberately ignored
+				String sourcePath = readSidecar( tempFile );
+				if ( sourcePath == null ) {
+					continue;
+				}
+				// Expected layout: {jarBaseName}-{pathHash}-{lastModified}.jar
+				String	base		= fileName.substring( 0, fileName.length() - ".jar".length() );
+				int		lastDash	= base.lastIndexOf( '-' );
+				if ( lastDash < 0 ) {
+					// Not our format; leave it alone
+					continue;
+				}
+				long lastModified;
+				try {
+					lastModified = Long.parseLong( base.substring( lastDash + 1 ) );
+				} catch ( NumberFormatException e ) {
+					// Not our format; leave it alone
+					continue;
+				}
+
+				// Keep the temp when the source still exists at the recorded path with the
+				// same lastModified; otherwise it is stale and eligible for deletion.
+				File	sourceFile	= new File( sourcePath );
+				boolean	keep		= sourceFile.exists() && sourceFile.lastModified() == lastModified;
+				if ( keep ) {
+					if ( logger != null ) {
+						logger.debug( "Keeping valid temp JAR file [{}] for source [{}]", tempFile.getAbsolutePath(), sourcePath );
+					}
+					continue;
+				}
+
+				if ( deleteJarTempFile( tempFile ) ) {
+					deleted++;
+					if ( logger != null ) {
+						logger.info( "Cleanup deleted stale temp JAR file [{}] for source [{}]", tempFile.getAbsolutePath(), sourcePath );
+					}
+				}
+			}
+		} catch ( IOException e ) {
+			if ( logger != null ) {
+				logger.debug( "Cleanup failed to list temp JAR directory [{}]: {}", tempDir, e.getMessage() );
+			}
+		}
+
+		return deleted;
 	}
 
 	/**
