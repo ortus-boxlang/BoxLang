@@ -38,7 +38,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
@@ -130,13 +129,6 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 	private final List<TempFileEntry>						tempFiles;
 
 	/**
-	 * Unique identifier for this class loader instance. Kept for logging/debugging only;
-	 * it is no longer used in temp file naming since temp files are shared across processes
-	 * based on a deterministic hash.
-	 */
-	private final String									classLoaderId;
-
-	/**
 	 * Cleanable registration for this class loader.
 	 * When the CL becomes phantom-reachable (eligible for GC without explicit close),
 	 * the registered cleanup action will close it. The action captures only the state
@@ -198,12 +190,11 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 	public DynamicClassLoader( Key name, URL[] urls, ClassLoader parent, Boolean loadParentFirst ) {
 		super( name.getName(), new URL[ 0 ], loadParentFirst ? parent : null );
 		Objects.requireNonNull( parent, "Parent class loader cannot be null" );
-		this.parent			= parent;
-		this.nameAsKey		= name;
-		this.tempFiles		= new ArrayList<>();
-		this.classLoaderId	= UUID.randomUUID().toString().replace( "-", "" ).substring( 0, 8 );
-		this.URLHash		= ClassLoaderUtil.hashSorted( urls );
-		this.cleanable		= cleaner.register( this, new CloseAction( this.tempFiles ) );
+		this.parent		= parent;
+		this.nameAsKey	= name;
+		this.tempFiles	= new ArrayList<>();
+		this.URLHash	= ClassLoaderUtil.hashSorted( urls );
+		this.cleanable	= cleaner.register( this, new CloseAction( this.tempFiles ) );
 		// Process original URLs through temp-copying addURL after super()
 		for ( URL url : urls ) {
 			addURL( url );
@@ -417,16 +408,6 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 	 */
 	public Key getNameAsKey() {
 		return this.nameAsKey;
-	}
-
-	/**
-	 * Get the unique identifier for this class loader instance.
-	 * Used in temp file naming to distinguish files from different class loaders.
-	 *
-	 * @return The unique class loader identifier
-	 */
-	public String getClassLoaderId() {
-		return this.classLoaderId;
 	}
 
 	/**

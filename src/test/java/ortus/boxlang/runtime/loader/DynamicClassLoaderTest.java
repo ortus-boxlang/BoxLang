@@ -25,6 +25,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -261,17 +263,14 @@ public class DynamicClassLoaderTest {
 		DynamicClassLoader	dynamicClassLoader	= new DynamicClassLoader( Key.of( "TempJarTest" ), urls, parentClassLoader, false );
 
 		try {
-			URL[]	clURLs		= dynamicClassLoader.getURLs();
-			String	runtimeId	= runtime.getRuntimeId();
+			URL[] clURLs = dynamicClassLoader.getURLs();
 
 			// All JAR URLs should point to temp files in boxlang-jars directory
 			for ( URL url : clURLs ) {
 				String urlStr = url.toString();
 				if ( urlStr.endsWith( ".jar" ) ) {
 					assertThat( urlStr ).contains( "boxlang-jars" );
-					// Temp naming: originalName-hash-runtimeId-classLoaderId.jar
-					assertThat( urlStr ).contains( runtimeId );
-					assertThat( urlStr ).contains( dynamicClassLoader.getClassLoaderId() );
+					// Temp naming: {originalName}-{pathHash}-{lastModified}.jar
 				}
 			}
 			// Non-jar files (like config.properties) should remain at their original path
@@ -281,25 +280,32 @@ public class DynamicClassLoaderTest {
 	}
 
 	@Test
-	@DisplayName( "Temp files exist on disk and are deletable after close" )
-	void testTempFilesExistAndAreDeletedOnClose() throws Exception {
+	@DisplayName( "Temp files exist on disk and ORPHANS are deleted on close" )
+	void testTempFilesExistAndOrphansAreDeletedOnClose() throws Exception {
 		Path				libPath				= Paths.get( "src/test/resources/libs/" ).toAbsolutePath().normalize();
 		URL[]				urls				= DynamicClassLoader.getJarURLs( libPath );
 		ClassLoader			parentClassLoader	= getClass().getClassLoader();
 		DynamicClassLoader	dynamicClassLoader	= new DynamicClassLoader( Key.of( "TempFileCleanup" ), urls, parentClassLoader, false );
 
 		// Collect temp file paths before close
-		File[]				tempFilesBefore		= listTempJarsForCL( dynamicClassLoader.getClassLoaderId() );
+		List<File>			tempFilesBefore		= new ArrayList<>();
+		for ( URL url : dynamicClassLoader.getURLs() ) {
+			String urlStr = url.toString();
+			if ( urlStr.endsWith( ".jar" ) ) {
+				tempFilesBefore.add( new File( url.toURI() ) );
+			}
+		}
 
 		// There should be at least some temp files for this CL
 		assertThat( tempFilesBefore ).isNotEmpty();
 
-		// Close — should delete them
+		// Close — orphans (source gone/changed) are deleted, but valid files are kept
 		dynamicClassLoader.close();
 
-		// After close, those temp files should be gone
+		// Source jars still exist with the same lastModified, so these temp files are
+		// NOT orphans and must survive close (they're shared across processes).
 		for ( File f : tempFilesBefore ) {
-			assertThat( f.exists() ).isFalse();
+			assertThat( f.exists() ).isTrue();
 		}
 	}
 
@@ -319,8 +325,7 @@ public class DynamicClassLoaderTest {
 			String urlStr = clURLs[ 0 ].toString();
 			// Should point to a temp location, not the original
 			assertThat( urlStr ).contains( "boxlang-jars" );
-			assertThat( urlStr ).contains( dynamicClassLoader.getClassLoaderId() );
-			assertThat( urlStr ).contains( runtime.getRuntimeId() );
+			// Temp naming: {originalName}-{pathHash}-{lastModified}.jar
 		} finally {
 			dynamicClassLoader.close();
 		}
@@ -346,14 +351,6 @@ public class DynamicClassLoaderTest {
 		} finally {
 			dynamicClassLoader.close();
 		}
-	}
-
-	/**
-	 * Helper to list temp files that belong to a specific CL ID
-	 */
-	private static File[] listTempJarsForCL( String classLoaderId ) {
-		File tempDir = new File( System.getProperty( "java.io.tmpdir" ), "boxlang-jars" );
-		return tempDir.listFiles( f -> f.getName().contains( classLoaderId ) );
 	}
 
 	@Test

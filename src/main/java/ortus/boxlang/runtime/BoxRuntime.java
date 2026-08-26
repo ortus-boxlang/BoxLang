@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
@@ -127,12 +126,6 @@ public class BoxRuntime implements java.io.Closeable {
 	 * Singleton instance
 	 */
 	private static BoxRuntime					instance;
-
-	/**
-	 * Unique identifier for this runtime instance.
-	 * Used to distinguish between multiple BoxLang processes sharing the same temp directories.
-	 */
-	private final String						runtimeId				= UUID.randomUUID().toString().replace( "-", "" ).substring( 0, 8 );
 
 	/**
 	 * Logger for the runtime
@@ -760,17 +753,6 @@ public class BoxRuntime implements java.io.Closeable {
 	 */
 	public static Boolean hasInstance() {
 		return instance != null;
-	}
-
-	/**
-	 * Get the unique identifier for this runtime instance.
-	 * This ID is generated at creation and distinguishes this runtime process
-	 * from other BoxLang processes that may share the same temp directories.
-	 *
-	 * @return The unique runtime identifier (8-character hex string)
-	 */
-	public String getRuntimeId() {
-		return this.runtimeId;
 	}
 
 	/**
