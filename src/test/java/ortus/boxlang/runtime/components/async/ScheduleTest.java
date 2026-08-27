@@ -589,6 +589,44 @@ public class ScheduleTest {
 		assertThat( found ).isTrue();
 	}
 
+	/**
+	 * Verifies that an omitted port is not persisted as HTTP port 80, allowing the URL scheme to select its default.
+	 */
+	@DisplayName( "schedule leaves the port unset when no port is provided" )
+	@Test
+	public void testOmittedPortIsNotPersisted() {
+		instance.executeSource(
+		    """
+		    <bx:schedule action="update" task="httpsTask" url="https://localhost/test" interval="120">
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE
+		);
+
+		IStruct task = ( IStruct ) instance.getSchedulerService().loadTasksFromDisk().stream()
+		    .filter( entry -> entry instanceof IStruct && "httpsTask".equals( ( ( IStruct ) entry ).getAsString( Key.task ) ) )
+		    .findFirst().orElseThrow();
+		assertThat( task.get( Key.port ) ).isNull();
+	}
+
+	/**
+	 * Verifies that an explicitly configured port is retained in the persisted task definition.
+	 */
+	@DisplayName( "schedule preserves an explicitly configured port" )
+	@Test
+	public void testExplicitPortIsPersisted() {
+		instance.executeSource(
+		    """
+		    <bx:schedule action="update" task="customPortTask" url="https://localhost/test" port="9443" interval="120">
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE
+		);
+
+		IStruct task = ( IStruct ) instance.getSchedulerService().loadTasksFromDisk().stream()
+		    .filter( entry -> entry instanceof IStruct && "customPortTask".equals( ( ( IStruct ) entry ).getAsString( Key.task ) ) )
+		    .findFirst().orElseThrow();
+		assertThat( task.getAsInteger( Key.port ) ).isEqualTo( 9443 );
+	}
+
 	@DisplayName( "tasks.json writes prefixed credentials and decrypts all prefixed values" )
 	@Test
 	public void testPrefixedTaskValues() throws Exception {
