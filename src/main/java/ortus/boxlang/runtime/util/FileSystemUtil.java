@@ -1410,9 +1410,10 @@ public final class FileSystemUtil {
 	 * Expands a path to an absolute path. If the path is already absolute, it is
 	 * returned as is.
 	 *
-	 * @param context  The context in which the BIF is being invoked.
-	 * @param path     The path to expand
-	 * @param basePath The base path to use for relative paths
+	 * @param context      The context in which the BIF is being invoked.
+	 * @param path         The path to expand
+	 * @param basePath     The base path to use for relative paths
+	 * @param externalOnly Whether to only consider external paths.
 	 *
 	 * @return The expanded path represented in a ResolvedFilePath record
 	 */
@@ -1432,6 +1433,21 @@ public final class FileSystemUtil {
 	 * @return The expanded path represented in a ResolvedFilePath record
 	 */
 	public static ResolvedFilePath expandPath( IStruct mappings, String path, ResolvedFilePath basePath, boolean externalOnly ) {
+		return expandPath( mappings, path, basePath, externalOnly, false );
+	}
+
+	/**
+	 * Expands a path to an absolute path. If the path is already absolute, it is
+	 * returned as is.
+	 *
+	 * @param mappings      The mappings to use for resolving the path.
+	 * @param path          The path to expand
+	 * @param basePath      The base path to use for relative paths
+	 * @param forceRelative Whether to force the path to be treated as relative. Absolute paths will be expanded again.
+	 *
+	 * @return The expanded path represented in a ResolvedFilePath record
+	 */
+	public static ResolvedFilePath expandPath( IStruct mappings, String path, ResolvedFilePath basePath, boolean externalOnly, boolean forceRelative ) {
 		// This really isn't a valid path, but ColdBox does this by carelessly appending too many slashes to view paths
 		if ( path.startsWith( "//" ) ) {
 			// strip one of them off
@@ -1442,7 +1458,8 @@ public final class FileSystemUtil {
 		String	originalPath		= path;
 		Path	originalPathPath	= null;
 		originalPathPath = Path.of( originalPath );
-		boolean isAbsolute = originalPathPath.isAbsolute();
+		// If we're forcing the input to be treated as relative, then never allow it to be absolute.
+		boolean isAbsolute = forceRelative ? false : originalPathPath.isAbsolute();
 
 		// If the incoming path does NOT start with a /, then we make it relative to the current template (if there is one)
 		if ( !isAbsolute && !path.startsWith( SLASH_PREFIX ) ) {

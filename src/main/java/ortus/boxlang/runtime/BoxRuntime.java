@@ -1341,10 +1341,10 @@ public class BoxRuntime implements java.io.Closeable {
 			executeClass( targetClass, templatePath, context, args );
 		} else {
 			// Load the template
-			BoxTemplate targetTemplate = RunnableLoader.getInstance().loadTemplateRelative(
+			BoxTemplate targetTemplate = RunnableLoader.getInstance().loadTemplateAbsolute(
 			    context,
-			    templatePath,
-			    false );
+			    ResolvedFilePath.of( templatePath )
+			);
 			executeTemplate( targetTemplate, templatePath, context );
 		}
 	}
