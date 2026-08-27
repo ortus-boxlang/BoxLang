@@ -247,7 +247,10 @@ public class SecurityConfig implements IConfigSegment {
 		PropertyHelper.processStringOrArrayToList( config, Key.disallowedFileOperationExtensions, this.disallowedFileOperationExtensions );
 		this.populateServerSystemScope	= PropertyHelper.processBoolean( config, Key.populateServerSystemScope, this.populateServerSystemScope );
 		this.secretAlgorithm			= PropertyHelper.processString( config, Key.secretAlgorithm, this.secretAlgorithm );
-		this.secretSeed					= PropertyHelper.processString( config, Key.secretSeed, this.secretSeed );
+		var tmp = PropertyHelper.processString( config, Key.secretSeed, this.secretSeed );
+		if ( tmp != null && !tmp.isEmpty() ) {
+			this.secretSeed = tmp;
+		}
 		return this;
 	}
 
