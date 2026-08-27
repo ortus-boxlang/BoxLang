@@ -194,7 +194,14 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 		this.nameAsKey	= name;
 		this.tempFiles	= new ArrayList<>();
 		this.URLHash	= ClassLoaderUtil.hashSorted( urls );
-		this.cleanable	= cleaner.register( this, new CloseAction( this.tempFiles ) );
+
+		// Only register the Cleaner when JAR temp file caching is enabled. When it's disabled we
+		// load JARs in place and there are no temp files to reap, so a Cleaner would be pure overhead.
+		if ( isJarTempFileCachingEnabled() ) {
+			this.cleanable = cleaner.register( this, new CloseAction( this.tempFiles ) );
+		} else {
+			this.cleanable = null;
+		}
 		// Process original URLs through temp-copying addURL after super()
 		for ( URL url : urls ) {
 			addURL( url );
@@ -546,6 +553,9 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 	/**
 	 * Add a URL to the class loader, automatically copying JARs to temp files
 	 * to prevent file locking on Windows.
+	 * <p>
+	 * When {@link #isJarTempFileCachingEnabled()} is {@code false}, the URL is added directly
+	 * with no temp copying or tracking.
 	 *
 	 * @param url The URL to add
 	 *
@@ -553,12 +563,16 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 	 */
 	@Override
 	public void addURL( URL url ) {
-		List<TempFileEntry>	newTempFiles	= new ArrayList<>();
-		URL[]				processed		= copyJarsToTemp( new URL[] { url }, newTempFiles );
-		for ( URL u : processed ) {
-			super.addURL( u );
+		if ( isJarTempFileCachingEnabled() ) {
+			List<TempFileEntry>	newTempFiles	= new ArrayList<>();
+			URL[]				processed		= copyJarsToTemp( new URL[] { url }, newTempFiles );
+			for ( URL u : processed ) {
+				super.addURL( u );
+			}
+			this.tempFiles.addAll( newTempFiles );
+		} else {
+			super.addURL( url );
 		}
-		this.tempFiles.addAll( newTempFiles );
 	}
 
 	/**
@@ -1037,6 +1051,19 @@ public class DynamicClassLoader extends URLClassLoader implements IModuleClassLo
 			}
 		}
 		return logger;
+	}
+
+	/**
+	 * Whether JAR temp file caching is enabled for the runtime. When enabled (the default),
+	 * JAR files are copied to a writable temp directory before being loaded, a Cleaner is
+	 * registered to reap orphaned temp files, and a startup sweep removes stale copies.
+	 * When disabled, JARs are loaded directly from their original paths with none of that
+	 * logic.
+	 *
+	 * @return {@code true} if JAR temp file caching is enabled, {@code false} otherwise
+	 */
+	public static boolean isJarTempFileCachingEnabled() {
+		return BoxRuntime.getInstance().getConfiguration().jarTempFileCaching;
 	}
 
 	/**

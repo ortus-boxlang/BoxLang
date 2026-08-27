@@ -391,4 +391,63 @@ public class DynamicClassLoaderTest {
 		}
 	}
 
+	@Test
+	@DisplayName( "When jarTempFileCaching is false, JARs load from original paths" )
+	void testJarCachingDisabledUsesOriginalURLs() throws Exception {
+		Path	libPath		= Paths.get( "src/test/resources/libs/" ).toAbsolutePath().normalize();
+		URL[]	urls		= DynamicClassLoader.getJarURLs( libPath );
+
+		// Save old state, set caching to false
+		boolean	original	= runtime.getConfiguration().jarTempFileCaching;
+		runtime.getConfiguration().jarTempFileCaching = false;
+
+		try {
+			DynamicClassLoader dcl = new DynamicClassLoader( Key.of( "NoCacheTest" ), urls, getClass().getClassLoader(), false );
+
+			try {
+				// JAR URLs should point to the original paths, not temp boxlang-jars
+				for ( URL url : dcl.getURLs() ) {
+					String urlStr = url.toString();
+					if ( urlStr.endsWith( ".jar" ) ) {
+						assertThat( urlStr ).doesNotContain( "boxlang-jars" );
+					}
+				}
+				// Class loading still works
+				Class<?> helloWorld = dcl.loadClass( "HelloWorld" );
+				assertThat( helloWorld ).isNotNull();
+			} finally {
+				dcl.close();
+			}
+		} finally {
+			runtime.getConfiguration().jarTempFileCaching = original;
+		}
+	}
+
+	@Test
+	@DisplayName( "When jarTempFileCaching is false, no sidecar .origin files are written" )
+	void testJarCachingDisabledNoSidecarFiles() throws Exception {
+		Path	libPath		= Paths.get( "src/test/resources/libs/" ).toAbsolutePath().normalize();
+		URL[]	urls		= DynamicClassLoader.getJarURLs( libPath );
+
+		boolean	original	= runtime.getConfiguration().jarTempFileCaching;
+		runtime.getConfiguration().jarTempFileCaching = false;
+
+		try {
+			DynamicClassLoader dcl = new DynamicClassLoader( Key.of( "NoSidecarTest" ), urls, getClass().getClassLoader(), false );
+
+			try {
+				// No .origin files should exist since no temp copies were made
+				File tempDir = new File( System.getProperty( "java.io.tmpdir" ), "boxlang-jars" );
+				if ( tempDir.isDirectory() ) {
+					File[] sidecars = tempDir.listFiles( ( dir, name ) -> name.endsWith( ".origin" ) && name.contains( "NoSidecarTest" ) );
+					assertThat( sidecars ).isEmpty();
+				}
+			} finally {
+				dcl.close();
+			}
+		} finally {
+			runtime.getConfiguration().jarTempFileCaching = original;
+		}
+	}
+
 }

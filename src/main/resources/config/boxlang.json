@@ -47,6 +47,12 @@
 	// Store the compiled class files on disk for reuse between restarts
 	// If disabled, the class files will be stored in memory only and lost on restart
 	"storeClassFilesOnDisk": true,
+	// Copy JAR files to a writable temp cache before loading them. This prevents file locking
+	// on Windows and lets stale/duplicate versions be cleaned up safely.
+	// Set to false when the filesystem is read-only, or when JARs never change and locking is
+	// not a concern. When disabled, JARs are loaded directly from their original paths, no temp
+	// copies are made, no cleaner is registered, and no startup temp cleanup runs.
+	"jarTempFileCaching": true,
 	// This enforces argument type checking and return value type checking for UDFs, closures, and lambdas.
 	"enforceUDFTypeChecks": true,
 	// The default timezone for the runtime; defaults to the JVM timezone if empty

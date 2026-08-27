@@ -595,9 +595,13 @@ public class BoxRuntime implements java.io.Closeable {
 		// temp directory. Deferred to a virtual thread so it never blocks startup, and
 		// only runs now - after the runtime, its services, modules, and global services
 		// have fully started - so it cannot race against any JARs they load.
-		Thread.ofVirtual()
-		    .name( "dynamic-classloader-cleanup" )
-		    .start( () -> DynamicClassLoader.cleanupStaleJarTempFiles() );
+		// Only runs when JAR temp file caching is enabled; when disabled there are no
+		// temp JAR files to clean up.
+		if ( DynamicClassLoader.isJarTempFileCachingEnabled() ) {
+			Thread.ofVirtual()
+			    .name( "dynamic-classloader-cleanup" )
+			    .start( () -> DynamicClassLoader.cleanupStaleJarTempFiles() );
+		}
 
 		// Setting this to a non-null value is the flag that lets everyone know the instance is fully started
 		this.startTime = Instant.now();

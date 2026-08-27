@@ -166,6 +166,16 @@ public class Configuration implements IConfigSegment {
 	public Boolean																storeClassFilesOnDisk				= true;
 
 	/**
+	 * Copy JAR files to a writable temp cache before loading them, which prevents file locking
+	 * on Windows and lets stale/duplicate versions be cleaned up safely. When disabled, JARs are
+	 * loaded directly from their original path, no temp copies are made, no cleaner is registered,
+	 * and no startup temp cleanup runs. Set this to {@code false} when the filesystem is read-only
+	 * or when JARs are known to never change and locking is not a concern.
+	 * {@code true} by default
+	 */
+	public Boolean																jarTempFileCaching					= true;
+
+	/**
 	 * The Timezone to use for the runtime;
 	 * Uses the Java Timezone format: {@code America/New_York}
 	 * Uses the default system timezone if not set
@@ -470,6 +480,11 @@ public class Configuration implements IConfigSegment {
 		// Store Class Files on Disk
 		if ( config.containsKey( Key.storeClassFilesOnDisk ) ) {
 			this.storeClassFilesOnDisk = BooleanCaster.cast( config.get( Key.storeClassFilesOnDisk ) );
+		}
+
+		// JAR Temp File Caching
+		if ( config.containsKey( Key.jarTempFileCaching ) ) {
+			this.jarTempFileCaching = BooleanCaster.cast( config.get( Key.jarTempFileCaching ) );
 		}
 
 		// Class Generation Directory
@@ -1234,6 +1249,7 @@ public class Configuration implements IConfigSegment {
 		    Key.enableNestedTransactions, this.enableNestedTransactions,
 		    Key.enforceUDFTypeChecks, this.enforceUDFTypeChecks,
 		    Key.storeClassFilesOnDisk, this.storeClassFilesOnDisk,
+		    Key.jarTempFileCaching, this.jarTempFileCaching,
 		    Key.useHighPrecisionMath, this.useHighPrecisionMath,
 		    Key.maxTrackedCompletedThreads, this.maxTrackedCompletedThreads,
 		    Key.validExtensions, Array.fromSet( getValidExtensions() ),
