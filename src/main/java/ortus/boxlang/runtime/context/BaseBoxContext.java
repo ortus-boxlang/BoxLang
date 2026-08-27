@@ -778,9 +778,22 @@ public class BaseBoxContext implements IBoxContext {
 	 * Invoke a template in the current context
 	 *
 	 * @param templatePath A relative template path
+	 * @param externalOnly Whether to only include external templates
 	 */
 	@Override
 	public void includeTemplate( String templatePath, boolean externalOnly ) {
+		includeTemplate( templatePath, externalOnly, true );
+	}
+
+	/**
+	 * Invoke a template in the current context
+	 *
+	 * @param templatePath  A relative or absolute template path (forceRelative controls how it's used)
+	 * @param externalOnly  Whether to only include external templates
+	 * @param forceRelative Whether to force the template path to be treated as relative
+	 */
+	@Override
+	public void includeTemplate( String templatePath, boolean externalOnly, boolean forceRelative ) {
 		Set<String>	VALID_TEMPLATE_EXTENSIONS	= BoxRuntime.getInstance().getConfiguration().getValidTemplateExtensions();
 		boolean		includeAll					= VALID_TEMPLATE_EXTENSIONS.contains( "*" );
 
@@ -803,7 +816,12 @@ public class BaseBoxContext implements IBoxContext {
 		// This extension check is duplicated in the runnableLoader right now since some code paths hit the runnableLoader directly
 		if ( includeAll || VALID_TEMPLATE_EXTENSIONS.contains( ext ) ) {
 			// Load template class, compiling if neccessary
-			BoxTemplate template = RunnableLoader.getInstance().loadTemplateRelative( this, templatePath, externalOnly );
+			BoxTemplate template;
+			if ( forceRelative ) {
+				template = RunnableLoader.getInstance().loadTemplateRelative( this, templatePath, externalOnly );
+			} else {
+				template = RunnableLoader.getInstance().loadTemplateAbsolute( this, FileSystemUtil.expandPath( this, templatePath ) );
+			}
 
 			template.invoke( this );
 		} else if ( allowIncludeClassFiles && BoxRuntime.getInstance().getConfiguration().getValidClassExtensionsList().contains( ext ) ) {
@@ -824,7 +842,19 @@ public class BaseBoxContext implements IBoxContext {
 		} else {
 			// If this extension is not one we compile, then just read the contents and flush it to the buffer
 			writeToBuffer(
-			    invokeFunction( Key.fileread, new Object[] { FileSystemUtil.expandPath( this, templatePath, externalOnly ).absolutePath().toString() } ) );
+			    invokeFunction(
+			        Key.fileread,
+			        new Object[] {
+			            FileSystemUtil.expandPath(
+			                getConfig().getAsStruct( Key.mappings ),
+			                templatePath,
+			                findClosestTemplate(),
+			                externalOnly,
+			                forceRelative
+			            ).absolutePath().toString()
+			        }
+			    )
+			);
 		}
 	}
 
