@@ -1319,7 +1319,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 * If it's a class the args will be passed to the main method
 	 * <p>
 	 *
-	 * @param templatePath The absolute path to the template to execute
+	 * @param templatePath The absolute or relative path to the template to execute
 	 * @param context      The context to execute the template in
 	 * @param args         The arguments to pass to the template
 	 */
@@ -1343,7 +1343,7 @@ public class BoxRuntime implements java.io.Closeable {
 			// Load the template
 			BoxTemplate targetTemplate = RunnableLoader.getInstance().loadTemplateAbsolute(
 			    context,
-			    ResolvedFilePath.of( templatePath )
+			    FileSystemUtil.expandPath( context, templatePath )
 			);
 			executeTemplate( targetTemplate, templatePath, context );
 		}
