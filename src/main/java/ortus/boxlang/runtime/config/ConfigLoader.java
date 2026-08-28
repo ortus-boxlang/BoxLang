@@ -331,29 +331,56 @@ public class ConfigLoader {
 
 	@SuppressWarnings( "unchecked" )
 	private Object decryptConfigValues( Object rawConfig, SecurityConfig secretConfig ) {
+		return decryptConfigValues( rawConfig, secretConfig, "" );
+	}
+
+	@SuppressWarnings( "unchecked" )
+	private Object decryptConfigValues( Object rawConfig, SecurityConfig secretConfig, String path ) {
 		if ( rawConfig instanceof IStruct struct ) {
 			for ( Key key : struct.keySet() ) {
-				struct.put( key, decryptConfigValues( struct.get( key ), secretConfig ) );
+				struct.put( key, decryptConfigValues( struct.get( key ), secretConfig, appendPath( path, key.getName() ) ) );
 			}
 		} else if ( rawConfig instanceof Array array ) {
 			for ( int i = 0; i < array.size(); i++ ) {
-				array.set( i, decryptConfigValues( array.get( i ), secretConfig ) );
+				array.set( i, decryptConfigValues( array.get( i ), secretConfig, path + "[" + i + "]" ) );
 			}
 		} else if ( rawConfig instanceof Map<?, ?> rawMap ) {
 			Map<Object, Object> configMap = ( Map<Object, Object> ) rawMap;
 			for ( Object key : List.copyOf( configMap.keySet() ) ) {
-				configMap.put( key, decryptConfigValues( configMap.get( key ), secretConfig ) );
+				configMap.put( key, decryptConfigValues( configMap.get( key ), secretConfig, appendPath( path, key.toString() ) ) );
 			}
 		} else if ( rawConfig instanceof List<?> rawList ) {
 			List<Object> configList = ( List<Object> ) rawList;
 			for ( int i = 0; i < configList.size(); i++ ) {
-				configList.set( i, decryptConfigValues( configList.get( i ), secretConfig ) );
+				configList.set( i, decryptConfigValues( configList.get( i ), secretConfig, path + "[" + i + "]" ) );
 			}
 		} else if ( rawConfig instanceof String value ) {
-			return ConfigSecretUtil.decryptIfEncrypted( value, secretConfig.getSecretSeed(), secretConfig.secretAlgorithm );
+			if ( ConfigSecretUtil.isEncrypted( value ) ) {
+				try {
+					return ConfigSecretUtil.decryptIfEncrypted( value, secretConfig.getSecretSeed(), secretConfig.secretAlgorithm );
+				} catch ( Exception e ) {
+					throw new ConfigurationException(
+					    "Failed to decrypt the [bxsecret:] value at configuration path [" + path + "] using algorithm ["
+					        + secretConfig.secretAlgorithm
+					        + "]. The value cannot be read with the runtime's current secret seed. Re-encrypt the value with the same secret seed this runtime uses.",
+					    e );
+				}
+			}
 		}
 
 		return rawConfig;
+	}
+
+	/**
+	 * Appends a path segment to an existing configuration path, separating segments with a dot.
+	 *
+	 * @param path    The current configuration path.
+	 * @param segment The segment to append.
+	 *
+	 * @return The combined configuration path.
+	 */
+	private String appendPath( String path, String segment ) {
+		return path.isEmpty() ? segment : path + "." + segment;
 	}
 
 	private SecurityConfig getSecretConfig( IStruct config ) {

@@ -418,6 +418,35 @@ class ConfigLoaderTest {
 		}
 	}
 
+	@DisplayName( "It reports the configuration key when a bxsecret value fails to decrypt" )
+	@Test
+	void testFailedDecryptionReportsKeyPath() throws Exception {
+		Path configFile = Files.createTempFile( "boxlang-secret-decrypt-error", ".json" );
+
+		try {
+			Files.writeString( configFile, """
+			                               {
+			                                 "datasources": {
+			                                   "myDs": {
+			                                     "password": "bxsecret:!!!invalid-base64!!!"
+			                                   }
+			                                 }
+			                               }
+			                               """, StandardCharsets.UTF_8 );
+
+			ConfigurationException exception = assertThrows(
+			    ConfigurationException.class,
+			    () -> ConfigLoader.getInstance().deserializeConfig( configFile ) );
+
+			assertThat( exception.getMessage() ).contains( "bxsecret:" );
+			assertThat( exception.getMessage() ).contains( "datasources" );
+			assertThat( exception.getMessage() ).contains( "myDs" );
+			assertThat( exception.getMessage() ).contains( "password" );
+		} finally {
+			Files.deleteIfExists( configFile );
+		}
+	}
+
 	@DisplayName( "It decrypts nested JSON configuration values before resolving placeholders" )
 	@Test
 	void testEncryptedConfigurationValues() throws Exception {
