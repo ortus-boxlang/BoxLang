@@ -294,10 +294,10 @@ public class ConfigLoader {
 
 		IStruct				envOverrides			= decryptEnvironmentOverrides( filterEnv( collectedEnvironment.getAsStruct( Key.environment ) ),
 		    secretConfig )
-		    .entrySet()
-		    .stream()
-		    .filter( entry -> !propertyOverrides.containsKey( entry.getKey() ) )
-		    .collect( BLCollector.toStruct() );
+		        .entrySet()
+		        .stream()
+		        .filter( entry -> !propertyOverrides.containsKey( entry.getKey() ) )
+		        .collect( BLCollector.toStruct() );
 
 		if ( envOverrides.isEmpty() && propertyOverrides.isEmpty() ) {
 			return config;
@@ -319,6 +319,8 @@ public class ConfigLoader {
 	private Object resolveConfigValues( Object rawConfig ) {
 		SecurityConfig secretConfig = getSecretConfig(
 		    rawConfig instanceof Map<?, ?> configMap ? new Struct( ( Map<Object, Object> ) configMap ) : new Struct() );
+		// Env/property seed overrides win when decrypting a JSON config file.
+		applySecretSeedOverrides( secretConfig );
 		return resolveConfigValues( rawConfig, secretConfig );
 	}
 
@@ -364,6 +366,47 @@ public class ConfigLoader {
 			secretConfig.process( securitySettings );
 		}
 		return secretConfig;
+	}
+
+	/**
+	 * Applies the secret-seed override from the environment or JVM system properties so it wins over any
+	 * seed in the file being decrypted. The same seed is used for all {@code bxsecret:} values because
+	 * environment and system-property overrides are applied only after file decryption completes.
+	 *
+	 * @param secretConfig The per-file {@link SecurityConfig} to apply the override to.
+	 */
+	private void applySecretSeedOverrides( SecurityConfig secretConfig ) {
+		IStruct	collectedEnvironment	= UnmodifiableStruct.of(
+		    Key.environment, UnmodifiableStruct.fromMap( System.getenv() ),
+		    Key.properties, UnmodifiableStruct.fromMap( System.getProperties() )
+		);
+
+		// System properties win over environment variables, matching mergeEnvironmentOverrides precedence.
+		IStruct	propertyOverrides		= filterEnv( collectedEnvironment.getAsStruct( Key.properties ) );
+		IStruct	envOverrides			= filterEnv( collectedEnvironment.getAsStruct( Key.environment ) );
+
+		String	overrideSeed			= firstNonBlank(
+		    propertyOverrides.getAsString( Key.of( "security.secretSeed" ) ),
+		    envOverrides.getAsString( Key.of( "security.secretSeed" ) ) );
+		if ( overrideSeed != null ) {
+			secretConfig.process( Struct.of( Key.secretSeed, overrideSeed ) );
+		}
+	}
+
+	/**
+	 * Returns the first non-blank value from the supplied candidates, trimmed, or null when all are blank.
+	 *
+	 * @param candidates The candidate values to inspect.
+	 *
+	 * @return The first non-blank trimmed value, or null.
+	 */
+	private String firstNonBlank( String... candidates ) {
+		for ( String candidate : candidates ) {
+			if ( candidate != null && !candidate.isBlank() ) {
+				return candidate.trim();
+			}
+		}
+		return null;
 	}
 
 	private IStruct decryptEnvironmentOverrides( IStruct overrides, SecurityConfig secretConfig ) {
