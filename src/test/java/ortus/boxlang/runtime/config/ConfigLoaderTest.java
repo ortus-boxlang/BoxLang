@@ -447,6 +447,25 @@ class ConfigLoaderTest {
 		}
 	}
 
+	@DisplayName( "It decrypts each placeholder value individually when placeholders resolve to bxsecret values" )
+	@Test
+	void testPlaceholderResolvedSecretIsDecrypted() {
+		String	secretA	= ConfigSecretUtil.encryptWithPrefix( "alpha" );
+		String	secretB	= ConfigSecretUtil.encryptWithPrefix( "beta" );
+		IStruct	map		= Struct.of(
+		    "a", secretA,
+		    "b", secretB,
+		    "c", "gamma" );
+
+		// Concatenated placeholders, each holding its own bxsecret value, must decrypt individually.
+		String	result	= ( String ) ConfigLoader.getInstance().resolvePlaceholdersWithSecrets(
+		    "${a}-${b}-${c}",
+		    ConfigLoader.getInstance().getSecretConfig( Struct.of() ),
+		    map );
+
+		assertThat( result ).isEqualTo( "alpha-beta-gamma" );
+	}
+
 	@DisplayName( "It decrypts nested JSON configuration values before resolving placeholders" )
 	@Test
 	void testEncryptedConfigurationValues() throws Exception {

@@ -24,14 +24,46 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 public class PlaceholderHelperTest {
+
+	/**
+	 * Preload the runtime so PlaceholderHelper's static initializer (which resolves
+	 * {@code boxlang-home} via BoxRuntime) runs against an already-started runtime
+	 * instead of booting it re-entrantly during class initialization.
+	 */
+	@BeforeAll
+	public static void setUp() {
+		BoxRuntime.getInstance( true );
+	}
+
+	@DisplayName( "PlaceholderHelper.resolve() should resolve JVM system properties as placeholders" )
+	@Test
+	public void testResolveWithSystemProperties() {
+		String	input		= "Temp directory: ${java.io.tmpdir}";
+
+		String	resolved	= PlaceholderHelper.resolve( input );
+
+		assertThat( resolved ).isEqualTo( "Temp directory: " + System.getProperty( "java.io.tmpdir" ) );
+	}
+
+	@DisplayName( "PlaceholderHelper.resolve() should prefer a system property over an env var for bare names" )
+	@Test
+	public void testSystemPropertyWinsOverEnvVar() {
+		// The bare name resolves from the system property (added last to the placeholder map),
+		// while the legacy env. prefix still resolves from the environment variable.
+		String resolved = PlaceholderHelper.resolve( "${user.home}" );
+
+		assertThat( resolved ).isEqualTo( System.getProperty( "user.home" ) );
+	}
 
 	@DisplayName( "PlaceholderHelper.resolve() should resolve placeholders in the input string with no case sensitivity" )
 	@Test

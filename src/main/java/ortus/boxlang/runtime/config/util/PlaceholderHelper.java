@@ -55,11 +55,17 @@ public class PlaceholderHelper {
 		PLACEHOLDER_MAP.put( "user-dir", System.getProperty( "user.dir" ) );
 		PLACEHOLDER_MAP.put( "boxlang-home", BoxRuntime.getInstance().getRuntimeHome().toString() );
 
-		// Add all the environment variables as replacements
+		// Add all the environment variables as replacements, both with the legacy
+		// "env." prefix and bare so `${env.FOO}` keeps working while `${FOO}` is also supported.
 		Map<String, String> env = System.getenv();
 		for ( Map.Entry<String, String> entry : env.entrySet() ) {
 			PLACEHOLDER_MAP.put( "env." + entry.getKey(), entry.getValue() );
+			PLACEHOLDER_MAP.put( entry.getKey(), entry.getValue() );
 		}
+
+		// Add all JVM system properties as replacements. These are added last with no prefix
+		// so, for bare names, a system property always wins over an environment variable.
+		System.getProperties().forEach( ( key, value ) -> PLACEHOLDER_MAP.put( key.toString(), value.toString() ) );
 	}
 
 	/**
@@ -76,6 +82,23 @@ public class PlaceholderHelper {
 	 * @return The Resolved string
 	 */
 	public static String resolve( String input, IStruct map ) {
+		return resolve( input, map, null );
+	}
+
+	/**
+	 * Resolve the input string and replace all placeholders with their values
+	 * from the incoming placeholder map, decrypting each replacement value with the
+	 * supplied decryptor at the point of replacement. When the decryptor is null, no
+	 * decryption occurs. This is used only by configuration-file processing so other
+	 * placeholder call sites in the runtime remain unaffected.
+	 *
+	 * @param input     The input string to Resolve
+	 * @param map       The placeholder map to use for resolving the input string
+	 * @param decryptor The optional function applied to each replacement value, or null.
+	 *
+	 * @return The Resolved string
+	 */
+	public static String resolve( String input, IStruct map, java.util.function.Function<String, String> decryptor ) {
 		// Create a pattern to match placeholder patterns like "${...}"
 		Matcher matcher = PLACEHOLDER_PATTERN.matcher( input );
 
@@ -88,6 +111,11 @@ public class PlaceholderHelper {
 			if ( replacement == null ) {
 				throw new BoxRuntimeException(
 				    "Placeholder '" + placeholder + "' has no replacement value. Value values are " + map.asString() + ". Replacement code was: " + input );
+			}
+
+			// Optionally decrypt the replacement value at the point of replacement.
+			if ( decryptor != null ) {
+				replacement = decryptor.apply( replacement );
 			}
 
 			return Matcher.quoteReplacement( replacement );
@@ -178,6 +206,16 @@ public class PlaceholderHelper {
 	}
 
 	/**
+	 * Get the default placeholder map used for resolution. This is a shared instance and
+	 * should not be mutated by callers; copy it before modification.
+	 *
+	 * @return The default placeholder map.
+	 */
+	public static IStruct getPlaceholderMap() {
+		return PLACEHOLDER_MAP;
+	}
+
+	/**
 	 * Recursively replace all placeholders throughout a tree made up of Maps and Lists.
 	 * You can provide a custom placeholder map
 	 *
@@ -189,23 +227,39 @@ public class PlaceholderHelper {
 	 */
 	@SuppressWarnings( "unchecked" )
 	public static <T> T resolveAll( T object, IStruct map ) {
+		return resolveAll( object, map, null );
+	}
+
+	/**
+	 * Recursively replace all placeholders throughout a tree made up of Maps and Lists,
+	 * optionally decrypting each replacement value with the supplied decryptor.
+	 *
+	 * @param object    Object to populate into tree placeholders.
+	 * @param map       The placeholder struct to use for resolving the input string
+	 * @param decryptor The optional function applied to each replacement value, or null.
+	 *
+	 * @return The Resolved tree
+	 *
+	 */
+	@SuppressWarnings( "unchecked" )
+	public static <T> T resolveAll( T object, IStruct map, java.util.function.Function<String, String> decryptor ) {
 		if ( object instanceof Map<?, ?> rawMap ) {
 			Map<Object, Object> configMap = ( Map<Object, Object> ) rawMap;
 			for ( Object key : List.copyOf( configMap.keySet() ) ) {
 				Object	value		= configMap.remove( key );
-				String	newKey		= resolve( key.toString(), map );
+				String	newKey		= resolve( key.toString(), map, decryptor );
 				Object	resolvedKey	= key instanceof Key ? Key.of( newKey ) : newKey;
-				configMap.put( resolvedKey, PlaceholderHelper.resolveAll( value, map ) );
+				configMap.put( resolvedKey, PlaceholderHelper.resolveAll( value, map, decryptor ) );
 			}
 			return object;
 		} else if ( object instanceof List<?> rawList ) {
 			List<Object> configList = ( List<Object> ) rawList;
 			for ( int i = 0; i < configList.size(); i++ ) {
-				configList.set( i, PlaceholderHelper.resolveAll( configList.get( i ), map ) );
+				configList.set( i, PlaceholderHelper.resolveAll( configList.get( i ), map, decryptor ) );
 			}
 			return object;
 		} else if ( object instanceof String strObj ) {
-			return ( T ) resolve( strObj, map );
+			return ( T ) resolve( strObj, map, decryptor );
 		}
 
 		// boolean, null, number
