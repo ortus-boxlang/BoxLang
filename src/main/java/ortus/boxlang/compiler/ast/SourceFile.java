@@ -19,6 +19,7 @@ package ortus.boxlang.compiler.ast;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.stream.Stream;
@@ -28,7 +29,8 @@ import java.util.stream.Stream;
  */
 public class SourceFile extends Source {
 
-	private final File file;
+	private final File					file;
+	private transient volatile String	cachedCode;
 
 	/**
 	 * Create a source for a given file
@@ -69,12 +71,22 @@ public class SourceFile extends Source {
 	 * @return teh source code in the given file
 	 */
 	public String getCode() {
-		try {
-			return new String( Files.readAllBytes( file.toPath() ) );
-		} catch ( IOException e ) {
-			e.printStackTrace();
+		String code = this.cachedCode;
+		if ( code == null ) {
+			synchronized ( this ) {
+				code = this.cachedCode;
+				if ( code == null ) {
+					try {
+						code = Files.readString( this.file.toPath(), StandardCharsets.UTF_8 );
+					} catch ( IOException e ) {
+						e.printStackTrace();
+						code = "";
+					}
+					this.cachedCode = code;
+				}
+			}
 		}
-		return "";
+		return code;
 	}
 
 	/**
@@ -89,7 +101,7 @@ public class SourceFile extends Source {
 
 	public Stream<String> getCodeAsStream() {
 		try {
-			return Files.lines( file.toPath() );
+			return Files.lines( file.toPath(), StandardCharsets.UTF_8 );
 		} catch ( IOException e ) {
 			e.printStackTrace();
 		}

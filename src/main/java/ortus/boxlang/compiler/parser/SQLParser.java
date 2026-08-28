@@ -196,6 +196,7 @@ public class SQLParser extends AbstractParser {
 
 		// associate all comments in the source with the appropriate AST nodes
 		rootNode.associateComments( this.comments );
+		rootNode.trimChildLists();
 
 		return rootNode;
 	}

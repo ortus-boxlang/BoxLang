@@ -199,7 +199,7 @@ public class CFParser extends AbstractParser {
 		Boolean				classOrInterface	= ext.isPresent() && ext.get().equalsIgnoreCase( "cfc" );
 		BoxNode				ast					= parserFirstStage( inputStream, classOrInterface, isScript );
 
-		return new ParsingResult( ast, issues, comments );
+		return createParsingResult( ast );
 	}
 
 	/**
@@ -242,7 +242,7 @@ public class CFParser extends AbstractParser {
 		InputStream	inputStream	= IOUtils.toInputStream( code, StandardCharsets.UTF_8 );
 
 		BoxNode		ast			= parserFirstStage( inputStream, classOrInterface, isScript );
-		return new ParsingResult( ast, issues, comments );
+		return createParsingResult( ast );
 	}
 
 	/**
@@ -278,13 +278,13 @@ public class CFParser extends AbstractParser {
 
 		try {
 			var ast = parseTree.accept( expressionVisitor );
-			return new ParsingResult( ast, issues, comments );
+			return createParsingResult( ast );
 		} catch ( Exception e ) {
 			// Ignore issues creating AST if the parsing already had failures
 			if ( issues.isEmpty() ) {
 				throw e;
 			}
-			return new ParsingResult( null, issues, comments );
+			return createParsingResult( null );
 		}
 
 	}
@@ -323,13 +323,13 @@ public class CFParser extends AbstractParser {
 		try {
 			var ast = parseTree.accept( visitor );
 
-			return new ParsingResult( ast, issues, comments );
+			return createParsingResult( ast );
 		} catch ( Exception e ) {
 			// Ignore issues creating AST if the parsing already had failures
 			if ( issues.isEmpty() ) {
 				throw e;
 			}
-			return new ParsingResult( null, issues, comments );
+			return createParsingResult( null );
 		}
 	}
 
@@ -527,7 +527,7 @@ public class CFParser extends AbstractParser {
 			} else {
 				// Catch-all. If this error is encountered, look at what modes were still on the stack, find what token was never ended, and
 				// add logic like the above to handle it. Eventually, this catch-all should never be used.
-				position = new Position( new Point( 0, 0 ), new Point( 0, 0 ), sourceToParse );
+				position = Position.compact( 0, 0, 0, 0, sourceToParse );
 				errorListener.semanticError(
 				    "Internal error(42): Un-popped Lexer modes. [" + String.join( ", ", modes.reversed() ) + "] Please report this to the developers.",
 				    position );
@@ -869,7 +869,7 @@ public class CFParser extends AbstractParser {
 									// slice all statements from this position to the end and set them as the body of the start component
 									boxComponent.setBody( new ArrayList<>( statements.subList( i + 1, size ) ) );
 									bodyStatements = boxComponent.getBody();
-									boxComponent.getPosition().setEnd( getPosition( statement.template_genericCloseComponent() ).getEnd() );
+									boxComponent.getPosition().setEnd( getPosition( statement.template_genericCloseComponent() ) );
 									boxComponent
 									    .setSourceText( getSourceText( boxComponent.getSourceStartIndex(), statement.template_genericCloseComponent() ) );
 									removeAfter = i;
@@ -1385,7 +1385,7 @@ public class CFParser extends AbstractParser {
 				stopIndex	= node.elseThenBody.get( i ).template_statement( node.elseThenBody.get( i ).template_statement().size() - 1 ).getStop()
 				    .getStopIndex();
 			}
-			Position		pos				= new Position(
+			Position		pos				= Position.compact(
 			    new Point( node.TEMPLATE_ELSEIF( i ).getSymbol().getLine(), node.TEMPLATE_ELSEIF( i ).getSymbol().getCharPositionInLine() - 3 ),
 			    end, sourceToParse );
 			BoxExpression	thisCondition	= expressionVisitor.visit( node.elseIfCondition.get( i ) );

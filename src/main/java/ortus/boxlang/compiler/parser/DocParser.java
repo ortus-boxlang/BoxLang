@@ -75,6 +75,7 @@ public class DocParser extends AbstractParser {
 
 		if ( issues.isEmpty() ) {
 			BoxDocComment ast = toAst( file, parseTree );
+			ast.trimChildLists();
 			return new ParsingResult( ast, issues, comments );
 		}
 		return new ParsingResult( null, issues, comments );

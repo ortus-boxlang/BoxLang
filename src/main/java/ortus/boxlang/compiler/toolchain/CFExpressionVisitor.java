@@ -373,7 +373,7 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 					is.setColumn( is.getColumn() + -1 );
 
 					// The Id needs to end in the correct column, not the end of the invocation
-					var	iPos	= new Position( ids, ide );
+					var	iPos	= Position.compact( ids, ide );
 
 					// Some messing around to get the text correct for the MethodInvocation
 					// as FunctionInvocation only stores a string, not an identifier for the function for
@@ -410,7 +410,7 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 				is.setColumn( is.getColumn() + -1 );
 
 				// The Id needs to end in the correct column, not the end of the invocation
-				var iPos = new Position( ids, ide );
+				var iPos = Position.compact( ids, ide );
 
 				if ( isStatic ) {
 					return new BoxStaticMethodInvocation( new BoxIdentifier( iName, iPos, iName ), left,
@@ -455,7 +455,7 @@ public class CFExpressionVisitor extends CFGrammarBaseVisitor<BoxExpression> {
 					is.setColumn( is.getColumn() + -1 );
 
 					// The Id needs to end in the correct column, not the end of the invocation
-					var	iPos	= new Position( ids, ide );
+					var	iPos	= Position.compact( ids, ide );
 
 					// Some messing around to get the text correct for the MethodInvocation
 					// as FunctionInvocation only stores a string, not an identifier for the function for

@@ -29,7 +29,9 @@ import org.apache.commons.text.StringEscapeUtils;
  */
 public abstract class Source implements Serializable {
 
-	private static final long serialVersionUID = 1L;
+	private static final long		serialVersionUID	= 1L;
+
+	private transient volatile byte	indexMode;
 
 	/**
 	 * Abstract method to get the code as a stream
@@ -44,6 +46,30 @@ public abstract class Source implements Serializable {
 	 * @return The code
 	 */
 	public abstract String getCode();
+
+	/**
+	 * Converts an ANTLR code-point index to a Java UTF-16 character index.
+	 *
+	 * @param codePointIndex index into the ANTLR character stream
+	 *
+	 * @return index into {@link #getCode()}
+	 */
+	public int toCharIndex( int codePointIndex ) {
+		String code = getCode();
+		if ( this.indexMode == 0 ) {
+			this.indexMode = containsSurrogatePair( code ) ? ( byte ) 2 : ( byte ) 1;
+		}
+		return this.indexMode == 1 ? codePointIndex : code.offsetByCodePoints( 0, codePointIndex );
+	}
+
+	private static boolean containsSurrogatePair( String code ) {
+		for ( int i = 0; i < code.length() - 1; i++ ) {
+			if ( Character.isSurrogatePair( code.charAt( i ), code.charAt( i + 1 ) ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
 
 	/**
 	 * Get the surrounding lines of code, 2 before and 2 after the given line number

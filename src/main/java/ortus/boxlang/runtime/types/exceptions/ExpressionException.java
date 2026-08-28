@@ -64,7 +64,7 @@ public class ExpressionException extends BoxRuntimeException {
 		// TODO: may want to change the way we dispaly position and sourcetext in the future
 		super( message + "\n position:" + position + "\n sourceText: " + sourceText, detail, "expression", cause );
 		this.errNumber	= errNumber;
-		this.position	= position;
+		this.position	= position == null ? null : position.snapshot();
 		this.sourceText	= sourceText;
 	}
 
