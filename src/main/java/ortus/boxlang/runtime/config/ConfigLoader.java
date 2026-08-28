@@ -294,10 +294,10 @@ public class ConfigLoader {
 
 		IStruct				envOverrides			= decryptEnvironmentOverrides( filterEnv( collectedEnvironment.getAsStruct( Key.environment ) ),
 		    secretConfig )
-		        .entrySet()
-		        .stream()
-		        .filter( entry -> !propertyOverrides.containsKey( entry.getKey() ) )
-		        .collect( BLCollector.toStruct() );
+		    .entrySet()
+		    .stream()
+		    .filter( entry -> !propertyOverrides.containsKey( entry.getKey() ) )
+		    .collect( BLCollector.toStruct() );
 
 		if ( envOverrides.isEmpty() && propertyOverrides.isEmpty() ) {
 			return config;
