@@ -36,7 +36,7 @@ public class ToSet extends BIF {
 		super();
 		declaredArguments = new Argument[] {
 		    new Argument( true, Argument.ANY, Key.value ),
-		    new Argument( false, Argument.STRING, Key.type, "default" ),
+		    new Argument( false, Argument.STRING, Key.type ),
 		    new Argument( false, Argument.STRING, Key.delimiter, "," )
 		};
 	}
@@ -59,20 +59,21 @@ public class ToSet extends BIF {
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
 		Object		value		= arguments.get( Key.value );
-		BoxSet.Type	type		= BoxSet.parseType( arguments.getAsString( Key.type ) );
+		String		stringType	= arguments.getAsString( Key.type );
+		BoxSet.Type	type		= stringType != null ? BoxSet.parseType( stringType ) : null;
 		String		delimiter	= arguments.getAsString( Key.delimiter );
 
 		BoxSet		seed;
 		if ( value instanceof String s ) {
+			if ( type == null ) {
+				type = BoxSet.Type.LINKED;
+			}
 			// Honor the user-supplied delimiter for String -> Set (SetCaster defaults to ",").
-			seed = BoxSet.fromCollection( ListUtil.asList( s, delimiter ) );
+			seed = BoxSet.fromCollection( type, ListUtil.asList( s, delimiter ) );
 		} else {
-			seed = SetCaster.castLoose( value );
+			seed = SetCaster.castLoose( value, type );
 		}
-		if ( seed.getType() == type ) {
-			return seed;
-		}
-		return new BoxSet( type, seed );
+		return seed;
 	}
 
 }
