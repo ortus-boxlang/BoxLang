@@ -52,6 +52,7 @@ import ortus.boxlang.runtime.dynamic.casters.LongCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.events.IInterceptorLambda;
 import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
@@ -143,6 +144,11 @@ public class Application {
 	 * The sessions for this application
 	 */
 	private ICacheProvider					sessionsCache;
+
+	/**
+	 * session cleanup interceptor for: BEFORE_CACHE_ELEMENT_REMOVED
+	 */
+	private IInterceptorLambda				sessionCacheInterceptorBeforeCacheElementRemoved;
 
 	/**
 	 * The listener that started this application (used for stopping it)
@@ -753,9 +759,10 @@ public class Application {
 		// Now store it
 		this.sessionsCache = this.cacheService.getCache( sessionCacheName );
 		// Register the session cleanup interceptor for: BEFORE_CACHE_ELEMENT_REMOVED
+
 		this.sessionsCache
 		    .getInterceptorPool()
-		    .register( data -> {
+		    .register( this.sessionCacheInterceptorBeforeCacheElementRemoved = data -> {
 			    ICacheProvider targetCache = ( ICacheProvider ) data.get( "cache" );
 			    String		key			= ( String ) data.get( "key" );
 
@@ -1027,6 +1034,13 @@ public class Application {
 			    .map( Key::of )
 			    .map( sessionKey -> ( Session ) this.sessionsCache.get( sessionKey.getName() ).get() )
 			    .forEach( session -> session.shutdown( this.getStartingListener() ) );
+		}
+
+		if ( this.sessionCacheInterceptorBeforeCacheElementRemoved != null ) {
+			this.sessionsCache.getInterceptorPool().unregister(
+			    this.sessionCacheInterceptorBeforeCacheElementRemoved
+			);
+			this.sessionCacheInterceptorBeforeCacheElementRemoved = null;
 		}
 
 		// Announce it to the listener

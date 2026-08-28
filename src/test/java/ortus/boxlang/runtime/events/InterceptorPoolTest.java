@@ -119,6 +119,95 @@ public class InterceptorPoolTest {
 		assertThat( data.get( "counter" ) ).isEqualTo( 1 );
 	}
 
+	@DisplayName( "It can unregister lambdas as interceptors" )
+	@Test
+	void testItCanUnregisterLambdasAsInterceptors() {
+		Key k = Key.of( "onRequestStart" );
+
+		{
+			IInterceptorLambda handler;
+			pool.register(
+			    handler = data -> false,
+			    k
+			);
+
+			assertThat( pool.getState( k ).exists( DynamicObject.of( handler ) ) ).isTrue();
+
+			pool.unregister( handler );
+
+			assertThat( pool.getState( k ).exists( DynamicObject.of( handler ) ) ).isFalse();
+		}
+
+		{
+			IInterceptorLambda handler;
+			pool.register(
+			    handler = data -> false,
+			    k
+			);
+
+			// double register, appears to be a no-op 2nd time around
+			pool.register( handler );
+
+			assertThat( pool.getState( k ).exists( DynamicObject.of( handler ) ) ).isTrue();
+
+			pool.unregister( handler );
+
+			assertThat( pool.getState( k ).exists( DynamicObject.of( handler ) ) ).isFalse();
+		}
+
+		{
+			IInterceptorLambda	handler1;
+			IInterceptorLambda	handler2;
+			pool.register(
+			    handler1 = data -> false,
+			    k
+			);
+			pool.register(
+			    handler2 = data -> false,
+			    k
+			);
+
+			assertThat( pool.getState( k ).exists( DynamicObject.of( handler1 ) ) ).isTrue();
+			assertThat( pool.getState( k ).exists( DynamicObject.of( handler2 ) ) ).isTrue();
+
+			pool.unregister( handler1 );
+
+			assertThat( pool.getState( k ).exists( DynamicObject.of( handler1 ) ) ).isFalse();
+			assertThat( pool.getState( k ).exists( DynamicObject.of( handler2 ) ) ).isTrue();
+
+			pool.unregister( handler2 );
+
+			assertThat( pool.getState( k ).exists( DynamicObject.of( handler1 ) ) ).isFalse();
+			assertThat( pool.getState( k ).exists( DynamicObject.of( handler2 ) ) ).isFalse();
+		}
+
+		{
+			IInterceptorLambda	handler1;
+			IInterceptorLambda	handler2;
+			pool.register(
+			    handler1 = data -> false,
+			    k
+			);
+			pool.register(
+			    handler2 = data -> false,
+			    k
+			);
+
+			assertThat( pool.getState( k ).exists( DynamicObject.of( handler1 ) ) ).isTrue();
+			assertThat( pool.getState( k ).exists( DynamicObject.of( handler2 ) ) ).isTrue();
+
+			pool.unregister( handler2 );
+
+			assertThat( pool.getState( k ).exists( DynamicObject.of( handler1 ) ) ).isTrue();
+			assertThat( pool.getState( k ).exists( DynamicObject.of( handler2 ) ) ).isFalse();
+
+			pool.unregister( handler1 );
+
+			assertThat( pool.getState( k ).exists( DynamicObject.of( handler1 ) ) ).isFalse();
+			assertThat( pool.getState( k ).exists( DynamicObject.of( handler2 ) ) ).isFalse();
+		}
+	}
+
 	@DisplayName( "it can unregister interceptors with a specific state" )
 	@Test
 	void testItCanUnregisterInterceptors() {

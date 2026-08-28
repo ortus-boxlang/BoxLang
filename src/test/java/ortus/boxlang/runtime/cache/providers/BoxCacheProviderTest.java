@@ -81,6 +81,20 @@ public class BoxCacheProviderTest {
 	}
 
 	@Test
+	@DisplayName( "Shutdown cancels the reaping future" )
+	void testShutdownCancelsReaper() {
+		BoxCacheProvider cache = new BoxCacheProvider();
+		cache.configure( cacheService, new CacheConfig( Key.of( "shutdown-reaper-test" ) ) );
+		assertThat( cache.getReapingFuture() ).isNotNull();
+		assertThat( cache.getReapingFuture().isCancelled() ).isFalse();
+
+		cache.shutdown();
+
+		assertThat( cache.getReapingFuture().isCancelled() ).isTrue();
+		assertThat( cache.isEnabled() ).isFalse();
+	}
+
+	@Test
 	@DisplayName( "Get the cache store metdata key map" )
 	void testGetCacheStoreMetadataKeyMap() {
 		assertThat( boxCache.getStoreMetadataKeyMap() ).isNotNull();
