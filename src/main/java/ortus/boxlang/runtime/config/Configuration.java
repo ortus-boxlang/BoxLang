@@ -48,6 +48,7 @@ import ortus.boxlang.runtime.config.segments.QueriesConfig;
 import ortus.boxlang.runtime.config.segments.SchedulerConfig;
 import ortus.boxlang.runtime.config.segments.SecurityConfig;
 import ortus.boxlang.runtime.config.segments.WatcherConfig;
+import ortus.boxlang.runtime.config.segments.XMLConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
@@ -163,6 +164,16 @@ public class Configuration implements IConfigSegment {
 	 * Store the compiled class files on disk for reuse between restarts
 	 */
 	public Boolean																storeClassFilesOnDisk				= true;
+
+	/**
+	 * Copy JAR files to a writable temp cache before loading them, which prevents file locking
+	 * on Windows and lets stale/duplicate versions be cleaned up safely. When disabled, JARs are
+	 * loaded directly from their original path, no temp copies are made, no cleaner is registered,
+	 * and no startup temp cleanup runs. Set this to {@code false} when the filesystem is read-only
+	 * or when JARs are known to never change and locking is not a concern.
+	 * {@code true} by default
+	 */
+	public Boolean																jarTempFileCaching					= true;
 
 	/**
 	 * The Timezone to use for the runtime;
@@ -390,6 +401,11 @@ public class Configuration implements IConfigSegment {
 	public QueriesConfig														queries								= new QueriesConfig();
 
 	/**
+	 * The XML parsing configuration — security and validation settings
+	 */
+	public XMLConfig															xml									= new XMLConfig();
+
+	/**
 	 * The container of runtimes configurations. Each runtime can collaborate settings by their name in this struct
 	 */
 	public IStruct																runtimes							= new Struct();
@@ -464,6 +480,11 @@ public class Configuration implements IConfigSegment {
 		// Store Class Files on Disk
 		if ( config.containsKey( Key.storeClassFilesOnDisk ) ) {
 			this.storeClassFilesOnDisk = BooleanCaster.cast( config.get( Key.storeClassFilesOnDisk ) );
+		}
+
+		// JAR Temp File Caching
+		if ( config.containsKey( Key.jarTempFileCaching ) ) {
+			this.jarTempFileCaching = BooleanCaster.cast( config.get( Key.jarTempFileCaching ) );
 		}
 
 		// Class Generation Directory
@@ -835,6 +856,11 @@ public class Configuration implements IConfigSegment {
 		// Process our queries configuration
 		if ( config.containsKey( Key.queries ) ) {
 			queries.process( StructCaster.cast( config.get( Key.queries ) ) );
+		}
+
+		// Process our xml configuration
+		if ( config.containsKey( Key.xml ) ) {
+			xml.process( StructCaster.cast( config.get( Key.xml ) ) );
 		}
 
 		return this;
@@ -1216,12 +1242,14 @@ public class Configuration implements IConfigSegment {
 		    Key.security, this.security.asStruct(),
 		    Key.scheduler, this.scheduler.asStruct(),
 		    Key.watcher, this.watcher.asStruct(),
+		    Key.xml, this.xml.asStruct(),
 		    Key.queries, this.queries.asStruct(),
 		    Key.timezone, this.timezone,
 		    Key.trustedCache, this.trustedCache,
 		    Key.enableNestedTransactions, this.enableNestedTransactions,
 		    Key.enforceUDFTypeChecks, this.enforceUDFTypeChecks,
 		    Key.storeClassFilesOnDisk, this.storeClassFilesOnDisk,
+		    Key.jarTempFileCaching, this.jarTempFileCaching,
 		    Key.useHighPrecisionMath, this.useHighPrecisionMath,
 		    Key.maxTrackedCompletedThreads, this.maxTrackedCompletedThreads,
 		    Key.validExtensions, Array.fromSet( getValidExtensions() ),

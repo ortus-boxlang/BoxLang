@@ -16,15 +16,16 @@ package ortus.boxlang.runtime.bifs.global.xml;
 
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
+import ortus.boxlang.runtime.config.segments.XMLConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.Argument;
+import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.XML;
-import ortus.boxlang.runtime.util.FileSystemUtil;
-
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 
 @BoxBIF( description = "Parse XML from a string" )
 public class XMLParse extends BIF {
@@ -35,7 +36,10 @@ public class XMLParse extends BIF {
 	public XMLParse() {
 		super();
 		this.declaredArguments = new Argument[] {
-		    new Argument( false, "string", Key.XML )
+		    new Argument( false, "string", Key.XML ),
+		    new Argument( false, "boolean", Key.caseSensitive, true ),
+		    new Argument( false, "any", Key.validator ),
+		    new Argument( false, "boolean", Key.lenient, true )
 		};
 	}
 
@@ -44,6 +48,14 @@ public class XMLParse extends BIF {
 	 *
 	 * @param context   The context in which the BIF is being invoked.
 	 * @param arguments Argument scope for the BIF.
+	 * 
+	 * @argument.XML The XML string to parse.
+	 * 
+	 * @argument.caseSensitive Whether the XML parsing should be case-sensitive.
+	 * 
+	 * @argument.validator An optional validator to apply to the parsed XML. This can be a string containing a path or URL to an XSD schema file, or a struct of XML security settings
+	 * 
+	 * @argument.lenient Whether the XML parsing should be lenient.
 	 *
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
@@ -58,9 +70,41 @@ public class XMLParse extends BIF {
 
 		// Is not XML. Must be file or URL
 		if ( !xml.trim().startsWith( "<" ) ) {
-			xml = StringCaster.cast( FileSystemUtil.read( xml ) );
+			xml = FileSystemUtil.readString( xml );
 		}
-		return new XML( xml );
+
+		Boolean	caseSensitive		= arguments.getAsBoolean( Key.caseSensitive );
+		Object	validator			= arguments.get( Key.validator );
+		Boolean	lenient				= arguments.getAsBoolean( Key.lenient );
+		IStruct	validatorSettings	= context.getConfig().getAsStruct( Key.applicationSettings ).getAsStruct( Key.XMLSettings );
+		if ( validator == null ) {
+			validator = validatorSettings;
+		} else if ( validator instanceof IStruct validatorStruct ) {
+			// Normalize any setting names for backward compat
+			final IStruct normalized = XMLConfig.normalize( validatorStruct );
+			// make sure our application context defaults are applied to the validator struct, but do not override any explicitly passed values
+			validatorSettings.keySet().stream().forEach( key -> {
+				normalized.putIfAbsent( key, validatorSettings.get( key ) );
+			} );
+			validator = normalized;
+		} else if ( validator instanceof String validatorString && !validatorString.trim().isEmpty() ) {
+			// If the validator is a local file path (not an HTTP/HTTPS URL), expand it
+			if ( !validatorString.toLowerCase().startsWith( "http" ) ) {
+				validator = FileSystemUtil.expandPath( context, validatorString ).absolutePath().toString();
+			}
+		}
+
+		// If lenient is explicitly passed, inject it as an override into the validator struct.
+		// The caller's value (true or false) is authoritative — it overrides any config-level default.
+		if ( lenient != null ) {
+			if ( validator instanceof IStruct validatorStruct ) {
+				validatorStruct.put( Key.lenientProcessing, Boolean.TRUE.equals( lenient ) );
+			} else if ( validator == null ) {
+				validator = Struct.of( Key.lenientProcessing, Boolean.TRUE.equals( lenient ) );
+			}
+		}
+
+		return new XML( xml, caseSensitive, validator );
 	}
 
 }

@@ -20,16 +20,50 @@ package ortus.boxlang.runtime.config.util;
 import static com.google.common.truth.Truth.assertThat;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 
 public class PlaceholderHelperTest {
+
+	/**
+	 * Preload the runtime so PlaceholderHelper's static initializer (which resolves
+	 * {@code boxlang-home} via BoxRuntime) runs against an already-started runtime
+	 * instead of booting it re-entrantly during class initialization.
+	 */
+	@BeforeAll
+	public static void setUp() {
+		BoxRuntime.getInstance( true );
+	}
+
+	@DisplayName( "PlaceholderHelper.resolve() should resolve JVM system properties as placeholders" )
+	@Test
+	public void testResolveWithSystemProperties() {
+		String	input		= "Temp directory: ${java.io.tmpdir}";
+
+		String	resolved	= PlaceholderHelper.resolve( input );
+
+		assertThat( resolved ).isEqualTo( "Temp directory: " + System.getProperty( "java.io.tmpdir" ) );
+	}
+
+	@DisplayName( "PlaceholderHelper.resolve() should prefer a system property over an env var for bare names" )
+	@Test
+	public void testSystemPropertyWinsOverEnvVar() {
+		// The bare name resolves from the system property (added last to the placeholder map),
+		// while the legacy env. prefix still resolves from the environment variable.
+		String resolved = PlaceholderHelper.resolve( "${user.home}" );
+
+		assertThat( resolved ).isEqualTo( System.getProperty( "user.home" ) );
+	}
 
 	@DisplayName( "PlaceholderHelper.resolve() should resolve placeholders in the input string with no case sensitivity" )
 	@Test
@@ -133,6 +167,21 @@ public class PlaceholderHelperTest {
 		assertThat( bumArray.get( 1 ) ).isEqualTo( "wood" );
 		assertThat( ( ( IStruct ) resolved.get( "nested wood" ) ).get( "majano" ) ).isEqualTo( "Cool" );
 
+	}
+
+	@DisplayName( "Placeholder recursion supports standard Maps and Lists" )
+	@Test
+	public void testResolveRecursiveJavaCollections() {
+		Map<String, Object> nested = new LinkedHashMap<>();
+		nested.put( "${name}", "${value}" );
+		Map<String, Object> input = new LinkedHashMap<>();
+		input.put( "nested", nested );
+		input.put( "values", new ArrayList<>( java.util.List.of( "${value}" ) ) );
+
+		PlaceholderHelper.resolveAll( input, Struct.of( "name", "secret", "value", "resolved" ) );
+
+		assertThat( ( ( Map<?, ?> ) input.get( "nested" ) ).get( "secret" ) ).isEqualTo( "resolved" );
+		assertThat( ( ( java.util.List<?> ) input.get( "values" ) ).get( 0 ) ).isEqualTo( "resolved" );
 	}
 
 }

@@ -335,4 +335,28 @@ public class QueryTest {
 		assertThat( ( ( Number ) qry.getCell( Key.of( "calc" ), 1 ) ).intValue() ).isEqualTo( 30 );
 	}
 
+	@DisplayName( "It handles access to non-existent rows gracefully" )
+	@Test
+	void testAccessNonExistentRows() {
+		boolean previousSetting = Query.allowAccessToNonExistentRows;
+		Query.allowAccessToNonExistentRows = true;
+		try {
+		// @formatter:off
+		instance.executeSource( """
+			myQry = queryNew( "col", "varchar", [] )
+			result1 = myQry.col
+			result2 = myQry.col[1]
+			
+			myQry = queryNew( "col", "varchar", ["test"] )
+			result3 = myQry.col[2]
+		""", context );
+		// @formatter:on
+			assertThat( variables.get( Key.of( "result1" ) ) ).isEqualTo( "" );
+			assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "" );
+			assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "" );
+		} finally {
+			Query.allowAccessToNonExistentRows = previousSetting;
+		}
+	}
+
 }

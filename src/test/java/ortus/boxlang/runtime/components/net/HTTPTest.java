@@ -35,13 +35,11 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.net.URI;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.math.BigInteger;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -54,6 +52,7 @@ import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -76,6 +75,10 @@ import org.junit.jupiter.api.Test;
 import com.github.tomakehurst.wiremock.junit5.WireMockRuntimeInfo;
 import com.github.tomakehurst.wiremock.junit5.WireMockTest;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -149,6 +152,48 @@ public class HTTPTest {
 		assertThat( bxhttp.get( Key.statusCode ) ).isEqualTo( 200 );
 		assertThat( bxhttp.get( Key.statusText ) ).isEqualTo( "OK" );
 		assertThat( bxhttp.getAsString( Key.fileContent ).replaceAll( "\\s+", "" ) ).isEqualTo( "Done" );
+	}
+
+	@DisplayName( "It logs HTTP request bookends" )
+	@Test
+	public void testLogsHTTPRequestBookends( WireMockRuntimeInfo wmRuntimeInfo ) {
+		stubFor( get( "/bookends" )
+		    .willReturn(
+		        aResponse()
+		            .withBody( "Done" )
+		            .withStatus( 200 ) ) );
+
+		Logger						httpLogger		= instance.getLoggingService().getLoggerContext()
+		    .getLogger( instance.getHttpService().getLogger().getName() );
+		Level						originalLevel	= httpLogger.getLevel();
+		ListAppender<ILoggingEvent>	logAppender		= new ListAppender<>();
+		logAppender.setContext( instance.getLoggingService().getLoggerContext() );
+		logAppender.start();
+		instance.getHttpService().getLogger().addAppender( logAppender );
+		httpLogger.setLevel( Level.DEBUG );
+
+		try {
+			String requestUrl = wmRuntimeInfo.getHttpBaseUrl() + "/bookends";
+			instance.executeSource( String.format( "bx:http url=\"%s\" method=\"GET\";", requestUrl ), context );
+
+			List<String>	messages		= logAppender.list.stream().map( ILoggingEvent::getFormattedMessage ).toList();
+			String			startMessage	= messages.stream()
+			    .filter( message -> message.startsWith( "Starting HTTP REQUEST " ) )
+			    .findFirst()
+			    .orElseThrow();
+			String			requestId		= startMessage.substring( "Starting HTTP REQUEST ".length(), startMessage.indexOf( " {" ) );
+			assertThat( startMessage ).isEqualTo( "Starting HTTP REQUEST " + requestId + " {URL='" + requestUrl + "', method='GET'}" );
+			assertThat( messages.stream().anyMatch(
+			    message -> message.matches( "HTTP REQUEST " + requestId + " completed  \\{Status Code=200 ,Time taken=\\d+ms}" )
+			) ).isTrue();
+			assertThat( logAppender.list.stream()
+			    .filter( event -> event.getFormattedMessage().contains( "HTTP REQUEST " + requestId ) )
+			    .allMatch( event -> event.getLevel().equals( Level.DEBUG ) ) ).isTrue();
+		} finally {
+			instance.getHttpService().getLogger().detachAppender( logAppender );
+			logAppender.stop();
+			httpLogger.setLevel( originalLevel );
+		}
 	}
 
 	@DisplayName( "It will ignore empty proxy settings" )
@@ -343,7 +388,7 @@ public class HTTPTest {
 		            // simulate duplicate headers
 		            ok().withHeader( "Content-Type", "image/jpeg; charset=utf-8" )
 		                .withBody(
-		                    ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
+		                    FileSystemUtil.readBinary( "src/test/resources/chuck_norris.jpg" ) ) ) );
 
 		// @formatter:off
 		instance.executeSource( String.format(
@@ -421,7 +466,7 @@ public class HTTPTest {
 		                .withHeader( "Content-Disposition",
 		                    "attachment; filename=\"chuck_norris_dl.jpg\"" )
 		                .withBody(
-		                    ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
+		                    FileSystemUtil.readBinary( "src/test/resources/chuck_norris.jpg" ) ) ) );
 
 		// @formatter:off
 		instance.executeSource( String.format(
@@ -466,7 +511,7 @@ public class HTTPTest {
 		                .withHeader( "Content-Disposition",
 		                    "attachment; filename=\"chuck_norris_dl.jpg\"" )
 		                .withBody(
-		                    ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
+		                    FileSystemUtil.readBinary( "src/test/resources/chuck_norris.jpg" ) ) ) );
 
 		// @formatter:off
 		instance.executeSource( String.format(
@@ -490,7 +535,7 @@ public class HTTPTest {
 		                .withHeader( "Content-Disposition",
 		                    "attachment; filename=\"chuck_norris_dl.jpg\"" )
 		                .withBody(
-		                    ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) ) ) );
+		                    FileSystemUtil.readBinary( "src/test/resources/chuck_norris.jpg" ) ) ) );
 
 		// @formatter:off
 		instance.executeSource( String.format(
@@ -513,7 +558,7 @@ public class HTTPTest {
 		            ok() ) );
 
 		// @formatter:off
-		variables.put(  Key.of( "fileContent" ), FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" ) );
+		variables.put(  Key.of( "fileContent" ), FileSystemUtil.readBinary( "src/test/resources/chuck_norris.jpg" ) );
 		instance.executeSource( String.format(
 			"""
 			bx:http method="POST" url="%s" {
@@ -539,7 +584,7 @@ public class HTTPTest {
 		            ok()
 		                .withHeader( "Content-Type", "image/jpeg; charset=utf-8" )
 		                .withBody(
-		                    ( byte[] ) FileSystemUtil.read( "src/test/resources/chuck_norris.jpg" )
+		                    FileSystemUtil.readBinary( "src/test/resources/chuck_norris.jpg" )
 		                )
 		        )
 		);

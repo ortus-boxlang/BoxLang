@@ -602,7 +602,7 @@ public class FeatureAuditVisitor extends VoidBoxVisitor {
 		BIFMap.put( "parsedatetime", "core" );
 		BIFMap.put( "parsenumber", "core" );
 		BIFMap.put( "pi", "core" );
-		BIFMap.put( "precisionevaluate", "core" );
+		BIFMap.put( "precisionevaluate", "bx-unsafe-evaluate" );
 		BIFMap.put( "preservesinglequotes", "core" );
 		BIFMap.put( "quarter", "core" );
 		BIFMap.put( "query", "core" );

@@ -40,6 +40,7 @@ import java.util.concurrent.ConcurrentMap;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
+import ortus.boxlang.runtime.bifs.global.decision.IsSimpleValue;
 import ortus.boxlang.runtime.components.jdbc.Query;
 import ortus.boxlang.runtime.context.ContainerBoxContext;
 import ortus.boxlang.runtime.context.IBoxContext;
@@ -48,13 +49,14 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.DateTimeCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
+import ortus.boxlang.runtime.logging.LoggingService;
 import ortus.boxlang.runtime.runnables.IClassRunnable;
 import ortus.boxlang.runtime.runnables.ITemplateRunnable;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
-import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.BoxStringBuilder;
+import ortus.boxlang.runtime.types.DateTime;
 import ortus.boxlang.runtime.types.Function;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.IType;
@@ -97,28 +99,42 @@ public class DumpUtil {
 	private static final String									DEFAULT_DUMP_TEMPLATE	= "Class.bxm";
 
 	/**
+	 * Dump the given target object to the configured output location, in either HTML or plain-text
+	 * format. This is the main entry point used by the {@code dump()}/{@code writeDump()} BIF and the
+	 * {@code <bx:dump>} component.
 	 *
-	 * @param target
-	 * @param label
-	 * @param top
-	 * @param expand
-	 * @param abort
-	 * @param output
-	 * @param format
-	 * @param showUDFs
+	 * @param context  The context in which the dump is being executed
+	 * @param target   The object to dump; can be any BoxLang or Java type, including {@code null}
+	 * @param label    An optional custom label to display above the dump (HTML output only)
+	 * @param depth    The recursion depth to display when dumping nested collections. 1-based:
+	 *                 {@code null} or {@code -1} is unlimited, {@code 0} shows nothing, {@code 1}
+	 *                 shows the top level with no recursion, {@code 2} recurses once, etc. Only
+	 *                 container/complex values are gated by this; scalar values always render fully
+	 * @param maxRows  The maximum number of keys/rows/items to display per level of a collection.
+	 *                 Same 1-based/{@code -1}/{@code 0} semantics as {@code depth}, but independent of it
+	 * @param expand   Whether to expand the dump by default (HTML output only)
+	 * @param abort    Whether to hard-abort the request after dumping
+	 * @param output   The output location: {@code "buffer"}, {@code "console"}, or an absolute file path
+	 * @param format   The output format: {@code "html"} or {@code "text"}; defaults based on the output location
+	 * @param showUDFs Whether to show UDFs/methods when dumping classes (HTML output only)
 	 */
 	public static void dump(
 	    IBoxContext context,
 	    Object target,
 	    String label,
-	    @Nullable Integer top,
+	    @Nullable Integer depth,
+	    @Nullable Integer maxRows,
 	    Boolean expand,
 	    Boolean abort,
 	    String output,
 	    String format,
 	    Boolean showUDFs ) {
 
-		boolean isScriptContext = context.getRequestContext() instanceof ScriptingRequestBoxContext;
+		// Normalize the -1 sentinel (and any other negative value) to "unlimited"
+		final Integer	depthFinal		= normalizeLimit( depth );
+		final Integer	maxRowsFinal	= normalizeLimit( maxRows );
+
+		boolean			isScriptContext	= context.getRequestContext() instanceof ScriptingRequestBoxContext;
 
 		// Default output param
 		if ( output == null ) {
@@ -182,7 +198,8 @@ public class DumpUtil {
 		            Key.context, context,
 		            Key.target, target,
 		            Key.label, label,
-		            Key.top, top,
+		            Key.depth, depthFinal,
+		            Key.maxRows, maxRowsFinal,
 		            Key.expand, expand,
 		            Key.abort, abort,
 		            Key.output, outputFinal,
@@ -192,7 +209,7 @@ public class DumpUtil {
 
 		String dumpOutput;
 		if ( format.equals( "html" ) ) {
-			dumpOutput = generateDumpHTML( context, target, label, top, expand, abort, output, format, showUDFs );
+			dumpOutput = generateDumpHTML( context, target, label, depthFinal, maxRowsFinal, expand, abort, output, format, showUDFs );
 		} else {
 			dumpOutput = generateDumpText( context, target, label );
 		}
@@ -255,7 +272,8 @@ public class DumpUtil {
 					            Key.context, context,
 					            Key.target, target,
 					            Key.label, label,
-					            Key.top, top,
+					            Key.depth, depthFinal,
+					            Key.maxRows, maxRowsFinal,
 					            Key.expand, expand,
 					            Key.abort, abort,
 					            Key.output, outputFinal,
@@ -267,6 +285,45 @@ public class DumpUtil {
 			}
 
 		}
+	}
+
+	/**
+	 * Normalizes a "depth" or "maxRows" limit value.
+	 * <p>
+	 * {@code null} and {@code -1} (and anything more negative) mean "unlimited", which we
+	 * represent internally as {@code null} so the rest of the dump logic only has one case
+	 * to worry about.
+	 *
+	 * @param value The limit value passed by the caller
+	 *
+	 * @return The normalized limit, or {@code null} if unlimited
+	 */
+	private static Integer normalizeLimit( @Nullable Integer value ) {
+		return ( value == null || value <= -1 ) ? null : value;
+	}
+
+	/**
+	 * Resolves the {@code maxRows} argument for the {@code dump()}/{@code writeDump()}/{@code <bx:dump>}
+	 * calls, folding in the deprecated {@code top} argument when {@code maxRows} wasn't explicitly
+	 * provided. {@code top} used to control both row limiting and recursion depth at once; now that
+	 * those are split into {@code maxRows} and {@code depth}, {@code top} is kept working - mapped onto
+	 * {@code maxRows} - purely for backwards compatibility with existing BoxLang code, and logs a
+	 * deprecation warning when used.
+	 *
+	 * @param maxRows The {@code maxRows} argument value, or {@code null} if not provided
+	 * @param top     The deprecated {@code top} argument value, or {@code null} if not provided
+	 *
+	 * @return The value to use for {@code maxRows}, or {@code null} if neither was provided
+	 */
+	public static Object resolveDeprecatedTop( @Nullable Object maxRows, @Nullable Object top ) {
+		if ( top != null ) {
+			LoggingService.getInstance().RUNTIME_LOGGER.warn(
+			    "The [top] argument to dump()/writeDump()/<bx:dump> is deprecated and will be removed in a future release. Use [maxRows] instead." );
+			if ( maxRows == null ) {
+				return top;
+			}
+		}
+		return maxRows;
 	}
 
 	/**
@@ -338,7 +395,8 @@ public class DumpUtil {
 	 * @param context  The context
 	 * @param target   The target object
 	 * @param label    The label for the object
-	 * @param top      The number of levels to dump
+	 * @param depth    The recursion depth to dump
+	 * @param maxRows  The maximum number of rows/items to dump per level
 	 * @param expand   Whether to expand the object
 	 * @param abort    Whether to abort on error
 	 * @param output   The output location
@@ -349,7 +407,8 @@ public class DumpUtil {
 	    IBoxContext context,
 	    Object target,
 	    String label,
-	    @Nullable Integer top,
+	    @Nullable Integer depth,
+	    @Nullable Integer maxRows,
 	    Boolean expand,
 	    Boolean abort,
 	    String output,
@@ -364,12 +423,22 @@ public class DumpUtil {
 		// prevent recursion
 		if ( !dumped.add( thisHashCode ) ) {
 			context.writeToBuffer( "<div><em>Recursive Reference (Skipping dump)</em></div>", true );
+			// Not our entry to clean up: dumped.add() failed, so we never added thisHashCode.
 			return null;
 		}
 
-		// Reached the top limit, so return to prevent dumping the entire world
-		if ( top != null && top <= 0 ) {
-			context.writeToBuffer( "<div><em>Top Limit reached (Skipping dump)</em></div>", true );
+		// Reached the depth limit, so return to prevent dumping the entire world.
+		// Simple/scalar values (strings, numbers, booleans, dates, etc.) never recurse further, so
+		// there's nothing for "depth" to limit about them - only gate actual container/complex values.
+		boolean isContainerValue = target != null && ! ( target instanceof NullValue ) && !IsSimpleValue.isSimpleValue( target );
+		if ( isContainerValue && depth != null && depth <= 0 ) {
+			context.writeToBuffer( "<div><em>Depth Limit reached (Skipping dump)</em></div>", true );
+			// We added thisHashCode above but are bailing out before the try/finally that would
+			// normally clean it up, so do it here to avoid leaking thread-local state across calls.
+			dumped.remove( thisHashCode );
+			if ( outerDump ) {
+				dumpedObjects.remove();
+			}
 			return null;
 		}
 
@@ -407,7 +476,8 @@ public class DumpUtil {
 			        Key.posInCode, posInCode,
 			        Key.var, target,
 			        Key.label, label,
-			        Key.top, top,
+			        Key.depth, depth,
+			        Key.maxRows, maxRows,
 			        Key.expand, expand,
 			        Key.abort, abort,
 			        Key.showUDFs, showUDFs,
@@ -484,7 +554,7 @@ public class DumpUtil {
 			return "StringBuffer.bxm";
 		} else if ( target instanceof IType ) {
 			return target.getClass().getSimpleName().replace( "Unmodifiable", "" ) + ".bxm";
-		} else if ( target instanceof String ) {
+		} else if ( target instanceof String || target instanceof Character ) {
 			return "String.bxm";
 		} else if ( target instanceof Number ) {
 			return "Number.bxm";

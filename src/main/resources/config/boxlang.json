@@ -47,6 +47,12 @@
 	// Store the compiled class files on disk for reuse between restarts
 	// If disabled, the class files will be stored in memory only and lost on restart
 	"storeClassFilesOnDisk": true,
+	// Copy JAR files to a writable temp cache before loading them. This prevents file locking
+	// on Windows and lets stale/duplicate versions be cleaned up safely.
+	// Set to false when the filesystem is read-only, or when JARs never change and locking is
+	// not a concern. When disabled, JARs are loaded directly from their original paths, no temp
+	// copies are made, no cleaner is registered, and no startup temp cleanup runs.
+	"jarTempFileCaching": true,
 	// This enforces argument type checking and return value type checking for UDFs, closures, and lambdas.
 	"enforceUDFTypeChecks": true,
 	// The default timezone for the runtime; defaults to the JVM timezone if empty
@@ -93,17 +99,11 @@
 		"${boxlang-home}/modules"
 	],
 	// A collection of BoxLang custom component directories, they must be absolute paths
-	"customComponentsDirectory": [
-		"${boxlang-home}/global/components"
-	],
+	"customComponentsDirectory": ["${boxlang-home}/global/components"],
 	// A collection of directories to lookup box classes in (.bx files), they must be absolute paths
-	"classPaths": [
-		"${boxlang-home}/global/classes"
-	],
+	"classPaths": ["${boxlang-home}/global/classes"],
 	// A collection of directories we will class load all Java *.jar files from
-	"javaLibraryPaths": [
-		"${boxlang-home}/lib"
-	],
+	"javaLibraryPaths": ["${boxlang-home}/lib"],
 	// Query Default Options
 	"queries": {
 		// The default timeout for queries in seconds. 0 means no timeout. This can be overridden per query.
@@ -117,6 +117,17 @@
 		// The default named cache to use for query caching.
 		// This cache must be defined in the "caches" section of this config file.
 		"cacheProvider": "default"
+	},
+	// XML Parsing Settings
+	"xml": {
+		// Enable JAXP secure processing mode to prevent XML processing attacks
+		"secureProcessing": true,
+		// Disallow DOCTYPE declarations in XML documents
+		"disallowDoctypeDeclaration": true,
+		// Allow external general entities (disabled by default for security)
+		"allowExternalEntities": false,
+		// Enable lenient XML parsing — relaxes well-formedness and validation requirements
+		"lenientProcessing": false
 	},
 	// Logging Settings for the runtime
 	"logging": {
@@ -322,9 +333,7 @@
 				"appender": "file",
 				"encoder": "text",
 				"additive": false,
-				"categories": [
-					"com.zaxxer.hikari"
-				]
+				"categories": ["com.zaxxer.hikari"]
 			}
 		}
 	},
@@ -332,7 +341,9 @@
 	// Please see the documentation to see which flags are available
 	"experimental": {
 		// If enabled, it will generate AST JSON data under the project's /grapher/data folder
-		"ASTCapture": false
+		"ASTCapture": false,
+		// If enabled, the parser DFA cache will be automatically evicted based on heap pressure, idle time, and max age
+		"clearParserCache": true
 	},
 	// Global Executors for the runtime
 	// These are managed by the AsyncService and registered upon startup
@@ -480,12 +491,12 @@
 	// When null, the runtime will use "struct" as the default format.
 	"defaultJSONQuerySerializationFormat": null,
 	/**
-	* Register any named caches here.
-	* The key is the name of the cache and the value is the cache configuration.
-	*
-	* A `provider` property is required and the value is the name of the cache provider or the fully qualified class name.
-	* The `properties` property is optional and is a struct of properties that are specific to the cache provider.
-	*/
+	 * Register any named caches here.
+	 * The key is the name of the cache and the value is the cache configuration.
+	 *
+	 * A `provider` property is required and the value is the name of the cache provider or the fully qualified class name.
+	 * The `properties` property is optional and is a struct of properties that are specific to the cache provider.
+	 */
 	"caches": {
 		// The configuration for the BoxLang `default` cache.  If empty, we use the defaults
 		// See the ortus.boxlang.runtime.config.segments.CacheConfig for all the available settings
@@ -578,6 +589,8 @@
 	},
 	// These are the security settings for the runtime
 	"security": {
+		// The encryption algorithm used for bxsecret: configuration values
+		"secretAlgorithm": "AES",
 		// All regex patterns are case-insensitive
 		// A list of regex patterns that will match class paths, and if matched, execution will be disallowed
 		// This applies to import statements, createObject, new, and class creation

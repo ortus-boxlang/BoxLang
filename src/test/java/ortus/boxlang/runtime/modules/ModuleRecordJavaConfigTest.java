@@ -175,10 +175,16 @@ class ModuleRecordJavaConfigTest {
 		ModuleRecord record = new ModuleRecord( JAVA_MODULE_PATH );
 
 		record.loadDescriptor( context ).register( context ).activate( context );
-		org.junit.jupiter.api.Assertions.assertDoesNotThrow( () -> record.moduleConfig.getClass().getMethod( "reset" ).invoke( null ) );
+		// Capture the config class BEFORE unloading: unload() resets the record's lifecycle
+		// state (moduleConfig included) so a later reload rebuilds everything from scratch
+		Class<?> configClass = record.moduleConfig.getClass();
+		org.junit.jupiter.api.Assertions.assertDoesNotThrow( () -> configClass.getMethod( "reset" ).invoke( null ) );
 		record.unload( context );
 
-		assertThat( getStaticBooleanFlag( record, "onUnloadCalled" ) ).isTrue();
+		assertThat( getStaticBooleanFlag( configClass, "onUnloadCalled" ) ).isTrue();
+		// The record's lifecycle state was reset for a potential reload
+		assertThat( record.moduleConfig ).isNull();
+		assertThat( record.getModuleClassLoader() ).isNull();
 	}
 
 	// -------------------------------------------------------------------------
@@ -314,8 +320,16 @@ class ModuleRecordJavaConfigTest {
 	 * loaded by the module's isolated classloader.
 	 */
 	private static boolean getStaticBooleanFlag( ModuleRecord record, String fieldName ) {
+		return getStaticBooleanFlag( record.moduleConfig.getClass(), fieldName );
+	}
+
+	/**
+	 * Reads a static boolean field from a config class captured before an unload
+	 * (unload resets the record's moduleConfig reference).
+	 */
+	private static boolean getStaticBooleanFlag( Class<?> configClass, String fieldName ) {
 		try {
-			Field field = record.moduleConfig.getClass().getField( fieldName );
+			Field field = configClass.getField( fieldName );
 			return ( boolean ) field.get( null );
 		} catch ( Exception e ) {
 			throw new RuntimeException( "Could not read static flag [" + fieldName + "]: " + e.getMessage(), e );

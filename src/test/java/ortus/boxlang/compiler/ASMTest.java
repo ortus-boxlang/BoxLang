@@ -180,6 +180,14 @@ public class ASMTest {
 	}
 
 	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
+	@DisplayName( "synthetic component with many UDF registrations should compile" )
+	@Test
+	public void testSyntheticLargeUDFRegistrationShouldCompile() {
+		assertDoesNotThrow(
+		    () -> RunnableLoader.getInstance().getBoxpiler().compileClass( buildSyntheticLargeUDFComponent(), BoxSourceType.CFSCRIPT ) );
+	}
+
+	@EnabledIf( "tools.CompilerUtils#isASMBoxpiler" )
 	@DisplayName( "very large switch template should compile" )
 	@Test
 	public void testVeryLargeSwitchTemplateShouldCompile() {
@@ -401,6 +409,23 @@ public class ASMTest {
 		source.append( "<cfset result = 'default'>\n" );
 		source.append( "</cfdefaultcase>\n" );
 		source.append( "</cfswitch>\n" );
+
+		return source.toString();
+	}
+
+	private String buildSyntheticLargeUDFComponent() {
+		StringBuilder source = new StringBuilder( "component {\n" );
+		for ( int functionIndex = 0; functionIndex < 300; functionIndex++ ) {
+			source.append( "public any function syntheticFunction" ).append( functionIndex ).append( "(" );
+			for ( int argumentIndex = 0; argumentIndex < 12; argumentIndex++ ) {
+				if ( argumentIndex > 0 ) {
+					source.append( ", " );
+				}
+				source.append( "required string argument" ).append( argumentIndex );
+			}
+			source.append( ") {}\n" );
+		}
+		source.append( "}\n" );
 
 		return source.toString();
 	}

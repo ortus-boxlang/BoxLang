@@ -453,6 +453,10 @@ public class InterceptorPool {
 		return unregister( target, states.toArray( new Key[ 0 ] ) );
 	}
 
+	public InterceptorPool unregister( IInterceptorLambda interceptor ) {
+		return unregister( DynamicObject.of( interceptor ) );
+	}
+
 	/**
 	 * This method registers a BoxLang interceptor with the pool by metadata inspection.
 	 * It will inspect the interceptor for methods that match the states that the

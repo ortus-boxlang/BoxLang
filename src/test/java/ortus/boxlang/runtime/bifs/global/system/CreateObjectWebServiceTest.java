@@ -22,6 +22,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -195,6 +196,7 @@ public class CreateObjectWebServiceTest {
 
 	@DisplayName( "Temp Convert: Celsius to Fahrenheit" )
 	@Test
+	@Disabled( "Server returned HTTP response code: 403 for URL: https://www.w3schools.com/xml/tempconvert.asmx?wsdl" )
 	public void testTempConvertCelsiusToFahrenheit() {
 		// @formatter:off
 		instance.executeSource(
@@ -209,6 +211,7 @@ public class CreateObjectWebServiceTest {
 
 	@DisplayName( "Temp Convert: Fahrenheit to Celsius" )
 	@Test
+	@Disabled( "Server returned HTTP response code: 403 for URL: https://www.w3schools.com/xml/tempconvert.asmx?wsdl" )
 	public void testTempConvertFahrenheitToCelsius() {
 		// @formatter:off
 		instance.executeSource(

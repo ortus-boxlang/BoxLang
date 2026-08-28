@@ -108,4 +108,10 @@ public class ClassFormattingTest extends PrettyPrintTest {
 	public void testComponentExtendsAttributeIsNotAlignmentPadded() throws IOException {
 		printTestWithDefaultConfig( "class", "component_extends_attribute" );
 	}
+
+	@Test
+	@DisplayName( "Top-level class comments and annotations stay unindented" )
+	public void testTopLevelCommentsAndAnnotations() throws IOException {
+		printTestWithConfigFile( "class", "top_level_comments_annotations" );
+	}
 }

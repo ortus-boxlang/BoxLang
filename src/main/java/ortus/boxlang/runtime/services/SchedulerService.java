@@ -22,20 +22,20 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.ZoneId;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-
-import ortus.boxlang.runtime.async.watchers.WatcherEvent;
-import ortus.boxlang.runtime.async.watchers.WatcherInstance;
-import ortus.boxlang.runtime.async.watchers.listeners.IWatcherListener;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.async.tasks.BaseScheduler;
 import ortus.boxlang.runtime.async.tasks.BoxScheduler;
 import ortus.boxlang.runtime.async.tasks.IScheduler;
 import ortus.boxlang.runtime.async.tasks.ScheduledTask;
+import ortus.boxlang.runtime.async.watchers.WatcherEvent;
+import ortus.boxlang.runtime.async.watchers.WatcherInstance;
+import ortus.boxlang.runtime.async.watchers.listeners.IWatcherListener;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
@@ -51,7 +51,7 @@ import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.JSONUtil;
-import ortus.boxlang.runtime.util.EncryptionUtil;
+import ortus.boxlang.runtime.util.ConfigSecretUtil;
 import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 
@@ -98,12 +98,6 @@ public class SchedulerService extends BaseService {
 	private final Object			tasksFileLock				= new Object();
 
 	/**
-	 * Cached AES encryption key used to protect credentials in tasks.json.
-	 * Lazily initialised by {@link #getOrCreateEncryptionKey()}.
-	 */
-	private volatile String			tasksEncryptionKey			= null;
-
-	/**
 	 * WatcherInstance that monitors tasks.json for external changes.
 	 * Non-null only when reloadOnChange=true and the watcher started successfully.
 	 */
@@ -121,6 +115,11 @@ public class SchedulerService extends BaseService {
 	 * Set to 5 seconds to give schedulers time to finish in-flight changes.
 	 */
 	private static final long		SELF_WRITE_GRACE_MS			= 5_000;
+
+	/**
+	 * Credential fields persisted for scheduled tasks.
+	 */
+	private static final Key[]		CREDENTIAL_KEYS				= { Key.username, Key.password, Key.proxyUser, Key.proxyPassword };
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -263,10 +262,7 @@ public class SchedulerService extends BaseService {
 				ortus.boxlang.runtime.async.tasks.BaseScheduler s = new ortus.boxlang.runtime.async.tasks.BaseScheduler( schedulerName, runtimeContext );
 				registerScheduler( s, false );
 			}
-			ortus.boxlang.runtime.async.tasks.BaseScheduler scheduler = ( ortus.boxlang.runtime.async.tasks.BaseScheduler ) getScheduler( schedulerKey );
-
-			// Decrypt credentials before passing to the callable builder
-			decryptTaskCredentials( taskDef );
+			ortus.boxlang.runtime.async.tasks.BaseScheduler	scheduler	= ( ortus.boxlang.runtime.async.tasks.BaseScheduler ) getScheduler( schedulerKey );
 
 			String											group		= taskDef.getAsString( Key.group );
 			String											className	= taskDef.getAsString( Key._CLASS );
@@ -393,6 +389,7 @@ public class SchedulerService extends BaseService {
 	/**
 	 * Get all the registered scheduler names as a BoxLang Array
 	 */
+	@SuppressWarnings( "null" )
 	public Array getSchedulerNames() {
 		return this.schedulers.keySet()
 		    .stream()
@@ -733,9 +730,7 @@ public class SchedulerService extends BaseService {
 					BaseScheduler s = new BaseScheduler( name, runtimeContext );
 					registerScheduler( s, false );
 				}
-				BaseScheduler scheduler = ( BaseScheduler ) getScheduler( schedulerName );
-
-				decryptTaskCredentials( taskDef );
+				BaseScheduler	scheduler	= ( BaseScheduler ) getScheduler( schedulerName );
 
 				String			group		= taskDef.getAsString( Key.group );
 				String			className	= taskDef.getAsString( Key._CLASS );
@@ -844,7 +839,9 @@ public class SchedulerService extends BaseService {
 		try {
 			Object parsed = JSONUtil.fromJSON( tasksFile.toFile(), true );
 			if ( parsed instanceof Array ) {
-				return ( Array ) parsed;
+				Array tasks = ( Array ) parsed;
+				decryptTaskValues( tasks );
+				return tasks;
 			}
 			// File exists but contains non-array JSON — treat as corrupt
 			throw new BoxRuntimeException( "tasks.json exists but does not contain a JSON array; refusing to overwrite." );
@@ -865,6 +862,7 @@ public class SchedulerService extends BaseService {
 		this.lastSelfWriteMs = System.currentTimeMillis();
 		Path tasksFile = getTasksFilePath();
 		try {
+			encryptTaskCredentials( tasks );
 			String json = JSONUtil.getJSONBuilder( true ).asString( tasks );
 			FileSystemUtil.write( tasksFile.toString(), json, "UTF-8", true );
 		} catch ( Exception e ) {
@@ -883,7 +881,6 @@ public class SchedulerService extends BaseService {
 			String	taskName	= attributes.getAsString( Key.task );
 			String	scheduler	= attributes.getAsString( Key.scheduler );
 
-			String	encKey		= getOrCreateEncryptionKey();
 			IStruct	taskDef		= Struct.ofNonConcurrent(
 			    "task", taskName,
 			    "scheduler", scheduler,
@@ -900,12 +897,12 @@ public class SchedulerService extends BaseService {
 			    "repeat", attributes.getAsInteger( Key.repeat ),
 			    "exclude", attributes.getAsString( Key.exclude ),
 			    "port", attributes.getAsInteger( Key.port ),
-			    "username", encryptCredential( attributes.getAsString( Key.username ), encKey ),
-			    "password", encryptCredential( attributes.getAsString( Key.password ), encKey ),
+			    "username", encryptCredential( attributes.getAsString( Key.username ) ),
+			    "password", encryptCredential( attributes.getAsString( Key.password ) ),
 			    "proxyServer", attributes.getAsString( Key.proxyServer ),
 			    "proxyPort", attributes.getAsInteger( Key.proxyPort ),
-			    "proxyUser", encryptCredential( attributes.getAsString( Key.proxyUser ), encKey ),
-			    "proxyPassword", encryptCredential( attributes.getAsString( Key.proxyPassword ), encKey ),
+			    "proxyUser", encryptCredential( attributes.getAsString( Key.proxyUser ) ),
+			    "proxyPassword", encryptCredential( attributes.getAsString( Key.proxyPassword ) ),
 			    "publish", BooleanCaster.cast( attributes.getOrDefault( Key.publish, false ) ),
 			    "path", attributes.getAsString( Key.path ),
 			    "file", attributes.getAsString( Key.file ),
@@ -1107,64 +1104,95 @@ public class SchedulerService extends BaseService {
 	}
 
 	/**
-	 * Returns the AES encryption key used to protect task credentials in tasks.json.
-	 * Reads the runtime seed from {@code ${boxLangHome}/config/.seed}, which BoxRuntime
-	 * auto-generates on first startup — no separate key file needed.
-	 *
-	 * @return Base64-encoded AES key string.
-	 */
-	private String getOrCreateEncryptionKey() {
-		if ( tasksEncryptionKey != null ) {
-			return tasksEncryptionKey;
-		}
-		synchronized ( tasksFileLock ) {
-			if ( tasksEncryptionKey != null ) {
-				return tasksEncryptionKey;
-			}
-			Path seedPath = runtime.getRuntimeHome().resolve( "config/.seed" );
-			try {
-				tasksEncryptionKey = new String( Files.readAllBytes( seedPath ), java.nio.charset.StandardCharsets.UTF_8 ).trim();
-			} catch ( Exception e ) {
-				throw new BoxRuntimeException( "Failed to read runtime seed for task credential encryption: " + e.getMessage(), e );
-			}
-			return tasksEncryptionKey;
-		}
-	}
-
-	/**
-	 * Encrypts a credential value using the tasks AES key.
+	 * Encrypts a credential value using the runtime seed.
 	 * Returns an empty string if the value is null or blank.
 	 *
-	 * @param value  The plaintext credential.
-	 * @param encKey The AES key string from {@link #getOrCreateEncryptionKey()}.
+	 * @param value The plaintext credential.
 	 *
 	 * @return Encrypted Base64-encoded string, or empty string.
 	 */
-	private String encryptCredential( String value, String encKey ) {
+	private String encryptCredential( String value ) {
 		if ( value == null || value.isBlank() ) {
 			return "";
 		}
-		return EncryptionUtil.encrypt( value, EncryptionUtil.DEFAULT_ENCRYPTION_ALGORITHM, encKey, EncryptionUtil.DEFAULT_ENCRYPTION_ENCODING, null, null );
+		return ConfigSecretUtil.isEncrypted( value ) ? value : ConfigSecretUtil.encryptWithPrefix( value );
 	}
 
 	/**
-	 * Decrypts the credential fields (username, password, proxyUser, proxyPassword) in a
-	 * persisted task definition struct in-place, so callers receive plaintext values.
+	 * Decrypts all prefixed values in persisted task definitions. Bare credential values are also decrypted for backward compatibility.
 	 *
-	 * @param taskDef The task definition struct loaded from disk.
+	 * @param tasks The persisted task definitions loaded from disk.
 	 */
-	private void decryptTaskCredentials( IStruct taskDef ) {
-		String encKey = getOrCreateEncryptionKey();
-		for ( Key credKey : new Key[] { Key.username, Key.password, Key.proxyUser, Key.proxyPassword } ) {
-			String encrypted = taskDef.getAsString( credKey );
+	private void decryptTaskValues( Array tasks ) {
+		for ( Object task : tasks ) {
+			if ( task instanceof IStruct taskDef ) {
+				// LEGACY COMPATIBILITY: Bare credential ciphertext remains readable until legacy task-file support is removed.
+				decryptLegacyTaskCredentials( taskDef );
+				decryptTaskValues( taskDef );
+			}
+		}
+	}
+
+	/**
+	 * Temporarily supports the historical bare-ciphertext format for credential fields in tasks.json.
+	 * LEGACY COMPATIBILITY: Remove this fallback when support for historical task files is retired.
+	 *
+	 * @param taskDef The persisted task definition struct.
+	 */
+	private void decryptLegacyTaskCredentials( IStruct taskDef ) {
+		for ( Key credentialKey : CREDENTIAL_KEYS ) {
+			String encrypted = taskDef.getAsString( credentialKey );
+			if ( ConfigSecretUtil.isEncrypted( encrypted ) ) {
+				continue;
+			}
 			if ( encrypted != null && !encrypted.isBlank() ) {
 				try {
-					taskDef.put( credKey, ( String ) EncryptionUtil.decrypt( encrypted, EncryptionUtil.DEFAULT_ENCRYPTION_ALGORITHM, encKey,
-					    EncryptionUtil.DEFAULT_ENCRYPTION_ENCODING, null, null ) );
+					taskDef.put( credentialKey, ConfigSecretUtil.decryptLegacy( encrypted ) );
 				} catch ( Exception e ) {
-					this.logger.warn( "Failed to decrypt credential [{}] for task [{}] — using empty value: {}", credKey.getName(),
+					this.logger.warn( "Failed to decrypt legacy credential [{}] for task [{}] — using empty value: {}", credentialKey.getName(),
 					    taskDef.getAsString( Key.task ), e.getMessage() );
-					taskDef.put( credKey, "" );
+					taskDef.put( credentialKey, "" );
+				}
+			}
+		}
+	}
+
+	/**
+	 * Recursively decrypts all {@code bxsecret:} values in a persisted task value tree.
+	 *
+	 * @param value The task value, map, list, or scalar to decrypt.
+	 *
+	 * @return The value tree with prefixed ciphertext replaced by plaintext.
+	 */
+	@SuppressWarnings( "unchecked" )
+	private Object decryptTaskValues( Object value ) {
+		if ( value instanceof Map<?, ?> rawMap ) {
+			Map<Object, Object> taskMap = ( Map<Object, Object> ) rawMap;
+			for ( Object key : List.copyOf( taskMap.keySet() ) ) {
+				taskMap.put( key, decryptTaskValues( taskMap.get( key ) ) );
+			}
+		} else if ( value instanceof List<?> rawList ) {
+			List<Object> taskList = ( List<Object> ) rawList;
+			for ( int i = 0; i < taskList.size(); i++ ) {
+				taskList.set( i, decryptTaskValues( taskList.get( i ) ) );
+			}
+		} else if ( value instanceof String stringValue ) {
+			return ConfigSecretUtil.decryptIfEncrypted( stringValue );
+		}
+
+		return value;
+	}
+
+	/**
+	 * Encrypts credential fields in task definitions using the current {@code bxsecret:} storage format.
+	 *
+	 * @param tasks The task definitions to prepare for persistence.
+	 */
+	private void encryptTaskCredentials( Array tasks ) {
+		for ( Object task : tasks ) {
+			if ( task instanceof IStruct taskDef ) {
+				for ( Key credentialKey : CREDENTIAL_KEYS ) {
+					taskDef.put( credentialKey, encryptCredential( taskDef.getAsString( credentialKey ) ) );
 				}
 			}
 		}

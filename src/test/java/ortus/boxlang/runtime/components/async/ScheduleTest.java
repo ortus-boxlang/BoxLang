@@ -47,6 +47,9 @@ import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.util.JSONUtil;
+import ortus.boxlang.runtime.util.ConfigSecretUtil;
+import ortus.boxlang.runtime.util.EncryptionUtil;
 
 public class ScheduleTest {
 
@@ -584,6 +587,106 @@ public class ScheduleTest {
 			return false;
 		} );
 		assertThat( found ).isTrue();
+	}
+
+	/**
+	 * Verifies that an omitted port is not persisted as HTTP port 80, allowing the URL scheme to select its default.
+	 */
+	@DisplayName( "schedule leaves the port unset when no port is provided" )
+	@Test
+	public void testOmittedPortIsNotPersisted() {
+		instance.executeSource(
+		    """
+		    <bx:schedule action="update" task="httpsTask" url="https://localhost/test" interval="120">
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE
+		);
+
+		IStruct task = ( IStruct ) instance.getSchedulerService().loadTasksFromDisk().stream()
+		    .filter( entry -> entry instanceof IStruct && "httpsTask".equals( ( ( IStruct ) entry ).getAsString( Key.task ) ) )
+		    .findFirst().orElseThrow();
+		assertThat( task.get( Key.port ) ).isNull();
+	}
+
+	/**
+	 * Verifies that an explicitly configured port is retained in the persisted task definition.
+	 */
+	@DisplayName( "schedule preserves an explicitly configured port" )
+	@Test
+	public void testExplicitPortIsPersisted() {
+		instance.executeSource(
+		    """
+		    <bx:schedule action="update" task="customPortTask" url="https://localhost/test" port="9443" interval="120">
+		    """,
+		    context, BoxSourceType.BOXTEMPLATE
+		);
+
+		IStruct task = ( IStruct ) instance.getSchedulerService().loadTasksFromDisk().stream()
+		    .filter( entry -> entry instanceof IStruct && "customPortTask".equals( ( ( IStruct ) entry ).getAsString( Key.task ) ) )
+		    .findFirst().orElseThrow();
+		assertThat( task.getAsInteger( Key.port ) ).isEqualTo( 9443 );
+	}
+
+	@DisplayName( "tasks.json writes prefixed credentials and decrypts all prefixed values" )
+	@Test
+	public void testPrefixedTaskValues() throws Exception {
+		String	prefixedToken	= ConfigSecretUtil.encryptWithPrefix( "task-token" );
+		Array	tasks			= Array.of( Struct.of(
+		    "task", "prefixedTask",
+		    "username", "task-user",
+		    "password", "task-password",
+		    "proxyUser", "proxy-user",
+		    "proxyPassword", "proxy-password",
+		    "metadata", Struct.of( "token", prefixedToken ),
+		    "values", Array.of( prefixedToken )
+		) );
+
+		svc.saveTasksToDisk( tasks );
+
+		Array	persisted		= ( Array ) JSONUtil.fromJSON( instance.getRuntimeHome().resolve( "config/tasks.json" ).toFile(), true );
+		IStruct	persistedTask	= ( IStruct ) persisted.get( 0 );
+		assertThat( ConfigSecretUtil.isEncrypted( persistedTask.getAsString( Key.username ) ) ).isTrue();
+		assertThat( ConfigSecretUtil.isEncrypted( persistedTask.getAsString( Key.password ) ) ).isTrue();
+		assertThat( ConfigSecretUtil.isEncrypted( persistedTask.getAsString( Key.proxyUser ) ) ).isTrue();
+		assertThat( ConfigSecretUtil.isEncrypted( persistedTask.getAsString( Key.proxyPassword ) ) ).isTrue();
+
+		IStruct loadedTask = ( IStruct ) svc.loadTasksFromDisk().get( 0 );
+		assertThat( loadedTask.getAsString( Key.username ) ).isEqualTo( "task-user" );
+		assertThat( loadedTask.getAsString( Key.password ) ).isEqualTo( "task-password" );
+		assertThat( ( ( IStruct ) loadedTask.get( "metadata" ) ).getAsString( Key.of( "token" ) ) ).isEqualTo( "task-token" );
+		assertThat( ( ( Array ) loadedTask.get( "values" ) ).get( 0 ) ).isEqualTo( "task-token" );
+	}
+
+	@DisplayName( "tasks.json supports legacy bare encrypted credentials" )
+	@Test
+	public void testLegacyTaskCredentials() throws Exception {
+		Array	legacyTasks	= Array.of( Struct.of(
+		    "task", "legacyTask",
+		    "username", encryptLegacyTaskCredential( "legacy-user" ),
+		    "password", encryptLegacyTaskCredential( "legacy-password" ),
+		    "proxyUser", encryptLegacyTaskCredential( "legacy-proxy-user" ),
+		    "proxyPassword", encryptLegacyTaskCredential( "legacy-proxy-password" )
+		) );
+		Path	tasksFile	= instance.getRuntimeHome().resolve( "config/tasks.json" );
+		Files.writeString( tasksFile, JSONUtil.getJSONBuilder( true ).asString( legacyTasks ) );
+
+		IStruct loadedTask = ( IStruct ) svc.loadTasksFromDisk().get( 0 );
+		assertThat( loadedTask.getAsString( Key.username ) ).isEqualTo( "legacy-user" );
+		assertThat( loadedTask.getAsString( Key.password ) ).isEqualTo( "legacy-password" );
+		assertThat( loadedTask.getAsString( Key.proxyUser ) ).isEqualTo( "legacy-proxy-user" );
+		assertThat( loadedTask.getAsString( Key.proxyPassword ) ).isEqualTo( "legacy-proxy-password" );
+	}
+
+	/**
+	 * Creates an unprefixed, UU-encoded credential matching the historical tasks.json format.
+	 *
+	 * @param value The credential plaintext.
+	 *
+	 * @return The historical encrypted credential value.
+	 */
+	private String encryptLegacyTaskCredential( String value ) {
+		return EncryptionUtil.encrypt( value, instance.getConfiguration().security.secretAlgorithm, ConfigSecretUtil.getRuntimeSeed(),
+		    EncryptionUtil.DEFAULT_ENCRYPTION_ENCODING, null, null );
 	}
 
 	@DisplayName( "delete removes task from tasks.json" )

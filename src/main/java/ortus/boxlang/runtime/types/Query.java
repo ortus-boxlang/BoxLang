@@ -89,16 +89,25 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * -----------------------------------------------------------
 	 */
 
-	private static final InterceptorService	interceptorService	= BoxRuntime.getInstance().getInterceptorService();
+	private static final InterceptorService	interceptorService				= BoxRuntime.getInstance().getInterceptorService();
 
-	private static final FunctionService	functionService		= BoxRuntime.getInstance().getFunctionService();
+	private static final FunctionService	functionService					= BoxRuntime.getInstance().getFunctionService();
 
-	private static final long				serialVersionUID	= 1L;
+	private static final long				serialVersionUID				= 1L;
 
 	/**
 	 * Flag to allow compat to influence the empty-string-to-null coercion when setting cell values to an empty string on a non-string-typed column.
 	 */
-	public static boolean					queryNullToEmpty	= false;
+	public static boolean					queryNullToEmpty				= false;
+
+	/**
+	 * Flag to allow compat to permit reading from row indexes beyond the current record count,
+	 * returning an empty string instead of throwing an exception. Row indexes below 1 (0-based negative)
+	 * still throw regardless of this flag. This mirrors the relaxed behavior of certain CFML engines.
+	 * 
+	 * TODO: Disable this and enable with compat, but we have bugs related to safe access that need fixed first
+	 */
+	public static boolean					allowAccessToNonExistentRows	= true;
 
 	/**
 	 * -----------------------------------------------------------
@@ -116,19 +125,19 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	 * This is an AtomicInteger so that it can be modified from multiple threads
 	 * safely.
 	 */
-	protected AtomicInteger					size				= new AtomicInteger( 0 );
+	protected AtomicInteger					size							= new AtomicInteger( 0 );
 
 	/**
 	 * Actual size of the data list, used to track how many rows have been added
 	 * This is volatile so that it can be updated from multiple threads
 	 * safely.
 	 */
-	private volatile int					actualSize			= 0;
+	private volatile int					actualSize						= 0;
 
 	/**
 	 * Map of column definitions
 	 */
-	private volatile Map<Key, QueryColumn>	columns				= Collections.synchronizedMap( new LinkedHashMap<Key, QueryColumn>() );
+	private volatile Map<Key, QueryColumn>	columns							= Collections.synchronizedMap( new LinkedHashMap<Key, QueryColumn>() );
 
 	/**
 	 * Metadata object
@@ -138,12 +147,12 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 	/**
 	 * Denormalized list of column names for fast access. Initialized on first use.
 	 */
-	private transient String				columnNameList		= null;
+	private transient String				columnNameList					= null;
 
 	/**
 	 * Denormalized array of column names for fast access. Initialized on first use.
 	 */
-	private transient Array					columnNameArray		= null;
+	private transient Array					columnNameArray					= null;
 
 	/**
 	 * Create a new query with additional metadata

@@ -70,7 +70,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	 * Public Properties
 	 * --------------------------------------------------------------------------
 	 */
-	public static final Array							EMPTY				= new UnmodifiableArray();
+	public static final Array							EMPTY	= new UnmodifiableArray();
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -99,19 +99,36 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	private transient Map<Key, IChangeListener<Array>>	listeners;
 
 	/**
-	 * Function service
+	 * Function service, resolved lazily so Array can be loaded
+	 * before the runtime's FunctionService is fully wired during startup.
 	 */
-	private static FunctionService						functionService		= BoxRuntime.getInstance().getFunctionService();
+	private static FunctionService						functionService;
+
+	/**
+	 * Gets the FunctionService, resolving it lazily on first use.
+	 *
+	 * @return The FunctionService.
+	 */
+	private static FunctionService getFunctionService() {
+		if ( functionService == null ) {
+			synchronized ( Array.class ) {
+				if ( functionService == null ) {
+					functionService = BoxRuntime.getInstance().getFunctionService();
+				}
+			}
+		}
+		return functionService;
+	}
 
 	/**
 	 * Serialization ID
 	 */
-	private static final long							serialVersionUID	= 1L;
+	private static final long	serialVersionUID	= 1L;
 
 	/**
 	 * Dimension
 	 */
-	public int											dimensions			= 1;
+	public int					dimensions			= 1;
 
 	/**
 	 * --------------------------------------------------------------------------
@@ -978,7 +995,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	 */
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Object[] positionalArguments, Boolean safe ) {
 
-		MemberDescriptor memberDescriptor = functionService.getMemberMethod( name, BoxLangType.ARRAY );
+		MemberDescriptor memberDescriptor = getFunctionService().getMemberMethod( name, BoxLangType.ARRAY );
 		if ( memberDescriptor != null ) {
 			return memberDescriptor.invoke( context, this, positionalArguments );
 		}
@@ -998,7 +1015,7 @@ public class Array implements List<Object>, IType, IReferenceable, IListenable<A
 	 */
 	public Object dereferenceAndInvoke( IBoxContext context, Key name, Map<Key, Object> namedArguments, Boolean safe ) {
 
-		MemberDescriptor memberDescriptor = functionService.getMemberMethod( name, BoxLangType.ARRAY );
+		MemberDescriptor memberDescriptor = getFunctionService().getMemberMethod( name, BoxLangType.ARRAY );
 		if ( memberDescriptor != null ) {
 			return memberDescriptor.invoke( context, this, namedArguments );
 		}

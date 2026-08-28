@@ -21,6 +21,7 @@ import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.events.IInterceptor;
 import ortus.boxlang.runtime.services.InterceptorService;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 
 /**
  * Contract for a pure-Java BoxLang module descriptor, equivalent to {@code ModuleConfig.bx}.
@@ -112,6 +113,21 @@ public interface IModuleConfig {
 	 * @param args    Command-line arguments passed to the module
 	 */
 	default void main( IBoxContext context, String[] args ) {
+	}
+
+	/**
+	 * Per-child overrides for modules nested inside this one (module inception).
+	 * <p>
+	 * Shape: <code>{ childName : { enabled : boolean, settings : { ... } } }</code>
+	 * <p>
+	 * These are applied on top of the child's own {@code configure()} defaults, but
+	 * <strong>before</strong> the global {@code boxlang.json} module config, which always wins.
+	 * The BX equivalent is declaring {@code this.modules} in {@code ModuleConfig.bx}.
+	 *
+	 * @return The per-child override struct; an empty struct when the module declares none
+	 */
+	default IStruct modules() {
+		return new Struct();
 	}
 
 	/**

@@ -222,6 +222,14 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 	private static Map<String, Map<String, String>>	BIFArgMap					= new HashMap<>();
 
 	/**
+	 * Names used when transpiling the CF writeDump()/cfdump "top" attribute/argument to BoxLang's "depth" argument
+	 */
+	private static final String						WRITEDUMP_FUNCTION_NAME		= "writedump";
+	private static final String						DUMP_COMPONENT_NAME			= "dump";
+	private static final String						DUMP_TOP_ATTRIBUTE_NAME		= "top";
+	private static final String						DUMP_DEPTH_ATTRIBUTE_NAME	= "depth";
+
+	/**
 	 * Configuration keys for transpiler settings
 	 */
 	private static Key								transpilerKey				= Key.of( "transpiler" );
@@ -317,6 +325,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		 * Only kicks in when named args are used
 		 */
 		BIFArgMap.put( "directorylist", Map.of( "absolute_path", "path" ) );
+		BIFArgMap.put( "spreadsheetwrite", Map.of( "filepath", "filename" ) );
 		BIFArgMap.put( "hash", Map.of( "string", "input" ) );
 		BIFArgMap.put( "extract", Map.of( "target", "destination" ) );
 		BIFArgMap.put( "getsafehtml", Map.of( "inputstring", "string", "policyfile", "policy" ) );
@@ -657,6 +666,21 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 			}
 		}
 
+		// CF's writeDump()/cfdump "top" attribute limits how many levels of recursion are shown. BoxLang's dump()
+		// separates that concept from row/item limiting (its "maxRows" argument), so a CF "top" value maps onto
+		// BoxLang's "depth" argument (recursion levels), decremented by one to account for the differing 1-based semantics.
+		// writeDump( var=data, top=value ) -> writeDump( var=data, depth=value-1 )
+		if ( name.equals( WRITEDUMP_FUNCTION_NAME ) && node.isNamedArgs() ) {
+			node.getArguments().stream()
+			    .filter( arg -> arg.getName().getAsSimpleValue().toString().equalsIgnoreCase( DUMP_TOP_ATTRIBUTE_NAME ) )
+			    .forEach( arg -> {
+				    if ( arg.getName() instanceof BoxStringLiteral bsl ) {
+					    bsl.setValue( DUMP_DEPTH_ATTRIBUTE_NAME );
+				    }
+				    arg.setValue( transpileDumpTopToDepth( arg.getValue() ) );
+			    } );
+		}
+
 		// look for "params" named arg, or 2nd positional arg, and if it's a struct literal, any of the values which are also a struct literal,
 		// rename any keys from cfsqltype to sqltype and remove "cf_sql_" from the values of any sqltype
 		if ( name.equals( "queryexecute" ) && node.getArguments().size() >= 2 ) {
@@ -806,6 +830,18 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 			}
 		}
 		return super.visit( node );
+	}
+
+	/**
+	 * Wraps a CF cfdump/writeDump "top" attribute/argument value expression as {@code value - 1}, for use as the
+	 * BoxLang dump "depth" argument.
+	 *
+	 * @param value The original "top" value expression
+	 *
+	 * @return A new expression representing {@code value - 1}
+	 */
+	private BoxExpression transpileDumpTopToDepth( BoxExpression value ) {
+		return new BoxBinaryOperation( value, BoxBinaryOperator.Minus, new BoxIntegerLiteral( "1", null, "1" ), null, null );
 	}
 
 	private BoxNode transpileListAppend( BoxFunctionInvocation node ) {
@@ -1058,7 +1094,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		    )
 		);
 
-		var closure = new BoxClosure(
+		var						closure		= new BoxClosure(
 		    // arg1, arg2, etc for as many args to the original BIF, or the actual arg names if using named args
 		    generateIIFEArgs( args ),
 		    // annotations
@@ -1074,12 +1110,22 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		);
 
 		// wrap up the closure as an IIFE
-		return new BoxExpressionInvocation(
+		// Note: addComment() returns BoxNode, not BoxExpressionInvocation, so we build the invocation first and add the comment on a separate line.
+		BoxExpressionInvocation	invocation	= new BoxExpressionInvocation(
 		    new BoxParenthesis( closure, null, null ),
 		    args,
 		    null,
 		    null
-		).addComment( new BoxSingleLineComment( "Transpiler workaround for BIF return type", null, null ) );
+		);
+		invocation.addComment( new BoxSingleLineComment( "Transpiler workaround for BIF return type", null, null ) );
+
+		// IMPORTANT: The args (and all other children) of the new IIFE are the ORIGINAL arguments from the
+		// BoxFunctionInvocation we are replacing. Since we are returning a whole new node instead of calling
+		// super.visit( node ) on the original, those children have NOT been visited yet. We MUST route the new
+		// node back through the visitor ( visit( BoxExpressionInvocation ) ) so every argument is recursively
+		// transpiled (e.g. `Chr(10)` -> `char(10)`, identifier renames, etc.). Failure to do so leaves CF-only
+		// syntax inside the arguments untranspiled, causing runtime errors like `Function 'Chr' not found`.
+		return super.visit( invocation );
 	}
 
 	private List<BoxArgument> generateBIFArgs( List<BoxArgument> args ) {
@@ -1537,6 +1583,19 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 				    } else if ( !bsl.getValue().equalsIgnoreCase( "readonly" ) ) {
 					    bsl.setValue( "readonly" );
 				    }
+			    } );
+		}
+
+		// cfdump's "top" attribute limits how many levels of recursion are shown. BoxLang's dump component separates
+		// that concept from row/item limiting (its "maxRows" attribute), so a CF "top" value maps onto BoxLang's
+		// "depth" attribute (recursion levels), decremented by one to account for the differing 1-based semantics.
+		// <cfdump var="data" top="#value#"> -> <bx:dump var="data" depth="#value-1#">
+		if ( componentName.equals( DUMP_COMPONENT_NAME ) ) {
+			node.getAttributes().stream()
+			    .filter( a -> a.getKey().getValue().equalsIgnoreCase( DUMP_TOP_ATTRIBUTE_NAME ) )
+			    .forEach( a -> {
+				    a.getKey().setValue( DUMP_DEPTH_ATTRIBUTE_NAME );
+				    a.setValue( transpileDumpTopToDepth( a.getValue() ) );
 			    } );
 		}
 

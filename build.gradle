@@ -15,7 +15,7 @@ plugins {
 	// For source code formatting
 	id "com.diffplug.spotless" version "8.6.0"
 	// Shadow
-	id "com.gradleup.shadow" version "9.4.3"
+	id "com.gradleup.shadow" version "9.6.1"
 	// For dependency updates
 	id 'com.github.ben-manes.versions' version '0.54.0'
 	// For building service loader files
@@ -146,7 +146,7 @@ dependencies {
 	// https://mvnrepository.com/artifact/org.slf4j/slf4j-api
 	implementation 'org.slf4j:slf4j-api:2.0.18'
 	// https://mvnrepository.com/artifact/ch.qos.logback/logback-classic
-	implementation 'ch.qos.logback:logback-classic:1.5.32'
+	implementation 'ch.qos.logback:logback-classic:1.6.1'
 	// https://mvnrepository.com/artifact/com.zaxxer/HikariCP
 	implementation 'com.zaxxer:HikariCP:6.3.0'
 	// https://mvnrepository.com/artifact/org.ow2.asm/asm-tree
@@ -1488,6 +1488,10 @@ spotless {
         removeUnusedImports()
         formatAnnotations()
     }
+}
+
+tasks.named( "spotlessJava" ) {
+	mustRunAfter( ":src:modules:javaTestModule:copyJarModuleFixture" )
 }
 
 task downloadDocGenerator( type: Download ) {

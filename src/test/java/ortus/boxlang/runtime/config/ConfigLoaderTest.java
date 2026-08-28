@@ -22,6 +22,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -33,11 +35,16 @@ import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.config.segments.CacheConfig;
+import ortus.boxlang.runtime.config.segments.ModuleConfig;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-
+import ortus.boxlang.runtime.types.exceptions.ConfigurationException;
 import ortus.boxlang.runtime.types.exceptions.MissingIncludeException;
+import ortus.boxlang.runtime.types.util.StructUtil;
+import ortus.boxlang.runtime.util.ConfigSecretUtil;
+import ortus.boxlang.runtime.util.EncryptionUtil;
 
 class ConfigLoaderTest {
 
@@ -276,6 +283,244 @@ class ConfigLoaderTest {
 		assertThat( config.security.allowedFileOperationExtensions ).contains( ".exe" );
 		assertThat( config.experimental ).isInstanceOf( IStruct.class );
 		assertThat( config.compiler ).isEqualTo( "asm" );
+	}
+
+	@DisplayName( "It can override the secret seed from a generic environment variable" )
+	@Test
+	void testGenericEnvironmentOverrideForSecretSeed() {
+		ConfigLoader	loader		= ConfigLoader.getInstance();
+		IStruct			environment	= Struct.of( "BOXLANG_SECURITY_SECRETSEED", "environment-seed" );
+		IStruct			flatConfig	= StructUtil.toFlatMap( Struct.of( Key.security, Struct.of() ) );
+
+		loader.filterEnv( environment ).entrySet().forEach( entry -> ConfigLoader.applyOverride( entry, flatConfig ) );
+		Configuration config = new Configuration().process( StructUtil.unFlattenKeys( flatConfig, true, false ) );
+
+		assertThat( config.security.getSecretSeed() ).isEqualTo( "environment-seed" );
+	}
+
+	@DisplayName( "It decrypts encrypted system-property overrides" )
+	@Test
+	void testEncryptedSystemPropertyOverride() {
+		String propertyName = "boxlang.compiler";
+		System.setProperty( propertyName, ConfigSecretUtil.encryptWithPrefix( "environment-secret" ) );
+
+		try {
+			Configuration config = new Configuration().process( ConfigLoader.getInstance().mergeEnvironmentOverrides( Struct.of(
+			    Key.compiler, "plaintext-compiler"
+			) ) );
+
+			assertThat( config.compiler ).isEqualTo( "environment-secret" );
+		} finally {
+			System.clearProperty( propertyName );
+		}
+	}
+
+	@DisplayName( "It lets an environment secret seed override win during JSON file processing" )
+	@Test
+	void testEnvironmentSecretSeedWinsDuringFileDecryption() throws Exception {
+		String	envSeed		= EncryptionUtil.generateKeyAsString();
+		String	fileSeed	= EncryptionUtil.generateKeyAsString();
+		String	encrypted	= ConfigSecretUtil.SECURE_VALUE_PREFIX + ConfigSecretUtil.encrypt( "environment-secret", envSeed );
+		Path	configFile	= Files.createTempFile( "boxlang-seed-env-override", ".json" );
+
+		try {
+			Files.writeString( configFile, """
+			                               {
+			                                 "security": {
+			                                   "secretSeed": "%s"
+			                                 },
+			                                 "modules": {
+			                                   "test": {
+			                                     "settings": {
+			                                       "secret": "%s"
+			                                     }
+			                                   }
+			                                 }
+			                               }
+			                               """.formatted( fileSeed, encrypted ), StandardCharsets.UTF_8 );
+			// The env-style system property simulates BOXLANG_SECURITY_SECRETSEED and wins over the file seed.
+			System.setProperty( "BOXLANG_SECURITY_SECRETSEED", envSeed );
+
+			IStruct	rawConfig	= ConfigLoader.getInstance().deserializeConfig( configFile );
+			IStruct	module		= rawConfig.getAsStruct( Key.of( "modules" ) ).getAsStruct( Key.of( "test" ) );
+
+			assertThat( module.getAsStruct( Key.of( "settings" ) ).getAsString( Key.of( "secret" ) ) ).isEqualTo( "environment-secret" );
+		} finally {
+			System.clearProperty( "BOXLANG_SECURITY_SECRETSEED" );
+			Files.deleteIfExists( configFile );
+		}
+	}
+
+	@DisplayName( "It lets a system-property secret seed override win during JSON file processing" )
+	@Test
+	void testSystemPropertySecretSeedWinsDuringFileDecryption() throws Exception {
+		String	systemSeed	= EncryptionUtil.generateKeyAsString();
+		String	fileSeed	= EncryptionUtil.generateKeyAsString();
+		String	encrypted	= ConfigSecretUtil.SECURE_VALUE_PREFIX + ConfigSecretUtil.encrypt( "system-secret", systemSeed );
+		Path	configFile	= Files.createTempFile( "boxlang-seed-sysprop-override", ".json" );
+
+		try {
+			Files.writeString( configFile, """
+			                               {
+			                                 "security": {
+			                                   "secretSeed": "%s"
+			                                 },
+			                                 "modules": {
+			                                   "test": {
+			                                     "settings": {
+			                                       "secret": "%s"
+			                                     }
+			                                   }
+			                                 }
+			                               }
+			                               """.formatted( fileSeed, encrypted ), StandardCharsets.UTF_8 );
+			System.setProperty( "boxlang.security.secretSeed", systemSeed );
+
+			IStruct	rawConfig	= ConfigLoader.getInstance().deserializeConfig( configFile );
+			IStruct	module		= rawConfig.getAsStruct( Key.of( "modules" ) ).getAsStruct( Key.of( "test" ) );
+
+			assertThat( module.getAsStruct( Key.of( "settings" ) ).getAsString( Key.of( "secret" ) ) ).isEqualTo( "system-secret" );
+		} finally {
+			System.clearProperty( "boxlang.security.secretSeed" );
+			Files.deleteIfExists( configFile );
+		}
+	}
+
+	@DisplayName( "It uses a file secret seed when no override is present" )
+	@Test
+	void testFileSecretSeedWorksWithoutOverride() throws Exception {
+		String	fileSeed	= EncryptionUtil.generateKeyAsString();
+		String	encrypted	= ConfigSecretUtil.SECURE_VALUE_PREFIX + ConfigSecretUtil.encrypt( "file-secret", fileSeed );
+		Path	configFile	= Files.createTempFile( "boxlang-seed-file", ".json" );
+
+		try {
+			Files.writeString( configFile, """
+			                               {
+			                                 "security": {
+			                                   "secretSeed": "%s"
+			                                 },
+			                                 "modules": {
+			                                   "test": {
+			                                     "settings": {
+			                                       "secret": "%s"
+			                                     }
+			                                   }
+			                                 }
+			                               }
+			                               """.formatted( fileSeed, encrypted ), StandardCharsets.UTF_8 );
+
+			IStruct	rawConfig	= ConfigLoader.getInstance().deserializeConfig( configFile );
+			IStruct	module		= rawConfig.getAsStruct( Key.of( "modules" ) ).getAsStruct( Key.of( "test" ) );
+
+			assertThat( module.getAsStruct( Key.of( "settings" ) ).getAsString( Key.of( "secret" ) ) ).isEqualTo( "file-secret" );
+		} finally {
+			Files.deleteIfExists( configFile );
+		}
+	}
+
+	@DisplayName( "It reports the configuration key when a bxsecret value fails to decrypt" )
+	@Test
+	void testFailedDecryptionReportsKeyPath() throws Exception {
+		Path configFile = Files.createTempFile( "boxlang-secret-decrypt-error", ".json" );
+
+		try {
+			Files.writeString( configFile, """
+			                               {
+			                                 "datasources": {
+			                                   "myDs": {
+			                                     "password": "bxsecret:!!!invalid-base64!!!"
+			                                   }
+			                                 }
+			                               }
+			                               """, StandardCharsets.UTF_8 );
+
+			ConfigurationException exception = assertThrows(
+			    ConfigurationException.class,
+			    () -> ConfigLoader.getInstance().deserializeConfig( configFile ) );
+
+			assertThat( exception.getMessage() ).contains( "bxsecret:" );
+			assertThat( exception.getMessage() ).contains( "datasources" );
+			assertThat( exception.getMessage() ).contains( "myDs" );
+			assertThat( exception.getMessage() ).contains( "password" );
+		} finally {
+			Files.deleteIfExists( configFile );
+		}
+	}
+
+	@DisplayName( "It decrypts each placeholder value individually when placeholders resolve to bxsecret values" )
+	@Test
+	void testPlaceholderResolvedSecretIsDecrypted() {
+		String	secretA	= ConfigSecretUtil.encryptWithPrefix( "alpha" );
+		String	secretB	= ConfigSecretUtil.encryptWithPrefix( "beta" );
+		IStruct	map		= Struct.of(
+		    "a", secretA,
+		    "b", secretB,
+		    "c", "gamma" );
+
+		// Concatenated placeholders, each holding its own bxsecret value, must decrypt individually.
+		String	result	= ( String ) ConfigLoader.getInstance().resolvePlaceholdersWithSecrets(
+		    "${a}-${b}-${c}",
+		    ConfigLoader.getInstance().getSecretConfig( Struct.of() ),
+		    map );
+
+		assertThat( result ).isEqualTo( "alpha-beta-gamma" );
+	}
+
+	@DisplayName( "It decrypts nested JSON configuration values before resolving placeholders" )
+	@Test
+	void testEncryptedConfigurationValues() throws Exception {
+		String	encryptedValue	= ConfigSecretUtil.encryptWithPrefix( "${user-home}/secret" )
+		    .replace( "\\", "\\\\" )
+		    .replace( "\"", "\\\"" );
+		Path	configFile		= Files.createTempFile( "boxlang-encrypted-config", ".json" );
+		String	configJson		= """
+		                          {
+		                            "modules": {
+		                              "test": {
+		                                "settings": {
+		                                  "secret": "%s",
+		                                  "values": ["%s"]
+		                                }
+		                              }
+		                            }
+		                          }
+		                          """.formatted( encryptedValue, encryptedValue );
+
+		try {
+			Files.writeString( configFile, configJson, StandardCharsets.UTF_8 );
+			Configuration	config	= ConfigLoader.getInstance().loadFromFile( configFile );
+			ModuleConfig	module	= ( ModuleConfig ) config.modules.get( Key.of( "test" ) );
+
+			assertThat( module.settings.getAsString( Key.of( "secret" ) ) ).isEqualTo( System.getProperty( "user.home" ) + "/secret" );
+			assertThat( ( ( List<?> ) module.settings.get( "values" ) ).get( 0 ) ).isEqualTo( System.getProperty( "user.home" ) + "/secret" );
+		} finally {
+			Files.deleteIfExists( configFile );
+		}
+	}
+
+	@DisplayName( "It rejects an encrypted secret algorithm before decrypting configuration values" )
+	@Test
+	void testEncryptedSecretAlgorithm() throws Exception {
+		Path configFile = Files.createTempFile( "boxlang-encrypted-algorithm", ".json" );
+
+		try {
+			Files.writeString( configFile, """
+			                               {
+			                                 "security": {
+			                                   "secretAlgorithm": "BxSeCrEt:not-an-algorithm"
+			                                 }
+			                               }
+			                               """, StandardCharsets.UTF_8 );
+
+			ConfigurationException exception = assertThrows(
+			    ConfigurationException.class,
+			    () -> ConfigLoader.getInstance().loadFromFile( configFile )
+			);
+
+			assertThat( exception ).hasMessageThat().contains( "security.secretAlgorithm" );
+		} finally {
+			Files.deleteIfExists( configFile );
+		}
 	}
 
 	@DisplayName( "It will reject invalid env vars" )

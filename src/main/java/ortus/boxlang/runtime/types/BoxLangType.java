@@ -139,4 +139,15 @@ public enum BoxLangType {
 		};
 	}
 
+	/**
+	 * Detect if a type is one of our 3 cystom types
+	 * 
+	 * @param type The BoxLangType to check
+	 *
+	 * @return True if the type is one of the custom types, false otherwise
+	 */
+	public static boolean isCustomType( BoxLangType type ) {
+		return type == BoxLangType.CUSTOM || type == BoxLangType.CUSTOM2 || type == BoxLangType.CUSTOM3;
+	}
+
 }

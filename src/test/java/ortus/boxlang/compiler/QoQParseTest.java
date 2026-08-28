@@ -966,4 +966,25 @@ public class QoQParseTest {
 
 	}
 
+	@Test
+	public void testInClauseWithNumericLiteralsOnVarcharColumn() {
+		instance.executeSource(
+		    """
+		    getProceeds = queryNew(
+		    	"Test,TestB,TestC,age",
+		    	"integer,varchar,varchar,integer",
+		    	[
+		    		{ Test: 1, TestB: "A", TestC: "18", age: 35 },
+		    		{ Test: 1, TestB: "W", TestC: "22", age: 28 }
+		    	]
+		    )
+		    result = queryExecute( "
+		    	SELECT * FROM getProceeds
+		    	WHERE TestC IN (18,22)
+		    ", [], { dbType : "query" } )
+		      """,
+		    context, BoxSourceType.BOXSCRIPT );
+		assertThat( variables.getAsQuery( result ).size() ).isEqualTo( 2 );
+	}
+
 }

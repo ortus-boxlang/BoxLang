@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.util.AbstractMap;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.apache.commons.io.FileUtils;
@@ -161,6 +162,8 @@ public class FileSystemStore extends AbstractStore {
 		getEntryStream()
 		    .parallel()
 		    .map( path -> ( BoxCacheEntry ) this.getQuiet( pathToCacheKey( path ) ) )
+		    // A file may vanish between enumeration and read; skip nulls instead of NPE-ing
+		    .filter( Objects::nonNull )
 		    .sorted( getPolicy().getComparator() )
 		    // Exclude eternal objects from eviction
 		    .filter( entry -> !entry.isEternal() )
@@ -297,7 +300,7 @@ public class FileSystemStore extends AbstractStore {
 	 * @return True if the object is in the store, false otherwise
 	 */
 	public boolean lookup( Key key ) {
-		return getEntryStream().anyMatch( path -> key.equals( pathToCacheKey( path ) ) );
+		return Files.exists( cacheKeyToPath( key ) );
 	}
 
 	/**
@@ -394,10 +397,11 @@ public class FileSystemStore extends AbstractStore {
 	 * @return The cache entry retrieved or null if not found
 	 */
 	public ICacheEntry getQuiet( Key key ) {
-		Path foundEntry = getEntryStream().filter( path -> key.equals( pathToCacheKey( path ) ) ).findFirst().orElse( null );
-		return foundEntry == null
-		    ? null
-		    : deserializeEntry( foundEntry );
+		Path target = cacheKeyToPath( key );
+		if ( !Files.exists( target ) ) {
+			return null;
+		}
+		return deserializeEntry( target );
 	}
 
 	/**
@@ -456,14 +460,16 @@ public class FileSystemStore extends AbstractStore {
 	 */
 
 	/**
-	 * Returns a stream of all cache entry paths
+	 * Returns a stream of all cache entry paths.
+	 * The directory walk is materialized into a list and closed here, so consumers
+	 * never leak a directory handle and always observe a stable snapshot of the store.
 	 *
 	 * @return A stream of all cache entry paths
 	 */
 	private Stream<Path> getEntryStream() {
-		try {
-			return Files.walk( directory, 1 )
-			    .filter( path -> cacheFileMatcher.matches( path.getFileName() ) );
+		try ( Stream<Path> paths = Files.walk( directory, 1 )
+		    .filter( path -> cacheFileMatcher.matches( path.getFileName() ) ) ) {
+			return paths.toList().stream();
 		} catch ( IOException e ) {
 			throw new BoxIOException( e );
 		}

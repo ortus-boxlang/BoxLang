@@ -18,16 +18,17 @@
 package ortus.boxlang.runtime;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -35,12 +36,11 @@ import org.apache.commons.lang3.Strings;
 
 import com.fasterxml.jackson.jr.ob.JSONObjectException;
 
-import java.io.File;
-
 import ortus.boxlang.compiler.BXCompiler;
 import ortus.boxlang.compiler.CFTranspiler;
 import ortus.boxlang.compiler.DiskClassUtil;
 import ortus.boxlang.compiler.FeatureAudit;
+import ortus.boxlang.compiler.SyntaxCheck;
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.compiler.parser.Parser;
 import ortus.boxlang.compiler.prettyprint.PrettyPrint;
@@ -63,6 +63,7 @@ import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxLicenseException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
+import ortus.boxlang.runtime.util.ConfigSecretUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 import ortus.boxlang.runtime.util.Timer;
 
@@ -103,13 +104,15 @@ public class BoxRunner {
 
 	/**
 	 * A list of action commands that can be executed by the BoxRunner:
-	 * compile, cftranspile, featureAudit, schedule
+	 * check, compile, cftranspile, featureaudit, format, generatesecret, schedule
 	 */
 	private static final List<String>	ACTION_COMMANDS				= List.of(
+	    "check",
 	    "compile",
 	    "cftranspile",
 	    "featureaudit",
 	    "format",
+	    "generatesecret",
 	    "schedule" );
 
 	/**
@@ -123,7 +126,8 @@ public class BoxRunner {
 	public static int					exitCode					= 0;
 
 	/**
-	 * Execute the BoxLang runtime with the passed arguments.
+	 * Execute the BoxLang runtime with the passed arguments and exit the JVM with
+	 * the resulting exit code.
 	 *
 	 * @param args The command-line arguments
 	 *
@@ -131,10 +135,38 @@ public class BoxRunner {
 	 * @throws JSONObjectException
 	 */
 	public static void main( String[] args ) {
+		System.exit( _main( args ) );
+	}
+
+	/**
+	 * Execute the BoxLang runtime with the passed arguments without exiting the
+	 * JVM.
+	 * <p>
+	 * This is the testable entry point. {@link #main} delegates to this method and
+	 * exits the JVM with the returned exit code. It is package-private so tests in
+	 * this package can invoke it directly, and so it can be called reflectively
+	 * from an isolated class loader.
+	 *
+	 * @param args The command-line arguments
+	 *
+	 * @return The exit code to use for the process (0 on success, non-zero on
+	 *         failure)
+	 *
+	 * @throws IOException
+	 * @throws JSONObjectException
+	 */
+	static int _main( String[] args ) {
 		Timer		timer	= new Timer();
 
 		// Parse CLI options with Env Overrides
 		CLIOptions	options	= parseEnvironmentVariables( parseCommandLineOptions( args ) );
+
+		// Show help? Handle this BEFORE starting the runtime so we never spin one up
+		// just to print usage.
+		if ( Boolean.TRUE.equals( options.showHelp() ) ) {
+			printHelp();
+			return 0;
+		}
 
 		// Debug mode?
 		if ( options.isDebugMode() ) {
@@ -154,22 +186,32 @@ public class BoxRunner {
 		} catch ( BoxLicenseException le ) {
 			System.out.println( String.format( licenseExceptionMessage, le.getMessage() ) );
 			ExceptionUtil.printBoxLangStackTrace( le, System.err );
-			System.exit( 1 );
-			return;
+			return 1;
 		} catch ( Throwable e ) {
 			String message = "An exception ocurred while initializing the BoxLang runtime: " + e.getMessage();
 			if ( message.contains( ExceptionUtil.LICENSE_MODULE_NAME ) || message.contains( ExceptionUtil.LICENSE_SUBSCRIPTION_NAME ) ) {
 				message = String.format( licenseExceptionMessage, e.getMessage() );
 			}
 			ExceptionUtil.printBoxLangStackTrace( e, System.err );
-			System.exit( 1 );
-			return;
+			return 1;
 		}
 		int exitCode = 0;
 
 		try {
+			// Now that the runtime is loaded, resolve the first positional argument to
+			// its execution target: registered module > template > shebang script >
+			// module failsafe. The module registry is only available after startup, so
+			// this can't happen during arg parsing.
+			final BoxRuntime resolvedRuntime = boxRuntime;
+			options = resolveExecutionTarget( options, name -> resolvedRuntime.getModuleService().hasModule( Key.of( name ) ) );
+
+			// Execute a Module — modules trump ALL other execution modes
+			if ( options.targetModule() != null ) {
+				System.setProperty( "boxlang.cliModule", options.targetModule() );
+				boxRuntime.executeModule( options.targetModule(), options.cliArgs().toArray( new String[ 0 ] ) );
+			}
 			// Show version
-			if ( Boolean.TRUE.equals( options.showVersion() ) ) {
+			else if ( Boolean.TRUE.equals( options.showVersion() ) ) {
 				var versionInfo = boxRuntime.getVersionInfo();
 				System.out.println( "Ortus BoxLang™ v" + versionInfo.get( "version" ) );
 				System.out.println( "BoxLang™ ID: " + versionInfo.get( "boxlangId" ) );
@@ -212,11 +254,6 @@ public class BoxRunner {
 				System.setProperty( "boxlang.cliTemplate", options.templatePath() );
 				boxRuntime.executeTemplate( options.templatePath(), options.cliArgs().toArray( new String[ 0 ] ) );
 			}
-			// Execute a Module
-			else if ( options.targetModule() != null ) {
-				System.setProperty( "boxlang.cliModule", options.targetModule() );
-				boxRuntime.executeModule( options.targetModule(), options.cliArgs().toArray( new String[ 0 ] ) );
-			}
 			// Execute incoming code
 			else if ( options.code() != null ) {
 				// Execute a string of code
@@ -224,7 +261,7 @@ public class BoxRunner {
 			}
 			// Action Command
 			else if ( options.actionCommand() != null ) {
-				runActionCommand( options, boxRuntime );
+				exitCode = runActionCommand( options, boxRuntime );
 			}
 			// REPL Mode: Execute code as read from the standard input of the process
 			else {
@@ -245,7 +282,7 @@ public class BoxRunner {
 		}
 
 		BoxRunner.exitCode = exitCode;
-		System.exit( exitCode );
+		return exitCode;
 	}
 
 	/**
@@ -296,9 +333,14 @@ public class BoxRunner {
 	 *
 	 * @param options The CLIOptions object with the parsed options
 	 * @param runtime The BoxRuntime object
+	 *
+	 * @return The exit code for the action command (0 on success)
 	 */
-	private static void runActionCommand( CLIOptions options, BoxRuntime runtime ) {
+	static int runActionCommand( CLIOptions options, BoxRuntime runtime ) {
 		switch ( options.actionCommand().toLowerCase() ) {
+			case "check" :
+				SyntaxCheck.main( options.cliArgs().toArray( new String[ 0 ] ) );
+				break;
 			case "compile" :
 				BXCompiler.main( options.cliArgs().toArray( new String[ 0 ] ) );
 				break;
@@ -311,13 +353,16 @@ public class BoxRunner {
 			case "format" :
 				PrettyPrint.main( options.cliArgs().toArray( new String[ 0 ] ) );
 				break;
+			case "generatesecret" :
+				generateSecret( options.cliArgs() );
+				break;
 			case "schedule" :
 				// Check for help first
 				if ( !options.cliArgs().isEmpty() &&
 				    ( options.cliArgs().getFirst().equalsIgnoreCase( "--help" ) ||
 				        options.cliArgs().getFirst().equalsIgnoreCase( "-h" ) ) ) {
 					printScheduleHelp();
-					System.exit( 0 );
+					return 0;
 				}
 				if ( options.cliArgs().isEmpty() ) {
 					throw new BoxRuntimeException(
@@ -328,6 +373,20 @@ public class BoxRunner {
 			default :
 				throw new BoxRuntimeException( "Unknown action command: " + options.actionCommand() );
 		}
+		return 0;
+	}
+
+	/**
+	 * Encrypts plaintext with the active runtime's configured secret and prints the resulting {@code bxsecret:} value.
+	 *
+	 * @param plaintextParts The command-line arguments that form the plaintext value.
+	 */
+	private static void generateSecret( List<String> plaintextParts ) {
+		if ( plaintextParts.isEmpty() ) {
+			throw new BoxRuntimeException( "generatesecret command requires plaintext. Use: boxlang generatesecret <PLAINTEXT>" );
+		}
+
+		System.out.print( ConfigSecretUtil.encryptWithPrefix( String.join( " ", plaintextParts ) ) );
 	}
 
 	/**
@@ -494,6 +553,7 @@ public class BoxRunner {
 		    transpile,
 		    runtimeHome,
 		    options.showVersion(),
+		    options.showHelp(),
 		    options.cliArgs(),
 		    options.cliArgsRaw(),
 		    options.targetModule(),
@@ -502,16 +562,22 @@ public class BoxRunner {
 
 	/**
 	 * Helper method to parse command-line arguments and set options accordingly.
+	 * <p>
+	 * Runtime startup flags (--bx-debug, --bx-config, --bx-home) are extracted in
+	 * a pre-pass from ANYWHERE in the argument list so they are always honored for
+	 * runtime startup and are never passed through to a module or template,
+	 * regardless of their position relative to other arguments.
+	 * <p>
+	 * Package-private so it can be unit tested directly.
 	 *
 	 * @param args The cli arguments used
 	 *
 	 * @return The CLIOptions object with the parsed options
 	 */
-	private static CLIOptions parseCommandLineOptions( String[] args ) {
+	static CLIOptions parseCommandLineOptions( String[] args ) {
 		// Initialize options with defaults
 		Boolean			debug			= null;
 		Boolean			printAST		= false;
-		List<String>	argsList		= new ArrayList<>( Arrays.asList( args ) );
 		String			currentArgument	= null;
 		String			file			= null;
 		String			targetModule	= null;
@@ -520,29 +586,82 @@ public class BoxRunner {
 		String			code			= null;
 		Boolean			transpile		= false;
 		Boolean			showVersion		= false;
+		Boolean			showHelp		= false;
 		List<String>	cliArgs			= new ArrayList<>();
 		String			actionCommand	= null;
+
+		// Pre-parse pass: extract the runtime startup flags (--bx-debug, --bx-config,
+		// --bx-home) from ANYWHERE in the argument list, including after a module: or
+		// template argument. These flags must ALWAYS be honored for runtime startup
+		// and must NEVER be passed through to a module or template as arguments.
+		// Once extracted, they are removed from the list so the main parse loop below
+		// never sees them. Both the space-separated (--bx-config /path) and equals
+		// (--bx-config=/path) forms are supported.
+		List<String>	argsList		= new ArrayList<>();
+		for ( int i = 0; i < args.length; i++ ) {
+			String arg = args[ i ];
+
+			// Debug mode Flag
+			if ( arg.equalsIgnoreCase( "--bx-debug" ) ) {
+				debug = true;
+				continue;
+			}
+
+			// Config File Flag
+			if ( arg.equalsIgnoreCase( "--bx-config" ) || arg.toLowerCase().startsWith( "--bx-config=" ) ) {
+				if ( arg.indexOf( '=' ) > -1 ) {
+					configFile = arg.substring( arg.indexOf( '=' ) + 1 );
+				} else {
+					if ( i + 1 >= args.length ) {
+						throw new BoxRuntimeException(
+						    "Missing config file path with --config flag, it must be the next argument. [--config /path/boxlang.json]" );
+					}
+					configFile = args[ ++i ];
+				}
+				continue;
+			}
+
+			// Runtime Home Flag
+			if ( arg.equalsIgnoreCase( "--bx-home" ) || arg.toLowerCase().startsWith( "--bx-home=" ) ) {
+				if ( arg.indexOf( '=' ) > -1 ) {
+					runtimeHome = arg.substring( arg.indexOf( '=' ) + 1 );
+				} else {
+					if ( i + 1 >= args.length ) {
+						throw new BoxRuntimeException(
+						    "Missing runtime home path with --home flag, it must be the next argument. [--home /path/to/boxlang-home]" );
+					}
+					runtimeHome = args[ ++i ];
+				}
+				continue;
+			}
+
+			argsList.add( arg );
+		}
 
 		// Consume args in order via the `current` variable
 		while ( !argsList.isEmpty() ) {
 			currentArgument = argsList.remove( 0 );
 
-			// Help Flag, we find and break off
+			// Is this a module execution? Checked BEFORE all
+			// other flag/file/script/code processing so a module trumps all of those
+			if ( currentArgument.startsWith( "module:" ) ) {
+				// Remove the prefix
+				targetModule = currentArgument.substring( 7 );
+				cliArgs.addAll( argsList );
+				break;
+			}
+
+			// Help Flag, we find and break off. Set the flag and let _main() handle
+			// printing help so we never call System.exit() outside of main().
 			if ( currentArgument.equalsIgnoreCase( "--help" ) || currentArgument.equalsIgnoreCase( "-h" ) ) {
-				printHelp();
-				System.exit( 0 );
+				showHelp = true;
+				break;
 			}
 
 			// ShowVersion mode Flag, we find and break off
 			if ( currentArgument.equalsIgnoreCase( "--version" ) ) {
 				showVersion = true;
 				break;
-			}
-
-			// Debug mode Flag, we find and continue to the next argument
-			if ( currentArgument.equalsIgnoreCase( "--bx-debug" ) ) {
-				debug = true;
-				continue;
 			}
 
 			// Print AST Flag, we find and continue to the next argument
@@ -554,26 +673,6 @@ public class BoxRunner {
 			// Transpile Flag, we find and continue to the next argument
 			if ( currentArgument.equalsIgnoreCase( "--bx-transpile" ) ) {
 				transpile = true;
-				continue;
-			}
-
-			// Config File Flag, we find and continue to the next argument for the path
-			if ( currentArgument.equalsIgnoreCase( "--bx-config" ) ) {
-				if ( argsList.isEmpty() ) {
-					throw new BoxRuntimeException(
-					    "Missing config file path with --config flag, it must be the next argument. [--config /path/boxlang.json]" );
-				}
-				configFile = argsList.remove( 0 );
-				continue;
-			}
-
-			// Runtime Home Flag, we find and continue to the next argument for the path
-			if ( currentArgument.equalsIgnoreCase( "--bx-home" ) ) {
-				if ( argsList.isEmpty() ) {
-					throw new BoxRuntimeException(
-					    "Missing runtime home path with --home flag, it must be the next argument. [--home /path/to/boxlang-home]" );
-				}
-				runtimeHome = argsList.remove( 0 );
 				continue;
 			}
 
@@ -594,37 +693,12 @@ public class BoxRunner {
 				break;
 			}
 
-			// Is it a shebang script to execute
-			if ( isShebangScript( currentArgument ) ) {
-				file = getSheBangScript( currentArgument );
-				cliArgs.addAll( argsList );
-				break;
-			}
-
-			// Template to execute?
-			String targetPath = getExecutableTemplate( currentArgument );
-			if ( targetPath != null ) {
-				file = targetPath;
-				cliArgs.addAll( argsList );
-				break;
-			}
-
-			// Is this a module execution
-			if ( currentArgument.startsWith( "module:" ) ) {
-				// Remove the prefix
-				targetModule = currentArgument.substring( 7 );
-				cliArgs.addAll( argsList );
-				break;
-			}
-
-			// add it to the list of arguments
+			// Positional argument: classification is deferred until the runtime is
+			// loaded (see resolveExecutionTarget in main()). We can't know if this is
+			// a registered module name until the runtime and its module registry are
+			// up, and the runtime can't be started until all args are parsed (config
+			// file, runtime home, etc.), so deferring is the only correct option.
 			cliArgs.add( currentArgument );
-		}
-
-		// If no file, code, module, or action command was specified, but we have cliArgs,
-		// treat the first arg as a potential module name (shortcut for module:name syntax)
-		if ( file == null && code == null && targetModule == null && actionCommand == null && !cliArgs.isEmpty() ) {
-			targetModule = cliArgs.remove( 0 );
 		}
 
 		return new CLIOptions(
@@ -636,10 +710,131 @@ public class BoxRunner {
 		    transpile,
 		    runtimeHome,
 		    showVersion,
+		    showHelp,
 		    cliArgs,
 		    args,
 		    targetModule,
 		    actionCommand );
+	}
+
+	/**
+	 * Resolve the first positional CLI argument to its execution target now that
+	 * the runtime (and therefore its module registry) is loaded.
+	 * <p>
+	 * During {@link #parseCommandLineOptions} we cannot know if the first
+	 * positional argument is a registered module name: the module registry only
+	 * exists once the runtime has started, and the runtime cannot be started until
+	 * all arguments (config file, runtime home, debug, etc.) have been parsed.
+	 * This catch-22 is why the classification is deferred to here, after startup.
+	 * <p>
+	 * Priority:
+	 * <ol>
+	 * <li><strong>Registered module</strong> — the predicate reports this name
+	 * exists, so it's a module execution. This prevents the shebang and template
+	 * checks from hijacking a module execution.</li>
+	 * <li><strong>Executable template</strong> — a valid template file on disk.</li>
+	 * <li><strong>Shebang script</strong> — a file whose first line starts with
+	 * {@code #!}.</li>
+	 * <li><strong>Module failsafe</strong> — nothing matched, so assume it's a
+	 * module name anyway. Preserves the historical end-of-parse behavior.</li>
+	 * </ol>
+	 * Package-private so it can be unit tested directly.
+	 * <p>
+	 * The module existence check is injected as a {@link Predicate} so this method
+	 * can be tested in a vacuum, without starting a BoxLang runtime. The real
+	 * caller passes a predicate backed by the runtime's module service.
+	 *
+	 * @param options      The parsed CLI options
+	 * @param isModuleName Predicate that returns true if the given name is a
+	 *                     registered module
+	 *
+	 * @return A new CLIOptions with the first positional argument resolved to its
+	 *         target
+	 */
+	static CLIOptions resolveExecutionTarget( CLIOptions options, Predicate<String> isModuleName ) {
+		// If a target was already resolved during parsing (module:, template, code or
+		// action command) or there are no positional arguments, there's nothing to do
+		if ( options.targetModule() != null
+		    || options.templatePath() != null
+		    || options.code() != null
+		    || options.actionCommand() != null
+		    || options.cliArgs().isEmpty() ) {
+			return options;
+		}
+
+		String			firstArg	= options.cliArgs().getFirst();
+		List<String>	rest		= new ArrayList<>( options.cliArgs().subList( 1, options.cliArgs().size() ) );
+
+		// 1. Is the first arg a registered module name?
+		if ( isModuleName.test( firstArg ) ) {
+			return withTargetModule( options, firstArg, rest );
+		}
+
+		// 2. Is it an executable template?
+		String targetPath = getExecutableTemplate( firstArg );
+		if ( targetPath != null ) {
+			return withTarget( options, targetPath, rest );
+		}
+
+		// 3. Is it a shebang script?
+		if ( isShebangScript( firstArg ) ) {
+			return withTarget( options, getSheBangScript( firstArg ), rest );
+		}
+
+		// 4. Failsafe: treat the first arg as a module name
+		return withTargetModule( options, firstArg, rest );
+	}
+
+	/**
+	 * Build a new CLIOptions with a template path set and the module cleared.
+	 *
+	 * @param options The options to base the new options on
+	 * @param file    The template path to execute
+	 * @param cliArgs The arguments to pass to the template
+	 *
+	 * @return A new CLIOptions instance
+	 */
+	private static CLIOptions withTarget( CLIOptions options, String file, List<String> cliArgs ) {
+		return new CLIOptions(
+		    file,
+		    options.debug(),
+		    options.code(),
+		    options.configFile(),
+		    options.printAST(),
+		    options.transpile(),
+		    options.runtimeHome(),
+		    options.showVersion(),
+		    options.showHelp(),
+		    cliArgs,
+		    options.cliArgsRaw(),
+		    null,
+		    options.actionCommand() );
+	}
+
+	/**
+	 * Build a new CLIOptions with a target module set and the template path cleared.
+	 *
+	 * @param options The options to base the new options on
+	 * @param module  The module to execute
+	 * @param cliArgs The arguments to pass to the module
+	 *
+	 * @return A new CLIOptions instance
+	 */
+	private static CLIOptions withTargetModule( CLIOptions options, String module, List<String> cliArgs ) {
+		return new CLIOptions(
+		    null,
+		    options.debug(),
+		    options.code(),
+		    options.configFile(),
+		    options.printAST(),
+		    options.transpile(),
+		    options.runtimeHome(),
+		    options.showVersion(),
+		    options.showHelp(),
+		    cliArgs,
+		    options.cliArgsRaw(),
+		    module,
+		    options.actionCommand() );
 	}
 
 	/**
@@ -730,6 +925,10 @@ public class BoxRunner {
 			return false;
 		}
 
+		if ( Files.isDirectory( templatePath ) ) {
+			return false;
+		}
+
 		if ( DiskClassUtil.isJavaByteCode( templatePath.toFile() ) ) {
 			return false;
 		}
@@ -784,12 +983,15 @@ public class BoxRunner {
 		System.out.println( "      --bx-transpile             🔄 Transpile BoxLang code to Java" );
 		System.out.println();
 		System.out.println( "🚀 ACTION COMMANDS:" );
+		System.out.println( "  check                            ✅ Check source files for syntax errors without executing them" );
+		System.out.println( "                                     Use: boxlang check --help" );
 		System.out.println( "  compile                         📦 Pre-compile BoxLang templates to class files" );
 		System.out.println( "                                     Use: boxlang compile --help" );
 		System.out.println( "  cftranspile                     🔄 Transpile ColdFusion code to BoxLang" );
 		System.out.println( "                                     Use: boxlang cftranspile --help" );
 		System.out.println( "  featureaudit                    🔍 Audit code for BoxLang feature compatibility" );
 		System.out.println( "                                     Use: boxlang featureaudit --help" );
+		System.out.println( "  generatesecret <PLAINTEXT>      🔐 Generate a bxsecret value using the active runtime configuration" );
 		System.out.println( "  schedule <SCHEDULER_FILE>       ⏰ Run a BoxLang scheduler from file" );
 		System.out.println( "                                     Use: boxlang schedule --help" );
 		System.out.println();
@@ -813,6 +1015,10 @@ public class BoxRunner {
 		System.out.println( "  # 🐛 Execute with debug mode and custom config" );
 		System.out.println( "  boxlang --bx-debug --bx-config ./custom.json myapp.bx" );
 		System.out.println();
+		System.out.println( "  # ✅ Check files for syntax errors" );
+		System.out.println( "  boxlang check myapp.bx" );
+		System.out.println( "  boxlang check --source ./src" );
+		System.out.println();
 		System.out.println( "  # 📦 Pre-compile templates" );
 		System.out.println( "  boxlang compile --source ./src --target ./compiled" );
 		System.out.println();
@@ -821,6 +1027,9 @@ public class BoxRunner {
 		System.out.println();
 		System.out.println( "  # 🔍 Audit code features" );
 		System.out.println( "  boxlang featureaudit --source ./myapp --output report.json" );
+		System.out.println();
+		System.out.println( "  # 🔐 Generate an encrypted configuration value" );
+		System.out.println( "  boxlang generatesecret \"my-sensitive-value\"" );
 		System.out.println();
 		System.out.println( "  # 🔍 Format Code" );
 		System.out.println( "  boxlang format ./" );

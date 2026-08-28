@@ -1,0 +1,47 @@
+/**
+ * Test fixture: a module that disables one of its own nested modules via `this.modules`.
+ * Kept in its own modules folder so the enablement test cannot interfere with the
+ * settings-precedence fixtures.
+ */
+class {
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Module Properties
+	 * --------------------------------------------------------------------------
+	 */
+
+	this.version		= "1.0.0";
+	this.mapping		= "disablingParent";
+	this.author			= "Ortus Solutions";
+	this.description	= "A module that disables its own nested module";
+	this.enabled		= true;
+
+	/**
+	 * A parent may switch a nested module off entirely.
+	 */
+	this.modules = {
+		"disabledChild" : {
+			enabled : false
+		}
+	};
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * Module Methods
+	 * --------------------------------------------------------------------------
+	 */
+
+	function configure(){
+		settings					= {};
+		interceptors				= [];
+		customInterceptionPoints	= [];
+	}
+
+	function onLoad(){
+	}
+
+	function onUnload(){
+	}
+
+}

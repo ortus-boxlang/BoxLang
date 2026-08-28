@@ -99,7 +99,7 @@ public class Concat implements IOperator {
 	 * @return The result — either a {@code String} or the mutated {@link BoxStringBuilder}
 	 */
 	public static Object invoke( IBoxContext context, Object target, Key name, Object right ) {
-		Object current = Referencer.get( context, target, name, false );
+		Object current = context.unwrapQueryColumn( Referencer.get( context, target, name, false ) );
 		if ( current instanceof BoxStringBuilder sb ) {
 			sb.append( right );
 			return sb;

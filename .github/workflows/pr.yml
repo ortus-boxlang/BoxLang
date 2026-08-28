@@ -6,6 +6,7 @@ on:
       - "main"
       - "development"
       - "releases/**"
+      - "hotfix/**"
   pull_request:
     branches:
       - development

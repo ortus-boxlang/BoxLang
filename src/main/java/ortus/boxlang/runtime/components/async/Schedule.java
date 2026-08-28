@@ -93,7 +93,7 @@ import ortus.boxlang.runtime.validation.Validator;
  *
  * @attribute.exclude Comma-separated dates or date ranges to skip.
  *
- * @attribute.port HTTP port override for the URL. Defaults to 80.
+ * @attribute.port Optional HTTP port override for the URL. When omitted, the URL scheme determines the default port.
  *
  * @attribute.username HTTP basic auth username.
  *
@@ -167,7 +167,7 @@ public class Schedule extends Component {
 		    new Attribute( Key.endTime, "string" ),
 		    new Attribute( Key.repeat, "integer" ),
 		    new Attribute( Key.exclude, "string" ),
-		    new Attribute( Key.port, "integer", 80 ),
+		    new Attribute( Key.port, "integer" ),
 		    new Attribute( Key.username, "string" ),
 		    new Attribute( Key.password, "string" ),
 		    new Attribute( Key.proxyServer, "string" ),
@@ -840,8 +840,11 @@ public class Schedule extends Component {
 
 			var				request	= client
 			    .newRequest( url, runtimeContext )
-			    .method( "GET" )
-			    .port( port );
+			    .method( "GET" );
+
+			if ( port != null ) {
+				request.port( port );
+			}
 
 			if ( username != null && !username.isBlank() ) {
 				request.withBasicAuth( username, password );

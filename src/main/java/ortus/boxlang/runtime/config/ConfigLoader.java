@@ -26,6 +26,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ortus.boxlang.runtime.config.segments.SecurityConfig;
 import ortus.boxlang.runtime.config.util.PlaceholderHelper;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
@@ -39,6 +40,7 @@ import ortus.boxlang.runtime.types.util.BLCollector;
 import ortus.boxlang.runtime.types.util.JSONUtil;
 import ortus.boxlang.runtime.types.util.ListUtil;
 import ortus.boxlang.runtime.types.util.StructUtil;
+import ortus.boxlang.runtime.util.ConfigSecretUtil;
 
 /**
  * This class is responsible for loading the core configuration file from the `resources` folder
@@ -136,8 +138,8 @@ public class ConfigLoader {
 		    true
 		);
 
-		// Replace all placeholders in the raw config
-		rawConfig = PlaceholderHelper.resolveAll( rawConfig );
+		// Decrypt prefixed values before resolving placeholders in the raw config.
+		rawConfig = resolveConfigValues( rawConfig );
 
 		// Verify it loaded the configuration map
 		if ( rawConfig instanceof Map ) {
@@ -224,8 +226,8 @@ public class ConfigLoader {
 		// Parse it natively to Java objects
 		Object rawConfig = JSONUtil.fromJSON( source, true );
 
-		// Replace all placeholders in the raw config
-		rawConfig = PlaceholderHelper.resolveAll( rawConfig );
+		// Decrypt prefixed values before resolving placeholders in the raw config.
+		rawConfig = resolveConfigValues( rawConfig );
 
 		// Verify it loaded the configuration map
 		if ( rawConfig instanceof Map ) {
@@ -286,9 +288,12 @@ public class ConfigLoader {
 		    Key.properties, UnmodifiableStruct.fromMap( System.getProperties() )
 		);
 
-		IStruct				propertyOverrides		= filterEnv( collectedEnvironment.getAsStruct( Key.properties ) );
+		SecurityConfig		secretConfig			= getSecretConfig( config );
+		IStruct				propertyOverrides		= decryptEnvironmentOverrides(
+		    filterEnv( collectedEnvironment.getAsStruct( Key.properties ) ), secretConfig );
 
-		IStruct				envOverrides			= filterEnv( collectedEnvironment.getAsStruct( Key.environment ) )
+		IStruct				envOverrides			= decryptEnvironmentOverrides( filterEnv( collectedEnvironment.getAsStruct( Key.environment ) ),
+		    secretConfig )
 		    .entrySet()
 		    .stream()
 		    .filter( entry -> !propertyOverrides.containsKey( entry.getKey() ) )
@@ -308,6 +313,215 @@ public class ConfigLoader {
 		}
 
 		return StructUtil.unFlattenKeys( flatConfig, true, false );
+	}
+
+	@SuppressWarnings( "unchecked" )
+	private Object resolveConfigValues( Object rawConfig ) {
+		SecurityConfig secretConfig = getSecretConfig(
+		    rawConfig instanceof Map<?, ?> configMap ? new Struct( ( Map<Object, Object> ) configMap ) : new Struct() );
+		// Env/property seed overrides win when decrypting a JSON config file.
+		applySecretSeedOverrides( secretConfig );
+		return resolveConfigValues( rawConfig, secretConfig );
+	}
+
+	/**
+	 * Decrypts and resolves a raw configuration value.
+	 * <p>
+	 * Prefixed values are decrypted first, then placeholders are resolved with each
+	 * placeholder value decrypted individually as it is substituted. This is only used
+	 * by configuration-file processing, never by general runtime placeholder call sites.
+	 *
+	 * @param rawConfig    The raw configuration value to process.
+	 * @param secretConfig The {@link SecurityConfig} used to decrypt prefixed values.
+	 *
+	 * @return The decrypted and resolved configuration value.
+	 */
+	private Object resolveConfigValues( Object rawConfig, SecurityConfig secretConfig ) {
+		decryptConfigValues( rawConfig, secretConfig );
+		return resolvePlaceholdersWithSecrets( rawConfig, secretConfig );
+	}
+
+	/**
+	 * Resolves placeholders in a configuration tree, decrypting each placeholder's value
+	 * individually as it is substituted so that a value like {@code "${a}-${b}"} where both
+	 * {@code a} and {@code b} hold {@code bxsecret:} values resolves correctly.
+	 *
+	 * @param value        The value tree to resolve.
+	 * @param secretConfig The {@link SecurityConfig} used to decrypt placeholder values.
+	 *
+	 * @return The resolved value tree.
+	 */
+	@SuppressWarnings( "unchecked" )
+	private Object resolvePlaceholdersWithSecrets( Object value, SecurityConfig secretConfig ) {
+		return resolvePlaceholdersWithSecrets( value, secretConfig, PlaceholderHelper.getPlaceholderMap() );
+	}
+
+	/**
+	 * Resolves placeholders in a configuration tree using the supplied placeholder map.
+	 * Encrypted placeholder values are decrypted at the point of replacement (only for
+	 * placeholders that are actually referenced) by supplying a decryptor to the resolver.
+	 * This runs only from configuration-file processing.
+	 *
+	 * @param value          The value tree to resolve.
+	 * @param secretConfig   The {@link SecurityConfig} used to decrypt placeholder values.
+	 * @param placeholderMap The placeholder map used for substitution.
+	 *
+	 * @return The resolved value tree.
+	 */
+	@SuppressWarnings( "unchecked" )
+	Object resolvePlaceholdersWithSecrets( Object value, SecurityConfig secretConfig, IStruct placeholderMap ) {
+		return PlaceholderHelper.resolveAll( value, placeholderMap, replacement -> ConfigSecretUtil.decryptIfEncrypted(
+		    replacement, secretConfig.getSecretSeed(), secretConfig.secretAlgorithm ) );
+	}
+
+	@SuppressWarnings( "unchecked" )
+	private Object decryptConfigValues( Object rawConfig, SecurityConfig secretConfig ) {
+		return decryptConfigValues( rawConfig, secretConfig, "" );
+	}
+
+	@SuppressWarnings( "unchecked" )
+	private Object decryptConfigValues( Object rawConfig, SecurityConfig secretConfig, String path ) {
+		if ( rawConfig instanceof IStruct struct ) {
+			for ( Key key : struct.keySet() ) {
+				struct.put( key, decryptConfigValues( struct.get( key ), secretConfig, appendPath( path, key.getName() ) ) );
+			}
+		} else if ( rawConfig instanceof Array array ) {
+			for ( int i = 0; i < array.size(); i++ ) {
+				array.set( i, decryptConfigValues( array.get( i ), secretConfig, path + "[" + i + "]" ) );
+			}
+		} else if ( rawConfig instanceof Map<?, ?> rawMap ) {
+			Map<Object, Object> configMap = ( Map<Object, Object> ) rawMap;
+			for ( Object key : List.copyOf( configMap.keySet() ) ) {
+				configMap.put( key, decryptConfigValues( configMap.get( key ), secretConfig, appendPath( path, key.toString() ) ) );
+			}
+		} else if ( rawConfig instanceof List<?> rawList ) {
+			List<Object> configList = ( List<Object> ) rawList;
+			for ( int i = 0; i < configList.size(); i++ ) {
+				configList.set( i, decryptConfigValues( configList.get( i ), secretConfig, path + "[" + i + "]" ) );
+			}
+		} else if ( rawConfig instanceof String value ) {
+			if ( ConfigSecretUtil.isEncrypted( value ) ) {
+				try {
+					return ConfigSecretUtil.decryptIfEncrypted( value, secretConfig.getSecretSeed(), secretConfig.secretAlgorithm );
+				} catch ( Exception e ) {
+					throw new ConfigurationException(
+					    "Failed to decrypt the [bxsecret:] value at configuration path [" + path + "] using algorithm ["
+					        + secretConfig.secretAlgorithm
+					        + "]. The value cannot be read with the runtime's current secret seed. Re-encrypt the value with the same secret seed this runtime uses.",
+					    e );
+				}
+			}
+		}
+
+		return rawConfig;
+	}
+
+	/**
+	 * Appends a path segment to an existing configuration path, separating segments with a dot.
+	 *
+	 * @param path    The current configuration path.
+	 * @param segment The segment to append.
+	 *
+	 * @return The combined configuration path.
+	 */
+	private String appendPath( String path, String segment ) {
+		return path.isEmpty() ? segment : path + "." + segment;
+	}
+
+	/**
+	 * Builds the {@link SecurityConfig} used to decrypt a configuration source.
+	 * <p>
+	 * The file's own {@code security} section is processed first. The secret seed override
+	 * from the environment or JVM system properties is applied by
+	 * {@link #resolveConfigValues(Object)} at the JSON-config-file boundary, not here, so
+	 * that it does not run while environment/property overrides are merged during startup.
+	 *
+	 * @param config The configuration struct being processed.
+	 *
+	 * @return The resolved {@link SecurityConfig}.
+	 */
+	SecurityConfig getSecretConfig( IStruct config ) {
+		SecurityConfig secretConfig = new SecurityConfig();
+		if ( config.get( Key.security ) instanceof Map<?, ?> securityConfig ) {
+			IStruct securitySettings = new Struct( securityConfig );
+			if ( ConfigSecretUtil.isEncrypted( securitySettings.getAsString( Key.secretAlgorithm ) ) ) {
+				throw new ConfigurationException( "The [security.secretAlgorithm] setting cannot be encrypted." );
+			}
+			secretConfig.process( securitySettings );
+		}
+		return secretConfig;
+	}
+
+	/**
+	 * Applies the secret-seed override from the environment or JVM system properties so it wins over any
+	 * seed in the file being decrypted. The same seed is used for all {@code bxsecret:} values because
+	 * environment and system-property overrides are applied only after file decryption completes.
+	 * <p>
+	 * This intentionally uses only plain Java maps to avoid loading BoxLang types (Array, Struct, etc.)
+	 * during early config bootstrap, before the runtime services are fully wired.
+	 *
+	 * @param secretConfig The per-file {@link SecurityConfig} to apply the override to.
+	 */
+	private void applySecretSeedOverrides( SecurityConfig secretConfig ) {
+		String overrideSeed = firstNonBlank(
+		    getCaseInsensitiveProperty( PROPERTY_PREFIX + "security.secretSeed" ),
+		    getCaseInsensitiveProperty( ENV_PREFIX + "SECURITY_SECRETSEED" ),
+		    getCaseInsensitiveEnv( ENV_PREFIX + "SECURITY_SECRETSEED" ) );
+		if ( overrideSeed != null ) {
+			secretConfig.process( Struct.of( Key.secretSeed, overrideSeed ) );
+		}
+	}
+
+	/**
+	 * Reads a JVM system property matching the given name, ignoring case.
+	 *
+	 * @param name The property name to look up.
+	 *
+	 * @return The matching property value, or null when absent.
+	 */
+	private String getCaseInsensitiveProperty( String name ) {
+		String lowerName = name.toLowerCase();
+		return System.getProperties().entrySet().stream()
+		    .filter( entry -> entry.getKey().toString().toLowerCase().equals( lowerName ) )
+		    .map( entry -> entry.getValue().toString() )
+		    .findFirst()
+		    .orElse( null );
+	}
+
+	/**
+	 * Reads an environment variable matching the given name, ignoring case.
+	 *
+	 * @param name The environment variable name to look up.
+	 *
+	 * @return The matching environment variable value, or null when absent.
+	 */
+	private String getCaseInsensitiveEnv( String name ) {
+		String upperName = name.toUpperCase();
+		return System.getenv().entrySet().stream()
+		    .filter( entry -> entry.getKey().toUpperCase().equals( upperName ) )
+		    .map( Map.Entry::getValue )
+		    .findFirst()
+		    .orElse( null );
+	}
+
+	/**
+	 * Returns the first non-blank value from the supplied candidates, trimmed, or null when all are blank.
+	 *
+	 * @param candidates The candidate values to inspect.
+	 *
+	 * @return The first non-blank trimmed value, or null.
+	 */
+	private String firstNonBlank( String... candidates ) {
+		for ( String candidate : candidates ) {
+			if ( candidate != null && !candidate.isBlank() ) {
+				return candidate.trim();
+			}
+		}
+		return null;
+	}
+
+	private IStruct decryptEnvironmentOverrides( IStruct overrides, SecurityConfig secretConfig ) {
+		return ( IStruct ) resolveConfigValues( overrides, secretConfig );
 	}
 
 	/**

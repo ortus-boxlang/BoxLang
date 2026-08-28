@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>BoxLang Dump depth/maxRows Integration Test</title>
+	<style>
+		body { font-family: system-ui, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 20px; }
+		h1 { font-size: 1.4rem; }
+		ul { line-height: 2; }
+		a { color: #0066cc; }
+	</style>
+</head>
+<body>
+	<h1>BoxLang <code>dump()</code> depth / maxRows Integration Test</h1>
+	<p>Live server built from branch <code>claude/boxlang-dump-depth-maxrows-itk5qz</code>.</p>
+	<ul>
+		<li><a href="01-depth-struct.bxm">01 - Recursion depth on nested Struct</a></li>
+		<li><a href="02-maxrows-struct.bxm">02 - Row limiting (maxRows) on a flat Struct</a></li>
+		<li><a href="03-maxrows-array.bxm">03 - Row limiting (maxRows) on an Array</a></li>
+		<li><a href="04-maxrows-query.bxm">04 - Row limiting (maxRows) on a Query</a></li>
+		<li><a href="05-set.bxm">05 - depth / maxRows on a Set</a></li>
+		<li><a href="06-combined.bxm">06 - depth + maxRows combined</a></li>
+		<li><a href="07-component-tag.bxm">07 - &lt;bx:dump&gt; component tag attributes</a></li>
+		<li><a href="08-cf-compat.cfm">08 - CF-compat &lt;cfdump top&gt; transpiled to depth</a></li>
+	</ul>
+</body>
+</html>

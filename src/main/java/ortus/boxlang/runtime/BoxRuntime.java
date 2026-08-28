@@ -63,6 +63,7 @@ import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.interop.DynamicObject;
 import ortus.boxlang.runtime.loader.ClassLocator;
+import ortus.boxlang.runtime.loader.DynamicClassLoader;
 import ortus.boxlang.runtime.loader.DynamicClassLoaderFactory;
 import ortus.boxlang.runtime.loader.IClassLoaderFactory;
 import ortus.boxlang.runtime.logging.LoggingService;
@@ -384,6 +385,9 @@ public class BoxRuntime implements java.io.Closeable {
 
 		this.configuration.process( loader.mergeEnvironmentOverrides( overrideConfig ) );
 
+		// Materialize the seed after all overrides are applied so legacy integrations can read the runtime-home seed file during startup.
+		this.configuration.security.getSecretSeed();
+
 		// Announce so any runtime additions - after all configuration settings have been applied
 		this.interceptorService.announce(
 		    BoxEvent.ON_CONFIGURATION_LOAD,
@@ -438,16 +442,6 @@ public class BoxRuntime implements java.io.Closeable {
 		// Global Directories to ensure
 		List<String> globalDirectories = Arrays.asList( "classes", "components", "schedulers" );
 		globalDirectories.forEach( dir -> FileSystemUtil.createDirectoryIfMissing( this.runtimeHome.resolve( "global" ).resolve( dir ) ) );
-
-		// Generate a seed file if missing
-		Path seedPath = this.runtimeHome.resolve( "config" ).resolve( ".seed" );
-		if ( Files.notExists( seedPath ) ) {
-			try {
-				Files.write( seedPath, EncryptionUtil.generateKeyAsString().getBytes() );
-			} catch ( IOException e ) {
-				throw new BoxRuntimeException( "Could not create runtime home seed file at [" + seedPath + "]", e );
-			}
-		}
 
 		// Copy config/boxlang.json if missing
 		FileSystemUtil.copyResourceToPath(
@@ -596,6 +590,18 @@ public class BoxRuntime implements java.io.Closeable {
 		// Announce it baby! Runtime is up
 		this.interceptorService.announce(
 		    BoxEvent.ON_RUNTIME_START );
+
+		// One-shot, fire-and-forget cleanup of stale temp JAR files in the shared
+		// temp directory. Deferred to a virtual thread so it never blocks startup, and
+		// only runs now - after the runtime, its services, modules, and global services
+		// have fully started - so it cannot race against any JARs they load.
+		// Only runs when JAR temp file caching is enabled; when disabled there are no
+		// temp JAR files to clean up.
+		if ( DynamicClassLoader.isJarTempFileCachingEnabled() ) {
+			Thread.ofVirtual()
+			    .name( "dynamic-classloader-cleanup" )
+			    .start( () -> DynamicClassLoader.cleanupStaleJarTempFiles() );
+		}
 
 		// Setting this to a non-null value is the flag that lets everyone know the instance is fully started
 		this.startTime = Instant.now();
@@ -1139,6 +1145,9 @@ public class BoxRuntime implements java.io.Closeable {
 		// Watcher service must shut down BEFORE asyncService so virtual-thread loops
 		// can be cancelled before their executor is terminated
 		instance.watcherService.onShutdown( force );
+		// Parser DFA cache eviction must shut down BEFORE asyncService so no
+		// unmanaged virtual threads block shutdown
+		Parser.shutdown();
 		instance.asyncService.onShutdown( force );
 		instance.functionService.onShutdown( force );
 		instance.componentService.onShutdown( force );
@@ -1313,7 +1322,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 * If it's a class the args will be passed to the main method
 	 * <p>
 	 *
-	 * @param templatePath The absolute path to the template to execute
+	 * @param templatePath The absolute or relative path to the template to execute
 	 * @param context      The context to execute the template in
 	 * @param args         The arguments to pass to the template
 	 */
@@ -1335,10 +1344,10 @@ public class BoxRuntime implements java.io.Closeable {
 			executeClass( targetClass, templatePath, context, args );
 		} else {
 			// Load the template
-			BoxTemplate targetTemplate = RunnableLoader.getInstance().loadTemplateRelative(
+			BoxTemplate targetTemplate = RunnableLoader.getInstance().loadTemplateAbsolute(
 			    context,
-			    templatePath,
-			    false );
+			    FileSystemUtil.expandPath( context, templatePath )
+			);
 			executeTemplate( targetTemplate, templatePath, context );
 		}
 	}

@@ -33,7 +33,6 @@ import org.junit.jupiter.api.Test;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -182,7 +181,7 @@ public class SystemExecuteTest {
 		    FileSystemUtil.exists( testTextFile )
 		);
 
-		String content = StringCaster.cast( FileSystemUtil.read( testTextFile ) );
+		String content = FileSystemUtil.readString( testTextFile );
 		assertTrue( content.length() > 0 );
 
 	}
@@ -218,7 +217,7 @@ public class SystemExecuteTest {
 		    FileSystemUtil.exists( testTextFile )
 		);
 
-		String content = StringCaster.cast( FileSystemUtil.read( testTextFile ) );
+		String content = FileSystemUtil.readString( testTextFile );
 		assertTrue( content.length() > 0 );
 
 	}

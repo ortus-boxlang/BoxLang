@@ -41,7 +41,14 @@
 								</th>
 								<td>
 									<div class="bx-onoff">
-										<bx:set dump( var : theCollection[ key ], top : isNull( top ) ? null : top - 1, expand : expand ?: null, output : "buffer", format : format ) >
+										<bx:set dump(
+													var : theCollection[ key ],
+													depth : isNull( depth ) ? null : depth - 1,
+													maxRows : maxRows ?: null,
+													expand : expand ?: null,
+													output : "buffer",
+													format : format ?: null
+												) >
 									</div>
 								</td>
 							</tr>

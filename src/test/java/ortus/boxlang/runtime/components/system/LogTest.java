@@ -37,7 +37,6 @@ import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
-import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -113,7 +112,7 @@ public class LogTest {
 		String	content		= "";
 		while ( System.nanoTime() < deadline ) {
 			if ( FileSystemUtil.exists( logFilePath ) ) {
-				content = StringCaster.cast( FileSystemUtil.read( logFilePath ) );
+				content = FileSystemUtil.readString( logFilePath );
 				if ( content.contains( expectedText ) ) {
 					return content;
 				}

@@ -20,8 +20,10 @@ package ortus.boxlang.runtime;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
-import java.nio.file.Path;
+import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
@@ -41,6 +43,16 @@ public class BoxRuntimeTest {
 		BoxRuntime runtime = BoxRuntime.getInstance( true );
 		assertThat( BoxRuntime.getInstance() ).isSameInstanceAs( runtime );
 		assertThat( runtime.getStartTime() ).isNotNull();
+	}
+
+	@DisplayName( "It creates the runtime seed during startup" )
+	@Test
+	public void testItCreatesRuntimeSeedDuringStartup() throws IOException {
+		BoxRuntime	runtime		= BoxRuntime.getInstance( true );
+		Path		seedPath	= runtime.getRuntimeHome().resolve( "config/.seed" );
+
+		assertThat( Files.exists( seedPath ) ).isTrue();
+		assertThat( Files.readString( seedPath ).trim() ).isEqualTo( runtime.getConfiguration().security.getSecretSeed() );
 	}
 
 	@DisplayName( "It can shutdown" )

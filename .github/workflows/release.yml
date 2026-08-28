@@ -17,6 +17,11 @@ on:
         required: false
         default: false
         type: boolean
+      skipEvergreen:
+        description: "Skip the evergreen 'latest snapshot' S3 upload (used by hotfix snapshots)"
+        required: false
+        default: false
+        type: boolean
 
   # Manual Trigger for LTS Releases
   workflow_dispatch:
@@ -59,20 +64,27 @@ jobs:
         id: current_version
         run: |
           TMPVERSION=$(grep '^version=' gradle.properties | cut -d'=' -f2)
-          if [[ "${{ github.ref }}" == "refs/heads/development" ]]; then
+
+          if [[ "$SNAPSHOT" == "true" ]]; then
             # Replace existing prerelease identifier with -snapshot or append -snapshot if none exists
-            TMPVERSION=$(echo $TMPVERSION | sed 's/-.*$//')-snapshot
+            TMPVERSION=$(echo $TMPVERSION | sed 's/-.*$//')
+            if [[ "$GITHUB_REF" == "refs/heads/development" ]]; then
+              TMPVERSION="${TMPVERSION}-snapshot"
+            else
+              # Non-development snapshot (e.g. hotfix/*): branch-scoped suffix so it
+              # never collides with development's version-keyed S3 path.
+              SAFE_BRANCH=$(echo "${GITHUB_REF#refs/heads/}" | tr -c 'a-zA-Z0-9' '-' | tr -s '-' | sed 's/^-//;s/-$//')
+              TMPVERSION="${TMPVERSION}-${SAFE_BRANCH}-snapshot"
+            fi
           fi
           echo "VERSION=$TMPVERSION" >> $GITHUB_ENV
 
           # Branche
           echo "Github Ref is $GITHUB_REF"
-          echo "BRANCH=main" >> $GITHUB_ENV
-
-          # Snapshot
-          if [ $GITHUB_REF == 'refs/heads/development' ]
-          then
+          if [[ "$SNAPSHOT" == "true" ]]; then
             echo "BRANCH=development" >> $GITHUB_ENV
+          else
+            echo "BRANCH=main" >> $GITHUB_ENV
           fi
 
       - name: Update changelog [unreleased] with latest version
@@ -126,6 +138,7 @@ jobs:
           DEST_DIR: "ortussolutions/boxlang/${{ env.VERSION }}"
 
       - name: Upload Evergreen Distributions to S3
+        if: inputs.skipEvergreen != true
         uses: jakejarvis/s3-sync-action@master
         with:
           args: --acl public-read
@@ -196,7 +209,7 @@ jobs:
   ##########################################################################################
   prep_next_release:
     name: Prep Next Release
-    if: github.ref != 'refs/heads/development'
+    if: inputs.snapshot != true
     runs-on: ubuntu-latest
     needs: [build]
     permissions:
