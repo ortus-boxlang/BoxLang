@@ -319,8 +319,6 @@ public class ConfigLoader {
 	private Object resolveConfigValues( Object rawConfig ) {
 		SecurityConfig secretConfig = getSecretConfig(
 		    rawConfig instanceof Map<?, ?> configMap ? new Struct( ( Map<Object, Object> ) configMap ) : new Struct() );
-		// Env/property seed overrides win when decrypting a JSON config file.
-		applySecretSeedOverrides( secretConfig );
 		return resolveConfigValues( rawConfig, secretConfig );
 	}
 
@@ -383,6 +381,18 @@ public class ConfigLoader {
 		return path.isEmpty() ? segment : path + "." + segment;
 	}
 
+	/**
+	 * Builds the {@link SecurityConfig} used to decrypt a configuration source.
+	 * <p>
+	 * The file's own {@code security} section is processed first, then the secret seed
+	 * from the environment or JVM system properties is applied on top so it is the absolute
+	 * authority: it loads before any other config and overrides every other secret seed
+	 * in every other location (files, seed files, etc.).
+	 *
+	 * @param config The configuration struct being processed.
+	 *
+	 * @return The resolved {@link SecurityConfig}.
+	 */
 	private SecurityConfig getSecretConfig( IStruct config ) {
 		SecurityConfig secretConfig = new SecurityConfig();
 		if ( config.get( Key.security ) instanceof Map<?, ?> securityConfig ) {
@@ -392,6 +402,8 @@ public class ConfigLoader {
 			}
 			secretConfig.process( securitySettings );
 		}
+		// The env/property seed is the absolute authority: it overrides every other seed everywhere.
+		applySecretSeedOverrides( secretConfig );
 		return secretConfig;
 	}
 
