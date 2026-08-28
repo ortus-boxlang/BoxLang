@@ -105,6 +105,11 @@ public class Parser {
 	private static volatile Future<?>		postParseCheckFuture;
 
 	/**
+	 * Cached experimental flag read once on first parse
+	 */
+	private static volatile boolean			cacheEvictionEnabled	= true;
+
+	/**
 	 * Lazy-init the virtual executor and start the watchdog loop.
 	 * Does nothing if already started or if no parse has ever occurred.
 	 */
@@ -114,6 +119,10 @@ public class Parser {
 		}
 		synchronized ( Parser.class ) {
 			if ( cacheExecutor != null ) {
+				return;
+			}
+			cacheEvictionEnabled = ( Boolean ) runtime.getConfiguration().experimental.getOrDefault( "clearParserCache", true );
+			if ( !cacheEvictionEnabled ) {
 				return;
 			}
 			// Grab a managed virtual executor from BoxLang's AsyncService
@@ -504,6 +513,9 @@ public class Parser {
 	 * - Schedule a one-shot debounced heap-threshold check (at most one in flight)
 	 */
 	private static void afterParse() {
+		if ( !cacheEvictionEnabled ) {
+			return;
+		}
 		ensureWatchdogStarted();
 		lastParseTime = System.nanoTime();
 		if ( postParseCheckFuture == null ) {

@@ -341,7 +341,9 @@
 	// Please see the documentation to see which flags are available
 	"experimental": {
 		// If enabled, it will generate AST JSON data under the project's /grapher/data folder
-		"ASTCapture": false
+		"ASTCapture": false,
+		// If enabled, the parser DFA cache will be automatically evicted based on heap pressure, idle time, and max age
+		"clearParserCache": true
 	},
 	// Global Executors for the runtime
 	// These are managed by the AsyncService and registered upon startup
