@@ -24,12 +24,16 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Optional;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import ortus.boxlang.compiler.DiskClassUtil;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -39,9 +43,111 @@ import ortus.boxlang.runtime.types.exceptions.ParseException;
 
 public class Parser {
 
-	private static BoxRuntime			runtime	= BoxRuntime.getInstance();
+	private static BoxRuntime				runtime					= BoxRuntime.getInstance();
 
-	private static final BoxLangLogger	logger	= runtime.getLoggingService().getLogger( Parser.class.getSimpleName() );
+	private static final BoxLangLogger		logger					= runtime.getLoggingService().RUNTIME_LOGGER;
+
+	/**
+	 * --------------------------------------------------------------------------
+	 * DFA Cache Management
+	 * --------------------------------------------------------------------------
+	 */
+
+	/**
+	 * Estimated memory per DFA cache state in bytes (4.2 KB)
+	 */
+	private static final long				BYTES_PER_DFA_STATE		= 4200L;
+
+	/**
+	 * Debounce interval for post-parse heap check (5 seconds)
+	 */
+	private static final long				POST_PARSE_DELAY_MS		= 5_000L;
+
+	/**
+	 * Watchdog check interval (30 seconds)
+	 */
+	private static final long				WATCHDOG_INTERVAL_MS	= 30_000L;
+
+	/**
+	 * Idle timeout before clearing an untouched cache (3 minutes)
+	 */
+	private static final long				IDLE_TIMEOUT_NS			= TimeUnit.MINUTES.toNanos( 3 );
+
+	/**
+	 * Max age before clearing even under load if > 100 MB (10 minutes)
+	 */
+	private static final long				MAX_AGE_NS				= TimeUnit.MINUTES.toNanos( 10 );
+
+	/**
+	 * Cache size threshold for max-age clear (100 MB)
+	 */
+	private static final long				MAX_AGE_THRESHOLD		= 100L * 1024 * 1024;
+
+	/**
+	 * VM-executor pool for cache management tasks (virtual-thread-based).
+	 * Created lazily on first parse.
+	 */
+	private static volatile ExecutorService	cacheExecutor;
+
+	/**
+	 * Last parse timestamp (nanos)
+	 */
+	private static volatile long			lastParseTime			= System.nanoTime();
+
+	/**
+	 * Last cache clear timestamp (nanoTime)
+	 */
+	private static volatile long			lastClearTime			= System.nanoTime();
+
+	/**
+	 * Post-parse debounce one-shot future; null = no pending check
+	 */
+	private static volatile Future<?>		postParseCheckFuture;
+
+	/**
+	 * Lazy-init the virtual executor and start the watchdog loop.
+	 * Does nothing if already started or if no parse has ever occurred.
+	 */
+	private static void ensureWatchdogStarted() {
+		if ( cacheExecutor != null ) {
+			return;
+		}
+		synchronized ( Parser.class ) {
+			if ( cacheExecutor != null ) {
+				return;
+			}
+			// Grab a managed virtual executor from BoxLang's AsyncService
+			BoxExecutor bxExec = runtime.getAsyncService().newVirtualExecutor( "parserCache" );
+			cacheExecutor = bxExec.executor();
+
+			// Watchdog loop: runs every 30s until shutdown
+			cacheExecutor.submit( () -> {
+				while ( true ) {
+					try {
+						Thread.sleep( WATCHDOG_INTERVAL_MS );
+					} catch ( InterruptedException e ) {
+						Thread.currentThread().interrupt();
+						return;
+					}
+					long	now				= System.nanoTime();
+					long	idleNs			= now - lastParseTime;
+					long	sinceClearNs	= now - lastClearTime;
+
+					// Rule 2: Idle - 3 minutes since last parse with non-zero cache
+					if ( idleNs >= IDLE_TIMEOUT_NS && getCacheSize() > 0 ) {
+						logger.trace( "Clearing DFA cache due to idle timeout (3 minutes)" );
+						clearParseCache();
+						lastClearTime = System.nanoTime();
+					} else if ( sinceClearNs >= MAX_AGE_NS
+					    && getCacheSize() * BYTES_PER_DFA_STATE > MAX_AGE_THRESHOLD ) {
+						logger.trace( "Clearing DFA cache due to max age (10 minutes) with cache > 100 MB" );
+						clearParseCache();
+						lastClearTime = System.nanoTime();
+					}
+				}
+			} );
+		}
+	}
 
 	/**
 	 * Parse a script file
@@ -107,6 +213,7 @@ public class Parser {
 		    "result", result
 		);
 		runtime.announce( "onParse", data );
+		afterParse();
 		return ( ParsingResult ) data.get( "result" );
 	}
 
@@ -186,6 +293,7 @@ public class Parser {
 		    "result", result
 		);
 		runtime.announce( "onParse", data );
+		afterParse();
 		return ( ParsingResult ) data.get( "result" );
 
 	}
@@ -210,6 +318,7 @@ public class Parser {
 			    "result", result
 			);
 			runtime.announce( "onParse", data );
+			afterParse();
 			return ( ParsingResult ) data.get( "result" );
 		} catch ( IOException e ) {
 			throw new BoxRuntimeException( "Error parsing expression", e );
@@ -224,6 +333,7 @@ public class Parser {
 		    "result", result
 		);
 		runtime.announce( "onParse", data );
+		afterParse();
 		return ( ParsingResult ) data.get( "result" );
 	}
 
@@ -389,6 +499,33 @@ public class Parser {
 	}
 
 	/**
+	 * Called after every parse to:
+	 * - Stamp the last parse time
+	 * - Schedule a one-shot debounced heap-threshold check (at most one in flight)
+	 */
+	private static void afterParse() {
+		ensureWatchdogStarted();
+		lastParseTime = System.nanoTime();
+		if ( postParseCheckFuture == null ) {
+			postParseCheckFuture = cacheExecutor.submit( () -> {
+				try {
+					Thread.sleep( POST_PARSE_DELAY_MS );
+				} catch ( InterruptedException e ) {
+					Thread.currentThread().interrupt();
+					return;
+				}
+				// Rule 1: If cache exceeds 1/3 of max heap, clear it
+				if ( getCacheSize() * BYTES_PER_DFA_STATE > Runtime.getRuntime().maxMemory() / 3 ) {
+					logger.trace( "Clearing DFA cache: estimated size exceeds 1/3 of max heap" );
+					clearParseCache();
+					lastClearTime = System.nanoTime();
+				}
+				postParseCheckFuture = null;
+			} );
+		}
+	}
+
+	/**
 	 * Get the number of states stored in all the DFA cache across all parsers.
 	 * 
 	 * @return the number of states stored in all the DFA cache
@@ -402,7 +539,7 @@ public class Parser {
 	/**
 	 * Clear the DFA cache across all parsers.
 	 */
-	public static void clearParseCache() {
+	public static synchronized void clearParseCache() {
 		CFParser.clearParseCache();
 		BoxParser.clearParseCache();
 		DocParser.clearParseCache();
