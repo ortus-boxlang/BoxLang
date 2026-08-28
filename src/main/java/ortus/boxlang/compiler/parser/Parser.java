@@ -25,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -33,7 +34,6 @@ import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.BoxScript;
 import ortus.boxlang.compiler.ast.BoxStatement;
 import ortus.boxlang.runtime.BoxRuntime;
-import ortus.boxlang.runtime.async.executors.BoxExecutor;
 import ortus.boxlang.runtime.logging.BoxLangLogger;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
@@ -125,9 +125,9 @@ public class Parser {
 			if ( !cacheEvictionEnabled ) {
 				return;
 			}
-			// Grab a managed virtual executor from BoxLang's AsyncService
-			BoxExecutor bxExec = runtime.getAsyncService().newVirtualExecutor( "parserCache" );
-			cacheExecutor = bxExec.executor();
+			// Unmanaged virtual-thread executor — never blocks shutdown
+			ExecutorService exec = Executors.newThreadPerTaskExecutor( Thread.ofVirtual().factory() );
+			cacheExecutor = exec;
 
 			// Watchdog loop: runs every 30s until shutdown
 			cacheExecutor.submit( () -> {
@@ -534,6 +534,24 @@ public class Parser {
 				}
 				postParseCheckFuture = null;
 			} );
+		}
+	}
+
+	/**
+	 * Shut down the DFA cache eviction system immediately.
+	 * Cancels any pending post-parse checks and interrupts the watchdog thread.
+	 * Safe to call multiple times and when the system was never started.
+	 */
+	public static void shutdown() {
+		var future = postParseCheckFuture;
+		if ( future != null ) {
+			future.cancel( true );
+			postParseCheckFuture = null;
+		}
+		var exec = cacheExecutor;
+		if ( exec != null ) {
+			exec.shutdownNow();
+			cacheExecutor = null;
 		}
 	}
 

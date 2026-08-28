@@ -1145,6 +1145,9 @@ public class BoxRuntime implements java.io.Closeable {
 		// Watcher service must shut down BEFORE asyncService so virtual-thread loops
 		// can be cancelled before their executor is terminated
 		instance.watcherService.onShutdown( force );
+		// Parser DFA cache eviction must shut down BEFORE asyncService so no
+		// unmanaged virtual threads block shutdown
+		Parser.shutdown();
 		instance.asyncService.onShutdown( force );
 		instance.functionService.onShutdown( force );
 		instance.componentService.onShutdown( force );
