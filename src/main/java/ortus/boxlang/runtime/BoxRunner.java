@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -67,11 +68,13 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.services.SchedulerService;
 import ortus.boxlang.runtime.types.Array;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxIOException;
 import ortus.boxlang.runtime.types.exceptions.BoxLicenseException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
+import ortus.boxlang.runtime.types.util.JSONUtil;
 import ortus.boxlang.runtime.util.ConfigSecretUtil;
 import ortus.boxlang.runtime.util.ResolvedFilePath;
 import ortus.boxlang.runtime.util.Timer;
@@ -302,11 +305,13 @@ public class BoxRunner {
 		System.out.println();
 		System.out.println( "📋 USAGE:" );
 		System.out.println( "  boxlang schedule                                 # 📊 Print a report of configured/loaded schedulers and tasks" );
+		System.out.println( "  boxlang schedule --json                          # 🤖 Print that same report as JSON" );
 		System.out.println( "  boxlang schedule <SCHEDULER_FILE>                # 🔧 Using OS binary" );
 		System.out.println( "  java -jar boxlang.jar schedule <SCHEDULER_FILE>  # 🐍 Using Java JAR" );
 		System.out.println();
 		System.out.println( "⚙️  OPTIONS:" );
 		System.out.println( "  -h, --help                      ❓ Show this help message and exit" );
+		System.out.println( "  --json                          🤖 Print the scheduler report as JSON instead of text" );
 		System.out.println();
 		System.out.println( "📂 SCHEDULER FILE REQUIREMENTS:" );
 		System.out.println( "  • Must be a .bx (BoxLang) file" );
@@ -537,6 +542,140 @@ public class BoxRunner {
 	}
 
 	/**
+	 * Prints the same scheduling landscape as {@link #printScheduleReport(BoxRuntime)}, but as a single JSON
+	 * document on stdout so it can be piped into tools like {@code jq} or consumed by other processes.
+	 *
+	 * @param runtime The BoxRuntime object
+	 */
+	private static void printScheduleReportAsJSON( BoxRuntime runtime ) {
+		SchedulerService	schedulerService	= runtime.getSchedulerService();
+		SchedulerConfig		config				= runtime.getConfiguration().scheduler;
+		Path				resolvedTasksFile	= Paths.get( PlaceholderHelper.resolve( config.tasksFile ) ).normalize().toAbsolutePath();
+		boolean				tasksFileExists		= Files.exists( resolvedTasksFile );
+
+		IStruct				configStruct		= Struct.ofNonConcurrent(
+		    "executor", config.executor,
+		    "cacheName", config.cacheName,
+		    "tasksFile", config.tasksFile,
+		    "tasksFileResolved", resolvedTasksFile.toString(),
+		    "reloadOnChange", config.reloadOnChange,
+		    "bootSchedulers", Array.fromList( config.schedulers )
+		);
+
+		Array				loadedSchedulers	= schedulerService.getSchedulers()
+		    .values()
+		    .stream()
+		    .sorted( ( a, b ) -> a.getSchedulerName().compareToIgnoreCase( b.getSchedulerName() ) )
+		    .map( BoxRunner::buildSchedulerJSON )
+		    .collect( Collectors.toCollection( Array::new ) );
+
+		Array				persistedTasks		= new Array();
+		String				tasksFileError		= null;
+		if ( tasksFileExists ) {
+			try {
+				for ( Object entry : schedulerService.loadTasksFromDisk() ) {
+					if ( entry instanceof IStruct taskDef ) {
+						persistedTasks.add( sanitizeTaskDef( taskDef ) );
+					}
+				}
+			} catch ( Exception e ) {
+				tasksFileError = e.getMessage();
+			}
+		}
+
+		IStruct report = Struct.ofNonConcurrent(
+		    "configuration", configStruct,
+		    "loadedSchedulers", loadedSchedulers,
+		    "tasksFile", Struct.ofNonConcurrent(
+		        "path", resolvedTasksFile.toString(),
+		        "exists", tasksFileExists,
+		        "error", tasksFileError,
+		        "tasks", persistedTasks
+		    )
+		);
+
+		try {
+			System.out.println( JSONUtil.getJSONBuilder( true ).asString( report ) );
+		} catch ( Exception e ) {
+			throw new BoxRuntimeException( "Failed to render schedule report as JSON: " + e.getMessage(), e );
+		}
+	}
+
+	/**
+	 * Builds a JSON-safe struct describing a single loaded scheduler and its registered tasks.
+	 *
+	 * @param scheduler The scheduler to describe
+	 *
+	 * @return A struct with the scheduler's name, running state, timezone, and tasks
+	 */
+	private static IStruct buildSchedulerJSON( IScheduler scheduler ) {
+		Array tasks = new Array();
+		if ( scheduler instanceof BaseScheduler baseScheduler ) {
+			baseScheduler.getRegisteredTasks().forEach( taskName -> tasks.add( buildTaskJSON( baseScheduler.getTaskRecord( taskName ) ) ) );
+		}
+		return Struct.ofNonConcurrent(
+		    "name", scheduler.getSchedulerName(),
+		    "started", scheduler.hasStarted(),
+		    "timezone", scheduler.getTimezone().toString(),
+		    "tasks", tasks
+		);
+	}
+
+	/**
+	 * Builds a JSON-safe struct describing a single live task registered in an already-loaded scheduler.
+	 *
+	 * @param record The task record to describe
+	 *
+	 * @return A struct with the task's identity, state, and run stats
+	 */
+	private static IStruct buildTaskJSON( TaskRecord record ) {
+		IStruct	stats	= record.task.getStats();
+		String	group	= ( record.group == null || record.group.isBlank() ) ? "default" : record.group;
+
+		return Struct.ofNonConcurrent(
+		    "name", record.name,
+		    "group", group,
+		    "disabled", record.disabled,
+		    "error", record.error,
+		    "errorMessage", record.errorMessage,
+		    "nextRun", stats.get( "nextRun" ),
+		    "lastRun", stats.get( "lastRun" ),
+		    "totalRuns", statAsInt( stats.get( "totalRuns" ) ),
+		    "totalSuccess", statAsInt( stats.get( "totalSuccess" ) ),
+		    "totalFailures", statAsInt( stats.get( "totalFailures" ) )
+		);
+	}
+
+	/**
+	 * Unwraps an {@link AtomicInteger} task stat into a plain JSON-serializable {@link Integer}.
+	 *
+	 * @param value The raw stat value, expected to be an {@link AtomicInteger}
+	 *
+	 * @return The unwrapped integer value, or 0 if the value is not an {@link AtomicInteger}
+	 */
+	private static int statAsInt( Object value ) {
+		return ( value instanceof AtomicInteger atomicInteger ) ? atomicInteger.get() : 0;
+	}
+
+	/**
+	 * Returns a copy of a persisted task definition with credential fields (username/password/proxy
+	 * credentials) stripped out, so a JSON report never leaks secrets even though
+	 * {@link SchedulerService#loadTasksFromDisk()} decrypts them for internal use.
+	 *
+	 * @param taskDef The persisted task definition struct
+	 *
+	 * @return A sanitized copy of the task definition
+	 */
+	private static IStruct sanitizeTaskDef( IStruct taskDef ) {
+		IStruct safe = new Struct( taskDef );
+		safe.remove( Key.username );
+		safe.remove( Key.password );
+		safe.remove( Key.proxyUser );
+		safe.remove( Key.proxyPassword );
+		return safe;
+	}
+
+	/**
 	 * Run an action command based on the options passed.
 	 *
 	 * @param options The CLIOptions object with the parsed options
@@ -570,6 +709,11 @@ public class BoxRunner {
 				    ( options.cliArgs().getFirst().equalsIgnoreCase( "--help" ) ||
 				        options.cliArgs().getFirst().equalsIgnoreCase( "-h" ) ) ) {
 					printScheduleHelp();
+					return 0;
+				}
+				// Check for the report in JSON format: `boxlang schedule --json`
+				if ( !options.cliArgs().isEmpty() && options.cliArgs().getFirst().equalsIgnoreCase( "--json" ) ) {
+					printScheduleReportAsJSON( runtime );
 					return 0;
 				}
 				if ( options.cliArgs().isEmpty() ) {
