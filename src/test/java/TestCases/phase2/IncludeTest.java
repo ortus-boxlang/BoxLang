@@ -76,6 +76,26 @@ public class IncludeTest {
 		assertThat( variables.get( result ) ).isEqualTo( "found the value before wood" );
 	}
 
+	@DisplayName( "can include file via a fully-resolved absolute path" )
+	@Test
+	public void testCanIncludeFileAbsolute() {
+		// A caller that already resolved and validated an absolute filesystem path itself (e.g. a web
+		// framework doing its own path-traversal check before rendering a view) should still be able to
+		// include it verbatim, without needing a registered mapping for it. Regression test for the case
+		// where loadTemplateRelative()'s forceRelative=true call into expandPath() never checked whether
+		// the incoming path was actually absolute, making any unmapped absolute path unresolvable.
+		String absolutePath = Paths.get( "src/test/java/TestCases/phase2/myInclude.cfs" ).toAbsolutePath().toString().replace( "\\", "\\\\" );
+		instance.executeSource(
+		    """
+		    myVar = "before"
+		       include "%s";
+		    result = fromInclude & " " & brad();
+		       """.formatted( absolutePath ),
+		    context );
+
+		assertThat( variables.get( result ) ).isEqualTo( "found the value before wood" );
+	}
+
 	@DisplayName( "can include file relative" )
 	@Test
 	public void testCanIncludeFileRelative() {

@@ -371,7 +371,14 @@ public class RunnableLoader {
 	 * @return The BoxTemplate instance
 	 */
 	public BoxTemplate loadTemplateRelative( IBoxContext context, String path, boolean externalOnly ) {
-		// Make absolute. Force this to be relative given the method we're in. Absolute paths would need to use loadTemplateAbsolute()
+		// Absolute paths are routed to loadTemplateAbsolute() directly: expandPath()'s forceRelative=true
+		// path below never checks whether the incoming string is actually absolute (it assumes relative-
+		// to-mappings/closest-template resolution is always wanted), so a genuinely absolute path that
+		// matches no registered mapping was previously unresolvable even when the file exists on disk.
+		if ( Path.of( path ).isAbsolute() ) {
+			return loadTemplateAbsolute( context, FileSystemUtil.expandPath( context, path, externalOnly ) );
+		}
+		// Make absolute. Force this to be relative given the method we're in.
 		return loadTemplateAbsolute( context,
 		    FileSystemUtil.expandPath(
 		        context.getConfig().getAsStruct( Key.mappings ),
