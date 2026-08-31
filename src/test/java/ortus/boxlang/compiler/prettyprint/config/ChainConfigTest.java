@@ -37,7 +37,7 @@ public class ChainConfigTest {
 		assertEquals( 3, config.getBreakCount() );
 		assertEquals( 60, config.getBreakLength() );
 		assertEquals( 0, config.getKeepReceiverCount() );
-		assertEquals( false, config.getPreferBreakBeforeArguments() );
+		assertEquals( "inner-first", config.getLengthStrategy() );
 	}
 
 	@Test
@@ -54,8 +54,8 @@ public class ChainConfigTest {
 		config.setKeepReceiverCount( 2 );
 		assertEquals( 2, config.getKeepReceiverCount() );
 
-		config.setPreferBreakBeforeArguments( true );
-		assertEquals( true, config.getPreferBreakBeforeArguments() );
+		config.setLengthStrategy( "chain-first" );
+		assertEquals( "chain-first", config.getLengthStrategy() );
 	}
 
 	@Test
@@ -65,14 +65,14 @@ public class ChainConfigTest {
 		config.setBreakCount( 5 );
 		config.setBreakLength( 100 );
 		config.setKeepReceiverCount( 2 );
-		config.setPreferBreakBeforeArguments( true );
+		config.setLengthStrategy( "chain-first" );
 
 		Map<String, Object> map = config.toMap();
 
 		assertEquals( 5, map.get( "break_count" ) );
 		assertEquals( 100, map.get( "break_length" ) );
 		assertEquals( 2, map.get( "keep_receiver_count" ) );
-		assertEquals( true, map.get( "prefer_break_before_arguments" ) );
+		assertEquals( "chain-first", map.get( "length_strategy" ) );
 	}
 
 	@Test
@@ -82,7 +82,7 @@ public class ChainConfigTest {
 		chainMap.put( "break_count", 4 );
 		chainMap.put( "break_length", 120 );
 		chainMap.put( "keep_receiver_count", 2 );
-		chainMap.put( "prefer_break_before_arguments", true );
+		chainMap.put( "length_strategy", "chain-first" );
 
 		Map<String, Object> configMap = new HashMap<>();
 		configMap.put( "chain", chainMap );
@@ -92,7 +92,7 @@ public class ChainConfigTest {
 		assertEquals( 4, config.getChain().getBreakCount() );
 		assertEquals( 120, config.getChain().getBreakLength() );
 		assertEquals( 2, config.getChain().getKeepReceiverCount() );
-		assertEquals( true, config.getChain().getPreferBreakBeforeArguments() );
+		assertEquals( "chain-first", config.getChain().getLengthStrategy() );
 	}
 
 	@Test

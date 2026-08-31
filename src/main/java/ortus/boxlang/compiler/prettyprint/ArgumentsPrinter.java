@@ -21,10 +21,7 @@ import java.util.List;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
-import ortus.boxlang.compiler.ast.expression.BoxClosure;
-import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
-import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 
 public class ArgumentsPrinter {
 
@@ -81,14 +78,6 @@ public class ArgumentsPrinter {
 		    && calculateArgumentListLength( arguments ) >= visitor.config.getArguments().getMultilineLength();
 	}
 
-	private boolean hasBlockFunctionArgument( List<BoxArgument> arguments ) {
-		return arguments.stream().anyMatch( argument -> {
-			var value = argument.getValue();
-			return ( value instanceof BoxLambda lambda && lambda.getBody() instanceof BoxStatementBlock )
-			    || ( value instanceof BoxClosure closure && closure.getBody() instanceof BoxStatementBlock );
-		} );
-	}
-
 	/**
 	 * Normalize source whitespace before measuring it so multiline decisions do not
 	 * depend on how the input was previously formatted.
@@ -117,8 +106,7 @@ public class ArgumentsPrinter {
 			multilineByCount	= size > ( visitor.config.getArguments().getMultilineCount() - 1 );
 			multilineByLength	= !suppressMultilineByLength && wouldBreakByLength( arguments );
 		}
-		var	multilineByStructure	= suppressMultilineByLength && hasBlockFunctionArgument( arguments );
-		var	multiline				= multilineByCount || multilineByLength || multilineByStructure;
+		var	multiline				= multilineByCount || multilineByLength;
 
 		int	maxArgumentNameLength	= 0;
 		if ( multiline && visitor.config.getAlignConsecutiveAssignments() ) {
@@ -144,7 +132,7 @@ public class ArgumentsPrinter {
 			if ( multiline ) {
 				contentsDoc.append( Line.LINE );
 			} else if ( padding ) {
-				contentsDoc.append( " " );
+				contentsDoc.append( Line.LINE );
 			} else {
 				contentsDoc.append( Line.SOFT );
 			}
@@ -196,7 +184,7 @@ public class ArgumentsPrinter {
 			if ( multiline ) {
 				argumentsDoc.append( Line.LINE );
 			} else if ( padding ) {
-				argumentsDoc.append( " " );
+				argumentsDoc.append( Line.LINE );
 			} else {
 				argumentsDoc.append( Line.SOFT );
 			}

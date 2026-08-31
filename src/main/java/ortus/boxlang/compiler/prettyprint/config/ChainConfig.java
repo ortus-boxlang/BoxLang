@@ -44,14 +44,14 @@ public class ChainConfig {
 	 * </pre>
 	 */
 	@JsonProperty( "break_count" )
-	private int		breakCount					= 3;
+	private int		breakCount			= 3;
 
 	/**
 	 * Total character length of a method chain that triggers line breaking.
 	 * If the flat-printed chain exceeds this length, it switches to multiline.
 	 */
 	@JsonProperty( "break_length" )
-	private int		breakLength					= 60;
+	private int		breakLength			= 60;
 
 	/**
 	 * Number of leading dot accesses in a method chain's receiver path to keep
@@ -60,14 +60,15 @@ public class ChainConfig {
 	 * together.
 	 */
 	@JsonProperty( "keep_receiver_count" )
-	private int		keepReceiverCount			= 0;
+	private int		keepReceiverCount	= 0;
 
 	/**
-	 * Prefer breaking a multi-method chain before breaking one of its argument
-	 * lists solely because of the configured argument length threshold.
+	 * Strategy for resolving line-length pressure between a method chain and its
+	 * nested call content. Supported values are {@code "inner-first"} and
+	 * {@code "chain-first"}.
 	 */
-	@JsonProperty( "prefer_break_before_arguments" )
-	private boolean	preferBreakBeforeArguments	= false;
+	@JsonProperty( "length_strategy" )
+	private String	lengthStrategy		= "inner-first";
 
 	/** Default constructor. */
 	public ChainConfig() {
@@ -139,23 +140,23 @@ public class ChainConfig {
 	}
 
 	/**
-	 * Get whether method chains should break before length-driven argument lists.
+	 * Get the strategy for resolving chain and nested-content length pressure.
 	 *
-	 * @return true when chain breaks take precedence
+	 * @return {@code "inner-first"} or {@code "chain-first"}
 	 */
-	public boolean getPreferBreakBeforeArguments() {
-		return preferBreakBeforeArguments;
+	public String getLengthStrategy() {
+		return lengthStrategy;
 	}
 
 	/**
-	 * Set whether method chains should break before length-driven argument lists.
+	 * Set the strategy for resolving chain and nested-content length pressure.
 	 *
-	 * @param preferBreakBeforeArguments true to prefer breaking the chain
+	 * @param lengthStrategy {@code "inner-first"} or {@code "chain-first"}
 	 *
 	 * @return this config for chaining
 	 */
-	public ChainConfig setPreferBreakBeforeArguments( boolean preferBreakBeforeArguments ) {
-		this.preferBreakBeforeArguments = preferBreakBeforeArguments;
+	public ChainConfig setLengthStrategy( String lengthStrategy ) {
+		this.lengthStrategy = lengthStrategy;
 		return this;
 	}
 
@@ -169,7 +170,7 @@ public class ChainConfig {
 		map.put( "break_count", breakCount );
 		map.put( "break_length", breakLength );
 		map.put( "keep_receiver_count", keepReceiverCount );
-		map.put( "prefer_break_before_arguments", preferBreakBeforeArguments );
+		map.put( "length_strategy", lengthStrategy );
 		return map;
 	}
 
@@ -180,10 +181,10 @@ public class ChainConfig {
 	 */
 	public ChainConfig clone() {
 		ChainConfig clone = new ChainConfig();
-		clone.breakCount					= this.breakCount;
-		clone.breakLength					= this.breakLength;
-		clone.keepReceiverCount				= this.keepReceiverCount;
-		clone.preferBreakBeforeArguments	= this.preferBreakBeforeArguments;
+		clone.breakCount		= this.breakCount;
+		clone.breakLength		= this.breakLength;
+		clone.keepReceiverCount	= this.keepReceiverCount;
+		clone.lengthStrategy	= this.lengthStrategy;
 		return clone;
 	}
 }

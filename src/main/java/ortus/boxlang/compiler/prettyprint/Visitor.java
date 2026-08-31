@@ -791,8 +791,8 @@ public class Visitor extends VoidBoxVisitor {
 		int		breakLength					= config.getChain().getBreakLength();
 		int		chainLength					= calculateChainLength( chain, root );
 		long	methodCallCount				= chain.stream().filter( ChainElement::isMethodInvocation ).count();
-		boolean	preferArgumentBreak			= config.getChain().getPreferBreakBeforeArguments() && methodCallCount > 1;
-		boolean	argumentLengthRequiresBreak	= preferArgumentBreak && chain.stream()
+		boolean	chainFirstLengthStrategy	= "chain-first".equals( config.getChain().getLengthStrategy() ) && methodCallCount > 1;
+		boolean	argumentLengthRequiresBreak	= chainFirstLengthStrategy && chain.stream()
 		    .filter( ChainElement::isMethodInvocation )
 		    .map( ChainElement::asMethodInvocation )
 		    .anyMatch( method -> argumentsPrinter.wouldBreakByLength( method.getArguments() ) );
@@ -828,7 +828,7 @@ public class Visitor extends VoidBoxVisitor {
 					methodNode.getName().accept( this );
 					print( " ]" );
 				}
-				argumentsPrinter.print( methodNode, methodNode.getArguments(), shouldBreak && preferArgumentBreak );
+				argumentsPrinter.print( methodNode, methodNode.getArguments(), shouldBreak && chainFirstLengthStrategy );
 				printPostComments( methodNode );
 			} else if ( element.isDotAccess() ) {
 				var dotAccess = element.asDotAccess();

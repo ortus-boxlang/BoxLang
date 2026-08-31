@@ -6,6 +6,6 @@
     "break_count": 100,
     "break_length": 2147483647,
     "keep_receiver_count": 1,
-    "prefer_break_before_arguments": true
+    "length_strategy": "chain-first"
   }
 }

@@ -63,7 +63,7 @@ public class ChainBreakCountTest extends PrettyPrintTest {
 
 	@Test
 	@DisplayName( "Chain breaks before argument lists break by length" )
-	public void testPreferChainBreakBeforeArguments() throws IOException {
-		printTestWithConfigFile( "chain", "chain_prefer_break_before_arguments" );
+	public void testChainFirstLengthStrategy() throws IOException {
+		printTestWithConfigFile( "chain", "chain_length_strategy_chain_first" );
 	}
 }

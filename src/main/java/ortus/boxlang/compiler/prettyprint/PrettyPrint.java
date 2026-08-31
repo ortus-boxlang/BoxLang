@@ -129,7 +129,7 @@ public final class PrettyPrint {
 			"break_count" : 3,
 			"break_length" : 60,
 			"keep_receiver_count" : 0,
-			"prefer_break_before_arguments" : false
+			"length_strategy" : "inner-first"
 		},
 		"template" : {
 			"enabled" : true,

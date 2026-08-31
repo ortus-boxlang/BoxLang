@@ -46,6 +46,12 @@ public class FunctionArgumentsTest extends PrettyPrintTest {
 	}
 
 	@Test
+	@DisplayName( "Arguments break as a complete call structure when the group does not fit" )
+	public void testCompleteMultilineCallStructure() throws IOException {
+		printTestWithConfigFile( "function_arguments", "complete_multiline_call_structure" );
+	}
+
+	@Test
 	@DisplayName( "Nested multiline argument values do not add indentation to the argument list" )
 	public void testNestedMultilineArgumentValueIndentation() throws IOException {
 		printTestWithConfigFile( "function_arguments", "nested_multiline_value" );
