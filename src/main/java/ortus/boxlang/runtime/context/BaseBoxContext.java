@@ -796,8 +796,9 @@ public class BaseBoxContext implements IBoxContext {
 	public void includeTemplate( String templatePath, boolean externalOnly, boolean forceRelative ) {
 		Set<String>	VALID_TEMPLATE_EXTENSIONS	= BoxRuntime.getInstance().getConfiguration().getValidTemplateExtensions();
 		boolean		includeAll					= VALID_TEMPLATE_EXTENSIONS.contains( "*" );
+		templatePath = templatePath.trim();
 
-		String		ext							= "";
+		String ext = "";
 		// If there is double //, remove the first char
 		if ( templatePath.startsWith( "//" ) ) {
 			templatePath = templatePath.substring( 1 );
