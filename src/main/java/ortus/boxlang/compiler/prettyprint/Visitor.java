@@ -757,9 +757,23 @@ public class Visitor extends VoidBoxVisitor {
 			chain.add( new ChainElement( methodNode ) );
 			currentNode = methodNode.getObj();
 			// Also collect any dot accesses in between
-			while ( currentNode instanceof BoxDotAccess dotAccess && followsMethodInvocation( dotAccess ) ) {
-				chain.add( new ChainElement( dotAccess ) );
-				currentNode = dotAccess.getContext();
+			while ( currentNode instanceof BoxDotAccess dotAccess ) {
+				if ( followsMethodInvocation( dotAccess ) ) {
+					chain.add( new ChainElement( dotAccess ) );
+					currentNode = dotAccess.getContext();
+					continue;
+				}
+
+				int receiverAccessesToBreak = Math.max(
+				    0,
+				    countDotAccesses( dotAccess ) - config.getChain().getKeepReceiverCount()
+				);
+				for ( int i = 0; i < receiverAccessesToBreak; i++ ) {
+					var receiverAccess = ( BoxDotAccess ) currentNode;
+					chain.add( new ChainElement( receiverAccess ) );
+					currentNode = receiverAccess.getContext();
+				}
+				break;
 			}
 		}
 
@@ -2235,6 +2249,22 @@ public class Visitor extends VoidBoxVisitor {
 			context = nestedDotAccess.getContext();
 		}
 		return context instanceof BoxMethodInvocation;
+	}
+
+	/**
+	 * Count consecutive dot accesses in a receiver path.
+	 *
+	 * @param node receiver path root
+	 *
+	 * @return the number of dot accesses
+	 */
+	private int countDotAccesses( BoxNode node ) {
+		int count = 0;
+		while ( node instanceof BoxDotAccess dotAccess ) {
+			count++;
+			node = dotAccess.getContext();
+		}
+		return count;
 	}
 
 	/**

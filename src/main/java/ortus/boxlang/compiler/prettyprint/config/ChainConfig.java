@@ -44,14 +44,23 @@ public class ChainConfig {
 	 * </pre>
 	 */
 	@JsonProperty( "break_count" )
-	private int	breakCount	= 3;
+	private int	breakCount			= 3;
 
 	/**
 	 * Total character length of a method chain that triggers line breaking.
 	 * If the flat-printed chain exceeds this length, it switches to multiline.
 	 */
 	@JsonProperty( "break_length" )
-	private int	breakLength	= 60;
+	private int	breakLength			= 60;
+
+	/**
+	 * Number of leading dot accesses in a method chain's receiver path to keep
+	 * before breaking the remaining chain. A value of {@code 0} allows the entire
+	 * receiver path to break, while {@code 1} keeps {@code variables.productions}
+	 * together.
+	 */
+	@JsonProperty( "keep_receiver_count" )
+	private int	keepReceiverCount	= 0;
 
 	/** Default constructor. */
 	public ChainConfig() {
@@ -100,6 +109,29 @@ public class ChainConfig {
 	}
 
 	/**
+	 * Get the number of leading receiver-path dot accesses kept before a chain
+	 * break.
+	 *
+	 * @return the number of receiver accesses to keep
+	 */
+	public int getKeepReceiverCount() {
+		return keepReceiverCount;
+	}
+
+	/**
+	 * Set the number of leading receiver-path dot accesses kept before a chain
+	 * break.
+	 *
+	 * @param keepReceiverCount the number of receiver accesses to keep
+	 *
+	 * @return this config for chaining
+	 */
+	public ChainConfig setKeepReceiverCount( int keepReceiverCount ) {
+		this.keepReceiverCount = Math.max( 0, keepReceiverCount );
+		return this;
+	}
+
+	/**
 	 * Convert this configuration to a map for JSON serialization.
 	 *
 	 * @return a map representation of this configuration
@@ -108,6 +140,7 @@ public class ChainConfig {
 		Map<String, Object> map = new LinkedHashMap<>();
 		map.put( "break_count", breakCount );
 		map.put( "break_length", breakLength );
+		map.put( "keep_receiver_count", keepReceiverCount );
 		return map;
 	}
 
@@ -118,8 +151,9 @@ public class ChainConfig {
 	 */
 	public ChainConfig clone() {
 		ChainConfig clone = new ChainConfig();
-		clone.breakCount	= this.breakCount;
-		clone.breakLength	= this.breakLength;
+		clone.breakCount		= this.breakCount;
+		clone.breakLength		= this.breakLength;
+		clone.keepReceiverCount	= this.keepReceiverCount;
 		return clone;
 	}
 }

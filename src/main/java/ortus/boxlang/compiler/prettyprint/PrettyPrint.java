@@ -127,7 +127,8 @@ public final class PrettyPrint {
 		},
 		"chain" : {
 			"break_count" : 3,
-			"break_length" : 60
+			"break_length" : 60,
+			"keep_receiver_count" : 0
 		},
 		"template" : {
 			"enabled" : true,

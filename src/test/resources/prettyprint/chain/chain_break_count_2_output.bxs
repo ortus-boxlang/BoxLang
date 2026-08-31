@@ -16,3 +16,9 @@ result = obj
 result = variables.productions
 	.forUser( user )
 	.get();
+
+// Keep only the configured number of receiver accesses
+result = variables.services
+	.productions
+	.forUser( user )
+	.get();

@@ -1604,6 +1604,9 @@ public final class Config {
 		if ( config.containsKey( "break_length" ) && config.get( "break_length" ) instanceof Number breakLength ) {
 			this.chain.setBreakLength( breakLength.intValue() );
 		}
+		if ( config.containsKey( "keep_receiver_count" ) && config.get( "keep_receiver_count" ) instanceof Number keepReceiverCount ) {
+			this.chain.setKeepReceiverCount( keepReceiverCount.intValue() );
+		}
 	}
 
 	/**
