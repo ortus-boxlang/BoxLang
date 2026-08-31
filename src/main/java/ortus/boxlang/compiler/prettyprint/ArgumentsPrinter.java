@@ -49,7 +49,7 @@ public class ArgumentsPrinter {
 				} else {
 					String nameSource = arg.getName().getSourceText();
 					if ( nameSource != null ) {
-						length += nameSource.length();
+						length += calculateSingleLineSourceLength( nameSource );
 					}
 				}
 				length += separator.length();
@@ -58,7 +58,7 @@ public class ArgumentsPrinter {
 			// Argument value
 			String valueSource = arg.getValue().getSourceText();
 			if ( valueSource != null ) {
-				length += valueSource.length();
+				length += calculateSingleLineSourceLength( valueSource );
 			}
 
 			if ( i < arguments.size() - 1 ) {
@@ -67,6 +67,14 @@ public class ArgumentsPrinter {
 		}
 
 		return length;
+	}
+
+	/**
+	 * Normalize source whitespace before measuring it so multiline decisions do not
+	 * depend on how the input was previously formatted.
+	 */
+	private int calculateSingleLineSourceLength( String source ) {
+		return source.replaceAll( "\\s+", " " ).trim().length();
 	}
 
 	public void print( BoxNode parentNode, List<BoxArgument> arguments ) {

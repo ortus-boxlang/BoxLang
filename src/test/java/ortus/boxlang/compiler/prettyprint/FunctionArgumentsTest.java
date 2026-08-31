@@ -22,6 +22,8 @@ import java.io.IOException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.prettyprint.config.Config;
+
 @DisplayName( "Function Arguments Formatting Tests" )
 public class FunctionArgumentsTest extends PrettyPrintTest {
 
@@ -47,6 +49,15 @@ public class FunctionArgumentsTest extends PrettyPrintTest {
 	@DisplayName( "Nested multiline argument values do not add indentation to the argument list" )
 	public void testNestedMultilineArgumentValueIndentation() throws IOException {
 		printTestWithConfigFile( "function_arguments", "nested_multiline_value" );
+	}
+
+	@Test
+	@DisplayName( "Nested function and lambda arguments are formatted idempotently" )
+	public void testNestedArgumentIdempotence() throws IOException {
+		assertPrintIdempotent(
+		    "function_arguments/nested_argument_idempotence_input.bxs",
+		    Config.loadConfig( TEST_RESOURCES_PATH + "function_arguments/nested_multiline_value.json" )
+		);
 	}
 
 	@Test
