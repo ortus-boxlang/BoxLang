@@ -1669,6 +1669,9 @@ public final class Config {
 		if ( config.containsKey( "member_spacing" ) && config.get( "member_spacing" ) instanceof Number memberSpacing ) {
 			this.classConfig.setMemberSpacing( memberSpacing.intValue() );
 		}
+		if ( config.containsKey( "body_spacing" ) && config.get( "body_spacing" ) instanceof Number bodySpacing ) {
+			this.classConfig.setBodySpacing( bodySpacing.intValue() );
+		}
 		if ( config.containsKey( "property_order" ) && config.get( "property_order" ) instanceof String propertyOrder ) {
 			this.classConfig.setPropertyOrder( propertyOrder );
 		}

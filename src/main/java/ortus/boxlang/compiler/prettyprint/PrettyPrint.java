@@ -147,6 +147,7 @@ public final class PrettyPrint {
 		"class" : {
 			"member_order" : "preserve",
 			"member_spacing" : 1,
+			"body_spacing" : 0,
 			"property_order" : "preserve",
 			"method_order" : "preserve",
 			"method_grouping" : false,
