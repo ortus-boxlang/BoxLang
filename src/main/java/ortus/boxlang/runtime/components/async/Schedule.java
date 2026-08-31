@@ -546,17 +546,19 @@ public class Schedule extends Component {
 		SchedulerService	svc				= ortus.boxlang.runtime.BoxRuntime.getInstance().getSchedulerService();
 		Key					schedulerKey	= Key.of( name );
 
-		if ( svc.hasScheduler( schedulerKey ) ) {
-			Object existing = svc.getScheduler( schedulerKey );
-			if ( existing instanceof BaseScheduler ) {
-				return ( BaseScheduler ) existing;
+		synchronized ( svc ) {
+			if ( svc.hasScheduler( schedulerKey ) ) {
+				Object existing = svc.getScheduler( schedulerKey );
+				if ( existing instanceof BaseScheduler ) {
+					return ( BaseScheduler ) existing;
+				}
 			}
-		}
 
-		// Register only — do NOT start. Startup happens after tasks are added (see _invoke post-switch).
-		BaseScheduler scheduler = new BaseScheduler( name, context );
-		svc.registerScheduler( scheduler, false );
-		return scheduler;
+			// Register only — do NOT start. Startup happens after tasks are added (see _invoke post-switch).
+			BaseScheduler scheduler = new BaseScheduler( name, context );
+			svc.registerScheduler( scheduler, false );
+			return scheduler;
+		}
 	}
 
 	/**

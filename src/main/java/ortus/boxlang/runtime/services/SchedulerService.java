@@ -514,7 +514,7 @@ public class SchedulerService extends BaseService {
 	 *
 	 * @return The scheduler
 	 */
-	public IScheduler registerScheduler( IScheduler scheduler, Boolean force ) {
+	public synchronized IScheduler registerScheduler( IScheduler scheduler, Boolean force ) {
 		Key schedulerName = scheduler.getSchedulerNameAsKey();
 
 		if ( hasScheduler( schedulerName ) && !force ) {
