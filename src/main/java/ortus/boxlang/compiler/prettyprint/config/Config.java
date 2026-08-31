@@ -1607,6 +1607,10 @@ public final class Config {
 		if ( config.containsKey( "keep_receiver_count" ) && config.get( "keep_receiver_count" ) instanceof Number keepReceiverCount ) {
 			this.chain.setKeepReceiverCount( keepReceiverCount.intValue() );
 		}
+		if ( config.containsKey( "prefer_break_before_arguments" )
+		    && config.get( "prefer_break_before_arguments" ) instanceof Boolean preferBreakBeforeArguments ) {
+			this.chain.setPreferBreakBeforeArguments( preferBreakBeforeArguments );
+		}
 	}
 
 	/**

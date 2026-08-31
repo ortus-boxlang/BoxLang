@@ -21,7 +21,10 @@ import java.util.List;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxArgument;
+import ortus.boxlang.compiler.ast.expression.BoxClosure;
+import ortus.boxlang.compiler.ast.expression.BoxLambda;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
+import ortus.boxlang.compiler.ast.statement.BoxStatementBlock;
 
 public class ArgumentsPrinter {
 
@@ -70,6 +73,23 @@ public class ArgumentsPrinter {
 	}
 
 	/**
+	 * Determine whether an argument list would become multiline solely because of
+	 * the configured length threshold.
+	 */
+	boolean wouldBreakByLength( List<BoxArgument> arguments ) {
+		return !visitor.config.getCFFormatCompatibility()
+		    && calculateArgumentListLength( arguments ) >= visitor.config.getArguments().getMultilineLength();
+	}
+
+	private boolean hasBlockFunctionArgument( List<BoxArgument> arguments ) {
+		return arguments.stream().anyMatch( argument -> {
+			var value = argument.getValue();
+			return ( value instanceof BoxLambda lambda && lambda.getBody() instanceof BoxStatementBlock )
+			    || ( value instanceof BoxClosure closure && closure.getBody() instanceof BoxStatementBlock );
+		} );
+	}
+
+	/**
 	 * Normalize source whitespace before measuring it so multiline decisions do not
 	 * depend on how the input was previously formatted.
 	 */
@@ -78,6 +98,10 @@ public class ArgumentsPrinter {
 	}
 
 	public void print( BoxNode parentNode, List<BoxArgument> arguments ) {
+		print( parentNode, arguments, false );
+	}
+
+	public void print( BoxNode parentNode, List<BoxArgument> arguments, boolean suppressMultilineByLength ) {
 		var		currentDoc			= visitor.getCurrentDoc();
 		var		argumentsDoc		= visitor.pushDoc( DocType.GROUP );
 
@@ -91,9 +115,10 @@ public class ArgumentsPrinter {
 			multilineByLength	= false;
 		} else {
 			multilineByCount	= size > ( visitor.config.getArguments().getMultilineCount() - 1 );
-			multilineByLength	= calculateArgumentListLength( arguments ) >= visitor.config.getArguments().getMultilineLength();
+			multilineByLength	= !suppressMultilineByLength && wouldBreakByLength( arguments );
 		}
-		var	multiline				= multilineByCount || multilineByLength;
+		var	multilineByStructure	= suppressMultilineByLength && hasBlockFunctionArgument( arguments );
+		var	multiline				= multilineByCount || multilineByLength || multilineByStructure;
 
 		int	maxArgumentNameLength	= 0;
 		if ( multiline && visitor.config.getAlignConsecutiveAssignments() ) {

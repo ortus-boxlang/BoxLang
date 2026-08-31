@@ -44,14 +44,14 @@ public class ChainConfig {
 	 * </pre>
 	 */
 	@JsonProperty( "break_count" )
-	private int	breakCount			= 3;
+	private int		breakCount					= 3;
 
 	/**
 	 * Total character length of a method chain that triggers line breaking.
 	 * If the flat-printed chain exceeds this length, it switches to multiline.
 	 */
 	@JsonProperty( "break_length" )
-	private int	breakLength			= 60;
+	private int		breakLength					= 60;
 
 	/**
 	 * Number of leading dot accesses in a method chain's receiver path to keep
@@ -60,7 +60,14 @@ public class ChainConfig {
 	 * together.
 	 */
 	@JsonProperty( "keep_receiver_count" )
-	private int	keepReceiverCount	= 0;
+	private int		keepReceiverCount			= 0;
+
+	/**
+	 * Prefer breaking a multi-method chain before breaking one of its argument
+	 * lists solely because of the configured argument length threshold.
+	 */
+	@JsonProperty( "prefer_break_before_arguments" )
+	private boolean	preferBreakBeforeArguments	= false;
 
 	/** Default constructor. */
 	public ChainConfig() {
@@ -132,6 +139,27 @@ public class ChainConfig {
 	}
 
 	/**
+	 * Get whether method chains should break before length-driven argument lists.
+	 *
+	 * @return true when chain breaks take precedence
+	 */
+	public boolean getPreferBreakBeforeArguments() {
+		return preferBreakBeforeArguments;
+	}
+
+	/**
+	 * Set whether method chains should break before length-driven argument lists.
+	 *
+	 * @param preferBreakBeforeArguments true to prefer breaking the chain
+	 *
+	 * @return this config for chaining
+	 */
+	public ChainConfig setPreferBreakBeforeArguments( boolean preferBreakBeforeArguments ) {
+		this.preferBreakBeforeArguments = preferBreakBeforeArguments;
+		return this;
+	}
+
+	/**
 	 * Convert this configuration to a map for JSON serialization.
 	 *
 	 * @return a map representation of this configuration
@@ -141,6 +169,7 @@ public class ChainConfig {
 		map.put( "break_count", breakCount );
 		map.put( "break_length", breakLength );
 		map.put( "keep_receiver_count", keepReceiverCount );
+		map.put( "prefer_break_before_arguments", preferBreakBeforeArguments );
 		return map;
 	}
 
@@ -151,9 +180,10 @@ public class ChainConfig {
 	 */
 	public ChainConfig clone() {
 		ChainConfig clone = new ChainConfig();
-		clone.breakCount		= this.breakCount;
-		clone.breakLength		= this.breakLength;
-		clone.keepReceiverCount	= this.keepReceiverCount;
+		clone.breakCount					= this.breakCount;
+		clone.breakLength					= this.breakLength;
+		clone.keepReceiverCount				= this.keepReceiverCount;
+		clone.preferBreakBeforeArguments	= this.preferBreakBeforeArguments;
 		return clone;
 	}
 }

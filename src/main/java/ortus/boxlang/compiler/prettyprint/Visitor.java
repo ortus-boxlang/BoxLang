@@ -786,14 +786,20 @@ public class Visitor extends VoidBoxVisitor {
 		}
 		root.accept( this );
 
-		int		chainSize		= chain.size();
-		int		breakCount		= config.getChain().getBreakCount();
-		int		breakLength		= config.getChain().getBreakLength();
-		int		chainLength		= calculateChainLength( chain, root );
-		boolean	shouldBreak		= chainSize >= breakCount || chainLength >= breakLength;
+		int		chainSize					= chain.size();
+		int		breakCount					= config.getChain().getBreakCount();
+		int		breakLength					= config.getChain().getBreakLength();
+		int		chainLength					= calculateChainLength( chain, root );
+		long	methodCallCount				= chain.stream().filter( ChainElement::isMethodInvocation ).count();
+		boolean	preferArgumentBreak			= config.getChain().getPreferBreakBeforeArguments() && methodCallCount > 1;
+		boolean	argumentLengthRequiresBreak	= preferArgumentBreak && chain.stream()
+		    .filter( ChainElement::isMethodInvocation )
+		    .map( ChainElement::asMethodInvocation )
+		    .anyMatch( method -> argumentsPrinter.wouldBreakByLength( method.getArguments() ) );
+		boolean	shouldBreak					= chainSize >= breakCount || chainLength >= breakLength || argumentLengthRequiresBreak;
 
-		var		chainGroup		= pushDoc( DocType.GROUP );
-		var		chainContents	= pushDoc( shouldBreak ? DocType.INDENT : DocType.ARRAY );
+		var		chainGroup					= pushDoc( DocType.GROUP );
+		var		chainContents				= pushDoc( shouldBreak ? DocType.INDENT : DocType.ARRAY );
 
 		// Force break if chain is long enough (by count or by length)
 		if ( shouldBreak ) {
@@ -822,7 +828,7 @@ public class Visitor extends VoidBoxVisitor {
 					methodNode.getName().accept( this );
 					print( " ]" );
 				}
-				argumentsPrinter.print( methodNode, methodNode.getArguments() );
+				argumentsPrinter.print( methodNode, methodNode.getArguments(), shouldBreak && preferArgumentBreak );
 				printPostComments( methodNode );
 			} else if ( element.isDotAccess() ) {
 				var dotAccess = element.asDotAccess();
