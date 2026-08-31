@@ -772,25 +772,25 @@ public class Visitor extends VoidBoxVisitor {
 		}
 		root.accept( this );
 
-		int		chainSize	= chain.size();
-		int		breakCount	= config.getChain().getBreakCount();
-		int		breakLength	= config.getChain().getBreakLength();
-		int		chainLength	= calculateChainLength( chain, root );
-		boolean	shouldBreak	= chainSize >= breakCount || chainLength >= breakLength;
+		int		chainSize		= chain.size();
+		int		breakCount		= config.getChain().getBreakCount();
+		int		breakLength		= config.getChain().getBreakLength();
+		int		chainLength		= calculateChainLength( chain, root );
+		boolean	shouldBreak		= chainSize >= breakCount || chainLength >= breakLength;
 
-		var		chainGroup	= pushDoc( DocType.GROUP );
-		var		indentGroup	= pushDoc( DocType.INDENT );
+		var		chainGroup		= pushDoc( DocType.GROUP );
+		var		chainContents	= pushDoc( shouldBreak ? DocType.INDENT : DocType.ARRAY );
 
 		// Force break if chain is long enough (by count or by length)
 		if ( shouldBreak ) {
-			indentGroup.append( Line.BREAK_PARENT );
+			chainContents.append( Line.BREAK_PARENT );
 		}
 
 		for ( int i = chain.size() - 1; i >= 0; i-- ) {
 			var element = chain.get( i );
 
 			if ( shouldBreak ) {
-				indentGroup.append( Line.HARD );
+				chainContents.append( Line.HARD );
 			}
 
 			if ( element.isMethodInvocation() ) {

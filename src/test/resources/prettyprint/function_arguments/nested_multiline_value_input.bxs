@@ -1,0 +1,5 @@
+var userMemento = user.getMemento( includes = [
+	"id",
+	"fullName",
+	"email"
+], ignoreDefaults = true );

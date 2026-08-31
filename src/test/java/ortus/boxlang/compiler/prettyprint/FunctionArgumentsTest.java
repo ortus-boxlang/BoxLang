@@ -44,6 +44,12 @@ public class FunctionArgumentsTest extends PrettyPrintTest {
 	}
 
 	@Test
+	@DisplayName( "Nested multiline argument values do not add indentation to the argument list" )
+	public void testNestedMultilineArgumentValueIndentation() throws IOException {
+		printTestWithConfigFile( "function_arguments", "nested_multiline_value" );
+	}
+
+	@Test
 	@DisplayName( "Trailing comma added when comma_dangle is true and multiline" )
 	public void testCommaDangleTrue() throws IOException {
 		printTestWithConfigFile( "function_arguments", "comma_dangle_true" );
