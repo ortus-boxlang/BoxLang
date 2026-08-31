@@ -11,3 +11,8 @@ result = obj
 	.foo()
 	.bar()
 	.baz();
+
+// Keep the initial receiver path on the assignment line
+result = variables.productions
+	.forUser( user )
+	.get();

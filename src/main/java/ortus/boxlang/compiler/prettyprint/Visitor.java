@@ -757,7 +757,7 @@ public class Visitor extends VoidBoxVisitor {
 			chain.add( new ChainElement( methodNode ) );
 			currentNode = methodNode.getObj();
 			// Also collect any dot accesses in between
-			while ( currentNode instanceof BoxDotAccess dotAccess ) {
+			while ( currentNode instanceof BoxDotAccess dotAccess && followsMethodInvocation( dotAccess ) ) {
 				chain.add( new ChainElement( dotAccess ) );
 				currentNode = dotAccess.getContext();
 			}
@@ -2219,6 +2219,22 @@ public class Visitor extends VoidBoxVisitor {
 			return 0;
 		}
 		return node.getSourceText().replaceAll( "\\s+", "" ).length();
+	}
+
+	/**
+	 * Determines whether a dot access follows a method invocation and is therefore
+	 * part of the fluent chain rather than part of its initial receiver path.
+	 *
+	 * @param dotAccess dot access to inspect
+	 *
+	 * @return true when the dot access is rooted in a method invocation
+	 */
+	private boolean followsMethodInvocation( BoxDotAccess dotAccess ) {
+		BoxNode context = dotAccess.getContext();
+		while ( context instanceof BoxDotAccess nestedDotAccess ) {
+			context = nestedDotAccess.getContext();
+		}
+		return context instanceof BoxMethodInvocation;
 	}
 
 	/**
