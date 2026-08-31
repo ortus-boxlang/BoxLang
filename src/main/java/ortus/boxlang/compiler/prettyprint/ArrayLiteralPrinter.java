@@ -60,7 +60,7 @@ public class ArrayLiteralPrinter {
 			}
 
 			arrayDoc.append( visitor.popDoc() );
-			arrayDoc.append( visitor.config.getArray().getEmptyPadding() ? Line.LINE : Line.SOFT );
+			arrayDoc.append( visitor.config.getArray().getPadding() ? Line.LINE : Line.SOFT );
 		} else {
 			// Check if there are inside comments — if so, force multiline to avoid collapsing
 			boolean hasInsideComments = false;
