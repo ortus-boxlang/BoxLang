@@ -118,7 +118,7 @@ public class ExpressionInterpreter {
 				return null;
 			}
 		}
-		return ref;
+		return context.unwrapQueryColumn( ref );
 	}
 
 	/**

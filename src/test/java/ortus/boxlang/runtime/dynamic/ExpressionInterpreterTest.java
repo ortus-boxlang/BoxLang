@@ -32,6 +32,8 @@ import ortus.boxlang.runtime.scopes.LocalScope;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Argument;
 import ortus.boxlang.runtime.types.IStruct;
+import ortus.boxlang.runtime.types.Query;
+import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.SampleUDF;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.UDF;
@@ -252,6 +254,17 @@ public class ExpressionInterpreterTest {
 		assertThat( ExpressionInterpreter.getVariable( context, "\"fo\"\"o\"", false ) ).isEqualTo( "fo\"o" );
 		assertThat( ExpressionInterpreter.getVariable( context, "'foo'", false ) ).isEqualTo( "foo" );
 		assertThat( ExpressionInterpreter.getVariable( context, "'fo''o'", false ) ).isEqualTo( "fo'o" );
+	}
+
+	@DisplayName( "It can get query column" )
+	@Test
+	void testItCanGetQueryColumn() {
+		IScope	variables	= context.getScopeNearby( VariablesScope.name );
+		Query	myQry		= new Query().addColumn( Key.of( "col" ), QueryColumnType.VARCHAR );
+		myQry.addRow( new Object[] { "foo" } );
+		variables.put( Key.of( "myQrr" ), myQry );
+
+		assertThat( ExpressionInterpreter.getVariable( context, "myQrr.col", false ) ).isEqualTo( "foo" );
 	}
 
 }
