@@ -14,6 +14,9 @@ jobs:
   tests:
     uses: ./.github/workflows/tests.yml
     secrets: inherit
+    with:
+      # Hotfixes only need the ASM compiler; skip the Java boxpiler
+      compilers: '["asm"]'
     permissions:
       checks: write
       pull-requests: write
