@@ -125,6 +125,7 @@ jobs:
           path: |
             build/reports/tests/**
             changelog.md
+            gradle.properties
 
       - name: Upload Distributions to S3
         uses: jakejarvis/s3-sync-action@master
@@ -235,6 +236,13 @@ jobs:
       - name: Copy Changelog
         run: |
           cp .tmp/changelog.md changelog.md
+
+      - name: Use Released Version As Bump Base
+        run: |
+          RELEASE_VERSION=$(grep '^version=' .tmp/gradle.properties | cut -d'=' -f2)
+          RELEASE_BOXLANG_VERSION=$(grep '^boxlangVersion=' .tmp/gradle.properties | cut -d'=' -f2)
+          sed -i "s/^version=.*/version=$RELEASE_VERSION/" gradle.properties
+          sed -i "s/^boxlangVersion=.*/boxlangVersion=$RELEASE_BOXLANG_VERSION/" gradle.properties
 
       - name: Bump Version
         run: |
