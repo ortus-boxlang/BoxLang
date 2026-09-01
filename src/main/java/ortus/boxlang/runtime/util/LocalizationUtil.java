@@ -1098,6 +1098,15 @@ public final class LocalizationUtil {
 			) );
 
 
+			// US Short DateTime 24-hour 24 hour time with meridian (e.g., 2/4/2024 12:00:00 AM )
+			add( Map.of(
+				"regexPattern", 
+				"^\\d{1,2}[-/]\\d{1,2}[-/]\\d{4}\\s+\\d{1,2}:\\d{2}:\\d{2}\\s+[APap][Mm]$",
+				"datePattern", "M<-/>d<-/>yyyy h:mm:ss a",
+				"description", "US date M/d/yyyy or MM-dd-yyyy with 12-hour time and AM/PM with seconds"
+			) );
+
+
 			// US Short DateTime with AM/PM no seconds (e.g., 02/04/2024 04:01 PM)
 			add( Map.of(
 				"regexPattern",
