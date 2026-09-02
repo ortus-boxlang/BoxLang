@@ -260,6 +260,36 @@ public class BoxRunnerParseTest {
 		assertThat( options.cliArgs() ).containsExactly( "-v", "extra" ).inOrder();
 	}
 
+	@DisplayName( "--help still shows global help when combined only with a startup flag like --bx-debug" )
+	@Test
+	void testHelpStillGlobalWithStartupFlag() {
+		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "--bx-debug", "--help" } );
+
+		assertThat( options.showHelp() ).isTrue();
+		assertThat( options.isDebugMode() ).isTrue();
+		assertThat( options.targetModule() ).isNull();
+	}
+
+	@DisplayName( "--version still shows global version when combined only with a startup flag like --bx-home=" )
+	@Test
+	void testVersionStillGlobalWithStartupFlag() {
+		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "--bx-home=/x", "--version" } );
+
+		assertThat( options.showVersion() ).isTrue();
+		assertThat( options.runtimeHome() ).isEqualTo( "/x" );
+		assertThat( options.targetModule() ).isNull();
+	}
+
+	@DisplayName( "-h still shows global help when combined only with a space-separated startup flag" )
+	@Test
+	void testHelpShortFlagStillGlobalWithStartupFlag() {
+		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "--bx-config", "/path/config.json", "-h" } );
+
+		assertThat( options.showHelp() ).isTrue();
+		assertThat( options.configFile() ).isEqualTo( "/path/config.json" );
+		assertThat( options.targetModule() ).isNull();
+	}
+
 	@DisplayName( "A bare module name receives a trailing -h instead of it triggering global help" )
 	@Test
 	void testBareModuleReceivesHelpFlag() {

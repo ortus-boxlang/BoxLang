@@ -942,21 +942,6 @@ public class BoxRunner {
 		List<String>	cliArgs			= new ArrayList<>();
 		String			actionCommand	= null;
 
-		// Global help/version: only recognized when they are the SOLE cli argument
-		// (e.g. `boxlang -h`, `boxlang --help`, `boxlang -v`, `boxlang --version`).
-		// If anything else is present - a module, a template, another flag - these
-		// tokens are left alone so a module or script can interpret them itself
-		// (e.g. `boxlang bxSites --help` must reach the bxSites module, not BoxLang's
-		// own help screen).
-		if ( args.length == 1 ) {
-			String onlyArgument = args[ 0 ];
-			if ( onlyArgument.equalsIgnoreCase( "--help" ) || onlyArgument.equalsIgnoreCase( "-h" ) ) {
-				showHelp = true;
-			} else if ( onlyArgument.equalsIgnoreCase( "--version" ) || onlyArgument.equalsIgnoreCase( "-v" ) ) {
-				showVersion = true;
-			}
-		}
-
 		// Pre-parse pass: extract the runtime startup flags (--bx-debug, --bx-config,
 		// --bx-home) from ANYWHERE in the argument list, including after a module: or
 		// template argument. These flags must ALWAYS be honored for runtime startup
@@ -964,7 +949,7 @@ public class BoxRunner {
 		// Once extracted, they are removed from the list so the main parse loop below
 		// never sees them. Both the space-separated (--bx-config /path) and equals
 		// (--bx-config=/path) forms are supported.
-		List<String> argsList = new ArrayList<>();
+		List<String>	argsList		= new ArrayList<>();
 		for ( int i = 0; i < args.length; i++ ) {
 			String arg = args[ i ];
 
@@ -1003,6 +988,22 @@ public class BoxRunner {
 			}
 
 			argsList.add( arg );
+		}
+
+		// Global help/version: only recognized when they are the SOLE remaining cli
+		// argument, AFTER the startup flags above (--bx-debug, --bx-config, --bx-home)
+		// have been extracted (e.g. `boxlang --bx-debug --help` still shows help).
+		// If anything else is present - a module, a template, another flag - these
+		// tokens are left alone so a module or script can interpret them itself
+		// (e.g. `boxlang bxSites --help` must reach the bxSites module, not BoxLang's
+		// own help screen).
+		if ( argsList.size() == 1 ) {
+			String onlyArgument = argsList.get( 0 );
+			if ( onlyArgument.equalsIgnoreCase( "--help" ) || onlyArgument.equalsIgnoreCase( "-h" ) ) {
+				showHelp = true;
+			} else if ( onlyArgument.equalsIgnoreCase( "--version" ) || onlyArgument.equalsIgnoreCase( "-v" ) ) {
+				showVersion = true;
+			}
 		}
 
 		// Consume args in order via the `current` variable
