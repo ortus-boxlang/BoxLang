@@ -329,6 +329,7 @@ public class CFTranspilerVisitor extends ReplacingBoxVisitor {
 		BIFArgMap.put( "hash", Map.of( "string", "input" ) );
 		BIFArgMap.put( "extract", Map.of( "target", "destination" ) );
 		BIFArgMap.put( "getsafehtml", Map.of( "inputstring", "string", "policyfile", "policy" ) );
+		BIFArgMap.put( "xmlparse", Map.of( "xmltext", "xml", "xmlstring", "xml", "parseroptions", "validator" ) );
 
 		/*
 		 * These are BIFs that return something useless like true, but would be much more useful to return the actual data structure.

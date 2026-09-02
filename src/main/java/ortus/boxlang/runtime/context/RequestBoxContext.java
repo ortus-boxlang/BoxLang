@@ -27,6 +27,7 @@ import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.application.ApplicationDefaultListener;
 import ortus.boxlang.runtime.application.BaseApplicationListener;
 import ortus.boxlang.runtime.async.RequestThreadManager;
+import ortus.boxlang.runtime.config.segments.XMLConfig;
 import ortus.boxlang.runtime.dynamic.casters.ArrayCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
@@ -503,6 +504,15 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 		    .ifPresent( disallowedFileOperationExtensions -> config.put( Key.disallowedFileOperationExtensions,
 		        ListUtil.asList( disallowedFileOperationExtensions, ListUtil.DEFAULT_DELIMITER ) ) );
 
+		// Apply XML parsing overrides, looking in both XMLSettings and xmlFeatures. Override xml key in config, and normalize struct via XMLConfig.normalize()
+		if ( appSettings.containsKey( Key.XMLSettings ) ) {
+			config.getAsStruct( Key.xml ).putAll( XMLConfig.normalizeNoDefaults( StructCaster.cast( appSettings.get( Key.XMLSettings ) ) ) );
+		}
+
+		if ( appSettings.containsKey( Key.XMLFeatures ) ) {
+			config.getAsStruct( Key.xml ).putAll( XMLConfig.normalizeNoDefaults( StructCaster.cast( appSettings.get( Key.XMLFeatures ) ) ) );
+		}
+
 		// OTHER OVERRIDES go here
 
 		// Announce it so modules can do their own overrides and such
@@ -680,6 +690,19 @@ public abstract class RequestBoxContext extends BaseBoxContext implements IJDBCC
 			return null;
 		}
 		return stack.peek();
+	}
+
+	/**
+	 * Look at the current thread and see if it has a request context and return it
+	 * Else return the provided default context if no current context is found.
+	 * 
+	 * @param defaultContext The default context to return if no current context is found
+	 *
+	 * @return The current request context or the provided default context if no current context is found
+	 */
+	public static IBoxContext getCurrent( IBoxContext defaultContext ) {
+		IBoxContext currentContext = getCurrent();
+		return currentContext != null ? currentContext : defaultContext;
 	}
 
 	/**

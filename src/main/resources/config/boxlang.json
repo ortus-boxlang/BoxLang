@@ -127,7 +127,7 @@
 		// Allow external general entities (disabled by default for security)
 		"allowExternalEntities": false,
 		// Enable lenient XML parsing — relaxes well-formedness and validation requirements
-		"lenientProcessing": false
+		"lenientProcessing": true
 	},
 	// Logging Settings for the runtime
 	"logging": {
