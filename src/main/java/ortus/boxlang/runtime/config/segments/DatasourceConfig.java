@@ -178,7 +178,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	// List of keys to NOT set dynamically. All keys not in this list will use
 	// `addDataSourceProperty` to set the property and pass it to the JDBC driver.
 	// Please use the hikariConfig setters for any hikari-specific properties.
-	private List<Key>				RESERVED_CONNECTION_PROPERTIES	= List.of(
+	private static final List<Key>	RESERVED_CONNECTION_PROPERTIES	= List.of(
 	    Key.leakDetectionThreshold,
 	    Key.autoCommit,
 	    Key.connectionLimit,
@@ -705,9 +705,13 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 
 		// ADD NON-RESERVED PROPERTIES
 		// as Hikari properties
+		// Note: HikariCP 7.x forwards these to the JDBC driver as-is, preserving the original
+		// Java type instead of stringifying them ( as 6.x did ). We stringify here ourselves so
+		// stricter JDBC drivers ( e.g. Derby ) don't choke on a non-String property value.
 		properties.entrySet().stream()
 		    .filter( entry -> !RESERVED_CONNECTION_PROPERTIES.contains( entry.getKey() ) )
-		    .forEach( entry -> result.addDataSourceProperty( entry.getKey().getName(), entry.getValue() ) );
+		    .filter( entry -> entry.getValue() != null )
+		    .forEach( entry -> result.addDataSourceProperty( entry.getKey().getName(), entry.getValue().toString() ) );
 
 		return result;
 	}

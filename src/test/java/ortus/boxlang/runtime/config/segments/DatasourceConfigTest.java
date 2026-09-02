@@ -67,7 +67,9 @@ class DatasourceConfigTest {
 	void testReservedPropertiesAreNotForwardedAsDataSourceProperties() {
 		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
 		    "connectionString", "jdbc:derby:memory:Foo;create=true",
-		    "connectionLimit", -1
+		    "connectionLimit", -1,
+		    "someVendorFlag", true,
+		    "someVendorTimeout", 42
 		) );
 		HikariConfig		hikariConfig	= datasource.toHikariConfig();
 
@@ -76,6 +78,8 @@ class DatasourceConfigTest {
 		// value ( e.g. a Boolean or Integer default that was never wired to a HikariConfig
 		// setter ) will NPE inside stricter JDBC drivers like Derby.
 		hikariConfig.getDataSourceProperties().forEach( ( key, value ) -> assertThat( value ).isInstanceOf( String.class ) );
+		assertThat( hikariConfig.getDataSourceProperties().get( "someVendorFlag" ) ).isEqualTo( "true" );
+		assertThat( hikariConfig.getDataSourceProperties().get( "someVendorTimeout" ) ).isEqualTo( "42" );
 		assertThat( hikariConfig.getDataSourceProperties().containsKey( "custom" ) ).isFalse();
 		assertThat( hikariConfig.getDataSourceProperties().containsKey( "connectionLimit" ) ).isFalse();
 		assertThat( hikariConfig.getMaximumPoolSize() ).isEqualTo( Integer.MAX_VALUE );
