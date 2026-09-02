@@ -101,28 +101,13 @@ public class BoxRunnerParseTest {
 		assertThat( options.cliArgs() ).containsExactly( "arg1" ).inOrder();
 	}
 
-	@DisplayName( "It sets showHelp for --help" )
+	@DisplayName( "parseCommandLineOptions alone never sets showHelp/showVersion - that's resolveExecutionTarget's job" )
 	@Test
-	void testHelpFlag() {
+	void testHelpVersionNotSetByParseAlone() {
 		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "--help" } );
 
-		assertThat( options.showHelp() ).isTrue();
-	}
-
-	@DisplayName( "It sets showVersion for --version" )
-	@Test
-	void testVersionFlag() {
-		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "--version" } );
-
-		assertThat( options.showVersion() ).isTrue();
-	}
-
-	@DisplayName( "It sets showVersion for the -v short form" )
-	@Test
-	void testVersionShortFlag() {
-		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "-v" } );
-
-		assertThat( options.showVersion() ).isTrue();
+		assertThat( options.showHelp() ).isFalse();
+		assertThat( options.cliArgs() ).containsExactly( "--help" );
 	}
 
 	@DisplayName( "It sets the code for --bx-code" )
@@ -213,81 +198,6 @@ public class BoxRunnerParseTest {
 		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "--bx-transpile" } );
 
 		assertThat( options.transpile() ).isTrue();
-	}
-
-	@DisplayName( "It sets showHelp for the -h short form" )
-	@Test
-	void testHelpShortFlag() {
-		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "-h" } );
-
-		assertThat( options.showHelp() ).isTrue();
-	}
-
-	@DisplayName( "Neither help nor version fire when both are present together (not the sole argument)" )
-	@Test
-	void testHelpAndVersionTogetherAreNotGlobal() {
-		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "--help", "--version" } );
-
-		assertThat( options.showHelp() ).isFalse();
-		assertThat( options.showVersion() ).isFalse();
-		assertThat( options.cliArgs() ).containsExactly( "--help", "--version" ).inOrder();
-	}
-
-	@DisplayName( "--help does not trigger global help when other args are present" )
-	@Test
-	void testHelpNotGlobalWithOtherArgs() {
-		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "--help", "extra" } );
-
-		assertThat( options.showHelp() ).isFalse();
-		assertThat( options.cliArgs() ).containsExactly( "--help", "extra" ).inOrder();
-	}
-
-	@DisplayName( "-h does not trigger global help when other args are present" )
-	@Test
-	void testHelpShortFlagNotGlobalWithOtherArgs() {
-		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "-h", "extra" } );
-
-		assertThat( options.showHelp() ).isFalse();
-		assertThat( options.cliArgs() ).containsExactly( "-h", "extra" ).inOrder();
-	}
-
-	@DisplayName( "-v does not trigger global version when other args are present" )
-	@Test
-	void testVersionShortFlagNotGlobalWithOtherArgs() {
-		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "-v", "extra" } );
-
-		assertThat( options.showVersion() ).isFalse();
-		assertThat( options.cliArgs() ).containsExactly( "-v", "extra" ).inOrder();
-	}
-
-	@DisplayName( "--help still shows global help when combined only with a startup flag like --bx-debug" )
-	@Test
-	void testHelpStillGlobalWithStartupFlag() {
-		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "--bx-debug", "--help" } );
-
-		assertThat( options.showHelp() ).isTrue();
-		assertThat( options.isDebugMode() ).isTrue();
-		assertThat( options.targetModule() ).isNull();
-	}
-
-	@DisplayName( "--version still shows global version when combined only with a startup flag like --bx-home=" )
-	@Test
-	void testVersionStillGlobalWithStartupFlag() {
-		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "--bx-home=/x", "--version" } );
-
-		assertThat( options.showVersion() ).isTrue();
-		assertThat( options.runtimeHome() ).isEqualTo( "/x" );
-		assertThat( options.targetModule() ).isNull();
-	}
-
-	@DisplayName( "-h still shows global help when combined only with a space-separated startup flag" )
-	@Test
-	void testHelpShortFlagStillGlobalWithStartupFlag() {
-		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "--bx-config", "/path/config.json", "-h" } );
-
-		assertThat( options.showHelp() ).isTrue();
-		assertThat( options.configFile() ).isEqualTo( "/path/config.json" );
-		assertThat( options.targetModule() ).isNull();
 	}
 
 	@DisplayName( "A bare module name receives a trailing -h instead of it triggering global help" )
@@ -496,7 +406,7 @@ public class BoxRunnerParseTest {
 		assertThat( options.cliArgs() ).containsExactly( "arg1" ).inOrder();
 	}
 
-	@DisplayName( "It does nothing when there are no positional args" )
+	@DisplayName( "It resolves a lone --version to global version instead of a module attempt" )
 	@Test
 	void testNoPositionals() {
 		CLIOptions	parsed	= BoxRunner.parseCommandLineOptions( new String[] { "--version" } );
@@ -505,6 +415,118 @@ public class BoxRunnerParseTest {
 		assertThat( options.showVersion() ).isTrue();
 		assertThat( options.targetModule() ).isNull();
 		assertThat( options.templatePath() ).isNull();
+	}
+
+	@DisplayName( "It does nothing when there are no positional args at all" )
+	@Test
+	void testTrulyEmptyCliArgs() {
+		CLIOptions	parsed	= BoxRunner.parseCommandLineOptions( new String[] { "--bx-debug" } );
+		CLIOptions	options	= BoxRunner.resolveExecutionTarget( parsed, name -> false );
+
+		assertThat( options.showHelp() ).isFalse();
+		assertThat( options.showVersion() ).isFalse();
+		assertThat( options.targetModule() ).isNull();
+		assertThat( options.templatePath() ).isNull();
+	}
+
+	@DisplayName( "It resolves --help to global help when nothing claims the name as a module/template/script" )
+	@Test
+	void testHelpResolvesGlobal() {
+		CLIOptions	parsed	= BoxRunner.parseCommandLineOptions( new String[] { "--help" } );
+		CLIOptions	options	= BoxRunner.resolveExecutionTarget( parsed, name -> false );
+
+		assertThat( options.showHelp() ).isTrue();
+		assertThat( options.targetModule() ).isNull();
+	}
+
+	@DisplayName( "It resolves the -h short form to global help" )
+	@Test
+	void testHelpShortFlagResolvesGlobal() {
+		CLIOptions	parsed	= BoxRunner.parseCommandLineOptions( new String[] { "-h" } );
+		CLIOptions	options	= BoxRunner.resolveExecutionTarget( parsed, name -> false );
+
+		assertThat( options.showHelp() ).isTrue();
+	}
+
+	@DisplayName( "It resolves the -v short form to global version" )
+	@Test
+	void testVersionShortFlagResolvesGlobal() {
+		CLIOptions	parsed	= BoxRunner.parseCommandLineOptions( new String[] { "-v" } );
+		CLIOptions	options	= BoxRunner.resolveExecutionTarget( parsed, name -> false );
+
+		assertThat( options.showVersion() ).isTrue();
+	}
+
+	@DisplayName( "--help still resolves to global help with trailing args, once nothing claims it as a target" )
+	@Test
+	void testHelpResolvesGlobalWithTrailingArgs() {
+		CLIOptions	parsed	= BoxRunner.parseCommandLineOptions( new String[] { "--help", "extra" } );
+		CLIOptions	options	= BoxRunner.resolveExecutionTarget( parsed, name -> false );
+
+		assertThat( options.showHelp() ).isTrue();
+	}
+
+	@DisplayName( "The first of --help/--version wins when both are present and neither is a module" )
+	@Test
+	void testHelpWinsWhenFirst() {
+		CLIOptions	parsed	= BoxRunner.parseCommandLineOptions( new String[] { "--help", "--version" } );
+		CLIOptions	options	= BoxRunner.resolveExecutionTarget( parsed, name -> false );
+
+		assertThat( options.showHelp() ).isTrue();
+		assertThat( options.showVersion() ).isFalse();
+	}
+
+	@DisplayName( "--version wins when it comes before --help instead" )
+	@Test
+	void testVersionWinsWhenFirst() {
+		CLIOptions	parsed	= BoxRunner.parseCommandLineOptions( new String[] { "--version", "--help" } );
+		CLIOptions	options	= BoxRunner.resolveExecutionTarget( parsed, name -> false );
+
+		assertThat( options.showVersion() ).isTrue();
+		assertThat( options.showHelp() ).isFalse();
+	}
+
+	@DisplayName( "--help still resolves to global help when combined only with a startup flag like --bx-debug" )
+	@Test
+	void testHelpStillGlobalWithStartupFlag() {
+		CLIOptions	parsed	= BoxRunner.parseCommandLineOptions( new String[] { "--bx-debug", "--help" } );
+		CLIOptions	options	= BoxRunner.resolveExecutionTarget( parsed, name -> false );
+
+		assertThat( options.showHelp() ).isTrue();
+		assertThat( options.isDebugMode() ).isTrue();
+		assertThat( options.targetModule() ).isNull();
+	}
+
+	@DisplayName( "--version still resolves to global version when combined only with a startup flag like --bx-home=" )
+	@Test
+	void testVersionStillGlobalWithStartupFlag() {
+		CLIOptions	parsed	= BoxRunner.parseCommandLineOptions( new String[] { "--bx-home=/x", "--version" } );
+		CLIOptions	options	= BoxRunner.resolveExecutionTarget( parsed, name -> false );
+
+		assertThat( options.showVersion() ).isTrue();
+		assertThat( options.runtimeHome() ).isEqualTo( "/x" );
+		assertThat( options.targetModule() ).isNull();
+	}
+
+	@DisplayName( "-h still resolves to global help when combined only with a space-separated startup flag" )
+	@Test
+	void testHelpShortFlagStillGlobalWithStartupFlag() {
+		CLIOptions	parsed	= BoxRunner.parseCommandLineOptions( new String[] { "--bx-config", "/path/config.json", "-h" } );
+		CLIOptions	options	= BoxRunner.resolveExecutionTarget( parsed, name -> false );
+
+		assertThat( options.showHelp() ).isTrue();
+		assertThat( options.configFile() ).isEqualTo( "/path/config.json" );
+		assertThat( options.targetModule() ).isNull();
+	}
+
+	@DisplayName( "A module registered under the exact name -h wins over global help" )
+	@Test
+	void testModuleNamedLikeHelpFlagWins() {
+		CLIOptions	parsed	= BoxRunner.parseCommandLineOptions( new String[] { "-h" } );
+		CLIOptions	options	= BoxRunner.resolveExecutionTarget( parsed, name -> name.equals( "-h" ) );
+
+		assertThat( options.targetModule() ).isEqualTo( "-h" );
+		assertThat( options.showHelp() ).isFalse();
 	}
 
 	@DisplayName( "A registered module wins over an existing file with the same name" )
