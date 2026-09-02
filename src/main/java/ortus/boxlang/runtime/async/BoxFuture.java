@@ -1124,7 +1124,16 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 * {@code ConnectionManager}/transaction state instead of sharing whatever
 	 * connection/transaction is active on the calling thread, matching the
 	 * isolation the {@code thread} component already provides.
-	 * Dependent thread tracking is handled by {@link ThreadBoxContext#runInContext}.
+	 * <p>
+	 * The dependent thread is registered on the request context immediately,
+	 * synchronously, on the calling thread, since the executor may not pick up
+	 * the task before the request finishes and its context is shut down.
+	 * {@link ortus.boxlang.runtime.context.RequestBoxContext#registerDependentThread}
+	 * is what tells the web request context to keep a usable copy of the HTTP
+	 * exchange around for the background thread instead of discarding it, and
+	 * that decision is made the moment the request context is shut down, so
+	 * registering it late - from inside the executor thread - would race with
+	 * (and can lose to) that shutdown.
 	 *
 	 * @param supplier The supplier to wrap
 	 * @param context  The calling context to use as the parent of the isolated context
@@ -1133,7 +1142,14 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 */
 	@SuppressWarnings( "unchecked" )
 	public static <T> Supplier<T> wrapSupplier( Supplier<T> supplier, IBoxContext context ) {
-		return () -> ( T ) ThreadBoxContext.runInContext( context, true, ctx -> supplier.get() );
+		RequestBoxContext.registerDependentThread( context );
+		return () -> {
+			try {
+				return ( T ) ThreadBoxContext.runInContext( context, true, ctx -> supplier.get() );
+			} finally {
+				RequestBoxContext.unregisterDependentThread( context );
+			}
+		};
 	}
 
 }
