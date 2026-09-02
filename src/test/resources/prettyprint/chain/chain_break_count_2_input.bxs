@@ -6,3 +6,9 @@ result = obj.foo().bar();
 
 // 3 calls - should definitely break
 result = obj.foo().bar().baz();
+
+// Keep the initial receiver path on the assignment line
+result = variables.productions.forUser( user ).get();
+
+// Keep only the configured number of receiver accesses
+result = variables.services.productions.forUser( user ).get();

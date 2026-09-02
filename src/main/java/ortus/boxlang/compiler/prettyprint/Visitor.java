@@ -758,8 +758,22 @@ public class Visitor extends VoidBoxVisitor {
 			currentNode = methodNode.getObj();
 			// Also collect any dot accesses in between
 			while ( currentNode instanceof BoxDotAccess dotAccess ) {
-				chain.add( new ChainElement( dotAccess ) );
-				currentNode = dotAccess.getContext();
+				if ( followsMethodInvocation( dotAccess ) ) {
+					chain.add( new ChainElement( dotAccess ) );
+					currentNode = dotAccess.getContext();
+					continue;
+				}
+
+				int receiverAccessesToBreak = Math.max(
+				    0,
+				    countDotAccesses( dotAccess ) - config.getChain().getKeepReceiverCount()
+				);
+				for ( int i = 0; i < receiverAccessesToBreak; i++ ) {
+					var receiverAccess = ( BoxDotAccess ) currentNode;
+					chain.add( new ChainElement( receiverAccess ) );
+					currentNode = receiverAccess.getContext();
+				}
+				break;
 			}
 		}
 
@@ -772,25 +786,31 @@ public class Visitor extends VoidBoxVisitor {
 		}
 		root.accept( this );
 
-		int		chainSize	= chain.size();
-		int		breakCount	= config.getChain().getBreakCount();
-		int		breakLength	= config.getChain().getBreakLength();
-		int		chainLength	= calculateChainLength( chain, root );
-		boolean	shouldBreak	= chainSize >= breakCount || chainLength >= breakLength;
+		int		chainSize					= chain.size();
+		int		breakCount					= config.getChain().getBreakCount();
+		int		breakLength					= config.getChain().getBreakLength();
+		int		chainLength					= calculateChainLength( chain, root );
+		long	methodCallCount				= chain.stream().filter( ChainElement::isMethodInvocation ).count();
+		boolean	chainFirstLengthStrategy	= "chain-first".equals( config.getChain().getLengthStrategy() ) && methodCallCount > 1;
+		boolean	argumentLengthRequiresBreak	= chainFirstLengthStrategy && chain.stream()
+		    .filter( ChainElement::isMethodInvocation )
+		    .map( ChainElement::asMethodInvocation )
+		    .anyMatch( method -> argumentsPrinter.wouldBreakByLength( method.getArguments() ) );
+		boolean	shouldBreak					= chainSize >= breakCount || chainLength >= breakLength || argumentLengthRequiresBreak;
 
-		var		chainGroup	= pushDoc( DocType.GROUP );
-		var		indentGroup	= pushDoc( DocType.INDENT );
+		var		chainGroup					= pushDoc( DocType.GROUP );
+		var		chainContents				= pushDoc( shouldBreak ? DocType.INDENT : DocType.ARRAY );
 
 		// Force break if chain is long enough (by count or by length)
 		if ( shouldBreak ) {
-			indentGroup.append( Line.BREAK_PARENT );
+			chainContents.append( Line.BREAK_PARENT );
 		}
 
 		for ( int i = chain.size() - 1; i >= 0; i-- ) {
 			var element = chain.get( i );
 
 			if ( shouldBreak ) {
-				indentGroup.append( Line.HARD );
+				chainContents.append( Line.HARD );
 			}
 
 			if ( element.isMethodInvocation() ) {
@@ -808,7 +828,7 @@ public class Visitor extends VoidBoxVisitor {
 					methodNode.getName().accept( this );
 					print( " ]" );
 				}
-				argumentsPrinter.print( methodNode, methodNode.getArguments() );
+				argumentsPrinter.print( methodNode, methodNode.getArguments(), shouldBreak && chainFirstLengthStrategy );
 				printPostComments( methodNode );
 			} else if ( element.isDotAccess() ) {
 				var dotAccess = element.asDotAccess();
@@ -2219,6 +2239,38 @@ public class Visitor extends VoidBoxVisitor {
 			return 0;
 		}
 		return node.getSourceText().replaceAll( "\\s+", "" ).length();
+	}
+
+	/**
+	 * Determines whether a dot access follows a method invocation and is therefore
+	 * part of the fluent chain rather than part of its initial receiver path.
+	 *
+	 * @param dotAccess dot access to inspect
+	 *
+	 * @return true when the dot access is rooted in a method invocation
+	 */
+	private boolean followsMethodInvocation( BoxDotAccess dotAccess ) {
+		BoxNode context = dotAccess.getContext();
+		while ( context instanceof BoxDotAccess nestedDotAccess ) {
+			context = nestedDotAccess.getContext();
+		}
+		return context instanceof BoxMethodInvocation;
+	}
+
+	/**
+	 * Count consecutive dot accesses in a receiver path.
+	 *
+	 * @param node receiver path root
+	 *
+	 * @return the number of dot accesses
+	 */
+	private int countDotAccesses( BoxNode node ) {
+		int count = 0;
+		while ( node instanceof BoxDotAccess dotAccess ) {
+			count++;
+			node = dotAccess.getContext();
+		}
+		return count;
 	}
 
 	/**

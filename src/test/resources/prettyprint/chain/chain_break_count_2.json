@@ -1,5 +1,6 @@
 {
   "chain": {
-    "break_count": 2
+    "break_count": 2,
+    "keep_receiver_count": 1
   }
 }

@@ -20,6 +20,7 @@ package ortus.boxlang.compiler.prettyprint;
 import ortus.boxlang.compiler.ast.BoxExpression;
 import ortus.boxlang.compiler.ast.expression.BoxAssignment;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
+import ortus.boxlang.compiler.ast.expression.BoxIdentifier;
 import ortus.boxlang.compiler.ast.expression.BoxStringConcat;
 import ortus.boxlang.compiler.ast.expression.BoxStringInterpolation;
 import ortus.boxlang.compiler.ast.expression.BoxStringLiteral;
@@ -76,10 +77,13 @@ public class StringPrinter {
 			processStringInterp( interp, quote );
 		} else if ( node instanceof BoxFQN fqn ) {
 			visitor.print( fqn.getValue() );
+		} else if ( node instanceof BoxIdentifier identifier ) {
+			visitor.print( identifier.getName() );
 		} else if ( node instanceof BoxAssignment assignment ) {
 			// Handles `include template="#expr#"` where the parser produces a BoxAssignment
-			// for the whole `template = expr` expression. We only want the right-hand side value.
-			printQuotedExpression( assignment.getRight(), quote );
+			// for the whole `template = expr` expression. Struct keys may also use a
+			// key-only assignment node, whose right-hand side is null.
+			printQuotedExpression( assignment.getRight() == null ? assignment.getLeft() : assignment.getRight(), quote );
 		} else {
 			visitor.print( "#" );
 			node.accept( visitor );
