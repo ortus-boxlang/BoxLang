@@ -942,6 +942,21 @@ public class BoxRunner {
 		List<String>	cliArgs			= new ArrayList<>();
 		String			actionCommand	= null;
 
+		// Global help/version: only recognized when they are the SOLE cli argument
+		// (e.g. `boxlang -h`, `boxlang --help`, `boxlang -v`, `boxlang --version`).
+		// If anything else is present - a module, a template, another flag - these
+		// tokens are left alone so a module or script can interpret them itself
+		// (e.g. `boxlang bxSites --help` must reach the bxSites module, not BoxLang's
+		// own help screen).
+		if ( args.length == 1 ) {
+			String onlyArgument = args[ 0 ];
+			if ( onlyArgument.equalsIgnoreCase( "--help" ) || onlyArgument.equalsIgnoreCase( "-h" ) ) {
+				showHelp = true;
+			} else if ( onlyArgument.equalsIgnoreCase( "--version" ) || onlyArgument.equalsIgnoreCase( "-v" ) ) {
+				showVersion = true;
+			}
+		}
+
 		// Pre-parse pass: extract the runtime startup flags (--bx-debug, --bx-config,
 		// --bx-home) from ANYWHERE in the argument list, including after a module: or
 		// template argument. These flags must ALWAYS be honored for runtime startup
@@ -949,7 +964,7 @@ public class BoxRunner {
 		// Once extracted, they are removed from the list so the main parse loop below
 		// never sees them. Both the space-separated (--bx-config /path) and equals
 		// (--bx-config=/path) forms are supported.
-		List<String>	argsList		= new ArrayList<>();
+		List<String> argsList = new ArrayList<>();
 		for ( int i = 0; i < args.length; i++ ) {
 			String arg = args[ i ];
 
@@ -1003,18 +1018,11 @@ public class BoxRunner {
 				break;
 			}
 
-			// Help Flag, we find and break off. Set the flag and let _main() handle
-			// printing help so we never call System.exit() outside of main().
-			if ( currentArgument.equalsIgnoreCase( "--help" ) || currentArgument.equalsIgnoreCase( "-h" ) ) {
-				showHelp = true;
-				break;
-			}
-
-			// ShowVersion mode Flag, we find and break off
-			if ( currentArgument.equalsIgnoreCase( "--version" ) ) {
-				showVersion = true;
-				break;
-			}
+			// NOTE: -h/--help/-v/--version are intentionally NOT special-cased here.
+			// They are only treated as global help/version when they are the SOLE cli
+			// argument (checked above, before this loop runs). Otherwise they fall
+			// through to the generic positional-argument branch below so they reach
+			// whatever module, action command, or template they were meant for.
 
 			// Print AST Flag, we find and continue to the next argument
 			if ( currentArgument.equalsIgnoreCase( "--bx-printAST" ) ) {
@@ -1105,12 +1113,15 @@ public class BoxRunner {
 	 */
 	static CLIOptions resolveExecutionTarget( CLIOptions options, Predicate<String> isModuleName ) {
 		// If a target was already resolved during parsing (module:, template, code or
-		// action command) or there are no positional arguments, there's nothing to do
+		// action command), there are no positional arguments, or the sole cli argument
+		// was the global -h/--help/-v/--version flag, there's nothing to do
 		if ( options.targetModule() != null
 		    || options.templatePath() != null
 		    || options.code() != null
 		    || options.actionCommand() != null
-		    || options.cliArgs().isEmpty() ) {
+		    || options.cliArgs().isEmpty()
+		    || Boolean.TRUE.equals( options.showHelp() )
+		    || Boolean.TRUE.equals( options.showVersion() ) ) {
 			return options;
 		}
 
@@ -1325,8 +1336,8 @@ public class BoxRunner {
 		System.out.println( "  java -jar boxlang.jar [OPTIONS] [FILE]        # 🐍 Using Java JAR" );
 		System.out.println();
 		System.out.println( "🔧 GLOBAL OPTIONS:" );
-		System.out.println( "  -h, --help                      ❓ Show this help message and exit" );
-		System.out.println( "      --version                   📋 Show version information and exit" );
+		System.out.println( "  -h, --help                      ❓ Show this help message and exit (only when passed alone)" );
+		System.out.println( "  -v, --version                   📋 Show version information and exit (only when passed alone)" );
 		System.out.println( "      --bx-debug                  🐛 Enable debug mode with timing information" );
 		System.out.println( "      --bx-config <PATH>          ⚙️  Use custom configuration file" );
 		System.out.println( "      --bx-home <PATH>           🏠 Set BoxLang runtime home directory" );

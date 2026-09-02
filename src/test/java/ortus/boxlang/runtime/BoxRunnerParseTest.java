@@ -117,6 +117,14 @@ public class BoxRunnerParseTest {
 		assertThat( options.showVersion() ).isTrue();
 	}
 
+	@DisplayName( "It sets showVersion for the -v short form" )
+	@Test
+	void testVersionShortFlag() {
+		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "-v" } );
+
+		assertThat( options.showVersion() ).isTrue();
+	}
+
 	@DisplayName( "It sets the code for --bx-code" )
 	@Test
 	void testCodeFlag() {
@@ -215,13 +223,56 @@ public class BoxRunnerParseTest {
 		assertThat( options.showHelp() ).isTrue();
 	}
 
-	@DisplayName( "Help wins over version when both are present" )
+	@DisplayName( "Neither help nor version fire when both are present together (not the sole argument)" )
 	@Test
-	void testHelpWinsOverVersion() {
+	void testHelpAndVersionTogetherAreNotGlobal() {
 		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "--help", "--version" } );
 
-		assertThat( options.showHelp() ).isTrue();
+		assertThat( options.showHelp() ).isFalse();
 		assertThat( options.showVersion() ).isFalse();
+		assertThat( options.cliArgs() ).containsExactly( "--help", "--version" ).inOrder();
+	}
+
+	@DisplayName( "--help does not trigger global help when other args are present" )
+	@Test
+	void testHelpNotGlobalWithOtherArgs() {
+		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "--help", "extra" } );
+
+		assertThat( options.showHelp() ).isFalse();
+		assertThat( options.cliArgs() ).containsExactly( "--help", "extra" ).inOrder();
+	}
+
+	@DisplayName( "-h does not trigger global help when other args are present" )
+	@Test
+	void testHelpShortFlagNotGlobalWithOtherArgs() {
+		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "-h", "extra" } );
+
+		assertThat( options.showHelp() ).isFalse();
+		assertThat( options.cliArgs() ).containsExactly( "-h", "extra" ).inOrder();
+	}
+
+	@DisplayName( "-v does not trigger global version when other args are present" )
+	@Test
+	void testVersionShortFlagNotGlobalWithOtherArgs() {
+		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "-v", "extra" } );
+
+		assertThat( options.showVersion() ).isFalse();
+		assertThat( options.cliArgs() ).containsExactly( "-v", "extra" ).inOrder();
+	}
+
+	@DisplayName( "A bare module name receives a trailing -h instead of it triggering global help" )
+	@Test
+	void testBareModuleReceivesHelpFlag() {
+		CLIOptions parsed = BoxRunner.parseCommandLineOptions( new String[] { "bxSites", "-h" } );
+
+		assertThat( parsed.showHelp() ).isFalse();
+		assertThat( parsed.cliArgs() ).containsExactly( "bxSites", "-h" ).inOrder();
+
+		CLIOptions options = BoxRunner.resolveExecutionTarget( parsed, name -> name.equals( "bxSites" ) );
+
+		assertThat( options.targetModule() ).isEqualTo( "bxSites" );
+		assertThat( options.showHelp() ).isFalse();
+		assertThat( options.cliArgs() ).containsExactly( "-h" ).inOrder();
 	}
 
 	@DisplayName( "It throws when --bx-code is missing its value" )
