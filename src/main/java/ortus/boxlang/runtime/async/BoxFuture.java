@@ -888,6 +888,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 		List<CompletableFuture<Object>>	futures		= array
 		    .stream()
 		    .map( item -> {
+				RequestBoxContext.registerDependentThread( context );
 				return CompletableFuture.supplyAsync( () -> ThreadBoxContext.runInContext( context, true, ctx -> {
 						try {
 							// Apply the mapper function directly to each item
@@ -907,6 +908,8 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 							else {
 								return ExceptionUtil.throwableToStruct( e );
 							}
+						} finally {
+							RequestBoxContext.unregisterDependentThread( context );
 						}
 					} ),
 						// Bound the executor to the CompletableFuture
@@ -983,6 +986,7 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 			// and return a key-value pair with the processed value
 			// If an error occurs, it will return the key with an error struct
 		    .map( entry -> {
+						RequestBoxContext.registerDependentThread( context );
 				CompletableFuture<Map.Entry<Key, Object>> future = CompletableFuture
 					.supplyAsync( () -> ( Map.Entry<Key, Object> ) ThreadBoxContext.runInContext( context, true, ctx -> {
 							try {
@@ -1015,6 +1019,8 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 								}
 								// Return the key-error pair
 								return new AbstractMap.SimpleEntry<>( entry.getKey(), errorResult );
+									} finally {
+										RequestBoxContext.unregisterDependentThread( context );
 							}
 						} ),
 					executor != null ? executor.executor() : ForkJoinPool.commonPool()
@@ -1133,7 +1139,14 @@ public class BoxFuture<T> extends CompletableFuture<T> {
 	 */
 	@SuppressWarnings( "unchecked" )
 	public static <T> Supplier<T> wrapSupplier( Supplier<T> supplier, IBoxContext context ) {
-		return () -> ( T ) ThreadBoxContext.runInContext( context, true, ctx -> supplier.get() );
+		RequestBoxContext.registerDependentThread( context );
+		return () -> {
+			try {
+				return ( T ) ThreadBoxContext.runInContext( context, true, ctx -> supplier.get() );
+			} finally {
+				RequestBoxContext.unregisterDependentThread( context );
+			}
+		};
 	}
 
 }
