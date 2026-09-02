@@ -181,9 +181,11 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	private List<Key>				RESERVED_CONNECTION_PROPERTIES	= List.of(
 	    Key.leakDetectionThreshold,
 	    Key.autoCommit,
+	    Key.connectionLimit,
 	    Key.connectionString,
 	    Key.connectionTestQuery,
 	    Key.connectionTimeout,
+	    Key.custom,
 	    Key.driver,
 	    Key.dsn,
 	    Key.healthCheckRegistry,
@@ -198,6 +200,7 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 	    Key.password,
 	    Key.poolName,
 	    Key.port,
+	    Key.registerMbeans,
 	    Key.username );
 
 	/**
@@ -695,6 +698,9 @@ public class DatasourceConfig implements Comparable<DatasourceConfig>, IConfigSe
 		}
 		if ( properties.containsKey( Key.initializationFailTimeout ) ) {
 			result.setInitializationFailTimeout( LongCaster.cast( properties.getOrDefault( Key.initializationFailTimeout, 1 ) ) );
+		}
+		if ( properties.containsKey( Key.registerMbeans ) ) {
+			result.setRegisterMbeans( properties.getAsBoolean( Key.registerMbeans ) );
 		}
 
 		// ADD NON-RESERVED PROPERTIES
