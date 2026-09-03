@@ -575,8 +575,6 @@ public abstract class BaseApplicationListener {
 		this.context.injectTopParentContext( new SessionBoxContext( targetSession ) );
 		targetSession.start( this.context );
 
-		this.context.registerShutdownListener( SessionBoxContext.persistSessionListener );
-
 	}
 
 	/**
