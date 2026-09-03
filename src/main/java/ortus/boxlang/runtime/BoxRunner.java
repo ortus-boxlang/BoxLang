@@ -990,22 +990,6 @@ public class BoxRunner {
 			argsList.add( arg );
 		}
 
-		// Global help/version: only recognized when they are the SOLE remaining cli
-		// argument, AFTER the startup flags above (--bx-debug, --bx-config, --bx-home)
-		// have been extracted (e.g. `boxlang --bx-debug --help` still shows help).
-		// If anything else is present - a module, a template, another flag - these
-		// tokens are left alone so a module or script can interpret them itself
-		// (e.g. `boxlang bxSites --help` must reach the bxSites module, not BoxLang's
-		// own help screen).
-		if ( argsList.size() == 1 ) {
-			String onlyArgument = argsList.get( 0 );
-			if ( onlyArgument.equalsIgnoreCase( "--help" ) || onlyArgument.equalsIgnoreCase( "-h" ) ) {
-				showHelp = true;
-			} else if ( onlyArgument.equalsIgnoreCase( "--version" ) || onlyArgument.equalsIgnoreCase( "-v" ) ) {
-				showVersion = true;
-			}
-		}
-
 		// Consume args in order via the `current` variable
 		while ( !argsList.isEmpty() ) {
 			currentArgument = argsList.remove( 0 );
@@ -1020,10 +1004,11 @@ public class BoxRunner {
 			}
 
 			// NOTE: -h/--help/-v/--version are intentionally NOT special-cased here.
-			// They are only treated as global help/version when they are the SOLE cli
-			// argument (checked above, before this loop runs). Otherwise they fall
-			// through to the generic positional-argument branch below so they reach
-			// whatever module, action command, or template they were meant for.
+			// They fall through to the generic positional-argument branch below like
+			// any other unrecognized token. Whether they end up meaning "show global
+			// help/version" is decided AFTER this loop finishes (see below), once every
+			// recognized flag (--bx-printAST, --bx-transpile, etc., not just the
+			// pre-parse startup flags) has had a chance to consume its own tokens.
 
 			// Print AST Flag, we find and continue to the next argument
 			if ( currentArgument.equalsIgnoreCase( "--bx-printAST" ) ) {
@@ -1060,6 +1045,25 @@ public class BoxRunner {
 			// up, and the runtime can't be started until all args are parsed (config
 			// file, runtime home, etc.), so deferring is the only correct option.
 			cliArgs.add( currentArgument );
+		}
+
+		// Global help/version: only recognized when they are the SOLE token left over
+		// after every other recognized flag (--bx-debug, --bx-config, --bx-home,
+		// --bx-printAST, --bx-transpile, etc.) has consumed its own tokens above, and
+		// nothing else has already claimed this invocation (a module:, action command,
+		// or --bx-code). This is checked here - after the loop - rather than against
+		// the raw args, so ANY recognized flag can precede help/version and it still
+		// resolves as global (e.g. `boxlang --bx-printAST --help` still shows help).
+		// If a real positional remains (e.g. `boxlang bxSites --help`), the flag is
+		// left alone in cliArgs so the module/script/action command it belongs to can
+		// interpret it itself.
+		if ( targetModule == null && actionCommand == null && code == null && cliArgs.size() == 1 ) {
+			String onlyArgument = cliArgs.get( 0 );
+			if ( onlyArgument.equalsIgnoreCase( "--help" ) || onlyArgument.equalsIgnoreCase( "-h" ) ) {
+				showHelp = true;
+			} else if ( onlyArgument.equalsIgnoreCase( "--version" ) || onlyArgument.equalsIgnoreCase( "-v" ) ) {
+				showVersion = true;
+			}
 		}
 
 		return new CLIOptions(

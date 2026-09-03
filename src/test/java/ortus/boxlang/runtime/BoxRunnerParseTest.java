@@ -290,6 +290,38 @@ public class BoxRunnerParseTest {
 		assertThat( options.targetModule() ).isNull();
 	}
 
+	@DisplayName( "--help still shows global help when combined only with --bx-printAST" )
+	@Test
+	void testHelpStillGlobalWithPrintASTFlag() {
+		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "--bx-printAST", "--help" } );
+
+		assertThat( options.showHelp() ).isTrue();
+		assertThat( options.printAST() ).isTrue();
+		assertThat( options.targetModule() ).isNull();
+	}
+
+	@DisplayName( "--version still shows global version when combined only with --bx-transpile" )
+	@Test
+	void testVersionStillGlobalWithTranspileFlag() {
+		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "--bx-transpile", "--version" } );
+
+		assertThat( options.showVersion() ).isTrue();
+		assertThat( options.transpile() ).isTrue();
+		assertThat( options.targetModule() ).isNull();
+	}
+
+	@DisplayName( "-h still shows global help when combined with multiple recognized flags" )
+	@Test
+	void testHelpStillGlobalWithMultipleFlags() {
+		CLIOptions options = BoxRunner.parseCommandLineOptions( new String[] { "--bx-debug", "--bx-printAST", "--bx-transpile", "-h" } );
+
+		assertThat( options.showHelp() ).isTrue();
+		assertThat( options.isDebugMode() ).isTrue();
+		assertThat( options.printAST() ).isTrue();
+		assertThat( options.transpile() ).isTrue();
+		assertThat( options.targetModule() ).isNull();
+	}
+
 	@DisplayName( "A bare module name receives a trailing -h instead of it triggering global help" )
 	@Test
 	void testBareModuleReceivesHelpFlag() {
