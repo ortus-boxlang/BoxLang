@@ -1151,6 +1151,7 @@ public class Key implements Comparable<Key>, Serializable {
 	public static final Key		minimumIdle							= Key.of( "minimumIdle" );
 	public static final Key		poolName							= Key.of( "poolName" );
 	public static final Key		initializationFailTimeout			= Key.of( "initializationFailTimeout" );
+	public static final Key		registerMbeans						= Key.of( "registerMbeans" );
 
 	// Transaction events
 	public static final Key		onTransactionBegin					= Key.of( "onTransactionBegin" );

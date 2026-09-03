@@ -50,6 +50,41 @@ class DatasourceConfigTest {
 		assertThat( hikariConfig.getJdbcUrl() ).isEqualTo( "jdbc:postgresql://localhost:5432/foo" );
 	}
 
+	@DisplayName( "It applies the registerMbeans default to the HikariConfig instead of forwarding it as a raw JDBC property" )
+	@Test
+	void testItAppliesRegisterMbeansToHikariConfig() {
+		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
+		    "connectionString", "jdbc:derby:memory:Foo;create=true"
+		) );
+		HikariConfig		hikariConfig	= datasource.toHikariConfig();
+
+		assertThat( hikariConfig.isRegisterMbeans() ).isTrue();
+		assertThat( hikariConfig.getDataSourceProperties().containsKey( "registerMbeans" ) ).isFalse();
+	}
+
+	@DisplayName( "It does not forward reserved connection properties as raw JDBC dataSourceProperties" )
+	@Test
+	void testReservedPropertiesAreNotForwardedAsDataSourceProperties() {
+		DatasourceConfig	datasource		= new DatasourceConfig( Key.of( "Foo" ), Struct.of(
+		    "connectionString", "jdbc:derby:memory:Foo;create=true",
+		    "connectionLimit", -1,
+		    "someVendorFlag", true,
+		    "someVendorTimeout", 42
+		) );
+		HikariConfig		hikariConfig	= datasource.toHikariConfig();
+
+		// Every value handed to the JDBC driver as a raw dataSourceProperty must be a String:
+		// Hikari 7.x no longer stringifies dataSourceProperties for us, so a stray non-String
+		// value ( e.g. a Boolean or Integer default that was never wired to a HikariConfig
+		// setter ) will NPE inside stricter JDBC drivers like Derby.
+		hikariConfig.getDataSourceProperties().forEach( ( key, value ) -> assertThat( value ).isInstanceOf( String.class ) );
+		assertThat( hikariConfig.getDataSourceProperties().get( "someVendorFlag" ) ).isEqualTo( "true" );
+		assertThat( hikariConfig.getDataSourceProperties().get( "someVendorTimeout" ) ).isEqualTo( "42" );
+		assertThat( hikariConfig.getDataSourceProperties().containsKey( "custom" ) ).isFalse();
+		assertThat( hikariConfig.getDataSourceProperties().containsKey( "connectionLimit" ) ).isFalse();
+		assertThat( hikariConfig.getMaximumPoolSize() ).isEqualTo( Integer.MAX_VALUE );
+	}
+
 	@DisplayName( "It supports plaintext datasource passwords" )
 	@Test
 	void testPlaintextDatasourcePassword() {
