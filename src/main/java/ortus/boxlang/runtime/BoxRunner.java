@@ -173,6 +173,13 @@ public class BoxRunner {
 		// Parse CLI options with Env Overrides
 		CLIOptions	options	= parseEnvironmentVariables( parseCommandLineOptions( args ) );
 
+		// Show help? Handle this BEFORE starting the runtime so we never spin one up
+		// just to print usage.
+		if ( Boolean.TRUE.equals( options.showHelp() ) ) {
+			printHelp();
+			return 0;
+		}
+
 		// Debug mode?
 		if ( options.isDebugMode() ) {
 			System.out.println( "+++ Debug mode enabled!" );
@@ -205,20 +212,13 @@ public class BoxRunner {
 		try {
 			// Now that the runtime is loaded, resolve the first positional argument to
 			// its execution target: registered module > template > shebang script >
-			// global help/version > module failsafe. The module registry is only
-			// available after startup, so this can't happen during arg parsing - this
-			// also means a bare `-h`/`--version` now pays for runtime startup instead
-			// of short-circuiting before it, so a module/script literally named one of
-			// those strings can still claim it.
+			// module failsafe. The module registry is only available after startup, so
+			// this can't happen during arg parsing.
 			final BoxRuntime resolvedRuntime = boxRuntime;
 			options = resolveExecutionTarget( options, name -> resolvedRuntime.getModuleService().hasModule( Key.of( name ) ) );
 
-			// Show help
-			if ( Boolean.TRUE.equals( options.showHelp() ) ) {
-				printHelp();
-			}
 			// Execute a Module — modules trump ALL other execution modes
-			else if ( options.targetModule() != null ) {
+			if ( options.targetModule() != null ) {
 				System.setProperty( "boxlang.cliModule", options.targetModule() );
 				boxRuntime.executeModule( options.targetModule(), options.cliArgs().toArray( new String[ 0 ] ) );
 			}
@@ -990,6 +990,22 @@ public class BoxRunner {
 			argsList.add( arg );
 		}
 
+		// Global help/version: only recognized when they are the SOLE remaining cli
+		// argument, AFTER the startup flags above (--bx-debug, --bx-config, --bx-home)
+		// have been extracted (e.g. `boxlang --bx-debug --help` still shows help).
+		// If anything else is present - a module, a template, another flag - these
+		// tokens are left alone so a module or script can interpret them itself
+		// (e.g. `boxlang bxSites --help` must reach the bxSites module, not BoxLang's
+		// own help screen).
+		if ( argsList.size() == 1 ) {
+			String onlyArgument = argsList.get( 0 );
+			if ( onlyArgument.equalsIgnoreCase( "--help" ) || onlyArgument.equalsIgnoreCase( "-h" ) ) {
+				showHelp = true;
+			} else if ( onlyArgument.equalsIgnoreCase( "--version" ) || onlyArgument.equalsIgnoreCase( "-v" ) ) {
+				showVersion = true;
+			}
+		}
+
 		// Consume args in order via the `current` variable
 		while ( !argsList.isEmpty() ) {
 			currentArgument = argsList.remove( 0 );
@@ -1004,10 +1020,10 @@ public class BoxRunner {
 			}
 
 			// NOTE: -h/--help/-v/--version are intentionally NOT special-cased here.
-			// They fall through to the generic positional-argument branch below like
-			// any other token; resolveExecutionTarget() decides later - once the
-			// module registry is available - whether they resolve to a real module,
-			// template, or script, or fall back to BoxLang's own global help/version.
+			// They are only treated as global help/version when they are the SOLE cli
+			// argument (checked above, before this loop runs). Otherwise they fall
+			// through to the generic positional-argument branch below so they reach
+			// whatever module, action command, or template they were meant for.
 
 			// Print AST Flag, we find and continue to the next argument
 			if ( currentArgument.equalsIgnoreCase( "--bx-printAST" ) ) {
@@ -1075,17 +1091,11 @@ public class BoxRunner {
 	 * Priority:
 	 * <ol>
 	 * <li><strong>Registered module</strong> — the predicate reports this name
-	 * exists, so it's a module execution. This prevents the shebang, template, and
-	 * help/version checks from hijacking a module execution.</li>
+	 * exists, so it's a module execution. This prevents the shebang and template
+	 * checks from hijacking a module execution.</li>
 	 * <li><strong>Executable template</strong> — a valid template file on disk.</li>
 	 * <li><strong>Shebang script</strong> — a file whose first line starts with
 	 * {@code #!}.</li>
-	 * <li><strong>Global help/version</strong> — the first arg is
-	 * {@code -h}/{@code --help} or {@code -v}/{@code --version} and nothing concrete
-	 * (module, template, script) claims that name, so it's treated as a request for
-	 * BoxLang's own help/version screen rather than an attempted module execution.
-	 * A module, template, or script can still be literally named one of these and
-	 * win, since this check runs after 1-3.</li>
 	 * <li><strong>Module failsafe</strong> — nothing matched, so assume it's a
 	 * module name anyway. Preserves the historical end-of-parse behavior.</li>
 	 * </ol>
@@ -1104,12 +1114,15 @@ public class BoxRunner {
 	 */
 	static CLIOptions resolveExecutionTarget( CLIOptions options, Predicate<String> isModuleName ) {
 		// If a target was already resolved during parsing (module:, template, code or
-		// action command) or there are no positional arguments, there's nothing to do
+		// action command), there are no positional arguments, or the sole cli argument
+		// was the global -h/--help/-v/--version flag, there's nothing to do
 		if ( options.targetModule() != null
 		    || options.templatePath() != null
 		    || options.code() != null
 		    || options.actionCommand() != null
-		    || options.cliArgs().isEmpty() ) {
+		    || options.cliArgs().isEmpty()
+		    || Boolean.TRUE.equals( options.showHelp() )
+		    || Boolean.TRUE.equals( options.showVersion() ) ) {
 			return options;
 		}
 
@@ -1132,17 +1145,7 @@ public class BoxRunner {
 			return withTarget( options, getSheBangScript( firstArg ), rest );
 		}
 
-		// 4. Global help/version - only once nothing concrete (module, template,
-		// script) has claimed the name, so a module/script literally named "-h" or
-		// "--version" still wins via checks 1-3 above.
-		if ( firstArg.equalsIgnoreCase( "--help" ) || firstArg.equalsIgnoreCase( "-h" ) ) {
-			return withShowHelp( options );
-		}
-		if ( firstArg.equalsIgnoreCase( "--version" ) || firstArg.equalsIgnoreCase( "-v" ) ) {
-			return withShowVersion( options );
-		}
-
-		// 5. Failsafe: treat the first arg as a module name
+		// 4. Failsafe: treat the first arg as a module name
 		return withTargetModule( options, firstArg, rest );
 	}
 
@@ -1195,54 +1198,6 @@ public class BoxRunner {
 		    cliArgs,
 		    options.cliArgsRaw(),
 		    module,
-		    options.actionCommand() );
-	}
-
-	/**
-	 * Build a new CLIOptions with showHelp set and any target/positional args cleared.
-	 *
-	 * @param options The options to base the new options on
-	 *
-	 * @return A new CLIOptions instance
-	 */
-	private static CLIOptions withShowHelp( CLIOptions options ) {
-		return new CLIOptions(
-		    null,
-		    options.debug(),
-		    options.code(),
-		    options.configFile(),
-		    options.printAST(),
-		    options.transpile(),
-		    options.runtimeHome(),
-		    options.showVersion(),
-		    true,
-		    List.of(),
-		    options.cliArgsRaw(),
-		    null,
-		    options.actionCommand() );
-	}
-
-	/**
-	 * Build a new CLIOptions with showVersion set and any target/positional args cleared.
-	 *
-	 * @param options The options to base the new options on
-	 *
-	 * @return A new CLIOptions instance
-	 */
-	private static CLIOptions withShowVersion( CLIOptions options ) {
-		return new CLIOptions(
-		    null,
-		    options.debug(),
-		    options.code(),
-		    options.configFile(),
-		    options.printAST(),
-		    options.transpile(),
-		    options.runtimeHome(),
-		    true,
-		    options.showHelp(),
-		    List.of(),
-		    options.cliArgsRaw(),
-		    null,
 		    options.actionCommand() );
 	}
 
