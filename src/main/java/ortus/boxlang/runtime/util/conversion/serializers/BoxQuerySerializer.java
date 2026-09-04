@@ -19,6 +19,7 @@ package ortus.boxlang.runtime.util.conversion.serializers;
 
 import java.io.IOException;
 import java.util.IdentityHashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -83,8 +84,11 @@ public class BoxQuerySerializer implements ValueWriter {
 				} else if ( queryFormat.equals( "column" ) || queryFormat.equals( "true" ) ) {
 					var						data	= new Struct( IStruct.TYPES.LINKED );
 					Map<Key, QueryColumn>	cols	= bxQuery.getColumns();
+					// Read the raw rows so queryNullToEmpty cannot convert stored nulls into empty strings.
+					List<Object[]>			rows	= bxQuery.getData();
 					for ( var col : cols.keySet() ) {
-						data.put( col, cols.get( col ).getColumnData() );
+						int columnIndex = cols.get( col ).getIndex();
+						data.put( col, rows.stream().map( row -> row[ columnIndex ] ).toArray() );
 					}
 					valueToSerialize = Struct.linkedOf(
 					    "rowCount", bxQuery.size(),
@@ -95,7 +99,8 @@ public class BoxQuerySerializer implements ValueWriter {
 					context.writeValue( valueToSerialize );
 					// "struct" is what we get by default (array of structs)
 				} else if ( queryFormat.equals( "struct" ) ) {
-					valueToSerialize = bxQuery.toArrayOfStructs();
+					// Use raw row access so queryNullToEmpty cannot convert stored nulls into empty strings.
+					valueToSerialize = bxQuery.intStream().mapToObj( bxQuery::getRowAsStructRaw ).toArray( IStruct[]::new );
 					runtime.announce( BoxEvent.ON_JSON_QUERY_SERIALIZE, () -> Struct.ofNonConcurrent( Key.data, valueToSerialize ) );
 					context.writeValue( valueToSerialize );
 				} else {

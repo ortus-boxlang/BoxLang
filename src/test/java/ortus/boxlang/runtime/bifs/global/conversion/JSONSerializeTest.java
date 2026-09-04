@@ -30,6 +30,7 @@ import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
+import ortus.boxlang.runtime.types.Query;
 
 public class JSONSerializeTest {
 
@@ -256,6 +257,100 @@ public class JSONSerializeTest {
 
 		// @formatter:on
 		assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) ).isEqualTo( expected.replaceAll( "\\s", "" ) );
+	}
+
+	@DisplayName( "It can serialize a query as array of structs with null values when queryNullToEmpty is enabled" )
+	@Test
+	public void testCanSerializeQueryArrayOfStructsWithNullValue() {
+		try {
+			Query.queryNullToEmpty = true;
+			// @formatter:off
+			instance.executeSource(
+			    """
+			         query = queryNew(
+					"col1,col2,col3",
+					"numeric,varchar,bit",
+					[
+						[1,null,true],
+						[2,"wood",false]
+					]
+				);
+				result = JSONSerialize( query, "struct" )
+			    """,
+			context );
+			// @formatter:on
+
+			Query query = variables.getAsQuery( Key.of( "query" ) );
+			assertThat( query.getData().get( 0 )[ 1 ] ).isNull();
+			assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) )
+			    .isEqualTo( "[{\"col1\":1,\"col2\":null,\"col3\":true},{\"col1\":2,\"col2\":\"wood\",\"col3\":false}]" );
+			assertThat( variables.getAsString( result ) ).doesNotContain( "\"\"" );
+		} finally {
+			Query.queryNullToEmpty = false;
+		}
+	}
+
+	@DisplayName( "It can serialize a query as row with null values when queryNullToEmpty is enabled" )
+	@Test
+	public void testCanSerializeQueryRowWithNullValue() {
+		try {
+			Query.queryNullToEmpty = true;
+			// @formatter:off
+			instance.executeSource(
+			    """
+			         query = queryNew(
+					"col1,col2,col3",
+					"numeric,varchar,bit",
+					[
+						[1,null,true],
+						[2,"wood",false]
+					]
+				);
+				result = JSONSerialize( query, "row" )
+			    """,
+			context );
+			// @formatter:on
+
+			Query query = variables.getAsQuery( Key.of( "query" ) );
+			assertThat( query.getData().get( 0 )[ 1 ] ).isNull();
+			assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) )
+			    .isEqualTo( "{\"columns\":[\"col1\",\"col2\",\"col3\"],\"data\":[[1,null,true],[2,\"wood\",false]]}" );
+			assertThat( variables.getAsString( result ) ).doesNotContain( "\"\"" );
+		} finally {
+			Query.queryNullToEmpty = false;
+		}
+	}
+
+	@DisplayName( "It can serialize a query as column with null values when queryNullToEmpty is enabled" )
+	@Test
+	public void testCanSerializeQueryColumnWithNullValue() {
+		try {
+			Query.queryNullToEmpty = true;
+			// @formatter:off
+			instance.executeSource(
+			    """
+			         query = queryNew(
+					"col1,col2,col3",
+					"numeric,varchar,bit",
+					[
+						[1,null,true],
+						[2,"wood",false]
+					]
+				);
+				result = JSONSerialize( query, "column" )
+			    """,
+			context );
+			// @formatter:on
+
+			Query query = variables.getAsQuery( Key.of( "query" ) );
+			assertThat( query.getData().get( 0 )[ 1 ] ).isNull();
+			assertThat( variables.getAsString( result ).replaceAll( "\\s", "" ) )
+			    .isEqualTo(
+			        "{\"rowCount\":2,\"columns\":[\"col1\",\"col2\",\"col3\"],\"data\":{\"col1\":[1,2],\"col2\":[null,\"wood\"],\"col3\":[true,false]}}" );
+			assertThat( variables.getAsString( result ) ).doesNotContain( "\"\"" );
+		} finally {
+			Query.queryNullToEmpty = false;
+		}
 	}
 
 	@DisplayName( "It can serialize a string Member" )
