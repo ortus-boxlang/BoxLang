@@ -1473,7 +1473,7 @@ public class BoxRuntime implements java.io.Closeable {
 					// Opps, an error while handling onAbort
 					errorToHandle = ae;
 				}
-				scriptingContext.flushBuffer( true );
+				scriptingContext.flushBuffer( false );
 				if ( e.getCause() != null ) {
 					// This will always be an instance of CustomException
 					throw ( RuntimeException ) e.getCause();
@@ -1521,7 +1521,7 @@ public class BoxRuntime implements java.io.Closeable {
 						ExceptionUtil.throwException( t );
 					}
 				}
-				scriptingContext.flushBuffer( false );
+				scriptingContext.flushBuffer( shutdownContext );
 				RequestBoxContext.removeCurrent();
 				Thread.currentThread().setContextClassLoader( oldClassLoader );
 				if ( shutdownContext ) {
@@ -1529,6 +1529,7 @@ public class BoxRuntime implements java.io.Closeable {
 				}
 			}
 		} else {
+			scriptingContext.flushBuffer( shutdownContext );
 			RequestBoxContext.removeCurrent();
 			if ( shutdownContext ) {
 				scriptingContext.getRequestContext().shutdown();
@@ -1584,7 +1585,7 @@ public class BoxRuntime implements java.io.Closeable {
 				// Opps, an error while handling onAbort
 				errorToHandle = ae;
 			}
-			scriptingContext.flushBuffer( true );
+			scriptingContext.flushBuffer( false );
 			if ( e.getCause() != null ) {
 				// This will always be an instance of CustomException
 				throw ( RuntimeException ) e.getCause();
@@ -1633,7 +1634,7 @@ public class BoxRuntime implements java.io.Closeable {
 					ExceptionUtil.throwException( t );
 				}
 			}
-			scriptingContext.flushBuffer( false );
+			scriptingContext.flushBuffer( shutdownContext );
 			RequestBoxContext.removeCurrent();
 			Thread.currentThread().setContextClassLoader( oldClassLoader );
 			if ( shutdownContext ) {
@@ -1700,14 +1701,14 @@ public class BoxRuntime implements java.io.Closeable {
 			// is responsible for signaling if needed.
 			return scriptRunnable.invoke( scriptingContext );
 		} catch ( AbortException e ) {
-			scriptingContext.flushBuffer( true );
+			scriptingContext.flushBuffer( false );
 			if ( e.getCause() != null ) {
 				// This will always be an instance of CustomException
 				throw ( RuntimeException ) e.getCause();
 			}
 			return null;
 		} finally {
-			scriptingContext.flushBuffer( false );
+			scriptingContext.flushBuffer( shutdownContext );
 			RequestBoxContext.removeCurrent();
 			Thread.currentThread().setContextClassLoader( oldClassLoader );
 			if ( shutdownContext ) {
@@ -1781,13 +1782,13 @@ public class BoxRuntime implements java.io.Closeable {
 			// Fire!!!
 			results = scriptRunnable.invoke( scriptingContext );
 		} catch ( AbortException e ) {
-			scriptingContext.flushBuffer( true );
+			scriptingContext.flushBuffer( false );
 			if ( e.getCause() != null ) {
 				// This will always be an instance of CustomException
 				throw ( RuntimeException ) e.getCause();
 			}
 		} finally {
-			scriptingContext.flushBuffer( false );
+			scriptingContext.flushBuffer( shutdownContext );
 			RequestBoxContext.removeCurrent();
 			Thread.currentThread().setContextClassLoader( oldClassLoader );
 			if ( shutdownContext ) {
@@ -1807,6 +1808,7 @@ public class BoxRuntime implements java.io.Closeable {
 	 */
 	public Object executeSource( InputStream sourceStream, IBoxContext context ) {
 		IBoxContext		scriptingContext	= ensureRequestTypeContext( context );
+		boolean			shutdownContext		= context != scriptingContext;
 		BufferedReader	reader				= new BufferedReader( new InputStreamReader( sourceStream ) );
 		String			source;
 		ClassLoader		oldClassLoader		= Thread.currentThread().getContextClassLoader();
@@ -1820,7 +1822,7 @@ public class BoxRuntime implements java.io.Closeable {
 
 				try {
 
-					BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadStatement( context, source,
+					BoxScript	scriptRunnable		= RunnableLoader.getInstance().loadStatement( scriptingContext, source,
 					    BoxSourceType.BOXSCRIPT );
 
 					// Fire!!!
@@ -1841,7 +1843,7 @@ public class BoxRuntime implements java.io.Closeable {
 						System.out.println();
 					}
 				} catch ( AbortException e ) {
-					scriptingContext.flushBuffer( true );
+					scriptingContext.flushBuffer( false );
 					if ( e.getCause() != null ) {
 						System.out.println( "Abort: " + e.getCause().getMessage() );
 					}
@@ -1854,6 +1856,10 @@ public class BoxRuntime implements java.io.Closeable {
 		} finally {
 			RequestBoxContext.removeCurrent();
 			Thread.currentThread().setContextClassLoader( oldClassLoader );
+			scriptingContext.flushBuffer( shutdownContext );
+			if ( shutdownContext ) {
+				scriptingContext.shutdown();
+			}
 		}
 
 		return null;
