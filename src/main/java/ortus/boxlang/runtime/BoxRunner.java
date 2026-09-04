@@ -1117,9 +1117,11 @@ public class BoxRunner {
 	 *         target
 	 */
 	static CLIOptions resolveExecutionTarget( CLIOptions options, Predicate<String> isModuleName ) {
-		// If a target was already resolved during parsing (module:, template, code or
-		// action command), there are no positional arguments, or the sole cli argument
-		// was the global -h/--help/-v/--version flag, there's nothing to do
+		// Nothing to do if a target/mode was already established during parsing
+		// (an explicit module: prefix, --bx-code, an action command, or global
+		// help/version), if templatePath is already set (only ever set by a prior
+		// call to this method, never during parsing itself), or if there are no
+		// positional arguments left to classify.
 		if ( options.targetModule() != null
 		    || options.templatePath() != null
 		    || options.code() != null
@@ -1341,8 +1343,8 @@ public class BoxRunner {
 		System.out.println( "  java -jar boxlang.jar [OPTIONS] [FILE]        # 🐍 Using Java JAR" );
 		System.out.println();
 		System.out.println( "🔧 GLOBAL OPTIONS:" );
-		System.out.println( "  -h, --help                      ❓ Show this help message and exit (only when passed alone)" );
-		System.out.println( "  -v, --version                   📋 Show version information and exit (only when passed alone)" );
+		System.out.println( "  -h, --help                      ❓ Show this help message and exit (unless a module/template/script is also given)" );
+		System.out.println( "  -v, --version                   📋 Show version information and exit (unless a module/template/script is also given)" );
 		System.out.println( "      --bx-debug                  🐛 Enable debug mode with timing information" );
 		System.out.println( "      --bx-config <PATH>          ⚙️  Use custom configuration file" );
 		System.out.println( "      --bx-home <PATH>           🏠 Set BoxLang runtime home directory" );
