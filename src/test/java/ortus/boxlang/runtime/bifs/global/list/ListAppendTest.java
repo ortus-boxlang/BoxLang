@@ -28,6 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
@@ -190,6 +191,24 @@ public class ListAppendTest {
 		    """,
 		    context );
 		assertThat( variables.getAsString( result ) ).isEqualTo( "a,,b,,,x,,y," );
+	}
+
+	@DisplayName( "listAppend() Performance" )
+	@Test
+	public void testListAppendPerformance() {
+		instance.executeSource(
+		    """
+		    myList = "a" &  repeatString( ",a", 1000000 )
+		    start = getTickCount()
+		    cfloop( from=1, to="10", index="i" ) {
+		    	mylist = listAppend( myList, "foo" )
+		    }
+		    result = getTickCount() - start
+		       """,
+		    context, BoxSourceType.CFSCRIPT );
+		// This shouldn't parse the million-element list at all
+		assertThat( variables.getAsNumber( result ).intValue() ).isLessThan( 250 );
+
 	}
 
 }
