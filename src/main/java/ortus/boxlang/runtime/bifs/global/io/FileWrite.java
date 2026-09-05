@@ -15,9 +15,13 @@
 
 package ortus.boxlang.runtime.bifs.global.io;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
 import ortus.boxlang.runtime.bifs.BIF;
 import ortus.boxlang.runtime.bifs.BoxBIF;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BoxFileCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.scopes.ArgumentsScope;
 import ortus.boxlang.runtime.scopes.Key;
@@ -35,7 +39,7 @@ public class FileWrite extends BIF {
 	public FileWrite() {
 		super();
 		declaredArguments = new Argument[] {
-		    new Argument( true, "boxfile", Key.file ),
+		    new Argument( true, "any", Key.file ),
 		    new Argument( true, "any", Key.data ),
 		    new Argument( false, "string", Key.charset, FileSystemUtil.DEFAULT_CHARSET.name() ),
 		    new Argument( false, "boolean", Key.createPath, false )
@@ -62,7 +66,19 @@ public class FileWrite extends BIF {
 	 * @argument.createPath When true, ensures all directories to the file destination are created. Only applies to path-based writes.
 	 */
 	public Object _invoke( IBoxContext context, ArgumentsScope arguments ) {
-		BoxFile	file		= arguments.getAsBoxFile( Key.file );
+		Object oFile = arguments.get( Key.file );
+
+		// The BoxFile cast expands path, but the bx:file component needs to default relative paths to the temp dir.
+		// So we need to intercept strings here, and expand them before we cast to BoxFile.
+		if ( oFile instanceof String fileStr ) {
+			if ( !Paths.get( fileStr ).isAbsolute() ) {
+				oFile = FileSystemUtil.getTempDirectory() + fileStr;
+			}
+		} else if ( oFile instanceof Path path && !path.isAbsolute() ) {
+			oFile = FileSystemUtil.getTempDirectory() + path.toString();
+		}
+
+		BoxFile	file		= BoxFileCaster.cast( context, oFile );
 		Object	fileContent	= arguments.get( Key.data );
 
 		// Explicit file object — write through the open stream
