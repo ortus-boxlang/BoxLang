@@ -25,6 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 import org.junit.jupiter.api.AfterAll;
@@ -133,6 +134,31 @@ public class FileTest {
 
 		assertThat( FileSystemUtil.exists( testTextFile ) ).isTrue();
 		assertThat( FileSystemUtil.readString( testTextFile ) ).isEqualTo( "I am writing!" );
+	}
+
+	/**
+	 * Verifies that a relative file path for the write action is resolved beneath the system temp directory.
+	 */
+	@Test
+	public void testTextFileWriteRelativePath() throws IOException {
+		String	relativeFile	= "FileComponentTest-relative.txt";
+		Path	expectedFile	= Path.of( FileSystemUtil.getTempDirectory(), relativeFile );
+
+		try {
+			assertFalse( FileSystemUtil.exists( expectedFile.toString() ) );
+			instance.executeSource(
+			    """
+			    <bx:file action="write" file="%s" output="I am writing to temp!" >
+			    """.formatted( relativeFile ),
+			    context, BoxSourceType.BOXTEMPLATE );
+
+			assertThat( FileSystemUtil.exists( expectedFile.toString() ) ).isTrue();
+			assertThat( FileSystemUtil.readString( expectedFile.toString() ) ).isEqualTo( "I am writing to temp!" );
+		} finally {
+			if ( FileSystemUtil.exists( expectedFile.toString() ) ) {
+				Files.deleteIfExists( expectedFile );
+			}
+		}
 	}
 
 	@Test
