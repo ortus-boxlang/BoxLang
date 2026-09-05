@@ -17,6 +17,8 @@
  */
 package ortus.boxlang.runtime.components.io;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Set;
 
@@ -32,6 +34,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.util.FileSystemUtil;
 import ortus.boxlang.runtime.validation.Validator;
 
 @BoxComponent( description = "Perform file operations like read, write, copy, and delete" )
@@ -148,6 +151,21 @@ public class File extends Component {
 
 		if ( action.equals( Key.write ) ) {
 			attributes.put( Key.data, output );
+
+			// fileWrite() expands path, but the bx:file component needs to default relative paths to the temp dir.
+			// So we need to intercept strings here, and expand them before we cast to BoxFile.
+
+			Object oFile = attributes.get( Key.file );
+			if ( oFile instanceof String fileStr ) {
+				if ( !Paths.get( fileStr ).isAbsolute() ) {
+					oFile = FileSystemUtil.getTempDirectory() + fileStr;
+					attributes.put( Key.file, oFile );
+				}
+			} else if ( oFile instanceof Path path && !path.isAbsolute() ) {
+				oFile = FileSystemUtil.getTempDirectory() + path.toString();
+				attributes.put( Key.file, oFile );
+			}
+
 			actionsMap.get( Key.write ).invoke( context, attributes, false, fileWriteKey );
 		} else if ( action.equals( Key.append ) ) {
 			attributes.put( Key.data, output );
