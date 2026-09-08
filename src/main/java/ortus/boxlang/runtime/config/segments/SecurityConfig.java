@@ -154,7 +154,7 @@ public class SecurityConfig implements IConfigSegment {
 	}
 
 	/**
-	 * Ensure seed file on disk.  This only exists for a backwards compat stopgap for bx-plus
+	 * Ensure seed file on disk. This only exists for a backwards compat stopgap for bx-plus
 	 * 
 	 * TODO: remove this methods, once the call to it in BoxRuntime is removed.
 	 */
