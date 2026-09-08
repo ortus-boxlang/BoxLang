@@ -385,6 +385,8 @@ public class BoxRuntime implements java.io.Closeable {
 
 		this.configuration.process( loader.mergeEnvironmentOverrides( overrideConfig ) );
 
+		// This is a temp workaround for the bx-plus module which needs the seed to be on disk
+		this.configuration.security.ensureSeedFile();
 		// Materialize the seed after all overrides are applied so legacy integrations can read the runtime-home seed file during startup.
 		this.configuration.security.getSecretSeed();
 
