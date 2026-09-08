@@ -154,6 +154,15 @@ public class SecurityConfig implements IConfigSegment {
 	}
 
 	/**
+	 * Ensure seed file on disk.  This only exists for a backwards compat stopgap for bx-plus
+	 * 
+	 * TODO: remove this methods, once the call to it in BoxRuntime is removed.
+	 */
+	public void ensureSeedFile() {
+		readOrCreateSecretSeed();
+	}
+
+	/**
 	 * This function takes in the name of a BIF to test if it is disallowed.
 	 * The search is case-insensitive.
 	 * If it's disallowed, it will throw a SecurityException, else it will return true
