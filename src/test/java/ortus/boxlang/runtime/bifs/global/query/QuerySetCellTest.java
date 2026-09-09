@@ -168,9 +168,9 @@ public class QuerySetCellTest {
 		    context );
 
 		assertThat( variables.getAsQuery( result ).getData().size() ).isEqualTo( 3 );
-		assertEquals( true, variables.get( Key.of( "bit1" ) ) );
-		assertEquals( false, variables.get( Key.of( "bit2" ) ) );
-		assertEquals( true, variables.get( Key.of( "bit3" ) ) );
+		assertEquals( 1, variables.get( Key.of( "bit1" ) ) );
+		assertEquals( 0, variables.get( Key.of( "bit2" ) ) );
+		assertEquals( 1, variables.get( Key.of( "bit3" ) ) );
 	}
 
 	// BL-640 - Test that time values in queries are handled correctly and allow for comparison

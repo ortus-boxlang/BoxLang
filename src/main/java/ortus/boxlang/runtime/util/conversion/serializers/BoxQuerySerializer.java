@@ -18,6 +18,7 @@
 package ortus.boxlang.runtime.util.conversion.serializers;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,11 +28,13 @@ import com.fasterxml.jackson.jr.ob.api.ValueWriter;
 import com.fasterxml.jackson.jr.ob.impl.JSONWriter;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.events.BoxEvent;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.Query;
 import ortus.boxlang.runtime.types.QueryColumn;
+import ortus.boxlang.runtime.types.QueryColumnType;
 import ortus.boxlang.runtime.types.Struct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
 
@@ -69,23 +72,39 @@ public class BoxQuerySerializer implements ValueWriter {
 				if ( queryFormat == null ) {
 					queryFormat = "row";
 				}
+				Map<Key, QueryColumn>	cols		= bxQuery.getColumns();
+				List<QueryColumn>		bitColumns	= cols.values().stream().filter( column -> column.getType() == QueryColumnType.BIT ).toList();
+				// Read raw values to preserve nulls regardless of queryNullToEmpty.
+				List<Object[]>			rows		= bxQuery.getData();
+				if ( !bitColumns.isEmpty() ) {
+					// BIT values are numeric in the query, but boolean in JSON. Only change copies of the rows.
+					List<Object[]> serializedRows = new ArrayList<>( rows.size() );
+					for ( Object[] row : rows ) {
+						Object[] serializedRow = row.clone();
+						for ( QueryColumn column : bitColumns ) {
+							int index = column.getIndex();
+							if ( serializedRow[ index ] != null ) {
+								serializedRow[ index ] = BooleanCaster.cast( serializedRow[ index ] );
+							}
+						}
+						serializedRows.add( serializedRow );
+					}
+					rows = serializedRows;
+				}
 				final Object valueToSerialize;
 
 				// "row" is the same as "false". Top level struct with columns (array of strings), data (array of arrays)
 				if ( queryFormat.equals( "row" ) || queryFormat.equals( "false" ) ) {
 					valueToSerialize = Struct.linkedOf(
 					    "columns", bxQuery.getColumns().keySet().stream().map( c -> c.getName() ).toArray( String[]::new ),
-					    "data", bxQuery.getData()
+					    "data", rows
 					);
 					runtime.announce( BoxEvent.ON_JSON_QUERY_SERIALIZE, () -> Struct.ofNonConcurrent( Key.data, valueToSerialize ) );
 					context.writeValue( valueToSerialize );
 					// "column" is the same as "true". Top level struct with rowcount, columns (array of strings), data (struct with column name as key and array of
 					// values as value)
 				} else if ( queryFormat.equals( "column" ) || queryFormat.equals( "true" ) ) {
-					var						data	= new Struct( IStruct.TYPES.LINKED );
-					Map<Key, QueryColumn>	cols	= bxQuery.getColumns();
-					// Read the raw rows so queryNullToEmpty cannot convert stored nulls into empty strings.
-					List<Object[]>			rows	= bxQuery.getData();
+					var data = new Struct( IStruct.TYPES.LINKED );
 					for ( var col : cols.keySet() ) {
 						int columnIndex = cols.get( col ).getIndex();
 						data.put( col, rows.stream().map( row -> row[ columnIndex ] ).toArray() );
@@ -99,8 +118,11 @@ public class BoxQuerySerializer implements ValueWriter {
 					context.writeValue( valueToSerialize );
 					// "struct" is what we get by default (array of structs)
 				} else if ( queryFormat.equals( "struct" ) ) {
-					// Use raw row access so queryNullToEmpty cannot convert stored nulls into empty strings.
-					valueToSerialize = bxQuery.intStream().mapToObj( bxQuery::getRowAsStructRaw ).toArray( IStruct[]::new );
+					valueToSerialize = rows.stream().map( row -> {
+						IStruct data = new Struct( IStruct.TYPES.LINKED );
+						cols.forEach( ( name, column ) -> data.put( name, row[ column.getIndex() ] ) );
+						return data;
+					} ).toArray( IStruct[]::new );
 					runtime.announce( BoxEvent.ON_JSON_QUERY_SERIALIZE, () -> Struct.ofNonConcurrent( Key.data, valueToSerialize ) );
 					context.writeValue( valueToSerialize );
 				} else {
