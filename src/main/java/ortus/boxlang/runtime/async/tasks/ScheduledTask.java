@@ -57,7 +57,6 @@ import ortus.boxlang.runtime.types.util.DateTimeHelper;
 import ortus.boxlang.runtime.types.util.StringUtil;
 import ortus.boxlang.runtime.types.exceptions.AbortException;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
-import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 import ortus.boxlang.runtime.util.Timer;
 
 /**
@@ -567,8 +566,8 @@ public class ScheduledTask implements Runnable {
 			final Exception exception = e;
 			// store failures
 			( ( AtomicInteger ) this.stats.get( "totalFailures" ) ).incrementAndGet();
-			logger.error( "Error running task ({}) failed: {}", name, exception.getMessage() );
-			logger.error( "Stacktrace for ({}) : {}", name, ExceptionUtil.getStackTraceAsString( exception ) );
+
+			logger.error( "Error running task (" + name + ") failed: " + exception.getMessage(), exception );
 
 			// Try to execute the error handlers. Try try try just in case.
 			try {
@@ -598,15 +597,7 @@ public class ScheduledTask implements Runnable {
 				);
 			} catch ( Throwable afterException ) {
 				// Log it, so it doesn't go to ether and executor doesn't die.
-				logger.error(
-				    "Error running task ({}) after/error handlers : {}",
-				    name,
-				    afterException.getMessage() );
-				logger.error(
-				    "Stacktrace for task ({}) after/error handlers : {}",
-				    name,
-				    ExceptionUtil.getStackTraceAsString( afterException )
-				);
+				logger.error( "Error running task " + name + " after/error handlers: " + afterException.getMessage(), afterException );
 			}
 		} finally {
 			// Store finalization stats
@@ -622,14 +613,7 @@ public class ScheduledTask implements Runnable {
 				RequestBoxContext.removeCurrent();
 				Thread.currentThread().setContextClassLoader( oldClassLoader );
 			} catch ( Throwable e ) {
-				logger.error(
-				    "Error running task ({}) finalization : {}",
-				    name,
-				    e.getMessage() );
-				logger.error(
-				    "Stacktrace for task ({}) finalization : {}",
-				    name,
-				    ExceptionUtil.getStackTraceAsString( e ) );
+				logger.error( "Error running task (" + name + ") finalization: " + e.getMessage(), e );
 			}
 
 			// Clean up an open connections from this run
@@ -637,14 +621,7 @@ public class ScheduledTask implements Runnable {
 				try {
 					jdbcContext.shutdownConnections();
 				} catch ( Throwable e ) {
-					logger.error(
-					    "Error shutting down JDBC connections for task ({}) : {}",
-					    name,
-					    e.getMessage() );
-					logger.error(
-					    "Stacktrace for task ({}) JDBC shutdown : {}",
-					    name,
-					    ExceptionUtil.getStackTraceAsString( e ) );
+					logger.error( "Error shutting down JDBC connections for task (" + name + "): " + e.getMessage(), e );
 				}
 			}
 		}
