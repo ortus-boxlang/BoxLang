@@ -34,6 +34,7 @@ import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.IStruct;
 import ortus.boxlang.runtime.types.exceptions.BoxRuntimeException;
+import ortus.boxlang.runtime.types.exceptions.ExceptionUtil;
 
 public class ExceptionTest {
 
@@ -130,6 +131,29 @@ public class ExceptionTest {
 		assertThat( t.getTagContext().size() ).isGreaterThan( 0 );
 		assertThat( ( ( IStruct ) t.getTagContext().get( 0 ) ).getAsInteger( Key.line ) ).isEqualTo( 2 );
 
+	}
+
+	@Test
+	public void testMergedStackTraceStopsAtCauseCycle() {
+		RuntimeException	first	= new RuntimeException( "first" );
+		RuntimeException	second	= new RuntimeException( "second" );
+		first.initCause( second );
+		second.initCause( first );
+
+		assertThat( ExceptionUtil.getMergedStackTrace2( first ) ).hasSize( 2 );
+	}
+
+	@Test
+	public void testMergedStackTraceStopsAtMaximumCauseDepth() {
+		RuntimeException	first	= new RuntimeException( "0" );
+		RuntimeException	current	= first;
+		for ( int i = 1; i <= 50; i++ ) {
+			RuntimeException next = new RuntimeException( String.valueOf( i ) );
+			current.initCause( next );
+			current = next;
+		}
+
+		assertThat( ExceptionUtil.getMergedStackTrace2( first ) ).hasSize( 50 );
 	}
 
 }
