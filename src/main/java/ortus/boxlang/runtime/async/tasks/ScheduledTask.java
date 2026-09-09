@@ -558,7 +558,7 @@ public class ScheduledTask implements Runnable {
 
 		} catch ( Throwable t ) {
 			Exception e = null;
-			if( t instanceof Exception exceptionObject ) {
+			if ( t instanceof Exception exceptionObject ) {
 				e = exceptionObject;
 			} else {
 				e = new BoxRuntimeException( "A low level exception occurred when running the scheduled task: " + t.getMessage(), t );
@@ -613,7 +613,7 @@ public class ScheduledTask implements Runnable {
 			this.stats.put( "lastRun", getNow() );
 			( ( AtomicLong ) this.stats.get( "lastExecutionTime" ) ).set( timer.stopAndGetMillis( timerLabel ) );
 			( ( AtomicInteger ) this.stats.get( "totalRuns" ) ).incrementAndGet();
-			try{
+			try {
 				// Call internal cleanups event
 				cleanupTaskRun();
 				// set next run time based on timeUnit and period
@@ -621,22 +621,22 @@ public class ScheduledTask implements Runnable {
 				// This cleanup is done by the runtime once a thread is done processing a request
 				RequestBoxContext.removeCurrent();
 				Thread.currentThread().setContextClassLoader( oldClassLoader );
-			} catch( Throwable e ){
+			} catch ( Throwable e ) {
 				logger.error(
 				    "Error running task ({}) finalization : {}",
-					name,
-					e.getMessage() );
+				    name,
+				    e.getMessage() );
 				logger.error(
 				    "Stacktrace for task ({}) finalization : {}",
-					name,
-					ExceptionUtil.getStackTraceAsString( e ) );
+				    name,
+				    ExceptionUtil.getStackTraceAsString( e ) );
 			}
 
 			// Clean up an open connections from this run
 			if ( this.taskContext instanceof IJDBCCapableContext jdbcContext ) {
-				try{
+				try {
 					jdbcContext.shutdownConnections();
-				} catch( Throwable e ){
+				} catch ( Throwable e ) {
 					logger.error(
 					    "Error shutting down JDBC connections for task ({}) : {}",
 					    name,
