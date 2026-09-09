@@ -276,13 +276,18 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 			int[] columnMap = columnMapList.stream().mapToInt( i -> i ).toArray();
 			// Update, may be smaller now if there were duplicate column names
 			columnCount = columnMap.length;
-			int rowCount = 0;
+			QueryColumn[]	queryColumns	= query.getColumns().values().toArray( QueryColumn[]::new );
+			int				rowCount		= 0;
 			while ( resultSet.next() && ( maxRows == -1 || rowCount < maxRows ) ) {
 				rowCount++;
 				Object[] row = new Object[ columnCount ];
 				for ( int i = 0; i < columnCount; i++ ) {
 					// Get the data in the JDBC column based on our column map and use the corresponding SQL type
 					row[ i ] = driver.transformValue( columnSQLTypes[ i ], resultSet.getObject( columnMap[ i ] ), statement );
+					// JDBC drivers may return Boolean for BIT, but query cells store numeric bits.
+					if ( queryColumns[ i ].getType() == QueryColumnType.BIT && row[ i ] instanceof Boolean bit ) {
+						row[ i ] = bit ? 1 : 0;
+					}
 				}
 				query.addRow( row );
 			}

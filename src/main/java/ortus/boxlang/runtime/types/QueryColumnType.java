@@ -43,7 +43,8 @@ public enum QueryColumnType {
 	CHAR( Types.CHAR ),
 	CLOB( Types.CLOB ),
 	DATE( Types.DATE ),
-    // DATETIME maps to Types.TIMESTAMP because SQL DATETIME is typically treated as a timestamp with both date and time components.
+    // DATETIME maps to Types.TIMESTAMP because SQL DATETIME is typically treated as
+    // a timestamp with both date and time components.
 	DATETIME( Types.TIMESTAMP ),
 	DECIMAL( Types.DECIMAL ),
 	DOUBLE( Types.DOUBLE ),
@@ -74,7 +75,8 @@ public enum QueryColumnType {
 	 * Create a new QueryColumnType from a string value.
 	 */
 	public static QueryColumnType fromString( String type ) {
-		// Legacy CF code can prefix types with "cf_sql_", so we'll strip that if it's present.
+		// Legacy CF code can prefix types with "cf_sql_", so we'll strip that if it's
+		// present.
 		type = type.toLowerCase().replace( "cf_sql_", "" );
 
 		switch ( type ) {
@@ -198,7 +200,8 @@ public enum QueryColumnType {
 	}
 
 	/**
-	 * Acquire a QueryColumnType from a SQL type. Useful for assembling Query objects from JDBC result sets.
+	 * Acquire a QueryColumnType from a SQL type. Useful for assembling Query
+	 * objects from JDBC result sets.
 	 *
 	 * @param type The SQL type to convert.
 	 *
@@ -297,7 +300,8 @@ public enum QueryColumnType {
 	 *
 	 * @param type       The query column type to convert to.
 	 * @param value      The value to convert.
-	 * @param context    The context in which the conversion is taking place. Useful for localization.
+	 * @param context    The context in which the conversion is taking place. Useful
+	 *                   for localization.
 	 * @param connection The BoxConnection instance
 	 */
 	public static Object toSQLType( QueryColumnType type, Object value, IBoxContext context, BoxConnection connection ) {
@@ -339,7 +343,7 @@ public enum QueryColumnType {
 						yield new javax.sql.rowset.serial.SerialClob( StringCaster.cast( value ).toCharArray() );
 					}
 				}
-				case QueryColumnType.BIT -> BooleanCaster.cast( value );
+				case QueryColumnType.BIT -> IntegerCaster.cast( value );
 				case QueryColumnType.BOOLEAN -> BooleanCaster.cast( value );
 				case QueryColumnType.TIME -> DateTimeCaster.cast( value, context ).toDate();
 				case QueryColumnType.DATE -> DateTimeCaster.cast( value, context ).toDate();
@@ -365,7 +369,8 @@ public enum QueryColumnType {
 	 *
 	 * @param type    The query column type to convert to.
 	 * @param value   The value to convert.
-	 * @param context The context in which the conversion is taking place. Useful for localization.
+	 * @param context The context in which the conversion is taking place. Useful
+	 *                for localization.
 	 */
 	@Deprecated
 	public static Object toSQLType( QueryColumnType type, Object value, IBoxContext context ) {

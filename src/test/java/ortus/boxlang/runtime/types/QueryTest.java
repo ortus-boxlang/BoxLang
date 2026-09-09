@@ -19,7 +19,13 @@ package ortus.boxlang.runtime.types;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Types;
 import java.util.Iterator;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -28,8 +34,12 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import ortus.boxlang.runtime.BoxRuntime;
+import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.context.ScriptingRequestBoxContext;
+import ortus.boxlang.runtime.jdbc.BoxConnection;
+import ortus.boxlang.runtime.jdbc.BoxStatement;
+import ortus.boxlang.runtime.jdbc.DataSource;
 import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
@@ -107,6 +117,39 @@ public class QueryTest {
 		assertThat( context.unwrapQueryColumn( qry.dereference( context, Key.of( "foo" ), false ) ) ).isEqualTo( "bar" );
 		assertThat( qry.assign( context, Key.of( "foo" ), "gavin" ) ).isEqualTo( "gavin" );
 		assertThat( context.unwrapQueryColumn( qry.dereference( context, Key.of( "foo" ), false ) ) ).isEqualTo( "gavin" );
+	}
+
+	@DisplayName( "JDBC BIT values are stored as numbers without changing BOOLEAN or INTEGER columns" )
+	@Test
+	void testFromResultSetPreservesNumericBits() throws SQLException {
+		// Use the real query-loading path with a generic datasource, without opening a database connection.
+		DatasourceConfig	config		= new DatasourceConfig( Key.of( "bitQuery" ), Struct.of(
+		    Key.driver, "generic", Key.connectionString, "jdbc:generic:bitQuery"
+		) );
+		DataSource			datasource	= new DataSource( config, false );
+		BoxStatement		statement	= new BoxStatement( new BoxConnection( null, datasource ), null );
+		ResultSet			resultSet	= mock( ResultSet.class );
+		ResultSetMetaData	metadata	= mock( ResultSetMetaData.class );
+		when( resultSet.getMetaData() ).thenReturn( metadata );
+		when( metadata.getColumnCount() ).thenReturn( 3 );
+		when( metadata.getColumnLabel( 1 ) ).thenReturn( "flag" );
+		when( metadata.getColumnType( 1 ) ).thenReturn( Types.BIT );
+		when( metadata.getColumnLabel( 2 ) ).thenReturn( "booleanFlag" );
+		when( metadata.getColumnType( 2 ) ).thenReturn( Types.BOOLEAN );
+		when( metadata.getColumnLabel( 3 ) ).thenReturn( "count" );
+		when( metadata.getColumnType( 3 ) ).thenReturn( Types.INTEGER );
+		when( resultSet.next() ).thenReturn( true, true, true, true, true, false );
+		when( resultSet.getObject( 1 ) ).thenReturn( false, true, 0, 1, null );
+		when( resultSet.getObject( 2 ) ).thenReturn( false, true, false, true, null );
+		when( resultSet.getObject( 3 ) ).thenReturn( 0, 1, 0, 1, null );
+
+		Query query = Query.fromResultSet( statement, resultSet );
+
+		assertThat( query.getColumn( Key.of( "flag" ) ).getType() ).isEqualTo( QueryColumnType.BIT );
+		assertThat( query.getColumnData( Key.of( "flag" ) ) ).asList().containsExactly( 0, 1, 0, 1, null ).inOrder();
+		assertThat( query.getData().get( 0 )[ 0 ] ).isInstanceOf( Integer.class );
+		assertThat( query.getColumnData( Key.of( "booleanFlag" ) ) ).asList().containsExactly( false, true, false, true, null ).inOrder();
+		assertThat( query.getColumnData( Key.count ) ).asList().containsExactly( 0, 1, 0, 1, null ).inOrder();
 	}
 
 	@DisplayName( "Test Query Iterator" )
