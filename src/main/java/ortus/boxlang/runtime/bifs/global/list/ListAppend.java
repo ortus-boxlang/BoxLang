@@ -80,7 +80,7 @@ public class ListAppend extends BIF {
 				return originalList + ( originalList.length() > 0 ? delimiter : "" ) + value;
 
 			}
-			return originalList + delimiter
+			return originalList + ( originalList.length() > 0 ? delimiter : "" )
 			    + ListUtil.asString( ListUtil.asList( value, delimiter, includeEmpty, isMultiChar ), delimiter );
 		}
 

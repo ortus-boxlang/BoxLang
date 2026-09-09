@@ -90,6 +90,26 @@ public class ListAppendTest {
 		assertEquals( updated.getAt( 6 ), "6" );
 	}
 
+	@DisplayName( "It can append to empty list" )
+	@Test
+	public void testAppendEmptyList() {
+		instance.executeSource(
+		    """
+		        nums = "";
+		        result = listAppend( nums, "a,b", ",", true );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "a,b" );
+
+		instance.executeSource(
+		    """
+		        nums = "";
+		        result = listAppend( nums, "ab", ",", true );
+		    """,
+		    context );
+		assertThat( variables.get( result ) ).isEqualTo( "ab" );
+	}
+
 	@DisplayName( "Can append using the member function" )
 	@Test
 	public void testAppendMember() {
