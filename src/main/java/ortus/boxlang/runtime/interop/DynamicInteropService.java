@@ -2192,7 +2192,10 @@ public class DynamicInteropService {
 		} else if ( targetInstance instanceof Throwable t && exceptionKeys.contains( name ) ) {
 			// Throwable.message always delegates through to the message field
 			if ( name.equals( Key.message ) ) {
-				return t.getMessage();
+				// A raw Java exception can carry a null message, but CFML always exposes an empty string,
+				// matching the empty string returned for the other exception keys below
+				String message = t.getMessage();
+				return message == null ? "" : message;
 			} else if ( name.equals( Key.cause ) ) {
 				return t.getCause();
 			} else if ( name.equals( Key.stackTrace ) ) {
