@@ -454,11 +454,26 @@ public class CFVisitor extends CFGrammarBaseVisitor<BoxNode> {
 			componentName = ctx.prefixedComponentName().getText().substring( 2 );
 		}
 
-		List<BoxAnnotation> attributes = Optional.ofNullable( ctx.componentAttribute() )
+		List<BoxAnnotation>	attributes				= Optional.ofNullable( ctx.componentAttribute() )
 		    .map( attributeList -> attributeList.stream().map( attribute -> ( BoxAnnotation ) attribute.accept( this ) ).collect( Collectors.toList() ) )
 		    .orElse( Collections.emptyList() );
 
-		attributes = buildComponentAttributes( componentName, attributes, ctx );
+		List<BoxAnnotation>	normalizedAttributes	= buildComponentAttributes( componentName, attributes, ctx );
+		// Script shortcuts must use the same lazy-default semantics as scoped param statements.
+		if ( normalizedAttributes != attributes && ctx.normalStatementBlock() == null ) {
+			BoxExpression	variable		= null;
+			BoxExpression	type			= null;
+			BoxExpression	defaultValue	= null;
+			for ( BoxAnnotation attribute : normalizedAttributes ) {
+				switch ( attribute.getKey().getValue().toLowerCase() ) {
+					case "name" -> variable = attribute.getValue();
+					case "type" -> type = attribute.getValue();
+					case "default" -> defaultValue = attribute.getValue();
+				}
+			}
+			return new BoxParam( variable, type, defaultValue, pos, src );
+		}
+		attributes = normalizedAttributes;
 
 		List<BoxStatement> body = null;
 		if ( ctx.normalStatementBlock() != null ) {

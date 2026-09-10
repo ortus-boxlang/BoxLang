@@ -485,11 +485,26 @@ public class BoxVisitor extends BoxGrammarBaseVisitor<BoxNode> {
 			// specical component name's like transaction which are allowed to not have bx: in front
 			name = ctx.specialComponentName().getText();
 		}
-		List<BoxAnnotation> attributes = Optional.ofNullable( ctx.componentAttribute() )
+		List<BoxAnnotation>	attributes				= Optional.ofNullable( ctx.componentAttribute() )
 		    .map( attributeList -> attributeList.stream().map( attribute -> ( BoxAnnotation ) attribute.accept( this ) ).collect( Collectors.toList() ) )
 		    .orElse( Collections.emptyList() );
 
-		attributes = buildComponentAttributes( name, attributes, ctx );
+		List<BoxAnnotation>	normalizedAttributes	= buildComponentAttributes( name, attributes, ctx );
+		// Script shortcuts must use the same lazy-default semantics as scoped param statements.
+		if ( normalizedAttributes != attributes && ctx.normalStatementBlock() == null ) {
+			BoxExpression	variable		= null;
+			BoxExpression	type			= null;
+			BoxExpression	defaultValue	= null;
+			for ( BoxAnnotation attribute : normalizedAttributes ) {
+				switch ( attribute.getKey().getValue().toLowerCase() ) {
+					case "name" -> variable = attribute.getValue();
+					case "type" -> type = attribute.getValue();
+					case "default" -> defaultValue = attribute.getValue();
+				}
+			}
+			return new BoxParam( variable, type, defaultValue, pos, src );
+		}
+		attributes = normalizedAttributes;
 
 		List<BoxStatement> body = null;
 		if ( ctx.normalStatementBlock() != null ) {

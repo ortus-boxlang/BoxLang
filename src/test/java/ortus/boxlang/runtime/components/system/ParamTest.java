@@ -19,12 +19,19 @@
 package ortus.boxlang.runtime.components.system;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import ortus.boxlang.compiler.parser.BoxSourceType;
 import ortus.boxlang.runtime.BoxRuntime;
@@ -34,6 +41,7 @@ import ortus.boxlang.runtime.scopes.IScope;
 import ortus.boxlang.runtime.scopes.Key;
 import ortus.boxlang.runtime.scopes.VariablesScope;
 import ortus.boxlang.runtime.types.Struct;
+import ortus.boxlang.runtime.types.exceptions.KeyNotFoundException;
 
 public class ParamTest {
 
@@ -178,6 +186,110 @@ public class ParamTest {
 		          """,
 		    context );
 		assertThat( variables.getAsString( result ) ).isEqualTo( "foo" );
+	}
+
+	private static Stream<Arguments> paramStatements() {
+		return Stream.of( BoxSourceType.BOXSCRIPT, BoxSourceType.CFSCRIPT ).flatMap( sourceType -> Stream.of(
+		    "param result = getDefault();",
+		    "param String result = getDefault();",
+		    "param variables.result = getDefault();",
+		    "param String variables.result = getDefault();"
+		).map( statement -> Arguments.of( statement, sourceType ) ) );
+	}
+
+	@DisplayName( "It does not evaluate a param default when the variable exists" )
+	@ParameterizedTest
+	@MethodSource( "paramStatements" )
+	public void testParamDoesNotEvaluateDefaultWhenVariableExists( String statement, BoxSourceType sourceType ) {
+		instance.executeSource(
+		    """
+		    variables.defaultCalls = 0;
+		    variables.result = "existing value";
+		    function getDefault() {
+		        variables.defaultCalls++;
+		        return "default value";
+		    }
+		    """ + statement,
+		    context, sourceType );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "existing value" );
+		assertThat( variables.getAsInteger( Key.of( "defaultCalls" ) ) ).isEqualTo( 0 );
+	}
+
+	@DisplayName( "It evaluates a param default exactly once when the variable is missing" )
+	@ParameterizedTest
+	@MethodSource( "paramStatements" )
+	public void testParamEvaluatesDefaultOnceWhenVariableIsMissing( String statement, BoxSourceType sourceType ) {
+		instance.executeSource(
+		    """
+		    variables.defaultCalls = 0;
+		    function getDefault() {
+		        variables.defaultCalls++;
+		        return "default value";
+		    }
+		    """ + statement,
+		    context, sourceType );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "default value" );
+		assertThat( variables.getAsInteger( Key.of( "defaultCalls" ) ) ).isEqualTo( 1 );
+	}
+
+	@DisplayName( "It preserves falsey param values without evaluating the default" )
+	@ParameterizedTest
+	@EnumSource( value = BoxSourceType.class, names = { "BOXSCRIPT", "CFSCRIPT" } )
+	public void testParamPreservesFalseyValues( BoxSourceType sourceType ) {
+		instance.executeSource(
+		    """
+		    variables.values = { flag: false, count: 0, text: "" };
+		    param variables.values.flag = failDefault();
+		    param variables.values.count = failDefault();
+		    param variables.values.text = failDefault();
+		    function failDefault() {
+		        throw "Default must not be evaluated";
+		    }
+		    """, context, sourceType );
+		assertThat( variables.getAsStruct( Key.of( "values" ) ) ).isEqualTo( Struct.of( "flag", false, "count", 0, "text", "" ) );
+	}
+
+	@DisplayName( "It evaluates defaults for null and missing nested values" )
+	@ParameterizedTest
+	@EnumSource( value = BoxSourceType.class, names = { "BOXSCRIPT", "CFSCRIPT" } )
+	public void testParamNullAndMissingNestedValues( BoxSourceType sourceType ) {
+		instance.executeSource(
+		    """
+		    variables.defaultCalls = 0;
+		    variables.values = { present: javacast( "null", "" ) };
+		    function getDefault() {
+		        variables.defaultCalls++;
+		        return "default value";
+		    }
+		    param variables.values.present = getDefault();
+		    param variables.values.missing = getDefault();
+		    """, context, sourceType );
+		assertThat( variables.getAsStruct( Key.of( "values" ) ) ).isEqualTo( Struct.of( "present", "default value", "missing", "default value" ) );
+		assertThat( variables.getAsInteger( Key.of( "defaultCalls" ) ) ).isEqualTo( 2 );
+	}
+
+	@DisplayName( "It resolves param defaults in the current function context" )
+	@ParameterizedTest
+	@EnumSource( value = BoxSourceType.class, names = { "BOXSCRIPT", "CFSCRIPT" } )
+	public void testParamFunctionContext( BoxSourceType sourceType ) {
+		instance.executeSource(
+		    """
+		    function withDefault( supplied ) {
+		        var fallback = "local default";
+		        param arguments.supplied = fallback;
+		        return arguments.supplied;
+		    }
+		    variables.existing = withDefault( "existing value" );
+		    variables.result = withDefault();
+		    """, context, sourceType );
+		assertThat( variables.getAsString( Key.of( "existing" ) ) ).isEqualTo( "existing value" );
+		assertThat( variables.getAsString( result ) ).isEqualTo( "local default" );
+	}
+
+	@DisplayName( "It still requires a variable when param has no default" )
+	@Test
+	public void testParamWithoutDefaultRequiresVariable() {
+		assertThrows( KeyNotFoundException.class, () -> instance.executeSource( "param String variables.missing;", context ) );
 	}
 
 	@DisplayName( "It can param a struct to a default value" )

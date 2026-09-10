@@ -16,8 +16,11 @@ package ortus.boxlang.compiler.javaboxpiler.transformer.statement;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.stmt.IfStmt;
+import com.github.javaparser.ast.stmt.Statement;
 
 import ortus.boxlang.compiler.ast.BoxNode;
 import ortus.boxlang.compiler.ast.expression.BoxFQN;
@@ -60,6 +63,7 @@ public class BoxParamTransformer extends AbstractTransformer {
 			    )
 			);
 		}
+		List<BoxAnnotation> requiredAttrs = new ArrayList<>( attrs );
 		if ( boxParam.getDefaultValue() != null ) {
 			attrs.add(
 			    new BoxAnnotation(
@@ -72,7 +76,18 @@ public class BoxParamTransformer extends AbstractTransformer {
 			    )
 			);
 		}
-		// Delegate to the component transformer
-		return transpiler.transform( new BoxComponent( "param", attrs, node.getPosition(), node.getSourceText() ), context );
+		// Preserve component processing, but only evaluate the default when the variable is missing.
+		Statement component = ( Statement ) transpiler.transform( new BoxComponent( "param", attrs, node.getPosition(), node.getSourceText() ), context );
+		if ( boxParam.getDefaultValue() == null ) {
+			return component;
+		}
+		IfStmt conditional = ( IfStmt ) parseStatement(
+		    "if ( ExpressionInterpreter.getVariable( ${contextName}, ${name}, true ) == null ) {}",
+		    Map.of( "contextName", transpiler.peekContextName(), "name", transpiler.transform( boxParam.getVariable() ).toString() ) );
+		conditional.setThenStmt( component );
+		conditional.setElseStmt( ( Statement ) transpiler.transform(
+		    new BoxComponent( "param", requiredAttrs, node.getPosition(), node.getSourceText() ), context ) );
+		addIndex( conditional, node );
+		return conditional;
 	}
 }
