@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.List;
 
@@ -48,6 +49,43 @@ import tools.JDBCTestUtils;
 public class QueryExecuteTest extends BaseJDBCTest {
 
 	static Key result = new Key( "result" );
+
+	@DisplayName( "It executes a query with a Double maxLength in a raw parameter struct" )
+	@Test
+	public void testStringBindingWithNumericMaxLength() {
+		this.variables.put( Key.maxLength, 13.0D );
+		instance.executeSource(
+		    """
+		    result = queryExecute( "SELECT id FROM developers WHERE name = :name",
+		        { name: { value: "Eric Peterson", sqltype: "varchar", maxLength: maxLength } } );
+		    """,
+		    this.context );
+		Query query = this.variables.getAsQuery( result );
+		assertThat( query.size() ).isEqualTo( 1 );
+		assertThat( query.getRowAsStruct( 0 ).get( "id" ) ).isEqualTo( 42 );
+	}
+
+	@DisplayName( "It inserts decimal bindings with a Double scale" )
+	@Test
+	public void testDecimalBindingWithNumericScale() {
+		this.variables.put( Key.scale, 2.0D );
+		this.variables.put( Key.value, new BigDecimal( "12.50" ) );
+		instance.executeSource(
+		    """
+		    queryExecute( "CREATE TABLE decimal_scale_test (amount DECIMAL(12, 2))" );
+		    try {
+		        queryExecute( "INSERT INTO decimal_scale_test (amount) VALUES (:amount)",
+		            { amount: { value: value, sqltype: "decimal", scale: scale } } );
+		        result = queryExecute( "SELECT amount FROM decimal_scale_test" );
+		    } finally {
+		        queryExecute( "DROP TABLE decimal_scale_test" );
+		    }
+		    """,
+		    this.context );
+		Query query = this.variables.getAsQuery( result );
+		assertThat( query.size() ).isEqualTo( 1 );
+		assertThat( query.getRowAsStruct( 0 ).get( "amount" ) ).isEqualTo( new BigDecimal( "12.50" ) );
+	}
 
 	@DisplayName( "It can execute a query with no bindings on the default datasource" )
 	@Test

@@ -17,6 +17,7 @@ package ortus.boxlang.runtime.jdbc;
 import ortus.boxlang.runtime.context.IBoxContext;
 import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.CastAttempt;
+import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.dynamic.casters.StringCaster;
 import ortus.boxlang.runtime.dynamic.casters.StructCaster;
 import ortus.boxlang.runtime.scopes.Key;
@@ -104,8 +105,8 @@ public class QueryParameter {
 		this.value		= this.isNullParam ? null : v;
 		this.sqltype	= RegexBuilder.of( sqltype, RegexBuilder.CF_SQL ).replaceAllAndGet( "" ).toUpperCase().trim();
 		this.type		= QueryColumnType.fromString( this.sqltype );
-		this.maxLength	= param.getAsInteger( Key.maxLength );
-		this.scale		= param.getAsInteger( Key.scale );
+		this.maxLength	= param.get( Key.maxLength ) == null ? null : IntegerCaster.cast( param.get( Key.maxLength ) );
+		this.scale		= param.get( Key.scale ) == null ? null : IntegerCaster.cast( param.get( Key.scale ) );
 	}
 
 	/**
