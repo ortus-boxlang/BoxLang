@@ -19,6 +19,12 @@ package ortus.boxlang.runtime.jdbc.drivers;
 
 import static com.google.common.truth.Truth.assertThat;
 
+import java.lang.reflect.Proxy;
+import java.sql.NClob;
+
+import javax.sql.rowset.serial.SerialBlob;
+import javax.sql.rowset.serial.SerialClob;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -125,6 +131,38 @@ public class GenericJDBCDriverTest {
 		} catch ( IllegalArgumentException e ) {
 			assertThat( e.getMessage() ).isEqualTo( "The port property is required for the Generic JDBC Driver" );
 		}
+	}
+
+	@Test
+	@DisplayName( "Test transforming an empty Clob" )
+	public void testTransformEmptyClob() throws Exception {
+		Object transformed = GenericJDBCDriver.transformValueStatic( 0, new SerialClob( new char[ 0 ] ), null );
+
+		assertThat( transformed ).isEqualTo( "" );
+	}
+
+	@Test
+	@DisplayName( "Test transforming an empty NClob" )
+	public void testTransformEmptyNClob() throws Exception {
+		NClob	nclob		= ( NClob ) Proxy.newProxyInstance(
+		    NClob.class.getClassLoader(),
+		    new Class[] { NClob.class },
+		    ( proxy, method, args ) -> switch ( method.getName() ) {
+			    case "length" -> 0L;
+			    case "getSubString" -> "";
+			    default -> throw new UnsupportedOperationException( method.getName() );
+		    } );
+		Object	transformed	= GenericJDBCDriver.transformValueStatic( 0, nclob, null );
+
+		assertThat( transformed ).isEqualTo( "" );
+	}
+
+	@Test
+	@DisplayName( "Test transforming an empty Blob" )
+	public void testTransformEmptyBlob() throws Exception {
+		Object transformed = GenericJDBCDriver.transformValueStatic( 0, new SerialBlob( new byte[ 0 ] ), null );
+
+		assertThat( transformed ).isEqualTo( new byte[ 0 ] );
 	}
 
 }

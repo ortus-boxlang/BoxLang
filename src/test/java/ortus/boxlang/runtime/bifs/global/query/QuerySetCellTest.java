@@ -351,4 +351,29 @@ public class QuerySetCellTest {
 		assertThat( ( ( Number ) qry.getCell( Key.of( "calc" ), 0 ) ).intValue() ).isEqualTo( 15 );
 	}
 
+	@DisplayName( "It sets bit values via querySetCell" )
+	@Test
+	public void testSettingBit() {
+		// @formatter:off
+		instance.executeSource( """
+			myQry = queryNew( "col", "clob", [""] )
+			querySetCell( myQry, "col", "test", 1 )
+			myQry.addRow();
+			myQry.col[2]="brad"
+			result = queryExecute(
+				"SELECT col FROM myQry",
+				[],
+				{ dbType: "query" }
+			)
+			result2 = myqry.col[1];
+			result3 = myqry.col[2];
+		""", context );
+		// @formatter:on
+		Query qry = variables.getAsQuery( result );
+		assertThat( qry.getCell( Key.of( "col" ), 0 ) ).isEqualTo( "test" );
+		assertThat( qry.getCell( Key.of( "col" ), 1 ) ).isEqualTo( "brad" );
+		assertThat( variables.get( Key.of( "result2" ) ) ).isEqualTo( "test" );
+		assertThat( variables.get( Key.of( "result3" ) ) ).isEqualTo( "brad" );
+	}
+
 }

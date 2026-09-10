@@ -1533,7 +1533,7 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 		if ( Query.queryNullToEmpty && !QueryColumnType.isStringType( columnType ) && value instanceof String castValue && castValue.isEmpty() ) {
 			value = null;
 		}
-		value = QueryColumnType.toSQLType( columnType, value, context, null );
+		value = GenericJDBCDriver.transformValueStatic( columnType.sqlType, QueryColumnType.toSQLType( columnType, value, context, null ), null );
 		column.setCell( getRowFromContext( context ), value );
 		return value;
 	}
