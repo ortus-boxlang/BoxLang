@@ -285,10 +285,6 @@ public class Query implements IType, IReferenceable, Collection<IStruct>, Serial
 				for ( int i = 0; i < columnCount; i++ ) {
 					// Get the data in the JDBC column based on our column map and use the corresponding SQL type
 					row[ i ] = driver.transformValue( columnSQLTypes[ i ], resultSet.getObject( columnMap[ i ] ), statement );
-					// JDBC drivers may return Boolean for BIT, but query cells store numeric bits.
-					if ( queryColumns[ i ].getType() == QueryColumnType.BIT && row[ i ] instanceof Boolean bit ) {
-						row[ i ] = bit ? 1 : 0;
-					}
 				}
 				query.addRow( row );
 			}

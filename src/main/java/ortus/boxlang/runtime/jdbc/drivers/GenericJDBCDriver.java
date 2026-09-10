@@ -22,6 +22,7 @@ import java.sql.SQLException;
 
 import ortus.boxlang.runtime.config.segments.DatasourceConfig;
 import ortus.boxlang.runtime.context.IBoxContext;
+import ortus.boxlang.runtime.dynamic.casters.BooleanCaster;
 import ortus.boxlang.runtime.dynamic.casters.IntegerCaster;
 import ortus.boxlang.runtime.jdbc.BoxConnection;
 import ortus.boxlang.runtime.jdbc.BoxStatement;
@@ -310,6 +311,16 @@ public class GenericJDBCDriver implements IJDBCDriver {
 		} else if ( value instanceof java.sql.RowId rowId ) {
 			// Convert RowId to byte array
 			return rowId.getBytes();
+		} else if ( sqlType == java.sql.Types.BIT ) {
+			// JDBC drivers may return Boolean for BIT, but query cells store numeric bits.
+			// Boolean caster could handle this, but fast tracking a couple common types
+			if ( value instanceof Boolean bit ) {
+				return bit ? 1 : 0;
+			} else if ( value instanceof Number number ) {
+				return number.intValue() == 1 ? 1 : 0;
+			} else {
+				return BooleanCaster.cast( value ) ? 1 : 0;
+			}
 		} else if ( value instanceof ResultSet resultSet ) {
 			return Query.fromResultSet( statement, resultSet );
 		}
